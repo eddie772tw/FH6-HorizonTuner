@@ -3,13 +3,15 @@ import Navigation from './components/Navigation';
 import TelemetryView from './components/TelemetryView';
 import TuningView from './components/TuningView';
 import CarParamsView from './components/CarParamsView';
+import SettingsView from './components/SettingsView';
 import { useTelemetry } from './hooks/useTelemetry';
 import { CarParamsProvider } from './context/CarParamsContext';
+import { SettingsProvider } from './context/SettingsContext';
 import './App.css';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params'>('car_params');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'settings'>('car_params');
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>
@@ -17,8 +19,9 @@ const AppContent: React.FC = () => {
       
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         {activeTab === 'telemetry' && <TelemetryView />}
-        {activeTab === 'tuning' && <TuningView />}
+        {activeTab === 'tuning' && <TuningView setActiveTab={setActiveTab} />}
         {activeTab === 'car_params' && <CarParamsView />}
+        {activeTab === 'settings' && <SettingsView />}
       </main>
     </div>
   );
@@ -28,11 +31,13 @@ import { TelemetryRecorderProvider } from './context/TelemetryRecorderContext';
 
 const App: React.FC = () => {
   return (
-    <CarParamsProvider>
-      <TelemetryRecorderProvider>
-        <AppContent />
-      </TelemetryRecorderProvider>
-    </CarParamsProvider>
+    <SettingsProvider>
+      <CarParamsProvider>
+        <TelemetryRecorderProvider>
+          <AppContent />
+        </TelemetryRecorderProvider>
+      </CarParamsProvider>
+    </SettingsProvider>
   );
 };
 

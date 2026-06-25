@@ -2,8 +2,8 @@ import React from 'react';
 import '../App.css';
 
 interface NavigationProps {
-  activeTab: 'telemetry' | 'tuning' | 'car_params';
-  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params') => void;
+  activeTab: 'telemetry' | 'tuning' | 'car_params' | 'settings';
+  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'settings') => void;
   isConnected: boolean;
 }
 
@@ -44,6 +44,12 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             style={getTabStyle(activeTab === 'car_params')}
           >
             Car Parameters
+          </button>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            style={getTabStyle(activeTab === 'settings')}
+          >
+            Settings
           </button>
         </div>
       </div>

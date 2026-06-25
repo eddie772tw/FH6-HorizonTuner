@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useTelemetry } from '../hooks/useTelemetry';
+import { useSettings } from './SettingsContext';
 
 export interface CarParams {
   weight: number;
@@ -17,7 +18,12 @@ export interface CarParams {
     brakes: 'Fixed' | 'Adjustable';
     diff: 'Fixed' | 'Adjustable';
   };
-  dyno_curve: Record<string, { hp: number; torque: number }>;
+  dyno_curve: Record<string, { hp: number; torque: number; hp_hist?: number[]; torque_hist?: number[] }>;
+}
+
+export interface AppSettings {
+  dyno_recording: boolean;
+  race_recording: boolean;
 }
 
 interface CarParamsContextType {
@@ -27,6 +33,10 @@ interface CarParamsContextType {
   carParams: CarParams | null;
   setCarParams: (params: CarParams) => void;
   saveCarParams: () => Promise<void>;
+  clearDynoCurve: () => Promise<void>;
+  importDynoValues: () => void;
+  settings: any;
+  updateSettings: (updates: any) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -34,14 +44,15 @@ const CarParamsContext = createContext<CarParamsContextType | undefined>(undefin
 
 export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { data } = useTelemetry();
-  // Listen to telemetry for CarOrdinal. If it changes, we try to load it.
   const telemetryCarId = data?.CarOrdinal ? data.CarOrdinal.toString() : '';
+  const { settings, updateSettings } = useSettings();
 
   const [carId, setCarId] = useState<string>('default_car');
   const [carParams, setCarParams] = useState<CarParams | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [carDb, setCarDb] = useState<Record<string, any>>({});
 
+  // Fetch car database
   useEffect(() => {
     fetch('http://127.0.0.1:8001/api/cars/database')
       .then(r => r.json())
@@ -69,7 +80,6 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (active && !result.error) {
           setCarParams(result);
         } else if (active && result.error) {
-          // If not found, set defaults so UI doesn't crash
             setCarParams({
               weight: 1500,
               weight_distribution: 50,
@@ -99,7 +109,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     return () => { active = false; };
   }, [carId]);
 
-  // Optionally poll dyno curve if telemetry is active for this car
+  // Poll dyno curve ONLY (no longer overwrites maxHpRpm/maxTorqueRpm)
   useEffect(() => {
     if (telemetryCarId === carId && telemetryCarId !== '0') {
       const interval = setInterval(async () => {
@@ -109,25 +119,12 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
           if (!result.error) {
             setCarParams(prev => {
               if (!prev) return result;
-              
-              let mHp = 0, mHpRpm = prev.maxHpRpm;
-              let mTorque = 0, mTorqueRpm = prev.maxTorqueRpm;
-              Object.entries(result.dyno_curve as Record<string, {hp: number, torque: number}>).forEach(([rpmStr, vals]) => {
-                const rpm = parseInt(rpmStr);
-                if (vals.hp > mHp) { mHp = vals.hp; mHpRpm = rpm; }
-                if (vals.torque > mTorque) { mTorque = vals.torque; mTorqueRpm = rpm; }
-              });
-
-              return { 
-                ...prev, 
-                dyno_curve: result.dyno_curve,
-                maxHpRpm: mHpRpm,
-                maxTorqueRpm: mTorqueRpm
-              };
+              // Only update dyno_curve — preserve all user-edited car params
+              return { ...prev, dyno_curve: result.dyno_curve };
             });
           }
         } catch (e) { }
-      }, 5000); // pull updates every 5s
+      }, 5000);
       return () => clearInterval(interval);
     }
   }, [telemetryCarId, carId]);
@@ -145,8 +142,41 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
+  const clearDynoCurve = async () => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}/dyno_curve`, {
+        method: 'DELETE'
+      });
+      const result = await res.json();
+      if (!result.error) {
+        setCarParams(prev => prev ? { ...prev, dyno_curve: {} } : prev);
+      }
+    } catch (e) {
+      console.error("Failed to clear dyno curve", e);
+    }
+  };
+
+  // Manually import peak RPM values from dyno curve into car params
+  const importDynoValues = () => {
+    if (!carParams || Object.keys(carParams.dyno_curve).length === 0) return;
+    let mHp = 0, mHpRpm = 0;
+    let mTorque = 0, mTorqueRpm = 0;
+    Object.entries(carParams.dyno_curve).forEach(([rpmStr, vals]) => {
+      const rpm = parseInt(rpmStr);
+      if (vals.hp > mHp) { mHp = vals.hp; mHpRpm = rpm; }
+      if (vals.torque > mTorque) { mTorque = vals.torque; mTorqueRpm = rpm; }
+    });
+    setCarParams({ ...carParams, maxHpRpm: mHpRpm, maxTorqueRpm: mTorqueRpm });
+  };
+
+
+
   return (
-    <CarParamsContext.Provider value={{ carId, setCarId, carName, carParams, setCarParams, saveCarParams, isLoading }}>
+    <CarParamsContext.Provider value={{
+      carId, setCarId, carName, carParams, setCarParams,
+      saveCarParams, clearDynoCurve, importDynoValues,
+      settings, updateSettings, isLoading
+    }}>
       {children}
     </CarParamsContext.Provider>
   );

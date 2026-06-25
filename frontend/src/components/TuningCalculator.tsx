@@ -1,10 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { calculateSprings, calculateARBs, calculateDampers, calculateSpringsByFrequency, calculateARBsAdvanced, calculateDampersAdvanced, Drivetrain } from '../utils/tuningMath';
-import { lbsToKg, kgToLbs, lbsInToKgfMm, kgfMmToLbsIn } from '../utils/units';
+import { useSettings } from '../context/SettingsContext';
 
 const TuningCalculator: React.FC = () => {
   const [isAdvancedMode, setIsAdvancedMode] = useState<boolean>(true);
-  const [unitSystem, setUnitSystem] = useState<'Imperial' | 'Metric'>('Imperial');
+
+  const { 
+    convertWeight, 
+    convertWeightToLbs, 
+    convertSpringRateLbsIn, 
+    convertSpringRateLbsInToLbsIn 
+  } = useSettings();
 
   // User Inputs
   const [frontBias, setFrontBias] = useState<number>(52.0);
@@ -25,18 +31,18 @@ const TuningCalculator: React.FC = () => {
   const [bumpRatio, setBumpRatio] = useState<number>(0.6); // 60%
 
   // Display Conversions
-  const displayWeight = unitSystem === 'Metric' ? lbsToKg(totalWeight) : totalWeight;
-  const setDisplayWeight = (val: number) => setTotalWeight(unitSystem === 'Metric' ? kgToLbs(val) : val);
+  const displayWeight = convertWeight(totalWeight).value;
+  const setDisplayWeight = (val: number) => setTotalWeight(convertWeightToLbs(val));
 
-  const displaySpringMin = unitSystem === 'Metric' ? lbsInToKgfMm(springMin) : springMin;
-  const setDisplaySpringMin = (val: number) => setSpringMin(unitSystem === 'Metric' ? kgfMmToLbsIn(val) : val);
+  const displaySpringMin = convertSpringRateLbsIn(springMin).value;
+  const setDisplaySpringMin = (val: number) => setSpringMin(convertSpringRateLbsInToLbsIn(val));
 
-  const displaySpringMax = unitSystem === 'Metric' ? lbsInToKgfMm(springMax) : springMax;
-  const setDisplaySpringMax = (val: number) => setSpringMax(unitSystem === 'Metric' ? kgfMmToLbsIn(val) : val);
+  const displaySpringMax = convertSpringRateLbsIn(springMax).value;
+  const setDisplaySpringMax = (val: number) => setSpringMax(convertSpringRateLbsInToLbsIn(val));
 
-  const formatSpring = (val: number) => unitSystem === 'Metric' ? lbsInToKgfMm(val).toFixed(1) : val.toFixed(1);
-  const springUnit = unitSystem === 'Metric' ? 'kgf/mm' : 'lbs/in';
-  const weightUnit = unitSystem === 'Metric' ? 'kg' : 'lbs';
+  const formatSpring = (val: number) => convertSpringRateLbsIn(val).value.toFixed(1);
+  const springUnit = convertSpringRateLbsIn(1).label;
+  const weightUnit = convertWeight(1).label;
 
   // Calculations
   const springs = useMemo(() => {
@@ -64,14 +70,6 @@ const TuningCalculator: React.FC = () => {
           Tuning Calculator
         </h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <select 
-            value={unitSystem} 
-            onChange={(e) => setUnitSystem(e.target.value as 'Imperial' | 'Metric')}
-            style={inputStyle}
-          >
-            <option value="Imperial">Imperial (lbs, lbs/in)</option>
-            <option value="Metric">Metric (kg, kgf/mm)</option>
-          </select>
           <select 
             value={isAdvancedMode ? 'Advanced' : 'Baseline'} 
             onChange={(e) => setIsAdvancedMode(e.target.value === 'Advanced')}

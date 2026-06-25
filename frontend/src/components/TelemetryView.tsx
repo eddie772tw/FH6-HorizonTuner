@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTelemetry } from '../hooks/useTelemetry';
+import { useSettings } from '../context/SettingsContext';
 import AnalysisView from './AnalysisView';
 
 const TelemetryView: React.FC = () => {
   const [subTab, setSubTab] = useState<'live' | 'analysis'>('live');
   const [historyG, setHistoryG] = useState<{lat: number, lon: number, time: number}[]>([]);
+  const [historySusp, setHistorySusp] = useState<{FL: number, FR: number, RL: number, RR: number, time: number}[]>([]);
   const { data } = useTelemetry();
+  const { convertSpeed, convertPower, convertTorque, convertBoost } = useSettings();
 
   useEffect(() => {
     if (!data) return;
@@ -19,6 +22,11 @@ const TelemetryView: React.FC = () => {
     setHistoryG(prev => {
       // Append current point and filter out anything older than 30 seconds
       return [...prev, { lat, lon, time: now }].filter(p => now - p.time <= 30000);
+    });
+
+    const suspTravel = data.NormalizedSuspensionTravel || [0, 0, 0, 0];
+    setHistorySusp(prev => {
+      return [...prev, { FL: suspTravel[0], FR: suspTravel[1], RL: suspTravel[2], RR: suspTravel[3], time: now }].filter(p => now - p.time <= 30000);
     });
   }, [data]);
 
@@ -40,15 +48,27 @@ const TelemetryView: React.FC = () => {
   const rpm = data?.CurrentEngineRpm || 0;
   const maxRpm = data?.EngineMaxRpm || 8000;
   const rpmPercent = Math.min((rpm / maxRpm) * 100, 100);
-  const speed = (data?.SpeedMetersPerSecond || 0) * 3.6; // m/s to km/h
+  
+  const speedVal = convertSpeed(data?.SpeedMetersPerSecond || 0);
+  const speed = speedVal.value;
+  const speedUnit = speedVal.label;
   const gear = data?.Gear || 0;
 
   // Dynamics
   const latG = (data?.AccelerationX || 0) / 9.81;
   const lonG = (data?.AccelerationZ || 0) / 9.81; // Z is forward/backward
-  const powerKw = (data?.PowerWatts || 0) / 1000;
-  const torque = data?.TorqueNewtons || 0;
-  const boost = data?.Boost || 0;
+  
+  const powerVal = convertPower(data?.PowerWatts || 0);
+  const power = powerVal.value;
+  const powerUnit = powerVal.label;
+  
+  const torqueVal = convertTorque(data?.TorqueNewtons || 0);
+  const torqueDisplay = torqueVal.value;
+  const torqueUnit = torqueVal.label;
+
+  const boostVal = convertBoost(data?.Boost || 0);
+  const boostDisplay = boostVal.value;
+  const boostUnit = boostVal.label;
 
   let pMaxLatAccel = { lat: 0, lon: 0 };
   let pMinLatAccel = { lat: 0, lon: 0 };
@@ -84,6 +104,26 @@ const TelemetryView: React.FC = () => {
     pMaxLatAccel, pMinLatAccel, pMaxLatBrake, pMinLatBrake,
     pMaxLonRight, pMinLonRight, pMaxLonLeft, pMinLonLeft
   ].filter(p => p.lat !== 0 || p.lon !== 0);
+
+  // Suspension & Tires
+  const susp = data?.NormalizedSuspensionTravel || [0,0,0,0];
+
+  // Calculate Min / Max suspension travel over the last 30 seconds
+  let maxFL = susp[0], minFL = susp[0];
+  let maxFR = susp[1], minFR = susp[1];
+  let maxRL = susp[2], minRL = susp[2];
+  let maxRR = susp[3], minRR = susp[3];
+
+  if (historySusp.length > 0) {
+    maxFL = Math.max(...historySusp.map(p => p.FL));
+    minFL = Math.min(...historySusp.map(p => p.FL));
+    maxFR = Math.max(...historySusp.map(p => p.FR));
+    minFR = Math.min(...historySusp.map(p => p.FR));
+    maxRL = Math.max(...historySusp.map(p => p.RL));
+    minRL = Math.min(...historySusp.map(p => p.RL));
+    maxRR = Math.max(...historySusp.map(p => p.RR));
+    minRR = Math.min(...historySusp.map(p => p.RR));
+  }
   
   // Laps
   const currentLap = data?.CurrentLap || 0;
@@ -97,8 +137,7 @@ const TelemetryView: React.FC = () => {
   const handbrake = data?.HandBrakeInput || 0; // 0-255
   const steer = data?.SteerInput || 0; // -127 to 127
 
-  // Suspension & Tires
-  const susp = data?.NormalizedSuspensionTravel || [0,0,0,0];
+  // Tires
   const tireTemp = data?.TireTemp || [0,0,0,0];
   const slipRatio = data?.TireSlipRatio || [0,0,0,0];
   const slipAngle = data?.TireSlipAngle || [0,0,0,0];
@@ -134,7 +173,7 @@ const TelemetryView: React.FC = () => {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
-                    {Math.round(speed)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>km/h</span>
+                    {Math.round(speed)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{speedUnit}</span>
                   </div>
                 </div>
               </div>
@@ -186,15 +225,15 @@ const TelemetryView: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
               <div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Power</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(powerKw)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>kW</span></div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(power)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{powerUnit}</span></div>
               </div>
               <div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Torque</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(torque)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>Nm</span></div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(torqueDisplay)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{torqueUnit}</span></div>
               </div>
               <div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Boost</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: boost > 0 ? 'var(--secondary)' : '#fff' }}>{boost.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>PSI</span></div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: boostDisplay > 0 ? 'var(--secondary)' : '#fff' }}>{boostDisplay.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{boostUnit}</span></div>
               </div>
             </div>
 
@@ -225,8 +264,8 @@ const TelemetryView: React.FC = () => {
               <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.15)' }} />
 
               {/* Labels */}
-              <span style={{ position: 'absolute', top: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>ACCEL</span>
-              <span style={{ position: 'absolute', bottom: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>BRAKE</span>
+              <span style={{ position: 'absolute', top: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>BRAKE</span>
+              <span style={{ position: 'absolute', bottom: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>ACCEL</span>
               <span style={{ position: 'absolute', left: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>L</span>
               <span style={{ position: 'absolute', right: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>R</span>
               
@@ -236,7 +275,7 @@ const TelemetryView: React.FC = () => {
                   position: 'absolute', 
                   width: '6px', height: '6px', 
                   borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
-                  top: `${80 - Math.max(-2, Math.min(2, p.lon)) * 40 - 3}px`, 
+                  top: `${80 + Math.max(-2, Math.min(2, p.lon)) * 40 - 3}px`, 
                   left: `${80 + Math.max(-2, Math.min(2, p.lat)) * 40 - 3}px`,
                   transition: 'top 0.1s linear, left 0.1s linear'
                 }} />
@@ -251,7 +290,7 @@ const TelemetryView: React.FC = () => {
                 borderRadius: '50%',
                 boxShadow: '0 0 12px var(--primary)',
                 // Max scale 2G (80px radius = 2G, so 40px per 1G)
-                transform: `translate(${Math.max(-2, Math.min(2, latG)) * 40}px, ${-Math.max(-2, Math.min(2, lonG)) * 40}px)`,
+                transform: `translate(${Math.max(-2, Math.min(2, latG)) * 40}px, ${Math.max(-2, Math.min(2, lonG)) * 40}px)`,
                 transition: 'transform 0.05s linear'
               }} />
             </div>
@@ -285,11 +324,11 @@ const TelemetryView: React.FC = () => {
       {/* 4. BOTTOM-RIGHT: Suspension Details */}
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
         <h3 style={{ marginBottom: '1rem' }}>Suspension Travel</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
-          <SuspensionBar title="Front Left" travel={susp[0]} />
-          <SuspensionBar title="Front Right" travel={susp[1]} />
-          <SuspensionBar title="Rear Left" travel={susp[2]} />
-          <SuspensionBar title="Rear Right" travel={susp[3]} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
+          <SuspensionBar title="Front Left" travel={susp[0]} history={historySusp.map(p => p.FL).slice(-150)} minVal={minFL} maxVal={maxFL} isLeft={true} />
+          <SuspensionBar title="Front Right" travel={susp[1]} history={historySusp.map(p => p.FR).slice(-150)} minVal={minFR} maxVal={maxFR} isLeft={false} />
+          <SuspensionBar title="Rear Left" travel={susp[2]} history={historySusp.map(p => p.RL).slice(-150)} minVal={minRL} maxVal={maxRL} isLeft={true} />
+          <SuspensionBar title="Rear Right" travel={susp[3]} history={historySusp.map(p => p.RR).slice(-150)} minVal={minRR} maxVal={maxRR} isLeft={false} />
         </div>
       </div>
 
@@ -323,6 +362,8 @@ const TireRadar: React.FC<{title: string, slipRatio: number, slipAngle: number, 
   // slipRatio % is typically * 100 but we will display the normalized value where 1.0 = 100% loss of grip
   const radius = 50; 
   const displayLimit = 1.5; 
+  const { convertTemp } = useSettings();
+  const tempVal = convertTemp(temp);
 
   const x = Math.max(-displayLimit, Math.min(displayLimit, slipAngle));
   const y = Math.max(-displayLimit, Math.min(displayLimit, slipRatio));
@@ -333,7 +374,7 @@ const TireRadar: React.FC<{title: string, slipRatio: number, slipAngle: number, 
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
         <strong style={{ color: 'var(--text-primary)' }}>{title}</strong>
-        <span style={{ color: getTempColor(temp), fontWeight: 600 }}>{Math.round(temp)}°</span>
+        <span style={{ color: getTempColor(temp), fontWeight: 600 }}>{Math.round(tempVal.value)}{tempVal.label}</span>
       </div>
       
       <div style={{ position: 'relative', width: `${radius*2}px`, height: `${radius*2}px`, borderRadius: '50%', border: isLosingGrip ? '2px solid #ff003c' : '2px solid rgba(255,255,255,0.1)' }}>
@@ -352,7 +393,7 @@ const TireRadar: React.FC<{title: string, slipRatio: number, slipAngle: number, 
           backgroundColor: isLosingGrip ? '#ff003c' : '#00f0ff',
           borderRadius: '50%',
           boxShadow: isLosingGrip ? '0 0 8px #ff003c' : '0 0 8px #00f0ff',
-          transform: `translate(${radius + (x / displayLimit) * radius - 4}px, ${radius - (y / displayLimit) * radius - 4}px)`,
+          transform: `translate(${radius + (x / displayLimit) * radius - 4}px, ${radius + (y / displayLimit) * radius - 4}px)`,
           transition: 'transform 0.05s linear, background 0.1s'
         }} />
       </div>
@@ -377,38 +418,150 @@ const TireRadar: React.FC<{title: string, slipRatio: number, slipAngle: number, 
   );
 };
 
-const SuspensionBar: React.FC<{title: string, travel: number}> = ({title, travel}) => {
+interface SuspensionBarProps {
+  title: string;
+  travel: number;
+  history: number[];
+  minVal: number;
+  maxVal: number;
+  isLeft: boolean;
+}
+
+const SuspensionBar: React.FC<SuspensionBarProps> = ({title, travel, history, minVal, maxVal, isLeft}) => {
   // Travel: 0.0 = max stretch, 1.0 = max compression
   const percent = Math.max(0, Math.min(100, travel * 100));
   const isBottomingOut = percent > 95;
   const isMaxStretch = percent < 5;
 
+  // Warning Colors based on 5% thresholds
+  const isMaxWarning = maxVal >= 0.95;
+  const isMinWarning = minVal <= 0.05;
+  const maxColor = isMaxWarning ? '#ff003c' : '#ffaa00';
+  const minColor = isMinWarning ? '#ff003c' : '#00f0ff';
+
+  // Unique IDs for SVG gradients to prevent duplication bugs
+  const gradId = `lineGrad-${title.replace(/\s+/g, '')}`;
+  const fillGradId = `suspGrad-${title.replace(/\s+/g, '')}`;
+
+  // SVG dimensions
+  const svgWidth = 140;
+  const svgHeight = 100;
+
+  // Convert history to points (y=0 is max compression, y=100 is max stretch)
+  const pointsStr = history.map((val, idx) => {
+    const x = history.length > 1 ? (idx / (history.length - 1)) * svgWidth : 0;
+    const y = svgHeight - (val * svgHeight);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const areaPointsStr = history.length > 0
+    ? `0,${svgHeight} ` + pointsStr + ` ${svgWidth},${svgHeight}`
+    : '';
+
+  const flexDirection = isLeft ? 'row' : 'row-reverse';
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '1rem' }}>
-      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem', textAlign: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '1rem', minWidth: '220px' }}>
+      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.8rem', textAlign: 'center' }}>
         {title}
       </div>
       
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '20px', height: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', position: 'relative', overflow: 'hidden' }}>
-          {/* Middle marker */}
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
-          
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: `${percent}%`,
-            background: isBottomingOut ? 'var(--secondary)' : isMaxStretch ? '#ffaa00' : 'var(--primary)',
-            transition: 'height 0.05s linear, background 0.1s',
-            borderRadius: percent > 98 ? '10px' : '0 0 10px 10px'
-          }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection, gap: '1rem', alignItems: 'center' }}>
+        {/* Chart (SVG) */}
+        <div style={{ flex: 1, height: `${svgHeight}px`, position: 'relative', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+          <svg width="100%" height="100%" viewBox={`0 0 ${svgWidth} ${svgHeight}`} preserveAspectRatio="none" style={{ display: 'block' }}>
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2={svgHeight} gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#ff003c" />
+                <stop offset="5%" stopColor="#ff003c" />
+                <stop offset="5%" stopColor="var(--primary)" />
+                <stop offset="95%" stopColor="var(--primary)" />
+                <stop offset="95%" stopColor="#ff003c" />
+                <stop offset="100%" stopColor="#ff003c" />
+              </linearGradient>
+              <linearGradient id={fillGradId} x1="0" y1="0" x2="0" y2={svgHeight} gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#ff003c" stopOpacity="0.25" />
+                <stop offset="5%" stopColor="#ff003c" stopOpacity="0.25" />
+                <stop offset="5%" stopColor="var(--primary)" stopOpacity="0.15" />
+                <stop offset="95%" stopColor="var(--primary)" stopOpacity="0.15" />
+                <stop offset="95%" stopColor="#ff003c" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#ff003c" stopOpacity="0.25" />
+              </linearGradient>
+            </defs>
+
+            {/* Warning zone backgrounds (5% compression/stretch limits) */}
+            <rect x="0" y="0" width={svgWidth} height="5" fill="rgba(255, 0, 60, 0.15)" />
+            <rect x="0" y="95" width={svgWidth} height="5" fill="rgba(255, 0, 60, 0.15)" />
+            <line x1="0" y1="5" x2={svgWidth} y2="5" stroke="rgba(255, 0, 60, 0.2)" strokeWidth="1" strokeDasharray="3,3" />
+            <line x1="0" y1="95" x2={svgWidth} y2="95" stroke="rgba(255, 0, 60, 0.2)" strokeWidth="1" strokeDasharray="3,3" />
+
+            {/* Filled area */}
+            {areaPointsStr && (
+              <polygon
+                points={areaPointsStr}
+                fill={`url(#${fillGradId})`}
+              />
+            )}
+
+            {/* Trend line */}
+            {pointsStr && (
+              <polyline
+                fill="none"
+                stroke={`url(#${gradId})`}
+                strokeWidth="2"
+                points={pointsStr}
+              />
+            )}
+          </svg>
+        </div>
+
+        {/* Vertical Bar */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: `${svgHeight}px`, width: '24px', justifyContent: 'center' }}>
+          <div style={{ width: '16px', height: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', position: 'relative' }}>
+            {/* Middle marker */}
+            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
+            
+            {/* Min marker */}
+            <div style={{
+              position: 'absolute',
+              bottom: `${minVal * 100}%`,
+              left: -4,
+              right: -4,
+              height: '2px',
+              background: minColor,
+              boxShadow: `0 0 4px ${minColor}`,
+              zIndex: 2,
+            }} />
+            {/* Max marker */}
+            <div style={{
+              position: 'absolute',
+              bottom: `${maxVal * 100}%`,
+              left: -4,
+              right: -4,
+              height: '2px',
+              background: maxColor,
+              boxShadow: `0 0 4px ${maxColor}`,
+              zIndex: 2,
+            }} />
+
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: `${percent}%`,
+              background: isBottomingOut ? 'var(--secondary)' : isMaxStretch ? '#ffaa00' : 'var(--primary)',
+              transition: 'height 0.05s linear, background 0.1s',
+              borderRadius: percent > 95 ? '8px' : '0 0 8px 8px'
+            }} />
+          </div>
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-        {travel.toFixed(2)}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '0 0.2rem' }}>
+        <span>Min: <span style={{ color: minColor, fontWeight: 600 }}>{minVal.toFixed(2)}</span></span>
+        <span style={{ color: 'white', fontWeight: 'bold' }}>{travel.toFixed(2)}</span>
+        <span>Max: <span style={{ color: maxColor, fontWeight: 600 }}>{maxVal.toFixed(2)}</span></span>
       </div>
     </div>
   );

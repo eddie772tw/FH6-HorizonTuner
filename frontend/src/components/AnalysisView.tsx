@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useTelemetryRecorder } from '../context/TelemetryRecorderContext';
+import { useSettings } from '../context/SettingsContext';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ScatterChart, Scatter, ZAxis
@@ -8,6 +9,7 @@ import {
 const AnalysisView: React.FC = () => {
   const { currentSession, loadedSession, setLoadedSession, clearCurrentSession, isRecording } = useTelemetryRecorder();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { convertSpeed, convertTemp } = useSettings();
 
   const handleSave = () => {
     if (currentSession.length === 0) {
@@ -61,8 +63,8 @@ const AnalysisView: React.FC = () => {
       time: (i * 0.1).toFixed(1), // Seconds
 
       // Speed
-      cur_Speed: cur ? cur.SpeedMetersPerSecond! * 3.6 : null,
-      load_Speed: load ? load.SpeedMetersPerSecond! * 3.6 : null,
+      cur_Speed: cur ? convertSpeed(cur.SpeedMetersPerSecond!).value : null,
+      load_Speed: load ? convertSpeed(load.SpeedMetersPerSecond!).value : null,
       
       // RPM
       cur_RPM: cur ? cur.CurrentEngineRpm : null,
@@ -89,14 +91,14 @@ const AnalysisView: React.FC = () => {
       load_SlipRatioFL: load ? load.TireSlipRatio[0] : null,
 
       // Tire Temps
-      cur_TempFL: cur?.TireTemp?.[0] ?? null,
-      cur_TempFR: cur?.TireTemp?.[1] ?? null,
-      cur_TempRL: cur?.TireTemp?.[2] ?? null,
-      cur_TempRR: cur?.TireTemp?.[3] ?? null,
-      load_TempFL: load?.TireTemp?.[0] ?? null,
-      load_TempFR: load?.TireTemp?.[1] ?? null,
-      load_TempRL: load?.TireTemp?.[2] ?? null,
-      load_TempRR: load?.TireTemp?.[3] ?? null,
+      cur_TempFL: cur?.TireTemp?.[0] != null ? convertTemp(cur.TireTemp[0]).value : null,
+      cur_TempFR: cur?.TireTemp?.[1] != null ? convertTemp(cur.TireTemp[1]).value : null,
+      cur_TempRL: cur?.TireTemp?.[2] != null ? convertTemp(cur.TireTemp[2]).value : null,
+      cur_TempRR: cur?.TireTemp?.[3] != null ? convertTemp(cur.TireTemp[3]).value : null,
+      load_TempFL: load?.TireTemp?.[0] != null ? convertTemp(load.TireTemp[0]).value : null,
+      load_TempFR: load?.TireTemp?.[1] != null ? convertTemp(load.TireTemp[1]).value : null,
+      load_TempRL: load?.TireTemp?.[2] != null ? convertTemp(load.TireTemp[2]).value : null,
+      load_TempRR: load?.TireTemp?.[3] != null ? convertTemp(load.TireTemp[3]).value : null,
       
       // Route & Grip mapping
       cur_PosX: cur?.PositionX ?? null,
@@ -187,7 +189,7 @@ const AnalysisView: React.FC = () => {
           </ChartWidget>
 
           {/* Chart 1: Speed & RPM */}
-          <ChartWidget title="Speed & RPM">
+          <ChartWidget title={`Speed (${convertSpeed(0).label}) & RPM`}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -285,7 +287,7 @@ const AnalysisView: React.FC = () => {
           </ChartWidget>
 
           {/* Chart 6: Tire Temperatures */}
-          <ChartWidget title="Tire Temperatures (°C / °F)">
+          <ChartWidget title={`Tire Temperatures (${convertTemp(0).label})`}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />

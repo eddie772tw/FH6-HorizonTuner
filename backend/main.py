@@ -66,6 +66,104 @@ telemetry_queue = asyncio.Queue(maxsize=100)
 dyno_cache = {}
 last_dyno_save_time = time.time()
 
+# --- Settings File Paths & Defaults ---
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
+
+DEFAULT_SETTINGS = {
+    "dyno_recording": True,
+    "race_recording": True,
+    "units": {
+        "speed": "kmh",
+        "weight": "kg",
+        "temperature": "C",
+        "tirePressure": "bar",
+        "boostPressure": "psi",
+        "springRate": "kgfmm",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
+        "power": "kw",
+        "torque": "nm"
+    }
+}
+
+app_settings = {
+    "dyno_recording": True,
+    "race_recording": True,
+    "units": dict(DEFAULT_SETTINGS["units"])
+}
+
+# Load settings from settings.json
+if os.path.exists(SETTINGS_FILE):
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+            for k, v in loaded.items():
+                if k == "units" and isinstance(v, dict):
+                    app_settings["units"].update(v)
+                else:
+                    app_settings[k] = v
+        logger.info(f"Loaded settings from {SETTINGS_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to load settings from {SETTINGS_FILE}: {e}")
+else:
+    try:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(app_settings, f, indent=4)
+        logger.info(f"Created default settings at {SETTINGS_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to save default settings to {SETTINGS_FILE}: {e}")
+
+# --- Dyno Collection Constants ---
+DYNO_BUCKET_SIZE = 50       # RPM per bucket (denser than 100 for higher resolution)
+DYNO_ANOMALY_THRESHOLD = 0.30   # 30% neighbor deviation threshold
+DYNO_NEIGHBOR_OFFSETS = [-200, -150, -100, -50, 50, 100, 150, 200]
+DYNO_MAX_HISTORY = 50  # Max historical records per RPM bucket
+
+def compute_dyno_value(history):
+    """Compute robust value from history using IQR outlier filtering + recency weighting.
+    
+    1. If < 4 samples, return max (not enough for statistics)
+    2. IQR filter: remove values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR]
+    3. Recency-weighted mean of filtered values (newer entries = higher weight)
+    """
+    if not history:
+        return 0
+    n = len(history)
+    if n < 4:
+        return max(history)
+    
+    sorted_vals = sorted(history)
+    q1 = sorted_vals[n // 4]
+    q3 = sorted_vals[(3 * n) // 4]
+    iqr = q3 - q1
+    lower_fence = q1 - 1.5 * iqr
+    upper_fence = q3 + 1.5 * iqr
+    
+    # Recency-weighted computation (history is oldest-first, index 0 = oldest)
+    weighted_sum = 0.0
+    total_weight = 0.0
+    for i, val in enumerate(history):
+        if lower_fence <= val <= upper_fence:
+            weight = 1.0 + i  # newer = higher weight
+            weighted_sum += val * weight
+            total_weight += weight
+    
+    if total_weight == 0:
+        return max(history)  # fallback if all filtered
+    
+    return weighted_sum / total_weight
+
+def dyno_is_reasonable(new_val, neighbor_vals, threshold=DYNO_ANOMALY_THRESHOLD):
+    """Check if new_val is within threshold of neighbor context."""
+    if not neighbor_vals:
+        return True  # No neighbors yet, accept any value
+    max_neighbor = max(neighbor_vals)
+    if max_neighbor <= 0:
+        return True
+    # Reject if new value exceeds neighbors by more than threshold
+    return new_val <= max_neighbor * (1 + threshold)
+
 def load_car_params(car_id: str):
     file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
     if os.path.exists(file_path):
@@ -81,7 +179,7 @@ def save_car_params(car_id: str, data: dict):
 @app.on_event("startup")
 async def startup_event():
     # Customizable IP and Port
-    ip = os.getenv("TELEMETRY_IP", "127.0.0.1")
+    ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
     
     # Start UDP listener in the background
@@ -98,11 +196,13 @@ async def broadcast_telemetry():
         # --- Dyno Collection Logic ---
         car_id = str(data.get("CarOrdinal", 0))
         if car_id and car_id != "0":
-            # Auto-create if not exists
+            # Load existing params into cache (always), auto-create only if race_recording
             if car_id not in dyno_cache:
                 params = load_car_params(car_id)
-                if not params:
-                    # Default template
+                if params:
+                    dyno_cache[car_id] = params
+                elif app_settings.get("race_recording", True):
+                    # Auto-create default profile
                     params = {
                         "weight": 1500,
                         "weight_distribution": 50,
@@ -116,35 +216,66 @@ async def broadcast_telemetry():
                         "dyno_curve": {}
                     }
                     save_car_params(car_id, params)
-                dyno_cache[car_id] = params
+                    dyno_cache[car_id] = params
             
-            # Extract power and torque
-            rpm = data.get("CurrentEngineRpm", 0)
-            if rpm > 0:
-                power_hp = data.get("PowerWatts", 0) / 745.7
-                torque_lbft = data.get("TorqueNewtons", 0) * 0.73756
+            # Only collect dyno data if recording is enabled AND car is in cache
+            if app_settings.get("dyno_recording", True) and car_id in dyno_cache:
+                # --- WOT (Wide Open Throttle) Filter ---
+                accel_input = data.get("AccelInput", 0)
+                gear = data.get("Gear", 0)
+                clutch_input = data.get("ClutchInput", 0)
                 
-                bucket = str(int(rpm // 100) * 100)
-                curve = dyno_cache[car_id].get("dyno_curve", {})
-                
-                existing = curve.get(bucket, {"hp": 0, "torque": 0})
-                updated = False
-                if power_hp > existing["hp"]:
-                    existing["hp"] = power_hp
-                    updated = True
-                if torque_lbft > existing["torque"]:
-                    existing["torque"] = torque_lbft
-                    updated = True
+                rpm = data.get("CurrentEngineRpm", 0)
+                if rpm > 0 and accel_input == 255 and gear > 0 and clutch_input == 0:
+                    power_hp = data.get("PowerWatts", 0) / 745.7
+                    torque_lbft = data.get("TorqueNewtons", 0) * 0.73756
                     
-                if updated:
-                    curve[bucket] = existing
-                    dyno_cache[car_id]["dyno_curve"] = curve
+                    bucket_int = int(rpm // DYNO_BUCKET_SIZE) * DYNO_BUCKET_SIZE
+                    bucket = str(bucket_int)
+                    curve = dyno_cache[car_id].get("dyno_curve", {})
                     
-                    # Periodic save to disk (every 5 seconds max)
-                    current_time = time.time()
-                    if current_time - last_dyno_save_time > 5.0:
-                        save_car_params(car_id, dyno_cache[car_id])
-                        last_dyno_save_time = current_time
+                    existing = curve.get(bucket, {"hp": 0, "torque": 0, "hp_hist": [], "torque_hist": []})
+                    hp_hist = existing.get("hp_hist", [])
+                    torque_hist = existing.get("torque_hist", [])
+                    
+                    # --- Multi-Neighbor Consistency Check (±200 RPM, 8 neighbors) ---
+                    neighbor_hp_vals = []
+                    neighbor_torque_vals = []
+                    for offset in DYNO_NEIGHBOR_OFFSETS:
+                        nb_key = str(bucket_int + offset)
+                        if nb_key in curve:
+                            neighbor_hp_vals.append(curve[nb_key]["hp"])
+                            neighbor_torque_vals.append(curve[nb_key]["torque"])
+                    
+                    updated = False
+                    
+                    # Add to HP history if reasonable
+                    if dyno_is_reasonable(power_hp, neighbor_hp_vals):
+                        hp_hist.append(power_hp)
+                        if len(hp_hist) > DYNO_MAX_HISTORY:
+                            hp_hist = hp_hist[-DYNO_MAX_HISTORY:]
+                        existing["hp_hist"] = hp_hist
+                        existing["hp"] = compute_dyno_value(hp_hist)
+                        updated = True
+                    
+                    # Add to Torque history if reasonable
+                    if dyno_is_reasonable(torque_lbft, neighbor_torque_vals):
+                        torque_hist.append(torque_lbft)
+                        if len(torque_hist) > DYNO_MAX_HISTORY:
+                            torque_hist = torque_hist[-DYNO_MAX_HISTORY:]
+                        existing["torque_hist"] = torque_hist
+                        existing["torque"] = compute_dyno_value(torque_hist)
+                        updated = True
+                    
+                    if updated:
+                        curve[bucket] = existing
+                        dyno_cache[car_id]["dyno_curve"] = curve
+                        
+                        # Periodic save to disk (every 5 seconds max)
+                        current_time = time.time()
+                        if current_time - last_dyno_save_time > 5.0:
+                            save_car_params(car_id, dyno_cache[car_id])
+                            last_dyno_save_time = current_time
 
         if manager.active_connections:
             await manager.broadcast_json(data)
@@ -187,6 +318,55 @@ async def update_car_params(car_id: str, data: dict):
     dyno_cache[car_id] = params
     return {"message": "Car parameters saved successfully"}
 
+@app.delete("/api/car_params/{car_id}/dyno_curve")
+async def clear_dyno_curve(car_id: str):
+    """Clear all dyno curve data for a specific car."""
+    # Update memory cache
+    if car_id in dyno_cache:
+        dyno_cache[car_id]["dyno_curve"] = {}
+        dyno_cache[car_id].pop("maxHpRpm", None)
+        dyno_cache[car_id].pop("maxTorqueRpm", None)
+        save_car_params(car_id, dyno_cache[car_id])
+    else:
+        # Also handle case where data is only on disk
+        params = load_car_params(car_id)
+        if params:
+            params["dyno_curve"] = {}
+            params.pop("maxHpRpm", None)
+            params.pop("maxTorqueRpm", None)
+            save_car_params(car_id, params)
+            dyno_cache[car_id] = params
+        else:
+            return {"error": "Car parameters not found"}
+    return {"message": "Dyno curve data cleared successfully"}
+
+# --- Settings API ---
+
+@app.get("/api/settings")
+async def get_settings():
+    return app_settings
+
+@app.post("/api/settings")
+async def update_settings(data: dict):
+    if "dyno_recording" in data:
+        app_settings["dyno_recording"] = bool(data["dyno_recording"])
+    if "race_recording" in data:
+        app_settings["race_recording"] = bool(data["race_recording"])
+    if "units" in data and isinstance(data["units"], dict):
+        if "units" not in app_settings:
+            app_settings["units"] = {}
+        app_settings["units"].update(data["units"])
+    
+    # Save to file
+    try:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(app_settings, f, indent=4)
+        logger.info(f"Saved settings to {SETTINGS_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
+        
+    return app_settings
+
 # --- Tuning API Endpoints ---
 
 @app.get("/api/tunings")
@@ -211,4 +391,4 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="127.0.0.1", port=8001)

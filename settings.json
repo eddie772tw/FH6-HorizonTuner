@@ -1,0 +1,16 @@
+{
+    "dyno_recording": false,
+    "race_recording": false,
+    "units": {
+        "speed": "mph",
+        "weight": "lbs",
+        "temperature": "F",
+        "tirePressure": "psi",
+        "boostPressure": "psi",
+        "springRate": "lbsin",
+        "rideHeight": "in",
+        "suspensionForce": "lbf",
+        "power": "hp",
+        "torque": "lbft"
+    }
+}

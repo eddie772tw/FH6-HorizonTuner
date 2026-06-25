@@ -2,15 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useCarParams } from '../context/CarParamsContext';
 import { calculateARBs, calculateSprings, calculateDampers } from '../utils/tuningMath';
+import { useSettings } from '../context/SettingsContext';
 
-const TuningView: React.FC = () => {
+const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActiveTab }) => {
   const { carId, carName, carParams } = useCarParams();
   const [activeSubTab, setActiveSubTab] = useState<string>('Gearing');
   const [saveName, setSaveName] = useState<string>(`Untitled_${new Date().toISOString().slice(0,10)}`);
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
   const [saveStatus, setSaveStatus] = useState<string>('');
   
-  const [isMetric, setIsMetric] = useState(true);
+  const { 
+    settings, 
+    convertTirePressure, 
+    convertTirePressureToBar, 
+    convertSpringRate, 
+    convertSpringRateToKgfmm, 
+    convertHeight, 
+    convertHeightToCm, 
+    convertForce, 
+    convertForceToKgf, 
+    convertSpeed, 
+    convertWeight 
+  } = useSettings();
 
   const tuningCategories = [
     'Theoretical Performance', 'Tires', 'Gearing', 'Alignment', 'Anti-roll bars', 'Springs', 
@@ -166,27 +179,25 @@ const TuningView: React.FC = () => {
 
   // Unit Conversion
   const convertToUI = (val: number, type: string) => {
-    if (isMetric) return val;
-    if (type === 'pressure') return val * 14.5038;
-    if (type === 'spring') return val * 55.9974;
-    if (type === 'height') return val * 0.3937;
-    if (type === 'force') return val * 2.20462;
+    if (type === 'pressure') return convertTirePressure(val).value;
+    if (type === 'spring') return convertSpringRate(val).value;
+    if (type === 'height') return convertHeight(val).value;
+    if (type === 'force') return convertForce(val).value;
     return val;
   };
   const convertFromUI = (val: number, type: string) => {
-    if (isMetric) return val;
-    if (type === 'pressure') return val / 14.5038;
-    if (type === 'spring') return val / 55.9974;
-    if (type === 'height') return val / 0.3937;
-    if (type === 'force') return val / 2.20462;
+    if (type === 'pressure') return convertTirePressureToBar(val);
+    if (type === 'spring') return convertSpringRateToKgfmm(val);
+    if (type === 'height') return convertHeightToCm(val);
+    if (type === 'force') return convertForceToKgf(val);
     return val;
   };
 
   const getUnitLabel = (type: string) => {
-    if (type === 'pressure') return isMetric ? ' bar' : ' psi';
-    if (type === 'spring') return isMetric ? ' kgf/mm' : ' lbs/in';
-    if (type === 'height') return isMetric ? ' cm' : ' in';
-    if (type === 'force') return isMetric ? ' kgf' : ' lbf';
+    if (type === 'pressure') return ' ' + convertTirePressure(1).label;
+    if (type === 'spring') return ' ' + convertSpringRate(1).label;
+    if (type === 'height') return ' ' + convertHeight(1).label;
+    if (type === 'force') return ' ' + convertForce(1).label;
     return '';
   };
 
@@ -237,12 +248,12 @@ const TuningView: React.FC = () => {
   const { gears, finalDrive, maxRpm } = tuning.gearing;
   const TIRE_RADIUS_M = 0.35; 
   const calcSpeed = (rpm: number, gearRatio: number) => {
-    const speedKmh = gearRatio === 0 ? 0 : ((rpm * 2 * Math.PI * TIRE_RADIUS_M) / (gearRatio * finalDrive * 60)) * 3.6;
-    return isMetric ? speedKmh : speedKmh / 1.60934;
+    const speedMs = gearRatio === 0 ? 0 : ((rpm * 2 * Math.PI * TIRE_RADIUS_M) / (gearRatio * finalDrive * 60));
+    return convertSpeed(speedMs).value;
   };
   const calcRpm = (speed: number, gearRatio: number) => {
-    const speedKmh = isMetric ? speed : speed * 1.60934;
-    return (speedKmh / 3.6) * (gearRatio * finalDrive * 60) / (2 * Math.PI * TIRE_RADIUS_M);
+    const speedMs = settings.units.speed === 'mph' ? speed / 2.23694 : speed / 3.6;
+    return (speedMs) * (gearRatio * finalDrive * 60) / (2 * Math.PI * TIRE_RADIUS_M);
   };
   
   const numGears = carParams?.adjustability?.gears || 6;
@@ -311,9 +322,11 @@ const TuningView: React.FC = () => {
         <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
             <h2 style={{ margin: 0, color: 'var(--primary)' }}>{activeSubTab} Setup</h2>
-            <button onClick={() => setIsMetric(!isMetric)} style={{ background: 'none', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>
-              Toggle Units: {isMetric ? 'Metric' : 'Imperial'}
-            </button>
+            {setActiveTab && (
+              <button onClick={() => setActiveTab('settings')} style={{ background: 'none', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>
+                Unit Settings
+              </button>
+            )}
           </div>
 
           <div style={{ maxWidth: activeSubTab === 'Gearing' ? '100%' : '550px', height: '100%' }}>
@@ -326,7 +339,7 @@ const TuningView: React.FC = () => {
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Weight ({isMetric ? 'kg' : 'lbs'})</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>Weight ({convertWeight(1).label})</span>
                     <input type="number" value={theoreticalData.weight} onChange={(e) => setTheoreticalData(p => ({...p, weight: e.target.value}))} style={{ width: '120px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right', padding: '0.5rem' }} placeholder="e.g. 1500"/>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -339,7 +352,7 @@ const TuningView: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Top Speed (Calculated from Gearing)</span>
-                    <span style={{ color: 'white', fontWeight: 'bold' }}>{maxSpeed.toFixed(1)} {isMetric ? 'km/h' : 'mph'}</span>
+                    <span style={{ color: 'white', fontWeight: 'bold' }}>{maxSpeed.toFixed(1)} {convertSpeed(1/3.6).label}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>0-100 km/h (In-game)</span>
@@ -349,7 +362,7 @@ const TuningView: React.FC = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Lateral Gs (193 km/h)</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>Lateral Gs ({settings.units.speed === 'mph' ? '120 mph' : '193 km/h'})</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <input type="number" value={theoreticalData.lateralG} onChange={(e) => setTheoreticalData(p => ({...p, lateralG: e.target.value}))} style={{ width: '100px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right', padding: '0.5rem' }}/>
                       <span style={{color: 'gray'}}>Gs</span>
@@ -505,9 +518,9 @@ const TuningView: React.FC = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="speed" type="number" domain={[0, xMax]} ticks={xTicks10s} tickFormatter={(val) => val % 50 === 0 ? val : ''} stroke="var(--text-secondary)" label={{ value: `Speed (${isMetric ? 'km/h' : 'mph'})`, position: 'bottom', fill: 'var(--text-secondary)' }} />
+                        <XAxis dataKey="speed" type="number" domain={[0, xMax]} ticks={xTicks10s} tickFormatter={(val) => val % 50 === 0 ? val : ''} stroke="var(--text-secondary)" label={{ value: `Speed (${convertSpeed(1/3.6).label})`, position: 'bottom', fill: 'var(--text-secondary)' }} />
                         <YAxis type="number" domain={[0, yMax]} ticks={yTicks100s} tickFormatter={(val) => val % 1000 === 0 ? val : ''} stroke="var(--text-secondary)" label={{ value: 'Engine RPM', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)' }} />
-                        <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)' }} labelFormatter={(val) => `Speed: ${Number(val).toFixed(1)} ${isMetric ? 'km/h' : 'mph'}`} />
+                        <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)' }} labelFormatter={(val) => `Speed: ${Number(val).toFixed(1)} ${convertSpeed(1/3.6).label}`} />
                         {xTicks50s.map(val => <ReferenceLine key={`x-${val}`} x={val} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />)}
                         {yTicks1000s.map(val => <ReferenceLine key={`y-${val}`} y={val} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />)}
                         <ReferenceLine y={maxRpm} stroke="red" strokeDasharray="5 5" label={{ position: 'top', value: 'Redline', fill: 'red' }} />
