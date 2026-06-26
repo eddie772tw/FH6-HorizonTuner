@@ -1,0 +1,16 @@
+{
+    "weight": 2582,
+    "weight_distribution": 57,
+    "drivetrain": "AWD",
+    "induction": "TwinTurbo",
+    "adjustability": {
+        "gearbox": "Full",
+        "gears": 6,
+        "suspension": "Race",
+        "arb": "Adjustable",
+        "aero": "Adjustable",
+        "brakes": "Adjustable",
+        "diff": "Adjustable"
+    },
+    "dyno_curve": {}
+}

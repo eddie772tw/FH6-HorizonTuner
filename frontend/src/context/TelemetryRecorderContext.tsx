@@ -15,6 +15,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   const { data } = useTelemetry();
   
   const [currentSession, setCurrentSession] = useState<TelemetryData[]>([]);
+  const currentSessionRef = useRef<TelemetryData[]>([]);
   const [loadedSession, setLoadedSession] = useState<TelemetryData[] | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -33,19 +34,31 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
       const now = performance.now();
       if (now - lastSampleTimeRef.current >= DOWNSAMPLE_MS) {
-        // Deep copy the data object to prevent reference issues
-        const dataPoint = JSON.parse(JSON.stringify(data));
-        setCurrentSession(prev => [...prev, dataPoint]);
+        // Just store the data directly. It's a parsed object from WS, 
+        // no need for expensive JSON.parse(JSON.stringify) anymore,
+        // and we push to the ref instead of spreading into state
+        // [MEMORY OPTIMIZATION] - Disabled Post-Race Recording to prevent memory leaks
+        // currentSessionRef.current.push(data);
+        
+        // Sync to React state occasionally to update UI, or just when recording stops
+        // If we need the UI to update the 'recording length', we can throttle the state update
+        // if (currentSessionRef.current.length % 10 === 0) { // update state every 1 second
+        //   setCurrentSession([...currentSessionRef.current]);
+        // }
+        
         lastSampleTimeRef.current = now;
       }
     } else {
       if (isRecording) {
         setIsRecording(false);
+        // Final sync to state when recording stops
+        setCurrentSession([...currentSessionRef.current]);
       }
     }
   }, [data, isRecording]);
 
   const clearCurrentSession = () => {
+    currentSessionRef.current = [];
     setCurrentSession([]);
   };
 

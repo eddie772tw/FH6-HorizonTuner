@@ -46,6 +46,8 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                 
                 # Car Identification
                 car_ordinal = struct.unpack_from('<i', data, 212)[0]
+                car_class = struct.unpack_from('<i', data, 216)[0]
+                car_pi = struct.unpack_from('<i', data, 220)[0]
                 drivetrain_type = struct.unpack_from('<i', data, 224)[0]
 
                 telemetry_data = {
@@ -65,6 +67,8 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                     "TireSlipRatio": [slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr],
                     "TireSlipAngle": [slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr],
                     "CarOrdinal": car_ordinal,
+                    "CarClass": car_class,
+                    "CarPerformanceIndex": car_pi,
                     "DrivetrainType": drivetrain_type,
                 }
 

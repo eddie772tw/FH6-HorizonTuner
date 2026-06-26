@@ -4,6 +4,8 @@ export interface TelemetryData {
   IsRaceOn: number;
   TimestampMS: number;
   CarOrdinal?: number;
+  CarClass?: number;
+  CarPerformanceIndex?: number;
   EngineMaxRpm: number;
   EngineIdleRpm: number;
   CurrentEngineRpm: number;
@@ -37,48 +39,79 @@ export interface TelemetryData {
   SteerInput?: number;
 }
 
+let sharedWs: WebSocket | null = null;
+let latestData: TelemetryData | null = null;
+let connectionState = false;
+let subscribers = 0;
+let reconnectTimeout: ReturnType<typeof setTimeout>;
+
+// 60Hz Event Emitter for high-performance Canvas rendering (Bypasses React)
+export const telemetryEmitter = new EventTarget();
+
 export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
-  const [data, setData] = useState<TelemetryData | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [data, setData] = useState<TelemetryData | null>(latestData);
+  const [isConnected, setIsConnected] = useState(connectionState);
 
   useEffect(() => {
-    let ws: WebSocket;
-    let reconnectTimeout: ReturnType<typeof setTimeout>;
+    subscribers++;
 
     const connect = () => {
-      ws = new WebSocket(url);
+      if (sharedWs && (sharedWs.readyState === WebSocket.OPEN || sharedWs.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
 
-      ws.onopen = () => {
-        setIsConnected(true);
+      sharedWs = new WebSocket(url);
+
+      sharedWs.onopen = () => {
+        connectionState = true;
         console.log("Telemetry WebSocket connected.");
       };
 
-      ws.onmessage = (event) => {
+      sharedWs.onmessage = (event) => {
         try {
-          const parsed = JSON.parse(event.data);
-          setData(parsed);
+          latestData = JSON.parse(event.data);
+          // Dispatch high-frequency 60Hz event directly to Canvas components
+          telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: latestData }));
         } catch (e) {
           console.error("Error parsing telemetry data:", e);
         }
       };
 
-      ws.onclose = () => {
-        setIsConnected(false);
+      sharedWs.onclose = () => {
+        connectionState = false;
+        sharedWs = null;
         console.log("Telemetry WebSocket closed. Reconnecting...");
+        clearTimeout(reconnectTimeout);
         reconnectTimeout = setTimeout(connect, 2000);
       };
       
-      ws.onerror = (e) => {
+      sharedWs.onerror = (e) => {
         console.error("Telemetry WebSocket error:", e);
-        ws.close();
+        if (sharedWs) sharedWs.close();
       };
     };
 
-    connect();
+    if (subscribers === 1) {
+      connect();
+    }
+
+    // [MEMORY OPTIMIZATION] Throttle React State updates to 5Hz to prevent massive Fiber garbage collection
+    // This provides readable text for the UI while the Canvas uses the 60Hz emitter above
+    const interval = setInterval(() => {
+      setData(latestData);
+      setIsConnected(connectionState);
+    }, 1000 / 5);
 
     return () => {
-      clearTimeout(reconnectTimeout);
-      if (ws) ws.close();
+      clearInterval(interval);
+      subscribers--;
+      if (subscribers === 0) {
+        clearTimeout(reconnectTimeout);
+        if (sharedWs) {
+          sharedWs.close();
+          sharedWs = null;
+        }
+      }
     };
   }, [url]);
 

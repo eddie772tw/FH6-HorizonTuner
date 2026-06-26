@@ -2,15 +2,15 @@
     "dyno_recording": false,
     "race_recording": false,
     "units": {
-        "speed": "mph",
+        "speed": "kmh",
         "weight": "lbs",
-        "temperature": "F",
+        "temperature": "C",
         "tirePressure": "psi",
-        "boostPressure": "psi",
-        "springRate": "lbsin",
-        "rideHeight": "in",
-        "suspensionForce": "lbf",
+        "boostPressure": "bar",
+        "springRate": "kgfmm",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
         "power": "hp",
-        "torque": "lbft"
+        "torque": "nm"
     }
 }
