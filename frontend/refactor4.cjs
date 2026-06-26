@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+const fs = require('fs');
+const path = 'd:/FH6-HorizonTuner/frontend/src/components/TelemetryView.tsx';
+
+const fileContent = `import React, { useState, useEffect, useRef } from 'react';
 import { useTelemetry, telemetryEmitter } from '../hooks/useTelemetry';
 import { useSettings } from '../context/SettingsContext';
 import { useCarParams } from '../context/CarParamsContext';
@@ -8,10 +11,17 @@ const getCarClassString = (cls?: number) => {
   if (cls === undefined) return '';
   const classes = ['E', 'D', 'C', 'B', 'A', 'S1', 'S2', 'X'];
   if (cls >= 0 && cls < classes.length) return classes[cls];
-  return `Class ${cls}`;
+  return \`Class \${cls}\`;
 };
 
-
+const getSlipColor = (ratio: number) => {
+  const absRatio = Math.abs(ratio);
+  if (absRatio < 0.08) return '#00f0ff';
+  if (absRatio <= 0.14) return '#00ff00';
+  if (absRatio <= 0.5) return '#00f0ff';
+  if (absRatio <= 1.0) return '#ffaa00';
+  return '#ff003c';
+};
 
 const getTempColor = (temp: number) => {
   if (temp < 150) return '#0088ff';
@@ -24,7 +34,7 @@ const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 1000);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+  return \`\${mins.toString().padStart(2, '0')}:\${secs.toString().padStart(2, '0')}.\${ms.toString().padStart(3, '0')}\`;
 };
 
 const activeTabStyle: React.CSSProperties = {
@@ -83,8 +93,8 @@ const SteerBar: React.FC = () => {
       if (!data || data.IsRaceOn !== 1) return;
       const steer = data.SteerInput || 0;
       if (barRef.current) {
-        barRef.current.style.width = `${Math.abs(steer) / 127 * 50}%`;
-        barRef.current.style.left = steer < 0 ? `${50 - (Math.abs(steer)/127*50)}%` : '50%';
+        barRef.current.style.width = \`\${Math.abs(steer) / 127 * 50}%\`;
+        barRef.current.style.left = steer < 0 ? \`\${50 - (Math.abs(steer)/127*50)}%\` : '50%';
       }
     };
     telemetryEmitter.addEventListener('update', handleDraw);
@@ -144,7 +154,7 @@ const GForceRadar: React.FC = () => {
       }
 
       if (dotRef.current) {
-        dotRef.current.style.transform = `translate(${Math.max(-2, Math.min(2, lat)) * 40}px, ${Math.max(-2, Math.min(2, lon)) * 40}px)`;
+        dotRef.current.style.transform = \`translate(\${Math.max(-2, Math.min(2, lat)) * 40}px, \${Math.max(-2, Math.min(2, lon)) * 40}px)\`;
       }
       if (latRef.current) latRef.current.innerText = Math.abs(lat).toFixed(2);
       if (lonRef.current) lonRef.current.innerText = Math.abs(lon).toFixed(2);
@@ -196,8 +206,8 @@ const GForceRadar: React.FC = () => {
         {markers.map((p, i) => (
           <div key={i} style={{ 
             position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
-            top: `${80 + Math.max(-2, Math.min(2, p.lon)) * 40 - 3}px`, 
-            left: `${80 + Math.max(-2, Math.min(2, p.lat)) * 40 - 3}px`,
+            top: \`\${80 + Math.max(-2, Math.min(2, p.lon)) * 40 - 3}px\`, 
+            left: \`\${80 + Math.max(-2, Math.min(2, p.lat)) * 40 - 3}px\`,
             transition: 'top 0.1s linear, left 0.1s linear'
           }} />
         ))}
@@ -285,31 +295,19 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, radius*2, radius*2);
-          
-          // Old style radar border
-          const isLosingGrip = Math.abs(cRatio) > 1.0 || Math.abs(cAngle) > 1.0;
+          const rOuter = radius * 0.9;
+          const rInner = radius * 0.6;
+          ctx.save();
           ctx.beginPath();
-          ctx.arc(radius, radius, radius - 1, 0, Math.PI * 2);
-          ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.1)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          // Crosshairs
-          ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+          ctx.arc(radius, radius, rOuter, 0, Math.PI * 2);
+          ctx.arc(radius, radius, rInner, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(0, 255, 0, 0.15)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
           ctx.lineWidth = 1;
-          ctx.moveTo(0, radius); ctx.lineTo(radius * 2, radius);
-          ctx.moveTo(radius, 0); ctx.lineTo(radius, radius * 2);
           ctx.stroke();
-
-          // 1.0 Threshold Circle (dashed)
-          ctx.beginPath();
-          ctx.setLineDash([3, 3]);
-          ctx.arc(radius, radius, radius / displayLimit, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(255,0,0,0.5)';
-          ctx.stroke();
-          ctx.setLineDash([]);
-  
+          ctx.restore();
 
           const history3s = hist.current.filter(p => now - p.time <= 3000);
           if (history3s.length > 0) {
@@ -329,18 +327,13 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
             ctx.stroke();
           }
 
-          
+          const dotColor = getSlipColor(cRatio);
           const px = Math.max(-displayLimit, Math.min(displayLimit, cAngle));
           const py = Math.max(-displayLimit, Math.min(displayLimit, cRatio));
-          const dotColor = isLosingGrip ? '#ff003c' : '#00f0ff';
           ctx.beginPath();
-          ctx.arc(radius + (px / displayLimit) * radius, radius - (py / displayLimit) * radius, 4, 0, Math.PI * 2);
+          ctx.arc(radius + (px / displayLimit) * radius, radius - (py / displayLimit) * radius, 6, 0, Math.PI * 2);
           ctx.fillStyle = dotColor;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = dotColor;
           ctx.fill();
-          ctx.shadowBlur = 0;
-  
         }
       }
 
@@ -400,25 +393,25 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
   }, [tireIdx, convertTemp]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px', transition: 'background 0.2s', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.8rem', borderRadius: '8px', transition: 'background 0.2s', alignItems: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
         <div style={{ position: 'relative', width: '100px', height: '100px' }}>
           <canvas ref={radarCanvasRef} width={100} height={100} style={{ position: 'absolute', top: 0, left: 0 }} />
         </div>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: !isLeft ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-end' : 'flex-start' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: isLeft ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-end' : 'flex-start' }}>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Slip Angle</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={angRef}>0.00</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-end' : 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-end' : 'flex-start' }}>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Slip Ratio</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={ratioRef}>0.00</span>
           </div>
         </div>
-        <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-start' : 'flex-end' }}>
+        <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-start' : 'flex-end' }}>
            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}><span ref={tempRef}>0</span><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{tempUnit}</span></span>
            <canvas ref={tempCanvasRef} width={100} height={70} style={{ width: '100%', flex: 1, marginTop: '4px' }} />
         </div>
@@ -428,7 +421,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
 };
 
 // --- COMPONENT: SuspensionBar ---
-const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = ({title, isLeft, tireIdx}) => {
+const SuspensionBar: React.FC<{title: string, tireIdx: number}> = ({title, tireIdx}) => {
   const barRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const minRef = useRef<HTMLSpanElement>(null);
@@ -479,33 +472,11 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       if (canvas && hist.current.length > 0) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          
           ctx.clearRect(0, 0, 150, 60);
-          const w = 150, h = 60;
-          const warningH = h * 0.05;
-          ctx.fillStyle = 'rgba(255, 0, 60, 0.15)';
-          ctx.fillRect(0, 0, w, warningH);
-          ctx.fillRect(0, h - warningH, w, warningH);
-          
           ctx.beginPath();
-          ctx.setLineDash([3, 3]);
-          ctx.strokeStyle = 'rgba(255, 0, 60, 0.2)';
-          ctx.lineWidth = 1;
-          ctx.moveTo(0, warningH); ctx.lineTo(w, warningH);
-          ctx.moveTo(0, h - warningH); ctx.lineTo(w, h - warningH);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          ctx.beginPath();
-          const grad = ctx.createLinearGradient(0, 0, 0, h);
-          grad.addColorStop(0, '#ff003c');
-          grad.addColorStop(0.05, 'var(--primary)');
-          grad.addColorStop(0.95, 'var(--primary)');
-          grad.addColorStop(1, '#ff003c');
-          ctx.strokeStyle = grad;
+          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
           ctx.lineWidth = 2;
           ctx.lineJoin = 'round';
-  
           const maxT = Math.max(...hist.current.map(p => p.time));
           for (let i = 0; i < hist.current.length; i++) {
             const p = hist.current[i];
@@ -523,9 +494,9 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   }, [tireIdx]);
 
   return (
-    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px' }}>
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600, textAlign: isLeft ? 'left' : 'right' }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
+    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.8rem', borderRadius: '8px' }}>
+      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
+      <div style={{ display: 'flex', gap: '1rem', height: '60px', alignItems: 'center' }}>
         <div style={{ position: 'relative', width: '24px', height: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
           <div ref={barRef} style={{
@@ -622,7 +593,7 @@ const TelemetryView: React.FC = () => {
                 <div style={{ textAlign: 'right' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>{Math.round(speedData.value)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{speedData.label}</span></div></div>
               </div>
               <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${rpmPercent}%`, background: rpmPercent > 90 ? 'var(--secondary)' : 'var(--primary)', transition: 'width 0.1s linear, background 0.3s ease' }} />
+                <div style={{ height: '100%', width: \`\${rpmPercent}%\`, background: rpmPercent > 90 ? 'var(--secondary)' : 'var(--primary)', transition: 'width 0.1s linear, background 0.3s ease' }} />
               </div>
             </div>
             <SteerBar />
@@ -672,10 +643,10 @@ const TelemetryView: React.FC = () => {
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
         <h3 style={{ marginBottom: '1rem' }}>Suspension Travel</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
-          <SuspensionBar title="Front Left" isLeft={true} tireIdx={0} />
-          <SuspensionBar title="Front Right" isLeft={false} tireIdx={1} />
-          <SuspensionBar title="Rear Left" isLeft={true} tireIdx={2} />
-          <SuspensionBar title="Rear Right" isLeft={false} tireIdx={3} />
+          <SuspensionBar title="Front Left" tireIdx={0} />
+          <SuspensionBar title="Front Right" tireIdx={1} />
+          <SuspensionBar title="Rear Left" tireIdx={2} />
+          <SuspensionBar title="Rear Right" tireIdx={3} />
         </div>
       </div>
 
@@ -686,3 +657,7 @@ const TelemetryView: React.FC = () => {
 };
 
 export default TelemetryView;
+`;
+
+fs.writeFileSync(path, fileContent, 'utf8');
+console.log("Rewrite complete.");
