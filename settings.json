@@ -7,7 +7,7 @@
         "temperature": "F",
         "tirePressure": "psi",
         "boostPressure": "psi",
-        "springRate": "lbsin",
+        "springRate": "kgfmm",
         "rideHeight": "in",
         "suspensionForce": "lbf",
         "power": "hp",
