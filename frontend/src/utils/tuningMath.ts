@@ -194,7 +194,9 @@ export function calculateSpringsByFrequency(
   max: number,
   frontBias: number,
   targetFreq: number,
-  baseFreq: number = 2.0
+  baseFreq: number = 2.0,
+  _hp: number = 0,
+  weight: number = 1500
 ): TuningResult {
   const biasDec = frontBias / 100;
   
@@ -203,6 +205,14 @@ export function calculateSpringsByFrequency(
   
   let front = (range * (biasDec * freqMultiplier)) + min;
   let rear = (range * ((1 - biasDec) * freqMultiplier)) + min;
+
+  // Anti-squat for high HP
+  const hpWeightRatio = weight > 0 ? _hp / (weight / 1000) : 0;
+  if (hpWeightRatio > 200) { // e.g., >300HP for 1500kg car
+    const stiffenRear = Math.min(0.2, (hpWeightRatio - 200) * 0.0005); // up to +20% rear stiffness
+    rear = rear * (1 + stiffenRear);
+    rear = Math.min(max, rear);
+  }
   
   // Clamp to boundaries
   front = Math.max(min, Math.min(max, front));
@@ -282,8 +292,9 @@ export function calculateDampersCritical(
   rearSpringLbsIn: number,
   weightLbs: number,
   frontBias: number,
-  reboundRatio: number = 0.75,
-  bumpRatio: number = 0.55
+  reboundRatio: number = 0.70,
+  bumpRatio: number = 0.50,
+  _hp: number = 0
 ): DamperResult {
   const biasDec = frontBias / 100;
   const frontWeight = weightLbs * biasDec;
@@ -320,13 +331,16 @@ export interface DiffResult {
 /**
  * Gets baseline differential settings based on drivetrain.
  */
-export function getDifferentialBaseline(drivetrain: Drivetrain): DiffResult {
+export function getDifferentialBaseline(drivetrain: Drivetrain, _hp: number = 0, torque: number = 0, weight: number = 1500): DiffResult {
+  const torqueWeightRatio = weight > 0 ? torque / (weight / 1000) : 0;
+  const torqueLockBonus = Math.min(25, torqueWeightRatio * 0.05);
+
   if (drivetrain === 'FWD') {
-    return { accelF: 30, decelF: 5, accelR: 0, decelR: 0, center: 50 };
+    return { accelF: Math.min(100, 30 + torqueLockBonus), decelF: 5, accelR: 0, decelR: 0, center: 50 };
   } else if (drivetrain === 'RWD') {
-    return { accelF: 0, decelF: 0, accelR: 65, decelR: 10, center: 50 };
+    return { accelF: 0, decelF: 0, accelR: Math.min(100, 65 + torqueLockBonus), decelR: 10, center: 50 };
   } else {
     // AWD
-    return { accelF: 25, decelF: 5, accelR: 70, decelR: 10, center: 70 };
+    return { accelF: Math.min(100, 25 + torqueLockBonus * 0.5), decelF: 5, accelR: Math.min(100, 70 + torqueLockBonus), decelR: 10, center: 70 };
   }
 }

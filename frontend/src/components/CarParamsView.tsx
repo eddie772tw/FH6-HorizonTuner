@@ -88,40 +88,120 @@ const CarParamsView: React.FC = () => {
         
         <hr style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
         
-        <h3 style={{ margin: 0 }}>Static Info</h3>
-        
-        <div style={formRowStyle}>
-          <label>Weight ({settings.units.weight})</label>
-          <input type="number" value={Math.round(displayCarWeight)} onChange={e => handleWeightChange(e.target.value)} style={inputStyle} />
-        </div>
-        <div style={formRowStyle}>
-          <label>Front Weight (%)</label>
-          <input type="number" value={carParams.weight_distribution} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value))} style={inputStyle} step="0.1" />
-        </div>
-        <div style={formRowStyle}>
-          <label>Drivetrain</label>
-          <select value={carParams.drivetrain} onChange={e => updateParam('drivetrain', e.target.value)} style={inputStyle}>
-            <option value="FWD">FWD (Front Wheel Drive)</option>
-            <option value="RWD">RWD (Rear Wheel Drive)</option>
-            <option value="AWD">AWD (All Wheel Drive)</option>
-          </select>
-        </div>
-        <div style={formRowStyle}>
-          <label>Induction</label>
-          <select value={carParams.induction} onChange={e => updateParam('induction', e.target.value)} style={inputStyle}>
-            <option value="NA">Naturally Aspirated (NA)</option>
-            <option value="Supercharger">Supercharger</option>
-            <option value="Turbo">Single Turbo</option>
-            <option value="TwinTurbo">Twin Turbo</option>
-          </select>
-        </div>
-        <div style={formRowStyle}>
-          <label>Max HP RPM</label>
-          <input type="number" value={carParams.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value))} style={inputStyle} step="100" />
-        </div>
-        <div style={formRowStyle}>
-          <label>Max Torque RPM</label>
-          <input type="number" value={carParams.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value))} style={inputStyle} step="100" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div>
+            <h3 style={{ margin: '0 0 1rem 0' }}>Static Info</h3>
+            <div style={formRowStyle}>
+              <label>Weight ({settings.units.weight})</label>
+              <input type="number" value={Math.round(displayCarWeight)} onChange={e => handleWeightChange(e.target.value)} style={inputStyle} />
+            </div>
+            <div style={formRowStyle}>
+              <label>Front Weight (%)</label>
+              <input type="number" value={carParams.weight_distribution} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value))} style={inputStyle} step="0.1" />
+            </div>
+            <div style={formRowStyle}>
+              <label>Drivetrain</label>
+              <select value={carParams.drivetrain} onChange={e => updateParam('drivetrain', e.target.value)} style={inputStyle}>
+                <option value="FWD">FWD (Front Wheel Drive)</option>
+                <option value="RWD">RWD (Rear Wheel Drive)</option>
+                <option value="AWD">AWD (All Wheel Drive)</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Induction</label>
+              <select value={carParams.induction} onChange={e => updateParam('induction', e.target.value)} style={inputStyle}>
+                <option value="NA">Naturally Aspirated (NA)</option>
+                <option value="Supercharger">Supercharger</option>
+                <option value="Turbo">Single Turbo</option>
+                <option value="TwinTurbo">Twin Turbo</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Max HP</label>
+              <input type="number" value={carParams.maxHp || 0} onChange={e => updateParam('maxHp', parseInt(e.target.value))} style={inputStyle} step="10" />
+            </div>
+            <div style={formRowStyle}>
+              <label>Max HP RPM</label>
+              <input type="number" value={carParams.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value))} style={inputStyle} step="100" />
+            </div>
+            <div style={formRowStyle}>
+              <label>Max Torque</label>
+              <input type="number" value={carParams.maxTorque || 0} onChange={e => updateParam('maxTorque', parseInt(e.target.value))} style={inputStyle} step="10" />
+            </div>
+            <div style={formRowStyle}>
+              <label>Max Torque RPM</label>
+              <input type="number" value={carParams.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value))} style={inputStyle} step="100" />
+            </div>
+            
+            <h4 style={{ margin: '1rem 0 0.5rem 0', color: 'var(--text-secondary)' }}>Assist Inputs</h4>
+            <div style={formRowStyle}>
+              <label>Aero Bal (0-1)</label>
+              <input type="number" value={carParams.aeroBalance ?? 0.5} onChange={e => updateParam('aeroBalance', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
+            </div>
+            <div style={formRowStyle}>
+              <label>Aero Eff (0-1)</label>
+              <input type="number" value={carParams.aeroEfficiency ?? 0.5} onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
+            </div>
+            <div style={formRowStyle}>
+              <label>Mech Bal (0-1)</label>
+              <input type="number" value={carParams.mechBalance ?? 0.5} onChange={e => updateParam('mechBalance', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
+            </div>
+          </div>
+          
+          <div>
+            <h3 style={{ margin: '0 0 1rem 0' }}>Adjustability Limits</h3>
+            <div style={formRowStyle}>
+              <label>Gearbox</label>
+              <select value={carParams.adjustability.gearbox} onChange={e => updateAdjust('gearbox', e.target.value)} style={inputStyle}>
+                <option value="Fixed">Fixed (Unadjustable)</option>
+                <option value="FinalDrive">Final Drive Only</option>
+                <option value="Full">Full Adjustable</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Gears Count</label>
+              <input type="number" value={carParams.adjustability.gears} min={4} max={10} onChange={e => updateAdjust('gears', parseInt(e.target.value))} style={inputStyle} />
+            </div>
+            <div style={formRowStyle}>
+              <label>Suspension</label>
+              <select value={carParams.adjustability.suspension} onChange={e => updateAdjust('suspension', e.target.value)} style={inputStyle}>
+                <option value="Fixed">Fixed</option>
+                <option value="Street">Street (No Springs/Dampers)</option>
+                <option value="Sport">Sport (No Springs/Dampers)</option>
+                <option value="Race">Race (Full Adjustable)</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Anti-roll Bars</label>
+              <select value={carParams.adjustability.arb} onChange={e => updateAdjust('arb', e.target.value)} style={inputStyle}>
+                <option value="Fixed">Fixed</option>
+                <option value="Adjustable">Adjustable</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Aero</label>
+              <select value={carParams.adjustability.aero || 'Fixed'} onChange={e => updateAdjust('aero', e.target.value)} style={inputStyle}>
+                <option value="Fixed">Fixed</option>
+                <option value="Front Only">Front Only</option>
+                <option value="Rear Only">Rear Only</option>
+                <option value="Adjustable">Adjustable</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Brakes</label>
+              <select value={carParams.adjustability.brakes || 'Fixed'} onChange={e => updateAdjust('brakes', e.target.value)} style={inputStyle}>
+                <option value="Fixed">Fixed</option>
+                <option value="Adjustable">Adjustable</option>
+              </select>
+            </div>
+            <div style={formRowStyle}>
+              <label>Differential</label>
+              <select value={carParams.adjustability.diff || 'Fixed'} onChange={e => updateAdjust('diff', e.target.value)} style={inputStyle}>
+                <option value="Fixed">Fixed</option>
+                <option value="Adjustable">Adjustable</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Import from Dyno button */}
@@ -137,44 +217,12 @@ const CarParamsView: React.FC = () => {
             padding: '0.4rem 0.75rem',
             cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer',
             width: '100%',
-            textAlign: 'center'
+            textAlign: 'center',
+            marginTop: '1rem'
           }}
         >
-          📥 從 Dyno 數據導入 Max HP / Torque RPM
+          📥 從 Dyno 數據導入 Max HP / Torque (含 RPM)
         </button>
-
-        <hr style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-        
-        <h3 style={{ margin: 0 }}>Adjustability Limits</h3>
-        
-        <div style={formRowStyle}>
-          <label>Gearbox</label>
-          <select value={carParams.adjustability.gearbox} onChange={e => updateAdjust('gearbox', e.target.value)} style={inputStyle}>
-            <option value="Fixed">Fixed (Unadjustable)</option>
-            <option value="FinalDrive">Final Drive Only</option>
-            <option value="Full">Full Adjustable</option>
-          </select>
-        </div>
-        <div style={formRowStyle}>
-          <label>Gears Count</label>
-          <input type="number" value={carParams.adjustability.gears} min={4} max={10} onChange={e => updateAdjust('gears', parseInt(e.target.value))} style={inputStyle} />
-        </div>
-        <div style={formRowStyle}>
-          <label>Suspension</label>
-          <select value={carParams.adjustability.suspension} onChange={e => updateAdjust('suspension', e.target.value)} style={inputStyle}>
-            <option value="Fixed">Fixed</option>
-            <option value="Street">Street (No Springs/Dampers)</option>
-            <option value="Sport">Sport (No Springs/Dampers)</option>
-            <option value="Race">Race (Full Adjustable)</option>
-          </select>
-        </div>
-        <div style={formRowStyle}>
-          <label>Anti-roll Bars</label>
-          <select value={carParams.adjustability.arb} onChange={e => updateAdjust('arb', e.target.value)} style={inputStyle}>
-            <option value="Fixed">Fixed</option>
-            <option value="Adjustable">Adjustable</option>
-          </select>
-        </div>
 
       </div>
 

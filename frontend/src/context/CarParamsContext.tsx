@@ -7,8 +7,13 @@ export interface CarParams {
   weight_distribution: number; // % front
   drivetrain: 'FWD' | 'RWD' | 'AWD';
   induction: 'NA' | 'Supercharger' | 'Turbo' | 'TwinTurbo';
+  maxHp: number;
+  maxTorque: number;
   maxHpRpm: number;
   maxTorqueRpm: number;
+  aeroBalance: number;
+  aeroEfficiency: number;
+  mechBalance: number;
   adjustability: {
     gearbox: 'Fixed' | 'FinalDrive' | 'Full';
     gears: number; // 4 to 10
@@ -85,8 +90,13 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
               weight_distribution: 50,
               drivetrain: 'RWD',
               induction: 'NA',
+              maxHp: 0,
+              maxTorque: 0,
               maxHpRpm: 0,
               maxTorqueRpm: 0,
+              aeroBalance: 0.50,
+              aeroEfficiency: 0.50,
+              mechBalance: 0.50,
               adjustability: {
                 gearbox: 'Full',
                 gears: 6,
@@ -166,7 +176,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (vals.hp > mHp) { mHp = vals.hp; mHpRpm = rpm; }
       if (vals.torque > mTorque) { mTorque = vals.torque; mTorqueRpm = rpm; }
     });
-    setCarParams({ ...carParams, maxHpRpm: mHpRpm, maxTorqueRpm: mTorqueRpm });
+    setCarParams({ ...carParams, maxHp: Math.round(mHp), maxTorque: Math.round(mTorque), maxHpRpm: mHpRpm, maxTorqueRpm: mTorqueRpm });
   };
 
 

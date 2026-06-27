@@ -6926,6 +6926,11 @@
             ]
         }
     },
-    "maxHpRpm": 7150,
-    "maxTorqueRpm": 5450
+    "maxHpRpm": 7100,
+    "maxTorqueRpm": 5450,
+    "maxHp": 562,
+    "maxTorque": 473,
+    "aeroBalance": 0.51,
+    "aeroEfficiency": 0.863,
+    "mechBalance": 0.55
 }

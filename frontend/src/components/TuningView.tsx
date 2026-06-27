@@ -18,7 +18,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useTelemetry } from '../hooks/useTelemetry';
 
 const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActiveTab }) => {
-  const { carId, carName, carParams } = useCarParams();
+  const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
   const [activeSubTab, setActiveSubTab] = useState<string>('Gearing');
   const [saveName, setSaveName] = useState<string>(`Untitled_${new Date().toISOString().slice(0,10)}`);
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
@@ -68,11 +68,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
   const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift'>('GT');
   const [inGameTopSpeed, setInGameTopSpeed] = useState<number>(300);
-  const [gearingAssistParams, setGearingAssistParams] = useState({
-    mechBalance: 0.50,
-    aeroEfficiency: 0.50,
-    aeroBalance: 0.50
-  });
+
 
   // Assist States
   const [targetFreq, setTargetFreq] = useState<number>(2.25);
@@ -140,7 +136,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
   };
 
   const applySpringsAssist = () => {
-    const res = calculateSpringsByFrequency(limits.springMin, limits.springMax, theoWd, targetFreq, 2.0);
+    const res = calculateSpringsByFrequency(limits.springMin, limits.springMax, theoWd, targetFreq, 2.0, carParams?.maxHp, carParams?.weight);
     updateSection('springs', 'front', res.front);
     updateSection('springs', 'rear', res.rear);
   };
@@ -157,7 +153,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
   };
 
   const applyDiffBaseline = () => {
-    const res = getDifferentialBaseline(carParams?.drivetrain || 'RWD');
+    if (saveCarParams) saveCarParams();
+    const res = getDifferentialBaseline(carParams?.drivetrain || 'RWD', carParams?.maxHp, carParams?.maxTorque, carParams?.weight);
     updateSection('diff', 'accelF', res.accelF);
     updateSection('diff', 'decelF', res.decelF);
     updateSection('diff', 'accelR', res.accelR);
@@ -257,6 +254,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
   };
 
   const applySuggestedGearing = () => {
+    if (saveCarParams) saveCarParams();
     const numGears = carParams?.adjustability?.gears || 6;
     const maxRpm = tuning.gearing.maxRpm;
     const newGears = [...tuning.gearing.gears];
@@ -272,6 +270,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
 
   const applyDragCorrection = () => {
+    if (saveCarParams) saveCarParams();
     const numGears = carParams?.adjustability?.gears || 6;
     if (numGears < 2) return;
     
@@ -290,7 +289,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     const gear0 = newGears[0];
     newGears[numGears - 1] = topGearRatio;
     
-    const drag = gearingAssistParams.aeroEfficiency;
+    const drag = (carParams?.aeroEfficiency ?? 0.5);
     const p = 0.4 + drag * 0.5; // Controls the curve
     
     for (let i = 1; i < numGears - 1; i++) {
@@ -319,9 +318,9 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     
     // GT Discipline - Advanced Calculations
     const dt = carParams?.drivetrain || 'RWD';
-    const mech = gearingAssistParams.mechBalance;
-    const drag = gearingAssistParams.aeroEfficiency;
-    const aeroBal = gearingAssistParams.aeroBalance;
+    const mech = (carParams?.mechBalance ?? 0.5);
+    const drag = (carParams?.aeroEfficiency ?? 0.5);
+    const aeroBal = (carParams?.aeroBalance ?? 0.5);
     
     let tractionIndex = 0.7; // default
     if (dt === 'AWD') tractionIndex = 1.0;
@@ -362,50 +361,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     return '';
   };
 
-  const TuningSlider = ({label, value, min, max, unitType, section, field, step=0.1, baseline, disabled=false, isUnknown=false}: any) => {
-    const displayVal = isUnknown ? 'Unknown' : convertToUI(value, unitType);
-    const uiMin = convertToUI(min, unitType);
-    const uiMax = convertToUI(max, unitType);
-    const uiBaseline = baseline !== undefined ? convertToUI(baseline, unitType) : undefined;
-    
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', opacity: disabled ? 0.6 : 1, transition: 'opacity 0.2s' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>
-            {label} 
-            {uiBaseline !== undefined && !isUnknown && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '0.5rem' }}>(Base: {uiBaseline.toFixed(1)}{getUnitLabel(unitType)})</span>}
-            {disabled && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '0.5rem' }}>(Locked)</span>}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            {isUnknown ? (
-              <span style={{ width: '80px', textAlign: 'right', color: 'gray', fontStyle: 'italic' }}>Unknown</span>
-            ) : (
-              <>
-                <input 
-                  type="number" 
-                  value={(displayVal as number).toFixed(2)} 
-                  onChange={(e) => updateSection(section, field, convertFromUI(parseFloat(e.target.value), unitType))} 
-                  step={step}
-                  disabled={disabled}
-                  style={{ width: '80px', background: disabled ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.3)', color: disabled ? 'gray' : 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right', cursor: disabled ? 'not-allowed' : 'text' }}
-                />
-                <span style={{color: 'gray', fontSize: '0.8rem', width: '45px'}}>{getUnitLabel(unitType)}</span>
-              </>
-            )}
-          </div>
-        </div>
-        <input 
-          type="range" min={uiMin} max={uiMax} step={step} 
-          value={isUnknown ? uiMin : (displayVal as number)} 
-          onChange={(e) => updateSection(section, field, convertFromUI(parseFloat(e.target.value), unitType))}
-          disabled={disabled}
-          style={{ width: '100%', accentColor: disabled ? 'gray' : 'var(--primary)', cursor: disabled ? 'not-allowed' : 'pointer' }}
-        />
-      </div>
-    );
-  };
-
-  // --- Gearing Chart Logic ---
+    // --- Gearing Chart Logic ---
   const { gears, finalDrive, maxRpm } = tuning.gearing;
   const TIRE_RADIUS_M = 0.35; 
   const calcSpeed = (rpm: number, gearRatio: number) => {
@@ -536,57 +492,100 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
             {activeSubTab === 'Tires' && (
               <>
-                <TuningSlider label="Front Pressure" value={tuning.tires.front} min={1.0} max={4.0} unitType="pressure" section="tires" field="front" step={0.05} />
-                <TuningSlider label="Rear Pressure" value={tuning.tires.rear} min={1.0} max={4.0} unitType="pressure" section="tires" field="rear" step={0.05} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Pressure" value={tuning.tires.front} min={1.0} max={4.0} unitType="pressure" section="tires" field="front" step={0.05} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Pressure" value={tuning.tires.rear} min={1.0} max={4.0} unitType="pressure" section="tires" field="rear" step={0.05} />
               </>
             )}
 
             {activeSubTab === 'Alignment' && (
               <>
-                <TuningSlider label="Front Camber" value={tuning.alignment.camberF} min={-5.0} max={5.0} unitType="none" section="alignment" field="camberF" />
-                <TuningSlider label="Rear Camber" value={tuning.alignment.camberR} min={-5.0} max={5.0} unitType="none" section="alignment" field="camberR" />
-                <TuningSlider label="Front Toe" value={tuning.alignment.toeF} min={-5.0} max={5.0} unitType="none" section="alignment" field="toeF" />
-                <TuningSlider label="Rear Toe" value={tuning.alignment.toeR} min={-5.0} max={5.0} unitType="none" section="alignment" field="toeR" />
-                <TuningSlider label="Front Caster" value={tuning.alignment.caster} min={1.0} max={7.0} unitType="none" section="alignment" field="caster" />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Camber" value={tuning.alignment.camberF} min={-5.0} max={5.0} unitType="none" section="alignment" field="camberF" />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Camber" value={tuning.alignment.camberR} min={-5.0} max={5.0} unitType="none" section="alignment" field="camberR" />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Toe" value={tuning.alignment.toeF} min={-5.0} max={5.0} unitType="none" section="alignment" field="toeF" />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Toe" value={tuning.alignment.toeR} min={-5.0} max={5.0} unitType="none" section="alignment" field="toeR" />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Caster" value={tuning.alignment.caster} min={1.0} max={7.0} unitType="none" section="alignment" field="caster" />
               </>
             )}
 
             {activeSubTab === 'Anti-roll bars' && (
               <>
-                <TuningSlider label="Front ARB" value={arbFixed ? arbBaseline.front : tuning.arb.front} min={limits.arbMin} max={limits.arbMax} unitType="none" section="arb" field="front" baseline={arbBaseline.front} disabled={arbFixed} isUnknown={arbFixed && !hasTheoData} />
-                <TuningSlider label="Rear ARB" value={arbFixed ? arbBaseline.rear : tuning.arb.rear} min={limits.arbMin} max={limits.arbMax} unitType="none" section="arb" field="rear" baseline={arbBaseline.rear} disabled={arbFixed} isUnknown={arbFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front ARB" value={arbFixed ? arbBaseline.front : tuning.arb.front} min={limits.arbMin} max={limits.arbMax} unitType="none" section="arb" field="front" baseline={arbBaseline.front} disabled={arbFixed} isUnknown={arbFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear ARB" value={arbFixed ? arbBaseline.rear : tuning.arb.rear} min={limits.arbMin} max={limits.arbMax} unitType="none" section="arb" field="rear" baseline={arbBaseline.rear} disabled={arbFixed} isUnknown={arbFixed && !hasTheoData} />
               </>
             )}
 
             {activeSubTab === 'Springs' && (
               <>
-                <TuningSlider label="Front Springs" value={springsFixed ? springsBaseline.front : tuning.springs.front} min={limits.springMin} max={limits.springMax} unitType="spring" section="springs" field="front" step={1} baseline={springsBaseline.front} disabled={springsFixed} isUnknown={springsFixed && !hasTheoData} />
-                <TuningSlider label="Rear Springs" value={springsFixed ? springsBaseline.rear : tuning.springs.rear} min={limits.springMin} max={limits.springMax} unitType="spring" section="springs" field="rear" step={1} baseline={springsBaseline.rear} disabled={springsFixed} isUnknown={springsFixed && !hasTheoData} />
-                <TuningSlider label="Front Ride Height" value={tuning.springs.heightF} min={5.0} max={30.0} unitType="height" section="springs" field="heightF" step={0.5} disabled={springsFixed} />
-                <TuningSlider label="Rear Ride Height" value={tuning.springs.heightR} min={5.0} max={30.0} unitType="height" section="springs" field="heightR" step={0.5} disabled={springsFixed} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Springs" value={springsFixed ? springsBaseline.front : tuning.springs.front} min={limits.springMin} max={limits.springMax} unitType="spring" section="springs" field="front" step={1} baseline={springsBaseline.front} disabled={springsFixed} isUnknown={springsFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Springs" value={springsFixed ? springsBaseline.rear : tuning.springs.rear} min={limits.springMin} max={limits.springMax} unitType="spring" section="springs" field="rear" step={1} baseline={springsBaseline.rear} disabled={springsFixed} isUnknown={springsFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Ride Height" value={tuning.springs.heightF} min={5.0} max={30.0} unitType="height" section="springs" field="heightF" step={0.5} disabled={springsFixed} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Ride Height" value={tuning.springs.heightR} min={5.0} max={30.0} unitType="height" section="springs" field="heightR" step={0.5} disabled={springsFixed} />
               </>
             )}
 
             {activeSubTab === 'Damping' && (
               <>
-                <TuningSlider label="Front Rebound" value={dampersFixed ? dampingBaseline.frontRebound : tuning.damping.reboundF} min={1.0} max={20.0} unitType="none" section="damping" field="reboundF" baseline={dampingBaseline.frontRebound} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
-                <TuningSlider label="Rear Rebound" value={dampersFixed ? dampingBaseline.rearRebound : tuning.damping.reboundR} min={1.0} max={20.0} unitType="none" section="damping" field="reboundR" baseline={dampingBaseline.rearRebound} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
-                <TuningSlider label="Front Bump" value={dampersFixed ? dampingBaseline.frontBump : tuning.damping.bumpF} min={1.0} max={20.0} unitType="none" section="damping" field="bumpF" baseline={dampingBaseline.frontBump} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
-                <TuningSlider label="Rear Bump" value={dampersFixed ? dampingBaseline.rearBump : tuning.damping.bumpR} min={1.0} max={20.0} unitType="none" section="damping" field="bumpR" baseline={dampingBaseline.rearBump} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Rebound" value={dampersFixed ? dampingBaseline.frontRebound : tuning.damping.reboundF} min={1.0} max={20.0} unitType="none" section="damping" field="reboundF" baseline={dampingBaseline.frontRebound} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Rebound" value={dampersFixed ? dampingBaseline.rearRebound : tuning.damping.reboundR} min={1.0} max={20.0} unitType="none" section="damping" field="reboundR" baseline={dampingBaseline.rearRebound} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Front Bump" value={dampersFixed ? dampingBaseline.frontBump : tuning.damping.bumpF} min={1.0} max={20.0} unitType="none" section="damping" field="bumpF" baseline={dampingBaseline.frontBump} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Rear Bump" value={dampersFixed ? dampingBaseline.rearBump : tuning.damping.bumpR} min={1.0} max={20.0} unitType="none" section="damping" field="bumpR" baseline={dampingBaseline.rearBump} disabled={dampersFixed} isUnknown={dampersFixed && !hasTheoData} />
               </>
             )}
 
-            {activeSubTab === 'Aero' && (
-              <>
-                <TuningSlider label="Front Downforce" value={tuning.aero.front} min={50} max={500} unitType="force" section="aero" field="front" step={1} disabled={carParams?.adjustability?.aero === 'Fixed' || carParams?.adjustability?.aero === 'Rear Only'} />
-                <TuningSlider label="Rear Downforce" value={tuning.aero.rear} min={50} max={500} unitType="force" section="aero" field="rear" step={1} disabled={carParams?.adjustability?.aero === 'Fixed' || carParams?.adjustability?.aero === 'Front Only'} />
-              </>
+                        {activeSubTab === 'Aero' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '0.8rem', borderRadius: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <span style={{ color: 'white' }}>Front Downforce</span>
+                    <button 
+                      onClick={() => {
+                        const current = carParams?.adjustability?.aero || 'Fixed';
+                        let next = current;
+                        if (current === 'Fixed') next = 'Front Only';
+                        else if (current === 'Rear Only') next = 'Adjustable';
+                        else if (current === 'Front Only') next = 'Fixed';
+                        else if (current === 'Adjustable') next = 'Rear Only';
+                        if (carParams) {
+                          setCarParams({ ...carParams, adjustability: { ...carParams.adjustability, aero: next } });
+                          if (saveCarParams) saveCarParams();
+                        }
+                      }}
+                      style={{ padding: '0.3rem 0.6rem', background: (carParams?.adjustability?.aero === 'Adjustable' || carParams?.adjustability?.aero === 'Front Only') ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)', color: (carParams?.adjustability?.aero === 'Adjustable' || carParams?.adjustability?.aero === 'Front Only') ? '#0f0' : '#f00', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      {(carParams?.adjustability?.aero === 'Adjustable' || carParams?.adjustability?.aero === 'Front Only') ? 'Unlocked' : 'Locked'}
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <span style={{ color: 'white' }}>Rear Downforce</span>
+                    <button 
+                      onClick={() => {
+                        const current = carParams?.adjustability?.aero || 'Fixed';
+                        let next = current;
+                        if (current === 'Fixed') next = 'Rear Only';
+                        else if (current === 'Front Only') next = 'Adjustable';
+                        else if (current === 'Rear Only') next = 'Fixed';
+                        else if (current === 'Adjustable') next = 'Front Only';
+                        if (carParams) {
+                          setCarParams({ ...carParams, adjustability: { ...carParams.adjustability, aero: next } });
+                          if (saveCarParams) saveCarParams();
+                        }
+                      }}
+                      style={{ padding: '0.3rem 0.6rem', background: (carParams?.adjustability?.aero === 'Adjustable' || carParams?.adjustability?.aero === 'Rear Only') ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)', color: (carParams?.adjustability?.aero === 'Adjustable' || carParams?.adjustability?.aero === 'Rear Only') ? '#0f0' : '#f00', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      {(carParams?.adjustability?.aero === 'Adjustable' || carParams?.adjustability?.aero === 'Rear Only') ? 'Unlocked' : 'Locked'}
+                    </button>
+                  </div>
+                </div>
+                
+                <TuningSlider label="Front Downforce" value={tuning.aero.front} min={50} max={500} unitType="force" section="aero" field="front" step={1} disabled={carParams?.adjustability?.aero === 'Fixed' || carParams?.adjustability?.aero === 'Rear Only'} updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} />
+                <TuningSlider label="Rear Downforce" value={tuning.aero.rear} min={50} max={500} unitType="force" section="aero" field="rear" step={1} disabled={carParams?.adjustability?.aero === 'Fixed' || carParams?.adjustability?.aero === 'Front Only'} updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} />
+              </div>
             )}
 
             {activeSubTab === 'Brake' && (
               <>
-                <TuningSlider label="Braking Balance (% Front)" value={tuning.brake.balance} min={0} max={100} unitType="none" section="brake" field="balance" step={1} disabled={carParams?.adjustability?.brakes === 'Fixed'} />
-                <TuningSlider label="Braking Pressure (%)" value={tuning.brake.pressure} min={10} max={200} unitType="none" section="brake" field="pressure" step={1} disabled={carParams?.adjustability?.brakes === 'Fixed'} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Braking Balance (% Front)" value={tuning.brake.balance} min={0} max={100} unitType="none" section="brake" field="balance" step={1} disabled={carParams?.adjustability?.brakes === 'Fixed'} />
+                <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Braking Pressure (%)" value={tuning.brake.pressure} min={10} max={200} unitType="none" section="brake" field="pressure" step={1} disabled={carParams?.adjustability?.brakes === 'Fixed'} />
               </>
             )}
 
@@ -595,21 +594,21 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
                 {(carParams?.drivetrain === 'FWD' || carParams?.drivetrain === 'AWD') && (
                   <div style={{ marginBottom: '1.5rem' }}>
                     <h4 style={{ color: 'var(--text-secondary)' }}>Front</h4>
-                    <TuningSlider label="Acceleration" value={tuning.diff.accelF} min={0} max={100} unitType="none" section="diff" field="accelF" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
-                    <TuningSlider label="Deceleration" value={tuning.diff.decelF} min={0} max={100} unitType="none" section="diff" field="decelF" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
+                    <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Acceleration" value={tuning.diff.accelF} min={0} max={100} unitType="none" section="diff" field="accelF" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
+                    <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Deceleration" value={tuning.diff.decelF} min={0} max={100} unitType="none" section="diff" field="decelF" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
                   </div>
                 )}
                 {(carParams?.drivetrain === 'RWD' || carParams?.drivetrain === 'AWD') && (
                   <div style={{ marginBottom: '1.5rem' }}>
                     <h4 style={{ color: 'var(--text-secondary)' }}>Rear</h4>
-                    <TuningSlider label="Acceleration" value={tuning.diff.accelR} min={0} max={100} unitType="none" section="diff" field="accelR" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
-                    <TuningSlider label="Deceleration" value={tuning.diff.decelR} min={0} max={100} unitType="none" section="diff" field="decelR" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
+                    <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Acceleration" value={tuning.diff.accelR} min={0} max={100} unitType="none" section="diff" field="accelR" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
+                    <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Deceleration" value={tuning.diff.decelR} min={0} max={100} unitType="none" section="diff" field="decelR" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
                   </div>
                 )}
                 {carParams?.drivetrain === 'AWD' && (
                   <div style={{ marginBottom: '1.5rem' }}>
                     <h4 style={{ color: 'var(--text-secondary)' }}>Center</h4>
-                    <TuningSlider label="Balance (% Rear)" value={tuning.diff.center} min={0} max={100} unitType="none" section="diff" field="center" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
+                    <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Balance (% Rear)" value={tuning.diff.center} min={0} max={100} unitType="none" section="diff" field="center" step={1} disabled={carParams?.adjustability?.diff === 'Fixed'} />
                   </div>
                 )}
               </>
@@ -627,41 +626,22 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
                     <input type="number" value={tuning.gearing.maxRpm} onChange={(e) => updateSection('gearing', 'maxRpm', parseFloat(e.target.value))} step="100" disabled={gearboxFixed || !!telemetryData?.EngineMaxRpm} style={{ width: '100px', background: gearboxFixed ? 'rgba(0,0,0,0.1)' : 'rgba(255,0,0,0.2)', color: gearboxFixed ? 'gray' : 'white', border: '1px solid rgba(255,0,0,0.5)', borderRadius: '4px', textAlign: 'right', cursor: (gearboxFixed || !!telemetryData?.EngineMaxRpm) ? 'not-allowed' : 'text' }}/>
                   </div>
                   <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '0' }} />
-                  <TuningSlider label="Final Drive" value={tuning.gearing.finalDrive} min={limits.finalDriveMin} max={limits.finalDriveMax} unitType="none" section="gearing" field="finalDrive" step={0.01} disabled={gearboxFixed} />
+                  <TuningSlider updateSection={updateSection} convertToUI={convertToUI} convertFromUI={convertFromUI} getUnitLabel={getUnitLabel} label="Final Drive" value={tuning.gearing.finalDrive} min={limits.finalDriveMin} max={limits.finalDriveMax} unitType="none" section="gearing" field="finalDrive" step={0.01} disabled={gearboxFixed} />
                   
                   {gearboxFull && Array.from({length: numGears}).map((_, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>{i + 1}{i===0?'st':i===1?'nd':i===2?'rd':'th'} Gear</span>
-                        <input 
-                          type="number" 
-                          value={tuning.gearing.gears[i].toFixed(2)} 
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            const newGears = [...tuning.gearing.gears];
-                            newGears[i] = val;
-                            for (let j = i + 1; j < newGears.length; j++) if (newGears[j] > newGears[j - 1]) newGears[j] = newGears[j - 1];
-                            for (let j = i - 1; j >= 0; j--) if (newGears[j] < newGears[j + 1]) newGears[j] = newGears[j + 1];
-                            setTuning(prev => ({...prev, gearing: {...prev.gearing, gears: newGears}}));
-                          }} 
-                          step="0.01"
-                          style={{ width: '80px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right' }}
-                        />
-                      </div>
-                      <input 
-                        type="range" min={limits.gearMin} max={limits.gearMax} step="0.01" 
-                        value={tuning.gearing.gears[i]} 
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          const newGears = [...tuning.gearing.gears];
-                          newGears[i] = val;
-                          for (let j = i + 1; j < newGears.length; j++) if (newGears[j] > newGears[j - 1]) newGears[j] = newGears[j - 1];
-                          for (let j = i - 1; j >= 0; j--) if (newGears[j] < newGears[j + 1]) newGears[j] = newGears[j + 1];
-                          setTuning(prev => ({...prev, gearing: {...prev.gearing, gears: newGears}}));
-                        }}
-                        style={{ width: '100%', accentColor: 'var(--primary)' }}
-                      />
-                    </div>
+                    <GearInput 
+                      key={i} 
+                      index={i} 
+                      value={tuning.gearing.gears[i]} 
+                      limits={limits}
+                      updateGears={(index: number, val: number) => {
+                        const newGears = [...tuning.gearing.gears];
+                        newGears[index] = val;
+                        for (let j = index + 1; j < newGears.length; j++) if (newGears[j] > newGears[j - 1]) newGears[j] = newGears[j - 1];
+                        for (let j = index - 1; j >= 0; j--) if (newGears[j] < newGears[j + 1]) newGears[j] = newGears[j + 1];
+                        setTuning(prev => ({...prev, gearing: {...prev.gearing, gears: newGears}}));
+                      }} 
+                    />
                   ))}
               </>
             )}
@@ -924,15 +904,15 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: 'white', fontSize: '0.8rem' }}>Mech Balance (Front Ratio):</span>
-                        <input type="number" min="0" max="1" step="0.001" value={gearingAssistParams.mechBalance} onChange={(e) => setGearingAssistParams(p => ({...p, mechBalance: parseFloat(e.target.value)}))} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                        <input type="number" min="0" max="1" step="0.001" value={(carParams?.mechBalance ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, mechBalance: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: 'white', fontSize: '0.8rem' }}>Aero Drag Index:</span>
-                        <input type="number" min="0" max="1" step="0.001" value={gearingAssistParams.aeroEfficiency} onChange={(e) => setGearingAssistParams(p => ({...p, aeroEfficiency: parseFloat(e.target.value)}))} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                        <input type="number" min="0" max="1" step="0.001" value={(carParams?.aeroEfficiency ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, aeroEfficiency: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: 'white', fontSize: '0.8rem' }}>Aero Balance (Front Ratio):</span>
-                        <input type="number" min="0" max="1" step="0.001" value={gearingAssistParams.aeroBalance} onChange={(e) => setGearingAssistParams(p => ({...p, aeroBalance: parseFloat(e.target.value)}))} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                        <input type="number" min="0" max="1" step="0.001" value={(carParams?.aeroBalance ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, aeroBalance: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
                       </div>
                     </div>
                   )}
@@ -992,4 +972,125 @@ const btnStyle: React.CSSProperties = {
   fontWeight: 'bold'
 };
 
+
+const TuningSlider = React.memo(({label, value, min, max, unitType, section, field, step=0.1, baseline, disabled=false, isUnknown=false, updateSection, convertToUI, convertFromUI, getUnitLabel}: any) => {
+  const displayVal = isUnknown ? 'Unknown' : convertToUI(value, unitType);
+  const uiMin = convertToUI(min, unitType);
+  const uiMax = convertToUI(max, unitType);
+  const uiBaseline = baseline !== undefined ? convertToUI(baseline, unitType) : undefined;
+  
+  const [localVal, setLocalVal] = React.useState(typeof displayVal === 'number' ? displayVal.toFixed(2) : '');
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isFocused && typeof displayVal === 'number') {
+      setLocalVal(displayVal.toFixed(2));
+    }
+  }, [displayVal, isFocused]);
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const parsed = parseFloat(localVal);
+    if (!isNaN(parsed)) {
+      updateSection(section, field, convertFromUI(parsed, unitType));
+    } else {
+      if (typeof displayVal === 'number') setLocalVal(displayVal.toFixed(2));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleBlur();
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', opacity: disabled ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ color: 'var(--text-secondary)' }}>
+          {label} 
+          {uiBaseline !== undefined && !isUnknown && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '0.5rem' }}>(Base: {uiBaseline.toFixed(1)}{getUnitLabel(unitType)})</span>}
+          {disabled && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '0.5rem' }}>(Locked)</span>}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          {isUnknown ? (
+            <span style={{ width: '80px', textAlign: 'right', color: 'gray', fontStyle: 'italic' }}>Unknown</span>
+          ) : (
+            <>
+              <input 
+                type="number" 
+                value={localVal} 
+                onChange={(e) => setLocalVal(e.target.value)} 
+                onFocus={() => setIsFocused(true)}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                step={step}
+                disabled={disabled}
+                style={{ width: '80px', background: disabled ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.3)', color: disabled ? 'gray' : 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right', cursor: disabled ? 'not-allowed' : 'text' }}
+              />
+              <span style={{color: 'gray', fontSize: '0.8rem', width: '45px'}}>{getUnitLabel(unitType)}</span>
+            </>
+          )}
+        </div>
+      </div>
+      <input 
+        type="range" min={uiMin} max={uiMax} step={step} 
+        value={isUnknown ? uiMin : (displayVal)} 
+        onChange={(e) => updateSection(section, field, convertFromUI(parseFloat(e.target.value), unitType))}
+        disabled={disabled}
+        style={{ width: '100%', accentColor: disabled ? 'gray' : 'var(--primary)', cursor: disabled ? 'not-allowed' : 'pointer' }}
+      />
+    </div>
+  );
+});
+
+
+const GearInput = React.memo(({ index, value, updateGears, limits }: any) => {
+  const [localVal, setLocalVal] = React.useState(typeof value === 'number' ? value.toFixed(2) : '');
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isFocused && typeof value === 'number') {
+      setLocalVal(value.toFixed(2));
+    }
+  }, [value, isFocused]);
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const parsed = parseFloat(localVal);
+    if (!isNaN(parsed)) {
+      updateGears(index, parsed);
+    } else if (typeof value === 'number') {
+      setLocalVal(value.toFixed(2));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleBlur();
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ color: 'var(--text-secondary)' }}>{index + 1}{index===0?'st':index===1?'nd':index===2?'rd':'th'} Gear</span>
+        <input 
+          type="number" 
+          value={localVal} 
+          onChange={(e) => setLocalVal(e.target.value)} 
+          onFocus={() => setIsFocused(true)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          step="0.01"
+          style={{ width: '80px', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right' }}
+        />
+      </div>
+      <input 
+        type="range" min={limits.gearMin} max={limits.gearMax} step={0.01} 
+        value={value} 
+        onChange={(e) => updateGears(index, parseFloat(e.target.value))}
+        style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
+      />
+    </div>
+  );
+});
+
 export default TuningView;
+
