@@ -237,7 +237,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
     const radius = 50; 
     const displayLimit = 1.5; 
     const histWidth = 100;
-    const histHeight = 100;
+    const histHeight = 70;
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
@@ -352,13 +352,10 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
           const minTemp = hist.current.length > 0 ? Math.min(...hist.current.map(p => p.temp)) : cTemp;
           const maxTemp = hist.current.length > 0 ? Math.max(...hist.current.map(p => p.temp)) : cTemp;
           
-          let tempMinScale = minTemp - 20;
-          let tempMaxScale = maxTemp + 20;
-          if (tempMaxScale - tempMinScale < 40) {
-            const mid = (tempMaxScale + tempMinScale) / 2;
-            tempMinScale = mid - 20;
-            tempMaxScale = mid + 20;
-          }
+          let tempMinScale = 100;
+          let tempMaxScale = 260;
+          if (minTemp < tempMinScale + 10) tempMinScale = minTemp - 10;
+          if (maxTemp > tempMaxScale - 10) tempMaxScale = maxTemp + 10;
           
           const numBins = 30;
           const tempPerBin = (tempMaxScale - tempMinScale) / numBins;
@@ -374,13 +371,13 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
 
           ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
           for (let i = 0; i < numBins; i++) {
-            const h = (bins[i] / maxBinCount) * histHeight;
-            if (h > 0) {
-              const binTemp = tempMinScale + i * tempPerBin;
-              ctx.fillStyle = getTempColor(binTemp);
-              const barW = histWidth / numBins;
-              ctx.fillRect(i * barW, histHeight - h, barW > 1 ? barW - 1 : barW, h);
-            }
+            let h = (bins[i] / maxBinCount) * histHeight;
+            if (h < 2) h = 2;
+            
+            const binTemp = tempMinScale + i * tempPerBin;
+            ctx.fillStyle = getTempColor(binTemp);
+            const barW = histWidth / numBins;
+            ctx.fillRect(i * barW, histHeight - h, barW > 1 ? barW - 1 : barW, h);
           }
           
           const currentT = Math.max(tempMinScale, Math.min(tempMaxScale, cTemp));
@@ -437,9 +434,13 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   
   const hist = useRef<{travel: number, time: number}[]>([]);
   const lastTimeRef = useRef(performance.now());
-  const minMax = useRef({ min: 0, max: 0 });
+  const minMax = useRef<{ min: number | null, max: number | null }>({ min: null, max: null });
 
   useEffect(() => {
+    // Canvas API does not support CSS variables like var(--primary) in gradients.
+    // Using a valid hex color avoids crashes.
+    const primaryColor = '#00f0ff';
+    
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if (!liveData || liveData.IsRaceOn !== 1) return;
@@ -449,8 +450,14 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       lastTimeRef.current = now;
 
       const travel = (liveData.NormalizedSuspensionTravel && liveData.NormalizedSuspensionTravel[tireIdx]) || 0;
-      if (travel < minMax.current.min) minMax.current.min = travel;
-      if (travel > minMax.current.max) minMax.current.max = travel;
+      
+      if (minMax.current.min === null || minMax.current.max === null) {
+        minMax.current.min = travel;
+        minMax.current.max = travel;
+      } else {
+        if (travel < minMax.current.min) minMax.current.min = travel;
+        if (travel > minMax.current.max) minMax.current.max = travel;
+      }
       
       const speed = liveData.SpeedMetersPerSecond || 0;
       const isMoving = Math.abs(speed) > 0.5;
@@ -469,7 +476,8 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
         }
       }
 
-      const percent = Math.max(0, Math.min(100, (travel + 0.5) * 100));
+      // Fixed 0-1 scale mapping (0% to 100%)
+      const percent = Math.max(0, Math.min(100, travel * 100));
       if (barRef.current) barRef.current.style.height = percent + '%';
       if (textRef.current) textRef.current.innerText = travel.toFixed(2);
       if (minRef.current) minRef.current.innerText = minMax.current.min.toFixed(2);
@@ -499,8 +507,9 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
           ctx.beginPath();
           const grad = ctx.createLinearGradient(0, 0, 0, h);
           grad.addColorStop(0, '#ff003c');
-          grad.addColorStop(0.05, 'var(--primary)');
-          grad.addColorStop(0.95, 'var(--primary)');
+          // Must use valid CSS hex strings in Canvas API
+          grad.addColorStop(0.05, primaryColor);
+          grad.addColorStop(0.95, primaryColor);
           grad.addColorStop(1, '#ff003c');
           ctx.strokeStyle = grad;
           ctx.lineWidth = 2;
@@ -510,7 +519,8 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
           for (let i = 0; i < hist.current.length; i++) {
             const p = hist.current[i];
             const x = 150 - ((maxT - p.time) / 3000) * 150; 
-            const y = 60 - ((p.travel + 0.5) * 60);
+            // Fixed mapping: travel 0..1 to canvas y 60..0
+            const y = 60 - (p.travel * 60);
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
@@ -525,7 +535,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   return (
     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px' }}>
       <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600, textAlign: isLeft ? 'left' : 'right' }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
         <div style={{ position: 'relative', width: '24px', height: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
           <div ref={barRef} style={{
