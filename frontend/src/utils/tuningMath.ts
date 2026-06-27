@@ -11,7 +11,114 @@ export interface TuningResult {
 }
 
 export type Drivetrain = 'RWD' | 'AWD' | 'FWD';
+export type RaceType = 'Road' | 'Rally' | 'Drag' | 'Drift';
 
+/**
+ * Calculates optimized alignment settings based on spring stiffness, ARB balance, race type, and drivetrain.
+ */
+export interface AlignmentResult {
+  camberF: number;
+  camberR: number;
+  toeF: number;
+  toeR: number;
+  caster: number;
+}
+
+export function calculateAlignmentSettings(
+  raceType: RaceType,
+  drivetrain: Drivetrain,
+  springsF: number,
+  springsR: number,
+  springsMin: number,
+  springsMax: number,
+  arbF: number,
+  arbR: number
+): AlignmentResult {
+  // Calculate Spring Stiffness Ratio (SR)
+  const range = springsMax - springsMin;
+  const srf = range > 0 ? (springsF - springsMin) / range : 0.5;
+  const srr = range > 0 ? (springsR - springsMin) / range : 0.5;
+
+  let camberF = 0;
+  let camberR = 0;
+  let toeF = 0;
+  let toeR = 0;
+  let caster = 5.0;
+
+  if (raceType === 'Road') {
+    camberF = -2.2 + (1.0 * srf);
+    camberR = camberF + 0.5;
+    toeF = arbF > arbR ? 0.1 : 0.0;
+    toeR = drivetrain === 'RWD' ? -0.1 : 0.0;
+    caster = 7.0 - (2.0 * srf);
+  } else if (raceType === 'Rally') {
+    camberF = -1.6 + (0.6 * srf);
+    camberR = -1.0 + (0.5 * srr);
+    toeF = 0.1;
+    toeR = 0.0;
+    caster = 6.0 - (1.5 * srf);
+  } else if (raceType === 'Drift') {
+    camberF = -5.0 + (1.0 * srf);
+    camberR = -0.5;
+    toeF = 0.3;
+    toeR = 0.1;
+    caster = 7.0;
+  } else {
+    // Default fallback (e.g. for Drag or unexpected)
+    camberF = -1.5;
+    camberR = -1.0;
+    toeF = 0.0;
+    toeR = 0.0;
+    caster = 5.0;
+  }
+
+  // Round values to sensible precision for Forza
+  return {
+    camberF: Math.round(camberF * 10) / 10,
+    camberR: Math.round(camberR * 10) / 10,
+    toeF: Math.round(toeF * 10) / 10,
+    toeR: Math.round(toeR * 10) / 10,
+    caster: Math.round(caster * 10) / 10,
+  };
+}
+
+/**
+ * Calculates optimized tire pressures based on race type, drivetrain, and alignment.
+ */
+export function calculateTirePressures(
+  raceType: RaceType,
+  drivetrain: Drivetrain,
+  alignment: { camberF: number; camberR: number; toeF: number; toeR: number; caster: number }
+): TuningResult {
+  let baseF = 2.1;
+  let baseR = 2.1;
+
+  if (raceType === 'Road') {
+    if (drivetrain === 'AWD') { baseF = 1.9; baseR = 1.9; }
+    else if (drivetrain === 'RWD') { baseF = 1.9; baseR = 1.8; }
+    else if (drivetrain === 'FWD') { baseF = 1.8; baseR = 2.0; }
+  } else if (raceType === 'Rally') {
+    baseF = 1.4; baseR = 1.4;
+  } else if (raceType === 'Drag') {
+    baseF = 2.4; baseR = 1.0;
+  } else if (raceType === 'Drift') {
+    if (drivetrain === 'AWD') { baseF = 1.9; baseR = 2.4; }
+    else { baseF = 1.9; baseR = 2.6; } // Default RWD/FWD to 2.6
+  }
+
+  const camberFOffset = 0.04 * Math.abs(alignment.camberF);
+  const camberROffset = 0.04 * Math.abs(alignment.camberR);
+
+  const toeFOffset = 0.15 * Math.abs(alignment.toeF);
+  const toeROffset = 0.15 * Math.abs(alignment.toeR);
+
+  const casterOffset = 0.01 * Math.max(0, alignment.caster - 5.0);
+
+  const front = Math.max(1.0, Math.min(4.0, baseF - camberFOffset - toeFOffset - casterOffset));
+  const rear = Math.max(1.0, Math.min(4.0, baseR - camberROffset - toeROffset));
+
+  return { front, rear };
+}
 
 /**
  * Calculates baseline spring rates based on weight distribution
@@ -74,25 +181,34 @@ export function calculateDampers(
 }
 
 /**
- * Calculates spring rates based on target natural frequency and total weight (Imperial units)
- * @param weightLbs - Total vehicle weight in pounds
+ * Calculates spring rates using Relative Frequency Scaling (Option 1)
+ * Formula: K = (Max - Min) * (WeightBias * (f_target / f_base)^2) + Min
+ * @param min - Minimum allowed spring rate
+ * @param max - Maximum allowed spring rate
  * @param frontBias - Front weight distribution percentage
  * @param targetFreq - Target natural frequency in Hz
+ * @param baseFreq - Base reference frequency in Hz (default 2.0)
  */
 export function calculateSpringsByFrequency(
-  weightLbs: number,
+  min: number,
+  max: number,
   frontBias: number,
-  targetFreq: number
+  targetFreq: number,
+  baseFreq: number = 2.0
 ): TuningResult {
   const biasDec = frontBias / 100;
-  const frontWeight = weightLbs * biasDec;
-  const rearWeight = weightLbs * (1 - biasDec);
   
-  // Formula: K = (f^2 * M_axle) / 19.56
-  return {
-    front: (Math.pow(targetFreq, 2) * frontWeight) / 19.56,
-    rear: (Math.pow(targetFreq, 2) * rearWeight) / 19.56
-  };
+  const range = max - min;
+  const freqMultiplier = Math.pow(targetFreq / baseFreq, 2);
+  
+  let front = (range * (biasDec * freqMultiplier)) + min;
+  let rear = (range * ((1 - biasDec) * freqMultiplier)) + min;
+  
+  // Clamp to boundaries
+  front = Math.max(min, Math.min(max, front));
+  rear = Math.max(min, Math.min(max, rear));
+  
+  return { front, rear };
 }
 
 /**
@@ -154,4 +270,63 @@ export function calculateDampersAdvanced(
     frontBump: frontRebound * bumpRatio,
     rearBump: rearRebound * bumpRatio
   };
+}
+
+/**
+ * Calculates damper clicks based on Critical Damping coefficient.
+ * Assumes inputs are in Imperial units (lbs/in for springs, lbs for weight)
+ * to match the game's internal physics calibration constant (0.00135).
+ */
+export function calculateDampersCritical(
+  frontSpringLbsIn: number,
+  rearSpringLbsIn: number,
+  weightLbs: number,
+  frontBias: number,
+  reboundRatio: number = 0.75,
+  bumpRatio: number = 0.55
+): DamperResult {
+  const biasDec = frontBias / 100;
+  const frontWeight = weightLbs * biasDec;
+  const rearWeight = weightLbs * (1 - biasDec);
+
+  const frontCc = 2 * Math.sqrt(frontSpringLbsIn * frontWeight);
+  const rearCc = 2 * Math.sqrt(rearSpringLbsIn * rearWeight);
+
+  // Calibration constant derived from telemetry reverse engineering
+  const CALIBRATION_CONST = 0.00135;
+
+  let frontRebound = frontCc * reboundRatio * CALIBRATION_CONST;
+  let rearRebound = rearCc * reboundRatio * CALIBRATION_CONST;
+  let frontBump = frontCc * bumpRatio * CALIBRATION_CONST;
+  let rearBump = rearCc * bumpRatio * CALIBRATION_CONST;
+
+  // Clamp to game limits 1.0 - 20.0
+  return {
+    frontRebound: Math.max(1.0, Math.min(20.0, frontRebound)),
+    rearRebound: Math.max(1.0, Math.min(20.0, rearRebound)),
+    frontBump: Math.max(1.0, Math.min(20.0, frontBump)),
+    rearBump: Math.max(1.0, Math.min(20.0, rearBump))
+  };
+}
+
+export interface DiffResult {
+  accelF: number;
+  decelF: number;
+  accelR: number;
+  decelR: number;
+  center: number;
+}
+
+/**
+ * Gets baseline differential settings based on drivetrain.
+ */
+export function getDifferentialBaseline(drivetrain: Drivetrain): DiffResult {
+  if (drivetrain === 'FWD') {
+    return { accelF: 30, decelF: 5, accelR: 0, decelR: 0, center: 50 };
+  } else if (drivetrain === 'RWD') {
+    return { accelF: 0, decelF: 0, accelR: 65, decelR: 10, center: 50 };
+  } else {
+    // AWD
+    return { accelF: 25, decelF: 5, accelR: 70, decelR: 10, center: 70 };
+  }
 }

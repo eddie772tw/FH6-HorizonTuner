@@ -47,9 +47,9 @@ const TuningCalculator: React.FC = () => {
   // Calculations
   const springs = useMemo(() => {
     return isAdvancedMode 
-      ? calculateSpringsByFrequency(totalWeight, frontBias, targetFreq)
+      ? calculateSpringsByFrequency(springMin, springMax, frontBias, targetFreq, 2.0)
       : calculateSprings(frontBias, springMin, springMax);
-  }, [isAdvancedMode, totalWeight, frontBias, targetFreq, springMin, springMax]);
+  }, [isAdvancedMode, frontBias, targetFreq, springMin, springMax]);
 
   const arbs = useMemo(() => {
     return isAdvancedMode

@@ -2,7 +2,7 @@
     "dyno_recording": false,
     "race_recording": false,
     "units": {
-        "speed": "kmh",
+        "speed": "mph",
         "weight": "lbs",
         "temperature": "C",
         "tirePressure": "psi",

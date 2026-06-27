@@ -115,11 +115,22 @@ const GForceRadar: React.FC = () => {
   const hist = useRef<{lat: number, lon: number, time: number}[]>([]);
   const lastTimeRef = useRef(performance.now());
   const [markers, setMarkers] = useState<{lat: number, lon: number}[]>([]);
+  const prevCar = useRef<number | null>(null);
+  const prevRace = useRef<number | null>(null);
 
   useEffect(() => {
     const handleDraw = (e: any) => {
       const data = e.detail;
-      if (!data || data.IsRaceOn !== 1) return;
+      if (!data) return;
+      
+      if ((prevCar.current !== null && prevCar.current !== data.CarOrdinal) ||
+          (prevRace.current !== null && prevRace.current !== data.IsRaceOn)) {
+        hist.current = [];
+      }
+      prevCar.current = data.CarOrdinal;
+      prevRace.current = data.IsRaceOn;
+
+      if (data.IsRaceOn !== 1) return;
       
       const now = performance.now();
       const dt = now - lastTimeRef.current;
@@ -229,6 +240,8 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
   const tempRef = useRef<HTMLSpanElement>(null);
   const angRef = useRef<HTMLSpanElement>(null);
   const ratioRef = useRef<HTMLSpanElement>(null);
+  const prevCar = useRef<number | null>(null);
+  const prevRace = useRef<number | null>(null);
   
   const { convertTemp } = useSettings();
   const tempUnit = convertTemp(0).label;
@@ -241,7 +254,16 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
-      if (!liveData || liveData.IsRaceOn !== 1) return;
+      if (!liveData) return;
+      
+      if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
+          (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
+        hist.current = [];
+      }
+      prevCar.current = liveData.CarOrdinal;
+      prevRace.current = liveData.IsRaceOn;
+
+      if (liveData.IsRaceOn !== 1) return;
       
       const now = performance.now();
       const dt = now - lastTimeRef.current;
@@ -311,7 +333,12 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
           ctx.setLineDash([]);
   
 
-          const history3s = hist.current.filter(p => now - p.time <= 3000);
+          let startIdx = hist.current.length - 1;
+          while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
+            startIdx--;
+          }
+          const history3s = hist.current.slice(startIdx + 1);
+
           if (history3s.length > 0) {
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -322,7 +349,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
               const px = Math.max(-displayLimit, Math.min(displayLimit, p.angle));
               const py = Math.max(-displayLimit, Math.min(displayLimit, p.ratio));
               const cx = radius + (px / displayLimit) * radius;
-              const cy = radius - (py / displayLimit) * radius;
+              const cy = radius + (py / displayLimit) * radius;
               if (i === 0) ctx.moveTo(cx, cy);
               else ctx.lineTo(cx, cy);
             }
@@ -334,7 +361,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
           const py = Math.max(-displayLimit, Math.min(displayLimit, cRatio));
           const dotColor = isLosingGrip ? '#ff003c' : '#00f0ff';
           ctx.beginPath();
-          ctx.arc(radius + (px / displayLimit) * radius, radius - (py / displayLimit) * radius, 4, 0, Math.PI * 2);
+          ctx.arc(radius + (px / displayLimit) * radius, radius + (py / displayLimit) * radius, 4, 0, Math.PI * 2);
           ctx.fillStyle = dotColor;
           ctx.shadowBlur = 8;
           ctx.shadowColor = dotColor;
@@ -435,6 +462,8 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   const hist = useRef<{travel: number, time: number}[]>([]);
   const lastTimeRef = useRef(performance.now());
   const minMax = useRef<{ min: number | null, max: number | null }>({ min: null, max: null });
+  const prevCar = useRef<number | null>(null);
+  const prevRace = useRef<number | null>(null);
 
   useEffect(() => {
     // Canvas API does not support CSS variables like var(--primary) in gradients.
@@ -443,7 +472,17 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
     
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
-      if (!liveData || liveData.IsRaceOn !== 1) return;
+      if (!liveData) return;
+      
+      if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
+          (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
+        hist.current = [];
+        minMax.current = { min: null, max: null };
+      }
+      prevCar.current = liveData.CarOrdinal;
+      prevRace.current = liveData.IsRaceOn;
+
+      if (liveData.IsRaceOn !== 1) return;
       
       const now = performance.now();
       const dt = now - lastTimeRef.current;
@@ -480,8 +519,8 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       const percent = Math.max(0, Math.min(100, travel * 100));
       if (barRef.current) barRef.current.style.height = percent + '%';
       if (textRef.current) textRef.current.innerText = travel.toFixed(2);
-      if (minRef.current) minRef.current.innerText = minMax.current.min.toFixed(2);
-      if (maxRef.current) maxRef.current.innerText = minMax.current.max.toFixed(2);
+      if (minRef.current) minRef.current.innerText = minMax.current.min !== null ? minMax.current.min.toFixed(2) : '-';
+      if (maxRef.current) maxRef.current.innerText = minMax.current.max !== null ? minMax.current.max.toFixed(2) : '-';
 
       const canvas = canvasRef.current;
       if (canvas && hist.current.length > 0) {
@@ -518,7 +557,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
           const maxT = Math.max(...hist.current.map(p => p.time));
           for (let i = 0; i < hist.current.length; i++) {
             const p = hist.current[i];
-            const x = 150 - ((maxT - p.time) / 3000) * 150; 
+            const x = 150 - ((maxT - p.time) / 2500) * 150; 
             // Fixed mapping: travel 0..1 to canvas y 60..0
             const y = 60 - (p.travel * 60);
             if (i === 0) ctx.moveTo(x, y);
@@ -563,36 +602,24 @@ const TelemetryView: React.FC = () => {
   const { convertSpeed, convertPower, convertTorque, convertBoost } = useSettings();
   const { carName } = useCarParams();
 
-  if (!data) {
-    return (
-      <div style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>🏎️</div>
-          <h2>Waiting for Telemetry</h2>
-          <p>Start Forza Horizon and ensure data out is enabled on port 5300.</p>
-        </div>
-      </div>
-    );
-  }
+  const isRacing = data?.IsRaceOn === 1;
 
-  const isRacing = data.IsRaceOn === 1;
-
-  const rpm = data.CurrentEngineRpm || 0;
-  const rpmIdle = data.EngineIdleRpm || 0;
-  const rpmMax = data.EngineMaxRpm || 1;
+  const rpm = data?.CurrentEngineRpm || 0;
+  const rpmIdle = data?.EngineIdleRpm || 0;
+  const rpmMax = data?.EngineMaxRpm || 1;
   const rpmPercent = Math.max(0, Math.min(100, ((rpm - rpmIdle) / (rpmMax - rpmIdle)) * 100));
 
-  const speedData = convertSpeed(data.SpeedMetersPerSecond || 0);
-  const powerData = convertPower(data.PowerWatts || 0);
-  const torqueData = convertTorque(data.TorqueNewtons || 0);
-  const boostData = convertBoost(data.Boost || 0);
+  const speedData = convertSpeed(data?.SpeedMetersPerSecond || 0);
+  const powerData = convertPower(data?.PowerWatts || 0);
+  const torqueData = convertTorque(data?.TorqueNewtons || 0);
+  const boostData = convertBoost(data?.Boost || 0);
 
-  const gear = data.Gear || 0;
-  const currentLap = data.CurrentLap || 0;
-  const bestLap = data.BestLap || 0;
-  const lastLap = data.LastLap || 0;
+  const gear = data?.Gear || 0;
+  const currentLap = data?.CurrentLap || 0;
+  const bestLap = data?.BestLap || 0;
+  const lastLap = data?.LastLap || 0;
 
-  const classDisplay = getCarClassString(data.CarClass);
+  const classDisplay = getCarClassString(data?.CarClass);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

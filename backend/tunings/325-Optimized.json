@@ -1,0 +1,60 @@
+{
+    "tires": {
+        "front": 2.1,
+        "rear": 2.1
+    },
+    "gearing": {
+        "finalDrive": 3.4,
+        "gears": [
+            2.89,
+            1.99,
+            1.49,
+            1.16,
+            0.94,
+            0.78,
+            0.65,
+            0.55,
+            0.5,
+            0.45
+        ],
+        "maxRpm": 8000
+    },
+    "alignment": {
+        "camberF": -1.5,
+        "camberR": -1,
+        "toeF": 0,
+        "toeR": 0,
+        "caster": 5
+    },
+    "arb": {
+        "front": 27.24,
+        "rear": 34.88400000000001
+    },
+    "springs": {
+        "front": 100,
+        "rear": 100,
+        "heightF": 15,
+        "heightR": 15
+    },
+    "damping": {
+        "reboundF": 10,
+        "reboundR": 10,
+        "bumpF": 6,
+        "bumpR": 6
+    },
+    "aero": {
+        "front": 100,
+        "rear": 150
+    },
+    "brake": {
+        "balance": 50,
+        "pressure": 100
+    },
+    "diff": {
+        "accelF": 50,
+        "decelF": 0,
+        "accelR": 50,
+        "decelR": 0,
+        "center": 65
+    }
+}

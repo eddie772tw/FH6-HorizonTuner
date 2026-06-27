@@ -16,12 +16,19 @@ const AppContent: React.FC = () => {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} isConnected={isConnected} />
-      
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
-        {activeTab === 'telemetry' && <TelemetryView />}
-        {activeTab === 'tuning' && <TuningView setActiveTab={setActiveTab} />}
-        {activeTab === 'car_params' && <CarParamsView />}
-        {activeTab === 'settings' && <SettingsView />}
+        <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <TelemetryView />
+        </div>
+        <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <TuningView setActiveTab={setActiveTab} />
+        </div>
+        <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <CarParamsView />
+        </div>
+        <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <SettingsView />
+        </div>
       </main>
     </div>
   );
