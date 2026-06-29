@@ -7733,5 +7733,9 @@
     },
     "induction": "TwinTurbo",
     "maxTorqueRpm": 4650,
-    "maxHpRpm": 7500
+    "maxHpRpm": 7500,
+    "maxHp": 841,
+    "maxTorque": 687,
+    "aeroEfficiency": 0.858,
+    "aeroBalance": 0.51
 }

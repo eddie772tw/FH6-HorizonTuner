@@ -9,7 +9,8 @@ const TuningCalculator: React.FC = () => {
     convertWeight, 
     convertWeightToLbs, 
     convertSpringRateLbsIn, 
-    convertSpringRateLbsInToLbsIn 
+    convertSpringRateLbsInToLbsIn,
+    t 
   } = useSettings();
 
   // User Inputs
@@ -67,7 +68,7 @@ const TuningCalculator: React.FC = () => {
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', gridColumn: '1 / -1' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
         <h2 style={{ color: 'var(--primary)', margin: 0 }}>
-          Tuning Calculator
+          {t("Tuning Calculator")}
         </h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <select 
@@ -75,8 +76,8 @@ const TuningCalculator: React.FC = () => {
             onChange={(e) => setIsAdvancedMode(e.target.value === 'Advanced')}
             style={inputStyle}
           >
-            <option value="Baseline">Baseline Mode</option>
-            <option value="Advanced">Advanced Mode</option>
+            <option value="Baseline">{t("Baseline Mode")}</option>
+            <option value="Advanced">{t("Advanced Mode")}</option>
           </select>
         </div>
       </div>
@@ -84,11 +85,11 @@ const TuningCalculator: React.FC = () => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
         {/* Input Section */}
         <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3>Vehicle Settings</h3>
+          <h3>{t("Vehicle Settings")}</h3>
           
           <div className="input-group">
             <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Front Weight Bias</span>
+              <span>{t("Front Weight Bias")}</span>
               <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{frontBias.toFixed(1)}%</span>
             </label>
             <input 
@@ -103,7 +104,7 @@ const TuningCalculator: React.FC = () => {
             <>
               <div className="input-group">
                 <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Total Weight ({weightUnit})</span>
+                  <span>{t("Total Weight")} ({weightUnit})</span>
                   <span style={{ color: 'white' }}>{Math.round(displayWeight)}</span>
                 </label>
                 <input 
@@ -115,21 +116,21 @@ const TuningCalculator: React.FC = () => {
               </div>
 
               <div className="input-group">
-                <label>Drivetrain</label>
+                <label>{t("Drivetrain")}</label>
                 <select 
                   value={drivetrain} 
                   onChange={(e) => setDrivetrain(e.target.value as Drivetrain)} 
                   style={inputStyle}
                 >
-                  <option value="RWD">RWD (Rear-Wheel Drive)</option>
-                  <option value="AWD">AWD (All-Wheel Drive)</option>
-                  <option value="FWD">FWD (Front-Wheel Drive)</option>
+                  <option value="RWD">{t("RWD (Rear-Wheel Drive)")}</option>
+                  <option value="AWD">{t("AWD (All-Wheel Drive)")}</option>
+                  <option value="FWD">{t("FWD (Front-Wheel Drive)")}</option>
                 </select>
               </div>
 
               <div className="input-group">
                 <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Target Frequency</span>
+                  <span>{t("Target Frequency")}</span>
                   <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{targetFreq.toFixed(2)} Hz</span>
                 </label>
                 <input 
@@ -143,11 +144,11 @@ const TuningCalculator: React.FC = () => {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="input-group">
-                <label>Spring Min ({springUnit})</label>
+                <label>{t("Spring Min")} ({springUnit})</label>
                 <input type="number" value={displaySpringMin.toFixed(1)} onChange={(e) => setDisplaySpringMin(Number(e.target.value))} style={inputStyle} />
               </div>
               <div className="input-group">
-                <label>Spring Max ({springUnit})</label>
+                <label>{t("Spring Max")} ({springUnit})</label>
                 <input type="number" value={displaySpringMax.toFixed(1)} onChange={(e) => setDisplaySpringMax(Number(e.target.value))} style={inputStyle} />
               </div>
             </div>
@@ -155,7 +156,7 @@ const TuningCalculator: React.FC = () => {
           
           <div className="input-group">
             <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Bump / Rebound Ratio</span>
+              <span>{t("Bump / Rebound Ratio")}</span>
               <span style={{ color: 'var(--secondary)', fontWeight: 'bold' }}>{(bumpRatio * 100).toFixed(0)}%</span>
             </label>
             <input 
@@ -172,53 +173,53 @@ const TuningCalculator: React.FC = () => {
           
           {/* Springs */}
           <div style={resultCardStyle}>
-            <h4 style={{ color: 'var(--text-secondary)' }}>Springs ({springUnit})</h4>
+            <h4 style={{ color: 'var(--text-secondary)' }}>{t("Springs")} ({springUnit})</h4>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{formatSpring(springs.front)}</div>
-                <div style={labelStyle}>Front</div>
+                <div style={labelStyle}>{t("Front")}</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{formatSpring(springs.rear)}</div>
-                <div style={labelStyle}>Rear</div>
+                <div style={labelStyle}>{t("Rear")}</div>
               </div>
             </div>
           </div>
 
           {/* ARBs */}
           <div style={resultCardStyle}>
-            <h4 style={{ color: 'var(--text-secondary)' }}>Anti-Roll Bars</h4>
+            <h4 style={{ color: 'var(--text-secondary)' }}>{t("Anti-Roll Bars")}</h4>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{arbs.front.toFixed(1)}</div>
-                <div style={labelStyle}>Front</div>
+                <div style={labelStyle}>{t("Front")}</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{arbs.rear.toFixed(1)}</div>
-                <div style={labelStyle}>Rear</div>
+                <div style={labelStyle}>{t("Rear")}</div>
               </div>
             </div>
           </div>
 
           {/* Dampers */}
           <div style={{ ...resultCardStyle, gridColumn: '1 / -1' }}>
-            <h4 style={{ color: 'var(--text-secondary)' }}>Damping</h4>
+            <h4 style={{ color: 'var(--text-secondary)' }}>{t("Damping")}</h4>
             <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '0.5rem' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{dampers.frontRebound.toFixed(1)}</div>
-                <div style={labelStyle}>Front Rebound</div>
+                <div style={labelStyle}>{t("Front Rebound")}</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{dampers.rearRebound.toFixed(1)}</div>
-                <div style={labelStyle}>Rear Rebound</div>
+                <div style={labelStyle}>{t("Rear Rebound")}</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{dampers.frontBump.toFixed(1)}</div>
-                <div style={labelStyle}>Front Bump</div>
+                <div style={labelStyle}>{t("Front Bump")}</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={valueStyle}>{dampers.rearBump.toFixed(1)}</div>
-                <div style={labelStyle}>Rear Bump</div>
+                <div style={labelStyle}>{t("Rear Bump")}</div>
               </div>
             </div>
           </div>

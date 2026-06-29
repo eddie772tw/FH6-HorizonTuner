@@ -1,12 +1,13 @@
 {
     "dyno_recording": false,
     "race_recording": false,
+    "language": "en-us",
     "units": {
-        "speed": "mph",
+        "speed": "kmh",
         "weight": "lbs",
-        "temperature": "F",
+        "temperature": "C",
         "tirePressure": "psi",
-        "boostPressure": "psi",
+        "boostPressure": "bar",
         "springRate": "kgfmm",
         "rideHeight": "in",
         "suspensionForce": "lbf",

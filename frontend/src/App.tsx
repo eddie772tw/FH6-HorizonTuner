@@ -32,7 +32,7 @@ const AppContent: React.FC = () => {
           <TuningView setActiveTab={setActiveTab} />
         </div>
         <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <CarParamsView />
+          <CarParamsView setActiveTab={setActiveTab} />
         </div>
         <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <SettingsView />

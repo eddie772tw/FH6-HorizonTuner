@@ -2,16 +2,133 @@ import React from 'react';
 import { useCarParams, CarParams } from '../context/CarParamsContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
+import { useTelemetry } from '../hooks/useTelemetry';
 
-const CarParamsView: React.FC = () => {
+const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActiveTab }) => {
   const {
     carId, setCarId, carName, carParams, setCarParams, saveCarParams,
     clearDynoCurve, importDynoValues, updateSettings, isLoading,
     carsWithParams
   } = useCarParams();
-  const { settings } = useSettings();
+  const { settings, t } = useSettings();
+  const { data: telemetryData } = useTelemetry();
+  
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
   const [subTab, setSubTab] = React.useState<'config' | 'dyno'>('config');
+  
+  // Guided Dyno wizard states
+  const [testState, setTestState] = React.useState<'ready' | 'waiting' | 'recording' | 'completed'>('ready');
+  const [runStartTime, setRunStartTime] = React.useState<number | null>(null);
+  const [runDuration, setRunDuration] = React.useState<number | null>(null);
+  const [gearingData, setGearingData] = React.useState<{ gears: number[]; finalDrive: number } | null>(null);
+
+  // Load gearing data from the active tuning setup
+  React.useEffect(() => {
+    const loadActiveGearing = async () => {
+      if (!carId) return;
+      const lastTuning = localStorage.getItem(`last_tuning_${carId}`);
+      if (lastTuning) {
+        try {
+          const prefix = `${carId}-`;
+          if (lastTuning.startsWith(prefix)) {
+            const saveName = lastTuning.substring(prefix.length);
+            const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}/${saveName}`);
+            const data = await res.json();
+            if (data && data.gearing) {
+              setGearingData(data.gearing);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load active gearing data", e);
+        }
+      }
+      setGearingData(null);
+    };
+    loadActiveGearing();
+  }, [carId]);
+
+  // Recommend best gear (closest to 1.00)
+  const recommendedGear = React.useMemo(() => {
+    if (!gearingData || !gearingData.gears || !carParams) return null;
+    const numGears = carParams.adjustability?.gears || 6;
+    let bestGearIdx = 3; // Default to 4th gear
+    let minDiff = 999;
+    
+    for (let i = 0; i < Math.min(gearingData.gears.length, numGears); i++) {
+      const ratio = gearingData.gears[i];
+      const diff = Math.abs(ratio - 1.0);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestGearIdx = i;
+      }
+    }
+    return {
+      gear: bestGearIdx + 1,
+      ratio: gearingData.gears[bestGearIdx]
+    };
+  }, [gearingData, carParams]);
+
+  // Guided Dyno Run state machine
+  React.useEffect(() => {
+    if (!telemetryData || !settings.dyno_recording) return;
+    const currentGear = telemetryData.Gear || 0;
+    const currentRpm = telemetryData.CurrentEngineRpm || 0;
+    const maxRpm = telemetryData.EngineMaxRpm || 8000;
+    const accel = telemetryData.AccelInput || 0;
+    const brake = telemetryData.BrakeInput || 0;
+    const handbrake = telemetryData.HandBrakeInput || 0;
+    const clutch = telemetryData.ClutchInput || 0;
+    
+    const targetGear = settings.dyno_test_gear ?? 4;
+    const isGearCorrect = targetGear === 0 || currentGear === targetGear;
+    
+    // Launch Control active check
+    const isLaunching = currentGear === 1 && handbrake > 50 && accel > 200;
+    if (isLaunching) {
+      // Pause or reset state machine during launch control
+      if (testState === 'recording') {
+        setTestState('ready');
+        setRunStartTime(null);
+      }
+      return;
+    }
+
+    if (testState === 'ready') {
+      if (isGearCorrect && currentRpm > 0 && currentRpm < 2500 && accel < 50 && brake === 0 && handbrake === 0) {
+        setTestState('waiting');
+      }
+    } else if (testState === 'waiting') {
+      if (!isGearCorrect) {
+        setTestState('ready');
+      } else if (accel >= 250 && currentRpm >= 2000 && brake === 0 && handbrake === 0 && clutch === 0) {
+        setTestState('recording');
+        setRunStartTime(Date.now());
+      }
+    } else if (testState === 'recording') {
+      const shouldStop = !isGearCorrect || accel < 200 || brake > 0 || handbrake > 0 || clutch > 50;
+      const isRedline = currentRpm >= maxRpm - 250;
+      
+      if (shouldStop || isRedline) {
+        if (runStartTime) {
+          const duration = (Date.now() - runStartTime) / 1000;
+          if (currentRpm >= maxRpm * 0.82 || isRedline) {
+            setTestState('completed');
+            setRunDuration(duration);
+          } else {
+            setTestState('ready');
+          }
+        } else {
+          setTestState('ready');
+        }
+        setRunStartTime(null);
+      }
+    } else if (testState === 'completed') {
+      if (isGearCorrect && currentRpm > 0 && currentRpm < 2500 && accel < 50 && brake === 0 && handbrake === 0) {
+        setTestState('waiting');
+      }
+    }
+  }, [telemetryData, testState, runStartTime, settings.dyno_test_gear, settings.dyno_recording, carParams]);
 
   // Auto-save states
   const [saveState, setSaveState] = React.useState<'saved' | 'saving' | 'unsaved'>('saved');
@@ -47,7 +164,7 @@ const CarParamsView: React.FC = () => {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffaa00', fontSize: '0.85rem', fontWeight: 600 }}>
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ffaa00', boxShadow: '0 0 8px #ffaa00', display: 'inline-block' }} />
-          有尚未儲存的變更
+          {t("Unsaved changes")}
         </div>
       );
     }
@@ -59,14 +176,14 @@ const CarParamsView: React.FC = () => {
             boxShadow: '0 0 8px var(--primary)', display: 'inline-block',
             animation: 'pulse 1s infinite alternate'
           }} />
-          儲存中...
+          {t("Saving...")}
         </div>
       );
     }
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#00e676', fontSize: '0.85rem', fontWeight: 600 }}>
         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00e676', boxShadow: '0 0 8px #00e676', display: 'inline-block' }} />
-        已儲存變更 {lastSavedTime && <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: '0.2rem' }}>({lastSavedTime})</span>}
+        {t("Changes saved")} {lastSavedTime && <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: '0.2rem' }}>({lastSavedTime})</span>}
       </div>
     );
   };
@@ -94,11 +211,11 @@ const CarParamsView: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div style={{ color: 'white', padding: '2rem' }}>Loading car parameters...</div>;
+    return <div style={{ color: 'white', padding: '2rem' }}>{t("Loading car parameters...")}</div>;
   }
 
   if (!carParams) {
-    return <div style={{ color: 'white', padding: '2rem' }}>No car loaded or telemetry inactive. Start driving a car to auto-create profile!</div>;
+    return <div style={{ color: 'white', padding: '2rem' }}>{t("No car loaded or telemetry inactive. Start driving a car to auto-create profile!")}</div>;
   }
 
   const updateParam = (field: keyof CarParams, value: any) => {
@@ -169,17 +286,17 @@ const CarParamsView: React.FC = () => {
       {/* Top Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>Car Parameters</h2>
+          <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{t("Car Parameters")}</h2>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={subTab === 'config' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('config')}>Profile Configuration</button>
-            <button style={subTab === 'dyno' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('dyno')}>Live Dyno Curve</button>
+            <button style={subTab === 'config' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('config')}>{t("Profile Configuration")}</button>
+            <button style={subTab === 'dyno' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('dyno')}>{t("Live Dyno Curve")}</button>
           </div>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           {renderSaveStatus()}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          <span>車輛調校對象:</span>
+          <span>{t("Car Target:")}</span>
           <select 
             value={carId} 
             onChange={(e) => setCarId(e.target.value)}
@@ -196,7 +313,7 @@ const CarParamsView: React.FC = () => {
           >
             {!carsWithParams.some(c => c.id === carId) && carId && (
               <option value={carId}>
-                {carName} (ID: {carId}) *未儲存參數*
+                {carName} (ID: {carId}) {t("*Unsaved Parameters*")}
               </option>
             )}
             {carsWithParams.map(car => (
@@ -211,56 +328,56 @@ const CarParamsView: React.FC = () => {
       {subTab === 'config' ? (
         /* Upper Section: Form Configurations */
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', flex: 1, overflowY: 'auto' }}>
-          <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>Car Profile Configuration</h3>
+          <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>{t("Car Profile Configuration")}</h3>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
             {/* Left Column: Static Info */}
             <div>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Static Info</h3>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>{t("Static Info")}</h3>
               <div style={formRowStyle}>
-                <label>Weight ({settings.units.weight})</label>
+                <label>{t("Weight")} ({settings.units.weight})</label>
                 <input type="number" value={Math.round(displayCarWeight)} onChange={e => handleWeightChange(e.target.value)} style={inputStyle} />
               </div>
               <div style={formRowStyle}>
-                <label>Front Weight (%)</label>
+                <label>{t("Front Weight (%)")}</label>
                 <input type="number" value={carParams.weight_distribution} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value))} style={inputStyle} step="0.1" />
               </div>
               <div style={formRowStyle}>
-                <label>Drivetrain</label>
+                <label>{t("Drivetrain")}</label>
                 <select value={carParams.drivetrain} onChange={e => updateParam('drivetrain', e.target.value)} style={inputStyle}>
-                  <option value="FWD">FWD (Front Wheel Drive)</option>
-                  <option value="RWD">RWD (Rear Wheel Drive)</option>
-                  <option value="AWD">AWD (All Wheel Drive)</option>
+                  <option value="FWD">{t("FWD (Front Wheel Drive)")}</option>
+                  <option value="RWD">{t("RWD (Rear Wheel Drive)")}</option>
+                  <option value="AWD">{t("AWD (All Wheel Drive)")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Induction</label>
+                <label>{t("Induction")}</label>
                 <select value={carParams.induction} onChange={e => updateParam('induction', e.target.value)} style={inputStyle}>
-                  <option value="NA">Naturally Aspirated (NA)</option>
-                  <option value="Supercharger">Supercharger</option>
-                  <option value="Turbo">Single Turbo</option>
-                  <option value="TwinTurbo">Twin Turbo</option>
+                  <option value="NA">{t("Naturally Aspirated (NA)")}</option>
+                  <option value="Supercharger">{t("Supercharger")}</option>
+                  <option value="Turbo">{t("Single Turbo")}</option>
+                  <option value="TwinTurbo">{t("Twin Turbo")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Max HP ({getPowerLabel()})</label>
+                <label>{t("Max HP")} ({getPowerLabel()})</label>
                 <input type="number" value={Math.round(displayMaxHp)} onChange={e => handleMaxHpChange(e.target.value)} style={inputStyle} step="10" />
               </div>
               <div style={formRowStyle}>
-                <label>Max HP RPM (rpm)</label>
+                <label>{t("Max HP RPM (rpm)")}</label>
                 <input type="number" value={carParams.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value))} style={inputStyle} step="100" />
               </div>
               <div style={formRowStyle}>
-                <label>Max Torque ({getTorqueLabel()})</label>
+                <label>{t("Max Torque")} ({getTorqueLabel()})</label>
                 <input type="number" value={Math.round(displayMaxTorque)} onChange={e => handleMaxTorqueChange(e.target.value)} style={inputStyle} step="10" />
               </div>
               <div style={formRowStyle}>
-                <label>Max Torque RPM (rpm)</label>
+                <label>{t("Max Torque RPM (rpm)")}</label>
                 <input type="number" value={carParams.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value))} style={inputStyle} step="100" />
               </div>
               
               <div style={formRowStyle}>
-                <label>Front Tire (mm/% R in)</label>
+                <label>{t("Front Tire (mm/% R in)")}</label>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                   <input type="number" value={carParams.frontTireWidth || 245} onChange={e => updateParam('frontTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} placeholder="245" />
                   <span style={{ color: 'gray' }}>/</span>
@@ -270,7 +387,7 @@ const CarParamsView: React.FC = () => {
                 </div>
               </div>
               <div style={formRowStyle}>
-                <label>Rear Tire (mm/% R in)</label>
+                <label>{t("Rear Tire (mm/% R in)")}</label>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                   <input type="number" value={carParams.rearTireWidth || 245} onChange={e => updateParam('rearTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} placeholder="245" />
                   <span style={{ color: 'gray' }}>/</span>
@@ -280,73 +397,73 @@ const CarParamsView: React.FC = () => {
                 </div>
               </div>
               
-              <h4 style={{ margin: '1rem 0 0.5rem 0', color: 'var(--text-secondary)' }}>Assist Inputs</h4>
+              <h4 style={{ margin: '1rem 0 0.5rem 0', color: 'var(--text-secondary)' }}>{t("Assist Inputs")}</h4>
               <div style={formRowStyle}>
-                <label>Aero Bal (0-1)</label>
+                <label>{t("Aero Bal (0-1)")}</label>
                 <input type="number" value={carParams.aeroBalance ?? 0.5} onChange={e => updateParam('aeroBalance', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
               </div>
               <div style={formRowStyle}>
-                <label>Aero Eff (0-1)</label>
+                <label>{t("Aero Eff (0-1)")}</label>
                 <input type="number" value={carParams.aeroEfficiency ?? 0.5} onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
               </div>
               <div style={formRowStyle}>
-                <label>Mech Bal (0-1)</label>
+                <label>{t("Mech Bal (0-1)")}</label>
                 <input type="number" value={carParams.mechBalance ?? 0.5} onChange={e => updateParam('mechBalance', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
               </div>
             </div>
             
             {/* Right Column: Adjustability Limits */}
             <div>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Adjustability Limits</h3>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>{t("Adjustability Limits")}</h3>
               <div style={formRowStyle}>
-                <label>Gearbox</label>
+                <label>{t("Gearbox")}</label>
                 <select value={carParams.adjustability.gearbox} onChange={e => updateAdjust('gearbox', e.target.value)} style={inputStyle}>
-                  <option value="Fixed">Fixed (Unadjustable)</option>
-                  <option value="FinalDrive">Final Drive Only</option>
-                  <option value="Full">Full Adjustable</option>
+                  <option value="Fixed">{t("Fixed (Unadjustable)")}</option>
+                  <option value="FinalDrive">{t("Final Drive Only")}</option>
+                  <option value="Full">{t("Full Adjustable")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Gears Count</label>
+                <label>{t("Gears Count")}</label>
                 <input type="number" value={carParams.adjustability.gears} min={4} max={10} onChange={e => updateAdjust('gears', parseInt(e.target.value))} style={inputStyle} />
               </div>
               <div style={formRowStyle}>
-                <label>Suspension</label>
+                <label>{t("Suspension")}</label>
                 <select value={carParams.adjustability.suspension} onChange={e => updateAdjust('suspension', e.target.value)} style={inputStyle}>
-                  <option value="Fixed">Fixed</option>
-                  <option value="Street">Street (No Springs/Dampers)</option>
-                  <option value="Sport">Sport (No Springs/Dampers)</option>
-                  <option value="Race">Race (Full Adjustable)</option>
+                  <option value="Fixed">{t("Fixed")}</option>
+                  <option value="Street">{t("Street (No Springs/Dampers)")}</option>
+                  <option value="Sport">{t("Sport (No Springs/Dampers)")}</option>
+                  <option value="Race">{t("Race (Full Adjustable)")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Anti-roll Bars</label>
+                <label>{t("Anti-roll Bars")}</label>
                 <select value={carParams.adjustability.arb} onChange={e => updateAdjust('arb', e.target.value)} style={inputStyle}>
-                  <option value="Fixed">Fixed</option>
-                  <option value="Adjustable">Adjustable</option>
+                  <option value="Fixed">{t("Fixed")}</option>
+                  <option value="Adjustable">{t("Adjustable")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Aero</label>
+                <label>{t("Aero")}</label>
                 <select value={carParams.adjustability.aero || 'Fixed'} onChange={e => updateAdjust('aero', e.target.value)} style={inputStyle}>
-                  <option value="Fixed">Fixed</option>
-                  <option value="Front Only">Front Only</option>
-                  <option value="Rear Only">Rear Only</option>
-                  <option value="Adjustable">Adjustable</option>
+                  <option value="Fixed">{t("Fixed")}</option>
+                  <option value="Front Only">{t("Front Only")}</option>
+                  <option value="Rear Only">{t("Rear Only")}</option>
+                  <option value="Adjustable">{t("Adjustable")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Brakes</label>
+                <label>{t("Brakes")}</label>
                 <select value={carParams.adjustability.brakes || 'Fixed'} onChange={e => updateAdjust('brakes', e.target.value)} style={inputStyle}>
-                  <option value="Fixed">Fixed</option>
-                  <option value="Adjustable">Adjustable</option>
+                  <option value="Fixed">{t("Fixed")}</option>
+                  <option value="Adjustable">{t("Adjustable")}</option>
                 </select>
               </div>
               <div style={formRowStyle}>
-                <label>Differential</label>
+                <label>{t("Differential")}</label>
                 <select value={carParams.adjustability.diff || 'Fixed'} onChange={e => updateAdjust('diff', e.target.value)} style={inputStyle}>
-                  <option value="Fixed">Fixed</option>
-                  <option value="Adjustable">Adjustable</option>
+                  <option value="Fixed">{t("Fixed")}</option>
+                  <option value="Adjustable">{t("Adjustable")}</option>
                 </select>
               </div>
             </div>
@@ -369,7 +486,7 @@ const CarParamsView: React.FC = () => {
               marginTop: '0.5rem'
             }}
           >
-            📥 從 Dyno 數據導入 Max HP / Torque (含 RPM)
+            {t("📥 Import Max HP / Torque from Dyno (includes RPM)")}
           </button>
         </div>
       ) : (
@@ -377,7 +494,7 @@ const CarParamsView: React.FC = () => {
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1, minHeight: 0 }}>
           {/* Title row with toggles */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.1rem' }}>Live Dyno Curve</h2>
+            <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.1rem' }}>{t("Live Dyno Curve")}</h2>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <button
                 onClick={() => setShowClearConfirm(true)}
@@ -390,28 +507,314 @@ const CarParamsView: React.FC = () => {
                   padding: '0.3rem 0.6rem'
                 }}
               >
-                清除數據
+                {t("Clear Data")}
               </button>
             </div>
           </div>
 
-          {/* Toggle switches row */}
+          {/* Toggle switches and Gearing controls row */}
           <div style={{
-            display: 'flex', gap: '1.5rem',
-            padding: '0.5rem 0.8rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.8rem',
+            padding: '0.8rem',
             background: 'rgba(0,0,0,0.3)',
             borderRadius: '6px',
-            alignItems: 'center',
-            fontSize: '0.85rem',
-            width: 'fit-content'
+            fontSize: '0.85rem'
           }}>
-            <ToggleSwitch
-              label="Dyno 紀錄"
-              checked={settings.dyno_recording}
-              onChange={(v) => updateSettings({ dyno_recording: v })}
-              color="#00e676"
-            />
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <ToggleSwitch
+                label={t("Dyno Record")}
+                checked={settings.dyno_recording}
+                onChange={(v) => updateSettings({ dyno_recording: v })}
+                color="#00e676"
+              />
+              
+              {settings.dyno_recording && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{t("Target Test Gear")}:</span>
+                    <select
+                      value={settings.dyno_test_gear ?? 4}
+                      onChange={(e) => updateSettings({ dyno_test_gear: parseInt(e.target.value) })}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)',
+                        color: 'white',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '4px',
+                        padding: '0.2rem 0.4rem',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      <option value={0}>{t("Any Gear (Free Run)")}</option>
+                      {[1,2,3,4,5,6,7,8,9,10].map(g => (
+                        <option key={g} value={g}>{g} {t("st")}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <ToggleSwitch
+                    label={t("Filter Tire Slip")}
+                    checked={settings.dyno_filter_slip ?? true}
+                    onChange={(v) => updateSettings({ dyno_filter_slip: v })}
+                    color="#00b4ff"
+                  />
+                  
+                  <ToggleSwitch
+                    label={t("Filter Gear Shifting Spikes")}
+                    checked={settings.dyno_filter_transients ?? true}
+                    onChange={(v) => updateSettings({ dyno_filter_transients: v })}
+                    color="#00b4ff"
+                  />
+                </>
+              )}
+            </div>
           </div>
+
+          {/* Guided Dyno Wizard Panel */}
+          {settings.dyno_recording && (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: '8px',
+              padding: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
+                  {t("Dyno Test Wizard")}
+                </h3>
+                
+                {telemetryData && (
+                  <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <span>{t("GEAR")}: <strong style={{ color: 'white' }}>{telemetryData.Gear}</strong></span>
+                    <span>RPM: <strong style={{ color: 'white' }}>{Math.round(telemetryData.CurrentEngineRpm || 0)}</strong></span>
+                    <span>{t("Throttle")}: <strong style={{ color: 'white' }}>{Math.round((telemetryData.AccelInput || 0) / 2.55)}%</strong></span>
+                  </div>
+                )}
+              </div>
+
+              {/* Guided Status Card */}
+              {(() => {
+                if (!telemetryData) {
+                  return (
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0.5rem 0', fontStyle: 'italic' }}>
+                      {t("No car loaded or telemetry inactive. Start driving a car to auto-create profile!")}
+                    </div>
+                  );
+                }
+
+                const currentGear = telemetryData.Gear || 0;
+                const currentRpm = telemetryData.CurrentEngineRpm || 0;
+                const maxRpm = telemetryData.EngineMaxRpm || 8000;
+                const accel = telemetryData.AccelInput || 0;
+                const handbrake = telemetryData.HandBrakeInput || 0;
+                const targetGear = settings.dyno_test_gear ?? 4;
+                
+                // Launch Control active check
+                const isLaunching = currentGear === 1 && handbrake > 50 && accel > 200;
+                if (isLaunching) {
+                  return (
+                    <div style={{
+                      background: 'rgba(0, 180, 255, 0.1)',
+                      border: '1px solid rgba(0, 180, 255, 0.3)',
+                      borderRadius: '6px',
+                      padding: '0.75rem',
+                      color: '#33c5ff',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.25rem'
+                    }}>
+                      <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>🚀</span> {t("🚀 Launch Control Active! Recording paused.")}
+                      </div>
+                      <div style={{ opacity: 0.8, fontSize: '0.85rem' }}>
+                        {t("Launch Control Active. Please perform Dyno test in 4th/5th gear for accuracy.")}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Slip check
+                const drivetrain = carParams.drivetrain || "RWD";
+                const slipRatios = telemetryData.TireSlipRatio || [0,0,0,0];
+                let isSlipped = false;
+                if (settings.dyno_filter_slip ?? true) {
+                  if (drivetrain === "RWD" && (Math.abs(slipRatios[2]) > 0.10 || Math.abs(slipRatios[3]) > 0.10)) isSlipped = true;
+                  else if (drivetrain === "FWD" && (Math.abs(slipRatios[0]) > 0.10 || Math.abs(slipRatios[1]) > 0.10)) isSlipped = true;
+                  else if (drivetrain === "AWD" && slipRatios.some(s => Math.abs(s) > 0.10)) isSlipped = true;
+                }
+
+                if (isSlipped && testState === 'recording') {
+                  return (
+                    <div style={{
+                      background: 'rgba(255, 170, 0, 0.1)',
+                      border: '1px solid rgba(255, 170, 0, 0.3)',
+                      borderRadius: '6px',
+                      padding: '0.75rem',
+                      color: '#ffaa00',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      animation: 'pulse 1s infinite alternate'
+                    }}>
+                      {t("⚠️ Tire Slip Detected! Recording paused.")}
+                    </div>
+                  );
+                }
+
+                switch (testState) {
+                  case 'ready':
+                    return (
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '6px',
+                        padding: '0.75rem',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.85rem'
+                      }}>
+                        {targetGear === 0 
+                          ? t("Ready! Perform a Full Throttle (WOT) run in any gear.") 
+                          : t("Please shift to gear {gear} and slow down below 2,000 RPM.").replace('{gear}', targetGear.toString())}
+                      </div>
+                    );
+                  case 'waiting':
+                    return (
+                      <div style={{
+                        background: 'rgba(0, 230, 118, 0.08)',
+                        border: '1px solid rgba(0, 230, 118, 0.25)',
+                        borderRadius: '6px',
+                        padding: '0.75rem',
+                        color: '#00e676',
+                        fontSize: '0.85rem',
+                        fontWeight: 600
+                      }}>
+                        {t("Ready! Perform a Full Throttle (WOT) run on a straight.")}
+                      </div>
+                    );
+                  case 'recording':
+                    const progress = Math.min(100, Math.max(0, ((currentRpm - 2000) / (maxRpm - 2000)) * 100));
+                    return (
+                      <div style={{
+                        background: 'rgba(255, 60, 60, 0.08)',
+                        border: '1px solid rgba(255, 60, 60, 0.25)',
+                        borderRadius: '6px',
+                        padding: '0.75rem',
+                        color: '#ff6b6b',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}>
+                        <div style={{ fontWeight: 600 }}>{t("Recording Dyno Curve... Keep Full Throttle!")}</div>
+                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${progress}%`, height: '100%', background: '#ff4444', transition: 'width 0.1s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  case 'completed':
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{
+                          background: 'rgba(0, 230, 118, 0.12)',
+                          border: '1px solid rgba(0, 230, 118, 0.4)',
+                          borderRadius: '6px',
+                          padding: '0.75rem',
+                          color: '#00e676',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}>
+                          {t("Dyno Run Completed! Check your new curve.")}
+                        </div>
+                        
+                        {runDuration !== null && (
+                          <div style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            {runDuration < 3.0 ? (
+                              <span style={{ color: '#ffaa00' }}>
+                                {t("Run duration too short ({sec}s). Gearing might be too short (high ratio). Low-gear inertial losses can underestimate horsepower. Consider tuning this gear longer (lower ratio) or using a higher gear.").replace('{sec}', runDuration.toFixed(1))}
+                              </span>
+                            ) : runDuration > 12.0 ? (
+                              <span style={{ color: '#ffaa00' }}>
+                                {t("Run duration too long ({sec}s). Aerodynamic drag at high speeds will underestimate high-RPM horsepower. Consider tuning this gear shorter (higher ratio) or using a lower gear.").replace('{sec}', runDuration.toFixed(1))}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#00e676' }}>
+                                🏆 {t("Run duration optimal ({sec}s). Excellent Dyno measurement quality!").replace('{sec}', runDuration.toFixed(1))}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                }
+              })()}
+
+              {/* Gearing Optimization Recommendations or Warnings */}
+              {recommendedGear ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.4rem',
+                  fontSize: '0.82rem',
+                  color: '#00b4ff',
+                  background: 'rgba(0, 180, 255, 0.05)',
+                  border: '1px solid rgba(0, 180, 255, 0.15)',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px'
+                }}>
+                  <span style={{ flexShrink: 0 }}>💡</span>
+                  <span>
+                    {t("Recommended Test Gear: {gear} (Ratio: {ratio}, closest to 1.00)")
+                      .replace('{gear}', recommendedGear.gear.toString())
+                      .replace('{ratio}', recommendedGear.ratio.toFixed(2))}
+                  </span>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                  fontSize: '0.82rem',
+                  color: '#ffaa00',
+                  background: 'rgba(255, 170, 0, 0.05)',
+                  border: '1px solid rgba(255, 170, 0, 0.15)',
+                  padding: '0.75rem',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold' }}>
+                    <span>⚠️</span>
+                    <span>{t("Gearing data not found for this car. The system cannot recommend the optimal test gear or perform precise diagnostics.")}</span>
+                  </div>
+                  <p style={{ margin: 0, opacity: 0.8, fontSize: '0.8rem', lineHeight: '1.4' }}>
+                    {t("Please complete your gearing setup in Tuning Setup -> Gearing first, save it, and then return here for the Dyno run.")}
+                  </p>
+                  {setActiveTab && (
+                    <button
+                      onClick={() => setActiveTab('tuning')}
+                      style={{
+                        ...btnStyle,
+                        background: 'rgba(255, 170, 0, 0.15)',
+                        color: '#ffbb33',
+                        border: '1px solid rgba(255, 170, 0, 0.3)',
+                        fontSize: '0.8rem',
+                        padding: '0.3rem 0.6rem',
+                        alignSelf: 'flex-start',
+                        marginTop: '0.2rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t("Go to Gearing Setup")}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Clear Confirmation Dialog */}
           {showClearConfirm && (
@@ -427,7 +830,7 @@ const CarParamsView: React.FC = () => {
               gap: '1rem'
             }}>
               <span style={{ color: '#ff6b6b', fontSize: '0.9rem' }}>
-                ⚠ 確定要清除此車輛的所有 Dyno 數據嗎？此操作無法復原。
+                {t("⚠ Are you sure you want to clear all Dyno data for this car? This cannot be undone.")}
               </span>
               <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                 <button
@@ -443,7 +846,7 @@ const CarParamsView: React.FC = () => {
                     padding: '0.35rem 0.75rem'
                   }}
                 >
-                  確認清除
+                  {t("Confirm Clear")}
                 </button>
                 <button
                   onClick={() => setShowClearConfirm(false)}
@@ -455,14 +858,14 @@ const CarParamsView: React.FC = () => {
                     padding: '0.35rem 0.75rem'
                   }}
                 >
-                  取消
+                  {t("Cancel")}
                 </button>
               </div>
             </div>
           )}
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>
-            在遊戲中以全油門駕駛車輛，系統將自動收集並記錄各 RPM 區段的馬力與扭矩數據。每個 RPM 點保留最多 50 筆歷史紀錄，透過 IQR 過濾離群值後加權計算。
+            {t("Drive the car at full throttle in-game to collect horsepower and torque data across RPM ranges. Each RPM point retains up to 50 historical records, filtered using IQR and weighted.")}
           </p>
 
           <div style={{ flex: 1, minHeight: 0 }}>
@@ -497,8 +900,8 @@ const CarParamsView: React.FC = () => {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
                 {settings.dyno_recording
-                  ? '尚未收集到 Dyno 數據。請在遊戲中全油門行駛！'
-                  : 'Dyno 紀錄已關閉。開啟後將開始收集數據。'}
+                  ? t("No Dyno data collected yet. Please drive at full throttle in-game!")
+                  : t("Dyno recording is disabled. Enable it to start collecting data.")}
               </div>
             )}
           </div>

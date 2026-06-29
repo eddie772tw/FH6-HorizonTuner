@@ -3,6 +3,8 @@ import { useTelemetry, telemetryEmitter } from '../hooks/useTelemetry';
 import { useSettings } from '../context/SettingsContext';
 import { useCarParams } from '../context/CarParamsContext';
 import AnalysisView from './AnalysisView';
+import DragTestView from './DragTestView';
+
 
 const getCarClassString = (cls?: number) => {
   if (cls === undefined) return '';
@@ -77,6 +79,7 @@ const InputBar: React.FC<{label: string, selector: (d: any) => number, max: numb
 // --- COMPONENT: SteerBar ---
 const SteerBar: React.FC = () => {
   const barRef = useRef<HTMLDivElement>(null);
+  const { t } = useSettings();
   useEffect(() => {
     const handleDraw = (e: any) => {
       const data = e.detail;
@@ -93,8 +96,8 @@ const SteerBar: React.FC = () => {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-        <span>Steer L</span>
-        <span>Steer R</span>
+        <span>{t("Steer L")}</span>
+        <span>{t("Steer R")}</span>
       </div>
       <div style={{ width: '100%', height: '16px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', position: 'relative', marginTop: '4px' }}>
         <div ref={barRef} style={{ 
@@ -117,6 +120,7 @@ const GForceRadar: React.FC = () => {
   const [markers, setMarkers] = useState<{lat: number, lon: number}[]>([]);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
+  const { t } = useSettings();
 
   useEffect(() => {
     const handleDraw = (e: any) => {
@@ -199,10 +203,10 @@ const GForceRadar: React.FC = () => {
         <div style={{ position: 'absolute', width: '80px', height: '80px', borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.1)' }} />
         <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.15)' }} />
         <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.15)' }} />
-        <span style={{ position: 'absolute', top: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>BRAKE</span>
-        <span style={{ position: 'absolute', bottom: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>ACCEL</span>
-        <span style={{ position: 'absolute', left: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>L</span>
-        <span style={{ position: 'absolute', right: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>R</span>
+        <span style={{ position: 'absolute', top: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("BRAKE")}</span>
+        <span style={{ position: 'absolute', bottom: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("ACCEL")}</span>
+        <span style={{ position: 'absolute', left: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("L")}</span>
+        <span style={{ position: 'absolute', right: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("R")}</span>
         
         {markers.map((p, i) => (
           <div key={i} style={{ 
@@ -220,11 +224,11 @@ const GForceRadar: React.FC = () => {
       <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.8rem' }}>
         <div style={{ textAlign: 'center' }}>
           <span ref={latRef} style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>0.00</span>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginLeft: '4px' }}>Lat G</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginLeft: '4px' }}>{t("Lat G")}</span>
         </div>
         <div style={{ textAlign: 'center' }}>
           <span ref={lonRef} style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)' }}>0.00</span>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginLeft: '4px' }}>Lon G</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginLeft: '4px' }}>{t("Lon G")}</span>
         </div>
       </div>
     </div>
@@ -243,7 +247,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
   
-  const { convertTemp } = useSettings();
+  const { convertTemp, t } = useSettings();
   const tempUnit = convertTemp(0).label;
 
   useEffect(() => {
@@ -434,11 +438,11 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
       <div style={{ flex: 1, display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: !isLeft ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-end' : 'flex-start' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Slip Angle</span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t("Slip Angle")}</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={angRef}>0.00</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-end' : 'flex-start' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Slip Ratio</span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t("Slip Ratio")}</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={ratioRef}>0.00</span>
           </div>
         </div>
@@ -458,6 +462,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   const minRef = useRef<HTMLSpanElement>(null);
   const maxRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { t } = useSettings();
   
   const hist = useRef<{travel: number, time: number}[]>([]);
   const lastTimeRef = useRef(performance.now());
@@ -587,9 +592,9 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '0 0.2rem' }}>
-        <span>Min: <span style={{ fontWeight: 600 }} ref={minRef}>0.00</span></span>
+        <span>{t("Min")}: <span style={{ fontWeight: 600 }} ref={minRef}>0.00</span></span>
         <span style={{ color: 'white', fontWeight: 'bold' }} ref={textRef}>0.00</span>
-        <span>Max: <span style={{ fontWeight: 600 }} ref={maxRef}>0.00</span></span>
+        <span>{t("Max")}: <span style={{ fontWeight: 600 }} ref={maxRef}>0.00</span></span>
       </div>
     </div>
   );
@@ -597,9 +602,9 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
 
 // --- COMPONENT: TelemetryView MAIN ---
 const TelemetryView: React.FC = () => {
-  const [subTab, setSubTab] = useState<'live' | 'analysis'>('live');
+  const [subTab, setSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
   const { data } = useTelemetry();
-  const { convertSpeed, convertPower, convertTorque, convertBoost } = useSettings();
+  const { convertSpeed, convertPower, convertTorque, convertBoost, t } = useSettings();
   const { carName } = useCarParams();
 
   const isRacing = data?.IsRaceOn === 1;
@@ -628,13 +633,14 @@ const TelemetryView: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: isRacing ? '0 0 10px var(--primary)' : 'none', transition: 'all 0.3s' }} />
             <span style={{ fontWeight: 600, color: isRacing ? '#fff' : 'var(--text-secondary)' }}>
-              {isRacing ? 'LIVE TELEMETRY' : 'PAUSED'}
+              {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
             </span>
           </div>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={subTab === 'live' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('live')}>Dashboard</button>
-            <button style={subTab === 'analysis' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('analysis')}>Post-Race Analysis</button>
+            <button style={subTab === 'live' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
+            <button style={subTab === 'analysis' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('analysis')}>{t("Post-Race Analysis")}</button>
+            <button style={subTab === 'drag' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
           </div>
         </div>
         <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
@@ -645,17 +651,19 @@ const TelemetryView: React.FC = () => {
 
       {subTab === 'analysis' ? (
         <AnalysisView />
+      ) : subTab === 'drag' ? (
+        <DragTestView />
       ) : (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
       
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>Driver Inputs & Engine</h3>
+        <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
           <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '0.5rem' }}>
                 <div><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>{Math.round(rpm)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>RPM</span></div></div>
-                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>{gear === 0 ? 'R' : gear} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>GEAR</span></div></div>
+                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>{gear === 0 ? 'R' : gear} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("GEAR")}</span></div></div>
                 <div style={{ textAlign: 'right' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>{Math.round(speedData.value)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{speedData.label}</span></div></div>
               </div>
               <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
@@ -666,30 +674,30 @@ const TelemetryView: React.FC = () => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '0.5rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <InputBar label="Throttle" selector={d => d.AccelInput || 0} max={255} color="#00ff00" />
-              <InputBar label="Brake" selector={d => d.BrakeInput || 0} max={255} color="#ff0000" />
+              <InputBar label={t("Throttle")} selector={d => d.AccelInput || 0} max={255} color="#00ff00" />
+              <InputBar label={t("Brake")} selector={d => d.BrakeInput || 0} max={255} color="#ff0000" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <InputBar label="Clutch" selector={d => d.ClutchInput || 0} max={255} color="#0088ff" />
-              <InputBar label="Handbrake" selector={d => d.HandBrakeInput || 0} max={255} color="#ffaa00" />
+              <InputBar label={t("Clutch")} selector={d => d.ClutchInput || 0} max={255} color="#0088ff" />
+              <InputBar label={t("Handbrake")} selector={d => d.HandBrakeInput || 0} max={255} color="#ffaa00" />
             </div>
           </div>
         </div>
       </div>
 
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>Vehicle Dynamics Overview</h3>
+        <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
         <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Power</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(powerData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{powerData.label}</span></div></div>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Torque</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(torqueData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{torqueData.label}</span></div></div>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Boost</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: boostData.value > 0 ? 'var(--secondary)' : '#fff' }}>{boostData.value.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{boostData.label}</span></div></div>
+              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Power")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(powerData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{powerData.label}</span></div></div>
+              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Torque")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(torqueData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{torqueData.label}</span></div></div>
+              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Boost")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: boostData.value > 0 ? 'var(--secondary)' : '#fff' }}>{boostData.value.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{boostData.label}</span></div></div>
             </div>
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>Current Lap:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(currentLap)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>Last Lap:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(lastLap)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>Best Lap:</span><span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{formatTime(bestLap)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Current Lap")}:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(currentLap)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Last Lap")}:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(lastLap)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>{t("Best Lap")}:</span><span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{formatTime(bestLap)}</span></div>
             </div>
           </div>
           <GForceRadar />
@@ -697,22 +705,22 @@ const TelemetryView: React.FC = () => {
       </div>
 
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Tire Grip & Status</h3>
+        <h3 style={{ marginBottom: '1rem' }}>{t("Tire Grip & Status")}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
-          <TireRadar title="Front Left" isLeft={true} tireIdx={0} />
-          <TireRadar title="Front Right" isLeft={false} tireIdx={1} />
-          <TireRadar title="Rear Left" isLeft={true} tireIdx={2} />
-          <TireRadar title="Rear Right" isLeft={false} tireIdx={3} />
+          <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
+          <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
+          <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
+          <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} />
         </div>
       </div>
 
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Suspension Travel</h3>
+        <h3 style={{ marginBottom: '1rem' }}>{t("Suspension Travel")}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
-          <SuspensionBar title="Front Left" isLeft={true} tireIdx={0} />
-          <SuspensionBar title="Front Right" isLeft={false} tireIdx={1} />
-          <SuspensionBar title="Rear Left" isLeft={true} tireIdx={2} />
-          <SuspensionBar title="Rear Right" isLeft={false} tireIdx={3} />
+          <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
+          <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
+          <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />
+          <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} />
         </div>
       </div>
 
