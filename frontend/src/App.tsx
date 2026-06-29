@@ -5,13 +5,21 @@ import TuningView from './components/TuningView';
 import CarParamsView from './components/CarParamsView';
 import SettingsView from './components/SettingsView';
 import { useTelemetry } from './hooks/useTelemetry';
-import { CarParamsProvider } from './context/CarParamsContext';
+import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
 import { SettingsProvider } from './context/SettingsContext';
 import './App.css';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
   const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'settings'>('telemetry');
+  const { carId, setCarId, telemetryCarId } = useCarParams();
+
+  // Auto-synchronize back to telemetry car when returning to telemetry tab
+  React.useEffect(() => {
+    if (activeTab === 'telemetry' && telemetryCarId && telemetryCarId !== '0' && carId !== telemetryCarId) {
+      setCarId(telemetryCarId);
+    }
+  }, [activeTab, telemetryCarId, carId, setCarId]);
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>

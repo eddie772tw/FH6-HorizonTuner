@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
 
@@ -14,6 +14,12 @@ export interface CarParams {
   aeroBalance: number;
   aeroEfficiency: number;
   mechBalance: number;
+  frontTireWidth?: number;
+  frontTireAspect?: number;
+  frontTireRim?: number;
+  rearTireWidth?: number;
+  rearTireAspect?: number;
+  rearTireRim?: number;
   adjustability: {
     gearbox: 'Fixed' | 'FinalDrive' | 'Full';
     gears: number; // 4 to 10
@@ -43,6 +49,8 @@ interface CarParamsContextType {
   settings: any;
   updateSettings: (updates: any) => Promise<void>;
   isLoading: boolean;
+  carsWithParams: { id: string; name: string }[];
+  telemetryCarId: string;
 }
 
 const CarParamsContext = createContext<CarParamsContextType | undefined>(undefined);
@@ -56,23 +64,42 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [carParams, setCarParams] = useState<CarParams | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [carDb, setCarDb] = useState<Record<string, any>>({});
+  const [carsWithParams, setCarsWithParams] = useState<{ id: string; name: string }[]>([]);
 
-  // Fetch car database
+  const fetchCarsWithParams = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8001/api/cars/with_params');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setCarsWithParams(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch cars with params", e);
+    }
+  };
+
+  // Fetch car database and cars with params
   useEffect(() => {
     fetch('http://127.0.0.1:8001/api/cars/database')
       .then(r => r.json())
       .then(data => setCarDb(data))
       .catch(e => console.error(e));
+    fetchCarsWithParams();
   }, []);
 
   const carName = carDb[carId]?.display_name || 'Unknown Car';
 
-  // Auto-switch to telemetry car id if it's active
+  const prevTelemetryCarIdRef = useRef<string>('');
+
+  // Auto-switch to telemetry car id if it's active and has actually changed
   useEffect(() => {
-    if (telemetryCarId && telemetryCarId !== '0' && telemetryCarId !== carId) {
-      setCarId(telemetryCarId);
+    if (telemetryCarId && telemetryCarId !== '0') {
+      if (telemetryCarId !== prevTelemetryCarIdRef.current) {
+        setCarId(telemetryCarId);
+      }
     }
-  }, [telemetryCarId, carId]);
+    prevTelemetryCarIdRef.current = telemetryCarId;
+  }, [telemetryCarId]);
 
   // Load params when carId changes
   useEffect(() => {
@@ -97,6 +124,12 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
               aeroBalance: 0.50,
               aeroEfficiency: 0.50,
               mechBalance: 0.50,
+              frontTireWidth: 245,
+              frontTireAspect: 40,
+              frontTireRim: 18,
+              rearTireWidth: 245,
+              rearTireAspect: 40,
+              rearTireRim: 18,
               adjustability: {
                 gearbox: 'Full',
                 gears: 6,
@@ -147,6 +180,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(carParams)
       });
+      await fetchCarsWithParams();
     } catch (e) {
       console.error("Failed to save car params", e);
     }
@@ -185,7 +219,8 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     <CarParamsContext.Provider value={{
       carId, setCarId, carName, carParams, setCarParams,
       saveCarParams, clearDynoCurve, importDynoValues,
-      settings, updateSettings, isLoading
+      settings, updateSettings, isLoading,
+      carsWithParams, telemetryCarId
     }}>
       {children}
     </CarParamsContext.Provider>

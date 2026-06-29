@@ -1,0 +1,23 @@
+{
+    "weight": 1500,
+    "weight_distribution": 50,
+    "drivetrain": "RWD",
+    "induction": "NA",
+    "maxHp": 0,
+    "maxTorque": 0,
+    "maxHpRpm": 0,
+    "maxTorqueRpm": 0,
+    "aeroBalance": 0.5,
+    "aeroEfficiency": 0.8,
+    "mechBalance": 0.5,
+    "adjustability": {
+        "gearbox": "Full",
+        "gears": 6,
+        "suspension": "Race",
+        "arb": "Adjustable",
+        "aero": "Rear Only",
+        "brakes": "Adjustable",
+        "diff": "Adjustable"
+    },
+    "dyno_curve": {}
+}

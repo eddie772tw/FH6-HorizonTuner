@@ -16,6 +16,7 @@ export interface UnitSettings {
 export interface AppSettings {
   dyno_recording: boolean;
   race_recording: boolean;
+  language: string;
   units: UnitSettings;
 }
 
@@ -23,6 +24,8 @@ interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => Promise<void>;
   isLoading: boolean;
+  t: (text: string) => string;
+  availableLanguages: Array<{ code: string; name: string }>;
   // Speed conversions (input in m/s)
   convertSpeed: (ms: number) => { value: number; label: string };
   // Weight conversions (input in lbs)
@@ -69,6 +72,7 @@ const defaultUnits: UnitSettings = {
 const defaultSettings: AppSettings = {
   dyno_recording: true,
   race_recording: true,
+  language: 'en-us',
   units: defaultUnits
 };
 
@@ -77,11 +81,26 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [availableLanguages, setAvailableLanguages] = useState<Array<{ code: string; name: string }>>([
+    { code: 'en-us', name: 'English (US)' }
+  ]);
 
   // Fetch settings from backend
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+        // Fetch languages first
+        try {
+          const langRes = await fetch('http://127.0.0.1:8001/api/languages');
+          const langData = await langRes.json();
+          if (Array.isArray(langData)) {
+            setAvailableLanguages(langData);
+          }
+        } catch (e) {
+          console.error('Failed to fetch available languages', e);
+        }
+
         const res = await fetch('http://127.0.0.1:8001/api/settings');
         const data = await res.json();
         if (data && !data.error) {
@@ -89,6 +108,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const merged: AppSettings = {
             dyno_recording: data.dyno_recording ?? defaultSettings.dyno_recording,
             race_recording: data.race_recording ?? defaultSettings.race_recording,
+            language: data.language ?? defaultSettings.language,
             units: {
               ...defaultUnits,
               ...(data.units || {})
@@ -104,6 +124,26 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     fetchSettings();
   }, []);
+
+  // Fetch translation when language changes
+  useEffect(() => {
+    const fetchTranslation = async () => {
+      if (settings.language === 'en-us') {
+        setTranslations({});
+        return;
+      }
+      try {
+        const res = await fetch(`http://127.0.0.1:8001/api/languages/${settings.language}`);
+        const data = await res.json();
+        if (data && !data.error) {
+          setTranslations(data);
+        }
+      } catch (e) {
+        console.error(`Failed to fetch translation for ${settings.language}`, e);
+      }
+    };
+    fetchTranslation();
+  }, [settings.language]);
 
   const updateSettings = async (updates: any) => {
     let newSettings = { ...settings };
@@ -266,11 +306,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { value: nm, label: 'N·m' };
   };
 
+  const t = (text: string): string => {
+    if (settings.language === 'en-us') {
+      return text;
+    }
+    return translations[text] ?? text;
+  };
+
   return (
     <SettingsContext.Provider value={{
       settings,
       updateSettings,
       isLoading,
+      t,
+      availableLanguages,
       convertSpeed,
       convertWeight,
       convertWeightToLbs,

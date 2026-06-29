@@ -1,5 +1,6 @@
 import React from 'react';
 import '../App.css';
+import { useSettings } from '../context/SettingsContext';
 
 interface NavigationProps {
   activeTab: 'telemetry' | 'tuning' | 'car_params' | 'settings';
@@ -8,6 +9,8 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConnected }) => {
+  const { t } = useSettings();
+
   return (
     <nav style={{ 
       display: 'flex', 
@@ -31,25 +34,25 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             onClick={() => setActiveTab('telemetry')}
             style={getTabStyle(activeTab === 'telemetry')}
           >
-            Telemetry
+            {t("Telemetry")}
           </button>
           <button 
             onClick={() => setActiveTab('tuning')}
             style={getTabStyle(activeTab === 'tuning')}
           >
-            Tuning Setup
+            {t("Tuning Setup")}
           </button>
           <button 
             onClick={() => setActiveTab('car_params')}
             style={getTabStyle(activeTab === 'car_params')}
           >
-            Car Parameters
+            {t("Car Parameters")}
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
             style={getTabStyle(activeTab === 'settings')}
           >
-            Settings
+            {t("Settings")}
           </button>
         </div>
       </div>
@@ -61,7 +64,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
           boxShadow: `0 0 8px ${isConnected ? '#00ff00' : '#ff0000'}`
         }} />
         <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {isConnected ? 'TELEMETRY LIVE' : 'DISCONNECTED'}
+          {isConnected ? t("TELEMETRY LIVE") : t("DISCONNECTED")}
         </span>
       </div>
     </nav>

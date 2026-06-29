@@ -17,8 +17,20 @@ import {
 import { useSettings } from '../context/SettingsContext';
 import { useTelemetry } from '../hooks/useTelemetry';
 
+const DEFAULT_TUNING = {
+  tires: { front: 2.1, rear: 2.1 },
+  gearing: { finalDrive: 3.40, gears: [2.89, 1.99, 1.49, 1.16, 0.94, 0.78, 0.65, 0.55, 0.50, 0.45], maxRpm: 8000 },
+  alignment: { camberF: -1.5, camberR: -1.0, toeF: 0.0, toeR: 0.0, caster: 5.0 },
+  arb: { front: 30, rear: 30 },
+  springs: { front: 100, rear: 100, heightF: 15, heightR: 15 },
+  damping: { reboundF: 10, reboundR: 10, bumpF: 6, bumpR: 6 },
+  aero: { front: 100, rear: 150 },
+  brake: { balance: 50, pressure: 100 },
+  diff: { accelF: 50, decelF: 0, accelR: 50, decelR: 0, center: 65 }
+};
+
 const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActiveTab }) => {
-  const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
+  const { carId, setCarId, carName, carParams, setCarParams, saveCarParams, carsWithParams } = useCarParams();
   const [activeSubTab, setActiveSubTab] = useState<string>('Gearing');
   const [saveName, setSaveName] = useState<string>(`Untitled_${new Date().toISOString().slice(0,10)}`);
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
@@ -46,18 +58,13 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     'Damping', 'Aero', 'Brake', 'Differential'
   ];
 
+  const latestCarIdRef = React.useRef(carId);
+  useEffect(() => {
+    latestCarIdRef.current = carId;
+  }, [carId]);
+
   // Comprehensive Tuning State (Internal always Metric)
-  const [tuning, setTuning] = useState({
-    tires: { front: 2.1, rear: 2.1 },
-    gearing: { finalDrive: 3.40, gears: [2.89, 1.99, 1.49, 1.16, 0.94, 0.78, 0.65, 0.55, 0.50, 0.45], maxRpm: 8000 },
-    alignment: { camberF: -1.5, camberR: -1.0, toeF: 0.0, toeR: 0.0, caster: 5.0 },
-    arb: { front: 30, rear: 30 },
-    springs: { front: 100, rear: 100, heightF: 15, heightR: 15 },
-    damping: { reboundF: 10, reboundR: 10, bumpF: 6, bumpR: 6 },
-    aero: { front: 100, rear: 150 },
-    brake: { balance: 50, pressure: 100 },
-    diff: { accelF: 50, decelF: 0, accelR: 50, decelR: 0, center: 65 }
-  });
+  const [tuning, setTuning] = useState(DEFAULT_TUNING);
 
   const [theoreticalData, setTheoreticalData] = useState({
     weight: '',
@@ -68,7 +75,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
   const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift'>('GT');
   const [inGameTopSpeed, setInGameTopSpeed] = useState<number>(300);
-
+  const [overriddenTopSpeed, setOverriddenTopSpeed] = useState<number | null>(null);
+  const [recommendedGearCount, setRecommendedGearCount] = useState<number | null>(null);
 
   // Assist States
   const [targetFreq, setTargetFreq] = useState<number>(2.25);
@@ -196,17 +204,59 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
   const gearboxFixed = carParams?.adjustability?.gearbox === 'Fixed';
   const gearboxFull = carParams?.adjustability?.gearbox === 'Full';
 
+  // Calculate tire radius based on front/rear tire dimensions and drivetrain (with AWD torque split weighting)
+  const getTireRadius = () => {
+    const defaultRadius = 0.35;
+    if (!carParams) return defaultRadius;
+
+    const {
+      frontTireWidth, frontTireAspect, frontTireRim,
+      rearTireWidth, rearTireAspect, rearTireRim,
+      drivetrain
+    } = carParams;
+
+    const calcRadius = (w?: number, a?: number, r?: number) => {
+      if (!w || !a || !r) return defaultRadius;
+      return (r * 0.0254 + 2 * (w * (a / 100)) / 1000) / 2;
+    };
+
+    const frontRadius = calcRadius(frontTireWidth, frontTireAspect, frontTireRim);
+    const rearRadius = calcRadius(rearTireWidth, rearTireAspect, rearTireRim);
+
+    if (drivetrain === 'FWD') {
+      return frontRadius;
+    } else if (drivetrain === 'RWD') {
+      return rearRadius;
+    } else { // AWD
+      const rearRatio = (tuning?.diff?.center ?? 50) / 100;
+      const frontRatio = 1 - rearRatio;
+      return (frontRadius * frontRatio) + (rearRadius * rearRatio);
+    }
+  };
+
+  const TIRE_RADIUS_M = getTireRadius();
+
   useEffect(() => {
     fetchTunings();
   }, [carId]);
 
   const fetchTunings = async () => {
+    const currentCarId = carId;
     try {
       const res = await fetch('http://127.0.0.1:8001/api/tunings');
       const data = await res.json();
-      if (data.tunings) {
-        const carTunings = data.tunings.filter((t: string) => t.startsWith(`${carId}-`));
+      if (data.tunings && latestCarIdRef.current === currentCarId) {
+        const carTunings = data.tunings.filter((t: string) => t.startsWith(`${currentCarId}-`));
         setSavedTunings(carTunings);
+        
+        // 載入最後使用的存檔
+        const lastTuning = localStorage.getItem(`last_tuning_${currentCarId}`);
+        if (lastTuning && carTunings.includes(lastTuning)) {
+          loadTuning(lastTuning, currentCarId);
+        } else {
+          setTuning(DEFAULT_TUNING);
+          setSaveName(`Untitled_${new Date().toISOString().slice(0,10)}`);
+        }
       }
     } catch (e) {}
   };
@@ -220,6 +270,10 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
       });
       if (res.ok) {
         setSaveStatus('Saved!');
+        // 記憶最後使用的存檔
+        const fullName = `${carId}-${saveName}`;
+        localStorage.setItem(`last_tuning_${carId}`, fullName);
+        
         fetchTunings();
         setTimeout(() => setSaveStatus(''), 3000);
       }
@@ -228,7 +282,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     }
   };
 
-  const loadTuning = async (fullName: string) => {
+  const loadTuning = async (fullName: string, expectedCarId?: string) => {
     if (!fullName) return;
     const parts = fullName.split('-');
     const cid = parts[0];
@@ -236,9 +290,12 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     try {
       const res = await fetch(`http://127.0.0.1:8001/api/tunings/${cid}/${sname}`);
       const data = await res.json();
-      if (!data.error) {
+      
+      const targetCid = expectedCarId || cid;
+      if (!data.error && latestCarIdRef.current === targetCid) {
         setTuning(data);
         setSaveName(sname);
+        localStorage.setItem(`last_tuning_${targetCid}`, fullName);
       }
     } catch (e) {}
   };
@@ -253,89 +310,235 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     }));
   };
 
-  const applySuggestedGearing = () => {
-    if (saveCarParams) saveCarParams();
-    const numGears = carParams?.adjustability?.gears || 6;
-    const maxRpm = tuning.gearing.maxRpm;
-    const newGears = [...tuning.gearing.gears];
-    
-    for (let i = 0; i < numGears - 1; i++) {
-      const targetYi = getTheoreticalYi(i, numGears);
-      newGears[i+1] = newGears[i] * (targetYi / maxRpm);
-    }
-    
-    updateSection('gearing', 'gears', newGears);
-  };
-
-
-
-  const applyDragCorrection = () => {
+  const applyScientificGearing = () => {
     if (saveCarParams) saveCarParams();
     const numGears = carParams?.adjustability?.gears || 6;
     if (numGears < 2) return;
-    
-    // 1. Target Top Speed from inGameTopSpeed
-    const speedMs = settings.units.speed === 'mph' ? inGameTopSpeed / 2.23694 : inGameTopSpeed / 3.6;
-    
-    // 2. Peak Power RPM
-    const pPower = (carParams?.maxHpRpm && carParams.maxHpRpm > 0) ? carParams.maxHpRpm : tuning.gearing.maxRpm * 0.9;
-    
-    // 3. Required Top Gear Ratio to hit Peak Power at speedMs
-    let topGearRatio = (pPower * 2 * Math.PI * 0.35) / (speedMs * tuning.gearing.finalDrive * 60);
-    topGearRatio = Math.max(limits.gearMin, Math.min(limits.gearMax, topGearRatio));
-    
-    // 4. Interpolate gears 2 to N
-    const newGears = [...tuning.gearing.gears];
-    const gear0 = newGears[0];
-    newGears[numGears - 1] = topGearRatio;
-    
-    const drag = (carParams?.aeroEfficiency ?? 0.5);
-    const p = 0.4 + drag * 0.5; // Controls the curve
-    
-    for (let i = 1; i < numGears - 1; i++) {
-      const x = i / (numGears - 1);
-      const fx = Math.pow(x, p);
-      let r = gear0 * Math.pow(topGearRatio / gear0, fx);
-      newGears[i] = Math.max(limits.gearMin, Math.min(limits.gearMax, r));
+
+    // --- Step 1: Optimize Final Drive Ratio ---
+    const g = 9.81;
+    const rho = 1.225;
+    const eta = 0.85;
+
+    // carParams.weight is stored in kg internally
+    const weightKg = carParams?.weight || 1500;
+    const W_N = weightKg * g;
+    const maxHp = carParams?.maxHp || 300;
+    const P_max_W = maxHp * 745.7 * eta;
+
+    const ae = carParams?.aeroEfficiency ?? 0.5;
+    const baseCdA = 1.0 - (ae * 0.5); 
+    const ab = carParams?.aeroBalance ?? 0.5;
+    const inducedDrag = Math.abs(ab - 0.5) * 0.2; 
+    const CdA = baseCdA + inducedDrag;
+    const k_aero = 0.5 * rho * CdA;
+    const C_rr = 0.015;
+
+    // Solve for V_max
+    let V_max = 50; 
+    for (let i = 0; i < 20; i++) {
+        const F_drag = C_rr * W_N + k_aero * V_max * V_max;
+        V_max = P_max_W / F_drag;
     }
     
-    updateSection('gearing', 'gears', newGears);
+    let final_V_max = V_max;
+    if (overriddenTopSpeed && overriddenTopSpeed > 0) {
+        final_V_max = settings.units.speed === 'mph' ? overriddenTopSpeed / 2.23694 : overriddenTopSpeed / 3.6;
+    } else {
+        const uiSpeed = settings.units.speed === 'mph' ? V_max * 2.23694 : V_max * 3.6;
+        setInGameTopSpeed(Math.round(uiSpeed));
+    }
+
+    const maxHpRpm = (carParams?.maxHpRpm && carParams.maxHpRpm > 0) ? carParams.maxHpRpm : tuning.gearing.maxRpm * 0.9;
+    
+    // Dynamic top gear assumption based on gear count to prevent gear crowding
+    const g_top_assumed = numGears >= 10 ? 0.50 : 
+                          numGears >= 8  ? 0.60 : 
+                          numGears >= 6  ? 0.75 : 0.85;
+
+    let FD = (maxHpRpm * 2 * Math.PI * TIRE_RADIUS_M) / (60 * g_top_assumed * final_V_max);
+    FD = Math.max(limits.finalDriveMin, Math.min(limits.finalDriveMax, FD));
+
+    // --- Step 2: 1st Gear Ratio ---
+    const W_f = (carParams?.weight_distribution ?? 50) / 100;
+    const MB = carParams?.mechBalance ?? 0.5;
+    const dt = carParams?.drivetrain || 'RWD';
+    const h_L = 0.25; 
+    const mu = 1.2; 
+
+    const mu_f = 2 * MB * mu;
+    const mu_r = 2 * (1 - MB) * mu;
+
+    let alpha = 0;
+    if (dt === 'RWD') {
+        alpha = (mu_r * (1 - W_f)) / (1 - mu_r * h_L);
+    } else if (dt === 'FWD') {
+        alpha = (mu_f * W_f) / (1 + mu_f * h_L);
+    } else {
+        alpha = (mu_f * W_f + mu_r * (1 - W_f)) / (1 + (mu_f - mu_r) * h_L);
+    }
+    alpha = Math.max(0.1, Math.min(2.0, alpha));
+
+    const F_tract_max = alpha * W_N;
+    const T_wheel_max = F_tract_max * TIRE_RADIUS_M;
+    
+    const maxTorqueLbFt = carParams?.maxTorque || 300;
+    const T_max_Nm = maxTorqueLbFt * 1.3558179;
+
+    let g1 = T_wheel_max / (T_max_Nm * FD * eta);
+
+    // --- Step 3: Top Gear Optimization ---
+    let g_top = (maxHpRpm * 2 * Math.PI * TIRE_RADIUS_M) / (60 * FD * final_V_max);
+    g_top = Math.max(limits.gearMin, Math.min(limits.gearMax, g_top));
+
+    // Safeguard to prevent 1st gear from being smaller than top gear (which would invert the ratios)
+    g1 = Math.max(g1, g_top + 1.2, 2.2);
+    g1 = Math.max(limits.gearMin, Math.min(limits.gearMax, g1));
+
+    // --- Step 4: Intermediate Gears ---
+    const newGears = [...tuning.gearing.gears];
+    newGears[0] = g1;
+    newGears[numGears - 1] = g_top;
+
+    const maxTorqueRpm = (carParams?.maxTorqueRpm && carParams.maxTorqueRpm > 0) ? carParams.maxTorqueRpm : tuning.gearing.maxRpm * 0.7;
+    const pbWidth = maxHpRpm - maxTorqueRpm;
+    const pbRatio = pbWidth / tuning.gearing.maxRpm;
+    
+    let recGears = 6;
+    if (pbRatio < 0.15) recGears = 8;
+    else if (pbRatio < 0.20) recGears = 7;
+    else if (pbRatio > 0.35) recGears = 5;
+    setRecommendedGearCount(recGears);
+
+    // Shape parameter p controls the curvature of the gear spacing.
+    // p must be less than 1.0 to ensure that RPM drops decrease progressively in higher gears (larger drop at low speed, smaller drop at high speed).
+    // A narrower powerband (small pbRatio) requires a smaller p to group high gears closer together.
+    // A wider powerband (large pbRatio) can use a larger p closer to linear spacing.
+    let p = 0.4 + pbRatio * 1.0;
+    p = Math.max(0.35, Math.min(0.85, p));
+    
+    if (gearingDiscipline === 'Rally') p = Math.min(0.9, p * 1.2); // Rally prefers more linear spacing
+    if (gearingDiscipline === 'Drift') p = Math.max(0.3, p * 0.8);  // Drift prefers very progressive spacing
+
+    for (let i = 1; i < numGears - 1; i++) {
+        const x = i / (numGears - 1);
+        const fx = Math.pow(x, p);
+        let r = g1 * Math.pow(g_top / g1, fx);
+        newGears[i] = Math.max(limits.gearMin, Math.min(limits.gearMax, r));
+    }
+
+    setTuning(prev => ({
+      ...prev,
+      gearing: {
+        ...prev.gearing,
+        finalDrive: Number(FD.toFixed(2)),
+        gears: newGears.map(g => Number(g.toFixed(2)))
+      }
+    }));
   };
 
   const getTheoreticalYi = (i: number, numGears: number) => {
-    const pPower = (carParams?.maxHpRpm && carParams.maxHpRpm > 0) ? carParams.maxHpRpm : tuning.gearing.maxRpm * 0.9;
-    const pTorque = (carParams?.maxTorqueRpm && carParams.maxTorqueRpm > 0) ? carParams.maxTorqueRpm : tuning.gearing.maxRpm * 0.7;
-    const range = pPower - pTorque;
-    
-    if (gearingDiscipline === 'Rally') return pTorque;
-    if (gearingDiscipline === 'Drift') {
-      if (i === 0) return tuning.gearing.maxRpm * 0.5;
-      let platformRpm = pTorque + range * 0.5;
-      if (carParams?.induction === 'Turbo') platformRpm = pTorque + range * 0.7;
-      if (carParams?.induction === 'TwinTurbo') platformRpm = pTorque + range * 0.4;
-      return platformRpm;
+    if (numGears < 2 || i >= numGears - 1) return tuning.gearing.maxRpm * 0.7;
+
+    // --- Step 1: Optimize Final Drive Ratio ---
+    const g = 9.81;
+    const rho = 1.225;
+    const eta = 0.85;
+
+    const weightKg = carParams?.weight || 1500;
+    const W_N = weightKg * g;
+    const maxHp = carParams?.maxHp || 300;
+    const P_max_W = maxHp * 745.7 * eta;
+
+    const ae = carParams?.aeroEfficiency ?? 0.5;
+    const baseCdA = 1.0 - (ae * 0.5); 
+    const ab = carParams?.aeroBalance ?? 0.5;
+    const inducedDrag = Math.abs(ab - 0.5) * 0.2; 
+    const CdA = baseCdA + inducedDrag;
+    const k_aero = 0.5 * rho * CdA;
+    const C_rr = 0.015;
+
+    // Solve for V_max
+    let V_max = 50; 
+    for (let j = 0; j < 20; j++) {
+        const F_drag = C_rr * W_N + k_aero * V_max * V_max;
+        V_max = P_max_W / F_drag;
     }
     
-    // GT Discipline - Advanced Calculations
+    let final_V_max = V_max;
+    if (overriddenTopSpeed && overriddenTopSpeed > 0) {
+        final_V_max = settings.units.speed === 'mph' ? overriddenTopSpeed / 2.23694 : overriddenTopSpeed / 3.6;
+    }
+
+    const maxHpRpm = (carParams?.maxHpRpm && carParams.maxHpRpm > 0) ? carParams.maxHpRpm : tuning.gearing.maxRpm * 0.9;
+    
+    const g_top_assumed = numGears >= 10 ? 0.50 : 
+                          numGears >= 8  ? 0.60 : 
+                          numGears >= 6  ? 0.75 : 0.85;
+
+    let FD = (maxHpRpm * 2 * Math.PI * TIRE_RADIUS_M) / (60 * g_top_assumed * final_V_max);
+    FD = Math.max(limits.finalDriveMin, Math.min(limits.finalDriveMax, FD));
+
+    // --- Step 2: 1st Gear Ratio ---
+    const W_f = (carParams?.weight_distribution ?? 50) / 100;
+    const MB = carParams?.mechBalance ?? 0.5;
     const dt = carParams?.drivetrain || 'RWD';
-    const mech = (carParams?.mechBalance ?? 0.5);
-    const drag = (carParams?.aeroEfficiency ?? 0.5);
-    const aeroBal = (carParams?.aeroBalance ?? 0.5);
+    const h_L = 0.25; 
+    const mu = 1.2; 
+
+    const mu_f = 2 * MB * mu;
+    const mu_r = 2 * (1 - MB) * mu;
+
+    let alpha = 0;
+    if (dt === 'RWD') {
+        alpha = (mu_r * (1 - W_f)) / (1 - mu_r * h_L);
+    } else if (dt === 'FWD') {
+        alpha = (mu_f * W_f) / (1 + mu_f * h_L);
+    } else {
+        alpha = (mu_f * W_f + mu_r * (1 - W_f)) / (1 + (mu_f - mu_r) * h_L);
+    }
+    alpha = Math.max(0.1, Math.min(2.0, alpha));
+
+    const F_tract_max = alpha * W_N;
+    const T_wheel_max = F_tract_max * TIRE_RADIUS_M;
     
-    let tractionIndex = 0.7; // default
-    if (dt === 'AWD') tractionIndex = 1.0;
-    else if (dt === 'RWD') tractionIndex = Math.min(1.0, (1.0 - mech) + 0.2);
-    else if (dt === 'FWD') tractionIndex = mech;
+    const maxTorqueLbFt = carParams?.maxTorque || 300;
+    const T_max_Nm = maxTorqueLbFt * 1.3558179;
+
+    let g1 = T_wheel_max / (T_max_Nm * FD * eta);
+
+    // --- Step 3: Top Gear Optimization ---
+    let g_top = (maxHpRpm * 2 * Math.PI * TIRE_RADIUS_M) / (60 * FD * final_V_max);
+    g_top = Math.max(limits.gearMin, Math.min(limits.gearMax, g_top));
+
+    g1 = Math.max(g1, g_top + 1.2, 2.2);
+    g1 = Math.max(limits.gearMin, Math.min(limits.gearMax, g1));
+
+    // --- Step 4: Intermediate Gears ---
+    const maxTorqueRpm = (carParams?.maxTorqueRpm && carParams.maxTorqueRpm > 0) ? carParams.maxTorqueRpm : tuning.gearing.maxRpm * 0.7;
+    const pbWidth = maxHpRpm - maxTorqueRpm;
+    const pbRatio = pbWidth / tuning.gearing.maxRpm;
     
-    const y1_ratio = 0.55 + (tractionIndex * 0.20);
-    const y1 = tuning.gearing.maxRpm * y1_ratio;
+    let p = 0.4 + pbRatio * 1.0;
+    p = Math.max(0.35, Math.min(0.85, p));
     
-    let p = 0.4 + drag * 0.5;
-    if (dt === 'RWD') p += ((1.0 - aeroBal) - 0.5) * 0.1;
+    if (gearingDiscipline === 'Rally') p = Math.min(0.9, p * 1.2);
+    if (gearingDiscipline === 'Drift') p = Math.max(0.3, p * 0.8);
+
+    const getGear = (idx: number) => {
+      if (idx === 0) return g1;
+      if (idx === numGears - 1) return g_top;
+      const x = idx / (numGears - 1);
+      const fx = Math.pow(x, p);
+      return Math.max(limits.gearMin, Math.min(limits.gearMax, g1 * Math.pow(g_top / g1, fx)));
+    };
+
+    const currentGear = getGear(i);
+    const nextGear = getGear(i + 1);
     
-    if (numGears <= 2) return pPower;
-    return y1 + (pPower - y1) * Math.pow(i / (numGears - 2), p);
+    return tuning.gearing.maxRpm * (nextGear / currentGear);
   };
+
 
   // Unit Conversion
   const convertToUI = (val: number, type: string) => {
@@ -363,7 +566,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
     // --- Gearing Chart Logic ---
   const { gears, finalDrive, maxRpm } = tuning.gearing;
-  const TIRE_RADIUS_M = 0.35; 
   const calcSpeed = (rpm: number, gearRatio: number) => {
     const speedMs = gearRatio === 0 ? 0 : ((rpm * 2 * Math.PI * TIRE_RADIUS_M) / (gearRatio * finalDrive * 60));
     return convertSpeed(speedMs).value;
@@ -402,7 +604,34 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
       {/* Top Bar */}
       <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <label style={{ color: 'var(--text-secondary)' }}>Car: <strong style={{color:'white'}}>{carName} (ID: {carId})</strong></label>
+          <label style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            Car:
+            <select 
+              value={carId} 
+              onChange={(e) => setCarId(e.target.value)}
+              style={{ 
+                padding: '0.4rem 0.8rem', 
+                background: 'rgba(0,0,0,0.4)', 
+                color: 'white', 
+                border: '1px solid rgba(255,255,255,0.15)', 
+                borderRadius: '4px',
+                fontWeight: 'normal',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {!carsWithParams.some(c => c.id === carId) && carId && (
+                <option value={carId}>
+                  {carName} (ID: {carId}) *未儲存參數*
+                </option>
+              )}
+              {carsWithParams.map(car => (
+                <option key={car.id} value={car.id}>
+                  {car.name} (ID: {car.id})
+                </option>
+              ))}
+            </select>
+          </label>
           <span style={{color: 'gray'}}>|</span>
           <label style={{ color: 'var(--text-secondary)' }}>Save Name:</label>
           <input 
@@ -916,20 +1145,28 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
                       </div>
                     </div>
                   )}
-                  <button onClick={applySuggestedGearing} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Apply Envelope to Gears 2-{numGears}</button>
 
                   <hr style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Secondary Correction (Drag Optimizer)</span>
-                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Anchors 1st Gear and Top Gear, generating a custom drag-optimized curve in between.</p>
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Scientific Gearing Calculation</span>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>4-Step Model: Theoretical FD, Launch-Limited 1st Gear, Drag-Corrected Top Gear, Envelope Deciplane interpolation.</p>
+                  
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                    <span style={{ color: 'white', fontSize: '0.9rem' }}>Calculated Mechanical Limit:</span>
-                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{calcSpeed(tuning.gearing.maxRpm, tuning.gearing.gears[numGears - 1] || 1).toFixed(1)} {convertSpeed(1).label}</span>
+                    <span style={{ color: 'white', fontSize: '0.9rem' }}>Derived Top Speed ({convertSpeed(1).label}):</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{inGameTopSpeed}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'white', fontSize: '0.9rem' }}>In-Game Top Speed ({convertSpeed(1).label}):</span>
-                    <input type="number" value={inGameTopSpeed} onChange={(e) => setInGameTopSpeed(parseFloat(e.target.value))} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', textAlign: 'right' }} />
+                    <span style={{ color: 'white', fontSize: '0.9rem' }}>Override Top Speed ({convertSpeed(1).label}):</span>
+                    <input type="number" placeholder="Optional" value={overriddenTopSpeed || ''} onChange={(e) => setOverriddenTopSpeed(e.target.value ? parseFloat(e.target.value) : null)} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', textAlign: 'right' }} />
                   </div>
-                  <button onClick={applyDragCorrection} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Anchor Top Gear & Smooth</button>
+                  
+                  {recommendedGearCount && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', background: 'rgba(255,255,0,0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,0,0.3)' }}>
+                      <span style={{ color: 'yellow', fontSize: '0.85rem' }}>Powerband Analysis:</span>
+                      <span style={{ color: 'yellow', fontWeight: 'bold', fontSize: '0.85rem' }}>Recommend {recommendedGearCount}-Speed Gearbox</span>
+                    </div>
+                  )}
+
+                  <button onClick={applyScientificGearing} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', marginTop: '0.5rem' }}>Apply Scientific Gearing</button>
                 </div>
                 
                 <div style={{ flex: 1, minHeight: '300px' }}>

@@ -69,10 +69,15 @@ last_dyno_save_time = time.time()
 # --- Settings File Paths & Defaults ---
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
+LANG_DIR = os.path.join(ROOT_DIR, "lang")
+
+# Ensure directories exist
+os.makedirs(LANG_DIR, exist_ok=True)
 
 DEFAULT_SETTINGS = {
     "dyno_recording": True,
     "race_recording": True,
+    "language": "en-us",
     "units": {
         "speed": "kmh",
         "weight": "kg",
@@ -90,6 +95,7 @@ DEFAULT_SETTINGS = {
 app_settings = {
     "dyno_recording": True,
     "race_recording": True,
+    "language": "en-us",
     "units": dict(DEFAULT_SETTINGS["units"])
 }
 
@@ -207,6 +213,12 @@ async def broadcast_telemetry():
                         "weight": 1500,
                         "weight_distribution": 50,
                         "drivetrain": "RWD",
+                        "frontTireWidth": 245,
+                        "frontTireAspect": 40,
+                        "frontTireRim": 18,
+                        "rearTireWidth": 245,
+                        "rearTireAspect": 40,
+                        "rearTireRim": 18,
                         "adjustability": {
                             "gearbox": "Full",
                             "gears": 6,
@@ -301,6 +313,21 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get_car_database():
     return car_database
 
+@app.get("/api/cars/with_params")
+async def get_cars_with_params():
+    try:
+        files = [f.replace(".json", "") for f in os.listdir(CAR_PARAMS_DIR) if f.endswith(".json")]
+        result = []
+        for car_id in files:
+            name = car_database.get(car_id, {}).get("display_name", f"Car {car_id}")
+            result.append({"id": car_id, "name": name})
+        result.sort(key=lambda x: x["name"])
+        return result
+    except Exception as e:
+        logger.error(f"Failed to list cars with params: {e}")
+        return []
+
+
 @app.get("/api/car_params/{car_id}")
 async def get_car_params(car_id: str):
     params = load_car_params(car_id)
@@ -352,6 +379,8 @@ async def update_settings(data: dict):
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
     if "race_recording" in data:
         app_settings["race_recording"] = bool(data["race_recording"])
+    if "language" in data:
+        app_settings["language"] = str(data["language"])
     if "units" in data and isinstance(data["units"], dict):
         if "units" not in app_settings:
             app_settings["units"] = {}
@@ -366,6 +395,47 @@ async def update_settings(data: dict):
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
         
     return app_settings
+
+# --- Languages API ---
+
+@app.get("/api/languages")
+async def list_languages():
+    # Always include English (US) which is hardcoded in the frontend
+    languages = [{"code": "en-us", "name": "English (US)"}]
+    
+    if os.path.exists(LANG_DIR):
+        for filename in os.listdir(LANG_DIR):
+            if filename.endswith(".json"):
+                code = filename[:-5].lower()
+                # Skip en-us if it's somehow in the folder to prevent duplication
+                if code == "en-us":
+                    continue
+                file_path = os.path.join(LANG_DIR, filename)
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        name = data.get("__language_name__", filename[:-5])
+                        languages.append({"code": code, "name": name})
+                except Exception as e:
+                    logger.error(f"Failed to read language file {filename}: {e}")
+                    
+    return languages
+
+@app.get("/api/languages/{code}")
+async def get_language(code: str):
+    code = code.lower()
+    if code == "en-us":
+        return {}
+        
+    file_path = os.path.join(LANG_DIR, f"{code}.json")
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            return {"error": f"Failed to read language file: {e}"}
+            
+    return {"error": "Language not found"}
 
 # --- Tuning API Endpoints ---
 
