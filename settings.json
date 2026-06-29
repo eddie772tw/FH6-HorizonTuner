@@ -1,9 +1,12 @@
 {
     "dyno_recording": false,
     "race_recording": false,
-    "language": "en-us",
+    "language": "zh-tw",
+    "dyno_test_gear": 6,
+    "dyno_filter_slip": true,
+    "dyno_filter_transients": true,
     "units": {
-        "speed": "kmh",
+        "speed": "mph",
         "weight": "lbs",
         "temperature": "C",
         "tirePressure": "psi",
