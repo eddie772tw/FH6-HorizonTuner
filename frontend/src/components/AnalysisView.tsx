@@ -61,7 +61,7 @@ const AnalysisView: React.FC = () => {
 
   // Handle saving the current session to the backend directory
   const handleSaveToBackend = async () => {
-    if (currentSession.length === 0) {
+    if (!loadedSession || loadedSession.length === 0) {
       alert(t("No data to save."));
       return;
     }
@@ -423,7 +423,7 @@ const AnalysisView: React.FC = () => {
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
             {/* Save to Backend Button */}
-            {selectedFilename === 'current' && currentSession.length > 0 && (
+            {selectedFilename === 'current' && loadedSession && loadedSession.length > 0 && (
               <button onClick={handleSaveToBackend} style={{ ...btnStyle, background: 'var(--primary)', color: '#000' }}>
                 {t("Save to Backend")}
               </button>

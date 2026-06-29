@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useCarParams } from '../context/CarParamsContext';
 import { 
@@ -74,7 +74,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
     lateralG: ''
   });
 
-  const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift'>('GT');
+  const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift' | 'Custom'>('GT');
+  const [basicCustomP, setBasicCustomP] = useState<number>(0.55);
   const [inGameTopSpeed, setInGameTopSpeed] = useState<number>(300);
   const [overriddenTopSpeed, setOverriddenTopSpeed] = useState<number | null>(null);
   const [recommendedGearCount, setRecommendedGearCount] = useState<number | null>(null);
@@ -88,6 +89,297 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
   const [tireRaceType, setTireRaceType] = useState<RaceType>('Road');
   const [tireDriveType, setTireDriveType] = useState<Drivetrain>(carParams?.drivetrain as Drivetrain || 'AWD');
   const [alignRaceType, setAlignRaceType] = useState<RaceType>('Road');
+
+  const [gearingMethod, setGearingMethod] = useState<'basic' | 'scientific' | 'drag_optimize'>('basic');
+  const [dragTestStatus, setDragTestStatus] = useState<'idle' | 'waiting' | 'recording' | 'finished'>('idle');
+  const [dragPointsCount, setDragPointsCount] = useState(0);
+  const [dragSessions, setDragSessions] = useState<any[]>([]);
+  const [selectedDragSession, setSelectedDragSession] = useState<string>('');
+  const [activeDragData, setActiveDragData] = useState<any[]>([]);
+  const [activeDragAnalysis, setActiveDragAnalysis] = useState<any | null>(null);
+  const [isSavingDrag, setIsSavingDrag] = useState(false);
+
+  // Poll drag status when in drag_optimize method
+  useEffect(() => {
+    if (gearingMethod !== 'drag_optimize') return;
+    let isMounted = true;
+    
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8001/api/drag/status');
+        const data = await res.json();
+        if (isMounted) {
+          setDragPointsCount(data.points_count);
+          const newStatus = data.status;
+          if (newStatus !== dragTestStatus) {
+            setDragTestStatus(newStatus);
+            if (newStatus === 'finished') {
+              fetchLatestDragData();
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to poll drag status in TuningView:', e);
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 200);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [gearingMethod, dragTestStatus]);
+
+  const fetchLatestDragData = async () => {
+    try {
+      const [dataRes, analysisRes] = await Promise.all([
+        fetch('http://127.0.0.1:8001/api/drag/data'),
+        fetch('http://127.0.0.1:8001/api/drag/analysis')
+      ]);
+      const data = await dataRes.json();
+      const analysisData = await analysisRes.json();
+      setActiveDragData(data);
+      setActiveDragAnalysis(analysisData);
+    } catch (e) {
+      console.error('Failed to fetch latest drag data:', e);
+    }
+  };
+
+  const fetchDragSessions = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8001/api/drag/sessions');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const filtered = data.filter((s: any) => s.metadata?.car_id === carId);
+        setDragSessions(filtered);
+      }
+    } catch (e) {
+      console.error('Failed to fetch drag sessions:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (gearingMethod === 'drag_optimize') {
+      fetchDragSessions();
+    }
+  }, [gearingMethod, carId]);
+
+  const handleLoadDragSession = async (filename: string) => {
+    setSelectedDragSession(filename);
+    if (!filename) {
+      setActiveDragData([]);
+      setActiveDragAnalysis(null);
+      return;
+    }
+    try {
+      const res = await fetch(`http://127.0.0.1:8001/api/drag/sessions/${filename}`);
+      const data = await res.json();
+      if (data.data && data.analysis) {
+        setActiveDragData(data.data);
+        setActiveDragAnalysis(data.analysis);
+      }
+    } catch (e) {
+      console.error('Failed to load drag session:', e);
+    }
+  };
+
+  const handleStartDragTest = async () => {
+    try {
+      await fetch('http://127.0.0.1:8001/api/drag/prepare', { method: 'POST' });
+      setDragTestStatus('waiting');
+      setActiveDragData([]);
+      setActiveDragAnalysis(null);
+      setSelectedDragSession('');
+    } catch (e) {
+      console.error('Failed to start drag test:', e);
+    }
+  };
+
+  const handleClearDragTest = async () => {
+    try {
+      await fetch('http://127.0.0.1:8001/api/drag/clear', { method: 'POST' });
+      setDragTestStatus('idle');
+      setActiveDragData([]);
+      setActiveDragAnalysis(null);
+      setSelectedDragSession('');
+    } catch (e) {
+      console.error('Failed to clear drag test:', e);
+    }
+  };
+
+  const handleSaveDragSession = async () => {
+    if (!activeDragData || activeDragData.length === 0) return;
+    setIsSavingDrag(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8001/api/drag/sessions/save', { method: 'POST' });
+      const data = await res.json();
+      if (data.message) {
+        alert(t('Drag session saved successfully'));
+        fetchDragSessions();
+        if (data.filename) {
+          setSelectedDragSession(data.filename);
+        }
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch (e) {
+      console.error('Failed to save drag session:', e);
+    } finally {
+      setIsSavingDrag(false);
+    }
+  };
+
+  const applyDragOptimizedGearing = () => {
+    if (!activeDragData || activeDragData.length === 0 || !activeDragAnalysis) {
+      alert(t('Please perform a drag test or select a saved run first.'));
+      return;
+    }
+
+    if (saveCarParams) saveCarParams();
+    
+    const numGears = carParams?.adjustability?.gears || 6;
+    if (numGears < 2) return;
+
+    let FD = tuning.gearing.finalDrive;
+    const newGears = [...tuning.gearing.gears];
+
+    // 1. Final Drive Optimization
+    const maxRpmLimit = tuning.gearing.maxRpm;
+    const lastPt = activeDragData[activeDragData.length - 1];
+    const topGearPts = activeDragData.filter(p => p.Gear === numGears);
+    const topGearMaxRpm = topGearPts.length > 0 ? Math.max(...topGearPts.map(p => p.CurrentEngineRpm)) : 0;
+    
+    let avgAccel = 0;
+    if (activeDragData.length > 10) {
+      const lastFew = activeDragData.slice(-10);
+      const dv = lastFew[lastFew.length - 1].SpeedMetersPerSecond - lastFew[0].SpeedMetersPerSecond;
+      const dt = lastFew[lastFew.length - 1].time - lastFew[0].time;
+      avgAccel = dt > 0 ? dv / dt : 0;
+    }
+
+    if (topGearMaxRpm >= maxRpmLimit - 150) {
+      FD = FD * 0.93; // reduce by 7%
+    } else if (topGearMaxRpm < maxRpmLimit * 0.75 && avgAccel < 0.3) {
+      FD = FD * 1.08; // increase by 8%
+    }
+    FD = Math.max(limits.finalDriveMin, Math.min(limits.finalDriveMax, FD));
+
+    // 2. First Gear Optimization based on Launch Slip
+    const launchSlip = activeDragAnalysis.launch_slip_percent || 0.0;
+    let g1 = tuning.gearing.gears[0];
+    if (launchSlip > 0.18) {
+      const slipFactor = Math.min(0.15, (launchSlip - 0.15) * 0.5);
+      g1 = g1 * (1 - slipFactor);
+    } else if (launchSlip < 0.05) {
+      g1 = g1 * 1.10;
+    }
+    g1 = Math.max(limits.gearMin, Math.min(limits.gearMax, g1));
+
+    // 3. Top Gear Target Ratio
+    const maxSpeedMs = Math.max(...activeDragData.map(p => p.SpeedMetersPerSecond));
+    let targetTopSpeedMs = maxSpeedMs * 1.05;
+    if (topGearMaxRpm >= maxRpmLimit - 150) {
+      targetTopSpeedMs = maxSpeedMs * 1.12;
+    }
+    
+    let g_top = (maxRpmLimit * 2 * Math.PI * TIRE_RADIUS_M) / (60 * FD * targetTopSpeedMs);
+    g_top = Math.max(limits.gearMin, Math.min(limits.gearMax, g_top));
+
+    g1 = Math.max(g1, g_top + 1.0, 2.2);
+    g1 = Math.min(limits.gearMax, g1);
+
+    newGears[0] = g1;
+    newGears[numGears - 1] = g_top;
+
+    // 4. Intermediate Gears Optimization based on RPM Retention
+    const R_start = 0.70;
+    const R_end = 0.83;
+    
+    for (let i = 1; i < numGears - 1; i++) {
+      const x = i / (numGears - 1);
+      const rx = R_start + (R_end - R_start) * Math.pow(x, 0.7);
+      let r = newGears[i - 1] * rx;
+      newGears[i] = Math.max(limits.gearMin, Math.min(limits.gearMax, r));
+    }
+
+    const calculated_g_top = newGears[numGears - 1];
+    if (Math.abs(calculated_g_top - g_top) > 0.01) {
+      const factor = Math.log(g_top / g1) / Math.log(newGears[numGears - 1] / g1);
+      for (let i = 1; i < numGears - 1; i++) {
+        const r = g1 * Math.pow(newGears[i] / g1, factor);
+        newGears[i] = Math.max(limits.gearMin, Math.min(limits.gearMax, r));
+      }
+      newGears[numGears - 1] = g_top;
+    }
+
+    setTuning(prev => ({
+      ...prev,
+      gearing: {
+        ...prev.gearing,
+        finalDrive: Number(FD.toFixed(2)),
+        gears: newGears.map(g => Number(g.toFixed(2)))
+      }
+    }));
+  };
+
+  const dragChartData = useMemo(() => {
+    if (!activeDragData || activeDragData.length === 0) return [];
+    return activeDragData.map(p => ({
+      speed: convertSpeed(p.SpeedMetersPerSecond).value,
+      rpm: p.CurrentEngineRpm
+    }));
+  }, [activeDragData, settings.units.speed]);
+
+  const getBasicPreviewGear = (idx: number, numGears: number) => {
+    const g1 = tuning.gearing.gears[0];
+    const g_top = tuning.gearing.gears[numGears - 1];
+    if (g1 <= g_top) return g1;
+    
+    let p = 0.55;
+    if (gearingDiscipline === 'Rally') p = 0.85;
+    else if (gearingDiscipline === 'Drift') p = 0.35;
+    else if (gearingDiscipline === 'Custom') p = basicCustomP;
+
+    if (idx === 0) return g1;
+    if (idx === numGears - 1) return g_top;
+    const x = idx / (numGears - 1);
+    return g1 * Math.pow(g_top / g1, Math.pow(x, p));
+  };
+
+  const applyBasicGearing = () => {
+    const numGears = carParams?.adjustability?.gears || 6;
+    if (numGears < 2) return;
+
+    const g1 = tuning.gearing.gears[0];
+    const g_top = tuning.gearing.gears[numGears - 1];
+
+    if (g1 <= g_top) {
+      alert(t("Invalid gearing: 1st gear must be greater than top gear."));
+      return;
+    }
+
+    let p = 0.55;
+    if (gearingDiscipline === 'Rally') p = 0.85;
+    else if (gearingDiscipline === 'Drift') p = 0.35;
+    else if (gearingDiscipline === 'Custom') p = basicCustomP;
+
+    const newGears = [...tuning.gearing.gears];
+    for (let i = 1; i < numGears - 1; i++) {
+      const x = i / (numGears - 1);
+      const r = g1 * Math.pow(g_top / g1, Math.pow(x, p));
+      newGears[i] = Math.max(limits.gearMin, Math.min(limits.gearMax, r));
+    }
+
+    setTuning(prev => ({
+      ...prev,
+      gearing: {
+        ...prev.gearing,
+        gears: newGears.map(g => Number(g.toFixed(2)))
+      }
+    }));
+  };
 
   useEffect(() => {
     if (carParams?.drivetrain) {
@@ -590,6 +882,11 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
       
       endPoint.currentEnvelope = maxRpm * (gears[i+1] / gearRatio);
       endPoint.theoreticalEnvelope = getTheoreticalYi(i, numGears);
+
+      // Calculate basic preview envelope
+      const previewCurrent = getBasicPreviewGear(i, numGears);
+      const previewNext = getBasicPreviewGear(i + 1, numGears);
+      endPoint.basicPreviewEnvelope = maxRpm * (previewNext / previewCurrent);
     }
     chartData.push(endPoint);
   }
@@ -1100,6 +1397,58 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
             {activeSubTab === 'Gearing' && (
               <>
+                {/* Method Switch Tabs */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
+                  <button 
+                    onClick={() => setGearingMethod('basic')} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      background: gearingMethod === 'basic' ? 'rgba(0, 240, 255, 0.2)' : 'transparent', 
+                      border: '1px solid rgba(0, 240, 255, 0.4)', 
+                      color: 'white', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      fontWeight: gearingMethod === 'basic' ? 'bold' : 'normal',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {t("Basic Tune")}
+                  </button>
+                  <button 
+                    onClick={() => setGearingMethod('scientific')} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      background: gearingMethod === 'scientific' ? 'rgba(0, 240, 255, 0.2)' : 'transparent', 
+                      border: '1px solid rgba(0, 240, 255, 0.4)', 
+                      color: 'white', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      fontWeight: gearingMethod === 'scientific' ? 'bold' : 'normal',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {t("Scientific Formula")}
+                  </button>
+                  <button 
+                    onClick={() => setGearingMethod('drag_optimize')} 
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      background: gearingMethod === 'drag_optimize' ? 'rgba(0, 240, 255, 0.2)' : 'transparent', 
+                      border: '1px solid rgba(0, 240, 255, 0.4)', 
+                      color: 'white', 
+                      borderRadius: '4px', 
+                      cursor: 'pointer',
+                      fontWeight: gearingMethod === 'drag_optimize' ? 'bold' : 'normal',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {t("Drag Test Optimization")}
+                  </button>
+                </div>
+
                 <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '1rem', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                   <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>{t("Dynamic Tuning Bounds")}</span>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
@@ -1120,51 +1469,203 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(0, 240, 255, 0.1)', padding: '1rem', borderRadius: '4px', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{t("Scientific Gearing Assist")}</span>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Discipline:")}</span>
-                    <select value={gearingDiscipline} onChange={(e) => setGearingDiscipline(e.target.value as any)} style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px' }}>
-                      <option value="GT">{t("GT (Circuit / Logarithmic)")}</option>
-                      <option value="Rally">{t("Rally (Constant / High Torque)")}</option>
-                      <option value="Drift">{t("Drift (Step / Platform)")}</option>
-                    </select>
-                  </div>
+                {gearingMethod === 'basic' && (
+                  <div style={{ background: 'rgba(0, 240, 255, 0.1)', padding: '1rem', borderRadius: '4px', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{t("Basic Gearing Assist")}</span>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                      {t("Please set your Final Drive, 1st Gear, and Top Gear on the left panel first.")}
+                    </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Mech Balance (Front Ratio):")}</span>
-                      <input type="number" min="0" max="1" step="0.001" value={(carParams?.mechBalance ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, mechBalance: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                      <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Discipline:")}</span>
+                      <select value={gearingDiscipline} onChange={(e) => setGearingDiscipline(e.target.value as any)} style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px' }}>
+                        <option value="GT">{t("GT (Circuit / Logarithmic)")}</option>
+                        <option value="Rally">{t("Rally (Constant / High Torque)")}</option>
+                        <option value="Drift">{t("Drift (Step / Platform)")}</option>
+                        <option value="Custom">{t("Custom")}</option>
+                      </select>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Aero Drag Index:")}</span>
-                      <input type="number" min="0" max="1" step="0.001" value={(carParams?.aeroEfficiency ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, aeroEfficiency: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Aero Balance (Front Ratio):")}</span>
-                      <input type="number" min="0" max="1" step="0.001" value={(carParams?.aeroBalance ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, aeroBalance: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
-                    </div>
-                  </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                    <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Derived Top Speed")} ({convertSpeed(1).label}):</span>
-                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{inGameTopSpeed}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Override Top Speed")} ({convertSpeed(1).label}):</span>
-                    <input type="number" placeholder={t("Optional")} value={overriddenTopSpeed || ''} onChange={(e) => setOverriddenTopSpeed(e.target.value ? parseFloat(e.target.value) : null)} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', textAlign: 'right' }} />
-                  </div>
-                  
-                  {recommendedGearCount && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', background: 'rgba(255,255,0,0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,0,0.3)' }}>
-                      <span style={{ color: 'yellow', fontSize: '0.85rem' }}>{t("Powerband Analysis:")}</span>
-                      <span style={{ color: 'yellow', fontWeight: 'bold', fontSize: '0.85rem' }}>{t("Recommend")} {recommendedGearCount}-{t("Speed Gearbox")}</span>
-                    </div>
-                  )}
+                    {gearingDiscipline === 'Custom' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Gearing Shape Parameter (p)")}</span>
+                          <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 'bold' }}>{basicCustomP.toFixed(2)}</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0.10" 
+                          max="1.50" 
+                          step="0.01" 
+                          value={basicCustomP} 
+                          onChange={(e) => setBasicCustomP(parseFloat(e.target.value))} 
+                          style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }} 
+                        />
+                      </div>
+                    )}
 
-                  <button onClick={applyScientificGearing} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', marginTop: '0.5rem' }}>{t("Apply Scientific Gearing")}</button>
-                </div>
+                    {tuning.gearing.gears[0] <= tuning.gearing.gears[numGears - 1] && (
+                      <div style={{ color: '#ff5f5f', fontSize: '0.8rem', fontWeight: 'bold', background: 'rgba(255,0,0,0.1)', padding: '0.5rem', borderRadius: '4px' }}>
+                        ⚠️ {t("Invalid gearing: 1st gear must be greater than top gear.")}
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={applyBasicGearing} 
+                      disabled={tuning.gearing.gears[0] <= tuning.gearing.gears[numGears - 1]}
+                      style={{ 
+                        ...btnStyle, 
+                        background: (tuning.gearing.gears[0] > tuning.gearing.gears[numGears - 1]) ? 'var(--primary)' : 'gray',
+                        cursor: (tuning.gearing.gears[0] > tuning.gearing.gears[numGears - 1]) ? 'pointer' : 'not-allowed',
+                        opacity: (tuning.gearing.gears[0] > tuning.gearing.gears[numGears - 1]) ? 1 : 0.6
+                      }}
+                    >
+                      {t("Apply Basic Tune")}
+                    </button>
+                  </div>
+                )}
+
+                {gearingMethod === 'scientific' && (
+                  <div style={{ background: 'rgba(0, 240, 255, 0.1)', padding: '1rem', borderRadius: '4px', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{t("Scientific Gearing Assist")}</span>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Discipline:")}</span>
+                      <select value={gearingDiscipline} onChange={(e) => setGearingDiscipline(e.target.value as any)} style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px' }}>
+                        <option value="GT">{t("GT (Circuit / Logarithmic)")}</option>
+                        <option value="Rally">{t("Rally (Constant / High Torque)")}</option>
+                        <option value="Drift">{t("Drift (Step / Platform)")}</option>
+                        <option value="Custom">{t("Custom")}</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Mech Balance (Front Ratio):")}</span>
+                        <input type="number" min="0" max="1" step="0.001" value={(carParams?.mechBalance ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, mechBalance: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Aero Drag Index:")}</span>
+                        <input type="number" min="0" max="1" step="0.001" value={(carParams?.aeroEfficiency ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, aeroEfficiency: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: 'white', fontSize: '0.8rem' }}>{t("Aero Balance (Front Ratio):")}</span>
+                        <input type="number" min="0" max="1" step="0.001" value={(carParams?.aeroBalance ?? 0.5)} onChange={(e) => { if(carParams) setCarParams({...carParams, aeroBalance: parseFloat(e.target.value)}); }} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.2rem', borderRadius: '4px', textAlign: 'right' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                      <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Derived Top Speed")} ({convertSpeed(1).label}):</span>
+                      <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{inGameTopSpeed}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'white', fontSize: '0.9rem' }}>{t("Override Top Speed")} ({convertSpeed(1).label}):</span>
+                      <input type="number" placeholder={t("Optional")} value={overriddenTopSpeed || ''} onChange={(e) => setOverriddenTopSpeed(e.target.value ? parseFloat(e.target.value) : null)} style={{ width: '80px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', textAlign: 'right' }} />
+                    </div>
+                    
+                    {recommendedGearCount && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', background: 'rgba(255,255,0,0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,0,0.3)' }}>
+                        <span style={{ color: 'yellow', fontSize: '0.85rem' }}>{t("Powerband Analysis:")}</span>
+                        <span style={{ color: 'yellow', fontWeight: 'bold', fontSize: '0.85rem' }}>{t("Recommend")} {recommendedGearCount}-{t("Speed Gearbox")}</span>
+                      </div>
+                    )}
+
+                    <button onClick={applyScientificGearing} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', marginTop: '0.5rem' }}>{t("Apply Scientific Gearing")}</button>
+                  </div>
+                )}
+
+                {gearingMethod === 'drag_optimize' && (
+                  <div style={{ background: 'rgba(255, 150, 0, 0.1)', padding: '1rem', borderRadius: '4px', border: '1px solid var(--accent)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{t("Drag Test Optimization")}</span>
+                    
+                    {/* Step 1: Current Gearing */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', borderLeft: '3px solid var(--primary)', paddingLeft: '0.6rem' }}>
+                      <span style={{ color: 'white', fontSize: '0.85rem', fontWeight: 'bold' }}>1. {t("Step 1: Gearing Baseline")}</span>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                        {t("Current Gearing ratios in the left panel will be used as the test baseline.")}
+                      </p>
+                    </div>
+
+                    {/* Step 2: Drag Test Control */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderLeft: '3px solid var(--primary)', paddingLeft: '0.6rem' }}>
+                      <span style={{ color: 'white', fontSize: '0.85rem', fontWeight: 'bold' }}>2. {t("Step 2: Perform Drag Test")}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Status:")}</span>
+                        <span style={{ 
+                          fontSize: '0.8rem', 
+                          fontWeight: 'bold', 
+                          color: dragTestStatus === 'recording' ? '#0f0' : dragTestStatus === 'waiting' ? 'yellow' : 'white' 
+                        }}>
+                          {t(dragTestStatus.toUpperCase())} {dragPointsCount > 0 && `(${dragPointsCount} pts)`}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={handleStartDragTest} style={{ ...btnStyle, flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}>
+                          {t("Start Drag Test")}
+                        </button>
+                        <button onClick={handleClearDragTest} style={{ ...btnStyle, flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', color: 'white' }}>
+                          {t("Clear Test")}
+                        </button>
+                      </div>
+                      {dragTestStatus === 'finished' && activeDragData.length > 0 && (
+                        <button 
+                          onClick={handleSaveDragSession} 
+                          disabled={isSavingDrag}
+                          style={{ ...btnStyle, padding: '0.4rem', fontSize: '0.8rem', background: 'rgba(0,255,0,0.2)', color: '#0f0', border: '1px solid #0f0' }}
+                        >
+                          {isSavingDrag ? t("Saving...") : t("Save This Run")}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Step 3: Select and Analyze */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderLeft: '3px solid var(--primary)', paddingLeft: '0.6rem' }}>
+                      <span style={{ color: 'white', fontSize: '0.85rem', fontWeight: 'bold' }}>3. {t("Step 3: Select & Analyze Run")}</span>
+                      <select 
+                        value={selectedDragSession} 
+                        onChange={(e) => handleLoadDragSession(e.target.value)}
+                        style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', width: '100%', fontSize: '0.8rem' }}
+                      >
+                        <option value="">-- {t("Select Drag Test Run")} --</option>
+                        {dragSessions.map(s => (
+                          <option key={s.metadata.filename} value={s.metadata.filename}>
+                            {s.metadata.car_name} - {new Date(s.metadata.timestamp * 1000).toLocaleString()}
+                          </option>
+                        ))}
+                      </select>
+                      {dragSessions.length === 0 && (
+                        <span style={{ fontSize: '0.75rem', color: 'gray', fontStyle: 'italic' }}>
+                          {t("No drag runs found for this car.")}
+                        </span>
+                      )}
+
+                      {activeDragAnalysis && (
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          <div><span style={{ color: 'white' }}>{t("Launch Slip:")}</span> {(activeDragAnalysis.launch_slip_percent * 100).toFixed(1)}%</div>
+                          <div><span style={{ color: 'white' }}>{t("Max Speed:")}</span> {convertSpeed(activeDragAnalysis.max_speed_kmh / 3.6).value.toFixed(1)} {convertSpeed(1).label}</div>
+                          <div><span style={{ color: 'white' }}>{t("Shifts:")}</span> {activeDragAnalysis.shifts?.length || 0} times</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Step 4: Optimize */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderLeft: '3px solid var(--primary)', paddingLeft: '0.6rem' }}>
+                      <span style={{ color: 'white', fontSize: '0.85rem', fontWeight: 'bold' }}>4. {t("Step 4: Calculate Optimized Gearing")}</span>
+                      <button 
+                        onClick={applyDragOptimizedGearing} 
+                        disabled={!activeDragData || activeDragData.length === 0}
+                        style={{ 
+                          ...btnStyle, 
+                          background: (activeDragData && activeDragData.length > 0) ? 'var(--accent)' : 'gray', 
+                          cursor: (activeDragData && activeDragData.length > 0) ? 'pointer' : 'not-allowed',
+                          opacity: (activeDragData && activeDragData.length > 0) ? 1 : 0.6
+                        }}
+                      >
+                        {t("Apply Optimized Gearing")}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 
                 <div style={{ flex: 1, minHeight: '300px' }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -1181,6 +1682,32 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
                       ))}
                       <Line type="monotone" dataKey="currentEnvelope" stroke="rgba(255,255,255,0.8)" strokeWidth={2} strokeDasharray="5 5" dot={{r: 4, fill: 'white'}} isAnimationActive={false} connectNulls={true} name={t("Current Envelope")} />
                       <Line type="monotone" dataKey="theoreticalEnvelope" stroke="var(--primary)" strokeWidth={2} strokeDasharray="3 3" dot={false} isAnimationActive={false} connectNulls={true} name={t("Theoretical Envelope")} />
+                      {gearingMethod === 'basic' && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="basicPreviewEnvelope" 
+                          stroke="#00ffff" 
+                          strokeWidth={2} 
+                          strokeDasharray="3 3" 
+                          dot={false} 
+                          isAnimationActive={false} 
+                          connectNulls={true} 
+                          name={t("Preview Envelope")} 
+                        />
+                      )}
+                      {dragChartData.length > 0 && (
+                        <Line 
+                          type="linear" 
+                          data={dragChartData} 
+                          dataKey="rpm" 
+                          stroke="#ff9f00" 
+                          strokeWidth={3} 
+                          dot={false} 
+                          isAnimationActive={false} 
+                          connectNulls={true} 
+                          name={t("Actual Gearing Path")} 
+                        />
+                      )}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

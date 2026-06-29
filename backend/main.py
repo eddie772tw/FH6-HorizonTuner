@@ -139,26 +139,74 @@ class RaceRecorder:
         self.last_sample_time = 0
         self.max_samples = 20000
         self.downsample_interval = 0.1 # 100ms (attempt ~10Hz)
+        self.lap_start_times = {} # {lap_num: relative_time}
+        self.last_write_time = 0
+        self.total_count = 0
+        self.latest_filepath = os.path.join(SESSIONS_DIR, "latest.json")
 
     def clear(self):
         self.is_recording = False
         self.current_session = []
         self.first_timestamp = None
         self.last_sample_time = 0
+        self.lap_start_times = {}
+        self.last_write_time = 0
+        self.total_count = 0
+
+    def _flush_to_disk(self):
+        """Append in-memory points to the latest.json file on disk and clear memory."""
+        if not self.current_session:
+            return
+        
+        existing_data = []
+        if os.path.exists(self.latest_filepath):
+            try:
+                with open(self.latest_filepath, "r", encoding="utf-8") as f:
+                    existing_data = json.load(f)
+                    if not isinstance(existing_data, list):
+                        existing_data = []
+            except Exception as e:
+                logger.error(f"Failed to read existing latest.json for flushing: {e}")
+                existing_data = []
+
+        existing_data.extend(self.current_session)
+        
+        try:
+            with open(self.latest_filepath, "w", encoding="utf-8") as f:
+                json.dump(existing_data, f, indent=4)
+            self.current_session = []
+            self.last_write_time = time.time()
+            logger.info(f"Flushed telemetry chunk to disk. Total points on disk: {len(existing_data)}")
+        except Exception as e:
+            logger.error(f"Failed to flush telemetry chunk to disk: {e}")
 
     def record(self, data: dict):
         if not app_settings.get("race_recording", True):
             if self.is_recording or self.current_session:
                 self.clear()
+                if os.path.exists(self.latest_filepath):
+                    try:
+                        os.remove(self.latest_filepath)
+                    except Exception:
+                        pass
             return
 
-        if data.get("IsRaceOn", 0) == 1:
+        is_race_on = data.get("IsRaceOn", 0) == 1
+
+        if is_race_on:
             if not self.is_recording:
+                self.clear()
                 self.is_recording = True
+                # Initialize/clear latest.json on start
+                try:
+                    with open(self.latest_filepath, "w", encoding="utf-8") as f:
+                        json.dump([], f)
+                except Exception as e:
+                    logger.error(f"Failed to initialize latest.json: {e}")
 
             now = time.time()
             if now - self.last_sample_time >= self.downsample_interval:
-                if len(self.current_session) >= self.max_samples:
+                if self.total_count >= self.max_samples:
                     self.is_recording = False
                     return
 
@@ -167,6 +215,11 @@ class RaceRecorder:
                     self.first_timestamp = timestamp_ms
 
                 relative_time = (timestamp_ms - self.first_timestamp) / 1000.0
+                current_lap = data.get("CurrentLap", 1)
+
+                # Track lap start times
+                if current_lap not in self.lap_start_times:
+                    self.lap_start_times[current_lap] = relative_time
 
                 # Data projection for memory efficiency
                 point = {
@@ -186,10 +239,48 @@ class RaceRecorder:
                     "PositionZ": data.get("PositionZ", 0.0)
                 }
                 self.current_session.append(point)
+                self.total_count += 1
                 self.last_sample_time = now
+
+                # Segmented write: Flush to disk every 30 seconds or 150 points
+                if len(self.current_session) >= 150 or (now - self.last_write_time >= 30.0 and self.last_write_time > 0):
+                    self._flush_to_disk()
         else:
             if self.is_recording:
-                self.is_recording = False
+                self.save_latest_and_clear(data)
+
+    def save_latest_and_clear(self, last_data: dict):
+        """Flush remaining data to disk, truncate post-finish line telemetry, and clear memory."""
+        self._flush_to_disk()
+        self.is_recording = False
+        
+        last_lap_num = last_data.get("CurrentLap", 1)
+        last_lap_time = last_data.get("LastLap", 0.0)
+        
+        if last_lap_num in self.lap_start_times and last_lap_time > 0.0:
+            cutoff_time = self.lap_start_times[last_lap_num] + last_lap_time
+            logger.info(f"Truncation: Last lap {last_lap_num} started at {self.lap_start_times[last_lap_num]}s, lasted {last_lap_time}s. Cutoff time: {cutoff_time}s")
+            
+            if os.path.exists(self.latest_filepath):
+                try:
+                    with open(self.latest_filepath, "r", encoding="utf-8") as f:
+                        all_points = json.load(f)
+                    
+                    if isinstance(all_points, list):
+                        original_count = len(all_points)
+                        filtered_points = [p for p in all_points if p.get("time", 0.0) <= cutoff_time]
+                        truncated_count = original_count - len(filtered_points)
+                        
+                        with open(self.latest_filepath, "w", encoding="utf-8") as f:
+                            json.dump(filtered_points, f, indent=4)
+                        
+                        logger.info(f"Truncated {truncated_count} post-finish line telemetry points. Cleaned session saved.")
+                except Exception as e:
+                    logger.error(f"Failed to truncate post-finish line telemetry: {e}")
+        else:
+            logger.info(f"No truncation applied. Last lap: {last_lap_num}, Last lap time: {last_lap_time}. Lap start times: {self.lap_start_times}")
+            
+        self.clear()
 
 race_recorder = RaceRecorder()
 
@@ -309,6 +400,17 @@ class DragRecorder:
         if not self.current_session:
             self.analysis_result = {"error": "No data recorded."}
             return
+
+        # Truncate session data after reaching maximum speed (discard subsequent deceleration)
+        max_speed = -1.0
+        max_speed_idx = 0
+        for idx, p in enumerate(self.current_session):
+            if p["SpeedMetersPerSecond"] > max_speed:
+                max_speed = p["SpeedMetersPerSecond"]
+                max_speed_idx = idx
+                
+        if max_speed_idx >= 10:
+            self.current_session = self.current_session[:max_speed_idx + 1]
 
         first_gear_pts = [p for p in self.current_session if p["Gear"] == 1]
         
@@ -548,7 +650,6 @@ class DragRecorder:
         }
 
 drag_recorder = DragRecorder()
-race_recorder = RaceRecorder()
 
 # --- Dyno Collection Constants ---
 DYNO_BUCKET_SIZE = 50       # RPM per bucket (denser than 100 for higher resolution)
@@ -953,16 +1054,28 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
 async def get_analysis_status():
     return {
         "isRecording": race_recorder.is_recording,
-        "recordingCount": len(race_recorder.current_session)
+        "recordingCount": race_recorder.total_count
     }
 
 @app.get("/api/analysis/data")
 async def get_analysis_data():
-    return race_recorder.current_session
+    if os.path.exists(race_recorder.latest_filepath):
+        try:
+            with open(race_recorder.latest_filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to read latest.json: {e}")
+            return []
+    return []
 
 @app.post("/api/analysis/clear")
 async def clear_analysis_data():
     race_recorder.clear()
+    if os.path.exists(race_recorder.latest_filepath):
+        try:
+            os.remove(race_recorder.latest_filepath)
+        except Exception:
+            pass
     return {"message": "Current recording session cleared."}
 
 @app.get("/api/analysis/sessions")
@@ -971,6 +1084,8 @@ async def list_saved_sessions():
         files = [f for f in os.listdir(SESSIONS_DIR) if f.endswith(".json")]
         sessions = []
         for f in files:
+            if f == "latest.json":
+                continue
             path = os.path.join(SESSIONS_DIR, f)
             stat = os.stat(path)
             sessions.append({
@@ -986,19 +1101,24 @@ async def list_saved_sessions():
 
 @app.post("/api/analysis/sessions/save")
 async def save_session_to_file():
-    if not race_recorder.current_session:
-        return {"error": "No data to save"}
+    # Deprecated in favor of save_latest, but kept for compatibility
+    return await save_latest_session_to_file()
+
+@app.post("/api/analysis/sessions/save_latest")
+async def save_latest_session_to_file():
+    if not os.path.exists(race_recorder.latest_filepath):
+        return {"error": "No recorded data found"}
     
     timestamp = int(time.time())
     filename = f"session_{timestamp}.json"
     file_path = os.path.join(SESSIONS_DIR, filename)
     
     try:
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(race_recorder.current_session, f, indent=4)
+        import shutil
+        shutil.copy2(race_recorder.latest_filepath, file_path)
         return {"message": "Session saved successfully", "filename": filename}
     except Exception as e:
-        logger.error(f"Failed to save session to {filename}: {e}")
+        logger.error(f"Failed to save latest session as {filename}: {e}")
         return {"error": f"Failed to save session: {e}"}
 
 @app.get("/api/analysis/sessions/{filename}")

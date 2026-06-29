@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTelemetry, telemetryEmitter } from '../hooks/useTelemetry';
 import { useSettings } from '../context/SettingsContext';
 import { useCarParams } from '../context/CarParamsContext';
+import { useTelemetryRecorder } from '../context/TelemetryRecorderContext';
 import AnalysisView from './AnalysisView';
 import DragTestView from './DragTestView';
 
@@ -606,6 +607,27 @@ const TelemetryView: React.FC = () => {
   const { data } = useTelemetry();
   const { convertSpeed, convertPower, convertTorque, convertBoost, t } = useSettings();
   const { carName } = useCarParams();
+  const { isRecording, loadSavedSession } = useTelemetryRecorder();
+
+  const prevIsRacingRef = useRef<boolean>(false);
+
+  // Monitor IsRaceOn to auto-redirect and load the latest session on race completion
+  useEffect(() => {
+    if (!data) return;
+    const isRacingNow = data.IsRaceOn === 1;
+    
+    // Transition from racing (true) to not racing (false)
+    if (prevIsRacingRef.current && !isRacingNow) {
+      if (isRecording) {
+        const timer = setTimeout(async () => {
+          await loadSavedSession('latest.json');
+          setSubTab('analysis');
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+    prevIsRacingRef.current = isRacingNow;
+  }, [data?.IsRaceOn, isRecording, loadSavedSession]);
 
   const isRacing = data?.IsRaceOn === 1;
 

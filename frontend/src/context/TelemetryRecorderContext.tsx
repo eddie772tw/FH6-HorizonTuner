@@ -45,9 +45,12 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   const { settings } = useSettings();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingCount, setRecordingCount] = useState(0);
-  const [currentSession, setCurrentSession] = useState<AnalysisDataPoint[]>([]);
   const [loadedSession, setLoadedSession] = useState<AnalysisDataPoint[] | null>(null);
   const [savedSessions, setSavedSessions] = useState<SavedSessionHeader[]>([]);
+
+  // Fixed static empty array. The frontend never stores telemetry points in background state.
+  // This completely eliminates background memory growth in the WebView.
+  const currentSession: AnalysisDataPoint[] = [];
 
   // Poll recording status from backend every 2 seconds
   useEffect(() => {
@@ -96,12 +99,13 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
     }
   };
 
+  // Fetch the current session (latest.json) and load it directly into loadedSession
   const fetchCurrentSessionData = async (): Promise<AnalysisDataPoint[]> => {
     try {
       const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
       const data = await res.json();
       if (Array.isArray(data)) {
-        setCurrentSession(data);
+        setLoadedSession(data);
         return data;
       }
     } catch (e) {
@@ -113,16 +117,17 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   const clearCurrentSession = async () => {
     try {
       await fetch('http://127.0.0.1:8001/api/analysis/clear', { method: 'POST' });
-      setCurrentSession([]);
+      setLoadedSession(null);
       setRecordingCount(0);
     } catch (e) {
       console.error('Failed to clear current session on backend:', e);
     }
   };
 
+  // Save the latest.json session file to a permanent timestamped file on the backend
   const saveCurrentSessionToBackend = async (): Promise<string | null> => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions/save', { method: 'POST' });
+      const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions/save_latest', { method: 'POST' });
       const data = await res.json();
       if (data && data.filename) {
         await fetchSavedSessionsList();
@@ -154,9 +159,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
       const data = await res.json();
       if (data && !data.error) {
         await fetchSavedSessionsList();
-        if (loadedSession && loadedSession === data) { // simple check or clear if matching
-          setLoadedSession(null);
-        }
+        setLoadedSession(null);
         return true;
       }
     } catch (e) {
