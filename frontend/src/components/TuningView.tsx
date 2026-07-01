@@ -247,7 +247,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActive
 
     // 1. Final Drive Optimization
     const maxRpmLimit = tuning.gearing.maxRpm;
-    const lastPt = activeDragData[activeDragData.length - 1];
     const topGearPts = activeDragData.filter(p => p.Gear === numGears);
     const topGearMaxRpm = topGearPts.length > 0 ? Math.max(...topGearPts.map(p => p.CurrentEngineRpm)) : 0;
     
