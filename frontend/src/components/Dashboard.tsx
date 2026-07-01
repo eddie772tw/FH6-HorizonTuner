@@ -17,7 +17,7 @@ const Dashboard: React.FC = () => {
     <div style={{ padding: '2rem', width: '100%', boxSizing: 'border-box' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(0, 240, 255, 0.5)' }}>
-          FH6 Telemetry Tuning
+          FH6-Horizon Tuner
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
