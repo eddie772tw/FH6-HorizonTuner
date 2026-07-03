@@ -1,8 +1,8 @@
 {
-    "dyno_recording": false,
+    "dyno_recording": true,
     "race_recording": false,
     "language": "zh-tw",
-    "dyno_test_gear": 6,
+    "dyno_test_gear": 0,
     "dyno_filter_slip": true,
     "dyno_filter_transients": true,
     "units": {
