@@ -30,6 +30,25 @@ export interface CarParams {
     diff: 'Fixed' | 'Adjustable';
   };
   dyno_curve: Record<string, { hp: number; torque: number; hp_hist?: number[]; torque_hist?: number[] }>;
+  
+  // New optional parameters for advanced tuning wizard
+  spring_front_min?: number;
+  spring_front_max?: number;
+  spring_rear_min?: number;
+  spring_rear_max?: number;
+  arb_front_min?: number;
+  arb_front_max?: number;
+  arb_rear_min?: number;
+  arb_rear_max?: number;
+  
+  roll_center_front?: number;
+  roll_center_rear?: number;
+  anti_dive?: number;
+  anti_squat?: number;
+
+  target_ride_frequency?: number;
+  target_rebound_ratio?: number;
+  target_bump_ratio?: number;
 }
 
 export interface AppSettings {
@@ -139,7 +158,22 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
                 brakes: 'Adjustable',
                 diff: 'Adjustable'
               },
-              dyno_curve: {}
+              dyno_curve: {},
+              spring_front_min: 10.0,
+              spring_front_max: 120.0,
+              spring_rear_min: 10.0,
+              spring_rear_max: 120.0,
+              arb_front_min: 1.0,
+              arb_front_max: 65.0,
+              arb_rear_min: 1.0,
+              arb_rear_max: 65.0,
+              roll_center_front: 0.0,
+              roll_center_rear: 0.0,
+              anti_dive: 0,
+              anti_squat: 0,
+              target_ride_frequency: 2.4,
+              target_rebound_ratio: 0.70,
+              target_bump_ratio: 0.55
             });
         }
       } catch (e) {

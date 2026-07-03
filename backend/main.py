@@ -134,6 +134,7 @@ else:
 class RaceRecorder:
     def __init__(self):
         self.is_recording = False
+        self.manual_mode = False  # Added to support open-world recording
         self.current_session = []
         self.first_timestamp = None
         self.last_sample_time = 0
@@ -146,6 +147,7 @@ class RaceRecorder:
 
     def clear(self):
         self.is_recording = False
+        self.manual_mode = False
         self.current_session = []
         self.first_timestamp = None
         self.last_sample_time = 0
@@ -191,12 +193,14 @@ class RaceRecorder:
                         pass
             return
 
-        is_race_on = data.get("IsRaceOn", 0) == 1
+        is_race_on = (data.get("IsRaceOn", 0) == 1) or self.manual_mode
 
         if is_race_on:
             if not self.is_recording:
                 self.clear()
                 self.is_recording = True
+                if self.manual_mode:
+                    self.manual_mode = True # Keep manual_mode flag True after clear
                 # Initialize/clear latest.json on start
                 try:
                     with open(self.latest_filepath, "w", encoding="utf-8") as f:
@@ -236,6 +240,7 @@ class RaceRecorder:
                     "TireSlipRatio": list(data.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])),
                     "TireTemp": list(data.get("TireTemp", [0.0, 0.0, 0.0, 0.0])),
                     "PositionX": data.get("PositionX", 0.0),
+                    "PositionY": data.get("PositionY", 0.0),
                     "PositionZ": data.get("PositionZ", 0.0)
                 }
                 self.current_session.append(point)
@@ -1077,6 +1082,33 @@ async def clear_analysis_data():
         except Exception:
             pass
     return {"message": "Current recording session cleared."}
+
+@app.post("/api/analysis/recorder/start")
+async def start_manual_recording():
+    race_recorder.clear()
+    race_recorder.manual_mode = True
+    race_recorder.is_recording = True
+    
+    # Initialize/clear latest.json on start
+    try:
+        with open(race_recorder.latest_filepath, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        logger.info("Manual recording started.")
+        return {"message": "Manual recording started successfully"}
+    except Exception as e:
+        logger.error(f"Failed to initialize latest.json for manual recording: {e}")
+        race_recorder.clear()
+        return {"error": f"Failed to start manual recording: {str(e)}"}
+
+@app.post("/api/analysis/recorder/stop")
+async def stop_manual_recording():
+    if not race_recorder.is_recording or not race_recorder.manual_mode:
+        return {"error": "Manual recording is not active"}
+    
+    race_recorder.manual_mode = False
+    race_recorder.save_latest_and_clear({})
+    logger.info("Manual recording stopped and saved.")
+    return {"message": "Manual recording stopped and saved successfully"}
 
 @app.get("/api/analysis/sessions")
 async def list_saved_sessions():

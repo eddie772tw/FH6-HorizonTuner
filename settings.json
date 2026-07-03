@@ -8,10 +8,10 @@
     "units": {
         "speed": "mph",
         "weight": "lbs",
-        "temperature": "C",
+        "temperature": "F",
         "tirePressure": "psi",
-        "boostPressure": "bar",
-        "springRate": "kgfmm",
+        "boostPressure": "psi",
+        "springRate": "lbsin",
         "rideHeight": "in",
         "suspensionForce": "lbf",
         "power": "hp",

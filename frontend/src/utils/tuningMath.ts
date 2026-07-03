@@ -344,3 +344,171 @@ export function getDifferentialBaseline(drivetrain: Drivetrain, _hp: number = 0,
     return { accelF: Math.min(100, 25 + torqueLockBonus * 0.5), decelF: 5, accelR: Math.min(100, 70 + torqueLockBonus), decelR: 10, center: 70 };
   }
 }
+
+export interface GearingResult {
+  finalDrive: number;
+  gears: number[];
+}
+
+/**
+ * AEGO (Adaptive Envelope & Gearing Optimization) Algorithm
+ * Generates custom, physically-sound gearing setup for 6 different race goals.
+ */
+export function calculateAEGOGearing(
+  raceGoal: string,
+  numGears: number,
+  carParams: any,
+  maxRpm: number
+): GearingResult {
+  // 1. Fallback & Default Parameters Setup
+  const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
+  const frontBias = (carParams && carParams.weight_distribution > 0) ? carParams.weight_distribution : 50; // %
+  const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
+  const maxHp = (carParams && carParams.maxHp > 0) ? carParams.maxHp : 300; // HP
+  
+  // Estimate maxTorque if not present
+  let maxTorque = (carParams && carParams.maxTorque > 0) ? carParams.maxTorque : 0; // N-m
+  if (maxTorque === 0) {
+    // Torque = HP * 9549 / RPM. Assume peak torque occurs at 75% of maxRpm
+    const torqueRpm = maxRpm * 0.75;
+    maxTorque = (maxHp * 745.7) / (torqueRpm * 2 * Math.PI / 60);
+  }
+
+  // 2. Step A: Theoretical Top Speed & Final Drive (FD) Derivation
+  // Equation: Power * efficiency = (beta * v^2 + roll_resist * m * g) * v
+  const efficiency = drivetrain === 'AWD' ? 0.85 : drivetrain === 'RWD' ? 0.90 : 0.92;
+  const powerWatts = maxHp * 745.7;
+  const beta = 0.35; // default equivalent drag coefficient
+  const rollResist = 0.015;
+  const g = 9.81;
+  const tireRadius = 0.32; // meters
+
+  // Solve for v_max using binary search
+  let lowSpeed = 25.0; // ~90 km/h
+  let highSpeed = 160.0; // ~576 km/h
+  let vMax = 60.0; // fallback
+  for (let iter = 0; iter < 30; iter++) {
+    const mid = (lowSpeed + highSpeed) / 2;
+    const dragForce = beta * mid * mid;
+    const rollForce = rollResist * weight * g;
+    const requiredPower = (dragForce + rollForce) * mid;
+    const availablePower = powerWatts * efficiency;
+    if (requiredPower > availablePower) {
+      highSpeed = mid;
+    } else {
+      lowSpeed = mid;
+      vMax = mid;
+    }
+  }
+
+  // Target Speed calculation based on raceGoal
+  let targetSpeed = vMax;
+  if (raceGoal === 'Touge') targetSpeed = vMax * 0.85;
+  else if (raceGoal === 'Rally') targetSpeed = vMax * 0.80;
+  else if (raceGoal === 'Drift') targetSpeed = vMax * 0.70;
+  else if (raceGoal === 'DangerSign') targetSpeed = vMax * 0.75;
+  else if (raceGoal === 'SpeedZone') targetSpeed = vMax * 1.02;
+
+  // Determine top gear ratio based on number of gears
+  let gTop = 0.55;
+  if (numGears <= 4) gTop = 0.75;
+  else if (numGears === 5) gTop = 0.68;
+  else if (numGears === 6) gTop = 0.60;
+  else if (numGears === 7) gTop = 0.55;
+  else if (numGears === 8) gTop = 0.51;
+  else if (numGears === 9) gTop = 0.47;
+  else if (numGears >= 10) gTop = 0.44;
+
+  // FD = (maxRpm * 2 * PI * r_tire) / (targetSpeed * gTop * 60)
+  let fd = (maxRpm * 2 * Math.PI * tireRadius) / (targetSpeed * gTop * 60);
+
+  // Apply Race Goal multiplier to FD
+  if (raceGoal === 'Touge') fd = fd * 1.08;
+  else if (raceGoal === 'Rally') fd = fd * 1.12;
+  else if (raceGoal === 'DangerSign') fd = fd * 1.18; // sprint emphasis
+
+  // Clamp FD to typical game boundaries
+  fd = Math.max(2.0, Math.min(6.5, fd));
+
+  // 3. Step B: Launch-Limited 1st Gear (g1) Calculation
+  const tLaunch = maxTorque * 0.85; // approximate launch torque
+  let mu = 1.15; // default road tire friction
+  if (raceGoal === 'Rally') mu = 0.85; // rally mud tire
+  else if (raceGoal === 'Drift') mu = 0.90; // drift tire
+
+  let alpha = 1.15; // slip allowance
+  if (raceGoal === 'Rally') alpha = 1.10; // keep traction on mud
+  else if (raceGoal === 'Drift') alpha = 1.25; // encourage initial wheelspin
+  else if (raceGoal === 'DangerSign') alpha = 1.05; // strict traction for sprint
+
+  // Drive wheel normal load calculation
+  const weightDistributionRatio = frontBias / 100;
+  let wStatic = weight;
+  if (drivetrain === 'RWD') {
+    wStatic = weight * (1 - weightDistributionRatio);
+  } else if (drivetrain === 'FWD') {
+    wStatic = weight * weightDistributionRatio;
+  }
+  
+  const wTransfer = weight * 0.08;
+  let wDrive = weight; // AWD uses all weight
+  if (drivetrain === 'RWD') {
+    wDrive = wStatic + wTransfer;
+  } else if (drivetrain === 'FWD') {
+    wDrive = Math.max(weight * 0.25, wStatic - wTransfer);
+  }
+
+  let g1 = (alpha * mu * wDrive * g * tireRadius) / (tLaunch * fd * efficiency);
+
+  // Clamp g1 to safe gameplay limits
+  g1 = Math.max(2.5, Math.min(4.8, g1));
+
+  // Ensure g1 > gTop
+  if (g1 <= gTop) {
+    g1 = gTop + 2.0;
+  }
+
+  // 4. Step C: Multi-Gear Ratio Interpolation based on Envelope Weights
+  const w: number[] = [];
+  const n = numGears;
+
+  for (let i = 1; i < n; i++) {
+    let weightVal = 1.0;
+    if (raceGoal === 'Road') {
+      weightVal = Math.pow(n - i, 0.7);
+    } else if (raceGoal === 'Touge') {
+      weightVal = 1.0;
+    } else if (raceGoal === 'Rally') {
+      weightVal = 1.0 + 0.12 * (n - 1 - i);
+    } else if (raceGoal === 'Drift') {
+      if (i === 1) weightVal = 2.5;
+      else if (i === 2) weightVal = 1.2;
+      else if (i === 3 || i === 4) weightVal = 0.45;
+      else weightVal = 1.4;
+    } else if (raceGoal === 'SpeedZone') {
+      if (i >= n - 2) weightVal = 0.35;
+      else weightVal = 1.0 + 0.3 * (n - 1 - i);
+    } else if (raceGoal === 'DangerSign') {
+      weightVal = 1.0;
+    }
+    w.push(weightVal);
+  }
+
+  const sumW = w.reduce((sum, val) => sum + val, 0);
+  const gears: number[] = Array(n).fill(0);
+  gears[0] = g1;
+  gears[n - 1] = gTop;
+
+  for (let i = 1; i < n - 1; i++) {
+    const subSumW = w.slice(0, i).reduce((sum, val) => sum + val, 0);
+    gears[i] = g1 * Math.pow(gTop / g1, subSumW / sumW);
+  }
+
+  const roundedFD = Math.round(fd * 100) / 100;
+  const roundedGears = gears.map(ratio => Math.round(ratio * 100) / 100);
+
+  return {
+    finalDrive: roundedFD,
+    gears: roundedGears
+  };
+}
