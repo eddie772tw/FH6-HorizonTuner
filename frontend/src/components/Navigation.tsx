@@ -26,7 +26,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
         <h1 style={{ margin: 0, color: 'var(--primary)', textShadow: '0 0 10px rgba(0, 240, 255, 0.5)', fontSize: '1.5rem' }}>
-          FH6 Tuner Pro
+          FH6-Horizon Tuner
         </h1>
         
         <div style={{ display: 'flex', gap: '1rem' }}>
