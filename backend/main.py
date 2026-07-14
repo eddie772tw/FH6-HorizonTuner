@@ -1,7 +1,23 @@
+import os
+import sys
+
+# 避免在無主控台模式下 sys.stdout/sys.stderr 為 None 導致 uvicorn 或 logging 報錯
+# 同時將發行版執行期的後端輸出重導向至 logs/backend.log
+if getattr(sys, "frozen", False):
+    DATA_ROOT = os.path.dirname(sys.executable)
+    log_dir = os.path.join(DATA_ROOT, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    backend_log_path = os.path.join(log_dir, "backend.log")
+    try:
+        backend_log = open(backend_log_path, "a", encoding="utf-8", buffering=1)
+        sys.stdout = backend_log
+        sys.stderr = backend_log
+    except Exception:
+        pass
+
 import asyncio
 import json
 import logging
-import os
 import time
 from typing import List
 
@@ -13,7 +29,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 統一判定與配置唯讀資源目錄與可寫入資料目錄
-import sys
 
 if getattr(sys, "frozen", False):
     RESOURCE_ROOT = sys._MEIPASS
@@ -1520,7 +1535,19 @@ if __name__ == "__main__":
         if os.path.exists(frontend_path):
             import subprocess
 
-            proc = subprocess.Popen([frontend_path, "--no-sidecar"])
+            # 準備前端日誌檔案
+            log_dir = os.path.join(DATA_ROOT, "logs")
+            frontend_log_path = os.path.join(log_dir, "frontend.log")
+            try:
+                frontend_log = open(frontend_log_path, "a", encoding="utf-8", buffering=1)
+                proc = subprocess.Popen(
+                    [frontend_path, "--no-sidecar"],
+                    stdout=frontend_log,
+                    stderr=subprocess.STDOUT
+                )
+            except Exception:
+                proc = subprocess.Popen([frontend_path, "--no-sidecar"])
+
             threading.Thread(
                 target=check_frontend_alive, args=(proc,), daemon=True
             ).start()

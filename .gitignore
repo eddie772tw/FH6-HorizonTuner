@@ -16,3 +16,12 @@
 !/backend/car_params/default_car.json
 /backend/sessions/*.json
 /backend/drag_sessions/*.json
+
+# Build and distribution directories
+/dist/
+/build/
+
+# Application runtime logs
+/logs/
+/backend/logs/
+**/logs/
