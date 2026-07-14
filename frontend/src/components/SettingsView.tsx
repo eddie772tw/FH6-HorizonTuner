@@ -198,6 +198,59 @@ const SettingsView: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              <hr style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '0.5rem 0' }} />
+
+              {/* Telemetry UDP Settings */}
+              <div style={sectionStyle}>
+                <h4 style={sectionTitleStyle}>{t("Telemetry Receiver Settings")}</h4>
+                
+                <div style={settingRowStyle}>
+                  <div>
+                    <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Telemetry IP")}</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("IP address to listen for Forza UDP telemetry packets.")}</span>
+                  </div>
+                  <input 
+                    type="text" 
+                    value={settings.telemetry_ip || '0.0.0.0'}
+                    onChange={(e) => updateSettings({ telemetry_ip: e.target.value })}
+                    className="cyber-input"
+                    style={{ 
+                      width: '170px', 
+                      background: 'rgba(0,0,0,0.4)', 
+                      color: 'white', 
+                      border: '1px solid rgba(255,255,255,0.2)', 
+                      borderRadius: '6px', 
+                      padding: '0.5rem 0.8rem', 
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={settingRowStyle}>
+                  <div>
+                    <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Telemetry Port")}</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Port to listen for Forza UDP telemetry packets (Default: 8000).")}</span>
+                  </div>
+                  <input 
+                    type="number" 
+                    value={settings.telemetry_port || 8000}
+                    onChange={(e) => updateSettings({ telemetry_port: parseInt(e.target.value) || 8000 })}
+                    className="cyber-input"
+                    style={{ 
+                      width: '170px', 
+                      background: 'rgba(0,0,0,0.4)', 
+                      color: 'white', 
+                      border: '1px solid rgba(255,255,255,0.2)', 
+                      borderRadius: '6px', 
+                      padding: '0.5rem 0.8rem', 
+                      fontSize: '0.9rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Basic Units */}

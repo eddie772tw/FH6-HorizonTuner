@@ -21,6 +21,8 @@ export interface AppSettings {
   dyno_filter_slip: boolean;
   dyno_filter_transients: boolean;
   units: UnitSettings;
+  telemetry_ip?: string;
+  telemetry_port?: number;
 }
 
 interface SettingsContextType {
@@ -79,7 +81,9 @@ const defaultSettings: AppSettings = {
   dyno_test_gear: 4,
   dyno_filter_slip: true,
   dyno_filter_transients: true,
-  units: defaultUnits
+  units: defaultUnits,
+  telemetry_ip: '0.0.0.0',
+  telemetry_port: 8000
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
