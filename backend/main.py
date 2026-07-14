@@ -22,6 +22,7 @@ else:
     backend_log_path = os.path.join(log_dir, "backend.log")
 
 import asyncio
+import gc
 import json
 import logging
 import subprocess
@@ -31,7 +32,7 @@ from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from telemetry_listener import start_udp_listener
+from telemetry_listener import pack_telemetry_binary, start_udp_listener
 
 
 # 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
@@ -115,18 +116,34 @@ if os.path.exists(CAR_DB_PATH):
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self.active_binary_connections: List[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket, is_binary: bool = False):
         await websocket.accept()
-        self.active_connections.append(websocket)
-        logger.info(f"Client connected. Total clients: {len(self.active_connections)}")
+        if is_binary:
+            self.active_binary_connections.append(websocket)
+            logger.info(
+                f"Binary Client connected. Total binary clients: {len(self.active_binary_connections)}"
+            )
+        else:
+            self.active_connections.append(websocket)
+            logger.info(
+                f"Client connected. Total clients: {len(self.active_connections)}"
+            )
 
-    def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
-        logger.info(
-            f"Client disconnected. Total clients: {len(self.active_connections)}"
-        )
+    def disconnect(self, websocket: WebSocket, is_binary: bool = False):
+        if is_binary:
+            if websocket in self.active_binary_connections:
+                self.active_binary_connections.remove(websocket)
+            logger.info(
+                f"Binary Client disconnected. Total binary clients: {len(self.active_binary_connections)}"
+            )
+        else:
+            if websocket in self.active_connections:
+                self.active_connections.remove(websocket)
+            logger.info(
+                f"Client disconnected. Total clients: {len(self.active_connections)}"
+            )
 
     async def broadcast_json(self, data: dict):
         for connection in self.active_connections:
@@ -134,11 +151,19 @@ class ConnectionManager:
                 await connection.send_json(data)
             except Exception as e:
                 logger.error(f"Error sending data to client: {e}")
-                self.disconnect(connection)
+                self.disconnect(connection, is_binary=False)
+
+    async def broadcast_binary(self, data: bytes):
+        for connection in self.active_binary_connections:
+            try:
+                await connection.send_bytes(data)
+            except Exception as e:
+                logger.error(f"Error sending binary data to client: {e}")
+                self.disconnect(connection, is_binary=True)
 
 
 manager = ConnectionManager()
-telemetry_queue = asyncio.Queue(maxsize=100)
+telemetry_queue = asyncio.Queue(maxsize=10)
 
 current_udp_transport = None
 current_udp_ip_port = (None, None)
@@ -1155,24 +1180,68 @@ async def broadcast_telemetry():
                             save_car_params(car_id, dyno_cache[car_id])
                             last_dyno_save_time = current_time
 
+        # --- Cache capacity limiting for dyno_cache (LRU/Cap to 20) ---
+        if len(dyno_cache) > 20:
+            # Pop the oldest inserted key
+            oldest_key = next(iter(dyno_cache))
+            dyno_cache.pop(oldest_key, None)
+
+        # --- Periodic GC (every 60 seconds) ---
+        current_time = time.time()
+        static_gc_state = getattr(broadcast_telemetry, "last_gc_time", 0.0)
+        if current_time - static_gc_state > 60.0:
+            gc.collect()
+            broadcast_telemetry.last_gc_time = current_time
+
+        # --- Backpressure: If queue is filling up, drop old frames ---
+        # Note: telemetry_queue size is 10. If it gets larger than 5, we clear all but the latest.
+        if telemetry_queue.qsize() > 5:
+            try:
+                while telemetry_queue.qsize() > 1:
+                    telemetry_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+
+        # --- Broadcast telemetry ---
         if manager.active_connections:
             await manager.broadcast_json(data)
+
+        if manager.active_binary_connections:
+            binary_data = pack_telemetry_binary(data)
+            await manager.broadcast_binary(binary_data)
 
         # Give control back to event loop
         await asyncio.sleep(0.01)
 
 
+# Initialize static variable for GC tracking
+broadcast_telemetry.last_gc_time = time.time()
+
+
 @app.websocket("/ws/telemetry")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+    await manager.connect(websocket, is_binary=False)
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, is_binary=False)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, is_binary=False)
+
+
+@app.websocket("/ws/telemetry/binary")
+async def websocket_binary_endpoint(websocket: WebSocket):
+    await manager.connect(websocket, is_binary=True)
+    try:
+        while True:
+            await websocket.receive_bytes()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, is_binary=True)
+    except Exception as e:
+        logger.error(f"Binary WebSocket error: {e}")
+        manager.disconnect(websocket, is_binary=True)
 
 
 # --- Car Params API Endpoints ---
