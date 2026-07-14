@@ -6,3 +6,5 @@ venv
 .ruff_cache
 tests
 frontend
+tool
+

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navigation from './components/Navigation';
 import TelemetryView from './components/TelemetryView';
+import OverlayView from './components/OverlayView';
 import TuningView from './components/TuningView';
 import CarParamsView from './components/CarParamsView';
 import SettingsView from './components/SettingsView';
@@ -12,7 +13,7 @@ import './App.css';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'overlay' | 'tuning' | 'car_params' | 'settings'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
 
@@ -29,6 +30,9 @@ const AppContent: React.FC = () => {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <TelemetryView />
+        </div>
+        <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <OverlayView />
         </div>
         <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <TuningView setActiveTab={setActiveTab} />
