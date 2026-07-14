@@ -1,6 +1,6 @@
 import os
-import sys
 import re
+import sys
 
 # 避免在無主控台模式下 sys.stdout/sys.stderr 為 None 導致 uvicorn 或 logging 報錯
 # 同時將發行版執行期的後端輸出重導向至 logs/backend.log
@@ -25,6 +25,7 @@ import asyncio
 import json
 import logging
 import time
+from contextlib import asynccontextmanager
 from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -109,16 +110,6 @@ if os.path.exists(CAR_DB_PATH):
     except Exception as e:
         logger.error(f"Failed to load car database: {e}")
 
-app = FastAPI(title="FH6 Telemetry Tuning Tool API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 class ConnectionManager:
     def __init__(self):
@@ -147,6 +138,30 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 telemetry_queue = asyncio.Queue(maxsize=100)
+
+
+@asynccontextmanager
+async def lifespan(app_inst: FastAPI):
+    # Customizable IP and Port
+    ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
+    port = int(os.getenv("TELEMETRY_PORT", "8000"))
+
+    # Start UDP listener in the background
+    asyncio.create_task(start_udp_listener(ip, port, telemetry_queue))
+    # Start the broadcast loop
+    asyncio.create_task(broadcast_telemetry())
+    yield
+
+
+app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Memory cache for dyno data to avoid disk I/O every frame
 dyno_cache = {}
@@ -928,8 +943,8 @@ def save_car_params(car_id: str, data: dict):
         json.dump(data, f, indent=4)
 
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     # Customizable IP and Port
     ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
@@ -938,6 +953,10 @@ async def startup_event():
     asyncio.create_task(start_udp_listener(ip, port, telemetry_queue))
     # Start the broadcast loop
     asyncio.create_task(broadcast_telemetry())
+    yield
+
+
+app.router.lifespan_context = lifespan
 
 
 async def broadcast_telemetry():

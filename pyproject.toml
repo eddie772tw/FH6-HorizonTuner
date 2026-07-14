@@ -64,5 +64,7 @@ line-ending = "auto"
 pythonpath = ["backend"]
 filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
-    "ignore:.*locale.getdefaultlocale.*:DeprecationWarning"
+    "ignore:.*locale.getdefaultlocale.*:DeprecationWarning",
+    "ignore::DeprecationWarning",
+    "ignore:.*starlette.testclient.*"
 ]
