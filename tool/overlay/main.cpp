@@ -4,21 +4,25 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <algorithm>
 
 // ImGui
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 
+// ExprTk
+#include <exprtk.hpp>
+
 // 我們的組件
 #include "DXGIOverlayManager.h"
 #include "WebSocketClient.h"
 
-// nlohmann/json (將由 CMake 下載)
+// nlohmann/json
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-// 外部宣告 ImGui WndProc 處理程序
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // 遙測數據結構
@@ -41,31 +45,242 @@ struct TelemetryData {
     float boost = 0.0f;
 };
 
-// 模組佈局結構
-struct ModuleLayout {
-    bool visible = true;
-    float x = 0.0f;
-    float y = 0.0f;
-    float w = 200.0f;
-    float h = 150.0f;
+// 用於表達式求值的全域變數 (記憶體地址必須保持固定)
+float ev_rpm = 0.0f;
+float ev_maxRpm = 6000.0f;
+float ev_idleRpm = 1000.0f;
+float ev_speed = 0.0f;
+float ev_gear = 0.0f;
+float ev_power = 0.0f;
+float ev_boost = 0.0f;
+float ev_accelX = 0.0f, ev_accelY = 0.0f, ev_accelZ = 0.0f;
+float ev_yaw = 0.0f, ev_pitch = 0.0f, ev_roll = 0.0f;
+float ev_tireTempFL = 0.0f, ev_tireTempFR = 0.0f, ev_tireTempRL = 0.0f, ev_tireTempRR = 0.0f;
+float ev_suspTravelFL = 0.0f, ev_suspTravelFR = 0.0f, ev_suspTravelRL = 0.0f, ev_suspTravelRR = 0.0f;
+float ev_slipRatioFL = 0.0f, ev_slipRatioFR = 0.0f, ev_slipRatioRL = 0.0f, ev_slipRatioRR = 0.0f;
+float ev_slipAngleFL = 0.0f, ev_slipAngleFR = 0.0f, ev_slipAngleRL = 0.0f, ev_slipAngleRR = 0.0f;
+
+exprtk::symbol_table<float> g_SymbolTable;
+
+// 表達式綁定結構
+struct ExpressionBinding {
+    std::string formula;
+    exprtk::expression<float> expr;
+    bool valid = false;
+
+    void Compile(const std::string& f) {
+        formula = f;
+        if (formula.empty()) {
+            valid = false;
+            return;
+        }
+        expr.register_symbol_table(g_SymbolTable);
+        exprtk::parser<float> parser;
+        if (parser.compile(formula, expr)) {
+            valid = true;
+        } else {
+            valid = false;
+            std::cerr << "[Expression] 編譯公式失敗: " << formula << "\n";
+        }
+    }
+
+    float Evaluate(float defaultValue = 0.0f) {
+        if (!valid) return defaultValue;
+        return expr.value();
+    }
 };
 
-// 全局變數
+// 解析 HEX 顏色字串
+ImVec4 ParseHexColor(const std::string& hex) {
+    if (hex.empty() || hex[0] != '#') return ImVec4(1, 1, 1, 1);
+    
+    std::string cleanHex = hex.substr(1);
+    unsigned int colorVal = 0;
+    std::stringstream ss;
+    ss << std::hex << cleanHex;
+    ss >> colorVal;
+
+    float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
+    if (cleanHex.length() == 6) {
+        r = ((colorVal >> 16) & 0xFF) / 255.0f;
+        g = ((colorVal >> 8) & 0xFF) / 255.0f;
+        b = (colorVal & 0xFF) / 255.0f;
+    } else if (cleanHex.length() == 8) {
+        r = ((colorVal >> 24) & 0xFF) / 255.0f;
+        g = ((colorVal >> 16) & 0xFF) / 255.0f;
+        b = ((colorVal >> 8) & 0xFF) / 255.0f;
+        a = (colorVal & 0xFF) / 255.0f;
+    }
+    return ImVec4(r, g, b, a);
+}
+
+// 條件色彩配置
+struct ColorRule {
+    std::string formula;
+    ExpressionBinding binding;
+    ImVec4 colorValue;
+};
+
+struct ComponentColor {
+    std::vector<ColorRule> rules;
+    ImVec4 defaultColor = ImVec4(1, 1, 1, 1);
+
+    void Parse(const json& j) {
+        rules.clear();
+        defaultColor = ImVec4(1, 1, 1, 1);
+
+        if (j.is_string()) {
+            defaultColor = ParseHexColor(j.get<std::string>());
+            return;
+        }
+
+        if (j.is_object() && j.contains("colorRules")) {
+            for (auto& rule : j["colorRules"]) {
+                if (rule.contains("formula") && rule.contains("color")) {
+                    std::string f = rule["formula"];
+                    std::string c = rule["color"];
+                    ImVec4 colVal = ParseHexColor(c);
+                    
+                    if (f == "default") {
+                        defaultColor = colVal;
+                    } else {
+                        ColorRule r;
+                        r.formula = f;
+                        r.colorValue = colVal;
+                        r.binding.Compile(f);
+                        rules.push_back(r);
+                    }
+                }
+            }
+        }
+    }
+
+    ImVec4 Evaluate() {
+        for (auto& rule : rules) {
+            if (rule.binding.Evaluate(0.0f) > 0.5f) {
+                return rule.colorValue;
+            }
+        }
+        return defaultColor;
+    }
+};
+
+// 資料驅動組件結構
+struct Component {
+    std::string id;
+    std::string type;
+    float x = 0.0f;
+    float y = 0.0f;
+    float w = 100.0f;
+    float h = 50.0f;
+    bool visible = true;
+    
+    // 文字屬性
+    float fontSize = 18.0f;
+    std::string align = "left"; // left, center, right
+    
+    // 進度條屬性
+    bool isVertical = false;
+
+    // 表達式綁定
+    ExpressionBinding valueBinding;
+    ComponentColor colorConfig;
+};
+
+// 佈局設定結構
+struct CanvasConfig {
+    float logicalW = 800.0f;
+    float logicalH = 480.0f;
+};
+
+// 全局狀態
+CanvasConfig       g_CanvasConfig;
+std::vector<Component> g_Components;
+std::mutex         g_LayoutMutex;
+std::wstring       g_LayoutFilePath = L"layout.json";
+
 DXGIOverlayManager g_OverlayManager;
 WebSocketClient    g_WSClient;
 TelemetryData      g_Telemetry;
 std::mutex         g_TelemetryMutex;
 
-ModuleLayout g_LayoutTireTemp   = { true, 50.0f, 50.0f, 250.0f, 180.0f };
-ModuleLayout g_LayoutSuspTravel = { true, 320.0f, 50.0f, 200.0f, 180.0f };
-ModuleLayout g_LayoutSlipLimit  = { true, 540.0f, 50.0f, 220.0f, 220.0f };
-ModuleLayout g_LayoutGForce     = { true, 50.0f, 250.0f, 220.0f, 220.0f };
-ModuleLayout g_LayoutDashboard  = { true, 290.0f, 250.0f, 470.0f, 120.0f };
+// 初始化符號表
+void InitSymbolTable() {
+    g_SymbolTable.add_variable("rpm", ev_rpm);
+    g_SymbolTable.add_variable("maxRpm", ev_maxRpm);
+    g_SymbolTable.add_variable("idleRpm", ev_idleRpm);
+    g_SymbolTable.add_variable("speed", ev_speed);
+    g_SymbolTable.add_variable("gear", ev_gear);
+    g_SymbolTable.add_variable("power", ev_power);
+    g_SymbolTable.add_variable("boost", ev_boost);
+    g_SymbolTable.add_variable("accelX", ev_accelX);
+    g_SymbolTable.add_variable("accelY", ev_accelY);
+    g_SymbolTable.add_variable("accelZ", ev_accelZ);
+    g_SymbolTable.add_variable("yaw", ev_yaw);
+    g_SymbolTable.add_variable("pitch", ev_pitch);
+    g_SymbolTable.add_variable("roll", ev_roll);
 
-std::mutex g_LayoutMutex;
-std::wstring g_LayoutFilePath = L"layout.json";
+    g_SymbolTable.add_variable("tireTempFL", ev_tireTempFL);
+    g_SymbolTable.add_variable("tireTempFR", ev_tireTempFR);
+    g_SymbolTable.add_variable("tireTempRL", ev_tireTempRL);
+    g_SymbolTable.add_variable("tireTempRR", ev_tireTempRR);
 
-// 載入佈局設定
+    g_SymbolTable.add_variable("suspTravelFL", ev_suspTravelFL);
+    g_SymbolTable.add_variable("suspTravelFR", ev_suspTravelFR);
+    g_SymbolTable.add_variable("suspTravelRL", ev_suspTravelRL);
+    g_SymbolTable.add_variable("suspTravelRR", ev_suspTravelRR);
+
+    g_SymbolTable.add_variable("slipRatioFL", ev_slipRatioFL);
+    g_SymbolTable.add_variable("slipRatioFR", ev_slipRatioFR);
+    g_SymbolTable.add_variable("slipRatioRL", ev_slipRatioRL);
+    g_SymbolTable.add_variable("slipRatioRR", ev_slipRatioRR);
+
+    g_SymbolTable.add_variable("slipAngleFL", ev_slipAngleFL);
+    g_SymbolTable.add_variable("slipAngleFR", ev_slipAngleFR);
+    g_SymbolTable.add_variable("slipAngleRL", ev_slipAngleRL);
+    g_SymbolTable.add_variable("slipAngleRR", ev_slipAngleRR);
+
+    g_SymbolTable.add_constants();
+}
+
+// 同步遙測數值至求值變數
+void UpdateExpressionVariables(const TelemetryData& t) {
+    ev_rpm = t.currentEngineRpm;
+    ev_maxRpm = t.engineMaxRpm;
+    ev_idleRpm = t.engineIdleRpm;
+    ev_speed = t.speed;
+    ev_gear = (float)t.gear;
+    ev_power = t.power;
+    ev_boost = t.boost;
+    ev_accelX = t.accel[0];
+    ev_accelY = t.accel[1];
+    ev_accelZ = t.accel[2];
+    ev_yaw = t.yaw;
+    ev_pitch = t.pitch;
+    ev_roll = t.roll;
+    
+    ev_tireTempFL = t.tireTemp[0];
+    ev_tireTempFR = t.tireTemp[1];
+    ev_tireTempRL = t.tireTemp[2];
+    ev_tireTempRR = t.tireTemp[3];
+
+    ev_suspTravelFL = t.suspTravel[0];
+    ev_suspTravelFR = t.suspTravel[1];
+    ev_suspTravelRL = t.suspTravel[2];
+    ev_suspTravelRR = t.suspTravel[3];
+
+    ev_slipRatioFL = t.slipRatio[0];
+    ev_slipRatioFR = t.slipRatio[1];
+    ev_slipRatioRL = t.slipRatio[2];
+    ev_slipRatioRR = t.slipRatio[3];
+
+    ev_slipAngleFL = t.slipAngle[0] * 57.29578f;
+    ev_slipAngleFR = t.slipAngle[1] * 57.29578f;
+    ev_slipAngleRL = t.slipAngle[2] * 57.29578f;
+    ev_slipAngleRR = t.slipAngle[3] * 57.29578f;
+}
+
+// 載入與解析 layout.json
 void LoadLayoutConfig() {
     std::lock_guard<std::mutex> lock(g_LayoutMutex);
     std::ifstream file(g_LayoutFilePath);
@@ -74,33 +289,59 @@ void LoadLayoutConfig() {
     try {
         json j;
         file >> j;
-        if (j.contains("modules")) {
-            auto modules = j["modules"];
-            auto loadModule = [](auto& m, ModuleLayout& layout) {
-                if (m.contains("visible")) layout.visible = m["visible"];
-                if (m.contains("x")) layout.x = m["x"];
-                if (m.contains("y")) layout.y = m["y"];
-                if (m.contains("w")) layout.w = m["w"];
-                if (m.contains("h")) layout.h = m["h"];
-            };
+        
+        // 載入畫布邏輯寬高
+        if (j.contains("canvas")) {
+            auto canv = j["canvas"];
+            if (canv.contains("w")) g_CanvasConfig.logicalW = canv["w"];
+            if (canv.contains("h")) g_CanvasConfig.logicalH = canv["h"];
+        }
 
-            if (modules.contains("tireTemp")) loadModule(modules["tireTemp"], g_LayoutTireTemp);
-            if (modules.contains("suspTravel")) loadModule(modules["suspTravel"], g_LayoutSuspTravel);
-            if (modules.contains("slipLimit")) loadModule(modules["slipLimit"], g_LayoutSlipLimit);
-            if (modules.contains("gForce")) loadModule(modules["gForce"], g_LayoutGForce);
-            if (modules.contains("dashboard")) loadModule(modules["dashboard"], g_LayoutDashboard);
+        // 載入各個組件
+        if (j.contains("components")) {
+            std::vector<Component> newComponents;
+            for (auto& compJson : j["components"]) {
+                Component c;
+                if (compJson.contains("id")) c.id = compJson["id"];
+                if (compJson.contains("type")) c.type = compJson["type"];
+                if (compJson.contains("x")) c.x = compJson["x"];
+                if (compJson.contains("y")) c.y = compJson["y"];
+                if (compJson.contains("w")) c.w = compJson["w"];
+                if (compJson.contains("h")) c.h = compJson["h"];
+                if (compJson.contains("visible")) c.visible = compJson["visible"];
+                
+                // 文字屬性
+                if (compJson.contains("fontSize")) c.fontSize = compJson["fontSize"];
+                if (compJson.contains("align")) c.align = compJson["align"];
+                
+                // 進度條屬性
+                if (compJson.contains("isVertical")) c.isVertical = compJson["isVertical"];
+
+                // 綁定 value 公式
+                if (compJson.contains("bindings") && compJson["bindings"].contains("value")) {
+                    c.valueBinding.Compile(compJson["bindings"]["value"]);
+                }
+
+                // 綁定 color 規則
+                if (compJson.contains("bindings") && compJson["bindings"].contains("color")) {
+                    c.colorConfig.Parse(compJson["bindings"]["color"]);
+                }
+
+                newComponents.push_back(c);
+            }
+            g_Components = std::move(newComponents);
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[Overlay] 解析佈局檔案錯誤: " << e.what() << "\n";
+        std::cerr << "[Layout] 解析佈局檔案出錯: " << e.what() << "\n";
     }
 }
 
-// 監控佈局檔案變更 (簡單的定時加載)
+// 監控設定變更
 void TickLayoutMonitor() {
     static DWORD lastTick = 0;
     DWORD currentTick = GetTickCount();
-    if (currentTick - lastTick > 1000) { // 每秒加載一次
+    if (currentTick - lastTick > 1000) {
         LoadLayoutConfig();
         lastTick = currentTick;
     }
@@ -116,10 +357,10 @@ void OnWebSocketMessage(const std::string& msg) {
         if (j.contains("CurrentEngineRpm")) g_Telemetry.currentEngineRpm = j["CurrentEngineRpm"];
         if (j.contains("EngineMaxRpm")) g_Telemetry.engineMaxRpm = j["EngineMaxRpm"];
         if (j.contains("EngineIdleRpm")) g_Telemetry.engineIdleRpm = j["EngineIdleRpm"];
-        if (j.contains("SpeedMetersPerSecond")) g_Telemetry.speed = j["SpeedMetersPerSecond"] * 3.6f; // m/s -> km/h
+        if (j.contains("SpeedMetersPerSecond")) g_Telemetry.speed = j["SpeedMetersPerSecond"] * 3.6f;
         if (j.contains("Gear")) g_Telemetry.gear = j["Gear"];
-        if (j.contains("PowerWatts")) g_Telemetry.power = j["PowerWatts"] / 745.7f; // W -> HP
-        if (j.contains("Boost")) g_Telemetry.boost = j["Boost"] / 6894.75729f; // Pa -> PSI
+        if (j.contains("PowerWatts")) g_Telemetry.power = j["PowerWatts"] / 745.7f;
+        if (j.contains("Boost")) g_Telemetry.boost = j["Boost"] / 6894.75729f;
 
         if (j.contains("TireTemp") && j["TireTemp"].is_array() && j["TireTemp"].size() >= 4) {
             for (int i = 0; i < 4; ++i) g_Telemetry.tireTemp[i] = j["TireTemp"][i];
@@ -133,209 +374,121 @@ void OnWebSocketMessage(const std::string& msg) {
         if (j.contains("TireSlipAngle") && j["TireSlipAngle"].is_array() && j["TireSlipAngle"].size() >= 4) {
             for (int i = 0; i < 4; ++i) g_Telemetry.slipAngle[i] = j["TireSlipAngle"][i];
         }
-        if (j.contains("AccelerationX")) g_Telemetry.accel[0] = j["AccelerationX"] / 9.81f; // m/s^2 -> G
+        if (j.contains("AccelerationX")) g_Telemetry.accel[0] = j["AccelerationX"] / 9.81f;
         if (j.contains("AccelerationY")) g_Telemetry.accel[1] = j["AccelerationY"] / 9.81f;
         if (j.contains("AccelerationZ")) g_Telemetry.accel[2] = j["AccelerationZ"] / 9.81f;
         if (j.contains("Yaw")) g_Telemetry.yaw = j["Yaw"];
     }
     catch (const std::exception& e) {
-        // 解析可能因封包格式不完全而失敗，忽略
+        // 忽略格式錯誤
     }
 }
 
-// 繪製 ImGui UI 模組
-void RenderTelemetryUI() {
+// 繪製資料驅動 UI
+void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     TelemetryData t;
     {
         std::lock_guard<std::mutex> lock(g_TelemetryMutex);
         t = g_Telemetry;
     }
 
-    ModuleLayout layTire, laySusp, laySlip, layG, layDash;
+    // 複製與更新公式引擎變數值
+    UpdateExpressionVariables(t);
+
+    std::vector<Component> comps;
+    CanvasConfig canv;
     {
         std::lock_guard<std::mutex> lock(g_LayoutMutex);
-        layTire = g_LayoutTireTemp;
-        laySusp = g_LayoutSuspTravel;
-        laySlip = g_LayoutSlipLimit;
-        layG = g_LayoutGForce;
-        layDash = g_LayoutDashboard;
+        comps = g_Components;
+        canv = g_CanvasConfig;
     }
 
-    // 設置 ImGui 視窗無邊框、無背景、不可移動、不可縮放（由 Tauri 配置控制）
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration | 
-                                   ImGuiWindowFlags_NoMove | 
-                                   ImGuiWindowFlags_NoResize | 
-                                   ImGuiWindowFlags_NoSavedSettings | 
-                                   ImGuiWindowFlags_NoFocusOnAppearing | 
-                                   ImGuiWindowFlags_NoNav;
+    // 1. 計算等比例縮放矩陣
+    float scaleX = (float)screenWidth / canv.logicalW;
+    float scaleY = (float)screenHeight / canv.logicalH;
+    float scale = min(scaleX, scaleY);
 
-    // 模組一：輪胎溫度與胎壓
-    if (layTire.visible) {
-        ImGui::SetNextWindowPos(ImVec2(layTire.x, layTire.y));
-        ImGui::SetNextWindowSize(ImVec2(layTire.w, layTire.h));
-        ImGui::Begin("Tire Thermodynamics", nullptr, windowFlags);
-        ImGui::Text("TIRE TEMPERATURE (°C)");
-        ImGui::Separator();
+    float offsetX = ((float)screenWidth - canv.logicalW * scale) * 0.5f;
+    float offsetY = ((float)screenHeight - canv.logicalH * scale) * 0.5f;
 
-        // 繪製 2x2 輪胎區塊
-        const char* labels[4] = { "FL", "FR", "RL", "RR" };
-        ImGui::Columns(2, "tire_grid", false);
-        for (int i = 0; i < 4; ++i) {
-            float temp = t.tireTemp[i];
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+    // 2. 遍歷元件進行資料驅動繪製
+    for (auto& comp : comps) {
+        if (!comp.visible) continue;
+
+        // 計算縮放後的位置大小
+        float sx = offsetX + comp.x * scale;
+        float sy = offsetY + comp.y * scale;
+        float sw = comp.w * scale;
+        float sh = comp.h * scale;
+
+        // 獲取當前顏色評估值
+        ImVec4 colVec = comp.colorConfig.Evaluate();
+        ImU32 col = ImGui::ColorConvertFloat4ToU32(colVec);
+
+        if (comp.type == "Text") {
+            float val = comp.valueBinding.Evaluate(0.0f);
             
-            // 色彩區間映射 (低溫藍 ➔ 正常綠 ➔ 高溫紅)
-            ImVec4 color = ImVec4(0.0f, 1.0f, 0.0f, 1.0f); // 預設綠色 (70-90度)
-            if (temp < 70.0f) {
-                float t_factor = max(0.0f, (temp - 30.0f) / 40.0f);
-                color = ImVec4(0.0f, t_factor, 1.0f - t_factor, 1.0f); // 藍色漸變到綠色
-            } else if (temp > 90.0f) {
-                float t_factor = min(1.0f, (temp - 90.0f) / 30.0f);
-                color = ImVec4(t_factor, 1.0f - t_factor, 0.0f, 1.0f); // 綠色漸變到紅色
+            // 將浮點數值格式化為字串 (如果值是整數，去小數點)
+            char textBuf[64];
+            if (val == (int)val) {
+                sprintf_s(textBuf, "%d", (int)val);
+            } else {
+                sprintf_s(textBuf, "%.1f", val);
             }
 
-            ImGui::Text("%s:", labels[i]);
-            ImGui::SameLine();
-            ImGui::TextColored(color, "%.1f °C", temp);
-            ImGui::NextColumn();
-        }
-        ImGui::Columns(1);
-        ImGui::End();
-    }
-
-    // 模組二：懸吊行程監控
-    if (laySusp.visible) {
-        ImGui::SetNextWindowPos(ImVec2(laySusp.x, laySusp.y));
-        ImGui::SetNextWindowSize(ImVec2(laySusp.w, laySusp.h));
-        ImGui::Begin("Suspension Travel", nullptr, windowFlags);
-        ImGui::Text("SUSPENSION TRAVEL");
-        ImGui::Separator();
-
-        const char* labels[4] = { "FL", "FR", "RL", "RR" };
-        for (int i = 0; i < 4; ++i) {
-            float travel = t.suspTravel[i];
-            // 繪製進度條表示行程，接近 1.0 (觸底) 時閃爍紅色
-            ImVec4 progressColor = ImVec4(0.2f, 0.7f, 1.0f, 1.0f);
-            if (travel > 0.95f) {
-                // 觸底警告閃爍
-                float flash = (float)sin(GetTickCount() * 0.02) * 0.5f + 0.5f;
-                progressColor = ImVec4(1.0f, 0.0f, 0.0f, flash);
+            // 自定義特殊值輸出（如檔位 0 -> R, 11 -> N）
+            if (comp.id == "gear_text" || comp.valueBinding.formula == "gear") {
+                int gearInt = (int)val;
+                if (gearInt == 0) sprintf_s(textBuf, "R");
+                else if (gearInt == 11) sprintf_s(textBuf, "N");
             }
-            ImGui::Text("%s: %.2f", labels[i], travel);
-            ImGui::SameLine(60);
-            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, progressColor);
-            ImGui::ProgressBar(travel, ImVec2(-1, 14), "");
-            ImGui::PopStyleColor();
-        }
-        ImGui::End();
-    }
 
-    // 模組三：輪胎抓地極限 (G-G Diagram & Slip)
-    if (laySlip.visible) {
-        ImGui::SetNextWindowPos(ImVec2(laySlip.x, laySlip.y));
-        ImGui::SetNextWindowSize(ImVec2(laySlip.w, laySlip.h));
-        ImGui::Begin("Slip Diagram", nullptr, windowFlags);
-        ImGui::Text("SLIP RATIO / ANGLE");
-        ImGui::Separator();
-
-        const char* labels[4] = { "FL", "FR", "RL", "RR" };
-        for (int i = 0; i < 4; ++i) {
-            float slipRatio = t.slipRatio[i];
-            float slipAngle = t.slipAngle[i] * 57.29578f; // 弧度轉角度
+            // 設置字型大小 (使用 ImGui 縮放或直接在 DrawList 用當前字型繪製)
+            // 由於 ImGui 不支持繪製時動態縮放字型，我們使用 DrawList 的 AddText 傳入縮放後的 fontSize
+            float currentFontSize = comp.fontSize * scale;
+            ImFont* font = ImGui::GetFont();
             
-            ImGui::Text("%s: Ratio: %+.2f | Angle: %+.1f°", labels[i], slipRatio, slipAngle);
+            ImVec2 textSize = font->CalcTextSizeA(currentFontSize, FLT_MAX, 0.0f, textBuf);
+            ImVec2 textPos = ImVec2(sx, sy);
+            
+            // 處理水平對齊
+            if (comp.align == "center") {
+                textPos.x = sx + (sw - textSize.x) * 0.5f;
+            } else if (comp.align == "right") {
+                textPos.x = sx + sw - textSize.x;
+            }
+            // 垂直置中
+            textPos.y = sy + (sh - textSize.y) * 0.5f;
+
+            drawList->AddText(font, currentFontSize, textPos, col, textBuf);
         }
-        ImGui::End();
-    }
+        else if (comp.type == "ProgressBar") {
+            float ratio = comp.valueBinding.Evaluate(0.0f);
+            ratio = max(0.0f, min(1.0f, ratio)); // 限制在 0.0 - 1.0 之間
 
-    // 模組四：G力感應
-    if (layG.visible) {
-        ImGui::SetNextWindowPos(ImVec2(layG.x, layG.y));
-        ImGui::SetNextWindowSize(ImVec2(layG.w, layG.h));
-        ImGui::Begin("G-Force", nullptr, windowFlags);
-        ImGui::Text("G-FORCE");
-        ImGui::Separator();
+            // 繪製背景邊框
+            drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), ImGui::ColorConvertFloat4ToU32(ImVec4(colVec.x, colVec.y, colVec.z, 0.2f)), 4.0f, 0, 1.0f);
 
-        ImGui::Text("Lat (X): %+.2f G", t.accel[0]);
-        ImGui::Text("Vert (Y): %+.2f G", t.accel[1]);
-        ImGui::Text("Long (Z): %+.2f G", t.accel[2]);
+            // 繪製填充進度
+            if (ratio > 0.01f) {
+                ImVec2 fillMin = ImVec2(sx + 2, sy + 2);
+                ImVec2 fillMax = ImVec2(sx + sw - 2, sy + sh - 2);
 
-        // 簡單繪製一個 G-G 二維點圖
-        ImDrawList* drawList = ImGui::GetWindowDrawList();
-        ImVec2 winPos = ImGui::GetWindowPos();
-        ImVec2 center = ImVec2(winPos.x + layG.w * 0.5f, winPos.y + layG.h * 0.6f);
-        float radius = min(layG.w, layG.h) * 0.25f;
+                if (comp.isVertical) {
+                    float fillHeight = (sh - 4) * ratio;
+                    fillMin.y = sy + sh - 2 - fillHeight;
+                } else {
+                    fillMax.x = sx + 2 + (sw - 4) * ratio;
+                }
 
-        // 繪製圓盤背景
-        drawList->AddCircle(center, radius, IM_COL32(100, 100, 100, 150), 32, 1.0f);
-        drawList->AddCircle(center, radius * 0.5f, IM_COL32(70, 70, 70, 100), 32, 1.0f);
-        drawList->AddLine(ImVec2(center.x - radius, center.y), ImVec2(center.x + radius, center.y), IM_COL32(80, 80, 80, 150));
-        drawList->AddLine(ImVec2(center.x, center.y - radius), ImVec2(center.x, center.y + radius), IM_COL32(80, 80, 80, 150));
-
-        // 計算 G 力點位置 (最大限制為 3G)
-        float maxG = 2.0f;
-        float ptX = center.x + (t.accel[0] / maxG) * radius;
-        float ptY = center.y - (t.accel[2] / maxG) * radius; // Z 負值為向前加速，映射至螢幕上方
-
-        // 限制在圓盤內
-        float dist = sqrt(pow(ptX - center.x, 2) + pow(ptY - center.y, 2));
-        if (dist > radius) {
-            float angle = atan2(ptY - center.y, ptX - center.x);
-            ptX = center.x + cos(angle) * radius;
-            ptY = center.y + sin(angle) * radius;
+                drawList->AddRectFilled(fillMin, fillMax, col, 2.0f);
+            }
         }
-
-        // 繪製目前的 G 力點
-        drawList->AddCircleFilled(ImVec2(ptX, ptY), 5.0f, IM_COL32(255, 50, 50, 255));
-        ImGui::End();
-    }
-
-    // 模組五：動力與換檔主儀表板
-    if (layDash.visible) {
-        ImGui::SetNextWindowPos(ImVec2(layDash.x, layDash.y));
-        ImGui::SetNextWindowSize(ImVec2(layDash.w, layDash.h));
-        ImGui::Begin("Dashboard", nullptr, windowFlags);
-
-        // 大檔位顯示
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // 假設使用大字體
-        char gearChar = (t.gear == 0) ? 'R' : (t.gear == 11) ? 'N' : '0' + t.gear;
-        if (t.gear == 11) gearChar = 'N'; // 預防
-        ImGui::Text("GEAR");
-        ImGui::SameLine(50);
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%c", gearChar);
-        ImGui::PopFont();
-
-        ImGui::SameLine(120);
-        ImGui::BeginGroup();
-        ImGui::Text("SPEED:  %.0f km/h", t.speed);
-        ImGui::Text("POWER:  %.0f HP", t.power);
-        ImGui::Text("BOOST:  %.2f PSI", t.boost);
-        ImGui::EndGroup();
-
-        // 轉速條
-        float rpmRatio = 0.0f;
-        if (t.engineMaxRpm > 0) {
-            rpmRatio = (t.currentEngineRpm - t.engineIdleRpm) / (t.engineMaxRpm - t.engineIdleRpm);
-            rpmRatio = max(0.0f, min(1.0f, rpmRatio));
-        }
-
-        ImVec4 rpmColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-        if (rpmRatio > 0.85f) {
-            // 超過 85% 紅線閃爍
-            float flash = (float)sin(GetTickCount() * 0.04) * 0.5f + 0.5f;
-            rpmColor = ImVec4(1.0f, 0.0f, 0.0f, flash);
-        } else if (rpmRatio > 0.7f) {
-            rpmColor = ImVec4(1.0f, 0.6f, 0.0f, 1.0f); // 黃橘色
-        }
-
-        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, rpmColor);
-        ImGui::ProgressBar(rpmRatio, ImVec2(-1, 15), "");
-        ImGui::PopStyleColor();
-
-        ImGui::End();
     }
 }
 
-// Win32 視窗回調程序
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
         return true;
@@ -361,7 +514,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // 解析啟動參數 (可指定 Port 等)
     int port = 8000;
     for (int i = 1; i < __argc; ++i) {
         if (wcscmp(__wargv[i], L"-port") == 0 && i + 1 < __argc) {
@@ -370,11 +522,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
     std::wstring wsPath = L"/ws/telemetry";
     
-    // 預設寬高為螢幕大小
     UINT width = GetSystemMetrics(SM_CXSCREEN);
     UINT height = GetSystemMetrics(SM_CYSCREEN);
 
-    // 1. 註冊 Win32 視窗類別
     const wchar_t szWindowClass[] = L"HorizonTunerOverlayClass";
     const wchar_t szTitle[] = L"HorizonTuner Overlay";
 
@@ -388,7 +538,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     wcex.lpszClassName = szWindowClass;
     RegisterClassExW(&wcex);
 
-    // 2. 建立視窗 (為 MPO 初始化做無邊框置頂樣式)
     HWND hWnd = CreateWindowExW(
         WS_EX_TOPMOST | WS_EX_TRANSPARENT,
         szWindowClass,
@@ -400,56 +549,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     if (!hWnd) return FALSE;
 
-    // 3. 初始化 DXGIOverlayManager (自動檢查並選擇 MPO 或是 方案 B 降級)
     if (!g_OverlayManager.Initialize(hWnd, width, height)) {
         MessageBoxW(nullptr, L"無法初始化 D3D11 與 Overlay 交換鏈。", L"錯誤", MB_ICONERROR);
         return FALSE;
     }
 
-    // 4. 初始化 ImGui
+    // 初始化公式符號表
+    InitSymbolTable();
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    // 禁用 imgui.ini，防止產生不必要的設定檔
     io.IniFilename = nullptr;
 
-    // 設定暗色系樣式
     ImGui::StyleColorsDark();
-
-    // 調整樣式以符合高質感微動畫/發光透明效果
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowRounding = 8.0f;
-    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.7f); // 半透明背景
-    style.Colors[ImGuiCol_Border] = ImVec4(0.2f, 0.7f, 1.0f, 0.4f);   // 科技藍邊框
 
     ImGui_ImplWin32_Init(hWnd);
     ImGui_ImplDX11_Init(g_OverlayManager.GetDevice(), g_OverlayManager.GetContext());
 
-    // 5. 載入佈局配置
+    // 載入 JSON 佈局
     LoadLayoutConfig();
 
-    // 6. 連線 Python 後端 WebSocket
-    // 我們可以從啟動目錄下的 logs/web_port.txt 讀取後端 Port
-    std::ifstream portFile("logs/web_port.txt");
-    if (!portFile.is_open()) {
-        portFile.open("../logs/web_port.txt"); // 嘗試上一級目錄
-    }
-    if (portFile.is_open()) {
-        portFile >> port;
-    }
-
-    std::cout << "[Overlay] 嘗試連接後端 WebSocket: 127.0.0.1:" << port << wsPath.c_str() << "...\n";
+    std::cout << "[Overlay] 連接後端 WebSocket: 127.0.0.1:" << port << wsPath.c_str() << "...\n";
     g_WSClient.Connect(L"127.0.0.1", port, wsPath, OnWebSocketMessage);
 
-    // 顯示視窗
     ShowWindow(hWnd, SW_SHOW);
     UpdateWindow(hWnd);
 
-    // 主訊息循環
     MSG msg;
     bool bRunning = true;
     while (bRunning) {
-        // 處理 Win32 訊息
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -460,34 +589,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         if (!bRunning) break;
 
-        // 定期監控與加載佈局設定檔
         TickLayoutMonitor();
 
-        // 開始 DXGI 幀繪製
         g_OverlayManager.BeginFrame();
 
-        // 開始 ImGui 幀
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // 渲染遙測
-        RenderTelemetryUI();
+        // 渲染資料驅動的 UI，傳入當前視窗寬高
+        RenderTelemetryUI(width, height);
 
-        // 結束 ImGui 幀並提交渲染
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        // 結束 DXGI 幀，Present 呈現
         g_OverlayManager.EndFrame();
 
-        // 若 WebSocket 斷線，定時重連
         if (!g_WSClient.IsConnected() && (GetTickCount() % 300 == 0)) {
             g_WSClient.Connect(L"127.0.0.1", port, wsPath, OnWebSocketMessage);
         }
     }
 
-    // 釋放資源
     g_WSClient.Disconnect();
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();

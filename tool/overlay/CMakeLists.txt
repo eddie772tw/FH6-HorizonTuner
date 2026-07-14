@@ -19,6 +19,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# 1.5. 獲取 ExprTk 數學表達式解析器
+FetchContent_Declare(
+    exprtk
+    GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(exprtk)
+
+
 # 2. 獲取 ImGui
 FetchContent_Declare(
     imgui
@@ -59,7 +68,10 @@ add_executable(HorizonTunerOverlay WIN32
 
 # 4. 設定編譯參數與連結庫
 target_compile_definitions(HorizonTunerOverlay PRIVATE UNICODE _UNICODE NOMINMAX)
-target_include_directories(HorizonTunerOverlay PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(HorizonTunerOverlay PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${exprtk_SOURCE_DIR}
+)
 
 # 連結 ImGui, nlohmann/json 與系統 DX/網路庫
 target_link_libraries(HorizonTunerOverlay PRIVATE
