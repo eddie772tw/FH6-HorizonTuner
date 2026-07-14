@@ -182,6 +182,18 @@ struct Component {
     // 進度條屬性
     bool isVertical = false;
 
+    // LED 組件屬性
+    int ledCount = 10;
+    std::string ledShape = "circle"; // "circle", "rect"
+    std::string fillDirection = "left_to_right"; // "left_to_right", "right_to_left", "center_out"
+
+    // 旋轉指針屬性
+    float pivotX = 50.0f;
+    float pivotY = 50.0f;
+    float startAngle = -135.0f;
+    float endAngle = 135.0f;
+    float needleLength = 40.0f;
+
     // 表達式綁定
     ExpressionBinding valueBinding;
     ComponentColor colorConfig;
@@ -316,6 +328,19 @@ void LoadLayoutConfig() {
                 
                 // 進度條屬性
                 if (compJson.contains("isVertical")) c.isVertical = compJson["isVertical"];
+
+                // LED 組件屬性
+                if (compJson.contains("ledCount")) c.ledCount = compJson["ledCount"];
+                if (compJson.contains("ledShape")) c.ledShape = compJson["ledShape"];
+                if (compJson.contains("fillDirection")) c.fillDirection = compJson["fillDirection"];
+
+                // 旋轉指針屬性
+                if (compJson.contains("pivotX")) c.pivotX = compJson["pivotX"];
+                if (compJson.contains("pivotY")) c.pivotY = compJson["pivotY"];
+                if (compJson.contains("startAngle")) c.startAngle = compJson["startAngle"];
+                if (compJson.contains("endAngle")) c.endAngle = compJson["endAngle"];
+                if (compJson.contains("needleLength")) c.needleLength = compJson["needleLength"];
+
 
                 // 綁定 value 公式
                 if (compJson.contains("bindings") && compJson["bindings"].contains("value")) {
@@ -485,6 +510,102 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
 
                 drawList->AddRectFilled(fillMin, fillMax, col, 2.0f);
             }
+        }
+        else if (comp.type == "LEDGroup") {
+            float ratio = comp.valueBinding.Evaluate(0.0f);
+            ratio = max(0.0f, min(1.0f, ratio));
+
+            int count = comp.ledCount;
+            int litCount = (int)(ratio * count);
+
+            // 閃爍提醒 (超過 96% 紅線)
+            bool isFlashing = false;
+            if (ratio > 0.96f) {
+                isFlashing = (GetTickCount() / 100) % 2 == 0;
+            }
+
+            float padding = 4.0f * scale;
+            float totalSpacing = padding * (count - 1);
+            float ledW = (sw - totalSpacing) / count;
+            float ledH = sh;
+
+            for (int i = 0; i < count; ++i) {
+                float lx = sx + i * (ledW + padding);
+                float ly = sy;
+
+                bool isLit = false;
+                if (comp.fillDirection == "left_to_right") {
+                    isLit = i < litCount;
+                } else if (comp.fillDirection == "right_to_left") {
+                    isLit = (count - 1 - i) < litCount;
+                } else if (comp.fillDirection == "center_out") {
+                    int mid = count / 2;
+                    int offset = abs(i - mid);
+                    isLit = (offset * 2) < litCount;
+                }
+
+                ImVec4 ledColor = ImVec4(0.15f, 0.15f, 0.15f, 1.0f); // 未亮暗灰色
+                if (isLit) {
+                    if (isFlashing) {
+                        ledColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+                    } else {
+                        float ledRatio = (float)i / count;
+                        if (ledRatio < 0.6f) {
+                            ledColor = ImVec4(0.0f, 1.0f, 0.2f, 1.0f); // 綠
+                        } else if (ledRatio < 0.8f) {
+                            ledColor = ImVec4(1.0f, 0.7f, 0.0f, 1.0f); // 黃
+                        } else {
+                            ledColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // 紅
+                        }
+                    }
+                }
+
+                ImU32 ledColU32 = ImGui::ColorConvertFloat4ToU32(ledColor);
+
+                if (comp.ledShape == "circle") {
+                    float radius = min(ledW, ledH) * 0.5f;
+                    ImVec2 center = ImVec2(lx + ledW * 0.5f, ly + ledH * 0.5f);
+                    drawList->AddCircleFilled(center, radius, IM_COL32(20, 20, 20, 200));
+                    drawList->AddCircleFilled(center, radius - 1.0f, ledColU32);
+
+                    if (isLit) {
+                        drawList->AddCircle(center, radius + 2.0f, ImGui::ColorConvertFloat4ToU32(ImVec4(ledColor.x, ledColor.y, ledColor.z, 0.25f)), 32, 2.0f);
+                    }
+                } else {
+                    drawList->AddRectFilled(ImVec2(lx, ly), ImVec2(lx + ledW, ly + ledH), ledColU32, 2.0f);
+                    if (isLit) {
+                        drawList->AddRect(ImVec2(lx - 1.0f, ly - 1.0f), ImVec2(lx + ledW + 1.0f, ly + ledH + 1.0f), ImGui::ColorConvertFloat4ToU32(ImVec4(ledColor.x, ledColor.y, ledColor.z, 0.25f)), 2.0f, 0, 1.5f);
+                    }
+                }
+            }
+        }
+        else if (comp.type == "Needle") {
+            float ratio = comp.valueBinding.Evaluate(0.0f);
+            ratio = max(0.0f, min(1.0f, ratio));
+
+            float spx = sx + comp.pivotX * scale;
+            float spy = sy + comp.pivotY * scale;
+
+            float angle = comp.startAngle + ratio * (comp.endAngle - comp.startAngle);
+            float rad = angle * (3.14159265f / 180.0f);
+            float length = comp.needleLength * scale;
+
+            float endX = spx + length * cos(rad);
+            float endY = spy + length * sin(rad);
+
+            // 繪製針尾 (配重效果)
+            float tailLength = length * 0.15f;
+            float tailX = spx - tailLength * cos(rad);
+            float tailY = spy - tailLength * sin(rad);
+            drawList->AddLine(ImVec2(spx, spy), ImVec2(tailX, tailY), IM_COL32(120, 120, 120, 255), 2.0f * scale);
+
+            // 繪製指針主線
+            drawList->AddLine(ImVec2(spx, spy), ImVec2(endX, endY), col, 3.0f * scale);
+
+            // 繪製中心針蓋
+            float capRadius = length * 0.12f;
+            drawList->AddCircleFilled(ImVec2(spx, spy), capRadius, IM_COL32(30, 30, 30, 255));
+            drawList->AddCircle(ImVec2(spx, spy), capRadius, IM_COL32(100, 100, 100, 255), 32, 1.0f);
         }
     }
 }

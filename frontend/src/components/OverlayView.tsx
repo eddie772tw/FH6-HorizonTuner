@@ -9,7 +9,7 @@ interface ColorRule {
 
 interface ComponentConfig {
   id: string;
-  type: 'Text' | 'ProgressBar';
+  type: 'Text' | 'ProgressBar' | 'LEDGroup' | 'Needle';
   x: number;
   y: number;
   w: number;
@@ -22,6 +22,18 @@ interface ComponentConfig {
   
   // 進度條屬性
   isVertical?: boolean;
+
+  // LED 組件屬性
+  ledCount?: number;
+  ledShape?: 'circle' | 'rect';
+  fillDirection?: 'left_to_right' | 'right_to_left' | 'center_out';
+
+  // 旋轉指針屬性
+  pivotX?: number;
+  pivotY?: number;
+  startAngle?: number;
+  endAngle?: number;
+  needleLength?: number;
 
   // 綁定
   bindings: {
@@ -66,20 +78,31 @@ const DEFAULT_LAYOUT: LayoutConfig = {
       }
     },
     {
-      id: 'rpm_bar',
-      type: 'ProgressBar',
-      x: 50, y: 50, w: 700, h: 30,
+      id: 'rpm_leds',
+      type: 'LEDGroup',
+      x: 200, y: 30, w: 400, h: 20,
       visible: true,
-      isVertical: false,
+      ledCount: 10,
+      ledShape: 'circle',
+      fillDirection: 'left_to_right',
       bindings: {
         value: '(rpm - idleRpm) / (maxRpm - idleRpm)',
-        color: {
-          colorRules: [
-            { formula: 'value > 0.9', color: '#ff0000' },
-            { formula: 'value > 0.75', color: '#ffaa00' },
-            { formula: 'default', color: '#00ff55' }
-          ]
-        }
+        color: '#ffffff'
+      }
+    },
+    {
+      id: 'rpm_needle',
+      type: 'Needle',
+      x: 50, y: 120, w: 200, h: 200,
+      visible: true,
+      pivotX: 100,
+      pivotY: 100,
+      startAngle: -135,
+      endAngle: 135,
+      needleLength: 80,
+      bindings: {
+        value: '(rpm - idleRpm) / (maxRpm - idleRpm)',
+        color: '#ff2200'
       }
     }
   ]
@@ -93,7 +116,6 @@ export const OverlayView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   
-  // 編輯模式：'color' 為單色模式，'conditional' 為條件模式
   const [colorMode, setColorMode] = useState<'color' | 'conditional'>('color');
 
   // 拖放與縮放
@@ -104,7 +126,7 @@ export const OverlayView: React.FC = () => {
   
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // 載入狀態與 Layout
+  // 輪詢狀態
   useEffect(() => {
     const checkStatus = async () => {
       try {
@@ -141,7 +163,6 @@ export const OverlayView: React.FC = () => {
     fetchLayout();
   }, []);
 
-  // 儲存 Layout
   const saveLayout = async (newLayout: LayoutConfig = layout) => {
     try {
       const res = await fetch('http://127.0.0.1:8001/api/overlay/layout', {
@@ -158,7 +179,6 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  // 啟動與終止 Overlay 進程
   const toggleOverlay = async () => {
     setLoading(true);
     const endpoint = isOverlayRunning ? 'stop' : 'start';
@@ -195,31 +215,70 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  // 新增元件
-  const addComponent = (type: 'Text' | 'ProgressBar') => {
+  // 匯出 JSON 設定
+  const exportLayout = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(layout, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "horizontuner_layout.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // 匯入 JSON 設定
+  const handleImportLayout = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileReader = new FileReader();
+    if (e.target.files && e.target.files[0]) {
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target?.result as string);
+          if (parsed && parsed.components && Array.isArray(parsed.components)) {
+            setLayout(parsed);
+            saveLayout(parsed);
+            setSelectedId(null);
+            alert(t('Imported successfully!') || '設定檔匯入成功！');
+          } else {
+            alert('Invalid configuration format.');
+          }
+        } catch (err) {
+          alert('Failed to parse JSON file.');
+        }
+      };
+    }
+  };
+
+  // 新增組件
+  const addComponent = (type: ComponentConfig['type']) => {
     const id = `${type.toLowerCase()}_${Date.now().toString().slice(-4)}`;
-    const newComp: ComponentConfig = type === 'Text' ? {
-      id,
-      type,
-      x: 100, y: 100, w: 200, h: 50,
-      visible: true,
-      fontSize: 24,
-      align: 'center',
-      bindings: {
-        value: 'speed',
-        color: '#ffffff'
-      }
-    } : {
-      id,
-      type,
-      x: 100, y: 150, w: 300, h: 25,
-      visible: true,
-      isVertical: false,
-      bindings: {
-        value: '(rpm - idleRpm) / (maxRpm - idleRpm)',
-        color: '#00ff55'
-      }
-    };
+    let newComp: ComponentConfig;
+    
+    if (type === 'Text') {
+      newComp = {
+        id, type, x: 100, y: 100, w: 200, h: 50, visible: true,
+        fontSize: 24, align: 'center',
+        bindings: { value: 'speed', color: '#ffffff' }
+      };
+    } else if (type === 'ProgressBar') {
+      newComp = {
+        id, type, x: 100, y: 150, w: 300, h: 25, visible: true,
+        isVertical: false,
+        bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#00ff55' }
+      };
+    } else if (type === 'LEDGroup') {
+      newComp = {
+        id, type, x: 100, y: 200, w: 400, h: 20, visible: true,
+        ledCount: 10, ledShape: 'circle', fillDirection: 'left_to_right',
+        bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#ffffff' }
+      };
+    } else {
+      newComp = {
+        id, type, x: 100, y: 240, w: 200, h: 200, visible: true,
+        pivotX: 100, pivotY: 100, startAngle: -135, endAngle: 135, needleLength: 80,
+        bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#ff2200' }
+      };
+    }
 
     const updated = {
       ...layout,
@@ -230,7 +289,6 @@ export const OverlayView: React.FC = () => {
     setSelectedId(id);
   };
 
-  // 刪除元件
   const deleteComponent = (id: string) => {
     if (window.confirm(t('Are you sure you want to delete this component?') || '確定要刪除此組件嗎？')) {
       const updated = {
@@ -243,7 +301,6 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  // 更新選定組件的特定屬性
   const updateSelectedComponent = (updatedFields: Partial<ComponentConfig>) => {
     if (!selectedId) return;
     const updatedComps = layout.components.map(c => {
@@ -257,7 +314,6 @@ export const OverlayView: React.FC = () => {
     saveLayout(updatedLayout);
   };
 
-  // 開始拖放與縮放
   const handleMouseDown = (
     e: React.MouseEvent,
     id: string,
@@ -275,7 +331,6 @@ export const OverlayView: React.FC = () => {
     startModulePos.current = { x: comp.x, y: comp.y, w: comp.w, h: comp.h };
   };
 
-  // 全局滑鼠拖曳與縮放移動
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!activeAction || !activeModule || !canvasRef.current) return;
@@ -302,11 +357,18 @@ export const OverlayView: React.FC = () => {
             let newW = startModulePos.current.w + deltaX;
             let newH = startModulePos.current.h + deltaY;
 
-            newW = Math.max(40, Math.min(canvasWidth - compCopy.x, newW));
+            newW = Math.max(20, Math.min(canvasWidth - compCopy.x, newW));
             newH = Math.max(15, Math.min(canvasHeight - compCopy.y, newH));
 
             compCopy.w = Math.round(newW);
             compCopy.h = Math.round(newH);
+            
+            // 如果是 Needle 針，自動將中心點跟指針長度對齊寬高的 50%
+            if (compCopy.type === 'Needle') {
+              compCopy.pivotX = Math.round(newW * 0.5);
+              compCopy.pivotY = Math.round(newH * 0.5);
+              compCopy.needleLength = Math.round(Math.min(newW, newH) * 0.45);
+            }
           }
           return compCopy;
         }
@@ -337,7 +399,6 @@ export const OverlayView: React.FC = () => {
 
   const selectedComp = layout.components.find(c => c.id === selectedId);
 
-  // 當選擇的組件變更時，動態同步色彩模式
   useEffect(() => {
     if (selectedComp) {
       if (typeof selectedComp.bindings.color === 'object') {
@@ -348,7 +409,6 @@ export const OverlayView: React.FC = () => {
     }
   }, [selectedId]);
 
-  // 修改顏色模式（單色 vs 條件）
   const handleColorModeChange = (mode: 'color' | 'conditional') => {
     if (!selectedComp) return;
     setColorMode(mode);
@@ -375,11 +435,9 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  // 新增條件變色規則
   const addColorRule = () => {
     if (!selectedComp || typeof selectedComp.bindings.color !== 'object') return;
     const rules = [...selectedComp.bindings.color.colorRules];
-    // 在 default 規則之前插入新規則
     const defaultIdx = rules.findIndex(r => r.formula === 'default');
     const newRule = { formula: 'value > 0.5', color: '#ffff00' };
     
@@ -397,7 +455,6 @@ export const OverlayView: React.FC = () => {
     });
   };
 
-  // 修改條件變色規則
   const updateColorRule = (index: number, fields: Partial<ColorRule>) => {
     if (!selectedComp || typeof selectedComp.bindings.color !== 'object') return;
     const rules = selectedComp.bindings.color.colorRules.map((r, idx) => {
@@ -415,7 +472,6 @@ export const OverlayView: React.FC = () => {
     });
   };
 
-  // 刪除條件變色規則
   const deleteColorRule = (index: number) => {
     if (!selectedComp || typeof selectedComp.bindings.color !== 'object') return;
     const rules = selectedComp.bindings.color.colorRules.filter((_, idx) => idx !== index);
@@ -429,44 +485,61 @@ export const OverlayView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1.5rem', overflow: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1.2rem', overflow: 'auto' }}>
       
       {/* 頂部控制列 */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '1.2rem 1.5rem',
+        padding: '1rem 1.5rem',
         background: 'rgba(255, 255, 255, 0.03)',
         borderRadius: '8px',
         border: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
         <div>
-          <h2 style={{ margin: '0 0 0.4rem 0', color: 'var(--primary)' }}>
-            {t('Dashboard Overlay') || '即時遙測儀表編輯器'}
+          <h2 style={{ margin: '0 0 0.3rem 0', color: 'var(--primary)' }}>
+            {t('Dashboard Overlay') || '賽車儀表編輯器 (Racing Dashboard Editor)'}
           </h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             {t('Fully custom HUD layout. Set math expressions to drive components in-game.') || 
-             '資料驅動式儀表。可為組件配置數學表達式（支援變數如 rpm, speed, gear 及其餘 20+ 遙測變數）。'}
+             '資料驅動式儀表。可為組件配置數學表達式與超轉變色邏輯。支援方案 A (MPO) 獨佔全螢幕覆蓋。'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
           {statusMessage && (
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.9rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem' }}>
               {statusMessage}
             </span>
           )}
 
           <button onClick={() => addComponent('Text')} className="cyber-btn-glow" style={buttonStyle('#00f0ff')}>
-            + {t('Add Text') || '新增文字'}
+            + {t('Text') || '文字'}
           </button>
           
           <button onClick={() => addComponent('ProgressBar')} className="cyber-btn-glow" style={buttonStyle('#00ffaa')}>
-            + {t('Add Bar') || '新增進度條'}
+            + {t('Bar') || '進度條'}
           </button>
 
-          <button onClick={resetLayout} className="cyber-btn-glow" style={buttonStyle('#aaaaaa', 'rgba(255,255,255,0.05)')}>
+          <button onClick={() => addComponent('LEDGroup')} className="cyber-btn-glow" style={buttonStyle('#ff00aa')}>
+            + {t('LEDs') || '超轉燈'}
+          </button>
+
+          <button onClick={() => addComponent('Needle')} className="cyber-btn-glow" style={buttonStyle('#ffaa00')}>
+            + {t('Needle') || '旋轉針'}
+          </button>
+
+          <button onClick={exportLayout} className="cyber-btn-glow" style={buttonStyle('#00ff00', 'rgba(0,255,0,0.05)')}>
+            {t('Export') || '匯出佈局'}
+          </button>
+
+          <label className="cyber-btn-glow" style={{ ...buttonStyle('#ffbb00', 'rgba(255,180,0,0.05)'), display: 'inline-block', margin: 0 }}>
+            {t('Import') || '匯入佈局'}
+            <input type="file" accept=".json" onChange={handleImportLayout} style={{ display: 'none' }} />
+          </label>
+
+          <button onClick={resetLayout} className="cyber-btn-glow" style={buttonStyle('#aaaaaa', 'rgba(255,255,255,0.03)')}>
             {t('Reset') || '重置'}
           </button>
 
@@ -478,7 +551,7 @@ export const OverlayView: React.FC = () => {
               background: isOverlayRunning ? 'rgba(255, 0, 0, 0.15)' : 'rgba(0, 240, 255, 0.15)',
               border: isOverlayRunning ? '1px solid rgba(255, 0, 0, 0.4)' : '1px solid rgba(0, 240, 255, 0.4)',
               color: isOverlayRunning ? '#ff5555' : 'var(--primary)',
-              padding: '0.5rem 1.2rem',
+              padding: '0.4rem 1.2rem',
               borderRadius: '4px',
               cursor: 'pointer',
               fontWeight: 'bold'
@@ -490,13 +563,13 @@ export const OverlayView: React.FC = () => {
       </div>
 
       {/* 主編輯視窗 */}
-      <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0, height: '650px' }}>
+      <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0, height: '620px' }}>
         
-        {/* 左側：16:9 仿真畫布 */}
-        <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
+        {/* 左側：畫布 */}
+        <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '0.4rem', height: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            <span>🖱️ {t('Click to select. Drag headers to move, drag corners to resize.') || '點選組件以編輯。拖曳組件標題以移動，拖曳右下角以縮放。'}</span>
-            <span>邏輯畫布解析度: 800 x 480</span>
+            <span>🖱️ {t('Click to select. Drag headers to move, drag corners to resize.') || '拖曳組件標題以移動，拖曳右下角以縮放。'}</span>
+            <span>畫布比例: 16:9 (邏輯寬高: 800 x 480)</span>
           </div>
           
           <div
@@ -511,7 +584,6 @@ export const OverlayView: React.FC = () => {
               boxShadow: 'inset 0 0 30px rgba(0,0,0,0.9)'
             }}
           >
-            {/* 格線 */}
             <div style={{
               position: 'absolute',
               width: '100%',
@@ -521,12 +593,10 @@ export const OverlayView: React.FC = () => {
               pointerEvents: 'none'
             }} />
 
-            {/* 渲染組件 */}
             {layout.components.map((comp) => {
               if (!comp.visible) return null;
               const isSelected = selectedId === comp.id;
               
-              // 取得預覽顏色 (如果設定了條件顏色，預覽只顯示 default)
               let previewColor = '#ffffff';
               if (typeof comp.bindings.color === 'string') {
                 previewColor = comp.bindings.color;
@@ -549,7 +619,7 @@ export const OverlayView: React.FC = () => {
                     width: `${comp.w}px`,
                     height: `${comp.h}px`,
                     border: isSelected ? '2px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.15)',
-                    background: isSelected ? 'rgba(0, 240, 255, 0.08)' : 'rgba(0, 0, 0, 0.6)',
+                    background: isSelected ? 'rgba(0, 240, 255, 0.08)' : 'rgba(0, 0, 0, 0.65)',
                     borderRadius: '4px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
                     display: 'flex',
@@ -558,13 +628,12 @@ export const OverlayView: React.FC = () => {
                     zIndex: isSelected ? 10 : 2
                   }}
                 >
-                  {/* 標題欄 (拖曳用) */}
                   <div
                     onMouseDown={(e) => handleMouseDown(e, comp.id, 'drag')}
                     style={{
                       background: isSelected ? 'rgba(0, 240, 255, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                       padding: '2px 8px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.72rem',
                       fontWeight: 'bold',
                       color: isSelected ? '#ffffff' : 'var(--text-secondary)',
                       cursor: 'move',
@@ -578,47 +647,103 @@ export const OverlayView: React.FC = () => {
                     [{comp.type}] {comp.id}
                   </div>
 
-                  {/* 內容預覽 */}
                   <div style={{
                     flex: 1,
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '4px',
-                    pointerEvents: 'none'
+                    padding: '6px',
+                    pointerEvents: 'none',
+                    position: 'relative'
                   }}>
-                    {comp.type === 'Text' ? (
+                    {comp.type === 'Text' && (
                       <span style={{ 
                         color: previewColor, 
-                        fontSize: `${Math.min(comp.fontSize || 18, comp.h - 10)}px`,
+                        fontSize: `${Math.min(comp.fontSize || 18, comp.h - 12)}px`,
                         fontWeight: 'bold',
                         textAlign: comp.align || 'left',
                         width: '100%'
                       }}>
                         {comp.bindings.value}
                       </span>
-                    ) : (
+                    )}
+
+                    {comp.type === 'ProgressBar' && (
                       <div style={{
                         width: '90%',
-                        height: comp.isVertical ? '80%' : '12px',
-                        border: `1px solid ${previewColor}55`,
+                        height: comp.isVertical ? '80%' : '10px',
+                        border: `1px solid ${previewColor}44`,
                         borderRadius: '2px',
                         position: 'relative'
                       }}>
                         <div style={{
                           position: 'absolute',
                           left: 0, bottom: 0,
-                          width: comp.isVertical ? '100%' : '70%',
-                          height: comp.isVertical ? '70%' : '100%',
+                          width: comp.isVertical ? '100%' : '65%',
+                          height: comp.isVertical ? '65%' : '100%',
                           background: previewColor,
                           borderRadius: '1px'
                         }} />
                       </div>
                     )}
+
+                    {comp.type === 'LEDGroup' && (
+                      <div style={{ display: 'flex', gap: '3px', width: '90%', justifyContent: 'center' }}>
+                        {Array.from({ length: comp.ledCount || 10 }).map((_, ledIdx) => {
+                          const ledRatio = ledIdx / (comp.ledCount || 10);
+                          let dotColor = '#333333';
+                          if (ledIdx < (comp.ledCount || 10) * 0.7) {
+                            dotColor = ledRatio < 0.6 ? '#00ff55' : ledRatio < 0.8 ? '#ffaa00' : '#ff0000';
+                          }
+                          return (
+                            <div
+                              key={ledIdx}
+                              style={{
+                                width: comp.ledShape === 'circle' ? '10px' : '8px',
+                                height: comp.ledShape === 'circle' ? '10px' : '12px',
+                                borderRadius: comp.ledShape === 'circle' ? '50%' : '1px',
+                                background: dotColor,
+                                border: '1px solid rgba(0,0,0,0.5)'
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {comp.type === 'Needle' && (
+                      <svg width="100%" height="100%" style={{ position: 'absolute', left: 0, top: 0 }}>
+                        {/* 繪製量圈背景線 */}
+                        <path
+                          d={`M ${comp.w * 0.15} ${comp.h * 0.8} A ${comp.w * 0.4} ${comp.h * 0.4} 0 0 1 ${comp.w * 0.85} ${comp.h * 0.8}`}
+                          fill="none"
+                          stroke="rgba(255,255,255,0.15)"
+                          strokeWidth="2"
+                          strokeDasharray="4 2"
+                        />
+                        {/* 繪製指針線 (模擬在 15% 比率的轉向角度) */}
+                        <line
+                          x1={comp.pivotX}
+                          y1={comp.pivotY}
+                          x2={(comp.pivotX || 100) + (comp.needleLength || 80) * Math.cos((-110 * Math.PI) / 180)}
+                          y2={(comp.pivotY || 100) + (comp.needleLength || 80) * Math.sin((-110 * Math.PI) / 180)}
+                          stroke={previewColor}
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                        {/* 繪製針蓋 */}
+                        <circle
+                          cx={comp.pivotX}
+                          cy={comp.pivotY}
+                          r={Math.min(comp.w, comp.h) * 0.08}
+                          fill="#222"
+                          stroke="#666"
+                          strokeWidth="1"
+                        />
+                      </svg>
+                    )}
                   </div>
 
-                  {/* 縮放點 */}
                   <div
                     onMouseDown={(e) => handleMouseDown(e, comp.id, 'resize')}
                     style={{
@@ -637,7 +762,7 @@ export const OverlayView: React.FC = () => {
           </div>
         </div>
 
-        {/* 右側：選定組件屬性編輯面板 */}
+        {/* 右側：屬性編輯 */}
         <div style={{
           flex: 1,
           display: 'flex',
@@ -651,9 +776,9 @@ export const OverlayView: React.FC = () => {
           overflowY: 'auto'
         }}>
           {selectedComp ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
-                <h3 style={{ margin: 0, color: 'var(--primary)' }}>{t('Component Properties') || '屬性編輯'}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
+                <h3 style={{ margin: 0, color: 'var(--primary)' }}>{t('Properties') || '屬性編輯'}</h3>
                 <button
                   onClick={() => deleteComponent(selectedComp.id)}
                   style={{
@@ -671,8 +796,8 @@ export const OverlayView: React.FC = () => {
               </div>
 
               {/* ID 編輯 */}
-              <div className="property-item">
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>組件 ID</label>
+              <div>
+                <label style={labelStyle}>組件 ID</label>
                 <input
                   type="text"
                   value={selectedComp.id}
@@ -681,7 +806,7 @@ export const OverlayView: React.FC = () => {
                 />
               </div>
 
-              {/* 座標大小屬性 */}
+              {/* 座標大小 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div>
                   <label style={labelStyle}>X 座標</label>
@@ -721,7 +846,7 @@ export const OverlayView: React.FC = () => {
                 </div>
               </div>
 
-              {/* 文字專用設定 */}
+              {/* Text 屬性 */}
               {selectedComp.type === 'Text' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div>
@@ -748,24 +873,119 @@ export const OverlayView: React.FC = () => {
                 </div>
               )}
 
-              {/* 進度條專用設定 */}
+              {/* ProgressBar 屬性 */}
               {selectedComp.type === 'ProgressBar' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="checkbox"
                     id="isVertical"
                     checked={selectedComp.isVertical || false}
                     onChange={(e) => updateSelectedComponent({ isVertical: e.target.checked })}
                   />
-                  <label htmlFor="isVertical" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>垂直排列進度條</label>
+                  <label htmlFor="isVertical" style={{ fontSize: '0.8rem', cursor: 'pointer' }}>垂直方向進度條</label>
                 </div>
               )}
 
-              {/* 數值公式綁定 */}
-              <div className="property-item">
+              {/* LEDGroup 屬性 */}
+              {selectedComp.type === 'LEDGroup' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={labelStyle}>LED 燈數</label>
+                      <input
+                        type="number"
+                        value={selectedComp.ledCount || 10}
+                        onChange={(e) => updateSelectedComponent({ ledCount: parseInt(e.target.value) || 5 })}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>燈形狀</label>
+                      <select
+                        value={selectedComp.ledShape || 'circle'}
+                        onChange={(e) => updateSelectedComponent({ ledShape: e.target.value as any })}
+                        style={inputStyle}
+                      >
+                        <option value="circle">圓形</option>
+                        <option value="rect">矩形</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>亮燈方向</label>
+                    <select
+                      value={selectedComp.fillDirection || 'left_to_right'}
+                      onChange={(e) => updateSelectedComponent({ fillDirection: e.target.value as any })}
+                      style={inputStyle}
+                    >
+                      <option value="left_to_right">由左至右</option>
+                      <option value="right_to_left">由右至左</option>
+                      <option value="center_out">中間向兩側擴散</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Needle 屬性 */}
+              {selectedComp.type === 'Needle' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={labelStyle}>中心點 X (Pivot X)</label>
+                      <input
+                        type="number"
+                        value={selectedComp.pivotX || 100}
+                        onChange={(e) => updateSelectedComponent({ pivotX: parseInt(e.target.value) || 0 })}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>中心點 Y (Pivot Y)</label>
+                      <input
+                        type="number"
+                        value={selectedComp.pivotY || 100}
+                        onChange={(e) => updateSelectedComponent({ pivotY: parseInt(e.target.value) || 0 })}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                    <div>
+                      <label style={labelStyle}>起角 (度)</label>
+                      <input
+                        type="number"
+                        value={selectedComp.startAngle || -135}
+                        onChange={(e) => updateSelectedComponent({ startAngle: parseInt(e.target.value) || 0 })}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>迄角 (度)</label>
+                      <input
+                        type="number"
+                        value={selectedComp.endAngle || 135}
+                        onChange={(e) => updateSelectedComponent({ endAngle: parseInt(e.target.value) || 0 })}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>針長度</label>
+                      <input
+                        type="number"
+                        value={selectedComp.needleLength || 80}
+                        onChange={(e) => updateSelectedComponent({ needleLength: parseInt(e.target.value) || 10 })}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 數值綁定 */}
+              <div>
                 <label style={labelStyle}>
-                  數值公式 (Expression) 
-                  <span style={{ color: 'var(--primary)', cursor: 'help', marginLeft: '6px' }} title="可用變數: speed, rpm, gear, maxRpm, boost, accelX, tireTempFL 等">ℹ️</span>
+                  數值綁定公式
+                  <span style={{ color: 'var(--primary)', cursor: 'help', marginLeft: '4px' }} title="支援變數: speed, rpm, gear, maxRpm, boost, accelX/Y/Z, tireTempFL/FR/RL/RR 等">ℹ️</span>
                 </label>
                 <input
                   type="text"
@@ -780,9 +1000,9 @@ export const OverlayView: React.FC = () => {
                 />
               </div>
 
-              {/* 顏色編輯 */}
-              <div className="property-item">
-                <label style={labelStyle}>色彩模式</label>
+              {/* 顏色 */}
+              <div>
+                <label style={labelStyle}>色彩設定模式</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   <button
                     onClick={() => handleColorModeChange('color')}
@@ -800,7 +1020,7 @@ export const OverlayView: React.FC = () => {
 
                 {colorMode === 'color' ? (
                   <div>
-                    <label style={labelStyle}>單色 HEX 設定</label>
+                    <label style={labelStyle}>選擇顏色</label>
                     <input
                       type="color"
                       value={typeof selectedComp.bindings.color === 'string' ? selectedComp.bindings.color : '#ffffff'}
@@ -810,21 +1030,21 @@ export const OverlayView: React.FC = () => {
                           color: e.target.value
                         }
                       })}
-                      style={{ width: '100%', height: '35px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                      style={{ width: '100%', height: '32px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     />
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={labelStyle}>條件變色規則表</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={labelStyle}>條件色彩規則 (Top-down 優先權)</label>
                     {typeof selectedComp.bindings.color === 'object' && selectedComp.bindings.color.colorRules.map((rule, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <div key={idx} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         {rule.formula === 'default' ? (
-                          <span style={{ fontSize: '0.8rem', width: '90px' }}>預設顏色</span>
+                          <span style={{ fontSize: '0.75rem', width: '80px' }}>預設背景色</span>
                         ) : (
                           <input
                             type="text"
                             value={rule.formula}
-                            placeholder="公式 (如 value>0.9)"
+                            placeholder="公式, 例: value>0.9"
                             onChange={(e) => updateColorRule(idx, { formula: e.target.value })}
                             style={{ ...inputStyle, flex: 1, fontSize: '0.75rem', padding: '3px 6px' }}
                           />
@@ -838,7 +1058,7 @@ export const OverlayView: React.FC = () => {
                         {rule.formula !== 'default' && (
                           <button
                             onClick={() => deleteColorRule(idx)}
-                            style={{ background: 'none', border: 'none', color: '#ff5555', cursor: 'pointer', fontSize: '1rem', padding: 0 }}
+                            style={{ background: 'none', border: 'none', color: '#ff5555', cursor: 'pointer', fontSize: '1rem' }}
                           >
                             ×
                           </button>
@@ -848,14 +1068,14 @@ export const OverlayView: React.FC = () => {
                     <button
                       onClick={addColorRule}
                       style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px dashed rgba(255,255,255,0.2)',
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px dashed rgba(255,255,255,0.15)',
                         color: 'var(--text)',
                         padding: '4px',
                         borderRadius: '4px',
                         cursor: 'pointer',
                         fontSize: '0.75rem',
-                        marginTop: '4px'
+                        marginTop: '2px'
                       }}
                     >
                       + 新增色彩條件
@@ -871,9 +1091,9 @@ export const OverlayView: React.FC = () => {
               justifyContent: 'center',
               height: '100%',
               color: 'var(--text-secondary)',
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               textAlign: 'center',
-              padding: '2rem'
+              padding: '1.5rem'
             }}>
               {t('Select a component in canvas or components list to edit properties.') || '請點選畫布上的組件開始編輯屬性，或者在頂部新增組件。'}
             </div>
@@ -884,16 +1104,15 @@ export const OverlayView: React.FC = () => {
   );
 };
 
-// 樣式輔助
 const buttonStyle = (color: string, bg: string = 'rgba(0,0,0,0.3)') => ({
   background: bg,
   border: `1px solid ${color}55`,
   color: color,
-  padding: '0.5rem 1rem',
+  padding: '0.4rem 0.8rem',
   borderRadius: '4px',
   cursor: 'pointer',
   fontWeight: 'bold' as const,
-  fontSize: '0.85rem'
+  fontSize: '0.8rem'
 });
 
 const modeButtonStyle = (isActive: boolean) => ({
@@ -901,11 +1120,11 @@ const modeButtonStyle = (isActive: boolean) => ({
   background: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
   border: 'none',
   color: isActive ? '#000' : 'var(--text)',
-  padding: '4px 0',
+  padding: '3px 0',
   borderRadius: '4px',
   cursor: 'pointer',
   fontWeight: 'bold' as const,
-  fontSize: '0.8rem'
+  fontSize: '0.75rem'
 });
 
 const inputStyle = {
@@ -913,15 +1132,15 @@ const inputStyle = {
   background: 'rgba(0,0,0,0.3)',
   border: '1px solid rgba(255,255,255,0.1)',
   color: '#fff',
-  padding: '6px 10px',
+  padding: '5px 8px',
   borderRadius: '4px',
-  fontSize: '0.85rem',
+  fontSize: '0.8rem',
   boxSizing: 'border-box' as const
 };
 
 const labelStyle = {
   display: 'block',
-  fontSize: '0.75rem',
+  fontSize: '0.72rem',
   color: 'var(--text-secondary)',
   marginBottom: '2px'
 };
