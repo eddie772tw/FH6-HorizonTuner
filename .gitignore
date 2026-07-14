@@ -24,4 +24,9 @@
 # Application runtime logs
 /logs/
 /backend/logs/
-**/logs/
+
+# Python compiled cache
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
