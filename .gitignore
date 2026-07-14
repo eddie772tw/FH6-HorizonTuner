@@ -1,3 +1,10 @@
 /.ref
 /backend/__pycache__
 /backend/venv
+
+# Python standard venv & cache directories
+/.venv/
+/venv/
+/.pytest_cache/
+/.ruff_cache/
+/__pycache__/
