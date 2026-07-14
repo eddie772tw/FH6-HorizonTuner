@@ -12,16 +12,41 @@ from telemetry_listener import start_udp_listener
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 統一判定與配置唯讀資源目錄與可寫入資料目錄
+import sys
+
+if getattr(sys, "frozen", False):
+    RESOURCE_ROOT = sys._MEIPASS
+    DATA_ROOT = os.path.dirname(sys.executable)
+    
+    CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
+    LANG_DIR = os.path.join(RESOURCE_ROOT, "lang")
+    
+    TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
+    CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
+    SESSIONS_DIR = os.path.join(DATA_ROOT, "sessions")
+    DRAG_SESSIONS_DIR = os.path.join(DATA_ROOT, "drag_sessions")
+    SETTINGS_FILE = os.path.join(DATA_ROOT, "settings.json")
+else:
+    RESOURCE_ROOT = os.path.dirname(os.path.abspath(__file__))
+    DATA_ROOT = RESOURCE_ROOT
+    ROOT_DIR = os.path.dirname(RESOURCE_ROOT)
+    
+    CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
+    LANG_DIR = os.path.join(ROOT_DIR, "lang")
+    
+    TUNINGS_DIR = os.path.join(RESOURCE_ROOT, "tunings")
+    CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
+    SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "sessions")
+    DRAG_SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "drag_sessions")
+    SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
+
 # Ensure directories exist
-TUNINGS_DIR = os.path.join(os.path.dirname(__file__), "tunings")
-CAR_PARAMS_DIR = os.path.join(os.path.dirname(__file__), "car_params")
-SESSIONS_DIR = os.path.join(os.path.dirname(__file__), "sessions")
-DRAG_SESSIONS_DIR = os.path.join(os.path.dirname(__file__), "drag_sessions")
-CAR_DB_PATH = os.path.join(os.path.dirname(__file__), "car_database.json")
 os.makedirs(TUNINGS_DIR, exist_ok=True)
 os.makedirs(CAR_PARAMS_DIR, exist_ok=True)
 os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
+os.makedirs(LANG_DIR, exist_ok=True)
 
 car_database = {}
 if os.path.exists(CAR_DB_PATH):
@@ -75,12 +100,7 @@ dyno_cache = {}
 last_dyno_save_time = time.time()
 
 # --- Settings File Paths & Defaults ---
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
-LANG_DIR = os.path.join(ROOT_DIR, "lang")
-
-# Ensure directories exist
-os.makedirs(LANG_DIR, exist_ok=True)
+# 使用最上方統一宣告的路徑與設定，免重複定義。
 
 DEFAULT_SETTINGS = {
     "dyno_recording": True,
@@ -1479,7 +1499,30 @@ async def delete_drag_session(filename: str):
     return {"error": "Drag session file not found"}
 
 
+def check_frontend_alive(proc):
+    import time
+    while True:
+        if proc.poll() is not None:
+            # Frontend has terminated, so shut down backend
+            os._exit(0)
+        time.sleep(1)
+
+
 if __name__ == "__main__":
     import uvicorn
+    import sys
+    import threading
+
+    if getattr(sys, "frozen", False):
+        frontend_path = os.path.join(sys._MEIPASS, "frontend.exe")
+        if os.path.exists(frontend_path):
+            import subprocess
+
+            proc = subprocess.Popen([frontend_path, "--no-sidecar"])
+            threading.Thread(
+                target=check_frontend_alive, args=(proc,), daemon=True
+            ).start()
+        else:
+            print("Frontend executable not found in bundle!")
 
     uvicorn.run(app, host="127.0.0.1", port=8001)
