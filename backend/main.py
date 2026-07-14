@@ -18,10 +18,10 @@ import sys
 if getattr(sys, "frozen", False):
     RESOURCE_ROOT = sys._MEIPASS
     DATA_ROOT = os.path.dirname(sys.executable)
-    
+
     CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
     LANG_DIR = os.path.join(RESOURCE_ROOT, "lang")
-    
+
     TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
     CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
     SESSIONS_DIR = os.path.join(DATA_ROOT, "sessions")
@@ -31,10 +31,10 @@ else:
     RESOURCE_ROOT = os.path.dirname(os.path.abspath(__file__))
     DATA_ROOT = RESOURCE_ROOT
     ROOT_DIR = os.path.dirname(RESOURCE_ROOT)
-    
+
     CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
     LANG_DIR = os.path.join(ROOT_DIR, "lang")
-    
+
     TUNINGS_DIR = os.path.join(RESOURCE_ROOT, "tunings")
     CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
     SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "sessions")
@@ -1501,6 +1501,7 @@ async def delete_drag_session(filename: str):
 
 def check_frontend_alive(proc):
     import time
+
     while True:
         if proc.poll() is not None:
             # Frontend has terminated, so shut down backend
@@ -1509,9 +1510,10 @@ def check_frontend_alive(proc):
 
 
 if __name__ == "__main__":
-    import uvicorn
     import sys
     import threading
+
+    import uvicorn
 
     if getattr(sys, "frozen", False):
         frontend_path = os.path.join(sys._MEIPASS, "frontend.exe")

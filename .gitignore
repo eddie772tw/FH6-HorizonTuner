@@ -8,3 +8,11 @@
 /.pytest_cache/
 /.ruff_cache/
 /__pycache__/
+
+# User settings and telemetry data outputs
+/settings.json
+/backend/tunings/*.json
+/backend/car_params/*.json
+!/backend/car_params/default_car.json
+/backend/sessions/*.json
+/backend/drag_sessions/*.json

@@ -111,7 +111,7 @@ if not exist "%~dp0dist" mkdir "%~dp0dist"
     --onefile ^
     --windowed ^
     --noupx ^
-    --icon="%~dp0frontend\src-tauri\icons\icon.ico" ^
+    --icon="%~dp0app.ico" ^
     --distpath "%~dp0dist" ^
     --name "FH6-HorizonTuner" ^
     --paths "%~dp0backend" ^
