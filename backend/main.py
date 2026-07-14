@@ -23,6 +23,7 @@ else:
 
 import asyncio
 import json
+import subprocess
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -1842,7 +1843,6 @@ if __name__ == "__main__":
         s.close()
         return port
 
-    global backend_port
     try:
         backend_port = get_free_port()
     except Exception:
