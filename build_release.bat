@@ -101,6 +101,17 @@ echo [SUCCESS] Tauri Frontend built successfully.
 echo.
 cd "%~dp0"
 
+:: 2.5. Build C++ DXGI Overlay Tool
+echo [INFO] Building C++ DXGI Overlay Tool...
+echo --------------------------------------------------------------------
+if not exist "%~dp0tool\overlay\build" mkdir "%~dp0tool\overlay\build"
+cd "%~dp0tool\overlay\build"
+cmake .. -DCMAKE_BUILD_TYPE=Release || exit /b 1
+cmake --build . --config Release || exit /b 1
+cd "%~dp0"
+echo [SUCCESS] C++ DXGI Overlay built successfully.
+echo.
+
 :: 3. Build Final Executable with PyInstaller
 echo [INFO] Running PyInstaller to create final standalone executable...
 echo --------------------------------------------------------------------
@@ -130,6 +141,25 @@ if errorlevel 1 (
     exit /b 1
 )
 echo [SUCCESS] Standalone executable created successfully.
+echo.
+
+:: 3.5. Copy Overlay binary to dist/tool
+echo [INFO] Copying Overlay binaries to dist/tool...
+set "OVERLAY_SRC="
+if exist "%~dp0tool\overlay\build\bin\Release\HorizonTunerOverlay.exe" (
+    set "OVERLAY_SRC=%~dp0tool\overlay\build\bin\Release\HorizonTunerOverlay.exe"
+) else if exist "%~dp0tool\overlay\build\bin\HorizonTunerOverlay.exe" (
+    set "OVERLAY_SRC=%~dp0tool\overlay\build\bin\HorizonTunerOverlay.exe"
+)
+
+if "%OVERLAY_SRC%" == "" (
+    echo [ERROR] Could not find compiled HorizonTunerOverlay.exe!
+    exit /b 1
+)
+
+if not exist "%~dp0dist\tool" mkdir "%~dp0dist\tool"
+copy /y "%OVERLAY_SRC%" "%~dp0dist\tool\" || exit /b 1
+echo [SUCCESS] Overlay binaries copied successfully to dist/tool.
 echo.
 
 :: 4. Success screen
