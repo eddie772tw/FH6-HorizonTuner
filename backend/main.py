@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 # 避免在無主控台模式下 sys.stdout/sys.stderr 為 None 導致 uvicorn 或 logging 報錯
 # 同時將發行版執行期的後端輸出重導向至 logs/backend.log
@@ -14,6 +15,11 @@ if getattr(sys, "frozen", False):
         sys.stderr = backend_log
     except Exception:
         pass
+else:
+    DATA_ROOT = os.path.dirname(os.path.abspath(__file__))
+    log_dir = os.path.join(DATA_ROOT, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    backend_log_path = os.path.join(log_dir, "backend.log")
 
 import asyncio
 import json
@@ -25,7 +31,39 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from telemetry_listener import start_udp_listener
 
-logging.basicConfig(level=logging.INFO)
+
+# 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
+class CleanFormatter(logging.Formatter):
+    ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+    def format(self, record):
+        formatted = super().format(record)
+        return self.ANSI_ESCAPE.sub("", formatted)
+
+
+# 配置根 Logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# 清除所有已有的 handler
+for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+# 檔案 Handler
+file_handler = logging.FileHandler(backend_log_path, encoding="utf-8")
+file_handler.setFormatter(
+    CleanFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+)
+root_logger.addHandler(file_handler)
+
+# 控制台 Handler (只有在非 frozen 開發期才需要)
+if not getattr(sys, "frozen", False):
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(
+        CleanFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    )
+    root_logger.addHandler(console_handler)
+
 logger = logging.getLogger(__name__)
 
 # 統一判定與配置唯讀資源目錄與可寫入資料目錄
@@ -1514,6 +1552,76 @@ async def delete_drag_session(filename: str):
     return {"error": "Drag session file not found"}
 
 
+LOG_LINE_PATTERN = re.compile(
+    r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) \[(\w+)\] ([\w\.-]+): (.*)$"
+)
+
+
+@app.get("/api/logs")
+async def get_logs(level: str = None, limit: int = 300):
+    if not os.path.exists(backend_log_path):
+        return {"logs": []}
+
+    try:
+        with open(backend_log_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+    except Exception as e:
+        return {"error": f"Failed to read log file: {e}"}
+
+    parsed_logs = []
+    current_entry = None
+
+    for line in lines:
+        line_str = line.rstrip("\n")
+        match = LOG_LINE_PATTERN.match(line_str)
+        if match:
+            if current_entry:
+                parsed_logs.append(current_entry)
+
+            timestamp, log_level, logger_name, message = match.groups()
+            current_entry = {
+                "timestamp": timestamp,
+                "level": log_level.upper(),
+                "logger": logger_name,
+                "message": message,
+            }
+        else:
+            # 如果不匹配，可能是 Traceback 或是多行日誌，併入上一行
+            if current_entry:
+                current_entry["message"] += "\n" + line_str
+            else:
+                # 孤立的行，直接作為普通日誌，預設為 INFO
+                current_entry = {
+                    "timestamp": "",
+                    "level": "INFO",
+                    "logger": "stdout",
+                    "message": line_str,
+                }
+
+    if current_entry:
+        parsed_logs.append(current_entry)
+
+    # 篩選級別
+    if level and level.upper() != "ALL":
+        target_level = level.upper()
+        parsed_logs = [log for log in parsed_logs if log["level"] == target_level]
+
+    # 取最新的 limit 條
+    return {"logs": parsed_logs[-limit:]}
+
+
+@app.delete("/api/logs")
+async def clear_logs():
+    if os.path.exists(backend_log_path):
+        try:
+            with open(backend_log_path, "w", encoding="utf-8") as f:
+                f.write("")
+            return {"message": "Logs cleared successfully"}
+        except Exception as e:
+            return {"error": f"Failed to clear logs: {e}"}
+    return {"message": "Log file does not exist"}
+
+
 def check_frontend_alive(proc):
     import time
 
@@ -1539,11 +1647,13 @@ if __name__ == "__main__":
             log_dir = os.path.join(DATA_ROOT, "logs")
             frontend_log_path = os.path.join(log_dir, "frontend.log")
             try:
-                frontend_log = open(frontend_log_path, "a", encoding="utf-8", buffering=1)
+                frontend_log = open(
+                    frontend_log_path, "a", encoding="utf-8", buffering=1
+                )
                 proc = subprocess.Popen(
                     [frontend_path, "--no-sidecar"],
                     stdout=frontend_log,
-                    stderr=subprocess.STDOUT
+                    stderr=subprocess.STDOUT,
                 )
             except Exception:
                 proc = subprocess.Popen([frontend_path, "--no-sidecar"])

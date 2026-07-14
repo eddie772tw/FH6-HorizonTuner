@@ -6,9 +6,10 @@ interface NavigationProps {
   activeTab: 'telemetry' | 'tuning' | 'car_params' | 'settings';
   setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'settings') => void;
   isConnected: boolean;
+  onShowLogs: () => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConnected }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConnected, onShowLogs }) => {
   const { t } = useSettings();
 
   return (
@@ -58,6 +59,24 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button
+          onClick={onShowLogs}
+          className="cyber-btn-glow"
+          style={{
+            background: 'rgba(0, 240, 255, 0.1)',
+            border: '1px solid rgba(0, 240, 255, 0.3)',
+            color: 'var(--primary)',
+            borderRadius: '4px',
+            padding: '0.4rem 0.8rem',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            marginRight: '1rem',
+            transition: 'all 0.2s',
+          }}
+        >
+          {t("Show Logs") || "診斷日誌"}
+        </button>
         <div style={{
           width: '10px', height: '10px', borderRadius: '50%',
           backgroundColor: isConnected ? '#00ff00' : '#ff0000',

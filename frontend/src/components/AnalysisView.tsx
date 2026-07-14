@@ -3,7 +3,7 @@ import { useTelemetryRecorder, AnalysisDataPoint } from '../context/TelemetryRec
 import { useSettings } from '../context/SettingsContext';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  ScatterChart, Scatter, ZAxis, BarChart, Bar, AreaChart, Area
+  ScatterChart, Scatter, ZAxis, BarChart, Bar, AreaChart, Area, ReferenceLine
 } from 'recharts';
 
 type MetricType = 'speed' | 'throttle' | 'brake' | 'grip' | 'suspension';
@@ -29,6 +29,11 @@ const AnalysisView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilename, setSelectedFilename] = useState<string>('current');
 
+  // Playback Timeline states
+  const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+
   // Fetch latest telemetry session data from backend when the view mounts
   useEffect(() => {
     const initData = async () => {
@@ -40,6 +45,24 @@ const AnalysisView: React.FC = () => {
   }, []);
 
   const activeSession = loadedSession || currentSession;
+
+  // Playback timer effect
+  useEffect(() => {
+    let timer: any;
+    if (isPlaying && activeSession.length > 0) {
+      timer = setInterval(() => {
+        setPlaybackIndex(prev => {
+          const next = prev + playbackSpeed;
+          if (next >= activeSession.length) {
+            setIsPlaying(false);
+            return activeSession.length - 1;
+          }
+          return next;
+        });
+      }, 100);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, playbackSpeed, activeSession.length]);
 
   // Handle saving the current session to a local JSON file (backup option)
   const handleSaveLocal = () => {
@@ -306,6 +329,12 @@ const AnalysisView: React.FC = () => {
     });
   }, [activeSession, selectedMetric]);
 
+  const currentCarPos = useMemo(() => {
+    if (playbackIndex === -1 || !activeSession[playbackIndex]) return [];
+    const p = activeSession[playbackIndex];
+    return [{ x: p.PositionX, z: p.PositionZ, val: 1, raw: p }];
+  }, [activeSession, playbackIndex]);
+
   const getHeatmapColor = (val: number) => {
     const hue = (1 - val) * 240;
     return `hsl(${hue}, 100%, 50%)`;
@@ -471,12 +500,103 @@ const AnalysisView: React.FC = () => {
           {t("No data recorded or loaded. Start racing to record telemetry or load a session file.")}
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(48%, 1fr))',
-          gap: '1rem',
-          paddingBottom: '2rem'
-        }}>
+        <>
+          {/* Playback Timeline Panel */}
+          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', flexShrink: 0, marginBottom: '1rem', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h4 style={{ color: 'var(--primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                ⏱️ {t("Telemetry Playback Timeline") || "遙測數據重播時間軸 [開發預留接入點]"}
+              </h4>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {playbackIndex === -1 ? t("Timeline Inactive") || "重播未啟用" : `${t("Replaying") || "重播中"}: ${activeSession[playbackIndex]?.time.toFixed(1)}s / ${activeSession[activeSession.length - 1]?.time.toFixed(1)}s (Index: ${playbackIndex})`}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              {/* Play/Pause Button */}
+              <button 
+                onClick={() => {
+                  if (playbackIndex === -1) setPlaybackIndex(0);
+                  setIsPlaying(!isPlaying);
+                }} 
+                className="cyber-btn-glow"
+                style={{ ...btnStyle, background: isPlaying ? 'var(--secondary)' : 'var(--primary)', color: isPlaying ? '#fff' : '#000', width: '100px', flexShrink: 0 }}
+              >
+                {isPlaying ? `⏸️ ${t("Pause") || "暫停"}` : `▶️ ${t("Play") || "播放"}`}
+              </button>
+
+              {/* Reset/Stop Button */}
+              <button 
+                onClick={() => {
+                  setIsPlaying(false);
+                  setPlaybackIndex(-1);
+                }}
+                style={{ ...btnStyle, background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }}
+              >
+                ⏹️ {t("Reset") || "重置"}
+              </button>
+
+              {/* Playback Speed select */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Speed") || "速度"}:</span>
+                <select
+                  value={playbackSpeed}
+                  onChange={(e) => setPlaybackSpeed(parseInt(e.target.value))}
+                  style={{ ...selectStyle, minWidth: '60px' }}
+                >
+                  <option value={1}>1x</option>
+                  <option value={2}>2x</option>
+                  <option value={5}>5x</option>
+                  <option value={10}>10x</option>
+                </select>
+              </div>
+
+              {/* Timeline Slider */}
+              <input
+                type="range"
+                min={0}
+                max={activeSession.length - 1}
+                value={playbackIndex === -1 ? 0 : playbackIndex}
+                onChange={(e) => {
+                  setIsPlaying(false);
+                  setPlaybackIndex(parseInt(e.target.value));
+                }}
+                style={{ flex: 1, accentColor: 'var(--primary)', cursor: 'pointer', height: '6px', borderRadius: '3px' }}
+                disabled={activeSession.length === 0}
+              />
+            </div>
+
+            {/* HUD Mini metrics for current playback index */}
+            {playbackIndex !== -1 && activeSession[playbackIndex] && (() => {
+              const p = activeSession[playbackIndex];
+              const speedVal = convertSpeed(p.SpeedMetersPerSecond);
+              return (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '1rem', 
+                  background: 'rgba(0,0,0,0.2)', 
+                  padding: '0.6rem 1rem', 
+                  borderRadius: '8px', 
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  fontSize: '0.85rem'
+                }}>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Speed") || "時速"}:</span> <strong style={{ color: '#fff' }}>{speedVal.value.toFixed(1)} {speedVal.label}</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("RPM") || "轉速"}:</span> <strong style={{ color: 'var(--primary)' }}>{p.CurrentEngineRpm.toFixed(0)} RPM</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Gear") || "檔位"}:</span> <strong style={{ color: 'var(--secondary)' }}>{t("G")}{p.Gear}</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Throttle") || "油門"}:</span> <strong style={{ color: '#00ff00' }}>{Math.round(p.AccelInput / 2.55)}%</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Brake") || "煞車"}:</span> <strong style={{ color: '#ff003c' }}>{Math.round(p.BrakeInput / 2.55)}%</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("G-Force") || "G力"}:</span> <strong style={{ color: '#ffaa00' }}>Lat: {(p.AccelerationX / 9.81).toFixed(2)}G | Lon: {(p.AccelerationZ / 9.81).toFixed(2)}G</strong></div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(48%, 1fr))',
+            gap: '1rem',
+            paddingBottom: '2rem'
+          }}>
           
           {/* 1. Track Map Heatmap */}
           <div className="glass-panel" style={{ gridColumn: 'span 2', minHeight: '450px', display: 'flex', flexDirection: 'column' }}>
@@ -507,6 +627,28 @@ const AnalysisView: React.FC = () => {
                   <ZAxis type="number" range={[49, 49]} />
                   <Tooltip content={<TrackMapTooltip />} trigger="hover" />
                   <Scatter name="Track Path" data={trackMapData} shape={renderTrackDot} />
+                  {playbackIndex !== -1 && currentCarPos.length > 0 && (
+                    <Scatter
+                      name={t("Current Position") || "目前位置"}
+                      data={currentCarPos}
+                      fill="var(--secondary)"
+                      shape={(props: any) => {
+                        const { cx, cy } = props;
+                        if (cx == null || cy == null) return null;
+                        return (
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r={8}
+                            fill="var(--secondary)"
+                            stroke="#fff"
+                            strokeWidth={2}
+                            style={{ filter: 'drop-shadow(0 0 5px var(--secondary))' }}
+                          />
+                        );
+                      }}
+                    />
+                  )}
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
@@ -530,6 +672,9 @@ const AnalysisView: React.FC = () => {
                 <Line yAxisId="left" type="monotone" dataKey="throttle" name={t("Throttle")} stroke="#00ff00" dot={false} strokeWidth={1.5} />
                 <Line yAxisId="left" type="monotone" dataKey="brake" name={t("Brake")} stroke="#ff003c" dot={false} strokeWidth={1.5} />
                 <Line yAxisId="right" type="stepAfter" dataKey="gear" name={t("Gear")} stroke="var(--primary)" dot={false} strokeWidth={2} />
+                {playbackIndex !== -1 && activeSession[playbackIndex] && (
+                  <ReferenceLine x={activeSession[playbackIndex].time} yAxisId="left" stroke="var(--secondary)" strokeWidth={2} />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </ChartWidget>
@@ -597,6 +742,7 @@ const AnalysisView: React.FC = () => {
           </ChartWidget>
 
         </div>
+      </>
       )}
     </div>
   );
