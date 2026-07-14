@@ -60,7 +60,13 @@ export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
         return;
       }
 
-      sharedWs = new WebSocket(url);
+      let finalUrl = url;
+      if (url.includes("8001")) {
+        const port = (window as any).BACKEND_PORT || 8001;
+        finalUrl = url.replace("8001", port.toString());
+      }
+
+      sharedWs = new WebSocket(finalUrl);
 
       sharedWs.onopen = () => {
         connectionState = true;

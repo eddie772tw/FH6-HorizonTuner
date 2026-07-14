@@ -4,6 +4,7 @@ import TelemetryView from './components/TelemetryView';
 import TuningView from './components/TuningView';
 import CarParamsView from './components/CarParamsView';
 import SettingsView from './components/SettingsView';
+import DiagnosticConsole from './components/DiagnosticConsole';
 import { useTelemetry } from './hooks/useTelemetry';
 import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
 import { SettingsProvider } from './context/SettingsContext';
@@ -13,6 +14,7 @@ const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
   const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'settings'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
+  const [showLogs, setShowLogs] = useState(false);
 
   // Auto-synchronize back to telemetry car when returning to telemetry tab
   React.useEffect(() => {
@@ -23,7 +25,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} isConnected={isConnected} />
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} isConnected={isConnected} onShowLogs={() => setShowLogs(true)} />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <TelemetryView />
@@ -38,6 +40,7 @@ const AppContent: React.FC = () => {
           <SettingsView />
         </div>
       </main>
+      {showLogs && <DiagnosticConsole onClose={() => setShowLogs(false)} />}
     </div>
   );
 };

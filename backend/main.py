@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 # 避免在無主控台模式下 sys.stdout/sys.stderr 為 None 導致 uvicorn 或 logging 報錯
@@ -14,18 +15,56 @@ if getattr(sys, "frozen", False):
         sys.stderr = backend_log
     except Exception:
         pass
+else:
+    DATA_ROOT = os.path.dirname(os.path.abspath(__file__))
+    log_dir = os.path.join(DATA_ROOT, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    backend_log_path = os.path.join(log_dir, "backend.log")
 
 import asyncio
 import json
 import logging
 import time
+from contextlib import asynccontextmanager
 from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from telemetry_listener import start_udp_listener
 
-logging.basicConfig(level=logging.INFO)
+
+# 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
+class CleanFormatter(logging.Formatter):
+    ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+    def format(self, record):
+        formatted = super().format(record)
+        return self.ANSI_ESCAPE.sub("", formatted)
+
+
+# 配置根 Logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# 清除所有已有的 handler
+for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+# 檔案 Handler
+file_handler = logging.FileHandler(backend_log_path, encoding="utf-8")
+file_handler.setFormatter(
+    CleanFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+)
+root_logger.addHandler(file_handler)
+
+# 控制台 Handler (只有在非 frozen 開發期才需要)
+if not getattr(sys, "frozen", False):
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(
+        CleanFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    )
+    root_logger.addHandler(console_handler)
+
 logger = logging.getLogger(__name__)
 
 # 統一判定與配置唯讀資源目錄與可寫入資料目錄
@@ -71,16 +110,6 @@ if os.path.exists(CAR_DB_PATH):
     except Exception as e:
         logger.error(f"Failed to load car database: {e}")
 
-app = FastAPI(title="FH6 Telemetry Tuning Tool API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 class ConnectionManager:
     def __init__(self):
@@ -110,6 +139,42 @@ class ConnectionManager:
 manager = ConnectionManager()
 telemetry_queue = asyncio.Queue(maxsize=100)
 
+current_udp_transport = None
+current_udp_ip_port = (None, None)
+
+
+@asynccontextmanager
+async def lifespan(app_inst: FastAPI):
+    global current_udp_transport, current_udp_ip_port
+    # Startup
+    ip = app_settings.get("telemetry_ip", os.getenv("TELEMETRY_IP", "0.0.0.0"))
+    port = int(app_settings.get("telemetry_port", os.getenv("TELEMETRY_PORT", 8000)))
+    current_udp_ip_port = (ip, port)
+
+    # Start UDP listener in the background
+    try:
+        current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
+    except Exception as e:
+        logger.error(f"Failed to start UDP Telemetry listener on {ip}:{port}: {e}")
+
+    # Start the broadcast loop
+    asyncio.create_task(broadcast_telemetry())
+    yield
+    # Shutdown
+    if current_udp_transport:
+        current_udp_transport.close()
+
+
+app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Memory cache for dyno data to avoid disk I/O every frame
 dyno_cache = {}
 last_dyno_save_time = time.time()
@@ -124,6 +189,8 @@ DEFAULT_SETTINGS = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
+    "telemetry_ip": "0.0.0.0",
+    "telemetry_port": 8000,
     "units": {
         "speed": "kmh",
         "weight": "kg",
@@ -145,6 +212,8 @@ app_settings = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
+    "telemetry_ip": "0.0.0.0",
+    "telemetry_port": 8000,
     "units": dict(DEFAULT_SETTINGS["units"]),
 }
 
@@ -890,8 +959,8 @@ def save_car_params(car_id: str, data: dict):
         json.dump(data, f, indent=4)
 
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     # Customizable IP and Port
     ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
@@ -900,6 +969,10 @@ async def startup_event():
     asyncio.create_task(start_udp_listener(ip, port, telemetry_queue))
     # Start the broadcast loop
     asyncio.create_task(broadcast_telemetry())
+    yield
+
+
+app.router.lifespan_context = lifespan
 
 
 async def broadcast_telemetry():
@@ -1165,6 +1238,8 @@ async def get_settings():
 
 @app.post("/api/settings")
 async def update_settings(data: dict):
+    global current_udp_transport, current_udp_ip_port
+
     if "dyno_recording" in data:
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
     if "race_recording" in data:
@@ -1177,6 +1252,18 @@ async def update_settings(data: dict):
         app_settings["dyno_filter_slip"] = bool(data["dyno_filter_slip"])
     if "dyno_filter_transients" in data:
         app_settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
+
+    # 處理 telemetry_ip 與 telemetry_port
+    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
+    new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
+
+    ip_port_changed = (new_ip != current_udp_ip_port[0]) or (
+        new_port != current_udp_ip_port[1]
+    )
+
+    app_settings["telemetry_ip"] = new_ip
+    app_settings["telemetry_port"] = new_port
+
     if "units" in data and isinstance(data["units"], dict):
         if "units" not in app_settings:
             app_settings["units"] = {}
@@ -1189,6 +1276,27 @@ async def update_settings(data: dict):
         logger.info(f"Saved settings to {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
+
+    # 若 IP 或 Port 變更，在執行期動態重啟 UDP listener
+    if ip_port_changed:
+        logger.info(
+            f"Forza UDP Telemetry endpoint changed to {new_ip}:{new_port}. Restarting listener..."
+        )
+        if current_udp_transport:
+            try:
+                current_udp_transport.close()
+            except Exception:
+                pass
+            current_udp_transport = None
+        try:
+            current_udp_transport = await start_udp_listener(
+                new_ip, new_port, telemetry_queue
+            )
+            current_udp_ip_port = (new_ip, new_port)
+        except Exception as e:
+            logger.error(
+                f"Failed to restart UDP Telemetry listener on {new_ip}:{new_port}: {e}"
+            )
 
     return app_settings
 
@@ -1514,6 +1622,76 @@ async def delete_drag_session(filename: str):
     return {"error": "Drag session file not found"}
 
 
+LOG_LINE_PATTERN = re.compile(
+    r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) \[(\w+)\] ([\w\.-]+): (.*)$"
+)
+
+
+@app.get("/api/logs")
+async def get_logs(level: str = None, limit: int = 300):
+    if not os.path.exists(backend_log_path):
+        return {"logs": []}
+
+    try:
+        with open(backend_log_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+    except Exception as e:
+        return {"error": f"Failed to read log file: {e}"}
+
+    parsed_logs = []
+    current_entry = None
+
+    for line in lines:
+        line_str = line.rstrip("\n")
+        match = LOG_LINE_PATTERN.match(line_str)
+        if match:
+            if current_entry:
+                parsed_logs.append(current_entry)
+
+            timestamp, log_level, logger_name, message = match.groups()
+            current_entry = {
+                "timestamp": timestamp,
+                "level": log_level.upper(),
+                "logger": logger_name,
+                "message": message,
+            }
+        else:
+            # 如果不匹配，可能是 Traceback 或是多行日誌，併入上一行
+            if current_entry:
+                current_entry["message"] += "\n" + line_str
+            else:
+                # 孤立的行，直接作為普通日誌，預設為 INFO
+                current_entry = {
+                    "timestamp": "",
+                    "level": "INFO",
+                    "logger": "stdout",
+                    "message": line_str,
+                }
+
+    if current_entry:
+        parsed_logs.append(current_entry)
+
+    # 篩選級別
+    if level and level.upper() != "ALL":
+        target_level = level.upper()
+        parsed_logs = [log for log in parsed_logs if log["level"] == target_level]
+
+    # 取最新的 limit 條
+    return {"logs": parsed_logs[-limit:]}
+
+
+@app.delete("/api/logs")
+async def clear_logs():
+    if os.path.exists(backend_log_path):
+        try:
+            with open(backend_log_path, "w", encoding="utf-8") as f:
+                f.write("")
+            return {"message": "Logs cleared successfully"}
+        except Exception as e:
+            return {"error": f"Failed to clear logs: {e}"}
+    return {"message": "Log file does not exist"}
+
+
 def check_frontend_alive(proc):
     import time
 
@@ -1530,6 +1708,29 @@ if __name__ == "__main__":
 
     import uvicorn
 
+    def get_free_port():
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        return port
+
+    try:
+        backend_port = get_free_port()
+    except Exception:
+        backend_port = 8001
+
+    try:
+        log_dir = os.path.join(DATA_ROOT, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        port_file_path = os.path.join(log_dir, "web_port.txt")
+        with open(port_file_path, "w", encoding="utf-8") as f:
+            f.write(str(backend_port))
+    except Exception as e:
+        print(f"Failed to write web_port.txt: {e}")
+
     if getattr(sys, "frozen", False):
         frontend_path = os.path.join(sys._MEIPASS, "frontend.exe")
         if os.path.exists(frontend_path):
@@ -1539,11 +1740,13 @@ if __name__ == "__main__":
             log_dir = os.path.join(DATA_ROOT, "logs")
             frontend_log_path = os.path.join(log_dir, "frontend.log")
             try:
-                frontend_log = open(frontend_log_path, "a", encoding="utf-8", buffering=1)
+                frontend_log = open(
+                    frontend_log_path, "a", encoding="utf-8", buffering=1
+                )
                 proc = subprocess.Popen(
                     [frontend_path, "--no-sidecar"],
                     stdout=frontend_log,
-                    stderr=subprocess.STDOUT
+                    stderr=subprocess.STDOUT,
                 )
             except Exception:
                 proc = subprocess.Popen([frontend_path, "--no-sidecar"])
@@ -1554,4 +1757,4 @@ if __name__ == "__main__":
         else:
             print("Frontend executable not found in bundle!")
 
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app, host="127.0.0.1", port=backend_port)

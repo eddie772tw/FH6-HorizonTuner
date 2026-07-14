@@ -51,11 +51,42 @@ h1, h2, h3, h4 {
   box-shadow: var(--glass-shadow);
   border-radius: 16px;
   padding: 1.5rem;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .glass-panel:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25), var(--glass-shadow);
+}
+
+/* Cyber Form Inputs */
+.cyber-input, .cyber-select {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: white !important;
+  padding: 0.5rem 0.8rem !important;
+  border-radius: 6px !important;
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-size: 0.9rem !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer;
+}
+.cyber-input:focus, .cyber-select:focus,
+.cyber-input:hover, .cyber-select:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+}
+
+/* Cyber Button Glow Effect */
+.cyber-btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
+}
+.cyber-btn-glow:hover {
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  transform: scale(1.02);
 }
 
 /* Custom Scrollbar */

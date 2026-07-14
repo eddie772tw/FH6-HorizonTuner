@@ -100,7 +100,7 @@ if errorlevel 1 (
 
 :: Run Ruff if available
 if exist "%VENV_DIR%\Scripts\ruff.exe" (
-    echo [INFO] Running Ruff check & format...
+    echo [INFO] Running Ruff check ^& format...
     "%VENV_DIR%\Scripts\ruff.exe" check . --fix
     "%VENV_DIR%\Scripts\ruff.exe" format .
 )
