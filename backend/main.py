@@ -139,18 +139,30 @@ class ConnectionManager:
 manager = ConnectionManager()
 telemetry_queue = asyncio.Queue(maxsize=100)
 
+current_udp_transport = None
+current_udp_ip_port = (None, None)
+
 
 @asynccontextmanager
 async def lifespan(app_inst: FastAPI):
-    # Customizable IP and Port
-    ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
-    port = int(os.getenv("TELEMETRY_PORT", "8000"))
+    global current_udp_transport, current_udp_ip_port
+    # Startup
+    ip = app_settings.get("telemetry_ip", os.getenv("TELEMETRY_IP", "0.0.0.0"))
+    port = int(app_settings.get("telemetry_port", os.getenv("TELEMETRY_PORT", 8000)))
+    current_udp_ip_port = (ip, port)
 
     # Start UDP listener in the background
-    asyncio.create_task(start_udp_listener(ip, port, telemetry_queue))
+    try:
+        current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
+    except Exception as e:
+        logger.error(f"Failed to start UDP Telemetry listener on {ip}:{port}: {e}")
+
     # Start the broadcast loop
     asyncio.create_task(broadcast_telemetry())
     yield
+    # Shutdown
+    if current_udp_transport:
+        current_udp_transport.close()
 
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
@@ -177,6 +189,8 @@ DEFAULT_SETTINGS = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
+    "telemetry_ip": "0.0.0.0",
+    "telemetry_port": 8000,
     "units": {
         "speed": "kmh",
         "weight": "kg",
@@ -198,6 +212,8 @@ app_settings = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
+    "telemetry_ip": "0.0.0.0",
+    "telemetry_port": 8000,
     "units": dict(DEFAULT_SETTINGS["units"]),
 }
 
@@ -1222,6 +1238,8 @@ async def get_settings():
 
 @app.post("/api/settings")
 async def update_settings(data: dict):
+    global current_udp_transport, current_udp_ip_port
+
     if "dyno_recording" in data:
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
     if "race_recording" in data:
@@ -1234,6 +1252,18 @@ async def update_settings(data: dict):
         app_settings["dyno_filter_slip"] = bool(data["dyno_filter_slip"])
     if "dyno_filter_transients" in data:
         app_settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
+
+    # 處理 telemetry_ip 與 telemetry_port
+    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
+    new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
+
+    ip_port_changed = (new_ip != current_udp_ip_port[0]) or (
+        new_port != current_udp_ip_port[1]
+    )
+
+    app_settings["telemetry_ip"] = new_ip
+    app_settings["telemetry_port"] = new_port
+
     if "units" in data and isinstance(data["units"], dict):
         if "units" not in app_settings:
             app_settings["units"] = {}
@@ -1246,6 +1276,27 @@ async def update_settings(data: dict):
         logger.info(f"Saved settings to {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
+
+    # 若 IP 或 Port 變更，在執行期動態重啟 UDP listener
+    if ip_port_changed:
+        logger.info(
+            f"Forza UDP Telemetry endpoint changed to {new_ip}:{new_port}. Restarting listener..."
+        )
+        if current_udp_transport:
+            try:
+                current_udp_transport.close()
+            except Exception:
+                pass
+            current_udp_transport = None
+        try:
+            current_udp_transport = await start_udp_listener(
+                new_ip, new_port, telemetry_queue
+            )
+            current_udp_ip_port = (new_ip, new_port)
+        except Exception as e:
+            logger.error(
+                f"Failed to restart UDP Telemetry listener on {new_ip}:{new_port}: {e}"
+            )
 
     return app_settings
 
@@ -1657,6 +1708,29 @@ if __name__ == "__main__":
 
     import uvicorn
 
+    def get_free_port():
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        return port
+
+    try:
+        backend_port = get_free_port()
+    except Exception:
+        backend_port = 8001
+
+    try:
+        log_dir = os.path.join(DATA_ROOT, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        port_file_path = os.path.join(log_dir, "web_port.txt")
+        with open(port_file_path, "w", encoding="utf-8") as f:
+            f.write(str(backend_port))
+    except Exception as e:
+        print(f"Failed to write web_port.txt: {e}")
+
     if getattr(sys, "frozen", False):
         frontend_path = os.path.join(sys._MEIPASS, "frontend.exe")
         if os.path.exists(frontend_path):
@@ -1683,4 +1757,4 @@ if __name__ == "__main__":
         else:
             print("Frontend executable not found in bundle!")
 
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app, host="127.0.0.1", port=backend_port)
