@@ -1,0 +1,64 @@
+{
+    "image_base": "0x140000000",
+    "imports": {
+        "d3d11.dll": {
+            "D3D11CreateDevice": "0x1400bdda8"
+        },
+        "ws2_32.dll": {
+            "recvfrom": "0x1400bda18",
+            "WSAStartup": "0x1400bda20",
+            "socket": "0x1400bda28",
+            "setsockopt": "0x1400bda30",
+            "inet_pton": "0x1400bda38",
+            "htons": "0x1400bda40",
+            "WSAGetLastError": "0x1400bda48",
+            "htonl": "0x1400bda50",
+            "closesocket": "0x1400bda58",
+            "bind": "0x1400bda60"
+        },
+        "dcomp.dll": {
+            "DCompositionCreateDevice": "0x1400bddb8"
+        },
+        "vigemclient.dll": {
+            "vigem_alloc": "0x1400bd960",
+            "vigem_target_x360_alloc": "0x1400bd968",
+            "vigem_target_free": "0x1400bd970",
+            "vigem_connect": "0x1400bd978",
+            "vigem_disconnect": "0x1400bd980",
+            "vigem_free": "0x1400bd988",
+            "vigem_target_add": "0x1400bd990",
+            "vigem_target_x360_update": "0x1400bd998",
+            "vigem_target_remove": "0x1400bd9a0"
+        }
+    },
+    "interesting_strings": {
+        "init_d3d: flip-model composition swap chain": [
+            "0x1400bf298"
+        ],
+        "load_dds_from_resource": [
+            "0x1400bf4a0",
+            "0x1400bf4e0",
+            "0x1400bf510",
+            "0x1400bf560",
+            "0x1400bf5a0",
+            "0x1400bf5e0",
+            "0x1400bf630",
+            "0x1400bf678"
+        ],
+        "load_texture_from_resource": [
+            "0x1400bf6c8",
+            "0x1400bf700",
+            "0x1400bf740",
+            "0x1400bf780",
+            "0x1400bf7c8",
+            "0x1400bf808",
+            "0x1400bf840"
+        ],
+        "vigem_connect failed": [
+            "0x1400c2a3e"
+        ],
+        "drift_assist: vigem_connect": [
+            "0x1400c2a30"
+        ]
+    }
+}
