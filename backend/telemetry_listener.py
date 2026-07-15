@@ -246,9 +246,21 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
 
 
 async def start_udp_listener(ip: str, port: int, message_queue: asyncio.Queue):
-    loop = asyncio.get_running_loop()
-    transport, protocol = await loop.create_datagram_endpoint(
-        lambda: TelemetryProtocol(message_queue), local_addr=(ip, port)
-    )
-    logger.info(f"Listening for Forza Telemetry on UDP {ip}:{port}")
-    return transport
+    try:
+        loop = asyncio.get_running_loop()
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((ip, port))
+
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: TelemetryProtocol(message_queue), sock=sock
+        )
+        logger.info(f"Listening for Forza Telemetry on UDP {ip}:{port}")
+        return transport
+    except Exception as e:
+        logger.error(
+            f"Failed to bind UDP Telemetry socket on {ip}:{port}: {e}. (The port might be exclusively occupied by another process.)"
+        )
+        return None

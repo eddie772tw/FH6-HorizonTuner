@@ -2004,15 +2004,41 @@ async def start_overlay():
         }
 
     try:
+        log_dir = os.path.join(DATA_ROOT, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        log_file_path = os.path.join(log_dir, "overlay.log")
+        overlay_log = open(log_file_path, "w", encoding="utf-8")
+
         overlay_process = subprocess.Popen(
             [exe_path, "-port", str(backend_port)],
             cwd=DATA_ROOT,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=overlay_log,
+            stderr=overlay_log,
         )
         logger.info(
             f"Started Overlay process from {exe_path} with backend port {backend_port}"
         )
+
+        # 稍微等待檢測是否啟動即崩潰
+        import asyncio
+
+        await asyncio.sleep(0.5)
+        poll = overlay_process.poll()
+        if poll is not None:
+            overlay_log.close()
+            log_content = ""
+            if os.path.exists(log_file_path):
+                with open(log_file_path, "r", encoding="utf-8", errors="ignore") as lf:
+                    log_content = lf.read()
+            logger.error(
+                f"Overlay process exited immediately with code {poll}. Logs:\n{log_content}"
+            )
+            overlay_process = None
+            return {
+                "error": f"Overlay exited immediately with code {poll}. Logs:\n{log_content}",
+                "success": False,
+            }
+
         return {"message": "Overlay started successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to start overlay process: {e}")
@@ -2081,10 +2107,19 @@ if __name__ == "__main__":
         s.close()
         return port
 
+    # 優先嘗試使用預設的 8001 埠號，若已被佔用則使用隨機動態埠號
+    backend_port = 8001
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        backend_port = get_free_port()
+        s.bind(("127.0.0.1", 8001))
+        s.close()
     except Exception:
-        backend_port = 8001
+        try:
+            backend_port = get_free_port()
+        except Exception:
+            backend_port = 8001
 
     try:
         log_dir = os.path.join(DATA_ROOT, "logs")

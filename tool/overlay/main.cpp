@@ -106,26 +106,33 @@ bool LoadTextureFromFile(const char* filename, ID3D11Device* device, ID3D11Shade
     int image_width = 0;
     int image_height = 0;
     std::string exeDir = GetExeDirectoryA();
-    std::string primaryPath = exeDir + "/assets/hud/" + std::string(filename);
-    unsigned char* image_data = stbi_load(primaryPath.c_str(), &image_width, &image_height, NULL, 4);
-    if (image_data == NULL) {
-        std::string fallback = exeDir + "/" + std::string(filename);
-        image_data = stbi_load(fallback.c_str(), &image_width, &image_height, NULL, 4);
-        if (image_data == NULL) {
-            image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
-            if (image_data == NULL) {
-                std::string fallbackPath = "assets/hud/" + std::string(filename);
-                image_data = stbi_load(fallbackPath.c_str(), &image_width, &image_height, NULL, 4);
-                if (image_data == NULL) {
-                    std::string parentFallbackPath = "../assets/hud/" + std::string(filename);
-                    image_data = stbi_load(parentFallbackPath.c_str(), &image_width, &image_height, NULL, 4);
-                    if (image_data == NULL) {
-                        return false;
-                    }
-                }
-            }
+    
+    std::vector<std::string> candidates = {
+        exeDir + "/assets/hud/" + filename,
+        exeDir + "/../assets/hud/" + filename,
+        exeDir + "/../../assets/hud/" + filename,
+        exeDir + "/../../../assets/hud/" + filename,
+        std::string("tool/overlay/assets/hud/") + filename,
+        std::string("assets/hud/") + filename,
+        filename
+    };
+    
+    unsigned char* image_data = nullptr;
+    std::string matchedPath = "";
+    for (const auto& path : candidates) {
+        image_data = stbi_load(path.c_str(), &image_width, &image_height, NULL, 4);
+        if (image_data != nullptr) {
+            matchedPath = path;
+            break;
         }
     }
+    
+    if (image_data == NULL) {
+        std::cout << "[Overlay] 錯誤：無法載入貼圖檔案 " << filename << " (已嘗試所有候選路徑)\n";
+        return false;
+    }
+    
+    std::cout << "[Overlay] 成功載入貼圖 " << filename << " 來自 " << matchedPath << " (" << image_width << "x" << image_height << ")\n";
 
     D3D11_TEXTURE2D_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
@@ -427,6 +434,7 @@ struct WidgetConfig {
 struct OverlayPreset {
     std::string name = "Default";
     int previewMode = 0;
+    int editMode = 0;
     WidgetConfig controller;
     WidgetConfig radio;
     WidgetConfig dashboard;
@@ -556,6 +564,7 @@ void LoadWidgetConfig(const std::map<std::string, std::string>& ini, const std::
 // 地圖路徑軌跡
 std::vector<ImVec2> g_MapPath;
 std::mutex g_MapPathMutex;
+DWORD g_LastTelemetryTime = 0;
 
 // 全域鍵盤 Hook
 HHOOK g_KeyboardHook = nullptr;
@@ -667,18 +676,25 @@ void LoadLayoutConfig() {
     
     if (g_ResolvedLayoutPath.empty()) {
         std::wstring exeDir = GetExeDirectory();
-        std::wstring primaryPath = exeDir + L"\\layout.ini";
-        std::ifstream f(primaryPath);
-        if (f.good()) {
-            g_ResolvedLayoutPath = primaryPath;
-        } else {
-            std::ifstream f2(g_LayoutFilePath);
-            if (f2.good()) {
-                g_ResolvedLayoutPath = g_LayoutFilePath;
-            } else {
-                g_ResolvedLayoutPath = L"layout.ini";
+        std::vector<std::wstring> candidates = {
+            exeDir + L"\\layout.ini",
+            exeDir + L"\\..\\layout.ini",
+            exeDir + L"\\..\\..\\layout.ini",
+            exeDir + L"\\..\\..\\..\\layout.ini",
+            g_LayoutFilePath,
+            L"layout.ini"
+        };
+        for (const auto& p : candidates) {
+            std::ifstream f(p);
+            if (f.good()) {
+                g_ResolvedLayoutPath = p;
+                break;
             }
         }
+        if (g_ResolvedLayoutPath.empty()) {
+            g_ResolvedLayoutPath = L"layout.ini";
+        }
+        std::wcout << L"[Layout] 成功解析 layout.ini 實體路徑: " << g_ResolvedLayoutPath << std::endl;
     }
 
     std::map<std::string, std::string> ini = ParseIniFile(g_ResolvedLayoutPath);
@@ -689,6 +705,11 @@ void LoadLayoutConfig() {
         g_Preset.previewMode = std::stoi(ini["preview_mode"]);
     } else {
         g_Preset.previewMode = 0;
+    }
+    if (ini.count("edit_mode")) {
+        g_Preset.editMode = std::stoi(ini["edit_mode"]);
+    } else {
+        g_Preset.editMode = 0;
     }
 
     LoadWidgetConfig(ini, "controller", g_Preset.controller);
@@ -957,6 +978,7 @@ void TickLayoutMonitor() {
 void OnWebSocketMessage(const void* data, size_t len, bool isBinary) {
     try {
         std::lock_guard<std::mutex> lock(g_TelemetryMutex);
+        g_LastTelemetryTime = GetTickCount();
 
         if (isBinary) {
             if (len == sizeof(BinaryTelemetryPacket)) {
@@ -1194,13 +1216,13 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         t = g_Telemetry;
     }
 
-    // 1. 如果既不是預覽模式，且遊戲未在比賽中，則不渲染任何 HUD
-    if (g_Preset.previewMode != 1 && !t.isRaceOn) {
-        return;
-    }
+    // 1. 不再檢查 isRaceOn，始終渲染 HUD
+
+    // 判斷遙測訊號是否活躍 (2秒內收到過資料)
+    bool isTelemetryActive = (GetTickCount() - g_LastTelemetryTime < 2000);
 
     // 複製與更新公式引擎變數值 (預覽模式下若無實時遙測，載入模擬測試資料)
-    if (g_Preset.previewMode == 1 && !t.isRaceOn) {
+    if (g_Preset.previewMode == 1 && !isTelemetryActive) {
         TelemetryData mockT;
         mockT.isRaceOn = true;
         mockT.currentEngineRpm = 5200.0f;
@@ -1225,7 +1247,7 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
 
     // 記錄地圖軌跡
     static ImVec2 lastPos(0.0f, 0.0f);
-    if (t.isRaceOn) {
+    if (isTelemetryActive && t.isRaceOn) {
         std::lock_guard<std::mutex> pathLock(g_MapPathMutex);
         float dx = t.posX - lastPos.x;
         float dy = t.posZ - lastPos.y;
@@ -1234,6 +1256,15 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
             lastPos = ImVec2(t.posX, t.posZ);
             if (g_MapPath.size() > 2000) {
                 g_MapPath.erase(g_MapPath.begin());
+            }
+        }
+    } else if (g_Preset.previewMode == 1 && !isTelemetryActive) {
+        std::lock_guard<std::mutex> pathLock(g_MapPathMutex);
+        if (g_MapPath.empty()) {
+            for (int i = 0; i < 100; ++i) {
+                float angle = i * (3.14159265f * 2.0f / 100.0f);
+                float r = 50.0f;
+                g_MapPath.push_back(ImVec2(r * cos(angle), r * sin(angle)));
             }
         }
     } else {
@@ -1292,8 +1323,8 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         float sw = comp.w * scale;
         float sh = comp.h * scale;
 
-        // 如果在預覽模式，繪製虛線定位邊框
-        if (g_Preset.previewMode == 1) {
+        // 如果在編輯定位模式，繪製虛線定位邊框與標籤描述
+        if (g_Preset.editMode == 1) {
             drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), IM_COL32(0, 240, 255, 200), 0.0f, 0, 1.5f * scale);
             char lbl[128];
             sprintf_s(lbl, "%s (Scale: %.2f)", comp.id.c_str(), scale / pulseScale);
@@ -1577,6 +1608,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow) {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    // 建立日誌資料夾並將 std::cout / std::cerr / std::wcout / std::wcerr 導向 logs/overlay.log
+    CreateDirectoryA("logs", NULL);
+    static std::ofstream cppLogFile("logs/overlay.log", std::ios::app);
+    static std::wofstream cppWLogFile("logs/overlay.log", std::ios::app);
+    std::streambuf* oldCout = std::cout.rdbuf(cppLogFile.rdbuf());
+    std::streambuf* oldCerr = std::cerr.rdbuf(cppLogFile.rdbuf());
+    std::wstreambuf* oldWCout = std::wcout.rdbuf(cppWLogFile.rdbuf());
+    std::wstreambuf* oldWCerr = std::wcerr.rdbuf(cppWLogFile.rdbuf());
+
+    // 啟用自動 flush (unitbuf)
+    std::cout << std::unitbuf;
+    std::cerr << std::unitbuf;
+    std::wcout << std::unitbuf;
+    std::wcerr << std::unitbuf;
+
+    std::cout << "\n========================================\n";
+    std::cout << "[Overlay] C++ 重疊層程式啟動...\n";
 
     // 預留授權校驗接口
     if (!VerifyLicenseStub()) {

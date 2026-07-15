@@ -10,40 +10,43 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn get_backend_port() -> Result<u16, String> {
     // 獲取當前執行檔所在的目錄
-    let mut path = std::env::current_exe()
+    let path = std::env::current_exe()
         .map(|p| p.parent().unwrap().to_path_buf())
         .unwrap_or_else(|_| PathBuf::from("."));
     
-    // 多路徑嘗試 logs/web_port.txt
-    let mut port_file = path.join("logs").join("web_port.txt");
-    if !port_file.exists() {
-        if let Some(parent) = path.parent() {
-            let p2 = parent.join("logs").join("web_port.txt");
-            if p2.exists() {
-                port_file = p2;
-            } else if let Some(gparent) = parent.parent() {
-                let p3 = gparent.join("logs").join("web_port.txt");
-                if p3.exists() {
-                    port_file = p3;
-                }
-            }
+    // 遞迴向上層目錄尋找 web_port.txt 檔案
+    let mut port_file = None;
+    let mut current = Some(path.as_path());
+    while let Some(p) = current {
+        let candidate1 = p.join("backend").join("logs").join("web_port.txt");
+        if candidate1.exists() {
+            port_file = Some(candidate1);
+            break;
         }
-    }
-    
-    if !port_file.exists() {
-        port_file = PathBuf::from("logs/web_port.txt");
-    }
-    
-    if !port_file.exists() {
-        port_file = PathBuf::from("backend/logs/web_port.txt");
+        let candidate2 = p.join("logs").join("web_port.txt");
+        if candidate2.exists() {
+            port_file = Some(candidate2);
+            break;
+        }
+        current = p.parent();
     }
 
-    match fs::read_to_string(&port_file) {
+    // 回退到工作目錄
+    let final_port_file = port_file.unwrap_or_else(|| {
+        let f1 = PathBuf::from("logs/web_port.txt");
+        if f1.exists() {
+            f1
+        } else {
+            PathBuf::from("backend/logs/web_port.txt")
+        }
+    });
+
+    match fs::read_to_string(&final_port_file) {
         Ok(content) => {
             let port_str = content.trim();
             port_str.parse::<u16>().map_err(|e| format!("Failed to parse port '{}': {}", port_str, e))
         }
-        Err(e) => Err(format!("Failed to read port file at {:?}: {}", port_file, e))
+        Err(e) => Err(format!("Failed to read port file at {:?}: {}", final_port_file, e))
     }
 }
 
