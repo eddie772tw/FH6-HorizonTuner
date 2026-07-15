@@ -1780,13 +1780,16 @@ async def clear_logs():
 # --- Overlay API ---
 OVERLAY_DIR = os.path.join(ROOT_DIR, "tool", "overlay")
 if not os.path.exists(OVERLAY_DIR):
-    OVERLAY_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tool", "overlay")
+    OVERLAY_DIR = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "tool", "overlay"
+    )
 
 LAYOUT_FILE = os.path.join(OVERLAY_DIR, "layout.ini")
 PRESETS_DIR = os.path.join(OVERLAY_DIR, "presets")
 
 # Ensure directories exist
 os.makedirs(PRESETS_DIR, exist_ok=True)
+
 
 def parse_ini_to_dict(filepath: str) -> dict:
     data = {}
@@ -1818,6 +1821,7 @@ def parse_ini_to_dict(filepath: str) -> dict:
         logger.error(f"Error parsing INI file {filepath}: {e}")
     return data
 
+
 def save_dict_to_ini(data: dict, filepath: str):
     try:
         with open(filepath, "w", encoding="utf-8") as f:
@@ -1825,6 +1829,7 @@ def save_dict_to_ini(data: dict, filepath: str):
                 f.write(f"{k}={v}\n")
     except Exception as e:
         logger.error(f"Error saving INI file {filepath}: {e}")
+
 
 def ensure_telemetry_widgets(data: dict) -> dict:
     telemetry_widgets = ["tire_temp", "susp_travel", "slip_limit", "g_force"]
@@ -1836,7 +1841,7 @@ def ensure_telemetry_widgets(data: dict) -> dict:
         opacity_key = f"{w}_opacity"
         padx_key = f"{w}_padding_x"
         pady_key = f"{w}_padding_y"
-        
+
         if enabled_key not in data:
             data[enabled_key] = 0
         if widget_key not in data:
@@ -1851,12 +1856,12 @@ def ensure_telemetry_widgets(data: dict) -> dict:
             data[padx_key] = 20
         if pady_key not in data:
             data[pady_key] = 20
-            
+
     if "preview_mode" not in data:
         data["preview_mode"] = 0
     if "name" not in data:
         data["name"] = "Default"
-        
+
     # Radio 進階設定預設值
     if "radio_media_source" not in data:
         data["radio_media_source"] = "SMTC"
@@ -1868,7 +1873,7 @@ def ensure_telemetry_widgets(data: dict) -> dict:
         data["radio_visualizer_height"] = 40.0
     if "radio_audio_device" not in data:
         data["radio_audio_device"] = "Default"
-        
+
     return data
 
 
@@ -1939,12 +1944,16 @@ async def apply_overlay_preset(payload: dict):
     preset_path = os.path.join(PRESETS_DIR, f"{name}.ini")
     if not os.path.exists(preset_path):
         return {"error": f"Preset {name} not found", "success": False}
-    
+
     try:
         data = parse_ini_to_dict(preset_path)
         data = ensure_telemetry_widgets(data)
         save_dict_to_ini(data, LAYOUT_FILE)
-        return {"message": f"Preset {name} applied successfully", "success": True, "data": data}
+        return {
+            "message": f"Preset {name} applied successfully",
+            "success": True,
+            "data": data,
+        }
     except Exception as e:
         logger.error(f"Failed to apply preset {name}: {e}")
         return {"error": f"Failed to apply preset: {e}", "success": False}
@@ -2019,8 +2028,7 @@ async def stop_overlay():
 
 @app.post("/api/license/verify")
 async def verify_license(payload: dict = None):
-    """
-    目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。
+    """目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。
     未來擴充計畫：
     1. 接收前端或客戶端傳送的 HWID (硬體識別碼) 與 License Key。
     2. 串接認證伺服器資料庫進行檢索，確認授權過期時間 (ExpireTime)。
