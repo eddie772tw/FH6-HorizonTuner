@@ -67,11 +67,16 @@ add_executable(HorizonTunerOverlay WIN32
 )
 
 # 4. 設定編譯參數與連結庫
-target_compile_definitions(HorizonTunerOverlay PRIVATE UNICODE _UNICODE NOMINMAX)
+target_compile_definitions(HorizonTunerOverlay PRIVATE UNICODE _UNICODE NOMINMAX _WIN32_WINNT=0x0602)
 target_include_directories(HorizonTunerOverlay PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${exprtk_SOURCE_DIR}
 )
+
+if(MSVC)
+    target_compile_options(HorizonTunerOverlay PRIVATE /utf-8 /bigobj)
+    target_compile_options(imgui PRIVATE /utf-8)
+endif()
 
 # 連結 ImGui, nlohmann/json 與系統 DX/網路庫
 target_link_libraries(HorizonTunerOverlay PRIVATE
@@ -86,4 +91,14 @@ target_link_libraries(HorizonTunerOverlay PRIVATE
 set_target_properties(HorizonTunerOverlay PROPERTIES
     OUTPUT_NAME "HorizonTunerOverlay"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+# 5. 複製 assets 貼圖與 presets 預設檔資源到輸出執行檔目錄下
+add_custom_command(TARGET HorizonTunerOverlay POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/hud"
+    "$<TARGET_FILE_DIR:HorizonTunerOverlay>/assets/hud"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/presets"
+    "$<TARGET_FILE_DIR:HorizonTunerOverlay>/presets"
 )

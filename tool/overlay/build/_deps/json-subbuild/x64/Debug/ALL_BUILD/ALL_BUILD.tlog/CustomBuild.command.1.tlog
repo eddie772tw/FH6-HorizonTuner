@@ -1,0 +1,10 @@
+^D:\FH6-HORIZONTUNER\TOOL\OVERLAY\BUILD\_DEPS\JSON-SUBBUILD\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/FH6-HorizonTuner/tool/overlay/build/_deps/json-subbuild -BD:/FH6-HorizonTuner/tool/overlay/build/_deps/json-subbuild --check-stamp-file D:/FH6-HorizonTuner/tool/overlay/build/_deps/json-subbuild/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\c3a9bdb2fe9ca0d0be4cfe775475dec7\imgui-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\9e033474a17081bc5901499d2545fc0f\imgui-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\88860f8e7afaa74d646c26c21517f68a\imgui-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\FH6-HorizonTuner\tool\overlay\build\_deps\imgui-subbuild\CMakeFiles\imgui-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{5C682294-57AE-35C6-971E-64E0E18C95EF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

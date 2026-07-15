@@ -1778,16 +1778,98 @@ async def clear_logs():
 
 
 # --- Overlay API ---
-LAYOUT_FILE = os.path.join(DATA_ROOT, "layout.json")
-DEFAULT_LAYOUT = {
-    "modules": {
-        "tireTemp": {"visible": True, "x": 50, "y": 50, "w": 250, "h": 180},
-        "suspTravel": {"visible": True, "x": 320, "y": 50, "w": 200, "h": 180},
-        "slipLimit": {"visible": True, "x": 540, "y": 50, "w": 220, "h": 220},
-        "gForce": {"visible": True, "x": 50, "y": 250, "w": 220, "h": 220},
-        "dashboard": {"visible": True, "x": 290, "y": 250, "w": 470, "h": 120},
-    }
-}
+OVERLAY_DIR = os.path.join(ROOT_DIR, "tool", "overlay")
+if not os.path.exists(OVERLAY_DIR):
+    OVERLAY_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tool", "overlay")
+
+LAYOUT_FILE = os.path.join(OVERLAY_DIR, "layout.ini")
+PRESETS_DIR = os.path.join(OVERLAY_DIR, "presets")
+
+# Ensure directories exist
+os.makedirs(PRESETS_DIR, exist_ok=True)
+
+def parse_ini_to_dict(filepath: str) -> dict:
+    data = {}
+    if not os.path.exists(filepath):
+        return data
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or line.startswith(";"):
+                    continue
+                if "=" in line:
+                    parts = line.split("=", 1)
+                    key = parts[0].strip()
+                    val = parts[1].strip()
+                    # Convert to numeric type if possible
+                    if val.lower() == "true":
+                        data[key] = 1
+                    elif val.lower() == "false":
+                        data[key] = 0
+                    elif val.isdigit():
+                        data[key] = int(val)
+                    else:
+                        try:
+                            data[key] = float(val)
+                        except ValueError:
+                            data[key] = val
+    except Exception as e:
+        logger.error(f"Error parsing INI file {filepath}: {e}")
+    return data
+
+def save_dict_to_ini(data: dict, filepath: str):
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            for k, v in data.items():
+                f.write(f"{k}={v}\n")
+    except Exception as e:
+        logger.error(f"Error saving INI file {filepath}: {e}")
+
+def ensure_telemetry_widgets(data: dict) -> dict:
+    telemetry_widgets = ["tire_temp", "susp_travel", "slip_limit", "g_force"]
+    for w in telemetry_widgets:
+        enabled_key = f"{w}_widget_enabled"
+        widget_key = f"{w}_widget"
+        align_key = f"{w}_alignment"
+        scale_key = f"{w}_scale"
+        opacity_key = f"{w}_opacity"
+        padx_key = f"{w}_padding_x"
+        pady_key = f"{w}_padding_y"
+        
+        if enabled_key not in data:
+            data[enabled_key] = 0
+        if widget_key not in data:
+            data[widget_key] = 0
+        if align_key not in data:
+            data[align_key] = 2  # Default Bottom-Right
+        if scale_key not in data:
+            data[scale_key] = 1.0
+        if opacity_key not in data:
+            data[opacity_key] = 0.9
+        if padx_key not in data:
+            data[padx_key] = 20
+        if pady_key not in data:
+            data[pady_key] = 20
+            
+    if "preview_mode" not in data:
+        data["preview_mode"] = 0
+    if "name" not in data:
+        data["name"] = "Default"
+        
+    # Radio 進階設定預設值
+    if "radio_media_source" not in data:
+        data["radio_media_source"] = "SMTC"
+    if "radio_visualizer_mode" not in data:
+        data["radio_visualizer_mode"] = "Spectrum"
+    if "radio_visualizer_bars" not in data:
+        data["radio_visualizer_bars"] = 16
+    if "radio_visualizer_height" not in data:
+        data["radio_visualizer_height"] = 40.0
+    if "radio_audio_device" not in data:
+        data["radio_audio_device"] = "Default"
+        
+    return data
 
 
 def get_overlay_path():
@@ -1820,23 +1902,52 @@ def get_overlay_path():
 @app.get("/api/overlay/layout")
 async def get_overlay_layout():
     if os.path.exists(LAYOUT_FILE):
-        try:
-            with open(LAYOUT_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load layout.json: {e}")
-    return DEFAULT_LAYOUT
+        data = parse_ini_to_dict(LAYOUT_FILE)
+        data = ensure_telemetry_widgets(data)
+        return data
+    default_data = ensure_telemetry_widgets({})
+    save_dict_to_ini(default_data, LAYOUT_FILE)
+    return default_data
 
 
 @app.post("/api/overlay/layout")
 async def save_overlay_layout(data: dict):
     try:
-        with open(LAYOUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        return {"message": "Layout saved successfully"}
+        data = ensure_telemetry_widgets(data)
+        save_dict_to_ini(data, LAYOUT_FILE)
+        return {"message": "Layout saved successfully", "success": True}
     except Exception as e:
-        logger.error(f"Failed to save layout.json: {e}")
-        return {"error": f"Failed to save layout: {e}"}
+        logger.error(f"Failed to save layout.ini: {e}")
+        return {"error": f"Failed to save layout: {e}", "success": False}
+
+
+@app.get("/api/overlay/presets")
+async def get_overlay_presets():
+    presets = []
+    if os.path.exists(PRESETS_DIR):
+        for filename in os.listdir(PRESETS_DIR):
+            if filename.endswith(".ini"):
+                presets.append(filename.replace(".ini", ""))
+    return presets
+
+
+@app.post("/api/overlay/presets/apply")
+async def apply_overlay_preset(payload: dict):
+    name = payload.get("name")
+    if not name:
+        return {"error": "Preset name is required", "success": False}
+    preset_path = os.path.join(PRESETS_DIR, f"{name}.ini")
+    if not os.path.exists(preset_path):
+        return {"error": f"Preset {name} not found", "success": False}
+    
+    try:
+        data = parse_ini_to_dict(preset_path)
+        data = ensure_telemetry_widgets(data)
+        save_dict_to_ini(data, LAYOUT_FILE)
+        return {"message": f"Preset {name} applied successfully", "success": True, "data": data}
+    except Exception as e:
+        logger.error(f"Failed to apply preset {name}: {e}")
+        return {"error": f"Failed to apply preset: {e}", "success": False}
 
 
 @app.get("/api/overlay/status")
@@ -1904,6 +2015,19 @@ async def stop_overlay():
         except Exception:
             pass
         return {"error": f"Failed to stop overlay: {e}", "success": False}
+
+
+@app.post("/api/license/verify")
+async def verify_license(payload: dict = None):
+    """
+    目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。
+    未來擴充計畫：
+    1. 接收前端或客戶端傳送的 HWID (硬體識別碼) 與 License Key。
+    2. 串接認證伺服器資料庫進行檢索，確認授權過期時間 (ExpireTime)。
+    3. 使用伺服器端私鑰對 HWID + ExpireTime 執行 ECDSA 非對稱加密數位簽章。
+    4. 返回專屬簽章憑證檔案以供客戶端（C++ Overlay）進行抗補丁校驗與數據解密。
+    """
+    return {"active": True, "message": "License Stub OK", "expires": "2099-12-31"}
 
 
 def check_frontend_alive(proc):

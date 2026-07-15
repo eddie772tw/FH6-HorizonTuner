@@ -1,0 +1,10 @@
+^D:\FH6-HORIZONTUNER\TOOL\OVERLAY\BUILD\_DEPS\EXPRTK-SUBBUILD\CMAKEFILES\34B65C40FE2470DD85DA5ECF6B31B7EE\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/FH6-HorizonTuner/tool/overlay/build/_deps/exprtk-subbuild -BD:/FH6-HorizonTuner/tool/overlay/build/_deps/exprtk-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file D:/FH6-HorizonTuner/tool/overlay/build/_deps/exprtk-subbuild/exprtk-populate.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

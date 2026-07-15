@@ -1,0 +1,10 @@
+^D:\FH6-HORIZONTUNER\TOOL\OVERLAY\BUILD\_DEPS\JSON-SUBBUILD\CMAKEFILES\DF6D27E8C36EC094C751C584200CB3BB\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/FH6-HorizonTuner/tool/overlay/build/_deps/json-subbuild -BD:/FH6-HorizonTuner/tool/overlay/build/_deps/json-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file D:/FH6-HorizonTuner/tool/overlay/build/_deps/json-subbuild/json-populate.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

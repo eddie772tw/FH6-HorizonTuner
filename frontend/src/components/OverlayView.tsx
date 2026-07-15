@@ -1,132 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import '../App.css';
 
-interface ColorRule {
-  formula: string;
-  color: string;
-}
-
-interface ComponentConfig {
-  id: string;
-  type: 'Text' | 'ProgressBar' | 'LEDGroup' | 'Needle';
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  visible: boolean;
-  
-  // 文字屬性
-  fontSize?: number;
-  align?: 'left' | 'center' | 'right';
-  
-  // 進度條屬性
-  isVertical?: boolean;
-
-  // LED 組件屬性
-  ledCount?: number;
-  ledShape?: 'circle' | 'rect';
-  fillDirection?: 'left_to_right' | 'right_to_left' | 'center_out';
-
-  // 旋轉指針屬性
-  pivotX?: number;
-  pivotY?: number;
-  startAngle?: number;
-  endAngle?: number;
-  needleLength?: number;
-
-  // 綁定
-  bindings: {
-    value: string;
-    color: string | { colorRules: ColorRule[] };
-  };
-}
-
-interface LayoutConfig {
-  canvas: {
-    w: number;
-    h: number;
-  };
-  components: ComponentConfig[];
-}
-
-const DEFAULT_LAYOUT: LayoutConfig = {
-  canvas: { w: 800, h: 480 },
-  components: [
-    {
-      id: 'gear_text',
-      type: 'Text',
-      x: 350, y: 150, w: 100, h: 100,
-      visible: true,
-      fontSize: 72,
-      align: 'center',
-      bindings: {
-        value: 'gear',
-        color: '#ffaa00'
-      }
-    },
-    {
-      id: 'speed_text',
-      type: 'Text',
-      x: 250, y: 260, w: 300, h: 60,
-      visible: true,
-      fontSize: 32,
-      align: 'center',
-      bindings: {
-        value: 'speed',
-        color: '#ffffff'
-      }
-    },
-    {
-      id: 'rpm_leds',
-      type: 'LEDGroup',
-      x: 200, y: 30, w: 400, h: 20,
-      visible: true,
-      ledCount: 10,
-      ledShape: 'circle',
-      fillDirection: 'left_to_right',
-      bindings: {
-        value: '(rpm - idleRpm) / (maxRpm - idleRpm)',
-        color: '#ffffff'
-      }
-    },
-    {
-      id: 'rpm_needle',
-      type: 'Needle',
-      x: 50, y: 120, w: 200, h: 200,
-      visible: true,
-      pivotX: 100,
-      pivotY: 100,
-      startAngle: -135,
-      endAngle: 135,
-      needleLength: 80,
-      bindings: {
-        value: '(rpm - idleRpm) / (maxRpm - idleRpm)',
-        color: '#ff2200'
-      }
-    }
-  ]
-};
-
 export const OverlayView: React.FC = () => {
   const { t } = useSettings();
-  const [layout, setLayout] = useState<LayoutConfig>(DEFAULT_LAYOUT);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [config, setConfig] = useState<Record<string, any>>({});
+  const [presets, setPresets] = useState<string[]>([]);
   const [isOverlayRunning, setIsOverlayRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  
-  const [colorMode, setColorMode] = useState<'color' | 'conditional'>('color');
+  const [expandedWidget, setExpandedWidget] = useState<string | null>(null);
+  const [showRadioModal, setShowRadioModal] = useState(false);
 
-  // 拖放與縮放
-  const [activeAction, setActiveAction] = useState<'drag' | 'resize' | null>(null);
-  const [activeModule, setActiveModule] = useState<string | null>(null);
-  const startMousePos = useRef({ x: 0, y: 0 });
-  const startModulePos = useRef({ x: 0, y: 0, w: 0, h: 0 });
-  
-  const canvasRef = useRef<HTMLDivElement>(null);
+  // 音訊裝置清單（模擬供選擇）
+  const mockAudioDevices = [
+    { id: 'Default', name: '系統預設輸入裝置 (Default)' },
+    { id: 'StereoMix', name: '立體聲混音 (Stereo Mix)' },
+    { id: 'Microphone', name: '麥克風 (Microphone)' }
+  ];
 
-  // 輪詢狀態
+  // 輪詢 Overlay 運行狀態
   useEffect(() => {
     const checkStatus = async () => {
       try {
@@ -145,33 +38,41 @@ export const OverlayView: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchLayout = async () => {
+  // 讀取目前的佈局設定與預設列表
+  const fetchLayoutAndPresets = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/overlay/layout');
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.components) {
-          setLayout(data);
-        }
+      // 讀取佈局
+      const layoutRes = await fetch('http://127.0.0.1:8001/api/overlay/layout');
+      if (layoutRes.ok) {
+        const layoutData = await layoutRes.json();
+        setConfig(layoutData);
+      }
+
+      // 讀取預設
+      const presetsRes = await fetch('http://127.0.0.1:8001/api/overlay/presets');
+      if (presetsRes.ok) {
+        const presetsData = await presetsRes.json();
+        setPresets(presetsData);
       }
     } catch (e) {
-      console.error('Failed to load overlay layout:', e);
+      console.error('Failed to load layout or presets:', e);
     }
   };
 
   useEffect(() => {
-    fetchLayout();
+    fetchLayoutAndPresets();
   }, []);
 
-  const saveLayout = async (newLayout: LayoutConfig = layout) => {
+  // 儲存設定至後端 layout.ini
+  const handleSaveConfig = async (updatedConfig = config) => {
     try {
       const res = await fetch('http://127.0.0.1:8001/api/overlay/layout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newLayout)
+        body: JSON.stringify(updatedConfig)
       });
       if (res.ok) {
-        setStatusMessage(t('Layout saved') || '佈局已儲存');
+        setStatusMessage(t('Layout saved') || '設定已儲存');
         setTimeout(() => setStatusMessage(''), 2000);
       }
     } catch (e) {
@@ -179,6 +80,32 @@ export const OverlayView: React.FC = () => {
     }
   };
 
+  // 套用預設套件
+  const handleApplyPreset = async (presetName: string) => {
+    if (window.confirm(`${t('Apply Preset') || '確定要載入預設'} "${presetName}" ${t('?') || '嗎？'}`)) {
+      try {
+        const res = await fetch('http://127.0.0.1:8001/api/overlay/presets/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: presetName })
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData.success) {
+            setConfig(resData.data);
+            setStatusMessage((t('Preset applied') || '已載入預設') + `: ${presetName}`);
+            setTimeout(() => setStatusMessage(''), 2000);
+          } else {
+            alert(resData.error || '套用失敗');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to apply preset:', e);
+      }
+    }
+  };
+
+  // 啟動/停止 C++ Overlay 處理程序
   const toggleOverlay = async () => {
     setLoading(true);
     const endpoint = isOverlayRunning ? 'stop' : 'start';
@@ -191,7 +118,7 @@ export const OverlayView: React.FC = () => {
         if (data.success) {
           setIsOverlayRunning(!isOverlayRunning);
           setStatusMessage(
-            endpoint === 'start' 
+            endpoint === 'start'
               ? (t('Overlay started successfully') || 'Overlay 啟動成功！')
               : (t('Overlay stopped successfully') || 'Overlay 已關閉')
           );
@@ -207,942 +134,517 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  const resetLayout = () => {
-    if (window.confirm(t('Are you sure you want to reset layout?') || '確定要重置佈局嗎？')) {
-      setLayout(DEFAULT_LAYOUT);
-      saveLayout(DEFAULT_LAYOUT);
-      setSelectedId(null);
-    }
+  // 更新配置中特定的屬性
+  const updateKey = (key: string, value: any) => {
+    const updated = { ...config, [key]: value };
+    setConfig(updated);
+    // 即時傳送至後端以在桌面上進行預覽同步
+    handleSaveConfig(updated);
   };
 
-  // 匯出 JSON 設定
-  const exportLayout = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(layout, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "horizontuner_layout.json");
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  };
-
-  // 匯入 JSON 設定
-  const handleImportLayout = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileReader = new FileReader();
-    if (e.target.files && e.target.files[0]) {
-      fileReader.readAsText(e.target.files[0], "UTF-8");
-      fileReader.onload = (event) => {
-        try {
-          const parsed = JSON.parse(event.target?.result as string);
-          if (parsed && parsed.components && Array.isArray(parsed.components)) {
-            setLayout(parsed);
-            saveLayout(parsed);
-            setSelectedId(null);
-            alert(t('Imported successfully!') || '設定檔匯入成功！');
-          } else {
-            alert('Invalid configuration format.');
-          }
-        } catch (err) {
-          alert('Failed to parse JSON file.');
-        }
-      };
-    }
-  };
-
-  // 新增組件
-  const addComponent = (type: ComponentConfig['type']) => {
-    const id = `${type.toLowerCase()}_${Date.now().toString().slice(-4)}`;
-    let newComp: ComponentConfig;
-    
-    if (type === 'Text') {
-      newComp = {
-        id, type, x: 100, y: 100, w: 200, h: 50, visible: true,
-        fontSize: 24, align: 'center',
-        bindings: { value: 'speed', color: '#ffffff' }
-      };
-    } else if (type === 'ProgressBar') {
-      newComp = {
-        id, type, x: 100, y: 150, w: 300, h: 25, visible: true,
-        isVertical: false,
-        bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#00ff55' }
-      };
-    } else if (type === 'LEDGroup') {
-      newComp = {
-        id, type, x: 100, y: 200, w: 400, h: 20, visible: true,
-        ledCount: 10, ledShape: 'circle', fillDirection: 'left_to_right',
-        bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#ffffff' }
-      };
-    } else {
-      newComp = {
-        id, type, x: 100, y: 240, w: 200, h: 200, visible: true,
-        pivotX: 100, pivotY: 100, startAngle: -135, endAngle: 135, needleLength: 80,
-        bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#ff2200' }
-      };
-    }
-
-    const updated = {
-      ...layout,
-      components: [...layout.components, newComp]
-    };
-    setLayout(updated);
-    saveLayout(updated);
-    setSelectedId(id);
-  };
-
-  const deleteComponent = (id: string) => {
-    if (window.confirm(t('Are you sure you want to delete this component?') || '確定要刪除此組件嗎？')) {
-      const updated = {
-        ...layout,
-        components: layout.components.filter(c => c.id !== id)
-      };
-      setLayout(updated);
-      saveLayout(updated);
-      if (selectedId === id) setSelectedId(null);
-    }
-  };
-
-  const updateSelectedComponent = (updatedFields: Partial<ComponentConfig>) => {
-    if (!selectedId) return;
-    const updatedComps = layout.components.map(c => {
-      if (c.id === selectedId) {
-        return { ...c, ...updatedFields } as ComponentConfig;
-      }
-      return c;
-    });
-    const updatedLayout = { ...layout, components: updatedComps };
-    setLayout(updatedLayout);
-    saveLayout(updatedLayout);
-  };
-
-  const handleMouseDown = (
-    e: React.MouseEvent,
-    id: string,
-    action: 'drag' | 'resize'
-  ) => {
-    e.preventDefault();
-    setSelectedId(id);
-    setActiveAction(action);
-    setActiveModule(id);
-    
-    const comp = layout.components.find(c => c.id === id);
-    if (!comp) return;
-    
-    startMousePos.current = { x: e.clientX, y: e.clientY };
-    startModulePos.current = { x: comp.x, y: comp.y, w: comp.w, h: comp.h };
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!activeAction || !activeModule || !canvasRef.current) return;
-
-      const deltaX = e.clientX - startMousePos.current.x;
-      const deltaY = e.clientY - startMousePos.current.y;
-
-      const canvasWidth = canvasRef.current.clientWidth;
-      const canvasHeight = canvasRef.current.clientHeight;
-
-      const updatedComps = layout.components.map(c => {
-        if (c.id === activeModule) {
-          const compCopy = { ...c };
-          if (activeAction === 'drag') {
-            let newX = startModulePos.current.x + deltaX;
-            let newY = startModulePos.current.y + deltaY;
-
-            newX = Math.max(0, Math.min(canvasWidth - compCopy.w, newX));
-            newY = Math.max(0, Math.min(canvasHeight - compCopy.h, newY));
-
-            compCopy.x = Math.round(newX);
-            compCopy.y = Math.round(newY);
-          } else if (activeAction === 'resize') {
-            let newW = startModulePos.current.w + deltaX;
-            let newH = startModulePos.current.h + deltaY;
-
-            newW = Math.max(20, Math.min(canvasWidth - compCopy.x, newW));
-            newH = Math.max(15, Math.min(canvasHeight - compCopy.y, newH));
-
-            compCopy.w = Math.round(newW);
-            compCopy.h = Math.round(newH);
-            
-            // 如果是 Needle 針，自動將中心點跟指針長度對齊寬高的 50%
-            if (compCopy.type === 'Needle') {
-              compCopy.pivotX = Math.round(newW * 0.5);
-              compCopy.pivotY = Math.round(newH * 0.5);
-              compCopy.needleLength = Math.round(Math.min(newW, newH) * 0.45);
-            }
-          }
-          return compCopy;
-        }
-        return c;
-      });
-
-      setLayout({ ...layout, components: updatedComps });
-    };
-
-    const handleMouseUp = () => {
-      if (activeAction && activeModule) {
-        saveLayout();
-      }
-      setActiveAction(null);
-      setActiveModule(null);
-    };
-
-    if (activeAction) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [activeAction, activeModule, layout]);
-
-  const selectedComp = layout.components.find(c => c.id === selectedId);
-
-  useEffect(() => {
-    if (selectedComp) {
-      if (typeof selectedComp.bindings.color === 'object') {
-        setColorMode('conditional');
-      } else {
-        setColorMode('color');
-      }
-    }
-  }, [selectedId]);
-
-  const handleColorModeChange = (mode: 'color' | 'conditional') => {
-    if (!selectedComp) return;
-    setColorMode(mode);
-    
-    if (mode === 'color') {
-      updateSelectedComponent({
-        bindings: {
-          ...selectedComp.bindings,
-          color: '#ffffff'
-        }
-      });
-    } else {
-      updateSelectedComponent({
-        bindings: {
-          ...selectedComp.bindings,
-          color: {
-            colorRules: [
-              { formula: 'value > 0.9', color: '#ff0000' },
-              { formula: 'default', color: '#00ff55' }
-            ]
-          }
-        }
-      });
-    }
-  };
-
-  const addColorRule = () => {
-    if (!selectedComp || typeof selectedComp.bindings.color !== 'object') return;
-    const rules = [...selectedComp.bindings.color.colorRules];
-    const defaultIdx = rules.findIndex(r => r.formula === 'default');
-    const newRule = { formula: 'value > 0.5', color: '#ffff00' };
-    
-    if (defaultIdx !== -1) {
-      rules.splice(defaultIdx, 0, newRule);
-    } else {
-      rules.push(newRule);
-    }
-
-    updateSelectedComponent({
-      bindings: {
-        ...selectedComp.bindings,
-        color: { colorRules: rules }
-      }
-    });
-  };
-
-  const updateColorRule = (index: number, fields: Partial<ColorRule>) => {
-    if (!selectedComp || typeof selectedComp.bindings.color !== 'object') return;
-    const rules = selectedComp.bindings.color.colorRules.map((r, idx) => {
-      if (idx === index) {
-        return { ...r, ...fields };
-      }
-      return r;
-    });
-
-    updateSelectedComponent({
-      bindings: {
-        ...selectedComp.bindings,
-        color: { colorRules: rules }
-      }
-    });
-  };
-
-  const deleteColorRule = (index: number) => {
-    if (!selectedComp || typeof selectedComp.bindings.color !== 'object') return;
-    const rules = selectedComp.bindings.color.colorRules.filter((_, idx) => idx !== index);
-
-    updateSelectedComponent({
-      bindings: {
-        ...selectedComp.bindings,
-        color: { colorRules: rules }
-      }
-    });
-  };
+  const widgetKeys = [
+    { id: 'dashboard', name: '儀表底盤 (Dashboard)' },
+    { id: 'tacho', name: '轉速儀表 (Tacho)' },
+    { id: 'radio', name: '收音機 (Radio)' },
+    { id: 'controller', name: '手把控制輸入 (Controller)' },
+    { id: 'boost', name: '增壓儀表 (Boost Gauge)' },
+    { id: 'oil_pressure', name: '機油壓力儀表 (Oil Pressure)' },
+    { id: 'oil_temp', name: '機油溫度儀表 (Oil Temp)' },
+    { id: 'coolant_temp', name: '水溫儀表 (Coolant Temp)' },
+    { id: 'tire_temp', name: '四輪胎溫卡片 (Tire Temp)' },
+    { id: 'susp_travel', name: '懸吊行程卡片 (Susp Travel)' },
+    { id: 'slip_limit', name: '輪胎極限打滑卡片 (Slip Limit)' },
+    { id: 'g_force', name: '加速度雷達卡片 (G-Force)' }
+  ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1.2rem', overflow: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1.5rem', color: '#fff', fontFamily: 'sans-serif' }}>
       
       {/* 頂部控制列 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '1rem 1.5rem',
-        background: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: '8px',
-        border: '1px solid rgba(255, 255, 255, 0.08)'
-      }}>
-        <div>
-          <h2 style={{ margin: '0 0 0.3rem 0', color: 'var(--primary)' }}>
-            {t('Dashboard Overlay') || '賽車儀表編輯器 (Racing Dashboard Editor)'}
-          </h2>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            {t('Fully custom HUD layout. Set math expressions to drive components in-game.') || 
-             '資料驅動式儀表。可為組件配置數學表達式與超轉變色邏輯。支援方案 A (MPO) 獨佔全螢幕覆蓋。'}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-          {statusMessage && (
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem' }}>
-              {statusMessage}
+      <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{
+              width: '12px', height: '12px', borderRadius: '50%',
+              background: isOverlayRunning ? '#00ff55' : '#888',
+              boxShadow: isOverlayRunning ? '0 0 10px #00ff55' : 'none',
+              transition: 'all 0.3s'
+            }} />
+            <span style={{ fontWeight: 'bold' }}>
+              {isOverlayRunning ? t("OVERLAY ACTIVE") || 'HUD 覆蓋層運作中' : t("OVERLAY INACTIVE") || 'HUD 覆蓋層未啟動'}
             </span>
-          )}
-
-          <button onClick={() => addComponent('Text')} className="cyber-btn-glow" style={buttonStyle('#00f0ff')}>
-            + {t('Text') || '文字'}
-          </button>
-          
-          <button onClick={() => addComponent('ProgressBar')} className="cyber-btn-glow" style={buttonStyle('#00ffaa')}>
-            + {t('Bar') || '進度條'}
-          </button>
-
-          <button onClick={() => addComponent('LEDGroup')} className="cyber-btn-glow" style={buttonStyle('#ff00aa')}>
-            + {t('LEDs') || '超轉燈'}
-          </button>
-
-          <button onClick={() => addComponent('Needle')} className="cyber-btn-glow" style={buttonStyle('#ffaa00')}>
-            + {t('Needle') || '旋轉針'}
-          </button>
-
-          <button onClick={exportLayout} className="cyber-btn-glow" style={buttonStyle('#00ff00', 'rgba(0,255,0,0.05)')}>
-            {t('Export') || '匯出佈局'}
-          </button>
-
-          <label className="cyber-btn-glow" style={{ ...buttonStyle('#ffbb00', 'rgba(255,180,0,0.05)'), display: 'inline-block', margin: 0 }}>
-            {t('Import') || '匯入佈局'}
-            <input type="file" accept=".json" onChange={handleImportLayout} style={{ display: 'none' }} />
-          </label>
-
-          <button onClick={resetLayout} className="cyber-btn-glow" style={buttonStyle('#aaaaaa', 'rgba(255,255,255,0.03)')}>
-            {t('Reset') || '重置'}
-          </button>
-
-          <button
-            onClick={toggleOverlay}
-            disabled={loading}
-            className="cyber-btn-glow"
+          </div>
+          <button 
+            onClick={toggleOverlay} 
+            disabled={loading} 
+            className="action-button"
             style={{
-              background: isOverlayRunning ? 'rgba(255, 0, 0, 0.15)' : 'rgba(0, 240, 255, 0.15)',
-              border: isOverlayRunning ? '1px solid rgba(255, 0, 0, 0.4)' : '1px solid rgba(0, 240, 255, 0.4)',
-              color: isOverlayRunning ? '#ff5555' : 'var(--primary)',
-              padding: '0.4rem 1.2rem',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: 'bold'
+              background: isOverlayRunning ? '#ff3b30' : 'var(--primary)',
+              color: isOverlayRunning ? '#fff' : '#000',
+              border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer'
             }}
           >
-            {loading ? '...' : isOverlayRunning ? (t('Stop Overlay') || '關閉 Overlay') : (t('Start Overlay') || '啟動 Overlay')}
+            {loading ? t('Processing...') || '處理中...' : (isOverlayRunning ? t('Stop HUD Overlay') || '停止覆蓋層' : t('Start HUD Overlay') || '開啟覆蓋層')}
           </button>
+        </div>
+        {statusMessage && <span style={{ color: '#00f0ff', fontWeight: 600 }}>{statusMessage}</span>}
+        <div style={{ fontSize: '0.9rem', color: '#888' }}>
+          Preset Name: <span style={{ color: '#fff', fontWeight: 600 }}>{config.name || 'Default'}</span>
         </div>
       </div>
 
-      {/* 主編輯視窗 */}
-      <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0, height: '620px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '1.5rem', flex: 1, minHeight: 0 }}>
         
-        {/* 左側：畫布 */}
-        <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '0.4rem', height: '100%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            <span>🖱️ {t('Click to select. Drag headers to move, drag corners to resize.') || '拖曳組件標題以移動，拖曳右下角以縮放。'}</span>
-            <span>畫布比例: 16:9 (邏輯寬高: 800 x 480)</span>
-          </div>
+        {/* 左側面板 - 預設載入與全域設定 */}
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          <div
-            ref={canvasRef}
-            style={{
-              flex: 1,
-              background: 'radial-gradient(circle, rgba(16, 24, 30, 1) 0%, rgba(8, 12, 16, 1) 100%)',
-              border: '2px solid rgba(255,255,255,0.06)',
-              borderRadius: '8px',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: 'inset 0 0 30px rgba(0,0,0,0.9)'
-            }}
-          >
-            <div style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)',
-              backgroundSize: '25px 25px',
-              pointerEvents: 'none'
-            }} />
+          {/* 全域模式設定 */}
+          <div>
+            <h3 style={{ marginTop: 0, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+              {t("Global Settings") || "全域設定"}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={config.preview_mode === 1}
+                  onChange={(e) => updateKey('preview_mode', e.target.checked ? 1 : 0)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: 600 }}>{t("Desktop Preview Mode") || "開啟桌面定位預覽"}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#888' }}>將在全局桌面上繪製各組件定位虛線框以利微調</span>
+                </div>
+              </label>
 
-            {layout.components.map((comp) => {
-              if (!comp.visible) return null;
-              const isSelected = selectedId === comp.id;
-              
-              let previewColor = '#ffffff';
-              if (typeof comp.bindings.color === 'string') {
-                previewColor = comp.bindings.color;
-              } else {
-                const defRule = comp.bindings.color.colorRules.find(r => r.formula === 'default');
-                if (defRule) previewColor = defRule.color;
-              }
-
-              return (
-                <div
-                  key={comp.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedId(comp.id);
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  onClick={() => {
+                    // 點擊套用會將 preview_mode 關閉，進入正常遊戲覆蓋層繪製模式
+                    updateKey('preview_mode', 0);
+                    setStatusMessage('設定已套用至正常遊戲重疊層');
+                    setTimeout(() => setStatusMessage(''), 2000);
                   }}
+                  className="action-button"
                   style={{
-                    position: 'absolute',
-                    left: `${comp.x}px`,
-                    top: `${comp.y}px`,
-                    width: `${comp.w}px`,
-                    height: `${comp.h}px`,
-                    border: isSelected ? '2px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.15)',
-                    background: isSelected ? 'rgba(0, 240, 255, 0.08)' : 'rgba(0, 0, 0, 0.65)',
-                    borderRadius: '4px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    zIndex: isSelected ? 10 : 2
+                    flex: 1, background: '#00ff88', color: '#000', border: 'none',
+                    padding: '0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer'
                   }}
                 >
-                  <div
-                    onMouseDown={(e) => handleMouseDown(e, comp.id, 'drag')}
-                    style={{
-                      background: isSelected ? 'rgba(0, 240, 255, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                      padding: '2px 8px',
-                      fontSize: '0.72rem',
-                      fontWeight: 'bold',
-                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
-                      cursor: 'move',
-                      userSelect: 'none',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                      whiteSpace: 'nowrap',
-                      textOverflow: 'ellipsis',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    [{comp.type}] {comp.id}
+                  {t("Apply Settings") || "確定並套用"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 相機震動與視覺回饋 */}
+          <div>
+            <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+              {t("Camera Effects") || "相機與動態視覺特效"}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={config.camera_shake_enabled === 1 || config.camera_shake_enabled === true}
+                  onChange={(e) => updateKey('camera_shake_enabled', e.target.checked ? 1 : 0)}
+                />
+                <span>{t("Camera Shake Enabled") || "啟用轉速與衝擊相機震動"}</span>
+              </label>
+              
+              {config.camera_shake_enabled === 1 && (
+                <>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#aaa' }}>
+                      <span>震動強度 (Intensity)</span>
+                      <span>{config.camera_shake_intensity?.toFixed(1) || '1.0'}</span>
+                    </div>
+                    <input 
+                      type="range" min="0.1" max="3.0" step="0.1"
+                      value={config.camera_shake_intensity || 1.0}
+                      onChange={(e) => updateKey('camera_shake_intensity', parseFloat(e.target.value))}
+                      style={{ width: '100%', accentColor: 'var(--primary)' }}
+                    />
                   </div>
-
-                  <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6px',
-                    pointerEvents: 'none',
-                    position: 'relative'
-                  }}>
-                    {comp.type === 'Text' && (
-                      <span style={{ 
-                        color: previewColor, 
-                        fontSize: `${Math.min(comp.fontSize || 18, comp.h - 12)}px`,
-                        fontWeight: 'bold',
-                        textAlign: comp.align || 'left',
-                        width: '100%'
-                      }}>
-                        {comp.bindings.value}
-                      </span>
-                    )}
-
-                    {comp.type === 'ProgressBar' && (
-                      <div style={{
-                        width: '90%',
-                        height: comp.isVertical ? '80%' : '10px',
-                        border: `1px solid ${previewColor}44`,
-                        borderRadius: '2px',
-                        position: 'relative'
-                      }}>
-                        <div style={{
-                          position: 'absolute',
-                          left: 0, bottom: 0,
-                          width: comp.isVertical ? '100%' : '65%',
-                          height: comp.isVertical ? '65%' : '100%',
-                          background: previewColor,
-                          borderRadius: '1px'
-                        }} />
-                      </div>
-                    )}
-
-                    {comp.type === 'LEDGroup' && (
-                      <div style={{ display: 'flex', gap: '3px', width: '90%', justifyContent: 'center' }}>
-                        {Array.from({ length: comp.ledCount || 10 }).map((_, ledIdx) => {
-                          const ledRatio = ledIdx / (comp.ledCount || 10);
-                          let dotColor = '#333333';
-                          if (ledIdx < (comp.ledCount || 10) * 0.7) {
-                            dotColor = ledRatio < 0.6 ? '#00ff55' : ledRatio < 0.8 ? '#ffaa00' : '#ff0000';
-                          }
-                          return (
-                            <div
-                              key={ledIdx}
-                              style={{
-                                width: comp.ledShape === 'circle' ? '10px' : '8px',
-                                height: comp.ledShape === 'circle' ? '10px' : '12px',
-                                borderRadius: comp.ledShape === 'circle' ? '50%' : '1px',
-                                background: dotColor,
-                                border: '1px solid rgba(0,0,0,0.5)'
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {comp.type === 'Needle' && (
-                      <svg width="100%" height="100%" style={{ position: 'absolute', left: 0, top: 0 }}>
-                        {/* 繪製量圈背景線 */}
-                        <path
-                          d={`M ${comp.w * 0.15} ${comp.h * 0.8} A ${comp.w * 0.4} ${comp.h * 0.4} 0 0 1 ${comp.w * 0.85} ${comp.h * 0.8}`}
-                          fill="none"
-                          stroke="rgba(255,255,255,0.15)"
-                          strokeWidth="2"
-                          strokeDasharray="4 2"
-                        />
-                        {/* 繪製指針線 (模擬在 15% 比率的轉向角度) */}
-                        <line
-                          x1={comp.pivotX}
-                          y1={comp.pivotY}
-                          x2={(comp.pivotX || 100) + (comp.needleLength || 80) * Math.cos((-110 * Math.PI) / 180)}
-                          y2={(comp.pivotY || 100) + (comp.needleLength || 80) * Math.sin((-110 * Math.PI) / 180)}
-                          stroke={previewColor}
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                        />
-                        {/* 繪製針蓋 */}
-                        <circle
-                          cx={comp.pivotX}
-                          cy={comp.pivotY}
-                          r={Math.min(comp.w, comp.h) * 0.08}
-                          fill="#222"
-                          stroke="#666"
-                          strokeWidth="1"
-                        />
-                      </svg>
-                    )}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#aaa' }}>
+                      <span>震動頻率 (Speed)</span>
+                      <span>{config.camera_shake_speed?.toFixed(1) || '1.0'}</span>
+                    </div>
+                    <input 
+                      type="range" min="0.1" max="3.0" step="0.1"
+                      value={config.camera_shake_speed || 1.0}
+                      onChange={(e) => updateKey('camera_shake_speed', parseFloat(e.target.value))}
+                      style={{ width: '100%', accentColor: 'var(--primary)' }}
+                    />
                   </div>
+                </>
+              )}
 
-                  <div
-                    onMouseDown={(e) => handleMouseDown(e, comp.id, 'resize')}
-                    style={{
-                      position: 'absolute',
-                      right: '0',
-                      bottom: '0',
-                      width: '10px',
-                      height: '10px',
-                      background: 'var(--primary)',
-                      cursor: 'nwse-resize'
-                    }}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox"
+                  checked={config.camera_distortion_enabled === 1 || config.camera_distortion_enabled === true}
+                  onChange={(e) => updateKey('camera_distortion_enabled', e.target.checked ? 1 : 0)}
+                />
+                <span>{t("Distortion Scaling Enabled") || "啟用加速度尺寸拉伸變形"}</span>
+              </label>
+
+              {config.camera_distortion_enabled === 1 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#aaa' }}>
+                    <span>變形靈敏度 (Sensitivity)</span>
+                    <span>{config.camera_distortion_intensity?.toFixed(1) || '1.0'}</span>
+                  </div>
+                  <input 
+                    type="range" min="0.1" max="3.0" step="0.1"
+                    value={config.camera_distortion_intensity || 1.0}
+                    onChange={(e) => updateKey('camera_distortion_intensity', parseFloat(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--primary)' }}
                   />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 內建預設組件庫 */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+              {t("Presets Library") || "內建預設套件庫"}
+            </h3>
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+              {presets.map((name) => (
+                <div 
+                  key={name}
+                  onClick={() => handleApplyPreset(name)}
+                  style={{
+                    padding: '0.75rem 1rem', background: config.name === name ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)',
+                    borderRadius: '4px', border: config.name === name ? '1px solid #00f0ff' : '1px solid rgba(255,255,255,0.1)',
+                    cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>{name}</span>
+                  <span style={{ fontSize: '0.8rem', color: '#00f0ff' }}>{t("Load") || "載入"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 右側面板 - 個別組件折疊配置欄 */}
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <h3 style={{ marginTop: 0, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+            {t("HUD Widgets Settings") || "HUD 組件獨立配置"}
+          </h3>
+          
+          <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.8rem', paddingRight: '0.5rem' }}>
+            {widgetKeys.map((w) => {
+              const enabledKey = `${w.id}_widget_enabled`;
+              const styleKey = `${w.id}_widget`;
+              const alignKey = `${w.id}_alignment`;
+              const scaleKey = `${w.id}_scale`;
+              const opacityKey = `${w.id}_opacity`;
+              const padxKey = `${w.id}_padding_x`;
+              const padyKey = `${w.id}_padding_y`;
+
+              const isEnabled = config[enabledKey] === 1 || config[enabledKey] === true;
+              const isExpanded = expandedWidget === w.id;
+
+              return (
+                <div 
+                  key={w.id} 
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    borderRadius: '6px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* 折疊列頭 */}
+                  <div 
+                    style={{
+                      padding: '1rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      background: isExpanded ? 'rgba(255,255,255,0.05)' : 'transparent'
+                    }}
+                    onClick={() => setExpandedWidget(isExpanded ? null : w.id)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <input 
+                        type="checkbox"
+                        checked={isEnabled}
+                        onClick={(e) => e.stopPropagation()} // 防止觸發展開
+                        onChange={(e) => updateKey(enabledKey, e.target.checked ? 1 : 0)}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontWeight: 600, color: isEnabled ? '#fff' : '#888' }}>{w.name}</span>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: '#888' }}>{isExpanded ? '▲ 收起' : '▼ 展開配置'}</span>
+                  </div>
+
+                  {/* 折疊內文 */}
+                  {isExpanded && (
+                    <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      
+                      {/* 對齊方式 */}
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '4px' }}>對齊錨點 (Alignment)</label>
+                        <select 
+                          value={config[alignKey] !== undefined ? config[alignKey] : 2}
+                          onChange={(e) => updateKey(alignKey, parseInt(e.target.value))}
+                          style={{ width: '100%', padding: '0.4rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+                        >
+                          <option value={0}>左上角 (Top-Left)</option>
+                          <option value={1}>中下部 (Bottom-Center)</option>
+                          <option value={2}>右下角 (Bottom-Right)</option>
+                          <option value={3}>左下角 (Bottom-Left)</option>
+                        </select>
+                      </div>
+
+                      {/* 樣式編號 (僅 Dashboard, Tacho, Radio 可選樣式) */}
+                      {['dashboard', 'tacho', 'radio'].includes(w.id) && (
+                        <div>
+                          <label style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '4px' }}>皮膚外觀樣式 (Style Index)</label>
+                          {w.id === 'dashboard' && (
+                            <select 
+                              value={config[styleKey] !== undefined ? config[styleKey] : 0}
+                              onChange={(e) => updateKey(styleKey, parseInt(e.target.value))}
+                              style={{ width: '100%', padding: '0.4rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+                            >
+                              <option value={0}>AEM Dashboard</option>
+                              <option value={1}>NFS 2015</option>
+                              <option value={2}>Soarer Dashboard</option>
+                              <option value={3}>JZX100</option>
+                              <option value={4}>Altezza TRD</option>
+                              <option value={5}>Ford GT</option>
+                            </select>
+                          )}
+                          {w.id === 'tacho' && (
+                            <select 
+                              value={config[styleKey] !== undefined ? config[styleKey] : 0}
+                              onChange={(e) => updateKey(styleKey, parseInt(e.target.value))}
+                              style={{ width: '100%', padding: '0.4rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+                            >
+                              <option value={0}>GT7 RPM</option>
+                              <option value={1}>Defi Advance</option>
+                              <option value={2}>Speedhut</option>
+                              <option value={3}>Altezza TRD</option>
+                              <option value={4}>NFS 2015</option>
+                              <option value={5}>Ford GT Speed</option>
+                            </select>
+                          )}
+                          {w.id === 'radio' && (
+                            <select 
+                              value={config[styleKey] !== undefined ? config[styleKey] : 0}
+                              onChange={(e) => updateKey(styleKey, parseInt(e.target.value))}
+                              style={{ width: '100%', padding: '0.4rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+                            >
+                              <option value={0}>Ford GT Radio</option>
+                              <option value={1}>NFS 2015 Radio</option>
+                              <option value={2}>Altezza TRD Radio</option>
+                              <option value={5}>Defi Radio</option>
+                            </select>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 縮放係數 */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#aaa', marginBottom: '4px' }}>
+                          <span>縮放 (Scale)</span>
+                          <span>{config[scaleKey]?.toFixed(2) || '1.00'}</span>
+                        </div>
+                        <input 
+                          type="range" min="0.3" max="2.5" step="0.05"
+                          value={config[scaleKey] !== undefined ? config[scaleKey] : 1.0}
+                          onChange={(e) => updateKey(scaleKey, parseFloat(e.target.value))}
+                          style={{ width: '100%', accentColor: 'var(--primary)' }}
+                        />
+                      </div>
+
+                      {/* 透明度 */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#aaa', marginBottom: '4px' }}>
+                          <span>透明度 (Opacity)</span>
+                          <span>{config[opacityKey]?.toFixed(2) || '1.00'}</span>
+                        </div>
+                        <input 
+                          type="range" min="0.1" max="1.0" step="0.05"
+                          value={config[opacityKey] !== undefined ? config[opacityKey] : 0.9}
+                          onChange={(e) => updateKey(opacityKey, parseFloat(e.target.value))}
+                          style={{ width: '100%', accentColor: 'var(--primary)' }}
+                        />
+                      </div>
+
+                      {/* Padding X */}
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '4px' }}>錨點偏移 X (Padding X)</label>
+                        <input 
+                          type="number" 
+                          value={config[padxKey] !== undefined ? config[padxKey] : 0}
+                          onChange={(e) => updateKey(padxKey, parseInt(e.target.value) || 0)}
+                          style={{ width: '100%', padding: '0.4rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+                        />
+                      </div>
+
+                      {/* Padding Y */}
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '4px' }}>錨點偏移 Y (Padding Y)</label>
+                        <input 
+                          type="number" 
+                          value={config[padyKey] !== undefined ? config[padyKey] : 0}
+                          onChange={(e) => updateKey(padyKey, parseInt(e.target.value) || 0)}
+                          style={{ width: '100%', padding: '0.4rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+                        />
+                      </div>
+
+                      {/* Radio 進階設定按鈕 */}
+                      {w.id === 'radio' && (
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <button
+                            onClick={() => setShowRadioModal(true)}
+                            style={{
+                              width: '100%', background: 'rgba(0, 240, 255, 0.2)', color: '#00f0ff',
+                              border: '1px solid #00f0ff', padding: '0.5rem', borderRadius: '4px',
+                              fontWeight: 'bold', cursor: 'pointer', marginTop: '0.5rem'
+                            }}
+                          >
+                            🎵 收音機與頻譜視覺化設定
+                          </button>
+                        </div>
+                      )}
+
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* 右側：屬性編輯 */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem',
-          background: 'rgba(255, 255, 255, 0.02)',
-          borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '1.2rem',
-          height: '100%',
-          overflowY: 'auto'
-        }}>
-          {selectedComp ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
-                <h3 style={{ margin: 0, color: 'var(--primary)' }}>{t('Properties') || '屬性編輯'}</h3>
-                <button
-                  onClick={() => deleteComponent(selectedComp.id)}
-                  style={{
-                    background: 'rgba(255,0,0,0.1)',
-                    border: '1px solid rgba(255,0,0,0.3)',
-                    color: '#ff5555',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem'
-                  }}
-                >
-                  {t('Delete') || '刪除'}
-                </button>
-              </div>
-
-              {/* ID 編輯 */}
-              <div>
-                <label style={labelStyle}>組件 ID</label>
-                <input
-                  type="text"
-                  value={selectedComp.id}
-                  onChange={(e) => updateSelectedComponent({ id: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* 座標大小 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div>
-                  <label style={labelStyle}>X 座標</label>
-                  <input
-                    type="number"
-                    value={selectedComp.x}
-                    onChange={(e) => updateSelectedComponent({ x: parseInt(e.target.value) || 0 })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Y 座標</label>
-                  <input
-                    type="number"
-                    value={selectedComp.y}
-                    onChange={(e) => updateSelectedComponent({ y: parseInt(e.target.value) || 0 })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>寬度 (W)</label>
-                  <input
-                    type="number"
-                    value={selectedComp.w}
-                    onChange={(e) => updateSelectedComponent({ w: parseInt(e.target.value) || 0 })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>高度 (H)</label>
-                  <input
-                    type="number"
-                    value={selectedComp.h}
-                    onChange={(e) => updateSelectedComponent({ h: parseInt(e.target.value) || 0 })}
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-
-              {/* Text 屬性 */}
-              {selectedComp.type === 'Text' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={labelStyle}>字型大小</label>
-                    <input
-                      type="number"
-                      value={selectedComp.fontSize || 24}
-                      onChange={(e) => updateSelectedComponent({ fontSize: parseInt(e.target.value) || 12 })}
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>水平對齊</label>
-                    <select
-                      value={selectedComp.align || 'left'}
-                      onChange={(e) => updateSelectedComponent({ align: e.target.value as any })}
-                      style={inputStyle}
-                    >
-                      <option value="left">靠左</option>
-                      <option value="center">置中</option>
-                      <option value="right">靠右</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* ProgressBar 屬性 */}
-              {selectedComp.type === 'ProgressBar' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    id="isVertical"
-                    checked={selectedComp.isVertical || false}
-                    onChange={(e) => updateSelectedComponent({ isVertical: e.target.checked })}
-                  />
-                  <label htmlFor="isVertical" style={{ fontSize: '0.8rem', cursor: 'pointer' }}>垂直方向進度條</label>
-                </div>
-              )}
-
-              {/* LEDGroup 屬性 */}
-              {selectedComp.type === 'LEDGroup' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <label style={labelStyle}>LED 燈數</label>
-                      <input
-                        type="number"
-                        value={selectedComp.ledCount || 10}
-                        onChange={(e) => updateSelectedComponent({ ledCount: parseInt(e.target.value) || 5 })}
-                        style={inputStyle}
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>燈形狀</label>
-                      <select
-                        value={selectedComp.ledShape || 'circle'}
-                        onChange={(e) => updateSelectedComponent({ ledShape: e.target.value as any })}
-                        style={inputStyle}
-                      >
-                        <option value="circle">圓形</option>
-                        <option value="rect">矩形</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>亮燈方向</label>
-                    <select
-                      value={selectedComp.fillDirection || 'left_to_right'}
-                      onChange={(e) => updateSelectedComponent({ fillDirection: e.target.value as any })}
-                      style={inputStyle}
-                    >
-                      <option value="left_to_right">由左至右</option>
-                      <option value="right_to_left">由右至左</option>
-                      <option value="center_out">中間向兩側擴散</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* Needle 屬性 */}
-              {selectedComp.type === 'Needle' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <label style={labelStyle}>中心點 X (Pivot X)</label>
-                      <input
-                        type="number"
-                        value={selectedComp.pivotX || 100}
-                        onChange={(e) => updateSelectedComponent({ pivotX: parseInt(e.target.value) || 0 })}
-                        style={inputStyle}
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>中心點 Y (Pivot Y)</label>
-                      <input
-                        type="number"
-                        value={selectedComp.pivotY || 100}
-                        onChange={(e) => updateSelectedComponent({ pivotY: parseInt(e.target.value) || 0 })}
-                        style={inputStyle}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
-                    <div>
-                      <label style={labelStyle}>起角 (度)</label>
-                      <input
-                        type="number"
-                        value={selectedComp.startAngle || -135}
-                        onChange={(e) => updateSelectedComponent({ startAngle: parseInt(e.target.value) || 0 })}
-                        style={inputStyle}
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>迄角 (度)</label>
-                      <input
-                        type="number"
-                        value={selectedComp.endAngle || 135}
-                        onChange={(e) => updateSelectedComponent({ endAngle: parseInt(e.target.value) || 0 })}
-                        style={inputStyle}
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>針長度</label>
-                      <input
-                        type="number"
-                        value={selectedComp.needleLength || 80}
-                        onChange={(e) => updateSelectedComponent({ needleLength: parseInt(e.target.value) || 10 })}
-                        style={inputStyle}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 數值綁定 */}
-              <div>
-                <label style={labelStyle}>
-                  數值綁定公式
-                  <span style={{ color: 'var(--primary)', cursor: 'help', marginLeft: '4px' }} title="支援變數: speed, rpm, gear, maxRpm, boost, accelX/Y/Z, tireTempFL/FR/RL/RR 等">ℹ️</span>
-                </label>
-                <input
-                  type="text"
-                  value={selectedComp.bindings.value}
-                  onChange={(e) => updateSelectedComponent({
-                    bindings: {
-                      ...selectedComp.bindings,
-                      value: e.target.value
-                    }
-                  })}
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* 顏色 */}
-              <div>
-                <label style={labelStyle}>色彩設定模式</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <button
-                    onClick={() => handleColorModeChange('color')}
-                    style={modeButtonStyle(colorMode === 'color')}
-                  >
-                    單色
-                  </button>
-                  <button
-                    onClick={() => handleColorModeChange('conditional')}
-                    style={modeButtonStyle(colorMode === 'conditional')}
-                  >
-                    條件變色
-                  </button>
-                </div>
-
-                {colorMode === 'color' ? (
-                  <div>
-                    <label style={labelStyle}>選擇顏色</label>
-                    <input
-                      type="color"
-                      value={typeof selectedComp.bindings.color === 'string' ? selectedComp.bindings.color : '#ffffff'}
-                      onChange={(e) => updateSelectedComponent({
-                        bindings: {
-                          ...selectedComp.bindings,
-                          color: e.target.value
-                        }
-                      })}
-                      style={{ width: '100%', height: '32px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                    />
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={labelStyle}>條件色彩規則 (Top-down 優先權)</label>
-                    {typeof selectedComp.bindings.color === 'object' && selectedComp.bindings.color.colorRules.map((rule, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        {rule.formula === 'default' ? (
-                          <span style={{ fontSize: '0.75rem', width: '80px' }}>預設背景色</span>
-                        ) : (
-                          <input
-                            type="text"
-                            value={rule.formula}
-                            placeholder="公式, 例: value>0.9"
-                            onChange={(e) => updateColorRule(idx, { formula: e.target.value })}
-                            style={{ ...inputStyle, flex: 1, fontSize: '0.75rem', padding: '3px 6px' }}
-                          />
-                        )}
-                        <input
-                          type="color"
-                          value={rule.color}
-                          onChange={(e) => updateColorRule(idx, { color: e.target.value })}
-                          style={{ width: '28px', height: '24px', border: 'none', padding: 0, cursor: 'pointer' }}
-                        />
-                        {rule.formula !== 'default' && (
-                          <button
-                            onClick={() => deleteColorRule(idx)}
-                            style={{ background: 'none', border: 'none', color: '#ff5555', cursor: 'pointer', fontSize: '1rem' }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <button
-                      onClick={addColorRule}
-                      style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px dashed rgba(255,255,255,0.15)',
-                        color: 'var(--text)',
-                        padding: '4px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                        marginTop: '2px'
-                      }}
-                    >
-                      + 新增色彩條件
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: 'var(--text-secondary)',
-              fontSize: '0.85rem',
-              textAlign: 'center',
-              padding: '1.5rem'
-            }}>
-              {t('Select a component in canvas or components list to edit properties.') || '請點選畫布上的組件開始編輯屬性，或者在頂部新增組件。'}
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* Radio settings Modal popup */}
+      {showRadioModal && (
+        <div 
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center',
+            alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
+          }}
+        >
+          <div 
+            className="glass-panel"
+            style={{
+              width: '450px', padding: '2rem', borderRadius: '8px',
+              border: '1px solid rgba(0, 240, 255, 0.3)',
+              display: 'flex', flexDirection: 'column', gap: '1.5rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
+              <h2 style={{ margin: 0, color: '#00f0ff', fontSize: '1.4rem' }}>🎵 收音機與音訊設定</h2>
+              <button 
+                onClick={() => setShowRadioModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#aaa', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* 媒體播放來源 */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: '#ccc', display: 'block', marginBottom: '6px' }}>媒體歌曲來源 (Media Source)</label>
+              <select
+                value={config.radio_media_source || 'SMTC'}
+                onChange={(e) => updateKey('radio_media_source', e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+              >
+                <option value="SMTC">Windows 系統音樂控制器 (SMTC 整合)</option>
+                <option value="Mock">模擬電台隨機播放 (Mock Player)</option>
+                <option value="Off">關閉歌曲顯示 (Off)</option>
+              </select>
+            </div>
+
+            {/* 音訊視覺化模式 */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: '#ccc', display: 'block', marginBottom: '6px' }}>頻譜視覺化效果 (Visualizer Mode)</label>
+              <select
+                value={config.radio_visualizer_mode || 'Spectrum'}
+                onChange={(e) => updateKey('radio_visualizer_mode', e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+              >
+                <option value="Spectrum">頻譜長條圖 (Spectrum Bars)</option>
+                <option value="Waveform">音訊波形圖 (Waveform)</option>
+                <option value="Off">關閉視覺效果 (Off)</option>
+              </select>
+            </div>
+
+            {/* 頻譜條數 */}
+            {config.radio_visualizer_mode === 'Spectrum' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ccc', marginBottom: '4px' }}>
+                  <span>視覺化頻譜條數 (Bars)</span>
+                  <span>{config.radio_visualizer_bars || 16} 條</span>
+                </div>
+                <input 
+                  type="range" min="8" max="64" step="4"
+                  value={config.radio_visualizer_bars || 16}
+                  onChange={(e) => updateKey('radio_visualizer_bars', parseInt(e.target.value))}
+                  style={{ width: '100%', accentColor: '#00f0ff' }}
+                />
+              </div>
+            )}
+
+            {/* 頻譜高度 */}
+            {config.radio_visualizer_mode !== 'Off' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ccc', marginBottom: '4px' }}>
+                  <span>頻譜最大高度 (Max Height)</span>
+                  <span>{config.radio_visualizer_height || 40} px</span>
+                </div>
+                <input 
+                  type="range" min="10" max="120" step="5"
+                  value={config.radio_visualizer_height || 40}
+                  onChange={(e) => updateKey('radio_visualizer_height', parseInt(e.target.value))}
+                  style={{ width: '100%', accentColor: '#00f0ff' }}
+                />
+              </div>
+            )}
+
+            {/* 音訊輸入來源 */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: '#ccc', display: 'block', marginBottom: '6px' }}>頻譜擷取輸入裝置 (Audio Input Device)</label>
+              <select
+                value={config.radio_audio_device || 'Default'}
+                onChange={(e) => updateKey('radio_audio_device', e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
+              >
+                {mockAudioDevices.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={() => setShowRadioModal(false)}
+              style={{
+                background: 'var(--primary)', color: '#000', border: 'none',
+                padding: '0.75rem', borderRadius: '4px', fontWeight: 'bold',
+                cursor: 'pointer', marginTop: '0.5rem', width: '100%'
+              }}
+            >
+              確定並關閉設定
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-};
-
-const buttonStyle = (color: string, bg: string = 'rgba(0,0,0,0.3)') => ({
-  background: bg,
-  border: `1px solid ${color}55`,
-  color: color,
-  padding: '0.4rem 0.8rem',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontWeight: 'bold' as const,
-  fontSize: '0.8rem'
-});
-
-const modeButtonStyle = (isActive: boolean) => ({
-  flex: 1,
-  background: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-  border: 'none',
-  color: isActive ? '#000' : 'var(--text)',
-  padding: '3px 0',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontWeight: 'bold' as const,
-  fontSize: '0.75rem'
-});
-
-const inputStyle = {
-  width: '100%',
-  background: 'rgba(0,0,0,0.3)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: '#fff',
-  padding: '5px 8px',
-  borderRadius: '4px',
-  fontSize: '0.8rem',
-  boxSizing: 'border-box' as const
-};
-
-const labelStyle = {
-  display: 'block',
-  fontSize: '0.72rem',
-  color: 'var(--text-secondary)',
-  marginBottom: '2px'
 };
 
 export default OverlayView;

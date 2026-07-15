@@ -186,10 +186,10 @@ bool DXGIOverlayManager::CheckHardwareOverlaySupport(bool& outSupported, bool& o
     // 3. 轉換至 IDXGIOutput3 進行 Overlay 支援檢測
     ComPtr<IDXGIOutput3> pOutput3;
     if (SUCCEEDED(pTargetOutput.As(&pOutput3))) {
-        BOOL bSupported = FALSE;
+        UINT flags = 0;
         // 檢測當前顯示輸出在 BGRA 格式下是否支援硬體 Overlay
-        HRESULT hr = pOutput3->CheckOverlaySupport(DXGI_FORMAT_B8G8R8A8_UNORM, m_pd3dDevice.Get(), &bSupported);
-        if (SUCCEEDED(hr) && bSupported) {
+        HRESULT hr = pOutput3->CheckOverlaySupport(DXGI_FORMAT_B8G8R8A8_UNORM, m_pd3dDevice.Get(), &flags);
+        if (SUCCEEDED(hr) && flags != 0) {
             outSupported = true;
         }
     }

@@ -1,3 +1,10 @@
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0602
+#elif _WIN32_WINNT < 0x0602
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0602
+#endif
+
 #include <windows.h>
 #include <iostream>
 #include <mutex>
@@ -6,6 +13,17 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <cmath>
+using std::min;
+using std::max;
+
+#include <map>
+#include <wrl/client.h>
+
+// 引入 stb_image 圖片庫
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_THREAD_LOCAL // 避免與執行緒相關的連結衝突
+#include "stb_image.h"
 
 // ImGui
 #include "imgui.h"
@@ -18,6 +36,8 @@
 // 我們的組件
 #include "DXGIOverlayManager.h"
 #include "WebSocketClient.h"
+
+extern DXGIOverlayManager g_OverlayManager;
 
 // nlohmann/json
 #include <nlohmann/json.hpp>
@@ -43,6 +63,176 @@ struct TelemetryData {
     float yaw = 0.0f;
     float power = 0.0f;
     float boost = 0.0f;
+};
+
+// 授權校驗預留接口與擴充註解
+bool VerifyLicenseStub() {
+    // TODO: 商業版將在此整合 ECDSA 非對稱簽章與 HWID 認證機制
+    // 預期流程：讀取伺服器發回的數位憑證檔案，使用內置公鑰進行校驗
+    return true;
+}
+
+std::string DecryptPresetStub(const std::vector<unsigned char>& encryptedData) {
+    // TODO: 商業版將在此利用憑證簽章派生 AES-256 解密金鑰，並解密核心預設佈局
+    // 避免逆向工程直接 Patch 機器碼跳轉分支繞過授權
+    return std::string((char*)encryptedData.data(), encryptedData.size());
+}
+
+// 實作加載貼圖到 D3D11 SRV 檢視
+bool LoadTextureFromFile(const char* filename, ID3D11Device* device, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height) {
+    int image_width = 0;
+    int image_height = 0;
+    unsigned char* image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
+    if (image_data == NULL) {
+        // 多路徑降級搜尋
+        std::string fallbackPath = "assets/hud/" + std::string(filename);
+        image_data = stbi_load(fallbackPath.c_str(), &image_width, &image_height, NULL, 4);
+        if (image_data == NULL) {
+            std::string parentFallbackPath = "../assets/hud/" + std::string(filename);
+            image_data = stbi_load(parentFallbackPath.c_str(), &image_width, &image_height, NULL, 4);
+            if (image_data == NULL) {
+                std::string gParentFallbackPath = "../../assets/hud/" + std::string(filename);
+                image_data = stbi_load(gParentFallbackPath.c_str(), &image_width, &image_height, NULL, 4);
+                if (image_data == NULL) {
+                    std::string toolParentPath = "tool/overlay/assets/hud/" + std::string(filename);
+                    image_data = stbi_load(toolParentPath.c_str(), &image_width, &image_height, NULL, 4);
+                    if (image_data == NULL) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = image_width;
+    desc.Height = image_height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+
+    ID3D11Texture2D *pTexture = NULL;
+    D3D11_SUBRESOURCE_DATA subResource;
+    subResource.pSysMem = image_data;
+    subResource.SysMemPitch = desc.Width * 4;
+    subResource.SysMemSlicePitch = 0;
+    HRESULT hr = device->CreateTexture2D(&desc, &subResource, &pTexture);
+    if (FAILED(hr)) {
+        stbi_image_free(image_data);
+        return false;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    hr = device->CreateShaderResourceView(pTexture, &srvDesc, out_srv);
+    pTexture->Release();
+
+    stbi_image_free(image_data);
+
+    if (FAILED(hr)) return false;
+
+    *out_width = image_width;
+    *out_height = image_height;
+    return true;
+}
+
+// 貼圖緩存與尺寸管理
+std::map<std::string, ID3D11ShaderResourceView*> g_TextureCache;
+std::map<std::string, ImVec2> g_TextureSizes;
+
+ID3D11ShaderResourceView* GetOrLoadTexture(const std::string& filename, int* width = nullptr, int* height = nullptr) {
+    if (filename.empty()) return nullptr;
+    auto it = g_TextureCache.find(filename);
+    if (it != g_TextureCache.end()) {
+        if (width) *width = (int)g_TextureSizes[filename].x;
+        if (height) *height = (int)g_TextureSizes[filename].y;
+        return it->second;
+    }
+
+    ID3D11ShaderResourceView* srv = nullptr;
+    int w = 0, h = 0;
+    if (LoadTextureFromFile(filename.c_str(), g_OverlayManager.GetDevice(), &srv, &w, &h)) {
+        g_TextureCache[filename] = srv;
+        g_TextureSizes[filename] = ImVec2((float)w, (float)h);
+        if (width) *width = w;
+        if (height) *height = h;
+        return srv;
+    }
+    return nullptr;
+}
+
+// 旋轉繪製貼圖輔助函數
+void DrawRotatedImage(ImDrawList* drawList, ID3D11ShaderResourceView* texture, const ImVec2& pivot, const ImVec2& size, float angleRad, ImU32 col = IM_COL32_WHITE) {
+    float cosA = cos(angleRad);
+    float sinA = sin(angleRad);
+
+    ImVec2 halfSize(size.x * 0.5f, size.y * 0.5f);
+    ImVec2 localPoints[4] = {
+        ImVec2(-halfSize.x, -halfSize.y),
+        ImVec2(halfSize.x, -halfSize.y),
+        ImVec2(halfSize.x, halfSize.y),
+        ImVec2(-halfSize.x, halfSize.y)
+    };
+
+    ImVec2 screenPoints[4];
+    for (int i = 0; i < 4; ++i) {
+        screenPoints[i].x = pivot.x + (localPoints[i].x * cosA - localPoints[i].y * sinA);
+        screenPoints[i].y = pivot.y + (localPoints[i].x * sinA + localPoints[i].y * cosA);
+    }
+
+    drawList->AddImageQuad(
+        (ImTextureID)texture,
+        screenPoints[0], screenPoints[1], screenPoints[2], screenPoints[3],
+        ImVec2(0, 0), ImVec2(1, 0), ImVec2(1, 1), ImVec2(0, 1),
+        col
+    );
+}
+
+// 風格配置
+struct StyleConfig {
+    std::string dialTexture;
+    std::string needleTexture;
+    float startAngle;
+    float endAngle;
+    float pivotX; // 旋轉中心比例 (0.0 - 1.0)
+    float pivotY;
+};
+
+std::map<std::string, StyleConfig> g_StyleConfigs = {
+    { "GT7_RPM", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
+    { "Defi_Advance_RPM", { "res_10_411.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
+    { "Speedhut_RPM", { "res_10_401.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
+    { "AltezzaTRD_RPM", { "res_10_257.png", "res_10_408.png", -140.0f, 140.0f, 0.5f, 0.5f } },
+    { "NFS2015_RPM", { "res_10_254.png", "res_10_408.png", -120.0f, 120.0f, 0.5f, 0.5f } },
+    { "FordGT_Speed", { "res_10_258.png", "res_10_408.png", -120.0f, 120.0f, 0.5f, 0.5f } },
+    { "NFS2015_oilpressure", { "res_10_254.png", "res_10_408.png", -90.0f, 90.0f, 0.5f, 0.5f } },
+    { "Boost_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
+    { "OilPressure_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
+    { "OilTemp_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
+    { "CoolantTemp_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } }
+};
+
+std::map<std::string, std::string> g_StaticTextures = {
+    { "AltezzaTRD_Radio", "res_10_312.png" },
+    { "NFS2015_Radio", "res_10_311.png" },
+    { "FordGT_Radio", "res_10_304.png" },
+    { "Defi_Radio", "res_10_313.png" },
+    { "AltezzaTRD_Dashboard", "res_10_257.png" },
+    { "NFS2015_Dashboard", "res_10_254.png" },
+    { "Soarer_Dashboard", "res_10_255.png" },
+    { "JZX100_Dashboard", "res_10_256.png" },
+    { "AEM_Dashboard", "res_10_250.png" },
+    { "FordGT_Dashboard", "res_10_258.png" },
+    { "Xbox_Controller", "res_10_500.png" }
 };
 
 // 用於表達式求值的全域變數 (記憶體地址必須保持固定)
@@ -106,10 +296,10 @@ ImVec4 ParseHexColor(const std::string& hex) {
         g = ((colorVal >> 8) & 0xFF) / 255.0f;
         b = (colorVal & 0xFF) / 255.0f;
     } else if (cleanHex.length() == 8) {
-        r = ((colorVal >> 24) & 0xFF) / 255.0f;
-        g = ((colorVal >> 16) & 0xFF) / 255.0f;
-        b = ((colorVal >> 8) & 0xFF) / 255.0f;
-        a = (colorVal & 0xFF) / 255.0f;
+        r = ((colorVal >> 16) & 0xFF) / 255.0f;
+        g = ((colorVal >> 8) & 0xFF) / 255.0f;
+        b = (colorVal & 0xFF) / 255.0f;
+        a = ((colorVal >> 24) & 0xFF) / 255.0f;
     }
     return ImVec4(r, g, b, a);
 }
@@ -117,25 +307,20 @@ ImVec4 ParseHexColor(const std::string& hex) {
 // 條件色彩配置
 struct ColorRule {
     std::string formula;
+    ImVec4 colorValue = ImVec4(1, 1, 1, 1);
     ExpressionBinding binding;
-    ImVec4 colorValue;
 };
 
 struct ComponentColor {
-    std::vector<ColorRule> rules;
     ImVec4 defaultColor = ImVec4(1, 1, 1, 1);
+    std::vector<ColorRule> rules;
 
-    void Parse(const json& j) {
+    void Parse(const json& colorJson) {
         rules.clear();
-        defaultColor = ImVec4(1, 1, 1, 1);
-
-        if (j.is_string()) {
-            defaultColor = ParseHexColor(j.get<std::string>());
-            return;
-        }
-
-        if (j.is_object() && j.contains("colorRules")) {
-            for (auto& rule : j["colorRules"]) {
+        if (colorJson.is_string()) {
+            defaultColor = ParseHexColor(colorJson);
+        } else if (colorJson.is_object() && colorJson.contains("colorRules")) {
+            for (auto& rule : colorJson["colorRules"]) {
                 if (rule.contains("formula") && rule.contains("color")) {
                     std::string f = rule["formula"];
                     std::string c = rule["color"];
@@ -169,6 +354,8 @@ struct ComponentColor {
 struct Component {
     std::string id;
     std::string type;
+    std::string stylePrefix = "";
+    std::string texturePath = "";
     float x = 0.0f;
     float y = 0.0f;
     float w = 100.0f;
@@ -199,6 +386,45 @@ struct Component {
     ComponentColor colorConfig;
 };
 
+// Widget 設定結構
+struct WidgetConfig {
+    bool enabled = false;
+    int style = 0;
+    int alignment = 2; // 預設右下角
+    float scale = 1.0f;
+    float opacity = 1.0f;
+    float padding_x = 0.0f;
+    float padding_y = 0.0f;
+    ImVec4 tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+};
+
+// INI 預設佈局結構
+struct OverlayPreset {
+    std::string name = "Default";
+    int previewMode = 0;
+    WidgetConfig controller;
+    WidgetConfig radio;
+    WidgetConfig dashboard;
+    WidgetConfig tacho;
+    WidgetConfig boost;
+    WidgetConfig oil_pressure;
+    WidgetConfig oil_temp;
+    WidgetConfig coolant_temp;
+    
+    // 獨立遙測卡片 Widget
+    WidgetConfig tire_temp;
+    WidgetConfig susp_travel;
+    WidgetConfig slip_limit;
+    WidgetConfig g_force;
+
+    // 相機抖動效果
+    bool camera_shake_enabled = false;
+    float camera_shake_intensity = 1.0f;
+    float camera_shake_speed = 1.0f;
+    bool camera_distortion_enabled = false;
+    float camera_distortion_intensity = 1.0f;
+};
+
 // 佈局設定結構
 struct CanvasConfig {
     float logicalW = 800.0f;
@@ -209,7 +435,96 @@ struct CanvasConfig {
 CanvasConfig       g_CanvasConfig;
 std::vector<Component> g_Components;
 std::mutex         g_LayoutMutex;
-std::wstring       g_LayoutFilePath = L"layout.json";
+std::wstring       g_LayoutFilePath = L"layout.ini"; // 改為 layout.ini
+OverlayPreset      g_Preset;                         // 儲存解析後的預設配置
+
+// 輕量原生 C++ INI 解析器
+std::map<std::string, std::string> ParseIniFile(const std::wstring& filePath) {
+    std::map<std::string, std::string> iniData;
+    std::ifstream file(filePath);
+    if (!file.is_open()) return iniData;
+
+    std::string line;
+    while (std::getline(file, line)) {
+        // 去除註解
+        size_t commentPos = line.find('#');
+        if (commentPos != std::string::npos) line = line.substr(0, commentPos);
+        commentPos = line.find(';');
+        if (commentPos != std::string::npos) line = line.substr(0, commentPos);
+
+        size_t eqPos = line.find('=');
+        if (eqPos == std::string::npos) continue;
+
+        std::string key = line.substr(0, eqPos);
+        std::string val = line.substr(eqPos + 1);
+
+        // 去除首尾空白字元
+        auto trim = [](std::string& s) {
+            if (s.empty()) return;
+            s.erase(0, s.find_first_not_of(" \t\r\n"));
+            size_t idx = s.find_last_not_of(" \t\r\n");
+            if (idx != std::string::npos) s.erase(idx + 1);
+        };
+        trim(key);
+        trim(val);
+
+        if (!key.empty()) {
+            iniData[key] = val;
+        }
+    }
+    return iniData;
+}
+
+// 載入 Widget 個別欄位
+void LoadWidgetConfig(const std::map<std::string, std::string>& ini, const std::string& prefix, WidgetConfig& config) {
+    if (ini.count(prefix + "_widget_enabled")) {
+        config.enabled = (ini.at(prefix + "_widget_enabled") == "1" || ini.at(prefix + "_widget_enabled") == "true");
+    } else {
+        config.enabled = false;
+    }
+    if (ini.count(prefix + "_widget")) {
+        config.style = std::stoi(ini.at(prefix + "_widget"));
+    } else {
+        config.style = 0;
+    }
+    if (ini.count(prefix + "_alignment")) {
+        config.alignment = std::stoi(ini.at(prefix + "_alignment"));
+    } else {
+        config.alignment = 2;
+    }
+    if (ini.count(prefix + "_scale")) {
+        config.scale = std::stof(ini.at(prefix + "_scale"));
+    } else {
+        config.scale = 1.0f;
+    }
+    if (ini.count(prefix + "_opacity")) {
+        config.opacity = std::stof(ini.at(prefix + "_opacity"));
+    } else {
+        config.opacity = 0.9f;
+    }
+    if (ini.count(prefix + "_padding_x")) {
+        config.padding_x = std::stof(ini.at(prefix + "_padding_x"));
+    } else {
+        config.padding_x = 0.0f;
+    }
+    if (ini.count(prefix + "_padding_y")) {
+        config.padding_y = std::stof(ini.at(prefix + "_padding_y"));
+    } else {
+        config.padding_y = 0.0f;
+    }
+    if (ini.count(prefix + "_widget_tint")) {
+        std::stringstream ss(ini.at(prefix + "_widget_tint"));
+        std::string val;
+        float c[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        int idx = 0;
+        while (std::getline(ss, val, ',') && idx < 4) {
+            c[idx++] = std::stof(val);
+        }
+        config.tint = ImVec4(c[0], c[1], c[2], c[3]);
+    } else {
+        config.tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+}
 
 DXGIOverlayManager g_OverlayManager;
 WebSocketClient    g_WSClient;
@@ -293,73 +608,157 @@ void UpdateExpressionVariables(const TelemetryData& t) {
 }
 
 // 載入與解析 layout.json
+// 載入與解析 layout.ini
 void LoadLayoutConfig() {
     std::lock_guard<std::mutex> lock(g_LayoutMutex);
-    std::ifstream file(g_LayoutFilePath);
-    if (!file.is_open()) return;
+    
+    std::map<std::string, std::string> ini = ParseIniFile(g_LayoutFilePath);
+    if (ini.empty()) {
+        ini = ParseIniFile(L"layout.ini");
+        if (ini.empty()) return;
+    }
 
-    try {
-        json j;
-        file >> j;
-        
-        // 載入畫布邏輯寬高
-        if (j.contains("canvas")) {
-            auto canv = j["canvas"];
-            if (canv.contains("w")) g_CanvasConfig.logicalW = canv["w"];
-            if (canv.contains("h")) g_CanvasConfig.logicalH = canv["h"];
+    if (ini.count("name")) g_Preset.name = ini["name"];
+    if (ini.count("preview_mode")) {
+        g_Preset.previewMode = std::stoi(ini["preview_mode"]);
+    } else {
+        g_Preset.previewMode = 0;
+    }
+
+    LoadWidgetConfig(ini, "controller", g_Preset.controller);
+    LoadWidgetConfig(ini, "radio", g_Preset.radio);
+    LoadWidgetConfig(ini, "dashboard", g_Preset.dashboard);
+    LoadWidgetConfig(ini, "tacho", g_Preset.tacho);
+    LoadWidgetConfig(ini, "boost", g_Preset.boost);
+    LoadWidgetConfig(ini, "oil_pressure", g_Preset.oil_pressure);
+    LoadWidgetConfig(ini, "oil_temp", g_Preset.oil_temp);
+    LoadWidgetConfig(ini, "coolant_temp", g_Preset.coolant_temp);
+
+    LoadWidgetConfig(ini, "tire_temp", g_Preset.tire_temp);
+    LoadWidgetConfig(ini, "susp_travel", g_Preset.susp_travel);
+    LoadWidgetConfig(ini, "slip_limit", g_Preset.slip_limit);
+    LoadWidgetConfig(ini, "g_force", g_Preset.g_force);
+
+    if (ini.count("camera_shake_enabled")) {
+        g_Preset.camera_shake_enabled = (ini["camera_shake_enabled"] == "1" || ini["camera_shake_enabled"] == "true");
+    } else {
+        g_Preset.camera_shake_enabled = false;
+    }
+    if (ini.count("camera_shake_intensity")) {
+        g_Preset.camera_shake_intensity = std::stof(ini["camera_shake_intensity"]);
+    } else {
+        g_Preset.camera_shake_intensity = 1.0f;
+    }
+    if (ini.count("camera_shake_speed")) {
+        g_Preset.camera_shake_speed = std::stof(ini["camera_shake_speed"]);
+    } else {
+        g_Preset.camera_shake_speed = 1.0f;
+    }
+
+    if (ini.count("camera_distortion_enabled")) {
+        g_Preset.camera_distortion_enabled = (ini["camera_distortion_enabled"] == "1" || ini["camera_distortion_enabled"] == "true");
+    } else {
+        g_Preset.camera_distortion_enabled = false;
+    }
+    if (ini.count("camera_distortion_intensity")) {
+        g_Preset.camera_distortion_intensity = std::stof(ini["camera_distortion_intensity"]);
+    } else {
+        g_Preset.camera_distortion_intensity = 1.0f;
+    }
+
+    std::vector<Component> newComponents;
+    
+    auto addCompFromWidget = [&](const std::string& id, const std::string& type, const std::string& stylePrefix, WidgetConfig& config, const std::string& formula) {
+        if (!config.enabled) return;
+
+        float base_w = 100.0f;
+        float base_h = 100.0f;
+
+        if (id == "dashboard") { base_w = 350.0f; base_h = 175.0f; }
+        else if (id == "tacho") { base_w = 150.0f; base_h = 150.0f; }
+        else if (id == "radio") {
+            if (config.style == 0) { base_w = 200.0f; base_h = 52.0f; }
+            else if (config.style == 1) { base_w = 220.0f; base_h = 53.0f; }
+            else if (config.style == 2) { base_w = 70.0f; base_h = 72.0f; }
+            else if (config.style == 5) { base_w = 100.0f; base_h = 50.0f; }
+            else { base_w = 150.0f; base_h = 60.0f; }
+        }
+        else if (id == "controller") { base_w = 250.0f; base_h = 62.0f; }
+        else if (id == "boost") { base_w = 80.0f; base_h = 80.0f; }
+        else if (id == "oil_pressure") { base_w = 80.0f; base_h = 80.0f; }
+        else if (id == "oil_temp") { base_w = 80.0f; base_h = 80.0f; }
+        else if (id == "coolant_temp") { base_w = 80.0f; base_h = 80.0f; }
+        else if (id == "tire_temp") { base_w = 220.0f; base_h = 180.0f; }
+        else if (id == "susp_travel") { base_w = 220.0f; base_h = 180.0f; }
+        else if (id == "slip_limit") { base_w = 220.0f; base_h = 180.0f; }
+        else if (id == "g_force") { base_w = 180.0f; base_h = 180.0f; }
+
+        float w = base_w * config.scale;
+        float h = base_h * config.scale;
+
+        float canvas_w = 800.0f;
+        float canvas_h = 480.0f;
+        float x = 0.0f;
+        float y = 0.0f;
+
+        if (config.alignment == 0) { // Top-Left
+            x = config.padding_x;
+            y = config.padding_y;
+        } else if (config.alignment == 1) { // Bottom-Center
+            x = (canvas_w - w) * 0.5f + config.padding_x;
+            y = canvas_h - h - config.padding_y;
+        } else if (config.alignment == 2) { // Bottom-Right
+            x = canvas_w - w - config.padding_x;
+            y = canvas_h - h - config.padding_y;
+        } else if (config.alignment == 3) { // Bottom-Left
+            x = config.padding_x;
+            y = canvas_h - h - config.padding_y;
+        } else {
+            x = config.padding_x;
+            y = config.padding_y;
         }
 
-        // 載入各個組件
-        if (j.contains("components")) {
-            std::vector<Component> newComponents;
-            for (auto& compJson : j["components"]) {
-                Component c;
-                if (compJson.contains("id")) c.id = compJson["id"];
-                if (compJson.contains("type")) c.type = compJson["type"];
-                if (compJson.contains("x")) c.x = compJson["x"];
-                if (compJson.contains("y")) c.y = compJson["y"];
-                if (compJson.contains("w")) c.w = compJson["w"];
-                if (compJson.contains("h")) c.h = compJson["h"];
-                if (compJson.contains("visible")) c.visible = compJson["visible"];
-                
-                // 文字屬性
-                if (compJson.contains("fontSize")) c.fontSize = compJson["fontSize"];
-                if (compJson.contains("align")) c.align = compJson["align"];
-                
-                // 進度條屬性
-                if (compJson.contains("isVertical")) c.isVertical = compJson["isVertical"];
+        Component c;
+        c.id = id;
+        c.type = type;
+        c.stylePrefix = stylePrefix;
+        c.x = x;
+        c.y = y;
+        c.w = w;
+        c.h = h;
+        c.visible = true;
 
-                // LED 組件屬性
-                if (compJson.contains("ledCount")) c.ledCount = compJson["ledCount"];
-                if (compJson.contains("ledShape")) c.ledShape = compJson["ledShape"];
-                if (compJson.contains("fillDirection")) c.fillDirection = compJson["fillDirection"];
-
-                // 旋轉指針屬性
-                if (compJson.contains("pivotX")) c.pivotX = compJson["pivotX"];
-                if (compJson.contains("pivotY")) c.pivotY = compJson["pivotY"];
-                if (compJson.contains("startAngle")) c.startAngle = compJson["startAngle"];
-                if (compJson.contains("endAngle")) c.endAngle = compJson["endAngle"];
-                if (compJson.contains("needleLength")) c.needleLength = compJson["needleLength"];
-
-
-                // 綁定 value 公式
-                if (compJson.contains("bindings") && compJson["bindings"].contains("value")) {
-                    c.valueBinding.Compile(compJson["bindings"]["value"]);
-                }
-
-                // 綁定 color 規則
-                if (compJson.contains("bindings") && compJson["bindings"].contains("color")) {
-                    c.colorConfig.Parse(compJson["bindings"]["color"]);
-                }
-
-                newComponents.push_back(c);
-            }
-            g_Components = std::move(newComponents);
+        if (!formula.empty()) {
+            c.valueBinding.Compile(formula);
         }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "[Layout] 解析佈局檔案出錯: " << e.what() << "\n";
-    }
+
+        newComponents.push_back(c);
+    };
+
+    std::string dbPrefixes[6] = { "AEM_Dashboard", "NFS2015_Dashboard", "Soarer_Dashboard", "JZX100_Dashboard", "AltezzaTRD_Dashboard", "FordGT_Dashboard" };
+    std::string dbPrefix = (g_Preset.dashboard.style >= 0 && g_Preset.dashboard.style < 6) ? dbPrefixes[g_Preset.dashboard.style] : "AEM_Dashboard";
+
+    std::string tachoPrefixes[6] = { "GT7_RPM", "Defi_Advance_RPM", "Speedhut_RPM", "AltezzaTRD_RPM", "NFS2015_RPM", "FordGT_Speed" };
+    std::string tachoPrefix = (g_Preset.tacho.style >= 0 && g_Preset.tacho.style < 6) ? tachoPrefixes[g_Preset.tacho.style] : "GT7_RPM";
+
+    std::string radioPrefixes[6] = { "FordGT_Radio", "NFS2015_Radio", "AltezzaTRD_Radio", "", "", "Defi_Radio" };
+    std::string radioPrefix = (g_Preset.radio.style >= 0 && g_Preset.radio.style < 6) ? radioPrefixes[g_Preset.radio.style] : "FordGT_Radio";
+
+    addCompFromWidget("dashboard", "Image", dbPrefix, g_Preset.dashboard, "");
+    addCompFromWidget("tacho", "Gauge", tachoPrefix, g_Preset.tacho, "(rpm - idleRpm) / (maxRpm - idleRpm)");
+    addCompFromWidget("radio", "Radio", radioPrefix, g_Preset.radio, "");
+    addCompFromWidget("controller", "Controller", "Xbox_Controller", g_Preset.controller, "");
+    addCompFromWidget("boost", "Gauge", "Boost_Gauge", g_Preset.boost, "boost");
+    addCompFromWidget("oil_pressure", "Gauge", "OilPressure_Gauge", g_Preset.oil_pressure, "oilPressure");
+    addCompFromWidget("oil_temp", "Gauge", "OilTemp_Gauge", g_Preset.oil_temp, "oilTemp");
+    addCompFromWidget("coolant_temp", "Gauge", "CoolantTemp_Gauge", g_Preset.coolant_temp, "coolantTemp");
+
+    addCompFromWidget("tire_temp", "TireTempCard", "TireTemp_Card", g_Preset.tire_temp, "");
+    addCompFromWidget("susp_travel", "SuspTravelCard", "SuspTravel_Card", g_Preset.susp_travel, "");
+    addCompFromWidget("slip_limit", "SlipLimitCard", "SlipLimit_Card", g_Preset.slip_limit, "");
+    addCompFromWidget("g_force", "GForceCard", "GForce_Card", g_Preset.g_force, "");
+
+    g_Components = std::move(newComponents);
 }
 
 #pragma pack(push, 1)
@@ -474,6 +873,122 @@ void OnWebSocketMessage(const void* data, size_t len, bool isBinary) {
     }
 }
 
+// 1. Tire Temp Card Widget 繪製
+void DrawTireTempCard(ImDrawList* drawList, float sx, float sy, float w, float h, float scale) {
+    drawList->AddRectFilled(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(10, 15, 20, 200), 8.0f * scale);
+    drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(255, 255, 255, 30), 8.0f * scale, 0, 1.0f);
+    drawList->AddText(nullptr, 14.0f * scale, ImVec2(sx + 10 * scale, sy + 8 * scale), IM_COL32(0, 240, 255, 255), "TIRE TEMP");
+
+    float temps[4] = { ev_tireTempFL, ev_tireTempFR, ev_tireTempRL, ev_tireTempRR };
+    const char* labels[4] = { "FL", "FR", "RL", "RR" };
+
+    auto getTireCol = [](float tempF) {
+        float tempC = (tempF - 32.0f) * 5.0f / 9.0f;
+        if (tempF < 150.0f || tempC < 65.0f) return IM_COL32(0, 136, 255, 220); // Cold
+        if (tempF > 210.0f || tempC > 99.0f) return IM_COL32(255, 0, 60, 220);  // Hot
+        return IM_COL32(0, 255, 80, 220);                                     // Normal
+    };
+
+    float boxW = (w - 30.0f * scale) * 0.5f;
+    float boxH = (h - 45.0f * scale) * 0.5f;
+
+    for (int i = 0; i < 4; ++i) {
+        int col = i % 2;
+        int row = i / 2;
+        float bx = sx + 10.0f * scale + col * (boxW + 10.0f * scale);
+        float by = sy + 30.0f * scale + row * (boxH + 8.0f * scale);
+
+        drawList->AddRectFilled(ImVec2(bx, by), ImVec2(bx + boxW, by + boxH), getTireCol(temps[i]), 4.0f * scale);
+        char buf[32];
+        sprintf_s(buf, "%s: %.0f F", labels[i], temps[i]);
+        drawList->AddText(nullptr, 12.0f * scale, ImVec2(bx + 6.0f * scale, by + (boxH - 12.0f * scale) * 0.5f), IM_COL32_WHITE, buf);
+    }
+}
+
+// 2. Suspension Travel Card Widget 繪製
+void DrawSuspTravelCard(ImDrawList* drawList, float sx, float sy, float w, float h, float scale) {
+    drawList->AddRectFilled(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(10, 15, 20, 200), 8.0f * scale);
+    drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(255, 255, 255, 30), 8.0f * scale, 0, 1.0f);
+    drawList->AddText(nullptr, 14.0f * scale, ImVec2(sx + 10 * scale, sy + 8 * scale), IM_COL32(0, 240, 255, 255), "SUSP TRAVEL");
+
+    float travels[4] = { ev_suspTravelFL, ev_suspTravelFR, ev_suspTravelRL, ev_suspTravelRR };
+    const char* labels[4] = { "FL", "FR", "RL", "RR" };
+
+    float barW = (w - 50.0f * scale) / 4.0f;
+    float maxBarH = h - 55.0f * scale;
+
+    for (int i = 0; i < 4; ++i) {
+        float bx = sx + 10.0f * scale + i * (barW + 10.0f * scale);
+        float by = sy + 30.0f * scale;
+
+        drawList->AddRectFilled(ImVec2(bx, by), ImVec2(bx + barW, by + maxBarH), IM_COL32(30, 40, 50, 255), 2.0f * scale);
+
+        float ratio = travels[i];
+        if (ratio < 0.0f) ratio = 0.0f;
+        if (ratio > 1.0f) ratio = 1.0f;
+        float barH = maxBarH * ratio;
+
+        drawList->AddRectFilled(ImVec2(bx, by + maxBarH - barH), ImVec2(bx + barW, by + maxBarH), IM_COL32(0, 240, 255, 255), 2.0f * scale);
+        
+        drawList->AddText(nullptr, 10.0f * scale, ImVec2(bx + 1.0f * scale, by + maxBarH + 2.0f * scale), IM_COL32(180, 200, 220, 255), labels[i]);
+    }
+}
+
+// 3. Slip Limit Card Widget 繪製
+void DrawSlipLimitCard(ImDrawList* drawList, float sx, float sy, float w, float h, float scale) {
+    drawList->AddRectFilled(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(10, 15, 20, 200), 8.0f * scale);
+    drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(255, 255, 255, 30), 8.0f * scale, 0, 1.0f);
+    drawList->AddText(nullptr, 14.0f * scale, ImVec2(sx + 10 * scale, sy + 8 * scale), IM_COL32(0, 240, 255, 255), "SLIP STATUS");
+
+    float ratios[4] = { ev_slipRatioFL, ev_slipRatioFR, ev_slipRatioRL, ev_slipRatioRR };
+    float angles[4] = { ev_slipAngleFL, ev_slipAngleFR, ev_slipAngleRL, ev_slipAngleRR };
+    const char* labels[4] = { "FL", "FR", "RL", "RR" };
+
+    float textY = sy + 30.0f * scale;
+    float rowH = (h - 40.0f * scale) / 4.0f;
+
+    for (int i = 0; i < 4; ++i) {
+        float y = textY + i * rowH;
+        bool isSlipping = (abs(ratios[i]) > 0.3f || abs(angles[i]) > 5.0f);
+        ImU32 textCol = isSlipping ? IM_COL32(255, 50, 80, 255) : IM_COL32(230, 240, 255, 255);
+
+        char buf[64];
+        sprintf_s(buf, "%s: R %.2f | A %.1f", labels[i], ratios[i], angles[i]);
+        drawList->AddText(nullptr, 12.0f * scale, ImVec2(sx + 12 * scale, y), textCol, buf);
+    }
+}
+
+// 4. G-Force Card Widget 繪製
+void DrawGForceCard(ImDrawList* drawList, float sx, float sy, float w, float h, float scale) {
+    drawList->AddRectFilled(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(10, 15, 20, 200), 8.0f * scale);
+    drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(255, 255, 255, 30), 8.0f * scale, 0, 1.0f);
+    drawList->AddText(nullptr, 14.0f * scale, ImVec2(sx + 10 * scale, sy + 8 * scale), IM_COL32(0, 240, 255, 255), "G-FORCE RADAR");
+
+    ImVec2 center(sx + w * 0.5f, sy + h * 0.55f);
+    float radarRadius = min(w, h) * 0.35f;
+
+    drawList->AddLine(ImVec2(center.x - radarRadius, center.y), ImVec2(center.x + radarRadius, center.y), IM_COL32(255, 255, 255, 45), 1.0f);
+    drawList->AddLine(ImVec2(center.x, center.y - radarRadius), ImVec2(center.x, center.y + radarRadius), IM_COL32(255, 255, 255, 45), 1.0f);
+    drawList->AddCircle(center, radarRadius * 0.5f, IM_COL32(255, 255, 255, 35), 32, 1.0f);
+    drawList->AddCircle(center, radarRadius, IM_COL32(255, 255, 255, 65), 32, 1.0f);
+
+    float latG = ev_accelX / 9.81f;
+    float lonG = ev_accelZ / 9.81f;
+
+    float dx = latG * radarRadius / 1.5f;
+    float dy = lonG * radarRadius / 1.5f;
+
+    float dist = sqrt(dx * dx + dy * dy);
+    if (dist > radarRadius) {
+        dx = (dx / dist) * radarRadius;
+        dy = (dy / dist) * radarRadius;
+    }
+
+    ImVec2 dotPos(center.x + dx, center.y + dy);
+    drawList->AddCircleFilled(dotPos, 5.0f * scale, IM_COL32(0, 240, 255, 255));
+    drawList->AddCircle(dotPos, 8.0f * scale, IM_COL32(0, 240, 255, 100), 16, 1.5f * scale);
+}
+
 // 繪製資料驅動 UI
 void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     TelemetryData t;
@@ -482,8 +997,34 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         t = g_Telemetry;
     }
 
-    // 複製與更新公式引擎變數值
-    UpdateExpressionVariables(t);
+    // 1. 如果既不是預覽模式，且遊戲未在比賽中，則不渲染任何 HUD
+    if (g_Preset.previewMode != 1 && !t.isRaceOn) {
+        return;
+    }
+
+    // 複製與更新公式引擎變數值 (預覽模式下若無實時遙測，載入模擬測試資料)
+    if (g_Preset.previewMode == 1 && !t.isRaceOn) {
+        TelemetryData mockT;
+        mockT.isRaceOn = true;
+        mockT.currentEngineRpm = 5200.0f;
+        mockT.engineMaxRpm = 8000.0f;
+        mockT.engineIdleRpm = 1000.0f;
+        mockT.speed = 120.0f;
+        mockT.gear = 4;
+        mockT.tireTemp[0] = 165.0f; mockT.tireTemp[1] = 168.0f;
+        mockT.tireTemp[2] = 180.0f; mockT.tireTemp[3] = 182.0f;
+        mockT.suspTravel[0] = 0.45f; mockT.suspTravel[1] = 0.48f;
+        mockT.suspTravel[2] = 0.52f; mockT.suspTravel[3] = 0.50f;
+        mockT.slipRatio[0] = 0.05f; mockT.slipRatio[1] = 0.08f;
+        mockT.slipRatio[2] = 0.12f; mockT.slipRatio[3] = 0.10f;
+        mockT.slipAngle[0] = 0.8f; mockT.slipAngle[1] = 0.9f;
+        mockT.slipAngle[2] = 1.2f; mockT.slipAngle[3] = 1.1f;
+        mockT.accel[0] = 4.5f; mockT.accel[1] = 0.0f; mockT.accel[2] = -3.2f;
+        mockT.boost = 12.5f;
+        UpdateExpressionVariables(mockT);
+    } else {
+        UpdateExpressionVariables(t);
+    }
 
     CanvasConfig canv;
     ImDrawList* drawList = ImGui::GetBackgroundDrawList();
@@ -491,15 +1032,42 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     std::lock_guard<std::mutex> lock(g_LayoutMutex);
     canv = g_CanvasConfig;
 
-    // 1. 計算等比例縮放矩陣
+    // 2. 處理相機震動 (Camera Shake) 與相機扭曲脈衝縮放 (Camera Distortion)
+    float shakeX = 0.0f;
+    float shakeY = 0.0f;
+    float pulseScale = 1.0f;
+
+    if (g_Preset.camera_shake_enabled) {
+        float timeSec = GetTickCount() * 0.001f * g_Preset.camera_shake_speed;
+        
+        float rpmRatio = ev_rpm / (ev_maxRpm > 0.0f ? ev_maxRpm : 6000.0f);
+        if (rpmRatio < 0.0f) rpmRatio = 0.0f;
+        if (rpmRatio > 1.0f) rpmRatio = 1.0f;
+        float vibe = rpmRatio * rpmRatio * 2.0f;
+
+        float accelMag = sqrt(ev_accelX * ev_accelX + ev_accelY * ev_accelY + ev_accelZ * ev_accelZ) / 9.81f;
+        if (accelMag > 1.0f) vibe += (accelMag - 1.0f) * 4.0f;
+
+        shakeX = sin(timeSec * 35.0f) * vibe * g_Preset.camera_shake_intensity;
+        shakeY = cos(timeSec * 31.0f) * vibe * g_Preset.camera_shake_intensity;
+    }
+
+    if (g_Preset.camera_distortion_enabled) {
+        float accelMag = sqrt(ev_accelX * ev_accelX + ev_accelY * ev_accelY + ev_accelZ * ev_accelZ) / 9.81f;
+        if (accelMag > 1.0f) {
+            pulseScale = 1.0f + (accelMag - 1.0f) * 0.03f * g_Preset.camera_distortion_intensity;
+        }
+    }
+
+    // 3. 計算等比例縮放矩陣
     float scaleX = (float)screenWidth / canv.logicalW;
     float scaleY = (float)screenHeight / canv.logicalH;
-    float scale = min(scaleX, scaleY);
+    float scale = min(scaleX, scaleY) * pulseScale;
 
-    float offsetX = ((float)screenWidth - canv.logicalW * scale) * 0.5f;
-    float offsetY = ((float)screenHeight - canv.logicalH * scale) * 0.5f;
+    float offsetX = ((float)screenWidth - canv.logicalW * scale) * 0.5f + shakeX;
+    float offsetY = ((float)screenHeight - canv.logicalH * scale) * 0.5f + shakeY;
 
-    // 2. 遍歷元件進行資料驅動繪製
+    // 4. 遍歷元件進行資料驅動繪製
     for (auto& comp : g_Components) {
         if (!comp.visible) continue;
 
@@ -509,11 +1077,31 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         float sw = comp.w * scale;
         float sh = comp.h * scale;
 
+        // 如果在預覽模式，繪製虛線定位邊框
+        if (g_Preset.previewMode == 1) {
+            drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + sw, sy + sh), IM_COL32(0, 240, 255, 200), 0.0f, 0, 1.5f * scale);
+            char lbl[128];
+            sprintf_s(lbl, "%s (Scale: %.2f)", comp.id.c_str(), scale / pulseScale);
+            drawList->AddText(nullptr, 11.0f * scale, ImVec2(sx + 2.0f * scale, sy + 2.0f * scale), IM_COL32(0, 240, 255, 255), lbl);
+        }
+
         // 獲取當前顏色評估值
         ImVec4 colVec = comp.colorConfig.Evaluate();
         ImU32 col = ImGui::ColorConvertFloat4ToU32(colVec);
 
-        if (comp.type == "Text") {
+        if (comp.type == "TireTempCard") {
+            DrawTireTempCard(drawList, sx, sy, sw, sh, scale);
+        }
+        else if (comp.type == "SuspTravelCard") {
+            DrawSuspTravelCard(drawList, sx, sy, sw, sh, scale);
+        }
+        else if (comp.type == "SlipLimitCard") {
+            DrawSlipLimitCard(drawList, sx, sy, sw, sh, scale);
+        }
+        else if (comp.type == "GForceCard") {
+            DrawGForceCard(drawList, sx, sy, sw, sh, scale);
+        }
+        else if (comp.type == "Text") {
             float val = comp.valueBinding.Evaluate(0.0f);
             
             // 將浮點數值格式化為字串 (如果值是整數，去小數點)
@@ -651,22 +1239,82 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
             float rad = angle * (3.14159265f / 180.0f);
             float length = comp.needleLength * scale;
 
-            float endX = spx + length * cos(rad);
-            float endY = spy + length * sin(rad);
+            std::string needleFile = "";
+            if (!comp.texturePath.empty()) {
+                needleFile = comp.texturePath;
+            } else if (!comp.stylePrefix.empty()) {
+                auto it = g_StyleConfigs.find(comp.stylePrefix);
+                if (it != g_StyleConfigs.end()) {
+                    needleFile = it->second.needleTexture;
+                }
+            }
 
-            // 繪製針尾 (配重效果)
-            float tailLength = length * 0.15f;
-            float tailX = spx - tailLength * cos(rad);
-            float tailY = spy - tailLength * sin(rad);
-            drawList->AddLine(ImVec2(spx, spy), ImVec2(tailX, tailY), IM_COL32(120, 120, 120, 255), 2.0f * scale);
+            if (!needleFile.empty()) {
+                ID3D11ShaderResourceView* needleTex = GetOrLoadTexture(needleFile);
+                if (needleTex) {
+                    DrawRotatedImage(drawList, needleTex, ImVec2(spx, spy), ImVec2(length * 2.0f, length * 2.0f), rad);
+                }
+            } else {
+                // 繪製針尾 (配重效果)
+                float tailLength = length * 0.15f;
+                float tailX = spx - tailLength * cos(rad);
+                float tailY = spy - tailLength * sin(rad);
+                drawList->AddLine(ImVec2(spx, spy), ImVec2(tailX, tailY), IM_COL32(120, 120, 120, 255), 2.0f * scale);
 
-            // 繪製指針主線
-            drawList->AddLine(ImVec2(spx, spy), ImVec2(endX, endY), col, 3.0f * scale);
+                // 繪製指針主線
+                float endX = spx + length * cos(rad);
+                float endY = spy + length * sin(rad);
+                drawList->AddLine(ImVec2(spx, spy), ImVec2(endX, endY), col, 3.0f * scale);
 
-            // 繪製中心針蓋
-            float capRadius = length * 0.12f;
-            drawList->AddCircleFilled(ImVec2(spx, spy), capRadius, IM_COL32(30, 30, 30, 255));
-            drawList->AddCircle(ImVec2(spx, spy), capRadius, IM_COL32(100, 100, 100, 255), 32, 1.0f);
+                // 繪製中心針蓋
+                float capRadius = length * 0.12f;
+                drawList->AddCircleFilled(ImVec2(spx, spy), capRadius, IM_COL32(30, 30, 30, 255));
+                drawList->AddCircle(ImVec2(spx, spy), capRadius, IM_COL32(100, 100, 100, 255), 32, 1.0f);
+            }
+        }
+        else if (comp.type == "Image" || comp.type == "Radio" || comp.type == "Controller") {
+            std::string texFile = "";
+            if (!comp.texturePath.empty()) {
+                texFile = comp.texturePath;
+            } else if (!comp.stylePrefix.empty()) {
+                auto it = g_StaticTextures.find(comp.stylePrefix);
+                if (it != g_StaticTextures.end()) {
+                    texFile = it->second;
+                }
+            }
+            if (!texFile.empty()) {
+                ID3D11ShaderResourceView* tex = GetOrLoadTexture(texFile);
+                if (tex) {
+                    drawList->AddImage((ImTextureID)tex, ImVec2(sx, sy), ImVec2(sx + sw, sy + sh));
+                }
+            }
+        }
+        else if (comp.type == "Gauge") {
+            auto it = g_StyleConfigs.find(comp.stylePrefix);
+            if (it != g_StyleConfigs.end()) {
+                StyleConfig config = it->second;
+
+                // 1. 繪製錶盤底圖
+                ID3D11ShaderResourceView* dialTex = GetOrLoadTexture(config.dialTexture);
+                if (dialTex) {
+                    drawList->AddImage((ImTextureID)dialTex, ImVec2(sx, sy), ImVec2(sx + sw, sy + sh));
+                }
+
+                // 2. 獲取數值與計算旋轉角度
+                float ratio = comp.valueBinding.Evaluate(0.0f);
+                ratio = max(0.0f, min(1.0f, ratio));
+                float angle = config.startAngle + ratio * (config.endAngle - config.startAngle);
+                float rad = angle * (3.14159265f / 180.0f);
+
+                // 3. 繪製指針貼圖
+                ID3D11ShaderResourceView* needleTex = GetOrLoadTexture(config.needleTexture);
+                if (needleTex) {
+                    float spx = sx + config.pivotX * sw;
+                    float spy = sy + config.pivotY * sh;
+                    float needleLen = comp.needleLength > 0.0f ? comp.needleLength * scale : min(sw, sh) * 0.45f;
+                    DrawRotatedImage(drawList, needleTex, ImVec2(spx, spy), ImVec2(needleLen * 2.0f, needleLen * 2.0f), rad);
+                }
+            }
         }
     }
 }
@@ -695,6 +1343,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow) {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    // 預留授權校驗接口
+    if (!VerifyLicenseStub()) {
+        MessageBoxW(nullptr, L"授權驗證失敗。", L"錯誤", MB_ICONERROR);
+        return FALSE;
+    }
 
     int port = 8000;
     for (int i = 1; i < __argc; ++i) {

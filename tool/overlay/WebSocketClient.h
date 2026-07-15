@@ -1,4 +1,12 @@
 #pragma once
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0602
+#elif _WIN32_WINNT < 0x0602
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0602
+#endif
+
 #include <windows.h>
 #include <winhttp.h>
 #include <string>
@@ -36,7 +44,7 @@ public:
         if (!m_hRequest) return false;
 
         // 升級連線為 WebSocket
-        if (!WinHttpSetOption(m_hRequest, WINHTTP_OPTION_UPGRADE_TO_WEBSOCKET, nullptr, 0)) {
+        if (!WinHttpSetOption(m_hRequest, WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0)) {
             WinHttpCloseHandle(m_hRequest);
             m_hRequest = nullptr;
             return false;
@@ -54,7 +62,7 @@ public:
             return false;
         }
 
-        m_hWebSocket = WinHttpWebSocketCompleteHandshake(m_hRequest, 0);
+        m_hWebSocket = WinHttpWebSocketCompleteUpgrade(m_hRequest, 0);
         if (!m_hWebSocket) {
             WinHttpCloseHandle(m_hRequest);
             m_hRequest = nullptr;
