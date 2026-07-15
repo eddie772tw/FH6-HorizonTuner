@@ -54,8 +54,8 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                 )
 
                 # Surface Rumble
-                rumble_fl, rumble_fr, rumble_rl, rumble_rr = (
-                    struct.unpack_from("<ffff", data, 148)
+                rumble_fl, rumble_fr, rumble_rl, rumble_rr = struct.unpack_from(
+                    "<ffff", data, 148
                 )
 
                 # Car Identification
@@ -66,9 +66,12 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                 cylinders = struct.unpack_from("<i", data, 228)[0]
 
                 # Combined Slip
-                combined_slip_fl, combined_slip_fr, combined_slip_rl, combined_slip_rr = (
-                    struct.unpack_from("<ffff", data, 180)
-                )
+                (
+                    combined_slip_fl,
+                    combined_slip_fr,
+                    combined_slip_rl,
+                    combined_slip_rr,
+                ) = struct.unpack_from("<ffff", data, 180)
 
                 telemetry_data = {
                     "IsRaceOn": is_race_on,
