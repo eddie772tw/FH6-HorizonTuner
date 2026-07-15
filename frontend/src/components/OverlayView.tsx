@@ -9,7 +9,7 @@ interface ColorRule {
 
 interface ComponentConfig {
   id: string;
-  type: 'Text' | 'ProgressBar' | 'LEDGroup' | 'Needle';
+  type: 'Text' | 'ProgressBar' | 'LEDGroup' | 'Needle' | 'Attitude' | 'Surface' | 'RaceBoard';
   x: number;
   y: number;
   w: number;
@@ -103,6 +103,16 @@ const DEFAULT_LAYOUT: LayoutConfig = {
       bindings: {
         value: '(rpm - idleRpm) / (maxRpm - idleRpm)',
         color: '#ff2200'
+      }
+    },
+    {
+      id: 'attitude_1',
+      type: 'Attitude',
+      x: 550, y: 250, w: 150, h: 150,
+      visible: true,
+      bindings: {
+        value: 'pitch,roll',
+        color: '#00f0ff'
       }
     }
   ]
@@ -271,6 +281,21 @@ export const OverlayView: React.FC = () => {
         id, type, x: 100, y: 200, w: 400, h: 20, visible: true,
         ledCount: 10, ledShape: 'circle', fillDirection: 'left_to_right',
         bindings: { value: '(rpm - idleRpm) / (maxRpm - idleRpm)', color: '#ffffff' }
+      };
+    } else if (type === 'Attitude') {
+      newComp = {
+        id, type, x: 100, y: 300, w: 200, h: 200, visible: true,
+        bindings: { value: 'pitch,roll', color: '#00f0ff' }
+      };
+    } else if (type === 'Surface') {
+      newComp = {
+        id, type, x: 100, y: 300, w: 250, h: 100, visible: true,
+        bindings: { value: 'surfaceRumble', color: '#ffaa00' }
+      };
+    } else if (type === 'RaceBoard') {
+      newComp = {
+        id, type, x: 100, y: 300, w: 300, h: 150, visible: true,
+        bindings: { value: 'lapNumber,racePosition', color: '#ffffff' }
       };
     } else {
       newComp = {
@@ -530,6 +555,18 @@ export const OverlayView: React.FC = () => {
             + {t('Needle') || '旋轉針'}
           </button>
 
+          <button onClick={() => addComponent('Attitude')} className="cyber-btn-glow" style={buttonStyle('#00f0ff')}>
+            + 姿態儀
+          </button>
+
+          <button onClick={() => addComponent('Surface')} className="cyber-btn-glow" style={buttonStyle('#ffaa00')}>
+            + 路面震動
+          </button>
+
+          <button onClick={() => addComponent('RaceBoard')} className="cyber-btn-glow" style={buttonStyle('#ffffff')}>
+            + 比賽面板
+          </button>
+
           <button onClick={exportLayout} className="cyber-btn-glow" style={buttonStyle('#00ff00', 'rgba(0,255,0,0.05)')}>
             {t('Export') || '匯出佈局'}
           </button>
@@ -741,6 +778,27 @@ export const OverlayView: React.FC = () => {
                           strokeWidth="1"
                         />
                       </svg>
+                    )}
+
+                    {comp.type === 'Attitude' && (
+                      <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: `2px solid ${previewColor}`, position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: '100%', background: 'rgba(0, 240, 255, 0.2)', borderTop: `2px solid ${previewColor}`, transform: 'translateY(-10px) rotate(15deg)' }} />
+                        <div style={{ position: 'absolute', top: '50%', left: '40%', width: '20%', height: '2px', background: '#fff' }} />
+                      </div>
+                    )}
+                    {comp.type === 'Surface' && (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <svg width="90%" height="80%" viewBox="0 0 100 50" preserveAspectRatio="none">
+                           <polyline points="0,25 20,25 25,10 30,40 35,25 60,25 65,15 70,35 75,25 100,25" fill="none" stroke={previewColor} strokeWidth="2" />
+                         </svg>
+                      </div>
+                    )}
+                    {comp.type === 'RaceBoard' && (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '10px', boxSizing: 'border-box' }}>
+                         <div style={{ color: previewColor, fontSize: '1.2rem', fontWeight: 'bold' }}>LAP 3/3</div>
+                         <div style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold' }}>POS 1</div>
+                         <div style={{ color: '#aaa', fontSize: '0.9rem' }}>TIME 01:23.456</div>
+                      </div>
                     )}
                   </div>
 

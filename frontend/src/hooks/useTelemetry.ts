@@ -37,6 +37,15 @@ export interface TelemetryData {
   HandBrakeInput?: number;
   Gear?: number;
   SteerInput?: number;
+  Pitch?: number;
+  Roll?: number;
+  SurfaceRumble?: number[];
+  TireCombinedSlip?: number[];
+  Cylinders?: number;
+  DistanceTraveled?: number;
+  CurrentRaceTime?: number;
+  LapNumber?: number;
+  RacePosition?: number;
 }
 
 let sharedWs: WebSocket | null = null;
