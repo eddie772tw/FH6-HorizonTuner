@@ -154,7 +154,8 @@ export const OverlayView: React.FC = () => {
     { id: 'tire_temp', name: '四輪胎溫卡片 (Tire Temp)' },
     { id: 'susp_travel', name: '懸吊行程卡片 (Susp Travel)' },
     { id: 'slip_limit', name: '輪胎極限打滑卡片 (Slip Limit)' },
-    { id: 'g_force', name: '加速度雷達卡片 (G-Force)' }
+    { id: 'g_force', name: '加速度雷達卡片 (G-Force)' },
+    { id: 'map', name: '地圖軌跡卡片 (Map Card)' }
   ];
 
   return (

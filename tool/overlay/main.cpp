@@ -63,6 +63,9 @@ struct TelemetryData {
     float yaw = 0.0f;
     float power = 0.0f;
     float boost = 0.0f;
+    float posX = 0.0f;
+    float posY = 0.0f;
+    float posZ = 0.0f;
 };
 
 std::wstring GetExeDirectory() {
@@ -265,6 +268,7 @@ float ev_power = 0.0f;
 float ev_boost = 0.0f;
 float ev_accelX = 0.0f, ev_accelY = 0.0f, ev_accelZ = 0.0f;
 float ev_yaw = 0.0f, ev_pitch = 0.0f, ev_roll = 0.0f;
+float ev_posX = 0.0f, ev_posY = 0.0f, ev_posZ = 0.0f;
 float ev_tireTempFL = 0.0f, ev_tireTempFR = 0.0f, ev_tireTempRL = 0.0f, ev_tireTempRR = 0.0f;
 float ev_suspTravelFL = 0.0f, ev_suspTravelFR = 0.0f, ev_suspTravelRL = 0.0f, ev_suspTravelRR = 0.0f;
 float ev_slipRatioFL = 0.0f, ev_slipRatioFR = 0.0f, ev_slipRatioRL = 0.0f, ev_slipRatioRR = 0.0f;
@@ -381,6 +385,7 @@ struct Component {
     float w = 100.0f;
     float h = 50.0f;
     bool visible = true;
+    int zOrder = 0;
     
     // 文字屬性
     float fontSize = 18.0f;
@@ -436,6 +441,7 @@ struct OverlayPreset {
     WidgetConfig susp_travel;
     WidgetConfig slip_limit;
     WidgetConfig g_force;
+    WidgetConfig map;
 
     // 相機抖動效果
     bool camera_shake_enabled = false;
@@ -447,8 +453,8 @@ struct OverlayPreset {
 
 // 佈局設定結構
 struct CanvasConfig {
-    float logicalW = 800.0f;
-    float logicalH = 480.0f;
+    float logicalW = 1920.0f;
+    float logicalH = 1080.0f;
 };
 
 // 全局狀態
@@ -547,6 +553,26 @@ void LoadWidgetConfig(const std::map<std::string, std::string>& ini, const std::
     }
 }
 
+// 地圖路徑軌跡
+std::vector<ImVec2> g_MapPath;
+std::mutex g_MapPathMutex;
+
+// 全域鍵盤 Hook
+HHOOK g_KeyboardHook = nullptr;
+HWND g_MainWindow = nullptr;
+
+LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
+        KBDLLHOOKSTRUCT* kb = (KBDLLHOOKSTRUCT*)lParam;
+        
+        // Caps Lock (0x14) 用於切換 UI 穿透與滑鼠交互狀態
+        if (kb->vkCode == VK_CAPITAL) {
+            PostMessageW(g_MainWindow, 0x8001, 100, 0);
+        }
+    }
+    return CallNextHookEx(g_KeyboardHook, nCode, wParam, lParam);
+}
+
 DXGIOverlayManager g_OverlayManager;
 WebSocketClient    g_WSClient;
 TelemetryData      g_Telemetry;
@@ -567,6 +593,9 @@ void InitSymbolTable() {
     g_SymbolTable.add_variable("yaw", ev_yaw);
     g_SymbolTable.add_variable("pitch", ev_pitch);
     g_SymbolTable.add_variable("roll", ev_roll);
+    g_SymbolTable.add_variable("posX", ev_posX);
+    g_SymbolTable.add_variable("posY", ev_posY);
+    g_SymbolTable.add_variable("posZ", ev_posZ);
 
     g_SymbolTable.add_variable("tireTempFL", ev_tireTempFL);
     g_SymbolTable.add_variable("tireTempFR", ev_tireTempFR);
@@ -606,6 +635,9 @@ void UpdateExpressionVariables(const TelemetryData& t) {
     ev_yaw = t.yaw;
     ev_pitch = t.pitch;
     ev_roll = t.roll;
+    ev_posX = t.posX;
+    ev_posY = t.posY;
+    ev_posZ = t.posZ;
     
     ev_tireTempFL = t.tireTemp[0];
     ev_tireTempFR = t.tireTemp[1];
@@ -672,6 +704,7 @@ void LoadLayoutConfig() {
     LoadWidgetConfig(ini, "susp_travel", g_Preset.susp_travel);
     LoadWidgetConfig(ini, "slip_limit", g_Preset.slip_limit);
     LoadWidgetConfig(ini, "g_force", g_Preset.g_force);
+    LoadWidgetConfig(ini, "map", g_Preset.map);
 
     if (ini.count("camera_shake_enabled")) {
         g_Preset.camera_shake_enabled = (ini["camera_shake_enabled"] == "1" || ini["camera_shake_enabled"] == "true");
@@ -700,6 +733,17 @@ void LoadLayoutConfig() {
         g_Preset.camera_distortion_intensity = 1.0f;
     }
 
+    std::vector<int> passOrder;
+    if (ini.count("pass_order")) {
+        std::stringstream ss(ini.at("pass_order"));
+        std::string val;
+        while (std::getline(ss, val, ',')) {
+            try {
+                passOrder.push_back(std::stoi(val));
+            } catch (...) {}
+        }
+    }
+
     std::vector<Component> newComponents;
     
     auto addCompFromWidget = [&](const std::string& id, const std::string& type, const std::string& stylePrefix, WidgetConfig& config, const std::string& formula) {
@@ -726,12 +770,17 @@ void LoadLayoutConfig() {
         else if (id == "susp_travel") { base_w = 220.0f; base_h = 180.0f; }
         else if (id == "slip_limit") { base_w = 220.0f; base_h = 180.0f; }
         else if (id == "g_force") { base_w = 180.0f; base_h = 180.0f; }
+        else if (id == "map") { base_w = 200.0f; base_h = 200.0f; }
+        else if (id.find("needle") != std::string::npos) {
+            base_w = 350.0f;
+            base_h = 175.0f;
+        }
 
         float w = base_w * config.scale;
         float h = base_h * config.scale;
 
-        float canvas_w = 800.0f;
-        float canvas_h = 480.0f;
+        float canvas_w = g_CanvasConfig.logicalW;
+        float canvas_h = g_CanvasConfig.logicalH;
         float x = 0.0f;
         float y = 0.0f;
 
@@ -762,6 +811,17 @@ void LoadLayoutConfig() {
         c.h = h;
         c.visible = true;
 
+        if (type == "Needle") {
+            auto it = g_StyleConfigs.find(stylePrefix);
+            if (it != g_StyleConfigs.end()) {
+                c.pivotX = it->second.pivotX * base_w;
+                c.pivotY = it->second.pivotY * base_h;
+                c.startAngle = it->second.startAngle;
+                c.endAngle = it->second.endAngle;
+                c.needleLength = min(base_w, base_h) * 0.45f;
+            }
+        }
+
         if (!formula.empty()) {
             c.valueBinding.Compile(formula);
         }
@@ -779,6 +839,23 @@ void LoadLayoutConfig() {
     std::string radioPrefix = (g_Preset.radio.style >= 0 && g_Preset.radio.style < 6) ? radioPrefixes[g_Preset.radio.style] : "FordGT_Radio";
 
     addCompFromWidget("dashboard", "Image", dbPrefix, g_Preset.dashboard, "");
+    
+    // 自動生成內建儀表板的指針
+    if (g_Preset.dashboard.enabled) {
+        if (g_Preset.dashboard.style == 1) { // NFS 2015
+            WidgetConfig needleConfig = g_Preset.dashboard;
+            addCompFromWidget("dashboard_rpm_needle", "Needle", "NFS2015_RPM", needleConfig, "(rpm - idleRpm) / (maxRpm - idleRpm)");
+        }
+        else if (g_Preset.dashboard.style == 4) { // Altezza TRD
+            WidgetConfig needleConfig = g_Preset.dashboard;
+            addCompFromWidget("dashboard_rpm_needle", "Needle", "AltezzaTRD_RPM", needleConfig, "(rpm - idleRpm) / (maxRpm - idleRpm)");
+        }
+        else if (g_Preset.dashboard.style == 5) { // Ford GT
+            WidgetConfig needleConfig = g_Preset.dashboard;
+            addCompFromWidget("dashboard_speed_needle", "Needle", "FordGT_Speed", needleConfig, "speed / 300.0");
+        }
+    }
+
     addCompFromWidget("tacho", "Gauge", tachoPrefix, g_Preset.tacho, "(rpm - idleRpm) / (maxRpm - idleRpm)");
     addCompFromWidget("radio", "Radio", radioPrefix, g_Preset.radio, "");
     addCompFromWidget("controller", "Controller", "Xbox_Controller", g_Preset.controller, "");
@@ -791,6 +868,39 @@ void LoadLayoutConfig() {
     addCompFromWidget("susp_travel", "SuspTravelCard", "SuspTravel_Card", g_Preset.susp_travel, "");
     addCompFromWidget("slip_limit", "SlipLimitCard", "SlipLimit_Card", g_Preset.slip_limit, "");
     addCompFromWidget("g_force", "GForceCard", "GForce_Card", g_Preset.g_force, "");
+    addCompFromWidget("map", "MapCard", "Map_Card", g_Preset.map, "");
+
+    // Z-Order 還原排序
+    auto getWidgetTypeIndex = [](const std::string& id) -> int {
+        if (id == "controller") return 0;
+        if (id == "map") return 1;
+        if (id == "radio") return 2;
+        if (id == "dashboard") return 3;
+        if (id == "tacho" || id == "dashboard_rpm_needle" || id == "dashboard_speed_needle") return 4;
+        if (id == "boost") return 5;
+        if (id == "oil_pressure") return 6;
+        if (id == "oil_temp") return 7;
+        if (id == "coolant_temp") return 8;
+        if (id == "tire_temp") return 9;
+        if (id == "susp_travel") return 10;
+        if (id == "slip_limit") return 11;
+        if (id == "g_force") return 12;
+        return 99;
+    };
+
+    for (auto& comp : newComponents) {
+        int idx = getWidgetTypeIndex(comp.id);
+        auto it = std::find(passOrder.begin(), passOrder.end(), idx);
+        if (it != passOrder.end()) {
+            comp.zOrder = (int)std::distance(passOrder.begin(), it);
+        } else {
+            comp.zOrder = idx;
+        }
+    }
+
+    std::sort(newComponents.begin(), newComponents.end(), [](const Component& a, const Component& b) {
+        return a.zOrder < b.zOrder;
+    });
 
     g_Components = std::move(newComponents);
 }
@@ -813,7 +923,10 @@ struct BinaryTelemetryPacket {
     float suspTravel[4];
     float slipRatio[4];
     float slipAngle[4];
-    char reserved[16];
+    float posX;
+    float posY;
+    float posZ;
+    char reserved[4];
 };
 #pragma pack(pop)
 
@@ -870,6 +983,9 @@ void OnWebSocketMessage(const void* data, size_t len, bool isBinary) {
                     // 為了使 slipAngle 符合 UpdateExpressionVariables，將其直接賦值
                     g_Telemetry.slipAngle[i] = packet->slipAngle[i] / 57.29578f; 
                 }
+                g_Telemetry.posX = packet->posX;
+                g_Telemetry.posY = packet->posY;
+                g_Telemetry.posZ = packet->posZ;
             }
         } else {
             // 保留原有 JSON 相容解析方式
@@ -901,6 +1017,9 @@ void OnWebSocketMessage(const void* data, size_t len, bool isBinary) {
             if (j.contains("AccelerationY")) g_Telemetry.accel[1] = j["AccelerationY"] / 9.81f;
             if (j.contains("AccelerationZ")) g_Telemetry.accel[2] = j["AccelerationZ"] / 9.81f;
             if (j.contains("Yaw")) g_Telemetry.yaw = j["Yaw"];
+            if (j.contains("PositionX")) g_Telemetry.posX = j["PositionX"];
+            if (j.contains("PositionY")) g_Telemetry.posY = j["PositionY"];
+            if (j.contains("PositionZ")) g_Telemetry.posZ = j["PositionZ"];
         }
     }
     catch (const std::exception& e) {
@@ -1024,6 +1143,49 @@ void DrawGForceCard(ImDrawList* drawList, float sx, float sy, float w, float h, 
     drawList->AddCircle(dotPos, 8.0f * scale, IM_COL32(0, 240, 255, 100), 16, 1.5f * scale);
 }
 
+// 5. 地圖卡片 Widget 繪製
+void DrawMapCard(ImDrawList* drawList, float sx, float sy, float w, float h, float scale) {
+    drawList->AddRectFilled(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(10, 15, 20, 200), 8.0f * scale);
+    drawList->AddRect(ImVec2(sx, sy), ImVec2(sx + w, sy + h), IM_COL32(255, 255, 255, 30), 8.0f * scale, 0, 1.0f);
+    drawList->AddText(nullptr, 14.0f * scale, ImVec2(sx + 10 * scale, sy + 8 * scale), IM_COL32(0, 240, 255, 255), "TRACK MAP");
+
+    std::lock_guard<std::mutex> pathLock(g_MapPathMutex);
+    if (g_MapPath.size() >= 2) {
+        float minX = FLT_MAX, maxX = -FLT_MAX, minY = FLT_MAX, maxY = -FLT_MAX;
+        for (const auto& p : g_MapPath) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        }
+        float pathW = maxX - minX;
+        float pathH = maxY - minY;
+        float maxDim = max(pathW, pathH);
+        if (maxDim < 1.0f) maxDim = 1.0f;
+
+        float margin = 20.0f * scale;
+        float drawW = w - margin * 2.0f;
+        float drawH = h - margin * 2.0f - 15.0f * scale;
+        float mapScale = min(drawW, drawH) / maxDim;
+
+        ImVec2 center(sx + w * 0.5f, sy + 15.0f * scale + h * 0.5f);
+        auto mapToScreen = [&](const ImVec2& p) {
+            float lx = (p.x - (minX + maxX) * 0.5f) * mapScale;
+            float ly = (p.y - (minY + maxY) * 0.5f) * mapScale;
+            return ImVec2(center.x + lx, center.y + ly);
+        };
+
+        for (size_t i = 0; i < g_MapPath.size() - 1; ++i) {
+            drawList->AddLine(mapToScreen(g_MapPath[i]), mapToScreen(g_MapPath[i+1]), IM_COL32(0, 240, 255, 200), 2.0f * scale);
+        }
+
+        // 繪製車載位置
+        ImVec2 carPos = mapToScreen(ImVec2(ev_posX, ev_posZ));
+        drawList->AddCircleFilled(carPos, 5.0f * scale, IM_COL32(255, 50, 80, 255));
+        drawList->AddCircle(carPos, 8.0f * scale, IM_COL32(255, 50, 80, 100), 16, 1.5f * scale);
+    }
+}
+
 // 繪製資料驅動 UI
 void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     TelemetryData t;
@@ -1059,6 +1221,24 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         UpdateExpressionVariables(mockT);
     } else {
         UpdateExpressionVariables(t);
+    }
+
+    // 記錄地圖軌跡
+    static ImVec2 lastPos(0.0f, 0.0f);
+    if (t.isRaceOn) {
+        std::lock_guard<std::mutex> pathLock(g_MapPathMutex);
+        float dx = t.posX - lastPos.x;
+        float dy = t.posZ - lastPos.y;
+        if (g_MapPath.empty() || (dx * dx + dy * dy > 2.0f)) {
+            g_MapPath.push_back(ImVec2(t.posX, t.posZ));
+            lastPos = ImVec2(t.posX, t.posZ);
+            if (g_MapPath.size() > 2000) {
+                g_MapPath.erase(g_MapPath.begin());
+            }
+        }
+    } else {
+        std::lock_guard<std::mutex> pathLock(g_MapPathMutex);
+        g_MapPath.clear();
     }
 
     CanvasConfig canv;
@@ -1135,6 +1315,9 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         }
         else if (comp.type == "GForceCard") {
             DrawGForceCard(drawList, sx, sy, sw, sh, scale);
+        }
+        else if (comp.type == "MapCard") {
+            DrawMapCard(drawList, sx, sy, sw, sh, scale);
         }
         else if (comp.type == "Text") {
             float val = comp.valueBinding.Evaluate(0.0f);
@@ -1363,6 +1546,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     case WM_WINDOWPOSCHANGED:
         g_OverlayManager.OnWindowMoved();
         break;
+    case 0x8001: // WM_TOGGLE_PASSTHROUGH
+        if (wParam == 1) { // 切換顯示/隱藏
+            static bool visible = true;
+            visible = !visible;
+            ShowWindow(hWnd, visible ? SW_SHOW : SW_HIDE);
+        }
+        else if (wParam == 100) { // 切換滑鼠穿透狀態
+            LONG_PTR exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+            if (exStyle & WS_EX_TRANSPARENT) {
+                SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT);
+            } else {
+                SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);
+            }
+            SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        }
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -1420,7 +1619,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     if (!hWnd) return FALSE;
 
+    g_MainWindow = hWnd;
+    g_KeyboardHook = SetWindowsHookExW(WH_KEYBOARD_LL, LowLevelKeyboardProc, hInstance, 0);
+
     if (!g_OverlayManager.Initialize(hWnd, width, height)) {
+        if (g_KeyboardHook) UnhookWindowsHookEx(g_KeyboardHook);
         MessageBoxW(nullptr, L"無法初始化 D3D11 與 Overlay 交換鏈。", L"錯誤", MB_ICONERROR);
         return FALSE;
     }
@@ -1479,6 +1682,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         if (!g_WSClient.IsConnected() && (GetTickCount() % 300 == 0)) {
             g_WSClient.Connect(L"127.0.0.1", port, wsPath, OnWebSocketMessage);
         }
+    }
+
+    if (g_KeyboardHook) {
+        UnhookWindowsHookEx(g_KeyboardHook);
     }
 
     g_WSClient.Disconnect();

@@ -1832,7 +1832,7 @@ def save_dict_to_ini(data: dict, filepath: str):
 
 
 def ensure_telemetry_widgets(data: dict) -> dict:
-    telemetry_widgets = ["tire_temp", "susp_travel", "slip_limit", "g_force"]
+    telemetry_widgets = ["tire_temp", "susp_travel", "slip_limit", "g_force", "map"]
     for w in telemetry_widgets:
         enabled_key = f"{w}_widget_enabled"
         widget_key = f"{w}_widget"

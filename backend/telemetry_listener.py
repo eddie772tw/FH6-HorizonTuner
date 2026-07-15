@@ -20,9 +20,10 @@ logger = logging.getLogger(__name__)
 # - f[4]: SuspTravel FL, FR, RL, RR (16 bytes)
 # - f[4]: SlipRatio FL, FR, RL, RR (16 bytes)
 # - f[4]: SlipAngle FL, FR, RL, RR (16 bytes)
-# - 16 bytes: Reserved padding (對齊 128 位元組)
+# - f[3]: Position X, Y, Z (12 bytes)
+# - 4 bytes: Reserved padding (對齊 136 位元組)
 TELEMETRY_STRUCT_FORMAT = (
-    "<iffffffffffff" + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "16s"
+    "<iffffi" + "f" * 8 + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "fff" + "4s"
 )
 
 
@@ -42,7 +43,7 @@ def pack_telemetry_binary(data: dict) -> bytes:
         accel_z = float(data.get("AccelerationZ", 0.0)) / 9.81
 
         yaw = float(data.get("Yaw", 0.0))
-        # 暫時用 0.0 代替 Pitch/Roll (原 telemetry_listener.py 中沒有對這兩者直接賦值)
+        # 暫時用 0.0 代替 Pitch/Roll
         pitch = 0.0
         roll = 0.0
 
@@ -60,7 +61,11 @@ def pack_telemetry_binary(data: dict) -> bytes:
         # 轉換弧度為度
         slip_angles_deg = [sa * 57.29578 for sa in slip_angles]
 
-        reserved = b"\x00" * 16
+        pos_x = float(data.get("PositionX", 0.0))
+        pos_y = float(data.get("PositionY", 0.0))
+        pos_z = float(data.get("PositionZ", 0.0))
+
+        reserved = b"\x00" * 4
 
         return struct.pack(
             TELEMETRY_STRUCT_FORMAT,
@@ -82,12 +87,15 @@ def pack_telemetry_binary(data: dict) -> bytes:
             *susp_travels,
             *slip_ratios,
             *slip_angles_deg,
+            pos_x,
+            pos_y,
+            pos_z,
             reserved,
         )
     except Exception as e:
         logger.error(f"Failed to pack telemetry data: {e}")
         # 返回一個全 0 封包
-        return b"\x00" * 128
+        return b"\x00" * 136
 
 
 class TelemetryProtocol(asyncio.DatagramProtocol):
