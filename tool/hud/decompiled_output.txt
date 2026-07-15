@@ -1,0 +1,384 @@
+=== Target Decompilation Output ===
+
+[*] Looking for Xrefs to vigem_target_x360_update (0x1400bd998)...
+
+--- Function at 1400414c0 calling vigem_target_x360_update ---
+
+void FUN_1400414c0(longlong param_1)
+
+{
+  longlong lVar1;
+  longlong lVar2;
+  void *_Memory;
+  int iVar3;
+  undefined8 local_18;
+  undefined4 uStack_10;
+  undefined4 uStack_c;
+  
+  iVar3 = _Mtx_lock();
+  if (iVar3 == 0) {
+    iVar3 = *(int *)(param_1 + 0x4c);
+    if (iVar3 == 0x7fffffff) {
+LAB_14004164a:
+      *(int *)(param_1 + 0x4c) = iVar3 + -1;
+                    /* WARNING: Subroutine does not return */
+      std::_Throw_Cpp_error(6);
+    }
+    if (*(char *)(param_1 + 0x60) != '\0') {
+      *(undefined1 *)(param_1 + 0x60) = 0;
+      _Mtx_unlock(param_1);
+      if (*(int *)(param_1 + 0x58) != 0) {
+        iVar3 = _Thrd_id();
+        if (*(int *)(param_1 + 0x58) == iVar3) goto LAB_14004165a;
+        local_18 = *(undefined8 *)(param_1 + 0x50);
+        uStack_10 = *(undefined4 *)(param_1 + 0x58);
+        uStack_c = *(undefined4 *)(param_1 + 0x5c);
+        iVar3 = _Thrd_join(&local_18,0);
+        if (iVar3 != 0) {
+                    /* WARNING: Subroutine does not return */
+          std::_Throw_Cpp_error(2);
+        }
+        *(undefined8 *)(param_1 + 0x50) = 0;
+        *(undefined8 *)(param_1 + 0x58) = 0;
+      }
+      FUN_14003f5d0(param_1 + 0xe0);
+      lVar1 = *(longlong *)(param_1 + 0x230);
+      lVar2 = *(longlong *)(param_1 + 0x238);
+      if (lVar1 != 0) {
+        if (lVar2 != 0) {
+          local_18 = 0;
+          uStack_10 = 0;
+          vigem_target_x360_update(lVar1,lVar2,&local_18);
+          vigem_target_remove(lVar1,lVar2);
+          vigem_target_free(lVar2);
+        }
+        vigem_disconnect(lVar1);
+        vigem_free(lVar1);
+      }
+      *(undefined8 *)(param_1 + 0x230) = 0;
+      *(undefined8 *)(param_1 + 0x238) = 0;
+      *(undefined1 *)(param_1 + 0x240) = 0;
+      iVar3 = _Mtx_lock(param_1);
+      if (iVar3 != 0) goto LAB_14004165a;
+      iVar3 = *(int *)(param_1 + 0x4c);
+      if (iVar3 == 0x7fffffff) goto LAB_14004164a;
+      _Memory = *(void **)(param_1 + 0xd8);
+      if (_Memory != (void *)0x0) {
+        FUN_140006c10(_Memory);
+        free(_Memory);
+      }
+      *(undefined8 *)(param_1 + 0xd8) = 0;
+      *(undefined1 *)(param_1 + 0x1d8) = 0;
+      *(undefined1 *)(param_1 + 0x240) = 0;
+      *(undefined4 *)(param_1 + 0x1d4) = 0;
+      FUN_1400417b0("drift_assist: stopped");
+    }
+    _Mtx_unlock(param_1);
+    return;
+  }
+LAB_14004165a:
+                    /* WARNING: Subroutine does not return */
+  std::_Throw_Cpp_error(5);
+}
+
+
+
+--- Function at 140040b50 calling vigem_target_x360_update ---
+
+void FUN_140040b50(longlong param_1,longlong param_2,float param_3)
+
+{
+  float *pfVar1;
+  float fVar2;
+  float local_res8 [6];
+  float local_res20 [2];
+  undefined2 local_98;
+  undefined1 local_96;
+  undefined1 local_95;
+  undefined2 local_94;
+  undefined2 local_92;
+  undefined2 local_90;
+  undefined2 local_8e;
+  float local_88 [2];
+  float local_80 [2];
+  float local_78 [2];
+  float local_70 [2];
+  float local_68 [2];
+  float local_60 [2];
+  float local_58 [2];
+  float local_50 [2];
+  float local_48 [2];
+  float local_40 [14];
+  
+  if ((*(longlong *)(param_1 + 0x230) != 0) && (*(longlong *)(param_1 + 0x238) != 0)) {
+    local_res8[0] = *(float *)(param_2 + 0x10);
+    local_98 = *(undefined2 *)(param_2 + 0x18);
+    local_res20[0] = 1.0;
+    local_80[0] = 1.0;
+    local_70[0] = 1.0;
+    local_60[0] = 1.0;
+    local_50[0] = 1.0;
+    local_40[0] = 1.0;
+    local_88[0] = *(float *)(param_2 + 0x14);
+    local_78[0] = param_3;
+    pfVar1 = local_res8;
+    if (DAT_1400bf024 <= *(float *)(param_2 + 0x10)) {
+      pfVar1 = local_res20;
+    }
+    local_68[0] = *(float *)(param_2 + 4);
+    local_58[0] = *(float *)(param_2 + 8);
+    fVar2 = *pfVar1;
+    if (fVar2 <= 0.0) {
+      fVar2 = 0.0;
+    }
+    local_48[0] = *(float *)(param_2 + 0xc);
+    local_96 = (undefined1)(int)(fVar2 * DAT_1400bfcf8);
+    pfVar1 = local_88;
+    if (DAT_1400bf024 <= *(float *)(param_2 + 0x14)) {
+      pfVar1 = local_80;
+    }
+    fVar2 = *pfVar1;
+    if (fVar2 <= 0.0) {
+      fVar2 = 0.0;
+    }
+    local_95 = (undefined1)(int)(fVar2 * DAT_1400bfcf8);
+    pfVar1 = local_78;
+    if (DAT_1400bf024 <= param_3) {
+      pfVar1 = local_70;
+    }
+    fVar2 = *pfVar1;
+    if (*pfVar1 <= DAT_1400bf8d0) {
+      fVar2 = DAT_1400bf8d0;
+    }
+    local_94 = (undefined2)(int)(fVar2 * DAT_1400c2b40);
+    pfVar1 = local_68;
+    if (DAT_1400bf024 <= *(float *)(param_2 + 4)) {
+      pfVar1 = local_60;
+    }
+    fVar2 = *pfVar1;
+    if (*pfVar1 <= DAT_1400bf8d0) {
+      fVar2 = DAT_1400bf8d0;
+    }
+    local_92 = (undefined2)(int)(fVar2 * DAT_1400c2b40);
+    pfVar1 = local_58;
+    if (DAT_1400bf024 <= *(float *)(param_2 + 8)) {
+      pfVar1 = local_50;
+    }
+    fVar2 = *pfVar1;
+    if (*pfVar1 <= DAT_1400bf8d0) {
+      fVar2 = DAT_1400bf8d0;
+    }
+    local_90 = (undefined2)(int)(fVar2 * DAT_1400c2b40);
+    pfVar1 = local_48;
+    if (DAT_1400bf024 <= *(float *)(param_2 + 0xc)) {
+      pfVar1 = local_40;
+    }
+    fVar2 = *pfVar1;
+    if (*pfVar1 <= DAT_1400bf8d0) {
+      fVar2 = DAT_1400bf8d0;
+    }
+    local_8e = (undefined2)(int)(fVar2 * DAT_1400c2b40);
+    vigem_target_x360_update
+              (*(longlong *)(param_1 + 0x230),*(longlong *)(param_1 + 0x238),&local_98);
+  }
+  return;
+}
+
+
+
+[*] Looking for Xrefs to init_d3d string (0x1400bf298)...
+
+--- Function at 140013200 referencing init_d3d string ---
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+ulonglong FUN_140013200(longlong param_1,undefined8 param_2,undefined4 param_3,undefined4 param_4)
+
+{
+  longlong *plVar1;
+  longlong *plVar2;
+  longlong *plVar3;
+  code *pcVar4;
+  longlong *plVar5;
+  byte bVar6;
+  int iVar7;
+  ulonglong uVar8;
+  undefined8 uVar9;
+  char *pcVar10;
+  undefined1 auStack_f8 [32];
+  longlong *local_d8;
+  undefined4 local_d0;
+  undefined4 local_c8;
+  longlong *local_c0;
+  undefined8 local_b8;
+  longlong *local_b0;
+  longlong *local_a8;
+  longlong *local_a0;
+  longlong *local_98;
+  longlong *local_90;
+  undefined4 local_88 [2];
+  undefined4 local_80;
+  undefined4 local_7c;
+  undefined8 local_78;
+  undefined8 local_70;
+  undefined4 local_68;
+  undefined8 local_64;
+  undefined4 local_5c;
+  undefined4 local_58;
+  undefined4 local_54;
+  ulonglong local_50;
+  
+  local_50 = DAT_1400e1ac0 ^ (ulonglong)auStack_f8;
+  local_88[0] = 0xb000;
+  plVar1 = (longlong *)(param_1 + 0x38);
+  plVar2 = (longlong *)*plVar1;
+  if (plVar2 != (longlong *)0x0) {
+    *plVar1 = 0;
+    (**(code **)(*plVar2 + 0x10))();
+  }
+  plVar2 = (longlong *)(param_1 + 0x30);
+  plVar3 = (longlong *)*plVar2;
+  if (plVar3 != (longlong *)0x0) {
+    *plVar2 = 0;
+    (**(code **)(*plVar3 + 0x10))();
+  }
+  local_b8 = 0;
+  local_c8 = 7;
+  local_d0 = 1;
+  local_d8 = (longlong *)local_88;
+  local_c0 = plVar2;
+  local_b0 = plVar1;
+  iVar7 = D3D11CreateDevice(0,1,0);
+  if (iVar7 < 0) {
+    uVar8 = FUN_1400417b0("init_d3d: D3D11CreateDevice FAILED hr=0x%08X",iVar7);
+    return uVar8 & 0xffffffffffffff00;
+  }
+  local_98 = (longlong *)0x0;
+  local_a0 = (longlong *)0x0;
+  local_a8 = (longlong *)0x0;
+  iVar7 = (*(code *)**(undefined8 **)*plVar2)((undefined8 *)*plVar2,&DAT_1400bf878,&local_98);
+  plVar3 = local_98;
+  plVar1 = local_a0;
+  if (iVar7 < 0) {
+LAB_14001353c:
+    pcVar10 = "init_d3d: DXGI factory lookup FAILED hr=0x%08X";
+  }
+  else {
+    pcVar4 = *(code **)(*local_98 + 0x38);
+    if (local_a0 != (longlong *)0x0) {
+      local_a0 = (longlong *)0x0;
+      (**(code **)(*plVar1 + 0x10))();
+    }
+    iVar7 = (*pcVar4)(plVar3,&local_a0);
+    plVar3 = local_a0;
+    plVar1 = local_a8;
+    if (iVar7 < 0) goto LAB_14001353c;
+    pcVar4 = *(code **)(*local_a0 + 0x30);
+    if (local_a8 != (longlong *)0x0) {
+      local_a8 = (longlong *)0x0;
+      (**(code **)(*plVar1 + 0x10))();
+    }
+    iVar7 = (*pcVar4)(plVar3,&DAT_1400bf170,&local_a8);
+    if (iVar7 < 0) goto LAB_14001353c;
+    (**(code **)(*local_98 + 0x50))(local_98,7);
+    plVar5 = local_a8;
+    local_78 = 0x57;
+    local_70 = 1;
+    local_68 = 0x20;
+    local_64 = 3;
+    local_5c = 4;
+    local_58 = 1;
+    local_54 = 0x40;
+    pcVar4 = *(code **)(*local_a8 + 0xc0);
+    plVar1 = (longlong *)(param_1 + 0x40);
+    plVar3 = (longlong *)*plVar1;
+    local_80 = param_3;
+    local_7c = param_4;
+    if (plVar3 != (longlong *)0x0) {
+      *plVar1 = 0;
+      (**(code **)(*plVar3 + 0x10))();
+    }
+    local_d8 = plVar1;
+    iVar7 = (*pcVar4)(plVar5,*plVar2,&local_80,0);
+    if (iVar7 < 0) {
+      pcVar10 = "init_d3d: CreateSwapChainForComposition FAILED hr=0x%08X";
+    }
+    else {
+      local_90 = (longlong *)0x0;
+      iVar7 = (*(code *)**(undefined8 **)*plVar1)((undefined8 *)*plVar1,&DAT_1400bf888,&local_90);
+      if (-1 < iVar7) {
+        (**(code **)(*local_90 + 0xf8))(local_90,2);
+        uVar9 = (**(code **)(*local_90 + 0x108))();
+        *(undefined8 *)(param_1 + 0x50) = uVar9;
+      }
+      if (*(longlong *)(param_1 + 0x50) == 0) {
+        FUN_1400417b0("init_d3d: frame latency waitable unavailable");
+      }
+      plVar1 = local_90;
+      if (local_90 != (longlong *)0x0) {
+        local_90 = (longlong *)0x0;
+        (**(code **)(*plVar1 + 0x10))();
+      }
+      plVar1 = *(longlong **)(param_1 + 0x60);
+      if (plVar1 != (longlong *)0x0) {
+        *(undefined8 *)(param_1 + 0x60) = 0;
+        (**(code **)(*plVar1 + 0x10))();
+      }
+      iVar7 = DCompositionCreateDevice(local_98,&DAT_1400bf180,param_1 + 0x60);
+      if (-1 < iVar7) {
+        plVar1 = *(longlong **)(param_1 + 0x60);
+        pcVar4 = *(code **)(*plVar1 + 0x30);
+        plVar2 = *(longlong **)(param_1 + 0x68);
+        if (plVar2 != (longlong *)0x0) {
+          *(undefined8 *)(param_1 + 0x68) = 0;
+          (**(code **)(*plVar2 + 0x10))();
+        }
+        iVar7 = (*pcVar4)(plVar1,param_2,1,param_1 + 0x68);
+        if (-1 < iVar7) {
+          plVar1 = *(longlong **)(param_1 + 0x60);
+          pcVar4 = *(code **)(*plVar1 + 0x38);
+          plVar2 = *(longlong **)(param_1 + 0x70);
+          if (plVar2 != (longlong *)0x0) {
+            *(undefined8 *)(param_1 + 0x70) = 0;
+            (**(code **)(*plVar2 + 0x10))();
+          }
+          iVar7 = (*pcVar4)(plVar1,param_1 + 0x70);
+          if ((((-1 < iVar7) &&
+               (iVar7 = (**(code **)(**(longlong **)(param_1 + 0x70) + 0x78))
+                                  (*(longlong **)(param_1 + 0x70),*(undefined8 *)(param_1 + 0x40)),
+               -1 < iVar7)) &&
+              (iVar7 = (**(code **)(**(longlong **)(param_1 + 0x68) + 0x18))
+                                 (*(longlong **)(param_1 + 0x68),*(undefined8 *)(param_1 + 0x70)),
+              -1 < iVar7)) &&
+             (iVar7 = (**(code **)(**(longlong **)(param_1 + 0x60) + 0x18))(), -1 < iVar7)) {
+            FUN_1400417b0("init_d3d: flip-model composition swap chain OK");
+            bVar6 = FUN_140015ea0(param_1);
+            goto LAB_14001354f;
+          }
+        }
+      }
+      pcVar10 = "init_d3d: DirectComposition setup FAILED hr=0x%08X";
+    }
+  }
+  FUN_1400417b0(pcVar10,iVar7);
+  bVar6 = 0;
+LAB_14001354f:
+  plVar1 = local_a8;
+  if (local_a8 != (longlong *)0x0) {
+    local_a8 = (longlong *)0x0;
+    (**(code **)(*plVar1 + 0x10))();
+  }
+  plVar1 = local_a0;
+  if (local_a0 != (longlong *)0x0) {
+    local_a0 = (longlong *)0x0;
+    (**(code **)(*plVar1 + 0x10))();
+  }
+  plVar1 = local_98;
+  if (local_98 != (longlong *)0x0) {
+    local_98 = (longlong *)0x0;
+    (**(code **)(*plVar1 + 0x10))();
+  }
+  return (ulonglong)bVar6;
+}
+
+
