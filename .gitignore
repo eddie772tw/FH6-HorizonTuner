@@ -31,3 +31,7 @@
 *.pyo
 *.pyd
 FH6 遙測調校工具設計計畫.md
+
+# Ultralight SDK (proprietary, do NOT commit to repo)
+/tool/overlay/ultralight-sdk/
+

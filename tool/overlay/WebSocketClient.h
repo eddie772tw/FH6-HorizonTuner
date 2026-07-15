@@ -17,13 +17,13 @@ private:
     HINTERNET m_hWebSocket = nullptr;
     bool m_connected = false;
     std::thread m_receiveThread;
-    std::function<void(const std::string&)> m_onMessage;
+    std::function<void(const void* data, size_t len, bool isBinary)> m_onMessage;
 
 public:
     WebSocketClient() = default;
     ~WebSocketClient() { Disconnect(); }
 
-    bool Connect(const std::wstring& host, WORD port, const std::wstring& path, std::function<void(const std::string&)> onMessage) {
+    bool Connect(const std::wstring& host, WORD port, const std::wstring& path, std::function<void(const void* data, size_t len, bool isBinary)> onMessage) {
         m_onMessage = onMessage;
         
         m_hSession = WinHttpOpen(L"HorizonTunerOverlay/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
@@ -94,8 +94,8 @@ public:
 
 private:
     void ReceiveLoop() {
-        std::vector<char> buffer(8192);
-        std::string message;
+        std::vector<char> buffer(512);
+        std::vector<char> messageCollector;
 
         while (m_connected) {
             DWORD bytesRead = 0;
@@ -107,13 +107,18 @@ private:
                 break;
             }
 
-            message.append(buffer.data(), bytesRead);
+            messageCollector.insert(messageCollector.end(), buffer.data(), buffer.data() + bytesRead);
 
             if (bufferType == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE) {
                 if (m_onMessage) {
-                    m_onMessage(message);
+                    m_onMessage(messageCollector.data(), messageCollector.size(), false);
                 }
-                message.clear();
+                messageCollector.clear();
+            } else if (bufferType == WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE) {
+                if (m_onMessage) {
+                    m_onMessage(messageCollector.data(), messageCollector.size(), true);
+                }
+                messageCollector.clear();
             } else if (bufferType == WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE) {
                 std::cout << "[WebSocket] 伺服器要求關閉連線。\n";
                 m_connected = false;

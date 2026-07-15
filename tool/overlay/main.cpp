@@ -362,47 +362,112 @@ void LoadLayoutConfig() {
     }
 }
 
+#pragma pack(push, 1)
+struct BinaryTelemetryPacket {
+    int isRaceOn;
+    float currentEngineRpm;
+    float engineMaxRpm;
+    float engineIdleRpm;
+    float speed;
+    int gear;
+    float power;
+    float boost;
+    float accel[3];
+    float yaw;
+    float pitch;
+    float roll;
+    float tireTemp[4];
+    float suspTravel[4];
+    float slipRatio[4];
+    float slipAngle[4];
+    char reserved[16];
+};
+#pragma pack(pop)
+
 // 監控設定變更
 void TickLayoutMonitor() {
     static DWORD lastTick = 0;
+    static FILETIME lastWriteTime = { 0, 0 };
     DWORD currentTick = GetTickCount();
-    if (currentTick - lastTick > 1000) {
-        LoadLayoutConfig();
+
+    if (currentTick - lastTick > 2000) { // 每 2 秒檢查一次，減少 I/O
         lastTick = currentTick;
+
+        WIN32_FILE_ATTRIBUTE_DATA fileInfo;
+        if (GetFileAttributesExW(g_LayoutFilePath.c_str(), GetFileExInfoStandard, &fileInfo)) {
+            if (fileInfo.ftLastWriteTime.dwLowDateTime != lastWriteTime.dwLowDateTime ||
+                fileInfo.ftLastWriteTime.dwHighDateTime != lastWriteTime.dwHighDateTime) {
+                
+                std::cout << "[Layout] 偵測到排版檔案變更，重新讀取...\n";
+                LoadLayoutConfig();
+                lastWriteTime = fileInfo.ftLastWriteTime;
+            }
+        }
     }
 }
 
 // WebSocket 訊息回調
-void OnWebSocketMessage(const std::string& msg) {
+void OnWebSocketMessage(const void* data, size_t len, bool isBinary) {
     try {
-        json j = json::parse(msg);
         std::lock_guard<std::mutex> lock(g_TelemetryMutex);
 
-        if (j.contains("IsRaceOn")) g_Telemetry.isRaceOn = j["IsRaceOn"] == 1;
-        if (j.contains("CurrentEngineRpm")) g_Telemetry.currentEngineRpm = j["CurrentEngineRpm"];
-        if (j.contains("EngineMaxRpm")) g_Telemetry.engineMaxRpm = j["EngineMaxRpm"];
-        if (j.contains("EngineIdleRpm")) g_Telemetry.engineIdleRpm = j["EngineIdleRpm"];
-        if (j.contains("SpeedMetersPerSecond")) g_Telemetry.speed = j["SpeedMetersPerSecond"] * 3.6f;
-        if (j.contains("Gear")) g_Telemetry.gear = j["Gear"];
-        if (j.contains("PowerWatts")) g_Telemetry.power = j["PowerWatts"] / 745.7f;
-        if (j.contains("Boost")) g_Telemetry.boost = j["Boost"] / 6894.75729f;
+        if (isBinary) {
+            if (len == sizeof(BinaryTelemetryPacket)) {
+                const BinaryTelemetryPacket* packet = reinterpret_cast<const BinaryTelemetryPacket*>(data);
+                g_Telemetry.isRaceOn = packet->isRaceOn == 1;
+                g_Telemetry.currentEngineRpm = packet->currentEngineRpm;
+                g_Telemetry.engineMaxRpm = packet->engineMaxRpm;
+                g_Telemetry.engineIdleRpm = packet->engineIdleRpm;
+                g_Telemetry.speed = packet->speed;
+                g_Telemetry.gear = packet->gear;
+                g_Telemetry.power = packet->power;
+                g_Telemetry.boost = packet->boost;
+                g_Telemetry.accel[0] = packet->accel[0];
+                g_Telemetry.accel[1] = packet->accel[1];
+                g_Telemetry.accel[2] = packet->accel[2];
+                g_Telemetry.yaw = packet->yaw;
+                g_Telemetry.pitch = packet->pitch;
+                g_Telemetry.roll = packet->roll;
+                for (int i = 0; i < 4; ++i) {
+                    g_Telemetry.tireTemp[i] = packet->tireTemp[i];
+                    g_Telemetry.suspTravel[i] = packet->suspTravel[i];
+                    g_Telemetry.slipRatio[i] = packet->slipRatio[i];
+                    // 在 Python 端已經轉成了度，所以這裡不需要重複乘以 57.29578f
+                    // 為了使 slipAngle 符合 UpdateExpressionVariables，將其直接賦值
+                    g_Telemetry.slipAngle[i] = packet->slipAngle[i] / 57.29578f; 
+                }
+            }
+        } else {
+            // 保留原有 JSON 相容解析方式
+            std::string msg(reinterpret_cast<const char*>(data), len);
+            json j = json::parse(msg);
 
-        if (j.contains("TireTemp") && j["TireTemp"].is_array() && j["TireTemp"].size() >= 4) {
-            for (int i = 0; i < 4; ++i) g_Telemetry.tireTemp[i] = j["TireTemp"][i];
+            if (j.contains("IsRaceOn")) g_Telemetry.isRaceOn = j["IsRaceOn"] == 1;
+            if (j.contains("CurrentEngineRpm")) g_Telemetry.currentEngineRpm = j["CurrentEngineRpm"];
+            if (j.contains("EngineMaxRpm")) g_Telemetry.engineMaxRpm = j["EngineMaxRpm"];
+            if (j.contains("EngineIdleRpm")) g_Telemetry.engineIdleRpm = j["EngineIdleRpm"];
+            if (j.contains("SpeedMetersPerSecond")) g_Telemetry.speed = j["SpeedMetersPerSecond"] * 3.6f;
+            if (j.contains("Gear")) g_Telemetry.gear = j["Gear"];
+            if (j.contains("PowerWatts")) g_Telemetry.power = j["PowerWatts"] / 745.7f;
+            if (j.contains("Boost")) g_Telemetry.boost = j["Boost"] / 6894.75729f;
+
+            if (j.contains("TireTemp") && j["TireTemp"].is_array() && j["TireTemp"].size() >= 4) {
+                for (int i = 0; i < 4; ++i) g_Telemetry.tireTemp[i] = j["TireTemp"][i];
+            }
+            if (j.contains("NormalizedSuspensionTravel") && j["NormalizedSuspensionTravel"].is_array() && j["NormalizedSuspensionTravel"].size() >= 4) {
+                for (int i = 0; i < 4; ++i) g_Telemetry.suspTravel[i] = j["NormalizedSuspensionTravel"][i];
+            }
+            if (j.contains("TireSlipRatio") && j["TireSlipRatio"].is_array() && j["TireSlipRatio"].size() >= 4) {
+                for (int i = 0; i < 4; ++i) g_Telemetry.slipRatio[i] = j["TireSlipRatio"][i];
+            }
+            if (j.contains("TireSlipAngle") && j["TireSlipAngle"].is_array() && j["TireSlipAngle"].size() >= 4) {
+                for (int i = 0; i < 4; ++i) g_Telemetry.slipAngle[i] = j["TireSlipAngle"][i];
+            }
+            if (j.contains("AccelerationX")) g_Telemetry.accel[0] = j["AccelerationX"] / 9.81f;
+            if (j.contains("AccelerationY")) g_Telemetry.accel[1] = j["AccelerationY"] / 9.81f;
+            if (j.contains("AccelerationZ")) g_Telemetry.accel[2] = j["AccelerationZ"] / 9.81f;
+            if (j.contains("Yaw")) g_Telemetry.yaw = j["Yaw"];
         }
-        if (j.contains("NormalizedSuspensionTravel") && j["NormalizedSuspensionTravel"].is_array() && j["NormalizedSuspensionTravel"].size() >= 4) {
-            for (int i = 0; i < 4; ++i) g_Telemetry.suspTravel[i] = j["NormalizedSuspensionTravel"][i];
-        }
-        if (j.contains("TireSlipRatio") && j["TireSlipRatio"].is_array() && j["TireSlipRatio"].size() >= 4) {
-            for (int i = 0; i < 4; ++i) g_Telemetry.slipRatio[i] = j["TireSlipRatio"][i];
-        }
-        if (j.contains("TireSlipAngle") && j["TireSlipAngle"].is_array() && j["TireSlipAngle"].size() >= 4) {
-            for (int i = 0; i < 4; ++i) g_Telemetry.slipAngle[i] = j["TireSlipAngle"][i];
-        }
-        if (j.contains("AccelerationX")) g_Telemetry.accel[0] = j["AccelerationX"] / 9.81f;
-        if (j.contains("AccelerationY")) g_Telemetry.accel[1] = j["AccelerationY"] / 9.81f;
-        if (j.contains("AccelerationZ")) g_Telemetry.accel[2] = j["AccelerationZ"] / 9.81f;
-        if (j.contains("Yaw")) g_Telemetry.yaw = j["Yaw"];
     }
     catch (const std::exception& e) {
         // 忽略格式錯誤
@@ -420,13 +485,11 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     // 複製與更新公式引擎變數值
     UpdateExpressionVariables(t);
 
-    std::vector<Component> comps;
     CanvasConfig canv;
-    {
-        std::lock_guard<std::mutex> lock(g_LayoutMutex);
-        comps = g_Components;
-        canv = g_CanvasConfig;
-    }
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+    std::lock_guard<std::mutex> lock(g_LayoutMutex);
+    canv = g_CanvasConfig;
 
     // 1. 計算等比例縮放矩陣
     float scaleX = (float)screenWidth / canv.logicalW;
@@ -436,10 +499,8 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     float offsetX = ((float)screenWidth - canv.logicalW * scale) * 0.5f;
     float offsetY = ((float)screenHeight - canv.logicalH * scale) * 0.5f;
 
-    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-
     // 2. 遍歷元件進行資料驅動繪製
-    for (auto& comp : comps) {
+    for (auto& comp : g_Components) {
         if (!comp.visible) continue;
 
         // 計算縮放後的位置大小
@@ -641,7 +702,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             port = _wtoi(__wargv[i + 1]);
         }
     }
-    std::wstring wsPath = L"/ws/telemetry";
+    std::wstring wsPath = L"/ws/telemetry/binary";
     
     UINT width = GetSystemMetrics(SM_CXSCREEN);
     UINT height = GetSystemMetrics(SM_CYSCREEN);

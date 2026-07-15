@@ -4,6 +4,91 @@ import struct
 
 logger = logging.getLogger(__name__)
 
+# 二進位封包格式 (128 bytes 固定大小，全部以小端/C aligned 對齊)
+# 格式說明:
+# - i: IsRaceOn (4 bytes)
+# - f: CurrentEngineRpm (4 bytes)
+# - f: EngineMaxRpm (4 bytes)
+# - f: EngineIdleRpm (4 bytes)
+# - f: Speed (4 bytes)
+# - i: Gear (4 bytes)
+# - f: Power (4 bytes)
+# - f: Boost (4 bytes)
+# - f[3]: Accel X, Y, Z (12 bytes)
+# - f[3]: Yaw, Pitch, Roll (12 bytes)
+# - f[4]: TireTemp FL, FR, RL, RR (16 bytes)
+# - f[4]: SuspTravel FL, FR, RL, RR (16 bytes)
+# - f[4]: SlipRatio FL, FR, RL, RR (16 bytes)
+# - f[4]: SlipAngle FL, FR, RL, RR (16 bytes)
+# - 16 bytes: Reserved padding (對齊 128 位元組)
+TELEMETRY_STRUCT_FORMAT = (
+    "<iffffffffffff" + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "16s"
+)
+
+
+def pack_telemetry_binary(data: dict) -> bytes:
+    try:
+        is_race_on = int(data.get("IsRaceOn", 0))
+        rpm = float(data.get("CurrentEngineRpm", 0.0))
+        max_rpm = float(data.get("EngineMaxRpm", 6000.0))
+        idle_rpm = float(data.get("EngineIdleRpm", 1000.0))
+        speed = float(data.get("SpeedMetersPerSecond", 0.0)) * 3.6  # 轉為 km/h
+        gear = int(data.get("Gear", 0))
+        power = float(data.get("PowerWatts", 0.0)) / 745.7
+        boost = float(data.get("Boost", 0.0)) / 6894.75729
+
+        accel_x = float(data.get("AccelerationX", 0.0)) / 9.81
+        accel_y = float(data.get("AccelerationY", 0.0)) / 9.81
+        accel_z = float(data.get("AccelerationZ", 0.0)) / 9.81
+
+        yaw = float(data.get("Yaw", 0.0))
+        # 暫時用 0.0 代替 Pitch/Roll (原 telemetry_listener.py 中沒有對這兩者直接賦值)
+        pitch = 0.0
+        roll = 0.0
+
+        tire_temps = data.get("TireTemp", [0.0] * 4)
+        susp_travels = data.get("NormalizedSuspensionTravel", [0.0] * 4)
+        slip_ratios = data.get("TireSlipRatio", [0.0] * 4)
+        slip_angles = data.get("TireSlipAngle", [0.0] * 4)
+
+        # 確保陣列長度皆為 4
+        tire_temps += [0.0] * (4 - len(tire_temps))
+        susp_travels += [0.0] * (4 - len(susp_travels))
+        slip_ratios += [0.0] * (4 - len(slip_ratios))
+        slip_angles += [0.0] * (4 - len(slip_angles))
+
+        # 轉換弧度為度
+        slip_angles_deg = [sa * 57.29578 for sa in slip_angles]
+
+        reserved = b"\x00" * 16
+
+        return struct.pack(
+            TELEMETRY_STRUCT_FORMAT,
+            is_race_on,
+            rpm,
+            max_rpm,
+            idle_rpm,
+            speed,
+            gear,
+            power,
+            boost,
+            accel_x,
+            accel_y,
+            accel_z,
+            yaw,
+            pitch,
+            roll,
+            *tire_temps,
+            *susp_travels,
+            *slip_ratios,
+            *slip_angles_deg,
+            reserved,
+        )
+    except Exception as e:
+        logger.error(f"Failed to pack telemetry data: {e}")
+        # 返回一個全 0 封包
+        return b"\x00" * 128
+
 
 class TelemetryProtocol(asyncio.DatagramProtocol):
     def __init__(self, message_queue: asyncio.Queue):
