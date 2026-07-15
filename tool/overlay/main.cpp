@@ -65,6 +65,26 @@ struct TelemetryData {
     float boost = 0.0f;
 };
 
+std::wstring GetExeDirectory() {
+    wchar_t buffer[MAX_PATH];
+    GetModuleFileNameW(NULL, buffer, MAX_PATH);
+    std::wstring path(buffer);
+    size_t pos = path.find_last_of(L"\\/");
+    if (pos != std::wstring::npos) {
+        return path.substr(0, pos);
+    }
+    return L".";
+}
+
+std::string GetExeDirectoryA() {
+    std::wstring wdir = GetExeDirectory();
+    if (wdir.empty()) return ".";
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wdir[0], (int)wdir.size(), NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wdir[0], (int)wdir.size(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
+
 // 授權校驗預留接口與擴充註解
 bool VerifyLicenseStub() {
     // TODO: 商業版將在此整合 ECDSA 非對稱簽章與 HWID 認證機制
@@ -82,20 +102,20 @@ std::string DecryptPresetStub(const std::vector<unsigned char>& encryptedData) {
 bool LoadTextureFromFile(const char* filename, ID3D11Device* device, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height) {
     int image_width = 0;
     int image_height = 0;
-    unsigned char* image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
+    std::string exeDir = GetExeDirectoryA();
+    std::string primaryPath = exeDir + "/assets/hud/" + std::string(filename);
+    unsigned char* image_data = stbi_load(primaryPath.c_str(), &image_width, &image_height, NULL, 4);
     if (image_data == NULL) {
-        // 多路徑降級搜尋
-        std::string fallbackPath = "assets/hud/" + std::string(filename);
-        image_data = stbi_load(fallbackPath.c_str(), &image_width, &image_height, NULL, 4);
+        std::string fallback = exeDir + "/" + std::string(filename);
+        image_data = stbi_load(fallback.c_str(), &image_width, &image_height, NULL, 4);
         if (image_data == NULL) {
-            std::string parentFallbackPath = "../assets/hud/" + std::string(filename);
-            image_data = stbi_load(parentFallbackPath.c_str(), &image_width, &image_height, NULL, 4);
+            image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
             if (image_data == NULL) {
-                std::string gParentFallbackPath = "../../assets/hud/" + std::string(filename);
-                image_data = stbi_load(gParentFallbackPath.c_str(), &image_width, &image_height, NULL, 4);
+                std::string fallbackPath = "assets/hud/" + std::string(filename);
+                image_data = stbi_load(fallbackPath.c_str(), &image_width, &image_height, NULL, 4);
                 if (image_data == NULL) {
-                    std::string toolParentPath = "tool/overlay/assets/hud/" + std::string(filename);
-                    image_data = stbi_load(toolParentPath.c_str(), &image_width, &image_height, NULL, 4);
+                    std::string parentFallbackPath = "../assets/hud/" + std::string(filename);
+                    image_data = stbi_load(parentFallbackPath.c_str(), &image_width, &image_height, NULL, 4);
                     if (image_data == NULL) {
                         return false;
                     }
@@ -436,6 +456,7 @@ CanvasConfig       g_CanvasConfig;
 std::vector<Component> g_Components;
 std::mutex         g_LayoutMutex;
 std::wstring       g_LayoutFilePath = L"layout.ini"; // 改為 layout.ini
+std::wstring       g_ResolvedLayoutPath;
 OverlayPreset      g_Preset;                         // 儲存解析後的預設配置
 
 // 輕量原生 C++ INI 解析器
@@ -612,11 +633,24 @@ void UpdateExpressionVariables(const TelemetryData& t) {
 void LoadLayoutConfig() {
     std::lock_guard<std::mutex> lock(g_LayoutMutex);
     
-    std::map<std::string, std::string> ini = ParseIniFile(g_LayoutFilePath);
-    if (ini.empty()) {
-        ini = ParseIniFile(L"layout.ini");
-        if (ini.empty()) return;
+    if (g_ResolvedLayoutPath.empty()) {
+        std::wstring exeDir = GetExeDirectory();
+        std::wstring primaryPath = exeDir + L"\\layout.ini";
+        std::ifstream f(primaryPath);
+        if (f.good()) {
+            g_ResolvedLayoutPath = primaryPath;
+        } else {
+            std::ifstream f2(g_LayoutFilePath);
+            if (f2.good()) {
+                g_ResolvedLayoutPath = g_LayoutFilePath;
+            } else {
+                g_ResolvedLayoutPath = L"layout.ini";
+            }
+        }
     }
+
+    std::map<std::string, std::string> ini = ParseIniFile(g_ResolvedLayoutPath);
+    if (ini.empty()) return;
 
     if (ini.count("name")) g_Preset.name = ini["name"];
     if (ini.count("preview_mode")) {
@@ -793,7 +827,8 @@ void TickLayoutMonitor() {
         lastTick = currentTick;
 
         WIN32_FILE_ATTRIBUTE_DATA fileInfo;
-        if (GetFileAttributesExW(g_LayoutFilePath.c_str(), GetFileExInfoStandard, &fileInfo)) {
+        std::wstring monitorPath = g_ResolvedLayoutPath.empty() ? g_LayoutFilePath : g_ResolvedLayoutPath;
+        if (GetFileAttributesExW(monitorPath.c_str(), GetFileExInfoStandard, &fileInfo)) {
             if (fileInfo.ftLastWriteTime.dwLowDateTime != lastWriteTime.dwLowDateTime ||
                 fileInfo.ftLastWriteTime.dwHighDateTime != lastWriteTime.dwHighDateTime) {
                 

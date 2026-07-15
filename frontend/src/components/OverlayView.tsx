@@ -220,9 +220,22 @@ export const OverlayView: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button 
                   onClick={() => {
-                    // 點擊套用會將 preview_mode 關閉，進入正常遊戲覆蓋層繪製模式
+                    handleSaveConfig(config);
+                    setStatusMessage('設定已成功儲存');
+                    setTimeout(() => setStatusMessage(''), 2000);
+                  }}
+                  className="action-button"
+                  style={{
+                    flex: 1, background: 'var(--primary)', color: '#000', border: 'none',
+                    padding: '0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer'
+                  }}
+                >
+                  {t("Save Settings") || "儲存目前設定"}
+                </button>
+                <button 
+                  onClick={() => {
                     updateKey('preview_mode', 0);
-                    setStatusMessage('設定已套用至正常遊戲重疊層');
+                    setStatusMessage('預覽已關閉，設定已套用至遊戲重疊層');
                     setTimeout(() => setStatusMessage(''), 2000);
                   }}
                   className="action-button"
@@ -231,7 +244,7 @@ export const OverlayView: React.FC = () => {
                     padding: '0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer'
                   }}
                 >
-                  {t("Apply Settings") || "確定並套用"}
+                  {t("Apply Settings") || "關閉預覽並套用"}
                 </button>
               </div>
             </div>

@@ -1886,6 +1886,12 @@ def get_overlay_path():
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         possible_paths = [
             os.path.join(
+                root, "tool", "overlay", "build", "bin", "Release", "HorizonTunerOverlay.exe"
+            ),
+            os.path.join(
+                root, "tool", "overlay", "build", "bin", "Debug", "HorizonTunerOverlay.exe"
+            ),
+            os.path.join(
                 root, "tool", "overlay", "build", "bin", "HorizonTunerOverlay.exe"
             ),
             os.path.join(
