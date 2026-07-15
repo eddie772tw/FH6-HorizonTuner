@@ -11,7 +11,7 @@ for filename in sorted(os.listdir(presets_dir)):
     path = os.path.join(presets_dir, filename)
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
-    
+
     preset_name = filename
     config = {}
     for line in lines:
@@ -36,9 +36,20 @@ widget_groups = {}
 for key in sorted(all_keys):
     prefix = key.rsplit("_", 1)[0] if "_" in key else key
     # Try to find widget group
-    for wname in ["controller", "map", "radio", "dashboard", "tacho", "boost", 
-                   "oil_pressure", "oil_temp", "coolant_temp", "camera_shake", 
-                   "camera_distortion", "pass_order"]:
+    for wname in [
+        "controller",
+        "map",
+        "radio",
+        "dashboard",
+        "tacho",
+        "boost",
+        "oil_pressure",
+        "oil_temp",
+        "coolant_temp",
+        "camera_shake",
+        "camera_distortion",
+        "pass_order",
+    ]:
         if key.startswith(wname):
             if wname not in widget_groups:
                 widget_groups[wname] = []
