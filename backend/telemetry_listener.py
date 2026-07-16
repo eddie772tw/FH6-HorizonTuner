@@ -120,6 +120,8 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
 
                 # Heading
                 yaw = struct.unpack_from("<f", data, 56)[0]
+                pitch = struct.unpack_from("<f", data, 60)[0]
+                roll = struct.unpack_from("<f", data, 64)[0]
 
                 # Suspension Travel (Normalized 0.0 to 1.0)
                 susp_fl, susp_fr, susp_rl, susp_rr = struct.unpack_from(
@@ -136,11 +138,25 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                     struct.unpack_from("<ffff", data, 164)
                 )
 
+                # Surface Rumble
+                rumble_fl, rumble_fr, rumble_rl, rumble_rr = struct.unpack_from(
+                    "<ffff", data, 148
+                )
+
                 # Car Identification
                 car_ordinal = struct.unpack_from("<i", data, 212)[0]
                 car_class = struct.unpack_from("<i", data, 216)[0]
                 car_pi = struct.unpack_from("<i", data, 220)[0]
                 drivetrain_type = struct.unpack_from("<i", data, 224)[0]
+                cylinders = struct.unpack_from("<i", data, 228)[0]
+
+                # Combined Slip
+                (
+                    combined_slip_fl,
+                    combined_slip_fr,
+                    combined_slip_rl,
+                    combined_slip_rr,
+                ) = struct.unpack_from("<ffff", data, 180)
 
                 telemetry_data = {
                     "IsRaceOn": is_race_on,
@@ -155,6 +171,15 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                     "VelocityY": vel_y,
                     "VelocityZ": vel_z,
                     "Yaw": yaw,
+                    "Pitch": pitch,
+                    "Roll": roll,
+                    "SurfaceRumble": [rumble_fl, rumble_fr, rumble_rl, rumble_rr],
+                    "TireCombinedSlip": [
+                        combined_slip_fl,
+                        combined_slip_fr,
+                        combined_slip_rl,
+                        combined_slip_rr,
+                    ],
                     "NormalizedSuspensionTravel": [susp_fl, susp_fr, susp_rl, susp_rr],
                     "TireSlipRatio": [
                         slip_ratio_fl,
@@ -172,6 +197,7 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                     "CarClass": car_class,
                     "CarPerformanceIndex": car_pi,
                     "DrivetrainType": drivetrain_type,
+                    "Cylinders": cylinders,
                 }
 
                 # V2 Dash Data
@@ -190,6 +216,11 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                     best_lap, last_lap, current_lap = struct.unpack_from(
                         "<fff", data, 296
                     )
+
+                    distance_traveled = struct.unpack_from("<f", data, 292)[0]
+                    current_race_time = struct.unpack_from("<f", data, 308)[0]
+                    lap_number = struct.unpack_from("<H", data, 312)[0]
+                    race_position = struct.unpack_from("<B", data, 314)[0]
 
                     # Controller Inputs
                     accel_input = struct.unpack_from("<B", data, 315)[0]
@@ -218,6 +249,10 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                             "BestLap": best_lap,
                             "LastLap": last_lap,
                             "CurrentLap": current_lap,
+                            "DistanceTraveled": distance_traveled,
+                            "CurrentRaceTime": current_race_time,
+                            "LapNumber": lap_number,
+                            "RacePosition": race_position,
                             "AccelInput": accel_input,
                             "BrakeInput": brake_input,
                             "ClutchInput": clutch_input,
