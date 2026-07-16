@@ -13,7 +13,8 @@ import './App.css';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'overlay' | 'tuning' | 'car_params' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'settings'>('telemetry');
+  // Remove overlay for safety issue.
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
 

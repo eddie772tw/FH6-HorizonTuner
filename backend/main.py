@@ -2107,19 +2107,19 @@ if __name__ == "__main__":
         s.close()
         return port
 
-    # 優先嘗試使用預設的 8001 埠號，若已被佔用則使用隨機動態埠號
-    backend_port = 8001
+    # 優先嘗試使用預設的 80 埠號，若已被佔用則使用隨機動態埠號
+    backend_port = 80
     import socket
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        s.bind(("127.0.0.1", 8001))
+        s.bind(("127.0.0.1", 80))
         s.close()
     except Exception:
         try:
             backend_port = get_free_port()
         except Exception:
-            backend_port = 8001
+            backend_port = 80
 
     try:
         log_dir = os.path.join(DATA_ROOT, "logs")

@@ -19,6 +19,7 @@ using std::max;
 
 #include <map>
 #include <wrl/client.h>
+#include <filesystem>
 
 // 引入 stb_image 圖片庫
 #define STB_IMAGE_IMPLEMENTATION
@@ -201,16 +202,20 @@ ID3D11ShaderResourceView* GetOrLoadTexture(const std::string& filename, int* wid
 }
 
 // 旋轉繪製貼圖輔助函數
-void DrawRotatedImage(ImDrawList* drawList, ID3D11ShaderResourceView* texture, const ImVec2& pivot, const ImVec2& size, float angleRad, ImU32 col = IM_COL32_WHITE) {
+void DrawRotatedImage(ImDrawList* drawList, ID3D11ShaderResourceView* texture, const ImVec2& pivot, const ImVec2& size, float angleRad, float needlePivotX = 0.5f, float needlePivotY = 0.5f, ImU32 col = IM_COL32_WHITE) {
     float cosA = cos(angleRad);
     float sinA = sin(angleRad);
 
-    ImVec2 halfSize(size.x * 0.5f, size.y * 0.5f);
+    float left = -size.x * needlePivotX;
+    float right = size.x * (1.0f - needlePivotX);
+    float top = -size.y * needlePivotY;
+    float bottom = size.y * (1.0f - needlePivotY);
+
     ImVec2 localPoints[4] = {
-        ImVec2(-halfSize.x, -halfSize.y),
-        ImVec2(halfSize.x, -halfSize.y),
-        ImVec2(halfSize.x, halfSize.y),
-        ImVec2(-halfSize.x, halfSize.y)
+        ImVec2(left, top),
+        ImVec2(right, top),
+        ImVec2(right, bottom),
+        ImVec2(left, bottom)
     };
 
     ImVec2 screenPoints[4];
@@ -235,20 +240,22 @@ struct StyleConfig {
     float endAngle;
     float pivotX; // 旋轉中心比例 (0.0 - 1.0)
     float pivotY;
+    float needlePivotX = 0.5f;
+    float needlePivotY = 0.5f;
 };
 
 std::map<std::string, StyleConfig> g_StyleConfigs = {
-    { "GT7_RPM", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
-    { "Defi_Advance_RPM", { "res_10_411.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
-    { "Speedhut_RPM", { "res_10_401.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
-    { "AltezzaTRD_RPM", { "res_10_257.png", "res_10_408.png", -140.0f, 140.0f, 0.5f, 0.5f } },
-    { "NFS2015_RPM", { "res_10_254.png", "res_10_408.png", -120.0f, 120.0f, 0.5f, 0.5f } },
-    { "FordGT_Speed", { "res_10_258.png", "res_10_408.png", -120.0f, 120.0f, 0.5f, 0.5f } },
-    { "NFS2015_oilpressure", { "res_10_254.png", "res_10_408.png", -90.0f, 90.0f, 0.5f, 0.5f } },
-    { "Boost_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
-    { "OilPressure_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
-    { "OilTemp_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } },
-    { "CoolantTemp_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f } }
+    { "GT7_RPM", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "Defi_Advance_RPM", { "res_10_411.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "Speedhut_RPM", { "res_10_401.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "AltezzaTRD_RPM", { "res_10_257.png", "res_10_406.png", -140.0f, 140.0f, 0.26f, 0.59f, 0.27f, 0.5f } },
+    { "NFS2015_RPM", { "res_10_254.png", "res_10_405.png", -120.0f, 120.0f, 0.75f, 0.59f, 0.11f, 0.5f } },
+    { "FordGT_Speed", { "res_10_258.png", "res_10_407.png", -120.0f, 120.0f, 0.5f, 0.5f, 0.11f, 0.5f } },
+    { "NFS2015_oilpressure", { "res_10_254.png", "res_10_408.png", -90.0f, 90.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "Boost_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "OilPressure_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "OilTemp_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } },
+    { "CoolantTemp_Gauge", { "res_10_410.png", "res_10_408.png", -135.0f, 135.0f, 0.5f, 0.5f, 0.5f, 0.5f } }
 };
 
 std::map<std::string, std::string> g_StaticTextures = {
@@ -1208,6 +1215,8 @@ void DrawMapCard(ImDrawList* drawList, float sx, float sy, float w, float h, flo
     }
 }
 
+float g_DebugManualRatio = 0.5f;
+
 // 繪製資料驅動 UI
 void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
     TelemetryData t;
@@ -1228,6 +1237,10 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
         mockT.currentEngineRpm = 5200.0f;
         mockT.engineMaxRpm = 8000.0f;
         mockT.engineIdleRpm = 1000.0f;
+        
+        // 使用 Debug 面板設定的 Override Ratio
+        mockT.currentEngineRpm = mockT.engineMaxRpm * g_DebugManualRatio;
+        
         mockT.speed = 120.0f;
         mockT.gear = 4;
         mockT.tireTemp[0] = 165.0f; mockT.tireTemp[1] = 168.0f;
@@ -1556,16 +1569,116 @@ void RenderTelemetryUI(UINT screenWidth, UINT screenHeight) {
                 float rad = angle * (3.14159265f / 180.0f);
 
                 // 3. 繪製指針貼圖
-                ID3D11ShaderResourceView* needleTex = GetOrLoadTexture(config.needleTexture);
-                if (needleTex) {
+                int needleW = 0, needleH = 0;
+                ID3D11ShaderResourceView* needleTex = GetOrLoadTexture(config.needleTexture, &needleW, &needleH);
+                if (needleTex && needleW > 0 && needleH > 0) {
                     float spx = sx + config.pivotX * sw;
                     float spy = sy + config.pivotY * sh;
+                    
+                    // 計算指針需要的螢幕長度
                     float needleLen = comp.needleLength > 0.0f ? comp.needleLength * scale : min(sw, sh) * 0.45f;
-                    DrawRotatedImage(drawList, needleTex, ImVec2(spx, spy), ImVec2(needleLen * 2.0f, needleLen * 2.0f), rad);
+                    
+                    // 以指針圖片的 "軸心到尖端" 的距離作為視覺長度來進行縮放
+                    float visual_length_in_tex = needleW * (1.0f - config.needlePivotX);
+                    if (visual_length_in_tex <= 0.01f) visual_length_in_tex = needleW * 0.5f;
+                    
+                    float texScale = needleLen / visual_length_in_tex;
+                    ImVec2 renderSize(needleW * texScale, needleH * texScale);
+                    
+                    DrawRotatedImage(drawList, needleTex, ImVec2(spx, spy), renderSize, rad, config.needlePivotX, config.needlePivotY);
                 }
             }
         }
     }
+}
+
+// 取得可用貼圖檔案列表供 Debug UI 使用
+std::vector<std::string> GetAvailableTextures() {
+    std::vector<std::string> textures;
+    std::string searchPath = GetExeDirectoryA() + "/assets/hud/*.png";
+    WIN32_FIND_DATAA fd;
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &fd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                textures.push_back(fd.cFileName);
+            }
+        } while (FindNextFileA(hFind, &fd));
+        FindClose(hFind);
+    }
+    return textures;
+}
+
+// 渲染 Debug 調校介面
+void RenderDebugUI() {
+    static bool showDebug = false;
+    
+    // 按下 F12 切換 Debug 面板 (也可以透過 CapsLock 切換滑鼠交互後點擊，但快速鍵更方便)
+    if (ImGui::IsKeyPressed(ImGuiKey_F12)) {
+        showDebug = !showDebug;
+    }
+    if (!showDebug) return;
+
+    if (ImGui::Begin("Texture & Gauge Debugger (Press F12 to close)", &showDebug)) {
+        static std::vector<std::string> textureFiles;
+        if (textureFiles.empty()) {
+            textureFiles = GetAvailableTextures();
+        }
+
+        static std::string selectedStyle = "AltezzaTRD_RPM";
+        if (ImGui::BeginCombo("Select Style", selectedStyle.c_str())) {
+            for (auto& pair : g_StyleConfigs) {
+                bool is_selected = (selectedStyle == pair.first);
+                if (ImGui::Selectable(pair.first.c_str(), is_selected)) {
+                    selectedStyle = pair.first;
+                }
+                if (is_selected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        auto it = g_StyleConfigs.find(selectedStyle);
+        if (it != g_StyleConfigs.end()) {
+            StyleConfig& cfg = it->second;
+
+            if (ImGui::BeginCombo("Dial Texture", cfg.dialTexture.c_str())) {
+                for (const auto& tex : textureFiles) {
+                    bool is_selected = (cfg.dialTexture == tex);
+                    if (ImGui::Selectable(tex.c_str(), is_selected)) cfg.dialTexture = tex;
+                    if (is_selected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            if (ImGui::BeginCombo("Needle Texture", cfg.needleTexture.c_str())) {
+                for (const auto& tex : textureFiles) {
+                    bool is_selected = (cfg.needleTexture == tex);
+                    if (ImGui::Selectable(tex.c_str(), is_selected)) cfg.needleTexture = tex;
+                    if (is_selected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::SliderFloat("Dial Pivot X", &cfg.pivotX, 0.0f, 1.0f);
+            ImGui::SliderFloat("Dial Pivot Y", &cfg.pivotY, 0.0f, 1.0f);
+            ImGui::SliderFloat("Needle Pivot X", &cfg.needlePivotX, 0.0f, 1.0f);
+            ImGui::SliderFloat("Needle Pivot Y", &cfg.needlePivotY, 0.0f, 1.0f);
+            ImGui::SliderFloat("Start Angle (deg)", &cfg.startAngle, -360.0f, 360.0f);
+            ImGui::SliderFloat("End Angle (deg)", &cfg.endAngle, -360.0f, 360.0f);
+
+            ImGui::SliderFloat("Preview Ratio (Override)", &g_DebugManualRatio, 0.0f, 1.0f);
+
+            if (ImGui::Button("Dump Configuration to Console")) {
+                std::cout << "--- Dump: " << selectedStyle << " ---\n";
+                std::cout << "Dial: " << cfg.dialTexture << "\n";
+                std::cout << "Needle: " << cfg.needleTexture << "\n";
+                std::cout << "Dial Pivot: " << cfg.pivotX << ", " << cfg.pivotY << "\n";
+                std::cout << "Needle Pivot: " << cfg.needlePivotX << ", " << cfg.needlePivotY << "\n";
+                std::cout << "Angles: " << cfg.startAngle << " to " << cfg.endAngle << "\n";
+            }
+        }
+    }
+    ImGui::End();
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -1722,6 +1835,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         // 渲染資料驅動的 UI，傳入當前視窗寬高
         RenderTelemetryUI(width, height);
+
+        // 渲染 Debug 調校介面
+        RenderDebugUI();
 
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

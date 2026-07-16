@@ -8,7 +8,28 @@
         "suspension": "Race",
         "arb": "Adjustable"
     },
-    "dyno_curve": {},
+    "dyno_curve": {
+        "5850": {
+            "hp": 20.315918034229583,
+            "torque": 18.09402982017517,
+            "hp_hist": [
+                20.315918034229583
+            ],
+            "torque_hist": [
+                18.09402982017517
+            ]
+        },
+        "7700": {
+            "hp": -43.33650429126995,
+            "torque": -29.446162400512694,
+            "hp_hist": [
+                -43.33650429126995
+            ],
+            "torque_hist": [
+                -29.446162400512694
+            ]
+        }
+    },
     "induction": "TwinTurbo",
     "maxHp": 841,
     "maxTorque": 687,
