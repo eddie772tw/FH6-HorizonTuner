@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Navigation from './components/Navigation';
 import TelemetryView from './components/TelemetryView';
-import OverlayView from './components/OverlayView';
 import TuningView from './components/TuningView';
 import CarParamsView from './components/CarParamsView';
 import SettingsView from './components/SettingsView';
@@ -32,9 +31,7 @@ const AppContent: React.FC = () => {
         <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <TelemetryView />
         </div>
-        <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <OverlayView />
-        </div>
+
         <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <TuningView setActiveTab={setActiveTab} />
         </div>

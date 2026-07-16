@@ -23,7 +23,7 @@ export const OverlayView: React.FC = () => {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8001/api/overlay/status');
+        const res = await fetch(`${getApiBaseUrl()}/api/overlay/status`);
         if (res.ok) {
           const data = await res.json();
           setIsOverlayRunning(data.running);
@@ -42,14 +42,14 @@ export const OverlayView: React.FC = () => {
   const fetchLayoutAndPresets = async () => {
     try {
       // 讀取佈局
-      const layoutRes = await fetch('http://127.0.0.1:8001/api/overlay/layout');
+      const layoutRes = await fetch(`${getApiBaseUrl()}/api/overlay/layout`);
       if (layoutRes.ok) {
         const layoutData = await layoutRes.json();
         setConfig(layoutData);
       }
 
       // 讀取預設
-      const presetsRes = await fetch('http://127.0.0.1:8001/api/overlay/presets');
+      const presetsRes = await fetch(`${getApiBaseUrl()}/api/overlay/presets`);
       if (presetsRes.ok) {
         const presetsData = await presetsRes.json();
         setPresets(presetsData);
@@ -66,7 +66,7 @@ export const OverlayView: React.FC = () => {
   // 儲存設定至後端 layout.ini
   const handleSaveConfig = async (updatedConfig = config) => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/overlay/layout', {
+      const res = await fetch(`${getApiBaseUrl()}/api/overlay/layout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedConfig)
@@ -84,7 +84,7 @@ export const OverlayView: React.FC = () => {
   const handleApplyPreset = async (presetName: string) => {
     if (window.confirm(`${t('Apply Preset') || '確定要載入預設'} "${presetName}" ${t('?') || '嗎？'}`)) {
       try {
-        const res = await fetch('http://127.0.0.1:8001/api/overlay/presets/apply', {
+        const res = await fetch(`${getApiBaseUrl()}/api/overlay/presets/apply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: presetName })
@@ -110,7 +110,7 @@ export const OverlayView: React.FC = () => {
     setLoading(true);
     const endpoint = isOverlayRunning ? 'stop' : 'start';
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/overlay/${endpoint}`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/overlay/${endpoint}`, {
         method: 'POST'
       });
       if (res.ok) {

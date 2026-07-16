@@ -37,7 +37,7 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
           const prefix = `${carId}-`;
           if (lastTuning.startsWith(prefix)) {
             const saveName = lastTuning.substring(prefix.length);
-            const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}/${saveName}`);
+            const res = await fetch(`${getApiBaseUrl()}/api/tunings/${carId}/${saveName}`);
             const data = await res.json();
             if (data && data.gearing) {
               setGearingData(data.gearing);

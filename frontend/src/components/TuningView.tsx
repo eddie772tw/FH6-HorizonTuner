@@ -146,13 +146,13 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     if (dragTestStatus === 'recording' || dragTestStatus === 'waiting') {
       interval = setInterval(async () => {
         try {
-          const res = await fetch('http://127.0.0.1:8001/api/gearing/drag/status');
+          const res = await fetch(`${getApiBaseUrl()}/api/gearing/drag/status`);
           const data = await res.json();
           setDragTestStatus(data.status);
           setDragPointsCount(data.points_count);
           if (data.status === 'finished') {
             clearInterval(interval);
-            const dataRes = await fetch('http://127.0.0.1:8001/api/gearing/drag/data');
+            const dataRes = await fetch(`${getApiBaseUrl()}/api/gearing/drag/data`);
             const dataPts = await dataRes.json();
             setActiveDragData(dataPts);
           }
@@ -165,7 +165,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const fetchTunings = async () => {
     if (!carId) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/tunings/${carId}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setSavedTunings(data);
@@ -184,7 +184,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     if (!carId) return;
     try {
       setSaveStatus(t('Saving...'));
-      const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}/${saveName}`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/tunings/${carId}/${saveName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tuning)
@@ -210,7 +210,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     const cid = parts[0];
     const sname = parts.slice(1).join('-');
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/tunings/${cid}/${sname}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/tunings/${cid}/${sname}`);
       const data = await res.json();
       if (!data.error && latestCarIdRef.current === cid) {
         setTuning(data);
@@ -241,7 +241,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const handleStartManualRecord = async () => {
     try {
       setManualRecStatus('recording');
-      await fetch('http://127.0.0.1:8001/api/analysis/recorder/start', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/analysis/recorder/start`, { method: 'POST' });
     } catch (e) {
       console.error(e);
       setManualRecStatus('idle');
@@ -251,9 +251,9 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const handleStopManualRecord = async () => {
     try {
       setManualRecStatus('saving');
-      await fetch('http://127.0.0.1:8001/api/analysis/recorder/stop', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/analysis/recorder/stop`, { method: 'POST' });
       await globalFetchCurrentSessionData();
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
+      const res = await fetch(`${getApiBaseUrl()}/api/analysis/data`);
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         setTelemetryPoints(data);
@@ -279,10 +279,10 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       let data: any[] = [];
       if (filename === 'current') {
         await globalFetchCurrentSessionData();
-        const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
+        const res = await fetch(`${getApiBaseUrl()}/api/analysis/data`);
         data = await res.json();
       } else {
-        const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${filename}`);
+        const res = await fetch(`${getApiBaseUrl()}/api/analysis/sessions/${filename}`);
         data = await res.json();
       }
 
@@ -379,13 +379,13 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const handleStartDragTest = async () => {
     try {
       setDragTestStatus('waiting');
-      await fetch('http://127.0.0.1:8001/api/gearing/drag/start', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/gearing/drag/start`, { method: 'POST' });
     } catch (e) {}
   };
 
   const handleClearDragTest = async () => {
     try {
-      await fetch('http://127.0.0.1:8001/api/gearing/drag/clear', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/gearing/drag/clear`, { method: 'POST' });
       setDragTestStatus('idle');
       setDragPointsCount(0);
       setActiveDragData([]);
@@ -395,7 +395,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const handleSaveDragSession = async () => {
     if (!carId) return;
     try {
-      await fetch('http://127.0.0.1:8001/api/gearing/drag/save', {
+      await fetch(`${getApiBaseUrl()}/api/gearing/drag/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ car_id: carId, car_name: carName })
@@ -412,7 +412,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       return;
     }
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/gearing/drag/sessions/${filename}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/gearing/drag/sessions/${filename}`);
       const data = await res.json();
       setActiveDragData(data.data);
     } catch (e) {}
@@ -421,7 +421,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const applyDragOptimizedGearing = async () => {
     if (!activeDragData || activeDragData.length === 0 || !carParams) return;
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/gearing/drag/optimize', {
+      const res = await fetch(`${getApiBaseUrl()}/api/gearing/drag/optimize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: activeDragData, car_params: carParams })

@@ -69,7 +69,7 @@ const DragTestView: React.FC = () => {
     
     const checkStatus = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8001/api/drag/status');
+        const res = await fetch(`${getApiBaseUrl()}/api/drag/status`);
         const data = await res.json();
         if (isMounted) {
           const newStatus = data.status;
@@ -98,7 +98,7 @@ const DragTestView: React.FC = () => {
 
   const fetchSessionsList = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/drag/sessions');
+      const res = await fetch(`${getApiBaseUrl()}/api/drag/sessions`);
       const data = await res.json();
       setSessionsList(data);
     } catch (e) {
@@ -114,8 +114,8 @@ const DragTestView: React.FC = () => {
     setIsLoading(true);
     try {
       const [dataRes, analysisRes] = await Promise.all([
-        fetch('http://127.0.0.1:8001/api/drag/data'),
-        fetch('http://127.0.0.1:8001/api/drag/analysis')
+        fetch(`${getApiBaseUrl()}/api/drag/data`),
+        fetch(`${getApiBaseUrl()}/api/drag/analysis`)
       ]);
       const data = await dataRes.json();
       const analysisData = await analysisRes.json();
@@ -131,7 +131,7 @@ const DragTestView: React.FC = () => {
 
   const handlePrepare = async () => {
     try {
-      await fetch('http://127.0.0.1:8001/api/drag/prepare', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/drag/prepare`, { method: 'POST' });
       setStatus('waiting');
       setSessionData([]);
       setAnalysis(null);
@@ -145,7 +145,7 @@ const DragTestView: React.FC = () => {
 
   const handleClear = async () => {
     try {
-      await fetch('http://127.0.0.1:8001/api/drag/clear', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/drag/clear`, { method: 'POST' });
       setStatus('idle');
       setSessionData([]);
       setAnalysis(null);
@@ -160,7 +160,7 @@ const DragTestView: React.FC = () => {
   const handleSaveSession = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/drag/sessions/save', { method: 'POST' });
+      const res = await fetch(`${getApiBaseUrl()}/api/drag/sessions/save`, { method: 'POST' });
       const data = await res.json();
       if (data.message) {
         alert(t('Drag session saved successfully'));
@@ -183,7 +183,7 @@ const DragTestView: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/drag/sessions/${filename}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/drag/sessions/${filename}`);
       const data = await res.json();
       if (data.data && data.analysis) {
         setCompareData(data.data);
@@ -200,7 +200,7 @@ const DragTestView: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/drag/sessions/${filename}`, { method: 'DELETE' });
+      const res = await fetch(`${getApiBaseUrl()}/api/drag/sessions/${filename}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.message) {
         fetchSessionsList();

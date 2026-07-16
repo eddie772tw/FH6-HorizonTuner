@@ -345,7 +345,8 @@ class RaceRecorder:
                         pass
             return
 
-        is_race_on = (data.get("IsRaceOn", 0) == 1) or self.manual_mode
+        # Check if in race (CurrentLap > 0.0 indicates a race or event, filtering out freeroam)
+        is_race_on = ((data.get("IsRaceOn", 0) == 1) and (data.get("CurrentLap", 0.0) > 0.0)) or self.manual_mode
 
         if is_race_on:
             if not self.is_recording:
@@ -2019,7 +2020,6 @@ async def start_overlay():
             f"Started Overlay process from {exe_path} with backend port {backend_port}"
         )
 
-        # 稍微等待檢測是否啟動即崩潰
         import asyncio
 
         await asyncio.sleep(0.5)
@@ -2072,12 +2072,8 @@ async def stop_overlay():
 
 @app.post("/api/license/verify")
 async def verify_license(payload: dict = None):
-    """目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。
-    未來擴充計畫：
-    1. 接收前端或客戶端傳送的 HWID (硬體識別碼) 與 License Key。
-    2. 串接認證伺服器資料庫進行檢索，確認授權過期時間 (ExpireTime)。
-    3. 使用伺服器端私鑰對 HWID + ExpireTime 執行 ECDSA 非對稱加密數位簽章。
-    4. 返回專屬簽章憑證檔案以供客戶端（C++ Overlay）進行抗補丁校驗與數據解密。
+    """
+    目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。
     """
     return {"active": True, "message": "License Stub OK", "expires": "2099-12-31"}
 

@@ -26,7 +26,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
   const fetchLogs = async () => {
     if (isPaused) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/logs?level=${level}&limit=300`);
+      const res = await fetch(`${getApiBaseUrl()}/api/logs?level=${level}&limit=300`);
       const data = await res.json();
       if (data.logs) {
         setLogs(data.logs);
@@ -56,7 +56,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
   const handleClearLogs = async () => {
     if (!window.confirm(t("Are you sure you want to clear all logs?") || "確定要清空所有日誌嗎？")) return;
     try {
-      await fetch('http://127.0.0.1:8001/api/logs', { method: 'DELETE' });
+      await fetch(`${getApiBaseUrl()}/api/logs`, { method: 'DELETE' });
       setLogs([]);
     } catch (err) {
       alert("Failed to clear logs on server.");

@@ -62,7 +62,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
         return;
       }
       try {
-        const res = await fetch('http://127.0.0.1:8001/api/analysis/status');
+        const res = await fetch(`${getApiBaseUrl()}/api/analysis/status`);
         const data = await res.json();
         if (active && data) {
           setIsRecording(data.isRecording);
@@ -89,7 +89,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
   const fetchSavedSessionsList = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions');
+      const res = await fetch(`${getApiBaseUrl()}/api/analysis/sessions`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setSavedSessions(data);
@@ -102,7 +102,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   // Fetch the current session (latest.json) and load it directly into loadedSession
   const fetchCurrentSessionData = async (): Promise<AnalysisDataPoint[]> => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
+      const res = await fetch(`${getApiBaseUrl()}/api/analysis/data`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setLoadedSession(data);
@@ -116,7 +116,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
   const clearCurrentSession = async () => {
     try {
-      await fetch('http://127.0.0.1:8001/api/analysis/clear', { method: 'POST' });
+      await fetch(`${getApiBaseUrl()}/api/analysis/clear`, { method: 'POST' });
       setLoadedSession(null);
       setRecordingCount(0);
     } catch (e) {
@@ -127,7 +127,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   // Save the latest.json session file to a permanent timestamped file on the backend
   const saveCurrentSessionToBackend = async (): Promise<string | null> => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions/save_latest', { method: 'POST' });
+      const res = await fetch(`${getApiBaseUrl()}/api/analysis/sessions/save_latest`, { method: 'POST' });
       const data = await res.json();
       if (data && data.filename) {
         await fetchSavedSessionsList();
@@ -141,7 +141,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
   const loadSavedSession = async (filename: string): Promise<AnalysisDataPoint[] | null> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/analysis/sessions/${encodeURIComponent(filename)}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setLoadedSession(data);
@@ -155,7 +155,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
   const deleteSavedSession = async (filename: string): Promise<boolean> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      const res = await fetch(`${getApiBaseUrl()}/api/analysis/sessions/${encodeURIComponent(filename)}`, { method: 'DELETE' });
       const data = await res.json();
       if (data && !data.error) {
         await fetchSavedSessionsList();

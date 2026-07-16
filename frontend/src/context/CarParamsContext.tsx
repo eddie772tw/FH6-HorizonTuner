@@ -87,7 +87,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const fetchCarsWithParams = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/cars/with_params');
+      const res = await fetch(`${getApiBaseUrl()}/api/cars/with_params`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setCarsWithParams(data);
@@ -99,7 +99,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Fetch car database and cars with params
   useEffect(() => {
-    fetch('http://127.0.0.1:8001/api/cars/database')
+    fetch(`${getApiBaseUrl()}/api/cars/database`)
       .then(r => r.json())
       .then(data => setCarDb(data))
       .catch(e => console.error(e));
@@ -126,7 +126,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     const fetchParams = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`);
+        const res = await fetch(`${getApiBaseUrl()}/api/car_params/${carId}`);
         const result = await res.json();
         if (active && !result.error) {
           setCarParams(result);
@@ -191,7 +191,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (telemetryCarId === carId && telemetryCarId !== '0') {
       const interval = setInterval(async () => {
         try {
-          const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`);
+          const res = await fetch(`${getApiBaseUrl()}/api/car_params/${carId}`);
           const result = await res.json();
           if (!result.error) {
             setCarParams(prev => {
@@ -209,7 +209,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   const saveCarParams = async () => {
     if (!carParams) return;
     try {
-      await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`, {
+      await fetch(`${getApiBaseUrl()}/api/car_params/${carId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(carParams)
@@ -222,7 +222,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const clearDynoCurve = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}/dyno_curve`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/car_params/${carId}/dyno_curve`, {
         method: 'DELETE'
       });
       const result = await res.json();

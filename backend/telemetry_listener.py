@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 # 二進位封包格式 (128 bytes 固定大小，全部以小端/C aligned 對齊)
 # 格式說明:
-# - i: IsRaceOn (4 bytes)
+# - i: IsRaceOn (4 bytes) - 註: 代表「可駕駛運行狀態」，包含賽事中與自由漫遊模式
 # - f: CurrentEngineRpm (4 bytes)
 # - f: EngineMaxRpm (4 bytes)
 # - f: EngineIdleRpm (4 bytes)
@@ -29,6 +29,7 @@ TELEMETRY_STRUCT_FORMAT = (
 
 def pack_telemetry_binary(data: dict) -> bytes:
     try:
+        # IsRaceOn 代表是否處於可駕駛狀態 (包含賽事與自由漫遊)
         is_race_on = int(data.get("IsRaceOn", 0))
         rpm = float(data.get("CurrentEngineRpm", 0.0))
         max_rpm = float(data.get("EngineMaxRpm", 6000.0))
