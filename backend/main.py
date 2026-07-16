@@ -346,7 +346,9 @@ class RaceRecorder:
             return
 
         # Check if in race (CurrentLap > 0.0 indicates a race or event, filtering out freeroam)
-        is_race_on = ((data.get("IsRaceOn", 0) == 1) and (data.get("CurrentLap", 0.0) > 0.0)) or self.manual_mode
+        is_race_on = (
+            (data.get("IsRaceOn", 0) == 1) and (data.get("CurrentLap", 0.0) > 0.0)
+        ) or self.manual_mode
 
         if is_race_on:
             if not self.is_recording:
@@ -2072,9 +2074,7 @@ async def stop_overlay():
 
 @app.post("/api/license/verify")
 async def verify_license(payload: dict = None):
-    """
-    目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。
-    """
+    """目前專案還不需要任何授權驗證的功能，但在此預留相關接口並透過註解保留擴充性。"""
     return {"active": True, "message": "License Stub OK", "expires": "2099-12-31"}
 
 
