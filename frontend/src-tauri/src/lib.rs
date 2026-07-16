@@ -9,41 +9,55 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 fn get_backend_port() -> Result<u16, String> {
-    // 獲取當前執行檔所在的目錄
-    let mut path = std::env::current_exe()
-        .map(|p| p.parent().unwrap().to_path_buf())
-        .unwrap_or_else(|_| PathBuf::from("."));
-    
-    // 多路徑嘗試 logs/web_port.txt
-    let mut port_file = path.join("logs").join("web_port.txt");
-    if !port_file.exists() {
-        if let Some(parent) = path.parent() {
-            let p2 = parent.join("logs").join("web_port.txt");
-            if p2.exists() {
-                port_file = p2;
-            } else if let Some(gparent) = parent.parent() {
-                let p3 = gparent.join("logs").join("web_port.txt");
-                if p3.exists() {
-                    port_file = p3;
-                }
-            }
+    if let Ok(port_str) = std::env::var("BACKEND_PORT") {
+        if let Ok(port) = port_str.parse::<u16>() {
+            return Ok(port);
         }
-    }
-    
-    if !port_file.exists() {
-        port_file = PathBuf::from("logs/web_port.txt");
-    }
-    
-    if !port_file.exists() {
-        port_file = PathBuf::from("backend/logs/web_port.txt");
     }
 
-    match fs::read_to_string(&port_file) {
+    let exe_dir = std::env::current_exe()
+        .map(|p| p.parent().unwrap().to_path_buf())
+        .ok();
+    
+    let cwd_dir = std::env::current_dir().ok();
+
+    let mut search_dirs = Vec::new();
+    if let Some(ref d) = exe_dir {
+        search_dirs.push(d.clone());
+    }
+    if let Some(ref d) = cwd_dir {
+        search_dirs.push(d.clone());
+    }
+
+    search_dirs.push(PathBuf::from("."));
+    search_dirs.push(PathBuf::from(".."));
+    search_dirs.push(PathBuf::from("../.."));
+
+    for base_dir in search_dirs {
+        let mut curr = Some(base_dir.as_path());
+        while let Some(dir) = curr {
+            let p1 = dir.join("logs").join("web_port.txt");
+            if p1.exists() {
+                return read_port_from_file(&p1);
+            }
+            let p2 = dir.join("backend").join("logs").join("web_port.txt");
+            if p2.exists() {
+                return read_port_from_file(&p2);
+            }
+            curr = dir.parent();
+        }
+    }
+
+    Err("Could not find web_port.txt in any searched paths".to_string())
+}
+
+fn read_port_from_file(path: &std::path::Path) -> Result<u16, String> {
+    match fs::read_to_string(path) {
         Ok(content) => {
             let port_str = content.trim();
-            port_str.parse::<u16>().map_err(|e| format!("Failed to parse port '{}': {}", port_str, e))
+            port_str.parse::<u16>().map_err(|e| format!("Failed to parse port '{}' from {:?}: {}", port_str, path, e))
         }
-        Err(e) => Err(format!("Failed to read port file at {:?}: {}", port_file, e))
+        Err(e) => Err(format!("Failed to read port file at {:?}: {}", path, e))
     }
 }
 
