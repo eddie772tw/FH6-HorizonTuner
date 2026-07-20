@@ -1,39 +1,80 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+from PyInstaller.utils.hooks import collect_all
 
+block_cipher = None
 
+# 1. 自動收集可能需要的依賴
+datas = []
+binaries = []
+hiddenimports = [
+    "numpy",
+]
+
+# 收集 numpy
+np_datas, np_bins, np_hidden = collect_all("numpy")
+datas += np_datas
+binaries += np_bins
+hiddenimports += np_hidden
+
+# 2. 手動定義靜態資源與 Tauri 前端編譯產出的 exe
+added_files = [
+    # 關鍵：將 Tauri 編譯產出的 frontend.exe 封裝進去（目標放在根目錄）
+    ('frontend/src-tauri/target/release/frontend.exe', '.'),
+    
+    # 專案靜態資料
+    ('backend/car_database.json', '.'),
+    ('backend/car_params/*', 'car_params'),
+    ('lang/*', 'lang'),
+]
+
+datas.extend(added_files)
+
+# 3. 分析與打包核心設定
 a = Analysis(
-    ['D:\\FH6-Bundle\\FH6-HorizonTuner\\backend\\main.py'],
-    pathex=['D:\\FH6-Bundle\\FH6-HorizonTuner\\backend'],
-    binaries=[],
-    datas=[('D:\\FH6-Bundle\\FH6-HorizonTuner\\frontend\\src-tauri\\target\\release\\frontend.exe', '.'), ('backend\\car_database.json', '.'), ('backend\\car_params\\*', 'car_params'), ('lang\\*', 'lang')],
-    hiddenimports=[],
+    [os.path.join('backend', 'main.py')], # 入口程式碼
+    pathex=['.'],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'PIL._imagingcms',
+        'PIL.ImageCms',
+        'PIL._webp',
+        'PIL._imagingtk',
+        'PIL.ImageTk',
+        'PIL._imagingmorph'
+    ], # 排除不需要的 Pillow 子模組以減輕體積
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
     noarchive=False,
-    optimize=0,
 )
-pyz = PYZ(a.pure)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
+    a.zipfiles,
     a.datas,
     [],
-    name='FH6-HorizonTuner',
+    name='FH6-HorizonTuner',   # 產出的 EXE 檔名
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,
+    upx=False,                 # 避免病毒誤報
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False,            # False 等同於 --windowed (不顯示控制台視窗)
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['D:\\FH6-Bundle\\FH6-HorizonTuner\\app.ico'],
+    icon="app.ico",
 )
