@@ -1778,6 +1778,7 @@ async def clear_logs():
 
 
 # --- Overlay API ---
+# 註記：目前前端已移除 Dashboard Overlay 分頁與相關開發，但後端以下之 API 接入點仍予以保留，作為未來可能重啟或擴展開發之預留接口。
 LAYOUT_FILE = os.path.join(DATA_ROOT, "layout.json")
 DEFAULT_LAYOUT = {
     "modules": {
@@ -1817,6 +1818,7 @@ def get_overlay_path():
         )
 
 
+# 預留未來開發：取得 Overlay 版面配置
 @app.get("/api/overlay/layout")
 async def get_overlay_layout():
     if os.path.exists(LAYOUT_FILE):
@@ -1828,6 +1830,7 @@ async def get_overlay_layout():
     return DEFAULT_LAYOUT
 
 
+# 預留未來開發：儲存 Overlay 版面配置
 @app.post("/api/overlay/layout")
 async def save_overlay_layout(data: dict):
     try:
@@ -1839,6 +1842,7 @@ async def save_overlay_layout(data: dict):
         return {"error": f"Failed to save layout: {e}"}
 
 
+# 預留未來開發：取得 Overlay 執行狀態
 @app.get("/api/overlay/status")
 async def get_overlay_status():
     global overlay_process
@@ -1851,6 +1855,7 @@ async def get_overlay_status():
     return {"running": running}
 
 
+# 預留未來開發：啟動 Overlay 處理程序
 @app.post("/api/overlay/start")
 async def start_overlay():
     global overlay_process
@@ -1881,6 +1886,7 @@ async def start_overlay():
         return {"error": f"Failed to start overlay: {e}", "success": False}
 
 
+# 預留未來開發：停止 Overlay 處理程序
 @app.post("/api/overlay/stop")
 async def stop_overlay():
     global overlay_process
