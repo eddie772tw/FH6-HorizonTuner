@@ -3,6 +3,7 @@ import { useSettings } from '../context/SettingsContext';
 import '../App.css';
 
 interface HudElements {
+  showGauge: boolean;
   showRPM: boolean;
   showSpeed: boolean;
   showGear: boolean;
@@ -15,6 +16,7 @@ interface HudElements {
   showTeleTires: boolean;
   showTeleAttitude: boolean;
   showTeleEngine: boolean;
+  showTelePedals: boolean;
 }
 
 interface MonitorOption {
@@ -34,7 +36,8 @@ interface HudConfig {
   unit: 'kmh' | 'mph';
   elements: HudElements;
   soundEnabled: boolean;
-  demoMode: boolean;
+  telemetryOpacity?: number;
+  telemetryScale?: number;
 }
 
 const DEFAULT_HUD_CONFIG: HudConfig = {
@@ -43,8 +46,10 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
-  demoMode: true,
+  telemetryOpacity: 0.85,
+  telemetryScale: 1.0,
   elements: {
+    showGauge: true,
     showRPM: true,
     showSpeed: true,
     showGear: true,
@@ -56,6 +61,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showTeleTires: false,
     showTeleAttitude: false,
     showTeleEngine: false,
+    showTelePedals: false,
   },
   soundEnabled: false,
 };
@@ -181,6 +187,7 @@ export const OverlayView: React.FC = () => {
     try {
       if (enable) {
         await applyMonitorSelection(updated.selectedMonitorIndex);
+        channelRef.current?.postMessage({ type: 'hud:animate' });
       }
       if ((window as any).__TAURI__?.core?.invoke) {
         await (window as any).__TAURI__.core.invoke('toggle_hud_window', { visible: enable });
@@ -207,6 +214,18 @@ export const OverlayView: React.FC = () => {
   const handleScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
     const updated = { ...config, scale: clamped };
+    saveConfig(updated);
+  };
+
+  const handleTelemetryOpacityChange = (newOpacity: number) => {
+    const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
+    const updated = { ...config, telemetryOpacity: clamped };
+    saveConfig(updated);
+  };
+
+  const handleTelemetryScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    const updated = { ...config, telemetryScale: clamped };
     saveConfig(updated);
   };
 
@@ -248,7 +267,7 @@ export const OverlayView: React.FC = () => {
       <div className="cyber-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
         <div>
           <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.6rem', letterSpacing: '1px' }}>
-            {t("Horizon Tuner HUD Control Panel") || "Horizon Tuner HUD 儀表板控制中心"}
+            {t("HUD Control Panel") || "HUD 儀表板控制中心"}
           </h2>
           <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
             {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6") || "全螢幕全透明靠右下賽車抬頭顯示儀表 (多顯示器 / 縮放 / 4卡片支援)"}
@@ -289,7 +308,7 @@ export const OverlayView: React.FC = () => {
         {/* Multi-Monitor Selector & Display Settings */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            🖥️ {t("Target Display Monitor") || "目標顯示器選擇"}
+            {t("Target Display Monitor") || "目標顯示器選擇"}
           </h3>
           <div style={{ marginTop: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>
@@ -324,7 +343,7 @@ export const OverlayView: React.FC = () => {
         {/* HUD Scale Slider & Input */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            🔍 {t("HUD Scale Size") || "儀表大小縮放設定"}
+            {t("HUD Scale Size") || "儀表大小縮放設定"}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -363,10 +382,90 @@ export const OverlayView: React.FC = () => {
           </div>
         </div>
 
+        {/* Telemetry Cluster Opacity & Scale */}
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("Central Telemetry Cluster Settings") || "中央遙測儀表叢集設定"}
+          </h3>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Opacity slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Opacity") || "遙測儀表透明度"}:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <input
+                    type="number"
+                    min={10}
+                    max={100}
+                    value={Math.round((config.telemetryOpacity ?? 0.85) * 100)}
+                    onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value) / 100)}
+                    style={{
+                      width: '65px',
+                      padding: '0.3rem',
+                      borderRadius: '4px',
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={0.1}
+                max={1.0}
+                step={0.05}
+                value={config.telemetryOpacity ?? 0.85}
+                onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Telemetry scale slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Scale Ratio") || "獨立遙測縮放比例"}:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <input
+                    type="number"
+                    min={50}
+                    max={200}
+                    value={Math.round((config.telemetryScale ?? 1.0) * 100)}
+                    onChange={(e) => handleTelemetryScaleChange(Number(e.target.value) / 100)}
+                    style={{
+                      width: '65px',
+                      padding: '0.3rem',
+                      borderRadius: '4px',
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryScale ?? 1.0}
+                onChange={(e) => handleTelemetryScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Style Selection */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            🏁 {t("HUD Style Mode") || "儀表板樣式模式"}
+            {t("HUD Style Mode") || "儀表板樣式模式"}
           </h3>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <button
@@ -382,7 +481,7 @@ export const OverlayView: React.FC = () => {
                 fontWeight: 'bold'
               }}
             >
-              🏁 {t("Advanced (Race Arc HUD)") || "Advanced 競賽弧形儀表"}
+              {t("Advanced (Race Arc HUD)") || "Advanced 競賽弧形儀表"}
             </button>
             <button
               onClick={() => handleStyleChange('simple')}
@@ -397,12 +496,12 @@ export const OverlayView: React.FC = () => {
                 fontWeight: 'bold'
               }}
             >
-              ⭕ {t("Simple (NFSU2 Style Circle)") || "Simple 圓形經典儀表"}
+              {t("Simple (NFSU2 Style Circle)") || "Simple 圓形經典儀表"}
             </button>
           </div>
         </div>
 
-        {/* HUD Elements Options (Renamed, Emoji Removed, Clean Checklist) */}
+        {/* HUD Elements Options */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Elements") || "HUD Elements"}
@@ -410,61 +509,36 @@ export const OverlayView: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginTop: '1rem' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showGauge !== false} onChange={() => handleElementToggle('showGauge')} />
+              <span>{t("Speedometer Gauge") || "右下競賽儀表"}</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
-              <span>{t("Suspension Travel Card") || "4 輪懸吊行程卡片 (直式)"}</span>
+              <span>{t("Suspension Travel") || "4 輪懸吊行程"}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleTires} onChange={() => handleElementToggle('showTeleTires')} />
-              <span>{t("Tire Slip & Temp Card") || "4 輪滑移雷達與胎溫直方圖卡片"}</span>
+              <span>{t("Tire Slip & Temp") || "4 輪滑移雷達與胎溫直方圖"}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleAttitude} onChange={() => handleElementToggle('showTeleAttitude')} />
-              <span>{t("G-Force & Attitude Card") || "車身姿態與 G力向量卡片 (換行)"}</span>
+              <span>{t("G-Force & Attitude") || "車身姿態與 G力雷達圖"}</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />
+              <span>{t("Throttle & Brake Trace") || "油門與煞車歷程折線圖"}</span>
             </label>
           </div>
-        </div>
-
-        {/* DEMO Mode Toggle */}
-        <div className="cyber-card" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>
-              {t("DEMO Mode") || "DEMO 示範模擬模式"}
-            </h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#aaa' }}>
-              {t("Allow simulated gauge sweep animation when no telemetry UDP data is received") || "開啟時在沒有遊戲遙測資料輸入時自動上演示範模擬作動"}
-            </p>
-          </div>
-          <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
-            <input
-              type="checkbox"
-              checked={config.demoMode !== false}
-              onChange={(e) => {
-                const newCfg = { ...config, demoMode: e.target.checked };
-                setConfig(newCfg);
-                saveConfig(newCfg);
-              }}
-              style={{ opacity: 0, width: 0, height: 0 }}
-            />
-            <span style={{
-              position: 'absolute', cursor: 'pointer', inset: 0,
-              background: config.demoMode !== false ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
-              borderRadius: '24px', transition: '0.2s'
-            }}>
-              <span style={{
-                position: 'absolute', content: '""', height: '18px', width: '18px',
-                left: config.demoMode !== false ? '28px' : '3px', bottom: '3px',
-                background: '#000', borderRadius: '50%', transition: '0.2s'
-              }} />
-            </span>
-          </label>
         </div>
 
         {/* Rev Limiter Auto-learning Database */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            ⚙️ {t("Car Rev Limiter Auto-Learning") || "車輛轉速極限自動學習庫"}
+            {t("Car Rev Limiter Auto-Learning") || "車輛轉速極限自動學習庫"}
           </h3>
           <p style={{ fontSize: '0.85rem', color: '#aaa', margin: '0.5rem 0' }}>
             {t("Recorded Car Profiles") || "已學習紀錄的車輛數量"}: <strong style={{ color: 'var(--primary)' }}>{Object.keys(carLearningData).length}</strong>
@@ -481,7 +555,7 @@ export const OverlayView: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            🗑 {t("Reset Car Learning Database") || "重置車輛學習資料庫"}
+            {t("Reset Car Learning Database") || "重置車輛學習資料庫"}
           </button>
         </div>
 

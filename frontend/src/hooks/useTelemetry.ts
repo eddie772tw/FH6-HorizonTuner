@@ -96,6 +96,8 @@ function formatHudTelemetry(raw: TelemetryData) {
   return {
     isRaceOn,
     is_race_on: isRaceOn,
+    isMetric,
+    is_metric: isMetric,
     timestamp_ms: raw.TimestampMS || 0,
     carOrdinal: raw.CarOrdinal || 1,
     car_ordinal: raw.CarOrdinal || 1,
@@ -137,10 +139,18 @@ function formatHudTelemetry(raw: TelemetryData) {
     slip_fr: slipFR,
     slip_rl: slipRL,
     slip_rr: slipRR,
+    slip_angle_fl: raw.TireSlipAngle?.[0] || 0,
+    slip_angle_fr: raw.TireSlipAngle?.[1] || 0,
+    slip_angle_rl: raw.TireSlipAngle?.[2] || 0,
+    slip_angle_rr: raw.TireSlipAngle?.[3] || 0,
     susp_fl: raw.NormalizedSuspensionTravel?.[0] || 0,
     susp_fr: raw.NormalizedSuspensionTravel?.[1] || 0,
     susp_rl: raw.NormalizedSuspensionTravel?.[2] || 0,
     susp_rr: raw.NormalizedSuspensionTravel?.[3] || 0,
+    TireTemp: raw.TireTemp || [180, 180, 180, 180],
+    TireSlipAngle: raw.TireSlipAngle || [0, 0, 0, 0],
+    TireSlipRatio: raw.TireSlipRatio || [0, 0, 0, 0],
+    NormalizedSuspensionTravel: raw.NormalizedSuspensionTravel || [0, 0, 0, 0],
     num_cylinders: raw.Cylinders || 4,
     lockup,
     sessionMaxima,
@@ -148,41 +158,7 @@ function formatHudTelemetry(raw: TelemetryData) {
   };
 }
 
-// Standby Idle Telemetry broadcast for HUD preview when game is not sending data
-if (typeof window !== 'undefined') {
-  const channel = new BroadcastChannel('horizon_tuner_hud_channel');
-  setInterval(() => {
-    if (Date.now() - lastRealDataTime > 2000) {
-      const idleData: TelemetryData = {
-        IsRaceOn: 1,
-        TimestampMS: Date.now(),
-        EngineMaxRpm: 8000,
-        EngineIdleRpm: 1000,
-        CurrentEngineRpm: 1200 + Math.sin(Date.now() / 300) * 80,
-        AccelerationX: 0,
-        AccelerationY: 0,
-        AccelerationZ: 1.0,
-        VelocityX: 0,
-        VelocityY: 0,
-        VelocityZ: 0,
-        Yaw: 0,
-        NormalizedSuspensionTravel: [0.5, 0.5, 0.5, 0.5],
-        TireSlipRatio: [0, 0, 0, 0],
-        TireSlipAngle: [0, 0, 0, 0],
-        SpeedMetersPerSecond: 0,
-        PowerWatts: 150000,
-        TorqueNewtons: 350,
-        Gear: 1,
-        Boost: 0,
-        Cylinders: 6
-      };
-      channel.postMessage({
-        type: 'telemetry',
-        data: formatHudTelemetry(idleData)
-      });
-    }
-  }, 50);
-}
+// Standby Idle Telemetry broadcast removed to ensure HUD only updates on live UDP telemetry data.
 
 export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
   const [data, setData] = useState<TelemetryData | null>(latestData);
@@ -307,6 +283,7 @@ function formatHudTelemetry(raw: TelemetryData) {
           lastRealDataTime = Date.now();
           // Dispatch high-frequency 60Hz event directly to Canvas components
           telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: latestData }));
+          window.dispatchEvent(new CustomEvent('hud:frame', { detail: latestData }));
           
           // Forward telemetry to Horizon Tuner HUD window via BroadcastChannel
           if (latestData && hudBroadcastChannel) {

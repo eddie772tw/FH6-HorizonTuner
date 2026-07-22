@@ -236,6 +236,150 @@ const GForceRadar: React.FC = () => {
   );
 };
 
+// --- COMPONENT: VerticalInputBar ---
+const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; max: number; color: string }> = ({ label, selector, max, color }) => {
+  const valRef = useRef<number>(0);
+  const barRef = useRef<HTMLDivElement>(null);
+  const pctRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      const liveData = e.detail;
+      if (!liveData) return;
+      const rawVal = selector(liveData);
+      valRef.current = Math.max(0, Math.min(max, rawVal));
+
+      const pct = Math.round((valRef.current / max) * 100);
+      if (barRef.current) barRef.current.style.height = `${pct}%`;
+      if (pctRef.current) pctRef.current.innerText = `${pct}%`;
+    };
+
+    window.addEventListener('hud:frame', handleUpdate);
+    telemetryEmitter.addEventListener('update', handleUpdate);
+    return () => {
+      window.removeEventListener('hud:frame', handleUpdate);
+      telemetryEmitter.removeEventListener('update', handleUpdate);
+    };
+  }, [selector, max]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</span>
+      <div style={{ position: 'relative', width: '16px', height: '65px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
+        <div ref={barRef} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '0%', background: color, transition: 'height 0.05s linear', borderRadius: '0 0 3px 3px' }} />
+      </div>
+      <span ref={pctRef} style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#fff' }}>0%</span>
+    </div>
+  );
+};
+
+// --- COMPONENT: PedalTraceCanvas ---
+const PedalTraceCanvas: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hist = useRef<{ throttle: number; brake: number; time: number }[]>([]);
+  const lastTimeRef = useRef(performance.now());
+  const prevCar = useRef<number | null>(null);
+  const prevRace = useRef<number | null>(null);
+  const { t } = useSettings();
+
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      const liveData = e.detail;
+      if (!liveData) return;
+
+      if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
+          (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
+        hist.current = [];
+      }
+      prevCar.current = liveData.CarOrdinal;
+      prevRace.current = liveData.IsRaceOn;
+
+      if (liveData.IsRaceOn !== 1) return;
+
+      const now = performance.now();
+      lastTimeRef.current = now;
+
+      const throttle = Math.max(0, Math.min(1, (liveData.AccelInput || 0) / 255));
+      const brake = Math.max(0, Math.min(1, (liveData.BrakeInput || 0) / 255));
+
+      if (hist.current.length < 300) {
+        hist.current.push({ throttle, brake, time: now });
+      } else {
+        const oldP = hist.current.shift();
+        if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; hist.current.push(oldP); }
+      }
+
+      const canvas = canvasRef.current;
+      if (canvas && hist.current.length > 0) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const w = canvas.width, h = canvas.height;
+          ctx.clearRect(0, 0, w, h);
+
+          // 50% Guideline
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5);
+          ctx.stroke();
+
+          const len = hist.current.length;
+          const stepX = w / (300 - 1);
+
+          // Throttle Trace (Green #00ff66) - Latest on right
+          ctx.beginPath();
+          for (let k = 0; k < len; k++) {
+            const px = k * stepX;
+            const py = h - (hist.current[k].throttle * (h - 6)) - 3;
+            if (k === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#00ff66';
+          ctx.shadowColor = 'rgba(0, 255, 102, 0.6)';
+          ctx.shadowBlur = 4;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Brake Trace (Red #ff0055) - Latest on right
+          ctx.beginPath();
+          for (let k = 0; k < len; k++) {
+            const px = k * stepX;
+            const py = h - (hist.current[k].brake * (h - 6)) - 3;
+            if (k === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#ff0055';
+          ctx.shadowColor = 'rgba(255, 0, 85, 0.6)';
+          ctx.shadowBlur = 4;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+      }
+    };
+
+    window.addEventListener('hud:frame', handleUpdate);
+    telemetryEmitter.addEventListener('update', handleUpdate);
+    return () => {
+      window.removeEventListener('hud:frame', handleUpdate);
+      telemetryEmitter.removeEventListener('update', handleUpdate);
+    };
+  }, []);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '95px', background: 'rgba(0,0,0,0.25)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+      <canvas ref={canvasRef} width={480} height={95} style={{ width: '100%', height: '100%' }} />
+      <span style={{ position: 'absolute', top: '6px', right: '10px', color: '#00ff66', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'monospace' }}>
+        {t("THROTTLE")}
+      </span>
+      <span style={{ position: 'absolute', bottom: '6px', right: '10px', color: '#ff0055', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'monospace' }}>
+        {t("BRAKE")}
+      </span>
+    </div>
+  );
+};
+
 // --- COMPONENT: TireRadar ---
 const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = ({title, isLeft, tireIdx}) => {
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -694,14 +838,13 @@ const TelemetryView: React.FC = () => {
             </div>
             <SteerBar />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '0.5rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <InputBar label={t("Throttle")} selector={d => d.AccelInput || 0} max={255} color="#00ff00" />
-              <InputBar label={t("Brake")} selector={d => d.BrakeInput || 0} max={255} color="#ff0000" />
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <PedalTraceCanvas />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <InputBar label={t("Clutch")} selector={d => d.ClutchInput || 0} max={255} color="#0088ff" />
-              <InputBar label={t("Handbrake")} selector={d => d.HandBrakeInput || 0} max={255} color="#ffaa00" />
+            <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
+              <VerticalInputBar label={t("Clutch")} selector={d => d.ClutchInput || 0} max={255} color="#0088ff" />
+              <VerticalInputBar label={t("Handbrake")} selector={d => d.HandBrakeInput || 0} max={255} color="#ffaa00" />
             </div>
           </div>
         </div>

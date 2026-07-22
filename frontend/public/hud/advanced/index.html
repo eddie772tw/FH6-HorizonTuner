@@ -14,6 +14,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Advanced HUD</title>
+    <!-- Include Shared Base HUD Styles -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         /* ── Fonts ──────────────────────────────────────────────────────────────── */
         @font-face {
@@ -267,9 +269,6 @@
 
 <body>
     <div class="adv-wrapper">
-
-        <!-- Shared Telemetry 4 Cards Mount Point -->
-        <div id="teleCardsMount"></div>
 
         <div class="adv-container" id="advContainer">
 
@@ -803,10 +802,9 @@
         }
     </script>
 
-    <!-- Include Shared Telemetry Cards Renderer -->
-    <script src="../shared/telemetry-cards.js"></script>
+    <!-- Include Shared Modules -->
+    <script src="../shared/hud-core.js"></script>
 
-    <!-- ========== HUD FRAME LISTENER ========== -->
     <script>
         var _advLastRaceState = 0;
         var _advSweepCarOrdinal = null;
@@ -814,10 +812,6 @@
         var _advLastIdleRpm = 800;
         var _advValidGear = 1;
         var _advLastKnownRedline = null;
-        var currentElements = {};
-
-        // Initialize shared Telemetry Cards
-        TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
 
         // Set speed with digit spans for tabular spacing
         function setAdvSpeedDisplay(value) {
@@ -838,156 +832,91 @@
             }).join('');
         }
 
-        // Apply saved unit on HUD load
-        var _advUnitEl = document.getElementById('adv-speed-unit');
-        if (_advUnitEl) _advUnitEl.textContent = window.getSpeedUnit?.() ?? 'KM/H';
+        // Register Advanced HUD Style with HUDCore Engine
+        HUDCore.registerStyle('advanced', {
+            containerId: 'advContainer',
+            scaleMultiplier: 0.5,
 
-        window.addEventListener('message', (e) => {
-            const { type, ...payload } = e.data ?? {};
+            onInit: function (payload) {
+                var _advUnitEl = document.getElementById('adv-speed-unit');
+                if (_advUnitEl) _advUnitEl.textContent = (payload && payload.isMetric !== false) ? 'KM/H' : 'MPH';
+            },
 
-            switch (type) {
+            onElementsChange: function (elements) {
+                var rpmCanvas = document.getElementById('advCanvas');
+                var rpmStatic = document.getElementById('advCanvasStatic');
+                var rpmVal = document.getElementById('adv-rpm-value');
+                if (rpmCanvas) rpmCanvas.style.display = elements.showRPM === false ? 'none' : 'block';
+                if (rpmStatic) rpmStatic.style.display = elements.showRPM === false ? 'none' : 'block';
+                if (rpmVal) rpmVal.style.display = elements.showRPM === false ? 'none' : 'block';
 
-                case 'config': {
-                    if (payload.data) {
-                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * 0.5);
-                        window._currentAdvScale = finalScale;
-                        var container = document.getElementById('advContainer');
-                        if (container) container.style.zoom = finalScale;
+                var speedEl = document.getElementById('adv-speed');
+                var unitEl = document.getElementById('adv-speed-unit');
+                if (speedEl) speedEl.style.display = elements.showSpeed === false ? 'none' : 'block';
+                if (unitEl) unitEl.style.display = elements.showSpeed === false ? 'none' : 'block';
+
+                var gearEl = document.getElementById('adv-gear');
+                if (gearEl) gearEl.style.display = elements.showGear === false ? 'none' : 'block';
+
+                var gaugeGroup = document.getElementById('advGauges');
+                if (gaugeGroup) gaugeGroup.style.display = elements.showPowerTorque === false ? 'none' : 'block';
+
+                window.showBoostGauge = elements.showBoost !== false;
+
+                var dotsLeft = document.getElementById('dots-left');
+                var dotsRight = document.getElementById('dots-right');
+                if (dotsLeft) dotsLeft.style.display = elements.showWheelLockup === false ? 'none' : 'flex';
+                if (dotsRight) dotsRight.style.display = elements.showWheelLockup === false ? 'none' : 'flex';
+            },
+
+            onFrame: function (data, payload) {
+                var redlineRpm = payload.redlineRpm || ((data.maxRpm || 8000) * 0.92);
+                var sessionMaxima = payload.sessionMaxima;
+                var lockup = payload.lockup || {};
+
+                var container = document.getElementById('advContainer');
+                if (!container) return;
+
+                if (data.maxRpm) _advLastMaxRpm = data.maxRpm;
+                if (data.idleRpm) _advLastIdleRpm = data.idleRpm;
+
+                container.classList.remove('hidden');
+
+                if (data.isRaceOn === 1 && _advLastRaceState === 0) {
+                    if (_advSweepCarOrdinal === null) {
+                        triggerAdvAnimation(data.maxRpm, data.idleRpm, redlineRpm);
+                        _advSweepCarOrdinal = data.carOrdinal;
                     }
-                    break;
                 }
+                _advLastRaceState = data.isRaceOn;
 
-                case 'hud:elements': {
-                    currentElements = payload || {};
-                    const rpmCanvas = document.getElementById('advCanvas');
-                    const rpmStatic = document.getElementById('advCanvasStatic');
-                    const rpmVal = document.getElementById('adv-rpm-value');
-                    if (rpmCanvas) rpmCanvas.style.display = currentElements.showRPM === false ? 'none' : 'block';
-                    if (rpmStatic) rpmStatic.style.display = currentElements.showRPM === false ? 'none' : 'block';
-                    if (rpmVal) rpmVal.style.display = currentElements.showRPM === false ? 'none' : 'block';
+                if (!window.advSweepActive) {
+                    drawAdvancedHUD(data, redlineRpm, sessionMaxima);
 
-                    const speedEl = document.getElementById('adv-speed');
-                    const unitEl = document.getElementById('adv-speed-unit');
-                    if (speedEl) speedEl.style.display = currentElements.showSpeed === false ? 'none' : 'block';
-                    if (unitEl) unitEl.style.display = currentElements.showSpeed === false ? 'none' : 'block';
+                    var speed = Math.round(payload.isMetric !== false
+                        ? data.speed * 3.6
+                        : data.speed * 2.237);
+                    setAdvSpeedDisplay(speed);
+                    setAdvRpmDisplay(Math.round(data.rpm), data.rpm >= redlineRpm);
 
-                    const gearEl = document.getElementById('adv-gear');
-                    if (gearEl) gearEl.style.display = currentElements.showGear === false ? 'none' : 'block';
+                    var gearEl = document.getElementById('adv-gear');
+                    if (data.gear <= 10) _advValidGear = data.gear;
+                    if (gearEl) gearEl.textContent = _advValidGear === 0 ? 'R' : _advValidGear.toString();
 
-                    const gaugeGroup = document.getElementById('advGauges');
-                    if (gaugeGroup) gaugeGroup.style.display = currentElements.showPowerTorque === false ? 'none' : 'block';
-
-                    window.showBoostGauge = currentElements.showBoost !== false;
-
-                    const dotsLeft = document.getElementById('dots-left');
-                    const dotsRight = document.getElementById('dots-right');
-                    if (dotsLeft) dotsLeft.style.display = currentElements.showWheelLockup === false ? 'none' : 'flex';
-                    if (dotsRight) dotsRight.style.display = currentElements.showWheelLockup === false ? 'none' : 'flex';
-
-                    // Update shared Telemetry Cards visibility
-                    TelemetryCardsManager.update(null, currentElements);
-                    break;
+                    updateDotGroup('fl', lockup.fl);
+                    updateDotGroup('rl', lockup.rl);
+                    updateDotGroup('fr', lockup.fr);
+                    updateDotGroup('rr', lockup.rr);
                 }
+            },
 
-                case 'hud:frame': {
-                    const { data, redlineRpm, sessionMaxima, lockup } = payload;
-                    const container = document.getElementById('advContainer');
-                    if (!container) return;
-
-                    if (data.maxRpm) _advLastMaxRpm = data.maxRpm;
-                    if (data.idleRpm) _advLastIdleRpm = data.idleRpm;
-
-                    container.classList.remove('hidden');
-
-                    if (data.isRaceOn === 1 && _advLastRaceState === 0) {
-                        if (_advSweepCarOrdinal === null) {
-                            triggerAdvAnimation(data.maxRpm, data.idleRpm, redlineRpm);
-                            _advSweepCarOrdinal = data.carOrdinal;
-                        }
-                    }
-                    _advLastRaceState = data.isRaceOn;
-
-                    if (!window.advSweepActive) {
-                        drawAdvancedHUD(data, redlineRpm, sessionMaxima);
-                        
-                        // Update shared Telemetry Cards
-                        TelemetryCardsManager.update(data, currentElements);
-
-                        const speed = Math.round(payload.isMetric !== false
-                            ? data.speed * 3.6
-                            : data.speed * 2.237);
-                        setAdvSpeedDisplay(speed);
-                        setAdvRpmDisplay(Math.round(data.rpm), data.rpm >= redlineRpm);
-
-                        const gearEl = document.getElementById('adv-gear');
-                        if (data.gear <= 10) _advValidGear = data.gear;
-                        if (gearEl) gearEl.textContent = _advValidGear === 0 ? 'R' : _advValidGear.toString();
-
-                        updateDotGroup('fl', lockup.fl);
-                        updateDotGroup('rl', lockup.rl);
-                        updateDotGroup('fr', lockup.fr);
-                        updateDotGroup('rr', lockup.rr);
-                    }
-                    break;
-                }
-
-                case 'hud:init': {
-                    const el = document.getElementById('adv-speed-unit');
-                    if (el) el.textContent = payload.isMetric ? 'KM/H' : 'MPH';
-                    break;
-                }
-
-                case 'car:changed': {
-                    const od = payload;
-                    if (od.carOrdinal === 0) return;
-                    if (!od.isKnown) {
-                        window.parent.postMessage({
-                            type: 'notification',
-                            message: 'New car detected! 🏎️ Rev it up to learn the limiter!',
-                            duration: 6000,
-                        }, '*');
-                    }
-                    if (_advSweepCarOrdinal !== null) {
-                        triggerAdvAnimation(
-                            od.maxRpm || _advLastMaxRpm,
-                            od.idleRpm || _advLastIdleRpm,
-                            od.redline || null
-                        );
-                    }
-                    _advSweepCarOrdinal = od.carOrdinal;
-                    break;
-                }
-
-                case 'speedunit:changed': {
-                    const el = document.getElementById('adv-speed-unit');
-                    if (el) el.textContent = payload.metric ? 'KM/H' : 'MPH';
-                    break;
-                }
-
-                case 'lc:state': {
-                    window.advLCArmed = payload.armed;
-                    window.advLCLaunched = payload.launched;
-                    window.advLCActive = payload.armed || payload.launched;
-                    break;
-                }
-
-                case 'hud:scale':
-                    if (window._currentAdvScale) {
-                        var container = document.getElementById('advContainer');
-                        if (container) container.style.zoom = window._currentAdvScale;
-                    } else {
-                        window.setAdvScale?.();
-                    }
-                    break;
-
-                case 'demo:start': window.dispatchEvent(new CustomEvent('demo:start')); break;
-                case 'demo:stop': window.dispatchEvent(new CustomEvent('demo:stop')); break;
-                case 'demo:toggle': window.dispatchEvent(new CustomEvent('demo:toggle')); break;
-
-                case 'tutorial:replay': window.dispatchEvent(new CustomEvent('tutorial:replay')); break;
-                case 'tutorial:locked': window.dispatchEvent(new CustomEvent('tutorial:locked')); break;
+            onAnimate: function () {
+                triggerAdvAnimation(8000, 1000, 7200);
             }
         });
+
+        // Activate Advanced Style
+        HUDCore.init('advanced');
     </script>
 
 
@@ -1080,107 +1009,6 @@
             }
 
             requestAnimationFrame(advLoop);
-        }
-    </script>
-
-
-    <!-- ========== DEMO MODE ========== -->
-    <script>
-        var advDemoMode = false;
-        var advDemoInterval = null;
-        var advDemoRpm = 0;
-        var advDemoGear = 1;
-        var advDemoDir = 1;
-        var avdDemoMaxRpm = 11_000;
-
-        function startAdvDemo() {
-            advDemoRpm = 0; advDemoGear = 1; advDemoDir = 1;
-            var container = document.getElementById('advContainer');
-            if (container) container.classList.remove('hidden');
-
-            advDemoInterval = setInterval(function () {
-                advDemoRpm += 100 * advDemoDir;
-                if (advDemoRpm >= avdDemoMaxRpm) advDemoDir = -1;
-                if (advDemoRpm <= 0) { advDemoDir = 1; advDemoGear = (advDemoGear % 6) + 1; }
-                var rpmPct = advDemoRpm / avdDemoMaxRpm;
-
-                var mockData = {
-                    isRaceOn: 1, rpm: advDemoRpm, maxRpm: avdDemoMaxRpm,
-                    speed: rpmPct * 83.3,
-                    // speed: 50,
-                    throttle: rpmPct,
-                    brake: 0,
-                    // gear: advDemoGear, throttle: rpmPct, brake: 0,
-                    gear: 10,
-                    boost: (rpmPct - 0.5) * 20,
-                    power: rpmPct * 650,
-                    torque: 100 + rpmPct * 500,
-                    carOrdinal: -1,
-                    handBrake: 0,
-                    wheelSpeedFL: 0, wheelSpeedFR: 0, wheelSpeedRL: 0, wheelSpeedRR: 0,
-                };
-
-                drawAdvancedHUD(mockData, 5000
-
-                );
-                setAdvSpeedDisplay(Math.round((window.convertSpeed ?? function (v) { return v * 3.6; })(mockData.speed)));
-                setAdvRpmDisplay(Math.round(mockData.rpm), mockData.rpm >= rpmPct);
-
-                var gearEl = document.getElementById('adv-gear');
-                if (gearEl) gearEl.textContent = mockData.gear.toString();
-
-                // Demo lockup: slowly build up FL lockup risk as RPM climbs
-                updateDotGroup('fl', rpmPct * 2);
-                updateDotGroup('rl', rpmPct * 0.4);
-                updateDotGroup('fr', rpmPct * 0.95);
-                updateDotGroup('rr', rpmPct * 0.5);
-            }, 100);
-        }
-
-        function stopAdvDemo() {
-            clearInterval(advDemoInterval);
-            advDemoInterval = null;
-        }
-
-        window.addEventListener('demo:toggle', function () {
-            advDemoMode = !advDemoMode;
-            window.demoActive = advDemoMode;
-            _updateAdvDemoUI(advDemoMode);
-           if (advDemoMode) {
-                startAdvDemo();
-                window.parent.postMessage({ type: 'titlebar:visible', visible: true }, '*');
-                window.parent.postMessage({ type: 'notification', message: 'Demo mode ON 🎮 — advanced HUD simulated' }, '*');
-            }
-            else {
-                stopAdvDemo();
-                if (!window.tutorialActive) window.parent.postMessage({ type: 'titlebar:visible', visible: false }, '*');
-                window.parent.postMessage({ type: 'notification', message: 'Demo mode OFF' }, '*');
-            }
-        });
-
-        window.addEventListener('demo:start', function () {
-            if (!advDemoMode) {
-                advDemoMode = true;
-                startAdvDemo();
-                _updateAdvDemoUI(true);
-                window.parent.postMessage({ type: 'titlebar:visible', visible: true }, '*');
-            }
-        });
-
-        window.addEventListener('demo:stop', function () {
-            if (advDemoMode) {
-                stopAdvDemo();
-                advDemoMode = false;
-                _updateAdvDemoUI(false);
-                if (!window.tutorialActive) window.parent.postMessage({ type: 'titlebar:visible', visible: false }, '*');
-            }
-        });
-
-        function _updateAdvDemoUI(on) {
-            var statusEl = document.getElementById('demo-status');
-            if (statusEl) statusEl.textContent = on ? 'ON' : 'OFF';
-            var btn = document.getElementById('demo-btn');
-            if (btn) btn.style.background = on ? 'rgba(255,0,136,0.3)' : '';
         }
     </script>
 

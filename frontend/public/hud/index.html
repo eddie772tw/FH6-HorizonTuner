@@ -431,6 +431,9 @@
         </div>
     </div>
 
+    <!-- ── Central Telemetry Cluster Mount Point (Host Root Level - Lifetime Decoupled) ── -->
+    <div id="teleCardsMount" style="position:fixed; inset:0; pointer-events:none; z-index:999;"></div>
+
     <!-- ── HUD mount point ───────────────────────────────────────────────── -->
     <div id="hud-root" data-physics="true">
         <iframe id="hud-iframe"
@@ -510,9 +513,6 @@
             <h3>HUD</h3>
             <button class="settings-btn danger" onclick="window.resetToSafePosition()">
                 🔄 Reset Window to Primary Monitor
-            </button>
-            <button class="settings-btn" id="demo-btn" onclick="window.dispatchEvent(new CustomEvent('demo:toggle'))">
-                🎮 Demo Mode: <span id="demo-status">OFF</span>
             </button>
             <button class="settings-btn" onclick="forceRelearn?.()">
                 🔄 Force Re-learn Rev Limiter
@@ -597,11 +597,17 @@
     </div>
 
     <!-- ── Shared modules ─────────────────────────────────────────────────── -->
+    <script src="./shared/telemetry-cards.js"></script>
     <script type="module">
         import { initCoordinator }                                                                                              from './shared/coordinator.js';
         import { initWebSocket }                                                                                                from './shared/ws.js';
         import { initPhysics, updatePhysicsTargets,togglePhysics }                                                              from './shared/physics.js';
         import { initUtils, showNotification, toggleNotifications, convertSpeed, setSpeedDisplay, toggleSpeedUnit, isMetric }   from './shared/utils.js';
+
+        // Initialize Host-level Central Telemetry Cluster (Decoupled from iframe lifetime)
+        if (window.TelemetryCardsManager) {
+            window.TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
+        }
 
         // ── HUD switcher ──────────────────────────────────────────────────
         const HUDS      = { simple: './simple/index.html', advanced: './advanced/index.html' };
@@ -642,20 +648,16 @@
                     postToHud('hud:elements', window._currentHudElements);
                 }
 
-                // Send immediate standby initial frame for instant render
+                // Send immediate zero standby initial frame for clean load
                 postToHud('hud:frame', {
-                    data: { isRaceOn: 1, rpm: 1200, maxRpm: 8000, idleRpm: 1000, speed: 0, gear: 1 },
+                    data: { isRaceOn: 0, rpm: 0, maxRpm: 8000, idleRpm: 1000, speed: 0, gear: 0 },
                     redlineRpm: 7200,
                     lockup: { fl: false, fr: false, rl: false, rr: false }
                 });
  
                 setTimeout(() => postToHud('hud:scale'), 30);
                 await window.loadWindowState?.();
- 
-                if (window.demoActive && window._currentHudConfig?.demoMode !== false) {
-                    setTimeout(() => postToHud('demo:start'), 150);
-                }
- 
+
                 console.log(`[Launcher] Loaded HUD: ${name}`);
             };
         }
@@ -751,6 +753,11 @@
                 const detail = type === 'hud:frame'
                     ? { ...e.detail ?? {}, isMetric: isMetric() }
                     : e.detail ?? {};
+                
+                if (type === 'hud:frame' && window.TelemetryCardsManager) {
+                    window.TelemetryCardsManager.update(detail.data || detail, window._currentHudConfig);
+                }
+
                 postToHud(type, detail);
             });
         });
@@ -765,6 +772,9 @@
         window.addEventListener('hud:config', (e) => {
             const config = e.detail || {};
             window._currentHudConfig = config;
+            if (window.TelemetryCardsManager) {
+                window.TelemetryCardsManager.update(null, config);
+            }
             postToHud('config', { data: config });
             if (config.elements) {
                 window._currentHudElements = config.elements;
@@ -774,14 +784,22 @@
                 console.log('[Launcher] Config requested HUD style change to:', config.hudStyle);
                 loadHud(config.hudStyle);
             }
-
-            if (config.demoMode === false && window.demoActive) {
-                window.dispatchEvent(new CustomEvent('demo:stop'));
-                postToHud('demo:stop');
-            } else if (config.demoMode !== false && !window.demoActive && window.isLocked) {
-                 // optionally auto start demo if toggle is checked back, but mostly handled by explicitly starting via UI or on restart
-            }
         });
+
+        // BroadcastChannel listener for launch & animate events
+        const launcherBc = new BroadcastChannel('horizon_tuner_hud_channel');
+        launcherBc.onmessage = (ev) => {
+            if (ev.data && ev.data.type === 'hud:animate') {
+                postToHud('hud:animate');
+            } else if (ev.data && ev.data.type === 'config') {
+                window._currentHudConfig = ev.data.data;
+                postToHud('config', { data: ev.data.data });
+                if (ev.data.data && ev.data.data.elements) {
+                    window._currentHudElements = ev.data.data.elements;
+                    postToHud('hud:elements', ev.data.data.elements);
+                }
+            }
+        };
 
         // ── Message listener — receive requests from active HUD iframe ────────
         window.addEventListener('message', (e) => {
