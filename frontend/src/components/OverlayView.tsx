@@ -38,6 +38,7 @@ interface HudConfig {
   soundEnabled: boolean;
   telemetryOpacity?: number;
   telemetryScale?: number;
+  pauseTelemetryViewWhenActive?: boolean;
 }
 
 const DEFAULT_HUD_CONFIG: HudConfig = {
@@ -48,6 +49,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   unit: 'kmh',
   telemetryOpacity: 0.85,
   telemetryScale: 1.0,
+  pauseTelemetryViewWhenActive: false,
   elements: {
     showGauge: true,
     showRPM: true,
@@ -199,7 +201,6 @@ export const OverlayView: React.FC = () => {
       console.warn('Tauri window manipulation notice:', err);
     }
 
-    setStatusMsg(enable ? (t('HUD Overlay Launched') || 'Horizon Tuner HUD 已在指定螢幕啟動') : (t('HUD Overlay Closed') || 'Horizon Tuner HUD 已關閉'));
     setLoading(false);
   };
 
@@ -533,6 +534,26 @@ export const OverlayView: React.FC = () => {
               <span>{t("Throttle & Brake Trace") || "油門與煞車歷程折線圖"}</span>
             </label>
           </div>
+        </div>
+
+        {/* Advanced Performance & System Options */}
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("Performance & System Options") || "效能與系統選項"}
+          </h3>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+            <input
+              type="checkbox"
+              checked={!!config.pauseTelemetryViewWhenActive}
+              onChange={(e) => {
+                const updated = { ...config, pauseTelemetryViewWhenActive: e.target.checked };
+                saveConfig(updated);
+              }}
+            />
+            <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+              {t("Pause Telemetry View when HUD is active") || "HUD 啟用期間暫停 Telemetry 頁面渲染 (節省 CPU/GPU 資源)"}
+            </span>
+          </label>
         </div>
 
         {/* Rev Limiter Auto-learning Database */}

@@ -88,6 +88,11 @@ export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
 
 const hudBroadcastChannel = typeof window !== 'undefined' ? new BroadcastChannel('horizon_tuner_hud_channel') : null;
 
+let peakSessionPower = 100;
+let peakSessionTorque = 100;
+let peakSessionBoost = 1.5;
+let lastCarOrdinal: number | null = null;
+
 function formatHudTelemetry(raw: TelemetryData) {
   const isMetric = true;
   const speedKmh = (raw.SpeedMetersPerSecond || 0) * 3.6;
@@ -96,13 +101,24 @@ function formatHudTelemetry(raw: TelemetryData) {
   const ftlbs = ((raw.TorqueNewtons || 0) * 0.737562);
   const kw = (raw.PowerWatts || 0) / 1000;
   const nm = raw.TorqueNewtons || 0;
-  const boostPsi = (raw.Boost || 0) * 0.145038;
-  const boostBar = (raw.Boost || 0) * 0.01;
+  const boostPsi = Math.max(0, raw.Boost || 0);
+  const boostBar = Math.max(0, (raw.Boost || 0) / 14.5038);
 
   const maxRpm = raw.EngineMaxRpm || 7000;
   const idleRpm = raw.EngineIdleRpm || 1000;
   const redlineRpm = Math.round(maxRpm * 0.93);
   const isRaceOn = raw.IsRaceOn ?? 1;
+
+  if (lastCarOrdinal !== null && lastCarOrdinal !== raw.CarOrdinal) {
+    peakSessionPower = 100;
+    peakSessionTorque = 100;
+    peakSessionBoost = 1.5;
+  }
+  lastCarOrdinal = raw.CarOrdinal || 1;
+
+  if (hp > peakSessionPower) peakSessionPower = hp;
+  if (ftlbs > peakSessionTorque) peakSessionTorque = ftlbs;
+  if (boostBar > peakSessionBoost) peakSessionBoost = boostBar;
 
   const brakeRatio = (raw.BrakeInput || 0) / 255;
   const slipFL = raw.TireSlipRatio?.[0] || 0;
@@ -118,9 +134,12 @@ function formatHudTelemetry(raw: TelemetryData) {
   };
 
   const sessionMaxima = {
-    power: hp,
-    torque: ftlbs,
-    boost: boostPsi,
+    power: peakSessionPower,
+    torque: peakSessionTorque,
+    boost: peakSessionBoost,
+    maxHP: peakSessionPower,
+    maxTQ: peakSessionTorque,
+    maxBoost: peakSessionBoost,
   };
 
   return {
@@ -167,6 +186,11 @@ function formatHudTelemetry(raw: TelemetryData) {
     slip_fr: slipFR,
     slip_rl: slipRL,
     slip_rr: slipRR,
+    TireTemp: raw.TireTemp || [0, 0, 0, 0],
+    temp_fl: raw.TireTemp?.[0] ?? 0,
+    temp_fr: raw.TireTemp?.[1] ?? 0,
+    temp_rl: raw.TireTemp?.[2] ?? 0,
+    temp_rr: raw.TireTemp?.[3] ?? 0,
     susp_fl: raw.NormalizedSuspensionTravel?.[0] || 0,
     susp_fr: raw.NormalizedSuspensionTravel?.[1] || 0,
     susp_rl: raw.NormalizedSuspensionTravel?.[2] || 0,

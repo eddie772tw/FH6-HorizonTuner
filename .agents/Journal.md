@@ -117,7 +117,60 @@
 - **統一 Vendor Chunk 解法**：將所有 `node_modules` 統一歸類劃分為 `vendor` Chunk (621 kB)，可徹底避免模組之間的循環相依問題。搭配 `chunkSizeWarningLimit: 800`，既能使主應用業務邏輯檔 `index.js` 暴降至 **225 kB**，又能 100% 保障產出執行檔正常載入啟動。
 
 **後續行動 (Action):**
-- 進行任何前端打包與 chunking 拆分調整後，除了檢查 build 警告外，必須特別防範模組間的循環引用。
+
+
+---
+
+## 2026-07-22 - HUD Layout 與 Telemetry 頁面 6 大優化與雷達圖極限邊界防護
+
+**學習點 (Learning):**
+- **圓形雷達圖向量 Clamp (Euclidean Radius Clamping)**：過往採用矩形極限 (`Math.min/max(x)`, `Math.min/max(y)`) 會導致斜角方向距離達 $\sqrt{x^2+y^2} = 1.414 \times R$，使藍點與軌跡線超出圓形邊界甚至溢出 Canvas 邊界導致點消失。導入 `dist = Math.sqrt(dx*dx + dy*dy)` 與極限半徑極化縮放 (`dx = (dx/dist) * maxR`)，可 100% 確保點始終沿著圓形邊線移動且不消失。
+- **G 力與輪胎雷達圖座標軸對齊**：
+  - **橫向 G 力 (Lateral G)**：根據 Forza UDP telemetry 規範，轉向時 lateral acceleration (`AccelerationX`) 向右或向左需與儀表視覺慣性一致。在 `TelemetryView.tsx` 與 `telemetry-cards.js` 中統一將 X 軸映射符號反轉（`lat = -rawAccX / 9.81`），使向左/向右切打方向盤時藍點位移符合預期。
+  - **縱向輪胎滑移 (Slip Ratio)**：統一 HUD 4 輪胎雷達圖 Y 軸映射，頂端為煞車 (Brake / negative ratio)、底端為加速燒胎 (Accel / positive ratio)，與 G 力雷達圖 (BRAKE on top) 及車輛前後重力轉移的視覺感知完美連動。
+- **廣播通道與 Telemetry 頁面解耦暫停 (BroadcastChannel HUD Pause Sync)**：在 `useTelemetry.ts` Ingestion 層中，HUD 數據預處理 (`formatHudTelemetry`) 在 WebSocket 接收瞬間即已完成，並透過 BroadcastChannel 直傳 HUD Overlay 獨立視窗。當使用者開啟「HUD 啟用時暫停 Telemetry 頁面渲染」開關時，`TelemetryView.tsx` 各 60Hz Canvas 組件直接透過全域 `__IS_HUD_PAUSED__` 旗標跳過繪製並呈現暫停提示條，實現大幅降低 CPU/GPU 開銷的同時，HUD 懸浮儀表依舊能毫秒級暢順繪繪與更新。
+- **TypeScript TS2688 / TS2307 測試檔 Exclusion**：執行 production Build (`npm run build` -> `tsc`) 時，若未在 `tsconfig.json` 設定 `"exclude": ["src/**/*.test.ts"]`，`tsc` 會因預設型別庫中缺乏 `vitest` 型別定義而報錯。在 `tsconfig.json` 中將 `.test.ts` 排除於 prod TS 編譯外，既保障 `tsc` 秒級 pass，又保證 Vitest 單元測試單獨流暢執行。
+
+---
+
+## 2026-07-22 - 修復 HUD Overlay 胎溫跳動 180 度與 31°C 轉譯顯示為 88°C/90°F 之 Bug
+
+**學習點 (Learning):**
+- **胎溫跳動 180 度主因**：Telemetry 接收時，若 `useTelemetry.ts` 或卡片初始化階段發送 null 數據更新，`telemetry-cards.js` 的 `temps` 數值會落入 `data.temp_fl || 180` 硬編碼保底值；隨後在 60Hz 遙測與 null config 更新交替觸發時，即造成畫面在真實胎溫與 180 之間高頻跳動。將 fallback 全數改為 `0` 並判定 `cTemp > 0` 時才渲染數值，無資料時呈現 `--°C`，徹底消除了 180 跳動。
+- **31°C 顯示為 88°C/90°F 主因**：Forza UDP 原生輸出的 `TireTemp` 為**華氏 (°F)**（例如室溫 31°C 時，原生 UDP 輸出 `87.8°F`，即約 90°F）。過往 `telemetry-cards.js` 未進行 `(F - 32) * 5 / 9` 換算，直接將 87.8°F 捨入為 `88` 標示為 `88°C`（大約 90°C）。校正後：
+  - 公制模式（Metric）：將 `87.8°F` 轉譯為 `(87.8 - 32) * 5 / 9 = 31°C` 精確顯示 `31°C`。
+  - 英制模式（Imperial）：顯示 `88°F`。
+  - 色彩判斷與直方圖顏色分佈：原先 `telemetry-cards.js` 的 `getTempColor` 內部進行了雙重華氏/攝氏判斷，導致 100°F ~ 150°F (冷胎區間) 的直方圖長條圖與胎溫文字均被錯誤繪製為綠色。對照 `TelemetryView.tsx`（Single Source of Truth）的色彩邏輯校正為 `tempF < 150` 藍色 (`#0088ff`)、`150 <= tempF <= 210` 綠色 (`#00ff00`)、`tempF > 210` 紅色 (`#ff0000`)，使 HUD Overlay 與 Telemetry 頁面直方圖色彩對齊。
+
+**後續行動 (Action):**
+- 為 HUD Overlay 新增任何遙測卡片或數據指標時，務必確認 UDP 原生數據單位（如華氏、Pascal、米/秒）是否於顯示層進行正確的單位換算與 fallback 處理，並嚴格遵循 `TelemetryView.tsx` 的顏色分佈。
+
+---
+
+## 2026-07-22 - 60Hz UDP 遙測效能優化與雷達圖彈跳跳動修復
+
+**學習點 (Learning):**
+- **後端佇列積壓與丟幀 (Backend Queue Backpressure & Frame Drop)**：`main.py` 的 `broadcast_telemetry()` 迴圈中，先前寫死了 `await asyncio.sleep(0.01)`（強制延遲 10ms），加上封包處理耗時導致單幀處理頻率低於 UDP 60Hz 接收頻率，造成佇列積壓並頻繁觸發 `telemetry_queue.qsize() > 5` 的丟幀邏輯（一次丟棄 4~5 個封包），使前端接收到 100ms~300ms 突發性中斷的資料包，引發雷達圖藍點與軌跡的暴衝彈跳。
+  - 將 `await asyncio.sleep(0.01)` 改為 `await asyncio.sleep(0)` 立即交接協程控制權。
+  - 將 `save_car_params` 同步寫檔與 `gc.collect()` 改以 `asyncio.to_thread` 移至背景執行緒，完全解放 UDP 主廣播迴圈。
+- **前端 60Hz 高頻 Canvas 零記憶體分配 (Zero-Allocation Canvas Loop)**：
+  - 清理 `VerticalInputBar` 與 `PedalTraceCanvas` 的重複 `window.addEventListener('hud:frame')` 綁定，避免單幀雙重渲染 (120Hz)。
+  - 以傳統 `for` 迴圈原地走訪極值，替代每秒 240 次 `Math.min(...hist.map())` 與 `.slice()` 陣列分配，徹底消除 V8 引擎的高頻垃圾回收停頓 (GC Pauses)。
+  - 採用「雙層向量光暈 (Double Pass Vector Glow)」替代高對比度高斯模糊 `ctx.shadowBlur` 濾鏡，在維持 0ms 渲染負擔的同時保留 100% 絕佳視覺質感與清晰可讀性。
+
+---
+
+## 2026-07-23 - 修復 Advanced HUD 速度 3.6 倍二次換算與增壓 (Boost) 單位邏輯
+
+**學習點 (Learning):**
+- **右下進階儀表盤 (Advanced HUD) 速度二次換算 Bug**：`formatHudTelemetry`（[useTelemetry.ts](file:///d:/FH6-HorizonTuner/frontend/src/hooks/useTelemetry.ts)）已將 Forza 原生 `SpeedMetersPerSecond` (m/s) 轉譯為 `speed_kmh` (km/h) 與 `speed_mph` (mph)。但 [advanced/index.html](file:///d:/FH6-HorizonTuner/frontend/public/hud/advanced/index.html) 的 DOM 渲染層誤將傳入之 `data.speed` 當成 m/s，再次執行 `data.speed * 3.6`，導致時速 100 km/h 暴增顯示為 **360 KM/H**。修正為直接讀取 `data.speed_kmh` / `data.speed_mph`。
+- **增壓 (Boost) PSI 與 Bar 轉換**：Forza Motorsport / Horizon UDP 封包 Byte offset 284 輸出的 `Boost` 原生單位為 **PSI**。過往 `useTelemetry.ts` 誤將傳入之數值乘上 `0.145038` 與 `0.01`，造成 `14.7 PSI` (約 1.0 Bar) 的增壓值被誤算為 `2.1 PSI` / `0.14 Bar`（增壓針幾乎不移動）。校正為 `boostPsi = raw.Boost`、`boostBar = raw.Boost / 14.5038`。
+- **Session Maxima 動態極值追蹤**：補齊 `useTelemetry.ts` 中 `sessionMaxima` 對全局 Peak Power / Torque / Boost 歷史極值的持續追蹤，確保進階儀表盤動態繪製針指標縮放精確穩定。
+
+**後續行動 (Action):**
+- 新增 HUD 樣式或遙測指標時，務必確認 `useTelemetry.ts` Ingestion 層與前端 HTML 視窗 DOM 渲染層之間「數據單位」的責任劃分，避免雙重乘算。
+
+
 
 
 
