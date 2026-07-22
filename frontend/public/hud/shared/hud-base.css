@@ -1,0 +1,62 @@
+/* =============================================================================
+   shared/hud-base.css
+   Unified base stylesheet for all Forza Horizon 6 HUD styles.
+   ============================================================================= */
+
+@font-face {
+    font-family: 'ForzaFont';
+    src: url('../assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+}
+
+@font-face {
+    font-family: 'ForzaGear';
+    src: url('../assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: transparent;
+    overflow: hidden;
+    font-family: 'ForzaFont', Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ── Standard Root Wrapper (Full Window) ──────────────────────────────── */
+.hud-root-wrapper {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    pointer-events: none;
+    padding: 30px;
+    overflow: visible;
+}
+
+/* ── Standard Scaled Gauge Container ──────────────────────────────────── */
+.hud-gauge-container {
+    position: relative;
+    pointer-events: all;
+    flex-shrink: 0;
+    transform-origin: bottom right;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hud-gauge-container.hidden {
+    display: none !important;
+}
+
+/* ── Standard Central Telemetry Cards Mount ────────────────────────────── */
+#teleCardsMount {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+}
