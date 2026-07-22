@@ -1857,9 +1857,7 @@ def check_frontend_alive(proc):
     while True:
         poll_code = proc.poll()
         if poll_code is not None:
-            logger.error(
-                f"Frontend process terminated with exit code: {poll_code}"
-            )
+            logger.error(f"Frontend process terminated with exit code: {poll_code}")
             log_obj = _cleanup_state.get("log")
             if log_obj:
                 try:
