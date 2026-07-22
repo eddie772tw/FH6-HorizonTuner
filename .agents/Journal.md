@@ -117,10 +117,7 @@
 - **統一 Vendor Chunk 解法**：將所有 `node_modules` 統一歸類劃分為 `vendor` Chunk (621 kB)，可徹底避免模組之間的循環相依問題。搭配 `chunkSizeWarningLimit: 800`，既能使主應用業務邏輯檔 `index.js` 暴降至 **225 kB**，又能 100% 保障產出執行檔正常載入啟動。
 
 **後續行動 (Action):**
-<<<<<<< Updated upstream
 - 進行任何前端打包與 chunking 拆分調整後，除了檢查 build 警告外，必須特別防範模組間的循環引用。
-=======
-
 
 ---
 
@@ -192,10 +189,3 @@
 **後續行動 (Action):**
 - 執行發行版打包（`build_release.bat`）前，確認 `.venv` 內已安裝完整需求套件（`requirements.txt`），且 PyInstaller 始終透過 `.venv` 呼叫執行。
 - 後續新增與進程生命週期相關的背景 Thread 時，務必區分 Frozen GUI 模式與開發模式的 stdin / log 輸出行為。
-
-
-
->>>>>>> Stashed changes
-
-
-
