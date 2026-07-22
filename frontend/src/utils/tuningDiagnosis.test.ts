@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { analyzeTelemetrySession } from './tuningDiagnosis';
 import { CarParams } from '../context/CarParamsContext';
 
-const mockCarParams: CarParams = {
+const mockCarParams = {
   carOrdinal: 100,
   carClass: 'S1',
   pi: 850,
@@ -13,7 +13,8 @@ const mockCarParams: CarParams = {
   torqueNm: 700,
   minRpm: 1000,
   maxRpm: 7500,
-};
+  maxHpRpm: 7500,
+} as unknown as CarParams;
 
 describe('tuningDiagnosis - analyzeTelemetrySession', () => {
 

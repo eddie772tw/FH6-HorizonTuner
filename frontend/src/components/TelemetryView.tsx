@@ -49,34 +49,6 @@ const inactiveTabStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-// --- COMPONENT: InputBar ---
-const InputBar: React.FC<{label: string, selector: (d: any) => number, max: number, color: string}> = ({label, selector, max, color}) => {
-  const barRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const handleDraw = (e: any) => {
-      const data = e.detail;
-      if (!data || data.IsRaceOn !== 1) return;
-      const percent = Math.min((selector(data) / max) * 100, 100);
-      if (barRef.current) barRef.current.style.width = percent + '%';
-      if (textRef.current) textRef.current.innerText = Math.round(percent) + '%';
-    };
-    telemetryEmitter.addEventListener('update', handleDraw);
-    return () => telemetryEmitter.removeEventListener('update', handleDraw);
-  }, [selector, max]);
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-        <span>{label}</span>
-        <span ref={textRef}>0%</span>
-      </div>
-      <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
-        <div ref={barRef} style={{ height: '100%', width: '0%', background: color, transition: 'width 0.05s linear' }} />
-      </div>
-    </div>
-  );
-};
-
 // --- COMPONENT: SteerBar ---
 const SteerBar: React.FC = () => {
   const barRef = useRef<HTMLDivElement>(null);

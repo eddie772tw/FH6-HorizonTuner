@@ -83,3 +83,16 @@
 
 **後續行動 (Action):**
 - 未來調整 Overlay 遙測元件繪圖 Canvas 時，應確保依據 CSS 計算出的真實像素高寬調適 Canvas 內部繪圖 context 的 `width` 與 `height`，防止高 DPI 螢幕下波形 blurry 模糊。
+
+---
+
+## 2026-07-22 - 修復 TypeScript Release Build 未使用變數與測試型別錯誤
+
+**學習點 (Learning):**
+- **TS6133 Unused Code Build Protection**：Tauri Release Build 執行 `tsc && vite build` 時在嚴格 TS 配置下會因 `noUnusedLocals` / `noUnusedParameters` 擋下所有未讀取的變數或全域函數（如 `InputBar`、`lastRealDataTime` 與重複廢棄的 `formatHudTelemetry`）。
+- **Mock 物件型別轉型**：在 Unit Test（如 `tuningDiagnosis.test.ts`）中傳遞 Mock 資料物件至帶型別約束（如 `CarParams`）的函數時，若屬性欄位未完全實現 interface，直接標註 `: CarParams` 會觸發 TS2353 錯誤。應使用 `as unknown as CarParams` 或完整實現屬性。
+
+**後續行動 (Action):**
+- 在重構或清理程式碼時，務必刪除廢棄未讀取的 Helper 函數與變數。
+- 宣佈任務完成前，持續執行 `cmd /c "npm --prefix frontend run build"` 確保前端 release 編譯無任何型別錯誤。
+
