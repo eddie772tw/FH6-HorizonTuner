@@ -149,9 +149,9 @@ FH6-HorizonTuner/
 > [!TIP]
 > `start_all.bat` 啟動腳本已整合自動格式化步驟。在日常開發中，每次執行 `start_all.bat` 時都會自動執行 `ruff format` 與 `ruff check`，確保代碼始終符合格式規範。
 
-### 單元測試 (Pytest)
+### 後端單元測試 (Pytest)
 
-所有的自動化測試均位於 `tests/` 目錄下。在提交 PR 之前，請確保所有測試通過：
+所有的後端自動化測試均位於 `tests/` 目錄下。在提交 PR 之前，請確保所有測試通過：
 
 ```bash
 # 在 Windows 虛擬環境內
@@ -161,13 +161,33 @@ FH6-HorizonTuner/
 .venv\Scripts\pytest tests/test_overlay_api.py -v
 ```
 
-目前的測試套件涵蓋：
+目前的後端測試套件涵蓋：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `test_telemetry_listener.py` | UDP 遙測封包解析與監聽器邏輯 |
 | `test_log_api.py` | 後端日誌 API、Traceback 拼接與層級篩選 |
 | `test_overlay_api.py` | Overlay 佈局存取、進程啟動/終止與狀態查詢 |
 | `test_drag_recorder.py` | 彈射起步測試的資料記錄與分析 |
+
+### 前端單元測試 (Vitest)
+
+前端使用 **[Vitest](https://vitest.dev/)** 作為單元測試框架，與 Vite 工具鏈緊密整合、零額外設定。測試檔與被測模組同目錄，命名為 `<模組名>.test.ts`。
+
+```bash
+# 從專案根目錄執行
+npm --prefix frontend run test
+
+# 或從 frontend/ 目錄執行
+cd frontend && npm run test
+```
+
+目前的前端測試套件涵蓋：
+| 測試檔案 | 覆蓋範圍 |
+| :--- | :--- |
+| `tuningMath.test.ts` | 彈簧 / ARB / 阻尼器 / 齒輪比 / 對齊 / 胎壓等11個導出純函數的單元測試 |
+
+> [!TIP]
+> 新增或修改 `frontend/src/utils/` 下的物理計算模組時，請同步新增對應的 `.test.ts` 單元測試，確保所有測試通過後才提交 PR。
 
 ---
 
@@ -192,8 +212,10 @@ FH6-HorizonTuner/
 
 - [ ] 代碼已通過 `ruff format --check .` 格式驗證
 - [ ] 代碼已通過 `ruff check .` 靜態檢查（無 Error / Warning）
-- [ ] 所有既有的單元測試已通過 (`pytest` 全數 Pass)
-- [ ] 若新增了 API 路由或核心邏輯，已補充對應的單元測試
+- [ ] 後端單元測試已全數通過 (`pytest` Pass)
+- [ ] 前端單元測試已全數通過 (`npm --prefix frontend run test` Pass)
+- [ ] 若新增了 API 路由或後端核心邏輯，已補充對應的 Pytest 單元測試
+- [ ] 若修改了 `tuningMath.ts` / `tuningDiagnosis.ts` 等前端計算邏輯，已補充對應的 Vitest 單元測試
 - [ ] 若修改了 UI 元件或前端邏輯，已在本地驗證功能運作正常
 - [ ] 若新增了多語言鍵值，已同步更新 `lang/zh-tw.json` 與 `lang/ja-jp.json`
 - [ ] Commit message 符合 Conventional Commits 規範
@@ -239,7 +261,8 @@ FH6-HorizonTuner/
 | 階段 | 說明 |
 | :--- | :--- |
 | **Lint** | 使用 `ruff check` 進行靜態代碼分析，並使用 `ruff format --check` 驗證排版格式 |
-| **Test** | 在 Windows + Ubuntu 雙平台上執行 `pytest` 完整測試套件 |
+| **Test (Backend)** | 在 Windows + Ubuntu 雙平台上執行 `pytest` 後端測試套件 |
+| **Test (Frontend)** | 執行 `npm --prefix frontend run test` 前端 Vitest 單元測試（涵蓋 `tuningMath.ts` 等物理計算純函數） |
 
 > [!IMPORTANT]
 > CI 流程設定於 `CI-Approval` 環境下運行，需要至少一位 Reviewer 在 GitHub 上批准後才會自動觸發。請確保在推送前已於本地通過 `ruff format --check .` 與 `pytest` 驗證，以避免不必要的 CI 失敗。
