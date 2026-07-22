@@ -3,8 +3,8 @@ import '../App.css';
 import { useSettings } from '../context/SettingsContext';
 
 interface NavigationProps {
-  activeTab: 'telemetry' | 'tuning' | 'car_params' | 'settings';
-  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'settings') => void;
+  activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings';
+  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings') => void;
   isConnected: boolean;
   onShowLogs: () => void;
 }
@@ -130,6 +130,12 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             style={getTabStyle(activeTab === 'car_params')}
           >
             {t("Car Parameters")}
+          </button>
+          <button 
+            onClick={() => setActiveTab('overlay')}
+            style={getTabStyle(activeTab === 'overlay')}
+          >
+            {t("HUD Overlay") || "HUD 儀表板"}
           </button>
           <button 
             onClick={() => setActiveTab('settings')}

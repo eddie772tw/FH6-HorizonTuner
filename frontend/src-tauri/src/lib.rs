@@ -63,11 +63,100 @@ fn read_port_from_file(path: &std::path::Path) -> Result<u16, String> {
     }
 }
 
+use tauri::Manager;
+
+#[tauri::command]
+fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        window.set_ignore_cursor_events(ignore).map_err(|e| e.to_string())
+    } else {
+        Err("Overlay window not found".to_string())
+    }
+}
+
+#[tauri::command]
+fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        if visible {
+            window.show().map_err(|e| e.to_string())?;
+            window.set_focus().map_err(|e| e.to_string())?;
+        } else {
+            window.hide().map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    } else {
+        Err("Overlay window not found".to_string())
+    }
+}
+
+/*
+// Hotkey listener structure reserved for future extension
+// Currently commented out as per requirement:
+// fn setup_global_hotkeys(app: &tauri::App) {
+//     // Ctrl+L: toggle click-through
+//     // Ctrl+S: save window position
+//     // Ctrl+R: reset rev limiter learning
+// }
+*/
+
+#[derive(serde::Serialize)]
+struct MonitorInfo {
+    name: String,
+    width: u32,
+    height: u32,
+    x: i32,
+    y: i32,
+    is_primary: bool,
+}
+
+#[tauri::command]
+fn get_available_monitors(app_handle: tauri::AppHandle) -> Result<Vec<MonitorInfo>, String> {
+    let monitors = app_handle.available_monitors().map_err(|e| e.to_string())?;
+    let primary = app_handle.primary_monitor().ok().flatten();
+    
+    let mut list = Vec::new();
+    for (idx, m) in monitors.into_iter().enumerate() {
+        let name = m.name().cloned().unwrap_or_else(|| format!("Display {}", idx + 1));
+        let size = m.size();
+        let pos = m.position();
+        let is_primary = primary.as_ref().map(|p| p.name() == m.name()).unwrap_or(idx == 0);
+
+        list.push(MonitorInfo {
+            name,
+            width: size.width,
+            height: size.height,
+            x: pos.x,
+            y: pos.y,
+            is_primary,
+        });
+    }
+    Ok(list)
+}
+
+#[tauri::command]
+fn move_hud_to_monitor(app_handle: tauri::AppHandle, monitor_x: i32, monitor_y: i32, width: u32, height: u32) -> Result<(), String> {
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        window.set_position(tauri::PhysicalPosition::new(monitor_x, monitor_y)).map_err(|e| e.to_string())?;
+        window.set_size(tauri::PhysicalSize::new(width, height)).map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err("Overlay window not found".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
+                    println!("Main window closed/destroyed — terminating all windows and backend sidecar.");
+                    window.app_handle().exit(0);
+                }
+            }
+        })
         .setup(|app| {
             let args: Vec<String> = std::env::args().collect();
             if args.contains(&"--no-sidecar".to_string()) || std::env::var("FH6_NO_SIDECAR").is_ok() {
@@ -95,7 +184,14 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, get_backend_port])
+        .invoke_handler(tauri::generate_handler![
+            greet, 
+            get_backend_port, 
+            set_hud_click_through, 
+            toggle_hud_window,
+            get_available_monitors,
+            move_hud_to_monitor
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

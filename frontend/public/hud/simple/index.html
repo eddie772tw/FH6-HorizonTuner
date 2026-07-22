@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simple HUD</title>
+    <style>
+        @font-face {
+            font-family: 'ForzaFont';
+            src: url('../assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'ForzaGear';
+            src: url('../assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; overflow: hidden; font-family: 'ForzaFont', Arial, sans-serif; }
+
+        /* ── Root wrapper — Bottom-Right Aligned ──────────────────────────────── */
+        .simple-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
+            pointer-events: none;
+            padding: 30px;
+            overflow: visible;
+        }
+
+        /* ── Scaled container — 750 × 750 (Origin: Bottom Right) ─────────────── */
+        .simple-container {
+            position: relative;
+            width: 750px;
+            height: 750px;
+            pointer-events: all;
+            flex-shrink: 0;
+            transform-origin: bottom right;
+            will-change: transform;
+        }
+
+        canvas#simpleCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            pointer-events: none;
+        }
+
+        /* ── Text Overlays (NFSU2 Style) ─────────────────────────────────────── */
+        .speed-text {
+            position: absolute;
+            bottom: 90px; right: 40px;
+            font-size: 130px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 700;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8), 3px 3px 5px rgba(0, 240, 255, 0.4);
+            pointer-events: none;
+        }
+        .speed-text span { display: inline-block; width: 1ch; text-align: center; }
+
+        .speed-unit {
+            position: absolute;
+            bottom: 50px; right: 45px;
+            font-size: 42px;
+            color: rgba(0, 240, 255, 0.9);
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .gear-text {
+            position: absolute;
+            top: 310px; right: 180px;
+            font-size: 95px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 900;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+        }
+
+        .gear-indicator {
+            position: absolute;
+            top: 275px; right: 195px;
+            width: 0; height: 0;
+            border-left: 22px solid transparent;
+            border-right: 22px solid transparent;
+            border-bottom: 35px solid rgba(255, 0, 136, 0.9);
+            opacity: 0;
+            transition: opacity 0.1s, transform 0.1s;
+            filter: drop-shadow(0 0 8px rgba(255, 0, 136, 0.8));
+            pointer-events: none;
+        }
+        .gear-indicator.active { opacity: 1; transform: scale(1.15); }
+
+        .lc-badge {
+            position: absolute;
+            top: 50px; right: 50px;
+            font-family: 'ForzaGear', Arial;
+            font-size: 28px;
+            letter-spacing: 0.15em;
+            color: rgba(255, 0, 136, 0.25);
+            border: 2px solid rgba(255, 0, 136, 0.15);
+            padding: 4px 12px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        .lc-badge.active {
+            color: rgb(255, 0, 136);
+            border-color: rgba(255, 0, 136, 0.8);
+            box-shadow: 0 0 14px rgba(255, 0, 136, 0.6);
+        }
+
+        .lock-badge {
+            position: absolute;
+            top: 50px; right: 140px;
+            font-family: 'ForzaGear', Arial;
+            font-size: 28px;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        .lock-badge.active {
+            color: rgb(255, 50, 50);
+            border-color: rgba(255, 50, 50, 0.8);
+            box-shadow: 0 0 14px rgba(255, 50, 50, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="simple-wrapper" id="simpleWrapper">
+        
+        <!-- Shared Telemetry 4 Cards Mount Point -->
+        <div id="teleCardsMount"></div>
+
+        <!-- Main Simple HUD Gauge Container -->
+        <div class="simple-container" id="simpleContainer">
+            <img src="./Tachometer.png" id="tachBgImg"
+                 style="position:absolute; top:65px; left:65px; width:621px; height:621px; pointer-events:none; opacity:0.9;" />
+            <canvas id="simpleCanvas" width="750" height="750"></canvas>
+            
+            <div class="lc-badge" id="lcBadge">LC</div>
+            <div class="lock-badge" id="lockBadge">LOCK</div>
+            <div class="gear-indicator" id="gearIndicator"></div>
+            <div class="gear-text" id="gearText">1</div>
+            <div class="speed-text" id="speedText">0</div>
+            <div class="speed-unit" id="speedUnit">KM/H</div>
+        </div>
+
+    </div>
+
+    <!-- Include Shared Telemetry Cards Renderer -->
+    <script src="../shared/telemetry-cards.js"></script>
+
+    <script>
+        var canvas = document.getElementById('simpleCanvas');
+        var ctx = canvas.getContext('2d');
+        var _simpleValidGear = 1;
+        var _simpleLastMaxRpm = 8000;
+        var currentElements = {};
+
+        // Initialize shared Telemetry Cards
+        TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
+
+        function setSimpleSpeedDisplay(value) {
+            var el = document.getElementById('speedText');
+            if (!el) return;
+            el.innerHTML = value.toString().split('').map(function (d) {
+                return '<span>' + d + '</span>';
+            }).join('');
+        }
+
+        function drawSimpleHUD(data, redlineRpm) {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, 750, 750);
+
+            var centerX = 375, centerY = 375, radius = 250;
+            var rpm = data.rpm || 0;
+            var maxRpm = data.maxRpm || _simpleLastMaxRpm || 8000;
+            var redline = redlineRpm || (maxRpm * 0.92);
+
+            var startAngle = Math.PI * 0.75;
+            var endAngle = Math.PI * 2.25;
+            var totalSweep = endAngle - startAngle;
+
+            var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+            var currentAngle = startAngle + rpmRatio * totalSweep;
+            var redlineRatio = Math.max(0, Math.min(1, redline / maxRpm));
+            var redlineAngle = startAngle + redlineRatio * totalSweep;
+
+            // Dial Arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.lineWidth = 14;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.stroke();
+
+            // Redline Sector
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, redlineAngle, endAngle);
+            ctx.lineWidth = 16;
+            ctx.strokeStyle = 'rgba(255, 0, 136, 0.8)';
+            ctx.stroke();
+
+            // Active Arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, currentAngle);
+            ctx.lineWidth = 16;
+            ctx.strokeStyle = (rpm >= redline) ? '#ff0088' : '#00f0ff';
+            ctx.shadowColor = (rpm >= redline) ? 'rgba(255, 0, 136, 0.9)' : 'rgba(0, 240, 255, 0.9)';
+            ctx.shadowBlur = 15;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Numbers
+            var maxDigits = Math.ceil(maxRpm / 1000);
+            ctx.font = 'bold 22px ForzaGear, Arial, sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+            for (var i = 0; i <= maxDigits; i++) {
+                var tickRpm = i * 1000;
+                var tickRatio = tickRpm / maxRpm;
+                if (tickRatio > 1) break;
+
+                var angle = startAngle + tickRatio * totalSweep;
+                var isRed = tickRpm >= redline;
+
+                var innerR = radius - 15, outerR = radius + 15;
+                ctx.beginPath();
+                ctx.moveTo(centerX + innerR * Math.cos(angle), centerY + innerR * Math.sin(angle));
+                ctx.lineTo(centerX + outerR * Math.cos(angle), centerY + outerR * Math.sin(angle));
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = isRed ? '#ff0088' : 'rgba(255, 255, 255, 0.7)';
+                ctx.stroke();
+
+                var numR = radius - 40;
+                ctx.fillStyle = isRed ? '#ff0088' : 'rgba(255, 255, 255, 0.9)';
+                ctx.fillText(i.toString(), centerX + numR * Math.cos(angle), centerY + numR * Math.sin(angle));
+            }
+
+            // Needle
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(currentAngle);
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(radius - 20, 0);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = (rpm >= redline) ? '#ff0055' : '#00f0ff';
+            ctx.shadowColor = (rpm >= redline) ? 'rgba(255, 0, 85, 0.9)' : 'rgba(0, 240, 255, 0.9)';
+            ctx.shadowBlur = 12;
+            ctx.stroke();
+            ctx.restore();
+
+            // Center Cap
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 24, 0, Math.PI * 2);
+            ctx.fillStyle = '#111';
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.fill(); ctx.stroke();
+        }
+
+        // Window Message Listener
+        window.addEventListener('message', function (e) {
+            const payload = e.data ?? {};
+            const type = payload.type;
+
+            switch (type) {
+                case 'config': {
+                    if (payload.data) {
+                        var container = document.getElementById('simpleContainer');
+                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * 0.5);
+                        if (container) {
+                            container.style.transform = 'scale(' + finalScale + ')';
+                            container.style.transformOrigin = 'bottom right';
+                        }
+                    }
+                    break;
+                }
+
+                case 'hud:elements': {
+                    currentElements = payload || {};
+                    var simpleCanvas = document.getElementById('simpleCanvas');
+                    var bgImg = document.getElementById('tachBgImg');
+                    var speedGroup = document.getElementById('speedText');
+                    var speedUnit = document.getElementById('speedUnit');
+                    var gearGroup = document.getElementById('gearText');
+
+                    if (simpleCanvas) simpleCanvas.style.display = currentElements.showRPM === false ? 'none' : 'block';
+                    if (bgImg) bgImg.style.display = currentElements.showRPM === false ? 'none' : 'block';
+
+                    if (speedGroup) speedGroup.style.display = currentElements.showSpeed === false ? 'none' : 'block';
+                    if (speedUnit) speedUnit.style.display = currentElements.showSpeed === false ? 'none' : 'block';
+                    if (gearGroup) gearGroup.style.display = currentElements.showGear === false ? 'none' : 'block';
+
+                    // Update shared Telemetry Cards visibility
+                    TelemetryCardsManager.update(null, currentElements);
+                    break;
+                }
+
+                case 'hud:frame': {
+                    var data = payload.data || {};
+                    var redlineRpm = payload.redlineRpm || (data.maxRpm * 0.92);
+
+                    drawSimpleHUD(data, redlineRpm);
+                    
+                    // Update shared Telemetry Cards with live data
+                    TelemetryCardsManager.update(data, currentElements);
+
+                    var speed = Math.round(data.speed_kmh ?? data.speed ?? 0);
+                    setSimpleSpeedDisplay(speed);
+
+                    var gearEl = document.getElementById('gearText');
+                    var gearIndicator = document.getElementById('gearIndicator');
+                    if (data.gear !== undefined && data.gear <= 10) _simpleValidGear = data.gear;
+                    if (gearEl) gearEl.textContent = _simpleValidGear === 0 ? 'R' : _simpleValidGear.toString();
+                    if (gearIndicator) gearIndicator.classList.toggle('active', (data.rpm / redlineRpm) >= 0.95);
+
+                    var lockBadge = document.getElementById('lockBadge');
+                    var lcBadge = document.getElementById('lcBadge');
+                    if (lockBadge && payload.lockup) {
+                        var isLocked = payload.lockup.fl || payload.lockup.fr || payload.lockup.rl || payload.lockup.rr;
+                        lockBadge.classList.toggle('active', !!isLocked);
+                    }
+                    if (lcBadge) {
+                        lcBadge.classList.toggle('active', payload.lcState === 'armed' || payload.lcState === 'launched');
+                    }
+                    break;
+                }
+
+                case 'hud:init': {
+                    var el = document.getElementById('speedUnit');
+                    if (el) el.textContent = payload.isMetric !== false ? 'KM/H' : 'MPH';
+                    break;
+                }
+            }
+        });
+
+        // Initial Standby Draw
+        setTimeout(function() {
+            var demoData = {
+                rpm: 1200, maxRpm: 8000, speed: 0, gear: 1,
+                susp_fl: 0.5, susp_fr: 0.5, susp_rl: 0.5, susp_rr: 0.5,
+                slip_fl: 0, slip_fr: 0, slip_rl: 0, slip_rr: 0,
+                accel_x: 0, accel_y: 0, accel_z: 1.0, power: 150, torque: 350
+            };
+            drawSimpleHUD(demoData, 7200);
+            TelemetryCardsManager.update(demoData, currentElements);
+        }, 50);
+    </script>
+</body>
+</html>

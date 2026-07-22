@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Forza Horizon 6 Custom HUD - By Paburrito</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: transparent;
+            overflow: hidden;
+            font-family: 'ForzaFont', Arial, sans-serif;
+        }
+
+        /* ── Fonts ─────────────────────────────────────────────────────────── */
+        @font-face {
+            font-family: 'ForzaFont';
+            src: url('./assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'ForzaGear';
+            src: url('./assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+        }
+
+        /* ── Titlebar ──────────────────────────────────────────────────────── */
+        #titlebar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 35px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 6px;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        body:not(.unlocked) #titlebar {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        #titlebar:hover          { opacity: 1; }
+        #titlebar.always-visible { opacity: 1; }
+
+        #drag-handle {
+            flex: 1;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            cursor: move;
+            user-select: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tb-divider {
+            width: 1px;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+        }
+
+        .tb-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        #titlebar button {
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 13px;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        #titlebar button:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* HUD toggle — shows which view is active */
+        #hud-toggle-btn {
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.05em;
+            font-size: 12px;
+            padding: 4px 12px;
+        }
+        #hud-toggle-btn .active-hud   { color: rgba(255, 255, 255, 0.95); }
+        #hud-toggle-btn .inactive-hud { color: rgba(255, 255, 255, 0.3); }
+
+        /* Lock button states */
+        #lock-btn.locked { background: rgba(255, 0, 136, 0.7); }
+        #lock-btn::after {
+            content: 'Ctrl+L: Lock & Click-through';
+            position: absolute;
+            top: 100%; right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            margin-top: 4px;
+        }
+        #lock-btn { position: relative; }
+        #lock-btn:hover::after { opacity: 1; }
+        #close-btn:hover { background: rgba(255, 50, 50, 0.8); }
+
+        /* ── Settings panel (slide-in from right) ──────────────────────────── */
+        #settings-panel {
+            position: fixed;
+            top: 0; right: -360px;
+            width: 340px;
+            height: 100vh;
+            background: rgba(10, 10, 10, 0.96);
+            border-left: 1px solid rgba(255, 0, 136, 0.3);
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+        #settings-panel.open { right: 0; }
+
+        #settings-panel::-webkit-scrollbar       { width: 5px; }
+        #settings-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        #settings-panel::-webkit-scrollbar-thumb { background: rgba(255,0,136,0.4); border-radius: 10px; }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+        .settings-header h2 {
+            color: rgba(255, 0, 136, 1);
+            font-size: 23px;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.2em;
+        }
+        #close-settings {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        #close-settings:hover { color: rgba(255, 0, 136, 1); }
+
+        .settings-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .settings-section h3 {
+            color: rgba(255, 0, 136, 0.8);
+            font-size: 20px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            font-family: 'ForzaGear', Arial, sans-serif;
+        }
+
+        /* Toggle rows */
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 18px;
+        }
+        .setting-row small {
+            display: block;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        /* Pill toggle switch */
+        .pill-toggle {
+            position: relative;
+            width: 46px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .pill-toggle input { opacity: 0; width: 0; height: 0; }
+        .pill-slider {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pill-slider::before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            left: 3px; top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .pill-toggle input:checked + .pill-slider { background: rgba(255, 0, 136, 0.8); }
+        .pill-toggle input:checked + .pill-slider::before { transform: translateX(22px); }
+
+        /* Settings action buttons */
+        .settings-btn {
+            display: block;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.85);
+            padding: 9px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            text-align: left;
+            margin-bottom: 8px;
+            transition: background 0.2s, border-color 0.2s;
+            font-family: 'ForzaFont', Arial, sans-serif;
+        }
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.13);
+            border-color: rgba(255, 0, 136, 0.4);
+        }
+        .settings-btn.danger {
+            border-color: rgba(255, 0, 136, 0.3);
+            color: rgba(255, 0, 136, 0.9);
+        }
+        .settings-btn.danger:hover { background: rgba(255, 0, 136, 0.15); }
+
+        /* Hotkeys table */
+        .hotkey-list {
+            list-style: none;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .hotkey-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .hotkey-list kbd {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            padding: 2px 7px;
+            font-size: 18px;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.9);
+            flex-shrink: 0;
+        }
+
+        /* Connection info */
+        .connection-info {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.7;
+        }
+        .connection-info strong { color: rgba(255, 0, 136, 0.9); }
+
+        /* About */
+        .about-text {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.7;
+            letter-spacing: 0.07em;
+        }
+        .about-text a {
+            color: rgba(255, 0, 136, 0.8);
+            text-decoration: none;
+        }
+
+        /* Settings overlay backdrop */
+        #settings-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: transparent;
+        }
+        #settings-backdrop.open { display: block; }
+
+        /* ── Tutorial ──────────────────────────────────────────────────────── */
+        @keyframes tb-breathe {
+            0%, 100% { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
+            50%       { background: rgba(255, 0, 136, 0.65);  box-shadow: 0 0 8px rgba(255, 0, 136, 0.7); }
+        }
+        .tb-highlight { animation: tb-breathe 1.1s ease-in-out infinite !important; }
+
+        #tutorial-panel {
+            position: fixed;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 10, 0.93);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 20px 24px;
+            max-width: 500px;
+            width: calc(100% - 40px);
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+        #tut-message {
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 18px;
+            line-height: 1.55;
+            margin: 0;
+        }
+        #tut-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tut-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            font-family: 'ForzaFont', Arial, sans-serif;
+            transition: background 0.2s;
+        }
+        .tut-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .tut-btn.primary {
+            background: rgba(255, 0, 136, 0.7);
+            border-color: rgba(255, 0, 136, 0.9);
+        }
+        .tut-btn.primary:hover { background: rgba(255, 0, 136, 0.9); }
+
+        @keyframes tut-wiggle {
+            0%,  100% { transform: translateX(-50%) rotate(0deg);  }
+            20%        { transform: translateX(-50%) rotate(-3deg); }
+            40%        { transform: translateX(-50%) rotate( 3deg); }
+            60%        { transform: translateX(-50%) rotate(-3deg); }
+            80%        { transform: translateX(-50%) rotate( 3deg); }
+        }
+        #tutorial-panel.tut-wiggle { animation: tut-wiggle 0.6s ease-in-out; }
+
+        /* ── Notification bubble ───────────────────────────────────────────── */
+        #notification-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #fff 0%, #d9d9d9 100%);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 15px 20px;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 9600;
+            pointer-events: all;
+        }
+        #notification-bubble.show { display: block; }
+        .bubble-content { display: flex; align-items: flex-start; gap: 10px; }
+        #bubble-text {
+            flex: 1;
+            color: #333;
+            font-size: 20px;
+            line-height: 1.4;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        #bubble-close {
+            background: transparent;
+            border: none;
+            color: #666;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+            width: 20px; height: 20px;
+            line-height: 20px;
+            flex-shrink: 0;
+        }
+        #bubble-close:hover { color: #ea1f54; }
+
+        /* ── HUD mount point ───────────────────────────────────────────────── */
+        #hud-root {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        /* Unlocked dashed border */
+        body.unlocked #hud-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body class="unlocked">
+
+    <!-- ── Titlebar ──────────────────────────────────────────────────────── -->
+    <div id="titlebar">
+        <span id="drag-handle">⋮⋮ FH6 Custom HUD - By Paburrito</span>
+        <div class="tb-divider"></div>
+        <div class="tb-group">
+            <button id="hud-toggle-btn" title="Switch HUD view">
+                <span class="active-hud">SIMPLE</span>
+                <span style="color:rgba(255,255,255,0.2);margin:0 4px;">|</span>
+                <span class="inactive-hud">ADVANCED</span>
+            </button>
+        </div>
+        <div class="tb-divider"></div>
+        <div class="tb-group">
+            <button id="lock-btn"     title="Lock/Unlock (Ctrl+L)">🔓</button>
+            <button id="settings-btn" title="Settings">⚙</button>
+            <button id="close-btn"    title="Close">✕</button>
+        </div>
+    </div>
+
+    <!-- ── HUD mount point ───────────────────────────────────────────────── -->
+    <div id="hud-root" data-physics="true">
+        <iframe id="hud-iframe"
+                src=""
+                style="position:absolute;inset:0;width:100%;height:100%;border:none;background:transparent;"
+                allowtransparency="true">
+        </iframe>
+    </div>
+
+    <!-- ── Notification bubble ───────────────────────────────────────────── -->
+    <div id="notification-bubble">
+        <div class="bubble-content">
+            <span id="bubble-text"></span>
+            <button id="bubble-close">✕</button>
+        </div>
+    </div>
+
+    <!-- ── Tutorial panel ────────────────────────────────────────────────── -->
+    <div id="tutorial-panel">
+        <p id="tut-message"></p>
+        <div id="tut-buttons"></div>
+    </div>
+
+    <!-- ── Settings backdrop (closes panel on outside click) ─────────────── -->
+    <div id="settings-backdrop"></div>
+
+    <!-- ── Settings panel ────────────────────────────────────────────────── -->
+    <div id="settings-panel">
+        <div class="settings-header">
+            <h2>⚙ SETTINGS</h2>
+            <button id="close-settings">✕</button>
+        </div>
+
+        <!-- Display -->
+        <div class="settings-section">
+            <h3>Display</h3>
+            <div class="setting-row">
+                <div>
+                    Speed Units
+                    <small>Saved automatically</small>
+                </div>
+                <label class="pill-toggle">
+                    <input type="checkbox" id="unit-toggle" />
+                    <span class="pill-slider"></span>
+                </label>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;font-size:12px;
+                        color:rgba(255,255,255,0.4);margin-top:-4px;padding-right:2px;">
+                <span id="unit-label-left">KM/H</span>
+                <span>/</span>
+                <span id="unit-label-right">MPH</span>
+            </div>
+            <div class="setting-row" style="margin-top:8px;">
+                <div>
+                    HUD Motion Physics
+                    <small>Spring-based g-force reactions</small>
+                </div>
+                <label class="pill-toggle">
+                    <input type="checkbox" id="physics-toggle" />
+                    <span class="pill-slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <div>
+                    Notifications
+                    <small>Learning alerts and status messages</small>
+                </div>
+                <label class="pill-toggle">
+                    <input type="checkbox" id="notif-toggle" />
+                    <span class="pill-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <div class="settings-section">
+            <h3>HUD</h3>
+            <button class="settings-btn danger" onclick="window.resetToSafePosition()">
+                🔄 Reset Window to Primary Monitor
+            </button>
+            <button class="settings-btn" id="demo-btn" onclick="window.dispatchEvent(new CustomEvent('demo:toggle'))">
+                🎮 Demo Mode: <span id="demo-status">OFF</span>
+            </button>
+            <button class="settings-btn" onclick="forceRelearn?.()">
+                🔄 Force Re-learn Rev Limiter
+            </button>
+            <button class="settings-btn" onclick="replayTutorial?.()">
+                🎓 Replay Tutorial
+            </button>
+            <button class="settings-btn" id="update-btn" onclick="checkForUpdates(true)">
+                🔍 Check for Updates: <span id="update-status">—</span>
+            </button>
+        </div>
+
+        <!-- Diagnostics -->
+        <div class="settings-section">
+            <h3>Diagnostics</h3>
+            <p class="connection-info" style="margin-bottom:10px">
+                Records performance data while you drive.<br>
+                Start recording, reproduce the issue, then export.
+            </p>
+            <button class="settings-btn" id="diag-record-btn" onclick="toggleDiagnostics()">
+                ⏺ Start Recording
+            </button>
+            <button class="settings-btn" id="diag-export-btn"
+                    onclick="window._diag.export()"
+                    style="display:none">
+                📄 Export Diagnostic Log
+            </button>
+        </div>
+
+        <!-- Hotkeys -->
+        <div class="settings-section">
+            <h3>Hotkeys</h3>
+            <ul class="hotkey-list">
+                <li><span>Lock / Unlock</span>         <kbd>Ctrl+L</kbd></li>
+                <li><span>Save position</span>         <kbd>Ctrl+S</kbd></li>
+                <li><span>Restore position</span>      <kbd>Ctrl+Shift+R</kbd></li>
+                <li><span>Re-learn limiter</span>      <kbd>Ctrl+R</kbd></li>
+                <li><span>Restart HUD</span>           <kbd>Ctrl+Alt+R</kbd></li>
+            </ul>
+        </div>
+
+        <!-- Connection -->
+        <div class="settings-section">
+            <h3>Connection</h3>
+            <p class="connection-info">
+                In FH6 go to <strong>Settings → HUD and Gameplay</strong> and set:<br>
+                Data Out: <strong>ON</strong><br>
+                IP Address: <strong>127.0.0.1</strong><br>
+                Port: <strong>5301</strong><br><br>
+                Turn off the in-game speedometer to avoid running two HUDs simultaneously.
+            </p>
+        </div>
+
+        <!-- What's Next -->
+        <div class="settings-section">
+            <h3>What's Next</h3>
+            <p class="about-text">
+                A few things still in the pipeline:<br><br>
+                <strong>EV HUD</strong>: a dedicated display for electric cars it's own design and characteristics, I do have to decide on the design and what data to show though.<br><br>
+                <!-- <strong>Advanced HUD guide</strong> — a brief first-run explainer for the superellipse arc, inner gauges and lockup dots.<br><br> -->
+                <strong>Motion blur</strong>: BIIIIIG if, depends on what feedback I get, most likely be paired with the physics of the hud but has yet to be defined.
+            </p>
+        </div>
+
+        <!-- About -->
+        <div class="settings-section">
+            <h3>About</h3>
+            <p class="about-text">
+                For those who don't know, this is basically an evolution from what I did as the custom HUD for Forza Horizon 5.<br>
+                
+                This time it has more features, quality of life improvements and certain bug fixes that weren't entirely done for FH5's Custom hud, trying to make things as painless as possible for the end user as well.<br>
+
+                Not gonna lie though, I still find it incredibly funny that this entire project was born out of a custom skin i made for GamepadViewer which ended up including a bit of HTML to have its own temeletry being displayed like one of those sim racers where it tracks the throttle and brake, etc.<br>
+
+                Like the previous HUD, I hope you enjoy this one as much as it was fun for me to develop it.<br><br> 
+
+                If you want to use it while streaming on OBS, make sure to use these settings: Window Capture → Capture Method: Windows 10 (1903+)<br><br>
+                <strong>FH6 Custom HUD By Paburrito</strong> with love.<br><br>
+                <span id="app-version" style="opacity:0.4; font-size:0.85em;">v—</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Shared modules ─────────────────────────────────────────────────── -->
+    <script type="module">
+        import { initCoordinator }                                                                                              from './shared/coordinator.js';
+        import { initWebSocket }                                                                                                from './shared/ws.js';
+        import { initPhysics, updatePhysicsTargets,togglePhysics }                                                              from './shared/physics.js';
+        import { initUtils, showNotification, toggleNotifications, convertSpeed, setSpeedDisplay, toggleSpeedUnit, isMetric }   from './shared/utils.js';
+
+        // ── HUD switcher ──────────────────────────────────────────────────
+        const HUDS      = { simple: './simple/index.html', advanced: './advanced/index.html' };
+        let   activeHud = localStorage.getItem('forza_hud_active') || 'simple';
+        const hudIframe  = document.getElementById('hud-iframe');
+
+        // Post a message to the active HUD iframe
+        function postToHud(type, detail = {}) {
+            hudIframe.contentWindow?.postMessage({ type, ...detail }, '*');
+        }
+
+        async function loadHud(name) {
+            if (window.demoActive) window.dispatchEvent(new CustomEvent('demo:stop'));
+            await window.saveWindowState?.();
+ 
+            activeHud        = name;
+            window._activeHud = name;
+            localStorage.setItem('forza_hud_active', name);
+            updateHudToggleBtn();
+ 
+            // Setting src destroys the old HUD context and loads the new one —
+            // the previous iframe's JS, canvases and event listeners are gone
+            hudIframe.src = HUDS[name];
+ 
+            hudIframe.onload = async () => {
+                initPhysics();
+ 
+                // Send initial state the HUD needs on first render
+                postToHud('hud:init', {
+                    isMetric: window.isMetric?.() ?? true,
+                });
+
+                if (window._currentHudConfig) {
+                    postToHud('config', { data: window._currentHudConfig });
+                }
+
+                if (window._currentHudElements) {
+                    postToHud('hud:elements', window._currentHudElements);
+                }
+
+                // Send immediate standby initial frame for instant render
+                postToHud('hud:frame', {
+                    data: { isRaceOn: 1, rpm: 1200, maxRpm: 8000, idleRpm: 1000, speed: 0, gear: 1 },
+                    redlineRpm: 7200,
+                    lockup: { fl: false, fr: false, rl: false, rr: false }
+                });
+ 
+                setTimeout(() => postToHud('hud:scale'), 30);
+                await window.loadWindowState?.();
+ 
+                if (window.demoActive && window._currentHudConfig?.demoMode !== false) {
+                    setTimeout(() => postToHud('demo:start'), 150);
+                }
+ 
+                console.log(`[Launcher] Loaded HUD: ${name}`);
+            };
+        }
+
+        function updateHudToggleBtn() {
+            const btn = document.getElementById('hud-toggle-btn');
+            btn.innerHTML =
+                `<span class="${activeHud === 'simple'   ? 'active-hud' : 'inactive-hud'}">SIMPLE</span>` +
+                `<span style="color:rgba(255,255,255,0.2);margin:0 4px;">|</span>` +
+                `<span class="${activeHud === 'advanced' ? 'active-hud' : 'inactive-hud'}">ADVANCED</span>`;
+        }
+
+        document.getElementById('hud-toggle-btn').addEventListener('click', () => {
+            loadHud(activeHud === 'simple' ? 'advanced' : 'simple');
+        });
+
+        // ── Settings panel ────────────────────────────────────────────────
+        const settingsPanel    = document.getElementById('settings-panel');
+        const settingsBackdrop = document.getElementById('settings-backdrop');
+
+        function openSettings()  {
+            settingsPanel.classList.add('open');
+            settingsBackdrop.classList.add('open');
+        }
+        function closeSettings() {
+            settingsPanel.classList.remove('open');
+            settingsBackdrop.classList.remove('open');
+        }
+
+        document.getElementById('settings-btn').addEventListener('click', openSettings);
+        document.getElementById('close-settings').addEventListener('click', closeSettings);
+        settingsBackdrop.addEventListener('click', closeSettings);
+
+        // Unit toggle (pill)
+        const unitToggle = document.getElementById('unit-toggle');
+        unitToggle.checked = !isMetric(); // checked = MPH
+        document.getElementById('unit-label-left').style.color  =
+            isMetric() ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
+        document.getElementById('unit-label-right').style.color =
+            isMetric() ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+
+        unitToggle.addEventListener('change', () => {
+            toggleSpeedUnit();
+            document.getElementById('unit-label-left').style.color  =
+                isMetric() ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
+            document.getElementById('unit-label-right').style.color =
+                isMetric() ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+        });
+
+        // Physics toggle (pill)
+        const physicsToggle = document.getElementById('physics-toggle');
+        physicsToggle.checked =
+            localStorage.getItem('forza_hud_physics_enabled') !== 'false';
+        physicsToggle.addEventListener('change', () => togglePhysics());
+
+        // Notifications toggle (pill)
+        const notifToggle = document.getElementById('notif-toggle');
+        notifToggle.checked =
+            localStorage.getItem('forza_hud_notifications_enabled') !== 'false';
+        notifToggle.addEventListener('change', () => toggleNotifications());
+
+        // Expose for settings-btn onclick handlers
+        window.forceRelearn = async () => {
+            await window.__TAURI__.core.invoke('force_relearn');
+            window.showNotification?.('Re-learning mode activated! 🔄 Drive to the limiter.', 4000);
+        };
+
+        window.replayTutorial = () => {
+            closeSettings();
+            localStorage.removeItem('forza_hud_tutorial_done');
+            window.dispatchEvent(new CustomEvent('tutorial:replay'));
+        };
+
+        // ── Boot ──────────────────────────────────────────────────────────
+        await loadHud(activeHud);
+        initUtils();
+    
+        initWebSocket();
+        initCoordinator();
+
+        // Coordinator and other systems dispatch on window; we forward to iframe.
+        const _HUD_FORWARD_EVENTS = [
+            'hud:frame',
+            'car:changed', 'car:learned',
+            'speedunit:changed',
+            'lc:state',
+            'demo:start', 'demo:stop', 'demo:toggle',
+            'tutorial:replay', 'tutorial:locked',
+        ];
+ 
+        _HUD_FORWARD_EVENTS.forEach(type => {
+            window.addEventListener(type, (e) => {
+                const detail = type === 'hud:frame'
+                    ? { ...e.detail ?? {}, isMetric: isMetric() }
+                    : e.detail ?? {};
+                postToHud(type, detail);
+            });
+        });
+
+        // ── Config listener from Frontend UI ─────────────────────────────
+        window.addEventListener('hud:config', (e) => {
+            const config = e.detail || {};
+            window._currentHudConfig = config;
+            postToHud('config', { data: config });
+            if (config.elements) {
+                window._currentHudElements = config.elements;
+                postToHud('hud:elements', config.elements);
+            }
+            if (config.hudStyle && config.hudStyle !== activeHud) {
+                console.log('[Launcher] Config requested HUD style change to:', config.hudStyle);
+                loadHud(config.hudStyle);
+            }
+        });
+
+        // ── Message listener — receive requests from active HUD iframe ────────
+        window.addEventListener('message', (e) => {
+            if (e.source !== hudIframe.contentWindow) return;
+            const { type, ...payload } = e.data ?? {};
+ 
+            switch (type) {
+                case 'notification':
+                    window.showNotification?.(payload.message, payload.duration);
+                    break;
+                case 'relearn':
+                    window.forceRelearn?.();
+                    break;
+                case 'titlebar:visible':
+                    document.getElementById('titlebar')?.classList.toggle('always-visible', payload.visible);
+                    break;
+            }
+        });
+
+        // const AUTO_DEMO = true; // ← flip to false before a release build
+        // if (AUTO_DEMO) setTimeout(() => window.dispatchEvent(new CustomEvent('demo:toggle')), 1500);
+
+        // ── FPS + memory monitor — remove before release ──────────────────────────
+        var _fpsCount = 0, _fpsLast = performance.now();
+        window.addEventListener('hud:frame', function() {
+            _fpsCount++;
+            var now = performance.now();
+            if (now - _fpsLast >= 1000) {
+                var mem = performance.memory
+                    ? (performance.memory.usedJSHeapSize / 1048576).toFixed(1) + 'MB'
+                    : 'n/a';
+
+                if(_fpsCount >= 55)
+                    console.log('[Perf] FPS:' + _fpsCount + '  heap:' + mem);
+                else
+                    console.log('[Perf] WARNING, dropping below 60 FPS:' + _fpsCount + ' FPS,  heap:' + mem);
+
+                _fpsCount = 0;
+                _fpsLast  = now;
+
+            }
+        });
+    </script>
+
+    <!-- ── Tauri window management ───────────────────────────────────────── -->
+    <script type="module">
+        const { getCurrentWindow } = window.__TAURI__.window;
+        const appWindow = getCurrentWindow();
+
+        window.isLocked   = false;
+        window.appWindow  = appWindow;
+
+        // Drag
+        document.getElementById('drag-handle').addEventListener('mousedown', async () => {
+            if (!window.isLocked) {
+                try { await appWindow.startDragging(); }
+                catch (err) { console.error('Drag failed:', err); }
+            }
+        });
+
+        // Lock
+        const lockBtn = document.getElementById('lock-btn');
+        lockBtn.addEventListener('click', async () => {
+            // Intercept during tutorial — prevent locking, let tutorial handle it
+            if (window.tutorialActive && !window.isLocked) {
+                window.dispatchEvent(new CustomEvent('tutorial:locked'));
+                return;
+            }
+            window.isLocked = !window.isLocked;
+            lockBtn.textContent = window.isLocked ? '🔒' : '🔓';
+            lockBtn.classList.toggle('locked', window.isLocked);
+            document.body.classList.toggle('unlocked', !window.isLocked);
+            await appWindow.setResizable(!window.isLocked);
+            if (window.isLocked) {
+                await appWindow.setIgnoreCursorEvents(true);
+                window.showNotification?.('Window locked! 🔒 Click-through enabled. Ctrl+L to unlock.');
+                await saveWindowState();
+            } else {
+                await appWindow.setIgnoreCursorEvents(false);
+                window.showNotification?.('Window unlocked! 🔓 Drag to reposition.');
+            }
+        });
+
+        // Close
+        document.getElementById('close-btn').addEventListener('click', async () => {
+            await saveWindowState();
+            await appWindow.close();
+        });
+
+        // Hotkeys
+        document.addEventListener('keydown', async (e) => {
+            if (e.ctrlKey && e.key === 'l') { e.preventDefault(); lockBtn.click(); }
+            if (e.ctrlKey && !e.shiftKey && e.key === 's') { e.preventDefault(); await saveCustomPosition(); }
+            if (e.ctrlKey && e.shiftKey  && e.key === 'R') { e.preventDefault(); await restoreCustomPosition(); }
+            if (e.ctrlKey && !e.shiftKey && e.key === 'r') { e.preventDefault(); window.forceRelearn?.(); }
+            if (e.ctrlKey && e.altKey    && e.key === 'r') { e.preventDefault(); window.location.reload(); }
+            if (e.ctrlKey && e.altKey && e.key === '0') { e.preventDefault(); resetToSafePosition(); }
+        });
+
+        const stateKey  = () => `forza_hud_window_state_${window._activeHud  ?? 'simple'}`;
+        const customKey = () => `forza_hud_custom_position_${window._activeHud ?? 'simple'}`;
+
+        async function saveWindowState() {
+            try {
+                const position = await appWindow.outerPosition();
+                const size     = await appWindow.innerSize();
+                localStorage.setItem(stateKey(), JSON.stringify({
+                    position: { x: position.x, y: position.y },
+                    size:     { width: size.width, height: size.height }
+                }));
+            } catch (e) { console.error('Failed to save window state:', e); }
+        }
+
+        async function applyWindowConfig(config) {
+            const { LogicalPosition, LogicalSize,
+                    availableMonitors, currentMonitor } = window.__TAURI__.window;
+            const monitors     = await availableMonitors();
+            const currentMon   = await currentMonitor();
+            const currentScale = currentMon?.scaleFactor ?? 1;
+
+            let targetScale = currentScale;
+            for (const m of monitors) {
+                const inX = config.position.x >= m.position.x &&
+                            config.position.x <  m.position.x + m.size.width;
+                const inY = config.position.y >= m.position.y &&
+                            config.position.y <  m.position.y + m.size.height;
+                if (inX && inY) { targetScale = m.scaleFactor; break; }
+            }
+
+            await appWindow.setPosition(new LogicalPosition(
+                config.position.x / currentScale,
+                config.position.y / currentScale
+            ));
+            await appWindow.setSize(new LogicalSize(
+                config.size.width  / targetScale,
+                config.size.height / targetScale
+            ));
+        }
+
+        async function loadWindowState() {
+            try {
+                const saved = localStorage.getItem(stateKey());
+                if (!saved) return;
+                await applyWindowConfig(JSON.parse(saved));
+            } catch (e) { console.error('Failed to load window state:', e); }
+        }
+
+        async function saveCustomPosition() {
+            try {
+                const position = await appWindow.outerPosition();
+                const size     = await appWindow.innerSize();
+                localStorage.setItem(customKey(), JSON.stringify({
+                    position: { x: position.x, y: position.y },
+                    size:     { width: size.width, height: size.height }
+                }));
+                window.showNotification?.('💾 Custom position saved!');
+            } catch (e) { console.error('Failed to save custom position:', e); }
+        }
+
+        async function restoreCustomPosition() {
+            try {
+                const saved = localStorage.getItem(customKey());
+                if (!saved) {
+                    window.showNotification?.('⚠️ No custom position saved yet. Use Ctrl+S first.');
+                    return;
+                }
+                await applyWindowConfig(JSON.parse(saved));
+                window.showNotification?.('✅ Custom position restored!');
+                await saveWindowState();
+            } catch (e) { console.error('Failed to restore custom position:', e); }
+        }
+
+        async function resetToSafePosition() {
+            try {
+                const { LogicalSize, LogicalPosition } = window.__TAURI__.window;
+                await appWindow.setSize(new LogicalSize(750, 750));
+                await appWindow.setPosition(new LogicalPosition(100, 100));
+                window.showNotification?.('🔄 Window reset to primary monitor');
+                await saveWindowState();
+            } catch (e) { console.error('Failed to reset position:', e); }
+        }
+
+
+        window.applyResolutionPreset = async function () {
+            try {
+                const { LogicalSize, LogicalPosition, currentMonitor } = window.__TAURI__.window;
+                const monitor = await currentMonitor();
+                const physH   = monitor.size.height;
+                const scale   = monitor.scaleFactor;
+                let w, h, x, y;
+                if (physH >= 2000)      { w = 718; h = 859; x = 3033; y = 1205; }
+                else if (physH >= 1400) { w = 479; h = 573; x = 2022; y =  803; }
+                else                    { w = 359; h = 430; x = 1517; y =  602; }
+                await appWindow.setSize(new LogicalSize(w / scale, h / scale));
+                await appWindow.setPosition(new LogicalPosition(x / scale, y / scale));
+                await saveWindowState();
+            } catch (e) { console.error('Preset failed:', e); }
+        };
+
+        // Auto-save on move (debounced)
+        let _saveTimeout;
+        setInterval(() => {
+            if (!window.isLocked) {
+                clearTimeout(_saveTimeout);
+                _saveTimeout = setTimeout(saveWindowState, 1000);
+            }
+        }, 2000);
+
+        window.saveWindowState = saveWindowState;
+        window.loadWindowState = loadWindowState;
+        window.resetToSafePosition = resetToSafePosition;
+
+        // ── Update checker ────────────────────────────────────────────────────────
+        async function openReleasesPage() {
+            try {
+                await window.__TAURI__.opener.openUrl(
+                    'https://github.com/Paburrito/forza-horizon-6-custom-hud/releases/latest'
+                );
+            } catch (e) {
+                console.error('Failed to open browser:', e);
+            }
+        }
+
+        async function checkForUpdates(manual = false) {
+            const statusEl  = document.getElementById('update-status');
+            const updateBtn = document.getElementById('update-btn');
+
+            try {
+                const currentVersion = await window.__TAURI__.app.getVersion();
+                const versionEl = document.getElementById('app-version');
+                if (versionEl) versionEl.textContent = `v${currentVersion}`;
+
+                if (statusEl) statusEl.textContent = '…';
+
+                const res  = await fetch(
+                    'https://api.github.com/repos/Paburrito/forza-horizon-6-custom-hud/releases/latest',
+                    { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+                );
+                const data   = await res.json();
+                const latest = data.tag_name?.replace('v', '') ?? null;
+
+                if (!latest) throw new Error('No release found');
+
+                if (latest !== currentVersion) {
+                    if (statusEl) statusEl.textContent = `v${latest} available!`;
+                    if (updateBtn) {
+                        updateBtn.innerHTML = `🔗 Download v${latest} on GitHub`;
+                        updateBtn.onclick   = openReleasesPage;
+                    }
+                    window.showNotification?.(
+                        `🆕 Update available: v${latest}, head over Settings to download`,
+                        10000
+                    );
+                } else {
+                    if (statusEl) statusEl.textContent = 'Up to date ✓';
+                    if (manual) window.showNotification?.('✅ You\'re on the latest version!', 3000);
+                }
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'Check failed';
+                if (manual) window.showNotification?.('⚠️ Could not check for updates', 3000);
+            }
+        }
+
+        setTimeout(() => checkForUpdates(false), 6000);
+        window.checkForUpdates  = checkForUpdates;
+        window.openReleasesPage = openReleasesPage;
+
+        // ── Diagnostic logger ─────────────────────────────────────────────────────────
+        window._diag = {
+            enabled:    false,
+            log:        [],
+            MAX:        3600,   // 60s at 60fps
+            startTime:  null,
+            _wsCount:   0,
+            _fpsCount:  0,
+            _fpsLast:   performance.now(),
+
+            record(category, key, value) {
+                if (!this.enabled) return;
+                this.log.push({
+                    t:   (performance.now() - this.startTime).toFixed(1),
+                    cat: category,
+                    key,
+                    val: typeof value === 'number' ? value.toFixed(2) : value
+                });
+                if (this.log.length > this.MAX) this.log.shift();
+            },
+
+            countWsMessage() {
+                if (!this.enabled) return;
+                this._wsCount++;
+            },
+
+            countFrame() {
+                if (!this.enabled) return;
+                this._fpsCount++;
+                const now = performance.now();
+                if (now - this._fpsLast >= 1000) {
+                    this.record('perf', 'fps',    this._fpsCount);
+                    this.record('perf', 'wsRate', this._wsCount);
+                    if (performance.memory) {
+                        this.record('perf', 'heapMB',
+                            performance.memory.usedJSHeapSize / 1048576);
+                    }
+                    this._fpsCount = 0;
+                    this._wsCount  = 0;
+                    this._fpsLast  = now;
+                }
+            },
+
+            start() {
+                this.enabled   = true;
+                this.startTime = performance.now();
+                this.log       = [];
+                this._fpsCount = 0;
+                this._wsCount  = 0;
+                this._fpsLast  = performance.now();
+                window.showNotification?.('🔴 Diagnostics recording — export when ready', 4000);
+                document.getElementById('diag-record-btn').textContent = '⏹ Stop Recording';
+                document.getElementById('diag-record-btn').style.background = 'rgba(255,0,136,0.3)';
+                document.getElementById('diag-export-btn').style.display = '';
+            },
+
+            stop() {
+                this.enabled = false;
+                document.getElementById('diag-record-btn').textContent = '⏺ Start Recording';
+                document.getElementById('diag-record-btn').style.background = '';
+                window.showNotification?.('⏹ Recording stopped — export when ready', 3000);
+            },
+
+            async export() {
+                if (this.log.length === 0) {
+                    window.showNotification?.('No data to export — record first', 3000);
+                    return;
+                }
+
+                const duration = ((performance.now() - this.startTime) / 1000).toFixed(1);
+
+                const byKey = (key) => this.log
+                    .filter(e => e.key === key)
+                    .map(e => parseFloat(e.val))
+                    .filter(v => !isNaN(v));
+
+                const avg  = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : 'n/a';
+                const min  = arr => arr.length ? Math.min(...arr).toFixed(2) : 'n/a';
+                const max  = arr => arr.length ? Math.max(...arr).toFixed(2) : 'n/a';
+
+                const fps      = byKey('fps');
+                const heap     = byKey('heapMB');
+                const wsRate   = byKey('wsRate');
+                const renderMs = byKey('renderMs');
+                const physMs   = byKey('physicsMs');
+
+                const lines = [
+                    '═══════════════════════════════════════════════════════════════',
+                    '  Forza Horizon 6 Custom HUD — Diagnostic Report',
+                    `  Generated : ${new Date().toISOString()}`,
+                    `  Duration  : ${duration}s`,
+                    `  HUD       : ${window._activeHud ?? 'unknown'}`,
+                    `  Entries   : ${this.log.length}`,
+                    '═══════════════════════════════════════════════════════════════',
+                    '',
+                    '── PERFORMANCE SUMMARY ────────────────────────────────────────',
+                    `  FPS             avg: ${avg(fps).padEnd(8)} min: ${min(fps).padEnd(8)} max: ${max(fps)}`,
+                    `  WS packets/s    avg: ${avg(wsRate).padEnd(8)} min: ${min(wsRate).padEnd(8)} max: ${max(wsRate)}`,
+                    `  Heap MB         avg: ${avg(heap).padEnd(8)} min: ${min(heap).padEnd(8)} max: ${max(heap)}`,
+                    renderMs.length
+                        ? `  Render ms       avg: ${avg(renderMs).padEnd(8)} max: ${max(renderMs)}`
+                        : '  Render ms       n/a (simple HUD instrumentation)',
+                    physMs.length
+                        ? `  Physics ms      avg: ${avg(physMs).padEnd(8)} max: ${max(physMs)}`
+                        : '  Physics ms      n/a',
+                    '',
+                    '── DROPPED FRAMES (render > 16.6ms) ───────────────────────────',
+                    ...this.log
+                        .filter(e => e.key === 'renderMs' && parseFloat(e.val) > 16.6)
+                        .map(e => `  [${String(e.t).padStart(9)}ms] ${e.val}ms`)
+                        .slice(0, 50)
+                        || ['  none detected'],
+                    '',
+                    '── RAW LOG ────────────────────────────────────────────────────',
+                    ...this.log.map(e =>
+                        `  [${String(e.t).padStart(9)}ms] ${e.cat.padEnd(8)} ${e.key.padEnd(12)} ${e.val}`
+                    )
+                ];
+
+                const content = lines.join('\n');
+                try {
+                    const path = await window.__TAURI__.dialog.save({
+                        defaultPath: `hud-diag-${Date.now()}.txt`,
+                        filters: [{ name: 'Text File', extensions: ['txt'] }]
+                    });
+
+                    if (path) {
+                        await window.__TAURI__.fs.writeTextFile(path, content);
+                        window.showNotification?.('📄 Diagnostic log saved', 3000);
+                    }
+                } catch (e) {
+                    console.error('Export failed:', e);
+                    window.showNotification?.('⚠️ Export failed', 3000);
+                }
+            }
+        };
+
+        function toggleDiagnostics() {
+            window._diag.enabled ? window._diag.stop() : window._diag.start();
+        }
+        window.toggleDiagnostics = toggleDiagnostics;
+    </script>
+
+</body>
+</html>
