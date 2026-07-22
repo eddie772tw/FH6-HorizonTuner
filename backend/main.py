@@ -192,19 +192,6 @@ async def lifespan(app_inst: FastAPI):
     if current_udp_transport:
         current_udp_transport.close()
 
-    global overlay_process
-    if overlay_process and overlay_process.poll() is None:
-        try:
-            logger.info("Stopping Overlay process during backend shutdown...")
-            overlay_process.terminate()
-            overlay_process.wait(timeout=2)
-        except Exception:
-            try:
-                overlay_process.kill()
-            except Exception:
-                pass
-        overlay_process = None
-
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
 
@@ -1791,125 +1778,72 @@ DEFAULT_LAYOUT = {
 }
 
 
-def get_overlay_path():
-    if getattr(sys, "frozen", False):
-        return os.path.join(
-            os.path.dirname(sys.executable), "tool", "HorizonTunerOverlay.exe"
-        )
-    else:
-        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        possible_paths = [
-            os.path.join(
-                root, "tool", "overlay", "build", "bin", "HorizonTunerOverlay.exe"
-            ),
-            os.path.join(
-                root, "tool", "overlay", "build", "Release", "HorizonTunerOverlay.exe"
-            ),
-            os.path.join(
-                root, "tool", "overlay", "build", "Debug", "HorizonTunerOverlay.exe"
-            ),
-            os.path.join(root, "tool", "overlay", "bin", "HorizonTunerOverlay.exe"),
-        ]
-        for p in possible_paths:
-            if os.path.exists(p):
-                return p
-        return os.path.join(
-            root, "tool", "overlay", "build", "bin", "HorizonTunerOverlay.exe"
-        )
+HUD_CONFIG_FILE = os.path.join(DATA_ROOT, "hud_config.json")
+CAR_LEARNING_FILE = os.path.join(DATA_ROOT, "car_learning.json")
+
+DEFAULT_HUD_CONFIG = {
+    "enabled": False,
+    "hudStyle": "advanced",
+    "position": {"x": 100, "y": 100},
+    "scale": 1.0,
+    "unit": "kmh",
+    "elements": {
+        "showRPM": True,
+        "showSpeed": True,
+        "showGear": True,
+        "showPowerTorque": True,
+        "showBoost": True,
+        "showWheelLockup": True,
+        "showMotionEffect": True,
+    },
+    "soundEnabled": False,
+}
 
 
-# 預留未來開發：取得 Overlay 版面配置
+@app.get("/api/overlay/config")
 @app.get("/api/overlay/layout")
-async def get_overlay_layout():
-    if os.path.exists(LAYOUT_FILE):
+async def get_overlay_config():
+    if os.path.exists(HUD_CONFIG_FILE):
         try:
-            with open(LAYOUT_FILE, "r", encoding="utf-8") as f:
+            with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to load layout.json: {e}")
-    return DEFAULT_LAYOUT
+            logger.error(f"Failed to load hud_config.json: {e}")
+    return DEFAULT_HUD_CONFIG
 
 
-# 預留未來開發：儲存 Overlay 版面配置
+@app.post("/api/overlay/config")
 @app.post("/api/overlay/layout")
-async def save_overlay_layout(data: dict):
+async def save_overlay_config(data: dict):
     try:
-        with open(LAYOUT_FILE, "w", encoding="utf-8") as f:
+        with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        return {"message": "Layout saved successfully"}
+        return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
-        logger.error(f"Failed to save layout.json: {e}")
-        return {"error": f"Failed to save layout: {e}"}
+        logger.error(f"Failed to save hud_config.json: {e}")
+        return {"error": f"Failed to save HUD config: {e}", "success": False}
 
 
-# 預留未來開發：取得 Overlay 執行狀態
-@app.get("/api/overlay/status")
-async def get_overlay_status():
-    global overlay_process
-    running = False
-    if overlay_process is not None:
-        if overlay_process.poll() is None:
-            running = True
-        else:
-            overlay_process = None
-    return {"running": running}
-
-
-# 預留未來開發：啟動 Overlay 處理程序
-@app.post("/api/overlay/start")
-async def start_overlay():
-    global overlay_process
-    if overlay_process is not None and overlay_process.poll() is None:
-        return {"message": "Overlay is already running", "success": True}
-
-    exe_path = get_overlay_path()
-    if not os.path.exists(exe_path):
-        logger.error(f"Overlay executable not found at: {exe_path}")
-        return {
-            "error": f"Overlay executable not found at {exe_path}",
-            "success": False,
-        }
-
-    try:
-        overlay_process = subprocess.Popen(
-            [exe_path, "-port", str(backend_port)],
-            cwd=DATA_ROOT,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        logger.info(
-            f"Started Overlay process from {exe_path} with backend port {backend_port}"
-        )
-        return {"message": "Overlay started successfully", "success": True}
-    except Exception as e:
-        logger.error(f"Failed to start overlay process: {e}")
-        return {"error": f"Failed to start overlay: {e}", "success": False}
-
-
-# 預留未來開發：停止 Overlay 處理程序
-@app.post("/api/overlay/stop")
-async def stop_overlay():
-    global overlay_process
-    if overlay_process is None or overlay_process.poll() is not None:
-        overlay_process = None
-        return {"message": "Overlay is not running", "success": True}
-
-    try:
-        overlay_process.terminate()
-        overlay_process.wait(timeout=2)
-        overlay_process = None
-        logger.info("Stopped Overlay process")
-        return {"message": "Overlay stopped successfully", "success": True}
-    except Exception as e:
-        logger.error(f"Failed to stop overlay process: {e}")
+@app.get("/api/overlay/car_learning")
+async def get_car_learning():
+    if os.path.exists(CAR_LEARNING_FILE):
         try:
-            if overlay_process:
-                overlay_process.kill()
-                overlay_process = None
-                return {"message": "Overlay killed successfully", "success": True}
-        except Exception:
-            pass
-        return {"error": f"Failed to stop overlay: {e}", "success": False}
+            with open(CAR_LEARNING_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load car_learning.json: {e}")
+    return {}
+
+
+@app.post("/api/overlay/car_learning")
+async def save_car_learning(data: dict):
+    try:
+        with open(CAR_LEARNING_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return {"message": "Car learning data saved successfully", "success": True}
+    except Exception as e:
+        logger.error(f"Failed to save car_learning.json: {e}")
+        return {"error": f"Failed to save car learning data: {e}", "success": False}
 
 
 def check_frontend_alive(proc):
@@ -1951,30 +1885,66 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Failed to write web_port.txt: {e}")
 
+    _cleanup_state = {"proc": None, "log": None}
+
     if getattr(sys, "frozen", False):
         frontend_path = os.path.join(sys._MEIPASS, "frontend.exe")
         if os.path.exists(frontend_path):
             import subprocess
 
-            # 準備前端日誌檔案
             log_dir = os.path.join(DATA_ROOT, "logs")
             frontend_log_path = os.path.join(log_dir, "frontend.log")
             try:
-                frontend_log = open(
+                _cleanup_state["log"] = open(
                     frontend_log_path, "a", encoding="utf-8", buffering=1
                 )
-                proc = subprocess.Popen(
+                _cleanup_state["proc"] = subprocess.Popen(
                     [frontend_path, "--no-sidecar"],
-                    stdout=frontend_log,
+                    stdout=_cleanup_state["log"],
                     stderr=subprocess.STDOUT,
                 )
             except Exception:
-                proc = subprocess.Popen([frontend_path, "--no-sidecar"])
+                _cleanup_state["proc"] = subprocess.Popen(
+                    [frontend_path, "--no-sidecar"]
+                )
 
             threading.Thread(
-                target=check_frontend_alive, args=(proc,), daemon=True
+                target=check_frontend_alive,
+                args=(_cleanup_state["proc"],),
+                daemon=True,
             ).start()
         else:
             print("Frontend executable not found in bundle!")
+
+    def cleanup_resources():
+        proc = _cleanup_state.get("proc")
+        log = _cleanup_state.get("log")
+        if proc:
+            try:
+                proc.terminate()
+                proc.wait(timeout=1)
+            except Exception:
+                pass
+            _cleanup_state["proc"] = None
+        if log:
+            try:
+                log.close()
+            except Exception:
+                pass
+            _cleanup_state["log"] = None
+
+    import atexit
+
+    atexit.register(cleanup_resources)
+
+    def monitor_stdin_eof():
+        try:
+            sys.stdin.read()
+        except Exception:
+            pass
+        cleanup_resources()
+        os._exit(0)
+
+    threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     uvicorn.run(app, host="127.0.0.1", port=backend_port)

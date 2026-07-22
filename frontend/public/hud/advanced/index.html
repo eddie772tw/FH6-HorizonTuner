@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<!--
+    advanced/index.html — Advanced HUD
+    Canvas: 1450 x 750
+    Arc center: (750, 730) — just below canvas bottom for a sweeping quarter-circle
+    Arc radius: 570px  |  Sweep: 180° → 270° (quarter circle, vertical to horizontal)
+
+    All gauge drawing is on canvas.
+    Gear number, speed, and speed unit are HTML overlays for font quality.
+    Per-wheel lockup dots are HTML for CSS blink animation.
+-->
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced HUD</title>
+    <style>
+        /* ── Fonts ──────────────────────────────────────────────────────────────── */
+        @font-face {
+            font-family: 'ForzaFont';
+            src: url('../assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+        }
+
+        @font-face {
+            font-family: 'ForzaGear';
+            src: url('../assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ── Root wrapper — fills the Tauri window ──────────────────────────────── */
+        .adv-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
+            pointer-events: none;
+            perspective: 350px;
+            perspective-origin: center;
+            padding: 30px;
+            overflow: visible;
+        }
+
+        /* ── Scaled container — 1450 × 750 ─────────────────────────────────────── */
+        .adv-container {
+            position: relative;
+            width: 1450px;
+            height: 750px;
+            pointer-events: all;
+            transform-origin: bottom right;
+            flex-shrink: 0;
+            will-change: transform;
+        }
+
+        canvas#advCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* ── Large text overlays ────────────────────────────────────────────────── */
+        #adv-gear {
+            position: absolute;
+            right: 0px;
+            bottom: -25px;
+            font-family: 'ForzaGear';
+            text-align: center;
+            width: 650px;
+            font-size: 550px;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #adv-speed {
+            position: absolute;
+            right: 670px;
+            bottom: 10px;
+            font-family: 'ForzaGear';
+            font-size: 280px;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.9);
+            outline: 1px;
+            text-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.05em;
+        }
+
+        #adv-speed span {
+            display: inline-block;
+            width: 1ch;
+            text-align: center;
+        }
+
+        #adv-speed-unit {
+            position: absolute;
+            right: 550px;
+            bottom: 27px;
+            font-family: 'ForzaGear';
+            font-size: 50px;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.1em;
+        }
+
+        /* ── Per-wheel dot strips ───────────────────────────────────────────────── */
+        .adv-dot-strip {
+            position: absolute;
+            top: 25%;
+            transform: translateY(-25%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        .adv-dot-strip.left {
+            left: 18px;
+        }
+
+        .adv-dot-strip.right {
+            right: 18px;
+        }
+
+        .adv-dot-label {
+            font-family: 'ForzaGear', Arial;
+            font-size: 35px;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.12em;
+            margin-bottom: 6px;
+        }
+
+        .adv-dot-label.bottom {
+            margin-bottom: 0;
+            margin-top: 6px;
+        }
+
+        .adv-dot-arrow {
+            font-size: 35px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1;
+            margin: 3px 0;
+        }
+
+        .adv-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            margin: 5px 0;
+            transition: background 0.08s, border-color 0.08s;
+        }
+
+        .adv-dot.active {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .adv-dot.danger {
+            background: rgb(255, 0, 136);
+            border-color: rgba(255, 0, 136, 0.8);
+            animation: adv-blink 0.12s infinite;
+        }
+
+        @keyframes adv-blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.12;
+            }
+        }
+
+        .adv-dot-sep {
+            width: 28px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.7);
+            margin: 10px 0;
+        }
+
+        #adv-rpm-value {
+            position: absolute;
+            right: 680px;
+            top: 310px;
+            font-family: 'ForzaGear', Arial;
+            font-size: 150px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: right;
+            letter-spacing: 0.05em;
+        }
+
+        #adv-rpm-value span {
+            display: inline-block;
+            width: 1ch;
+            text-align: center;
+        }
+
+        /* ── Telemetry 4-Cards Container ─────────────────────────────────────────── */
+        .tele-cards-container {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 15px;
+            pointer-events: none;
+        }
+
+        .tele-card {
+            background: rgba(15, 20, 28, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #fff;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            width: 340px;
+            backdrop-filter: blur(8px);
+        }
+
+        .tele-card-title {
+            font-size: 13px;
+            color: rgba(0, 240, 255, 0.9);
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .tele-grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .bar-bg {
+            height: 6px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: #00f0ff;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        /* ── HUD hidden state ───────────────────────────────────────────────────── */
+        .adv-container.hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="adv-wrapper">
+
+        <!-- Shared Telemetry 4 Cards Mount Point -->
+        <div id="teleCardsMount"></div>
+
+        <div class="adv-container" id="advContainer">
+
+            <!-- Static canvas — arc segments, labels (drawn once) -->
+            <canvas id="advCanvasStatic" width="1450" height="750"
+                style="position:absolute; top:0; left:0; pointer-events:none;"></canvas>
+
+            <!-- Main canvas — needles, badges (drawn every frame) -->
+            <canvas id="advCanvas" width="1450" height="750"></canvas>
+
+            <!-- Gear number -->
+            <div id="adv-gear">1</div>
+
+            <!-- Speed display (digit-spanned for tabular spacing) -->
+            <div id="adv-speed"><span>0</span></div>
+            <div id="adv-speed-unit">KM/H</div>
+
+            <!-- RPM Display -->
+            <div id="adv-rpm-value">0</div>
+
+            <!-- Left dot strip (FL top, RL bottom) -->
+            <div class="adv-dot-strip left" id="dots-left">
+                <div class="adv-dot-label">FL</div>
+                <div class="adv-dot-arrow">↑</div>
+                <!-- FL: dot 3 is outermost (lights last), dot 0 is closest to center (lights first) -->
+                <!-- <div class="adv-dot" id="dot-fl-4"></div> -->
+                <div class="adv-dot" id="dot-fl-3"></div>
+                <div class="adv-dot" id="dot-fl-2"></div>
+                <div class="adv-dot" id="dot-fl-1"></div>
+                <div class="adv-dot" id="dot-fl-0"></div>
+                <div class="adv-dot-sep"></div>
+                <!-- RL: dot 0 is closest to center (lights first), dot 3 outermost (lights last) -->
+                <div class="adv-dot" id="dot-rl-0"></div>
+                <div class="adv-dot" id="dot-rl-1"></div>
+                <div class="adv-dot" id="dot-rl-2"></div>
+                <div class="adv-dot" id="dot-rl-3"></div>
+                <!-- <div class="adv-dot" id="dot-rl-4"></div> -->
+                <div class="adv-dot-arrow">↓</div>
+                <div class="adv-dot-label bottom">RL</div>
+            </div>
+
+            <!-- Right dot strip (FR top, RR bottom) -->
+            <div class="adv-dot-strip right" id="dots-right">
+                <div class="adv-dot-label">FR</div>
+                <div class="adv-dot-arrow">↑</div>
+                <!-- <div class="adv-dot" id="dot-fr-4"></div> -->
+                <div class="adv-dot" id="dot-fr-3"></div>
+                <div class="adv-dot" id="dot-fr-2"></div>
+                <div class="adv-dot" id="dot-fr-1"></div>
+                <div class="adv-dot" id="dot-fr-0"></div>
+                <div class="adv-dot-sep"></div>
+                <div class="adv-dot" id="dot-rr-0"></div>
+                <div class="adv-dot" id="dot-rr-1"></div>
+                <div class="adv-dot" id="dot-rr-2"></div>
+                <div class="adv-dot" id="dot-rr-3"></div>
+                <!-- <div class="adv-dot" id="dot-rr-4"></div> -->
+                <div class="adv-dot-arrow">↓</div>
+                <div class="adv-dot-label bottom">RR</div>
+            </div>
+
+        </div><!-- /.adv-container -->
+    </div><!-- /.adv-wrapper -->
+
+
+    <!-- ========== DRAWING CONSTANTS ========== -->
+    <script>
+        // var advCanvas = document.getElementById('advCanvas');
+        // var ctx       = advCanvas.getContext('2d');
+
+        var canvas = document.getElementById('advCanvas');
+        var ctx = canvas.getContext('2d');
+        var canvasStatic = document.getElementById('advCanvasStatic');
+        var ctxS = canvasStatic.getContext('2d');
+
+        // Force ForzaFont to load before first canvas draw
+        document.fonts.load('1em ForzaFont').then(() => {
+            _staticDirty = true;
+            console.log('[AdvHUD] ForzaFont loaded');
+        });
+
+        var _staticDirty = true;
+        var _staticLastRedline = 0;
+        var _staticLastVisualMax = 0;
+        var _staticLastSweep = Infinity;
+        var _staticLastAlpha = 1.0;
+
+        // ── Canvas ──────────────────────────────────────────────────────────────────
+        var W = 1450, H = 750;
+
+        // ── RPM Arc geometry ─────────────────────────────────────────────────────────
+        var EL_CX = 735;   // ellipse center x — shift right to push arc leftward
+        var EL_CY = 615;   // ellipse center y — shift down to push arc upward
+        var EL_A = 610;   // horizontal semi-axis — controls width of the arc
+        var EL_B = 550;   // vertical semi-axis  — controls height of the arc
+        var EL_N = 2.35;   // 2 = regular ellipse, 3-4 = pronounced corner, tune from here
+        var EL_START = Math.PI * 0.97; // was Math.PI — pulls the bottom further down-right
+        var EL_END = Math.PI * 1.65; // was Math.PI * 1.5 — pushes the top further right
+        // var EL_CX = 400;   // ellipse center x — shift right to push arc leftward
+        // var EL_CY = 400;   // ellipse center y — shift down to push arc upward
+        // var EL_A  = 250;   // horizontal semi-axis — controls width of the arc
+        // var EL_B  = 250;   // vertical semi-axis  — controls height of the arc
+        // var EL_N  = 2.5;   // 2 = regular ellipse, 3-4 = pronounced corner, tune from here
+        // var EL_START = Math.PI * 1; // was Math.PI — pulls the bottom further down-right
+        // var EL_END   = Math.PI * 3; // was Math.PI * 1.5 — pushes the top further right
+
+        var EL_P = 2 / EL_N;
+
+        function superPt(t) {
+            var ct = Math.cos(t), st = Math.sin(t);
+            return {
+                x: EL_CX + EL_A * Math.sign(ct) * Math.pow(Math.abs(ct), EL_P),
+                y: EL_CY + EL_B * Math.sign(st) * Math.pow(Math.abs(st), EL_P)
+            };
+        }
+
+        // Build a lookup table: arc length along the curve → t value
+        // Call once at startup with ~500 steps for sufficient precision
+        function buildArcTable(steps) {
+            var entries = [{ t: EL_START, len: 0 }];
+            var total = 0;
+
+            for (var i = 1; i <= steps; i++) {
+                var ta = EL_START + (i - 1) / steps * (EL_END - EL_START);
+                var tb = EL_START + i / steps * (EL_END - EL_START);
+                var pa = superPt(ta), pb = superPt(tb);
+                var dx = pb.x - pa.x, dy = pb.y - pa.y;
+                total += Math.sqrt(dx * dx + dy * dy);
+                entries.push({ t: tb, len: total });
+            }
+
+            return { entries: entries, total: total };
+        }
+
+        // Given a 0-1 fraction of total arc length, return the corresponding t
+        function arcFracToT(frac, table) {
+            var target = frac * table.total;
+            var lo = 0, hi = table.entries.length - 1;
+
+            // Binary search
+            while (lo < hi - 1) {
+                var mid = (lo + hi) >> 1;
+                if (table.entries[mid].len < target) lo = mid;
+                else hi = mid;
+            }
+
+            // Interpolate between the two bracketing entries
+            var e0 = table.entries[lo], e1 = table.entries[hi];
+            var span = e1.len - e0.len;
+            if (span < 1e-10) return e0.t;
+            return e0.t + (target - e0.len) / span * (e1.t - e0.t);
+        }
+
+        // Build once at startup — update if EL_ values change
+        var _arcTable = buildArcTable(600);
+
+        function superNormal(t) {
+            // Numerically approximate the tangent then rotate 90°
+            var dt = 0.0005;
+            var p1 = superPt(t - dt), p2 = superPt(t + dt);
+            var dx = p2.x - p1.x, dy = p2.y - p1.y;
+            var len = Math.sqrt(dx * dx + dy * dy);
+            // Rotate tangent 90° — which direction depends on curve winding
+            // For our arc (going counterclockwise inward), this points inward:
+            return { x: dy / len, y: -dx / len };
+        }
+
+        // Direction from ellipse center outward to the arc point — used for label placement
+        function superOutward(t) {
+            var pt = superPt(t);
+            var dx = pt.x - EL_CX, dy = pt.y - EL_CY;
+            var len = Math.sqrt(dx * dx + dy * dy);
+            return { x: dx / len, y: dy / len };
+        }
+
+        function rpmToT(rpm, visualMax) {
+            return arcFracToT(rpm / visualMax, _arcTable);
+        }
+
+        // Point on the inner arc — same superellipse but offset inward by `offset` px
+        function innerPt(t, offset) {
+            var pt = superPt(t);
+            var nor = superNormal(t);
+            return { x: pt.x - nor.x * offset, y: pt.y - nor.y * offset };
+        }
+
+        // Draw a segment of the inner arc (used for HP and TQ gauges)
+        function drawInnerArc(cx, t1, t2, offset, isRed, glowOffset, glowWidth) {
+            if (t2 <= t1) return;
+            glowOffset = (glowOffset !== undefined) ? glowOffset : HP_TQ_GLOW_OFFSET;
+            glowWidth = (glowWidth !== undefined) ? glowWidth : HP_TQ_GLOW_B;
+            var steps = Math.max(8, Math.ceil(Math.abs(t2 - t1) * 250));
+
+            cx.beginPath();
+            for (var si = 0; si <= steps; si++) {
+                var t = t1 + (si / steps) * (t2 - t1);
+                var pt = superPt(t);
+                var nor = superNormal(t);
+                var go = offset - glowOffset;
+                si === 0 ? cx.moveTo(pt.x - nor.x * go, pt.y - nor.y * go)
+                    : cx.lineTo(pt.x - nor.x * go, pt.y - nor.y * go);
+            }
+            cx.lineCap = 'butt';
+            cx.lineWidth = glowWidth;
+            cx.strokeStyle = isRed ? 'rgba(255,0,136,0.40)' : 'rgba(255,255,255,0.40)';
+            cx.stroke();
+
+            cx.beginPath();
+            for (var si = 0; si <= steps; si++) {
+                var t = t1 + (si / steps) * (t2 - t1);
+                var pt = innerPt(t, offset);
+                si === 0 ? cx.moveTo(pt.x, pt.y) : cx.lineTo(pt.x, pt.y);
+            }
+            cx.lineWidth = HP_TQ_LINE_W;
+            cx.strokeStyle = isRed ? C_PINK_DIM : C_WHITE_DIM;
+            cx.stroke();
+        }
+
+        var RPM_SEG_T_GAP = 0;     // gap between segments in t-space — tune for visual breathing room
+        var RPM_SEG_W = 8;     // solid line width
+        var RPM_GLOW = 28;    // shadow blur radius
+        var RPM_GLOW_W = 45;    // glow band width — extends inward from the arc
+        var RPM_GLOW_OFFSET = -20;   // negative = inward, positive = outward
+
+        function drawSuperSegment(cx, t1, t2, isRed) {
+            if (t2 <= t1) return;
+            var steps = Math.max(6, Math.ceil((t2 - t1) * 200));
+
+            cx.beginPath();
+            for (var si = 0; si <= steps; si++) {
+                var t = t1 + (si / steps) * (t2 - t1);
+                var pt = superPt(t);
+                var out = superNormal(t);
+                si === 0 ? cx.moveTo(pt.x + out.x * RPM_GLOW_OFFSET, pt.y + out.y * RPM_GLOW_OFFSET)
+                    : cx.lineTo(pt.x + out.x * RPM_GLOW_OFFSET, pt.y + out.y * RPM_GLOW_OFFSET);
+            }
+            cx.lineCap = 'butt';
+            cx.lineWidth = RPM_GLOW_W;
+            cx.strokeStyle = isRed ? 'rgba(255,0,136,0.40)' : 'rgba(255,255,255,0.40)';
+            cx.stroke();
+
+            cx.beginPath();
+            for (var si = 0; si <= steps; si++) {
+                var pt = superPt(t1 + (si / steps) * (t2 - t1));
+                si === 0 ? cx.moveTo(pt.x, pt.y) : cx.lineTo(pt.x, pt.y);
+            }
+            cx.lineWidth = RPM_SEG_W;
+            cx.strokeStyle = isRed ? C_PINK_DIM : C_WHITE;
+            cx.stroke();
+        }
+
+
+        var ARC_START = Math.PI;        // 180° — arc start (bottom-left, tangent going UP)
+        var ARC_END = Math.PI * 1.5;  // 270° — arc end   (top-center, tangent going RIGHT)
+        var ARC_SWEEP = Math.PI * 0.5;  // 90° total sweep
+
+        // ── HP / TQ inner arc ────────────────────────────────────────────────────────
+        // Runs along the RPM arc at a smaller radius, split at the midpoint
+        var HP_TQ_OFFSET = 65;   // px inward from the RPM arc solid line
+        var HP_TQ_LINE_W = 6;
+        var HP_TQ_GLOW_B = 38;   // glow band width
+        var HP_TQ_GLOW_OFFSET = -15; // negative = glow shifts inward from solid line
+
+
+        // ── Boost gauge ──────────────────────────────────────────────────────────────
+        var BOOST_SEGS = 5;
+        var BOOST_GAP_F = 0.04;   // proportional gap, same as HP/TQ
+        var BOOST_F_START = 0.0;    // arc fraction where boost gauge starts
+        var BOOST_F_END = 0.30;   // arc fraction where boost gauge ends
+        var BOOST_OFFSET = 65;    // px inward from RPM line (further than HP/TQ)
+        var BOOST_GLOW_OFFSET = -15;    // negative = glow shifts further inward
+        var BOOST_GLOW_B = 38;     // glow band width
+        var BOOST_LINE_W = 6;      // solid line width (reuses HP_TQ_LINE_W logic)
+
+
+        // ── Colors ───────────────────────────────────────────────────────────────────
+        var C_WHITE = 'rgba(255,255,255,1)';
+        var C_WHITE_DIM = 'rgba(255,255,255,0.85)';
+        var C_WHITE_MID = 'rgba(255,255,255,0.5)';
+        var C_WHITE_FADE = 'rgba(255,255,255,0)';
+        var C_PINK = 'rgba(255,0,136,1)';
+        var C_PINK_DIM = 'rgba(255,0,136,0.85)';
+
+        // ── Animation state ──────────────────────────────────────────────────────────
+        window.advSweepActive = false;
+        window.advFadeAlpha = 1.0;    // 1 = fully visible, 0 = dark
+        window.advSweepRpm = 0;
+
+        // ── Update wheel lockup dot colors ───────────────────────────────────────────
+        function updateDotGroup(prefix, delta) {
+            var pct = delta * 100;
+            var isHigh = pct >= 75;
+            for (var i = 0; i < 4; i++) {
+                var threshold = (i + 1) * 25;  // 25 / 50 / 75 / 100
+                var active = pct >= threshold;
+                var el = document.getElementById('dot-' + prefix + '-' + i);
+                if (!el) continue;
+                el.className = 'adv-dot' + (active ? ' active' : '') + (active && isHigh ? ' danger' : '');
+            }
+        }
+    </script>
+
+
+    <!-- ========== DRAW FUNCTION ========== -->
+    <script>
+        function drawStaticHUD(redlineRpm, visualMax, sweepRpm, fadeAlpha) {
+            ctxS.clearRect(0, 0, W, H);
+            ctxS.save();
+            ctxS.globalAlpha = fadeAlpha ?? 1.0;
+
+            var segments = Math.ceil(visualMax / 1000) || 8;
+
+            // ── RPM arc segments ─────────────────────────────────────────────────────
+            for (var i = 0; i < segments; i++) {
+                if (i * 1000 > sweepRpm) continue;
+                var segStartRpm = i * 1000;
+                var segEndRpm = (i + 1) * 1000;
+                var segT1Raw = rpmToT(segStartRpm, visualMax);
+                var segT2Raw = rpmToT(segEndRpm, visualMax);
+                var gap = (segT2Raw - segT1Raw) * 0.03;
+                var t1 = segT1Raw + gap;
+                var t2 = segT2Raw - gap;
+
+                var fullyRed = segStartRpm >= redlineRpm;
+                var splitHere = segStartRpm < redlineRpm && segEndRpm > redlineRpm;
+
+                if (splitHere) {
+                    var tRed = rpmToT(redlineRpm, visualMax);
+                    drawSuperSegment(ctxS, t1, tRed - RPM_SEG_T_GAP, false);
+                    drawSuperSegment(ctxS, tRed + RPM_SEG_T_GAP, t2, true);
+                } else {
+                    drawSuperSegment(ctxS, t1, t2, fullyRed);
+                }
+            }
+
+            // ── RPM numbers ──────────────────────────────────────────────────────────
+            ctxS.font = '45px ForzaFont, Arial';
+            ctxS.textAlign = 'center';
+            ctxS.textBaseline = 'middle';
+            for (var j = 0; j <= segments; j++) {
+                if (j > 0 && j * 1000 > sweepRpm) continue;
+                var t = rpmToT(j * 1000, visualMax);
+                var pt = superPt(t);
+                var out = superOutward(t);
+                ctxS.fillStyle = j * 1000 >= redlineRpm ? C_PINK : C_WHITE;
+                ctxS.fillText(j.toString(), pt.x + out.x * 40, pt.y + out.y * 40);
+            }
+
+            // ── HP / TQ inner arcs ───────────────────────────────────────────────────
+            var INNER_N = 5;
+            var INNER_GAP_F = 0.04;
+            var HP_F_START = 0.35;
+            var TQ_F_END = 0.95;
+            var HP_TQ_MID = HP_F_START + (TQ_F_END - HP_F_START) / 2;
+            var HP_F_END = HP_TQ_MID - 0.004;
+            var TQ_F_START = HP_TQ_MID + 0.004;
+
+            for (var i = 0; i < INNER_N; i++) {
+                var f1 = HP_F_START + (i / INNER_N) * (HP_F_END - HP_F_START);
+                var f2 = HP_F_START + ((i + 1) / INNER_N) * (HP_F_END - HP_F_START);
+                var st = rpmToT(f1 * visualMax, visualMax);
+                var et = rpmToT(f2 * visualMax, visualMax);
+                var gp = (et - st) * INNER_GAP_F;
+                drawInnerArc(ctxS, st + gp, et - gp, HP_TQ_OFFSET, i === 0);
+            }
+            for (var i = 0; i < INNER_N; i++) {
+                var f2 = TQ_F_END - (i / INNER_N) * (TQ_F_END - TQ_F_START);
+                var f1 = TQ_F_END - ((i + 1) / INNER_N) * (TQ_F_END - TQ_F_START);
+                var st = rpmToT(f1 * visualMax, visualMax);
+                var et = rpmToT(f2 * visualMax, visualMax);
+                var gp = (et - st) * INNER_GAP_F;
+                drawInnerArc(ctxS, st + gp, et - gp, HP_TQ_OFFSET, i === 0);
+            }
+
+            var hpLbPt = innerPt(rpmToT((HP_F_START + HP_F_END) * 0.5 * visualMax, visualMax), HP_TQ_OFFSET + 55);
+            var tqLbPt = innerPt(rpmToT((TQ_F_START + TQ_F_END) * 0.5 * visualMax, visualMax), HP_TQ_OFFSET + 55);
+            ctxS.font = 'bold 30px ForzaFont, Arial'; ctxS.textAlign = 'left'; ctxS.textBaseline = 'middle';
+            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText('HP', hpLbPt.x, hpLbPt.y - 5);
+            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText('TQ', tqLbPt.x, tqLbPt.y + 2);
+
+            // ── Boost arc ────────────────────────────────────────────────────────────
+            for (var i = 0; i < BOOST_SEGS; i++) {
+                var f1 = BOOST_F_START + (i / BOOST_SEGS) * (BOOST_F_END - BOOST_F_START);
+                var f2 = BOOST_F_START + ((i + 1) / BOOST_SEGS) * (BOOST_F_END - BOOST_F_START);
+                var st = rpmToT(f1 * visualMax, visualMax);
+                var et = rpmToT(f2 * visualMax, visualMax);
+                var gp = (et - st) * BOOST_GAP_F;
+                drawInnerArc(ctxS, st + gp, et - gp, BOOST_OFFSET, i === 0, BOOST_GLOW_OFFSET, BOOST_GLOW_B);
+            }
+
+            var BOOST_ZERO_F = BOOST_F_START + (BOOST_F_END - BOOST_F_START) / BOOST_SEGS;
+            ctxS.font = 'bold 28px ForzaFont, Arial'; ctxS.textAlign = 'center'; ctxS.textBaseline = 'middle';
+            var bNeg = innerPt(rpmToT(BOOST_F_START * visualMax, visualMax), BOOST_OFFSET + 50);
+            var bZero = innerPt(rpmToT(BOOST_ZERO_F * visualMax, visualMax), BOOST_OFFSET + 50);
+            var bPos = innerPt(rpmToT(BOOST_F_END * visualMax, visualMax), BOOST_OFFSET + 50);
+            ctxS.fillStyle = C_PINK_DIM; ctxS.fillText('−', bNeg.x, bNeg.y);
+            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText('0', bZero.x, bZero.y);
+            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText('+', bPos.x, bPos.y);
+
+            // ── Static text labels ───────────────────────────────────────────────────
+            ctxS.fillStyle = C_WHITE_MID; ctxS.font = 'bold 50px ForzaFont, Arial';
+            ctxS.letterSpacing = '0.1em'; ctxS.textAlign = 'left';
+            ctxS.fillText('RPM', 780, 460);
+
+            ctxS.textAlign = 'right'; ctxS.letterSpacing = '0.2em';
+            ctxS.fillText('GEAR', 1300, 265);
+            ctxS.letterSpacing = '0px';
+
+            ctxS.restore();
+        }
+
+        function drawAdvancedHUD(data, redlineRpm, maxima = {
+            maxBoost: 5, maxVacuum: 2,
+            maxHP: 10, minHP: 5,
+            maxTQ: 10, minTQ: 5,
+            reset: false
+        }) {
+            if (maxima.reset) _staticDirty = true;
+            const { maxBoost, maxVacuum, maxHP, minHP, maxTQ, minTQ } = maxima;
+
+            // ── Session learning + dirty flag ────────────────────────────────────────
+            var segments = Math.ceil(data.maxRpm / 1000) || 8;
+            var visualMax = segments * 1000;
+            var fadeAlpha = window.advFadeAlpha ?? 1.0;
+            var sweepRpm = window.sweepRevealRpm ?? Infinity;
+
+            // ── Redraw static canvas only when something structural changes ───────────
+            if (_staticDirty
+                || redlineRpm !== _staticLastRedline
+                || visualMax !== _staticLastVisualMax
+                || sweepRpm !== _staticLastSweep
+                || fadeAlpha !== _staticLastAlpha) {
+                drawStaticHUD(redlineRpm, visualMax, sweepRpm, fadeAlpha);
+                _staticDirty = false;
+                _staticLastRedline = redlineRpm;
+                _staticLastVisualMax = visualMax;
+                _staticLastSweep = sweepRpm;
+                _staticLastAlpha = fadeAlpha;
+            }
+
+            // ── Dynamic canvas: clear and draw only moving elements ──────────────────
+            ctx.clearRect(0, 0, W, H);
+            ctx.save();
+            ctx.globalAlpha = fadeAlpha;
+
+            var HP_F_START = 0.35, TQ_F_END = 0.95;
+            var HP_TQ_MID = HP_F_START + (TQ_F_END - HP_F_START) / 2;
+            var HP_F_END = HP_TQ_MID - 0.004;
+            var TQ_F_START = HP_TQ_MID + 0.004;
+            var INNER_N = 5;
+            var HP_ZERO_F = HP_F_START + (HP_F_END - HP_F_START) / INNER_N;
+            var TQ_ZERO_F = TQ_F_END - (TQ_F_END - TQ_F_START) / INNER_N;
+
+            // HP needle
+            var hpNeedleF = data.power >= 0
+                ? HP_ZERO_F + Math.min(1, data.power / maxHP) * (HP_F_END - HP_ZERO_F)
+                : HP_ZERO_F - Math.min(1, -data.power / minHP) * (HP_ZERO_F - HP_F_START);
+            var hpNT = rpmToT(hpNeedleF * visualMax, visualMax);
+            var hpNPt = innerPt(hpNT, HP_TQ_OFFSET);
+            var hpNN = superNormal(hpNT);
+            var hpRed = data.power < 0;
+            ctx.strokeStyle = hpRed ? C_PINK : C_WHITE; ctx.lineWidth = 6; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(hpNPt.x - hpNN.x * 35, hpNPt.y - hpNN.y * 35);
+            ctx.lineTo(hpNPt.x + hpNN.x * 10, hpNPt.y + hpNN.y * 10);
+            ctx.stroke();
+
+            // TQ needle
+            var tqNeedleF = data.torque >= 0
+                ? TQ_ZERO_F - Math.min(1, data.torque / maxTQ) * (TQ_ZERO_F - TQ_F_START)
+                : TQ_ZERO_F + Math.min(1, -data.torque / minTQ) * (TQ_F_END - TQ_ZERO_F);
+            var tqNT = rpmToT(tqNeedleF * visualMax, visualMax);
+            var tqNPt = innerPt(tqNT, HP_TQ_OFFSET);
+            var tqNN = superNormal(tqNT);
+            var tqRed = data.torque < 0;
+            ctx.strokeStyle = tqRed ? C_PINK : C_WHITE; ctx.lineWidth = 6; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(tqNPt.x - tqNN.x * 35, tqNPt.y - tqNN.y * 35);
+            ctx.lineTo(tqNPt.x + tqNN.x * 10, tqNPt.y + tqNN.y * 10);
+            ctx.stroke();
+
+            // Boost needle
+            if (window.showBoostGauge !== false) {
+                var BOOST_ZERO_F = BOOST_F_START + (BOOST_F_END - BOOST_F_START) / BOOST_SEGS;
+                var boostNeedleF = data.boost >= 0
+                    ? BOOST_ZERO_F + Math.min(1, data.boost / maxBoost) * (BOOST_F_END - BOOST_ZERO_F)
+                    : BOOST_ZERO_F - Math.min(1, -data.boost / maxVacuum) * (BOOST_ZERO_F - BOOST_F_START);
+                var boostNT = rpmToT(boostNeedleF * visualMax, visualMax);
+                var boostNPt = innerPt(boostNT, BOOST_OFFSET);
+                var boostNN = superNormal(boostNT);
+                var boostPos = data.boost >= 0;
+                ctx.strokeStyle = boostPos ? C_WHITE : C_PINK; ctx.lineWidth = 6; ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(boostNPt.x - boostNN.x * 35, boostNPt.y - boostNN.y * 35);
+                ctx.lineTo(boostNPt.x + boostNN.x * 10, boostNPt.y + boostNN.y * 10);
+                ctx.stroke();
+            }
+
+            // RPM needle
+            var needleT = rpmToT(data.rpm, visualMax);
+            var needlePt = superPt(needleT);
+            var needleOut = superNormal(needleT);
+            var needleIsRed = data.rpm >= redlineRpm;
+            ctx.strokeStyle = needleIsRed ? C_PINK : C_WHITE; ctx.lineWidth = 7; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(needlePt.x - needleOut.x * 40, needlePt.y - needleOut.y * 40);
+            ctx.lineTo(needlePt.x + needleOut.x * 10, needlePt.y + needleOut.y * 10);
+            ctx.stroke();
+
+            // Shift triangle
+            if (data.rpm >= redlineRpm) {
+                ctx.fillStyle = C_PINK;
+                ctx.beginPath();
+                ctx.moveTo(900, 500); ctx.lineTo(930, 560); ctx.lineTo(870, 560);
+                ctx.closePath(); ctx.fill();
+            }
+
+            // LC badge
+            var b = { label: 'LC', x: 750, armed: !!(window.advLCArmed), launched: !!(window.advLCLaunched) };
+            var active = b.armed || b.launched;
+            var badgeAlpha = b.armed ? 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 250 * Math.PI))
+                : b.launched ? 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 120 * Math.PI))
+                    : 0.25;
+            ctx.globalAlpha = badgeAlpha;
+            ctx.strokeStyle = active ? C_PINK : C_WHITE; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(695, 250, 110, 80, 4); ctx.stroke();
+            ctx.fillStyle = active ? C_PINK : C_WHITE; ctx.font = 'bold 50px ForzaGear, Arial';
+            ctx.textAlign = 'center'; ctx.fillText('LC', 750, 310);
+            ctx.globalAlpha = 1.0;
+
+            ctx.restore();
+        }
+    </script>
+
+    <!-- Include Shared Telemetry Cards Renderer -->
+    <script src="../shared/telemetry-cards.js"></script>
+
+    <!-- ========== HUD FRAME LISTENER ========== -->
+    <script>
+        var _advLastRaceState = 0;
+        var _advSweepCarOrdinal = null;
+        var _advLastMaxRpm = 8000;
+        var _advLastIdleRpm = 800;
+        var _advValidGear = 1;
+        var _advLastKnownRedline = null;
+        var currentElements = {};
+
+        // Initialize shared Telemetry Cards
+        TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
+
+        // Set speed with digit spans for tabular spacing
+        function setAdvSpeedDisplay(value) {
+            var el = document.getElementById('adv-speed');
+            if (!el) return;
+            el.innerHTML = value.toString().split('').map(function (d) {
+                return '<span>' + d + '</span>';
+            }).join('');
+        }
+
+        // Set RPM with digit spans for tabular spacing
+        function setAdvRpmDisplay(value, isRed) {
+            var el = document.getElementById('adv-rpm-value');
+            if (!el) return;
+            el.style.color = isRed ? C_PINK_DIM : 'rgba(255,255,255,0.7)';
+            el.innerHTML = value.toString().split('').map(function (d) {
+                return '<span>' + d + '</span>';
+            }).join('');
+        }
+
+        // Apply saved unit on HUD load
+        var _advUnitEl = document.getElementById('adv-speed-unit');
+        if (_advUnitEl) _advUnitEl.textContent = window.getSpeedUnit?.() ?? 'KM/H';
+
+        window.addEventListener('message', (e) => {
+            const { type, ...payload } = e.data ?? {};
+
+            switch (type) {
+
+                case 'config': {
+                    if (payload.data) {
+                        var container = document.getElementById('advContainer');
+                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * 0.5);
+                        if (container) container.style.zoom = finalScale;
+                    }
+                    break;
+                }
+
+                case 'hud:elements': {
+                    currentElements = payload || {};
+                    const rpmCanvas = document.getElementById('advCanvas');
+                    const rpmStatic = document.getElementById('advCanvasStatic');
+                    const rpmVal = document.getElementById('adv-rpm-value');
+                    if (rpmCanvas) rpmCanvas.style.display = currentElements.showRPM === false ? 'none' : 'block';
+                    if (rpmStatic) rpmStatic.style.display = currentElements.showRPM === false ? 'none' : 'block';
+                    if (rpmVal) rpmVal.style.display = currentElements.showRPM === false ? 'none' : 'block';
+
+                    const speedEl = document.getElementById('adv-speed');
+                    const unitEl = document.getElementById('adv-speed-unit');
+                    if (speedEl) speedEl.style.display = currentElements.showSpeed === false ? 'none' : 'block';
+                    if (unitEl) unitEl.style.display = currentElements.showSpeed === false ? 'none' : 'block';
+
+                    const gearEl = document.getElementById('adv-gear');
+                    if (gearEl) gearEl.style.display = currentElements.showGear === false ? 'none' : 'block';
+
+                    const gaugeGroup = document.getElementById('advGauges');
+                    if (gaugeGroup) gaugeGroup.style.display = currentElements.showPowerTorque === false ? 'none' : 'block';
+
+                    window.showBoostGauge = currentElements.showBoost !== false;
+
+                    const dotsLeft = document.getElementById('dots-left');
+                    const dotsRight = document.getElementById('dots-right');
+                    if (dotsLeft) dotsLeft.style.display = currentElements.showWheelLockup === false ? 'none' : 'flex';
+                    if (dotsRight) dotsRight.style.display = currentElements.showWheelLockup === false ? 'none' : 'flex';
+
+                    // Update shared Telemetry Cards visibility
+                    TelemetryCardsManager.update(null, currentElements);
+                    break;
+                }
+
+                case 'hud:frame': {
+                    const { data, redlineRpm, sessionMaxima, lockup } = payload;
+                    const container = document.getElementById('advContainer');
+                    if (!container) return;
+
+                    if (data.maxRpm) _advLastMaxRpm = data.maxRpm;
+                    if (data.idleRpm) _advLastIdleRpm = data.idleRpm;
+
+                    container.classList.remove('hidden');
+
+                    if (data.isRaceOn === 1 && _advLastRaceState === 0) {
+                        if (_advSweepCarOrdinal === null) {
+                            triggerAdvAnimation(data.maxRpm, data.idleRpm, redlineRpm);
+                            _advSweepCarOrdinal = data.carOrdinal;
+                        }
+                    }
+                    _advLastRaceState = data.isRaceOn;
+
+                    if (!window.advSweepActive) {
+                        drawAdvancedHUD(data, redlineRpm, sessionMaxima);
+                        
+                        // Update shared Telemetry Cards
+                        TelemetryCardsManager.update(data, currentElements);
+
+                        const speed = Math.round(payload.isMetric !== false
+                            ? data.speed * 3.6
+                            : data.speed * 2.237);
+                        setAdvSpeedDisplay(speed);
+                        setAdvRpmDisplay(Math.round(data.rpm), data.rpm >= redlineRpm);
+
+                        const gearEl = document.getElementById('adv-gear');
+                        if (data.gear <= 10) _advValidGear = data.gear;
+                        if (gearEl) gearEl.textContent = _advValidGear === 0 ? 'R' : _advValidGear.toString();
+
+                        updateDotGroup('fl', lockup.fl);
+                        updateDotGroup('rl', lockup.rl);
+                        updateDotGroup('fr', lockup.fr);
+                        updateDotGroup('rr', lockup.rr);
+                    }
+                    break;
+                }
+
+                case 'hud:init': {
+                    const el = document.getElementById('adv-speed-unit');
+                    if (el) el.textContent = payload.isMetric ? 'KM/H' : 'MPH';
+                    break;
+                }
+
+                case 'car:changed': {
+                    const od = payload;
+                    if (od.carOrdinal === 0) return;
+                    if (!od.isKnown) {
+                        window.parent.postMessage({
+                            type: 'notification',
+                            message: 'New car detected! 🏎️ Rev it up to learn the limiter!',
+                            duration: 6000,
+                        }, '*');
+                    }
+                    if (_advSweepCarOrdinal !== null) {
+                        triggerAdvAnimation(
+                            od.maxRpm || _advLastMaxRpm,
+                            od.idleRpm || _advLastIdleRpm,
+                            od.redline || null
+                        );
+                    }
+                    _advSweepCarOrdinal = od.carOrdinal;
+                    break;
+                }
+
+                case 'speedunit:changed': {
+                    const el = document.getElementById('adv-speed-unit');
+                    if (el) el.textContent = payload.metric ? 'KM/H' : 'MPH';
+                    break;
+                }
+
+                case 'lc:state': {
+                    window.advLCArmed = payload.armed;
+                    window.advLCLaunched = payload.launched;
+                    window.advLCActive = payload.armed || payload.launched;
+                    break;
+                }
+
+                case 'hud:scale':
+                    window.setAdvScale?.();  // advanced
+                    // simple HUD equivalent if it has one
+                    break;
+
+                case 'demo:start': window.dispatchEvent(new CustomEvent('demo:start')); break;
+                case 'demo:stop': window.dispatchEvent(new CustomEvent('demo:stop')); break;
+                case 'demo:toggle': window.dispatchEvent(new CustomEvent('demo:toggle')); break;
+
+                case 'tutorial:replay': window.dispatchEvent(new CustomEvent('tutorial:replay')); break;
+                case 'tutorial:locked': window.dispatchEvent(new CustomEvent('tutorial:locked')); break;
+            }
+        });
+    </script>
+
+
+    <!-- ========== STARTUP ANIMATION (pulse fade-in + arc sweep) ========== -->
+    <script>
+        var ADV_FADE_MS = 1000;   // initial fade-in duration
+        var ADV_SWEEP_UP_MS = 1500;   // needle sweeps 0 → max
+        var ADV_HOLD_MS = 350;    // hold at peak
+        var ADV_SWEEP_DN_MS = 1500;   // needle falls to idle
+        var ADV_TOTAL_MS = ADV_FADE_MS + ADV_SWEEP_UP_MS + ADV_HOLD_MS + ADV_SWEEP_DN_MS;
+
+        window.sweepRevealRpm = Infinity; // used by RPM segment draw skip
+
+        function easeAdvIn(t) { return t * t; }
+        function easeAdvIO(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+        function easeAdvOut(t) { var c1 = 0.35, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+
+        function triggerAdvAnimation(maxRpm, idleRpm, knownRedline) {
+            window.advSweepActive = true;
+            window.advFadeAlpha = 0;
+            window.sweepRevealRpm = 0;
+
+            var container = document.getElementById('advContainer');
+            if (container) container.classList.remove('hidden');
+
+            setAdvSpeedDisplay(0);
+            var gearEl = document.getElementById('adv-gear');
+            if (gearEl) gearEl.textContent = '-';
+
+            var rawMax = (maxRpm && maxRpm > 0) ? maxRpm : (_advLastMaxRpm || 8000);
+            var sweepMax = Math.ceil(rawMax / 1000) * 1000;
+            var restRpm = (idleRpm && idleRpm > 0) ? idleRpm : 800;
+            var sweepRedl = knownRedline || sweepMax * 0.85;
+
+            var startTime = null;
+
+            function advLoop(ts) {
+                if (!startTime) startTime = ts;
+                var elapsed = ts - startTime;
+                var fakeRpm;
+
+                if (elapsed < ADV_FADE_MS) {
+                    // Phase 1: fade in, arc segments reveal with the fade
+                    var ft = easeAdvIn(elapsed / ADV_FADE_MS);
+                    window.advFadeAlpha = ft;
+                    window.sweepRevealRpm = ft * sweepMax;
+                    fakeRpm = 0;
+
+                } else if (elapsed < ADV_FADE_MS + ADV_SWEEP_UP_MS) {
+                    // Phase 2: all segments visible, needle sweeps up
+                    var t2 = easeAdvIO((elapsed - ADV_FADE_MS) / ADV_SWEEP_UP_MS);
+                    window.advFadeAlpha = 1.0;
+                    window.sweepRevealRpm = Infinity;
+                    fakeRpm = t2 * sweepMax;
+
+                } else if (elapsed < ADV_FADE_MS + ADV_SWEEP_UP_MS + ADV_HOLD_MS) {
+                    // Phase 3: hold at peak
+                    window.advFadeAlpha = 1.0;
+                    window.sweepRevealRpm = Infinity;
+                    fakeRpm = sweepMax;
+
+                } else if (elapsed < ADV_TOTAL_MS) {
+                    // Phase 4: needle falls to idle with overshoot
+                    var t4 = (elapsed - ADV_FADE_MS - ADV_SWEEP_UP_MS - ADV_HOLD_MS) / ADV_SWEEP_DN_MS;
+                    fakeRpm = Math.max(0, restRpm + (1 - easeAdvOut(t4)) * (sweepMax - restRpm));
+                    window.sweepRevealRpm = Infinity;
+
+                } else {
+                    // Done
+                    window.advSweepActive = false;
+                    window.advFadeAlpha = 1.0;
+                    window.sweepRevealRpm = Infinity;
+                    drawAdvancedHUD({
+                        isRaceOn: 1, rpm: restRpm, maxRpm: sweepMax,
+                        speed: 0, gear: 0, throttle: 0, brake: 0,
+                        boost: 0, power: 0, torque: 0,
+                        carOrdinal: window.getCurrentCarOrdinal?.() ?? -1,
+                    }, sweepRedl);
+                    return;
+                }
+
+                drawAdvancedHUD({
+                    isRaceOn: 1, rpm: fakeRpm, maxRpm: sweepMax,
+                    speed: 0, gear: 0, throttle: 0, brake: 0,
+                    boost: 0, power: 0, torque: 0,
+                    carOrdinal: window.getCurrentCarOrdinal?.() ?? -1,
+                }, sweepRedl);
+
+                requestAnimationFrame(advLoop);
+            }
+
+            requestAnimationFrame(advLoop);
+        }
+    </script>
+
+
+    <!-- ========== DEMO MODE ========== -->
+    <script>
+        var advDemoMode = false;
+        var advDemoInterval = null;
+        var advDemoRpm = 0;
+        var advDemoGear = 1;
+        var advDemoDir = 1;
+        var avdDemoMaxRpm = 11_000;
+
+        function startAdvDemo() {
+            advDemoRpm = 0; advDemoGear = 1; advDemoDir = 1;
+            var container = document.getElementById('advContainer');
+            if (container) container.classList.remove('hidden');
+
+            advDemoInterval = setInterval(function () {
+                advDemoRpm += 100 * advDemoDir;
+                if (advDemoRpm >= avdDemoMaxRpm) advDemoDir = -1;
+                if (advDemoRpm <= 0) { advDemoDir = 1; advDemoGear = (advDemoGear % 6) + 1; }
+                var rpmPct = advDemoRpm / avdDemoMaxRpm;
+
+                var mockData = {
+                    isRaceOn: 1, rpm: advDemoRpm, maxRpm: avdDemoMaxRpm,
+                    speed: rpmPct * 83.3,
+                    // speed: 50,
+                    throttle: rpmPct,
+                    brake: 0,
+                    // gear: advDemoGear, throttle: rpmPct, brake: 0,
+                    gear: 10,
+                    boost: (rpmPct - 0.5) * 20,
+                    power: rpmPct * 650,
+                    torque: 100 + rpmPct * 500,
+                    carOrdinal: -1,
+                    handBrake: 0,
+                    wheelSpeedFL: 0, wheelSpeedFR: 0, wheelSpeedRL: 0, wheelSpeedRR: 0,
+                };
+
+                drawAdvancedHUD(mockData, 5000
+
+                );
+                setAdvSpeedDisplay(Math.round((window.convertSpeed ?? function (v) { return v * 3.6; })(mockData.speed)));
+                setAdvRpmDisplay(Math.round(mockData.rpm), mockData.rpm >= rpmPct);
+
+                var gearEl = document.getElementById('adv-gear');
+                if (gearEl) gearEl.textContent = mockData.gear.toString();
+
+                // Demo lockup: slowly build up FL lockup risk as RPM climbs
+                updateDotGroup('fl', rpmPct * 2);
+                updateDotGroup('rl', rpmPct * 0.4);
+                updateDotGroup('fr', rpmPct * 0.95);
+                updateDotGroup('rr', rpmPct * 0.5);
+            }, 100);
+        }
+
+        function stopAdvDemo() {
+            clearInterval(advDemoInterval);
+            advDemoInterval = null;
+        }
+
+        window.addEventListener('demo:toggle', function () {
+            advDemoMode = !advDemoMode;
+            window.demoActive = advDemoMode;
+            _updateAdvDemoUI(advDemoMode);
+           if (advDemoMode) {
+                startAdvDemo();
+                window.parent.postMessage({ type: 'titlebar:visible', visible: true }, '*');
+                window.parent.postMessage({ type: 'notification', message: 'Demo mode ON 🎮 — advanced HUD simulated' }, '*');
+            }
+            else {
+                stopAdvDemo();
+                if (!window.tutorialActive) window.parent.postMessage({ type: 'titlebar:visible', visible: false }, '*');
+                window.parent.postMessage({ type: 'notification', message: 'Demo mode OFF' }, '*');
+            }
+        });
+
+        window.addEventListener('demo:start', function () {
+            if (!advDemoMode) {
+                advDemoMode = true;
+                startAdvDemo();
+                _updateAdvDemoUI(true);
+                window.parent.postMessage({ type: 'titlebar:visible', visible: true }, '*');
+            }
+        });
+
+        window.addEventListener('demo:stop', function () {
+            if (advDemoMode) {
+                stopAdvDemo();
+                advDemoMode = false;
+                _updateAdvDemoUI(false);
+                if (!window.tutorialActive) window.parent.postMessage({ type: 'titlebar:visible', visible: false }, '*');
+            }
+        });
+
+        function _updateAdvDemoUI(on) {
+            var statusEl = document.getElementById('demo-status');
+            if (statusEl) statusEl.textContent = on ? 'ON' : 'OFF';
+            var btn = document.getElementById('demo-btn');
+            if (btn) btn.style.background = on ? 'rgba(255,0,136,0.3)' : '';
+        }
+    </script>
+
+
+    <!-- ========== HUD SCALE + PHYSICS CONTAINER ========== -->
+    <script>
+        // Override scale for advanced HUD's wider 1450px layout
+        function setAdvScale() {
+            var el = document.getElementById('advContainer');
+            if (!el) return;
+            var BUFFER = 30; // px reserved on each side for physics movement
+            var scale = Math.min(
+                (window.innerWidth - BUFFER * 2) / 1450,
+                (window.innerHeight - BUFFER * 2) / 750,
+                1
+            );
+            el.style.zoom = scale;
+            document.documentElement.style.setProperty('--adv-scale', scale);
+        }
+        setAdvScale();
+        window.addEventListener('resize', setAdvScale);
+
+        window.setAdvScale = setAdvScale;
+        setAdvScale();
+
+    </script>
+
+</body>
+
+</html>

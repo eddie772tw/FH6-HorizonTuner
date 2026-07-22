@@ -251,3 +251,10 @@ FH6-HorizonTuner/
 本專案採用 [MIT 授權條款](LICENSE) 發行。
 
 Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
+
+---
+
+## 致謝與專案參考 / Credits & Acknowledgements
+
+Credits:Paburrito/forza-horizon-6-custom-hud
+Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.

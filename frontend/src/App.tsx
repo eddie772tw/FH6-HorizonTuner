@@ -10,9 +10,11 @@ import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
 import { SettingsProvider } from './context/SettingsContext';
 import './App.css';
 
+import OverlayView from './components/OverlayView';
+
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
 
@@ -35,6 +37,9 @@ const AppContent: React.FC = () => {
         </div>
         <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <CarParamsView setActiveTab={setActiveTab} />
+        </div>
+        <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <OverlayView />
         </div>
         <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <SettingsView />

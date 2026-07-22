@@ -10,15 +10,50 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "FH6-Horizon Tuner",
-        "width": 800,
-        "height": 600
+        "width": 1280,
+        "height": 720,
+        "label": "main"
+      },
+      {
+        "title": "Horizon Tuner HUD",
+        "label": "overlay",
+        "url": "/hud/index.html",
+        "width": 1920,
+        "height": 1080,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "shadow": false,
+        "visible": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "capabilities": [
+        {
+          "identifier": "main-capability",
+          "windows": ["main", "overlay"],
+          "permissions": [
+            "core:window:allow-set-position",
+            "core:window:allow-set-size",
+            "core:window:allow-outer-position",
+            "core:window:allow-outer-size",
+            "core:window:allow-inner-size",
+            "core:window:allow-inner-position",
+            "core:window:allow-show",
+            "core:window:allow-hide",
+            "core:window:allow-close",
+            "core:window:allow-set-focus",
+            "core:window:allow-start-dragging",
+            "core:window:allow-set-ignore-cursor-events"
+          ]
+        }
+      ]
     }
   },
   "bundle": {
