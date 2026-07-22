@@ -16,3 +16,7 @@ build
 dist
 
 .agents
+
+node_modules
+
+showcase pic

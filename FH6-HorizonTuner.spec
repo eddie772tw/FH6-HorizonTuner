@@ -4,18 +4,25 @@ from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
-# 1. 自動收集可能需要的依賴
+# 1. 自動收集 FastAPI 與後端核心依賴
 datas = []
 binaries = []
 hiddenimports = [
-    "numpy",
+    "fastapi",
+    "starlette",
+    "uvicorn",
+    "websockets",
+    "pydantic",
 ]
 
-# 收集 numpy
-np_datas, np_bins, np_hidden = collect_all("numpy")
-datas += np_datas
-binaries += np_bins
-hiddenimports += np_hidden
+for pkg in ["fastapi", "uvicorn", "starlette", "websockets", "pydantic"]:
+    try:
+        pkg_datas, pkg_bins, pkg_hidden = collect_all(pkg)
+        datas += pkg_datas
+        binaries += pkg_bins
+        hiddenimports += pkg_hidden
+    except Exception:
+        pass
 
 # 2. 手動定義靜態資源與 Tauri 前端編譯產出的 exe
 added_files = [
@@ -33,7 +40,7 @@ datas.extend(added_files)
 # 3. 分析與打包核心設定
 a = Analysis(
     [os.path.join('backend', 'main.py')], # 入口程式碼
-    pathex=['.'],
+    pathex=['.', 'backend'],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,

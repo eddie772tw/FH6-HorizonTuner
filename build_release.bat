@@ -11,30 +11,30 @@ set "VENV_DIR=%~dp0.venv"
 set "PY_EXE=%VENV_DIR%\Scripts\python.exe"
 set "PYINSTALLER_EXE=%VENV_DIR%\Scripts\pyinstaller.exe"
 
-if not exist "%PYINSTALLER_EXE%" (
+if exist "%PY_EXE%" (
+    if not exist "%PYINSTALLER_EXE%" (
+        echo [INFO] PyInstaller not found in virtual environment, installing...
+        "%PY_EXE%" -m pip install pyinstaller
+        if errorlevel 1 (
+            echo [ERROR] Failed to install PyInstaller in virtual environment.
+            if not "%GITHUB_ACTIONS%" == "true" pause
+            exit /b 1
+        )
+    )
+    set "RUN_PYINSTALLER="%PY_EXE%" -m PyInstaller"
+) else (
     where pyinstaller >nul 2>nul
     if !errorlevel! equ 0 (
-        set "PYINSTALLER_EXE=pyinstaller"
+        set "RUN_PYINSTALLER=pyinstaller"
     ) else (
-        echo [INFO] PyInstaller not found in virtual environment, checking global Python...
-        if exist "%PY_EXE%" (
-            "%PY_EXE%" -m pip install pyinstaller
-            if errorlevel 1 (
-                echo [ERROR] Failed to install PyInstaller in virtual environment.
-                if not "%GITHUB_ACTIONS%" == "true" pause
-                exit /b 1
-            )
+        where python >nul 2>nul
+        if !errorlevel! equ 0 (
+            python -m pip install pyinstaller
+            set "RUN_PYINSTALLER=python -m PyInstaller"
         ) else (
-            where python >nul 2>nul
-            if !errorlevel! equ 0 (
-                set "PY_EXE=python"
-                "!PY_EXE!" -m pip install pyinstaller
-                set "PYINSTALLER_EXE=pyinstaller"
-            ) else (
-                echo [ERROR] No valid Python virtual environment or global Python environment found.
-                if not "%GITHUB_ACTIONS%" == "true" pause
-                exit /b 1
-            )
+            echo [ERROR] No valid Python virtual environment or global Python environment found.
+            if not "%GITHUB_ACTIONS%" == "true" pause
+            exit /b 1
         )
     )
 )
@@ -106,7 +106,7 @@ echo [INFO] Running PyInstaller to create final standalone executable...
 echo --------------------------------------------------------------------
 if not exist "%~dp0dist" mkdir "%~dp0dist"
 
-"%PYINSTALLER_EXE%" "%~dp0FH6-HorizonTuner.spec" --clean
+%RUN_PYINSTALLER% "%~dp0FH6-HorizonTuner.spec" --clean
 
 echo --------------------------------------------------------------------
 

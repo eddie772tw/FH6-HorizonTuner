@@ -1849,10 +1849,25 @@ async def save_car_learning(data: dict):
 def check_frontend_alive(proc):
     import time
 
+    time.sleep(2)
     while True:
-        if proc.poll() is not None:
-            # Frontend has terminated, so shut down backend
-            os._exit(0)
+        poll_code = proc.poll()
+        if poll_code is not None:
+            logger.error(
+                f"Frontend process terminated with exit code: {poll_code}"
+            )
+            log_obj = _cleanup_state.get("log")
+            if log_obj:
+                try:
+                    log_obj.flush()
+                except Exception:
+                    pass
+            try:
+                sys.stdout.flush()
+                sys.stderr.flush()
+            except Exception:
+                pass
+            os._exit(poll_code if poll_code is not None else 0)
         time.sleep(1)
 
 
@@ -1937,14 +1952,18 @@ if __name__ == "__main__":
 
     atexit.register(cleanup_resources)
 
-    def monitor_stdin_eof():
-        try:
-            sys.stdin.read()
-        except Exception:
-            pass
-        cleanup_resources()
-        os._exit(0)
+    # 在非 Frozen 開發模式下，若被外部視窗 process (如 Tauri Sidecar) 啟動，監聽 stdin EOF 以連帶關閉
+    if not getattr(sys, "frozen", False):
 
-    threading.Thread(target=monitor_stdin_eof, daemon=True).start()
+        def monitor_stdin_eof():
+            try:
+                if sys.stdin is not None:
+                    sys.stdin.read()
+            except Exception:
+                pass
+            cleanup_resources()
+            os._exit(0)
+
+        threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     uvicorn.run(app, host="127.0.0.1", port=backend_port)
