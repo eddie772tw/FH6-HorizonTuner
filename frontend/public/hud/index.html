@@ -755,6 +755,12 @@
             });
         });
 
+        // Track demo active status correctly at the top level
+        window.demoActive = false;
+        window.addEventListener('demo:start', () => window.demoActive = true);
+        window.addEventListener('demo:stop', () => window.demoActive = false);
+        window.addEventListener('demo:toggle', () => window.demoActive = !window.demoActive);
+
         // ── Config listener from Frontend UI ─────────────────────────────
         window.addEventListener('hud:config', (e) => {
             const config = e.detail || {};
@@ -767,6 +773,13 @@
             if (config.hudStyle && config.hudStyle !== activeHud) {
                 console.log('[Launcher] Config requested HUD style change to:', config.hudStyle);
                 loadHud(config.hudStyle);
+            }
+
+            if (config.demoMode === false && window.demoActive) {
+                window.dispatchEvent(new CustomEvent('demo:stop'));
+                postToHud('demo:stop');
+            } else if (config.demoMode !== false && !window.demoActive && window.isLocked) {
+                 // optionally auto start demo if toggle is checked back, but mostly handled by explicitly starting via UI or on restart
             }
         });
 

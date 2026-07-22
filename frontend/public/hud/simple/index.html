@@ -29,7 +29,7 @@
             overflow: visible;
         }
 
-        /* ── Scaled container — 750 × 750 (Origin: Bottom Right) ─────────────── */
+        /* ── Scaled container — 750 × 750 ─────────────── */
         .simple-container {
             position: relative;
             width: 750px;
@@ -37,7 +37,6 @@
             pointer-events: all;
             flex-shrink: 0;
             transform-origin: bottom right;
-            will-change: transform;
         }
 
         canvas#simpleCanvas {
@@ -277,11 +276,11 @@
             switch (type) {
                 case 'config': {
                     if (payload.data) {
-                        var container = document.getElementById('simpleContainer');
                         var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * 0.5);
+                        window._currentSimpleScale = finalScale;
+                        var container = document.getElementById('simpleContainer');
                         if (container) {
-                            container.style.transform = 'scale(' + finalScale + ')';
-                            container.style.transformOrigin = 'bottom right';
+                            container.style.zoom = finalScale;
                         }
                     }
                     break;
@@ -342,8 +341,60 @@
                     if (el) el.textContent = payload.isMetric !== false ? 'KM/H' : 'MPH';
                     break;
                 }
+
+                case 'demo:start': {
+                    startSimpleDemo();
+                    break;
+                }
+
+                case 'demo:stop': {
+                    stopSimpleDemo();
+                    break;
+                }
+
+                case 'hud:scale': {
+                    if (window._currentSimpleScale) {
+                        var container = document.getElementById('simpleContainer');
+                        if (container) container.style.zoom = window._currentSimpleScale;
+                    }
+                    break;
+                }
             }
         });
+
+        // ── Demo Animation ──
+        var simpleDemoInterval = null;
+        var simpleDemoRpm = 0;
+        var simpleDemoDir = 1;
+        var simpleDemoMaxRpm = 8000;
+
+        function startSimpleDemo() {
+            if (simpleDemoInterval) return;
+            simpleDemoRpm = 1200;
+            simpleDemoDir = 1;
+            simpleDemoInterval = setInterval(function() {
+                simpleDemoRpm += 150 * simpleDemoDir;
+                if (simpleDemoRpm >= simpleDemoMaxRpm) simpleDemoDir = -1;
+                if (simpleDemoRpm <= 1200) simpleDemoDir = 1;
+
+                var mockData = {
+                    rpm: simpleDemoRpm, maxRpm: simpleDemoMaxRpm, speed: (simpleDemoRpm / simpleDemoMaxRpm) * 120, gear: 2,
+                    susp_fl: 0.5 + Math.sin(Date.now() / 200) * 0.2, susp_fr: 0.5 + Math.cos(Date.now() / 200) * 0.2, susp_rl: 0.5, susp_rr: 0.5,
+                    slip_fl: simpleDemoRpm > 7000 ? 0.8 : 0, slip_fr: simpleDemoRpm > 7000 ? 0.8 : 0, slip_rl: 0, slip_rr: 0,
+                    accel_x: Math.sin(Date.now() / 500), accel_y: 0, accel_z: simpleDemoDir > 0 ? 0.5 : -0.5, power: 150, torque: 350
+                };
+                drawSimpleHUD(mockData, simpleDemoMaxRpm * 0.92);
+                TelemetryCardsManager.update(mockData, currentElements);
+                setSimpleSpeedDisplay(Math.round(mockData.speed));
+            }, 16);
+        }
+
+        function stopSimpleDemo() {
+            if (simpleDemoInterval) {
+                clearInterval(simpleDemoInterval);
+                simpleDemoInterval = null;
+            }
+        }
 
         // Initial Standby Draw
         setTimeout(function() {
