@@ -108,4 +108,16 @@
 **後續行動 (Action):**
 - 未來若引入其他大型 npm 套件（如 Babylon.js、Three.js），應同步維護 `vite.config.ts` 中的 `manualChunks` 函數規則。
 
+---
+
+## 2026-07-22 - 修正 Vite manualChunks 循環模組依賴 (Circular Dependency) 導致執行檔無法啟動問題
+
+**學習點 (Learning):**
+- **循環依賴崩潰陷阱**：若在 `manualChunks` 中僅將 `recharts` 抽出，卻將 `react` 留置於主 `index.js` 包中，`index.js` 會需要 `vendor-recharts`，而 `vendor-recharts` 又會反向引用的未未初始化的 `React`。這在開發模式 (Dev Server HMR) 下看似正常，但打包後的正式執行檔 (Release Build) 會丟出 `Uncaught ReferenceError: Cannot access 'React' before initialization` 造成全頁白屏或無法啟動。
+- **統一 Vendor Chunk 解法**：將所有 `node_modules` 統一歸類劃分為 `vendor` Chunk (621 kB)，可徹底避免模組之間的循環相依問題。搭配 `chunkSizeWarningLimit: 800`，既能使主應用業務邏輯檔 `index.js` 暴降至 **225 kB**，又能 100% 保障產出執行檔正常載入啟動。
+
+**後續行動 (Action):**
+- 進行任何前端打包與 chunking 拆分調整後，除了檢查 build 警告外，必須特別防範模組間的循環引用。
+
+
 
