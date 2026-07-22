@@ -52,6 +52,7 @@
   - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "npm --prefix frontend run test"`）。
   - 修改後端 UDP 解析邏輯後，必須新增或更新 `tests/` 下對應的 Pytest 單元測試。
   - 任務結束後，必須主動回顧開發過程並更新 `.agents/Journal.md`。
+  - **維護 `.gitignore` 規範**：新增功能、模組或執行任務時，必須同步檢查並維護 `.gitignore` 檔案，確保所有動態生成之快取（`__pycache__`, `node_modules`, `target`）、使用者設定、運行數據與臨時檔均被嚴格排除，維護 Repository 之純潔性。
 * **詢問後才做的事**：
   - 修改 UDP 封包解構格式 (Packet Structure Byte Offsets)。
   - 引入全新的 npm 或 pip 第三方相依套件。
@@ -71,3 +72,4 @@
 2. 評估本次任務是否有值得傳承的「學習點/失敗經驗/架構坑點」。
 3. 若有，請自動於 `.agents/Journal.md` 追加一筆紀錄，格式嚴格遵守規範。
 4. 在評估有需要時，建議並詢問是否建立一個或多個SKILL來幫助未來開發。
+5. **維護 `.gitignore`**：檢查是否有新增或遺漏的編譯快取、運行數據或產物檔，確認 `.gitignore` 保持完備，維持 Repository 純潔。

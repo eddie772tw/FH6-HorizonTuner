@@ -1,39 +1,65 @@
-/.ref
-/backend/__pycache__
-/backend/venv
-
 # Python standard venv & cache directories
-/.venv/
-/venv/
-/.pytest_cache/
-/.ruff_cache/
-/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
 
-# User settings and telemetry data outputs
+# Frontend & Node.js build / dependencies
+node_modules/
+frontend/node_modules/
+dist/
+build/
+frontend/dist/
+frontend/dist-ssr/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+
+# Rust & Tauri build outputs
+frontend/src-tauri/target/
+frontend/src-tauri/gen/
+
+# User settings, runtime telemetry logs, and auto-generated data
 /settings.json
+/backend/settings.json
+/backend/hud_config.json
+/backend/layout.json
+/backend/car_learning.json
 /backend/tunings/*.json
 /backend/car_params/*.json
 !/backend/car_params/default_car.json
 /backend/sessions/*.json
 /backend/drag_sessions/*.json
-
-# Build and distribution directories
-/dist/
-/build/
-
-# Application runtime logs
 /logs/
 **/logs/
 
-# Python compiled cache
-**/__pycache__/
-*.pyc
-*.pyo
-*.pyd
-FH6 遙測調校工具設計計畫.md
+# Operating System & IDE temp files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
 
-# Ultralight SDK (proprietary, do NOT commit to repo)
-/tool/overlay/ultralight-sdk/
-
+# Miscellaneous / Repository cleanup exclusions
+/.ref
 /ref
-backend/car_learning.json
+/tool/overlay/ultralight-sdk/
+FH6 遙測調校工具設計計畫.md
