@@ -849,8 +849,9 @@
 
                 case 'config': {
                     if (payload.data) {
-                        var container = document.getElementById('advContainer');
                         var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * 0.5);
+                        window._currentAdvScale = finalScale;
+                        var container = document.getElementById('advContainer');
                         if (container) container.style.zoom = finalScale;
                     }
                     break;
@@ -971,8 +972,12 @@
                 }
 
                 case 'hud:scale':
-                    window.setAdvScale?.();  // advanced
-                    // simple HUD equivalent if it has one
+                    if (window._currentAdvScale) {
+                        var container = document.getElementById('advContainer');
+                        if (container) container.style.zoom = window._currentAdvScale;
+                    } else {
+                        window.setAdvScale?.();
+                    }
                     break;
 
                 case 'demo:start': window.dispatchEvent(new CustomEvent('demo:start')); break;
@@ -1184,6 +1189,7 @@
     <script>
         // Override scale for advanced HUD's wider 1450px layout
         function setAdvScale() {
+            if (window._currentAdvScale) return;
             var el = document.getElementById('advContainer');
             if (!el) return;
             var BUFFER = 30; // px reserved on each side for physics movement
