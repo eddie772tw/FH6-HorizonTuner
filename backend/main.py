@@ -1164,7 +1164,11 @@ async def broadcast_telemetry():
                         # Periodic save to disk (every 5 seconds max)
                         current_time = time.time()
                         if current_time - last_dyno_save_time > 5.0:
-                            save_car_params(car_id, dyno_cache[car_id])
+                            asyncio.create_task(
+                                asyncio.to_thread(
+                                    save_car_params, car_id, dyno_cache[car_id]
+                                )
+                            )
                             last_dyno_save_time = current_time
 
         # --- Cache capacity limiting for dyno_cache (LRU/Cap to 20) ---
@@ -1177,7 +1181,7 @@ async def broadcast_telemetry():
         current_time = time.time()
         static_gc_state = getattr(broadcast_telemetry, "last_gc_time", 0.0)
         if current_time - static_gc_state > 60.0:
-            gc.collect()
+            asyncio.create_task(asyncio.to_thread(gc.collect))
             broadcast_telemetry.last_gc_time = current_time
 
         # --- Backpressure: If queue is filling up, drop old frames ---
@@ -1197,8 +1201,8 @@ async def broadcast_telemetry():
             binary_data = pack_telemetry_binary(data)
             await manager.broadcast_binary(binary_data)
 
-        # Give control back to event loop
-        await asyncio.sleep(0.01)
+        # Yield control immediately back to event loop without forced delay
+        await asyncio.sleep(0)
 
 
 # Initialize static variable for GC tracking

@@ -56,7 +56,7 @@ const SteerBar: React.FC = () => {
   useEffect(() => {
     const handleDraw = (e: any) => {
       const data = e.detail;
-      if (!data || data.IsRaceOn !== 1) return;
+      if ((window as any).__IS_HUD_PAUSED__ || !data || data.IsRaceOn !== 1) return;
       const steer = data.SteerInput || 0;
       if (barRef.current) {
         barRef.current.style.width = `${Math.abs(steer) / 127 * 50}%`;
@@ -98,7 +98,7 @@ const GForceRadar: React.FC = () => {
   useEffect(() => {
     const handleDraw = (e: any) => {
       const data = e.detail;
-      if (!data) return;
+      if ((window as any).__IS_HUD_PAUSED__ || !data) return;
       
       if ((prevCar.current !== null && prevCar.current !== data.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== data.IsRaceOn)) {
@@ -113,8 +113,8 @@ const GForceRadar: React.FC = () => {
       const dt = now - lastTimeRef.current;
       lastTimeRef.current = now;
 
-      const lat = (data.AccelerationX || 0) / 9.81;
-      const lon = (data.AccelerationZ || 0) / 9.81;
+      const lat = -(data.AccelerationX || 0) / 9.81; // Invert X axis (lateral G) per user requirement
+      const lon = (data.AccelerationZ || 0) / 9.81; // Keep Y axis (longitudinal G: BRAKE on top)
       const isMoving = Math.abs(data.SpeedMetersPerSecond || 0) > 0.5;
 
       if (!isMoving) {
@@ -132,7 +132,15 @@ const GForceRadar: React.FC = () => {
       }
 
       if (dotRef.current) {
-        dotRef.current.style.transform = `translate(${Math.max(-2, Math.min(2, lat)) * 40}px, ${Math.max(-2, Math.min(2, lon)) * 40}px)`;
+        let dx = lat * 40;
+        let dy = lon * 40;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxR = 73; // radius 80 minus dot radius 7
+        if (dist > maxR && dist > 0) {
+          dx = (dx / dist) * maxR;
+          dy = (dy / dist) * maxR;
+        }
+        dotRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
       }
       if (latRef.current) latRef.current.innerText = Math.abs(lat).toFixed(2);
       if (lonRef.current) lonRef.current.innerText = Math.abs(lon).toFixed(2);
@@ -142,22 +150,28 @@ const GForceRadar: React.FC = () => {
     // 5Hz marker updater for React state
     const markerInterval = setInterval(() => {
       const now = performance.now();
-      const history30s = hist.current.filter(p => now - p.time <= 30000);
-      if (history30s.length > 0) {
-        let maxLatL = { lat: 0, lon: 0 }, maxLatR = { lat: 0, lon: 0 };
-        let maxLonB = { lat: 0, lon: 0 }, maxLonA = { lat: 0, lon: 0 };
-        let maxL_B = { lat: 0, lon: 0 }, maxL_A = { lat: 0, lon: 0 };
-        let maxR_B = { lat: 0, lon: 0 }, maxR_A = { lat: 0, lon: 0 };
-        for (const p of history30s) {
-          if (p.lat < maxLatL.lat) maxLatL = p;
-          if (p.lat > maxLatR.lat) maxLatR = p;
-          if (p.lon < maxLonB.lon) maxLonB = p;
-          if (p.lon > maxLonA.lon) maxLonA = p;
-          if (p.lat < 0 && p.lon < 0 && (p.lat+p.lon < maxL_B.lat+maxL_B.lon)) maxL_B = p;
-          if (p.lat < 0 && p.lon > 0 && (p.lat-p.lon < maxL_A.lat-maxL_A.lon)) maxL_A = p;
-          if (p.lat > 0 && p.lon < 0 && (p.lat-p.lon > maxR_B.lat-maxR_B.lon)) maxR_B = p;
-          if (p.lat > 0 && p.lon > 0 && (p.lat+p.lon > maxR_A.lat+maxR_A.lon)) maxR_A = p;
-        }
+      let maxLatL = { lat: 0, lon: 0 }, maxLatR = { lat: 0, lon: 0 };
+      let maxLonB = { lat: 0, lon: 0 }, maxLonA = { lat: 0, lon: 0 };
+      let maxL_B = { lat: 0, lon: 0 }, maxL_A = { lat: 0, lon: 0 };
+      let maxR_B = { lat: 0, lon: 0 }, maxR_A = { lat: 0, lon: 0 };
+      let foundAny = false;
+
+      const len = hist.current.length;
+      for (let i = 0; i < len; i++) {
+        const p = hist.current[i];
+        if (now - p.time > 30000) continue;
+        foundAny = true;
+        if (p.lat < maxLatL.lat) maxLatL = p;
+        if (p.lat > maxLatR.lat) maxLatR = p;
+        if (p.lon < maxLonB.lon) maxLonB = p;
+        if (p.lon > maxLonA.lon) maxLonA = p;
+        if (p.lat < 0 && p.lon < 0 && (p.lat + p.lon < maxL_B.lat + maxL_B.lon)) maxL_B = p;
+        if (p.lat < 0 && p.lon > 0 && (p.lat - p.lon < maxL_A.lat - maxL_A.lon)) maxL_A = p;
+        if (p.lat > 0 && p.lon < 0 && (p.lat - p.lon > maxR_B.lat - maxR_B.lon)) maxR_B = p;
+        if (p.lat > 0 && p.lon > 0 && (p.lat + p.lon > maxR_A.lat + maxR_A.lon)) maxR_A = p;
+      }
+
+      if (foundAny) {
         setMarkers([maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A]);
       } else {
         setMarkers([]);
@@ -181,14 +195,24 @@ const GForceRadar: React.FC = () => {
         <span style={{ position: 'absolute', left: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("L")}</span>
         <span style={{ position: 'absolute', right: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("R")}</span>
         
-        {markers.map((p, i) => (
-          <div key={i} style={{ 
-            position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
-            top: `${80 + Math.max(-2, Math.min(2, p.lon)) * 40 - 3}px`, 
-            left: `${80 + Math.max(-2, Math.min(2, p.lat)) * 40 - 3}px`,
-            transition: 'top 0.1s linear, left 0.1s linear'
-          }} />
-        ))}
+        {markers.map((p, i) => {
+          let mx = p.lat * 40;
+          let my = p.lon * 40;
+          const mDist = Math.sqrt(mx * mx + my * my);
+          const maxMR = 77; // radius 80 minus marker half size 3
+          if (mDist > maxMR && mDist > 0) {
+            mx = (mx / mDist) * maxMR;
+            my = (my / mDist) * maxMR;
+          }
+          return (
+            <div key={i} style={{ 
+              position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
+              top: `${80 + my - 3}px`, 
+              left: `${80 + mx - 3}px`,
+              transition: 'top 0.1s linear, left 0.1s linear'
+            }} />
+          );
+        })}
         <div ref={dotRef} style={{
           position: 'absolute', width: '14px', height: '14px', backgroundColor: 'var(--primary)',
           borderRadius: '50%', boxShadow: '0 0 12px var(--primary)', transition: 'transform 0.05s linear'
@@ -217,7 +241,7 @@ const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; 
   useEffect(() => {
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
-      if (!liveData) return;
+      if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
       const rawVal = selector(liveData);
       valRef.current = Math.max(0, Math.min(max, rawVal));
 
@@ -226,10 +250,8 @@ const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; 
       if (pctRef.current) pctRef.current.innerText = `${pct}%`;
     };
 
-    window.addEventListener('hud:frame', handleUpdate);
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
-      window.removeEventListener('hud:frame', handleUpdate);
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
   }, [selector, max]);
@@ -257,7 +279,7 @@ const PedalTraceCanvas: React.FC = () => {
   useEffect(() => {
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
-      if (!liveData) return;
+      if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
 
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
@@ -331,10 +353,8 @@ const PedalTraceCanvas: React.FC = () => {
       }
     };
 
-    window.addEventListener('hud:frame', handleUpdate);
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
-      window.removeEventListener('hud:frame', handleUpdate);
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
   }, []);
@@ -375,7 +395,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
-      if (!liveData) return;
+      if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
       
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
@@ -458,37 +478,54 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
           while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
             startIdx--;
           }
-          const history3s = hist.current.slice(startIdx + 1);
+          const firstValidIdx = startIdx + 1;
+          const histLen = hist.current.length;
 
-          if (history3s.length > 0) {
+          if (firstValidIdx < histLen) {
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.lineWidth = 2;
             ctx.lineJoin = 'round';
-            for (let i = 0; i < history3s.length; i++) {
-              const p = history3s[i];
-              const px = Math.max(-displayLimit, Math.min(displayLimit, p.angle));
-              const py = Math.max(-displayLimit, Math.min(displayLimit, p.ratio));
-              const cx = radius + (px / displayLimit) * radius;
-              const cy = radius + (py / displayLimit) * radius;
-              if (i === 0) ctx.moveTo(cx, cy);
+            for (let i = firstValidIdx; i < histLen; i++) {
+              const p = hist.current[i];
+              let dx = (p.angle / displayLimit) * radius;
+              let dy = (p.ratio / displayLimit) * radius;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist > radius && dist > 0) {
+                dx = (dx / dist) * radius;
+                dy = (dy / dist) * radius;
+              }
+              const cx = radius + dx;
+              const cy = radius + dy;
+              if (i === firstValidIdx) ctx.moveTo(cx, cy);
               else ctx.lineTo(cx, cy);
             }
             ctx.stroke();
           }
 
-          
-          const px = Math.max(-displayLimit, Math.min(displayLimit, cAngle));
-          const py = Math.max(-displayLimit, Math.min(displayLimit, cRatio));
+          let dx = (cAngle / displayLimit) * radius;
+          let dy = (cRatio / displayLimit) * radius;
+          const tDist = Math.sqrt(dx * dx + dy * dy);
+          const maxTR = radius - 4; // Radius 50 minus dot radius 4
+          if (tDist > maxTR && tDist > 0) {
+            dx = (dx / tDist) * maxTR;
+            dy = (dy / tDist) * maxTR;
+          }
           const dotColor = isLosingGrip ? '#ff003c' : '#00f0ff';
+          const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : 'rgba(0, 240, 255, 0.35)';
+          const dotCenterX = radius + dx;
+          const dotCenterY = radius + dy;
+
+          // Double Pass Vector Glow (Zero performance cost, crisp glow aesthetic)
           ctx.beginPath();
-          ctx.arc(radius + (px / displayLimit) * radius, radius + (py / displayLimit) * radius, 4, 0, Math.PI * 2);
-          ctx.fillStyle = dotColor;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = dotColor;
+          ctx.arc(dotCenterX, dotCenterY, 7, 0, Math.PI * 2);
+          ctx.fillStyle = dotGlowColor;
           ctx.fill();
-          ctx.shadowBlur = 0;
-  
+
+          ctx.beginPath();
+          ctx.arc(dotCenterX, dotCenterY, 4, 0, Math.PI * 2);
+          ctx.fillStyle = dotColor;
+          ctx.fill();
         }
       }
 
@@ -497,8 +534,19 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
         const ctx = tCanvas.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, histWidth, histHeight);
-          const minTemp = hist.current.length > 0 ? Math.min(...hist.current.map(p => p.temp)) : cTemp;
-          const maxTemp = hist.current.length > 0 ? Math.max(...hist.current.map(p => p.temp)) : cTemp;
+          
+          let minTemp = cTemp;
+          let maxTemp = cTemp;
+          const hLen = hist.current.length;
+          if (hLen > 0) {
+            minTemp = hist.current[0].temp;
+            maxTemp = hist.current[0].temp;
+            for (let i = 1; i < hLen; i++) {
+              const t = hist.current[i].temp;
+              if (t < minTemp) minTemp = t;
+              if (t > maxTemp) maxTemp = t;
+            }
+          }
           
           let tempMinScale = 100;
           let tempMaxScale = 260;
@@ -508,14 +556,17 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
           const numBins = 30;
           const tempPerBin = (tempMaxScale - tempMinScale) / numBins;
           const bins = new Array(numBins).fill(0);
-          hist.current.forEach(p => {
-            if (Math.abs(p.speed) < 0.5) return; 
+          let maxBinCount = 1;
+
+          for (let i = 0; i < hLen; i++) {
+            const p = hist.current[i];
+            if (Math.abs(p.speed) < 0.5) continue;
             let t = Math.max(tempMinScale, Math.min(tempMaxScale, p.temp));
             let binIdx = Math.floor((t - tempMinScale) / tempPerBin);
             if (binIdx >= numBins) binIdx = numBins - 1;
             bins[binIdx]++;
-          });
-          const maxBinCount = Math.max(1, ...bins);
+            if (bins[binIdx] > maxBinCount) maxBinCount = bins[binIdx];
+          }
 
           ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
           for (let i = 0; i < numBins; i++) {
@@ -594,7 +645,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
     
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
-      if (!liveData) return;
+      if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
       
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
@@ -720,12 +771,42 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
 // --- COMPONENT: TelemetryView MAIN ---
 const TelemetryView: React.FC = () => {
   const [subTab, setSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
+  const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
   const { data } = useTelemetry();
   const { convertSpeed, convertPower, convertTorque, convertBoost, t } = useSettings();
   const { carName } = useCarParams();
   const { isRecording, loadSavedSession } = useTelemetryRecorder();
 
   const prevIsRacingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('horizon_tuner_hud_channel');
+    const checkConfig = (cfg: any) => {
+      if (cfg && cfg.enabled && cfg.pauseTelemetryViewWhenActive) {
+        setIsHudPaused(true);
+        (window as any).__IS_HUD_PAUSED__ = true;
+      } else {
+        setIsHudPaused(false);
+        (window as any).__IS_HUD_PAUSED__ = false;
+      }
+    };
+
+    const port = (window as any).BACKEND_PORT || 8001;
+    fetch(`http://127.0.0.1:${port}/api/overlay/config`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) checkConfig(data); })
+      .catch(() => {});
+
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'config') {
+        checkConfig(event.data.data);
+      }
+    };
+
+    return () => {
+      channel.close();
+    };
+  }, []);
 
   // Monitor IsRaceOn to auto-redirect and load the latest session on race completion
   useEffect(() => {
@@ -786,6 +867,30 @@ const TelemetryView: React.FC = () => {
           {carName}
         </div>
       </div>
+
+      {isHudPaused && (
+        <div style={{
+          padding: '0.8rem 1.2rem',
+          marginBottom: '1.5rem',
+          background: 'rgba(255, 170, 0, 0.12)',
+          border: '1px solid rgba(255, 170, 0, 0.4)',
+          borderRadius: '8px',
+          color: '#ffaa00',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.9rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ fontSize: '1.2rem' }}>⏸️</span>
+            <strong>{t("Telemetry rendering paused (HUD Overlay is active)") || "Telemetry 畫面已暫停渲染 (HUD Overlay 啟用中，節省 CPU/GPU 資源)"}</strong>
+          </div>
+          <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+            {t("Can be toggled in HUD Control Panel") || "可在 HUD 控制面板關閉此暫停開關"}
+          </span>
+        </div>
+      )}
 
       {subTab === 'analysis' ? (
         <AnalysisView />

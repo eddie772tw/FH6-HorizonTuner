@@ -11,11 +11,10 @@
 
     var corners = ['FL', 'FR', 'RL', 'RR'];
 
-    function getTempColor(tempC) {
-        if (tempC < 60) return '#0088ff';
-        if (tempC < 105) return '#00ff00';
-        if (tempC < 130) return '#ffaa00';
-        return '#ff0000';
+    function getTempColor(tempF) {
+        if (tempF < 150) return '#0088ff';
+        if (tempF > 210) return '#ff0000';
+        return '#00ff00';
     }
 
     var TelemetryCardsManager = {
@@ -417,17 +416,21 @@
             if (showAttitude) {
                 var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);
                 var rawAccZ = data.accel_z !== undefined ? data.accel_z : (data.AccelerationZ || 0);
-                var lat = rawAccX / 9.81;
-                var lon = rawAccZ / 9.81;
+                var lat = -rawAccX / 9.81; // Invert X axis (lateral G) per user requirement
+                var lon = rawAccZ / 9.81;  // Keep Y axis (longitudinal G: BRAKE on top)
 
                 var gCircle = document.getElementById('tcGRadarCircle');
                 var dot = document.getElementById('tcGDot');
                 if (gCircle && dot) {
                     var radius = gCircle.clientWidth / 2;
-                    var normLat = Math.max(-2, Math.min(2, lat)) / 2;
-                    var normLon = Math.max(-2, Math.min(2, lon)) / 2;
-                    var xPx = normLat * radius;
-                    var yPx = normLon * radius;
+                    var maxGRadius = Math.max(0, radius - 4);
+                    var xPx = (lat / 2) * radius;
+                    var yPx = (lon / 2) * radius;
+                    var gDist = Math.sqrt(xPx * xPx + yPx * yPx);
+                    if (gDist > maxGRadius && gDist > 0) {
+                        xPx = (xPx / gDist) * maxGRadius;
+                        yPx = (yPx / gDist) * maxGRadius;
+                    }
                     dot.style.transform = 'translate(' + xPx + 'px, ' + yPx + 'px)';
                 }
 
@@ -445,6 +448,7 @@
                 var markersContainer = document.getElementById('tcGMarkers');
                 if (markersContainer && gCircle) {
                     var radiusPx = gCircle.clientWidth / 2;
+                    var maxMRadius = Math.max(0, radiusPx - 4);
                     var recent30s = this.gHist.filter(function (p) { return now - p.time <= 30000; });
                     if (recent30s.length > 0 && Math.random() < 0.2) {
                         var maxL = 0, maxR = 0, maxB = 0, maxA = 0;
@@ -466,8 +470,15 @@
                             mDot.style.height = '6px';
                             mDot.style.borderRadius = '50%';
                             mDot.style.background = 'rgba(255,255,255,0.7)';
-                            mDot.style.left = (radiusPx + (p.lat / 2) * radiusPx - 3) + 'px';
-                            mDot.style.top = (radiusPx + (p.lon / 2) * radiusPx - 3) + 'px';
+                            var mx = (p.lat / 2) * radiusPx;
+                            var my = (p.lon / 2) * radiusPx;
+                            var mDist = Math.sqrt(mx * mx + my * my);
+                            if (mDist > maxMRadius && mDist > 0) {
+                                mx = (mx / mDist) * maxMRadius;
+                                my = (my / mDist) * maxMRadius;
+                            }
+                            mDot.style.left = (radiusPx + mx - 3) + 'px';
+                            mDot.style.top = (radiusPx + my - 3) + 'px';
                             markersContainer.appendChild(mDot);
                         });
                     }
@@ -556,10 +567,10 @@
                 data.slip_angle_rr !== undefined ? data.slip_angle_rr : (rawSlipAngles[3] || 0)
             ];
             var temps = [
-                rawTemps[0] !== undefined ? rawTemps[0] : (data.temp_fl || 180),
-                rawTemps[1] !== undefined ? rawTemps[1] : (data.temp_fr || 180),
-                rawTemps[2] !== undefined ? rawTemps[2] : (data.temp_rl || 180),
-                rawTemps[3] !== undefined ? rawTemps[3] : (data.temp_rr || 180)
+                data.temp_fl !== undefined ? data.temp_fl : (rawTemps[0] !== undefined ? rawTemps[0] : 0),
+                data.temp_fr !== undefined ? data.temp_fr : (rawTemps[1] !== undefined ? rawTemps[1] : 0),
+                data.temp_rl !== undefined ? data.temp_rl : (rawTemps[2] !== undefined ? rawTemps[2] : 0),
+                data.temp_rr !== undefined ? data.temp_rr : (rawTemps[3] !== undefined ? rawTemps[3] : 0)
             ];
             var travels = [
                 data.susp_fl !== undefined ? data.susp_fl : (rawTravels[0] || 0),
@@ -575,7 +586,7 @@
                 var tag = corners[i];
                 var cRatio = slipRatios[i] || 0;
                 var cAngle = slipAngles[i] || 0;
-                var cTemp = temps[i] || 180;
+                var cTemp = temps[i] || 0;
                 var cTravel = Math.max(0, Math.min(1, travels[i] || 0));
 
                 // Maintain 3-Second Tire Temp History (180 points at 60Hz)
@@ -595,9 +606,15 @@
                     // Dynamic Temp display with unit (°C or °F)
                     var tempEl = document.getElementById('tcTireTemp' + tag);
                     if (tempEl) {
-                        var displayTemp = isMetric ? Math.round(cTemp) : Math.round(cTemp * 1.8 + 32);
-                        tempEl.textContent = displayTemp + (isMetric ? '°C' : '°F');
-                        tempEl.style.color = getTempColor(cTemp);
+                        if (cTemp > 0) {
+                            var cTempC = (cTemp - 32) * 5 / 9;
+                            var displayTemp = isMetric ? Math.round(cTempC) : Math.round(cTemp);
+                            tempEl.textContent = displayTemp + (isMetric ? '°C' : '°F');
+                            tempEl.style.color = getTempColor(cTemp);
+                        } else {
+                            tempEl.textContent = '--' + (isMetric ? '°C' : '°F');
+                            tempEl.style.color = 'rgba(255,255,255,0.4)';
+                        }
                     }
 
                     // 2D Slip Radar Canvas
@@ -611,8 +628,17 @@
                             rCtx.beginPath(); rCtx.arc(rx0, ry0, rRad, 0, Math.PI * 2);
                             rCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; rCtx.lineWidth = 1; rCtx.stroke();
                             var mag = Math.sqrt(cAngle * cAngle + cRatio * cRatio);
-                            var px = rx0 + (cAngle / 1.0) * rRad;
-                            var py = ry0 - (cRatio / 1.0) * rRad;
+                            var maxTRadius = Math.max(0, rRad - 4);
+                            var dx = (cAngle / 1.0) * rRad;
+                            // Longitudinal mapping: negative cRatio (braking) -> top, positive cRatio (acceleration) -> bottom
+                            var dy = (cRatio / 1.0) * rRad;
+                            var tDist = Math.sqrt(dx * dx + dy * dy);
+                            if (tDist > maxTRadius && tDist > 0) {
+                                dx = (dx / tDist) * maxTRadius;
+                                dy = (dy / tDist) * maxTRadius;
+                            }
+                            var px = rx0 + dx;
+                            var py = ry0 + dy;
                             rCtx.beginPath(); rCtx.arc(px, py, 4, 0, Math.PI * 2);
                             rCtx.fillStyle = mag > 1.0 ? '#ff0055' : '#00f0ff'; rCtx.fill();
                         }
@@ -632,6 +658,7 @@
                             var bins = new Array(numBins).fill(0);
 
                             tHist.forEach(function (p) {
+                                if (p.temp <= 0) return;
                                 var tVal = Math.max(tempMinScale, Math.min(tempMaxScale, p.temp));
                                 var bIdx = Math.floor((tVal - tempMinScale) / tempPerBin);
                                 if (bIdx >= numBins) bIdx = numBins - 1;
