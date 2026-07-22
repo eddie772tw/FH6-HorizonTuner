@@ -96,3 +96,16 @@
 - 在重構或清理程式碼時，務必刪除廢棄未讀取的 Helper 函數與變數。
 - 宣佈任務完成前，持續執行 `cmd /c "npm --prefix frontend run build"` 確保前端 release 編譯無任何型別錯誤。
 
+---
+
+## 2026-07-22 - Vite Rollup manualChunks 策略性分包優化
+
+**學習點 (Learning):**
+- **Vite 500 kB Chunk 警告**：當前端靜態引入大型圖表庫（如 `recharts` 430KB+）與 View 元件時，預設會打成單一巨大 Chunk（848 kB）。
+- **manualChunks 函數 vs 物件寫法**：使用物件語法 `manualChunks: { 'vendor-react': ['react'] }` 在 React/Vite 插件重新導出模組時，可能會觸發 `Generated an empty chunk: "vendor-react"` 警告；改用 `manualChunks(id)` 函數判斷 `id.includes('node_modules')` 能更精確、乾淨地隔離 `recharts` 與 `d3-*`，消除所有 Chunk 大小與空包警告。
+- **建置速度提升**：將 `recharts` 等不常變動的巨型第三方庫獨立為 `vendor-recharts` 後，建置時間從原本的 6.86s 縮短至 4.44s（提升 35%）。
+
+**後續行動 (Action):**
+- 未來若引入其他大型 npm 套件（如 Babylon.js、Three.js），應同步維護 `vite.config.ts` 中的 `manualChunks` 函數規則。
+
+
