@@ -32,7 +32,10 @@ from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from motec_exporter import export_session_to_motec_csv
 from telemetry_listener import pack_telemetry_binary, start_udp_listener
+from telemetry_sqlite import TelemetrySQLite
 
 
 # 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
@@ -82,6 +85,7 @@ if getattr(sys, "frozen", False):
     CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
     SESSIONS_DIR = os.path.join(DATA_ROOT, "sessions")
     DRAG_SESSIONS_DIR = os.path.join(DATA_ROOT, "drag_sessions")
+    USER_CONFIGS_DIR = os.path.join(DATA_ROOT, "user_configs")
     SETTINGS_FILE = os.path.join(DATA_ROOT, "settings.json")
 else:
     RESOURCE_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -95,14 +99,21 @@ else:
     CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
     SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "sessions")
     DRAG_SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "drag_sessions")
+    USER_CONFIGS_DIR = os.path.join(RESOURCE_ROOT, "user_configs")
     SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
+
+SESSIONS_DB_PATH = os.path.join(SESSIONS_DIR, "telemetry_sessions.db")
+ANALYSIS_LAYOUT_FILE = os.path.join(USER_CONFIGS_DIR, "analysis_layout.json")
 
 # Ensure directories exist
 os.makedirs(TUNINGS_DIR, exist_ok=True)
 os.makedirs(CAR_PARAMS_DIR, exist_ok=True)
 os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
+os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 os.makedirs(LANG_DIR, exist_ok=True)
+
+telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
 
 car_database = {}
 if os.path.exists(CAR_DB_PATH):
@@ -282,81 +293,82 @@ else:
 class RaceRecorder:
     def __init__(self):
         self.is_recording = False
-        self.manual_mode = False  # Added to support open-world recording
-        self.current_session = []
+        self.manual_mode = False
+        self.current_session_id = None
+        self.in_memory_batch = []
         self.first_timestamp = None
         self.last_sample_time = 0
-        self.max_samples = 20000
-        self.downsample_interval = 0.1  # 100ms (attempt ~10Hz)
+        self.max_samples = 50000
+        self.downsample_interval = 0.1  # 100ms (10Hz)
         self.lap_start_times = {}  # {lap_num: relative_time}
-        self.last_write_time = 0
         self.total_count = 0
-        self.latest_filepath = os.path.join(SESSIONS_DIR, "latest.json")
 
     def clear(self):
         self.is_recording = False
         self.manual_mode = False
-        self.current_session = []
+        self.current_session_id = None
+        self.in_memory_batch = []
         self.first_timestamp = None
         self.last_sample_time = 0
         self.lap_start_times = {}
-        self.last_write_time = 0
         self.total_count = 0
 
-    def _flush_to_disk(self):
-        """Append in-memory points to the latest.json file on disk and clear memory."""
-        if not self.current_session:
+    def _flush_to_sqlite(self):
+        """Batch insert in-memory points into SQLite database asynchronously."""
+        if not self.in_memory_batch or not self.current_session_id:
             return
 
-        existing_data = []
-        if os.path.exists(self.latest_filepath):
-            try:
-                with open(self.latest_filepath, "r", encoding="utf-8") as f:
-                    existing_data = json.load(f)
-                    if not isinstance(existing_data, list):
-                        existing_data = []
-            except Exception as e:
-                logger.error(f"Failed to read existing latest.json for flushing: {e}")
-                existing_data = []
-
-        existing_data.extend(self.current_session)
+        batch_to_write = list(self.in_memory_batch)
+        self.in_memory_batch = []
 
         try:
-            with open(self.latest_filepath, "w", encoding="utf-8") as f:
-                json.dump(existing_data, f, indent=4)
-            self.current_session = []
-            self.last_write_time = time.time()
-            logger.info(
-                f"Flushed telemetry chunk to disk. Total points on disk: {len(existing_data)}"
-            )
+            telemetry_db.insert_points_batch(self.current_session_id, batch_to_write)
         except Exception as e:
-            logger.error(f"Failed to flush telemetry chunk to disk: {e}")
+            logger.error(f"Failed to flush telemetry batch to SQLite: {e}")
 
     def record(self, data: dict):
         if not app_settings.get("race_recording", True):
-            if self.is_recording or self.current_session:
+            if self.is_recording:
                 self.clear()
-                if os.path.exists(self.latest_filepath):
-                    try:
-                        os.remove(self.latest_filepath)
-                    except Exception:
-                        pass
             return
 
-        is_race_on = (data.get("IsRaceOn", 0) == 1) or self.manual_mode
+        # Accurate race active gate: Must be IsRaceOn=1 AND CurrentRaceTime > 0 AND CurrentLap > 0 (or manual_mode)
+        is_race_on = data.get("IsRaceOn", 0) == 1
+        current_race_time = data.get("CurrentRaceTime", 0.0)
+        current_lap = data.get("CurrentLap", data.get("LapNumber", 0))
 
-        if is_race_on:
+        is_race_active = self.manual_mode or (
+            is_race_on and current_race_time > 0.0 and current_lap > 0
+        )
+
+        if is_race_active:
             if not self.is_recording:
                 self.clear()
                 self.is_recording = True
-                if self.manual_mode:
-                    self.manual_mode = True  # Keep manual_mode flag True after clear
-                # Initialize/clear latest.json on start
-                try:
-                    with open(self.latest_filepath, "w", encoding="utf-8") as f:
-                        json.dump([], f)
-                except Exception as e:
-                    logger.error(f"Failed to initialize latest.json: {e}")
+                self.current_session_id = f"session_{int(time.time())}"
+
+                car_ordinal = data.get("CarOrdinal", 0)
+                car_info = car_database.get(str(car_ordinal), {})
+                car_name = f"{car_info.get('year', '')} {car_info.get('make', '')} {car_info.get('model', '')}".strip()
+                if not car_name:
+                    car_name = (
+                        f"Car #{car_ordinal}" if car_ordinal > 0 else "Unknown Car"
+                    )
+
+                car_class = data.get("CarClass", 0)
+                car_pi = data.get("CarPerformanceIndex", 0)
+
+                telemetry_db.create_session(
+                    session_id=self.current_session_id,
+                    car_ordinal=car_ordinal,
+                    car_name=car_name,
+                    car_class=car_class,
+                    car_pi=car_pi,
+                    start_time=time.time(),
+                )
+                logger.info(
+                    f"Started new telemetry recording session: {self.current_session_id}"
+                )
 
             now = time.time()
             if now - self.last_sample_time >= self.downsample_interval:
@@ -369,87 +381,88 @@ class RaceRecorder:
                     self.first_timestamp = timestamp_ms
 
                 relative_time = (timestamp_ms - self.first_timestamp) / 1000.0
-                current_lap = data.get("CurrentLap", 1)
+                c_lap = data.get("CurrentLap", 1)
 
-                # Track lap start times
-                if current_lap not in self.lap_start_times:
-                    self.lap_start_times[current_lap] = relative_time
+                if c_lap not in self.lap_start_times:
+                    self.lap_start_times[c_lap] = relative_time
 
-                # Data projection for memory efficiency
-                point = {
-                    "time": round(relative_time, 2),
-                    "SpeedMetersPerSecond": data.get("SpeedMetersPerSecond", 0.0),
-                    "CurrentEngineRpm": data.get("CurrentEngineRpm", 0),
-                    "Gear": data.get("Gear", 0),
-                    "AccelInput": data.get("AccelInput", 0),
-                    "BrakeInput": data.get("BrakeInput", 0),
-                    "AccelerationX": data.get("AccelerationX", 0.0),
-                    "AccelerationZ": data.get("AccelerationZ", 0.0),
-                    "SuspTravel": list(
-                        data.get("NormalizedSuspensionTravel", [0.0, 0.0, 0.0, 0.0])
-                    ),
-                    "TireSlipAngle": list(
-                        data.get("TireSlipAngle", [0.0, 0.0, 0.0, 0.0])
-                    ),
-                    "TireSlipRatio": list(
-                        data.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])
-                    ),
-                    "TireTemp": list(data.get("TireTemp", [0.0, 0.0, 0.0, 0.0])),
-                    "PositionX": data.get("PositionX", 0.0),
-                    "PositionY": data.get("PositionY", 0.0),
-                    "PositionZ": data.get("PositionZ", 0.0),
-                }
-                self.current_session.append(point)
+                # Clone data dictionary for SQLite batch insert
+                point = dict(data)
+                point["time"] = round(relative_time, 2)
+
+                self.in_memory_batch.append(point)
                 self.total_count += 1
                 self.last_sample_time = now
 
-                # Segmented write: Flush to disk every 30 seconds or 150 points
-                if len(self.current_session) >= 150 or (
-                    now - self.last_write_time >= 30.0 and self.last_write_time > 0
-                ):
-                    self._flush_to_disk()
+                if len(self.in_memory_batch) >= 50:
+                    self._flush_to_sqlite()
         else:
             if self.is_recording:
                 self.save_latest_and_clear(data)
 
     def save_latest_and_clear(self, last_data: dict):
-        """Flush remaining data to disk, truncate post-finish line telemetry, and clear memory."""
-        self._flush_to_disk()
-        self.is_recording = False
+        """Flush remaining batch to SQLite, calculate lap summaries, and clear memory."""
+        if not self.current_session_id:
+            self.clear()
+            return
 
-        last_lap_num = last_data.get("CurrentLap", 1)
-        last_lap_time = last_data.get("LastLap", 0.0)
+        self._flush_to_sqlite()
 
-        if last_lap_num in self.lap_start_times and last_lap_time > 0.0:
-            cutoff_time = self.lap_start_times[last_lap_num] + last_lap_time
-            logger.info(
-                f"Truncation: Last lap {last_lap_num} started at {self.lap_start_times[last_lap_num]}s, lasted {last_lap_time}s. Cutoff time: {cutoff_time}s"
-            )
+        # Calculate Laps summary from SQLite
+        try:
+            points = telemetry_db.get_telemetry_points(self.current_session_id)
+            if points:
+                laps_map: dict[int, list[dict]] = {}
+                for p in points:
+                    l_num = p.get("LapNumber", 1)
+                    if l_num not in laps_map:
+                        laps_map[l_num] = []
+                    laps_map[l_num].append(p)
 
-            if os.path.exists(self.latest_filepath):
-                try:
-                    with open(self.latest_filepath, "r", encoding="utf-8") as f:
-                        all_points = json.load(f)
+                laps_summary = []
+                best_lap_time = 999999.0
+                total_distance = 0.0
 
-                    if isinstance(all_points, list):
-                        original_count = len(all_points)
-                        filtered_points = [
-                            p for p in all_points if p.get("time", 0.0) <= cutoff_time
-                        ]
-                        truncated_count = original_count - len(filtered_points)
+                for l_num, l_points in laps_map.items():
+                    if not l_points:
+                        continue
+                    l_time = l_points[-1]["time"] - l_points[0]["time"]
+                    start_dist = l_points[0].get("lap_distance", 0.0)
+                    end_dist = l_points[-1].get("lap_distance", 0.0)
+                    speeds = [p["SpeedMetersPerSecond"] * 3.6 for p in l_points]
+                    max_sp = max(speeds) if speeds else 0.0
+                    avg_sp = sum(speeds) / len(speeds) if speeds else 0.0
 
-                        with open(self.latest_filepath, "w", encoding="utf-8") as f:
-                            json.dump(filtered_points, f, indent=4)
+                    if l_time > 1.0 and l_time < best_lap_time:
+                        best_lap_time = l_time
 
-                        logger.info(
-                            f"Truncated {truncated_count} post-finish line telemetry points. Cleaned session saved."
-                        )
-                except Exception as e:
-                    logger.error(f"Failed to truncate post-finish line telemetry: {e}")
-        else:
-            logger.info(
-                f"No truncation applied. Last lap: {last_lap_num}, Last lap time: {last_lap_time}. Lap start times: {self.lap_start_times}"
-            )
+                    laps_summary.append(
+                        {
+                            "lap_number": l_num,
+                            "lap_time": round(l_time, 3),
+                            "start_distance": round(start_dist, 1),
+                            "end_distance": round(end_dist, 1),
+                            "max_speed_kmh": round(max_sp, 1),
+                            "avg_speed_kmh": round(avg_sp, 1),
+                        }
+                    )
+                    total_distance = max(total_distance, end_dist)
+
+                if best_lap_time == 999999.0:
+                    best_lap_time = 0.0
+
+                telemetry_db.save_laps_summary(self.current_session_id, laps_summary)
+                telemetry_db.update_session_summary(
+                    self.current_session_id,
+                    total_laps=len(laps_summary),
+                    best_lap_time=round(best_lap_time, 3),
+                    total_distance=round(total_distance, 1),
+                )
+                logger.info(
+                    f"Finished session {self.current_session_id}: {len(laps_summary)} laps recorded in SQLite."
+                )
+        except Exception as e:
+            logger.error(f"Error finalizing session summary in SQLite: {e}")
 
         self.clear()
 
@@ -1468,34 +1481,68 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
 # --- Post-Race Analysis API Endpoints ---
 
 
+@app.get("/api/analysis/config")
+async def get_analysis_config():
+    if os.path.exists(ANALYSIS_LAYOUT_FILE):
+        try:
+            with open(ANALYSIS_LAYOUT_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to read analysis layout config: {e}")
+    # Default layout configuration
+    return {
+        "activeMetric": "speed",
+        "customMathChannels": [],
+        "enabledCharts": [
+            "track_map",
+            "inputs_gear",
+            "gg_diagram",
+            "slip_scatter",
+            "susp_dist",
+            "temp_dist",
+        ],
+    }
+
+
+@app.post("/api/analysis/config")
+async def save_analysis_config(config: dict):
+    try:
+        with open(ANALYSIS_LAYOUT_FILE, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=4)
+        return {"message": "Analysis layout saved successfully"}
+    except Exception as e:
+        logger.error(f"Failed to save analysis layout: {e}")
+        return {"error": f"Failed to save analysis layout: {e}"}
+
+
 @app.get("/api/analysis/status")
 async def get_analysis_status():
     return {
         "isRecording": race_recorder.is_recording,
         "recordingCount": race_recorder.total_count,
+        "currentSessionId": race_recorder.current_session_id,
     }
 
 
 @app.get("/api/analysis/data")
-async def get_analysis_data():
-    if os.path.exists(race_recorder.latest_filepath):
-        try:
-            with open(race_recorder.latest_filepath, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to read latest.json: {e}")
-            return []
+async def get_current_analysis_data(lap: int = 0):
+    if race_recorder.current_session_id:
+        return telemetry_db.get_telemetry_points(
+            race_recorder.current_session_id, lap_number=lap if lap > 0 else None
+        )
+    # Return latest recorded session if any
+    sessions = telemetry_db.list_all_sessions()
+    if sessions:
+        latest_id = sessions[0]["session_id"]
+        return telemetry_db.get_telemetry_points(
+            latest_id, lap_number=lap if lap > 0 else None
+        )
     return []
 
 
 @app.post("/api/analysis/clear")
 async def clear_analysis_data():
     race_recorder.clear()
-    if os.path.exists(race_recorder.latest_filepath):
-        try:
-            os.remove(race_recorder.latest_filepath)
-        except Exception:
-            pass
     return {"message": "Current recording session cleared."}
 
 
@@ -1504,17 +1551,19 @@ async def start_manual_recording():
     race_recorder.clear()
     race_recorder.manual_mode = True
     race_recorder.is_recording = True
+    race_recorder.current_session_id = f"session_{int(time.time())}"
 
-    # Initialize/clear latest.json on start
-    try:
-        with open(race_recorder.latest_filepath, "w", encoding="utf-8") as f:
-            json.dump([], f)
-        logger.info("Manual recording started.")
-        return {"message": "Manual recording started successfully"}
-    except Exception as e:
-        logger.error(f"Failed to initialize latest.json for manual recording: {e}")
-        race_recorder.clear()
-        return {"error": f"Failed to start manual recording: {str(e)}"}
+    telemetry_db.create_session(
+        session_id=race_recorder.current_session_id,
+        car_ordinal=0,
+        car_name="Manual Session",
+        start_time=time.time(),
+    )
+    logger.info("Manual recording started.")
+    return {
+        "message": "Manual recording started successfully",
+        "sessionId": race_recorder.current_session_id,
+    }
 
 
 @app.post("/api/analysis/recorder/stop")
@@ -1531,72 +1580,76 @@ async def stop_manual_recording():
 @app.get("/api/analysis/sessions")
 async def list_saved_sessions():
     try:
-        files = [f for f in os.listdir(SESSIONS_DIR) if f.endswith(".json")]
+        raw_sessions = telemetry_db.list_all_sessions()
         sessions = []
-        for f in files:
-            if f == "latest.json":
-                continue
-            path = os.path.join(SESSIONS_DIR, f)
-            stat = os.stat(path)
+        for s in raw_sessions:
             sessions.append(
-                {"filename": f, "size": stat.st_size, "mtime": stat.st_mtime}
+                {
+                    "filename": s["session_id"],
+                    "session_id": s["session_id"],
+                    "car_name": s["car_name"],
+                    "total_laps": s["total_laps"],
+                    "best_lap_time": s["best_lap_time"],
+                    "total_distance": s["total_distance"],
+                    "mtime": s["start_time"],
+                    "size": 0,
+                }
             )
-        sessions.sort(key=lambda x: x["mtime"], reverse=True)
         return sessions
     except Exception as e:
-        logger.error(f"Failed to list saved sessions: {e}")
+        logger.error(f"Failed to list saved sessions from SQLite: {e}")
         return []
 
 
-@app.post("/api/analysis/sessions/save")
-async def save_session_to_file():
-    # Deprecated in favor of save_latest, but kept for compatibility
-    return await save_latest_session_to_file()
+@app.get("/api/analysis/sessions/{session_id}/laps")
+async def get_session_laps(session_id: str):
+    return telemetry_db.get_session_laps(session_id)
 
 
-@app.post("/api/analysis/sessions/save_latest")
-async def save_latest_session_to_file():
-    if not os.path.exists(race_recorder.latest_filepath):
-        return {"error": "No recorded data found"}
-
-    timestamp = int(time.time())
-    filename = f"session_{timestamp}.json"
-    file_path = os.path.join(SESSIONS_DIR, filename)
-
+@app.get("/api/analysis/sessions/{session_id}")
+async def load_saved_session(session_id: str, lap: int = 0):
     try:
-        import shutil
-
-        shutil.copy2(race_recorder.latest_filepath, file_path)
-        return {"message": "Session saved successfully", "filename": filename}
+        data = telemetry_db.get_telemetry_points(
+            session_id, lap_number=lap if lap > 0 else None
+        )
+        if data:
+            return data
     except Exception as e:
-        logger.error(f"Failed to save latest session as {filename}: {e}")
-        return {"error": f"Failed to save session: {e}"}
+        return {"error": f"Failed to read session telemetry: {e}"}
+    return []
 
 
-@app.get("/api/analysis/sessions/{filename}")
-async def load_saved_session(filename: str):
-    filename = os.path.basename(filename)
-    file_path = os.path.join(SESSIONS_DIR, filename)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            return {"error": f"Failed to read session file: {e}"}
-    return {"error": "Session file not found"}
-
-
-@app.delete("/api/analysis/sessions/{filename}")
-async def delete_saved_session(filename: str):
-    filename = os.path.basename(filename)
-    file_path = os.path.join(SESSIONS_DIR, filename)
-    if os.path.exists(file_path):
-        try:
-            os.remove(file_path)
+@app.delete("/api/analysis/sessions/{session_id}")
+async def delete_saved_session(session_id: str):
+    try:
+        success = telemetry_db.delete_session(session_id)
+        if success:
             return {"message": "Session deleted successfully"}
-        except Exception as e:
-            return {"error": f"Failed to delete session file: {e}"}
-    return {"error": "Session file not found"}
+    except Exception as e:
+        return {"error": f"Failed to delete session: {e}"}
+    return {"error": "Session not found"}
+
+
+@app.get("/api/analysis/export/motec/{session_id}")
+async def export_motec_session(session_id: str):
+    sessions = telemetry_db.list_all_sessions()
+    session_meta = next((s for s in sessions if s["session_id"] == session_id), None)
+    if not session_meta:
+        return {"error": "Session not found"}
+
+    points = telemetry_db.get_telemetry_points(session_id)
+    if not points:
+        return {"error": "No telemetry data points found in session"}
+
+    export_filename = f"{session_id}_motec.csv"
+    export_filepath = os.path.join(SESSIONS_DIR, export_filename)
+
+    success = export_session_to_motec_csv(session_meta, points, export_filepath)
+    if success and os.path.exists(export_filepath):
+        return FileResponse(
+            export_filepath, filename=export_filename, media_type="text/csv"
+        )
+    return {"error": "Failed to generate MoTeC CSV export"}
 
 
 # --- Drag Test API Endpoints ---

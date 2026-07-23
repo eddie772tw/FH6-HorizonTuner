@@ -16,7 +16,6 @@ const ThemeView: React.FC = () => {
   const { t } = useSettings();
 
   const [cssValidation, setCssValidation] = useState<{ isValid: boolean; error?: string }>({ isValid: true });
-  const [copiedNotification, setCopiedNotification] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If customCSS is currently empty, automatically populate with active template
@@ -308,7 +307,7 @@ const ThemeView: React.FC = () => {
                     border: '1px solid var(--glass-border)',
                     display: 'flex',
                     flexDirection: 'column',
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     gap: '0.8rem'
                   }}
                 >
