@@ -113,11 +113,11 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
-            if window.label() == "main" {
-                if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
-                    println!("Main window CloseRequested — terminating application.");
-                    window.app_handle().exit(0);
-                }
+            if window.label() == "main"
+                && matches!(event, tauri::WindowEvent::CloseRequested { .. })
+            {
+                println!("Main window CloseRequested — terminating application.");
+                window.app_handle().exit(0);
             }
         })
         .setup(|app| {

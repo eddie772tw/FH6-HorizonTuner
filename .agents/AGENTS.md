@@ -9,8 +9,8 @@
 
 ### 核心原則
 1. **效能與即時性為先**：作為遊戲 Overlay / HUD，畫面渲染與數據傳遞的延遲（Latency）直接影響玩家體驗。避免在大數據流中進行不必要的深拷貝 (Deep Copy) 或頻繁的 DOM 重新渲染。
-2. **測試驗證與語法規範**：在提交任何程式碼修改前，請務必執行以下檢查：
-   - Rust 語法與格式檢查：`cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` 以及 `cargo clippy --manifest-path frontend/src-tauri/Cargo.toml --all-targets -- -D warnings`
+2. **測試驗證與語法規範 (Mandatory Local Gateways)**：在提交任何程式碼修改或宣佈任務完成前，必須執行以下檢查：
+   - Rust 語法與 Clippy 零警告檢查：`cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` 以及 `cargo clippy --manifest-path frontend/src-tauri/Cargo.toml --all-targets -- -D warnings`
    - 前端語法檢查：`npm --prefix frontend run lint`
    - Rust 後端與 UDP 解析測試：`cargo test --manifest-path frontend/src-tauri/Cargo.toml`
    - 前端物理與算牌測試：`cmd /c "npm --prefix frontend run test"`
@@ -47,7 +47,7 @@
 ### 開發邊界限制
 * **必須做的事**：
   - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 計算邏輯後，必須更新單元測試並確認前端測試全數通過（`cmd /c "npm --prefix frontend run test"`）。
-  - 修改 Rust UDP 解析或 Storage 邏輯後，必須執行 `cargo test --manifest-path frontend/src-tauri/Cargo.toml` 確保測試全數通過。
+  - 修改 Rust 程式碼後，必須執行 `cargo clippy --manifest-path frontend/src-tauri/Cargo.toml --all-targets -- -D warnings` 與 `cargo test` 確保零 Warning 與測試全數通過。
   - **同步維護 `.pkgdirignore` 與 `.gitignore` 規範**。
   - 任務結束後，必須主動回顧開發過程並更新 `.agents/Journal.md`。
 * **詢問後才做的事**：
@@ -63,8 +63,9 @@
 * **任務結束後**：若發現物理計算陷阱、UDP 解包效能瓶頸或異步 Bug，強制寫入 [.agents/Journal.md]。
 
 ## Task Completion Checklist
-在宣佈任何開發/重構任務完成前，Agent 必須執行：
-1. 執行單元測試（`cargo test` 與 `npm run test`）並確保全數 Pass。
-2. 評估本次任務是否有值得傳承的「學習點/失敗經驗/架構坑點」。
-3. 若有，自動於 `.agents/Journal.md` 追加紀錄。
-4. **維護 `.pkgdirignore` 與 `.gitignore`**：確認遺漏或新增快取產物已排除，發行資源登錄正確。
+在宣佈任何開發/重構任務完成前，Agent 必須強制執行：
+1. **Rust 靜態語法與 Clippy 嚴格驗證**：執行 `cargo fmt -- --check` 以及 `cargo clippy --all-targets -- -D warnings`，確保本地程式碼達成零警告（0 Warnings）。
+2. **前端靜態與單元測試驗證**：執行 `npm run lint` 與 `npm run test`（Vitest），確保 100% Pass。
+3. **Rust 單元測試**：執行 `cargo test` 並確保全數 Pass。
+4. **評估經驗傳承**：評估本次任務是否有值得傳承的「學習點/失敗經驗/架構坑點」，若有，自動於 `.agents/Journal.md` 追加紀錄。
+5. **維護資源專屬設定**：確認 `.pkgdirignore` 與 `.gitignore` 已正確更新排除快取或登錄發行資源。

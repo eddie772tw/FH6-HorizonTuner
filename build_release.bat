@@ -62,13 +62,20 @@ for /d %%D in ("!ROOT_DIR!*") do (
 echo [SUCCESS] No unregistered resource directories found.
 echo.
 
-REM 2. Run Rust and Frontend Format Check
-echo [INFO] Verifying code formatting and linting...
+REM 2. Run Rust and Frontend Format & Clippy Check
+echo [INFO] Verifying code formatting and clippy linting...
 echo --------------------------------------------------------------------
 cargo fmt --manifest-path "!ROOT_DIR!frontend\src-tauri\Cargo.toml" -- --check
 if errorlevel 1 (
     echo [WARNING] Cargo formatting check reported issues. Auto-formatting...
     cargo fmt --manifest-path "!ROOT_DIR!frontend\src-tauri\Cargo.toml"
+)
+
+cargo clippy --manifest-path "!ROOT_DIR!frontend\src-tauri\Cargo.toml" --all-targets -- -D warnings
+if errorlevel 1 (
+    echo [ERROR] Cargo Clippy reported warnings or errors! Please fix them before building.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
 )
 
 REM 3. Run Tauri Build
