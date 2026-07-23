@@ -189,3 +189,17 @@
 **後續行動 (Action):**
 - 執行發行版打包（`build_release.bat`）前，確認 `.venv` 內已安裝完整需求套件（`requirements.txt`），且 PyInstaller 始終透過 `.venv` 呼叫執行。
 - 後續新增與進程生命週期相關的背景 Thread 時，務必區分 Frozen GUI 模式與開發模式的 stdin / log 輸出行為。
+
+---
+
+## 2026-07-23 - ThemeView 功能補全、Custom CSS 語法動態校驗與深淺色主題持久化
+
+**學習點 (Learning):**
+- **DOM CSSStyleSheet 即時驗證**：利用純 JavaScript 括號/註解解析器搭配 `document.createElement('style')` 注入測試，可毫秒級判定 Custom CSS 的合法性，並在 UI 上呈現即時狀態徽章與錯誤行號提示。
+- **Custom CSS 預設自動帶入與樣式系統標註**：當使用者開啟 Custom CSS 編輯器時，預設自動產出並帶入當前 UI 生效的完整 Vanilla CSS 樣式代碼，降低自訂門檻；並明確標註系統採用 Vanilla CSS + CSS Variables + Glassmorphism 獨立架構。
+- **多儲存槽 (3-Slots) 與 JSON 導入匯出**：建立 3 個獨立 Slot 與 JSON 匯入匯出功能，讓使用者能自由保存與共享不同場景的顏色、深淺色與 CSS 組合。
+- **後端持久化相容性**：在 `backend/main.py` 的 `app_settings` 與 `update_settings` 中擴充 `theme` 字典並寫入 `settings.json`，實現主題設定持久化與離線 LocalStorage 備援防護。
+
+**後續行動 (Action):**
+- 後續新增 UI 組件時，背景與邊框一律優先採用 `var(--glass-bg)` 與 `var(--glass-border)`，避免在 Light Mode 切換時出現硬編碼區塊。
+

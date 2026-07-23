@@ -12,11 +12,32 @@
   --primary: #00f0ff; /* Neon cyan */
   --secondary: #ff003c; /* Neon pink/red */
   --accent: #7000ff; /* Deep purple */
-  --glass-bg: rgba(25, 28, 36, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(25, 28, 36, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-blur: 12px;
+  --panel-radius: 16px;
+  --input-radius: 6px;
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --input-text: #ffffff;
+  --bg-gradient: radial-gradient(circle at top right, #1a1c23, #0f1115);
   --text-primary: #ffffff;
   --text-secondary: #9ba1a6;
+  --primary-glow: rgba(0, 240, 255, 0.25);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  color: #1e293b;
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --glass-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --input-text: #0f172a;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --primary-glow: rgba(0, 240, 255, 0.15);
 }
 
 body {
@@ -25,7 +46,9 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, #1a1c23, #0f1115);
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4 {
@@ -45,27 +68,27 @@ h1, h2, h3, h4 {
 /* Glassmorphism utility */
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  border-radius: 16px;
+  border-radius: var(--panel-radius);
   padding: 1.5rem;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .glass-panel:hover {
   transform: translateY(-2px);
   border-color: var(--primary);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25), var(--glass-shadow);
+  box-shadow: 0 0 15px var(--primary-glow), var(--glass-shadow);
 }
 
 /* Cyber Form Inputs */
 .cyber-input, .cyber-select {
-  background: rgba(0, 0, 0, 0.4) !important;
+  background: var(--input-bg) !important;
   border: 1px solid var(--glass-border) !important;
-  color: white !important;
+  color: var(--input-text) !important;
   padding: 0.5rem 0.8rem !important;
-  border-radius: 6px !important;
+  border-radius: var(--input-radius) !important;
   font-family: 'Outfit', 'Inter', sans-serif !important;
   font-size: 0.9rem !important;
   outline: none !important;
@@ -75,7 +98,7 @@ h1, h2, h3, h4 {
 .cyber-input:focus, .cyber-select:focus,
 .cyber-input:hover, .cyber-select:hover {
   border-color: var(--primary) !important;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+  box-shadow: 0 0 8px var(--primary-glow) !important;
 }
 
 /* Cyber Button Glow Effect */
@@ -85,7 +108,7 @@ h1, h2, h3, h4 {
   transition: all 0.2s ease-in-out;
 }
 .cyber-btn-glow:hover {
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  box-shadow: 0 0 10px var(--primary-glow);
   transform: scale(1.02);
 }
 
@@ -112,12 +135,12 @@ h1, h2, h3, h4 {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.2); 
+  background: rgba(0,0,0,0.1); 
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15); 
+  background: rgba(128,128,128,0.3); 
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.3); 
+  background: rgba(128,128,128,0.5); 
 }

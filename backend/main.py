@@ -231,6 +231,14 @@ DEFAULT_SETTINGS = {
         "power": "kw",
         "torque": "nm",
     },
+    "theme": {
+        "mode": "dark",
+        "primaryColor": "#00f0ff",
+        "secondaryColor": "#ff003c",
+        "accentColor": "#7000ff",
+        "customCSS": "",
+        "slots": [],
+    },
 }
 
 app_settings = {
@@ -243,6 +251,7 @@ app_settings = {
     "telemetry_ip": "0.0.0.0",
     "telemetry_port": 8000,
     "units": dict(DEFAULT_SETTINGS["units"]),
+    "theme": dict(DEFAULT_SETTINGS["theme"]),
 }
 
 # Load settings from settings.json
@@ -253,6 +262,8 @@ if os.path.exists(SETTINGS_FILE):
             for k, v in loaded.items():
                 if k == "units" and isinstance(v, dict):
                     app_settings["units"].update(v)
+                elif k == "theme" and isinstance(v, dict):
+                    app_settings["theme"].update(v)
                 else:
                     app_settings[k] = v
         logger.info(f"Loaded settings from {SETTINGS_FILE}")
@@ -1344,6 +1355,11 @@ async def update_settings(data: dict):
         if "units" not in app_settings:
             app_settings["units"] = {}
         app_settings["units"].update(data["units"])
+
+    if "theme" in data and isinstance(data["theme"], dict):
+        if "theme" not in app_settings:
+            app_settings["theme"] = {}
+        app_settings["theme"].update(data["theme"])
 
     # Save to file
     try:
