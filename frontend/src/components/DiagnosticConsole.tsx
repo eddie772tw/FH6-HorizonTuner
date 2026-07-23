@@ -18,7 +18,6 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
   const [level, setLevel] = useState<string>('ALL');
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const consoleRef = useRef<HTMLPreElement>(null);
 
@@ -146,11 +145,6 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
 
         {/* Console Body */}
         <div style={consoleBodyStyle}>
-          {errorMsg && (
-            <div style={{ color: '#ff1744', padding: '10px', fontSize: '0.9rem', borderBottom: '1px solid rgba(255,23,68,0.2)', backgroundColor: 'rgba(255,23,68,0.05)' }}>
-              ⚠️ {errorMsg}
-            </div>
-          )}
           <pre 
             ref={consoleRef} 
             style={consoleOutputStyle}

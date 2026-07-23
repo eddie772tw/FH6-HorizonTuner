@@ -51,7 +51,6 @@ const DragTestView: React.FC = () => {
   const { convertSpeed, t } = useSettings();
 
   const [status, setStatus] = useState<'idle' | 'waiting' | 'recording' | 'finished'>('idle');
-  const [pointsCount, setPointsCount] = useState(0);
   const [sessionData, setSessionData] = useState<DragPoint[]>([]);
   const [analysis, setAnalysis] = useState<DragAnalysis | null>(null);
   const [activeChart, setActiveChart] = useState<'speed_rpm' | 'slip'>('speed_rpm');
@@ -66,7 +65,9 @@ const DragTestView: React.FC = () => {
 
   // Poll status from backend
   useEffect(() => {
-    // Pure Rust environment status check
+    if (status === 'finished') {
+      fetchData();
+    }
   }, [status]);
 
   const fetchSessionsList = async () => {
@@ -323,7 +324,7 @@ const DragTestView: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff003c', boxShadow: '0 0 8px #ff003c' }} className="pulse-dot" />
                 <span style={{ color: '#ff003c', fontWeight: 700, fontSize: '0.9rem' }}>
-                  {t("RECORDING")} ({pointsCount} pts)
+                  {t("RECORDING")} ({sessionData.length} pts)
                 </span>
               </div>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -403,7 +404,7 @@ const DragTestView: React.FC = () => {
           <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem 2rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Recorded Frames")}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white' }}>{pointsCount}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white' }}>{sessionData.length}</div>
             </div>
             <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ textAlign: 'center' }}>

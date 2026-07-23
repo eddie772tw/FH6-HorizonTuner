@@ -38,8 +38,8 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
           const prefix = `${carId}-`;
           if (lastTuning.startsWith(prefix)) {
             const saveName = lastTuning.substring(prefix.length);
-            const data = await apiClient.getTuningRecord(carId, saveName);
-            if (data && !(data as any).error && data.gearing) {
+            const data = (await apiClient.getTuningRecord(carId, saveName)) as any;
+            if (data && !data.error && data.gearing) {
               setGearingData(data.gearing);
               return;
             }

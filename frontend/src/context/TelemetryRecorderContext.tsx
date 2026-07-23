@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useSettings } from './SettingsContext';
 import { apiClient } from '../services/apiClient';
 
 export interface AnalysisDataPoint {
@@ -43,7 +42,6 @@ interface TelemetryRecorderContextType {
 const TelemetryRecorderContext = createContext<TelemetryRecorderContextType | undefined>(undefined);
 
 export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { settings } = useSettings();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingCount, setRecordingCount] = useState(0);
   const [loadedSession, setLoadedSession] = useState<AnalysisDataPoint[] | null>(null);
@@ -84,6 +82,7 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
       await apiClient.deleteAnalysisSession("latest.json");
       setLoadedSession(null);
       setRecordingCount(0);
+      setIsRecording(false);
     } catch (e) {
       console.error('Failed to clear current session:', e);
     }
