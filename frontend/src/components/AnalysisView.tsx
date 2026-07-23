@@ -505,10 +505,10 @@ const AnalysisView: React.FC = () => {
           <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', flexShrink: 0, marginBottom: '1rem', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ color: 'var(--primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                ⏱️ {t("Telemetry Playback Timeline") || "遙測數據重播時間軸 [開發預留接入點]"}
+                ⏱️ {t("Telemetry Playback Timeline")}
               </h4>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {playbackIndex === -1 ? t("Timeline Inactive") || "重播未啟用" : `${t("Replaying") || "重播中"}: ${activeSession[playbackIndex]?.time.toFixed(1)}s / ${activeSession[activeSession.length - 1]?.time.toFixed(1)}s (Index: ${playbackIndex})`}
+                {playbackIndex === -1 ? t("Timeline Inactive") : `${t("Replaying")}: ${activeSession[playbackIndex]?.time.toFixed(1)}s / ${activeSession[activeSession.length - 1]?.time.toFixed(1)}s (Index: ${playbackIndex})`}
               </span>
             </div>
 
@@ -522,7 +522,7 @@ const AnalysisView: React.FC = () => {
                 className="cyber-btn-glow"
                 style={{ ...btnStyle, background: isPlaying ? 'var(--secondary)' : 'var(--primary)', color: isPlaying ? '#fff' : '#000', width: '100px', flexShrink: 0 }}
               >
-                {isPlaying ? `⏸️ ${t("Pause") || "暫停"}` : `▶️ ${t("Play") || "播放"}`}
+                {isPlaying ? `⏸️ ${t("Pause")}` : `▶️ ${t("Play")}`}
               </button>
 
               {/* Reset/Stop Button */}
@@ -533,12 +533,12 @@ const AnalysisView: React.FC = () => {
                 }}
                 style={{ ...btnStyle, background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }}
               >
-                ⏹️ {t("Reset") || "重置"}
+                ⏹️ {t("Reset")}
               </button>
 
               {/* Playback Speed select */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Speed") || "速度"}:</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Speed")}:</span>
                 <select
                   value={playbackSpeed}
                   onChange={(e) => setPlaybackSpeed(parseInt(e.target.value))}
@@ -580,12 +580,12 @@ const AnalysisView: React.FC = () => {
                   border: '1px solid rgba(255,255,255,0.05)',
                   fontSize: '0.85rem'
                 }}>
-                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Speed") || "時速"}:</span> <strong style={{ color: '#fff' }}>{speedVal.value.toFixed(1)} {speedVal.label}</strong></div>
-                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("RPM") || "轉速"}:</span> <strong style={{ color: 'var(--primary)' }}>{p.CurrentEngineRpm.toFixed(0)} RPM</strong></div>
-                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Gear") || "檔位"}:</span> <strong style={{ color: 'var(--secondary)' }}>{t("G")}{p.Gear}</strong></div>
-                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Throttle") || "油門"}:</span> <strong style={{ color: '#00ff00' }}>{Math.round(p.AccelInput / 2.55)}%</strong></div>
-                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Brake") || "煞車"}:</span> <strong style={{ color: '#ff003c' }}>{Math.round(p.BrakeInput / 2.55)}%</strong></div>
-                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("G-Force") || "G力"}:</span> <strong style={{ color: '#ffaa00' }}>Lat: {(p.AccelerationX / 9.81).toFixed(2)}G | Lon: {(p.AccelerationZ / 9.81).toFixed(2)}G</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Speed")}:</span> <strong style={{ color: '#fff' }}>{speedVal.value.toFixed(1)} {speedVal.label}</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("RPM")}:</span> <strong style={{ color: 'var(--primary)' }}>{p.CurrentEngineRpm.toFixed(0)} RPM</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Gear")}:</span> <strong style={{ color: 'var(--secondary)' }}>{t("G")}{p.Gear}</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Throttle")}:</span> <strong style={{ color: '#00ff00' }}>{Math.round(p.AccelInput / 2.55)}%</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("Brake")}:</span> <strong style={{ color: '#ff003c' }}>{Math.round(p.BrakeInput / 2.55)}%</strong></div>
+                  <div style={{ flex: 1 }}><span style={{ color: 'var(--text-secondary)' }}>{t("G-Force")}:</span> <strong style={{ color: '#ffaa00' }}>Lat: {(p.AccelerationX / 9.81).toFixed(2)}G | Lon: {(p.AccelerationZ / 9.81).toFixed(2)}G</strong></div>
                 </div>
               );
             })()}
@@ -629,7 +629,7 @@ const AnalysisView: React.FC = () => {
                   <Scatter isAnimationActive={false} name="Track Path" data={trackMapData} shape={renderTrackDot} />
                   {playbackIndex !== -1 && currentCarPos.length > 0 && (
                     <Scatter isAnimationActive={false}
-                      name={t("Current Position") || "目前位置"}
+                      name={t("Current Position")}
                       data={currentCarPos}
                       fill="var(--secondary)"
                       shape={(props: any) => {

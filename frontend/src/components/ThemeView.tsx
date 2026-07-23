@@ -10,14 +10,14 @@ const ThemeView: React.FC = () => {
     <div style={{ padding: '2rem', color: 'var(--text-primary)', height: '100%', overflowY: 'auto' }}>
       <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
         <h2 style={{ color: 'var(--primary)', marginBottom: '1.5rem', textShadow: '0 0 10px rgba(0, 240, 255, 0.3)' }}>
-          {t("Theme Settings") || "Theme Settings"}
+          {t("Theme Settings")}
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Color Settings */}
           <div>
             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-              {t("Colors") || "Colors"}
+              {t("Colors")}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -83,7 +83,7 @@ const ThemeView: React.FC = () => {
           {/* Custom CSS Setting */}
           <div>
             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
-              {t("Custom CSS") || "Custom CSS"}
+              {t("Custom CSS")}
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
               Add your own CSS rules to override default styles. These will be injected globally.

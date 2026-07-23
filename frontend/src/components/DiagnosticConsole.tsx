@@ -54,7 +54,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
 
   // Clear logs
   const handleClearLogs = async () => {
-    if (!window.confirm(t("Are you sure you want to clear all logs?") || "確定要清空所有日誌嗎？")) return;
+    if (!window.confirm(t("Are you sure you want to clear all logs?"))) return;
     try {
       await fetch('http://127.0.0.1:8001/api/logs', { method: 'DELETE' });
       setLogs([]);
@@ -98,16 +98,16 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
         {/* Header */}
         <div style={modalHeaderStyle}>
           <h3 style={{ margin: 0, color: 'var(--primary)', textShadow: '0 0 8px rgba(0, 240, 255, 0.4)' }}>
-            💻 {t("Diagnostic Log Console") || "診斷主控台"}
+            💻 {t("Diagnostic Log Console")}
           </h3>
-          <button style={closeBtnStyle} onClick={onClose} aria-label={t("Close Console") || "關閉"}>&times;</button>
+          <button style={closeBtnStyle} onClick={onClose} aria-label={t("Close Console")}>&times;</button>
         </div>
 
         {/* Toolbar */}
         <div style={toolbarStyle}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Log Level") || "日誌層級"}:</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Log Level")}:</span>
               <select 
                 value={level} 
                 onChange={(e) => setLevel(e.target.value)} 
@@ -128,7 +128,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
                 onChange={(e) => setAutoScroll(e.target.checked)} 
                 style={{ accentColor: 'var(--primary)' }}
               />
-              {t("Auto Scroll") || "自動滾動"}
+              {t("Auto Scroll")}
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
@@ -138,7 +138,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
                 onChange={(e) => setIsPaused(e.target.checked)} 
                 style={{ accentColor: 'var(--primary)' }}
               />
-              {t("Pause") || "暫停"}
+              {t("Pause")}
             </label>
           </div>
 
@@ -147,7 +147,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
             className="cyber-btn-glow"
             style={clearBtnStyle}
           >
-            🗑️ {t("Clear Logs") || "清除日誌"}
+            🗑️ {t("Clear Logs")}
           </button>
         </div>
 
@@ -164,7 +164,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
           >
             {logs.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', padding: '20px', textAlign: 'center' }}>
-                -- {t("No log messages matching filter.") || "目前沒有符合篩選條件的日誌。"} --
+                -- {t("No log messages matching filter.")} --
               </div>
             ) : (
               logs.map((entry, idx) => (

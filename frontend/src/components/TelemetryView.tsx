@@ -889,10 +889,10 @@ const TelemetryView: React.FC = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span style={{ fontSize: '1.2rem' }}>⏸️</span>
-            <strong>{t("Telemetry rendering paused (HUD Overlay is active)") || "Telemetry 畫面已暫停渲染 (HUD Overlay 啟用中，節省 CPU/GPU 資源)"}</strong>
+            <strong>{t("Telemetry rendering paused (HUD Overlay is active)")}</strong>
           </div>
           <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-            {t("Can be toggled in HUD Control Panel") || "可在 HUD 控制面板關閉此暫停開關"}
+            {t("Can be toggled in HUD Control Panel")}
           </span>
         </div>
       )}

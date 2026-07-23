@@ -769,12 +769,12 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                     onChange={e => setSelectedRaceGoal(e.target.value)} 
                     style={{ ...inputStyle, width: '280px', border: '1px solid var(--primary)', background: 'black' }}
                   >
-                    <option value="Road">{t("Road & Street (公路與街頭賽事)")}</option>
-                    <option value="Touge">{t("Touge Mountain Pass (日本山道連續彎)")}</option>
-                    <option value="Rally">{t("Rally & Cross Country (拉力與越野路面)")}</option>
-                    <option value="Drift">{t("Drift Zone (開放世界甩尾區間)")}</option>
-                    <option value="SpeedZone">{t("Speed Zone (高下壓力測速區間)")}</option>
-                    <option value="DangerSign">{t("Danger Sign (高飛躍防底盤重擊)")}</option>
+                    <option value="Road">{t("Road & Street")}</option>
+                    <option value="Touge">{t("Touge Mountain Pass")}</option>
+                    <option value="Rally">{t("Rally & Cross Country")}</option>
+                    <option value="Drift">{t("Drift Zone")}</option>
+                    <option value="SpeedZone">{t("Speed Zone")}</option>
+                    <option value="DangerSign">{t("Danger Sign")}</option>
                   </select>
                 </div>
                 <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>

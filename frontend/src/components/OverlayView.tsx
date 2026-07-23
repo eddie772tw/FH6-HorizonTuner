@@ -268,10 +268,10 @@ export const OverlayView: React.FC = () => {
       <div className="cyber-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
         <div>
           <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.6rem', letterSpacing: '1px' }}>
-            {t("HUD Control Panel") || "HUD 儀表板控制中心"}
+            {t("HUD Control Panel")}
           </h2>
           <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-            {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6") || "全螢幕全透明靠右下賽車抬頭顯示儀表 (多顯示器 / 縮放 / 4卡片支援)"}
+            {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6")}
             <br />
             Credits:Paburrito/forza-horizon-6-custom-hud
           </p>
@@ -293,7 +293,7 @@ export const OverlayView: React.FC = () => {
             boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px rgba(0, 240, 255, 0.3)',
           }}
         >
-          {loading ? '...' : config.enabled ? (t("Close HUD Overlay") || "關閉 Horizon Tuner HUD") : (t("Launch HUD Overlay") || "開啟 Horizon Tuner HUD")}
+          {loading ? '...' : config.enabled ? (t("Close HUD Overlay")) : (t("Launch HUD Overlay"))}
         </button>
       </div>
 
@@ -309,11 +309,11 @@ export const OverlayView: React.FC = () => {
         {/* Multi-Monitor Selector & Display Settings */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("Target Display Monitor") || "目標顯示器選擇"}
+            {t("Target Display Monitor")}
           </h3>
           <div style={{ marginTop: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>
-              {t("Select Monitor for HUD Overlay") || "選擇 HUD 展示的螢幕"}
+              {t("Select Monitor for HUD Overlay")}
             </label>
             <select
               value={config.selectedMonitorIndex}
@@ -331,11 +331,11 @@ export const OverlayView: React.FC = () => {
               {monitors.length > 0 ? (
                 monitors.map((m, idx) => (
                   <option key={idx} value={idx}>
-                    {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary") || "主要"}]` : ''}
+                    {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary")}]` : ''}
                   </option>
                 ))
               ) : (
-                <option value={0}>{t("Default Primary Display") || "預設主要顯示器"}</option>
+                <option value={0}>{t("Default Primary Display")}</option>
               )}
             </select>
           </div>
@@ -344,11 +344,11 @@ export const OverlayView: React.FC = () => {
         {/* HUD Scale Slider & Input */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("HUD Scale Size") || "儀表大小縮放設定"}
+            {t("HUD Scale Size")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("HUD Scale Ratio") || "儀表整體比例"}:</span>
+              <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("HUD Scale Ratio")}:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <input
                   type="number"
@@ -386,13 +386,13 @@ export const OverlayView: React.FC = () => {
         {/* Telemetry Cluster Opacity & Scale */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("Central Telemetry Cluster Settings") || "中央遙測儀表叢集設定"}
+            {t("Central Telemetry Cluster Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* Opacity slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Opacity") || "遙測儀表透明度"}:</span>
+                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Opacity")}:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <input
                     type="number"
@@ -428,7 +428,7 @@ export const OverlayView: React.FC = () => {
             {/* Telemetry scale slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Scale Ratio") || "獨立遙測縮放比例"}:</span>
+                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Scale Ratio")}:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <input
                     type="number"
@@ -466,7 +466,7 @@ export const OverlayView: React.FC = () => {
         {/* Style Selection */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("HUD Style Mode") || "儀表板樣式模式"}
+            {t("HUD Style Mode")}
           </h3>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <button
@@ -482,7 +482,7 @@ export const OverlayView: React.FC = () => {
                 fontWeight: 'bold'
               }}
             >
-              {t("Advanced (Race Arc HUD)") || "Advanced 競賽弧形儀表"}
+              {t("Advanced (Race Arc HUD)")}
             </button>
             <button
               onClick={() => handleStyleChange('simple')}
@@ -497,7 +497,7 @@ export const OverlayView: React.FC = () => {
                 fontWeight: 'bold'
               }}
             >
-              {t("Simple (NFSU2 Style Circle)") || "Simple 圓形經典儀表"}
+              {t("Simple (NFSU2 Style Circle)")}
             </button>
           </div>
         </div>
@@ -505,33 +505,33 @@ export const OverlayView: React.FC = () => {
         {/* HUD Elements Options */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("HUD Elements") || "HUD Elements"}
+            {t("HUD Elements")}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginTop: '1rem' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showGauge !== false} onChange={() => handleElementToggle('showGauge')} />
-              <span>{t("Speedometer Gauge") || "右下競賽儀表"}</span>
+              <span>{t("Speedometer Gauge")}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
-              <span>{t("Suspension Travel") || "4 輪懸吊行程"}</span>
+              <span>{t("Suspension Travel")}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleTires} onChange={() => handleElementToggle('showTeleTires')} />
-              <span>{t("Tire Slip & Temp") || "4 輪滑移雷達與胎溫直方圖"}</span>
+              <span>{t("Tire Slip & Temp")}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleAttitude} onChange={() => handleElementToggle('showTeleAttitude')} />
-              <span>{t("G-Force & Attitude") || "車身姿態與 G力雷達圖"}</span>
+              <span>{t("G-Force & Attitude")}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />
-              <span>{t("Throttle & Brake Trace") || "油門與煞車歷程折線圖"}</span>
+              <span>{t("Throttle & Brake Trace")}</span>
             </label>
           </div>
         </div>
@@ -539,7 +539,7 @@ export const OverlayView: React.FC = () => {
         {/* Advanced Performance & System Options */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("Performance & System Options") || "效能與系統選項"}
+            {t("Performance & System Options")}
           </h3>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', marginTop: '0.5rem' }}>
             <input
@@ -551,7 +551,7 @@ export const OverlayView: React.FC = () => {
               }}
             />
             <span style={{ fontSize: '0.9rem', color: '#eee' }}>
-              {t("Pause Telemetry View when HUD is active") || "HUD 啟用期間暫停 Telemetry 頁面渲染 (節省 CPU/GPU 資源)"}
+              {t("Pause Telemetry View when HUD is active")}
             </span>
           </label>
         </div>
@@ -559,10 +559,10 @@ export const OverlayView: React.FC = () => {
         {/* Rev Limiter Auto-learning Database */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("Car Rev Limiter Auto-Learning") || "車輛轉速極限自動學習庫"}
+            {t("Car Rev Limiter Auto-Learning")}
           </h3>
           <p style={{ fontSize: '0.85rem', color: '#aaa', margin: '0.5rem 0' }}>
-            {t("Recorded Car Profiles") || "已學習紀錄的車輛數量"}: <strong style={{ color: 'var(--primary)' }}>{Object.keys(carLearningData).length}</strong>
+            {t("Recorded Car Profiles")}: <strong style={{ color: 'var(--primary)' }}>{Object.keys(carLearningData).length}</strong>
           </p>
           <button
             onClick={handleResetCarLearning}
@@ -576,7 +576,7 @@ export const OverlayView: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            {t("Reset Car Learning Database") || "重置車輛學習資料庫"}
+            {t("Reset Car Learning Database")}
           </button>
         </div>
 

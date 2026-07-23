@@ -43,12 +43,12 @@ const GitInfoBadge: React.FC = () => {
           statusStr = ` (behind ${latestTag})`;
         } else if (compareData.status === "identical") {
           if (!__GIT_COMMIT__.startsWith('post-')) {
-            setGitText(`${__GIT_BRANCH__} (${latestTag})`);
+            setGitTex`${__GIT_BRANCH__} (${latestTag})`;
             return;
           }
         }
 
-        setGitText(`${__GIT_BRANCH__} (${__GIT_COMMIT__})${statusStr}`);
+        setGitTex`${__GIT_BRANCH__} (${__GIT_COMMIT__})${statusStr}`;
       } catch (e) {
         console.warn("Failed to check release status", e);
       }
@@ -135,7 +135,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             onClick={() => setActiveTab('overlay')}
             style={getTabStyle(activeTab === 'overlay')}
           >
-            {t("HUD Overlay") || "HUD 儀表板"}
+            {t("HUD Overlay")}
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
@@ -169,7 +169,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             transition: 'all 0.2s',
           }}
         >
-          {t("Show Logs") || "診斷日誌"}
+          {t("Show Logs")}
         </button>
         <div style={{
           width: '10px', height: '10px', borderRadius: '50%',
