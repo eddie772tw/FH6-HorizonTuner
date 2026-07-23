@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTelemetryRecorder, AnalysisDataPoint, LapSummary } from '../context/TelemetryRecorderContext';
 import { useSettings } from '../context/SettingsContext';
 import TrackMapCanvas from './TrackMapCanvas';
-import { evaluateCustomMath } from '../utils/customMathEngine';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+import { CustomChannelItem } from './CustomChannelEditor';
+import DynamicChartGrid, { ChartSlotConfig, DEFAULT_CHART_SLOTS } from './DynamicChartGrid';
+import ChartEditModal from './ChartEditModal';
 
 type MetricType = 'speed' | 'throttle' | 'brake' | 'grip' | 'suspension';
 
@@ -33,46 +32,92 @@ const AnalysisView: React.FC = () => {
 
   // Laps & Lap Comparison state
   const [lapsList, setLapsList] = useState<LapSummary[]>([]);
-  const [primaryLap, setPrimaryLap] = useState<number>(0); // 0 = All Laps
-  const [compareLap, setCompareLap] = useState<number>(-1); // -1 = None
+  const [primaryLap, setPrimaryLap] = useState<number>(0);
+  const [compareLap, setCompareLap] = useState<number>(-1);
   const [compareSessionData, setCompareSessionData] = useState<AnalysisDataPoint[]>([]);
+  const [fullSessionTrackData, setFullSessionTrackData] = useState<AnalysisDataPoint[]>([]);
 
-  // Custom Math Channel state
-  const [customFormula, setCustomFormula] = useState<string>('Speed * 3.6');
-  const [customFormulaName, setCustomFormulaName] = useState<string>('Speed (km/h)');
-  const [customChannels, setCustomChannels] = useState<Array<{ name: string; formula: string }>>([]);
+  // Custom Math Channels & 4 Chart Slots state
+  const [customChannels, setCustomChannels] = useState<CustomChannelItem[]>([]);
+  const [chartSlots, setChartSlots] = useState<ChartSlotConfig[]>(DEFAULT_CHART_SLOTS);
+  const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
 
-  // Playback Timeline states
+  // Initialized flag for auto-save prevention on first load
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+
+  // Playback Timeline state
   const [playbackIndex] = useState<number>(-1);
 
   // Fetch initial telemetry session & layout config on mount
   useEffect(() => {
     const initData = async () => {
       setIsLoading(true);
-      await fetchCurrentSessionData(primaryLap);
+      const data = await fetchCurrentSessionData(primaryLap);
+      setFullSessionTrackData(data);
+
       const savedConfig = await loadAnalysisConfig();
       if (savedConfig) {
         if (savedConfig.activeMetric) setSelectedMetric(savedConfig.activeMetric as MetricType);
         if (savedConfig.customMathChannels) setCustomChannels(savedConfig.customMathChannels);
+        if (savedConfig.slots && savedConfig.slots.length === 4) {
+          setChartSlots(savedConfig.slots as ChartSlotConfig[]);
+        }
       }
+      setIsConfigLoaded(true);
       setIsLoading(false);
     };
     initData();
   }, []);
 
+  // Silent Debounced Auto-Save Layout Config when state changes
+  useEffect(() => {
+    if (!isConfigLoaded) return;
+    const timer = setTimeout(async () => {
+      const config = {
+        activeMetric: selectedMetric,
+        customMathChannels: customChannels,
+        slots: chartSlots,
+        enabledCharts: ["track_map", "chart_grid"]
+      };
+      await saveAnalysisConfig(config);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [selectedMetric, customChannels, chartSlots, isConfigLoaded]);
+
+  // During Live Recording, periodically (every 5s) fetch full session data to refresh track map base path
+  useEffect(() => {
+    let intervalId: any = null;
+    if (isRecording) {
+      intervalId = setInterval(async () => {
+        const fullPoints = await fetchCurrentSessionData(0);
+        if (fullPoints && fullPoints.length > 0) {
+          setFullSessionTrackData(fullPoints);
+        }
+      }, 5000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isRecording]);
+
   const activeSession = loadedSession || currentSession;
 
-  // Load Lap Summaries when selected Session changes
+  // Load Lap Summaries & Full Track Base Data when selected Session changes
   useEffect(() => {
-    const fetchLaps = async () => {
+    const fetchLapsAndFullTrack = async () => {
       if (selectedFilename !== 'current' && selectedFilename !== 'local') {
         const laps = await loadSessionLaps(selectedFilename);
         setLapsList(laps);
+
+        const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=0`);
+        const data = await res.json();
+        if (Array.isArray(data)) setFullSessionTrackData(data);
       } else {
         setLapsList([]);
       }
     };
-    fetchLaps();
+    fetchLapsAndFullTrack();
   }, [selectedFilename]);
 
   // Load Primary Lap Data when primaryLap dropdown changes
@@ -109,29 +154,6 @@ const AnalysisView: React.FC = () => {
     fetchCompareData();
   }, [compareLap, selectedFilename]);
 
-  // Save Layout Configuration to backend user_configs
-  const handleSaveConfig = async () => {
-    const config = {
-      activeMetric: selectedMetric,
-      customMathChannels: customChannels,
-      enabledCharts: ["track_map", "inputs_gear", "gg_diagram", "slip_scatter", "susp_dist", "temp_dist"]
-    };
-    const ok = await saveAnalysisConfig(config);
-    if (ok) {
-      alert(`${t("Analysis layout config saved to backend!")} (backend/user_configs/analysis_layout.json)`);
-    } else {
-      alert(t("Failed to save layout config."));
-    }
-  };
-
-  const handleAddCustomChannel = () => {
-    if (!customFormulaName || !customFormula) return;
-    const next = [...customChannels, { name: customFormulaName, formula: customFormula }];
-    setCustomChannels(next);
-    setCustomFormulaName('');
-    setCustomFormula('');
-  };
-
   const handleDropdownChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     setSelectedFilename(val);
@@ -164,11 +186,10 @@ const AnalysisView: React.FC = () => {
     }
   };
 
-  // --- Track Map Data for Canvas ---
-  const canvasTrackData = useMemo(() => {
-    if (activeSession.length === 0) return [];
+  const formatTrackCanvasData = (points: AnalysisDataPoint[]) => {
+    if (points.length === 0) return [];
     let metricMax = 0.1;
-    activeSession.forEach(p => {
+    points.forEach(p => {
       let v = p.SpeedMetersPerSecond;
       if (selectedMetric === 'throttle') v = p.AccelInput / 255;
       else if (selectedMetric === 'brake') v = p.BrakeInput / 255;
@@ -177,7 +198,7 @@ const AnalysisView: React.FC = () => {
       if (v > metricMax) metricMax = v;
     });
 
-    return activeSession.map(p => {
+    return points.map(p => {
       let v = p.SpeedMetersPerSecond;
       if (selectedMetric === 'throttle') v = p.AccelInput / 255;
       else if (selectedMetric === 'brake') v = p.BrakeInput / 255;
@@ -191,74 +212,36 @@ const AnalysisView: React.FC = () => {
         raw: p
       };
     });
-  }, [activeSession, selectedMetric]);
+  };
 
-  // --- Lap-by-Lap Delta Comparison Chart Data ---
-  const lapDeltaChartData = useMemo(() => {
-    if (activeSession.length === 0) return [];
-    const step = Math.max(1, Math.floor(activeSession.length / 500));
-    
-    return activeSession.filter((_, idx) => idx % step === 0).map((p, idx) => {
-      const primarySpeedKmh = p.SpeedMetersPerSecond * 3.6;
-      const compareP = compareSessionData[idx] || compareSessionData[compareSessionData.length - 1];
-      const compareSpeedKmh = compareP ? compareP.SpeedMetersPerSecond * 3.6 : 0;
-      const speedDelta = compareP ? primarySpeedKmh - compareSpeedKmh : 0;
+  const activeCanvasData = formatTrackCanvasData(activeSession);
+  const baseCanvasData = formatTrackCanvasData(fullSessionTrackData);
+  const isSavedSession = selectedFilename !== 'current' && selectedFilename !== 'local';
 
-      return {
-        time: p.time,
-        primarySpeed: Number(primarySpeedKmh.toFixed(1)),
-        compareSpeed: Number(compareSpeedKmh.toFixed(1)),
-        speedDelta: Number(speedDelta.toFixed(1)),
-        primaryThrottle: Number(((p.AccelInput / 255) * 100).toFixed(0)),
-        primaryBrake: Number(((p.BrakeInput / 255) * 100).toFixed(0))
-      };
-    });
-  }, [activeSession, compareSessionData]);
-
-  // --- Custom Math Channel Curve Data ---
-  const customMathChartData = useMemo(() => {
-    if (customChannels.length === 0 || activeSession.length === 0) return [];
-    const step = Math.max(1, Math.floor(activeSession.length / 500));
-
-    return activeSession.filter((_, idx) => idx % step === 0).map(p => {
-      const ctx: Record<string, number> = {
-        SpeedMetersPerSecond: p.SpeedMetersPerSecond,
-        CurrentEngineRpm: p.CurrentEngineRpm,
-        Gear: p.Gear,
-        AccelInput: p.AccelInput,
-        BrakeInput: p.BrakeInput,
-        AccelerationX: p.AccelerationX,
-        AccelerationZ: p.AccelerationZ,
-        TireTemp_0: p.TireTemp[0] || 0,
-        TireTemp_1: p.TireTemp[1] || 0,
-        TireTemp_2: p.TireTemp[2] || 0,
-        TireTemp_3: p.TireTemp[3] || 0,
-      };
-
-      const pointObj: Record<string, any> = { time: p.time };
-      customChannels.forEach(ch => {
-        pointObj[ch.name] = Number(evaluateCustomMath(ch.formula, ctx).toFixed(2));
-      });
-      return pointObj;
-    });
-  }, [activeSession, customChannels]);
+  const handleSaveSlotFromModal = (updatedSlot: ChartSlotConfig) => {
+    if (editingSlotIndex !== null) {
+      const nextSlots = [...chartSlots];
+      nextSlots[editingSlotIndex] = updatedSlot;
+      setChartSlots(nextSlots);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
       
-      {/* Toolbar */}
+      {/* Toolbar - Pure Title Without MoTeC Aligned */}
       <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', flexShrink: 0 }}>
         <div>
-          <h2 style={{ color: 'var(--primary)', marginBottom: '0.3rem' }}>{t("Post-Race Analysis (MoTeC Aligned)")}</h2>
+          <h2 style={{ color: 'var(--primary)', marginBottom: '0.3rem' }}>{t("Post-Race Analysis")}</h2>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
             {t("Status")}: {isRecording ? (
               <span style={{ color: '#ff003c', fontWeight: 'bold' }}>
-                🔴 {t("Recording...")} ({recordingCount} {t("samples")})
+                {t("Recording...")} ({recordingCount} {t("samples")})
               </span>
             ) : (
               `${t("Idle")} (${activeSession.length} ${t("samples")})`
             )}
-            {selectedFilename !== 'current' && selectedFilename !== 'local' && ` | 📁 ${t("Loaded Session")}: ${selectedFilename}`}
+            {selectedFilename !== 'current' && selectedFilename !== 'local' && ` | ${t("Loaded Session")}: ${selectedFilename}`}
           </div>
         </div>
         
@@ -309,12 +292,7 @@ const AnalysisView: React.FC = () => {
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
             {/* MoTeC CSV Export Button */}
             <button onClick={() => exportMoTecCsv(selectedFilename)} style={{ ...btnStyle, background: '#7000ff', color: '#fff' }}>
-              📥 MoTeC CSV {t("Export")}
-            </button>
-
-            {/* Save Layout Config Button */}
-            <button onClick={handleSaveConfig} style={{ ...btnStyle, background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
-              💾 {t("Save Layout Config")}
+              MoTeC CSV {t("Export")}
             </button>
 
             {/* Delete Session Button */}
@@ -337,98 +315,59 @@ const AnalysisView: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Main Display Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(48%, 1fr))', gap: '1rem', paddingBottom: '2rem' }}>
-            
-            {/* 1. Track Map Canvas (RDP Vector Line) */}
-            <div className="glass-panel" style={{ gridColumn: 'span 2', minHeight: '420px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h4 style={{ color: 'var(--text-primary)', margin: 0 }}>📍 {t("Track Map (RDP Vector Path)")}</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Metric")}:</span>
-                  <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value as MetricType)} style={selectStyle}>
-                    <option value="speed">{t("Speed")}</option>
-                    <option value="throttle">{t("Throttle")}</option>
-                    <option value="brake">{t("Brake")}</option>
-                    <option value="grip">{t("Grip Slip")}</option>
-                    <option value="suspension">{t("Suspension")}</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ flex: 1, position: 'relative', minHeight: '350px' }}>
-                <TrackMapCanvas data={canvasTrackData} currentPlaybackIndex={playbackIndex} selectedMetricLabel={selectedMetric} />
+          {/* Track Map Canvas Section */}
+          <div className="glass-panel" style={{ minHeight: '420px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', padding: '0.5rem 1rem' }}>
+              <h4 style={{ color: 'var(--text-primary)', margin: 0 }}>{t("Track Map")}</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Metric")}:</span>
+                <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value as MetricType)} style={selectStyle}>
+                  <option value="speed">{t("Speed")}</option>
+                  <option value="throttle">{t("Throttle")}</option>
+                  <option value="brake">{t("Brake")}</option>
+                  <option value="grip">{t("Grip Slip")}</option>
+                  <option value="suspension">{t("Suspension")}</option>
+                </select>
               </div>
             </div>
-
-            {/* 2. Lap-by-Lap Delta Comparison Chart */}
-            <ChartWidget title={`⚡ ${t("Lap Delta & Speed Comparison")} ${compareLap > 0 ? `(Lap ${primaryLap || 'All'} vs Lap ${compareLap})` : ''}`}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lapDeltaChartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="time" stroke="var(--text-secondary)" tick={{fontSize: 10}} label={{ value: t('Time (s)'), position: 'insideBottomRight', offset: -5 }} />
-                  <YAxis yAxisId="left" stroke="var(--text-secondary)" tick={{fontSize: 10}} label={{ value: 'km/h', angle: -90, position: 'insideLeft' }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#ff003c" tick={{fontSize: 10}} label={{ value: 'Delta (km/h)', angle: 90, position: 'insideRight' }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
-                  <Legend verticalAlign="top" height={36}/>
-                  <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="primarySpeed" name={`Lap ${primaryLap || 'Primary'} Speed`} stroke="#00ff00" dot={false} strokeWidth={2} />
-                  {compareLap > 0 && (
-                    <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="compareSpeed" name={`Lap ${compareLap} Speed`} stroke="#00f0ff" dot={false} strokeWidth={2} strokeDasharray="4 4" />
-                  )}
-                  {compareLap > 0 && (
-                    <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="speedDelta" name="Speed Delta" stroke="#ff003c" dot={false} strokeWidth={1.5} />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWidget>
-
-            {/* 3. Custom Channel Formula Builder & Chart */}
-            <ChartWidget title={`🧮 ${t("Custom Math Channel Chart")}`}>
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                <input
-                  type="text"
-                  placeholder="Channel Name (e.g. DeltaG)"
-                  value={customFormulaName}
-                  onChange={(e) => setCustomFormulaName(e.target.value)}
-                  style={{ ...selectStyle, flex: 1, minWidth: 0 }}
-                />
-                <input
-                  type="text"
-                  placeholder="Formula (e.g. AccelInput - BrakeInput)"
-                  value={customFormula}
-                  onChange={(e) => setCustomFormula(e.target.value)}
-                  style={{ ...selectStyle, flex: 2, minWidth: 0 }}
-                />
-                <button onClick={handleAddCustomChannel} style={{ ...btnStyle, padding: '0.3rem 0.6rem' }}>+</button>
-              </div>
-              <ResponsiveContainer width="100%" height="80%">
-                <LineChart data={customMathChartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="time" stroke="var(--text-secondary)" tick={{fontSize: 10}} />
-                  <YAxis stroke="var(--text-secondary)" tick={{fontSize: 10}} />
-                  <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
-                  <Legend verticalAlign="top" height={36}/>
-                  {customChannels.map((ch, idx) => (
-                    <Line key={ch.name} isAnimationActive={false} type="monotone" dataKey={ch.name} name={ch.name} stroke={idx % 2 === 0 ? '#ffaa00' : '#7000ff'} dot={false} strokeWidth={1.5} />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWidget>
-
+            <div style={{ flex: 1, position: 'relative', minHeight: '350px' }}>
+              <TrackMapCanvas
+                data={activeCanvasData}
+                fullTrackData={baseCanvasData}
+                currentPlaybackIndex={playbackIndex}
+                selectedMetricLabel={selectedMetric}
+                isRecording={isRecording}
+                isSavedSession={isSavedSession}
+              />
+            </div>
           </div>
+
+          {/* 4 Customizable Multi-Dimensional Chart Slots Grid */}
+          <DynamicChartGrid
+            slots={chartSlots}
+            onOpenEditModal={(idx) => setEditingSlotIndex(idx)}
+            activeSession={activeSession}
+            compareSessionData={compareSessionData}
+            customChannels={customChannels}
+            isRecording={isRecording}
+          />
         </>
+      )}
+
+      {/* Chart Edit Modal with Multi-Chart Type Preview */}
+      {editingSlotIndex !== null && chartSlots[editingSlotIndex] && (
+        <ChartEditModal
+          slot={chartSlots[editingSlotIndex]}
+          isOpen={editingSlotIndex !== null}
+          onClose={() => setEditingSlotIndex(null)}
+          onSaveSlot={handleSaveSlotFromModal}
+          customChannels={customChannels}
+          sampleData={activeSession}
+        />
       )}
     </div>
   );
 };
-
-const ChartWidget: React.FC<{ title: string, children: React.ReactNode, height?: string }> = ({ title, children, height = '360px' }) => (
-  <div className="glass-panel" style={{ height, display: 'flex', flexDirection: 'column', padding: '1.2rem' }}>
-    <h4 style={{ marginBottom: '0.8rem', color: 'var(--text-primary)', marginTop: 0, fontSize: '0.95rem' }}>{title}</h4>
-    <div style={{ flex: 1, minHeight: 0 }}>
-      {children}
-    </div>
-  </div>
-);
 
 const btnStyle: React.CSSProperties = {
   background: 'var(--primary)',

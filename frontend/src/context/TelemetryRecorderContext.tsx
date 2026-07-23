@@ -43,6 +43,19 @@ export interface LapSummary {
 export interface AnalysisLayoutConfig {
   activeMetric: string;
   customMathChannels: Array<{ name: string; formula: string }>;
+  slots?: Array<{
+    id: string;
+    title: string;
+    domain: 'time' | 'distance' | 'lap';
+    channels: Array<{
+      id: string;
+      name: string;
+      formula: string;
+      color: string;
+      strokeWidth: number;
+      isDashed: boolean;
+    }>;
+  }>;
   enabledCharts: string[];
 }
 

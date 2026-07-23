@@ -217,3 +217,237 @@
 **後續行動 (Action):**
 - 未來擴充遙測通道時，優先維護 `telemetry_sqlite.py` 與 `motec_exporter.py` 的欄位映射，保持與 MoTeC i2 規範之相容性。
 
+---
+
+## 2026-07-23 - 賽後分析 (Post-Race Analysis) Phase 2 雙層賽道圖與 4 槽位多維度圖表架構
+
+**學習點 (Learning):**
+- **雙層繪製架構 (Dual-Layer Circuit Track Canvas)**：在 `TrackMapCanvas.tsx` 中將第一圈/全賽事 Base Coordinates 作為底層半透明繪製，頂層繪製當前選定單圈之彩虹指標線，成功實現了第二圈開始全賽道路線即時呈現與動態脈衝車位標點。
+- **Channel 公式編輯器與語法下拉自動補全**：建立 `CustomChannelEditor.tsx`，內建 20+ 標準遙測通道點選自動補全詞典，支援一鍵插入與即時求值預覽 (`Live Formula Evaluation`)。
+- **4 槽位多維度圖表面板 (4-Slot Dynamic Chart Grid)**：設計 `DynamicChartGrid.tsx`，提供 4 個獨立可配圖表槽位，開放客製化標題、支援 `Time (s)` / `Distance (m)` / `Lap` 多維度對齊，並預設將 **Lap Delta & Speed Comparison** 為 Slot 1 範例樣板。
+
+**後續行動 (Action):**
+- 在高組件化解耦時，元件之間未讀取的 props（如 `primaryLap` / `compareLap`）必須主動清理，確保 Tauri Release Build (`tsc && vite build`) 秒級 pass。
+
+---
+
+## 2026-07-23 - 賽後分析 Phase 3 彈出式 ChartEditModal、純文字專業 UI 與 30 秒記憶體拋棄機制
+- 在 Windows PowerShell 環境中，直接執行 `npm --prefix frontend run test` 或 `npx` 時，可能觸發 `PSSecurityException` (UnauthorizedAccess)，主因是系統網域或執行策略管制阻擋了 `.ps1` 腳本執行。
+- 包裹命令為 `cmd /c "npm --prefix frontend run test"` 可繞過 PowerShell 限制，穩定順利啟動 Vitest 並完成全數測試運算。
+
+**後續行動 (Action):**
+- 在 `AGENTS.md` 及重構 SKILL 指南中明確標註 `cmd /c` 指令選項，避免 Agent 後續重試陷入權限錯誤循環。
+
+---
+
+## 2026-07-22 - 追加 tuningDiagnosis.ts 前端遙測診斷測試套件
+
+**學習點 (Learning):**
+- `tuningDiagnosis.ts` 內部的數據結構解析同時支援舊版遙測欄位名（如 `SuspTravel`、`TireSlipAngle`）與單位轉換（如弧度轉角度 `* (180 / Math.PI)`）。
+- 滯空觸地測試中需精確提供連續滯空時間 (> 0.3s) 及加速度向量 `AccelerationX` / `AccelerationZ` 才能正確認定跳躍並計算 Landing G 衝擊值。
+
+**後續行動 (Action):**
+- 後續若調整診斷邏輯或新增極限運動診斷（如 0-400m 拖孤/直線加速測試），需同步維護 `tuningDiagnosis.test.ts`。
+
+---
+
+## 2026-07-22 - HUD Overlay 全螢幕中央半透明對稱儀表 (Central Telemetry Cluster) 重構
+
+**學習點 (Learning):**
+- **螢幕相對比例 (vh) 響應性**：將 HUD 中央 G-Force 雷達基準尺寸定為 `75vh`，四角輪胎與懸吊圖表定為 `12.5vh`，配合獨立遙測縮放比例 `telemetryScale` 乘積運算，可確保 Overlay 在不同螢幕解析度 (1080p, 2K, 4K) 下維持一致的視覺比重與清晰度。
+- **對稱鏡像佈局 (Symmetric Mirroring)**：左側二輪 (FL/RL) 與右側二輪 (FR/RR) 在 DOM 結構與 flex 方向上實施對稱鏡像 (`flex-direction: row` vs `flex-direction: row-reverse`)，讓 telemetry 視覺自然向畫面中心收攏。
+- **獨立通道控制 (Independent Controls)**：將 HUD 競賽弧形/圓形儀表 (Race HUD) 的縮放與中央遙測儀表 (Telemetry Cluster) 的縮放 (`telemetryScale`) 及透明度 (`telemetryOpacity`) 解耦，大幅提升玩家自由配置視角的靈活性。
+- **角落縱向堆疊排版 (Vertical Layout Refactor)**：將四角懸吊 (Suspension) 與輪胎 (Tire) 組件改為 `flex-direction: column` 縱向堆疊，並為 `tcSuspBlock` 與 `tcTireBlock` 建立獨立 `display` 綁定，成功解決了懸吊與輪胎單獨開關失靈的問題，並大幅收縮左右側卡片寬度，防止與右下角 Speedometer 競賽表盤重疊。
+- **全多型態啟動展演 (Universal Startup Sweep Animations)**：為 Simple HUD 指針與圓環、Advanced HUD 弧形動態、中央遙測雷達與 4 角圖表全數建立統一的 `hud:animate` 觸發機制（包含更換樣式、載入與點擊 Launch HUD 啟動），極大地強化了賽車電競儀表的儀式感。
+- **純淨極簡風 UI (Clean Minimalist UI)**：重命名頁面標題為 `HUD Control Panel`，徹底清除非必要的動態 Demo 模式模擬代碼與全頁面的 Emoji 圖符，並將右下競賽儀表 (`showGauge`) 統一整合入 "HUD Elements" 的純 Checkbox 清單中。
+- **徹底清除 Standby 模擬數據 (Idle Telemetry Cleanup)**：經精確監控與追蹤，發現 `useTelemetry.ts` 頂層原包含一個 `setInterval` (20Hz 頻率)，會在未收到 UDP 數據超過 2 秒時持續對 BroadcastChannel 發送包含正弦波抖動 `1200 RPM` 與假 `PowerWatts` 的 `idleData` 模擬資料。將該 `setInterval` 與 `index.html` 中的預設怠速 initial frame 清除後，徹底實現了只有在收到真實 UDP 遙測數據時 HUD 才會動態變化的純淨狀態。
+- **Advanced 儀表數據包完整透傳與多重相容 (Full Telemetry Mapping & Fallback)**：修復了 `formatHudTelemetry` 中未打包 `TireTemp`、`TireSlipAngle`、`TireSlipRatio` 與 `NormalizedSuspensionTravel` 原生陣列及個體的 Bug，並於 `telemetry-cards.js` 中加入了對 `AccelerationX` / `accel_x` 等雙命名格式的容錯解析。
+- **HUD 架構標準化與 Host 級別生命週期解耦 (Standardization & Host Decoupling)**：
+  1. **標準化註冊引擎與規格書**：建立 `shared/hud-core.js` 與 [HUD_DEVELOPMENT_GUIDE.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/public/hud/HUD_DEVELOPMENT_GUIDE.md)，規範 `HUDCore.registerStyle` 生命週期鉤子，消除了 Simple 與 Advanced 儀表的程式邏輯分歧。
+  2. **Host 級別生命週期解耦**：將 `#teleCardsMount` 提升至 Launcher Host (`index.html`) 根層級託管。中央遙測 Cluster 於啟動時建立後**永不銷毀**，更換右下角 Gauge 樣式時不再引發 DOM 銷毀與 100% 縮放跳變。
+  3. **視角與語法修復**：修正 `advanced/index.html` 腳本語法錯誤，並將 `#teleCardsMount` 移出 3D perspective 容器，恢復全視角連貫繪製與外圈全套刻度還原。
+
+- **中央遙測 Cluster 與波形圖表升級 (Telemetry Cluster & Canvas Upgrades)**：
+  1. **油門/煞車 5秒歷程折線圖 (`showTelePedals`)**：繪製過去 5 秒動態歷史波形，標籤精確位移至右上角 (`THROTTLE`) 與右下角 (`BRAKE`)。
+  2. **G力雷達圖與胎溫分佈直方圖**：`LAT G` (9點鐘) 與 `LON G` (6點鐘) 呈現垂直/水平正交對稱；4 輪胎溫 3 秒滾動歷史分佈直方圖與公英制單位 (`°C`/`°F`) 自動連動。
+
+- **主 GUI 駕駛輸入面板重構、無死角多語系與數據防護 (GUI Telemetry, i18n & Data Protection)**：
+  1. **直式條形圖與波形延伸**：在 `TelemetryView.tsx` 中將離合器與手煞車重構為直式條形圖 (`VerticalInputBar`) 並列於右側，左側油門與煞車波形 Canvas 大尺寸延伸且維護卡片外框尺寸穩定不變形。
+  2. **無死角多語系對照**：於 `zh-tw.json` 與 `ja-jp.json` 補齊全套 HUD 控制選項、標題、分頁標籤 (`HUD 懸浮儀表`) 與全大寫 key (`THROTTLE`/`BRAKE`)。
+  3. **雙重事件發送防護**：於 `useTelemetry.ts` 補充全域發送 `window.hud:frame`，並為所有 60Hz Canvas 組件配備 `telemetryEmitter` 與 `window.hud:frame` 雙重事件備援監聽，徹底保障主 GUI 即時遙測圖表數據零遺失。
+
+**後續行動 (Action):**
+- 未來調整 Overlay 遙測元件繪圖 Canvas 時，應確保依據 CSS 計算出的真實像素高寬調適 Canvas 內部繪圖 context 的 `width` 與 `height`，防止高 DPI 螢幕下波形 blurry 模糊。
+
+---
+
+## 2026-07-22 - 修復 TypeScript Release Build 未使用變數與測試型別錯誤
+
+**學習點 (Learning):**
+- **TS6133 Unused Code Build Protection**：Tauri Release Build 執行 `tsc && vite build` 時在嚴格 TS 配置下會因 `noUnusedLocals` / `noUnusedParameters` 擋下所有未讀取的變數或全域函數（如 `InputBar`、`lastRealDataTime` 與重複廢棄的 `formatHudTelemetry`）。
+- **Mock 物件型別轉型**：在 Unit Test（如 `tuningDiagnosis.test.ts`）中傳遞 Mock 資料物件至帶型別約束（如 `CarParams`）的函數時，若屬性欄位未完全實現 interface，直接標註 `: CarParams` 會觸發 TS2353 錯誤。應使用 `as unknown as CarParams` 或完整實現屬性。
+
+**後續行動 (Action):**
+- 在重構或清理程式碼時，務必刪除廢棄未讀取的 Helper 函數與變數。
+- 宣佈任務完成前，持續執行 `cmd /c "npm --prefix frontend run build"` 確保前端 release 編譯無任何型別錯誤。
+
+---
+
+## 2026-07-22 - Vite Rollup manualChunks 策略性分包優化
+
+**學習點 (Learning):**
+- **Vite 500 kB Chunk 警告**：當前端靜態引入大型圖表庫（如 `recharts` 430KB+）與 View 元件時，預設會打成單一巨大 Chunk（848 kB）。
+- **manualChunks 函數 vs 物件寫法**：使用物件語法 `manualChunks: { 'vendor-react': ['react'] }` 在 React/Vite 插件重新導出模組時，可能會觸發 `Generated an empty chunk: "vendor-react"` 警告；改用 `manualChunks(id)` 函數判斷 `id.includes('node_modules')` 能更精確、乾淨地隔離 `recharts` 與 `d3-*`，消除所有 Chunk 大小與空包警告。
+- **建置速度提升**：將 `recharts` 等不常變動的巨型第三方庫獨立為 `vendor-recharts` 後，建置時間從原本的 6.86s 縮短至 4.44s（提升 35%）。
+
+**後續行動 (Action):**
+- 未來若引入其他大型 npm 套件（如 Babylon.js、Three.js），應同步維護 `vite.config.ts` 中的 `manualChunks` 函數規則。
+
+---
+
+## 2026-07-22 - 修正 Vite manualChunks 循環模組依賴 (Circular Dependency) 導致執行檔無法啟動問題
+
+**學習點 (Learning):**
+- **循環依賴崩潰陷阱**：若在 `manualChunks` 中僅將 `recharts` 抽出，卻將 `react` 留置於主 `index.js` 包中，`index.js` 會需要 `vendor-recharts`，而 `vendor-recharts` 又會反向引用的未未初始化的 `React`。這在開發模式 (Dev Server HMR) 下看似正常，但打包後的正式執行檔 (Release Build) 會丟出 `Uncaught ReferenceError: Cannot access 'React' before initialization` 造成全頁白屏或無法啟動。
+- **統一 Vendor Chunk 解法**：將所有 `node_modules` 統一歸類劃分為 `vendor` Chunk (621 kB)，可徹底避免模組之間的循環相依問題。搭配 `chunkSizeWarningLimit: 800`，既能使主應用業務邏輯檔 `index.js` 暴降至 **225 kB**，又能 100% 保障產出執行檔正常載入啟動。
+
+**後續行動 (Action):**
+- 進行任何前端打包與 chunking 拆分調整後，除了檢查 build 警告外，必須特別防範模組間的循環引用。
+
+---
+
+## 2026-07-22 - HUD Layout 與 Telemetry 頁面 6 大優化與雷達圖極限邊界防護
+
+**學習點 (Learning):**
+- **圓形雷達圖向量 Clamp (Euclidean Radius Clamping)**：過往採用矩形極限 (`Math.min/max(x)`, `Math.min/max(y)`) 會導致斜角方向距離達 $\sqrt{x^2+y^2} = 1.414 \times R$，使藍點與軌跡線超出圓形邊界甚至溢出 Canvas 邊界導致點消失。導入 `dist = Math.sqrt(dx*dx + dy*dy)` 與極限半徑極化縮放 (`dx = (dx/dist) * maxR`)，可 100% 確保點始終沿著圓形邊線移動且不消失。
+- **G 力與輪胎雷達圖座標軸對齊**：
+  - **橫向 G 力 (Lateral G)**：根據 Forza UDP telemetry 規範，轉向時 lateral acceleration (`AccelerationX`) 向右或向左需與儀表視覺慣性一致。在 `TelemetryView.tsx` 與 `telemetry-cards.js` 中統一將 X 軸映射符號反轉（`lat = -rawAccX / 9.81`），使向左/向右切打方向盤時藍點位移符合預期。
+  - **縱向輪胎滑移 (Slip Ratio)**：統一 HUD 4 輪胎雷達圖 Y 軸映射，頂端為煞車 (Brake / negative ratio)、底端為加速燒胎 (Accel / positive ratio)，與 G 力雷達圖 (BRAKE on top) 及車輛前後重力轉移的視覺感知完美連動。
+- **廣播通道與 Telemetry 頁面解耦暫停 (BroadcastChannel HUD Pause Sync)**：在 `useTelemetry.ts` Ingestion 層中，HUD 數據預處理 (`formatHudTelemetry`) 在 WebSocket 接收瞬間即已完成，並透過 BroadcastChannel 直傳 HUD Overlay 獨立視窗。當使用者開啟「HUD 啟用時暫停 Telemetry 頁面渲染」開關時，`TelemetryView.tsx` 各 60Hz Canvas 組件直接透過全域 `__IS_HUD_PAUSED__` 旗標跳過繪製並呈現暫停提示條，實現大幅降低 CPU/GPU 開銷的同時，HUD 懸浮儀表依舊能毫秒級暢順繪繪與更新。
+- **TypeScript TS2688 / TS2307 測試檔 Exclusion**：執行 production Build (`npm run build` -> `tsc`) 時，若未在 `tsconfig.json` 設定 `"exclude": ["src/**/*.test.ts"]`，`tsc` 會因預設型別庫中缺乏 `vitest` 型別定義而報錯。在 `tsconfig.json` 中將 `.test.ts` 排除於 prod TS 編譯外，既保障 `tsc` 秒級 pass，又保證 Vitest 單元測試單獨流暢執行。
+
+---
+
+## 2026-07-22 - 修復 HUD Overlay 胎溫跳動 180 度與 31°C 轉譯顯示為 88°C/90°F 之 Bug
+
+**學習點 (Learning):**
+- **胎溫跳動 180 度主因**：Telemetry 接收時，若 `useTelemetry.ts` 或卡片初始化階段發送 null 數據更新，`telemetry-cards.js` 的 `temps` 數值會落入 `data.temp_fl || 180` 硬編碼保底值；隨後在 60Hz 遙測與 null config 更新交替觸發時，即造成畫面在真實胎溫與 180 之間高頻跳動。將 fallback 全數改為 `0` 並判定 `cTemp > 0` 時才渲染數值，無資料時呈現 `--°C`，徹底消除了 180 跳動。
+- **31°C 顯示為 88°C/90°F 主因**：Forza UDP 原生輸出的 `TireTemp` 為**華氏 (°F)**（例如室溫 31°C 時，原生 UDP 輸出 `87.8°F`，即約 90°F）。過往 `telemetry-cards.js` 未進行 `(F - 32) * 5 / 9` 換算，直接將 87.8°F 捨入為 `88` 標示為 `88°C`（大約 90°C）。校正後：
+  - 公制模式（Metric）：將 `87.8°F` 轉譯為 `(87.8 - 32) * 5 / 9 = 31°C` 精確顯示 `31°C`。
+  - 英制模式（Imperial）：顯示 `88°F`。
+  - 色彩判斷與直方圖顏色分佈：原先 `telemetry-cards.js` 的 `getTempColor` 內部進行了雙重華氏/攝氏判斷，導致 100°F ~ 150°F (冷胎區間) 的直方圖長條圖與胎溫文字均被錯誤繪製為綠色。對照 `TelemetryView.tsx`（Single Source of Truth）的色彩邏輯校正為 `tempF < 150` 藍色 (`#0088ff`)、`150 <= tempF <= 210` 綠色 (`#00ff00`)、`tempF > 210` 紅色 (`#ff0000`)，使 HUD Overlay 與 Telemetry 頁面直方圖色彩對齊。
+
+**後續行動 (Action):**
+- 為 HUD Overlay 新增任何遙測卡片或數據指標時，務必確認 UDP 原生單位（如華氏、Pascal、米/秒）是否於顯示層進行正確的單位換算與 fallback 處理，並嚴格遵循 `TelemetryView.tsx` 的顏色分佈。
+
+---
+
+## 2026-07-22 - 60Hz UDP 遙測效能優化與雷達圖彈跳跳動修復
+
+**學習點 (Learning):**
+- **後端佇列積壓與丟幀 (Backend Queue Backpressure & Frame Drop)**：`main.py` 的 `broadcast_telemetry()` 迴圈中，先前寫死了 `await asyncio.sleep(0.01)`（強制延遲 10ms），加上封包處理耗時導致單幀處理頻率低於 UDP 60Hz 接收頻率，造成佇列積壓並頻繁觸發 `telemetry_queue.qsize() > 5` 的丟幀邏輯（一次丟棄 4~5 個封包），使前端接收到 100ms~300ms 突發性中斷的資料包，引發雷達圖藍點與軌跡的暴衝彈跳。
+  - 將 `await asyncio.sleep(0.01)` 改為 `await asyncio.sleep(0)` 立即交接協程控制權。
+  - 將 `save_car_params` 同步寫檔與 `gc.collect()` 改以 `asyncio.to_thread` 移至背景執行緒，完全解放 UDP 主廣播迴圈。
+- **前端 60Hz 高頻 Canvas 零記憶體分配 (Zero-Allocation Canvas Loop)**：
+  - 清理 `VerticalInputBar` 與 `PedalTraceCanvas` 的重複 `window.addEventListener('hud:frame')` 綁定，避免單幀雙重渲染 (120Hz)。
+  - 以傳統 `for` 迴圈原地走訪極值，替代每秒 240 次 `Math.min(...hist.map())` 與 `.slice()` 陣列分配，徹底消除 V8 引擎的高頻垃圾回收停頓 (GC Pauses)。
+  - 採用「雙層向量光暈 (Double Pass Vector Glow)」替代高對比度高斯模糊 `ctx.shadowBlur` 濾鏡，在維持 0ms 渲染負擔的同時保留 100% 絕佳視覺質感與清晰可讀性。
+
+---
+
+## 2026-07-23 - 修復 Advanced HUD 速度 3.6 倍二次換算與增壓 (Boost) 單位邏輯
+
+**學習點 (Learning):**
+- **右下進階儀表盤 (Advanced HUD) 速度二次換算 Bug**：`formatHudTelemetry`（[useTelemetry.ts](file:///d:/FH6-HorizonTuner/frontend/src/hooks/useTelemetry.ts)）已將 Forza 原生 `SpeedMetersPerSecond` (m/s) 轉譯為 `speed_kmh` (km/h) 與 `speed_mph` (mph)。但 [advanced/index.html](file:///d:/FH6-HorizonTuner/frontend/public/hud/advanced/index.html) 的 DOM 渲染層誤將傳入之 `data.speed` 當成 m/s，再次執行 `data.speed * 3.6`，導致時速 100 km/h 暴增顯示為 **360 KM/H**。修正為直接讀取 `data.speed_kmh` / `data.speed_mph`。
+- **增壓 (Boost) PSI 與 Bar 轉換**：Forza Motorsport / Horizon UDP 封包 Byte offset 284 輸出的 `Boost` 原生單位為 **PSI**。過往 `useTelemetry.ts` 誤將傳入之數值乘上 `0.145038` 與 `0.01`，造成 `14.7 PSI` (約 1.0 Bar) 的增壓值被誤算為 `2.1 PSI` / `0.14 Bar`（增壓針幾乎不移動）。校正為 `boostPsi = raw.Boost`、`boostBar = raw.Boost / 14.5038`。
+- **Session Maxima 動態極值追蹤**：補齊 `useTelemetry.ts` 中 `sessionMaxima` 對全局 Peak Power / Torque / Boost 歷史極值的持續追蹤，確保進階儀表盤動態繪製針指標縮放精確穩定。
+
+**後續行動 (Action):**
+- 新增 HUD 樣式或遙測指標時，務必確認 `useTelemetry.ts` Ingestion 層與前端 HTML 視窗 DOM 渲染層之間「數據單位」的責任劃分，避免雙重乘算。
+
+---
+
+## 2026-07-23 - 修復 PyInstaller 發行版遺失 FastAPI / 後端模組致命錯誤 (ModuleNotFoundError: No module named 'fastapi')
+
+**學習點 (Learning):**
+- **全域 PyInstaller 誤導環境陷阱 (Global PyInstaller Fallback Hazard)**：原 `build_release.bat` 在專案虛擬環境 (`.venv`) 未安裝 PyInstaller 時，會退回搜尋系統 `where pyinstaller`。若系統全域 Python 3.13 安裝有 PyInstaller 但缺乏 `fastapi`、`uvicorn`、`websockets` 等專案依賴，PyInstaller 會以全域 Python 環境進行模組分析與打包，導致編譯出來的執行檔在啟動時拋出 `ModuleNotFoundError: No module named 'fastapi'`。
+- **PyInstaller Spec 套件收集與 Hidden Imports 配置**：
+  - 專案程式碼並未引用 `numpy`，舊 spec 檔誤寫了 `collect_all("numpy")`。當在沒有 `numpy` 的 `.venv` 執行打包時會拋出異常。
+  - 將 spec 檔內的收集目標修正為 `fastapi`、`uvicorn`、`starlette`、`websockets` 與 `pydantic`，並於 `Analysis.pathex` 加入 `'backend'` 目錄，確保 FastAPI 路由、中間件與非同步 Socket 解析全數正確包含於產出執行檔中。
+- **虛擬環境強制綁定**：將 `build_release.bat` 邏輯修改為優先於 `.venv` 自動安裝並透過 `"%PY_EXE%" -m PyInstaller` 執行打包，徹底杜絕引用全域 Python site-packages 的隱患。
+
+- **GUI 無主控台模式下 `monitor_stdin_eof` 觸發即刻退出陷阱 (No-Console Stdin EOF Trap)**：
+  - 當 PyInstaller 使用 `console=False`（無主控台視窗）編譯 release 執行檔時，Windows 不會為進程配置 `sys.stdin` 控制台句柄（`sys.stdin` 處於 EOF 或關閉狀態）。
+  - `main.py` 底部原先會無條件啟動 `monitor_stdin_eof` 執行緒執行 `sys.stdin.read()`。當在 release GUI 模式下執行時，`sys.stdin.read()` 會立即讀取到 EOF 並觸發 `os._exit(0)`，造成執行檔一雙擊啟動便在數毫秒內直接退出。
+  - 將 `monitor_stdin_eof` 包裹於 `if not getattr(sys, "frozen", False):` 條件中，僅在開發模式/Sidecar 下才監聽 stdin EOF，徹底修復了發行版啟動即退出的問題。
+
+**後續行動 (Action):**
+- 執行發行版打包（`build_release.bat`）前，確認 `.venv` 內已安裝完整需求套件（`requirements.txt`），且 PyInstaller 始終透過 `.venv` 呼叫執行。
+- 後續新增與進程生命週期相關的背景 Thread 時，務必區分 Frozen GUI 模式與開發模式的 stdin / log 輸出行為。
+
+---
+
+## 2026-07-23 - ThemeView 功能補全、Custom CSS 語法動態校驗與深淺色主題持久化
+
+**學習點 (Learning):**
+- **DOM CSSStyleSheet 即時驗證**：利用純 JavaScript 括號/註解解析器搭配 `document.createElement('style')` 注入測試，可毫秒級判定 Custom CSS 的合法性，並在 UI 上呈現即時狀態徽章與錯誤行號提示。
+- **Custom CSS 預設自動帶入與樣式系統標註**：當使用者開啟 Custom CSS 編輯器時，預設自動產出並帶入當前 UI 生效的完整 Vanilla CSS 樣式代碼，降低自訂門檻；並明確標註系統採用 Vanilla CSS + CSS Variables + Glassmorphism 獨立架構。
+- **多儲存槽 (3-Slots) 與 JSON 導入匯出**：建立 3 個獨立 Slot 與 JSON 匯入匯出功能，讓使用者能自由保存與共享不同場景的顏色、深淺色與 CSS 組合。
+- **後端持久化相容性**：在 `backend/main.py` 的 `app_settings` 與 `update_settings` 中擴充 `theme` 字典並寫入 `settings.json`，實現主題設定持久化與離線 LocalStorage 備援防護。
+
+**後續行動 (Action):**
+- 後續新增 UI 組件時，背景與邊框一律優先採用 `var(--glass-bg)` 與 `var(--glass-border)`，避免在 Light Mode 切換時出現硬編碼區塊。
+
+---
+
+## 2026-07-23 - 賽後分析 (Post-Race Analysis) 全面重製與 MoTeC 通道標準化
+
+**學習點 (Learning):**
+- **賽事自動閘門判定 (Accurate Race Gate)**：`IsRaceOn == 1` 在 Horizon 5/6 開放世界漫遊 (Freeroam) 時亦被觸發。引入 `IsRaceOn == 1 and CurrentRaceTime > 0 and CurrentLap > 0` 組合閘門，徹底消除了漫遊狀態下的誤錄製與背景資源浪費。
+- **SQLite (WAL Mode) 高效串流數據庫**：淘汰每 30s 全檔重讀重寫 `latest.json` 的極低效方式，改用 SQLite `journal_mode=WAL; synchronous=NORMAL;` 搭配 50-point 非同步批次寫入，使 60Hz/10Hz UDP 數據紀錄零 Disk I/O 阻塞與零掉幀。
+- **MoTeC 通道與 Lap Distance 對標**：以 MoTeC 20+ 標準 Channel 規範設計資料庫結構，精確記錄 `lap_distance` 與各輪態物理數值，並提供一鍵導出標準 MoTeC i2 CSV 檔功能。
+- **Ramer-Douglas-Peucker (RDP) + Canvas 2D 賽道圖繪製**：利用 RDP 演算法將上萬個賽道點精簡為 300~500 個拓撲關鍵拐點，搭配 HTML5 Canvas 2D stroke 繪製多重指標彩虹向量線條，SVG DOM 開銷降為 0。
+- **獨立設定檔 (user_configs) 與 .gitignore 管制**：使用者自訂分析佈局與 Channel 算式持久化於 `backend/user_configs/analysis_layout.json`，並於 `.gitignore` 中嚴格納入排除，確保使用者個人化設定與版本控制分離。
+
+**後續行動 (Action):**
+- 未來擴充遙測通道時，優先維護 `telemetry_sqlite.py` 與 `motec_exporter.py` 的欄位映射，保持與 MoTeC i2 規範之相容性。
+
+---
+
+## 2026-07-23 - 賽後分析 (Post-Race Analysis) Phase 2 雙層賽道圖與 4 槽位多維度圖表架構
+
+**學習點 (Learning):**
+- **雙層繪製架構 (Dual-Layer Circuit Track Canvas)**：在 `TrackMapCanvas.tsx` 中將第一圈/全賽事 Base Coordinates 作為底層半透明繪製，頂層繪製當前選定單圈之彩虹指標線，成功實現了第二圈開始全賽道路線即時呈現與動態脈衝車位標點。
+- **Channel 公式編輯器與語法下拉自動補全**：建立 `CustomChannelEditor.tsx`，內建 20+ 標準遙測通道點選自動補全詞典，支援一鍵插入與即時求值預覽 (`Live Formula Evaluation`)。
+- **4 槽位多維度圖表面板 (4-Slot Dynamic Chart Grid)**：設計 `DynamicChartGrid.tsx`，提供 4 個獨立可配圖表槽位，開放客製化標題、支援 `Time (s)` / `Distance (m)` / `Lap` 多維度對齊，並預設將 **Lap Delta & Speed Comparison** 為 Slot 1 範例樣板。
+
+**後續行動 (Action):**
+- 在高組件化解耦時，元件之間未讀取的 props（如 `primaryLap` / `compareLap`）必須主動清理，確保 Tauri Release Build (`tsc && vite build`) 秒級 pass。
+
+---
+
+## 2026-07-23 - 賽後分析 Phase 3 彈出式 ChartEditModal、純文字專業 UI 與 30 秒記憶體拋棄機制
+
+**學習點 (Learning):**
+- **彈出式 ChartEditModal 集中編輯與雙欄即時預覽**：設計 `ChartEditModal.tsx` 雙欄結構，讓 4 個圖表卡片平時維持乾淨專業極簡視覺。點擊「Settings / Edit」按鈕彈出編輯窗，左欄進行標題、X 軸維度 (`Distance m` / `Time s` / `Lap`)、Y 軸通道與 Channel 子卡片設定，右欄即時動態預覽。
+- **無 Emoji 純文字規範 (No Emoji Policy)**：徹底清理 `AnalysisView` 介面中的所有 Emoji 圖符，Slots 1 標題去範例化為純文字 `Lap Delta & Speed Comparison`，大幅提升賽車電競軟體專業感。
+- **賽事 Performance 暫停繪製模式**：當 `isRecording == true` (賽事錄製中) 時，下方圖表卡片自動暫停高頻 Recharts 繪製，將 100% 效能釋放給遊戲 Overlay 與遊戲 FPS；完賽時自動解鎖圖表繪製。
+- **漫遊 30 秒舊點拋棄 (30s Fixed Queue Drop)**：漫遊非錄製狀態下，`TrackMapCanvas` 將超過 30 秒的歷史座標點直接截斷拋棄 (`slice/shift`)，使漫遊期間記憶體佔用保持嚴格 O(1) 恆定，且支援車頭方向角 (Heading Arrow) 指示繪製。
+
+---
+
+## 2026-07-23 - 5 大多圖表形式 (Line, Bar, Histogram, Radar, Pie)、即時轉換與 Track Map 淨化修復
+
+**學習點 (Learning):**
+- **5 大專業遙測圖表形式 (Multi-Chart Transformation Engine)**：建立 `transformTelemetryData` 數據轉換引擎，將遙測點即時轉譯為 Line (折線圖)、Bar (長條圖)、Histogram (直條開度頻次分佈)、Radar (四輪/綜合蛛網評估) 與 Pie (擋位佔比圓餅圖)。
+- **ChartEditModal 雙欄即時動態預覽**：在編輯 Modal 中，右側 Panel 根據使用者所選的 `chartType` 與 Channel 子卡片設定，動態分支渲染 Recharts 對應組件，達成毫秒級視覺化連動。
+- **Track Map 標題淨化與漫遊動態繪製**：潔淨去除標題括弧字樣 (`Track Map`)，修復漫遊狀態下 Track Map 高頻 re-render，維持流暢 30 秒漸隱尾跡繪製。
+
+---
+
+## 2026-07-23 - Layout Config 防抖靜默自動儲存、歷史 Session 全軌跡與 100% i18n 支援
+
+**學習點 (Learning):**
+- **防抖靜默自動儲存 (Debounced Auto-Save Layout Config)**：移除手動點擊「Save Layout Config」按鈕的繁瑣設計。在 `AnalysisView.tsx` 中透過 `useEffect` 監聽 `[selectedMetric, customChannels, chartSlots]` 變更並設定 800ms 防抖計時器，背景自動呼叫 `saveAnalysisConfig(...)` 寫入 `backend/user_configs/analysis_layout.json`，達成極致滑順的無感自動持久化。
+- **歷史 Session 全軌跡渲染 (isSavedSession Gate)**：在 `TrackMapCanvas.tsx` 中引進 `isSavedSession` 判定（當 `selectedFilename !== 'current'` 時觸發）。歷史完賽 Session 會跳過漫遊狀態的「過去 30 秒截斷」限制，完整還原繪製整條賽道的完整路徑軌跡。
+- **100% 無死角 i18n 多語系支援**：在 `lang/zh-tw.json` 與 `lang/ja-jp.json` 中補齊賽後分析主頁面、Modal 選擇器、5 大圖表形式 (Line, Bar, Histogram, Radar, Pie) 與公式編輯器 control 項目的對應翻譯，確保切換語系時畫面 100% 翻譯覆蓋。

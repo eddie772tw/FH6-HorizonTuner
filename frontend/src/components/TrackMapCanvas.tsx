@@ -8,32 +8,63 @@ export interface TrackPoint extends Point2D {
 
 interface TrackMapCanvasProps {
   data: TrackPoint[];
+  fullTrackData?: TrackPoint[]; // Full circuit track data for base layer
   currentPlaybackIndex?: number;
   selectedMetricLabel?: string;
+  isRecording?: boolean;
+  isSavedSession?: boolean;      // True when viewing loaded/history saved sessions
   onPointHover?: (point: any | null) => void;
 }
 
 const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   data,
+  fullTrackData,
   currentPlaybackIndex = -1,
   selectedMetricLabel = 'Speed',
+  isRecording = false,
+  isSavedSession = false,
   onPointHover
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoveredPoint, setHoveredPoint] = useState<TrackPoint | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
 
-  // RDP Vector Line Simplification for super fast rendering
-  const simplifiedData = useMemo(() => {
-    if (data.length <= 100) return data;
-    return simplifyPathRDP(data, 0.3); // 0.3m tolerance
-  }, [data]);
+  // In Freeroam (isRecording === false && isSavedSession === false), retain only past 30s
+  // In Saved/Loaded Sessions or Recording Mode, render full complete path!
+  const filteredData = useMemo(() => {
+    if (isRecording || isSavedSession || data.length === 0) return data;
+    const latestTime = data[data.length - 1]?.raw?.time ?? 0;
+    const cutoffTime = latestTime - 30.0;
+    
+    let startIndex = 0;
+    for (let i = 0; i < data.length; i++) {
+      if ((data[i].raw?.time ?? 0) >= cutoffTime) {
+        startIndex = i;
+        break;
+      }
+    }
+    return data.slice(startIndex);
+  }, [data, isRecording, isSavedSession]);
 
-  // Compute Bounding Box
+  // RDP Simplification for active path
+  const simplifiedActiveData = useMemo(() => {
+    if (filteredData.length <= 100) return filteredData;
+    return simplifyPathRDP(filteredData, 0.3);
+  }, [filteredData]);
+
+  // RDP Simplification for full circuit base path
+  const simplifiedBaseData = useMemo(() => {
+    const baseSource = (fullTrackData && fullTrackData.length > 0) ? fullTrackData : filteredData;
+    if (baseSource.length <= 100) return baseSource;
+    return simplifyPathRDP(baseSource, 0.3);
+  }, [fullTrackData, filteredData]);
+
+  // Compute Bounding Box from Base Circuit Data to keep canvas scale stable
   const bounds = useMemo(() => {
-    if (simplifiedData.length === 0) return { minX: 0, maxX: 1, minZ: 0, maxZ: 1, width: 1, height: 1 };
+    const source = simplifiedBaseData.length > 0 ? simplifiedBaseData : simplifiedActiveData;
+    if (source.length === 0) return { minX: 0, maxX: 1, minZ: 0, maxZ: 1, width: 1, height: 1 };
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-    for (const p of simplifiedData) {
+    for (const p of source) {
       if (p.x < minX) minX = p.x;
       if (p.x > maxX) maxX = p.x;
       if (p.z < minZ) minZ = p.z;
@@ -42,9 +73,8 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
     const width = Math.max(1, maxX - minX);
     const height = Math.max(1, maxZ - minZ);
     return { minX, maxX, minZ, maxZ, width, height };
-  }, [simplifiedData]);
+  }, [simplifiedBaseData, simplifiedActiveData]);
 
-  // Map world (x, z) to Canvas pixel coordinates
   const worldToCanvas = (x: number, z: number, canvasWidth: number, canvasHeight: number) => {
     const padding = 40;
     const availWidth = canvasWidth - padding * 2;
@@ -62,15 +92,14 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
     return `hsl(${hue}, 100%, 50%)`;
   };
 
-  // Render Canvas
+  // Render Canvas with Dual-Layer Architecture & Heading Arrow
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || simplifiedData.length === 0) return;
+    if (!canvas || (simplifiedActiveData.length === 0 && simplifiedBaseData.length === 0)) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Adapt device pixel ratio for High-DPI screens
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
@@ -79,7 +108,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    // Draw Track Grid Background Line
+    // Grid Background
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
     const gridSize = 40;
@@ -90,52 +119,82 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke();
     }
 
-    // Draw Continuous Rainbow Vector Line Path
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 4;
 
-    for (let i = 0; i < simplifiedData.length - 1; i++) {
-      const p1 = simplifiedData[i];
-      const p2 = simplifiedData[i + 1];
-
-      const c1 = worldToCanvas(p1.x, p1.z, rect.width, rect.height);
-      const c2 = worldToCanvas(p2.x, p2.z, rect.width, rect.height);
-
+    // LAYER 1: Base Full Circuit Track Path
+    if (simplifiedBaseData.length > 1) {
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.beginPath();
-      ctx.moveTo(c1.cx, c1.cy);
-      ctx.lineTo(c2.cx, c2.cy);
-
-      ctx.strokeStyle = getHeatmapColor(p1.val);
+      const firstC = worldToCanvas(simplifiedBaseData[0].x, simplifiedBaseData[0].z, rect.width, rect.height);
+      ctx.moveTo(firstC.cx, firstC.cy);
+      for (let i = 1; i < simplifiedBaseData.length; i++) {
+        const c = worldToCanvas(simplifiedBaseData[i].x, simplifiedBaseData[i].z, rect.width, rect.height);
+        ctx.lineTo(c.cx, c.cy);
+      }
       ctx.stroke();
     }
 
-    // Draw Current Playback Car Marker
-    if (currentPlaybackIndex >= 0 && data[currentPlaybackIndex]) {
-      const carP = data[currentPlaybackIndex];
+    // LAYER 2: Active Lap Metric Rainbow Vector Line Path
+    if (simplifiedActiveData.length > 1) {
+      ctx.lineWidth = 4;
+      for (let i = 0; i < simplifiedActiveData.length - 1; i++) {
+        const p1 = simplifiedActiveData[i];
+        const p2 = simplifiedActiveData[i + 1];
+
+        const c1 = worldToCanvas(p1.x, p1.z, rect.width, rect.height);
+        const c2 = worldToCanvas(p2.x, p2.z, rect.width, rect.height);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.cx, c1.cy);
+        ctx.lineTo(c2.cx, c2.cy);
+
+        ctx.strokeStyle = getHeatmapColor(p1.val);
+        ctx.stroke();
+      }
+    }
+
+    // LAYER 3: Current Vehicle Position Marker with Heading Arrow Indicator
+    const targetCarIdx = currentPlaybackIndex >= 0 ? currentPlaybackIndex : filteredData.length - 1;
+    if (targetCarIdx >= 0 && filteredData[targetCarIdx]) {
+      const carP = filteredData[targetCarIdx];
       const carC = worldToCanvas(carP.x, carP.z, rect.width, rect.height);
 
-      // Outer glow pulse
+      let headingAngle = carP.raw?.Yaw ?? 0.0;
+      if (headingAngle === 0 && targetCarIdx > 0) {
+        const prevP = filteredData[targetCarIdx - 1];
+        headingAngle = Math.atan2(carP.z - prevP.z, carP.x - prevP.x);
+      }
+
       ctx.beginPath();
       ctx.arc(carC.cx, carC.cy, 9, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 0, 60, 0.3)';
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.3)';
       ctx.fill();
 
-      // Core dot
+      ctx.save();
+      ctx.translate(carC.cx, carC.cy);
+      ctx.rotate(headingAngle);
+
       ctx.beginPath();
-      ctx.arc(carC.cx, carC.cy, 5, 0, Math.PI * 2);
+      ctx.moveTo(12, 0);
+      ctx.lineTo(-6, -6);
+      ctx.lineTo(-3, 0);
+      ctx.lineTo(-6, 6);
+      ctx.closePath();
+
       ctx.fillStyle = '#00f0ff';
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.fill();
       ctx.stroke();
+      ctx.restore();
     }
-  }, [simplifiedData, bounds, currentPlaybackIndex, data]);
+  }, [simplifiedActiveData, simplifiedBaseData, bounds, currentPlaybackIndex, filteredData]);
 
-  // Handle Mouse Move for Hover Detection
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || data.length === 0) return;
+    if (!canvas || filteredData.length === 0) return;
 
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
@@ -144,7 +203,9 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
     let closestDist = Infinity;
     let closestPoint: TrackPoint | null = null;
 
-    for (const p of simplifiedData) {
+    const source = simplifiedActiveData.length > 0 ? simplifiedActiveData : simplifiedBaseData;
+
+    for (const p of source) {
       const c = worldToCanvas(p.x, p.z, rect.width, rect.height);
       const dist = Math.hypot(c.cx - mouseX, c.cy - mouseY);
       if (dist < closestDist && dist < 20) {
@@ -173,7 +234,6 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
         style={{ width: '100%', height: '100%', display: 'block', cursor: 'crosshair' }}
       />
 
-      {/* Hover Tooltip Overlay */}
       {hoveredPoint && hoverPos && (
         <div style={{
           position: 'absolute',
