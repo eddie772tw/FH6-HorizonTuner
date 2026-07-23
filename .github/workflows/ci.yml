@@ -11,10 +11,10 @@ permissions:
   contents: read
 
 jobs:
-  # Job 1: Rust Backend Lint, Formatting & Tests
+  # Job 1: Rust Backend Lint, Formatting & Tests (Optimized on Linux with Rust Cache)
   rust-ci:
     name: Rust Backend CI
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -23,6 +23,11 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         components: rustfmt, clippy
+
+    - name: Enable Rust Cargo Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: frontend/src-tauri -> target
 
     - name: Rust Code Formatting Check
       run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
@@ -72,6 +77,11 @@ jobs:
 
     - name: Set up Rust Toolchain
       uses: dtolnay/rust-toolchain@stable
+
+    - name: Enable Rust Cargo Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: frontend/src-tauri -> target
 
     - name: Install Frontend Dependencies
       run: npm --prefix frontend install
