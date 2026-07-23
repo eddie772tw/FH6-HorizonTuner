@@ -23,6 +23,7 @@ export interface AppSettings {
   units: UnitSettings;
   telemetry_ip?: string;
   telemetry_port?: number;
+  game_tune_dir?: string;
 }
 
 interface SettingsContextType {
@@ -83,7 +84,8 @@ const defaultSettings: AppSettings = {
   dyno_filter_transients: true,
   units: defaultUnits,
   telemetry_ip: '0.0.0.0',
-  telemetry_port: 8000
+  telemetry_port: 8000,
+  game_tune_dir: ""
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -122,6 +124,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             dyno_test_gear: data.dyno_test_gear ?? defaultSettings.dyno_test_gear,
             dyno_filter_slip: data.dyno_filter_slip ?? defaultSettings.dyno_filter_slip,
             dyno_filter_transients: data.dyno_filter_transients ?? defaultSettings.dyno_filter_transients,
+            game_tune_dir: data.game_tune_dir ?? defaultSettings.game_tune_dir,
             units: {
               ...defaultUnits,
               ...(data.units || {})

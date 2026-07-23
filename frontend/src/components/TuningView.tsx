@@ -82,6 +82,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const [saveStatus, setSaveStatus] = useState<string>('');
   const [saveName, setSaveName] = useState<string>(`Tuning_${new Date().toISOString().slice(0, 10)}`);
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
+  const [gameTunings, setGameTunings] = useState<string[]>([]);
 
   // Telemetry Recorder
   const {
@@ -167,8 +168,16 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     try {
       const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}`);
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setSavedTunings(data);
+      if (Array.isArray(data.tunings || data)) {
+        setSavedTunings(data.tunings || data);
+      }
+    } catch (e) {}
+
+    try {
+      const gRes = await fetch(`http://127.0.0.1:8001/api/game_tunings/${carId}`);
+      const gData = await gRes.json();
+      if (gData.tunings && Array.isArray(gData.tunings)) {
+        setGameTunings(gData.tunings);
       }
     } catch (e) {}
   };
@@ -201,6 +210,33 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       }
     } catch (e) {
       setSaveStatus(t('Save failed.'));
+    }
+  };
+
+  const loadGameTuning = async (filename: string) => {
+    if (!filename) return;
+    try {
+      const res = await fetch(`http://127.0.0.1:8001/api/game_tunings/parse/${filename}`);
+      const data = await res.json();
+      if (!data.error) {
+        // Adjust array sizes for UI
+        if (data.gearing && data.gearing.gears) {
+           data.gearing.gears = data.gearing.gears.slice(0, numGears);
+           if (data.gearing.gears.length < numGears) {
+             const fillArr = Array(numGears - data.gearing.gears.length).fill(0.0);
+             data.gearing.gears = [...data.gearing.gears, ...fillArr];
+           }
+        }
+        setTuning(data);
+        setSaveStatus(t('Game tuning imported successfully!'));
+        setTimeout(() => setSaveStatus(''), 3000);
+      } else {
+        setSaveStatus(data.error);
+        setTimeout(() => setSaveStatus(''), 3000);
+      }
+    } catch (e) {
+      setSaveStatus(t('Failed to import game tuning.'));
+      setTimeout(() => setSaveStatus(''), 3000);
     }
   };
 
@@ -827,11 +863,19 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                 <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{t("Load Profile:")}</span>
                   <select 
-                    onChange={(e) => loadTuning(e.target.value)} 
+                    onChange={(e) => { loadTuning(e.target.value); e.target.value = ""; }}
                     style={{ padding: '0.3rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', fontSize: '0.8rem' }}
                   >
                     <option value="">-- {t("Select Saved Tuning")} --</option>
                     {savedTunings.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginLeft: '0.5rem' }}>{t("Import:")}</span>
+                  <select
+                    onChange={(e) => { loadGameTuning(e.target.value); e.target.value = ""; }}
+                    style={{ padding: '0.3rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', fontSize: '0.8rem' }}
+                  >
+                    <option value="">-- {t("Select File")} --</option>
+                    {gameTunings.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               )}
@@ -1598,9 +1642,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               
               <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                 <label style={{ color: 'var(--text-secondary)' }}>{t("Load Profile:")}</label>
-                <select onChange={(e) => loadTuning(e.target.value)} style={{ padding: '0.4rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}>
+                <select onChange={(e) => { loadTuning(e.target.value); e.target.value = ""; }} style={{ padding: '0.4rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}>
                   <option value="">-- {t("Select Saved Tuning")} --</option>
                   {savedTunings.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <label style={{ color: 'var(--text-secondary)' }}>{t("Import Game Tune:")}</label>
+                <select onChange={(e) => { loadGameTuning(e.target.value); e.target.value = ""; }} style={{ padding: '0.4rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}>
+                  <option value="">-- {t("Select File")} --</option>
+                  {gameTunings.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
             </div>

@@ -253,7 +253,32 @@ const SettingsView: React.FC = () => {
               </div>
             </div>
 
+
+              <div style={settingRowStyle}>
+                <div>
+                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Game Tune Directory")}</strong>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Directory containing Forza Horizon 6 tune data files.")}</span>
+                </div>
+                <input
+                  type="text"
+                  value={settings.game_tune_dir || ''}
+                  onChange={(e) => updateSettings({ game_tune_dir: e.target.value })}
+                  className="cyber-input"
+                  style={{
+                    width: '170px',
+                    background: 'rgba(0,0,0,0.4)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '6px',
+                    padding: '0.5rem 0.8rem',
+                    fontSize: '0.9rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
             {/* Basic Units */}
+
             <div style={sectionStyle}>
               <h4 style={sectionTitleStyle}>{t("General Vehicle Units")}</h4>
 

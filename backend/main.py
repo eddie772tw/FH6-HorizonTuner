@@ -219,6 +219,7 @@ DEFAULT_SETTINGS = {
     "dyno_filter_transients": True,
     "telemetry_ip": "0.0.0.0",
     "telemetry_port": 8000,
+    "game_tune_dir": "",
     "units": {
         "speed": "kmh",
         "weight": "kg",
@@ -1329,6 +1330,9 @@ async def update_settings(data: dict):
     if "dyno_filter_transients" in data:
         app_settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
 
+    if "game_tune_dir" in data:
+        app_settings["game_tune_dir"] = str(data["game_tune_dir"])
+
     # 處理 telemetry_ip 與 telemetry_port
     new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
     new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
@@ -1449,7 +1453,139 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
     return {"message": "Saved successfully"}
 
 
+
+import struct
+
+@app.get("/api/game_tunings/{car_id}")
+async def list_game_tunings(car_id: str):
+    game_tune_dir = app_settings.get("game_tune_dir", "")
+    if not game_tune_dir or not os.path.exists(game_tune_dir):
+        return {"tunings": []}
+
+    try:
+        files = [f for f in os.listdir(game_tune_dir) if os.path.isfile(os.path.join(game_tune_dir, f))]
+        matching_files = []
+        for f in files:
+            path = os.path.join(game_tune_dir, f)
+            if os.path.getsize(path) != 598:
+                continue
+            with open(path, "rb") as bf:
+                data = bf.read(598)
+                if len(data) == 598:
+                    car_ordinal = struct.unpack("<H", data[0x02:0x04])[0]
+                    if str(car_ordinal) == str(car_id):
+                        matching_files.append(f)
+        return {"tunings": matching_files}
+    except Exception as e:
+        logger.error(f"Failed to list game tunings: {e}")
+        return {"tunings": []}
+
+@app.get("/api/game_tunings/parse/{filename}")
+async def parse_game_tuning(filename: str):
+    game_tune_dir = app_settings.get("game_tune_dir", "")
+    if not game_tune_dir or not os.path.exists(game_tune_dir):
+        return {"error": "Game tune directory not configured or does not exist"}
+
+    file_path = os.path.join(game_tune_dir, os.path.basename(filename))
+    if not os.path.exists(file_path):
+        return {"error": "File not found"}
+
+    if os.path.getsize(file_path) != 598:
+        return {"error": "Invalid file size (must be 598 bytes)"}
+
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read(598)
+
+        def get_f32(offset):
+            return struct.unpack("<f", data[offset:offset+4])[0]
+
+        # Parse data according to the gist
+        df_front = get_f32(0x019E)
+        df_rear = get_f32(0x01A2)
+        final_drive = get_f32(0x01A6)
+        brake_pressure = get_f32(0x01AA)
+        brake_balance = get_f32(0x01AE)
+        center_diff = get_f32(0x01B6)
+
+        tp_front = get_f32(0x01CE)
+        camber_f = get_f32(0x01D2)
+        toe_f = get_f32(0x01D6)
+        caster_f = get_f32(0x01DA)
+        spring_f = get_f32(0x01DE)
+        arb_f = get_f32(0x01E2)
+        ride_h_f = get_f32(0x01E6)
+        bump_f = get_f32(0x01EA)
+        rebound_f = get_f32(0x01EE)
+        diff_accel_f = get_f32(0x01F2)
+        diff_decel_f = get_f32(0x01F6)
+
+        tp_rear = get_f32(0x01FA)
+        camber_r = get_f32(0x01FE)
+        toe_r = get_f32(0x0202)
+        spring_r = get_f32(0x020A)
+        arb_r = get_f32(0x020E)
+        ride_h_r = get_f32(0x0212)
+        bump_r = get_f32(0x0216)
+        rebound_r = get_f32(0x021A)
+        diff_accel_r = get_f32(0x021E)
+        diff_decel_r = get_f32(0x0222)
+
+        gears = []
+        for i in range(10):
+            offset = 0x022E + (i * 4)
+            gear_ratio = get_f32(offset)
+            if gear_ratio > 0.0:
+                gears.append(gear_ratio)
+            else:
+                gears.append(0.0) # Fill remaining with 0.0 or let frontend handle it
+
+        # Build TuningState JSON
+        tuning_state = {
+            "tires": { "front": round(tp_front, 2), "rear": round(tp_rear, 2) },
+            "alignment": {
+                "camberF": round(camber_f, 1),
+                "camberR": round(camber_r, 1),
+                "toeF": round(toe_f, 1),
+                "toeR": round(toe_r, 1),
+                "caster": round(caster_f, 1)
+            },
+            "arb": { "front": round(arb_f, 1), "rear": round(arb_r, 1) },
+            "springs": {
+                "front": round(spring_f, 1),
+                "rear": round(spring_r, 1),
+                "heightF": round(ride_h_f, 1),
+                "heightR": round(ride_h_r, 1)
+            },
+            "damping": {
+                "reboundF": round(rebound_f, 1),
+                "reboundR": round(rebound_r, 1),
+                "bumpF": round(bump_f, 1),
+                "bumpR": round(bump_r, 1)
+            },
+            "aero": { "front": round(df_front, 1), "rear": round(df_rear, 1) },
+            "brake": { "balance": round(brake_balance, 0), "pressure": round(brake_pressure, 0) },
+            "diff": {
+                "accelF": round(diff_accel_f, 0),
+                "decelF": round(diff_decel_f, 0),
+                "accelR": round(diff_accel_r, 0),
+                "decelR": round(diff_decel_r, 0),
+                "center": round(center_diff, 0)
+            },
+            "gearing": {
+                "finalDrive": round(final_drive, 2),
+                "gears": gears,
+                "maxRpm": 8000 # Let frontend sync maxRpm as usual
+            }
+        }
+
+        return tuning_state
+    except Exception as e:
+        logger.error(f"Failed to parse game tuning: {e}")
+        return {"error": str(e)}
+
 # --- Post-Race Analysis API Endpoints ---
+
 
 
 @app.get("/api/analysis/status")

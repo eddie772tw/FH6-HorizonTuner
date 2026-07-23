@@ -189,3 +189,13 @@
 **後續行動 (Action):**
 - 執行發行版打包（`build_release.bat`）前，確認 `.venv` 內已安裝完整需求套件（`requirements.txt`），且 PyInstaller 始終透過 `.venv` 呼叫執行。
 - 後續新增與進程生命週期相關的背景 Thread 時，務必區分 Frozen GUI 模式與開發模式的 stdin / log 輸出行為。
+
+## $(date +%Y-%m-%d) - Import Game Tune (Gist Integration)
+
+**學習點 (Learning):**
+- Forza Horizon 6 遊戲調校檔案 (Game Tune Data) 為固定 598 bytes 的二進位檔案。
+- 透過解析檔案位元偏移 (Byte Offset)，能精準還原輪胎、定位、防傾桿、彈簧、阻尼、空力、煞車與差速器等各項數據。
+- Gearing (齒輪比) 資料為連續浮點數，若不足最大檔位會補上 `0.0`，後端解析與前端 UI 皆須注意陣列長度的一致性（本專案預設補齊 `0.0`）。
+
+**後續行動 (Action):**
+- 未來若遊戲更新或調校資料結構改變（如新增 DLC），需重新驗證 `0x0000` 格式版本，並在 `backend/main.py` 的解析 endpoints (`/api/game_tunings/parse/{filename}`) 擴充。
