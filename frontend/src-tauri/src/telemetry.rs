@@ -234,7 +234,7 @@ pub fn parse_telemetry_packet(data: &[u8]) -> Option<TelemetryData> {
 pub fn spawn_telemetry_listener(app_handle: AppHandle, port: u16) {
     let running = Arc::new(AtomicBool::new(true));
 
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let addr = format!("0.0.0.0:{}", port);
         let socket = match UdpSocket::bind(&addr).await {
             Ok(s) => {

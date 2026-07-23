@@ -15,7 +15,7 @@
 
 **學習點 (Learning):**
 - **Python FastAPI + PyInstaller 包裹 Sidecar 架構痛點徹底解決**：舊架構使用 PyInstaller 包裹 Python 產生 FastAPI Sidecar 再讓 Tauri 調用，帶來了較高的安裝包體積、舊進程 Port 8000/8001 衝突、stdin EOF 重導向崩潰以及 CI 必須配置 Python 環境與 Approval 審核的龐大開銷。
-- **Pure Rust UDP Socket 60Hz 零拷貝解析**：改用 Rust `tokio::net::UdpSocket` 搭配 `byteorder` 進行二進位結構解構 (232-byte V1 & 324-byte V2 Dash Data)，直接透由 Tauri v2 的 `AppHandle::emit("telemetry-data", &data)` 廣播至 Webview，延遲與 CPU 佔用顯著低於舊有 WebSocket 序列化廣播。
+- **Pure Rust UDP Socket 60Hz 零拷貝解析**：改用 Rust `tokio::net::UdpSocket` 搭配 `byteorder` 進行二進位結構解構 (232-byte V1 & 324-byte V2 Dash Data)，直接透由 Tauri v2 的 `AppHandle::emit("telemetry-data", &data)` 廣播至 Webview。在 Tauri `setup` 鉤子中派生非同步任務時，必須使用 `tauri::async_runtime::spawn` 替代標準 `tokio::spawn`，以正確掛載至 Tauri 管理的 Tokio Async Reactor，防止 `there is no reactor running` panic 錯誤。
 - **Ruff 規範精確繼承與工具鏈移轉**：原先 `pyproject.toml` 中的 Ruff 規範標竿（88 字元最大行寬、雙引號、isort 自動 Import 排序）透過新增 `rustfmt.toml` (`max_width = 88`, `imports_granularity = "Crate"`) 與前端 `biome.json` (`lineWidth: 88`) 完全繼承與對齊。
 - **批次檔與 CI 自動化流程精簡**：
   - `start_all.bat`：一鍵啟動開發生態，保留工具鏈檢測、舊視窗進程自動終止、語法格式自動修復。

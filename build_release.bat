@@ -8,7 +8,7 @@ echo.
 
 cd /D "%~dp0"
 
-:: 1. Scan for unregistered directories (not ignored and not packaged)
+REM 1. Scan for unregistered directories
 echo [INFO] Scanning for unregistered resource directories...
 echo --------------------------------------------------------------------
 set "HAS_UNREGISTERED=false"
@@ -17,7 +17,6 @@ for /d %%D in ("%~dp0*") do (
     set "DIR_NAME=%%~nxD"
     set "IS_IGNORED=false"
     
-    :: Check if directory is listed in .pkgdirignore
     if exist "%~dp0.pkgdirignore" (
         for /f "usebackq tokens=* eol=#" %%I in ("%~dp0.pkgdirignore") do (
             if /i "%%~nxD" == "%%I" set "IS_IGNORED=true"
@@ -25,7 +24,6 @@ for /d %%D in ("%~dp0*") do (
     )
     
     if "!IS_IGNORED!" == "false" (
-        :: For Pure Rust architecture, check if directory is registered in Cargo/Tauri resources
         if /i not "%%~nxD" == "frontend" (
             echo.
             echo [WARNING] Found directory '%%~nxD' that is neither ignored nor packaged.
@@ -52,7 +50,7 @@ for /d %%D in ("%~dp0*") do (
 echo [SUCCESS] No unregistered resource directories found.
 echo.
 
-:: 2. Run Rust & Frontend Lint/Format Check
+REM 2. Run Rust and Frontend Format Check
 echo [INFO] Verifying code formatting and linting...
 echo --------------------------------------------------------------------
 cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
@@ -61,7 +59,7 @@ if errorlevel 1 (
     cargo fmt --manifest-path frontend/src-tauri/Cargo.toml
 )
 
-:: 3. Run Tauri Build
+REM 3. Run Tauri Build
 echo [INFO] Running Pure Rust Tauri Build...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
@@ -78,7 +76,7 @@ echo [SUCCESS] Standalone Pure Rust executable built successfully.
 echo.
 cd "%~dp0"
 
-:: 4. Verification of output binary
+REM 4. Verification of output binary
 set "RELEASE_EXE=%~dp0frontend\src-tauri\target\release\frontend.exe"
 if exist "%RELEASE_EXE%" (
     echo ====================================================================

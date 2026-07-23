@@ -9,29 +9,29 @@ echo.
 
 cd /D "%~dp0"
 
-:: 1. Check Node.js environment
+REM 1. Check Node.js environment
 where node >nul 2>nul
-if %errorlevel% neq 0 (
+if "!errorlevel!" neq "0" (
     echo [ERROR] Node.js is not installed or not in PATH.
-    echo Please install Node.js (v18+) to run the frontend dev environment.
+    echo Please install Node.js v18 or newer to run the frontend dev environment.
     pause
     exit /b 1
 )
 
-:: 2. Check Rust & Cargo environment
+REM 2. Check Rust and Cargo environment
 where cargo >nul 2>nul
-if %errorlevel% neq 0 (
+if "!errorlevel!" neq "0" (
     echo [ERROR] Rust / Cargo toolchain is not installed or not in PATH.
-    echo Please install Rust via rustup (https://rustup.rs/) to build the Pure Rust backend.
+    echo Please install Rust via https://rustup.rs/ to build the Pure Rust backend.
     pause
     exit /b 1
 )
 
-:: 3. Run Rust format check and auto-formatting
-echo [INFO] Running Rust & Frontend format check...
+REM 3. Run Rust format check and auto-formatting
+echo [INFO] Running Rust and Frontend format check...
 cargo fmt --manifest-path frontend/src-tauri/Cargo.toml >nul 2>nul
 
-:: 4. Terminate old running instances to prevent port/window conflicts
+REM 4. Terminate old running instances to prevent port/window conflicts
 echo [INFO] Cleaning up previous running instances...
 taskkill /F /IM "frontend.exe" /T >nul 2>nul
 taskkill /F /FI "WINDOWTITLE eq FH6 Telemetry*" /T >nul 2>nul
