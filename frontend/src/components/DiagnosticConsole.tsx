@@ -100,7 +100,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
           <h3 style={{ margin: 0, color: 'var(--primary)', textShadow: '0 0 8px rgba(0, 240, 255, 0.4)' }}>
             💻 {t("Diagnostic Log Console") || "診斷主控台"}
           </h3>
-          <button style={closeBtnStyle} onClick={onClose}>&times;</button>
+          <button style={closeBtnStyle} onClick={onClose} aria-label={t("Close Console") || "關閉"}>&times;</button>
         </div>
 
         {/* Toolbar */}
