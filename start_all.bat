@@ -52,6 +52,11 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| find ":1420" ^| find "LISTENIN
     taskkill /F /PID %%a >nul 2>nul
 )
 
+REM 5. Configure Windows Firewall for UDP Telemetry
+echo [INFO] Configuring Windows Firewall for UDP Port 8000...
+netsh advfirewall firewall delete rule name="FH6_HorizonTuner_UDP_8000" >nul 2>&1
+netsh advfirewall firewall add rule name="FH6_HorizonTuner_UDP_8000" dir=in action=allow protocol=UDP localport=8000 >nul 2>&1
+
 echo [INFO] Launching Pure Rust Tauri Application in Dev Mode...
 cd /D "!ROOT_DIR!frontend"
 call npm run tauri dev
