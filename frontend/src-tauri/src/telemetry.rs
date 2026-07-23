@@ -201,7 +201,8 @@ pub fn parse_telemetry_packet(data: &[u8]) -> Option<TelemetryData> {
         telemetry.position_x = Some(LittleEndian::read_f32(&data[244..248]));
         telemetry.position_y = Some(LittleEndian::read_f32(&data[248..252]));
         telemetry.position_z = Some(LittleEndian::read_f32(&data[252..256]));
-        telemetry.speed_meters_per_second = Some(LittleEndian::read_f32(&data[256..260]));
+        telemetry.speed_meters_per_second =
+            Some(LittleEndian::read_f32(&data[256..260]));
         telemetry.power_watts = Some(LittleEndian::read_f32(&data[260..264]));
         telemetry.torque_newtons = Some(LittleEndian::read_f32(&data[264..268]));
         telemetry.tire_temp = Some(vec![

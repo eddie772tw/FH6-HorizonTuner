@@ -62,7 +62,11 @@ pub fn read_json_file(sub_dir: &str, file_name: &str) -> Result<Value, String> {
     }
 }
 
-pub fn write_json_file(sub_dir: &str, file_name: &str, data: &Value) -> Result<(), String> {
+pub fn write_json_file(
+    sub_dir: &str,
+    file_name: &str,
+    data: &Value,
+) -> Result<(), String> {
     let data_dir = get_data_dir();
     let target_dir = if sub_dir.is_empty() {
         data_dir

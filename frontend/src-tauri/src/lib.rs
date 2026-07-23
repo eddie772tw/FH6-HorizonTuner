@@ -6,20 +6,31 @@ use tauri::Manager;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Pure Rust Tauri Backend!", name)
+    format!(
+        "Hello, {}! You've been greeted from Pure Rust Tauri Backend!",
+        name
+    )
 }
 
 #[tauri::command]
-fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
+fn set_hud_click_through(
+    app_handle: tauri::AppHandle,
+    ignore: bool,
+) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        window.set_ignore_cursor_events(ignore).map_err(|e| e.to_string())
+        window
+            .set_ignore_cursor_events(ignore)
+            .map_err(|e| e.to_string())
     } else {
         Err("Overlay window not found".to_string())
     }
 }
 
 #[tauri::command]
-fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
+fn toggle_hud_window(
+    app_handle: tauri::AppHandle,
+    visible: bool,
+) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
             window.show().map_err(|e| e.to_string())?;
@@ -44,16 +55,24 @@ struct MonitorInfo {
 }
 
 #[tauri::command]
-fn get_available_monitors(app_handle: tauri::AppHandle) -> Result<Vec<MonitorInfo>, String> {
+fn get_available_monitors(
+    app_handle: tauri::AppHandle,
+) -> Result<Vec<MonitorInfo>, String> {
     let monitors = app_handle.available_monitors().map_err(|e| e.to_string())?;
     let primary = app_handle.primary_monitor().ok().flatten();
 
     let mut list = Vec::new();
     for (idx, m) in monitors.into_iter().enumerate() {
-        let name = m.name().cloned().unwrap_or_else(|| format!("Display {}", idx + 1));
+        let name = m
+            .name()
+            .cloned()
+            .unwrap_or_else(|| format!("Display {}", idx + 1));
         let size = m.size();
         let pos = m.position();
-        let is_primary = primary.as_ref().map(|p| p.name() == m.name()).unwrap_or(idx == 0);
+        let is_primary = primary
+            .as_ref()
+            .map(|p| p.name() == m.name())
+            .unwrap_or(idx == 0);
 
         list.push(MonitorInfo {
             name,
@@ -95,7 +114,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             if window.label() == "main" {
-                if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
+                if let tauri::WindowEvent::CloseRequested { .. }
+                | tauri::WindowEvent::Destroyed = event
+                {
                     println!("Main window closed/destroyed — terminating all windows.");
                     window.app_handle().exit(0);
                 }

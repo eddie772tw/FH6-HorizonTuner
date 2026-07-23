@@ -51,7 +51,11 @@ pub fn get_tuning_record(car_id: String, save_name: String) -> Result<Value, Str
 }
 
 #[tauri::command]
-pub fn save_tuning_record(car_id: String, save_name: String, data: Value) -> Result<(), String> {
+pub fn save_tuning_record(
+    car_id: String,
+    save_name: String,
+    data: Value,
+) -> Result<(), String> {
     let filename = format!("{}_{}.json", car_id, save_name);
     storage::write_json_file("tunings", &filename, &data)
 }
