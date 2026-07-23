@@ -49,3 +49,6 @@ ehthumbs.db
 /.ref
 /ref
 /tool/overlay/ultralight-sdk/
+backend/hud_config.json
+/backend/__pycache__
+/backend/car_params
