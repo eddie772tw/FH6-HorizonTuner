@@ -47,6 +47,9 @@ jobs:
   frontend-ci:
     name: Frontend TypeScript CI
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -59,16 +62,19 @@ jobs:
         cache-dependency-path: frontend/package-lock.json
 
     - name: Install Frontend Dependencies
-      run: npm --prefix frontend install
+      run: npm install
 
     - name: Execute Vitest Physics & Tuning Tests
-      run: npm --prefix frontend run test
+      run: npm run test
 
   # Job 3: Pure Rust Tauri Executable Build Verification
   build-verification:
     name: Tauri Release Build Verification
     needs: [rust-ci, frontend-ci]
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -89,7 +95,7 @@ jobs:
         workspaces: frontend/src-tauri -> target
 
     - name: Install Frontend Dependencies
-      run: npm --prefix frontend install
+      run: npm install
 
     - name: Build Pure Rust Tauri Executable
-      run: npm --prefix frontend run tauri build
+      run: npm run tauri build
