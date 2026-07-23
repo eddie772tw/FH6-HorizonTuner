@@ -5,16 +5,18 @@ import TuningView from './components/TuningView';
 import CarParamsView from './components/CarParamsView';
 import SettingsView from './components/SettingsView';
 import DiagnosticConsole from './components/DiagnosticConsole';
+import ThemeView from './components/ThemeView';
 import { useTelemetry } from './hooks/useTelemetry';
 import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 
 import OverlayView from './components/OverlayView';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
 
@@ -44,6 +46,9 @@ const AppContent: React.FC = () => {
         <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <SettingsView />
         </div>
+        <div style={{ display: activeTab === 'theme' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <ThemeView />
+        </div>
       </main>
       {showLogs && <DiagnosticConsole onClose={() => setShowLogs(false)} />}
     </div>
@@ -54,13 +59,15 @@ import { TelemetryRecorderProvider } from './context/TelemetryRecorderContext';
 
 const App: React.FC = () => {
   return (
-    <SettingsProvider>
+    <ThemeProvider>
+      <SettingsProvider>
       <CarParamsProvider>
         <TelemetryRecorderProvider>
           <AppContent />
         </TelemetryRecorderProvider>
       </CarParamsProvider>
-    </SettingsProvider>
+      </SettingsProvider>
+    </ThemeProvider>
   );
 };
 
