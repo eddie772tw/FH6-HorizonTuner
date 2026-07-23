@@ -33,9 +33,9 @@ from typing import List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from motec_exporter import export_session_to_motec_csv
 from telemetry_listener import pack_telemetry_binary, start_udp_listener
 from telemetry_sqlite import TelemetrySQLite
-from motec_exporter import export_session_to_motec_csv
 
 
 # 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
@@ -337,32 +337,38 @@ class RaceRecorder:
         current_race_time = data.get("CurrentRaceTime", 0.0)
         current_lap = data.get("CurrentLap", data.get("LapNumber", 0))
 
-        is_race_active = self.manual_mode or (is_race_on and current_race_time > 0.0 and current_lap > 0)
+        is_race_active = self.manual_mode or (
+            is_race_on and current_race_time > 0.0 and current_lap > 0
+        )
 
         if is_race_active:
             if not self.is_recording:
                 self.clear()
                 self.is_recording = True
                 self.current_session_id = f"session_{int(time.time())}"
-                
+
                 car_ordinal = data.get("CarOrdinal", 0)
                 car_info = car_database.get(str(car_ordinal), {})
                 car_name = f"{car_info.get('year', '')} {car_info.get('make', '')} {car_info.get('model', '')}".strip()
                 if not car_name:
-                    car_name = f"Car #{car_ordinal}" if car_ordinal > 0 else "Unknown Car"
+                    car_name = (
+                        f"Car #{car_ordinal}" if car_ordinal > 0 else "Unknown Car"
+                    )
 
                 car_class = data.get("CarClass", 0)
                 car_pi = data.get("CarPerformanceIndex", 0)
-                
+
                 telemetry_db.create_session(
                     session_id=self.current_session_id,
                     car_ordinal=car_ordinal,
                     car_name=car_name,
                     car_class=car_class,
                     car_pi=car_pi,
-                    start_time=time.time()
+                    start_time=time.time(),
                 )
-                logger.info(f"Started new telemetry recording session: {self.current_session_id}")
+                logger.info(
+                    f"Started new telemetry recording session: {self.current_session_id}"
+                )
 
             now = time.time()
             if now - self.last_sample_time >= self.downsample_interval:
@@ -383,7 +389,7 @@ class RaceRecorder:
                 # Clone data dictionary for SQLite batch insert
                 point = dict(data)
                 point["time"] = round(relative_time, 2)
-                
+
                 self.in_memory_batch.append(point)
                 self.total_count += 1
                 self.last_sample_time = now
@@ -401,7 +407,7 @@ class RaceRecorder:
             return
 
         self._flush_to_sqlite()
-        
+
         # Calculate Laps summary from SQLite
         try:
             points = telemetry_db.get_telemetry_points(self.current_session_id)
@@ -430,14 +436,16 @@ class RaceRecorder:
                     if l_time > 1.0 and l_time < best_lap_time:
                         best_lap_time = l_time
 
-                    laps_summary.append({
-                        "lap_number": l_num,
-                        "lap_time": round(l_time, 3),
-                        "start_distance": round(start_dist, 1),
-                        "end_distance": round(end_dist, 1),
-                        "max_speed_kmh": round(max_sp, 1),
-                        "avg_speed_kmh": round(avg_sp, 1),
-                    })
+                    laps_summary.append(
+                        {
+                            "lap_number": l_num,
+                            "lap_time": round(l_time, 3),
+                            "start_distance": round(start_dist, 1),
+                            "end_distance": round(end_dist, 1),
+                            "max_speed_kmh": round(max_sp, 1),
+                            "avg_speed_kmh": round(avg_sp, 1),
+                        }
+                    )
                     total_distance = max(total_distance, end_dist)
 
                 if best_lap_time == 999999.0:
@@ -448,9 +456,11 @@ class RaceRecorder:
                     self.current_session_id,
                     total_laps=len(laps_summary),
                     best_lap_time=round(best_lap_time, 3),
-                    total_distance=round(total_distance, 1)
+                    total_distance=round(total_distance, 1),
                 )
-                logger.info(f"Finished session {self.current_session_id}: {len(laps_summary)} laps recorded in SQLite.")
+                logger.info(
+                    f"Finished session {self.current_session_id}: {len(laps_summary)} laps recorded in SQLite."
+                )
         except Exception as e:
             logger.error(f"Error finalizing session summary in SQLite: {e}")
 
@@ -1483,7 +1493,14 @@ async def get_analysis_config():
     return {
         "activeMetric": "speed",
         "customMathChannels": [],
-        "enabledCharts": ["track_map", "inputs_gear", "gg_diagram", "slip_scatter", "susp_dist", "temp_dist"]
+        "enabledCharts": [
+            "track_map",
+            "inputs_gear",
+            "gg_diagram",
+            "slip_scatter",
+            "susp_dist",
+            "temp_dist",
+        ],
     }
 
 
@@ -1503,19 +1520,23 @@ async def get_analysis_status():
     return {
         "isRecording": race_recorder.is_recording,
         "recordingCount": race_recorder.total_count,
-        "currentSessionId": race_recorder.current_session_id
+        "currentSessionId": race_recorder.current_session_id,
     }
 
 
 @app.get("/api/analysis/data")
 async def get_current_analysis_data(lap: int = 0):
     if race_recorder.current_session_id:
-        return telemetry_db.get_telemetry_points(race_recorder.current_session_id, lap_number=lap if lap > 0 else None)
+        return telemetry_db.get_telemetry_points(
+            race_recorder.current_session_id, lap_number=lap if lap > 0 else None
+        )
     # Return latest recorded session if any
     sessions = telemetry_db.list_all_sessions()
     if sessions:
         latest_id = sessions[0]["session_id"]
-        return telemetry_db.get_telemetry_points(latest_id, lap_number=lap if lap > 0 else None)
+        return telemetry_db.get_telemetry_points(
+            latest_id, lap_number=lap if lap > 0 else None
+        )
     return []
 
 
@@ -1531,15 +1552,18 @@ async def start_manual_recording():
     race_recorder.manual_mode = True
     race_recorder.is_recording = True
     race_recorder.current_session_id = f"session_{int(time.time())}"
-    
+
     telemetry_db.create_session(
         session_id=race_recorder.current_session_id,
         car_ordinal=0,
         car_name="Manual Session",
-        start_time=time.time()
+        start_time=time.time(),
     )
     logger.info("Manual recording started.")
-    return {"message": "Manual recording started successfully", "sessionId": race_recorder.current_session_id}
+    return {
+        "message": "Manual recording started successfully",
+        "sessionId": race_recorder.current_session_id,
+    }
 
 
 @app.post("/api/analysis/recorder/stop")
@@ -1559,16 +1583,18 @@ async def list_saved_sessions():
         raw_sessions = telemetry_db.list_all_sessions()
         sessions = []
         for s in raw_sessions:
-            sessions.append({
-                "filename": s["session_id"],
-                "session_id": s["session_id"],
-                "car_name": s["car_name"],
-                "total_laps": s["total_laps"],
-                "best_lap_time": s["best_lap_time"],
-                "total_distance": s["total_distance"],
-                "mtime": s["start_time"],
-                "size": 0
-            })
+            sessions.append(
+                {
+                    "filename": s["session_id"],
+                    "session_id": s["session_id"],
+                    "car_name": s["car_name"],
+                    "total_laps": s["total_laps"],
+                    "best_lap_time": s["best_lap_time"],
+                    "total_distance": s["total_distance"],
+                    "mtime": s["start_time"],
+                    "size": 0,
+                }
+            )
         return sessions
     except Exception as e:
         logger.error(f"Failed to list saved sessions from SQLite: {e}")
@@ -1583,7 +1609,9 @@ async def get_session_laps(session_id: str):
 @app.get("/api/analysis/sessions/{session_id}")
 async def load_saved_session(session_id: str, lap: int = 0):
     try:
-        data = telemetry_db.get_telemetry_points(session_id, lap_number=lap if lap > 0 else None)
+        data = telemetry_db.get_telemetry_points(
+            session_id, lap_number=lap if lap > 0 else None
+        )
         if data:
             return data
     except Exception as e:
@@ -1615,10 +1643,12 @@ async def export_motec_session(session_id: str):
 
     export_filename = f"{session_id}_motec.csv"
     export_filepath = os.path.join(SESSIONS_DIR, export_filename)
-    
+
     success = export_session_to_motec_csv(session_meta, points, export_filepath)
     if success and os.path.exists(export_filepath):
-        return FileResponse(export_filepath, filename=export_filename, media_type="text/csv")
+        return FileResponse(
+            export_filepath, filename=export_filename, media_type="text/csv"
+        )
     return {"error": "Failed to generate MoTeC CSV export"}
 
 
