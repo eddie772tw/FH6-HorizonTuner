@@ -5,7 +5,6 @@ on:
     branches: [ "master", "main" ]
   pull_request:
     branches: [ "master", "main" ]
-  workflow_dispatch: # 容許在 GitHub Action 介面上手動點擊執行
 
 permissions:
   contents: read
@@ -14,9 +13,6 @@ jobs:
   # 任務 1：Ruff 靜態代碼與格式檢查
   lint:
     runs-on: ubuntu-latest
-    # 設定 environment 使其需要在 GitHub 上獲得批准後才能執行。
-    # 註：需要在 GitHub Repository Settings -> Environments 建立名為 "CI-Approval" 的環境，並設定 "Required reviewers"。
-    environment: CI-Approval
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -34,8 +30,6 @@ jobs:
   # 任務 2：跨平台測試與邏輯驗證
   test:
     runs-on: ${{ matrix.os }}
-    # 同樣需要 GitHub 上的環境審批
-    environment: CI-Approval
     strategy:
       fail-fast: false
       matrix:
