@@ -1,62 +1,80 @@
-name: FH6 HorizonTuner CI Pipeline
+name: FH6 HorizonTuner CI Pipeline (Pure Rust)
 
 on:
   push:
     branches: [ "master", "main" ]
   pull_request:
     branches: [ "master", "main" ]
-  workflow_dispatch: # 容許在 GitHub Action 介面上手動點擊執行
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  # 任務 1：Ruff 靜態代碼與格式檢查
-  lint:
+  # Job 1: Rust Backend Lint, Formatting & Tests
+  rust-ci:
+    name: Rust Backend CI
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Rust Toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Rust Code Formatting Check
+      run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+
+    - name: Rust Clippy Linting Check
+      run: cargo clippy --manifest-path frontend/src-tauri/Cargo.toml --all-targets -- -D warnings
+
+    - name: Rust Unit & Integration Tests
+      run: cargo test --manifest-path frontend/src-tauri/Cargo.toml
+
+  # Job 2: Frontend TypeScript & Physics Math Unit Tests
+  frontend-ci:
+    name: Frontend TypeScript CI
     runs-on: ubuntu-latest
-    # 設定 environment 使其需要在 GitHub 上獲得批准後才能執行。
-    # 註：需要在 GitHub Repository Settings -> Environments 建立名為 "CI-Approval" 的環境，並設定 "Required reviewers"。
-    environment: CI-Approval
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Run Ruff Check
-      uses: astral-sh/ruff-action@v3
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        args: "check --output-format=github ."
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
 
-    - name: Run Ruff Format Verification
-      uses: astral-sh/ruff-action@v3
-      with:
-        args: "format --check ."
+    - name: Install Frontend Dependencies
+      run: npm --prefix frontend install
 
-  # 任務 2：跨平台測試與邏輯驗證
-  test:
-    runs-on: ${{ matrix.os }}
-    # 同樣需要 GitHub 上的環境審批
-    environment: CI-Approval
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        python-version: ["3.13"]
+    - name: Execute Vitest Physics & Tuning Tests
+      run: npm --prefix frontend run test
 
+  # Job 3: Pure Rust Tauri Executable Build Verification
+  build-verification:
+    name: Tauri Release Build Verification
+    needs: [rust-ci, frontend-ci]
+    runs-on: windows-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
 
-    - name: Upgrade pip and install core requirements
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+    - name: Set up Rust Toolchain
+      uses: dtolnay/rust-toolchain@stable
 
-    - name: Execute automated test suite via pytest
-      run: |
-        python -m pytest -v
+    - name: Install Frontend Dependencies
+      run: npm --prefix frontend install
+
+    - name: Build Pure Rust Tauri Executable
+      run: npm --prefix frontend run tauri build

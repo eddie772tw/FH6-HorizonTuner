@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 
 export interface TelemetryData {
   IsRaceOn: number;
@@ -67,6 +68,26 @@ export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
 
   useEffect(() => {
     subscribers++;
+
+    let unlistenTauri: (() => void) | null = null;
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+    if (isTauri) {
+      listen<TelemetryData>("telemetry-data", (event) => {
+        latestData = event.payload;
+        connectionState = true;
+        telemetryEmitter.dispatchEvent(new CustomEvent("update", { detail: latestData }));
+        window.dispatchEvent(new CustomEvent("hud:frame", { detail: latestData }));
+        if (latestData && hudBroadcastChannel) {
+          hudBroadcastChannel.postMessage({
+            type: "telemetry",
+            data: formatHudTelemetry(latestData),
+          });
+        }
+      }).then((unsub) => {
+        unlistenTauri = unsub;
+      });
+    }
 
     const connect = () => {
       if (sharedWs && (sharedWs.readyState === WebSocket.OPEN || sharedWs.readyState === WebSocket.CONNECTING)) {
@@ -248,6 +269,7 @@ function formatHudTelemetry(raw: TelemetryData) {
 
     return () => {
       clearInterval(interval);
+      if (unlistenTauri) unlistenTauri();
       subscribers--;
       if (subscribers === 0) {
         clearTimeout(reconnectTimeout);

@@ -2,44 +2,13 @@
 setlocal enabledelayedexpansion
 
 echo ====================================================================
-echo      FH6 HorizonTuner - Standalone Release Bundler
+echo      FH6 HorizonTuner - Pure Rust Standalone Release Bundler
 echo ====================================================================
 echo.
 
-:: 1. Check and locate virtual environment and PyInstaller
-set "VENV_DIR=%~dp0.venv"
-set "PY_EXE=%VENV_DIR%\Scripts\python.exe"
-set "PYINSTALLER_EXE=%VENV_DIR%\Scripts\pyinstaller.exe"
+cd /D "%~dp0"
 
-if exist "%PY_EXE%" (
-    if not exist "%PYINSTALLER_EXE%" (
-        echo [INFO] PyInstaller not found in virtual environment, installing...
-        "%PY_EXE%" -m pip install pyinstaller
-        if errorlevel 1 (
-            echo [ERROR] Failed to install PyInstaller in virtual environment.
-            if not "%GITHUB_ACTIONS%" == "true" pause
-            exit /b 1
-        )
-    )
-    set "RUN_PYINSTALLER="%PY_EXE%" -m PyInstaller"
-) else (
-    where pyinstaller >nul 2>nul
-    if !errorlevel! equ 0 (
-        set "RUN_PYINSTALLER=pyinstaller"
-    ) else (
-        where python >nul 2>nul
-        if !errorlevel! equ 0 (
-            python -m pip install pyinstaller
-            set "RUN_PYINSTALLER=python -m PyInstaller"
-        ) else (
-            echo [ERROR] No valid Python virtual environment or global Python environment found.
-            if not "%GITHUB_ACTIONS%" == "true" pause
-            exit /b 1
-        )
-    )
-)
-
-:: 1.5. Scan for unregistered directories (not ignored and not packaged)
+:: 1. Scan for unregistered directories (not ignored and not packaged)
 echo [INFO] Scanning for unregistered resource directories...
 echo --------------------------------------------------------------------
 set "HAS_UNREGISTERED=false"
@@ -56,9 +25,8 @@ for /d %%D in ("%~dp0*") do (
     )
     
     if "!IS_IGNORED!" == "false" (
-        :: Check if it's already packaged in this script by searching for its name
-        findstr /I /C:"%%~nxD" "%~dp0FH6-HorizonTuner.spec" >nul
-        if errorlevel 1 (
+        :: For Pure Rust architecture, check if directory is registered in Cargo/Tauri resources
+        if /i not "%%~nxD" == "frontend" (
             echo.
             echo [WARNING] Found directory '%%~nxD' that is neither ignored nor packaged.
             if "%GITHUB_ACTIONS%" == "true" (
@@ -73,7 +41,7 @@ for /d %%D in ("%~dp0*") do (
                 echo [SUCCESS] Added '%%~nxD' to .pkgdirignore.
             ) else (
                 echo.
-                echo [IMPORTANT] Please add '%%~nxD' to build_release.bat packaging options or .pkgdirignore.
+                echo [IMPORTANT] Please add '%%~nxD' to packaging options or .pkgdirignore.
                 echo [INFO] Building process will now terminate.
                 pause
                 exit /b 1
@@ -84,8 +52,17 @@ for /d %%D in ("%~dp0*") do (
 echo [SUCCESS] No unregistered resource directories found.
 echo.
 
-:: 2. Run Tauri Build
-echo [INFO] Running Tauri Build...
+:: 2. Run Rust & Frontend Lint/Format Check
+echo [INFO] Verifying code formatting and linting...
+echo --------------------------------------------------------------------
+cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+if errorlevel 1 (
+    echo [WARNING] Cargo formatting check reported issues. Auto-formatting...
+    cargo fmt --manifest-path frontend/src-tauri/Cargo.toml
+)
+
+:: 3. Run Tauri Build
+echo [INFO] Running Pure Rust Tauri Build...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 call npm install || exit /b 1
@@ -97,34 +74,22 @@ if errorlevel 1 (
     if not "%GITHUB_ACTIONS%" == "true" pause
     exit /b 1
 )
-echo [SUCCESS] Tauri Frontend built successfully.
+echo [SUCCESS] Standalone Pure Rust executable built successfully.
 echo.
 cd "%~dp0"
 
-:: 3. Build Final Executable with PyInstaller
-echo [INFO] Running PyInstaller to create final standalone executable...
-echo --------------------------------------------------------------------
-if not exist "%~dp0dist" mkdir "%~dp0dist"
-
-%RUN_PYINSTALLER% "%~dp0FH6-HorizonTuner.spec" --clean
-
-echo --------------------------------------------------------------------
-
-if errorlevel 1 (
+:: 4. Verification of output binary
+set "RELEASE_EXE=%~dp0frontend\src-tauri\target\release\frontend.exe"
+if exist "%RELEASE_EXE%" (
+    echo ====================================================================
+    echo      FH6 HorizonTuner Standalone Executable Created Successfully
+    echo ====================================================================
+    echo  Distribution Executable Path:
+    echo  %RELEASE_EXE%
     echo.
-    echo [ERROR] PyInstaller bundling encountered an error!
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+) else (
+    echo [INFO] Bundle created. Check frontend/src-tauri/target/release/bundle/ for installer packages.
 )
-echo [SUCCESS] Standalone executable created successfully.
-echo.
 
-:: 4. Success screen
-echo ====================================================================
-echo      FH6 HorizonTuner standalone bundle created successfully
-echo ====================================================================
-echo  Distribution Executable Path:
-echo  %~dp0dist\FH6-HorizonTuner.exe
-echo.
 if not "%GITHUB_ACTIONS%" == "true" pause
 exit /b 0

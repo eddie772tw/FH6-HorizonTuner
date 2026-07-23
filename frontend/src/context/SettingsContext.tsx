@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiClient } from '../services/apiClient';
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -100,21 +101,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        // Fetch languages first
-        try {
-          const langRes = await fetch('http://127.0.0.1:8001/api/languages');
-          const langData = await langRes.json();
-          if (Array.isArray(langData)) {
-            setAvailableLanguages(langData);
-          }
-        } catch (e) {
-          console.error('Failed to fetch available languages', e);
-        }
-
-        const res = await fetch('http://127.0.0.1:8001/api/settings');
-        const data = await res.json();
+        const data = (await apiClient.getSettings()) as any;
         if (data && !data.error) {
-          // Merge defaults to handle cases where units might be missing or partially set
           const merged: AppSettings = {
             dyno_recording: data.dyno_recording ?? defaultSettings.dyno_recording,
             race_recording: data.race_recording ?? defaultSettings.race_recording,
@@ -124,13 +112,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             dyno_filter_transients: data.dyno_filter_transients ?? defaultSettings.dyno_filter_transients,
             units: {
               ...defaultUnits,
-              ...(data.units || {})
-            }
+              ...(data.units || {}),
+            },
           };
           setSettings(merged);
         }
       } catch (e) {
-        console.error('Failed to fetch settings from backend', e);
+        console.error("Failed to fetch settings from backend", e);
       } finally {
         setIsLoading(false);
       }
@@ -138,45 +126,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchSettings();
   }, []);
 
-  // Fetch translation when language changes
-  useEffect(() => {
-    const fetchTranslation = async () => {
-      if (settings.language === 'en-us') {
-        setTranslations({});
-        return;
-      }
-      try {
-        const res = await fetch(`http://127.0.0.1:8001/api/languages/${settings.language}`);
-        const data = await res.json();
-        if (data && !data.error) {
-          setTranslations(data);
-        }
-      } catch (e) {
-        console.error(`Failed to fetch translation for ${settings.language}`, e);
-      }
-    };
-    fetchTranslation();
-  }, [settings.language]);
-
   const updateSettings = async (updates: any) => {
     let newSettings = { ...settings };
-    
-    if ('units' in updates) {
+
+    if ("units" in updates) {
       newSettings.units = { ...settings.units, ...updates.units };
     } else {
       newSettings = { ...settings, ...updates };
     }
-    
+
     setSettings(newSettings);
 
     try {
-      await fetch('http://127.0.0.1:8001/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
+      await apiClient.saveSettings(newSettings);
     } catch (e) {
-      console.error('Failed to update settings in backend', e);
+      console.error("Failed to update settings in backend", e);
     }
   };
 

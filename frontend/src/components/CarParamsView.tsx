@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiClient } from '../services/apiClient';
 import { useCarParams, CarParams } from '../context/CarParamsContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useSettings } from '../context/SettingsContext';
@@ -37,9 +38,8 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
           const prefix = `${carId}-`;
           if (lastTuning.startsWith(prefix)) {
             const saveName = lastTuning.substring(prefix.length);
-            const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}/${saveName}`);
-            const data = await res.json();
-            if (data && data.gearing) {
+            const data = await apiClient.getTuningRecord(carId, saveName);
+            if (data && !(data as any).error && data.gearing) {
               setGearingData(data.gearing);
               return;
             }

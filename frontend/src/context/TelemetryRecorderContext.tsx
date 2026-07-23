@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSettings } from './SettingsContext';
+import { apiClient } from '../services/apiClient';
 
 export interface AnalysisDataPoint {
   time: number;                  // Seconds since recording started
@@ -48,62 +49,26 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   const [loadedSession, setLoadedSession] = useState<AnalysisDataPoint[] | null>(null);
   const [savedSessions, setSavedSessions] = useState<SavedSessionHeader[]>([]);
 
-  // Fixed static empty array. The frontend never stores telemetry points in background state.
-  // This completely eliminates background memory growth in the WebView.
   const currentSession: AnalysisDataPoint[] = [];
 
-  // Poll recording status from backend every 2 seconds
-  useEffect(() => {
-    let active = true;
-    const checkStatus = async () => {
-      if (!settings.race_recording) {
-        if (isRecording) setIsRecording(false);
-        if (recordingCount !== 0) setRecordingCount(0);
-        return;
-      }
-      try {
-        const res = await fetch('http://127.0.0.1:8001/api/analysis/status');
-        const data = await res.json();
-        if (active && data) {
-          setIsRecording(data.isRecording);
-          setRecordingCount(data.recordingCount);
-        }
-      } catch (e) {
-        console.error('Failed to fetch telemetry recording status from backend:', e);
-      }
-    };
-
-    checkStatus();
-    const interval = setInterval(checkStatus, 2000);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [settings.race_recording, isRecording, recordingCount]);
-
-  // Fetch the list of saved sessions on mount
   useEffect(() => {
     fetchSavedSessionsList();
   }, []);
 
   const fetchSavedSessionsList = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions');
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setSavedSessions(data);
+      const files = await apiClient.getAnalysisSessions();
+      if (Array.isArray(files)) {
+        setSavedSessions(files.map(filename => ({ filename, size: 0, mtime: Date.now() })));
       }
     } catch (e) {
       console.error('Failed to fetch saved sessions list:', e);
     }
   };
 
-  // Fetch the current session (latest.json) and load it directly into loadedSession
   const fetchCurrentSessionData = async (): Promise<AnalysisDataPoint[]> => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
-      const data = await res.json();
+      const data = (await apiClient.getAnalysisSession("latest.json")) as AnalysisDataPoint[];
       if (Array.isArray(data)) {
         setLoadedSession(data);
         return data;
@@ -116,33 +81,31 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
   const clearCurrentSession = async () => {
     try {
-      await fetch('http://127.0.0.1:8001/api/analysis/clear', { method: 'POST' });
+      await apiClient.deleteAnalysisSession("latest.json");
       setLoadedSession(null);
       setRecordingCount(0);
     } catch (e) {
-      console.error('Failed to clear current session on backend:', e);
+      console.error('Failed to clear current session:', e);
     }
   };
 
-  // Save the latest.json session file to a permanent timestamped file on the backend
   const saveCurrentSessionToBackend = async (): Promise<string | null> => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions/save_latest', { method: 'POST' });
-      const data = await res.json();
-      if (data && data.filename) {
+      const filename = `session_${Date.now()}.json`;
+      if (loadedSession) {
+        await apiClient.saveAnalysisSession(filename, loadedSession);
         await fetchSavedSessionsList();
-        return data.filename;
+        return filename;
       }
     } catch (e) {
-      console.error('Failed to save session to backend:', e);
+      console.error('Failed to save session:', e);
     }
     return null;
   };
 
   const loadSavedSession = async (filename: string): Promise<AnalysisDataPoint[] | null> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}`);
-      const data = await res.json();
+      const data = (await apiClient.getAnalysisSession(filename)) as AnalysisDataPoint[];
       if (Array.isArray(data)) {
         setLoadedSession(data);
         return data;
@@ -155,13 +118,10 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
 
   const deleteSavedSession = async (filename: string): Promise<boolean> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data && !data.error) {
-        await fetchSavedSessionsList();
-        setLoadedSession(null);
-        return true;
-      }
+      await apiClient.deleteAnalysisSession(filename);
+      await fetchSavedSessionsList();
+      setLoadedSession(null);
+      return true;
     } catch (e) {
       console.error(`Failed to delete saved session ${filename}:`, e);
     }
@@ -195,4 +155,3 @@ export const useTelemetryRecorder = () => {
   }
   return context;
 };
-

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
+import { apiClient } from '../services/apiClient';
 
 export interface CarParams {
   weight: number;
@@ -30,8 +31,7 @@ export interface CarParams {
     diff: 'Fixed' | 'Adjustable';
   };
   dyno_curve: Record<string, { hp: number; torque: number; hp_hist?: number[]; torque_hist?: number[] }>;
-  
-  // New optional parameters for advanced tuning wizard
+
   spring_front_min?: number;
   spring_front_max?: number;
   spring_rear_min?: number;
@@ -40,7 +40,7 @@ export interface CarParams {
   arb_front_max?: number;
   arb_rear_min?: number;
   arb_rear_max?: number;
-  
+
   roll_center_front?: number;
   roll_center_rear?: number;
   anti_dive?: number;
@@ -87,22 +87,21 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const fetchCarsWithParams = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/cars/with_params');
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setCarsWithParams(data);
+      const db = await apiClient.getCarDatabase() as Record<string, any>;
+      if (db) {
+        setCarDb(db);
+        const carsList = Object.entries(db).map(([id, info]: [string, any]) => ({
+          id,
+          name: info.display_name || id,
+        }));
+        setCarsWithParams(carsList);
       }
     } catch (e) {
       console.error("Failed to fetch cars with params", e);
     }
   };
 
-  // Fetch car database and cars with params
   useEffect(() => {
-    fetch('http://127.0.0.1:8001/api/cars/database')
-      .then(r => r.json())
-      .then(data => setCarDb(data))
-      .catch(e => console.error(e));
     fetchCarsWithParams();
   }, []);
 
@@ -110,7 +109,6 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const prevTelemetryCarIdRef = useRef<string>('');
 
-  // Auto-switch to telemetry car id if it's active and has actually changed
   useEffect(() => {
     if (telemetryCarId && telemetryCarId !== '0') {
       if (telemetryCarId !== prevTelemetryCarIdRef.current) {
@@ -120,61 +118,59 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     prevTelemetryCarIdRef.current = telemetryCarId;
   }, [telemetryCarId]);
 
-  // Load params when carId changes
   useEffect(() => {
     let active = true;
     const fetchParams = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`);
-        const result = await res.json();
-        if (active && !result.error) {
+        const result = (await apiClient.getCarParams(carId)) as CarParams | null;
+        if (active && result && !('error' in (result as any))) {
           setCarParams(result);
-        } else if (active && result.error) {
-            setCarParams({
-              weight: 1500,
-              weight_distribution: 50,
-              drivetrain: 'RWD',
-              induction: 'NA',
-              maxHp: 0,
-              maxTorque: 0,
-              maxHpRpm: 0,
-              maxTorqueRpm: 0,
-              aeroBalance: 0.50,
-              aeroEfficiency: 0.50,
-              mechBalance: 0.50,
-              frontTireWidth: 245,
-              frontTireAspect: 40,
-              frontTireRim: 18,
-              rearTireWidth: 245,
-              rearTireAspect: 40,
-              rearTireRim: 18,
-              adjustability: {
-                gearbox: 'Full',
-                gears: 6,
-                suspension: 'Race',
-                arb: 'Adjustable',
-                aero: 'Adjustable',
-                brakes: 'Adjustable',
-                diff: 'Adjustable'
-              },
-              dyno_curve: {},
-              spring_front_min: 10.0,
-              spring_front_max: 120.0,
-              spring_rear_min: 10.0,
-              spring_rear_max: 120.0,
-              arb_front_min: 1.0,
-              arb_front_max: 65.0,
-              arb_rear_min: 1.0,
-              arb_rear_max: 65.0,
-              roll_center_front: 0.0,
-              roll_center_rear: 0.0,
-              anti_dive: 0,
-              anti_squat: 0,
-              target_ride_frequency: 2.4,
-              target_rebound_ratio: 0.70,
-              target_bump_ratio: 0.55
-            });
+        } else if (active) {
+          setCarParams({
+            weight: 1500,
+            weight_distribution: 50,
+            drivetrain: 'RWD',
+            induction: 'NA',
+            maxHp: 0,
+            maxTorque: 0,
+            maxHpRpm: 0,
+            maxTorqueRpm: 0,
+            aeroBalance: 0.50,
+            aeroEfficiency: 0.50,
+            mechBalance: 0.50,
+            frontTireWidth: 245,
+            frontTireAspect: 40,
+            frontTireRim: 18,
+            rearTireWidth: 245,
+            rearTireAspect: 40,
+            rearTireRim: 18,
+            adjustability: {
+              gearbox: 'Full',
+              gears: 6,
+              suspension: 'Race',
+              arb: 'Adjustable',
+              aero: 'Adjustable',
+              brakes: 'Adjustable',
+              diff: 'Adjustable'
+            },
+            dyno_curve: {},
+            spring_front_min: 10.0,
+            spring_front_max: 120.0,
+            spring_rear_min: 10.0,
+            spring_rear_max: 120.0,
+            arb_front_min: 1.0,
+            arb_front_max: 65.0,
+            arb_rear_min: 1.0,
+            arb_rear_max: 65.0,
+            roll_center_front: 0.0,
+            roll_center_rear: 0.0,
+            anti_dive: 0,
+            anti_squat: 0,
+            target_ride_frequency: 2.4,
+            target_rebound_ratio: 0.70,
+            target_bump_ratio: 0.55
+          });
         }
       } catch (e) {
         console.error("Failed to load car params", e);
@@ -186,34 +182,10 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     return () => { active = false; };
   }, [carId]);
 
-  // Poll dyno curve ONLY (no longer overwrites maxHpRpm/maxTorqueRpm)
-  useEffect(() => {
-    if (telemetryCarId === carId && telemetryCarId !== '0') {
-      const interval = setInterval(async () => {
-        try {
-          const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`);
-          const result = await res.json();
-          if (!result.error) {
-            setCarParams(prev => {
-              if (!prev) return result;
-              // Only update dyno_curve — preserve all user-edited car params
-              return { ...prev, dyno_curve: result.dyno_curve };
-            });
-          }
-        } catch (e) { }
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [telemetryCarId, carId]);
-
   const saveCarParams = async () => {
     if (!carParams) return;
     try {
-      await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(carParams)
-      });
+      await apiClient.saveCarParams(carId, carParams);
       await fetchCarsWithParams();
     } catch (e) {
       console.error("Failed to save car params", e);
@@ -222,19 +194,13 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const clearDynoCurve = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}/dyno_curve`, {
-        method: 'DELETE'
-      });
-      const result = await res.json();
-      if (!result.error) {
-        setCarParams(prev => prev ? { ...prev, dyno_curve: {} } : prev);
-      }
+      await apiClient.deleteDynoCurve(carId);
+      setCarParams(prev => prev ? { ...prev, dyno_curve: {} } : prev);
     } catch (e) {
       console.error("Failed to clear dyno curve", e);
     }
   };
 
-  // Manually import peak RPM values from dyno curve into car params
   const importDynoValues = () => {
     if (!carParams || Object.keys(carParams.dyno_curve).length === 0) return;
     let mHp = 0, mHpRpm = 0;
@@ -246,8 +212,6 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
     setCarParams({ ...carParams, maxHp: Math.round(mHp), maxTorque: Math.round(mTorque), maxHpRpm: mHpRpm, maxTorqueRpm: mTorqueRpm });
   };
-
-
 
   return (
     <CarParamsContext.Provider value={{

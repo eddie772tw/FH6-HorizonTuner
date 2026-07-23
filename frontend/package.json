@@ -8,7 +8,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "npx @biomejs/biome check src",
+    "format": "npx @biomejs/biome format --write src"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
