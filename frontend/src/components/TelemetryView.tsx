@@ -49,8 +49,12 @@ const inactiveTabStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
+// --- Extracted selectors for memoized components ---
+const selectClutch = (d: any) => d.ClutchInput || 0;
+const selectHandbrake = (d: any) => d.HandBrakeInput || 0;
+
 // --- COMPONENT: SteerBar ---
-const SteerBar: React.FC = () => {
+const SteerBar: React.FC = React.memo(() => {
   const barRef = useRef<HTMLDivElement>(null);
   const { t } = useSettings();
   useEffect(() => {
@@ -81,10 +85,10 @@ const SteerBar: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 // --- COMPONENT: GForceRadar ---
-const GForceRadar: React.FC = () => {
+const GForceRadar: React.FC = React.memo(() => {
   const dotRef = useRef<HTMLDivElement>(null);
   const latRef = useRef<HTMLSpanElement>(null);
   const lonRef = useRef<HTMLSpanElement>(null);
@@ -230,10 +234,10 @@ const GForceRadar: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 // --- COMPONENT: VerticalInputBar ---
-const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; max: number; color: string }> = ({ label, selector, max, color }) => {
+const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; max: number; color: string }> = React.memo(({ label, selector, max, color }) => {
   const valRef = useRef<number>(0);
   const barRef = useRef<HTMLDivElement>(null);
   const pctRef = useRef<HTMLSpanElement>(null);
@@ -265,10 +269,10 @@ const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; 
       <span ref={pctRef} style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#fff' }}>0%</span>
     </div>
   );
-};
+});
 
 // --- COMPONENT: PedalTraceCanvas ---
-const PedalTraceCanvas: React.FC = () => {
+const PedalTraceCanvas: React.FC = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ throttle: number; brake: number; time: number }[]>([]);
   const lastTimeRef = useRef(performance.now());
@@ -370,10 +374,10 @@ const PedalTraceCanvas: React.FC = () => {
       </span>
     </div>
   );
-};
+});
 
 // --- COMPONENT: TireRadar ---
-const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = ({title, isLeft, tireIdx}) => {
+const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = React.memo(({title, isLeft, tireIdx}) => {
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{temp: number, ratio: number, angle: number, time: number, speed: number}[]>([]);
@@ -621,10 +625,10 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = (
       </div>
     </div>
   );
-};
+});
 
 // --- COMPONENT: SuspensionBar ---
-const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = ({title, isLeft, tireIdx}) => {
+const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = React.memo(({title, isLeft, tireIdx}) => {
   const barRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const minRef = useRef<HTMLSpanElement>(null);
@@ -766,7 +770,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       </div>
     </div>
   );
-};
+});
 
 // --- COMPONENT: TelemetryView MAIN ---
 const TelemetryView: React.FC = () => {
@@ -920,8 +924,8 @@ const TelemetryView: React.FC = () => {
               <PedalTraceCanvas />
             </div>
             <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
-              <VerticalInputBar label={t("Clutch")} selector={d => d.ClutchInput || 0} max={255} color="#0088ff" />
-              <VerticalInputBar label={t("Handbrake")} selector={d => d.HandBrakeInput || 0} max={255} color="#ffaa00" />
+              <VerticalInputBar label={t("Clutch")} selector={selectClutch} max={255} color="#0088ff" />
+              <VerticalInputBar label={t("Handbrake")} selector={selectHandbrake} max={255} color="#ffaa00" />
             </div>
           </div>
         </div>
