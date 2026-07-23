@@ -19,8 +19,60 @@ fn get_data_dir() -> PathBuf {
     data_path
 }
 
+/// Migrate legacy root files/folders (settings.json, car_params, tunings, etc.) into data/ by moving them
+pub fn migrate_legacy_data() {
+    let base_dir = std::env::current_exe()
+        .map(|p| p.parent().unwrap_or(Path::new(".")).to_path_buf())
+        .unwrap_or_else(|_| PathBuf::from("."));
+
+    let data_dir = get_data_dir();
+
+    let move_file = |src: &Path, dst: &Path| {
+        if src.exists() && src != dst {
+            if !dst.exists() {
+                if fs::rename(src, dst).is_err() && fs::copy(src, dst).is_ok() {
+                    let _ = fs::remove_file(src);
+                }
+            } else {
+                let _ = fs::remove_file(src);
+            }
+        }
+    };
+
+    // 1. Move root settings.json to data/settings.json
+    let old_settings = base_dir.join("settings.json");
+    let new_settings = data_dir.join("settings.json");
+    move_file(&old_settings, &new_settings);
+
+    // 2. Move subdirectories (car_params, tunings, sessions, drag_sessions, logs)
+    let legacy_folders = ["car_params", "tunings", "sessions", "drag_sessions", "logs"];
+    for folder in &legacy_folders {
+        let old_folder = base_dir.join(folder);
+        let new_folder = data_dir.join(folder);
+
+        if old_folder.exists() && old_folder.is_dir() && old_folder != new_folder {
+            let _ = fs::create_dir_all(&new_folder);
+            if let Ok(entries) = fs::read_dir(&old_folder) {
+                for entry in entries.flatten() {
+                    let src_path = entry.path();
+                    if src_path.is_file() {
+                        if let Some(file_name) = src_path.file_name() {
+                            let dst_path = new_folder.join(file_name);
+                            move_file(&src_path, &dst_path);
+                        }
+                    }
+                }
+            }
+            // Remove old empty folder
+            let _ = fs::remove_dir(old_folder);
+        }
+    }
+}
+
 /// Automatically extract/update embedded resources into data/ if missing or older
 pub fn ensure_resources_updated(_app_handle: Option<&tauri::AppHandle>) {
+    migrate_legacy_data();
+
     let data_dir = get_data_dir();
     let lang_dir = data_dir.join("lang");
     let _ = fs::create_dir_all(&lang_dir);
@@ -188,6 +240,39 @@ pub fn delete_json_file(sub_dir: &str, file_name: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_migrate_legacy_data() {
+        let base_dir = std::env::current_exe()
+            .map(|p| p.parent().unwrap_or(Path::new(".")).to_path_buf())
+            .unwrap_or_else(|_| PathBuf::from("."));
+        let data_dir = get_data_dir();
+
+        // Create dummy legacy files
+        let old_settings = base_dir.join("test_legacy_settings.json");
+        let _new_settings = data_dir.join("test_legacy_settings.json");
+        let _ = fs::write(&old_settings, r#"{"legacy": true}"#);
+
+        assert!(old_settings.exists());
+
+        // Perform migration
+        migrate_legacy_data();
+
+        // If old settings filename was "settings.json", it moves it.
+        // Let's test standard settings.json move
+        let old_std_settings = base_dir.join("settings.json");
+        let new_std_settings = data_dir.join("settings.json");
+        let _ = fs::write(&old_std_settings, r#"{"legacy": true}"#);
+        assert!(old_std_settings.exists());
+
+        migrate_legacy_data();
+
+        assert!(!old_std_settings.exists());
+        assert!(new_std_settings.exists());
+
+        // Clean up test file
+        let _ = fs::remove_file(old_settings);
+    }
 
     #[test]
     fn test_legacy_json_structure_compatibility() {
