@@ -92,9 +92,9 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
       justifyContent: 'space-between', 
       alignItems: 'center', 
       padding: '1rem 2rem',
-      background: 'rgba(0, 0, 0, 0.5)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(10px)',
+      background: 'var(--glass-bg)',
+      borderBottom: '1px solid var(--glass-border)',
+      backdropFilter: 'blur(var(--glass-blur))',
       position: 'sticky',
       top: 0,
       zIndex: 100
