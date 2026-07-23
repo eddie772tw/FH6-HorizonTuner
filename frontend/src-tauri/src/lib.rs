@@ -122,6 +122,7 @@ pub fn run() {
         })
         .setup(|app| {
             println!("[Pure Rust] Initializing HorizonTuner Pure Rust Backend...");
+            storage::ensure_resources_updated(Some(app.handle()));
             telemetry::spawn_telemetry_listener(app.handle().clone(), 8000);
             Ok(())
         })

@@ -2,6 +2,11 @@ use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// Embedded Default Fallback Resources
+const EMBEDDED_CAR_DB: &str = include_str!("../../../car_database.json");
+const EMBEDDED_LANG_ZH_TW: &str = include_str!("../../../lang/zh-tw.json");
+const EMBEDDED_LANG_JA_JP: &str = include_str!("../../../lang/ja-jp.json");
+
 fn get_data_dir() -> PathBuf {
     let base_dir = std::env::current_exe()
         .map(|p| p.parent().unwrap_or(Path::new(".")).to_path_buf())
@@ -14,92 +19,84 @@ fn get_data_dir() -> PathBuf {
     data_path
 }
 
-pub fn find_resource_file(
-    app_handle: Option<&tauri::AppHandle>,
-    file_subpath: &str,
-) -> Option<PathBuf> {
-    // 1. Try Tauri AppHandle resource_dir
-    if let Some(app) = app_handle {
-        use tauri::Manager;
-        if let Ok(res_dir) = app.path().resource_dir() {
-            let p = res_dir.join(file_subpath);
-            if p.exists() {
-                return Some(p);
-            }
-            let p_up = res_dir.join("_up_").join("_up_").join(file_subpath);
-            if p_up.exists() {
-                return Some(p_up);
-            }
-        }
-    }
+/// Automatically extract/update embedded resources into data/ if missing or older
+pub fn ensure_resources_updated(_app_handle: Option<&tauri::AppHandle>) {
+    let data_dir = get_data_dir();
+    let lang_dir = data_dir.join("lang");
+    let _ = fs::create_dir_all(&lang_dir);
 
-    // 2. Try current exe directory and parents
-    if let Ok(exe_path) = std::env::current_exe() {
-        let mut curr = exe_path.parent();
-        for _ in 0..5 {
-            if let Some(dir) = curr {
-                let p = dir.join(file_subpath);
-                if p.exists() {
-                    return Some(p);
-                }
-                curr = dir.parent();
-            }
-        }
-    }
+    // Executable mtime as baseline build timestamp
+    let exe_mtime = std::env::current_exe()
+        .ok()
+        .and_then(|p| fs::metadata(p).ok())
+        .and_then(|m| m.modified().ok());
 
-    // 3. Try current working dir and parents
-    if let Ok(cwd) = std::env::current_dir() {
-        let mut curr = Some(cwd.as_path());
-        for _ in 0..5 {
-            if let Some(dir) = curr {
-                let p = dir.join(file_subpath);
-                if p.exists() {
-                    return Some(p);
-                }
-                curr = dir.parent();
+    let sync_file = |target_path: &Path, content: &str| {
+        let should_write = if !target_path.exists() {
+            true
+        } else if let (Some(build_time), Ok(meta)) =
+            (exe_mtime, fs::metadata(target_path))
+        {
+            if let Ok(file_time) = meta.modified() {
+                // If embedded build time is newer than target physical file, update it
+                build_time > file_time
+            } else {
+                false
             }
-        }
-    }
+        } else {
+            false
+        };
 
-    None
+        if should_write {
+            let _ = fs::write(target_path, content);
+        }
+    };
+
+    // 1. Sync data/car_database.json
+    sync_file(&data_dir.join("car_database.json"), EMBEDDED_CAR_DB);
+
+    // 2. Sync data/lang/*.json
+    sync_file(&lang_dir.join("zh-tw.json"), EMBEDDED_LANG_ZH_TW);
+    sync_file(&lang_dir.join("ja-jp.json"), EMBEDDED_LANG_JA_JP);
 }
 
 pub fn read_car_database(
-    app_handle: Option<&tauri::AppHandle>,
+    _app_handle: Option<&tauri::AppHandle>,
 ) -> Result<Value, String> {
-    if let Some(db_path) = find_resource_file(app_handle, "car_database.json") {
+    let db_path = get_data_dir().join("car_database.json");
+    if db_path.exists() {
         let content = fs::read_to_string(&db_path).map_err(|e| e.to_string())?;
         serde_json::from_str(&content).map_err(|e| e.to_string())
     } else {
-        Ok(serde_json::json!({}))
+        serde_json::from_str(EMBEDDED_CAR_DB).map_err(|e| e.to_string())
     }
 }
 
 pub fn read_language_file(
-    app_handle: Option<&tauri::AppHandle>,
+    _app_handle: Option<&tauri::AppHandle>,
     code: &str,
 ) -> Result<Value, String> {
-    let subpath = format!("lang/{}.json", code);
-    if let Some(lang_path) = find_resource_file(app_handle, &subpath) {
+    let lang_path = get_data_dir().join("lang").join(format!("{}.json", code));
+    if lang_path.exists() {
         let content = fs::read_to_string(&lang_path).map_err(|e| e.to_string())?;
         serde_json::from_str(&content).map_err(|e| e.to_string())
     } else {
-        Ok(serde_json::json!({}))
+        let fallback = match code {
+            "ja-jp" => EMBEDDED_LANG_JA_JP,
+            _ => EMBEDDED_LANG_ZH_TW,
+        };
+        serde_json::from_str(fallback).map_err(|e| e.to_string())
     }
 }
 
 pub fn list_languages(
-    app_handle: Option<&tauri::AppHandle>,
+    _app_handle: Option<&tauri::AppHandle>,
 ) -> Result<Vec<Value>, String> {
     let mut list = vec![serde_json::json!({"code": "en-us", "name": "English (US)"})];
+    let lang_dir = get_data_dir().join("lang");
 
-    let lang_dir = find_resource_file(app_handle, "lang").or_else(|| {
-        find_resource_file(app_handle, "lang/zh-tw.json")
-            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-    });
-
-    if let Some(dir) = lang_dir {
-        if let Ok(entries) = fs::read_dir(dir) {
+    if lang_dir.exists() {
+        if let Ok(entries) = fs::read_dir(lang_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_file()
@@ -193,13 +190,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_write_and_read_json() {
-        let test_val = serde_json::json!({"test_key": "test_val"});
-        assert!(write_json_file("test_dir", "test_file.json", &test_val).is_ok());
+    fn test_legacy_json_structure_compatibility() {
+        // Test compatibility with legacy Python FastAPI JSON structures
+        let legacy_hud_config = serde_json::json!({
+            "show_speed": true,
+            "show_gear": true,
+            "legacy_field_from_python": "should_be_preserved_or_ignored"
+        });
 
-        let read_val = read_json_file("test_dir", "test_file.json").unwrap();
-        assert_eq!(read_val["test_key"], "test_val");
+        assert!(
+            write_json_file("test_legacy", "hud_config.json", &legacy_hud_config)
+                .is_ok()
+        );
 
-        assert!(delete_json_file("test_dir", "test_file.json").is_ok());
+        let loaded = read_json_file("test_legacy", "hud_config.json").unwrap();
+        assert_eq!(loaded["show_speed"], true);
+        assert_eq!(
+            loaded["legacy_field_from_python"],
+            "should_be_preserved_or_ignored"
+        );
+
+        assert!(delete_json_file("test_legacy", "hud_config.json").is_ok());
     }
 }

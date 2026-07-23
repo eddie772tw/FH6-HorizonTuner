@@ -26,7 +26,7 @@ echo --------------------------------------------------------------------
 call node frontend/scripts/verify-resources.js
 if errorlevel 1 (
     echo.
-    echo [ERROR] Resource verification failed! Please register unhandled directories in tauri.conf.json or .pkgdirignore.
+    echo [ERROR] Resource verification failed! Please register unhandled directories in tauri.conf.json or .pkgignore.
     if not "%GITHUB_ACTIONS%" == "true" pause
     exit /b 1
 )
@@ -65,18 +65,42 @@ echo [SUCCESS] Standalone Pure Rust executable built successfully.
 echo.
 cd /D "!ROOT_DIR!"
 
-REM 4. Verification of output binary
-set "RELEASE_EXE=!ROOT_DIR!frontend\src-tauri\target\release\frontend.exe"
-if exist "%RELEASE_EXE%" (
-    echo ====================================================================
-    echo      FH6 HorizonTuner Standalone Executable Created Successfully
-    echo ====================================================================
-    echo  Distribution Executable Path:
-    echo  %RELEASE_EXE%
-    echo.
+REM 4. Deploy release artifacts to root dist/ directory
+echo [INFO] Deploying release package to root dist/ folder...
+echo --------------------------------------------------------------------
+if not exist "!ROOT_DIR!dist" mkdir "!ROOT_DIR!dist"
+if not exist "!ROOT_DIR!dist\data" mkdir "!ROOT_DIR!dist\data"
+
+set "RELEASE_SRC=!ROOT_DIR!frontend\src-tauri\target\release\frontend.exe"
+set "DIST_EXE=!ROOT_DIR!dist\FH6-HorizonTuner.exe"
+
+if exist "!RELEASE_SRC!" (
+    copy /Y "!RELEASE_SRC!" "!DIST_EXE!" >nul
+    echo [SUCCESS] Copied executable to !DIST_EXE!
 ) else (
-    echo [INFO] Bundle created. Check frontend/src-tauri/target/release/bundle/ for installer packages.
+    echo [WARNING] Release executable !RELEASE_SRC! not found.
 )
+
+REM Copy default resources to dist/data/ (car_database.json & lang/)
+if exist "!ROOT_DIR!car_database.json" (
+    copy /Y "!ROOT_DIR!car_database.json" "!ROOT_DIR!dist\data\car_database.json" >nul
+    echo [SUCCESS] Copied default car_database.json to dist\data\
+)
+
+if exist "!ROOT_DIR!lang" (
+    xcopy /E /I /Y "!ROOT_DIR!lang" "!ROOT_DIR!dist\data\lang" >nul
+    echo [SUCCESS] Copied default lang/ directory to dist\data\lang\
+)
+
+echo.
+echo ====================================================================
+echo      FH6 HorizonTuner Release Package Created Successfully
+echo ====================================================================
+echo  Distribution Folder: !ROOT_DIR!dist
+echo  Main Executable:     !DIST_EXE!
+echo  Data Directory:      dist\data\ (car_database.json, lang\)
+echo ====================================================================
+echo.
 
 if not "%GITHUB_ACTIONS%" == "true" pause
 exit /b 0
