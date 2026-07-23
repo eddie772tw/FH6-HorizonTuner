@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 title FH6 Telemetry Tuning Tool (Pure Rust Tauri)
 
 echo ====================================================================
-echo      FH6 HorizonTuner - Pure Rust Dev Environment Launcher
+echo      FH6 HorizonTuner - Dev Environment Launcher
 echo ====================================================================
 echo.
 

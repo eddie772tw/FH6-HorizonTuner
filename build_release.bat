@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ====================================================================
-echo      FH6 HorizonTuner - Pure Rust Standalone Release Bundler
+echo      FH6 HorizonTuner - Standalone Release Bundler
 echo ====================================================================
 echo.
 
