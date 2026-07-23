@@ -1,0 +1,9 @@
+# .pkgignore - 打包與發行過濾控制檔 (Packaging Ignore & Negation Rules)
+# 支援 Git 語法：
+#   path/  : 發行時排除此目錄
+#   !path/ : 強制包含/打包此目錄 (覆寫全域與 .gitignore 的排除)
+
+.github
+.agents
+tool
+showcase pic

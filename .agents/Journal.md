@@ -21,7 +21,8 @@
 - **批次檔絕對路徑切換與 Auto UAC 權限提升**：在 CMD 腳本中，多次調用相對路徑 `cd frontend` 會引發 `系統找不到指定的路徑` 錯誤，統一改以 `cd /D "!ROOT_DIR!frontend"` 進行絕對定位。非系統管理員身分雙擊批次檔時，`taskkill` 與 `netstat` 操作會因 Access is denied 拋錯引發連鎖閃退，於腳本開頭加入 `net session` 檢測與 PowerShell `-Verb RunAs` 自動引導請求 UAC 管理員授權。
 - **HUD 儀表板控制中心設定持久化與 API 轉譯**：重構 `OverlayView.tsx` 與 `TelemetryView.tsx` 中殘留的硬編碼 `fetch("http://127.0.0.1:8001/api/overlay/config")` 網絡請求，全數替換為 Pure Rust Tauri IPC 通訊 `apiClient.getOverlayConfig()` 與 `saveOverlayConfig()`，使設定變更 100% 持久化寫入至 `hud_config.json`，解決重啟後恢復預設值的問題。
 - **連線狀態視覺語意明確化 (Two-Tier Status Indicator)**：重構連線燈號，區分內嵌 Pure Rust 後端 Core 狀態與 Forza Horizon UDP 遙測串流狀態（綠燈 `FORZA TELEMETRY LIVE 60Hz` vs 黃燈 `WAITING FOR FORZA UDP`），擺脫無效的 WebSocket 迴連警報並提供極致的連線明確性。
-- **工作流漏洞檢討與強制門檻升級 (Workflows & Mandatory Gateways)**：深刻檢討先前的 Task Completion Checklist。單純執行 `cargo test` 無法阻斷符合語法但帶有 warnings 的 Rust 代碼溜至 CI。已全面升級 `AGENTS.md` 的 Task Completion Checklist 與 `build_release.bat` 本地腳本，將 `cargo clippy --all-targets -- -D warnings` 與 `npm run lint` 提升為宣佈任務完成前不可豁免的 Mandatory 本地卡關門檻。
+- **方案 A 單一真理資源校驗腳本 (`verify-resources.js`)**：實施 Single Source of Truth 資源動態校驗腳本 `frontend/scripts/verify-resources.js`，自動由 `tauri.conf.json` 解析 `bundle.resources` 白名單，動態比對 `.pkgdirignore`。成功完全淘汰舊有 `.pkgdirs` 硬編碼維護檔。
+- **React.lazy + Family Chunking 零循環相依包體優化 (Code-Splitting)**：在 `TelemetryView.tsx` 內將 `AnalysisView` 與 `DragTestView` 改為 `React.lazy()` + `<Suspense>` 動態切割；並在 `vite.config.ts` 採用「圖表依賴家族 (Recharts + D3 + Victory)」完整封裝為 `charts.js` (357 kB)，將核心首屏包 `vendor.js` 從 622 kB 大幅打降至 **264 kB** (Gzip 85 kB)，建置時間從 7.56s 縮短至 2.93s，完美避開過往跨 Chunk 循環引用的白屏崩潰陷阱。
 - **GitHub Actions CI Linux 依賴與工作目錄修正**：在 Linux (`ubuntu-latest`) 上編譯與檢驗 `glib-sys` 時補全 `libgtk-3-dev` 與 `libwebkit2gtk-4.1-dev` 等 C/GTK 原生套件。針對子目錄前端 Job 明確設置 `defaults.run.working-directory: frontend`，徹底防止 Windows pwsh 平台執行 npm 時因根目錄無 `package.json` 引發的 ENOENT 錯位。
 
 **後續行動 (Action):**

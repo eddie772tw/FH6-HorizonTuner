@@ -40,9 +40,10 @@
    - **數據層 (Rust Backend/UDP)**：僅負責數據接收與格式轉譯，不承載 UI 呈現邏輯。
    - **呈現層 (Frontend/Components)**：僅負責 UI 互動與視覺化，嚴禁在組件內撰寫複雜的物理計算公式。
 
-3. **維護 `.pkgdirignore` 與 `.gitignore` 規範**：
-   - 新增功能、模組、檔案或執行任務時，必須同步檢查並維護 `.pkgdirignore` 與 `.gitignore` 檔案。
-   - 確保所有動態生成之快取（`node_modules`, `target`）、使用者設定、運行數據與臨時檔均被 `.gitignore` 嚴格排除；同時確保非發行打包目錄正確登錄於 `.pkgdirignore`，維護 Repository 純潔性與打包精準度。
+3. **動態維護 `.pkgignore` 規範**：
+   - `.pkgignore` 為專案打包與發行過濾專屬控制檔（做為 `.gitignore` 的擴充與白黑名單覆寫檔）。
+   - **支援 Git 語法**：使用 `path/` 將資料夾列入黑名單，使用 `!path/` (否定語法) 強制包含/打包該資料夾（覆寫全域與 `.gitignore` 的排除）。
+   - 資源動態校驗器 `verify-resources.js` 會自動解析 `.gitignore` 與 `.pkgignore`，維持 Repository 純潔性與打包精準度。
 
 ### 開發邊界限制
 * **必須做的事**：

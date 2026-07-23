@@ -4,8 +4,9 @@ import { useSettings } from '../context/SettingsContext';
 import { useCarParams } from '../context/CarParamsContext';
 import { useTelemetryRecorder } from '../context/TelemetryRecorderContext';
 import { apiClient } from '../services/apiClient';
-import AnalysisView from './AnalysisView';
-import DragTestView from './DragTestView';
+
+const AnalysisView = React.lazy(() => import('./AnalysisView'));
+const DragTestView = React.lazy(() => import('./DragTestView'));
 
 
 const getCarClassString = (cls?: number) => {
@@ -892,9 +893,13 @@ const TelemetryView: React.FC = () => {
       )}
 
       {subTab === 'analysis' ? (
-        <AnalysisView />
+        <React.Suspense fallback={<div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading Analysis Module...</div>}>
+          <AnalysisView />
+        </React.Suspense>
       ) : subTab === 'drag' ? (
-        <DragTestView />
+        <React.Suspense fallback={<div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading Drag Test Module...</div>}>
+          <DragTestView />
+        </React.Suspense>
       ) : (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
       

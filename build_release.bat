@@ -20,46 +20,16 @@ echo.
 set "ROOT_DIR=%~dp0"
 cd /D "!ROOT_DIR!"
 
-REM 1. Scan for unregistered directories
+REM 1. Scan for unregistered directories dynamically via Node.js Single Source of Truth
 echo [INFO] Scanning for unregistered resource directories...
 echo --------------------------------------------------------------------
-set "HAS_UNREGISTERED=false"
-
-for /d %%D in ("!ROOT_DIR!*") do (
-    set "DIR_NAME=%%~nxD"
-    set "IS_IGNORED=false"
-    
-    if exist "!ROOT_DIR!.pkgdirignore" (
-        for /f "usebackq tokens=* eol=#" %%I in ("!ROOT_DIR!.pkgdirignore") do (
-            if /i "%%~nxD" == "%%I" set "IS_IGNORED=true"
-        )
-    )
-    
-    if "!IS_IGNORED!" == "false" (
-        if /i not "%%~nxD" == "frontend" (
-            echo.
-            echo [WARNING] Found directory '%%~nxD' that is neither ignored nor packaged.
-            if "%GITHUB_ACTIONS%" == "true" (
-                echo [ERROR] Unregistered directory '%%~nxD' found in CI. Terminating.
-                exit /b 1
-            )
-            choice /C YN /T 10 /D N /M "Would you like to add '%%~nxD' to .pkgdirignore?"
-            if !errorlevel! equ 1 (
-                echo [INFO] Adding '%%~nxD' to .pkgdirignore...
-                echo.>> "!ROOT_DIR!.pkgdirignore"
-                echo %%~nxD>> "!ROOT_DIR!.pkgdirignore"
-                echo [SUCCESS] Added '%%~nxD' to .pkgdirignore.
-            ) else (
-                echo.
-                echo [IMPORTANT] Please add '%%~nxD' to packaging options or .pkgdirignore.
-                echo [INFO] Building process will now terminate.
-                pause
-                exit /b 1
-            )
-        )
-    )
+call node frontend/scripts/verify-resources.js
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Resource verification failed! Please register unhandled directories in tauri.conf.json or .pkgdirignore.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
 )
-echo [SUCCESS] No unregistered resource directories found.
 echo.
 
 REM 2. Run Rust and Frontend Format & Clippy Check
