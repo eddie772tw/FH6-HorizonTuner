@@ -36,11 +36,20 @@ frontend/src-tauri/gen/
 /backend/hud_config.json
 /backend/layout.json
 /backend/car_learning.json
+/backend/user_configs/
 /backend/tunings/*.json
 /backend/car_params/*.json
 !/backend/car_params/default_car.json
 /backend/sessions/*.json
+/backend/sessions/*.db
+/backend/sessions/*.db-wal
+/backend/sessions/*.db-shm
+/backend/sessions/*.ld
+/backend/sessions/*.csv
 /backend/drag_sessions/*.json
+*.db
+*.db-wal
+*.db-shm
 /logs/
 **/logs/
 

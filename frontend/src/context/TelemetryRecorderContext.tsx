@@ -3,6 +3,8 @@ import { useSettings } from './SettingsContext';
 
 export interface AnalysisDataPoint {
   time: number;                  // Seconds since recording started
+  LapNumber?: number;
+  lap_distance?: number;
   SpeedMetersPerSecond: number;
   CurrentEngineRpm: number;
   Gear: number;
@@ -20,8 +22,28 @@ export interface AnalysisDataPoint {
 
 export interface SavedSessionHeader {
   filename: string;
+  session_id: string;
+  car_name?: string;
+  total_laps?: number;
+  best_lap_time?: number;
+  total_distance?: number;
   size: number;
   mtime: number;
+}
+
+export interface LapSummary {
+  lap_number: number;
+  lap_time: number;
+  start_distance: number;
+  end_distance: number;
+  max_speed_kmh: number;
+  avg_speed_kmh: number;
+}
+
+export interface AnalysisLayoutConfig {
+  activeMetric: string;
+  customMathChannels: Array<{ name: string; formula: string }>;
+  enabledCharts: string[];
 }
 
 interface TelemetryRecorderContextType {
@@ -33,10 +55,14 @@ interface TelemetryRecorderContextType {
   setLoadedSession: (data: AnalysisDataPoint[] | null) => void;
   clearCurrentSession: () => Promise<void>;
   saveCurrentSessionToBackend: () => Promise<string | null>;
-  fetchCurrentSessionData: () => Promise<AnalysisDataPoint[]>;
+  fetchCurrentSessionData: (lap?: number) => Promise<AnalysisDataPoint[]>;
   fetchSavedSessionsList: () => Promise<void>;
-  loadSavedSession: (filename: string) => Promise<AnalysisDataPoint[] | null>;
+  loadSavedSession: (filename: string, lap?: number) => Promise<AnalysisDataPoint[] | null>;
+  loadSessionLaps: (filename: string) => Promise<LapSummary[]>;
   deleteSavedSession: (filename: string) => Promise<boolean>;
+  exportMoTecCsv: (filename: string) => void;
+  loadAnalysisConfig: () => Promise<AnalysisLayoutConfig | null>;
+  saveAnalysisConfig: (config: AnalysisLayoutConfig) => Promise<boolean>;
 }
 
 const TelemetryRecorderContext = createContext<TelemetryRecorderContextType | undefined>(undefined);
@@ -48,8 +74,6 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
   const [loadedSession, setLoadedSession] = useState<AnalysisDataPoint[] | null>(null);
   const [savedSessions, setSavedSessions] = useState<SavedSessionHeader[]>([]);
 
-  // Fixed static empty array. The frontend never stores telemetry points in background state.
-  // This completely eliminates background memory growth in the WebView.
   const currentSession: AnalysisDataPoint[] = [];
 
   // Poll recording status from backend every 2 seconds
@@ -82,7 +106,6 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
     };
   }, [settings.race_recording, isRecording, recordingCount]);
 
-  // Fetch the list of saved sessions on mount
   useEffect(() => {
     fetchSavedSessionsList();
   }, []);
@@ -99,10 +122,9 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
     }
   };
 
-  // Fetch the current session (latest.json) and load it directly into loadedSession
-  const fetchCurrentSessionData = async (): Promise<AnalysisDataPoint[]> => {
+  const fetchCurrentSessionData = async (lap: number = 0): Promise<AnalysisDataPoint[]> => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
+      const res = await fetch(`http://127.0.0.1:8001/api/analysis/data?lap=${lap}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setLoadedSession(data);
@@ -124,7 +146,6 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
     }
   };
 
-  // Save the latest.json session file to a permanent timestamped file on the backend
   const saveCurrentSessionToBackend = async (): Promise<string | null> => {
     try {
       const res = await fetch('http://127.0.0.1:8001/api/analysis/sessions/save_latest', { method: 'POST' });
@@ -139,9 +160,9 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
     return null;
   };
 
-  const loadSavedSession = async (filename: string): Promise<AnalysisDataPoint[] | null> => {
+  const loadSavedSession = async (filename: string, lap: number = 0): Promise<AnalysisDataPoint[] | null> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}`);
+      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}?lap=${lap}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setLoadedSession(data);
@@ -151,6 +172,19 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
       console.error(`Failed to load saved session ${filename}:`, e);
     }
     return null;
+  };
+
+  const loadSessionLaps = async (filename: string): Promise<LapSummary[]> => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}/laps`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data;
+      }
+    } catch (e) {
+      console.error(`Failed to load session laps ${filename}:`, e);
+    }
+    return [];
   };
 
   const deleteSavedSession = async (filename: string): Promise<boolean> => {
@@ -168,6 +202,44 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
     return false;
   };
 
+  const exportMoTecCsv = (filename: string) => {
+    const url = `http://127.0.0.1:8001/api/analysis/export/motec/${encodeURIComponent(filename)}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}_motec.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const loadAnalysisConfig = async (): Promise<AnalysisLayoutConfig | null> => {
+    try {
+      const res = await fetch('http://127.0.0.1:8001/api/analysis/config');
+      const data = await res.json();
+      if (data && !data.error) {
+        return data;
+      }
+    } catch (e) {
+      console.error('Failed to load analysis layout config:', e);
+    }
+    return null;
+  };
+
+  const saveAnalysisConfig = async (config: AnalysisLayoutConfig): Promise<boolean> => {
+    try {
+      const res = await fetch('http://127.0.0.1:8001/api/analysis/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      const data = await res.json();
+      return !!(data && !data.error);
+    } catch (e) {
+      console.error('Failed to save analysis layout config:', e);
+    }
+    return false;
+  };
+
   return (
     <TelemetryRecorderContext.Provider value={{
       isRecording,
@@ -181,7 +253,11 @@ export const TelemetryRecorderProvider: React.FC<{ children: React.ReactNode }> 
       fetchCurrentSessionData,
       fetchSavedSessionsList,
       loadSavedSession,
-      deleteSavedSession
+      loadSessionLaps,
+      deleteSavedSession,
+      exportMoTecCsv,
+      loadAnalysisConfig,
+      saveAnalysisConfig
     }}>
       {children}
     </TelemetryRecorderContext.Provider>
@@ -195,4 +271,3 @@ export const useTelemetryRecorder = () => {
   }
   return context;
 };
-

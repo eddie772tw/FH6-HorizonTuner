@@ -203,3 +203,17 @@
 **後續行動 (Action):**
 - 後續新增 UI 組件時，背景與邊框一律優先採用 `var(--glass-bg)` 與 `var(--glass-border)`，避免在 Light Mode 切換時出現硬編碼區塊。
 
+---
+
+## 2026-07-23 - 賽後分析 (Post-Race Analysis) 全面重製與 MoTeC 通道標準化
+
+**學習點 (Learning):**
+- **賽事自動閘門判定 (Accurate Race Gate)**：`IsRaceOn == 1` 在 Horizon 5/6 開放世界漫遊 (Freeroam) 時亦被觸發。引入 `IsRaceOn == 1 and CurrentRaceTime > 0 and CurrentLap > 0` 組合閘門，徹底消除了漫遊狀態下的誤錄製與背景資源浪費。
+- **SQLite (WAL Mode) 高效串流數據庫**：淘汰每 30s 全檔重讀重寫 `latest.json` 的極低效方式，改用 SQLite `journal_mode=WAL; synchronous=NORMAL;` 搭配 50-point 非同步批次寫入，使 60Hz/10Hz UDP 數據紀錄零 Disk I/O 阻塞與零掉幀。
+- **MoTeC 通道與 Lap Distance 對標**：以 MoTeC 20+ 標準 Channel 規範設計資料庫結構，精確記錄 `lap_distance` 與各輪態物理數值，並提供一鍵導出標準 MoTeC i2 CSV 檔功能。
+- **Ramer-Douglas-Peucker (RDP) + Canvas 2D 賽道圖繪製**：利用 RDP 演算法將上萬個賽道點精簡為 300~500 個拓撲關鍵拐點，搭配 HTML5 Canvas 2D stroke 繪製多重指標彩虹向量線條，SVG DOM 開銷降為 0。
+- **獨立設定檔 (user_configs) 與 .gitignore 管制**：使用者自訂分析佈局與 Channel 算式持久化於 `backend/user_configs/analysis_layout.json`，並於 `.gitignore` 中嚴格納入排除，確保使用者個人化設定與版本控制分離。
+
+**後續行動 (Action):**
+- 未來擴充遙測通道時，優先維護 `telemetry_sqlite.py` 與 `motec_exporter.py` 的欄位映射，保持與 MoTeC i2 規範之相容性。
+
