@@ -159,7 +159,7 @@ const AnalysisView: React.FC = () => {
   // --- PANEL 1: Slip Angle vs Slip Ratio Heatmap ---
   const slipData = useMemo(() => {
     const data: any[] = [];
-    const step = Math.max(1, Math.floor(activeSession.length / 1500));
+    const step = Math.max(1, Math.floor(activeSession.length / 500));
     for (let i = 0; i < activeSession.length; i += step) {
       const p = activeSession[i];
       for (let w = 0; w < 4; w++) {
@@ -241,7 +241,7 @@ const AnalysisView: React.FC = () => {
   // --- PANEL 4: G-G Diagram & Friction Circle ---
   const ggData = useMemo(() => {
     const points: any[] = [];
-    const step = Math.max(1, Math.floor(activeSession.length / 1200));
+    const step = Math.max(1, Math.floor(activeSession.length / 800));
     
     for (let i = 0; i < activeSession.length; i += step) {
       const p = activeSession[i];
@@ -280,7 +280,7 @@ const AnalysisView: React.FC = () => {
 
   // --- PANEL 5: Combined Driver Inputs & Gear Chart ---
   const inputsChartData = useMemo(() => {
-    const step = Math.max(1, Math.floor(activeSession.length / 1000));
+    const step = Math.max(1, Math.floor(activeSession.length / 800));
     return activeSession.filter((_, idx) => idx % step === 0).map(p => ({
       time: p.time,
       throttle: Number(((p.AccelInput / 255) * 100).toFixed(0)),
@@ -307,7 +307,7 @@ const AnalysisView: React.FC = () => {
       if (susp > suspMax) suspMax = susp;
     });
 
-    const step = Math.max(1, Math.floor(activeSession.length / 2000));
+    const step = Math.max(1, Math.floor(activeSession.length / 1000));
     return activeSession.filter((_, idx) => idx % step === 0).map(p => {
       const speed = p.SpeedMetersPerSecond;
       const grip = Math.max(...p.TireSlipRatio.map(Math.abs));
@@ -626,9 +626,9 @@ const AnalysisView: React.FC = () => {
                   <YAxis type="number" dataKey="z" name="PosZ" domain={['dataMin - 50', 'dataMax + 50']} tick={false} axisLine={false} />
                   <ZAxis type="number" range={[49, 49]} />
                   <Tooltip content={<TrackMapTooltip />} trigger="hover" />
-                  <Scatter name="Track Path" data={trackMapData} shape={renderTrackDot} />
+                  <Scatter isAnimationActive={false} name="Track Path" data={trackMapData} shape={renderTrackDot} />
                   {playbackIndex !== -1 && currentCarPos.length > 0 && (
-                    <Scatter
+                    <Scatter isAnimationActive={false}
                       name={t("Current Position") || "目前位置"}
                       data={currentCarPos}
                       fill="var(--secondary)"
@@ -669,9 +669,9 @@ const AnalysisView: React.FC = () => {
                 <YAxis yAxisId="right" orientation="right" domain={[1, 10]} interval={1} stroke="var(--primary)" tick={{fontSize: 10}} label={{ value: t('Gear'), angle: 90, position: 'insideRight' }} />
                 <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
                 <Legend verticalAlign="top" height={36}/>
-                <Line yAxisId="left" type="monotone" dataKey="throttle" name={t("Throttle")} stroke="#00ff00" dot={false} strokeWidth={1.5} />
-                <Line yAxisId="left" type="monotone" dataKey="brake" name={t("Brake")} stroke="#ff003c" dot={false} strokeWidth={1.5} />
-                <Line yAxisId="right" type="stepAfter" dataKey="gear" name={t("Gear")} stroke="var(--primary)" dot={false} strokeWidth={2} />
+                <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="throttle" name={t("Throttle")} stroke="#00ff00" dot={false} strokeWidth={1.5} />
+                <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="brake" name={t("Brake")} stroke="#ff003c" dot={false} strokeWidth={1.5} />
+                <Line isAnimationActive={false} yAxisId="right" type="stepAfter" dataKey="gear" name={t("Gear")} stroke="var(--primary)" dot={false} strokeWidth={2} />
                 {playbackIndex !== -1 && activeSession[playbackIndex] && (
                   <ReferenceLine x={activeSession[playbackIndex].time} yAxisId="left" stroke="var(--secondary)" strokeWidth={2} />
                 )}
@@ -688,8 +688,8 @@ const AnalysisView: React.FC = () => {
                 <YAxis type="number" dataKey="lonG" name="Lon G" domain={[-2, 2]} stroke="var(--text-secondary)" tick={{fontSize: 10}} unit="G" />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
                 <Legend verticalAlign="top" height={36} />
-                <Scatter name={t("G-G Limit")} data={ggData.polygon} fill="none" line={{ stroke: 'var(--primary)', strokeWidth: 2, strokeDasharray: '4 4' }} shape={() => null} />
-                <Scatter name={t("Dynamic Gs")} data={ggData.points} fill="var(--secondary)" opacity={0.3} shape="circle" />
+                <Scatter isAnimationActive={false} name={t("G-G Limit")} data={ggData.polygon} fill="none" line={{ stroke: 'var(--primary)', strokeWidth: 2, strokeDasharray: '4 4' }} shape={() => null} />
+                <Scatter isAnimationActive={false} name={t("Dynamic Gs")} data={ggData.points} fill="var(--secondary)" opacity={0.3} shape="circle" />
               </ScatterChart>
             </ResponsiveContainer>
           </ChartWidget>
@@ -702,7 +702,7 @@ const AnalysisView: React.FC = () => {
                 <XAxis type="number" dataKey="angle" name={t("Slip Angle")} domain={[0, 'auto']} stroke="var(--text-secondary)" tick={{fontSize: 10}} unit="°" />
                 <YAxis type="number" dataKey="ratio" name={t("Slip Ratio")} domain={[0, 1.5]} stroke="var(--text-secondary)" tick={{fontSize: 10}} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
-                <Scatter name={t("Tyre Slip")} data={slipData} fill="#7000ff" opacity={0.15} shape="circle" />
+                <Scatter isAnimationActive={false} name={t("Tyre Slip")} data={slipData} fill="#7000ff" opacity={0.15} shape="circle" />
               </ScatterChart>
             </ResponsiveContainer>
           </ChartWidget>
@@ -716,10 +716,10 @@ const AnalysisView: React.FC = () => {
                 <YAxis stroke="var(--text-secondary)" tick={{fontSize: 10}} unit="%" />
                 <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
                 <Legend verticalAlign="top" height={36} />
-                <Bar dataKey="FL" name="FL" fill="#00f0ff" />
-                <Bar dataKey="FR" name="FR" fill="#ffaa00" />
-                <Bar dataKey="RL" name="RL" fill="#ff003c" />
-                <Bar dataKey="RR" name="RR" fill="#7000ff" />
+                <Bar isAnimationActive={false} dataKey="FL" name="FL" fill="#00f0ff" />
+                <Bar isAnimationActive={false} dataKey="FR" name="FR" fill="#ffaa00" />
+                <Bar isAnimationActive={false} dataKey="RL" name="RL" fill="#ff003c" />
+                <Bar isAnimationActive={false} dataKey="RR" name="RR" fill="#7000ff" />
               </BarChart>
             </ResponsiveContainer>
           </ChartWidget>
@@ -733,10 +733,10 @@ const AnalysisView: React.FC = () => {
                 <YAxis stroke="var(--text-secondary)" tick={{fontSize: 10}} unit="%" />
                 <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
                 <Legend verticalAlign="top" height={36} />
-                <Area type="monotone" dataKey="FL" name="FL" stroke="#00f0ff" fill="#00f0ff" fillOpacity={0.05} />
-                <Area type="monotone" dataKey="FR" name="FR" stroke="#ffaa00" fill="#ffaa00" fillOpacity={0.05} />
-                <Area type="monotone" dataKey="RL" name="RL" stroke="#ff003c" fill="#ff003c" fillOpacity={0.05} />
-                <Area type="monotone" dataKey="RR" name="RR" stroke="#7000ff" fill="#7000ff" fillOpacity={0.05} />
+                <Area isAnimationActive={false} type="monotone" dataKey="FL" name="FL" stroke="#00f0ff" fill="#00f0ff" fillOpacity={0.05} />
+                <Area isAnimationActive={false} type="monotone" dataKey="FR" name="FR" stroke="#ffaa00" fill="#ffaa00" fillOpacity={0.05} />
+                <Area isAnimationActive={false} type="monotone" dataKey="RL" name="RL" stroke="#ff003c" fill="#ff003c" fillOpacity={0.05} />
+                <Area isAnimationActive={false} type="monotone" dataKey="RR" name="RR" stroke="#7000ff" fill="#7000ff" fillOpacity={0.05} />
               </AreaChart>
             </ResponsiveContainer>
           </ChartWidget>
