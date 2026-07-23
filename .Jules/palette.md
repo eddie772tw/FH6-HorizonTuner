@@ -1,0 +1,3 @@
+## 2024-03-24 - Accessible Custom Toggles & Modals
+**Learning:** In the `Dashboard.tsx`, the custom toggle for metric/imperial units relied solely on a `<label>` with an `onClick` event, making it inaccessible to keyboard users (no tab focus) and screen readers (no state announcement). In `DiagnosticConsole.tsx`, the close button used an icon (`&times;`) without an aria-label.
+**Action:** When implementing custom UI controls (like switches/toggles), always back them with a visually hidden (`.sr-only`) native `<input type="checkbox">` to ensure proper keyboard navigation and screen reader support. Always add `aria-label` to icon-only buttons. Added global `:focus-visible` styles to `App.css` to improve keyboard navigation visibility across the app.

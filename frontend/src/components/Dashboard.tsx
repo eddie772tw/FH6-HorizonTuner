@@ -33,13 +33,21 @@ const Dashboard: React.FC = () => {
           FH6-Horizon Tuner
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => setUseMetric(!useMetric)}>
-            <span style={{ color: !useMetric ? 'var(--primary)' : 'var(--text-secondary)' }}>MPH</span>
+          <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <span style={{ color: !useMetric ? 'var(--primary)' : 'var(--text-secondary)' }} aria-hidden="true">MPH</span>
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={useMetric}
+              onChange={() => setUseMetric(!useMetric)}
+              aria-label="Toggle Metric Units"
+            />
             <div 
               style={{
                 width: '40px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px',
                 position: 'relative', border: '1px solid var(--primary)'
               }}
+              aria-hidden="true"
             >
               <div style={{
                 position: 'absolute', top: '2px', left: useMetric ? '22px' : '2px',
@@ -47,7 +55,7 @@ const Dashboard: React.FC = () => {
                 transition: 'left 0.2s'
               }} />
             </div>
-            <span style={{ color: useMetric ? 'var(--primary)' : 'var(--text-secondary)' }}>KM/H</span>
+            <span style={{ color: useMetric ? 'var(--primary)' : 'var(--text-secondary)' }} aria-hidden="true">KM/H</span>
           </label>
           <div style={{
             width: '12px', height: '12px', borderRadius: '50%',
