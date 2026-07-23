@@ -24,7 +24,7 @@
 - **Ruff 規範精確繼承與工具鏈移轉**：原先 `pyproject.toml` 中的 Ruff 規範標竿（88 字元最大行寬、雙引號、isort 自動 Import 排序）透過新增 `rustfmt.toml` (`max_width = 88`) 與前端 `biome.json` (`lineWidth: 88`) 完全繼承與對齊。
   - `start_all.bat`：一鍵啟動開發生態，包含 UAC 自動提權、Port 1420/8000 清理、絕對路徑切換與格式自動修復。
   - `build_release.bat`：一鍵打包原生檔，100% 保留未註冊資源目錄 (`.pkgdirignore`) 自動掃描機制與發行檔產出驗證。
-  - GitHub Actions：啟用 `Swatinem/rust-cache@v2` 並將 Rust CI 移至 Ubuntu 高速平台，移除 `environment: CI-Approval` 手動審核阻礙。
+  - GitHub Actions：啟用 `Swatinem/rust-cache@v2` 並將 Rust CI 移至 Ubuntu 高速平台（並透過 `apt install` 補全 `libgtk-3-dev` 與 `libwebkit2gtk-4.1-dev` 等 C/GTK 原生依賴庫以滿足 `glib-sys` 解析），移除 `environment: CI-Approval` 手動審核阻礙。
 
 **後續行動 (Action):**
 - 後續新增或維護專案資源時，必須同步檢查並更新 `.pkgdirignore` 與 `.gitignore`，維持打包品質與 Repository 純潔。
