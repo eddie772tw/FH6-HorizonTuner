@@ -167,11 +167,13 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
         </button>
         <div style={{
           width: '10px', height: '10px', borderRadius: '50%',
-          backgroundColor: isConnected ? '#00ff00' : '#ff0000',
-          boxShadow: `0 0 8px ${isConnected ? '#00ff00' : '#ff0000'}`
+          backgroundColor: isConnected ? '#00ff00' : '#ffaa00',
+          boxShadow: `0 0 8px ${isConnected ? '#00ff00' : '#ffaa00'}`
         }} />
-        <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {isConnected ? t("TELEMETRY LIVE") : t("DISCONNECTED")}
+        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 'bold' }}>
+          {isConnected 
+            ? (t("FORZA TELEMETRY LIVE") || "遊戲遙測傳送中 (60Hz)") 
+            : (t("WAITING FOR FORZA UDP") || "後端就緒，等待遊戲數據 (UDP 8000)")}
         </span>
       </div>
     </nav>

@@ -15,12 +15,16 @@
 
 **學習點 (Learning):**
 - **Python FastAPI + PyInstaller 包裹 Sidecar 架構痛點徹底解決**：舊架構使用 PyInstaller 包裹 Python 產生 FastAPI Sidecar 再讓 Tauri 調用，帶來了較高的安裝包體積、舊進程 Port 8000/8001 衝突、stdin EOF 重導向崩潰以及 CI 必須配置 Python 環境與 Approval 審核的龐大開銷。
-- **Pure Rust UDP Socket 60Hz 零拷貝解析**：改用 Rust `tokio::net::UdpSocket` 搭配 `byteorder` 進行二進位結構解構 (232-byte V1 & 324-byte V2 Dash Data)，直接透由 Tauri v2 的 `AppHandle::emit("telemetry-data", &data)` 廣播至 Webview。在 Tauri `setup` 鉤子中派生非同步任務時，必須使用 `tauri::async_runtime::spawn` 替代標準 `tokio::spawn`，以正確掛載至 Tauri 管理的 Tokio Async Reactor，防止 `there is no reactor running` panic 錯誤。
-- **Ruff 規範精確繼承與工具鏈移轉**：原先 `pyproject.toml` 中的 Ruff 規範標竿（88 字元最大行寬、雙引號、isort 自動 Import 排序）透過新增 `rustfmt.toml` (`max_width = 88`, `imports_granularity = "Crate"`) 與前端 `biome.json` (`lineWidth: 88`) 完全繼承與對齊。
-- **批次檔與 CI 自動化流程精簡**：
-  - `start_all.bat`：一鍵啟動開發生態，保留工具鏈檢測、舊視窗進程自動終止、語法格式自動修復。
+- **Pure Rust UDP Socket 60Hz 零拷貝解析與 Async Runtime**：改用 Rust `tokio::net::UdpSocket` 搭配 `byteorder` 進行二進位結構解構 (232-byte V1 & 324-byte V2 Dash Data)，直接透由 Tauri v2 的 `AppHandle::emit("telemetry-data", &data)` 廣播至 Webview。在 Tauri `setup` 鉤子中派生非同步任務時，必須使用 `tauri::async_runtime::spawn` 替代標準 `tokio::spawn`，以正確掛載至 Tauri 管理的 Tokio Async Reactor，防止 `there is no reactor running` panic 錯誤。
+- **Tauri WindowEvent::Destroyed 致命閃退避坑 (Webview Reload Crash Trap)**：在 Tauri 2 `on_window_event` 鉤子中，當 Vite 發生 dependency optimization、HMR 或頁面刷新時，Webview 內部會拋出 `WindowEvent::Destroyed`。若將其誤視為「視窗關閉」並觸發 `exit(0)`，會導致應用程式在啟動載入數秒後突然閃退崩潰！必須僅對 `WindowEvent::CloseRequested` 做出 `exit(0)` 回應。
+- **Windows CMD 批次檔語法解析崩潰 (`這個時候不應有 to`)**：CMD 在多行 `if (...)` / `for (...)` 區塊內若含有 `echo` 訊息或 `::` 註解且帶有右括號 `)`（例如 `https://rustup.rs/)`），解譯器會將第一個 `)` 誤認為區塊結束標記，將後續文字 `to build...` 解析為無效指令引發語法崩潰。必須將 `::` 註解改為安全的 `REM` 標記並移除 `echo` 內的括號。
+- **批次檔絕對路徑切換與 Auto UAC 權限提升**：在 CMD 腳本中，多次調用相對路徑 `cd frontend` 會引發 `系統找不到指定的路徑` 錯誤，統一改以 `cd /D "!ROOT_DIR!frontend"` 進行絕對定位。非系統管理員身分雙擊批次檔時，`taskkill` 與 `netstat` 操作會因 Access is denied 拋錯引發連鎖閃退，於腳本開頭加入 `net session` 檢測與 PowerShell `-Verb RunAs` 自動引導請求 UAC 管理員授權。
+- **HUD 儀表板控制中心設定持久化與 API 轉譯**：重構 `OverlayView.tsx` 與 `TelemetryView.tsx` 中殘留的硬編碼 `fetch("http://127.0.0.1:8001/api/overlay/config")` 網絡請求，全數替換為 Pure Rust Tauri IPC 通訊 `apiClient.getOverlayConfig()` 與 `saveOverlayConfig()`，使設定變更 100% 持久化寫入至 `hud_config.json`，解決重啟後恢復預設值的問題。
+- **連線狀態視覺語意明確化 (Two-Tier Status Indicator)**：重構連線燈號，區分內嵌 Pure Rust 後端 Core 狀態與 Forza Horizon UDP 遙測串流狀態（綠燈 `FORZA TELEMETRY LIVE 60Hz` vs 黃燈 `WAITING FOR FORZA UDP`），擺脫無效的 WebSocket 迴連警報並提供極致的連線明確性。
+- **Ruff 規範精確繼承與工具鏈移轉**：原先 `pyproject.toml` 中的 Ruff 規範標竿（88 字元最大行寬、雙引號、isort 自動 Import 排序）透過新增 `rustfmt.toml` (`max_width = 88`) 與前端 `biome.json` (`lineWidth: 88`) 完全繼承與對齊。
+  - `start_all.bat`：一鍵啟動開發生態，包含 UAC 自動提權、Port 1420/8000 清理、絕對路徑切換與格式自動修復。
   - `build_release.bat`：一鍵打包原生檔，100% 保留未註冊資源目錄 (`.pkgdirignore`) 自動掃描機制與發行檔產出驗證。
-  - GitHub Actions：移除 `environment: CI-Approval` 手動審核阻礙，採用 Rust + Vitest + Tauri Build 無縫自動化 CI。
+  - GitHub Actions：啟用 `Swatinem/rust-cache@v2` 並將 Rust CI 移至 Ubuntu 高速平台，移除 `environment: CI-Approval` 手動審核阻礙。
 
 **後續行動 (Action):**
 - 後續新增或維護專案資源時，必須同步檢查並更新 `.pkgdirignore` 與 `.gitignore`，維持打包品質與 Repository 純潔。

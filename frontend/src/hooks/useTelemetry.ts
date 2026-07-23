@@ -54,60 +54,15 @@ let latestData: TelemetryData | null = null;
 let connectionState = false;
 let subscribers = 0;
 let reconnectTimeout: ReturnType<typeof setTimeout>;
+let lastPacketTimestamp = 0;
 
 // 60Hz Event Emitter for high-performance Canvas rendering (Bypasses React)
 export const telemetryEmitter = new EventTarget();
 
-
-
-// Standby Idle Telemetry broadcast removed to ensure HUD only updates on live UDP telemetry data.
-
-export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
-  const [data, setData] = useState<TelemetryData | null>(latestData);
-  const [isConnected, setIsConnected] = useState(connectionState);
-
-  useEffect(() => {
-    subscribers++;
-
-    let unlistenTauri: (() => void) | null = null;
-    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-
-    if (isTauri) {
-      listen<TelemetryData>("telemetry-data", (event) => {
-        latestData = event.payload;
-        connectionState = true;
-        telemetryEmitter.dispatchEvent(new CustomEvent("update", { detail: latestData }));
-        window.dispatchEvent(new CustomEvent("hud:frame", { detail: latestData }));
-        if (latestData && hudBroadcastChannel) {
-          hudBroadcastChannel.postMessage({
-            type: "telemetry",
-            data: formatHudTelemetry(latestData),
-          });
-        }
-      }).then((unsub) => {
-        unlistenTauri = unsub;
-      });
-    }
-
-    const connect = () => {
-      if (sharedWs && (sharedWs.readyState === WebSocket.OPEN || sharedWs.readyState === WebSocket.CONNECTING)) {
-        return;
-      }
-
-      let finalUrl = url;
-      if (url.includes("8001")) {
-        const port = (window as any).BACKEND_PORT || 8001;
-        finalUrl = url.replace("8001", port.toString());
-      }
-
-      sharedWs = new WebSocket(finalUrl);
-
-      sharedWs.onopen = () => {
-        connectionState = true;
-        console.log("Telemetry WebSocket connected.");
-      };
-
-const hudBroadcastChannel = typeof window !== 'undefined' ? new BroadcastChannel('horizon_tuner_hud_channel') : null;
+const hudBroadcastChannel =
+  typeof window !== "undefined"
+    ? new BroadcastChannel("horizon_tuner_hud_channel")
+    : null;
 
 let peakSessionPower = 100;
 let peakSessionTorque = 100;
@@ -118,8 +73,8 @@ function formatHudTelemetry(raw: TelemetryData) {
   const isMetric = true;
   const speedKmh = (raw.SpeedMetersPerSecond || 0) * 3.6;
   const speedMph = (raw.SpeedMetersPerSecond || 0) * 2.23694;
-  const hp = ((raw.PowerWatts || 0) / 745.7);
-  const ftlbs = ((raw.TorqueNewtons || 0) * 0.737562);
+  const hp = (raw.PowerWatts || 0) / 745.7;
+  const ftlbs = (raw.TorqueNewtons || 0) * 0.737562;
   const kw = (raw.PowerWatts || 0) / 1000;
   const nm = raw.TorqueNewtons || 0;
   const boostPsi = Math.max(0, raw.Boost || 0);
@@ -219,50 +174,111 @@ function formatHudTelemetry(raw: TelemetryData) {
     num_cylinders: raw.Cylinders || 4,
     lockup,
     sessionMaxima,
-    lcState: 'inactive'
+    lcState: "inactive",
   };
 }
 
-      sharedWs.onmessage = (event) => {
-        try {
-          latestData = JSON.parse(event.data);
-          // Dispatch high-frequency 60Hz event directly to Canvas components
-          telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: latestData }));
-          window.dispatchEvent(new CustomEvent('hud:frame', { detail: latestData }));
-          
-          // Forward telemetry to Horizon Tuner HUD window via BroadcastChannel
-          if (latestData && hudBroadcastChannel) {
-            hudBroadcastChannel.postMessage({
-              type: 'telemetry',
-              data: formatHudTelemetry(latestData)
-            });
-          }
-        } catch (e) {
-          console.error("Error parsing telemetry data:", e);
+export function useTelemetry(
+  url: string = "ws://127.0.0.1:8001/ws/telemetry",
+) {
+  const [data, setData] = useState<TelemetryData | null>(latestData);
+  const [isConnected, setIsConnected] = useState(connectionState);
+
+  useEffect(() => {
+    subscribers++;
+
+    let unlistenTauri: (() => void) | null = null;
+    const isTauri =
+      typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+    if (isTauri) {
+      listen<TelemetryData>("telemetry-data", (event) => {
+        latestData = event.payload;
+        lastPacketTimestamp = Date.now();
+        telemetryEmitter.dispatchEvent(
+          new CustomEvent("update", { detail: latestData }),
+        );
+        window.dispatchEvent(
+          new CustomEvent("hud:frame", { detail: latestData }),
+        );
+        if (latestData && hudBroadcastChannel) {
+          hudBroadcastChannel.postMessage({
+            type: "telemetry",
+            data: formatHudTelemetry(latestData),
+          });
         }
+      }).then((unsub) => {
+        unlistenTauri = unsub;
+      });
+    } else {
+      const connect = () => {
+        if (
+          sharedWs &&
+          (sharedWs.readyState === WebSocket.OPEN ||
+            sharedWs.readyState === WebSocket.CONNECTING)
+        ) {
+          return;
+        }
+
+        let finalUrl = url;
+        if (url.includes("8001")) {
+          const port = (window as any).BACKEND_PORT || 8001;
+          finalUrl = url.replace("8001", port.toString());
+        }
+
+        sharedWs = new WebSocket(finalUrl);
+
+        sharedWs.onopen = () => {
+          connectionState = true;
+          console.log("Telemetry WebSocket connected.");
+        };
+
+        sharedWs.onmessage = (event) => {
+          try {
+            latestData = JSON.parse(event.data);
+            telemetryEmitter.dispatchEvent(
+              new CustomEvent("update", { detail: latestData }),
+            );
+            window.dispatchEvent(
+              new CustomEvent("hud:frame", { detail: latestData }),
+            );
+
+            if (latestData && hudBroadcastChannel) {
+              hudBroadcastChannel.postMessage({
+                type: "telemetry",
+                data: formatHudTelemetry(latestData),
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing telemetry data:", e);
+          }
+        };
+
+        sharedWs.onclose = () => {
+          connectionState = false;
+          sharedWs = null;
+          console.log("Telemetry WebSocket closed. Reconnecting...");
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(connect, 2000);
+        };
+
+        sharedWs.onerror = (e) => {
+          console.error("Telemetry WebSocket error:", e);
+          if (sharedWs) sharedWs.close();
+        };
       };
 
-      sharedWs.onclose = () => {
-        connectionState = false;
-        sharedWs = null;
-        console.log("Telemetry WebSocket closed. Reconnecting...");
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = setTimeout(connect, 2000);
-      };
-      
-      sharedWs.onerror = (e) => {
-        console.error("Telemetry WebSocket error:", e);
-        if (sharedWs) sharedWs.close();
-      };
-    };
-
-    if (subscribers === 1) {
-      connect();
+      if (subscribers === 1) {
+        connect();
+      }
     }
 
-    // [MEMORY OPTIMIZATION] Throttle React State updates to 5Hz to prevent massive Fiber garbage collection
-    // This provides readable text for the UI while the Canvas uses the 60Hz emitter above
+    // Throttle React State updates & check UDP live status
     const interval = setInterval(() => {
+      if (isTauri) {
+        // If received UDP packet within last 2.5 seconds, consider live
+        connectionState = Date.now() - lastPacketTimestamp < 2500;
+      }
       setData(latestData);
       setIsConnected(connectionState);
     }, 1000 / 5);

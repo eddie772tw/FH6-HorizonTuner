@@ -3,6 +3,7 @@ import { useTelemetry, telemetryEmitter } from '../hooks/useTelemetry';
 import { useSettings } from '../context/SettingsContext';
 import { useCarParams } from '../context/CarParamsContext';
 import { useTelemetryRecorder } from '../context/TelemetryRecorderContext';
+import { apiClient } from '../services/apiClient';
 import AnalysisView from './AnalysisView';
 import DragTestView from './DragTestView';
 
@@ -791,10 +792,8 @@ const TelemetryView: React.FC = () => {
       }
     };
 
-    const port = (window as any).BACKEND_PORT || 8001;
-    fetch(`http://127.0.0.1:${port}/api/overlay/config`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data) checkConfig(data); })
+    apiClient.getOverlayConfig()
+      .then((data: any) => { if (data && typeof data === 'object' && Object.keys(data).length > 0) checkConfig(data); })
       .catch(() => {});
 
     channel.onmessage = (event) => {

@@ -2,12 +2,24 @@
 setlocal enabledelayedexpansion
 title FH6 Telemetry Tuning Tool (Pure Rust Tauri)
 
+REM Check for Administrator Privileges
+net session >nul 2>&1
+if "!errorlevel!" neq "0" (
+    echo [INFO] Requesting Administrator privileges to prevent process cleanup errors...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs" >nul 2>&1
+    if "!errorlevel!" equ "0" (
+        exit /b 0
+    )
+    echo [WARNING] Running without Administrator privileges. Process cleanup may be limited.
+)
+
 echo ====================================================================
 echo      FH6 HorizonTuner - Development Launcher
 echo ====================================================================
 echo.
 
-cd /D "%~dp0"
+set "ROOT_DIR=%~dp0"
+cd /D "!ROOT_DIR!"
 
 REM 1. Check Node.js environment
 where node >nul 2>nul
@@ -29,16 +41,21 @@ if "!errorlevel!" neq "0" (
 
 REM 3. Run Rust format check and auto-formatting
 echo [INFO] Running Rust and Frontend format check...
-cargo fmt --manifest-path frontend/src-tauri/Cargo.toml >nul 2>nul
+cargo fmt --manifest-path "!ROOT_DIR!frontend\src-tauri\Cargo.toml" >nul 2>nul
 
-REM 4. Terminate old running instances to prevent port/window conflicts
+REM 4. Terminate old running instances and release port 1420 (Gracefully)
 echo [INFO] Cleaning up previous running instances...
 taskkill /F /IM "frontend.exe" /T >nul 2>nul
 taskkill /F /FI "WINDOWTITLE eq FH6 Telemetry*" /T >nul 2>nul
 
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| find ":1420" ^| find "LISTENING"') do (
+    taskkill /F /PID %%a >nul 2>nul
+)
+
 echo [INFO] Launching Pure Rust Tauri Application in Dev Mode...
-cd frontend
+cd /D "!ROOT_DIR!frontend"
 call npm run tauri dev
 
+echo.
 echo Dev environment closed.
 pause

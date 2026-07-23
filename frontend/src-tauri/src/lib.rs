@@ -114,10 +114,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             if window.label() == "main" {
-                if let tauri::WindowEvent::CloseRequested { .. }
-                | tauri::WindowEvent::Destroyed = event
-                {
-                    println!("Main window closed/destroyed — terminating all windows.");
+                if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+                    println!("Main window CloseRequested — terminating application.");
                     window.app_handle().exit(0);
                 }
             }

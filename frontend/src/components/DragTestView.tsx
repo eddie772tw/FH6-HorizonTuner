@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSettings } from '../context/SettingsContext';
+import { apiClient } from '../services/apiClient';
 
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend
@@ -65,41 +66,12 @@ const DragTestView: React.FC = () => {
 
   // Poll status from backend
   useEffect(() => {
-    let isMounted = true;
-    
-    const checkStatus = async () => {
-      try {
-        const res = await fetch('http://127.0.0.1:8001/api/drag/status');
-        const data = await res.json();
-        if (isMounted) {
-          const newStatus = data.status;
-          setPointsCount(data.points_count);
-          
-          if (newStatus !== status) {
-            setStatus(newStatus);
-            if (newStatus === 'finished') {
-              fetchData();
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Failed to poll drag status:', e);
-      }
-    };
-
-    checkStatus();
-    const interval = setInterval(checkStatus, 200);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    // Pure Rust environment status check
   }, [status]);
 
   const fetchSessionsList = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/drag/sessions');
-      const data = await res.json();
+      const data = await apiClient.getDragSessions();
       setSessionsList(data);
     } catch (e) {
       console.error('Failed to fetch drag sessions:', e);
@@ -113,15 +85,11 @@ const DragTestView: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [dataRes, analysisRes] = await Promise.all([
-        fetch('http://127.0.0.1:8001/api/drag/data'),
-        fetch('http://127.0.0.1:8001/api/drag/analysis')
-      ]);
-      const data = await dataRes.json();
-      const analysisData = await analysisRes.json();
-      
-      setSessionData(data);
-      setAnalysis(analysisData);
+      const data = (await apiClient.getDragSession('latest.json')) as any;
+      if (data) {
+        setSessionData(data.data || []);
+        setAnalysis(data.analysis || null);
+      }
     } catch (e) {
       console.error('Failed to fetch drag data or analysis:', e);
     } finally {
@@ -130,44 +98,31 @@ const DragTestView: React.FC = () => {
   };
 
   const handlePrepare = async () => {
-    try {
-      await fetch('http://127.0.0.1:8001/api/drag/prepare', { method: 'POST' });
-      setStatus('waiting');
-      setSessionData([]);
-      setAnalysis(null);
-      setSelectedCompareFilename('');
-      setCompareData([]);
-      setCompareAnalysis(null);
-    } catch (e) {
-      console.error('Failed to prepare drag test:', e);
-    }
+    setStatus('waiting');
+    setSessionData([]);
+    setAnalysis(null);
+    setSelectedCompareFilename('');
+    setCompareData([]);
+    setCompareAnalysis(null);
   };
 
   const handleClear = async () => {
-    try {
-      await fetch('http://127.0.0.1:8001/api/drag/clear', { method: 'POST' });
-      setStatus('idle');
-      setSessionData([]);
-      setAnalysis(null);
-      setSelectedCompareFilename('');
-      setCompareData([]);
-      setCompareAnalysis(null);
-    } catch (e) {
-      console.error('Failed to clear drag test:', e);
-    }
+    setStatus('idle');
+    setSessionData([]);
+    setAnalysis(null);
+    setSelectedCompareFilename('');
+    setCompareData([]);
+    setCompareAnalysis(null);
   };
 
   const handleSaveSession = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/drag/sessions/save', { method: 'POST' });
-      const data = await res.json();
-      if (data.message) {
-        alert(t('Drag session saved successfully'));
-        fetchSessionsList();
-      } else if (data.error) {
-        alert(data.error);
-      }
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `drag_${timestamp}.json`;
+      await apiClient.saveDragSession(filename, { data: sessionData, analysis });
+      alert(t('Drag session saved successfully'));
+      fetchSessionsList();
     } catch (e) {
       console.error('Failed to save drag session:', e);
     } finally {
@@ -183,9 +138,8 @@ const DragTestView: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/drag/sessions/${filename}`);
-      const data = await res.json();
-      if (data.data && data.analysis) {
+      const data = (await apiClient.getDragSession(filename)) as any;
+      if (data && data.data && data.analysis) {
         setCompareData(data.data);
         setCompareAnalysis(data.analysis);
       }
@@ -200,15 +154,12 @@ const DragTestView: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/drag/sessions/${filename}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.message) {
-        fetchSessionsList();
-        if (selectedCompareFilename === filename) {
-          setSelectedCompareFilename('');
-          setCompareData([]);
-          setCompareAnalysis(null);
-        }
+      await apiClient.deleteDragSession(filename);
+      fetchSessionsList();
+      if (selectedCompareFilename === filename) {
+        setSelectedCompareFilename('');
+        setCompareData([]);
+        setCompareAnalysis(null);
       }
     } catch (e) {
       console.error('Failed to delete session:', e);

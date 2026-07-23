@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../context/SettingsContext';
+import { apiClient } from '../services/apiClient';
 import '../App.css';
 
 interface HudElements {
@@ -116,11 +117,8 @@ export const OverlayView: React.FC = () => {
 
   const fetchConfig = async () => {
     try {
-      const port = (window as any).BACKEND_PORT || 8001;
-      const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
-      if (res.ok) {
-        const data = await res.json();
-        // Always reset enabled to false on startup so user manually toggles it
+      const data = (await apiClient.getOverlayConfig()) as any;
+      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         const merged = {
           ...DEFAULT_HUD_CONFIG,
           ...data,
@@ -136,28 +134,15 @@ export const OverlayView: React.FC = () => {
   };
 
   const fetchCarLearning = async () => {
-    try {
-      const port = (window as any).BACKEND_PORT || 8001;
-      const res = await fetch(`http://127.0.0.1:${port}/api/overlay/car_learning`);
-      if (res.ok) {
-        const data = await res.json();
-        setCarLearningData(data);
-      }
-    } catch (e) {
-      console.warn('Failed to fetch car learning data:', e);
-    }
+    // Car learning data placeholder for Pure Rust
+    setCarLearningData({});
   };
 
   const saveConfig = async (newConfig: HudConfig) => {
     setConfig(newConfig);
     broadcastConfig(newConfig);
     try {
-      const port = (window as any).BACKEND_PORT || 8001;
-      await fetch(`http://127.0.0.1:${port}/api/overlay/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig),
-      });
+      await apiClient.saveOverlayConfig(newConfig);
     } catch (e) {
       console.error('Failed to save HUD config:', e);
     }
