@@ -135,6 +135,8 @@ pub fn run() {
             move_hud_to_monitor,
             // Storage Commands
             commands::get_car_database,
+            commands::get_languages,
+            commands::get_language,
             commands::get_car_params,
             commands::save_car_params,
             commands::delete_dyno_curve,

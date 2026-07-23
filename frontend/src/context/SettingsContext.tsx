@@ -97,10 +97,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     { code: 'en-us', name: 'English (US)' }
   ]);
 
-  // Fetch settings from backend
+  // Fetch settings & languages from backend
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+        try {
+          const langData = (await apiClient.getLanguages()) as any[];
+          if (Array.isArray(langData)) {
+            setAvailableLanguages(langData);
+          }
+        } catch (e) {
+          console.error("Failed to fetch available languages", e);
+        }
+
         const data = (await apiClient.getSettings()) as any;
         if (data && !data.error) {
           const merged: AppSettings = {
@@ -125,6 +134,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     fetchSettings();
   }, []);
+
+  // Fetch translation when language changes
+  useEffect(() => {
+    const fetchTranslation = async () => {
+      if (settings.language === "en-us") {
+        setTranslations({});
+        return;
+      }
+      try {
+        const data = (await apiClient.getLanguage(settings.language)) as any;
+        if (data && !data.error) {
+          setTranslations(data);
+        }
+      } catch (e) {
+        console.error(`Failed to fetch translation for ${settings.language}`, e);
+      }
+    };
+    fetchTranslation();
+  }, [settings.language]);
 
   const updateSettings = async (updates: any) => {
     let newSettings = { ...settings };

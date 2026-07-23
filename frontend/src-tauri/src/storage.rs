@@ -3,46 +3,124 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 fn get_data_dir() -> PathBuf {
-    let dir = std::env::current_exe()
+    let base_dir = std::env::current_exe()
         .map(|p| p.parent().unwrap_or(Path::new(".")).to_path_buf())
         .unwrap_or_else(|_| PathBuf::from("."));
 
-    // If running in target/release, use current dir or data/
-    let data_path = dir.join("data");
+    let data_path = base_dir.join("data");
     if !data_path.exists() {
         let _ = fs::create_dir_all(&data_path);
     }
     data_path
 }
 
-fn get_resource_dir() -> PathBuf {
-    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    if cwd.join("backend").exists() {
-        cwd.join("backend")
-    } else if cwd.join("car_database.json").exists() {
-        cwd
-    } else {
-        cwd.join("..").join("backend")
+pub fn find_resource_file(
+    app_handle: Option<&tauri::AppHandle>,
+    file_subpath: &str,
+) -> Option<PathBuf> {
+    // 1. Try Tauri AppHandle resource_dir
+    if let Some(app) = app_handle {
+        use tauri::Manager;
+        if let Ok(res_dir) = app.path().resource_dir() {
+            let p = res_dir.join(file_subpath);
+            if p.exists() {
+                return Some(p);
+            }
+            let p_up = res_dir.join("_up_").join("_up_").join(file_subpath);
+            if p_up.exists() {
+                return Some(p_up);
+            }
+        }
     }
+
+    // 2. Try current exe directory and parents
+    if let Ok(exe_path) = std::env::current_exe() {
+        let mut curr = exe_path.parent();
+        for _ in 0..5 {
+            if let Some(dir) = curr {
+                let p = dir.join(file_subpath);
+                if p.exists() {
+                    return Some(p);
+                }
+                curr = dir.parent();
+            }
+        }
+    }
+
+    // 3. Try current working dir and parents
+    if let Ok(cwd) = std::env::current_dir() {
+        let mut curr = Some(cwd.as_path());
+        for _ in 0..5 {
+            if let Some(dir) = curr {
+                let p = dir.join(file_subpath);
+                if p.exists() {
+                    return Some(p);
+                }
+                curr = dir.parent();
+            }
+        }
+    }
+
+    None
 }
 
-pub fn read_car_database() -> Result<Value, String> {
-    let resource_dir = get_resource_dir();
-    let db_path = resource_dir.join("car_database.json");
-
-    if db_path.exists() {
+pub fn read_car_database(
+    app_handle: Option<&tauri::AppHandle>,
+) -> Result<Value, String> {
+    if let Some(db_path) = find_resource_file(app_handle, "car_database.json") {
         let content = fs::read_to_string(&db_path).map_err(|e| e.to_string())?;
         serde_json::from_str(&content).map_err(|e| e.to_string())
     } else {
-        // Fallback search
-        let alt_path = PathBuf::from("car_database.json");
-        if alt_path.exists() {
-            let content = fs::read_to_string(&alt_path).map_err(|e| e.to_string())?;
-            serde_json::from_str(&content).map_err(|e| e.to_string())
-        } else {
-            Ok(serde_json::json!({}))
+        Ok(serde_json::json!({}))
+    }
+}
+
+pub fn read_language_file(
+    app_handle: Option<&tauri::AppHandle>,
+    code: &str,
+) -> Result<Value, String> {
+    let subpath = format!("lang/{}.json", code);
+    if let Some(lang_path) = find_resource_file(app_handle, &subpath) {
+        let content = fs::read_to_string(&lang_path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&content).map_err(|e| e.to_string())
+    } else {
+        Ok(serde_json::json!({}))
+    }
+}
+
+pub fn list_languages(
+    app_handle: Option<&tauri::AppHandle>,
+) -> Result<Vec<Value>, String> {
+    let mut list = vec![serde_json::json!({"code": "en-us", "name": "English (US)"})];
+
+    let lang_dir = find_resource_file(app_handle, "lang").or_else(|| {
+        find_resource_file(app_handle, "lang/zh-tw.json")
+            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+    });
+
+    if let Some(dir) = lang_dir {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file()
+                    && path.extension().and_then(|s| s.to_str()) == Some("json")
+                {
+                    if let Some(code) = path.file_stem().and_then(|s| s.to_str()) {
+                        let name = match code {
+                            "zh-tw" => "繁體中文 (Taiwan)",
+                            "ja-jp" => "日本語 (Japanese)",
+                            "en-us" => "English (US)",
+                            _ => code,
+                        };
+                        if code != "en-us" {
+                            list.push(serde_json::json!({"code": code, "name": name}));
+                        }
+                    }
+                }
+            }
         }
     }
+    Ok(list)
 }
 
 pub fn read_json_file(sub_dir: &str, file_name: &str) -> Result<Value, String> {

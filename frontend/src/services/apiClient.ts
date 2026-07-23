@@ -12,6 +12,20 @@ export const apiClient = {
     return {};
   },
 
+  getLanguages: async () => {
+    if (isTauriEnv()) {
+      return await invoke("get_languages");
+    }
+    return [{ code: "en-us", name: "English (US)" }];
+  },
+
+  getLanguage: async (code: string) => {
+    if (isTauriEnv()) {
+      return await invoke("get_language", { code });
+    }
+    return {};
+  },
+
   getCarParams: async (carId: string) => {
     if (isTauriEnv()) {
       return await invoke("get_car_params", { carId });

@@ -58,7 +58,11 @@
   },
   "bundle": {
     "active": true,
-    "targets": [],
+    "targets": "all",
+    "resources": [
+      "../../car_database.json",
+      "../../lang/*"
+    ],
     "icon": [
       "../../app.ico"
     ]

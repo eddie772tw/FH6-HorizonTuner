@@ -2,8 +2,21 @@ use crate::storage;
 use serde_json::Value;
 
 #[tauri::command]
-pub fn get_car_database() -> Result<Value, String> {
-    storage::read_car_database()
+pub fn get_car_database(app_handle: tauri::AppHandle) -> Result<Value, String> {
+    storage::read_car_database(Some(&app_handle))
+}
+
+#[tauri::command]
+pub fn get_languages(app_handle: tauri::AppHandle) -> Result<Vec<Value>, String> {
+    storage::list_languages(Some(&app_handle))
+}
+
+#[tauri::command]
+pub fn get_language(
+    app_handle: tauri::AppHandle,
+    code: String,
+) -> Result<Value, String> {
+    storage::read_language_file(Some(&app_handle), &code)
 }
 
 #[tauri::command]
