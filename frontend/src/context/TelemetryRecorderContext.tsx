@@ -3,6 +3,7 @@ import { useSettings } from './SettingsContext';
 
 export interface AnalysisDataPoint {
   time: number;                  // Seconds since recording started
+  CurrentLap?: number;
   SpeedMetersPerSecond: number;
   CurrentEngineRpm: number;
   Gear: number;

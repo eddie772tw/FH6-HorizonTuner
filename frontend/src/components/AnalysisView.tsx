@@ -28,6 +28,7 @@ const AnalysisView: React.FC = () => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('speed');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilename, setSelectedFilename] = useState<string>('current');
+  const [selectedLap, setSelectedLap] = useState<number | 'all'>('all');
 
   // Playback Timeline states
   const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
@@ -44,7 +45,28 @@ const AnalysisView: React.FC = () => {
     initData();
   }, []);
 
-  const activeSession = loadedSession || currentSession;
+  const rawSession = loadedSession || currentSession;
+
+  const availableLaps = useMemo(() => {
+    const laps = new Set<number>();
+    rawSession.forEach(p => {
+      if (p.CurrentLap !== undefined && p.CurrentLap > 0) {
+        laps.add(p.CurrentLap);
+      }
+    });
+    return Array.from(laps).sort((a, b) => a - b);
+  }, [rawSession]);
+
+  useEffect(() => {
+    if (availableLaps.length > 0 && selectedLap === 'all') {
+      setSelectedLap(availableLaps[0]);
+    }
+  }, [availableLaps, selectedLap]);
+
+  const activeSession = useMemo(() => {
+    if (selectedLap === 'all') return rawSession;
+    return rawSession.filter(p => p.CurrentLap === selectedLap);
+  }, [rawSession, selectedLap]);
 
   // Playback timer effect
   useEffect(() => {
@@ -428,6 +450,22 @@ const AnalysisView: React.FC = () => {
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           
           {/* Saved Sessions Dropdown */}
+          {availableLaps.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Select Lap")}:</span>
+              <select
+                value={selectedLap}
+                onChange={(e) => setSelectedLap(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                style={selectStyle}
+              >
+                <option value="all">{t("All Laps")}</option>
+                {availableLaps.map(lap => (
+                  <option key={lap} value={lap}>{t("Lap")} {lap}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Select Session")}:</span>
             <select

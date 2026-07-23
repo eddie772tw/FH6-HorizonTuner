@@ -367,6 +367,7 @@ class RaceRecorder:
                 # Data projection for memory efficiency
                 point = {
                     "time": round(relative_time, 2),
+                    "CurrentLap": current_lap,
                     "SpeedMetersPerSecond": data.get("SpeedMetersPerSecond", 0.0),
                     "CurrentEngineRpm": data.get("CurrentEngineRpm", 0),
                     "Gear": data.get("Gear", 0),
