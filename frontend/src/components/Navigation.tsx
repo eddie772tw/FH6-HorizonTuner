@@ -135,7 +135,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             onClick={() => setActiveTab('overlay')}
             style={getTabStyle(activeTab === 'overlay')}
           >
-            {t("HUD Overlay") || "HUD 儀表板"}
+            {t("HUD Overlay")}
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
@@ -169,7 +169,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             transition: 'all 0.2s',
           }}
         >
-          {t("Show Logs") || "診斷日誌"}
+          {t("Show Logs")}
         </button>
         <div style={{
           width: '10px', height: '10px', borderRadius: '50%',
