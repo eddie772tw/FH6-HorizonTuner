@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import Navigation from './components/Navigation';
-import TelemetryView from './components/TelemetryView';
-import TuningView from './components/TuningView';
-import CarParamsView from './components/CarParamsView';
+import TelemetryView from './features/telemetry/TelemetryView';
+import TuningView from './features/tuning/TuningView';
+import CarParamsView from './features/car_params/CarParamsView';
 import SettingsView from './components/SettingsView';
 import DiagnosticConsole from './components/DiagnosticConsole';
 import ThemeView from './components/ThemeView';
@@ -12,7 +12,7 @@ import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 
-import OverlayView from './components/OverlayView';
+import OverlayView from './features/overlay_control/OverlayView';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();

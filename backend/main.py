@@ -33,6 +33,7 @@ from typing import List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from motec_exporter import export_session_to_motec_csv
 from telemetry_listener import pack_telemetry_binary, start_udp_listener
 from telemetry_sqlite import TelemetrySQLite
@@ -205,6 +206,11 @@ async def lifespan(app_inst: FastAPI):
 
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
+
+# Mount HUD overlay directory as static files
+hud_overlay_path = os.path.join(os.path.dirname(__file__), "..", "hud_overlay")
+if os.path.exists(hud_overlay_path):
+    app.mount("/hud", StaticFiles(directory=hud_overlay_path, html=True), name="hud")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1891,6 +1897,10 @@ async def save_overlay_config(data: dict):
     try:
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        # Broadcast config update to all connected WebSockets (including the HUD)
+        await manager.broadcast_json({"type": "hud:config", "data": data})
+        
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save hud_config.json: {e}")

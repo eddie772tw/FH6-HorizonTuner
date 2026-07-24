@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSettings } from '../context/SettingsContext';
-import '../App.css';
+import { useSettings } from '../../context/SettingsContext';
+import '../../App.css';
 
 interface HudElements {
   showGauge: boolean;

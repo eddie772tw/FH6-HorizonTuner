@@ -78,6 +78,9 @@ fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(
 fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
+            let port = get_backend_port().unwrap_or(8001);
+            let url = format!("http://127.0.0.1:{}/hud/index.html", port);
+            let _ = window.eval(&format!("if (!window.location.href.includes('127.0.0.1:{}')) window.location.href = '{}';", port, url));
             window.show().map_err(|e| e.to_string())?;
             window.set_focus().map_err(|e| e.to_string())?;
         } else {
