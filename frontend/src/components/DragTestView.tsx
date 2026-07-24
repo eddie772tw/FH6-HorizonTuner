@@ -522,14 +522,16 @@ const DragTestView: React.FC = () => {
                       />
                       <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: 12}} />
                       
-                      <Line yAxisId="left" type="monotone" dataKey="speed" name={t("Speed")} stroke="#00f0ff" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
-                      <Line yAxisId="right" type="monotone" dataKey="rpm" name="RPM" stroke="#ff003c" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-                      <Line yAxisId="left" type="step" dataKey="gear" name={t("Gear")} stroke="#ffaa00" strokeWidth={1.5} dot={false} />
+
+                      {/* Disabled animation for performance on high-density telemetry data */}
+                      <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="speed" name={t("Speed")} stroke="#00f0ff" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                      <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="rpm" name="RPM" stroke="#ff003c" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+                      <Line isAnimationActive={false} yAxisId="left" type="step" dataKey="gear" name={t("Gear")} stroke="#ffaa00" strokeWidth={1.5} dot={false} />
                       
                       {compareAnalysis && (
                         <>
-                          <Line yAxisId="left" type="monotone" dataKey="compare_speed" name={`${t("Compare Speed")} (${compareAnalysis.car_name})`} stroke="#00b0d0" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
-                          <Line yAxisId="right" type="monotone" dataKey="compare_rpm" name={`Compare RPM (${compareAnalysis.car_name})`} stroke="#d00030" strokeWidth={1.2} strokeDasharray="4 4" connectNulls dot={false} />
+                          <Line isAnimationActive={false} yAxisId="left" type="monotone" dataKey="compare_speed" name={`${t("Compare Speed")} (${compareAnalysis.car_name})`} stroke="#00b0d0" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
+                          <Line isAnimationActive={false} yAxisId="right" type="monotone" dataKey="compare_rpm" name={`Compare RPM (${compareAnalysis.car_name})`} stroke="#d00030" strokeWidth={1.2} strokeDasharray="4 4" connectNulls dot={false} />
                         </>
                       )}
                     </LineChart>
@@ -546,13 +548,15 @@ const DragTestView: React.FC = () => {
                       />
                       <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: 12}} />
                       
-                      <Line type="monotone" dataKey="fl_slip" name={t("FL Slip")} stroke="#387908" strokeWidth={1.5} dot={false} />
-                      <Line type="monotone" dataKey="fr_slip" name={t("FR Slip")} stroke="#ff7300" strokeWidth={1.5} dot={false} />
-                      <Line type="monotone" dataKey="rl_slip" name={t("RL Slip")} stroke="#00f0ff" strokeWidth={1.5} dot={false} />
-                      <Line type="monotone" dataKey="rr_slip" name={t("RR Slip")} stroke="#ff003c" strokeWidth={1.5} dot={false} />
-                      <Line type="monotone" dataKey="slip_diff" name={t("Slip Difference")} stroke="#ffcc00" strokeWidth={2.5} strokeDasharray="3 3" dot={false} />
+
+                      {/* Disabled animation for performance on high-density telemetry data */}
+                      <Line isAnimationActive={false} type="monotone" dataKey="fl_slip" name={t("FL Slip")} stroke="#387908" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="fr_slip" name={t("FR Slip")} stroke="#ff7300" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="rl_slip" name={t("RL Slip")} stroke="#00f0ff" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="rr_slip" name={t("RR Slip")} stroke="#ff003c" strokeWidth={1.5} dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="slip_diff" name={t("Slip Difference")} stroke="#ffcc00" strokeWidth={2.5} strokeDasharray="3 3" dot={false} />
                       {compareAnalysis && (
-                        <Line type="monotone" dataKey="compare_slip_diff" name={`${t("Compare Slip Diff")} (${compareAnalysis.car_name})`} stroke="#e6b800" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
+                        <Line isAnimationActive={false} type="monotone" dataKey="compare_slip_diff" name={`${t("Compare Slip Diff")} (${compareAnalysis.car_name})`} stroke="#e6b800" strokeWidth={1.5} strokeDasharray="4 4" connectNulls dot={false} />
                       )}
                     </LineChart>
                   </ResponsiveContainer>
