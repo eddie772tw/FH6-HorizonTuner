@@ -122,12 +122,12 @@ class TelemetrySQLite:
         with closing(self._get_connection()) as conn:
             with conn:
                 conn.execute(
-                """
+                    """
                 INSERT OR REPLACE INTO sessions (session_id, car_ordinal, car_name, car_class, car_pi, start_time)
                 VALUES (?, ?, ?, ?, ?, ?);
             """,
-                (session_id, car_ordinal, car_name, car_class, car_pi, start_time),
-            )
+                    (session_id, car_ordinal, car_name, car_class, car_pi, start_time),
+                )
             conn.commit()
 
     def update_session_summary(
@@ -140,13 +140,13 @@ class TelemetrySQLite:
         with closing(self._get_connection()) as conn:
             with conn:
                 conn.execute(
-                """
+                    """
                 UPDATE sessions
                 SET total_laps = ?, best_lap_time = ?, total_distance = ?
                 WHERE session_id = ?;
             """,
-                (total_laps, best_lap_time, total_distance, session_id),
-            )
+                    (total_laps, best_lap_time, total_distance, session_id),
+                )
             conn.commit()
 
     def save_laps_summary(self, session_id: str, laps_data: List[Dict[str, Any]]):
@@ -154,21 +154,21 @@ class TelemetrySQLite:
             with conn:
                 for lap in laps_data:
                     conn.execute(
-                    """
+                        """
                     INSERT OR REPLACE INTO laps
                     (session_id, lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh)
                     VALUES (?, ?, ?, ?, ?, ?, ?);
                 """,
-                    (
-                        session_id,
-                        lap.get("lap_number", 1),
-                        lap.get("lap_time", 0.0),
-                        lap.get("start_distance", 0.0),
-                        lap.get("end_distance", 0.0),
-                        lap.get("max_speed_kmh", 0.0),
-                        lap.get("avg_speed_kmh", 0.0),
-                    ),
-                )
+                        (
+                            session_id,
+                            lap.get("lap_number", 1),
+                            lap.get("lap_time", 0.0),
+                            lap.get("start_distance", 0.0),
+                            lap.get("end_distance", 0.0),
+                            lap.get("max_speed_kmh", 0.0),
+                            lap.get("avg_speed_kmh", 0.0),
+                        ),
+                    )
             conn.commit()
 
     def insert_points_batch(self, session_id: str, points: List[Dict[str, Any]]):
@@ -252,7 +252,7 @@ class TelemetrySQLite:
         with closing(self._get_connection()) as conn:
             with conn:
                 conn.executemany(
-                """
+                    """
                 INSERT INTO telemetry_channels (
                     session_id, lap_number, relative_time, lap_distance,
                     speed, rpm, gear, accel_pct, brake_pct, steer_pct, clutch_pct, handbrake_pct,
@@ -271,8 +271,8 @@ class TelemetrySQLite:
                     ?, ?, ?, ?
                 );
             """,
-                records,
-            )
+                    records,
+                )
             conn.commit()
 
     def list_all_sessions(self) -> List[Dict[str, Any]]:
@@ -365,5 +365,7 @@ class TelemetrySQLite:
     def delete_session(self, session_id: str) -> bool:
         with closing(self._get_connection()) as conn:
             with conn:
-                conn.execute("DELETE FROM sessions WHERE session_id = ?;", (session_id,))
+                conn.execute(
+                    "DELETE FROM sessions WHERE session_id = ?;", (session_id,)
+                )
             return True
