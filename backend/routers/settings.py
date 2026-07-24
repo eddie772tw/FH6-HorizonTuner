@@ -21,7 +21,7 @@ DEFAULT_SETTINGS = {
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
     "telemetry_ip": "0.0.0.0",
-    "telemetry_port": 8000,
+    "telemetry_port": 20127,
     "units": {
         "speed": "kmh",
         "weight": "kg",

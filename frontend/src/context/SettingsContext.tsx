@@ -1,4 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { i18nManager } from '../i18n/i18nManager';
+import zhTW from '../i18n/locales/zh-TW';
+import jaJP from '../i18n/locales/ja-JP';
+
+const STATIC_LOCALES: Record<string, any> = {
+  'zh-tw': zhTW,
+  'ja-jp': jaJP,
+};
+
+
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -93,7 +103,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [availableLanguages, setAvailableLanguages] = useState<Array<{ code: string; name: string }>>([
-    { code: 'en-us', name: 'English (US)' }
+    { code: 'en-us', name: 'English (US)' },
+    { code: 'zh-tw', name: '繁體中文' },
+    { code: 'ja-jp', name: '日本語' }
   ]);
 
   // Fetch settings from backend
@@ -102,16 +114,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         // Fetch languages first
         try {
-          const langRes = await fetch('http://127.0.0.1:8001/api/languages');
+          const langRes = await fetch('/api/languages');
           const langData = await langRes.json();
-          if (Array.isArray(langData)) {
+          if (Array.isArray(langData) && langData.length > 0) {
             setAvailableLanguages(langData);
           }
         } catch (e) {
           console.error('Failed to fetch available languages', e);
         }
 
-        const res = await fetch('http://127.0.0.1:8001/api/settings');
+        const res = await fetch('/api/settings');
         const data = await res.json();
         if (data && !data.error) {
           // Merge defaults to handle cases where units might be missing or partially set
@@ -140,23 +152,34 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Fetch translation when language changes
   useEffect(() => {
+    const lang = (settings.language || 'en-us').toLowerCase();
+    i18nManager.setLanguage(lang as any);
+
+    // 1. Immediately apply static locale dictionary for instant 0ms UI update
+    if (STATIC_LOCALES[lang]) {
+      setTranslations(STATIC_LOCALES[lang]);
+      i18nManager.setCustomDictionary(lang, STATIC_LOCALES[lang]);
+    } else if (lang === 'en-us') {
+      setTranslations({});
+    }
+
+    // 2. Asynchronously fetch dynamic overrides from backend if available
     const fetchTranslation = async () => {
-      if (settings.language === 'en-us') {
-        setTranslations({});
-        return;
-      }
+      if (lang === 'en-us') return;
       try {
-        const res = await fetch(`http://127.0.0.1:8001/api/languages/${settings.language}`);
+        const res = await fetch(`/api/languages/${lang}`);
         const data = await res.json();
         if (data && !data.error) {
-          setTranslations(data);
+          setTranslations(prev => ({ ...prev, ...data }));
+          i18nManager.setCustomDictionary(lang, data);
         }
       } catch (e) {
-        console.error(`Failed to fetch translation for ${settings.language}`, e);
+        console.error(`Failed to fetch dynamic translation for ${lang}`, e);
       }
     };
     fetchTranslation();
   }, [settings.language]);
+
 
   const updateSettings = async (updates: any) => {
     let newSettings = { ...settings };
@@ -170,7 +193,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSettings(newSettings);
 
     try {
-      await fetch('http://127.0.0.1:8001/api/settings', {
+      await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -179,6 +202,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error('Failed to update settings in backend', e);
     }
   };
+
 
   // Speed (m/s input)
   const convertSpeed = (ms: number) => {
@@ -320,11 +344,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (text: string): string => {
-    if (settings.language === 'en-us') {
+    const lang = (settings.language || 'en-us').toLowerCase();
+    if (lang === 'en-us') {
       return text;
     }
-    return translations[text] ?? text;
+    if (translations && translations[text] !== undefined) {
+      return translations[text];
+    }
+    if (STATIC_LOCALES[lang] && STATIC_LOCALES[lang][text] !== undefined) {
+      return STATIC_LOCALES[lang][text];
+    }
+    return text;
   };
+
 
   return (
     <SettingsContext.Provider value={{

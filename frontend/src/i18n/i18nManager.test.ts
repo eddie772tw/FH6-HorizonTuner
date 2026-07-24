@@ -51,4 +51,13 @@ describe('I18nManager', () => {
     expect(langs[0]).toHaveProperty('code');
     expect(langs[0]).toHaveProperty('name');
   });
+
+  it('should allow setting custom dictionary dynamically', () => {
+    i18nManager.setLanguage('zh-tw');
+    i18nManager.setCustomDictionary('zh-tw', {
+      custom_dynamic_key: '動態翻譯測試',
+    });
+    expect(i18nManager.t('custom_dynamic_key')).toBe('動態翻譯測試');
+  });
 });
+

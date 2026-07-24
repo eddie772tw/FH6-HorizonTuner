@@ -61,7 +61,7 @@ export const telemetryEmitter = new EventTarget();
 
 // Standby Idle Telemetry broadcast removed to ensure HUD only updates on live UDP telemetry data.
 
-export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
+export function useTelemetry(url: string = "ws://127.0.0.1:8000/ws/telemetry") {
   const [data, setData] = useState<TelemetryData | null>(latestData);
   const [isConnected, setIsConnected] = useState(connectionState);
 
@@ -74,9 +74,11 @@ export function useTelemetry(url: string = "ws://127.0.0.1:8001/ws/telemetry") {
       }
 
       let finalUrl = url;
-      if (url.includes("8001")) {
-        const port = (window as any).BACKEND_PORT || 8001;
-        finalUrl = url.replace("8001", port.toString());
+      if (typeof window !== "undefined") {
+        if (url.includes("8001") || url.includes("8000")) {
+          const port = (window as any).BACKEND_PORT || 8000;
+          finalUrl = url.replace(/8001|8000/, port.toString());
+        }
       }
 
       sharedWs = new WebSocket(finalUrl);

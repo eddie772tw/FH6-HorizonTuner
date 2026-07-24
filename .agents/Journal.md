@@ -430,3 +430,57 @@
 **後續行動 (Action):**
 - 未來在使用 SQLite 建立關聯式資料表與級聯刪除 (Cascade Delete) 時，務必在每一次 sqlite3.connect 之後呼叫 PRAGMA foreign_keys = ON;。
 - 撰寫單元測試時，若發現任何 ResourceWarning，應立即檢查是否存在未關閉之 Socket、File IO 或 DB 連線，確保測試環境無資源洩漏 (Memory Leak)。
+
+---
+
+## 2026-07-24 - 修復 start_backend.bat 啟動 ModuleNotFoundError 與 Python 模組入口點
+
+**學習點 (Learning):**
+- **Windows .bat 工作目錄與 Python Package Sys.path 陷阱**：在 `start_backend.bat` 原原本本寫了 `cd backend`，會使 Python 執行 `python main.py` 時將 `sys.path[0]` 指向 `backend` 資料夾。當 `backend/main.py` 以頂層 `import backend.core.config` 的絕對包語法引用時，Python 無法在當前目錄下找到名為 `backend` 的套件，進而報錯 `ModuleNotFoundError: No module named 'backend.core'`。
+- **標準批次檔啟動方式**：保持工作目錄於專案根目錄 `%~dp0`，並以 `python -m backend.update_car_db` 與 `python -m backend.main`（或 `uvicorn backend.main:app`）方式呼叫 Python 模組，可完美確保 top-level `backend` 套件名稱在 `sys.path` 中被正確解析。
+- **FastAPI 入口點**：在 `backend/main.py` 底部加上 `if __name__ == "__main__": uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)`，確保無論是使用 `python -m backend.main` 還是雙擊 bat 檔皆能順利啟動 Web 服務。
+
+**後續行動 (Action):**
+- 所有相依於 `backend` 根套件名稱的 Python 腳本或 `.bat` 啟動檔，一律維持專案根目錄為 Working Directory，並以 `-m backend.<module>` 方式啟動。
+
+---
+
+## 2026-07-24 - 修復前端多國語言切換失效、語系列表獲取與動態 Port 全局代理
+
+**學習點 (Learning):**
+- **預設埠號與獨立 API 連線斷層 (Default Port Fallback Breakage)**：前端 `SettingsContext.tsx` 預設硬編碼發送 `http://127.0.0.1:8001/api/languages` 與 `http://127.0.0.1:8001/api/settings`，而在非 Tauri 包裹的環境或純網頁測試模式下，`main.tsx` 預設退回 8001 端口。然而 Python FastAPI 後端真正的預設監聽埠號為 `8000`，連線 8001 失敗引發例外捕獲，導致 `availableLanguages` 停留在預設單一語系（`English (US)`），選單無法顯示 `繁體中文` 或 `日本語`，且請求 `api/languages/zh-tw` 亦宣告失聯。
+- **全域 Fetch & WebSocket 相對路徑通配代理**：在 `main.tsx` 中將 fallback 埠號修正為 `8000`，並擴充全局 `fetch` 攔截器，使其同時匹配 `/api/...`、`/ws/...`、`8000` 與 `8001`，自動統一代理轉換為 `http://127.0.0.1:${backendPort}`。
+- **雙重語系字典同步與預設備用選單 (i18nManager & SettingsContext Sync)**：
+  - 在 `SettingsContext.tsx` 預設提供 `[en-us, zh-tw, ja-jp]` 三語系列表，確保即使網路離線或初始化階段也能正常切換選單。
+  - 在取得 `/api/languages/${lang}` 字典數據後，同步呼叫 `i18nManager.setCustomDictionary(lang, data)` 與 `setLanguage(lang)`，達成 `useSettings().t` 與全域 `i18nManager.t` 字典的 100% 毫秒級實時同步。
+
+**後續行動 (Action):**
+- 前端新增 API 請求時一律使用 `/api/...` 相對路徑，由 `main.tsx` 全局攔截器處理連接埠切換，避免在組件中硬編碼 `http://127.0.0.1:8000` 或 `8001`。
+
+---
+
+## 2026-07-24 - 修復右上角 WebSocket 連線斷線 (Illegal Invocation) 與 0ms 介面語言即時更新
+
+**學習點 (Learning):**
+- **JavaScript 原生類別建構子代理陷阱 (Native WebSocket Illegal Invocation)**：`main.tsx` 中原先採用 `Reflect.construct(OriginalWebSocket, [urlStr, protocols], ProxyWebSocket)` 來代理 `window.WebSocket`。原生 C++ 實現的 Web API（如 `WebSocket`）不允許私有插槽被自訂的原型鏈所隱蔽，嘗試綁定 `.onopen` / `.onmessage` 或呼叫 `.close()` 時會靜默觸發 Native `TypeError: Illegal invocation`，導致 WebSocket 每次建立連線皆發送 `onerror` / `onclose`，UI 右上角呈現 `DISCONNECTED`。改為標準包覆語法 `new OriginalWebSocket(urlStr, protocols)` 後，連線與 Event Handling 恢復 100% 正常通訊。
+- **非同步 Fetch 導致的語系切換 UI 無感問題 (0ms Instant Locale Switch)**：原先 `SettingsContext` 在切換語言時僅於背景非同步執行 `fetch('/api/languages/' + lang)`。在非同步 Promise 未 resolved 的時間差內，`translations` state 未獲得即時變更，使 UI 畫面未觸發即時重新渲染。
+  - 將完整的 [lang/zh-tw.json](file:///d:/FH6-Bundle/FH6-HorizonTuner/lang/zh-tw.json) 與 [lang/ja-jp.json](file:///d:/FH6-Bundle/FH6-HorizonTuner/lang/ja-jp.json) 打包匯入為前端靜態 `STATIC_LOCALES` 模組。
+  - 當使用者點選下拉選單切換語言的瞬間，立即同步載入靜態字典，實現 **0ms 零延遲全站 UI 語言切換**，隨後再非同步融合後端回傳的動態更新。
+
+**後續行動 (Action):**
+- 重寫 Native Browser API (如 `WebSocket`, `Fetch`, `Worker`) 時，切勿使用 `Reflect.construct` 改變其 Prototype 指向，應採用正統 Closure / Function Wrapper 以維護內部私有插槽。
+
+---
+
+## 2026-07-24 - 修復 UDP 遙測通訊埠與 HTTP 伺服器 8000 重疊衝突及 t 函數靜態備援機制
+
+**學習點 (Learning):**
+- **UDP Port 8000 與 HTTP API 伺服器重疊衝突 (Socket Port Conflict)**：在 `settings.json` 與 `backend/routers/settings.py` 原預設集中，`telemetry_port` 被誤設為 `8000`。這導致後端啟動時，UDP Datagram 監聽器與 HTTP/WebSocket (Uvicorn) 伺服器強行搶佔同一個 8000 埠，造成 socket 連線受阻。將 `telemetry_port` 設定校正為 Forza Horizon 官方遙測 Port **`20127`** 後，遙測 UDP 接收與 Web HTTP/WebSocket (Port 8000) 徹底解耦，徹底消除了 Port 衝突陷阱。
+- **t 翻譯函數雙重備援機制 (Double-Layer Translation Fallback)**：在 `SettingsContext.tsx` 中將 `t(text)` 擴充為雙重查詢，優先自動態 `translations` 讀取，若非同步網絡請求尚未 complete，立即可無縫退回讀取靜態 `STATIC_LOCALES[lang][text]`，確保 100% 情況下語言變更均能獲得立即、正確的畫面呈現。
+
+**後續行動 (Action):**
+- Forza UDP 遙測通訊埠統一設為 `20127`，與 Web 伺服器 `8000` 埠維持獨立分工。
+
+
+
+

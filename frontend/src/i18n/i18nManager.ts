@@ -30,6 +30,17 @@ class I18nManager {
     return this.dictionary[key] || fallback || key;
   }
   
+  public setCustomDictionary(lang: string, dict: TranslationDictionary) {
+    const code = lang.toLowerCase();
+    this.availableDicts[code] = {
+      ...(this.availableDicts[code] || {}),
+      ...dict,
+    };
+    if (this.currentLang === code) {
+      this.dictionary = this.availableDicts[code];
+    }
+  }
+
   public getAvailableLanguages() {
     return Object.keys(this.availableDicts).map(key => ({
       code: key as LanguageCode,
@@ -39,3 +50,4 @@ class I18nManager {
 }
 
 export const i18nManager = new I18nManager();
+
