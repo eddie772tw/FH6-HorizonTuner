@@ -61,10 +61,16 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pytest.ini_options]
-pythonpath = ["backend"]
+pythonpath = [".", "backend"]
 filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
     "ignore:.*locale.getdefaultlocale.*:DeprecationWarning",
     "ignore::DeprecationWarning",
     "ignore:.*starlette.testclient.*"
+]
+
+[tool.coverage.run]
+omit = [
+    "backend/update_car_db.py",
+    "backend/main.py"
 ]

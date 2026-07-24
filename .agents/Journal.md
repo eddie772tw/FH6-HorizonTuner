@@ -56,35 +56,7 @@
 
 ---
 
-## 2026-07-22 - HUD Overlay 全螢幕中央半透明對稱儀表 (Central Telemetry Cluster) 重構
 
-**學習點 (Learning):**
-- **螢幕相對比例 (vh) 響應性**：將 HUD 中央 G-Force 雷達基準尺寸定為 `75vh`，四角輪胎與懸吊圖表定為 `12.5vh`，配合獨立遙測縮放比例 `telemetryScale` 乘積運算，可確保 Overlay 在不同螢幕解析度 (1080p, 2K, 4K) 下維持一致的視覺比重與清晰度。
-- **對稱鏡像佈局 (Symmetric Mirroring)**：左側二輪 (FL/RL) 與右側二輪 (FR/RR) 在 DOM 結構與 flex 方向上實施對稱鏡像 (`flex-direction: row` vs `flex-direction: row-reverse`)，讓 telemetry 視覺自然向畫面中心收攏。
-- **獨立通道控制 (Independent Controls)**：將 HUD 競賽弧形/圓形儀表 (Race HUD) 的縮放與中央遙測儀表 (Telemetry Cluster) 的縮放 (`telemetryScale`) 及透明度 (`telemetryOpacity`) 解耦，大幅提升玩家自由配置視角的靈活性。
-- **角落縱向堆疊排版 (Vertical Layout Refactor)**：將四角懸吊 (Suspension) 與輪胎 (Tire) 組件改為 `flex-direction: column` 縱向堆疊，並為 `tcSuspBlock` 與 `tcTireBlock` 建立獨立 `display` 綁定，成功解決了懸吊與輪胎單獨開關失靈的問題，並大幅收縮左右側卡片寬度，防止與右下角 Speedometer 競賽表盤重疊。
-- **全多型態啟動展演 (Universal Startup Sweep Animations)**：為 Simple HUD 指針與圓環、Advanced HUD 弧形動態、中央遙測雷達與 4 角圖表全數建立統一的 `hud:animate` 觸發機制（包含更換樣式、載入與點擊 Launch HUD 啟動），極大地強化了賽車電競儀表的儀式感。
-- **純淨極簡風 UI (Clean Minimalist UI)**：重命名頁面標題為 `HUD Control Panel`，徹底清除非必要的動態 Demo 模式模擬代碼與全頁面的 Emoji 圖符，並將右下競賽儀表 (`showGauge`) 統一整合入 "HUD Elements" 的純 Checkbox 清單中。
-- **徹底清除 Standby 模擬數據 (Idle Telemetry Cleanup)**：經精確監控與追蹤，發現 `useTelemetry.ts` 頂層原包含一個 `setInterval` (20Hz 頻率)，會在未收到 UDP 數據超過 2 秒時持續對 BroadcastChannel 發送包含正弦波抖動 `1200 RPM` 與假 `PowerWatts` 的 `idleData` 模擬資料。將該 `setInterval` 與 `index.html` 中的預設怠速 initial frame 清除後，徹底實現了只有在收到真實 UDP 遙測數據時 HUD 才會動態變化的純淨狀態。
-- **Advanced 儀表數據包完整透傳與多重相容 (Full Telemetry Mapping & Fallback)**：修復了 `formatHudTelemetry` 中未打包 `TireTemp`、`TireSlipAngle`、`TireSlipRatio` 與 `NormalizedSuspensionTravel` 原生陣列及個體的 Bug，並於 `telemetry-cards.js` 中加入了對 `AccelerationX` / `accel_x` 等雙命名格式的容錯解析。
-- **HUD 架構標準化與 Host 級別生命週期解耦 (Standardization & Host Decoupling)**：
-  1. **標準化註冊引擎與規格書**：建立 `shared/hud-core.js` 與 [HUD_DEVELOPMENT_GUIDE.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/public/hud/HUD_DEVELOPMENT_GUIDE.md)，規範 `HUDCore.registerStyle` 生命週期鉤子，消除了 Simple 與 Advanced 儀表的程式邏輯分歧。
-  2. **Host 級別生命週期解耦**：將 `#teleCardsMount` 提升至 Launcher Host (`index.html`) 根層級託管。中央遙測 Cluster 於啟動時建立後**永不銷毀**，更換右下角 Gauge 樣式時不再引發 DOM 銷毀與 100% 縮放跳變。
-  3. **視角與語法修復**：修正 `advanced/index.html` 腳本語法錯誤，並將 `#teleCardsMount` 移出 3D perspective 容器，恢復全視角連貫繪製與外圈全套刻度還原。
-
-- **中央遙測 Cluster 與波形圖表升級 (Telemetry Cluster & Canvas Upgrades)**：
-  1. **油門/煞車 5秒歷程折線圖 (`showTelePedals`)**：繪製過去 5 秒動態歷史波形，標籤精確位移至右上角 (`THROTTLE`) 與右下角 (`BRAKE`)。
-  2. **G力雷達圖與胎溫分佈直方圖**：`LAT G` (9點鐘) 與 `LON G` (6點鐘) 呈現垂直/水平正交對稱；4 輪胎溫 3 秒滾動歷史分佈直方圖與公英制單位 (`°C`/`°F`) 自動連動。
-
-- **主 GUI 駕駛輸入面板重構、無死角多語系與數據防護 (GUI Telemetry, i18n & Data Protection)**：
-  1. **直式條形圖與波形延伸**：在 `TelemetryView.tsx` 中將離合器與手煞車重構為直式條形圖 (`VerticalInputBar`) 並列於右側，左側油門與煞車波形 Canvas 大尺寸延伸且維護卡片外框尺寸穩定不變形。
-  2. **無死角多語系對照**：於 `zh-tw.json` 與 `ja-jp.json` 補齊全套 HUD 控制選項、標題、分頁標籤 (`HUD 懸浮儀表`) 與全大寫 key (`THROTTLE`/`BRAKE`)。
-  3. **雙重事件發送防護**：於 `useTelemetry.ts` 補充全域發送 `window.hud:frame`，並為所有 60Hz Canvas 組件配備 `telemetryEmitter` 與 `window.hud:frame` 雙重事件備援監聽，徹底保障主 GUI 即時遙測圖表數據零遺失。
-
-**後續行動 (Action):**
-- 未來調整 Overlay 遙測元件繪圖 Canvas 時，應確保依據 CSS 計算出的真實像素高寬調適 Canvas 內部繪圖 context 的 `width` 與 `height`，防止高 DPI 螢幕下波形 blurry 模糊。
-
----
 
 ## 2026-07-22 - 修復 TypeScript Release Build 未使用變數與測試型別錯誤
 
@@ -133,44 +105,20 @@
 
 ---
 
-## 2026-07-22 - 修復 HUD Overlay 胎溫跳動 180 度與 31°C 轉譯顯示為 88°C/90°F 之 Bug
-
-**學習點 (Learning):**
-- **胎溫跳動 180 度主因**：Telemetry 接收時，若 `useTelemetry.ts` 或卡片初始化階段發送 null 數據更新，`telemetry-cards.js` 的 `temps` 數值會落入 `data.temp_fl || 180` 硬編碼保底值；隨後在 60Hz 遙測與 null config 更新交替觸發時，即造成畫面在真實胎溫與 180 之間高頻跳動。將 fallback 全數改為 `0` 並判定 `cTemp > 0` 時才渲染數值，無資料時呈現 `--°C`，徹底消除了 180 跳動。
-- **31°C 顯示為 88°C/90°F 主因**：Forza UDP 原生輸出的 `TireTemp` 為**華氏 (°F)**（例如室溫 31°C 時，原生 UDP 輸出 `87.8°F`，即約 90°F）。過往 `telemetry-cards.js` 未進行 `(F - 32) * 5 / 9` 換算，直接將 87.8°F 捨入為 `88` 標示為 `88°C`（大約 90°C）。校正後：
-  - 公制模式（Metric）：將 `87.8°F` 轉譯為 `(87.8 - 32) * 5 / 9 = 31°C` 精確顯示 `31°C`。
-  - 英制模式（Imperial）：顯示 `88°F`。
-  - 色彩判斷與直方圖顏色分佈：原先 `telemetry-cards.js` 的 `getTempColor` 內部進行了雙重華氏/攝氏判斷，導致 100°F ~ 150°F (冷胎區間) 的直方圖長條圖與胎溫文字均被錯誤繪製為綠色。對照 `TelemetryView.tsx`（Single Source of Truth）的色彩邏輯校正為 `tempF < 150` 藍色 (`#0088ff`)、`150 <= tempF <= 210` 綠色 (`#00ff00`)、`tempF > 210` 紅色 (`#ff0000`)，使 HUD Overlay 與 Telemetry 頁面直方圖色彩對齊。
-
-**後續行動 (Action):**
-- 為 HUD Overlay 新增任何遙測卡片或數據指標時，務必確認 UDP 原生數據單位（如華氏、Pascal、米/秒）是否於顯示層進行正確的單位換算與 fallback 處理，並嚴格遵循 `TelemetryView.tsx` 的顏色分佈。
-
----
 
 ## 2026-07-22 - 60Hz UDP 遙測效能優化與雷達圖彈跳跳動修復
 
 **學習點 (Learning):**
-- **後端佇列積壓與丟幀 (Backend Queue Backpressure & Frame Drop)**：`main.py` 的 `broadcast_telemetry()` 迴圈中，先前寫死了 `await asyncio.sleep(0.01)`（強制延遲 10ms），加上封包處理耗時導致單幀處理頻率低於 UDP 60Hz 接收頻率，造成佇列積壓並頻繁觸發 `telemetry_queue.qsize() > 5` 的丟幀邏輯（一次丟棄 4~5 個封包），使前端接收到 100ms~300ms 突發性中斷的資料包，引發雷達圖藍點與軌跡的暴衝彈跳。
+- **後端佇列積壓與丟幀 (Backend Queue Backpressure & Frame Drop)**：`backend/services/telemetry_listener.py` 的 UDP 監聽與廣播迴圈中，若強制延遲或同步檔案 IO 過長，導致單幀處理頻率低於 UDP 60Hz 接收頻率，會造成佇列積壓並頻繁觸發 `telemetry_queue.qsize() > 5` 的丟幀邏輯，引發雷達圖藍點與軌跡的暴衝彈跳。
   - 將 `await asyncio.sleep(0.01)` 改為 `await asyncio.sleep(0)` 立即交接協程控制權。
   - 將 `save_car_params` 同步寫檔與 `gc.collect()` 改以 `asyncio.to_thread` 移至背景執行緒，完全解放 UDP 主廣播迴圈。
-- **前端 60Hz 高頻 Canvas 零記憶體分配 (Zero-Allocation Canvas Loop)**：
-  - 清理 `VerticalInputBar` 與 `PedalTraceCanvas` 的重複 `window.addEventListener('hud:frame')` 綁定，避免單幀雙重渲染 (120Hz)。
+- **前端 60Hz 高頻 Canvas 零記憶體分配 (Zero-Allocation in React/Canvas)**：
   - 以傳統 `for` 迴圈原地走訪極值，替代每秒 240 次 `Math.min(...hist.map())` 與 `.slice()` 陣列分配，徹底消除 V8 引擎的高頻垃圾回收停頓 (GC Pauses)。
   - 採用「雙層向量光暈 (Double Pass Vector Glow)」替代高對比度高斯模糊 `ctx.shadowBlur` 濾鏡，在維持 0ms 渲染負擔的同時保留 100% 絕佳視覺質感與清晰可讀性。
 
 ---
 
-## 2026-07-23 - 修復 Advanced HUD 速度 3.6 倍二次換算與增壓 (Boost) 單位邏輯
 
-**學習點 (Learning):**
-- **右下進階儀表盤 (Advanced HUD) 速度二次換算 Bug**：`formatHudTelemetry`（[useTelemetry.ts](file:///d:/FH6-HorizonTuner/frontend/src/hooks/useTelemetry.ts)）已將 Forza 原生 `SpeedMetersPerSecond` (m/s) 轉譯為 `speed_kmh` (km/h) 與 `speed_mph` (mph)。但 [advanced/index.html](file:///d:/FH6-HorizonTuner/frontend/public/hud/advanced/index.html) 的 DOM 渲染層誤將傳入之 `data.speed` 當成 m/s，再次執行 `data.speed * 3.6`，導致時速 100 km/h 暴增顯示為 **360 KM/H**。修正為直接讀取 `data.speed_kmh` / `data.speed_mph`。
-- **增壓 (Boost) PSI 與 Bar 轉換**：Forza Motorsport / Horizon UDP 封包 Byte offset 284 輸出的 `Boost` 原生單位為 **PSI**。過往 `useTelemetry.ts` 誤將傳入之數值乘上 `0.145038` 與 `0.01`，造成 `14.7 PSI` (約 1.0 Bar) 的增壓值被誤算為 `2.1 PSI` / `0.14 Bar`（增壓針幾乎不移動）。校正為 `boostPsi = raw.Boost`、`boostBar = raw.Boost / 14.5038`。
-- **Session Maxima 動態極值追蹤**：補齊 `useTelemetry.ts` 中 `sessionMaxima` 對全局 Peak Power / Torque / Boost 歷史極值的持續追蹤，確保進階儀表盤動態繪製針指標縮放精確穩定。
-
-**後續行動 (Action):**
-- 新增 HUD 樣式或遙測指標時，務必確認 `useTelemetry.ts` Ingestion 層與前端 HTML 視窗 DOM 渲染層之間「數據單位」的責任劃分，避免雙重乘算。
-
----
 
 ## 2026-07-23 - 修復 PyInstaller 發行版遺失 FastAPI / 後端模組致命錯誤 (ModuleNotFoundError: No module named 'fastapi')
 
@@ -451,3 +399,34 @@
 - **防抖靜默自動儲存 (Debounced Auto-Save Layout Config)**：移除手動點擊「Save Layout Config」按鈕的繁瑣設計。在 `AnalysisView.tsx` 中透過 `useEffect` 監聽 `[selectedMetric, customChannels, chartSlots]` 變更並設定 800ms 防抖計時器，背景自動呼叫 `saveAnalysisConfig(...)` 寫入 `backend/user_configs/analysis_layout.json`，達成極致滑順的無感自動持久化。
 - **歷史 Session 全軌跡渲染 (isSavedSession Gate)**：在 `TrackMapCanvas.tsx` 中引進 `isSavedSession` 判定（當 `selectedFilename !== 'current'` 時觸發）。歷史完賽 Session 會跳過漫遊狀態的「過去 30 秒截斷」限制，完整還原繪製整條賽道的完整路徑軌跡。
 - **100% 無死角 i18n 多語系支援**：在 `lang/zh-tw.json` 與 `lang/ja-jp.json` 中補齊賽後分析主頁面、Modal 選擇器、5 大圖表形式 (Line, Bar, Histogram, Radar, Pie) 與公式編輯器 control 項目的對應翻譯，確保切換語系時畫面 100% 翻譯覆蓋。
+
+---
+
+## 2026-07-24 - FH6-HorizonTuner 全面前後端模組化重構與解耦
+
+**學習點 (Learning):**
+1. **後端架構層次解耦 (Backend Multi-Layer Decoupling)**：
+   - 成功將過往 >900 行之單一 monolithic `main.py` 拆解為標準的 `core/` (配置與狀態)、`services/` (UDP接收、SQLite資料庫、紀錄器、科學計算) 與 `routers/` (FastAPI API 端點路由) 模組。
+   - 保留 `main.py` 的 Module Level Proxy 物件（如 `main.backend_log_path` 與 `main.HUD_CONFIG_FILE`），可在不破壞原有測試合約的情況下，實現 100% 後端 Pytest 通過。
+2. **高階科學計算前瞻預留 (High-Performance Scientific Computing Stubs)**：
+   - 建立 `backend/services/physics_engine/engine_stubs.py`，預留未來引入 NumPy、SciPy 向量化運算與 Numba JIT 即時編譯加速之介面，並以純 Python 為預設相容 fallback。
+3. **前端外掛化 HUD 插件架構與視窗拆分 (Plugin-based HUD Architecture & Dynamic Component Splitting)**：
+   - 在 `frontend/src/features/hud/plugins/` 建立極簡開發範例表盤 `temp`，展示新開發者如何快速擴充新樣式。
+   - 將 Telemetry 遙測監控面板 (G力雷達圖、油門煞車圖、輪胎懸吊圖表) 獨立為獨立元件集 `TelemetryPlugin`，並拆分為 `PedalTraceSection.tsx`、`GRadarSection.tsx` 與 `TireSuspensionSection.tsx` 三個子組件，徹底擺脫 monolithic 龐大檔案問題。
+   - 使用 `React.lazy` / `Suspense` 實現按需載入。
+
+**後續行動 (Action):**
+- 後續新增 API 端點時，應新增於 `backend/routers/` 下對應業務領域的檔名中，嚴禁向 `main.py` 寫入具體路由邏輯。
+- 開發新型態 HUD 表盤時，直接於 `frontend/src/features/hud/plugins/` 下建置新目錄並實作 `IHudStylePlugin` 介面。
+
+
+
+## 2026-07-24 - SQLite CASCADE DELETE 與測試環境連線關閉之隱藏坑點
+
+**學習點 (Learning):**
+- **SQLite WAL Mode 外鍵約束陷阱**：在預設狀態下，SQLite 並不會自動開啟外鍵約束 (Foreign Key Constraints)。當執行刪除 sessions 的操作時，雖然設定了 ON DELETE CASCADE，關聯的 	elemetry_data 卻不會被自動刪除，造成資料庫中出現無法參照的孤兒紀錄。必須在建立連線時手動執行 PRAGMA foreign_keys = ON; 才能使級聯刪除生效。
+- **測試環境 ResourceWarning 資源洩漏**：在進行 pytest 測試時，若 SQLite 的 Connection 物件未被顯式關閉，將會在測試結束或垃圾回收時拋出 ResourceWarning: unclosed database。在 TelemetrySQLite 類別中，所有資料庫存取都應該套用 contextlib.closing 確保每次操作後 Cursor 與 Connection 均被妥善釋放。
+
+**後續行動 (Action):**
+- 未來在使用 SQLite 建立關聯式資料表與級聯刪除 (Cascade Delete) 時，務必在每一次 sqlite3.connect 之後呼叫 PRAGMA foreign_keys = ON;。
+- 撰寫單元測試時，若發現任何 ResourceWarning，應立即檢查是否存在未關閉之 Socket、File IO 或 DB 連線，確保測試環境無資源洩漏 (Memory Leak)。

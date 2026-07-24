@@ -1,6 +1,8 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { execSync } from "child_process";
+import path from "path";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -15,16 +17,16 @@ try {
   } catch (e) {
     gitCommit = execSync("git rev-parse --short HEAD", { cwd: ".." }).toString().trim();
   }
-  
+
   try {
     const status = execSync("git status --porcelain -uno", { cwd: ".." }).toString().trim();
     if (status.length > 0) {
       const changedFiles = status.split("\n").map(line => line.trim());
       const hasRealChanges = changedFiles.some(line => {
         const filePath = line.substring(2).trim();
-        return !filePath.endsWith("Cargo.lock") && 
-               !filePath.endsWith("package-lock.json") && 
-               !filePath.includes("logs/") && 
+        return !filePath.endsWith("Cargo.lock") &&
+               !filePath.endsWith("package-lock.json") &&
+               !filePath.includes("logs/") &&
                !filePath.includes("__pycache__");
       });
       if (hasRealChanges) {
@@ -41,6 +43,11 @@ try {
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   define: {
     __GIT_COMMIT__: JSON.stringify(gitCommit),
     __GIT_BRANCH__: JSON.stringify(gitBranch),
@@ -82,6 +89,14 @@ export default defineConfig(async () => ({
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
+    },
+  },
+  test: {
+    coverage: {
+      provider: "v8",
+      all: true,
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.d.ts", "src/main.tsx", "vite.config.ts"],
     },
   },
 }));

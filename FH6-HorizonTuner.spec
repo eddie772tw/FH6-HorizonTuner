@@ -13,6 +13,22 @@ hiddenimports = [
     "uvicorn",
     "websockets",
     "pydantic",
+    "backend.core.config",
+    "backend.core.state",
+    "backend.core.logging_config",
+    "backend.routers.telemetry",
+    "backend.routers.tuning",
+    "backend.routers.drag",
+    "backend.routers.analysis",
+    "backend.routers.theme",
+    "backend.routers.settings",
+    "backend.services.telemetry_listener",
+    "backend.services.recorders",
+    "backend.services.telemetry_sqlite",
+    "backend.services.motec_exporter",
+    "backend.services.car_service",
+    "backend.services.tuning_service",
+    "backend.services.physics_engine.engine_stubs",
 ]
 
 for pkg in ["fastapi", "uvicorn", "starlette", "websockets", "pydantic"]:
@@ -28,7 +44,7 @@ for pkg in ["fastapi", "uvicorn", "starlette", "websockets", "pydantic"]:
 added_files = [
     # 關鍵：將 Tauri 編譯產出的 frontend.exe 封裝進去（目標放在根目錄）
     ('frontend/src-tauri/target/release/frontend.exe', '.'),
-    
+
     # 專案靜態資料
     ('backend/car_database.json', '.'),
     ('backend/car_params/*', 'car_params'),

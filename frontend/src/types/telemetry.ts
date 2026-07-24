@@ -1,0 +1,86 @@
+export interface TelemetryData {
+  IsRaceOn?: number;
+  TimestampMS?: number;
+  EngineMaxRpm?: number;
+  EngineIdleRpm?: number;
+  CurrentEngineRpm?: number;
+  AccelerationX?: number;
+  AccelerationY?: number;
+  AccelerationZ?: number;
+  VelocityX?: number;
+  VelocityY?: number;
+  VelocityZ?: number;
+  AngularVelocityX?: number;
+  AngularVelocityY?: number;
+  AngularVelocityZ?: number;
+  Yaw?: number;
+  Pitch?: number;
+  Roll?: number;
+  NormalizedSuspensionTravel?: number[];
+  TireSlipRatio?: number[];
+  WheelRotationSpeed?: number[];
+  WheelOnRumbleStrip?: number[];
+  WheelInPuddleDepth?: number[];
+  SurfaceRumble?: number[];
+  TireSlipAngle?: number[];
+  TireCombinedSlip?: number[];
+  SuspensionTravelMeters?: number[];
+  CarOrdinal?: number;
+  CarClass?: number;
+  CarPerformanceIndex?: number;
+  DrivetrainType?: number;
+  NumCylinders?: number;
+  PositionX?: number;
+  PositionY?: number;
+  PositionZ?: number;
+  SpeedMetersPerSecond?: number;
+  PowerWatts?: number;
+  TorqueNewtons?: number;
+  TorqueNm?: number;
+  TireTemp?: number[];
+  Boost?: number;
+  Fuel?: number;
+  DistanceTraveled?: number;
+  BestLap?: number;
+  LastLap?: number;
+  CurrentLap?: number;
+  CurrentRaceTime?: number;
+  Accel?: number;
+  Brake?: number;
+  Clutch?: number;
+  Handbrake?: number;
+  Gear?: number;
+  Steer?: number;
+  AccelInput?: number;
+  BrakeInput?: number;
+  ClutchInput?: number;
+  HandBrakeInput?: number;
+  SteerInput?: number;
+
+  time?: number;
+}
+
+export interface HudConfig {
+  enabled: boolean;
+  hudStyle: string;
+  position: { x: number; y: number };
+  scale: number;
+  unit: 'kmh' | 'mph';
+  elements: {
+    showRPM?: boolean;
+    showSpeed?: boolean;
+    showGear?: boolean;
+    showPowerTorque?: boolean;
+    showBoost?: boolean;
+    showWheelLockup?: boolean;
+    showMotionEffect?: boolean;
+    showGauge?: boolean;
+    showTeleRadar?: boolean;
+    showTelePedals?: boolean;
+    showTeleSuspension?: boolean;
+    showTeleTires?: boolean;
+  };
+  telemetryScale?: number;
+  telemetryOpacity?: number;
+  soundEnabled?: boolean;
+}
