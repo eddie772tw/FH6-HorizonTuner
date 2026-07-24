@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -91,10 +92,11 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
-  const [translations, setTranslations] = useState<Record<string, string>>({});
   const [availableLanguages, setAvailableLanguages] = useState<Array<{ code: string; name: string }>>([
     { code: 'en-us', name: 'English (US)' }
   ]);
+
+  const { t, i18n } = useTranslation();
 
   // Fetch settings from backend
   useEffect(() => {
@@ -128,7 +130,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           };
           setSettings(merged);
+          if (merged.language) {
+            i18n.changeLanguage(merged.language);
+          }
         }
+
       } catch (e) {
         console.error('Failed to fetch settings from backend', e);
       } finally {
@@ -138,25 +144,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchSettings();
   }, []);
 
-  // Fetch translation when language changes
-  useEffect(() => {
-    const fetchTranslation = async () => {
-      if (settings.language === 'en-us') {
-        setTranslations({});
-        return;
-      }
-      try {
-        const res = await fetch(`http://127.0.0.1:8001/api/languages/${settings.language}`);
-        const data = await res.json();
-        if (data && !data.error) {
-          setTranslations(data);
-        }
-      } catch (e) {
-        console.error(`Failed to fetch translation for ${settings.language}`, e);
-      }
-    };
-    fetchTranslation();
-  }, [settings.language]);
 
   const updateSettings = async (updates: any) => {
     let newSettings = { ...settings };
@@ -167,6 +154,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       newSettings = { ...settings, ...updates };
     }
     
+    if (updates.language) {
+      i18n.changeLanguage(updates.language);
+    }
     setSettings(newSettings);
 
     try {
@@ -319,12 +309,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { value: nm, label: 'N·m' };
   };
 
-  const t = (text: string): string => {
-    if (settings.language === 'en-us') {
-      return text;
-    }
-    return translations[text] ?? text;
-  };
 
   return (
     <SettingsContext.Provider value={{

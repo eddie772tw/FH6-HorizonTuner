@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { initI18n } from "./i18n";
 import { invoke } from "@tauri-apps/api/core";
 
 // 1. 全局劫持 fetch 與 WebSocket 以支援動態 port 協商
@@ -58,6 +59,9 @@ async function initApp() {
     console.warn("Failed to get backend port from Tauri, using default 8001:", e);
   }
   (window as any).BACKEND_PORT = backendPort;
+
+  initI18n(backendPort);
+
 
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
