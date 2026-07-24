@@ -250,7 +250,7 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
           <h3 style={{ color: 'var(--primary)', margin: 0 }}>{t("Chart Configuration & Live Preview")}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+          <button aria-label={t("Close")} onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Two-Column Body */}
@@ -310,7 +310,7 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: ch.color }}>Line #{idx + 1} ({ch.name})</span>
-                  <button onClick={() => handleRemoveChannel(idx)} style={{ background: 'none', border: 'none', color: '#ff003c', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>×</button>
+                  <button aria-label={t("Remove Channel")} onClick={() => handleRemoveChannel(idx)} style={{ background: 'none', border: 'none', color: '#ff003c', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>×</button>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>

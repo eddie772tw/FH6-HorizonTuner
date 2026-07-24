@@ -191,6 +191,7 @@ const CustomChannelEditor: React.FC<CustomChannelEditorProps> = ({ channels, onC
               <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{ch.name}:</span>
               <span style={{ fontFamily: 'monospace', color: '#ccc' }}>{ch.formula}</span>
               <button 
+                aria-label={t("Remove Channel")}
                 onClick={() => handleRemoveChannel(idx)} 
                 style={{ background: 'none', border: 'none', color: '#ff003c', cursor: 'pointer', fontWeight: 'bold', marginLeft: '0.2rem' }}
               >
