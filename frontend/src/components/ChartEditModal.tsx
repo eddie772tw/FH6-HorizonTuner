@@ -269,20 +269,20 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Chart Type")}:</span>
                 <select value={chartType} onChange={(e) => setChartType(e.target.value as ChartType)} style={selectStyle}>
-                  <option value="line">Line Chart</option>
-                  <option value="bar">Bar Chart</option>
-                  <option value="histogram">Histogram (Binning)</option>
-                  <option value="radar">Radar (Spider)</option>
-                  <option value="pie">Pie (Ratio)</option>
+                  <option value="line">{t("chart_type_line_chart")}</option>
+                  <option value="bar">{t("chart_type_bar_chart")}</option>
+                  <option value="histogram">{t("chart_type_histogram")}</option>
+                  <option value="radar">{t("chart_type_radar")}</option>
+                  <option value="pie">{t("chart_type_pie")}</option>
                 </select>
               </div>
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("X-Domain")}:</span>
                 <select value={domain} onChange={(e) => setDomain(e.target.value as DomainType)} style={selectStyle}>
-                  <option value="distance">Distance (m)</option>
-                  <option value="time">Time (s)</option>
-                  <option value="lap">Lap Domain</option>
+                  <option value="distance">{t("chart_domain_distance")}</option>
+                  <option value="time">{t("chart_domain_time")}</option>
+                  <option value="lap">{t("chart_domain_lap")}</option>
                 </select>
               </div>
             </div>
@@ -309,19 +309,19 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
                 display: 'flex', flexDirection: 'column', gap: '0.6rem'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: ch.color }}>Line #{idx + 1} ({ch.name})</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: ch.color }}>{t("chart_edit_line_number", { idx: idx + 1 })} ({ch.name})</span>
                   <button aria-label={t("Remove Channel")} onClick={() => handleRemoveChannel(idx)} style={{ background: 'none', border: 'none', color: '#ff003c', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>×</button>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" placeholder="Channel Label" value={ch.name} onChange={(e) => handleUpdateChannel(idx, { name: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
+                  <input type="text" placeholder={t("chart_edit_channel_label_placeholder")} value={ch.name} onChange={(e) => handleUpdateChannel(idx, { name: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
                   <select onChange={(e) => { if (e.target.value) handleUpdateChannel(idx, { formula: e.target.value }); }} style={{ ...selectStyle, flex: 1.2 }} value="">
-                    <option value="">-- Autocomplete Quick Select --</option>
+                    <option value="">{t("chart_edit_autocomplete_quick_select")}</option>
                     {AVAILABLE_VARIABLES.map(v => (<option key={v.key} value={v.key}>{v.key} ({v.desc})</option>))}
                   </select>
                 </div>
 
-                <input type="text" placeholder="Formula (e.g. Speed * 3.6)" value={ch.formula} onChange={(e) => handleUpdateChannel(idx, { formula: e.target.value })} style={{ ...inputStyle, fontFamily: 'monospace', color: 'var(--secondary)' }} />
+                <input type="text" placeholder={t("chart_edit_formula_placeholder")} value={ch.formula} onChange={(e) => handleUpdateChannel(idx, { formula: e.target.value })} style={{ ...inputStyle, fontFamily: 'monospace', color: 'var(--secondary)' }} />
 
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
@@ -331,7 +331,7 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span style={{ fontSize: '0.7rem', color: '#888' }}>Width:</span>
+                    <span style={{ fontSize: '0.7rem', color: '#888' }}>{t("chart_edit_width")}</span>
                     <select value={ch.strokeWidth} onChange={(e) => handleUpdateChannel(idx, { strokeWidth: parseInt(e.target.value) })} style={{ ...selectStyle, padding: '0.15rem 0.3rem', width: 'auto' }}>
                       <option value={1}>1px</option><option value={2}>2px</option><option value={3}>3px</option><option value={4}>4px</option>
                     </select>
@@ -348,8 +348,8 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
           {/* RIGHT COLUMN: Realtime Multi-Chart Live Preview (45%) */}
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--primary)' }}>Live Preview: {title || 'Untitled'} ({chartType.toUpperCase()})</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Domain: {domain}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--primary)' }}>{t("chart_edit_live_preview")} {title || t("chart_edit_untitled")} ({chartType.toUpperCase()})</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t("chart_edit_domain")} {domain}</span>
             </div>
 
             <div style={{ flex: 1, minHeight: 0 }}>
