@@ -7,3 +7,6 @@
 ## 2026-07-24 - [ARIA Current for Navigation Tabs]
 **Learning:** Adding `aria-current="page"` to active navigation tab buttons provides clear, semantic context to screen readers about the user's current location within the application, enhancing general accessibility beyond standard focus indicators.
 **Action:** Always consider `aria-current` when building tabbed interfaces or primary navigation components to indicate active state for assistive technologies.
+## 2024-07-26 - Navigation Tab Accessibility
+**Learning:** Screen reader users rely on attributes like `aria-current="page"` (or sometimes `"true"`) on navigation elements to understand which section or tab is currently active. Visually styled active states are not conveyed to assistive technologies automatically.
+**Action:** Always add `aria-current="page"` (or similar depending on context) to the active element within a tabbed or menu-based navigation structure to ensure equal access to application state.

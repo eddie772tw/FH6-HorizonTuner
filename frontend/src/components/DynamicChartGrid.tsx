@@ -127,7 +127,7 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                   {cType === 'pie' ? (
                     <PieChart>
-                      <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label>
+                      <Pie isAnimationActive={false} data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label>
                         {chartData.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={entry.color || COLOR_SWATCHES[index % COLOR_SWATCHES.length]} />
                         ))}
@@ -140,7 +140,7 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
                       <PolarGrid stroke="rgba(255,255,255,0.1)" />
                       <PolarAngleAxis dataKey="metric" stroke="var(--text-secondary)" tick={{ fontSize: 9 }} />
                       <PolarRadiusAxis stroke="var(--text-secondary)" tick={{ fontSize: 8 }} />
-                      <Radar name={slot.title} dataKey="value" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.4} />
+                      <Radar isAnimationActive={false} name={slot.title} dataKey="value" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.4} />
                       <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
                     </RadarChart>
                   ) : cType === 'histogram' ? (
@@ -149,7 +149,7 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
                       <XAxis dataKey="xDomain" stroke="var(--text-secondary)" tick={{ fontSize: 9 }} />
                       <YAxis stroke="var(--text-secondary)" tick={{ fontSize: 9 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
-                      <Bar dataKey="Frequency" fill="var(--primary)" />
+                      <Bar isAnimationActive={false} dataKey="Frequency" fill="var(--primary)" />
                     </BarChart>
                   ) : cType === 'bar' ? (
                     <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
@@ -159,7 +159,7 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
                       <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }} />
                       <Legend verticalAlign="top" height={26} iconSize={10} wrapperStyle={{ fontSize: '0.75rem' }} />
                       {channels.map(ch => (
-                        <Bar key={ch.id} dataKey={ch.name} fill={ch.color} />
+                        <Bar isAnimationActive={false} key={ch.id} dataKey={ch.name} fill={ch.color} />
                       ))}
                     </BarChart>
                   ) : (
