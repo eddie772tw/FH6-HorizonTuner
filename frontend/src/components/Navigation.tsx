@@ -116,36 +116,42 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
           <button 
             onClick={() => setActiveTab('telemetry')}
             style={getTabStyle(activeTab === 'telemetry')}
+            aria-current={activeTab === 'telemetry' ? 'page' : undefined}
           >
             {t("Telemetry")}
           </button>
           <button 
             onClick={() => setActiveTab('tuning')}
             style={getTabStyle(activeTab === 'tuning')}
+            aria-current={activeTab === 'tuning' ? 'page' : undefined}
           >
             {t("Tuning Setup")}
           </button>
           <button 
             onClick={() => setActiveTab('car_params')}
             style={getTabStyle(activeTab === 'car_params')}
+            aria-current={activeTab === 'car_params' ? 'page' : undefined}
           >
             {t("Car Parameters")}
           </button>
           <button 
             onClick={() => setActiveTab('overlay')}
             style={getTabStyle(activeTab === 'overlay')}
+            aria-current={activeTab === 'overlay' ? 'page' : undefined}
           >
             {t("HUD Overlay")}
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
             style={getTabStyle(activeTab === 'settings')}
+            aria-current={activeTab === 'settings' ? 'page' : undefined}
           >
             {t("Settings")}
           </button>
           <button
             onClick={() => setActiveTab('theme')}
             style={getTabStyle(activeTab === 'theme')}
+            aria-current={activeTab === 'theme' ? 'page' : undefined}
           >
             {t("Theme")}
           </button>

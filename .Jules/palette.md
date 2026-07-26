@@ -4,3 +4,6 @@
 ## 2024-07-24 - Missing ARIA labels on dynamically generated icon buttons
 **Learning:** Dynamically generated UI lists with icon-only actions (like "Remove Channel" with an "×" icon) often lack proper screen-reader context if not explicitly labelled during map iteration.
 **Action:** Always add explicit `aria-label`s to dynamically mapped icon buttons.
+## 2024-07-26 - Navigation Tab Accessibility
+**Learning:** Screen reader users rely on attributes like `aria-current="page"` (or sometimes `"true"`) on navigation elements to understand which section or tab is currently active. Visually styled active states are not conveyed to assistive technologies automatically.
+**Action:** Always add `aria-current="page"` (or similar depending on context) to the active element within a tabbed or menu-based navigation structure to ensure equal access to application state.
