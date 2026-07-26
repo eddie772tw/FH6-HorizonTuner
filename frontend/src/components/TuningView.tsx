@@ -1457,7 +1457,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                             <XAxis dataKey="time" stroke="rgba(255,255,255,0.4)" fontSize={9} />
                             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={9} domain={['auto', 'auto']} />
                             <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)' }} />
-                            <Area type="monotone" dataKey="PositionY" stroke="#00b4ff" fillOpacity={1} fill="url(#heightColor)" strokeWidth={2} name="PositionY" />
+                            {/* Disabled animation for performance on high-density telemetry data */}
+                            <Area isAnimationActive={false} type="monotone" dataKey="PositionY" stroke="#00b4ff" fillOpacity={1} fill="url(#heightColor)" strokeWidth={2} name="PositionY" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
