@@ -78,7 +78,7 @@ FH6-HorizonTuner/
 1. 啟動遊戲，進入**設定** -> **HUD 與遊戲操作 (HUD and Gameplay)**。
 2. 尋找 **資料輸出 (Data Out)**，將其設為 **開啟 (ON)**。
 3. 將 **資料輸出 IP 位址 (Data Out IP Address)** 填入 `127.0.0.1`。
-4. 將 **資料輸出連接埠 (Data Out Port)** 填入 `20440`。
+4. 將 **資料輸出連接埠 (Data Out Port)** 填入 `8000`。
 
 ### 2. 啟動本工具
 
@@ -171,10 +171,10 @@ FH6-HorizonTuner/
 
 ```bash
 # 從專案根目錄執行
-npm --prefix frontend run test
+cd frontend && pnpm run test
 
 # 或從 frontend/ 目錄執行
-cd frontend && npm run test
+cd frontend && pnpm run test
 ```
 
 目前的前端測試套件涵蓋：
@@ -209,7 +209,7 @@ cd frontend && npm run test
 - [ ] 代碼已通過 `ruff format --check .` 格式驗證
 - [ ] 代碼已通過 `ruff check .` 靜態檢查（無 Error / Warning）
 - [ ] 後端單元測試已全數通過 (`pytest` Pass)
-- [ ] 前端單元測試已全數通過 (`npm --prefix frontend run test` Pass)
+- [ ] 前端單元測試已全數通過 (`cd frontend && pnpm run test` Pass)
 - [ ] 若新增了 API 路由或後端核心邏輯，已補充對應的 Pytest 單元測試
 - [ ] 若修改了 `tuningMath.ts` / `tuningDiagnosis.ts` 等前端計算邏輯，已補充對應的 Vitest 單元測試
 - [ ] 若修改了 UI 元件或前端邏輯，已在本地驗證功能運作正常
@@ -258,10 +258,10 @@ cd frontend && npm run test
 | :--- | :--- |
 | **Lint** | 使用 `ruff check` 進行靜態代碼分析，並使用 `ruff format --check` 驗證排版格式 |
 | **Test (Backend)** | 在 Windows + Ubuntu 雙平台上執行 `pytest` 後端測試套件 |
-| **Test (Frontend)** | 執行 `npm --prefix frontend run test` 前端 Vitest 單元測試（涵蓋 `tuningMath.ts` 等物理計算純函數） |
+| **Test (Frontend)** | 執行 `cd frontend && pnpm run test` 前端 Vitest 單元測試（涵蓋 `tuningMath.ts` 等物理計算純函數） |
 
 > [!IMPORTANT]
-> CI 流程設定於 `CI-Approval` 環境下運行，需要至少一位 Reviewer 在 GitHub 上批准後才會自動觸發。請確保在推送前已於本地通過 `ruff format --check .` 與 `pytest` 驗證，以避免不必要的 CI 失敗。
+> 流程已採用全自動化 CI/CD 環境，無需等待 Approve 即可在提交 PR 後自動觸發測試。請確保在推送前已於本地通過 `ruff format --check .` 與 `pytest` 驗證，以避免不必要的 CI 失敗。
 
 ---
 
