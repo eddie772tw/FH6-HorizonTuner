@@ -33,6 +33,7 @@ added_files = [
     ('backend/car_database.json', '.'),
     ('backend/car_params/*', 'car_params'),
     ('lang/*', 'lang'),
+    ('hud_overlay/*', 'hud_overlay'),
 ]
 
 datas.extend(added_files)

@@ -207,8 +207,11 @@ async def lifespan(app_inst: FastAPI):
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
 
-# Mount HUD overlay directory as static files
-hud_overlay_path = os.path.join(os.path.dirname(__file__), "..", "hud_overlay")
+if getattr(sys, "frozen", False):
+    hud_overlay_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
+else:
+    hud_overlay_path = os.path.join(os.path.dirname(__file__), "..", "hud_overlay")
+
 if os.path.exists(hud_overlay_path):
     app.mount("/hud", StaticFiles(directory=hud_overlay_path, html=True), name="hud")
 

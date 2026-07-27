@@ -1,11 +1,11 @@
-# FH6-HorizonTuner ðŸŽï¸
+# FH6-HorizonTuner ??ï¸?
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
 [![Language](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React-purple.svg)](https://tauri.app/)
 [![Overlay](https://img.shields.io/badge/Overlay-D3D11%20%2B%20DXGI%20MPO-orange.svg)](tool/overlay/)
-[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_release.bat)
+[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 
 ---
 
@@ -13,7 +13,7 @@
 
 `FH6-HorizonTuner` is a dedicated telemetry data analysis and vehicle tuning assistant tool developed for *Forza Horizon 6*. This project integrates a high-performance Python backend UDP packet listener service, a modern Tauri desktop graphical user interface, and a fully injection-free DXGI MPO (Multiplane Overlay) hardware overlay rendering engine.
 
-The current release provides **real-time telemetry dashboards**, a **customizable racing dashboard overlay (with a WYSIWYG visual editor)**, a **vehicle tuning workbench**, and **drag launch testing** â€” helping players monitor vehicle physics and dynamic feedback in real time.
+The current release provides **real-time telemetry dashboards**, a **customizable racing dashboard overlay (with a WYSIWYG visual editor)**, a **vehicle tuning workbench**, and **drag launch testing** ??helping players monitor vehicle physics and dynamic feedback in real time.
 
 ---
 
@@ -37,34 +37,34 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ```text
 FH6-HorizonTuner/
-â”œâ”€â”€ .github/workflows/       # GitHub CI/CD workflow (Ruff Lint + Pytest)
-â”œâ”€â”€ backend/                 # Python FastAPI backend core
-â”‚   â”œâ”€â”€ main.py              # Backend entry point, API definitions & Overlay process management
-â”‚   â”œâ”€â”€ telemetry_listener.py # UDP telemetry socket listener and parser
-â”‚   â””â”€â”€ car_database.json    # Built-in car database
-â”œâ”€â”€ frontend/                # Tauri frontend code (Vite + React + TypeScript)
-â”‚   â”œâ”€â”€ src/components/      # Frontend UI components
-â”‚   â”‚   â”œâ”€â”€ TelemetryView.tsx    # Real-time telemetry dashboard
-â”‚   â”‚   â”œâ”€â”€ OverlayView.tsx      # WYSIWYG dashboard layout editor
-â”‚   â”‚   â”œâ”€â”€ TuningView.tsx       # Vehicle tuning workbench
-â”‚   â”‚   â”œâ”€â”€ DragTestView.tsx     # Drag launch test
-â”‚   â”‚   â”œâ”€â”€ AnalysisView.tsx     # Data analysis view
-â”‚   â”‚   â”œâ”€â”€ DiagnosticConsole.tsx # Diagnostic log console
-â”‚   â”‚   â””â”€â”€ Navigation.tsx       # Navigation component
-â”‚   â””â”€â”€ src-tauri/           # Tauri window bundler configuration
-â”œâ”€â”€ tool/                    # External native tooling
-â”‚   â””â”€â”€ overlay/             # C++ DXGI MPO Overlay rendering engine
-â”‚       â”œâ”€â”€ main.cpp             # D3D11/ImGui data-driven rendering entry
-â”‚       â”œâ”€â”€ DXGIOverlayManager.h/.cpp # DXGI swap chain management & MPO/fallback
-â”‚       â”œâ”€â”€ WebSocketClient.h    # WinHTTP native WebSocket client
-â”‚       â””â”€â”€ CMakeLists.txt       # CMake build config (auto-fetch nlohmann/json, ExprTk, ImGui)
-â”œâ”€â”€ lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
-â”œâ”€â”€ tests/                   # Pytest unit testing suite
-â”œâ”€â”€ pyproject.toml           # Ruff formatting rules & Pytest configuration
-â”œâ”€â”€ requirements.txt         # Python dependency list
-â”œâ”€â”€ .pkgdirignore            # Package exclusion directory definitions
-â”œâ”€â”€ start_all.bat            # One-click developer environment launcher
-â””â”€â”€ build_release.bat        # One-click standalone release bundler
+?œâ??€ .github/workflows/       # GitHub CI/CD workflow (Ruff Lint + Pytest)
+?œâ??€ backend/                 # Python FastAPI backend core
+??  ?œâ??€ main.py              # Backend entry point, API definitions & Overlay process management
+??  ?œâ??€ telemetry_listener.py # UDP telemetry socket listener and parser
+??  ?”â??€ car_database.json    # Built-in car database
+?œâ??€ frontend/                # Tauri frontend code (Vite + React + TypeScript)
+??  ?œâ??€ src/components/      # Frontend UI components
+??  ??  ?œâ??€ TelemetryView.tsx    # Real-time telemetry dashboard
+??  ??  ?œâ??€ OverlayView.tsx      # WYSIWYG dashboard layout editor
+??  ??  ?œâ??€ TuningView.tsx       # Vehicle tuning workbench
+??  ??  ?œâ??€ DragTestView.tsx     # Drag launch test
+??  ??  ?œâ??€ AnalysisView.tsx     # Data analysis view
+??  ??  ?œâ??€ DiagnosticConsole.tsx # Diagnostic log console
+??  ??  ?”â??€ Navigation.tsx       # Navigation component
+??  ?”â??€ src-tauri/           # Tauri window bundler configuration
+?œâ??€ tool/                    # External native tooling
+??  ?”â??€ overlay/             # C++ DXGI MPO Overlay rendering engine
+??      ?œâ??€ main.cpp             # D3D11/ImGui data-driven rendering entry
+??      ?œâ??€ DXGIOverlayManager.h/.cpp # DXGI swap chain management & MPO/fallback
+??      ?œâ??€ WebSocketClient.h    # WinHTTP native WebSocket client
+??      ?”â??€ CMakeLists.txt       # CMake build config (auto-fetch nlohmann/json, ExprTk, ImGui)
+?œâ??€ lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
+?œâ??€ tests/                   # Pytest unit testing suite
+?œâ??€ pyproject.toml           # Ruff formatting rules & Pytest configuration
+?œâ??€ requirements.txt         # Python dependency list
+?œâ??€ .pkgdirignore            # Package exclusion directory definitions
+?œâ??€ start_all.bat            # One-click developer environment launcher
+?”â??€ build_all.bat        # One-click standalone release bundler
 ```
 
 ---
@@ -95,7 +95,7 @@ The project provides a highly automated launcher script that simplifies setup:
 
 You can package both the frontend and backend into a **single standalone executable (.exe)** for clean, portable, installation-free execution:
 
-1. Double-click **`build_release.bat`**:
+1. Double-click **`build_all.bat`**:
    - Builds the Tauri frontend project, producing `frontend.exe`.
    - Automatically compiles the C++ Overlay engine via CMake and copies `HorizonTunerOverlay.exe` to `dist/tool/`.
    - Packages the FastAPI backend, translations (`lang/`), default car parameters, and the vehicle database together using PyInstaller.
@@ -118,7 +118,7 @@ You can package both the frontend and backend into a **single standalone executa
 * **Python**: 3.13 or 3.14 (Standard Windows installer or `uv` managed)
 * **Node.js**: 20 or higher
 * **Rust / Cargo**: Required only for local Tauri compilation (automatically falls back to web debug mode if missing)
-* **CMake + MSVC/MinGW**: Required for compiling the C++ DXGI Overlay engine (optional â€” use pre-compiled binaries if no overlay changes are needed)
+* **CMake + MSVC/MinGW**: Required for compiling the C++ DXGI Overlay engine (optional ??use pre-compiled binaries if no overlay changes are needed)
 
 ---
 

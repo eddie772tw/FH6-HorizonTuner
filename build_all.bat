@@ -73,7 +73,7 @@ for /d %%D in ("%~dp0*") do (
                 echo [SUCCESS] Added '%%~nxD' to .pkgdirignore.
             ) else (
                 echo.
-                echo [IMPORTANT] Please add '%%~nxD' to build_release.bat packaging options or .pkgdirignore.
+                echo [IMPORTANT] Please add '%%~nxD' to build_all.bat packaging options or .pkgdirignore.
                 echo [INFO] Building process will now terminate.
                 pause
                 exit /b 1
@@ -89,6 +89,7 @@ echo [INFO] Running Tauri Build...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 call npm install || exit /b 1
+call npm audit fix || exit /b 1
 call npm run tauri build || exit /b 1
 
 if errorlevel 1 (

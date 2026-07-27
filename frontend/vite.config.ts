@@ -1,6 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+
+// Read backend port for dev proxy
+let backendPort = 8000;
+try {
+  const portStr = fs.readFileSync("../backend/logs/web_port.txt", "utf-8");
+  backendPort = parseInt(portStr.trim()) || 8000;
+} catch (e) {
+  // fallback to 8000 or 8001
+  backendPort = 8001;
+}
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -71,6 +83,12 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
     host: host || false,
+    proxy: {
+      '/hud': {
+        target: `http://127.0.0.1:${backendPort}`,
+        changeOrigin: true
+      }
+    },
     hmr: host
       ? {
           protocol: "ws",
