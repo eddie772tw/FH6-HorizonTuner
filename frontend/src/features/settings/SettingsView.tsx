@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSettings, UnitSettings } from '../context/SettingsContext';
+import { useSettings, UnitSettings } from '../../context/SettingsContext';
 
 const SettingsView: React.FC = () => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();

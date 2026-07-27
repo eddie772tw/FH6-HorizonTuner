@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { simplifyPathRDP, Point2D } from '../utils/rdpSimplifier';
+import { simplifyPathRDP, Point2D } from '../../utils/rdpSimplifier';
 
 export interface TrackPoint extends Point2D {
   val: number;        // Normalized metric value (0.0 to 1.0)

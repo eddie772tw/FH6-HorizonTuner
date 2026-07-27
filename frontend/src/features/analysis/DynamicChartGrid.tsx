@@ -1,7 +1,7 @@
 import React from 'react';
-import { AnalysisDataPoint } from '../context/TelemetryRecorderContext';
+import { AnalysisDataPoint } from '../../context/TelemetryRecorderContext';
 import { CustomChannelItem } from './CustomChannelEditor';
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../../context/SettingsContext';
 import { ChannelConfigItem, ChartType, transformTelemetryData } from './ChartEditModal';
 import {
   LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,

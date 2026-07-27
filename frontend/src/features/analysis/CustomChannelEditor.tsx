@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { evaluateCustomMath } from '../utils/customMathEngine';
-import { useSettings } from '../context/SettingsContext';
+import { evaluateCustomMath } from '../../utils/customMathEngine';
+import { useSettings } from '../../context/SettingsContext';
 
 export interface CustomChannelItem {
   name: string;

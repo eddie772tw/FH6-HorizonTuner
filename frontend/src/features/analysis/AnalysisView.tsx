@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useTelemetryRecorder, AnalysisDataPoint, LapSummary } from '../context/TelemetryRecorderContext';
-import { useSettings } from '../context/SettingsContext';
+import { useTelemetryRecorder, AnalysisDataPoint, LapSummary } from '../../context/TelemetryRecorderContext';
+import { useSettings } from '../../context/SettingsContext';
 import TrackMapCanvas from './TrackMapCanvas';
 import { CustomChannelItem } from './CustomChannelEditor';
 import DynamicChartGrid, { ChartSlotConfig, DEFAULT_CHART_SLOTS } from './DynamicChartGrid';

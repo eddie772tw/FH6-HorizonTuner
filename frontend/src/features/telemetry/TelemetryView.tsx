@@ -10,8 +10,8 @@ import PedalTraceCanvas from './components/PedalTraceCanvas';
 import TireRadar from './components/TireRadar';
 import SuspensionBar from './components/SuspensionBar';
 
-const AnalysisView = React.lazy(() => import('../../components/AnalysisView'));
-const DragTestView = React.lazy(() => import('../../components/DragTestView'));
+const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
+const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
 
 
 const getCarClassString = (cls?: number) => {

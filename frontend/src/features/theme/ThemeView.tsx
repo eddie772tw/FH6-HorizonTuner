@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTheme, getDefaultCSSTemplate } from '../context/ThemeContext';
-import { useSettings } from '../context/SettingsContext';
-import { validateCSS } from '../utils/cssValidator';
+import { useTheme, getDefaultCSSTemplate } from '../../context/ThemeContext';
+import { useSettings } from '../../context/SettingsContext';
+import { validateCSS } from '../../utils/cssValidator';
 
 const ThemeView: React.FC = () => {
   const {

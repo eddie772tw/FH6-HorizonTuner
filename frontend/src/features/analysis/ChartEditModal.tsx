@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { DomainType } from './DynamicChartGrid';
 import { CustomChannelItem } from './CustomChannelEditor';
-import { evaluateCustomMath } from '../utils/customMathEngine';
-import { useSettings } from '../context/SettingsContext';
-import { AnalysisDataPoint } from '../context/TelemetryRecorderContext';
+import { evaluateCustomMath } from '../../utils/customMathEngine';
+import { useSettings } from '../../context/SettingsContext';
+import { AnalysisDataPoint } from '../../context/TelemetryRecorderContext';
 import {
   LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
