@@ -940,6 +940,30 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>°</span>
                     </div>
                   </div>
+
+                  {/* Aerodynamics */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{t("Aerodynamics")}</span>
+                    <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
+                      <span style={{ color: 'gray', fontSize: '0.75rem' }}>{t("Front:")}</span>
+                      <input 
+                        type="number" step="1" 
+                        value={tuning.aero.front} 
+                        onChange={e => updateSection('aero', 'front', parseFloat(e.target.value) || 0)}
+                        disabled={tuningMode === 'recommended'}
+                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                      />
+                      <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
+                      <input 
+                        type="number" step="1" 
+                        value={tuning.aero.rear} 
+                        onChange={e => updateSection('aero', 'rear', parseFloat(e.target.value) || 0)}
+                        disabled={tuningMode === 'recommended'}
+                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                      />
+                      <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}></span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
