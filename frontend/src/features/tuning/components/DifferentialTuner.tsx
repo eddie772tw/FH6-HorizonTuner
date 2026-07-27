@@ -12,7 +12,7 @@ interface DiffTuning {
 interface DifferentialTunerProps {
   tuning: { diff: DiffTuning };
   tuningMode: 'recommended' | 'custom';
-  updateSection: (section: string, field: string, value: any) => void;
+  updateSection: (section: any, field: string, value: any) => void;
   drivetrain?: string;
 }
 

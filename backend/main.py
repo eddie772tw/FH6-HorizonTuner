@@ -1897,10 +1897,10 @@ async def save_overlay_config(data: dict):
     try:
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        
+
         # Broadcast config update to all connected WebSockets (including the HUD)
         await manager.broadcast_json({"type": "hud:config", "data": data})
-        
+
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save hud_config.json: {e}")

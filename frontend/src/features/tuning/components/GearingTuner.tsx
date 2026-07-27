@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer } from 'recharts';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings } from '../../../context/SettingsContext';
 
 interface GearingTunerProps {
   tuning: any;
   tuningMode: string;
-  updateSection: (section: string, field: string, value: any) => void;
+  updateSection: (section: any, field: string, value: any) => void;
   numGears: number;
   chartData: any[];
   xMax: number;

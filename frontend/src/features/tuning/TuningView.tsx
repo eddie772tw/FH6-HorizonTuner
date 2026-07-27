@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, ReferenceLine } from 'recharts';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
 import { useTelemetryRecorder } from '../../context/TelemetryRecorderContext';
 import { analyzeTelemetrySession, DiagnosisReport } from '../../utils/tuningDiagnosis';
@@ -17,6 +16,9 @@ import { useSettings } from '../../context/SettingsContext';
 import { SuspensionTuner } from './components/SuspensionTuner';
 import { GearingTuner } from './components/GearingTuner';
 import { DifferentialTuner } from './components/DifferentialTuner';
+import { DiagnosisPanel } from './components/DiagnosisPanel';
+import { DragTestSection } from './components/DragTestSection';
+import { TuningSliderGrid } from './components/TuningSliderGrid';
 const TIRE_RADIUS_M = 0.32;
 
 interface GearingTuning {
@@ -55,7 +57,7 @@ const initialTuning = (numGears: number): TuningState => ({
 
 const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
-  const { settings, convertTirePressure, convertTirePressureToBar, convertSpringRate, convertSpringRateToKgfmm, convertHeight, convertHeightToCm, convertSpeed, t } = useSettings();
+  const { settings, convertTirePressure, convertTirePressureToBar, convertSpringRate, convertSpeed, t } = useSettings();
 
   // Wizard Steps
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -570,14 +572,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   };
 
   // Unit Labels local helper
-  const getUnitLabel = (type: string) => {
-    if (type === 'pressure') return ' ' + convertTirePressure(1).label;
-    if (type === 'spring') return ' ' + convertSpringRate(1).label;
-    if (type === 'height') return ' cm';
-    if (type === 'force') return ' kgf';
-    return '';
-  };
-
+  
   // Chart speed calculators
   const calcSpeed = (rpm: number, gearRatio: number) => {
     const speedMs = gearRatio === 0 ? 0 : ((rpm * 2 * Math.PI * TIRE_RADIUS_M) / (gearRatio * tuning.gearing.finalDrive * 60));
@@ -1023,43 +1018,19 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
             )}
 
             {/* Optional Drag Optimization for SpeedZone */}
-            {selectedRaceGoal === 'SpeedZone' && (
-              <div style={{ background: 'rgba(255, 150, 0, 0.05)', padding: '1.2rem', borderRadius: '8px', border: '1px solid var(--accent)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                <span style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.9rem' }}>🏎️ {t("Drag Test Optimizer (Alternative Gearing)")}</span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={handleStartDragTest} style={{ ...btnStyle, flex: 1, padding: '0.35rem', fontSize: '0.75rem' }}>
-                    {t("Start drag run")}
-                  </button>
-                  <button onClick={handleClearDragTest} style={{ ...btnStyle, flex: 1, padding: '0.35rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: 'white' }}>
-                    {t("Reset run")}
-                  </button>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                  <span>{t("Drag Status:")} <strong style={{ color: dragTestStatus==='recording'?'#0f0':'white' }}>{dragTestStatus.toUpperCase()}</strong></span>
-                  <span>{dragPointsCount} {t("pts collected")}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <select 
-                    value={selectedDragSession} 
-                    onChange={(e) => handleLoadDragSession(e.target.value)}
-                    style={{ background: 'black', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', flex: 1, fontSize: '0.8rem' }}
-                  >
-                    <option value="">-- {t("Select Drag Test Run")} --</option>
-                    {globalSavedSessions.map((s: any) => (
-                      <option key={s.filename} value={s.filename}>{s.filename}</option>
-                    ))}
-                  </select>
-                  <button onClick={handleSaveDragSession} style={{ ...btnStyle, padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: 'white' }}>💾 {t("Save Run")}</button>
-                </div>
-                <button 
-                  onClick={applyDragOptimizedGearing} 
-                  disabled={!activeDragData || activeDragData.length === 0}
-                  style={{ ...btnStyle, background: (activeDragData && activeDragData.length > 0) ? 'var(--accent)' : 'gray', color: 'black', fontSize: '0.8rem', padding: '0.4rem' }}
-                >
-                  ⚙️ {t("Calculate optimized FD & 1st gear")}
-                </button>
-              </div>
-            )}
+            <DragTestSection 
+              selectedRaceGoal={selectedRaceGoal}
+              dragTestStatus={dragTestStatus}
+              dragPointsCount={dragPointsCount}
+              selectedDragSession={selectedDragSession}
+              globalSavedSessions={globalSavedSessions}
+              activeDragData={activeDragData}
+              handleStartDragTest={handleStartDragTest}
+              handleClearDragTest={handleClearDragTest}
+              handleLoadDragSession={handleLoadDragSession}
+              handleSaveDragSession={handleSaveDragSession}
+              applyDragOptimizedGearing={applyDragOptimizedGearing}
+            />
 
             {/* Load Saved Session Dropdown */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.2rem', borderRadius: '8px' }}>
@@ -1100,170 +1071,10 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               </span>
             </div>
 
-            {!diagnosisReport ? (
-              <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                {t("No telemetry file loaded. Please go to Step 3 to select and analyze a session first.")}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '1.5rem', alignItems: 'start' }}>
-                
-                {/* Left Side: Dynamic Data Visualizations */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  
-                  {/* Jump height graph (Only for DangerSign or detected jump) */}
-                  {diagnosisReport.jumpAnalysis && (
-                    <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                      <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>🚀 {t("Danger Sign Height & Airtime Profile")}</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.8rem', textAlign: 'center' }}>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Max Jump Height")}</div>
-                          <div style={{ fontSize: '1.1rem', color: '#00ffff', fontWeight: 'bold' }}>
-                            {settings.units.rideHeight === 'in' 
-                              ? `${(diagnosisReport.jumpAnalysis.maxHeightDelta * 3.28084).toFixed(1)} ft` 
-                              : `${diagnosisReport.jumpAnalysis.maxHeightDelta.toFixed(1)} m`}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Airtime")}</div>
-                          <div style={{ fontSize: '1.1rem', color: '#00ffff', fontWeight: 'bold' }}>{diagnosisReport.jumpAnalysis.airtime} s</div>
-                        </div>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Landing Force")}</div>
-                          <div style={{ fontSize: '1.1rem', color: diagnosisReport.jumpAnalysis.landingSuspensionMax >= 0.98 ? '#ff3d00' : 'white', fontWeight: 'bold' }}>
-                            {diagnosisReport.jumpAnalysis.maxLandingImpactG.toFixed(1)} G
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ height: '180px', width: '100%', marginTop: '0.4rem' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={telemetryPoints.filter((_, idx) => idx % 4 === 0)} margin={{ top: 10, right: 10, bottom: 5, left: -25 }}>
-                            <defs>
-                              <linearGradient id="heightColor" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#00b4ff" stopOpacity={0.6}/>
-                                <stop offset="95%" stopColor="#00b4ff" stopOpacity={0.0}/>
-                              </linearGradient>
-                            </defs>
-                            <XAxis dataKey="time" stroke="rgba(255,255,255,0.4)" fontSize={9} />
-                            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={9} domain={['auto', 'auto']} />
-                            <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)' }} />
-                            <Area type="monotone" dataKey="PositionY" stroke="#00b4ff" fillOpacity={1} fill="url(#heightColor)" strokeWidth={2} name="PositionY" />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Drift Stability Panel */}
-                  {diagnosisReport.driftAnalysis && (
-                    <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                      <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>💨 {t("Drift Angle & Stability Performance")}</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.8rem', textAlign: 'center' }}>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Avg Drift Angle")}</div>
-                          <div style={{ fontSize: '1.1rem', color: '#ff9f00', fontWeight: 'bold' }}>{diagnosisReport.driftAnalysis.avgDriftAngle}°</div>
-                        </div>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Drift Stability")}</div>
-                          <div style={{ fontSize: '1.1rem', color: diagnosisReport.driftAnalysis.driftStability >= 75 ? '#00e676' : 'yellow', fontWeight: 'bold' }}>
-                            {diagnosisReport.driftAnalysis.driftStability}%
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Drift Time Ratio")}</div>
-                          <div style={{ fontSize: '1.1rem', color: 'white', fontWeight: 'bold' }}>{diagnosisReport.driftAnalysis.driftTimePercent}%</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Speed Cornering and Powerband efficiency */}
-                  {diagnosisReport.speedAnalysis && (
-                    <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                      <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>🏁 {t("Cornering Speed & Powerband Overlap")}</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.8rem', textAlign: 'center' }}>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Max Speed")}</div>
-                          <div style={{ fontSize: '1.1rem', color: 'white', fontWeight: 'bold' }}>
-                            {convertSpeed(diagnosisReport.speedAnalysis.maxSpeed / 3.6).value.toFixed(1)} {convertSpeed(1/3.6).label}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Corner Speed Loss")}</div>
-                          <div style={{ fontSize: '1.1rem', color: diagnosisReport.speedAnalysis.speedDropPercent > 35 ? '#ff5f5f' : 'white', fontWeight: 'bold' }}>
-                            {diagnosisReport.speedAnalysis.speedDropPercent}%
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ color: 'gray' }}>{t("Powerband Overlap")}</div>
-                          <div style={{ fontSize: '1.1rem', color: diagnosisReport.speedAnalysis.powerbandEfficiency >= 70 ? '#00e676' : 'yellow', fontWeight: 'bold' }}>
-                            {diagnosisReport.speedAnalysis.powerbandEfficiency}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Suspension Travel Chart */}
-                  <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                    <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>📊 {t("Suspension Damping Travel & Bottom-Out Rates")}</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}>
-                      <div>
-                        <span style={{ color: 'gray' }}>{t("Front Max Travel:")}</span> <strong style={{ color: 'white' }}>{(diagnosisReport.suspension.frontMaxTravel * 100).toFixed(0)}%</strong>
-                        <div style={{ color: diagnosisReport.suspension.frontBottomOutRate > 1.5 ? '#ff3d00' : '#00e676', fontSize: '0.75rem', marginTop: '0.2rem' }}>
-                          {t("Front Bottom-Out Rate:")} {diagnosisReport.suspension.frontBottomOutRate}%
-                        </div>
-                      </div>
-                      <div>
-                        <span style={{ color: 'gray' }}>{t("Rear Max Travel:")}</span> <strong style={{ color: 'white' }}>{(diagnosisReport.suspension.rearMaxTravel * 100).toFixed(0)}%</strong>
-                        <div style={{ color: diagnosisReport.suspension.rearBottomOutRate > 1.5 ? '#ff3d00' : '#00e676', fontSize: '0.75rem', marginTop: '0.2rem' }}>
-                          {t("Rear Bottom-Out Rate:")} {diagnosisReport.suspension.rearBottomOutRate}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Side: Specific Correction Advice */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  
-                  {/* Automatic corrections */}
-                  <div className="glass-panel" style={{ padding: '1.2rem', border: '1px solid rgba(0, 180, 255, 0.2)', background: 'rgba(0, 180, 255, 0.03)' }}>
-                    <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--primary)', fontSize: '0.95rem' }}>🔧 {t("Recommended Correction Settings")}</h4>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '300px', overflowY: 'auto' }}>
-                      {diagnosisReport.suspension.advice.map((adv, idx) => (
-                        <div key={`susp-adv-${idx}`} style={{ fontSize: '0.85rem', lineHeight: '1.3', padding: '0.4rem', borderLeft: '3px solid #ffaa00', background: 'rgba(255,170,0,0.03)' }}>{adv}</div>
-                      ))}
-                      {diagnosisReport.jumpAnalysis?.advice.map((adv, idx) => (
-                        <div key={`jump-adv-${idx}`} style={{ fontSize: '0.85rem', lineHeight: '1.3', padding: '0.4rem', borderLeft: '3px solid #00b4ff', background: 'rgba(0,180,255,0.03)' }}>{adv}</div>
-                      ))}
-                      {diagnosisReport.driftAnalysis?.advice.map((adv, idx) => (
-                        <div key={`drift-adv-${idx}`} style={{ fontSize: '0.85rem', lineHeight: '1.3', padding: '0.4rem', borderLeft: '3px solid #ff9f00', background: 'rgba(255,159,0,0.03)' }}>{adv}</div>
-                      ))}
-                      {diagnosisReport.speedAnalysis?.advice.map((adv, idx) => (
-                        <div key={`speed-adv-${idx}`} style={{ fontSize: '0.85rem', lineHeight: '1.3', padding: '0.4rem', borderLeft: '3px solid #00e676', background: 'rgba(0,230,118,0.03)' }}>{adv}</div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Manual Diagnostic Guide Zone */}
-                  <div className="glass-panel" style={{ padding: '1.2rem', background: 'rgba(255, 170, 0, 0.03)', border: '1px solid rgba(255, 170, 0, 0.15)' }}>
-                    <h4 style={{ margin: '0 0 0.8rem 0', color: '#ffaa00', fontSize: '0.95rem' }}>📖 {t("Manual Telemetry Diagnostic Guide")}</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.8rem', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                      <div>
-                        <strong style={{ color: 'white' }}>{t("1. Camber Temperature Difference:")}</strong><br />
-                        {t("Forza UDP telemetry does not provide inner/center/outer tire temps. During high lateral G cornering, open game telemetry UI and check FL/FR/RL/RR tire temp blocks. Outer side temp should be slightly warmer than inner (ideal diff: 2-5°C). If outer side is too hot, increase negative Camber (e.g. -1.5 to -2.0).")}
-                      </div>
-                      <div>
-                        <strong style={{ color: 'white' }}>{t("2. Tire Pressure Status:")}</strong><br />
-                        {t("Forza UDP telemetry does not output tire pressure. Drive 2-3 laps and check tire temperature color. Light green is optimal; light blue is cold (under-inflated); orange/red is hot (over-inflated). Adjust cold tire pressure accordingly by +/- 0.1 Bar.")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            )}
+            <DiagnosisPanel 
+              diagnosisReport={diagnosisReport} 
+              telemetryPoints={telemetryPoints} 
+            />
           </div>
         )}
 
@@ -1295,33 +1106,11 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
             </div>
 
             {/* Sliders adjustment list */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-              {/* Left sliders */}
-              <div>
-                <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--primary)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.3rem', fontSize: '0.95rem' }}>
-                  🚘 {t("Tire Pressure & ARB Sliders")}
-                </h4>
-                <TuningSlider label={t("Front Tire Pressure")} value={tuning.tires.front} min={1.0} max={4.0} step={0.01} unitType="pressure" section="tires" field="front" updateSection={updateSection} convertToUI={convertTirePressure} convertFromUI={convertTirePressureToBar} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Rear Tire Pressure")} value={tuning.tires.rear} min={1.0} max={4.0} step={0.01} unitType="pressure" section="tires" field="rear" updateSection={updateSection} convertToUI={convertTirePressure} convertFromUI={convertTirePressureToBar} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Front Anti-roll Bar")} value={tuning.arb.front} min={carParams?.arb_front_min ?? 1.0} max={carParams?.arb_front_max ?? 65.0} step={0.1} unitType="force" section="arb" field="front" updateSection={updateSection} convertToUI={(v: any) => ({value:v,label:''})} convertFromUI={(v: any) => v} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Rear Anti-roll Bar")} value={tuning.arb.rear} min={carParams?.arb_rear_min ?? 1.0} max={carParams?.arb_rear_max ?? 65.0} step={0.1} unitType="force" section="arb" field="rear" updateSection={updateSection} convertToUI={(v: any) => ({value:v,label:''})} convertFromUI={(v: any) => v} getUnitLabel={getUnitLabel} />
-              </div>
-
-              {/* Right sliders */}
-              <div>
-                <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--primary)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.3rem', fontSize: '0.95rem' }}>
-                  {t("Suspension & Damping Sliders")}
-                </h4>
-                <TuningSlider label={t("Front Springs")} value={tuning.springs.front} min={carParams?.spring_front_min ?? 10.0} max={carParams?.spring_front_max ?? 120.0} step={0.1} unitType="spring" section="springs" field="front" updateSection={updateSection} convertToUI={convertSpringRate} convertFromUI={convertSpringRateToKgfmm} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Rear Springs")} value={tuning.springs.rear} min={carParams?.spring_rear_min ?? 10.0} max={carParams?.spring_rear_max ?? 120.0} step={0.1} unitType="spring" section="springs" field="rear" updateSection={updateSection} convertToUI={convertSpringRate} convertFromUI={convertSpringRateToKgfmm} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Front Ride Height")} value={tuning.springs.heightF} min={5.0} max={35.0} step={0.1} unitType="height" section="springs" field="heightF" updateSection={updateSection} convertToUI={convertHeight} convertFromUI={convertHeightToCm} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Rear Ride Height")} value={tuning.springs.heightR} min={5.0} max={35.0} step={0.1} unitType="height" section="springs" field="heightR" updateSection={updateSection} convertToUI={convertHeight} convertFromUI={convertHeightToCm} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Front Rebound Damping")} value={tuning.damping.reboundF} min={1.0} max={20.0} step={0.1} unitType="force" section="damping" field="reboundF" updateSection={updateSection} convertToUI={(v: any) => ({value:v,label:''})} convertFromUI={(v: any) => v} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Rear Rebound Damping")} value={tuning.damping.reboundR} min={1.0} max={20.0} step={0.1} unitType="force" section="damping" field="reboundR" updateSection={updateSection} convertToUI={(v: any) => ({value:v,label:''})} convertFromUI={(v: any) => v} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Front Bump Damping")} value={tuning.damping.bumpF} min={1.0} max={20.0} step={0.1} unitType="force" section="damping" field="bumpF" updateSection={updateSection} convertToUI={(v: any) => ({value:v,label:''})} convertFromUI={(v: any) => v} getUnitLabel={getUnitLabel} />
-                <TuningSlider label={t("Rear Bump Damping")} value={tuning.damping.bumpR} min={1.0} max={20.0} step={0.1} unitType="force" section="damping" field="bumpR" updateSection={updateSection} convertToUI={(v: any) => ({value:v,label:''})} convertFromUI={(v: any) => v} getUnitLabel={getUnitLabel} />
-              </div>
-            </div>
+            <TuningSliderGrid 
+              tuning={tuning} 
+              carParams={carParams} 
+              updateSection={updateSection} 
+            />
           </div>
         )}
 
@@ -1340,12 +1129,6 @@ const btnStyle: React.CSSProperties = {
   fontWeight: 'bold'
 };
 
-const formRowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '0.8rem'
-};
 
 const inputStyle: React.CSSProperties = {
   background: 'rgba(0,0,0,0.3)',
@@ -1368,74 +1151,6 @@ const smallInputStyle: React.CSSProperties = {
   outline: 'none'
 };
 
-const TuningSlider = React.memo(({label, value, min, max, unitType, section, field, step=0.1, baseline, disabled=false, isUnknown=false, updateSection, convertToUI, convertFromUI, getUnitLabel}: any) => {
-  const { t } = useSettings();
-  const displayVal = isUnknown ? 'Unknown' : convertToUI(value, unitType);
-  const uiMin = convertToUI(min, unitType);
-  const uiMax = convertToUI(max, unitType);
-  const uiBaseline = baseline !== undefined ? convertToUI(baseline, unitType) : undefined;
-  
-  const [localVal, setLocalVal] = React.useState(typeof displayVal === 'number' ? displayVal.toFixed(2) : '');
-  const [isFocused, setIsFocused] = React.useState(false);
 
-  React.useEffect(() => {
-    if (!isFocused && typeof displayVal === 'number') {
-      setLocalVal(displayVal.toFixed(2));
-    }
-  }, [displayVal, isFocused]);
-
-  const handleBlur = () => {
-    setIsFocused(false);
-    const parsed = parseFloat(localVal);
-    if (!isNaN(parsed)) {
-      updateSection(section, field, convertFromUI(parsed, unitType));
-    } else {
-      if (typeof displayVal === 'number') setLocalVal(displayVal.toFixed(2));
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleBlur();
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', opacity: disabled ? 0.6 : 1, transition: 'opacity 0.2s' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ color: 'var(--text-secondary)' }}>
-          {label} 
-          {uiBaseline !== undefined && !isUnknown && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '0.5rem' }}>({t("Base:")} {uiBaseline.toFixed(1)}{getUnitLabel(unitType)})</span>}
-          {disabled && <span style={{ color: 'gray', fontSize: '0.8rem', marginLeft: '0.5rem' }}>({t("Locked")})</span>}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-          {isUnknown ? (
-            <span style={{ width: '80px', textAlign: 'right', color: 'gray', fontStyle: 'italic' }}>{t("Unknown")}</span>
-          ) : (
-            <>
-              <input 
-                type="number" 
-                value={localVal} 
-                onChange={(e) => setLocalVal(e.target.value)} 
-                onFocus={() => setIsFocused(true)}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step={step}
-                disabled={disabled}
-                style={{ width: '80px', background: disabled ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.3)', color: disabled ? 'gray' : 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', textAlign: 'right', cursor: disabled ? 'not-allowed' : 'text' }}
-              />
-              <span style={{color: 'gray', fontSize: '0.8rem', width: '45px'}}>{getUnitLabel(unitType)}</span>
-            </>
-          )}
-        </div>
-      </div>
-      <input 
-        type="range" min={uiMin} max={uiMax} step={step} 
-        value={isUnknown ? uiMin : (displayVal)} 
-        onChange={(e) => updateSection(section, field, convertFromUI(parseFloat(e.target.value), unitType))}
-        disabled={disabled}
-        style={{ width: '100%', accentColor: disabled ? 'gray' : 'var(--primary)', cursor: disabled ? 'not-allowed' : 'pointer' }}
-      />
-    </div>
-  );
-});
 
 export default TuningView;

@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings } from '../../../context/SettingsContext';
 
 interface SuspensionTunerProps {
   tuning: any;
   tuningMode: string;
-  updateSection: (section: string, field: string, value: any) => void;
+  updateSection: (section: any, field: string, value: any) => void;
 }
 
 const smallInputStyle: React.CSSProperties = {

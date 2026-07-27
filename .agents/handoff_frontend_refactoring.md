@@ -61,7 +61,7 @@
 | `features/tuning/components/SuspensionTuner.tsx` | 8.7 KB | ✅ 實質抽離完成 (React.memo) |
 | `features/tuning/components/GearingTuner.tsx` | 8.5 KB | ✅ 實質抽離完成 (React.memo) |
 | `features/tuning/components/DifferentialTuner.tsx` | 6.2 KB | ✅ 實質抽離完成 (React.memo) |
-| `features/tuning/components/ARBTuner.tsx` | 0.5 KB | ⚠️ **僅骨架**，實際 JSX 仍在 TuningView 中 |
+| `features/tuning/components/ARBTuner.tsx` | 0.5 KB | ✅ **已由 TuningSliderGrid 取代** |
 | `features/tuning/components/AeroTuner.tsx` | 0.5 KB | ⚠️ **僅骨架**，實際 JSX 仍在 TuningView 中 |
 
 ---
@@ -72,7 +72,7 @@
 
 `TuningView.tsx` 目前仍有 **77KB / ~1440 行**，需要繼續拆分以下區塊：
 
-#### a) 輪胎壓力與 ARB Slider 區塊（約 L1381-L1408）
+#### ✅ a) 輪胎壓力與 ARB Slider 區塊（已完成）
 
 目前 `ARBTuner.tsx` 是空骨架。但注意：ARB slider 與 Tire Pressure slider 混在同一個 `<div>` 網格內：
 
@@ -87,11 +87,11 @@ L1394-L1407: 右側 = Front/Rear Springs + Ride Height + Damping (8 sliders)
 
 `AeroTuner.tsx` 是空骨架。但空力在 TuningView 中只有 2 個數值（`tuning.aero.front` / `tuning.aero.rear`），散落在定位/對齊 (Alignment) 區塊附近。由於體積極小（~10 行），**可以考慮不獨立抽離**，或與 Alignment 一起封裝為 `AlignmentAeroTuner.tsx`。
 
-#### c) 診斷報告 (Diagnosis Report) 區塊（約 L1060-L1350）
+#### ✅ c) 診斷報告 (Diagnosis Report) 區塊（已完成）
 
 此區塊約 290 行，包含懸吊診斷、輪胎診斷、操控評分等多個子面板。建議抽離為 `DiagnosisPanel.tsx`。
 
-#### d) 拖曳測試與齒輪比優化 (Drag Test & Gearing Optimization)（約 L700-L850）
+#### ✅ d) 拖曳測試與齒輪比優化 (Drag Test & Gearing Optimization)（已完成）
 
 此區塊包含 Drag test wizard 與齒輪比圖表，約 150 行，建議抽離為 `DragTestSection.tsx`。
 
