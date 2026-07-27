@@ -33,11 +33,22 @@ try {
     if (status.length > 0) {
       const changedFiles = status.split("\n").map(line => line.trim());
       const hasRealChanges = changedFiles.some(line => {
-        const filePath = line.substring(2).trim();
-        return !filePath.endsWith("Cargo.lock") && 
-               !filePath.endsWith("package-lock.json") && 
-               !filePath.includes("logs/") && 
-               !filePath.includes("__pycache__");
+        const filePath = line.substring(2).trim().toLowerCase();
+
+        const ignoredPatterns = [
+          "cargo.lock", "cargo.toml",
+          "package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
+          "tauri.conf.json",
+          "logs/", "__pycache__", ".pytest_cache", ".ruff_cache",
+          "backend/car_database.json"
+        ];
+
+        for (const pattern of ignoredPatterns) {
+          if (filePath.endsWith(pattern) || filePath.includes(pattern)) {
+            return false;
+          }
+        }
+        return true;
       });
       if (hasRealChanges) {
         gitCommit = "post-" + gitCommit;
