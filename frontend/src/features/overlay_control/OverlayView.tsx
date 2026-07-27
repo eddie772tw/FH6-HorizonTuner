@@ -72,9 +72,9 @@ export const OverlayView: React.FC = () => {
   const { t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<string>('');
+  // const [statusMsg, setStatusMsg] = useState<string>('');
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
-  const [carLearningData, setCarLearningData] = useState<Record<string, any>>({});
+  // const [carLearningData, setCarLearningData] = useState<Record<string, any>>({});
 
   const channelRef = React.useRef<BroadcastChannel | null>(null);
 
@@ -82,7 +82,7 @@ export const OverlayView: React.FC = () => {
     channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
     fetchMonitors();
     fetchConfig();
-    fetchCarLearning();
+    // fetchCarLearning();
 
     return () => {
       channelRef.current?.close();
@@ -132,18 +132,20 @@ export const OverlayView: React.FC = () => {
     }
   };
 
+/*
   const fetchCarLearning = async () => {
     try {
       const port = (window as any).BACKEND_PORT || 8001;
       const res = await fetch(`http://127.0.0.1:${port}/api/overlay/car_learning`);
       if (res.ok) {
         const data = await res.json();
-        setCarLearningData(data);
+        // setCarLearningData(data);
       }
     } catch (e) {
       console.warn('Failed to fetch car learning data:', e);
     }
   };
+*/
 
   const saveConfig = async (newConfig: HudConfig) => {
     setConfig(newConfig);
@@ -243,6 +245,7 @@ export const OverlayView: React.FC = () => {
     saveConfig(updated);
   };
 
+/*
   const handleResetCarLearning = async () => {
     if (!window.confirm(t('Are you sure you want to reset car limiter database?'))) return;
     try {
@@ -252,12 +255,13 @@ export const OverlayView: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      setCarLearningData({});
+      // setCarLearningData({});
       setStatusMsg(t('Car learning reset successfully'));
     } catch (e) {
       console.error('Failed to reset car learning:', e);
     }
   };
+*/
 
   return (
     <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -294,11 +298,13 @@ export const OverlayView: React.FC = () => {
         </button>
       </div>
 
-      {statusMsg && (
+      {/*
+      statusMsg && (
         <div style={{ padding: '0.8rem 1rem', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)' }}>
           {statusMsg}
         </div>
-      )}
+      )
+      */}
 
       {/* Main Settings Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>

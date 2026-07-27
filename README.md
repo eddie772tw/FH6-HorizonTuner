@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React-purple.svg)](https://tauri.app/)
 [![Overlay](https://img.shields.io/badge/Overlay-D3D11%20%2B%20DXGI%20MPO-orange.svg)](tool/overlay/)
-[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_release.bat)
+[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 
 ---
 
@@ -65,7 +65,7 @@ FH6-HorizonTuner/
 ├── requirements.txt         # Python 依賴套件清單
 ├── .pkgdirignore            # 打包排除目錄定義
 ├── start_all.bat            # 一鍵開發啟動器
-└── build_release.bat        # 一鍵打包發行腳本
+└── build_all.bat            # 一鍵打包發行腳本
 ```
 
 ---
@@ -96,19 +96,15 @@ FH6-HorizonTuner/
 
 您可以將後端與前端打包成一個**單一可執行檔 (.exe)**，方便綠色免安裝執行：
 
-1. 雙擊執行 **`build_release.bat`**：
-   - 腳本將會自動建置 Tauri 前端專案，生成 `frontend.exe`。
-   - 自動透過 CMake 編譯 C++ Overlay 引擎，並將 `HorizonTunerOverlay.exe` 複製至 `dist/tool/` 目錄。
-   - 使用 PyInstaller 將後端 FastAPI、翻譯字典（`lang/`）、預設參數（`car_params/default_car.json`）及車輛資料庫（`car_database.json`）與前端一併封裝。
-   - 封裝完成後將在 `dist/` 目錄下產生獨立執行檔 `FH6-HorizonTuner.exe`。
-
 > [!NOTE]
 > **路徑設計說明**：
 > 發行版的獨立執行檔在運行時，所有的預設資源會由暫存目錄釋放讀取；而由使用者操作產生的個人設定檔（`settings.json`）、遙測紀錄（`sessions/`）以及車輛調校資料（`tunings/`）皆會**自動儲存於該 `.exe` 執行檔的同級目錄下**，確保您的調校數據能隨身帶走。
 
 * **排除非發行資源目錄 (.pkgdirignore)**：
-    * 專案根目錄下的 **`.pkgdirignore`** 檔案用於定義不需要打包進 `.exe` 中的目錄（例如：虛擬環境 `.venv`、開發暫存目錄 `build`、測試程式 `tests`、C++ 原始碼 `tool` 等）。
-    * 當執行 `build_release.bat` 時，腳本會自動掃描根目錄。若發現有新增的資料夾既不在 `.pkgdirignore` 中、也未在打包指令中進行 `--add-data` 配置，將會主動彈出互動提示：
+    專案提供了 `build_all.bat`，該腳本會自動檢查環境、建置前端並透過 PyInstaller 打包整個應用程式：
+
+1. 雙擊執行 **`build_all.bat`**：
+    * 當執行 `build_all.bat` 時，腳本會自動掃描根目錄。若發現有新增的資料夾既不在 `.pkgdirignore` 中、也未在打包指令中進行 `--add-data` 配置，將會主動彈出互動提示：
         * **輸入 Y**：自動將該資料夾新增至 `.pkgdirignore` 以在未來忽略它。
         * **輸入 N**（超時 10 秒亦為 N）：警示開發者需要手動將其加入打包設定，並中止建置流程。
 
