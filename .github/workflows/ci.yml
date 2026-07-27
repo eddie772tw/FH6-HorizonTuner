@@ -71,6 +71,7 @@ jobs:
         pnpm install
 
     - name: Check Frontend Security with pnpm audit
+      shell: bash
       run: |
         cd frontend
         if ! pnpm audit; then
