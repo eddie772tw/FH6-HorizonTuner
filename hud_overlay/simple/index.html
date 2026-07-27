@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simple HUD</title>
+    <!-- Include Shared Base HUD Styles -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        /* ── Text Overlays (NFSU2 Style) ─────────────────────────────────────── */
+        .speed-text {
+            position: absolute;
+            bottom: 90px; right: 40px;
+            font-size: 130px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 700;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8), 3px 3px 5px rgba(0, 240, 255, 0.4);
+            pointer-events: none;
+        }
+        .speed-text span { display: inline-block; width: 1ch; text-align: center; }
+
+        .speed-unit {
+            position: absolute;
+            bottom: 50px; right: 45px;
+            font-size: 42px;
+            color: rgba(0, 240, 255, 0.9);
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .gear-text {
+            position: absolute;
+            top: 310px; right: 180px;
+            font-size: 95px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 900;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+        }
+
+        .gear-indicator {
+            position: absolute;
+            top: 275px; right: 195px;
+            width: 0; height: 0;
+            border-left: 22px solid transparent;
+            border-right: 22px solid transparent;
+            border-bottom: 35px solid rgba(255, 0, 136, 0.9);
+            opacity: 0;
+            transition: opacity 0.1s, transform 0.1s;
+            filter: drop-shadow(0 0 8px rgba(255, 0, 136, 0.8));
+            pointer-events: none;
+        }
+        .gear-indicator.active { opacity: 1; transform: scale(1.15); }
+
+        .lc-badge {
+            position: absolute;
+            top: 280px; left: 160px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(255, 0, 136, 0.25);
+            border: 1px solid rgba(255, 0, 136, 0.7);
+            color: #ff0088;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 0, 136, 0.4);
+        }
+        .lc-badge.active { opacity: 1; }
+
+        .lock-badge {
+            position: absolute;
+            top: 325px; left: 160px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(255, 50, 50, 0.25);
+            border: 1px solid rgba(255, 50, 50, 0.7);
+            color: #ff5555;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 50, 50, 0.4);
+        }
+        .lock-badge.active { opacity: 1; }
+    </style>
+</head>
+
+<body>
+    <div class="hud-root-wrapper" id="simpleWrapper">
+        <!-- Main Simple HUD Gauge Container -->
+        <div class="hud-gauge-container" id="simpleContainer" style="width: 750px; height: 750px;">
+            <img src="./Tachometer.png" id="tachBgImg"
+                 style="position:absolute; top:65px; left:65px; width:621px; height:621px; pointer-events:none; opacity:0.9;" />
+            <canvas id="simpleCanvas" width="750" height="750"></canvas>
+            
+            <div class="lc-badge" id="lcBadge">LC</div>
+            <div class="lock-badge" id="lockBadge">LOCK</div>
+            <div class="gear-indicator" id="gearIndicator"></div>
+            <div class="gear-text" id="gearText">1</div>
+            <div class="speed-text" id="speedText">0</div>
+            <div class="speed-unit" id="speedUnit">KM/H</div>
+        </div>
+    </div>
+
+    <!-- Include Shared Modules -->
+    <script src="../shared/hud-core.js"></script>
+
+    <script>
+        var canvas = document.getElementById('simpleCanvas');
+        var ctx = canvas ? canvas.getContext('2d') : null;
+        var _simpleValidGear = 1;
+        window.simpleSweepActive = false;
+
+        function setSimpleSpeedDisplay(value) {
+            var el = document.getElementById('speedText');
+            if (!el) return;
+            el.innerHTML = value.toString().split('').map(function (d) {
+                return '<span>' + d + '</span>';
+            }).join('');
+        }
+
+        function drawSimpleHUD(data, redlineRpm) {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var centerX = 375, centerY = 375, radius = 250;
+            var rpm = data.rpm || 0;
+            var maxRpm = data.maxRpm || 8000;
+            var redline = redlineRpm || (maxRpm * 0.92);
+
+            var startAngle = Math.PI * 0.75;
+            var endAngle = Math.PI * 2.25;
+            var totalSweep = endAngle - startAngle;
+
+            var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+            var currentAngle = startAngle + rpmRatio * totalSweep;
+            var redlineRatio = Math.max(0, Math.min(1, redline / maxRpm));
+            var redlineAngle = startAngle + redlineRatio * totalSweep;
+
+            // 1. Dial Base Arc (外圈基本灰色半透明軌道)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.lineWidth = 14;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.stroke();
+            ctx.restore();
+
+            // 2. Redline Sector Arc (紅線極限區域底色)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, redlineAngle, endAngle);
+            ctx.lineWidth = 16;
+            ctx.strokeStyle = 'rgba(255, 0, 136, 0.8)';
+            ctx.stroke();
+            ctx.restore();
+
+            // 3. Active Progress Arc (當前動態轉速發光弧條)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, currentAngle);
+            ctx.lineWidth = 16;
+            var isOverRedline = rpm >= redline;
+            ctx.strokeStyle = isOverRedline ? '#ff0088' : '#00f0ff';
+            ctx.shadowColor = isOverRedline ? 'rgba(255, 0, 136, 0.9)' : 'rgba(0, 240, 255, 0.9)';
+            ctx.shadowBlur = 15;
+            ctx.stroke();
+            ctx.restore();
+
+            // 4. Numbers & Tick Marks (外圈刻度與數字 0, 1, 2... 8)
+            var maxDigits = Math.ceil(maxRpm / 1000);
+            ctx.save();
+            ctx.font = 'bold 22px ForzaGear, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (var i = 0; i <= maxDigits; i++) {
+                var tickRpm = i * 1000;
+                var tickRatio = tickRpm / maxRpm;
+                if (tickRatio > 1) break;
+
+                var angle = startAngle + tickRatio * totalSweep;
+                var isRed = tickRpm >= redline;
+
+                // Tick mark
+                var innerR = radius - 15, outerR = radius + 15;
+                ctx.beginPath();
+                ctx.moveTo(centerX + innerR * Math.cos(angle), centerY + innerR * Math.sin(angle));
+                ctx.lineTo(centerX + outerR * Math.cos(angle), centerY + outerR * Math.sin(angle));
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = isRed ? '#ff0088' : 'rgba(255, 255, 255, 0.7)';
+                ctx.stroke();
+
+                // Digit text
+                var numR = radius - 40;
+                ctx.fillStyle = isRed ? '#ff0088' : 'rgba(255, 255, 255, 0.9)';
+                ctx.fillText(i.toString(), centerX + numR * Math.cos(angle), centerY + numR * Math.sin(angle));
+            }
+            ctx.restore();
+
+            // 5. Needle (動態指針)
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(currentAngle);
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(radius - 20, 0);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = (rpm >= redline) ? '#ff0055' : '#00f0ff';
+            ctx.shadowColor = (rpm >= redline) ? 'rgba(255, 0, 85, 0.9)' : 'rgba(0, 240, 255, 0.9)';
+            ctx.shadowBlur = 12;
+            ctx.stroke();
+            ctx.restore();
+
+            // 6. Center Cap (中心軸蓋)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 24, 0, Math.PI * 2);
+            ctx.fillStyle = '#111';
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function triggerSimpleSweepAnimation() {
+            if (window.simpleSweepActive) return;
+            window.simpleSweepActive = true;
+
+            var startTime = performance.now();
+            
+            // Read standard config from host window if available, fallback to 900ms default
+            var hostConfig = window.parent && window.parent.HUD_ANIM_CONFIG;
+            var duration = hostConfig ? hostConfig.TOTAL_DURATION : 900;
+            var maxSweepRpm = 8000;
+
+            function animate(now) {
+                var elapsed = now - startTime;
+                var progress = Math.min(1.0, elapsed / duration);
+                var sweepRpm = 0;
+
+                if (progress < 0.5) {
+                    var p = progress / 0.5;
+                    sweepRpm = maxSweepRpm * Math.sin(p * Math.PI / 2);
+                } else {
+                    var p = (progress - 0.5) / 0.5;
+                    sweepRpm = maxSweepRpm * (1 - Math.sin(p * Math.PI / 2)) + 1200 * Math.sin(p * Math.PI / 2);
+                }
+
+                drawSimpleHUD({ rpm: sweepRpm, maxRpm: maxSweepRpm }, 7200);
+                setSimpleSpeedDisplay(Math.round((sweepRpm / maxSweepRpm) * 160));
+
+                if (progress < 1.0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    window.simpleSweepActive = false;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // ── Register Simple HUD with HUDCore Engine ──
+        HUDCore.registerStyle('simple', {
+            containerId: 'simpleContainer',
+            scaleMultiplier: 0.5,
+
+            onInit: function (payload) {
+                if (payload && payload.isMetric !== undefined) {
+                    var el = document.getElementById('speedUnit');
+                    if (el) el.textContent = payload.isMetric !== false ? 'KM/H' : 'MPH';
+                }
+            },
+
+            onElementsChange: function (elements) {
+                var simpleCanvas = document.getElementById('simpleCanvas');
+                var bgImg = document.getElementById('tachBgImg');
+                var speedGroup = document.getElementById('speedText');
+                var speedUnit = document.getElementById('speedUnit');
+                var gearGroup = document.getElementById('gearText');
+
+                if (simpleCanvas) simpleCanvas.style.display = elements.showRPM === false ? 'none' : 'block';
+                if (bgImg) bgImg.style.display = elements.showRPM === false ? 'none' : 'block';
+
+                if (speedGroup) speedGroup.style.display = elements.showSpeed === false ? 'none' : 'block';
+                if (speedUnit) speedUnit.style.display = elements.showSpeed === false ? 'none' : 'block';
+                if (gearGroup) gearGroup.style.display = elements.showGear === false ? 'none' : 'block';
+            },
+
+            onFrame: function (data, payload) {
+                var redlineRpm = payload.redlineRpm || ((data.maxRpm || 8000) * 0.92);
+
+                if (!window.simpleSweepActive) {
+                    drawSimpleHUD(data, redlineRpm);
+
+                    var speed = Math.round(data.speed_kmh ?? data.speed ?? 0);
+                    setSimpleSpeedDisplay(speed);
+
+                    var gearEl = document.getElementById('gearText');
+                    var gearIndicator = document.getElementById('gearIndicator');
+                    if (data.gear !== undefined && data.gear <= 10) _simpleValidGear = data.gear;
+                    if (gearEl) gearEl.textContent = _simpleValidGear === 0 ? 'R' : _simpleValidGear.toString();
+                    if (gearIndicator) gearIndicator.classList.toggle('active', (data.rpm / redlineRpm) >= 0.95);
+
+                    var lockBadge = document.getElementById('lockBadge');
+                    var lcBadge = document.getElementById('lcBadge');
+                    if (lockBadge && payload.lockup) {
+                        var isLocked = payload.lockup.fl || payload.lockup.fr || payload.lockup.rl || payload.lockup.rr;
+                        lockBadge.classList.toggle('active', !!isLocked);
+                    }
+                    if (lcBadge) {
+                        lcBadge.classList.toggle('active', payload.lcState === 'armed' || payload.lcState === 'launched');
+                    }
+                }
+            },
+
+            onAnimate: function () {
+                triggerSimpleSweepAnimation();
+            }
+        });
+
+        // Activate Simple Style
+        HUDCore.init('simple');
+
+        // Initial Standby Render
+        setTimeout(function () {
+            drawSimpleHUD({ rpm: 0, maxRpm: 8000 }, 7200);
+            triggerSimpleSweepAnimation();
+        }, 80);
+    </script>
+</body>
+</html>

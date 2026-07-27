@@ -106,7 +106,7 @@ function formatHudTelemetry(raw: TelemetryData) {
 
   const maxRpm = raw.EngineMaxRpm || 7000;
   const idleRpm = raw.EngineIdleRpm || 1000;
-  const redlineRpm = Math.round(maxRpm * 0.93);
+  const redlineRpm = Math.max(0, maxRpm - 1000);
   const isRaceOn = raw.IsRaceOn ?? 1;
 
   if (lastCarOrdinal !== null && lastCarOrdinal !== raw.CarOrdinal) {
