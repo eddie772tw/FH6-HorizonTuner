@@ -106,10 +106,7 @@ export const OverlayView: React.FC = () => {
     if (channelRef.current) {
       channelRef.current.postMessage({
         type: 'config',
-        data: {
-          ...newConfig,
-          actualScale: (newConfig.scale || 1.0) * 0.5,
-        },
+        data: newConfig,
       });
     }
   };
@@ -556,7 +553,7 @@ export const OverlayView: React.FC = () => {
           </label>
         </div>
 
-        {/* Rev Limiter Auto-learning Database */}
+        {/* TODO: 待未來實作轉速自動學習狀態機
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Car Rev Limiter Auto-Learning")}
@@ -579,6 +576,7 @@ export const OverlayView: React.FC = () => {
             {t("Reset Car Learning Database")}
           </button>
         </div>
+        */}
 
       </div>
     </div>

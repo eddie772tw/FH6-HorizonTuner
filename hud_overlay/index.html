@@ -732,6 +732,17 @@
         };
 
         // ── Boot ──────────────────────────────────────────────────────────
+        const host = window.location.port ? window.location.host : '127.0.0.1:8001';
+        try {
+            const res = await fetch(`http://${host}/api/overlay/config`);
+            const config = await res.json();
+            window._currentHudConfig = config;
+            if (config.elements) window._currentHudElements = config.elements;
+            if (config.hudStyle) activeHud = config.hudStyle;
+        } catch(e) {
+            console.warn('[Launcher] Failed to fetch initial config', e);
+        }
+
         await loadHud(activeHud);
         initUtils();
     

@@ -922,10 +922,11 @@
 
     <!-- ========== STARTUP ANIMATION (pulse fade-in + arc sweep) ========== -->
     <script>
-        var ADV_FADE_MS = 1000;   // initial fade-in duration
-        var ADV_SWEEP_UP_MS = 1500;   // needle sweeps 0 → max
-        var ADV_HOLD_MS = 350;    // hold at peak
-        var ADV_SWEEP_DN_MS = 1500;   // needle falls to idle
+        var hostConfig = window.parent && window.parent.HUD_ANIM_CONFIG;
+        var ADV_FADE_MS = hostConfig ? hostConfig.FADE_MS : 150;
+        var ADV_SWEEP_UP_MS = hostConfig ? hostConfig.SWEEP_UP_MS : 350;
+        var ADV_HOLD_MS = hostConfig ? hostConfig.HOLD_MS : 50;
+        var ADV_SWEEP_DN_MS = hostConfig ? hostConfig.SWEEP_DN_MS : 350;
         var ADV_TOTAL_MS = ADV_FADE_MS + ADV_SWEEP_UP_MS + ADV_HOLD_MS + ADV_SWEEP_DN_MS;
 
         window.sweepRevealRpm = Infinity; // used by RPM segment draw skip

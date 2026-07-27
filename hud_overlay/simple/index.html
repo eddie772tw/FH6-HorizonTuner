@@ -237,7 +237,10 @@
             window.simpleSweepActive = true;
 
             var startTime = performance.now();
-            var duration = 900;
+            
+            // Read standard config from host window if available, fallback to 900ms default
+            var hostConfig = window.parent && window.parent.HUD_ANIM_CONFIG;
+            var duration = hostConfig ? hostConfig.TOTAL_DURATION : 900;
             var maxSweepRpm = 8000;
 
             function animate(now) {

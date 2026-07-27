@@ -375,7 +375,7 @@
                 try { localStorage.setItem('forza_hud_tele_opacity', fullConfig.telemetryOpacity.toString()); } catch (e) {}
             }
 
-            var tScale = this.lastScale;
+            var tScale = this.lastScale * 0.75;
             var tOpacity = this.lastOpacity;
 
             var wrapper = document.getElementById('tcClusterWrapper');
@@ -466,10 +466,10 @@
                         points.forEach(function (p) {
                             var mDot = document.createElement('div');
                             mDot.style.position = 'absolute';
-                            mDot.style.width = '6px';
-                            mDot.style.height = '6px';
+                            mDot.style.width = '18px';
+                            mDot.style.height = '18px';
                             mDot.style.borderRadius = '50%';
-                            mDot.style.background = 'rgba(255,255,255,0.7)';
+                            mDot.style.background = 'rgba(255,255,255,0.4)';
                             var mx = (p.lat / 2) * radiusPx;
                             var my = (p.lon / 2) * radiusPx;
                             var mDist = Math.sqrt(mx * mx + my * my);
@@ -477,8 +477,8 @@
                                 mx = (mx / mDist) * maxMRadius;
                                 my = (my / mDist) * maxMRadius;
                             }
-                            mDot.style.left = (radiusPx + mx - 3) + 'px';
-                            mDot.style.top = (radiusPx + my - 3) + 'px';
+                            mDot.style.left = (radiusPx + mx - 9) + 'px';
+                            mDot.style.top = (radiusPx + my - 9) + 'px';
                             markersContainer.appendChild(mDot);
                         });
                     }

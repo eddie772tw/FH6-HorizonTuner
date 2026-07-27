@@ -21,7 +21,29 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
     // Canvas API does not support CSS variables like var(--primary) in gradients.
     // Using a valid hex color avoids crashes.
     const primaryColor = '#00f0ff';
-    
+    // Draw initial background
+    const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      ctx.clearRect(0, 0, w, h);
+      const warningH = h * 0.05;
+      ctx.fillStyle = 'rgba(255, 0, 60, 0.15)';
+      ctx.fillRect(0, 0, w, warningH);
+      ctx.fillRect(0, h - warningH, w, warningH);
+      
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(255, 0, 60, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, warningH); ctx.lineTo(w, warningH);
+      ctx.moveTo(0, h - warningH); ctx.lineTo(w, h - warningH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) drawBackground(ctx, 150, 60);
+    }
+
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
@@ -67,7 +89,6 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
         }
       }
 
-      // Fixed 0-1 scale mapping (0% to 100%)
       const percent = Math.max(0, Math.min(100, travel * 100));
       if (barRef.current) barRef.current.style.height = percent + '%';
       if (textRef.current) textRef.current.innerText = travel.toFixed(2);
@@ -79,26 +100,11 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
         const ctx = canvas.getContext('2d');
         if (ctx) {
           
-          ctx.clearRect(0, 0, 150, 60);
-          const w = 150, h = 60;
-          const warningH = h * 0.05;
-          ctx.fillStyle = 'rgba(255, 0, 60, 0.15)';
-          ctx.fillRect(0, 0, w, warningH);
-          ctx.fillRect(0, h - warningH, w, warningH);
-          
-          ctx.beginPath();
-          ctx.setLineDash([3, 3]);
-          ctx.strokeStyle = 'rgba(255, 0, 60, 0.2)';
-          ctx.lineWidth = 1;
-          ctx.moveTo(0, warningH); ctx.lineTo(w, warningH);
-          ctx.moveTo(0, h - warningH); ctx.lineTo(w, h - warningH);
-          ctx.stroke();
-          ctx.setLineDash([]);
+          drawBackground(ctx, 150, 60);
 
           ctx.beginPath();
-          const grad = ctx.createLinearGradient(0, 0, 0, h);
+          const grad = ctx.createLinearGradient(0, 0, 0, 60);
           grad.addColorStop(0, '#ff003c');
-          // Must use valid CSS hex strings in Canvas API
           grad.addColorStop(0.05, primaryColor);
           grad.addColorStop(0.95, primaryColor);
           grad.addColorStop(1, '#ff003c');
@@ -110,7 +116,6 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
           for (let i = 0; i < hist.current.length; i++) {
             const p = hist.current[i];
             const x = 150 - ((maxT - p.time) / 2500) * 150; 
-            // Fixed mapping: travel 0..1 to canvas y 60..0
             const y = 60 - (p.travel * 60);
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
@@ -126,7 +131,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   return (
     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px' }}>
       <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600, textAlign: isLeft ? 'left' : 'right' }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
         <div style={{ position: 'relative', width: '24px', height: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
           <div ref={barRef} style={{

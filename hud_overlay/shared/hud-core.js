@@ -3,6 +3,14 @@
 // Standardized Registration Engine and Lifecycle Controller for HUD Styles.
 // =============================================================================
 
+window.HUD_ANIM_CONFIG = {
+    TOTAL_DURATION: 1500,
+    FADE_MS: 150,
+    SWEEP_UP_MS: 1000,
+    HOLD_MS: 50,
+    SWEEP_DN_MS: 1000
+};
+
 (function (window) {
     'use strict';
 
@@ -76,9 +84,9 @@
                             window._currentHudElements = currentElements;
                         }
 
-                        // Standardized Scale calculation
+                        // Standardized Scale calculation with a global 0.75 downscale factor
                         var multiplier = activeStyle.scaleMultiplier !== undefined ? activeStyle.scaleMultiplier : 1.0;
-                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * multiplier);
+                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * multiplier * 0.75);
                         window._currentHudScale = finalScale;
 
                         var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;

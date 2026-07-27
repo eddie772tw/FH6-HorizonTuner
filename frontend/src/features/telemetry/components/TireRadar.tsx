@@ -29,6 +29,38 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
     const histWidth = 100;
     const histHeight = 70;
 
+    const drawBackground = (ctx: CanvasRenderingContext2D, radius: number, displayLimit: number, isLosingGrip: boolean) => {
+      ctx.clearRect(0, 0, radius * 2, radius * 2);
+      
+      // Radar border
+      ctx.beginPath();
+      ctx.arc(radius, radius, radius - 1, 0, Math.PI * 2);
+      ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Crosshairs
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, radius); ctx.lineTo(radius * 2, radius);
+      ctx.moveTo(radius, 0); ctx.lineTo(radius, radius * 2);
+      ctx.stroke();
+
+      // 1.0 Threshold Circle (dashed)
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.arc(radius, radius, radius / displayLimit, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+
+    if (radarCanvasRef.current) {
+      const ctx = radarCanvasRef.current.getContext('2d');
+      if (ctx) drawBackground(ctx, radius, displayLimit, false);
+    }
+
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
@@ -83,33 +115,9 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
       if (rCanvas) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
-          ctx.clearRect(0, 0, radius*2, radius*2);
-          
-          // Old style radar border
           const isLosingGrip = Math.abs(cRatio) > 1.0 || Math.abs(cAngle) > 1.0;
-          ctx.beginPath();
-          ctx.arc(radius, radius, radius - 1, 0, Math.PI * 2);
-          ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.1)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          // Crosshairs
-          ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-          ctx.lineWidth = 1;
-          ctx.moveTo(0, radius); ctx.lineTo(radius * 2, radius);
-          ctx.moveTo(radius, 0); ctx.lineTo(radius, radius * 2);
-          ctx.stroke();
-
-          // 1.0 Threshold Circle (dashed)
-          ctx.beginPath();
-          ctx.setLineDash([3, 3]);
-          ctx.arc(radius, radius, radius / displayLimit, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(255,0,0,0.5)';
-          ctx.stroke();
-          ctx.setLineDash([]);
+          drawBackground(ctx, radius, displayLimit, isLosingGrip);
   
-
           let startIdx = hist.current.length - 1;
           while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
             startIdx--;
@@ -232,25 +240,25 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
   }, [tireIdx, convertTemp]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px', transition: 'background 0.2s', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px', transition: 'background 0.2s', alignItems: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
         <div style={{ position: 'relative', width: '100px', height: '100px' }}>
           <canvas ref={radarCanvasRef} width={100} height={100} style={{ position: 'absolute', top: 0, left: 0 }} />
         </div>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: !isLeft ? 'row' : 'row-reverse', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: !isLeft ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-end' : 'flex-start' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: isLeft ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-end' : 'flex-start' }}>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t("Slip Angle")}</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={angRef}>0.00</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-end' : 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-end' : 'flex-start' }}>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t("Slip Ratio")}</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={ratioRef}>0.00</span>
           </div>
         </div>
-        <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: !isLeft ? 'flex-start' : 'flex-end' }}>
+        <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-start' : 'flex-end' }}>
            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}><span ref={tempRef}>0</span><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{tempUnit}</span></span>
            <canvas ref={tempCanvasRef} width={100} height={70} style={{ width: '100%', flex: 1, marginTop: '4px' }} />
         </div>

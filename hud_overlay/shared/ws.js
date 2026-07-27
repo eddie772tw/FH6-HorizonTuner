@@ -12,7 +12,7 @@ export function initWebSocket() {
     
     // Connect to the backend WebSocket using the same host as the page (or default to 8001 if testing locally)
     const host = window.location.port ? window.location.host : '127.0.0.1:8001';
-    ws = new WebSocket(`ws://${host}/ws`);
+    ws = new WebSocket(`ws://${host}/ws/telemetry`);
 
     ws.onopen = () => {
         console.log('[HUD Receiver] WebSocket connected');

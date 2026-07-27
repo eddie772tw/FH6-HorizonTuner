@@ -465,3 +465,28 @@
 **後續行動 (Action):**
 - 未來新增 HUD 儀表樣式時，開發者只需在 `hud_overlay/` 新增資料夾與 HTML 檔案，完全不需觸碰前端 React/Tauri 編譯流程。
 - 當進行跨 Origin 通訊時（如 Tauri 內嵌視窗與 HTTP 服務之間），應優先選擇 WebSocket 或 HTTP API，避免依賴 `BroadcastChannel`、`localStorage` 等嚴格同源限定的瀏覽器機制。
+
+---
+
+## 2026-07-27 - 60Hz Canvas 背景網格遺失與對稱排版 (Symmetric Mirroring) 修復
+
+**學習點 (Learning):**
+- **Canvas 初始空白陷阱 (Initial Canvas Grid Missing)**：當使用 HTML5 Canvas 繪製遙測儀表的背景網格（如雷達圈或懸吊警示區）時，若將繪圖邏輯綁定於 `handleUpdate` 監聽器內且加上 `if (liveData.IsRaceOn !== 1) return;` 阻擋，會導致遊戲暫停或未連線前 Canvas 呈現完全透明（沒有任何背景與框線）。必須將背景繪製邏輯抽離成 `drawBackground` 並在 `useEffect` 初次掛載時就強制呼叫一次。
+- **對稱鏡像排版陷阱 (Flex Direction Mirroring)**：為了讓左右兩側車輪的遙測儀表自然向畫面中央收攏，使用 `isLeft ? 'row' : 'row-reverse'` 是正確的設定。左側輪胎 (`isLeft=true`) 使用 `row` 會讓 Canvas 靠右側（中央），右側輪胎 (`isLeft=false`) 使用 `row-reverse` 會讓 Canvas 靠左側（中央）。錯誤地使用 `!isLeft` 會導致排版完全顛倒，導致版面混亂。
+
+**後續行動 (Action):**
+- 開發任何以 Canvas 為基礎的高頻 UI 儀表時，務必區分「靜態背景」與「動態資料」，並確保靜態背景在沒有資料輸入的狀態下依然能被正確繪製與顯示。
+
+---
+
+## 2026-07-27 - 修復 HUD Overlay WebSocket 連線錯誤與啟動縮放失效問題
+
+**學習點 (Learning):**
+- **WebSocket 路徑錯位導致靜默失效 (Silent Failure)**：`hud_overlay/shared/ws.js` 預設連線到 `/ws`，但後端實際的遙測端點為 `/ws/telemetry`。連線失敗不僅造成數據不更新，也導致 `ws.onopen` 內的初始 `config` 獲取完全未執行。
+- **HUD iframe 初始化時機陷阱 (Async Race Condition)**：HUD Overlay 的縮放 (`actualScale` / `scale`) 仰賴於主應用 (React) 的 `BroadcastChannel`。但若主應用在 iframe 載入前就發送廣播，HUD 將會漏接 `config`。解法為在 `hud_overlay/index.html` 的 iframe `onload` 觸發前，主動透過 `fetch` 確保取得初始 `config`。
+- **縮放邏輯雙重處理衝突 (Scale Double Computation)**：React 前端嘗試硬編碼計算 `actualScale = scale * 0.5` 並傳遞，但不同 HUD 樣式 (Simple / Advanced) 其實擁有不同的 `scaleMultiplier` (1.0 vs 0.5)。應移除 React 端的寫死計算，將邏輯全權交還給 `hud-core.js` 原生處理。
+- **紅線轉速 (Redline RPM) 計算一致性**：過去以 `maxRpm * 0.93` 計算紅線區，會導致高轉車與低轉車的紅線視覺寬度差異巨大。改為固定 `maxRpm - 1000`，確保各車輛的儀表紅線區域視覺比例穩定一致。
+
+**後續行動 (Action):**
+- 凡涉及 WebSocket 連線或 `fetch` API 呼叫，必須確保前後端 endpoint 完全對齊，並應增加顯式的錯誤日誌提示。
+- 在跨 iframe / 視窗通訊時，不可假設 Broadcast 接收端永遠已準備就緒。需要有「主動拉取初始狀態 (Pull)」搭配「被動接收更新 (Push)」的雙重機制。
