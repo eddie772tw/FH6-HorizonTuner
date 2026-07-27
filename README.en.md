@@ -77,7 +77,7 @@ To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
 1. Start the game and go to **Settings** -> **HUD and Gameplay**.
 2. Locate **Data Out** and set it to **ON**.
 3. Set **Data Out IP Address** to `127.0.0.1`.
-4. Set **Data Out Port** to `20440`.
+4. Set **Data Out Port** to `8000`.
 
 ### 2. Launching the Tool
 
@@ -223,7 +223,7 @@ The project uses GitHub Actions for automated quality control. Every push to `ma
 | **Test** | Full `pytest` suite execution on both Windows and Ubuntu platforms |
 
 > [!IMPORTANT]
-> The CI pipeline runs under the `CI-Approval` environment, requiring at least one reviewer approval on GitHub before execution. Ensure you pass `ruff format --check .` and `pytest` locally before pushing to avoid unnecessary CI failures.
+> The CI pipeline is now fully automated and no longer requires reviewer approval to trigger. Ensure you pass `ruff format --check .` and `pytest` locally before pushing to avoid unnecessary CI failures.
 
 ---
 
