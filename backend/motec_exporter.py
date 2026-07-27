@@ -1,7 +1,7 @@
 import csv
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -152,3 +152,98 @@ def export_session_to_motec_csv(
     except Exception as e:
         logger.error(f"Failed to export MoTeC CSV: {e}")
         return False
+
+
+from typing import Any, Dict, List
+
+
+def parse_motec_csv_to_telemetry(
+    filepath: str, parse_data: bool = True
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    session_meta = {
+        "session_id": "Unknown",
+        "car_name": "Unknown Vehicle",
+        "timestamp": 0,
+    }
+    telemetry_points = []
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+
+            # Read header block until empty row
+            for row in reader:
+                if not row:
+                    break
+                if len(row) >= 4:
+                    if row[0] == "Date":
+                        session_meta["session_id"] = row[1]
+                    elif row[0] == "Driver" and len(row) >= 4:
+                        if row[2] == "Vehicle":
+                            session_meta["car_name"] = row[3]
+
+            if not parse_data:
+                return session_meta, []
+
+            next(reader, [])
+            next(reader, [])
+
+            for row in reader:
+                if not row or len(row) < 27:
+                    continue
+
+                def get_float(idx, default=0.0):
+                    try:
+                        return float(row[idx])
+                    except (ValueError, IndexError):
+                        return default
+
+                def get_int(idx, default=0):
+                    try:
+                        return int(float(row[idx]))
+                    except (ValueError, IndexError):
+                        return default
+
+                point = {
+                    "time": get_float(0),
+                    "lap_distance": get_float(1),
+                    "LapNumber": get_int(2, 1),
+                    "SpeedMetersPerSecond": get_float(3) / 3.6,
+                    "CurrentEngineRpm": get_int(4),
+                    "Gear": get_int(5),
+                    "AccelInput": int(get_float(6) * 2.55),
+                    "BrakeInput": int(get_float(7) * 2.55),
+                    "steer_pct": get_float(8),
+                    "AccelerationX": get_float(9) * 9.81,
+                    "AccelerationZ": get_float(10) * 9.81,
+                    "SuspTravel": [
+                        get_float(11) / 100.0,
+                        get_float(12) / 100.0,
+                        get_float(13) / 100.0,
+                        get_float(14) / 100.0,
+                    ],
+                    "TireSlipAngle": [
+                        get_float(15) / 57.29578,
+                        get_float(16) / 57.29578,
+                        get_float(17) / 57.29578,
+                        get_float(18) / 57.29578,
+                    ],
+                    "TireSlipRatio": [
+                        get_float(19),
+                        get_float(20),
+                        get_float(21),
+                        get_float(22),
+                    ],
+                    "TireTemp": [
+                        get_float(23) * 9 / 5 + 32,
+                        get_float(24) * 9 / 5 + 32,
+                        get_float(25) * 9 / 5 + 32,
+                        get_float(26) * 9 / 5 + 32,
+                    ],
+                }
+                telemetry_points.append(point)
+
+    except Exception as e:
+        logger.error(f"Failed to parse MoTeC CSV: {e}")
+
+    return session_meta, telemetry_points
