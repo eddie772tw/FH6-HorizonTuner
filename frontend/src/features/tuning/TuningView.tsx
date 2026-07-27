@@ -1071,7 +1071,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               </span>
             </div>
 
-            <DiagnosisPanel 
+<DiagnosisPanel 
               diagnosisReport={diagnosisReport} 
               telemetryPoints={telemetryPoints} 
             />
