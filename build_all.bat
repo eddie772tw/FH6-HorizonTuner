@@ -88,9 +88,16 @@ echo.
 echo [INFO] Running Tauri Build...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
-call npm install || exit /b 1
-call npm audit fix || exit /b 1
-call npm run tauri build || exit /b 1
+call pnpm install || exit /b 1
+call pnpm audit --fix || exit /b 1
+call pnpm audit
+if errorlevel 1 (
+    echo.
+    echo [ERROR] pnpm audit found unresolved vulnerabilities. Please fix them before building.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
+)
+call pnpm run tauri build || exit /b 1
 
 if errorlevel 1 (
     echo.

@@ -112,6 +112,18 @@ for /f "tokens=5" %%a in ('netstat -aon ^| find ":8000" ^| find "LISTENING"') do
     taskkill /F /PID %%a >nul 2>nul
 )
 
+:: Check frontend dependencies and perform audit fix
+echo [INFO] Checking frontend dependencies...
+cd frontend
+call pnpm install
+echo [INFO] Running pnpm audit fix for frontend...
+call pnpm audit --fix
+call pnpm audit >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [WARNING] pnpm audit found unresolved vulnerabilities. Please check manually.
+)
+cd ..
+
 echo [INFO] Starting Backend and Frontend...
 start "FH6 Telemetry Backend" cmd /c "start_backend.bat"
 start "FH6 Telemetry Frontend" cmd /c "start_frontend.bat"
