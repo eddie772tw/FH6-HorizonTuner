@@ -18,11 +18,13 @@
     "recharts": "^3.9.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.1.6",
     "@types/recharts": "^1.8.29",
     "@vitejs/plugin-react": "^4.6.0",
+    "playwright": "^1.62.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vitest": "^4.1.10"
