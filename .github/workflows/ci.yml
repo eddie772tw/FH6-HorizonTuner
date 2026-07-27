@@ -54,3 +54,25 @@ jobs:
     - name: Execute automated test suite via pytest
       run: |
         python -m pytest -v
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 8
+
+    - name: Install Frontend Dependencies
+      run: |
+        cd frontend
+        pnpm install
+
+    - name: Check Frontend Security with pnpm audit
+      run: |
+        cd frontend
+        if ! pnpm audit; then
+          echo "::warning::pnpm audit found vulnerabilities in frontend dependencies!"
+        fi
