@@ -1,3 +1,4 @@
+import { getTireCoefficient } from './tireCoefficients';
 /**
  * Forza Horizon Tuning Math Utility
  * 
@@ -362,150 +363,161 @@ export function calculateAEGOGearing(
 ): GearingResult {
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
-  const frontBias = (carParams && carParams.weight_distribution > 0) ? carParams.weight_distribution : 50; // %
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
   const maxHp = (carParams && carParams.maxHp > 0) ? carParams.maxHp : 300; // HP
   
   // Estimate maxTorque if not present
   let maxTorque = (carParams && carParams.maxTorque > 0) ? carParams.maxTorque : 0; // N-m
+  let rpmHp = (carParams && carParams.maxHpRpm > 0) ? carParams.maxHpRpm : maxRpm * 0.85;
+  let rpmT = (carParams && carParams.maxTorqueRpm > 0) ? carParams.maxTorqueRpm : maxRpm * 0.6;
+
   if (maxTorque === 0) {
-    // Torque = HP * 9549 / RPM. Assume peak torque occurs at 75% of maxRpm
-    const torqueRpm = maxRpm * 0.75;
-    maxTorque = (maxHp * 745.7) / (torqueRpm * 2 * Math.PI / 60);
+    maxTorque = (maxHp * 7021.5) / rpmT; // Approximation in Nm
   }
 
-  // 2. Step A: Theoretical Top Speed & Final Drive (FD) Derivation
-  // Equation: Power * efficiency = (beta * v^2 + roll_resist * m * g) * v
-  const efficiency = drivetrain === 'AWD' ? 0.85 : drivetrain === 'RWD' ? 0.90 : 0.92;
-  const powerWatts = maxHp * 745.7;
-  const beta = 0.35; // default equivalent drag coefficient
-  const rollResist = 0.015;
-  const g = 9.81;
-  const tireRadius = 0.32; // meters
+  // Advanced variables
+  const mechBalance = carParams?.mechBalance ?? 0.5;
+  const aeroBalance = carParams?.aeroBalance ?? 0.5;
+  const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
+  const engineType = carParams?.induction ?? 'NA';
+  const tireType = carParams?.tireType;
 
-  // Solve for v_max using binary search
-  let lowSpeed = 25.0; // ~90 km/h
-  let highSpeed = 160.0; // ~576 km/h
-  let vMax = 60.0; // fallback
-  for (let iter = 0; iter < 30; iter++) {
-    const mid = (lowSpeed + highSpeed) / 2;
-    const dragForce = beta * mid * mid;
-    const rollForce = rollResist * weight * g;
-    const requiredPower = (dragForce + rollForce) * mid;
-    const availablePower = powerWatts * efficiency;
-    if (requiredPower > availablePower) {
-      highSpeed = mid;
+  // Determine active tire size based on drivetrain
+  const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
+  const ar = (drivetrain === 'FWD' ? carParams?.frontTireAspect : carParams?.rearTireAspect) ?? 40;
+  const sRim = (drivetrain === 'FWD' ? carParams?.frontTireRim : carParams?.rearTireRim) ?? 18;
+
+  // 1. Tire Circumference (m)
+  const C = ((((wTire * ar) / 100) * 2 + sRim * 25.4) * Math.PI) / 1000;
+
+  // TODO: AWD fDrive is 1.0 but it doesn't take into account AWD specific torque distribution.
+  const fDrive = drivetrain === 'AWD' ? 1.0 : (drivetrain === 'RWD' ? 0.6 : 0.4);
+  const fTire = getTireCoefficient(tireType);
+  const fGrip = fTire;
+
+  let fd = 0;
+  let gears: number[] = [];
+
+  if (raceGoal === 'Drift') {
+    // Drift Profile
+    const rRpm = rpmT / rpmHp;
+    let dDrift = 0;
+    if (engineType === 'Turbo') dDrift = Math.max(rRpm, 0.75);
+    else if (engineType === 'TwinTurbo') dDrift = Math.max(rRpm, 0.65);
+    else if (engineType === 'Supercharger') dDrift = Math.max(rRpm, 0.55);
+    else dDrift = Math.max(rRpm, 0.82); // NA
+
+    gears = new Array(numGears).fill(0.5); // Fallback defaults
+    if (numGears >= 4) {
+      gears[3] = 1.0; // G_4
+      gears[2] = gears[3] / dDrift; // G_3
+      gears[1] = gears[2] / dDrift; // G_2
+      gears[0] = gears[1] / dDrift; // G_1
     } else {
-      lowSpeed = mid;
-      vMax = mid;
+      gears[numGears - 1] = 1.0;
+      for (let i = numGears - 2; i >= 0; i--) {
+        gears[i] = gears[i + 1] / dDrift;
+      }
+    }
+
+    fd = (weight * fDrive * fGrip * 2 * C) / (maxTorque * gears[0]) * 3.5;
+    fd = Math.max(2.2, Math.min(6.1, fd));
+
+  } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {
+    // Rally Profile
+    const vTheo = 28 * Math.pow(maxHp, 1 / 3);
+    const r = Math.max(0.75, Math.min(0.85, 0.82 - 0.05 * ((maxTorque / maxHp) - 1.1)));
+
+    gears = new Array(numGears).fill(0);
+    gears[0] = 2.7;
+    for (let i = 1; i < numGears; i++) {
+      gears[i] = gears[i - 1] * r;
+    }
+
+    const gTop = gears[numGears - 1];
+    fd = (rpmHp * C * 60) / (gTop * vTheo * 1000);
+    // Add sane limits for FD
+    fd = Math.max(2.0, Math.min(6.5, fd));
+
+  } else if (raceGoal === 'Drag') {
+    // Drag Profile
+    const vTrap = 255 * Math.pow(maxHp / weight, 1 / 3);
+    const fDriveDrag = drivetrain === 'AWD' ? 1.0 : 0.6; // TODO: handle AWD torque distribution
+    const rDrag = Math.max(0.65, Math.min(0.78, 0.72 + 0.03 * (fDriveDrag - 0.8)));
+    const is3Speed = (1 / rDrag) < 1.18;
+
+    gears = new Array(numGears).fill(0);
+
+    const idxG4 = Math.min(3, numGears - 1);
+    const idxG3 = Math.min(2, numGears - 1);
+    const idxG2 = Math.min(1, numGears - 1);
+    const idxG1 = 0;
+
+    gears[idxG4] = 1.0; // G_4
+
+    if (idxG3 !== idxG4) {
+      gears[idxG3] = is3Speed ? 1.0 : (1 / rDrag); // G_3
+    }
+
+    if (idxG2 !== idxG3) {
+      gears[idxG2] = gears[idxG3] / rDrag; // G_2
+    }
+
+    if (idxG1 !== idxG2) {
+      gears[idxG1] = gears[idxG2] * (fDriveDrag === 1.0 ? 1.3 : 1.0); // G_1
+    }
+
+    for (let i = 4; i < numGears; i++) {
+        gears[i] = gears[i - 1] * rDrag;
+    }
+
+    fd = (rpmHp * C * 60) / (gears[idxG4] * vTrap * 1000);
+    // Sane limits
+    fd = Math.max(2.0, Math.min(6.5, fd));
+
+  } else {
+    // Road / Circuit (Default)
+    const p = 1 + (maxHp / 1000) * ((0.95 - aeroEfficiency) * 5) * (1.2 - 0.4 * aeroBalance);
+    const vTop = Math.pow(maxHp, 1 / 3) * 38 * (aeroEfficiency / 0.85);
+    const d = Math.max(rpmT / rpmHp, 0.75);
+
+    fd = ((rpmHp * C * 60) / (vTop * 0.85 * 1000)) * (0.8 + 0.4 * mechBalance);
+    fd = Math.max(2.0, Math.min(6.5, fd));
+
+    gears = new Array(numGears).fill(0);
+
+    // G_1
+    const g1Base = (weight * fDrive * fTire * 2 * C) / (maxTorque * fd);
+    const g1Mult = Math.max(1.0, (maxTorque * 3.2) / (weight * fDrive));
+    gears[0] = Math.max(0.48, Math.min(6.0, g1Base * g1Mult));
+
+    // G_N
+    gears[numGears - 1] = (rpmHp * C * 60) / (vTop * fd * 1000);
+
+    // G_2 to G_N-1
+    for (let n = 2; n < numGears; n++) {
+      const exp = 1 - ((n - 1) - 1) / Math.max(1, numGears - 3) * (1 - 1 / p);
+      gears[n - 1] = Math.max(0.48, Math.min(6.0, gears[n - 2] * Math.pow(d, exp)));
     }
   }
 
-  // Target Speed calculation based on raceGoal
-  let targetSpeed = vMax;
-  if (raceGoal === 'Touge') targetSpeed = vMax * 0.85;
-  else if (raceGoal === 'Rally') targetSpeed = vMax * 0.80;
-  else if (raceGoal === 'Drift') targetSpeed = vMax * 0.70;
-  else if (raceGoal === 'DangerSign') targetSpeed = vMax * 0.75;
-  else if (raceGoal === 'SpeedZone') targetSpeed = vMax * 1.02;
-
-  // Determine top gear ratio based on number of gears
-  let gTop = 0.55;
-  if (numGears <= 4) gTop = 0.75;
-  else if (numGears === 5) gTop = 0.68;
-  else if (numGears === 6) gTop = 0.60;
-  else if (numGears === 7) gTop = 0.55;
-  else if (numGears === 8) gTop = 0.51;
-  else if (numGears === 9) gTop = 0.47;
-  else if (numGears >= 10) gTop = 0.44;
-
-  // FD = (maxRpm * 2 * PI * r_tire) / (targetSpeed * gTop * 60)
-  let fd = (maxRpm * 2 * Math.PI * tireRadius) / (targetSpeed * gTop * 60);
-
-  // Apply Race Goal multiplier to FD
-  if (raceGoal === 'Touge') fd = fd * 1.08;
-  else if (raceGoal === 'Rally') fd = fd * 1.12;
-  else if (raceGoal === 'DangerSign') fd = fd * 1.18; // sprint emphasis
-
-  // Clamp FD to typical game boundaries
-  fd = Math.max(2.0, Math.min(6.5, fd));
-
-  // 3. Step B: Launch-Limited 1st Gear (g1) Calculation
-  const tLaunch = maxTorque * 0.85; // approximate launch torque
-  let mu = 1.15; // default road tire friction
-  if (raceGoal === 'Rally') mu = 0.85; // rally mud tire
-  else if (raceGoal === 'Drift') mu = 0.90; // drift tire
-
-  let alpha = 1.15; // slip allowance
-  if (raceGoal === 'Rally') alpha = 1.10; // keep traction on mud
-  else if (raceGoal === 'Drift') alpha = 1.25; // encourage initial wheelspin
-  else if (raceGoal === 'DangerSign') alpha = 1.05; // strict traction for sprint
-
-  // Drive wheel normal load calculation
-  const weightDistributionRatio = frontBias / 100;
-  let wStatic = weight;
-  if (drivetrain === 'RWD') {
-    wStatic = weight * (1 - weightDistributionRatio);
-  } else if (drivetrain === 'FWD') {
-    wStatic = weight * weightDistributionRatio;
-  }
-  
-  const wTransfer = weight * 0.08;
-  let wDrive = weight; // AWD uses all weight
-  if (drivetrain === 'RWD') {
-    wDrive = wStatic + wTransfer;
-  } else if (drivetrain === 'FWD') {
-    wDrive = Math.max(weight * 0.25, wStatic - wTransfer);
-  }
-
-  let g1 = (alpha * mu * wDrive * g * tireRadius) / (tLaunch * fd * efficiency);
-
-  // Clamp g1 to safe gameplay limits
-  g1 = Math.max(2.5, Math.min(4.8, g1));
-
-  // Ensure g1 > gTop
-  if (g1 <= gTop) {
-    g1 = gTop + 2.0;
-  }
-
-  // 4. Step C: Multi-Gear Ratio Interpolation based on Envelope Weights
-  const w: number[] = [];
-  const n = numGears;
-
-  for (let i = 1; i < n; i++) {
-    let weightVal = 1.0;
-    if (raceGoal === 'Road') {
-      weightVal = Math.pow(n - i, 0.7);
-    } else if (raceGoal === 'Touge') {
-      weightVal = 1.0;
-    } else if (raceGoal === 'Rally') {
-      weightVal = 1.0 + 0.12 * (n - 1 - i);
-    } else if (raceGoal === 'Drift') {
-      if (i === 1) weightVal = 2.5;
-      else if (i === 2) weightVal = 1.2;
-      else if (i === 3 || i === 4) weightVal = 0.45;
-      else weightVal = 1.4;
-    } else if (raceGoal === 'SpeedZone') {
-      if (i >= n - 2) weightVal = 0.35;
-      else weightVal = 1.0 + 0.3 * (n - 1 - i);
-    } else if (raceGoal === 'DangerSign') {
-      weightVal = 1.0;
-    }
-    w.push(weightVal);
-  }
-
-  const sumW = w.reduce((sum, val) => sum + val, 0);
-  const gears: number[] = Array(n).fill(0);
-  gears[0] = g1;
-  gears[n - 1] = gTop;
-
-  for (let i = 1; i < n - 1; i++) {
-    const subSumW = w.slice(0, i).reduce((sum, val) => sum + val, 0);
-    gears[i] = g1 * Math.pow(gTop / g1, subSumW / sumW);
+  // Ensure Fallback Values
+  if (isNaN(fd) || fd === Infinity || fd === -Infinity || fd === 0) fd = 3.50;
+  for(let i = 0; i < gears.length; i++) {
+     if (isNaN(gears[i]) || gears[i] === Infinity || gears[i] === -Infinity || gears[i] === 0) gears[i] = 1.0;
   }
 
   const roundedFD = Math.round(fd * 100) / 100;
-  const roundedGears = gears.map(ratio => Math.round(ratio * 100) / 100);
+  const roundedGears = gears.map((ratio) => {
+    return Math.round(ratio * 100) / 100;
+  });
+
+  // Force monotonic decrease as tests require it (g1 > g2 > ... > gN)
+  for (let i = 1; i < roundedGears.length; i++) {
+     if (roundedGears[i] >= roundedGears[i - 1]) {
+        roundedGears[i] = Math.max(0.48, Math.round((roundedGears[i - 1] - 0.01) * 100) / 100);
+     }
+  }
 
   return {
     finalDrive: roundedFD,

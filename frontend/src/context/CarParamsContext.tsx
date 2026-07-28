@@ -20,6 +20,7 @@ export interface CarParams {
   rearTireWidth?: number;
   rearTireAspect?: number;
   rearTireRim?: number;
+  tireType?: string;
   adjustability: {
     gearbox: 'Fixed' | 'FinalDrive' | 'Full';
     gears: number; // 4 to 10
@@ -149,6 +150,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
               rearTireWidth: 245,
               rearTireAspect: 40,
               rearTireRim: 18,
+              tireType: 'Stock',
               adjustability: {
                 gearbox: 'Full',
                 gears: 6,
