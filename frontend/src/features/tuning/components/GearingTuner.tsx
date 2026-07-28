@@ -12,7 +12,9 @@ interface GearingTunerProps {
   yMax: number;
   carParams: any;
   gearingMethod: string;
-  setGearingMethod: (v: 'basic' | 'scientific' | 'drag_optimize') => void;
+  setGearingMethod: (v: 'scientific' | 'custom') => void;
+  customGearingModel: string;
+  setCustomGearingModel: (v: string) => void;
   basicCustomP: number;
   setBasicCustomP: (v: number) => void;
   pMin: number;
@@ -44,7 +46,7 @@ const btnStyle: React.CSSProperties = {
 
 const GearingTunerComponent: React.FC<GearingTunerProps> = ({ 
   tuning, tuningMode, updateSection, numGears, chartData, xMax, yMax, carParams, 
-  gearingMethod, setGearingMethod, basicCustomP, setBasicCustomP, pMin, pMax, 
+  gearingMethod, setGearingMethod, customGearingModel, setCustomGearingModel, basicCustomP, setBasicCustomP, pMin, pMax,
   gearingDiscipline, applyBasicGearing, applyScientificGearing 
 }) => {
   const { t } = useSettings();
@@ -129,26 +131,46 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '0.8rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
           <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>{t("Tuning Method")}</span>
           <div style={{ display: 'flex', gap: '0.4rem' }}>
-            <button onClick={() => setGearingMethod('basic')} style={{ ...btnStyle, flex: 1, fontSize: '0.72rem', padding: '0.2rem 0.3rem', background: gearingMethod==='basic'?'var(--primary)':'rgba(255,255,255,0.05)', color: gearingMethod==='basic'?'black':'white' }}>{t("Basic Linear")}</button>
             <button onClick={() => setGearingMethod('scientific')} style={{ ...btnStyle, flex: 1, fontSize: '0.72rem', padding: '0.2rem 0.3rem', background: gearingMethod==='scientific'?'var(--primary)':'rgba(255,255,255,0.05)', color: gearingMethod==='scientific'?'black':'white' }}>{t("Scientific")}</button>
+            <button onClick={() => setGearingMethod('custom')} style={{ ...btnStyle, flex: 1, fontSize: '0.72rem', padding: '0.2rem 0.3rem', background: gearingMethod==='custom'?'var(--primary)':'rgba(255,255,255,0.05)', color: gearingMethod==='custom'?'black':'white' }}>{t("自訂")}</button>
           </div>
 
-          {gearingMethod === 'basic' ? (
+          {gearingMethod === 'custom' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{t("Spacing (p):")}</span>
-                <span style={{ fontWeight: 'bold' }}>{basicCustomP.toFixed(2)}</span>
-              </div>
-              <input 
-                type="range" min={pMin} max={pMax} step="0.01" value={basicCustomP} 
-                onChange={(e) => setBasicCustomP(parseFloat(e.target.value))} 
-                style={{ width: '100%', accentColor: 'var(--primary)' }} 
-              />
-              <button 
-                onClick={applyBasicGearing}
-                style={{ ...btnStyle, fontSize: '0.75rem', padding: '0.35rem', marginTop: '0.3rem' }}
+              <select
+                value={customGearingModel}
+                onChange={(e) => setCustomGearingModel(e.target.value)}
+                style={{ ...inputStyle, width: '100%', padding: '0.3rem', fontSize: '0.8rem' }}
               >
-                ⚙️ {t("Apply")}
+                <option value="Basic Linear">Basic Linear</option>
+                <option value="Road">AEGO - Road</option>
+                <option value="Rally">AEGO - Rally</option>
+                <option value="Drift">AEGO - Drift</option>
+                <option value="Drag">AEGO - Drag</option>
+              </select>
+
+              {customGearingModel === 'Basic Linear' ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{t("Spacing (p):")}</span>
+                    <span style={{ fontWeight: 'bold' }}>{basicCustomP.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range" min={pMin} max={pMax} step="0.01" value={basicCustomP}
+                    onChange={(e) => setBasicCustomP(parseFloat(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--primary)' }}
+                  />
+                </>
+              ) : (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                  {t("This model calculates automatically based on vehicle weight, RPM and tire parameters.")}
+                </div>
+              )}
+              <button 
+                onClick={customGearingModel === 'Basic Linear' ? applyBasicGearing : applyScientificGearing}
+                style={{ ...btnStyle, fontSize: '0.75rem', padding: '0.35rem', marginTop: '0.3rem', background: 'rgba(255, 255, 255, 0.1)', color: 'white' }}
+              >
+                ⚙️ {t("Apply Custom")}
               </button>
             </div>
           ) : (

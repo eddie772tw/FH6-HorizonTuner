@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
-import { useTelemetryRecorder } from '../../context/TelemetryRecorderContext';
-import { analyzeTelemetrySession, DiagnosisReport } from '../../utils/tuningDiagnosis';
 import { 
   calculateARBsAdvanced,
   calculateSpringsByFrequency,
@@ -16,9 +14,6 @@ import { useSettings } from '../../context/SettingsContext';
 import { SuspensionTuner } from './components/SuspensionTuner';
 import { GearingTuner } from './components/GearingTuner';
 import { DifferentialTuner } from './components/DifferentialTuner';
-import { DiagnosisPanel } from './components/DiagnosisPanel';
-import { DragTestSection } from './components/DragTestSection';
-import { TuningSliderGrid } from './components/TuningSliderGrid';
 const TIRE_RADIUS_M = 0.32;
 
 interface GearingTuning {
@@ -61,37 +56,24 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 
   // Wizard Steps
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [selectedSessionFile, setSelectedSessionFile] = useState<string>('current');
-  const [telemetryPoints, setTelemetryPoints] = useState<any[]>([]);
-  const [diagnosisReport, setDiagnosisReport] = useState<DiagnosisReport | null>(null);
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
-  const [manualRecStatus, setManualRecStatus] = useState<'idle' | 'recording' | 'saving'>('idle');
   const [tuningMode, setTuningMode] = useState<'recommended' | 'custom'>('recommended');
   const [pMin, setPMin] = useState<number>(0.40);
   const [pMax, setPMax] = useState<number>(0.65);
 
   // Gearing states
-  const [gearingMethod, setGearingMethod] = useState<'basic' | 'scientific' | 'drag_optimize'>('basic');
+  const [gearingMethod, setGearingMethod] = useState<'scientific' | 'custom'>('scientific');
+  const [customGearingModel, setCustomGearingModel] = useState<string>('Basic Linear');
   const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift' | 'Custom'>('GT');
   const [basicCustomP, setBasicCustomP] = useState<number>(0.5);
 
   // Drag states
-  const [selectedDragSession, setSelectedDragSession] = useState<string>('');
-  const [activeDragData, setActiveDragData] = useState<any[]>([]);
-  const [dragTestStatus, setDragTestStatus] = useState<'idle' | 'waiting' | 'recording' | 'finished'>('idle');
-  const [dragPointsCount, setDragPointsCount] = useState<number>(0);
 
   const numGears = carParams?.adjustability?.gears || 6;
   const [tuning, setTuning] = useState<TuningState>(() => initialTuning(numGears));
-  const [saveStatus, setSaveStatus] = useState<string>('');
-  const [saveName, setSaveName] = useState<string>(`Tuning_${new Date().toISOString().slice(0, 10)}`);
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
 
   // Telemetry Recorder
-  const {
-    fetchCurrentSessionData: globalFetchCurrentSessionData,
-    savedSessions: globalSavedSessions
-  } = useTelemetryRecorder();
 
   const latestCarIdRef = useRef(carId);
   useEffect(() => {
@@ -145,26 +127,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       setPMax(0.65);
     }
   }, [selectedRaceGoal]);
-  useEffect(() => {
-    let interval: any;
-    if (dragTestStatus === 'recording' || dragTestStatus === 'waiting') {
-      interval = setInterval(async () => {
-        try {
-          const res = await fetch('http://127.0.0.1:8001/api/gearing/drag/status');
-          const data = await res.json();
-          setDragTestStatus(data.status);
-          setDragPointsCount(data.points_count);
-          if (data.status === 'finished') {
-            clearInterval(interval);
-            const dataRes = await fetch('http://127.0.0.1:8001/api/gearing/drag/data');
-            const dataPts = await dataRes.json();
-            setActiveDragData(dataPts);
-          }
-        } catch (e) {}
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [dragTestStatus]);
 
   const fetchTunings = async () => {
     if (!carId) return;
@@ -184,29 +146,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }
   };
 
-  const saveTuning = async () => {
-    if (!carId) return;
-    try {
-      setSaveStatus(t('Saving...'));
-      const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}/${saveName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tuning)
-      });
-      const data = await res.json();
-      if (data.error) {
-        setSaveStatus(data.error);
-      } else {
-        setSaveStatus(t('Saved successfully!'));
-        const fullName = `${carId}-${saveName}`;
-        localStorage.setItem(`last_tuning_${carId}`, fullName);
-        fetchTunings();
-        setTimeout(() => setSaveStatus(''), 3000);
-      }
-    } catch (e) {
-      setSaveStatus(t('Save failed.'));
-    }
-  };
 
   const loadTuning = async (fullName: string) => {
     if (!fullName) return;
@@ -218,7 +157,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       const data = await res.json();
       if (!data.error && latestCarIdRef.current === cid) {
         setTuning(data);
-        setSaveName(sname);
         localStorage.setItem(`last_tuning_${cid}`, fullName);
       }
     } catch (e) {}
@@ -242,68 +180,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-  const handleStartManualRecord = async () => {
-    try {
-      setManualRecStatus('recording');
-      await fetch('http://127.0.0.1:8001/api/analysis/recorder/start', { method: 'POST' });
-    } catch (e) {
-      console.error(e);
-      setManualRecStatus('idle');
-    }
-  };
 
-  const handleStopManualRecord = async () => {
-    try {
-      setManualRecStatus('saving');
-      await fetch('http://127.0.0.1:8001/api/analysis/recorder/stop', { method: 'POST' });
-      await globalFetchCurrentSessionData();
-      const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setTelemetryPoints(data);
-        if (carParams) {
-          const report = analyzeTelemetrySession(data, carParams, selectedRaceGoal);
-          setDiagnosisReport(report);
-        }
-        setManualRecStatus('idle');
-        setCurrentStep(4);
-      } else {
-        alert(t("No telemetry points collected. Please drive for a few seconds first!"));
-        setManualRecStatus('idle');
-      }
-    } catch (e) {
-      console.error(e);
-      setManualRecStatus('idle');
-    }
-  };
 
-  const handleLoadSessionFile = async (filename: string) => {
-    if (!filename) return;
-    try {
-      let data: any[] = [];
-      if (filename === 'current') {
-        await globalFetchCurrentSessionData();
-        const res = await fetch('http://127.0.0.1:8001/api/analysis/data');
-        data = await res.json();
-      } else {
-        const res = await fetch(`http://127.0.0.1:8001/api/analysis/sessions/${filename}`);
-        data = await res.json();
-      }
-
-      if (Array.isArray(data) && data.length > 0) {
-        setTelemetryPoints(data);
-        if (carParams) {
-          const report = analyzeTelemetrySession(data, carParams, selectedRaceGoal);
-          setDiagnosisReport(report);
-        }
-        setCurrentStep(4);
-      } else {
-        alert(t("Failed to load telemetry or file is empty."));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   // Automated Gearing Logic
   const getLimits = () => {
@@ -362,8 +240,9 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 
   const applyScientificGearing = () => {
     if (!carParams) return;
+    const goal = gearingMethod === 'custom' && customGearingModel !== 'Basic Linear' ? customGearingModel : selectedRaceGoal;
     const result = calculateAEGOGearing(
-      selectedRaceGoal,
+      goal,
       numGears,
       carParams,
       tuning.gearing.maxRpm
@@ -380,70 +259,10 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   };
 
   // Drag Gearing Handlers
-  const handleStartDragTest = async () => {
-    try {
-      setDragTestStatus('waiting');
-      await fetch('http://127.0.0.1:8001/api/gearing/drag/start', { method: 'POST' });
-    } catch (e) {}
-  };
 
-  const handleClearDragTest = async () => {
-    try {
-      await fetch('http://127.0.0.1:8001/api/gearing/drag/clear', { method: 'POST' });
-      setDragTestStatus('idle');
-      setDragPointsCount(0);
-      setActiveDragData([]);
-    } catch (e) {}
-  };
 
-  const handleSaveDragSession = async () => {
-    if (!carId) return;
-    try {
-      await fetch('http://127.0.0.1:8001/api/gearing/drag/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ car_id: carId, car_name: carName })
-      });
-      alert(t("Drag test session saved successfully!"));
-    } catch (e) {
-    }
-  };
 
-  const handleLoadDragSession = async (filename: string) => {
-    setSelectedDragSession(filename);
-    if (!filename) {
-      setActiveDragData([]);
-      return;
-    }
-    try {
-      const res = await fetch(`http://127.0.0.1:8001/api/gearing/drag/sessions/${filename}`);
-      const data = await res.json();
-      setActiveDragData(data.data);
-    } catch (e) {}
-  };
 
-  const applyDragOptimizedGearing = async () => {
-    if (!activeDragData || activeDragData.length === 0 || !carParams) return;
-    try {
-      const res = await fetch('http://127.0.0.1:8001/api/gearing/drag/optimize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: activeDragData, car_params: carParams })
-      });
-      const opt = await res.json();
-      if (!opt.error) {
-        setTuning(prev => ({
-          ...prev,
-          gearing: {
-            ...prev.gearing,
-            finalDrive: Number(opt.optimized_fd.toFixed(2)),
-            gears: prev.gearing.gears.map((g, idx) => idx === 0 ? Number(opt.optimized_g1.toFixed(2)) : g)
-          }
-        }));
-        alert(t("Drag optimized FD & 1st gear applied!"));
-      }
-    } catch (e) {}
-  };
 
   // Baseline auto-generator
   const generateBaselineTuning = () => {
@@ -659,7 +478,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                 ◀ {t("Previous")}
               </button>
             )}
-            {currentStep < 5 && (
+            {currentStep < 5 && currentStep < 2 && (
               <button 
                 onClick={() => {
                   if (currentStep === 1) {
@@ -678,6 +497,20 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                 {t("Next")} ▶
               </button>
             )}
+            {currentStep === 2 && (
+               <button
+                disabled
+                style={{
+                  ...btnStyle,
+                  background: 'gray',
+                  color: 'rgba(255,255,255,0.4)',
+                  cursor: 'not-allowed'
+                }}
+                title={t("In Development")}
+              >
+                {t("Next (In Development)")} ▶
+              </button>
+            )}
           </div>
         </div>
 
@@ -687,11 +520,11 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
           <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Baseline Setup")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={stepHeaderStyle(3)} onClick={() => hasCoreParams && setCurrentStep(3)}>3. {t("Telemetry Load")}</div>
+          <div style={{ ...stepHeaderStyle(3), opacity: 0.3, cursor: 'not-allowed' }}>3. {t("Telemetry Load")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={stepHeaderStyle(4)} onClick={() => hasCoreParams && diagnosisReport && setCurrentStep(4)}>4. {t("Diagnosis & Correction")}</div>
+          <div style={{ ...stepHeaderStyle(4), opacity: 0.3, cursor: 'not-allowed' }}>4. {t("Diagnosis & Correction")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={stepHeaderStyle(5)} onClick={() => hasCoreParams && setCurrentStep(5)}>5. {t("Save Setup")}</div>
+          <div style={{ ...stepHeaderStyle(5), opacity: 0.3, cursor: 'not-allowed' }}>5. {t("Save Setup")}</div>
         </div>
       </div>
 
@@ -782,21 +615,17 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                     onChange={e => setSelectedRaceGoal(e.target.value)} 
                     style={{ ...inputStyle, width: '280px', border: '1px solid var(--primary)', background: 'black' }}
                   >
-                    <option value="Road">{t("Road & Street (公路與街頭賽事)")}</option>
-                    <option value="Touge">{t("Touge Mountain Pass (日本山道連續彎)")}</option>
-                    <option value="Rally">{t("Rally & Cross Country (拉力與越野路面)")}</option>
-                    <option value="Drift">{t("Drift Zone (開放世界甩尾區間)")}</option>
-                    <option value="SpeedZone">{t("Speed Zone (高下壓力測速區間)")}</option>
-                    <option value="DangerSign">{t("Danger Sign (高飛躍防底盤重擊)")}</option>
+                    <option value="Road">{t("Road / Circuit")}</option>
+                    <option value="Drift">{t("Drift")}</option>
+                    <option value="Rally">{t("Rally")}</option>
+                    <option value="Drag">{t("Drag")}</option>
                   </select>
                 </div>
                 <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>
-                  {selectedRaceGoal === 'Road' && t("Road setting optimizes suspension for maximum cornering grip and chassis stiffness on flat asphalt tracks.")}
-                  {selectedRaceGoal === 'Touge' && t("Touge setup sharpens steering turn-in response and introduces mild oversteer for tight mountain hairpins.")}
-                  {selectedRaceGoal === 'Rally' && t("Rally mode softens spring rates (Natural Freq ~ 1.5 Hz) and unlocks maximum height to absorb gravel and jumps.")}
+                  {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes suspension for maximum cornering grip and chassis stiffness on flat asphalt tracks.")}
                   {selectedRaceGoal === 'Drift' && t("Drift configuration locks differentials to 100%, uses front-hard-rear-soft springs, and sets extreme front camber.")}
-                  {selectedRaceGoal === 'SpeedZone' && t("Speed Zone targets low drag aero and stiff suspension to withstand high high-speed downforce loads.")}
-                  {selectedRaceGoal === 'DangerSign' && t("Danger Sign strengthens shock compression (Bump Damping) to cushion chassis impact upon vertical landings.")}
+                  {selectedRaceGoal === 'Rally' && t("Rally mode softens spring rates (Natural Freq ~ 1.5 Hz) and unlocks maximum height to absorb gravel and jumps.")}
+                  {selectedRaceGoal === 'Drag' && t("Drag setting targets maximum rear grip and launch acceleration.")}
                 </p>
               </div>
             )}
@@ -854,7 +683,33 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               {t("These values are calculated mathematically using weight distribution and optimal natural frequency. Set these values in your Forza Tuning menu first:")}
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <GearingTuner
+              tuning={tuning}
+              tuningMode={tuningMode}
+              updateSection={updateSection}
+              numGears={numGears}
+              chartData={chartData}
+              xMax={xMax}
+              yMax={yMax}
+              carParams={carParams}
+              gearingMethod={gearingMethod}
+              setGearingMethod={setGearingMethod}
+              customGearingModel={customGearingModel}
+              setCustomGearingModel={setCustomGearingModel}
+              basicCustomP={basicCustomP}
+              setBasicCustomP={setBasicCustomP}
+              pMin={pMin}
+              pMax={pMax}
+              gearingDiscipline={gearingDiscipline}
+              applyBasicGearing={applyBasicGearing}
+              applyScientificGearing={applyScientificGearing}
+            />
+
+            <div style={{ position: 'relative', marginTop: '1rem' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10, display: 'flex', justifyContent: 'center', alignItems: 'center', borderRadius: '8px', pointerEvents: 'none' }}>
+                <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.5)', background: 'rgba(255, 61, 0, 0.8)', padding: '0.5rem 1rem', borderRadius: '4px' }}>{t("In Development")}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', opacity: 0.5 }}>
               
               {/* Tires & Alignment */}
               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -988,172 +843,15 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               {/* Differential Settings */}
               <DifferentialTuner tuning={tuning} tuningMode={tuningMode} updateSection={updateSection} drivetrain={carParams?.drivetrain} />
 
-            </div>
-
-            <GearingTuner 
-              tuning={tuning} 
-              tuningMode={tuningMode} 
-              updateSection={updateSection}
-              numGears={numGears}
-              chartData={chartData}
-              xMax={xMax}
-              yMax={yMax}
-              carParams={carParams}
-              gearingMethod={gearingMethod}
-              setGearingMethod={setGearingMethod}
-              basicCustomP={basicCustomP}
-              setBasicCustomP={setBasicCustomP}
-              pMin={pMin}
-              pMax={pMax}
-              gearingDiscipline={gearingDiscipline}
-              applyBasicGearing={applyBasicGearing}
-              applyScientificGearing={applyScientificGearing}
-            />
-          </div>
-        )}
-
-        {/* ================= STEP 3: TELEMETRY LOAD ================= */}
-        {currentStep === 3 && (
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
-            <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>📊 Step 3: {t("Load telemetry data for analysis")}</h3>
-            
-            {/* Open World Manual Recording Control */}
-            {['Drift', 'SpeedZone', 'DangerSign'].includes(selectedRaceGoal) ? (
-              <div style={{ background: 'rgba(255, 61, 0, 0.05)', border: '1px solid rgba(255, 61, 0, 0.2)', padding: '1.2rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>⏺️ {t("Open-World Manual Telemetry Recording")}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: manualRecStatus === 'recording' ? 'red' : 'gray', display: 'inline-block' }} />
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {manualRecStatus === 'recording' ? t("RECORDING...") : manualRecStatus === 'saving' ? t("SAVING...") : t("IDLE")}
-                    </span>
-                  </div>
-                </div>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>
-                  {t("Forza's open-world challenges (Drift Zones, Speed Zones, Danger Signs) do not trigger official race mode. Use these buttons to manually start and stop recording when you perform the challenge.")}
-                </p>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem' }}>
-                  {manualRecStatus !== 'recording' ? (
-                    <button 
-                      onClick={handleStartManualRecord} 
-                      disabled={manualRecStatus === 'saving'}
-                      style={{ ...btnStyle, background: '#ff3d00', color: 'white', flex: 1, padding: '0.5rem 1rem' }}
-                    >
-                      ⏺ {t("Start Recording Test")}
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={handleStopManualRecord} 
-                      style={{ ...btnStyle, background: '#00e676', color: 'black', flex: 1, padding: '0.5rem 1rem' }}
-                    >
-                      ⏹ {t("Stop & Load Analysis")}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div style={{ background: 'rgba(0, 230, 118, 0.05)', border: '1px solid rgba(0, 230, 118, 0.15)', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                ℹ️ {t("Standard race mode will auto-record telemetry. You can load files directly below after finishing your race.")}
-              </div>
-            )}
-
-            {/* Optional Drag Optimization for SpeedZone */}
-            <DragTestSection 
-              selectedRaceGoal={selectedRaceGoal}
-              dragTestStatus={dragTestStatus}
-              dragPointsCount={dragPointsCount}
-              selectedDragSession={selectedDragSession}
-              globalSavedSessions={globalSavedSessions}
-              activeDragData={activeDragData}
-              handleStartDragTest={handleStartDragTest}
-              handleClearDragTest={handleClearDragTest}
-              handleLoadDragSession={handleLoadDragSession}
-              handleSaveDragSession={handleSaveDragSession}
-              applyDragOptimizedGearing={applyDragOptimizedGearing}
-            />
-
-            {/* Load Saved Session Dropdown */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.2rem', borderRadius: '8px' }}>
-              <label style={{ fontWeight: 600, color: 'white' }}>{t("Load Telemetry File (JSON):")}</label>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <select 
-                  value={selectedSessionFile} 
-                  onChange={e => setSelectedSessionFile(e.target.value)} 
-                  style={{ ...inputStyle, flex: 1, background: 'black' }}
-                >
-                  <option value="current">-- {t("Latest Raw Telemetry Session (latest.json)")} --</option>
-                  {globalSavedSessions.map((s: any) => (
-                    <option key={s.filename} value={s.filename}>
-                      {s.filename} ({Math.round(s.size / 1024)} KB)
-                    </option>
-                  ))}
-                </select>
-                <button 
-                  onClick={() => handleLoadSessionFile(selectedSessionFile)} 
-                  style={{ ...btnStyle, padding: '0.5rem 1.5rem' }}
-                >
-                  📥 {t("Load & Analyze")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ================= STEP 4: DIAGNOSIS & CORRECTION ================= */}
-        {currentStep === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-            
-            {/* Header Status Card */}
-            <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>🔍 Step 4: {t("Telemetry Diagnostic Report")}</h3>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {t("Analyzed Points:")} <strong style={{ color: 'white' }}>{telemetryPoints.length}</strong>
-              </span>
-            </div>
-
-<DiagnosisPanel 
-              diagnosisReport={diagnosisReport} 
-              telemetryPoints={telemetryPoints} 
-            />
-          </div>
-        )}
-
-        {/* ================= STEP 5: ITERATIVE OPTIMIZATION & SAVE ================= */}
-        {currentStep === 5 && (
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
-            <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>💾 Step 5: {t("Final adjustments & Save setup profile")}</h3>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '6px' }}>
-              <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                <label style={{ color: 'var(--text-secondary)' }}>{t("Save Setup Name:")}</label>
-                <input 
-                  type="text" 
-                  value={saveName} 
-                  onChange={(e) => setSaveName(e.target.value)}
-                  style={{ padding: '0.4rem', background: 'black', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '4px', width: '180px' }}
-                />
-                <button onClick={saveTuning} style={btnStyle}>{t("Save This Setup")}</button>
-                <span style={{ color: 'var(--primary)', fontSize: '0.9rem' }}>{saveStatus}</span>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                <label style={{ color: 'var(--text-secondary)' }}>{t("Load Profile:")}</label>
-                <select onChange={(e) => loadTuning(e.target.value)} style={{ padding: '0.4rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}>
-                  <option value="">-- {t("Select Saved Tuning")} --</option>
-                  {savedTunings.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
               </div>
             </div>
 
-            {/* Sliders adjustment list */}
-            <TuningSliderGrid 
-              tuning={tuning} 
-              carParams={carParams} 
-              updateSection={updateSection} 
-            />
+
           </div>
         )}
 
+
+        {/* TODO: Implement Steps 3-5 (Telemetry, Diagnosis, Iteration) */}
       </div>
     </div>
   );
@@ -1168,7 +866,6 @@ const btnStyle: React.CSSProperties = {
   cursor: 'pointer',
   fontWeight: 'bold'
 };
-
 
 const inputStyle: React.CSSProperties = {
   background: 'rgba(0,0,0,0.3)',
@@ -1190,7 +887,5 @@ const smallInputStyle: React.CSSProperties = {
   fontSize: '0.8rem',
   outline: 'none'
 };
-
-
 
 export default TuningView;
