@@ -1,0 +1,6 @@
+packages:
+  - 'frontend'
+
+allowBuilds:
+  '0': esbuild
+  esbuild: true

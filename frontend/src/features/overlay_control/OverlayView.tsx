@@ -532,10 +532,17 @@ export const OverlayView: React.FC = () => {
               <span>{t("G-Force & Attitude")}</span>
             </label>
 
+
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />
               <span>{t("Throttle & Brake Trace")}</span>
             </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showPowerTorque !== false} onChange={() => handleElementToggle('showPowerTorque')} />
+              <span>{t("Power & Torque Trace")}</span>
+            </label>
+
           </div>
         </div>
 
