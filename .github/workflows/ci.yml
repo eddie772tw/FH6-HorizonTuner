@@ -50,7 +50,31 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install python-multipart
 
     - name: Execute automated test suite via pytest
       run: |
         python -m pytest -v
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 8
+
+    - name: Install Frontend Dependencies
+      run: |
+        cd frontend
+        pnpm install
+
+    - name: Check Frontend Security with pnpm audit
+      shell: bash
+      run: |
+        cd frontend
+        if ! pnpm audit; then
+          echo "::warning::pnpm audit found vulnerabilities in frontend dependencies!"
+        fi
