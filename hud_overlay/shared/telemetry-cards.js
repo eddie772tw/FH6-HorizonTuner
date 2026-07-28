@@ -33,6 +33,7 @@
         ],
         tireHist: [[], [], [], []], // 3s history for tire temp/slip distribution
         pedalHist: [],             // 5s history for throttle & brake inputs (300 points)
+        powerTorqueHist: [],       // 5s history for RPM, Power, Torque (300 points)
         gHist: [],                 // 30s history for G-force peaks
         lastTime: performance.now(),
 
@@ -353,6 +354,31 @@
                             </div>
                         </div>
 
+                        <!-- Row 5, Col 2: Power & Torque 2D Scatter Plot -->
+                        <div id="tcPowerTorqueContainer" style="
+                            grid-column: 2;
+                            grid-row: 5;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            width: 75vh;
+                            margin-top: 1.2vh;
+                            background: rgba(0, 0, 0, 0.4);
+                            backdrop-filter: blur(8px);
+                            border-radius: 8px;
+                            border: 1px solid rgba(0, 240, 255, 0.25);
+                            padding: 0.4rem 0.8rem;
+                            position: relative;
+                        ">
+                            <div style="position:relative; width:100%; height:12vh;">
+                                <canvas id="tcPowerTorqueChart" width="550" height="80" style="width:100%; height:100%; background:rgba(0,0,0,0.25); border-radius:4px;"></canvas>
+                                <span style="position:absolute; top:4px; left:8px; color:#00f0ff; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(0,240,255,0.6);">TORQUE (MAX 1800)</span>
+                                <span style="position:absolute; top:4px; right:8px; color:#ff0088; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,0,136,0.6);">POWER (MAX 1600)</span>
+                                <span style="position:absolute; bottom:4px; right:8px; color:#aaa; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em;">RPM</span>
+                            </div>
+                        </div>
+
+
                     </div>
                 </div>
             `;
@@ -395,6 +421,10 @@
 
             var pedalContainer = document.getElementById('tcPedalWaveContainer');
             if (pedalContainer) pedalContainer.style.display = showPedals ? 'flex' : 'none';
+
+            var powerTorqueContainer = document.getElementById('tcPowerTorqueContainer');
+            if (powerTorqueContainer) powerTorqueContainer.style.display = elements.showPowerTorque !== false ? 'flex' : 'none';
+
 
             corners.forEach(function (tag) {
                 var cornerEl = document.getElementById('tcCorner' + tag);
