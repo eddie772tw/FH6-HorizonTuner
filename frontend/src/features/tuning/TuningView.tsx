@@ -719,6 +719,21 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                     <label>{t("Front Bias (%)")}:</label>
                     <input type="number" value={carParams?.weight_distribution || ''} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '100px' }} step="0.1" placeholder="e.g. 52.4" />
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <label>{t("Tire Compound")}:</label>
+                    <select value={carParams?.tireType || 'Stock'} onChange={e => updateParam('tireType', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
+                      <option value="Stock">Stock</option>
+                      <option value="Street">Street</option>
+                      <option value="Sport">Sport</option>
+                      <option value="Semi-Slick">Semi-Slick</option>
+                      <option value="Slick">Slick</option>
+                      <option value="Rally">Rally</option>
+                      <option value="Off-Road">Off-Road</option>
+                      <option value="Snow">Snow</option>
+                      <option value="Drag">Drag</option>
+                      <option value="Drift">Drift</option>
+                    </select>
+                  </div>
                 </div>
                 <button onClick={saveCarParams} style={{ ...btnStyle, background: '#ff3d00', color: 'white', padding: '0.4rem 1.2rem', fontSize: '0.85rem' }}>
                   💾 {t("Save Parameters")}
@@ -732,6 +747,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                     <div><span style={{ color: 'gray' }}>{t("Weight")}:</span> {Math.round(settings.units.weight === 'lbs' ? carParams.weight * 2.2046 : carParams.weight)} {settings.units.weight}</div>
                     <div><span style={{ color: 'gray' }}>{t("Weight Distribution")}:</span> {carParams.weight_distribution}% Front</div>
                     <div><span style={{ color: 'gray' }}>{t("Drivetrain")}:</span> {carParams.drivetrain}</div>
+                    <div><span style={{ color: 'gray' }}>{t("Tire Compound")}:</span> {carParams.tireType || 'Stock'}</div>
                     <div><span style={{ color: 'gray' }}>{t("Max Power")}:</span> {carParams.maxHp} HP @ {carParams.maxHpRpm || 'N/A'} RPM</div>
                   </div>
                 </div>
