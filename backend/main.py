@@ -30,11 +30,11 @@ import time
 from contextlib import asynccontextmanager
 from typing import List
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from motec_exporter import export_session_to_motec_csv
+from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from telemetry_listener import pack_telemetry_binary, start_udp_listener
 from telemetry_sqlite import TelemetrySQLite
 
@@ -1659,6 +1659,39 @@ async def export_motec_session(session_id: str):
             export_filepath, filename=export_filename, media_type="text/csv"
         )
     return {"error": "Failed to generate MoTeC CSV export"}
+
+
+@app.post("/api/analysis/import/motec")
+async def import_motec_session(file: UploadFile = File(...)):
+    import shutil
+    import tempfile
+
+    try:
+        # Save uploaded file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = tmp.name
+
+        # Parse the CSV file
+        meta, data = parse_motec_csv_to_telemetry(tmp_path, parse_data=True)
+
+        # Clean up the temporary file
+        os.remove(tmp_path)
+
+        if not data:
+            return {"error": "Failed to parse MoTeC CSV or file is empty"}
+
+        return {
+            "metadata": {
+                "filename": file.filename,
+                "car_name": meta.get("car_name", "Unknown Vehicle"),
+                "session_id": meta.get("session_id", file.filename),
+            },
+            "data": data,
+        }
+    except Exception as e:
+        logger.error(f"Failed to import MoTeC CSV: {e}")
+        return {"error": f"Failed to import MoTeC CSV: {e}"}
 
 
 # --- Drag Test API Endpoints ---
