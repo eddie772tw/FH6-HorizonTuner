@@ -258,4 +258,6 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   );
 };
 
-export default TrackMapCanvas;
+// Memoized to prevent expensive canvas redraws when unrelated parent state changes.
+// Expected Impact: Eliminates redundant path calculations and canvas rendering overhead during active telemetry streaming, maintaining 60 FPS performance on complex circuits.
+export default React.memo(TrackMapCanvas);
