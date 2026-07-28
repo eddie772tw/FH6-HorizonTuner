@@ -64,7 +64,7 @@
                     <div id="tcGridContainer" style="
                         display: grid;
                         grid-template-columns: auto auto auto;
-                        grid-template-rows: auto auto auto auto;
+                        grid-template-rows: auto auto auto auto auto;
                         column-gap: 2.5vw;
                         row-gap: 1.5vh;
                         align-items: center;
