@@ -5,7 +5,6 @@
 [![Language](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React-purple.svg)](https://tauri.app/)
-[![Overlay](https://img.shields.io/badge/Overlay-D3D11%20%2B%20DXGI%20MPO-orange.svg)](tool/overlay/)
 [![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 
 ---
