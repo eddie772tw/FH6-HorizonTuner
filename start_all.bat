@@ -117,7 +117,7 @@ echo [INFO] Checking frontend dependencies...
 cd frontend
 call pnpm install
 echo [INFO] Running pnpm audit fix for frontend...
-call pnpm audit --fix
+call pnpm audit --fix update
 call pnpm audit >nul 2>nul
 if %errorlevel% neq 0 (
     echo [WARNING] pnpm audit found unresolved vulnerabilities. Please check manually.

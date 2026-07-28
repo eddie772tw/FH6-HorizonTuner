@@ -2,4 +2,5 @@ packages:
   - 'frontend'
 
 allowBuilds:
-  - esbuild
+  '0': esbuild
+  esbuild: true
