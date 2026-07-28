@@ -150,9 +150,9 @@ const TelemetryView: React.FC = () => {
           </div>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={subTab === 'live' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
-            <button style={subTab === 'analysis' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('analysis')}>{t("Post-Race Analysis")}</button>
-            <button style={subTab === 'drag' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
+            <button style={subTab === 'live' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
+            <button style={subTab === 'analysis' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
+            <button style={subTab === 'drag' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('drag')} aria-current={subTab === 'drag' ? 'page' : undefined}>{t("Drag Test")}</button>
           </div>
         </div>
         <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
