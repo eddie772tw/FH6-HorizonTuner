@@ -64,14 +64,47 @@
                     <div id="tcGridContainer" style="
                         display: grid;
                         grid-template-columns: auto auto auto;
-                        grid-template-rows: auto auto auto auto auto;
+
                         column-gap: 2.5vw;
                         row-gap: 1.5vh;
                         align-items: center;
                         justify-items: center;
                     ">
+
+                        <!-- Row 1, Col 2: Top Power Spacer (Mirrors Row 7) -->
+                        <div id="tcTopPowerSpacer" style="
+                            grid-column: 2;
+                            grid-row: 1;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            width: 75vh;
+                            margin-bottom: 1.2vh;
+                            padding: 0.4rem 0.8rem;
+                            border: 1px solid transparent;
+                            visibility: hidden;
+                        ">
+                            <div style="width:100%; height:12vh;"></div>
+                        </div>
+
+                        <!-- Row 2, Col 2: Top Pedal Spacer (Mirrors Row 6) -->
+                        <div id="tcTopPedalSpacer" style="
+                            grid-column: 2;
+                            grid-row: 2;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            width: 75vh;
+                            margin-bottom: 1.2vh;
+                            padding: 0.4rem 0.8rem;
+                            border: 1px solid transparent;
+                            visibility: hidden;
+                        ">
+                            <div style="width:100%; height:10vh;"></div>
+                        </div>
+
                         <!-- Row 1, Col 1: FL Corner (Front Left - Vertical Layout) -->
-                        <div id="tcCornerFL" class="tele-corner" style="grid-column:1; grid-row:1; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                        <div id="tcCornerFL" class="tele-corner" style="grid-column:1; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
                             <!-- FL Suspension Block -->
                             <div id="tcSuspBlockFL" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
                                 <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -111,7 +144,7 @@
                         </div>
 
                         <!-- Row 1, Col 3: FR Corner (Front Right - Vertical & Symmetric) -->
-                        <div id="tcCornerFR" class="tele-corner" style="grid-column:3; grid-row:1; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                        <div id="tcCornerFR" class="tele-corner" style="grid-column:3; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
                             <!-- FR Suspension Block -->
                             <div id="tcSuspBlockFR" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
                                 <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -153,7 +186,7 @@
                         <!-- Row 2, Col 2: Center Core (G-Force Radar: 75vh at 100% scale) -->
                         <div id="tcCenterRadarContainer" style="
                             grid-column: 2;
-                            grid-row: 1 / span 3;
+                            grid-row: 3 / span 3;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
@@ -250,7 +283,7 @@
                         </div>
 
                         <!-- Row 3, Col 1: RL Corner (Rear Left - Vertical Layout) -->
-                        <div id="tcCornerRL" class="tele-corner" style="grid-column:1; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                        <div id="tcCornerRL" class="tele-corner" style="grid-column:1; grid-row:5; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
                             <!-- RL Suspension Block -->
                             <div id="tcSuspBlockRL" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
                                 <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -290,7 +323,7 @@
                         </div>
 
                         <!-- Row 3, Col 3: RR Corner (Rear Right - Vertical & Symmetric) -->
-                        <div id="tcCornerRR" class="tele-corner" style="grid-column:3; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                        <div id="tcCornerRR" class="tele-corner" style="grid-column:3; grid-row:5; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
                             <!-- RR Suspension Block -->
                             <div id="tcSuspBlockRR" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
                                 <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -332,7 +365,7 @@
                         <!-- Row 4, Col 2: Throttle & Brake 5-Second Input Trace -->
                         <div id="tcPedalWaveContainer" style="
                             grid-column: 2;
-                            grid-row: 4;
+                            grid-row: 6;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
@@ -357,7 +390,7 @@
                         <!-- Row 5, Col 2: Power & Torque 2D Scatter Plot -->
                         <div id="tcPowerTorqueContainer" style="
                             grid-column: 2;
-                            grid-row: 5;
+                            grid-row: 7;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
@@ -424,6 +457,13 @@
 
             var powerTorqueContainer = document.getElementById('tcPowerTorqueContainer');
             if (powerTorqueContainer) powerTorqueContainer.style.display = elements.showPowerTorque !== false ? 'flex' : 'none';
+
+            var topPedalSpacer = document.getElementById('tcTopPedalSpacer');
+            if (topPedalSpacer) topPedalSpacer.style.display = showPedals ? 'flex' : 'none';
+
+            var topPowerSpacer = document.getElementById('tcTopPowerSpacer');
+            if (topPowerSpacer) topPowerSpacer.style.display = elements.showPowerTorque !== false ? 'flex' : 'none';
+
 
 
             corners.forEach(function (tag) {
