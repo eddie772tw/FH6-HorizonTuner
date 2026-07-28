@@ -481,6 +481,7 @@ const DragTestView: React.FC = () => {
                     color: activeChart === 'speed_rpm' ? 'white' : 'var(--text-secondary)',
                     fontWeight: 600
                   }}
+                  aria-current={activeChart === 'speed_rpm' ? 'true' : undefined}
                 >
                   {t("Speed & RPM")}
                 </button>
@@ -492,6 +493,7 @@ const DragTestView: React.FC = () => {
                     color: activeChart === 'slip' ? 'white' : 'var(--text-secondary)',
                     fontWeight: 600
                   }}
+                  aria-current={activeChart === 'slip' ? 'true' : undefined}
                 >
                   {t("Tire Slip")}
                 </button>

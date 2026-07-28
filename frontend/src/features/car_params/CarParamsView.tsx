@@ -329,8 +329,8 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
           <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{t("Car Parameters")}</h2>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={subTab === 'config' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('config')}>{t("Profile Configuration")}</button>
-            <button style={subTab === 'dyno' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('dyno')}>{t("Live Dyno Curve")}</button>
+            <button style={subTab === 'config' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('config')} aria-current={subTab === 'config' ? 'page' : undefined}>{t("Profile Configuration")}</button>
+            <button style={subTab === 'dyno' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('dyno')} aria-current={subTab === 'dyno' ? 'page' : undefined}>{t("Live Dyno Curve")}</button>
           </div>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           {renderSaveStatus()}
