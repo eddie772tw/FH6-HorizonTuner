@@ -59,6 +59,7 @@
 * **絕對不做的事**：
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
+  - **嚴禁使用命令列操作 (如 `echo` 或 `>>`) 來寫入或附加內容至檔案** (尤其是 Markdown 文件如 Journal.md)。由於 Windows 命令列的字元編碼 (Code Page) 差異，這將導致中文編碼毀損。必須使用專屬的檔案讀寫工具 (如 `write_to_file` 或 `replace_file_content`)。
 
 ## 開發紀錄日誌 (Journal.md)
 專案設有 [.agents/Journal.md](.agents/Journal.md) 機制：

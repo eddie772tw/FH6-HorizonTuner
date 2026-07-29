@@ -1,18 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
 import { 
-  calculateARBsAdvanced,
-  calculateSpringsByFrequency,
-  calculateDampersCritical,
-  getDifferentialBaseline,
-  calculateTirePressures,
   RaceType,
   Drivetrain,
   calculateAEGOGearing
 } from '../../utils/tuningMath';
 import { useSettings } from '../../context/SettingsContext';
-import { SuspensionTuner } from './components/SuspensionTuner';
 import { GearingTuner } from './components/GearingTuner';
+import { SuspensionTuner } from './components/SuspensionTuner';
 import { DifferentialTuner } from './components/DifferentialTuner';
 const TIRE_RADIUS_M = 0.32;
 
@@ -134,7 +129,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}`);
       const data = await res.json();
       if (Array.isArray(data)) {
-        setSavedTunings(data);
+        setSavedTunings(data.filter((t: string) => t.includes('gearing_')));
       }
     } catch (e) {}
   };
@@ -240,9 +235,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 
   const applyScientificGearing = () => {
     if (!carParams) return;
-    const goal = gearingMethod === 'custom' && customGearingModel !== 'Basic Linear' ? customGearingModel : selectedRaceGoal;
     const result = calculateAEGOGearing(
-      goal,
+      selectedRaceGoal,
       numGears,
       carParams,
       tuning.gearing.maxRpm
@@ -264,130 +258,12 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 
 
 
-  // Baseline auto-generator
+  // Baseline auto-generator (Now exclusively applies gearing)
   const generateBaselineTuning = () => {
     if (!carParams || carParams.weight <= 0 || carParams.weight_distribution <= 0) {
       return;
     }
-
-    const weightKg = carParams.weight;
-    const frontBias = carParams.weight_distribution;
-    const drivetrain = carParams.drivetrain || 'RWD';
-
-    const springsMin = carParams.spring_front_min ?? 10.0;
-    const springsMax = carParams.spring_front_max ?? 120.0;
-    const arbMin = carParams.arb_front_min ?? 1.0;
-    const arbMax = carParams.arb_front_max ?? 65.0;
-
-    let targetHz = carParams.target_ride_frequency ?? 2.4;
-    if (!carParams.target_ride_frequency) {
-      if (selectedRaceGoal === 'Rally') targetHz = 1.5;
-      else if (selectedRaceGoal === 'Drift') targetHz = 2.0;
-      else if (selectedRaceGoal === 'DangerSign') targetHz = 1.7;
-      else if (selectedRaceGoal === 'SpeedZone') targetHz = 2.8;
-      else if (selectedRaceGoal === 'Touge') targetHz = 2.5;
-    }
-
-    const calcSpringsRes = calculateSpringsByFrequency(
-      springsMin,
-      springsMax,
-      frontBias,
-      targetHz,
-      2.0,
-      carParams.maxHp,
-      weightKg
-    );
-
-    const calcArbsRes = calculateARBsAdvanced(frontBias, drivetrain, arbMin, arbMax);
-    if (selectedRaceGoal === 'Rally') {
-      calcArbsRes.front *= 0.6;
-      calcArbsRes.rear *= 0.6;
-    } else if (selectedRaceGoal === 'Drift') {
-      calcArbsRes.front *= 0.9;
-      calcArbsRes.rear *= 1.2;
-    }
-    calcArbsRes.front = Math.max(arbMin, Math.min(arbMax, calcArbsRes.front));
-    calcArbsRes.rear = Math.max(arbMin, Math.min(arbMax, calcArbsRes.rear));
-
-    const weightLbs = weightKg * 2.20462;
-    const frontLbsIn = calcSpringsRes.front * 55.9974;
-    const rearLbsIn = calcSpringsRes.rear * 55.9974;
-    const reboundRatio = carParams.target_rebound_ratio ?? 0.70;
-    const bumpRatio = carParams.target_bump_ratio ?? 0.55;
-    const calcDampersRes = calculateDampersCritical(
-      frontLbsIn,
-      rearLbsIn,
-      weightLbs,
-      frontBias,
-      reboundRatio,
-      bumpRatio
-    );
-
-    const calcTireRes = calculateTirePressures(
-      (selectedRaceGoal === 'Rally' ? 'Rally' : selectedRaceGoal === 'Drift' ? 'Drift' : 'Road') as RaceType,
-      drivetrain as Drivetrain,
-      { camberF: -1.5, camberR: -1.0, toeF: 0.0, toeR: 0.0, caster: 6.0 }
-    );
-
-    const calcDiffRes = getDifferentialBaseline(drivetrain, carParams.maxHp, carParams.maxTorque, weightKg);
-    if (selectedRaceGoal === 'Drift') {
-      calcDiffRes.accelF = 100;
-      calcDiffRes.decelF = 0;
-      calcDiffRes.accelR = 100;
-      calcDiffRes.decelR = 100;
-    } else if (selectedRaceGoal === 'Rally') {
-      calcDiffRes.accelF = 50;
-      calcDiffRes.decelF = 0;
-      calcDiffRes.accelR = 80;
-      calcDiffRes.decelR = 10;
-    }
-
-    let centerBias = 65;
-    if (drivetrain === 'AWD') {
-      if (selectedRaceGoal === 'Rally') {
-        centerBias = 55;
-      } else if (selectedRaceGoal === 'Drift') {
-        centerBias = 80;
-      } else if (selectedRaceGoal === 'Touge') {
-        centerBias = 70;
-      } else if (selectedRaceGoal === 'SpeedZone' || selectedRaceGoal === 'Road') {
-        centerBias = 65;
-      } else if (selectedRaceGoal === 'DangerSign') {
-        centerBias = 60;
-      }
-    }
-
-    setTuning(prev => ({
-      ...prev,
-      tires: {
-        front: Number(calcTireRes.front.toFixed(2)),
-        rear: Number(calcTireRes.rear.toFixed(2))
-      },
-      arb: {
-        front: Number(calcArbsRes.front.toFixed(1)),
-        rear: Number(calcArbsRes.rear.toFixed(1))
-      },
-      springs: {
-        ...prev.springs,
-        front: Number(calcSpringsRes.front.toFixed(1)),
-        rear: Number(calcSpringsRes.rear.toFixed(1)),
-        heightF: selectedRaceGoal === 'Rally' ? 22 : selectedRaceGoal === 'Drift' ? 14 : 15,
-        heightR: selectedRaceGoal === 'Rally' ? 22 : selectedRaceGoal === 'Drift' ? 14 : 15
-      },
-      damping: {
-        reboundF: Number(calcDampersRes.frontRebound.toFixed(1)),
-        reboundR: Number(calcDampersRes.rearRebound.toFixed(1)),
-        bumpF: Number(calcDampersRes.frontBump.toFixed(1)),
-        bumpR: Number(calcDampersRes.rearBump.toFixed(1))
-      },
-      diff: {
-        accelF: calcDiffRes.accelF,
-        decelF: calcDiffRes.decelF,
-        accelR: calcDiffRes.accelR,
-        decelR: calcDiffRes.decelR,
-        center: centerBias
-      }
-    }));
+    applyScientificGearing();
   };
 
   // Unit Labels local helper
@@ -402,14 +278,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     return (speedMs) * (gearRatio * tuning.gearing.finalDrive * 60) / (2 * Math.PI * TIRE_RADIUS_M);
   };
 
-  const chartData: any[] = [{ speed: 0, gear1: 0 }];
+  const chartData: any[] = [{ speed: 0, gear1: 0, currentEnvelope: 0, theoreticalEnvelope: 0, basicPreviewEnvelope: 0 }];
   for (let i = 0; i < numGears; i++) {
     const gearRatio = tuning.gearing.gears[i];
     if (gearRatio <= 0) continue;
     const maxSpeedForGear = calcSpeed(tuning.gearing.maxRpm, gearRatio);
     const endPoint: any = { speed: maxSpeedForGear };
     endPoint[`gear${i + 1}`] = tuning.gearing.maxRpm;
-    if (i + 1 < numGears && tuning.gearing.gears[i + 1] > 0) {
+    if (i + 1 < numGears && tuning.gearing.gears[i + 1] > 0 && tuning.gearing.gears[i + 1] < tuning.gearing.gears[i]) {
       endPoint[`gear${i + 2}`] = calcRpm(maxSpeedForGear, tuning.gearing.gears[i + 1]);
       endPoint.currentEnvelope = tuning.gearing.maxRpm * (tuning.gearing.gears[i + 1] / gearRatio);
       endPoint.theoreticalEnvelope = getTheoreticalYi(i, numGears);
@@ -518,7 +394,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
           <div style={stepHeaderStyle(1)} onClick={() => setCurrentStep(1)}>1. {t("Goal & Setup")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Baseline Setup")}</div>
+          <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Gearbox Setup")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
           <div style={{ ...stepHeaderStyle(3), opacity: 0.3, cursor: 'not-allowed' }}>3. {t("Telemetry Load")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
@@ -703,11 +579,11 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
           </div>
         )}
 
-        {/* ================= STEP 2: BASELINE SETUP ================= */}
+        {/* ================= STEP 2: GEARBOX SETUP ================= */}
         {currentStep === 2 && (
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>📐 Step 2: {t("Apply calculated baseline setup in-game")}</h3>
+              <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>📐 Step 2: {t("Apply calculated gearbox ratios in-game")}</h3>
               <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.08)', padding: '0.3rem 0.6rem', borderRadius: '4px', color: 'var(--text-secondary)' }}>
                 {t("Goal:")} <strong style={{ color: 'var(--primary)' }}>{selectedRaceGoal.toUpperCase()}</strong>
               </span>
@@ -751,7 +627,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
             </div>
 
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              {t("These values are calculated mathematically using weight distribution and optimal natural frequency. Set these values in your Forza Tuning menu first:")}
+              {t("These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:")}
             </p>
 
             <GearingTuner
@@ -909,6 +785,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                 </div>
               </div>
 
+              {/* TODO: 移除其它懸吊、輪胎、差速器自動計算邏輯，保留 UI 顯示。 */}
               <SuspensionTuner tuning={tuning} tuningMode={tuningMode} updateSection={updateSection} />
 
               {/* Differential Settings */}
