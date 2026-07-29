@@ -116,9 +116,7 @@ const ThemeView: React.FC = () => {
             color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.6rem'
           }}>
-            <span style={{ fontSize: '1.2rem' }}>⚙️</span>
             <div>
               <strong>{t("CSS Engine Architecture")}: </strong>
               <span>{t("This application is built with Vanilla CSS + Modern CSS Variables + Glassmorphism style.")}</span>
@@ -367,7 +365,6 @@ const ThemeView: React.FC = () => {
                 border: cssValidation.isValid ? '1px solid #00ff88' : '1px solid #ff003c',
                 color: cssValidation.isValid ? '#00ff88' : '#ff003c'
               }}>
-                <span>{cssValidation.isValid ? '✓' : '⚠️'}</span>
                 <span>{cssValidation.isValid ? t("Valid CSS Syntax") : (cssValidation.error || t("Invalid CSS Syntax"))}</span>
               </div>
             </div>
@@ -424,7 +421,7 @@ const ThemeView: React.FC = () => {
                   fontWeight: 600
                 }}
               >
-                ⚠️ {t("Reset to Defaults")}
+                {t("Reset to Defaults")}
               </button>
             </div>
           </div>

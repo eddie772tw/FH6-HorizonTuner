@@ -119,7 +119,7 @@ const DiagnosisPanelComponent: React.FC<DiagnosisPanelProps> = ({ diagnosisRepor
 
         {/* Suspension Travel Chart */}
         <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-          <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>📊 {t("Suspension Damping Travel & Bottom-Out Rates")}</h4>
+          <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>{t("Suspension Damping Travel & Bottom-Out Rates")}</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}>
             <div>
               <span style={{ color: 'gray' }}>{t("Front Max Travel:")}</span> <strong style={{ color: 'white' }}>{(diagnosisReport.suspension.frontMaxTravel * 100).toFixed(0)}%</strong>

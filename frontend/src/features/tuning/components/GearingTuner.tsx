@@ -54,7 +54,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
       <div style={{ marginBottom: '0.8rem' }}>
-        <h4 style={{ margin: 0, color: 'white', fontSize: '0.95rem' }}>⚙️ {t("Gearbox Ratios (Optional)")}</h4>
+        <h4 style={{ margin: 0, color: 'white', fontSize: '0.95rem' }}>{t("Gearbox Ratios (Optional)")}</h4>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', alignItems: 'start' }}>
