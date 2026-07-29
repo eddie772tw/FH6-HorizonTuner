@@ -89,7 +89,7 @@ echo [INFO] Running Tauri Build...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 call pnpm install || exit /b 1
-call pnpm audit --fix || exit /b 1
+call pnpm audit --fix update || exit /b 1
 call pnpm audit
 if errorlevel 1 (
     echo.
