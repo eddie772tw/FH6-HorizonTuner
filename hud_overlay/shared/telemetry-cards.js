@@ -405,8 +405,8 @@
                         ">
                             <div style="position:relative; width:100%; height:12vh;">
                                 <canvas id="tcPowerTorqueChart" width="550" height="80" style="width:100%; height:100%; background:rgba(0,0,0,0.25); border-radius:4px;"></canvas>
-                                <span style="position:absolute; top:4px; left:8px; color:#00f0ff; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(0,240,255,0.6);">TORQUE (MAX 1800)</span>
-                                <span style="position:absolute; top:4px; right:8px; color:#ff0088; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,0,136,0.6);">POWER (MAX 1600)</span>
+                                <span id="tcTorqueLabel" style="position:absolute; top:4px; left:8px; color:#ffeb3b; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,235,59,0.6);">TORQUE</span>
+                                <span id="tcPowerLabel" style="position:absolute; top:4px; right:8px; color:#ff0088; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,0,136,0.6);">POWER</span>
                                 <span style="position:absolute; bottom:4px; right:8px; color:#aaa; font-weight:bold; font-size:0.7rem; font-family:'ForzaGear'; letter-spacing:0.05em;">RPM</span>
                             </div>
                         </div>
@@ -792,6 +792,59 @@
                             wCtx.strokeStyle = '#00f0ff';
                             wCtx.lineWidth = 1.5;
                             wCtx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // 4. Power & Torque Scatter Plot vs RPM
+            if (elements.showPowerTorque !== false) {
+                var maxHP = data.sessionMaxima ? (data.sessionMaxima.maxHP || 100) : 100;
+                var maxTQ = data.sessionMaxima ? (data.sessionMaxima.maxTQ || 100) : 100;
+                var ceilHP = Math.max(100, Math.ceil(maxHP / 100) * 100);
+                var ceilTQ = Math.max(100, Math.ceil(maxTQ / 100) * 100);
+                
+                var pwrLbl = document.getElementById('tcPowerLabel');
+                var tqLbl = document.getElementById('tcTorqueLabel');
+                if (pwrLbl) pwrLbl.textContent = 'POWER (MAX ' + ceilHP + ')';
+                if (tqLbl) tqLbl.textContent = 'TORQUE (MAX ' + ceilTQ + ')';
+
+                var currentRPM = data.rpm || 0;
+                var currentPwr = data.power || 0;
+                var currentTq = data.torque || 0;
+
+                if (this.powerTorqueHist.length < 300) {
+                    this.powerTorqueHist.push({ rpm: currentRPM, power: currentPwr, torque: currentTq, time: now });
+                } else {
+                    var oldPT = this.powerTorqueHist.shift();
+                    if (oldPT) { oldPT.rpm = currentRPM; oldPT.power = currentPwr; oldPT.torque = currentTq; oldPT.time = now; this.powerTorqueHist.push(oldPT); }
+                }
+
+                var ptCanvas = document.getElementById('tcPowerTorqueChart');
+                if (ptCanvas && this.powerTorqueHist.length > 0) {
+                    var ptCtx = ptCanvas.getContext('2d');
+                    if (ptCtx) {
+                        var pw = ptCanvas.width, ph = ptCanvas.height;
+                        ptCtx.clearRect(0, 0, pw, ph);
+
+                        var mRpm = data.maxRpm || 10000;
+
+                        // Draw Torque Trace (Yellow #ffeb3b)
+                        ptCtx.fillStyle = 'rgba(255, 235, 59, 0.6)';
+                        for (var k = 0; k < this.powerTorqueHist.length; k++) {
+                            var pt = this.powerTorqueHist[k];
+                            var tx = (pt.rpm / mRpm) * pw;
+                            var ty = ph - (Math.max(0, pt.torque) / ceilTQ) * ph;
+                            ptCtx.fillRect(tx, ty, 2, 2);
+                        }
+
+                        // Draw Power Trace (Pink #ff0088)
+                        ptCtx.fillStyle = 'rgba(255, 0, 136, 0.6)';
+                        for (var k = 0; k < this.powerTorqueHist.length; k++) {
+                            var pt = this.powerTorqueHist[k];
+                            var px = (pt.rpm / mRpm) * pw;
+                            var py = ph - (Math.max(0, pt.power) / ceilHP) * ph;
+                            ptCtx.fillRect(px, py, 2, 2);
                         }
                     }
                 }
