@@ -152,6 +152,26 @@ const SettingsView: React.FC = () => {
           {/* Left Column: General & Basic Units */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             
+            {/* Language Settings */}
+            <div style={sectionStyle}>
+              <h4 style={sectionTitleStyle}>{t("Language Settings")}</h4>
+              <div style={settingRowStyle}>
+                <div>
+                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Language")}</strong>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Select application display language.")}</span>
+                </div>
+                <select 
+                  value={settings.language} 
+                  onChange={(e) => updateSettings({ language: e.target.value })}
+                  style={selectStyle}
+                >
+                  {availableLanguages.map(lang => (
+                    <option key={lang.code} value={lang.code}>{lang.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {/* General Settings */}
             <div style={sectionStyle}>
               <h4 style={sectionTitleStyle}>{t("General Recording Settings")}</h4>
@@ -180,23 +200,6 @@ const SettingsView: React.FC = () => {
                   onChange={(e) => updateSettings({ race_recording: e.target.checked })}
                   style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                 />
-              </div>
-
-              {/* Language Selection */}
-              <div style={settingRowStyle}>
-                <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Language")}</strong>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Select application display language.")}</span>
-                </div>
-                <select 
-                  value={settings.language} 
-                  onChange={(e) => updateSettings({ language: e.target.value })}
-                  style={selectStyle}
-                >
-                  {availableLanguages.map(lang => (
-                    <option key={lang.code} value={lang.code}>{lang.name}</option>
-                  ))}
-                </select>
               </div>
 
               <hr style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '0.5rem 0' }} />

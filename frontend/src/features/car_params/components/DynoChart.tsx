@@ -211,7 +211,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
                   fontWeight: 'bold',
                   animation: 'pulse 1s infinite alternate'
                 }}>
-                  {t("⚠️ Tire Slip Detected! Recording paused.")}
+                  {t("Tire Slip Detected! Recording paused.")}
                 </div>
               );
             }
@@ -336,7 +336,6 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               borderRadius: '6px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold' }}>
-                <span>⚠️</span>
                 <span>{t("Gearing data not found for this car. The system cannot recommend the optimal test gear or perform precise diagnostics.")}</span>
               </div>
               <p style={{ margin: 0, opacity: 0.8, fontSize: '0.8rem', lineHeight: '1.4' }}>

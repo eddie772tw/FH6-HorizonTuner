@@ -147,7 +147,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
             className="cyber-btn-glow"
             style={clearBtnStyle}
           >
-            🗑️ {t("Clear Logs")}
+            {t("Clear Logs")}
           </button>
         </div>
 
@@ -155,7 +155,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
         <div style={consoleBodyStyle}>
           {errorMsg && (
             <div style={{ color: '#ff1744', padding: '10px', fontSize: '0.9rem', borderBottom: '1px solid rgba(255,23,68,0.2)', backgroundColor: 'rgba(255,23,68,0.05)' }}>
-              ⚠️ {errorMsg}
+              {errorMsg}
             </div>
           )}
           <pre 

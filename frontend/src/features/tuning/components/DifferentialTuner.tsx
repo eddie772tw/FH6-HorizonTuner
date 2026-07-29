@@ -34,7 +34,7 @@ export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({
   return (
     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
       <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--primary)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem', fontSize: '0.95rem' }}>
-        ⚙️ {t("Differential Settings")}
+        {t("Differential Settings")}
       </h4>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
         {/* Front Differential */}

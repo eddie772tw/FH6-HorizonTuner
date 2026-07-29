@@ -528,3 +528,24 @@
 - 未來新增或擴充 HUD telemetry 視圖元件時，直接在 `hud_overlay/shared/telemetry-cards/` 下建立對應元件子模組，並於 `manager.js` 中進行連線。
 - Playwright E2E 測試中若需 serving 本地檔案，建議持續採用動態 Port (0) 的微型 Node.js HTTP 伺服器模式，確保 ES Modules 不受 `file://` CORS 規範阻擋。
 
+---
+
+## 2026-07-29 - HUD Overlay, 預設組態, 單位/語言預設值與 UI Emoji 全面清理
+
+**學習點 (Learning):**
+- **HUD Elements 開關收攏與 Motion Effect 新增**：
+  - 零碎開關（如單獨隱藏 `showRPM` 或 `showGear`）容易造成 HUD DOM 佈局破碎或轉譯異常。將元素控制收攏為模組級開關（`showGauge` 主儀表、`showMotionEffect` 動態視覺效果、`showPowerTorque` 及 4 區塊 Telemetry 卡片），既精簡了 Overlay 控制面板，亦避免了視圖破碎。
+  - 在 GUI 介面新增 `Motion Effect` 開關，並於 HUD 控制層同步支援。
+- **全域預設值與 Settings 機制**：
+  - 將無設定檔時的預設語言設為 `zh-tw`，紀錄開關 (`dyno_recording`, `race_recording`) 設為預設關閉 (`false`)。
+  - 將單位轉換調整為除胎壓 (`psi`) 與馬力 (`hp`) 強制指定外，其餘預設皆為公制 (Metric)。
+  - 在 `SettingsView` 中將 Language 選單從 `General Recording Settings` 獨立為專屬選單區塊，提高選單結構之清析度。
+- **無 Emoji UI 規範與文件維護**：
+  - 全面清理前端 React 元件（`AdvancedGeometry.tsx`, `DragTestView.tsx`, `ThemeView.tsx`, `DifferentialTuner.tsx`, `DragTestSection.tsx`, `GearingTuner.tsx`, `DiagnosisPanel.tsx`, `DiagnosticConsole.tsx`, `DynoChart.tsx`, `TuningView.tsx`）中殘留的 Emoji 圖符，視覺提升專業極簡感。
+  - 於 `AGENTS.md` 中新增「嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示」與「完整測試矩陣說明」。
+  - 核對並刪除過期的交接說明檔案 `.agents/handoff_frontend_refactoring.md`，維持 `.agents/` 目錄簡潔性。
+
+**後續行動 (Action):**
+- 後續新增 UI 元件時，嚴格遵守 `AGENTS.md` 無 Emoji 規範與單元/E2E 測試驗證流程。
+
+

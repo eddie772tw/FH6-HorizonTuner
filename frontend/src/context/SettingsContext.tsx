@@ -65,19 +65,19 @@ const defaultUnits: UnitSettings = {
   speed: 'kmh',
   weight: 'kg',
   temperature: 'C',
-  tirePressure: 'bar',
-  boostPressure: 'psi',
+  tirePressure: 'psi',
+  boostPressure: 'bar',
   springRate: 'kgfmm',
   rideHeight: 'cm',
   suspensionForce: 'kgf',
-  power: 'kw',
+  power: 'hp',
   torque: 'nm'
 };
 
 const defaultSettings: AppSettings = {
-  dyno_recording: true,
-  race_recording: true,
-  language: 'en-us',
+  dyno_recording: false,
+  race_recording: false,
+  language: 'zh-tw',
   dyno_test_gear: 4,
   dyno_filter_slip: true,
   dyno_filter_transients: true,

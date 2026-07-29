@@ -47,9 +47,9 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
-  telemetryOpacity: 0.85,
+  telemetryOpacity: 0.65,
   telemetryScale: 1.0,
-  pauseTelemetryViewWhenActive: false,
+  pauseTelemetryViewWhenActive: true,
   elements: {
     showGauge: true,
     showRPM: true,
@@ -59,11 +59,11 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showBoost: true,
     showWheelLockup: true,
     showMotionEffect: true,
-    showTeleSuspension: false,
-    showTeleTires: false,
-    showTeleAttitude: false,
-    showTeleEngine: false,
-    showTelePedals: false,
+    showTeleSuspension: true,
+    showTeleTires: true,
+    showTeleAttitude: true,
+    showTeleEngine: true,
+    showTelePedals: true,
   },
   soundEnabled: false,
 };
@@ -344,65 +344,23 @@ export const OverlayView: React.FC = () => {
           </div>
         </div>
 
-        {/* HUD Scale Slider & Input */}
+        {/* HUD & Telemetry Scale Settings */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Scale Size")}
           </h3>
-          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("HUD Scale Ratio")}:</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <input
-                  type="number"
-                  min={50}
-                  max={200}
-                  value={Math.round(config.scale * 100)}
-                  onChange={(e) => handleScaleChange(Number(e.target.value) / 100)}
-                  style={{
-                    width: '65px',
-                    padding: '0.3rem',
-                    borderRadius: '4px',
-                    background: 'rgba(0,0,0,0.5)',
-                    border: '1px solid var(--primary)',
-                    color: 'var(--primary)',
-                    textAlign: 'center',
-                    fontWeight: 'bold'
-                  }}
-                />
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
-              </div>
-            </div>
-
-            <input
-              type="range"
-              min={0.5}
-              max={2.0}
-              step={0.05}
-              value={config.scale}
-              onChange={(e) => handleScaleChange(Number(e.target.value))}
-              style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-            />
-          </div>
-        </div>
-
-        {/* Telemetry Cluster Opacity & Scale */}
-        <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("Central Telemetry Cluster Settings")}
-          </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Opacity slider */}
+            {/* HUD Scale */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Opacity")}:</span>
+                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("HUD Scale Ratio")}:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <input
                     type="number"
-                    min={10}
-                    max={100}
-                    value={Math.round((config.telemetryOpacity ?? 0.85) * 100)}
-                    onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value) / 100)}
+                    min={50}
+                    max={200}
+                    value={Math.round(config.scale * 100)}
+                    onChange={(e) => handleScaleChange(Number(e.target.value) / 100)}
                     style={{
                       width: '65px',
                       padding: '0.3rem',
@@ -419,16 +377,16 @@ export const OverlayView: React.FC = () => {
               </div>
               <input
                 type="range"
-                min={0.1}
-                max={1.0}
+                min={0.5}
+                max={2.0}
                 step={0.05}
-                value={config.telemetryOpacity ?? 0.85}
-                onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
+                value={config.scale}
+                onChange={(e) => handleScaleChange(Number(e.target.value))}
                 style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
               />
             </div>
 
-            {/* Telemetry scale slider */}
+            {/* Telemetry Scale */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Scale Ratio")}:</span>
@@ -460,6 +418,50 @@ export const OverlayView: React.FC = () => {
                 step={0.05}
                 value={config.telemetryScale ?? 1.0}
                 onChange={(e) => handleTelemetryScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Telemetry Cluster Opacity */}
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("Central Telemetry Cluster Settings")}
+          </h3>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Opacity slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Opacity")}:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <input
+                    type="number"
+                    min={10}
+                    max={100}
+                    value={Math.round((config.telemetryOpacity ?? 0.65) * 100)}
+                    onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value) / 100)}
+                    style={{
+                      width: '65px',
+                      padding: '0.3rem',
+                      borderRadius: '4px',
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={0.1}
+                max={1.0}
+                step={0.05}
+                value={config.telemetryOpacity ?? 0.65}
+                onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
                 style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
               />
             </div>
@@ -518,6 +520,11 @@ export const OverlayView: React.FC = () => {
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showMotionEffect !== false} onChange={() => handleElementToggle('showMotionEffect')} />
+              <span>{t("Motion Effect")}</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
               <span>{t("Suspension Travel")}</span>
             </label>
@@ -531,7 +538,6 @@ export const OverlayView: React.FC = () => {
               <input type="checkbox" checked={config.elements.showTeleAttitude} onChange={() => handleElementToggle('showTeleAttitude')} />
               <span>{t("G-Force & Attitude")}</span>
             </label>
-
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />

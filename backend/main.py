@@ -231,9 +231,9 @@ last_dyno_save_time = time.time()
 # 使用最上方統一宣告的路徑與設定，免重複定義。
 
 DEFAULT_SETTINGS = {
-    "dyno_recording": True,
-    "race_recording": True,
-    "language": "en-us",
+    "dyno_recording": False,
+    "race_recording": False,
+    "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
@@ -243,12 +243,12 @@ DEFAULT_SETTINGS = {
         "speed": "kmh",
         "weight": "kg",
         "temperature": "C",
-        "tirePressure": "bar",
-        "boostPressure": "psi",
+        "tirePressure": "psi",
+        "boostPressure": "bar",
         "springRate": "kgfmm",
         "rideHeight": "cm",
         "suspensionForce": "kgf",
-        "power": "kw",
+        "power": "hp",
         "torque": "nm",
     },
     "theme": {
@@ -262,9 +262,9 @@ DEFAULT_SETTINGS = {
 }
 
 app_settings = {
-    "dyno_recording": True,
-    "race_recording": True,
-    "language": "en-us",
+    "dyno_recording": False,
+    "race_recording": False,
+    "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
@@ -1902,7 +1902,11 @@ DEFAULT_HUD_CONFIG = {
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
+    "telemetryOpacity": 0.65,
+    "telemetryScale": 1.0,
+    "pauseTelemetryViewWhenActive": True,
     "elements": {
+        "showGauge": True,
         "showRPM": True,
         "showSpeed": True,
         "showGear": True,
@@ -1910,6 +1914,11 @@ DEFAULT_HUD_CONFIG = {
         "showBoost": True,
         "showWheelLockup": True,
         "showMotionEffect": True,
+        "showTeleSuspension": True,
+        "showTeleTires": True,
+        "showTeleAttitude": True,
+        "showTeleEngine": True,
+        "showTelePedals": True,
     },
     "soundEnabled": False,
 }

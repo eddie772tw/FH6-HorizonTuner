@@ -59,6 +59,7 @@
 * **絕對不做的事**：
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
+  - 嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示（請保持極簡專業視覺）。
   - **嚴禁使用命令列操作 (如 `echo` 或 `>>`) 來寫入或附加內容至檔案** (尤其是 Markdown 文件如 Journal.md)。由於 Windows 命令列的字元編碼 (Code Page) 差異，這將導致中文編碼毀損。必須使用專屬的檔案讀寫工具 (如 `write_to_file` 或 `replace_file_content`)。
 
 ## 開發紀錄日誌 (Journal.md)
@@ -88,8 +89,9 @@ Welcome! When working on this repository, please adhere to the following guideli
 
 ## 2. Testing Expectations
 - **Run Tests Locally:** Always run both frontend and backend test suites before submitting a PR.
-  - Frontend: `cd frontend && pnpm run test`
-  - Backend: `pytest tests/`
+  - Frontend Unit Tests: `cd frontend && pnpm run test` (covers `telemetryCards`, `tuningMath`, `tuningDiagnosis`, `cssValidator`, `customMathEngine`, `rdpSimplifier`)
+  - Frontend E2E Tests: `cd frontend && pnpm run test:e2e` (covers `canvas.spec.ts`, `hud_telemetry_cards.spec.ts`)
+  - Backend Tests: `pytest tests/` (covers `test_overlay_api.py`, `test_telemetry_listener.py`, `test_log_api.py`, `test_drag_recorder.py`, `test_analysis_sqlite.py`)
 - **Test Coverage:** When adding or modifying calculation logic (e.g., in `frontend/src/utils/` like `tuningMath.ts`), you must add or update corresponding unit tests.
 - **Verification:** Do not blindly assume changes work. Write and run tests, use Playwright if instructed for UI verifications, and run linting/formatting checks.
 
@@ -103,6 +105,7 @@ Welcome! When working on this repository, please adhere to the following guideli
 - Ensure the commit message follows Conventional Commits format if it doesn't fall into the special categories above.
 
 ## 4. UI/UX and Localization (i18n) Rules
+- **No Emojis in UI:** Emojis in UI labels, headers, or buttons are strictly prohibited to maintain a high-tech, clean, professional interface aesthetics.
 - **No Inline Fallbacks:** Inline fallback strings within localization functions (e.g., `t('key') || 'fallback'`) are strictly prohibited in frontend components. Translations must be resolved exclusively through the `lang/` JSON files.
 - **Translation Alignment:** `lang/en-us.json` is the baseline file. All other locale files must fully align their keys with `en-us.json`.
 - **Accessibility (A11y):** Add ARIA labels to icon-only buttons, use `aria-current="page"` for active navigation tabs, preserve keyboard accessibility, and use visually hidden native inputs (`.sr-only`) for custom toggles.

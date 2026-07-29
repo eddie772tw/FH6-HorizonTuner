@@ -359,7 +359,7 @@ const DragTestView: React.FC = () => {
           {status === 'waiting' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span className="pulse-text" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
-                ⚠️ {t("Waiting for Launch...")}
+                {t("Waiting for Launch...")}
               </span>
               <button className="btn-secondary" onClick={handleClear} style={{ padding: '0.5rem 1rem', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}>
                 {t("Cancel")}
@@ -408,7 +408,6 @@ const DragTestView: React.FC = () => {
 
       {analysis && !analysis.path_valid && (
         <div style={{ padding: '0.8rem 1.2rem', background: 'rgba(255, 0, 60, 0.12)', border: '1px solid rgba(255, 0, 60, 0.25)', borderRadius: '8px', color: '#ff3366', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          <span>⚠️</span>
           <div>
             <strong>{t("Path Validity Warning")}:</strong> {t("Detected significant path deviation")} ({analysis.max_deviation_meters}m). {t("This test may contain turns or severe loss of control, which can distort gearing analysis. Please select a straight road and try again.")}
           </div>
@@ -685,7 +684,7 @@ const DragTestView: React.FC = () => {
             {/* Gearing Optimization Recommendations */}
             <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflowY: 'auto', maxHeight: '450px' }}>
               <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-                ⚙️ {t("Gearing Tuning Assist")}
+                {t("Gearing Tuning Assist")}
               </h4>
               
               {analysis ? (

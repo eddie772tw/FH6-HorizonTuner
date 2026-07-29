@@ -34,7 +34,7 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
       <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        ⚙️ {t("Advanced Suspension Limits & Geometry")}
+        {t("Advanced Suspension Limits & Geometry")}
       </h3>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
