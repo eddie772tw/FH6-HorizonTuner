@@ -46,8 +46,8 @@ const btnStyle: React.CSSProperties = {
 
 const GearingTunerComponent: React.FC<GearingTunerProps> = ({ 
   tuning, tuningMode, updateSection, numGears, chartData, xMax, yMax, carParams, 
-  gearingMethod, setGearingMethod, customGearingModel, setCustomGearingModel, basicCustomP, setBasicCustomP, pMin, pMax,
-  gearingDiscipline, applyBasicGearing, applyScientificGearing 
+  gearingMethod: _gearingMethod, setGearingMethod: _setGearingMethod, customGearingModel: _customGearingModel, setCustomGearingModel: _setCustomGearingModel, basicCustomP: _basicCustomP, setBasicCustomP: _setBasicCustomP, pMin: _pMin, pMax: _pMax,
+  gearingDiscipline: _gearingDiscipline, applyBasicGearing: _applyBasicGearing, applyScientificGearing 
 }) => {
   const { t } = useSettings();
 

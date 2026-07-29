@@ -597,16 +597,16 @@
     </div>
 
     <!-- ── Shared modules ─────────────────────────────────────────────────── -->
-    <script src="./shared/telemetry-cards.js"></script>
     <script type="module">
+        import { TelemetryCardsManager }                                                        from './shared/telemetry-cards.js';
         import { initCoordinator }                                                                                              from './shared/coordinator.js';
         import { initWebSocket }                                                                                                from './shared/ws.js';
         import { initPhysics, updatePhysicsTargets,togglePhysics }                                                              from './shared/physics.js';
         import { initUtils, showNotification, toggleNotifications, convertSpeed, setSpeedDisplay, toggleSpeedUnit, isMetric }   from './shared/utils.js';
 
         // Initialize Host-level Central Telemetry Cluster (Decoupled from iframe lifetime)
-        if (window.TelemetryCardsManager) {
-            window.TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
+        if (TelemetryCardsManager) {
+            TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
         }
 
         // ── HUD switcher ──────────────────────────────────────────────────
