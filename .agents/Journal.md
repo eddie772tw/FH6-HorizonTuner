@@ -514,3 +514,17 @@
 - 未來引入新的賽事模型公式時，必須絕對避免在 `tuningMath.ts` 中硬編碼檔位數或其他外部應決定的車輛參數。
 - 下一次將重新引入懸吊與輪胎邏輯時，應確保這部分的 UI 能夠正常解鎖並連動計算模型。
 - **4檔以上相容性處理**：為了解決甩尾與直線加速模型僅適用於 4 速變速箱的問題，已實作相容性解法：當 `numGears > 4` 時，僅會計算前 4 檔的齒比，而 5 檔以上（含）的齒比將直接複製 4 檔的數值，且不會受到嚴格遞減 (Monotonic Decrease) 測試或邏輯的強制影響。
+
+---
+
+## 2026-07-29 - hud_overlay/shared/telemetry-cards.js 模組化拆分與測試套件補全
+
+**學習點 (Learning):**
+- **巨型 DOM 繪製模組解耦 (Modular Refactoring)**：將超過 880 行的 `telemetry-cards.js` 依領域拆分為 pure math/converters (`utils.js`)、HTML template string (`template.js`)、G-Force Radar (`g-radar.js`)、4-Corner suspension & tire (`corner-card.js`)、Pedal wave (`pedal-wave.js`)、Power/Torque scatter plot (`power-torque.js`) 與 Orchestrator (`manager.js`)。透過 ES Module 與對外入口檔 `shared/telemetry-cards.js` 的 `window.TelemetryCardsManager` 導出，既解決了高複雜度單一檔案的維護難題，又保持了 100% 向後相容性。
+- **Unit Test Mock DOM 環境設定 (Node/Vitest DOM Mock)**：在未安裝 `jsdom`/`happy-dom` 全域套件的情形下，於 `telemetryCards.test.ts` 中實作輕量級 `setupDOMMock` 模擬 `document.createElement` 與 2D Canvas context API，讓 Vitest 單元測試得以在 < 1 秒內極速驗證遙測數據轉 DOM 文字、歷史 Buffer 上限 purge 以及元素顯隱 toggles。
+- **Playwright Worker 併發 Port 衝突與動態 Port 綁定 (Playwright Parallel Workers)**：Playwright 預設啟用 `fullyParallel: true` 跨 worker 執行測試，若測試中的內建 HTTP 伺服器硬編碼固定 port (如 8989) 會引發 `EADDRINUSE` 錯誤。改用 `server.listen(0, '127.0.0.1')` 讓 OS 動態分配 Port 並以 `(server.address() as net.AddressInfo).port` 取得 URL，能順利支援多 Worker 並行 Playwright 端對端渲染驗證。
+
+**後續行動 (Action):**
+- 未來新增或擴充 HUD telemetry 視圖元件時，直接在 `hud_overlay/shared/telemetry-cards/` 下建立對應元件子模組，並於 `manager.js` 中進行連線。
+- Playwright E2E 測試中若需 serving 本地檔案，建議持續採用動態 Port (0) 的微型 Node.js HTTP 伺服器模式，確保 ES Modules 不受 `file://` CORS 規範阻擋。
+

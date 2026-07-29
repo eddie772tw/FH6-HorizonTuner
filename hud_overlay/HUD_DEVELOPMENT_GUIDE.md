@@ -101,7 +101,7 @@ HUDCore.init(id);
     </div>
 
     <!-- 4. 引入共享 JavaScript 模組 -->
-    <script src="../shared/telemetry-cards.js"></script>
+    <script type="module" src="../shared/telemetry-cards.js"></script>
     <script src="../shared/hud-core.js"></script>
 
     <script>

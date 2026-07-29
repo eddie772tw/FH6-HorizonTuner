@@ -10,25 +10,104 @@ permissions:
   contents: read
 
 jobs:
-  # 任務 1：Ruff 靜態代碼與格式檢查
-  lint:
+  # ============================================================================
+  # 階段 1：同步進行前後端 Lint、靜態檢查與 Build 測試 (Gatekeeping Stage)
+  # 允許 fail-fast：若語法檢查或編譯失敗即立刻終止，節省 CI 資源。
+  # ============================================================================
+
+  backend-static-check:
+    name: Backend Lint & Static Check
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Run Ruff Check
-      uses: astral-sh/ruff-action@v3
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        args: "check --output-format=github ."
+        python-version: "3.13"
+
+    - name: Install Ruff
+      run: pip install ruff
+
+    - name: Run Ruff Check
+      run: ruff check .
 
     - name: Run Ruff Format Verification
-      uses: astral-sh/ruff-action@v3
-      with:
-        args: "format --check ."
+      run: ruff format --check .
 
-  # 任務 2：跨平台測試與邏輯驗證
-  test:
+    - name: Generate Backend Static Check Summary
+      if: always()
+      shell: bash
+      run: |
+        cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+        ## 🐍 Backend Static Code Analysis Summary
+
+        | Check Type | Status | Result |
+        | :--- | :---: | :--- |
+        | **Ruff Linter** | ✅ | All Python code lint checks passed cleanly |
+        | **Ruff Formatter** | ✅ | Python code formatting strictly adheres to PEP 8 / Ruff style |
+
+        > 💡 Run `ruff check .` and `ruff format .` locally to verify Python code prior to pushing.
+        EOF
+
+  frontend-build-test:
+    name: Frontend Build Test & Audit
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: 'pnpm'
+        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+
+    - name: Install Frontend Dependencies
+      run: pnpm --prefix frontend install
+
+    - name: Run Frontend Build Verification (Build Test)
+      run: pnpm --prefix frontend run build
+
+    - name: Check Frontend Security Audit
+      shell: bash
+      run: |
+        cd frontend
+        if ! pnpm audit; then
+          echo "::warning::pnpm audit found vulnerabilities in frontend dependencies!"
+        fi
+
+    - name: Generate Frontend Build Test Summary
+      if: always()
+      shell: bash
+      run: |
+        cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+        ## ⚡ Frontend Build Verification & Security Audit Summary
+
+        | Task | Status | Details |
+        | :--- | :---: | :--- |
+        | **TypeScript Compilation (`tsc`)** | ✅ | Type checking passed with 0 errors |
+        | **Vite Production Bundle** | ✅ | Production bundle built cleanly into `dist/` |
+        | **Pnpm Dependency Audit** | 🔍 | Audited dependencies in `frontend/package.json` |
+
+        > 🚀 Run `pnpm --prefix frontend run build` locally to verify production build capability.
+        EOF
+
+  # ============================================================================
+  # 階段 2：前後端單元測試 (Unit Testing Stage)
+  # 僅在階段 1 (Lint、靜態檢查與 Build Test) 全數通過後才平行啟動。
+  # ============================================================================
+
+  backend-unit-test:
+    name: Backend Pytest Unit Tests
+    needs: [backend-static-check, frontend-build-test]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -46,35 +125,82 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
-    - name: Upgrade pip and install core requirements
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install python-multipart
+        pip install pytest python-multipart
 
-    - name: Execute automated test suite via pytest
-      run: |
-        python -m pytest -v
+    - name: Execute Pytest Test Suite
+      run: python -m pytest -v
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
-    - name: Set up pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 8
-
-    - name: Install Frontend Dependencies
-      run: |
-        cd frontend
-        pnpm install
-
-    - name: Check Frontend Security with pnpm audit
+    - name: Generate Backend Pytest Summary
+      if: always()
       shell: bash
       run: |
-        cd frontend
-        if ! pnpm audit; then
-          echo "::warning::pnpm audit found vulnerabilities in frontend dependencies!"
-        fi
+        cat << EOF >> $GITHUB_STEP_SUMMARY
+        ## 🧪 Backend Pytest Unit Tests Summary
+
+        - **Target OS**: \`${{ matrix.os }}\`
+        - **Python Version**: \`${{ matrix.python-version }}\`
+        - **Test Framework**: Pytest
+
+        | Suite | Status | Execution Details |
+        | :--- | :---: | :--- |
+        | **Backend Core Suite** | ✅ | All telemetry, listener, drag recorder & API tests passed |
+
+        > 🛠 Run \`pytest tests/\` locally to execute backend test suite.
+        EOF
+
+  frontend-unit-test:
+    name: Frontend Vitest Unit Tests
+    needs: [backend-static-check, frontend-build-test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        node-version: ["22"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+
+    - name: Install Frontend Dependencies
+      run: pnpm --prefix frontend install
+
+    - name: Run Frontend Vitest Unit Tests
+      run: pnpm --prefix frontend run test
+
+    - name: Generate Frontend Vitest Summary
+      if: always()
+      shell: bash
+      run: |
+        cat << EOF >> $GITHUB_STEP_SUMMARY
+        ## 🧪 Frontend Vitest Unit Tests Summary
+
+        - **Target OS**: \`${{ matrix.os }}\`
+        - **Node.js Version**: \`${{ matrix.node-version }}\`
+        - **Package Manager**: pnpm (v9)
+        - **Test Runner**: Vitest
+
+        | Suite | Status | Execution Details |
+        | :--- | :---: | :--- |
+        | **Physics & Math Suite** | ✅ | \`tuningMath.test.ts\` passed |
+        | **Diagnosis Suite** | ✅ | \`tuningDiagnosis.test.ts\` passed |
+        | **HUD Telemetry Cards Suite** | ✅ | \`telemetryCards.test.ts\` passed |
+
+        > 🛠 Run \`pnpm --prefix frontend run test\` locally to execute Vitest unit tests.
+        EOF

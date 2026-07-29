@@ -67,6 +67,12 @@ ehthumbs.db
 *.bak
 *.tmp
 
+# Playwright test reports & results
+playwright-report/
+frontend/playwright-report/
+test-results/
+frontend/test-results/
+
 # Miscellaneous / Repository cleanup exclusions
 /.ref
 /ref
