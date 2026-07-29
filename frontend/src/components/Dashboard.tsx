@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTelemetry } from '../hooks/useTelemetry';
 import TuningCalculator from './TuningCalculator';
 import '../App.css';
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { data, isConnected } = useTelemetry();
   const [useMetric, setUseMetric] = useState(true); // Dashboard local unit override
 
@@ -30,17 +32,17 @@ const Dashboard: React.FC = () => {
     <div style={{ padding: '2rem', width: '100%', boxSizing: 'border-box' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(0, 240, 255, 0.5)' }}>
-          FH6-Horizon Tuner
+          {t('FH6-Horizon Tuner')}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <span style={{ color: !useMetric ? 'var(--primary)' : 'var(--text-secondary)' }} aria-hidden="true">MPH</span>
+            <span style={{ color: !useMetric ? 'var(--primary)' : 'var(--text-secondary)' }} aria-hidden="true">{t('MPH')}</span>
             <input
               type="checkbox"
               className="sr-only"
               checked={useMetric}
               onChange={() => setUseMetric(!useMetric)}
-              aria-label="Toggle Metric Units"
+              aria-label={t('Toggle Metric Units')}
             />
             <div 
               style={{
@@ -55,7 +57,7 @@ const Dashboard: React.FC = () => {
                 transition: 'left 0.2s'
               }} />
             </div>
-            <span style={{ color: useMetric ? 'var(--primary)' : 'var(--text-secondary)' }} aria-hidden="true">KM/H</span>
+            <span style={{ color: useMetric ? 'var(--primary)' : 'var(--text-secondary)' }} aria-hidden="true">{t('KM/H')}</span>
           </label>
           <div style={{
             width: '12px', height: '12px', borderRadius: '50%',
@@ -63,7 +65,7 @@ const Dashboard: React.FC = () => {
             boxShadow: `0 0 8px ${isConnected ? '#00ff00' : '#ff0000'}`
           }} />
           <span style={{ color: 'var(--text-secondary)' }}>
-            {isConnected ? 'LIVE' : 'DISCONNECTED'}
+            {isConnected ? t('LIVE') : t('DISCONNECTED')}
           </span>
         </div>
       </header>
@@ -72,9 +74,9 @@ const Dashboard: React.FC = () => {
         
         {/* RPM Widget */}
         <div className="glass-panel">
-          <h3>Engine RPM</h3>
+          <h3>{t('Engine RPM')}</h3>
           <div style={{ fontSize: '2.5rem', fontWeight: 700, margin: '1rem 0', color: 'var(--primary)' }}>
-            {Math.round(rpm)} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>RPM</span>
+            {Math.round(rpm)} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>{t('RPM')}</span>
           </div>
           <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
             <div style={{ 
@@ -88,15 +90,15 @@ const Dashboard: React.FC = () => {
 
         {/* G-Force Widget */}
         <div className="glass-panel">
-          <h3>G-Force</h3>
+          <h3>{t('G-Force')}</h3>
           <div style={{ display: 'flex', justifyContent: 'space-around', margin: '1rem 0' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', fontWeight: 700 }}>{(gForceX / 9.81).toFixed(2)}</div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Lat G</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('Lat G')}</div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', fontWeight: 700 }}>{(gForceY / 9.81).toFixed(2)}</div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Lon G</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('Lon G')}</div>
             </div>
           </div>
         </div>

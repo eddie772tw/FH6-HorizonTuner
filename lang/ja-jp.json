@@ -746,5 +746,19 @@
   "Bar Chart": "棒グラフ",
   "Histogram (Binning)": "ヒストグラム (分布)",
   "Radar (Spider)": "レーダーチャート (蜘蛛の巣)",
-  "Pie (Ratio)": "円グラフ (割合)"
+  "Pie (Ratio)": "円グラフ (割合)",
+  "Vehicle Parameters": "Vehicle Parameters",
+  "Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out above to unlock tuning wizard.": "Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out above to unlock tuning wizard.",
+  "Recalculate Ratio": "Recalculate Ratio",
+  "Apply calculated gearbox ratios in-game": "Apply calculated gearbox ratios in-game",
+  "Gearbox Setup": "Gearbox Setup",
+  "These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:": "These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:",
+  "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.": "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.",
+  "FH6-Horizon Tuner": "FH6-Horizon Tuner",
+  "MPH": "MPH",
+  "Toggle Metric Units": "Toggle Metric Units",
+  "KM/H": "KM/H",
+  "LIVE": "LIVE",
+  "RPM": "RPM",
+  "G-Force": "G-Force"
 }
