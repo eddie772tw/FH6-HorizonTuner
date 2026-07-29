@@ -745,5 +745,12 @@
   "Bar Chart": "長條圖",
   "Histogram (Binning)": "直條分佈圖",
   "Radar (Spider)": "雷達蛛網圖",
-  "Pie (Ratio)": "圓餅圖"
+  "Pie (Ratio)": "圓餅圖",
+  "Vehicle Parameters": "車輛參數",
+  "Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out above to unlock tuning wizard.": "底盤調校計算器需要有效的「車輛重量」與「前後配重比」。請在上方輸入以解鎖調校精靈。",
+  "Recalculate Ratio": "重新計算齒比",
+  "Apply calculated gearbox ratios in-game": "在遊戲內套用齒比設定",
+  "Gearbox Setup": "變速箱專屬設定",
+  "These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:": "這些齒比是基於引擎扭力曲線、輪胎抓地力與空力阻力所計算出的最佳齒比配置。請先在遊戲中的調校選單輸入這些數值：",
+  "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.": "警告：缺少避震極限設定。此設定檔未設定避震彈簧極限，計算將使用預設範圍。建議至「車輛參數」中補齊以提升極限數值精準度。"
 }

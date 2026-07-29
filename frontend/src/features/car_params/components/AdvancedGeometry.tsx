@@ -37,7 +37,7 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
         ⚙️ {t("Advanced Suspension Limits & Geometry")}
       </h3>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
         {/* Column 1: Spring & ARB Limits */}
         <div>
           <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Spring & ARB Slider Limits")}</h4>
@@ -72,27 +72,7 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
             </div>
           </div>
         </div>
-        
-        {/* Column 2: Suspension Geometry */}
-        <div>
-          <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Suspension Geometry")}</h4>
-          <div style={formRowStyle}>
-            <label>{t("Front Roll Center Offset")}</label>
-            <input type="number" value={carParams.roll_center_front ?? 0.0} onChange={e => updateParam('roll_center_front', parseFloat(e.target.value) || 0)} style={inputStyle} step="0.01" placeholder="e.g. 0.00" />
-          </div>
-          <div style={formRowStyle}>
-            <label>{t("Rear Roll Center Offset")}</label>
-            <input type="number" value={carParams.roll_center_rear ?? 0.0} onChange={e => updateParam('roll_center_rear', parseFloat(e.target.value) || 0)} style={inputStyle} step="0.01" placeholder="e.g. 0.00" />
-          </div>
-          <div style={formRowStyle}>
-            <label>{t("Anti-Dive Geometry (%)")}</label>
-            <input type="number" value={carParams.anti_dive ?? 0} onChange={e => updateParam('anti_dive', parseInt(e.target.value) || 0)} style={inputStyle} step="1" placeholder="e.g. 0" />
-          </div>
-          <div style={formRowStyle}>
-            <label>{t("Anti-Squat Geometry (%)")}</label>
-            <input type="number" value={carParams.anti_squat ?? 0} onChange={e => updateParam('anti_squat', parseInt(e.target.value) || 0)} style={inputStyle} step="1" placeholder="e.g. 0" />
-          </div>
-        </div>
+
         
         {/* Column 3: Tuning Preferences */}
         <div>

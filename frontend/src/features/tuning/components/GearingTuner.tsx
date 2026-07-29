@@ -12,7 +12,9 @@ interface GearingTunerProps {
   yMax: number;
   carParams: any;
   gearingMethod: string;
-  setGearingMethod: (v: 'basic' | 'scientific' | 'drag_optimize') => void;
+  setGearingMethod: (v: 'scientific' | 'custom') => void;
+  customGearingModel: string;
+  setCustomGearingModel: (v: string) => void;
   basicCustomP: number;
   setBasicCustomP: (v: number) => void;
   pMin: number;
@@ -44,7 +46,7 @@ const btnStyle: React.CSSProperties = {
 
 const GearingTunerComponent: React.FC<GearingTunerProps> = ({ 
   tuning, tuningMode, updateSection, numGears, chartData, xMax, yMax, carParams, 
-  gearingMethod, setGearingMethod, basicCustomP, setBasicCustomP, pMin, pMax, 
+  gearingMethod, setGearingMethod, customGearingModel, setCustomGearingModel, basicCustomP, setBasicCustomP, pMin, pMax,
   gearingDiscipline, applyBasicGearing, applyScientificGearing 
 }) => {
   const { t } = useSettings();
@@ -55,7 +57,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         <h4 style={{ margin: 0, color: 'white', fontSize: '0.95rem' }}>⚙️ {t("Gearbox Ratios (Optional)")}</h4>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.9fr 1fr', gap: '1rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', alignItems: 'start' }}>
         {/* Gears Input panel */}
         <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.8rem', borderRadius: '6px', maxHeight: '380px', height: '380px', overflowY: 'auto' }}>
           <div style={formRowStyle}>
@@ -125,46 +127,14 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
           </ResponsiveContainer>
         </div>
 
-        {/* Gearing Controls panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '0.8rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>{t("Tuning Method")}</span>
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
-            <button onClick={() => setGearingMethod('basic')} style={{ ...btnStyle, flex: 1, fontSize: '0.72rem', padding: '0.2rem 0.3rem', background: gearingMethod==='basic'?'var(--primary)':'rgba(255,255,255,0.05)', color: gearingMethod==='basic'?'black':'white' }}>{t("Basic Linear")}</button>
-            <button onClick={() => setGearingMethod('scientific')} style={{ ...btnStyle, flex: 1, fontSize: '0.72rem', padding: '0.2rem 0.3rem', background: gearingMethod==='scientific'?'var(--primary)':'rgba(255,255,255,0.05)', color: gearingMethod==='scientific'?'black':'white' }}>{t("Scientific")}</button>
-          </div>
-
-          {gearingMethod === 'basic' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{t("Spacing (p):")}</span>
-                <span style={{ fontWeight: 'bold' }}>{basicCustomP.toFixed(2)}</span>
-              </div>
-              <input 
-                type="range" min={pMin} max={pMax} step="0.01" value={basicCustomP} 
-                onChange={(e) => setBasicCustomP(parseFloat(e.target.value))} 
-                style={{ width: '100%', accentColor: 'var(--primary)' }} 
-              />
-              <button 
-                onClick={applyBasicGearing}
-                style={{ ...btnStyle, fontSize: '0.75rem', padding: '0.35rem', marginTop: '0.3rem' }}
-              >
-                ⚙️ {t("Apply")}
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{t("Discipline:")}</span>
-                <span style={{ fontWeight: 'bold', color: 'white' }}>{gearingDiscipline}</span>
-              </div>
-              <button 
+        {/* Gearing Controls panel removed */}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+           <button 
                 onClick={applyScientificGearing} 
-                style={{ ...btnStyle, background: 'rgba(0, 180, 255, 0.2)', color: '#00b4ff', border: '1px solid rgba(0, 180, 255, 0.3)', fontSize: '0.75rem', padding: '0.35rem', marginTop: '0.3rem', width: '100%' }}
+                style={{ ...btnStyle, background: 'rgba(0, 180, 255, 0.2)', color: '#00b4ff', border: '1px solid rgba(0, 180, 255, 0.3)', fontSize: '0.9rem', padding: '0.5rem', marginTop: '0.5rem', width: '100%' }}
               >
-                🚀 {t("Apply")}
-              </button>
-            </div>
-          )}
+                🚀 {t("Recalculate Ratio")}
+           </button>
         </div>
 
       </div>
