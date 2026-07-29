@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Forza Motorsport 4 HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .fm4-container {
+            width: 270px; height: 270px;
+            pointer-events: none;
+        }
+        canvas { display: block; width: 270px; height: 270px; }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container fm4-container" id="fm4uiContainer">
+            <canvas id="fm4uiCanvas" width="270" height="270"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('fm4uiCanvas');
+            var ctx = canvas ? canvas.getContext('2d') : null;
+            var images = {};
+            var loadedCount = 0;
+            var totalImages = 0;
+            var isReady = false;
+
+            var rpm_bands = [
+                { minimum: 17000, face: "rpm_16500", frame_rate: 0.01285 },
+                { minimum: 15000, face: "rpm_14200", frame_rate: 0.01485 },
+                { minimum: 12000, face: "rpm_12100", frame_rate: 0.01500 },
+                { minimum: 11000, face: "rpm_10300", frame_rate: 0.02235 },
+                { minimum: 10000, face: "rpm_9400",  frame_rate: 0.02240 },
+                { minimum: 9000,  face: "rpm_8800",  frame_rate: 0.02705 },
+                { minimum: 8000,  face: "rpm_8000",  frame_rate: 0.02690 },
+                { minimum: 7000,  face: "rpm_6400",  frame_rate: 0.03390 },
+                { minimum: 6000,  face: "rpm_6200",  frame_rate: 0.03875 },
+                { minimum: 5000,  face: "rpm_4600",  frame_rate: 0.039875 },
+                { minimum: 3500,  face: "rpm_3300",  frame_rate: 0.05350 }
+            ];
+            var fallback_gauge = { face: "rpm_8800", frame_rate: 0.02705 };
+
+            function clamp(val, min, max) {
+                return Math.max(min, Math.min(max, val));
+            }
+
+            function selectGauge(maxRpm) {
+                for (var i = 0; i < rpm_bands.length; i++) {
+                    if (maxRpm >= rpm_bands[i].minimum) return rpm_bands[i];
+                }
+                return fallback_gauge;
+            }
+
+            function gearAssetKey(label) {
+                if (label === 'R') return 'gear_R';
+                if (label === 'N') return 'gear_N';
+                var g = parseInt(label, 10);
+                if (!isNaN(g) && g >= 1 && g <= 9) return 'gear_' + g;
+                return null;
+            }
+
+            // Preload asset map
+            var assetMap = {
+                base: "./assets/img/background/background.png",
+                rpm_16500: "./assets/img/background/rpm_16500.png",
+                rpm_14200: "./assets/img/background/rpm_14200.png",
+                rpm_12100: "./assets/img/background/rpm_12100.png",
+                rpm_10300: "./assets/img/background/rpm_10300.png",
+                rpm_9400: "./assets/img/background/rpm_9400.png",
+                rpm_8800: "./assets/img/background/rpm_8800.png",
+                rpm_8000: "./assets/img/background/rpm_8000.png",
+                rpm_6400: "./assets/img/background/rpm_6400.png",
+                rpm_6200: "./assets/img/background/rpm_6200.png",
+                rpm_4600: "./assets/img/background/rpm_4600.png",
+                rpm_3300: "./assets/img/background/rpm_3300.png",
+                gear_R: "./assets/img/gears/gear_R.png",
+                gear_N: "./assets/img/gears/gear_N.png"
+            };
+
+            for (var i = 0; i <= 269; i++) {
+                var pad3 = ('00' + i).slice(-3);
+                assetMap["rev_" + i] = "./assets/img/rev/rev_" + pad3 + ".png";
+            }
+            for (var i = 0; i <= 499; i++) {
+                var pad3 = ('000' + i).slice(-3);
+                assetMap["speed_" + i] = "./assets/img/speed/speed_" + pad3 + ".png";
+            }
+            for (var i = 1; i <= 9; i++) {
+                assetMap["gear_" + i] = "./assets/img/gears/gear_" + i + ".png";
+            }
+
+            var keys = Object.keys(assetMap);
+            totalImages = keys.length;
+
+            keys.forEach(function(key) {
+                var img = new Image();
+                img.onload = function() {
+                    images[key] = img;
+                    loadedCount++;
+                    if (loadedCount >= totalImages) isReady = true;
+                };
+                img.onerror = function() {
+                    loadedCount++;
+                    if (loadedCount >= totalImages) isReady = true;
+                };
+                img.src = assetMap[key];
+            });
+
+            var showUnits = true;
+            var isMetricUnit = true;
+
+            function renderFM4(data) {
+                if (!ctx || !isReady) return;
+                ctx.clearRect(0, 0, 270, 270);
+
+                var maxRpm = data.maxRpm || data.max_rpm || 8000;
+                var rpm = data.rpm || 0;
+                var mps = data.SpeedMetersPerSecond || 0;
+                var speed = isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694);
+
+                var gearVal = data.gear;
+                var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
+
+                var gauge = selectGauge(Math.max(0, maxRpm));
+                var revFrame = clamp(Math.floor(Math.max(0, rpm) * gauge.frame_rate + 0.5), 0, 269);
+                var speedFrame = clamp(Math.floor(Math.max(0, speed) + 0.5), 0, 499);
+
+                // 1. Draw dial face
+                if (images[gauge.face]) ctx.drawImage(images[gauge.face], 0, 0, 270, 270);
+                // 2. Draw base frame
+                if (images["base"]) ctx.drawImage(images["base"], 0, 0, 270, 270);
+
+                // 3. Draw gear asset
+                var gearKey = gearAssetKey(gearLabel);
+                if (gearKey && images[gearKey]) {
+                    ctx.drawImage(images[gearKey], 113.5, 73.5, 52, 68);
+                } else {
+                    ctx.save();
+                    ctx.font = 'bold 43px ForzaGear, Arial, sans-serif';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(gearLabel, 139.5, 107.5);
+                    ctx.restore();
+                }
+
+                // 4. Draw RPM rev needle frame
+                if (images["rev_" + revFrame]) ctx.drawImage(images["rev_" + revFrame], 0, 0, 270, 270);
+                // 5. Draw speed frame
+                if (images["speed_" + speedFrame]) ctx.drawImage(images["speed_" + speedFrame], 0, 0, 270, 270);
+
+                // 6. Draw unit label
+                if (showUnits) {
+                    ctx.save();
+                    ctx.font = 'bold 11px ForzaGear, Arial, sans-serif';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 135, 213);
+                    ctx.restore();
+                }
+            }
+
+            var sweepActive = false;
+            function triggerSweep() {
+                if (sweepActive) return;
+                sweepActive = true;
+                var startTime = performance.now();
+                var duration = 1200;
+                var maxRpm = 8000;
+
+                function animate(now) {
+                    var elapsed = now - startTime;
+                    var progress = Math.min(1.0, elapsed / duration);
+                    var mockRpm = 0;
+                    if (progress < 0.5) {
+                        var p = progress / 0.5;
+                        mockRpm = maxRpm * Math.sin(p * Math.PI / 2);
+                    } else {
+                        var p = (progress - 0.5) / 0.5;
+                        mockRpm = maxRpm * (1 - Math.sin(p * Math.PI / 2)) + 1000 * Math.sin(p * Math.PI / 2);
+                    }
+
+                    renderFM4({
+                        rpm: mockRpm,
+                        maxRpm: maxRpm,
+                        speed: (mockRpm / maxRpm) * 180,
+                        gear: 3
+                    });
+
+                    if (progress < 1.0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        sweepActive = false;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            HUDCore.registerStyle('fm4ui', {
+                containerId: 'fm4uiContainer',
+                scaleMultiplier: 1.4,
+                onInit: function(payload) {
+                    if (payload) {
+                        if (payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                    }
+                },
+                onElementsChange: function(elements) {
+                    var c = document.getElementById('fm4uiContainer');
+                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
+                },
+                onFrame: function(data, payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                    if (!sweepActive) renderFM4(data);
+                },
+                onAnimate: function() {
+                    triggerSweep();
+                }
+            });
+
+            HUDCore.init('fm4ui');
+            setTimeout(triggerSweep, 100);
+        })();
+    </script>
+</body>
+</html>

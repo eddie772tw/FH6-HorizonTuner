@@ -549,3 +549,28 @@
 - 後續新增 UI 元件時，嚴格遵守 `AGENTS.md` 無 Emoji 規範與單元/E2E 測試驗證流程。
 
 
+---
+
+## 2026-07-29 - HUD 錶盤全面移殖：從 Lua 解譯器走向獨立原生 HTML5 Canvas+JS 架構
+
+**學習點 (Learning):**
+- **解耦與零解譯開銷 (Zero-Interpreter Overhead)**：將原本經由 Fengari (Lua 虛擬機器) 解譯運行的 9 個 Lua 錶盤完全轉換為獨立原生的 HTML5 Canvas + JS。不僅消除了 60Hz UDP 高頻更新下的 CPU 虛擬機器調用與 GC 開銷，更提高了各個 HUD 的獨立性與可維護性。
+- **序列切片與 Sprite Sheet 高效渲染**：對於 `fm4ui` (270張指針與500張時速切片)、`nfs15` (359張轉速弧條) 與 `wmps3` (七段數字與檔位 Sprite Sheet)，採用頁面載入時的 `Image` 物件陣列靜態預載，在 `onFrame` 內直接呼叫 `ctx.drawImage`，避免每影格重複進行 DOM 建立與資源加載。
+- **原生 Canvas 發光與微調變數 (Native Glow & Hidden Tuning Vars)**：針對 VFD / VFD Radio 等真空管擬真儀表，利用原生 Canvas 2D 的 `ctx.shadowBlur` 與 `ctx.shadowColor` 重現藍綠色 Glow 螢光，並於 JS 頂層保留 `VFD_GLOW_CONFIG` 配置常數，方便日後微調而不必動到控制面板 Schema。
+
+
+- **更新 HUD 開發規範指南 (HUD_DEVELOPMENT_GUIDE.md Update)**：同步更新 [HUD_DEVELOPMENT_GUIDE.md](file:///d:/FH6-HorizonTuner/hud_overlay/HUD_DEVELOPMENT_GUIDE.md) 指南檔，精確校正專案相對目錄路徑（`hud_overlay/<style_name>/index.html`）、當前現存 8 款原生 HTML5 Canvas+JS 儀表樣式、`HUDCore` 最新注入的 CSS 變數（發光強度、自訂色彩、遙測元素獨立縮放）與廣播訊息 API（`hud:reload` / `hud:destroy`），以及右下角對齊 (Bottom-Right Alignment) 與 360px ~ 400px 視覺寬度校準規範。
+
+**後續行動 (Action):**
+- 後續若要新增新的錶盤樣式，直接參考 `simple`、`advanced` 或 `vfd` 的原生 HTML5 Canvas+JS 結構，呼叫 `HUDCore.registerStyle(id, definition)` 即可流暢整合入系統。
+
+
+- **作者元數據模組化重構 (author.json Modular Metadata)**：將原本硬編碼於 [OverlayView.tsx](file:///d:/FH6-HorizonTuner/frontend/src/features/overlay_control/OverlayView.tsx) 內的靜態 `HUD_INFO` 字典，拆分至各儀表目錄下的獨立 `author.json` 檔案（例如 `hud_overlay/advanced/author.json`），並改為伴隨選單切換動作動態 `fetch` 載入、快取於 React State (`authorCache`) 以避免重複請求。這種設計使新增儀表樣式時只需在該目錄放置 `author.json` 即可完成作者資訊註冊，無需修改控制面板原始碼中的任何硬編碼字典。
+
+**後續行動 (Action):**
+- 新增儀表樣式時，只需在 `hud_overlay/<style_name>/` 內放置 `author.json` (`{ "author": "...", "description": "..." }`)，控制面板會自動動態載入。
+
+
+
+
+

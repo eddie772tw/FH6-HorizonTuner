@@ -84,6 +84,16 @@ window.HUD_ANIM_CONFIG = {
                             window._currentHudElements = currentElements;
                         }
 
+                        // Parse glow intensity & custom color settings
+                        window._currentGlowIntensity = payload.data.glowIntensity !== undefined ? payload.data.glowIntensity : 1.0;
+                        window._currentCustomColor = payload.data.customColor || '#00f0ff';
+                        window._currentUseDefaultColors = payload.data.useDefaultColors !== false;
+
+                        if (document.documentElement && typeof document.documentElement.style.setProperty === 'function') {
+                            document.documentElement.style.setProperty('--hud-glow-intensity', window._currentGlowIntensity);
+                            document.documentElement.style.setProperty('--hud-custom-color', window._currentUseDefaultColors ? 'var(--hud-default-color, #00f0ff)' : window._currentCustomColor);
+                        }
+
                         // Standardized Scale calculation with a global 0.75 downscale factor
                         var multiplier = activeStyle.scaleMultiplier !== undefined ? activeStyle.scaleMultiplier : 1.0;
                         var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * multiplier * 0.75);
@@ -176,6 +186,21 @@ window.HUD_ANIM_CONFIG = {
                             container.style.zoom = window._currentHudScale;
                         }
                     }
+                    break;
+                }
+
+                case 'hud:reload': {
+                    console.log('[HUDCore] Reloading HUD iframe window...');
+                    window.location.reload();
+                    break;
+                }
+
+                case 'hud:destroy': {
+                    console.log('[HUDCore] Destroying HUD frame resources...');
+                    if (window.TelemetryCardsManager && window.TelemetryCardsManager.destroy) {
+                        window.TelemetryCardsManager.destroy();
+                    }
+                    document.body.innerHTML = '';
                     break;
                 }
             }

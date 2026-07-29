@@ -610,7 +610,16 @@
         }
 
         // ── HUD switcher ──────────────────────────────────────────────────
-        const HUDS      = { simple: './simple/index.html', advanced: './advanced/index.html' };
+        const HUDS      = {
+            simple: './simple/index.html',
+            advanced: './advanced/index.html',
+            fm4ui: './fm4ui/index.html',
+            gt7: './gt7/index.html',
+            mw2005: './mw2005/index.html',
+            nfs15: './nfs15/index.html',
+            shift_tacho: './shift_tacho/index.html',
+            vfd: './vfd/index.html'
+        };
         let   activeHud = localStorage.getItem('forza_hud_active') || 'simple';
         const hudIframe  = document.getElementById('hud-iframe');
 

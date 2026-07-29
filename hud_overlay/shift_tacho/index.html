@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NFS Shift Tachometer HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .shift-container {
+            width: 440px; height: 280px;
+            pointer-events: none;
+        }
+        canvas { display: block; width: 440px; height: 280px; }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container shift-container" id="shiftTachoContainer">
+            <canvas id="shiftCanvas" width="440" height="280"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function() {
+            var canvas = document.getElementById('shiftCanvas');
+            var ctx = canvas ? canvas.getContext('2d') : null;
+            var images = {};
+            var isReady = false;
+
+            var assetMap = {
+                revlight: "./assets/img/revlight.png",
+                ebrake: "./assets/img/ebrake.png",
+                abs: "./assets/img/abs.png",
+                traction: "./assets/img/traction.png"
+            };
+
+            var keys = Object.keys(assetMap);
+            var loaded = 0;
+            keys.forEach(function(k) {
+                var img = new Image();
+                img.onload = img.onerror = function() {
+                    images[k] = img;
+                    loaded++;
+                    if (loaded >= keys.length) isReady = true;
+                };
+                img.src = assetMap[k];
+            });
+
+            var isMetricUnit = true;
+            var showLights = true;
+
+            function renderShiftTacho(data) {
+                if (!ctx || !isReady) return;
+                ctx.clearRect(0, 0, 440, 280);
+
+                var maxRpm = data.maxRpm || data.max_rpm || 8000;
+                var rpm = data.rpm || 0;
+                var mps = data.SpeedMetersPerSecond || 0;
+                var speed = isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694);
+
+                var gearVal = data.gear;
+                var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
+
+                var rpmRatio = Math.max(0, Math.min(1, rpm / Math.max(1, maxRpm)));
+                var atRedline = rpmRatio >= 0.85;
+
+                ctx.save();
+
+                // 1. Redline alert background boxes
+                if (atRedline) {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.05)';
+                    ctx.fillRect(54, 99, 102, 82);
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                    ctx.fillRect(57, 102, 96, 76);
+                    ctx.fillStyle = 'rgba(255, 8, 8, 0.2)';
+                    ctx.fillRect(60, 105, 90, 70);
+                }
+
+                // 2. Gear display box background
+                var grad = ctx.createLinearGradient(65, 110, 65, 170);
+                grad.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
+                grad.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(65, 110, 80, 60);
+
+                ctx.strokeStyle = atRedline ? '#ffd438' : '#000000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(65, 110, 80, 60);
+
+                // Gear Text
+                ctx.font = 'bold 40px ForzaGear, monospace, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(gearLabel, 105, 140);
+
+                // Speed Text & Unit
+                ctx.font = 'bold 86px ForzaGear, sans-serif';
+                ctx.fillText(Math.round(speed).toString(), 258, 60);
+
+                ctx.font = 'bold 18px ForzaGear, sans-serif';
+                ctx.shadowBlur = 0;
+                ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 324, 46);
+
+                // 3. Shift Lights (7 circles)
+                if (showLights) {
+                    for (var i = 0; i < 7; i++) {
+                        var active = rpmRatio >= 0.65 + i * 0.05;
+                        var glow = "#1a1a1a";
+                        if (active) {
+                            if (i < 2) glow = "#00ff00";
+                            else if (i < 4) glow = "#ffff00";
+                            else glow = "#ff4500";
+                        }
+                        var cx = 174 + i * 20;
+
+                        if (active) {
+                            ctx.beginPath(); ctx.arc(cx, 127, 8, 0, Math.PI * 2);
+                            ctx.fillStyle = glow; ctx.fill();
+                            ctx.beginPath(); ctx.arc(cx, 127, 5, 0, Math.PI * 2);
+                            ctx.fillStyle = '#ffff66'; ctx.fill();
+                        } else {
+                            ctx.beginPath(); ctx.arc(cx, 127, 8, 0, Math.PI * 2);
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.22)'; ctx.fill();
+                        }
+
+                        if (images.revlight) {
+                            ctx.save();
+                            ctx.globalAlpha = active ? 1 : 0.25;
+                            ctx.drawImage(images.revlight, 167 + i * 20, 120, 14, 14);
+                            ctx.restore();
+                        }
+                    }
+                }
+
+                // 4. Indicator badges (E-Brake, ABS, Traction)
+                var handbrakeActive = !!(data.handbrake || data.hand_brake);
+                var indicators = [
+                    { img: images.ebrake, active: handbrakeActive },
+                    { img: images.abs, active: false },
+                    { img: images.traction, active: false }
+                ];
+
+                indicators.forEach(function(ind, idx) {
+                    var cx = 185 + idx * 50;
+                    ctx.beginPath(); ctx.arc(cx, 174, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fill();
+
+                    if (ind.img) {
+                        ctx.save();
+                        ctx.globalAlpha = ind.active ? 1 : 0.4;
+                        ctx.drawImage(ind.img, cx - 16, 155, 32, 32);
+                        ctx.restore();
+                    }
+                });
+
+                ctx.restore();
+            }
+
+            var sweepActive = false;
+            function triggerSweep() {
+                if (sweepActive) return;
+                sweepActive = true;
+                var startTime = performance.now();
+                var duration = 1200;
+                var maxRpm = 8000;
+
+                function animate(now) {
+                    var elapsed = now - startTime;
+                    var progress = Math.min(1.0, elapsed / duration);
+                    var mockRpm = 0;
+                    if (progress < 0.5) {
+                        var p = progress / 0.5;
+                        mockRpm = maxRpm * Math.sin(p * Math.PI / 2);
+                    } else {
+                        var p = (progress - 0.5) / 0.5;
+                        mockRpm = maxRpm * (1 - Math.sin(p * Math.PI / 2)) + 1000 * Math.sin(p * Math.PI / 2);
+                    }
+
+                    renderShiftTacho({
+                        rpm: mockRpm,
+                        maxRpm: maxRpm,
+                        speed: (mockRpm / maxRpm) * 230,
+                        gear: 4
+                    });
+
+                    if (progress < 1.0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        sweepActive = false;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            HUDCore.registerStyle('shift_tacho', {
+                containerId: 'shiftTachoContainer',
+                scaleMultiplier: 0.9,
+                onInit: function(payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                },
+                onElementsChange: function(elements) {
+                    var c = document.getElementById('shiftTachoContainer');
+                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
+                },
+                onFrame: function(data, payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                    if (!sweepActive) renderShiftTacho(data);
+                },
+                onAnimate: function() {
+                    triggerSweep();
+                }
+            });
+
+            HUDCore.init('shift_tacho');
+            setTimeout(triggerSweep, 100);
+        })();
+    </script>
+</body>
+</html>
