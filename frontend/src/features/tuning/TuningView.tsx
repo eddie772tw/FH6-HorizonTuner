@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
 import { 
-  RaceType,
-  Drivetrain,
   calculateAEGOGearing
 } from '../../utils/tuningMath';
 import { useSettings } from '../../context/SettingsContext';
@@ -47,7 +45,7 @@ const initialTuning = (numGears: number): TuningState => ({
 
 const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
-  const { settings, convertTirePressure, convertTirePressureToBar, convertSpringRate, convertSpeed, t } = useSettings();
+  const { settings, convertTirePressure, convertTirePressureToBar, convertSpringRate: _convertSpringRate, convertSpeed, t } = useSettings();
 
   // Wizard Steps
   const [currentStep, setCurrentStep] = useState<number>(1);

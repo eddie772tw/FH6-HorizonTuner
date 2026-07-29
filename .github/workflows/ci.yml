@@ -10,25 +10,69 @@ permissions:
   contents: read
 
 jobs:
-  # 任務 1：Ruff 靜態代碼與格式檢查
-  lint:
+  # ============================================================================
+  # 階段 1：同步進行前後端 Lint、靜態檢查與 Build 測試 (Gatekeeping Stage)
+  # 允許 fail-fast：若語法檢查或編譯失敗即立刻終止，節省 CI 資源。
+  # ============================================================================
+
+  backend-static-check:
+    name: Backend Lint & Static Check
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Run Ruff Check
-      uses: astral-sh/ruff-action@v3
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        args: "check --output-format=github ."
+        python-version: "3.13"
+
+    - name: Install Ruff
+      run: pip install ruff
+
+    - name: Run Ruff Check
+      run: ruff check .
 
     - name: Run Ruff Format Verification
-      uses: astral-sh/ruff-action@v3
-      with:
-        args: "format --check ."
+      run: ruff format --check .
 
-  # 任務 2：跨平台測試與邏輯驗證
-  test:
+  frontend-build-test:
+    name: Frontend Build Test & Audit
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Install Frontend Dependencies
+      run: pnpm --prefix frontend install
+
+    - name: Run Frontend Build Verification (Build Test)
+      run: pnpm --prefix frontend run build
+
+    - name: Check Frontend Security Audit
+      shell: bash
+      run: |
+        cd frontend
+        if ! pnpm audit; then
+          echo "::warning::pnpm audit found vulnerabilities in frontend dependencies!"
+        fi
+
+  # ============================================================================
+  # 階段 2：前後端單元測試 (Unit Testing Stage)
+  # 僅在階段 1 (Lint、靜態檢查與 Build Test) 全數通過後才平行啟動。
+  # ============================================================================
+
+  backend-unit-test:
+    name: Backend Pytest Unit Tests
+    needs: [backend-static-check, frontend-build-test]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -46,35 +90,39 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
-    - name: Upgrade pip and install core requirements
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install python-multipart
+        pip install pytest python-multipart
 
-    - name: Execute automated test suite via pytest
-      run: |
-        python -m pytest -v
+    - name: Execute Pytest Test Suite
+      run: python -m pytest -v
 
-    - name: Set up Node.js
+  frontend-unit-test:
+    name: Frontend Vitest Unit Tests
+    needs: [backend-static-check, frontend-build-test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        node-version: ["20"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: ${{ matrix.node-version }}
 
     - name: Set up pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 8
+      uses: pnpm/action-setup@v4
 
     - name: Install Frontend Dependencies
-      run: |
-        cd frontend
-        pnpm install
+      run: pnpm --prefix frontend install
 
-    - name: Check Frontend Security with pnpm audit
-      shell: bash
-      run: |
-        cd frontend
-        if ! pnpm audit; then
-          echo "::warning::pnpm audit found vulnerabilities in frontend dependencies!"
-        fi
+    - name: Run Frontend Vitest Unit Tests
+      run: pnpm --prefix frontend run test
