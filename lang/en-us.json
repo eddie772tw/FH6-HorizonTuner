@@ -1,4 +1,5 @@
 {
+  "__language_name__": "English",
   "*Unsaved Parameters*": "*Unsaved Parameters*",
   "-": "-",
   "./AnalysisView": "./AnalysisView",
@@ -752,5 +753,12 @@
   "Apply calculated gearbox ratios in-game": "Apply calculated gearbox ratios in-game",
   "Gearbox Setup": "Gearbox Setup",
   "These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:": "These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:",
-  "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.": "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy."
+  "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.": "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.",
+  "FH6-Horizon Tuner": "FH6-Horizon Tuner",
+  "MPH": "MPH",
+  "Toggle Metric Units": "Toggle Metric Units",
+  "KM/H": "KM/H",
+  "LIVE": "LIVE",
+  "RPM": "RPM",
+  "G-Force": "G-Force"
 }
