@@ -490,3 +490,15 @@
 **後續行動 (Action):**
 - 凡涉及 WebSocket 連線或 `fetch` API 呼叫，必須確保前後端 endpoint 完全對齊，並應增加顯式的錯誤日誌提示。
 - 在跨 iframe / 視窗通訊時，不可假設 Broadcast 接收端永遠已準備就緒。需要有「主動拉取初始狀態 (Pull)」搭配「被動接收更新 (Push)」的雙重機制。
+
+---
+
+## 2026-07-29 - 變速箱與輪胎公式常數校準
+
+**學習點 (Learning):**
+- tuningMath.ts 變速箱與終傳比的計算數學模型與公式完全一致，無需修改。
+- 但在 tireCoefficients.ts 中的輪胎抓地力係數與 ref/tuning_formulas.md 不符（如 Street 應為 0.95 而非 0.90，Drag 應為 1.40 而非 1.25）。必須確保程式碼實作與物理公式文件 (Single Source of Truth) 完全對齊。
+
+**後續行動 (Action):**
+- 進行任何物理計算驗證時，若發現常數定義與公式文件不符，應以 tuning_formulas.md 為絕對基準進行修正。
+

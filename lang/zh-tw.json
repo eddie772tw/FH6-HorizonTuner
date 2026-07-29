@@ -745,5 +745,8 @@
   "Bar Chart": "長條圖",
   "Histogram (Binning)": "直條分佈圖",
   "Radar (Spider)": "雷達蛛網圖",
-  "Pie (Ratio)": "圓餅圖"
+  "Pie (Ratio)": "圓餅圖",
+  "Vehicle Parameters": "車輛參數",
+  "Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out above to unlock tuning wizard.": "底盤調校計算器需要有效的「車輛重量」與「前後配重比」。請在上方輸入以解鎖調校精靈。",
+  "Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.": "警告：缺少避震極限設定。此設定檔尚未設定避震彈簧極限，計算器將採用預設範圍。建議至「車輛參數」頁面補全以提升極限插值精準度。"
 }

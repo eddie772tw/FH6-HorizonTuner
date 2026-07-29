@@ -1,14 +1,14 @@
 export const tireGripCoefficients: Record<string, number> = {
   'Stock': 0.85,
-  'Street': 0.90,
-  'Sport': 0.95,
-  'Semi-Slick': 1.05,
+  'Street': 0.95,
+  'Sport': 1.05,
+  'Semi-Slick': 1.15,
   'Slick': 1.15,
-  'Rally': 0.85,
-  'Off-Road': 0.80,
-  'Snow': 0.70,
-  'Drag': 1.25,
-  'Drift': 0.90,
+  'Rally': 1.05,
+  'Off-Road': 1.05,
+  'Snow': 1.05,
+  'Drag': 1.40,
+  'Drift': 1.05,
   'Default': 1.0
 };
 

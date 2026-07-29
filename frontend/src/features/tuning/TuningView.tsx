@@ -532,103 +532,174 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.2rem' }}>
         
         {/* ================= STEP 1: GOAL & SETUP ================= */}
+        {/* ================= STEP 1: GOAL & SETUP ================= */}
         {currentStep === 1 && (
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
             <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>🎯 Step 1: {t("Define tuning goals & check parameters")}</h3>
-            
-            {/* Core Params Validation */}
-            {!hasCoreParams ? (
-              <div style={{ padding: '1.2rem', border: '1px solid #ff3d00', background: 'rgba(255, 61, 0, 0.05)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'center' }}>
-                <h4 style={{ color: '#ff3d00', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>⚠️ {t("Missing Core Vehicle Parameters")}</h4>
-                <p style={{ textAlign: 'center', maxWidth: '600px', margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  {t("Tuning calculator requires valid vehicle weight and weight distribution parameters to compute suspension baseline. Please fill them out below to unlock tuning wizard.")}
-                </p>
-                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label>{t("Weight (kg)")}:</label>
-                    <input type="number" value={carParams?.weight || ''} onChange={e => updateParam('weight', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} placeholder="e.g. 1450" />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label>{t("Front Bias (%)")}:</label>
-                    <input type="number" value={carParams?.weight_distribution || ''} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '100px' }} step="0.1" placeholder="e.g. 52.4" />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label>{t("Tire Compound")}:</label>
-                    <select value={carParams?.tireType || 'Stock'} onChange={e => updateParam('tireType', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
-                      <option value="Stock">Stock</option>
-                      <option value="Street">Street</option>
-                      <option value="Sport">Sport</option>
-                      <option value="Semi-Slick">Semi-Slick</option>
-                      <option value="Slick">Slick</option>
-                      <option value="Rally">Rally</option>
-                      <option value="Off-Road">Off-Road</option>
-                      <option value="Snow">Snow</option>
-                      <option value="Drag">Drag</option>
-                      <option value="Drift">Drift</option>
+
+            {/* Select Goal */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
+                <select 
+                  value={selectedRaceGoal} 
+                  onChange={e => setSelectedRaceGoal(e.target.value)} 
+                  style={{ ...inputStyle, width: '280px', border: '1px solid var(--primary)', background: 'black' }}
+                >
+                  <option value="Road">{t("Road / Circuit")}</option>
+                  <option value="Drift">{t("Drift")}</option>
+                  <option value="Rally">{t("Rally")}</option>
+                  <option value="Drag">{t("Drag")}</option>
+                </select>
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>
+                {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes suspension for maximum cornering grip and chassis stiffness on flat asphalt tracks.")}
+                {selectedRaceGoal === 'Drift' && t("Drift configuration locks differentials to 100%, uses front-hard-rear-soft springs, and sets extreme front camber.")}
+                {selectedRaceGoal === 'Rally' && t("Rally mode softens spring rates (Natural Freq ~ 1.5 Hz) and unlocks maximum height to absorb gravel and jumps.")}
+                {selectedRaceGoal === 'Drag' && t("Drag setting targets maximum rear grip and launch acceleration.")}
+              </p>
+            </div>
+
+            {/* Dynamic Editable Form */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.2rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)' }}>{t("Vehicle Parameters")}</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem 2rem' }}>
+                
+                {/* Always visible core fields */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Weight")} ({settings.units.weight})</label>
+                  <input type="number" value={carParams?.weight ? Math.round(settings.units.weight === 'lbs' ? carParams.weight * 2.2046 : carParams.weight) : ''} onChange={e => {
+                    const val = parseFloat(e.target.value) || 0;
+                    updateParam('weight', settings.units.weight === 'lbs' ? val / 2.2046 : val);
+                  }} style={{ ...inputStyle, width: '120px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Weight Distribution")} (%)</label>
+                  <input type="number" value={carParams?.weight_distribution || ''} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="0.1" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</label>
+                  <select value={carParams?.drivetrain || 'RWD'} onChange={e => updateParam('drivetrain', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
+                    <option value="FWD">FWD</option>
+                    <option value="RWD">RWD</option>
+                    <option value="AWD">AWD</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Tire Compound")}</label>
+                  <select value={carParams?.tireType || 'Stock'} onChange={e => updateParam('tireType', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
+                    <option value="Stock">Stock</option>
+                    <option value="Street">Street</option>
+                    <option value="Sport">Sport</option>
+                    <option value="Semi-Slick">Semi-Slick</option>
+                    <option value="Slick">Slick</option>
+                    <option value="Rally">Rally</option>
+                    <option value="Off-Road">Off-Road</option>
+                    <option value="Snow">Snow</option>
+                    <option value="Drag">Drag</option>
+                    <option value="Drift">Drift</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max HP")}</label>
+                  <input type="number" value={carParams?.maxHp || 0} onChange={e => updateParam('maxHp', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="10" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max HP RPM (rpm)")}</label>
+                  <input type="number" value={carParams?.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max Torque")}</label>
+                  <input type="number" value={carParams?.maxTorque || 0} onChange={e => updateParam('maxTorque', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="10" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max Torque RPM (rpm)")}</label>
+                  <input type="number" value={carParams?.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Gears Count")}</label>
+                  <input type="number" value={carParams?.adjustability?.gears || 6} min={4} max={10} onChange={e => {
+                    if (!carParams) return;
+                    updateParam('adjustability', { ...carParams.adjustability, gears: parseInt(e.target.value) || 6 });
+                  }} style={{ ...inputStyle, width: '120px' }} />
+                </div>
+
+                {/* Conditional Fields based on Race Goal */}
+                {selectedRaceGoal === 'Road' && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Aero Bal (0-1)")}</label>
+                      <input type="number" value={carParams?.aeroBalance ?? 0.5} onChange={e => updateParam('aeroBalance', parseFloat(e.target.value))} style={{ ...inputStyle, width: '120px' }} step="0.01" min="0" max="1" />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Aero Eff (0-1)")}</label>
+                      <input type="number" value={carParams?.aeroEfficiency ?? 0.5} onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value))} style={{ ...inputStyle, width: '120px' }} step="0.01" min="0" max="1" />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Mech Bal (0-1)")}</label>
+                      <input type="number" value={carParams?.mechBalance ?? 0.5} onChange={e => updateParam('mechBalance', parseFloat(e.target.value))} style={{ ...inputStyle, width: '120px' }} step="0.01" min="0" max="1" />
+                    </div>
+                  </>
+                )}
+
+                {selectedRaceGoal === 'Drift' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Induction")}</label>
+                    <select value={carParams?.induction || 'NA'} onChange={e => updateParam('induction', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
+                      <option value="NA">{t("Naturally Aspirated (NA)")}</option>
+                      <option value="Supercharger">{t("Supercharger")}</option>
+                      <option value="Turbo">{t("Single Turbo")}</option>
+                      <option value="TwinTurbo">{t("Twin Turbo")}</option>
                     </select>
                   </div>
+                )}
+                
+              </div>
+
+              {/* Tire Specs */}
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Front Tire (mm/% R in)")}</label>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <input type="number" value={carParams?.frontTireWidth || 245} onChange={e => updateParam('frontTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} />
+                    <span style={{ color: 'gray' }}>/</span>
+                    <input type="number" value={carParams?.frontTireAspect || 40} onChange={e => updateParam('frontTireAspect', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
+                    <span style={{ color: 'gray' }}>R</span>
+                    <input type="number" value={carParams?.frontTireRim || 18} onChange={e => updateParam('frontTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
+                  </div>
                 </div>
-                <button onClick={saveCarParams} style={{ ...btnStyle, background: '#ff3d00', color: 'white', padding: '0.4rem 1.2rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Rear Tire (mm/% R in)")}</label>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <input type="number" value={carParams?.rearTireWidth || 245} onChange={e => updateParam('rearTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} />
+                    <span style={{ color: 'gray' }}>/</span>
+                    <input type="number" value={carParams?.rearTireAspect || 40} onChange={e => updateParam('rearTireAspect', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
+                    <span style={{ color: 'gray' }}>R</span>
+                    <input type="number" value={carParams?.rearTireRim || 18} onChange={e => updateParam('rearTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={saveCarParams} style={{ ...btnStyle, background: 'var(--primary)', color: 'black', padding: '0.4rem 1.2rem', fontSize: '0.9rem' }}>
                   💾 {t("Save Parameters")}
                 </button>
               </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 0.6rem 0', color: 'var(--text-secondary)' }}>{t("Vehicle Profile Metadata")}</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem' }}>
-                    <div><span style={{ color: 'gray' }}>{t("Weight")}:</span> {Math.round(settings.units.weight === 'lbs' ? carParams.weight * 2.2046 : carParams.weight)} {settings.units.weight}</div>
-                    <div><span style={{ color: 'gray' }}>{t("Weight Distribution")}:</span> {carParams.weight_distribution}% Front</div>
-                    <div><span style={{ color: 'gray' }}>{t("Drivetrain")}:</span> {carParams.drivetrain}</div>
-                    <div><span style={{ color: 'gray' }}>{t("Tire Compound")}:</span> {carParams.tireType || 'Stock'}</div>
-                    <div><span style={{ color: 'gray' }}>{t("Max Power")}:</span> {carParams.maxHp} HP @ {carParams.maxHpRpm || 'N/A'} RPM</div>
-                  </div>
-                </div>
-                <div>
-                  {/* Optional parameters warning check */}
-                  {!hasOptionalSuspParams ? (
-                    <div style={{ padding: '0.8rem', background: 'rgba(255, 170, 0, 0.08)', border: '1px solid rgba(255, 170, 0, 0.3)', borderRadius: '6px', color: '#ffaa00', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                      <div style={{ fontWeight: 600 }}>⚠️ {t("Warning: Missing Suspension Limits")}</div>
-                      <div>
-                        {t("This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.")}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ color: '#00e676', fontSize: '0.85rem', background: 'rgba(0, 230, 118, 0.05)', border: '1px solid rgba(0, 230, 118, 0.2)', padding: '0.8rem', borderRadius: '6px' }}>
-                      <div style={{ fontWeight: 600 }}>✓ {t("Complete suspension limits detected")}</div>
-                      <div style={{ color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
-                        {t("Spring limits")} ({convertSpringRate(carParams.spring_front_min || 0).value.toFixed(1)} - {convertSpringRate(carParams.spring_front_max || 0).value.toFixed(1)} {convertSpringRate(1).label}) {t("will be used to scale rigidity.")}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            </div>
+            
+            {/* Warning if missing core parameters */}
+            {!hasCoreParams && (
+              <div style={{ padding: '0.8rem', background: 'rgba(255, 61, 0, 0.05)', border: '1px solid #ff3d00', borderRadius: '8px', color: '#ff3d00', fontSize: '0.9rem', textAlign: 'center' }}>
+                ⚠️ {t("Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out above to unlock tuning wizard.")}
               </div>
             )}
-
-            {/* Select Goal */}
-            {hasCoreParams && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
-                  <select 
-                    value={selectedRaceGoal} 
-                    onChange={e => setSelectedRaceGoal(e.target.value)} 
-                    style={{ ...inputStyle, width: '280px', border: '1px solid var(--primary)', background: 'black' }}
-                  >
-                    <option value="Road">{t("Road / Circuit")}</option>
-                    <option value="Drift">{t("Drift")}</option>
-                    <option value="Rally">{t("Rally")}</option>
-                    <option value="Drag">{t("Drag")}</option>
-                  </select>
-                </div>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>
-                  {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes suspension for maximum cornering grip and chassis stiffness on flat asphalt tracks.")}
-                  {selectedRaceGoal === 'Drift' && t("Drift configuration locks differentials to 100%, uses front-hard-rear-soft springs, and sets extreme front camber.")}
-                  {selectedRaceGoal === 'Rally' && t("Rally mode softens spring rates (Natural Freq ~ 1.5 Hz) and unlocks maximum height to absorb gravel and jumps.")}
-                  {selectedRaceGoal === 'Drag' && t("Drag setting targets maximum rear grip and launch acceleration.")}
-                </p>
+            {/* Warning if missing optional params */}
+            {hasCoreParams && !hasOptionalSuspParams && (
+              <div style={{ padding: '0.8rem', background: 'rgba(255, 170, 0, 0.08)', border: '1px solid rgba(255, 170, 0, 0.3)', borderRadius: '6px', color: '#ffaa00', fontSize: '0.85rem' }}>
+                ⚠️ {t("Warning: Missing Suspension Limits. This profile lacks spring slider limits. Calculator will fallback to default ranges. Consider adding them in 'Car Parameters' for max calculator accuracy.")}
               </div>
             )}
+            
           </div>
         )}
 
