@@ -6,6 +6,19 @@
     <title>Gran Turismo 7 HUD</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        @font-face {
+            font-family: 'GT7Digits';
+            src: url('./assets/fonts/arkitech_medium.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'GT7Text';
+            src: url('./assets/fonts/gt7-MyFont Regular.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'GT7Bold';
+            src: url('./assets/fonts/gt7-MyFont Bold.ttf') format('truetype');
+            font-weight: bold;
+        }
         .gt7-container {
             align-self: center;
             transform-origin: bottom center;
@@ -217,7 +230,7 @@
 
                 // Speed & Unit & Gear Text
                 ctx.save();
-                ctx.font = 'bold 68px ForzaGear, Arial, sans-serif';
+                ctx.font = 'bold 68px GT7Digits, Arial, sans-serif';
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -225,12 +238,12 @@
                 ctx.shadowBlur = 4;
                 ctx.fillText(Math.round(speed).toString(), 480, 128);
 
-                ctx.font = 'bold 27px ForzaGear, Arial, sans-serif';
+                ctx.font = 'bold 27px GT7Text, Arial, sans-serif';
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
                 ctx.shadowBlur = 0;
                 ctx.fillText(isMetricUnit ? 'km/h' : 'mph', 525, 178);
 
-                ctx.font = 'bold 116px ForzaGear, Arial, sans-serif';
+                ctx.font = 'bold 116px GT7Digits, Arial, sans-serif';
                 ctx.fillStyle = '#ffffff';
                 ctx.shadowBlur = 4;
                 ctx.fillText(gearLabel, 714, 131);

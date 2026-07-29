@@ -5,6 +5,14 @@
     <title>NFS Shift Tachometer HUD</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        @font-face {
+            font-family: 'ShiftDigits';
+            src: url('./assets/font/RobotoMono-Medium.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'ShiftLabels';
+            src: url('./assets/font/BarlowSemiCondensed-Bold.ttf') format('truetype');
+        }
         .shift-container {
             width: 440px; height: 280px;
             pointer-events: none;
@@ -91,7 +99,7 @@
                 ctx.strokeRect(65, 110, 80, 60);
 
                 // Gear Text
-                ctx.font = 'bold 40px ForzaGear, monospace, sans-serif';
+                ctx.font = 'bold 40px ShiftDigits, monospace, sans-serif';
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -100,10 +108,10 @@
                 ctx.fillText(gearLabel, 105, 140);
 
                 // Speed Text & Unit
-                ctx.font = 'bold 86px ForzaGear, sans-serif';
+                ctx.font = 'bold 86px ShiftDigits, sans-serif';
                 ctx.fillText(Math.round(speed).toString(), 258, 60);
 
-                ctx.font = 'bold 18px ForzaGear, sans-serif';
+                ctx.font = 'bold 18px ShiftLabels, sans-serif';
                 ctx.shadowBlur = 0;
                 ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 324, 46);
 

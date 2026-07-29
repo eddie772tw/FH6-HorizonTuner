@@ -6,6 +6,14 @@
     <title>VFD Gauge & Radio HUD Suite</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        @font-face {
+            font-family: 'VFDDigits';
+            src: url('./assets/fonts/DSEG7Modern-Bold.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'VFDAlpha';
+            src: url('./assets/fonts/DSEG14Modern-Regular.ttf') format('truetype');
+        }
         .vfd-container {
             width: 1120px;
             height: 480px;
@@ -98,7 +106,7 @@
                 drawPanel(0, 0, 1120, 82);
 
                 ctx.save();
-                ctx.font = 'bold 14px ForzaGear, sans-serif';
+                ctx.font = 'bold 14px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.fillText("RPM x1000", 18, 28);
 
@@ -132,12 +140,12 @@
                 // 2. Gear Panel
                 drawPanel(0, 94, 170, 164);
                 ctx.save();
-                ctx.font = 'bold 13px ForzaGear, sans-serif';
+                ctx.font = 'bold 13px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.textAlign = 'center';
                 ctx.fillText("GEAR", 85, 115);
 
-                ctx.font = 'bold 92px ForzaGear, monospace, sans-serif';
+                ctx.font = 'bold 92px VFDDigits, monospace, sans-serif';
                 ctx.fillStyle = currentPalette.dim;
                 ctx.globalAlpha = 0.17;
                 ctx.fillText("8", 85, 205);
@@ -152,11 +160,11 @@
                 // 3. Velocity / Speed Panel
                 drawPanel(184, 94, 440, 164);
                 ctx.save();
-                ctx.font = 'bold 13px ForzaGear, sans-serif';
+                ctx.font = 'bold 13px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.fillText("VELOCITY", 204, 115);
 
-                ctx.font = 'bold 98px ForzaGear, monospace, sans-serif';
+                ctx.font = 'bold 98px VFDDigits, monospace, sans-serif';
                 ctx.fillStyle = currentPalette.dim;
                 ctx.globalAlpha = 0.14;
                 ctx.textAlign = 'right';
@@ -168,13 +176,13 @@
                 ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
                 ctx.fillText(speed.toString(), 520, 200);
 
-                ctx.font = 'bold 17px ForzaGear, sans-serif';
+                ctx.font = 'bold 17px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.shadowBlur = 0;
                 ctx.fillText(isMetricUnit ? "KM/H" : "MPH", 542, 195);
 
                 // Throttle & Brake Bars
-                ctx.font = 'bold 11px ForzaGear, sans-serif';
+                ctx.font = 'bold 11px VFDAlpha, sans-serif';
                 ctx.fillText("THR", 204, 245);
                 drawCellBar(244, 238, 150, 10, 10, data.throttle || 0, currentPalette.primary, currentPalette.dim);
 
@@ -185,11 +193,11 @@
                 // 4. Engine RPM & Fuel Panel
                 drawPanel(638, 94, 482, 164);
                 ctx.save();
-                ctx.font = 'bold 13px ForzaGear, sans-serif';
+                ctx.font = 'bold 13px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.fillText("ENGINE RPM", 658, 115);
 
-                ctx.font = 'bold 43px ForzaGear, monospace, sans-serif';
+                ctx.font = 'bold 43px VFDDigits, monospace, sans-serif';
                 ctx.fillStyle = currentPalette.dim;
                 ctx.globalAlpha = 0.14;
                 ctx.textAlign = 'right';
@@ -211,13 +219,13 @@
                 ctx.save();
 
                 // Radio Header & Track Marquee
-                ctx.font = 'bold 14px ForzaGear, sans-serif';
+                ctx.font = 'bold 14px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.shadowColor = currentPalette.primary;
                 ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
                 ctx.fillText("VFD AUDIO MONITOR / RADIO SPECTRUM", 18, panelY + 25);
 
-                ctx.font = 'bold 26px ForzaGear, sans-serif';
+                ctx.font = 'bold 26px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.accent;
                 ctx.shadowColor = currentPalette.accent;
                 ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;

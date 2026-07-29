@@ -570,7 +570,31 @@
 **後續行動 (Action):**
 - 新增儀表樣式時，只需在 `hud_overlay/<style_name>/` 內放置 `author.json` (`{ "author": "...", "description": "..." }`)，控制面板會自動動態載入。
 
+---
 
+## 2026-07-30 - 修復 HUD Overlay 4 款錶盤未使用自帶字體而 Fallback 至共用字體的問題
+
+**學習點 (Learning):**
+- **Canvas `ctx.font` 與 CSS `@font-face` 的綁定關係**：HTML5 Canvas 2D 的 `ctx.font` 屬性使用 CSS font shorthand 語法，但其字體名稱必須對應到已透過 `@font-face` 宣告的 CSS font-family 才能生效。若未宣告 `@font-face`，瀏覽器會靜默回退至 fallback 字體鏈（如 `sans-serif`），不會觸發任何錯誤或警告。
+- **問題根因**：`shift_tacho`、`vfd`、`gt7`、`mw2005` 四款錶盤各自在 `assets/` 目錄下攜帶了專屬字體檔案（如 DSEG 七段 LCD 字體、RobotoMono、Arkitech、Seven Segment 等），但所有 `ctx.font` 引用均寫死為 `ForzaGear`（由 `hud-base.css` 宣告的共用字體 HelveticaNowDisplay）。由於從未為這些自帶字體建立 `@font-face` 規則，渲染結果完全看不出各錶盤應有的視覺特色。
+- **修正模式**：對照 ForzaOSD 參考專案的 `profile.lua` 字體宣告（`fonts = { digits = { path = "..." }, labels = { path = "..." } }`），為每款錶盤建立對應的 `@font-face` 規則，並將所有 `ctx.font` 中的 `ForzaGear` 替換為各自的 CSS font-family 名稱。
+- **字體角色分離原則**：依據參考專案，數字型字體（`digits`）用於速度、轉速、檔位等數值渲染，標籤型字體（`labels` / `alpha`）用於單位文字與面板標題，兩者不應混用。
+
+| 錶盤 | 字體檔案 | CSS Family | 用途 |
+|------|---------|------------|------|
+| shift_tacho | RobotoMono-Medium.ttf | ShiftDigits | 數字 |
+| shift_tacho | BarlowSemiCondensed-Bold.ttf | ShiftLabels | 標籤 |
+| vfd | DSEG7Modern-Bold.ttf | VFDDigits | 七段數字 |
+| vfd | DSEG14Modern-Regular.ttf | VFDAlpha | 十四段標籤 |
+| gt7 | arkitech_medium.ttf | GT7Digits | 數字 |
+| gt7 | gt7-MyFont Regular.ttf | GT7Text | 一般文字 |
+| gt7 | gt7-MyFont Bold.ttf | GT7Bold | 粗體文字 |
+| mw2005 | Seven_Segment_BOLD.ttf | MW2005Digits | 七段數字 |
+| mw2005 | StackSansHeadline-SemiBold.ttf | MW2005Labels | 標籤 |
+
+**後續行動 (Action):**
+- 未來新增 HUD 錶盤樣式時，若攜帶自帶字體，必須在 `<style>` 區塊中建立對應的 `@font-face` 宣告，並確保 `ctx.font` 引用的 font-family 名稱與之完全一致。
+- 字體對照表已獨立建檔於 `hud_font_mapping_reference.md`，後續維護時優先查閱。
 
 
 
