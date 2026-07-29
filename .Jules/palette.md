@@ -10,3 +10,6 @@
 ## 2024-07-26 - Navigation Tab Accessibility
 **Learning:** Screen reader users rely on attributes like `aria-current="page"` (or sometimes `"true"`) on navigation elements to understand which section or tab is currently active. Visually styled active states are not conveyed to assistive technologies automatically.
 **Action:** Always add `aria-current="page"` (or similar depending on context) to the active element within a tabbed or menu-based navigation structure to ensure equal access to application state.
+## 2024-07-26 - Icon Button Labeling
+**Learning:** When using HTML entities like `&times;` (`×`) or `✕` for close/remove buttons, they must have an explicit `aria-label` attribute (e.g., `aria-label="Close"`) to be accessible to screen readers, and it is better to use `&times;` rather than hardcoded unicode characters.
+**Action:** Ensure all icon-only buttons, especially those using symbols for actions, have descriptive `aria-label`s.

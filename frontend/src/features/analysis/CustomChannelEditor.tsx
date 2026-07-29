@@ -195,7 +195,7 @@ const CustomChannelEditor: React.FC<CustomChannelEditorProps> = ({ channels, onC
                 onClick={() => handleRemoveChannel(idx)} 
                 style={{ background: 'none', border: 'none', color: '#ff003c', cursor: 'pointer', fontWeight: 'bold', marginLeft: '0.2rem' }}
               >
-                ×
+                &times;
               </button>
             </div>
           ))}
