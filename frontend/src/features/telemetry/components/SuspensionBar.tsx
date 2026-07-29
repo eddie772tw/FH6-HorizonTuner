@@ -112,7 +112,8 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
           ctx.lineWidth = 2;
           ctx.lineJoin = 'round';
   
-          const maxT = Math.max(...hist.current.map(p => p.time));
+          // Bolt: Optimized max time calculation by directly accessing the last element since the array is ordered temporally
+          const maxT = hist.current.length > 0 ? hist.current[hist.current.length - 1].time : 0;
           for (let i = 0; i < hist.current.length; i++) {
             const p = hist.current[i];
             const x = 150 - ((maxT - p.time) / 2500) * 150; 
