@@ -628,7 +628,7 @@
             hudIframe.contentWindow?.postMessage({ type, ...detail }, '*');
         }
 
-        async function loadHud(name) {
+        async function loadHud(name, force = false) {
             if (window.demoActive) window.dispatchEvent(new CustomEvent('demo:stop'));
             await window.saveWindowState?.();
  
@@ -639,7 +639,8 @@
  
             // Setting src destroys the old HUD context and loads the new one —
             // the previous iframe's JS, canvases and event listeners are gone
-            hudIframe.src = HUDS[name];
+            const cacheBuster = force ? `?t=${Date.now()}` : '';
+            hudIframe.src = HUDS[name] + cacheBuster;
  
             hudIframe.onload = async () => {
                 initPhysics();
@@ -811,6 +812,9 @@
         launcherBc.onmessage = (ev) => {
             if (ev.data && ev.data.type === 'hud:animate') {
                 postToHud('hud:animate');
+            } else if (ev.data && ev.data.type === 'hud:reload') {
+                console.log('[Launcher] Received hud:reload, reloading HUD:', activeHud);
+                loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
                 window._currentHudConfig = ev.data.data;
                 postToHud('config', { data: ev.data.data });

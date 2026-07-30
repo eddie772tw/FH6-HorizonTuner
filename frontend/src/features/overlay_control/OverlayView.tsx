@@ -99,20 +99,21 @@ export const OverlayView: React.FC = () => {
   useEffect(() => {
     channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
     fetchMonitors();
-    fetchConfig();
+    fetchConfig(false, false);
 
     return () => {
       channelRef.current?.close();
     };
   }, []);
 
-  const loadAuthorInfo = async (styleName: string) => {
-    if (authorCache[styleName]) {
+  const loadAuthorInfo = async (styleName: string, force: boolean = false) => {
+    if (!force && authorCache[styleName]) {
       setCurrentAuthorInfo(authorCache[styleName]);
       return;
     }
     try {
-      const res = await fetch(`./hud/${styleName}/author.json`);
+      const cacheBuster = force ? `?t=${Date.now()}` : '';
+      const res = await fetch(`./hud/${styleName}/author.json${cacheBuster}`);
       if (res.ok) {
         const data = await res.json();
         const info: AuthorInfo = {
@@ -152,28 +153,28 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  const fetchConfig = async () => {
+  const fetchConfig = async (preserveEnabled: boolean = false, forceAuthorUpdate: boolean = false) => {
     try {
       const port = (window as any).BACKEND_PORT || 8001;
       const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
       if (res.ok) {
         const data = await res.json();
-        // Always reset enabled to false on startup so user manually toggles it
+        // Always reset enabled to false on startup so user manually toggles it unless preserveEnabled is true
         const merged = {
           ...DEFAULT_HUD_CONFIG,
           ...data,
-          enabled: false,
+          enabled: preserveEnabled,
           elements: { ...DEFAULT_HUD_CONFIG.elements, ...(data.elements || {}) }
         };
         setConfig(merged);
         broadcastConfig(merged);
-        loadAuthorInfo(merged.hudStyle);
+        loadAuthorInfo(merged.hudStyle, forceAuthorUpdate);
       } else {
-        loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle);
+        loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
       }
     } catch (e) {
       console.warn('Failed to fetch HUD config:', e);
-      loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle);
+      loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
     }
   };
 
@@ -302,7 +303,7 @@ export const OverlayView: React.FC = () => {
   const handleReloadHud = () => {
     broadcastConfig(config);
     channelRef.current?.postMessage({ type: 'hud:reload' });
-    fetchConfig();
+    fetchConfig(config.enabled, true);
   };
 
   const handleElementToggle = (key: keyof HudElements) => {
