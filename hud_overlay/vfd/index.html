@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>VFD Gauge & Radio HUD Suite</title>
+    <title>Retro VFD Gauge & Radio HUD Suite</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         @font-face {
@@ -16,14 +16,14 @@
         }
         .vfd-container {
             width: 1120px;
-            height: 480px;
+            height: 520px;
             pointer-events: none;
         }
 
         canvas {
             display: block;
             width: 1120px;
-            height: 480px;
+            height: 520px;
         }
     </style>
 </head>
@@ -32,7 +32,7 @@
     <div id="teleCardsMount"></div>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container vfd-container" id="vfdContainer">
-            <canvas id="vfdCanvas" width="1120" height="480"></canvas>
+            <canvas id="vfdCanvas" width="1120" height="520"></canvas>
         </div>
     </div>
 
@@ -43,237 +43,633 @@
             var canvas = document.getElementById('vfdCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
 
-            // ── VFD Phosphor Glow Tuning Config ─────────────────────────────────────
-            var VFD_GLOW_CONFIG = {
-                bloom: 1.0,
-                glowRadius: 8,
-                palette: {
-                    Aqua: { primary: "#8ffff0", accent: "#d2fff9", dim: "#183b38", hot: "#ff584d" },
-                    Amber: { primary: "#ffc15a", accent: "#ffe5ad", dim: "#493719", hot: "#ff4b3f" },
-                    Green: { primary: "#78ff91", accent: "#d4ffdc", dim: "#193f21", hot: "#ff5548" },
-                    Ice: { primary: "#b9e8ff", accent: "#f3fbff", dim: "#203744", hot: "#ff6170" }
-                }
+            // ── VFD Phosphor Palette & Constant Glow ────────────────────────────────
+            var VFD_CLASSIC_GLOW = "#8ffff0";
+            var VFD_GLOW_RADIUS = 9;
+
+            var defaultPalette = {
+                primary: "#8ffff0",
+                accent: "#d2fff9",
+                dim: "rgba(24, 59, 56, 0.22)",
+                hot: "#ff584d",
+                amber: "#ffb732",
+                glow: VFD_CLASSIC_GLOW
             };
 
+            var currentPalette = Object.assign({}, defaultPalette);
             var isMetricUnit = true;
-            var currentPalette = VFD_GLOW_CONFIG.palette.Aqua;
+
+            // ── Audio System & Media State ──────────────────────────────────────────
+            var spectrumBands = new Array(32).fill(0);
+            var peakHoldVals = new Array(32).fill(0);
+            var peakHoldTicks = new Array(32).fill(0);
+
+            var backendVuL = 0;
+            var backendVuR = 0;
+            var hasBackendAudio = false;
+
+            var DEFAULT_MARQUEE = "TANTRON - TURBO FIRE /// MADE BY CROSXOVER";
+
+            var systemMediaInfo = {
+                title: "Turbo Fire",
+                artist: "TANTRON",
+                status: "none",
+                has_media: false
+            };
+
+            var marqueeText = DEFAULT_MARQUEE;
+            var marqueeScrollPos = 0;
 
             function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-            function drawPanel(x, y, w, h) {
+            function updateDynamicColors() {
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+
+                if (!useDefault && customColor) {
+                    currentPalette.primary = customColor;
+                    currentPalette.accent = customColor;
+                    currentPalette.dim = "rgba(40, 55, 60, 0.28)";
+                } else {
+                    currentPalette.primary = defaultPalette.primary;
+                    currentPalette.accent = defaultPalette.accent;
+                    currentPalette.dim = defaultPalette.dim;
+                }
+                currentPalette.glow = VFD_CLASSIC_GLOW;
+            }
+
+            // Sanitize text for 14-Segment VFD font compatibility
+            function sanitizeVFDText(text) {
+                if (text === null || text === undefined) return "";
+                var str = typeof text === "string" ? text : String(text);
+                if (!str.trim()) return "";
+
+                str = str
+                    .replace(/[éèêë]/gi, "E")
+                    .replace(/[áàâäã]/gi, "A")
+                    .replace(/[óòôöõ]/gi, "O")
+                    .replace(/[úùûü]/gi, "U")
+                    .replace(/[íìîï]/gi, "I")
+                    .replace(/ñ/gi, "N")
+                    .replace(/ç/gi, "C")
+                    .replace(/[’‘]/g, "'")
+                    .replace(/[“”]/g, '"')
+                    .replace(/[–—]/g, "-")
+                    .replace(/…/g, "...");
+
+                str = str.replace(/&/g, "AND").replace(/!/g, "");
+                str = str.replace(/[^\x20-\x7E]/g, " ");
+
+                return str
+                    .replace(/[@#$%\^*()_+=[\]{}|\\;:'",.<>?]/g, " ")
+                    .replace(/\s+/g, " ")
+                    .toUpperCase()
+                    .trim();
+            }
+
+            // Fetch Windows System Media info with multi-port fallback
+            async function fetchSystemMedia() {
+                var origin = window.location.origin;
+                var port = window.location.port;
+                var candidates = [];
+
+                if (origin && origin !== "null") candidates.push(origin + "/api/overlay/system_media");
+                if (window.parent && window.parent.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.parent.BACKEND_PORT + "/api/overlay/system_media");
+                if (window.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.BACKEND_PORT + "/api/overlay/system_media");
+                if (port) candidates.push("http://127.0.0.1:" + port + "/api/overlay/system_media");
+                candidates.push("http://127.0.0.1:8001/api/overlay/system_media");
+                candidates.push("http://127.0.0.1:8000/api/overlay/system_media");
+                candidates.push("/api/overlay/system_media");
+
+                for (var i = 0; i < candidates.length; i++) {
+                    try {
+                        var res = await fetch(candidates[i]);
+                        if (res.ok) {
+                            var data = await res.json();
+                            if (data && data.success) {
+                                systemMediaInfo = data;
+                                var t = (data.title || "").trim();
+                                var a = (data.artist || "").trim();
+
+                                // Filter out our own app title and default placeholders
+                                var ownAppTitles = ["fh6-horizon tuner", "horizon tuner", "turbo fire", "fh6-horizontuner"];
+                                var tLower = t.toLowerCase();
+                                var aLower = a.toLowerCase();
+                                var isSelfTitle = ownAppTitles.some(function(k) { return tLower.indexOf(k) >= 0 || aLower.indexOf(k) >= 0; });
+                                var isPlaying = data.status === "playing";
+                                var hasMedia = !isSelfTitle && isPlaying && (t.length > 0 || a.length > 0);
+
+                                systemMediaInfo.has_media = hasMedia;
+
+                                var newMarquee = DEFAULT_MARQUEE;
+                                if (hasMedia && (t || a)) {
+                                    var trackStr = (t && a) ? (a + " - " + t) : (t || a);
+                                    var cleanStr = sanitizeVFDText(trackStr);
+                                    newMarquee = cleanStr ? cleanStr : DEFAULT_MARQUEE;
+                                }
+
+                                if (newMarquee !== marqueeText) {
+                                    marqueeText = newMarquee;
+                                    marqueeScrollPos = 0; // Reset scroll position when track changes
+                                }
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        // Try next fallback endpoint
+                    }
+                }
+                systemMediaInfo.has_media = false;
+                if (marqueeText !== DEFAULT_MARQUEE) {
+                    marqueeText = DEFAULT_MARQUEE;
+                    marqueeScrollPos = 0;
+                }
+            }
+
+            // Fetch WASAPI system audio spectrum from backend
+            async function fetchAudioSpectrum() {
+                var origin = window.location.origin;
+                var port = window.location.port;
+                var candidates = [];
+
+                if (origin && origin !== "null") candidates.push(origin + "/api/overlay/audio_spectrum");
+                if (window.parent && window.parent.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.parent.BACKEND_PORT + "/api/overlay/audio_spectrum");
+                if (window.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.BACKEND_PORT + "/api/overlay/audio_spectrum");
+                if (port) candidates.push("http://127.0.0.1:" + port + "/api/overlay/audio_spectrum");
+                candidates.push("http://127.0.0.1:8001/api/overlay/audio_spectrum");
+                candidates.push("http://127.0.0.1:8000/api/overlay/audio_spectrum");
+                candidates.push("/api/overlay/audio_spectrum");
+
+                for (var i = 0; i < candidates.length; i++) {
+                    try {
+                        var res = await fetch(candidates[i]);
+                        if (res.ok) {
+                            var data = await res.json();
+                            if (data && data.success && Array.isArray(data.spectrum)) {
+                                hasBackendAudio = !!data.has_audio;
+                                backendVuL = clamp(data.vu_left || 0, 0, 1);
+                                backendVuR = clamp(data.vu_right || 0, 0, 1);
+
+                                if (data.spectrum.length === 32) {
+                                    for (var b = 0; b < 32; b++) {
+                                        var raw = clamp(data.spectrum[b] || 0, 0, 1);
+                                        // Smooth transition
+                                        spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                                    }
+                                }
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        // Try next endpoint
+                    }
+                }
+                hasBackendAudio = false;
+            }
+
+            fetchSystemMedia();
+            fetchAudioSpectrum();
+            setInterval(fetchSystemMedia, 1000);
+            setInterval(fetchAudioSpectrum, 60);
+
+
+            // ── VFD Drawing Primitives ──────────────────────────────────────────────
+            function drawVFDPanelFrame(x, y, w, h, title) {
                 ctx.save();
-                ctx.fillStyle = '#081411';
+                ctx.fillStyle = '#040d0c';
                 ctx.fillRect(x, y, w, h);
+
+                ctx.strokeStyle = 'rgba(15, 45, 40, 0.25)';
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                for (var gx = x + 8; gx < x + w; gx += 12) {
+                    ctx.moveTo(gx, y);
+                    ctx.lineTo(gx, y + h);
+                }
+                for (var gy = y + 8; gy < y + h; gy += 12) {
+                    ctx.moveTo(x, gy);
+                    ctx.lineTo(x + w, gy);
+                }
+                ctx.stroke();
+
                 ctx.strokeStyle = currentPalette.primary;
-                ctx.globalAlpha = 0.3;
-                ctx.lineWidth = 1.2;
+                ctx.globalAlpha = 0.35;
+                ctx.lineWidth = 1.4;
                 ctx.strokeRect(x, y, w, h);
+
+                if (title) {
+                    ctx.font = 'bold 11px VFDAlpha, sans-serif';
+                    ctx.fillStyle = currentPalette.primary;
+                    ctx.globalAlpha = 0.7;
+                    ctx.fillText(title, x + 10, y + 16);
+                }
                 ctx.restore();
             }
 
-            function drawCellBar(x, y, w, h, count, value, color, dimColor) {
+            function drawCellBar(x, y, w, h, count, value, color, dimColor, isVertical) {
                 var gap = 3;
-                var cellW = (w - gap * (count - 1)) / count;
                 var lit = Math.floor(clamp(value, 0, 1) * count + 0.5);
 
                 for (var i = 1; i <= count; i++) {
-                    var cellX = x + (i - 1) * (cellW + gap);
+                    var cellX = isVertical ? x : x + (i - 1) * ((w - gap * (count - 1)) / count + gap);
+                    var cellY = isVertical ? y + h - i * ((h - gap * (count - 1)) / count + gap) : y;
+                    var cellW = isVertical ? w : (w - gap * (count - 1)) / count;
+                    var cellH = isVertical ? (h - gap * (count - 1)) / count : h;
+
                     ctx.fillStyle = dimColor;
                     ctx.globalAlpha = 0.42;
-                    ctx.fillRect(cellX, y, cellW, h);
+                    ctx.fillRect(cellX, cellY, cellW, cellH);
 
                     if (i <= lit) {
                         ctx.save();
                         ctx.fillStyle = color;
-                        ctx.globalAlpha = 0.9;
-                        ctx.shadowColor = color;
-                        ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                        ctx.fillRect(cellX, y, cellW, h);
+                        ctx.globalAlpha = 0.95;
+                        ctx.shadowColor = currentPalette.glow;
+                        ctx.shadowBlur = VFD_GLOW_RADIUS;
+                        ctx.fillRect(cellX, cellY, cellW, cellH);
                         ctx.restore();
                     }
                 }
             }
 
-            function renderVFDGauge(data) {
+            // ── Upper Section: Gauge Instrument Cluster ─────────────────────────────
+            var peakRpmVal = 0;
+            var peakRpmHoldTicks = 0;
+
+            function renderVFDGaugeCluster(data) {
+                updateDynamicColors();
+
                 var maxRpm = Math.max(1000, data.maxRpm || data.max_rpm || 8500);
                 var rpm = Math.max(0, data.rpm || 0);
                 var mps = data.SpeedMetersPerSecond || 0;
                 var speed = Math.floor(clamp(isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694), 0, 999) + 0.5);
                 var gearVal = data.gear;
                 var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
+                var boostPsi = (data.boost || data.boost_psi || 0);
+                var tempC = data.engine_temp || 85;
 
-                // 1. Top RPM Bar Panel
-                drawPanel(0, 0, 1120, 82);
+                if (rpm >= peakRpmVal) {
+                    peakRpmVal = rpm;
+                    peakRpmHoldTicks = 25;
+                } else {
+                    if (peakRpmHoldTicks > 0) {
+                        peakRpmHoldTicks--;
+                    } else {
+                        peakRpmVal = Math.max(rpm, peakRpmVal - 150);
+                    }
+                }
 
+                // Tachometer Panel
+                drawVFDPanelFrame(0, 0, 1120, 115, "TACHOMETER x1000 RPM");
                 ctx.save();
-                ctx.font = 'bold 14px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.primary;
-                ctx.fillText("RPM x1000", 18, 28);
-
-                // RPM Ticks
-                var x = 170, y = 37, w = 930, count = 64, gap = 2;
-                var cellW = (w - gap * (count - 1)) / count;
+                var count = 54, startX = 25, startY = 85, cellW = 16, cellH = 34, gap = 4;
                 var rpmRatio = clamp(rpm / maxRpm, 0, 1);
-                var lit = Math.floor(rpmRatio * count + 0.5);
-                var redlineCell = Math.floor(0.9 * count + 0.5);
+                var litCount = Math.floor(rpmRatio * count + 0.5);
+                var peakCell = Math.floor(clamp(peakRpmVal / maxRpm, 0, 1) * count + 0.5);
+                var redlineStartCell = Math.floor(0.88 * count);
+                var warnStartCell = Math.floor(0.72 * count);
+
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.textAlign = 'center';
+                for (var n = 0; n <= 10; n++) {
+                    var numRatio = n / 10;
+                    var numCell = Math.floor(numRatio * count);
+                    var nx = startX + numCell * (cellW + gap);
+                    var nColor = n >= 9 ? currentPalette.hot : (n >= 8 ? currentPalette.amber : currentPalette.primary);
+
+                    ctx.fillStyle = currentPalette.dim;
+                    ctx.fillText(String(n), nx + cellW / 2, startY - cellH - 8);
+
+                    if (rpmRatio >= numRatio) {
+                        ctx.save();
+                        ctx.fillStyle = nColor;
+                        ctx.shadowColor = currentPalette.glow;
+                        ctx.shadowBlur = VFD_GLOW_RADIUS;
+                        ctx.fillText(String(n), nx + cellW / 2, startY - cellH - 8);
+                        ctx.restore();
+                    }
+                }
 
                 for (var i = 1; i <= count; i++) {
-                    var cellX = x + (i - 1) * (cellW + gap);
-                    var isHot = i >= redlineCell;
-                    var activeColor = isHot ? currentPalette.hot : currentPalette.primary;
+                    var cx = startX + (i - 1) * (cellW + gap);
+                    var cy = startY - cellH;
+                    var isRedline = i >= redlineStartCell;
+                    var isWarn = i >= warnStartCell && !isRedline;
+                    var activeColor = isRedline ? currentPalette.hot : (isWarn ? currentPalette.amber : currentPalette.primary);
 
-                    ctx.fillStyle = isHot ? "#4b1917" : currentPalette.dim;
-                    ctx.globalAlpha = 0.48;
-                    ctx.fillRect(cellX, y, cellW, 24);
+                    ctx.fillStyle = isRedline ? "rgba(80, 20, 20, 0.3)" : currentPalette.dim;
+                    ctx.globalAlpha = 0.42;
+                    ctx.fillRect(cx, cy, cellW, cellH);
 
-                    if (i <= lit) {
+                    if (i <= litCount) {
                         ctx.save();
                         ctx.fillStyle = activeColor;
-                        ctx.shadowColor = activeColor;
-                        ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                        ctx.fillRect(cellX, y, cellW, 24);
+                        ctx.globalAlpha = 0.95;
+                        ctx.shadowColor = currentPalette.glow;
+                        ctx.shadowBlur = VFD_GLOW_RADIUS;
+                        ctx.fillRect(cx, cy, cellW, cellH);
+                        ctx.restore();
+                    }
+
+                    if (i === peakCell && peakCell > litCount) {
+                        ctx.save();
+                        ctx.fillStyle = activeColor;
+                        ctx.shadowColor = currentPalette.glow;
+                        ctx.shadowBlur = VFD_GLOW_RADIUS + 4;
+                        ctx.fillRect(cx, cy - 3, cellW, cellH + 6);
                         ctx.restore();
                     }
                 }
                 ctx.restore();
 
-                // 2. Gear Panel
-                drawPanel(0, 94, 170, 164);
+                // Speedometer Panel
+                drawVFDPanelFrame(0, 123, 420, 145, "DIGITAL SPEEDOMETER");
                 ctx.save();
-                ctx.font = 'bold 13px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.primary;
-                ctx.textAlign = 'center';
-                ctx.fillText("GEAR", 85, 115);
-
-                ctx.font = 'bold 92px VFDDigits, monospace, sans-serif';
-                ctx.fillStyle = currentPalette.dim;
-                ctx.globalAlpha = 0.17;
-                ctx.fillText("8", 85, 205);
-
-                ctx.fillStyle = currentPalette.accent;
-                ctx.globalAlpha = 1.0;
-                ctx.shadowColor = currentPalette.accent;
-                ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                ctx.fillText(gearLabel, 85, 205);
-                ctx.restore();
-
-                // 3. Velocity / Speed Panel
-                drawPanel(184, 94, 440, 164);
-                ctx.save();
-                ctx.font = 'bold 13px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.primary;
-                ctx.fillText("VELOCITY", 204, 115);
-
-                ctx.font = 'bold 98px VFDDigits, monospace, sans-serif';
-                ctx.fillStyle = currentPalette.dim;
-                ctx.globalAlpha = 0.14;
+                ctx.font = 'bold 96px VFDDigits, monospace, sans-serif';
                 ctx.textAlign = 'right';
-                ctx.fillText("888", 520, 200);
 
-                ctx.fillStyle = currentPalette.accent;
-                ctx.globalAlpha = 1.0;
-                ctx.shadowColor = currentPalette.accent;
-                ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                ctx.fillText(speed.toString(), 520, 200);
+                ctx.fillStyle = currentPalette.dim;
+                ctx.globalAlpha = 0.22;
+                ctx.fillText("888", 320, 235);
 
-                ctx.font = 'bold 17px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
+                ctx.globalAlpha = 1.0;
+                ctx.shadowColor = currentPalette.glow;
+                ctx.shadowBlur = VFD_GLOW_RADIUS;
+                ctx.fillText(speed.toString(), 320, 235);
+
+                ctx.font = 'bold 18px VFDAlpha, sans-serif';
                 ctx.shadowBlur = 0;
-                ctx.fillText(isMetricUnit ? "KM/H" : "MPH", 542, 195);
-
-                // Throttle & Brake Bars
-                ctx.font = 'bold 11px VFDAlpha, sans-serif';
-                ctx.fillText("THR", 204, 245);
-                drawCellBar(244, 238, 150, 10, 10, data.throttle || 0, currentPalette.primary, currentPalette.dim);
-
-                ctx.fillText("BRK", 408, 245);
-                drawCellBar(450, 238, 150, 10, 10, data.brake || 0, currentPalette.hot, currentPalette.dim);
+                ctx.fillText(isMetricUnit ? "KM/H" : "MPH", 395, 230);
                 ctx.restore();
 
-                // 4. Engine RPM & Fuel Panel
-                drawPanel(638, 94, 482, 164);
+                // Gear & Shift Lamp Bezel
+                drawVFDPanelFrame(430, 123, 210, 145, "TRANSMISSION");
                 ctx.save();
-                ctx.font = 'bold 13px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.primary;
-                ctx.fillText("ENGINE RPM", 658, 115);
+                ctx.font = 'bold 90px VFDDigits, monospace, sans-serif';
+                ctx.textAlign = 'center';
 
-                ctx.font = 'bold 43px VFDDigits, monospace, sans-serif';
                 ctx.fillStyle = currentPalette.dim;
-                ctx.globalAlpha = 0.14;
-                ctx.textAlign = 'right';
-                ctx.fillText("88888", 1098, 155);
+                ctx.globalAlpha = 0.22;
+                ctx.fillText("8", 535, 235);
 
-                ctx.fillStyle = currentPalette.primary;
+                ctx.fillStyle = currentPalette.accent;
                 ctx.globalAlpha = 1.0;
-                ctx.shadowColor = currentPalette.primary;
-                ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                ctx.fillText(('00000' + Math.round(rpm)).slice(-5), 1098, 155);
+                ctx.shadowColor = currentPalette.glow;
+                ctx.shadowBlur = VFD_GLOW_RADIUS;
+                ctx.fillText(gearLabel, 535, 235);
+
+                var isOverrev = rpmRatio > 0.90;
+                ctx.font = 'bold 11px VFDAlpha, sans-serif';
+                ctx.fillStyle = isOverrev ? currentPalette.hot : currentPalette.dim;
+                ctx.globalAlpha = isOverrev ? 1.0 : 0.25;
+                if (isOverrev) {
+                    ctx.shadowColor = currentPalette.hot;
+                    ctx.shadowBlur = 12;
+                }
+                ctx.fillText("SHIFT ▲", 535, 150);
+                ctx.restore();
+
+                // Auxiliary Telemetry Gauges
+                drawVFDPanelFrame(650, 123, 470, 145, "VEHICLE TELEMETRY & INTAKE");
+                ctx.save();
+                ctx.font = 'bold 11px VFDAlpha, sans-serif';
+                ctx.fillStyle = currentPalette.primary;
+
+                ctx.fillText("THR", 665, 155);
+                drawCellBar(700, 145, 170, 13, 14, data.throttle || 0, currentPalette.primary, currentPalette.dim, false);
+
+                ctx.fillText("BRK", 665, 185);
+                drawCellBar(700, 175, 170, 13, 14, data.brake || 0, currentPalette.hot, currentPalette.dim, false);
+
+                ctx.fillText("BOOST", 665, 215);
+                var boostNorm = clamp((boostPsi + 14.7) / 45.0, 0, 1);
+                drawCellBar(700, 205, 170, 13, 14, boostNorm, currentPalette.amber, currentPalette.dim, false);
+
+                ctx.fillText("TEMP", 890, 155);
+                var tempNorm = clamp(tempC / 120, 0, 1);
+                drawCellBar(930, 145, 160, 13, 12, tempNorm, tempC > 105 ? currentPalette.hot : currentPalette.primary, currentPalette.dim, false);
+
+                ctx.fillText("FUEL", 890, 185);
+                drawCellBar(930, 175, 160, 13, 12, 0.85, currentPalette.primary, currentPalette.dim, false);
+
+                var isAbs = (data.brake || 0) > 0.85 && (data.speed_kmh || 0) > 30;
+                var isTcs = (data.throttle || 0) > 0.85;
+
+                ctx.font = 'bold 10px VFDAlpha, sans-serif';
+                ctx.fillStyle = isAbs ? currentPalette.hot : currentPalette.dim;
+                ctx.fillRect(890, 205, 45, 16);
+                ctx.fillStyle = isAbs ? "#ffffff" : currentPalette.dim;
+                ctx.fillText("ABS", 902, 217);
+
+                ctx.fillStyle = isTcs ? currentPalette.amber : currentPalette.dim;
+                ctx.fillRect(945, 205, 45, 16);
+                ctx.fillStyle = isTcs ? "#ffffff" : currentPalette.dim;
+                ctx.fillText("TCS", 958, 217);
+
+                var isTurbo = boostPsi > 1.0;
+                ctx.fillStyle = isTurbo ? currentPalette.primary : currentPalette.dim;
+                ctx.fillRect(1000, 205, 55, 16);
+                ctx.fillStyle = isTurbo ? "#000000" : currentPalette.dim;
+                ctx.fillText("TURBO", 1008, 217);
                 ctx.restore();
             }
 
-            function renderVFDRadioSpectrum(time) {
-                var now = time || (performance.now() / 1000);
-                var panelY = 275;
-                drawPanel(0, panelY, 1120, 185);
+            // ── Lower Section: Radio & Audio Spectrum Analyzer ──────────────────────
+            // ── Lower Section: Radio & Audio Spectrum Analyzer ──────────────────────
+            function updateAudioSpectrum() {
+                var bandCount = 32;
+
+                if (!hasBackendAudio) {
+                    for (var b = 0; b < bandCount; b++) {
+                        spectrumBands[b] = Math.max(0, spectrumBands[b] * 0.85 - 0.02);
+                    }
+                }
+
+                // Peak Hold Gravitational Physics Update
+                for (var i = 0; i < bandCount; i++) {
+                    var cur = spectrumBands[i];
+                    if (cur >= peakHoldVals[i]) {
+                        peakHoldVals[i] = cur;
+                        peakHoldTicks[i] = 12;
+                    } else {
+                        if (peakHoldTicks[i] > 0) {
+                            peakHoldTicks[i]--;
+                        } else {
+                            peakHoldVals[i] = Math.max(cur, peakHoldVals[i] - 0.038);
+                        }
+                    }
+                }
+            }
+
+            function renderVFDRadioSection() {
+                updateAudioSpectrum();
+
+                var panelY = 278;
+                drawVFDPanelFrame(0, panelY, 1120, 235, "RETRO VFD CAR STEREO HEAD UNIT / AUDIO EQUALIZER");
 
                 ctx.save();
 
-                // Radio Header & Track Marquee
-                ctx.font = 'bold 14px VFDAlpha, sans-serif';
+                // 1. Extended 14-Segment VFD Marquee Display (Cell-by-Cell Grid Alignment)
+                var maxFitCells = 48;
+                var startX = 22;
+                var cellStep = 18.5;
+                var cellY = panelY + 42;
+
+                var safeText = marqueeText || DEFAULT_MARQUEE;
+                var textLen = safeText.length;
+                var needScroll = textLen > maxFitCells;
+
+                if (needScroll) {
+                    marqueeScrollPos += 0.04; // Slowed down to ~2.4 characters per second (2~3 chars/sec)
+                } else {
+                    marqueeScrollPos = 0;
+                }
+
+                var subStr = "";
+                if (needScroll) {
+                    var padText = safeText + "         ";
+                    var padLen = padText.length;
+                    var startIdx = (padLen > 0) ? (Math.floor(marqueeScrollPos) % padLen) : 0;
+                    if (isNaN(startIdx) || startIdx < 0) startIdx = 0;
+                    var textWindow = padText + padText + padText + padText;
+                    subStr = textWindow.substring(startIdx, startIdx + maxFitCells);
+                } else {
+                    subStr = safeText;
+                }
+
+                // Cell-by-Cell Grid Rendering (Guarantees 100% Pixel Alignment)
+                ctx.font = 'bold 22px VFDAlpha, sans-serif';
+                for (var ci = 0; ci < maxFitCells; ci++) {
+                    var cx = startX + ci * cellStep;
+                    var ch = subStr[ci] || ' ';
+
+                    // Unlit Ghost Segment '8'
+                    ctx.save();
+                    ctx.fillStyle = currentPalette.dim;
+                    ctx.globalAlpha = 0.42;
+                    ctx.shadowBlur = 0;
+                    ctx.fillText("8", cx, cellY);
+                    ctx.restore();
+
+                    // Lit Character Segment
+                    if (ch !== ' ') {
+                        ctx.save();
+                        ctx.fillStyle = currentPalette.accent;
+                        ctx.shadowColor = currentPalette.glow;
+                        ctx.shadowBlur = VFD_GLOW_RADIUS;
+                        ctx.fillText(ch, cx, cellY);
+                        ctx.restore();
+                    }
+                }
+
+                // 2. SYS MEDIA Rectangular Vacuum Tube Indicator Lamp (x:940, w:150)
+                var hasMedia = systemMediaInfo.has_media;
+                ctx.font = 'bold 11px VFDAlpha, sans-serif';
+
+                ctx.fillStyle = hasMedia ? currentPalette.primary : currentPalette.dim;
+                ctx.globalAlpha = hasMedia ? 0.95 : 0.28;
+                ctx.fillRect(940, panelY + 18, 150, 26);
+
+                if (hasMedia) {
+                    ctx.save();
+                    ctx.shadowColor = currentPalette.glow;
+                    ctx.shadowBlur = VFD_GLOW_RADIUS + 4;
+                    ctx.fillRect(940, panelY + 18, 150, 26);
+                    ctx.restore();
+                }
+
+                ctx.fillStyle = hasMedia ? "#000000" : currentPalette.dim;
+                ctx.globalAlpha = hasMedia ? 1.0 : 0.6;
+                ctx.textAlign = 'center';
+                ctx.fillText(hasMedia ? "SYS MEDIA: ON" : "SYS MEDIA: OFF", 1015, panelY + 35);
+                ctx.textAlign = 'left';
+
+                // Stereo / Tuned Status Lamps
+                ctx.font = 'bold 11px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
-                ctx.shadowColor = currentPalette.primary;
-                ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                ctx.fillText("VFD AUDIO MONITOR / RADIO SPECTRUM", 18, panelY + 25);
+                ctx.globalAlpha = 0.9;
+                ctx.shadowColor = currentPalette.glow;
+                ctx.shadowBlur = VFD_GLOW_RADIUS;
+                ctx.fillText("FM STEREO", 20, panelY + 68);
+                ctx.fillText("DOLBY NR", 120, panelY + 68);
+                ctx.fillText("TUNED 104.5 MHz", 210, panelY + 68);
 
-                ctx.font = 'bold 26px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.accent;
-                ctx.shadowColor = currentPalette.accent;
-                ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
-                ctx.fillText("FORZA HORIZON 6 SOUNDTRACK  /  RADIO ETIENNE", 18, panelY + 60);
-
-                // 28 Bands Audio Spectrum Bar
-                var left = 18, top = panelY + 80, width = 1084, height = 75;
-                var bandCount = 36;
-                var bandGap = 4;
+                // 3. 32-Band VFD Equalizer Bargraphs with Peak Hold Dots
+                var left = 20, top = panelY + 80, width = 1010, height = 135;
+                var bandCount = 32;
+                var bandGap = 5;
                 var bandW = (width - bandGap * (bandCount - 1)) / bandCount;
-                var segments = 7, segGap = 2;
+                var segments = 12, segGap = 3;
                 var segH = (height - segGap * (segments - 1)) / segments;
 
                 for (var b = 0; b < bandCount; b++) {
-                    var wave = 0.5 + 0.5 * Math.sin(now * 3.2 + b * 0.55);
-                    var shape = 0.45 + 0.55 * Math.sin((b + 1) / bandCount * Math.PI);
-                    var val = clamp(0.16 + wave * shape * 0.77, 0, 1);
-                    var lit = Math.floor(val * segments + 0.5);
+                    var val = spectrumBands[b];
+                    var litSegs = Math.floor(val * segments + 0.5);
+                    var peakSeg = Math.floor(peakHoldVals[b] * segments + 0.5);
                     var bx = left + b * (bandW + bandGap);
 
                     for (var s = 1; s <= segments; s++) {
                         var sy = top + height - s * segH - (s - 1) * segGap;
-                        ctx.fillStyle = currentPalette.dim;
-                        ctx.globalAlpha = 0.35;
+                        var isHigh = s >= 10;
+                        var isMid = s >= 7 && !isHigh;
+                        var segColor = isHigh ? currentPalette.hot : (isMid ? currentPalette.amber : currentPalette.primary);
+
+                        // Unlit Ghost Segment Background (High Contrast VFD Grid)
+                        ctx.fillStyle = isHigh ? "rgba(70, 20, 20, 0.35)" : "rgba(18, 55, 48, 0.42)";
+                        ctx.globalAlpha = 0.85;
                         ctx.fillRect(bx, sy, bandW, segH);
 
-                        if (s <= lit) {
+                        // Lit Segment Phosphor Glow
+                        if (s <= litSegs) {
                             ctx.save();
-                            ctx.fillStyle = currentPalette.primary;
-                            ctx.globalAlpha = 0.9;
-                            ctx.shadowColor = currentPalette.primary;
-                            ctx.shadowBlur = VFD_GLOW_CONFIG.glowRadius;
+                            ctx.fillStyle = segColor;
+                            ctx.globalAlpha = 0.95;
+                            ctx.shadowColor = currentPalette.glow;
+                            ctx.shadowBlur = VFD_GLOW_RADIUS;
+                            ctx.fillRect(bx, sy, bandW, segH);
+                            ctx.restore();
+                        }
+
+                        // Peak Hold Falling Dot Highlight
+                        if (s === peakSeg && peakSeg > 0) {
+                            ctx.save();
+                            ctx.fillStyle = currentPalette.accent;
+                            ctx.globalAlpha = 1.0;
+                            ctx.shadowColor = currentPalette.glow;
+                            ctx.shadowBlur = VFD_GLOW_RADIUS + 4;
                             ctx.fillRect(bx, sy, bandW, segH);
                             ctx.restore();
                         }
                     }
                 }
 
+                // 4. Stereo L/R Volume Level VU Meters (Dynamic Peak Tracking Sensitivity)
+                var vuX = 1045, vuY = panelY + 80, vuW = 20, vuH = 135;
+                var maxL = Math.max.apply(null, spectrumBands.slice(0, 16)) || 0;
+                var maxR = Math.max.apply(null, spectrumBands.slice(16, 32)) || 0;
+                var vuL = hasBackendAudio ? Math.min(1.0, Math.max(backendVuL * 2.2, maxL * 0.95)) : Math.min(1.0, maxL * 0.95);
+                var vuR = hasBackendAudio ? Math.min(1.0, Math.max(backendVuR * 2.2, maxR * 0.95)) : Math.min(1.0, maxR * 0.95);
+
+                drawCellBar(vuX, vuY, vuW, vuH, 12, vuL, currentPalette.primary, currentPalette.dim, true);
+                drawCellBar(vuX + 28, vuY, vuW, vuH, 12, vuR, currentPalette.primary, currentPalette.dim, true);
+
+                ctx.font = 'bold 9px VFDAlpha, sans-serif';
+                ctx.fillStyle = currentPalette.primary;
+                ctx.fillText("L", vuX + 7, vuY + vuH + 12);
+                ctx.fillText("R", vuX + 35, vuY + vuH + 12);
+
                 ctx.restore();
             }
 
-            function renderVFDSuite(data, time) {
+            function renderVFDSuite(data) {
                 if (!ctx) return;
-                ctx.clearRect(0, 0, 1120, 480);
-                renderVFDGauge(data);
-                renderVFDRadioSpectrum(time);
+                ctx.clearRect(0, 0, 1120, 520);
+                renderVFDGaugeCluster(data || {});
+                renderVFDRadioSection();
             }
 
+            // Sweep Animation for Cluster Launch
             var sweepActive = false;
             function triggerSweep() {
                 if (sweepActive) return;
@@ -297,11 +693,12 @@
                     renderVFDSuite({
                         rpm: mockRpm,
                         maxRpm: maxRpm,
-                        speed: (mockRpm / maxRpm) * 220,
+                        speed: (mockRpm / maxRpm) * 240,
                         gear: 4,
                         throttle: progress < 0.5 ? progress * 2 : 0,
-                        brake: progress >= 0.5 ? (progress - 0.5) * 2 : 0
-                    }, elapsed / 1000);
+                        brake: progress >= 0.5 ? (progress - 0.5) * 2 : 0,
+                        boost: (mockRpm / maxRpm) * 18
+                    });
 
                     if (progress < 1.0) {
                         requestAnimationFrame(animate);
@@ -311,6 +708,25 @@
                 }
                 requestAnimationFrame(animate);
             }
+
+            // ── Continuous 60FPS UI Render Loop & HUDCore Registration ─────────────
+            var latestTelemetryData = {};
+
+            function startContinuousRenderLoop() {
+                function renderLoop() {
+                    try {
+                        if (!sweepActive) {
+                            renderVFDSuite(latestTelemetryData);
+                        }
+                    } catch (err) {
+                        console.error("VFD Render loop notice:", err);
+                    } finally {
+                        requestAnimationFrame(renderLoop);
+                    }
+                }
+                requestAnimationFrame(renderLoop);
+            }
+
 
             HUDCore.registerStyle('vfd', {
                 containerId: 'vfdContainer',
@@ -324,7 +740,7 @@
                 },
                 onFrame: function (data, payload) {
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
-                    if (!sweepActive) renderVFDSuite(data);
+                    latestTelemetryData = data || {};
                 },
                 onAnimate: function () {
                     triggerSweep();
@@ -332,6 +748,7 @@
             });
 
             HUDCore.init('vfd');
+            startContinuousRenderLoop();
             setTimeout(triggerSweep, 100);
         })();
     </script>

@@ -924,13 +924,17 @@
 
         async function saveWindowState() {
             try {
-                const position = await appWindow.outerPosition();
-                const size     = await appWindow.innerSize();
-                localStorage.setItem(stateKey(), JSON.stringify({
-                    position: { x: position.x, y: position.y },
-                    size:     { width: size.width, height: size.height }
-                }));
-            } catch (e) { console.error('Failed to save window state:', e); }
+                if (window.__TAURI__ && appWindow && appWindow.outerPosition) {
+                    const position = await appWindow.outerPosition();
+                    const size     = await appWindow.innerSize();
+                    localStorage.setItem(stateKey(), JSON.stringify({
+                        position: { x: position.x, y: position.y },
+                        size:     { width: size.width, height: size.height }
+                    }));
+                }
+            } catch (e) {
+                // Silently handle window state saving when outerPosition capability is restricted
+            }
         }
 
         async function applyWindowConfig(config) {

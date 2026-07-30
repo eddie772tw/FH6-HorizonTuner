@@ -82,6 +82,11 @@ window.HUD_ANIM_CONFIG = {
                         if (payload.data.elements) {
                             currentElements = payload.data.elements;
                             window._currentHudElements = currentElements;
+
+                            // Sync Motion Effect toggle with physics engine
+                            if (currentElements.showMotionEffect !== undefined && window.setPhysicsEnabled) {
+                                window.setPhysicsEnabled(currentElements.showMotionEffect !== false);
+                            }
                         }
 
                         // Parse glow intensity & custom color settings
@@ -125,6 +130,11 @@ window.HUD_ANIM_CONFIG = {
                     if (!currentFullConfig) currentFullConfig = {};
                     currentFullConfig.elements = currentElements;
                     window._currentHudElements = currentElements;
+
+                    // Sync Motion Effect toggle with physics engine
+                    if (currentElements.showMotionEffect !== undefined && window.setPhysicsEnabled) {
+                        window.setPhysicsEnabled(currentElements.showMotionEffect !== false);
+                    }
 
                     // Standard Gauge Container Visibility
                     var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;

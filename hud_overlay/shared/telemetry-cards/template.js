@@ -102,7 +102,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
 
                 <!-- Row 3, Col 3: FR Corner (Front Right - Vertical & Symmetric) -->
-                <div id="tcCornerFR" class="tele-corner" style="grid-column:3; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                <div id="tcCornerFR" class="tele-corner" style="grid-column:3; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2); transform: scale(var(--tc-elem-scale, 1.0)); transform-origin: top right;">
                     <!-- FR Suspension Block -->
                     <div id="tcSuspBlockFR" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
                         <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">

@@ -596,5 +596,88 @@
 - 未來新增 HUD 錶盤樣式時，若攜帶自帶字體，必須在 `<style>` 區塊中建立對應的 `@font-face` 宣告，並確保 `ctx.font` 引用的 font-family 名稱與之完全一致。
 - 字體對照表已獨立建檔於 `hud_font_mapping_reference.md`，後續維護時優先查閱。
 
+---
+
+### 2026-07-30 — Vite HUD 靜態檔案服務與三項 HUD 控制面板 Bug 修復
+
+**問題現象 (4 項)：**
+1. 開發模式下 `/hud/*` 請求出現 `ECONNREFUSED`，`author.json` 無法載入、HUD reload 失效
+2. Motion Effect 開關無效果
+3. Telemetry Card Element Scale 滑桿對 FR (Front Right) 圖表不生效
+4. Refresh HUD 按鈕因 `/hud/index.html` 載入失敗而連帶失效
+
+**根因分析：**
+1. **核心問題**：`vite.config.ts` 使用 `server.proxy` 將 `/hud/*` 代理至後端，但 dev 模式下 sidecar（Python 後端）經常未啟動（`Failed to spawn sidecar`），proxy 無目標可連。即使後端運行，port 也是隨機的且僅在啟動時讀取一次，重啟後即失效。
+2. **Motion Effect**：`OverlayView.tsx` 的 `showMotionEffect` toggle 透過 BroadcastChannel 發送 `hud:elements` 訊息，但 `hud-core.js` 收到後**從未**將該值轉發給 `physics.js` 的物理引擎（`_physicsEnabled` 僅由 `localStorage` 與 HUD 內部按鈕控制）。
+3. **FR Element Scale**：`template.js` 中 FL、RL、RR 三個角落都有 `transform: scale(var(--tc-elem-scale, 1.0))` inline style，唯獨 `tcCornerFR` 遺漏了此 CSS。
+4. **Refresh 按鈕**：`handleReloadHud` 發送 `hud:reload` → HUD iframe 執行 `window.location.reload()` → 重新載入 `/hud/index.html`，但 proxy 失效導致載入失敗。
+
+**修復方案：**
+1. **移除 proxy，改用 Vite Plugin 直接服務靜態檔**：新增 `hudStaticPlugin()` Vite Plugin，在 `configureServer` 階段註冊 middleware，將 `/hud/*` 請求直接對應至 `hud_overlay/` 目錄讀取檔案，完全不依賴後端。
+2. **新增 `setPhysicsEnabled(enabled)` API**：在 `physics.js` 暴露顯式設定函數（非 toggle），並在 `hud-core.js` 的 `config` 及 `hud:elements` 兩個 handler 中呼叫。
+3. **補齊 FR 角落的 `transform` CSS**：在 `template.js` 的 `tcCornerFR` div 添加 `transform: scale(var(--tc-elem-scale, 1.0)); transform-origin: top right;`。
+
+**學習點：**
+- **Dev 模式靜態資源不應依賴 backend proxy**：HUD overlay 本質為靜態檔案，dev 模式下應由 Vite 直接服務，避免 sidecar 啟動順序與隨機 port 問題。
+- **React 控制面板 ↔ HUD iframe 的狀態同步必須顯式**：兩者透過 BroadcastChannel 溝通，任何新的 config 欄位（如 `showMotionEffect`）必須在 `hud-core.js` 的訊息處理中顯式對應到 HUD 內部的控制函數，不會自動生效。
+- **4 角對稱 UI 元素務必逐一檢查一致性**：FL/FR/RL/RR 四角的 inline style 或 class 遺漏一角是常見的 copy-paste bug。
+
+---
+
+### 2026-07-30 — VFD HUD 儀表重構、Web Audio API 頻譜與 Windows 系統媒體 API 對接
+
+**學習點 (Learning):**
+1. **真空螢光管 (VFD) 物理視覺還原**：
+   - 經典 80/90 年代 VFD 儀表面板之視覺核心在於**全熄滅段落鬼影 (Unlit Ghost Segments)**、**真空管玻璃金屬網紋 (Wire Mesh Grid)** 以及**高強度螢光 Bloom 擴散**。
+   - 在 Canvas 渲染中，透過劃分兩次 Path 繪製（先以 15-20% 透明度渲染全數鬼影段落，再以 1.0 不透明度 + `shadowBlur` 渲染目前亮起的段落），能完美還原實體 VFD 玻璃管內部金屬線路質感。
+2. **調色盤主色與 Glow 效果隔離機制**：
+   - 當使用者在 `OverlayView` 控制面板選擇自訂色彩時，該色彩應僅綁定至**筆觸與文字段落主色 (Primary Color)**，而發光層 (Glow / `shadowColor`) 應繼續鎖定預設之螢光青綠 (`#8ffff0`) 或專屬螢光氣氛，避免自訂色彩影響復古發光質感。
+3. **Web Audio API 頻譜解析與 Windows System Media 雙驅動**：
+   - 下方收音機面板實作雙模音訊機制：支援 Web Audio API (`AudioContext` / `AnalyserNode` / `getByteFrequencyData`) 擷取真實系統/麥克風音訊，並配備動態諧波音頻合成器 fallback。
+   - 透過 Windows API (`Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager`) 非同步抓取 Windows 系統當前播放之音樂 Title 與 Artist，並透過 14 段 VFD 跑馬燈 (`DSEG14Modern-Regular`) 動態滾動顯示，顯著提升電競儀表板之沉浸感與實用性。
+
+**後續行動 (Action):**
+
+
+
+---
+
+### 2026-07-30 — VFD 收音機區塊功能修復與 WASAPI Loopback 系統音訊整合
+
+**學習點 (Learning):**
+1. **動畫主迴圈例外屏障 (Render Loop Exception Shielding)**：
+   - 前端 60FPS `requestAnimationFrame` 迴圈若缺乏 `try...catch...finally` 防護，一旦文字處理 (如 `.trim()`) 或渲染遭遇非預期的極端 input，會直接在中途拋出 Exception 導致 renderLoop 終止（現象即為 HUD 完全卡死）。
+   - 務必在迴圈主體包裹 `try...catch...finally`，並確保 `requestAnimationFrame` 於 `finally` 區塊中執行。
+2. **14-Segment VFD 字型與非 ASCII 字符過濾規範**：
+   - 14 段擬真字體 (如 `DSEG14Modern`) 僅支援標準 printable ASCII (32-126)。若遇到 Unicode / CJK / Emoji 字符或 surrogate pairs，原生 `fillText` 會引發異常或破圖。
+   - `sanitizeVFDText` 必須先將歐美拉丁重音 (如 `é` -> `E`) 與智慧標點 (如 `’` -> `'`) 標準化，並清理非 ASCII 字符，確保滾動跑馬燈不卡死。
+3. **曲目變更滾動位置即時重置 (Scroll Pos Reset)**：
+   - 當曲名或歌手變更時，若未同步將 `marqueeScrollPos` 歸零，畫面會從舊曲目的中途偏移位置繼續滾動，導致換歌時呈現切字或跳動狀況。
+4. **WASAPI Loopback 系統音效與聲道 (L/R) 渲染**：
+   - 遊戲 HUD 絕不可請求使用者麥克風 (`getUserMedia`)。音訊頻譜與 L/R 聲道表應由後端 WASAPI System Audio Loopback 擷取揚聲器/耳機輸出 PCM，計算 32-Band log-FFT 與 RMS 音量後傳遞至前端。
+
+**後續行動 (Action):**
+- 後續新增或維護 HUD 音響與頻譜模組時，統一以 WASAPI Loopback (`/api/overlay/audio_spectrum`) 作為聲波與 VU 表資料來源，嚴禁於前端調用麥克風 API。
+- **WinRT GSMTC 全局媒體資訊 (Single Source of Truth)**：將 Windows WinRT GSMTC 設為全局媒體最高權威來源，解決視窗名稱掃描誤抓背景 `Spotifylauncher` 等進程的問題；備用視窗掃描強制僅採納帶有 `" - "` (歌手 - 歌名) 結構之真正曲目。
+- **Tauri `outerPosition` Capability 隔離**：開發模式跨網域 HTTP 載入 Overlay 時，在 `tauri.conf.json` 補充 `remote` URLs 並於 `saveWindowState()` 做靜態例外隔離，避免 console log 警告洗洗洗。
+
+---
+
+### 2026-07-30 — Retro VFD 跑馬燈非重複渲染與作者/描述正名
+
+**學習點 (Learning):**
+1. **跑馬燈短文字無重複 (Non-Scrolling Marquee Window Logic)**：
+   - 當跑馬燈字串長度 `textLen <= maxFitCells`（無需滾動）時，不可使用循環環狀拼接字串 `textWindow = padText + padText + ...`，否則短曲目尾部會不正常地重複出現。
+   - 正確的做法是：`needScroll` 為 false 時直接取單次 `safeText`，使剩餘之 Canvas 格數自然呈現 Unlit Ghost `'8'` 晶片段落。
+2. **Retro VFD 創作者標誌與正名規範**：
+   - 儀表顯示名稱與目錄確立為 `Retro VFD`，作者為 `eddie772tw ft. crosXover`。
+   - 品牌標語 `/// EDDIE772TW FT. CROSXOVER` 應於預設電台狀態完整保留，僅在讀取到有效真實曲目時過濾。
+
+**後續行動 (Action):**
+- 維護 VFD 跑馬燈時，務必區分 `needScroll` 狀態，避免短曲串誤觸環狀重複渲染。
+
+
+
+
 
 

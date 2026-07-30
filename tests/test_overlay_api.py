@@ -66,3 +66,26 @@ def test_save_and_get_hud_config(temp_hud_config_file):
     loaded_data = get_res.json()
     assert loaded_data["hudStyle"] == "simple"
     assert loaded_data["elements"]["showSpeed"] is False
+
+
+def test_get_system_media_endpoint():
+    client = TestClient(app)
+    res = client.get("/api/overlay/system_media")
+    assert res.status_code == 200
+    data = res.json()
+    assert "title" in data
+    assert "artist" in data
+    assert "status" in data
+    assert data["success"] is True
+
+
+def test_get_audio_spectrum_endpoint():
+    client = TestClient(app)
+    res = client.get("/api/overlay/audio_spectrum")
+    assert res.status_code == 200
+    data = res.json()
+    assert "spectrum" in data
+    assert len(data["spectrum"]) == 32
+    assert "vu_left" in data
+    assert "vu_right" in data
+    assert data["success"] is True

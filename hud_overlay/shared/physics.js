@@ -186,16 +186,18 @@ export function initPhysics() {
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
 export function togglePhysics() {
-    _physicsEnabled = !_physicsEnabled;
+    setPhysicsEnabled(!_physicsEnabled);
+}
+
+export function setPhysicsEnabled(enabled) {
+    const newState = !!enabled;
+    if (newState === _physicsEnabled) return;
+    _physicsEnabled = newState;
     localStorage.setItem('forza_hud_physics_enabled', _physicsEnabled);
 
     Object.keys(physicsTargets).forEach(k => physicsTargets[k] = 0);
 
     _syncUI();
-
-    window.showNotification?.(
-        _physicsEnabled ? '📳 HUD motion enabled' : '🔇 HUD motion disabled'
-    );
 }
 
 function _syncUI() {
@@ -212,4 +214,6 @@ function _syncUI() {
 // ── Expose on window for non-module script blocks ─────────────────────────────
 window.updatePhysicsTargets = updatePhysicsTargets;
 window.togglePhysics        = togglePhysics;
+window.setPhysicsEnabled    = setPhysicsEnabled;
 window.physicsTargets       = physicsTargets;
+
