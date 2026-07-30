@@ -13,3 +13,6 @@
 ## 2024-07-26 - Icon Button Labeling
 **Learning:** When using HTML entities like `&times;` (`×`) or `✕` for close/remove buttons, they must have an explicit `aria-label` attribute (e.g., `aria-label="Close"`) to be accessible to screen readers, and it is better to use `&times;` rather than hardcoded unicode characters.
 **Action:** Ensure all icon-only buttons, especially those using symbols for actions, have descriptive `aria-label`s.
+## 2024-07-28 - Custom Form Controls Need Native Inputs
+**Learning:** Custom UI controls (like switches, toggles) built using visual elements (`div`s) and `onClick` handlers are inaccessible to screen readers and keyboard users (no tab focus, spacebar interaction).
+**Action:** Always wrap custom toggles in a `<label>` and back them with a visually hidden (`.sr-only`) native `<input type="checkbox">`. Bind the `checked` state and `onChange` handler to the native input, removing `onClick` handlers from visual elements. Use global `:focus-visible` styles to indicate keyboard focus.
