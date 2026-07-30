@@ -49,6 +49,7 @@ _PS_GSMTC_B64 = base64.b64encode(_PS_GSMTC_SCRIPT.encode("utf-16le")).decode("as
 def _query_powershell_gsmtc() -> dict | None:
     """Query Windows WinRT GSMTC via PowerShell encoded command."""
     try:
+        creationflags = 0x08000000 if sys.platform == "win32" else 0
         res = subprocess.run(
             ["powershell", "-NoProfile", "-EncodedCommand", _PS_GSMTC_B64],
             capture_output=True,
@@ -56,6 +57,7 @@ def _query_powershell_gsmtc() -> dict | None:
             encoding="utf-8",
             errors="ignore",
             timeout=2.0,
+            creationflags=creationflags,
         )
         if res.returncode == 0 and res.stdout.strip():
             import json
@@ -293,17 +295,22 @@ async def get_system_media_info() -> dict:
         }
 
     # 2. Fallback to desktop window media scanner
-    extracted = await asyncio.to_thread(_extract_windows_desktop_media)
-    if extracted and extracted.get("has_media"):
-        _media_cache["title"] = extracted["title"]
-        _media_cache["artist"] = extracted["artist"]
-        _media_cache["status"] = extracted["status"]
-        _media_cache["has_media"] = True
-    else:
-        _media_cache["title"] = DEFAULT_TITLE
-        _media_cache["artist"] = DEFAULT_ARTIST
-        _media_cache["status"] = "none"
-        _media_cache["has_media"] = False
+    #    extracted = await asyncio.to_thread(_extract_windows_desktop_media)
+    #    if extracted and extracted.get("has_media"):
+    #        _media_cache["title"] = extracted["title"]
+    #        _media_cache["artist"] = extracted["artist"]
+    #        _media_cache["status"] = extracted["status"]
+    #        _media_cache["has_media"] = True
+    #    else:
+    #        _media_cache["title"] = DEFAULT_TITLE
+    #        _media_cache["artist"] = DEFAULT_ARTIST
+    #        _media_cache["status"] = "none"
+    #        _media_cache["has_media"] = False
+
+    _media_cache["title"] = DEFAULT_TITLE
+    _media_cache["artist"] = DEFAULT_ARTIST
+    _media_cache["status"] = "none"
+    _media_cache["has_media"] = False
 
     return {
         "title": _media_cache["title"],

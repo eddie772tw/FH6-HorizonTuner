@@ -6,6 +6,7 @@ pydantic>=2.10.0,<3.0.0
 httpx>=0.28.1,<1.0.0
 python-multipart
 soundcard>=0.4.4
+winsdk
 
 # 開發與測試工具
 ruff
