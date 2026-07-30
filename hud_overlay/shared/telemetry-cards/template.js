@@ -7,7 +7,7 @@
  * Generates the full cluster HTML string.
  *
  * @param {number} initialScale   - Legacy scale fallback
- * @param {number} initialOpacity - Wrapper opacity (0–1)
+ * @param {number} initialOpacity - Wrapper opacity (0??)
  */
 export function getClusterHTML(initialScale, initialOpacity) {
     return `
@@ -16,8 +16,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
             #tcClusterWrapper {
                 --card-primary:        #00f0ff;
                 --card-contrast:       #ff0088;
-                --card-font-size:      calc(0.75rem * var(--tc-font-scale, 1.0));
-                --card-font-sm:        calc(0.65rem * var(--tc-font-scale, 1.0));
+                --card-font-size:      calc(0.9375rem * var(--tc-font-scale, 1.0));
+                --card-font-sm:        calc(0.8125rem * var(--tc-font-scale, 1.0));
                 --tc-corner-offset-y:  0px;
                 --tc-corners-scale:    1.0;
                 --tc-gradar-scale:     1.0;
@@ -139,10 +139,14 @@ export function getClusterHTML(initialScale, initialOpacity) {
             #tcTopEdgeContainer.tc-side-by-side,
             #tcBottomEdgeContainer.tc-side-by-side {
                 flex-direction: row !important;
-                justify-content: space-between !important;
+                justify-content: center !important;
+                gap: 1.5vh !important;
                 width: 100vw !important;
                 box-sizing: border-box;
                 padding: 0 25px;
+            }
+            #tcBottomEdgeContainer.tc-side-by-side {
+                bottom: 0px !important;
             }
 
             .tc-edge-chart.tc-half-width {
@@ -213,7 +217,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             </div>
                             <div style="display:flex; flex-direction:row; gap:4px; align-items:center; justify-content:center; flex:1; width:100%;">
                                 <div style="position:relative; width:8px; height:10.5vh; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;">
-                                    <div id="tcSuspBarFL" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff); transition:height 0.05s linear;"></div>
+                                    <div id="tcSuspBarFL" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff);"></div>
                                 </div>
                                 <canvas id="tcSuspWaveFL" width="130" height="90" class="tc-sub-canvas" style="width:100%; height:10.5vh; border-radius:4px; background:rgba(0,0,0,0.2);"></canvas>
                             </div>
@@ -226,21 +230,21 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             <div class="tc-sub-header">
                                 <span>SLIP</span>
                                 <span style="font-family:monospace; color:#aaa; font-size:calc(var(--card-font-sm, 0.65rem) * 0.9); white-space:nowrap;">
-                                    A:<span id="tcTireAngFL" style="color:#fff;">0.0°</span> R:<span id="tcTireRatFL" style="color:#fff;">0.00</span>
+                                    A:<span id="tcTireAngFL" style="color:#fff;">0.0簞</span> R:<span id="tcTireRatFL" style="color:#fff;">0.00</span>
                                 </span>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:center; flex:1; width:100%;">
-                                <canvas id="tcTireRadarFL" width="110" height="110" class="tc-sub-canvas" style="width:100%; height:10.5vh;"></canvas>
+                                <canvas id="tcTireRadarFL" width="400" height="400" class="tc-sub-canvas" style="aspect-ratio:1/1; height:10.5vh; max-width:100%;"></canvas>
                             </div>
                         </div>
                     </div>
                     <div id="tcTempBlockFL" class="tc-sub-card" style="width:100%;">
                         <div class="tc-sub-header">
                             <span>TEMP</span>
-                            <span id="tcTireTempFL" style="color:#fff; font-family:monospace;">--°C</span>
+                            <span id="tcTireTempFL" style="color:#fff; font-family:monospace;">--簞C</span>
                         </div>
-                        <div style="position:relative; width:100%; height:3.5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
-                            <canvas id="tcTireHistFL" width="200" height="36" style="width:100%; height:3.5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
+                        <div style="position:relative; width:100%; height:5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
+                            <canvas id="tcTireHistFL" width="800" height="120" style="width:100%; height:5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
                         </div>
                         <div class="tc-sub-footer" style="justify-content:space-between;">
                             <span style="font-size:0.55rem; color:#888;">COLD</span>
@@ -264,7 +268,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             </div>
                             <div style="display:flex; flex-direction:row-reverse; gap:4px; align-items:center; justify-content:center; flex:1; width:100%;">
                                 <div style="position:relative; width:8px; height:10.5vh; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;">
-                                    <div id="tcSuspBarFR" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff); transition:height 0.05s linear;"></div>
+                                    <div id="tcSuspBarFR" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff);"></div>
                                 </div>
                                 <canvas id="tcSuspWaveFR" width="130" height="90" class="tc-sub-canvas" style="width:100%; height:10.5vh; border-radius:4px; background:rgba(0,0,0,0.2);"></canvas>
                             </div>
@@ -277,21 +281,21 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             <div class="tc-sub-header">
                                 <span>SLIP</span>
                                 <span style="font-family:monospace; color:#aaa; font-size:calc(var(--card-font-sm, 0.65rem) * 0.9); white-space:nowrap;">
-                                    A:<span id="tcTireAngFR" style="color:#fff;">0.0°</span> R:<span id="tcTireRatFR" style="color:#fff;">0.00</span>
+                                    A:<span id="tcTireAngFR" style="color:#fff;">0.0簞</span> R:<span id="tcTireRatFR" style="color:#fff;">0.00</span>
                                 </span>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:center; flex:1; width:100%;">
-                                <canvas id="tcTireRadarFR" width="110" height="110" class="tc-sub-canvas" style="width:100%; height:10.5vh;"></canvas>
+                                <canvas id="tcTireRadarFR" width="400" height="400" class="tc-sub-canvas" style="aspect-ratio:1/1; height:10.5vh; max-width:100%;"></canvas>
                             </div>
                         </div>
                     </div>
                     <div id="tcTempBlockFR" class="tc-sub-card" style="width:100%;">
                         <div class="tc-sub-header">
                             <span>TEMP</span>
-                            <span id="tcTireTempFR" style="color:#fff; font-family:monospace;">--°C</span>
+                            <span id="tcTireTempFR" style="color:#fff; font-family:monospace;">--簞C</span>
                         </div>
-                        <div style="position:relative; width:100%; height:3.5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
-                            <canvas id="tcTireHistFR" width="200" height="36" style="width:100%; height:3.5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
+                        <div style="position:relative; width:100%; height:5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
+                            <canvas id="tcTireHistFR" width="800" height="120" style="width:100%; height:5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
                         </div>
                         <div class="tc-sub-footer" style="justify-content:space-between;">
                             <span style="font-size:0.55rem; color:#888;">COLD</span>
@@ -387,7 +391,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             </div>
                             <div style="display:flex; flex-direction:row; gap:4px; align-items:center; justify-content:center; flex:1; width:100%;">
                                 <div style="position:relative; width:8px; height:10.5vh; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;">
-                                    <div id="tcSuspBarRL" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff); transition:height 0.05s linear;"></div>
+                                    <div id="tcSuspBarRL" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff);"></div>
                                 </div>
                                 <canvas id="tcSuspWaveRL" width="130" height="90" class="tc-sub-canvas" style="width:100%; height:10.5vh; border-radius:4px; background:rgba(0,0,0,0.2);"></canvas>
                             </div>
@@ -400,21 +404,21 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             <div class="tc-sub-header">
                                 <span>SLIP</span>
                                 <span style="font-family:monospace; color:#aaa; font-size:calc(var(--card-font-sm, 0.65rem) * 0.9); white-space:nowrap;">
-                                    A:<span id="tcTireAngRL" style="color:#fff;">0.0°</span> R:<span id="tcTireRatRL" style="color:#fff;">0.00</span>
+                                    A:<span id="tcTireAngRL" style="color:#fff;">0.0簞</span> R:<span id="tcTireRatRL" style="color:#fff;">0.00</span>
                                 </span>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:center; flex:1; width:100%;">
-                                <canvas id="tcTireRadarRL" width="110" height="110" class="tc-sub-canvas" style="width:100%; height:10.5vh;"></canvas>
+                                <canvas id="tcTireRadarRL" width="400" height="400" class="tc-sub-canvas" style="aspect-ratio:1/1; height:10.5vh; max-width:100%;"></canvas>
                             </div>
                         </div>
                     </div>
                     <div id="tcTempBlockRL" class="tc-sub-card" style="width:100%;">
                         <div class="tc-sub-header">
                             <span>TEMP</span>
-                            <span id="tcTireTempRL" style="color:#fff; font-family:monospace;">--°C</span>
+                            <span id="tcTireTempRL" style="color:#fff; font-family:monospace;">--簞C</span>
                         </div>
-                        <div style="position:relative; width:100%; height:3.5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
-                            <canvas id="tcTireHistRL" width="200" height="36" style="width:100%; height:3.5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
+                        <div style="position:relative; width:100%; height:5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
+                            <canvas id="tcTireHistRL" width="800" height="120" style="width:100%; height:5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
                         </div>
                         <div class="tc-sub-footer" style="justify-content:space-between;">
                             <span style="font-size:0.55rem; color:#888;">COLD</span>
@@ -438,7 +442,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             </div>
                             <div style="display:flex; flex-direction:row-reverse; gap:4px; align-items:center; justify-content:center; flex:1; width:100%;">
                                 <div style="position:relative; width:8px; height:10.5vh; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;">
-                                    <div id="tcSuspBarRR" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff); transition:height 0.05s linear;"></div>
+                                    <div id="tcSuspBarRR" style="position:absolute; bottom:0; left:0; right:0; height:50%; background:var(--card-primary,#00f0ff);"></div>
                                 </div>
                                 <canvas id="tcSuspWaveRR" width="130" height="90" class="tc-sub-canvas" style="width:100%; height:10.5vh; border-radius:4px; background:rgba(0,0,0,0.2);"></canvas>
                             </div>
@@ -451,21 +455,21 @@ export function getClusterHTML(initialScale, initialOpacity) {
                             <div class="tc-sub-header">
                                 <span>SLIP</span>
                                 <span style="font-family:monospace; color:#aaa; font-size:calc(var(--card-font-sm, 0.65rem) * 0.9); white-space:nowrap;">
-                                    A:<span id="tcTireAngRR" style="color:#fff;">0.0°</span> R:<span id="tcTireRatRR" style="color:#fff;">0.00</span>
+                                    A:<span id="tcTireAngRR" style="color:#fff;">0.0簞</span> R:<span id="tcTireRatRR" style="color:#fff;">0.00</span>
                                 </span>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:center; flex:1; width:100%;">
-                                <canvas id="tcTireRadarRR" width="110" height="110" class="tc-sub-canvas" style="width:100%; height:10.5vh;"></canvas>
+                                <canvas id="tcTireRadarRR" width="400" height="400" class="tc-sub-canvas" style="aspect-ratio:1/1; height:10.5vh; max-width:100%;"></canvas>
                             </div>
                         </div>
                     </div>
                     <div id="tcTempBlockRR" class="tc-sub-card" style="width:100%;">
                         <div class="tc-sub-header">
                             <span>TEMP</span>
-                            <span id="tcTireTempRR" style="color:#fff; font-family:monospace;">--°C</span>
+                            <span id="tcTireTempRR" style="color:#fff; font-family:monospace;">--簞C</span>
                         </div>
-                        <div style="position:relative; width:100%; height:3.5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
-                            <canvas id="tcTireHistRR" width="200" height="36" style="width:100%; height:3.5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
+                        <div style="position:relative; width:100%; height:5vh; display:flex; align-items:center; justify-content:center; flex:1; margin:2px 0;">
+                            <canvas id="tcTireHistRR" width="800" height="120" style="width:100%; height:5vh; background:rgba(255,255,255,0.03); border-radius:4px;"></canvas>
                         </div>
                         <div class="tc-sub-footer" style="justify-content:space-between;">
                             <span style="font-size:0.55rem; color:#888;">COLD</span>
@@ -477,9 +481,9 @@ export function getClusterHTML(initialScale, initialOpacity) {
             </div>
         </div>
 
-        <!-- ══════════════════════════════════════════════ -->
+        <!-- ?????????????????????????????????????????????? -->
         <!-- Fixed Screen Top / Bottom Flex Containers      -->
-        <!-- ══════════════════════════════════════════════ -->
+        <!-- ?????????????????????????????????????????????? -->
         <div id="tcTopEdgeContainer" style="
             position: fixed; top: 15px; left: 0; right: 0;
             display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -505,11 +509,13 @@ export function getClusterHTML(initialScale, initialOpacity) {
             <div id="tcPowerTorqueContainer" class="tc-edge-chart tc-edge-chart-panel">
                 <div style="position:relative; width:100%; height:100%;">
                     <canvas id="tcPowerTorqueChart" width="550" height="80" style="width:100%; height:100%; background:rgba(0,0,0,0.25); border-radius:4px;"></canvas>
-                    <span id="tcTorqueLabel" style="position:absolute; top:4px; left:8px; color:#ffeb3b; font-weight:bold; font-size:var(--card-font-sm,0.7rem); font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,235,59,0.6);">TORQUE</span>
-                    <span id="tcPowerLabel" style="position:absolute; top:4px; right:8px; color:#ff0088; font-weight:bold; font-size:var(--card-font-sm,0.7rem); font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,0,136,0.6);">POWER</span>
+                    <span style="position:absolute; top:4px; left:8px; color:#ffeb3b; font-weight:bold; font-size:var(--card-font-sm,0.7rem); font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,235,59,0.6);">TORQUE</span>
+                    <span style="position:absolute; top:4px; right:8px; color:#ff0088; font-weight:bold; font-size:var(--card-font-sm,0.7rem); font-family:'ForzaGear'; letter-spacing:0.05em; text-shadow:0 0 6px rgba(255,0,136,0.6);">POWER</span>
                     <span style="position:absolute; bottom:4px; right:8px; color:#aaa; font-weight:bold; font-size:var(--card-font-sm,0.7rem); font-family:'ForzaGear'; letter-spacing:0.05em;">RPM</span>
                 </div>
             </div>
         </div>
     `;
 }
+
+

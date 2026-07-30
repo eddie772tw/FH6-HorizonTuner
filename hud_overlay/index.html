@@ -193,10 +193,17 @@
             if (ev.data && ev.data.type === 'hud:animate') {
                 postToHud('hud:animate');
             } else if (ev.data && ev.data.type === 'hud:reload') {
+                if (ev.data.hudStyle) {
+                    activeHud = ev.data.hudStyle;
+                }
                 console.log('[Launcher] Received hud:reload, reloading HUD:', activeHud);
+                postToHud('hud:reload');
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
                 window._currentHudConfig = ev.data.data;
+                if (ev.data.data && ev.data.data.hudStyle) {
+                    activeHud = ev.data.data.hudStyle;
+                }
                 postToHud('config', { data: ev.data.data });
                 if (ev.data.data && ev.data.data.elements) {
                     window._currentHudElements = ev.data.data.elements;

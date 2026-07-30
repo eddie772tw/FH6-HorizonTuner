@@ -68,6 +68,25 @@ def test_save_and_get_hud_config(temp_hud_config_file):
     assert loaded_data["elements"]["showSpeed"] is False
 
 
+def test_reset_hud_config(temp_hud_config_file):
+    client = TestClient(app)
+
+    # First modify config
+    client.post("/api/overlay/config", json={"hudStyle": "vfd"})
+
+    # Then reset
+    reset_res = client.post("/api/overlay/reset")
+    assert reset_res.status_code == 200
+    assert reset_res.json()["success"] is True
+
+    # Verify reset back to default
+    get_res = client.get("/api/overlay/config")
+    assert get_res.status_code == 200
+    data = get_res.json()
+    assert data["hudStyle"] == "advanced"
+    assert data["elements"]["showTeleTires"] is True
+
+
 def test_get_system_media_endpoint():
     client = TestClient(app)
     res = client.get("/api/overlay/system_media")

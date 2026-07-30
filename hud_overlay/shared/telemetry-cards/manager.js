@@ -93,8 +93,8 @@ export function createTelemetryCardsManager() {
             var showAttitude = elements.showTeleAttitude   !== false;
             var showSusp     = elements.showTeleSuspension !== false;
             var showTires    = elements.showTeleTires      !== false;
-            var showSlip     = showTires && (elements.showTeleTiresSlip !== false);
-            var showTemp     = showTires && (elements.showTeleTiresTemp !== false);
+            var showSlip     = elements.showTeleTiresSlip !== undefined ? (elements.showTeleTiresSlip !== false) : showTires;
+            var showTemp     = elements.showTeleTiresTemp !== undefined ? (elements.showTeleTiresTemp !== false) : showTires;
             var showPedals   = elements.showTelePedals     !== false;
             var showPT       = elements.showPowerTorque    !== false;
             var showCorners  = showSusp || showSlip || showTemp;
@@ -146,11 +146,14 @@ export function createTelemetryCardsManager() {
                 } else {
                     pedalContainer.classList.remove('tc-half-width');
                 }
-                var targetPedalParent = (pedalPos === 'top') ? topEdgeContainer : bottomEdgeContainer;
+                var targetPedalParent = (sideBySide ? bottomEdgeContainer : ((pedalPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
                 if (targetPedalParent && pedalContainer.parentElement !== targetPedalParent) {
                     targetPedalParent.appendChild(pedalContainer);
                 }
-                pedalContainer.style.transform = 'translateX(' + pedalOffsetX + 'px) scale(' + pedalScale + ')';
+                // In side-by-side mode, clear translateX so charts appear adjacent
+                pedalContainer.style.transform = sideBySide
+                    ? 'scale(' + pedalScale + ')'
+                    : 'translateX(' + pedalOffsetX + 'px) scale(' + pedalScale + ')';
                 if (typeof pedalContainer.style.setProperty === 'function') {
                     pedalContainer.style.setProperty('--card-primary',  primaryColor);
                     pedalContainer.style.setProperty('--card-contrast', contrastColor);
@@ -165,11 +168,14 @@ export function createTelemetryCardsManager() {
                 } else {
                     ptContainer.classList.remove('tc-half-width');
                 }
-                var targetPtParent = (ptPos === 'top') ? topEdgeContainer : bottomEdgeContainer;
+                var targetPtParent = (sideBySide ? bottomEdgeContainer : ((ptPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
                 if (targetPtParent && ptContainer.parentElement !== targetPtParent) {
                     targetPtParent.appendChild(ptContainer);
                 }
-                ptContainer.style.transform = 'translateX(' + ptOffsetX + 'px) scale(' + ptScale + ')';
+                // In side-by-side mode, clear translateX so charts appear adjacent
+                ptContainer.style.transform = sideBySide
+                    ? 'scale(' + ptScale + ')'
+                    : 'translateX(' + ptOffsetX + 'px) scale(' + ptScale + ')';
                 if (typeof ptContainer.style.setProperty === 'function') {
                     ptContainer.style.setProperty('--card-primary',  primaryColor);
                     ptContainer.style.setProperty('--card-contrast', contrastColor);

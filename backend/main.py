@@ -1961,6 +1961,25 @@ async def save_overlay_config(data: dict):
         return {"error": f"Failed to save HUD config: {e}", "success": False}
 
 
+@app.post("/api/overlay/reset")
+async def reset_overlay_config():
+    try:
+        data = DEFAULT_HUD_CONFIG
+        with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        await manager.broadcast_json({"type": "hud:config", "data": data})
+
+        return {
+            "message": "HUD config reset to defaults successfully",
+            "success": True,
+            "data": data,
+        }
+    except Exception as e:
+        logger.error(f"Failed to reset hud_config.json: {e}")
+        return {"error": f"Failed to reset HUD config: {e}", "success": False}
+
+
 @app.get("/api/overlay/car_learning")
 async def get_car_learning():
     if os.path.exists(CAR_LEARNING_FILE):

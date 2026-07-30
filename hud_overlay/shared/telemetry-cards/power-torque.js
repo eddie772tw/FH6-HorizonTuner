@@ -10,11 +10,7 @@ export function renderPowerTorque(data, powerTorqueHist, now) {
     var maxTQ = data.sessionMaxima ? (data.sessionMaxima.maxTQ || 100) : 100;
     var ceilHP = Math.max(100, Math.ceil(maxHP / 100) * 100);
     var ceilTQ = Math.max(100, Math.ceil(maxTQ / 100) * 100);
-
-    var pwrLbl = document.getElementById('tcPowerLabel');
-    var tqLbl  = document.getElementById('tcTorqueLabel');
-    if (pwrLbl) pwrLbl.textContent = 'POWER (MAX ' + ceilHP + ')';
-    if (tqLbl)  tqLbl.textContent  = 'TORQUE (MAX ' + ceilTQ + ')';
+    var combinedMax = Math.max(ceilHP, ceilTQ);
 
     var currentRPM = data.rpm    || 0;
     var currentPwr = data.power  || 0;
@@ -42,6 +38,19 @@ export function renderPowerTorque(data, powerTorqueHist, now) {
     var pw = ptCanvas.width, ph = ptCanvas.height;
     ptCtx.clearRect(0, 0, pw, ph);
 
+    // MAX text hidden per requirement
+    /*
+    ptCtx.save();
+    ptCtx.fillStyle = '#ffffff';
+    ptCtx.font = 'bold 12px monospace';
+    ptCtx.textAlign = 'center';
+    ptCtx.textBaseline = 'top';
+    if (typeof ptCtx.fillText === 'function') {
+        ptCtx.fillText('MAX: ' + combinedMax, pw / 2, 4);
+    }
+    ptCtx.restore();
+    */
+
     var mRpm = data.maxRpm || 10000;
 
     // Draw Torque Trace (Yellow #ffeb3b)
@@ -49,8 +58,8 @@ export function renderPowerTorque(data, powerTorqueHist, now) {
     for (var k = 0; k < powerTorqueHist.length; k++) {
         var pt = powerTorqueHist[k];
         var tx = (pt.rpm / mRpm) * pw;
-        var clampedTQ = clamp(pt.torque, 0, ceilTQ);
-        var ty = ph - (clampedTQ / ceilTQ) * (ph - 4) - 2;
+        var clampedTQ = clamp(pt.torque, 0, combinedMax);
+        var ty = ph - (clampedTQ / combinedMax) * (ph - 4) - 2;
         ptCtx.fillRect(tx, ty, 2, 2);
     }
 
@@ -59,8 +68,8 @@ export function renderPowerTorque(data, powerTorqueHist, now) {
     for (var k = 0; k < powerTorqueHist.length; k++) {
         var pt = powerTorqueHist[k];
         var px = (pt.rpm / mRpm) * pw;
-        var clampedHP = clamp(pt.power, 0, ceilHP);
-        var py = ph - (clampedHP / ceilHP) * (ph - 4) - 2;
-        ptCtx.fillRect(px, px, 2, 2);
+        var clampedHP = clamp(pt.power, 0, combinedMax);
+        var py = ph - (clampedHP / combinedMax) * (ph - 4) - 2;
+        ptCtx.fillRect(px, py, 2, 2);
     }
 }

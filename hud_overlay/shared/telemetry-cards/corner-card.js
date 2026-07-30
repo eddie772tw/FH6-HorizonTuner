@@ -10,9 +10,37 @@ import {
     clamp,
     TEMP_HIST_MIN_F,
     TEMP_HIST_MAX_F,
+    TEMP_COLD_F,
+    TEMP_HOT_F,
     TEMP_NORMAL_MIN_F,
     TEMP_NORMAL_MAX_F,
 } from './utils.js';
+
+function getCanvasContext(canvas) {
+    if (!canvas) return null;
+    var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+    var cssW = canvas.width || 100;
+    var cssH = canvas.height || 100;
+    if (typeof canvas.getBoundingClientRect === 'function') {
+        var rect = canvas.getBoundingClientRect();
+        if (rect && rect.width > 0 && rect.height > 0) {
+            cssW = rect.width;
+            cssH = rect.height;
+        }
+    }
+    var targetW = Math.max(10, Math.floor(cssW * dpr));
+    var targetH = Math.max(10, Math.floor(cssH * dpr));
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+    }
+    return {
+        ctx: typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null,
+        w: targetW,
+        h: targetH,
+        dpr: dpr
+    };
+}
 
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now) {
     var rawSlipRatios = data.TireSlipRatio || [];
@@ -74,35 +102,29 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
             var rCanvas = document.getElementById('tcTireRadar' + tag);
             if (rCanvas) {
-                var rCtx = rCanvas.getContext('2d');
-                if (rCtx) {
-                    var rw = rCanvas.width, rh = rCanvas.height;
+                var cData = getCanvasContext(rCanvas);
+                if (cData && cData.ctx) {
+                    var rCtx = cData.ctx;
+                    var rw = cData.w, rh = cData.h, dpr = cData.dpr;
                     rCtx.clearRect(0, 0, rw, rh);
                     var rx0 = rw / 2, ry0 = rh / 2;
-                    var rRad = Math.min(rw, rh) * 0.42;
+                    var rRad = Math.min(rw, rh) * 0.44;
 
                     // Outer circle
                     rCtx.beginPath();
                     rCtx.arc(rx0, ry0, rRad, 0, Math.PI * 2);
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-                    rCtx.lineWidth = 1;
-                    rCtx.stroke();
-
-                    // 50% inner circle (comfort threshold)
-                    rCtx.beginPath();
-                    rCtx.arc(rx0, ry0, rRad * 0.5, 0, Math.PI * 2);
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-                    rCtx.lineWidth = 1;
+                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.30)';
+                    rCtx.lineWidth = 1.5 * dpr;
                     rCtx.stroke();
 
                     // Crosshairs
-                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-                    rCtx.lineWidth = 0.8;
+                    rCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                    rCtx.lineWidth = 1 * dpr;
                     rCtx.beginPath(); rCtx.moveTo(rx0, ry0 - rRad); rCtx.lineTo(rx0, ry0 + rRad); rCtx.stroke();
                     rCtx.beginPath(); rCtx.moveTo(rx0 - rRad, ry0); rCtx.lineTo(rx0 + rRad, ry0); rCtx.stroke();
 
                     // Map slip angle → X, slip ratio → Y
-                    var maxTRadius = Math.max(0, rRad - 3);
+                    var maxTRadius = Math.max(0, rRad - 3 * dpr);
                     var dx = (cAngle / 1.0) * rRad;
                     var dy = (cRatio / 1.0) * rRad;
                     var tDist = Math.sqrt(dx * dx + dy * dy);
@@ -114,8 +136,8 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                     var px = rx0 + dx, py = ry0 + dy;
 
                     rCtx.beginPath();
-                    rCtx.arc(px, py, 5, 0, Math.PI * 2);
-                    rCtx.fillStyle = mag > 1.0 ? 'rgba(255,0,85,0.85)' : 'rgba(0,240,255,0.85)';
+                    rCtx.arc(px, py, Math.max(4 * dpr, rRad * 0.1), 0, Math.PI * 2);
+                    rCtx.fillStyle = mag > 1.0 ? 'rgba(255,0,85,0.90)' : 'rgba(0,240,255,0.90)';
                     rCtx.fill();
                 }
             }
@@ -125,53 +147,85 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
         if (showTemp) {
             var tempEl = document.getElementById('tcTireTemp' + tag);
             if (tempEl) {
-                if (cTemp > 0) {
-                    var cTempC   = (cTemp - 32) * 5 / 9;
-                    var displayT = isMetric ? Math.round(cTempC) : Math.round(cTemp);
-                    tempEl.textContent = displayT + (isMetric ? '\u00b0C' : '\u00b0F');
-                    tempEl.style.color = getTempColor(cTemp);
-                } else {
-                    tempEl.textContent = '--' + (isMetric ? '\u00b0C' : '\u00b0F');
-                    tempEl.style.color = 'rgba(255,255,255,0.4)';
-                }
+                tempEl.style.display = 'none';
             }
 
             var tCanvas = document.getElementById('tcTireHist' + tag);
             if (tCanvas && tHist.length > 0) {
-                var tCtx = tCanvas.getContext('2d');
-                if (tCtx) {
-                    var tw = tCanvas.width, th = tCanvas.height;
+                var tData = getCanvasContext(tCanvas);
+                if (tData && tData.ctx) {
+                    var tCtx = tData.ctx;
+                    var tw = tData.w, th = tData.h, dpr = tData.dpr;
                     tCtx.clearRect(0, 0, tw, th);
 
-                    var numBins   = 15;
-                    var tempRange = TEMP_HIST_MAX_F - TEMP_HIST_MIN_F;
+                    var targetBarW = 3 * dpr;
+                    var numBins    = Math.max(15, Math.floor(tw / targetBarW));
+                    var barW       = tw / numBins;
+
+                    var tempRange  = TEMP_HIST_MAX_F - TEMP_HIST_MIN_F;
                     var tempPerBin = tempRange / numBins;
-                    var bins = new Array(numBins).fill(0);
+                    var bins       = new Array(numBins).fill(0);
 
                     for (var hi = 0; hi < tHist.length; hi++) {
                         var p = tHist[hi];
                         if (p.temp <= 0) continue;
-                        var tVal = clamp(p.temp, TEMP_HIST_MIN_F, TEMP_HIST_MAX_F);
-                        var bIdx = Math.floor((tVal - TEMP_HIST_MIN_F) / tempPerBin);
-                        if (bIdx >= numBins) bIdx = numBins - 1;
+                        var normT = clamp((p.temp - TEMP_HIST_MIN_F) / tempRange, 0, 1);
+                        var bIdx  = Math.min(numBins - 1, Math.floor(normT * numBins));
                         bins[bIdx]++;
                     }
 
-                    var maxBinCount = Math.max(1, Math.max.apply(null, bins));
+                    var maxBinCount = Math.max(3, Math.max.apply(null, bins));
 
-                    var normStartBin = Math.floor((TEMP_NORMAL_MIN_F - TEMP_HIST_MIN_F) / tempPerBin);
-                    var normEndBin   = Math.ceil( (TEMP_NORMAL_MAX_F - TEMP_HIST_MIN_F) / tempPerBin);
-                    var barW = tw / numBins;
+                    // Tri-Color Baseline (Cold: Blue, Normal: Green, Hot: Red)
+                    var coldX = Math.max(0, Math.min(tw, ((TEMP_COLD_F - TEMP_HIST_MIN_F) / tempRange) * tw));
+                    var hotX  = Math.max(0, Math.min(tw, ((TEMP_HOT_F  - TEMP_HIST_MIN_F) / tempRange) * tw));
+                    var lineY = th - 1 * dpr;
 
-                    tCtx.fillStyle = 'rgba(0, 255, 100, 0.08)';
-                    tCtx.fillRect(normStartBin * barW, 0, (normEndBin - normStartBin) * barW, th);
+                    tCtx.lineWidth = 1.5 * dpr;
+                    // Cold segment (Blue)
+                    tCtx.strokeStyle = '#0088ff';
+                    tCtx.beginPath(); tCtx.moveTo(0, lineY); tCtx.lineTo(coldX, lineY); tCtx.stroke();
+                    // Normal segment (Green)
+                    tCtx.strokeStyle = '#00ff00';
+                    tCtx.beginPath(); tCtx.moveTo(coldX, lineY); tCtx.lineTo(hotX, lineY); tCtx.stroke();
+                    // Hot segment (Red)
+                    tCtx.strokeStyle = '#ff0000';
+                    tCtx.beginPath(); tCtx.moveTo(hotX, lineY); tCtx.lineTo(tw, lineY); tCtx.stroke();
 
                     for (var b = 0; b < numBins; b++) {
-                        var bH = (bins[b] / maxBinCount) * (th - 4);
-                        if (bH < 2) bH = 2;
-                        var bTemp = TEMP_HIST_MIN_F + b * tempPerBin;
-                        tCtx.fillStyle = getTempColor(bTemp);
-                        tCtx.fillRect(b * barW, th - bH, barW - 1, bH);
+                        var bH = (bins[b] / maxBinCount) * (th - 6 * dpr);
+                        if (bH < 2 * dpr) bH = 2 * dpr;
+                        var bTempMid = TEMP_HIST_MIN_F + (b + 0.5) * tempPerBin;
+                        tCtx.fillStyle = getTempColor(bTempMid);
+                        var drawBarW = barW > 1.5 * dpr ? barW - 0.5 * dpr : barW;
+                        tCtx.fillRect(b * barW, th - 2 * dpr - bH, drawBarW, bH);
+                    }
+
+                    // White Indicator Line & Floating Current Temp Display
+                    if (cTemp > 0) {
+                        var normTempFactor = clamp((cTemp - TEMP_HIST_MIN_F) / tempRange, 0, 1);
+                        var indicatorX     = normTempFactor * tw;
+
+                        // Draw White Line
+                        tCtx.strokeStyle = '#ffffff';
+                        tCtx.lineWidth   = 1.5 * dpr;
+                        tCtx.beginPath();
+                        tCtx.moveTo(indicatorX, 0);
+                        tCtx.lineTo(indicatorX, th);
+                        tCtx.stroke();
+
+                        // Draw Floating Temperature Text
+                        var cTempC   = (cTemp - 32) * 5 / 9;
+                        var displayT = (isMetric ? Math.round(cTempC) + '\u00b0C' : Math.round(cTemp) + '\u00b0F');
+
+                        var fontSize = Math.max(10 * dpr, Math.round(th * 0.28));
+                        tCtx.fillStyle  = '#ffffff';
+                        tCtx.font       = 'bold ' + fontSize + 'px monospace';
+                        tCtx.textAlign  = indicatorX > tw - (36 * dpr) ? 'right' : (indicatorX < (36 * dpr) ? 'left' : 'center');
+                        tCtx.textBaseline = 'top';
+                        if (typeof tCtx.fillText === 'function') {
+                            tCtx.fillText(displayT, indicatorX, 2 * dpr);
+                        }
                     }
                 }
             }
@@ -201,9 +255,10 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
             var wCanvas = document.getElementById('tcSuspWave' + tag);
             if (wCanvas && sHist.length > 0) {
-                var wCtx = wCanvas.getContext('2d');
-                if (wCtx) {
-                    var ww = wCanvas.width, wh = wCanvas.height;
+                var wData = getCanvasContext(wCanvas);
+                if (wData && wData.ctx) {
+                    var wCtx = wData.ctx;
+                    var ww = wData.w, wh = wData.h, dpr = wData.dpr;
                     wCtx.clearRect(0, 0, ww, wh);
 
                     var warnH = wh * 0.05;
@@ -226,7 +281,7 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                         if (cssVal && cssVal.trim()) primaryColor = cssVal.trim();
                     }
                     wCtx.strokeStyle = primaryColor;
-                    wCtx.lineWidth = 1.5;
+                    wCtx.lineWidth = 1.5 * dpr;
                     wCtx.stroke();
                 }
             }

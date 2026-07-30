@@ -382,6 +382,8 @@
   "Release throttle to finish.": "鬆開油門將結束測試。",
   "Remove Channel": "Remove Channel",
   "Reset Car Learning Database": "重置車輛學習資料庫",
+  "Reset HUD Settings": "重設 HUD 相關設定",
+  "Reset all HUD elements, scaling, colors, and positions to default values.": "將所有 HUD 元素、縮放、顏色與位置重設為預設值。",
   "Reset run": "Reset run",
   "Reset to Defaults": "重設為預設主題",
   "Retention": "轉速保留率",

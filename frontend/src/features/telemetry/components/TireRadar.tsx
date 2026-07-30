@@ -3,8 +3,8 @@ import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 
 const getTempColor = (temp: number) => {
-  if (temp < 150) return '#0088ff';
-  if (temp > 210) return '#ff0000';
+  if (temp < 167) return '#0088ff';
+  if (temp > 221) return '#ff0000';
   return '#00ff00';
 };
 
@@ -177,60 +177,68 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
       if (tCanvas) {
         const ctx = tCanvas.getContext('2d');
         if (ctx) {
-          ctx.clearRect(0, 0, histWidth, histHeight);
-          
-          let minTemp = cTemp;
-          let maxTemp = cTemp;
-          const hLen = hist.current.length;
-          if (hLen > 0) {
-            minTemp = hist.current[0].temp;
-            maxTemp = hist.current[0].temp;
-            for (let i = 1; i < hLen; i++) {
-              const t = hist.current[i].temp;
-              if (t < minTemp) minTemp = t;
-              if (t > maxTemp) maxTemp = t;
-            }
+          const tw = tCanvas.clientWidth || histWidth;
+          const th = tCanvas.clientHeight || histHeight;
+          if (tCanvas.width !== tw || tCanvas.height !== th) {
+            tCanvas.width = tw;
+            tCanvas.height = th;
           }
+          ctx.clearRect(0, 0, tw, th);
           
-          let tempMinScale = 100;
-          let tempMaxScale = 260;
-          if (minTemp < tempMinScale + 10) tempMinScale = minTemp - 10;
-          if (maxTemp > tempMaxScale - 10) tempMaxScale = maxTemp + 10;
+          const tempMinScale = 100;
+          const tempMaxScale = 260;
+          const tempRange = tempMaxScale - tempMinScale;
           
-          const numBins = 30;
-          const tempPerBin = (tempMaxScale - tempMinScale) / numBins;
+          const targetBarW = 3;
+          const numBins = Math.max(15, Math.floor(tw / targetBarW));
+          const tempPerBin = tempRange / numBins;
           const bins = new Array(numBins).fill(0);
           let maxBinCount = 1;
 
+          const hLen = hist.current.length;
           for (let i = 0; i < hLen; i++) {
             const p = hist.current[i];
             if (Math.abs(p.speed) < 0.5) continue;
-            let t = Math.max(tempMinScale, Math.min(tempMaxScale, p.temp));
-            let binIdx = Math.floor((t - tempMinScale) / tempPerBin);
-            if (binIdx >= numBins) binIdx = numBins - 1;
+            let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
+            let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
             bins[binIdx]++;
             if (bins[binIdx] > maxBinCount) maxBinCount = bins[binIdx];
           }
 
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+          // Tri-Color Baseline (Cold: Blue, Normal: Green, Hot: Red)
+          const coldX = Math.max(0, Math.min(tw, ((167 - tempMinScale) / tempRange) * tw));
+          const hotX = Math.max(0, Math.min(tw, ((221 - tempMinScale) / tempRange) * tw));
+          const lineY = th - 1;
+
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#0088ff';
+          ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(coldX, lineY); ctx.stroke();
+          ctx.strokeStyle = '#00ff00';
+          ctx.beginPath(); ctx.moveTo(coldX, lineY); ctx.lineTo(hotX, lineY); ctx.stroke();
+          ctx.strokeStyle = '#ff0000';
+          ctx.beginPath(); ctx.moveTo(hotX, lineY); ctx.lineTo(tw, lineY); ctx.stroke();
+
+          const barW = tw / numBins;
           for (let i = 0; i < numBins; i++) {
-            let h = (bins[i] / maxBinCount) * histHeight;
+            let h = (bins[i] / maxBinCount) * (th - 6);
             if (h < 2) h = 2;
             
-            const binTemp = tempMinScale + i * tempPerBin;
-            ctx.fillStyle = getTempColor(binTemp);
-            const barW = histWidth / numBins;
-            ctx.fillRect(i * barW, histHeight - h, barW > 1 ? barW - 1 : barW, h);
+            const binTempMid = tempMinScale + (i + 0.5) * tempPerBin;
+            ctx.fillStyle = getTempColor(binTempMid);
+            const drawW = barW > 1.5 ? barW - 0.5 : barW;
+            ctx.fillRect(i * barW, th - 2 - h, drawW, h);
           }
           
-          const currentT = Math.max(tempMinScale, Math.min(tempMaxScale, cTemp));
-          const lineX = ((currentT - tempMinScale) / (tempMaxScale - tempMinScale)) * histWidth;
-          ctx.beginPath();
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 2;
-          ctx.moveTo(lineX, 0);
-          ctx.lineTo(lineX, histHeight);
-          ctx.stroke();
+          if (cTemp > 0) {
+            const currentT = Math.max(tempMinScale, Math.min(tempMaxScale, cTemp));
+            const lineX = ((currentT - tempMinScale) / tempRange) * tw;
+            ctx.beginPath();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, th);
+            ctx.stroke();
+          }
         }
       }
     };

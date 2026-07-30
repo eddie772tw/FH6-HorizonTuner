@@ -48,6 +48,8 @@ interface HudConfig {
   telemetryPowerTorqueScale?: number;
   /** Independent font scale for card text (0.5–2.0) */
   telemetryCardFontScale?: number;
+  /** Option to merge power/torque & pedal charts side-by-side */
+  telemetrySideBySideCharts?: boolean;
   /** Chart position: 'top' | 'bottom' */
   telemetryPedalPosition?: 'top' | 'bottom';
   telemetryPowerTorquePosition?: 'top' | 'bottom';
@@ -55,6 +57,9 @@ interface HudConfig {
   telemetryCornerOffsetY?: number;
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
+  /** VFD Instrument Sensitivity Offsets */
+  vfdVuOffset?: number;
+  vfdAudioOffset?: number;
   glowIntensity?: number;
   customColor?: string;
   useDefaultColors?: boolean;
@@ -73,11 +78,14 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
   telemetryCardFontScale: 1.0,
+  telemetrySideBySideCharts: false,
   telemetryPedalPosition: 'bottom',
-  telemetryPowerTorquePosition: 'bottom',
+  telemetryPowerTorquePosition: 'top',
   telemetryCornerOffsetY: 0,
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
+  vfdVuOffset: 0,
+  vfdAudioOffset: 0,
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
@@ -98,7 +106,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showTeleAttitude: true,
     showTeleEngine: true,
     showTelePedals: true,
-    showTeleCenterAnchor: true,
+    showTeleCenterAnchor: false,
     showTeleGridLines: false,
   },
   soundEnabled: false,
@@ -326,12 +334,20 @@ export const OverlayView: React.FC = () => {
   };
 
   const handlePedalOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryPedalOffsetX: val };
+    const updated = {
+      ...config,
+      telemetryPedalOffsetX: val,
+      ...(config.telemetrySideBySideCharts ? { telemetryPowerTorqueOffsetX: val } : {})
+    };
     saveConfig(updated);
   };
 
   const handlePowerTorqueOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryPowerTorqueOffsetX: val };
+    const updated = {
+      ...config,
+      telemetryPowerTorqueOffsetX: val,
+      ...(config.telemetrySideBySideCharts ? { telemetryPedalOffsetX: val } : {})
+    };
     saveConfig(updated);
   };
 
@@ -342,12 +358,45 @@ export const OverlayView: React.FC = () => {
   };
 
   const handlePedalPositionChange = (pos: 'top' | 'bottom') => {
-    const updated = { ...config, telemetryPedalPosition: pos };
+    const updated = {
+      ...config,
+      telemetryPedalPosition: pos,
+      ...(config.telemetrySideBySideCharts ? { telemetryPowerTorquePosition: pos } : {})
+    };
     saveConfig(updated);
   };
 
   const handlePowerTorquePositionChange = (pos: 'top' | 'bottom') => {
-    const updated = { ...config, telemetryPowerTorquePosition: pos };
+    const updated = {
+      ...config,
+      telemetryPowerTorquePosition: pos,
+      ...(config.telemetrySideBySideCharts ? { telemetryPedalPosition: pos } : {})
+    };
+    saveConfig(updated);
+  };
+
+  const handleSideBySideChartsToggle = () => {
+    const nextVal = !config.telemetrySideBySideCharts;
+    const updated = {
+      ...config,
+      telemetrySideBySideCharts: nextVal,
+      ...(nextVal ? {
+        telemetryPowerTorqueOffsetX: config.telemetryPedalOffsetX ?? 0,
+        telemetryPowerTorquePosition: config.telemetryPedalPosition ?? 'bottom'
+      } : {})
+    };
+    saveConfig(updated);
+  };
+
+  const handleVfdVuOffsetChange = (val: number) => {
+    const clamped = Math.max(-5, Math.min(5, val));
+    const updated = { ...config, vfdVuOffset: clamped };
+    saveConfig(updated);
+  };
+
+  const handleVfdAudioOffsetChange = (val: number) => {
+    const clamped = Math.max(-5, Math.min(5, val));
+    const updated = { ...config, vfdAudioOffset: clamped };
     saveConfig(updated);
   };
 
@@ -369,17 +418,37 @@ export const OverlayView: React.FC = () => {
 
   const handleReloadHud = () => {
     broadcastConfig(config);
+    channelRef.current?.postMessage({ type: 'hud:reload', hudStyle: config.hudStyle });
+    fetchConfig(config.enabled, true);
+    if (config.hudStyle) {
+      loadAuthorInfo(config.hudStyle, true);
+    }
+  };
+
+  const handleResetHudConfig = () => {
+    const resetConfig: HudConfig = {
+      ...DEFAULT_HUD_CONFIG,
+      enabled: config.enabled,
+    };
+    saveConfig(resetConfig);
     channelRef.current?.postMessage({ type: 'hud:reload' });
     fetchConfig(config.enabled, true);
   };
 
   const handleElementToggle = (key: keyof HudElements) => {
+    const nextVal = !config.elements[key];
+    const newElements = {
+      ...config.elements,
+      [key]: nextVal,
+    };
+
+    if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && nextVal) {
+      newElements.showTeleTires = true;
+    }
+
     const updated = {
       ...config,
-      elements: {
-        ...config.elements,
-        [key]: !config.elements[key],
-      },
+      elements: newElements,
     };
     saveConfig(updated);
   };
@@ -462,6 +531,16 @@ export const OverlayView: React.FC = () => {
             {t("Offset & Position Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* Merge Power/Torque & Pedal Position Chart Switch */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.2rem' }}>
+              <input
+                type="checkbox"
+                checked={config.telemetrySideBySideCharts === true}
+                onChange={handleSideBySideChartsToggle}
+              />
+              <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>{t("Merge Power & Pedal Charts")}</span>
+            </label>
+
             {/* Corner Cards Vertical (Y) Offset Slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
@@ -537,7 +616,7 @@ export const OverlayView: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Power/Torque Position")}:</span>
               <select
-                value={config.telemetryPowerTorquePosition ?? 'bottom'}
+                value={config.telemetryPowerTorquePosition ?? 'top'}
                 onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
                 style={{
                   background: 'rgba(0,0,0,0.5)',
@@ -553,6 +632,43 @@ export const OverlayView: React.FC = () => {
                 <option value="top">{t("Top")}</option>
               </select>
             </div>
+
+            {/* VFD Instrument Waveform Sensitivity Offsets (Visible only when Retro VFD is selected) */}
+            {config.hudStyle === 'vfd' && (
+              <>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>VU Offset:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-5}
+                    max={5}
+                    step={1}
+                    value={config.vfdVuOffset ?? 0}
+                    onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>Audio Visualizer Offset:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdAudioOffset ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-5}
+                    max={5}
+                    step={1}
+                    value={config.vfdAudioOffset ?? 0}
+                    onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -674,11 +790,6 @@ export const OverlayView: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginTop: '1rem' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={config.elements.showGauge !== false} onChange={() => handleElementToggle('showGauge')} />
-              <span>{t("Speedometer Gauge")}</span>
-            </label>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
               <span>{t("Suspension Travel")}</span>
             </label>
@@ -710,15 +821,25 @@ export const OverlayView: React.FC = () => {
           </div>
         </div>
 
-        {/* --- COLUMN 1 ROW 2: HUD Style Mode --- */}
+        {/* --- COLUMN 1 ROW 2: Speedometer Settings --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("HUD Style Mode")}
+            {t("Speedometer Settings")}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.2rem' }}>
+              <input
+                type="checkbox"
+                checked={config.elements.showGauge !== false}
+                onChange={() => handleElementToggle('showGauge')}
+              />
+              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{t("Enabled")}</span>
+            </label>
+
             <select
               value={config.hudStyle}
               onChange={(e) => handleStyleChange(e.target.value as any)}
+              disabled={config.elements.showGauge === false}
               style={{
                 width: '100%',
                 padding: '0.8rem',
@@ -726,9 +847,10 @@ export const OverlayView: React.FC = () => {
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 background: 'rgba(0, 0, 0, 0.5)',
                 color: 'var(--primary)',
-                cursor: 'pointer',
+                cursor: config.elements.showGauge === false ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold',
-                outline: 'none'
+                outline: 'none',
+                opacity: config.elements.showGauge === false ? 0.5 : 1
               }}
             >
               <option value="advanced" style={{ background: '#222', color: '#fff' }}>{t("Advanced (Race Arc HUD)")}</option>
@@ -753,7 +875,7 @@ export const OverlayView: React.FC = () => {
                 cursor: 'pointer',
                 fontSize: '0.85rem',
                 fontWeight: 'bold',
-                transition: 'background 0.2s ease'
+                transition: 'background 0.2s ease',
               }}
             >
               {t("Refresh HUD List & Reload HTML")}
@@ -959,6 +1081,32 @@ export const OverlayView: React.FC = () => {
                 {t("Alignment Grid Lines")}
               </span>
             </label>
+
+            {/* Reset HUD Settings Action */}
+            <div style={{ marginTop: '0.6rem', paddingTop: '0.8rem', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+              <button
+                onClick={handleResetHudConfig}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem',
+                  borderRadius: '4px',
+                  background: 'rgba(255, 60, 60, 0.15)',
+                  border: '1px solid rgba(255, 60, 60, 0.4)',
+                  color: '#ff6b6b',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 60, 60, 0.3)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 60, 60, 0.15)')}
+              >
+                {t("Reset HUD Settings")}
+              </button>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: '#888', marginTop: '0.4rem', textAlign: 'center' }}>
+                {t("Reset all HUD elements, scaling, colors, and positions to default values.")}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -429,12 +429,14 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               <YAxis 
                 yAxisId="hp" 
                 stroke="var(--accent)" 
+                tick={false}
                 label={{ value: `Power (${getPowerLabel()})`, angle: -90, position: 'insideLeft', fill: 'var(--accent)' }} 
               />
               <YAxis 
                 yAxisId="torque" 
                 orientation="right" 
                 stroke="hsl(120, 80%, 60%)" 
+                tick={false}
                 label={{ value: `Torque (${getTorqueLabel()})`, angle: -90, position: 'insideRight', fill: 'hsl(120, 80%, 60%)' }} 
               />
               <Tooltip 

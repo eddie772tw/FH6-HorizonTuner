@@ -137,7 +137,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
           <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
           <div ref={barRef} style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
-            background: 'var(--primary)', transition: 'height 0.05s linear, background 0.1s', borderRadius: '0 0 8px 8px'
+            background: 'var(--primary)', borderRadius: '0 0 8px 8px'
           }} />
         </div>
         <div style={{ flex: 1, height: '100%', position: 'relative', opacity: 0.8 }}>

@@ -5,10 +5,9 @@
 
 export const corners = ['FL', 'FR', 'RL', 'RR'];
 
-// Tire temperature thresholds (°F) — aligned with TelemetryView.tsx Single Source of Truth
-// Normal operating range: 75–105 °C == 167–221 °F
-export const TEMP_COLD_F      = 150;   // < 150°F → blue  (#0088ff)
-export const TEMP_HOT_F       = 210;   // > 210°F → red   (#ff0000)  [aligned with TelemetryView.tsx]
+// Tire temperature thresholds (°F) — 75°C (167°F) to 105°C (221°F) normal operating range
+export const TEMP_COLD_F      = 167;   // < 167°F (75°C) → blue  (#0088ff)
+export const TEMP_HOT_F       = 221;   // > 221°F (105°C) → red   (#ff0000)
 export const TEMP_NORMAL_MIN_F = 167;  // 75°C → normal range lower bound
 export const TEMP_NORMAL_MAX_F = 221;  // 105°C → normal range upper bound
 
