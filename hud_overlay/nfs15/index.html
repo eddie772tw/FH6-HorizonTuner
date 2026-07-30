@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>NFS 2015 HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .nfs15-container {
+            width: 331px;
+            height: 320px;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            width: 331px;
+            height: 320px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="teleCardsMount"></div>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container nfs15-container" id="nfs15Container">
+            <canvas id="nfs15Canvas" width="331" height="320"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var canvas = document.getElementById('nfs15Canvas');
+            var ctx = canvas ? canvas.getContext('2d') : null;
+            var images = {};
+            var isReady = false;
+
+            var baseRoot = "./assets/skins/NFS15SPD/";
+            var assetMap = {
+                background: baseRoot + "images/background.png",
+                flash: baseRoot + "images/flash.png",
+                gear_n: baseRoot + "images/chars/nfs15gear/n.png",
+                gear_r: baseRoot + "images/chars/nfs15gear/R.png",
+                unit_k: baseRoot + "images/chars/nfs15uom/K.png",
+                unit_m: baseRoot + "images/chars/nfs15uom/M.png"
+            };
+
+            for (var i = 1; i <= 359; i++) {
+                assetMap["rev_" + i] = baseRoot + "images/rev/rev_" + i + ".png";
+            }
+            for (var i = 1; i <= 19; i++) {
+                assetMap["zone_" + i] = baseRoot + "images/revzones/" + i + ".png";
+            }
+            for (var i = 0; i <= 9; i++) {
+                assetMap["gear_" + i] = baseRoot + "images/chars/nfs15gear/" + i + ".png";
+                assetMap["speed_" + i] = baseRoot + "images/chars/nfs15speed/" + i + ".png";
+            }
+
+            var keys = Object.keys(assetMap);
+            var loaded = 0;
+            keys.forEach(function (k) {
+                var img = new Image();
+                img.onload = img.onerror = function () {
+                    images[k] = img;
+                    loaded++;
+                    if (loaded >= keys.length) isReady = true;
+                };
+                img.src = assetMap[k];
+            });
+
+            var isMetricUnit = true;
+            var lastGear = null;
+            var flashUntil = 0;
+
+            function drawSpeed(speed) {
+                var val = Math.max(0, Math.min(999, Math.floor(speed + 0.5)));
+                var str = ('  ' + val).slice(-3);
+                var startX = 0.35 * 331;
+                var startY = 0.74 * 320;
+                var w = 230 * 0.125;
+                var h = 368 * 0.125;
+
+                for (var i = 0; i < 3; i++) {
+                    var ch = str.charAt(i);
+                    if (ch !== ' ' && images["speed_" + ch]) {
+                        ctx.drawImage(images["speed_" + ch], startX + i * w, startY, w, h);
+                    }
+                }
+            }
+
+            function drawGear(label) {
+                var key = (label || 'n').toLowerCase();
+                if (key !== 'n' && key !== 'r') key = key.charAt(0);
+                var imgKey = "gear_" + key;
+                if (images[imgKey]) {
+                    ctx.drawImage(images[imgKey], 0.46 * 331, 0.57 * 320, 230 * 0.1125, 368 * 0.1125);
+                }
+            }
+
+            function renderNFS15(data, time) {
+                if (!ctx || !isReady) return;
+                ctx.clearRect(0, 0, 331, 320);
+
+                var maxRpm = data.maxRpm || data.max_rpm || 8000;
+                var rpm = data.rpm || 0;
+                var mps = data.SpeedMetersPerSecond || 0;
+                var speed = isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694);
+
+                var gearVal = data.gear;
+                var gearLabel = gearVal === 0 ? 'r' : (gearVal === 11 ? 'n' : (gearVal !== undefined ? String(gearVal) : '1'));
+
+                var rpmRatio = Math.max(0, rpm / Math.max(1, maxRpm));
+
+                // 1. Background
+                if (images.background) ctx.drawImage(images.background, 0, 0, 331, 320);
+
+                // 2. Rev Frame
+                var revFrame = Math.max(1, Math.min(359, Math.floor(rpmRatio / 1.18 * 359) + 1));
+                if (images["rev_" + revFrame]) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.82;
+                    ctx.drawImage(images["rev_" + revFrame], 0, 0, 331, 320);
+                    ctx.restore();
+                }
+
+                // 3. Redline zone
+                if (rpmRatio >= 0.81) {
+                    var zone = Math.max(1, Math.min(19, Math.floor((rpmRatio - 0.81) * 100) + 1));
+                    var visible = rpmRatio < 1 || Math.floor((time || performance.now() / 1000) * 10) % 2 === 0;
+                    if (visible && images["zone_" + zone]) {
+                        ctx.drawImage(images["zone_" + zone], 0, 0, 331, 320);
+                    }
+                }
+
+                // 4. Gear & Speed & Unit
+                drawGear(gearLabel);
+                drawSpeed(speed);
+
+                var unitKey = isMetricUnit ? "unit_k" : "unit_m";
+                if (images[unitKey]) {
+                    ctx.drawImage(images[unitKey], 0.42 * 331, 0.91 * 320, 224 * 0.27, 60 * 0.27);
+                }
+
+                // 5. Gear change flash effect
+                var nowSec = (time || performance.now() / 1000);
+                if (lastGear !== null && lastGear !== gearLabel) {
+                    flashUntil = nowSec + 0.1;
+                }
+                lastGear = gearLabel;
+
+                if (nowSec < flashUntil && images.flash) {
+                    ctx.drawImage(images.flash, 0, 0, 331, 320);
+                }
+            }
+
+            var sweepActive = false;
+            function triggerSweep() {
+                if (sweepActive) return;
+                sweepActive = true;
+                var startTime = performance.now();
+                var duration = 1200;
+                var maxRpm = 8000;
+
+                function animate(now) {
+                    var elapsed = now - startTime;
+                    var progress = Math.min(1.0, elapsed / duration);
+                    var mockRpm = 0;
+                    if (progress < 0.5) {
+                        var p = progress / 0.5;
+                        mockRpm = maxRpm * Math.sin(p * Math.PI / 2);
+                    } else {
+                        var p = (progress - 0.5) / 0.5;
+                        mockRpm = maxRpm * (1 - Math.sin(p * Math.PI / 2)) + 1000 * Math.sin(p * Math.PI / 2);
+                    }
+
+                    renderNFS15({
+                        rpm: mockRpm,
+                        maxRpm: maxRpm,
+                        speed: (mockRpm / maxRpm) * 210,
+                        gear: 3
+                    }, elapsed / 1000);
+
+                    if (progress < 1.0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        sweepActive = false;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            HUDCore.registerStyle('nfs15', {
+                containerId: 'nfs15Container',
+                scaleMultiplier: 1.5,
+                onInit: function (payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                },
+                onElementsChange: function (elements) {
+                    var c = document.getElementById('nfs15Container');
+                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
+                },
+                onFrame: function (data, payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                    if (!sweepActive) renderNFS15(data);
+                },
+                onAnimate: function () {
+                    triggerSweep();
+                }
+            });
+
+            HUDCore.init('nfs15');
+            setTimeout(triggerSweep, 100);
+        })();
+    </script>
+</body>
+
+</html>

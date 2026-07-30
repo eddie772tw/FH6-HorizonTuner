@@ -610,7 +610,16 @@
         }
 
         // ── HUD switcher ──────────────────────────────────────────────────
-        const HUDS      = { simple: './simple/index.html', advanced: './advanced/index.html' };
+        const HUDS      = {
+            simple: './simple/index.html',
+            advanced: './advanced/index.html',
+            fm4ui: './fm4ui/index.html',
+            gt7: './gt7/index.html',
+            mw2005: './mw2005/index.html',
+            nfs15: './nfs15/index.html',
+            shift_tacho: './shift_tacho/index.html',
+            vfd: './vfd/index.html'
+        };
         let   activeHud = localStorage.getItem('forza_hud_active') || 'simple';
         const hudIframe  = document.getElementById('hud-iframe');
 
@@ -915,13 +924,17 @@
 
         async function saveWindowState() {
             try {
-                const position = await appWindow.outerPosition();
-                const size     = await appWindow.innerSize();
-                localStorage.setItem(stateKey(), JSON.stringify({
-                    position: { x: position.x, y: position.y },
-                    size:     { width: size.width, height: size.height }
-                }));
-            } catch (e) { console.error('Failed to save window state:', e); }
+                if (window.__TAURI__ && appWindow && appWindow.outerPosition) {
+                    const position = await appWindow.outerPosition();
+                    const size     = await appWindow.innerSize();
+                    localStorage.setItem(stateKey(), JSON.stringify({
+                        position: { x: position.x, y: position.y },
+                        size:     { width: size.width, height: size.height }
+                    }));
+                }
+            } catch (e) {
+                // Silently handle window state saving when outerPosition capability is restricted
+            }
         }
 
         async function applyWindowConfig(config) {

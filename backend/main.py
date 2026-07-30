@@ -30,11 +30,13 @@ import time
 from contextlib import asynccontextmanager
 from typing import List
 
+from audio_spectrum import get_audio_spectrum_data
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
+from system_media import get_system_media_info
 from telemetry_listener import pack_telemetry_binary, start_udp_listener
 from telemetry_sqlite import TelemetrySQLite
 
@@ -1972,6 +1974,35 @@ async def save_car_learning(data: dict):
     except Exception as e:
         logger.error(f"Failed to save car_learning.json: {e}")
         return {"error": f"Failed to save car learning data: {e}", "success": False}
+
+
+@app.get("/api/overlay/system_media")
+async def get_system_media():
+    try:
+        return await get_system_media_info()
+    except Exception as e:
+        logger.error(f"Failed to get system media info: {e}")
+        return {
+            "title": "FORZA HORIZON 6 SOUNDTRACK",
+            "artist": "RADIO ETIENNE",
+            "status": "idle",
+            "success": False,
+        }
+
+
+@app.get("/api/overlay/audio_spectrum")
+async def get_audio_spectrum():
+    try:
+        return await get_audio_spectrum_data()
+    except Exception as e:
+        logger.error(f"Failed to get audio spectrum data: {e}")
+        return {
+            "spectrum": [0.0] * 32,
+            "vu_left": 0.0,
+            "vu_right": 0.0,
+            "has_audio": False,
+            "success": False,
+        }
 
 
 def check_frontend_alive(proc):

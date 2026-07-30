@@ -1,17 +1,77 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
-// Read backend port for dev proxy
-let backendPort = 8000;
-try {
-  const portStr = fs.readFileSync("../backend/logs/web_port.txt", "utf-8");
-  backendPort = parseInt(portStr.trim()) || 8000;
-} catch (e) {
-  // fallback to 8000 or 8001
-  backendPort = 8001;
+// In dev mode, the Python backend sidecar may not be running.
+// Serve hud_overlay/ files directly for /hud/* requests instead of proxying.
+const HUD_OVERLAY_DIR = path.resolve(__dirname, "../hud_overlay");
+
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ttf": "font/ttf",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".otf": "font/otf",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".webp": "image/webp",
+};
+
+function hudStaticPlugin(): Plugin {
+  return {
+    name: "hud-static-serve",
+    configureServer(server) {
+      // Register before internal middlewares so /hud/* is intercepted early
+      server.middlewares.use((req, res, next) => {
+        if (!req.url || !req.url.startsWith("/hud/")) return next();
+
+        // Strip /hud/ prefix and decode URI, then map to hud_overlay/
+        const relativePath = decodeURIComponent(req.url.slice("/hud/".length).split("?")[0]);
+        const filePath = path.join(HUD_OVERLAY_DIR, relativePath);
+
+        // Security: prevent directory traversal
+        if (!filePath.startsWith(HUD_OVERLAY_DIR)) {
+          res.statusCode = 403;
+          res.end("Forbidden");
+          return;
+        }
+
+        try {
+          const stat = fs.statSync(filePath);
+          if (stat.isDirectory()) {
+            // Serve index.html for directory requests
+            const indexPath = path.join(filePath, "index.html");
+            if (fs.existsSync(indexPath)) {
+              res.setHeader("Content-Type", "text/html; charset=utf-8");
+              res.end(fs.readFileSync(indexPath));
+              return;
+            }
+            res.statusCode = 404;
+            res.end("Not Found");
+            return;
+          }
+          const ext = path.extname(filePath).toLowerCase();
+          const mime = MIME_TYPES[ext] || "application/octet-stream";
+          const charset = [".html", ".css", ".js", ".json", ".svg"].includes(ext) ? "; charset=utf-8" : "";
+          res.setHeader("Content-Type", mime + charset);
+          res.setHeader("Cache-Control", "no-cache");
+          res.end(fs.readFileSync(filePath));
+        } catch {
+          res.statusCode = 404;
+          res.end("Not Found");
+        }
+      });
+    },
+  };
 }
 
 // @ts-expect-error process is a nodejs global
@@ -63,7 +123,7 @@ try {
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react()],
+  plugins: [react(), hudStaticPlugin()],
   define: {
     __GIT_COMMIT__: JSON.stringify(gitCommit),
     __GIT_BRANCH__: JSON.stringify(gitBranch),
@@ -94,12 +154,6 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
     host: host || false,
-    proxy: {
-      '/hud': {
-        target: `http://127.0.0.1:${backendPort}`,
-        changeOrigin: true
-      }
-    },
     hmr: host
       ? {
           protocol: "ws",

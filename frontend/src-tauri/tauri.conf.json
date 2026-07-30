@@ -38,6 +38,9 @@
         {
           "identifier": "main-capability",
           "windows": ["main", "overlay"],
+          "remote": {
+            "urls": ["http://127.0.0.1:*", "http://localhost:*"]
+          },
           "permissions": [
             "core:window:allow-set-position",
             "core:window:allow-set-size",

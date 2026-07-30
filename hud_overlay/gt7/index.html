@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gran Turismo 7 HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        @font-face {
+            font-family: 'GT7Digits';
+            src: url('./assets/fonts/arkitech_medium.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'GT7Text';
+            src: url('./assets/fonts/gt7-MyFont Regular.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'GT7Bold';
+            src: url('./assets/fonts/gt7-MyFont Bold.ttf') format('truetype');
+            font-weight: bold;
+        }
+        .gt7-container {
+            align-self: center;
+            transform-origin: bottom center;
+            width: 1260px;
+            height: 240px;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            width: 1260px;
+            height: 240px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="teleCardsMount"></div>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container gt7-container" id="gt7Container">
+            <canvas id="gt7Canvas" width="1260" height="240"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var canvas = document.getElementById('gt7Canvas');
+            var ctx = canvas ? canvas.getContext('2d') : null;
+            var images = {};
+            var isReady = false;
+
+            var assetMap = {
+                background: "./assets/img/tach/background.png",
+                line: "./assets/img/tach/line.png",
+                dashes: "./assets/img/tach/dashes.png",
+                brake_gauge: "./assets/img/gauge_left.png",
+                throttle_gauge: "./assets/img/gauge_right.png",
+                brake_icon: "./assets/img/icons/brakes_icon.png",
+                throttle_icon: "./assets/img/icons/throttle_icon.png",
+                handbrake: "./assets/img/icons/handbrake-hq.png",
+                turbo_background: "./assets/img/turbo_background.png",
+                tyre_center: "./assets/img/tyre-center.png",
+                tyre_outline: "./assets/img/tyre-outline.png"
+            };
+
+            for (var i = 0; i <= 80; i++) {
+                var pad2 = ('0' + i).slice(-2);
+                assetMap["rev" + i] = "./assets/img/tach/rev/rev_back_" + pad2 + ".png";
+            }
+
+            var keys = Object.keys(assetMap);
+            var loaded = 0;
+            keys.forEach(function (k) {
+                var img = new Image();
+                img.onload = img.onerror = function () {
+                    images[k] = img;
+                    loaded++;
+                    if (loaded >= keys.length) isReady = true;
+                };
+                img.src = assetMap[k];
+            });
+
+            function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+            function mix(a, b, amt) { return a + (b - a) * clamp(amt, 0, 1); }
+            function hexColor(r, g, b) {
+                return "#" + Math.floor(r * 255 + 0.5).toString(16).padStart(2, '0') +
+                    Math.floor(g * 255 + 0.5).toString(16).padStart(2, '0') +
+                    Math.floor(b * 255 + 0.5).toString(16).padStart(2, '0');
+            }
+
+            function getTempColor(temp) {
+                if (temp <= 0) return "#666666";
+                if (temp < 160) {
+                    var amt = clamp((temp - 80) / 80, 0, 1);
+                    return hexColor(mix(0.25, 1, amt), mix(0.55, 1, amt), 1);
+                }
+                if (temp <= 230) return "#ffffff";
+                var amt = clamp((temp - 230) / 80, 0, 1);
+                return hexColor(1, mix(1, 0.12, amt), mix(1, 0.12, amt));
+            }
+
+            var settings = {
+                show_extras: true,
+                show_tires: true,
+                show_boost: true,
+                show_race_info: true
+            };
+            var isMetricUnit = true;
+            var peakPositiveBoost = 0;
+            var boostCar = null;
+
+            function drawTires(tm) {
+                var x = -205, y = 12;
+                var temps = [
+                    tm.temp_fl || tm.tire_temp_front_left || 178,
+                    tm.temp_fr || tm.tire_temp_front_right || 184,
+                    tm.temp_rl || tm.tire_temp_rear_left || 194,
+                    tm.temp_rr || tm.tire_temp_rear_right || 188
+                ];
+
+                if (images.tyre_center) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.75;
+                    ctx.drawImage(images.tyre_center, x + 10.5, y, 201, 217);
+                    ctx.restore();
+                }
+
+                var positions = [
+                    { x: x + 4, y: y + 7 },
+                    { x: x + 172, y: y + 7 },
+                    { x: x + 4, y: y + 117 },
+                    { x: x + 172, y: y + 117 }
+                ];
+
+                for (var i = 0; i < 4; i++) {
+                    if (images.tyre_outline) {
+                        ctx.save();
+                        ctx.globalAlpha = 0.92;
+                        ctx.drawImage(images.tyre_outline, positions[i].x, positions[i].y, 46, 94);
+                        ctx.restore();
+                    }
+                }
+            }
+
+            function drawBoost(tm) {
+                var scale = 1.25;
+                var w = 171 * scale, h = 186 * scale;
+                var x = 1295.5 - w * 0.5, y = 99 - h * 0.5;
+                var boostPsi = tm.boost_psi ?? (tm.boost !== undefined ? tm.boost : 14.5);
+                var boostBar = boostPsi * 0.0689476;
+                var maxBar = Math.max(2, Math.ceil(Math.max(boostBar, peakPositiveBoost * 0.0689476)));
+
+                if (images.turbo_background) {
+                    ctx.drawImage(images.turbo_background, x, y, w, h);
+                }
+
+                var cx = x + w * 0.5, cy = y + h * 0.5;
+                var radius = w * 75.75 / 228;
+
+                ctx.save();
+                ctx.beginPath();
+                var startA = Math.PI, endA = Math.PI;
+                if (boostBar >= 0) {
+                    endA = Math.PI + Math.PI * clamp(boostBar / maxBar, 0, 1);
+                } else {
+                    startA = Math.PI - Math.PI * 0.5 * clamp(-boostBar, 0, 1);
+                }
+                ctx.arc(cx, cy, radius, startA, endA);
+                ctx.lineWidth = 6.75 * scale;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            function renderGT7(data, time) {
+                if (!ctx || !isReady) return;
+                ctx.clearRect(0, 0, 1260, 240);
+
+                var maxRpm = data.maxRpm || data.max_rpm || 8000;
+                var rpm = data.rpm || 0;
+                var mps = data.SpeedMetersPerSecond || 0;
+                var speed = isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694);
+
+                var gearVal = data.gear;
+                var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
+                var steer = data.steer || data.steering || 0;
+
+                var rpmRatio = clamp(rpm * 1.05 / Math.max(1, maxRpm), 0, 1);
+                var cx = 630;
+
+                if (settings.show_tires) drawTires(data);
+                if (settings.show_boost) drawBoost(data);
+
+                // Background
+                if (images.background) ctx.drawImage(images.background, 230, 20, 800, 196);
+                if (images.line) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.15;
+                    ctx.drawImage(images.line, 230, 20, 800, 61);
+                    ctx.restore();
+                }
+
+                // Rev Frame
+                var progress = clamp((rpmRatio - 0.8) / 0.2, 0, 1);
+                var frame = Math.floor(progress * 80 + 0.5);
+                var blink = rpmRatio >= 0.995 && Math.floor((time || performance.now() / 1000) * 10) % 2 === 1;
+
+                if (!blink && images["rev" + frame]) {
+                    ctx.drawImage(images["rev" + frame], 230, 20, 800, 60);
+                }
+
+                if (images.dashes) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.35;
+                    ctx.drawImage(images.dashes, 230, 20, 800, 62);
+                    ctx.restore();
+                }
+
+                // Center Divider Line
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(cx, 72); ctx.lineTo(cx, 197);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.restore();
+
+                // Speed & Unit & Gear Text
+                ctx.save();
+                ctx.font = 'bold 68px GT7Digits, Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(Math.round(speed).toString(), 480, 128);
+
+                ctx.font = 'bold 27px GT7Text, Arial, sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+                ctx.shadowBlur = 0;
+                ctx.fillText(isMetricUnit ? 'km/h' : 'mph', 525, 178);
+
+                ctx.font = 'bold 116px GT7Digits, Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 4;
+                ctx.fillText(gearLabel, 714, 131);
+                ctx.restore();
+
+                // Steering Indicator
+                ctx.save();
+                ctx.beginPath(); ctx.arc(cx, 11, 3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; ctx.fill();
+                ctx.beginPath(); ctx.arc(cx + 390 * steer, 11 + 25 * Math.pow(Math.abs(steer), 2), 4, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 26, 26, 0.8)'; ctx.fill();
+                ctx.restore();
+
+                // Brake & Throttle Gauges
+                var brake = clamp(data.brake || 0, 0, 1);
+                var throttle = clamp(data.throttle || 0, 0, 1);
+
+                if (images.brake_gauge) ctx.drawImage(images.brake_gauge, 102, 37, 62, 190);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(125, 48 + 168 * (1 - brake), 24, 168 * brake);
+                if (images.brake_icon) ctx.drawImage(images.brake_icon, 60, 112, 39, 39);
+
+                if (images.throttle_gauge) ctx.drawImage(images.throttle_gauge, 1096, 37, 62, 190);
+                ctx.fillRect(1111, 48 + 168 * (1 - throttle), 24, 168 * throttle);
+                if (images.throttle_icon) ctx.drawImage(images.throttle_icon, 1160, 112, 39, 39);
+
+                if (settings.show_extras && (data.handbrake || data.hand_brake)) {
+                    if (images.handbrake) ctx.drawImage(images.handbrake, 1165, 145, 40, 40);
+                }
+            }
+
+            var sweepActive = false;
+            function triggerSweep() {
+                if (sweepActive) return;
+                sweepActive = true;
+                var startTime = performance.now();
+                var duration = 1200;
+                var maxRpm = 8000;
+
+                function animate(now) {
+                    var elapsed = now - startTime;
+                    var progress = Math.min(1.0, elapsed / duration);
+                    var mockRpm = 0;
+                    if (progress < 0.5) {
+                        var p = progress / 0.5;
+                        mockRpm = maxRpm * Math.sin(p * Math.PI / 2);
+                    } else {
+                        var p = (progress - 0.5) / 0.5;
+                        mockRpm = maxRpm * (1 - Math.sin(p * Math.PI / 2)) + 1000 * Math.sin(p * Math.PI / 2);
+                    }
+
+                    renderGT7({
+                        rpm: mockRpm,
+                        maxRpm: maxRpm,
+                        speed: (mockRpm / maxRpm) * 220,
+                        gear: 4,
+                        throttle: progress < 0.5 ? progress * 2 : 0,
+                        brake: progress >= 0.5 ? (progress - 0.5) * 2 : 0,
+                        steer: 0.2 * Math.sin(progress * Math.PI * 4)
+                    }, elapsed / 1000);
+
+                    if (progress < 1.0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        sweepActive = false;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            HUDCore.registerStyle('gt7', {
+                containerId: 'gt7Container',
+                scaleMultiplier: 1.0,
+                onInit: function (payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                },
+                onElementsChange: function (elements) {
+                    var c = document.getElementById('gt7Container');
+                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
+                },
+                onFrame: function (data, payload) {
+                    if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                    if (!sweepActive) renderGT7(data);
+                },
+                onAnimate: function () {
+                    triggerSweep();
+                }
+            });
+
+            HUDCore.init('gt7');
+            setTimeout(triggerSweep, 100);
+        })();
+    </script>
+</body>
+
+</html>

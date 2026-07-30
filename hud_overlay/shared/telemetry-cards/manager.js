@@ -60,11 +60,15 @@ export function createTelemetryCardsManager() {
 
             var tScale = this.lastScale * 0.75;
             var tOpacity = this.lastOpacity;
+            var elemScale = fullConfig.telemetryCardElementScale !== undefined ? fullConfig.telemetryCardElementScale : 1.0;
 
             var wrapper = document.getElementById('tcClusterWrapper');
             if (wrapper) {
                 wrapper.style.opacity = tOpacity;
                 wrapper.style.transform = 'translate(-50%, -50%) scale(' + tScale + ')';
+                if (typeof wrapper.style.setProperty === 'function') {
+                    wrapper.style.setProperty('--tc-elem-scale', elemScale);
+                }
             }
 
             var showAttitude = elements.showTeleAttitude !== false;

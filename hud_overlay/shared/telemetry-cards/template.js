@@ -62,7 +62,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
 
                 <!-- Row 3, Col 1: FL Corner (Front Left - Vertical Layout) -->
-                <div id="tcCornerFL" class="tele-corner" style="grid-column:1; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                <div id="tcCornerFL" class="tele-corner" style="grid-column:1; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2); transform: scale(var(--tc-elem-scale, 1.0)); transform-origin: top left;">
                     <!-- FL Suspension Block -->
                     <div id="tcSuspBlockFL" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
                         <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -102,7 +102,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
 
                 <!-- Row 3, Col 3: FR Corner (Front Right - Vertical & Symmetric) -->
-                <div id="tcCornerFR" class="tele-corner" style="grid-column:3; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                <div id="tcCornerFR" class="tele-corner" style="grid-column:3; grid-row:3; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2); transform: scale(var(--tc-elem-scale, 1.0)); transform-origin: top right;">
                     <!-- FR Suspension Block -->
                     <div id="tcSuspBlockFR" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
                         <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -180,11 +180,12 @@ export function getClusterHTML(initialScale, initialOpacity) {
                         <span style="position:absolute; right:12px; font-size:0.8rem; color:rgba(255,255,255,0.6); font-weight:bold;">R</span>
 
                         <!-- 9 o'clock Position (Left): LAT G Readout Chip -->
-                        <div style="
+                        <div id="tcLatGChip" style="
                             position: absolute;
                             left: -18px;
                             top: 50%;
-                            transform: translateY(-50%);
+                            transform: translateY(-50%) scale(var(--tc-elem-scale, 1.0));
+                            transform-origin: left center;
                             background: rgba(0, 0, 0, 0.65);
                             backdrop-filter: blur(6px);
                             padding: 0.35rem 0.7rem;
@@ -202,11 +203,12 @@ export function getClusterHTML(initialScale, initialOpacity) {
                         </div>
 
                         <!-- 6 o'clock Position (Bottom Center): LON G Readout Chip -->
-                        <div style="
+                        <div id="tcLonGChip" style="
                             position: absolute;
                             bottom: -18px;
                             left: 50%;
-                            transform: translateX(-50%);
+                            transform: translateX(-50%) scale(var(--tc-elem-scale, 1.0));
+                            transform-origin: bottom center;
                             background: rgba(0, 0, 0, 0.65);
                             backdrop-filter: blur(6px);
                             padding: 0.35rem 0.7rem;
@@ -241,7 +243,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
 
                 <!-- Row 5, Col 1: RL Corner (Rear Left - Vertical Layout) -->
-                <div id="tcCornerRL" class="tele-corner" style="grid-column:1; grid-row:5; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                <div id="tcCornerRL" class="tele-corner" style="grid-column:1; grid-row:5; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-start; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2); transform: scale(var(--tc-elem-scale, 1.0)); transform-origin: bottom left;">
                     <!-- RL Suspension Block -->
                     <div id="tcSuspBlockRL" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
                         <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -281,7 +283,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
 
                 <!-- Row 5, Col 3: RR Corner (Rear Right - Vertical & Symmetric) -->
-                <div id="tcCornerRR" class="tele-corner" style="grid-column:3; grid-row:5; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2);">
+                <div id="tcCornerRR" class="tele-corner" style="grid-column:3; grid-row:5; display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end; background:rgba(0,0,0,0.35); backdrop-filter:blur(6px); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(0,240,255,0.2); transform: scale(var(--tc-elem-scale, 1.0)); transform-origin: bottom right;">
                     <!-- RR Suspension Block -->
                     <div id="tcSuspBlockRR" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
                         <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:#00f0ff; font-weight:bold;">
@@ -335,6 +337,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
                     border: 1px solid rgba(0, 240, 255, 0.25);
                     padding: 0.4rem 0.8rem;
                     position: relative;
+                    transform: scale(var(--tc-elem-scale, 1.0));
+                    transform-origin: top center;
                 ">
                     <div style="position:relative; width:100%; height:10vh;">
                         <canvas id="tcPedalWave" width="550" height="60" style="width:100%; height:100%; background:rgba(0,0,0,0.25); border-radius:4px;"></canvas>
@@ -360,6 +364,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
                     border: 1px solid rgba(0, 240, 255, 0.25);
                     padding: 0.4rem 0.8rem;
                     position: relative;
+                    transform: scale(var(--tc-elem-scale, 1.0));
+                    transform-origin: top center;
                 ">
                     <div style="position:relative; width:100%; height:12vh;">
                         <canvas id="tcPowerTorqueChart" width="550" height="80" style="width:100%; height:100%; background:rgba(0,0,0,0.25); border-radius:4px;"></canvas>
