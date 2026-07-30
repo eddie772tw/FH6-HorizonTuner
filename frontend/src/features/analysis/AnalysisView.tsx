@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   useTelemetryRecorder,
   AnalysisDataPoint,
@@ -228,7 +228,7 @@ const AnalysisView: React.FC = () => {
     }
   };
 
-  const formatTrackCanvasData = (points: AnalysisDataPoint[]) => {
+  const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => {
     if (points.length === 0) return [];
     let metricMax = 0.1;
     points.forEach((p) => {
@@ -236,7 +236,7 @@ const AnalysisView: React.FC = () => {
       if (selectedMetric === "throttle") v = p.AccelInput / 255;
       else if (selectedMetric === "brake") v = p.BrakeInput / 255;
       else if (selectedMetric === "grip")
-        v = Math.max(...p.TireSlipRatio.map(Math.abs));
+        v = Math.max(Math.abs(p.TireSlipRatio[0]), Math.abs(p.TireSlipRatio[1]), Math.abs(p.TireSlipRatio[2]), Math.abs(p.TireSlipRatio[3]));
       else if (selectedMetric === "suspension") v = p.SuspTravel[0];
       if (v > metricMax) metricMax = v;
     });
@@ -246,7 +246,7 @@ const AnalysisView: React.FC = () => {
       if (selectedMetric === "throttle") v = p.AccelInput / 255;
       else if (selectedMetric === "brake") v = p.BrakeInput / 255;
       else if (selectedMetric === "grip")
-        v = Math.max(...p.TireSlipRatio.map(Math.abs));
+        v = Math.max(Math.abs(p.TireSlipRatio[0]), Math.abs(p.TireSlipRatio[1]), Math.abs(p.TireSlipRatio[2]), Math.abs(p.TireSlipRatio[3]));
       else if (selectedMetric === "suspension") v = p.SuspTravel[0];
 
       return {
@@ -256,10 +256,10 @@ const AnalysisView: React.FC = () => {
         raw: p,
       };
     });
-  };
+  }, [selectedMetric]);
 
-  const activeCanvasData = formatTrackCanvasData(activeSession);
-  const baseCanvasData = formatTrackCanvasData(fullSessionTrackData);
+  const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
+  const baseCanvasData = useMemo(() => formatTrackCanvasData(fullSessionTrackData), [fullSessionTrackData, formatTrackCanvasData]);
   const isSavedSession =
     selectedFilename !== "current" && selectedFilename !== "local";
 

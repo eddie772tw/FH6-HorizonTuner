@@ -12,3 +12,9 @@
 ## 2026-07-29 - Array map and spread operator in High-Frequency Canvas Renders
 **Learning:** Using `.map()` to create a new array and `...` spread operator in a 60Hz high-frequency rendering loop (like `Math.max(...hist.map(...))`) causes severe garbage collection pressure and main thread blocking, even when wrapped in React.memo(), because it executes outside the React render cycle during telemetry updates.
 **Action:** Avoid `.map()` and `...` on large arrays inside high-frequency event listeners. If an array is chronologically sorted, access the last element directly (e.g., `hist[hist.length - 1]`) instead of calculating min/max.
+
+## 2024-11-20 - Memoizing Base Data and Short-Circuiting Hidden Components
+**Learning:** In high-frequency React render cycles (like processing 60Hz live telemetry data), components that perform expensive data transformations (e.g., `transformTelemetryData` or iterating over arrays using `.map` and `.forEach`) can bottleneck the main thread. This is especially problematic if the data transformations are running for components that are visually hidden or paused, or if the base data they are transforming updates infrequently.
+**Action:**
+1. Use `useMemo` and `useCallback` to prevent unnecessary reprocessing of large arrays (like `fullSessionTrackData` updating only every 5s).
+2. Short-circuit expensive transformation functions if their resulting data will not be rendered (e.g., conditionally skip `transformTelemetryData` when `isRecording` is true and charts are hidden).
