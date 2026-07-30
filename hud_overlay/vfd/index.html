@@ -320,7 +320,7 @@
                 }
 
                 // Tachometer Panel
-                drawVFDPanelFrame(0, 0, 1120, 115, "TACHOMETER x1000 RPM");
+                drawVFDPanelFrame(0, 0, 1120, 115, "RPM x1000");
                 ctx.save();
                 var count = 54, startX = 25, startY = 85, cellW = 16, cellH = 34, gap = 4;
                 var rpmRatio = clamp(rpm / maxRpm, 0, 1);
@@ -383,7 +383,7 @@
                 ctx.restore();
 
                 // Speedometer Panel
-                drawVFDPanelFrame(0, 123, 420, 145, "DIGITAL SPEEDOMETER");
+                drawVFDPanelFrame(0, 123, 420, 145, "SPEED");
                 ctx.save();
                 ctx.font = 'bold 96px VFDDigits, monospace, sans-serif';
                 ctx.textAlign = 'right';
@@ -404,7 +404,7 @@
                 ctx.restore();
 
                 // Gear & Shift Lamp Bezel
-                drawVFDPanelFrame(430, 123, 210, 145, "TRANSMISSION");
+                drawVFDPanelFrame(430, 123, 210, 145, "GEAR");
                 ctx.save();
                 ctx.font = 'bold 90px VFDDigits, monospace, sans-serif';
                 ctx.textAlign = 'center';
@@ -427,11 +427,11 @@
                     ctx.shadowColor = currentPalette.hot;
                     ctx.shadowBlur = 12;
                 }
-                ctx.fillText("SHIFT ▲", 535, 150);
+                ctx.fillText("SHIFT", 535, 150);
                 ctx.restore();
 
                 // Auxiliary Telemetry Gauges
-                drawVFDPanelFrame(650, 123, 470, 145, "VEHICLE TELEMETRY & INTAKE");
+                drawVFDPanelFrame(650, 123, 470, 145, "TELEMETRY");
                 ctx.save();
                 ctx.font = 'bold 11px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
@@ -442,7 +442,7 @@
                 ctx.fillText("BRK", 665, 185);
                 drawCellBar(700, 175, 170, 13, 14, data.brake || 0, currentPalette.hot, currentPalette.dim, false);
 
-                ctx.fillText("BOOST", 665, 215);
+                ctx.fillText("BST", 665, 215);
                 var boostNorm = clamp((boostPsi + 14.7) / 45.0, 0, 1);
                 drawCellBar(700, 205, 170, 13, 14, boostNorm, currentPalette.amber, currentPalette.dim, false);
 
@@ -471,11 +471,10 @@
                 ctx.fillStyle = isTurbo ? currentPalette.primary : currentPalette.dim;
                 ctx.fillRect(1000, 205, 55, 16);
                 ctx.fillStyle = isTurbo ? "#000000" : currentPalette.dim;
-                ctx.fillText("TURBO", 1008, 217);
+                ctx.fillText("TUR", 1008, 217);
                 ctx.restore();
             }
 
-            // ── Lower Section: Radio & Audio Spectrum Analyzer ──────────────────────
             // ── Lower Section: Radio & Audio Spectrum Analyzer ──────────────────────
             function updateAudioSpectrum() {
                 var bandCount = 32;
@@ -506,7 +505,7 @@
                 updateAudioSpectrum();
 
                 var panelY = 278;
-                drawVFDPanelFrame(0, panelY, 1120, 235, "RETRO VFD CAR STEREO HEAD UNIT / AUDIO EQUALIZER");
+                drawVFDPanelFrame(0, panelY, 1120, 235, "AUDIO EQUALIZER");
 
                 ctx.save();
 
@@ -521,7 +520,7 @@
                 var needScroll = textLen > maxFitCells;
 
                 if (needScroll) {
-                    marqueeScrollPos += 0.04; // Slowed down to ~2.4 characters per second (2~3 chars/sec)
+                    marqueeScrollPos += 0.04;
                 } else {
                     marqueeScrollPos = 0;
                 }
@@ -582,7 +581,7 @@
                 ctx.fillStyle = hasMedia ? "#000000" : currentPalette.dim;
                 ctx.globalAlpha = hasMedia ? 1.0 : 0.6;
                 ctx.textAlign = 'center';
-                ctx.fillText(hasMedia ? "SYS MEDIA: ON" : "SYS MEDIA: OFF", 1015, panelY + 35);
+                ctx.fillText(hasMedia ? "MEDIA: ON" : "MEDIA: OFF", 1015, panelY + 35);
                 ctx.textAlign = 'left';
 
                 // Stereo / Tuned Status Lamps
@@ -591,9 +590,9 @@
                 ctx.globalAlpha = 0.9;
                 ctx.shadowColor = currentPalette.glow;
                 ctx.shadowBlur = VFD_GLOW_RADIUS;
-                ctx.fillText("FM STEREO", 20, panelY + 68);
-                ctx.fillText("DOLBY NR", 120, panelY + 68);
-                ctx.fillText("TUNED 104.5 MHz", 210, panelY + 68);
+                //ctx.fillText("FM STEREO", 20, panelY + 68);
+                //ctx.fillText("DOLBY NR", 120, panelY + 68);
+                //ctx.fillText("TUNED 104.5 MHz", 210, panelY + 68);
 
                 // 3. 32-Band VFD Equalizer Bargraphs with Peak Hold Dots
                 var left = 20, top = panelY + 80, width = 1010, height = 135;
