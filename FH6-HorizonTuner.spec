@@ -13,9 +13,20 @@ hiddenimports = [
     "uvicorn",
     "websockets",
     "pydantic",
+	"winsdk",
+    "winsdk.windows.media.control",
 ]
 
-for pkg in ["fastapi", "uvicorn", "starlette", "websockets", "pydantic"]:
+packages_to_collect = [
+    "fastapi", 
+    "uvicorn", 
+    "starlette", 
+    "websockets", 
+    "pydantic", 
+    "winsdk",
+]
+
+for pkg in packages_to_collect:
     try:
         pkg_datas, pkg_bins, pkg_hidden = collect_all(pkg)
         datas += pkg_datas
