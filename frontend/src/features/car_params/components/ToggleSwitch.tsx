@@ -7,8 +7,14 @@ export const ToggleSwitch: React.FC<{
   color?: string;
 }> = ({ label, checked, onChange, color = '#00e676' }) => (
   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
+    <input
+      type="checkbox"
+      className="sr-only"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      aria-label={label}
+    />
     <div
-      onClick={() => onChange(!checked)}
       style={{
         width: '36px',
         height: '20px',
