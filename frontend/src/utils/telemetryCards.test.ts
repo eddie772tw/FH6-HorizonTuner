@@ -14,10 +14,20 @@ function setupDOMMock() {
     const elements: Record<string, any> = {};
 
     function createMockElement(tagName = 'div', id = '') {
+        const customStyles: Record<string, string> = {};
+        const classSet = new Set<string>();
         const el: any = {
             tagName,
             id,
-            style: {},
+            classList: {
+                add: (cls: string) => classSet.add(cls),
+                remove: (cls: string) => classSet.delete(cls),
+                contains: (cls: string) => classSet.has(cls)
+            },
+            style: {
+                setProperty: (prop: string, val: string) => { customStyles[prop] = val; },
+                getPropertyValue: (prop: string) => customStyles[prop] || ''
+            },
             textContent: '',
             clientWidth: 200,
             clientHeight: 200,
@@ -202,5 +212,98 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         expect(attitudeContainer?.style.display).toBe('none');
         expect(pedalContainer?.style.display).toBe('none');
         expect(powerContainer?.style.display).toBe('none');
+    });
+
+    it('corner cards utilize new 2-row layout structure with SLIP A/R header and horizontal TEMP chart', () => {
+        const html = getClusterHTML(1.0, 1.0);
+
+        // Check 2-row layout blocks for FL corner
+        expect(html).toContain('id="tcCornerFL"');
+        expect(html).toContain('id="tcSuspBlockFL"');
+        expect(html).toContain('id="tcSlipBlockFL"');
+        expect(html).toContain('id="tcTempBlockFL"');
+
+        // Check SLIP block header contains A: and R: readouts
+        expect(html).toContain('tcTireAngFL');
+        expect(html).toContain('tcTireRatFL');
+
+        // Check TEMP block contains horizontal labels COLD and HOT
+        expect(html).toContain('COLD');
+        expect(html).toContain('HOT');
+
+        // Verify canvas width increases for expanded waveform & radar
+        expect(html).toContain('id="tcSuspWaveFL" width="130"');
+        expect(html).toContain('id="tcTireRadarFL" width="110"');
+        expect(html).toContain('id="tcTireHistFL" width="200"');
+
+        // Verify inner corner transform-origins
+        expect(html).toMatch(/id="tcCornerFL"[^>]*transform-origin:\s*bottom right/);
+        expect(html).toMatch(/id="tcCornerFR"[^>]*transform-origin:\s*bottom left/);
+        expect(html).toMatch(/id="tcCornerRL"[^>]*transform-origin:\s*top right/);
+        expect(html).toMatch(/id="tcCornerRR"[^>]*transform-origin:\s*top left/);
+    });
+
+    it('applies custom gauge primary color to pedal chart and power/torque chart borders', () => {
+        const manager = createTelemetryCardsManager();
+        manager.init(container);
+
+        const customPrimary = '#ffaa00';
+        manager.update({}, {
+            useDefaultColors: false,
+            customColor: customPrimary,
+            elements: {
+                showTelePedals: true,
+                showPowerTorque: true
+            }
+        });
+
+        const pedalContainer = document.getElementById('tcPedalWaveContainer');
+        const ptContainer = document.getElementById('tcPowerTorqueContainer');
+
+        expect(pedalContainer?.style.getPropertyValue('--card-primary')).toBe(customPrimary);
+        expect(ptContainer?.style.getPropertyValue('--card-primary')).toBe(customPrimary);
+    });
+
+    it('telemetryCornerEdgeSnap toggles grid container class and edge scale origins', () => {
+        const manager = createTelemetryCardsManager();
+        manager.init(container);
+
+        manager.update({}, {
+            telemetryCornerEdgeSnap: true
+        });
+
+        const gridContainer = document.getElementById('tcGridContainer');
+        expect(gridContainer?.classList.contains('tc-edge-snapped-corners')).toBe(true);
+
+        const fl = document.getElementById('tcCornerFL');
+        const fr = document.getElementById('tcCornerFR');
+        const rl = document.getElementById('tcCornerRL');
+        const rr = document.getElementById('tcCornerRR');
+
+        expect(fl?.style.transformOrigin).toBe('bottom left');
+        expect(fr?.style.transformOrigin).toBe('bottom right');
+        expect(rl?.style.transformOrigin).toBe('top left');
+        expect(rr?.style.transformOrigin).toBe('top right');
+    });
+
+    it('telemetrySideBySideCharts toggles container side-by-side and chart half-width classes', () => {
+        const manager = createTelemetryCardsManager();
+        manager.init(container);
+
+        manager.update({}, {
+            telemetrySideBySideCharts: true,
+            elements: {
+                showTelePedals: true,
+                showPowerTorque: true
+            }
+        });
+
+        const bottomContainer = document.getElementById('tcBottomEdgeContainer');
+        const pedalContainer = document.getElementById('tcPedalWaveContainer');
+        const ptContainer = document.getElementById('tcPowerTorqueContainer');
+
+        expect(bottomContainer?.classList.contains('tc-side-by-side')).toBe(true);
+        expect(pedalContainer?.classList.contains('tc-half-width')).toBe(true);
+        expect(ptContainer?.classList.contains('tc-half-width')).toBe(true);
     });
 });

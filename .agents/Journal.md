@@ -18,6 +18,73 @@
 
 ---
 
+## 2026-07-30 - 四角卡片螢幕邊緣貼齊與圖表半寬左右並排 layout 開關支援
+
+**學習點 (Learning):**
+- **邊緣貼齊 (Edge Snap) 與動態 `transform-origin` 協同 (Origin Swapping with Border Attachment)**：在 3x3 Grid 佈局下，卡片靠近中央，縮放固定點應設於內側；當啟用 `telemetryCornerEdgeSnap` 切換為螢幕邊緣貼齊（`width: 100vw; padding: 0 25px; grid-template-columns: auto 1fr auto;`）時，將 4 個角落卡片的 `transform-origin` 反向轉置為畫面外側邊緣方向（FL: `bottom left`, FR: `bottom right`, RL: `top left`, RR: `top right`），可實現極致穩定的邊貼齊外擴縮放。
+- **圖表半寬左右對齊 (.tc-side-by-side & .tc-half-width)**：將 Pedal Wave 與 Power/Torque 圖表寬度縮短為 `36vh`，並在頂/底部容器上套用 `flex-direction: row; justify-content: space-between; width: 100vw;`，由於 Canvas 繪製邏輯（`pedal-wave.js` & `power-torque.js`）完全基於動態 `canvas.width` 與 `canvas.height`，圖表自適應縮短與畫質呈現極為順暢。
+
+**後續行動 (Action):**
+- HUD Overlay UI 設定若涉及佈局模式切換，應優先採用 CSS utility class 開關配合 JS 條件式動態賦予，維持效能與樣式隔離。
+
+---
+
+**學習點 (Learning):**
+- **跨 DOM 層級 CSS 變數獨立傳播 (Independent CSS Variable Propagation)**：Pedal Chart (`#tcPedalWaveContainer`) 與 Power/Torque Chart (`#tcPowerTorqueContainer`) 屬於外層 `fixed` 堆疊容器 (`#tcTopEdgeContainer` / `#tcBottomEdgeContainer`) 的 DOM 子節點，而非 `#tcClusterWrapper` 的子節點。因此寫在 `#tcClusterWrapper.style` 上的 `--card-primary` 無法被其繼承。在 `manager.js` 中顯式將 `--card-primary` 與 `--card-contrast` 直接透過 `style.setProperty()` 傳遞至 `pedalContainer` 與 `ptContainer`，可讓 CSS 的 `border: 1px solid var(--card-primary, ...)` 即時反映玩家自訂的 Custom Gauge Color。
+
+**後續行動 (Action):**
+- 後續新增或搬移脫離主集線器 (Cluster Wrapper) 的獨立圖表 Panel 時，一律確保其 DOM 元素上同步注入主色調 CSS 變數 `--card-primary`。
+
+---
+
+**學習點 (Learning):**
+- **「上二下一」視覺空間極大化**：將角落卡片原有的 3 區塊並排改為第一排放 SUSP 與 SLIP、第二排放自適應 100% 全寬胎溫圖（TEMP Block）後，卡片頂部的垂直與水平空間得到極大釋放。將 SLIP 的滑移角 A 與滑移率 R 數據移至 SLIP 標頭行（`tc-sub-header`）右側，省去了頁尾標籤空間，使得雷達圖 Canvas `tcTireRadar` 與懸吊歷程波形 Canvas `tcSuspWave` 能夠顯著擴大 resolution 與視覺尺寸（半徑從 37.8px 提升至 46.2px）。
+- **原生橫向繪製無縫轉譯 (Native Horizontal Histogram)**：移除 `tcTireHist` Canvas 的 CSS `-90deg` 旋轉後，原本在 `corner-card.js` 中 idx 0 (低溫) 到 idx 14 (高溫) 的橫向 Bin 繪製邏輯完全不需變動，就能直接自然呈現低溫在左、高溫在右的標準直方圖，結合底部 `COLD` 與 `HOT` 頁尾標籤，視覺可讀性與現代感大幅提升。
+
+**後續行動 (Action):**
+- 後續若調整 Corner Card 內部組件結構，應優先維護 HTML template 內的 DOM ID (如 `tcTireAng`, `tcTireRat`, `tcSuspWave` 等)，以確保後續 telemetry manager 及單元測試相容。
+
+---
+
+**學習點 (Learning):**
+- **DOM 節點層級與 CSS 變數繼承 (CSS Variable Scope)**：若 fixed 定位元素不是 `#tcClusterWrapper` 的子 DOM 節點，直接將 `--tc-pedal-offset-x` 寫在 `#tcClusterWrapper.style` 上是無法被同層或外層的固定圖表繼承的。將 `transform: translateX(${offset}px) scale(${scale})` 直接在 JavaScript `manager.js` 中動態賦值給圖表 DOM element 的 inline style，能最直接且可靠地反映 Offset 與 Scale。
+- **Flexbox 邊緣堆疊消除重疊 (Zero-Overlap Edge Stacking)**：在畫面上、下兩端各建立一個 `position: fixed` 的容器 (`#tcTopEdgeContainer` 使用 `flex-direction: column` / `#tcBottomEdgeContainer` 使用 `flex-direction: column-reverse`)。當油門煞車與馬力扭力圖同時指定在同一側時，只需將它們動態 `.appendChild()` 移入同一個 Flex 容器中，瀏覽器就會自動對齊外框邊緣並保持 `10px` gap 嚴格堆疊，徹底解決寫死 top/bottom 偏移像素所導致的局部重疊問題。
+- **4 個獨立區塊 Scale 管理**：將 `Telemetry Scale` 拆分為 G-Force Radar (`telemetryGRadarScale`)、4-Corner Cards (`telemetryCornersScale`)、Pedal Chart (`telemetryPedalScale`) 與 Power/Torque Chart (`telemetryPowerTorqueScale`) 4 個獨立參數，可滿足玩家針對不同圖表大小的客製化需求。
+
+**後續行動 (Action):**
+- 當有多個邊緣貼齊面板可能重疊時，優先採用 fixed Flexbox 堆疊容器機制。
+
+---
+
+## 2026-07-30 - Telemetry Cards UI 第二階段：邊緣貼齊、X/Y Offset、獨立子卡片與透明錨點
+
+**學習點 (Learning):**
+- **取消 Element Scale 解決縮放與貼齊衝突**：在 Overlay HUD 中，若父容器被套用 `transform: scale()`，內部的 `position: fixed` 或邊緣貼齊元素會因為縮放基準點 (Transform Origin) 與畫面邊界計算產生偏差。取消 Element Scale 改為純粹的元件邊界 `position: fixed` + CSS Offset 變數後，貼齊頂部與底部的效果極度穩定且不受解析度縮放影響。
+- **畫面邊緣貼齊 (Edge-Aligned Panels)**：將 Pedal Wave 與 Power/Torque 設定為 `position: fixed; top/bottom: 15px; left: 50%; transform: translateX(calc(-50% + offset_x))`。當兩者均置於同一側時，後者動態調整為 `110px` offset，可徹底解決重疊與非對稱佔位問題。
+- **透明中央錨點 (Center Anchor) 解耦對齊依賴**：原先四輪角落卡片完全依賴 G-Force 雷達圖的 DOM 高度來置中，關閉雷達圖會導致四輪卡片擠在一起。藉由放置一個永久的 `tcCenterAnchor` (70vh x 70vh Grid cell)，即便 G-Force 雷達隱藏，四輪卡片依然能以螢幕正中央為基準對齊，且可藉由 `showTeleGridLines` 在錨點上 overlay 對齊十字虛線。
+- **子卡片 (SUSP, SLIP, TEMP) 尺寸與樣式標準化**：將每個 Corner 角落內部的三個子卡片統一定義為 `.tc-sub-card` (寬度 11vh, 最小高度 15vh) 與 `.tc-sub-canvas` (9.5vh x 9.5vh)，結構統一為 `Header (名稱+主值)` -> `Canvas 繪圖區` -> `Footer (動態範圍數據)`，能提供一致且專業的視覺效果。
+
+**後續行動 (Action):**
+- 後續新增 Overlay 圖表元件時，一律採用 fixed 螢幕貼齊搭配 CSS 變數做 Offset 調整，避免使用外層 wrapper 的 scale 變形。
+
+---
+
+## 2026-07-30 - Telemetry Cards UI 大規模優化：佈局、字體、顏色、圖表位置
+
+**學習點 (Learning):**
+- **getComputedStyle 在 jsdom 測試環境不可用**：在 `corner-card.js` 中使用 `getComputedStyle(el).getPropertyValue('--card-primary')` 讀取 CSS 變數，在瀏覽器正常，但在 Vitest + jsdom 環境中拋出 `ReferenceError: getComputedStyle is not defined`。解決方案：改用 `el.style.getPropertyValue('--card-primary')`（inline style 上的 Property），因為 manager.js 已透過 `wrapper.style.setProperty('--card-primary', ...)` 將顏色值設在 inline style 上，可直接讀取，完全避開 `getComputedStyle`。
+- **溫度閾值常數需與測試期望對齊**：`TEMP_HOT_F` 常數若從 210 改為 221，既有測試 `getTempColor(220) === '#ff0000'` 就會失敗（220°F < 221°F 被判為綠色）。應保留原有 `TEMP_HOT_F = 210`（與 TelemetryView.tsx 一致），另以 `TEMP_NORMAL_MAX_F = 221` 定義正常區間上界，兩者不要混用同一個常數。
+- **胎溫直方圖垂直化（旋轉 90°）CSS Trick**：讓水平繪製的 Canvas 顯示為垂直（高溫在上），wrapper div 用 `overflow: hidden`，canvas 用 `transform: rotate(-90deg) translateX(-100%); transform-origin: top left;`。繪圖邏輯不需修改，左邊 bin 旋轉後變下方，右邊變上方，完全符合設計。
+- **Element Scale `transform-origin` 決定放大方向**：FL 用 `top left`，FR 用 `top right`，RL 用 `bottom left`，RR 用 `bottom right`。若統一使用 `top left`，右側與下方卡片會因原點位於左上而向中心擠入，而非向外擴張。
+- **四輪角落卡片對稱性**：關閉某輪時使用 `visibility: hidden`（而非 `display: none`），讓卡片仍佔 Grid 格以保持對稱。`display: none` 會導致格塌陷，剩餘卡片向中心聚攏。
+- **獨立 Font Scale CSS 變數**：以 `--tc-font-scale` 讓字體大小與元素縮放解耦。在 manager.js 以 `style.setProperty('--tc-font-scale', fontScale)` 寫入，在 CSS 中以 `calc(0.75rem * var(--tc-font-scale, 1.0))` 計算字體，使用者可在不改變卡片大小的情況下單獨放大文字。
+
+**後續行動 (Action):**
+- 凡需在 HUD Canvas 模組讀取 CSS 變數，一律使用 `element.style.getPropertyValue()` 而非 `getComputedStyle()`，確保 jsdom 測試環境相容性。
+- 新增 Canvas 自適應解析度功能時，在 `template.js` 的 `<style>` 使用 `@media (min-width: ...)` 定義 CSS class，並在元素上套用 class 而非 inline style，確保統一管理。
+
+---
+
 ## 2026-07-22 - 初次建立 tuningMath.ts Vitest 測試套件
 
 **學習點 (Learning):**

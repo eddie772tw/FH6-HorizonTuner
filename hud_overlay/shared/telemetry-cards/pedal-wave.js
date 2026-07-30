@@ -7,7 +7,7 @@ import { clamp } from './utils.js';
 
 export function renderPedalWave(data, pedalHist, now) {
     var throttle = clamp(data.throttle !== undefined ? data.throttle : 0, 0, 1);
-    var brake = clamp(data.brake !== undefined ? data.brake : 0, 0, 1);
+    var brake    = clamp(data.brake    !== undefined ? data.brake    : 0, 0, 1);
 
     if (pedalHist.length < 300) {
         pedalHist.push({ throttle: throttle, brake: brake, time: now });
@@ -17,52 +17,52 @@ export function renderPedalWave(data, pedalHist, now) {
     }
 
     var pCanvas = document.getElementById('tcPedalWave');
-    if (pCanvas && pedalHist.length > 0) {
-        var pCtx = pCanvas.getContext('2d');
-        if (pCtx) {
-            var pw = pCanvas.width, ph = pCanvas.height;
-            pCtx.clearRect(0, 0, pw, ph);
+    if (!pCanvas) return;
 
-            // 50% Guideline
-            pCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-            pCtx.lineWidth = 1;
-            pCtx.beginPath();
-            pCtx.moveTo(0, ph * 0.5);
-            pCtx.lineTo(pw, ph * 0.5);
-            pCtx.stroke();
+    var pCtx = pCanvas.getContext('2d');
+    if (!pCtx || pedalHist.length === 0) return;
 
-            var len = pedalHist.length;
-            var stepX = pw / (300 - 1);
+    var pw = pCanvas.width, ph = pCanvas.height;
+    pCtx.clearRect(0, 0, pw, ph);
 
-            // Throttle Trace (Green #00ff66) - Latest data on right
-            pCtx.beginPath();
-            for (var k = 0; k < len; k++) {
-                var px = k * stepX;
-                var py = ph - (pedalHist[k].throttle * (ph - 6)) - 3;
-                if (k === 0) pCtx.moveTo(px, py);
-                else pCtx.lineTo(px, py);
-            }
-            pCtx.lineWidth = 2.5;
-            pCtx.strokeStyle = '#00ff66';
-            pCtx.shadowColor = 'rgba(0, 255, 102, 0.6)';
-            pCtx.shadowBlur = 6;
-            pCtx.stroke();
-            pCtx.shadowBlur = 0;
+    // 50% Guideline
+    pCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    pCtx.lineWidth = 1;
+    pCtx.beginPath();
+    pCtx.moveTo(0, ph * 0.5);
+    pCtx.lineTo(pw, ph * 0.5);
+    pCtx.stroke();
 
-            // Brake Trace (Red #ff0055) - Latest data on right
-            pCtx.beginPath();
-            for (var k = 0; k < len; k++) {
-                var px = k * stepX;
-                var py = ph - (pedalHist[k].brake * (ph - 6)) - 3;
-                if (k === 0) pCtx.moveTo(px, py);
-                else pCtx.lineTo(px, py);
-            }
-            pCtx.lineWidth = 2.5;
-            pCtx.strokeStyle = '#ff0055';
-            pCtx.shadowColor = 'rgba(255, 0, 85, 0.6)';
-            pCtx.shadowBlur = 6;
-            pCtx.stroke();
-            pCtx.shadowBlur = 0;
-        }
+    var len = pedalHist.length;
+    var stepX = pw / (300 - 1);
+
+    // Throttle Trace (Green #00ff66) - Latest data on right
+    pCtx.beginPath();
+    for (var k = 0; k < len; k++) {
+        var px = k * stepX;
+        var py = ph - (pedalHist[k].throttle * (ph - 6)) - 3;
+        if (k === 0) pCtx.moveTo(px, py);
+        else         pCtx.lineTo(px, py);
     }
+    pCtx.lineWidth = 2.5;
+    pCtx.strokeStyle = '#00ff66';
+    pCtx.shadowColor = 'rgba(0, 255, 102, 0.6)';
+    pCtx.shadowBlur = 6;
+    pCtx.stroke();
+    pCtx.shadowBlur = 0;
+
+    // Brake Trace (Red #ff0055) - Latest data on right
+    pCtx.beginPath();
+    for (var k = 0; k < len; k++) {
+        var px = k * stepX;
+        var py = ph - (pedalHist[k].brake * (ph - 6)) - 3;
+        if (k === 0) pCtx.moveTo(px, py);
+        else         pCtx.lineTo(px, py);
+    }
+    pCtx.lineWidth = 2.5;
+    pCtx.strokeStyle = '#ff0055';
+    pCtx.shadowColor = 'rgba(255, 0, 85, 0.6)';
+    pCtx.shadowBlur = 6;
+    pCtx.stroke();
+    pCtx.shadowBlur = 0;
 }

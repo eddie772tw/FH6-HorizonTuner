@@ -11,12 +11,16 @@ interface HudElements {
   showBoost: boolean;
   showWheelLockup: boolean;
   showMotionEffect: boolean;
-  // Telemetry 4 Cards
+  // Telemetry 4 Cards & Sub-elements
   showTeleSuspension: boolean;
   showTeleTires: boolean;
+  showTeleTiresSlip: boolean;
+  showTeleTiresTemp: boolean;
   showTeleAttitude: boolean;
   showTeleEngine: boolean;
   showTelePedals: boolean;
+  showTeleCenterAnchor: boolean;
+  showTeleGridLines: boolean;
 }
 
 interface MonitorOption {
@@ -37,8 +41,20 @@ interface HudConfig {
   elements: HudElements;
   soundEnabled: boolean;
   telemetryOpacity?: number;
-  telemetryScale?: number;
-  telemetryCardElementScale?: number;
+  /** 4 Independent Component Scales */
+  telemetryGRadarScale?: number;
+  telemetryCornersScale?: number;
+  telemetryPedalScale?: number;
+  telemetryPowerTorqueScale?: number;
+  /** Independent font scale for card text (0.5–2.0) */
+  telemetryCardFontScale?: number;
+  /** Chart position: 'top' | 'bottom' */
+  telemetryPedalPosition?: 'top' | 'bottom';
+  telemetryPowerTorquePosition?: 'top' | 'bottom';
+  /** Offsets for element positioning */
+  telemetryCornerOffsetY?: number;
+  telemetryPedalOffsetX?: number;
+  telemetryPowerTorqueOffsetX?: number;
   glowIntensity?: number;
   customColor?: string;
   useDefaultColors?: boolean;
@@ -52,8 +68,16 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   scale: 1.0,
   unit: 'kmh',
   telemetryOpacity: 0.65,
-  telemetryScale: 1.0,
-  telemetryCardElementScale: 1.0,
+  telemetryGRadarScale: 1.0,
+  telemetryCornersScale: 1.0,
+  telemetryPedalScale: 1.0,
+  telemetryPowerTorqueScale: 1.0,
+  telemetryCardFontScale: 1.0,
+  telemetryPedalPosition: 'bottom',
+  telemetryPowerTorquePosition: 'bottom',
+  telemetryCornerOffsetY: 0,
+  telemetryPedalOffsetX: 0,
+  telemetryPowerTorqueOffsetX: 0,
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
@@ -69,9 +93,13 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showMotionEffect: true,
     showTeleSuspension: true,
     showTeleTires: true,
+    showTeleTiresSlip: true,
+    showTeleTiresTemp: true,
     showTeleAttitude: true,
     showTeleEngine: true,
     showTelePedals: true,
+    showTeleCenterAnchor: true,
+    showTeleGridLines: false,
   },
   soundEnabled: false,
 };
@@ -272,15 +300,54 @@ export const OverlayView: React.FC = () => {
     saveConfig(updated);
   };
 
-  const handleTelemetryScaleChange = (newScale: number) => {
+  const handleGRadarScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    const updated = { ...config, telemetryScale: clamped };
+    saveConfig({ ...config, telemetryGRadarScale: clamped });
+  };
+
+  const handleCornersScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryCornersScale: clamped });
+  };
+
+  const handlePedalScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryPedalScale: clamped });
+  };
+
+  const handlePowerTorqueScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
+  };
+
+  const handleCornerOffsetYChange = (val: number) => {
+    const updated = { ...config, telemetryCornerOffsetY: val };
     saveConfig(updated);
   };
 
-  const handleTelemetryCardElementScaleChange = (newScale: number) => {
+  const handlePedalOffsetXChange = (val: number) => {
+    const updated = { ...config, telemetryPedalOffsetX: val };
+    saveConfig(updated);
+  };
+
+  const handlePowerTorqueOffsetXChange = (val: number) => {
+    const updated = { ...config, telemetryPowerTorqueOffsetX: val };
+    saveConfig(updated);
+  };
+
+  const handleTelemetryCardFontScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    const updated = { ...config, telemetryCardElementScale: clamped };
+    const updated = { ...config, telemetryCardFontScale: clamped };
+    saveConfig(updated);
+  };
+
+  const handlePedalPositionChange = (pos: 'top' | 'bottom') => {
+    const updated = { ...config, telemetryPedalPosition: pos };
+    saveConfig(updated);
+  };
+
+  const handlePowerTorquePositionChange = (pos: 'top' | 'bottom') => {
+    const updated = { ...config, telemetryPowerTorquePosition: pos };
     saveConfig(updated);
   };
 
@@ -389,38 +456,103 @@ export const OverlayView: React.FC = () => {
       {/* Main Settings Grid: 3 columns x 2 rows fixed grid layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
 
-        {/* --- COLUMN 1 ROW 1: Target Display Monitor --- */}
+        {/* --- COLUMN 1 ROW 1: Offset & Position Settings --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
-            {t("Target Display Monitor")}
+            {t("Offset & Position Settings")}
           </h3>
-          <div style={{ marginTop: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>
-              {t("Select Monitor for HUD Overlay")}
-            </label>
-            <select
-              value={config.selectedMonitorIndex}
-              onChange={(e) => handleMonitorChange(Number(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '0.6rem',
-                borderRadius: '4px',
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid var(--primary)',
-                color: 'white',
-                fontSize: '0.95rem'
-              }}
-            >
-              {monitors.length > 0 ? (
-                monitors.map((m, idx) => (
-                  <option key={idx} value={idx}>
-                    {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary")}]` : ''}
-                  </option>
-                ))
-              ) : (
-                <option value={0}>{t("Default Primary Display")}</option>
-              )}
-            </select>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* Corner Cards Vertical (Y) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Corner Cards Y-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetY ?? 0} px</span>
+              </div>
+              <input
+                type="range"
+                min={-300}
+                max={300}
+                step={5}
+                value={config.telemetryCornerOffsetY ?? 0}
+                onChange={(e) => handleCornerOffsetYChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Pedal Wave Horizontal (X) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart X-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPedalOffsetX ?? 0} px</span>
+              </div>
+              <input
+                type="range"
+                min={-500}
+                max={500}
+                step={10}
+                value={config.telemetryPedalOffsetX ?? 0}
+                onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Power / Torque Horizontal (X) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque X-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
+              </div>
+              <input
+                type="range"
+                min={-500}
+                max={500}
+                step={10}
+                value={config.telemetryPowerTorqueOffsetX ?? 0}
+                onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Chart Top/Bottom Positions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+              <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Pedal Position")}:</span>
+              <select
+                value={config.telemetryPedalPosition ?? 'bottom'}
+                onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
+                style={{
+                  background: 'rgba(0,0,0,0.5)',
+                  border: '1px solid var(--primary)',
+                  color: 'var(--primary)',
+                  borderRadius: '4px',
+                  padding: '0.25rem 0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value="bottom">{t("Bottom")}</option>
+                <option value="top">{t("Top")}</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Power/Torque Position")}:</span>
+              <select
+                value={config.telemetryPowerTorquePosition ?? 'bottom'}
+                onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
+                style={{
+                  background: 'rgba(0,0,0,0.5)',
+                  border: '1px solid var(--primary)',
+                  color: 'var(--primary)',
+                  borderRadius: '4px',
+                  padding: '0.25rem 0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value="bottom">{t("Bottom")}</option>
+                <option value="top">{t("Top")}</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -429,31 +561,12 @@ export const OverlayView: React.FC = () => {
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Scale Size")}
           </h3>
-          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* HUD Scale */}
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+            {/* Overall HUD Scale */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("HUD Scale Ratio")}:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <input
-                    type="number"
-                    min={50}
-                    max={200}
-                    value={Math.round(config.scale * 100)}
-                    onChange={(e) => handleScaleChange(Number(e.target.value) / 100)}
-                    style={{
-                      width: '65px',
-                      padding: '0.3rem',
-                      borderRadius: '4px',
-                      background: 'rgba(0,0,0,0.5)',
-                      border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
-                      textAlign: 'center',
-                      fontWeight: 'bold'
-                    }}
-                  />
-                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Overall HUD Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round(config.scale * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -466,38 +579,87 @@ export const OverlayView: React.FC = () => {
               />
             </div>
 
-            {/* Telemetry Scale */}
+            {/* G-Force Radar Scale */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Scale Ratio")}:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <input
-                    type="number"
-                    min={50}
-                    max={200}
-                    value={Math.round((config.telemetryScale ?? 1.0) * 100)}
-                    onChange={(e) => handleTelemetryScaleChange(Number(e.target.value) / 100)}
-                    style={{
-                      width: '65px',
-                      padding: '0.3rem',
-                      borderRadius: '4px',
-                      background: 'rgba(0,0,0,0.5)',
-                      border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
-                      textAlign: 'center',
-                      fontWeight: 'bold'
-                    }}
-                  />
-                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("G-Force Radar Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryGRadarScale ?? 1.0) * 100)}%</span>
               </div>
               <input
                 type="range"
                 min={0.5}
                 max={2.0}
                 step={0.05}
-                value={config.telemetryScale ?? 1.0}
-                onChange={(e) => handleTelemetryScaleChange(Number(e.target.value))}
+                value={config.telemetryGRadarScale ?? 1.0}
+                onChange={(e) => handleGRadarScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* 4-Corner Cards Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("4-Corner Wheel Cards Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryCornersScale ?? 1.0) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryCornersScale ?? 1.0}
+                onChange={(e) => handleCornersScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Pedal Chart Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryPedalScale ?? 1.0}
+                onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Power / Torque Chart Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryPowerTorqueScale ?? 1.0}
+                onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Card Font Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Card Font Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryCardFontScale ?? 1.0) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryCardFontScale ?? 1.0}
+                onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
                 style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
               />
             </div>
@@ -522,8 +684,13 @@ export const OverlayView: React.FC = () => {
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={config.elements.showTeleTires} onChange={() => handleElementToggle('showTeleTires')} />
-              <span>{t("Tire Slip & Temp")}</span>
+              <input type="checkbox" checked={config.elements.showTeleTiresSlip !== false} onChange={() => handleElementToggle('showTeleTiresSlip')} />
+              <span>{t("Tire Slip Radar")}</span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTeleTiresTemp !== false} onChange={() => handleElementToggle('showTeleTiresTemp')} />
+              <span>{t("Tire Temp Histogram")}</span>
             </label>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -646,41 +813,7 @@ export const OverlayView: React.FC = () => {
               />
             </div>
 
-            {/* Telemetry Card Element Scale slider */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Card Element Scale")}:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <input
-                    type="number"
-                    min={50}
-                    max={200}
-                    value={Math.round((config.telemetryCardElementScale ?? 1.0) * 100)}
-                    onChange={(e) => handleTelemetryCardElementScaleChange(Number(e.target.value) / 100)}
-                    style={{
-                      width: '65px',
-                      padding: '0.3rem',
-                      borderRadius: '4px',
-                      background: 'rgba(0,0,0,0.5)',
-                      border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
-                      textAlign: 'center',
-                      fontWeight: 'bold'
-                    }}
-                  />
-                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
-                </div>
-              </div>
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.05}
-                value={config.telemetryCardElementScale ?? 1.0}
-                onChange={(e) => handleTelemetryCardElementScaleChange(Number(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-              />
-            </div>
+
 
             {/* Glow Intensity slider (發光強度拉桿) */}
             <div>
@@ -760,6 +893,37 @@ export const OverlayView: React.FC = () => {
             {t("Performance & System Options")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+
+            {/* Target Display Monitor Selector */}
+            <div style={{ marginBottom: '0.4rem', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>
+                {t("Select Monitor for HUD Overlay")}:
+              </label>
+              <select
+                value={config.selectedMonitorIndex}
+                onChange={(e) => handleMonitorChange(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  borderRadius: '4px',
+                  background: 'rgba(0,0,0,0.5)',
+                  border: '1px solid var(--primary)',
+                  color: 'white',
+                  fontSize: '0.85rem'
+                }}
+              >
+                {monitors.length > 0 ? (
+                  monitors.map((m, idx) => (
+                    <option key={idx} value={idx}>
+                      {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary")}]` : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value={0}>{t("Default Primary Display")}</option>
+                )}
+              </select>
+            </div>
+
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
               <input
                 type="checkbox"
@@ -771,6 +935,28 @@ export const OverlayView: React.FC = () => {
               />
               <span style={{ fontSize: '0.9rem', color: '#eee' }}>
                 {t("Pause Telemetry View when HUD is active")}
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={config.elements.showTeleCenterAnchor !== false}
+                onChange={() => handleElementToggle('showTeleCenterAnchor')}
+              />
+              <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+                {t("Center Alignment Anchor Frame")}
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!config.elements.showTeleGridLines}
+                onChange={() => handleElementToggle('showTeleGridLines')}
+              />
+              <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+                {t("Alignment Grid Lines")}
               </span>
             </label>
           </div>
