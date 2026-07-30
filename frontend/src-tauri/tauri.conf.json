@@ -17,19 +17,6 @@
         "width": 1280,
         "height": 720,
         "label": "main"
-      },
-      {
-        "title": "Horizon Tuner HUD",
-        "label": "overlay",
-        "url": "/hud/index.html",
-        "width": 1920,
-        "height": 1080,
-        "resizable": true,
-        "decorations": false,
-        "transparent": true,
-        "alwaysOnTop": true,
-        "shadow": false,
-        "visible": false
       }
     ],
     "security": {
