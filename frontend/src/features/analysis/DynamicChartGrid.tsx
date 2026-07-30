@@ -87,7 +87,7 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(48%, 1fr))', gap: '1rem', width: '100%' }}>
       {slots.map((slot, sIdx) => {
         const cType: ChartType = slot.chartType || 'line';
-        const chartData = transformTelemetryData(cType, slot.domain, slot.channels || [], activeSession, customChannels);
+        const chartData = isRecording ? [] : transformTelemetryData(cType, slot.domain, slot.channels || [], activeSession, customChannels);
         const xUnit = slot.domain === 'distance' ? 'm' : slot.domain === 'lap' ? 'Lap' : 's';
         const channels = slot.channels || [];
 
