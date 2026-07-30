@@ -1,8 +1,8 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::fs;
 use std::path::PathBuf;
-use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandEvent;
+use tauri_plugin_shell::ShellExt;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -20,7 +20,7 @@ fn get_backend_port() -> Result<u16, String> {
     let exe_dir = std::env::current_exe()
         .map(|p| p.parent().unwrap().to_path_buf())
         .ok();
-    
+
     let cwd_dir = std::env::current_dir().ok();
 
     let mut search_dirs = Vec::new();
@@ -57,9 +57,11 @@ fn read_port_from_file(path: &std::path::Path) -> Result<u16, String> {
     match fs::read_to_string(path) {
         Ok(content) => {
             let port_str = content.trim();
-            port_str.parse::<u16>().map_err(|e| format!("Failed to parse port '{}' from {:?}: {}", port_str, path, e))
+            port_str
+                .parse::<u16>()
+                .map_err(|e| format!("Failed to parse port '{}' from {:?}: {}", port_str, path, e))
         }
-        Err(e) => Err(format!("Failed to read port file at {:?}: {}", path, e))
+        Err(e) => Err(format!("Failed to read port file at {:?}: {}", path, e)),
     }
 }
 
@@ -68,7 +70,9 @@ use tauri::Manager;
 #[tauri::command]
 fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        window.set_ignore_cursor_events(ignore).map_err(|e| e.to_string())
+        window
+            .set_ignore_cursor_events(ignore)
+            .map_err(|e| e.to_string())
     } else {
         Err("Overlay window not found".to_string())
     }
@@ -80,11 +84,15 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
         if visible {
             let port = get_backend_port().unwrap_or(8001);
             let url = format!("http://127.0.0.1:{}/hud/index.html", port);
-            let _ = window.eval(&format!("if (!window.location.href.includes('127.0.0.1:{}')) window.location.href = '{}';", port, url));
+            let _ = window.eval(&format!(
+                "if (!window.location.href.includes('127.0.0.1:{}')) window.location.href = '{}';",
+                port, url
+            ));
             window.show().map_err(|e| e.to_string())?;
             window.set_focus().map_err(|e| e.to_string())?;
         } else {
             window.hide().map_err(|e| e.to_string())?;
+            let _ = window.eval("window.location.href = 'about:blank';");
         }
         Ok(())
     } else {
@@ -116,13 +124,19 @@ struct MonitorInfo {
 fn get_available_monitors(app_handle: tauri::AppHandle) -> Result<Vec<MonitorInfo>, String> {
     let monitors = app_handle.available_monitors().map_err(|e| e.to_string())?;
     let primary = app_handle.primary_monitor().ok().flatten();
-    
+
     let mut list = Vec::new();
     for (idx, m) in monitors.into_iter().enumerate() {
-        let name = m.name().cloned().unwrap_or_else(|| format!("Display {}", idx + 1));
+        let name = m
+            .name()
+            .cloned()
+            .unwrap_or_else(|| format!("Display {}", idx + 1));
         let size = m.size();
         let pos = m.position();
-        let is_primary = primary.as_ref().map(|p| p.name() == m.name()).unwrap_or(idx == 0);
+        let is_primary = primary
+            .as_ref()
+            .map(|p| p.name() == m.name())
+            .unwrap_or(idx == 0);
 
         list.push(MonitorInfo {
             name,
@@ -137,10 +151,20 @@ fn get_available_monitors(app_handle: tauri::AppHandle) -> Result<Vec<MonitorInf
 }
 
 #[tauri::command]
-fn move_hud_to_monitor(app_handle: tauri::AppHandle, monitor_x: i32, monitor_y: i32, width: u32, height: u32) -> Result<(), String> {
+fn move_hud_to_monitor(
+    app_handle: tauri::AppHandle,
+    monitor_x: i32,
+    monitor_y: i32,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        window.set_position(tauri::PhysicalPosition::new(monitor_x, monitor_y)).map_err(|e| e.to_string())?;
-        window.set_size(tauri::PhysicalSize::new(width, height)).map_err(|e| e.to_string())?;
+        window
+            .set_position(tauri::PhysicalPosition::new(monitor_x, monitor_y))
+            .map_err(|e| e.to_string())?;
+        window
+            .set_size(tauri::PhysicalSize::new(width, height))
+            .map_err(|e| e.to_string())?;
         Ok(())
     } else {
         Err("Overlay window not found".to_string())
@@ -161,6 +185,46 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            #[allow(unused_variables)]
+            let overlay_window = tauri::WebviewWindowBuilder::new(
+                app,
+                "overlay",
+                tauri::WebviewUrl::App("about:blank".into())
+            )
+            .title("Horizon Tuner HUD")
+            .inner_size(1920.0, 1080.0)
+            .resizable(true)
+            .decorations(false)
+            .transparent(true)
+            .always_on_top(true)
+            .shadow(false)
+            .visible(false)
+            .build()
+            .expect("failed to build overlay window");
+            #[cfg(target_os = "windows")]
+            {
+                use windows::Win32::Foundation::HWND;
+                use windows::Win32::UI::WindowsAndMessaging::{
+                    GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOREDIRECTIONBITMAP, WS_EX_TRANSPARENT, WS_EX_LAYERED
+                };
+                use windows::Win32::Graphics::Dwm::DwmExtendFrameIntoClientArea;
+                use windows::Win32::UI::Controls::MARGINS;
+
+                if let Ok(hwnd_val) = overlay_window.hwnd() {
+                    let hwnd = HWND(hwnd_val.0 as _);
+                    unsafe {
+                        let mut ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as u32;
+                        ex_style |= WS_EX_NOREDIRECTIONBITMAP.0 | WS_EX_TRANSPARENT.0 | WS_EX_LAYERED.0;
+                        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style as _);
+
+                        let margins = MARGINS { cxLeftWidth: -1, cxRightWidth: -1, cyTopHeight: -1, cyBottomHeight: -1 };
+                        let _ = DwmExtendFrameIntoClientArea(hwnd, &margins);
+                    }
+                }
+            }
+
+
+
             let args: Vec<String> = std::env::args().collect();
             if args.contains(&"--no-sidecar".to_string()) || std::env::var("FH6_NO_SIDECAR").is_ok() {
                 println!("Skipping sidecar startup as --no-sidecar was passed or FH6_NO_SIDECAR env var is set.");
@@ -188,9 +252,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet, 
-            get_backend_port, 
-            set_hud_click_through, 
+            greet,
+            get_backend_port,
+            set_hud_click_through,
             toggle_hud_window,
             get_available_monitors,
             move_hud_to_monitor
