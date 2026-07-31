@@ -34,7 +34,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'vfd';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -56,6 +56,7 @@ interface HudConfig {
   telemetryMergedChartsPosition?: 'top' | 'bottom';
   /** Offsets for element positioning */
   telemetryCornerOffsetY?: number;
+  telemetryCornerOffsetX?: number;
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
   telemetryMergedChartsOffsetX?: number;
@@ -70,7 +71,7 @@ interface HudConfig {
 
 const DEFAULT_HUD_CONFIG: HudConfig = {
   enabled: false,
-  hudStyle: 'advanced',
+  hudStyle: 'vfd',
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -85,6 +86,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPowerTorquePosition: 'top',
   telemetryMergedChartsPosition: 'bottom',
   telemetryCornerOffsetY: 0,
+  telemetryCornerOffsetX: 0,
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
   telemetryMergedChartsOffsetX: 0,
@@ -333,6 +335,11 @@ export const OverlayView: React.FC = () => {
     saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
   };
 
+  const handleCornerOffsetXChange = (val: number) => {
+    const updated = { ...config, telemetryCornerOffsetX: val };
+    saveConfig(updated);
+  };
+
   const handleCornerOffsetYChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetY: val };
     saveConfig(updated);
@@ -503,9 +510,11 @@ export const OverlayView: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
             {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6")}
             <br />
-            Simple & Advanced HUD Style: Paburrito/forza-horizon-6-custom-hud
+            Simple & Advanced HUD Style: Paburrito
             <br />
-            Other HUD Style: StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
+            VFD HUD Style: eddie772tw feat. crosXover
+            <br />
+            Other SIMHUB HUD Style: StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
           </p>
         </div>
 
@@ -546,6 +555,23 @@ export const OverlayView: React.FC = () => {
             {t("Offset & Position Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* Corner Cards Horizontal (X) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Corner Cards X-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetX ?? 0} px</span>
+              </div>
+              <input
+                type="range"
+                min={-500}
+                max={500}
+                step={5}
+                value={config.telemetryCornerOffsetX ?? 0}
+                onChange={(e) => handleCornerOffsetXChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
             {/* Corner Cards Vertical (Y) Offset Slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
