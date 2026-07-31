@@ -347,24 +347,26 @@
                 var litCount = Math.floor(rpmRatio * count + 0.5);
                 var peakCell = Math.floor(clamp(peakRpmVal / maxRpm, 0, 1) * count + 0.5);
 
+                // Dynamic RPM label step calculation: 2000 RPM step for maxRpm > 12000, 1000 RPM step otherwise
+                var stepRpm = maxRpm > 12000 ? 2000 : 1000;
                 ctx.font = 'bold 12px VFDAlpha, sans-serif';
                 ctx.textAlign = 'center';
-                for (var n = 0; n <= 10; n++) {
-                    var numRatio = n / 10;
-                    var numCell = Math.floor(numRatio * count);
-                    var nx = startX + numCell * (cellW + gap);
-                    var labelRpm = (n / 10) * maxRpm;
-                    var nColor = labelRpm >= redlineRpm ? currentPalette.hot : (labelRpm >= warnRpm ? currentPalette.amber : currentPalette.primary);
+                for (var targetRpm = 0; targetRpm <= maxRpm; targetRpm += stepRpm) {
+                    var labelRatio = targetRpm / maxRpm;
+                    var targetCell = labelRatio * count;
+                    var nx = startX + targetCell * (cellW + gap);
+                    var labelText = String(Math.round(targetRpm / 1000));
+                    var nColor = targetRpm >= redlineRpm ? currentPalette.hot : (targetRpm >= warnRpm ? currentPalette.amber : currentPalette.primary);
 
                     ctx.fillStyle = currentPalette.dim;
-                    ctx.fillText(String(n), nx + cellW / 2, startY - cellH - 8);
+                    ctx.fillText(labelText, nx, startY - cellH - 8);
 
-                    if (rpmRatio >= numRatio) {
+                    if (rpmRatio >= labelRatio) {
                         ctx.save();
                         ctx.fillStyle = nColor;
                         ctx.shadowColor = currentPalette.glow;
                         ctx.shadowBlur = VFD_GLOW_RADIUS;
-                        ctx.fillText(String(n), nx + cellW / 2, startY - cellH - 8);
+                        ctx.fillText(labelText, nx, startY - cellH - 8);
                         ctx.restore();
                     }
                 }
@@ -463,8 +465,12 @@
 
                 // Extract Power, Torque & Boost telemetry values
                 var sessionMaxima = (payload && payload.sessionMaxima) || (data && data.sessionMaxima) || {};
+                var idleRpm = data.EngineIdleRpm !== undefined ? data.EngineIdleRpm : (data.engine_idle_rpm !== undefined ? data.engine_idle_rpm : null);
+                var isEV = idleRpm === 0;
+
                 var curHp = Math.max(0, data.power_hp !== undefined ? data.power_hp : (data.PowerWatts ? data.PowerWatts / 745.7 : (data.power ? (data.power < 50 ? data.power * 1.341 : data.power) : 0)));
-                var curTq = Math.max(0, data.torque_ftlbs !== undefined ? data.torque_ftlbs : (data.TorqueNewtons ? data.TorqueNewtons * 0.737562 : (data.torque || 0)));
+                var rawTq = data.torque_ftlbs !== undefined ? data.torque_ftlbs : (data.TorqueNewtons ? data.TorqueNewtons * 0.737562 : (data.torque || 0));
+                var curTq = Math.max(0, rawTq);
                 var curBoostBar = Math.max(0, data.boost_bar !== undefined ? data.boost_bar : (data.boost_psi ? data.boost_psi / 14.5038 : (data.boost ? (data.boost > 5 ? data.boost / 14.5038 : data.boost) : 0)));
 
                 if (curHp > peakSessionHp) peakSessionHp = curHp;
@@ -477,9 +483,14 @@
 
                 var powNorm = clamp(curHp / maxHpBound, 0, 1);
                 var torNorm = clamp(curTq / maxTqBound, 0, 1);
-                var boostNorm = clamp(curBoostBar / maxBoostBound, 0, 1);
 
-                // --- Left Column: Throttle, Brake, Boost ---
+                // For EV, RGN bar is based on negative torque normalized against maxTqBound
+                var evBlueColor = "#009ADA";
+                var boostNorm = isEV ? clamp((-rawTq) / maxTqBound, 0, 1) : clamp(curBoostBar / maxBoostBound, 0, 1);
+                var boostLabel = isEV ? "RGN" : "BST";
+                var boostColor = isEV ? evBlueColor : currentPalette.amber;
+
+                // --- Left Column: Throttle, Brake, Boost / RGN ---
                 ctx.font = 'bold 12px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
                 ctx.globalAlpha = 1.0;
@@ -493,10 +504,10 @@
                 drawCellBar(708, 200, 195, 18, 14, data.brake || 0, currentPalette.hot, currentPalette.dim, false);
 
                 ctx.font = 'bold 12px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.amber;
+                ctx.fillStyle = boostColor;
                 ctx.globalAlpha = 1.0;
-                ctx.fillText("BST", 665, 243);
-                drawCellBar(708, 234, 195, 18, 14, boostNorm, currentPalette.amber, currentPalette.dim, false);
+                ctx.fillText(boostLabel, 665, 243);
+                drawCellBar(708, 234, 195, 18, 14, boostNorm, boostColor, currentPalette.dim, false);
 
                 // --- Right Column: POW (Power), TOR (Torque) & Status Lamp Indicators ---
                 ctx.font = 'bold 12px VFDAlpha, sans-serif';
@@ -513,7 +524,7 @@
 
                 var isAbs = (data.brake || 0) > 0.85 && (data.speed_kmh || 0) > 30;
                 var isTcs = throttleVal > 0.85;
-                var isTurbo = curBoostBar > 0.05;
+                var isTurboOrRgn = isEV ? (rawTq < -5) : (curBoostBar > 0.05);
 
                 // ABS Lamp
                 ctx.save();
@@ -553,23 +564,24 @@
                 ctx.fillText("TCS", 1005, 247);
                 ctx.restore();
 
-                // TUR Lamp
+                // TUR / RGN Lamp
                 ctx.save();
-                ctx.fillStyle = isTurbo ? currentPalette.primary : currentPalette.dim;
-                ctx.globalAlpha = isTurbo ? 0.95 : 0.25;
+                var lampActiveColor = isEV ? evBlueColor : currentPalette.primary;
+                ctx.fillStyle = isTurboOrRgn ? lampActiveColor : currentPalette.dim;
+                ctx.globalAlpha = isTurboOrRgn ? 0.95 : 0.25;
                 ctx.fillRect(1038, 234, 55, 26);
-                ctx.strokeStyle = isTurbo ? currentPalette.primary : "rgba(143, 255, 240, 0.3)";
+                ctx.strokeStyle = isTurboOrRgn ? lampActiveColor : (isEV ? "rgba(0, 154, 218, 0.3)" : "rgba(143, 255, 240, 0.3)");
                 ctx.lineWidth = 1.2;
                 ctx.strokeRect(1038, 234, 55, 26);
-                if (isTurbo) {
-                    ctx.shadowColor = currentPalette.glow;
+                if (isTurboOrRgn) {
+                    ctx.shadowColor = isEV ? evBlueColor : currentPalette.glow;
                     ctx.shadowBlur = 10;
                 }
                 ctx.font = 'bold 12px VFDAlpha, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillStyle = isTurbo ? "#040d0c" : currentPalette.dim;
-                ctx.globalAlpha = isTurbo ? 1.0 : 0.35;
-                ctx.fillText("TUR", 1065, 247);
+                ctx.fillStyle = isTurboOrRgn ? "#040d0c" : currentPalette.dim;
+                ctx.globalAlpha = isTurboOrRgn ? 1.0 : 0.35;
+                ctx.fillText(isEV ? "RGN" : "TUR", 1065, 247);
                 ctx.restore();
 
                 ctx.restore();
