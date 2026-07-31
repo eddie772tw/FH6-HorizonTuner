@@ -16,6 +16,18 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-07-31 - VFD HUD Motion Effect 高效能渲染與平滑化優化
+
+**學習點 (Learning):**
+1. **Lerp 線性插值平滑化 (Linear Interpolation for Telemetry Shake)**：遙測加速度數據在高頻 60Hz+ 接收時易產生影格級別的微幅跳動。採用 Lerp（如 `val += (target - val) * 0.2`）處理平移與 Blur 數值，能有效平滑化強煞車或急轉彎時的 UI 位移，防範畫面碎震與閃跳。
+2. **G 力 deadzone 死區過濾**：當 `Math.abs(gX) < 0.1` 及 `Math.abs(gY) < 0.1` 時強制回歸 0G，能確保車輛直線巡航時介面保持絕對穩定銳利，避免微小擺動打擾駕駛視覺焦點。
+3. **translate3d 硬體加速與 setProperty 跳過無效 DOM 操作**：使用 `translate3d(x, y, 0)` 取代 2D `translate` 可將 DOM 平移提升至 GPU 獨立圖層渲染；結合 `will-change: transform, filter;` 與變量更新閾值判定 (`> 0.05px`)，在數值無顯著變化時跳過 CSS DOM 寫入，極大地降低頻繁操作 CSS Filter 的 GPU 記憶體與渲染開銷。
+
+**後續行動 (Action):**
+- 後續若有其他 Overlay HUD 需要加入加速度Shake視效，應統一沿用 `Lerp + Deadzone (0.1G) + translate3d + DOM write threshold (> 0.05px)` 的極效能範式。
+
+---
+
 ## 2026-07-30 - HUD Overlay 多項視效、卡片合併與 VFD 靈敏度控制優化
 
 **學習點 (Learning):**

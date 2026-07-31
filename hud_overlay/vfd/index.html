@@ -20,6 +20,7 @@
             width: 1120px;
             height: 520px;
             pointer-events: none;
+            will-change: transform, filter;
         }
 
         canvas {
@@ -60,6 +61,16 @@
 
             var currentPalette = Object.assign({}, defaultPalette);
             var isMetricUnit = true;
+
+            // ── Motion Effect Smooth Lerp State ─────────────────────────────────────
+            var motionState = {
+                currentOffsetX: 0,
+                currentOffsetY: 0,
+                currentBlurPx: 0,
+                lastAppliedOffsetX: 0,
+                lastAppliedOffsetY: 0,
+                lastAppliedBlurPx: 0
+            };
 
             // ── Audio System & Media State ──────────────────────────────────────────
             var spectrumBands = new Array(32).fill(0);
@@ -792,16 +803,48 @@
                         var gX = clamp(-rawAccX / 9.81, -2.5, 2.5);
                         var gY = clamp(rawAccY / 9.81, -2.5, 2.5);
 
-                        var offsetX = gX * 12; // 12px shift per G
-                        var offsetY = gY * 12;
-                        var gMag = Math.sqrt(gX * gX + gY * gY);
-                        var blurPx = gMag > 0.8 ? Math.min(3.5, (gMag - 0.8) * 2.0) : 0;
+                        // Deadzone filtering: lower than 0.1G produces 0 shift
+                        if (Math.abs(gX) < 0.1) gX = 0;
+                        if (Math.abs(gY) < 0.1) gY = 0;
 
-                        vfdContainer.style.transform = 'translate(' + offsetX.toFixed(1) + 'px, ' + offsetY.toFixed(1) + 'px)';
-                        vfdContainer.style.filter = blurPx > 0.1 ? 'blur(' + blurPx.toFixed(1) + 'px)' : 'none';
+                        var targetOffsetX = gX * 12; // 12px shift per G
+                        var targetOffsetY = gY * 12;
+                        var gMag = Math.sqrt(gX * gX + gY * gY);
+                        var targetBlurPx = gMag > 0.8 ? Math.min(3.5, (gMag - 0.8) * 2.0) : 0;
+
+                        // Lerp smooth calculation
+                        motionState.currentOffsetX += (targetOffsetX - motionState.currentOffsetX) * 0.2;
+                        motionState.currentOffsetY += (targetOffsetY - motionState.currentOffsetY) * 0.2;
+                        motionState.currentBlurPx += (targetBlurPx - motionState.currentBlurPx) * 0.2;
+
+                        // Threshold check to avoid ineffective DOM updates
+                        var isTransformChanged = Math.abs(motionState.currentOffsetX - motionState.lastAppliedOffsetX) > 0.05 ||
+                            Math.abs(motionState.currentOffsetY - motionState.lastAppliedOffsetY) > 0.05;
+                        var isFilterChanged = Math.abs(motionState.currentBlurPx - motionState.lastAppliedBlurPx) > 0.05;
+
+                        if (isTransformChanged) {
+                            vfdContainer.style.transform = 'translate3d(' + motionState.currentOffsetX.toFixed(2) + 'px, ' + motionState.currentOffsetY.toFixed(2) + 'px, 0px)';
+                            motionState.lastAppliedOffsetX = motionState.currentOffsetX;
+                            motionState.lastAppliedOffsetY = motionState.currentOffsetY;
+                        }
+
+                        if (isFilterChanged) {
+                            vfdContainer.style.filter = motionState.currentBlurPx > 0.1 ? 'blur(' + motionState.currentBlurPx.toFixed(2) + 'px)' : 'none';
+                            motionState.lastAppliedBlurPx = motionState.currentBlurPx;
+                        }
                     } else {
-                        vfdContainer.style.transform = 'none';
-                        vfdContainer.style.filter = 'none';
+                        if (motionState.lastAppliedOffsetX !== 0 || motionState.lastAppliedOffsetY !== 0) {
+                            vfdContainer.style.transform = 'none';
+                            motionState.currentOffsetX = 0;
+                            motionState.currentOffsetY = 0;
+                            motionState.lastAppliedOffsetX = 0;
+                            motionState.lastAppliedOffsetY = 0;
+                        }
+                        if (motionState.lastAppliedBlurPx !== 0) {
+                            vfdContainer.style.filter = 'none';
+                            motionState.currentBlurPx = 0;
+                            motionState.lastAppliedBlurPx = 0;
+                        }
                     }
                 }
 
