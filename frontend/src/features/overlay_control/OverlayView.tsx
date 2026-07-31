@@ -63,6 +63,7 @@ interface HudConfig {
   /** VFD Instrument Sensitivity Offsets */
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
+  vfdRealWaveform?: boolean;
   glowIntensity?: number;
   customColor?: string;
   useDefaultColors?: boolean;
@@ -92,6 +93,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryMergedChartsOffsetX: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
+  vfdRealWaveform: true,
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
@@ -920,7 +922,20 @@ export const OverlayView: React.FC = () => {
             {config.hudStyle === 'vfd' && (
               <>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                  <div style={{ marginBottom: '0.6rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={config.vfdRealWaveform !== false}
+                      onChange={(e) => {
+                        const updated = { ...config, vfdRealWaveform: e.target.checked };
+                        saveConfig(updated);
+                      }}
+                    />
+                    <span style={{ fontSize: '0.9rem', color: '#eee' }}>{t("Enable Real Audio Waveform")}</span>
+                  </label>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
                     <span style={{ fontSize: '0.85rem', color: '#ccc' }}>VU Offset:</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
                   </div>
