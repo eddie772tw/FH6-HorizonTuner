@@ -19,7 +19,7 @@ description: 當需要拆分龐大組件、重構底層邏輯或建立全新功�
 
 ### 步驟 3：建立單元測試 (Add Isolation Tests)
 - 在不啟動 UI 的情況下，針對新模組編寫測試：
-  - 前端模組：於 `*.test.ts` 中撰寫 Vitest（在 Windows PowerShell 下執行 `cmd /c "npm --prefix frontend run test"`）。
+  - 前端模組：於 `*.test.ts` 中撰寫 Vitest（在 Windows PowerShell 下執行 `cmd /c "pnpm -C frontend run test"`）。
   - 後端模組：於 `tests/` 中撰寫 Pytest（執行 `pytest tests/`）。
 
 ### 步驟 4：組件/介面對接 (Wire Up)

@@ -10,10 +10,10 @@ This template should help get you started developing with Tauri, React and Types
 
 | 指令 | 說明 |
 | :--- | :--- |
-| `npm run dev` | 啟動 Vite 開發伺服器 (port 1420) |
-| `npm run build` | TypeScript 類型檢查 + Vite 生產建置 |
-| `npm run test` | 執行 Vitest 單元測試 (一次性) |
-| `npm run tauri` | 啟動 Tauri 桌面應用 |
+| `pnpm run dev` | 啟動 Vite 開發伺服器 (port 1420) |
+| `pnpm run build` | TypeScript 類型檢查 + Vite 生產建置 |
+| `pnpm run test` | 執行 Vitest 單元測試 (一次性) |
+| `pnpm run tauri` | 啟動 Tauri 桌面應用 |
 
 ## 單元測試 (Vitest)
 
@@ -28,10 +28,10 @@ This template should help get you started developing with Tauri, React and Types
 
 ```bash
 # 從 frontend/ 目錄
-npm run test
+pnpm run test
 
 # 從專案根目錄
-npm --prefix frontend run test
+pnpm -C frontend run test
 ```
 
 ### 目前的測試涵蓋範圍

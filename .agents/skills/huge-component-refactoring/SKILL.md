@@ -21,4 +21,4 @@ description: 當需要重構或拆分超過 250 行之巨型 UI 組件（如 Tun
 ## 🧪 重構 SOP
 1. 提取純邏輯至 `src/utils/` 並確保有單元測試防護。
 2. 將長 DOM 子樹獨立為子組件（如 `SuspensionCard.tsx`、`GearingCard.tsx`）。
-3. 執行前端測試驗證：`cmd /c "npm --prefix frontend run test"`。
+3. 執行前端測試驗證：`cmd /c "pnpm -C frontend run test"`。

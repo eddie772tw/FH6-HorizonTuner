@@ -11,5 +11,5 @@
 ## 任務完成驗證關卡 (Verification Gate)
 - 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試：
   - 後端：`pytest tests/` (與語法檢查 `ruff check .`)
-  - 前端：`cmd /c "npm --prefix frontend run test"`
+  - 前端：`cmd /c "pnpm -C frontend run test"`
 - 嚴禁為了使測試通過而隨意放寬測試條件或修改斷言閾值。
