@@ -15,6 +15,8 @@ hiddenimports = [
     "pydantic",
 	"winsdk",
     "winsdk.windows.media.control",
+    "numpy",
+    "soundcard",
 ]
 
 packages_to_collect = [
@@ -24,6 +26,8 @@ packages_to_collect = [
     "websockets", 
     "pydantic", 
     "winsdk",
+    "numpy",
+    "soundcard",
 ]
 
 for pkg in packages_to_collect:
