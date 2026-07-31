@@ -67,6 +67,7 @@ export function createTelemetryCardsManager() {
             var ptScale      = fullConfig.telemetryPowerTorqueScale !== undefined ? fullConfig.telemetryPowerTorqueScale : 1.0;
 
             var cornerOffsetY = fullConfig.telemetryCornerOffsetY || 0;
+            var cornerOffsetX = fullConfig.telemetryCornerOffsetX || 0;
             var pedalOffsetX  = fullConfig.telemetryPedalOffsetX  || 0;
             var ptOffsetX     = fullConfig.telemetryPowerTorqueOffsetX || 0;
 
@@ -82,6 +83,7 @@ export function createTelemetryCardsManager() {
                 if (typeof wrapper.style.setProperty === 'function') {
                     wrapper.style.setProperty('--tc-font-scale',      fontScale);
                     wrapper.style.setProperty('--tc-corner-offset-y',  cornerOffsetY + 'px');
+                    wrapper.style.setProperty('--tc-corner-offset-x',  cornerOffsetX + 'px');
                     wrapper.style.setProperty('--tc-corners-scale',    cornersScale.toString());
                     wrapper.style.setProperty('--tc-gradar-scale',     gRadarScale.toString());
                     wrapper.style.setProperty('--card-primary',       primaryColor);

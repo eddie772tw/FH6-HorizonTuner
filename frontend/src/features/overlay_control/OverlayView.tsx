@@ -56,6 +56,7 @@ interface HudConfig {
   telemetryMergedChartsPosition?: 'top' | 'bottom';
   /** Offsets for element positioning */
   telemetryCornerOffsetY?: number;
+  telemetryCornerOffsetX?: number;
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
   telemetryMergedChartsOffsetX?: number;
@@ -85,6 +86,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPowerTorquePosition: 'top',
   telemetryMergedChartsPosition: 'bottom',
   telemetryCornerOffsetY: 0,
+  telemetryCornerOffsetX: 0,
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
   telemetryMergedChartsOffsetX: 0,
@@ -333,6 +335,11 @@ export const OverlayView: React.FC = () => {
     saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
   };
 
+  const handleCornerOffsetXChange = (val: number) => {
+    const updated = { ...config, telemetryCornerOffsetX: val };
+    saveConfig(updated);
+  };
+
   const handleCornerOffsetYChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetY: val };
     saveConfig(updated);
@@ -546,6 +553,23 @@ export const OverlayView: React.FC = () => {
             {t("Offset & Position Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* Corner Cards Horizontal (X) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Corner Cards X-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetX ?? 0} px</span>
+              </div>
+              <input
+                type="range"
+                min={-500}
+                max={500}
+                step={5}
+                value={config.telemetryCornerOffsetX ?? 0}
+                onChange={(e) => handleCornerOffsetXChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
             {/* Corner Cards Vertical (Y) Offset Slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>

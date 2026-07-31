@@ -19,6 +19,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 --card-font-size:      calc(0.9375rem * var(--tc-font-scale, 1.0));
                 --card-font-sm:        calc(0.8125rem * var(--tc-font-scale, 1.0));
                 --tc-corner-offset-y:  0px;
+                --tc-corner-offset-x:  0px;
                 --tc-corners-scale:    1.0;
                 --tc-gradar-scale:     1.0;
             }
@@ -49,7 +50,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 border-radius: 8px;
                 border: 1px solid var(--card-primary, rgba(0, 240, 255, 0.25));
                 box-sizing: border-box;
-                transform: translateY(var(--tc-corner-offset-y, 0px)) scale(var(--tc-corners-scale, 1.0));
+                /* specific transforms applied per side */
                 transition: transform 0.15s ease-out;
             }
 
@@ -131,8 +132,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
             #tcGridContainer.tc-edge-snapped-corners {
                 width: 100vw;
                 box-sizing: border-box;
-                padding: 0 25px;
-                grid-template-columns: auto 1fr auto !important;
+                padding: 0;
+                grid-template-columns: 50vw 0 50vw !important;
             }
 
             /* Side-by-side half-width edge containers & charts */
@@ -192,8 +193,10 @@ export function getClusterHTML(initialScale, initialOpacity) {
             <!-- Core 3x3 Grid Layout -->
             <div id="tcGridContainer" style="
                 display: grid;
-                grid-template-columns: auto auto auto;
-                column-gap: 2.5vw;
+                grid-template-columns: 50vw 0 50vw;
+                width: 100vw;
+                box-sizing: border-box;
+                column-gap: 0;
                 row-gap: 2.0vh;
                 align-items: center;
                 justify-items: center;
@@ -203,8 +206,10 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 <!-- Row 1, Col 1: FL Corner -->
                 <div id="tcCornerFL" class="tele-corner" style="
                     grid-column: 1; grid-row: 1;
+                    justify-self: start;
                     display: flex; flex-direction: column; gap: 0.4rem;
                     transform-origin: bottom right;
+                    transform: translate(calc(33.3333vw + var(--tc-corner-offset-x, 0px) - 50%), var(--tc-corner-offset-y, 0px)) scale(var(--tc-corners-scale, 1.0));
                 ">
                     <div style="font-size:var(--card-font-size,0.75rem); color:var(--card-primary,#00f0ff); font-weight:bold; letter-spacing:0.05em;">FL</div>
                     <div style="display:flex; flex-direction:row; gap:0.4rem; align-items:stretch;">
@@ -254,8 +259,10 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 <!-- Row 1, Col 3: FR Corner -->
                 <div id="tcCornerFR" class="tele-corner" style="
                     grid-column: 3; grid-row: 1;
+                    justify-self: end;
                     display: flex; flex-direction: column; gap: 0.4rem;
                     transform-origin: bottom left;
+                    transform: translate(calc(-33.3333vw + var(--tc-corner-offset-x, 0px) + 50%), var(--tc-corner-offset-y, 0px)) scale(var(--tc-corners-scale, 1.0));
                 ">
                     <div style="font-size:var(--card-font-size,0.75rem); color:var(--card-primary,#00f0ff); font-weight:bold; letter-spacing:0.05em; text-align:right;">FR</div>
                     <div style="display:flex; flex-direction:row-reverse; gap:0.4rem; align-items:stretch;">
@@ -377,8 +384,10 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 <!-- Row 3, Col 1: RL Corner -->
                 <div id="tcCornerRL" class="tele-corner" style="
                     grid-column: 1; grid-row: 3;
+                    justify-self: start;
                     display: flex; flex-direction: column; gap: 0.4rem;
                     transform-origin: top right;
+                    transform: translate(calc(33.3333vw + var(--tc-corner-offset-x, 0px) - 50%), var(--tc-corner-offset-y, 0px)) scale(var(--tc-corners-scale, 1.0));
                 ">
                     <div style="font-size:var(--card-font-size,0.75rem); color:var(--card-primary,#00f0ff); font-weight:bold; letter-spacing:0.05em;">RL</div>
                     <div style="display:flex; flex-direction:row; gap:0.4rem; align-items:stretch;">
@@ -428,8 +437,10 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 <!-- Row 3, Col 3: RR Corner -->
                 <div id="tcCornerRR" class="tele-corner" style="
                     grid-column: 3; grid-row: 3;
+                    justify-self: end;
                     display: flex; flex-direction: column; gap: 0.4rem;
                     transform-origin: top left;
+                    transform: translate(calc(-33.3333vw + var(--tc-corner-offset-x, 0px) + 50%), var(--tc-corner-offset-y, 0px)) scale(var(--tc-corners-scale, 1.0));
                 ">
                     <div style="font-size:var(--card-font-size,0.75rem); color:var(--card-primary,#00f0ff); font-weight:bold; letter-spacing:0.05em; text-align:right;">RR</div>
                     <div style="display:flex; flex-direction:row-reverse; gap:0.4rem; align-items:stretch;">
