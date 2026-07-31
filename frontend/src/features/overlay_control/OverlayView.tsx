@@ -53,10 +53,12 @@ interface HudConfig {
   /** Chart position: 'top' | 'bottom' */
   telemetryPedalPosition?: 'top' | 'bottom';
   telemetryPowerTorquePosition?: 'top' | 'bottom';
+  telemetryMergedChartsPosition?: 'top' | 'bottom';
   /** Offsets for element positioning */
   telemetryCornerOffsetY?: number;
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
+  telemetryMergedChartsOffsetX?: number;
   /** VFD Instrument Sensitivity Offsets */
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
@@ -81,15 +83,18 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetrySideBySideCharts: false,
   telemetryPedalPosition: 'bottom',
   telemetryPowerTorquePosition: 'top',
+  telemetryMergedChartsPosition: 'bottom',
   telemetryCornerOffsetY: 0,
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
+  telemetryMergedChartsOffsetX: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
   pauseTelemetryViewWhenActive: true,
+
   elements: {
     showGauge: true,
     showRPM: true,
@@ -346,7 +351,14 @@ export const OverlayView: React.FC = () => {
     const updated = {
       ...config,
       telemetryPowerTorqueOffsetX: val,
-      ...(config.telemetrySideBySideCharts ? { telemetryPedalOffsetX: val } : {})
+    };
+    saveConfig(updated);
+  };
+
+  const handleMergedChartsOffsetXChange = (val: number) => {
+    const updated = {
+      ...config,
+      telemetryMergedChartsOffsetX: val,
     };
     saveConfig(updated);
   };
@@ -361,7 +373,6 @@ export const OverlayView: React.FC = () => {
     const updated = {
       ...config,
       telemetryPedalPosition: pos,
-      ...(config.telemetrySideBySideCharts ? { telemetryPowerTorquePosition: pos } : {})
     };
     saveConfig(updated);
   };
@@ -370,7 +381,14 @@ export const OverlayView: React.FC = () => {
     const updated = {
       ...config,
       telemetryPowerTorquePosition: pos,
-      ...(config.telemetrySideBySideCharts ? { telemetryPedalPosition: pos } : {})
+    };
+    saveConfig(updated);
+  };
+
+  const handleMergedChartsPositionChange = (pos: 'top' | 'bottom') => {
+    const updated = {
+      ...config,
+      telemetryMergedChartsPosition: pos,
     };
     saveConfig(updated);
   };
@@ -380,13 +398,10 @@ export const OverlayView: React.FC = () => {
     const updated = {
       ...config,
       telemetrySideBySideCharts: nextVal,
-      ...(nextVal ? {
-        telemetryPowerTorqueOffsetX: config.telemetryPedalOffsetX ?? 0,
-        telemetryPowerTorquePosition: config.telemetryPedalPosition ?? 'bottom'
-      } : {})
     };
     saveConfig(updated);
   };
+
 
   const handleVfdVuOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
@@ -531,16 +546,6 @@ export const OverlayView: React.FC = () => {
             {t("Offset & Position Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            {/* Merge Power/Torque & Pedal Position Chart Switch */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.2rem' }}>
-              <input
-                type="checkbox"
-                checked={config.telemetrySideBySideCharts === true}
-                onChange={handleSideBySideChartsToggle}
-              />
-              <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>{t("Merge Power & Pedal Charts")}</span>
-            </label>
-
             {/* Corner Cards Vertical (Y) Offset Slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
@@ -558,142 +563,147 @@ export const OverlayView: React.FC = () => {
               />
             </div>
 
-            {/* Pedal Wave Horizontal (X) Offset Slider */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart X-Offset")}:</span>
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPedalOffsetX ?? 0} px</span>
-              </div>
+            {/* Merge Power/Torque & Pedal Position Chart Switch */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: '0.2rem 0' }}>
               <input
-                type="range"
-                min={-500}
-                max={500}
-                step={10}
-                value={config.telemetryPedalOffsetX ?? 0}
-                onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                type="checkbox"
+                checked={config.telemetrySideBySideCharts === true}
+                onChange={handleSideBySideChartsToggle}
               />
-            </div>
+              <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>{t("Merge Power & Pedal Charts")}</span>
+            </label>
 
-            {/* Power / Torque Horizontal (X) Offset Slider */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque X-Offset")}:</span>
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
-              </div>
-              <input
-                type="range"
-                min={-500}
-                max={500}
-                step={10}
-                value={config.telemetryPowerTorqueOffsetX ?? 0}
-                onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-              />
-            </div>
-
-            {/* Chart Top/Bottom Positions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Pedal Position")}:</span>
-              <select
-                value={config.telemetryPedalPosition ?? 'bottom'}
-                onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
-                style={{
-                  background: 'rgba(0,0,0,0.5)',
-                  border: '1px solid var(--primary)',
-                  color: 'var(--primary)',
-                  borderRadius: '4px',
-                  padding: '0.25rem 0.5rem',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem'
-                }}
-              >
-                <option value="bottom">{t("Bottom")}</option>
-                <option value="top">{t("Top")}</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Power/Torque Position")}:</span>
-              <select
-                value={config.telemetryPowerTorquePosition ?? 'top'}
-                onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
-                style={{
-                  background: 'rgba(0,0,0,0.5)',
-                  border: '1px solid var(--primary)',
-                  color: 'var(--primary)',
-                  borderRadius: '4px',
-                  padding: '0.25rem 0.5rem',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem'
-                }}
-              >
-                <option value="bottom">{t("Bottom")}</option>
-                <option value="top">{t("Top")}</option>
-              </select>
-            </div>
-
-            {/* VFD Instrument Waveform Sensitivity Offsets (Visible only when Retro VFD is selected) */}
-            {config.hudStyle === 'vfd' && (
+            {/* Conditional Display: Merged vs Individual Offsets & Positions */}
+            {config.telemetrySideBySideCharts ? (
               <>
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
+                {/* Merged Charts Horizontal (X) Offset Slider */}
+                <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>VU Offset:</span>
-                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Merged Charts X-Offset")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryMergedChartsOffsetX ?? 0} px</span>
                   </div>
                   <input
                     type="range"
-                    min={-5}
-                    max={5}
-                    step={1}
-                    value={config.vfdVuOffset ?? 0}
-                    onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
+                    min={-500}
+                    max={500}
+                    step={10}
+                    value={config.telemetryMergedChartsOffsetX ?? 0}
+                    onChange={(e) => handleMergedChartsOffsetXChange(Number(e.target.value))}
                     style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
                   />
                 </div>
 
+                {/* Merged Charts Top/Bottom Position */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Merged Charts Position")}:</span>
+                  <select
+                    value={config.telemetryMergedChartsPosition ?? 'bottom'}
+                    onChange={(e) => handleMergedChartsPositionChange(e.target.value as 'top' | 'bottom')}
+                    style={{
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      borderRadius: '4px',
+                      padding: '0.25rem 0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <option value="bottom">{t("Bottom")}</option>
+                    <option value="top">{t("Top")}</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Pedal Wave Horizontal (X) Offset Slider */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>Audio Visualizer Offset:</span>
-                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdAudioOffset ?? 0}</span>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart X-Offset")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPedalOffsetX ?? 0} px</span>
                   </div>
                   <input
                     type="range"
-                    min={-5}
-                    max={5}
-                    step={1}
-                    value={config.vfdAudioOffset ?? 0}
-                    onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
+                    min={-500}
+                    max={500}
+                    step={10}
+                    value={config.telemetryPedalOffsetX ?? 0}
+                    onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
                     style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
                   />
+                </div>
+
+                {/* Power / Torque Horizontal (X) Offset Slider */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque X-Offset")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-500}
+                    max={500}
+                    step={10}
+                    value={config.telemetryPowerTorqueOffsetX ?? 0}
+                    onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                {/* Chart Top/Bottom Positions */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Pedal Position")}:</span>
+                  <select
+                    value={config.telemetryPedalPosition ?? 'bottom'}
+                    onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
+                    style={{
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      borderRadius: '4px',
+                      padding: '0.25rem 0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <option value="bottom">{t("Bottom")}</option>
+                    <option value="top">{t("Top")}</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Power/Torque Position")}:</span>
+                  <select
+                    value={config.telemetryPowerTorquePosition ?? 'top'}
+                    onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
+                    style={{
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      borderRadius: '4px',
+                      padding: '0.25rem 0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <option value="bottom">{t("Bottom")}</option>
+                    <option value="top">{t("Top")}</option>
+                  </select>
                 </div>
               </>
             )}
+
           </div>
         </div>
 
         {/* --- COLUMN 2 ROW 1: HUD Scale Size --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
+
           <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Scale Size")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-            {/* Overall HUD Scale */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Overall HUD Scale")}:</span>
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round(config.scale * 100)}%</span>
-              </div>
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.05}
-                value={config.scale}
-                onChange={(e) => handleScaleChange(Number(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-              />
-            </div>
+
 
             {/* G-Force Radar Scale */}
             <div>
@@ -862,6 +872,60 @@ export const OverlayView: React.FC = () => {
               <option value="shift_tacho" style={{ background: '#222', color: '#fff' }}>{t("NFS Shift Tachometer")}</option>
               <option value="vfd" style={{ background: '#222', color: '#fff' }}>Retro VFD</option>
             </select>
+
+            {/* Overall HUD Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Overall HUD Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round(config.scale * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.scale}
+                onChange={(e) => handleScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* VFD Instrument Waveform Sensitivity Offsets (Visible only when Retro VFD is selected) */}
+            {config.hudStyle === 'vfd' && (
+              <>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>VU Offset:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-5}
+                    max={5}
+                    step={1}
+                    value={config.vfdVuOffset ?? 0}
+                    onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>Audio Visualizer Offset:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdAudioOffset ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-5}
+                    max={5}
+                    step={1}
+                    value={config.vfdAudioOffset ?? 0}
+                    onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+              </>
+            )}
 
             <button
               onClick={handleReloadHud}

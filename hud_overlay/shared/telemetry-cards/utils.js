@@ -92,3 +92,35 @@ export function computeContrastColor(hexColor) {
     var bb = Math.round(hue2rgb(p, q, h - 1/3) * 255);
     return '#' + ((1 << 24) | (rr << 16) | (gg << 8) | bb).toString(16).slice(1);
 }
+
+/**
+ * Returns a DPI-scaled 2D canvas context and dimensions.
+ * Ensures consistent rendering scale across high DPI displays.
+ * @param {HTMLCanvasElement} canvas
+ */
+export function getCanvasContext(canvas) {
+    if (!canvas) return null;
+    var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+    var cssW = canvas.width || 100;
+    var cssH = canvas.height || 100;
+    if (typeof canvas.getBoundingClientRect === 'function') {
+        var rect = canvas.getBoundingClientRect();
+        if (rect && rect.width > 0 && rect.height > 0) {
+            cssW = rect.width;
+            cssH = rect.height;
+        }
+    }
+    var targetW = Math.max(10, Math.floor(cssW * dpr));
+    var targetH = Math.max(10, Math.floor(cssH * dpr));
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+    }
+    return {
+        ctx: typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null,
+        w: targetW,
+        h: targetH,
+        dpr: dpr
+    };
+}
+

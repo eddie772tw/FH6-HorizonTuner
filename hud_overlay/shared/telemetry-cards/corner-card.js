@@ -8,6 +8,7 @@ import {
     getTempColor,
     radToDeg,
     clamp,
+    getCanvasContext,
     TEMP_HIST_MIN_F,
     TEMP_HIST_MAX_F,
     TEMP_COLD_F,
@@ -16,31 +17,6 @@ import {
     TEMP_NORMAL_MAX_F,
 } from './utils.js';
 
-function getCanvasContext(canvas) {
-    if (!canvas) return null;
-    var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
-    var cssW = canvas.width || 100;
-    var cssH = canvas.height || 100;
-    if (typeof canvas.getBoundingClientRect === 'function') {
-        var rect = canvas.getBoundingClientRect();
-        if (rect && rect.width > 0 && rect.height > 0) {
-            cssW = rect.width;
-            cssH = rect.height;
-        }
-    }
-    var targetW = Math.max(10, Math.floor(cssW * dpr));
-    var targetH = Math.max(10, Math.floor(cssH * dpr));
-    if (canvas.width !== targetW || canvas.height !== targetH) {
-        canvas.width = targetW;
-        canvas.height = targetH;
-    }
-    return {
-        ctx: typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null,
-        w: targetW,
-        h: targetH,
-        dpr: dpr
-    };
-}
 
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now) {
     var rawSlipRatios = data.TireSlipRatio || [];

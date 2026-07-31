@@ -121,15 +121,18 @@ export function createTelemetryCardsManager() {
             }
 
             // ---- Edge-Aligned Charts Positioning & Stacking ----
-            var pedalPos   = fullConfig.telemetryPedalPosition       || 'bottom';
-            var ptPos      = fullConfig.telemetryPowerTorquePosition || 'bottom';
-            var sideBySide = fullConfig.telemetrySideBySideCharts === true || elements.showTeleSideBySideCharts === true;
+            var pedalPos     = fullConfig.telemetryPedalPosition       || 'bottom';
+            var ptPos        = fullConfig.telemetryPowerTorquePosition || 'bottom';
+            var mergedPos    = fullConfig.telemetryMergedChartsPosition || 'bottom';
+            var mergedOffsetX = fullConfig.telemetryMergedChartsOffsetX || 0;
+            var sideBySide   = fullConfig.telemetrySideBySideCharts === true || elements.showTeleSideBySideCharts === true;
 
             var topEdgeContainer    = document.getElementById('tcTopEdgeContainer');
             var bottomEdgeContainer = document.getElementById('tcBottomEdgeContainer');
 
             [topEdgeContainer, bottomEdgeContainer].forEach(function (container) {
                 if (container) {
+                    container.style.opacity = tOpacity;
                     if (sideBySide) {
                         container.classList.add('tc-side-by-side');
                     } else {
@@ -137,6 +140,8 @@ export function createTelemetryCardsManager() {
                     }
                 }
             });
+
+            var targetMergedParent = (mergedPos === 'top') ? topEdgeContainer : bottomEdgeContainer;
 
             var pedalContainer = document.getElementById('tcPedalWaveContainer');
             if (pedalContainer) {
@@ -146,14 +151,13 @@ export function createTelemetryCardsManager() {
                 } else {
                     pedalContainer.classList.remove('tc-half-width');
                 }
-                var targetPedalParent = (sideBySide ? bottomEdgeContainer : ((pedalPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
+                var targetPedalParent = (sideBySide ? targetMergedParent : ((pedalPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
                 if (targetPedalParent && pedalContainer.parentElement !== targetPedalParent) {
                     targetPedalParent.appendChild(pedalContainer);
                 }
-                // In side-by-side mode, clear translateX so charts appear adjacent
-                pedalContainer.style.transform = sideBySide
-                    ? 'scale(' + pedalScale + ')'
-                    : 'translateX(' + pedalOffsetX + 'px) scale(' + pedalScale + ')';
+                // In side-by-side mode, use mergedOffsetX
+                var effPedalOffset = sideBySide ? mergedOffsetX : pedalOffsetX;
+                pedalContainer.style.transform = 'translateX(' + effPedalOffset + 'px) scale(' + pedalScale + ')';
                 if (typeof pedalContainer.style.setProperty === 'function') {
                     pedalContainer.style.setProperty('--card-primary',  primaryColor);
                     pedalContainer.style.setProperty('--card-contrast', contrastColor);
@@ -168,19 +172,19 @@ export function createTelemetryCardsManager() {
                 } else {
                     ptContainer.classList.remove('tc-half-width');
                 }
-                var targetPtParent = (sideBySide ? bottomEdgeContainer : ((ptPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
+                var targetPtParent = (sideBySide ? targetMergedParent : ((ptPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
                 if (targetPtParent && ptContainer.parentElement !== targetPtParent) {
                     targetPtParent.appendChild(ptContainer);
                 }
-                // In side-by-side mode, clear translateX so charts appear adjacent
-                ptContainer.style.transform = sideBySide
-                    ? 'scale(' + ptScale + ')'
-                    : 'translateX(' + ptOffsetX + 'px) scale(' + ptScale + ')';
+                // In side-by-side mode, use mergedOffsetX
+                var effPtOffset = sideBySide ? mergedOffsetX : ptOffsetX;
+                ptContainer.style.transform = 'translateX(' + effPtOffset + 'px) scale(' + ptScale + ')';
                 if (typeof ptContainer.style.setProperty === 'function') {
                     ptContainer.style.setProperty('--card-primary',  primaryColor);
                     ptContainer.style.setProperty('--card-contrast', contrastColor);
                 }
             }
+
 
             // ---- Corner Cards (Grid vs Screen Edge Snap Layout) ----
             var cornerEdgeSnap = fullConfig.telemetryCornerEdgeSnap === true || elements.showTeleCornerEdgeSnap === true;

@@ -1427,7 +1427,7 @@ async def list_languages():
 
     if os.path.exists(LANG_DIR):
         for filename in os.listdir(LANG_DIR):
-            if filename.endswith(".json"):
+            if filename.endswith(".json") and filename.lower() != "iso639.json":
                 code = filename[:-5].lower()
                 # Skip en-us if it's somehow in the folder to prevent duplication
                 if code == "en-us":
@@ -1436,8 +1436,9 @@ async def list_languages():
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        name = data.get("__language_name__", filename[:-5])
-                        languages.append({"code": code, "name": name})
+                        if isinstance(data, dict):
+                            name = data.get("__language_name__", filename[:-5])
+                            languages.append({"code": code, "name": name})
                 except Exception as e:
                     logger.error(f"Failed to read language file {filename}: {e}")
 

@@ -876,6 +876,50 @@
 **後續行動 (Action):**
 - 處理 Forza UDP 遙測胎溫時，一律以 167°F (75°C) 與 221°F (105°C) 作為極限區間門檻。
 
+---
+
+## 2026-07-31 — Telemetry Cards 全卡片 High-DPI 繪圖適應與 OverlayView 主題/透明度同步重構
+
+**學習點 (Learning):**
+1. **High-DPI Canvas 通用輔助抽象 (Shared Canvas DPI Scaler)**：將原先僅位於 `corner-card.js` 的 `getCanvasContext(canvas)` 抽出至 `utils.js` 成為共用函式。在繪繪 `power-torque.js` 與 `pedal-wave.js` 時全面導入此函式，解決了在 1440p/4K 或 Windows 顯示縮放 (125%/150%) 下 Canvas 內部像素與 CSS 尺寸不一致導致的圖片模糊與拉伸變形問題。
+2. **OverlayView 自訂主題色與透明度向向下層疊傳遞 (Theme & Opacity Inheritance)**：
+   - 解決 `power-torque.js` 與 `pedal-wave.js` 硬編碼主題色與透明度反應脫節問題。
+   - `manager.js` 接收 `fullConfig` (包含 `customColor` / `useDefaultColors` / `telemetryOpacity`) 時，將 `--card-primary` 與 `--card-contrast` 主題變數寫入容器層級 DOM，並**同步將 `tOpacity` 賦予給 Edge Charts 的容器 `tcTopEdgeContainer` 與 `tcBottomEdgeContainer`**（因為這兩個 Container 為脫離中央 Wrapper 的 fixed 邊緣容器），使 `power-torque` 與 `pedal-wave` 圖表能 100% 精確地套用 Telemetry Opacity 設定。
+   - **Merge 併排模式螢幕安全邊界保護**：移除 `template.js` 中 `#tcBottomEdgeContainer.tc-side-by-side` 硬編碼的 `bottom: 0px !important` 覆寫，使其統一保持 `bottom: 15px` / `top: 15px` 的安全 Padding 間距，解決併排顯示時圖表外框被螢幕底端切到超出顯示範圍的問題。
+
+
+3. **無 HUD 互動原則貫徹 (Strict Non-Interactive HUD)**：確保 HUD 為完全靜態的視覺呈現，取消所有 hover、tooltip 阻礙觀看的繪圖與事件觸發邏輯，保持 `pointer-events: none`。
+
+---
+
+## 2026-07-31 — HUD Control Panel UI 重構、Merge 圖表 Top/Bottom 與 VFD Glow/Motion MVP 實作
+
+**學習點 (Learning):**
+1. **Merge 圖表條件式控制項解耦 (Conditional Controls Decoupling)**：當 `telemetrySideBySideCharts` 為 `true` 時，將單獨的 Pedal/PowerTorque Position 與 X-Offset 隱藏，並以 `telemetryMergedChartsPosition` 與 `telemetryMergedChartsOffsetX` 進行接管。這讓併排後的圖表群組可以自由放置於螢幕頂端 (`top`) 或底端 (`bottom`)，且取消 Merge 後能精確還原舊有各自設定。
+2. **G-Force 驅動 Motion Effect (G-Force Acceleration Shake & Motion Blur)**：讀取遙測數據中的瞬時 G 力 (`AccelerationX/Y/Z`)，映射為 VFD 儀表 Canvas 容器的動態位移 `translate(gX * 12, gY * 12)` 與劇烈操駕下的動態模糊 `blur(px)`，顯著提升駕駛沉浸感與真實車輛晃動回饋。
+3. **調色盤發光色完整對齊與波形動態調幅 (Palette Aligned Glow & Dynamic Radius)**：
+   - 修正 VFD 儀表中 `currentPalette.glow` 固定使用舊顏色的瑕疵，使其在自訂顏色模式下動態為 `customColor`，達成 100% 發光顏色對齊。
+   - 基礎發光強度由 `glowIntensity` 控制，實時發光半徑 `VFD_GLOW_RADIUS` 則隨 RPM 與音訊頻域波形振幅動態起伏 (`baseGlow * (1.0 + waveBoost)`)。
+4. **VFD 靈敏度跨度 20 倍擴大**：VU Meter 與 Equalizer Spectrum 計算中引進 `1.0 + (offset * 0.20)` 增益算式，使 11 階階梯 Slider 擁有顯著的 20 倍控制靈敏度。
+
+
+---
+
+## 2026-07-31 — 語言列表 metadata 過濾與統一 Unicode 度數符號處理
+
+**學習點 (Learning):**
+1. **i18n 語言目錄中非語言元檔案過濾 (Language Directory Non-Translation Metadata Filtering)**：
+   - 後端 `main.py` 的 `/api/languages` API 原先對 `lang/` 目錄執行純粹的 `filename.endswith(".json")` 走訪與 `json.load()`。當目錄中存在 ISO 元資料對照檔 `iso639.json`（Root 為 JSON Array 陣列而非 Dictionary）時，呼叫 `.get("__language_name__")` 會觸發 `'list' object has no attribute 'get'` 錯誤。
+   - 修正：顯式過濾 `iso639.json`，並要求載入內容必須為 `isinstance(data, dict)` 始進行語言名稱提取。
+2. **UI 度數符號防護與 `unitFormatter.ts`**：
+   - 為了避免前端元件在不同環境下度數符號 `°` 被錯誤轉譯或顯示為中文「度」字，建立統一工具函式 `formatDegree(value, unit)`，強制輸出 Unicode `\u00B0` 符號（如 `85\u00B0C`、`1.5\u00B0`）。
+
+**後續行動 (Action):**
+- 後續於 `lang/` 目錄新增任何非語系對照之元資料 JSON 時，應同步於 `main.py` 的 `list_languages` 排除清單中維護。
+
+
+
+
 
 
 

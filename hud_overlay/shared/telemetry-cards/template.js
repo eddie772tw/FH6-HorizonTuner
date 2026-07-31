@@ -145,9 +145,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 box-sizing: border-box;
                 padding: 0 25px;
             }
-            #tcBottomEdgeContainer.tc-side-by-side {
-                bottom: 0px !important;
-            }
+
 
             .tc-edge-chart.tc-half-width {
                 width: 36vh !important;
