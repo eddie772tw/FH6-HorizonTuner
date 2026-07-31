@@ -136,7 +136,12 @@ const TelemetryView: React.FC = () => {
   const bestLap = data?.BestLap || 0;
   const lastLap = data?.LastLap || 0;
 
+
   const classDisplay = getCarClassString(data?.CarClass);
+
+  const isEV = data?.EngineIdleRpm === 0;
+  const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
+
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -157,6 +162,7 @@ const TelemetryView: React.FC = () => {
         </div>
         <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
           {classDisplay && <span style={{ color: '#00f0ff', marginRight: '0.6rem' }}>{classDisplay}</span>}
+          {isEV && <span style={{ background: '#00ff88', color: '#000', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', marginRight: '0.6rem', fontWeight: 'bold' }}>EV</span>}
           {carName}
         </div>
       </div>
@@ -229,9 +235,13 @@ const TelemetryView: React.FC = () => {
         <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Power")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(powerData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{powerData.label}</span></div></div>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Torque")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>{Math.round(torqueData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{torqueData.label}</span></div></div>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Boost")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: boostData.value > 0 ? 'var(--secondary)' : '#fff' }}>{boostData.value.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{boostData.label}</span></div></div>
+              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Power")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: (isEV && powerData.value < 0) ? '#00ff88' : '#fff' }}>{Math.round(powerData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{powerData.label}</span></div></div>
+              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Torque")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: (isEV && torqueData.value < 0) ? '#00ff88' : '#fff' }}>{Math.round(torqueData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{torqueData.label}</span></div></div>
+              {isEV ? (
+                <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Regen")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: isRegenActive ? '#00ff88' : '#fff' }}>{isRegenActive ? t("ON") : t("OFF")}</div></div>
+              ) : (
+                <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Boost")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: boostData.value > 0 ? 'var(--secondary)' : '#fff' }}>{boostData.value.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{boostData.label}</span></div></div>
+              )}
             </div>
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Current Lap")}:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(currentLap)}</span></div>
