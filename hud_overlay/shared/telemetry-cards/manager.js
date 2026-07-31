@@ -245,7 +245,9 @@ export function createTelemetryCardsManager() {
                 renderPedalWave(data, this.pedalHist, now);
             }
 
-            renderCorners(data, showSusp, showSlip, showTemp, this.tireHist, this.suspHist, this.suspMinMax, now);
+            if (showCorners) {
+                renderCorners(data, showSusp, showSlip, showTemp, this.tireHist, this.suspHist, this.suspMinMax, now);
+            }
 
             if (showPT) {
                 renderPowerTorque(data, this.powerTorqueHist, now);
