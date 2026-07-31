@@ -82,7 +82,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
           <input type="number" value={carParams.frontTireWidth || 245} onChange={e => updateParam('frontTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} placeholder="245" />
           <span style={{ color: 'gray' }}>/</span>
           <input type="number" value={carParams.frontTireAspect || 40} onChange={e => updateParam('frontTireAspect', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} placeholder="40" />
-          <span style={{ color: 'gray' }}>R</span>
+          <span style={{ color: 'gray' }}>{t("R")}</span>
           <input type="number" value={carParams.frontTireRim || 18} onChange={e => updateParam('frontTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} placeholder="18" />
         </div>
       </div>
@@ -92,7 +92,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
           <input type="number" value={carParams.rearTireWidth || 245} onChange={e => updateParam('rearTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} placeholder="245" />
           <span style={{ color: 'gray' }}>/</span>
           <input type="number" value={carParams.rearTireAspect || 40} onChange={e => updateParam('rearTireAspect', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} placeholder="40" />
-          <span style={{ color: 'gray' }}>R</span>
+          <span style={{ color: 'gray' }}>{t("R")}</span>
           <input type="number" value={carParams.rearTireRim || 18} onChange={e => updateParam('rearTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} placeholder="18" />
         </div>
       </div>
