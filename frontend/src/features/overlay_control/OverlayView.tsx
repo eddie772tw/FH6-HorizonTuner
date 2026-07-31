@@ -34,7 +34,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'vfd';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -71,7 +71,7 @@ interface HudConfig {
 
 const DEFAULT_HUD_CONFIG: HudConfig = {
   enabled: false,
-  hudStyle: 'advanced',
+  hudStyle: 'vfd',
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -510,9 +510,11 @@ export const OverlayView: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
             {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6")}
             <br />
-            Simple & Advanced HUD Style: Paburrito/forza-horizon-6-custom-hud
+            Simple & Advanced HUD Style: Paburrito
             <br />
-            Other HUD Style: StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
+            VFD HUD Style: eddie772tw feat. crosXover
+            <br />
+            Other SIMHUB HUD Style: StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
           </p>
         </div>
 
