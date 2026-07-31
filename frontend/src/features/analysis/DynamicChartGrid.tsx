@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AnalysisDataPoint } from '../../context/TelemetryRecorderContext';
 import { CustomChannelItem } from './CustomChannelEditor';
 import { useSettings } from '../../context/SettingsContext';
@@ -83,11 +83,25 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
 }) => {
   const { t } = useSettings();
 
+  // [PERF] Memoize transformed chart data for all slots to prevent expensive O(N*M) recalculations
+  // of large telemetry datasets (activeSession) on every React render.
+  // Impact: Eliminates main thread blocking during parent component state updates when telemetry data hasn't changed.
+  const allChartsData = useMemo(() => {
+    if (isRecording) return slots.map(() => []);
+    return slots.map(slot => transformTelemetryData(
+      slot.chartType || 'line',
+      slot.domain,
+      slot.channels || [],
+      activeSession,
+      customChannels
+    ));
+  }, [isRecording, slots, activeSession, customChannels]);
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(48%, 1fr))', gap: '1rem', width: '100%' }}>
       {slots.map((slot, sIdx) => {
         const cType: ChartType = slot.chartType || 'line';
-        const chartData = isRecording ? [] : transformTelemetryData(cType, slot.domain, slot.channels || [], activeSession, customChannels);
+        const chartData = allChartsData[sIdx];
         const xUnit = slot.domain === 'distance' ? 'm' : slot.domain === 'lap' ? 'Lap' : 's';
         const channels = slot.channels || [];
 
