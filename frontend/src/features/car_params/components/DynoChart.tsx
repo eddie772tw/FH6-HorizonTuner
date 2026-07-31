@@ -141,7 +141,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
             {telemetryData && (
               <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 <span>{t("GEAR")}: <strong style={{ color: 'white' }}>{telemetryData.Gear}</strong></span>
-                <span>RPM: <strong style={{ color: 'white' }}>{Math.round(telemetryData.CurrentEngineRpm || 0)}</strong></span>
+                <span>{t("RPM")}: <strong style={{ color: 'white' }}>{Math.round(telemetryData.CurrentEngineRpm || 0)}</strong></span>
                 <span>{t("Throttle")}: <strong style={{ color: 'white' }}>{Math.round((telemetryData.AccelInput || 0) / 2.55)}%</strong></span>
               </div>
             )}
