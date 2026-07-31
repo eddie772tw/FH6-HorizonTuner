@@ -12,7 +12,7 @@
 2. **測試驗證需求**：在提交任何程式碼修改前，請務必執行以下測試：
    - 語法檢查：`ruff check . --fix`以及`ruff format .`
    - 後端 UDP 與邏輯測試：`pytest tests/`
-   - 前端物理與算牌測試：`npm --prefix frontend run test`
+   - 前端物理與算牌測試：`pnpm -C frontend run test`
 3. **無副作用設計**：`tuningMath.ts` 與 `tuningDiagnosis.ts` 中的計算工具不可以依賴 React Component State 或外部全域變數。
 
 ### 前端測試規範 (Vitest)
@@ -26,10 +26,10 @@
 * **執行指令**：
   ```bash
   # 從專案根目錄 (Windows PowerShell 下建議搭配 cmd /c 避免 PSSecurityException)
-  cmd /c "npm --prefix frontend run test"
+  cmd /c "pnpm -C frontend run test"
 
   # 或從 frontend/ 目錄
-  npm run test
+  pnpm run test
   ```
 
 ### 模組化與架構解耦規範 (Modular Architecture Rules)
@@ -49,7 +49,7 @@
 
 ### 開發邊界限制
 * **必須做的事**：
-  - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "npm --prefix frontend run test"`）。
+  - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "pnpm -C frontend run test"`）。
   - 修改後端 UDP 解析邏輯後，必須新增或更新 `tests/` 下對應的 Pytest 單元測試。
   - 任務結束後，必須主動回顧開發過程並更新 `.agents/Journal.md`。
   - **維護 `.gitignore` 規範**：新增功能、模組或執行任務時，必須同步檢查並維護 `.gitignore` 檔案，確保所有動態生成之快取（`__pycache__`, `node_modules`, `target`）、使用者設定、運行數據與臨時檔均被嚴格排除，維護 Repository 之純潔性。
@@ -70,7 +70,7 @@
 
 ## Task Completion Checklist
 在宣佈任何開發/重構任務完成前，Agent 必須執行：
-1. 執行單元測試（`pytest` / `npm run test`）並確保全數 Pass[cite: 1, 2]。
+1. 執行單元測試（`pytest` / `pnpm run test`）並確保全數 Pass[cite: 1, 2]。
 2. 評估本次任務是否有值得傳承的「學習點/失敗經驗/架構坑點」。
 3. 若有，請自動於 `.agents/Journal.md` 追加一筆紀錄，格式嚴格遵守規範。
 4. 在評估有需要時，建議並詢問是否建立一個或多個SKILL來幫助未來開發。

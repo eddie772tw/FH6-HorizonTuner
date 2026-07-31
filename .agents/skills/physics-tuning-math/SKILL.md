@@ -21,4 +21,4 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 
 ## 🧪 驗證 SOP
 - 修改物理算牌公式後，必須於 `tuningMath.test.ts` 新增/更新單元測試案例。
-- 執行測試指令：`cmd /c "npm --prefix frontend run test"`。
+- 執行測試指令：`cmd /c "pnpm -C frontend run test"`。

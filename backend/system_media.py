@@ -188,7 +188,7 @@ def _extract_windows_desktop_media() -> dict | None:
             "parsec",
             "logioptions",
             "menu",
-            "npm run dev",
+            "pnpm run dev",
             "visual studio",
             "code",
             "file explorer",

@@ -164,8 +164,8 @@
 ## 2026-07-22 - Windows PowerShell 執行前端 Vitest 測試的 ExecutionPolicy 避坑處理
 
 **學習點 (Learning):**
-- 在 Windows PowerShell 環境中，直接執行 `npm --prefix frontend run test` 或 `npx` 時，可能觸發 `PSSecurityException` (UnauthorizedAccess)，主因是系統網域或執行策略管制阻擋了 `.ps1` 腳本執行。
-- 包裹命令為 `cmd /c "npm --prefix frontend run test"` 可繞過 PowerShell 限制，穩定順利啟動 Vitest 並完成全數測試運算。
+- 在 Windows PowerShell 環境中，直接執行 `pnpm -C frontend run test` 或 `npx` 時，可能觸發 `PSSecurityException` (UnauthorizedAccess)，主因是系統網域或執行策略管制阻擋了 `.ps1` 腳本執行。
+- 包裹命令為 `cmd /c "pnpm -C frontend run test"` 可繞過 PowerShell 限制，穩定順利啟動 Vitest 並完成全數測試運算。
 
 **後續行動 (Action):**
 - 在 `AGENTS.md` 及重構 SKILL 指南中明確標註 `cmd /c` 指令選項，避免 Agent 後續重試陷入權限錯誤循環。
@@ -221,7 +221,7 @@
 
 **後續行動 (Action):**
 - 在重構或清理程式碼時，務必刪除廢棄未讀取的 Helper 函數與變數。
-- 宣佈任務完成前，持續執行 `cmd /c "npm --prefix frontend run build"` 確保前端 release 編譯無任何型別錯誤。
+- 宣佈任務完成前，持續執行 `cmd /c "pnpm -C frontend run build"` 確保前端 release 編譯無任何型別錯誤。
 
 ---
 
@@ -256,7 +256,7 @@
   - **橫向 G 力 (Lateral G)**：根據 Forza UDP telemetry 規範，轉向時 lateral acceleration (`AccelerationX`) 向右或向左需與儀表視覺慣性一致。在 `TelemetryView.tsx` 與 `telemetry-cards.js` 中統一將 X 軸映射符號反轉（`lat = -rawAccX / 9.81`），使向左/向右切打方向盤時藍點位移符合預期。
   - **縱向輪胎滑移 (Slip Ratio)**：統一 HUD 4 輪胎雷達圖 Y 軸映射，頂端為煞車 (Brake / negative ratio)、底端為加速燒胎 (Accel / positive ratio)，與 G 力雷達圖 (BRAKE on top) 及車輛前後重力轉移的視覺感知完美連動。
 - **廣播通道與 Telemetry 頁面解耦暫停 (BroadcastChannel HUD Pause Sync)**：在 `useTelemetry.ts` Ingestion 層中，HUD 數據預處理 (`formatHudTelemetry`) 在 WebSocket 接收瞬間即已完成，並透過 BroadcastChannel 直傳 HUD Overlay 獨立視窗。當使用者開啟「HUD 啟用時暫停 Telemetry 頁面渲染」開關時，`TelemetryView.tsx` 各 60Hz Canvas 組件直接透過全域 `__IS_HUD_PAUSED__` 旗標跳過繪製並呈現暫停提示條，實現大幅降低 CPU/GPU 開銷的同時，HUD 懸浮儀表依舊能毫秒級暢順繪繪與更新。
-- **TypeScript TS2688 / TS2307 測試檔 Exclusion**：執行 production Build (`npm run build` -> `tsc`) 時，若未在 `tsconfig.json` 設定 `"exclude": ["src/**/*.test.ts"]`，`tsc` 會因預設型別庫中缺乏 `vitest` 型別定義而報錯。在 `tsconfig.json` 中將 `.test.ts` 排除於 prod TS 編譯外，既保障 `tsc` 秒級 pass，又保證 Vitest 單元測試單獨流暢執行。
+- **TypeScript TS2688 / TS2307 測試檔 Exclusion**：執行 production Build (`pnpm run build` -> `tsc`) 時，若未在 `tsconfig.json` 設定 `"exclude": ["src/**/*.test.ts"]`，`tsc` 會因預設型別庫中缺乏 `vitest` 型別定義而報錯。在 `tsconfig.json` 中將 `.test.ts` 排除於 prod TS 編譯外，既保障 `tsc` 秒級 pass，又保證 Vitest 單元測試單獨流暢執行。
 
 ---
 
@@ -359,8 +359,8 @@
 ---
 
 ## 2026-07-23 - 賽後分析 Phase 3 彈出式 ChartEditModal、純文字專業 UI 與 30 秒記憶體拋棄機制
-- 在 Windows PowerShell 環境中，直接執行 `npm --prefix frontend run test` 或 `npx` 時，可能觸發 `PSSecurityException` (UnauthorizedAccess)，主因是系統網域或執行策略管制阻擋了 `.ps1` 腳本執行。
-- 包裹命令為 `cmd /c "npm --prefix frontend run test"` 可繞過 PowerShell 限制，穩定順利啟動 Vitest 並完成全數測試運算。
+- 在 Windows PowerShell 環境中，直接執行 `pnpm -C frontend run test` 或 `npx` 時，可能觸發 `PSSecurityException` (UnauthorizedAccess)，主因是系統網域或執行策略管制阻擋了 `.ps1` 腳本執行。
+- 包裹命令為 `cmd /c "pnpm -C frontend run test"` 可繞過 PowerShell 限制，穩定順利啟動 Vitest 並完成全數測試運算。
 
 **後續行動 (Action):**
 - 在 `AGENTS.md` 及重構 SKILL 指南中明確標註 `cmd /c` 指令選項，避免 Agent 後續重試陷入權限錯誤循環。
@@ -416,7 +416,7 @@
 
 **後續行動 (Action):**
 - 在重構或清理程式碼時，務必刪除廢棄未讀取的 Helper 函數與變數。
-- 宣佈任務完成前，持續執行 `cmd /c "npm --prefix frontend run build"` 確保前端 release 編譯無任何型別錯誤。
+- 宣佈任務完成前，持續執行 `cmd /c "pnpm -C frontend run build"` 確保前端 release 編譯無任何型別錯誤。
 
 ---
 
@@ -451,7 +451,7 @@
   - **橫向 G 力 (Lateral G)**：根據 Forza UDP telemetry 規範，轉向時 lateral acceleration (`AccelerationX`) 向右或向左需與儀表視覺慣性一致。在 `TelemetryView.tsx` 與 `telemetry-cards.js` 中統一將 X 軸映射符號反轉（`lat = -rawAccX / 9.81`），使向左/向右切打方向盤時藍點位移符合預期。
   - **縱向輪胎滑移 (Slip Ratio)**：統一 HUD 4 輪胎雷達圖 Y 軸映射，頂端為煞車 (Brake / negative ratio)、底端為加速燒胎 (Accel / positive ratio)，與 G 力雷達圖 (BRAKE on top) 及車輛前後重力轉移的視覺感知完美連動。
 - **廣播通道與 Telemetry 頁面解耦暫停 (BroadcastChannel HUD Pause Sync)**：在 `useTelemetry.ts` Ingestion 層中，HUD 數據預處理 (`formatHudTelemetry`) 在 WebSocket 接收瞬間即已完成，並透過 BroadcastChannel 直傳 HUD Overlay 獨立視窗。當使用者開啟「HUD 啟用時暫停 Telemetry 頁面渲染」開關時，`TelemetryView.tsx` 各 60Hz Canvas 組件直接透過全域 `__IS_HUD_PAUSED__` 旗標跳過繪製並呈現暫停提示條，實現大幅降低 CPU/GPU 開銷的同時，HUD 懸浮儀表依舊能毫秒級暢順繪繪與更新。
-- **TypeScript TS2688 / TS2307 測試檔 Exclusion**：執行 production Build (`npm run build` -> `tsc`) 時，若未在 `tsconfig.json` 設定 `"exclude": ["src/**/*.test.ts"]`，`tsc` 會因預設型別庫中缺乏 `vitest` 型別定義而報錯。在 `tsconfig.json` 中將 `.test.ts` 排除於 prod TS 編譯外，既保障 `tsc` 秒級 pass，又保證 Vitest 單元測試單獨流暢執行。
+- **TypeScript TS2688 / TS2307 測試檔 Exclusion**：執行 production Build (`pnpm run build` -> `tsc`) 時，若未在 `tsconfig.json` 設定 `"exclude": ["src/**/*.test.ts"]`，`tsc` 會因預設型別庫中缺乏 `vitest` 型別定義而報錯。在 `tsconfig.json` 中將 `.test.ts` 排除於 prod TS 編譯外，既保障 `tsc` 秒級 pass，又保證 Vitest 單元測試單獨流暢執行。
 
 ---
 
