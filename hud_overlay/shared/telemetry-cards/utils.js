@@ -103,12 +103,11 @@ export function getCanvasContext(canvas) {
     var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
     var cssW = canvas.width || 100;
     var cssH = canvas.height || 100;
-    if (typeof canvas.getBoundingClientRect === 'function') {
-        var rect = canvas.getBoundingClientRect();
-        if (rect && rect.width > 0 && rect.height > 0) {
-            cssW = rect.width;
-            cssH = rect.height;
-        }
+
+    // Use clientWidth/clientHeight to avoid recursive scaling loops caused by CSS transforms (like scale())
+    if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+        cssW = canvas.clientWidth;
+        cssH = canvas.clientHeight;
     }
     var targetW = Math.max(10, Math.floor(cssW * dpr));
     var targetH = Math.max(10, Math.floor(cssH * dpr));
