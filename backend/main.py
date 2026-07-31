@@ -1427,7 +1427,7 @@ async def list_languages():
 
     if os.path.exists(LANG_DIR):
         for filename in os.listdir(LANG_DIR):
-            if filename.endswith(".json"):
+            if filename.endswith(".json") and filename.lower() != "iso639.json":
                 code = filename[:-5].lower()
                 # Skip en-us if it's somehow in the folder to prevent duplication
                 if code == "en-us":
@@ -1436,8 +1436,9 @@ async def list_languages():
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        name = data.get("__language_name__", filename[:-5])
-                        languages.append({"code": code, "name": name})
+                        if isinstance(data, dict):
+                            name = data.get("__language_name__", filename[:-5])
+                            languages.append({"code": code, "name": name})
                 except Exception as e:
                     logger.error(f"Failed to read language file {filename}: {e}")
 
@@ -1905,7 +1906,10 @@ DEFAULT_HUD_CONFIG = {
     "scale": 1.0,
     "unit": "kmh",
     "telemetryOpacity": 0.65,
-    "telemetryScale": 1.0,
+    "telemetryGRadarScale": 1.0,
+    "telemetryCornersScale": 1.0,
+    "telemetryPedalScale": 1.0,
+    "telemetryPowerTorqueScale": 1.0,
     "pauseTelemetryViewWhenActive": True,
     "elements": {
         "showGauge": True,
@@ -1918,9 +1922,13 @@ DEFAULT_HUD_CONFIG = {
         "showMotionEffect": True,
         "showTeleSuspension": True,
         "showTeleTires": True,
+        "showTeleTiresSlip": True,
+        "showTeleTiresTemp": True,
         "showTeleAttitude": True,
         "showTeleEngine": True,
         "showTelePedals": True,
+        "showTeleCenterAnchor": True,
+        "showTeleGridLines": False,
     },
     "soundEnabled": False,
 }
@@ -1952,6 +1960,25 @@ async def save_overlay_config(data: dict):
     except Exception as e:
         logger.error(f"Failed to save hud_config.json: {e}")
         return {"error": f"Failed to save HUD config: {e}", "success": False}
+
+
+@app.post("/api/overlay/reset")
+async def reset_overlay_config():
+    try:
+        data = DEFAULT_HUD_CONFIG
+        with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        await manager.broadcast_json({"type": "hud:config", "data": data})
+
+        return {
+            "message": "HUD config reset to defaults successfully",
+            "success": True,
+            "data": data,
+        }
+    except Exception as e:
+        logger.error(f"Failed to reset hud_config.json: {e}")
+        return {"error": f"Failed to reset HUD config: {e}", "success": False}
 
 
 @app.get("/api/overlay/car_learning")

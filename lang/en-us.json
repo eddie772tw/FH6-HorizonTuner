@@ -383,6 +383,8 @@
   "Release throttle to finish.": "Release throttle to finish.",
   "Remove Channel": "Remove Channel",
   "Reset Car Learning Database": "Reset Car Learning Database",
+  "Reset HUD Settings": "Reset HUD Settings",
+  "Reset all HUD elements, scaling, colors, and positions to default values.": "Reset all HUD elements, scaling, colors, and positions to default values.",
   "Reset run": "Reset run",
   "Reset to Defaults": "Reset to Defaults",
   "Retention": "Retention",

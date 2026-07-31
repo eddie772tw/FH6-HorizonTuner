@@ -16,6 +16,133 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-07-31 - VFD HUD Motion Effect 高效能渲染與平滑化優化
+
+**學習點 (Learning):**
+1. **Lerp 線性插值平滑化 (Linear Interpolation for Telemetry Shake)**：遙測加速度數據在高頻 60Hz+ 接收時易產生影格級別的微幅跳動。採用 Lerp（如 `val += (target - val) * 0.2`）處理平移與 Blur 數值，能有效平滑化強煞車或急轉彎時的 UI 位移，防範畫面碎震與閃跳。
+2. **G 力 deadzone 死區過濾**：當 `Math.abs(gX) < 0.1` 及 `Math.abs(gY) < 0.1` 時強制回歸 0G，能確保車輛直線巡航時介面保持絕對穩定銳利，避免微小擺動打擾駕駛視覺焦點。
+3. **translate3d 硬體加速與 setProperty 跳過無效 DOM 操作**：使用 `translate3d(x, y, 0)` 取代 2D `translate` 可將 DOM 平移提升至 GPU 獨立圖層渲染；結合 `will-change: transform, filter;` 與變量更新閾值判定 (`> 0.05px`)，在數值無顯著變化時跳過 CSS DOM 寫入，極大地降低頻繁操作 CSS Filter 的 GPU 記憶體與渲染開銷。
+
+**後續行動 (Action):**
+- 後續若有其他 Overlay HUD 需要加入加速度Shake視效，應統一沿用 `Lerp + Deadzone (0.1G) + translate3d + DOM write threshold (> 0.05px)` 的極效能範式。
+
+---
+
+## 2026-07-30 - HUD Overlay 多項視效、卡片合併與 VFD 靈敏度控制優化
+
+**學習點 (Learning):**
+1. **馬力與扭力雙極值動態 Y 軸歸一 (Unified Dynamic Y-Axis Scale)**：在 `power-torque.js` 中將馬力與扭力採集數據取聯集極大值 `combinedMax = Math.max(ceilHP, ceilTQ)` 作為圖表 Y 軸高，並防護填滿點座標從 `(px, px)` 修正為 `(px, py)`，確保兩條數據曲線均能完全展示不超出圖表邊界。
+2. **正圓形畫布長寬比鎖定 (CSS Aspect Ratio Constraint for Perfect Circle)**：四角卡片的輪胎滑移雷達圖 `tcTireRadar` 因為外部容器與 CSS `width: 100%; height: 10.5vh` 導致非正方形延伸。顯式賦予 `aspect-ratio: 1 / 1; height: 10.5vh; max-width: 100%;` 後，能在任何縮放與卡片排版下始終維持絕對正圓形。
+3. **胎溫直方圖動態適應與白色滑動指示線 (Adaptive Temp Histogram & Moving White Indicator)**：胎溫直方圖 `tcTireHist` 的直條數量 (`numBins`) 改為依據 Canvas clientWidth 動態劃分（單直條縮減為約 4px），並於 Canvas 上動態繪製跟隨目前溫度的白色指示垂直線與 Floating 溫度數值，同步將標頭靜態文字標籤隱藏，大幅提升視覺高科技感。
+4. **8 方向 G-Force 極限值追蹤 (8-Directional G-Force Extreme Point Tracking)**：移植 `TelemetryView.tsx` 中的 8 極點演算法 (N, S, E, W, NE, NW, SE, SW)，在 G-Force 雷達圖中呈現精確的歷史極限白點。
+5. **馬力扭力與油門煞車卡片合併與聯動 (Merged Card Side-by-Side & Linked Controls)**：當開啟 `telemetrySideBySideCharts` 時，兩圖表寬度減半並併排於螢幕底端（套用 `bottom: 0px !important`），且設定面板中的 X-Offset 與 Top/Bottom 位置選單會自動雙向聯動。
+6. **VFD 靈敏度客製化拉桿 (VFD Waveform Sensitivity Offsets)**：新增 `vfdVuOffset` 與 `vfdAudioOffset` (-5 ~ +5) 控制拉桿，並僅在切換至 `vfd` 樣式時動態顯示，維持非 VFD 樣式下的介面簡潔。
+
+**後續行動 (Action):**
+- 調整 Canvas 繪圖內容時，務必確保內建或 lightweight DOM test context 具備相應之 mock 方法（例如 `fillText`），避免單元測試環境拋出 undefined function 錯誤。
+
+---
+
+## 2026-07-31 - HUD Canvas 解析度陷阱：HTML 屬性尺寸 vs CSS 顯示尺寸不一致
+
+**學習點 (Learning):**
+1. **Canvas 像素解析度陷阱 (Canvas Pixel Buffer vs CSS Display Size)**：HTML `<canvas width="W" height="H">` 的屬性定義的是**內部像素緩衝區尺寸 (internal pixel buffer)**，與 CSS `width/height` 定義的**顯示框大小**完全獨立。若內部緩衝區遠小於 CSS 顯示框，瀏覽器會進行放大插值，產生模糊 (aliasing)。正確做法是在每幀繪製前先讀取 `canvas.clientWidth / canvas.clientHeight`，再同步到 `canvas.width / canvas.height`。
+2. **完美正圓強制做法**：僅靠 CSS `aspect-ratio: 1/1` 不足以保證 canvas 繪圖空間為正方形。必須在 JS 中用 `Math.min(clientWidth, clientHeight)` 取較小值後，同時賦予 `canvas.width = canvas.height = size`，才能確保繪製出的同心圓不變形為橢圓。
+3. **胎溫直方圖綠色正常區間對齊陷阱**：以 `bin index * barW` 計算綠色 zone 起點會因 `numBins` 動態改變而偏移。正確做法是改為 `((TEMP_NORMAL_MIN_F - TEMP_HIST_MIN_F) / tempRange) * tw`，直接以比例映射至像素 X 座標，確保與溫度數據完全對齊。
+4. **Side-by-Side 並排圖表三重錯誤**：啟用合併模式後圖表跑到螢幕角落的根本原因有三個：(a) CSS `justify-content: space-between` 把兩張圖推到容器兩端；(b) 個別的 `translateX(offset)` 仍被套用造成額外偏移；(c) 兩個圖表若位置設定不同（一個 top 一個 bottom）會進入不同容器。修正：CSS 改 `justify-content: center; gap`，JS 中 side-by-side 模式強制兩者都進 `bottomEdgeContainer`，並清除 `translateX`。
+
+**後續行動 (Action):**
+- 新增或修改 HUD Canvas 元素時，**必須在繪製函數最開頭加入 clientWidth/clientHeight 同步步驟**，這是一條應成為 Code Review Checklist 的規則。
+- 任何以「bin index 乘以寬度」對應畫布 x 座標的做法，都應改為「比例直接乘以畫布總寬」，以規避 numBins 可變性帶來的偏差。
+
+---
+
+## 2026-07-30 - HUD 控制面板 Performance & System Options 新增重置 HUD 設定功能
+
+**學習點 (Learning):**
+- **HUD 設定檔預設值一鍵重置 (One-Click Default Config Overwrite)**：在控制面板 `OverlayView.tsx` 的「Performance & System Options」卡片下新增「重設 HUD 相關設定 (`Reset HUD Settings`)」按鈕，並於後端 `main.py` 提供 `POST /api/overlay/reset` API 端點。此功能將即時重置所有元素開關、圖表縮放比例、自訂顏色與佈局位置至標準預設值 (`DEFAULT_HUD_CONFIG`)，同時保持當前 HUD 開啟/關閉狀態 (`enabled`) 不受影響，並自動向廣播頻道 (`BroadcastChannel`) 發送 `hud:reload` 事件重新載入 HUD Overlay。
+
+**後續行動 (Action):**
+- 提供重置按鈕時應維持良好的多國語言相容（`en-us.json`, `zh-tw.json`, `ja-jp.json`），並保留執行階段狀態以避免重置過程突兀打斷 overlay window 運作。
+
+---
+
+## 2026-07-30 - HUD Overlay 四角卡片輪胎滑移與溫度卡片顯示邏輯修復
+
+**學習點 (Learning):**
+- **隱性父層 Toggel 斷層 (Implicit Parent Toggle Gating)**：`manager.js` 原本的卡片顯示判定邏輯為 `showSlip = showTires && showTeleTiresSlip` 與 `showTemp = showTires && showTeleTiresTemp`。然而在前端 `OverlayView.tsx` 控制面板中，使用者僅有 `showTeleTiresSlip`（輪胎滑移）與 `showTeleTiresTemp`（輪胎溫度）兩個細項開關，並無父層 `showTeleTires` 開關。若舊設定檔 `hud_config.json` 中的 `"showTeleTires"` 為 `false`，即便玩家開啟細項開關，`showTires` 亦會恆為 `false`，導致滑移雷達與溫度直方圖區塊被 `display: none` 隱藏，僅剩懸吊行程（`showTeleSuspension`）能正常呈現。
+- **優雅降級判定與透傳對齊 (Graceful Toggle Evaluation & Telemetry Symmetrical Mapping)**：在 `manager.js` 中將判定改為 `elements.showTeleTiresSlip !== undefined ? (elements.showTeleTiresSlip !== false) : showTires`，優先尊重顯式設定之子項 Toggle，若未定義則 Safe Fallback 至 `showTires`；同時於 `coordinator.js` 的 `formatHudTelemetry` 數據透傳中補齊 `slip_angle_fl/fr/rl/rr` 與陣列預設值，確保數據解析與 UI 展示無死角。
+
+**後續行動 (Action):**
+- HUD Overlay 之元件開關（Element Toggles）若設有子級與父級關係，必須確保前端 UI 設有對應層級之控制項，或在 JS manager 中實現顯式子項優先（Explicit Sub-toggle Precedence）之降級邏輯。
+
+---
+
+## 2026-07-30 - 四角卡片螢幕邊緣貼齊與圖表半寬左右並排 layout 開關支援
+
+**學習點 (Learning):**
+- **邊緣貼齊 (Edge Snap) 與動態 `transform-origin` 協同 (Origin Swapping with Border Attachment)**：在 3x3 Grid 佈局下，卡片靠近中央，縮放固定點應設於內側；當啟用 `telemetryCornerEdgeSnap` 切換為螢幕邊緣貼齊（`width: 100vw; padding: 0 25px; grid-template-columns: auto 1fr auto;`）時，將 4 個角落卡片的 `transform-origin` 反向轉置為畫面外側邊緣方向（FL: `bottom left`, FR: `bottom right`, RL: `top left`, RR: `top right`），可實現極致穩定的邊貼齊外擴縮放。
+- **圖表半寬左右對齊 (.tc-side-by-side & .tc-half-width)**：將 Pedal Wave 與 Power/Torque 圖表寬度縮短為 `36vh`，並在頂/底部容器上套用 `flex-direction: row; justify-content: space-between; width: 100vw;`，由於 Canvas 繪製邏輯（`pedal-wave.js` & `power-torque.js`）完全基於動態 `canvas.width` 與 `canvas.height`，圖表自適應縮短與畫質呈現極為順暢。
+
+**後續行動 (Action):**
+- HUD Overlay UI 設定若涉及佈局模式切換，應優先採用 CSS utility class 開關配合 JS 條件式動態賦予，維持效能與樣式隔離。
+
+---
+
+**學習點 (Learning):**
+- **跨 DOM 層級 CSS 變數獨立傳播 (Independent CSS Variable Propagation)**：Pedal Chart (`#tcPedalWaveContainer`) 與 Power/Torque Chart (`#tcPowerTorqueContainer`) 屬於外層 `fixed` 堆疊容器 (`#tcTopEdgeContainer` / `#tcBottomEdgeContainer`) 的 DOM 子節點，而非 `#tcClusterWrapper` 的子節點。因此寫在 `#tcClusterWrapper.style` 上的 `--card-primary` 無法被其繼承。在 `manager.js` 中顯式將 `--card-primary` 與 `--card-contrast` 直接透過 `style.setProperty()` 傳遞至 `pedalContainer` 與 `ptContainer`，可讓 CSS 的 `border: 1px solid var(--card-primary, ...)` 即時反映玩家自訂的 Custom Gauge Color。
+
+**後續行動 (Action):**
+- 後續新增或搬移脫離主集線器 (Cluster Wrapper) 的獨立圖表 Panel 時，一律確保其 DOM 元素上同步注入主色調 CSS 變數 `--card-primary`。
+
+---
+
+**學習點 (Learning):**
+- **「上二下一」視覺空間極大化**：將角落卡片原有的 3 區塊並排改為第一排放 SUSP 與 SLIP、第二排放自適應 100% 全寬胎溫圖（TEMP Block）後，卡片頂部的垂直與水平空間得到極大釋放。將 SLIP 的滑移角 A 與滑移率 R 數據移至 SLIP 標頭行（`tc-sub-header`）右側，省去了頁尾標籤空間，使得雷達圖 Canvas `tcTireRadar` 與懸吊歷程波形 Canvas `tcSuspWave` 能夠顯著擴大 resolution 與視覺尺寸（半徑從 37.8px 提升至 46.2px）。
+- **原生橫向繪製無縫轉譯 (Native Horizontal Histogram)**：移除 `tcTireHist` Canvas 的 CSS `-90deg` 旋轉後，原本在 `corner-card.js` 中 idx 0 (低溫) 到 idx 14 (高溫) 的橫向 Bin 繪製邏輯完全不需變動，就能直接自然呈現低溫在左、高溫在右的標準直方圖，結合底部 `COLD` 與 `HOT` 頁尾標籤，視覺可讀性與現代感大幅提升。
+
+**後續行動 (Action):**
+- 後續若調整 Corner Card 內部組件結構，應優先維護 HTML template 內的 DOM ID (如 `tcTireAng`, `tcTireRat`, `tcSuspWave` 等)，以確保後續 telemetry manager 及單元測試相容。
+
+---
+
+**學習點 (Learning):**
+- **DOM 節點層級與 CSS 變數繼承 (CSS Variable Scope)**：若 fixed 定位元素不是 `#tcClusterWrapper` 的子 DOM 節點，直接將 `--tc-pedal-offset-x` 寫在 `#tcClusterWrapper.style` 上是無法被同層或外層的固定圖表繼承的。將 `transform: translateX(${offset}px) scale(${scale})` 直接在 JavaScript `manager.js` 中動態賦值給圖表 DOM element 的 inline style，能最直接且可靠地反映 Offset 與 Scale。
+- **Flexbox 邊緣堆疊消除重疊 (Zero-Overlap Edge Stacking)**：在畫面上、下兩端各建立一個 `position: fixed` 的容器 (`#tcTopEdgeContainer` 使用 `flex-direction: column` / `#tcBottomEdgeContainer` 使用 `flex-direction: column-reverse`)。當油門煞車與馬力扭力圖同時指定在同一側時，只需將它們動態 `.appendChild()` 移入同一個 Flex 容器中，瀏覽器就會自動對齊外框邊緣並保持 `10px` gap 嚴格堆疊，徹底解決寫死 top/bottom 偏移像素所導致的局部重疊問題。
+- **4 個獨立區塊 Scale 管理**：將 `Telemetry Scale` 拆分為 G-Force Radar (`telemetryGRadarScale`)、4-Corner Cards (`telemetryCornersScale`)、Pedal Chart (`telemetryPedalScale`) 與 Power/Torque Chart (`telemetryPowerTorqueScale`) 4 個獨立參數，可滿足玩家針對不同圖表大小的客製化需求。
+
+**後續行動 (Action):**
+- 當有多個邊緣貼齊面板可能重疊時，優先採用 fixed Flexbox 堆疊容器機制。
+
+---
+
+## 2026-07-30 - Telemetry Cards UI 第二階段：邊緣貼齊、X/Y Offset、獨立子卡片與透明錨點
+
+**學習點 (Learning):**
+- **取消 Element Scale 解決縮放與貼齊衝突**：在 Overlay HUD 中，若父容器被套用 `transform: scale()`，內部的 `position: fixed` 或邊緣貼齊元素會因為縮放基準點 (Transform Origin) 與畫面邊界計算產生偏差。取消 Element Scale 改為純粹的元件邊界 `position: fixed` + CSS Offset 變數後，貼齊頂部與底部的效果極度穩定且不受解析度縮放影響。
+- **畫面邊緣貼齊 (Edge-Aligned Panels)**：將 Pedal Wave 與 Power/Torque 設定為 `position: fixed; top/bottom: 15px; left: 50%; transform: translateX(calc(-50% + offset_x))`。當兩者均置於同一側時，後者動態調整為 `110px` offset，可徹底解決重疊與非對稱佔位問題。
+- **透明中央錨點 (Center Anchor) 解耦對齊依賴**：原先四輪角落卡片完全依賴 G-Force 雷達圖的 DOM 高度來置中，關閉雷達圖會導致四輪卡片擠在一起。藉由放置一個永久的 `tcCenterAnchor` (70vh x 70vh Grid cell)，即便 G-Force 雷達隱藏，四輪卡片依然能以螢幕正中央為基準對齊，且可藉由 `showTeleGridLines` 在錨點上 overlay 對齊十字虛線。
+- **子卡片 (SUSP, SLIP, TEMP) 尺寸與樣式標準化**：將每個 Corner 角落內部的三個子卡片統一定義為 `.tc-sub-card` (寬度 11vh, 最小高度 15vh) 與 `.tc-sub-canvas` (9.5vh x 9.5vh)，結構統一為 `Header (名稱+主值)` -> `Canvas 繪圖區` -> `Footer (動態範圍數據)`，能提供一致且專業的視覺效果。
+
+**後續行動 (Action):**
+- 後續新增 Overlay 圖表元件時，一律採用 fixed 螢幕貼齊搭配 CSS 變數做 Offset 調整，避免使用外層 wrapper 的 scale 變形。
+
+---
+
+## 2026-07-30 - Telemetry Cards UI 大規模優化：佈局、字體、顏色、圖表位置
+
+**學習點 (Learning):**
+- **getComputedStyle 在 jsdom 測試環境不可用**：在 `corner-card.js` 中使用 `getComputedStyle(el).getPropertyValue('--card-primary')` 讀取 CSS 變數，在瀏覽器正常，但在 Vitest + jsdom 環境中拋出 `ReferenceError: getComputedStyle is not defined`。解決方案：改用 `el.style.getPropertyValue('--card-primary')`（inline style 上的 Property），因為 manager.js 已透過 `wrapper.style.setProperty('--card-primary', ...)` 將顏色值設在 inline style 上，可直接讀取，完全避開 `getComputedStyle`。
+- **溫度閾值常數需與測試期望對齊**：`TEMP_HOT_F` 常數若從 210 改為 221，既有測試 `getTempColor(220) === '#ff0000'` 就會失敗（220°F < 221°F 被判為綠色）。應保留原有 `TEMP_HOT_F = 210`（與 TelemetryView.tsx 一致），另以 `TEMP_NORMAL_MAX_F = 221` 定義正常區間上界，兩者不要混用同一個常數。
+- **胎溫直方圖垂直化（旋轉 90°）CSS Trick**：讓水平繪製的 Canvas 顯示為垂直（高溫在上），wrapper div 用 `overflow: hidden`，canvas 用 `transform: rotate(-90deg) translateX(-100%); transform-origin: top left;`。繪圖邏輯不需修改，左邊 bin 旋轉後變下方，右邊變上方，完全符合設計。
+- **Element Scale `transform-origin` 決定放大方向**：FL 用 `top left`，FR 用 `top right`，RL 用 `bottom left`，RR 用 `bottom right`。若統一使用 `top left`，右側與下方卡片會因原點位於左上而向中心擠入，而非向外擴張。
+- **四輪角落卡片對稱性**：關閉某輪時使用 `visibility: hidden`（而非 `display: none`），讓卡片仍佔 Grid 格以保持對稱。`display: none` 會導致格塌陷，剩餘卡片向中心聚攏。
+- **獨立 Font Scale CSS 變數**：以 `--tc-font-scale` 讓字體大小與元素縮放解耦。在 manager.js 以 `style.setProperty('--tc-font-scale', fontScale)` 寫入，在 CSS 中以 `calc(0.75rem * var(--tc-font-scale, 1.0))` 計算字體，使用者可在不改變卡片大小的情況下單獨放大文字。
+
+**後續行動 (Action):**
+- 凡需在 HUD Canvas 模組讀取 CSS 變數，一律使用 `element.style.getPropertyValue()` 而非 `getComputedStyle()`，確保 jsdom 測試環境相容性。
+- 新增 Canvas 自適應解析度功能時，在 `template.js` 的 `<style>` 使用 `@media (min-width: ...)` 定義 CSS class，並在元素上套用 class 而非 inline style，確保統一管理。
+
 ---
 
 ## 2026-07-22 - 初次建立 tuningMath.ts Vitest 測試套件
@@ -675,6 +802,137 @@
 
 **後續行動 (Action):**
 - 維護 VFD 跑馬燈時，務必區分 `needScroll` 狀態，避免短曲串誤觸環狀重複渲染。
+
+---
+
+### 2026-07-31 — Retro VFD 儀表優化：紅黃線算式對齊、閃爍升檔警示、絲印標題質感與 Telemetry 子區塊擴大
+
+**學習點 (Learning):**
+1. **VFD 儀表轉速表紅黃線動態算式與高頻升檔閃爍 (VFD RPM Redline/Yellowline & Upshift Flash Warning)**：以 `payload.redlineRpm || maxRpm * 0.92` 對齊 Advanced HUD 紅線起點，並將黃線區起點設為紅線起點往回推 1000 RPM (`redlineRpm - 1000`)。當轉速進入紅線區時，透過 `Math.floor(Date.now() / 65) % 2 === 0` 快速切換 active cell 與 `SHIFT` 燈號之 alpha/glow，形成 8Hz 的強烈升檔視覺警示。
+2. **絲印質感標題下沉堆疊 (VFD Silk-Screen Title Layering)**：子區塊標題（`RPM x1000`, `SPEED`, `GEAR`, `TELEMETRY`, `AUDIO EQUALIZER`）改在 `drawVFDPanelFrame` 中以 `bold 22px "Trebuchet MS"` 半透明色 (`globalAlpha = 0.20`) 在面板網格畫布層後方繪製，使前景數字與長條圖蓋於上方，重現經典 VFD 玻璃陰極極板印刷質感。
+3. **Telemetry 子區塊完全重構與對齊修復 (Telemetry Block Restructuring & Explicit Alignment)**：重構 `TELEMETRY` Panel，顯式指定 `ctx.textAlign = 'left'` 與 `ctx.textBaseline = 'middle'` 解決 `THR` 以外文字消失問題，並將長條圖高度放大至 `18px`，`ABS`/`TCS`/`TUR` 警示燈號擴大至 `54x26px` ~ `55x26px` 配合高對比度邊框與 Bloom 發光，填滿 `470x145px` 空間。
+
+**後續行動 (Action):**
+- 修改 VFD 或 HUD Canvas 繪圖邏輯時，務必在內部 context save/restore 區塊內顯式設定 `textAlign` 與 `textBaseline`，防止上游圖表繪製殘留的 text alignment 影響下游文字渲染。
+
+---
+
+### 2026-07-31 — HUD 控制面板 Refresh 按鈕修復與 BroadcastChannel 雙向強刷對齊
+
+**學習點 (Learning):**
+1. **Refresh 按鈕觸發機制雙向強化 (Dual-Channel HUD Force Reload)**：
+   - 點擊控制面板 `Refresh HUD List & Reload HTML` 時，`handleReloadHud` 必須同時透傳當前 `hudStyle`（如 `vfd`）至 BroadcastChannel，並調用 `loadAuthorInfo(style, true)` 帶 timestamp query 避免 metadata 快取。
+   - 宿主頁面 (`hud_overlay/index.html`) 於收到 `hud:reload` 廣播時，需先更新本地 `activeHud`，並先向 iframe 內部 `postToHud('hud:reload')` 觸發 `HUDCore` 之 `window.location.reload()` 立即執行 window reload，隨後再調用 `loadHud(activeHud, true)` 為 iframe `src` 追加時間戳 (`?t=timestamp`)。
+2. **按鈕停用狀態解鎖 (Unrestricted Refresh Action)**：
+   - 移除 `OverlayView.tsx` 中 Refresh 按鈕在 `showGauge === false` 時的停用條件，確保使用者無論當前關閉或開啟 Gauge，皆可點擊 Refresh 按鈕隨時重新載入 HTML 與靜態檔。
+
+**後續行動 (Action):**
+- 確保所有跨 iframe 廣播訊息均攜帶最新 `hudStyle` 識別符，避免樣式切換與網頁強刷產生非同步分歧。
+
+---
+
+### 2026-07-31 — VFD 油門條件紅線閃爍控制與 Telemetry BST/POW/TOR 單位極值修正
+
+**學習點 (Learning):**
+1. **油門 > 50% 升檔警示判定與 SHIFT 文字隱藏**：
+   - 轉速進入紅線區時，若油門輸入 $\le$ 50%（如鬆油門降速或高轉速滑行），轉速條改為穩定常亮紅光而不閃爍，且 GEAR 區塊的 `SHIFT` 文字完全隱藏 (`isRedlineAlert = (rpm >= redlineRpm) && (throttle > 0.5)`)，大幅提升視野專注度與駕駛反饋精確度。
+2. **BST (增壓) 量表不作動根因與 POW/TOR 動態歸一**：
+   - **根因分析**：原先 VFD 儀表中 `var boostPsi = (data.boost || data.boost_psi || 0)`，當 `coordinator.js` 傳回之 `data.boost` 為 Bar 單位數值（例如 `0.5` bar）時，`data.boost` 優先被評估並被誤當成 PSI，導致數值傳入 `(boostPsi + 14.7) / 45.0` 後計算結果僅為 `0.33` 且幾乎不上移。
+   - **修復方案**：顯式優先讀取 `data.boost_bar` 與 `data.boost_psi`，確保單位正確轉換為 Bar；並將右側 `TEMP` / `FUEL` 量表替換為 `POW` (馬力) 與 `TOR` (扭力)。
+   - **動態 Y 軸極值歸一**：結合 `sessionMaxima` (歷史 Peak) 與當前實時 peak，以 `clamp(val / maxBound, 0, 1)` 動態計算 Bar 比例，確保各種馬力級距與改裝渦輪車款均能完美延伸縮放。
+
+**後續行動 (Action):**
+- 處理跨 UI 模組的多單位 (PSI / Bar / kPa / HP / kW) 數據時，避免使用 fallback `data.a || data.b` 語法，應優先使用顯式欄位名 (如 `data.boost_bar` 或 `data.power_hp`)，徹底防止單位混淆。
+
+---
+
+## 2026-07-31 — HUD 四輪卡片繪製重構、Canvas 高 DPR 解析度同步與 DynoChart Y軸 MAX 標註優化
+
+**學習點 (Learning):**
+1. **Canvas 解析度動態同步 (Dynamic Canvas Resolution Sync via `devicePixelRatio`)**：
+   - 之前 SLIP 雷達圖非正圓、拉伸模糊以及 TEMP 胎溫直方圖區間與底線偏移的根本原因，是 Canvas HTML 屬性 (`width="400" height="400"`) 與 CSS 容器動態拉伸尺寸不符合。
+   - 建立 `getCanvasContext(canvas)` 工具函數，在每一幀繪製前透過 `canvas.getBoundingClientRect()` 獲取 CSS Pixel 尺寸，並乘以 `window.devicePixelRatio` 動態設定 `canvas.width` 與 `canvas.height`，同時在測試或 JSDOM 環境下進行 fallback 保護。這樣能在動態響應式排版下 100% 確保雷達圖呈現正圓且保持畫質極致清晰。
+2. **SUSP 行程量表 60Hz 零延遲繪製**：
+   - 原先 `#tcSuspBar` 樣式寫有 `transition: height 0.05s linear;`，50ms 的動畫過渡每幀都在與 60Hz (16ms) 遙測訊號競爭，造成視覺反應遲鈍與流暢度不足。移除該 CSS transition 後，量表高度得以瞬間精確反應即時行程。
+3. **DynoChart & HUD 馬力/扭力圖表 MAX 標註優化**：
+   - 在 `power-torque.js` 中隱藏繪製於 Overlay 圖表上方的 `MAX:` 文字。
+   - 在 `DynoChart.tsx` 中為 `YAxis` 設定 `tick={false}`，隱藏 Y 軸數值刻度，使介面更加乾淨專業。
+
+**後續行動 (Action):**
+- 所有新建或重構之 Canvas 渲染模組，幫忙統一呼叫 `getCanvasContext` 或於繪製前進行 `devicePixelRatio` 緩衝區尺寸同步，且不得在 60Hz 動態高度/寬度 DOM 元素上套用 CSS `transition`。
+
+---
+
+## 2026-07-31 — Phase 2: TEMP 圖表精細化直條、三色底線繪製與顏色判定一致性重構
+
+**學習點 (Learning):**
+1. **細化直條與動態 Bin 數量**：將單一直條寬度固定為精細像素 (`targetBarW = 3px`)，直條數量依據畫布寬度動態計算 (`numBins = tw / 3px`)。當卡片在不同佈局（寬版/窄版）切換時，直條寬度保持極致細緻，並以更多直條呈現更精確的胎溫分佈。
+2. **三色底線保留與色塊背景移除**：移除原本綠色區間的滿填色塊 (`fillRect`)，改在底線畫布上精確繪製三色段落（藍 `< 150°F` 佔 31.25%、綠 `150–210°F` 佔 37.5%、紅 `> 210°F` 佔 31.25%），提升高級感與視覺純淨度。
+3. **寬度切換下顏色判定絕對一致性**：採歸一化連續比例映射，且每個 Bin 的顏色嚴格透過該 Bin 的**中心溫度** (`bTempMid = MIN + (b + 0.5) * tempPerBin`) 進行評估。無論卡片如何縮放或寬度改變，特定溫度數值（如 148°F）永遠穩定落入藍色直條，徹底消除了舊版浮動寬度導致的顏色翻轉不一致問題。
+
+**後續行動 (Action):**
+- 後續設計直方圖或波形類 Canvas 圖表時，分桶顏色判定必須採用分桶中心值 (Bin Midpoint Evaluation)，以避免因桶寬與動態分組變更引發的邊界顏色失真。
+
+---
+
+## 2026-07-31 — TEMP 圖表 75°C~105°C 正常胎溫區間精確校正
+
+**學習點 (Learning):**
+1. **胎溫攝氏/華氏對應邏輯校正**：
+   - 舊版程式碼誤將 `TEMP_COLD_F = 150°F` (即 65.55°C) 與 `TEMP_HOT_F = 210°F` (即 98.88°C) 當成綠色區間邊界，導致正常胎溫被錯誤渲染在 65°C~100°C 之間。
+   - 正確的標準工作胎溫為 **75°C ~ 105°C**，換算為華氏分別為：
+     - $75^\circ\text{C} \times \frac{9}{5} + 32 = 167^\circ\text{F}$ (`TEMP_COLD_F = 167`)
+     - $105^\circ\text{C} \times \frac{9}{5} + 32 = 221^\circ\text{F}$ (`TEMP_HOT_F = 221`)
+   - 校正後：`< 167°F (< 75°C)` 為藍色、`167°F~221°F (75°C~105°C)` 為綠色、`> 221°F (> 105°C)` 為紅色。HUD Overlay 三色底線段落與 `TireRadar.tsx` 均已同步校正。
+
+**後續行動 (Action):**
+- 處理 Forza UDP 遙測胎溫時，一律以 167°F (75°C) 與 221°F (105°C) 作為極限區間門檻。
+
+---
+
+## 2026-07-31 — Telemetry Cards 全卡片 High-DPI 繪圖適應與 OverlayView 主題/透明度同步重構
+
+**學習點 (Learning):**
+1. **High-DPI Canvas 通用輔助抽象 (Shared Canvas DPI Scaler)**：將原先僅位於 `corner-card.js` 的 `getCanvasContext(canvas)` 抽出至 `utils.js` 成為共用函式。在繪繪 `power-torque.js` 與 `pedal-wave.js` 時全面導入此函式，解決了在 1440p/4K 或 Windows 顯示縮放 (125%/150%) 下 Canvas 內部像素與 CSS 尺寸不一致導致的圖片模糊與拉伸變形問題。
+2. **OverlayView 自訂主題色與透明度向向下層疊傳遞 (Theme & Opacity Inheritance)**：
+   - 解決 `power-torque.js` 與 `pedal-wave.js` 硬編碼主題色與透明度反應脫節問題。
+   - `manager.js` 接收 `fullConfig` (包含 `customColor` / `useDefaultColors` / `telemetryOpacity`) 時，將 `--card-primary` 與 `--card-contrast` 主題變數寫入容器層級 DOM，並**同步將 `tOpacity` 賦予給 Edge Charts 的容器 `tcTopEdgeContainer` 與 `tcBottomEdgeContainer`**（因為這兩個 Container 為脫離中央 Wrapper 的 fixed 邊緣容器），使 `power-torque` 與 `pedal-wave` 圖表能 100% 精確地套用 Telemetry Opacity 設定。
+   - **Merge 併排模式螢幕安全邊界保護**：移除 `template.js` 中 `#tcBottomEdgeContainer.tc-side-by-side` 硬編碼的 `bottom: 0px !important` 覆寫，使其統一保持 `bottom: 15px` / `top: 15px` 的安全 Padding 間距，解決併排顯示時圖表外框被螢幕底端切到超出顯示範圍的問題。
+
+
+3. **無 HUD 互動原則貫徹 (Strict Non-Interactive HUD)**：確保 HUD 為完全靜態的視覺呈現，取消所有 hover、tooltip 阻礙觀看的繪圖與事件觸發邏輯，保持 `pointer-events: none`。
+
+---
+
+## 2026-07-31 — HUD Control Panel UI 重構、Merge 圖表 Top/Bottom 與 VFD Glow/Motion MVP 實作
+
+**學習點 (Learning):**
+1. **Merge 圖表條件式控制項解耦 (Conditional Controls Decoupling)**：當 `telemetrySideBySideCharts` 為 `true` 時，將單獨的 Pedal/PowerTorque Position 與 X-Offset 隱藏，並以 `telemetryMergedChartsPosition` 與 `telemetryMergedChartsOffsetX` 進行接管。這讓併排後的圖表群組可以自由放置於螢幕頂端 (`top`) 或底端 (`bottom`)，且取消 Merge 後能精確還原舊有各自設定。
+2. **G-Force 驅動 Motion Effect (G-Force Acceleration Shake & Motion Blur)**：讀取遙測數據中的瞬時 G 力 (`AccelerationX/Y/Z`)，映射為 VFD 儀表 Canvas 容器的動態位移 `translate(gX * 12, gY * 12)` 與劇烈操駕下的動態模糊 `blur(px)`，顯著提升駕駛沉浸感與真實車輛晃動回饋。
+3. **調色盤發光色完整對齊與波形動態調幅 (Palette Aligned Glow & Dynamic Radius)**：
+   - 修正 VFD 儀表中 `currentPalette.glow` 固定使用舊顏色的瑕疵，使其在自訂顏色模式下動態為 `customColor`，達成 100% 發光顏色對齊。
+   - 基礎發光強度由 `glowIntensity` 控制，實時發光半徑 `VFD_GLOW_RADIUS` 則隨 RPM 與音訊頻域波形振幅動態起伏 (`baseGlow * (1.0 + waveBoost)`)。
+4. **VFD 靈敏度跨度 20 倍擴大**：VU Meter 與 Equalizer Spectrum 計算中引進 `1.0 + (offset * 0.20)` 增益算式，使 11 階階梯 Slider 擁有顯著的 20 倍控制靈敏度。
+
+
+---
+
+## 2026-07-31 — 語言列表 metadata 過濾與統一 Unicode 度數符號處理
+
+**學習點 (Learning):**
+1. **i18n 語言目錄中非語言元檔案過濾 (Language Directory Non-Translation Metadata Filtering)**：
+   - 後端 `main.py` 的 `/api/languages` API 原先對 `lang/` 目錄執行純粹的 `filename.endswith(".json")` 走訪與 `json.load()`。當目錄中存在 ISO 元資料對照檔 `iso639.json`（Root 為 JSON Array 陣列而非 Dictionary）時，呼叫 `.get("__language_name__")` 會觸發 `'list' object has no attribute 'get'` 錯誤。
+   - 修正：顯式過濾 `iso639.json`，並要求載入內容必須為 `isinstance(data, dict)` 始進行語言名稱提取。
+2. **UI 度數符號防護與 `unitFormatter.ts`**：
+   - 為了避免前端元件在不同環境下度數符號 `°` 被錯誤轉譯或顯示為中文「度」字，建立統一工具函式 `formatDegree(value, unit)`，強制輸出 Unicode `\u00B0` 符號（如 `85\u00B0C`、`1.5\u00B0`）。
+
+**後續行動 (Action):**
+- 後續於 `lang/` 目錄新增任何非語系對照之元資料 JSON 時，應同步於 `main.py` 的 `list_languages` 排除清單中維護。
+
+
+
+
+
 
 
 

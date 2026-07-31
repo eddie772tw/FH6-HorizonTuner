@@ -383,6 +383,8 @@
   "Release throttle to finish.": "アクセルを放すとテストは終了します。",
   "Remove Channel": "Remove Channel",
   "Reset Car Learning Database": "学習データベースをリセット",
+  "Reset HUD Settings": "HUD設定をリセット",
+  "Reset all HUD elements, scaling, colors, and positions to default values.": "すべてのHUD要素、スケーリング、カラー、位置をデフォルト値にリセットします。",
   "Reset run": "Reset run",
   "Reset to Defaults": "Reset to Defaults",
   "Retention": "スピード維持率",

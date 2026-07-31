@@ -3,138 +3,262 @@
 // Central Orchestrator & State Manager for Telemetry Cards Cluster
 // =============================================================================
 
-import { corners } from './utils.js';
+import { corners, computeContrastColor } from './utils.js';
 import { getClusterHTML } from './template.js';
 import { renderGRadar } from './g-radar.js';
 import { renderCorners } from './corner-card.js';
 import { renderPedalWave } from './pedal-wave.js';
 import { renderPowerTorque } from './power-torque.js';
 
+var DEFAULT_PRIMARY_COLOR = '#00f0ff';
+
 export function createTelemetryCardsManager() {
     return {
         initialized: false,
         containerEl: null,
-        lastScale: parseFloat((typeof localStorage !== 'undefined' && localStorage.getItem('forza_hud_tele_scale')) || '1.0'),
+
         lastOpacity: parseFloat((typeof localStorage !== 'undefined' && localStorage.getItem('forza_hud_tele_opacity')) || '0.85'),
 
-        // Rolling history buffers for waveforms & peak markers
-        suspHist: [[], [], [], []], // 2.5s history for FL, FR, RL, RR
+        suspHist:   [[], [], [], []],
         suspMinMax: [
             { min: null, max: null },
             { min: null, max: null },
             { min: null, max: null },
             { min: null, max: null }
         ],
-        tireHist: [[], [], [], []], // 3s history for tire temp/slip distribution
-        pedalHist: [],             // 5s history for throttle & brake inputs (300 points)
-        powerTorqueHist: [],       // 5s history for RPM, Power, Torque (300 points)
-        gHist: [],                 // 30s history for G-force peaks
+        tireHist:        [[], [], [], []],
+        pedalHist:       [],
+        powerTorqueHist: [],
+        gHist:           [],
         lastTime: typeof performance !== 'undefined' ? performance.now() : Date.now(),
 
+        // -----------------------------------------------------------------------
         init: function (parentEl) {
             if (!parentEl) return;
             this.containerEl = parentEl;
 
-            var initialScale = this.lastScale;
             var initialOpacity = this.lastOpacity;
 
-            // HTML Template for Central Symmetric Cluster Layout
-            parentEl.innerHTML = getClusterHTML(initialScale, initialOpacity);
+            parentEl.innerHTML = getClusterHTML(1.0, initialOpacity);
             this.initialized = true;
         },
 
+        // -----------------------------------------------------------------------
         update: function (data, config) {
             if (!this.containerEl) return;
 
             var fullConfig = config || (typeof window !== 'undefined' && window._currentFullConfig) || {};
-            var elements = fullConfig.elements || (typeof window !== 'undefined' && window._currentHudElements) || {};
+            var elements   = fullConfig.elements || (typeof window !== 'undefined' && window._currentHudElements) || {};
 
-            if (fullConfig.telemetryScale !== undefined) {
-                this.lastScale = fullConfig.telemetryScale;
-                try { if (typeof localStorage !== 'undefined') localStorage.setItem('forza_hud_tele_scale', fullConfig.telemetryScale.toString()); } catch (e) {}
-            }
             if (fullConfig.telemetryOpacity !== undefined) {
                 this.lastOpacity = fullConfig.telemetryOpacity;
                 try { if (typeof localStorage !== 'undefined') localStorage.setItem('forza_hud_tele_opacity', fullConfig.telemetryOpacity.toString()); } catch (e) {}
             }
 
-            var tScale = this.lastScale * 0.75;
             var tOpacity = this.lastOpacity;
-            var elemScale = fullConfig.telemetryCardElementScale !== undefined ? fullConfig.telemetryCardElementScale : 1.0;
+
+            var fontScale = fullConfig.telemetryCardFontScale !== undefined ? fullConfig.telemetryCardFontScale : 1.0;
+            fontScale = Math.max(0.5, Math.min(2.0, fontScale));
+
+            // 4 Independent Component Scales
+            var gRadarScale = fullConfig.telemetryGRadarScale !== undefined ? fullConfig.telemetryGRadarScale : 1.0;
+            var cornersScale = fullConfig.telemetryCornersScale !== undefined ? fullConfig.telemetryCornersScale : 1.0;
+            var pedalScale   = fullConfig.telemetryPedalScale !== undefined ? fullConfig.telemetryPedalScale : 1.0;
+            var ptScale      = fullConfig.telemetryPowerTorqueScale !== undefined ? fullConfig.telemetryPowerTorqueScale : 1.0;
+
+            var cornerOffsetY = fullConfig.telemetryCornerOffsetY || 0;
+            var pedalOffsetX  = fullConfig.telemetryPedalOffsetX  || 0;
+            var ptOffsetX     = fullConfig.telemetryPowerTorqueOffsetX || 0;
+
+            var useDefaultColors = fullConfig.useDefaultColors !== false;
+            var primaryColor = useDefaultColors
+                ? DEFAULT_PRIMARY_COLOR
+                : (fullConfig.customColor || DEFAULT_PRIMARY_COLOR);
+            var contrastColor = computeContrastColor(primaryColor);
 
             var wrapper = document.getElementById('tcClusterWrapper');
             if (wrapper) {
                 wrapper.style.opacity = tOpacity;
-                wrapper.style.transform = 'translate(-50%, -50%) scale(' + tScale + ')';
                 if (typeof wrapper.style.setProperty === 'function') {
-                    wrapper.style.setProperty('--tc-elem-scale', elemScale);
+                    wrapper.style.setProperty('--tc-font-scale',      fontScale);
+                    wrapper.style.setProperty('--tc-corner-offset-y',  cornerOffsetY + 'px');
+                    wrapper.style.setProperty('--tc-corners-scale',    cornersScale.toString());
+                    wrapper.style.setProperty('--tc-gradar-scale',     gRadarScale.toString());
+                    wrapper.style.setProperty('--card-primary',       primaryColor);
+                    wrapper.style.setProperty('--card-contrast',      contrastColor);
                 }
             }
 
-            var showAttitude = elements.showTeleAttitude !== false;
-            var showSusp = elements.showTeleSuspension !== false;
-            var showTires = elements.showTeleTires !== false;
-            var showPedals = elements.showTelePedals !== false;
-            var showCorners = showSusp || showTires;
+            // ---- Element Visibility Toggles ----
+            var showAttitude = elements.showTeleAttitude   !== false;
+            var showSusp     = elements.showTeleSuspension !== false;
+            var showTires    = elements.showTeleTires      !== false;
+            var showSlip     = elements.showTeleTiresSlip !== undefined ? (elements.showTeleTiresSlip !== false) : showTires;
+            var showTemp     = elements.showTeleTiresTemp !== undefined ? (elements.showTeleTiresTemp !== false) : showTires;
+            var showPedals   = elements.showTelePedals     !== false;
+            var showPT       = elements.showPowerTorque    !== false;
+            var showCorners  = showSusp || showSlip || showTemp;
 
-            var centerContainer = document.getElementById('tcCenterRadarContainer');
-            if (centerContainer) centerContainer.style.display = showAttitude ? 'flex' : 'none';
+            // ---- Central Anchor & Alignment Grid ----
+            var showCenterAnchor = elements.showTeleCenterAnchor !== false;
+            var showGridLines    = elements.showTeleGridLines === true;
+
+            var centerAnchor = document.getElementById('tcCenterAnchor');
+            if (centerAnchor) {
+                centerAnchor.style.display     = (showAttitude || showCenterAnchor) ? 'flex' : 'flex';
+                centerAnchor.style.visibility  = (showAttitude || showCenterAnchor) ? 'visible' : 'hidden';
+                centerAnchor.style.borderStyle = showCenterAnchor ? 'dashed' : 'none';
+            }
+
+            var centerRadar = document.getElementById('tcCenterRadarContainer');
+            if (centerRadar) {
+                centerRadar.style.display = showAttitude ? 'flex' : 'none';
+            }
+
+            var gridLinesEl = document.getElementById('tcGridLines');
+            if (gridLinesEl) {
+                gridLinesEl.style.display = showGridLines ? 'block' : 'none';
+            }
+
+            // ---- Edge-Aligned Charts Positioning & Stacking ----
+            var pedalPos     = fullConfig.telemetryPedalPosition       || 'bottom';
+            var ptPos        = fullConfig.telemetryPowerTorquePosition || 'bottom';
+            var mergedPos    = fullConfig.telemetryMergedChartsPosition || 'bottom';
+            var mergedOffsetX = fullConfig.telemetryMergedChartsOffsetX || 0;
+            var sideBySide   = fullConfig.telemetrySideBySideCharts === true || elements.showTeleSideBySideCharts === true;
+
+            var topEdgeContainer    = document.getElementById('tcTopEdgeContainer');
+            var bottomEdgeContainer = document.getElementById('tcBottomEdgeContainer');
+
+            [topEdgeContainer, bottomEdgeContainer].forEach(function (container) {
+                if (container) {
+                    container.style.opacity = tOpacity;
+                    if (sideBySide) {
+                        container.classList.add('tc-side-by-side');
+                    } else {
+                        container.classList.remove('tc-side-by-side');
+                    }
+                }
+            });
+
+            var targetMergedParent = (mergedPos === 'top') ? topEdgeContainer : bottomEdgeContainer;
 
             var pedalContainer = document.getElementById('tcPedalWaveContainer');
-            if (pedalContainer) pedalContainer.style.display = showPedals ? 'flex' : 'none';
+            if (pedalContainer) {
+                pedalContainer.style.display = showPedals ? 'flex' : 'none';
+                if (sideBySide) {
+                    pedalContainer.classList.add('tc-half-width');
+                } else {
+                    pedalContainer.classList.remove('tc-half-width');
+                }
+                var targetPedalParent = (sideBySide ? targetMergedParent : ((pedalPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
+                if (targetPedalParent && pedalContainer.parentElement !== targetPedalParent) {
+                    targetPedalParent.appendChild(pedalContainer);
+                }
+                // In side-by-side mode, use mergedOffsetX
+                var effPedalOffset = sideBySide ? mergedOffsetX : pedalOffsetX;
+                pedalContainer.style.transform = 'translateX(' + effPedalOffset + 'px) scale(' + pedalScale + ')';
+                if (typeof pedalContainer.style.setProperty === 'function') {
+                    pedalContainer.style.setProperty('--card-primary',  primaryColor);
+                    pedalContainer.style.setProperty('--card-contrast', contrastColor);
+                }
+            }
 
-            var powerTorqueContainer = document.getElementById('tcPowerTorqueContainer');
-            if (powerTorqueContainer) powerTorqueContainer.style.display = elements.showPowerTorque !== false ? 'flex' : 'none';
+            var ptContainer = document.getElementById('tcPowerTorqueContainer');
+            if (ptContainer) {
+                ptContainer.style.display = showPT ? 'flex' : 'none';
+                if (sideBySide) {
+                    ptContainer.classList.add('tc-half-width');
+                } else {
+                    ptContainer.classList.remove('tc-half-width');
+                }
+                var targetPtParent = (sideBySide ? targetMergedParent : ((ptPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
+                if (targetPtParent && ptContainer.parentElement !== targetPtParent) {
+                    targetPtParent.appendChild(ptContainer);
+                }
+                // In side-by-side mode, use mergedOffsetX
+                var effPtOffset = sideBySide ? mergedOffsetX : ptOffsetX;
+                ptContainer.style.transform = 'translateX(' + effPtOffset + 'px) scale(' + ptScale + ')';
+                if (typeof ptContainer.style.setProperty === 'function') {
+                    ptContainer.style.setProperty('--card-primary',  primaryColor);
+                    ptContainer.style.setProperty('--card-contrast', contrastColor);
+                }
+            }
 
-            var topPedalSpacer = document.getElementById('tcTopPedalSpacer');
-            if (topPedalSpacer) topPedalSpacer.style.display = showPedals ? 'flex' : 'none';
 
-            var topPowerSpacer = document.getElementById('tcTopPowerSpacer');
-            if (topPowerSpacer) topPowerSpacer.style.display = elements.showPowerTorque !== false ? 'flex' : 'none';
+            // ---- Corner Cards (Grid vs Screen Edge Snap Layout) ----
+            var cornerEdgeSnap = fullConfig.telemetryCornerEdgeSnap === true || elements.showTeleCornerEdgeSnap === true;
+
+            var gridContainer = document.getElementById('tcGridContainer');
+            if (gridContainer) {
+                if (cornerEdgeSnap) {
+                    gridContainer.classList.add('tc-edge-snapped-corners');
+                } else {
+                    gridContainer.classList.remove('tc-edge-snapped-corners');
+                }
+            }
+
+            var cornerOrigins = cornerEdgeSnap ? {
+                FL: 'bottom left',
+                FR: 'bottom right',
+                RL: 'top left',
+                RR: 'top right'
+            } : {
+                FL: 'bottom right',
+                FR: 'bottom left',
+                RL: 'top right',
+                RR: 'top left'
+            };
 
             corners.forEach(function (tag) {
-                var cornerEl = document.getElementById('tcCorner' + tag);
+                var cornerEl  = document.getElementById('tcCorner'    + tag);
                 var suspBlock = document.getElementById('tcSuspBlock' + tag);
-                var tireBlock = document.getElementById('tcTireBlock' + tag);
-                var divider = document.getElementById('tcDivider' + tag);
+                var slipBlock = document.getElementById('tcSlipBlock' + tag);
+                var tempBlock = document.getElementById('tcTempBlock' + tag);
 
-                if (cornerEl) cornerEl.style.display = showCorners ? 'flex' : 'none';
+                if (cornerEl) {
+                    cornerEl.style.transformOrigin = cornerOrigins[tag];
+                    if (showCorners) {
+                        cornerEl.style.display    = 'flex';
+                        cornerEl.style.visibility = 'visible';
+                    } else {
+                        cornerEl.style.display    = 'flex';
+                        cornerEl.style.visibility = 'hidden';
+                    }
+                }
                 if (suspBlock) suspBlock.style.display = showSusp ? 'flex' : 'none';
-                if (tireBlock) tireBlock.style.display = showTires ? 'flex' : 'none';
-                if (divider) divider.style.display = (showSusp && showTires) ? 'block' : 'none';
+                if (slipBlock) slipBlock.style.display = showSlip ? 'flex' : 'none';
+                if (tempBlock) tempBlock.style.display = showTemp ? 'flex' : 'none';
             });
 
             if (!data) return;
 
             var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
-            // 1. Center G-Force Radar & Dynamics
             if (showAttitude) {
                 renderGRadar(data, this.gHist, now);
             }
 
-            // 2. Throttle & Brake 5-Second Input Trace Canvas
             if (showPedals) {
                 renderPedalWave(data, this.pedalHist, now);
             }
 
-            // 3. 4-Corner Tire Radars, Temp 3-Second Distribution Histograms & Suspension Bars
-            renderCorners(data, showSusp, showTires, this.tireHist, this.suspHist, this.suspMinMax, now);
+            renderCorners(data, showSusp, showSlip, showTemp, this.tireHist, this.suspHist, this.suspMinMax, now);
 
-            // 4. Power & Torque Scatter Plot vs RPM
-            if (elements.showPowerTorque !== false) {
+            if (showPT) {
                 renderPowerTorque(data, this.powerTorqueHist, now);
             }
         },
 
+        // -----------------------------------------------------------------------
         triggerClusterSweepAnimation: function () {
             var wrapper = document.getElementById('tcClusterWrapper');
             var gCircle = document.getElementById('tcGRadarCircle');
-            var gDot = document.getElementById('tcGDot');
+            var gDot    = document.getElementById('tcGDot');
             if (!wrapper) return;
 
             wrapper.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease';
-            wrapper.style.transform = 'translate(-50%, -50%) scale(0.92)';
+            wrapper.style.transform  = 'translate(-50%, -50%) scale(0.92)';
 
             if (gCircle) {
                 gCircle.style.boxShadow = '0 0 45px rgba(0, 240, 255, 0.6), inset 0 0 35px rgba(0, 240, 255, 0.4)';

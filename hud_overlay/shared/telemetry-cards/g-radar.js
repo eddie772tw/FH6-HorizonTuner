@@ -41,25 +41,31 @@ export function renderGRadar(data, gHist, now) {
         var maxMRadius = Math.max(0, radiusPx - 4);
         var recent30s = gHist.filter(function (p) { return now - p.time <= 30000; });
         if (recent30s.length > 0 && Math.random() < 0.2) {
-            var maxL = 0, maxR = 0, maxB = 0, maxA = 0;
+            var maxLatL = { lat: 0, lon: 0 }, maxLatR = { lat: 0, lon: 0 };
+            var maxLonB = { lat: 0, lon: 0 }, maxLonA = { lat: 0, lon: 0 };
+            var maxL_B  = { lat: 0, lon: 0 }, maxL_A  = { lat: 0, lon: 0 };
+            var maxR_B  = { lat: 0, lon: 0 }, maxR_A  = { lat: 0, lon: 0 };
+
             recent30s.forEach(function (p) {
-                if (p.lat < maxL) maxL = p.lat;
-                if (p.lat > maxR) maxR = p.lat;
-                if (p.lon < maxB) maxB = p.lon;
-                if (p.lon > maxA) maxA = p.lon;
+                if (p.lat < maxLatL.lat) maxLatL = p;
+                if (p.lat > maxLatR.lat) maxLatR = p;
+                if (p.lon < maxLonB.lon) maxLonB = p;
+                if (p.lon > maxLonA.lon) maxLonA = p;
+                if (p.lat < 0 && p.lon < 0 && (p.lat + p.lon < maxL_B.lat + maxL_B.lon)) maxL_B = p;
+                if (p.lat < 0 && p.lon > 0 && (p.lat - p.lon < maxL_A.lat - maxL_A.lon)) maxL_A = p;
+                if (p.lat > 0 && p.lon < 0 && (p.lat - p.lon > maxR_B.lat - maxR_B.lon)) maxR_B = p;
+                if (p.lat > 0 && p.lon > 0 && (p.lat + p.lon > maxR_A.lat + maxR_A.lon)) maxR_A = p;
             });
             markersContainer.innerHTML = '';
-            var points = [
-                { lat: maxL, lon: 0 }, { lat: maxR, lon: 0 },
-                { lat: 0, lon: maxB }, { lat: 0, lon: maxA }
-            ];
+            var points = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
             points.forEach(function (p) {
+                if (p.lat === 0 && p.lon === 0) return;
                 var mDot = document.createElement('div');
                 mDot.style.position = 'absolute';
-                mDot.style.width = '18px';
-                mDot.style.height = '18px';
+                mDot.style.width = '6px';
+                mDot.style.height = '6px';
                 mDot.style.borderRadius = '50%';
-                mDot.style.background = 'rgba(255,255,255,0.4)';
+                mDot.style.background = 'rgba(255,255,255,0.5)';
                 var mx = (p.lat / 2) * radiusPx;
                 var my = (p.lon / 2) * radiusPx;
                 var mDist = Math.sqrt(mx * mx + my * my);
@@ -67,8 +73,8 @@ export function renderGRadar(data, gHist, now) {
                     mx = (mx / mDist) * maxMRadius;
                     my = (my / mDist) * maxMRadius;
                 }
-                mDot.style.left = (radiusPx + mx - 9) + 'px';
-                mDot.style.top = (radiusPx + my - 9) + 'px';
+                mDot.style.left = (radiusPx + mx - 3) + 'px';
+                mDot.style.top = (radiusPx + my - 3) + 'px';
                 markersContainer.appendChild(mDot);
             });
         }

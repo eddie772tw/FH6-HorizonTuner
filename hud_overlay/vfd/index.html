@@ -10,14 +10,17 @@
             font-family: 'VFDDigits';
             src: url('./assets/fonts/DSEG7Modern-Bold.ttf') format('truetype');
         }
+
         @font-face {
             font-family: 'VFDAlpha';
             src: url('./assets/fonts/DSEG14Modern-Regular.ttf') format('truetype');
         }
+
         .vfd-container {
             width: 1120px;
             height: 520px;
             pointer-events: none;
+            will-change: transform, filter;
         }
 
         canvas {
@@ -59,6 +62,16 @@
             var currentPalette = Object.assign({}, defaultPalette);
             var isMetricUnit = true;
 
+            // ── Motion Effect Smooth Lerp State ─────────────────────────────────────
+            var motionState = {
+                currentOffsetX: 0,
+                currentOffsetY: 0,
+                currentBlurPx: 0,
+                lastAppliedOffsetX: 0,
+                lastAppliedOffsetY: 0,
+                lastAppliedBlurPx: 0
+            };
+
             // ── Audio System & Media State ──────────────────────────────────────────
             var spectrumBands = new Array(32).fill(0);
             var peakHoldVals = new Array(32).fill(0);
@@ -90,13 +103,15 @@
                     currentPalette.primary = customColor;
                     currentPalette.accent = customColor;
                     currentPalette.dim = "rgba(40, 55, 60, 0.28)";
+                    currentPalette.glow = customColor;
                 } else {
                     currentPalette.primary = defaultPalette.primary;
                     currentPalette.accent = defaultPalette.accent;
                     currentPalette.dim = defaultPalette.dim;
+                    currentPalette.glow = VFD_CLASSIC_GLOW;
                 }
-                currentPalette.glow = VFD_CLASSIC_GLOW;
             }
+
 
             // Sanitize text for 14-Segment VFD font compatibility
             function sanitizeVFDText(text) {
@@ -152,10 +167,10 @@
                                 var a = (data.artist || "").trim();
 
                                 // Filter out our own app title and default placeholders
-                                var ownAppTitles = ["fh6-horizon tuner", "horizon tuner", "turbo fire", "fh6-horizontuner"];
+                                var ownAppTitles = ["fh6-horizon tuner", "horizon tuner", "fh6-horizontuner"];
                                 var tLower = t.toLowerCase();
                                 var aLower = a.toLowerCase();
-                                var isSelfTitle = ownAppTitles.some(function(k) { return tLower.indexOf(k) >= 0 || aLower.indexOf(k) >= 0; });
+                                var isSelfTitle = ownAppTitles.some(function (k) { return tLower.indexOf(k) >= 0 || aLower.indexOf(k) >= 0; });
                                 var isPlaying = data.status === "playing";
                                 var hasMedia = !isSelfTitle && isPlaying && (t.length > 0 || a.length > 0);
 
@@ -258,10 +273,14 @@
                 ctx.strokeRect(x, y, w, h);
 
                 if (title) {
-                    ctx.font = 'bold 11px VFDAlpha, sans-serif';
+                    ctx.save();
+                    ctx.font = 'bold 22px "Trebuchet MS", "Arial Black", sans-serif';
                     ctx.fillStyle = currentPalette.primary;
-                    ctx.globalAlpha = 0.7;
-                    ctx.fillText(title, x + 10, y + 16);
+                    ctx.globalAlpha = 0.20;
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(title.toUpperCase(), x + 14, y + 10);
+                    ctx.restore();
                 }
                 ctx.restore();
             }
@@ -295,8 +314,11 @@
             // ── Upper Section: Gauge Instrument Cluster ─────────────────────────────
             var peakRpmVal = 0;
             var peakRpmHoldTicks = 0;
+            var peakSessionHp = 100;
+            var peakSessionTq = 100;
+            var peakSessionBoostBar = 1.0;
 
-            function renderVFDGaugeCluster(data) {
+            function renderVFDGaugeCluster(data, payload) {
                 updateDynamicColors();
 
                 var maxRpm = Math.max(1000, data.maxRpm || data.max_rpm || 8500);
@@ -305,8 +327,17 @@
                 var speed = Math.floor(clamp(isMetricUnit ? (data.speed_kmh || data.speed || mps * 3.6) : (data.speed_mph || mps * 2.23694), 0, 999) + 0.5);
                 var gearVal = data.gear;
                 var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
-                var boostPsi = (data.boost || data.boost_psi || 0);
-                var tempC = data.engine_temp || 85;
+                var throttleVal = data.throttle !== undefined ? data.throttle : ((data.Accel || data.AccelInput || 0) / 255);
+
+                // Redline calculation matches Advanced HUD; Yellowline is 1000 RPM before Redline
+                var payloadRedline = (payload && payload.redlineRpm) || (data && (data.redlineRpm || data.redline));
+                var redlineRpm = payloadRedline && payloadRedline > 0 ? payloadRedline : maxRpm * 0.92;
+                var warnRpm = Math.max(0, redlineRpm - 1000);
+
+                // Redline flashing & SHIFT indicator ONLY active when Throttle input > 50% (0.5)
+                var isHighThrottle = throttleVal > 0.5;
+                var isRedlineAlert = (rpm >= redlineRpm) && isHighThrottle;
+                var isFlashOff = isRedlineAlert && (Math.floor(Date.now() / 65) % 2 === 0);
 
                 if (rpm >= peakRpmVal) {
                     peakRpmVal = rpm;
@@ -322,30 +353,31 @@
                 // Tachometer Panel
                 drawVFDPanelFrame(0, 0, 1120, 115, "RPM x1000");
                 ctx.save();
-                var count = 54, startX = 25, startY = 85, cellW = 16, cellH = 34, gap = 4;
+                var count = 54, startX = 25, startY = 97, cellW = 16, cellH = 34, gap = 4;
                 var rpmRatio = clamp(rpm / maxRpm, 0, 1);
                 var litCount = Math.floor(rpmRatio * count + 0.5);
                 var peakCell = Math.floor(clamp(peakRpmVal / maxRpm, 0, 1) * count + 0.5);
-                var redlineStartCell = Math.floor(0.88 * count);
-                var warnStartCell = Math.floor(0.72 * count);
 
+                // Dynamic RPM label step calculation: 2000 RPM step for maxRpm > 12000, 1000 RPM step otherwise
+                var stepRpm = maxRpm > 12000 ? 2000 : 1000;
                 ctx.font = 'bold 12px VFDAlpha, sans-serif';
                 ctx.textAlign = 'center';
-                for (var n = 0; n <= 10; n++) {
-                    var numRatio = n / 10;
-                    var numCell = Math.floor(numRatio * count);
-                    var nx = startX + numCell * (cellW + gap);
-                    var nColor = n >= 9 ? currentPalette.hot : (n >= 8 ? currentPalette.amber : currentPalette.primary);
+                for (var targetRpm = 0; targetRpm <= maxRpm; targetRpm += stepRpm) {
+                    var labelRatio = targetRpm / maxRpm;
+                    var targetCell = labelRatio * count;
+                    var nx = startX + targetCell * (cellW + gap);
+                    var labelText = String(Math.round(targetRpm / 1000));
+                    var nColor = targetRpm >= redlineRpm ? currentPalette.hot : (targetRpm >= warnRpm ? currentPalette.amber : currentPalette.primary);
 
                     ctx.fillStyle = currentPalette.dim;
-                    ctx.fillText(String(n), nx + cellW / 2, startY - cellH - 8);
+                    ctx.fillText(labelText, nx, startY - cellH - 8);
 
-                    if (rpmRatio >= numRatio) {
+                    if (rpmRatio >= labelRatio) {
                         ctx.save();
                         ctx.fillStyle = nColor;
                         ctx.shadowColor = currentPalette.glow;
                         ctx.shadowBlur = VFD_GLOW_RADIUS;
-                        ctx.fillText(String(n), nx + cellW / 2, startY - cellH - 8);
+                        ctx.fillText(labelText, nx, startY - cellH - 8);
                         ctx.restore();
                     }
                 }
@@ -353,20 +385,23 @@
                 for (var i = 1; i <= count; i++) {
                     var cx = startX + (i - 1) * (cellW + gap);
                     var cy = startY - cellH;
-                    var isRedline = i >= redlineStartCell;
-                    var isWarn = i >= warnStartCell && !isRedline;
+                    var cellRpm = (i / count) * maxRpm;
+                    var isRedline = cellRpm >= redlineRpm;
+                    var isWarn = cellRpm >= warnRpm && !isRedline;
                     var activeColor = isRedline ? currentPalette.hot : (isWarn ? currentPalette.amber : currentPalette.primary);
 
-                    ctx.fillStyle = isRedline ? "rgba(80, 20, 20, 0.3)" : currentPalette.dim;
+                    ctx.fillStyle = isRedline ? "rgba(80, 20, 20, 0.3)" : (isWarn ? "rgba(70, 50, 10, 0.25)" : currentPalette.dim);
                     ctx.globalAlpha = 0.42;
                     ctx.fillRect(cx, cy, cellW, cellH);
 
                     if (i <= litCount) {
                         ctx.save();
                         ctx.fillStyle = activeColor;
-                        ctx.globalAlpha = 0.95;
-                        ctx.shadowColor = currentPalette.glow;
-                        ctx.shadowBlur = VFD_GLOW_RADIUS;
+                        ctx.globalAlpha = isFlashOff ? 0.15 : 0.95;
+                        if (!isFlashOff) {
+                            ctx.shadowColor = isRedline ? currentPalette.hot : currentPalette.glow;
+                            ctx.shadowBlur = isRedline ? VFD_GLOW_RADIUS + 4 : VFD_GLOW_RADIUS;
+                        }
                         ctx.fillRect(cx, cy, cellW, cellH);
                         ctx.restore();
                     }
@@ -374,7 +409,8 @@
                     if (i === peakCell && peakCell > litCount) {
                         ctx.save();
                         ctx.fillStyle = activeColor;
-                        ctx.shadowColor = currentPalette.glow;
+                        ctx.globalAlpha = isFlashOff ? 0.2 : 1.0;
+                        ctx.shadowColor = isRedline ? currentPalette.hot : currentPalette.glow;
                         ctx.shadowBlur = VFD_GLOW_RADIUS + 4;
                         ctx.fillRect(cx, cy - 3, cellW, cellH + 6);
                         ctx.restore();
@@ -390,17 +426,17 @@
 
                 ctx.fillStyle = currentPalette.dim;
                 ctx.globalAlpha = 0.22;
-                ctx.fillText("888", 320, 235);
+                ctx.fillText("888", 320, 243);
 
                 ctx.fillStyle = currentPalette.primary;
                 ctx.globalAlpha = 1.0;
                 ctx.shadowColor = currentPalette.glow;
                 ctx.shadowBlur = VFD_GLOW_RADIUS;
-                ctx.fillText(speed.toString(), 320, 235);
+                ctx.fillText(speed.toString(), 320, 243);
 
                 ctx.font = 'bold 18px VFDAlpha, sans-serif';
                 ctx.shadowBlur = 0;
-                ctx.fillText(isMetricUnit ? "KM/H" : "MPH", 395, 230);
+                ctx.fillText(isMetricUnit ? "KM/H" : "MPH", 395, 238);
                 ctx.restore();
 
                 // Gear & Shift Lamp Bezel
@@ -411,77 +447,171 @@
 
                 ctx.fillStyle = currentPalette.dim;
                 ctx.globalAlpha = 0.22;
-                ctx.fillText("8", 535, 235);
+                ctx.fillText("8", 535, 243);
 
                 ctx.fillStyle = currentPalette.accent;
                 ctx.globalAlpha = 1.0;
                 ctx.shadowColor = currentPalette.glow;
                 ctx.shadowBlur = VFD_GLOW_RADIUS;
-                ctx.fillText(gearLabel, 535, 235);
+                ctx.fillText(gearLabel, 535, 243);
 
-                var isOverrev = rpmRatio > 0.90;
-                ctx.font = 'bold 11px VFDAlpha, sans-serif';
-                ctx.fillStyle = isOverrev ? currentPalette.hot : currentPalette.dim;
-                ctx.globalAlpha = isOverrev ? 1.0 : 0.25;
-                if (isOverrev) {
-                    ctx.shadowColor = currentPalette.hot;
-                    ctx.shadowBlur = 12;
+                // SHIFT prompt ONLY displayed when RPM >= redline AND Throttle > 50%
+                if (isRedlineAlert) {
+                    ctx.font = 'bold 11px VFDAlpha, sans-serif';
+                    ctx.fillStyle = currentPalette.hot;
+                    ctx.globalAlpha = isFlashOff ? 0.15 : 1.0;
+                    if (!isFlashOff) {
+                        ctx.shadowColor = currentPalette.hot;
+                        ctx.shadowBlur = 14;
+                    }
+                    ctx.fillText("SHIFT", 535, 156);
                 }
-                ctx.fillText("SHIFT", 535, 150);
                 ctx.restore();
 
-                // Auxiliary Telemetry Gauges
+                // Auxiliary Telemetry Gauges (POW, TOR, BST with Dynamic Upper Bound Range Scaling)
                 drawVFDPanelFrame(650, 123, 470, 145, "TELEMETRY");
                 ctx.save();
-                ctx.font = 'bold 11px VFDAlpha, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+
+                // Extract Power, Torque & Boost telemetry values
+                var sessionMaxima = (payload && payload.sessionMaxima) || (data && data.sessionMaxima) || {};
+                var idleRpm = data.EngineIdleRpm !== undefined ? data.EngineIdleRpm : (data.engine_idle_rpm !== undefined ? data.engine_idle_rpm : null);
+                var isEV = idleRpm === 0;
+
+                var curHp = Math.max(0, data.power_hp !== undefined ? data.power_hp : (data.PowerWatts ? data.PowerWatts / 745.7 : (data.power ? (data.power < 50 ? data.power * 1.341 : data.power) : 0)));
+                var rawTq = data.torque_ftlbs !== undefined ? data.torque_ftlbs : (data.TorqueNewtons ? data.TorqueNewtons * 0.737562 : (data.torque || 0));
+                var curTq = Math.max(0, rawTq);
+                var curBoostBar = Math.max(0, data.boost_bar !== undefined ? data.boost_bar : (data.boost_psi ? data.boost_psi / 14.5038 : (data.boost ? (data.boost > 5 ? data.boost / 14.5038 : data.boost) : 0)));
+
+                if (curHp > peakSessionHp) peakSessionHp = curHp;
+                if (curTq > peakSessionTq) peakSessionTq = curTq;
+                if (curBoostBar > peakSessionBoostBar) peakSessionBoostBar = curBoostBar;
+
+                var maxHpBound = Math.max(100, sessionMaxima.maxHP || sessionMaxima.power || 100, peakSessionHp);
+                var maxTqBound = Math.max(100, sessionMaxima.maxTQ || sessionMaxima.torque || 100, peakSessionTq);
+                var maxBoostBound = Math.max(1.0, sessionMaxima.maxBoost || sessionMaxima.boost || 1.0, peakSessionBoostBar);
+
+                var powNorm = clamp(curHp / maxHpBound, 0, 1);
+                var torNorm = clamp(curTq / maxTqBound, 0, 1);
+
+                // For EV, RGN bar is based on negative torque normalized against maxTqBound
+                var evBlueColor = "#009ADA";
+                var boostNorm = isEV ? clamp((-rawTq) / maxTqBound, 0, 1) : clamp(curBoostBar / maxBoostBound, 0, 1);
+                var boostLabel = isEV ? "RGN" : "BST";
+                var boostColor = isEV ? evBlueColor : currentPalette.amber;
+
+                // --- Left Column: Throttle, Brake, Boost / RGN ---
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
                 ctx.fillStyle = currentPalette.primary;
+                ctx.globalAlpha = 1.0;
+                ctx.fillText("THR", 665, 175);
+                drawCellBar(708, 166, 195, 18, 14, throttleVal || 0, currentPalette.primary, currentPalette.dim, false);
 
-                ctx.fillText("THR", 665, 155);
-                drawCellBar(700, 145, 170, 13, 14, data.throttle || 0, currentPalette.primary, currentPalette.dim, false);
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.fillStyle = currentPalette.hot;
+                ctx.globalAlpha = 1.0;
+                ctx.fillText("BRK", 665, 209);
+                drawCellBar(708, 200, 195, 18, 14, data.brake || 0, currentPalette.hot, currentPalette.dim, false);
 
-                ctx.fillText("BRK", 665, 185);
-                drawCellBar(700, 175, 170, 13, 14, data.brake || 0, currentPalette.hot, currentPalette.dim, false);
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.fillStyle = boostColor;
+                ctx.globalAlpha = 1.0;
+                ctx.fillText(boostLabel, 665, 243);
+                drawCellBar(708, 234, 195, 18, 14, boostNorm, boostColor, currentPalette.dim, false);
 
-                ctx.fillText("BST", 665, 215);
-                var boostNorm = clamp((boostPsi + 14.7) / 45.0, 0, 1);
-                drawCellBar(700, 205, 170, 13, 14, boostNorm, currentPalette.amber, currentPalette.dim, false);
+                // --- Right Column: POW (Power), TOR (Torque) & Status Lamp Indicators ---
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.fillStyle = currentPalette.primary;
+                ctx.globalAlpha = 1.0;
+                ctx.fillText("POW", 918, 175);
+                drawCellBar(965, 166, 135, 18, 10, powNorm, currentPalette.primary, currentPalette.dim, false);
 
-                ctx.fillText("TEMP", 890, 155);
-                var tempNorm = clamp(tempC / 120, 0, 1);
-                drawCellBar(930, 145, 160, 13, 12, tempNorm, tempC > 105 ? currentPalette.hot : currentPalette.primary, currentPalette.dim, false);
-
-                ctx.fillText("FUEL", 890, 185);
-                drawCellBar(930, 175, 160, 13, 12, 0.85, currentPalette.primary, currentPalette.dim, false);
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.fillStyle = currentPalette.primary;
+                ctx.globalAlpha = 1.0;
+                ctx.fillText("TOR", 918, 209);
+                drawCellBar(965, 200, 135, 18, 10, torNorm, currentPalette.accent, currentPalette.dim, false);
 
                 var isAbs = (data.brake || 0) > 0.85 && (data.speed_kmh || 0) > 30;
-                var isTcs = (data.throttle || 0) > 0.85;
+                var isTcs = throttleVal > 0.85;
+                var isTurboOrRgn = isEV ? (rawTq < -5) : (curBoostBar > 0.05);
 
-                ctx.font = 'bold 10px VFDAlpha, sans-serif';
+                // ABS Lamp
+                ctx.save();
                 ctx.fillStyle = isAbs ? currentPalette.hot : currentPalette.dim;
-                ctx.fillRect(890, 205, 45, 16);
+                ctx.globalAlpha = isAbs ? 0.95 : 0.25;
+                ctx.fillRect(918, 234, 54, 26);
+                ctx.strokeStyle = isAbs ? currentPalette.hot : "rgba(255, 88, 77, 0.3)";
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(918, 234, 54, 26);
+                if (isAbs) {
+                    ctx.shadowColor = currentPalette.hot;
+                    ctx.shadowBlur = 10;
+                }
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.textAlign = 'center';
                 ctx.fillStyle = isAbs ? "#ffffff" : currentPalette.dim;
-                ctx.fillText("ABS", 902, 217);
+                ctx.globalAlpha = isAbs ? 1.0 : 0.35;
+                ctx.fillText("ABS", 945, 247);
+                ctx.restore();
 
+                // TCS Lamp
+                ctx.save();
                 ctx.fillStyle = isTcs ? currentPalette.amber : currentPalette.dim;
-                ctx.fillRect(945, 205, 45, 16);
+                ctx.globalAlpha = isTcs ? 0.95 : 0.25;
+                ctx.fillRect(978, 234, 54, 26);
+                ctx.strokeStyle = isTcs ? currentPalette.amber : "rgba(255, 183, 50, 0.3)";
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(978, 234, 54, 26);
+                if (isTcs) {
+                    ctx.shadowColor = currentPalette.amber;
+                    ctx.shadowBlur = 10;
+                }
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.textAlign = 'center';
                 ctx.fillStyle = isTcs ? "#ffffff" : currentPalette.dim;
-                ctx.fillText("TCS", 958, 217);
+                ctx.globalAlpha = isTcs ? 1.0 : 0.35;
+                ctx.fillText("TCS", 1005, 247);
+                ctx.restore();
 
-                var isTurbo = boostPsi > 1.0;
-                ctx.fillStyle = isTurbo ? currentPalette.primary : currentPalette.dim;
-                ctx.fillRect(1000, 205, 55, 16);
-                ctx.fillStyle = isTurbo ? "#000000" : currentPalette.dim;
-                ctx.fillText("TUR", 1008, 217);
+                // TUR / RGN Lamp
+                ctx.save();
+                var lampActiveColor = isEV ? evBlueColor : currentPalette.primary;
+                ctx.fillStyle = isTurboOrRgn ? lampActiveColor : currentPalette.dim;
+                ctx.globalAlpha = isTurboOrRgn ? 0.95 : 0.25;
+                ctx.fillRect(1038, 234, 55, 26);
+                ctx.strokeStyle = isTurboOrRgn ? lampActiveColor : (isEV ? "rgba(0, 154, 218, 0.3)" : "rgba(143, 255, 240, 0.3)");
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(1038, 234, 55, 26);
+                if (isTurboOrRgn) {
+                    ctx.shadowColor = isEV ? evBlueColor : currentPalette.glow;
+                    ctx.shadowBlur = 10;
+                }
+                ctx.font = 'bold 12px VFDAlpha, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = isTurboOrRgn ? "#040d0c" : currentPalette.dim;
+                ctx.globalAlpha = isTurboOrRgn ? 1.0 : 0.35;
+                ctx.fillText(isEV ? "RGN" : "TUR", 1065, 247);
+                ctx.restore();
+
                 ctx.restore();
             }
 
-            // ── Lower Section: Radio & Audio Spectrum Analyzer ──────────────────────
+            // ── Stereo L/R Volume Level VU Meters & Audio Equalizer Spectrum Updates ─────
             function updateAudioSpectrum() {
                 var bandCount = 32;
+
+                var rawAudioOffset = (window._currentFullConfig && window._currentFullConfig.vfdAudioOffset !== undefined) ? window._currentFullConfig.vfdAudioOffset : 0;
+                var audioMult = 1.0 + (rawAudioOffset * 0.20); // Each step adds/subtracts 20% span (20x multiplier)
 
                 if (!hasBackendAudio) {
                     for (var b = 0; b < bandCount; b++) {
                         spectrumBands[b] = Math.max(0, spectrumBands[b] * 0.85 - 0.02);
+                    }
+                } else {
+                    for (var b = 0; b < bandCount; b++) {
+                        spectrumBands[b] = clamp(spectrumBands[b] * audioMult, 0, 1);
                     }
                 }
 
@@ -509,11 +639,11 @@
 
                 ctx.save();
 
-                // 1. Extended 14-Segment VFD Marquee Display (Cell-by-Cell Grid Alignment)
+                // 1. Extended 14-Segment VFD Marquee Display
                 var maxFitCells = 48;
                 var startX = 22;
                 var cellStep = 18.5;
-                var cellY = panelY + 42;
+                var cellY = panelY + 54;
 
                 var safeText = marqueeText || DEFAULT_MARQUEE;
                 var textLen = safeText.length;
@@ -537,13 +667,11 @@
                     subStr = safeText;
                 }
 
-                // Cell-by-Cell Grid Rendering (Guarantees 100% Pixel Alignment)
                 ctx.font = 'bold 22px VFDAlpha, sans-serif';
                 for (var ci = 0; ci < maxFitCells; ci++) {
                     var cx = startX + ci * cellStep;
                     var ch = subStr[ci] || ' ';
 
-                    // Unlit Ghost Segment '8'
                     ctx.save();
                     ctx.fillStyle = currentPalette.dim;
                     ctx.globalAlpha = 0.42;
@@ -551,7 +679,6 @@
                     ctx.fillText("8", cx, cellY);
                     ctx.restore();
 
-                    // Lit Character Segment
                     if (ch !== ' ') {
                         ctx.save();
                         ctx.fillStyle = currentPalette.accent;
@@ -562,39 +689,28 @@
                     }
                 }
 
-                // 2. SYS MEDIA Rectangular Vacuum Tube Indicator Lamp (x:940, w:150)
+                // 2. SYS MEDIA Indicator Lamp
                 var hasMedia = systemMediaInfo.has_media;
                 ctx.font = 'bold 11px VFDAlpha, sans-serif';
-
                 ctx.fillStyle = hasMedia ? currentPalette.primary : currentPalette.dim;
                 ctx.globalAlpha = hasMedia ? 0.95 : 0.28;
-                ctx.fillRect(940, panelY + 18, 150, 26);
+                ctx.fillRect(940, panelY + 30, 150, 26);
 
                 if (hasMedia) {
                     ctx.save();
                     ctx.shadowColor = currentPalette.glow;
                     ctx.shadowBlur = VFD_GLOW_RADIUS + 4;
-                    ctx.fillRect(940, panelY + 18, 150, 26);
+                    ctx.fillRect(940, panelY + 30, 150, 26);
                     ctx.restore();
                 }
 
                 ctx.fillStyle = hasMedia ? "#000000" : currentPalette.dim;
                 ctx.globalAlpha = hasMedia ? 1.0 : 0.6;
                 ctx.textAlign = 'center';
-                ctx.fillText(hasMedia ? "MEDIA: ON" : "MEDIA: OFF", 1015, panelY + 35);
+                ctx.fillText(hasMedia ? "MEDIA: ON" : "MEDIA: OFF", 1015, panelY + 47);
                 ctx.textAlign = 'left';
 
-                // Stereo / Tuned Status Lamps
-                ctx.font = 'bold 11px VFDAlpha, sans-serif';
-                ctx.fillStyle = currentPalette.primary;
-                ctx.globalAlpha = 0.9;
-                ctx.shadowColor = currentPalette.glow;
-                ctx.shadowBlur = VFD_GLOW_RADIUS;
-                //ctx.fillText("FM STEREO", 20, panelY + 68);
-                //ctx.fillText("DOLBY NR", 120, panelY + 68);
-                //ctx.fillText("TUNED 104.5 MHz", 210, panelY + 68);
-
-                // 3. 32-Band VFD Equalizer Bargraphs with Peak Hold Dots
+                // 3. 32-Band VFD Equalizer Bargraphs
                 var left = 20, top = panelY + 80, width = 1010, height = 135;
                 var bandCount = 32;
                 var bandGap = 5;
@@ -614,12 +730,10 @@
                         var isMid = s >= 7 && !isHigh;
                         var segColor = isHigh ? currentPalette.hot : (isMid ? currentPalette.amber : currentPalette.primary);
 
-                        // Unlit Ghost Segment Background (High Contrast VFD Grid)
                         ctx.fillStyle = isHigh ? "rgba(70, 20, 20, 0.35)" : "rgba(18, 55, 48, 0.42)";
                         ctx.globalAlpha = 0.85;
                         ctx.fillRect(bx, sy, bandW, segH);
 
-                        // Lit Segment Phosphor Glow
                         if (s <= litSegs) {
                             ctx.save();
                             ctx.fillStyle = segColor;
@@ -630,7 +744,6 @@
                             ctx.restore();
                         }
 
-                        // Peak Hold Falling Dot Highlight
                         if (s === peakSeg && peakSeg > 0) {
                             ctx.save();
                             ctx.fillStyle = currentPalette.accent;
@@ -643,12 +756,18 @@
                     }
                 }
 
-                // 4. Stereo L/R Volume Level VU Meters (Dynamic Peak Tracking Sensitivity)
+                // 4. Stereo L/R Volume Level VU Meters (With 20x Sensitivity Multiplier)
+                var rawVuOffset = (window._currentFullConfig && window._currentFullConfig.vfdVuOffset !== undefined) ? window._currentFullConfig.vfdVuOffset : 0;
+                var vuMult = 1.0 + (rawVuOffset * 0.20); // Each step adds/subtracts 20% span (20x multiplier)
+
                 var vuX = 1045, vuY = panelY + 80, vuW = 20, vuH = 135;
                 var maxL = Math.max.apply(null, spectrumBands.slice(0, 16)) || 0;
                 var maxR = Math.max.apply(null, spectrumBands.slice(16, 32)) || 0;
-                var vuL = hasBackendAudio ? Math.min(1.0, Math.max(backendVuL * 2.2, maxL * 0.95)) : Math.min(1.0, maxL * 0.95);
-                var vuR = hasBackendAudio ? Math.min(1.0, Math.max(backendVuR * 2.2, maxR * 0.95)) : Math.min(1.0, maxR * 0.95);
+                var rawVuL = hasBackendAudio ? Math.min(1.0, Math.max(backendVuL * 2.2, maxL * 0.95)) : Math.min(1.0, maxL * 0.95);
+                var rawVuR = hasBackendAudio ? Math.min(1.0, Math.max(backendVuR * 2.2, maxR * 0.95)) : Math.min(1.0, maxR * 0.95);
+
+                var vuL = clamp(rawVuL * vuMult, 0, 1);
+                var vuR = clamp(rawVuR * vuMult, 0, 1);
 
                 drawCellBar(vuX, vuY, vuW, vuH, 12, vuL, currentPalette.primary, currentPalette.dim, true);
                 drawCellBar(vuX + 28, vuY, vuW, vuH, 12, vuR, currentPalette.primary, currentPalette.dim, true);
@@ -661,12 +780,79 @@
                 ctx.restore();
             }
 
-            function renderVFDSuite(data) {
+            var latestTelemetryData = {};
+            var latestTelemetryPayload = {};
+
+            function renderVFDSuite(data, payload) {
                 if (!ctx) return;
+
+                // ── Glow Intensity & Dynamic Waveform Modulated Radius ─────────────────────
+                var baseGlowFactor = (window._currentFullConfig && window._currentFullConfig.glowIntensity !== undefined) ? window._currentFullConfig.glowIntensity : 1.0;
+                var rpmRatio = (data && data.maxRpm) ? clamp((data.rpm || 0) / data.maxRpm, 0, 1) : 0;
+                var avgSpectrum = spectrumBands.length ? (spectrumBands.reduce(function (a, b) { return a + b; }, 0) / spectrumBands.length) : 0;
+                var dynamicWaveBoost = Math.max(rpmRatio, avgSpectrum) * 0.5;
+                VFD_GLOW_RADIUS = Math.round(9 * baseGlowFactor * (1.0 + dynamicWaveBoost));
+
+                // ── Motion Effect (G-Force Acceleration Shake & Motion Blur) ───────────────
+                var showMotion = window._currentElements ? (window._currentElements.showMotionEffect !== false) : true;
+                var vfdContainer = document.getElementById('vfdContainer');
+                if (vfdContainer) {
+                    if (showMotion && data) {
+                        var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);
+                        var rawAccY = data.accel_y !== undefined ? data.accel_y : (data.AccelerationY || 0);
+                        var gX = clamp(-rawAccX / 9.81, -2.5, 2.5);
+                        var gY = clamp(rawAccY / 9.81, -2.5, 2.5);
+
+                        // Deadzone filtering: lower than 0.1G produces 0 shift
+                        if (Math.abs(gX) < 0.1) gX = 0;
+                        if (Math.abs(gY) < 0.1) gY = 0;
+
+                        var targetOffsetX = gX * 12; // 12px shift per G
+                        var targetOffsetY = gY * 12;
+                        var gMag = Math.sqrt(gX * gX + gY * gY);
+                        var targetBlurPx = gMag > 0.8 ? Math.min(3.5, (gMag - 0.8) * 2.0) : 0;
+
+                        // Lerp smooth calculation
+                        motionState.currentOffsetX += (targetOffsetX - motionState.currentOffsetX) * 0.2;
+                        motionState.currentOffsetY += (targetOffsetY - motionState.currentOffsetY) * 0.2;
+                        motionState.currentBlurPx += (targetBlurPx - motionState.currentBlurPx) * 0.2;
+
+                        // Threshold check to avoid ineffective DOM updates
+                        var isTransformChanged = Math.abs(motionState.currentOffsetX - motionState.lastAppliedOffsetX) > 0.05 ||
+                            Math.abs(motionState.currentOffsetY - motionState.lastAppliedOffsetY) > 0.05;
+                        var isFilterChanged = Math.abs(motionState.currentBlurPx - motionState.lastAppliedBlurPx) > 0.05;
+
+                        if (isTransformChanged) {
+                            vfdContainer.style.transform = 'translate3d(' + motionState.currentOffsetX.toFixed(2) + 'px, ' + motionState.currentOffsetY.toFixed(2) + 'px, 0px)';
+                            motionState.lastAppliedOffsetX = motionState.currentOffsetX;
+                            motionState.lastAppliedOffsetY = motionState.currentOffsetY;
+                        }
+
+                        if (isFilterChanged) {
+                            vfdContainer.style.filter = motionState.currentBlurPx > 0.1 ? 'blur(' + motionState.currentBlurPx.toFixed(2) + 'px)' : 'none';
+                            motionState.lastAppliedBlurPx = motionState.currentBlurPx;
+                        }
+                    } else {
+                        if (motionState.lastAppliedOffsetX !== 0 || motionState.lastAppliedOffsetY !== 0) {
+                            vfdContainer.style.transform = 'none';
+                            motionState.currentOffsetX = 0;
+                            motionState.currentOffsetY = 0;
+                            motionState.lastAppliedOffsetX = 0;
+                            motionState.lastAppliedOffsetY = 0;
+                        }
+                        if (motionState.lastAppliedBlurPx !== 0) {
+                            vfdContainer.style.filter = 'none';
+                            motionState.currentBlurPx = 0;
+                            motionState.lastAppliedBlurPx = 0;
+                        }
+                    }
+                }
+
                 ctx.clearRect(0, 0, 1120, 520);
-                renderVFDGaugeCluster(data || {});
+                renderVFDGaugeCluster(data || {}, payload || latestTelemetryPayload || {});
                 renderVFDRadioSection();
             }
+
 
             // Sweep Animation for Cluster Launch
             var sweepActive = false;
@@ -697,7 +883,7 @@
                         throttle: progress < 0.5 ? progress * 2 : 0,
                         brake: progress >= 0.5 ? (progress - 0.5) * 2 : 0,
                         boost: (mockRpm / maxRpm) * 18
-                    });
+                    }, { redlineRpm: 7200 });
 
                     if (progress < 1.0) {
                         requestAnimationFrame(animate);
@@ -709,13 +895,11 @@
             }
 
             // ── Continuous 60FPS UI Render Loop & HUDCore Registration ─────────────
-            var latestTelemetryData = {};
-
             function startContinuousRenderLoop() {
                 function renderLoop() {
                     try {
                         if (!sweepActive) {
-                            renderVFDSuite(latestTelemetryData);
+                            renderVFDSuite(latestTelemetryData, latestTelemetryPayload);
                         }
                     } catch (err) {
                         console.error("VFD Render loop notice:", err);
@@ -732,6 +916,7 @@
                 scaleMultiplier: 0.75,
                 onInit: function (payload) {
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                    if (payload) latestTelemetryPayload = payload;
                 },
                 onElementsChange: function (elements) {
                     var c = document.getElementById('vfdContainer');
@@ -740,6 +925,7 @@
                 onFrame: function (data, payload) {
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     latestTelemetryData = data || {};
+                    latestTelemetryPayload = payload || {};
                 },
                 onAnimate: function () {
                     triggerSweep();
