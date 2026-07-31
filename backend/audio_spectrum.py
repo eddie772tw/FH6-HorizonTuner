@@ -6,6 +6,8 @@ import sys
 import threading
 import time
 
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 # Cache for audio spectrum state
@@ -29,69 +31,33 @@ def _compute_fft_bands(
     if not pcm_samples or len(pcm_samples) < 32:
         return [0.0] * num_bands, 0.0, 0.0
 
-    m_len = len(pcm_samples) // 2
+    samples = np.array(pcm_samples, dtype=np.float32)
+    m_len = len(samples) // 2
     if m_len < 16:
         return [0.0] * num_bands, 0.0, 0.0
 
-    left_samples = pcm_samples[0::2]
-    right_samples = pcm_samples[1::2] if len(pcm_samples) > 1 else left_samples
+    left = samples[0::2]
+    right = samples[1::2] if len(samples) > 1 else left
 
-    rms_l = (
-        math.sqrt(sum(s * s for s in left_samples) / max(1, len(left_samples)))
-        if left_samples
-        else 0.0
-    )
-    rms_r = (
-        math.sqrt(sum(s * s for s in right_samples) / max(1, len(right_samples)))
-        if right_samples
-        else 0.0
-    )
+    rms_l = float(np.sqrt(np.mean(left**2))) if len(left) > 0 else 0.0
+    rms_r = float(np.sqrt(np.mean(right**2))) if len(right) > 0 else 0.0
 
     vu_l = min(1.0, max(0.0, rms_l * 2.8))
     vu_r = min(1.0, max(0.0, rms_r * 2.8))
 
-    mono = [
-        (
-            left_samples[i]
-            + (right_samples[i] if i < len(right_samples) else left_samples[i])
-        )
-        * 0.5
-        for i in range(len(left_samples))
-    ]
-    m_len = len(mono)
+    mono = (left + right[: len(left)]) * 0.5
+
+    # 使用快速傅立葉轉換 (FFT) 替代手動三層迴圈
+    windowed = mono * np.hanning(len(mono))
+    fft_mags = np.abs(np.fft.rfft(windowed))
+    data_len = len(fft_mags)
 
     spectrum = [0.0] * num_bands
     for b in range(num_bands):
-        low_f = math.pow(b / num_bands, 2.0)
-        high_f = math.pow((b + 1) / num_bands, 2.0)
-
-        start_idx = int(low_f * (m_len // 2))
-        end_idx = min(m_len // 2, int(high_f * (m_len // 2)))
-
-        if start_idx == end_idx:
-            end_idx = start_idx + 1
-
-        mag_sum = 0.0
-        count = 0
-        step = max(1, (end_idx - start_idx) // 4)
-
-        for k in range(start_idx, end_idx, step):
-            angle = 2.0 * math.pi * k / m_len
-            real = 0.0
-            imag = 0.0
-            stride = max(1, m_len // 32)
-            for i in range(0, m_len, stride):
-                w = 0.5 * (1.0 - math.cos(2.0 * math.pi * i / m_len))
-                s = mono[i] * w
-                real += s * math.cos(angle * i)
-                imag -= s * math.sin(angle * i)
-            mag = math.sqrt(real * real + imag * imag) / (m_len / stride)
-            mag_sum += mag
-            count += 1
-
-        avg_mag = mag_sum / max(1, count)
-        val = min(1.0, max(0.0, math.pow(avg_mag * 6.0, 0.75)))
-        spectrum[b] = val
+        start_idx = int((b / num_bands) ** 2.0 * data_len)
+        end_idx = max(start_idx + 1, int(((b + 1) / num_bands) ** 2.0 * data_len))
+        avg_mag = float(np.mean(fft_mags[start_idx:end_idx]))
+        spectrum[b] = min(1.0, max(0.0, (avg_mag * 6.0) ** 0.75))
 
     return spectrum, vu_l, vu_r
 

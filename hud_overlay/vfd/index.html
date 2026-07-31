@@ -603,7 +603,7 @@
                 var bandCount = 32;
 
                 var rawAudioOffset = (window._currentFullConfig && window._currentFullConfig.vfdAudioOffset !== undefined) ? window._currentFullConfig.vfdAudioOffset : 0;
-                var audioMult = 1.0 + (rawAudioOffset * 0.20); // Each step adds/subtracts 20% span (20x multiplier)
+                var audioMult = 1.0 + (rawAudioOffset * 0.04); // Each step adds/subtracts 4% span (4x multiplier)
 
                 if (!hasBackendAudio) {
                     for (var b = 0; b < bandCount; b++) {
@@ -756,9 +756,9 @@
                     }
                 }
 
-                // 4. Stereo L/R Volume Level VU Meters (With 20x Sensitivity Multiplier)
+                // 4. Stereo L/R Volume Level VU Meters
                 var rawVuOffset = (window._currentFullConfig && window._currentFullConfig.vfdVuOffset !== undefined) ? window._currentFullConfig.vfdVuOffset : 0;
-                var vuMult = 1.0 + (rawVuOffset * 0.20); // Each step adds/subtracts 20% span (20x multiplier)
+                var vuMult = 1.0 + (rawVuOffset * 0.04); // Each step adds/subtracts 4% span (4x multiplier)
 
                 var vuX = 1045, vuY = panelY + 80, vuW = 20, vuH = 135;
                 var maxL = Math.max.apply(null, spectrumBands.slice(0, 16)) || 0;

@@ -21,3 +21,6 @@
 ## 2026-07-31 - Memoizing Derived Chart Data inside Loops
 **Learning:** Calling expensive data transformation functions inside a React render loop (like `.map` over an array of configurations) blocks the main thread, especially when mapping over large arrays like telemetry history.
 **Action:** Always wrap derived data calculations that rely on large datasets with `useMemo` and map the results locally to avoid redundant O(N*M) operations on every state update, caching the results instead.
+## 2025-02-12 - Optimized Audio Spectrum FFT Computation
+**Learning:** Manual mathematical loops for operations like Discrete Fourier Transform (DFT) can be computationally expensive and slow.
+**Action:** Utilize optimized native libraries like `numpy` and its `np.fft.rfft` implementation to significantly enhance the performance of Fast Fourier Transform computations. Ensure required dependencies like `numpy` are added to `requirements.txt`.
