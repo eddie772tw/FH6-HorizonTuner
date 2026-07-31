@@ -18,3 +18,6 @@
 **Action:**
 1. Use `useMemo` and `useCallback` to prevent unnecessary reprocessing of large arrays (like `fullSessionTrackData` updating only every 5s).
 2. Short-circuit expensive transformation functions if their resulting data will not be rendered (e.g., conditionally skip `transformTelemetryData` when `isRecording` is true and charts are hidden).
+## 2026-07-31 - Memoizing Derived Chart Data inside Loops
+**Learning:** Calling expensive data transformation functions inside a React render loop (like `.map` over an array of configurations) blocks the main thread, especially when mapping over large arrays like telemetry history.
+**Action:** Always wrap derived data calculations that rely on large datasets with `useMemo` and map the results locally to avoid redundant O(N*M) operations on every state update, caching the results instead.
