@@ -16,3 +16,6 @@
 ## 2024-07-28 - Custom Form Controls Need Native Inputs
 **Learning:** Custom UI controls (like switches, toggles) built using visual elements (`div`s) and `onClick` handlers are inaccessible to screen readers and keyboard users (no tab focus, spacebar interaction).
 **Action:** Always wrap custom toggles in a `<label>` and back them with a visually hidden (`.sr-only`) native `<input type="checkbox">`. Bind the `checked` state and `onChange` handler to the native input, removing `onClick` handlers from visual elements. Use global `:focus-visible` styles to indicate keyboard focus.
+## 2024-08-01 - Expand Clickable Hit Areas for Settings Rows
+**Learning:** Wrapping settings rows that contain checkboxes in `<label>` tags with `cursor: 'pointer'` significantly improves accessibility by expanding the clickable hit area to encompass the entire row rather than just the small checkbox element (Fitts's Law).
+**Action:** Always wrap settings rows containing checkboxes in `<label>` tags and style them with `cursor: 'pointer'` to improve ease of use and adhere to accessibility best practices.

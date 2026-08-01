@@ -176,7 +176,7 @@ const SettingsView: React.FC = () => {
             <div style={sectionStyle}>
               <h4 style={sectionTitleStyle}>{t("General Recording Settings")}</h4>
               
-              <div style={settingRowStyle}>
+              <label style={{ ...settingRowStyle, cursor: 'pointer' }}>
                 <div>
                   <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Dyno Recording")}</strong>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Automatically collect and update engine output curves during full throttle acceleration.")}</span>
@@ -187,9 +187,9 @@ const SettingsView: React.FC = () => {
                   onChange={(e) => updateSettings({ dyno_recording: e.target.checked })}
                   style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                 />
-              </div>
+              </label>
 
-              <div style={settingRowStyle}>
+              <label style={{ ...settingRowStyle, cursor: 'pointer' }}>
                 <div>
                   <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Race Recording")}</strong>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Record suspension and grip data during races or driving for post-race analysis.")}</span>
@@ -200,7 +200,7 @@ const SettingsView: React.FC = () => {
                   onChange={(e) => updateSettings({ race_recording: e.target.checked })}
                   style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                 />
-              </div>
+              </label>
 
               <hr style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '0.5rem 0' }} />
 
