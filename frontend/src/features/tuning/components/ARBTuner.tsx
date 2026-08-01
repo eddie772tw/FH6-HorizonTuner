@@ -1,3 +1,4 @@
+import { useSettings } from '../../../context/SettingsContext';
 import React from 'react';
 
 interface ARBTunerProps {
@@ -6,9 +7,10 @@ interface ARBTunerProps {
 }
 
 export const ARBTuner: React.FC<ARBTunerProps> = () => {
+  const { t } = useSettings();
   return (
     <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <h3 style={{ margin: 0, color: 'var(--primary)' }}>Anti-Roll Bars (ARB) Tuning</h3>
+      <h3 style={{ margin: 0, color: 'var(--primary)' }}>{t("Anti-Roll Bars (ARB) Tuning")}</h3>
       {/* Extracted content goes here */}
     </div>
   );
