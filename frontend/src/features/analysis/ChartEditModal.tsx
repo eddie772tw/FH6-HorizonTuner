@@ -116,9 +116,22 @@ export function transformTelemetryData(
   // MODE 2: HISTOGRAM (Binning Distribution of primary channel)
   if (chartType === 'histogram') {
     const primaryCh = channels[0] || { formula: 'Throttle' };
-    const values = sampleData.map(p => evaluateCustomMath(primaryCh.formula, getContext(p)));
-    const minVal = Math.min(...values);
-    const maxVal = Math.max(...values);
+    const values = new Float64Array(sampleData.length);
+    let minVal = Infinity;
+    let maxVal = -Infinity;
+
+    // [PERF] Optimized O(N) loop to avoid .map() array creation and dangerous Math.max(...values) spread operator
+    // which can exceed the maximum call stack size on large telemetry history datasets.
+    for (let i = 0; i < sampleData.length; i++) {
+      const v = evaluateCustomMath(primaryCh.formula, getContext(sampleData[i]));
+      values[i] = v;
+      if (v < minVal) minVal = v;
+      if (v > maxVal) maxVal = v;
+    }
+
+    if (minVal === Infinity) minVal = 0;
+    if (maxVal === -Infinity) maxVal = 0;
+
     const binsCount = 5;
     const binWidth = Math.max(1, (maxVal - minVal) / binsCount);
 
@@ -127,12 +140,12 @@ export function transformTelemetryData(
       count: 0
     }));
 
-    values.forEach(v => {
-      let bIdx = Math.floor((v - minVal) / binWidth);
+    for (let i = 0; i < values.length; i++) {
+      let bIdx = Math.floor((values[i] - minVal) / binWidth);
       if (bIdx >= binsCount) bIdx = binsCount - 1;
       if (bIdx < 0) bIdx = 0;
       bins[bIdx].count++;
-    });
+    }
 
     return bins.map(b => ({ xDomain: b.range, Frequency: b.count }));
   }

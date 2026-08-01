@@ -24,3 +24,6 @@
 ## 2025-02-12 - Optimized Audio Spectrum FFT Computation
 **Learning:** Manual mathematical loops for operations like Discrete Fourier Transform (DFT) can be computationally expensive and slow.
 **Action:** Utilize optimized native libraries like `numpy` and its `np.fft.rfft` implementation to significantly enhance the performance of Fast Fourier Transform computations. Ensure required dependencies like `numpy` are added to `requirements.txt`.
+## 2024-12-05 - Avoid spread operator with Math.max/min on large arrays
+**Learning:** Using `Math.max(...values)` or `Math.min(...values)` on very large datasets (like full telemetry session histories) throws a "Maximum call stack size exceeded" error. The array spread operator expands into function arguments, and V8 limits the number of arguments to roughly 125,000.
+**Action:** Always compute `min` and `max` values iteratively within an O(N) loop rather than using the spread operator for telemetry history arrays. This prevents stack overflow exceptions and reduces garbage collection pressure by avoiding intermediate array creations (like from `.map()`).
