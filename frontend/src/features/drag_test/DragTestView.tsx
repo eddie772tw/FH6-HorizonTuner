@@ -643,13 +643,13 @@ const DragTestView: React.FC = () => {
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Max Speed")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#00f0ff' }}>
-                        {analysis.max_speed_kmh} <span style={{ fontSize: '0.8rem' }}>km/h</span>
+                        {analysis.max_speed_kmh} <span style={{ fontSize: '0.8rem' }}>{t("km/h")}</span>
                       </div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Test Duration")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>
-                        {analysis.duration} <span style={{ fontSize: '0.8rem' }}>s</span>
+                        {analysis.duration} <span style={{ fontSize: '0.8rem' }}>{t("s")}</span>
                       </div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -667,7 +667,7 @@ const DragTestView: React.FC = () => {
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Path Deviation")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: analysis.path_valid ? '#00ff00' : '#ff003c' }}>
-                        {analysis.max_deviation_meters} <span style={{ fontSize: '0.8rem' }}>m</span>
+                        {analysis.max_deviation_meters} <span style={{ fontSize: '0.8rem' }}>{t("m")}</span>
                       </div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>

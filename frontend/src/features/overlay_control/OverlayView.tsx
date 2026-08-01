@@ -896,7 +896,7 @@ export const OverlayView: React.FC = () => {
               <option value="mw2005" style={{ background: '#222', color: '#fff' }}>{t("NFS Most Wanted 2005 HUD")}</option>
               <option value="nfs15" style={{ background: '#222', color: '#fff' }}>{t("NFS 2015 Style HUD")}</option>
               <option value="shift_tacho" style={{ background: '#222', color: '#fff' }}>{t("NFS Shift Tachometer")}</option>
-              <option value="vfd" style={{ background: '#222', color: '#fff' }}>Retro VFD</option>
+              <option value="vfd" style={{ background: '#222', color: '#fff' }}>{t("Retro VFD")}</option>
             </select>
 
             {/* Overall HUD Scale */}

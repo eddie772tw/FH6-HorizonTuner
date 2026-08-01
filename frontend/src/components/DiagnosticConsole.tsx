@@ -114,10 +114,10 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
                 className="cyber-select"
                 style={{ padding: '0.3rem 0.6rem', minWidth: '100px' }}
               >
-                <option value="ALL">ALL</option>
-                <option value="INFO">INFO</option>
-                <option value="WARNING">WARNING</option>
-                <option value="ERROR">ERROR</option>
+                <option value="ALL">{t("ALL")}</option>
+                <option value="INFO">{t("INFO")}</option>
+                <option value="WARNING">{t("WARNING")}</option>
+                <option value="ERROR">{t("ERROR")}</option>
               </select>
             </div>
 

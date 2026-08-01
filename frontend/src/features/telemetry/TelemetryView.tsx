@@ -162,7 +162,7 @@ const TelemetryView: React.FC = () => {
         </div>
         <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
           {classDisplay && <span style={{ color: '#00f0ff', marginRight: '0.6rem' }}>{classDisplay}</span>}
-          {isEV && <span style={{ background: '#00ff88', color: '#000', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', marginRight: '0.6rem', fontWeight: 'bold' }}>EV</span>}
+          {isEV && <span style={{ background: '#00ff88', color: '#000', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', marginRight: '0.6rem', fontWeight: 'bold' }}>{t("EV")}</span>}
           {carName}
         </div>
       </div>
@@ -208,7 +208,7 @@ const TelemetryView: React.FC = () => {
           <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '0.5rem' }}>
-                <div><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>{Math.round(rpm)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>RPM</span></div></div>
+                <div><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>{Math.round(rpm)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("RPM")}</span></div></div>
                 <div style={{ textAlign: 'center' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>{gear === 0 ? 'R' : gear} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("GEAR")}</span></div></div>
                 <div style={{ textAlign: 'right' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>{Math.round(speedData.value)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{speedData.label}</span></div></div>
               </div>

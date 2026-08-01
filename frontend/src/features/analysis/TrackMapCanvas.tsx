@@ -1,3 +1,4 @@
+import { useSettings } from '../../context/SettingsContext';
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { simplifyPathRDP, Point2D } from '../../utils/rdpSimplifier';
 
@@ -25,6 +26,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   isSavedSession = false,
   onPointHover
 }) => {
+  const { t } = useSettings();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoveredPoint, setHoveredPoint] = useState<TrackPoint | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -250,8 +252,8 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
           zIndex: 10
         }}>
           <div><strong>{selectedMetricLabel}:</strong> {(hoveredPoint.val * 100).toFixed(0)}%</div>
-          <div>Time: {hoveredPoint.raw?.time?.toFixed(1) ?? 0}s</div>
-          <div>Speed: {((hoveredPoint.raw?.SpeedMetersPerSecond ?? 0) * 3.6).toFixed(1)} km/h</div>
+          <div>{t("Time:")} {hoveredPoint.raw?.time?.toFixed(1) ?? 0}{t("s")}</div>
+          <div>{t("Speed:")} {((hoveredPoint.raw?.SpeedMetersPerSecond ?? 0) * 3.6).toFixed(1)} {t("km/h")}</div>
         </div>
       )}
     </div>

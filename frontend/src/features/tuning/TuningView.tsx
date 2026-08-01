@@ -454,24 +454,24 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</label>
                   <select value={carParams?.drivetrain || 'RWD'} onChange={e => updateParam('drivetrain', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
-                    <option value="FWD">FWD</option>
-                    <option value="RWD">RWD</option>
-                    <option value="AWD">AWD</option>
+                    <option value="FWD">{t("FWD")}</option>
+                    <option value="RWD">{t("RWD")}</option>
+                    <option value="AWD">{t("AWD")}</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Tire Compound")}</label>
                   <select value={carParams?.tireType || 'Stock'} onChange={e => updateParam('tireType', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
-                    <option value="Stock">Stock</option>
-                    <option value="Street">Street</option>
-                    <option value="Sport">Sport</option>
-                    <option value="Semi-Slick">Semi-Slick</option>
-                    <option value="Slick">Slick</option>
-                    <option value="Rally">Rally</option>
-                    <option value="Off-Road">Off-Road</option>
-                    <option value="Snow">Snow</option>
-                    <option value="Drag">Drag</option>
-                    <option value="Drift">Drift</option>
+                    <option value="Stock">{t("Stock")}</option>
+                    <option value="Street">{t("Street")}</option>
+                    <option value="Sport">{t("Sport")}</option>
+                    <option value="Semi-Slick">{t("Semi-Slick")}</option>
+                    <option value="Slick">{t("Slick")}</option>
+                    <option value="Rally">{t("Rally")}</option>
+                    <option value="Off-Road">{t("Off-Road")}</option>
+                    <option value="Snow">{t("Snow")}</option>
+                    <option value="Drag">{t("Drag")}</option>
+                    <option value="Drift">{t("Drift")}</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
