@@ -921,7 +921,7 @@ export const OverlayView: React.FC = () => {
               <>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>VU Offset:</span>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("VU Offset:")}</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
                   </div>
                   <input
@@ -937,7 +937,7 @@ export const OverlayView: React.FC = () => {
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>Audio Visualizer Offset:</span>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Audio Visualizer Offset:")}</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdAudioOffset ?? 0}</span>
                   </div>
                   <input

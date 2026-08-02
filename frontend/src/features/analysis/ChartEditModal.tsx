@@ -327,9 +327,9 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" placeholder="Channel Label" value={ch.name} onChange={(e) => handleUpdateChannel(idx, { name: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
+                  <input type="text" placeholder={t("Channel Label")} value={ch.name} onChange={(e) => handleUpdateChannel(idx, { name: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
                   <select onChange={(e) => { if (e.target.value) handleUpdateChannel(idx, { formula: e.target.value }); }} style={{ ...selectStyle, flex: 1.2 }} value="">
-                    <option value="">-- Autocomplete Quick Select --</option>
+                    <option value="">{t("-- Autocomplete Quick Select --")}</option>
                     {AVAILABLE_VARIABLES.map(v => (<option key={v.key} value={v.key}>{v.key} ({v.desc})</option>))}
                   </select>
                 </div>
