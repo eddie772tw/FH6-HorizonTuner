@@ -11,7 +11,6 @@ interface DiffTuning {
 
 interface DifferentialTunerProps {
   tuning: { diff: DiffTuning };
-  tuningMode: 'recommended' | 'custom';
   updateSection: (section: any, field: string, value: any) => void;
   drivetrain?: string;
 }
@@ -28,7 +27,7 @@ const smallInputStyle: React.CSSProperties = {
   outline: 'none'
 };
 
-export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({ tuning, tuningMode, updateSection, drivetrain }) => {
+export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({ tuning, updateSection, drivetrain }) => {
   const { t } = useSettings();
 
   return (
@@ -46,16 +45,14 @@ export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({
               type="number" step="1" 
               value={tuning.diff.accelF} 
               onChange={e => updateSection('diff', 'accelF', parseInt(e.target.value) || 0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, width: '40px', opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={{ ...smallInputStyle, width: '40px' }}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Decel:")}</span>
             <input 
               type="number" step="1" 
               value={tuning.diff.decelF} 
               onChange={e => updateSection('diff', 'decelF', parseInt(e.target.value) || 0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, width: '40px', opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={{ ...smallInputStyle, width: '40px' }}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>%</span>
           </div>
@@ -70,16 +67,14 @@ export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({
               type="number" step="1" 
               value={tuning.diff.accelR} 
               onChange={e => updateSection('diff', 'accelR', parseInt(e.target.value) || 0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, width: '40px', opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={{ ...smallInputStyle, width: '40px' }}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Decel:")}</span>
             <input 
               type="number" step="1" 
               value={tuning.diff.decelR} 
               onChange={e => updateSection('diff', 'decelR', parseInt(e.target.value) || 0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, width: '40px', opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={{ ...smallInputStyle, width: '40px' }}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>%</span>
           </div>
@@ -95,8 +90,7 @@ export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({
                 type="number" step="1" 
                 value={tuning.diff.center} 
                 onChange={e => updateSection('diff', 'center', parseInt(e.target.value) || 0)}
-                disabled={tuningMode === 'recommended'}
-                style={{ ...smallInputStyle, width: '40px', opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                style={{ ...smallInputStyle, width: '40px' }}
               />
               <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '45px', textAlign: 'left' }}>% Rear</span>
             </div>

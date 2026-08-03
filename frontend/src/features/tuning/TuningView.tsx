@@ -671,16 +671,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                         type="number" step="0.01" 
                         value={Number(convertTirePressure(tuning.tires.front).value.toFixed(2))} 
                         onChange={e => updateSection('tires', 'front', convertTirePressureToBar(parseFloat(e.target.value) || 0.0))}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
                       <input 
                         type="number" step="0.01" 
                         value={Number(convertTirePressure(tuning.tires.rear).value.toFixed(2))} 
                         onChange={e => updateSection('tires', 'rear', convertTirePressureToBar(parseFloat(e.target.value) || 0.0))}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>{convertTirePressure(1).label}</span>
                     </div>
@@ -695,16 +693,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                         type="number" step="0.1" 
                         value={tuning.alignment.camberF} 
                         onChange={e => updateSection('alignment', 'camberF', parseFloat(e.target.value) || 0.0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
                       <input 
                         type="number" step="0.1" 
                         value={tuning.alignment.camberR} 
                         onChange={e => updateSection('alignment', 'camberR', parseFloat(e.target.value) || 0.0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>°</span>
                     </div>
@@ -719,16 +715,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                         type="number" step="0.1" 
                         value={tuning.alignment.toeF} 
                         onChange={e => updateSection('alignment', 'toeF', parseFloat(e.target.value) || 0.0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
                       <input 
                         type="number" step="0.1" 
                         value={tuning.alignment.toeR} 
                         onChange={e => updateSection('alignment', 'toeR', parseFloat(e.target.value) || 0.0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>°</span>
                     </div>
@@ -743,8 +737,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                         type="number" step="0.1" 
                         value={tuning.alignment.caster} 
                         onChange={e => updateSection('alignment', 'caster', parseFloat(e.target.value) || 0.0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
                       <input 
@@ -766,16 +759,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                         type="number" step="1" 
                         value={tuning.aero.front} 
                         onChange={e => updateSection('aero', 'front', parseFloat(e.target.value) || 0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
                       <input 
                         type="number" step="1" 
                         value={tuning.aero.rear} 
                         onChange={e => updateSection('aero', 'rear', parseFloat(e.target.value) || 0)}
-                        disabled={tuningMode === 'recommended'}
-                        style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+                        style={smallInputStyle}
                       />
                       <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}></span>
                     </div>
@@ -783,11 +774,10 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                 </div>
               </div>
 
-              {/* TODO: 移除其它懸吊、輪胎、差速器自動計算邏輯，保留 UI 顯示。 */}
-              <SuspensionTuner tuning={tuning} tuningMode={tuningMode} updateSection={updateSection} />
+              <SuspensionTuner tuning={tuning} updateSection={updateSection} />
 
               {/* Differential Settings */}
-              <DifferentialTuner tuning={tuning} tuningMode={tuningMode} updateSection={updateSection} drivetrain={carParams?.drivetrain} />
+              <DifferentialTuner tuning={tuning} updateSection={updateSection} drivetrain={carParams?.drivetrain} />
 
               </div>
             </div>
