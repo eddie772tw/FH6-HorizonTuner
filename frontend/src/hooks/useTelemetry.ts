@@ -224,13 +224,18 @@ function formatHudTelemetry(raw: TelemetryData) {
       sharedWs.onclose = () => {
         connectionState = false;
         sharedWs = null;
-        console.log("Telemetry WebSocket closed. Reconnecting...");
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = setTimeout(connect, 2000);
+        if (subscribers > 0) {
+          console.log("Telemetry WebSocket closed. Reconnecting...");
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(connect, 2000);
+        } else {
+          console.log("Telemetry WebSocket closed. No subscribers, stopping reconnection.");
+        }
       };
       
       sharedWs.onerror = (e) => {
         console.error("Telemetry WebSocket error:", e);
+        connectionState = false;
         if (sharedWs) sharedWs.close();
       };
     };
@@ -252,8 +257,11 @@ function formatHudTelemetry(raw: TelemetryData) {
       if (subscribers === 0) {
         clearTimeout(reconnectTimeout);
         if (sharedWs) {
+          sharedWs.onclose = null;
+          sharedWs.onerror = null;
           sharedWs.close();
           sharedWs = null;
+          connectionState = false;
         }
       }
     };
