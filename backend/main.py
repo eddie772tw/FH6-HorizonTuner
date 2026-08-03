@@ -2,6 +2,13 @@ import os
 import re
 import sys
 
+if getattr(sys, "frozen", False):
+    if sys.platform == "win32":
+        try:
+            os.add_dll_directory(sys._MEIPASS)
+        except Exception:
+            pass
+
 # 避免在無主控台模式下 sys.stdout/sys.stderr 為 None 導致 uvicorn 或 logging 報錯
 # 同時將發行版執行期的後端輸出重導向至 logs/backend.log
 if getattr(sys, "frozen", False):
@@ -78,14 +85,6 @@ if not getattr(sys, "frozen", False):
     root_logger.addHandler(console_handler)
 
 logger = logging.getLogger(__name__)
-
-if getattr(sys, "frozen", False):
-    if sys.platform == "win32":
-        try:
-            os.add_dll_directory(sys._MEIPASS)
-        except Exception:
-            pass
-
 
 # 統一判定與配置唯讀資源目錄與可寫入資料目錄
 
@@ -2167,15 +2166,17 @@ if __name__ == "__main__":
     except Exception:
         backend_port = 8001
 
-    try:
-        log_dir = os.path.join(DATA_ROOT, "logs")
-        os.makedirs(log_dir, exist_ok=True)
-        port_file_path = os.path.join(log_dir, "web_port.txt")
-        with open(port_file_path, "w", encoding="utf-8") as f:
-            f.write(str(backend_port))
-    except Exception as e:
-        print(f"Failed to write web_port.txt: {e}")
-        backend_port = 8001
+    def write_web_port(port):
+        try:
+            log_dir = os.path.join(DATA_ROOT, "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            port_file_path = os.path.join(log_dir, "web_port.txt")
+            with open(port_file_path, "w", encoding="utf-8") as f:
+                f.write(str(port))
+        except Exception as e:
+            print(f"Failed to write web_port.txt: {e}")
+
+    write_web_port(backend_port)
 
     _cleanup_state = {"proc": None, "log": None}
 
@@ -2248,4 +2249,29 @@ if __name__ == "__main__":
 
         threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
-    uvicorn.run(app, host="127.0.0.1", port=backend_port)
+    import socket
+
+    max_retries = 3
+    bound = False
+
+    for attempt in range(max_retries):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", backend_port))
+                bound = True
+                break
+        except OSError as e:
+            print(f"Port {backend_port} is unavailable: {e}")
+            if attempt < max_retries - 1:
+                try:
+                    backend_port = get_free_port()
+                except Exception:
+                    backend_port += 1
+                write_web_port(backend_port)
+                print(f"Retrying with port {backend_port}...")
+            else:
+                print("Max retries reached. Backend failed to start.")
+                sys.exit(1)
+
+    if bound:
+        uvicorn.run(app, host="127.0.0.1", port=backend_port)

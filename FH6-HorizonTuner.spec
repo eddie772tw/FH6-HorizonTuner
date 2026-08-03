@@ -18,6 +18,8 @@ hiddenimports = [
     "numpy",
     "soundcard",
     "multiprocessing",
+    "python-multipart",
+    "httpx",
 ]
 
 packages_to_collect = [
@@ -30,6 +32,8 @@ packages_to_collect = [
     "numpy",
     "soundcard",
     "multiprocessing",
+    "python-multipart",
+    "httpx",
 ]
 
 for pkg in packages_to_collect:
