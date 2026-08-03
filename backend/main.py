@@ -13,8 +13,12 @@ if getattr(sys, "frozen", False):
         backend_log = open(backend_log_path, "a", encoding="utf-8", buffering=1)
         sys.stdout = backend_log
         sys.stderr = backend_log
-    except Exception:
-        pass
+    except OSError as e:
+        if sys.stderr is not None:
+            try:
+                sys.stderr.write(f"Failed to open backend.log: {e}\n")
+            except Exception:
+                pass
 else:
     DATA_ROOT = os.path.dirname(os.path.abspath(__file__))
     log_dir = os.path.join(DATA_ROOT, "logs")
