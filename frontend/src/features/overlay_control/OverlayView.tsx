@@ -438,9 +438,19 @@ export const OverlayView: React.FC = () => {
     saveConfig(updated);
   };
 
-  const handleReloadHud = () => {
+  const handleReloadHud = async () => {
     broadcastConfig(config);
     channelRef.current?.postMessage({ type: 'hud:reload', hudStyle: config.hudStyle });
+
+    // Attempt hard reload of iframe through tauri window command
+    if ((window as any).__TAURI__?.core?.invoke) {
+      try {
+        await (window as any).__TAURI__.core.invoke('reload_hud_window');
+      } catch (err) {
+        console.warn('Failed to invoke reload_hud_window:', err);
+      }
+    }
+
     fetchConfig(config.enabled, true);
     if (config.hudStyle) {
       loadAuthorInfo(config.hudStyle, true);
