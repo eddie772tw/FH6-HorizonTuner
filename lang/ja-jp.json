@@ -1,4 +1,5 @@
 {
+  "__language_name__": "日本語",
   "% Rear": "% 後輪",
   "*Unsaved Parameters*": "*パラメータは保存されません*",
   "-": "-",
@@ -12,7 +13,6 @@
   "2d": "2d",
   "4-Step Model: Theoretical FD, Launch-Limited 1st Gear, Drag-Corrected Top Gear, Envelope shadow interpolation.": "4 段階モデル​​: 理論上の最終変速比、始動限界 1 速ギア、風抵抗補正最高ギア、ギア比エンベロープ補間。",
   "\\n": "\\n",
-  "__language_name__": "日本語",
   "a": "a",
   "ACCEL": "アクセル",
   "Accel:": "加速：",
