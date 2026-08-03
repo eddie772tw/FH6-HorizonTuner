@@ -142,6 +142,107 @@
                     .trim();
             }
 
+            // Fetch Windows System Media info with multi-port fallback
+            async function fetchSystemMedia() {
+                var origin = window.location.origin;
+                var port = window.location.port;
+                var candidates = [];
+
+                if (origin && origin !== "null") candidates.push(origin + "/api/overlay/system_media");
+                if (window.parent && window.parent.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.parent.BACKEND_PORT + "/api/overlay/system_media");
+                if (window.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.BACKEND_PORT + "/api/overlay/system_media");
+                if (port) candidates.push("http://127.0.0.1:" + port + "/api/overlay/system_media");
+                candidates.push("http://127.0.0.1:8001/api/overlay/system_media");
+                candidates.push("http://127.0.0.1:8000/api/overlay/system_media");
+                candidates.push("/api/overlay/system_media");
+
+                for (var i = 0; i < candidates.length; i++) {
+                    try {
+                        var res = await fetch(candidates[i]);
+                        if (res.ok) {
+                            var data = await res.json();
+                            if (data && data.success) {
+                                systemMediaInfo = data;
+                                var t = (data.title || "").trim();
+                                var a = (data.artist || "").trim();
+
+                                // Filter out our own app title and default placeholders
+                                var ownAppTitles = ["fh6-horizon tuner", "horizon tuner", "fh6-horizontuner"];
+                                var tLower = t.toLowerCase();
+                                var aLower = a.toLowerCase();
+                                var isSelfTitle = ownAppTitles.some(function (k) { return tLower.indexOf(k) >= 0 || aLower.indexOf(k) >= 0; });
+                                var isPlaying = data.status === "playing";
+                                var hasMedia = !isSelfTitle && isPlaying && (t.length > 0 || a.length > 0);
+
+                                systemMediaInfo.has_media = hasMedia;
+
+                                var newMarquee = DEFAULT_MARQUEE;
+                                if (hasMedia && (t || a)) {
+                                    var trackStr = (t && a) ? (a + " - " + t) : (t || a);
+                                    var cleanStr = sanitizeVFDText(trackStr);
+                                    newMarquee = cleanStr ? cleanStr : DEFAULT_MARQUEE;
+                                }
+
+                                if (newMarquee !== marqueeText) {
+                                    marqueeText = newMarquee;
+                                    marqueeScrollPos = 0; // Reset scroll position when track changes
+                                }
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        // Try next fallback endpoint
+                    }
+                }
+                systemMediaInfo.has_media = false;
+                if (marqueeText !== DEFAULT_MARQUEE) {
+                    marqueeText = DEFAULT_MARQUEE;
+                    marqueeScrollPos = 0;
+                }
+            }
+
+            // Fetch WASAPI system audio spectrum from backend
+            async function fetchAudioSpectrum() {
+                var origin = window.location.origin;
+                var port = window.location.port;
+                var candidates = [];
+
+                if (origin && origin !== "null") candidates.push(origin + "/api/overlay/audio_spectrum");
+                if (window.parent && window.parent.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.parent.BACKEND_PORT + "/api/overlay/audio_spectrum");
+                if (window.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.BACKEND_PORT + "/api/overlay/audio_spectrum");
+                if (port) candidates.push("http://127.0.0.1:" + port + "/api/overlay/audio_spectrum");
+                candidates.push("http://127.0.0.1:8001/api/overlay/audio_spectrum");
+                candidates.push("http://127.0.0.1:8000/api/overlay/audio_spectrum");
+                candidates.push("/api/overlay/audio_spectrum");
+
+                for (var i = 0; i < candidates.length; i++) {
+                    try {
+                        var res = await fetch(candidates[i]);
+                        if (res.ok) {
+                            var data = await res.json();
+                            if (data && data.success && Array.isArray(data.spectrum)) {
+                                hasBackendAudio = !!data.has_audio;
+                                backendVuL = data.vu_left || 0;
+                                backendVuR = data.vu_right || 0;
+
+                                if (data.spectrum.length === 32) {
+                                    var rawAudioOffset = (window._currentFullConfig && window._currentFullConfig.vfdAudioOffset !== undefined) ? window._currentFullConfig.vfdAudioOffset : 0;
+                                    var audioMult = 1.0 + (rawAudioOffset * 0.12); // Each step adds/subtracts 12% span (about 10~15% requested)
+                                    for (var b = 0; b < 32; b++) {
+                                        var raw = clamp((data.spectrum[b] || 0) * audioMult, 0, 1);
+                                        // Smooth transition
+                                        spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                                    }
+                                }
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        // Try next endpoint
+                    }
+                }
+                hasBackendAudio = false;
+            }
 
 
 
@@ -499,16 +600,9 @@
             function updateAudioSpectrum() {
                 var bandCount = 32;
 
-                var rawAudioOffset = (window._currentFullConfig && window._currentFullConfig.vfdAudioOffset !== undefined) ? window._currentFullConfig.vfdAudioOffset : 0;
-                var audioMult = 1.0 + (rawAudioOffset * 0.04); // Each step adds/subtracts 4% span (4x multiplier)
-
                 if (!hasBackendAudio) {
                     for (var b = 0; b < bandCount; b++) {
                         spectrumBands[b] = Math.max(0, spectrumBands[b] * 0.85 - 0.02);
-                    }
-                } else {
-                    for (var b = 0; b < bandCount; b++) {
-                        spectrumBands[b] = clamp(spectrumBands[b] * audioMult, 0, 1);
                     }
                 }
 
@@ -655,29 +749,27 @@
 
                 // 4. Stereo L/R Volume Level VU Meters
                 var rawVuOffset = (window._currentFullConfig && window._currentFullConfig.vfdVuOffset !== undefined) ? window._currentFullConfig.vfdVuOffset : 0;
-                var vuMult = 1.0 + (rawVuOffset * 0.04); // Each step adds/subtracts 4% span (4x multiplier)
+                var vuMult = 1.0 + (rawVuOffset * 0.12); // Each step adds/subtracts 12% span (about 10~15% requested)
 
                 var vuX = 1045, vuY = panelY + 80, vuW = 20, vuH = 135;
 
-                var maxL = 0;
-                for (var i_spec = 0; i_spec < 16; i_spec++) {
-                    if (spectrumBands[i_spec] > maxL) {
-                        maxL = spectrumBands[i_spec];
+                var vuL = 0;
+                var vuR = 0;
+
+                if (hasBackendAudio) {
+                    vuL = clamp(backendVuL * vuMult, 0, 1);
+                    vuR = clamp(backendVuR * vuMult, 0, 1);
+                } else {
+                    var maxOverall = 0;
+                    for (var i_spec = 0; i_spec < 32; i_spec++) {
+                        if (spectrumBands[i_spec] > maxOverall) {
+                            maxOverall = spectrumBands[i_spec];
+                        }
                     }
+                    var fbVu = clamp(maxOverall * 0.95 * vuMult, 0, 1);
+                    vuL = fbVu;
+                    vuR = fbVu;
                 }
-
-                var maxR = 0;
-                for (var i_spec2 = 16; i_spec2 < 32; i_spec2++) {
-                    if (spectrumBands[i_spec2] > maxR) {
-                        maxR = spectrumBands[i_spec2];
-                    }
-                }
-
-                var rawVuL = hasBackendAudio ? Math.min(1.0, Math.max(backendVuL * 2.2, maxL * 0.95)) : Math.min(1.0, maxL * 0.95);
-                var rawVuR = hasBackendAudio ? Math.min(1.0, Math.max(backendVuR * 2.2, maxR * 0.95)) : Math.min(1.0, maxR * 0.95);
-
-                var vuL = clamp(rawVuL * vuMult, 0, 1);
-                var vuR = clamp(rawVuR * vuMult, 0, 1);
 
                 drawCellBar(vuX, vuY, vuW, vuH, 12, vuL, currentPalette.primary, currentPalette.dim, true);
                 drawCellBar(vuX + 28, vuY, vuW, vuH, 12, vuR, currentPalette.primary, currentPalette.dim, true);
