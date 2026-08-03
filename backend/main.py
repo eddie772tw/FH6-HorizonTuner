@@ -1013,6 +1013,7 @@ def dyno_is_reasonable(new_val, neighbor_vals, threshold=DYNO_ANOMALY_THRESHOLD)
 
 
 def load_car_params(car_id: str):
+    car_id = os.path.basename(car_id)
     file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -1021,6 +1022,7 @@ def load_car_params(car_id: str):
 
 
 def save_car_params(car_id: str, data: dict):
+    car_id = os.path.basename(car_id)
     file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
