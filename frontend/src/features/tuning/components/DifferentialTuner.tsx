@@ -98,7 +98,7 @@ export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({
                 disabled={tuningMode === 'recommended'}
                 style={{ ...smallInputStyle, width: '40px', opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
               />
-              <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '45px', textAlign: 'left' }}>% Rear</span>
+              <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '45px', textAlign: 'left' }}>{t("% Rear")}</span>
             </div>
           </div>
         ) : (
@@ -112,7 +112,7 @@ export const DifferentialTuner: React.FC<DifferentialTunerProps> = React.memo(({
                 disabled={true}
                 style={{ ...smallInputStyle, width: '40px', textAlign: 'center', cursor: 'not-allowed' }} 
               />
-              <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '45px', textAlign: 'left' }}>% Rear</span>
+              <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '45px', textAlign: 'left' }}>{t("% Rear")}</span>
             </div>
           </div>
         )}
