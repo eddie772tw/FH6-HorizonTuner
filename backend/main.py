@@ -205,6 +205,7 @@ async def lifespan(app_inst: FastAPI):
 
     # Start the broadcast loop
     asyncio.create_task(broadcast_telemetry())
+    asyncio.create_task(broadcast_overlay_state())
     yield
     # Shutdown
     if current_udp_transport:
@@ -1038,10 +1039,45 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(start_udp_listener(ip, port, telemetry_queue))
     # Start the broadcast loop
     asyncio.create_task(broadcast_telemetry())
+    asyncio.create_task(broadcast_overlay_state())
     yield
 
 
 app.router.lifespan_context = lifespan
+
+
+async def broadcast_overlay_state():
+    logger.info("Overlay state broadcasting loop started.")
+    last_media_time = 0.0
+
+    while True:
+        try:
+            # Only process if there are active connections
+            if manager.active_connections:
+                current_time = time.time()
+
+                # Fetch audio spectrum every iteration (approx 60ms)
+                audio_data = await get_audio_spectrum_data()
+                if audio_data:
+                    await manager.broadcast_json(
+                        {"type": "hud:audio", "data": audio_data}
+                    )
+
+                # Fetch media info every 1000ms
+                if current_time - last_media_time >= 1.0:
+                    media_data = await get_system_media_info()
+                    if media_data:
+                        await manager.broadcast_json(
+                            {"type": "hud:media", "data": media_data}
+                        )
+                    last_media_time = current_time
+
+            # 60Hz loop interval (approx 16.6ms) - we run it at roughly 16-20ms to allow smooth audio
+            await asyncio.sleep(0.016)
+
+        except Exception as e:
+            logger.error(f"Error in broadcast_overlay_state: {e}")
+            await asyncio.sleep(1.0)
 
 
 async def broadcast_telemetry():

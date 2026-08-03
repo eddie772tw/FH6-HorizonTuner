@@ -170,6 +170,15 @@
         window.addEventListener('demo:toggle', () => window.demoActive = !window.demoActive);
 
         // ── Config listener from Frontend UI ─────────────────────────────
+
+        // ── WebSocket state forwarding ─────────────────────────────
+        window.addEventListener('hud:audio', (e) => {
+            postToHud('hud:audio', { data: e.detail });
+        });
+        window.addEventListener('hud:media', (e) => {
+            postToHud('hud:media', { data: e.detail });
+        });
+
         window.addEventListener('hud:config', (e) => {
             const config = e.detail || {};
             window._currentHudConfig = config;
