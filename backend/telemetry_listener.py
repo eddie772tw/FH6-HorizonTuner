@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 # - f[4]: SuspTravel FL, FR, RL, RR (16 bytes)
 # - f[4]: SlipRatio FL, FR, RL, RR (16 bytes)
 # - f[4]: SlipAngle FL, FR, RL, RR (16 bytes)
-# - 16 bytes: Reserved padding (對齊 128 位元組)
+# - 8 bytes: Reserved padding (對齊 128 位元組)
 TELEMETRY_STRUCT_FORMAT = (
-    "<iffffffffffff" + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "16s"
+    "<iffffiffffffff" + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "8s"
 )
 
 
@@ -60,7 +60,7 @@ def pack_telemetry_binary(data: dict) -> bytes:
         # 轉換弧度為度
         slip_angles_deg = [sa * 57.29578 for sa in slip_angles]
 
-        reserved = b"\x00" * 16
+        reserved = b"\x00" * 8
 
         return struct.pack(
             TELEMETRY_STRUCT_FORMAT,

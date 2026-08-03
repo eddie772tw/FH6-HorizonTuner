@@ -2,7 +2,11 @@ import asyncio
 import struct
 import unittest
 
-from telemetry_listener import TelemetryProtocol
+from telemetry_listener import (
+    TELEMETRY_STRUCT_FORMAT,
+    TelemetryProtocol,
+    pack_telemetry_binary,
+)
 
 
 class TestTelemetryListener(unittest.TestCase):
@@ -164,6 +168,115 @@ class TestTelemetryListener(unittest.TestCase):
 
         self.protocol.datagram_received(bytes(data), ("127.0.0.1", 20440))
         self.assertEqual(self.queue.qsize(), 0)
+
+    def test_pack_telemetry_binary_default_values(self):
+        # Empty dict should yield default values
+        packed = pack_telemetry_binary({})
+        self.assertEqual(len(packed), 128)
+
+        unpacked = struct.unpack(TELEMETRY_STRUCT_FORMAT, packed)
+
+        # is_race_on
+        self.assertEqual(unpacked[0], 0)
+        # rpm
+        self.assertAlmostEqual(unpacked[1], 0.0)
+        # max_rpm
+        self.assertAlmostEqual(unpacked[2], 6000.0)
+        # idle_rpm
+        self.assertAlmostEqual(unpacked[3], 1000.0)
+        # speed
+        self.assertAlmostEqual(unpacked[4], 0.0)
+        # gear
+        self.assertEqual(unpacked[5], 0)
+        # power
+        self.assertAlmostEqual(unpacked[6], 0.0)
+        # boost
+        self.assertAlmostEqual(unpacked[7], 0.0)
+
+        # accel x, y, z
+        self.assertAlmostEqual(unpacked[8], 0.0)
+        self.assertAlmostEqual(unpacked[9], 0.0)
+        self.assertAlmostEqual(unpacked[10], 0.0)
+
+        # yaw, pitch, roll
+        self.assertAlmostEqual(unpacked[11], 0.0)
+        self.assertAlmostEqual(unpacked[12], 0.0)
+        self.assertAlmostEqual(unpacked[13], 0.0)
+
+        # tire_temps (14,15,16,17)
+        for i in range(14, 18):
+            self.assertAlmostEqual(unpacked[i], 0.0)
+
+        # susp_travels (18,19,20,21)
+        for i in range(18, 22):
+            self.assertAlmostEqual(unpacked[i], 0.0)
+
+        # slip_ratios (22,23,24,25)
+        for i in range(22, 26):
+            self.assertAlmostEqual(unpacked[i], 0.0)
+
+        # slip_angles (26,27,28,29)
+        for i in range(26, 30):
+            self.assertAlmostEqual(unpacked[i], 0.0)
+
+    def test_pack_telemetry_binary_with_values(self):
+        data = {
+            "IsRaceOn": 1,
+            "CurrentEngineRpm": 3000.0,
+            "EngineMaxRpm": 8000.0,
+            "EngineIdleRpm": 900.0,
+            "SpeedMetersPerSecond": 10.0,
+            "Gear": 3,
+            "PowerWatts": 74570.0,  # ~100 hp
+            "Boost": 68947.5729,  # ~10 psi
+            "AccelerationX": 9.81,  # 1G
+            "AccelerationY": 19.62,  # 2G
+            "AccelerationZ": -9.81,  # -1G
+            "Yaw": 3.14,
+            "TireTemp": [1.0, 2.0, 3.0, 4.0],
+            "NormalizedSuspensionTravel": [0.1, 0.2, 0.3, 0.4],
+            "TireSlipRatio": [0.5, 0.6, 0.7, 0.8],
+            "TireSlipAngle": [0.1, -0.1, 0.2, -0.2],
+        }
+        packed = pack_telemetry_binary(data)
+        self.assertEqual(len(packed), 128)
+
+        unpacked = struct.unpack(TELEMETRY_STRUCT_FORMAT, packed)
+
+        self.assertEqual(unpacked[0], 1)
+        self.assertAlmostEqual(unpacked[1], 3000.0, places=3)
+        self.assertAlmostEqual(unpacked[2], 8000.0, places=3)
+        self.assertAlmostEqual(unpacked[3], 900.0, places=3)
+        self.assertAlmostEqual(unpacked[4], 36.0, places=3)
+        self.assertEqual(unpacked[5], 3)
+        self.assertAlmostEqual(unpacked[6], 100.0, places=3)
+        self.assertAlmostEqual(unpacked[7], 10.0, places=3)
+        self.assertAlmostEqual(unpacked[8], 1.0, places=3)
+        self.assertAlmostEqual(unpacked[9], 2.0, places=3)
+        self.assertAlmostEqual(unpacked[10], -1.0, places=3)
+        self.assertAlmostEqual(unpacked[11], 3.14, places=3)
+        self.assertAlmostEqual(unpacked[14], 1.0, places=3)
+        self.assertAlmostEqual(unpacked[18], 0.1, places=3)
+        self.assertAlmostEqual(unpacked[22], 0.5, places=3)
+        self.assertAlmostEqual(unpacked[26], 0.1 * 57.29578, places=3)
+        self.assertAlmostEqual(unpacked[27], -0.1 * 57.29578, places=3)
+
+    def test_pack_telemetry_binary_partial_arrays(self):
+        data = {
+            "TireTemp": [10.0, 20.0],
+        }
+        packed = pack_telemetry_binary(data)
+        unpacked = struct.unpack(TELEMETRY_STRUCT_FORMAT, packed)
+        self.assertAlmostEqual(unpacked[14], 10.0, places=3)
+        self.assertAlmostEqual(unpacked[15], 20.0, places=3)
+        self.assertAlmostEqual(unpacked[16], 0.0, places=3)
+        self.assertAlmostEqual(unpacked[17], 0.0, places=3)
+
+    def test_pack_telemetry_binary_exception_handling(self):
+        data = {"IsRaceOn": "not_an_int"}
+        packed = pack_telemetry_binary(data)
+        self.assertEqual(len(packed), 128)  # Exception handler returns 128 bytes
+        self.assertEqual(packed, b"\x00" * 128)
 
 
 if __name__ == "__main__":
