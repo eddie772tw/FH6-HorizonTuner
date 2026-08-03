@@ -353,23 +353,26 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               </button>
             )}
             {currentStep < 5 && currentStep < 2 && (
-              <button 
-                onClick={() => {
-                  if (currentStep === 1) {
-                    generateBaselineTuning();
-                  }
-                  setCurrentStep(prev => prev + 1);
-                }} 
-                disabled={currentStep === 1 && !hasCoreParams}
-                style={{ 
-                  ...btnStyle, 
-                  background: (currentStep === 1 && !hasCoreParams) ? 'gray' : 'var(--primary)',
-                  color: (currentStep === 1 && !hasCoreParams) ? 'rgba(255,255,255,0.4)' : 'black',
-                  cursor: (currentStep === 1 && !hasCoreParams) ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {t("Next")} ▶
-              </button>
+              <span title={(currentStep === 1 && !hasCoreParams) ? t("Please set basic vehicle parameters in step 1 to proceed.") : undefined} style={(currentStep === 1 && !hasCoreParams) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}>
+                <button
+                  onClick={() => {
+                    if (currentStep === 1) {
+                      generateBaselineTuning();
+                    }
+                    setCurrentStep(prev => prev + 1);
+                  }}
+                  disabled={currentStep === 1 && !hasCoreParams}
+                  style={{
+                    ...btnStyle,
+                    background: (currentStep === 1 && !hasCoreParams) ? 'gray' : 'var(--primary)',
+                    color: (currentStep === 1 && !hasCoreParams) ? 'rgba(255,255,255,0.4)' : 'black',
+                    cursor: (currentStep === 1 && !hasCoreParams) ? 'not-allowed' : 'pointer',
+                    pointerEvents: (currentStep === 1 && !hasCoreParams) ? 'none' : 'auto'
+                  }}
+                >
+                  {t("Next")} ▶
+                </button>
+              </span>
             )}
             {currentStep === 2 && (
                <button
