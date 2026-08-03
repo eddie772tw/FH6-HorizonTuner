@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DomainType } from './DynamicChartGrid';
 import { CustomChannelItem } from './CustomChannelEditor';
 import { evaluateCustomMath } from '../../utils/customMathEngine';
@@ -245,7 +245,12 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
     onClose();
   };
 
-  const previewData = transformTelemetryData(chartType, domain, channels, sampleData, customChannels);
+  // [PERF] Memoize expensive preview data generation to avoid O(N*M) operations
+  // blocking the main thread when users type in text inputs (e.g., Title) causing state updates.
+  const previewData = useMemo(() => {
+    return transformTelemetryData(chartType, domain, channels, sampleData, customChannels);
+  }, [chartType, domain, channels, sampleData, customChannels]);
+
   const xUnit = domain === 'distance' ? 'm' : domain === 'lap' ? 'Lap' : 's';
 
   return (
