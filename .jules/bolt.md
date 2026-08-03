@@ -1,7 +1,11 @@
-## 2026-08-01 - Prevent Garbage Collection Pauses from Math.max.apply() in HUD Loops
-**Learning:** Using `Math.max.apply(null, array)` and methods like `array.slice()` inside high-frequency rendering loops (such as the HUD canvas overlay) creates unnecessary intermediate array allocations and function-call overhead. This triggers frequent Garbage Collection (GC) pauses, causing frame drops and jitter in the overlay rendering.
-**Action:** Replace `Math.max.apply()` and `.slice()` in performance-critical rendering loops with native, iterative `for` loops to eliminate runtime object allocation and minimize GC pressure.
+## 2025-03-03 - Decouple WebSocket Streams to Prevent Concurrent Write Crashes
+**Learning:** High-frequency backend asyncio broadcast tasks (e.g., telemetry vs overlay states) writing to the same FastAPI/Uvicorn WebSocket endpoint concurrently will corrupt frame headers and force the client to disconnect with protocol errors.
+**Action:** Decouple logically distinct high-frequency data streams into separate WebSocket endpoints (e.g., `/ws/telemetry` and `/ws/overlay`), each managed by its own `ConnectionManager` instance, eliminating the need for slow runtime locks while fixing concurrent write drops.
 
-## 2024-05-18 - Optimized WebSocket Audio Broadcast
-**Learning:** Polling a high-frequency local API endpoint (e.g., audio spectrum data at 60Hz) using `setInterval` + `fetch` on the frontend introduces significant HTTP overhead, TCP connection churn, and JSON parsing latency in the browser's main thread.
-**Action:** Always prefer WebSocket event streams for continuous, high-frequency telemetry or state transmission. Implemented a generic `manager.broadcast_json` event bus in the FastAPI backend and used `window.dispatchEvent` in the frontend to route the payloads without HTTP handshakes.
+## 2025-03-03 - Prevent Endless WebSocket Reconnect Loops on React Unmount
+**Learning:** If a shared WebSocket manages its reconnection logic in its `onclose` handler without verifying active listeners, React component unmount lifecycles will trigger endless background reconnect loops, spamming the console with `WebSocket is closed before the connection is established` warnings.
+**Action:** Always clear `.onclose` and `.onerror` handlers to `null` during cleanup, and conditionally check if subscriber counts are > 0 before calling `setTimeout` for reconnects inside the closure.
+
+## 2025-03-03 - Isolate Vanilla JS WebSocket Reconnection Loops
+**Learning:** Combining multiple WebSocket initializations into a single function with one global auto-reconnect trigger causes connection leaks, as dropping one socket will re-initialize all of them, stranding the still-open ones.
+**Action:** In vanilla JS implementations, encapsulate each WebSocket connection in a standalone initialization function, granting each its own dedicated timeout loop for robust partial-drop recovery.

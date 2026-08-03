@@ -7,6 +7,7 @@ import SettingsView from './features/settings/SettingsView';
 import DiagnosticConsole from './components/DiagnosticConsole';
 import ThemeView from './features/theme/ThemeView';
 import { useTelemetry } from './hooks/useTelemetry';
+import { useOverlayWebSocket } from './hooks/useOverlayWebSocket';
 import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -16,6 +17,7 @@ import OverlayView from './features/overlay_control/OverlayView';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
+  useOverlayWebSocket();
   const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);

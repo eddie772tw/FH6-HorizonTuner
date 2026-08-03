@@ -203,7 +203,8 @@ class ConnectionManager:
                 self.disconnect(connection, is_binary=True)
 
 
-manager = ConnectionManager()
+telemetry_manager = ConnectionManager()
+overlay_manager = ConnectionManager()
 telemetry_queue = asyncio.Queue(maxsize=10)
 
 current_udp_transport = None
@@ -1076,13 +1077,13 @@ async def broadcast_overlay_state():
     while True:
         try:
             # Only process if there are active connections
-            if manager.active_connections:
+            if overlay_manager.active_connections:
                 current_time = time.time()
 
                 # Fetch audio spectrum every iteration (approx 60ms)
                 audio_data = await get_audio_spectrum_data()
                 if audio_data:
-                    await manager.broadcast_json(
+                    await overlay_manager.broadcast_json(
                         {"type": "hud:audio", "data": audio_data}
                     )
 
@@ -1090,7 +1091,7 @@ async def broadcast_overlay_state():
                 if current_time - last_media_time >= 1.0:
                     media_data = await get_system_media_info()
                     if media_data:
-                        await manager.broadcast_json(
+                        await overlay_manager.broadcast_json(
                             {"type": "hud:media", "data": media_data}
                         )
                     last_media_time = current_time
@@ -1294,12 +1295,12 @@ async def broadcast_telemetry():
                 pass
 
         # --- Broadcast telemetry ---
-        if manager.active_connections:
-            await manager.broadcast_json(data)
+        if telemetry_manager.active_connections:
+            await telemetry_manager.broadcast_json(data)
 
-        if manager.active_binary_connections:
+        if telemetry_manager.active_binary_connections:
             binary_data = pack_telemetry_binary(data)
-            await manager.broadcast_binary(binary_data)
+            await telemetry_manager.broadcast_binary(binary_data)
 
         # Yield control immediately back to event loop without forced delay
         await asyncio.sleep(0)
@@ -1311,28 +1312,41 @@ broadcast_telemetry.last_gc_time = time.time()
 
 @app.websocket("/ws/telemetry")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket, is_binary=False)
+    await telemetry_manager.connect(websocket, is_binary=False)
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        manager.disconnect(websocket, is_binary=False)
+        telemetry_manager.disconnect(websocket, is_binary=False)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
-        manager.disconnect(websocket, is_binary=False)
+        telemetry_manager.disconnect(websocket, is_binary=False)
 
 
 @app.websocket("/ws/telemetry/binary")
 async def websocket_binary_endpoint(websocket: WebSocket):
-    await manager.connect(websocket, is_binary=True)
+    await telemetry_manager.connect(websocket, is_binary=True)
     try:
         while True:
             await websocket.receive_bytes()
     except WebSocketDisconnect:
-        manager.disconnect(websocket, is_binary=True)
+        telemetry_manager.disconnect(websocket, is_binary=True)
     except Exception as e:
         logger.error(f"Binary WebSocket error: {e}")
-        manager.disconnect(websocket, is_binary=True)
+        telemetry_manager.disconnect(websocket, is_binary=True)
+
+
+@app.websocket("/ws/overlay")
+async def websocket_overlay_endpoint(websocket: WebSocket):
+    await overlay_manager.connect(websocket, is_binary=False)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        overlay_manager.disconnect(websocket, is_binary=False)
+    except Exception as e:
+        logger.error(f"Overlay WebSocket error: {e}")
+        overlay_manager.disconnect(websocket, is_binary=False)
 
 
 # --- Car Params API Endpoints ---
@@ -2028,7 +2042,7 @@ async def save_overlay_config(data: dict):
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         # Broadcast config update to all connected WebSockets (including the HUD)
-        await manager.broadcast_json({"type": "hud:config", "data": data})
+        await overlay_manager.broadcast_json({"type": "hud:config", "data": data})
 
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
@@ -2043,7 +2057,7 @@ async def reset_overlay_config():
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-        await manager.broadcast_json({"type": "hud:config", "data": data})
+        await overlay_manager.broadcast_json({"type": "hud:config", "data": data})
 
         return {
             "message": "HUD config reset to defaults successfully",

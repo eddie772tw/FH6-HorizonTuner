@@ -4,18 +4,26 @@
 // Data Flow: Backend -> HUD Window
 // =============================================================================
 
-let ws = null;
+let telemetryWs = null;
+let overlayWs = null;
 let isConnected = false;
+let isOverlayConnected = false;
 
 export function initWebSocket() {
     console.log('[HUD Receiver] Initializing Backend WebSocket connection');
     
     // Connect to the backend WebSocket using the same host as the page (or default to 8001 if testing locally)
     const host = window.location.port ? window.location.host : '127.0.0.1:8001';
-    ws = new WebSocket(`ws://${host}/ws/telemetry`);
 
-    ws.onopen = () => {
-        console.log('[HUD Receiver] WebSocket connected');
+    initTelemetryWebSocket(host);
+    initOverlayWebSocket(host);
+}
+
+function initTelemetryWebSocket(host) {
+    telemetryWs = new WebSocket(`ws://${host}/ws/telemetry`);
+
+    telemetryWs.onopen = () => {
+        console.log('[HUD Receiver] Telemetry WebSocket connected');
         isConnected = true;
         window.dispatchEvent(new CustomEvent('ws:connected'));
         
@@ -28,7 +36,7 @@ export function initWebSocket() {
             .catch(err => console.error('[HUD Receiver] Failed to fetch initial config', err));
     };
 
-    ws.onmessage = async (event) => {
+    telemetryWs.onmessage = async (event) => {
         if (event.data instanceof Blob) {
             // Binary telemetry data (128 bytes)
             const arrayBuffer = await event.data.arrayBuffer();
@@ -37,33 +45,53 @@ export function initWebSocket() {
         } else {
             try {
                 const msg = JSON.parse(event.data);
-                if (msg.type) {
-                    if (msg.type === 'hud:config') {
-                        // Update from backend when config is saved in main UI
-                        window.dispatchEvent(new CustomEvent('hud:config', { detail: msg.data }));
-                    } else if (msg.type === 'hud:animate') {
-                        // Sent from backend when HUD is toggled
-                        window.dispatchEvent(new CustomEvent('hud:animate'));
-                    } else if (msg.type === 'hud:audio') {
-                        window.dispatchEvent(new CustomEvent('hud:audio', { detail: msg.data }));
-                    } else if (msg.type === 'hud:media') {
-                        window.dispatchEvent(new CustomEvent('hud:media', { detail: msg.data }));
-                    }
-                } else {
-                    // Raw telemetry dict
-                    window.dispatchEvent(new CustomEvent('telemetry', { detail: msg }));
-                }
+                // Raw telemetry dict
+                window.dispatchEvent(new CustomEvent('telemetry', { detail: msg }));
             } catch (e) {
                 // Ignore parsing errors
             }
         }
     };
 
-    ws.onclose = () => {
-        console.log('[HUD Receiver] WebSocket disconnected');
+    telemetryWs.onclose = () => {
+        console.log('[HUD Receiver] Telemetry WebSocket disconnected');
         isConnected = false;
         window.dispatchEvent(new CustomEvent('ws:disconnected'));
-        setTimeout(initWebSocket, 2000); // Auto-reconnect
+        setTimeout(() => initTelemetryWebSocket(host), 2000); // Auto-reconnect
+    };
+}
+
+function initOverlayWebSocket(host) {
+    overlayWs = new WebSocket(`ws://${host}/ws/overlay`);
+
+    overlayWs.onopen = () => {
+        console.log('[HUD Receiver] Overlay WebSocket connected');
+        isOverlayConnected = true;
+    };
+
+    overlayWs.onmessage = async (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg.type) {
+                if (msg.type === 'hud:config') {
+                    window.dispatchEvent(new CustomEvent('hud:config', { detail: msg.data }));
+                } else if (msg.type === 'hud:animate') {
+                    window.dispatchEvent(new CustomEvent('hud:animate'));
+                } else if (msg.type === 'hud:audio') {
+                    window.dispatchEvent(new CustomEvent('hud:audio', { detail: msg.data }));
+                } else if (msg.type === 'hud:media') {
+                    window.dispatchEvent(new CustomEvent('hud:media', { detail: msg.data }));
+                }
+            }
+        } catch (e) {
+            // Ignore parsing errors
+        }
+    };
+
+    overlayWs.onclose = () => {
+        console.log('[HUD Receiver] Overlay WebSocket disconnected');
+        isOverlayConnected = false;
+        setTimeout(() => initOverlayWebSocket(host), 2000); // Auto-reconnect
     };
 }
 
