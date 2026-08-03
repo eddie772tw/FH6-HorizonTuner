@@ -35,7 +35,7 @@ from contextlib import asynccontextmanager
 from typing import List
 
 from audio_spectrum import get_audio_spectrum_data
-from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Path, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -1455,7 +1455,7 @@ async def list_languages():
 
 
 @app.get("/api/languages/{code}")
-async def get_language(code: str):
+async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
     code = code.lower()
     if code == "en-us":
         return {}
