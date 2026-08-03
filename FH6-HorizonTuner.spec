@@ -48,9 +48,9 @@ added_files = [
     
     # 專案靜態資料
     ('backend/car_database.json', '.'),
-    ('backend/car_params/*', 'car_params'),
-    ('lang/*', 'lang'),
-    ('hud_overlay/*', 'hud_overlay'),
+    ('backend/car_params', 'car_params'),
+    ('lang', 'lang'),
+    ('hud_overlay', 'hud_overlay'),
 ]
 
 datas.extend(added_files)

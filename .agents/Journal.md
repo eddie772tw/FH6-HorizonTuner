@@ -929,13 +929,18 @@
 **後續行動 (Action):**
 - 後續於 `lang/` 目錄新增任何非語系對照之元資料 JSON 時，應同步於 `main.py` 的 `list_languages` 排除清單中維護。
 
+---
 
+## 2026-08-03 — PyInstaller Spec 靜態資源目錄打包展平 (Directory Flattening) 修復
 
+**學習點 (Learning):**
+1. **PyInstaller `datas` 萬用字元展平陷阱 (PyInstaller Wildcard Directory Flattening Hazard)**：
+   - 當在 `PyInstaller.spec` 的 `added_files / datas` 中使用包含萬用字元 `*` 的目錄路徑（例如 `('hud_overlay/*', 'hud_overlay')`）時，PyInstaller 會對萬用字元進行展開，將匹配到的每一個子目錄（如 `hud_overlay/vfd`）單獨視為資料源 `('hud_overlay/vfd', 'hud_overlay')` 進行複製。
+   - 這會導致所有子目錄內的檔案（例如 `index.html`）全部被**展平 (flatten)** 並直接複製到 Release 包的 `sys._MEIPASS/hud_overlay/` 根目錄中，造成層級結構遺失以及各樣式目錄下的檔案在根目錄相互覆蓋衝突。
+   - 在 Release Executive 運行時，`hud_overlay/index.html` (Launcher Host) 請求切換至子目錄 `/hud/<style>/index.html` 時均會因為實體檔案路徑不存在而回傳 404 (Not Found)，導致 Speedometer 樣式無法切換，且無法透過重啟 HUD 或應用程式恢復。
+2. **正確寫法與自動化測試防護**：
+   - 將 Spec 中的 `('hud_overlay/*', 'hud_overlay')` 修正為完整資料夾路徑 `('hud_overlay', 'hud_overlay')`（`car_params` 與 `lang` 也一併改為 `('backend/car_params', 'car_params')` 與 `('lang', 'lang')`），可讓 PyInstaller 完整遞迴封裝所有子目錄及其檔案結構。
+   - 新增 `tests/test_spec_bundling.py` 單元測試，透過 AST 解析 `FH6-HorizonTuner.spec` 檔案，自動確保 future refactor 不會誤導入帶有通配符星號的目錄資源打包聲明。
 
-
-
-
-
-
-
-
+**後續行動 (Action):**
+- 在 `FH6-HorizonTuner.spec` 中聲明多層級靜態資源目錄時，務必使用完整的資料夾名稱 `('src_dir', 'dst_dir')`，嚴禁使用 `src_dir/*` 通配符。
