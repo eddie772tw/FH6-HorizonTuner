@@ -1653,7 +1653,7 @@ async def export_motec_session(session_id: str):
     if not points:
         return {"error": "No telemetry data points found in session"}
 
-    export_filename = f"{session_id}_motec.csv"
+    export_filename = os.path.basename(f"{session_id}_motec.csv")
     export_filepath = os.path.join(SESSIONS_DIR, export_filename)
 
     success = export_session_to_motec_csv(session_meta, points, export_filepath)
