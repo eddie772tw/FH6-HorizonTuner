@@ -5,8 +5,12 @@ import math
 import sys
 import threading
 import time
+import warnings
 
 import numpy as np
+
+# Suppress expected runtime warnings from the soundcard module (e.g. "data discontinuity in recording")
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="soundcard")
 
 logger = logging.getLogger(__name__)
 
