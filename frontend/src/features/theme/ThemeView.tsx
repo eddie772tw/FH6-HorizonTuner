@@ -443,15 +443,15 @@ const ThemeView: React.FC = () => {
                   {t("Available CSS Variables:")}
                 </strong>
                 <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                  <li><code style={codeStyle}>--primary</code>: Primary brand accent color</li>
-                  <li><code style={codeStyle}>--secondary</code>: Secondary warning/accent color</li>
-                  <li><code style={codeStyle}>--accent</code>: Highlight purple/cyan accent</li>
-                  <li><code style={codeStyle}>--glass-bg</code>: Panel translucent background</li>
-                  <li><code style={codeStyle}>--glass-border</code>: Panel glass border color</li>
-                  <li><code style={codeStyle}>--glass-blur</code>: Panel backdrop blur radius</li>
-                  <li><code style={codeStyle}>--panel-radius</code>: Main panel corner radius</li>
-                  <li><code style={codeStyle}>--input-bg</code>: Form input background</li>
-                  <li><code style={codeStyle}>--bg-gradient</code>: Page overall background gradient</li>
+                  <li><code style={codeStyle}>--primary</code>: {t("Primary brand accent color")}</li>
+                  <li><code style={codeStyle}>--secondary</code>: {t("Secondary warning/accent color")}</li>
+                  <li><code style={codeStyle}>--accent</code>: {t("Highlight purple/cyan accent")}</li>
+                  <li><code style={codeStyle}>--glass-bg</code>: {t("Panel translucent background")}</li>
+                  <li><code style={codeStyle}>--glass-border</code>: {t("Panel glass border color")}</li>
+                  <li><code style={codeStyle}>--glass-blur</code>: {t("Panel backdrop blur radius")}</li>
+                  <li><code style={codeStyle}>--panel-radius</code>: {t("Main panel corner radius")}</li>
+                  <li><code style={codeStyle}>--input-bg</code>: {t("Form input background")}</li>
+                  <li><code style={codeStyle}>--bg-gradient</code>: {t("Page overall background gradient")}</li>
                 </ul>
               </div>
 
@@ -460,11 +460,11 @@ const ThemeView: React.FC = () => {
                   {t("Target UI Selectors:")}
                 </strong>
                 <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                  <li><code style={codeStyle}>.glass-panel</code>: Main content cards & panels</li>
-                  <li><code style={codeStyle}>.cyber-input</code>: Text inputs & dropdown selects</li>
-                  <li><code style={codeStyle}>.cyber-btn-glow</code>: Interactive glowing buttons</li>
-                  <li><code style={codeStyle}>[data-theme="dark"]</code>: Dark mode root target</li>
-                  <li><code style={codeStyle}>[data-theme="light"]</code>: Light mode root target</li>
+                  <li><code style={codeStyle}>.glass-panel</code>: {t("Main content cards & panels")}</li>
+                  <li><code style={codeStyle}>.cyber-input</code>: {t("Text inputs & dropdown selects")}</li>
+                  <li><code style={codeStyle}>.cyber-btn-glow</code>: {t("Interactive glowing buttons")}</li>
+                  <li><code style={codeStyle}>[data-theme="dark"]</code>: {t("Dark mode root target")}</li>
+                  <li><code style={codeStyle}>[data-theme="light"]</code>: {t("Light mode root target")}</li>
                 </ul>
               </div>
             </div>

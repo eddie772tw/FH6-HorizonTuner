@@ -1,3 +1,6 @@
+## 2024-05-18 - Prevent Blocking Event Loop with Asyncio File I/O
+**Learning:** Synchronous file I/O operations (like `open()` and `json.dump()`) in a FastAPI async endpoint block the main event loop, leading to increased latency under load.
+**Action:** Wrap synchronous I/O operations in a helper function and use Python's built-in `await asyncio.to_thread(func)` to offload the blocking operations to a separate thread without requiring external dependencies like `aiofiles`.
 ## 2024-03-XX - Unnecessary React Renders of Standalone Canvas Components
 **Learning:** Components containing `canvas` elements that manage their own updates via high-frequency event emitters (like `telemetryEmitter.addEventListener`) can still be unnecessarily re-rendered by the main React state loop in parent components if they are not memoized.
 **Action:** When a canvas subcomponent independently renders live data outside the React state cycle, wrap it in `React.memo()` (and ensure any props like inline selector functions are extracted to constants or memoized) to prevent the parent React component from pointlessly re-evaluating the canvas component's virtual DOM structure at high frequencies.
@@ -30,3 +33,6 @@
 ## 2024-08-03 - [Optimize batch inserts using executemany]
 **Learning:** [Using `executemany` instead of multiple single `execute` statements within a loop drastically improves SQLite bulk insertion performance (N+1 query problem). An early return on empty sequences also eliminates unnecessary overhead.]
 **Action:** [Always prefer `executemany` with parameterized queries when inserting or updating batches of data in SQLite databases to minimize communication overhead and maximize batch performance.]
+## 2024-03-XX - Memoize Data Transformations in Modals to Avoid Keystroke Blocking
+**Learning:** Calling expensive data transformation functions (like `transformTelemetryData` over large `sampleData` arrays) directly within a functional component like a Modal blocks the main thread. If the component has string inputs (e.g., for titles), the re-renders triggered by typing will re-execute the expensive transformation, leading to significant input lag and poor user experience.
+**Action:** Always wrap expensive derived data calculations within UI components (especially Modals with text inputs) in `useMemo` blocks, ensuring that the heavy computation is only re-run when actual data dependencies (like the dataset or selected channels) change, not when unrelated UI state updates.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DomainType } from './DynamicChartGrid';
 import { CustomChannelItem } from './CustomChannelEditor';
 import { evaluateCustomMath } from '../../utils/customMathEngine';
@@ -245,7 +245,12 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
     onClose();
   };
 
-  const previewData = transformTelemetryData(chartType, domain, channels, sampleData, customChannels);
+  // [PERF] Memoize expensive preview data generation to avoid O(N*M) operations
+  // blocking the main thread when users type in text inputs (e.g., Title) causing state updates.
+  const previewData = useMemo(() => {
+    return transformTelemetryData(chartType, domain, channels, sampleData, customChannels);
+  }, [chartType, domain, channels, sampleData, customChannels]);
+
   const xUnit = domain === 'distance' ? 'm' : domain === 'lap' ? 'Lap' : 's';
 
   return (
@@ -327,9 +332,9 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" placeholder="Channel Label" value={ch.name} onChange={(e) => handleUpdateChannel(idx, { name: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
+                  <input type="text" placeholder={t("Channel Label")} value={ch.name} onChange={(e) => handleUpdateChannel(idx, { name: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
                   <select onChange={(e) => { if (e.target.value) handleUpdateChannel(idx, { formula: e.target.value }); }} style={{ ...selectStyle, flex: 1.2 }} value="">
-                    <option value="">-- Autocomplete Quick Select --</option>
+                    <option value="">{t("-- Autocomplete Quick Select --")}</option>
                     {AVAILABLE_VARIABLES.map(v => (<option key={v.key} value={v.key}>{v.key} ({v.desc})</option>))}
                   </select>
                 </div>

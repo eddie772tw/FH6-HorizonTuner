@@ -13,8 +13,12 @@ if getattr(sys, "frozen", False):
         backend_log = open(backend_log_path, "a", encoding="utf-8", buffering=1)
         sys.stdout = backend_log
         sys.stderr = backend_log
-    except Exception:
-        pass
+    except OSError as e:
+        if sys.stderr is not None:
+            try:
+                sys.stderr.write(f"Failed to open backend.log: {e}\n")
+            except Exception:
+                pass
 else:
     DATA_ROOT = os.path.dirname(os.path.abspath(__file__))
     log_dir = os.path.join(DATA_ROOT, "logs")
@@ -219,7 +223,7 @@ if os.path.exists(hud_overlay_path):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:1420", "http://127.0.0.1:1420"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1385,10 +1389,13 @@ async def update_settings(data: dict):
             app_settings["theme"] = {}
         app_settings["theme"].update(data["theme"])
 
-    # Save to file
-    try:
+    # Save to file asynchronously to avoid blocking the event loop
+    def _save_settings():
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump(app_settings, f, indent=4)
+
+    try:
+        await asyncio.to_thread(_save_settings)
         logger.info(f"Saved settings to {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
@@ -1475,6 +1482,8 @@ async def list_tunings():
 
 @app.get("/api/tunings/{car_id}/{save_name}")
 async def get_tuning(car_id: str, save_name: str):
+    car_id = os.path.basename(car_id)
+    save_name = os.path.basename(save_name)
     file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -1484,6 +1493,8 @@ async def get_tuning(car_id: str, save_name: str):
 
 @app.post("/api/tunings/{car_id}/{save_name}")
 async def save_tuning(car_id: str, save_name: str, data: dict):
+    car_id = os.path.basename(car_id)
+    save_name = os.path.basename(save_name)
     file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
@@ -1653,7 +1664,7 @@ async def export_motec_session(session_id: str):
     if not points:
         return {"error": "No telemetry data points found in session"}
 
-    export_filename = f"{session_id}_motec.csv"
+    export_filename = os.path.basename(f"{session_id}_motec.csv")
     export_filepath = os.path.join(SESSIONS_DIR, export_filename)
 
     success = export_session_to_motec_csv(session_meta, points, export_filepath)
