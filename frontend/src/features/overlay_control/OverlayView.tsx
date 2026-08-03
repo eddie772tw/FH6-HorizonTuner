@@ -518,25 +518,27 @@ export const OverlayView: React.FC = () => {
           </p>
         </div>
 
-        {/* TODO: Add tooltip explaining disabled state */}
-        <button
-          onClick={() => toggleHudWindow(!config.enabled)}
-          disabled={loading}
-          className="cyber-btn-glow"
-          style={{
-            padding: '0.8rem 2rem',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            borderRadius: '6px',
-            cursor: loading ? 'wait' : 'pointer',
-            background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'rgba(0, 240, 255, 0.2)',
-            border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid rgba(0, 240, 255, 0.6)',
-            color: config.enabled ? '#ff5555' : 'var(--primary)',
-            boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px rgba(0, 240, 255, 0.3)',
-          }}
-        >
-          {loading ? '...' : config.enabled ? (t("Close HUD Overlay")) : (t("Launch HUD Overlay"))}
-        </button>
+        <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
+          <button
+            onClick={() => toggleHudWindow(!config.enabled)}
+            disabled={loading}
+            className="cyber-btn-glow"
+            style={{
+              padding: '0.8rem 2rem',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              borderRadius: '6px',
+              cursor: loading ? 'wait' : 'pointer',
+              background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'rgba(0, 240, 255, 0.2)',
+              border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid rgba(0, 240, 255, 0.6)',
+              color: config.enabled ? '#ff5555' : 'var(--primary)',
+              boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px rgba(0, 240, 255, 0.3)',
+              pointerEvents: loading ? 'none' : 'auto'
+            }}
+          >
+            {loading ? '...' : config.enabled ? (t("Close HUD Overlay")) : (t("Launch HUD Overlay"))}
+          </button>
+        </span>
       </div>
 
       {/*

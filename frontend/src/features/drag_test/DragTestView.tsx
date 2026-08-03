@@ -383,19 +383,21 @@ const DragTestView: React.FC = () => {
           
           {status === 'finished' && (
             <div style={{ display: 'flex', gap: '0.8rem' }}>
-              {/* TODO: Add tooltip explaining disabled state */}
-              <button 
-                className="btn-primary" 
-                onClick={handleSaveSession} 
-                disabled={isSaving}
-                style={{ 
-                  padding: '0.6rem 1.2rem', fontWeight: 600, borderRadius: '6px', 
-                  background: '#00ff66', border: 'none', color: '#111', cursor: 'pointer',
-                  opacity: isSaving ? 0.5 : 1
-                }}
-              >
-                {isSaving ? t("Saving...") : t("Save Test")}
-              </button>
+              <span title={isSaving ? t("Saving data in progress...") : undefined} style={isSaving ? { cursor: 'not-allowed', display: 'inline-block' } : {}}>
+                <button
+                  className="btn-primary"
+                  onClick={handleSaveSession}
+                  disabled={isSaving}
+                  style={{
+                    padding: '0.6rem 1.2rem', fontWeight: 600, borderRadius: '6px',
+                    background: '#00ff66', border: 'none', color: '#111', cursor: isSaving ? 'not-allowed' : 'pointer',
+                    opacity: isSaving ? 0.5 : 1,
+                    pointerEvents: isSaving ? 'none' : 'auto'
+                  }}
+                >
+                  {isSaving ? t("Saving...") : t("Save Test")}
+                </button>
+              </span>
               <button className="btn-primary" onClick={handlePrepare} style={{ padding: '0.6rem 1.2rem', fontWeight: 600, borderRadius: '6px', background: 'var(--primary)', border: 'none', color: 'white', cursor: 'pointer' }}>
                 {t("New Test")}
               </button>

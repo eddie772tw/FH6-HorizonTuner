@@ -22,3 +22,6 @@
 ## 2026-08-03 - Tooltips on Disabled Buttons
 **Learning:** Users often encounter disabled buttons (e.g., when no data is available to import) and may not understand why the action is unavailable, leading to frustration. A visual disabled state alone is sometimes insufficient.
 **Action:** Always add a `title` attribute (or a tooltip component) to disabled buttons explaining *why* the button is disabled and *how* the user can resolve it.
+## 2024-08-03 - Tooltips on Disabled Buttons Wrapper
+**Learning:** Native `disabled` buttons often swallow pointer events (especially in browsers like Firefox), which prevents tooltips (like the `title` attribute) from showing up when added directly to the `<button>` element.
+**Action:** When adding tooltips to disabled buttons, wrap the button in a `<span>`, apply the `title` attribute to the `span`, set `pointerEvents: 'none'` on the disabled `<button>`, and set `display: 'inline-block'` with conditional `cursor: 'not-allowed'` (or similar) on the wrapper `span` to ensure the tooltip is reliably displayed on hover.
