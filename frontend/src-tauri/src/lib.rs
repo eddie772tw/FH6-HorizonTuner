@@ -205,7 +205,7 @@ pub fn run() {
             {
                 use windows::Win32::Foundation::HWND;
                 use windows::Win32::UI::WindowsAndMessaging::{
-                    GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOREDIRECTIONBITMAP, WS_EX_TRANSPARENT, WS_EX_LAYERED
+                    GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TRANSPARENT, WS_EX_LAYERED
                 };
                 use windows::Win32::Graphics::Dwm::DwmExtendFrameIntoClientArea;
                 use windows::Win32::UI::Controls::MARGINS;
@@ -214,7 +214,7 @@ pub fn run() {
                     let hwnd = HWND(hwnd_val.0 as _);
                     unsafe {
                         let mut ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as u32;
-                        ex_style |= WS_EX_NOREDIRECTIONBITMAP.0 | WS_EX_TRANSPARENT.0 | WS_EX_LAYERED.0;
+                        ex_style |= WS_EX_TRANSPARENT.0 | WS_EX_LAYERED.0;
                         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style as _);
 
                         let margins = MARGINS { cxLeftWidth: -1, cxRightWidth: -1, cyTopHeight: -1, cyBottomHeight: -1 };
