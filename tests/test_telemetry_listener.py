@@ -2,13 +2,23 @@ import asyncio
 import struct
 import unittest
 
-from telemetry_listener import TelemetryProtocol
+from telemetry_listener import TelemetryProtocol, pack_telemetry_binary
 
 
 class TestTelemetryListener(unittest.TestCase):
     def setUp(self):
         self.queue = asyncio.Queue()
         self.protocol = TelemetryProtocol(self.queue)
+
+
+    def test_pack_telemetry_binary_error_path(self):
+        # Pass a dictionary that causes a TypeError during conversion
+        data = {
+            "IsRaceOn": "not_an_int"
+        }
+        packed_data = pack_telemetry_binary(data)
+        self.assertEqual(len(packed_data), 128)
+        self.assertEqual(packed_data, b"\x00" * 128)
 
     def test_datagram_received_v1(self):
         # Build 232 byte packet (V1)
