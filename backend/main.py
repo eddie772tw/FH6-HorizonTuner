@@ -2274,6 +2274,7 @@ if __name__ == "__main__":
                 sys.exit(1)
 
     if bound:
+
         class EndpointFilter(logging.Filter):
             def filter(self, record: logging.LogRecord) -> bool:
                 if record.args and len(record.args) >= 3:
