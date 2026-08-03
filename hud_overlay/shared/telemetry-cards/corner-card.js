@@ -150,7 +150,12 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                         bins[bIdx]++;
                     }
 
-                    var maxBinCount = Math.max(3, Math.max.apply(null, bins));
+                    var maxBinCount = 3;
+                    for (var i_bin = 0; i_bin < bins.length; i_bin++) {
+                        if (bins[i_bin] > maxBinCount) {
+                            maxBinCount = bins[i_bin];
+                        }
+                    }
 
                     // Tri-Color Baseline (Cold: Blue, Normal: Green, Hot: Red)
                     var coldX = Math.max(0, Math.min(tw, ((TEMP_COLD_F - TEMP_HIST_MIN_F) / tempRange) * tw));
