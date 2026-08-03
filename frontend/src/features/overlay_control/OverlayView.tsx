@@ -518,6 +518,7 @@ export const OverlayView: React.FC = () => {
           </p>
         </div>
 
+        {/* TODO: Add tooltip explaining disabled state */}
         <button
           onClick={() => toggleHudWindow(!config.enabled)}
           disabled={loading}

@@ -410,6 +410,7 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
           <button
             onClick={importDynoValues}
             disabled={Object.keys(carParams.dyno_curve).length === 0}
+            title={Object.keys(carParams.dyno_curve).length === 0 ? t("No dyno data available to import. Please run the dyno test first.") : undefined}
             style={{
               ...btnStyle,
               background: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 180, 255, 0.15)',

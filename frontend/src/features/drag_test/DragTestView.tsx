@@ -383,6 +383,7 @@ const DragTestView: React.FC = () => {
           
           {status === 'finished' && (
             <div style={{ display: 'flex', gap: '0.8rem' }}>
+              {/* TODO: Add tooltip explaining disabled state */}
               <button 
                 className="btn-primary" 
                 onClick={handleSaveSession} 
