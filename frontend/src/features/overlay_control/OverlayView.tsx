@@ -68,6 +68,7 @@ interface HudConfig {
   customColor?: string;
   useDefaultColors?: boolean;
   pauseTelemetryViewWhenActive?: boolean;
+  hardwareAcceleration?: boolean;
 }
 
 const DEFAULT_HUD_CONFIG: HudConfig = {
@@ -98,6 +99,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   customColor: '#00f0ff',
   useDefaultColors: true,
   pauseTelemetryViewWhenActive: true,
+  hardwareAcceleration: false,
 
   elements: {
     showGauge: true,
@@ -1210,6 +1212,21 @@ export const OverlayView: React.FC = () => {
               />
               <span style={{ fontSize: '0.9rem', color: '#eee' }}>
                 {t("Alignment Grid Lines")}
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={config.hardwareAcceleration === true}
+                onChange={(e) => {
+                  const updated = { ...config, hardwareAcceleration: e.target.checked };
+                  saveConfig(updated);
+                  alert(t("You must restart the entire FH6-Horizon Tuner application for this change to take effect."));
+                }}
+              />
+              <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+                {t("Enable Hardware Acceleration (Requires App Restart)")}
               </span>
             </label>
 

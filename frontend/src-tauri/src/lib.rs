@@ -202,7 +202,7 @@ pub fn run() {
         })
         .setup(|app| {
             #[allow(unused_variables)]
-            let overlay_window = tauri::WebviewWindowBuilder::new(
+            let mut overlay_builder = tauri::WebviewWindowBuilder::new(
                 app,
                 "overlay",
                 tauri::WebviewUrl::App("about:blank".into())
@@ -214,9 +214,54 @@ pub fn run() {
             .transparent(true)
             .always_on_top(true)
             .shadow(false)
-            .visible(false)
-            .build()
-            .expect("failed to build overlay window");
+            .visible(false);
+
+            // Read hud_config.json to check hardware acceleration setting
+            let mut hw_accel = true; // default
+            if let Ok(exe_dir) = std::env::current_exe().map(|p| p.parent().unwrap().to_path_buf()) {
+                let config_path = exe_dir.join("hud_config.json");
+                if let Ok(content) = std::fs::read_to_string(&config_path) {
+                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                        if let Some(hw) = json.get("hardwareAcceleration").and_then(|v| v.as_bool()) {
+                            hw_accel = hw;
+                        } else {
+                             // Not present in config, means it's defaulting to false based on the updated JS model
+                             hw_accel = false;
+                        }
+                    }
+                } else {
+                     // Try development path
+                     if let Ok(cwd) = std::env::current_dir() {
+                          let dev_config_path = cwd.join("..").join("..").join("hud_config.json");
+                          if let Ok(content) = std::fs::read_to_string(&dev_config_path) {
+                              if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                                  if let Some(hw) = json.get("hardwareAcceleration").and_then(|v| v.as_bool()) {
+                                      hw_accel = hw;
+                                  } else {
+                                      hw_accel = false;
+                                  }
+                              }
+                          } else {
+                              hw_accel = false; // default to false if not found
+                          }
+                     }
+                }
+            } else {
+                hw_accel = false;
+            }
+
+            if !hw_accel {
+                println!("Hardware acceleration for HUD overlay is disabled in settings.");
+                overlay_builder = overlay_builder.additional_browser_args("--disable-gpu");
+            } else {
+                println!("Hardware acceleration for HUD overlay is enabled.");
+            }
+
+            #[allow(unused_variables)]
+            let overlay_window = overlay_builder
+                .build()
+                .expect("failed to build overlay window");
+
             #[cfg(target_os = "windows")]
             {
                 use windows::Win32::Foundation::HWND;
