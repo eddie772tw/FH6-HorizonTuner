@@ -160,8 +160,8 @@ export const OverlayView: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         const info: AuthorInfo = {
-          author: data.author || 'Author',
-          description: data.description || 'No description provided.'
+          author: data.author || t('Author'),
+          description: data.description || t('No description provided.')
         };
         setAuthorCache(prev => ({ ...prev, [styleName]: info }));
         setCurrentAuthorInfo(info);
@@ -170,7 +170,7 @@ export const OverlayView: React.FC = () => {
     } catch (e) {
       console.warn(`Failed to dynamically load author.json for HUD style '${styleName}':`, e);
     }
-    const fallback: AuthorInfo = { author: 'Author', description: 'Author metadata unavailable.' };
+    const fallback: AuthorInfo = { author: 'Author', description: t('Author metadata unavailable.') };
     setCurrentAuthorInfo(fallback);
   };
 
@@ -510,11 +510,11 @@ export const OverlayView: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
             {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6")}
             <br />
-            Simple & Advanced HUD Style: Paburrito
+            {t('Simple & Advanced HUD Style:')} Paburrito
             <br />
-            VFD HUD Style: eddie772tw feat. crosXover
+            {t('VFD HUD Style:')} eddie772tw feat. crosXover
             <br />
-            Other SIMHUB HUD Style: StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
+            {t('Other SIMHUB HUD Style:')} StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
           </p>
         </div>
 
@@ -975,10 +975,10 @@ export const OverlayView: React.FC = () => {
             {/* HUD Author & Simple Description Info Box */}
             <div style={{ padding: '0.8rem', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '6px' }}>
               <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>
-                {t("Author")}: <strong style={{ color: 'var(--primary)' }}>{currentAuthorInfo.author}</strong>
+                {t("Author")}: <strong style={{ color: 'var(--primary)' }}>{currentAuthorInfo.author === 'Author' ? t('Author') : currentAuthorInfo.author}</strong>
               </div>
               <div style={{ fontSize: '0.8rem', color: '#ccc', lineHeight: '1.4' }}>
-                {currentAuthorInfo.description}
+                {currentAuthorInfo.description === 'Loading author metadata...' ? t('Loading author metadata...') : currentAuthorInfo.description === 'Author metadata unavailable.' ? t('Author metadata unavailable.') : currentAuthorInfo.description === 'No description provided.' ? t('No description provided.') : currentAuthorInfo.description}
               </div>
             </div>
           </div>

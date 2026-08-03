@@ -1,3 +1,3 @@
-## 2023-10-27 - No Fallback Strings in UI Components
-**Learning:** Fallback strings inside `t()` functions (e.g., `t('key') || 'fallback'`) are strictly prohibited. They hide untranslated content and prevent the extraction tools from syncing keys correctly.
-**Action:** Always scan for and remove `|| 'fallback'` patterns from UI files, extracting the text fully into `lang/en-us.json` instead. Ensure all targets implement the key to prevent missing UI elements.
+## 2024-05-18 - JSON locale extraction pollution
+**Learning:** Extracting missing translation keys using naive regexes over the codebase can inadvertently pull in non-UI strings (like HTML tags `"div"`, local paths, and variable artifact fragments). Adding these as hardcoded English fallback keys to non-English files (`ja-jp.json`, `zh-tw.json`) creates noise and makes it harder for translators to pinpoint what actually needs localization.
+**Action:** When extracting hardcoded text and introducing new translation keys to the i18n system, only add the new valid keys to the baseline `en-us.json` file. Ensure that non-English JSON files are not auto-populated with English defaults to keep the translation dictionaries clean.
