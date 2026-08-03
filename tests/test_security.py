@@ -56,3 +56,42 @@ def test_save_car_params_path_traversal(tmp_path):
             assert data == {"some": "data"}
     finally:
         main.CAR_PARAMS_DIR = orig_dir
+
+
+def test_cors_preflight_valid_origins():
+    valid_origins = [
+        "tauri://localhost",
+        "https://tauri.localhost",
+        "http://tauri.localhost",
+        "http://localhost:1420",
+        "http://127.0.0.1:52234",
+    ]
+    for origin in valid_origins:
+        res = client.options(
+            "/api/overlay/config",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        assert res.status_code == 200, f"Failed for origin: {origin}"
+        assert res.headers.get("access-control-allow-origin") == origin
+
+
+def test_cors_preflight_blocked_origins():
+    blocked_origins = [
+        "https://evil-attacker.com",
+        "http://malicious-website.org",
+        "http://localhost.evil.com",
+    ]
+    for origin in blocked_origins:
+        res = client.options(
+            "/api/overlay/config",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        assert res.headers.get("access-control-allow-origin") != origin

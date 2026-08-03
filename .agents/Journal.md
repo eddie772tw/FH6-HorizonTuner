@@ -944,3 +944,38 @@
 
 **後續行動 (Action):**
 - 在 `FH6-HorizonTuner.spec` 中聲明多層級靜態資源目錄時，務必使用完整的資料夾名稱 `('src_dir', 'dst_dir')`，嚴禁使用 `src_dir/*` 通配符。
+
+---
+
+## 2026-08-03 — Release Executable CORS Preflight 400 Bad Request 安全折衷修復
+
+**學習點 (Learning):**
+1. **Tauri Release 自訂 Origin (tauri://localhost) 被 CORS 預檢攔截陷阱**：
+   - 在 Dev 模式下，前端 Origin 為 `http://localhost:1420`；但在 Release Executable (Tauri WebView2) 環境下，前端 Origin 為 `tauri://localhost` 或 `https://tauri.localhost`。
+   - 原先 FastAPI 的 `CORSMiddleware` 硬編碼了 `allow_origins=["http://localhost:1420", "http://127.0.0.1:1420"]`，當 Release 版 UI 發起 Cross-Origin `POST /api/overlay/config` 時，瀏覽器發送 Preflight `OPTIONS` 請求，遭到 CORS 中介軟體回傳 `400 Bad Request`，進而阻止了實際的 `POST` 請求發送。這導致 Speedometer 樣式無法成功儲存至後端設定檔，且重啟應用程式或 HUD 也無法解決。
+2. **兼顧 CSRF 防禦與 Release 運行的安全折衷方案**：
+   - 不採用開啟全通配符放行 (`*` 或 `.*`)，而是採用精確的白名單 Regex：
+     `r"^(https?://(localhost|127\.0\.0\.1|tauri\.localhost)(:\d+)?|tauri://localhost)$"`
+   - 此寫法能完全涵蓋 Dev / Release 模式下的 `localhost`、`127.0.0.1` 與 `tauri://localhost`，同時維持對來自外部惡意網站 (CSRF/CORS) 存取本機 FastAPI 服務的嚴密阻擋。
+3. **自動化 Preflight 測試防護**：
+   - 於 `tests/test_security.py` 新增 `test_cors_preflight_valid_origins` 與 `test_cors_preflight_blocked_origins` 斷言測試，確保預檢機制在 release 原點正常回應 200，且攻擊者原點會被確實阻擋。
+
+**後續行動 (Action):**
+- 設定 CORS 白名單時，凡需相容 Tauri 發行版，務必將 `tauri://localhost` 及 `tauri.localhost` 納入正則表達式白名單中。
+
+---
+
+## 2026-08-03 — HUD Overlay 多項優化：Merged 容器層級 Transform、預設值更動與 Motion Effect 特效修復
+
+**學習點 (Learning):**
+1. **Side-by-Side (Merged) 圖表容器層級 Transform (Container-level Scaling & Offsetting)**：
+   - 當開啟 `telemetrySideBySideCharts` 時，兩張圖表 Pedal Chart 與 Power/Torque Chart 作為子節點放置於 Flex 邊緣容器中。縮放與位移若分別作用於子圖表上，會造成排版與縮放中心分歧。
+   - 修正為在 `manager.js` 中將 `mergedOffsetX` 與 `mergedScale`（`telemetryMergedChartsScale`）統一套用於 Edge 父容器（`#tcTopEdgeContainer` 或 `#tcBottomEdgeContainer`）之 transform：`translateX(offsetX) scale(scale)`，子圖表 transform 重置為 `none`。此做法使合併圖表集體位移與縮放極為順暢且佈局一致。
+2. **iframe 狀態全域變數讀取防錯與 Motion Effect 強制歸零 (State Variable Normalization & Motion Cleanup)**：
+   - 在 `vfd/index.html` 中發現 Motion Effect 未生效且無法關閉的 Bug 根因在於：程式碼讀取了未定義的全域變數 `window._currentElements`（正確變數名稱為 `window._currentHudElements`）。
+   - 修正變數讀取後，當 `showMotionEffect` 為 `false` 時，務必將 `vfdContainer.style.transform` 與 `vfdContainer.style.filter` 強制設定為 `'none'`，並將內部 `motionState` 屬性一併歸零，防止殘留離散數值造成視覺晃動。
+
+**後續行動 (Action):**
+- 於任何 HUD 樣式 HTML/JS 存取全域 elements 時，統一使用 `(window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {}` 進行防禦式讀取。
+
+

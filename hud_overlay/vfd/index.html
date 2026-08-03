@@ -796,7 +796,8 @@
                 VFD_GLOW_RADIUS = Math.round(9 * baseGlowFactor * (1.0 + dynamicWaveBoost));
 
                 // ── Motion Effect (G-Force Acceleration Shake & Motion Blur) ───────────────
-                var showMotion = window._currentElements ? (window._currentElements.showMotionEffect !== false) : true;
+                var currentElements = (window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {};
+                var showMotion = currentElements.showMotionEffect !== false;
                 var vfdContainer = document.getElementById('vfdContainer');
                 if (vfdContainer) {
                     if (showMotion && data) {
@@ -835,18 +836,14 @@
                             motionState.lastAppliedBlurPx = motionState.currentBlurPx;
                         }
                     } else {
-                        if (motionState.lastAppliedOffsetX !== 0 || motionState.lastAppliedOffsetY !== 0) {
-                            vfdContainer.style.transform = 'none';
-                            motionState.currentOffsetX = 0;
-                            motionState.currentOffsetY = 0;
-                            motionState.lastAppliedOffsetX = 0;
-                            motionState.lastAppliedOffsetY = 0;
-                        }
-                        if (motionState.lastAppliedBlurPx !== 0) {
-                            vfdContainer.style.filter = 'none';
-                            motionState.currentBlurPx = 0;
-                            motionState.lastAppliedBlurPx = 0;
-                        }
+                        vfdContainer.style.transform = 'none';
+                        vfdContainer.style.filter = 'none';
+                        motionState.currentOffsetX = 0;
+                        motionState.currentOffsetY = 0;
+                        motionState.lastAppliedOffsetX = 0;
+                        motionState.lastAppliedOffsetY = 0;
+                        motionState.currentBlurPx = 0;
+                        motionState.lastAppliedBlurPx = 0;
                     }
                 }
 
