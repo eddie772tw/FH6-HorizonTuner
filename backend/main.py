@@ -2274,4 +2274,14 @@ if __name__ == "__main__":
                 sys.exit(1)
 
     if bound:
+
+        class EndpointFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord) -> bool:
+                if record.args and len(record.args) >= 3:
+                    req_path = str(record.args[2])
+                    if "/api/logs" in req_path or "/api/car_params" in req_path:
+                        return False
+                return True
+
+        logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
         uvicorn.run(app, host="127.0.0.1", port=backend_port)
