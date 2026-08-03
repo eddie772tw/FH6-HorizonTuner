@@ -1447,7 +1447,7 @@ async def list_languages():
 
 @app.get("/api/languages/{code}")
 async def get_language(code: str):
-    code = code.lower()
+    code = os.path.basename(code).lower()
     if code == "en-us":
         return {}
 
