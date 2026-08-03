@@ -761,8 +761,21 @@
                 var vuMult = 1.0 + (rawVuOffset * 0.04); // Each step adds/subtracts 4% span (4x multiplier)
 
                 var vuX = 1045, vuY = panelY + 80, vuW = 20, vuH = 135;
-                var maxL = Math.max.apply(null, spectrumBands.slice(0, 16)) || 0;
-                var maxR = Math.max.apply(null, spectrumBands.slice(16, 32)) || 0;
+
+                var maxL = 0;
+                for (var i_spec = 0; i_spec < 16; i_spec++) {
+                    if (spectrumBands[i_spec] > maxL) {
+                        maxL = spectrumBands[i_spec];
+                    }
+                }
+
+                var maxR = 0;
+                for (var i_spec2 = 16; i_spec2 < 32; i_spec2++) {
+                    if (spectrumBands[i_spec2] > maxR) {
+                        maxR = spectrumBands[i_spec2];
+                    }
+                }
+
                 var rawVuL = hasBackendAudio ? Math.min(1.0, Math.max(backendVuL * 2.2, maxL * 0.95)) : Math.min(1.0, maxL * 0.95);
                 var rawVuR = hasBackendAudio ? Math.min(1.0, Math.max(backendVuR * 2.2, maxR * 0.95)) : Math.min(1.0, maxR * 0.95);
 
