@@ -17,6 +17,7 @@ hiddenimports = [
     "winsdk.windows.media.control",
     "numpy",
     "soundcard",
+    "multiprocessing",
 ]
 
 packages_to_collect = [
@@ -28,6 +29,7 @@ packages_to_collect = [
     "winsdk",
     "numpy",
     "soundcard",
+    "multiprocessing",
 ]
 
 for pkg in packages_to_collect:
