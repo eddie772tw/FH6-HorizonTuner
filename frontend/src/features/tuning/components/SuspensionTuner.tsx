@@ -3,7 +3,6 @@ import { useSettings } from '../../../context/SettingsContext';
 
 interface SuspensionTunerProps {
   tuning: any;
-  tuningMode: string;
   updateSection: (section: any, field: string, value: any) => void;
 }
 
@@ -17,7 +16,7 @@ const smallInputStyle: React.CSSProperties = {
   textAlign: 'right'
 };
 
-const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, tuningMode, updateSection }) => {
+const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, updateSection }) => {
   const { convertSpringRate, convertSpringRateToKgfmm, convertHeight, convertHeightToCm, t } = useSettings();
 
   return (
@@ -35,16 +34,14 @@ const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, tuni
               type="number" step="0.1" 
               value={tuning.arb.front} 
               onChange={e => updateSection('arb', 'front', parseFloat(e.target.value) || 0.0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
             <input 
               type="number" step="0.1" 
               value={tuning.arb.rear} 
               onChange={e => updateSection('arb', 'rear', parseFloat(e.target.value) || 0.0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }} />
           </div>
@@ -59,16 +56,14 @@ const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, tuni
               type="number" step="0.1" 
               value={Number(convertSpringRate(tuning.springs.front).value.toFixed(1))} 
               onChange={e => updateSection('springs', 'front', convertSpringRateToKgfmm(parseFloat(e.target.value) || 0.0))}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
             <input 
               type="number" step="0.1" 
               value={Number(convertSpringRate(tuning.springs.rear).value.toFixed(1))} 
               onChange={e => updateSection('springs', 'rear', convertSpringRateToKgfmm(parseFloat(e.target.value) || 0.0))}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>{convertSpringRate(1).label}</span>
           </div>
@@ -83,16 +78,14 @@ const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, tuni
               type="number" step="0.1" 
               value={Number(convertHeight(tuning.springs.heightF).value.toFixed(1))} 
               onChange={e => updateSection('springs', 'heightF', convertHeightToCm(parseFloat(e.target.value) || 0.0))}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
             <input 
               type="number" step="0.1" 
               value={Number(convertHeight(tuning.springs.heightR).value.toFixed(1))} 
               onChange={e => updateSection('springs', 'heightR', convertHeightToCm(parseFloat(e.target.value) || 0.0))}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }}>{convertHeight(1).label}</span>
           </div>
@@ -107,16 +100,14 @@ const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, tuni
               type="number" step="0.1" 
               value={tuning.damping.reboundF} 
               onChange={e => updateSection('damping', 'reboundF', parseFloat(e.target.value) || 0.0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
             <input 
               type="number" step="0.1" 
               value={tuning.damping.reboundR} 
               onChange={e => updateSection('damping', 'reboundR', parseFloat(e.target.value) || 0.0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }} />
           </div>
@@ -131,16 +122,14 @@ const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, tuni
               type="number" step="0.1" 
               value={tuning.damping.bumpF} 
               onChange={e => updateSection('damping', 'bumpF', parseFloat(e.target.value) || 0.0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.2rem' }}>{t("Rear:")}</span>
             <input 
               type="number" step="0.1" 
               value={tuning.damping.bumpR} 
               onChange={e => updateSection('damping', 'bumpR', parseFloat(e.target.value) || 0.0)}
-              disabled={tuningMode === 'recommended'}
-              style={{ ...smallInputStyle, opacity: tuningMode === 'recommended' ? 0.5 : 1, cursor: tuningMode === 'recommended' ? 'not-allowed' : 'text' }} 
+              style={smallInputStyle}
             />
             <span style={{ color: 'gray', fontSize: '0.75rem', marginLeft: '0.25rem', width: '25px', textAlign: 'left' }} />
           </div>
