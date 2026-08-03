@@ -1,3 +1,6 @@
+## 2024-05-18 - Prevent Blocking Event Loop with Asyncio File I/O
+**Learning:** Synchronous file I/O operations (like `open()` and `json.dump()`) in a FastAPI async endpoint block the main event loop, leading to increased latency under load.
+**Action:** Wrap synchronous I/O operations in a helper function and use Python's built-in `await asyncio.to_thread(func)` to offload the blocking operations to a separate thread without requiring external dependencies like `aiofiles`.
 ## 2024-03-XX - Unnecessary React Renders of Standalone Canvas Components
 **Learning:** Components containing `canvas` elements that manage their own updates via high-frequency event emitters (like `telemetryEmitter.addEventListener`) can still be unnecessarily re-rendered by the main React state loop in parent components if they are not memoized.
 **Action:** When a canvas subcomponent independently renders live data outside the React state cycle, wrap it in `React.memo()` (and ensure any props like inline selector functions are extracted to constants or memoized) to prevent the parent React component from pointlessly re-evaluating the canvas component's virtual DOM structure at high frequencies.

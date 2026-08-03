@@ -1385,10 +1385,13 @@ async def update_settings(data: dict):
             app_settings["theme"] = {}
         app_settings["theme"].update(data["theme"])
 
-    # Save to file
-    try:
+    # Save to file asynchronously to avoid blocking the event loop
+    def _save_settings():
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump(app_settings, f, indent=4)
+
+    try:
+        await asyncio.to_thread(_save_settings)
         logger.info(f"Saved settings to {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
