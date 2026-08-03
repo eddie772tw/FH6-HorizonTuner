@@ -1475,6 +1475,8 @@ async def list_tunings():
 
 @app.get("/api/tunings/{car_id}/{save_name}")
 async def get_tuning(car_id: str, save_name: str):
+    car_id = os.path.basename(car_id)
+    save_name = os.path.basename(save_name)
     file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -1484,6 +1486,8 @@ async def get_tuning(car_id: str, save_name: str):
 
 @app.post("/api/tunings/{car_id}/{save_name}")
 async def save_tuning(car_id: str, save_name: str, data: dict):
+    car_id = os.path.basename(car_id)
+    save_name = os.path.basename(save_name)
     file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
