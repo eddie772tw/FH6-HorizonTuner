@@ -30,6 +30,9 @@
 ## 2024-12-05 - Avoid spread operator with Math.max/min on large arrays
 **Learning:** Using `Math.max(...values)` or `Math.min(...values)` on very large datasets (like full telemetry session histories) throws a "Maximum call stack size exceeded" error. The array spread operator expands into function arguments, and V8 limits the number of arguments to roughly 125,000.
 **Action:** Always compute `min` and `max` values iteratively within an O(N) loop rather than using the spread operator for telemetry history arrays. This prevents stack overflow exceptions and reduces garbage collection pressure by avoiding intermediate array creations (like from `.map()`).
+## 2024-08-03 - [Optimize batch inserts using executemany]
+**Learning:** [Using `executemany` instead of multiple single `execute` statements within a loop drastically improves SQLite bulk insertion performance (N+1 query problem). An early return on empty sequences also eliminates unnecessary overhead.]
+**Action:** [Always prefer `executemany` with parameterized queries when inserting or updating batches of data in SQLite databases to minimize communication overhead and maximize batch performance.]
 ## 2024-03-XX - Memoize Data Transformations in Modals to Avoid Keystroke Blocking
 **Learning:** Calling expensive data transformation functions (like `transformTelemetryData` over large `sampleData` arrays) directly within a functional component like a Modal blocks the main thread. If the component has string inputs (e.g., for titles), the re-renders triggered by typing will re-execute the expensive transformation, leading to significant input lag and poor user experience.
 **Action:** Always wrap expensive derived data calculations within UI components (especially Modals with text inputs) in `useMemo` blocks, ensuring that the heavy computation is only re-run when actual data dependencies (like the dataset or selected channels) change, not when unrelated UI state updates.
