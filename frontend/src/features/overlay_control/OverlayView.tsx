@@ -46,6 +46,7 @@ interface HudConfig {
   telemetryCornersScale?: number;
   telemetryPedalScale?: number;
   telemetryPowerTorqueScale?: number;
+  telemetryMergedChartsScale?: number;
   /** Independent font scale for card text (0.5–2.0) */
   telemetryCardFontScale?: number;
   /** Option to merge power/torque & pedal charts side-by-side */
@@ -80,8 +81,9 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryCornersScale: 1.0,
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
+  telemetryMergedChartsScale: 1.0,
   telemetryCardFontScale: 1.0,
-  telemetrySideBySideCharts: false,
+  telemetrySideBySideCharts: true,
   telemetryPedalPosition: 'bottom',
   telemetryPowerTorquePosition: 'top',
   telemetryMergedChartsPosition: 'bottom',
@@ -333,6 +335,11 @@ export const OverlayView: React.FC = () => {
   const handlePowerTorqueScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
     saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
+  };
+
+  const handleMergedChartsScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryMergedChartsScale: clamped });
   };
 
   const handleCornerOffsetXChange = (val: number) => {
@@ -778,39 +785,60 @@ export const OverlayView: React.FC = () => {
               />
             </div>
 
-            {/* Pedal Chart Scale */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart Scale")}:</span>
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
+            {config.telemetrySideBySideCharts ? (
+              /* Merged Charts Scale */
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Merged Charts Scale")}:</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryMergedChartsScale ?? 1.0) * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2.0}
+                  step={0.05}
+                  value={config.telemetryMergedChartsScale ?? 1.0}
+                  onChange={(e) => handleMergedChartsScaleChange(Number(e.target.value))}
+                  style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                />
               </div>
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.05}
-                value={config.telemetryPedalScale ?? 1.0}
-                onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-              />
-            </div>
+            ) : (
+              <>
+                {/* Pedal Chart Scale */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart Scale")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2.0}
+                    step={0.05}
+                    value={config.telemetryPedalScale ?? 1.0}
+                    onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
 
-            {/* Power / Torque Chart Scale */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque Scale")}:</span>
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
-              </div>
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.05}
-                value={config.telemetryPowerTorqueScale ?? 1.0}
-                onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-              />
-            </div>
+                {/* Power / Torque Chart Scale */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque Scale")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2.0}
+                    step={0.05}
+                    value={config.telemetryPowerTorqueScale ?? 1.0}
+                    onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Card Font Scale */}
             <div>

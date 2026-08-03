@@ -247,7 +247,7 @@ if os.path.exists(hud_overlay_path):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:1420", "http://127.0.0.1:1420"],
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1|tauri\.localhost)(:\d+)?|tauri://localhost)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1973,7 +1973,7 @@ CAR_LEARNING_FILE = os.path.join(DATA_ROOT, "car_learning.json")
 
 DEFAULT_HUD_CONFIG = {
     "enabled": False,
-    "hudStyle": "advanced",
+    "hudStyle": "vfd",
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
@@ -1982,6 +1982,8 @@ DEFAULT_HUD_CONFIG = {
     "telemetryCornersScale": 1.0,
     "telemetryPedalScale": 1.0,
     "telemetryPowerTorqueScale": 1.0,
+    "telemetryMergedChartsScale": 1.0,
+    "telemetrySideBySideCharts": True,
     "pauseTelemetryViewWhenActive": True,
     "elements": {
         "showGauge": True,

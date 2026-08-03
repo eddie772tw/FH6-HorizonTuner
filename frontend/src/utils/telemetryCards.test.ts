@@ -311,12 +311,15 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         expect(rr?.style.transformOrigin).toBe('top right');
     });
 
-    it('telemetrySideBySideCharts toggles container side-by-side and chart half-width classes', () => {
+    it('telemetrySideBySideCharts toggles container side-by-side, half-width classes, and container-level transform', () => {
         const manager = createTelemetryCardsManager();
         manager.init(container);
 
         manager.update({}, {
             telemetrySideBySideCharts: true,
+            telemetryMergedChartsOffsetX: 50,
+            telemetryMergedChartsScale: 1.2,
+            telemetryMergedChartsPosition: 'bottom',
             elements: {
                 showTelePedals: true,
                 showPowerTorque: true
@@ -328,7 +331,10 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         const ptContainer = document.getElementById('tcPowerTorqueContainer');
 
         expect(bottomContainer?.classList.contains('tc-side-by-side')).toBe(true);
+        expect(bottomContainer?.style.transform).toBe('translateX(50px) scale(1.2)');
         expect(pedalContainer?.classList.contains('tc-half-width')).toBe(true);
+        expect(pedalContainer?.style.transform).toBe('none');
         expect(ptContainer?.classList.contains('tc-half-width')).toBe(true);
+        expect(ptContainer?.style.transform).toBe('none');
     });
 });

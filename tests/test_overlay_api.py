@@ -30,7 +30,7 @@ def test_get_hud_config_default(temp_hud_config_file):
     assert response.status_code == 200
 
     data = response.json()
-    assert data["hudStyle"] == "advanced"
+    assert data["hudStyle"] == "vfd"
     assert "elements" in data
     assert data["elements"]["showRPM"] is True
 
@@ -83,7 +83,7 @@ def test_reset_hud_config(temp_hud_config_file):
     get_res = client.get("/api/overlay/config")
     assert get_res.status_code == 200
     data = get_res.json()
-    assert data["hudStyle"] == "advanced"
+    assert data["hudStyle"] == "vfd"
     assert data["elements"]["showTeleTires"] is True
 
 

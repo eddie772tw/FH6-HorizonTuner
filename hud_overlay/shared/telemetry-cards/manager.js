@@ -127,6 +127,7 @@ export function createTelemetryCardsManager() {
             var ptPos        = fullConfig.telemetryPowerTorquePosition || 'bottom';
             var mergedPos    = fullConfig.telemetryMergedChartsPosition || 'bottom';
             var mergedOffsetX = fullConfig.telemetryMergedChartsOffsetX || 0;
+            var mergedScale   = (fullConfig.telemetryMergedChartsScale !== undefined) ? fullConfig.telemetryMergedChartsScale : 1.0;
             var sideBySide   = fullConfig.telemetrySideBySideCharts === true || elements.showTeleSideBySideCharts === true;
 
             var topEdgeContainer    = document.getElementById('tcTopEdgeContainer');
@@ -139,27 +140,34 @@ export function createTelemetryCardsManager() {
                         container.classList.add('tc-side-by-side');
                     } else {
                         container.classList.remove('tc-side-by-side');
+                        container.style.transform = 'none';
                     }
                 }
             });
 
             var targetMergedParent = (mergedPos === 'top') ? topEdgeContainer : bottomEdgeContainer;
+            if (sideBySide && targetMergedParent) {
+                targetMergedParent.style.transform = 'translateX(' + mergedOffsetX + 'px) scale(' + mergedScale + ')';
+                var otherMergedContainer = (mergedPos === 'top') ? bottomEdgeContainer : topEdgeContainer;
+                if (otherMergedContainer) {
+                    otherMergedContainer.style.transform = 'none';
+                }
+            }
 
             var pedalContainer = document.getElementById('tcPedalWaveContainer');
             if (pedalContainer) {
                 pedalContainer.style.display = showPedals ? 'flex' : 'none';
                 if (sideBySide) {
                     pedalContainer.classList.add('tc-half-width');
+                    pedalContainer.style.transform = 'none';
                 } else {
                     pedalContainer.classList.remove('tc-half-width');
+                    pedalContainer.style.transform = 'translateX(' + pedalOffsetX + 'px) scale(' + pedalScale + ')';
                 }
                 var targetPedalParent = (sideBySide ? targetMergedParent : ((pedalPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
                 if (targetPedalParent && pedalContainer.parentElement !== targetPedalParent) {
                     targetPedalParent.appendChild(pedalContainer);
                 }
-                // In side-by-side mode, use mergedOffsetX
-                var effPedalOffset = sideBySide ? mergedOffsetX : pedalOffsetX;
-                pedalContainer.style.transform = 'translateX(' + effPedalOffset + 'px) scale(' + pedalScale + ')';
                 if (typeof pedalContainer.style.setProperty === 'function') {
                     pedalContainer.style.setProperty('--card-primary',  primaryColor);
                     pedalContainer.style.setProperty('--card-contrast', contrastColor);
@@ -171,16 +179,15 @@ export function createTelemetryCardsManager() {
                 ptContainer.style.display = showPT ? 'flex' : 'none';
                 if (sideBySide) {
                     ptContainer.classList.add('tc-half-width');
+                    ptContainer.style.transform = 'none';
                 } else {
                     ptContainer.classList.remove('tc-half-width');
+                    ptContainer.style.transform = 'translateX(' + ptOffsetX + 'px) scale(' + ptScale + ')';
                 }
                 var targetPtParent = (sideBySide ? targetMergedParent : ((ptPos === 'top') ? topEdgeContainer : bottomEdgeContainer));
                 if (targetPtParent && ptContainer.parentElement !== targetPtParent) {
                     targetPtParent.appendChild(ptContainer);
                 }
-                // In side-by-side mode, use mergedOffsetX
-                var effPtOffset = sideBySide ? mergedOffsetX : ptOffsetX;
-                ptContainer.style.transform = 'translateX(' + effPtOffset + 'px) scale(' + ptScale + ')';
                 if (typeof ptContainer.style.setProperty === 'function') {
                     ptContainer.style.setProperty('--card-primary',  primaryColor);
                     ptContainer.style.setProperty('--card-contrast', contrastColor);
