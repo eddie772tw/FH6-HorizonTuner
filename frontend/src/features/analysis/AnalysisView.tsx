@@ -229,33 +229,40 @@ const AnalysisView: React.FC = () => {
   };
 
   const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => {
-    if (points.length === 0) return [];
+    const len = points.length;
+    if (len === 0) return [];
+
+    // [PERF] Cache computed metrics in a typed array to prevent double iteration math calculations
+    // and avoid creating throwaway objects/arrays inside .map() across large datasets.
+    const cachedValues = new Float64Array(len);
     let metricMax = 0.1;
-    points.forEach((p) => {
+
+    for (let i = 0; i < len; i++) {
+      const p = points[i];
       let v = p.SpeedMetersPerSecond;
       if (selectedMetric === "throttle") v = p.AccelInput / 255;
       else if (selectedMetric === "brake") v = p.BrakeInput / 255;
-      else if (selectedMetric === "grip")
-        v = Math.max(Math.abs(p.TireSlipRatio[0]), Math.abs(p.TireSlipRatio[1]), Math.abs(p.TireSlipRatio[2]), Math.abs(p.TireSlipRatio[3]));
+      else if (selectedMetric === "grip") {
+        const slip = p.TireSlipRatio;
+        // O(1) direct access and Math.max to prevent array spread operator crash on large stacks
+        v = Math.max(Math.abs(slip[0]), Math.abs(slip[1]), Math.abs(slip[2]), Math.abs(slip[3]));
+      }
       else if (selectedMetric === "suspension") v = p.SuspTravel[0];
+
+      cachedValues[i] = v;
       if (v > metricMax) metricMax = v;
-    });
+    }
 
-    return points.map((p) => {
-      let v = p.SpeedMetersPerSecond;
-      if (selectedMetric === "throttle") v = p.AccelInput / 255;
-      else if (selectedMetric === "brake") v = p.BrakeInput / 255;
-      else if (selectedMetric === "grip")
-        v = Math.max(Math.abs(p.TireSlipRatio[0]), Math.abs(p.TireSlipRatio[1]), Math.abs(p.TireSlipRatio[2]), Math.abs(p.TireSlipRatio[3]));
-      else if (selectedMetric === "suspension") v = p.SuspTravel[0];
-
-      return {
-        x: p.PositionX,
-        z: p.PositionZ,
-        val: metricMax > 0 ? v / metricMax : 0,
-        raw: p,
+    const result = new Array(len);
+    for (let i = 0; i < len; i++) {
+      result[i] = {
+        x: points[i].PositionX,
+        z: points[i].PositionZ,
+        val: metricMax > 0 ? cachedValues[i] / metricMax : 0,
+        raw: points[i],
       };
-    });
+    }
+    return result;
   }, [selectedMetric]);
 
   const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
