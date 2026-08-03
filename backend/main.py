@@ -79,6 +79,14 @@ if not getattr(sys, "frozen", False):
 
 logger = logging.getLogger(__name__)
 
+if getattr(sys, "frozen", False):
+    if sys.platform == "win32":
+        try:
+            os.add_dll_directory(sys._MEIPASS)
+        except Exception:
+            pass
+
+
 # 統一判定與配置唯讀資源目錄與可寫入資料目錄
 
 if getattr(sys, "frozen", False):
@@ -118,6 +126,21 @@ os.makedirs(CAR_PARAMS_DIR, exist_ok=True)
 os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
 os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
+
+if getattr(sys, "frozen", False):
+    import shutil
+
+    bundled_car_params = os.path.join(RESOURCE_ROOT, "car_params")
+    if os.path.exists(bundled_car_params):
+        for f_name in os.listdir(bundled_car_params):
+            src = os.path.join(bundled_car_params, f_name)
+            dst = os.path.join(CAR_PARAMS_DIR, f_name)
+            if not os.path.exists(dst):
+                try:
+                    shutil.copy2(src, dst)
+                except Exception:
+                    pass
+
 os.makedirs(LANG_DIR, exist_ok=True)
 
 telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
@@ -2069,6 +2092,10 @@ def check_frontend_alive(proc):
 
 
 if __name__ == "__main__":
+    import multiprocessing
+
+    multiprocessing.freeze_support()
+
     import sys
     import threading
 
@@ -2096,6 +2123,7 @@ if __name__ == "__main__":
             f.write(str(backend_port))
     except Exception as e:
         print(f"Failed to write web_port.txt: {e}")
+        backend_port = 8001
 
     _cleanup_state = {"proc": None, "log": None}
 
@@ -2110,14 +2138,19 @@ if __name__ == "__main__":
                 _cleanup_state["log"] = open(
                     frontend_log_path, "a", encoding="utf-8", buffering=1
                 )
+                env = os.environ.copy()
+                env["BACKEND_PORT"] = str(backend_port)
                 _cleanup_state["proc"] = subprocess.Popen(
                     [frontend_path, "--no-sidecar"],
                     stdout=_cleanup_state["log"],
                     stderr=subprocess.STDOUT,
+                    env=env,
                 )
             except Exception:
+                env = os.environ.copy()
+                env["BACKEND_PORT"] = str(backend_port)
                 _cleanup_state["proc"] = subprocess.Popen(
-                    [frontend_path, "--no-sidecar"]
+                    [frontend_path, "--no-sidecar"], env=env
                 )
 
             threading.Thread(
