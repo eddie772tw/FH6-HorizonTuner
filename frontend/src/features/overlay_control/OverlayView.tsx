@@ -81,7 +81,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
   telemetryCardFontScale: 1.0,
-  telemetrySideBySideCharts: false,
+  telemetrySideBySideCharts: true,
   telemetryPedalPosition: 'bottom',
   telemetryPowerTorquePosition: 'top',
   telemetryMergedChartsPosition: 'bottom',
@@ -335,6 +335,11 @@ export const OverlayView: React.FC = () => {
     saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
   };
 
+  const handleMergedScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryPedalScale: clamped, telemetryPowerTorqueScale: clamped });
+  };
+
   const handleCornerOffsetXChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetX: val };
     saveConfig(updated);
@@ -457,13 +462,23 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  const handleResetHudConfig = () => {
+  const handleResetHudConfig = async () => {
     const resetConfig: HudConfig = {
       ...DEFAULT_HUD_CONFIG,
       enabled: config.enabled,
     };
-    saveConfig(resetConfig);
+    await saveConfig(resetConfig);
     channelRef.current?.postMessage({ type: 'hud:reload' });
+
+    // Attempt hard reload of iframe through tauri window command
+    if ((window as any).__TAURI__?.core?.invoke) {
+      try {
+        await (window as any).__TAURI__.core.invoke('reload_hud_window');
+      } catch (err) {
+        console.warn('Failed to invoke reload_hud_window:', err);
+      }
+    }
+
     fetchConfig(config.enabled, true);
   };
 
@@ -488,6 +503,7 @@ export const OverlayView: React.FC = () => {
   const handleStyleChange = (style: HudConfig['hudStyle']) => {
     const updated = { ...config, hudStyle: style };
     saveConfig(updated);
+    channelRef.current?.postMessage({ type: 'hud:reload', hudStyle: style });
     loadAuthorInfo(style);
   };
 

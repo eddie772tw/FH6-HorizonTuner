@@ -1982,6 +1982,7 @@ DEFAULT_HUD_CONFIG = {
     "telemetryCornersScale": 1.0,
     "telemetryPedalScale": 1.0,
     "telemetryPowerTorqueScale": 1.0,
+    "telemetrySideBySideCharts": True,
     "pauseTelemetryViewWhenActive": True,
     "elements": {
         "showGauge": True,
