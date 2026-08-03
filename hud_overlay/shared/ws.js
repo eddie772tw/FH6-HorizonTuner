@@ -44,6 +44,10 @@ export function initWebSocket() {
                     } else if (msg.type === 'hud:animate') {
                         // Sent from backend when HUD is toggled
                         window.dispatchEvent(new CustomEvent('hud:animate'));
+                    } else if (msg.type === 'hud:audio') {
+                        window.dispatchEvent(new CustomEvent('hud:audio', { detail: msg.data }));
+                    } else if (msg.type === 'hud:media') {
+                        window.dispatchEvent(new CustomEvent('hud:media', { detail: msg.data }));
                     }
                 } else {
                     // Raw telemetry dict

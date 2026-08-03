@@ -142,110 +142,7 @@
                     .trim();
             }
 
-            // Fetch Windows System Media info with multi-port fallback
-            async function fetchSystemMedia() {
-                var origin = window.location.origin;
-                var port = window.location.port;
-                var candidates = [];
 
-                if (origin && origin !== "null") candidates.push(origin + "/api/overlay/system_media");
-                if (window.parent && window.parent.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.parent.BACKEND_PORT + "/api/overlay/system_media");
-                if (window.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.BACKEND_PORT + "/api/overlay/system_media");
-                if (port) candidates.push("http://127.0.0.1:" + port + "/api/overlay/system_media");
-                candidates.push("http://127.0.0.1:8001/api/overlay/system_media");
-                candidates.push("http://127.0.0.1:8000/api/overlay/system_media");
-                candidates.push("/api/overlay/system_media");
-
-                for (var i = 0; i < candidates.length; i++) {
-                    try {
-                        var res = await fetch(candidates[i]);
-                        if (res.ok) {
-                            var data = await res.json();
-                            if (data && data.success) {
-                                systemMediaInfo = data;
-                                var t = (data.title || "").trim();
-                                var a = (data.artist || "").trim();
-
-                                // Filter out our own app title and default placeholders
-                                var ownAppTitles = ["fh6-horizon tuner", "horizon tuner", "fh6-horizontuner"];
-                                var tLower = t.toLowerCase();
-                                var aLower = a.toLowerCase();
-                                var isSelfTitle = ownAppTitles.some(function (k) { return tLower.indexOf(k) >= 0 || aLower.indexOf(k) >= 0; });
-                                var isPlaying = data.status === "playing";
-                                var hasMedia = !isSelfTitle && isPlaying && (t.length > 0 || a.length > 0);
-
-                                systemMediaInfo.has_media = hasMedia;
-
-                                var newMarquee = DEFAULT_MARQUEE;
-                                if (hasMedia && (t || a)) {
-                                    var trackStr = (t && a) ? (a + " - " + t) : (t || a);
-                                    var cleanStr = sanitizeVFDText(trackStr);
-                                    newMarquee = cleanStr ? cleanStr : DEFAULT_MARQUEE;
-                                }
-
-                                if (newMarquee !== marqueeText) {
-                                    marqueeText = newMarquee;
-                                    marqueeScrollPos = 0; // Reset scroll position when track changes
-                                }
-                                return;
-                            }
-                        }
-                    } catch (e) {
-                        // Try next fallback endpoint
-                    }
-                }
-                systemMediaInfo.has_media = false;
-                if (marqueeText !== DEFAULT_MARQUEE) {
-                    marqueeText = DEFAULT_MARQUEE;
-                    marqueeScrollPos = 0;
-                }
-            }
-
-            // Fetch WASAPI system audio spectrum from backend
-            async function fetchAudioSpectrum() {
-                var origin = window.location.origin;
-                var port = window.location.port;
-                var candidates = [];
-
-                if (origin && origin !== "null") candidates.push(origin + "/api/overlay/audio_spectrum");
-                if (window.parent && window.parent.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.parent.BACKEND_PORT + "/api/overlay/audio_spectrum");
-                if (window.BACKEND_PORT) candidates.push("http://127.0.0.1:" + window.BACKEND_PORT + "/api/overlay/audio_spectrum");
-                if (port) candidates.push("http://127.0.0.1:" + port + "/api/overlay/audio_spectrum");
-                candidates.push("http://127.0.0.1:8001/api/overlay/audio_spectrum");
-                candidates.push("http://127.0.0.1:8000/api/overlay/audio_spectrum");
-                candidates.push("/api/overlay/audio_spectrum");
-
-                for (var i = 0; i < candidates.length; i++) {
-                    try {
-                        var res = await fetch(candidates[i]);
-                        if (res.ok) {
-                            var data = await res.json();
-                            if (data && data.success && Array.isArray(data.spectrum)) {
-                                hasBackendAudio = !!data.has_audio;
-                                backendVuL = clamp(data.vu_left || 0, 0, 1);
-                                backendVuR = clamp(data.vu_right || 0, 0, 1);
-
-                                if (data.spectrum.length === 32) {
-                                    for (var b = 0; b < 32; b++) {
-                                        var raw = clamp(data.spectrum[b] || 0, 0, 1);
-                                        // Smooth transition
-                                        spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
-                                    }
-                                }
-                                return;
-                            }
-                        }
-                    } catch (e) {
-                        // Try next endpoint
-                    }
-                }
-                hasBackendAudio = false;
-            }
-
-            fetchSystemMedia();
-            fetchAudioSpectrum();
-            setInterval(fetchSystemMedia, 1000);
-            setInterval(fetchAudioSpectrum, 60);
 
 
             // ── VFD Drawing Primitives ──────────────────────────────────────────────
@@ -939,6 +836,33 @@
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     latestTelemetryData = data || {};
                     latestTelemetryPayload = payload || {};
+                },
+                onAudio: function (data) {
+                    if (data && data.success && Array.isArray(data.spectrum)) {
+                        hasBackendAudio = !!data.has_audio;
+                        backendVuL = clamp(data.vu_left || 0, 0, 1);
+                        backendVuR = clamp(data.vu_right || 0, 0, 1);
+
+                        if (data.spectrum.length === 32) {
+                            for (var b = 0; b < 32; b++) {
+                                var raw = clamp(data.spectrum[b] || 0, 0, 1);
+                                spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                            }
+                        }
+                    } else {
+                        hasBackendAudio = false;
+                    }
+                },
+                onMedia: function (data) {
+                    if (data && data.success) {
+                        systemMediaInfo = data;
+                        if (!systemMediaInfo.has_media) {
+                            marqueeScrollPos = 0;
+                        }
+                    } else {
+                        systemMediaInfo = { has_media: false, title: "", artist: "", status: "idle" };
+                        marqueeScrollPos = 0;
+                    }
                 },
                 onAnimate: function () {
                     triggerSweep();
