@@ -150,14 +150,18 @@ class TelemetrySQLite:
             conn.commit()
 
     def save_laps_summary(self, session_id: str, laps_data: List[Dict[str, Any]]):
+        if not laps_data:
+            return
+
         with self._get_connection() as conn:
-            for lap in laps_data:
-                conn.execute(
-                    """
-                    INSERT OR REPLACE INTO laps
-                    (session_id, lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh)
-                    VALUES (?, ?, ?, ?, ?, ?, ?);
-                """,
+            # Optimize: use executemany instead of a loop of executes
+            conn.executemany(
+                """
+                INSERT OR REPLACE INTO laps
+                (session_id, lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh)
+                VALUES (?, ?, ?, ?, ?, ?, ?);
+            """,
+                [
                     (
                         session_id,
                         lap.get("lap_number", 1),
@@ -166,8 +170,10 @@ class TelemetrySQLite:
                         lap.get("end_distance", 0.0),
                         lap.get("max_speed_kmh", 0.0),
                         lap.get("avg_speed_kmh", 0.0),
-                    ),
-                )
+                    )
+                    for lap in laps_data
+                ],
+            )
             conn.commit()
 
     def insert_points_batch(self, session_id: str, points: List[Dict[str, Any]]):
