@@ -19,3 +19,6 @@
 ## 2024-08-01 - Expand Clickable Hit Areas for Settings Rows
 **Learning:** Wrapping settings rows that contain checkboxes in `<label>` tags with `cursor: 'pointer'` significantly improves accessibility by expanding the clickable hit area to encompass the entire row rather than just the small checkbox element (Fitts's Law).
 **Action:** Always wrap settings rows containing checkboxes in `<label>` tags and style them with `cursor: 'pointer'` to improve ease of use and adhere to accessibility best practices.
+## 2026-08-03 - Tooltips on Disabled Buttons
+**Learning:** Users often encounter disabled buttons (e.g., when no data is available to import) and may not understand why the action is unavailable, leading to frustration. A visual disabled state alone is sometimes insufficient.
+**Action:** Always add a `title` attribute (or a tooltip component) to disabled buttons explaining *why* the button is disabled and *how* the user can resolve it.
