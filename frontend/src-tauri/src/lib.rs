@@ -100,6 +100,22 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
     }
 }
 
+
+#[tauri::command]
+fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        let port = get_backend_port().unwrap_or(8001);
+        let url = format!("http://127.0.0.1:{}/hud/index.html", port);
+
+        let _ = window.eval("window.location.href = 'about:blank';");
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let _ = window.eval(&format!("window.location.href = '{}';", url));
+        Ok(())
+    } else {
+        Err("Overlay window not found".to_string())
+    }
+}
+
 /*
 // Hotkey listener structure reserved for future extension
 // Currently commented out as per requirement:
@@ -256,6 +272,7 @@ pub fn run() {
             get_backend_port,
             set_hud_click_through,
             toggle_hud_window,
+            reload_hud_window,
             get_available_monitors,
             move_hud_to_monitor
         ])
