@@ -42,8 +42,8 @@ def _compute_fft_bands(
     rms_l = float(np.sqrt(np.mean(left**2))) if len(left) > 0 else 0.0
     rms_r = float(np.sqrt(np.mean(right**2))) if len(right) > 0 else 0.0
 
-    vu_l = min(1.0, max(0.0, rms_l * 2.8))
-    vu_r = min(1.0, max(0.0, rms_r * 2.8))
+    vu_l = max(0.0, rms_l * 2.8)
+    vu_r = max(0.0, rms_r * 2.8)
 
     mono = (left + right[: len(left)]) * 0.5
 
@@ -57,7 +57,7 @@ def _compute_fft_bands(
         start_idx = int((b / num_bands) ** 2.0 * data_len)
         end_idx = max(start_idx + 1, int(((b + 1) / num_bands) ** 2.0 * data_len))
         avg_mag = float(np.mean(fft_mags[start_idx:end_idx]))
-        spectrum[b] = min(1.0, max(0.0, (avg_mag * 6.0) ** 0.75))
+        spectrum[b] = max(0.0, (avg_mag * 6.0) ** 0.75)
 
     return spectrum, vu_l, vu_r
 
@@ -102,8 +102,8 @@ def _wasapi_loopback_worker():
                     rms_l = float(np.sqrt(np.mean(left**2))) if len(left) > 0 else 0.0
                     rms_r = float(np.sqrt(np.mean(right**2))) if len(right) > 0 else 0.0
 
-                    vu_l = min(1.0, max(0.0, float(math.pow(rms_l * 30.0, 0.65))))
-                    vu_r = min(1.0, max(0.0, float(math.pow(rms_r * 30.0, 0.65))))
+                    vu_l = max(0.0, float(math.pow(rms_l * 30.0, 0.65)))
+                    vu_r = max(0.0, float(math.pow(rms_r * 30.0, 0.65)))
 
                     # Mono FFT analysis
                     mono = (left + right) * 0.5
@@ -125,7 +125,7 @@ def _wasapi_loopback_worker():
                                 int(math.pow((b + 1) / bands, 2.0) * data_len),
                             )
                             avg_mag = float(np.mean(fft_mags[start_idx:end_idx]))
-                            val = min(1.0, max(0.0, math.pow(avg_mag * 4.5, 0.75)))
+                            val = max(0.0, math.pow(avg_mag * 4.5, 0.75))
                             spectrum[b] = val
 
                     with _lock:
