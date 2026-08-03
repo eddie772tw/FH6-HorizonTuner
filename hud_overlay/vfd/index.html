@@ -244,10 +244,6 @@
                 hasBackendAudio = false;
             }
 
-            fetchSystemMedia();
-            fetchAudioSpectrum();
-            setInterval(fetchSystemMedia, 1000);
-            setInterval(fetchAudioSpectrum, 60);
 
 
             // ── VFD Drawing Primitives ──────────────────────────────────────────────
@@ -932,6 +928,33 @@
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     latestTelemetryData = data || {};
                     latestTelemetryPayload = payload || {};
+                },
+                onAudio: function (data) {
+                    if (data && data.success && Array.isArray(data.spectrum)) {
+                        hasBackendAudio = !!data.has_audio;
+                        backendVuL = clamp(data.vu_left || 0, 0, 1);
+                        backendVuR = clamp(data.vu_right || 0, 0, 1);
+
+                        if (data.spectrum.length === 32) {
+                            for (var b = 0; b < 32; b++) {
+                                var raw = clamp(data.spectrum[b] || 0, 0, 1);
+                                spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                            }
+                        }
+                    } else {
+                        hasBackendAudio = false;
+                    }
+                },
+                onMedia: function (data) {
+                    if (data && data.success) {
+                        systemMediaInfo = data;
+                        if (!systemMediaInfo.has_media) {
+                            marqueeScrollPos = 0;
+                        }
+                    } else {
+                        systemMediaInfo = { has_media: false, title: "", artist: "", status: "idle" };
+                        marqueeScrollPos = 0;
+                    }
                 },
                 onAnimate: function () {
                     triggerSweep();

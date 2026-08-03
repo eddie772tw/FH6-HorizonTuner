@@ -152,6 +152,21 @@ window.HUD_ANIM_CONFIG = {
                     break;
                 }
 
+
+                case 'hud:audio': {
+                    if (activeStyle.onAudio) {
+                        activeStyle.onAudio(payload.data || {});
+                    }
+                    break;
+                }
+
+                case 'hud:media': {
+                    if (activeStyle.onMedia) {
+                        activeStyle.onMedia(payload.data || {});
+                    }
+                    break;
+                }
+
                 case 'hud:frame': {
                     var data = payload.data || {};
 
