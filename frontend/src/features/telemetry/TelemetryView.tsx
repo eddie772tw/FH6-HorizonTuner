@@ -26,13 +26,7 @@ const getCarClassString = (cls?: number) => {
 
 
 
-const formatTime = (seconds: number) => {
-  if (seconds <= 0) return "--:--.---";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-};
+
 
 const activeTabStyle: React.CSSProperties = {
   background: 'var(--primary)',
@@ -129,25 +123,8 @@ const TelemetryView: React.FC = () => {
 
   const isRacing = displayData?.IsRaceOn === 1;
 
-  const rpm = displayData?.CurrentEngineRpm || 0;
-  const rpmIdle = displayData?.EngineIdleRpm || 0;
-  const rpmMax = displayData?.EngineMaxRpm || 1;
-  const rpmPercent = Math.max(0, Math.min(100, ((rpm - rpmIdle) / (rpmMax - rpmIdle)) * 100));
-
-  const speedData = convertSpeed(displayData?.SpeedMetersPerSecond || 0);
-  const powerData = convertPower(displayData?.PowerWatts || 0);
-  const torqueData = convertTorque(displayData?.TorqueNewtons || 0);
-  const boostData = convertBoost(displayData?.Boost || 0);
-
-  const gear = displayData?.Gear || 0;
-  const currentLap = displayData?.CurrentLap || 0;
-  const bestLap = displayData?.BestLap || 0;
-  const lastLap = displayData?.LastLap || 0;
-
   const classDisplay = getCarClassString(displayData?.CarClass);
-
   const isEV = displayData?.EngineIdleRpm === 0;
-  const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
 
 
   return (
