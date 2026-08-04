@@ -22,3 +22,7 @@
 ## 2025-03-03 - Remove CSS transitions from high-frequency telemetry components
 **Learning:** CSS transitions applied to elements updated at 60Hz via requestAnimationFrame or high-frequency event emitters conflict with the rapid DOM updates. This causes visual jitter and performance degradation because the browser's composite engine attempts to calculate interpolated frames for values that are already being manually interpolated/updated at 60Hz.
 **Action:** Always remove CSS `transition` styles from elements updated at high frequencies (like telemetry components) to prevent visual conflict and reduce browser rendering overhead.
+
+## 2025-03-03 - Prevent String Array Allocations in High-Frequency DOM Updates
+**Learning:** Using `value.toString().split('').map(...).join('')` inside high-frequency 60Hz telemetry rendering loops (like HUD overlay speed/RPM displays) creates a new array, iterates it with a closure, and joins it back together on every frame. This triggers massive Garbage Collection (GC) pauses and visual jitter. Additionally, blindly updating `innerHTML` every frame when the value hasn't changed causes unnecessary DOM repaints.
+**Action:** Replace `split('').map()` with native `for` loops and simple string concatenation. Always implement a cache check (e.g., `if (_lastValue === value) return;`) before updating DOM text or innerHTML in high-frequency functions.

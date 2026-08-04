@@ -192,12 +192,19 @@
 
         function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
+        var _simpleLastSpeedValue = null;
+
         function setSimpleSpeedDisplay(value) {
+            if (_simpleLastSpeedValue === value) return;
+            _simpleLastSpeedValue = value;
             var el = document.getElementById('speedText');
             if (!el) return;
-            el.innerHTML = value.toString().split('').map(function (d) {
-                return '<span>' + d + '</span>';
-            }).join('');
+            var valStr = value.toString();
+            var out = "";
+            for (var i = 0; i < valStr.length; i++) {
+                out += '<span>' + valStr[i] + '</span>';
+            }
+            el.innerHTML = out;
         }
 
         function drawSimpleHUD(data, redlineRpm) {
