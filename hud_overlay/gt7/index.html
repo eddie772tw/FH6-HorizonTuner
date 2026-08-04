@@ -67,11 +67,6 @@
                 tyre_outline: "./assets/img/tyre-outline.png"
             };
 
-            for (var i = 0; i <= 80; i++) {
-                var pad2 = ('0' + i).slice(-2);
-                assetMap["rev" + i] = "./assets/img/tach/rev/rev_back_" + pad2 + ".png";
-            }
-
             var keys = Object.keys(assetMap);
             var loaded = 0;
             keys.forEach(function (k) {
@@ -212,11 +207,13 @@
 
                 // Rev Frame
                 var progress = clamp((rpmRatio - 0.8) / 0.2, 0, 1);
-                var frame = Math.floor(progress * 80 + 0.5);
                 var blink = rpmRatio >= 0.995 && Math.floor((time || performance.now() / 1000) * 10) % 2 === 1;
 
-                if (!blink && images["rev" + frame]) {
-                    ctx.drawImage(images["rev" + frame], 230, 20, 800, 60);
+                if (!blink && images.line) {
+                    var drawWidth = 800 * progress;
+                    if (drawWidth > 0) {
+                        ctx.drawImage(images.line, 0, 0, drawWidth, 62, 230, 20, drawWidth, 60);
+                    }
                 }
 
                 if (images.dashes) {
