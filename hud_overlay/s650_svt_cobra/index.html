@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>S650 svt_cobra HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        @font-face {
+            font-family: 'MustangModernDigits';
+            src: url('../assets/fonts/mustang_sans_bold.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'FoxBodyRetro';
+            src: url('../assets/fonts/foxbody_1987.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'MustangHeritage1967';
+            src: url('../assets/fonts/ford_classic_serif.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'SVTCobraBold';
+            src: url('../assets/fonts/svt_cobra_digits.ttf') format('truetype');
+        }
+
+        .s650-container {
+            align-self: center;
+            transform-origin: bottom center;
+            width: 1260px;
+            height: 240px;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            width: 1260px;
+            height: 240px;
+        }
+    </style>
+</head>
+<body>
+    <div id="teleCardsMount"></div>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container s650-container" id="s650Container">
+            <canvas id="s650Canvas" width="1260" height="240"></canvas>
+        </div>
+    </div>
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+    <script src="../shared/s650_renderer.js"></script>
+    <script>
+        (function() {
+            window.registerS650Style('s650_svt_cobra', 'svt_cobra');
+        })();
+    </script>
+</body>
+</html>

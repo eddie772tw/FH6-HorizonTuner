@@ -34,7 +34,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 's650_normal' | 's650_sport' | 's650_track' | 's650_calm' | 's650_foxbody' | 's650_heritage67' | 's650_svt_cobra';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -938,6 +938,13 @@ export const OverlayView: React.FC = () => {
               <option value="nfs15" style={{ background: '#222', color: '#fff' }}>{t("NFS 2015 Style HUD")}</option>
               <option value="shift_tacho" style={{ background: '#222', color: '#fff' }}>{t("NFS Shift Tachometer")}</option>
               <option value="vfd" style={{ background: '#222', color: '#fff' }}>{t("Retro VFD")}</option>
+              <option value="s650_normal" style={{ background: '#222', color: '#fff' }}>{t("S650 Normal")}</option>
+              <option value="s650_sport" style={{ background: '#222', color: '#fff' }}>{t("S650 Sport")}</option>
+              <option value="s650_track" style={{ background: '#222', color: '#fff' }}>{t("S650 Track")}</option>
+              <option value="s650_calm" style={{ background: '#222', color: '#fff' }}>{t("S650 Calm")}</option>
+              <option value="s650_foxbody" style={{ background: '#222', color: '#fff' }}>{t("S650 Foxbody")}</option>
+              <option value="s650_heritage67" style={{ background: '#222', color: '#fff' }}>{t("S650 Heritage '67")}</option>
+              <option value="s650_svt_cobra" style={{ background: '#222', color: '#fff' }}>{t("S650 SVT Cobra")}</option>
             </select>
 
             {/* Overall HUD Scale */}
