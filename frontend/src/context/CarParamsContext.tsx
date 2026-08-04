@@ -14,6 +14,8 @@ export interface CarParams {
   aeroBalance: number;
   aeroEfficiency: number;
   mechBalance: number;
+  aero_downforce_front?: number;
+  aero_downforce_rear?: number;
   frontTireWidth?: number;
   frontTireAspect?: number;
   frontTireRim?: number;
@@ -144,6 +146,8 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
               aeroBalance: 0.50,
               aeroEfficiency: 0.50,
               mechBalance: 0.50,
+              aero_downforce_front: 0,
+              aero_downforce_rear: 0,
               frontTireWidth: 245,
               frontTireAspect: 40,
               frontTireRim: 18,

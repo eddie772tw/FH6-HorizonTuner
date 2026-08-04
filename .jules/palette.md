@@ -1,0 +1,3 @@
+## 2026-08-04 - Chassis Tuning Refactoring
+**Learning:** Consolidating user tuning inputs (like `aero_downforce` and suspension `min`/`max` bounds) into a unified setup step (Step 1) significantly improves the mental model of the Tuning Wizard, making the subsequent calculation steps (Gearing in Step 2, Chassis in Step 3) feel like deterministic results derived from the car's initial parameters.
+**Action:** When creating multi-step calculation wizards, always group manual user inputs and boundaries into the earliest possible steps, and reserve later steps purely for visualizing and applying calculated outputs based on mathematical models (e.g., 4D Chassis math).
