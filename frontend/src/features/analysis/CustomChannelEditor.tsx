@@ -163,14 +163,19 @@ const CustomChannelEditor: React.FC<CustomChannelEditorProps> = ({ channels, onC
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAddChannel}
-            disabled={!name.trim() || !formula.trim()}
-            style={{ ...btnStyle, marginTop: '1.2rem', height: '36px' }}
+          <span
+            title={(!name.trim() || !formula.trim()) ? t("Please provide both a name and a formula.") : undefined}
+            style={{ display: 'inline-block', marginTop: '1.2rem', cursor: (!name.trim() || !formula.trim()) ? 'not-allowed' : 'pointer' }}
           >
-            + {t("Add Channel")}
-          </button>
+            <button
+              type="button"
+              onClick={handleAddChannel}
+              disabled={!name.trim() || !formula.trim()}
+              style={{ ...btnStyle, height: '36px', width: '100%', pointerEvents: (!name.trim() || !formula.trim()) ? 'none' : 'auto' }}
+            >
+              + {t("Add Channel")}
+            </button>
+          </span>
         </div>
       </div>
 
