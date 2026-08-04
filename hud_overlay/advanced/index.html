@@ -930,24 +930,38 @@
         var _advLastIdleRpm = 800;
         var _advValidGear = 1;
         var _advLastKnownRedline = null;
+        var _advLastSpeedValue = null;
+        var _advLastRpmValue = null;
+        var _advLastRpmColorRed = null;
 
         // Set speed with digit spans for tabular spacing
         function setAdvSpeedDisplay(value) {
+            if (_advLastSpeedValue === value) return;
+            _advLastSpeedValue = value;
             var el = document.getElementById('adv-speed');
             if (!el) return;
-            el.innerHTML = value.toString().split('').map(function (d) {
-                return '<span>' + d + '</span>';
-            }).join('');
+            var valStr = value.toString();
+            var out = "";
+            for (var i = 0; i < valStr.length; i++) {
+                out += '<span>' + valStr[i] + '</span>';
+            }
+            el.innerHTML = out;
         }
 
         // Set RPM with digit spans for tabular spacing
         function setAdvRpmDisplay(value, isRed) {
+            if (_advLastRpmValue === value && _advLastRpmColorRed === isRed) return;
+            _advLastRpmValue = value;
+            _advLastRpmColorRed = isRed;
             var el = document.getElementById('adv-rpm-value');
             if (!el) return;
             el.style.color = isRed ? C_PINK_DIM : 'var(--adv-primary-dim)';
-            el.innerHTML = value.toString().split('').map(function (d) {
-                return '<span>' + d + '</span>';
-            }).join('');
+            var valStr = value.toString();
+            var out = "";
+            for (var i = 0; i < valStr.length; i++) {
+                out += '<span>' + valStr[i] + '</span>';
+            }
+            el.innerHTML = out;
         }
 
         // Register Advanced HUD Style with HUDCore Engine
