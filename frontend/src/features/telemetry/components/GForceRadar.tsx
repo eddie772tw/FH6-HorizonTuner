@@ -127,8 +127,7 @@ const GForceRadar: React.FC = React.memo(() => {
             <div key={i} style={{ 
               position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
               top: `${80 + my - 3}px`, 
-              left: `${80 + mx - 3}px`,
-              transition: 'top 0.1s linear, left 0.1s linear'
+              left: `${80 + mx - 3}px`
             }} />
           );
         })}

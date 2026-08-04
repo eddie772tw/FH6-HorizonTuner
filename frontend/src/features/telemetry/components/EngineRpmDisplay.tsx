@@ -61,7 +61,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
         </div>
       </div>
       <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
-        <div ref={rpmBarRef} style={{ height: '100%', width: '0%', background: 'var(--primary)', transition: 'background 0.3s ease' }} />
+        <div ref={rpmBarRef} style={{ height: '100%', width: '0%', background: 'var(--primary)' }} />
       </div>
     </div>
   );
