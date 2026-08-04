@@ -5,7 +5,7 @@
     <title>Forza Motorsport 4 HUD</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
-        .fm4-container {
+        .fm4_re-container {
             width: 270px; height: 270px;
             pointer-events: none;
         }
@@ -15,8 +15,8 @@
 <body>
     <div id="teleCardsMount"></div>
     <div class="hud-root-wrapper">
-        <div class="hud-gauge-container fm4-container" id="fm4uiContainer">
-            <canvas id="fm4uiCanvas" width="270" height="270"></canvas>
+        <div class="hud-gauge-container fm4_re-container" id="fm4_reContainer">
+            <canvas id="fm4_reCanvas" width="270" height="270"></canvas>
         </div>
     </div>
 
@@ -24,13 +24,12 @@
     <script src="../shared/hud-core.js"></script>
     <script>
         (function() {
-            var canvas = document.getElementById('fm4uiCanvas');
+            var canvas = document.getElementById('fm4_reCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
             var images = {};
             var loadedCount = 0;
             var totalImages = 0;
             var isReady = false;
-            var sweepPending = false;
 
             var rpm_bands = [
                 { minimum: 17000, face: "rpm_16500", frame_rate: 0.01285 },
@@ -68,33 +67,12 @@
 
             // Preload asset map
             var assetMap = {
-                base: "./assets/img/background/background.png",
-                rpm_16500: "./assets/img/background/rpm_16500.png",
-                rpm_14200: "./assets/img/background/rpm_14200.png",
-                rpm_12100: "./assets/img/background/rpm_12100.png",
-                rpm_10300: "./assets/img/background/rpm_10300.png",
-                rpm_9400: "./assets/img/background/rpm_9400.png",
-                rpm_8800: "./assets/img/background/rpm_8800.png",
-                rpm_8000: "./assets/img/background/rpm_8000.png",
-                rpm_6400: "./assets/img/background/rpm_6400.png",
-                rpm_6200: "./assets/img/background/rpm_6200.png",
-                rpm_4600: "./assets/img/background/rpm_4600.png",
-                rpm_3300: "./assets/img/background/rpm_3300.png",
-                gear_R: "./assets/img/gears/gear_R.png",
-                gear_N: "./assets/img/gears/gear_N.png"
+                base: "./assets/img/background/background.png"
             };
 
-            for (var i = 0; i <= 269; i++) {
-                var pad3 = ('00' + i).slice(-3);
-                assetMap["rev_" + i] = "./assets/img/rev/rev_" + pad3 + ".png";
-            }
-            for (var i = 0; i <= 499; i++) {
-                var pad3 = ('000' + i).slice(-3);
-                assetMap["speed_" + i] = "./assets/img/speed/speed_" + pad3 + ".png";
-            }
-            for (var i = 1; i <= 9; i++) {
-                assetMap["gear_" + i] = "./assets/img/gears/gear_" + i + ".png";
-            }
+
+
+
 
             var keys = Object.keys(assetMap);
             totalImages = keys.length;
@@ -104,23 +82,11 @@
                 img.onload = function() {
                     images[key] = img;
                     loadedCount++;
-                    if (loadedCount >= totalImages) {
-                        isReady = true;
-                        if (sweepPending) {
-                            sweepPending = false;
-                            triggerSweep();
-                        }
-                    }
+                    if (loadedCount >= totalImages) isReady = true;
                 };
                 img.onerror = function() {
                     loadedCount++;
-                    if (loadedCount >= totalImages) {
-                        isReady = true;
-                        if (sweepPending) {
-                            sweepPending = false;
-                            triggerSweep();
-                        }
-                    }
+                    if (loadedCount >= totalImages) isReady = true;
                 };
                 img.src = assetMap[key];
             });
@@ -128,7 +94,7 @@
             var showUnits = true;
             var isMetricUnit = true;
 
-            function renderFM4(data) {
+            window.renderFM4RE = function(data) {
                 if (!ctx || !isReady) return;
                 ctx.clearRect(0, 0, 270, 270);
 
@@ -141,34 +107,131 @@
                 var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
 
                 var gauge = selectGauge(Math.max(0, maxRpm));
-                var revFrame = clamp(Math.floor(Math.max(0, rpm) * gauge.frame_rate + 0.5), 0, 269);
-                var speedFrame = clamp(Math.floor(Math.max(0, speed) + 0.5), 0, 499);
+                var maxFrames = 269;
 
-                // 1. Draw dial face
-                if (images[gauge.face]) ctx.drawImage(images[gauge.face], 0, 0, 270, 270);
+                var startAngle = 91.4 * Math.PI / 180;
+                var sweepAngle = 228.4 * Math.PI / 180;
+                var cx = 135;
+                var cy = 135;
+
                 // 2. Draw base frame
                 if (images["base"]) ctx.drawImage(images["base"], 0, 0, 270, 270);
 
-                // 3. Draw gear asset
-                var gearKey = gearAssetKey(gearLabel);
-                if (gearKey && images[gearKey]) {
-                    ctx.drawImage(images[gearKey], 113.5, 73.5, 52, 68);
-                } else {
-                    ctx.save();
-                    ctx.font = 'bold 43px ForzaGear, Arial, sans-serif';
-                    ctx.fillStyle = '#ffffff';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                    ctx.shadowBlur = 4;
-                    ctx.fillText(gearLabel, 139.5, 107.5);
-                    ctx.restore();
+                // 1. Draw gauge face (ticks, labels, redline)
+                ctx.save();
+                ctx.font = 'bold 15px ForzaFont, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 2;
+
+                var maxDrawRpm = 10000; // default for 8000
+                if (gauge.face === "rpm_16500") maxDrawRpm = 18000;
+                else if (gauge.face === "rpm_14200") maxDrawRpm = 16000;
+                else if (gauge.face === "rpm_12100") maxDrawRpm = 14000;
+                else if (gauge.face === "rpm_10300") maxDrawRpm = 12000;
+                else if (gauge.face === "rpm_9400") maxDrawRpm = 12000;
+                else if (gauge.face === "rpm_8800") maxDrawRpm = 10000;
+                else if (gauge.face === "rpm_8000") maxDrawRpm = 10000;
+                else if (gauge.face === "rpm_6400") maxDrawRpm = 8000;
+                else if (gauge.face === "rpm_6200") maxDrawRpm = 7000;
+                else if (gauge.face === "rpm_4600") maxDrawRpm = 6000;
+                else if (gauge.face === "rpm_3300") maxDrawRpm = 5000;
+
+                for (var r = 0; r <= maxDrawRpm; r += 250) {
+                    var frame = Math.round(r * gauge.frame_rate);
+                    if (frame > maxFrames) continue;
+
+                    var angle = startAngle + (frame / maxFrames) * sweepAngle;
+
+                    var isMajor = r % 1000 === 0;
+                    var isMedium = r % 500 === 0 && !isMajor;
+                    var isLabel = r % 2000 === 0;
+
+                    if (gauge.face === "rpm_16500" || gauge.face === "rpm_14200" || gauge.face === "rpm_12100") {
+                        isLabel = r % 3000 === 0;
+                    }
+
+                    var isRedline = r >= gauge.minimum;
+
+                    ctx.beginPath();
+                    var r1 = isMajor ? 111 : (isMedium ? 114 : 117);
+                    var r2 = 120;
+                    ctx.moveTo(cx + r1 * Math.cos(angle), cy + r1 * Math.sin(angle));
+                    ctx.lineTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle));
+
+                    ctx.strokeStyle = isRedline ? '#c00' : 'rgba(255, 255, 255, 0.7)';
+                    ctx.lineWidth = isMajor ? 3 : (isMedium ? 2 : 1.5);
+                    ctx.stroke();
+
+                    if (isLabel) {
+                        var lr = 95;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText((r / 1000).toString(), cx + lr * Math.cos(angle), cy + lr * Math.sin(angle));
+                    }
                 }
 
-                // 4. Draw RPM rev needle frame
-                if (images["rev_" + revFrame]) ctx.drawImage(images["rev_" + revFrame], 0, 0, 270, 270);
-                // 5. Draw speed frame
-                if (images["speed_" + speedFrame]) ctx.drawImage(images["speed_" + speedFrame], 0, 0, 270, 270);
+                var redlineStartF = Math.round(gauge.minimum * gauge.frame_rate);
+                var redlineStartA = startAngle + (redlineStartF / maxFrames) * sweepAngle;
+                var redlineEndA = startAngle + sweepAngle;
+
+                if (redlineStartF <= maxFrames) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 115, redlineStartA, redlineEndA);
+                    ctx.strokeStyle = '#c00';
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // 3. Draw gear
+                ctx.save();
+                ctx.font = 'bold 50px ForzaGear, Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(gearLabel, 139.5, 106);
+                ctx.restore();
+
+                // 4. Draw RPM rev needle and the sweeping arc
+                var rFrame = Math.round(Math.max(0, rpm) * gauge.frame_rate);
+                var nAngle = startAngle + (Math.min(rFrame, maxFrames) / maxFrames) * sweepAngle;
+
+                // Draw the sweeping arc that fills up to the needle
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, 115, startAngle, nAngle);
+                ctx.strokeStyle = '#cccccc';
+                ctx.lineWidth = 8;
+                ctx.stroke();
+                ctx.restore();
+
+                // Draw the needle head
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(nAngle);
+                ctx.beginPath();
+                ctx.moveTo(106, -3.5);
+                ctx.lineTo(125, -2);
+                ctx.lineTo(125, 2);
+                ctx.lineTo(106, 3.5);
+                ctx.closePath();
+                ctx.fillStyle = '#d00';
+                ctx.fill();
+                ctx.restore();
+
+                // 5. Draw speed
+                ctx.save();
+                ctx.font = 'bold 42px ForzaFont, Arial, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(Math.floor(Math.max(0, speed)).toString(), 141, 186);
+                ctx.restore();
 
                 // 6. Draw unit label
                 if (showUnits) {
@@ -204,7 +267,7 @@
                         mockRpm = maxRpm * (1 - Math.sin(p * Math.PI / 2)) + 1000 * Math.sin(p * Math.PI / 2);
                     }
 
-                    renderFM4({
+                    renderFM4RE({
                         rpm: mockRpm,
                         maxRpm: maxRpm,
                         speed: (mockRpm / maxRpm) * 180,
@@ -220,8 +283,8 @@
                 requestAnimationFrame(animate);
             }
 
-            HUDCore.registerStyle('fm4ui', {
-                containerId: 'fm4uiContainer',
+            HUDCore.registerStyle('fm4_re', {
+                containerId: 'fm4_reContainer',
                 scaleMultiplier: 1.4,
                 onInit: function(payload) {
                     if (payload) {
@@ -229,24 +292,20 @@
                     }
                 },
                 onElementsChange: function(elements) {
-                    var c = document.getElementById('fm4uiContainer');
+                    var c = document.getElementById('fm4_reContainer');
                     if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
                 },
                 onFrame: function(data, payload) {
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
-                    if (!sweepActive) renderFM4(data);
+                    if (!sweepActive) renderFM4RE(data);
                 },
-                onAnimate: function () {
-                    if (isReady) {
-                        triggerSweep();
-                    } else {
-                        sweepPending = true;
-                    }
+                onAnimate: function() {
+                    triggerSweep();
                 }
             });
 
-            HUDCore.init('fm4ui');
-
+            HUDCore.init('fm4_re');
+            setTimeout(triggerSweep, 100);
         })();
     </script>
 </body>
