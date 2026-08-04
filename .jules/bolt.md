@@ -13,3 +13,12 @@
 ## 2025-03-09 - HTML5 Canvas Optimization for HUD overlays
 **Learning:** Replaced heavy image sequence preloading (over 700 frames) with native Canvas API drawing in the HUD overlay to vastly reduce HTTP requests, memory footprint, and initialization latency.
 **Action:** When creating animated dials or dynamic text readouts in HUD overlays, favor math-driven rendering using Canvas primitives (`ctx.arc`, `ctx.fillText`, `ctx.rotate`) instead of fetching hundreds of sprite images.
+## 2026-08-04 - Fix Telemetry Jitter
+**Learning:** High-frequency (60Hz) DOM updates conflict with CSS `transition` properties, causing visual jitter. Also, rendering 60Hz data via standard React state triggers excessive garbage collection, causing UI stutter.
+**Action:** Extract high-frequency data fields to separate components that subscribe directly to the event emitter (`telemetryEmitter`) and update the DOM directly via `refs`. Always remove CSS `transition` styles from elements updated at this frequency to prevent visual conflict.
+## 2025-03-01 - HUD Overlay Performance GC Pressure
+**Learning:** Using array callbacks (`.filter`, `.forEach`) in high-frequency loops (like `requestAnimationFrame` for `g-radar`) allocates closures and intermediate arrays every frame. Combined with unbound data accumulation during pauses, this causes heavy Garbage Collection (GC) spikes and visual stuttering.
+**Action:** Replace `.filter` and `.forEach` with native `for` loops in 60Hz rendering code. Implement a time-delta reset (e.g., `now - lastTime > 1500ms`) to cleanly flush stale telemetry data when the game pauses or disconnects. Also ensure lifecycle events like `destroy` properly zero out arrays to prevent cross-HUD memory leaks.
+## 2025-03-03 - Remove CSS transitions from high-frequency telemetry components
+**Learning:** CSS transitions applied to elements updated at 60Hz via requestAnimationFrame or high-frequency event emitters conflict with the rapid DOM updates. This causes visual jitter and performance degradation because the browser's composite engine attempts to calculate interpolated frames for values that are already being manually interpolated/updated at 60Hz.
+**Action:** Always remove CSS `transition` styles from elements updated at high frequencies (like telemetry components) to prevent visual conflict and reduce browser rendering overhead.

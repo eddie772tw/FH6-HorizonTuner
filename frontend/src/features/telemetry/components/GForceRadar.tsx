@@ -127,14 +127,13 @@ const GForceRadar: React.FC = React.memo(() => {
             <div key={i} style={{ 
               position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
               top: `${80 + my - 3}px`, 
-              left: `${80 + mx - 3}px`,
-              transition: 'top 0.1s linear, left 0.1s linear'
+              left: `${80 + mx - 3}px`
             }} />
           );
         })}
         <div ref={dotRef} style={{
           position: 'absolute', width: '14px', height: '14px', backgroundColor: 'var(--primary)',
-          borderRadius: '50%', boxShadow: '0 0 12px var(--primary)', transition: 'transform 0.05s linear'
+          borderRadius: '50%', boxShadow: '0 0 12px var(--primary)'
         }} />
       </div>
       <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.8rem' }}>
