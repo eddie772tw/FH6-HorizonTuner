@@ -28,7 +28,7 @@ const SteerBar: React.FC = React.memo(() => {
       <div style={{ width: '100%', height: '16px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', position: 'relative', marginTop: '4px' }}>
         <div ref={barRef} style={{ 
           position: 'absolute', height: '100%', background: 'white',
-          width: '0%', left: '50%', transition: 'width 0.05s linear, left 0.05s linear'
+          width: '0%', left: '50%'
         }} />
         <div style={{ position: 'absolute', left: '50%', top: '-2px', bottom: '-2px', width: '2px', background: 'gray' }} />
       </div>
