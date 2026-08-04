@@ -66,8 +66,15 @@ export function transformTelemetryData(
 ) {
   if (sampleData.length === 0) return [];
 
+  let lastValidGear = 0;
+
   // Helper context generator
   const getContext = (p: AnalysisDataPoint) => {
+    if (p.Gear !== 11) {
+      lastValidGear = p.Gear;
+    }
+    const currentGear = p.Gear === 11 ? lastValidGear : p.Gear;
+
     const primarySpeedKmh = p.SpeedMetersPerSecond * 3.6;
     const mathCtx: Record<string, number> = {
       Speed: primarySpeedKmh,
@@ -76,7 +83,7 @@ export function transformTelemetryData(
       SpeedDelta: primarySpeedKmh * 0.05,
       RPM: p.CurrentEngineRpm,
       CurrentEngineRpm: p.CurrentEngineRpm,
-      Gear: p.Gear,
+      Gear: currentGear,
       Throttle: (p.AccelInput / 255) * 100,
       Brake: (p.BrakeInput / 255) * 100,
       AccelInput: p.AccelInput,
@@ -102,8 +109,14 @@ export function transformTelemetryData(
   // MODE 1: PIE CHART (Gear Usage Ratio or Throttle Ratio)
   if (chartType === 'pie') {
     const counts: Record<string, number> = {};
+    let localLastValidGear = 0;
     sampleData.forEach(p => {
-      const gKey = `Gear ${p.Gear}`;
+      if (p.Gear !== 11) {
+        localLastValidGear = p.Gear;
+      }
+      const currentGear = p.Gear === 11 ? localLastValidGear : p.Gear;
+
+      const gKey = `Gear ${currentGear}`;
       counts[gKey] = (counts[gKey] || 0) + 1;
     });
     return Object.keys(counts).map((key, idx) => ({
