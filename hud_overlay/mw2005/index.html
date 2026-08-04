@@ -36,6 +36,7 @@
             var ctx = canvas ? canvas.getContext('2d') : null;
             var images = {};
             var isReady = false;
+            var sweepPending = false;
 
             var assetMap = {
                 boost_gauge: "./assets/img/general/BOOST_LINE_GAUGE.png",
@@ -63,7 +64,13 @@
                 img.onload = img.onerror = function() {
                     images[k] = img;
                     loaded++;
-                    if (loaded >= keys.length) isReady = true;
+                    if (loaded >= keys.length) {
+                        isReady = true;
+                        if (sweepPending) {
+                            sweepPending = false;
+                            triggerSweep();
+                        }
+                    }
                 };
                 img.src = assetMap[k];
             });
@@ -208,13 +215,17 @@
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     if (!sweepActive) renderMW2005(data);
                 },
-                onAnimate: function() {
-                    triggerSweep();
+                onAnimate: function () {
+                    if (isReady) {
+                        triggerSweep();
+                    } else {
+                        sweepPending = true;
+                    }
                 }
             });
 
             HUDCore.init('mw2005');
-            setTimeout(triggerSweep, 100);
+
         })();
     </script>
 </body>
