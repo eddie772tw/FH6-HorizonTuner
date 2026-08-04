@@ -407,25 +407,30 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
             handleSpringRearMaxChange={handleSpringRearMaxChange}
           />
 
-          <button
-            onClick={importDynoValues}
-            disabled={Object.keys(carParams.dyno_curve).length === 0}
+          <span
             title={Object.keys(carParams.dyno_curve).length === 0 ? t("No dyno data available to import. Please run the dyno test first.") : undefined}
-            style={{
-              ...btnStyle,
-              background: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 180, 255, 0.15)',
-              color: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.3)' : '#00b4ff',
-              border: '1px solid rgba(0, 180, 255, 0.3)',
-              fontSize: '0.85rem',
-              padding: '0.4rem 0.75rem',
-              cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer',
-              width: '100%',
-              textAlign: 'center',
-              marginTop: '0.5rem'
-            }}
+            style={{ display: 'inline-block', width: '100%', cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer' }}
           >
-            {t("📥 Import Max HP / Torque from Dyno (includes RPM)")}
-          </button>
+            <button
+              onClick={importDynoValues}
+              disabled={Object.keys(carParams.dyno_curve).length === 0}
+              style={{
+                ...btnStyle,
+                background: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 180, 255, 0.15)',
+                color: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.3)' : '#00b4ff',
+                border: '1px solid rgba(0, 180, 255, 0.3)',
+                fontSize: '0.85rem',
+                padding: '0.4rem 0.75rem',
+                cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer',
+                width: '100%',
+                textAlign: 'center',
+                marginTop: '0.5rem',
+                pointerEvents: Object.keys(carParams.dyno_curve).length === 0 ? 'none' : 'auto'
+              }}
+            >
+              {t("📥 Import Max HP / Torque from Dyno (includes RPM)")}
+            </button>
+          </span>
         </div>
       ) : (
         <DynoChart 
