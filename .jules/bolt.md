@@ -15,3 +15,6 @@
 ## 2025-03-01 - HUD Overlay Performance GC Pressure
 **Learning:** Using array callbacks (`.filter`, `.forEach`) in high-frequency loops (like `requestAnimationFrame` for `g-radar`) allocates closures and intermediate arrays every frame. Combined with unbound data accumulation during pauses, this causes heavy Garbage Collection (GC) spikes and visual stuttering.
 **Action:** Replace `.filter` and `.forEach` with native `for` loops in 60Hz rendering code. Implement a time-delta reset (e.g., `now - lastTime > 1500ms`) to cleanly flush stale telemetry data when the game pauses or disconnects. Also ensure lifecycle events like `destroy` properly zero out arrays to prevent cross-HUD memory leaks.
+## 2025-03-03 - Remove CSS transitions from high-frequency telemetry components
+**Learning:** CSS transitions applied to elements updated at 60Hz via requestAnimationFrame or high-frequency event emitters conflict with the rapid DOM updates. This causes visual jitter and performance degradation because the browser's composite engine attempts to calculate interpolated frames for values that are already being manually interpolated/updated at 60Hz.
+**Action:** Always remove CSS `transition` styles from elements updated at high frequencies (like telemetry components) to prevent visual conflict and reduce browser rendering overhead.
