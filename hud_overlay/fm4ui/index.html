@@ -30,6 +30,7 @@
             var loadedCount = 0;
             var totalImages = 0;
             var isReady = false;
+            var sweepPending = false;
 
             var rpm_bands = [
                 { minimum: 17000, face: "rpm_16500", frame_rate: 0.01285 },
@@ -103,11 +104,23 @@
                 img.onload = function() {
                     images[key] = img;
                     loadedCount++;
-                    if (loadedCount >= totalImages) isReady = true;
+                    if (loadedCount >= totalImages) {
+                        isReady = true;
+                        if (sweepPending) {
+                            sweepPending = false;
+                            triggerSweep();
+                        }
+                    }
                 };
                 img.onerror = function() {
                     loadedCount++;
-                    if (loadedCount >= totalImages) isReady = true;
+                    if (loadedCount >= totalImages) {
+                        isReady = true;
+                        if (sweepPending) {
+                            sweepPending = false;
+                            triggerSweep();
+                        }
+                    }
                 };
                 img.src = assetMap[key];
             });
@@ -223,13 +236,17 @@
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     if (!sweepActive) renderFM4(data);
                 },
-                onAnimate: function() {
-                    triggerSweep();
+                onAnimate: function () {
+                    if (isReady) {
+                        triggerSweep();
+                    } else {
+                        sweepPending = true;
+                    }
                 }
             });
 
             HUDCore.init('fm4ui');
-            setTimeout(triggerSweep, 100);
+
         })();
     </script>
 </body>
