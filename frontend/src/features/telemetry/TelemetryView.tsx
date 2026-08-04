@@ -70,6 +70,7 @@ const TelemetryView: React.FC = () => {
   const { carName } = useCarParams();
   const { isRecording, loadSavedSession } = useTelemetryRecorder();
 
+  const activeDataRef = useRef<any>(null);
   const prevIsRacingRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -119,27 +120,31 @@ const TelemetryView: React.FC = () => {
     prevIsRacingRef.current = isRacingNow;
   }, [data?.IsRaceOn, isRecording, loadSavedSession]);
 
-  const isRacing = data?.IsRaceOn === 1;
+  if (!isHudPaused) {
+    activeDataRef.current = data;
+  }
+  const displayData = activeDataRef.current;
 
-  const rpm = data?.CurrentEngineRpm || 0;
-  const rpmIdle = data?.EngineIdleRpm || 0;
-  const rpmMax = data?.EngineMaxRpm || 1;
+  const isRacing = displayData?.IsRaceOn === 1;
+
+  const rpm = displayData?.CurrentEngineRpm || 0;
+  const rpmIdle = displayData?.EngineIdleRpm || 0;
+  const rpmMax = displayData?.EngineMaxRpm || 1;
   const rpmPercent = Math.max(0, Math.min(100, ((rpm - rpmIdle) / (rpmMax - rpmIdle)) * 100));
 
-  const speedData = convertSpeed(data?.SpeedMetersPerSecond || 0);
-  const powerData = convertPower(data?.PowerWatts || 0);
-  const torqueData = convertTorque(data?.TorqueNewtons || 0);
-  const boostData = convertBoost(data?.Boost || 0);
+  const speedData = convertSpeed(displayData?.SpeedMetersPerSecond || 0);
+  const powerData = convertPower(displayData?.PowerWatts || 0);
+  const torqueData = convertTorque(displayData?.TorqueNewtons || 0);
+  const boostData = convertBoost(displayData?.Boost || 0);
 
-  const gear = data?.Gear || 0;
-  const currentLap = data?.CurrentLap || 0;
-  const bestLap = data?.BestLap || 0;
-  const lastLap = data?.LastLap || 0;
+  const gear = displayData?.Gear || 0;
+  const currentLap = displayData?.CurrentLap || 0;
+  const bestLap = displayData?.BestLap || 0;
+  const lastLap = displayData?.LastLap || 0;
 
+  const classDisplay = getCarClassString(displayData?.CarClass);
 
-  const classDisplay = getCarClassString(data?.CarClass);
-
-  const isEV = data?.EngineIdleRpm === 0;
+  const isEV = displayData?.EngineIdleRpm === 0;
   const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
 
 
