@@ -6,6 +6,15 @@
     <!-- Include Shared Base HUD Styles -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        :root {
+            --simple-primary-color: #00f0ff;
+            --simple-primary-rgba: rgba(0, 240, 255, 0.9);
+            --simple-primary-dim: rgba(0, 240, 255, 0.4);
+            --simple-hot-color: #ff0088;
+            --simple-hot-rgba: rgba(255, 0, 136, 0.9);
+            --simple-hot-dim: rgba(255, 0, 136, 0.8);
+        }
+
         /* ── Text Overlays (NFSU2 Style) ─────────────────────────────────────── */
         .speed-text {
             position: absolute;
@@ -15,7 +24,7 @@
             font-weight: 700;
             font-family: 'ForzaGear', Arial, sans-serif;
             letter-spacing: 0.05em;
-            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8), 3px 3px 5px rgba(0, 240, 255, 0.4);
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8), 3px 3px 5px var(--simple-primary-dim);
             pointer-events: none;
         }
         .speed-text span { display: inline-block; width: 1ch; text-align: center; }
@@ -24,10 +33,10 @@
             position: absolute;
             bottom: 50px; right: 45px;
             font-size: 42px;
-            color: rgba(0, 240, 255, 0.9);
+            color: var(--simple-primary-rgba);
             font-family: 'ForzaGear', Arial, sans-serif;
             letter-spacing: 0.1em;
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             pointer-events: none;
         }
 
@@ -49,10 +58,10 @@
             width: 0; height: 0;
             border-left: 22px solid transparent;
             border-right: 22px solid transparent;
-            border-bottom: 35px solid rgba(255, 0, 136, 0.9);
+            border-bottom: 35px solid var(--simple-hot-rgba);
             opacity: 0;
             transition: opacity 0.1s, transform 0.1s;
-            filter: drop-shadow(0 0 8px rgba(255, 0, 136, 0.8));
+            filter: drop-shadow(0 0 8px var(--simple-hot-dim));
             pointer-events: none;
         }
         .gear-indicator.active { opacity: 1; transform: scale(1.15); }
@@ -119,6 +128,70 @@
         var _simpleValidGear = 1;
         window.simpleSweepActive = false;
 
+        var defaultColorPrimary = '#00f0ff';
+        var defaultColorPrimaryRgba = 'rgba(0, 240, 255, 0.9)';
+        var defaultColorPrimaryDim = 'rgba(0, 240, 255, 0.4)';
+        var defaultColorHot = '#ff0088';
+        var defaultColorHotRgba = 'rgba(255, 0, 136, 0.9)';
+
+        var CURRENT_PRIMARY = defaultColorPrimary;
+        var CURRENT_PRIMARY_RGBA = defaultColorPrimaryRgba;
+        var CURRENT_HOT = defaultColorHot;
+        var CURRENT_HOT_RGBA = defaultColorHotRgba;
+
+        function hexToRgba(hex, alpha) {
+            var c;
+            if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+                c = hex.substring(1).split('');
+                if(c.length === 3){
+                    c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+                }
+                c = '0x' + c.join('');
+                return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+            }
+            return 'rgba(255,255,255,'+alpha+')';
+        }
+
+        var _lastAppliedPrimary = null;
+
+        function updateDynamicColors() {
+            var customColor = window._currentCustomColor;
+            var useDefault = window._currentUseDefaultColors !== false;
+            var targetColor = (!useDefault && customColor) ? customColor : defaultColorPrimary;
+
+            if (targetColor !== _lastAppliedPrimary) {
+                _lastAppliedPrimary = targetColor;
+
+                if (!useDefault && customColor) {
+                    CURRENT_PRIMARY = customColor;
+                    CURRENT_PRIMARY_RGBA = hexToRgba(customColor, 0.9);
+                    var cDim = hexToRgba(customColor, 0.4);
+
+                    document.documentElement.style.setProperty('--simple-primary-color', customColor);
+                    document.documentElement.style.setProperty('--simple-primary-rgba', CURRENT_PRIMARY_RGBA);
+                    document.documentElement.style.setProperty('--simple-primary-dim', cDim);
+                } else {
+                    CURRENT_PRIMARY = defaultColorPrimary;
+                    CURRENT_PRIMARY_RGBA = defaultColorPrimaryRgba;
+
+                    document.documentElement.style.setProperty('--simple-primary-color', defaultColorPrimary);
+                    document.documentElement.style.setProperty('--simple-primary-rgba', defaultColorPrimaryRgba);
+                    document.documentElement.style.setProperty('--simple-primary-dim', defaultColorPrimaryDim);
+                }
+            }
+        }
+
+        var motionState = {
+            currentOffsetX: 0,
+            currentOffsetY: 0,
+            currentBlurPx: 0,
+            lastAppliedOffsetX: 0,
+            lastAppliedOffsetY: 0,
+            lastAppliedBlurPx: 0
+        };
+
+        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
         function setSimpleSpeedDisplay(value) {
             var el = document.getElementById('speedText');
             if (!el) return;
@@ -129,6 +202,56 @@
 
         function drawSimpleHUD(data, redlineRpm) {
             if (!ctx) return;
+            updateDynamicColors();
+
+            var currentElements = (window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {};
+            var showMotion = currentElements.showMotionEffect !== false;
+            var simpleContainer = document.getElementById('simpleContainer');
+            if (simpleContainer) {
+                if (showMotion && data) {
+                    var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);
+                    var rawAccY = data.accel_y !== undefined ? data.accel_y : (data.AccelerationY || 0);
+                    var gX = clamp(-rawAccX / 9.81, -2.5, 2.5);
+                    var gY = clamp(rawAccY / 9.81, -2.5, 2.5);
+
+                    if (Math.abs(gX) < 0.1) gX = 0;
+                    if (Math.abs(gY) < 0.1) gY = 0;
+
+                    var targetOffsetX = gX * 12;
+                    var targetOffsetY = gY * 12;
+                    var gMag = Math.sqrt(gX * gX + gY * gY);
+                    var targetBlurPx = gMag > 0.8 ? Math.min(3.5, (gMag - 0.8) * 2.0) : 0;
+
+                    motionState.currentOffsetX += (targetOffsetX - motionState.currentOffsetX) * 0.2;
+                    motionState.currentOffsetY += (targetOffsetY - motionState.currentOffsetY) * 0.2;
+                    motionState.currentBlurPx += (targetBlurPx - motionState.currentBlurPx) * 0.2;
+
+                    var isTransformChanged = Math.abs(motionState.currentOffsetX - motionState.lastAppliedOffsetX) > 0.05 ||
+                                             Math.abs(motionState.currentOffsetY - motionState.lastAppliedOffsetY) > 0.05;
+                    var isFilterChanged = Math.abs(motionState.currentBlurPx - motionState.lastAppliedBlurPx) > 0.05;
+
+                    if (isTransformChanged) {
+                        simpleContainer.style.transform = 'translate3d(' + motionState.currentOffsetX.toFixed(2) + 'px, ' + motionState.currentOffsetY.toFixed(2) + 'px, 0px)';
+                        motionState.lastAppliedOffsetX = motionState.currentOffsetX;
+                        motionState.lastAppliedOffsetY = motionState.currentOffsetY;
+                    }
+
+                    if (isFilterChanged) {
+                        simpleContainer.style.filter = motionState.currentBlurPx > 0.1 ? 'blur(' + motionState.currentBlurPx.toFixed(2) + 'px)' : 'none';
+                        motionState.lastAppliedBlurPx = motionState.currentBlurPx;
+                    }
+                } else {
+                    simpleContainer.style.transform = 'none';
+                    simpleContainer.style.filter = 'none';
+                    motionState.currentOffsetX = 0;
+                    motionState.currentOffsetY = 0;
+                    motionState.lastAppliedOffsetX = 0;
+                    motionState.lastAppliedOffsetY = 0;
+                    motionState.currentBlurPx = 0;
+                    motionState.lastAppliedBlurPx = 0;
+                }
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             var centerX = 375, centerY = 375, radius = 250;
@@ -169,8 +292,8 @@
             ctx.arc(centerX, centerY, radius, startAngle, currentAngle);
             ctx.lineWidth = 16;
             var isOverRedline = rpm >= redline;
-            ctx.strokeStyle = isOverRedline ? '#ff0088' : '#00f0ff';
-            ctx.shadowColor = isOverRedline ? 'rgba(255, 0, 136, 0.9)' : 'rgba(0, 240, 255, 0.9)';
+            ctx.strokeStyle = isOverRedline ? CURRENT_HOT : CURRENT_PRIMARY;
+            ctx.shadowColor = isOverRedline ? CURRENT_HOT_RGBA : CURRENT_PRIMARY_RGBA;
             ctx.shadowBlur = 15;
             ctx.stroke();
             ctx.restore();
@@ -196,12 +319,12 @@
                 ctx.moveTo(centerX + innerR * Math.cos(angle), centerY + innerR * Math.sin(angle));
                 ctx.lineTo(centerX + outerR * Math.cos(angle), centerY + outerR * Math.sin(angle));
                 ctx.lineWidth = 3;
-                ctx.strokeStyle = isRed ? '#ff0088' : 'rgba(255, 255, 255, 0.7)';
+                ctx.strokeStyle = isRed ? CURRENT_HOT : 'rgba(255, 255, 255, 0.7)';
                 ctx.stroke();
 
                 // Digit text
                 var numR = radius - 40;
-                ctx.fillStyle = isRed ? '#ff0088' : 'rgba(255, 255, 255, 0.9)';
+                ctx.fillStyle = isRed ? CURRENT_HOT : 'rgba(255, 255, 255, 0.9)';
                 ctx.fillText(i.toString(), centerX + numR * Math.cos(angle), centerY + numR * Math.sin(angle));
             }
             ctx.restore();
@@ -214,8 +337,8 @@
             ctx.moveTo(-15, 0);
             ctx.lineTo(radius - 20, 0);
             ctx.lineWidth = 6;
-            ctx.strokeStyle = (rpm >= redline) ? '#ff0055' : '#00f0ff';
-            ctx.shadowColor = (rpm >= redline) ? 'rgba(255, 0, 85, 0.9)' : 'rgba(0, 240, 255, 0.9)';
+            ctx.strokeStyle = (rpm >= redline) ? CURRENT_HOT : CURRENT_PRIMARY;
+            ctx.shadowColor = (rpm >= redline) ? CURRENT_HOT_RGBA : CURRENT_PRIMARY_RGBA;
             ctx.shadowBlur = 12;
             ctx.stroke();
             ctx.restore();
@@ -225,7 +348,7 @@
             ctx.beginPath();
             ctx.arc(centerX, centerY, 24, 0, Math.PI * 2);
             ctx.fillStyle = '#111';
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+            ctx.strokeStyle = CURRENT_PRIMARY_RGBA;
             ctx.lineWidth = 4;
             ctx.fill();
             ctx.stroke();
