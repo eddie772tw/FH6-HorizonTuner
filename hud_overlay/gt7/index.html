@@ -22,14 +22,16 @@
         .gt7-container {
             align-self: center;
             transform-origin: bottom center;
-            width: 1260px;
+            /* 修正：擴大容器寬度以容納左右兩側的負數與溢出座標 */
+            width: 1740px; 
             height: 240px;
             pointer-events: none;
         }
 
         canvas {
             display: block;
-            width: 1260px;
+            /* 修正：同步擴大畫布寬度 */
+            width: 1740px; 
             height: 240px;
         }
     </style>
@@ -39,7 +41,8 @@
     <div id="teleCardsMount"></div>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container gt7-container" id="gt7Container">
-            <canvas id="gt7Canvas" width="1260" height="240"></canvas>
+            <!-- 修正：更新 HTML 屬性上的寬度 -->
+            <canvas id="gt7Canvas" width="1740" height="240"></canvas>
         </div>
     </div>
 
@@ -140,6 +143,11 @@
                 for (var i = 0; i < 4; i++) {
                     if (images.tyre_outline) {
                         ctx.save();
+                        // 修正：依照溫度資料填入對應的輪胎顏色
+                        ctx.fillStyle = getTempColor(temps[i]);
+                        // 在外框內部填上顏色色塊
+                        ctx.fillRect(positions[i].x + 4, positions[i].y + 4, 38, 86);
+                        
                         ctx.globalAlpha = 0.92;
                         ctx.drawImage(images.tyre_outline, positions[i].x, positions[i].y, 46, 94);
                         ctx.restore();
@@ -152,6 +160,10 @@
                 var w = 171 * scale, h = 186 * scale;
                 var x = 1295.5 - w * 0.5, y = 99 - h * 0.5;
                 var boostPsi = tm.boost_psi ?? (tm.boost !== undefined ? tm.boost : 14.5);
+                
+                // 修正：動態更新峰值增壓，確保進度條能正確抓取極值
+                if (boostPsi > peakPositiveBoost) { peakPositiveBoost = boostPsi; }
+                
                 var boostBar = boostPsi * 0.0689476;
                 var maxBar = Math.max(2, Math.ceil(Math.max(boostBar, peakPositiveBoost * 0.0689476)));
 
@@ -179,7 +191,13 @@
 
             function renderGT7(data, time) {
                 if (!ctx || !isReady) return;
-                ctx.clearRect(0, 0, 1260, 240);
+                
+                // 修正：清除畫布區域擴大至 1740
+                ctx.clearRect(0, 0, 1740, 240);
+
+                ctx.save();
+                // 修正：將所有元素向右平移 210px，讓負數座標 (-205) 與溢出座標能進入可視範圍內
+                ctx.translate(210, 0);
 
                 var maxRpm = data.maxRpm || data.max_rpm || 8000;
                 var rpm = data.rpm || 0;
@@ -190,7 +208,7 @@
                 var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
                 var steer = data.steer || data.steering || 0;
 
-                var rpmRatio = clamp(rpm * 1.05 / Math.max(1, maxRpm), 0, 1);
+                var rpmRatio = clamp((Math.max(0, rpm + 1000)) * 1.05 / Math.max(1, maxRpm), 0, 1);
                 var cx = 630;
 
                 if (settings.show_tires) drawTires(data);
@@ -207,7 +225,7 @@
 
                 // Rev Frame
                 var progress = clamp((rpmRatio - 0.8) / 0.2, 0, 1);
-                var blink = rpmRatio >= 0.995 && Math.floor((time || performance.now() / 1000) * 10) % 2 === 1;
+                var blink = rpmRatio >= 0.95 && Math.floor((time || performance.now() / 1000) * 10) % 2 === 1;
 
                 if (!blink && images.line) {
                     var drawWidth = 800 * progress;
@@ -277,6 +295,9 @@
                 if (settings.show_extras && (data.handbrake || data.hand_brake)) {
                     if (images.handbrake) ctx.drawImage(images.handbrake, 1165, 145, 40, 40);
                 }
+                
+                // 恢復畫布平移前的狀態
+                ctx.restore();
             }
 
             var sweepActive = false;
