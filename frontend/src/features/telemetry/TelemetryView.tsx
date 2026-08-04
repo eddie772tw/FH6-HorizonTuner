@@ -9,6 +9,8 @@ import VerticalInputBar from './components/VerticalInputBar';
 import PedalTraceCanvas from './components/PedalTraceCanvas';
 import TireRadar from './components/TireRadar';
 import SuspensionBar from './components/SuspensionBar';
+import EngineRpmDisplay from './components/EngineRpmDisplay';
+import VehicleDynamicsDisplay from './components/VehicleDynamicsDisplay';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
@@ -66,7 +68,7 @@ const TelemetryView: React.FC = () => {
   const [subTab, setSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
   const { data } = useTelemetry();
-  const { convertSpeed, convertPower, convertTorque, convertBoost, t } = useSettings();
+  const { t } = useSettings();
   const { carName } = useCarParams();
   const { isRecording, loadSavedSession } = useTelemetryRecorder();
 
@@ -211,16 +213,7 @@ const TelemetryView: React.FC = () => {
         <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
           <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '0.5rem' }}>
-                <div><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>{Math.round(rpm)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("RPM")}</span></div></div>
-                <div style={{ textAlign: 'center' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>{gear === 0 ? 'R' : gear} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("GEAR")}</span></div></div>
-                <div style={{ textAlign: 'right' }}><div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>{Math.round(speedData.value)} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{speedData.label}</span></div></div>
-              </div>
-              <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${rpmPercent}%`, background: rpmPercent > 90 ? 'var(--secondary)' : 'var(--primary)', transition: 'width 0.1s linear, background 0.3s ease' }} />
-              </div>
-            </div>
+            <EngineRpmDisplay />
             <SteerBar />
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
@@ -238,22 +231,7 @@ const TelemetryView: React.FC = () => {
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
         <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Power")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: (isEV && powerData.value < 0) ? '#00ff88' : '#fff' }}>{Math.round(powerData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{powerData.label}</span></div></div>
-              <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Torque")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: (isEV && torqueData.value < 0) ? '#00ff88' : '#fff' }}>{Math.round(torqueData.value)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{torqueData.label}</span></div></div>
-              {isEV ? (
-                <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Regen")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: isRegenActive ? '#00ff88' : '#fff' }}>{isRegenActive ? t("ON") : t("OFF")}</div></div>
-              ) : (
-                <div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Boost")}</div><div style={{ fontSize: '1.4rem', fontWeight: 700, color: boostData.value > 0 ? 'var(--secondary)' : '#fff' }}>{boostData.value.toFixed(1)}<span style={{fontSize:'0.8rem', marginLeft: '2px'}}>{boostData.label}</span></div></div>
-              )}
-            </div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Current Lap")}:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(currentLap)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Last Lap")}:</span><span style={{ fontFamily: 'monospace' }}>{formatTime(lastLap)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>{t("Best Lap")}:</span><span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{formatTime(bestLap)}</span></div>
-            </div>
-          </div>
+          <VehicleDynamicsDisplay />
           <GForceRadar />
         </div>
       </div>
