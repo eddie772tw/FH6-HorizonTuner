@@ -190,7 +190,7 @@
                 var gearLabel = gearVal === 0 ? 'R' : (gearVal === 11 ? 'N' : (gearVal !== undefined ? String(gearVal) : '1'));
                 var steer = data.steer || data.steering || 0;
 
-                var rpmRatio = clamp(rpm * 1.05 / Math.max(1, maxRpm), 0, 1);
+                var rpmRatio = clamp((Math.max(0, rpm + 1000)) * 1.05 / Math.max(1, maxRpm), 0, 1);
                 var cx = 630;
 
                 if (settings.show_tires) drawTires(data);
@@ -207,7 +207,7 @@
 
                 // Rev Frame
                 var progress = clamp((rpmRatio - 0.8) / 0.2, 0, 1);
-                var blink = rpmRatio >= 0.995 && Math.floor((time || performance.now() / 1000) * 10) % 2 === 1;
+                var blink = rpmRatio >= 0.95 && Math.floor((time || performance.now() / 1000) * 10) % 2 === 1;
 
                 if (!blink && images.line) {
                     var drawWidth = 800 * progress;
