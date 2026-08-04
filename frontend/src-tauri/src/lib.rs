@@ -217,16 +217,13 @@ pub fn run() {
             .visible(false);
 
             // Read hud_config.json to check hardware acceleration setting
-            let mut hw_accel = true; // default
+            let mut hw_accel = false; // default to false
             if let Ok(exe_dir) = std::env::current_exe().map(|p| p.parent().unwrap().to_path_buf()) {
                 let config_path = exe_dir.join("hud_config.json");
                 if let Ok(content) = std::fs::read_to_string(&config_path) {
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
                         if let Some(hw) = json.get("hardwareAcceleration").and_then(|v| v.as_bool()) {
                             hw_accel = hw;
-                        } else {
-                             // Not present in config, means it's defaulting to false based on the updated JS model
-                             hw_accel = false;
                         }
                     }
                 } else {
@@ -237,22 +234,18 @@ pub fn run() {
                               if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
                                   if let Some(hw) = json.get("hardwareAcceleration").and_then(|v| v.as_bool()) {
                                       hw_accel = hw;
-                                  } else {
-                                      hw_accel = false;
                                   }
                               }
-                          } else {
-                              hw_accel = false; // default to false if not found
                           }
                      }
                 }
-            } else {
-                hw_accel = false;
             }
 
             if !hw_accel {
                 println!("Hardware acceleration for HUD overlay is disabled in settings.");
-                overlay_builder = overlay_builder.additional_browser_args("--disable-gpu");
+                // Note: Calling additional_browser_args overrides the default Wry arguments.
+                // We must include the default disable-features as recommended by Tauri documentation to avoid Webview2 crashes/glitches.
+                overlay_builder = overlay_builder.additional_browser_args("--disable-gpu --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection");
             } else {
                 println!("Hardware acceleration for HUD overlay is enabled.");
             }
