@@ -12,3 +12,6 @@
 ## 2026-08-04 - Fix Telemetry Jitter
 **Learning:** High-frequency (60Hz) DOM updates conflict with CSS `transition` properties, causing visual jitter. Also, rendering 60Hz data via standard React state triggers excessive garbage collection, causing UI stutter.
 **Action:** Extract high-frequency data fields to separate components that subscribe directly to the event emitter (`telemetryEmitter`) and update the DOM directly via `refs`. Always remove CSS `transition` styles from elements updated at this frequency to prevent visual conflict.
+## 2025-03-01 - HUD Overlay Performance GC Pressure
+**Learning:** Using array callbacks (`.filter`, `.forEach`) in high-frequency loops (like `requestAnimationFrame` for `g-radar`) allocates closures and intermediate arrays every frame. Combined with unbound data accumulation during pauses, this causes heavy Garbage Collection (GC) spikes and visual stuttering.
+**Action:** Replace `.filter` and `.forEach` with native `for` loops in 60Hz rendering code. Implement a time-delta reset (e.g., `now - lastTime > 1500ms`) to cleanly flush stale telemetry data when the game pauses or disconnects. Also ensure lifecycle events like `destroy` properly zero out arrays to prevent cross-HUD memory leaks.

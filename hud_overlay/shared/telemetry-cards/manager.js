@@ -244,6 +244,22 @@ export function createTelemetryCardsManager() {
 
             var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
+            // Time-based cleanup: if game was paused or disconnected, clear old history
+            if (now - this.lastTime > 1500) {
+                this.suspHist = [[], [], [], []];
+                this.suspMinMax = [
+                    { min: null, max: null },
+                    { min: null, max: null },
+                    { min: null, max: null },
+                    { min: null, max: null }
+                ];
+                this.tireHist = [[], [], [], []];
+                this.pedalHist = [];
+                this.powerTorqueHist = [];
+                this.gHist = [];
+            }
+            this.lastTime = now;
+
             if (showAttitude) {
                 renderGRadar(data, this.gHist, now);
             }
@@ -287,6 +303,26 @@ export function createTelemetryCardsManager() {
                     gDot.style.boxShadow = '0 0 16px #00f0ff, 0 0 30px rgba(0, 240, 255, 0.8)';
                 }
             }, 450);
+        },
+
+        // -----------------------------------------------------------------------
+        destroy: function () {
+            this.suspHist = [[], [], [], []];
+            this.suspMinMax = [
+                { min: null, max: null },
+                { min: null, max: null },
+                { min: null, max: null },
+                { min: null, max: null }
+            ];
+            this.tireHist = [[], [], [], []];
+            this.pedalHist = [];
+            this.powerTorqueHist = [];
+            this.gHist = [];
+
+            if (this.containerEl) {
+                this.containerEl.innerHTML = '';
+            }
+            this.initialized = false;
         }
     };
 }

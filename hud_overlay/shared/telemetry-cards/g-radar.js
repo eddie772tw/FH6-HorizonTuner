@@ -39,44 +39,55 @@ export function renderGRadar(data, gHist, now) {
     if (markersContainer && gCircle) {
         var radiusPx = gCircle.clientWidth / 2;
         var maxMRadius = Math.max(0, radiusPx - 4);
-        var recent30s = gHist.filter(function (p) { return now - p.time <= 30000; });
-        if (recent30s.length > 0 && Math.random() < 0.2) {
+
+        if (gHist.length > 0 && Math.random() < 0.2) {
             var maxLatL = { lat: 0, lon: 0 }, maxLatR = { lat: 0, lon: 0 };
             var maxLonB = { lat: 0, lon: 0 }, maxLonA = { lat: 0, lon: 0 };
             var maxL_B  = { lat: 0, lon: 0 }, maxL_A  = { lat: 0, lon: 0 };
             var maxR_B  = { lat: 0, lon: 0 }, maxR_A  = { lat: 0, lon: 0 };
 
-            recent30s.forEach(function (p) {
-                if (p.lat < maxLatL.lat) maxLatL = p;
-                if (p.lat > maxLatR.lat) maxLatR = p;
-                if (p.lon < maxLonB.lon) maxLonB = p;
-                if (p.lon > maxLonA.lon) maxLonA = p;
-                if (p.lat < 0 && p.lon < 0 && (p.lat + p.lon < maxL_B.lat + maxL_B.lon)) maxL_B = p;
-                if (p.lat < 0 && p.lon > 0 && (p.lat - p.lon < maxL_A.lat - maxL_A.lon)) maxL_A = p;
-                if (p.lat > 0 && p.lon < 0 && (p.lat - p.lon > maxR_B.lat - maxR_B.lon)) maxR_B = p;
-                if (p.lat > 0 && p.lon > 0 && (p.lat + p.lon > maxR_A.lat + maxR_A.lon)) maxR_A = p;
-            });
-            markersContainer.innerHTML = '';
-            var points = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
-            points.forEach(function (p) {
-                if (p.lat === 0 && p.lon === 0) return;
-                var mDot = document.createElement('div');
-                mDot.style.position = 'absolute';
-                mDot.style.width = '6px';
-                mDot.style.height = '6px';
-                mDot.style.borderRadius = '50%';
-                mDot.style.background = 'rgba(255,255,255,0.5)';
-                var mx = (p.lat / 2) * radiusPx;
-                var my = (p.lon / 2) * radiusPx;
-                var mDist = Math.sqrt(mx * mx + my * my);
-                if (mDist > maxMRadius && mDist > 0) {
-                    mx = (mx / mDist) * maxMRadius;
-                    my = (my / mDist) * maxMRadius;
+            var hasRecent = false;
+            for (var i = 0; i < gHist.length; i++) {
+                var p = gHist[i];
+                if (now - p.time <= 30000) {
+                    hasRecent = true;
+                    if (p.lat < maxLatL.lat) maxLatL = p;
+                    if (p.lat > maxLatR.lat) maxLatR = p;
+                    if (p.lon < maxLonB.lon) maxLonB = p;
+                    if (p.lon > maxLonA.lon) maxLonA = p;
+                    if (p.lat < 0 && p.lon < 0 && (p.lat + p.lon < maxL_B.lat + maxL_B.lon)) maxL_B = p;
+                    if (p.lat < 0 && p.lon > 0 && (p.lat - p.lon < maxL_A.lat - maxL_A.lon)) maxL_A = p;
+                    if (p.lat > 0 && p.lon < 0 && (p.lat - p.lon > maxR_B.lat - maxR_B.lon)) maxR_B = p;
+                    if (p.lat > 0 && p.lon > 0 && (p.lat + p.lon > maxR_A.lat + maxR_A.lon)) maxR_A = p;
                 }
-                mDot.style.left = (radiusPx + mx - 3) + 'px';
-                mDot.style.top = (radiusPx + my - 3) + 'px';
-                markersContainer.appendChild(mDot);
-            });
+            }
+
+            if (hasRecent) {
+                markersContainer.innerHTML = '';
+                var points = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
+                for (var j = 0; j < points.length; j++) {
+                    var pt = points[j];
+                    if (pt.lat === 0 && pt.lon === 0) continue;
+
+                    var mDot = document.createElement('div');
+                    mDot.style.position = 'absolute';
+                    mDot.style.width = '6px';
+                    mDot.style.height = '6px';
+                    mDot.style.borderRadius = '50%';
+                    mDot.style.background = 'rgba(255,255,255,0.5)';
+
+                    var mx = (pt.lat / 2) * radiusPx;
+                    var my = (pt.lon / 2) * radiusPx;
+                    var mDist = Math.sqrt(mx * mx + my * my);
+                    if (mDist > maxMRadius && mDist > 0) {
+                        mx = (mx / mDist) * maxMRadius;
+                        my = (my / mDist) * maxMRadius;
+                    }
+                    mDot.style.left = (radiusPx + mx - 3) + 'px';
+                    mDot.style.top = (radiusPx + my - 3) + 'px';
+                    markersContainer.appendChild(mDot);
+                }
+            }
         }
     }
 }
