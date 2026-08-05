@@ -995,21 +995,21 @@
 
 ---
 
-## 2026-08-05 — Step3 底盤調校實作、Step TSX 獨立組件架構與空力自動反推機制
+## 2026-08-05 — Step 2 齒比圖表有效動力帶 (Effective Powerband) 視覺化高亮
 
 **學習點 (Learning):**
-1. **Step 導向介面獨立 TSX 組件規範 (Step Component Independence)**：
-   - 將精靈嚮導 (Wizard) 的每一個 Step 獨立為專屬 TSX 組件 (`Step1GoalSetup.tsx`, `Step2GearboxSetup.tsx`, `Step3ChassisTuner.tsx`)，使 `TuningView.tsx` 解耦為專注於向導進度與狀態傳遞的 View Container，行數由 611 行降至約 240 行。此規範已寫入 `AGENTS.md` 成為專案全域開發標準。
-2. **下壓力 0 值觸發自動反推機制 (Auto Downforce Derivation on Zero)**：
-   - 在 `tuningMath.ts` 中實作 `resolveAeroDownforce` 純函數，當玩家將下壓力設為 `0` (或勾選 Auto Checkbox 鎖定為 0) 時，自動結合車輛靜態重量分配 ($W_f\%, W_r\%$)、驅動方式修正係數 (`Drivetrain_Modifier`: RWD 0.82, FWD/AWD 1.05) 與車重估算目標下壓力，無需玩家額外輸入需測量之數據。
-3. **賽車目標動態欄位呈現與廢棄欄位清理**：
-   - Step 1 與 `CarParamsView.tsx` 車輛參數頁面動態根據 `Road` / `Drift` / `Rally` / `Drag` 顯示對應之欄位（如僅 `Drift` 顯示 `induction` 進氣方式）。
-   - 全數清理已拋棄、已改為自動計算或未被任何賽種使用之舊欄位（如 `target_ride_frequency`, `target_rebound_ratio` 等），並固定 ARB 範圍為 1.0~65.0。
-4. **舊版Preset檔向下相容載入 (`normalizeCarParams`)**：
-   - 於 `CarParamsContext.tsx` 中實作相容層，讀取舊版 JSON 時自動補齊 `spring_front_min` (10.0), `spring_front_max` (120.0) 等預設值，保障車輛檔無痛過渡。
+1. **Recharts 動力帶背景色塊與峰值參考線 (Powerband Highlight & Reference Lines)**：
+   - 於 [GearingTuner.tsx](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/src/features/tuning/components/GearingTuner.tsx) 中追加 3 大視覺元素：
+     1. **最大馬力轉速參考線**：紅色虛線 `ReferenceLine` ($RPM_{HP}$)。
+     2. **最大扭力轉速參考線**：橙色虛線 `ReferenceLine` ($RPM_{T}$)。
+     3. **有效動力帶高亮區塊**：使用 `ReferenceArea` 在背景繪製半透明極簡薄綠/青色塊 (`rgba(0, 230, 118, 0.08)`)，介於最大扭力與最大馬力轉速之間，讓玩家一目瞭然換檔後的轉速落點是否完滿落在有效動力帶區間內。
 
 **後續行動 (Action):**
-- 後續開發任何多步驟精靈介面時，一律遵循 `AGENTS.md` 新增的獨立 TSX 組件規範，保持主 Container 的精簡與高可讀性。
+- 後續進行圖表視覺優化時，多善用 Recharts 之 `ReferenceArea` 與色彩透明度，提升數據讀取的直覺性與視覺體驗。
+
+
+
+
 
 
 

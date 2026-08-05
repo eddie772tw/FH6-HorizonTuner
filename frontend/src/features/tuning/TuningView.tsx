@@ -42,14 +42,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
 
-  // Gearing tuning states
-  const [gearingMethod, setGearingMethod] = useState<'scientific' | 'custom'>('scientific');
-  const [customGearingModel, setCustomGearingModel] = useState<string>('Basic Linear');
-  const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift' | 'Custom'>('GT');
-  const [basicCustomP, setBasicCustomP] = useState<number>(0.5);
-  const [pMin, setPMin] = useState<number>(0.40);
-  const [pMax, setPMax] = useState<number>(0.65);
-
   const numGears = carParams?.adjustability?.gears || 6;
   const [tuning, setTuning] = useState<TuningState>(() => initialTuning(numGears));
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
@@ -80,26 +72,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       }));
     }
   }, [carParams]);
-
-  // Sync discipline defaults with raceGoal
-  useEffect(() => {
-    if (selectedRaceGoal === 'Rally' || selectedRaceGoal === 'DangerSign') {
-      setGearingDiscipline('Rally');
-      setBasicCustomP(0.7);
-      setPMin(0.60);
-      setPMax(0.80);
-    } else if (selectedRaceGoal === 'Drift') {
-      setGearingDiscipline('Drift');
-      setBasicCustomP(0.4);
-      setPMin(0.30);
-      setPMax(0.50);
-    } else {
-      setGearingDiscipline('GT');
-      setBasicCustomP(0.5);
-      setPMin(0.40);
-      setPMax(0.65);
-    }
-  }, [selectedRaceGoal]);
 
   const fetchTunings = async () => {
     if (!carId) return;
@@ -152,25 +124,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-  const applyBasicGearing = () => {
-    const limits = { gearMin: 0.3, gearMax: 6.0 };
-    const newGears = [...tuning.gearing.gears];
-    const g1 = tuning.gearing.gears[0];
-    const g_top = tuning.gearing.gears[numGears - 1];
 
-    for (let i = 1; i < numGears - 1; i++) {
-      const x = i / (numGears - 1);
-      const fx = Math.pow(x, basicCustomP);
-      newGears[i] = Math.max(limits.gearMin, Math.min(limits.gearMax, g1 * Math.pow(g_top / g1, fx)));
-    }
-    setTuning(prev => ({
-      ...prev,
-      gearing: {
-        ...prev.gearing,
-        gears: newGears.map(g => Number(g.toFixed(2)))
-      }
-    }));
-  };
 
   const applyScientificGearing = () => {
     if (!carParams) return;
@@ -293,23 +247,12 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 
         {currentStep === 2 && (
           <Step2GearboxSetup
-            gearingMethod={gearingMethod}
-            setGearingMethod={setGearingMethod}
-            customGearingModel={customGearingModel}
-            setCustomGearingModel={setCustomGearingModel}
-            gearingDiscipline={gearingDiscipline}
-            setGearingDiscipline={setGearingDiscipline}
-            basicCustomP={basicCustomP}
-            setBasicCustomP={setBasicCustomP}
-            pMin={pMin}
-            pMax={pMax}
             tuning={tuning}
             updateSection={updateSection}
-            applyScientificGearing={applyScientificGearing}
-            applyBasicGearing={applyBasicGearing}
             numGears={numGears}
             savedTunings={savedTunings}
             loadTuning={loadTuning}
+            carParams={carParams}
           />
         )}
 

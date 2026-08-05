@@ -167,6 +167,46 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
         </div>
 
+        {/* Dynamic Section: Mechanical & Aero Balance (Road / Circuit Only) */}
+        {selectedRaceGoal === 'Road' && (
+          <>
+            <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
+              {t("Mechanical & Aero Balance (AEGO Coefficients)")}
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8rem 1.5rem', marginBottom: '1.2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Mechanical Balance (Bm)")}</label>
+                <input 
+                  type="number" step="0.05" min="0.1" max="1.0" 
+                  value={carParams?.mechBalance ?? 0.50} 
+                  onChange={e => updateParam('mechBalance', parseFloat(e.target.value) || 0.50)} 
+                  style={{ ...inputStyle, width: '70px', textAlign: 'center' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Aero Balance (Ba)")}</label>
+                <input 
+                  type="number" step="0.05" min="0.1" max="1.0" 
+                  value={carParams?.aeroBalance ?? 0.50} 
+                  onChange={e => updateParam('aeroBalance', parseFloat(e.target.value) || 0.50)} 
+                  style={{ ...inputStyle, width: '70px', textAlign: 'center' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Aero Efficiency (E)")}</label>
+                <input 
+                  type="number" step="0.05" min="0.1" max="1.0" 
+                  value={carParams?.aeroEfficiency ?? 0.50} 
+                  onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value) || 0.50)} 
+                  style={{ ...inputStyle, width: '70px', textAlign: 'center' }} 
+                />
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Section 2: Engine Power & Gearbox */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
           {t("Power Specs & Transmission")}

@@ -88,6 +88,16 @@ describe('calculateAEGOGearing', () => {
     expect(result.gears).toHaveLength(6);
     expect(result.finalDrive).toBeGreaterThanOrEqual(2.0);
   });
+
+  it('should reflect mechBalance, aeroBalance, and aeroEfficiency on Road gearing calculations', () => {
+    const defaultBalanceCar: TuningCarParams = { ...sampleCar, mechBalance: 0.50, aeroBalance: 0.50, aeroEfficiency: 0.50 };
+    const customBalanceCar: TuningCarParams = { ...sampleCar, mechBalance: 0.80, aeroBalance: 0.80, aeroEfficiency: 0.80 };
+    
+    const defaultRes = calculateAEGOGearing('Road', 6, defaultBalanceCar, 7500);
+    const customRes = calculateAEGOGearing('Road', 6, customBalanceCar, 7500);
+
+    expect(customRes.finalDrive).not.toBe(defaultRes.finalDrive);
+  });
 });
 
 // ============================================================
