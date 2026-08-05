@@ -65,13 +65,13 @@ const GitInfoBadge: React.FC = () => {
     <span 
       style={{
         fontSize: '0.7rem',
-        color: '#a0a0a0',
-        background: 'rgba(255, 255, 255, 0.05)',
+        color: 'var(--text-secondary)',
+        background: 'var(--surface-2)',
         padding: '2px 8px',
         borderRadius: '4px',
         marginLeft: '10px',
         fontWeight: 'normal',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid var(--divider)',
         display: 'inline-block',
         verticalAlign: 'middle',
         textShadow: 'none',
@@ -103,7 +103,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
         <h1 style={{ 
           margin: 0, 
           color: 'var(--primary)', 
-          textShadow: '0 0 10px rgba(0, 240, 255, 0.5)', 
+          textShadow: '0 0 10px var(--primary-glow)', 
           fontSize: '1.5rem',
           display: 'flex',
           alignItems: 'center'
@@ -163,8 +163,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
           onClick={onShowLogs}
           className="cyber-btn-glow"
           style={{
-            background: 'rgba(0, 240, 255, 0.1)',
-            border: '1px solid rgba(0, 240, 255, 0.3)',
+            background: 'var(--surface-3)',
+            border: '1px solid var(--glass-border)',
             color: 'var(--primary)',
             borderRadius: '4px',
             padding: '0.4rem 0.8rem',
@@ -172,7 +172,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConn
             fontWeight: 'bold',
             cursor: 'pointer',
             marginRight: '1rem',
-            transition: 'all 0.2s',
           }}
         >
           {t("Show Logs")}

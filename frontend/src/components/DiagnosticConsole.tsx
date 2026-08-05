@@ -97,7 +97,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
       <div style={modalWindowStyle}>
         {/* Header */}
         <div style={modalHeaderStyle}>
-          <h3 style={{ margin: 0, color: 'var(--primary)', textShadow: '0 0 8px rgba(0, 240, 255, 0.4)' }}>
+          <h3 style={{ margin: 0, color: 'var(--primary)', textShadow: '0 0 8px var(--primary-glow)' }}>
             💻 {t("Diagnostic Log Console")}
           </h3>
           <button style={closeBtnStyle} onClick={onClose} aria-label={t("Close Console")}>&times;</button>
@@ -214,9 +214,10 @@ const modalWindowStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: '900px',
   height: '80vh',
-  backgroundColor: 'rgba(11, 12, 16, 0.95)',
+  backgroundColor: 'var(--glass-bg)',
+  backdropFilter: 'blur(var(--glass-blur))',
   border: '1px solid var(--primary)',
-  boxShadow: '0 0 20px rgba(0, 240, 255, 0.3)',
+  boxShadow: '0 0 20px var(--primary-glow)',
   borderRadius: '12px',
   display: 'flex',
   flexDirection: 'column',
@@ -225,7 +226,7 @@ const modalWindowStyle: React.CSSProperties = {
 
 const modalHeaderStyle: React.CSSProperties = {
   padding: '1rem 1.5rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+  borderBottom: '1px solid var(--divider)',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
@@ -244,8 +245,8 @@ const closeBtnStyle: React.CSSProperties = {
 
 const toolbarStyle: React.CSSProperties = {
   padding: '0.8rem 1.5rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-  background: 'rgba(255,255,255,0.02)',
+  borderBottom: '1px solid var(--divider)',
+  background: 'var(--surface-1)',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',

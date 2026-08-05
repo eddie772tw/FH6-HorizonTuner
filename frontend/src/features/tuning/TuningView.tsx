@@ -165,18 +165,18 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     background: currentStep === stepNum 
       ? 'var(--primary)' 
       : currentStep > stepNum 
-        ? 'rgba(0, 230, 118, 0.15)' 
-        : 'rgba(255,255,255,0.03)',
+        ? 'var(--primary-glow)' 
+        : 'var(--surface-1)',
     color: currentStep === stepNum 
-      ? 'black' 
+      ? '#ffffff' 
       : currentStep > stepNum 
-        ? '#00e676' 
+        ? 'var(--primary)' 
         : 'var(--text-secondary)',
     border: currentStep === stepNum 
       ? '1px solid var(--primary)' 
       : currentStep > stepNum 
-        ? '1px solid rgba(0, 230, 118, 0.3)' 
-        : '1px solid rgba(255,255,255,0.08)',
+        ? '1px solid var(--primary)' 
+        : '1px solid var(--glass-border)',
     borderRadius: '20px',
     fontWeight: 'bold',
     fontSize: '0.8rem',
@@ -185,7 +185,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     gap: '0.3rem',
     cursor: stepNum === 1 || hasCoreParams ? 'pointer' : 'not-allowed',
     transition: 'all 0.3s ease',
-    boxShadow: currentStep === stepNum ? '0 0 12px rgba(0, 180, 255, 0.3)' : 'none'
+    boxShadow: currentStep === stepNum ? '0 0 12px var(--primary-glow)' : 'none'
   });
 
   return (

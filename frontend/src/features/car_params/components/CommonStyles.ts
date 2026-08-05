@@ -9,9 +9,9 @@ export const formRowStyle: React.CSSProperties = {
 
 export const inputStyle: React.CSSProperties = {
   padding: '0.5rem',
-  background: 'rgba(0,0,0,0.3)',
-  border: '1px solid rgba(255,255,255,0.2)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   borderRadius: '4px',
   width: '180px',
   textAlign: 'right'
@@ -29,7 +29,7 @@ export const btnStyle: React.CSSProperties = {
 
 export const activeTabStyle: React.CSSProperties = {
   background: 'var(--primary)',
-  color: '#000',
+  color: '#ffffff',
   border: 'none',
   padding: '0.4rem 0.8rem',
   borderRadius: '4px',
@@ -39,7 +39,7 @@ export const activeTabStyle: React.CSSProperties = {
 };
 
 export const inactiveTabStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
   color: 'var(--text-secondary)',
   border: 'none',
   padding: '0.4rem 0.8rem',

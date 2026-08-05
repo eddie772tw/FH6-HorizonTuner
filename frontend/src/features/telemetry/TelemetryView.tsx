@@ -39,7 +39,7 @@ const activeTabStyle: React.CSSProperties = {
 };
 
 const inactiveTabStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.1)',
+  background: 'var(--surface-2)',
   color: 'var(--text-secondary)',
   border: 'none',
   padding: '0.5rem 1rem',
@@ -85,7 +85,7 @@ const TelemetryView: React.FC = () => {
     fetch(`http://127.0.0.1:${port}/api/overlay/config`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) checkConfig(data); })
-      .catch(() => {});
+      .catch(() => { });
 
     channel.onmessage = (event) => {
       if (event.data && event.data.type === 'config') {
@@ -102,7 +102,7 @@ const TelemetryView: React.FC = () => {
   useEffect(() => {
     if (!data) return;
     const isRacingNow = data.IsRaceOn === 1;
-    
+
     // Transition from racing (true) to not racing (false)
     if (prevIsRacingRef.current && !isRacingNow) {
       if (isRecording) {
@@ -129,15 +129,15 @@ const TelemetryView: React.FC = () => {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: 'var(--surface-1)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid var(--divider)' }}>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: isRacing ? '0 0 10px var(--primary)' : 'none' }} />
-            <span style={{ fontWeight: 600, color: isRacing ? '#fff' : 'var(--text-secondary)' }}>
+            <span style={{ fontWeight: 600, color: isRacing ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
               {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
             </span>
           </div>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button style={subTab === 'live' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
             <button style={subTab === 'analysis' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
@@ -184,56 +184,56 @@ const TelemetryView: React.FC = () => {
           <DragTestView />
         </React.Suspense>
       ) : (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
-      
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <EngineRpmDisplay />
-            <SteerBar />
-          </div>
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <PedalTraceCanvas />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
+
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                <EngineRpmDisplay />
+                <SteerBar />
+              </div>
+              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <PedalTraceCanvas />
+                </div>
+                <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
+                  <VerticalInputBar label={t("Clutch")} selector={selectClutch} max={255} color="#0088ff" />
+                  <VerticalInputBar label={t("Handbrake")} selector={selectHandbrake} max={255} color="#ffaa00" />
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
-              <VerticalInputBar label={t("Clutch")} selector={selectClutch} max={255} color="#0088ff" />
-              <VerticalInputBar label={t("Handbrake")} selector={selectHandbrake} max={255} color="#ffaa00" />
+          </div>
+
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
+            <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
+              <VehicleDynamicsDisplay />
+              <GForceRadar />
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
-        <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
-          <VehicleDynamicsDisplay />
-          <GForceRadar />
-        </div>
-      </div>
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ marginBottom: '1rem' }}>{t("Tire Grip & Status")}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
+              <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
+              <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
+              <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
+              <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} />
+            </div>
+          </div>
 
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1rem' }}>{t("Tire Grip & Status")}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
-          <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
-          <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
-          <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
-          <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} />
-        </div>
-      </div>
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ marginBottom: '1rem' }}>{t("Suspension Travel")}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
+              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
+              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
+              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />
+              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} />
+            </div>
+          </div>
 
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1rem' }}>{t("Suspension Travel")}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
-          <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
-          <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
-          <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />
-          <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} />
         </div>
-      </div>
-
-      </div>
       )}
     </div>
   );

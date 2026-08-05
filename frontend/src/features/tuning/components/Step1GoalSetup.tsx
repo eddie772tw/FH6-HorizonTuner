@@ -16,9 +16,9 @@ interface Step1GoalSetupProps {
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.5)',
-  border: '1px solid rgba(255,255,255,0.15)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.4rem 0.6rem',
   borderRadius: '6px',
   fontSize: '0.9rem'
@@ -69,11 +69,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
             <select 
               value={selectedRaceGoal} 
               onChange={e => setSelectedRaceGoal(e.target.value)} 
-              style={{ ...inputStyle, width: '200px', border: '1px solid var(--primary)', background: 'black' }}
+              style={{ ...inputStyle, width: '200px', border: '1px solid var(--primary)', background: 'var(--input-bg)', color: 'var(--input-text)' }}
             >
               <option value="Road">{t("Road / Circuit")}</option>
               <option value="Drift">{t("Drift")}</option>
@@ -91,11 +91,11 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255, 183, 3, 0.05)', border: '1px solid rgba(255, 183, 3, 0.2)', padding: '1.2rem', borderRadius: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Current Season:")}</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem' }}>{t("Current Season:")}</span>
             <select 
               value={season} 
               onChange={e => setSeason(e.target.value as Season)} 
-              style={{ ...inputStyle, width: '200px', border: '1px solid #ffb703', background: 'black' }}
+              style={{ ...inputStyle, width: '200px', border: '1px solid #ffb703', background: 'var(--input-bg)', color: 'var(--input-text)' }}
             >
               <option value="Summer">{t("Summer (-0.5 PSI)")}</option>
               <option value="Autumn">{t("Autumn (-0.5 PSI)")}</option>
@@ -111,7 +111,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
 
       {/* Vehicle Parameters Form */}
-      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.2rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ background: 'var(--surface-1)', padding: '1.2rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
         
         {/* Section 1: Core Physics & Drivetrain */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>

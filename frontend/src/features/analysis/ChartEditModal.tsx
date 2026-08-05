@@ -452,10 +452,10 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
 };
 
 const inputStyle: React.CSSProperties = {
-  background: '#111', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box'
+  background: 'var(--input-bg)', color: 'var(--input-text)', border: '1px solid var(--glass-border)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box'
 };
 const selectStyle: React.CSSProperties = {
-  background: '#111', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', width: '100%'
+  background: 'var(--input-bg)', color: 'var(--input-text)', border: '1px solid var(--glass-border)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', width: '100%'
 };
 const btnStyle: React.CSSProperties = {
   padding: '0.4rem 1rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', border: 'none'

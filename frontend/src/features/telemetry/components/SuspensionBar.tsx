@@ -130,11 +130,11 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   }, [tireIdx]);
 
   return (
-    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px' }}>
+    <div style={{ background: 'var(--surface-1)', border: '1px solid var(--glass-border)', padding: '0.8rem', borderRadius: '8px' }}>
       <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600, textAlign: isLeft ? 'left' : 'right' }}>{title}</div>
       <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: '24px', height: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.3)', zIndex: 1 }} />
+        <div style={{ position: 'relative', width: '24px', height: '100%', background: 'var(--surface-2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 1 }} />
           <div ref={barRef} style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
             background: 'var(--primary)', borderRadius: '0 0 8px 8px'
@@ -146,7 +146,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '0 0.2rem' }}>
         <span>{t("Min")}: <span style={{ fontWeight: 600 }} ref={minRef}>0.00</span></span>
-        <span style={{ color: 'white', fontWeight: 'bold' }} ref={textRef}>0.00</span>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }} ref={textRef}>0.00</span>
         <span>{t("Max")}: <span style={{ fontWeight: 600 }} ref={maxRef}>0.00</span></span>
       </div>
     </div>

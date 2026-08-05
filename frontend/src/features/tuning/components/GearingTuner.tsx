@@ -12,9 +12,9 @@ interface GearingTunerProps {
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.4)',
-  border: '1px solid rgba(255,255,255,0.2)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   borderRadius: '4px'
 };
 

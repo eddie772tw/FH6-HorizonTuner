@@ -106,7 +106,7 @@ const DynamicChartGrid: React.FC<DynamicChartGridProps> = ({
         const channels = slot.channels || [];
 
         return (
-          <div key={slot.id} className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '340px' }}>
+          <div key={slot.id} className="glass-panel glass-panel-interactive" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '340px' }}>
             
             {/* Clean Card Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>

@@ -546,10 +546,10 @@ export const OverlayView: React.FC = () => {
               fontWeight: 'bold',
               borderRadius: '6px',
               cursor: loading ? 'wait' : 'pointer',
-              background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'rgba(0, 240, 255, 0.2)',
-              border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid rgba(0, 240, 255, 0.6)',
+              background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'var(--primary-glow)',
+              border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid var(--primary)',
               color: config.enabled ? '#ff5555' : 'var(--primary)',
-              boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px rgba(0, 240, 255, 0.3)',
+              boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px var(--primary-glow)',
               pointerEvents: loading ? 'none' : 'auto'
             }}
           >
@@ -571,14 +571,14 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 1 ROW 1: Offset & Position Settings --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Offset & Position Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             {/* Corner Cards Horizontal (X) Offset Slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Corner Cards X-Offset")}:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Corner Cards X-Offset")}:</span>
                 <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetX ?? 0} px</span>
               </div>
               <input
@@ -595,7 +595,7 @@ export const OverlayView: React.FC = () => {
             {/* Corner Cards Vertical (Y) Offset Slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Corner Cards Y-Offset")}:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Corner Cards Y-Offset")}:</span>
                 <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetY ?? 0} px</span>
               </div>
               <input
@@ -625,7 +625,7 @@ export const OverlayView: React.FC = () => {
                 {/* Merged Charts Horizontal (X) Offset Slider */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Merged Charts X-Offset")}:</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Merged Charts X-Offset")}:</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryMergedChartsOffsetX ?? 0} px</span>
                   </div>
                   <input
@@ -641,14 +641,14 @@ export const OverlayView: React.FC = () => {
 
                 {/* Merged Charts Top/Bottom Position */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Merged Charts Position")}:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Merged Charts Position")}:</span>
                   <select
                     value={config.telemetryMergedChartsPosition ?? 'bottom'}
                     onChange={(e) => handleMergedChartsPositionChange(e.target.value as 'top' | 'bottom')}
                     style={{
-                      background: 'rgba(0,0,0,0.5)',
+                      background: 'var(--input-bg)',
                       border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
+                      color: 'var(--input-text)',
                       borderRadius: '4px',
                       padding: '0.25rem 0.5rem',
                       cursor: 'pointer',
@@ -665,7 +665,7 @@ export const OverlayView: React.FC = () => {
                 {/* Pedal Wave Horizontal (X) Offset Slider */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart X-Offset")}:</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Pedal Chart X-Offset")}:</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPedalOffsetX ?? 0} px</span>
                   </div>
                   <input
@@ -682,7 +682,7 @@ export const OverlayView: React.FC = () => {
                 {/* Power / Torque Horizontal (X) Offset Slider */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque X-Offset")}:</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Power / Torque X-Offset")}:</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
                   </div>
                   <input
@@ -698,14 +698,14 @@ export const OverlayView: React.FC = () => {
 
                 {/* Chart Top/Bottom Positions */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Pedal Position")}:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Pedal Position")}:</span>
                   <select
                     value={config.telemetryPedalPosition ?? 'bottom'}
                     onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
                     style={{
-                      background: 'rgba(0,0,0,0.5)',
+                      background: 'var(--input-bg)',
                       border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
+                      color: 'var(--input-text)',
                       borderRadius: '4px',
                       padding: '0.25rem 0.5rem',
                       cursor: 'pointer',
@@ -718,14 +718,14 @@ export const OverlayView: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Power/Torque Position")}:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Power/Torque Position")}:</span>
                   <select
                     value={config.telemetryPowerTorquePosition ?? 'top'}
                     onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
                     style={{
-                      background: 'rgba(0,0,0,0.5)',
+                      background: 'var(--input-bg)',
                       border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
+                      color: 'var(--input-text)',
                       borderRadius: '4px',
                       padding: '0.25rem 0.5rem',
                       cursor: 'pointer',
@@ -745,7 +745,7 @@ export const OverlayView: React.FC = () => {
         {/* --- COLUMN 2 ROW 1: HUD Scale Size --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
 
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Scale Size")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
@@ -754,7 +754,7 @@ export const OverlayView: React.FC = () => {
             {/* G-Force Radar Scale */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("G-Force Radar Scale")}:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("G-Force Radar Scale")}:</span>
                 <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryGRadarScale ?? 1.0) * 100)}%</span>
               </div>
               <input
@@ -771,7 +771,7 @@ export const OverlayView: React.FC = () => {
             {/* 4-Corner Cards Scale */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("4-Corner Wheel Cards Scale")}:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("4-Corner Wheel Cards Scale")}:</span>
                 <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryCornersScale ?? 1.0) * 100)}%</span>
               </div>
               <input
@@ -789,7 +789,7 @@ export const OverlayView: React.FC = () => {
               /* Merged Charts Scale */
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Merged Charts Scale")}:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Merged Charts Scale")}:</span>
                   <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryMergedChartsScale ?? 1.0) * 100)}%</span>
                 </div>
                 <input
@@ -807,7 +807,7 @@ export const OverlayView: React.FC = () => {
                 {/* Pedal Chart Scale */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Pedal Chart Scale")}:</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Pedal Chart Scale")}:</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
                   </div>
                   <input
@@ -824,7 +824,7 @@ export const OverlayView: React.FC = () => {
                 {/* Power / Torque Chart Scale */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Power / Torque Scale")}:</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Power / Torque Scale")}:</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
                   </div>
                   <input
@@ -843,7 +843,7 @@ export const OverlayView: React.FC = () => {
             {/* Card Font Scale */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Card Font Scale")}:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Card Font Scale")}:</span>
                 <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryCardFontScale ?? 1.0) * 100)}%</span>
               </div>
               <input
@@ -861,7 +861,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 3 ROW 1: HUD Elements --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Elements")}
           </h3>
 
@@ -900,7 +900,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 1 ROW 2: Speedometer Settings --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Speedometer Settings")}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
@@ -922,28 +922,28 @@ export const OverlayView: React.FC = () => {
                 padding: '0.8rem',
                 borderRadius: '6px',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                background: 'rgba(0, 0, 0, 0.5)',
-                color: 'var(--primary)',
+                background: 'var(--input-bg)',
+                color: 'var(--input-text)',
                 cursor: config.elements.showGauge === false ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold',
                 outline: 'none',
                 opacity: config.elements.showGauge === false ? 0.5 : 1
               }}
             >
-              <option value="advanced" style={{ background: '#222', color: '#fff' }}>{t("Advanced (Race Arc HUD)")}</option>
-              <option value="simple" style={{ background: '#222', color: '#fff' }}>{t("Simple (NFSU2 Style Circle)")}</option>
-              <option value="fm4ui" style={{ background: '#222', color: '#fff' }}>{t("FM4 Style HUD")}</option>
-              <option value="gt7" style={{ background: '#222', color: '#fff' }}>{t("GT7 Style HUD")}</option>
-              <option value="mw2005" style={{ background: '#222', color: '#fff' }}>{t("NFS Most Wanted 2005 HUD")}</option>
-              <option value="nfs15" style={{ background: '#222', color: '#fff' }}>{t("NFS 2015 Style HUD")}</option>
-              <option value="shift_tacho" style={{ background: '#222', color: '#fff' }}>{t("NFS Shift Tachometer")}</option>
-              <option value="vfd" style={{ background: '#222', color: '#fff' }}>{t("Retro VFD")}</option>
+              <option value="advanced">{t("Advanced (Race Arc HUD)")}</option>
+              <option value="simple">{t("Simple (NFSU2 Style Circle)")}</option>
+              <option value="fm4ui">{t("FM4 Style HUD")}</option>
+              <option value="gt7">{t("GT7 Style HUD")}</option>
+              <option value="mw2005">{t("NFS Most Wanted 2005 HUD")}</option>
+              <option value="nfs15">{t("NFS 2015 Style HUD")}</option>
+              <option value="shift_tacho">{t("NFS Shift Tachometer")}</option>
+              <option value="vfd">{t("Retro VFD")}</option>
             </select>
 
             {/* Overall HUD Scale */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Overall HUD Scale")}:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Overall HUD Scale")}:</span>
                 <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round(config.scale * 100)}%</span>
               </div>
               <input
@@ -962,7 +962,7 @@ export const OverlayView: React.FC = () => {
               <>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("VU Offset:")}</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("VU Offset:")}</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
                   </div>
                   <input
@@ -978,7 +978,7 @@ export const OverlayView: React.FC = () => {
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#ccc' }}>{t("Audio Visualizer Offset:")}</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Audio Visualizer Offset:")}</span>
                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdAudioOffset ?? 0}</span>
                   </div>
                   <input
@@ -1000,7 +1000,7 @@ export const OverlayView: React.FC = () => {
                 width: '100%',
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
-                background: 'rgba(0, 240, 255, 0.1)',
+                background: 'var(--primary-glow)',
                 border: '1px solid var(--primary)',
                 color: 'var(--primary)',
                 cursor: 'pointer',
@@ -1013,7 +1013,7 @@ export const OverlayView: React.FC = () => {
             </button>
 
             {/* HUD Author & Simple Description Info Box */}
-            <div style={{ padding: '0.8rem', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '6px' }}>
+            <div style={{ padding: '0.8rem', background: 'var(--surface-1)', border: '1px solid var(--divider)', borderRadius: '6px' }}>
               <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>
                 {t("Author")}: <strong style={{ color: 'var(--primary)' }}>{currentAuthorInfo.author === 'Author' ? t('Author') : currentAuthorInfo.author}</strong>
               </div>
@@ -1026,14 +1026,14 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 2 ROW 2: HUD Style Settings (改名自中央遙測叢集設定) --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Style Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
             {/* Telemetry Opacity slider */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Telemetry Opacity")}:</span>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Telemetry Opacity")}:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <input
                     type="number"
@@ -1045,9 +1045,9 @@ export const OverlayView: React.FC = () => {
                       width: '65px',
                       padding: '0.3rem',
                       borderRadius: '4px',
-                      background: 'rgba(0,0,0,0.5)',
+                      background: 'var(--input-bg)',
                       border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
+                      color: 'var(--input-text)',
                       textAlign: 'center',
                       fontWeight: 'bold'
                     }}
@@ -1071,7 +1071,7 @@ export const OverlayView: React.FC = () => {
             {/* Glow Intensity slider (發光強度拉桿) */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.9rem', color: '#ccc' }}>{t("Glow Intensity")}:</span>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Glow Intensity")}:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <input
                     type="number"
@@ -1083,9 +1083,9 @@ export const OverlayView: React.FC = () => {
                       width: '65px',
                       padding: '0.3rem',
                       borderRadius: '4px',
-                      background: 'rgba(0,0,0,0.5)',
+                      background: 'var(--input-bg)',
                       border: '1px solid var(--primary)',
-                      color: 'var(--primary)',
+                      color: 'var(--input-text)',
                       textAlign: 'center',
                       fontWeight: 'bold'
                     }}
@@ -1112,12 +1112,12 @@ export const OverlayView: React.FC = () => {
                   checked={config.useDefaultColors !== false}
                   onChange={handleUseDefaultColorsToggle}
                 />
-                <span style={{ fontSize: '0.9rem', color: '#eee' }}>{t("Use Default Gauge Colors")}</span>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t("Use Default Gauge Colors")}</span>
               </label>
 
               {config.useDefaultColors === false && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '1.4rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#aaa' }}>{t("Custom Gauge Color")}:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Custom Gauge Color")}:</span>
                   <input
                     type="color"
                     value={config.customColor || '#00f0ff'}
@@ -1135,21 +1135,21 @@ export const OverlayView: React.FC = () => {
                 checked={config.elements.showMotionEffect !== false}
                 onChange={() => handleElementToggle('showMotionEffect')}
               />
-              <span style={{ fontSize: '0.9rem', color: '#eee' }}>{t("Motion Effect")}</span>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t("Motion Effect")}</span>
             </label>
           </div>
         </div>
 
         {/* --- COLUMN 3 ROW 2: Performance & System Options --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Performance & System Options")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
 
             {/* Target Display Monitor Selector */}
             <div style={{ marginBottom: '0.4rem', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
                 {t("Select Monitor for HUD Overlay")}:
               </label>
               <select
@@ -1159,9 +1159,9 @@ export const OverlayView: React.FC = () => {
                   width: '100%',
                   padding: '0.5rem',
                   borderRadius: '4px',
-                  background: 'rgba(0,0,0,0.5)',
+                  background: 'var(--input-bg)',
                   border: '1px solid var(--primary)',
-                  color: 'white',
+                  color: 'var(--input-text)',
                   fontSize: '0.85rem'
                 }}
               >
@@ -1186,7 +1186,7 @@ export const OverlayView: React.FC = () => {
                   saveConfig(updated);
                 }}
               />
-              <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                 {t("Pause Telemetry View when HUD is active")}
               </span>
             </label>
@@ -1197,7 +1197,7 @@ export const OverlayView: React.FC = () => {
                 checked={config.elements.showTeleCenterAnchor !== false}
                 onChange={() => handleElementToggle('showTeleCenterAnchor')}
               />
-              <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                 {t("Center Alignment Anchor Frame")}
               </span>
             </label>
@@ -1208,7 +1208,7 @@ export const OverlayView: React.FC = () => {
                 checked={!!config.elements.showTeleGridLines}
                 onChange={() => handleElementToggle('showTeleGridLines')}
               />
-              <span style={{ fontSize: '0.9rem', color: '#eee' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                 {t("Alignment Grid Lines")}
               </span>
             </label>
