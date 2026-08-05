@@ -250,27 +250,27 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
   }, [tireIdx, convertTemp]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'var(--surface-1)', border: '1px solid var(--glass-border)', padding: '0.8rem', borderRadius: '8px', alignItems: 'center' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
-        <div style={{ position: 'relative', width: '100px', height: '100px' }}>
-          <canvas ref={radarCanvasRef} width={100} height={100} style={{ position: 'absolute', top: 0, left: 0 }} />
+    <div className={`d-flex gap-3 align-items-center p-3 rounded border ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+      <div className="d-flex flex-column align-items-center justify-content-center">
+        <div className="fw-bold mb-2" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{title}</div>
+        <div className="position-relative" style={{ width: '100px', height: '100px' }}>
+          <canvas ref={radarCanvasRef} width={100} height={100} className="position-absolute top-0 start-0" />
         </div>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: isLeft ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-end' : 'flex-start' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t("Slip Angle")}</span>
-            <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={angRef}>0.00</span>
+      <div className={`d-flex flex-grow-1 justify-content-between ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+        <div className={`d-flex flex-column gap-1 justify-content-center ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
+          <div className={`d-flex flex-column ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
+            <span className="text-secondary text-uppercase" style={{ fontSize: '0.65rem' }}>{t("Slip Angle")}</span>
+            <span className="fw-bold" style={{ fontFamily: 'monospace' }} ref={angRef}>0.00</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-end' : 'flex-start' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t("Slip Ratio")}</span>
-            <span style={{ fontFamily: 'monospace', fontWeight: 600 }} ref={ratioRef}>0.00</span>
+          <div className={`d-flex flex-column ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
+            <span className="text-secondary text-uppercase" style={{ fontSize: '0.65rem' }}>{t("Slip Ratio")}</span>
+            <span className="fw-bold" style={{ fontFamily: 'monospace' }} ref={ratioRef}>0.00</span>
           </div>
         </div>
-        <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: isLeft ? 'flex-start' : 'flex-end' }}>
-           <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}><span ref={tempRef}>0</span><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{tempUnit}</span></span>
-           <canvas ref={tempCanvasRef} width={100} height={70} style={{ width: '100%', flex: 1, marginTop: '4px' }} />
+        <div className={`d-flex flex-column position-relative ${isLeft ? 'align-items-start' : 'align-items-end'}`} style={{ width: '100px', height: '100px' }}>
+           <span className="fw-bold" style={{ fontSize: '1.2rem' }}><span ref={tempRef}>0</span><span className="text-secondary" style={{ fontSize: '0.8rem' }}>{tempUnit}</span></span>
+           <canvas ref={tempCanvasRef} width={100} height={70} className="w-100 flex-grow-1 mt-1" />
         </div>
       </div>
     </div>

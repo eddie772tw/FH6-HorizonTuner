@@ -20,17 +20,17 @@ const SteerBar: React.FC = React.memo(() => {
     return () => telemetryEmitter.removeEventListener('update', handleDraw);
   }, []);
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+    <div className="d-flex flex-column justify-content-center flex-grow-1">
+      <div className="d-flex justify-content-between text-secondary" style={{ fontSize: '0.85rem' }}>
         <span>{t("Steer L")}</span>
         <span>{t("Steer R")}</span>
       </div>
-      <div style={{ width: '100%', height: '16px', background: 'var(--surface-2)', border: '1px solid var(--glass-border)', borderRadius: '8px', position: 'relative', marginTop: '4px' }}>
-        <div ref={barRef} style={{ 
-          position: 'absolute', height: '100%', background: 'var(--primary)',
+      <div className="w-100 position-relative mt-1 border" style={{ height: '16px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important', borderRadius: '8px' }}>
+        <div ref={barRef} className="position-absolute h-100" style={{
+          background: 'var(--primary)',
           width: '0%', left: '50%'
         }} />
-        <div style={{ position: 'absolute', left: '50%', top: '-2px', bottom: '-2px', width: '2px', background: 'var(--divider)' }} />
+        <div className="position-absolute" style={{ left: '50%', top: '-2px', bottom: '-2px', width: '2px', background: 'var(--divider)' }} />
       </div>
     </div>
   );

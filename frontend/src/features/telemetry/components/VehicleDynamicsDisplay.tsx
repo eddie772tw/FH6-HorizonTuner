@@ -94,31 +94,31 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
 
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+    <div className="d-flex flex-column justify-content-center flex-grow-1">
+      <div className="d-grid gap-2 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
         <div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Power")}</div>
-          <div ref={powerContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            <span ref={powerRef}>0</span><span ref={powerLabelRef} style={{fontSize:'0.8rem', marginLeft: '2px'}}></span>
+          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>{t("Power")}</div>
+          <div ref={powerContainerRef} className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+            <span ref={powerRef}>0</span><span ref={powerLabelRef} className="ms-1" style={{ fontSize: '0.8rem' }}></span>
           </div>
         </div>
         <div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Torque")}</div>
-          <div ref={torqueContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            <span ref={torqueRef}>0</span><span ref={torqueLabelRef} style={{fontSize:'0.8rem', marginLeft: '2px'}}></span>
+          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>{t("Torque")}</div>
+          <div ref={torqueContainerRef} className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+            <span ref={torqueRef}>0</span><span ref={torqueLabelRef} className="ms-1" style={{ fontSize: '0.8rem' }}></span>
           </div>
         </div>
         <div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{isEV ? t("Regen") : t("Boost")}</div>
-          <div ref={thirdStatContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-             <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} style={{fontSize:'0.8rem', marginLeft: '2px'}}></span>
+          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>{isEV ? t("Regen") : t("Boost")}</div>
+          <div ref={thirdStatContainerRef} className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+             <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} className="ms-1" style={{ fontSize: '0.8rem' }}></span>
           </div>
         </div>
       </div>
-      <div style={{ borderTop: '1px solid var(--divider)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Current Lap")}:</span><span ref={currentLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Last Lap")}:</span><span ref={lastLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>{t("Best Lap")}:</span><span ref={bestLapRef} style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>--:--.---</span></div>
+      <div className="d-flex flex-column gap-1 pt-2 border-top" style={{ borderColor: 'var(--divider) !important' }}>
+        <div className="d-flex justify-content-between" style={{ fontSize: '0.9rem' }}><span className="text-secondary">{t("Current Lap")}:</span><span ref={currentLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
+        <div className="d-flex justify-content-between" style={{ fontSize: '0.9rem' }}><span className="text-secondary">{t("Last Lap")}:</span><span ref={lastLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
+        <div className="d-flex justify-content-between" style={{ fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>{t("Best Lap")}:</span><span ref={bestLapRef} className="fw-bold" style={{ fontFamily: 'monospace', color: 'var(--primary)' }}>--:--.---</span></div>
       </div>
     </div>
   );
