@@ -112,27 +112,38 @@ const TelemetryView: React.FC = () => {
 
   return (
     <div className="d-flex flex-column h-100">
-      <div className="d-flex justify-content-between align-items-center mb-4 p-3 rounded border" style={{ background: 'var(--surface-1)', borderColor: 'var(--divider) !important' }}>
-        <div className="d-flex gap-3 align-items-center">
-          <div className="d-flex align-items-center gap-2">
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: isRacing ? '0 0 10px var(--primary)' : 'none' }} />
-            <span className={isRacing ? "fw-bold text-primary" : "fw-bold text-secondary"}>
-              {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
-            </span>
+      <nav className="navbar mb-4 p-3 rounded border glass-panel">
+        <div className="container-fluid px-0">
+          <div className="d-flex align-items-center gap-3">
+            <div className="navbar-brand d-flex align-items-center gap-2 m-0">
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: isRacing ? '0 0 10px var(--primary)' : 'none' }} />
+              <span className={isRacing ? "fw-bold text-primary fs-6" : "fw-bold text-secondary fs-6"}>
+                {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
+              </span>
+            </div>
+
+            <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} className="d-none d-sm-block"></div>
+
+            <ul className="nav nav-pills" role="tablist">
+              <li className="nav-item" role="presentation">
+                <button className={`nav-link ${subTab === 'live' ? 'active' : ''}`} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
+              </li>
+              <li className="nav-item" role="presentation">
+                <button className={`nav-link ${subTab === 'analysis' ? 'active' : ''}`} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
+              </li>
+              <li className="nav-item" role="presentation">
+                <button className={`nav-link ${subTab === 'drag' ? 'active' : ''}`} onClick={() => setSubTab('drag')} aria-current={subTab === 'drag' ? 'page' : undefined}>{t("Drag Test")}</button>
+              </li>
+            </ul>
           </div>
-          <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
-          <div className="d-flex gap-2">
-            <button className={`btn btn-sm ${subTab === 'live' ? 'btn-primary' : ''}`} style={subTab !== 'live' ? { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: 'none' } : { fontWeight: 'bold', color: '#000' }} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
-            <button className={`btn btn-sm ${subTab === 'analysis' ? 'btn-primary' : ''}`} style={subTab !== 'analysis' ? { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: 'none' } : { fontWeight: 'bold', color: '#000' }} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
-            <button className={`btn btn-sm ${subTab === 'drag' ? 'btn-primary' : ''}`} style={subTab !== 'drag' ? { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: 'none' } : { fontWeight: 'bold', color: '#000' }} onClick={() => setSubTab('drag')} aria-current={subTab === 'drag' ? 'page' : undefined}>{t("Drag Test")}</button>
+
+          <div className="d-flex align-items-center fw-bold text-secondary fs-6">
+            {classDisplay && <span className="badge text-bg-info me-2">{classDisplay}</span>}
+            {isEV && <span className="badge text-bg-success me-2">{t("EV")}</span>}
+            <span className="text-truncate" style={{ maxWidth: '200px' }}>{carName}</span>
           </div>
         </div>
-        <div className="d-flex align-items-center fw-bold text-secondary fs-6">
-          {classDisplay && <span className="me-2" style={{ color: '#00f0ff' }}>{classDisplay}</span>}
-          {isEV && <span className="badge me-2 fw-bold text-dark" style={{ background: '#00ff88' }}>{t("EV")}</span>}
-          {carName}
-        </div>
-      </div>
+      </nav>
 
       {isHudPaused && (
         <div className="alert d-flex align-items-center justify-content-between mb-4 shadow-sm" style={{ background: 'rgba(255, 170, 0, 0.12)', border: '1px solid rgba(255, 170, 0, 0.4)', color: '#ffaa00' }}>
