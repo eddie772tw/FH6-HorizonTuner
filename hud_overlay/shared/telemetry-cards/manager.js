@@ -133,7 +133,9 @@ export function createTelemetryCardsManager() {
             var topEdgeContainer    = document.getElementById('tcTopEdgeContainer');
             var bottomEdgeContainer = document.getElementById('tcBottomEdgeContainer');
 
-            [topEdgeContainer, bottomEdgeContainer].forEach(function (container) {
+            var edgeContainers = [topEdgeContainer, bottomEdgeContainer];
+            for (var i = 0; i < edgeContainers.length; i++) {
+                var container = edgeContainers[i];
                 if (container) {
                     container.style.opacity = tOpacity;
                     if (sideBySide) {
@@ -143,7 +145,7 @@ export function createTelemetryCardsManager() {
                         container.style.transform = 'none';
                     }
                 }
-            });
+            }
 
             var targetMergedParent = (mergedPos === 'top') ? topEdgeContainer : bottomEdgeContainer;
             if (sideBySide && targetMergedParent) {
@@ -219,7 +221,8 @@ export function createTelemetryCardsManager() {
                 RR: 'top left'
             };
 
-            corners.forEach(function (tag) {
+            for (var i = 0; i < corners.length; i++) {
+                var tag = corners[i];
                 var cornerEl  = document.getElementById('tcCorner'    + tag);
                 var suspBlock = document.getElementById('tcSuspBlock' + tag);
                 var slipBlock = document.getElementById('tcSlipBlock' + tag);
@@ -238,7 +241,7 @@ export function createTelemetryCardsManager() {
                 if (suspBlock) suspBlock.style.display = showSusp ? 'flex' : 'none';
                 if (slipBlock) slipBlock.style.display = showSlip ? 'flex' : 'none';
                 if (tempBlock) tempBlock.style.display = showTemp ? 'flex' : 'none';
-            });
+            }
 
             if (!data) return;
 
