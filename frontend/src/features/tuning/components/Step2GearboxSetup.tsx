@@ -33,8 +33,7 @@ export const Step2GearboxSetup: React.FC<Step2GearboxSetupProps> = ({
             <span style={{ color: 'gray', fontSize: '0.8rem' }}>{t("Load Preset:")}</span>
             <select
               onChange={e => loadTuning(e.target.value)}
-              defaultValue=""
-              style={{ background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '0.3rem', borderRadius: '4px', fontSize: '0.8rem' }}
+              style={{ background: 'var(--input-bg)', color: 'var(--input-text)', border: '1px solid var(--glass-border)', padding: '0.3rem', borderRadius: '4px', fontSize: '0.8rem' }}
             >
               <option value="" disabled>{t("Select Saved Preset")}</option>
               {savedTunings.map(s => (

@@ -127,7 +127,8 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
 
           if (firstValidIdx < histLen) {
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            const isLightTheme = document.documentElement.getAttribute('data-bs-theme') === 'light';
+            ctx.strokeStyle = isLightTheme ? 'rgba(15, 23, 42, 0.45)' : 'rgba(255, 255, 255, 0.35)';
             ctx.lineWidth = 2;
             ctx.lineJoin = 'round';
             for (let i = firstValidIdx; i < histLen; i++) {
@@ -155,8 +156,9 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
             dx = (dx / tDist) * maxTR;
             dy = (dy / tDist) * maxTR;
           }
-          const dotColor = isLosingGrip ? '#ff003c' : '#00f0ff';
-          const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : 'rgba(0, 240, 255, 0.35)';
+          const primaryHex = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00f0ff';
+          const dotColor = isLosingGrip ? '#ff003c' : (primaryHex.startsWith('#') ? primaryHex : '#00f0ff');
+          const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
           const dotCenterX = radius + dx;
           const dotCenterY = radius + dy;
 

@@ -55,9 +55,9 @@ const SettingsView: React.FC = () => {
   }
 
   const selectStyle: React.CSSProperties = {
-    background: 'rgba(0, 0, 0, 0.4)',
-    color: 'white',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
+    background: 'var(--input-bg)',
+    color: 'var(--input-text)',
+    border: '1px solid var(--glass-border)',
     borderRadius: '6px',
     padding: '0.5rem 0.8rem',
     fontSize: '0.9rem',
@@ -72,7 +72,7 @@ const SettingsView: React.FC = () => {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingBottom: '0.8rem',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+    borderBottom: '1px solid var(--divider)',
   };
 
   const sectionStyle: React.CSSProperties = {
@@ -86,7 +86,7 @@ const SettingsView: React.FC = () => {
     color: 'var(--primary)',
     fontSize: '1.05rem',
     fontWeight: 600,
-    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+    borderBottom: '1px solid var(--divider-md)',
     paddingBottom: '0.4rem',
   };
 
@@ -104,7 +104,7 @@ const SettingsView: React.FC = () => {
           <button 
             onClick={() => applyPreset('metric')}
             style={{
-              background: 'rgba(0, 240, 255, 0.1)',
+              background: 'var(--primary-glow)',
               border: '1px solid var(--primary)',
               color: 'var(--primary)',
               padding: '0.4rem 1rem',
@@ -157,7 +157,7 @@ const SettingsView: React.FC = () => {
               <h4 style={sectionTitleStyle}>{t("Language Settings")}</h4>
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Language")}</strong>
+                  <strong style={{ display: 'block', color: 'var(--text-primary)', fontSize: '0.9rem' }}>{t("Language")}</strong>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Select application display language.")}</span>
                 </div>
                 <select 

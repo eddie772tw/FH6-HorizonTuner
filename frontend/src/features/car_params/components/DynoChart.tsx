@@ -123,8 +123,8 @@ export const DynoChart: React.FC<DynoChartProps> = ({
       {/* Guided Dyno Wizard Panel */}
       {settings.dyno_recording && (
         <div style={{
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
+          background: 'var(--surface-1)',
+          border: '1px solid var(--glass-border)',
           borderRadius: '8px',
           padding: '1rem',
           display: 'flex',
@@ -220,8 +220,8 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               case 'ready':
                 return (
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--glass-border)',
                     borderRadius: '6px',
                     padding: '0.75rem',
                     color: 'var(--text-secondary)',
@@ -400,7 +400,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
               onClick={() => setShowClearConfirm(false)}
               style={{
                 ...btnStyle,
-                background: 'rgba(255, 255, 255, 0.1)',
+                background: 'var(--surface-2)',
                 color: 'var(--text-secondary)',
                 fontSize: '0.85rem',
                 padding: '0.35rem 0.75rem'

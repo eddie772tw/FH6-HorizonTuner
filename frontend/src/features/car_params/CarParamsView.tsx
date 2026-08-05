@@ -220,11 +220,11 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
   };
 
   if (isLoading) {
-    return <div style={{ color: 'white', padding: '2rem' }}>{t("Loading car parameters...")}</div>;
+    return <div style={{ color: 'var(--text-primary)', padding: '2rem' }}>{t("Loading car parameters...")}</div>;
   }
 
   if (!carParams) {
-    return <div style={{ color: 'white', padding: '2rem' }}>{t("No car loaded or telemetry inactive. Start driving a car to auto-create profile!")}</div>;
+    return <div style={{ color: 'var(--text-primary)', padding: '2rem' }}>{t("No car loaded or telemetry inactive. Start driving a car to auto-create profile!")}</div>;
   }
 
   const updateParam = (field: keyof CarParams, value: any) => {
@@ -324,15 +324,15 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', paddingRight: '0.5rem' }}>
       
       {/* Top Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-1)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid var(--divider)' }}>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{t("Car Parameters")}</h2>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button style={subTab === 'config' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('config')} aria-current={subTab === 'config' ? 'page' : undefined}>{t("Profile Configuration")}</button>
             <button style={subTab === 'dyno' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('dyno')} aria-current={subTab === 'dyno' ? 'page' : undefined}>{t("Live Dyno Curve")}</button>
           </div>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
           {renderSaveStatus()}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -342,9 +342,9 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
             onChange={(e) => setCarId(e.target.value)}
             style={{ 
               padding: '0.4rem 0.8rem', 
-              background: 'rgba(0,0,0,0.4)', 
-              color: 'white', 
-              border: '1px solid rgba(255,255,255,0.15)', 
+              background: 'var(--input-bg)', 
+              color: 'var(--input-text)', 
+              border: '1px solid var(--glass-border)', 
               borderRadius: '4px',
               fontWeight: 'normal',
               outline: 'none',
@@ -416,9 +416,9 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
               disabled={Object.keys(carParams.dyno_curve).length === 0}
               style={{
                 ...btnStyle,
-                background: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 180, 255, 0.15)',
-                color: Object.keys(carParams.dyno_curve).length === 0 ? 'rgba(255,255,255,0.3)' : '#00b4ff',
-                border: '1px solid rgba(0, 180, 255, 0.3)',
+                background: Object.keys(carParams.dyno_curve).length === 0 ? 'var(--surface-2)' : 'var(--primary-glow)',
+                color: Object.keys(carParams.dyno_curve).length === 0 ? 'var(--text-secondary)' : 'var(--primary)',
+                border: '1px solid var(--primary)',
                 fontSize: '0.85rem',
                 padding: '0.4rem 0.75rem',
                 cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer',

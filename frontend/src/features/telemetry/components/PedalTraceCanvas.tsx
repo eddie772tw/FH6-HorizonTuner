@@ -46,7 +46,8 @@ const PedalTraceCanvas: React.FC = React.memo(() => {
           ctx.clearRect(0, 0, w, h);
 
           // 50% Guideline
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          const isLight = document.documentElement.getAttribute('data-bs-theme') === 'light';
+          ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5);

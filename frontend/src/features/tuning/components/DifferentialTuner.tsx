@@ -16,9 +16,9 @@ interface DifferentialTunerProps {
 }
 
 const smallInputStyle: React.CSSProperties = {
-  background: 'black',
-  color: 'white',
-  border: '1px solid rgba(255,255,255,0.2)',
+  background: 'var(--input-bg)',
+  color: 'var(--input-text)',
+  border: '1px solid var(--glass-border)',
   borderRadius: '4px',
   padding: '0.2rem',
   width: '55px',

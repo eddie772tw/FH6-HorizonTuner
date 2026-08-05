@@ -546,10 +546,10 @@ export const OverlayView: React.FC = () => {
               fontWeight: 'bold',
               borderRadius: '6px',
               cursor: loading ? 'wait' : 'pointer',
-              background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'rgba(0, 240, 255, 0.2)',
-              border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid rgba(0, 240, 255, 0.6)',
+              background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'var(--primary-glow)',
+              border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid var(--primary)',
               color: config.enabled ? '#ff5555' : 'var(--primary)',
-              boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px rgba(0, 240, 255, 0.3)',
+              boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px var(--primary-glow)',
               pointerEvents: loading ? 'none' : 'auto'
             }}
           >
@@ -571,7 +571,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 1 ROW 1: Offset & Position Settings --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Offset & Position Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
@@ -745,7 +745,7 @@ export const OverlayView: React.FC = () => {
         {/* --- COLUMN 2 ROW 1: HUD Scale Size --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
 
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Scale Size")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
@@ -861,7 +861,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 3 ROW 1: HUD Elements --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Elements")}
           </h3>
 
@@ -900,7 +900,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 1 ROW 2: Speedometer Settings --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Speedometer Settings")}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
@@ -1000,7 +1000,7 @@ export const OverlayView: React.FC = () => {
                 width: '100%',
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
-                background: 'rgba(0, 240, 255, 0.1)',
+                background: 'var(--primary-glow)',
                 border: '1px solid var(--primary)',
                 color: 'var(--primary)',
                 cursor: 'pointer',
@@ -1013,7 +1013,7 @@ export const OverlayView: React.FC = () => {
             </button>
 
             {/* HUD Author & Simple Description Info Box */}
-            <div style={{ padding: '0.8rem', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '6px' }}>
+            <div style={{ padding: '0.8rem', background: 'var(--surface-1)', border: '1px solid var(--divider)', borderRadius: '6px' }}>
               <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>
                 {t("Author")}: <strong style={{ color: 'var(--primary)' }}>{currentAuthorInfo.author === 'Author' ? t('Author') : currentAuthorInfo.author}</strong>
               </div>
@@ -1026,7 +1026,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 2 ROW 2: HUD Style Settings (改名自中央遙測叢集設定) --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("HUD Style Settings")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
@@ -1142,7 +1142,7 @@ export const OverlayView: React.FC = () => {
 
         {/* --- COLUMN 3 ROW 2: Performance & System Options --- */}
         <div className="cyber-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
             {t("Performance & System Options")}
           </h3>
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>

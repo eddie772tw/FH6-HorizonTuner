@@ -13,9 +13,9 @@ interface Step5TelemetryCalibrationProps {
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.5)',
-  border: '1px solid rgba(255,255,255,0.15)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.4rem 0.6rem',
   borderRadius: '6px',
   fontSize: '0.9rem',
@@ -24,12 +24,12 @@ const inputStyle: React.CSSProperties = {
 };
 
 const selectStyle: React.CSSProperties = {
-  background: 'black',
-  border: '1px solid rgba(255,255,255,0.2)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.4rem 0.6rem',
   borderRadius: '6px',
-  fontSize: '0.85rem',
+  fontSize: '0.9rem',
   width: '100%'
 };
 

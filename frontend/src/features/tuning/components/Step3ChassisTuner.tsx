@@ -10,9 +10,9 @@ interface Step3ChassisTunerProps {
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.5)',
-  border: '1px solid rgba(255,255,255,0.15)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.3rem 0.5rem',
   borderRadius: '4px',
   width: '70px',

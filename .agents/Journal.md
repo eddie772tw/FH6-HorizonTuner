@@ -16,6 +16,133 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-05 - 全 GUI 硬編碼青色按鈕/提示框背景與 Canvas 圖表自適應調色清理
+
+**學習點 (Learning):**
+1. **動態品牌色擴散機制 (Dynamic Accent Color Diffusion)**：
+   修復前 `SettingsView` (All Metric)、`CarParamsView` (Import Dyno)、`OverlayView` (開啟 Overlay)、`ThemeView` (頂部 Bar)、`SlotManagerPanel` (槽位 Save) 等按鈕與提示框使用了硬編碼的青色數值 (`rgba(0, 240, 255, 0.1)` / `rgba(0, 180, 255, 0.15)`)。這導致使用者切換 Preset 至 Solar Flare 橘或 Emerald Volt 綠時，按鈕背景依然硬生生亮青色。
+   重構後：
+   - 按鈕/提示框背景：全面替換為 `var(--primary-glow)` 與 `var(--primary)`，讓全介面按鈕光彩 100% 同步隨 Preset 動態變化！
+2. **Canvas 向量圖表與標記點主題綁定 (Theme-Aware Canvas Vector Styling)**：
+   在 `TireRadar` 與 `TrackMapCanvas` 中，將抓地力向量點與賽道位置箭頭標記的 fillStyle 改為動態讀取 CSS `--primary` 數值，徹底解決了 Canvas 靜態青色圓點在非青色 Preset 下的無視覺反應問題。
+
+**後續行動 (Action):**
+- 撰寫任何按鈕 hover 或提示框背景時，一律使用 `var(--primary-glow)` 與 `var(--primary)`，切勿在 React 內寫死硬編碼 RGBA 青色。
+
+---
+
+## 2026-08-05 - 追加 Color Presets ("crosXover" & "Retro VFD")
+
+**學習點 (Learning):**
+1. **crosXover 色彩範本**：
+   - Primary: `#7f4448` (暗莓紅/莫蘭迪紅)
+   - Secondary: `#d4cac9` (質感銀灰/米白)
+   - Accent: `#4c4c4c` (深炭灰)
+   為使用者提供低調精緻、霧面金屬感跑車內裝風格。
+2. **Retro VFD (真空螢光顯示器) 色彩範本**：
+   直接抽自 `hud_overlay/vfd/index.html` 的經典 80 世紀真空管螢幕與賽車儀表板視覺色系：
+   - Primary: `#8ffff0` (經典 VFD 真空螢光青綠光)
+   - Secondary: `#ff584d` (VFD 高熱警示紅)
+   - Accent: `#ffb732` (VFD 琥珀金/指示黃)
+   將經典硬體數碼儀表的科技光輝完美延展至主 GUI 介面！
+
+---
+
+## 2026-08-05 - 卡片 Hover 漂浮行為與硬編碼青色光暈優化
+
+**學習點 (Learning):**
+1. **靜態面板 vs 互動卡片的 UI 可點擊性區分 (Affordance-driven Hover Styling)**：
+   修復前的 `.glass-panel:hover` 寫死了 `transform: translateY(-2px)`，導致普通靜態內容面板在 hover 時也會向上漂浮，給使用者造成「可點擊/可展開」的視覺誤導。
+   重構後：
+   - 標準 `.glass-panel` 預設維持穩定靜態面板質感，無 hover 漂浮。
+   - 僅對真正可點擊/可展開的元件（如 Core Theme 選擇卡片、槽位卡片、分析圖表 Slot）加上 `.glass-panel-interactive` / `.card-interactive` 類別，提供質感明確的 hover 向上微浮 (`translateY(-3px)`) 提示。
+2. **光暈邊框色與 `Primary Color` 動態綁定 (Dynamic Glow Binding)**：
+   原先 `App.css` 內寫死了 `border-color: rgba(0, 240, 255, 0.35)` 青色光暈，切換成烈焰橘、翡翠綠或古銅金等 Preset 時顯得突兀。重構後將其替換為動態變數：
+   `border-color: var(--primary) !important` 與 `box-shadow: 0 0 18px var(--primary-glow) !important`，確保 hover 時邊框與光暈 100% 跟隨當前選擇的色彩範本。
+
+**後續行動 (Action):**
+- 後續新增 UI 組件時，僅在具備點擊/展開/選擇行為的卡片上添加 `.glass-panel-interactive` 類別。
+
+---
+
+## 2026-08-05 - Core Theme 與 Color Presets 功能完全解耦與純色彩範本重構
+
+**學習點 (Learning):**
+1. **主題系統三維度獨立分工 (Independent 3-Dimensional Theme Architecture)**：
+   重構前 Presets 混合了 `mode` (dark/light) 與 `halfmoonCore` 屬性，導致點擊 Preset 時會意外切換使用者的日夜模式與 Core 基礎調性。
+   完成解耦後：
+   - `AppearanceModePanel`: 獨立控制日夜模式 (`mode`)
+   - `Core Theme`: 獨立控制 Halfmoon 框架調性與字體/背景漸層 (`halfmoonCore`)
+   - `Color Presets`: 專注於套用 Accent 三色組合 (`primaryColor`, `secondaryColor`, `accentColor`)，不干擾前兩者。
+2. **6 大賽車純色彩預設組合 (Pure Color Palettes)**：
+   重新設計 6 個視覺衝擊感強烈的色彩組合（Neon Cyan, Cobalt Indigo, Bronze Espresso, Emerald Volt, Solar Flare, Synthwave Pink），按鈕內以 3 個直覺圓點展示三色層次，不論在深色或淺色模式下皆展現清晰優雅的品牌色彩。
+
+**後續行動 (Action):**
+- 後續新增 Preset 時，僅需定義 `primaryColor`, `secondaryColor`, `accentColor`，避免夾帶 `mode` 或 `halfmoonCore` 變更。
+
+---
+
+## 2026-08-05 - 全分頁 (Telemetry, Tuning, CarParams, Analysis, Console) 硬編碼色彩語義化與日夜模式全面覆蓋
+
+**學習點 (Learning):**
+1. **跨視圖通用語義 Token 體系 (Universal View Token Normalization)**：
+   全專案主要視圖 (`CarParamsView`, `TelemetryView`, `TuningView`, `AnalysisView`, `DiagnosticConsole`) 以及所有子組件中，硬編碼的 `color: 'white'`, `background: 'rgba(0,0,0,0.4)'`, `border: '1px solid rgba(255,255,255,0.1)'` 已全面重構為相應的 CSS 變數：
+   - 文字：`var(--text-primary)`, `var(--text-secondary)`
+   - 表面/內襯：`var(--surface-1)`, `var(--surface-2)`, `var(--surface-3)`, `var(--input-bg)`
+   - 邊框線：`var(--glass-border)`, `var(--divider)`, `var(--divider-md)`
+   此變更確保切換淺色主題與 Core Theme 時，所有分頁均能 100% 同步呈現優雅質感與明確對比度。
+2. **圖表與 Canvas 輔助線主題自適應 (Canvas & Chart Theme Awareness)**：
+   對於 `PedalTraceCanvas` 與 `TireRadar` 等動態 Canvas 元素，改為透過 `document.documentElement.getAttribute('data-bs-theme')` 動態選擇網格與軌跡的描邊樣式，解決了淺色模式下白色網格線消失或硬編碼深色邊框造成割裂感的問題。
+
+**後續行動 (Action):**
+- 未來新增任何 View 頁面或 Modal 彈窗時，嚴禁在 inline style 中寫死黑白底色，必須直接使用 `var(--surface-1/2)`, `var(--input-bg)`, `var(--divider)` 等語義變數。
+
+---
+
+## 2026-08-05 - Halfmoon CSS v2 淺色模式對比度完美重構與原生元件風格融入
+
+**學習點 (Learning):**
+1. **淺色模式 Glassmorphism 語義 Token 重設計 (Light Mode Surface Architecture)**：
+   在 Glassmorphism 風格下，淺色主題 (Light Mode) 的卡片面板與內部 Surface 不應使用深灰色透明度，而應採用亮白晶透背景（如 `--glass-bg: rgba(255,255,255,0.82)`）搭配高對比度深色字體 (`--text-primary: #0f172a`) 與細緻陰影 (`--glass-shadow: 0 12px 36px rgba(0,0,0,0.08)`)。
+2. **區塊硬編碼清空與語義變數傳播 (Surface Tokens)**：
+   子卡片與區塊內部全面禁止使用 `rgba(0,0,0,0.15)` 或 `rgba(255,255,255,0.08)` 等寫死的色彩，改用動態語義 Token `--surface-1` (卡片內襯)、`--surface-2` (控制項軌道)、`--surface-3` (高亮/Hover)，確保日夜模式切換時整個 UI 均能展現相應的明亮感或深邃感。
+3. **Halfmoon 2.0 原生 Class 融合 (.card, .form-control)**：
+   在 `App.css` 中注入 Halfmoon 原生 `.card`、`.form-control` 等 Class 的底層 CSS 變數覆蓋，大幅提升整體 GUI 與 Halfmoon CSS v2.0 框架的貼合度。
+
+**後續行動 (Action):**
+- 於 ThemeView 及其他 View 中新增區塊時，統一使用 `--surface-1/2/3` 作為襯底背景，確保在淺色（白底黑字）與深色（黑底白字）間平滑過渡。
+
+---
+
+## 2026-08-05 - Halfmoon CSS v2 主題切換失效診斷與硬碼 inline-style 全面語義化修復
+
+**學習點 (Learning):**
+1. **防 FOUC 早期注入機制 (Early Theme Attribute Injection)**：在 `main.tsx` React 掛載 (`ReactDOM.render`) 之前執行 IIFE，同步從 `localStorage` 讀取 `themeSettings` 並設置 `data-bs-theme` / `data-bs-core` 與 `--primary` 等 CSS 變數，可完全避免頁面首次渲染時因未取得屬性而產生的閃白/無樣式狀況 (FOUC)。
+2. **解決 Inline Style 穿透問題 (Semantic Variable Refactoring)**：診斷發現切換主題（特別是日夜模式）無效的根本原因是多個 View 與 Step 組件內寫死了 `background: 'rgba(0,0,0,0.5)'` 或 `color: 'white'` 等內聯樣式。透過將其替換為 `--input-bg`, `--input-text`, `--glass-border`, `--divider`, `--surface-1/2/3` 等 CSS 語義變數，成功讓所有組件（包括 SettingsView, Navigation, Tuning Step 1~5, OverlayView 等）完全響應 Halfmoon 的日夜切換與 Core Theme 配色。
+3. **Core Theme 視覺區隔化 (Visual Differentiation)**：透過 `[data-bs-core="..."][data-bs-theme="..."]` 的組合選擇器，為 Default、Modern、Elegant 注入專屬的背景漸層與 Glass 邊框調色，使主題切換具備極為顯著的視覺層次感。
+
+**後續行動 (Action):**
+- 新增或維護 UI 組件時，避免在 `style` 屬性內硬編碼 `rgba(0,0,0,...)` 或 `rgba(255,255,255,...)`。
+- 一律優先使用 `var(--surface-1/2/3)`, `var(--divider)`, `var(--input-bg)` 等定義好的 CSS 語義變數。
+
+---
+
+## 2026-08-05 - Halfmoon CSS v2 引入與主題系統底層全取代
+
+**學習點 (Learning):**
+1. **「底層全取代、層間映射」架構（Zero-TSX-Change Replacement）**：引入 Halfmoon CSS v2.0.2 取代手動 `[data-theme="dark/light"]` 系統時，正確策略不是逐一修改 30+ 個 TSX 組件中的 `var(--primary)` 等引用，而是在 `App.css` 建立「反向映射層（Reverse Mapping）」：`--primary: #00f0ff`（自訂值），並在 ThemeContext 的 `useEffect` 直接操作 `document.documentElement.style.setProperty('--primary', userColor)` 覆蓋。Halfmoon 控制 `--bs-body-color`、`--bs-border-color` 等語義系統，我們的品牌色（`--primary`、`--secondary`、`--accent`）保持獨立。此策略達到零 TSX 修改量。
+2. **Halfmoon `--bs-primary` 採用 HSL 計算值**：Halfmoon 的 `--bs-primary` 透過 `--bs-primary-hue`、`--bs-primary-saturation` 與 lightness 百分比動態計算 `hsl()` 值，無法直接以 hex 字串覆蓋（會導致整個 HSL 計算鏈斷裂）。正確做法是保留 Halfmoon 的 `--bs-primary` 不動，用獨立的 `--primary` 作為品牌色（用戶可控），兩者語義分離。
+3. **Halfmoon Cores 需同時 import 主 CSS 和 cores CSS**：`halfmoon.min.css` 只包含 default 主題，`halfmoon.cores.css` 才包含 `[data-bs-core="modern"]` 和 `[data-bs-core="elegant"]` 的覆蓋規則。兩個 import 缺一不可，且必須在 `App.css` 之前（在 `main.tsx` 頂部）import，確保 Halfmoon 為最底層樣式。
+4. **`hexToRgb` 必要性**：ThemeContext 需要計算 `--primary-glow`（如 `rgba(0, 240, 255, 0.25)`），而 CSS `color-mix()` 在 Tauri WebView 的相容性尚不確定，故以純 TS 的 `hexToRgb()` helper 在注入前計算好 RGB string，直接 setProperty 設定，避免 CSS 計算失效問題。
+5. **ThemeView 521 行拆分為 5 子組件**：依 AGENTS.md 規範（>250 行強制評估），趁 Halfmoon 整合機會完成拆分：`AppearanceModePanel`、`ColorPickerPanel`、`PresetPanel`、`SlotManagerPanel`、`CustomCSSEditorPanel`。ThemeView.tsx 降至 65 行純 Container。
+
+**後續行動 (Action):**
+- 引入任何 CSS 框架時，優先評估「能否透過反向映射保持 TSX 層零修改」，而非全面替換組件中的 CSS 變數引用。
+- Halfmoon 更新版本時，需確認 `halfmoon.cores.css` 路徑是否變更（目前為 `halfmoon/css/cores/halfmoon.cores.css`）。
+- 後續若新增自訂 CSS 類別，一律使用 `var(--bs-*)` 語義變數而非硬編碼顏色，確保深/淺色自動適應。
+
+---
+
 ## 2026-07-31 - VFD HUD Motion Effect 高效能渲染與平滑化優化
 
 **學習點 (Learning):**
