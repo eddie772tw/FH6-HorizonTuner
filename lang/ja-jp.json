@@ -858,5 +858,10 @@
   "AWD Center Rear Split": "AWD センターリアトルク配分",
   "Chassis Tuning": "足回り調校",
   "Please set basic vehicle parameters in Step 1 to proceed.": "Step 1で基本車両パラメータを設定してください。",
-  "Please define basic vehicle parameters in Step 1 first.": "最初にStep 1で基本車両パラメータを設定してください。"
+  "Please define basic vehicle parameters in Step 1 first.": "最初にStep 1で基本車両パラメータを設定してください。",
+  "Invalid Theme JSON file format.": "無効な Theme JSON ファイル形式です。",
+  "Primary": "プライマリ",
+  "Secondary": "セカンダリ",
+  "Accent": "アクセント",
+  "Failed to clear logs on server.": "サーバー上のログのクリアに失敗しました。"
 }

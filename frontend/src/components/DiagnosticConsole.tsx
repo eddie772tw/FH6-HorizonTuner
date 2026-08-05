@@ -59,7 +59,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
       await fetch('http://127.0.0.1:8001/api/logs', { method: 'DELETE' });
       setLogs([]);
     } catch (err) {
-      alert("Failed to clear logs on server.");
+      alert(t("Failed to clear logs on server."));
     }
   };
 

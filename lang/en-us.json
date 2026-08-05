@@ -914,5 +914,10 @@
   "AWD Center Rear Split": "AWD Center Rear Split",
   "Chassis Tuning": "Chassis Tuning",
   "Please set basic vehicle parameters in Step 1 to proceed.": "Please set basic vehicle parameters in Step 1 to proceed.",
-  "Please define basic vehicle parameters in Step 1 first.": "Please define basic vehicle parameters in Step 1 first."
+  "Please define basic vehicle parameters in Step 1 first.": "Please define basic vehicle parameters in Step 1 first.",
+  "Invalid Theme JSON file format.": "Invalid Theme JSON file format.",
+  "Primary": "Primary",
+  "Secondary": "Secondary",
+  "Accent": "Accent",
+  "Failed to clear logs on server.": "Failed to clear logs on server."
 }

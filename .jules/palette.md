@@ -1,3 +1,6 @@
 ## 2026-08-04 - Chassis Tuning Refactoring
 **Learning:** Consolidating user tuning inputs (like `aero_downforce` and suspension `min`/`max` bounds) into a unified setup step (Step 1) significantly improves the mental model of the Tuning Wizard, making the subsequent calculation steps (Gearing in Step 2, Chassis in Step 3) feel like deterministic results derived from the car's initial parameters.
 **Action:** When creating multi-step calculation wizards, always group manual user inputs and boundaries into the earliest possible steps, and reserve later steps purely for visualizing and applying calculated outputs based on mathematical models (e.g., 4D Chassis math).
+## 2024-05-14 - Translation JSON Reformatting Trap
+**Learning:** Using Python's `json.dump` to add missing keys to existing translation JSON files will often cause massive full-file formatting diffs (e.g. changing indentation from 2 spaces to 4 spaces, or reordering keys), polluting git history and violating the `<50 lines` rule.
+**Action:** When updating `lang/*.json` files with new keys, inject the new key-value pairs textually near the end of the file (e.g. using `re` or `sed`) to preserve the exact file formatting, rather than parsing and re-serializing the entire file.

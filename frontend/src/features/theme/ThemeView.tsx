@@ -89,7 +89,7 @@ const ThemeView: React.FC = () => {
       if (content) {
         const success = importThemeJSON(content);
         if (!success) {
-          alert('Invalid Theme JSON file format.');
+          alert(t('Invalid Theme JSON file format.'));
         }
       }
     };
@@ -318,9 +318,9 @@ const ThemeView: React.FC = () => {
 
                   {/* Preview Colors */}
                   <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: slot.primaryColor, border: '1px solid #fff' }} title="Primary" />
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: slot.secondaryColor, border: '1px solid #fff' }} title="Secondary" />
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: slot.accentColor, border: '1px solid #fff' }} title="Accent" />
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: slot.primaryColor, border: '1px solid #fff' }} title={t("Primary")} />
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: slot.secondaryColor, border: '1px solid #fff' }} title={t("Secondary")} />
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: slot.accentColor, border: '1px solid #fff' }} title={t("Accent")} />
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
                       {slot.mode === 'light' ? '☀️ Light' : '🌙 Dark'}
                     </span>
