@@ -370,3 +370,99 @@ export function analyzeTelemetrySession(
 
   return report;
 }
+
+export interface TireDiagnosisInput {
+  photF: number; // Front hot pressure (PSI)
+  photR: number; // Rear hot pressure (PSI)
+  tempF: number; // Front axle average temp (deg C)
+  tempR: number; // Rear axle average temp (deg C)
+  targetPhot: number; // Target hot pressure (PSI)
+  handlingIssue: string; // Dynamic handling anomaly key
+  chassis?: {
+    arb: { front: number; rear: number };
+    springs: { front: number; rear: number; heightF: number; heightR: number };
+    damping: { reboundF: number; reboundR: number; bumpF: number; bumpR: number };
+    diff: { accelF: number; decelF: number; accelR: number; decelR: number; centerRear: number };
+  } | null;
+}
+
+export interface TireDiagnosisResult {
+  deltaTaxle: number;
+  axleBalanceStatus: 'balanced' | 'front_overheat' | 'rear_overheat';
+  biasF: number;
+  biasR: number;
+  primaryPressureAdvice: string;
+  secondarySuspensionAdvice: string;
+  isConverged: boolean;
+}
+
+/**
+ * Closed-Loop Telemetry Diagnosis for Tire Pressures and Alignment Linkage.
+ */
+export function evaluateTireTelemetryDiagnosis(
+  input: TireDiagnosisInput
+): TireDiagnosisResult {
+  const { photF, photR, tempF, tempR, targetPhot, handlingIssue, chassis } = input;
+
+  const deltaTaxle = Math.round((tempF - tempR) * 10) / 10;
+  const biasF = Math.round((photF - targetPhot) * 10) / 10;
+  const biasR = Math.round((photR - targetPhot) * 10) / 10;
+
+  let axleBalanceStatus: 'balanced' | 'front_overheat' | 'rear_overheat' = 'balanced';
+  if (Math.abs(deltaTaxle) <= 3.0) {
+    axleBalanceStatus = 'balanced';
+  } else if (deltaTaxle > 3.0) {
+    axleBalanceStatus = 'front_overheat';
+  } else {
+    axleBalanceStatus = 'rear_overheat';
+  }
+
+  // Primary Pressure Advice
+  let primaryPressureAdvice = '';
+  const isConverged = Math.abs(biasF) <= 0.3 && Math.abs(biasR) <= 0.3;
+
+  if (isConverged) {
+    primaryPressureAdvice = `前後熱胎壓精確收斂於目標黃金區間 (${targetPhot.toFixed(1)} PSI)。無需調整冷胎壓。`;
+  } else {
+    const adjF = biasF > 0 ? `降低前冷胎壓 -${biasF.toFixed(1)} PSI` : `提高前冷胎壓 +${Math.abs(biasF).toFixed(1)} PSI`;
+    const adjR = biasR > 0 ? `降低後冷胎壓 -${biasR.toFixed(1)} PSI` : `提高後冷胎壓 +${Math.abs(biasR).toFixed(1)} PSI`;
+    primaryPressureAdvice = `第一優先微調：建議 ${adjF}，且 ${adjR}。`;
+  }
+
+  // Secondary Suspension Advice (linked with Step 3 Chassis outputs if present)
+  let secondarySuspensionAdvice = '';
+  const currentArbF = chassis?.arb?.front ?? 1.0;
+  const currentArbR = chassis?.arb?.rear ?? 1.0;
+  const currentDecelR = chassis?.diff?.decelR ?? 20;
+
+  if (handlingIssue === 'understeer_entry') {
+    secondarySuspensionAdvice = `入彎轉向不足：建議增加前輪外展前束角 (Toe-out +0.1度)，或將後防傾桿由目前的 ${currentArbR.toFixed(1)} 適度調硬 +2.0。`;
+  } else if (handlingIssue === 'understeer_mid') {
+    secondarySuspensionAdvice = `彎中極限轉向不足：前輪側向變形過大。建議增加前負外傾角 (Camber 向左 -0.2度)，或將前防傾桿由 ${currentArbF.toFixed(1)} 調軟 -3.0。`;
+  } else if (handlingIssue === 'oversteer_snap') {
+    secondarySuspensionAdvice = `車尾突兀失控：後輪過熱或氣壓偏差。建議提高後束角內收 (Toe-in -0.1度)，或將後減速鎖定率由 ${currentDecelR}% 調高至 ${Math.min(100, currentDecelR + 5)}% 以穩定車尾。`;
+  } else if (handlingIssue === 'braking_lockup') {
+    secondarySuspensionAdvice = `煞車鎖死前輪滑移：前負外傾過大減少煞車接觸面。建議減少前負外傾角 (Camber +0.3度)，並增加主銷後傾角 (Caster +0.5度) 作為補償。`;
+  } else if (handlingIssue === 'cold_tires') {
+    secondarySuspensionAdvice = `胎溫過低無法升溫：適度調高冷胎壓 (+0.5 至 +1.0 PSI) 增加發酵速度，或選用軟質輪胎配方。`;
+  } else {
+    if (axleBalanceStatus === 'front_overheat') {
+      secondarySuspensionAdvice = `前軸溫度偏高 (溫差 +${deltaTaxle.toFixed(1)} deg C)：前輪負擔較重，可適度調軟前防傾桿 (目前 ${currentArbF.toFixed(1)}) 或增加前負外傾角。`;
+    } else if (axleBalanceStatus === 'rear_overheat') {
+      secondarySuspensionAdvice = `後軸溫度偏高 (溫差 ${deltaTaxle.toFixed(1)} deg C)：後輪滑移量較大，可適度調軟後防傾桿 (目前 ${currentArbR.toFixed(1)}) 或降低差速器加速鎖定率。`;
+    } else {
+      secondarySuspensionAdvice = `底盤動態表現均衡。懸吊幾何與胎溫契合良好。`;
+    }
+  }
+
+  return {
+    deltaTaxle,
+    axleBalanceStatus,
+    biasF,
+    biasR,
+    primaryPressureAdvice,
+    secondarySuspensionAdvice,
+    isConverged
+  };
+}
+

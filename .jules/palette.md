@@ -1,0 +1,3 @@
+## 2024-08-05 - Form Control Accessibility in BasicCarInfo
+**Learning:** `BasicCarInfo.tsx` relied on implicit wrapping or visual proximity for form labels, which violates accessibility standards for screen readers and reduces click-target area for users. Secondary inputs in multi-input rows (like Tire specs) completely lacked descriptive labels.
+**Action:** Always explicitly associate `<label>` elements with their corresponding inputs using `htmlFor` and `id` attributes. For secondary inputs without visible labels, use descriptive `aria-label` attributes to ensure screen reader compatibility.

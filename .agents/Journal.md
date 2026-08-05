@@ -978,4 +978,49 @@
 **後續行動 (Action):**
 - 於任何 HUD 樣式 HTML/JS 存取全域 elements 時，統一使用 `(window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {}` 進行防禦式讀取。
 
+---
+
+## 2026-08-05 — 公式化底盤調校 Markdown 文件重構與圖表 LaTeX 標準化
+
+**學習點 (Learning):**
+1. **Markdown 表格與斷行毀損優化 (Markdown Line Break & Table Reconstruction)**：參考文件 `ref/公式化底盤調校.md` 原始內容因缺乏換行標籤被壓縮至 11 行極長字串，導致表格語法潰散與閱讀性降低。重構為 243 行具備標準標題階層 (`#`, `##`, `###`) 的結構化文件，並補全 Slider 邊界條件表與四大賽事目標（公路、甩尾、拉力、直線加速）綜合矩陣對照表。
+2. **LaTeX 公式與 GitHub Alert 美化**：將所有物理算式（防傾桿、彈簧下壓力補償、阻尼比例、差速器偏置）轉譯為置中 `$$ ... $$` 區塊與內聯 `$ ... $` 標籤，並導入 `> [!TIP]`、`> [!NOTE]` 提示框，突顯 AWD Meta 1/65 設定等關鍵物理策略。
+3. **相關模組參照導覽**：加入與 `ref/tuning_formulas.md`（變速箱齒比數學模型）的雙向導覽連結。
+
+**後續行動 (Action):**
+- 維護參考資料 Markdown 文件時，務必確認在 standard markdown viewer 中具備清晰的排版呈現與完整表格渲染。
+
+---
+
+
+---
+
+## 2026-08-05 — 調校精靈與組件多語系字典 (`lang/*.json`) 完整補齊
+
+## 2026-08-05 — 整合 Step 4 輪胎與定位與 Step 5 遙測動態校正至調校工作流
+
+**學習點 (Learning):**
+1. **輸入參數集中化與 Step 4/5 數據繼承 (Input Consolidation & Multi-Step Inheritance)**：
+   - 將當前遊戲季節 (`season`: Summer / Autumn / Spring / Winter) 統一集中於 Step 1 表單輸入，作為全工作流的基礎參數。
+   - Step 4 (輪胎與定位) 作為靜態初設面板，無需重複表單輸入，直接繼承 Step 1 已填寫的車輛規格 (包含前/後輪胎寬、扁平比、輪圈大小及季節偏置) 計算胎壁高度 $H_{wall}$ 與幾何角度，符合單一職責與優雅 UI 規範。
+   - Step 5 (遙測動態校正) 與 Step 4 及 Step 3 (底盤懸吊、彈簧 $K_F/K_R$、防傾桿 $ARB_F/ARB_R$、差速器鎖定率) 實施跨步驟數據繼承，當偵測到前後軸溫差 $\Delta T_{axle}$ 過大或駕駛異常感受時，能參照 Step 3 產出的當前底盤剛性給予更為精準與量化的微調指引。
+2. **Forza UDP 遙測封包邊界與胎溫/胎壓解耦 (Telemetry UDP Boundary & Hybrid Input)**：
+   - Forza Horizon UDP 遙測封包包含實測 4 輪胎溫 (`TireTemp`) 數據，但原生未提供即時胎壓。
+   - Step 5 採取混合輸入機制：從背景 `useTelemetry()` 自動帶入並算得前後軸實測平均胎溫；並透過明確的文字提示引導玩家在賽道試駕 2 圈後開啟遊戲內【遙測畫面】觀察熱胎壓，並於 Step 5 填入 $P_{hot,F}, P_{hot,R}$ 觸發閉環微調診斷。
+3. **全域單位換算與 i18n 翻譯完備 (Global Unit Conversion & Localization)**：
+   - 物理算牌與診斷核心維持 SI / 標準單位 (PSI, °C)，UI 呈現統一調用 `SettingsContext` (`convertTirePressureFromPsi`, `convertTemp` 等) 與 `units.ts`，支援使用者偏好單位 (PSI / BAR / kPa, °C / °F) 的動態切換。
+   - 於 `lang/zh-tw.json` 與 `lang/en-us.json` 補齊所有新增欄位與診斷語句之多國語言字典。
+
+**後續行動 (Action):**
+- 保持跨 Step UI 組件單一職責與 Step 導向獨立 TSX 組件檔規範 (`Step4TireAlignSetup.tsx`, `Step5TelemetryCalibration.tsx`)。
+- 物理算牌與診斷邏輯嚴格維持純函數，並維護 Vitest 單元測試 100% 通過。
+
+
+
+
+
+
+
+
+
 

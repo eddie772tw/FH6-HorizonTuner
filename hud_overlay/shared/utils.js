@@ -31,14 +31,20 @@ export function toggleSpeedUnit() {
 }
 
 // ── Speed display — wraps each digit in a <span> for tabular spacing ─────────
+let _lastSpeedValue = null;
+
 export function setSpeedDisplay(value) {
+    if (_lastSpeedValue === value) return;
     const el = document.getElementById('speedText');
     if (!el) return;
-    el.innerHTML = value
-        .toString()
-        .split('')
-        .map(d => `<span>${d}</span>`)
-        .join('');
+
+    _lastSpeedValue = value;
+    const strVal = value.toString();
+    let html = '';
+    for (let i = 0; i < strVal.length; i++) {
+        html += `<span>${strVal[i]}</span>`;
+    }
+    el.innerHTML = html;
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
