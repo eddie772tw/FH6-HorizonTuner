@@ -41,6 +41,9 @@ interface SettingsContextType {
   // Tire Pressure (input in bar)
   convertTirePressure: (bar: number) => { value: number; label: string };
   convertTirePressureToBar: (val: number) => number;
+  // Tire Pressure (input in psi)
+  convertTirePressureFromPsi: (psi: number) => { value: number; label: string };
+  convertTirePressureToPsi: (val: number) => number;
   // Boost Pressure (input in psi)
   convertBoost: (psi: number) => { value: number; label: string };
   // Spring rate (input in kgf/mm)
@@ -230,6 +233,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return val;
   };
 
+  // Tire Pressure (input in psi)
+  const convertTirePressureFromPsi = (psi: number) => {
+    if (settings.units.tirePressure === 'bar') {
+      return { value: psi * 0.0689476, label: 'bar' };
+    } else if (settings.units.tirePressure === 'kpa') {
+      return { value: psi * 6.89476, label: 'kPa' };
+    }
+    return { value: psi, label: 'PSI' };
+  };
+
+  const convertTirePressureToPsi = (val: number) => {
+    if (settings.units.tirePressure === 'bar') {
+      return val / 0.0689476;
+    } else if (settings.units.tirePressure === 'kpa') {
+      return val / 6.89476;
+    }
+    return val;
+  };
+
   // Boost (psi input)
   const convertBoost = (psi: number) => {
     if (settings.units.boostPressure === 'bar') {
@@ -339,6 +361,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       convertTemp,
       convertTirePressure,
       convertTirePressureToBar,
+      convertTirePressureFromPsi,
+      convertTirePressureToPsi,
       convertBoost,
       convertSpringRate,
       convertSpringRateToKgfmm,

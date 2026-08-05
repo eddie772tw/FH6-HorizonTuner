@@ -14,6 +14,8 @@ export interface CarParams {
   aeroBalance: number;
   aeroEfficiency: number;
   mechBalance: number;
+  aero_downforce_front?: number;
+  aero_downforce_rear?: number;
   frontTireWidth?: number;
   frontTireAspect?: number;
   frontTireRim?: number;
@@ -32,11 +34,15 @@ export interface CarParams {
   };
   dyno_curve: Record<string, { hp: number; torque: number; hp_hist?: number[]; torque_hist?: number[] }>;
   
-  // New optional parameters for advanced tuning wizard
+  // Suspension & Ride Height limits for tuning wizard
   spring_front_min?: number;
   spring_front_max?: number;
   spring_rear_min?: number;
   spring_rear_max?: number;
+  height_front_min?: number;
+  height_front_max?: number;
+  height_rear_min?: number;
+  height_rear_max?: number;
   arb_front_min?: number;
   arb_front_max?: number;
   arb_rear_min?: number;
@@ -121,6 +127,56 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     prevTelemetryCarIdRef.current = telemetryCarId;
   }, [telemetryCarId]);
 
+  const normalizeCarParams = (raw: any): CarParams => {
+    return {
+      weight: raw?.weight ?? 1500,
+      weight_distribution: raw?.weight_distribution ?? 50,
+      drivetrain: raw?.drivetrain ?? 'RWD',
+      induction: raw?.induction ?? 'NA',
+      maxHp: raw?.maxHp ?? 0,
+      maxTorque: raw?.maxTorque ?? 0,
+      maxHpRpm: raw?.maxHpRpm ?? 0,
+      maxTorqueRpm: raw?.maxTorqueRpm ?? 0,
+      aeroBalance: raw?.aeroBalance ?? 0.50,
+      aeroEfficiency: raw?.aeroEfficiency ?? 0.50,
+      mechBalance: raw?.mechBalance ?? 0.50,
+      aero_downforce_front: raw?.aero_downforce_front ?? 0,
+      aero_downforce_rear: raw?.aero_downforce_rear ?? 0,
+      frontTireWidth: raw?.frontTireWidth ?? 245,
+      frontTireAspect: raw?.frontTireAspect ?? 40,
+      frontTireRim: raw?.frontTireRim ?? 18,
+      rearTireWidth: raw?.rearTireWidth ?? 245,
+      rearTireAspect: raw?.rearTireAspect ?? 40,
+      rearTireRim: raw?.rearTireRim ?? 18,
+      tireType: raw?.tireType ?? 'Stock',
+      adjustability: {
+        gearbox: raw?.adjustability?.gearbox ?? 'Full',
+        gears: raw?.adjustability?.gears ?? 6,
+        suspension: raw?.adjustability?.suspension ?? 'Race',
+        arb: raw?.adjustability?.arb ?? 'Adjustable',
+        aero: raw?.adjustability?.aero ?? 'Adjustable',
+        brakes: raw?.adjustability?.brakes ?? 'Adjustable',
+        diff: raw?.adjustability?.diff ?? 'Adjustable'
+      },
+      dyno_curve: raw?.dyno_curve ?? {},
+      spring_front_min: raw?.spring_front_min ?? 10.0,
+      spring_front_max: raw?.spring_front_max ?? 120.0,
+      spring_rear_min: raw?.spring_rear_min ?? 10.0,
+      spring_rear_max: raw?.spring_rear_max ?? 120.0,
+      height_front_min: raw?.height_front_min ?? 10.0,
+      height_front_max: raw?.height_front_max ?? 25.0,
+      height_rear_min: raw?.height_rear_min ?? 10.0,
+      height_rear_max: raw?.height_rear_max ?? 25.0,
+      roll_center_front: raw?.roll_center_front ?? 0.0,
+      roll_center_rear: raw?.roll_center_rear ?? 0.0,
+      anti_dive: raw?.anti_dive ?? 0,
+      anti_squat: raw?.anti_squat ?? 0,
+      target_ride_frequency: raw?.target_ride_frequency ?? 2.4,
+      target_rebound_ratio: raw?.target_rebound_ratio ?? 0.70,
+      target_bump_ratio: raw?.target_bump_ratio ?? 0.55
+    };
+  };
+
   // Load params when carId changes
   useEffect(() => {
     let active = true;
@@ -130,53 +186,9 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         const res = await fetch(`http://127.0.0.1:8001/api/car_params/${carId}`);
         const result = await res.json();
         if (active && !result.error) {
-          setCarParams(result);
+          setCarParams(normalizeCarParams(result));
         } else if (active && result.error) {
-            setCarParams({
-              weight: 1500,
-              weight_distribution: 50,
-              drivetrain: 'RWD',
-              induction: 'NA',
-              maxHp: 0,
-              maxTorque: 0,
-              maxHpRpm: 0,
-              maxTorqueRpm: 0,
-              aeroBalance: 0.50,
-              aeroEfficiency: 0.50,
-              mechBalance: 0.50,
-              frontTireWidth: 245,
-              frontTireAspect: 40,
-              frontTireRim: 18,
-              rearTireWidth: 245,
-              rearTireAspect: 40,
-              rearTireRim: 18,
-              tireType: 'Stock',
-              adjustability: {
-                gearbox: 'Full',
-                gears: 6,
-                suspension: 'Race',
-                arb: 'Adjustable',
-                aero: 'Adjustable',
-                brakes: 'Adjustable',
-                diff: 'Adjustable'
-              },
-              dyno_curve: {},
-              spring_front_min: 10.0,
-              spring_front_max: 120.0,
-              spring_rear_min: 10.0,
-              spring_rear_max: 120.0,
-              arb_front_min: 1.0,
-              arb_front_max: 65.0,
-              arb_rear_min: 1.0,
-              arb_rear_max: 65.0,
-              roll_center_front: 0.0,
-              roll_center_rear: 0.0,
-              anti_dive: 0,
-              anti_squat: 0,
-              target_ride_frequency: 2.4,
-              target_rebound_ratio: 0.70,
-              target_bump_ratio: 0.55
-            });
+          setCarParams(normalizeCarParams({}));
         }
       } catch (e) {
         console.error("Failed to load car params", e);

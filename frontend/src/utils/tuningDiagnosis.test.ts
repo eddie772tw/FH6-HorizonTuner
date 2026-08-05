@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeTelemetrySession } from './tuningDiagnosis';
+import { analyzeTelemetrySession, evaluateTireTelemetryDiagnosis } from './tuningDiagnosis';
+
 import { CarParams } from '../context/CarParamsContext';
 
 const mockCarParams = {
@@ -99,3 +100,45 @@ describe('tuningDiagnosis - analyzeTelemetrySession', () => {
   });
 
 });
+
+describe('evaluateTireTelemetryDiagnosis', () => {
+  it('應精確判斷熱胎壓收斂狀態與軸溫差', () => {
+    const res = evaluateTireTelemetryDiagnosis({
+      photF: 32.5,
+      photR: 32.5,
+      tempF: 90,
+      tempR: 90,
+      targetPhot: 32.5,
+      handlingIssue: 'none'
+    });
+
+    expect(res.isConverged).toBe(true);
+    expect(res.deltaTaxle).toBe(0);
+    expect(res.axleBalanceStatus).toBe('balanced');
+    expect(res.primaryPressureAdvice).toContain('無需調整冷胎壓');
+  });
+
+  it('應能發出正確的氣壓微調與極限推頭幾何聯動微調指令', () => {
+    const res = evaluateTireTelemetryDiagnosis({
+      photF: 34.0,
+      photR: 32.0,
+      tempF: 98,
+      tempR: 88,
+      targetPhot: 32.5,
+      handlingIssue: 'understeer_mid',
+      chassis: {
+        arb: { front: 15.0, rear: 55.0 },
+        springs: { front: 50, rear: 50, heightF: 12, heightR: 12 },
+        damping: { reboundF: 10, reboundR: 10, bumpF: 6, bumpR: 6 },
+        diff: { accelF: 15, decelF: 0, accelR: 75, decelR: 15, centerRear: 70 }
+      }
+    });
+
+    expect(res.isConverged).toBe(false);
+    expect(res.biasF).toBe(1.5);
+    expect(res.biasR).toBe(-0.5);
+    expect(res.primaryPressureAdvice).toContain('降低前冷胎壓 -1.5 PSI');
+    expect(res.secondarySuspensionAdvice).toContain('前防傾桿由 15.0 調軟 -3.0');
+  });
+});
+

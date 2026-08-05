@@ -47,6 +47,10 @@
    - 新增或重構模組時，必須同步提供該模組的獨立單元測試（Unit Test）。
    - 跨模組對接時，必須透過型別宣告（TypeScript Interface / Python Type Hints）明確定義數據合約。
 
+4. **Step 導向介面獨立規範**：
+   - 對於精靈嚮導 (Wizard) 或多步驟介面（如 Tuning Workflow），**每一個 Step 必須各自獨立為一個 TSX 組件檔**（例如 `Step1GoalSetup.tsx`、`Step2GearboxSetup.tsx`、`Step3ChassisTuner.tsx`）。
+   - 主 View（例如 `TuningView.tsx`）僅作為 View Container，專注於導覽進度條 (Stepper Header) 與 Step 之間狀態傳送，嚴禁將 Step 的 UI 表單細節混在主 View 中。
+
 ### 開發邊界限制
 * **必須做的事**：
   - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "pnpm -C frontend run test"`）。
