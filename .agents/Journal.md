@@ -995,17 +995,17 @@
 
 ---
 
-## 2026-08-05 — Step 2 齒比圖表有效動力帶 (Effective Powerband) 視覺化高亮
+## 2026-08-05 — 調校精靈與組件多語系字典 (`lang/*.json`) 完整補齊
 
 **學習點 (Learning):**
-1. **Recharts 動力帶背景色塊與峰值參考線 (Powerband Highlight & Reference Lines)**：
-   - 於 [GearingTuner.tsx](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/src/features/tuning/components/GearingTuner.tsx) 中追加 3 大視覺元素：
-     1. **最大馬力轉速參考線**：紅色虛線 `ReferenceLine` ($RPM_{HP}$)。
-     2. **最大扭力轉速參考線**：橙色虛線 `ReferenceLine` ($RPM_{T}$)。
-     3. **有效動力帶高亮區塊**：使用 `ReferenceArea` 在背景繪製半透明極簡薄綠/青色塊 (`rgba(0, 230, 118, 0.08)`)，介於最大扭力與最大馬力轉速之間，讓玩家一目瞭然換檔後的轉速落點是否完滿落在有效動力帶區間內。
+1. **多語系字典補齊與格式規範 (`lang/` JSON Dictionary Completion)**：
+   - 於 [d:\FH6-Bundle\FH6-HorizonTuner\lang](file:///d:/FH6-Bundle/FH6-HorizonTuner/lang) 目錄下補齊 `zh-tw.json`（繁體中文）、`en-us.json`（英文）與 `ja-jp.json`（日文）中關於 Step 1~3 調校精靈的所有 46 條新增 Key 與 Value 對應。
+   - 包含四賽事目標詳細說明、機械與空力平衡係數、懸吊邊界與預設套用按鈕、AEGO 齒比終傳比標籤、底盤四卡片說明以及 Recharts 有效動力帶高亮圖例之語系翻譯。
 
 **後續行動 (Action):**
-- 後續進行圖表視覺優化時，多善用 Recharts 之 `ReferenceArea` 與色彩透明度，提升數據讀取的直覺性與視覺體驗。
+- 保持 `lang/` 字典檔案格式良好與多語系同步更新，維持全站國際化品質。
+
+
 
 
 

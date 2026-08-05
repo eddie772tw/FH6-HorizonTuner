@@ -198,7 +198,7 @@ export const Step3ChassisTuner: React.FC<Step3ChassisTunerProps> = ({
           {drivetrain === 'AWD' && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.4rem' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>{t("AWD Center Rear Split")}</span>
-              <input type="text" readOnly value={`${diff.centerRear}% Rear`} style={{ ...inputStyle, border: '1px solid var(--primary)', width: '90px' }} />
+              <input type="text" readOnly value={`${diff.centerRear}% ${t("Rear")}`} style={{ ...inputStyle, border: '1px solid var(--primary)', width: '90px' }} />
             </div>
           )}
         </div>
