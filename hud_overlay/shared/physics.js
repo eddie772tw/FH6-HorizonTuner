@@ -109,10 +109,17 @@ function _stepSpring(spring, target, dt) {
     spring.pos += spring.vel * dt;
 }
 
+const _springKeys = Object.keys(_springs);
+const ZERO_TARGETS = { x: 0, yBias: 0, yWiggle: 0, z: 0, roll: 0 };
+
 function _atRest() {
-    return Object.values(_springs).every(
-        s => Math.abs(s.pos) < 0.01 && Math.abs(s.vel) < 0.01
-    );
+    for (var i = 0; i < _springKeys.length; i++) {
+        var s = _springs[_springKeys[i]];
+        if (Math.abs(s.pos) >= 0.01 || Math.abs(s.vel) >= 0.01) {
+            return false;
+        }
+    }
+    return true;
 }
 
 let _hudContainer = null;
@@ -143,12 +150,13 @@ function _physicsLoop(timestamp) {
     // When disabled, let all springs decay naturally to zero
     const targets = _physicsEnabled
         ? physicsTargets
-        : { x: 0, yBias: 0, yWiggle: 0, z: 0, roll: 0 };
+        : ZERO_TARGETS;
 
     const dt = Math.min((timestamp - (_lastPhysicsTime ?? timestamp)) / 1000, 0.05);
     _lastPhysicsTime = timestamp;
 
-    for (const key of Object.keys(_springs)) {
+    for (var i = 0; i < _springKeys.length; i++) {
+        var key = _springKeys[i];
         _stepSpring(_springs[key], targets[key], dt);
     }
 
