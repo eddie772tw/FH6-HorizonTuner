@@ -42,26 +42,26 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
   }, [convertSpeed]);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: '0.5rem' }}>
+    <div className="d-flex flex-column flex-grow-1">
+      <div className="d-flex justify-content-between align-items-end mb-2">
         <div>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>
-            <span ref={rpmRef}>0</span> <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("RPM")}</span>
+          <div className="fw-bold text-primary lh-1" style={{ fontSize: '2rem' }}>
+            <span ref={rpmRef}>0</span> <span className="text-secondary" style={{ fontSize: '0.9rem' }}>{t("RPM")}</span>
           </div>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
-            <span ref={gearRef}>N</span> <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("GEAR")}</span>
+        <div className="text-center">
+          <div className="fw-bold lh-1" style={{ fontSize: '2rem', color: 'var(--text-primary)' }}>
+            <span ref={gearRef}>N</span> <span className="text-secondary" style={{ fontSize: '0.9rem' }}>{t("GEAR")}</span>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>
-            <span ref={speedRef}>0</span> <span ref={speedLabelRef} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}></span>
+        <div className="text-end">
+          <div className="fw-bold lh-1" style={{ fontSize: '2rem', color: 'var(--accent)' }}>
+            <span ref={speedRef}>0</span> <span ref={speedLabelRef} className="text-secondary" style={{ fontSize: '0.9rem' }}></span>
           </div>
         </div>
       </div>
-      <div style={{ width: '100%', height: '10px', background: 'var(--surface-2)', border: '1px solid var(--glass-border)', borderRadius: '5px', overflow: 'hidden' }}>
-        <div ref={rpmBarRef} style={{ height: '100%', width: '0%', background: 'var(--primary)' }} />
+      <div className="w-100 overflow-hidden border" style={{ height: '10px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important', borderRadius: '5px' }}>
+        <div ref={rpmBarRef} className="h-100" style={{ width: '0%', background: 'var(--primary)' }} />
       </div>
     </div>
   );

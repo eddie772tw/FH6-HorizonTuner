@@ -130,24 +130,24 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   }, [tireIdx]);
 
   return (
-    <div style={{ background: 'var(--surface-1)', border: '1px solid var(--glass-border)', padding: '0.8rem', borderRadius: '8px' }}>
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600, textAlign: isLeft ? 'left' : 'right' }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', height: '60px', alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: '24px', height: '100%', background: 'var(--surface-2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 1 }} />
-          <div ref={barRef} style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
+    <div className="p-3 rounded border" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+      <div className={`fw-bold mb-2 ${isLeft ? 'text-start' : 'text-end'}`} style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{title}</div>
+      <div className={`d-flex gap-3 align-items-center ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ height: '60px' }}>
+        <div className="position-relative h-100 border" style={{ width: '24px', background: 'var(--surface-2)', borderRadius: '12px', borderColor: 'var(--glass-border) !important' }}>
+          <div className="position-absolute" style={{ top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 1 }} />
+          <div ref={barRef} className="position-absolute" style={{
+            bottom: 0, left: 0, right: 0, height: '50%',
             background: 'var(--primary)', borderRadius: '0 0 8px 8px'
           }} />
         </div>
-        <div style={{ flex: 1, height: '100%', position: 'relative', opacity: 0.8 }}>
-           <canvas ref={canvasRef} width={150} height={60} style={{ width: '100%', height: '100%' }} />
+        <div className="flex-grow-1 h-100 position-relative opacity-75">
+           <canvas ref={canvasRef} width={150} height={60} className="w-100 h-100" />
         </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem', fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '0 0.2rem' }}>
-        <span>{t("Min")}: <span style={{ fontWeight: 600 }} ref={minRef}>0.00</span></span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }} ref={textRef}>0.00</span>
-        <span>{t("Max")}: <span style={{ fontWeight: 600 }} ref={maxRef}>0.00</span></span>
+      <div className="d-flex justify-content-between mt-3 px-1 text-secondary" style={{ fontSize: '0.8rem' }}>
+        <span>{t("Min")}: <span className="fw-bold" ref={minRef}>0.00</span></span>
+        <span className="fw-bold" style={{ color: 'var(--text-primary)' }} ref={textRef}>0.00</span>
+        <span>{t("Max")}: <span className="fw-bold" ref={maxRef}>0.00</span></span>
       </div>
     </div>
   );

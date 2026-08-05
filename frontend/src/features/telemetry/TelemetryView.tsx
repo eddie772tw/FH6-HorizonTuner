@@ -28,24 +28,7 @@ const getCarClassString = (cls?: number) => {
 
 
 
-const activeTabStyle: React.CSSProperties = {
-  background: 'var(--primary)',
-  color: '#000',
-  border: 'none',
-  padding: '0.5rem 1rem',
-  borderRadius: '4px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-};
-
-const inactiveTabStyle: React.CSSProperties = {
-  background: 'var(--surface-2)',
-  color: 'var(--text-secondary)',
-  border: 'none',
-  padding: '0.5rem 1rem',
-  borderRadius: '4px',
-  cursor: 'pointer',
-};
+// Button classes will be applied directly instead of these objects
 
 // --- Extracted selectors for memoized components ---
 const selectClutch = (d: any) => d.ClutchInput || 0;
@@ -128,76 +111,64 @@ const TelemetryView: React.FC = () => {
 
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: 'var(--surface-1)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid var(--divider)' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <div className="d-flex flex-column h-100">
+      <div className="d-flex justify-content-between align-items-center mb-4 p-3 rounded border" style={{ background: 'var(--surface-1)', borderColor: 'var(--divider) !important' }}>
+        <div className="d-flex gap-3 align-items-center">
+          <div className="d-flex align-items-center gap-2">
             <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: isRacing ? '0 0 10px var(--primary)' : 'none' }} />
-            <span style={{ fontWeight: 600, color: isRacing ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+            <span className={isRacing ? "fw-bold text-primary" : "fw-bold text-secondary"}>
               {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
             </span>
           </div>
           <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={subTab === 'live' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
-            <button style={subTab === 'analysis' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
-            <button style={subTab === 'drag' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('drag')} aria-current={subTab === 'drag' ? 'page' : undefined}>{t("Drag Test")}</button>
+          <div className="d-flex gap-2">
+            <button className={`btn btn-sm ${subTab === 'live' ? 'btn-primary' : ''}`} style={subTab !== 'live' ? { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: 'none' } : { fontWeight: 'bold', color: '#000' }} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
+            <button className={`btn btn-sm ${subTab === 'analysis' ? 'btn-primary' : ''}`} style={subTab !== 'analysis' ? { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: 'none' } : { fontWeight: 'bold', color: '#000' }} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
+            <button className={`btn btn-sm ${subTab === 'drag' ? 'btn-primary' : ''}`} style={subTab !== 'drag' ? { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: 'none' } : { fontWeight: 'bold', color: '#000' }} onClick={() => setSubTab('drag')} aria-current={subTab === 'drag' ? 'page' : undefined}>{t("Drag Test")}</button>
           </div>
         </div>
-        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-          {classDisplay && <span style={{ color: '#00f0ff', marginRight: '0.6rem' }}>{classDisplay}</span>}
-          {isEV && <span style={{ background: '#00ff88', color: '#000', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.75rem', marginRight: '0.6rem', fontWeight: 'bold' }}>{t("EV")}</span>}
+        <div className="d-flex align-items-center fw-bold text-secondary fs-6">
+          {classDisplay && <span className="me-2" style={{ color: '#00f0ff' }}>{classDisplay}</span>}
+          {isEV && <span className="badge me-2 fw-bold text-dark" style={{ background: '#00ff88' }}>{t("EV")}</span>}
           {carName}
         </div>
       </div>
 
       {isHudPaused && (
-        <div style={{
-          padding: '0.8rem 1.2rem',
-          marginBottom: '1.5rem',
-          background: 'rgba(255, 170, 0, 0.12)',
-          border: '1px solid rgba(255, 170, 0, 0.4)',
-          borderRadius: '8px',
-          color: '#ffaa00',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.9rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>⏸️</span>
+        <div className="alert d-flex align-items-center justify-content-between mb-4 shadow-sm" style={{ background: 'rgba(255, 170, 0, 0.12)', border: '1px solid rgba(255, 170, 0, 0.4)', color: '#ffaa00' }}>
+          <div className="d-flex align-items-center gap-2">
+            <span className="fs-5">⏸️</span>
             <strong>{t("Telemetry rendering paused (HUD Overlay is active)")}</strong>
           </div>
-          <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+          <span className="small opacity-75">
             {t("Can be toggled in HUD Control Panel")}
           </span>
         </div>
       )}
 
       {subTab === 'analysis' ? (
-        <React.Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t("Loading Analysis...")}</div>}>
+        <React.Suspense fallback={<div className="p-5 text-center text-secondary">{t("Loading Analysis...")}</div>}>
           <AnalysisView />
         </React.Suspense>
       ) : subTab === 'drag' ? (
-        <React.Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t("Loading Drag Test...")}</div>}>
+        <React.Suspense fallback={<div className="p-5 text-center text-secondary">{t("Loading Drag Test...")}</div>}>
           <DragTestView />
         </React.Suspense>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
+        <div className="d-grid gap-4 flex-grow-1" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', minHeight: '600px' }}>
 
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
-              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+          <div className="glass-panel d-flex flex-column gap-3">
+            <h3 className="m-0">{t("Driver Inputs & Engine")}</h3>
+            <div className="d-flex flex-column justify-content-center gap-3 flex-grow-1">
+              <div className="d-flex gap-4 align-items-center">
                 <EngineRpmDisplay />
                 <SteerBar />
               </div>
-              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div className="d-flex gap-3 align-items-center mt-2">
+                <div className="d-flex flex-column justify-content-center flex-grow-1">
                   <PedalTraceCanvas />
                 </div>
-                <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
+                <div className="d-flex gap-3 align-items-center px-2">
                   <VerticalInputBar label={t("Clutch")} selector={selectClutch} max={255} color="#0088ff" />
                   <VerticalInputBar label={t("Handbrake")} selector={selectHandbrake} max={255} color="#ffaa00" />
                 </div>
@@ -205,17 +176,17 @@ const TelemetryView: React.FC = () => {
             </div>
           </div>
 
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
-            <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
+          <div className="glass-panel d-flex flex-column gap-3">
+            <h3 className="m-0">{t("Vehicle Dynamics Overview")}</h3>
+            <div className="d-flex gap-4 align-items-center flex-grow-1">
               <VehicleDynamicsDisplay />
               <GForceRadar />
             </div>
           </div>
 
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ marginBottom: '1rem' }}>{t("Tire Grip & Status")}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
+          <div className="glass-panel d-flex flex-column">
+            <h3 className="mb-3 m-0">{t("Tire Grip & Status")}</h3>
+            <div className="d-grid gap-3 flex-grow-1" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' }}>
               <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
               <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
               <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
@@ -223,9 +194,9 @@ const TelemetryView: React.FC = () => {
             </div>
           </div>
 
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ marginBottom: '1rem' }}>{t("Suspension Travel")}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
+          <div className="glass-panel d-flex flex-column">
+            <h3 className="mb-3 m-0">{t("Suspension Travel")}</h3>
+            <div className="d-grid gap-3 flex-grow-1" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' }}>
               <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
               <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
               <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />

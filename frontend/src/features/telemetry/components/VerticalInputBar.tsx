@@ -26,10 +26,10 @@ const VerticalInputBar: React.FC<{ label: string; selector: (d: any) => number; 
   }, [selector, max]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</span>
-      <div style={{ position: 'relative', width: '16px', height: '65px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-        <div ref={barRef} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '0%', background: color, borderRadius: '0 0 3px 3px' }} />
+    <div className="d-flex flex-column align-items-center gap-1">
+      <span className="fw-bold text-secondary" style={{ fontSize: '0.72rem' }}>{label}</span>
+      <div className="position-relative overflow-hidden border" style={{ width: '16px', height: '65px', background: 'var(--surface-2)', borderRadius: '4px', borderColor: 'var(--glass-border) !important' }}>
+        <div ref={barRef} className="position-absolute start-0 end-0 bottom-0" style={{ height: '0%', background: color, borderRadius: '0 0 3px 3px' }} />
       </div>
       <span ref={pctRef} style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: 'var(--text-primary)' }}>0%</span>
     </div>
