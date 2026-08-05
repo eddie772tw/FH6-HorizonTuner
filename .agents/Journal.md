@@ -16,6 +16,38 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-05 - Telemetry 圖表輪廓/外框、頁籤按鈕與 HUD Control Panel 文字全面語義化
+
+**學習點 (Learning):**
+1. **Telemetry 圖表與量表外框 Light Mode 極致可視化 (Chart Outline Visibility)**：
+   - `EngineRpmDisplay.tsx`：修復 `Gear` 檔位數字寫死 `color: 'white'` (在 Light Mode 隱形)，改為 `var(--text-primary)`；轉速槽背景改為 `var(--surface-2)`。
+   - `SteerBar.tsx`：方向盤量表軌道寫死 `rgba(255,255,255,0.1)`、當前方向盤指引條寫死 `background: 'white'` (Light Mode 隱形)，改為 `var(--surface-2)` 與 `var(--primary)`。
+   - `GForceRadar.tsx`：雷達的外圈框、虛線圈、中軸線與 `BRAKE/ACCEL/L/R` 方位標籤寫死透明白與淡白，改為 `var(--glass-border)`、`var(--divider)` 與 `var(--text-secondary)`，使雷達圖框在 Light Mode 下清晰可見。
+   - `VehicleDynamicsDisplay.tsx` & `VerticalInputBar.tsx`：修復 Power/Torque 數字與垂直進度條在 Light Mode 下的顏色與分隔線。
+2. **HUD Control Panel 30+ 處硬編碼色調大掃除 (HUD Control Panel Full Cleanup)**：
+   - 清除了 `OverlayView.tsx` 中全部殘留的 `#ccc`, `#aaa`, `#eee`, `#888` 灰色標籤，替換為 `var(--text-secondary)` 與 `var(--text-primary)`。
+   - 移除了 Speedometer Style 下拉選單 `<option>` 殘留的 `background: '#222', color: '#fff'` 硬編碼黑底。
+
+**後續行動 (Action):**
+- 撰寫任何帶有向量輪廓或文字圖表時，嚴禁使用 `color: 'white'` 或 `rgba(255,255,255,0.2)` 作為邊框，必須統一導轉至 CSS 變數 `var(--glass-border)`、`var(--divider)` 與 `var(--text-primary)`。
+
+---
+
+## 2026-08-05 - Light Mode 專屬視覺顯示問題大掃除與精準修復
+
+**學習點 (Learning):**
+1. **`<select>` 下拉選單純黑遮蔽修復 (Select Element Background Normalization)**：
+   修復前 `Step1GoalSetup.tsx` 與 `DragTestSection.tsx` 殘留了 `background: 'black'`，導致 Light Mode 下出現純黑矩形底框 + 黑字，文字被完全遮蔽隱形。重構後統一採用 `background: 'var(--input-bg)'` 與 `color: 'var(--input-text)'`，實現極佳對比度的清晰閱讀體驗。
+2. **Telemetry 視圖 4 大區塊子卡片極致淡色襯底 (Subcard Neutral Background)**：
+   修復前 `PedalTraceCanvas`, `SuspensionBar`, `TireRadar` 4 輪小卡片使用了 `background: 'rgba(0,0,0,0.18/0.25)'`，導致在 Light Mode 下呈現泥濘暗灰卡片塊。重構後統一替換為 `background: 'var(--surface-1)'`，在 Light Mode 下呈現出溫潤晶透的藍白襯底 (`rgba(241, 245, 249, 0.85)`)。
+3. **HTML5 `input[type="range"]` 滑桿軌道 Light Mode 調色 (Range Slider Track Theme Adaption)**：
+   在 `App.css` 中加入了自訂 `-webkit-slider-runnable-track` 與 `-webkit-slider-thumb` 樣式，將滑桿軌道色改為 `var(--surface-2)`、滑塊點改為 `var(--primary)`，使 HUD Overlay 視圖中的多個比例與透明度滑桿在 Light Mode 下展現高品質質感。
+
+**後續行動 (Action):**
+- 寫任何 TSX 元件時，嚴禁給予 `<select>` 或 input `background: 'black'` 或硬編碼灰底，強制使用 `var(--input-bg)` 或 `var(--surface-1)`。
+
+---
+
 ## 2026-08-05 - 全 GUI 硬編碼青色按鈕/提示框背景與 Canvas 圖表自適應調色清理
 
 **學習點 (Learning):**

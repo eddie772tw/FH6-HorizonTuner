@@ -85,7 +85,7 @@ const TelemetryView: React.FC = () => {
     fetch(`http://127.0.0.1:${port}/api/overlay/config`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) checkConfig(data); })
-      .catch(() => {});
+      .catch(() => { });
 
     channel.onmessage = (event) => {
       if (event.data && event.data.type === 'config') {
@@ -102,7 +102,7 @@ const TelemetryView: React.FC = () => {
   useEffect(() => {
     if (!data) return;
     const isRacingNow = data.IsRaceOn === 1;
-    
+
     // Transition from racing (true) to not racing (false)
     if (prevIsRacingRef.current && !isRacingNow) {
       if (isRecording) {
@@ -184,56 +184,56 @@ const TelemetryView: React.FC = () => {
           <DragTestView />
         </React.Suspense>
       ) : (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
-      
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <EngineRpmDisplay />
-            <SteerBar />
-          </div>
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <PedalTraceCanvas />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', gap: '2rem', flex: 1, minHeight: '600px' }}>
+
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ margin: 0 }}>{t("Driver Inputs & Engine")}</h3>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                <EngineRpmDisplay />
+                <SteerBar />
+              </div>
+              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <PedalTraceCanvas />
+                </div>
+                <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
+                  <VerticalInputBar label={t("Clutch")} selector={selectClutch} max={255} color="#0088ff" />
+                  <VerticalInputBar label={t("Handbrake")} selector={selectHandbrake} max={255} color="#ffaa00" />
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0 0.5rem' }}>
-              <VerticalInputBar label={t("Clutch")} selector={selectClutch} max={255} color="#0088ff" />
-              <VerticalInputBar label={t("Handbrake")} selector={selectHandbrake} max={255} color="#ffaa00" />
+          </div>
+
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
+            <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
+              <VehicleDynamicsDisplay />
+              <GForceRadar />
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>{t("Vehicle Dynamics Overview")}</h3>
-        <div style={{ display: 'flex', gap: '2rem', flex: 1, alignItems: 'center' }}>
-          <VehicleDynamicsDisplay />
-          <GForceRadar />
-        </div>
-      </div>
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ marginBottom: '1rem' }}>{t("Tire Grip & Status")}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
+              <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
+              <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
+              <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
+              <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} />
+            </div>
+          </div>
 
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1rem' }}>{t("Tire Grip & Status")}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1rem', flex: 1 }}>
-          <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
-          <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
-          <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
-          <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} />
-        </div>
-      </div>
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ marginBottom: '1rem' }}>{t("Suspension Travel")}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
+              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
+              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
+              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />
+              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} />
+            </div>
+          </div>
 
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ marginBottom: '1rem' }}>{t("Suspension Travel")}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '1.2rem', flex: 1 }}>
-          <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
-          <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
-          <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />
-          <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} />
         </div>
-      </div>
-
-      </div>
       )}
     </div>
   );

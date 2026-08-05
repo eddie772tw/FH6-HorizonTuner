@@ -96,7 +96,7 @@ const PedalTraceCanvas: React.FC = React.memo(() => {
   }, []);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '95px', background: 'rgba(0,0,0,0.25)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: '100%', height: '95px', background: 'var(--surface-1)', borderRadius: '6px', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
       <canvas ref={canvasRef} width={480} height={95} style={{ width: '100%', height: '100%' }} />
       <span style={{ position: 'absolute', top: '6px', right: '10px', color: '#00ff66', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'monospace' }}>
         {t("THROTTLE")}

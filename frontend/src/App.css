@@ -281,6 +281,43 @@ canvas, [class*="recharts"], input[type="range"], input[type="color"] {
   transform: scale(1.02);
 }
 
+/* Range Input Slider Theme Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  margin-top: -5px;
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  border: none;
+  cursor: pointer;
+}
+
 /* =============================================================================
    (G) Scrollbar & Utilities
    ============================================================================= */

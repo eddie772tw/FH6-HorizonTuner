@@ -105,14 +105,14 @@ const GForceRadar: React.FC = React.memo(() => {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'relative', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.2)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ position: 'absolute', width: '80px', height: '80px', borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.1)' }} />
-        <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.15)' }} />
-        <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.15)' }} />
-        <span style={{ position: 'absolute', top: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("BRAKE")}</span>
-        <span style={{ position: 'absolute', bottom: '2px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("ACCEL")}</span>
-        <span style={{ position: 'absolute', left: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("L")}</span>
-        <span style={{ position: 'absolute', right: '5px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t("R")}</span>
+      <div style={{ position: 'relative', width: '160px', height: '160px', borderRadius: '50%', background: 'var(--surface-2)', border: '2px solid var(--glass-border)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ position: 'absolute', width: '80px', height: '80px', borderRadius: '50%', border: '1px dashed var(--divider)' }} />
+        <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'var(--divider)' }} />
+        <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'var(--divider)' }} />
+        <span style={{ position: 'absolute', top: '2px', fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t("BRAKE")}</span>
+        <span style={{ position: 'absolute', bottom: '2px', fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t("ACCEL")}</span>
+        <span style={{ position: 'absolute', left: '5px', fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t("L")}</span>
+        <span style={{ position: 'absolute', right: '5px', fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t("R")}</span>
         
         {markers.map((p, i) => {
           let mx = p.lat * 40;
@@ -125,7 +125,7 @@ const GForceRadar: React.FC = React.memo(() => {
           }
           return (
             <div key={i} style={{ 
-              position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.6)', 
+              position: 'absolute', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.6,
               top: `${80 + my - 3}px`, 
               left: `${80 + mx - 3}px`
             }} />

@@ -29,7 +29,7 @@ export const btnStyle: React.CSSProperties = {
 
 export const activeTabStyle: React.CSSProperties = {
   background: 'var(--primary)',
-  color: '#000',
+  color: '#ffffff',
   border: 'none',
   padding: '0.4rem 0.8rem',
   borderRadius: '4px',

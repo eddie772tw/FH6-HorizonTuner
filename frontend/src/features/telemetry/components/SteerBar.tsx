@@ -25,12 +25,12 @@ const SteerBar: React.FC = React.memo(() => {
         <span>{t("Steer L")}</span>
         <span>{t("Steer R")}</span>
       </div>
-      <div style={{ width: '100%', height: '16px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', position: 'relative', marginTop: '4px' }}>
+      <div style={{ width: '100%', height: '16px', background: 'var(--surface-2)', border: '1px solid var(--glass-border)', borderRadius: '8px', position: 'relative', marginTop: '4px' }}>
         <div ref={barRef} style={{ 
-          position: 'absolute', height: '100%', background: 'white',
+          position: 'absolute', height: '100%', background: 'var(--primary)',
           width: '0%', left: '50%'
         }} />
-        <div style={{ position: 'absolute', left: '50%', top: '-2px', bottom: '-2px', width: '2px', background: 'gray' }} />
+        <div style={{ position: 'absolute', left: '50%', top: '-2px', bottom: '-2px', width: '2px', background: 'var(--divider)' }} />
       </div>
     </div>
   );

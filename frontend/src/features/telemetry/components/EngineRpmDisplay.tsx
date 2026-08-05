@@ -50,7 +50,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
             <span ref={gearRef}>N</span> <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("GEAR")}</span>
           </div>
         </div>
@@ -60,7 +60,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
           </div>
         </div>
       </div>
-      <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '10px', background: 'var(--surface-2)', border: '1px solid var(--glass-border)', borderRadius: '5px', overflow: 'hidden' }}>
         <div ref={rpmBarRef} style={{ height: '100%', width: '0%', background: 'var(--primary)' }} />
       </div>
     </div>

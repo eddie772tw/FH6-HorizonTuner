@@ -250,7 +250,7 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
   }, [tireIdx, convertTemp]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.8rem', borderRadius: '8px', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: isLeft ? 'row' : 'row-reverse', gap: '1rem', background: 'var(--surface-1)', border: '1px solid var(--glass-border)', padding: '0.8rem', borderRadius: '8px', alignItems: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>{title}</div>
         <div style={{ position: 'relative', width: '100px', height: '100px' }}>

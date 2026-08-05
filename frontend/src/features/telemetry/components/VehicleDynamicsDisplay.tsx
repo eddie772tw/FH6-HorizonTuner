@@ -44,22 +44,22 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
 
       if (powerRef.current) powerRef.current.innerText = Math.round(powerData.value).toString();
       if (powerContainerRef.current) {
-        powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? '#00ff88' : '#fff';
+        powerContainerRef.current.style.color = (isEV && powerData.value < 0) ? '#00ff88' : 'var(--text-primary)';
       }
 
       if (torqueRef.current) torqueRef.current.innerText = Math.round(torqueData.value).toString();
       if (torqueContainerRef.current) {
-        torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? '#00ff88' : '#fff';
+        torqueContainerRef.current.style.color = (isEV && torqueData.value < 0) ? '#00ff88' : 'var(--text-primary)';
       }
 
       if (isEV) {
         if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = isRegenActive ? t("ON") : t("OFF");
         if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = "";
-        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? '#00ff88' : '#fff';
+        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = isRegenActive ? '#00ff88' : 'var(--text-primary)';
       } else {
         if (thirdStatValueRef.current) thirdStatValueRef.current.innerText = boostData.value.toFixed(1);
         if (thirdStatLabelRef.current) thirdStatLabelRef.current.innerText = boostData.label;
-        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : '#fff';
+        if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : 'var(--text-primary)';
       }
 
       const currentLap = data.CurrentLap || 0;
@@ -98,24 +98,24 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
         <div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Power")}</div>
-          <div ref={powerContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
+          <div ref={powerContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             <span ref={powerRef}>0</span><span ref={powerLabelRef} style={{fontSize:'0.8rem', marginLeft: '2px'}}></span>
           </div>
         </div>
         <div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t("Torque")}</div>
-          <div ref={torqueContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
+          <div ref={torqueContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             <span ref={torqueRef}>0</span><span ref={torqueLabelRef} style={{fontSize:'0.8rem', marginLeft: '2px'}}></span>
           </div>
         </div>
         <div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{isEV ? t("Regen") : t("Boost")}</div>
-          <div ref={thirdStatContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
+          <div ref={thirdStatContainerRef} style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>
              <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} style={{fontSize:'0.8rem', marginLeft: '2px'}}></span>
           </div>
         </div>
       </div>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+      <div style={{ borderTop: '1px solid var(--divider)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Current Lap")}:</span><span ref={currentLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--text-secondary)' }}>{t("Last Lap")}:</span><span ref={lastLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>{t("Best Lap")}:</span><span ref={bestLapRef} style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>--:--.---</span></div>
