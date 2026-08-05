@@ -978,4 +978,15 @@
 **後續行動 (Action):**
 - 於任何 HUD 樣式 HTML/JS 存取全域 elements 時，統一使用 `(window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {}` 進行防禦式讀取。
 
+---
+
+## 2026-08-05 — 公式化底盤調校 Markdown 文件重構與圖表 LaTeX 標準化
+
+**學習點 (Learning):**
+1. **Markdown 表格與斷行毀損優化 (Markdown Line Break & Table Reconstruction)**：參考文件 `ref/公式化底盤調校.md` 原始內容因缺乏換行標籤被壓縮至 11 行極長字串，導致表格語法潰散與閱讀性降低。重構為 243 行具備標準標題階層 (`#`, `##`, `###`) 的結構化文件，並補全 Slider 邊界條件表與四大賽事目標（公路、甩尾、拉力、直線加速）綜合矩陣對照表。
+2. **LaTeX 公式與 GitHub Alert 美化**：將所有物理算式（防傾桿、彈簧下壓力補償、阻尼比例、差速器偏置）轉譯為置中 `$$ ... $$` 區塊與內聯 `$ ... $` 標籤，並導入 `> [!TIP]`、`> [!NOTE]` 提示框，突顯 AWD Meta 1/65 設定等關鍵物理策略。
+3. **相關模組參照導覽**：加入與 `ref/tuning_formulas.md`（變速箱齒比數學模型）的雙向導覽連結。
+
+**後續行動 (Action):**
+- 維護參考資料 Markdown 文件時，務必確認在 standard markdown viewer 中具備清晰的排版呈現與完整表格渲染。
 
