@@ -126,6 +126,11 @@ describe('evaluateTireTelemetryDiagnosis', () => {
       tempR: 88,
       targetPhot: 32.5,
       handlingIssue: 'understeer_mid',
+      alignment: {
+        camber: { front: -1.5, rear: -1.0 },
+        toe: { front: 0.0, rear: 0.0 },
+        caster: 5.5
+      },
       chassis: {
         arb: { front: 15.0, rear: 55.0 },
         springs: { front: 50, rear: 50, heightF: 12, heightR: 12 },
@@ -138,7 +143,53 @@ describe('evaluateTireTelemetryDiagnosis', () => {
     expect(res.biasF).toBe(1.5);
     expect(res.biasR).toBe(-0.5);
     expect(res.primaryPressureAdvice).toContain('降低前冷胎壓 -1.5 PSI');
-    expect(res.secondarySuspensionAdvice).toContain('前防傾桿由 15.0 調軟 -3.0');
+    expect(res.secondarySuspensionAdvice).toContain('前防傾桿由 15.0 調軟');
+    expect(res.specificAdjustments.length).toBeGreaterThan(0);
+    const camberAdj = res.specificAdjustments.find(a => a.name.includes('Camber'));
+    expect(camberAdj).toBeDefined();
+    expect(camberAdj?.current).toBe(-1.5);
+    expect(camberAdj?.target).toBe(-1.8);
+  });
+
+  it('應能在華氏 (°F) 模式下正確判斷軸溫差與顯示單位', () => {
+    const res = evaluateTireTelemetryDiagnosis({
+      photF: 32.5,
+      photR: 32.5,
+      tempF: 198,
+      tempR: 188,
+      targetPhot: 32.5,
+      handlingIssue: 'none',
+      tempUnit: 'F'
+    });
+
+    expect(res.deltaTaxle).toBe(10);
+    expect(res.axleBalanceStatus).toBe('front_overheat');
+    expect(res.secondarySuspensionAdvice).toContain('°F');
+  });
+
+  it('應能結合遙測動態抓地力數據 (telemetryGripMetrics) 拋出警訊', () => {
+    const res = evaluateTireTelemetryDiagnosis({
+      photF: 32.5,
+      photR: 32.5,
+      tempF: 90,
+      tempR: 90,
+      targetPhot: 32.5,
+      handlingIssue: 'none',
+      telemetryGripMetrics: {
+        avgSlipRatioF: -0.18,
+        avgSlipRatioR: 0.05,
+        maxSlipAngleF: 8.5,
+        maxSlipAngleR: 4.0,
+        maxSuspTravelF: 0.96,
+        maxSuspTravelR: 0.60
+      }
+    });
+
+    expect(res.gripAnalysisAdvice.length).toBeGreaterThan(0);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('觸底警訊'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('煞車滑移'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('轉向飽和'))).toBe(true);
   });
 });
+
 

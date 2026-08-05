@@ -231,24 +231,45 @@ export function calculateAEGOGearing(
 
   } else {
     // Road / Circuit (Default)
-    const p = 1 + (maxHp / 1000) * ((0.95 - aeroEfficiency) * 5) * (1.2 - 0.4 * aeroBalance);
-    const vTop = Math.pow(maxHp, 1 / 3) * 38 * (aeroEfficiency / 0.85);
-    const d = Math.max(rpmT / rpmHp, 0.75);
+    const vTop = Math.min(480, Math.max(180, Math.pow(maxHp, 1 / 3) * 38 * (aeroEfficiency / 0.85) * (1.1 - 0.2 * aeroBalance)));
+    const totalTopRatio = (rpmHp * C * 60) / (vTop * 1000);
 
-    fd = ((rpmHp * C * 60) / (vTop * 0.85 * 1000)) * (0.8 + 0.4 * mechBalance);
-    fd = Math.max(2.0, Math.min(6.5, fd));
+    // Target top gear ratio based on number of gears
+    let targetTopGear = 0.74;
+    if (numGears <= 3) targetTopGear = 1.00;
+    else if (numGears === 4) targetTopGear = 0.92;
+    else if (numGears === 5) targetTopGear = 0.82;
+    else if (numGears === 6) targetTopGear = 0.74;
+    else if (numGears === 7) targetTopGear = 0.68;
+    else if (numGears === 8) targetTopGear = 0.63;
+    else targetTopGear = 0.58;
+
+    let targetFd = (totalTopRatio / targetTopGear) * (0.9 + 0.2 * mechBalance);
+    fd = Math.max(2.0, Math.min(6.5, targetFd));
+    
+    // Recalculate top gear ratio if FD was clamped or adjusted
+    const gN1 = totalTopRatio / fd;
 
     gears = new Array(numGears).fill(0);
 
+    // 1st Gear calculation based on vehicle launch dynamics
     const g1Base = (weight * fDrive * fTire * 2 * C) / (maxTorque * fd);
     const g1Mult = Math.max(1.0, (maxTorque * 3.2) / (weight * fDrive));
-    gears[0] = Math.max(0.48, Math.min(6.0, g1Base * g1Mult));
+    const g0 = Math.max(gN1 * 2.2, Math.min(6.0, g1Base * g1Mult));
 
-    gears[numGears - 1] = (rpmHp * C * 60) / (vTop * fd * 1000);
+    // Powerband progression exponent
+    const rPowerband = Math.max(0.55, Math.min(0.85, rpmT / rpmHp));
+    const pExp = 1.15 + 0.45 * rPowerband;
 
-    for (let n = 2; n < numGears; n++) {
-      const exp = 1 - ((n - 1) - 1) / Math.max(1, numGears - 3) * (1 - 1 / p);
-      gears[n - 1] = Math.max(0.48, Math.min(6.0, gears[n - 2] * Math.pow(d, exp)));
+    // Generate smooth progressive gear steps connecting 1st gear (g0) to top gear (gN1)
+    for (let i = 0; i < numGears; i++) {
+      if (numGears <= 1) {
+        gears[i] = g0;
+      } else {
+        const x = i / (numGears - 1);
+        const u = 1 - Math.pow(1 - x, pExp);
+        gears[i] = g0 * Math.pow(gN1 / g0, u);
+      }
     }
   }
 

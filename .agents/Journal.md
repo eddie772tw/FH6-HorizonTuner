@@ -14,7 +14,22 @@
 ## YYYY-MM-DD - [標題]
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
-```
+## 2026-08-05 - Step 5 遙測閉環校準胎溫單位轉換、動態抓地力分析與 ARB/定位幾何微調具體化
+
+**學習點 (Learning):**
+1. **Forza UDP 遙測胎溫單位防護與跨單位歸一化 (UDP Tire Temperature Unit Normalization)**：
+   - Forza UDP 遙測封包中的 `TireTemp` (4 輪胎溫) 原生輸出為**華氏 (°F)**。在 Step 5 的 `autoSyncTemp` 自動同步中，若直接寫入 `tempF/tempR` 且 UI 設定為攝氏 (`°C`)，會導致數字數值膨脹 (例如 195 變成 195°C)，引發嚴重的軸溫差與過熱誤判。
+   - 重構後：`Step5TelemetryCalibration` 自動讀取 `useSettings()` 的 `convertTemp()` 單位設定，若為 `°C` 則將 UDP 的 °F 數值透過 `(f - 32) * 5 / 9` 精確轉譯；且在 `tuningDiagnosis.ts` 診斷函數內部，將溫差計算閾值 (`3.0°C`) 與顯示單位 (`°C` / `°F`) 完全分離並動態對齊。
+2. **遙測動態抓地力封包與動態警訊整合 (Telemetry Grip & Dynamic Metrics Integration)**：
+   - 擴充 `evaluateTireTelemetryDiagnosis` 傳入遙測數據結構 `telemetryGripMetrics`（包含 `TireSlipRatio`, `TireSlipAngle`, `NormalizedSuspensionTravel`）。
+   - 實現動態診斷：重煞前輪鎖死 (Slip Ratio < -0.15)、出彎後輪打滑 (Slip Ratio > +0.15)、極限過彎轉向飽和/推頭 (Slip Angle 差異 > 3°) 與懸吊行程觸底警訊 (Suspension Travel >= 95%)，自動給出相應操控建議。
+3. **ARB 與定位角度微調具體化與邊界保護 (Actionable Micro-Adjustments with Numerical Targets)**：
+   - 傳入 Step 3 Chassis 與 Step 4 Alignment 的基準數值，將模糊的提示（如 "增加前負外傾角" 或 "後防傾桿 +2.0"）精確計算並輸出為 `SpecificAdjustmentItem` (`Baseline → Target (Delta)`) 標籤（如 `前 Camber: -1.50° → -1.80°` / `前 ARB: 15.0 → 12.0`），並對 ARB (`1.0 ~ 65.0`) 與 Diff 鎖定率 (`0 ~ 100%`) 實施 Clamp 邊界防護。
+
+**後續行動 (Action):**
+- 未來在擴充其他 Step 診斷或微調系統時，若涉及遙測封包數據，一律先確認該數據在 UDP protocol 中的原生物理單位（如 speed $m/s$, temp °F, pressure Pa, angle rad），並於 Ingestion/Diagnosis 層完成歸一化。
+
+---
 
 ## 2026-08-05 - Telemetry 圖表輪廓/外框、頁籤按鈕與 HUD Control Panel 文字全面語義化
 
@@ -1174,12 +1189,29 @@
 - 保持跨 Step UI 組件單一職責與 Step 導向獨立 TSX 組件檔規範 (`Step4TireAlignSetup.tsx`, `Step5TelemetryCalibration.tsx`)。
 - 物理算牌與診斷邏輯嚴格維持純函數，並維護 Vitest 單元測試 100% 通過。
 
+---
 
+## 2026-08-05 — Forza UDP 遙測胎溫數據（右後輪與左後輪同步）之調查與驗證
 
+**學習點 (Learning):**
+1. **遙測數據流路徑獨立性驗證 (Data Pipeline Independence Verification)**：
+   - 後端 UDP 解析器 (`telemetry_listener.py`)、SQLite 歷史紀錄器 (`telemetry_sqlite.py`)、前端 WebSocket 數據接收 Hook (`useTelemetry.ts`) 以及 HUD Overlay 協調器 (`coordinator.js`, `corner-card.js`) 在解包及傳播 `TireTemp` (四輪胎溫陣列 `[FL, FR, RL, RR]`) 時，`temp_rl` (index 2) 與 `temp_rr` (index 3) 均自 UDP offset 正確且獨立解包。
+   - 全系統程式碼無任何將 `temp_rr` 誤指派為 `temp_rl` 的錯誤逻辑，程式碼解析完全正確。
+2. **遊戲原生 UDP DataOut 輸出限制 (Forza Engine Native Telemetry Bug)**：
+   - 在 Forza Motorsport / Forza Horizon 系列遊戲中，原生 UDP DataOut 數據流在導出後軸胎溫時，右後輪 (`TireTempRR`) 數值在特定狀態下會直接與左後輪 (`TireTempRL`) 保持同步，此乃 Forza 遊戲物理引擎 / UDP DataOut 出口端原生資料導出邏輯的已知限制。
 
+---
 
+## 2026-08-05 - AEGO 齒輪比計算動力帶漸進凹曲線重構與 Step 2 唯讀與自動觸發保護
 
+**學習點 (Learning):**
+1. **AEGO 齒輪比末檔掉轉斷崖與動力帶對齊機制 (AEGO Gearing Powerband & Top Gear Smooth Progression)**：
+   - 舊版 `calculateAEGOGearing` 在 Road/Circuit 模式下，末檔 $g_{N-1}$ 係由 $v_{top}$ 與 $fd$ 獨立計算後直接填入，導致其與前一檔 $g_{N-2}$ 完全解耦；對於高馬力/多檔位車輛 (如 Mustang Dark Horse 882 HP)，升至末檔時轉速巨幅驟降 (例如從 5 檔 1.03 驟降至 6 檔 0.54)，降幅達 48%，遠低於引擎最大扭力轉速 $RPM_{torque}$，造成嚴重的脫離動力帶失速現象。
+   - 重構後導入動力帶轉速比 $r_{powerband} = \frac{maxTorqueRpm}{maxHpRpm}$ 與漸進凹曲線 $u_i = 1 - (1 - x_i)^p$ (其中 $p = 1.15 + 0.45 \times r_{powerband}$)，使齒比從 1 檔平滑過渡至末檔。升檔轉速全數緊貼 Peak Powerband 區間 ($[RPM_{torque}, RPM_{hp}]$)，將車輛 3847 之 5 升 6 檔轉速從 3932 RPM 大幅修復至 6306 RPM，消除斷崖。
+2. **Step 2 齒比欄位唯讀與 Header 跳轉自動重算 (Step 2 ReadOnly Protection & Header Navigation Auto-Calculation)**：
+   - 於 `GearingTuner.tsx` 將齒比欄位設為 `readOnly` 配合 `cursor: not-allowed` 與 Tooltip 提示，防止玩家誤輸入解壞 AEGO 算牌結果。
+   - 於 `TuningView.tsx` 注入 `useEffect` 監聽 `[selectedRaceGoal, numGears, carParams, tuning.gearing.maxRpm]`，確保直接點選 Stepper Header 跳轉 Step 2 或變更賽事目的時，一律自動算得並套用最新齒比。
 
-
-
+**後續行動 (Action):**
+- 後續新增或維護 AEGO 齒輪調校演算法時，一律保持端點 ($g_0$ 與 $g_{N-1}$) 與中間步階的幾何連續性，並於 `tuningMath.test.ts` 中維持對特定車輛 (如 Mustang 3847) 升檔轉速 $\ge RPM_{torque}$ 的單元測試斷言。
 

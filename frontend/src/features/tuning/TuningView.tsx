@@ -157,6 +157,34 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
+  // Auto-calculate AEGO gearing whenever race goal, vehicle params, gear count, or max RPM change
+  useEffect(() => {
+    if (!carParams) return;
+    const result = calculateAEGOGearing(
+      selectedRaceGoal,
+      numGears,
+      carParams,
+      tuning.gearing.maxRpm
+    );
+
+    setTuning(prev => {
+      if (
+        prev.gearing.finalDrive === result.finalDrive &&
+        JSON.stringify(prev.gearing.gears) === JSON.stringify(result.gears)
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        gearing: {
+          ...prev.gearing,
+          finalDrive: result.finalDrive,
+          gears: result.gears
+        }
+      };
+    });
+  }, [selectedRaceGoal, numGears, carParams, tuning.gearing.maxRpm]);
+
   const hasCoreParams = Boolean(carParams && carParams.weight > 0 && carParams.weight_distribution > 0);
 
   // Stepper Header Button Style
@@ -296,6 +324,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
             selectedRaceGoal={selectedRaceGoal}
             carParams={carParams}
             chassisTuning={chassisResult}
+            alignment={tireAlignResult}
             targetPhot={tireAlignResult?.targetPhot || 32.5}
           />
         )}

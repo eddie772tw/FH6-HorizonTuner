@@ -5,7 +5,7 @@ import { calcGearSpeed } from '../../../utils/tuningMath';
 
 interface GearingTunerProps {
   tuning: any;
-  updateSection: (section: any, field: string, value: any) => void;
+  updateSection?: (section: any, field: string, value: any) => void;
   numGears: number;
   carParams?: any;
   gearingMethod?: string;
@@ -26,7 +26,6 @@ const formRowStyle: React.CSSProperties = {
 
 const GearingTunerComponent: React.FC<GearingTunerProps> = ({ 
   tuning, 
-  updateSection, 
   numGears,
   carParams
 }) => {
@@ -136,8 +135,9 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
             <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
             <input 
               type="number" step="0.01" value={tuning.gearing.finalDrive} 
-              onChange={(e) => updateSection('gearing', 'finalDrive', parseFloat(e.target.value) || 3.40)} 
-              style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)' }} 
+              readOnly
+              title={t("Auto-calculated by AEGO algorithm")}
+              style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)', opacity: 0.85, cursor: 'not-allowed' }} 
             />
           </div>
 
@@ -147,12 +147,9 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gear")} {i + 1}</span>
                 <input 
                   type="number" step="0.01" value={tuning.gearing.gears[i] || 0.0} 
-                  onChange={(e) => {
-                    const newGears = [...tuning.gearing.gears];
-                    newGears[i] = parseFloat(e.target.value) || 0.0;
-                    updateSection('gearing', 'gears', newGears);
-                  }} 
-                  style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right' }} 
+                  readOnly
+                  title={t("Auto-calculated by AEGO algorithm")}
+                  style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right', opacity: 0.85, cursor: 'not-allowed' }} 
                 />
               </div>
             ))}

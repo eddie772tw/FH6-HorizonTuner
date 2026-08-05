@@ -100,6 +100,40 @@ describe('calculateAEGOGearing', () => {
 
     expect(customRes.finalDrive).not.toBe(defaultRes.finalDrive);
   });
+
+  it('Vehicle 3847 (Mustang Dark Horse) Road gearing should keep shift RPM inside powerband and avoid top-gear cliff drop', () => {
+    const mustang3847: TuningCarParams = {
+      weight: 1804,
+      weight_distribution: 54,
+      drivetrain: 'RWD',
+      induction: 'Supercharger',
+      maxHp: 882,
+      maxTorque: 665,
+      maxHpRpm: 7500,
+      maxTorqueRpm: 4750,
+      aeroBalance: 0.39,
+      aeroEfficiency: 0.68,
+      mechBalance: 0.46
+    };
+
+    const res = calculateAEGOGearing('Road', 6, mustang3847, 8625);
+    expect(res.gears).toHaveLength(6);
+
+    // 1. Verify monotonic decrease
+    for (let i = 1; i < res.gears.length; i++) {
+      expect(res.gears[i]).toBeLessThan(res.gears[i - 1]);
+    }
+
+    // 2. Verify shift RPM drops from 7500 RPM shift remain above maxTorqueRpm (4750 RPM)
+    for (let i = 1; i < res.gears.length; i++) {
+      const shiftRpm = 7500 * (res.gears[i] / res.gears[i - 1]);
+      expect(shiftRpm).toBeGreaterThanOrEqual(4750);
+    }
+
+    // 3. Verify top gear step ratio (Gear 6 / Gear 5) is smooth (> 0.78) and doesn't drop > 25%
+    const topStepRatio = res.gears[5] / res.gears[4];
+    expect(topStepRatio).toBeGreaterThanOrEqual(0.78);
+  });
 });
 
 // ============================================================
