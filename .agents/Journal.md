@@ -990,3 +990,17 @@
 **後續行動 (Action):**
 - 維護參考資料 Markdown 文件時，務必確認在 standard markdown viewer 中具備清晰的排版呈現與完整表格渲染。
 
+---
+
+## 2026-08-05 — tuningMath.ts 與 TuningView.tsx 棄用公式清理與物理計算解耦
+
+**學習點 (Learning):**
+1. **棄用舊邏輯與廢棄 Import 徹底清理 (Complete Removal of Deprecated Formulas)**：
+   - 當部分算牌邏輯（如舊版 Step 3 底盤調校公式）被判定為受到誤導或受到錯誤影響時，必須同步從純函數庫 (`tuningMath.ts`)、型別定義以及單元測試檔 (`tuningMath.test.ts`) 中徹底移除相應的導出與 import 語句，避免殘留無效 code 影響專案架構乾淨度。
+2. **UI 呈現層與物理計算層極致解耦 (UI Decoupling & Pure Math Extraction)**：
+   - 將原本硬編碼在 UI 組件 (`TuningView.tsx`) 中的圖表轉速/速度運算邏輯（`calcSpeed`, `calcRpm`）抽出至 `tuningMath.ts` 中的 `calcGearSpeed` 與 `calcGearRpm` 純函數，並在 `tuningMath.test.ts` 中加入邊界測試。此舉完全符合 `AGENTS.md` 單一真理（Single Source of Truth）規範。
+
+**後續行動 (Action):**
+- 重新開發 Step 3 底盤調校模組時，應先在 `tuningMath.ts` 建立純函數與強型別定義，編寫單元測試驗證無誤後再對接 `TuningView.tsx` 介面。
+
+
