@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
-import { 
-  calculateAEGOGearing,
-  calcGearSpeed,
-  calcGearRpm
-} from '../../utils/tuningMath';
+import { calculateAEGOGearing } from '../../utils/tuningMath';
 import { useSettings } from '../../context/SettingsContext';
-import { GearingTuner } from './components/GearingTuner';
-
-const TIRE_RADIUS_M = 0.32;
+import { Step1GoalSetup } from './components/Step1GoalSetup';
+import { Step2GearboxSetup } from './components/Step2GearboxSetup';
+import { Step3ChassisTuner } from './components/Step3ChassisTuner';
 
 interface GearingTuning {
   finalDrive: number;
@@ -28,22 +24,31 @@ const initialTuning = (numGears: number): TuningState => ({
   }
 });
 
+const btnStyle: React.CSSProperties = {
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontWeight: 'bold',
+  padding: '0.4rem 1rem',
+  fontSize: '0.85rem',
+  transition: 'all 0.2s ease'
+};
+
 const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
-  const { settings, convertSpeed, t } = useSettings();
+  const { t } = useSettings();
 
-  // Wizard Steps
+  // Wizard Steps State
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
-  const [tuningMode, setTuningMode] = useState<'recommended' | 'custom'>('recommended');
-  const [pMin, setPMin] = useState<number>(0.40);
-  const [pMax, setPMax] = useState<number>(0.65);
 
-  // Gearing states
+  // Gearing tuning states
   const [gearingMethod, setGearingMethod] = useState<'scientific' | 'custom'>('scientific');
   const [customGearingModel, setCustomGearingModel] = useState<string>('Basic Linear');
   const [gearingDiscipline, setGearingDiscipline] = useState<'GT' | 'Rally' | 'Drift' | 'Custom'>('GT');
   const [basicCustomP, setBasicCustomP] = useState<number>(0.5);
+  const [pMin, setPMin] = useState<number>(0.40);
+  const [pMax, setPMax] = useState<number>(0.65);
 
   const numGears = carParams?.adjustability?.gears || 6;
   const [tuning, setTuning] = useState<TuningState>(() => initialTuning(numGears));
@@ -54,7 +59,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     latestCarIdRef.current = carId;
   }, [carId]);
 
-  // Load baseline on car select
+  // Reset/load baseline on car selection
   useEffect(() => {
     if (carId) {
       setTuning(initialTuning(numGears));
@@ -63,7 +68,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }
   }, [carId, numGears]);
 
-  // Sync maxRpm
+  // Sync maxRpm with engine spec
   useEffect(() => {
     if (carParams?.maxHpRpm) {
       setTuning(prev => ({
@@ -76,7 +81,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }
   }, [carParams]);
 
-  // Sync Gearing Discipline, default P value, and narrow range with selectedRaceGoal
+  // Sync discipline defaults with raceGoal
   useEffect(() => {
     if (selectedRaceGoal === 'Rally' || selectedRaceGoal === 'DangerSign') {
       setGearingDiscipline('Rally');
@@ -88,13 +93,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       setBasicCustomP(0.4);
       setPMin(0.30);
       setPMax(0.50);
-    } else if (selectedRaceGoal === 'Touge') {
-      setGearingDiscipline('GT');
-      setBasicCustomP(0.6);
-      setPMin(0.50);
-      setPMax(0.70);
     } else {
-      // Road, SpeedZone
       setGearingDiscipline('GT');
       setBasicCustomP(0.5);
       setPMin(0.40);
@@ -143,7 +142,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     });
   };
 
-  const updateSection = (section: keyof typeof tuning, field: string, value: any) => {
+  const updateSection = (section: any, field: string, value: any) => {
     setTuning(prev => ({
       ...prev,
       [section]: {
@@ -153,27 +152,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-  // Automated Gearing Logic
-  const getLimits = () => {
-    return {
-      finalDriveMin: 2.0,
-      finalDriveMax: 6.5,
-      gearMin: 0.3,
-      gearMax: 6.0
-    };
-  };
-
-  const getBasicPreviewGear = (idx: number, numGears: number) => {
-    const limits = getLimits();
-    const g1 = 2.89;
-    const g_top = 0.50;
-    const x = idx / (numGears - 1);
-    const fx = Math.pow(x, basicCustomP);
-    return Math.max(limits.gearMin, Math.min(limits.gearMax, g1 * Math.pow(g_top / g1, fx)));
-  };
-
   const applyBasicGearing = () => {
-    const limits = getLimits();
+    const limits = { gearMin: 0.3, gearMax: 6.0 };
     const newGears = [...tuning.gearing.gears];
     const g1 = tuning.gearing.gears[0];
     const g_top = tuning.gearing.gears[numGears - 1];
@@ -190,22 +170,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
         gears: newGears.map(g => Number(g.toFixed(2)))
       }
     }));
-  };
-
-  const getTheoreticalYi = (i: number, numGears: number) => {
-    if (!carParams || numGears < 2 || i >= numGears - 1) {
-      return tuning.gearing.maxRpm * 0.7;
-    }
-    const result = calculateAEGOGearing(
-      selectedRaceGoal,
-      numGears,
-      carParams,
-      tuning.gearing.maxRpm
-    );
-    const gCurr = result.gears[i];
-    const gNext = result.gears[i + 1];
-    if (!gCurr || !gNext) return tuning.gearing.maxRpm * 0.7;
-    return tuning.gearing.maxRpm * (gNext / gCurr);
   };
 
   const applyScientificGearing = () => {
@@ -227,44 +191,9 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-  const generateBaselineTuning = () => {
-    if (!carParams || carParams.weight <= 0 || carParams.weight_distribution <= 0) {
-      return;
-    }
-    applyScientificGearing();
-  };
+  const hasCoreParams = Boolean(carParams && carParams.weight > 0 && carParams.weight_distribution > 0);
 
-  // Pure functions used for chart speed/RPM calculations
-  const calcSpeed = (rpm: number, gearRatio: number) => {
-    const speedMs = calcGearSpeed(rpm, gearRatio, tuning.gearing.finalDrive, TIRE_RADIUS_M);
-    return convertSpeed(speedMs).value;
-  };
-  const calcRpm = (speed: number, gearRatio: number) => {
-    const speedMs = settings.units.speed === 'mph' ? speed / 2.23694 : speed / 3.6;
-    return calcGearRpm(speedMs, gearRatio, tuning.gearing.finalDrive, TIRE_RADIUS_M);
-  };
-
-  const chartData: any[] = [{ speed: 0, gear1: 0, currentEnvelope: 0, theoreticalEnvelope: 0, basicPreviewEnvelope: 0 }];
-  for (let i = 0; i < numGears; i++) {
-    const gearRatio = tuning.gearing.gears[i];
-    if (gearRatio <= 0) continue;
-    const maxSpeedForGear = calcSpeed(tuning.gearing.maxRpm, gearRatio);
-    const endPoint: any = { speed: maxSpeedForGear };
-    endPoint[`gear${i + 1}`] = tuning.gearing.maxRpm;
-    if (i + 1 < numGears && tuning.gearing.gears[i + 1] > 0 && tuning.gearing.gears[i + 1] < tuning.gearing.gears[i]) {
-      endPoint[`gear${i + 2}`] = calcRpm(maxSpeedForGear, tuning.gearing.gears[i + 1]);
-      endPoint.currentEnvelope = tuning.gearing.maxRpm * (tuning.gearing.gears[i + 1] / gearRatio);
-      endPoint.theoreticalEnvelope = getTheoreticalYi(i, numGears);
-      endPoint.basicPreviewEnvelope = tuning.gearing.maxRpm * (getBasicPreviewGear(i + 1, numGears) / getBasicPreviewGear(i, numGears));
-    }
-    chartData.push(endPoint);
-  }
-
-  const maxSpeed = chartData.length > 0 ? Math.max(...chartData.map(d => d.speed)) : 400;
-  const xMax = Math.max(100, Math.ceil(maxSpeed / 50) * 50);
-  const yMax = Math.ceil((tuning.gearing.maxRpm + 500) / 1000) * 1000;
-
-  // Stepper Header Styles
+  // Stepper Header Button Style
   const stepHeaderStyle = (stepNum: number) => ({
     padding: '0.6rem 1.2rem',
     background: currentStep === stepNum 
@@ -288,39 +217,41 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     display: 'flex',
     alignItems: 'center',
     gap: '0.4rem',
-    cursor: stepNum <= 2 ? 'pointer' : 'not-allowed',
+    cursor: stepNum === 1 || hasCoreParams ? 'pointer' : 'not-allowed',
     transition: 'all 0.3s ease',
     boxShadow: currentStep === stepNum ? '0 0 12px rgba(0, 180, 255, 0.3)' : 'none'
   });
 
-  const hasCoreParams = carParams && carParams.weight > 0 && carParams.weight_distribution > 0;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%', overflow: 'hidden' }}>
       
-      {/* Stepper Header */}
+      {/* Stepper Navigation Header */}
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '1rem', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem' }}>🛠️ {t("Tuning Wizard")}</span>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem' }}>{t("Tuning Wizard")}</span>
             <span style={{ color: 'gray' }}>|</span>
             <span style={{ color: 'white', fontWeight: 600 }}>{carName} (ID: {carId})</span>
           </div>
+          
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {currentStep > 1 && (
               <button 
+                type="button"
                 onClick={() => setCurrentStep(prev => prev - 1)} 
                 style={{ ...btnStyle, background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}
               >
-                ◀ {t("Previous")}
+                &lt; {t("Previous")}
               </button>
             )}
-            {currentStep === 1 && (
-              <span title={!hasCoreParams ? t("Please set basic vehicle parameters in step 1 to proceed.") : undefined}>
+
+            {currentStep < 3 && (
+              <span title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}>
                 <button
+                  type="button"
                   onClick={() => {
-                    generateBaselineTuning();
-                    setCurrentStep(2);
+                    if (currentStep === 1) applyScientificGearing();
+                    setCurrentStep(prev => prev + 1);
                   }}
                   disabled={!hasCoreParams}
                   style={{
@@ -330,7 +261,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
                     cursor: !hasCoreParams ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {t("Next")} ▶
+                  {t("Next")} &gt;
                 </button>
               </span>
             )}
@@ -343,268 +274,56 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
           <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Gearbox Setup")}</div>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={{ ...stepHeaderStyle(3), opacity: 0.4, cursor: 'not-allowed' }}>3. {t("Chassis Tuning (Refactoring)")}</div>
+          <div style={stepHeaderStyle(3)} onClick={() => hasCoreParams && setCurrentStep(3)}>3. {t("Chassis Tuning")}</div>
         </div>
       </div>
 
       {/* Step Content Area */}
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.2rem' }}>
-        
-        {/* ================= STEP 1: GOAL & SETUP ================= */}
         {currentStep === 1 && (
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
-            <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>🎯 Step 1: {t("Define tuning goals & check parameters")}</h3>
-
-            {/* Select Goal */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
-                <select 
-                  value={selectedRaceGoal} 
-                  onChange={e => setSelectedRaceGoal(e.target.value)} 
-                  style={{ ...inputStyle, width: '280px', border: '1px solid var(--primary)', background: 'black' }}
-                >
-                  <option value="Road">{t("Road / Circuit")}</option>
-                  <option value="Drift">{t("Drift")}</option>
-                  <option value="Rally">{t("Rally")}</option>
-                  <option value="Drag">{t("Drag")}</option>
-                </select>
-              </div>
-              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>
-                {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes gearbox ratios for balanced acceleration and corner exit speed.")}
-                {selectedRaceGoal === 'Drift' && t("Drift configuration focuses gear ratios on powerband retention for continuous wheelspin.")}
-                {selectedRaceGoal === 'Rally' && t("Rally mode adjusts transmission for fast acceleration out of tight dirt corners.")}
-                {selectedRaceGoal === 'Drag' && t("Drag setting targets maximum launch acceleration and trap speed.")}
-              </p>
-            </div>
-
-            {/* Vehicle Parameters Form */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.2rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)' }}>{t("Vehicle Parameters")}</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem 2rem' }}>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Weight")} ({settings.units.weight})</label>
-                  <input type="number" value={carParams?.weight ? Math.round(settings.units.weight === 'lbs' ? carParams.weight * 2.2046 : carParams.weight) : ''} onChange={e => {
-                    const val = parseFloat(e.target.value) || 0;
-                    updateParam('weight', settings.units.weight === 'lbs' ? val / 2.2046 : val);
-                  }} style={{ ...inputStyle, width: '120px' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Weight Distribution")} (%)</label>
-                  <input type="number" value={carParams?.weight_distribution || ''} onChange={e => updateParam('weight_distribution', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="0.1" />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Drivetrain")}</label>
-                  <select value={carParams?.drivetrain || 'RWD'} onChange={e => updateParam('drivetrain', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
-                    <option value="FWD">{t("FWD")}</option>
-                    <option value="RWD">{t("RWD")}</option>
-                    <option value="AWD">{t("AWD")}</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Tire Compound")}</label>
-                  <select value={carParams?.tireType || 'Stock'} onChange={e => updateParam('tireType', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
-                    <option value="Stock">{t("Stock")}</option>
-                    <option value="Street">{t("Street")}</option>
-                    <option value="Sport">{t("Sport")}</option>
-                    <option value="Semi-Slick">{t("Semi-Slick")}</option>
-                    <option value="Slick">{t("Slick")}</option>
-                    <option value="Rally">{t("Rally")}</option>
-                    <option value="Off-Road">{t("Off-Road")}</option>
-                    <option value="Snow">{t("Snow")}</option>
-                    <option value="Drag">{t("Drag")}</option>
-                    <option value="Drift">{t("Drift")}</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max HP")}</label>
-                  <input type="number" value={carParams?.maxHp || 0} onChange={e => updateParam('maxHp', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="10" />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max HP RPM (rpm)")}</label>
-                  <input type="number" value={carParams?.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max Torque")}</label>
-                  <input type="number" value={carParams?.maxTorque || 0} onChange={e => updateParam('maxTorque', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="10" />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Max Torque RPM (rpm)")}</label>
-                  <input type="number" value={carParams?.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Gears Count")}</label>
-                  <input type="number" value={carParams?.adjustability?.gears || 6} min={4} max={10} onChange={e => {
-                    if (!carParams) return;
-                    updateParam('adjustability', { ...carParams.adjustability, gears: parseInt(e.target.value) || 6 });
-                  }} style={{ ...inputStyle, width: '120px' }} />
-                </div>
-
-                {selectedRaceGoal === 'Drift' && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Induction")}</label>
-                    <select value={carParams?.induction || 'NA'} onChange={e => updateParam('induction', e.target.value)} style={{ ...inputStyle, width: '120px' }}>
-                      <option value="NA">{t("Naturally Aspirated (NA)")}</option>
-                      <option value="Supercharger">{t("Supercharger")}</option>
-                      <option value="Turbo">{t("Single Turbo")}</option>
-                      <option value="TwinTurbo">{t("Twin Turbo")}</option>
-                    </select>
-                  </div>
-                )}
-                
-              </div>
-
-              {/* Tire Specs */}
-              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '2rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Front Tire (mm/% R in)")}</label>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                    <input type="number" value={carParams?.frontTireWidth || 245} onChange={e => updateParam('frontTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} />
-                    <span style={{ color: 'gray' }}>/</span>
-                    <input type="number" value={carParams?.frontTireAspect || 40} onChange={e => updateParam('frontTireAspect', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
-                    <span style={{ color: 'gray' }}>R</span>
-                    <input type="number" value={carParams?.frontTireRim || 18} onChange={e => updateParam('frontTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Rear Tire (mm/% R in)")}</label>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                    <input type="number" value={carParams?.rearTireWidth || 245} onChange={e => updateParam('rearTireWidth', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '60px', padding: '0.25rem', textAlign: 'center' }} />
-                    <span style={{ color: 'gray' }}>/</span>
-                    <input type="number" value={carParams?.rearTireAspect || 40} onChange={e => updateParam('rearTireAspect', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
-                    <span style={{ color: 'gray' }}>R</span>
-                    <input type="number" value={carParams?.rearTireRim || 18} onChange={e => updateParam('rearTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
-                  </div>
-                </div>
-              </div>
-              
-              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={saveCarParams} style={{ ...btnStyle, background: 'var(--primary)', color: 'black', padding: '0.4rem 1.2rem', fontSize: '0.9rem' }}>
-                  💾 {t("Save Parameters")}
-                </button>
-              </div>
-            </div>
-            
-            {!hasCoreParams && (
-              <div style={{ padding: '0.8rem', background: 'rgba(255, 61, 0, 0.05)', border: '1px solid #ff3d00', borderRadius: '8px', color: '#ff3d00', fontSize: '0.9rem', textAlign: 'center' }}>
-                {t("Tuning calculator requires valid vehicle weight and weight distribution parameters. Please fill them out above to unlock tuning wizard.")}
-              </div>
-            )}
-            
-          </div>
+          <Step1GoalSetup
+            selectedRaceGoal={selectedRaceGoal}
+            setSelectedRaceGoal={setSelectedRaceGoal}
+            carParams={carParams}
+            updateParam={updateParam}
+            saveCarParams={saveCarParams}
+            hasCoreParams={hasCoreParams}
+          />
         )}
 
-        {/* ================= STEP 2: GEARBOX SETUP ================= */}
         {currentStep === 2 && (
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>📐 Step 2: {t("Apply calculated gearbox ratios in-game")}</h3>
-              <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.08)', padding: '0.3rem 0.6rem', borderRadius: '4px', color: 'var(--text-secondary)' }}>
-                {t("Goal:")} <strong style={{ color: 'var(--primary)' }}>{selectedRaceGoal.toUpperCase()}</strong>
-              </span>
-            </div>
-
-            {/* Tuning Mode Toggle */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.6rem 1rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>{t("Tuning Mode:")}</span>
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
-                  <button 
-                    onClick={() => {
-                      setTuningMode('recommended');
-                      generateBaselineTuning();
-                    }} 
-                    style={{ ...btnStyle, fontSize: '0.8rem', padding: '0.3rem 0.8rem', background: tuningMode === 'recommended' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: tuningMode === 'recommended' ? 'black' : 'white' }}
-                  >
-                    {t("Recommended")}
-                  </button>
-                  <button 
-                    onClick={() => setTuningMode('custom')} 
-                    style={{ ...btnStyle, fontSize: '0.8rem', padding: '0.3rem 0.8rem', background: tuningMode === 'custom' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: tuningMode === 'custom' ? 'black' : 'white' }}
-                  >
-                    {t("Custom")}
-                  </button>
-                </div>
-              </div>
-              
-              {tuningMode === 'custom' && (
-                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{t("Load Profile:")}</span>
-                  <select 
-                    onChange={(e) => loadTuning(e.target.value)} 
-                    style={{ padding: '0.3rem', background: 'black', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', fontSize: '0.8rem' }}
-                  >
-                    <option value="">-- {t("Select Saved Tuning")} --</option>
-                    {savedTunings.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              {t("These gearbox ratios are calculated mathematically using the vehicle's torque curve, tire grip, and aerodynamics. Set these values in your Forza Tuning menu:")}
-            </p>
-
-            <GearingTuner
-              tuning={tuning}
-              tuningMode={tuningMode}
-              updateSection={updateSection}
-              numGears={numGears}
-              chartData={chartData}
-              xMax={xMax}
-              yMax={yMax}
-              carParams={carParams}
-              gearingMethod={gearingMethod}
-              setGearingMethod={setGearingMethod}
-              customGearingModel={customGearingModel}
-              setCustomGearingModel={setCustomGearingModel}
-              basicCustomP={basicCustomP}
-              setBasicCustomP={setBasicCustomP}
-              pMin={pMin}
-              pMax={pMax}
-              gearingDiscipline={gearingDiscipline}
-              applyBasicGearing={applyBasicGearing}
-              applyScientificGearing={applyScientificGearing}
-            />
-
-          </div>
+          <Step2GearboxSetup
+            gearingMethod={gearingMethod}
+            setGearingMethod={setGearingMethod}
+            customGearingModel={customGearingModel}
+            setCustomGearingModel={setCustomGearingModel}
+            gearingDiscipline={gearingDiscipline}
+            setGearingDiscipline={setGearingDiscipline}
+            basicCustomP={basicCustomP}
+            setBasicCustomP={setBasicCustomP}
+            pMin={pMin}
+            pMax={pMax}
+            tuning={tuning}
+            updateSection={updateSection}
+            applyScientificGearing={applyScientificGearing}
+            applyBasicGearing={applyBasicGearing}
+            numGears={numGears}
+            savedTunings={savedTunings}
+            loadTuning={loadTuning}
+          />
         )}
 
-        {/* ================= STEP 3: CHASSIS TUNING (Refactoring Placeholder) ================= */}
         {currentStep === 3 && (
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '2rem', textAlign: 'center', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.2rem' }}>⚙️ Step 3: {t("Chassis Tuning (Refactoring)")}</h3>
-            <div style={{ background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.2)', padding: '1.5rem', borderRadius: '12px', maxWidth: '500px' }}>
-              <p style={{ color: 'white', fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>
-                {t("Chassis tuning model (suspension, ARB, damping & differential) is currently undergoing full physical refactoring to align with exact Forza vehicle dynamics. New model will be available in the upcoming release.")}
-              </p>
-            </div>
-          </div>
+          <Step3ChassisTuner
+            selectedRaceGoal={selectedRaceGoal}
+            carParams={carParams}
+            saveCarParams={saveCarParams}
+          />
         )}
-
       </div>
+
     </div>
   );
-};
-
-const btnStyle: React.CSSProperties = {
-  padding: '0.5rem 1rem',
-  background: 'var(--primary)',
-  color: 'black',
-  border: 'none',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontWeight: 'bold'
-};
-
-const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.3)',
-  color: 'white',
-  border: '1px solid rgba(255,255,255,0.2)',
-  borderRadius: '4px',
-  padding: '0.4rem',
-  outline: 'none'
 };
 
 export default TuningView;

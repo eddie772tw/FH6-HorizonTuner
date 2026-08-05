@@ -992,15 +992,24 @@
 
 ---
 
-## 2026-08-05 — tuningMath.ts 與 TuningView.tsx 棄用公式清理與物理計算解耦
+
+---
+
+## 2026-08-05 — Step3 底盤調校實作、Step TSX 獨立組件架構與空力自動反推機制
 
 **學習點 (Learning):**
-1. **棄用舊邏輯與廢棄 Import 徹底清理 (Complete Removal of Deprecated Formulas)**：
-   - 當部分算牌邏輯（如舊版 Step 3 底盤調校公式）被判定為受到誤導或受到錯誤影響時，必須同步從純函數庫 (`tuningMath.ts`)、型別定義以及單元測試檔 (`tuningMath.test.ts`) 中徹底移除相應的導出與 import 語句，避免殘留無效 code 影響專案架構乾淨度。
-2. **UI 呈現層與物理計算層極致解耦 (UI Decoupling & Pure Math Extraction)**：
-   - 將原本硬編碼在 UI 組件 (`TuningView.tsx`) 中的圖表轉速/速度運算邏輯（`calcSpeed`, `calcRpm`）抽出至 `tuningMath.ts` 中的 `calcGearSpeed` 與 `calcGearRpm` 純函數，並在 `tuningMath.test.ts` 中加入邊界測試。此舉完全符合 `AGENTS.md` 單一真理（Single Source of Truth）規範。
+1. **Step 導向介面獨立 TSX 組件規範 (Step Component Independence)**：
+   - 將精靈嚮導 (Wizard) 的每一個 Step 獨立為專屬 TSX 組件 (`Step1GoalSetup.tsx`, `Step2GearboxSetup.tsx`, `Step3ChassisTuner.tsx`)，使 `TuningView.tsx` 解耦為專注於向導進度與狀態傳遞的 View Container，行數由 611 行降至約 240 行。此規範已寫入 `AGENTS.md` 成為專案全域開發標準。
+2. **下壓力 0 值觸發自動反推機制 (Auto Downforce Derivation on Zero)**：
+   - 在 `tuningMath.ts` 中實作 `resolveAeroDownforce` 純函數，當玩家將下壓力設為 `0` (或勾選 Auto Checkbox 鎖定為 0) 時，自動結合車輛靜態重量分配 ($W_f\%, W_r\%$)、驅動方式修正係數 (`Drivetrain_Modifier`: RWD 0.82, FWD/AWD 1.05) 與車重估算目標下壓力，無需玩家額外輸入需測量之數據。
+3. **賽車目標動態欄位呈現與廢棄欄位清理**：
+   - Step 1 與 `CarParamsView.tsx` 車輛參數頁面動態根據 `Road` / `Drift` / `Rally` / `Drag` 顯示對應之欄位（如僅 `Drift` 顯示 `induction` 進氣方式）。
+   - 全數清理已拋棄、已改為自動計算或未被任何賽種使用之舊欄位（如 `target_ride_frequency`, `target_rebound_ratio` 等），並固定 ARB 範圍為 1.0~65.0。
+4. **舊版Preset檔向下相容載入 (`normalizeCarParams`)**：
+   - 於 `CarParamsContext.tsx` 中實作相容層，讀取舊版 JSON 時自動補齊 `spring_front_min` (10.0), `spring_front_max` (120.0) 等預設值，保障車輛檔無痛過渡。
 
 **後續行動 (Action):**
-- 重新開發 Step 3 底盤調校模組時，應先在 `tuningMath.ts` 建立純函數與強型別定義，編寫單元測試驗證無誤後再對接 `TuningView.tsx` 介面。
+- 後續開發任何多步驟精靈介面時，一律遵循 `AGENTS.md` 新增的獨立 TSX 組件規範，保持主 Container 的精簡與高可讀性。
+
 
 

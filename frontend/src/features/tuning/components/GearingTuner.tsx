@@ -4,24 +4,25 @@ import { useSettings } from '../../../context/SettingsContext';
 
 interface GearingTunerProps {
   tuning: any;
-  tuningMode: string;
+  tuningMode?: string;
   updateSection: (section: any, field: string, value: any) => void;
   numGears: number;
-  chartData: any[];
-  xMax: number;
-  yMax: number;
-  carParams: any;
+  chartData?: any[];
+  xMax?: number;
+  yMax?: number;
+  carParams?: any;
   gearingMethod: string;
-  setGearingMethod: (v: 'scientific' | 'custom') => void;
-  customGearingModel: string;
-  setCustomGearingModel: (v: string) => void;
-  basicCustomP: number;
-  setBasicCustomP: (v: number) => void;
-  pMin: number;
-  pMax: number;
-  gearingDiscipline: string;
-  applyBasicGearing: () => void;
-  applyScientificGearing: () => void;
+  setGearingMethod?: (v: 'scientific' | 'custom') => void;
+  customGearingModel?: string;
+  setCustomGearingModel?: (v: string) => void;
+  basicCustomP?: number;
+  setBasicCustomP?: (v: number) => void;
+  pMin?: number;
+  pMax?: number;
+  gearingDiscipline?: string;
+  setGearingDiscipline?: (v: any) => void;
+  applyBasicGearing?: () => void;
+  applyScientificGearing?: () => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -90,8 +91,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         <div style={{ height: '380px', background: 'rgba(0,0,0,0.15)', borderRadius: '6px', padding: '0.5rem' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -20 }}>
-              <XAxis dataKey="speed" type="number" domain={[0, xMax]} stroke="rgba(255,255,255,0.4)" fontSize={9} />
-              <YAxis type="number" domain={[0, yMax]} stroke="rgba(255,255,255,0.4)" fontSize={9} />
+              <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="rgba(255,255,255,0.4)" fontSize={9} />
+              <YAxis type="number" domain={[0, yMax || 9000]} stroke="rgba(255,255,255,0.4)" fontSize={9} />
               {carParams?.maxHpRpm && (
                 <ReferenceLine 
                   y={carParams.maxHpRpm} 

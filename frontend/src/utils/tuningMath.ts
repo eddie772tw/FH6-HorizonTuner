@@ -33,6 +33,15 @@ export interface TuningCarParams {
     brakes?: string;
     diff?: string;
   };
+  // Suspension & Ride Height Limits for Safety Clamping
+  spring_front_min?: number; // kgf/mm
+  spring_front_max?: number;
+  spring_rear_min?: number;
+  spring_rear_max?: number;
+  height_front_min?: number; // cm
+  height_front_max?: number;
+  height_rear_min?: number;
+  height_rear_max?: number;
 }
 
 export type Drivetrain = 'RWD' | 'AWD' | 'FWD';
@@ -41,6 +50,32 @@ export type RaceType = 'Road' | 'Rally' | 'Drag' | 'Drift';
 export interface GearingResult {
   finalDrive: number;
   gears: number[];
+}
+
+export interface ChassisTuningResult {
+  arb: {
+    front: number;
+    rear: number;
+  };
+  springs: {
+    front: number; // kgf/mm
+    rear: number;  // kgf/mm
+    heightF: number; // cm
+    heightR: number; // cm
+  };
+  damping: {
+    reboundF: number;
+    reboundR: number;
+    bumpF: number;
+    bumpR: number;
+  };
+  diff: {
+    accelF: number;
+    decelF: number;
+    accelR: number;
+    decelR: number;
+    centerRear: number; // % to rear
+  };
 }
 
 /**
@@ -250,3 +285,276 @@ export function calculateAEGOGearing(
     gears: roundedGears
   };
 }
+
+/**
+ * Resolves aerodynamic downforce for front and rear axles (in kgf).
+ * If values are <= 0, triggers automatic derivation based on weight distribution
+ * and drivetrain modifier.
+ */
+export function resolveAeroDownforce(params: TuningCarParams): { front: number; rear: number } {
+  const weightKg = params.weight > 0 ? params.weight : 1400;
+  const wf = params.weight_distribution > 0 ? params.weight_distribution : 50;
+  const wr = 100 - wf;
+  const drivetrain = params.drivetrain || 'RWD';
+
+  const fVal = params.aero_downforce_front ?? 0;
+  const rVal = params.aero_downforce_rear ?? 0;
+
+  // Drivetrain aero modifier from reference document:
+  // RWD: 0.82 (more rear downforce)
+  // FWD / AWD: 1.05 (more front downforce)
+  const drivetrainModifier = drivetrain === 'RWD' ? 0.82 : 1.05;
+
+  // 1. Both explicit values > 0
+  if (fVal > 0 && rVal > 0) {
+    return { front: Math.round(fVal * 10) / 10, rear: Math.round(rVal * 10) / 10 };
+  }
+
+  const ratio = (wf / wr) * drivetrainModifier;
+
+  // 2. Only front > 0, rear <= 0 -> Derive rear
+  if (fVal > 0 && rVal <= 0) {
+    const derivedRear = fVal / ratio;
+    return { front: Math.round(fVal * 10) / 10, rear: Math.round(derivedRear * 10) / 10 };
+  }
+
+  // 3. Only rear > 0, front <= 0 -> Derive front
+  if (rVal > 0 && fVal <= 0) {
+    const derivedFront = rVal * ratio;
+    return { front: Math.round(derivedFront * 10) / 10, rear: Math.round(rVal * 10) / 10 };
+  }
+
+  // 4. Both <= 0 -> Derive both from estimated total target downforce
+  // Target total downforce = 20% of vehicle weight in lbs (converted to kgf)
+  const weightLbs = weightKg * 2.20462;
+  const totalTargetLbs = weightLbs * 0.20;
+  const totalTargetKgf = totalTargetLbs / 2.20462;
+
+  // Solve system: front / rear = ratio & front + rear = totalTargetKgf
+  const derivedRear = totalTargetKgf / (1 + ratio);
+  const derivedFront = totalTargetKgf - derivedRear;
+
+  return {
+    front: Math.round(derivedFront * 10) / 10,
+    rear: Math.round(derivedRear * 10) / 10
+  };
+}
+
+/**
+ * Calculates complete Step3 Chassis Tuning (ARBs, Springs, Ride Height, Damping, Differential).
+ * Enforces safety clamping against user-defined slider limits.
+ */
+export function calculateChassisTuning(
+  raceGoal: string,
+  carParams: TuningCarParams | null
+): ChassisTuningResult {
+  // Safe Fallback defaults
+  const weight = carParams && carParams.weight > 0 ? carParams.weight : 1400;
+  const wf = carParams && carParams.weight_distribution > 0 ? carParams.weight_distribution : 50;
+  const wr = 100 - wf;
+  const drivetrain: Drivetrain = carParams?.drivetrain || 'RWD';
+
+  const kMinF = carParams?.spring_front_min ?? 10.0;
+  const kMaxF = carParams?.spring_front_max ?? 120.0;
+  const kMinR = carParams?.spring_rear_min ?? 10.0;
+  const kMaxR = carParams?.spring_rear_max ?? 120.0;
+
+  const hMinF = carParams?.height_front_min ?? 10.0;
+  const hMaxF = carParams?.height_front_max ?? 25.0;
+  const hMinR = carParams?.height_rear_min ?? 10.0;
+  const hMaxR = carParams?.height_rear_max ?? 25.0;
+
+  // Aero resolution
+  const aero = carParams ? resolveAeroDownforce(carParams) : { front: 50, rear: 50 };
+
+  let arbF = 1.0;
+  let arbR = 1.0;
+  let springF = 10.0;
+  let springR = 10.0;
+  let heightF = 10.0;
+  let heightR = 10.0;
+  let rebF = 1.0;
+  let rebR = 1.0;
+  let bumpF = 1.0;
+  let bumpR = 1.0;
+
+  let accelF = 0;
+  let decelF = 0;
+  let accelR = 0;
+  let decelR = 0;
+  let centerRear = 50;
+
+  const click = 0.5; // Ride height click increment in cm
+
+  if (raceGoal === 'Drift') {
+    // 1. Anti-Roll Bars (Extreme Front-Soft / Rear-Stiff)
+    arbF = 10.0;
+    arbR = 50.0;
+
+    // 2. Softened Drift Springs
+    springF = weight * (wf / 100) * 0.035;
+    springR = weight * (wr / 100) * 0.035;
+
+    // 3. Ride Height
+    heightF = hMinF + 1 * click;
+    heightR = hMinR;
+
+    // 4. Damping (Symmetric Low-Stiffness)
+    rebF = 6.0;
+    rebR = 6.0;
+    bumpF = 3.0;
+    bumpR = 3.0;
+
+    // 5. Differential
+    if (drivetrain === 'AWD') {
+      accelF = 40;
+      decelF = 0;
+      accelR = 100;
+      decelR = 0;
+      centerRear = 88;
+    } else {
+      accelR = 100;
+      decelR = 25;
+    }
+
+  } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {
+    // 1. Anti-Roll Bars (Softened 35%)
+    const baseArbF = 64.0 * (wf / 100) + 1.0;
+    const baseArbR = 64.0 * (wr / 100) + 1.0;
+    arbF = baseArbF * 0.35;
+    arbR = baseArbR * 0.35;
+
+    // 2. Springs (Softened 65% of base)
+    const baseSpringF = (kMaxF - kMinF) * (wf / 100) + kMinF;
+    const baseSpringR = (kMaxR - kMinR) * (wr / 100) + kMinR;
+    springF = baseSpringF * 0.65;
+    springR = baseSpringR * 0.65;
+
+    // 3. Maximum Ride Height
+    heightF = hMaxF;
+    heightR = hMaxR;
+
+    // 4. Damping (40% Bump Ratio for Landing Absorptions)
+    rebF = 14.0 * (wf / 100) + 1.0;
+    rebR = 14.0 * (wr / 100) + 1.0;
+    bumpF = rebF * 0.40;
+    bumpR = rebR * 0.40;
+
+    // 5. Differential
+    if (drivetrain === 'AWD') {
+      accelF = 40;
+      decelF = 10;
+      accelR = 80;
+      decelR = 25;
+      centerRear = 65;
+    } else if (drivetrain === 'FWD') {
+      accelF = 60;
+      decelF = 15;
+    } else {
+      accelR = 75;
+      decelR = 25;
+    }
+
+  } else if (raceGoal === 'Drag') {
+    // 1. Anti-Roll Bars (Front Unconstrained)
+    arbF = 1.0;
+    arbR = 2.0;
+
+    // 2. Springs (Front Max, Rear Min for Weight Transfer)
+    springF = kMaxF * 0.90;
+    springR = kMinR;
+
+    // 3. Rake Angle Ride Height (Front Highest, Rear Lowest)
+    heightF = hMaxF;
+    heightR = hMinR;
+
+    // 4. Diagonal Extreme Damping
+    rebF = 1.0;
+    bumpF = 20.0;
+    rebR = 20.0;
+    bumpR = 1.0;
+
+    // 5. Differential
+    accelF = drivetrain === 'FWD' || drivetrain === 'AWD' ? 100 : 0;
+    decelF = 0;
+    accelR = drivetrain === 'RWD' || drivetrain === 'AWD' ? 100 : 0;
+    decelR = 0;
+    centerRear = 80;
+
+  } else {
+    // Road / Circuit (Default)
+    // 1. Anti-Roll Bars
+    if (drivetrain === 'AWD') {
+      // 1/65 Meta Strategy for AWD
+      arbF = Math.min(5.0, 1.0 + (wf / 100) * 4.0);
+      arbR = Math.max(50.0, 65.0 - (100 - wr) * 0.3);
+    } else {
+      arbF = 64.0 * (wf / 100) + 1.0;
+      arbR = 64.0 * (wr / 100) + 1.0;
+    }
+
+    // 2. Springs with Aero Compensation
+    const baseSpringF = (kMaxF - kMinF) * (wf / 100) + kMinF;
+    const baseSpringR = (kMaxR - kMinR) * (wr / 100) + kMinR;
+    const deltaKf = (aero.front / 10) * 0.5;
+    const deltaKr = (aero.rear / 25) * 0.5;
+    springF = baseSpringF + deltaKf;
+    springR = baseSpringR + deltaKr;
+
+    // 3. Ride Height (+3 clicks above min)
+    heightF = hMinF + 3 * click;
+    heightR = hMinR + 3 * click;
+
+    // 4. Damping (60% Golden Bump Ratio)
+    rebF = 19.0 * (wf / 100) + 1.0;
+    rebR = 19.0 * (wr / 100) + 1.0;
+    bumpF = rebF * 0.60;
+    bumpR = rebR * 0.60;
+
+    // 5. Differential
+    if (drivetrain === 'FWD') {
+      accelF = 40;
+      decelF = 10;
+    } else if (drivetrain === 'RWD') {
+      accelR = Math.min(65, Math.max(40, 40 + (wr - 50) * 0.5));
+      decelR = 20;
+    } else {
+      accelF = 15;
+      decelF = 0;
+      accelR = 75;
+      decelR = 15;
+      centerRear = Math.min(85, Math.max(60, wr + 20));
+    }
+  }
+
+  // Safety Clamping & Precision Rounding
+  const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, val));
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+
+  return {
+    arb: {
+      front: r1(clamp(arbF, 1.0, 65.0)),
+      rear: r1(clamp(arbR, 1.0, 65.0))
+    },
+    springs: {
+      front: r1(clamp(springF, kMinF, kMaxF)),
+      rear: r1(clamp(springR, kMinR, kMaxR)),
+      heightF: r1(clamp(heightF, hMinF, hMaxF)),
+      heightR: r1(clamp(heightR, hMinR, hMaxR))
+    },
+    damping: {
+      reboundF: r1(clamp(rebF, 1.0, 20.0)),
+      reboundR: r1(clamp(rebR, 1.0, 20.0)),
+      bumpF: r1(clamp(bumpF, 1.0, 20.0)),
+      bumpR: r1(clamp(bumpR, 1.0, 20.0))
+    },
+    diff: {
+      accelF: r1(clamp(accelF, 0, 100)),
+      decelF: r1(clamp(decelF, 0, 100)),
+      accelR: r1(clamp(accelR, 0, 100)),
+      decelR: r1(clamp(decelR, 0, 100)),
+      centerRear: r1(clamp(centerRear, 10, 90))
+    }
+  };
+}
+
