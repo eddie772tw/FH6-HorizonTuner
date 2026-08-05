@@ -997,13 +997,24 @@
 
 ## 2026-08-05 — 調校精靈與組件多語系字典 (`lang/*.json`) 完整補齊
 
+## 2026-08-05 — 整合 Step 4 輪胎與定位與 Step 5 遙測動態校正至調校工作流
+
 **學習點 (Learning):**
-1. **多語系字典補齊與格式規範 (`lang/` JSON Dictionary Completion)**：
-   - 於 [d:\FH6-Bundle\FH6-HorizonTuner\lang](file:///d:/FH6-Bundle/FH6-HorizonTuner/lang) 目錄下補齊 `zh-tw.json`（繁體中文）、`en-us.json`（英文）與 `ja-jp.json`（日文）中關於 Step 1~3 調校精靈的所有 46 條新增 Key 與 Value 對應。
-   - 包含四賽事目標詳細說明、機械與空力平衡係數、懸吊邊界與預設套用按鈕、AEGO 齒比終傳比標籤、底盤四卡片說明以及 Recharts 有效動力帶高亮圖例之語系翻譯。
+1. **輸入參數集中化與 Step 4/5 數據繼承 (Input Consolidation & Multi-Step Inheritance)**：
+   - 將當前遊戲季節 (`season`: Summer / Autumn / Spring / Winter) 統一集中於 Step 1 表單輸入，作為全工作流的基礎參數。
+   - Step 4 (輪胎與定位) 作為靜態初設面板，無需重複表單輸入，直接繼承 Step 1 已填寫的車輛規格 (包含前/後輪胎寬、扁平比、輪圈大小及季節偏置) 計算胎壁高度 $H_{wall}$ 與幾何角度，符合單一職責與優雅 UI 規範。
+   - Step 5 (遙測動態校正) 與 Step 4 及 Step 3 (底盤懸吊、彈簧 $K_F/K_R$、防傾桿 $ARB_F/ARB_R$、差速器鎖定率) 實施跨步驟數據繼承，當偵測到前後軸溫差 $\Delta T_{axle}$ 過大或駕駛異常感受時，能參照 Step 3 產出的當前底盤剛性給予更為精準與量化的微調指引。
+2. **Forza UDP 遙測封包邊界與胎溫/胎壓解耦 (Telemetry UDP Boundary & Hybrid Input)**：
+   - Forza Horizon UDP 遙測封包包含實測 4 輪胎溫 (`TireTemp`) 數據，但原生未提供即時胎壓。
+   - Step 5 採取混合輸入機制：從背景 `useTelemetry()` 自動帶入並算得前後軸實測平均胎溫；並透過明確的文字提示引導玩家在賽道試駕 2 圈後開啟遊戲內【遙測畫面】觀察熱胎壓，並於 Step 5 填入 $P_{hot,F}, P_{hot,R}$ 觸發閉環微調診斷。
+3. **全域單位換算與 i18n 翻譯完備 (Global Unit Conversion & Localization)**：
+   - 物理算牌與診斷核心維持 SI / 標準單位 (PSI, °C)，UI 呈現統一調用 `SettingsContext` (`convertTirePressureFromPsi`, `convertTemp` 等) 與 `units.ts`，支援使用者偏好單位 (PSI / BAR / kPa, °C / °F) 的動態切換。
+   - 於 `lang/zh-tw.json` 與 `lang/en-us.json` 補齊所有新增欄位與診斷語句之多國語言字典。
 
 **後續行動 (Action):**
-- 保持 `lang/` 字典檔案格式良好與多語系同步更新，維持全站國際化品質。
+- 保持跨 Step UI 組件單一職責與 Step 導向獨立 TSX 組件檔規範 (`Step4TireAlignSetup.tsx`, `Step5TelemetryCalibration.tsx`)。
+- 物理算牌與診斷邏輯嚴格維持純函數，並維護 Vitest 單元測試 100% 通過。
+
 
 
 

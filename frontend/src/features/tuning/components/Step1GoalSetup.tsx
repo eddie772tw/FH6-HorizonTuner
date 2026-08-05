@@ -2,9 +2,13 @@ import React from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 
+import { Season } from '../../../utils/tuningMath';
+
 interface Step1GoalSetupProps {
   selectedRaceGoal: string;
   setSelectedRaceGoal: (goal: string) => void;
+  season: Season;
+  setSeason: (season: Season) => void;
   carParams: CarParams | null;
   updateParam: (field: keyof CarParams, value: any) => void;
   saveCarParams: () => Promise<void>;
@@ -31,6 +35,8 @@ const btnStyle: React.CSSProperties = {
 export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   selectedRaceGoal,
   setSelectedRaceGoal,
+  season,
+  setSeason,
   carParams,
   updateParam,
   saveCarParams,
@@ -59,28 +65,50 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
         Step 1: {t("Define tuning goals & check parameters")}
       </h3>
 
-      {/* Select Goal Card */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
-          <select 
-            value={selectedRaceGoal} 
-            onChange={e => setSelectedRaceGoal(e.target.value)} 
-            style={{ ...inputStyle, width: '280px', border: '1px solid var(--primary)', background: 'black' }}
-          >
-            <option value="Road">{t("Road / Circuit")}</option>
-            <option value="Drift">{t("Drift")}</option>
-            <option value="Rally">{t("Rally / Off-Road")}</option>
-            <option value="Drag">{t("Drag")}</option>
-          </select>
+      {/* Select Goal & Season Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Select Race / Tuning Goal:")}</span>
+            <select 
+              value={selectedRaceGoal} 
+              onChange={e => setSelectedRaceGoal(e.target.value)} 
+              style={{ ...inputStyle, width: '200px', border: '1px solid var(--primary)', background: 'black' }}
+            >
+              <option value="Road">{t("Road / Circuit")}</option>
+              <option value="Drift">{t("Drift")}</option>
+              <option value="Rally">{t("Rally / Off-Road")}</option>
+              <option value="Drag">{t("Drag")}</option>
+            </select>
+          </div>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
+            {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.")}
+            {selectedRaceGoal === 'Drift' && t("Drift mode configures extreme front-soft rear-stiff anti-roll bars, softened springs, and wheelspin-focused differential.")}
+            {selectedRaceGoal === 'Rally' && t("Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.")}
+            {selectedRaceGoal === 'Drag' && t("Drag setting sets rake angle ride height, diagonal extreme damping, and 100% differential lock for maximum launch traction.")}
+          </p>
         </div>
-        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
-          {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.")}
-          {selectedRaceGoal === 'Drift' && t("Drift mode configures extreme front-soft rear-stiff anti-roll bars, softened springs, and wheelspin-focused differential.")}
-          {selectedRaceGoal === 'Rally' && t("Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.")}
-          {selectedRaceGoal === 'Drag' && t("Drag setting sets rake angle ride height, diagonal extreme damping, and 100% differential lock for maximum launch traction.")}
-        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(255, 183, 3, 0.05)', border: '1px solid rgba(255, 183, 3, 0.2)', padding: '1.2rem', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{t("Current Season:")}</span>
+            <select 
+              value={season} 
+              onChange={e => setSeason(e.target.value as Season)} 
+              style={{ ...inputStyle, width: '200px', border: '1px solid #ffb703', background: 'black' }}
+            >
+              <option value="Summer">{t("Summer (-0.5 PSI)")}</option>
+              <option value="Autumn">{t("Autumn (-0.5 PSI)")}</option>
+              <option value="Spring">{t("Spring (+0.5 PSI)")}</option>
+              <option value="Winter">{t("Winter (+0.5 PSI)")}</option>
+            </select>
+          </div>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
+            {t("Game season directly affects ambient temperatures and tire pressure fermentation offsets, fitting into Step 4 static setup recommendations.")}
+          </p>
+        </div>
       </div>
+
 
       {/* Vehicle Parameters Form */}
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.2rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>

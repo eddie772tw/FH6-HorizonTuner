@@ -14,8 +14,10 @@ import {
   calcGearRpm,
   resolveAeroDownforce,
   calculateChassisTuning,
+  calculateStaticTireAlignment,
   TuningCarParams
 } from './tuningMath';
+
 
 // ---------- Helpers ----------
 
@@ -235,4 +237,57 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.arb.rear).toBeLessThanOrEqual(65.0);
   });
 });
+
+// ============================================================
+// calculateStaticTireAlignment
+// ============================================================
+describe('calculateStaticTireAlignment', () => {
+  const sampleCar: TuningCarParams = {
+    weight: 1350,
+    weight_distribution: 54,
+    drivetrain: 'AWD',
+    maxHp: 400,
+    maxTorque: 500,
+    maxHpRpm: 6500,
+    maxTorqueRpm: 4000,
+    frontTireWidth: 245,
+    frontTireAspect: 40,
+    frontTireRim: 18,
+    rearTireWidth: 275,
+    rearTireAspect: 35,
+    rearTireRim: 18
+  };
+
+  it('should calculate tire sidewall heights correctly', () => {
+    const res = calculateStaticTireAlignment('Road', 'Summer', sampleCar);
+    expect(res.hwF).toBe(98); // 245 * 0.40 = 98mm
+    expect(res.hwR).toBe(96.3); // 275 * 0.35 = 96.25 -> 96.3mm
+  });
+
+  it('should apply season bias correctly (+0.5 for Winter, -0.5 for Summer)', () => {
+    const resSummer = calculateStaticTireAlignment('Road', 'Summer', sampleCar);
+    const resWinter = calculateStaticTireAlignment('Road', 'Winter', sampleCar);
+    expect(resSummer.seasonBias).toBe(-0.5);
+    expect(resWinter.seasonBias).toBe(0.5);
+    expect(resWinter.pcF - resSummer.pcF).toBeCloseTo(1.0, 1);
+  });
+
+  it('should calculate specific discipline values for Drift mode', () => {
+    const resDrift = calculateStaticTireAlignment('Drift', 'Summer', sampleCar);
+    expect(resDrift.targetPhot).toBe(21.0);
+    expect(resDrift.camber.front).toBe(-4.8);
+    expect(resDrift.camber.rear).toBe(-0.5);
+    expect(resDrift.caster).toBe(7.0);
+  });
+
+  it('should calculate specific discipline values for Rally mode', () => {
+    const resRally = calculateStaticTireAlignment('Rally', 'Summer', sampleCar);
+    expect(resRally.targetPhot).toBe(27.5);
+    expect(resRally.camber.front).toBe(-1.3);
+    expect(resRally.camber.rear).toBe(-0.8);
+    expect(resRally.toe.front).toBe('+0.2°');
+    expect(resRally.toe.rear).toBe('0.0°');
+  });
+});
+
 

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
-import { calculateAEGOGearing } from '../../utils/tuningMath';
+import { calculateAEGOGearing, calculateChassisTuning, calculateStaticTireAlignment, Season } from '../../utils/tuningMath';
 import { useSettings } from '../../context/SettingsContext';
 import { Step1GoalSetup } from './components/Step1GoalSetup';
 import { Step2GearboxSetup } from './components/Step2GearboxSetup';
 import { Step3ChassisTuner } from './components/Step3ChassisTuner';
+import { Step4TireAlignSetup } from './components/Step4TireAlignSetup';
+import { Step5TelemetryCalibration } from './components/Step5TelemetryCalibration';
 
 interface GearingTuning {
   finalDrive: number;
@@ -41,6 +43,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
   // Wizard Steps State
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
+  const [season, setSeason] = useState<Season>('Summer');
 
   const numGears = carParams?.adjustability?.gears || 6;
   const [tuning, setTuning] = useState<TuningState>(() => initialTuning(numGears));
@@ -72,6 +75,17 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       }));
     }
   }, [carParams]);
+
+  // Inherited calculations across steps
+  const chassisResult = useMemo(() => {
+    if (!carParams) return null;
+    return calculateChassisTuning(selectedRaceGoal, carParams);
+  }, [selectedRaceGoal, carParams]);
+
+  const tireAlignResult = useMemo(() => {
+    if (!carParams) return null;
+    return calculateStaticTireAlignment(selectedRaceGoal, season, carParams);
+  }, [selectedRaceGoal, season, carParams]);
 
   const fetchTunings = async () => {
     if (!carId) return;
@@ -124,8 +138,6 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-
-
   const applyScientificGearing = () => {
     if (!carParams) return;
     const result = calculateAEGOGearing(
@@ -149,7 +161,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 
   // Stepper Header Button Style
   const stepHeaderStyle = (stepNum: number) => ({
-    padding: '0.6rem 1.2rem',
+    padding: '0.5rem 0.9rem',
     background: currentStep === stepNum 
       ? 'var(--primary)' 
       : currentStep > stepNum 
@@ -167,10 +179,10 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
         : '1px solid rgba(255,255,255,0.08)',
     borderRadius: '20px',
     fontWeight: 'bold',
-    fontSize: '0.85rem',
+    fontSize: '0.8rem',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.4rem',
+    gap: '0.3rem',
     cursor: stepNum === 1 || hasCoreParams ? 'pointer' : 'not-allowed',
     transition: 'all 0.3s ease',
     boxShadow: currentStep === stepNum ? '0 0 12px rgba(0, 180, 255, 0.3)' : 'none'
@@ -199,7 +211,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               </button>
             )}
 
-            {currentStep < 3 && (
+            {currentStep < 5 && (
               <span title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}>
                 <button
                   type="button"
@@ -225,10 +237,14 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
         {/* Wizard Stepper Progress Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
           <div style={stepHeaderStyle(1)} onClick={() => setCurrentStep(1)}>1. {t("Goal & Setup")}</div>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Gearbox Setup")}</div>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }} />
-          <div style={stepHeaderStyle(3)} onClick={() => hasCoreParams && setCurrentStep(3)}>3. {t("Chassis Tuning")}</div>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
+          <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Gearbox")}</div>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
+          <div style={stepHeaderStyle(3)} onClick={() => hasCoreParams && setCurrentStep(3)}>3. {t("Chassis")}</div>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
+          <div style={stepHeaderStyle(4)} onClick={() => hasCoreParams && setCurrentStep(4)}>4. {t("Tire & Alignment")}</div>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
+          <div style={stepHeaderStyle(5)} onClick={() => hasCoreParams && setCurrentStep(5)}>5. {t("Telemetry Calibration")}</div>
         </div>
       </div>
 
@@ -238,6 +254,8 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
           <Step1GoalSetup
             selectedRaceGoal={selectedRaceGoal}
             setSelectedRaceGoal={setSelectedRaceGoal}
+            season={season}
+            setSeason={setSeason}
             carParams={carParams}
             updateParam={updateParam}
             saveCarParams={saveCarParams}
@@ -261,6 +279,24 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
             selectedRaceGoal={selectedRaceGoal}
             carParams={carParams}
             saveCarParams={saveCarParams}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <Step4TireAlignSetup
+            selectedRaceGoal={selectedRaceGoal}
+            season={season}
+            carParams={carParams}
+            onNextStep={() => setCurrentStep(5)}
+          />
+        )}
+
+        {currentStep === 5 && (
+          <Step5TelemetryCalibration
+            selectedRaceGoal={selectedRaceGoal}
+            carParams={carParams}
+            chassisTuning={chassisResult}
+            targetPhot={tireAlignResult?.targetPhot || 32.5}
           />
         )}
       </div>

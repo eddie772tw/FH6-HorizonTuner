@@ -558,3 +558,147 @@ export function calculateChassisTuning(
   };
 }
 
+export type Season = 'Summer' | 'Autumn' | 'Spring' | 'Winter';
+
+export interface StaticTireAlignResult {
+  pcF: number; // PSI
+  pcR: number; // PSI
+  targetPhot: number; // PSI
+  seasonBias: number; // PSI
+  camber: {
+    front: number;
+    rear: number;
+  };
+  toe: {
+    front: string;
+    rear: string;
+  };
+  caster: number;
+  hwF: number; // mm
+  hwR: number; // mm
+}
+
+/**
+ * Calculates static cold tire pressures, target hot pressure, and alignment geometry (Camber/Toe/Caster).
+ * 
+ * @param discipline Race discipline ('Road' | 'Drift' | 'Rally' | 'Drag')
+ * @param season Season ('Summer' | 'Autumn' | 'Spring' | 'Winter')
+ * @param params Vehicle parameters
+ */
+export function calculateStaticTireAlignment(
+  discipline: string,
+  season: Season = 'Summer',
+  params: TuningCarParams | null
+): StaticTireAlignResult {
+  const M = params && params.weight > 0 ? params.weight : 1350;
+  const Wf = (params && params.weight_distribution > 0 ? params.weight_distribution : 54) / 100.0;
+  const Wr = 1.0 - Wf;
+  const drivetrain = params?.drivetrain || 'AWD';
+
+  // Tire specs from carParams
+  const fw = params?.frontTireWidth || 245;
+  const fa = params?.frontTireAspect || 40;
+  const rw = params?.rearTireWidth || 275;
+  const ra = params?.rearTireAspect || 35;
+
+  const hwF = Math.round(fw * (fa / 100.0) * 10) / 10;
+  const hwR = Math.round(rw * (ra / 100.0) * 10) / 10;
+
+  // Season bias
+  const deltaPSeason = (season === 'Spring' || season === 'Winter') ? 0.5 : -0.5;
+
+  // Drive bias
+  let driveBiasF = 0.0;
+  let driveBiasR = 0.0;
+  if (drivetrain === 'FWD') {
+    driveBiasF = 1.5;
+    driveBiasR = -0.5;
+  } else if (drivetrain === 'RWD') {
+    driveBiasF = 0.5;
+    driveBiasR = 0.0;
+  } else {
+    driveBiasF = 0.2;
+    driveBiasR = 0.0;
+  }
+
+  let targetPhot = 32.5;
+  let pcF = 0;
+  let pcR = 0;
+  let camberF = 0;
+  let camberR = 0;
+  let toeF = '+0.1°';
+  let toeR = '-0.1°';
+  let caster = 6.0;
+
+  const normalizedDisc = discipline.toLowerCase();
+
+  if (normalizedDisc === 'drift') {
+    targetPhot = 21.0;
+    pcF = 32.0 + 2.0 * ((M * Wf) / 1000) + deltaPSeason;
+    pcR = 19.5 + 1.0 * ((M * Wr) / 1000) + deltaPSeason;
+
+    camberF = -4.8;
+    camberR = -0.5;
+    toeF = '+1.2°';
+    toeR = '-0.3°';
+    caster = 7.0;
+  } else if (normalizedDisc === 'rally' || normalizedDisc === 'dangersign') {
+    targetPhot = 27.5;
+    pcF = 22.0 + 2.0 * ((M * Wf) / 1000) + 0.02 * hwF + deltaPSeason;
+    pcR = 21.5 + 2.0 * ((M * Wr) / 1000) + 0.02 * hwR + deltaPSeason;
+
+    camberF = -1.3;
+    camberR = -0.8;
+    toeF = '+0.2°';
+    toeR = '0.0°';
+    caster = 6.0;
+  } else if (normalizedDisc === 'drag') {
+    targetPhot = 23.5;
+    if (drivetrain === 'RWD') {
+      pcF = 38.0;
+      pcR = 15.0 + 1.5 * ((M * Wr) / 1000) + deltaPSeason;
+    } else {
+      pcF = 23.0 + deltaPSeason;
+      pcR = 23.0 + deltaPSeason;
+    }
+
+    camberF = 0.0;
+    camberR = -0.1;
+    toeF = '0.0°';
+    toeR = '0.0°';
+    caster = 5.0;
+  } else {
+    // Default Road / Circuit
+    targetPhot = 32.5;
+    pcF = 28.5 + 2.5 * ((M * Wf) / 1000 - 0.7) - 0.005 * (fw - 245) + driveBiasF + deltaPSeason;
+    pcR = 28.0 + 2.5 * ((M * Wr) / 1000 - 0.7) - 0.005 * (rw - 245) + driveBiasR + deltaPSeason;
+
+    camberF = -Number((1.5 + 0.8 * Wf + 0.2 * 1.0).toFixed(1));
+    camberR = -Number((0.8 + 0.6 * Wr + 0.2 * 1.0).toFixed(1));
+    toeF = '+0.1°';
+    toeR = '-0.1°';
+    caster = Number((5.0 + 2.0 * Wf).toFixed(1));
+  }
+
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+
+  return {
+    pcF: r1(pcF),
+    pcR: r1(pcR),
+    targetPhot: r1(targetPhot),
+    seasonBias: r1(deltaPSeason),
+    camber: {
+      front: r1(camberF),
+      rear: r1(camberR)
+    },
+    toe: {
+      front: toeF,
+      rear: toeR
+    },
+    caster: r1(caster),
+    hwF,
+    hwR
+  };
+}
+
+
