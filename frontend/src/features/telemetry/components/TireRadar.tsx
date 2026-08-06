@@ -25,44 +25,61 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
   const bgCacheRef = useRef<{ canvas: OffscreenCanvas | null; isLosingGrip: boolean }>({ canvas: null, isLosingGrip: false });
   
   // 保存 DOM 的實體邏輯尺寸 (CSS 像素)
-  const tempSizeRef = useRef({ w: 90, h: 55 });
-
-  const radarSizeRef = useRef<number>(120);
-  const [radarSize, setRadarSize] = React.useState<number>(120);
+  const tempSizeRef = useRef({ w: 90, h: 28 });
   const { convertTemp } = useSettings();
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (height > 0) {
-          const calcSize = Math.max(70, height - 36);
-          if (Math.abs(calcSize - radarSizeRef.current) > 1) {
-            radarSizeRef.current = calcSize;
-            setRadarSize(calcSize);
-          }
-        }
-        
-        // 取得動態容器的真實 CSS 尺寸 (以 tempCanvas 的父元素為準)
-        if (tempCanvasRef.current && tempCanvasRef.current.parentElement) {
-          const parent = tempCanvasRef.current.parentElement;
-          tempSizeRef.current = { 
-            w: Math.max(60, parent.clientWidth), 
-            h: Math.max(30, parent.clientHeight) 
-          };
+    const syncCanvasBuffers = () => {
+      const dpr = window.devicePixelRatio || 1;
+
+      // 1. Radar Canvas Buffer Sync (保持正圓, 最大適應 38% 欄位)
+      const rCanvas = radarCanvasRef.current;
+      if (rCanvas && rCanvas.parentElement) {
+        const parent = rCanvas.parentElement;
+        const rw = parent.clientWidth;
+        const rh = parent.clientHeight;
+        const rSize = Math.max(30, Math.min(rw, rh));
+        const pixelR = Math.floor(rSize * dpr);
+        if (rCanvas.width !== pixelR || rCanvas.height !== pixelR) {
+          rCanvas.width = pixelR;
+          rCanvas.height = pixelR;
+          rCanvas.style.width = `${rSize}px`;
+          rCanvas.style.height = `${rSize}px`;
+          bgCacheRef.current.canvas = null;
         }
       }
+
+      // 2. Temp Canvas Buffer Sync (完全依據右側欄位 ClientWidth 自適應 100% 寬度)
+      const tCanvas = tempCanvasRef.current;
+      if (tCanvas && tCanvas.parentElement) {
+        const parent = tCanvas.parentElement;
+        const tw = Math.max(35, parent.clientWidth);
+        const th = Math.max(16, parent.clientHeight);
+        tempSizeRef.current = { w: tw, h: th };
+        const pixelW = Math.floor(tw * dpr);
+        const pixelH = Math.floor(th * dpr);
+        if (tCanvas.width !== pixelW || tCanvas.height !== pixelH) {
+          tCanvas.width = pixelW;
+          tCanvas.height = pixelH;
+          tCanvas.style.width = `${tw}px`;
+          tCanvas.style.height = `${th}px`;
+        }
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      syncCanvasBuffers();
     });
     resizeObserver.observe(container);
+    syncCanvasBuffers();
 
     return () => resizeObserver.disconnect();
   }, []);
 
   useEffect(() => {
-    const radius = radarSize / 2;
     const displayLimit = 1.5;
 
     const updateThemeVars = () => {
@@ -77,33 +94,21 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
     const themeObserver = new MutationObserver(updateThemeVars);
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 
-    const rCanvas = radarCanvasRef.current;
-    if (rCanvas) {
+    const getOrCreateBgCache = (scaledRadius: number, isLosingGrip: boolean): OffscreenCanvas | null => {
       const dpr = window.devicePixelRatio || 1;
-      // 確保內部 Canvas Buffer 乘以 DPR
-      rCanvas.width = Math.floor(radarSize * dpr);
-      rCanvas.height = Math.floor(radarSize * dpr);
-      // CSS 保持邏輯像素
-      rCanvas.style.width = `${radarSize}px`;
-      rCanvas.style.height = `${radarSize}px`;
-      bgCacheRef.current.canvas = null;
-    }
-
-    const getOrCreateBgCache = (isLosingGrip: boolean): OffscreenCanvas | null => {
-      const dpr = window.devicePixelRatio || 1;
-      const scaledRadius = radius * dpr;
       const cache = bgCacheRef.current;
-      if (cache.canvas && cache.isLosingGrip === isLosingGrip) {
+      const targetSize = Math.floor(scaledRadius * 2);
+      if (cache.canvas && cache.canvas.width === targetSize && cache.isLosingGrip === isLosingGrip) {
         return cache.canvas;
       }
       try {
-        const offscreen = new OffscreenCanvas(Math.floor(scaledRadius * 2), Math.floor(scaledRadius * 2));
+        const offscreen = new OffscreenCanvas(targetSize, targetSize);
         const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
         if (!ctx) return null;
 
         ctx.clearRect(0, 0, offscreen.width, offscreen.height);
         ctx.beginPath();
-        ctx.arc(scaledRadius, scaledRadius, scaledRadius - 1 * dpr, 0, Math.PI * 2);
+        ctx.arc(scaledRadius, scaledRadius, Math.max(1, scaledRadius - 1 * dpr), 0, Math.PI * 2);
         ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.12)';
         ctx.lineWidth = 2 * dpr;
         ctx.stroke();
@@ -111,8 +116,8 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(255,255,255,0.12)';
         ctx.lineWidth = 1 * dpr;
-        ctx.moveTo(0, scaledRadius); ctx.lineTo(scaledRadius * 2, scaledRadius);
-        ctx.moveTo(scaledRadius, 0); ctx.lineTo(scaledRadius, scaledRadius * 2);
+        ctx.moveTo(0, scaledRadius); ctx.lineTo(targetSize, scaledRadius);
+        ctx.moveTo(scaledRadius, 0); ctx.lineTo(scaledRadius, targetSize);
         ctx.stroke();
 
         ctx.beginPath();
@@ -129,14 +134,6 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         return null;
       }
     };
-
-    if (rCanvas) {
-      const ctx = rCanvas.getContext('2d');
-      if (ctx) {
-        const bg = getOrCreateBgCache(false);
-        if (bg) ctx.drawImage(bg, 0, 0);
-      }
-    }
 
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
@@ -187,15 +184,17 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
       }
 
-      // 1. Radar Canvas 繪製 (保持原邏輯)
-      if (rCanvas) {
+      // 1. Radar Canvas 繪製 (純動態對齊 Buffer 尺寸)
+      const rCanvas = radarCanvasRef.current;
+      if (rCanvas && rCanvas.width > 0) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
           const dpr = window.devicePixelRatio || 1;
+          const radius = (rCanvas.width / dpr) / 2;
           const isLosingGrip = Math.abs(cRatio) > 1.0 || Math.abs(cAngle) > 1.0;
 
           ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
-          const bg = getOrCreateBgCache(isLosingGrip);
+          const bg = getOrCreateBgCache(radius * dpr, isLosingGrip);
           if (bg) {
             ctx.drawImage(bg, 0, 0);
           }
@@ -222,8 +221,8 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
                 dx = (dx / dist) * maxScaledR;
                 dy = (dy / dist) * maxScaledR;
               }
-              const cx = maxScaledR + dx;
-              const cy = maxScaledR + dy;
+              const cx = radius * dpr + dx;
+              const cy = radius * dpr + dy;
               if (i === firstValidIdx) ctx.moveTo(cx, cy);
               else ctx.lineTo(cx, cy);
             }
@@ -245,18 +244,18 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
           const dotCenterY = radius * dpr + dy;
 
           ctx.beginPath();
-          ctx.arc(dotCenterX, dotCenterY, 7 * dpr, 0, Math.PI * 2);
+          ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
           ctx.fillStyle = dotGlowColor;
           ctx.fill();
 
           ctx.beginPath();
-          ctx.arc(dotCenterX, dotCenterY, 4 * dpr, 0, Math.PI * 2);
+          ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
           ctx.fillStyle = dotColor;
           ctx.fill();
         }
       }
 
-      // 2. Temp Canvas 高畫質解析度修復修正 (修正高 DPI 模糊問題)
+      // 2. Temp Canvas 高畫質 100% 自適應繪製
       const tCanvas = tempCanvasRef.current;
       if (tCanvas) {
         const ctx = tCanvas.getContext('2d');
@@ -265,18 +264,6 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
           const tw = tempSizeRef.current.w;
           const th = tempSizeRef.current.h;
 
-          // ⭐ 關鍵修復：將 Canvas 實體像素（Buffer）擴展為 DPR 倍數
-          const pixelW = Math.floor(tw * dpr);
-          const pixelH = Math.floor(th * dpr);
-
-          if (tCanvas.width !== pixelW || tCanvas.height !== pixelH) {
-            tCanvas.width = pixelW;
-            tCanvas.height = pixelH;
-            tCanvas.style.width = `${tw}px`;
-            tCanvas.style.height = `${th}px`;
-          }
-
-          // ⭐ 重置並放大 Context 座標軸，後續所有繪製邏輯直接依照原邏輯(tw, th)即可，不必手動乘 dpr
           ctx.save();
           ctx.scale(dpr, dpr);
           ctx.clearRect(0, 0, tw, th);
@@ -285,8 +272,8 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
           const tempMaxScale = 260;
           const tempRange = tempMaxScale - tempMinScale;
 
-          const targetBarW = 3;
-          const numBins = Math.max(15, Math.floor(tw / targetBarW));
+          const targetBarW = 2.5;
+          const numBins = Math.max(10, Math.floor(tw / targetBarW));
           const tempPerBin = tempRange / numBins;
           const bins = new Array(numBins).fill(0);
           let maxBinCount = 1;
@@ -320,7 +307,7 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
 
             const binTempMid = tempMinScale + (i + 0.5) * tempPerBin;
             ctx.fillStyle = getTempColor(binTempMid);
-            const drawW = barW > 1.5 ? barW - 0.5 : barW;
+            const drawW = barW > 1.2 ? barW - 0.3 : barW;
             ctx.fillRect(i * barW, th - 2 - h, drawW, h);
           }
 
@@ -338,13 +325,12 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
               const pct = (lineX / tw) * 100;
               tempLabelRef.current.innerText = `${Math.round(convertTemp(cTemp).value)}`;
               tempLabelRef.current.style.left = `${pct}%`;
-              tempLabelRef.current.style.transform = pct > 68
-                ? 'translateX(calc(-100% - 3px))'
-                : 'translateX(3px)';
+              tempLabelRef.current.style.transform = pct > 50
+                ? 'translateX(calc(-100% - 2px))'
+                : 'translateX(2px)';
             }
           }
 
-          // 還原 context 的 scale 狀態
           ctx.restore();
         }
       }
@@ -355,49 +341,59 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
       themeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [tireIdx, convertTemp, radarSize]);
+  }, [tireIdx, convertTemp]);
 
   return (
-    <div ref={containerRef} className={`d-flex gap-2 align-items-stretch p-2 rounded-3 border h-100 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important', minHeight: 0 }}>
-      {/* 雷達圖區 */}
-      <div className="d-flex flex-column align-items-center justify-content-center flex-shrink-0">
-        <div className="fw-bold text-body mb-1 fs-8">{title}</div>
-        <div className="position-relative" style={{ width: `${radarSize}px`, height: `${radarSize}px` }}>
-          <canvas ref={radarCanvasRef} className="position-absolute top-0 start-0" />
+    <div
+      ref={containerRef}
+      className={`d-flex gap-2 align-items-center p-2 rounded-3 border h-100 overflow-hidden ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}
+      style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important', minHeight: 0 }}
+    >
+      {/* 雷達圖區 (固定佔據 ~38% 寬度) */}
+      <div className="d-flex flex-column align-items-center justify-content-center h-100 overflow-hidden" style={{ flex: '0 0 38%', maxWidth: '42%', minWidth: '40px' }}>
+        <div className="fw-bold text-body mb-1 fs-8 flex-shrink-0 text-truncate">{title}</div>
+        <div className="w-100 flex-grow-1 position-relative d-flex align-items-center justify-content-center overflow-hidden" style={{ minHeight: 0 }}>
+          <canvas ref={radarCanvasRef} className="position-absolute" />
         </div>
       </div>
-      {/* 右側資訊區 */}
-      <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0, minHeight: 0, gap: '6px' }}>
-        <div className="d-flex flex-row gap-3 align-items-end flex-shrink-0">
+
+      {/* 右側資訊與胎溫分佈區 (占據剩餘 ~62% 寬度, 垂直自適應充滿 100% 高度) */}
+      <div className="d-flex flex-column h-100 overflow-hidden" style={{ flex: '1 1 0%', minWidth: 0, gap: '4px' }}>
+        {/* ANG & RAT 數據大字體標頭 */}
+        <div className="d-flex flex-row align-items-center gap-3 flex-shrink-0 pt-1">
           <div className="d-flex flex-column align-items-start">
-            <span style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>ANG</span>
-            <span className="fw-bold font-monospace" ref={angRef} style={{ fontSize: '1.5rem', lineHeight: 1.1 }}>0.00</span>
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>ANG</span>
+            <span className="fw-bold font-monospace text-body" ref={angRef} style={{ fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
           </div>
-          <div style={{ width: '1px', height: '28px', background: 'rgba(128,128,128,0.2)', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '26px', background: 'rgba(128,128,128,0.2)', flexShrink: 0 }} />
           <div className="d-flex flex-column align-items-start">
-            <span style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>RAT</span>
-            <span className="fw-bold font-monospace" ref={ratioRef} style={{ fontSize: '1.5rem', lineHeight: 1.1 }}>0.00</span>
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>RAT</span>
+            <span className="fw-bold font-monospace text-body" ref={ratioRef} style={{ fontSize: '1.45rem', lineHeight: 1.0 }}>0.00</span>
           </div>
         </div>
-        <div className="flex-grow-1 position-relative" style={{ minHeight: 0 }}>
-          <canvas ref={tempCanvasRef} className="position-absolute top-0 start-0" style={{ display: 'block' }} />
+
+        {/* 胎溫分佈直方圖區 (垂直高度自適應充滿剩餘空間，消除中央空白) */}
+        <div className="flex-grow-1 position-relative w-100 overflow-hidden" style={{ minHeight: '24px' }}>
+          <canvas ref={tempCanvasRef} className="position-absolute top-0 start-0 w-100 h-100" style={{ display: 'block' }} />
           <span
             ref={tempLabelRef}
             style={{
               position: 'absolute',
-              top: '2px',
+              top: '1px',
               left: '50%',
-              transform: 'translateX(3px)',
-              fontSize: '1.20rem',
+              transform: 'translateX(2px)',
+              fontSize: '0.95rem',
               fontFamily: "'Courier New', monospace",
               fontWeight: 700,
               color: '#fff',
-              background: 'rgba(0,0,0,0.55)',
-              padding: '0 2px',
-              lineHeight: 1.3,
+              background: 'rgba(0,0,0,0.65)',
+              borderRadius: '2px',
+              padding: '0 3px',
+              lineHeight: 1.2,
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
               userSelect: 'none',
+              zIndex: 2,
             }}
           >0</span>
         </div>

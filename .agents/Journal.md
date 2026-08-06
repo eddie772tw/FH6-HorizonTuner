@@ -15,6 +15,22 @@
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
+## 2026-08-06 - 胎溫分佈圖 (`TireRadar.tsx`) 純 CSS 流體排版與雙向高度自適應充滿重構
+
+**學習點 (Learning):**
+1. **擺脫 React State 異步尺寸拉扯 (Zero-State Canvas Buffer Synchronization)**：
+   - 舊做法在 `ResizeObserver` 內執行 `setRadarSize` 觸發 React State 重繪，導致視窗縮放/放大時出現 DOM 時序非同步與暴膨裁切。
+   - 重構方案：
+     1. 移除 `radarSize` React State，全面改為**純 CSS 流體比例分劃 (雷達 38% / 資訊 62%)**。
+     2. `ResizeObserver` 專注於同步 `rCanvas` 與 `tCanvas` 的實體 Buffer 像素尺寸 (`width / height`)，做到 0ms 延遲的高畫質響應式縮放與擠壓。
+2. **胎溫圖垂直高度全自適應充滿 (Vertical Height Auto-Filling)**：
+   - 移除固定 28px 高度限制，改用 `flex-grow-1` (`height: 100%`) 垂直充滿右側欄位所有剩餘高度，徹底消除卡片中央巨大的空白區。
+   - ANG 與 RAT 數據標頭採用 `1.45rem` 等寬粗體大字體高對比呈現，胎溫直方圖與高低溫線段動態依 `th = parent.clientHeight` 等比例拉伸，視覺效果大氣且層次豐富。
+
+**後續行動 (Action):**
+- 包含正圓 Canvas 與視訊圖表的卡片組件，一律採用「純 CSS 流體比例分劃 + ResizeObserver 純 Buffer 同步」，且內部 Canvas 容器應設定 `flex-grow-1` 自適應充滿垂直空間，防範中央空白。
+
+---
 
 ## 2026-08-06 - 診斷主控台 (`DiagnosticConsole.tsx`) 正規 Bootstrap Offcanvas 模式遷移
 
