@@ -1648,6 +1648,19 @@
 **後續行動 (Action):**
 - 遙測數據分析或過濾計算時，一律由 `TimestampMS` 差值動態計算 $\Delta T$，勿尋找獨立 `DeltaT` / `DataPacketId` 欄位。
 
+---
+
+## 2026-08-06 - telemetry-udp-protocol 技能結構模組化拆分
+
+**學習點 (Learning):**
+1. **技能參考資料子模組化 (Skill Reference Subdocument Pattern)**：
+   - 將全數 324 位元組 (0 ~ 323 Bytes) 的 41 項欄位名稱、位址、物理定義、單位換算與專案使用狀態對照表，抽離至獨立參考文件 [.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)。
+   - 保持主 [.agents/skills/telemetry-udp-protocol/SKILL.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/telemetry-udp-protocol/SKILL.md) 檔簡潔輕量（低於 100 行），提升 Agent 讀取與理解效率。
+
+**後續行動 (Action):**
+- 查閱遙測封包個別欄位使用狀態時，直接檢視 `references/packet_format_reference.md`。
+
+
 
 
 

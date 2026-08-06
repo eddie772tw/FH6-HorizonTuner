@@ -8,10 +8,10 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 ## 核心原則
 
 1. **Agent 遵循與維護義務**：
-   - 所有 Agent 在開發、重構或維護前端 UI 組件、頁面佈局與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本 Skill 與 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 規格書**。
+   - 所有 Agent 在開發、重構或維護前端 UI 組件、頁面佈局與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本 Skill 與 [HALFMOON_SPECIFICATION.md] 規格書**。
 
 2. **雙層架構與語意化 CSS 變數權杖 (Design Tokens)**：
-   - 核心框架使用 **Halfmoon CSS v2.0.2**（Layer 1），覆蓋與皮膚調整於 `src/App.css`（Layer 2）。詳細元件對照可參閱 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md)。
+   - 核心框架使用 **Halfmoon CSS v2.0.2**（Layer 1），覆蓋與皮膚調整於 `src/App.css`（Layer 2）。詳細元件對照可參閱 [HALFMOON_SPECIFICATION.md]。
    - **禁止硬編碼顏色**：所有背景色、文字色、邊框與陰影必須使用語意化變數（如 `var(--glass-bg)`, `var(--text-primary)`, `var(--surface-1)`, `var(--primary)`），嚴禁於 inline style 硬編碼 `#ffffff` 或 `#000000`。
 
 3. **防閃爍 (Anti-FOUC) 護欄**：
@@ -32,7 +32,7 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 
 ## 組件、佈局與 Helper 選用手冊
 
-完整對照手冊請全盤參考 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md)。
+完整對照手冊請全盤參考 [HALFMOON_SPECIFICATION.md]。
 
 ### 1. 面板與容器 (Card & Panels)
 * 靜態儀表 / 調校精靈步驟容器：`<div className="glass-panel p-4">...</div>`
@@ -74,7 +74,7 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 1. **樣式與規格遵循檢查**：
    - 檢查組件內是否有硬編碼顏色、Emoji 圖示或違規的 hover 動畫。
    - 確認主色彩使用 `var(--primary)`，語意文字使用 `var(--text-primary)` / `var(--text-secondary)`。
-   - 確認變更符合 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 規範。
+   - 確認變更符合 [HALFMOON_SPECIFICATION.md] 規範。
 2. **單元測試驗證**：
    - 從專案根目錄執行前端測試：
      ```bash
