@@ -177,7 +177,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       styleTag.id = 'custom-theme-css';
       document.head.appendChild(styleTag);
     }
-    // SEC-FIX: Use textContent instead of innerHTML to prevent XSS
     styleTag.textContent = themeSettings.customCSS;
 
     // Save to LocalStorage

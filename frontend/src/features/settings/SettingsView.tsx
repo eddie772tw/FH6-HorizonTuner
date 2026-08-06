@@ -157,10 +157,11 @@ const SettingsView: React.FC = () => {
               <h4 style={sectionTitleStyle}>{t("Language Settings")}</h4>
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'var(--text-primary)', fontSize: '0.9rem' }}>{t("Language")}</strong>
+                  <label htmlFor="settings-language" style={{ display: 'block', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Language")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Select application display language.")}</span>
                 </div>
                 <select 
+                  id="settings-language"
                   value={settings.language} 
                   onChange={(e) => updateSettings({ language: e.target.value })}
                   style={selectStyle}
@@ -210,10 +211,11 @@ const SettingsView: React.FC = () => {
                 
                 <div style={settingRowStyle}>
                   <div>
-                    <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Telemetry IP")}</strong>
+                    <label htmlFor="settings-telemetry-ip" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Telemetry IP")}</label>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("IP address to listen for Forza UDP telemetry packets.")}</span>
                   </div>
                   <input 
+                    id="settings-telemetry-ip"
                     type="text" 
                     value={settings.telemetry_ip || '0.0.0.0'}
                     onChange={(e) => updateSettings({ telemetry_ip: e.target.value })}
@@ -233,10 +235,11 @@ const SettingsView: React.FC = () => {
 
                 <div style={settingRowStyle}>
                   <div>
-                    <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Telemetry Port")}</strong>
+                    <label htmlFor="settings-telemetry-port" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Telemetry Port")}</label>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Port to listen for Forza UDP telemetry packets (Default: 8000).")}</span>
                   </div>
                   <input 
+                    id="settings-telemetry-port"
                     type="number" 
                     value={settings.telemetry_port || 8000}
                     onChange={(e) => updateSettings({ telemetry_port: parseInt(e.target.value) || 8000 })}
@@ -262,10 +265,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Speed")}</strong>
+                  <label htmlFor="settings-unit-speed" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Speed")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for current speed, top speed, and gearing graphs.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-speed"
                   value={settings.units.speed} 
                   onChange={(e) => handleUnitChange('speed', e.target.value)}
                   style={selectStyle}
@@ -277,10 +281,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Weight")}</strong>
+                  <label htmlFor="settings-unit-weight" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Weight")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for vehicle parameters and tuning calculator.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-weight"
                   value={settings.units.weight} 
                   onChange={(e) => handleUnitChange('weight', e.target.value)}
                   style={selectStyle}
@@ -292,10 +297,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Temperature")}</strong>
+                  <label htmlFor="settings-unit-temperature" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Temperature")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for tire temperature and all engine temperature settings.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-temperature"
                   value={settings.units.temperature} 
                   onChange={(e) => handleUnitChange('temperature', e.target.value)}
                   style={selectStyle}
@@ -307,10 +313,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Ride Height")}</strong>
+                  <label htmlFor="settings-unit-rideHeight" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Ride Height")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for suspension ride height sliders.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-rideHeight"
                   value={settings.units.rideHeight} 
                   onChange={(e) => handleUnitChange('rideHeight', e.target.value)}
                   style={selectStyle}
@@ -332,10 +339,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Tire Pressure")}</strong>
+                  <label htmlFor="settings-unit-tirePressure" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Tire Pressure")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for four-wheel tire pressure tuning and live telemetry.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-tirePressure"
                   value={settings.units.tirePressure} 
                   onChange={(e) => handleUnitChange('tirePressure', e.target.value)}
                   style={selectStyle}
@@ -348,10 +356,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Boost Pressure")}</strong>
+                  <label htmlFor="settings-unit-boostPressure" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Boost Pressure")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for the boost gauge on the dashboard.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-boostPressure"
                   value={settings.units.boostPressure} 
                   onChange={(e) => handleUnitChange('boostPressure', e.target.value)}
                   style={selectStyle}
@@ -369,10 +378,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Spring Rate")}</strong>
+                  <label htmlFor="settings-unit-springRate" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Spring Rate")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for spring stiffness sliders and calculators.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-springRate"
                   value={settings.units.springRate} 
                   onChange={(e) => handleUnitChange('springRate', e.target.value)}
                   style={selectStyle}
@@ -384,10 +394,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Suspension Force")}</strong>
+                  <label htmlFor="settings-unit-suspensionForce" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Suspension Force")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for anti-roll bars or suspension load analysis.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-suspensionForce"
                   value={settings.units.suspensionForce} 
                   onChange={(e) => handleUnitChange('suspensionForce', e.target.value)}
                   style={selectStyle}
@@ -404,10 +415,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Power")}</strong>
+                  <label htmlFor="settings-unit-power" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Power")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for vehicle parameters and dashboard max horsepower.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-power"
                   value={settings.units.power} 
                   onChange={(e) => handleUnitChange('power', e.target.value)}
                   style={selectStyle}
@@ -420,10 +432,11 @@ const SettingsView: React.FC = () => {
 
               <div style={settingRowStyle}>
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Torque")}</strong>
+                  <label htmlFor="settings-unit-torque" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Torque")}</label>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for dyno torque curves and live torque readout.")}</span>
                 </div>
                 <select 
+                  id="settings-unit-torque"
                   value={settings.units.torque} 
                   onChange={(e) => handleUnitChange('torque', e.target.value)}
                   style={selectStyle}

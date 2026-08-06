@@ -32,3 +32,6 @@
 ## 2024-08-05 - Avoid .forEach and Object allocation in 60Hz Render Loops
 **Learning:** In high-frequency rendering loops (like HUD telemetry updates running at 60Hz), using functional iterations (e.g., `[].forEach`, `Object.keys().forEach`) or allocating objects dynamically every frame creates significant Garbage Collection (GC) pressure, causing visual stuttering and frame drops.
 **Action:** Always replace `.forEach` with native `for` loops, pre-compute keys outside the render loop instead of calling `Object.keys()`, and use pre-allocated static variables or objects instead of creating zero-values (like `{x: 0, y: 0}`) on the fly.
+## 2025-03-10 - Avoid Higher-Order Array Methods in Large Array Processors
+**Learning:** Chained array methods like `.filter().map()` or nested `.forEach` loops inside React hooks or utility functions that process large sets of data (like historical telemetry points in `ChartEditModal.tsx` or `tuningDiagnosis.ts`) cause excessive memory allocations and GC spikes. This leads to noticeable UI stuttering when charts update or calculations run.
+**Action:** Always replace `.forEach()`, `.map()`, `.filter()`, and `.reduce()` with standard `for` loops when handling potentially large arrays. For example, merge a map/reduce combination into a single loop accumulator to improve computational throughput and reduce memory footprint.

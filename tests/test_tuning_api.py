@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 
 # Make sure main is importable
 import sys
@@ -30,6 +29,9 @@ def test_tuning_path_traversal_get():
 
     # First, let's create a "secret" file outside TUNINGS_DIR just to see if we can read it without our fix
     # but we can just check what file path the backend attempts to construct
+    secret_file_path = os.path.join(TUNINGS_DIR, "..", "secret-test.json")
+    with open(secret_file_path, "w") as f:
+        json.dump({"secret": "this should not be readable"}, f)
 
     # If the fix works, '.../../../secret' will become 'secret'
     # So it will look for 'TUNINGS_DIR/secret-test.json' instead of somewhere else
@@ -73,6 +75,8 @@ def test_tuning_path_traversal_get():
     # Clean up the test file
     if os.path.exists(file_path):
         os.remove(file_path)
+    if os.path.exists(secret_file_path):
+        os.remove(secret_file_path)
 
 
 def test_tuning_path_traversal_save():
