@@ -6,9 +6,14 @@ import { BasicCarInfo } from './components/BasicCarInfo';
 import { AdjustabilityLimits } from './components/AdjustabilityLimits';
 import { AdvancedGeometry } from './components/AdvancedGeometry';
 import { DynoChart } from './components/DynoChart';
-import { activeTabStyle, inactiveTabStyle, btnStyle } from './components/CommonStyles';
 
-const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setActiveTab }) => {
+interface CarParamsViewProps {
+  subTab?: 'config' | 'dyno';
+  setSubTab?: (tab: 'config' | 'dyno') => void;
+  setActiveTab?: (tab: any) => void;
+}
+
+const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab, setActiveTab }) => {
   const {
     carId, setCarId, carName, carParams, setCarParams, saveCarParams,
     clearDynoCurve, importDynoValues, updateSettings, isLoading,
@@ -23,7 +28,10 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
   const { data: telemetryData } = useTelemetry();
   
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
-  const [subTab, setSubTab] = React.useState<'config' | 'dyno'>('config');
+  const [internalSubTab, setInternalSubTab] = React.useState<'config' | 'dyno'>('config');
+  const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
+  const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
+
   
   // Guided Dyno wizard states
   const [testState, setTestState] = React.useState<'ready' | 'waiting' | 'recording' | 'completed'>('ready');
@@ -321,75 +329,100 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', paddingRight: '0.5rem' }}>
+    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
       
-      {/* Top Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-1)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid var(--divider)' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{t("Car Parameters")}</h2>
-          <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={subTab === 'config' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('config')} aria-current={subTab === 'config' ? 'page' : undefined}>{t("Profile Configuration")}</button>
-            <button style={subTab === 'dyno' ? activeTabStyle : inactiveTabStyle} onClick={() => setSubTab('dyno')} aria-current={subTab === 'dyno' ? 'page' : undefined}>{t("Live Dyno Curve")}</button>
+      {/* Standardized Header Banner (Aligned with OverlayView) */}
+      <div className="border-bottom pb-3 mb-2 flex-shrink-0">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <div className="d-flex align-items-center gap-3 mb-1">
+              <h2 className="text-primary fs-4 fw-bold m-0" style={{ letterSpacing: '0.5px' }}>
+                {t("Car Parameters & Dyno")}
+              </h2>
+              {renderSaveStatus()}
+            </div>
+            <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
+              {t("Configure vehicle specifications, weight distribution, spring limits, and real-time dyno curves")}
+            </p>
           </div>
-          <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} />
-          {renderSaveStatus()}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          <span>{t("Car Target:")}</span>
-          <select 
-            value={carId} 
-            onChange={(e) => setCarId(e.target.value)}
-            style={{ 
-              padding: '0.4rem 0.8rem', 
-              background: 'var(--input-bg)', 
-              color: 'var(--input-text)', 
-              border: '1px solid var(--glass-border)', 
-              borderRadius: '4px',
-              fontWeight: 'normal',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            {!carsWithParams.some((c: any) => c.id === carId) && carId && (
-              <option value={carId}>
-                {carName} (ID: {carId}) {t("*Unsaved Parameters*")}
-              </option>
-            )}
-            {carsWithParams.map((car: any) => (
-              <option key={car.id} value={car.id}>
-                {car.name} (ID: {car.id})
-              </option>
-            ))}
-          </select>
+
+          <div className="d-flex align-items-center gap-3">
+            <ul className="nav nav-pills gap-1">
+              <li className="nav-item">
+                <button 
+                  className={`nav-link btn-sm py-1 px-3 ${subTab === 'config' ? 'active fw-bold' : 'text-body-secondary'}`}
+                  onClick={() => setSubTab('config')} 
+                  aria-current={subTab === 'config' ? 'page' : undefined}
+                >
+                  {t("Profile Configuration")}
+                </button>
+              </li>
+              <li className="nav-item">
+                <button 
+                  className={`nav-link btn-sm py-1 px-3 ${subTab === 'dyno' ? 'active fw-bold' : 'text-body-secondary'}`}
+                  onClick={() => setSubTab('dyno')} 
+                  aria-current={subTab === 'dyno' ? 'page' : undefined}
+                >
+                  {t("Live Dyno Curve")}
+                </button>
+              </li>
+            </ul>
+
+            <div className="vr opacity-25" style={{ height: '20px' }} />
+
+            <div className="d-flex align-items-center gap-2 fs-7 fw-semibold text-body-secondary">
+              <span>{t("Car Target:")}</span>
+              <select 
+                value={carId} 
+                onChange={(e) => setCarId(e.target.value)}
+                className="form-select form-select-sm"
+                style={{ width: 'auto', minWidth: '200px' }}
+              >
+                {!carsWithParams.some((c: any) => c.id === carId) && carId && (
+                  <option value={carId}>
+                    {carName} (ID: {carId}) {t("*Unsaved Parameters*")}
+                  </option>
+                )}
+                {carsWithParams.map((car: any) => (
+                  <option key={car.id} value={car.id}>
+                    {car.name} (ID: {car.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
       {subTab === 'config' ? (
-        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', flex: 1, overflowY: 'auto' }}>
-          <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>{t("Car Profile Configuration")}</h3>
+        <div className="flex-grow-1 overflow-auto p-2 d-flex flex-column gap-3">
+          <h3 className="text-primary fs-5 fw-bold m-0">{t("Car Profile Configuration")}</h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-            <BasicCarInfo 
-              t={t} 
-              settings={settings} 
-              carParams={carParams} 
-              updateParam={updateParam}
-              displayCarWeight={displayCarWeight}
-              displayMaxHp={displayMaxHp}
-              displayMaxTorque={displayMaxTorque}
-              handleWeightChange={handleWeightChange}
-              handleMaxHpChange={handleMaxHpChange}
-              handleMaxTorqueChange={handleMaxTorqueChange}
-              getPowerLabel={getPowerLabel}
-              getTorqueLabel={getTorqueLabel}
-            />
+          <div className="row g-4">
+            <div className="col-12 col-md-6">
+              <BasicCarInfo 
+                t={t} 
+                settings={settings} 
+                carParams={carParams} 
+                updateParam={updateParam}
+                displayCarWeight={displayCarWeight}
+                displayMaxHp={displayMaxHp}
+                displayMaxTorque={displayMaxTorque}
+                handleWeightChange={handleWeightChange}
+                handleMaxHpChange={handleMaxHpChange}
+                handleMaxTorqueChange={handleMaxTorqueChange}
+                getPowerLabel={getPowerLabel}
+                getTorqueLabel={getTorqueLabel}
+              />
+            </div>
             
-            <AdjustabilityLimits 
-              t={t}
-              carParams={carParams}
-              updateAdjust={updateAdjust}
-            />
+            <div className="col-12 col-md-6">
+              <AdjustabilityLimits 
+                t={t}
+                carParams={carParams}
+                updateAdjust={updateAdjust}
+              />
+            </div>
           </div>
 
           <AdvancedGeometry 
@@ -409,24 +442,12 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
 
           <span
             title={Object.keys(carParams.dyno_curve).length === 0 ? t("No dyno data available to import. Please run the dyno test first.") : undefined}
-            style={{ display: 'inline-block', width: '100%', cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer' }}
+            className="w-100 d-inline-block mt-2"
           >
             <button
               onClick={importDynoValues}
               disabled={Object.keys(carParams.dyno_curve).length === 0}
-              style={{
-                ...btnStyle,
-                background: Object.keys(carParams.dyno_curve).length === 0 ? 'var(--surface-2)' : 'var(--primary-glow)',
-                color: Object.keys(carParams.dyno_curve).length === 0 ? 'var(--text-secondary)' : 'var(--primary)',
-                border: '1px solid var(--primary)',
-                fontSize: '0.85rem',
-                padding: '0.4rem 0.75rem',
-                cursor: Object.keys(carParams.dyno_curve).length === 0 ? 'not-allowed' : 'pointer',
-                width: '100%',
-                textAlign: 'center',
-                marginTop: '0.5rem',
-                pointerEvents: Object.keys(carParams.dyno_curve).length === 0 ? 'none' : 'auto'
-              }}
+              className="btn btn-outline-primary w-100 py-2 fw-bold"
             >
               {t("📥 Import Max HP / Torque from Dyno (includes RPM)")}
             </button>
@@ -456,3 +477,4 @@ const CarParamsView: React.FC<{ setActiveTab?: (tab: any) => void }> = ({ setAct
 };
 
 export default CarParamsView;
+

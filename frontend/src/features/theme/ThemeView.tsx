@@ -12,37 +12,33 @@ const ThemeView: React.FC = () => {
   const { t } = useSettings();
 
   return (
-    <div style={{ padding: '2rem', color: 'var(--text-primary)', height: '100%', overflowY: 'auto' }}>
-      <div className="glass-panel" style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
+    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
+      
+      {/* Standardized Header Banner (Aligned with OverlayView) */}
+      <div className="border-bottom pb-3 mb-2 flex-shrink-0">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
+              {t("Theme Customization")}
+            </h2>
+            <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
+              {t("Personalize application skin, glassmorphism, accent colors, and custom CSS styling")}
+            </p>
+          </div>
 
-        {/* Title & Architecture Banner */}
-        <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.2rem' }}>
-          <h2 style={{ color: 'var(--primary)', margin: 0, textShadow: '0 0 10px var(--primary-glow)', fontSize: '1.8rem' }}>
-            {t('Theme Settings')}
-          </h2>
-          <div style={{
-            marginTop: '0.8rem',
-            padding: '0.65rem 1rem',
-            borderRadius: '8px',
-            background: 'var(--primary-glow)',
-            border: '1px solid var(--primary)',
-            fontSize: '0.85rem',
-            color: 'var(--text-secondary)',
-          }}>
-            <strong style={{ color: 'var(--text-primary)' }}>{t('CSS Engine')}: </strong>
-            {t('Halfmoon CSS v2.0.2')} + Glassmorphism Skin
-            &nbsp;|&nbsp;
-            <strong style={{ color: 'var(--text-primary)' }}>{t('Core Theme')}: </strong>
-            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
-              {(themeSettings.halfmoonCore || 'default').charAt(0).toUpperCase() +
-               (themeSettings.halfmoonCore || 'default').slice(1)}
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge text-bg-primary fs-7 px-3 py-2 fw-bold">
+              Halfmoon CSS • {themeSettings.mode.toUpperCase()}
             </span>
-            &nbsp;/&nbsp;
-            <span style={{ textTransform: 'capitalize' }}>{themeSettings.mode}</span>
           </div>
         </div>
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+      {/* Main Content Area */}
+      <div className="flex-grow-1 overflow-auto p-2">
+
+
+        <div className="d-flex flex-column gap-4">
           <AppearanceModePanel />
           <ColorPickerPanel />
           <PresetPanel />
@@ -55,3 +51,4 @@ const ThemeView: React.FC = () => {
 };
 
 export default ThemeView;
+

@@ -93,193 +93,115 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ onClose }) => {
   };
 
   return (
-    <div style={modalOverlayStyle}>
-      <div style={modalWindowStyle}>
-        {/* Header */}
-        <div style={modalHeaderStyle}>
-          <h3 style={{ margin: 0, color: 'var(--primary)', textShadow: '0 0 8px var(--primary-glow)' }}>
-            💻 {t("Diagnostic Log Console")}
-          </h3>
-          <button style={closeBtnStyle} onClick={onClose} aria-label={t("Close Console")}>&times;</button>
-        </div>
+    <div className="offcanvas offcanvas-bottom show border-top glass-panel shadow-lg" tabIndex={-1} style={{ height: '52vh', zIndex: 1050, bottom: 0, left: 0, right: 0, position: 'fixed' }}>
+      
+      {/* Header */}
+      <div className="offcanvas-header border-bottom px-4 py-2.5 d-flex justify-content-between align-items-center">
+        <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0 d-flex align-items-center gap-2">
+          {t("Diagnostic Log Console")}
+        </h5>
+        <button 
+          type="button" 
+          className="btn-close" 
+          onClick={onClose} 
+          aria-label={t("Close Console")} 
+        />
+      </div>
 
-        {/* Toolbar */}
-        <div style={toolbarStyle}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Log Level")}:</span>
-              <select 
-                value={level} 
-                onChange={(e) => setLevel(e.target.value)} 
-                className="cyber-select"
-                style={{ padding: '0.3rem 0.6rem', minWidth: '100px' }}
-              >
-                <option value="ALL">{t("ALL")}</option>
-                <option value="INFO">{t("INFO")}</option>
-                <option value="WARNING">{t("WARNING")}</option>
-                <option value="ERROR">{t("ERROR")}</option>
-              </select>
-            </div>
+      {/* Toolbar */}
+      <div className="border-bottom px-4 py-2 d-flex justify-content-between align-items-center" style={{ background: 'var(--surface-1)' }}>
+        <div className="d-flex gap-4 align-items-center">
+          <div className="d-flex align-items-center gap-2">
+            <label className="form-label mb-0 text-body-secondary fs-7">{t("Log Level")}:</label>
+            <select 
+              value={level} 
+              onChange={(e) => setLevel(e.target.value)} 
+              className="form-select form-select-sm"
+              style={{ width: 'auto', minWidth: '110px' }}
+            >
+              <option value="ALL">{t("ALL")}</option>
+              <option value="INFO">{t("INFO")}</option>
+              <option value="WARNING">{t("WARNING")}</option>
+              <option value="ERROR">{t("ERROR")}</option>
+            </select>
+          </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-              <input 
-                type="checkbox" 
-                checked={autoScroll} 
-                onChange={(e) => setAutoScroll(e.target.checked)} 
-                style={{ accentColor: 'var(--primary)' }}
-              />
+          <div className="form-check mb-0">
+            <input 
+              type="checkbox" 
+              className="form-check-input"
+              id="chk-auto-scroll"
+              checked={autoScroll} 
+              onChange={(e) => setAutoScroll(e.target.checked)} 
+            />
+            <label className="form-check-label fs-7 text-body-secondary" htmlFor="chk-auto-scroll">
               {t("Auto Scroll")}
-            </label>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-              <input 
-                type="checkbox" 
-                checked={isPaused} 
-                onChange={(e) => setIsPaused(e.target.checked)} 
-                style={{ accentColor: 'var(--primary)' }}
-              />
-              {t("Pause")}
             </label>
           </div>
 
-          <button 
-            onClick={handleClearLogs} 
-            className="cyber-btn-glow"
-            style={clearBtnStyle}
-          >
-            {t("Clear Logs")}
-          </button>
+          <div className="form-check mb-0">
+            <input 
+              type="checkbox" 
+              className="form-check-input"
+              id="chk-pause"
+              checked={isPaused} 
+              onChange={(e) => setIsPaused(e.target.checked)} 
+            />
+            <label className="form-check-label fs-7 text-body-secondary" htmlFor="chk-pause">
+              {t("Pause")}
+            </label>
+          </div>
         </div>
 
-        {/* Console Body */}
-        <div style={consoleBodyStyle}>
-          {errorMsg && (
-            <div style={{ color: '#ff1744', padding: '10px', fontSize: '0.9rem', borderBottom: '1px solid rgba(255,23,68,0.2)', backgroundColor: 'rgba(255,23,68,0.05)' }}>
-              {errorMsg}
-            </div>
-          )}
-          <pre 
-            ref={consoleRef} 
-            style={consoleOutputStyle}
-          >
-            {logs.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', padding: '20px', textAlign: 'center' }}>
-                -- {t("No log messages matching filter.")} --
-              </div>
-            ) : (
-              logs.map((entry, idx) => (
-                <span key={idx} style={getLogEntryStyle(entry)}>
-                  {entry.timestamp && <span style={{ color: '#888', marginRight: '8px' }}>{entry.timestamp}</span>}
-                  {entry.level && (
-                    <span style={{ 
-                      marginRight: '8px', 
-                      fontWeight: 'bold', 
-                      fontSize: '0.8rem',
-                      padding: '1px 4px',
-                      borderRadius: '3px',
-                      backgroundColor: 'rgba(255,255,255,0.05)' 
-                    }}>
-                      [{entry.level}]
-                    </span>
-                  )}
-                  {entry.logger && <span style={{ color: 'var(--primary)', marginRight: '8px' }}>{entry.logger}:</span>}
-                  <span>{entry.message}</span>
-                </span>
-              ))
-            )}
-          </pre>
-        </div>
+        <button 
+          onClick={handleClearLogs} 
+          className="btn btn-outline-danger btn-sm fw-bold"
+        >
+          {t("Clear Logs")}
+        </button>
       </div>
+
+      {/* Offcanvas Body */}
+      <div className="offcanvas-body p-0 d-flex flex-column flex-grow-1 overflow-hidden" style={{ background: '#050508' }}>
+        {errorMsg && (
+          <div className="alert alert-danger mb-0 rounded-0 py-2 px-3 fs-7">
+            {errorMsg}
+          </div>
+        )}
+        <pre 
+          ref={consoleRef} 
+          className="p-3 m-0 flex-grow-1 overflow-auto text-light"
+          style={{
+            fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace",
+            fontSize: '0.85rem',
+            lineHeight: '1.5'
+          }}
+        >
+          {logs.length === 0 ? (
+            <div className="text-body-secondary p-4 text-center">
+              -- {t("No log messages matching filter.")} --
+            </div>
+          ) : (
+            logs.map((entry, idx) => (
+              <span key={idx} style={getLogEntryStyle(entry)}>
+                {entry.timestamp && <span className="text-secondary me-2">{entry.timestamp}</span>}
+                {entry.level && (
+                  <span className="me-2 fw-bold badge bg-secondary bg-opacity-25 fs-8">
+                    [{entry.level}]
+                  </span>
+                )}
+                {entry.logger && <span className="text-primary me-2">{entry.logger}:</span>}
+                <span>{entry.message}</span>
+              </span>
+            ))
+          )}
+        </pre>
+      </div>
+
     </div>
   );
 };
 
-// Inline Styles
-const modalOverlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.75)',
-  backdropFilter: 'blur(5px)',
-  zIndex: 1000,
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  padding: '2rem',
-};
-
-const modalWindowStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: '900px',
-  height: '80vh',
-  backgroundColor: 'var(--glass-bg)',
-  backdropFilter: 'blur(var(--glass-blur))',
-  border: '1px solid var(--primary)',
-  boxShadow: '0 0 20px var(--primary-glow)',
-  borderRadius: '12px',
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-};
-
-const modalHeaderStyle: React.CSSProperties = {
-  padding: '1rem 1.5rem',
-  borderBottom: '1px solid var(--divider)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-};
-
-const closeBtnStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: 'var(--text-secondary)',
-  fontSize: '1.8rem',
-  cursor: 'pointer',
-  padding: 0,
-  lineHeight: 1,
-  transition: 'color 0.2s',
-};
-
-const toolbarStyle: React.CSSProperties = {
-  padding: '0.8rem 1.5rem',
-  borderBottom: '1px solid var(--divider)',
-  background: 'var(--surface-1)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-};
-
-const clearBtnStyle: React.CSSProperties = {
-  background: 'rgba(255,0,60,0.1)',
-  border: '1px solid rgba(255,0,60,0.3)',
-  color: '#ff003c',
-  padding: '0.4rem 1rem',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-  fontWeight: 'bold',
-};
-
-const consoleBodyStyle: React.CSSProperties = {
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-  background: '#050508',
-};
-
-const consoleOutputStyle: React.CSSProperties = {
-  flex: 1,
-  margin: 0,
-  padding: '1.2rem',
-  overflowY: 'auto',
-  fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace",
-  fontSize: '0.85rem',
-  lineHeight: '1.5',
-  color: '#f0f0f0',
-};
 
 export default DiagnosticConsole;
+

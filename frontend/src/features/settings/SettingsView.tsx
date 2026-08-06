@@ -48,123 +48,69 @@ const SettingsView: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--primary)' }}>
+      <div className="d-flex justify-content-center align-items-center h-100 text-primary">
         <h3>{t("Loading Settings...")}</h3>
       </div>
     );
   }
 
-  const selectStyle: React.CSSProperties = {
-    background: 'var(--input-bg)',
-    color: 'var(--input-text)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: '6px',
-    padding: '0.5rem 0.8rem',
-    fontSize: '0.9rem',
-    width: '170px',
-    outline: 'none',
-    cursor: 'pointer',
-    transition: 'border-color 0.2s',
-  };
-
-  const settingRowStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: '0.8rem',
-    borderBottom: '1px solid var(--divider)',
-  };
-
-  const sectionStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  };
-
-  const sectionTitleStyle: React.CSSProperties = {
-    margin: 0,
-    color: 'var(--primary)',
-    fontSize: '1.05rem',
-    fontWeight: 600,
-    borderBottom: '1px solid var(--divider-md)',
-    paddingBottom: '0.4rem',
-  };
-
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', paddingRight: '0.5rem' }}>
+    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
       
-      {/* Top Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{t("System Settings")}</h2>
-        </div>
-        
-        {/* Preset Buttons */}
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button 
-            onClick={() => applyPreset('metric')}
-            style={{
-              background: 'var(--primary-glow)',
-              border: '1px solid var(--primary)',
-              color: 'var(--primary)',
-              padding: '0.4rem 1rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              transition: 'all 0.3s',
-            }}
-          >
-            {t("All Metric")}
-          </button>
-          <button 
-            onClick={() => applyPreset('imperial')}
-            style={{
-              background: 'rgba(255, 0, 60, 0.1)',
-              border: '1px solid var(--secondary)',
-              color: 'var(--secondary)',
-              padding: '0.4rem 1rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              transition: 'all 0.3s',
-            }}
-          >
-            {t("All Imperial")}
-          </button>
+      {/* Standardized Header Banner (Aligned with OverlayView) */}
+      <div className="border-bottom pb-3 mb-2 flex-shrink-0">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
+              {t("System Settings")}
+            </h2>
+            <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
+              {t("Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.")}
+            </p>
+          </div>
+          
+          {/* Preset Buttons */}
+          <div className="d-flex gap-2">
+            <button 
+              onClick={() => applyPreset('metric')}
+              className="btn btn-outline-primary fw-bold px-3 py-2"
+            >
+              {t("All Metric")}
+            </button>
+            <button 
+              onClick={() => applyPreset('imperial')}
+              className="btn btn-outline-danger fw-bold px-3 py-2"
+            >
+              {t("All Imperial")}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Settings Panel */}
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, overflowY: 'auto' }}>
-        <div>
-          <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>{t("System Settings & Unit Conversion")}</h3>
-          <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            {t("Adjust unit conversions for the tuning tool. All changes are saved automatically.")}
-          </p>
-        </div>
+      <div className="flex-grow-1 overflow-auto p-2">
 
-        <hr style={{ borderColor: 'rgba(255,255,255,0.08)', margin: 0 }} />
+        <hr className="my-3" />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+        <div className="row g-4">
           
           {/* Left Column: General & Basic Units */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="col-12 col-md-6 d-flex flex-column gap-4">
             
             {/* Language Settings */}
-            <div style={sectionStyle}>
-              <h4 style={sectionTitleStyle}>{t("Language Settings")}</h4>
-              <div style={settingRowStyle}>
+            <div className="d-flex flex-column gap-2">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Language Settings")}</h5>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-language" style={{ display: 'block', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Language")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Select application display language.")}</span>
+                  <label htmlFor="settings-language" className="form-label fw-bold mb-0 fs-6">{t("Language")}</label>
+                  <div className="form-text fs-7">{t("Select application display language.")}</div>
                 </div>
                 <select 
                   id="settings-language"
                   value={settings.language} 
                   onChange={(e) => updateSettings({ language: e.target.value })}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   {availableLanguages.map(lang => (
                     <option key={lang.code} value={lang.code}>{lang.name}</option>
@@ -173,154 +119,140 @@ const SettingsView: React.FC = () => {
               </div>
             </div>
 
-            {/* General Settings */}
-            <div style={sectionStyle}>
-              <h4 style={sectionTitleStyle}>{t("General Recording Settings")}</h4>
+            {/* General Recording Settings */}
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("General Recording Settings")}</h5>
               
-              <label style={{ ...settingRowStyle, cursor: 'pointer' }}>
+              <div className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3">
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Dyno Recording")}</strong>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Automatically collect and update engine output curves during full throttle acceleration.")}</span>
+                  <label className="form-check-label fw-bold fs-6" htmlFor="chk-dyno-rec">{t("Dyno Recording")}</label>
+                  <div className="form-text fs-7">{t("Automatically collect and update engine output curves during full throttle acceleration.")}</div>
                 </div>
                 <input 
                   type="checkbox" 
+                  className="form-check-input ms-auto fs-5"
+                  id="chk-dyno-rec"
                   checked={settings.dyno_recording}
                   onChange={(e) => updateSettings({ dyno_recording: e.target.checked })}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                 />
-              </label>
+              </div>
 
-              <label style={{ ...settingRowStyle, cursor: 'pointer' }}>
+              <div className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3">
                 <div>
-                  <strong style={{ display: 'block', color: 'white', fontSize: '0.9rem' }}>{t("Race Recording")}</strong>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Record suspension and grip data during races or driving for post-race analysis.")}</span>
+                  <label className="form-check-label fw-bold fs-6" htmlFor="chk-race-rec">{t("Race Recording")}</label>
+                  <div className="form-text fs-7">{t("Record suspension and grip data during races or driving for post-race analysis.")}</div>
                 </div>
                 <input 
                   type="checkbox" 
+                  className="form-check-input ms-auto fs-5"
+                  id="chk-race-rec"
                   checked={settings.race_recording}
                   onChange={(e) => updateSettings({ race_recording: e.target.checked })}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                 />
-              </label>
+              </div>
+            </div>
 
-              <hr style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '0.5rem 0' }} />
-
-              {/* Telemetry UDP Settings */}
-              <div style={sectionStyle}>
-                <h4 style={sectionTitleStyle}>{t("Telemetry Receiver Settings")}</h4>
-                
-                <div style={settingRowStyle}>
-                  <div>
-                    <label htmlFor="settings-telemetry-ip" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Telemetry IP")}</label>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("IP address to listen for Forza UDP telemetry packets.")}</span>
-                  </div>
-                  <input 
-                    id="settings-telemetry-ip"
-                    type="text" 
-                    value={settings.telemetry_ip || '0.0.0.0'}
-                    onChange={(e) => updateSettings({ telemetry_ip: e.target.value })}
-                    className="cyber-input"
-                    style={{ 
-                      width: '170px', 
-                      background: 'rgba(0,0,0,0.4)', 
-                      color: 'white', 
-                      border: '1px solid rgba(255,255,255,0.2)', 
-                      borderRadius: '6px', 
-                      padding: '0.5rem 0.8rem', 
-                      fontSize: '0.9rem',
-                      outline: 'none'
-                    }}
-                  />
+            {/* Telemetry UDP Receiver Settings */}
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Telemetry Receiver Settings")}</h5>
+              
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
+                <div>
+                  <label htmlFor="settings-telemetry-ip" className="form-label fw-bold mb-0 fs-6">{t("Telemetry IP")}</label>
+                  <div className="form-text fs-7">{t("IP address to listen for Forza UDP telemetry packets.")}</div>
                 </div>
+                <input 
+                  id="settings-telemetry-ip"
+                  type="text" 
+                  value={settings.telemetry_ip || '0.0.0.0'}
+                  onChange={(e) => updateSettings({ telemetry_ip: e.target.value })}
+                  className="form-control form-control-sm"
+                  style={{ width: '170px' }}
+                />
+              </div>
 
-                <div style={settingRowStyle}>
-                  <div>
-                    <label htmlFor="settings-telemetry-port" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Telemetry Port")}</label>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Port to listen for Forza UDP telemetry packets (Default: 8000).")}</span>
-                  </div>
-                  <input 
-                    id="settings-telemetry-port"
-                    type="number" 
-                    value={settings.telemetry_port || 8000}
-                    onChange={(e) => updateSettings({ telemetry_port: parseInt(e.target.value) || 8000 })}
-                    className="cyber-input"
-                    style={{ 
-                      width: '170px', 
-                      background: 'rgba(0,0,0,0.4)', 
-                      color: 'white', 
-                      border: '1px solid rgba(255,255,255,0.2)', 
-                      borderRadius: '6px', 
-                      padding: '0.5rem 0.8rem', 
-                      fontSize: '0.9rem',
-                      outline: 'none'
-                    }}
-                  />
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
+                <div>
+                  <label htmlFor="settings-telemetry-port" className="form-label fw-bold mb-0 fs-6">{t("Telemetry Port")}</label>
+                  <div className="form-text fs-7">{t("Port to listen for Forza UDP telemetry packets (Default: 8000).")}</div>
                 </div>
+                <input 
+                  id="settings-telemetry-port"
+                  type="number" 
+                  value={settings.telemetry_port || 8000}
+                  onChange={(e) => updateSettings({ telemetry_port: parseInt(e.target.value) || 8000 })}
+                  className="form-control form-control-sm"
+                  style={{ width: '170px' }}
+                />
               </div>
             </div>
 
             {/* Basic Units */}
-            <div style={sectionStyle}>
-              <h4 style={sectionTitleStyle}>{t("General Vehicle Units")}</h4>
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("General Vehicle Units")}</h5>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-speed" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Speed")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for current speed, top speed, and gearing graphs.")}</span>
+                  <label htmlFor="settings-unit-speed" className="form-label fw-bold mb-0 fs-6">{t("Speed")}</label>
+                  <div className="form-text fs-7">{t("Used for current speed, top speed, and gearing graphs.")}</div>
                 </div>
                 <select 
                   id="settings-unit-speed"
                   value={settings.units.speed} 
                   onChange={(e) => handleUnitChange('speed', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="kmh">{t("Metric (km/h)")}</option>
                   <option value="mph">{t("Imperial (mph)")}</option>
                 </select>
               </div>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-weight" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Weight")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for vehicle parameters and tuning calculator.")}</span>
+                  <label htmlFor="settings-unit-weight" className="form-label fw-bold mb-0 fs-6">{t("Weight")}</label>
+                  <div className="form-text fs-7">{t("Used for vehicle parameters and tuning calculator.")}</div>
                 </div>
                 <select 
                   id="settings-unit-weight"
                   value={settings.units.weight} 
                   onChange={(e) => handleUnitChange('weight', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="kg">{t("Metric (kg)")}</option>
                   <option value="lbs">{t("Imperial (lbs)")}</option>
                 </select>
               </div>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-temperature" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Temperature")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for tire temperature and all engine temperature settings.")}</span>
+                  <label htmlFor="settings-unit-temperature" className="form-label fw-bold mb-0 fs-6">{t("Temperature")}</label>
+                  <div className="form-text fs-7">{t("Used for tire temperature and all engine temperature settings.")}</div>
                 </div>
                 <select 
                   id="settings-unit-temperature"
                   value={settings.units.temperature} 
                   onChange={(e) => handleUnitChange('temperature', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="C">{t("Metric (Celsius °C)")}</option>
                   <option value="F">{t("Imperial (Fahrenheit °F)")}</option>
                 </select>
               </div>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-rideHeight" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Ride Height")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for suspension ride height sliders.")}</span>
+                  <label htmlFor="settings-unit-rideHeight" className="form-label fw-bold mb-0 fs-6">{t("Ride Height")}</label>
+                  <div className="form-text fs-7">{t("Used for suspension ride height sliders.")}</div>
                 </div>
                 <select 
                   id="settings-unit-rideHeight"
                   value={settings.units.rideHeight} 
                   onChange={(e) => handleUnitChange('rideHeight', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="cm">{t("Metric (cm)")}</option>
                   <option value="in">{t("Imperial (in)")}</option>
@@ -331,22 +263,23 @@ const SettingsView: React.FC = () => {
           </div>
 
           {/* Right Column: Pressures, Gearing & Engine Units */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="col-12 col-md-6 d-flex flex-column gap-4">
             
             {/* Pressure Settings */}
-            <div style={sectionStyle}>
-              <h4 style={sectionTitleStyle}>{t("Pressure Settings")}</h4>
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Pressure Settings")}</h5>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-tirePressure" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Tire Pressure")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for four-wheel tire pressure tuning and live telemetry.")}</span>
+                  <label htmlFor="settings-unit-tirePressure" className="form-label fw-bold mb-0 fs-6">{t("Tire Pressure")}</label>
+                  <div className="form-text fs-7">{t("Used for four-wheel tire pressure tuning and live telemetry.")}</div>
                 </div>
                 <select 
                   id="settings-unit-tirePressure"
                   value={settings.units.tirePressure} 
                   onChange={(e) => handleUnitChange('tirePressure', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="bar">{t("Metric (bar)")}</option>
                   <option value="psi">{t("Imperial (psi)")}</option>
@@ -354,16 +287,17 @@ const SettingsView: React.FC = () => {
                 </select>
               </div>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-boostPressure" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Boost Pressure")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for the boost gauge on the dashboard.")}</span>
+                  <label htmlFor="settings-unit-boostPressure" className="form-label fw-bold mb-0 fs-6">{t("Boost Pressure")}</label>
+                  <div className="form-text fs-7">{t("Used for the boost gauge on the dashboard.")}</div>
                 </div>
                 <select 
                   id="settings-unit-boostPressure"
                   value={settings.units.boostPressure} 
                   onChange={(e) => handleUnitChange('boostPressure', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="psi">{t("Imperial (psi)")}</option>
                   <option value="bar">{t("Metric (bar)")}</option>
@@ -372,36 +306,38 @@ const SettingsView: React.FC = () => {
               </div>
             </div>
 
-            {/* Gearing & Suspension */}
-            <div style={sectionStyle}>
-              <h4 style={sectionTitleStyle}>{t("Chassis & Mechanical Units")}</h4>
+            {/* Chassis & Mechanical Units */}
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Chassis & Mechanical Units")}</h5>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-springRate" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Spring Rate")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for spring stiffness sliders and calculators.")}</span>
+                  <label htmlFor="settings-unit-springRate" className="form-label fw-bold mb-0 fs-6">{t("Spring Rate")}</label>
+                  <div className="form-text fs-7">{t("Used for spring stiffness sliders and calculators.")}</div>
                 </div>
                 <select 
                   id="settings-unit-springRate"
                   value={settings.units.springRate} 
                   onChange={(e) => handleUnitChange('springRate', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="kgfmm">{t("Metric (kgf/mm)")}</option>
                   <option value="lbsin">{t("Imperial (lbs/in)")}</option>
                 </select>
               </div>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-suspensionForce" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Suspension Force")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for anti-roll bars or suspension load analysis.")}</span>
+                  <label htmlFor="settings-unit-suspensionForce" className="form-label fw-bold mb-0 fs-6">{t("Suspension Force")}</label>
+                  <div className="form-text fs-7">{t("Used for anti-roll bars or suspension load analysis.")}</div>
                 </div>
                 <select 
                   id="settings-unit-suspensionForce"
                   value={settings.units.suspensionForce} 
                   onChange={(e) => handleUnitChange('suspensionForce', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="kgf">{t("Metric (kgf)")}</option>
                   <option value="lbf">{t("Imperial (lbf)")}</option>
@@ -410,19 +346,20 @@ const SettingsView: React.FC = () => {
             </div>
 
             {/* Power & Torque */}
-            <div style={sectionStyle}>
-              <h4 style={sectionTitleStyle}>{t("Engine Power Output")}</h4>
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Engine Power Output")}</h5>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-power" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Power")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for vehicle parameters and dashboard max horsepower.")}</span>
+                  <label htmlFor="settings-unit-power" className="form-label fw-bold mb-0 fs-6">{t("Power")}</label>
+                  <div className="form-text fs-7">{t("Used for vehicle parameters and dashboard max horsepower.")}</div>
                 </div>
                 <select 
                   id="settings-unit-power"
                   value={settings.units.power} 
                   onChange={(e) => handleUnitChange('power', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="kw">{t("Kilowatt (kW)")}</option>
                   <option value="hp">{t("Imperial Horsepower (hp)")}</option>
@@ -430,16 +367,17 @@ const SettingsView: React.FC = () => {
                 </select>
               </div>
 
-              <div style={settingRowStyle}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-torque" style={{ display: 'block', color: 'white', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>{t("Torque")}</label>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Used for dyno torque curves and live torque readout.")}</span>
+                  <label htmlFor="settings-unit-torque" className="form-label fw-bold mb-0 fs-6">{t("Torque")}</label>
+                  <div className="form-text fs-7">{t("Used for dyno torque curves and live torque readout.")}</div>
                 </div>
                 <select 
                   id="settings-unit-torque"
                   value={settings.units.torque} 
                   onChange={(e) => handleUnitChange('torque', e.target.value)}
-                  style={selectStyle}
+                  className="form-select form-select-sm"
+                  style={{ width: '170px' }}
                 >
                   <option value="nm">{t("Newton-Meter (N·m)")}</option>
                   <option value="lbft">{t("Pound-Foot (lb-ft)")}</option>
@@ -457,4 +395,5 @@ const SettingsView: React.FC = () => {
 };
 
 export default SettingsView;
+
 

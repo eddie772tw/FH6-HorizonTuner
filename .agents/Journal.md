@@ -16,6 +16,146 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-06 - 全站 View 標頭標題、說明內文與右側按鈕區塊完美對齊 HUD 控制中心 (`OverlayView.tsx`) 規範
+
+**學習點 (Learning):**
+1. ** View 標頭大標題與說明內文標準化 (Standardized Header Title, Subtitle & Action Layout)**：
+   - 將全站所有帶標題區塊的 View (`TuningView`, `CarParamsView`, `SettingsView`, `ThemeView`) 標頭結構精準統一對齊 HUD 控制中心 (`OverlayView.tsx`)：
+     1. **大標題 (Title)**：`h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}`。
+     2. **說明內文 (Description)**：`p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}`。
+     3. **右側操作區 (Right Actions)**：對齊右側 `.d-flex.align-items-center.gap-2` 的 `.btn` (px-3 py-2 / px-4 py-2)、Nav Pills 與狀態 Badge 呈現。
+     4. **特例維護**：即時遙測 View (`TelemetryView.tsx`) 依規範維持專屬的高頻動態數據狀態標頭。
+
+**後續行動 (Action):**
+- 未來新增頁面 View 時，標頭強制採用 `OverlayView` 的標題 + 說明內文 + 右側操作區標準結構。
+
+---
+
+## 2026-08-06 - 全域導覽列 (`Navigation.tsx`) `overflow: visible` 徹底解鎖與選單裁切消除修復
+
+**學習點 (Learning):**
+1. **導覽列容器 `overflow: visible` 獨立豁免與下拉選單浮動保護 (Unclipped Floating Dropdown Menu)**：
+   - 診斷修復了先前全域 `.container-fluid { overflow-x: hidden !important; }` 無意中作用到了 `<nav>` 內部 `.container-fluid` 的重大陷阱。該溢出防護導致延伸出 `<nav>` 邊界層的下拉選單被裁剪，並引發了導覽列內部的錯誤垂直/水平滾動條。
+   - **修復方案**：在 `App.css` 顯式定義 `.navbar, .navbar .container-fluid { overflow: visible !important; }`，並將視圖層面的溢出防護範圍精準限制在 `main .container-fluid`。同時在 `Navigation.tsx` 中為 `<nav>` 與內層 `.container-fluid` 顯式聲明 `overflow: visible` 與 `z-index: 1050`。
+   - 二級下拉選單現在能無障礙懸浮彈出於頁面最上層，導覽列絕不再以任何形式從內部發生捲動。
+
+**後續行動 (Action):**
+- 維護導覽列或頁面頂部 Header 時，必須確保其父容器明確保留 `overflow: visible`，確保懸浮 Popup/Dropdown 順暢彈出不被裁剪。
+
+---
+
+## 2026-08-06 - 全域導覽列 (`Navigation.tsx`) 頂層矩形框與二級下拉選單雙重邊框修復
+
+**學習點 (Learning):**
+1. **導覽列與下拉選單卡片框徹底切除 (Unframed Navbar & Native Dropdown Menu)**：
+   - 診斷修復了 `Navigation.tsx` 中兩處誤用 `.glass-panel` 卡片類別帶來的框感：
+     1. **Navbar 本身**：移除 `.glass-panel` 圓角矩形邊框，改為貼齊頂部、背景透亮並帶單一底邊框 (`border-bottom`) 的滿版標準導覽列。
+     2. **二級下拉選單 (`.dropdown-menu`)**：移除 `.glass-panel` 與 `.border` 的重複邊框疊加，改為原生 Halfmoon 輕量晶透菜單 (`var(--surface-1)`)。
+
+**後續行動 (Action):**
+- 全域 Navigation 佈局維護時，切勿在 Navbar 本身或下拉選單外套用 `.glass-panel` 卡片邊框。
+
+---
+
+## 2026-08-06 - 全站 View 畫面呈現風格統一對齊 HUD 控制中心 (`OverlayView.tsx`) 規範
+
+**學習點 (Learning):**
+1. **全站一致性畫面呈現與佈局設計語言 (Full-Site Design Language Unification)**：
+   - 深入研究 HUD 控制中心 (`OverlayView.tsx`) 開闊流暢的視覺呈現後，將全站 6 大 View (`TelemetryView`, `TuningView`, `CarParamsView`, `OverlayView`, `SettingsView`, `ThemeView`) 畫面呈現樣式 100% 統一對齊。
+   - **獨立 Banner 標頭**：頂部標題、說明與操作按鈕呈現於獨立開闊無框區域（底部帶 `border-bottom pb-3 mb-2 flex-shrink-0` 分界線）。
+   - **無邊框內容區塊**：移除全站內容容器外包的強烈 `.card.glass-panel` 矩形盒邊框，改為 `flex-grow-1 overflow-auto p-2` 開闊佈局。
+   - **自適應寬度鎖定**：頂層統一賦予 `w-100 overflow-x-hidden overflow-y-auto`，確保 100% 響應式縮放，永不產生左右水平滾動條。
+
+**後續行動 (Action):**
+- 全站新增 View 或擴充子模組時，嚴格維護此統一畫面呈現規範（獨立 Banner Header + 無邊框開闊內容區塊 + 100% 自適應寬度）。
+
+---
+
+## 2026-08-06 - 全站 View 容器 100% 自適應寬度與溢出左右滾動條鎖死修復
+
+**學習點 (Learning):**
+1. **Bootstrap / Halfmoon `.row` 負 Margin 溢出與水平滾動條防護 (Horizontal Scrollbar Prevention)**：
+   - 診斷發現視窗最大化時 View 內部產生錯誤水平左右滾動條的根本原因：`.row` 預設帶有 `-1.5rem` 的負邊距（Negative Margin），在設有 `overflow-auto` 的 View 容器內引發超寬溢出。
+   - 重構方案：全站所有 6 大 View (`OverlayView`, `TelemetryView`, `TuningView`, `CarParamsView`, `SettingsView`, `ThemeView`) 頂層容器統一賦予 `w-100 overflow-x-hidden overflow-y-auto`；並在 `OverlayView` 的 `.row` 加上 `m-0 w-100`。
+   - 同時在 `App.css` 注入全局防護規則 `.container-fluid { max-width: 100%; overflow-x: hidden; }` 與 `.row { margin-left: 0; margin-right: 0; }`，徹底鎖死任何潛在水平溢出，100% 保證 View 自適應寬度縮放且永遠不出現左右卷軸。
+
+**後續行動 (Action):**
+- 撰寫包含 `.row` 的 View 或組件時，確保外層容器具有 `overflow-x-hidden` 或 `.row` 上加上 `m-0`，維護全站 100% 自適應寬度。
+
+---
+
+## 2026-08-06 - HUD 控制中心 (`OverlayView.tsx`) 6 大子 Grid 卡片外框完全移除修復
+
+**學習點 (Learning):**
+1. **子 Grid 卡片外框完全移除與純淨無邊框排版 (Card Border Removal for Pure Unframed Sub-grids)**：
+   - 修正了 `OverlayView.tsx` 中各個子 Grid 容器誤用 `.card.glass-panel` 所帶來的強烈矩形邊框感。
+   - 將 6 個子 Grid 容器全數替換為 `h-100 p-2 d-flex flex-column gap-3`，徹底切除矩形外框。
+   - 標頭保持底線分界 `border-bottom pb-2 m-0`，實現全站統一、無框開闊、極具空氣感與高級極客溫潤質感的大氣排版。
+
+**後續行動 (Action):**
+- HUD 控制中心之子 Grid 區塊維護時，切勿在外層包裹 `.card` 矩形框，維持無框獨立排版。
+
+---
+
+## 2026-08-06 - 手動還原舊版 HUD 控制中心 (`OverlayView.tsx`) 零視效變動無縫遷移至 Halfmoon v2 語法
+
+**學習點 (Learning):**
+1. **零排版/零視覺位移語法遷移原則 (Zero Layout Drift Syntax Migration)**：
+   - 對於手動還原之舊版 `OverlayView.tsx`，在嚴格保持「排版、內文、元件排列順序（3 欄 x 2 列共 6 板塊）、開闊無框 Header」1:1 零變動的前提下，完成 Halfmoon v2 原生 Class 語法遷移。
+   - 下拉選單改為 `.form-select.form-select-sm`、開關元件改為 `.form-check.form-switch` 搭配 `.form-check-input`、範圍滑桿改為 `.form-range`、按鈕與文字改為 `.btn` / `.badge` / `text-primary` / `text-body-secondary`。
+   - 完全清除了舊有 `rgba(0,0,0,0.5)`、`#ccc` 等硬編碼 Inline-Style，100% 完美融合至 Halfmoon 語義系統與 Core Theme 主題機制中。
+
+**後續行動 (Action):**
+- 保持開闊獨立 Header 與直觀 3-Column Grid 結構，未來擴充 Overlay 控制選項時優先採用 Halfmoon 原生 `.form-range` 與 `.form-check.form-switch`。
+
+---
+
+## 2026-08-06 - 全站 View 標頭去框開闊化與 HUD 儀表板控制中心經典 3-Column 重製前樣式完全還原
+
+**學習點 (Learning):**
+1. **標頭去卡片化與開闊視覺體驗 (Unframed Title Header Design)**：
+   - 全站 6 大 View (`TelemetryView`, `TuningView`, `CarParamsView`, `OverlayView`, `SettingsView`, `ThemeView`) 統一移除外包標題列的獨立 `.card` 矩形框，重構為開闊無框式標頭（`border-bottom pb-3 mb-2 flex-shrink-0`）。
+   - 標題與說明文字直接在獨立區域自然呈展，消除封閉盒感，顯著增強 UI 呼吸感與極客科技大氣感。
+2. **HUD 儀表板控制中心經典樣式完全還原 (`OverlayView.tsx`)**：
+   - 標頭：還原為無外框開闊標頭，左側標題與描述，右側 ACTIVE 狀態 Badge 與 Launch/Close Overlay 啟動按鈕。
+   - 板塊：從 Side-bar 抽離格式完全還原為重製前極度直觀、視覺對稱的 **3-Column / Grid 佈局**（Column 1: HUD Style & Author Settings / Column 2: Telemetry Cards Layout & Scaling / Column 3: Component Toggles & System Options）。
+
+**後續行動 (Action):**
+- 全站新增 View 或重構 Header 時，統一保持開闊無框獨立標頭風格，勿將 Title Header 硬套入 `.card` 矩形外框中。
+
+---
+
+## 2026-08-06 - 主 GUI 全分頁內部結構標準化與裝飾性 Emoji 大掃除
+
+**學習點 (Learning):**
+1. **極簡專業 UI 規範與裝飾性 Emoji 嚴格排除 (Strict Removal of Non-functional Emojis)**：
+   - 根據 `AGENTS.md` 規範：「嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示（請保持極簡專業視覺）」。
+   - 已對全站組件（包括 `Navigation.tsx` 下拉選單、`OverlayView.tsx` 側邊欄、`DiagnosticConsole.tsx` 標頭與 `TelemetryView.tsx` 提示框）中的所有非功能性裝飾 Emoji（如 📊, 📈, 🏎️, ⚙️, 🖥️, ⏱️, ⚡, 💻, ⏸️ 等）進行全面大掃除。
+   - 介面回歸極簡、專業、硬核科技質感，改以 Halfmoon 原生 Badge、純文字與視效襯底呈現。
+
+**後續行動 (Action):**
+- 嚴格遵守 AGENTS.md 守則，寫任何 TSX UI 組件或選單項目時，一律禁止硬編碼插入裝飾性 Emoji，確保視覺效果始終極簡與高度專業。
+
+---
+
+## 2026-08-06 - 主 GUI 全分頁內部結構標準化與 Navbar Dropdown 二級目錄快捷跳轉重構
+
+**學習點 (Learning):**
+1. **全域 Navbar Dropdown 二級目錄與 View 內部 Navs & Tabs 雙向同步 (Bi-directional Sub-tab Navigation)**：
+   - 在全域導航列 `Navigation.tsx` 導入 Halfmoon 原生 `.dropdown`, `.dropdown-menu`, `.dropdown-item` 結構。
+   - 由 `App.tsx` 維護 View 子頁面狀態 (`telemetrySubTab`, `tuningStep`, `carParamsSubTab`, `overlayCategory`) 並提供 `onSubTabJump` 跳轉處理常式。點擊頂部下拉菜單可從任意頁面跨頁直達指定的子分頁（例如從 `Telemetry` 頁面直達 `Tuning Setup` 的 `Step 3: Chassis`）；同時**完整保留** View 內部原有透過 `Navs and Tabs` / Stepper 的切換做法，兩者共存且雙向狀態完全同步。
+2. **三層容器架構與 UI 視覺階層規範 (3-Tier Page Composition Standard)**：
+   - 全站 8 大視圖統一收攏為「標頭 Navbar 卡片 (`card glass-panel px-4 py-3 border`)」+「主要內容區 (`card glass-panel flex-grow-1 overflow-auto p-4`)」的三層容器架構，消除頁面切換時的外邊距跳動與滾動軸拉扯感。
+   - `OverlayView` 重構為標準 Left-Sidebar + Right-Content 結構（分類: General / Displays / Gauges / Performance），大幅提升設定瀏覽效率。
+   - `DiagnosticConsole` 重構為 Halfmoon 原生底部滑出抽屜 (`.offcanvas.offcanvas-bottom`)，可在不遮擋全螢幕操作視線的前提下隨時監控日誌與連線狀態。
+3. **即時遙測 Dashboard 4 大卡片完整保護 (Telemetry Cards Protection)**：
+   - 在標準化 `TelemetryView` 頂欄佈局時，`subTab === 'live'` 下 4 個即時遙測卡片 (Driver Inputs, Vehicle Dynamics, Tire Grip, Suspension Travel) 的畫布幾何、2x2 Grid 結構與 60Hz+ UDP 高頻更新邏輯獲得 100% 完整保護，完全不受影響。
+
+**後續行動 (Action):**
+- 後續新增或擴充視圖時，統一採用三層頁面容器架構與 Halfmoon 原生元件（Navbar, Navs & Tabs, Sidebar, Offcanvas）。
+
+---
+
 ## 2026-08-06 - Step 2 齒比全檔位幾何步階二次重配微調與單元測試動態解耦
 
 **學習點 (Learning):**
@@ -1313,6 +1453,22 @@
    - 純函數解析不涉及任何同步阻塞 I/O，完全符合 UDP 60Hz+ 高頻效能規範。
    - 解耦後可以直接給予二進位 Byte Array 測試 `parse_telemetry_packet`，毋須透過 `DatagramProtocol` 模擬，測試更加純粹。
 
+
 **後續行動 (Action):**
 - 後續若有新增 UDP DataOut 欄位解析，可直接在 `parse_telemetry_packet` 中擴充，並於 `test_telemetry_listener.py` 補齊單元測試。
+
+---
+
+## 2026-08-06 - 前端 GUI 介面全面替換 Halfmoon v2 原生組件與 Layout 實施
+
+**學習點 (Learning):**
+1. **Halfmoon v2 原生 DOM 結構與純淨樣式原則 (Native Halfmoon v2 Markup Normalization)**：
+   - 全面清理散落於各 View 與 Component (`Navigation.tsx`, `DiagnosticConsole.tsx`, `SettingsView.tsx`, `ThemeView.tsx`, `CarParamsView.tsx`, `BasicCarInfo.tsx`, `TelemetryView.tsx`) 的冗餘 Inline Style 物件。
+   - 完全採用 Halfmoon 2 原生相容層標籤與類別：Navbar (`.navbar`, `.navbar-brand`, `.navbar-nav`, `.nav-link`), Card (`.card`, `.card-header`, `.card-body`), Form Controls (`.form-label`, `.form-select`, `.form-control`, `.form-check`, `.form-switch`, `.input-group`), Modal (`.modal`, `.modal-dialog`, `.modal-content`) 與 Layout Grid (`container-fluid`, `row`, `col-*`, `g-3`, `gap-3`)。
+2. **兩層式設計架構與主題變數整合 (Two-Layered Skin Architecture)**：
+   - 僅保留 `.glass-panel` 之毛玻璃特效與動態主題變數 (`data-bs-theme`, `data-bs-core`, `--primary` 等)，將視覺控制完全還原並委託給 Halfmoon 2 原生樣式系統，不僅畫面質感達到原生高級標準，可維護性亦得到顯著提升。
+
+**後續行動 (Action):**
+- 未來新增前端 UI 視圖或元件時，嚴禁自訂非標 control class 或使用大量 inline CSS style，應統一採用 Halfmoon v2 原生 HTML 結構與工具類別。
+
 

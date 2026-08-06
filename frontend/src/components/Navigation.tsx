@@ -5,6 +5,7 @@ import { useSettings } from '../context/SettingsContext';
 interface NavigationProps {
   activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme';
   setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme') => void;
+  onSubTabJump: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme', subTarget?: any) => void;
   isConnected: boolean;
   onShowLogs: () => void;
 }
@@ -83,122 +84,216 @@ const GitInfoBadge: React.FC = () => {
   );
 };
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isConnected, onShowLogs }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs }) => {
   const { t } = useSettings();
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme', subTarget?: any) => {
+    onSubTabJump(tab, subTarget);
+    setActiveDropdown(null);
+  };
 
   return (
-    <nav style={{ 
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      alignItems: 'center', 
-      padding: '1rem 2rem',
-      background: 'var(--glass-bg)',
-      borderBottom: '1px solid var(--glass-border)',
-      backdropFilter: 'blur(var(--glass-blur))',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-        <h1 style={{ 
-          margin: 0, 
-          color: 'var(--primary)', 
-          textShadow: '0 0 10px var(--primary-glow)', 
-          fontSize: '1.5rem',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
-          FH6-Horizon Tuner
-          <GitInfoBadge />
-        </h1>
-        
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button 
-            onClick={() => setActiveTab('telemetry')}
-            style={getTabStyle(activeTab === 'telemetry')}
-            aria-current={activeTab === 'telemetry' ? 'page' : undefined}
-          >
-            {t("Telemetry")}
-          </button>
-          <button 
-            onClick={() => setActiveTab('tuning')}
-            style={getTabStyle(activeTab === 'tuning')}
-            aria-current={activeTab === 'tuning' ? 'page' : undefined}
-          >
-            {t("Tuning Setup")}
-          </button>
-          <button 
-            onClick={() => setActiveTab('car_params')}
-            style={getTabStyle(activeTab === 'car_params')}
-            aria-current={activeTab === 'car_params' ? 'page' : undefined}
-          >
-            {t("Car Parameters")}
-          </button>
-          <button 
-            onClick={() => setActiveTab('overlay')}
-            style={getTabStyle(activeTab === 'overlay')}
-            aria-current={activeTab === 'overlay' ? 'page' : undefined}
-          >
-            {t("HUD Overlay")}
-          </button>
-          <button 
-            onClick={() => setActiveTab('settings')}
-            style={getTabStyle(activeTab === 'settings')}
-            aria-current={activeTab === 'settings' ? 'page' : undefined}
-          >
-            {t("Settings")}
-          </button>
-          <button
-            onClick={() => setActiveTab('theme')}
-            style={getTabStyle(activeTab === 'theme')}
-            aria-current={activeTab === 'theme' ? 'page' : undefined}
-          >
-            {t("Theme")}
-          </button>
-        </div>
-      </div>
+    <nav className="navbar navbar-expand-lg border-bottom sticky-top px-4 py-2" style={{ zIndex: 1050, background: 'var(--glass-bg)', backdropFilter: 'blur(var(--glass-blur))', WebkitBackdropFilter: 'blur(var(--glass-blur))', overflow: 'visible' }}>
+      <div className="container-fluid p-0 d-flex justify-content-between align-items-center" style={{ overflow: 'visible' }}>
+        <div className="d-flex align-items-center gap-4">
+          <span className="navbar-brand text-primary fw-bold fs-5 d-flex align-items-center m-0">
+            FH6-Horizon Tuner
+            <GitInfoBadge />
+          </span>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <button
-          onClick={onShowLogs}
-          className="cyber-btn-glow"
-          style={{
-            background: 'var(--surface-3)',
-            border: '1px solid var(--glass-border)',
-            color: 'var(--primary)',
-            borderRadius: '4px',
-            padding: '0.4rem 0.8rem',
-            fontSize: '0.85rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            marginRight: '1rem',
-          }}
-        >
-          {t("Show Logs")}
-        </button>
-        <div style={{
-          width: '10px', height: '10px', borderRadius: '50%',
-          backgroundColor: isConnected ? '#00ff00' : '#ff0000',
-          boxShadow: `0 0 8px ${isConnected ? '#00ff00' : '#ff0000'}`
-        }} />
-        <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {isConnected ? t("TELEMETRY LIVE") : t("DISCONNECTED")}
-        </span>
+          <ul className="navbar-nav flex-row gap-1">
+            
+            {/* Telemetry Dropdown */}
+            <li 
+              className="nav-item dropdown position-relative"
+              onMouseEnter={() => setActiveDropdown('telemetry')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <button 
+                onClick={() => handleDropdownItemClick('telemetry', 'live')}
+                className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'telemetry' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+              >
+                {t("Telemetry")}
+                <span className="fs-8 opacity-50 ms-1">▾</span>
+              </button>
+              {activeDropdown === 'telemetry' && (
+                <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '210px', zIndex: 1000, background: 'var(--surface-1)' }}>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('telemetry', 'live')}>
+                      {t("Dashboard")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('telemetry', 'analysis')}>
+                      {t("Post-Race Analysis")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('telemetry', 'drag')}>
+                      {t("Drag Test")}
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Tuning Setup Dropdown */}
+            <li 
+              className="nav-item dropdown position-relative"
+              onMouseEnter={() => setActiveDropdown('tuning')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <button 
+                onClick={() => handleDropdownItemClick('tuning', 1)}
+                className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'tuning' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+              >
+                {t("Tuning Setup")}
+                <span className="fs-8 opacity-50 ms-1">▾</span>
+              </button>
+              {activeDropdown === 'tuning' && (
+                <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '220px', zIndex: 1000, background: 'var(--surface-1)' }}>
+                  <li>
+                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 1)}>
+                      <span className="badge bg-primary-subtle text-primary">1</span> {t("Goal & Setup")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 2)}>
+                      <span className="badge bg-primary-subtle text-primary">2</span> {t("Gearbox")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 3)}>
+                      <span className="badge bg-primary-subtle text-primary">3</span> {t("Chassis")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 4)}>
+                      <span className="badge bg-primary-subtle text-primary">4</span> {t("Tire & Alignment")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 5)}>
+                      <span className="badge bg-primary-subtle text-primary">5</span> {t("Telemetry Calibration")}
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Car Parameters Dropdown */}
+            <li 
+              className="nav-item dropdown position-relative"
+              onMouseEnter={() => setActiveDropdown('car_params')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <button 
+                onClick={() => handleDropdownItemClick('car_params', 'config')}
+                className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'car_params' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+              >
+                {t("Car Parameters")}
+                <span className="fs-8 opacity-50 ms-1">▾</span>
+              </button>
+              {activeDropdown === 'car_params' && (
+                <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '210px', zIndex: 1000, background: 'var(--surface-1)' }}>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('car_params', 'config')}>
+                      {t("Profile Configuration")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('car_params', 'dyno')}>
+                      {t("Live Dyno Curve")}
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* HUD Overlay Dropdown */}
+            <li 
+              className="nav-item dropdown position-relative"
+              onMouseEnter={() => setActiveDropdown('overlay')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <button 
+                onClick={() => handleDropdownItemClick('overlay', 'general')}
+                className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'overlay' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+              >
+                {t("HUD Overlay")}
+                <span className="fs-8 opacity-50 ms-1">▾</span>
+              </button>
+              {activeDropdown === 'overlay' && (
+                <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '200px', zIndex: 1000, background: 'var(--surface-1)' }}>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'general')}>
+                      {t("General Settings")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'displays')}>
+                      {t("Displays & Layout")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'gauges')}>
+                      {t("Gauges & Scales")}
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'performance')}>
+                      {t("Performance & System")}
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </li>
+
+            {/* Settings Link */}
+            <li className="nav-item">
+              <button 
+                onClick={() => handleDropdownItemClick('settings')}
+                className={`nav-link px-3 py-2 ${activeTab === 'settings' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                aria-current={activeTab === 'settings' ? 'page' : undefined}
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+              >
+                {t("Settings")}
+              </button>
+            </li>
+
+            {/* Theme Link */}
+            <li className="nav-item">
+              <button
+                onClick={() => handleDropdownItemClick('theme')}
+                className={`nav-link px-3 py-2 ${activeTab === 'theme' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                aria-current={activeTab === 'theme' ? 'page' : undefined}
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
+              >
+                {t("Theme")}
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div className="d-flex align-items-center gap-3">
+          <button
+            onClick={onShowLogs}
+            className="btn btn-outline-primary btn-sm fw-bold"
+          >
+            {t("Show Logs")}
+          </button>
+          <span className={`badge ${isConnected ? 'text-bg-success' : 'text-bg-danger'} px-2 py-1 fs-7`}>
+            {isConnected ? t("TELEMETRY LIVE") : t("DISCONNECTED")}
+          </span>
+        </div>
       </div>
     </nav>
   );
 };
-
-const getTabStyle = (isActive: boolean): React.CSSProperties => ({
-  background: 'none',
-  border: 'none',
-  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-  fontSize: '1.1rem',
-  fontWeight: isActive ? 'bold' : 'normal',
-  cursor: 'pointer',
-  borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
-  padding: '0.5rem 1rem',
-  transition: 'all 0.2s'
-});
 
 export default Navigation;

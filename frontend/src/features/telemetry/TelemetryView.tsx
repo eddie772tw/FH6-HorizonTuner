@@ -41,8 +41,16 @@ const selectHandbrake = (d: any) => d.HandBrakeInput || 0;
 
 
 // --- COMPONENT: TelemetryView MAIN ---
-const TelemetryView: React.FC = () => {
-  const [subTab, setSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
+interface TelemetryViewProps {
+  subTab?: 'live' | 'analysis' | 'drag';
+  setSubTab?: (tab: 'live' | 'analysis' | 'drag') => void;
+}
+
+const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab }) => {
+  const [internalSubTab, setInternalSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
+  const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
+  const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
+
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
   const { data } = useTelemetry();
   const { t } = useSettings();
@@ -66,7 +74,7 @@ const TelemetryView: React.FC = () => {
 
     const port = (window as any).BACKEND_PORT || 8001;
     fetch(`http://127.0.0.1:${port}/api/overlay/config`)
-      .then(res => res.ok ? res.json() : null)
+      .then(res => res.json())
       .then(data => { if (data) checkConfig(data); })
       .catch(() => { });
 
@@ -97,7 +105,7 @@ const TelemetryView: React.FC = () => {
       }
     }
     prevIsRacingRef.current = isRacingNow;
-  }, [data?.IsRaceOn, isRecording, loadSavedSession]);
+  }, [data?.IsRaceOn, isRecording, loadSavedSession, setSubTab]);
 
   if (!isHudPaused) {
     activeDataRef.current = data;
@@ -111,44 +119,43 @@ const TelemetryView: React.FC = () => {
 
 
   return (
-    <div className="d-flex flex-column h-100">
-      <nav className="navbar mb-4 p-3 rounded border glass-panel">
-        <div className="container-fluid px-0">
-          <div className="d-flex align-items-center gap-3">
-            <div className="navbar-brand d-flex align-items-center gap-2 m-0">
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--primary)' : 'var(--text-secondary)', boxShadow: isRacing ? '0 0 10px var(--primary)' : 'none' }} />
-              <span className={isRacing ? "fw-bold text-primary fs-6" : "fw-bold text-secondary fs-6"}>
-                {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
-              </span>
-            </div>
-
-            <div style={{ width: '1px', height: '20px', background: 'var(--divider)' }} className="d-none d-sm-block"></div>
-
-            <ul className="nav nav-pills" role="tablist">
-              <li className="nav-item" role="presentation">
-                <button className={`nav-link ${subTab === 'live' ? 'active' : ''}`} onClick={() => setSubTab('live')} aria-current={subTab === 'live' ? 'page' : undefined}>{t("Dashboard")}</button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className={`nav-link ${subTab === 'analysis' ? 'active' : ''}`} onClick={() => setSubTab('analysis')} aria-current={subTab === 'analysis' ? 'page' : undefined}>{t("Post-Race Analysis")}</button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className={`nav-link ${subTab === 'drag' ? 'active' : ''}`} onClick={() => setSubTab('drag')} aria-current={subTab === 'drag' ? 'page' : undefined}>{t("Drag Test")}</button>
-              </li>
-            </ul>
+    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
+      
+      {/* Unframed Top Navigation Header */}
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-2 flex-shrink-0">
+        <div className="d-flex align-items-center gap-3">
+          <div className="d-flex align-items-center gap-2">
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isRacing ? 'var(--bs-primary)' : 'var(--bs-secondary)', boxShadow: isRacing ? '0 0 10px var(--bs-primary)' : 'none' }} />
+            <span className={isRacing ? "fw-bold text-primary fs-6 m-0" : "fw-bold text-secondary fs-6 m-0"}>
+              {isRacing ? t("LIVE TELEMETRY") : t("PAUSED")}
+            </span>
           </div>
 
-          <div className="d-flex align-items-center fw-bold text-secondary fs-6">
-            {classDisplay && <span className="badge text-bg-info me-2">{classDisplay}</span>}
-            {isEV && <span className="badge text-bg-success me-2">{t("EV")}</span>}
-            <span className="text-truncate" style={{ maxWidth: '200px' }}>{carName}</span>
-          </div>
+          <div className="vr opacity-25" style={{ height: '20px' }} />
+
+          <ul className="nav nav-pills gap-1" role="tablist">
+            <li className="nav-item" role="presentation">
+              <button className={`nav-link btn-sm ${subTab === 'live' ? 'active fw-bold' : ''}`} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
+            </li>
+            <li className="nav-item" role="presentation">
+              <button className={`nav-link btn-sm ${subTab === 'analysis' ? 'active fw-bold' : ''}`} onClick={() => setSubTab('analysis')}>{t("Post-Race Analysis")}</button>
+            </li>
+            <li className="nav-item" role="presentation">
+              <button className={`nav-link btn-sm ${subTab === 'drag' ? 'active fw-bold' : ''}`} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
+            </li>
+          </ul>
         </div>
-      </nav>
+
+        <div className="d-flex align-items-center fw-bold text-secondary fs-6">
+          {classDisplay && <span className="badge text-bg-info me-2">{classDisplay}</span>}
+          {isEV && <span className="badge text-bg-success me-2">{t("EV")}</span>}
+          <span className="text-truncate" style={{ maxWidth: '200px' }}>{carName}</span>
+        </div>
+      </div>
 
       {isHudPaused && (
         <div className="alert d-flex align-items-center justify-content-between mb-4 shadow-sm" style={{ background: 'rgba(255, 170, 0, 0.12)', border: '1px solid rgba(255, 170, 0, 0.4)', color: '#ffaa00' }}>
           <div className="d-flex align-items-center gap-2">
-            <span className="fs-5">⏸️</span>
             <strong>{t("Telemetry rendering paused (HUD Overlay is active)")}</strong>
           </div>
           <span className="small opacity-75">
@@ -168,8 +175,8 @@ const TelemetryView: React.FC = () => {
       ) : (
         <div className="d-grid gap-4 flex-grow-1" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '4.5fr 5.5fr', minHeight: '600px' }}>
 
-          <div className="glass-panel d-flex flex-column gap-3">
-            <h3 className="m-0">{t("Driver Inputs & Engine")}</h3>
+          <div className="card glass-panel d-flex flex-column gap-3 p-4">
+            <h3 className="fs-5 text-primary fw-bold m-0">{t("Driver Inputs & Engine")}</h3>
             <div className="d-flex flex-column justify-content-center gap-3 flex-grow-1">
               <div className="d-flex gap-4 align-items-center">
                 <EngineRpmDisplay />
@@ -187,16 +194,16 @@ const TelemetryView: React.FC = () => {
             </div>
           </div>
 
-          <div className="glass-panel d-flex flex-column gap-3">
-            <h3 className="m-0">{t("Vehicle Dynamics Overview")}</h3>
+          <div className="card glass-panel d-flex flex-column gap-3 p-4">
+            <h3 className="fs-5 text-primary fw-bold m-0">{t("Vehicle Dynamics Overview")}</h3>
             <div className="d-flex gap-4 align-items-center flex-grow-1">
               <VehicleDynamicsDisplay />
               <GForceRadar />
             </div>
           </div>
 
-          <div className="glass-panel d-flex flex-column">
-            <h3 className="mb-3 m-0">{t("Tire Grip & Status")}</h3>
+          <div className="card glass-panel d-flex flex-column p-4">
+            <h3 className="fs-5 text-primary fw-bold mb-3 m-0">{t("Tire Grip & Status")}</h3>
             <div className="d-grid gap-3 flex-grow-1" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' }}>
               <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
               <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
@@ -205,8 +212,8 @@ const TelemetryView: React.FC = () => {
             </div>
           </div>
 
-          <div className="glass-panel d-flex flex-column">
-            <h3 className="mb-3 m-0">{t("Suspension Travel")}</h3>
+          <div className="card glass-panel d-flex flex-column p-4">
+            <h3 className="fs-5 text-primary fw-bold mb-3 m-0">{t("Suspension Travel")}</h3>
             <div className="d-grid gap-3 flex-grow-1" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' }}>
               <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
               <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
@@ -216,6 +223,7 @@ const TelemetryView: React.FC = () => {
           </div>
 
         </div>
+
       )}
     </div>
   );
