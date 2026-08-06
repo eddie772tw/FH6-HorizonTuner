@@ -1689,6 +1689,20 @@
 **後續行動 (Action):**
 - 後續可直接放上 `assets/live_map_bg.png` 地圖圖片檔案，Live Map 卡片將自動進行替換渲染。
 
+---
+
+## 2026-08-06 - Drift HUD 全域儀表對接與 Launcher / 控制面板選單註冊
+
+**學習點 (Learning):**
+1. **全域 HUD 註冊鏈與跨層 UI 下拉選單整合 (Global HUD Registration Chain)**：
+   - 儀表名稱確立為 **"Drift HUD"**，識別碼 `drift`，對應目錄 `./dirft/index.html`。
+   - 於 `hud_overlay/index.html` Launcher Host 的 `HUDS` 映射表中註冊 `drift: './dirft/index.html'`。
+   - 於 `frontend/src/features/overlay_control/OverlayView.tsx` 擴充 `HudConfig` 的 `hudStyle` Union Type (`... | 'drift'`) 與控制面板 `<option value="drift">{t("Drift HUD")}</option>` 選項，實現全站無縫調用與切換。
+
+**後續行動 (Action):**
+- 玩家於 OverlayView 控制面板選擇 "Drift HUD" 時，系統自動通過 iframe / BroadcastChannel 無縫切換載入 `dirft/index.html`。
+
+
 
 
 

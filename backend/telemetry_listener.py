@@ -306,4 +306,3 @@ async def start_udp_listener(ip: str, port: int, message_queue: asyncio.Queue):
     )
     logger.info(f"Listening for Forza Telemetry on UDP {ip}:{port}")
     return transport
-

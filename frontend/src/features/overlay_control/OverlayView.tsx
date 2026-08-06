@@ -34,7 +34,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -487,7 +487,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
-      
+
       {/* Unframed Header Banner */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-2 flex-shrink-0">
         <div>
@@ -880,14 +880,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 disabled={config.elements.showGauge === false}
                 className="form-select form-select-sm fw-bold"
               >
-                <option value="advanced">{t("Advanced (Race Arc HUD)")}</option>
-                <option value="simple">{t("Simple (NFSU2 Style Circle)")}</option>
-                <option value="fm4ui">{t("FM4 Style HUD")}</option>
-                <option value="gt7">{t("GT7 Style HUD")}</option>
-                <option value="mw2005">{t("NFS Most Wanted 2005 HUD")}</option>
-                <option value="nfs15">{t("NFS 2015 Style HUD")}</option>
-                <option value="shift_tacho">{t("NFS Shift Tachometer")}</option>
+                <option value="advanced">{t("Race Arc HUD)")}</option>
+                <option value="simple">{t("Simple")}</option>
+                <option value="fm4ui">{t("Forza Motorsport 4")}</option>
+                <option value="gt7">{t("GT7")}</option>
+                <option value="mw2005">{t("NFS Most Wanted '05")}</option>
+                <option value="nfs15">{t("NFS '15")}</option>
+                <option value="shift_tacho">{t("NFS Shift")}</option>
                 <option value="vfd">{t("Retro VFD")}</option>
+                <option value="drift">{t("Drift HUD")}</option>
               </select>
 
               {/* Overall HUD Scale */}

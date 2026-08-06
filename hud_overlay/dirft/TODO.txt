@@ -1,16 +1,16 @@
 ===============================================================================
-093 Drift HUD 儀表擴充 TODO 備忘錄
+Drift HUD 儀表擴充紀錄檔
 ===============================================================================
 
-未來對接實作步驟：
+已完成對接項目：
 
-1. 儀表視效與 Canvas 繪製：
-   - 使用 frontend/src/utils/driftMath.ts 的純函數計算結果 (Flow Rating, Spin Risk, Operation Popups)。
-   - 繪製動態 Drift Angle 弧形指針與 Flow/Risk 進度條。
-   - 繪製 Operation Event (HANDBRAKE, CLUTCH KICK, SPIN SAVE) 浮動快閃動畫與踏板亮脈衝。
+1. 儀表註冊與路徑對接 [COMPLETED]：
+   - 儀表註冊名稱確立為："Drift HUD" (id: 'drift')
+   - 指向目錄：`./dirft/index.html`
+   - 已於全域 `hud_overlay/index.html` 的 HUDS 字典中註冊 `'drift': './dirft/index.html'`。
+   - 已於控制面板 `frontend/src/features/overlay_control/OverlayView.tsx` 擴充 `hudStyle` 型別與 `<option value="drift">Drift HUD</option>` 下拉選單。
 
-2. 全域 HUD 控制面板選單對接 (選填/未來進行)：
-   - 修改 `hud_overlay/index.html` 中的 HUDS 字典，新增：
-     '093_drift': './093_drift/index.html'
-   - 修改 `frontend/src/features/overlay_control/OverlayView.tsx` 中的 `hudStyle` Union Type 與下拉選單 <option>：
-     <option value="093_drift">{t("093 Drift Style HUD")}</option>
+2. 儀表視效與 Canvas 繪製 [COMPLETED]：
+   - 使用 `frontend/src/utils/driftMath.ts` 的純函數計算結果 (Flow Rating 1~5, Spin Risk 1~4, Operation Popups)。
+   - 繪製斜角 Segment 轉速條與雙向 Drift Angle 指針條。
+   - 繪製 Operation Events (HANDBRAKE, CLUTCH KICK, SPIN SAVE) 3D 晶透浮動快閃動畫與動態標籤。
