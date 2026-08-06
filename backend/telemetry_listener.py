@@ -252,6 +252,32 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
     return telemetry_data
 
 
+def forward_udp_packet(
+    data: bytes,
+    target_host: str = "127.0.0.1",
+    target_port: int | None = None,
+    enabled: bool = False,
+) -> bool:
+    """SimHub / Third-party UDP passthrough raw packet forwarding placeholder function.
+
+    TODO: 未來預計實作完整的 SimHub / 第三方 HUD UDP 封包靜態轉發功能。
+    當 enabled=True 且 target_port 經由設定檔或控制介面傳入（例如 8001 或其他 Port）時，
+    透過非同步/零阻塞 UDP Socket 將原生的 324-byte telemetry 封包原封不動轉發至 target_host:target_port。
+    目前此功能預設不啟用 (enabled=False)，避免對主高頻 UDP 接收迴圈產生非必要的 I/O 開銷。
+
+    :param data: Raw binary telemetry datagram bytes received from Forza
+    :param target_host: Target forwarding IPv4 address (default "127.0.0.1")
+    :param target_port: Target forwarding UDP port (must be specified by caller)
+    :param enabled: Whether forwarding is enabled (default False)
+    :return: True if successfully forwarded, False otherwise
+    """
+    if not enabled or target_port is None:
+        return False
+
+    # TODO: 於此處實作非同步 socket.sendto 靜態 raw 封包轉發機制
+    return False
+
+
 class TelemetryProtocol(asyncio.DatagramProtocol):
     def __init__(self, message_queue: asyncio.Queue):
         self.message_queue = message_queue
@@ -262,6 +288,7 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         try:
+            # TODO: 未來在此處依設定呼叫 forward_udp_packet(data, target_host, target_port, enabled)
             telemetry_data = parse_telemetry_packet(data)
             if telemetry_data is not None:
                 try:
@@ -279,3 +306,4 @@ async def start_udp_listener(ip: str, port: int, message_queue: asyncio.Queue):
     )
     logger.info(f"Listening for Forza Telemetry on UDP {ip}:{port}")
     return transport
+

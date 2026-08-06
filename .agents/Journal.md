@@ -1660,6 +1660,21 @@
 **後續行動 (Action):**
 - 查閱遙測封包個別欄位使用狀態時，直接檢視 `references/packet_format_reference.md`。
 
+---
+
+## 2026-08-06 - 093 Drift 姿態評估純邏輯整合、整數分級抽象與後端 UDP Passthrough 預留
+
+**學習點 (Learning):**
+1. **漂移姿態評估純邏輯與抽象分級解耦 (Drift Dynamics Pure Logic & Integer Rating Abstraction)**：
+   - 將 `093 Drift HUD` 的漂移角、反打量 (`calculateCounterSteer`)、Flow 評分與 Spin Risk 狀態機等核心計算抽離為無狀態純函數 `frontend/src/utils/driftMath.ts`。
+   - 分級介面抽象化：Quality 品質採用 `1 ~ 5` 整數表示（`1: BUILD`, `2: NORMAL`, `3: CHASE`, `4: SMOOTH`, `5: LOCKED`），Risk 風險採用 `1 ~ 4` 整數表示（`1: SAFE`, `2: EDGE`, `3: RISK`, `4: MAX`），Operation Events 採用可讀性佔位符 (`EVENT_HANDBRAKE` 等)，完美隔離純邏輯層與 UI 呈現層語義。
+2. **後端 UDP Passthrough 零阻塞預留模式 (Backend UDP Forwarding Architecture)**：
+   - 於 `backend/telemetry_listener.py` 中設計 `forward_udp_packet(data, target_host, target_port, enabled=False)` 函式，避免硬編碼特定 Port，預設 `enabled=False` 絕不在接收主迴圈內產生多餘 I/O 開銷。
+
+**後續行動 (Action):**
+- 未來前端或 HUD Overlay 欲渲染 Drift 姿態與快閃時，統一引用 `driftMath.ts` 並於 UI 層將 1~5 / 1~4 整數分級轉譯為當地語系字串。
+
+
 
 
 

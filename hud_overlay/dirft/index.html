@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Drift HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .drift-container {
+            width: 400px;
+            height: 300px;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            width: 400px;
+            height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 共享中央遙測掛載點 -->
+    <div id="teleCardsMount"></div>
+
+    <!-- Drift 儀表掛載容器 -->
+    <div class="hud-gauge-container drift-container" id="driftContainer">
+        <canvas id="driftCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        // Drift HUD 骨架預備
+        HUDCore.registerStyle('drift', {
+            containerId: 'drift093Container',
+            scaleMultiplier: 0.85,
+            onInit: function (payload) {
+                // TODO: Drift 初始化邏輯
+            },
+            onFrame: function (data, payload) {
+                // TODO: 60Hz 繪製流暢度與極限儀表
+            }
+        });
+        HUDCore.init('drift');
+    </script>
+</body>
+
+</html>

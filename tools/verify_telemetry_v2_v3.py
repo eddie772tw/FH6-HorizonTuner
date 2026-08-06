@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-FH6-HorizonTuner - 遙測封包區塊 2 與區塊 3 位元組對照驗證腳本
+"""FH6-HorizonTuner - 遙測封包區塊 2 與區塊 3 位元組對照驗證腳本
 (Verification Script for Telemetry Block 2 & Block 3 Data Out Offsets)
 
 本腳本用於核對與驗證 324-Byte Forza Data Out 封包在中：
@@ -13,11 +12,12 @@ FH6-HorizonTuner - 遙測封包區塊 2 與區塊 3 位元組對照驗證腳本
 3. 對兩種解包方法進行數值解析與物理合理性對比印出。
 """
 
-import sys
-import struct
-import socket
 import argparse
-from typing import Dict, Any
+import socket
+import struct
+import sys
+from typing import Any, Dict
+
 
 # ==============================================================================
 # 方法 A：標準 Dash 官方規範解包函數 (Standard Spec: 0~231 / 232~311 / 312~323)
@@ -188,7 +188,7 @@ def create_synthetic_324_packet() -> bytes:
 # ==============================================================================
 def print_comparison_report(raw_data: bytes, source_label: str = "Synthetic Test Packet"):
     print("=" * 80)
-    print(f"  Forza Horizon Data Out 遙測封包區塊 2 / 區塊 3 核對報告")
+    print("  Forza Horizon Data Out 遙測封包區塊 2 / 區塊 3 核對報告")
     print(f"  數據來源: {source_label} | 封包總長度: {len(raw_data)} 位元組")
     print("=" * 80)
 
@@ -245,7 +245,7 @@ def print_comparison_report(raw_data: bytes, source_label: str = "Synthetic Test
     print("-" * 80)
     tail_bytes = raw_data[300:324]
     print(f"Hex Dump (300-323): {tail_bytes.hex(' ')}")
-    
+
     # Try unpacking as Method A (312~323 spec)
     try:
         f_delta_t = struct.unpack_from("<f", raw_data, 312)[0]
@@ -279,7 +279,7 @@ def print_comparison_report(raw_data: bytes, source_label: str = "Synthetic Test
 # ==============================================================================
 def scan_packets_for_tail_fields(port: int, count: int = 15, timeout: float = 5.0):
     """收集多個連續 Live UDP 封包並全面掃描全封包 Offset，尋找 DeltaT, DataPacketId, DrivingLine 候選位址"""
-    print(f"\n" + "=" * 80)
+    print("\n" + "=" * 80)
     print(f"  [實時多封包連貫掃描引擎] 監聽 Port {port}，收集 {count} 個連續封包進行 Offset 探測...")
     print("=" * 80)
 
@@ -403,7 +403,7 @@ def main():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind(("0.0.0.0", args.port))
         sock.settimeout(5.0)
-        print(f"正在等待 Forza 遊戲 UDP 遙測封包 (5 秒超時)...")
+        print("正在等待 Forza 遊戲 UDP 遙測封包 (5 秒超時)...")
         try:
             while True:
                 data, addr = sock.recvfrom(1024)
