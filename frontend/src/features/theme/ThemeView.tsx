@@ -7,48 +7,76 @@ import PresetPanel from './components/PresetPanel';
 import SlotManagerPanel from './components/SlotManagerPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
 
-const ThemeView: React.FC = () => {
+interface ThemeViewProps {
+  show: boolean;
+  onClose: () => void;
+}
+
+const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
   const { themeSettings } = useTheme();
   const { t } = useSettings();
 
   return (
-    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
-      
-      {/* Standardized Header Banner (Aligned with OverlayView) */}
-      <div className="border-bottom pb-3 mb-2 flex-shrink-0">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <>
+      {/* Backdrop */}
+      <div
+        className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
+        style={{
+          display: show ? 'block' : 'none',
+          zIndex: 1040,
+        }}
+        onClick={onClose}
+      />
+
+      {/* Offcanvas panel */}
+      <div
+        className={`offcanvas offcanvas-start border-end glass-panel shadow-lg${show ? ' show' : ''}`}
+        tabIndex={-1}
+        aria-modal="true"
+        role="dialog"
+        style={{
+          width: '480px',
+          zIndex: 1050,
+          visibility: show ? 'visible' : 'hidden',
+          transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
+        }}
+      >
+        {/* Header */}
+        <div className="offcanvas-header border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
           <div>
-            <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
+            <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0">
               {t("Theme Customization")}
-            </h2>
-            <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
-              {t("Personalize application skin, glassmorphism, accent colors, and custom CSS styling")}
+            </h5>
+            <p className="text-body-secondary fs-8 mb-0 mt-1" style={{ lineHeight: '1.3' }}>
+              {t("Personalize skin, colors, and custom CSS")}
             </p>
           </div>
-
           <div className="d-flex align-items-center gap-2">
-            <span className="badge text-bg-primary fs-7 px-3 py-2 fw-bold">
-              Halfmoon CSS • {themeSettings.mode.toUpperCase()}
+            <span className="badge text-bg-primary fs-8 px-2 py-1 fw-bold">
+              {themeSettings.mode.toUpperCase()}
             </span>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={onClose}
+              aria-label={t("Close Theme Panel")}
+            />
+          </div>
+        </div>
+
+        {/* Offcanvas Body */}
+        <div className="offcanvas-body p-0 overflow-y-auto">
+          <div className="d-flex flex-column gap-4 p-4">
+            <AppearanceModePanel />
+            <ColorPickerPanel />
+            <PresetPanel />
+            <SlotManagerPanel />
+            <CustomCSSEditorPanel />
           </div>
         </div>
       </div>
-
-      {/* Main Content Area */}
-      <div className="flex-grow-1 overflow-auto p-2">
-
-
-        <div className="d-flex flex-column gap-4">
-          <AppearanceModePanel />
-          <ColorPickerPanel />
-          <PresetPanel />
-          <SlotManagerPanel />
-          <CustomCSSEditorPanel />
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 
 export default ThemeView;
-

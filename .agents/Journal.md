@@ -16,6 +16,36 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-06 - 診斷主控台 (`DiagnosticConsole.tsx`) 正規 Bootstrap Offcanvas 模式遷移
+
+**學習點 (Learning):**
+1. **Offcanvas 正規化：常駐 DOM + `show` prop 控制可見性 (Persistent DOM + show Prop Pattern)**：
+   - 舊做法以 `{showLogs && <DiagnosticConsole />}` 條件渲染，組件隨開關 mount/unmount，**完全無法呈現 Bootstrap Offcanvas 的 CSS transition 滑入滑出動畫**，也無法正確觸發 `offcanvas-backdrop` 背景遮罩。
+   - 正確做法：組件**常態掛載於 DOM**，改為傳入 `show: boolean` prop，在組件內部依 `show` 值動態切換 `.show` CSS class 與 `visibility` 屬性，完整實現 `transform: translateY` 的 0.3s ease-in-out 滑入滑出動畫效果。
+   - 同時加入 `offcanvas-backdrop fade show` 背景遮罩元素（`display: show ? 'block' : 'none'`），點擊遮罩亦可觸發 `onClose` 關閉面板，符合 Bootstrap Offcanvas 標準互動行為。
+
+**後續行動 (Action):**
+- 任何以 `offcanvas-bottom` / `offcanvas-end` 等方式實作的滑出面板，一律採用**常態掛載 + `show` prop** 模式，切勿使用條件渲染。
+
+---
+
+## 2026-08-06 - ThemeView 與 DiagnosticConsole 全面 Offcanvas 化（Tab → 左側滑入面板）
+
+**學習點 (Learning):**
+1. **Navbar Tab → Offcanvas 按鈕入口遷移模式 (Tab to Offcanvas Migration Pattern)**：
+   - 將 `ThemeView` 從全頁面 Tab（activeTab 狀態 + main 區域渲染）遷移為左側 `offcanvas-start` 滑入面板，入口統一移至 Navbar 右側工具列按鈕區，與 `DiagnosticConsole`（Show Logs）並排。
+   - 遷移同步清理：`activeTab` union type 移除 `'theme'`、`handleSubTabJump` 型別對齊、`Navigation.tsx` 的 `handleDropdownItemClick` 也需移除 `'theme'`（否則 TS 型別不符報錯）。
+2. **offcanvas-start vs offcanvas-bottom**：
+   - 功能型側邊工具面板（診斷日誌、主題設定等）一律使用 `offcanvas-start`（從左側滑入），避免遮蔽主要內容操作區。
+   - `offcanvas-bottom` 適合浮動通知 / Toast 型短暫提示；`offcanvas-start` 適合需要滾動瀏覽的長型設定內容。
+3. **ThemeView 組件 Props 介面設計**：
+   - `show: boolean` + `onClose: () => void` 是所有 Offcanvas 面板的標準 Props 介面。組件內部負責 backdrop、show class、transition，App 層只管理 boolean 狀態。
+
+**後續行動 (Action):**
+- 新增任何輔助工具面板（Debug、Filter、History 等）時，優先考慮 `offcanvas-start` 而非新增 Tab，以維持主導航列的簡潔性。
+
+---
+
 ## 2026-08-06 - 全站 View 標頭標題、說明內文與右側按鈕區塊完美對齊 HUD 控制中心 (`OverlayView.tsx`) 規範
 
 **學習點 (Learning):**

@@ -9,13 +9,14 @@ const getTempColor = (temp: number) => {
 };
 
 // --- COMPONENT: TireRadar ---
-const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = React.memo(({title, isLeft, tireIdx}) => {
+const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> = React.memo(({ title, isLeft, tireIdx }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
-  const hist = useRef<{temp: number, ratio: number, angle: number, time: number, speed: number}[]>([]);
+  const hist = useRef<{ temp: number, ratio: number, angle: number, time: number, speed: number }[]>([]);
   const lastTimeRef = useRef(performance.now());
-  const tempRef = useRef<HTMLSpanElement>(null);
+  const tempLabelRef = useRef<HTMLSpanElement>(null);
+
   const angRef = useRef<HTMLSpanElement>(null);
   const ratioRef = useRef<HTMLSpanElement>(null);
   const prevCar = useRef<number | null>(null);
@@ -27,9 +28,9 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
   // tempCanvas 尺寸快取（避免 clientWidth/clientHeight reflow）
   const tempSizeRef = useRef({ w: 90, h: 55 });
 
-  const [radarSize, setRadarSize] = React.useState<number>(95);
-  const { convertTemp, t } = useSettings();
-  const tempUnit = convertTemp(0).label;
+  const radarSizeRef = useRef<number>(120);
+  const [radarSize, setRadarSize] = React.useState<number>(120);
+  const { convertTemp } = useSettings();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -39,13 +40,17 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (height > 0) {
-          // Bounded radar size between 70px and 95px
-          const calcSize = Math.max(70, Math.min(95, height - 32));
-          setRadarSize(calcSize);
+          // 上限跟隨容器高度，移除硬頂 95px，讓 radar 可以放大
+          const calcSize = Math.max(70, height - 36);
+          if (Math.abs(calcSize - radarSizeRef.current) > 1) {
+            radarSizeRef.current = calcSize;
+            setRadarSize(calcSize);
+          }
         }
         // 快取 tempCanvas 尺寸，避免之後讀取 clientWidth/clientHeight
         if (tempCanvasRef.current) {
-          const tempW = Math.floor((width - calcSizeFromHeight(entry.contentRect.height)) - 16) || 90;
+          const calcSize = radarSizeRef.current;
+          const tempW = Math.floor((width - calcSize) - 16) || 90;
           tempSizeRef.current = { w: Math.max(60, tempW), h: 55 };
         }
       }
@@ -55,8 +60,6 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
     return () => resizeObserver.disconnect();
   }, []);
 
-  // 從高度計算 calcSize 的純函數（與 ResizeObserver 回調共用邏輯）
-  const calcSizeFromHeight = (h: number) => Math.max(70, Math.min(95, h - 32));
 
   useEffect(() => {
     const radius = radarSize / 2;
@@ -142,16 +145,16 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
-      
+
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
-          (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
+        (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
         hist.current = [];
       }
       prevCar.current = liveData.CarOrdinal;
       prevRace.current = liveData.IsRaceOn;
 
       if (liveData.IsRaceOn !== 1) return;
-      
+
       const now = performance.now();
       const dt = now - lastTimeRef.current;
       lastTimeRef.current = now;
@@ -173,13 +176,13 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
         } else {
           const old = hist.current.shift();
           if (old) {
-             old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
-             hist.current.push(old);
+            old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
+            hist.current.push(old);
           }
         }
       }
 
-      if (tempRef.current) tempRef.current.innerText = Math.round(convertTemp(cTemp).value).toString();
+
       if (angRef.current) {
         angRef.current.innerText = cAngle.toFixed(2);
         angRef.current.style.color = Math.abs(cAngle) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
@@ -271,11 +274,11 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
             tCanvas.height = th;
           }
           ctx.clearRect(0, 0, tw, th);
-          
+
           const tempMinScale = 100;
           const tempMaxScale = 260;
           const tempRange = tempMaxScale - tempMinScale;
-          
+
           const targetBarW = 3;
           const numBins = Math.max(15, Math.floor(tw / targetBarW));
           const tempPerBin = tempRange / numBins;
@@ -309,13 +312,13 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
           for (let i = 0; i < numBins; i++) {
             let h = (bins[i] / maxBinCount) * (th - 6);
             if (h < 2) h = 2;
-            
+
             const binTempMid = tempMinScale + (i + 0.5) * tempPerBin;
             ctx.fillStyle = getTempColor(binTempMid);
             const drawW = barW > 1.5 ? barW - 0.5 : barW;
             ctx.fillRect(i * barW, th - 2 - h, drawW, h);
           }
-          
+
           if (cTemp > 0) {
             const currentT = Math.max(tempMinScale, Math.min(tempMaxScale, cTemp));
             const lineX = ((currentT - tempMinScale) / tempRange) * tw;
@@ -325,6 +328,17 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
             ctx.moveTo(lineX, 0);
             ctx.lineTo(lineX, th);
             ctx.stroke();
+
+            // 溫度數值：更新 DOM span 位置（原生字體品質，避免 canvas 字體模糊）
+            if (tempLabelRef.current) {
+              const pct = (lineX / tw) * 100;
+              tempLabelRef.current.innerText = `${Math.round(convertTemp(cTemp).value)}`;
+              tempLabelRef.current.style.left = `${pct}%`;
+              // 靠右側時翻轉至白線左側，避免溢出
+              tempLabelRef.current.style.transform = pct > 68
+                ? 'translateX(calc(-100% - 3px))'
+                : 'translateX(3px)';
+            }
           }
         }
       }
@@ -338,27 +352,50 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
   }, [tireIdx, convertTemp]);
 
   return (
-    <div ref={containerRef} className={`d-flex gap-2 align-items-center p-2 rounded-3 border h-100 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-      <div className="d-flex flex-column align-items-center justify-content-center">
+    <div ref={containerRef} className={`d-flex gap-2 align-items-stretch p-2 rounded-3 border h-100 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important', minHeight: 0 }}>
+      {/* 雷達圖區：使用正方形，邊長跟隨 radarSize */}
+      <div className="d-flex flex-column align-items-center justify-content-center flex-shrink-0">
         <div className="fw-bold text-body mb-1 fs-8">{title}</div>
         <div className="position-relative" style={{ width: `${radarSize}px`, height: `${radarSize}px` }}>
           <canvas ref={radarCanvasRef} className="position-absolute top-0 start-0 w-100 h-100" />
         </div>
       </div>
-      <div className={`d-flex flex-grow-1 justify-content-between ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
-        <div className={`d-flex flex-column gap-1 justify-content-center ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
-          <div className={`d-flex flex-column ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
-            <span className="text-body-secondary text-uppercase fs-8" style={{ fontSize: '0.68rem' }}>{t("Slip Angle")}</span>
-            <span className="fw-bold font-monospace text-body fs-8" ref={angRef}>0.00</span>
+      {/* 右側資訊區：flex-column，ANG/RAT 橫排在上，胎溫圖在下 */}
+      <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0, minHeight: 0, gap: '6px' }}>
+        {/* ANG / RAT 橫排區 */}
+        <div className="d-flex flex-row gap-3 align-items-end flex-shrink-0">
+          <div className="d-flex flex-column align-items-start">
+            <span style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>ANG</span>
+            <span className="fw-bold font-monospace" ref={angRef} style={{ fontSize: '1.5rem', lineHeight: 1.1 }}>0.00</span>
           </div>
-          <div className={`d-flex flex-column ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
-            <span className="text-body-secondary text-uppercase fs-8" style={{ fontSize: '0.68rem' }}>{t("Slip Ratio")}</span>
-            <span className="fw-bold font-monospace text-body fs-8" ref={ratioRef}>0.00</span>
+          <div style={{ width: '1px', height: '28px', background: 'rgba(128,128,128,0.2)', flexShrink: 0 }} />
+          <div className="d-flex flex-column align-items-start">
+            <span style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>RAT</span>
+            <span className="fw-bold font-monospace" ref={ratioRef} style={{ fontSize: '1.5rem', lineHeight: 1.1 }}>0.00</span>
           </div>
         </div>
-        <div className={`d-flex flex-column position-relative justify-content-between ${isLeft ? 'align-items-start' : 'align-items-end'}`} style={{ width: '90px', height: `${radarSize}px` }}>
-           <span className="fw-bold font-monospace text-body fs-6"><span ref={tempRef}>0</span><span className="text-body-secondary fs-8 ms-1">{tempUnit}</span></span>
-           <canvas ref={tempCanvasRef} width={90} height={55} className="w-100 flex-grow-1 mt-1" />
+        {/* 胎溫分佈圖：flex-grow-1 填滿下方剩餘空間，canvas wrapper 提供 position-relative 讓 label 可絕對定位 */}
+        <div className="flex-grow-1 position-relative" style={{ minHeight: 0 }}>
+          <canvas ref={tempCanvasRef} width={90} height={55} className="w-100 h-100" style={{ display: 'block', minHeight: 0 }} />
+          <span
+            ref={tempLabelRef}
+            style={{
+              position: 'absolute',
+              top: '2px',
+              left: '50%',
+              transform: 'translateX(3px)',
+              fontSize: '1.20rem',
+              fontFamily: "'Courier New', monospace",
+              fontWeight: 700,
+              color: '#fff',
+              background: 'rgba(0,0,0,0.55)',
+              padding: '0 2px',
+              lineHeight: 1.3,
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >0</span>
         </div>
       </div>
     </div>

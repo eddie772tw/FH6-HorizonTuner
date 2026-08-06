@@ -3,11 +3,12 @@ import '../App.css';
 import { useSettings } from '../context/SettingsContext';
 
 interface NavigationProps {
-  activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme';
-  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme') => void;
-  onSubTabJump: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme', subTarget?: any) => void;
+  activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings';
+  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings') => void;
+  onSubTabJump: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => void;
   isConnected: boolean;
   onShowLogs: () => void;
+  onShowTheme: () => void;
 }
 
 const GitInfoBadge: React.FC = () => {
@@ -84,11 +85,11 @@ const GitInfoBadge: React.FC = () => {
   );
 };
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs, onShowTheme }) => {
   const { t } = useSettings();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
-  const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme', subTarget?: any) => {
+  const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
     onSubTabJump(tab, subTarget);
     setActiveDropdown(null);
   };
@@ -266,21 +267,16 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               </button>
             </li>
 
-            {/* Theme Link */}
-            <li className="nav-item">
-              <button
-                onClick={() => handleDropdownItemClick('theme')}
-                className={`nav-link px-3 py-2 ${activeTab === 'theme' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
-                aria-current={activeTab === 'theme' ? 'page' : undefined}
-                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
-              >
-                {t("Theme")}
-              </button>
-            </li>
           </ul>
         </div>
 
-        <div className="d-flex align-items-center gap-3">
+        <div className="d-flex align-items-center gap-2">
+          <button
+            onClick={onShowTheme}
+            className="btn btn-outline-secondary btn-sm fw-bold"
+          >
+            {t("Theme")}
+          </button>
           <button
             onClick={onShowLogs}
             className="btn btn-outline-primary btn-sm fw-bold"

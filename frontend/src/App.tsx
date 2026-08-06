@@ -18,9 +18,10 @@ import OverlayView from './features/overlay_control/OverlayView';
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
   useOverlayWebSocket();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
+  const [showTheme, setShowTheme] = useState(false);
 
   // SubTab States for Quick Jumps
   const [telemetrySubTab, setTelemetrySubTab] = useState<'live' | 'analysis' | 'drag'>('live');
@@ -29,7 +30,7 @@ const AppContent: React.FC = () => {
   const [overlayCategory, setOverlayCategory] = useState<'general' | 'displays' | 'gauges' | 'performance'>('general');
 
   // Quick jump handler triggered by Navbar Dropdown
-  const handleSubTabJump = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme', subTarget?: any) => {
+  const handleSubTabJump = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
     setActiveTab(tab);
     if (subTarget) {
       if (tab === 'telemetry') setTelemetrySubTab(subTarget);
@@ -52,8 +53,9 @@ const AppContent: React.FC = () => {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onSubTabJump={handleSubTabJump}
-        isConnected={isConnected} 
-        onShowLogs={() => setShowLogs(true)} 
+        isConnected={isConnected}
+        onShowLogs={() => setShowLogs(true)}
+        onShowTheme={() => setShowTheme(true)}
       />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -71,11 +73,9 @@ const AppContent: React.FC = () => {
         <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <SettingsView />
         </div>
-        <div style={{ display: activeTab === 'theme' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <ThemeView />
-        </div>
       </main>
-      {showLogs && <DiagnosticConsole onClose={() => setShowLogs(false)} />}
+      <DiagnosticConsole show={showLogs} onClose={() => setShowLogs(false)} />
+      <ThemeView show={showTheme} onClose={() => setShowTheme(false)} />
     </div>
   );
 };
