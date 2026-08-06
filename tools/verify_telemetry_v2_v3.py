@@ -371,16 +371,26 @@ def scan_packets_for_tail_fields(port: int, count: int = 15, timeout: float = 5.
         f_val = struct.unpack_from("<f", sample_pkt, off)[0]
         i_val = struct.unpack_from("<i", sample_pkt, off)[0]
         note = ""
-        if off == 244: note = "PositionX (實測)"
-        elif off == 256: note = "Speed (實測)"
-        elif off == 260: note = "Power (實測)"
-        elif off == 264: note = "Torque (實測)"
-        elif off == 268: note = "TireTemp FL (實測)"
-        elif off == 284: note = "Boost (實測)"
-        elif off == 288: note = "Fuel (實測)"
-        elif off == 292: note = "DistanceTraveled (實測)"
-        elif off == 296: note = "BestLap (實測)"
-        elif off == 308: note = "CurrentRaceTime (實測)"
+        if off == 244:
+            note = "PositionX (實測)"
+        elif off == 256:
+            note = "Speed (實測)"
+        elif off == 260:
+            note = "Power (實測)"
+        elif off == 264:
+            note = "Torque (實測)"
+        elif off == 268:
+            note = "TireTemp FL (實測)"
+        elif off == 284:
+            note = "Boost (實測)"
+        elif off == 288:
+            note = "Fuel (實測)"
+        elif off == 292:
+            note = "DistanceTraveled (實測)"
+        elif off == 296:
+            note = "BestLap (實測)"
+        elif off == 308:
+            note = "CurrentRaceTime (實測)"
         print(f"Offset {off:<3} (0x{off:02X}) | {f_val:<20.6f} | {i_val:<15} | {note}")
 
     print("=" * 80)

@@ -531,6 +531,42 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
             </div>
         </div>
+
+        <!-- ======================================================================= -->
+        <!-- 5. Live Map Container (Positioned Bottom-Left by default)               -->
+        <!-- ======================================================================= -->
+        <div id="tcLiveMapContainer" class="tele-live-map-container" style="
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            pointer-events: none;
+            z-index: 998;
+            transform-origin: bottom left;
+            transform: translate(var(--tc-live-map-offset-x, 0px), var(--tc-live-map-offset-y, 0px)) scale(var(--tc-live-map-scale, 1.0));
+            opacity: var(--tc-live-map-opacity, 1.0);
+            transition: opacity 0.2s ease, transform 0.15s ease-out;
+        ">
+            <div id="tcLiveMapCard" class="tele-corner" style="
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                width: 280px;
+                padding: 0.5rem 0.6rem;
+                background: rgba(0, 0, 0, 0.45);
+                backdrop-filter: blur(8px);
+                border-radius: 8px;
+                border: 1px solid var(--card-primary, rgba(0, 240, 255, 0.3));
+                box-sizing: border-box;
+            ">
+                <div style="font-size:var(--card-font-size,0.75rem); color:var(--card-primary,#00f0ff); font-weight:bold; letter-spacing:0.05em; display:flex; justify-content:space-between; align-items:center;">
+                    <span>LIVE MAP</span>
+                    <span id="tcLiveMapCoord" style="font-family:monospace; font-size:0.65rem; color:#aaa;">X: 0 Z: 0</span>
+                </div>
+                <div style="position:relative; width:100%; height:200px; border-radius:6px; overflow:hidden; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1);">
+                    <canvas id="tcLiveMapCanvas" width="268" height="200" style="display:block; width:100%; height:100%;"></canvas>
+                </div>
+            </div>
+        </div>
     `;
 }
 

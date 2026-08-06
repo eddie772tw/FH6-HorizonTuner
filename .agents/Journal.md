@@ -1674,6 +1674,22 @@
 **後續行動 (Action):**
 - 未來前端或 HUD Overlay 欲渲染 Drift 姿態與快閃時，統一引用 `driftMath.ts` 並於 UI 層將 1~5 / 1~4 整數分級轉譯為當地語系字串。
 
+---
+
+## 2026-08-06 - Live Map 遙測卡片自適應軌跡繪製與 Drift HUD 下方居中 Advanced 風格構建
+
+**學習點 (Learning):**
+1. **Live Map 遙測卡片自適應縮放與 Asset 佔位符模式 (Live Map Auto-Scaling & Asset Placeholder Pattern)**：
+   - 於 `hud_overlay/shared/telemetry-cards/live-map.js` 實現了 Live Map 遙測卡片，預設靠左下角對齊 (bottom-left)，具備 `--tc-live-map-offset-x/y`、`--tc-live-map-opacity` 與 `scale` 獨立控制項。
+   - 地圖背景支援 Asset 圖片 pre-loading (`assets/live_map_bg.png`) 與 onerror 回退畫布極客虛線網格 Placeholder。世界座標 $(X, Z)$ 透過動態滑動視窗歸一化映射至 Canvas，呈現 Grip 青線與 Drift 橘線。
+2. **Drift HUD 居中下方定位與 Advanced 視覺樣式繼承 (GT7 Centered Alignment & Advanced Visual Styling)**：
+   - 於 `hud_overlay/dirft/index.html` 實現 Drift HUD，比照 GT7 儀表採用 `.drift-wrapper` 全螢幕容器 + `.drift-container { align-self: center; transform-origin: bottom center; }` 置於下方中央。
+   - 繼承 Advanced HUD 晶透暗色科技襯底 (`rgba(5, 10, 18, 0.55)` + blur)、Neon Cyan 主色、斜體 `ForzaGear` 大字體、Segment RPM 轉速條與 Flow (1~5) / Risk (1~4) / Operation Popups 動態繪製。
+
+**後續行動 (Action):**
+- 後續可直接放上 `assets/live_map_bg.png` 地圖圖片檔案，Live Map 卡片將自動進行替換渲染。
+
+
 
 
 

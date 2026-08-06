@@ -4,18 +4,167 @@
 <head>
     <meta charset="UTF-8">
     <title>Drift HUD</title>
+    <!-- 引入共享 Base 樣式 -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        /* ── Fonts ──────────────────────────────────────────────────────── */
+        @font-face {
+            font-family: 'ForzaFont';
+            src: url('../assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+        }
+
+        @font-face {
+            font-family: 'ForzaGear';
+            src: url('../assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+        }
+
+        /* ── Root Wrapper & Centered Bottom Positioning (GT7 Style Alignment) ── */
+        .drift-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 下方中央居中對齊 */
+            justify-content: flex-end;
+            pointer-events: none;
+            padding: 25px;
+            overflow: visible;
+        }
+
+        /* ── Advanced Style Drift Container (1400px x 320px) ──────────────── */
         .drift-container {
-            width: 400px;
-            height: 300px;
+            position: relative;
+            width: 1400px;
+            height: 320px;
+            pointer-events: all;
+            align-self: center;
+            transform-origin: bottom center;
+            flex-shrink: 0;
+            background: rgba(5, 10, 18, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 0 25px rgba(0, 240, 255, 0.08);
+            box-sizing: border-box;
+            padding: 15px 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        canvas#driftCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1400px;
+            height: 320px;
             pointer-events: none;
         }
 
-        canvas {
-            display: block;
-            width: 400px;
-            height: 300px;
+        :root {
+            --drift-primary: #00f0ff;
+            --drift-amber: #ffb836;
+            --drift-rose: #ff0088;
+            --drift-mint: #52ffeb;
+            --drift-text: #ffffff;
+        }
+
+        /* ── Advanced Style HTML Text Overlays ────────────────────────────── */
+        .drift-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .drift-badge {
+            font-family: 'ForzaGear', Arial, sans-serif;
+            font-size: 1.1rem;
+            color: var(--drift-primary);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+        }
+
+        .drift-readouts {
+            display: flex;
+            align-items: baseline;
+            gap: 40px;
+            z-index: 10;
+        }
+
+        .drift-gear-box {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        #drift-gear {
+            font-family: 'ForzaGear', Arial, sans-serif;
+            font-size: 110px;
+            line-height: 0.85;
+            color: var(--drift-text);
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .drift-gear-unit {
+            font-family: 'ForzaFont', Arial, sans-serif;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        .drift-speed-box {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        #drift-speed {
+            font-family: 'ForzaGear', Arial, sans-serif;
+            font-size: 78px;
+            line-height: 0.9;
+            color: var(--drift-text);
+        }
+
+        .drift-speed-unit {
+            font-family: 'ForzaFont', Arial, sans-serif;
+            font-size: 1.3rem;
+            color: var(--drift-primary);
+            font-style: italic;
+        }
+
+        /* ── Operation Popup Floating Banner ───────────────────────────────── */
+        #drift-popup {
+            position: absolute;
+            top: -55px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--drift-primary);
+            box-shadow: 0 0 20px var(--drift-primary);
+            padding: 6px 24px;
+            border-radius: 20px;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            font-size: 1.4rem;
+            color: #ffffff;
+            letter-spacing: 0.12em;
+            opacity: 0;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #drift-popup.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-5px);
         }
     </style>
 </head>
@@ -24,25 +173,323 @@
     <!-- 共享中央遙測掛載點 -->
     <div id="teleCardsMount"></div>
 
-    <!-- Drift 儀表掛載容器 -->
-    <div class="hud-gauge-container drift-container" id="driftContainer">
-        <canvas id="driftCanvas" width="800" height="600"></canvas>
+    <!-- 根視窗 (GT7 式下方中央置中) -->
+    <div class="drift-wrapper">
+        <div class="hud-gauge-container drift-container" id="driftContainer">
+            <!-- 動態快閃 Popup Banner -->
+            <div id="drift-popup">HANDBRAKE</div>
+
+            <!-- 標頭列：即時 Flow & Risk 資訊標籤 -->
+            <div class="drift-header">
+                <div class="drift-badge">
+                    <span>DRIFT TELEMETRY</span>
+                    <span id="drift-car-name" style="font-size:0.85rem; color:rgba(255,255,255,0.6); margin-left:15px;">2002 Nissan Silvia Spec-R</span>
+                </div>
+                <div style="display:flex; gap:25px; font-family:'ForzaGear'; font-size:0.95rem;">
+                    <div>FLOW: <span id="drift-flow-label" style="color:var(--drift-primary);">BUILD (1)</span></div>
+                    <div>RISK: <span id="drift-risk-label" style="color:var(--drift-mint);">SAFE (1)</span></div>
+                    <div>ANGLE: <span id="drift-angle-text" style="color:#fff;">0.0°</span></div>
+                </div>
+            </div>
+
+            <!-- 主畫布：繪製 Advanced 風格 Segment 轉速條、漂移角、Flow 與 Risk Meter -->
+            <canvas id="driftCanvas" width="1400" height="320"></canvas>
+
+            <!-- 底部數據：檔位與車速 -->
+            <div class="drift-readouts">
+                <div class="drift-gear-box">
+                    <div id="drift-gear">N</div>
+                    <div class="drift-gear-unit">GEAR</div>
+                </div>
+                <div class="drift-speed-box">
+                    <div id="drift-speed">0</div>
+                    <div class="drift-speed-unit" id="drift-speed-unit">KM/H</div>
+                </div>
+                <div style="margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:4px; font-family:'ForzaFont'; font-size:0.85rem; color:rgba(255,255,255,0.5);">
+                    <div>RPM: <span id="drift-rpm-text" style="color:#fff; font-family:monospace;">0</span></div>
+                    <div>COUNTER: <span id="drift-counter-text" style="color:var(--drift-primary); font-family:monospace;">0%</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- 腳本引入：Telemetry Cards & HUD Core -->
+    <script type="module" src="../shared/telemetry-cards.js"></script>
     <script src="../shared/hud-core.js"></script>
     <script>
-        // Drift HUD 骨架預備
-        HUDCore.registerStyle('drift', {
-            containerId: 'drift093Container',
-            scaleMultiplier: 0.85,
-            onInit: function (payload) {
-                // TODO: Drift 初始化邏輯
-            },
-            onFrame: function (data, payload) {
-                // TODO: 60Hz 繪製流暢度與極限儀表
+        (function () {
+            var canvas = document.getElementById('driftCanvas');
+            var ctx = canvas ? canvas.getContext('2d') : null;
+
+            // Telemetry State
+            var currentAngle = 0;
+            var displayAngle = 0;
+            var currentFlowPct = 0;
+            var currentSpinRisk = 0;
+            var currentSpeed = 0;
+            var currentRpm = 0;
+            var maxRpm = 9000;
+            var currentGear = 'N';
+            var steerPct = 0;
+            var counterPct = 0;
+            var flowQuality = 1;
+            var riskLevel = 1;
+
+            var popupTimer = null;
+
+            // Flow & Risk Label Text Mappings
+            var FLOW_NAMES = { 1: 'BUILD', 2: 'NORMAL', 3: 'CHASE', 4: 'SMOOTH', 5: 'LOCKED' };
+            var RISK_NAMES = { 1: 'SAFE', 2: 'EDGE', 3: 'RISK', 4: 'MAX' };
+
+            function triggerPopup(text, durationMs) {
+                var popup = document.getElementById('drift-popup');
+                if (!popup) return;
+                popup.innerText = text;
+                popup.classList.add('active');
+                if (popupTimer) clearTimeout(popupTimer);
+                popupTimer = setTimeout(function () {
+                    popup.classList.remove('active');
+                }, durationMs || 1200);
             }
-        });
-        HUDCore.init('drift');
+
+            // Advanced Canvas Drawing Logic
+            function drawCanvas() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, 1400, 320);
+
+                // ── 1. Advanced Style Segment Tacho Arc (RPM Bar) ────────────────
+                var rpmRatio = Math.min(1.0, currentRpm / Math.max(1, maxRpm));
+                var startX = 25;
+                var startY = 65;
+                var barWidth = 1350;
+                var segmentCount = 45;
+                var segWidth = (barWidth / segmentCount) - 3;
+
+                ctx.save();
+                for (var i = 0; i < segmentCount; i++) {
+                    var segRatio = i / segmentCount;
+                    var active = segRatio <= rpmRatio;
+
+                    var x = startX + i * (segWidth + 3);
+                    var y = startY;
+
+                    if (active) {
+                        if (segRatio > 0.85) {
+                            ctx.fillStyle = '#ff0088'; // Redline Rose
+                            ctx.shadowColor = '#ff0088';
+                            ctx.shadowBlur = 10;
+                        } else if (segRatio > 0.65) {
+                            ctx.fillStyle = '#ffb836'; // Amber
+                            ctx.shadowColor = '#ffb836';
+                            ctx.shadowBlur = 6;
+                        } else {
+                            ctx.fillStyle = '#00f0ff'; // Neon Cyan
+                            ctx.shadowColor = '#00f0ff';
+                            ctx.shadowBlur = 4;
+                        }
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.shadowBlur = 0;
+                    }
+
+                    // Skewed Advanced Segment Rectangles
+                    ctx.beginPath();
+                    ctx.moveTo(x + 5, y);
+                    ctx.lineTo(x + segWidth + 5, y);
+                    ctx.lineTo(x + segWidth, y + 14);
+                    ctx.lineTo(x, y + 14);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                // ── 2. Center Drift Angle Gauge (Bidirectional Bar) ─────────────
+                var centerX = 700;
+                var gaugeY = 130;
+                var maxAngleWidth = 350;
+
+                ctx.save();
+                // Center Tick & Track
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(centerX - maxAngleWidth, gaugeY);
+                ctx.lineTo(centerX + maxAngleWidth, gaugeY);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(centerX, gaugeY - 8);
+                ctx.lineTo(centerX, gaugeY + 8);
+                ctx.stroke();
+
+                // Active Drift Angle Fill
+                var angleRatio = Math.min(1.0, Math.abs(displayAngle) / 60.0);
+                var fillLen = angleRatio * maxAngleWidth;
+
+                if (fillLen > 1) {
+                    ctx.beginPath();
+                    if (displayAngle >= 0) {
+                        ctx.moveTo(centerX, gaugeY);
+                        ctx.lineTo(centerX + fillLen, gaugeY);
+                        ctx.strokeStyle = '#00f0ff';
+                        ctx.shadowColor = '#00f0ff';
+                    } else {
+                        ctx.moveTo(centerX, gaugeY);
+                        ctx.lineTo(centerX - fillLen, gaugeY);
+                        ctx.strokeStyle = '#ff0088';
+                        ctx.shadowColor = '#ff0088';
+                    }
+                    ctx.lineWidth = 10;
+                    ctx.shadowBlur = 12;
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // ── 3. Flow & Risk Meter Progress Bars ─────────────────────────
+                var flowY = 180;
+                var riskY = 210;
+                var meterWidth = 400;
+
+                // Flow Meter (Left Aligned)
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.fillRect(100, flowY, meterWidth, 12);
+                var activeFlowW = (currentFlowPct / 100.0) * meterWidth;
+                if (activeFlowW > 0) {
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 8;
+                    ctx.fillRect(100, flowY, activeFlowW, 12);
+                }
+                ctx.font = '12px ForzaGear';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillText('FLOW SCORE', 100, flowY - 4);
+                ctx.restore();
+
+                // Risk Meter (Right Aligned)
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.fillRect(900, riskY - 30, meterWidth, 12);
+                var activeRiskW = (currentSpinRisk / 100.0) * meterWidth;
+                if (activeRiskW > 0) {
+                    ctx.fillStyle = riskLevel >= 3 ? '#ff0088' : (riskLevel === 2 ? '#ffb836' : '#52ffeb');
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 8;
+                    ctx.fillRect(900, riskY - 30, activeRiskW, 12);
+                }
+                ctx.font = '12px ForzaGear';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillText('SPIN RISK', 900, riskY - 34);
+                ctx.restore();
+            }
+
+            // HUDCore Style Registration
+            HUDCore.registerStyle('drift', {
+                containerId: 'driftContainer',
+                scaleMultiplier: 0.90,
+                onInit: function (payload) {
+                    var unitEl = document.getElementById('drift-speed-unit');
+                    if (unitEl && payload && payload.isMetric !== undefined) {
+                        unitEl.innerText = payload.isMetric ? 'KM/H' : 'MPH';
+                    }
+                },
+                onFrame: function (data, payload) {
+                    if (!data) return;
+
+                    // Extract Speed & RPM
+                    currentSpeed = Math.round(data.speed || 0);
+                    currentRpm = data.rpm || 0;
+                    maxRpm = data.rpmMax || payload.redlineRpm || 9000;
+                    currentGear = data.gear !== undefined ? (data.gear === 0 ? 'R' : (data.gear === 11 ? 'N' : data.gear)) : 'N';
+
+                    // Telemetry vectors & Drift Angle
+                    var vx = data.vx || data.VelocityX || 0;
+                    var vz = data.vz || data.VelocityZ || 0;
+
+                    // Simple internal drift angle calculation
+                    var speedPlane = Math.hypot(vx, vz);
+                    if (speedPlane > 0.5) {
+                        currentAngle = (Math.atan2(vx, vz) * 180.0) / Math.PI;
+                    } else {
+                        currentAngle = 0;
+                    }
+
+                    // Lerp display angle for smooth animation
+                    displayAngle += (currentAngle - displayAngle) * 0.22;
+
+                    // Counter-steer calculation
+                    steerPct = data.steer || data.SteerInput || 0;
+                    var countering = Math.abs(displayAngle) >= 8.0 && (displayAngle * steerPct > 0);
+                    counterPct = countering ? Math.abs(steerPct) : 0;
+
+                    // Simulated Flow & Risk ratings
+                    var absAngle = Math.abs(displayAngle);
+                    if (absAngle >= 30) {
+                        flowQuality = 5; // LOCKED
+                        currentFlowPct = Math.min(100, currentFlowPct + 2);
+                    } else if (absAngle >= 15) {
+                        flowQuality = 3; // CHASE
+                        currentFlowPct = Math.min(80, currentFlowPct + 1);
+                    } else {
+                        flowQuality = 1; // BUILD
+                        currentFlowPct = Math.max(0, currentFlowPct - 1.5);
+                    }
+
+                    if (absAngle >= 50) {
+                        riskLevel = 4; // MAX
+                        currentSpinRisk = Math.min(100, currentSpinRisk + 3);
+                    } else if (absAngle >= 35) {
+                        riskLevel = 3; // RISK
+                        currentSpinRisk = Math.min(75, currentSpinRisk + 1.5);
+                    } else if (absAngle >= 20) {
+                        riskLevel = 2; // EDGE
+                        currentSpinRisk = 40;
+                    } else {
+                        riskLevel = 1; // SAFE
+                        currentSpinRisk = Math.max(0, currentSpinRisk - 2);
+                    }
+
+                    // Update HTML Overlay Readings
+                    var gearEl = document.getElementById('drift-gear');
+                    if (gearEl) gearEl.innerText = currentGear;
+
+                    var speedEl = document.getElementById('drift-speed');
+                    if (speedEl) speedEl.innerText = currentSpeed;
+
+                    var rpmEl = document.getElementById('drift-rpm-text');
+                    if (rpmEl) rpmEl.innerText = Math.round(currentRpm);
+
+                    var angleEl = document.getElementById('drift-angle-text');
+                    if (angleEl) angleEl.innerText = displayAngle.toFixed(1) + '°';
+
+                    var flowEl = document.getElementById('drift-flow-label');
+                    if (flowEl) flowEl.innerText = (FLOW_NAMES[flowQuality] || 'BUILD') + ' (' + flowQuality + ')';
+
+                    var riskEl = document.getElementById('drift-risk-label');
+                    if (riskEl) riskEl.innerText = (RISK_NAMES[riskLevel] || 'SAFE') + ' (' + riskLevel + ')';
+
+                    var counterEl = document.getElementById('drift-counter-text');
+                    if (counterEl) counterEl.innerText = Math.round(counterPct) + '%';
+
+                    // Detect Operations & Popups
+                    var handbrake = data.handbrake || data.HandBrakeInput || 0;
+                    if (handbrake > 50) {
+                        triggerPopup('EVENT_HANDBRAKE', 900);
+                    }
+
+                    // Redraw Canvas
+                    drawCanvas();
+                },
+                onAnimate: function () {
+                    triggerPopup('DRIFT HUD READY', 1500);
+                }
+            });
+
+            // Activate HUD
+            HUDCore.init('drift');
+        })();
     </script>
 </body>
 
