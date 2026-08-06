@@ -231,7 +231,10 @@ export function calculateAEGOGearing(
 
   } else {
     // Road / Circuit (Default)
-    const vTop = Math.min(480, Math.max(180, Math.pow(maxHp, 1 / 3) * 38 * (aeroEfficiency / 0.85) * (1.1 - 0.2 * aeroBalance)));
+    // Physical Top Speed with cubic-root scaling for aero efficiency (power drag P_drag ∝ v^3)
+    const aeroEfficiencyFactor = Math.pow(Math.max(0.2, aeroEfficiency) / 0.85, 1 / 3);
+    const aeroBalanceFactor = 1.05 - 0.10 * aeroBalance;
+    const vTop = Math.min(480, Math.max(180, Math.pow(maxHp, 1 / 3) * 38 * aeroEfficiencyFactor * aeroBalanceFactor));
     const totalTopRatio = (rpmHp * C * 60) / (vTop * 1000);
 
     // Target top gear ratio based on number of gears
@@ -257,9 +260,9 @@ export function calculateAEGOGearing(
     const g1Mult = Math.max(1.0, (maxTorque * 3.2) / (weight * fDrive));
     const g0 = Math.max(gN1 * 2.2, Math.min(6.0, g1Base * g1Mult));
 
-    // Powerband progression exponent
+    // Powerband progression exponent gamma (smooth geometric progressive curve)
     const rPowerband = Math.max(0.55, Math.min(0.85, rpmT / rpmHp));
-    const pExp = 1.15 + 0.45 * rPowerband;
+    const gamma = 0.90 + 0.15 * (1.0 - rPowerband);
 
     // Generate smooth progressive gear steps connecting 1st gear (g0) to top gear (gN1)
     for (let i = 0; i < numGears; i++) {
@@ -267,8 +270,18 @@ export function calculateAEGOGearing(
         gears[i] = g0;
       } else {
         const x = i / (numGears - 1);
-        const u = 1 - Math.pow(1 - x, pExp);
+        const u = Math.pow(x, gamma);
         gears[i] = g0 * Math.pow(gN1 / g0, u);
+      }
+    }
+
+    // Enforce final gear step ratio lower-bound protection to prevent cliff drops
+    if (numGears >= 3) {
+      const secondLastStepRatio = gears[numGears - 2] / gears[numGears - 3];
+      const minTopStepRatio = Math.max(0.76, 0.80 * secondLastStepRatio);
+      const targetTopGearRatio = gears[numGears - 2] * minTopStepRatio;
+      if (gears[numGears - 1] < targetTopGearRatio) {
+        gears[numGears - 1] = targetTopGearRatio;
       }
     }
   }

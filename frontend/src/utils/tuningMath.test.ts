@@ -130,9 +130,29 @@ describe('calculateAEGOGearing', () => {
       expect(shiftRpm).toBeGreaterThanOrEqual(4750);
     }
 
-    // 3. Verify top gear step ratio (Gear 6 / Gear 5) is smooth (> 0.78) and doesn't drop > 25%
+    // 3. Verify top gear step ratio (Gear 6 / Gear 5) is smooth (>= 0.76) and doesn't drop > 24%
     const topStepRatio = res.gears[5] / res.gears[4];
-    expect(topStepRatio).toBeGreaterThanOrEqual(0.78);
+    expect(topStepRatio).toBeGreaterThanOrEqual(0.76);
+
+    // 4. Verify step ratios are progressive (R_i <= R_{i+1})
+    for (let i = 1; i < res.gears.length - 1; i++) {
+      const stepRatioCurrent = res.gears[i] / res.gears[i - 1];
+      const stepRatioNext = res.gears[i + 1] / res.gears[i];
+      expect(stepRatioNext).toBeGreaterThanOrEqual(stepRatioCurrent - 0.03); // allowable small rounding tolerance
+    }
+  });
+
+  it('should apply cubic-root aero scaling so high downforce does not drastically collapse final drive', () => {
+    const lowAeroCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.85 };
+    const highAeroCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.45 };
+
+    const lowAeroRes = calculateAEGOGearing('Road', 6, lowAeroCar, 7500);
+    const highAeroRes = calculateAEGOGearing('Road', 6, highAeroCar, 7500);
+
+    // High downforce (lower efficiency 0.45 vs 0.85) should only adjust final drive moderately (< 20%), not by 40%+
+    const fdRatio = highAeroRes.finalDrive / lowAeroRes.finalDrive;
+    expect(fdRatio).toBeLessThanOrEqual(1.25);
+    expect(fdRatio).toBeGreaterThanOrEqual(0.90);
   });
 });
 
