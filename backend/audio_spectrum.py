@@ -1,4 +1,3 @@
-import ctypes
 import logging
 import math
 import sys
