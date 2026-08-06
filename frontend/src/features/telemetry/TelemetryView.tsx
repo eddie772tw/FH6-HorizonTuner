@@ -233,11 +233,11 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
               <h3 className="fs-6 text-primary fw-bold m-0">{t("Live Telemetry Traces")}</h3>
               <RenderSwitch checked={renderConfig.traces} onChange={() => toggleBlockRender('traces')} />
             </div>
-            <div className="d-flex flex-column gap-2 flex-grow-1 overflow-hidden h-100">
-              <div className="flex-grow-1 overflow-hidden" style={{ height: '50%' }}>
+            <div className="d-flex flex-column gap-2 flex-grow-1 overflow-hidden" style={{ minHeight: 0 }}>
+              <div className="flex-grow-1 overflow-hidden" style={{ flex: '1 1 0%', minHeight: 0 }}>
                 <PedalTraceCanvas height="100%" enabled={renderConfig.traces} />
               </div>
-              <div className="flex-grow-1 overflow-hidden" style={{ height: '50%' }}>
+              <div className="flex-grow-1 overflow-hidden" style={{ flex: '1 1 0%', minHeight: 0 }}>
                 <PowerTorqueCanvas height="100%" enabled={renderConfig.traces} />
               </div>
             </div>

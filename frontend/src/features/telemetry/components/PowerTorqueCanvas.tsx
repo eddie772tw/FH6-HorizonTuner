@@ -120,17 +120,26 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
       ctx.clearRect(0, 0, w, h);
 
+      const padTop = 26 * dpr;
+      const padBottom = 12 * dpr;
+      const plotH = Math.max(10, h - padTop - padBottom);
+
       // Grid Guidelines（使用快取的主題色值）
       const { primary: primaryHex, secondary: secondaryHex, isLight } = themeVars.current;
       ctx.strokeStyle = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)';
       ctx.lineWidth = 1 * dpr;
 
-      // Draw horizontal dashed grid lines (25%, 50%, 75%)
+      // Draw horizontal dashed grid lines (0% baseline, 25%, 50%, 75%)
       ctx.setLineDash([4 * dpr, 4 * dpr]);
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.25); ctx.lineTo(w, h * 0.25);
-      ctx.moveTo(0, h * 0.50); ctx.lineTo(w, h * 0.50);
-      ctx.moveTo(0, h * 0.75); ctx.lineTo(w, h * 0.75);
+      const y0 = h - padBottom;
+      const y25 = h - padBottom - plotH * 0.25;
+      const y50 = h - padBottom - plotH * 0.50;
+      const y75 = h - padBottom - plotH * 0.75;
+      ctx.moveTo(0, y0); ctx.lineTo(w, y0);
+      ctx.moveTo(0, y25); ctx.lineTo(w, y25);
+      ctx.moveTo(0, y50); ctx.lineTo(w, y50);
+      ctx.moveTo(0, y75); ctx.lineTo(w, y75);
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -148,7 +157,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       for (let k = 0; k < len; k++) {
         const pt = hist.current[k];
         const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const py = h - (pt.torque / combinedMax) * (h - 20 * dpr) - 10 * dpr;
+        const py = h - padBottom - (pt.torque / combinedMax) * plotH;
 
         ctx.beginPath();
         ctx.arc(px, py, 1.8 * dpr, 0, Math.PI * 2);
@@ -160,7 +169,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       for (let k = 0; k < len; k++) {
         const pt = hist.current[k];
         const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const py = h - (pt.power / combinedMax) * (h - 20 * dpr) - 10 * dpr;
+        const py = h - padBottom - (pt.power / combinedMax) * plotH;
 
         ctx.beginPath();
         ctx.arc(px, py, 2.0 * dpr, 0, Math.PI * 2);
@@ -171,8 +180,8 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       if (len > 0) {
         const latest = hist.current[len - 1];
         const pxRpm = (latest.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
-        const pyPower = h - (latest.power / combinedMax) * (h - 20 * dpr) - 10 * dpr;
-        const pyTorque = h - (latest.torque / combinedMax) * (h - 20 * dpr) - 10 * dpr;
+        const pyPower = h - padBottom - (latest.power / combinedMax) * plotH;
+        const pyTorque = h - padBottom - (latest.torque / combinedMax) * plotH;
 
         // Current Power Active Marker
         ctx.beginPath();
@@ -208,7 +217,8 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       ref={containerRef}
       className="position-relative w-100 rounded-3 border overflow-hidden d-flex flex-column flex-grow-1"
       style={{
-        minHeight: typeof height === 'number' ? `${height}px` : height,
+        height: typeof height === 'number' ? `${height}px` : height,
+        minHeight: typeof height === 'number' ? `${height}px` : undefined,
         background: 'var(--surface-1)',
         borderColor: 'var(--glass-border) !important'
       }}

@@ -95,14 +95,23 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           const dpr = window.devicePixelRatio || 1;
           ctx.clearRect(0, 0, w, h);
 
-          // Dashed Guidelines (25%, 50%, 75%)（使用快取的 isLight）
+          const padTop = 26 * dpr;
+          const padBottom = 12 * dpr;
+          const plotH = Math.max(10, h - padTop - padBottom);
+
+          // Dashed Guidelines (0% baseline, 25%, 50%, 75%)（使用快取的 isLight）
           ctx.strokeStyle = isLightRef.current ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)';
           ctx.lineWidth = 1 * dpr;
           ctx.setLineDash([4 * dpr, 4 * dpr]);
           ctx.beginPath();
-          ctx.moveTo(0, h * 0.25); ctx.lineTo(w, h * 0.25);
-          ctx.moveTo(0, h * 0.50); ctx.lineTo(w, h * 0.50);
-          ctx.moveTo(0, h * 0.75); ctx.lineTo(w, h * 0.75);
+          const y0 = h - padBottom;
+          const y25 = h - padBottom - plotH * 0.25;
+          const y50 = h - padBottom - plotH * 0.50;
+          const y75 = h - padBottom - plotH * 0.75;
+          ctx.moveTo(0, y0); ctx.lineTo(w, y0);
+          ctx.moveTo(0, y25); ctx.lineTo(w, y25);
+          ctx.moveTo(0, y50); ctx.lineTo(w, y50);
+          ctx.moveTo(0, y75); ctx.lineTo(w, y75);
           ctx.stroke();
           ctx.setLineDash([]);
 
@@ -114,7 +123,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           ctx.beginPath();
           for (let k = 0; k < len; k++) {
             const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - (hist.current[k].throttle * (h - 16 * dpr)) - 8 * dpr;
+            const py = h - padBottom - (hist.current[k].throttle * plotH);
             if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
@@ -129,7 +138,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           ctx.beginPath();
           for (let k = 0; k < len; k++) {
             const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - (hist.current[k].brake * (h - 16 * dpr)) - 8 * dpr;
+            const py = h - padBottom - (hist.current[k].brake * plotH);
             if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
@@ -156,7 +165,8 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
       ref={containerRef}
       className="position-relative w-100 rounded-3 border overflow-hidden flex-grow-1"
       style={{
-        minHeight: typeof height === 'number' ? `${height}px` : height,
+        height: typeof height === 'number' ? `${height}px` : height,
+        minHeight: typeof height === 'number' ? `${height}px` : undefined,
         background: 'var(--surface-1)',
         borderColor: 'var(--glass-border) !important'
       }}

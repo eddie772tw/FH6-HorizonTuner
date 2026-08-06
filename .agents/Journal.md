@@ -15,6 +15,41 @@
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
+
+## 2026-08-07 - Live Telemetry Traces 雙圖表 Flex 容器高度溢出與繪圖 Padding / 0% 基線對齊修正 (`TelemetryView.tsx`, `PedalTraceCanvas.tsx`, `PowerTorqueCanvas.tsx`)
+
+**學習點 (Learning):**
+1. **Flex Column 容器子元素 `h-100` 與 `gap` 疊加截斷陷阱 (Flex Column Outer h-100 Overflow)**：
+   - 舊版 `TelemetryView.tsx` 中 Block 2 (Live Telemetry Traces) 內層容器設定了 `h-100`。由於 Outer Card 已包含 Header 標題（高度約 32px），內層 `h-100` 導致 inner container 總高度達到 `100% + 32px`；同時 inner container 內兩個子圖表容器設定 `style={{ height: '50%' }}` 加上 `gap-2` (8px)，使得 Child 2 底部累計溢出 `32px + 8px`，被 Outer Card 的 `overflow-hidden` 裁切遮擋。
+   - 修正方案：移除內層 `h-100`，改設 `minHeight: 0`；子圖表容器改為 `flex: '1 1 0%', minHeight: 0`，由 Flexbox 自動精準平分剩餘高度與 gap。
+2. **Canvas 繪圖 Margin 與數據 0% Baseline 對齊 (Canvas Plot Margin & Baseline Alignment)**：
+   - 舊版 `PedalTraceCanvas` 與 `PowerTorqueCanvas` 在 Canvas 內部繪製網格線時，直接以 `h * 0.25, h * 0.50, h * 0.75` 畫線，但數據 Y 軸映射卻套用了 top/bottom 8px~10px 的內邊距，導致 25%/50%/75% 虛線與數據波形完全對不上；且無 0% 基線 (Bottom Baseline)，導致數值為 0 的底部波形/點位與邊框黏連。
+   - 修正方案：定義明確 `padTop = 26 * dpr`（避開頂部 overlay 文字標頭）與 `padBottom = 12 * dpr`（避開底部圓角邊框），`plotH = h - padTop - padBottom`。所有網格虛線（0% baseline, 25%, 50%, 75%）與波形/散佈點 Y 座標全數統一依此繪圖區間對齊，畫面視覺清晰且精準不截斷。
+
+**後續行動 (Action):**
+- 凡是在帶 Header 的 column Flex 容器內擺放多個並排 Canvas/Card 時，嚴禁於子層設置 `h-100` 或 `height: 50%`，必須使用 `flex: '1 1 0%', minHeight: 0`。
+- Canvas 數據繪製與背景虛線必須使用同一組 `padTop/padBottom` 計算繪圖高度 `plotH`，並明確繪製 0% 基線。
+
+---
+
+## 2026-08-07 - AEGO 齒比紅線極速換算與高檔位動力帶轉速上限修復 (`tuningMath.ts`)
+
+**學習點 (Learning):**
+1. **`simulatedTopSpeed` 轉速比例換算 (Redline Speed Scaling)**：
+   - Forza 遊戲內顯示與輸入的 `simulatedTopSpeed` 為車輛在紅線轉速 (`maxRpm`) 下的實體極速。修復後將其先乘上 $\frac{maxHpRpm}{maxRpm}$ 縮放至 Peak HP 轉速再計算 `topTotalRatio`，完美修正終傳比與紅線極速。
+2. **高檔位升檔轉速與 Powerband 區間上限對齊 (High Gear Shift RPM Upper Bounding)**：
+   - 舊版演算法將步階比率上限設為 `rMax = rRedlineHp * 1.05`，且硬編碼末檔齒比 `gNgears = 0.85`；在多檔位（如 7 檔）高檔位升檔時（如 6 升 7 檔），導致升檔比率 $r_{\text{step}} > r_{\text{redline}} = \frac{maxHpRpm}{maxRpm}$，進而使升檔後起始轉速 $RPM_{\text{shift}} = maxRpm \times r_{\text{step}} > maxHpRpm$，硬生生凸出於動力帶區間之外。
+   - 修正方案：
+     1. 將 $r_{\text{Max}}$ 嚴格上限限制為 $r_{\text{redline}} = \frac{maxHpRpm}{maxRpm}$。
+     2. 移除硬編碼末檔齒比 $g_{N-1} = 0.85$，改由 1 檔與 $r_{\text{step}}$ 漸進遞推生成。
+     3. 於二次補正 re-distribution 迴圈中，精準以 $s = \left(\frac{g_{\text{top}}}{g_0 \times \prod r_{\text{raw}}}\right)^{\frac{1}{N_{\text{steps}}}}$ 比例重排全數中間檔位並保護 $g_{\text{top}}$。
+   - 效果：全數檔位（從 1 升 2 檔至 6 升 7 檔）在紅線升檔後的起始轉速，全數動態收斂落在 $\le maxHpRpm$ 且 $\ge maxTorqueRpm$ 的亮綠色動力帶區間內！
+
+**後續行動 (Action):**
+- 多檔位齒比步階計算時，嚴禁設定比率上限 $r_{\text{Max}} > \frac{maxHpRpm}{maxRpm}$；齒比必須由 1 檔向末檔幾何連續漸進導出，保證全檔位升檔轉速 100% 留在動力帶包絡線內。
+
+---
+
 ## 2026-08-06 - 車輛動力學概覽 G力雷達圖 (`GForceRadar.tsx`) 雙重尺寸同步、防扁變形與即時點邊界限制重構
 
 **學習點 (Learning):**
@@ -1660,12 +1695,18 @@
 **後續行動 (Action):**
 - 查閱遙測封包個別欄位使用狀態時，直接檢視 `references/packet_format_reference.md`。
 
+---
 
+## 2026-08-07 - 直線加速 (Drag) 調校計算機 4-Speed Meta 齒比極速與前低後高 Forward Rake 車身物理重構
 
+**學習點 (Learning):**
+1. **Forza Drag 4-Speed Meta 齒比與動力極速校準 ($v_{\text{drag\_top}}$)**：
+   - 舊邏輯原先將 Drag 極速估算為 $255 \times (\text{maxHp} / \text{weight})^{1/3}$（對 930 HP 車輛僅得 221.5 km/h），導致主減速比過密且 4 檔在 221 km/h 即達轉速上限。在 Forza Drag 中，4 檔為避免換檔時間損失的 Meta 選擇，但 4 檔必須能夠完整達到車輛動力的極速上限。
+   - 重構方案：推導動態極速估算公式 $v_{\text{drag\_top}} = 410.0 \cdot \left(\frac{\text{maxHp}}{\text{weight}}\right)^{0.30} \cdot (1 + 0.12 \cdot \text{aeroEfficiency})$，使 930 HP AWD 車輛的 4 檔紅線車速達到 381.3+ km/h，並在 1~4 檔間套用幾何步進比率衰減，5 檔以上硬性維持 1.00。
+2. **前低後高 Forward Rake 空氣力學姿態與大扭力壓制懸吊**：
+   - 舊邏輯將前車高設為最大值、後車高設為最小值，會導致底盤進氣產生巨額空氣阻力與抬升力。
+   - 修正為：前車高設為最小值 (`hMinF`) 壓低車頭封閉氣口、後車高設為最大值 (`hMaxR`) 形成前傾姿態引導氣流並增強後輪下壓力；後彈簧設為高剛度偏硬 (90% Max)，有效防範起步大扭力造成車尾嚴重沉降。
 
-
-
-
-
-
+**後續行動 (Action):**
+- 當車輛 Drag 算牌出現極速異常時，優先檢查 $v_{\text{drag\_top}}$ 與 4 檔終傳比計算，並確認前後車身高度符合前低後高 Forward Rake 姿態。
 
