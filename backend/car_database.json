@@ -1815,19 +1815,19 @@
     "notes": "Name was generated from game asset name. Verify weird/abbreviated models before public release."
   },
   "1215": {
-    "display_name": "NUL_CAR_00",
-    "year": 2000,
-    "make": "Nissan",
-    "model": "CAR",
-    "asset": "NUL_CAR_00",
+    "display_name": "2020 Yamaha YZF-R15",
+    "year": 2020,
+    "make": "Yamaha",
+    "model": "YZF-R15",
+    "asset": "YAM_YZFR15_20",
     "car_id": 1215,
-    "manufacturer_code": "NUL",
-    "raw_model": "CAR",
-    "source": "Forza Horizon 6 Car Ordinals JSON Gist",
-    "confidence": "id-from-game-asset-name-auto-cleaned",
+    "manufacturer_code": "YAM",
+    "raw_model": "YZF-R15",
+    "source": "Horizon Tuner Easter Egg Entry",
+    "confidence": "custom-easter-egg",
     "internal_path": "Scene/animations/Mojo/clip/carclips_1215.clipd",
-    "zip_file": "NUL_CAR_00.zip",
-    "notes": "Name was generated from game asset name. Verify weird/abbreviated models before public release."
+    "zip_file": "YAM_YZFR15_20.zip",
+    "notes": "Horizon Tuner Easter Egg Entry"
   },
   "1216": {
     "display_name": "2011 Audi RS3",

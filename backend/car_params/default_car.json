@@ -7,9 +7,7 @@
     "maxTorque": 0,
     "maxHpRpm": 0,
     "maxTorqueRpm": 0,
-    "aeroBalance": 0.5,
     "aeroEfficiency": 0.8,
-    "mechBalance": 0.5,
     "adjustability": {
         "gearbox": "Full",
         "gears": 6,

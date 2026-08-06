@@ -11,9 +11,9 @@ export interface CarParams {
   maxTorque: number;
   maxHpRpm: number;
   maxTorqueRpm: number;
-  aeroBalance: number;
+  aeroBalance?: number;
   aeroEfficiency: number;
-  mechBalance: number;
+  mechBalance?: number;
   aero_downforce_front?: number;
   aero_downforce_rear?: number;
   frontTireWidth?: number;

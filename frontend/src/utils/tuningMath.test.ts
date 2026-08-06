@@ -91,17 +91,17 @@ describe('calculateAEGOGearing', () => {
     expect(result.finalDrive).toBeGreaterThanOrEqual(2.0);
   });
 
-  it('should reflect mechBalance, aeroBalance, and aeroEfficiency on Road gearing calculations', () => {
-    const defaultBalanceCar: TuningCarParams = { ...sampleCar, mechBalance: 0.50, aeroBalance: 0.50, aeroEfficiency: 0.50 };
-    const customBalanceCar: TuningCarParams = { ...sampleCar, mechBalance: 0.80, aeroBalance: 0.80, aeroEfficiency: 0.80 };
+  it('should reflect aeroEfficiency on Road gearing calculations', () => {
+    const lowEfficiencyCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.20 };
+    const highEfficiencyCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.80 };
     
-    const defaultRes = calculateAEGOGearing('Road', 6, defaultBalanceCar, 7500);
-    const customRes = calculateAEGOGearing('Road', 6, customBalanceCar, 7500);
+    const lowRes = calculateAEGOGearing('Road', 6, lowEfficiencyCar, 7500);
+    const highRes = calculateAEGOGearing('Road', 6, highEfficiencyCar, 7500);
 
-    expect(customRes.finalDrive).not.toBe(defaultRes.finalDrive);
+    expect(highRes.finalDrive).not.toBe(lowRes.finalDrive);
   });
 
-  it('Vehicle 3847 (Mustang Dark Horse) Road gearing should keep shift RPM inside powerband and avoid top-gear cliff drop', () => {
+  it('Vehicle 3847 (Mustang Dark Horse) Road gearing should maintain physical reasonableness and closed-loop smooth progression', () => {
     const mustang3847: TuningCarParams = {
       weight: 1804,
       weight_distribution: 54,
@@ -111,48 +111,50 @@ describe('calculateAEGOGearing', () => {
       maxTorque: 665,
       maxHpRpm: 7500,
       maxTorqueRpm: 4750,
-      aeroBalance: 0.39,
       aeroEfficiency: 0.68,
-      mechBalance: 0.46
+      rearTireWidth: 335,
+      rearTireAspect: 25,
+      rearTireRim: 20
     };
 
     const res = calculateAEGOGearing('Road', 6, mustang3847, 8625);
     expect(res.gears).toHaveLength(6);
 
-    // 1. Verify monotonic decrease
+    // 1. Verify FD is within valid physical range [2.0, 6.5]
+    expect(res.finalDrive).toBeGreaterThanOrEqual(2.0);
+    expect(res.finalDrive).toBeLessThanOrEqual(6.5);
+
+    // 2. Verify monotonic decrease (g1 > g2 > ... > g6)
     for (let i = 1; i < res.gears.length; i++) {
       expect(res.gears[i]).toBeLessThan(res.gears[i - 1]);
     }
 
-    // 2. Verify shift RPM drops from 7500 RPM shift remain above maxTorqueRpm (4750 RPM)
+    // 3. Verify shift RPM drops from maxHpRpm (7500 RPM) remain inside powerband (>= maxTorqueRpm 4750 RPM)
     for (let i = 1; i < res.gears.length; i++) {
       const shiftRpm = 7500 * (res.gears[i] / res.gears[i - 1]);
       expect(shiftRpm).toBeGreaterThanOrEqual(4750);
     }
 
-    // 3. Verify top gear step ratio (Gear 6 / Gear 5) is smooth (>= 0.76) and doesn't drop > 24%
-    const topStepRatio = res.gears[5] / res.gears[4];
-    expect(topStepRatio).toBeGreaterThanOrEqual(0.76);
+    // 4. Verify top gear lands on target standard overdrive ratio (0.85)
+    expect(res.gears[5]).toBeCloseTo(0.85, 2);
 
-    // 4. Verify step ratios are progressive (R_i <= R_{i+1})
+    // 5. Verify smooth step ratio progression without cliff drop (R_{i+1} >= R_i - 0.05)
     for (let i = 1; i < res.gears.length - 1; i++) {
       const stepRatioCurrent = res.gears[i] / res.gears[i - 1];
       const stepRatioNext = res.gears[i + 1] / res.gears[i];
-      expect(stepRatioNext).toBeGreaterThanOrEqual(stepRatioCurrent - 0.03); // allowable small rounding tolerance
+      expect(stepRatioNext).toBeGreaterThanOrEqual(stepRatioCurrent - 0.05);
     }
   });
 
-  it('should apply cubic-root aero scaling so high downforce does not drastically collapse final drive', () => {
-    const lowAeroCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.85 };
-    const highAeroCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.45 };
+  it('drivetrain launch factor should adjust 1st gear target speed (AWD shorter 1st gear than RWD)', () => {
+    const awdCar: TuningCarParams = { ...sampleCar, drivetrain: 'AWD' };
+    const rwdCar: TuningCarParams = { ...sampleCar, drivetrain: 'RWD' };
 
-    const lowAeroRes = calculateAEGOGearing('Road', 6, lowAeroCar, 7500);
-    const highAeroRes = calculateAEGOGearing('Road', 6, highAeroCar, 7500);
+    const awdRes = calculateAEGOGearing('Road', 6, awdCar, 7500);
+    const rwdRes = calculateAEGOGearing('Road', 6, rwdCar, 7500);
 
-    // High downforce (lower efficiency 0.45 vs 0.85) should only adjust final drive moderately (< 20%), not by 40%+
-    const fdRatio = highAeroRes.finalDrive / lowAeroRes.finalDrive;
-    expect(fdRatio).toBeLessThanOrEqual(1.25);
-    expect(fdRatio).toBeGreaterThanOrEqual(0.90);
+    // AWD 1st gear ratio should be larger than RWD for shorter 1st gear launch
+    expect(awdRes.gears[0]).toBeGreaterThan(rwdRes.gears[0]);
   });
 });
 

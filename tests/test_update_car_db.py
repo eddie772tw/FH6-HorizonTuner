@@ -128,3 +128,40 @@ def test_existing_entry_and_various_name_formats():
         assert updated_db["3"]["year"] == 0
         assert updated_db["3"]["make"] == "Unknown"
         assert updated_db["3"]["model"] == "WeirdCarName"
+
+
+def test_skip_easter_egg_car_1215():
+    existing_db = {
+        "1215": {
+            "display_name": "2020 Yamaha YZF-R15",
+            "year": 2020,
+            "make": "Yamaha",
+            "model": "YZF-R15",
+            "car_id": 1215,
+            "source": "Horizon Tuner Easter Egg Entry",
+        }
+    }
+    new_data = {
+        "NUL_CAR_00": "1215",
+    }
+
+    with (
+        patch("update_car_db.urllib.request.urlopen") as mock_urlopen,
+        patch(
+            "builtins.open", new_callable=mock_open, read_data=json.dumps(existing_db)
+        ),
+        patch("update_car_db.json.dump") as mock_json_dump,
+    ):
+        mock_response = MagicMock()
+        mock_response.read.return_value.decode.return_value = json.dumps(new_data)
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        update_car_db.main()
+
+        args, kwargs = mock_json_dump.call_args
+        updated_db = args[0]
+
+        # Verify car 1215 remains unchanged as Yamaha YZF-R15
+        assert updated_db["1215"]["display_name"] == "2020 Yamaha YZF-R15"
+        assert updated_db["1215"]["make"] == "Yamaha"
+        assert updated_db["1215"]["model"] == "YZF-R15"

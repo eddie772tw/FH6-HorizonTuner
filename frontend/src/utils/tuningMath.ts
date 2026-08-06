@@ -141,8 +141,6 @@ export function calculateAEGOGearing(
   }
 
   // Advanced variables
-  const mechBalance = carParams?.mechBalance ?? 0.5;
-  const aeroBalance = carParams?.aeroBalance ?? 0.5;
   const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
   const tireType = carParams?.tireType;
@@ -230,58 +228,50 @@ export function calculateAEGOGearing(
     fd = Math.max(2.0, Math.min(6.5, fd));
 
   } else {
-    // Road / Circuit (Default)
-    // Physical Top Speed with cubic-root scaling for aero efficiency (power drag P_drag ∝ v^3)
-    const aeroEfficiencyFactor = Math.pow(Math.max(0.2, aeroEfficiency) / 0.85, 1 / 3);
-    const aeroBalanceFactor = 1.05 - 0.10 * aeroBalance;
-    const vTop = Math.min(480, Math.max(180, Math.pow(maxHp, 1 / 3) * 38 * aeroEfficiencyFactor * aeroBalanceFactor));
-    const totalTopRatio = (rpmHp * C * 60) / (vTop * 1000);
+    // Road / Circuit (Default) - Closed-loop Geometric Step Ratio Smooth Correction Model
+    const kTrack = 0.915;
+    const vTarget = Math.pow(maxHp, 1 / 3) * 32.5 * (1 + 0.15 * aeroEfficiency);
+    const vCircuit = vTarget * kTrack;
+    const gNgears = 0.85;
 
-    // Target top gear ratio based on number of gears
-    let targetTopGear = 0.74;
-    if (numGears <= 3) targetTopGear = 1.00;
-    else if (numGears === 4) targetTopGear = 0.92;
-    else if (numGears === 5) targetTopGear = 0.82;
-    else if (numGears === 6) targetTopGear = 0.74;
-    else if (numGears === 7) targetTopGear = 0.68;
-    else if (numGears === 8) targetTopGear = 0.63;
-    else targetTopGear = 0.58;
+    // Final Drive calculation
+    const rawFd = (rpmHp * C * 60) / (vCircuit * gNgears * 1000);
+    fd = Math.max(2.0, Math.min(6.5, rawFd));
 
-    let targetFd = (totalTopRatio / targetTopGear) * (0.9 + 0.2 * mechBalance);
-    fd = Math.max(2.0, Math.min(6.5, targetFd));
-    
-    // Recalculate top gear ratio if FD was clamped or adjusted
-    const gN1 = totalTopRatio / fd;
+    // 1st Gear target speed with drivetrain launch modifier kDrive
+    const vBase = 90.0;
+    const kDrive = drivetrain === 'AWD' ? 0.85 : (drivetrain === 'FWD' ? 1.05 : 1.15);
+    const v1 = vBase * kDrive;
+
+    const g1 = (rpmHp * C * 60) / (v1 * fd * 1000);
+
+    // Powerband progression range definition
+    const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
+    const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
+    const rMin = isTurbo ? Math.max(0.72, rBand) : Math.max(0.65, rBand);
+    const rMax = Math.max(0.82, rBand + 0.15);
 
     gears = new Array(numGears).fill(0);
+    gears[0] = Math.max(0.48, Math.min(6.0, g1));
+    gears[numGears - 1] = gNgears;
 
-    // 1st Gear calculation based on vehicle launch dynamics
-    const g1Base = (weight * fDrive * fTire * 2 * C) / (maxTorque * fd);
-    const g1Mult = Math.max(1.0, (maxTorque * 3.2) / (weight * fDrive));
-    const g0 = Math.max(gN1 * 2.2, Math.min(6.0, g1Base * g1Mult));
+    if (numGears > 1) {
+      const numSteps = numGears - 1;
+      const rRaw: number[] = [];
+      let prodRaw = 1.0;
 
-    // Powerband progression exponent gamma (smooth geometric progressive curve)
-    const rPowerband = Math.max(0.55, Math.min(0.85, rpmT / rpmHp));
-    const gamma = 0.90 + 0.15 * (1.0 - rPowerband);
-
-    // Generate smooth progressive gear steps connecting 1st gear (g0) to top gear (gN1)
-    for (let i = 0; i < numGears; i++) {
-      if (numGears <= 1) {
-        gears[i] = g0;
-      } else {
-        const x = i / (numGears - 1);
-        const u = Math.pow(x, gamma);
-        gears[i] = g0 * Math.pow(gN1 / g0, u);
+      for (let i = 1; i <= numSteps; i++) {
+        const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
+        const rVal = rMin + (rMax - rMin) * fraction;
+        rRaw.push(rVal);
+        prodRaw *= rVal;
       }
-    }
 
-    // Enforce final gear step ratio lower-bound protection to prevent cliff drops
-    if (numGears >= 3) {
-      const secondLastStepRatio = gears[numGears - 2] / gears[numGears - 3];
-      const minTopStepRatio = Math.max(0.76, 0.80 * secondLastStepRatio);
-      const targetTopGearRatio = gears[numGears - 2] * minTopStepRatio;
-      if (gears[numGears - 1] < targetTopGearRatio) {
-        gears[numGears - 1] = targetTopGearRatio;
+      const s = Math.pow(gNgears / (gears[0] * prodRaw), 1 / numSteps);
+
+      for (let i = 1; i < numGears; i++) {
+        const rAdj = rRaw[i - 1] * s;
+        gears[i] = gears[i - 1] * rAdj;
       }
     }
   }

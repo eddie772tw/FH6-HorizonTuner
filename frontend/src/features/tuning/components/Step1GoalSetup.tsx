@@ -176,63 +176,37 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </select>
           </div>
 
-          {/* Dynamic parameter: Induction ONLY shown when RaceGoal === 'Drift' */}
-          {selectedRaceGoal === 'Drift' && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Induction Type")}</label>
-              <select 
-                value={carParams?.induction || 'NA'} 
-                onChange={e => updateParam('induction', e.target.value)} 
-                style={{ ...inputStyle, width: '120px' }}
-              >
-                <option value="NA">{t("Naturally Aspirated (NA)")}</option>
-                <option value="Supercharger">{t("Supercharger")}</option>
-                <option value="Turbo">{t("Single Turbo")}</option>
-                <option value="TwinTurbo">{t("Twin Turbo")}</option>
-              </select>
-            </div>
-          )}
+          {/* Induction Type parameter (affects powerband and turbo lag in Road/Drift) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Induction Type")}</label>
+            <select 
+              value={carParams?.induction || 'NA'} 
+              onChange={e => updateParam('induction', e.target.value)} 
+              style={{ ...inputStyle, width: '120px' }}
+            >
+              <option value="NA">{t("Naturally Aspirated (NA)")}</option>
+              <option value="Supercharger">{t("Supercharger")}</option>
+              <option value="Turbo">{t("Single Turbo")}</option>
+              <option value="TwinTurbo">{t("Twin Turbo")}</option>
+            </select>
+          </div>
 
         </div>
 
-        {/* Dynamic Section: Mechanical & Aero Balance (Road / Circuit Only) */}
+        {/* Dynamic Section: Aero Efficiency (Road / Circuit Goal) */}
         {selectedRaceGoal === 'Road' && (
-          <>
-            <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
-              {t("Mechanical & Aero Balance (AEGO Coefficients)")}
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8rem 1.5rem', marginBottom: '1.2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Mechanical Balance (Bm)")}</label>
-                <input 
-                  type="number" step="0.05" min="0.1" max="1.0" 
-                  value={carParams?.mechBalance ?? 0.50} 
-                  onChange={e => updateParam('mechBalance', parseFloat(e.target.value) || 0.50)} 
-                  style={{ ...inputStyle, width: '70px', textAlign: 'center' }} 
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Aero Balance (Ba)")}</label>
-                <input 
-                  type="number" step="0.05" min="0.1" max="1.0" 
-                  value={carParams?.aeroBalance ?? 0.50} 
-                  onChange={e => updateParam('aeroBalance', parseFloat(e.target.value) || 0.50)} 
-                  style={{ ...inputStyle, width: '70px', textAlign: 'center' }} 
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Aero Efficiency (E)")}</label>
-                <input 
-                  type="number" step="0.05" min="0.1" max="1.0" 
-                  value={carParams?.aeroEfficiency ?? 0.50} 
-                  onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value) || 0.50)} 
-                  style={{ ...inputStyle, width: '70px', textAlign: 'center' }} 
-                />
-              </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
+            <div>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{t("Aero Efficiency (E)")}</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '0.6rem' }}>{t("(Used for circuit top speed aero drag scaling)")}</span>
             </div>
-          </>
+            <input 
+              type="number" step="0.05" min="0.10" max="1.00" 
+              value={carParams?.aeroEfficiency ?? 0.50} 
+              onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value) || 0.50)} 
+              style={{ ...inputStyle, width: '80px', textAlign: 'center' }} 
+            />
+          </div>
         )}
 
         {/* Section 2: Engine Power & Gearbox */}

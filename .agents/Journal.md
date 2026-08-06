@@ -14,6 +14,51 @@
 ## YYYY-MM-DD - [標題]
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
+```
+
+## 2026-08-06 - 1215 號 Placeholder 車輛過濾保護與 2020 Yamaha YZF-R15 彩蛋設定
+
+**學習點 (Learning):**
+1. **特定 Ordinal 車輛資料保護與跳過機制 (Ordinal Skip & Easter Egg Protection)**：
+   - Forza Ordinals 對照表中的 `1215` 號車輛名為 `NUL_CAR_00`（單一連字號資產名稱，無空格無年份），過去執行 `update_car_db.py` 時會因無法切割品牌與車型而印出警告。
+   - 將 `1215` 號車輛資料於 `car_database.json` 中設定為彩蛋「2020 Yamaha YZF-R15」，並於 `update_car_db.py` 抓取循環中加入 `if ordinal == 1215 or name_str == "NUL_CAR_00": continue` 判定，使其始終被更新迴圈跳過，確保彩蛋資訊永久獲保護且消除所有 Console 告警。
+
+**後續行動 (Action):**
+- 未來若有自訂彩蛋車輛或特殊備用 Ordinal（如未公開開發車輛），可統一在 `update_car_db.py` 的白名單跳過機制中管理。
+
+---
+
+## 2026-08-06 - 廢棄機械/空力平衡數值清理、Step 1 介面重構與預設/3847 車輛 JSON 清理
+
+**學習點 (Learning):**
+1. **廢棄平衡變數全面清理 (Decoupled Balance Parameter Removal)**：
+   - 由於最新公路環道齒比模型已徹底解耦機械平衡 $B_m$ 與空力平衡 $B_a$，不再將其參與傳動齒比計算。
+   - 已從 `tuningMath.ts` 中完全移除 `mechBalance` / `aeroBalance` 未使用變數，解決 TypeScript Linter 警告；同時將 `CarParams` 介面中的 $B_m / B_a$ 改為 optional 選填欄位，維護向下相容性。
+2. **Step 1 嚮導介面與靜態車輛資料欄位精簡 (UI Streamlining & Parameter Clean-up)**：
+   - 在 `Step1GoalSetup.tsx` 中移除過時的 `Mech Balance (Bm)` 與 `Aero Balance (Ba)` 輸入框，僅保留 `Aero Efficiency (E)` (空力效率) 並將 `Induction Type` (進氣形式) 改為常態顯示。
+   - 在 `BasicCarInfo.tsx` (車輛參數視圖) 中同步移除 `Aero Bal` 與 `Mech Bal` 輸入框。
+   - 清理 `backend/car_params/3847.json` 與 `default_car.json` 中的廢棄平衡屬性。
+
+**後續行動 (Action):**
+- 後續新增或重構算牌模型時，若發生物理變數解耦，應同步清理 UI 輸入元件與車輛 JSON 範本，保持領域模型純潔。
+
+---
+
+## 2026-08-06 - 公路環道閉環幾何步階比率平滑修正齒比模型重製與 3847 物理合理性驗算
+
+**學習點 (Learning):**
+1. **閉環幾何步階比率平滑修正 (Closed-Loop Geometric Step-Ratio Smooth Correction)**：
+   - 將公路環道最高檔位齒比固定為標準超比檔 $G_{N_{gears}} = 0.85$，並以 $FD = \frac{RPM_{HP} \times C_{rear} \times 60}{V_{circuit} \times 0.85 \times 1000}$ 求得終傳比；同時結合驅動方式起步修正 $k_{drive}$（RWD 1.15, FWD 1.05, AWD 0.85）確定一檔齒比 $G_1$。
+   - 在 $1 \dots N_{gears}-1$ 步階區間生成依進氣形式 ($Type_{induction}$) 定義之動態邊界步階序列 $R_{raw, i}$，並求解幾何校正因子 $s = \left( \frac{G_{N_{gears}}}{G_1 \times \prod R_{raw, i}} \right)^{\frac{1}{N_{gears}-1}}$。
+   - 透過校正後步階比率 $R_{adj, i} = R_{raw, i} \times s$ 遞推求得中間檔位 $G_n = G_{n-1} \times R_{adj, n-1}$。此演算法完全鎖死檔位銜接兩端點，確保 $5 \to 6$ 檔完全平滑無斷層崖（轉速 drop % 隨著檔位上升自然收窄），徹底解決極速與中間檔分離算牌造成的脫節現象。
+2. **單元測試斷言原則 (Physics Reasonableness Assertions vs Hardcoded Values)**：
+   - 單元測試對車輛 (如 3847 Mustang Dark Horse) 的斷言應著重於**物理合理性與數學邊界性**（如終傳比界於 [2.0, 6.5]、全檔位單調遞減 $G_1 > G_2 > \dots > G_N$、換檔跌落轉速不低於最大扭力轉速 $RPM_T$、步階比遞進平滑性等），而非強行寫死固定的齒比小數點數值，從而確保車輛資料庫參數升級或調整時，單元測試依然展現極佳的強韌度。
+
+**後續行動 (Action):**
+- 將閉環幾何校正因子 $s$ 的平滑遞推思想推廣至其他賽事型態之算牌模組，維持全維度變速箱設定物理合理性與高畫質渲染表現。
+
+---
+
 ## 2026-08-06 - 公路賽齒比模型空氣阻力三次方根修正與動力帶雙端漸進曲線重構
 
 **學習點 (Learning):**

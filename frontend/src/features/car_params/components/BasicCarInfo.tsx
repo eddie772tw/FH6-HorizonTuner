@@ -99,16 +99,8 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
       
       <h4 style={{ margin: '1rem 0 0.5rem 0', color: 'var(--text-secondary)' }}>{t("Assist Inputs")}</h4>
       <div style={formRowStyle}>
-        <label htmlFor="aero_balance">{t("Aero Bal (0-1)")}</label>
-        <input id="aero_balance" type="number" value={carParams.aeroBalance ?? 0.5} onChange={e => updateParam('aeroBalance', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
-      </div>
-      <div style={formRowStyle}>
         <label htmlFor="aero_efficiency">{t("Aero Eff (0-1)")}</label>
         <input id="aero_efficiency" type="number" value={carParams.aeroEfficiency ?? 0.5} onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
-      </div>
-      <div style={formRowStyle}>
-        <label htmlFor="mech_balance">{t("Mech Bal (0-1)")}</label>
-        <input id="mech_balance" type="number" value={carParams.mechBalance ?? 0.5} onChange={e => updateParam('mechBalance', parseFloat(e.target.value))} style={inputStyle} step="0.01" min="0" max="1" />
       </div>
     </div>
   );
