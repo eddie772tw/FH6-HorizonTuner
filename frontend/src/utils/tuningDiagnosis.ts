@@ -69,7 +69,8 @@ export function analyzeTelemetrySession(
   let frontMax = 0;
   let rearMax = 0;
 
-  points.forEach(p => {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     const travel = p.SuspTravel || [0.0, 0.0, 0.0, 0.0];
     const fl = travel[0] || 0;
     const fr = travel[1] || 0;
@@ -84,7 +85,7 @@ export function analyzeTelemetrySession(
 
     if (frontVal >= 0.95) frontBottomOutCount++;
     if (rearVal >= 0.95) rearBottomOutCount++;
-  });
+  }
 
   report.suspension.frontMaxTravel = frontMax;
   report.suspension.rearMaxTravel = rearMax;
@@ -208,7 +209,8 @@ export function analyzeTelemetrySession(
   let driftPointsCount = 0;
   let totalDriftAngleSum = 0;
   
-  points.forEach(p => {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     // Average rear tire slip angle is a reliable indicator of drift angle
     const slipAngles = p.TireSlipAngle || [0.0, 0.0, 0.0, 0.0];
     const rlSlip = Math.abs(slipAngles[2] || 0) * (180 / Math.PI);
@@ -220,7 +222,7 @@ export function analyzeTelemetrySession(
       driftPointsCount++;
       totalDriftAngleSum += rearSlipAvg;
     }
-  });
+  }
 
   const driftTimePercent = (driftPointsCount / totalPoints) * 100;
 
@@ -232,16 +234,24 @@ export function analyzeTelemetrySession(
     let latGVariance = 0;
     if (driftPointsCount > 1) {
       const latGs: number[] = [];
-      points.forEach(p => {
+      let latGsSum = 0;
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
         const slipAngles = p.TireSlipAngle || [0.0, 0.0, 0.0, 0.0];
         const rearSlipAvg = (Math.abs(slipAngles[2]) + Math.abs(slipAngles[3])) / 2 * (180 / Math.PI);
         if (rearSlipAvg > 8.0 && p.SpeedMetersPerSecond > 5.0) {
-          latGs.push(p.AccelerationX / 9.81);
+          const latG = p.AccelerationX / 9.81;
+          latGs.push(latG);
+          latGsSum += latG;
         }
-      });
-      const meanLatG = latGs.reduce((a, b) => a + b, 0) / latGs.length;
-      const squaredDiffs = latGs.map(g => Math.pow(g - meanLatG, 2));
-      const variance = squaredDiffs.reduce((a, b) => a + b, 0) / (latGs.length - 1);
+      }
+
+      const meanLatG = latGsSum / latGs.length;
+      let squaredDiffsSum = 0;
+      for (let i = 0; i < latGs.length; i++) {
+        squaredDiffsSum += Math.pow(latGs[i] - meanLatG, 2);
+      }
+      const variance = squaredDiffsSum / (latGs.length - 1);
       latGVariance = Math.sqrt(variance); // Standard Deviation
     }
 
@@ -287,7 +297,8 @@ export function analyzeTelemetrySession(
   const powerbandMin = maxHpRpm * 0.80; // 80% to 105% of peak RPM
   const powerbandMax = maxHpRpm * 1.05;
 
-  points.forEach((p, idx) => {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     const speed = p.SpeedMetersPerSecond * 3.6; // convert to km/h
     if (speed > maxSpeed) maxSpeed = speed;
 
@@ -298,7 +309,7 @@ export function analyzeTelemetrySession(
     if (latG > 0.45) {
       if (!insideCorner) {
         insideCorner = true;
-        const entryPt = points[Math.max(0, idx - 5)];
+        const entryPt = points[Math.max(0, i - 5)];
         entrySpeed = entryPt.SpeedMetersPerSecond * 3.6;
       }
       if (speed < minSpeedInCorner) {
@@ -316,7 +327,7 @@ export function analyzeTelemetrySession(
         insidePowerbandCount++;
       }
     }
-  });
+  }
 
   const speedDrop = entrySpeed > 0 ? ((entrySpeed - minSpeedInCorner) / entrySpeed) * 100 : 0;
   const powerbandEff = accelTimeCount > 0 ? (insidePowerbandCount / accelTimeCount) * 100 : 0;
