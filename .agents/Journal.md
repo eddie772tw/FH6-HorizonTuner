@@ -15,6 +15,21 @@
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
+## 2026-08-06 - 車輛動力學概覽 G力雷達圖 (`GForceRadar.tsx`) 雙重尺寸同步、防扁變形與即時點邊界限制重構
+
+**學習點 (Learning):**
+1. **跨層尺寸脫節與偏置暴走陷阱 (Dual-Dimension Desync & Out-of-Bounds Issue)**：
+   - 舊實作中，`ResizeObserver` 僅更新了 `sizeRef.current` 與 `markerCanvasRef` 解析度，但 HTML 圓形外框 DOM 卻釘死在初始渲染尺寸 (`170px`)。當容器變大時（例如 `sizeRef.current = 220px`），計算出的 `dx, dy` 偏置量（如 `100px`）超越了實體外框半徑 (`85px`)，導致即時 G力點與歷史 Marker 大幅飛出圈外。
+   - 重構方案：在 `ResizeObserver` 回調中建立 `circleContainerRef` 與 `innerCircleRef` 指向 HTML 外圈與內圈 DOM，將計算出的最佳直徑 `clampedSize` **同步寫入 HTML DOM style `width/height`、Canvas CSS/Buffer 以及 `sizeRef.current`**，實現零 React state re-render 的 100% 動態尺寸同步。
+2. **正圓高寬比防護與精確居中偏置 (Aspect-Ratio Protection & Centered Point Clamping)**：
+   - 為雷達 HTML 圓框樣式加入 `aspectRatio: '1 / 1'` 與 `flexShrink: 0`，防止 Flexbox 容器在高度受限時將正圓雷達圖壓縮成扁平橢圓。
+   - 將即時 G力點 `<div ref={dotRef}>` 基準調整為 `left: 50%, top: 50%`，並抽出純函數 `gforceRadarMath.ts` 處理極座標偏置與 `maxR = radius - dotRadius` 精確 Clamping，保證在任何超大 G 力（如 > 4.0G 碰撞）下點絕對留在圈內。
+
+**後續行動 (Action):**
+- 包含正圓 HTML 容器與繪圖 Canvas 的 Overlay/Telemetry 卡片，一律加上 `aspectRatio: '1 / 1'` 與 `flexShrink: 0` 防變形；且當使用 ResizeObserver 變更內部繪圖尺寸時，必須同步更動外圍 HTML 圓 DOM 寬高，避免 DOM 與 Canvas 尺寸脫節。
+
+---
+
 ## 2026-08-06 - 胎溫分佈圖 (`TireRadar.tsx`) 純 CSS 流體排版與雙向高度自適應充滿重構
 
 **學習點 (Learning):**
@@ -1516,5 +1531,128 @@
 
 **後續行動 (Action):**
 - 未來新增前端 UI 視圖或元件時，嚴禁自訂非標 control class 或使用大量 inline CSS style，應統一採用 Halfmoon v2 原生 HTML 結構與工具類別。
+
+---
+
+## 2026-08-06 - 遙測儀表板 (`TelemetryView.tsx`) 區塊圖表渲染獨立開關與條件性渲染優化
+
+**學習點 (Learning):**
+1. **高頻遙測下的差異化渲染開關策略 (Selective Telemetry Component Rendering)**：
+   - Dashboard 5 大區塊的開關行為需精準分層：
+     - 波形區塊 (Block 2)：圖表關閉時全清空畫布並停止點記錄。
+     - 動力學區塊 (Block 3)：關閉時清空 `GForceRadar` 畫布與雷達圖指示點，但保持底部 `Lat G` / `Lon G` DOM 數字更新。
+     - 輪胎狀態區塊 (Block 4)：關閉時停止動態抓地力痕跡點與胎溫彩色分佈直方柱，但**保留左側靜態雷達圖背景圓框**、**最底部的靜態三色區域基準線**、`ANG` / `RAT` 標頭與即時胎溫白線及數字標籤繪製。
+     - 懸吊行程區塊 (Block 5)：關閉時停止歷史折線圖 Canvas 疊加，但保持即時懸吊 `Bar` 柱狀圖與 `Min` / `Max` 極值更新。
+     - 駕駛輸入與引擎區塊 (Block 1)：維持無開關狀態，永遠保持即時渲染。
+2. **零 React Re-render 之即時繪製邏輯過濾 (Zero-Rerender Canvas Draw Filtering)**：
+   - 透過 Prop 傳遞 `enabled` / `renderCharts` / `renderRadar` / `renderHistoryTrace` 旗標予低階 Canvas 組件，在內部 `handleUpdate` 事件觸發時，僅在旗標為 `true` 時執行 Canvas `stroke` / `fillRect` 繪繪步驟與點陣列 `hist` 的長度擴充，大幅降低關閉圖表時的 CPU / GPU 渲染開銷。
+   - 狀態儲存於 `localStorage` (鍵名：`telemetry_block_render_config`)，達成跨頁與重新載入之偏好持久化。
+
+**後續行動 (Action):**
+- 後續若新增包含高頻繪圖 Canvas 的卡片組件，若圖表並非關鍵即時指標，可預留獨立繪圖開關控制以供高幀率 / 低功耗需求使用。
+
+---
+
+## 2026-08-06 - Halfmoon CSS 視覺設計規格書與 Agent Skill 標準化撰寫
+
+**學習點 (Learning):**
+1. **設計系統雙層架構標準化 (Two-Layer Architecture Standardization)**：
+   - 將 Layer 1 (Halfmoon CSS v2.0.2 核心語意標籤與 Bootstrap 5 相容佈局) 與 Layer 2 (`App.css` Glassmorphism 賽車暗色/亮色皮膚與霓虹變數) 的權責徹底釐清並文件化。
+   - 完成 `frontend/docs/HALFMOON_SPECIFICATION.md` 規格書 2.0.0，全面對齊 [Halfmoon 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/)：
+     - **Components**: Cards, Buttons, Button Groups, Forms/Controls, Badges, Alerts, Dropdowns, Navbars/Navs, Offcanvas, Modal, Progress Bars, Spinners, Tables。
+     - **Layout**: Containers (`.container-fluid`), Grid System (`.row`, `.col-*`), Gutters (`.g-2`, `.g-3`), Display & Flexbox。
+     - **Helpers & Utilities**: Color & Background, Borders & Shadows, Spacing & Sizing, Position & Z-Index 階層圖, Typography, Vertical Align & Overflow。
+2. **AI Agent 專用 Skill 導入 (`halfmoon-design-system`)**：
+   - 於 `.agents/skills/halfmoon-design-system/SKILL.md` 建立專屬 Agent Skill，提供觸發條件、核心原則、元件/佈局/Helper 選擇對照手冊、防閃爍 (Anti-FOUC) 規則、導覽列 `overflow: visible` 護欄、Emoji 禁用原則與單元測試驗證 SOP。
+
+**後續行動 (Action):**
+- 未來開發或重構前端 UI 時，Agent 可主動調用 `halfmoon-design-system` 技能，確保持續遵循全盤對齊 Halfmoon 官方文件的視覺設計與組件規格標準。
+
+---
+
+## 2026-08-06 - 文件極簡大掃除與 Agent 設計系統遵循規範 (AGENTS.md) 注入
+
+**學習點 (Learning):**
+1. **文件非必要 Emoji 全面大掃除 (Document Emoji Cleanup)**：
+   - 清除 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 及所有技能檔 (`halfmoon-design-system`, `huge-component-refactoring`, `physics-tuning-math`, `modular-refactoring`, `telemetry-udp-protocol`) 標題與內文中的非必要裝飾性 Emoji，確保文檔視覺極簡、嚴謹與高度專業。
+2. **AGENTS.md  mandatory 指示注入 (Agent System Compliance Mandate)**：
+   - 在 [.agents/AGENTS.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/AGENTS.md) 的「UI 視覺與設計系統規範」與「必須做的事」中注入強制命令：要求所有 AI Agent 於開發、重構或修飾前端 UI 與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護** Halfmoon CSS 規格書與 `halfmoon-design-system` 技能。
+
+**後續行動 (Action):**
+- 任何 Agent 於未來任務處理 UI 變更時，自動依據 `AGENTS.md` 指示加載並維護 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 與 [halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md)。
+
+---
+
+## 2026-08-06 - telemetry-udp-protocol 技能 324-Byte Data Out 完整位元組結構補充
+
+**學習點 (Learning):**
+1. **324-Byte Data Out 完整封包細節補充 (Complete 324-Byte Offset Specification)**：
+   - 於 [.agents/skills/telemetry-udp-protocol/SKILL.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/telemetry-udp-protocol/SKILL.md) 補充《極限競速：地平線6》(Dash 格式) 全數 324 位元組的詳細對照表。
+   - 分為「1. 遊戲基礎狀態與物理模擬（0 ~ 231 Bytes）」、「2. V2 儀表板擴充欄位（232 ~ 311 Bytes）」與「3. 尾部增強校驗（312 ~ 323 Bytes）」，詳載 Byte Offset、Data Type、Field Name、物理意義與單位對照。
+
+**後續行動 (Action):**
+- 任何涉及 Forza UDP 封包解構、欄位新增或位元偏移檢查的任務，應優先閱讀 `telemetry-udp-protocol` SKILL 表格進行精確位元組校對。
+
+---
+
+## 2026-08-06 - 遙測封包區塊 2 與區塊 3 獨立對照腳本 (`tools/verify_telemetry_v2_v3.py`)
+
+**學習點 (Learning):**
+1. **雙重解包模式實時/合成對比驗證 (Dual Unpacking Verification Script)**：
+   - 撰寫獨立驗證工具 [tools/verify_telemetry_v2_v3.py](file:///d:/FH6-Bundle/FH6-HorizonTuner/tools/verify_telemetry_v2_v3.py)，內建「方法 A：標準 Dash 官方規範 (Standard Spec Offset)」與「方法 B：目前實作 (Current Code Offset)」雙重對照引擎。
+   - 支援合成標準 324-Byte 封包測試及實時 Live UDP 監聽模式 (`--live --port 20440`)，精確驗證並印出區塊 2 與區塊 3 所有欄位的解析結果與出入差距。
+
+**後續行動 (Action):**
+- 未來調整 UDP 遙測封包位元組偏移時，可直接執行 `python tools/verify_telemetry_v2_v3.py` 驗證解析結果。
+
+---
+
+## 2026-08-06 - Live UDP 實機廣播（UDP Port 8000）數值實證與 12-Byte Padding 對齊推論
+
+**學習點 (Learning):**
+1. **實測傳輸與經驗物理參數比對驗證 (Empirical Live UDP Telemetry Capture)**：
+   - 使用 `tools/verify_telemetry_v2_v3.py --live --port 8000` 捕捉到了來自廣播源 `192.168.50.231:5200` 的真實 324-Byte 遊戲 UDP 遙測封包。
+   - **實證推論結論**：**目前程式碼實作 (`telemetry_listener.py`) 才是正確的 (Code Method B is CORRECT)**！
+   - 原因：Forza Horizon 原生 Data Out 在位元組 232 ~ 243 帶有 12 位元組的保留間隔 (Reserved Padding)。目前程式碼從 Offset 244 讀取 `Position`、Offset 256 讀取 `Speed`、Offset 260 讀取 `Power`，得到的數值（車速 `189.55 km/h`、馬力 `913.1 HP`、扭力 `810.6 N·m`、胎溫 `127℉~153℉`、全油門 `255`、3 檔 `Gear 3`）在物理上 100% 精確且完美合理。相反地，若依照無 Padding 的網路概略規範 (Method A) 讀取，會得到車速 10,534 km/h、胎溫 68,0921 ℉ 的荒謬奇異值。
+
+**後續行動 (Action):**
+- 已更新 [.agents/skills/telemetry-udp-protocol/SKILL.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/telemetry-udp-protocol/SKILL.md)，記載 232~243 Bytes 保留間隔避坑經驗，切勿在未來重構時將 `telemetry_listener.py` 的解包偏移往向前搬移。
+
+---
+
+## 2026-08-06 - 尾部 312 ~ 323 位元組 Raw Hex 分析與網路材料「尾部增強校驗」偽命題證偽
+
+**學習點 (Learning):**
+1. **尾部 312 ~ 323 位元組實測證偽 (Tail Byte Raw Hex Disproof)**：
+   - 通過 `tools/verify_telemetry_v2_v3.py --live --port 8000` 擷取實機 324-Byte 封包尾部 Raw Hex：`00 00 00 00 00 00 00 00 12 17 ce 45 00 00 00 ff 00 00 00 03 fb 9f 00 00`。
+   - **實證結論**：網路材料宣稱的「尾部增強校驗（312~323 Bytes 包含 `DeltaT` float / `NormalizedDrivingLine` float / `DataPacketId` int32）」**在實際遊戲傳輸中完全不存在**。
+   - 理由：
+     - 若強行將位元組 312~315 讀取為 float，會得到 `-1.7014e+38` 的極限溢出無效浮點數。
+     - 實測位元組 312~323 實際上裝載的是 `LapNumber` (312), `RacePosition` (314), `AccelInput` (315: `255`), `Gear` (319: `3`), `SteerInput` (320: `-5`) 等控制項與檔位數值！
+
+**後續行動 (Action):**
+- 永久維護 `telemetry-udp-protocol` SKILL 實測真值表，避免未來 Agent 被網路流傳之虛假 312~323 尾部校驗規範誤導。
+
+---
+
+## 2026-08-06 - 實時多封包探測探針 (`--scan`) 全封包 Offset 掃描結果
+
+**學習點 (Learning):**
+1. **全封包 324-Byte 數值位址掃描驗證 (Full-Packet Field Scanner Results)**：
+   - 擴充 [tools/verify_telemetry_v2_v3.py](file:///d:/FH6-Bundle/FH6-HorizonTuner/tools/verify_telemetry_v2_v3.py) 具備 `--scan` 多封包探測引擎，連續捕獲 15 個實時遊戲 UDP 封包全封包掃描。
+   - **實測結論**：
+     1. **`DataPacketId` 掃描結果**：全封包 0 ~ 320 任意 Offset **皆無**呈現 +1 精確遞增的 Int32/UInt32 欄位。遊戲僅透過 Offset 4 的 `TimestampMS` 標記時間點。
+     2. **`DeltaT` 掃描結果**：全封包 0 ~ 320 任意 Offset **皆無**數值位於 0.005s ~ 0.050s 之 Float32 欄位。實測由 `TimestampMS` (Offset 4) 幀間差計算得出的影格時間為 `0.016786 s` (59.57Hz)。
+     3. 證明網傳材料中「尾部增強校驗 `DeltaT` / `DataPacketId` 欄位」為不符合真實狀況之虛構描述。
+
+**後續行動 (Action):**
+- 遙測數據分析或過濾計算時，一律由 `TimestampMS` 差值動態計算 $\Delta T$，勿尋找獨立 `DeltaT` / `DataPacketId` 欄位。
+
+
+
+
+
+
+
 
 

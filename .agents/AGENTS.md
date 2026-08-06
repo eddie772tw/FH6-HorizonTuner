@@ -47,6 +47,14 @@
    - 新增或重構模組時，必須同步提供該模組的獨立單元測試（Unit Test）。
    - 跨模組對接時，必須透過型別宣告（TypeScript Interface / Python Type Hints）明確定義數據合約。
 
+5. **UI 視覺與設計系統規範 (Halfmoon CSS & Design System Mandate)**：
+   - 所有 Agent 在開發、重構或維護前端 UI 組件、頁面佈局與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護**：
+     1. 前端 Halfmoon CSS 規格書：[HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md)
+     2. Agent 設計系統 Skill：[halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md)
+   - **雙層架構**：遵守 Layer 1 (Halfmoon CSS v2.0.2 核心語意標籤與 Layout) + Layer 2 (`App.css` Glassmorphism 賽車暗色/亮色皮膚與霓虹變數) 的權責劃分。
+   - **防閃爍 (Anti-FOUC)**：確保頁面首幀依據 `data-bs-theme` / `data-bs-core` 正確無縫渲染。
+   - **禁用硬編碼與 Emoji**：嚴禁在組件內硬編碼背景色或字體色，統一使用 CSS 語意變數；嚴禁在 UI 字串或組件內加入裝飾性 Emoji 圖示。
+
 4. **Step 導向介面獨立規範**：
    - 對於精靈嚮導 (Wizard) 或多步驟介面（如 Tuning Workflow），**每一個 Step 必須各自獨立為一個 TSX 組件檔**（例如 `Step1GoalSetup.tsx`、`Step2GearboxSetup.tsx`、`Step3ChassisTuner.tsx`）。
    - 主 View（例如 `TuningView.tsx`）僅作為 View Container，專注於導覽進度條 (Stepper Header) 與 Step 之間狀態傳送，嚴禁將 Step 的 UI 表單細節混在主 View 中。
@@ -55,6 +63,7 @@
 * **必須做的事**：
   - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "pnpm -C frontend run test"`）。
   - 修改後端 UDP 解析邏輯後，必須新增或更新 `tests/` 下對應的 Pytest 單元測試。
+  - 前端 UI 開發或變更時，必須遵循並維護 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 規格書與 [halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md) 技能標準。
   - 任務結束後，必須主動回顧開發過程並更新 `.agents/Journal.md`。
   - **維護 `.gitignore` 規範**：新增功能、模組或執行任務時，必須同步檢查並維護 `.gitignore` 檔案，確保所有動態生成之快取（`__pycache__`, `node_modules`, `target`）、使用者設定、運行數據與臨時檔均被嚴格排除，維護 Repository 之純潔性。
 * **詢問後才做的事**：

@@ -12,6 +12,7 @@ import EngineRpmDisplay from './components/EngineRpmDisplay';
 import VehicleDynamicsDisplay from './components/VehicleDynamicsDisplay';
 import PowerTorqueCanvas from './components/PowerTorqueCanvas';
 import ArcSteerGauge from './components/ArcSteerGauge';
+import RenderSwitch from './components/RenderSwitch';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
@@ -49,6 +50,13 @@ interface TelemetryViewProps {
   setSubTab?: (tab: 'live' | 'analysis' | 'drag') => void;
 }
 
+interface BlockRenderConfig {
+  traces: boolean;
+  dynamicsRadar: boolean;
+  tireRadar: boolean;
+  suspensionTrace: boolean;
+}
+
 const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab }) => {
   const [internalSubTab, setInternalSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
   const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
@@ -59,6 +67,26 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
   const { t } = useSettings();
   const { carName } = useCarParams();
   const { isRecording, loadSavedSession } = useTelemetryRecorder();
+
+  const [renderConfig, setRenderConfig] = useState<BlockRenderConfig>(() => {
+    try {
+      const saved = localStorage.getItem('telemetry_block_render_config');
+      if (saved) {
+        return { traces: true, dynamicsRadar: true, tireRadar: true, suspensionTrace: true, ...JSON.parse(saved) };
+      }
+    } catch {}
+    return { traces: true, dynamicsRadar: true, tireRadar: true, suspensionTrace: true };
+  });
+
+  const toggleBlockRender = (key: keyof BlockRenderConfig) => {
+    setRenderConfig(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem('telemetry_block_render_config', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const prevIsRacingRef = useRef<boolean>(false);
 
@@ -201,49 +229,61 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
 
           {/* BLOCK 2: Row 1 Center (Span 2 / 6 = 33.3%) - Dual Trace Center */}
           <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 2' }}>
-            <h3 className="fs-6 text-primary fw-bold border-bottom pb-1 m-0">{t("Live Telemetry Traces")}</h3>
+            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
+              <h3 className="fs-6 text-primary fw-bold m-0">{t("Live Telemetry Traces")}</h3>
+              <RenderSwitch checked={renderConfig.traces} onChange={() => toggleBlockRender('traces')} />
+            </div>
             <div className="d-flex flex-column gap-2 flex-grow-1 overflow-hidden h-100">
               <div className="flex-grow-1 overflow-hidden" style={{ height: '50%' }}>
-                <PedalTraceCanvas height="100%" />
+                <PedalTraceCanvas height="100%" enabled={renderConfig.traces} />
               </div>
               <div className="flex-grow-1 overflow-hidden" style={{ height: '50%' }}>
-                <PowerTorqueCanvas height="100%" />
+                <PowerTorqueCanvas height="100%" enabled={renderConfig.traces} />
               </div>
             </div>
           </div>
 
           {/* BLOCK 3: Row 1 Right (Span 2 / 6 = 33.3%) - Dynamics Summary & G-Radar */}
           <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 2' }}>
-            <h3 className="fs-6 text-primary fw-bold border-bottom pb-1 m-0">{t("Vehicle Dynamics Overview")}</h3>
+            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
+              <h3 className="fs-6 text-primary fw-bold m-0">{t("Vehicle Dynamics Overview")}</h3>
+              <RenderSwitch checked={renderConfig.dynamicsRadar} onChange={() => toggleBlockRender('dynamicsRadar')} />
+            </div>
             <div className="d-flex gap-3 align-items-stretch flex-grow-1 overflow-hidden">
               <div className="flex-grow-1 overflow-hidden h-100">
                 <VehicleDynamicsDisplay />
               </div>
-              <div className="d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '42%' }}>
-                <GForceRadar />
+              <div className="d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '42%', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+                <GForceRadar renderRadar={renderConfig.dynamicsRadar} />
               </div>
             </div>
           </div>
 
           {/* BLOCK 4: Row 2 Left (Span 3 / 6 = 50%) - Tire Grip & Status */}
           <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 3' }}>
-            <h3 className="fs-6 text-primary fw-bold border-bottom pb-1 m-0">{t("Tire Grip & Status")}</h3>
+            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
+              <h3 className="fs-6 text-primary fw-bold m-0">{t("Tire Grip & Status")}</h3>
+              <RenderSwitch checked={renderConfig.tireRadar} onChange={() => toggleBlockRender('tireRadar')} />
+            </div>
             <div className="d-grid gap-2 flex-grow-1 h-100 overflow-hidden" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
-              <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} />
-              <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} />
-              <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} />
-              <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} />
+              <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} renderCharts={renderConfig.tireRadar} />
+              <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} renderCharts={renderConfig.tireRadar} />
+              <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} renderCharts={renderConfig.tireRadar} />
+              <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} renderCharts={renderConfig.tireRadar} />
             </div>
           </div>
 
           {/* BLOCK 5: Row 2 Right (Span 3 / 6 = 50%) - Suspension Travel */}
           <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 3' }}>
-            <h3 className="fs-6 text-primary fw-bold border-bottom pb-1 m-0">{t("Suspension Travel")}</h3>
+            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
+              <h3 className="fs-6 text-primary fw-bold m-0">{t("Suspension Travel")}</h3>
+              <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />
+            </div>
             <div className="d-grid gap-2 flex-grow-1 h-100 overflow-hidden" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
-              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} />
-              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} />
-              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} />
-              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} />
+              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} renderHistoryTrace={renderConfig.suspensionTrace} />
+              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} renderHistoryTrace={renderConfig.suspensionTrace} />
+              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} />
+              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} />
             </div>
           </div>
 

@@ -9,7 +9,14 @@ const getTempColor = (temp: number) => {
 };
 
 // --- COMPONENT: TireRadar ---
-const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> = React.memo(({ title, isLeft, tireIdx }) => {
+interface TireRadarProps {
+  title: string;
+  isLeft: boolean;
+  tireIdx: number;
+  renderCharts?: boolean;
+}
+
+const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx, renderCharts = true }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,6 +34,17 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
   // 保存 DOM 的實體邏輯尺寸 (CSS 像素)
   const tempSizeRef = useRef({ w: 90, h: 28 });
   const { convertTemp } = useSettings();
+
+  useEffect(() => {
+    if (!renderCharts) {
+      const rCanvas = radarCanvasRef.current;
+      if (rCanvas) {
+        const ctx = rCanvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+      }
+      hist.current = [];
+    }
+  }, [renderCharts]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -161,18 +179,22 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
       const speed = liveData.SpeedMetersPerSecond || 0;
       const isMoving = Math.abs(speed) > 0.5;
 
-      if (!isMoving) {
-        for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
-      } else {
-        if (hist.current.length < 900) {
-          hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now, speed });
+      if (renderCharts) {
+        if (!isMoving) {
+          for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
         } else {
-          const old = hist.current.shift();
-          if (old) {
-            old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
-            hist.current.push(old);
+          if (hist.current.length < 900) {
+            hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now, speed });
+          } else {
+            const old = hist.current.shift();
+            if (old) {
+              old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
+              hist.current.push(old);
+            }
           }
         }
+      } else {
+        hist.current = [];
       }
 
       if (angRef.current) {
@@ -189,69 +211,73 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
       if (rCanvas && rCanvas.width > 0) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
+          ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
           const dpr = window.devicePixelRatio || 1;
           const radius = (rCanvas.width / dpr) / 2;
           const isLosingGrip = Math.abs(cRatio) > 1.0 || Math.abs(cAngle) > 1.0;
 
-          ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+          // 保留靜態抓地力雷達圖背景
           const bg = getOrCreateBgCache(radius * dpr, isLosingGrip);
           if (bg) {
             ctx.drawImage(bg, 0, 0);
           }
-          let startIdx = hist.current.length - 1;
-          while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
-            startIdx--;
-          }
-          const firstValidIdx = startIdx + 1;
-          const histLen = hist.current.length;
 
-          if (firstValidIdx < histLen) {
-            ctx.beginPath();
-            const isLightTheme = document.documentElement.getAttribute('data-bs-theme') === 'light';
-            ctx.strokeStyle = isLightTheme ? 'rgba(15, 23, 42, 0.45)' : 'rgba(255, 255, 255, 0.35)';
-            ctx.lineWidth = 2 * dpr;
-            ctx.lineJoin = 'round';
-            for (let i = firstValidIdx; i < histLen; i++) {
-              const p = hist.current[i];
-              let dx = (p.angle / displayLimit) * radius * dpr;
-              let dy = (p.ratio / displayLimit) * radius * dpr;
-              const dist = Math.sqrt(dx * dx + dy * dy);
-              const maxScaledR = radius * dpr;
-              if (dist > maxScaledR && dist > 0) {
-                dx = (dx / dist) * maxScaledR;
-                dy = (dy / dist) * maxScaledR;
-              }
-              const cx = radius * dpr + dx;
-              const cy = radius * dpr + dy;
-              if (i === firstValidIdx) ctx.moveTo(cx, cy);
-              else ctx.lineTo(cx, cy);
+          if (renderCharts) {
+            let startIdx = hist.current.length - 1;
+            while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
+              startIdx--;
             }
-            ctx.stroke();
+            const firstValidIdx = startIdx + 1;
+            const histLen = hist.current.length;
+
+            if (firstValidIdx < histLen) {
+              ctx.beginPath();
+              const isLightTheme = document.documentElement.getAttribute('data-bs-theme') === 'light';
+              ctx.strokeStyle = isLightTheme ? 'rgba(15, 23, 42, 0.45)' : 'rgba(255, 255, 255, 0.35)';
+              ctx.lineWidth = 2 * dpr;
+              ctx.lineJoin = 'round';
+              for (let i = firstValidIdx; i < histLen; i++) {
+                const p = hist.current[i];
+                let dx = (p.angle / displayLimit) * radius * dpr;
+                let dy = (p.ratio / displayLimit) * radius * dpr;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const maxScaledR = radius * dpr;
+                if (dist > maxScaledR && dist > 0) {
+                  dx = (dx / dist) * maxScaledR;
+                  dy = (dy / dist) * maxScaledR;
+                }
+                const cx = radius * dpr + dx;
+                const cy = radius * dpr + dy;
+                if (i === firstValidIdx) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+              }
+              ctx.stroke();
+            }
+
+            let dx = (cAngle / displayLimit) * radius * dpr;
+            let dy = (cRatio / displayLimit) * radius * dpr;
+            const tDist = Math.sqrt(dx * dx + dy * dy);
+            const maxTR = (radius - 4) * dpr;
+            if (tDist > maxTR && tDist > 0) {
+              dx = (dx / tDist) * maxTR;
+              dy = (dy / tDist) * maxTR;
+            }
+            const { primary: primaryHex } = themeVars.current;
+            const dotColor = isLosingGrip ? '#ff003c' : (primaryHex.startsWith('#') ? primaryHex : '#00f0ff');
+            const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
+            const dotCenterX = radius * dpr + dx;
+            const dotCenterY = radius * dpr + dy;
+
+            ctx.beginPath();
+            ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
+            ctx.fillStyle = dotGlowColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
+            ctx.fillStyle = dotColor;
+            ctx.fill();
           }
-
-          let dx = (cAngle / displayLimit) * radius * dpr;
-          let dy = (cRatio / displayLimit) * radius * dpr;
-          const tDist = Math.sqrt(dx * dx + dy * dy);
-          const maxTR = (radius - 4) * dpr;
-          if (tDist > maxTR && tDist > 0) {
-            dx = (dx / tDist) * maxTR;
-            dy = (dy / tDist) * maxTR;
-          }
-          const { primary: primaryHex } = themeVars.current;
-          const dotColor = isLosingGrip ? '#ff003c' : (primaryHex.startsWith('#') ? primaryHex : '#00f0ff');
-          const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
-          const dotCenterX = radius * dpr + dx;
-          const dotCenterY = radius * dpr + dy;
-
-          ctx.beginPath();
-          ctx.arc(dotCenterX, dotCenterY, 6 * dpr, 0, Math.PI * 2);
-          ctx.fillStyle = dotGlowColor;
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.arc(dotCenterX, dotCenterY, 3.5 * dpr, 0, Math.PI * 2);
-          ctx.fillStyle = dotColor;
-          ctx.fill();
         }
       }
 
@@ -272,22 +298,7 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
           const tempMaxScale = 260;
           const tempRange = tempMaxScale - tempMinScale;
 
-          const targetBarW = 2.5;
-          const numBins = Math.max(10, Math.floor(tw / targetBarW));
-          const tempPerBin = tempRange / numBins;
-          const bins = new Array(numBins).fill(0);
-          let maxBinCount = 1;
-
-          const hLen = hist.current.length;
-          for (let i = 0; i < hLen; i++) {
-            const p = hist.current[i];
-            if (Math.abs(p.speed) < 0.5) continue;
-            let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
-            let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
-            bins[binIdx]++;
-            if (bins[binIdx] > maxBinCount) maxBinCount = bins[binIdx];
-          }
-
+          // 保留最底部的靜態三色區域基準線
           const coldX = Math.max(0, Math.min(tw, ((167 - tempMinScale) / tempRange) * tw));
           const hotX = Math.max(0, Math.min(tw, ((221 - tempMinScale) / tempRange) * tw));
           const lineY = th - 1;
@@ -300,15 +311,34 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
           ctx.strokeStyle = '#ff0000';
           ctx.beginPath(); ctx.moveTo(hotX, lineY); ctx.lineTo(tw, lineY); ctx.stroke();
 
-          const barW = tw / numBins;
-          for (let i = 0; i < numBins; i++) {
-            let h = (bins[i] / maxBinCount) * (th - 6);
-            if (h < 2) h = 2;
+          // 僅在 renderCharts === true 時繪製彩色分佈直方圖柱
+          if (renderCharts) {
+            const targetBarW = 2.5;
+            const numBins = Math.max(10, Math.floor(tw / targetBarW));
+            const tempPerBin = tempRange / numBins;
+            const bins = new Array(numBins).fill(0);
+            let maxBinCount = 1;
 
-            const binTempMid = tempMinScale + (i + 0.5) * tempPerBin;
-            ctx.fillStyle = getTempColor(binTempMid);
-            const drawW = barW > 1.2 ? barW - 0.3 : barW;
-            ctx.fillRect(i * barW, th - 2 - h, drawW, h);
+            const hLen = hist.current.length;
+            for (let i = 0; i < hLen; i++) {
+              const p = hist.current[i];
+              if (Math.abs(p.speed) < 0.5) continue;
+              let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
+              let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
+              bins[binIdx]++;
+              if (bins[binIdx] > maxBinCount) maxBinCount = bins[binIdx];
+            }
+
+            const barW = tw / numBins;
+            for (let i = 0; i < numBins; i++) {
+              let h = (bins[i] / maxBinCount) * (th - 6);
+              if (h < 2) h = 2;
+
+              const binTempMid = tempMinScale + (i + 0.5) * tempPerBin;
+              ctx.fillStyle = getTempColor(binTempMid);
+              const drawW = barW > 1.2 ? barW - 0.3 : barW;
+              ctx.fillRect(i * barW, th - 2 - h, drawW, h);
+            }
           }
 
           if (cTemp > 0) {
@@ -341,7 +371,7 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
       themeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [tireIdx, convertTemp]);
+  }, [tireIdx, convertTemp, renderCharts]);
 
   return (
     <div

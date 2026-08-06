@@ -3,7 +3,12 @@ import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 
 // --- COMPONENT: PedalTraceCanvas ---
-const PedalTraceCanvas: React.FC<{ height?: string | number }> = React.memo(({ height = '140px' }) => {
+interface PedalTraceCanvasProps {
+  height?: string | number;
+  enabled?: boolean;
+}
+
+const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height = '140px', enabled = true }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ throttle: number; brake: number; time: number }[]>([]);
@@ -12,6 +17,15 @@ const PedalTraceCanvas: React.FC<{ height?: string | number }> = React.memo(({ h
   const prevRace = useRef<number | null>(null);
   const isLightRef = useRef(false);
   const { t } = useSettings();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas && !enabled) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hist.current = [];
+    }
+  }, [enabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,6 +56,15 @@ const PedalTraceCanvas: React.FC<{ height?: string | number }> = React.memo(({ h
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
+
+      if (!enabled) {
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        hist.current = [];
+        return;
+      }
 
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
@@ -126,7 +149,7 @@ const PedalTraceCanvas: React.FC<{ height?: string | number }> = React.memo(({ h
       themeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, []);
+  }, [enabled]);
 
   return (
     <div

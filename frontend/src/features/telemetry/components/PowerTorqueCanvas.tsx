@@ -4,9 +4,10 @@ import { useSettings } from '../../../context/SettingsContext';
 
 interface PowerTorqueCanvasProps {
   height?: string | number;
+  enabled?: boolean;
 }
 
-const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height = '140px' }) => {
+const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height = '140px', enabled = true }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ rpm: number; power: number; torque: number; time: number }[]>([]);
@@ -18,6 +19,15 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
   const maxPowerObservedRef = useRef<number>(100);
   const maxTorqueObservedRef = useRef<number>(100);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas && !enabled) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hist.current = [];
+    }
+  }, [enabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -54,6 +64,15 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
+
+      if (!enabled) {
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        hist.current = [];
+        return;
+      }
 
       if (
         (prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
@@ -182,7 +201,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       themeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [convertPower, convertTorque]);
+  }, [convertPower, convertTorque, enabled]);
 
   return (
     <div
