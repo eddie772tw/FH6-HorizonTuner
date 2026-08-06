@@ -21,11 +21,10 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
   const ratioRef = useRef<HTMLSpanElement>(null);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  // 策略 A：快取主題色值
   const themeVars = useRef({ primary: '#00f0ff', isLight: false });
-  // 策略 B：靜態背景快取（OffscreenCanvas），避免每幀重繪
   const bgCacheRef = useRef<{ canvas: OffscreenCanvas | null; isLosingGrip: boolean }>({ canvas: null, isLosingGrip: false });
-  // tempCanvas 尺寸快取（避免 clientWidth/clientHeight reflow）
+  
+  // 保存 DOM 的實體邏輯尺寸 (CSS 像素)
   const tempSizeRef = useRef({ w: 90, h: 55 });
 
   const radarSizeRef = useRef<number>(120);
@@ -40,18 +39,20 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (height > 0) {
-          // 上限跟隨容器高度，移除硬頂 95px，讓 radar 可以放大
           const calcSize = Math.max(70, height - 36);
           if (Math.abs(calcSize - radarSizeRef.current) > 1) {
             radarSizeRef.current = calcSize;
             setRadarSize(calcSize);
           }
         }
-        // 快取 tempCanvas 尺寸，避免之後讀取 clientWidth/clientHeight
-        if (tempCanvasRef.current) {
-          const calcSize = radarSizeRef.current;
-          const tempW = Math.floor((width - calcSize) - 16) || 90;
-          tempSizeRef.current = { w: Math.max(60, tempW), h: 55 };
+        
+        // 取得動態容器的真實 CSS 尺寸 (以 tempCanvas 的父元素為準)
+        if (tempCanvasRef.current && tempCanvasRef.current.parentElement) {
+          const parent = tempCanvasRef.current.parentElement;
+          tempSizeRef.current = { 
+            w: Math.max(60, parent.clientWidth), 
+            h: Math.max(30, parent.clientHeight) 
+          };
         }
       }
     });
@@ -60,19 +61,16 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
     return () => resizeObserver.disconnect();
   }, []);
 
-
   useEffect(() => {
     const radius = radarSize / 2;
     const displayLimit = 1.5;
 
-    // 策略 A：快取主題色值
     const updateThemeVars = () => {
       const style = getComputedStyle(document.documentElement);
       themeVars.current = {
         primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
         isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
       };
-      // 主題改變時使背景快取失效，下一幀重繪
       bgCacheRef.current.canvas = null;
     };
     updateThemeVars();
@@ -82,18 +80,19 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
     const rCanvas = radarCanvasRef.current;
     if (rCanvas) {
       const dpr = window.devicePixelRatio || 1;
+      // 確保內部 Canvas Buffer 乘以 DPR
       rCanvas.width = Math.floor(radarSize * dpr);
       rCanvas.height = Math.floor(radarSize * dpr);
-      // 背景快取失效
+      // CSS 保持邏輯像素
+      rCanvas.style.width = `${radarSize}px`;
+      rCanvas.style.height = `${radarSize}px`;
       bgCacheRef.current.canvas = null;
     }
 
-    // 策略 B：靜態背景離屏快取
     const getOrCreateBgCache = (isLosingGrip: boolean): OffscreenCanvas | null => {
       const dpr = window.devicePixelRatio || 1;
       const scaledRadius = radius * dpr;
       const cache = bgCacheRef.current;
-      // 只有在 isLosingGrip 狀態改變或快取不存在時才重新繪製
       if (cache.canvas && cache.isLosingGrip === isLosingGrip) {
         return cache.canvas;
       }
@@ -103,20 +102,19 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         if (!ctx) return null;
 
         ctx.clearRect(0, 0, offscreen.width, offscreen.height);
-        // Radar border
         ctx.beginPath();
         ctx.arc(scaledRadius, scaledRadius, scaledRadius - 1 * dpr, 0, Math.PI * 2);
         ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.12)';
         ctx.lineWidth = 2 * dpr;
         ctx.stroke();
-        // Crosshairs
+
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(255,255,255,0.12)';
         ctx.lineWidth = 1 * dpr;
         ctx.moveTo(0, scaledRadius); ctx.lineTo(scaledRadius * 2, scaledRadius);
         ctx.moveTo(scaledRadius, 0); ctx.lineTo(scaledRadius, scaledRadius * 2);
         ctx.stroke();
-        // 1.0 Threshold Circle (dashed)
+
         ctx.beginPath();
         ctx.setLineDash([3 * dpr, 3 * dpr]);
         ctx.arc(scaledRadius, scaledRadius, scaledRadius / displayLimit, 0, Math.PI * 2);
@@ -128,12 +126,10 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         cache.isLosingGrip = isLosingGrip;
         return offscreen;
       } catch {
-        // OffscreenCanvas 不支援時退化
         return null;
       }
     };
 
-    // 初始化靜態背景（非 losing grip 狀態）
     if (rCanvas) {
       const ctx = rCanvas.getContext('2d');
       if (ctx) {
@@ -182,7 +178,6 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         }
       }
 
-
       if (angRef.current) {
         angRef.current.innerText = cAngle.toFixed(2);
         angRef.current.style.color = Math.abs(cAngle) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
@@ -192,13 +187,13 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
       }
 
+      // 1. Radar Canvas 繪製 (保持原邏輯)
       if (rCanvas) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
           const dpr = window.devicePixelRatio || 1;
           const isLosingGrip = Math.abs(cRatio) > 1.0 || Math.abs(cAngle) > 1.0;
 
-          // 策略 B：從快取繪製靜態背景（isLosingGrip 改變才重新生成）
           ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
           const bg = getOrCreateBgCache(isLosingGrip);
           if (bg) {
@@ -244,7 +239,6 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
             dy = (dy / tDist) * maxTR;
           }
           const { primary: primaryHex } = themeVars.current;
-          // isLosingGrip already declared at line 196 within this ctx block
           const dotColor = isLosingGrip ? '#ff003c' : (primaryHex.startsWith('#') ? primaryHex : '#00f0ff');
           const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
           const dotCenterX = radius * dpr + dx;
@@ -262,17 +256,29 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
         }
       }
 
+      // 2. Temp Canvas 高畫質解析度修復修正 (修正高 DPI 模糊問題)
       const tCanvas = tempCanvasRef.current;
       if (tCanvas) {
         const ctx = tCanvas.getContext('2d');
         if (ctx) {
-          // 使用快取的尺寸，避免 clientWidth/clientHeight reflow
+          const dpr = window.devicePixelRatio || 1;
           const tw = tempSizeRef.current.w;
           const th = tempSizeRef.current.h;
-          if (tCanvas.width !== tw || tCanvas.height !== th) {
-            tCanvas.width = tw;
-            tCanvas.height = th;
+
+          // ⭐ 關鍵修復：將 Canvas 實體像素（Buffer）擴展為 DPR 倍數
+          const pixelW = Math.floor(tw * dpr);
+          const pixelH = Math.floor(th * dpr);
+
+          if (tCanvas.width !== pixelW || tCanvas.height !== pixelH) {
+            tCanvas.width = pixelW;
+            tCanvas.height = pixelH;
+            tCanvas.style.width = `${tw}px`;
+            tCanvas.style.height = `${th}px`;
           }
+
+          // ⭐ 重置並放大 Context 座標軸，後續所有繪製邏輯直接依照原邏輯(tw, th)即可，不必手動乘 dpr
+          ctx.save();
+          ctx.scale(dpr, dpr);
           ctx.clearRect(0, 0, tw, th);
 
           const tempMinScale = 100;
@@ -295,7 +301,6 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
             if (bins[binIdx] > maxBinCount) maxBinCount = bins[binIdx];
           }
 
-          // Tri-Color Baseline (Cold: Blue, Normal: Green, Hot: Red)
           const coldX = Math.max(0, Math.min(tw, ((167 - tempMinScale) / tempRange) * tw));
           const hotX = Math.max(0, Math.min(tw, ((221 - tempMinScale) / tempRange) * tw));
           const lineY = th - 1;
@@ -329,17 +334,18 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
             ctx.lineTo(lineX, th);
             ctx.stroke();
 
-            // 溫度數值：更新 DOM span 位置（原生字體品質，避免 canvas 字體模糊）
             if (tempLabelRef.current) {
               const pct = (lineX / tw) * 100;
               tempLabelRef.current.innerText = `${Math.round(convertTemp(cTemp).value)}`;
               tempLabelRef.current.style.left = `${pct}%`;
-              // 靠右側時翻轉至白線左側，避免溢出
               tempLabelRef.current.style.transform = pct > 68
                 ? 'translateX(calc(-100% - 3px))'
                 : 'translateX(3px)';
             }
           }
+
+          // 還原 context 的 scale 狀態
+          ctx.restore();
         }
       }
     };
@@ -349,20 +355,19 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
       themeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [tireIdx, convertTemp]);
+  }, [tireIdx, convertTemp, radarSize]);
 
   return (
     <div ref={containerRef} className={`d-flex gap-2 align-items-stretch p-2 rounded-3 border h-100 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important', minHeight: 0 }}>
-      {/* 雷達圖區：使用正方形，邊長跟隨 radarSize */}
+      {/* 雷達圖區 */}
       <div className="d-flex flex-column align-items-center justify-content-center flex-shrink-0">
         <div className="fw-bold text-body mb-1 fs-8">{title}</div>
         <div className="position-relative" style={{ width: `${radarSize}px`, height: `${radarSize}px` }}>
-          <canvas ref={radarCanvasRef} className="position-absolute top-0 start-0 w-100 h-100" />
+          <canvas ref={radarCanvasRef} className="position-absolute top-0 start-0" />
         </div>
       </div>
-      {/* 右側資訊區：flex-column，ANG/RAT 橫排在上，胎溫圖在下 */}
+      {/* 右側資訊區 */}
       <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0, minHeight: 0, gap: '6px' }}>
-        {/* ANG / RAT 橫排區 */}
         <div className="d-flex flex-row gap-3 align-items-end flex-shrink-0">
           <div className="d-flex flex-column align-items-start">
             <span style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--bs-secondary-color, rgba(108,117,125,0.85))', fontWeight: 600 }}>ANG</span>
@@ -374,9 +379,8 @@ const TireRadar: React.FC<{ title: string, isLeft: boolean, tireIdx: number }> =
             <span className="fw-bold font-monospace" ref={ratioRef} style={{ fontSize: '1.5rem', lineHeight: 1.1 }}>0.00</span>
           </div>
         </div>
-        {/* 胎溫分佈圖：flex-grow-1 填滿下方剩餘空間，canvas wrapper 提供 position-relative 讓 label 可絕對定位 */}
         <div className="flex-grow-1 position-relative" style={{ minHeight: 0 }}>
-          <canvas ref={tempCanvasRef} width={90} height={55} className="w-100 h-100" style={{ display: 'block', minHeight: 0 }} />
+          <canvas ref={tempCanvasRef} className="position-absolute top-0 start-0" style={{ display: 'block' }} />
           <span
             ref={tempLabelRef}
             style={{
