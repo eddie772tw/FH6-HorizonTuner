@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 
 # Make sure main is importable
 import sys
