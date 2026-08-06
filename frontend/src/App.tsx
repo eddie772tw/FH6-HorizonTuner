@@ -83,15 +83,21 @@ const AppContent: React.FC = () => {
 
 import { TelemetryRecorderProvider } from './context/TelemetryRecorderContext';
 
+import { ToastProvider } from './context/ToastContext';
+import ToastContainer from './components/common/ToastContainer';
+
 const App: React.FC = () => {
   return (
     <ThemeProvider>
       <SettingsProvider>
-      <CarParamsProvider>
-        <TelemetryRecorderProvider>
-          <AppContent />
-        </TelemetryRecorderProvider>
-      </CarParamsProvider>
+        <ToastProvider>
+          <CarParamsProvider>
+            <TelemetryRecorderProvider>
+              <AppContent />
+              <ToastContainer />
+            </TelemetryRecorderProvider>
+          </CarParamsProvider>
+        </ToastProvider>
       </SettingsProvider>
     </ThemeProvider>
   );

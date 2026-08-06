@@ -258,6 +258,11 @@ export function createTelemetryCardsManager() {
                 if (tempBlock) tempBlock.style.display = showTemp ? 'flex' : 'none';
             }
 
+            var liveMapContainer = document.getElementById('tcLiveMapContainer');
+            if (liveMapContainer) {
+                liveMapContainer.style.display = showLiveMap ? 'block' : 'none';
+            }
+
             if (!data) return;
 
             var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -294,14 +299,10 @@ export function createTelemetryCardsManager() {
                 renderPowerTorque(data, this.powerTorqueHist, now);
             }
 
-            var liveMapContainer = document.getElementById('tcLiveMapContainer');
-            if (liveMapContainer) {
-                liveMapContainer.style.display = showLiveMap ? 'block' : 'none';
-                if (showLiveMap) {
-                    var liveMapCanvas = document.getElementById('tcLiveMapCanvas');
-                    if (liveMapCanvas) {
-                        renderLiveMap(liveMapCanvas, data, fullConfig);
-                    }
+            if (showLiveMap) {
+                var liveMapCanvas = document.getElementById('tcLiveMapCanvas');
+                if (liveMapCanvas) {
+                    renderLiveMap(liveMapCanvas, data, fullConfig);
                 }
             }
         },

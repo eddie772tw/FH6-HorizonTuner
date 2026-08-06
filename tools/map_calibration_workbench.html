@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FH6 Live MAP 後端實時遙測與視覺化軌跡對齊工作台</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --border-color: #30363d;
+            --accent-color: #00f0ff;
+            --text-color: #c9d1d9;
+            --highlight: #ff00aa;
+            --green: #00ff66;
+            --orange: #ff9900;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Control Panel */
+        .sidebar {
+            width: 440px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 14px;
+            overflow-y: auto;
+        }
+
+        h1 { font-size: 16px; color: var(--accent-color); text-transform: uppercase; letter-spacing: 1px; }
+        .subtitle { font-size: 12px; color: #8b949e; margin-bottom: 4px; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .card h2 { font-size: 13px; color: #fff; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; display: flex; justify-content: space-between; }
+
+        label { display: block; font-size: 11px; color: #8b949e; margin-top: 6px; }
+        input[type="text"], input[type="number"], input[type="range"], input[type="file"], select {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .row { display: flex; gap: 8px; align-items: center; }
+        .row > div { flex: 1; }
+
+        .nudge-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            padding: 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        button:hover { background: rgba(255, 255, 255, 0.16); border-color: var(--accent-color); }
+        button.btn-primary { background: var(--accent-color); color: #000; font-weight: bold; border: none; }
+        button.btn-primary:hover { opacity: 0.9; }
+        button.btn-success { background: var(--green); color: #000; font-weight: bold; border: none; }
+        button.btn-danger { background: #ff0055; color: #fff; font-weight: bold; border: none; }
+        button.btn-warning { background: #ffaa00; color: #000; font-weight: bold; border: none; }
+
+        /* Main Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #05070a;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 20px rgba(0,240,255,0.1);
+            cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+
+        /* Live Preview Widget Overlay */
+        .preview-widget {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 240px;
+            height: 240px;
+            background: rgba(13, 17, 23, 0.94);
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            background: rgba(0, 240, 255, 0.15);
+            padding: 5px 8px;
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #previewCanvas {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .coords-display {
+            font-family: monospace;
+            font-size: 11px;
+            color: #58a6ff;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .img-status {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 6px;
+        }
+        .status-loading { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
+        .status-ok { background: rgba(0, 255, 102, 0.15); color: #00ff66; }
+        .status-err { background: rgba(255, 0, 85, 0.15); color: #ff0055; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div>
+            <h1>FH6 地圖對齊與實時遙測對接工作台</h1>
+            <div class="subtitle">已整合長軌跡永久保留與一鍵車輛對焦功能</div>
+        </div>
+
+        <!-- Quick Center & Auto Tracking Control -->
+        <div class="card" style="border: 2px solid var(--accent-color); background: rgba(0, 240, 255, 0.05);">
+            <h2>🎯 即時車輛對焦 (Instant Vehicle Centering)</h2>
+            <button class="btn-primary" id="btnCenterVehicle" style="font-size: 13px; padding: 10px; margin-top: 4px;">
+                將目前遙測座標移動到地圖中央 (Center Vehicle)
+            </button>
+            <div class="row" style="margin-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #fff;">
+                    <input type="checkbox" id="chkAutoTrackCenter" style="width: auto;">
+                    自動即時追蹤將車輛鎖定於中央 (Auto Tracking)
+                </label>
+            </div>
+        </div>
+
+        <!-- Real Backend WebSocket Connection -->
+        <div class="card">
+            <h2>0. 後端 WebSocket 實時遙測連線 (Live Backend WS)</h2>
+            <label>WebSocket 伺服器網址</label>
+            <input type="text" id="wsUrlInput" value="ws://localhost:8000/ws/telemetry">
+            <div class="row" style="margin-top: 6px;">
+                <button class="btn-success" id="btnConnectWs">開啟實時連線 (Connect)</button>
+                <button class="btn-danger" id="btnDisconnectWs">中斷連線 (Disconnect)</button>
+            </div>
+            <div class="img-status status-err" id="wsStatus">狀態: 未連線到後端 WebSocket</div>
+        </div>
+
+        <!-- Image Loader Selection -->
+        <div class="card">
+            <h2>1. 地圖底圖載入 (Map Image)</h2>
+            <label>手動選擇圖片 (live_map_bg.png)</label>
+            <input type="file" id="mapFileInput" accept="image/*">
+            <div class="img-status status-loading" id="imgStatus">嘗試載入地圖底圖...</div>
+        </div>
+
+        <!-- Track Trace & Telemetry Controls -->
+        <div class="card">
+            <h2>2. 行駛軌跡與車輛遙測 (Track Trace & Position)</h2>
+            <label>選擇軌跡來源 (Trajectory Source)</label>
+            <select id="presetTrackSelect">
+                <option value="live">後端真實實時行車軌跡 (Live Telemetry Stream)</option>
+                <option value="hakone">Hakone Touge 山道過彎甩尾軌跡</option>
+                <option value="tokyo">Tokyo Highway 首都高環狀線軌跡</option>
+                <option value="fuji">Fuji Speedway 富士賽道圈速軌跡</option>
+            </select>
+
+            <div class="row" style="margin-top: 6px;">
+                <button id="btnClearTrace">清除歷史軌跡 (Clear Trace)</button>
+            </div>
+            <div class="subtitle" id="traceCountDisplay" style="margin-top: 4px;">目前軌跡點數: 0 點 (永久保存不消失)</div>
+
+            <label>即時車輛世界座標 (Position X / Z)</label>
+            <div class="row">
+                <div>
+                    <label>PositionX (m)</label>
+                    <input type="number" id="simXNum" value="-120">
+                </div>
+                <div>
+                    <label>PositionZ (m)</label>
+                    <input type="number" id="simZNum" value="80">
+                </div>
+            </div>
+
+            <label>車頭指向 (Yaw / Velocity - 驗證箭頭朝向)</label>
+            <div class="row">
+                <div>
+                    <label>VelocityX (m/s)</label>
+                    <input type="number" id="simVx" value="25" step="1">
+                </div>
+                <div>
+                    <label>VelocityZ (m/s)</label>
+                    <input type="number" id="simVz" value="15" step="1">
+                </div>
+            </div>
+
+            <div class="coords-display" id="headingAngleDisplay" style="margin-top: 6px;">
+                車頭指向角: 59.0° (東北 NE)
+            </div>
+        </div>
+
+        <!-- Intuitive Map Alignment Nudge Buttons -->
+        <div class="card">
+            <h2>3. 微調對齊控制 (Visual Alignment Nudge)</h2>
+            <div class="subtitle">直接在右側畫布上按住拖曳可手動對齊地圖與道路</div>
+            <div class="nudge-grid">
+                <div></div>
+                <button id="nudgeUp">▲ 北 (+5m)</button>
+                <div></div>
+                <button id="nudgeLeft">◄ 西 (-5m)</button>
+                <button id="nudgeReset">重置 (Reset)</button>
+                <button id="nudgeRight">東 (+5m) ►</button>
+                <div></div>
+                <button id="nudgeDown">▼ 南 (-5m)</button>
+                <div></div>
+            </div>
+
+            <div class="row" style="margin-top: 8px;">
+                <button id="zoomIn">+ 放大 (+2%)</button>
+                <button id="zoomOut">- 縮小 (-2%)</button>
+            </div>
+        </div>
+
+        <!-- Affine Transformation Matrix Config -->
+        <div class="card">
+            <h2>4. 仿射對應矩陣 (Calibration Matrix)</h2>
+            <label>地圖圖片中心錨點 Center Pixel (X, Y)</label>
+            <div class="row">
+                <input type="number" id="matCenterX" value="1200" step="1">
+                <input type="number" id="matCenterY" value="800" step="1">
+            </div>
+
+            <label>米/像素 比例尺 (Scale X, Scale Z)</label>
+            <div class="row">
+                <input type="number" id="matScaleX" value="0.85" step="0.01">
+                <input type="number" id="matScaleZ" value="-0.85" step="0.01">
+            </div>
+
+            <button class="btn-primary" id="btnExportConfig">一鍵匯出校正設定 (Export JSON)</button>
+        </div>
+    </div>
+
+    <!-- Main Workspace Area -->
+    <div class="workspace">
+        <div class="canvas-container">
+            <canvas id="mainCanvas" width="1600" height="1066"></canvas>
+        </div>
+
+        <!-- HUD Live MAP Minimap Preview Card -->
+        <div class="preview-widget">
+            <div class="preview-header">
+                <span>HUD LIVE MAP CARD</span>
+                <span id="cardStatus">250m ZOOM</span>
+            </div>
+            <canvas id="previewCanvas" width="240" height="240"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Image & Canvas Setup
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+
+        const mapImg = new Image();
+        let imgLoaded = false;
+
+        const imgStatus = document.getElementById('imgStatus');
+        const mapFileInput = document.getElementById('mapFileInput');
+        const presetTrackSelect = document.getElementById('presetTrackSelect');
+        const wsStatus = document.getElementById('wsStatus');
+        const traceCountDisplay = document.getElementById('traceCountDisplay');
+
+        // Instant Vehicle Centering Controls
+        const btnCenterVehicle = document.getElementById('btnCenterVehicle');
+        const chkAutoTrackCenter = document.getElementById('chkAutoTrackCenter');
+
+        // Inputs
+        const simXNum = document.getElementById('simXNum');
+        const simZNum = document.getElementById('simZNum');
+        const simVx = document.getElementById('simVx');
+        const simVz = document.getElementById('simVz');
+        const headingAngleDisplay = document.getElementById('headingAngleDisplay');
+
+        const matCenterX = document.getElementById('matCenterX');
+        const matCenterY = document.getElementById('matCenterY');
+        const matScaleX = document.getElementById('matScaleX');
+        const matScaleZ = document.getElementById('matScaleZ');
+
+        // Real Telemetry Data & Persistent Live Track History
+        let liveTrackHistory = [];
+        let wsSocket = null;
+        let isWsConnected = false;
+
+        // Preset Driving Trajectories
+        const PRESET_TRACKS = {
+            hakone: generateHakoneTrack(),
+            tokyo: generateTokyoTrack(),
+            fuji: generateFujiTrack()
+        };
+        let currentTrack = liveTrackHistory;
+
+        function generateHakoneTrack() {
+            const pts = [];
+            for (let i = 0; i <= 60; i++) {
+                const t = (i / 60) * Math.PI * 2;
+                const x = -120 + Math.sin(t) * 150 + Math.cos(t * 2) * 30;
+                const z = 80 + Math.cos(t * 0.9) * 120 + Math.sin(t * 1.5) * 25;
+                const drift = Math.sin(t * 3) > 0.3;
+                pts.push({ x, z, drift });
+            }
+            return pts;
+        }
+
+        function generateTokyoTrack() {
+            const pts = [];
+            for (let i = 0; i <= 80; i++) {
+                const t = (i / 80) * Math.PI * 2;
+                const x = 80 + Math.cos(t) * 280;
+                const z = 180 + Math.sin(t) * 190;
+                pts.push({ x, z, drift: false });
+            }
+            return pts;
+        }
+
+        function generateFujiTrack() {
+            const pts = [];
+            for (let i = 0; i <= 70; i++) {
+                const t = (i / 70) * Math.PI * 2;
+                const x = 150 + Math.sin(t * 1.5) * 220;
+                const z = -100 + Math.cos(t * 1.2) * 160;
+                pts.push({ x, z, drift: i % 15 === 0 });
+            }
+            return pts;
+        }
+
+        // Candidates for auto loading
+        const imageCandidateUrls = [
+            '../hud_overlay/assets/live_map_bg.png',
+            'hud_overlay/assets/live_map_bg.png',
+            './hud_overlay/assets/live_map_bg.png',
+            'https://forza.labsgg.com/_astro/FH6-full-map.59v5pH0D.jpg',
+            'https://media.mapgenie.io/v2/assets/prod/games/forza-horizon-6/preview.jpg'
+        ];
+
+        function tryLoadUrl(index) {
+            if (index >= imageCandidateUrls.length) {
+                imgStatus.className = 'img-status status-err';
+                imgStatus.innerText = '自動載入圖片失敗。請點擊上方「選擇檔案」選擇 live_map_bg.png。';
+                drawAll();
+                return;
+            }
+
+            const img = new Image();
+            img.onload = () => {
+                mapImg.src = img.src;
+                imgLoaded = true;
+                mainCanvas.width = img.width;
+                mainCanvas.height = img.height;
+                imgStatus.className = 'img-status status-ok';
+                imgStatus.innerText = `地圖圖檔載入成功 (${img.width}x${img.height} px)`;
+                drawAll();
+            };
+            img.onerror = () => {
+                tryLoadUrl(index + 1);
+            };
+            img.src = imageCandidateUrls[index];
+        }
+
+        // Manual File Picker
+        mapFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        mapImg.src = img.src;
+                        imgLoaded = true;
+                        mainCanvas.width = img.width;
+                        mainCanvas.height = img.height;
+                        imgStatus.className = 'img-status status-ok';
+                        imgStatus.innerText = `手動選擇圖檔成功 (${img.width}x${img.height} px)`;
+                        drawAll();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Initial Auto Load
+        tryLoadUrl(0);
+
+        // Center Vehicle Logic
+        function centerVehicleOnMap() {
+            const curX = parseFloat(simXNum.value) || 0;
+            const curZ = parseFloat(simZNum.value) || 0;
+
+            const sx = parseFloat(matScaleX.value) || 0.85;
+            const sz = parseFloat(matScaleZ.value) || -0.85;
+
+            const canvasW = imgLoaded && mapImg.width ? mapImg.width : mainCanvas.width;
+            const canvasH = imgLoaded && mapImg.height ? mapImg.height : mainCanvas.height;
+
+            const newCenterX = Math.round((canvasW / 2) - (curX / sx));
+            const newCenterY = Math.round((canvasH / 2) - (curZ / sz));
+
+            matCenterX.value = newCenterX;
+            matCenterY.value = newCenterY;
+            drawAll();
+        }
+
+        btnCenterVehicle.addEventListener('click', centerVehicleOnMap);
+
+        // Real Backend WebSocket Setup
+        document.getElementById('btnConnectWs').addEventListener('click', connectWebSocket);
+        document.getElementById('btnDisconnectWs').addEventListener('click', disconnectWebSocket);
+        document.getElementById('btnClearTrace').addEventListener('click', () => {
+            liveTrackHistory = [];
+            if (presetTrackSelect.value === 'live') {
+                currentTrack = liveTrackHistory;
+            }
+            if (traceCountDisplay) {
+                traceCountDisplay.innerText = '目前軌跡點數: 0 點 (永久保存不消失)';
+            }
+            drawAll();
+        });
+
+        function connectWebSocket() {
+            const url = document.getElementById('wsUrlInput').value || 'ws://localhost:8000/ws/telemetry';
+            wsStatus.className = 'img-status status-loading';
+            wsStatus.innerText = `正在連線至 ${url}...`;
+
+            try {
+                if (wsSocket) {
+                    wsSocket.close();
+                }
+                wsSocket = new WebSocket(url);
+
+                wsSocket.onopen = () => {
+                    isWsConnected = true;
+                    wsStatus.className = 'img-status status-ok';
+                    wsStatus.innerText = `已成功連線至後端 WebSocket: ${url}`;
+                    presetTrackSelect.value = 'live';
+                    currentTrack = liveTrackHistory;
+                };
+
+                wsSocket.onmessage = (event) => {
+                    try {
+                        const packet = JSON.parse(event.data);
+                        handleLiveTelemetryPacket(packet);
+                    } catch (err) {
+                        // ignore parse errors
+                    }
+                };
+
+                wsSocket.onerror = () => {
+                    wsStatus.className = 'img-status status-err';
+                    wsStatus.innerText = 'WebSocket 連線發生錯誤。請確認後端正在運行 (python -m backend.main)';
+                };
+
+                wsSocket.onclose = () => {
+                    isWsConnected = false;
+                    wsStatus.className = 'img-status status-err';
+                    wsStatus.innerText = '已與後端 WebSocket 中斷連線';
+                };
+            } catch (err) {
+                wsStatus.className = 'img-status status-err';
+                wsStatus.innerText = '連線建立失敗: ' + err.message;
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (wsSocket) {
+                wsSocket.close();
+                wsSocket = null;
+            }
+            isWsConnected = false;
+            wsStatus.className = 'img-status status-err';
+            wsStatus.innerText = '已手動中斷 WebSocket 連線';
+        }
+
+        function handleLiveTelemetryPacket(data) {
+            if (!data) return;
+
+            const rx = data.PositionX !== undefined ? data.PositionX : (data.x || 0);
+            const rz = data.PositionZ !== undefined ? data.PositionZ : (data.z !== undefined ? data.z : (data.PositionY || 0));
+            const vx = data.VelocityX !== undefined ? data.VelocityX : (data.vx || 0);
+            const vz = data.VelocityZ !== undefined ? data.VelocityZ : (data.vz || 0);
+            const speed = data.SpeedMetersPerSecond !== undefined ? data.SpeedMetersPerSecond * 3.6 : (data.speed || 0);
+
+            if (Math.abs(rx) > 0.01 || Math.abs(rz) > 0.01) {
+                simXNum.value = Math.round(rx * 10) / 10;
+                simZNum.value = Math.round(rz * 10) / 10;
+                simVx.value = Math.round(vx * 10) / 10;
+                simVz.value = Math.round(vz * 10) / 10;
+
+                const isDrift = data.TireSlipRatio ? Math.max.apply(null, data.TireSlipRatio) > 0.4 : speed > 20;
+
+                // Push new point if vehicle moved > 0.3m (Persistent long history without expiring)
+                let shouldPush = false;
+                if (liveTrackHistory.length === 0) {
+                    shouldPush = true;
+                } else {
+                    const lastP = liveTrackHistory[liveTrackHistory.length - 1];
+                    const distMoved = Math.hypot(rx - lastP.x, rz - lastP.z);
+                    if (distMoved > 0.3) {
+                        shouldPush = true;
+                    }
+                }
+
+                if (shouldPush) {
+                    liveTrackHistory.push({ x: rx, z: rz, drift: isDrift });
+                    if (liveTrackHistory.length > 50000) {
+                        liveTrackHistory.shift();
+                    }
+                    if (traceCountDisplay) {
+                        traceCountDisplay.innerText = `目前軌跡點數: ${liveTrackHistory.length} 點 (永久累積不消失)`;
+                    }
+                }
+
+                if (presetTrackSelect.value === 'live') {
+                    currentTrack = liveTrackHistory;
+                }
+
+                // If Auto Track Center is checked, shift map to keep car in center
+                if (chkAutoTrackCenter.checked) {
+                    const sx = parseFloat(matScaleX.value) || 0.85;
+                    const sz = parseFloat(matScaleZ.value) || -0.85;
+                    const canvasW = imgLoaded && mapImg.width ? mapImg.width : mainCanvas.width;
+                    const canvasH = imgLoaded && mapImg.height ? mapImg.height : mainCanvas.height;
+
+                    matCenterX.value = Math.round((canvasW / 2) - (rx / sx));
+                    matCenterY.value = Math.round((canvasH / 2) - (rz / sz));
+                }
+
+                drawAll();
+            }
+        }
+
+        presetTrackSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val === 'live') {
+                currentTrack = liveTrackHistory;
+            } else {
+                currentTrack = PRESET_TRACKS[val] || PRESET_TRACKS.hakone;
+            }
+            if (currentTrack.length > 0) {
+                simXNum.value = Math.round(currentTrack[0].x);
+                simZNum.value = Math.round(currentTrack[0].z);
+            }
+            if (traceCountDisplay) {
+                traceCountDisplay.innerText = `目前軌跡點數: ${currentTrack.length} 點 (永久累積不消失)`;
+            }
+            drawAll();
+        });
+
+        // Dragging state on canvas
+        let isDraggingCar = false;
+        let isDraggingMap = false;
+        let dragStartX = 0, dragStartY = 0;
+        let initialCenterX = 1200, initialCenterY = 800;
+
+        mainCanvas.addEventListener('mousedown', (e) => {
+            const rect = mainCanvas.getBoundingClientRect();
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+
+            const clickPxX = (e.clientX - rect.left) * scaleX;
+            const clickPxY = (e.clientY - rect.top) * scaleY;
+
+            const cx = parseFloat(matCenterX.value);
+            const cy = parseFloat(matCenterY.value);
+            const sx = parseFloat(matScaleX.value);
+            const sz = parseFloat(matScaleZ.value);
+
+            const curX = parseFloat(simXNum.value);
+            const curZ = parseFloat(simZNum.value);
+
+            const carPxX = cx + (curX / sx);
+            const carPxY = cy + (curZ / sz);
+
+            const distToCar = Math.hypot(clickPxX - carPxX, clickPxY - carPxY);
+
+            if (distToCar < 25) {
+                isDraggingCar = true;
+            } else {
+                isDraggingMap = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                initialCenterX = parseFloat(matCenterX.value);
+                initialCenterY = parseFloat(matCenterY.value);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDraggingCar) {
+                const rect = mainCanvas.getBoundingClientRect();
+                const scaleX = mainCanvas.width / rect.width;
+                const scaleY = mainCanvas.height / rect.height;
+
+                const clickPxX = (e.clientX - rect.left) * scaleX;
+                const clickPxY = (e.clientY - rect.top) * scaleY;
+
+                const cx = parseFloat(matCenterX.value);
+                const cy = parseFloat(matCenterY.value);
+                const sx = parseFloat(matScaleX.value);
+                const sz = parseFloat(matScaleZ.value);
+
+                const newWorldX = Math.round((clickPxX - cx) * sx);
+                const newWorldZ = Math.round((clickPxY - cy) * sz);
+
+                simXNum.value = newWorldX;
+                simZNum.value = newWorldZ;
+                drawAll();
+            } else if (isDraggingMap) {
+                const dx = (e.clientX - dragStartX);
+                const dy = (e.clientY - dragStartY);
+
+                matCenterX.value = Math.round(initialCenterX + dx);
+                matCenterY.value = Math.round(initialCenterY + dy);
+                drawAll();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDraggingCar = false;
+            isDraggingMap = false;
+        });
+
+        // Nudge Control Buttons
+        document.getElementById('nudgeUp').addEventListener('click', () => { matCenterY.value = parseFloat(matCenterY.value) - 5; drawAll(); });
+        document.getElementById('nudgeDown').addEventListener('click', () => { matCenterY.value = parseFloat(matCenterY.value) + 5; drawAll(); });
+        document.getElementById('nudgeLeft').addEventListener('click', () => { matCenterX.value = parseFloat(matCenterX.value) - 5; drawAll(); });
+        document.getElementById('nudgeRight').addEventListener('click', () => { matCenterX.value = parseFloat(matCenterX.value) + 5; drawAll(); });
+        document.getElementById('nudgeReset').addEventListener('click', () => { matCenterX.value = 1200; matCenterY.value = 800; matScaleX.value = 0.85; matScaleZ.value = -0.85; drawAll(); });
+
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            matScaleX.value = (parseFloat(matScaleX.value) * 0.98).toFixed(4);
+            matScaleZ.value = (parseFloat(matScaleZ.value) * 0.98).toFixed(4);
+            drawAll();
+        });
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            matScaleX.value = (parseFloat(matScaleX.value) * 1.02).toFixed(4);
+            matScaleZ.value = (parseFloat(matScaleZ.value) * 1.02).toFixed(4);
+            drawAll();
+        });
+
+        // Event listeners
+        [simXNum, simZNum, simVx, simVz, matCenterX, matCenterY, matScaleX, matScaleZ].forEach(el => el.addEventListener('input', drawAll));
+
+        function drawAll() {
+            drawMainCanvas();
+            drawPreviewWidget();
+        }
+
+        // Draw Full Image, History Track Trace, & Overlays
+        function drawMainCanvas() {
+            mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            if (imgLoaded) {
+                mainCtx.drawImage(mapImg, 0, 0);
+            } else {
+                mainCtx.fillStyle = '#0a0e17';
+                mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+                mainCtx.fillStyle = '#00f0ff';
+                mainCtx.font = '16px monospace';
+                mainCtx.textAlign = 'center';
+                mainCtx.fillText('請在左側欄位點擊「選擇檔案」載入 live_map_bg.png 地圖底圖', mainCanvas.width / 2, mainCanvas.height / 2);
+            }
+
+            const cx = parseFloat(matCenterX.value);
+            const cy = parseFloat(matCenterY.value);
+            const sx = parseFloat(matScaleX.value);
+            const sz = parseFloat(matScaleZ.value);
+
+            // 1. Draw Preset or Live Driving Trajectory Line
+            if (currentTrack && currentTrack.length > 1) {
+                mainCtx.save();
+                mainCtx.lineWidth = 4;
+                mainCtx.lineCap = 'round';
+                mainCtx.lineJoin = 'round';
+
+                for (let i = 1; i < currentTrack.length; i++) {
+                    const p1 = currentTrack[i - 1];
+                    const p2 = currentTrack[i];
+
+                    const px1 = cx + (p1.x / sx);
+                    const py1 = cy + (p1.z / sz);
+                    const px2 = cx + (p2.x / sx);
+                    const py2 = cy + (p2.z / sz);
+
+                    mainCtx.beginPath();
+                    mainCtx.moveTo(px1, py1);
+                    mainCtx.lineTo(px2, py2);
+                    mainCtx.strokeStyle = p2.drift ? 'rgba(255, 120, 0, 0.9)' : 'rgba(0, 240, 255, 0.85)';
+                    mainCtx.stroke();
+                }
+                mainCtx.restore();
+            }
+
+            // 2. Draw Car Marker & Heading Vector Arrow
+            const curX = parseFloat(simXNum.value);
+            const curZ = parseFloat(simZNum.value);
+            const carPxX = cx + (curX / sx);
+            const carPxY = cy + (curZ / sz);
+
+            const vx = parseFloat(simVx.value);
+            const vz = parseFloat(simVz.value);
+            const yawAngle = Math.atan2(vx, vz);
+
+            mainCtx.save();
+            mainCtx.translate(carPxX, carPxY);
+            mainCtx.rotate(yawAngle);
+
+            mainCtx.beginPath();
+            mainCtx.moveTo(0, -16);
+            mainCtx.lineTo(12, 12);
+            mainCtx.lineTo(0, 6);
+            mainCtx.lineTo(-12, 12);
+            mainCtx.closePath();
+
+            mainCtx.fillStyle = '#00f0ff';
+            mainCtx.fill();
+            mainCtx.lineWidth = 2.5;
+            mainCtx.strokeStyle = '#ffffff';
+            mainCtx.stroke();
+            mainCtx.restore();
+        }
+
+        // Draw Live MAP Telemetry Card Preview Widget
+        function drawPreviewWidget() {
+            const pw = previewCanvas.width;
+            const ph = previewCanvas.height;
+            previewCtx.clearRect(0, 0, pw, ph);
+
+            const curX = parseFloat(simXNum.value);
+            const curZ = parseFloat(simZNum.value);
+
+            const vx = parseFloat(simVx.value);
+            const vz = parseFloat(simVz.value);
+            const yawAngle = Math.atan2(vx, vz);
+
+            headingAngleDisplay.innerText = `車頭指向角: ${(yawAngle * 180 / Math.PI).toFixed(1)}° (${getCompassDir(yawAngle)})`;
+
+            const cx = parseFloat(matCenterX.value);
+            const cy = parseFloat(matCenterY.value);
+            const sx = parseFloat(matScaleX.value);
+            const sz = parseFloat(matScaleZ.value);
+
+            const carPxX = cx + (curX / sx);
+            const carPxY = cy + (curZ / sz);
+
+            const viewRadiusPx = 250 / Math.abs(sx);
+            const cropX = carPxX - viewRadiusPx;
+            const cropY = carPxY - viewRadiusPx;
+            const cropSize = viewRadiusPx * 2;
+
+            // Draw zoomed background
+            if (imgLoaded) {
+                previewCtx.drawImage(mapImg, cropX, cropY, cropSize, cropSize, 0, 0, pw, ph);
+            } else {
+                previewCtx.fillStyle = '#080c16';
+                previewCtx.fillRect(0, 0, pw, ph);
+            }
+
+            // Draw Trajectory on Minimap Preview
+            if (currentTrack && currentTrack.length > 1) {
+                previewCtx.save();
+                previewCtx.lineWidth = 3;
+                previewCtx.lineCap = 'round';
+
+                for (let i = 1; i < currentTrack.length; i++) {
+                    const p1 = currentTrack[i - 1];
+                    const p2 = currentTrack[i];
+
+                    const c1x = ((cx + p1.x / sx) - cropX) / cropSize * pw;
+                    const c1y = ((cy + p1.z / sz) - cropY) / cropSize * ph;
+                    const c2x = ((cx + p2.x / sx) - cropX) / cropSize * pw;
+                    const c2y = ((cy + p2.z / sz) - cropY) / cropSize * ph;
+
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(c1x, c1y);
+                    previewCtx.lineTo(c2x, c2y);
+                    previewCtx.strokeStyle = p2.drift ? 'rgba(255, 120, 0, 0.9)' : 'rgba(0, 240, 255, 0.85)';
+                    previewCtx.stroke();
+                }
+                previewCtx.restore();
+            }
+
+            // Draw Centered Vehicle Arrow Cursor
+            const centerCanvasX = pw / 2;
+            const centerCanvasY = ph / 2;
+
+            previewCtx.save();
+            previewCtx.translate(centerCanvasX, centerCanvasY);
+            previewCtx.rotate(yawAngle);
+
+            previewCtx.beginPath();
+            previewCtx.moveTo(0, -10); // Nose points UP
+            previewCtx.lineTo(8, 8);
+            previewCtx.lineTo(0, 4);
+            previewCtx.lineTo(-8, 8);
+            previewCtx.closePath();
+
+            previewCtx.fillStyle = '#00f0ff';
+            previewCtx.fill();
+            previewCtx.lineWidth = 1.8;
+            previewCtx.strokeStyle = '#ffffff';
+            previewCtx.stroke();
+            previewCtx.restore();
+
+            // Compass N/S/E/W
+            previewCtx.save();
+            previewCtx.font = 'bold 9px monospace';
+            previewCtx.fillStyle = 'rgba(0, 240, 255, 0.8)';
+            previewCtx.textAlign = 'center';
+            previewCtx.textBaseline = 'middle';
+            previewCtx.fillText('N', pw / 2, 10);
+            previewCtx.fillText('S', pw / 2, ph - 8);
+            previewCtx.fillText('W', 10, ph / 2);
+            previewCtx.fillText('E', pw - 10, ph / 2);
+            previewCtx.restore();
+        }
+
+        function getCompassDir(rad) {
+            const deg = (rad * 180 / Math.PI + 360) % 360;
+            if (deg >= 337.5 || deg < 22.5) return 'N (北)';
+            if (deg >= 22.5 && deg < 67.5) return 'NE (東北)';
+            if (deg >= 67.5 && deg < 112.5) return 'E (東)';
+            if (deg >= 112.5 && deg < 157.5) return 'SE (東南)';
+            if (deg >= 157.5 && deg < 202.5) return 'S (南)';
+            if (deg >= 202.5 && deg < 247.5) return 'SW (西南)';
+            if (deg >= 247.5 && deg < 292.5) return 'W (西)';
+            return 'NW (西北)';
+        }
+
+        document.getElementById('btnExportConfig').addEventListener('click', () => {
+            const configData = {
+                centerX: parseFloat(matCenterX.value),
+                centerY: parseFloat(matCenterY.value),
+                scaleX: parseFloat(matScaleX.value),
+                scaleZ: parseFloat(matScaleZ.value)
+            };
+            const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'map_calibration_config.json';
+            a.click();
+        });
+    </script>
+</body>
+</html>

@@ -15,6 +15,21 @@
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
+## 2026-08-06 - Halfmoon 不干擾 DOM 版型懸浮 Toast 通知系統重構 (`ToastContext.tsx` & `ToastContainer.tsx`)
+
+**學習點 (Learning):**
+1. **DOM 內嵌 Alert 版型推擠與微幅晃動陷阱 (DOM In-Flow Alert Layout Shift Issue)**：
+   - 舊實作在 `TelemetryView.tsx` 啟用 HUD Overlay 時，於高頻繪圖 Dashboard 正上方硬生生插入一個 `<div className="alert alert-warning">` 區塊。這類 DOM 內嵌 Block 會佔用垂直空間，動態推擠下方 `gridTemplateRows: 4.2fr 5.8fr` 的 Telemetry Grid 高度，造成 layout shift 與視覺位移。
+   - 重構方案：
+     1. 移除 DOM 內嵌推擠 Alert，建立全域 `ToastContext` 與 `ToastContainer`。
+     2. `ToastContainer` 使用 `position-fixed top-0 end-0 p-3` (z-index: 1060)，100% 脫離 CSS Normal Flow 空間，絕對不干擾 View 圖表與面板的高度與邊界。
+     3. Toast 樣式套用 `.toast.show.glass-panel` 毛玻璃與 Halfmoon 語意 `.badge` (WARNING, ERROR, SUCCESS, INFO)，無 Emoji，帶有滑順的微動畫與定時自動收起機制。
+
+**後續行動 (Action):**
+- 全站非阻斷性狀態通知（如暫停提示、匯出成功、狀態連線變化）統一使用 `useToast().addToast(...)` 進行懸浮提示，嚴禁在畫面內容區域中放置會擠壓周邊 CSS Flex/Grid 版型的內嵌 Alert。
+
+---
+
 ## 2026-08-06 - 車輛動力學概覽 G力雷達圖 (`GForceRadar.tsx`) 雙重尺寸同步、防扁變形與即時點邊界限制重構
 
 **學習點 (Learning):**
@@ -1809,7 +1824,247 @@
 - **零版型破壞 (Layout Integrity)**：完全保留原本 093 Drift HUD 的 80 段拋物線弧形幾何、1120x420 無截斷畫布與踏板/轉向版型結構。
 
 **後續行動 (Action):**
-- 維持 `hud-core.js` 標準生命週期與雙模式相容性。
+---
+
+## 2026-08-06 - HUD Control Panel 中 Live Map 切換與參數控制修復 (Live Map Control Fix)
+
+**學習點 (Learning):**
+1. **TelemetryCardsManager Early Return 擺放位置坑點**：
+   - 於 `hud_overlay/shared/telemetry-cards/manager.js` 中，原本將 `liveMapContainer.style.display` 切換放置在 `if (!data) return;` 之後。當 UI 控制面板變更設定並發送 `TelemetryCardsManager.update(null, config)` 時，由於沒有遊戲遙測數據 `data`，函數提前返回，導致 `tcLiveMapContainer` 的顯示狀態無法及時更新。
+   - **解決方案**：將 `liveMapContainer.style.display = showLiveMap ? 'block' : 'none';` 移至 `if (!data) return;` 防禦性 return 之前，使其與其餘中央 telemetry 卡片一致。
+2. **BroadcastChannel 跨視窗廣播同步連鎖 (BroadcastChannel Sync Pipeline)**：
+   - 前端控制面板經由 `BroadcastChannel` 傳送 `config` 變更時，`hud_overlay/index.html` 接收訊息漏掉呼叫 `TelemetryCardsManager.update(null, ev.data.data)`，補齊該呼叫確保控制面板操作能在 Overlay 視窗中即時反應。
+3. **後端與前端全屬性對齊**：
+   - 於 `backend/main.py` 的 `DEFAULT_HUD_CONFIG["elements"]` 補齊 `"showLiveMap": True`。
+   - 於 `OverlayView.tsx` 擴充 Live Map 之 Scale (縮放)、Opacity (透明度)、OffsetX/Y (位移) 等傳遞介面與 UI 調整滑桿。
+
+**後續行動 (Action):**
+- 未來新增 Central Telemetry Card 時，必須確保其 DOM 顯示切換邏輯位於 `if (!data) return;` 之前，並於 `telemetryCards.test.ts` 驗證 `data: null` 狀態下的 visibility 變化。
+
+---
+
+## 2026-08-06 - Live MAP HUD 元素升級與 MapGenie 日本地圖 POI 整合 (MapGenie Live MAP Enrichment)
+
+**學習點 (Learning):**
+1. **遙測空間座標 (3D World Space) 至畫布座標 (2D Canvas Space) 轉換與極值包含 (POI Inclusion Bounds)**：
+   - Forza UDP 提供 `PositionX` (東/西向) 與 `PositionZ` (南/北向) 公尺座標。轉譯時需考慮網頁 Canvas Y 軸倒置（向下為正），故 $py$ 轉譯需做 $(1 - \text{ratio})$ 反轉處理。
+   - 為防止地標 (POI) 超出畫布邊界， auto-range 演算法除計算車輛歷史軌跡極值外，亦需動態納入周圍 300m 範圍內之 POI 座標，確保玩家靠近地標時 Minimap 能順暢展現地標圓環與圖籤。
+2. **Node/Vitest JSDOM Canvas Mock 繪圖 API 安全防禦 (JSDOM Canvas API Feature Detection)**：
+   - 在 JSDOM / Vitest 單元測試環境中，`HTMLCanvasElement` mock 並未實作 `setLineDash`, `ellipse`, `translate`, `rotate` 等 Canvas 2D 高級繪圖 API。
+   - **防禦性設計**：在呼叫 `ctx.translate()` / `ctx.rotate()` 與 `ctx.setLineDash()` 前一律加入 `if (typeof ctx.translate === 'function')` 特徵檢查，防止無介面測試環境拋出 `TypeError: ctx.translate is not a function`。
+3. **MapGenie POI 系統與 Proximity Alert 近距離警報 (Proximity Banner UI)**：
+   - 整合包含 PR Stunts (Speed Trap, Speed Zone, Drift Zone, Danger Sign)、賽事點 (Touge Mountain, Road Race, Street Race) 與 Collectibles/Mascots (Skyline Barn Find, Ramen, Matcha) 等點位資料庫。
+   - 於 `live-map.js` 即時計算車輛與最近 POI 之歐氏距離 $\sqrt{(x_1-x_2)^2 + (z_1-z_2)^2}$，當距離 $\le 250\text{m}$ 時觸發 `#tcLiveMapNearby` 顯示與距離即時換算。
+
+**後續行動 (Action):**
+- 撰寫 Canvas 2D 進階渲染（如偏航角懸浮旋轉箭頭、虛線特徵線條）時，必須一律包含功能特徵判斷，避免在 JSDOM 單元測試環境引發執行階段例外。
+
+---
+
+## 2026-08-06 - Live MAP POI 本地 JSON 動態維護架構 (Local JSON POI Architecture)
+
+**學習點 (Learning):**
+1. **解耦 POI 資料與渲染邏輯 (Decoupling POI Data from Renderer)**：
+   - 建立獨立的本地 JSON 設定檔 [`hud_overlay/assets/japan_pois.json`](file:///d:/FH6-HorizonTuner/hud_overlay/assets/japan_pois.json)，將 POI 的 `id`, `name`, `type`, `category`, `x, z`, `symbol`, `color` 解耦至獨立資料檔案中維護。
+   - `live-map.js` 於初始化階段自動非同步 `fetch` 本地 JSON，並提供 `setCustomPOIs` 導出函數，便於玩家或擴充工具無縫更新 POI 點位資訊，無需修改繪圖程式碼。
+
+**後續行動 (Action):**
+- 未來新增地圖（如其他 Horizon 賽季或自訂地圖包）時，只需增加對應區域之 JSON 設定檔即可完成動態掛載。
+
+---
+
+## 2026-08-06 - MapGenie 自動擷取腳本與 2D 仿射座標校準 (MapGenie Extraction & 2D Affine Calibration)
+
+**學習點 (Learning):**
+1. **地圖空間經緯度至遊戲 UDP 世界座標之 2D 仿射變換 (2D Affine Transformation Matrix)**：
+   - 地圖網站（如 MapGenie）提供之空間點位多為經緯度 $(\text{lat}, \text{lng})$ 或相對像素點。透過建立控制基準點 (Ground Control Points) 並求解 2D 仿射轉換矩陣 $\begin{bmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{bmatrix}$ 與偏移向量，可將全區地點批量精準轉換為遊戲 UDP 輸出之米制世界座標 $(X, Z)$。
+2. **自動化擷取與本地資產補齊 (Automated Map Assets & POI Pipeline)**：
+   - 建立 [`tools/fetch_mapgenie_pois.py`](file:///d:/FH6-HorizonTuner/tools/fetch_mapgenie_pois.py) 與 [`tools/calibrate_map_coords.py`](file:///d:/FH6-HorizonTuner/tools/calibrate_map_coords.py) 自動化工具流，一鍵自動抓取 MapGenie 官方 2.28 MB 高解析地圖檔 (`live_map_bg.png`) 並校準產出 `japan_pois.json`。
+
+**後續行動 (Action):**
+- 當遊戲更新全新賽季地圖或擴充區塊時，直接執行 `python tools/fetch_mapgenie_pois.py` 與 `python tools/calibrate_map_coords.py` 即可自動完成圖檔下載與 POI 座標更新。
+
+---
+
+## 2026-08-06 - MapGenie 瓦片架構與 REST API 防爬蟲機制解構 (MapGenie Tile Architecture & Anti-Scraping)
+
+**學習點 (Learning):**
+1. **MapGenie API 認證與瓦片架構分析**：
+   - MapGenie 的網頁內部以 `window.mapData` 宣告地圖資料（日本地圖共包含 737 個點位），但其 REST API 端點 (`/api/v1/user/map-data/{id}` 與 `/api/v1/locations/{id}`) 強制對外部未驗證 HTTP 請求返回 `401 Unauthorized` / `404` 認證保護。
+   - 地圖瓦片採用 Leaflet/MapLibre 四季切割格式：`https://tiles.mapgenie.io/games/forza-horizon-6/one/default-v2/{z}/{y}/{x}.jpg` (Zoom 8-15)。
+2. **多維度地點分類與仿射轉譯對齊**：
+   - 腳本建立對應賽事 (Touge, Street, Road, Dirt, Drag, Cross-Country)、PR Stunts (Speed Trap, Speed Zone, Drift Zone, Danger Sign)、收集品 (Barn Find, XP Board, Mascot) 與玩家設施 (Player House, Car Meet) 之轉換與仿射矩陣。
+
+**後續行動 (Action):**
+- 未來需大量爬取 MapGenie 多圖層點位時，可搭配 Playwright 無頭瀏覽器腳本在 DOM 上下文中提取 `window.mapData` 完整的 737 個即時點位物件。
+
+---
+
+## 2026-08-06 - ForzaLabs (LabsGG) 地圖爬蟲與 3.24MB 全景底圖導出 (LabsGG Scraping & 3.24MB Asset)
+
+**學習點 (Learning):**
+1. **LabsGG Astro 靜態頁面與幾何數據解析**：
+   - ForzaLabs (`forza.labsgg.com`) 採用 Astro v5 靜態 SSR 渲染架構，頁面 script 標籤中內嵌了全區 **457 條道路幾何線段 (Road Segments)** 與 **28 種標記類別定義**。
+   - 底圖為直連 Astro CDN 之 **3.24 MB** 完整高解析全景地圖圖檔 (`/_astro/FH6-full-map.59v5pH0D.jpg`)。
+2. **2D 畫布與遊戲 UDP 空間轉換**：
+   - 建立 [`tools/fetch_labsgg_data.py`](file:///d:/FH6-HorizonTuner/tools/fetch_labsgg_data.py) 自動抓取 LabsGG 底圖與道路資料，並由 [`tools/calibrate_map_coords.py`](file:///d:/FH6-HorizonTuner/tools/calibrate_map_coords.py) 將 2D 畫布像素座標對齊為 UDP 米制世界座標 $(X, Z)$，導出 454 個高精度地點至 `japan_pois.json`。
+
+**後續行動 (Action):**
+- 未來更新 Live MAPOverlay 時，可選擇帶有完整道路拓樸數據的 LabsGG 幾何點位，實現精確的路線追蹤與道路探索提示。
+
+---
+
+## 2026-08-06 - Live MAP 遙測卡片整合 3.24MB 全景底圖與 454 POI 小地圖 (Live MAP Card Integration)
+
+**學習點 (Learning):**
+1. **Live MAP 小地圖繪圖鏈 (Live MAP Minimap Pipeline)**：
+   - 升級 [`hud_overlay/shared/telemetry-cards/live-map.js`](file:///d:/FH6-HorizonTuner/hud_overlay/shared/telemetry-cards/live-map.js)，將 3.24 MB 的 `live_map_bg.png` 地圖圖檔與 454 個地點資料庫 `japan_pois.json` 整合至 60Hz 繪圖循環中。
+   - 實現動態自動範圍視圖 (Auto Range Normalization)、車頭指向光標 (Heading Yaw Arrow Cursor)、過彎甩尾歷史軌跡 (Drift Trace) 與近距離地點警報橫幅 (`#tcLiveMapNearby`) 的無縫結合。
+
+**後續行動 (Action):**
+- 維持 60Hz 渲染低開銷，對於遙測數據中的 Yaw/Velocity 向量維持極輕量純數學運算，並確保無 Emoji 的極簡專業視覺語彙。
+
+---
+
+## 2026-08-06 - Live MAP 小地圖底圖區域動態裁切與車頭指向角度修復 (Minimap Crop Zoom & Arrow Heading Fix)
+
+**學習點 (Learning):**
+1. **小地圖底圖動態區域裁切與縮放 (Canvas Crop Zoom)**：
+   - 避免將整張全景地圖強制全域壓縮印在小 Canvas 上。透過定義 `WORLD_BOUNDS` $[-1000, 1000] \text{ m}$，計算當前車輛位置在圖片中的正規化像素中心 $(sx, sy)$ 與 250m 視野半徑裁切視窗 $(sw, sh)$，傳給 `ctx.drawImage(img, sx - sw/2, sy - sh/2, sw, sh, 0, 0, w, h)`，實現底圖跟隨車輛位置實時放大滑動。
+2. **2D Canvas 座標系下之車頭旋轉角轉譯 (Heading Angle Vector Calibration)**：
+   - Forza UDPTelemetry 中 +X 為東、+Z 為北；Canvas 2D 中 $Y$ 軸反轉向下。車輛前進指向角應修正為 $\text{yawAngle} = \text{atan2}(VelocityX, -VelocityZ)$，使前進方向與 Canvas 旋轉角度完全對齊（指向正北時角度為 0 指向畫面上方）。
+
+**後續行動 (Action):**
+- 在 Canvas 渲染 2D 畫布與 UDP 世界座標轉換時，務必區分 Z 軸垂直反轉與 Heading 向量 $\text{atan2}(vx, vz)$，確保動態追蹤與轉向精確吻合。
+
+---
+
+## 2026-08-06 - 獨立對照校正工作台與車頭指向向量公式最終修復 (Map Calibration Workbench & atan2(vx, vz) Fix)
+
+**學習點 (Learning):**
+1. **獨立視覺化地圖對應與校正工作台 (Standalone Calibration Workbench)**：
+   - 建立 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html) 獨立輔助工具，允許開發階段點擊底圖任意像素點點查對應世界座標，並即時模擬車輛位置、速度向量與 HUD 小地圖畫面，一鍵匯出 `map_calibration_config.json`。
+2. **車頭指向角純數學正解 (Exact Heading Angle Math)**：
+   - 在 Canvas 2D 畫布中，車頭箭頭鼻尖頂點繪製於 $(0, -9)$（朝上 $12\text{ o'clock}$）。當車輛向北移動 ($vz > 0, vx = 0$) 時，旋轉角必須為 $0\text{ rad}$。
+   - 正確公式為 $\text{yawAngle} = \text{atan2}(VelocityX, VelocityZ)$，無負號。
+
+**後續行動 (Action):**
+- 開發與調校任何地圖與遙測點位時，優先開啟 `tools/map_calibration_workbench.html` 進行點擊點對點驗證與視覺化調試。
+
+---
+
+## 2026-08-06 - 車輛局部座標系速度與世界姿態角 (Yaw) 混淆陷阱修正 (Local vs World Frame Heading Bug)
+
+**學習點 (Learning):**
+1. **Forza UDP 遙測座標系區分 (Local Velocity vs World Yaw)**：
+   - 封包中 `VelocityX, Y, Z` (Offset 32~43) 為**車輛局部座標系 (Local Frame)** 速度，$VelocityZ$ 永遠代表前進速度（直行時永遠 $>0$）。若誤用此速度向量計算 `atan2(VelocityX, VelocityZ)`，角度會**永遠恆等於 0 (正北/朝上)**！
+   - 正確的車輛世界指向應使用 `data.Yaw` (Offset 56~67 世界姿態角)，或由世界座標歷程差值 $(\Delta X_{\text{world}}, \Delta Z_{\text{world}})$ 計算 `atan2(dxWorld, dzWorld)`。
+
+**後續行動 (Action):**
+- 處理 2D 地圖或抬頭顯示器 (HUD) 車頭方向時，嚴禁使用局部座標系 speed/velocity 向量計算 Heading，一律採用 `data.Yaw` 或世界座標差值。
+
+---
+
+## 2026-08-06 - 校正工作台 file:// 協議 CORS 阻擋修復與圖檔選擇器 (Local HTML File Picker Fix)
+
+**學習點 (Learning):**
+1. **瀏覽器 file:// 協議下 crossOrigin 安全限制**：
+   - 當直接從本機檔案系統開啟單一 HTML 檔案時 (`file:///d:/...`)，設定 `img.crossOrigin = 'Anonymous'` 會引發瀏覽器 CORS 安全攔截 (`origin 'null' is blocked`)。
+   - 解決方案：移除 `file://` 協議下的 `crossOrigin` 屬性，並提供 `<input type="file">` 手動圖檔選擇器，透過 `FileReader.readAsDataURL` 即時將本地 `live_map_bg.png` 讀入 Canvas。
+
+**後續行動 (Action):**
+- 提供開發用獨立 HTML 工具時，務必加入本地檔案選擇器 (`FileReader`)，確保在任何作業系統與瀏覽器限制下均能零障礙載入本地資源。
+
+---
+
+## 2026-08-06 - 校正工作台直觀互動升級（滑鼠拖曳對齊與軌跡疊加）(Interactive Drag Alignment & Path Trace Overlay)
+
+**學習點 (Learning):**
+1. **畫布手動拖曳對齊 (Canvas Mouse Drag Alignment)**：
+   - 在 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html) 中加入滑鼠拖曳監聽事件 (`mousedown`, `mousemove`, `mouseup`)。使用者可直接點擊拖曳車輛游標以調整 $PositionX, PositionZ$，或拖曳畫布背景以調整對齊錨點 ($centerX, centerY$)。
+2. **遙測歷史行車軌跡疊加 (Driving Trajectory Overlay)**：
+   - 繪製預設或實時行車路線 (Hakone, Tokyo, Fuji賽道)，讓開發者能直接眼見驗證整條道路軌跡是否與地圖影像上的白線/黃線精確重合。
+
+**後續行動 (Action):**
+- 地圖對齊校正時，優先搭配軌跡選單與滑鼠拖曳微調，驗證通過後一鍵匯出 `map_calibration_config.json`。
+
+---
+
+## 2026-08-06 - 校正工作台直連專案後端 WebSocket 實時遙測 (Live Backend WebSocket Integration)
+
+**學習點 (Learning):**
+1. **實時 WebSocket 遙測串流對接 (Live WS Telemetry Ingestion)**：
+   - 升級 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html)，對接專案後端 (`backend/main.py`) 的 `ws://localhost:8000/ws/telemetry` 串流。
+   - 工作台可即時接收真實遊戲遙測數據，將車輛行駛軌跡動態繪製在畫布地圖上，使開發者能夠邊玩遊戲邊實時校正地圖對齊關係。
+
+**後續行動 (Action):**
+- 開發與測試地圖 HUD 時，啟動 `python -m backend.main` 後打開 `tools/map_calibration_workbench.html` 即可進行實時雙向驗證。
+
+---
+
+## 2026-08-06 - 校正工作台一鍵對焦點擊與自動追蹤鎖定 (Instant Vehicle Centering & Auto Track Lock)
+
+**學習點 (Learning):**
+1. **車輛座標一鍵畫布置中演算法 (Instant Vehicle Centering Math)**：
+   - 在 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html) 中加入一鍵置中計算。透過當前遙測座標 $(X_{\text{car}}, Z_{\text{car}})$ 與畫布維度，瞬間倒算平移錨點：
+     $$centerX = \frac{canvasW}{2} - \frac{X_{\text{car}}}{scaleX}$$
+     $$centerY = \frac{canvasH}{2} - \frac{Z_{\text{car}}}{scaleZ}$$
+   - 實現不論車輛行駛至地圖何處，點擊一下按鈕即立刻將車輛拉回畫布中央。
+
+**後續行動 (Action):**
+- 遙測軌跡移出視窗時，點擊「將目前遙測座標移動到地圖中央」即可立即對焦點位。
+
+---
+
+## 2026-08-06 - 歷史行車軌跡長度擴增與永久保存去重機制 (Persistent Long Track Trace & Distance Filtering)
+
+**學習點 (Learning):**
+1. **軌跡永久累積與位移去重演算法 (Distance Threshold Filtering)**：
+   - 升級 [`live-map.js`](file:///d:/FH6-HorizonTuner/hud_overlay/shared/telemetry-cards/live-map.js) 與 [`map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html)。將歷史軌跡點數上限大幅提升至 10,000 ~ 50,000 點。
+   - 僅當車輛實際位移距離 $> 0.3 \text{ m}$ 時才推入新座標點，防止原地打轉或停車時點陣爆量，並取消時間衰減淡出，確保行駛過的所有道路線條完整永久留存。
+
+**後續行動 (Action):**
+- 地圖校正或進行長距離路線地圖對齊時，直接駕駛繞行賽道全區，整條路網軌跡將完整清晰保留在地圖上供比對對齊。
+
+---
+
+## 2026-08-06 - 使用者校準矩陣導回 Live MAP 與全地點資料庫 (Calibrated Matrix Import & Sync)
+
+**學習點 (Learning):**
+1. **地圖仿射矩陣同步 (Map Calibration Sync Pipeline)**：
+   - 讀取使用者匯出之 `map_calibration_config.json` 參數 (`centerX: 1170, centerY: 1312, scaleX: 7.81, scaleZ: -7.81`)。
+   - 將最新 `MAP_CALIBRATION` 參數寫入 [`live-map.js`](file:///d:/FH6-HorizonTuner/hud_overlay/shared/telemetry-cards/live-map.js)，並由 `tools/calibrate_map_coords.py` 重新導出 454 個精確對齊之 POIs 至 [`hud_overlay/assets/japan_pois.json`](file:///d:/FH6-HorizonTuner/hud_overlay/assets/japan_pois.json)。
+
+**後續行動 (Action):**
+- 校正完畢後透過 `calibrate_map_coords.py` 一鍵重新導出 POI catalog，維持 HUD 小地圖與全區地點 100% 精準對齊。
+
+---
+
+## 2026-08-06 - HUD Elements 控制面板子開關階層條件隱藏 (Conditional HUD Sub-toggle UI)
+
+**學習點 (Learning):**
+1. **控制面板階層隱藏 UX (Hierarchical Toggle Visibility)**：
+   - 修改 [`frontend/src/features/overlay_control/OverlayView.tsx`](file:///d:/FH6-HorizonTuner/frontend/src/features/overlay_control/OverlayView.tsx)。當主開關 `showLiveMap` 為 `false` (關閉) 時，透過 JSX 條件判斷自動動態隱藏屬下強相關的 4 個子控制開關 (`showLiveMapPOIs`, `showLiveMapPRStunts`, `showLiveMapCollectibles`, `showLiveMapHeading`)，確保控制選單簡潔流暢。
+
+**後續行動 (Action):**
+- 未來新增主次階層面板（如 VFD 儀表或 Audio 子開關）時，保持主開關關閉時隱藏附屬子開關的動態條件渲染慣例。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

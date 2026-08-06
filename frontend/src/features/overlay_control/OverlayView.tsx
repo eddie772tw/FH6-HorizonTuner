@@ -22,6 +22,10 @@ interface HudElements {
   showTeleCenterAnchor: boolean;
   showTeleGridLines: boolean;
   showLiveMap?: boolean;
+  showLiveMapPOIs?: boolean;
+  showLiveMapPRStunts?: boolean;
+  showLiveMapCollectibles?: boolean;
+  showLiveMapHeading?: boolean;
 }
 
 interface MonitorOption {
@@ -48,6 +52,8 @@ interface HudConfig {
   telemetryPedalScale?: number;
   telemetryPowerTorqueScale?: number;
   telemetryMergedChartsScale?: number;
+  telemetryLiveMapScale?: number;
+  telemetryLiveMapOpacity?: number;
   /** Independent font scale for card text (0.5–2.0) */
   telemetryCardFontScale?: number;
   /** Option to merge power/torque & pedal charts side-by-side */
@@ -62,6 +68,8 @@ interface HudConfig {
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
   telemetryMergedChartsOffsetX?: number;
+  telemetryLiveMapOffsetX?: number;
+  telemetryLiveMapOffsetY?: number;
   /** VFD Instrument Sensitivity Offsets */
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
@@ -83,6 +91,8 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
   telemetryMergedChartsScale: 1.0,
+  telemetryLiveMapScale: 1.0,
+  telemetryLiveMapOpacity: 1.0,
   telemetryCardFontScale: 1.0,
   telemetrySideBySideCharts: true,
   telemetryPedalPosition: 'bottom',
@@ -93,6 +103,8 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
   telemetryMergedChartsOffsetX: 0,
+  telemetryLiveMapOffsetX: 0,
+  telemetryLiveMapOffsetY: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
   glowIntensity: 1.0,
@@ -119,6 +131,10 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
     showLiveMap: true,
+    showLiveMapPOIs: true,
+    showLiveMapPRStunts: true,
+    showLiveMapCollectibles: true,
+    showLiveMapHeading: true,
   },
   soundEnabled: false,
 };
@@ -333,6 +349,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     saveConfig({ ...config, telemetryMergedChartsScale: clamped });
   };
 
+  const handleLiveMapScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryLiveMapScale: clamped });
+  };
+
+  const handleLiveMapOpacityChange = (newOpacity: number) => {
+    const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
+    saveConfig({ ...config, telemetryLiveMapOpacity: clamped });
+  };
+
   const handleCornerOffsetXChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetX: val };
     saveConfig(updated);
@@ -340,6 +366,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const handleCornerOffsetYChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetY: val };
+    saveConfig(updated);
+  };
+
+  const handleLiveMapOffsetXChange = (val: number) => {
+    const updated = { ...config, telemetryLiveMapOffsetX: val };
+    saveConfig(updated);
+  };
+
+  const handleLiveMapOffsetYChange = (val: number) => {
+    const updated = { ...config, telemetryLiveMapOffsetY: val };
     saveConfig(updated);
   };
 
@@ -653,6 +689,40 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     />
                   </div>
 
+                  {/* Live Map Horizontal (X) Offset Slider */}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="fs-7 text-body-secondary">{t("Live Map X-Offset")}:</span>
+                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetX ?? 0} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      className="form-range"
+                      min={-500}
+                      max={500}
+                      step={10}
+                      value={config.telemetryLiveMapOffsetX ?? 0}
+                      onChange={(e) => handleLiveMapOffsetXChange(Number(e.target.value))}
+                    />
+                  </div>
+
+                  {/* Live Map Vertical (Y) Offset Slider */}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="fs-7 text-body-secondary">{t("Live Map Y-Offset")}:</span>
+                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetY ?? 0} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      className="form-range"
+                      min={-500}
+                      max={500}
+                      step={10}
+                      value={config.telemetryLiveMapOffsetY ?? 0}
+                      onChange={(e) => handleLiveMapOffsetYChange(Number(e.target.value))}
+                    />
+                  </div>
+
                   {/* Chart Top/Bottom Positions */}
                   <div className="d-flex justify-content-between align-items-center pt-1">
                     <span className="fs-7 text-body-secondary">{t("Pedal Position")}:</span>
@@ -799,6 +869,23 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
                 />
               </div>
+
+              {/* Live Map Scale */}
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="fs-7 text-body-secondary">{t("Live Map Scale")}:</span>
+                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapScale ?? 1.0) * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  className="form-range"
+                  min={0.5}
+                  max={2.0}
+                  step={0.05}
+                  value={config.telemetryLiveMapScale ?? 1.0}
+                  onChange={(e) => handleLiveMapScaleChange(Number(e.target.value))}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -859,6 +946,38 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   <label className="form-check-label fs-7" htmlFor="sw-tele-live-map">{t("Live Map (Track & Cursor)")}</label>
                 </div>
               </div>
+
+              {config.elements.showLiveMap !== false && (
+                <>
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pois" checked={config.elements.showLiveMapPOIs !== false} onChange={() => handleElementToggle('showLiveMapPOIs')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pois">{t("Live Map Landmarks & POIs")}</label>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pr" checked={config.elements.showLiveMapPRStunts !== false} onChange={() => handleElementToggle('showLiveMapPRStunts')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pr">{t("PR Stunts (Speed/Drift/Danger)")}</label>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-collectibles" checked={config.elements.showLiveMapCollectibles !== false} onChange={() => handleElementToggle('showLiveMapCollectibles')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-collectibles">{t("Collectibles & Mascots")}</label>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-heading" checked={config.elements.showLiveMapHeading !== false} onChange={() => handleElementToggle('showLiveMapHeading')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-heading">{t("Heading Arrow & Compass")}</label>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

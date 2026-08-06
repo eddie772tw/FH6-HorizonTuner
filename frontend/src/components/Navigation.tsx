@@ -88,6 +88,13 @@ const GitInfoBadge: React.FC = () => {
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs, onShowTheme }) => {
   const { t } = useSettings();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [showUdpPopover, setShowUdpPopover] = useState<boolean>(!isConnected);
+
+  React.useEffect(() => {
+    if (!isConnected) {
+      setShowUdpPopover(true);
+    }
+  }, [isConnected]);
 
   const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
     onSubTabJump(tab, subTarget);
@@ -283,9 +290,72 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
           >
             {t("Show Logs")}
           </button>
-          <span className={`badge ${isConnected ? 'text-bg-success' : 'text-bg-danger'} px-2 py-1 fs-7`}>
-            {isConnected ? t("UDP SIGNAL ACTIVE") : t("UDP DISCONNECTED")}
-          </span>
+          <div 
+            className="position-relative d-inline-block"
+            onClick={() => { if (!isConnected) setShowUdpPopover(prev => !prev); }}
+            onMouseEnter={() => { if (!isConnected) setShowUdpPopover(true); }}
+            onMouseLeave={() => { if (!isConnected) setShowUdpPopover(false); }}
+            style={{ cursor: !isConnected ? 'pointer' : 'default' }}
+          >
+            <span className={`badge ${isConnected ? 'text-bg-success' : 'text-bg-danger'} px-2 py-1 fs-7`}>
+              {isConnected ? t("UDP SIGNAL ACTIVE") : t("UDP DISCONNECTED")}
+            </span>
+
+            {!isConnected && showUdpPopover && (
+              <div 
+                className="popover bs-popover-bottom show glass-panel shadow-lg border"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  zIndex: 1055,
+                  minWidth: '320px',
+                  backdropFilter: 'blur(16px)',
+                  background: 'var(--glass-bg)',
+                  borderColor: 'var(--bs-danger)',
+                  cursor: 'default'
+                }}
+                role="tooltip"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '20px',
+                    width: 0,
+                    height: 0,
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderBottom: '6px solid var(--bs-danger)'
+                  }} 
+                />
+                <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-danger fw-bold fs-7 d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center gap-2">
+                    <span>{t("UDP Connection Alert")}</span>
+                    <span className="badge text-bg-danger">OFFLINE</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-close btn-sm"
+                    aria-label="Close"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUdpPopover(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="popover-body px-3 py-2 text-start">
+                  <div className="fs-7 text-body fw-medium">
+                    {t("Forza Horizon UDP telemetry stream is disconnected.")}
+                  </div>
+                  <div className="fs-8 text-secondary mt-1">
+                    {t("Ensure Data Out is turned ON in game HUD settings (Port 8000/8001).")}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

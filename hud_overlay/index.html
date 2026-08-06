@@ -211,6 +211,9 @@
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
                 window._currentHudConfig = ev.data.data;
+                if (window.TelemetryCardsManager) {
+                    window.TelemetryCardsManager.update(null, ev.data.data);
+                }
                 if (ev.data.data && ev.data.data.hudStyle) {
                     activeHud = ev.data.data.hudStyle;
                 }

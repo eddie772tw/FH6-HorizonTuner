@@ -562,6 +562,20 @@ export function getClusterHTML(initialScale, initialOpacity) {
                     <span>LIVE MAP</span>
                     <span id="tcLiveMapCoord" style="font-family:monospace; font-size:0.65rem; color:#aaa;">X: 0 Z: 0</span>
                 </div>
+                <div id="tcLiveMapNearby" style="
+                    display: none;
+                    font-size: 0.65rem;
+                    font-weight: bold;
+                    color: #ffaa00;
+                    background: rgba(255, 170, 0, 0.15);
+                    border: 1px solid rgba(255, 170, 0, 0.4);
+                    border-radius: 4px;
+                    padding: 2px 6px;
+                    text-align: center;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                "></div>
                 <div style="position:relative; width:100%; height:200px; border-radius:6px; overflow:hidden; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1);">
                     <canvas id="tcLiveMapCanvas" width="268" height="200" style="display:block; width:100%; height:100%;"></canvas>
                 </div>

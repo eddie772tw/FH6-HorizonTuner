@@ -2016,6 +2016,7 @@ DEFAULT_HUD_CONFIG = {
         "showTelePedals": True,
         "showTeleCenterAnchor": True,
         "showTeleGridLines": False,
+        "showLiveMap": True,
     },
     "soundEnabled": False,
 }

@@ -65,6 +65,11 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 * Navbar 下拉選單保護：`.navbar` 與 `.navbar .container-fluid` 必須包含 `overflow: visible !important`。
 * 頁面容器防橫向滾動：`main .container-fluid` 必須包含 `max-width: 100% !important; overflow-x: hidden !important;`。
 
+### 7. 狀態通知與向下 Popover 規範 (Popovers & Toasts)
+* **版型零擠壓原則**：嚴禁在 View 中插入動態 Block 內嵌 `<div className="alert">`，避免推擠 Flex/Grid 版型與 60Hz 繪圖區域。
+* **Header Badge 向下 Popover 氣泡**：狀態說明使用 Badge + `position: absolute; top: calc(100% + 8px); z-index: 1050;` 的 `.popover.bs-popover-bottom.glass-panel`，切換分頁時自動彈出、常駐顯示並帶有 `.btn-close` 手動關閉。
+* **全域 Toast 懸浮通知**：動作完成/非阻斷性提示採用 `useToast().addToast(...)`（`.toast-container.position-fixed.top-0.end-0.p-3`）。
+
 ---
 
 ## 開發與變更驗證 SOP

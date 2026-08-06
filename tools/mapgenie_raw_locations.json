@@ -1,0 +1,415 @@
+[
+  {
+    "id": 101,
+    "title": "Horizon Japan Main Festival",
+    "category": "Festival Site",
+    "lat": 35.68,
+    "lng": 139.76
+  },
+  {
+    "id": 102,
+    "title": "Horizon Fuji Festival Site",
+    "category": "Festival Site",
+    "lat": 35.36,
+    "lng": 138.72
+  },
+  {
+    "id": 103,
+    "title": "Horizon Showcase: Bullet Train Race",
+    "category": "Horizon Event",
+    "lat": 35.65,
+    "lng": 139.74
+  },
+  {
+    "id": 104,
+    "title": "Horizon Showcase: Mount Fuji Descent",
+    "category": "Horizon Event",
+    "lat": 35.37,
+    "lng": 138.74
+  },
+  {
+    "id": 201,
+    "title": "Hakone Touge Drift Zone",
+    "category": "Drift Zone",
+    "lat": 35.19,
+    "lng": 139.02
+  },
+  {
+    "id": 202,
+    "title": "Irohazaka Hairpin Drift",
+    "category": "Drift Zone",
+    "lat": 36.74,
+    "lng": 139.51
+  },
+  {
+    "id": 203,
+    "title": "Mount Akagi Downhill Drift",
+    "category": "Drift Zone",
+    "lat": 36.55,
+    "lng": 139.18
+  },
+  {
+    "id": 204,
+    "title": "Mount Haruna Touge Drift",
+    "category": "Drift Zone",
+    "lat": 36.47,
+    "lng": 138.87
+  },
+  {
+    "id": 205,
+    "title": "Mount Tsukuba Drift Zone",
+    "category": "Drift Zone",
+    "lat": 36.22,
+    "lng": 140.1
+  },
+  {
+    "id": 206,
+    "title": "Shuto C1 Outer Ring Drift",
+    "category": "Drift Zone",
+    "lat": 35.67,
+    "lng": 139.76
+  },
+  {
+    "id": 207,
+    "title": "Daikoku Futo Parking Drift",
+    "category": "Drift Zone",
+    "lat": 35.46,
+    "lng": 139.68
+  },
+  {
+    "id": 208,
+    "title": "Suzuka Circuit S-Curves Drift",
+    "category": "Drift Zone",
+    "lat": 34.84,
+    "lng": 136.53
+  },
+  {
+    "id": 209,
+    "title": "Fuji Speedway Hairpin Drift",
+    "category": "Drift Zone",
+    "lat": 35.37,
+    "lng": 138.93
+  },
+  {
+    "id": 210,
+    "title": "Kyoto Arashiyama Bamboo Drift",
+    "category": "Drift Zone",
+    "lat": 35.01,
+    "lng": 135.67
+  },
+  {
+    "id": 301,
+    "title": "Fuji Speedway Trap",
+    "category": "Speed Trap",
+    "lat": 35.37,
+    "lng": 138.92
+  },
+  {
+    "id": 302,
+    "title": "Shuto Wanganline Trap",
+    "category": "Speed Trap",
+    "lat": 35.62,
+    "lng": 139.78
+  },
+  {
+    "id": 303,
+    "title": "Tokyo Aqua-Line Tunnel Trap",
+    "category": "Speed Trap",
+    "lat": 35.54,
+    "lng": 139.87
+  },
+  {
+    "id": 304,
+    "title": "Kansai Highway Speed Trap",
+    "category": "Speed Trap",
+    "lat": 34.68,
+    "lng": 135.52
+  },
+  {
+    "id": 305,
+    "title": "Tomei Expressway Speed Zone",
+    "category": "Speed Trap",
+    "lat": 35.3,
+    "lng": 139.2
+  },
+  {
+    "id": 306,
+    "title": "Shin-Tomei Straight Speed Trap",
+    "category": "Speed Trap",
+    "lat": 35.05,
+    "lng": 138.5
+  },
+  {
+    "id": 307,
+    "title": "Meishin Highway Speed Zone",
+    "category": "Speed Trap",
+    "lat": 34.9,
+    "lng": 135.8
+  },
+  {
+    "id": 308,
+    "title": "Hokkaido Straight Speed Trap",
+    "category": "Speed Trap",
+    "lat": 43.05,
+    "lng": 141.34
+  },
+  {
+    "id": 401,
+    "title": "Mount Fuji Summit Danger Sign",
+    "category": "Danger Sign",
+    "lat": 35.37,
+    "lng": 138.73
+  },
+  {
+    "id": 402,
+    "title": "Tokyo Rainbow Bridge Danger Sign",
+    "category": "Danger Sign",
+    "lat": 35.63,
+    "lng": 139.76
+  },
+  {
+    "id": 403,
+    "title": "Hakone Cliff Danger Sign",
+    "category": "Danger Sign",
+    "lat": 35.2,
+    "lng": 139.03
+  },
+  {
+    "id": 404,
+    "title": "Kyoto Temple Steps Danger Sign",
+    "category": "Danger Sign",
+    "lat": 35.0,
+    "lng": 135.77
+  },
+  {
+    "id": 501,
+    "title": "Suzuka Touge Battle",
+    "category": "Touge Racing Event",
+    "lat": 34.84,
+    "lng": 136.53
+  },
+  {
+    "id": 502,
+    "title": "Mount Akagi Downhill Cup",
+    "category": "Touge Racing Event",
+    "lat": 36.55,
+    "lng": 139.18
+  },
+  {
+    "id": 503,
+    "title": "Tokyo Night Street Race",
+    "category": "Street Racing Event",
+    "lat": 35.68,
+    "lng": 139.77
+  },
+  {
+    "id": 504,
+    "title": "Shuto Midnight Midnight Club",
+    "category": "Street Racing Event",
+    "lat": 35.65,
+    "lng": 139.75
+  },
+  {
+    "id": 505,
+    "title": "Kyoto Ancient Road Race",
+    "category": "Road Racing Event",
+    "lat": 35.01,
+    "lng": 135.76
+  },
+  {
+    "id": 506,
+    "title": "Fuji International GP",
+    "category": "Road Racing Event",
+    "lat": 35.36,
+    "lng": 138.92
+  },
+  {
+    "id": 507,
+    "title": "Osaka Docks Drag Race",
+    "category": "Drag Racing Event",
+    "lat": 34.69,
+    "lng": 135.5
+  },
+  {
+    "id": 508,
+    "title": "Hokkaido Dirt Rally",
+    "category": "Dirt Racing Event",
+    "lat": 43.06,
+    "lng": 141.35
+  },
+  {
+    "id": 509,
+    "title": "Mount Fuji Forest Cross-Country",
+    "category": "Cross-Country Event",
+    "lat": 35.35,
+    "lng": 138.7
+  },
+  {
+    "id": 601,
+    "title": "Barn Find: Nissan Skyline GT-R R32",
+    "category": "Barn Find",
+    "lat": 35.2,
+    "lng": 139.1
+  },
+  {
+    "id": 602,
+    "title": "Barn Find: Toyota Supra Mk4 1998",
+    "category": "Barn Find",
+    "lat": 35.4,
+    "lng": 138.8
+  },
+  {
+    "id": 603,
+    "title": "Barn Find: Mazda RX-7 FD3S 1997",
+    "category": "Barn Find",
+    "lat": 35.0,
+    "lng": 135.8
+  },
+  {
+    "id": 604,
+    "title": "Barn Find: Honda NSX Type R 1992",
+    "category": "Barn Find",
+    "lat": 36.2,
+    "lng": 140.0
+  },
+  {
+    "id": 605,
+    "title": "Barn Find: Mitsubishi Lancer Evo VI",
+    "category": "Barn Find",
+    "lat": 36.7,
+    "lng": 139.5
+  },
+  {
+    "id": 606,
+    "title": "Bonus Board 5000 XP (Hakone)",
+    "category": "Bonus Board",
+    "lat": 35.18,
+    "lng": 139.01
+  },
+  {
+    "id": 607,
+    "title": "Bonus Board 5000 XP (Fuji)",
+    "category": "Bonus Board",
+    "lat": 35.38,
+    "lng": 138.9
+  },
+  {
+    "id": 608,
+    "title": "Bonus Board Fast Travel (Tokyo)",
+    "category": "Bonus Board",
+    "lat": 35.67,
+    "lng": 139.74
+  },
+  {
+    "id": 609,
+    "title": "Bonus Board 5000 XP (Kyoto)",
+    "category": "Bonus Board",
+    "lat": 35.02,
+    "lng": 135.75
+  },
+  {
+    "id": 610,
+    "title": "Bonus Board Fast Travel (Osaka)",
+    "category": "Bonus Board",
+    "lat": 34.68,
+    "lng": 135.51
+  },
+  {
+    "id": 701,
+    "title": "Japan Mascot: Ramen (Shinjuku)",
+    "category": "Ramen",
+    "lat": 35.69,
+    "lng": 139.7
+  },
+  {
+    "id": 702,
+    "title": "Japan Mascot: Ramen (Shibuya)",
+    "category": "Ramen",
+    "lat": 35.66,
+    "lng": 139.7
+  },
+  {
+    "id": 703,
+    "title": "Japan Mascot: Matcha (Kyoto)",
+    "category": "Matcha",
+    "lat": 35.02,
+    "lng": 135.75
+  },
+  {
+    "id": 704,
+    "title": "Japan Mascot: Matcha (Uji)",
+    "category": "Matcha",
+    "lat": 34.89,
+    "lng": 135.8
+  },
+  {
+    "id": 705,
+    "title": "Japan Mascot: Onigiri (Osaka)",
+    "category": "Onigiri",
+    "lat": 34.68,
+    "lng": 135.51
+  },
+  {
+    "id": 706,
+    "title": "Japan Mascot: Dango (Hakone)",
+    "category": "Dango",
+    "lat": 35.21,
+    "lng": 139.03
+  },
+  {
+    "id": 707,
+    "title": "Japan Mascot: Edamame (Hokkaido)",
+    "category": "Edamame",
+    "lat": 43.05,
+    "lng": 141.35
+  },
+  {
+    "id": 708,
+    "title": "Japan Mascot: Curry (Yokohama)",
+    "category": "Curry",
+    "lat": 35.44,
+    "lng": 139.63
+  },
+  {
+    "id": 801,
+    "title": "Player House: Mt. Fuji Villa",
+    "category": "Player House",
+    "lat": 35.39,
+    "lng": 138.75
+  },
+  {
+    "id": 802,
+    "title": "Player House: Tokyo Penthouse",
+    "category": "Player House",
+    "lat": 35.66,
+    "lng": 139.73
+  },
+  {
+    "id": 803,
+    "title": "Player House: Kyoto Traditional Machiya",
+    "category": "Player House",
+    "lat": 35.0,
+    "lng": 135.76
+  },
+  {
+    "id": 804,
+    "title": "Daikoku Car Meet",
+    "category": "Car Meet",
+    "lat": 35.46,
+    "lng": 139.68
+  },
+  {
+    "id": 805,
+    "title": "Tatsumi PA Car Meet",
+    "category": "Car Meet",
+    "lat": 35.64,
+    "lng": 139.8
+  },
+  {
+    "id": 806,
+    "title": "Umeda Underground Car Meet",
+    "category": "Car Meet",
+    "lat": 34.7,
+    "lng": 135.5
+  }
+]
