@@ -16,6 +16,32 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-06 - Step 2 齒比全檔位幾何步階二次重配微調與單元測試動態解耦
+
+**學習點 (Learning):**
+1. **頂端檔位雙重鎖定與全檔位幾何步階閉環重配 (Dual-Anchored Top-Gear & Closed-Loop Re-distribution)**：
+   - 僅對終傳比 (FD) 進行純比例縮放無法解決最高檔在紅線轉速 (Redline RPM) 下延伸車速衝破 `softMaxSpeed` (極速軟上限) 的物理問題。
+   - 二次補正必須將最高檔在 Peak HP 轉速 ($RPM_{\text{HP}}$) 的有效目標極速鎖定為 $\min\left(V_{\text{sim}}, \; V_{\text{soft}} \times \frac{RPM_{\text{HP}}}{RPM_{\text{max}}}\right)$。反推求得新的最高檔齒比 $G_N$ 後，重新發起全檔位幾何步階因子 $s$ 求解，重推 $G_1 \dots G_{N-1}$，使全檔位轉速斜線 100% 精準收斂至軟上限虛線內部。
+2. **單元測試動態解耦原則 (Decoupled Dynamic Test Assertions)**：
+   - 測試案例不可將車輛參數（如 3847 Mustang Dark Horse）硬編碼於期望數字斷言中。改為根據 `carParams` 與 `simulatedTopSpeed` / `softMaxSpeed` 輸入，以相對物理算式動態推算期望界限（如 `speedAtRedlineKmh <= softMaxSpeed + 0.5`），從而使單元測試在車輛資料庫參數發生動態變化時依然維持 100% 純潔與強韌度。
+
+**後續行動 (Action):**
+- 保持物理與算牌單元測試動態解耦，防止硬編碼常數在資料庫修訂時造成 false fails。
+
+---
+
+## 2026-08-06 - Step 2 齒輪箱調校二次補正機制（模擬極速空氣阻力補正與物理軟上限封絡）
+
+**學習點 (Learning):**
+1. **二次補正純函數設計與阻力微調 (Secondary Correction Pure Function Model)**：
+   - Forza 遊戲內物理環境受動態空氣阻力與胎面抓地力影響，初始理論算牌可能有些微速度差距。透過在 `calculateAEGOGearing` 加入 `simulatedTopSpeed` (遊戲實際模擬極速) 與 `softMaxSpeed` (預覽圖極速軟上限)，能計算阻力修正比率 $K_{\text{drag}} = \frac{V_{\text{sim}}}{V_{\text{base}}}$，動態將終傳比 $FD_{\text{corrected}} = FD_{\text{base}} \times \frac{V_{\text{base}}}{V_{\text{target, final}}}$ 做精準微調。
+   - 所有補正公式維持為純函數（Pure Functions），並於 Step 2 畫面動態繪製 Recharts 垂直參考虛線（Simulated Top Speed / Soft Cap），顯著增強使用者互動與調校準確度。
+
+**後續行動 (Action):**
+- 未來可將二次補正參數持久化連同車輛 Step 2 預設檔一併儲存於 JSON 資料庫。
+
+---
+
 ## 2026-08-06 - 1215 號 Placeholder 車輛過濾保護與 2020 Yamaha YZF-R15 彩蛋設定
 
 **學習點 (Learning):**

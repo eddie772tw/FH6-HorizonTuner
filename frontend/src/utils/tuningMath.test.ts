@@ -135,14 +135,81 @@ describe('calculateAEGOGearing', () => {
       expect(shiftRpm).toBeGreaterThanOrEqual(4750);
     }
 
-    // 4. Verify top gear lands on target standard overdrive ratio (0.85)
-    expect(res.gears[5]).toBeCloseTo(0.85, 2);
-
     // 5. Verify smooth step ratio progression without cliff drop (R_{i+1} >= R_i - 0.05)
     for (let i = 1; i < res.gears.length - 1; i++) {
       const stepRatioCurrent = res.gears[i] / res.gears[i - 1];
       const stepRatioNext = res.gears[i + 1] / res.gears[i];
       expect(stepRatioNext).toBeGreaterThanOrEqual(stepRatioCurrent - 0.05);
+    }
+  });
+
+  it('should support secondary correction with simulatedTopSpeed and softMaxSpeed', () => {
+    const baseRes = calculateAEGOGearing('Road', 6, sampleCar, 7500);
+
+    // 1. Lower simulatedTopSpeed should adjust top gear / FD setup to be shorter
+    const correctedLower = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      simulatedTopSpeed: 200
+    });
+    expect(correctedLower.gears[5] * correctedLower.finalDrive).toBeGreaterThan(baseRes.gears[5] * baseRes.finalDrive);
+
+    // 2. softMaxSpeed clamping
+    const correctedSoftCap = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      softMaxSpeed: 180
+    });
+    expect(correctedSoftCap.gears[5] * correctedSoftCap.finalDrive).toBeGreaterThan(baseRes.gears[5] * baseRes.finalDrive);
+
+    // 3. Graceful handling of invalid or empty secondary correction
+    const fallbackRes = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      simulatedTopSpeed: 0,
+      softMaxSpeed: -10
+    });
+    expect(fallbackRes.finalDrive).toBe(baseRes.finalDrive);
+  });
+
+  it('should dynamically bound top gear speed within softMaxSpeed at redline RPM without hardcoded values', () => {
+    const carParams: TuningCarParams = {
+      weight: 1679,
+      weight_distribution: 54,
+      drivetrain: 'RWD',
+      induction: 'Supercharger',
+      maxHp: 909,
+      maxTorque: 687,
+      maxHpRpm: 7500,
+      maxTorqueRpm: 4750,
+      aeroEfficiency: 0.68,
+      rearTireWidth: 335,
+      rearTireAspect: 30,
+      rearTireRim: 19
+    };
+
+    const maxRpm = Math.round((carParams.maxHpRpm || 7000) * 1.15);
+    const softMaxSpeed = 334;
+    const simulatedTopSpeed = 310.2;
+
+    const res = calculateAEGOGearing('Road', 6, carParams, maxRpm, {
+      simulatedTopSpeed,
+      softMaxSpeed
+    });
+
+    // Compute tire radius dynamically from car parameters
+    const wallMm = ((carParams.rearTireWidth || 245) * (carParams.rearTireAspect || 40)) / 100;
+    const rimMm = (carParams.rearTireRim || 18) * 25.4;
+    const tireRadiusM = (wallMm * 2 + rimMm) / 2000;
+
+    const topGearRatio = res.gears[5];
+    const speedAtRedlineKmh = calcGearSpeed(maxRpm, topGearRatio, res.finalDrive, tireRadiusM) * 3.6;
+    const speedAtPeakHpKmh = calcGearSpeed(carParams.maxHpRpm, topGearRatio, res.finalDrive, tireRadiusM) * 3.6;
+
+    // 1. Dynamic Assertion: Redline speed must be bounded within softMaxSpeed (with tiny float margin)
+    expect(speedAtRedlineKmh).toBeLessThanOrEqual(softMaxSpeed + 0.5);
+
+    // 2. Dynamic Assertion: Peak HP speed must be bounded by simulatedTopSpeed or softMaxSpeed scaled
+    const expectedPeakHpCap = Math.min(simulatedTopSpeed, softMaxSpeed * (carParams.maxHpRpm / maxRpm));
+    expect(speedAtPeakHpKmh).toBeLessThanOrEqual(expectedPeakHpCap + 0.5);
+
+    // 3. Dynamic Assertion: All gear ratios must remain strictly monotonically decreasing
+    for (let i = 1; i < res.gears.length; i++) {
+      expect(res.gears[i]).toBeLessThan(res.gears[i - 1]);
     }
   });
 

@@ -12,6 +12,8 @@ interface GearingTuning {
   finalDrive: number;
   gears: number[];
   maxRpm: number;
+  simulatedTopSpeed?: number;
+  softMaxSpeed?: number;
 }
 
 interface TuningState {
@@ -144,7 +146,11 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       selectedRaceGoal,
       numGears,
       carParams,
-      tuning.gearing.maxRpm
+      tuning.gearing.maxRpm,
+      {
+        simulatedTopSpeed: tuning.gearing.simulatedTopSpeed,
+        softMaxSpeed: tuning.gearing.softMaxSpeed
+      }
     );
 
     setTuning(prev => ({
@@ -157,14 +163,18 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-  // Auto-calculate AEGO gearing whenever race goal, vehicle params, gear count, or max RPM change
+  // Auto-calculate AEGO gearing whenever race goal, vehicle params, gear count, max RPM or secondary corrections change
   useEffect(() => {
     if (!carParams) return;
     const result = calculateAEGOGearing(
       selectedRaceGoal,
       numGears,
       carParams,
-      tuning.gearing.maxRpm
+      tuning.gearing.maxRpm,
+      {
+        simulatedTopSpeed: tuning.gearing.simulatedTopSpeed,
+        softMaxSpeed: tuning.gearing.softMaxSpeed
+      }
     );
 
     setTuning(prev => {
@@ -183,7 +193,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
         }
       };
     });
-  }, [selectedRaceGoal, numGears, carParams, tuning.gearing.maxRpm]);
+  }, [selectedRaceGoal, numGears, carParams, tuning.gearing.maxRpm, tuning.gearing.simulatedTopSpeed, tuning.gearing.softMaxSpeed]);
 
   const hasCoreParams = Boolean(carParams && carParams.weight > 0 && carParams.weight_distribution > 0);
 

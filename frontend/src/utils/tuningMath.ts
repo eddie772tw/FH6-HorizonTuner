@@ -116,15 +116,22 @@ export function calcGearRpm(
   return (speedMs * gearRatio * finalDrive * 60) / (2 * Math.PI * tireRadiusM);
 }
 
+export interface GearingSecondaryCorrection {
+  simulatedTopSpeed?: number; // Simulated/Theoretical top speed from initial gearing (km/h)
+  softMaxSpeed?: number;      // Transmission preview soft max speed limit cap (km/h)
+}
+
 /**
  * AEGO (Adaptive Envelope & Gearing Optimization) Algorithm
  * Generates custom, physically-sound gearing setup for different race goals.
+ * Supports secondary correction based on in-game simulated top speed & soft cap.
  */
 export function calculateAEGOGearing(
   raceGoal: string,
   numGears: number,
   carParams: TuningCarParams | null,
-  maxRpm: number
+  maxRpm: number,
+  secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
@@ -272,6 +279,73 @@ export function calculateAEGOGearing(
       for (let i = 1; i < numGears; i++) {
         const rAdj = rRaw[i - 1] * s;
         gears[i] = gears[i - 1] * rAdj;
+      }
+    }
+  }
+
+  // Secondary Correction Mechanism (Dual-Anchored Top-Gear & Closed-Loop Gear Ratio Re-distribution)
+  if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
+    const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
+    const tireRadiusM = C / (2 * Math.PI);
+    const topGearIdx = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) - 1 : numGears - 1;
+    
+    // Baseline top speed for highest active gear at Peak HP RPM
+    const baselineTopSpeedMs = calcGearSpeed(rpmHp, gears[topGearIdx], fd, tireRadiusM);
+    const baselineTopSpeedKmh = baselineTopSpeedMs * 3.6;
+
+    let targetTopSpeedAtPeakHpKmh = baselineTopSpeedKmh;
+
+    // 1. Soft Max Speed Cap Constraint at Redline RPM
+    if (softMaxSpeed && softMaxSpeed > 0 && maxRpm > 0) {
+      const maxSpeedAtPeakHpFromSoftCap = softMaxSpeed * (rpmHp / maxRpm);
+      targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSoftCap);
+    }
+
+    // 2. Simulated Top Speed Correction at Peak HP RPM
+    if (simulatedTopSpeed && simulatedTopSpeed > 0) {
+      targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, simulatedTopSpeed);
+    }
+
+    // 3. Re-calculate top gear total drive ratio (i_top_total = FD * G_top)
+    if (targetTopSpeedAtPeakHpKmh > 0 && Math.abs(targetTopSpeedAtPeakHpKmh - baselineTopSpeedKmh) > 0.1) {
+      const topTotalRatio = (rpmHp * C * 60) / (targetTopSpeedAtPeakHpKmh * 1000);
+      
+      // Determine new top gear ratio and balance with Final Drive
+      let newGtop = topTotalRatio / fd;
+      if (newGtop < 0.48 || newGtop > 1.25) {
+        const clampedGtop = Math.max(0.50, Math.min(1.10, newGtop));
+        fd = Math.max(2.0, Math.min(6.5, topTotalRatio / clampedGtop));
+        newGtop = topTotalRatio / fd;
+      }
+      gears[topGearIdx] = newGtop;
+
+      // 4. Full Closed-Loop Gear Ratio Re-distribution for all intermediate gears
+      if (topGearIdx > 0 && gears[0] > 0) {
+        const numSteps = topGearIdx;
+        const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
+        const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
+        const rMin = isTurbo ? Math.max(0.72, rBand) : Math.max(0.65, rBand);
+        const rMax = Math.max(0.82, rBand + 0.15);
+
+        const rRaw: number[] = [];
+        let prodRaw = 1.0;
+        for (let i = 1; i <= numSteps; i++) {
+          const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
+          const rVal = rMin + (rMax - rMin) * fraction;
+          rRaw.push(rVal);
+          prodRaw *= rVal;
+        }
+
+        const s = Math.pow(gears[topGearIdx] / (gears[0] * prodRaw), 1 / numSteps);
+        for (let i = 1; i <= topGearIdx; i++) {
+          const rAdj = rRaw[i - 1] * s;
+          gears[i] = gears[i - 1] * rAdj;
+        }
+
+        // Fill remaining gears if Drift/Drag
+        for (let i = topGearIdx + 1; i < numGears; i++) {
+          gears[i] = gears[topGearIdx];
+        }
       }
     }
   }
