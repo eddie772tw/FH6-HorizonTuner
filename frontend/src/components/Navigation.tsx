@@ -288,7 +288,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
             {t("Show Logs")}
           </button>
           <span className={`badge ${isConnected ? 'text-bg-success' : 'text-bg-danger'} px-2 py-1 fs-7`}>
-            {isConnected ? t("TELEMETRY LIVE") : t("DISCONNECTED")}
+            {isConnected ? t("UDP SIGNAL ACTIVE") : t("UDP DISCONNECTED")}
           </span>
         </div>
       </div>

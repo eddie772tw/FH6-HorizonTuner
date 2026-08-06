@@ -4,6 +4,8 @@ import { useSettings } from '../../../context/SettingsContext';
 
 // --- COMPONENT: SuspensionBar ---
 const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = React.memo(({title, isLeft, tireIdx}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const minRef = useRef<HTMLSpanElement>(null);
@@ -18,13 +20,31 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   const prevRace = useRef<number | null>(null);
 
   useEffect(() => {
-    // Canvas API does not support CSS variables like var(--primary) in gradients.
-    // Using a valid hex color avoids crashes.
+    const canvas = canvasRef.current;
+    const container = canvasContainerRef.current;
+    if (!canvas || !container) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+        }
+      }
+    });
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
     const primaryColor = '#00f0ff';
-    // Draw initial background
+
     const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
       ctx.clearRect(0, 0, w, h);
-      const warningH = h * 0.05;
+      const warningH = h * 0.08;
       ctx.fillStyle = 'rgba(255, 0, 60, 0.15)';
       ctx.fillRect(0, 0, w, warningH);
       ctx.fillRect(0, h - warningH, w, warningH);
@@ -39,9 +59,9 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       ctx.setLineDash([]);
     };
 
-    if (canvasRef.current) {
+    if (canvasRef.current && canvasRef.current.width > 0) {
       const ctx = canvasRef.current.getContext('2d');
-      if (ctx) drawBackground(ctx, 150, 60);
+      if (ctx) drawBackground(ctx, canvasRef.current.width, canvasRef.current.height);
     }
 
     const handleUpdate = (e: any) => {
@@ -78,7 +98,7 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       if (!isMoving) {
         for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
       } else {
-        if (hist.current.length < 150) {
+        if (hist.current.length < 180) {
           hist.current.push({ travel, time: now });
         } else {
           const old = hist.current.shift();
@@ -96,28 +116,30 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
       if (maxRef.current) maxRef.current.innerText = minMax.current.max !== null ? minMax.current.max.toFixed(2) : '-';
 
       const canvas = canvasRef.current;
-      if (canvas && hist.current.length > 0) {
+      if (canvas && hist.current.length > 0 && canvas.width > 0 && canvas.height > 0) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          const w = canvas.width;
+          const h = canvas.height;
+          const dpr = window.devicePixelRatio || 1;
           
-          drawBackground(ctx, 150, 60);
+          drawBackground(ctx, w, h);
 
           ctx.beginPath();
-          const grad = ctx.createLinearGradient(0, 0, 0, 60);
+          const grad = ctx.createLinearGradient(0, 0, 0, h);
           grad.addColorStop(0, '#ff003c');
-          grad.addColorStop(0.05, primaryColor);
-          grad.addColorStop(0.95, primaryColor);
+          grad.addColorStop(0.08, primaryColor);
+          grad.addColorStop(0.92, primaryColor);
           grad.addColorStop(1, '#ff003c');
           ctx.strokeStyle = grad;
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 2 * dpr;
           ctx.lineJoin = 'round';
   
-          // Bolt: Optimized max time calculation by directly accessing the last element since the array is ordered temporally
           const maxT = hist.current.length > 0 ? hist.current[hist.current.length - 1].time : 0;
           for (let i = 0; i < hist.current.length; i++) {
             const p = hist.current[i];
-            const x = 150 - ((maxT - p.time) / 2500) * 150; 
-            const y = 60 - (p.travel * 60);
+            const x = w - ((maxT - p.time) / 2500) * w; 
+            const y = h - (p.travel * h);
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
@@ -130,24 +152,24 @@ const SuspensionBar: React.FC<{title: string, isLeft: boolean, tireIdx: number}>
   }, [tireIdx]);
 
   return (
-    <div className="p-3 rounded border" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-      <div className={`fw-bold mb-2 ${isLeft ? 'text-start' : 'text-end'}`} style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{title}</div>
-      <div className={`d-flex gap-3 align-items-center ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ height: '60px' }}>
-        <div className="position-relative h-100 border" style={{ width: '24px', background: 'var(--surface-2)', borderRadius: '12px', borderColor: 'var(--glass-border) !important' }}>
-          <div className="position-absolute" style={{ top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 1 }} />
-          <div ref={barRef} className="position-absolute" style={{
-            bottom: 0, left: 0, right: 0, height: '50%',
-            background: 'var(--primary)', borderRadius: '0 0 8px 8px'
+    <div ref={containerRef} className="p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+      <div className={`fw-bold text-body mb-1 fs-8 ${isLeft ? 'text-start' : 'text-end'}`}>{title}</div>
+      <div className={`d-flex gap-2 align-items-center flex-grow-1 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ height: '42px', minHeight: '38px' }}>
+        <div className="position-relative h-100 border rounded-pill overflow-hidden flex-shrink-0" style={{ width: '20px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
+          <div className="position-absolute" style={{ top: '50%', left: 0, right: 0, height: '1px', background: 'var(--divider)', zIndex: 2 }} />
+          <div ref={barRef} className="position-absolute start-0 end-0 bottom-0 rounded-bottom-pill" style={{
+            height: '50%',
+            background: 'var(--primary)'
           }} />
         </div>
-        <div className="flex-grow-1 h-100 position-relative opacity-75">
-           <canvas ref={canvasRef} width={150} height={60} className="w-100 h-100" />
+        <div ref={canvasContainerRef} className="flex-grow-1 h-100 position-relative opacity-75 overflow-hidden">
+           <canvas ref={canvasRef} className="w-100 h-100 d-block" />
         </div>
       </div>
-      <div className="d-flex justify-content-between mt-3 px-1 text-secondary" style={{ fontSize: '0.8rem' }}>
-        <span>{t("Min")}: <span className="fw-bold" ref={minRef}>0.00</span></span>
-        <span className="fw-bold" style={{ color: 'var(--text-primary)' }} ref={textRef}>0.00</span>
-        <span>{t("Max")}: <span className="fw-bold" ref={maxRef}>0.00</span></span>
+      <div className="d-flex justify-content-between mt-1 px-1 text-body-secondary fs-8 flex-shrink-0">
+        <span>{t("Min")}: <span className="fw-bold font-monospace text-body" ref={minRef}>0.00</span></span>
+        <span className="fw-bold font-monospace text-primary fs-7" ref={textRef}>0.00</span>
+        <span>{t("Max")}: <span className="fw-bold font-monospace text-body" ref={maxRef}>0.00</span></span>
       </div>
     </div>
   );

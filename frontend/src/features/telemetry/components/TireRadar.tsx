@@ -10,6 +10,7 @@ const getTempColor = (temp: number) => {
 
 // --- COMPONENT: TireRadar ---
 const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = React.memo(({title, isLeft, tireIdx}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{temp: number, ratio: number, angle: number, time: number, speed: number}[]>([]);
@@ -19,46 +20,123 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
   const ratioRef = useRef<HTMLSpanElement>(null);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  
+  // 策略 A：快取主題色值
+  const themeVars = useRef({ primary: '#00f0ff', isLight: false });
+  // 策略 B：靜態背景快取（OffscreenCanvas），避免每幀重繪
+  const bgCacheRef = useRef<{ canvas: OffscreenCanvas | null; isLosingGrip: boolean }>({ canvas: null, isLosingGrip: false });
+  // tempCanvas 尺寸快取（避免 clientWidth/clientHeight reflow）
+  const tempSizeRef = useRef({ w: 90, h: 55 });
+
+  const [radarSize, setRadarSize] = React.useState<number>(95);
   const { convertTemp, t } = useSettings();
   const tempUnit = convertTemp(0).label;
 
   useEffect(() => {
-    const radius = 50; 
-    const displayLimit = 1.5; 
-    const histWidth = 100;
-    const histHeight = 70;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const drawBackground = (ctx: CanvasRenderingContext2D, radius: number, displayLimit: number, isLosingGrip: boolean) => {
-      ctx.clearRect(0, 0, radius * 2, radius * 2);
-      
-      // Radar border
-      ctx.beginPath();
-      ctx.arc(radius, radius, radius - 1, 0, Math.PI * 2);
-      ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.1)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (height > 0) {
+          // Bounded radar size between 70px and 95px
+          const calcSize = Math.max(70, Math.min(95, height - 32));
+          setRadarSize(calcSize);
+        }
+        // 快取 tempCanvas 尺寸，避免之後讀取 clientWidth/clientHeight
+        if (tempCanvasRef.current) {
+          const tempW = Math.floor((width - calcSizeFromHeight(entry.contentRect.height)) - 16) || 90;
+          tempSizeRef.current = { w: Math.max(60, tempW), h: 55 };
+        }
+      }
+    });
+    resizeObserver.observe(container);
 
-      // Crosshairs
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(0, radius); ctx.lineTo(radius * 2, radius);
-      ctx.moveTo(radius, 0); ctx.lineTo(radius, radius * 2);
-      ctx.stroke();
+    return () => resizeObserver.disconnect();
+  }, []);
 
-      // 1.0 Threshold Circle (dashed)
-      ctx.beginPath();
-      ctx.setLineDash([3, 3]);
-      ctx.arc(radius, radius, radius / displayLimit, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,0,0,0.5)';
-      ctx.stroke();
-      ctx.setLineDash([]);
+  // 從高度計算 calcSize 的純函數（與 ResizeObserver 回調共用邏輯）
+  const calcSizeFromHeight = (h: number) => Math.max(70, Math.min(95, h - 32));
+
+  useEffect(() => {
+    const radius = radarSize / 2;
+    const displayLimit = 1.5;
+
+    // 策略 A：快取主題色值
+    const updateThemeVars = () => {
+      const style = getComputedStyle(document.documentElement);
+      themeVars.current = {
+        primary: style.getPropertyValue('--primary').trim() || '#00f0ff',
+        isLight: document.documentElement.getAttribute('data-bs-theme') === 'light',
+      };
+      // 主題改變時使背景快取失效，下一幀重繪
+      bgCacheRef.current.canvas = null;
+    };
+    updateThemeVars();
+    const themeObserver = new MutationObserver(updateThemeVars);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+
+    const rCanvas = radarCanvasRef.current;
+    if (rCanvas) {
+      const dpr = window.devicePixelRatio || 1;
+      rCanvas.width = Math.floor(radarSize * dpr);
+      rCanvas.height = Math.floor(radarSize * dpr);
+      // 背景快取失效
+      bgCacheRef.current.canvas = null;
+    }
+
+    // 策略 B：靜態背景離屏快取
+    const getOrCreateBgCache = (isLosingGrip: boolean): OffscreenCanvas | null => {
+      const dpr = window.devicePixelRatio || 1;
+      const scaledRadius = radius * dpr;
+      const cache = bgCacheRef.current;
+      // 只有在 isLosingGrip 狀態改變或快取不存在時才重新繪製
+      if (cache.canvas && cache.isLosingGrip === isLosingGrip) {
+        return cache.canvas;
+      }
+      try {
+        const offscreen = new OffscreenCanvas(Math.floor(scaledRadius * 2), Math.floor(scaledRadius * 2));
+        const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
+        if (!ctx) return null;
+
+        ctx.clearRect(0, 0, offscreen.width, offscreen.height);
+        // Radar border
+        ctx.beginPath();
+        ctx.arc(scaledRadius, scaledRadius, scaledRadius - 1 * dpr, 0, Math.PI * 2);
+        ctx.strokeStyle = isLosingGrip ? '#ff003c' : 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 2 * dpr;
+        ctx.stroke();
+        // Crosshairs
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1 * dpr;
+        ctx.moveTo(0, scaledRadius); ctx.lineTo(scaledRadius * 2, scaledRadius);
+        ctx.moveTo(scaledRadius, 0); ctx.lineTo(scaledRadius, scaledRadius * 2);
+        ctx.stroke();
+        // 1.0 Threshold Circle (dashed)
+        ctx.beginPath();
+        ctx.setLineDash([3 * dpr, 3 * dpr]);
+        ctx.arc(scaledRadius, scaledRadius, scaledRadius / displayLimit, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        cache.canvas = offscreen;
+        cache.isLosingGrip = isLosingGrip;
+        return offscreen;
+      } catch {
+        // OffscreenCanvas 不支援時退化
+        return null;
+      }
     };
 
-    if (radarCanvasRef.current) {
-      const ctx = radarCanvasRef.current.getContext('2d');
-      if (ctx) drawBackground(ctx, radius, displayLimit, false);
+    // 初始化靜態背景（非 losing grip 狀態）
+    if (rCanvas) {
+      const ctx = rCanvas.getContext('2d');
+      if (ctx) {
+        const bg = getOrCreateBgCache(false);
+        if (bg) ctx.drawImage(bg, 0, 0);
+      }
     }
 
     const handleUpdate = (e: any) => {
@@ -111,13 +189,18 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
         ratioRef.current.style.color = Math.abs(cRatio) > 1.0 ? 'var(--secondary)' : 'var(--text-secondary)';
       }
 
-      const rCanvas = radarCanvasRef.current;
       if (rCanvas) {
         const ctx = rCanvas.getContext('2d');
         if (ctx) {
+          const dpr = window.devicePixelRatio || 1;
           const isLosingGrip = Math.abs(cRatio) > 1.0 || Math.abs(cAngle) > 1.0;
-          drawBackground(ctx, radius, displayLimit, isLosingGrip);
-  
+
+          // 策略 B：從快取繪製靜態背景（isLosingGrip 改變才重新生成）
+          ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+          const bg = getOrCreateBgCache(isLosingGrip);
+          if (bg) {
+            ctx.drawImage(bg, 0, 0);
+          }
           let startIdx = hist.current.length - 1;
           while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
             startIdx--;
@@ -129,47 +212,48 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
             ctx.beginPath();
             const isLightTheme = document.documentElement.getAttribute('data-bs-theme') === 'light';
             ctx.strokeStyle = isLightTheme ? 'rgba(15, 23, 42, 0.45)' : 'rgba(255, 255, 255, 0.35)';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 * dpr;
             ctx.lineJoin = 'round';
             for (let i = firstValidIdx; i < histLen; i++) {
               const p = hist.current[i];
-              let dx = (p.angle / displayLimit) * radius;
-              let dy = (p.ratio / displayLimit) * radius;
+              let dx = (p.angle / displayLimit) * radius * dpr;
+              let dy = (p.ratio / displayLimit) * radius * dpr;
               const dist = Math.sqrt(dx * dx + dy * dy);
-              if (dist > radius && dist > 0) {
-                dx = (dx / dist) * radius;
-                dy = (dy / dist) * radius;
+              const maxScaledR = radius * dpr;
+              if (dist > maxScaledR && dist > 0) {
+                dx = (dx / dist) * maxScaledR;
+                dy = (dy / dist) * maxScaledR;
               }
-              const cx = radius + dx;
-              const cy = radius + dy;
+              const cx = maxScaledR + dx;
+              const cy = maxScaledR + dy;
               if (i === firstValidIdx) ctx.moveTo(cx, cy);
               else ctx.lineTo(cx, cy);
             }
             ctx.stroke();
           }
 
-          let dx = (cAngle / displayLimit) * radius;
-          let dy = (cRatio / displayLimit) * radius;
+          let dx = (cAngle / displayLimit) * radius * dpr;
+          let dy = (cRatio / displayLimit) * radius * dpr;
           const tDist = Math.sqrt(dx * dx + dy * dy);
-          const maxTR = radius - 4; // Radius 50 minus dot radius 4
+          const maxTR = (radius - 4) * dpr;
           if (tDist > maxTR && tDist > 0) {
             dx = (dx / tDist) * maxTR;
             dy = (dy / tDist) * maxTR;
           }
-          const primaryHex = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00f0ff';
+          const { primary: primaryHex } = themeVars.current;
+          // isLosingGrip already declared at line 196 within this ctx block
           const dotColor = isLosingGrip ? '#ff003c' : (primaryHex.startsWith('#') ? primaryHex : '#00f0ff');
           const dotGlowColor = isLosingGrip ? 'rgba(255, 0, 60, 0.35)' : (primaryHex.startsWith('#') ? `${primaryHex}59` : 'rgba(0, 240, 255, 0.35)');
-          const dotCenterX = radius + dx;
-          const dotCenterY = radius + dy;
+          const dotCenterX = radius * dpr + dx;
+          const dotCenterY = radius * dpr + dy;
 
-          // Double Pass Vector Glow (Zero performance cost, crisp glow aesthetic)
           ctx.beginPath();
-          ctx.arc(dotCenterX, dotCenterY, 7, 0, Math.PI * 2);
+          ctx.arc(dotCenterX, dotCenterY, 7 * dpr, 0, Math.PI * 2);
           ctx.fillStyle = dotGlowColor;
           ctx.fill();
 
           ctx.beginPath();
-          ctx.arc(dotCenterX, dotCenterY, 4, 0, Math.PI * 2);
+          ctx.arc(dotCenterX, dotCenterY, 4 * dpr, 0, Math.PI * 2);
           ctx.fillStyle = dotColor;
           ctx.fill();
         }
@@ -179,8 +263,9 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
       if (tCanvas) {
         const ctx = tCanvas.getContext('2d');
         if (ctx) {
-          const tw = tCanvas.clientWidth || histWidth;
-          const th = tCanvas.clientHeight || histHeight;
+          // 使用快取的尺寸，避免 clientWidth/clientHeight reflow
+          const tw = tempSizeRef.current.w;
+          const th = tempSizeRef.current.h;
           if (tCanvas.width !== tw || tCanvas.height !== th) {
             tCanvas.width = tw;
             tCanvas.height = th;
@@ -246,31 +331,34 @@ const TireRadar: React.FC<{title: string, isLeft: boolean, tireIdx: number}> = R
     };
 
     telemetryEmitter.addEventListener('update', handleUpdate);
-    return () => telemetryEmitter.removeEventListener('update', handleUpdate);
+    return () => {
+      themeObserver.disconnect();
+      telemetryEmitter.removeEventListener('update', handleUpdate);
+    };
   }, [tireIdx, convertTemp]);
 
   return (
-    <div className={`d-flex gap-3 align-items-center p-3 rounded border ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+    <div ref={containerRef} className={`d-flex gap-2 align-items-center p-2 rounded-3 border h-100 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`} style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
       <div className="d-flex flex-column align-items-center justify-content-center">
-        <div className="fw-bold mb-2" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{title}</div>
-        <div className="position-relative" style={{ width: '100px', height: '100px' }}>
-          <canvas ref={radarCanvasRef} width={100} height={100} className="position-absolute top-0 start-0" />
+        <div className="fw-bold text-body mb-1 fs-8">{title}</div>
+        <div className="position-relative" style={{ width: `${radarSize}px`, height: `${radarSize}px` }}>
+          <canvas ref={radarCanvasRef} className="position-absolute top-0 start-0 w-100 h-100" />
         </div>
       </div>
       <div className={`d-flex flex-grow-1 justify-content-between ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
         <div className={`d-flex flex-column gap-1 justify-content-center ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
           <div className={`d-flex flex-column ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
-            <span className="text-secondary text-uppercase" style={{ fontSize: '0.65rem' }}>{t("Slip Angle")}</span>
-            <span className="fw-bold" style={{ fontFamily: 'monospace' }} ref={angRef}>0.00</span>
+            <span className="text-body-secondary text-uppercase fs-8" style={{ fontSize: '0.68rem' }}>{t("Slip Angle")}</span>
+            <span className="fw-bold font-monospace text-body fs-8" ref={angRef}>0.00</span>
           </div>
           <div className={`d-flex flex-column ${isLeft ? 'align-items-end' : 'align-items-start'}`}>
-            <span className="text-secondary text-uppercase" style={{ fontSize: '0.65rem' }}>{t("Slip Ratio")}</span>
-            <span className="fw-bold" style={{ fontFamily: 'monospace' }} ref={ratioRef}>0.00</span>
+            <span className="text-body-secondary text-uppercase fs-8" style={{ fontSize: '0.68rem' }}>{t("Slip Ratio")}</span>
+            <span className="fw-bold font-monospace text-body fs-8" ref={ratioRef}>0.00</span>
           </div>
         </div>
-        <div className={`d-flex flex-column position-relative ${isLeft ? 'align-items-start' : 'align-items-end'}`} style={{ width: '100px', height: '100px' }}>
-           <span className="fw-bold" style={{ fontSize: '1.2rem' }}><span ref={tempRef}>0</span><span className="text-secondary" style={{ fontSize: '0.8rem' }}>{tempUnit}</span></span>
-           <canvas ref={tempCanvasRef} width={100} height={70} className="w-100 flex-grow-1 mt-1" />
+        <div className={`d-flex flex-column position-relative justify-content-between ${isLeft ? 'align-items-start' : 'align-items-end'}`} style={{ width: '90px', height: `${radarSize}px` }}>
+           <span className="fw-bold font-monospace text-body fs-6"><span ref={tempRef}>0</span><span className="text-body-secondary fs-8 ms-1">{tempUnit}</span></span>
+           <canvas ref={tempCanvasRef} width={90} height={55} className="w-100 flex-grow-1 mt-1" />
         </div>
       </div>
     </div>
