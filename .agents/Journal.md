@@ -1702,6 +1702,122 @@
 **後續行動 (Action):**
 - 玩家於 OverlayView 控制面板選擇 "Drift HUD" 時，系統自動通過 iframe / BroadcastChannel 無縫切換載入 `dirft/index.html`。
 
+---
+
+## 2026-08-06 - Live Map 前端 UI 開關註冊與 093 Drift 向量繪圖幾何佈局精化
+
+**學習點 (Learning):**
+1. **參考專案無外部圖片資產特質 (Code-driven Procedural Vector Graphics Pattern)**：
+   - 經仔細檢視參考專案 `ref/093_Drift_HUD-main/`，確認其**無任何獨立的 PNG/JPG 圖片與外部字體檔**。全部視覺元素（弧形角度儀表、G力軌跡球、方向盤反打指針、段狀 RPM 條與動態彈窗）皆為 `main.py` 以 QPainter 程式碼進行 Procedural Vector Drawing 生成。
+2. **HUD Elements 前端 UI 開關擴充 (HUD Elements Control Binding)**：
+   - 於 `frontend/src/features/overlay_control/OverlayView.tsx` 擴充 `HudElements` 介面 (`showLiveMap?: boolean`)、`DEFAULT_HUD_CONFIG` (`showLiveMap: true`) 與控制面板 Switch 開關 UI，玩家可在介面上自由切換 Live Map 卡片。
+3. **Drift HUD 高階 Street-HUD 視覺調色與雙向極限繪製 (093 Street-HUD Visual Precision)**：
+   - 於 `hud_overlay/dirft/index.html` 融入 093 Drift 的 Street-HUD 經典配色（`#55DFFF` Ice Blue / `#FF3F9B` Rose Pink / `#FFB84A` Amber / `#FF4A3D` Danger Red）與 Class Badge (`A 700`, `S1 880` 等），完美呈現 GT7 風格居中佈局與 Advanced 高質感畫風。
+
+**後續行動 (Action):**
+- 未來可隨時放上地圖圖片至 `/assets/live_map_bg.png`，Live Map 將自動優先呈現圖檔背景。
+
+---
+
+## 2026-08-06 - Procedural Vector Drawing 純繪圖幾何重構與 7 大 Panel 還原
+
+**學習點 (Learning):**
+1. **Procedural Vector Drawing 純畫布幾何還原範式 (QPainter to HTML5 Canvas Translation)**：
+   - 於 `hud_overlay/dirft/index.html` 將 Python QPainter 的繪圖邏輯 100% 以原生 HTML5 Canvas 2D Path / Context 重構。
+   - 完整重現了 7 大 Panel 幾何結構：
+     1. **Vehicle Info Panel**：Class Badge (`A 700` 帶動態色彩區塊與發光)、車輛底牌、標題數碼。
+     2. **Drift Angle Gauge Panel**：動態夾角計、度數刻度、`#55DFFF` (Ice Blue 左甩) / `#FF3F9B` (Rose Pink 右甩) 雙色充填。
+     3. **G-Meter & Attitude Radar Panel**：同心圓 (0.5G/1.0G/1.5G)、十字軸與動態 G Trail 歷史軌跡。
+     4. **Segment RPM Bar**：24 段斜角動態轉速段與 Redline 閃爍。
+     5. **Steer & Counter Panel**：方向盤軌道與 Counter-steer 高亮扣扣條。
+     6. **Flow & Risk Meters**：Flow (1~5) 與 Risk (1~4) 雙柱計量條。
+     7. **Inputs & Rear Slip Panel**：H/C/B/T 踏板與 RL/RR 雙後輪滑移量柱狀圖。
+
+**後續行動 (Action):**
+- 保持 Procedural Vector Drawing 幾何架構純淨，不依賴外部影像資產檔，維持高影格率 60Hz 渲染表現。
+
+---
+
+## 2026-08-06 - Drift HUD 動作修復：60Hz 獨立繪繪迴圈、元素顯隱與 DEMO 模擬對接
+
+**學習點 (Learning):**
+1. **HUD 60Hz 獨立渲染迴圈與 DEMO 備用模式 (60Hz Independent Render Loop & DEMO Fallback Pattern)**：
+   - 修復了 `hud_overlay/dirft/index.html` 靜態無動作的根因：先前僅於 `onFrame` 回調內繪圖，缺少獨立的 `requestAnimationFrame(renderLoop)`。
+   - 加入 60Hz 繪製迴圈，並實現了 **DEMO 正弦波動模擬**（車速 85~115km/h 波動、漂移角 -45°~+45° 擺動、RPM 與 G 軌跡脈衝），使儀表在遊戲未運行或初次開啟時均能 100% 展現絢麗的連續賽車姿態動作。
+2. **`onElementsChange` 與藍芽/廣播 Telemetry 資料結構調和 (Telemetry Normalization)**：
+   - 補全 `HUDCore.registerStyle('drift', ...)` 的 `onElementsChange` 鉤子，使控制面板選單開關可動態顯隱 `driftContainer`。
+   - 兼容 `SpeedMetersPerSecond * 3.6`、`CurrentEngineRpm`、`AccelInput / 255 * 100` 等原生 UDP Packet 欄位名稱。
+
+**後續行動 (Action):**
+- 所有新開發之 HUD Overlay 均須採用 `requestAnimationFrame(renderLoop)` + `DEMO Mode Fallback` 機制，確保首幀與靜態階段畫面具備流暢動畫。
+
+---
+
+## 2026-08-06 - Drift HUD 遙測數據傳遞對接修復：Packet Normalizer 與雙向 isMetric 對接
+
+**學習點 (Learning):**
+1. **全規格 Telemetry 數據規範化 parser (Full Spectrum Telemetry Packet Normalizer)**：
+   - 經對比 `gt7/index.html` 與 `simple/index.html` 之 data 處理模式，於 `hud_overlay/dirft/index.html` 實現了 `parseTelemetryData(data, payload)`：
+     - 相容原生 UDP `SpeedMetersPerSecond`、`CurrentEngineRpm`、`Gear` (10/11 為 N, 0 為 R)、`AccelInput` (0~255 及 0.0~1.0 雙型別歸一化)。
+     - 座標速度與角度算術：當提供 $v_x, v_z$ 速度分量時，自動依 $\text{atan2}(v_x, v_z)$ 計算即時漂移角，並動態轉換 `isMetric` 單位標籤（KM/H vs MPH）。
+2. **HUDCore 廣播訊息與即時 Snapshot 渲染連鎖 (Message Pipeline & Snapshot Loop Integration)**：
+   - 將接收到的 `hud:frame` 遙測資料實時注入全域變數 Snapshot，並由 60Hz 迴圈 (`renderLoop`) 即時動態刷畫布，徹底避免訊息積壓與靜止。
+
+**後續行動 (Action):**
+- 未來無論透過 UDP 即時數據或物理 Demo 廣播，Drift HUD 均能 100% 正確解析並動態渲染姿態。
+
+---
+
+## 2026-08-06 - Drift HUD 子元素卡片重疊解耦與畫布版型純化 (Drift Core Pure Refactoring)
+
+**學習點 (Learning):**
+1. **跨組件卡片解耦與重疊清除 (Cross-Card Decoupling Architecture)**：
+   - 經對比 Central Telemetry Cluster（已包含 `showTeleAttitude` G-Force 雷達、`showTelePedals` 四踏板軌跡波形、`showTeleTiresSlip` 四輪滑移雷達與 `showLiveMap` 地圖），於 `hud_overlay/dirft/index.html` 精準裁剪了重複面板：
+     1. **移除 Vehicle Info Panel (左上)**：車款名稱與 Class Badge 區塊。
+     2. **移除 G-Meter & Attitude Radar Panel (右上)**：避免與獨立 `showTeleAttitude` 卡片重疊。
+     3. **移除 Inputs & Rear Slip Panel (右下)**：避免與獨立 `showTelePedals` 與 `showTeleTiresSlip` 卡片重疊。
+2. **純粹 Drift Telemetry Core 畫布版型**：
+   - 畫布維度重新對齊為 1120x360，畫面高度聚焦於 **Drift Angle Arc**、**Segment RPM Tacho**、**Steer & Counter-steer %**、**Drift Flow (1~5)** 與 **Spin Risk (1~4)** 等 Drift HUD 獨有且具辨識度之動態面板。
+
+**後續行動 (Action):**
+- 保持各 HUD Overlay 與 Central Telemetry Cards 職責解耦，避免 UI 畫面元素重疊。
+
+---
+
+## 2026-08-06 - 093 QPainter 原繪圖質感還原與轉速卡片 / 檔位時速遮蓋完全消除
+
+**學習點 (Learning):**
+1. **093 Street HUD 低調極速質感的精確重現 (093 Low-Key Street HUD Aesthetics)**：
+   - 將 Canvas 邊框與背景質感還原為原專案的暗黑低調圓角襯底 (`rgba(5, 8, 13, 0.70)`) 搭配極細低彩描邊 (`rgba(85, 223, 255, 0.22)`)，告別浮誇 Neon 藍框。
+2. **三橫向獨立面板佈局與空間遮蓋完全消除 (Strict Zero-Overlap Grid System)**：
+   - 徹底排查並解決了轉速表卡片與檔位時速文字遮蓋問題。
+   - 將畫布底部重構為 3 個 100% 空間解耦、橫向一字排開的獨立面板：
+     - **Panel B1 (x=20 ~ 280px)**：專屬 `CURRENT TELEMETRY` 檔位大數字與車速數字面板。
+     - **Panel B2 (x=315 ~ 695px)**：專屬 `ENGINE TACHO` 22 段斜角轉速卡片（與 Panel B1 保持 35px 淨空距，零重疊）。
+     - **Panel B3 (x=710 ~ 1100px)**：專屬 `STEER & DRIFT STATUS` 反打比率條與 Flow/Risk 評級。
+
+**後續行動 (Action):**
+- 保持 HTML Overlay 與 Canvas 幾何座標完全鎖定在獨立分區，防止跨組件空間碰撞。
+
+---
+
+## 2026-08-06 - Advanced HUD 配色與轉速表尺風格邏輯 (灰白軌、純白 Fill、極限熾紅) 轉譯
+
+**學習點 (Learning):**
+- **Advanced 轉速表尺邏輯融合**：借鑑 `hud_overlay/advanced` 的經典表尺風格，將 Drift HUD 中的背景軌跡與未填滿刻度全數改為極簡灰白半透明軌 (`rgba(255, 255, 255, 0.20)`)，極限狀態 (甩尾角度 $\ge 45^\circ$、RPM $\ge 82\%$、重度反打與煞車) 轉換為 Advanced 特色高亮熾紅 (`rgb(255, 0, 102)` / `#FF0066`)。
+- **冷銀純白動態 Fill**：標準甩尾角度、普通轉速段與方向盤填滿線條一律採用動態冷純白 (`#ffffff`)，大幅增強視線聚焦與高彩電競質感。
+- **零版型破壞 (Layout Integrity)**：完全保留原本 093 Drift HUD 的 80 段拋物線弧形幾何、1120x420 無截斷畫布與踏板/轉向版型結構。
+
+**後續行動 (Action):**
+- 維持 `hud-core.js` 標準生命週期與雙模式相容性。
+
+
+
+
+
+
+
+
 
 
 

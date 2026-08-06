@@ -21,6 +21,7 @@ interface HudElements {
   showTelePedals: boolean;
   showTeleCenterAnchor: boolean;
   showTeleGridLines: boolean;
+  showLiveMap?: boolean;
 }
 
 interface MonitorOption {
@@ -117,6 +118,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showTelePedals: true,
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
+    showLiveMap: true,
   },
   soundEnabled: false,
 };
@@ -850,6 +852,13 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   <label className="form-check-label fs-7" htmlFor="sw-tele-power">{t("Power & Torque Trace")}</label>
                 </div>
               </div>
+
+              <div className="col-6">
+                <div className="form-check form-switch py-1">
+                  <input type="checkbox" className="form-check-input" id="sw-tele-live-map" checked={config.elements.showLiveMap !== false} onChange={() => handleElementToggle('showLiveMap')} />
+                  <label className="form-check-label fs-7" htmlFor="sw-tele-live-map">{t("Live Map (Track & Cursor)")}</label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -880,7 +889,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 disabled={config.elements.showGauge === false}
                 className="form-select form-select-sm fw-bold"
               >
-                <option value="advanced">{t("Race Arc HUD)")}</option>
+                <option value="advanced">{t("Race Arc")}</option>
                 <option value="simple">{t("Simple")}</option>
                 <option value="fm4ui">{t("Forza Motorsport 4")}</option>
                 <option value="gt7">{t("GT7")}</option>
