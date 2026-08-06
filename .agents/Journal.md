@@ -1301,3 +1301,18 @@
 **後續行動 (Action):**
 - 後續新增或維護 AEGO 齒輪調校演算法時，一律保持端點 ($g_0$ 與 $g_{N-1}$) 與中間步階的幾何連續性，並於 `tuningMath.test.ts` 中維持對特定車輛 (如 Mustang 3847) 升檔轉速 $\ge RPM_{torque}$ 的單元測試斷言。
 
+---
+
+## 2026-08-06 - backend/telemetry_listener.py 的 datagram_received 方法重構與解析邏輯獨立抽離
+
+**學習點 (Learning):**
+1. **二進位 Struct Unpacking 獨立抽離與純函數化 (Binary Unpacking Pure Function Separation)**：
+   - 原本 `datagram_received` 長達 ~170 行，混合 Protocol 接收、長度檢查 (232-byte V1 / 324-byte V2)、`struct.unpack_from` 與 Queue 派送。
+   - 抽離出獨立純函數 `parse_telemetry_packet(data: bytes) -> dict | None` 後，使解包與數據映射邏輯獨立，`datagram_received` 精簡至 10 行，大幅提升維護性與可讀性。
+2. **零阻塞 UDP 高頻與單元測試性 (High-Frequency UDP & Isolated Unit Testing)**：
+   - 純函數解析不涉及任何同步阻塞 I/O，完全符合 UDP 60Hz+ 高頻效能規範。
+   - 解耦後可以直接給予二進位 Byte Array 測試 `parse_telemetry_packet`，毋須透過 `DatagramProtocol` 模擬，測試更加純粹。
+
+**後續行動 (Action):**
+- 後續若有新增 UDP DataOut 欄位解析，可直接在 `parse_telemetry_packet` 中擴充，並於 `test_telemetry_listener.py` 補齊單元測試。
+
