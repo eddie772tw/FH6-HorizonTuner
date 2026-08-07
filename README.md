@@ -24,16 +24,30 @@
 
 ## 核心功能 / Core Features
 
-* **即時遙測面板 (60Hz Live Telemetry)**: 高更新率數據可視化，包含車速、引擎轉速、馬力、扭力、渦輪增壓值 (Boost)、G 力雷達與駕駛輸入反饋。
-* **自定義儀表覆蓋層 (Custom Dashboard Overlay)**:
-  - 提供 HTML5 Canvas 硬體加速儀表覆蓋層（支援 GT7、Retro VFD、093 Drift 等風格）。
-  - 100% 免注入、免 Hook，零反作弊封號風險。
-  - 支援動態表達式綁定、條件變色與多頻道 WebSocket 數據透傳。
-* **WYSIWYG 儀表編輯器 (Visual Dashboard Designer)**: 在 Tauri 前端中提供拖曳式佈局編輯器，支援即時預覽、屬性面板、條件色彩規則表與一鍵匯入/匯出佈局設定。
-* **輪胎與懸吊監控**: 即時顯示四輪獨立的輪胎表面溫度、熱胎壓與正規化懸吊行程。
-* **車輛調校工作台 (Tuning Workbench)**: 提供 5 步驟車輛調校嚮導（Goal, Gearing, Chassis, Alignment, Telemetry Calibration），包含 AEGO 齒比與懸吊/阻尼算牌。
-* **彈射起步測試 (Drag Test)**: 提供起步加速度計時測試的記錄、分析與圖表回放功能。
-* **診斷主控台 (Diagnostic Console)**: 內建即時日誌檢視器，支援層級篩選與 Traceback 拼接，方便即時排查問題。
+* **即時遙測與物理動態分析 (60Hz Live Telemetry & Dynamics)**:
+  - 60Hz 高頻 UDP 遙測封包接收與極致效能視效渲染。
+  - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
+  - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
+* **5 步驟公式化車輛調校工作台 (5-Step Physics Tuning Workbench)**:
+  - **Step 1 賽事目標 (Goal Setup)**：支援公路環道 (Road)、甩尾 (Drift)、越野拉力 (Rally) 與直線加速 (Drag) 四大賽事取向及空力效率配比。
+  - **Step 2 AEGO 齒比 (AEGO Gearing)**：獨家 AEGO 齒比演算法與動力帶 (Powerband) 分析，支援 4-Speed Drag Meta、軟上限 (Soft Cap) 與極速閉環幾何二次修正。
+  - **Step 3 底盤懸吊 (Chassis Tuner)**：防傾桿 (ARB 1/65 Meta 策略)、彈簧剛性、前傾姿態 (Forward Rake) 車高、黃金比例阻尼 (60% Bump Ratio) 與差速器鎖定率。
+  - **Step 4 胎壓與對齊 (Alignment & Tires)**：季節偏置靜態冷胎壓算牌、Camber / Toe / Caster 幾何計算。
+  - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
+* **客製化賽車儀表覆蓋層與視覺編輯器 (Racing HUD Overlay & WYSIWYG Designer)**:
+  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
+  - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
+  - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
+* **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
+  - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。
+  - 速度/轉速時間軸圖表回放與歷史 Session 紀錄對比。
+* **遙測持久化與 MoTeC i2 數據匯出 (SQLite Storage & MoTeC Exporter)**:
+  - 後端 SQLite 遙測歷程資料庫自動記錄。
+  - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
+* **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
+  - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
+  - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
+  - **動態多語言**：預設支援繁體中文 (zh-tw)、英文 (en-us)、日文 (ja-jp) 等。
 
 ---
 

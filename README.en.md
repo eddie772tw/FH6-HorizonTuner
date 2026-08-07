@@ -23,16 +23,30 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ## Core Features
 
-* **Real-time Telemetry Dashboard (60Hz)**: High-refresh-rate data visualization including vehicle speed, engine RPM, power (HP), torque, boost, G-force radar, and driver input feedback.
-* **Custom Dashboard Overlay**:
-  - HTML5 Canvas hardware-accelerated overlay supporting multiple HUD styles (GT7, Retro VFD, 093 Drift, etc.).
-  - 100% injection-free, zero hook, zero anti-cheat ban risk.
-  - Supports dynamic expression bindings, conditional threshold styling, and multi-channel WebSocket telemetry streaming.
-* **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor in the Tauri frontend with real-time preview, property panels, conditional color rule tables, and one-click import/export layout presets.
-* **Tire & Suspension Monitoring**: Real-time display of individual tire surface temperatures, hot pressures, and normalized suspension travel for all four wheels.
-* **Tuning Workbench**: 5-Step Vehicle Tuning Wizard (Goal, Gearing, Chassis, Alignment, Telemetry Calibration) featuring AEGO gear ratio calculation and suspension/damping math.
-* **Drag Test**: Launch acceleration timing test recording, analysis, and chart playback.
-* **Diagnostic Console**: Built-in live log viewer with level filtering and Traceback merging for real-time debugging.
+* **Real-time Telemetry & Dynamics (60Hz Live Data)**:
+  - High-frequency 60Hz UDP telemetry packet ingestion and high-performance visual rendering.
+  - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
+  - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
+* **5-Step Physics Tuning Workbench**:
+  - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag) and aerodynamic efficiency parameters.
+  - **Step 2 AEGO Gearing**: Proprietary AEGO gear ratio calculation algorithm & Powerband envelope analysis, supporting 4-Speed Drag Meta, Soft Max Speed caps, and closed-loop top-speed re-distribution.
+  - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
+  - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
+  - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
+* **Racing HUD Overlay & WYSIWYG Designer**:
+  - HTML5 Canvas hardware-accelerated standalone overlays featuring GT7, Retro VFD, and 093 Drift professional HUD styles.
+  - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
+  - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
+* **Drag Launch Test & Acceleration Analyzer**:
+  - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.
+  - Speed/RPM timeline chart playback and historical session comparison.
+* **Telemetry Persistence & MoTeC i2 Exporter**:
+  - Automated backend SQLite historical telemetry logging.
+  - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
+* **Diagnostics Console, Theme System & i18n**:
+  - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
+  - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
+  - **Dynamic i18n**: Multi-language framework supporting Traditional Chinese (`zh-tw`), English (`en-us`), Japanese (`ja-jp`), and more.
 
 ---
 
