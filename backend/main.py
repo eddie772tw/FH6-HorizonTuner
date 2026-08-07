@@ -1538,7 +1538,8 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            return {"error": f"Failed to read language file: {e}"}
+            logger.error(f"Failed to read language file: {e}")
+            return {"error": "Failed to read language file"}
 
     return {"error": "Language not found"}
 
@@ -1609,7 +1610,7 @@ async def save_analysis_config(config: dict):
         return {"message": "Analysis layout saved successfully"}
     except Exception as e:
         logger.error(f"Failed to save analysis layout: {e}")
-        return {"error": f"Failed to save analysis layout: {e}"}
+        return {"error": "Failed to save analysis layout"}
 
 
 @app.get("/api/analysis/status")
@@ -1712,7 +1713,8 @@ async def load_saved_session(session_id: str, lap: int = 0):
         if data:
             return data
     except Exception as e:
-        return {"error": f"Failed to read session telemetry: {e}"}
+        logger.error(f"Failed to read session telemetry: {e}")
+        return {"error": "Failed to read session telemetry"}
     return []
 
 
@@ -1723,7 +1725,8 @@ async def delete_saved_session(session_id: str):
         if success:
             return {"message": "Session deleted successfully"}
     except Exception as e:
-        return {"error": f"Failed to delete session: {e}"}
+        logger.error(f"Failed to delete session: {e}")
+        return {"error": "Failed to delete session"}
     return {"error": "Session not found"}
 
 
@@ -1779,7 +1782,7 @@ async def import_motec_session(file: UploadFile = File(...)):
         }
     except Exception as e:
         logger.error(f"Failed to import MoTeC CSV: {e}")
-        return {"error": f"Failed to import MoTeC CSV: {e}"}
+        return {"error": "Failed to import MoTeC CSV"}
 
 
 # --- Drag Test API Endpoints ---
@@ -1846,7 +1849,7 @@ async def drag_save_session():
         return {"message": "Drag session saved successfully", "filename": filename}
     except Exception as e:
         logger.error(f"Failed to save drag session to {filename}: {e}")
-        return {"error": f"Failed to save session: {e}"}
+        return {"error": "Failed to save session"}
 
 
 @app.get("/api/drag/sessions")
@@ -1880,7 +1883,8 @@ async def get_drag_session(filename: str):
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            return {"error": f"Failed to read drag session file: {e}"}
+            logger.error(f"Failed to read drag session file: {e}")
+            return {"error": "Failed to read drag session file"}
     return {"error": "Drag session file not found"}
 
 
@@ -1893,7 +1897,8 @@ async def delete_drag_session(filename: str):
             os.remove(file_path)
             return {"message": "Drag session deleted successfully"}
         except Exception as e:
-            return {"error": f"Failed to delete drag session file: {e}"}
+            logger.error(f"Failed to delete drag session file: {e}")
+            return {"error": "Failed to delete drag session file"}
     return {"error": "Drag session file not found"}
 
 
@@ -1911,7 +1916,8 @@ async def get_logs(level: str = None, limit: int = 300):
         with open(backend_log_path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
     except Exception as e:
-        return {"error": f"Failed to read log file: {e}"}
+        logger.error(f"Failed to read log file: {e}")
+        return {"error": "Failed to read log file"}
 
     parsed_logs = []
     current_entry = None
@@ -1963,7 +1969,8 @@ async def clear_logs():
                 f.write("")
             return {"message": "Logs cleared successfully"}
         except Exception as e:
-            return {"error": f"Failed to clear logs: {e}"}
+            logger.error(f"Failed to clear logs: {e}")
+            return {"error": "Failed to clear logs"}
     return {"message": "Log file does not exist"}
 
 
@@ -2046,7 +2053,7 @@ async def save_overlay_config(data: dict):
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save hud_config.json: {e}")
-        return {"error": f"Failed to save HUD config: {e}", "success": False}
+        return {"error": "Failed to save HUD config", "success": False}
 
 
 @app.post("/api/overlay/reset")
@@ -2065,7 +2072,7 @@ async def reset_overlay_config():
         }
     except Exception as e:
         logger.error(f"Failed to reset hud_config.json: {e}")
-        return {"error": f"Failed to reset HUD config: {e}", "success": False}
+        return {"error": "Failed to reset HUD config", "success": False}
 
 
 @app.get("/api/overlay/car_learning")
@@ -2087,7 +2094,7 @@ async def save_car_learning(data: dict):
         return {"message": "Car learning data saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save car_learning.json: {e}")
-        return {"error": f"Failed to save car learning data: {e}", "success": False}
+        return {"error": "Failed to save car learning data", "success": False}
 
 
 @app.get("/api/overlay/system_media")
