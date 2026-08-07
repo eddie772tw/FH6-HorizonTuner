@@ -2,6 +2,8 @@ import os
 import re
 import sys
 
+import argparse
+
 if getattr(sys, "frozen", False):
     if sys.platform == "win32":
         try:
@@ -9,13 +11,28 @@ if getattr(sys, "frozen", False):
         except Exception:
             pass
 
-# 避免在無主控台模式下 sys.stdout/sys.stderr 為 None 導致 uvicorn 或 logging 報錯
-# 同時將發行版執行期的後端輸出重導向至 logs/backend.log
+parser = argparse.ArgumentParser(description="FH6 HorizonTuner Backend Sidecar")
+parser.add_argument("--data-dir", type=str, default=None, help="Directory for user persistent data")
+parsed_args, _ = parser.parse_known_args()
+
 if getattr(sys, "frozen", False):
-    DATA_ROOT = os.path.dirname(sys.executable)
-    log_dir = os.path.join(DATA_ROOT, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    backend_log_path = os.path.join(log_dir, "backend.log")
+    RESOURCE_ROOT = sys._MEIPASS
+    if parsed_args.data_dir:
+        DATA_ROOT = os.path.abspath(parsed_args.data_dir)
+    else:
+        DATA_ROOT = os.path.dirname(sys.executable)
+else:
+    RESOURCE_ROOT = os.path.dirname(os.path.abspath(__file__))
+    if parsed_args.data_dir:
+        DATA_ROOT = os.path.abspath(parsed_args.data_dir)
+    else:
+        DATA_ROOT = RESOURCE_ROOT
+
+log_dir = os.path.join(DATA_ROOT, "logs")
+os.makedirs(log_dir, exist_ok=True)
+backend_log_path = os.path.join(log_dir, "backend.log")
+
+if getattr(sys, "frozen", False):
     try:
         backend_log = open(backend_log_path, "a", encoding="utf-8", buffering=1)
         sys.stdout = backend_log
@@ -26,11 +43,6 @@ if getattr(sys, "frozen", False):
                 sys.stderr.write(f"Failed to open backend.log: {e}\n")
             except Exception:
                 pass
-else:
-    DATA_ROOT = os.path.dirname(os.path.abspath(__file__))
-    log_dir = os.path.join(DATA_ROOT, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    backend_log_path = os.path.join(log_dir, "backend.log")
 
 import asyncio
 import gc
@@ -86,35 +98,21 @@ if not getattr(sys, "frozen", False):
 
 logger = logging.getLogger(__name__)
 
-# 統一判定與配置唯讀資源目錄與可寫入資料目錄
+# 統一配置唯讀資源目錄與可寫入資料目錄
 
-if getattr(sys, "frozen", False):
-    RESOURCE_ROOT = sys._MEIPASS
-    DATA_ROOT = os.path.dirname(sys.executable)
+CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
+RESOURCE_CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
+RESOURCE_LANG_DIR = os.path.join(RESOURCE_ROOT, "lang") if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(RESOURCE_ROOT), "lang")
+RESOURCE_HUD_DIR = os.path.join(RESOURCE_ROOT, "hud_overlay") if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(RESOURCE_ROOT), "hud_overlay")
 
-    CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
-    LANG_DIR = os.path.join(RESOURCE_ROOT, "lang")
-
-    TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
-    CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
-    SESSIONS_DIR = os.path.join(DATA_ROOT, "sessions")
-    DRAG_SESSIONS_DIR = os.path.join(DATA_ROOT, "drag_sessions")
-    USER_CONFIGS_DIR = os.path.join(DATA_ROOT, "user_configs")
-    SETTINGS_FILE = os.path.join(DATA_ROOT, "settings.json")
-else:
-    RESOURCE_ROOT = os.path.dirname(os.path.abspath(__file__))
-    DATA_ROOT = RESOURCE_ROOT
-    ROOT_DIR = os.path.dirname(RESOURCE_ROOT)
-
-    CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
-    LANG_DIR = os.path.join(ROOT_DIR, "lang")
-
-    TUNINGS_DIR = os.path.join(RESOURCE_ROOT, "tunings")
-    CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
-    SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "sessions")
-    DRAG_SESSIONS_DIR = os.path.join(RESOURCE_ROOT, "drag_sessions")
-    USER_CONFIGS_DIR = os.path.join(RESOURCE_ROOT, "user_configs")
-    SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
+LANG_DIR = os.path.join(DATA_ROOT, "lang")
+TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
+CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
+HUD_OVERLAY_DIR = os.path.join(DATA_ROOT, "hud_overlay")
+SESSIONS_DIR = os.path.join(DATA_ROOT, "sessions")
+DRAG_SESSIONS_DIR = os.path.join(DATA_ROOT, "drag_sessions")
+USER_CONFIGS_DIR = os.path.join(DATA_ROOT, "user_configs")
+SETTINGS_FILE = os.path.join(DATA_ROOT, "settings.json")
 
 SESSIONS_DB_PATH = os.path.join(SESSIONS_DIR, "telemetry_sessions.db")
 ANALYSIS_LAYOUT_FILE = os.path.join(USER_CONFIGS_DIR, "analysis_layout.json")
@@ -122,25 +120,24 @@ ANALYSIS_LAYOUT_FILE = os.path.join(USER_CONFIGS_DIR, "analysis_layout.json")
 # Ensure directories exist
 os.makedirs(TUNINGS_DIR, exist_ok=True)
 os.makedirs(CAR_PARAMS_DIR, exist_ok=True)
+os.makedirs(LANG_DIR, exist_ok=True)
+os.makedirs(HUD_OVERLAY_DIR, exist_ok=True)
 os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
 os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 
-if getattr(sys, "frozen", False):
+# 完整複製內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護
+if os.path.exists(RESOURCE_LANG_DIR):
     import shutil
-
-    bundled_car_params = os.path.join(RESOURCE_ROOT, "car_params")
-    if os.path.exists(bundled_car_params):
-        for f_name in os.listdir(bundled_car_params):
-            src = os.path.join(bundled_car_params, f_name)
-            dst = os.path.join(CAR_PARAMS_DIR, f_name)
+    for f_name in os.listdir(RESOURCE_LANG_DIR):
+        if f_name.endswith(".json"):
+            src = os.path.join(RESOURCE_LANG_DIR, f_name)
+            dst = os.path.join(LANG_DIR, f_name)
             if not os.path.exists(dst):
                 try:
                     shutil.copy2(src, dst)
                 except Exception:
                     pass
-
-os.makedirs(LANG_DIR, exist_ok=True)
 
 telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
 
@@ -1041,6 +1038,10 @@ def load_car_params(car_id: str):
     file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    res_path = os.path.join(RESOURCE_CAR_PARAMS_DIR, f"{car_id}.json")
+    if os.path.exists(res_path):
+        with open(res_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
 
@@ -2186,52 +2187,10 @@ if __name__ == "__main__":
 
     write_web_port(backend_port)
 
-    _cleanup_state = {"proc": None, "log": None}
-
-    if getattr(sys, "frozen", False):
-        frontend_path = os.path.join(sys._MEIPASS, "frontend.exe")
-        if os.path.exists(frontend_path):
-            import subprocess
-
-            log_dir = os.path.join(DATA_ROOT, "logs")
-            frontend_log_path = os.path.join(log_dir, "frontend.log")
-            try:
-                _cleanup_state["log"] = open(
-                    frontend_log_path, "a", encoding="utf-8", buffering=1
-                )
-                env = os.environ.copy()
-                env["BACKEND_PORT"] = str(backend_port)
-                _cleanup_state["proc"] = subprocess.Popen(
-                    [frontend_path, "--no-sidecar"],
-                    stdout=_cleanup_state["log"],
-                    stderr=subprocess.STDOUT,
-                    env=env,
-                )
-            except Exception:
-                env = os.environ.copy()
-                env["BACKEND_PORT"] = str(backend_port)
-                _cleanup_state["proc"] = subprocess.Popen(
-                    [frontend_path, "--no-sidecar"], env=env
-                )
-
-            threading.Thread(
-                target=check_frontend_alive,
-                args=(_cleanup_state["proc"],),
-                daemon=True,
-            ).start()
-        else:
-            print("Frontend executable not found in bundle!")
+    _cleanup_state = {"log": None}
 
     def cleanup_resources():
-        proc = _cleanup_state.get("proc")
         log = _cleanup_state.get("log")
-        if proc:
-            try:
-                proc.terminate()
-                proc.wait(timeout=1)
-            except Exception:
-                pass
-            _cleanup_state["proc"] = None
         if log:
             try:
                 log.close()
@@ -2243,19 +2202,18 @@ if __name__ == "__main__":
 
     atexit.register(cleanup_resources)
 
-    # 在非 Frozen 開發模式下，若被外部視窗 process (如 Tauri Sidecar) 啟動，監聽 stdin EOF 以連帶關閉
-    if not getattr(sys, "frozen", False):
+    # 在 Sidecar 模式下，監聽 stdin EOF 以在父程序 (Tauri Host) 關閉時連帶優雅退出
+    def monitor_stdin_eof():
+        try:
+            if sys.stdin is not None:
+                sys.stdin.read()
+        except Exception:
+            pass
+        cleanup_resources()
+        os._exit(0)
 
-        def monitor_stdin_eof():
-            try:
-                if sys.stdin is not None:
-                    sys.stdin.read()
-            except Exception:
-                pass
-            cleanup_resources()
-            os._exit(0)
-
-        threading.Thread(target=monitor_stdin_eof, daemon=True).start()
+    import threading
+    threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     import socket
 

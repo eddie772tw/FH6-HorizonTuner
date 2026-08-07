@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "frontend",
-  "version": "0.1.0",
+  "productName": "FH6-HorizonTuner",
+  "version": "11.4.5.14",
   "identifier": "com.eddie772tw.frontend",
   "build": {
     "beforeDevCommand": "pnpm run dev",
@@ -48,9 +48,19 @@
   },
   "bundle": {
     "active": true,
-    "targets": [],
+    "targets": ["nsis"],
+    "publisher": "eddie772tw",
+    "copyright": "Copyright (C) 2026 eddie772tw. All rights reserved.",
+    "shortDescription": "FH6 HorizonTuner Telemetry Tuning App",
+    "longDescription": "FH6 HorizonTuner Telemetry Tuning Tool for Forza Horizon 6",
+    "externalBin": [
+      "bin/server-sidecar"
+    ],
     "icon": [
       "../../app.ico"
-    ]
+    ],
+    "nsis": {
+      "installerIcon": "../../app.ico"
+    }
   }
 }

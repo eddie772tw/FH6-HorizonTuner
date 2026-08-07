@@ -29,6 +29,7 @@ pnpm-debug.log*
 # Rust & Tauri build outputs
 frontend/src-tauri/target/
 frontend/src-tauri/gen/
+frontend/src-tauri/bin/
 
 # User settings, runtime telemetry logs, and auto-generated data
 /settings.json

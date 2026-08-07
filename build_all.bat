@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ====================================================================
-echo      FH6 HorizonTuner - Standalone Release Bundler
+echo      FH6 HorizonTuner - Sidecar Release Bundler
 echo ====================================================================
 echo.
 
@@ -56,11 +56,11 @@ for /d %%D in ("%~dp0*") do (
     )
     
     if "!IS_IGNORED!" == "false" (
-        :: Check if it's already packaged in this script by searching for its name
-        findstr /I /C:"%%~nxD" "%~dp0FH6-HorizonTuner.spec" >nul
+        :: Check if it's already packaged in backend/server-sidecar.spec
+        findstr /I /C:"%%~nxD" "%~dp0server-sidecar.spec" >nul
         if errorlevel 1 (
             echo.
-            echo [WARNING] Found directory '%%~nxD' that is neither ignored nor packaged.
+            echo [WARNING] Found directory '%%~nxD' that is neither ignored nor packaged in server-sidecar.spec.
             if "%GITHUB_ACTIONS%" == "true" (
                 echo [ERROR] Unregistered directory '%%~nxD' found in CI. Terminating.
                 exit /b 1
@@ -73,7 +73,7 @@ for /d %%D in ("%~dp0*") do (
                 echo [SUCCESS] Added '%%~nxD' to .pkgdirignore.
             ) else (
                 echo.
-                echo [IMPORTANT] Please add '%%~nxD' to build_all.bat packaging options or .pkgdirignore.
+                echo [IMPORTANT] Please add '%%~nxD' to packaging options or .pkgdirignore.
                 echo [INFO] Building process will now terminate.
                 pause
                 exit /b 1
@@ -84,8 +84,31 @@ for /d %%D in ("%~dp0*") do (
 echo [SUCCESS] No unregistered resource directories found.
 echo.
 
-:: 2. Run Tauri Build
-echo [INFO] Running Tauri Build...
+:: 2. Build Python Backend Sidecar Executable with PyInstaller
+echo [INFO] Building Python Backend Sidecar with PyInstaller...
+echo --------------------------------------------------------------------
+%RUN_PYINSTALLER% "%~dp0server-sidecar.spec" --clean
+if errorlevel 1 (
+    echo.
+    echo [ERROR] PyInstaller Sidecar bundling encountered an error!
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
+)
+
+set "TAURI_BIN_DIR=%~dp0frontend\src-tauri\bin"
+if not exist "%TAURI_BIN_DIR%" mkdir "%TAURI_BIN_DIR%"
+
+copy /Y "%~dp0dist\server-sidecar-x86_64-pc-windows-msvc.exe" "%TAURI_BIN_DIR%\server-sidecar-x86_64-pc-windows-msvc.exe"
+if errorlevel 1 (
+    echo [ERROR] Failed to copy Sidecar executable to Tauri bin directory.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
+)
+echo [SUCCESS] Python Backend Sidecar created and placed in Tauri bin directory.
+echo.
+
+:: 3. Run Tauri Build
+echo [INFO] Running Tauri Build (Packaging Single Standalone Bundle)...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 call pnpm install || exit /b 1
@@ -105,29 +128,17 @@ if errorlevel 1 (
     if not "%GITHUB_ACTIONS%" == "true" pause
     exit /b 1
 )
-echo [SUCCESS] Tauri Frontend built successfully.
+echo [SUCCESS] Tauri Frontend & Main Executable built successfully.
 echo.
 cd "%~dp0"
 
-:: 3. Build Final Executable with PyInstaller
-echo [INFO] Running PyInstaller to create final standalone executable...
-echo --------------------------------------------------------------------
+:: 4. Copy final executable to root dist/ directory for 100% upgrade backward compatibility
 if not exist "%~dp0dist" mkdir "%~dp0dist"
-
-%RUN_PYINSTALLER% "%~dp0FH6-HorizonTuner.spec" --clean
-
-echo --------------------------------------------------------------------
-
-if errorlevel 1 (
-    echo.
-    echo [ERROR] PyInstaller bundling encountered an error!
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+if exist "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" (
+    copy /Y "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" "%~dp0dist\FH6-HorizonTuner.exe"
 )
-echo [SUCCESS] Standalone executable created successfully.
-echo.
 
-:: 4. Success screen
+:: 5. Success screen
 echo ====================================================================
 echo      FH6 HorizonTuner standalone bundle created successfully
 echo ====================================================================

@@ -138,3 +138,12 @@
   - 批量同步多語系 key (如 `zh-tw.json` 與 `ja-jp.json`) 或抓取的 ad-hoc 腳本，於提交 PR 前必須手動清理，防止 repo 污染。
   - 具備持久 Debug 參考價值者移入 Skill 的 `references/` 目錄。
   - 執行 `build_all.bat` 發行打包時，善用 `.pkgdirignore` 排除開發快取與資源，發行版 `.exe` 會自動於同級目錄建立 `settings.json` 與數據資料夾，實現綠色隨身攜帶。
+
+### 5. Tauri Sidecar 正向轉移與「進程/路徑分離」免安裝隔離
+* **學習點 (Learning)**：
+  - **Sidecar 進程與路徑分離陷阱**：在單檔免安裝 (Single Portable EXE) 模式下，Tauri 將二進位 Sidecar (`server-sidecar`) 釋放至 `%TEMP%` 目錄執行。若 Python 端仍以 `sys.executable` 作為 `DATA_ROOT`，使用者產生的 `settings.json`、`tunings/` 與 SQLite `telemetry_sessions.db` 將寫入 Temp 區，隨時有遺失風險。
+  - **Host EXE 目錄傳參**：Rust 端在 `setup()` 時取得 `std::env::current_exe().parent()`，以 `--data-dir` 參數主動傳給 Sidecar，確保資料與 Host EXE 100% 保持在同級目錄下，實現隨身帶走。
+  - **資料夾初始與動態 Fallback 規範**：
+    - `lang/`：初始化時自動複製專案內完整語系檔至 `DATA_ROOT/lang/` 供使用者直接調整。
+    - `car_params/`：`DATA_ROOT/car_params/` 預設為空，僅在使用者儲存時寫入；讀取時優先嘗試 `DATA_ROOT/car_params/`，若未命中則 Fallback 讀取二進位內建 `RESOURCE_ROOT/car_params/`。
+    - `hud_overlay/`：`DATA_ROOT/hud_overlay/` 預設為空，保留內建原生 HUD 掛載，同時允許使用者放入自訂 HTML/CSS 面板進行動態掃描與追加。

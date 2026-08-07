@@ -123,16 +123,15 @@ The project provides highly automated launcher scripts:
 
 ## Standalone Release Bundling
 
-You can package both the frontend and backend into a **single standalone executable (.exe)** for clean, portable, installation-free execution:
+You can package both the frontend and backend into a **single standalone executable (.exe)** using the standard **Tauri (Rust Host) + Python Sidecar** architecture:
 
 1. Double-click **`build_all.bat`**:
-   - Builds the Tauri frontend project, producing `frontend.exe`.
-   - Packages the FastAPI backend, translations (`lang/`), default car parameters, and the vehicle database together using PyInstaller.
-   - The final bundled executable `FH6-HorizonTuner.exe` is generated inside the `dist/` directory.
+   - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
+   - **Phase 2 (Tauri Bundle)**: Tauri bundles the React frontend and Python Sidecar binary into a single standalone portable package inside `frontend/src-tauri/target/release/bundle/`.
 
 > [!NOTE]
 > **Portable Path Strategy**:
-> When running the standalone executable, all read-only default resources are extracted from a temporary directory. User-generated files like settings (`settings.json`), telemetry sessions (`sessions/`), and custom tunings (`tunings/`) are **automatically saved alongside the `.exe`**, ensuring your data remains fully portable.
+> When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
 
 * **Excluding Non-release Directories (.pkgdirignore)**:
     * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).

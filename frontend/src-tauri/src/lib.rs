@@ -247,8 +247,14 @@ pub fn run() {
                 return Ok(());
             }
 
+            let current_exe_dir = std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|p| p.to_string_lossy().into_owned()))
+                .unwrap_or_else(|| ".".to_string());
+
             if let Ok(sidecar_command) = app.shell().sidecar("server-sidecar") {
-                if let Ok((mut rx, child)) = sidecar_command.spawn() {
+                let sidecar_with_args = sidecar_command.args(["--data-dir", &current_exe_dir]);
+                if let Ok((mut rx, child)) = sidecar_with_args.spawn() {
                     tauri::async_runtime::spawn(async move {
                         let _child_handle = child;
                         while let Some(event) = rx.recv().await {
