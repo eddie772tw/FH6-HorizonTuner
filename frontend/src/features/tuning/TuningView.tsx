@@ -36,7 +36,7 @@ interface TuningViewProps {
   setActiveTab?: (tab: any) => void;
 }
 
-const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurrentStep: propSetStep }) => {
+const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurrentStep: propSetStep, setActiveTab }) => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
   const { t } = useSettings();
 
@@ -283,7 +283,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
                         className="btn btn-outline-warning btn-sm fw-bold w-100"
                         onClick={() => {
                           setShowParamsPopover(false);
-                          setActiveTab('car_params');
+                          setActiveTab?.('car_params');
                         }}
                       >
                         {t("Go to Car Parameters")} &gt;

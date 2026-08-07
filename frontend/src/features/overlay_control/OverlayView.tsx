@@ -886,6 +886,23 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   onChange={(e) => handleLiveMapScaleChange(Number(e.target.value))}
                 />
               </div>
+
+              {/* Live Map Opacity */}
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="fs-7 text-body-secondary">{t("Live Map Opacity")}:</span>
+                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapOpacity ?? 1.0) * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  className="form-range"
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  value={config.telemetryLiveMapOpacity ?? 1.0}
+                  onChange={(e) => handleLiveMapOpacityChange(Number(e.target.value))}
+                />
+              </div>
             </div>
           </div>
         </div>

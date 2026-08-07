@@ -44,6 +44,21 @@
 
 ---
 
+## 2026-08-07 - TuningView / OverlayView IDE 懸空屬性與編譯修正 (`TuningView.tsx`, `OverlayView.tsx`)
+
+**學習點 (Learning):**
+1. **TypeScript 可選 Prop 未解構引發 Cannot find name 錯誤**：
+   - `TuningViewProps` 定義了 `setActiveTab?: (tab: any) => void;`，但在 `TuningView` 組件函式參數中漏掉 `setActiveTab` 的解構，導致 Popover 按鈕回呼中存取 `setActiveTab` 時觸發 `Cannot find name 'setActiveTab'` 編譯錯誤。
+   - 修正方案：於組件解構參數中補上 `setActiveTab`，並於點擊回呼中使用 optional chaining (`setActiveTab?.('car_params')`) 安全呼叫。
+2. **OverlayView 未使用處理函式與 Live Map Opacity UI 滑塊補完**：
+   - `OverlayView.tsx` 宣告了 `handleLiveMapOpacityChange` 處理函式與 `telemetryLiveMapOpacity` 設定項，但 HUD Controls 面板中遺漏了 Live Map 透明度 (Opacity) 的 UI 控制項，導致 TypeScript `error TS6133: 'handleLiveMapOpacityChange' is declared but its value is never read` 告警。
+   - 修正方案：於 Live Map Scale 區塊下方補齊 Live Map Opacity Range Slider (`min=0.1, max=1.0, step=0.05`)，既修復 TS6133 告警，又提供完整的透明度控制功能。
+
+**後續行動 (Action):**
+- 在元件宣告可選 Handler/Props 時，必須確認 (1) 元件參數正確解構並採用 optional chaining 防護，(2) 相關控制函式有在 Component View UI 中被綁定對應的表單輸入控制項。
+
+---
+
 ## 2026-08-07 - AEGO 齒比紅線極速換算與高檔位動力帶轉速上限修復 (`tuningMath.ts`)
 
 **學習點 (Learning):**
