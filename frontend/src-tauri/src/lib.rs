@@ -252,24 +252,30 @@ pub fn run() {
                 .and_then(|p| p.parent().map(|p| p.to_string_lossy().into_owned()))
                 .unwrap_or_else(|| ".".to_string());
 
-            if let Ok(sidecar_command) = app.shell().sidecar("server-sidecar") {
-                let sidecar_with_args = sidecar_command.args(["--data-dir", &current_exe_dir]);
-                if let Ok((mut rx, child)) = sidecar_with_args.spawn() {
-                    tauri::async_runtime::spawn(async move {
-                        let _child_handle = child;
-                        while let Some(event) = rx.recv().await {
-                            if let CommandEvent::Stdout(line) = event {
-                                println!("sidecar: {}", String::from_utf8_lossy(&line));
-                            } else if let CommandEvent::Stderr(line) = event {
-                                println!("sidecar err: {}", String::from_utf8_lossy(&line));
-                            }
+            match app.shell().sidecar("bin/server-sidecar") {
+                Ok(sidecar_command) => {
+                    let sidecar_with_args = sidecar_command.args(["--data-dir", &current_exe_dir]);
+                    match sidecar_with_args.spawn() {
+                        Ok((mut rx, _child)) => {
+                            println!("Sidecar process spawned successfully!");
+                            tauri::async_runtime::spawn(async move {
+                                while let Some(event) = rx.recv().await {
+                                    if let CommandEvent::Stdout(line) = event {
+                                        println!("sidecar: {}", String::from_utf8_lossy(&line));
+                                    } else if let CommandEvent::Stderr(line) = event {
+                                        println!("sidecar err: {}", String::from_utf8_lossy(&line));
+                                    }
+                                }
+                            });
                         }
-                    });
-                } else {
-                    println!("Failed to spawn sidecar, continuing without it.");
+                        Err(e) => {
+                            eprintln!("Failed to spawn sidecar process: {:?}", e);
+                        }
+                    }
                 }
-            } else {
-                println!("Sidecar configuration not found, continuing without it.");
+                Err(e) => {
+                    eprintln!("Failed to create sidecar command: {:?}", e);
+                }
             }
             Ok(())
         })

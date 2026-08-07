@@ -40,8 +40,12 @@ def test_spec_hud_overlay_packaging_no_wildcard():
                                         lang_entry = (src, dst)
 
         assert added_files_found, f"added_files assignment not found in {spec_path}"
-        assert hud_overlay_entry is not None, f"hud_overlay entry not found in {spec_path}"
-        assert car_params_entry is not None, f"car_params entry not found in {spec_path}"
+        assert hud_overlay_entry is not None, (
+            f"hud_overlay entry not found in {spec_path}"
+        )
+        assert car_params_entry is not None, (
+            f"car_params entry not found in {spec_path}"
+        )
         assert lang_entry is not None, f"lang entry not found in {spec_path}"
 
         assert "*" not in hud_overlay_entry[0]

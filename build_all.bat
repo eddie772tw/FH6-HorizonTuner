@@ -139,6 +139,11 @@ if exist "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" (
 )
 
 :: 5. Success screen
+:: Clean up intermediate sidecar executable from dist directory
+if exist "%~dp0dist\server-sidecar-x86_64-pc-windows-msvc.exe" (
+    del /F /Q "%~dp0dist\server-sidecar-x86_64-pc-windows-msvc.exe" >nul 2>&1
+)
+
 echo ====================================================================
 echo      FH6 HorizonTuner standalone bundle created successfully
 echo ====================================================================

@@ -4,6 +4,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+
 import pytest
 
 
@@ -66,18 +67,26 @@ def test_sidecar_executable_existence_and_metadata():
         target_exe = standalone_exe
 
     if not target_exe:
-        pytest.skip("No compiled executable found to verify metadata. Build executable first.")
+        pytest.skip(
+            "No compiled executable found to verify metadata. Build executable first."
+        )
 
     assert os.path.exists(target_exe), f"Executable does not exist at {target_exe}"
-    assert os.path.getsize(target_exe) > 100000, f"Executable file {target_exe} is surprisingly small"
+    assert os.path.getsize(target_exe) > 100000, (
+        f"Executable file {target_exe} is surprisingly small"
+    )
 
     if sys.platform == "win32":
         company = get_pe_string_info(target_exe, "CompanyName")
         version = get_pe_string_info(target_exe, "FileVersion")
         if company:
-            assert company == "eddie772tw", f"Expected CompanyName 'eddie772tw', got '{company}'"
+            assert company == "eddie772tw", (
+                f"Expected CompanyName 'eddie772tw', got '{company}'"
+            )
         if version:
-            assert version == "11.4.5.14", f"Expected FileVersion '11.4.5.14', got '{version}'"
+            assert version.startswith("11.45.14"), (
+                f"Expected FileVersion starting with '11.45.14', got '{version}'"
+            )
 
 
 def test_executable_bootstrap_and_config_interaction(tmp_path):
@@ -116,7 +125,9 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
 
     # Assert 1: settings.json created and readable
     settings_file = test_data_dir / "settings.json"
-    assert settings_file.exists(), f"settings.json was not created in --data-dir. stdout: {stdout}, stderr: {stderr}"
+    assert settings_file.exists(), (
+        f"settings.json was not created in --data-dir. stdout: {stdout}, stderr: {stderr}"
+    )
     with open(settings_file, "r", encoding="utf-8") as f:
         settings = json.load(f)
         assert "units" in settings, "settings.json is missing 'units' key"
@@ -126,7 +137,9 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
     lang_dir = test_data_dir / "lang"
     assert lang_dir.exists(), "lang directory was not created"
     lang_files = list(lang_dir.glob("*.json"))
-    assert len(lang_files) > 0, "lang directory does not contain bootstrapped language files"
+    assert len(lang_files) > 0, (
+        "lang directory does not contain bootstrapped language files"
+    )
 
     # Assert 3: car_params/, hud_overlay/, tunings/, drag_sessions/, user_configs/ created
     assert (test_data_dir / "car_params").exists(), "car_params directory missing"

@@ -1,8 +1,7 @@
+import argparse
 import os
 import re
 import sys
-
-import argparse
 
 if getattr(sys, "frozen", False):
     if sys.platform == "win32":
@@ -12,7 +11,9 @@ if getattr(sys, "frozen", False):
             pass
 
 parser = argparse.ArgumentParser(description="FH6 HorizonTuner Backend Sidecar")
-parser.add_argument("--data-dir", type=str, default=None, help="Directory for user persistent data")
+parser.add_argument(
+    "--data-dir", type=str, default=None, help="Directory for user persistent data"
+)
 parsed_args, _ = parser.parse_known_args()
 
 if getattr(sys, "frozen", False):
@@ -102,8 +103,16 @@ logger = logging.getLogger(__name__)
 
 CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
 RESOURCE_CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
-RESOURCE_LANG_DIR = os.path.join(RESOURCE_ROOT, "lang") if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(RESOURCE_ROOT), "lang")
-RESOURCE_HUD_DIR = os.path.join(RESOURCE_ROOT, "hud_overlay") if getattr(sys, "frozen", False) else os.path.join(os.path.dirname(RESOURCE_ROOT), "hud_overlay")
+RESOURCE_LANG_DIR = (
+    os.path.join(RESOURCE_ROOT, "lang")
+    if getattr(sys, "frozen", False)
+    else os.path.join(os.path.dirname(RESOURCE_ROOT), "lang")
+)
+RESOURCE_HUD_DIR = (
+    os.path.join(RESOURCE_ROOT, "hud_overlay")
+    if getattr(sys, "frozen", False)
+    else os.path.join(os.path.dirname(RESOURCE_ROOT), "hud_overlay")
+)
 
 LANG_DIR = os.path.join(DATA_ROOT, "lang")
 TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
@@ -129,6 +138,7 @@ os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 # 完整複製內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護
 if os.path.exists(RESOURCE_LANG_DIR):
     import shutil
+
     for f_name in os.listdir(RESOURCE_LANG_DIR):
         if f_name.endswith(".json"):
             src = os.path.join(RESOURCE_LANG_DIR, f_name)
@@ -2204,15 +2214,17 @@ if __name__ == "__main__":
 
     # 在 Sidecar 模式下，監聽 stdin EOF 以在父程序 (Tauri Host) 關閉時連帶優雅退出
     def monitor_stdin_eof():
+        start_t = time.time()
         try:
             if sys.stdin is not None:
                 sys.stdin.read()
         except Exception:
             pass
-        cleanup_resources()
-        os._exit(0)
+        # 若啟動不到 2 秒即收到 EOF，說明為無 console/pipe 之環境，忽視假 EOF 以免誤殺 Sidecar
+        if time.time() - start_t > 2.0:
+            cleanup_resources()
+            os._exit(0)
 
-    import threading
     threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     import socket

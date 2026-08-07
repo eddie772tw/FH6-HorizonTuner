@@ -6,6 +6,15 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "shell:default"
+    "shell:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "bin/server-sidecar",
+          "sidecar": true
+        }
+      ]
+    }
   ]
 }

@@ -134,10 +134,9 @@
   - 輔助驗證腳本切勿放置於 `tests/` 目錄或以 `test_` 命名，`pyproject.toml` 明確維護 `testpaths = ["tests"]`。
 
 ### 4. 一次性開發腳本生命週期與 發行打包規範 (來自 Jules/narrator.md)
-* **學習點 (Learning)**：
-  - 批量同步多語系 key (如 `zh-tw.json` 與 `ja-jp.json`) 或抓取的 ad-hoc 腳本，於提交 PR 前必須手動清理，防止 repo 污染。
-  - 具備持久 Debug 參考價值者移入 Skill 的 `references/` 目錄。
-  - 執行 `build_all.bat` 發行打包時，善用 `.pkgdirignore` 排除開發快取與資源，發行版 `.exe` 會自動於同級目錄建立 `settings.json` 與數據資料夾，實現綠色隨身攜帶。
+* **Tauri Sidecar 打包時的中間檔與產出淨化**：
+  - PyInstaller 在 Phase 1 打包產出的 `server-sidecar-x86_64-pc-windows-msvc.exe` 僅作為供 Tauri 在 Phase 2 嵌入的資源。
+  - 在發行 Release 時**只需提供 `dist/FH6-HorizonTuner.exe`**，不需要提供 Sidecar 中間檔。已在 `build_all.bat` 末尾自動加上清理邏輯。發行打包時，善用 `.pkgdirignore` 排除開發快取與資源，發行版 `.exe` 會自動於同級目錄建立 `settings.json` 與數據資料夾，實現綠色隨身攜帶。
 
 ### 5. Tauri Sidecar 正向轉移與「進程/路徑分離」免安裝隔離
 * **學習點 (Learning)**：
