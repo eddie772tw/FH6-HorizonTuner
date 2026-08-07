@@ -2137,3 +2137,21 @@
 **後續行動 (Action):**
 - 當車輛 Drag 算牌出現極速異常時，優先檢查 $v_{\text{drag\_top}}$ 與 4 檔終傳比計算，並確認前後車身高度符合前低後高 Forward Rake 姿態。
 
+---
+
+## 2026-08-07 - Pytest 測試收集器探索腳本與絕對路徑硬編碼衝突修復 (`tools/inspect_labsgg_scripts.py`, `pyproject.toml`, `ci.yml`)
+
+**學習點 (Learning):**
+1. **Pytest 測試收集 (Test Collection) 命名衝突與頂層開檔陷阱**：
+   - `tools/` 目錄下的工具探索腳本若命名為 `test_*.py`（如 `test_labsgg_scripts.py`），會被 pytest 的自動測試收集機制視為單元測試模組。當該腳本在頂層 (Module level) 包含硬編碼之開發者本機路徑並直接執行讀檔開檔操作時，在 CI 雲端環境（如 GitHub Actions Linux Runner）將觸發 `FileNotFoundError` 導致整個 CI 測試階段中斷。
+   - 修復方案：
+     1. 將非測試用之探索腳本重新命名為 `inspect_labsgg_scripts.py`，去除 `test_` 前綴。
+     2. 為腳本開檔流程加入 `CONTENT_MD_PATH.exists()` 檢查與防禦性退出。
+2. **Pytest 測試目錄邊界與模組路徑顯式隔離**：
+   - `pyproject.toml` 的 `[tool.pytest.ini_options]` 應顯式聲明 `testpaths = ["tests"]` 與 `pythonpath = [".", "backend"]`，將 pytest 執行的範圍嚴格限制於 `tests/` 目錄，避免掃描根目錄其他工具與臨時檔案。
+   - 同時在 `.github/workflows/ci.yml` 中將 `python -m pytest -v` 改為 `python -m pytest tests/ -v` 確保 CI 執行邊界清晰無虞。
+
+**後續行動 (Action):**
+- 凡放在 `tools/` 或非 `tests/` 目錄下的輔助、探索或抓取腳本，切勿使用 `test_` 為檔名前綴；且在 `pyproject.toml` 中必須明確維護 `testpaths = ["tests"]`。
+
+

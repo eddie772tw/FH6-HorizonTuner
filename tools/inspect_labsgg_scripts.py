@@ -2,11 +2,14 @@
 
 import json
 import re
+import sys
 from pathlib import Path
 
-CONTENT_MD_PATH = Path(
-    r"C:\Users\eddie\.gemini\antigravity\brain\4795a90b-7496-4be0-9a25-ca7ce301739e\.system_generated\steps\288\content.md"
-)
+CONTENT_MD_PATH = Path("content.md")
+
+if not CONTENT_MD_PATH.exists():
+    print(f"Error: {CONTENT_MD_PATH} not found.")
+    sys.exit(0)
 
 with open(CONTENT_MD_PATH, "r", encoding="utf-8") as f:
     html = f.read()
