@@ -39,3 +39,6 @@
 ## 2024-05-18 - Replacing forEach closures in high-frequency React loop
 **Learning:** In high-frequency rendering paths (like processing large telemetry dataset for Chart previews), using array methods like `.forEach` creates a new function closure allocation for every data point. This can cause unnecessary garbage collection overhead when parsing thousands of items continuously.
 **Action:** Replace `.forEach` or chained array iteration methods with native `for` loops inside expensive data-parsing contexts like `transformTelemetryData` or high-rate UI loops to reduce GC pressure.
+## 2026-08-07 - Cache CSS Custom Property Updates in High-Frequency DOM Loops
+**Learning:** In a 60Hz high-frequency loop (like `requestAnimationFrame` updates for HUD overlays), blindly calling `style.setProperty()` every frame forces the browser to re-evaluate styles, causing layout thrashing even if the value hasn't changed.
+**Action:** Use a closure variable object (e.g. `var _lastStyles = {}`) to cache the currently applied CSS custom property values, and conditionally invoke `style.setProperty()` only when the new value differs from the cached value to avoid redundant DOM operations.

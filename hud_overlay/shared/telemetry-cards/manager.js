@@ -13,6 +13,8 @@ import { renderPowerTorque } from './power-torque.js';
 var DEFAULT_PRIMARY_COLOR = '#00f0ff';
 
 export function createTelemetryCardsManager() {
+    var _lastStyles = {};
+
     return {
         initialized: false,
         containerEl: null,
@@ -81,13 +83,13 @@ export function createTelemetryCardsManager() {
             if (wrapper) {
                 wrapper.style.opacity = tOpacity;
                 if (typeof wrapper.style.setProperty === 'function') {
-                    wrapper.style.setProperty('--tc-font-scale',      fontScale);
-                    wrapper.style.setProperty('--tc-corner-offset-y',  cornerOffsetY + 'px');
-                    wrapper.style.setProperty('--tc-corner-offset-x',  cornerOffsetX + 'px');
-                    wrapper.style.setProperty('--tc-corners-scale',    cornersScale.toString());
-                    wrapper.style.setProperty('--tc-gradar-scale',     gRadarScale.toString());
-                    wrapper.style.setProperty('--card-primary',       primaryColor);
-                    wrapper.style.setProperty('--card-contrast',      contrastColor);
+                    if (_lastStyles['fontScale'] !== fontScale) { wrapper.style.setProperty('--tc-font-scale', fontScale); _lastStyles['fontScale'] = fontScale; }
+                    if (_lastStyles['cornerOffsetY'] !== cornerOffsetY) { wrapper.style.setProperty('--tc-corner-offset-y', cornerOffsetY + 'px'); _lastStyles['cornerOffsetY'] = cornerOffsetY; }
+                    if (_lastStyles['cornerOffsetX'] !== cornerOffsetX) { wrapper.style.setProperty('--tc-corner-offset-x', cornerOffsetX + 'px'); _lastStyles['cornerOffsetX'] = cornerOffsetX; }
+                    if (_lastStyles['cornersScale'] !== cornersScale) { wrapper.style.setProperty('--tc-corners-scale', cornersScale.toString()); _lastStyles['cornersScale'] = cornersScale; }
+                    if (_lastStyles['gRadarScale'] !== gRadarScale) { wrapper.style.setProperty('--tc-gradar-scale', gRadarScale.toString()); _lastStyles['gRadarScale'] = gRadarScale; }
+                    if (_lastStyles['primaryColor'] !== primaryColor) { wrapper.style.setProperty('--card-primary', primaryColor); _lastStyles['primaryColor'] = primaryColor; }
+                    if (_lastStyles['contrastColor'] !== contrastColor) { wrapper.style.setProperty('--card-contrast', contrastColor); _lastStyles['contrastColor'] = contrastColor; }
                 }
             }
 
@@ -171,8 +173,8 @@ export function createTelemetryCardsManager() {
                     targetPedalParent.appendChild(pedalContainer);
                 }
                 if (typeof pedalContainer.style.setProperty === 'function') {
-                    pedalContainer.style.setProperty('--card-primary',  primaryColor);
-                    pedalContainer.style.setProperty('--card-contrast', contrastColor);
+                    if (_lastStyles['pedalPrimary'] !== primaryColor) { pedalContainer.style.setProperty('--card-primary', primaryColor); _lastStyles['pedalPrimary'] = primaryColor; }
+                    if (_lastStyles['pedalContrast'] !== contrastColor) { pedalContainer.style.setProperty('--card-contrast', contrastColor); _lastStyles['pedalContrast'] = contrastColor; }
                 }
             }
 
@@ -191,8 +193,8 @@ export function createTelemetryCardsManager() {
                     targetPtParent.appendChild(ptContainer);
                 }
                 if (typeof ptContainer.style.setProperty === 'function') {
-                    ptContainer.style.setProperty('--card-primary',  primaryColor);
-                    ptContainer.style.setProperty('--card-contrast', contrastColor);
+                    if (_lastStyles['ptPrimary'] !== primaryColor) { ptContainer.style.setProperty('--card-primary', primaryColor); _lastStyles['ptPrimary'] = primaryColor; }
+                    if (_lastStyles['ptContrast'] !== contrastColor) { ptContainer.style.setProperty('--card-contrast', contrastColor); _lastStyles['ptContrast'] = contrastColor; }
                 }
             }
 
