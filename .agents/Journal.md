@@ -16,6 +16,20 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-07 - HUD Overlay 模組動態解析解耦與 Release 雙層自訂目錄掃描重構
+
+**學習點 (Learning):**
+1. **雙層目錄掃描與優先級覆蓋機制 (Dual-Layer Directory Scanning & Priority Overrides)**：
+   - 後端 FastAPI 提供 `/api/hud/styles` API，動態掃描原生 `RESOURCE_ROOT/hud_overlay` (打包於 `sys._MEIPASS`) 與使用者自訂 `DATA_ROOT/hud_overlay` (與 EXE 同層) 目錄。
+   - 硬編碼過濾清單 (`IGNORED_HUD_DIRS = {"shared", "assets", "telemetry", "common", "fonts", "css", "js", "__pycache__"}`) 精確排除輔助目錄，確保僅含 `index.html` 之儀表目錄被納入清單。當使用者目錄存在與原生同名之 HUD 時，使用者自訂優先覆蓋原生樣式。
+2. **Release 靜態資源雙路由 Mount 策略 (`/hud` vs `/hud_user`)**：
+   - 打包後原生 HUD 位於 `sys._MEIPASS`（掛載於 `/hud`），而使用者自訂 HUD 位於 EXE 同層資料夾（掛載於 `/hud_user`）。API 會於條目中回傳 `urlPrefix`，使前端 `OverlayView.tsx` (`author.json`) 與 Launcher `index.html` (`iframe.src`) 能精確載入對應資源。
+3. **前端與 Launcher 全動態選單解耦**：
+   - `OverlayView.tsx` 將 `hudStyle` 型別放寬為 `string`，並動態抓取 API 建立 `<select>` 選單與作者元資料；`hud_overlay/index.html` 徹底廢棄靜態 `HUDS` 字典，實現零手動註冊之全自動 HUD 擴充架構。
+
+**後續行動 (Action):**
+- 新增或擴充 HUD 儀表樣式時，只需在 `hud_overlay/` (或 Release 後的 `dist/hud_overlay/`) 下建立包含 `index.html` 與 `author.json` 的資料夾即可自動識別，無需修改任何 UI 與 Launcher 程式碼。
+
 ## 2026-08-07 - 093 Drift HUD PyQt (main.py) 至 HTML5 Canvas (hud_overlay/drift) 多畫布 Viewport 轉譯與數據對接重構
 
 **學習點 (Learning):**

@@ -65,20 +65,28 @@
             TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
         }
 
-        // ── HUD switcher ──────────────────────────────────────────────────
-        const HUDS = {
-            simple: './simple/index.html',
-            advanced: './advanced/index.html',
-            fm4ui: './fm4ui/index.html',
-            gt7: './gt7/index.html',
-            mw2005: './mw2005/index.html',
-            nfs15: './nfs15/index.html',
-            shift_tacho: './shift_tacho/index.html',
-            vfd: './vfd/index.html',
-            drift: './drift/index.html'
-        };
+        // ── Dynamic HUD switcher ──────────────────────────────────────────
+        let hudStyles = {};
         let activeHud = localStorage.getItem('forza_hud_active') || 'simple';
         const hudIframe = document.getElementById('hud-iframe');
+
+        async function loadHudStyles() {
+            const host = window.location.port ? window.location.host : '127.0.0.1:8001';
+            try {
+                const res = await fetch(`http://${host}/api/hud/styles`);
+                if (res.ok) {
+                    const data = await res.json();
+                    hudStyles = {};
+                    (data.styles || []).forEach(s => {
+                        hudStyles[s.id] = `.${s.urlPrefix}/${s.id}/index.html`;
+                    });
+                    console.log('[Launcher] Dynamic HUD styles loaded:', Object.keys(hudStyles));
+                    return;
+                }
+            } catch (e) {
+                console.warn('[Launcher] Failed to fetch dynamic HUD styles from API:', e);
+            }
+        }
 
         // Post a message to the active HUD iframe
         function postToHud(type, detail = {}) {
@@ -93,7 +101,8 @@
             localStorage.setItem('forza_hud_active', name);
 
             const cacheBuster = force ? `?t=${Date.now()}` : '';
-            hudIframe.src = HUDS[name] + cacheBuster;
+            const targetUrl = hudStyles[name] || `./${name}/index.html`;
+            hudIframe.src = targetUrl + cacheBuster;
 
             hudIframe.onload = async () => {
                 initPhysics();
@@ -119,12 +128,13 @@
                 });
 
                 setTimeout(() => postToHud('hud:scale'), 30);
-                console.log(`[Launcher] Loaded HUD: ${name}`);
+                console.log(`[Launcher] Loaded HUD: ${name} (${targetUrl})`);
             };
         }
 
         // ── Boot ──────────────────────────────────────────────────────────
         const host = window.location.port ? window.location.host : '127.0.0.1:8001';
+        await loadHudStyles();
         try {
             const res = await fetch(`http://${host}/api/overlay/config`);
             const config = await res.json();

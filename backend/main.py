@@ -237,13 +237,40 @@ async def lifespan(app_inst: FastAPI):
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
 
-if getattr(sys, "frozen", False):
-    hud_overlay_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
-else:
-    hud_overlay_path = os.path.join(os.path.dirname(__file__), "..", "hud_overlay")
+IGNORED_HUD_DIRS = {
+    "shared",
+    "assets",
+    "telemetry",
+    "common",
+    "fonts",
+    "css",
+    "js",
+    "__pycache__",
+}
 
-if os.path.exists(hud_overlay_path):
-    app.mount("/hud", StaticFiles(directory=hud_overlay_path, html=True), name="hud")
+if getattr(sys, "frozen", False):
+    builtin_hud_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
+    user_hud_path = os.path.join(DATA_ROOT, "hud_overlay")
+
+    if os.path.exists(builtin_hud_path):
+        app.mount(
+            "/hud", StaticFiles(directory=builtin_hud_path, html=True), name="hud"
+        )
+    if os.path.exists(user_hud_path):
+        app.mount(
+            "/hud_user",
+            StaticFiles(directory=user_hud_path, html=True),
+            name="hud_user",
+        )
+else:
+    hud_overlay_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "hud_overlay")
+    )
+    if os.path.exists(hud_overlay_path):
+        app.mount(
+            "/hud", StaticFiles(directory=hud_overlay_path, html=True), name="hud"
+        )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -2074,6 +2101,55 @@ async def reset_overlay_config():
     except Exception as e:
         logger.error(f"Failed to reset hud_config.json: {e}")
         return {"error": "Failed to reset HUD config", "success": False}
+
+
+@app.get("/api/hud/styles")
+async def get_hud_styles():
+    """掃描原生 (RESOURCE_ROOT) 與使用者自訂 (DATA_ROOT) hud_overlay 目錄，
+    過濾掉非 HUD 目錄 (如 shared, assets, telemetry)，
+    合併回傳有效的 HUD 清單（使用者自訂優先於原生）。
+    """
+    if getattr(sys, "frozen", False):
+        builtin_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
+        user_path = os.path.join(DATA_ROOT, "hud_overlay")
+    else:
+        builtin_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "hud_overlay")
+        )
+        user_path = builtin_path
+
+    styles: dict[str, dict] = {}
+
+    # 1. 掃描原生 HUD (builtin)
+    if os.path.isdir(builtin_path):
+        for entry in sorted(os.scandir(builtin_path), key=lambda e: e.name):
+            if (
+                entry.is_dir()
+                and entry.name.lower() not in IGNORED_HUD_DIRS
+                and os.path.isfile(os.path.join(entry.path, "index.html"))
+            ):
+                styles[entry.name] = {
+                    "id": entry.name,
+                    "source": "builtin",
+                    "urlPrefix": "/hud",
+                }
+
+    # 2. 掃描使用者自訂 HUD (user)
+    if os.path.isdir(user_path) and user_path != builtin_path:
+        for entry in sorted(os.scandir(user_path), key=lambda e: e.name):
+            if (
+                entry.is_dir()
+                and entry.name.lower() not in IGNORED_HUD_DIRS
+                and os.path.isfile(os.path.join(entry.path, "index.html"))
+            ):
+                # 衝突時使用者自訂覆蓋原生
+                styles[entry.name] = {
+                    "id": entry.name,
+                    "source": "user",
+                    "urlPrefix": "/hud_user",
+                }
+
+    return {"styles": list(styles.values())}
 
 
 @app.get("/api/overlay/car_learning")
