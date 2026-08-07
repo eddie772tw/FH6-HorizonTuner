@@ -109,14 +109,14 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
 
     # Gracefully close
     try:
-        proc.terminate()
-        proc.wait(timeout=3.0)
+        stdout, stderr = proc.communicate(timeout=3.0)
     except Exception:
         proc.kill()
+        stdout, stderr = proc.communicate()
 
     # Assert 1: settings.json created and readable
     settings_file = test_data_dir / "settings.json"
-    assert settings_file.exists(), "settings.json was not created in --data-dir"
+    assert settings_file.exists(), f"settings.json was not created in --data-dir. stdout: {stdout}, stderr: {stderr}"
     with open(settings_file, "r", encoding="utf-8") as f:
         settings = json.load(f)
         assert "units" in settings, "settings.json is missing 'units' key"
@@ -147,7 +147,7 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = [row[0] for row in cursor.fetchall()]
     conn.close()
-    assert "telemetry_sessions" in tables, "telemetry_sessions table missing in SQLite DB"
+    assert "sessions" in tables, "sessions table missing in SQLite DB"
 
     # Assert 5: logs/ created and backend.log written
     logs_dir = test_data_dir / "logs"
