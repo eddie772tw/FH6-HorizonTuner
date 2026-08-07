@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>093 LAB Drift HUD (Advanced Style)</title>
+    <title>Drift HUD</title>
     <!-- 引入共享 Base 樣式 -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
@@ -158,7 +158,7 @@
     <!-- 共享中央遙測掛載點 -->
     <div id="teleCardsMount"></div>
 
-    <!-- 根視窗 (GT7 式下方中央置中) -->
+    <!-- 根視窗-->
     <div class="drift-wrapper">
         <div class="hud-gauge-container drift-container" id="driftContainer">
             <!-- 093 快閃 Banner -->
@@ -170,7 +170,7 @@
             <div id="drift-speed-overlay">0</div>
             <div id="drift-speed-unit-overlay">KM/H</div>
 
-            <!-- 093 全向量 Drift 核心畫布 (1120 x 420) -->
+            <!-- 全向量 Drift 核心畫布 (1120 x 420) -->
             <canvas id="driftCanvas" width="1120" height="420"></canvas>
         </div>
     </div>
@@ -314,74 +314,6 @@
                     triggerPopup('HANDBRAKE ENTRY', 1000, false);
                 } else if (clutchPct > 70 && accelPct > 50 && prevInputs.C <= 70) {
                     triggerPopup('CLUTCH KICK', 1000, false);
-                }
-            }
-
-            // ── Physics & Demo Mode Wave Processor ──────────────────────────────
-            function updatePhysicsAndDemo() {
-                var now = Date.now();
-                var isLive = (now - lastFrameTime < 1500);
-
-                // Decrement input TTLs
-                ['H', 'C', 'B', 'T'].forEach(function (k) {
-                    if (inputFlashTtl[k] > 0) inputFlashTtl[k]--;
-                });
-
-                if (!isLive && !isSweepActive) {
-                    // DEMO Animated Mode simulating dynamic drift session
-                    demoPhase += 0.025;
-                    angle = Math.sin(demoPhase) * 48.0;
-                    speedKmh = Math.round(105 + Math.sin(demoPhase * 1.2) * 26);
-                    gear = '3';
-                    rpm = 5800 + (Math.sin(demoPhase * 2.2) + 1.0) * 1400;
-                    maxRpm = 9000;
-
-                    accelPct = Math.max(0, 72 + Math.sin(demoPhase * 1.7) * 28);
-                    brakePct = Math.max(0, -Math.sin(demoPhase * 1.1) * 65);
-                    clutchPct = Math.max(0, Math.sin(demoPhase * 2.5 - 2.0)) * 100;
-                    handbrakePct = Math.max(0, Math.sin(demoPhase * 0.6 - 1.4)) * 100;
-                    steerPct = Math.sin(demoPhase * 1.4) * 85;
-
-                    if (handbrakePct > 70 && Math.random() < 0.03) {
-                        triggerPopup('HANDBRAKE ENTRY', 1100, false);
-                    } else if (Math.abs(angle) > 42 && Math.random() < 0.02) {
-                        triggerPopup('GOD DRIFT', 1300, true);
-                    }
-                }
-
-                // Smooth display angle lerp
-                prevAngleAbs = Math.abs(displayAngle);
-                displayAngle += (angle - displayAngle) * 0.22;
-
-                // Drift hold timer
-                if (Math.abs(displayAngle) >= 12.0) {
-                    holdSeconds += 1.0 / 60.0;
-                } else {
-                    holdSeconds = Math.max(0, holdSeconds - 2.0 / 60.0);
-                }
-
-                // Counter-steer calculation
-                var countering = Math.abs(displayAngle) >= 8.0 && (displayAngle * steerPct > 0);
-                counterPct = countering ? Math.abs(steerPct) : 0;
-
-                // Flow & Risk Rating logic
-                var absAngle = Math.abs(displayAngle);
-                if (absAngle >= 30) {
-                    flowQuality = 5; flowPct = Math.min(100, flowPct + 2);
-                } else if (absAngle >= 15) {
-                    flowQuality = 3; flowPct = Math.min(80, flowPct + 1);
-                } else {
-                    flowQuality = 1; flowPct = Math.max(0, flowPct - 1.5);
-                }
-
-                if (absAngle >= 45) {
-                    riskLevel = 4; spinRisk = Math.min(100, spinRisk + 3);
-                } else if (absAngle >= 30) {
-                    riskLevel = 3; spinRisk = Math.min(75, spinRisk + 1.5);
-                } else if (absAngle >= 15) {
-                    riskLevel = 2; spinRisk = 40;
-                } else {
-                    riskLevel = 1; spinRisk = Math.max(0, spinRisk - 2);
                 }
             }
 
@@ -761,7 +693,6 @@
             // ── 60Hz Render Loop ───────────────────────────────────────────────
             function renderLoop() {
                 try {
-                    updatePhysicsAndDemo();
                     updateHTMLOverlays();
                     renderQPainterVectorHUD();
                 } catch (e) {
