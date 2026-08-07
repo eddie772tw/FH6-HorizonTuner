@@ -2200,4 +2200,19 @@
 **後續行動 (Action):**
 - 凡放在 `tools/` 或非 `tests/` 目錄下的輔助、探索或抓取腳本，切勿使用 `test_` 為檔名前綴；且在 `pyproject.toml` 中必須明確維護 `testpaths = ["tests"]`。
 
+---
+
+## 2026-08-07 - 合併前開發工具腳本清理 (Pre-Merge Cleanup)
+
+**學習點 (Learning):**
+1. **`tools/` 一次性腳本生命週期管理**：
+   - 開發期間於 `tools/` 累積了 6 支 Python 腳本（地圖 POI 爬蟲、UDP 封包驗證、座標仿射校準）與 3 個大型原始 JSON 資料（合計約 1.07 MB）。這些腳本在完成其使命後需在合併前統一清除，以維護 Repository 純潔性。
+   - 特別注意：`fetch_labsgg_data.py` 與 `inspect_labsgg.py` 兩支腳本內部包含開發者本機 Gemini Brain 的絕對快取路徑，若不刪除會將開發者環境隱私資訊留存於 Repo 中。
+2. **Skill `references/` 是保存一次性工具的最佳去處**：
+   - `verify_telemetry_v2_v3.py` 包含完整的 324-byte 封包區塊 A/B 方法對照解析邏輯與全封包 Offset 掃描引擎，具有持久 Debug 參考價值。最佳處置方式是移入 `telemetry-udp-protocol` Skill 的 `references/` 目錄，使其在版本庫中受 Skill 架構保護，同時與正式後端程式碼完全解耦。
+3. **`.agents/docs/` 是設計公式文件的歸宿**：
+   - `ref/` 中的調校研究 Markdown 文件（底盤公式、齒比公式、調校研究原稿）雖已被 `.gitignore` 排除，但移入 `.agents/docs/` 後可被版本追蹤，同時為未來 Agent 提供算法決策背景。
+
+**後續行動 (Action):**
+- 未來開發新功能時，若需要建立爬蟲/驗證/校準等一次性工具腳本，應從一開始就評估其「合併後是否有保留價值」——若有 Debug 參考價值，移入對應 Skill 的 `references/`；若純屬一次性使用，直接刪除並於 `.gitignore` 補入對應規則。
 

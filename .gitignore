@@ -80,3 +80,7 @@ frontend/test-results/
 FH6 遙測調校工具設計計畫.md
 /frontend/playwright-report
 /frontend/test-results
+
+# Development tool scripts & raw data outputs (one-time use, not for production)
+/tools/
+/benchmark_results.json
