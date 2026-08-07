@@ -15,6 +15,52 @@
 **學習點 (Learning):** [簡述學到了什麼、底層原因或發現的機制]
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
+
+## 2026-08-07 - 093 Drift HUD PyQt (main.py) 至 HTML5 Canvas (hud_overlay/drift) 多畫布 Viewport 轉譯與數據對接重構
+
+**學習點 (Learning):**
+1. **單一固定 Canvas 邊界瓶頸與 Viewport Sub-Canvas Grid 解耦**：
+   - 舊版 `hud_overlay/drift/index.html` 被強制鎖死在單一 `1120px x 420px` Canvas 內，導致 `g_meter` (2.5G 雷達)、`live_map` (2D Track 軌跡)、`vehicle_info` (車型全名/PI級別/驅動方式/汽缸數) 等高階面板無處安放。
+   - 重構方案：將 `drift/index.html` 改為全螢幕 Viewport Container (`.drift-viewport`)，並將 8 大面板拆分為獨立相對定位的 Sub-Canvas (Vehicle, Arc, Inputs, Steer, Style, GMeter, Map, Popups)，並配合 `car_database.json` 實現完美的 093 LAB. Cyber & Street 畫布還原。
+2. **車輛 ID Metadata 單一真理 (Single Source of Truth) 與即時數據透傳**：
+   - 使用主專案 `backend/car_database.json` 做為車輛 Metadata 庫，並在 `coordinator.js` 中顯式補齊 `pos_x`, `pos_y`, `pos_z`, `driveline_id` 欄位傳遞，解決車名與幾何資訊脫節問題。
+3. **RetroVFD 風格控制項連動 (`OverlayView.tsx`)**：
+   - 參考 RetroVFD 在 `OverlayView.tsx` 內 `config.hudStyle === 'vfd'` 的獨立屬性切換模式，為 Drift HUD 增加 `driftProfile` (`1440P STREAM`, `1080P FULL`, `1440P CLEAN`) 控制選單，動態切換顯示區塊。
+
+4. **全螢幕對齊與 Scaled Gauge Container 規格約束 (`.hud-root-wrapper` & `.hud-gauge-container`)**：
+   - 發現全螢幕內 `100vw / 100vh` 絕對定位搭配 `calc()` 會導致跨解析度與 `HUDCore` 全域縮放 (Zoom) 錯位。
+   - 修正方案：對齊 `GT7 HUD` / `VFD HUD` 標準規格，採用 `.hud-root-wrapper` (全螢幕 Viewport Flex 容器) 搭配 1680px x 640px 標準 `.hud-gauge-container`（`align-self: center; transform-origin: bottom center;` 置底居中），使 Drift HUD 所有子面板與向量畫布能精確隨 `HUDCore` scaleMultiplier 自適應放縮，呈現流暢一致的全螢幕視覺體驗。
+   - **動態 `maxRpm` 表盤上限與紅線區分級 (Dynamic Redline Span Logic)**：
+     - 表盤上限 $RPM_{\text{limit}}$ 隨遙測 `maxRpm` 向上取整至千轉（如 8200 $\to$ 9000 RPM, 11400 $\to$ 12000 RPM）。
+     - **紅線區跨度**：
+       - 萬轉以上 ($maxRpm \ge 10000$ RPM)：紅線跨度為 1500 RPM（$RPM_{\text{redline}} = maxRpm - 1500$）。
+       - 萬轉以下 ($maxRpm < 10000$ RPM)：紅線跨度為 1000 RPM（$RPM_{\text{redline}} = maxRpm - 1000$）。
+     - Segments 條與千轉數字刻度隨此標準動態渲染發光熱紅 `C_REDLINE`，完美貼合真實賽車儀表物理。
+   - **弧表外緣無縫貼合與向內繪製 (Inward Arc Fitting)**：
+     - 上下對稱雙弧表的外側曲線 100% 貼齊半橢圓背景邊框， Segments 條與 Dot 通通向內延伸繪製。
+   - **傳統由左至右轉速表 (Traditional Left-to-Right Tacho)**：
+     - 轉速下弧改為從最左端 (0 RPM) 順向累積至最右端 (Max RPM)，紅線區專屬集中於右尾端。
+5. **約 30% 半透明半橢圓 HUD 背景 (Semi-Elliptical Lens Backdrop) 與雙同心弧線無框融入**：
+   - 由於 Central Cluster Telemetry Cards 已包含獨立地圖與 G-Force 雷達，解耦 Drift HUD 重複元件。
+   - 在底層繪製 30% 透明度 (`rgba(10, 16, 26, 0.32)`) 半橢圓底罩 (`cx: 840, cy: 330, rx: 780, ry: 250`) 與頂部 `C_ICE` 發光切線。
+   - **雙弧圍合拋物線方向修正**：上弧拋物線為拱形 (頂點在上 $y(t) = cy_{top} + rise \times t^2$)；下弧拋物線為碗形 (頂點在下 $y(t) = cy_{bot} - rise \times t^2$)，上下形成完美且正確的雙弧抱合幾何 (`()`)。
+   - **雙弧推擴加大與大氣份量感 (Arc Expansion)**：上弧頂點移至 $cy: 125$，下弧頂點移至 $cy: 515$，弧長半寬擴展至 `halfWidth: 480px`， Segments 厚度加大 ($barW: 6.0px$)，視覺張力極具震撼。
+   - **輸入柱腹地置中 (Centered Input Bars)**：將左翼 H/C 柱內縮右移至 `x: 300`，右翼 B/T 柱內縮左移至 `x: 1260`，完美呈現於兩側空白腹地中央。
+   - **資訊量 100% 左右對稱與 Flow/Risk 評級放大**：將 `GRIP` / `HOLD: 3.5s` 移動至左區 `0.0°` 角度大字正上方，達成左右雙側 3x3 橫向階梯平衡；將 Flow 與 Risk 評級放大至 `28px`，強化高頻過彎動態辨識。
+   - **中央三區橫向排版 (Left to Right)**：左為角度大字 (如 `45.2°`)、中為檔位 (`4`) 與速度 (`128 KM/H`)、右為反打數值 (`COUNTER 28.5°`)。
+   - **切除矩形外框**：車輛規格 (Spec) 與 4-Pedal 輸入條直接無框融入橢圓內側兩翼，呈現極度純粹精緻的太空艙/抬頭顯示 (HUD) 視覺。
+
+## 2026-08-07 - Drift HUD 目錄名稱拼字修正與作者元資料 (author.json) 擷取修復 (hud_overlay/drift)
+
+**學習點 (Learning):**
+1. **HUD 靜態目錄名稱與 hudStyle 動態載入路徑脫節陷阱**：
+   - `OverlayView.tsx` 中的 `loadAuthorInfo(styleName)` 會向 `./hud/${styleName}/author.json` 發起 HTTP 請求，而 Vite / FastAPI 伺服器 middleware 將 `/hud/*` 映射至 `hud_overlay/*` 目錄。
+   - 原先專案目錄誤命名為 `hud_overlay/dirft` (錯字 `dirft`)，儘管 `hud_overlay/index.html` 內部以 `'drift': './dirft/index.html'` 勉強對接了 iframe 載入，但 `OverlayView.tsx` 請求 `/hud/drift/author.json` 時會回傳 404 Not Found，導致作者與描述元資料無法被正確捕捉。
+   - 修復方案：將 `hud_overlay/dirft` 重命名為 `hud_overlay/drift`，並同步將 `hud_overlay/index.html` 中的字典註冊路徑修正為 `'drift': './drift/index.html'`。
+
+**後續行動 (Action):**
+- 新增 HUD 樣式時，其專案資料夾名稱必須嚴格 1:1 等於 `hudStyle` 識別碼 (ID)，切勿在目錄名稱中使用變體或拼字錯字，以保障 `author.json` 與靜態資源請求之路徑一致性。
+
 ## 2026-08-06 - Halfmoon 不干擾 DOM 版型懸浮 Toast 通知系統重構 (`ToastContext.tsx` & `ToastContainer.tsx`)
 
 **學習點 (Learning):**
