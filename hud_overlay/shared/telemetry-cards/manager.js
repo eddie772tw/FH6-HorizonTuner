@@ -9,6 +9,7 @@ import { renderGRadar } from './g-radar.js';
 import { renderCorners } from './corner-card.js';
 import { renderPedalWave } from './pedal-wave.js';
 import { renderPowerTorque } from './power-torque.js';
+import { renderLiveMap } from './live-map.js';
 
 var DEFAULT_PRIMARY_COLOR = '#00f0ff';
 
@@ -73,6 +74,11 @@ export function createTelemetryCardsManager() {
             var pedalOffsetX  = fullConfig.telemetryPedalOffsetX  || 0;
             var ptOffsetX     = fullConfig.telemetryPowerTorqueOffsetX || 0;
 
+            var liveMapOffsetX = fullConfig.telemetryLiveMapOffsetX || 0;
+            var liveMapOffsetY = fullConfig.telemetryLiveMapOffsetY || 0;
+            var liveMapOpacity = fullConfig.telemetryLiveMapOpacity !== undefined ? fullConfig.telemetryLiveMapOpacity : 1.0;
+            var liveMapScale   = fullConfig.telemetryLiveMapScale   !== undefined ? fullConfig.telemetryLiveMapScale   : 1.0;
+
             var useDefaultColors = fullConfig.useDefaultColors !== false;
             var primaryColor = useDefaultColors
                 ? DEFAULT_PRIMARY_COLOR
@@ -93,6 +99,14 @@ export function createTelemetryCardsManager() {
                 }
             }
 
+            var liveMapContainer = document.getElementById('tcLiveMapContainer');
+            if (liveMapContainer && typeof liveMapContainer.style.setProperty === 'function') {
+                liveMapContainer.style.setProperty('--tc-live-map-offset-x', liveMapOffsetX + 'px');
+                liveMapContainer.style.setProperty('--tc-live-map-offset-y', liveMapOffsetY + 'px');
+                liveMapContainer.style.setProperty('--tc-live-map-opacity',  liveMapOpacity.toString());
+                liveMapContainer.style.setProperty('--tc-live-map-scale',    liveMapScale.toString());
+            }
+
             // ---- Element Visibility Toggles ----
             var showAttitude = elements.showTeleAttitude   !== false;
             var showSusp     = elements.showTeleSuspension !== false;
@@ -101,6 +115,7 @@ export function createTelemetryCardsManager() {
             var showTemp     = elements.showTeleTiresTemp !== undefined ? (elements.showTeleTiresTemp !== false) : showTires;
             var showPedals   = elements.showTelePedals     !== false;
             var showPT       = elements.showPowerTorque    !== false;
+            var showLiveMap  = elements.showLiveMap        !== false;
             var showCorners  = showSusp || showSlip || showTemp;
 
             // ---- Central Anchor & Alignment Grid ----
@@ -245,6 +260,11 @@ export function createTelemetryCardsManager() {
                 if (tempBlock) tempBlock.style.display = showTemp ? 'flex' : 'none';
             }
 
+            var liveMapContainer = document.getElementById('tcLiveMapContainer');
+            if (liveMapContainer) {
+                liveMapContainer.style.display = showLiveMap ? 'block' : 'none';
+            }
+
             if (!data) return;
 
             var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -279,6 +299,13 @@ export function createTelemetryCardsManager() {
 
             if (showPT) {
                 renderPowerTorque(data, this.powerTorqueHist, now);
+            }
+
+            if (showLiveMap) {
+                var liveMapCanvas = document.getElementById('tcLiveMapCanvas');
+                if (liveMapCanvas) {
+                    renderLiveMap(liveMapCanvas, data, fullConfig);
+                }
             }
         },
 

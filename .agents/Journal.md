@@ -16,6 +16,64 @@
 **後續行動 (Action):** [下次開發時該如何應用此經驗]
 ```
 
+## 2026-08-07 - 093 Drift HUD PyQt (main.py) 至 HTML5 Canvas (hud_overlay/drift) 多畫布 Viewport 轉譯與數據對接重構
+
+**學習點 (Learning):**
+1. **單一固定 Canvas 邊界瓶頸與 Viewport Sub-Canvas Grid 解耦**：
+   - 舊版 `hud_overlay/drift/index.html` 被強制鎖死在單一 `1120px x 420px` Canvas 內，導致 `g_meter` (2.5G 雷達)、`live_map` (2D Track 軌跡)、`vehicle_info` (車型全名/PI級別/驅動方式/汽缸數) 等高階面板無處安放。
+   - 重構方案：將 `drift/index.html` 改為全螢幕 Viewport Container (`.drift-viewport`)，並將 8 大面板拆分為獨立相對定位的 Sub-Canvas (Vehicle, Arc, Inputs, Steer, Style, GMeter, Map, Popups)，並配合 `car_database.json` 實現完美的 093 LAB. Cyber & Street 畫布還原。
+2. **車輛 ID Metadata 單一真理 (Single Source of Truth) 與即時數據透傳**：
+   - 使用主專案 `backend/car_database.json` 做為車輛 Metadata 庫，並在 `coordinator.js` 中顯式補齊 `pos_x`, `pos_y`, `pos_z`, `driveline_id` 欄位傳遞，解決車名與幾何資訊脫節問題。
+3. **RetroVFD 風格控制項連動 (`OverlayView.tsx`)**：
+   - 參考 RetroVFD 在 `OverlayView.tsx` 內 `config.hudStyle === 'vfd'` 的獨立屬性切換模式，為 Drift HUD 增加 `driftProfile` (`1440P STREAM`, `1080P FULL`, `1440P CLEAN`) 控制選單，動態切換顯示區塊。
+
+4. **全螢幕對齊與 Scaled Gauge Container 規格約束 (`.hud-root-wrapper` & `.hud-gauge-container`)**：
+   - 發現全螢幕內 `100vw / 100vh` 絕對定位搭配 `calc()` 會導致跨解析度與 `HUDCore` 全域縮放 (Zoom) 錯位。
+   - 修正方案：對齊 `GT7 HUD` / `VFD HUD` 標準規格，採用 `.hud-root-wrapper` (全螢幕 Viewport Flex 容器) 搭配 1680px x 640px 標準 `.hud-gauge-container`（`align-self: center; transform-origin: bottom center;` 置底居中），使 Drift HUD 所有子面板與向量畫布能精確隨 `HUDCore` scaleMultiplier 自適應放縮，呈現流暢一致的全螢幕視覺體驗。
+   - **動態 `maxRpm` 表盤上限與紅線區分級 (Dynamic Redline Span Logic)**：
+     - 表盤上限 $RPM_{\text{limit}}$ 隨遙測 `maxRpm` 向上取整至千轉（如 8200 $\to$ 9000 RPM, 11400 $\to$ 12000 RPM）。
+     - **紅線區跨度**：
+       - 萬轉以上 ($maxRpm \ge 10000$ RPM)：紅線跨度為 1500 RPM（$RPM_{\text{redline}} = maxRpm - 1500$）。
+       - 萬轉以下 ($maxRpm < 10000$ RPM)：紅線跨度為 1000 RPM（$RPM_{\text{redline}} = maxRpm - 1000$）。
+     - Segments 條與千轉數字刻度隨此標準動態渲染發光熱紅 `C_REDLINE`，完美貼合真實賽車儀表物理。
+   - **弧表外緣無縫貼合與向內繪製 (Inward Arc Fitting)**：
+     - 上下對稱雙弧表的外側曲線 100% 貼齊半橢圓背景邊框， Segments 條與 Dot 通通向內延伸繪製。
+   - **傳統由左至右轉速表 (Traditional Left-to-Right Tacho)**：
+     - 轉速下弧改為從最左端 (0 RPM) 順向累積至最右端 (Max RPM)，紅線區專屬集中於右尾端。
+5. **約 30% 半透明半橢圓 HUD 背景 (Semi-Elliptical Lens Backdrop) 與雙同心弧線無框融入**：
+   - 由於 Central Cluster Telemetry Cards 已包含獨立地圖與 G-Force 雷達，解耦 Drift HUD 重複元件。
+   - 在底層繪製 30% 透明度 (`rgba(10, 16, 26, 0.32)`) 半橢圓底罩 (`cx: 840, cy: 330, rx: 780, ry: 250`) 與頂部 `C_ICE` 發光切線。
+   - **雙弧圍合拋物線方向修正**：上弧拋物線為拱形 (頂點在上 $y(t) = cy_{top} + rise \times t^2$)；下弧拋物線為碗形 (頂點在下 $y(t) = cy_{bot} - rise \times t^2$)，上下形成完美且正確的雙弧抱合幾何 (`()`)。
+   - **雙弧推擴加大與大氣份量感 (Arc Expansion)**：上弧頂點移至 $cy: 125$，下弧頂點移至 $cy: 515$，弧長半寬擴展至 `halfWidth: 480px`， Segments 厚度加大 ($barW: 6.0px$)，視覺張力極具震撼。
+   - **輸入柱腹地置中 (Centered Input Bars)**：將左翼 H/C 柱內縮右移至 `x: 300`，右翼 B/T 柱內縮左移至 `x: 1260`，完美呈現於兩側空白腹地中央。
+   - **資訊量 100% 左右對稱與 Flow/Risk 評級放大**：將 `GRIP` / `HOLD: 3.5s` 移動至左區 `0.0°` 角度大字正上方，達成左右雙側 3x3 橫向階梯平衡；將 Flow 與 Risk 評級放大至 `28px`，強化高頻過彎動態辨識。
+   - **中央三區橫向排版 (Left to Right)**：左為角度大字 (如 `45.2°`)、中為檔位 (`4`) 與速度 (`128 KM/H`)、右為反打數值 (`COUNTER 28.5°`)。
+   - **切除矩形外框**：車輛規格 (Spec) 與 4-Pedal 輸入條直接無框融入橢圓內側兩翼，呈現極度純粹精緻的太空艙/抬頭顯示 (HUD) 視覺。
+
+## 2026-08-07 - Drift HUD 目錄名稱拼字修正與作者元資料 (author.json) 擷取修復 (hud_overlay/drift)
+
+**學習點 (Learning):**
+1. **HUD 靜態目錄名稱與 hudStyle 動態載入路徑脫節陷阱**：
+   - `OverlayView.tsx` 中的 `loadAuthorInfo(styleName)` 會向 `./hud/${styleName}/author.json` 發起 HTTP 請求，而 Vite / FastAPI 伺服器 middleware 將 `/hud/*` 映射至 `hud_overlay/*` 目錄。
+   - 原先專案目錄誤命名為 `hud_overlay/dirft` (錯字 `dirft`)，儘管 `hud_overlay/index.html` 內部以 `'drift': './dirft/index.html'` 勉強對接了 iframe 載入，但 `OverlayView.tsx` 請求 `/hud/drift/author.json` 時會回傳 404 Not Found，導致作者與描述元資料無法被正確捕捉。
+   - 修復方案：將 `hud_overlay/dirft` 重命名為 `hud_overlay/drift`，並同步將 `hud_overlay/index.html` 中的字典註冊路徑修正為 `'drift': './drift/index.html'`。
+
+**後續行動 (Action):**
+- 新增 HUD 樣式時，其專案資料夾名稱必須嚴格 1:1 等於 `hudStyle` 識別碼 (ID)，切勿在目錄名稱中使用變體或拼字錯字，以保障 `author.json` 與靜態資源請求之路徑一致性。
+
+## 2026-08-06 - Halfmoon 不干擾 DOM 版型懸浮 Toast 通知系統重構 (`ToastContext.tsx` & `ToastContainer.tsx`)
+
+**學習點 (Learning):**
+1. **DOM 內嵌 Alert 版型推擠與微幅晃動陷阱 (DOM In-Flow Alert Layout Shift Issue)**：
+   - 舊實作在 `TelemetryView.tsx` 啟用 HUD Overlay 時，於高頻繪圖 Dashboard 正上方硬生生插入一個 `<div className="alert alert-warning">` 區塊。這類 DOM 內嵌 Block 會佔用垂直空間，動態推擠下方 `gridTemplateRows: 4.2fr 5.8fr` 的 Telemetry Grid 高度，造成 layout shift 與視覺位移。
+   - 重構方案：
+     1. 移除 DOM 內嵌推擠 Alert，建立全域 `ToastContext` 與 `ToastContainer`。
+     2. `ToastContainer` 使用 `position-fixed top-0 end-0 p-3` (z-index: 1060)，100% 脫離 CSS Normal Flow 空間，絕對不干擾 View 圖表與面板的高度與邊界。
+     3. Toast 樣式套用 `.toast.show.glass-panel` 毛玻璃與 Halfmoon 語意 `.badge` (WARNING, ERROR, SUCCESS, INFO)，無 Emoji，帶有滑順的微動畫與定時自動收起機制。
+
+**後續行動 (Action):**
+- 全站非阻斷性狀態通知（如暫停提示、匯出成功、狀態連線變化）統一使用 `useToast().addToast(...)` 進行懸浮提示，嚴禁在畫面內容區域中放置會擠壓周邊 CSS Flex/Grid 版型的內嵌 Alert。
+
 ## 2026-08-07 - Live Telemetry Traces 雙圖表 Flex 容器高度溢出與繪圖 Padding / 0% 基線對齊修正 (`TelemetryView.tsx`, `PedalTraceCanvas.tsx`, `PowerTorqueCanvas.tsx`)
 
 **學習點 (Learning):**
@@ -29,6 +87,21 @@
 **後續行動 (Action):**
 - 凡是在帶 Header 的 column Flex 容器內擺放多個並排 Canvas/Card 時，嚴禁於子層設置 `h-100` 或 `height: 50%`，必須使用 `flex: '1 1 0%', minHeight: 0`。
 - Canvas 數據繪製與背景虛線必須使用同一組 `padTop/padBottom` 計算繪圖高度 `plotH`，並明確繪製 0% 基線。
+
+---
+
+## 2026-08-07 - TuningView / OverlayView IDE 懸空屬性與編譯修正 (`TuningView.tsx`, `OverlayView.tsx`)
+
+**學習點 (Learning):**
+1. **TypeScript 可選 Prop 未解構引發 Cannot find name 錯誤**：
+   - `TuningViewProps` 定義了 `setActiveTab?: (tab: any) => void;`，但在 `TuningView` 組件函式參數中漏掉 `setActiveTab` 的解構，導致 Popover 按鈕回呼中存取 `setActiveTab` 時觸發 `Cannot find name 'setActiveTab'` 編譯錯誤。
+   - 修正方案：於組件解構參數中補上 `setActiveTab`，並於點擊回呼中使用 optional chaining (`setActiveTab?.('car_params')`) 安全呼叫。
+2. **OverlayView 未使用處理函式與 Live Map Opacity UI 滑塊補完**：
+   - `OverlayView.tsx` 宣告了 `handleLiveMapOpacityChange` 處理函式與 `telemetryLiveMapOpacity` 設定項，但 HUD Controls 面板中遺漏了 Live Map 透明度 (Opacity) 的 UI 控制項，導致 TypeScript `error TS6133: 'handleLiveMapOpacityChange' is declared but its value is never read` 告警。
+   - 修正方案：於 Live Map Scale 區塊下方補齊 Live Map Opacity Range Slider (`min=0.1, max=1.0, step=0.05`)，既修復 TS6133 告警，又提供完整的透明度控制功能。
+
+**後續行動 (Action):**
+- 在元件宣告可選 Handler/Props 時，必須確認 (1) 元件參數正確解構並採用 optional chaining 防護，(2) 相關控制函式有在 Component View UI 中被綁定對應的表單輸入控制項。
 
 ---
 
@@ -1697,6 +1770,406 @@
 
 ---
 
+## 2026-08-06 - 093 Drift 姿態評估純邏輯整合、整數分級抽象與後端 UDP Passthrough 預留
+
+**學習點 (Learning):**
+1. **漂移姿態評估純邏輯與抽象分級解耦 (Drift Dynamics Pure Logic & Integer Rating Abstraction)**：
+   - 將 `093 Drift HUD` 的漂移角、反打量 (`calculateCounterSteer`)、Flow 評分與 Spin Risk 狀態機等核心計算抽離為無狀態純函數 `frontend/src/utils/driftMath.ts`。
+   - 分級介面抽象化：Quality 品質採用 `1 ~ 5` 整數表示（`1: BUILD`, `2: NORMAL`, `3: CHASE`, `4: SMOOTH`, `5: LOCKED`），Risk 風險採用 `1 ~ 4` 整數表示（`1: SAFE`, `2: EDGE`, `3: RISK`, `4: MAX`），Operation Events 採用可讀性佔位符 (`EVENT_HANDBRAKE` 等)，完美隔離純邏輯層與 UI 呈現層語義。
+2. **後端 UDP Passthrough 零阻塞預留模式 (Backend UDP Forwarding Architecture)**：
+   - 於 `backend/telemetry_listener.py` 中設計 `forward_udp_packet(data, target_host, target_port, enabled=False)` 函式，避免硬編碼特定 Port，預設 `enabled=False` 絕不在接收主迴圈內產生多餘 I/O 開銷。
+
+**後續行動 (Action):**
+- 未來前端或 HUD Overlay 欲渲染 Drift 姿態與快閃時，統一引用 `driftMath.ts` 並於 UI 層將 1~5 / 1~4 整數分級轉譯為當地語系字串。
+
+---
+
+## 2026-08-06 - Live Map 遙測卡片自適應軌跡繪製與 Drift HUD 下方居中 Advanced 風格構建
+
+**學習點 (Learning):**
+1. **Live Map 遙測卡片自適應縮放與 Asset 佔位符模式 (Live Map Auto-Scaling & Asset Placeholder Pattern)**：
+   - 於 `hud_overlay/shared/telemetry-cards/live-map.js` 實現了 Live Map 遙測卡片，預設靠左下角對齊 (bottom-left)，具備 `--tc-live-map-offset-x/y`、`--tc-live-map-opacity` 與 `scale` 獨立控制項。
+   - 地圖背景支援 Asset 圖片 pre-loading (`assets/live_map_bg.png`) 與 onerror 回退畫布極客虛線網格 Placeholder。世界座標 $(X, Z)$ 透過動態滑動視窗歸一化映射至 Canvas，呈現 Grip 青線與 Drift 橘線。
+2. **Drift HUD 居中下方定位與 Advanced 視覺樣式繼承 (GT7 Centered Alignment & Advanced Visual Styling)**：
+   - 於 `hud_overlay/dirft/index.html` 實現 Drift HUD，比照 GT7 儀表採用 `.drift-wrapper` 全螢幕容器 + `.drift-container { align-self: center; transform-origin: bottom center; }` 置於下方中央。
+   - 繼承 Advanced HUD 晶透暗色科技襯底 (`rgba(5, 10, 18, 0.55)` + blur)、Neon Cyan 主色、斜體 `ForzaGear` 大字體、Segment RPM 轉速條與 Flow (1~5) / Risk (1~4) / Operation Popups 動態繪製。
+
+**後續行動 (Action):**
+- 後續可直接放上 `assets/live_map_bg.png` 地圖圖片檔案，Live Map 卡片將自動進行替換渲染。
+
+---
+
+## 2026-08-06 - Drift HUD 全域儀表對接與 Launcher / 控制面板選單註冊
+
+**學習點 (Learning):**
+1. **全域 HUD 註冊鏈與跨層 UI 下拉選單整合 (Global HUD Registration Chain)**：
+   - 儀表名稱確立為 **"Drift HUD"**，識別碼 `drift`，對應目錄 `./dirft/index.html`。
+   - 於 `hud_overlay/index.html` Launcher Host 的 `HUDS` 映射表中註冊 `drift: './dirft/index.html'`。
+   - 於 `frontend/src/features/overlay_control/OverlayView.tsx` 擴充 `HudConfig` 的 `hudStyle` Union Type (`... | 'drift'`) 與控制面板 `<option value="drift">{t("Drift HUD")}</option>` 選項，實現全站無縫調用與切換。
+
+**後續行動 (Action):**
+- 玩家於 OverlayView 控制面板選擇 "Drift HUD" 時，系統自動通過 iframe / BroadcastChannel 無縫切換載入 `dirft/index.html`。
+
+---
+
+## 2026-08-06 - Live Map 前端 UI 開關註冊與 093 Drift 向量繪圖幾何佈局精化
+
+**學習點 (Learning):**
+1. **參考專案無外部圖片資產特質 (Code-driven Procedural Vector Graphics Pattern)**：
+   - 經仔細檢視參考專案 `ref/093_Drift_HUD-main/`，確認其**無任何獨立的 PNG/JPG 圖片與外部字體檔**。全部視覺元素（弧形角度儀表、G力軌跡球、方向盤反打指針、段狀 RPM 條與動態彈窗）皆為 `main.py` 以 QPainter 程式碼進行 Procedural Vector Drawing 生成。
+2. **HUD Elements 前端 UI 開關擴充 (HUD Elements Control Binding)**：
+   - 於 `frontend/src/features/overlay_control/OverlayView.tsx` 擴充 `HudElements` 介面 (`showLiveMap?: boolean`)、`DEFAULT_HUD_CONFIG` (`showLiveMap: true`) 與控制面板 Switch 開關 UI，玩家可在介面上自由切換 Live Map 卡片。
+3. **Drift HUD 高階 Street-HUD 視覺調色與雙向極限繪製 (093 Street-HUD Visual Precision)**：
+   - 於 `hud_overlay/dirft/index.html` 融入 093 Drift 的 Street-HUD 經典配色（`#55DFFF` Ice Blue / `#FF3F9B` Rose Pink / `#FFB84A` Amber / `#FF4A3D` Danger Red）與 Class Badge (`A 700`, `S1 880` 等），完美呈現 GT7 風格居中佈局與 Advanced 高質感畫風。
+
+**後續行動 (Action):**
+- 未來可隨時放上地圖圖片至 `/assets/live_map_bg.png`，Live Map 將自動優先呈現圖檔背景。
+
+---
+
+## 2026-08-06 - Procedural Vector Drawing 純繪圖幾何重構與 7 大 Panel 還原
+
+**學習點 (Learning):**
+1. **Procedural Vector Drawing 純畫布幾何還原範式 (QPainter to HTML5 Canvas Translation)**：
+   - 於 `hud_overlay/dirft/index.html` 將 Python QPainter 的繪圖邏輯 100% 以原生 HTML5 Canvas 2D Path / Context 重構。
+   - 完整重現了 7 大 Panel 幾何結構：
+     1. **Vehicle Info Panel**：Class Badge (`A 700` 帶動態色彩區塊與發光)、車輛底牌、標題數碼。
+     2. **Drift Angle Gauge Panel**：動態夾角計、度數刻度、`#55DFFF` (Ice Blue 左甩) / `#FF3F9B` (Rose Pink 右甩) 雙色充填。
+     3. **G-Meter & Attitude Radar Panel**：同心圓 (0.5G/1.0G/1.5G)、十字軸與動態 G Trail 歷史軌跡。
+     4. **Segment RPM Bar**：24 段斜角動態轉速段與 Redline 閃爍。
+     5. **Steer & Counter Panel**：方向盤軌道與 Counter-steer 高亮扣扣條。
+     6. **Flow & Risk Meters**：Flow (1~5) 與 Risk (1~4) 雙柱計量條。
+     7. **Inputs & Rear Slip Panel**：H/C/B/T 踏板與 RL/RR 雙後輪滑移量柱狀圖。
+
+**後續行動 (Action):**
+- 保持 Procedural Vector Drawing 幾何架構純淨，不依賴外部影像資產檔，維持高影格率 60Hz 渲染表現。
+
+---
+
+## 2026-08-06 - Drift HUD 動作修復：60Hz 獨立繪繪迴圈、元素顯隱與 DEMO 模擬對接
+
+**學習點 (Learning):**
+1. **HUD 60Hz 獨立渲染迴圈與 DEMO 備用模式 (60Hz Independent Render Loop & DEMO Fallback Pattern)**：
+   - 修復了 `hud_overlay/dirft/index.html` 靜態無動作的根因：先前僅於 `onFrame` 回調內繪圖，缺少獨立的 `requestAnimationFrame(renderLoop)`。
+   - 加入 60Hz 繪製迴圈，並實現了 **DEMO 正弦波動模擬**（車速 85~115km/h 波動、漂移角 -45°~+45° 擺動、RPM 與 G 軌跡脈衝），使儀表在遊戲未運行或初次開啟時均能 100% 展現絢麗的連續賽車姿態動作。
+2. **`onElementsChange` 與藍芽/廣播 Telemetry 資料結構調和 (Telemetry Normalization)**：
+   - 補全 `HUDCore.registerStyle('drift', ...)` 的 `onElementsChange` 鉤子，使控制面板選單開關可動態顯隱 `driftContainer`。
+   - 兼容 `SpeedMetersPerSecond * 3.6`、`CurrentEngineRpm`、`AccelInput / 255 * 100` 等原生 UDP Packet 欄位名稱。
+
+**後續行動 (Action):**
+- 所有新開發之 HUD Overlay 均須採用 `requestAnimationFrame(renderLoop)` + `DEMO Mode Fallback` 機制，確保首幀與靜態階段畫面具備流暢動畫。
+
+---
+
+## 2026-08-06 - Drift HUD 遙測數據傳遞對接修復：Packet Normalizer 與雙向 isMetric 對接
+
+**學習點 (Learning):**
+1. **全規格 Telemetry 數據規範化 parser (Full Spectrum Telemetry Packet Normalizer)**：
+   - 經對比 `gt7/index.html` 與 `simple/index.html` 之 data 處理模式，於 `hud_overlay/dirft/index.html` 實現了 `parseTelemetryData(data, payload)`：
+     - 相容原生 UDP `SpeedMetersPerSecond`、`CurrentEngineRpm`、`Gear` (10/11 為 N, 0 為 R)、`AccelInput` (0~255 及 0.0~1.0 雙型別歸一化)。
+     - 座標速度與角度算術：當提供 $v_x, v_z$ 速度分量時，自動依 $\text{atan2}(v_x, v_z)$ 計算即時漂移角，並動態轉換 `isMetric` 單位標籤（KM/H vs MPH）。
+2. **HUDCore 廣播訊息與即時 Snapshot 渲染連鎖 (Message Pipeline & Snapshot Loop Integration)**：
+   - 將接收到的 `hud:frame` 遙測資料實時注入全域變數 Snapshot，並由 60Hz 迴圈 (`renderLoop`) 即時動態刷畫布，徹底避免訊息積壓與靜止。
+
+**後續行動 (Action):**
+- 未來無論透過 UDP 即時數據或物理 Demo 廣播，Drift HUD 均能 100% 正確解析並動態渲染姿態。
+
+---
+
+## 2026-08-06 - Drift HUD 子元素卡片重疊解耦與畫布版型純化 (Drift Core Pure Refactoring)
+
+**學習點 (Learning):**
+1. **跨組件卡片解耦與重疊清除 (Cross-Card Decoupling Architecture)**：
+   - 經對比 Central Telemetry Cluster（已包含 `showTeleAttitude` G-Force 雷達、`showTelePedals` 四踏板軌跡波形、`showTeleTiresSlip` 四輪滑移雷達與 `showLiveMap` 地圖），於 `hud_overlay/dirft/index.html` 精準裁剪了重複面板：
+     1. **移除 Vehicle Info Panel (左上)**：車款名稱與 Class Badge 區塊。
+     2. **移除 G-Meter & Attitude Radar Panel (右上)**：避免與獨立 `showTeleAttitude` 卡片重疊。
+     3. **移除 Inputs & Rear Slip Panel (右下)**：避免與獨立 `showTelePedals` 與 `showTeleTiresSlip` 卡片重疊。
+2. **純粹 Drift Telemetry Core 畫布版型**：
+   - 畫布維度重新對齊為 1120x360，畫面高度聚焦於 **Drift Angle Arc**、**Segment RPM Tacho**、**Steer & Counter-steer %**、**Drift Flow (1~5)** 與 **Spin Risk (1~4)** 等 Drift HUD 獨有且具辨識度之動態面板。
+
+**後續行動 (Action):**
+- 保持各 HUD Overlay 與 Central Telemetry Cards 職責解耦，避免 UI 畫面元素重疊。
+
+---
+
+## 2026-08-06 - 093 QPainter 原繪圖質感還原與轉速卡片 / 檔位時速遮蓋完全消除
+
+**學習點 (Learning):**
+1. **093 Street HUD 低調極速質感的精確重現 (093 Low-Key Street HUD Aesthetics)**：
+   - 將 Canvas 邊框與背景質感還原為原專案的暗黑低調圓角襯底 (`rgba(5, 8, 13, 0.70)`) 搭配極細低彩描邊 (`rgba(85, 223, 255, 0.22)`)，告別浮誇 Neon 藍框。
+2. **三橫向獨立面板佈局與空間遮蓋完全消除 (Strict Zero-Overlap Grid System)**：
+   - 徹底排查並解決了轉速表卡片與檔位時速文字遮蓋問題。
+   - 將畫布底部重構為 3 個 100% 空間解耦、橫向一字排開的獨立面板：
+     - **Panel B1 (x=20 ~ 280px)**：專屬 `CURRENT TELEMETRY` 檔位大數字與車速數字面板。
+     - **Panel B2 (x=315 ~ 695px)**：專屬 `ENGINE TACHO` 22 段斜角轉速卡片（與 Panel B1 保持 35px 淨空距，零重疊）。
+     - **Panel B3 (x=710 ~ 1100px)**：專屬 `STEER & DRIFT STATUS` 反打比率條與 Flow/Risk 評級。
+
+**後續行動 (Action):**
+- 保持 HTML Overlay 與 Canvas 幾何座標完全鎖定在獨立分區，防止跨組件空間碰撞。
+
+---
+
+## 2026-08-06 - Advanced HUD 配色與轉速表尺風格邏輯 (灰白軌、純白 Fill、極限熾紅) 轉譯
+
+**學習點 (Learning):**
+- **Advanced 轉速表尺邏輯融合**：借鑑 `hud_overlay/advanced` 的經典表尺風格，將 Drift HUD 中的背景軌跡與未填滿刻度全數改為極簡灰白半透明軌 (`rgba(255, 255, 255, 0.20)`)，極限狀態 (甩尾角度 $\ge 45^\circ$、RPM $\ge 82\%$、重度反打與煞車) 轉換為 Advanced 特色高亮熾紅 (`rgb(255, 0, 102)` / `#FF0066`)。
+- **冷銀純白動態 Fill**：標準甩尾角度、普通轉速段與方向盤填滿線條一律採用動態冷純白 (`#ffffff`)，大幅增強視線聚焦與高彩電競質感。
+- **零版型破壞 (Layout Integrity)**：完全保留原本 093 Drift HUD 的 80 段拋物線弧形幾何、1120x420 無截斷畫布與踏板/轉向版型結構。
+
+**後續行動 (Action):**
+---
+
+## 2026-08-06 - HUD Control Panel 中 Live Map 切換與參數控制修復 (Live Map Control Fix)
+
+**學習點 (Learning):**
+1. **TelemetryCardsManager Early Return 擺放位置坑點**：
+   - 於 `hud_overlay/shared/telemetry-cards/manager.js` 中，原本將 `liveMapContainer.style.display` 切換放置在 `if (!data) return;` 之後。當 UI 控制面板變更設定並發送 `TelemetryCardsManager.update(null, config)` 時，由於沒有遊戲遙測數據 `data`，函數提前返回，導致 `tcLiveMapContainer` 的顯示狀態無法及時更新。
+   - **解決方案**：將 `liveMapContainer.style.display = showLiveMap ? 'block' : 'none';` 移至 `if (!data) return;` 防禦性 return 之前，使其與其餘中央 telemetry 卡片一致。
+2. **BroadcastChannel 跨視窗廣播同步連鎖 (BroadcastChannel Sync Pipeline)**：
+   - 前端控制面板經由 `BroadcastChannel` 傳送 `config` 變更時，`hud_overlay/index.html` 接收訊息漏掉呼叫 `TelemetryCardsManager.update(null, ev.data.data)`，補齊該呼叫確保控制面板操作能在 Overlay 視窗中即時反應。
+3. **後端與前端全屬性對齊**：
+   - 於 `backend/main.py` 的 `DEFAULT_HUD_CONFIG["elements"]` 補齊 `"showLiveMap": True`。
+   - 於 `OverlayView.tsx` 擴充 Live Map 之 Scale (縮放)、Opacity (透明度)、OffsetX/Y (位移) 等傳遞介面與 UI 調整滑桿。
+
+**後續行動 (Action):**
+- 未來新增 Central Telemetry Card 時，必須確保其 DOM 顯示切換邏輯位於 `if (!data) return;` 之前，並於 `telemetryCards.test.ts` 驗證 `data: null` 狀態下的 visibility 變化。
+
+---
+
+## 2026-08-06 - Live MAP HUD 元素升級與 MapGenie 日本地圖 POI 整合 (MapGenie Live MAP Enrichment)
+
+**學習點 (Learning):**
+1. **遙測空間座標 (3D World Space) 至畫布座標 (2D Canvas Space) 轉換與極值包含 (POI Inclusion Bounds)**：
+   - Forza UDP 提供 `PositionX` (東/西向) 與 `PositionZ` (南/北向) 公尺座標。轉譯時需考慮網頁 Canvas Y 軸倒置（向下為正），故 $py$ 轉譯需做 $(1 - \text{ratio})$ 反轉處理。
+   - 為防止地標 (POI) 超出畫布邊界， auto-range 演算法除計算車輛歷史軌跡極值外，亦需動態納入周圍 300m 範圍內之 POI 座標，確保玩家靠近地標時 Minimap 能順暢展現地標圓環與圖籤。
+2. **Node/Vitest JSDOM Canvas Mock 繪圖 API 安全防禦 (JSDOM Canvas API Feature Detection)**：
+   - 在 JSDOM / Vitest 單元測試環境中，`HTMLCanvasElement` mock 並未實作 `setLineDash`, `ellipse`, `translate`, `rotate` 等 Canvas 2D 高級繪圖 API。
+   - **防禦性設計**：在呼叫 `ctx.translate()` / `ctx.rotate()` 與 `ctx.setLineDash()` 前一律加入 `if (typeof ctx.translate === 'function')` 特徵檢查，防止無介面測試環境拋出 `TypeError: ctx.translate is not a function`。
+3. **MapGenie POI 系統與 Proximity Alert 近距離警報 (Proximity Banner UI)**：
+   - 整合包含 PR Stunts (Speed Trap, Speed Zone, Drift Zone, Danger Sign)、賽事點 (Touge Mountain, Road Race, Street Race) 與 Collectibles/Mascots (Skyline Barn Find, Ramen, Matcha) 等點位資料庫。
+   - 於 `live-map.js` 即時計算車輛與最近 POI 之歐氏距離 $\sqrt{(x_1-x_2)^2 + (z_1-z_2)^2}$，當距離 $\le 250\text{m}$ 時觸發 `#tcLiveMapNearby` 顯示與距離即時換算。
+
+**後續行動 (Action):**
+- 撰寫 Canvas 2D 進階渲染（如偏航角懸浮旋轉箭頭、虛線特徵線條）時，必須一律包含功能特徵判斷，避免在 JSDOM 單元測試環境引發執行階段例外。
+
+---
+
+## 2026-08-06 - Live MAP POI 本地 JSON 動態維護架構 (Local JSON POI Architecture)
+
+**學習點 (Learning):**
+1. **解耦 POI 資料與渲染邏輯 (Decoupling POI Data from Renderer)**：
+   - 建立獨立的本地 JSON 設定檔 [`hud_overlay/assets/japan_pois.json`](file:///d:/FH6-HorizonTuner/hud_overlay/assets/japan_pois.json)，將 POI 的 `id`, `name`, `type`, `category`, `x, z`, `symbol`, `color` 解耦至獨立資料檔案中維護。
+   - `live-map.js` 於初始化階段自動非同步 `fetch` 本地 JSON，並提供 `setCustomPOIs` 導出函數，便於玩家或擴充工具無縫更新 POI 點位資訊，無需修改繪圖程式碼。
+
+**後續行動 (Action):**
+- 未來新增地圖（如其他 Horizon 賽季或自訂地圖包）時，只需增加對應區域之 JSON 設定檔即可完成動態掛載。
+
+---
+
+## 2026-08-06 - MapGenie 自動擷取腳本與 2D 仿射座標校準 (MapGenie Extraction & 2D Affine Calibration)
+
+**學習點 (Learning):**
+1. **地圖空間經緯度至遊戲 UDP 世界座標之 2D 仿射變換 (2D Affine Transformation Matrix)**：
+   - 地圖網站（如 MapGenie）提供之空間點位多為經緯度 $(\text{lat}, \text{lng})$ 或相對像素點。透過建立控制基準點 (Ground Control Points) 並求解 2D 仿射轉換矩陣 $\begin{bmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{bmatrix}$ 與偏移向量，可將全區地點批量精準轉換為遊戲 UDP 輸出之米制世界座標 $(X, Z)$。
+2. **自動化擷取與本地資產補齊 (Automated Map Assets & POI Pipeline)**：
+   - 建立 [`tools/fetch_mapgenie_pois.py`](file:///d:/FH6-HorizonTuner/tools/fetch_mapgenie_pois.py) 與 [`tools/calibrate_map_coords.py`](file:///d:/FH6-HorizonTuner/tools/calibrate_map_coords.py) 自動化工具流，一鍵自動抓取 MapGenie 官方 2.28 MB 高解析地圖檔 (`live_map_bg.png`) 並校準產出 `japan_pois.json`。
+
+**後續行動 (Action):**
+- 當遊戲更新全新賽季地圖或擴充區塊時，直接執行 `python tools/fetch_mapgenie_pois.py` 與 `python tools/calibrate_map_coords.py` 即可自動完成圖檔下載與 POI 座標更新。
+
+---
+
+## 2026-08-06 - MapGenie 瓦片架構與 REST API 防爬蟲機制解構 (MapGenie Tile Architecture & Anti-Scraping)
+
+**學習點 (Learning):**
+1. **MapGenie API 認證與瓦片架構分析**：
+   - MapGenie 的網頁內部以 `window.mapData` 宣告地圖資料（日本地圖共包含 737 個點位），但其 REST API 端點 (`/api/v1/user/map-data/{id}` 與 `/api/v1/locations/{id}`) 強制對外部未驗證 HTTP 請求返回 `401 Unauthorized` / `404` 認證保護。
+   - 地圖瓦片採用 Leaflet/MapLibre 四季切割格式：`https://tiles.mapgenie.io/games/forza-horizon-6/one/default-v2/{z}/{y}/{x}.jpg` (Zoom 8-15)。
+2. **多維度地點分類與仿射轉譯對齊**：
+   - 腳本建立對應賽事 (Touge, Street, Road, Dirt, Drag, Cross-Country)、PR Stunts (Speed Trap, Speed Zone, Drift Zone, Danger Sign)、收集品 (Barn Find, XP Board, Mascot) 與玩家設施 (Player House, Car Meet) 之轉換與仿射矩陣。
+
+**後續行動 (Action):**
+- 未來需大量爬取 MapGenie 多圖層點位時，可搭配 Playwright 無頭瀏覽器腳本在 DOM 上下文中提取 `window.mapData` 完整的 737 個即時點位物件。
+
+---
+
+## 2026-08-06 - ForzaLabs (LabsGG) 地圖爬蟲與 3.24MB 全景底圖導出 (LabsGG Scraping & 3.24MB Asset)
+
+**學習點 (Learning):**
+1. **LabsGG Astro 靜態頁面與幾何數據解析**：
+   - ForzaLabs (`forza.labsgg.com`) 採用 Astro v5 靜態 SSR 渲染架構，頁面 script 標籤中內嵌了全區 **457 條道路幾何線段 (Road Segments)** 與 **28 種標記類別定義**。
+   - 底圖為直連 Astro CDN 之 **3.24 MB** 完整高解析全景地圖圖檔 (`/_astro/FH6-full-map.59v5pH0D.jpg`)。
+2. **2D 畫布與遊戲 UDP 空間轉換**：
+   - 建立 [`tools/fetch_labsgg_data.py`](file:///d:/FH6-HorizonTuner/tools/fetch_labsgg_data.py) 自動抓取 LabsGG 底圖與道路資料，並由 [`tools/calibrate_map_coords.py`](file:///d:/FH6-HorizonTuner/tools/calibrate_map_coords.py) 將 2D 畫布像素座標對齊為 UDP 米制世界座標 $(X, Z)$，導出 454 個高精度地點至 `japan_pois.json`。
+
+**後續行動 (Action):**
+- 未來更新 Live MAPOverlay 時，可選擇帶有完整道路拓樸數據的 LabsGG 幾何點位，實現精確的路線追蹤與道路探索提示。
+
+---
+
+## 2026-08-06 - Live MAP 遙測卡片整合 3.24MB 全景底圖與 454 POI 小地圖 (Live MAP Card Integration)
+
+**學習點 (Learning):**
+1. **Live MAP 小地圖繪圖鏈 (Live MAP Minimap Pipeline)**：
+   - 升級 [`hud_overlay/shared/telemetry-cards/live-map.js`](file:///d:/FH6-HorizonTuner/hud_overlay/shared/telemetry-cards/live-map.js)，將 3.24 MB 的 `live_map_bg.png` 地圖圖檔與 454 個地點資料庫 `japan_pois.json` 整合至 60Hz 繪圖循環中。
+   - 實現動態自動範圍視圖 (Auto Range Normalization)、車頭指向光標 (Heading Yaw Arrow Cursor)、過彎甩尾歷史軌跡 (Drift Trace) 與近距離地點警報橫幅 (`#tcLiveMapNearby`) 的無縫結合。
+
+**後續行動 (Action):**
+- 維持 60Hz 渲染低開銷，對於遙測數據中的 Yaw/Velocity 向量維持極輕量純數學運算，並確保無 Emoji 的極簡專業視覺語彙。
+
+---
+
+## 2026-08-06 - Live MAP 小地圖底圖區域動態裁切與車頭指向角度修復 (Minimap Crop Zoom & Arrow Heading Fix)
+
+**學習點 (Learning):**
+1. **小地圖底圖動態區域裁切與縮放 (Canvas Crop Zoom)**：
+   - 避免將整張全景地圖強制全域壓縮印在小 Canvas 上。透過定義 `WORLD_BOUNDS` $[-1000, 1000] \text{ m}$，計算當前車輛位置在圖片中的正規化像素中心 $(sx, sy)$ 與 250m 視野半徑裁切視窗 $(sw, sh)$，傳給 `ctx.drawImage(img, sx - sw/2, sy - sh/2, sw, sh, 0, 0, w, h)`，實現底圖跟隨車輛位置實時放大滑動。
+2. **2D Canvas 座標系下之車頭旋轉角轉譯 (Heading Angle Vector Calibration)**：
+   - Forza UDPTelemetry 中 +X 為東、+Z 為北；Canvas 2D 中 $Y$ 軸反轉向下。車輛前進指向角應修正為 $\text{yawAngle} = \text{atan2}(VelocityX, -VelocityZ)$，使前進方向與 Canvas 旋轉角度完全對齊（指向正北時角度為 0 指向畫面上方）。
+
+**後續行動 (Action):**
+- 在 Canvas 渲染 2D 畫布與 UDP 世界座標轉換時，務必區分 Z 軸垂直反轉與 Heading 向量 $\text{atan2}(vx, vz)$，確保動態追蹤與轉向精確吻合。
+
+---
+
+## 2026-08-06 - 獨立對照校正工作台與車頭指向向量公式最終修復 (Map Calibration Workbench & atan2(vx, vz) Fix)
+
+**學習點 (Learning):**
+1. **獨立視覺化地圖對應與校正工作台 (Standalone Calibration Workbench)**：
+   - 建立 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html) 獨立輔助工具，允許開發階段點擊底圖任意像素點點查對應世界座標，並即時模擬車輛位置、速度向量與 HUD 小地圖畫面，一鍵匯出 `map_calibration_config.json`。
+2. **車頭指向角純數學正解 (Exact Heading Angle Math)**：
+   - 在 Canvas 2D 畫布中，車頭箭頭鼻尖頂點繪製於 $(0, -9)$（朝上 $12\text{ o'clock}$）。當車輛向北移動 ($vz > 0, vx = 0$) 時，旋轉角必須為 $0\text{ rad}$。
+   - 正確公式為 $\text{yawAngle} = \text{atan2}(VelocityX, VelocityZ)$，無負號。
+
+**後續行動 (Action):**
+- 開發與調校任何地圖與遙測點位時，優先開啟 `tools/map_calibration_workbench.html` 進行點擊點對點驗證與視覺化調試。
+
+---
+
+## 2026-08-06 - 車輛局部座標系速度與世界姿態角 (Yaw) 混淆陷阱修正 (Local vs World Frame Heading Bug)
+
+**學習點 (Learning):**
+1. **Forza UDP 遙測座標系區分 (Local Velocity vs World Yaw)**：
+   - 封包中 `VelocityX, Y, Z` (Offset 32~43) 為**車輛局部座標系 (Local Frame)** 速度，$VelocityZ$ 永遠代表前進速度（直行時永遠 $>0$）。若誤用此速度向量計算 `atan2(VelocityX, VelocityZ)`，角度會**永遠恆等於 0 (正北/朝上)**！
+   - 正確的車輛世界指向應使用 `data.Yaw` (Offset 56~67 世界姿態角)，或由世界座標歷程差值 $(\Delta X_{\text{world}}, \Delta Z_{\text{world}})$ 計算 `atan2(dxWorld, dzWorld)`。
+
+**後續行動 (Action):**
+- 處理 2D 地圖或抬頭顯示器 (HUD) 車頭方向時，嚴禁使用局部座標系 speed/velocity 向量計算 Heading，一律採用 `data.Yaw` 或世界座標差值。
+
+---
+
+## 2026-08-06 - 校正工作台 file:// 協議 CORS 阻擋修復與圖檔選擇器 (Local HTML File Picker Fix)
+
+**學習點 (Learning):**
+1. **瀏覽器 file:// 協議下 crossOrigin 安全限制**：
+   - 當直接從本機檔案系統開啟單一 HTML 檔案時 (`file:///d:/...`)，設定 `img.crossOrigin = 'Anonymous'` 會引發瀏覽器 CORS 安全攔截 (`origin 'null' is blocked`)。
+   - 解決方案：移除 `file://` 協議下的 `crossOrigin` 屬性，並提供 `<input type="file">` 手動圖檔選擇器，透過 `FileReader.readAsDataURL` 即時將本地 `live_map_bg.png` 讀入 Canvas。
+
+**後續行動 (Action):**
+- 提供開發用獨立 HTML 工具時，務必加入本地檔案選擇器 (`FileReader`)，確保在任何作業系統與瀏覽器限制下均能零障礙載入本地資源。
+
+---
+
+## 2026-08-06 - 校正工作台直觀互動升級（滑鼠拖曳對齊與軌跡疊加）(Interactive Drag Alignment & Path Trace Overlay)
+
+**學習點 (Learning):**
+1. **畫布手動拖曳對齊 (Canvas Mouse Drag Alignment)**：
+   - 在 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html) 中加入滑鼠拖曳監聽事件 (`mousedown`, `mousemove`, `mouseup`)。使用者可直接點擊拖曳車輛游標以調整 $PositionX, PositionZ$，或拖曳畫布背景以調整對齊錨點 ($centerX, centerY$)。
+2. **遙測歷史行車軌跡疊加 (Driving Trajectory Overlay)**：
+   - 繪製預設或實時行車路線 (Hakone, Tokyo, Fuji賽道)，讓開發者能直接眼見驗證整條道路軌跡是否與地圖影像上的白線/黃線精確重合。
+
+**後續行動 (Action):**
+- 地圖對齊校正時，優先搭配軌跡選單與滑鼠拖曳微調，驗證通過後一鍵匯出 `map_calibration_config.json`。
+
+---
+
+## 2026-08-06 - 校正工作台直連專案後端 WebSocket 實時遙測 (Live Backend WebSocket Integration)
+
+**學習點 (Learning):**
+1. **實時 WebSocket 遙測串流對接 (Live WS Telemetry Ingestion)**：
+   - 升級 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html)，對接專案後端 (`backend/main.py`) 的 `ws://localhost:8000/ws/telemetry` 串流。
+   - 工作台可即時接收真實遊戲遙測數據，將車輛行駛軌跡動態繪製在畫布地圖上，使開發者能夠邊玩遊戲邊實時校正地圖對齊關係。
+
+**後續行動 (Action):**
+- 開發與測試地圖 HUD 時，啟動 `python -m backend.main` 後打開 `tools/map_calibration_workbench.html` 即可進行實時雙向驗證。
+
+---
+
+## 2026-08-06 - 校正工作台一鍵對焦點擊與自動追蹤鎖定 (Instant Vehicle Centering & Auto Track Lock)
+
+**學習點 (Learning):**
+1. **車輛座標一鍵畫布置中演算法 (Instant Vehicle Centering Math)**：
+   - 在 [`tools/map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html) 中加入一鍵置中計算。透過當前遙測座標 $(X_{\text{car}}, Z_{\text{car}})$ 與畫布維度，瞬間倒算平移錨點：
+     $$centerX = \frac{canvasW}{2} - \frac{X_{\text{car}}}{scaleX}$$
+     $$centerY = \frac{canvasH}{2} - \frac{Z_{\text{car}}}{scaleZ}$$
+   - 實現不論車輛行駛至地圖何處，點擊一下按鈕即立刻將車輛拉回畫布中央。
+
+**後續行動 (Action):**
+- 遙測軌跡移出視窗時，點擊「將目前遙測座標移動到地圖中央」即可立即對焦點位。
+
+---
+
+## 2026-08-06 - 歷史行車軌跡長度擴增與永久保存去重機制 (Persistent Long Track Trace & Distance Filtering)
+
+**學習點 (Learning):**
+1. **軌跡永久累積與位移去重演算法 (Distance Threshold Filtering)**：
+   - 升級 [`live-map.js`](file:///d:/FH6-HorizonTuner/hud_overlay/shared/telemetry-cards/live-map.js) 與 [`map_calibration_workbench.html`](file:///d:/FH6-HorizonTuner/tools/map_calibration_workbench.html)。將歷史軌跡點數上限大幅提升至 10,000 ~ 50,000 點。
+   - 僅當車輛實際位移距離 $> 0.3 \text{ m}$ 時才推入新座標點，防止原地打轉或停車時點陣爆量，並取消時間衰減淡出，確保行駛過的所有道路線條完整永久留存。
+
+**後續行動 (Action):**
+- 地圖校正或進行長距離路線地圖對齊時，直接駕駛繞行賽道全區，整條路網軌跡將完整清晰保留在地圖上供比對對齊。
+
+---
+
+## 2026-08-06 - 使用者校準矩陣導回 Live MAP 與全地點資料庫 (Calibrated Matrix Import & Sync)
+
+**學習點 (Learning):**
+1. **地圖仿射矩陣同步 (Map Calibration Sync Pipeline)**：
+   - 讀取使用者匯出之 `map_calibration_config.json` 參數 (`centerX: 1170, centerY: 1312, scaleX: 7.81, scaleZ: -7.81`)。
+   - 將最新 `MAP_CALIBRATION` 參數寫入 [`live-map.js`](file:///d:/FH6-HorizonTuner/hud_overlay/shared/telemetry-cards/live-map.js)，並由 `tools/calibrate_map_coords.py` 重新導出 454 個精確對齊之 POIs 至 [`hud_overlay/assets/japan_pois.json`](file:///d:/FH6-HorizonTuner/hud_overlay/assets/japan_pois.json)。
+
+**後續行動 (Action):**
+- 校正完畢後透過 `calibrate_map_coords.py` 一鍵重新導出 POI catalog，維持 HUD 小地圖與全區地點 100% 精準對齊。
+
+---
+
+## 2026-08-06 - HUD Elements 控制面板子開關階層條件隱藏 (Conditional HUD Sub-toggle UI)
+
+**學習點 (Learning):**
+1. **控制面板階層隱藏 UX (Hierarchical Toggle Visibility)**：
+   - 修改 [`frontend/src/features/overlay_control/OverlayView.tsx`](file:///d:/FH6-HorizonTuner/frontend/src/features/overlay_control/OverlayView.tsx)。當主開關 `showLiveMap` 為 `false` (關閉) 時，透過 JSX 條件判斷自動動態隱藏屬下強相關的 4 個子控制開關 (`showLiveMapPOIs`, `showLiveMapPRStunts`, `showLiveMapCollectibles`, `showLiveMapHeading`)，確保控制選單簡潔流暢。
+
+**後續行動 (Action):**
+- 未來新增主次階層面板（如 VFD 儀表或 Audio 子開關）時，保持主開關關閉時隱藏附屬子開關的動態條件渲染慣例。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## 2026-08-07 - 直線加速 (Drag) 調校計算機 4-Speed Meta 齒比極速與前低後高 Forward Rake 車身物理重構
 
 **學習點 (Learning):**
@@ -1709,4 +2182,37 @@
 
 **後續行動 (Action):**
 - 當車輛 Drag 算牌出現極速異常時，優先檢查 $v_{\text{drag\_top}}$ 與 4 檔終傳比計算，並確認前後車身高度符合前低後高 Forward Rake 姿態。
+
+---
+
+## 2026-08-07 - Pytest 測試收集器探索腳本與絕對路徑硬編碼衝突修復 (`tools/inspect_labsgg_scripts.py`, `pyproject.toml`, `ci.yml`)
+
+**學習點 (Learning):**
+1. **Pytest 測試收集 (Test Collection) 命名衝突與頂層開檔陷阱**：
+   - `tools/` 目錄下的工具探索腳本若命名為 `test_*.py`（如 `test_labsgg_scripts.py`），會被 pytest 的自動測試收集機制視為單元測試模組。當該腳本在頂層 (Module level) 包含硬編碼之開發者本機路徑並直接執行讀檔開檔操作時，在 CI 雲端環境（如 GitHub Actions Linux Runner）將觸發 `FileNotFoundError` 導致整個 CI 測試階段中斷。
+   - 修復方案：
+     1. 將非測試用之探索腳本重新命名為 `inspect_labsgg_scripts.py`，去除 `test_` 前綴。
+     2. 為腳本開檔流程加入 `CONTENT_MD_PATH.exists()` 檢查與防禦性退出。
+2. **Pytest 測試目錄邊界與模組路徑顯式隔離**：
+   - `pyproject.toml` 的 `[tool.pytest.ini_options]` 應顯式聲明 `testpaths = ["tests"]` 與 `pythonpath = [".", "backend"]`，將 pytest 執行的範圍嚴格限制於 `tests/` 目錄，避免掃描根目錄其他工具與臨時檔案。
+   - 同時在 `.github/workflows/ci.yml` 中將 `python -m pytest -v` 改為 `python -m pytest tests/ -v` 確保 CI 執行邊界清晰無虞。
+
+**後續行動 (Action):**
+- 凡放在 `tools/` 或非 `tests/` 目錄下的輔助、探索或抓取腳本，切勿使用 `test_` 為檔名前綴；且在 `pyproject.toml` 中必須明確維護 `testpaths = ["tests"]`。
+
+---
+
+## 2026-08-07 - 合併前開發工具腳本清理 (Pre-Merge Cleanup)
+
+**學習點 (Learning):**
+1. **`tools/` 一次性腳本生命週期管理**：
+   - 開發期間於 `tools/` 累積了 6 支 Python 腳本（地圖 POI 爬蟲、UDP 封包驗證、座標仿射校準）與 3 個大型原始 JSON 資料（合計約 1.07 MB）。這些腳本在完成其使命後需在合併前統一清除，以維護 Repository 純潔性。
+   - 特別注意：`fetch_labsgg_data.py` 與 `inspect_labsgg.py` 兩支腳本內部包含開發者本機 Gemini Brain 的絕對快取路徑，若不刪除會將開發者環境隱私資訊留存於 Repo 中。
+2. **Skill `references/` 是保存一次性工具的最佳去處**：
+   - `verify_telemetry_v2_v3.py` 包含完整的 324-byte 封包區塊 A/B 方法對照解析邏輯與全封包 Offset 掃描引擎，具有持久 Debug 參考價值。最佳處置方式是移入 `telemetry-udp-protocol` Skill 的 `references/` 目錄，使其在版本庫中受 Skill 架構保護，同時與正式後端程式碼完全解耦。
+3. **`.agents/docs/` 是設計公式文件的歸宿**：
+   - `ref/` 中的調校研究 Markdown 文件（底盤公式、齒比公式、調校研究原稿）雖已被 `.gitignore` 排除，但移入 `.agents/docs/` 後可被版本追蹤，同時為未來 Agent 提供算法決策背景。
+
+**後續行動 (Action):**
+- 未來開發新功能時，若需要建立爬蟲/驗證/校準等一次性工具腳本，應從一開始就評估其「合併後是否有保留價值」——若有 Debug 參考價值，移入對應 Skill 的 `references/`；若純屬一次性使用，直接刪除並於 `.gitignore` 補入對應規則。
 

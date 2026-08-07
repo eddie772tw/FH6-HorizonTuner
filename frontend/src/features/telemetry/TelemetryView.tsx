@@ -18,6 +18,7 @@ const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
 
 
+
 const getCarClassString = (cls?: number) => {
   if (cls === undefined) return '';
   const classes = ['E', 'D', 'C', 'B', 'A', 'S1', 'S2', 'X'];
@@ -119,6 +120,15 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
     };
   }, []);
 
+  const [showPopover, setShowPopover] = useState<boolean>(isHudPaused);
+
+  // Auto-pop popover whenever isHudPaused is active (e.g. switching tabs to telemetry or HUD paused state changes)
+  useEffect(() => {
+    if (isHudPaused) {
+      setShowPopover(true);
+    }
+  }, [isHudPaused]);
+
   // Monitor IsRaceOn to auto-redirect and load the latest session on race completion
   useEffect(() => {
     if (!telemetryData) return;
@@ -143,12 +153,16 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
   const isEV = telemetryData?.EngineIdleRpm === 0;
 
   return (
-    <div className="container-fluid h-100 w-100 d-flex flex-column gap-2 p-0 overflow-hidden">
+    <div className="d-flex flex-column h-100 w-100 overflow-hidden">
       
-      {/* Unframed Top Navigation Header */}
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2 mb-1 flex-shrink-0">
+      {/* Header bar */}
+      <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom flex-shrink-0">
         <div className="d-flex align-items-center gap-3">
-          <div className="d-flex align-items-center gap-2">
+          <div 
+            className="position-relative d-inline-flex align-items-center gap-2"
+            onClick={() => { if (isHudPaused) setShowPopover(prev => !prev); }}
+            style={{ cursor: isHudPaused ? 'pointer' : 'default' }}
+          >
             <div style={{
               width: '12px',
               height: '12px',
@@ -159,6 +173,62 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
             <span className={isHudPaused ? "fw-bold text-warning fs-6 m-0" : isRacing ? "fw-bold text-primary fs-6 m-0" : "fw-bold text-secondary fs-6 m-0"}>
               {isHudPaused ? t("RENDER PAUSED (OVERLAY ACTIVE)") : isRacing ? t("RACE DATA LIVE") : t("GAME IDLE / MENU")}
             </span>
+
+            {/* Downward Popover */}
+            {isHudPaused && showPopover && (
+              <div 
+                className="popover bs-popover-bottom show glass-panel shadow-lg border"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: 0,
+                  zIndex: 1050,
+                  minWidth: '320px',
+                  backdropFilter: 'blur(16px)',
+                  background: 'var(--glass-bg)',
+                  borderColor: 'var(--bs-warning)',
+                  cursor: 'default'
+                }}
+                role="tooltip"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    left: '20px',
+                    width: 0,
+                    height: 0,
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderBottom: '6px solid var(--bs-warning)'
+                  }} 
+                />
+                <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center gap-2">
+                    <span>{t("HUD Overlay Active")}</span>
+                    <span className="badge text-bg-warning">PAUSED</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-close btn-sm"
+                    aria-label="Close"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPopover(false);
+                    }}
+                  ></button>
+                </div>
+                <div className="popover-body px-3 py-2 text-start">
+                  <div className="fs-7 text-body fw-medium">
+                    {t("Telemetry rendering paused (HUD Overlay is active)")}
+                  </div>
+                  <div className="fs-8 text-secondary mt-1">
+                    {t("Can be toggled in HUD Control Panel")}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="vr opacity-25" style={{ height: '20px' }} />
@@ -182,17 +252,6 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
           <span className="text-truncate" style={{ maxWidth: '200px' }}>{displayCarName}</span>
         </div>
       </div>
-
-      {isHudPaused && (
-        <div className="alert alert-warning d-flex align-items-center justify-content-between mb-2 py-2 shadow-sm flex-shrink-0">
-          <div className="d-flex align-items-center gap-2 fs-7">
-            <strong>{t("Telemetry rendering paused (HUD Overlay is active)")}</strong>
-          </div>
-          <span className="small opacity-75 fs-8">
-            {t("Can be toggled in HUD Control Panel")}
-          </span>
-        </div>
-      )}
 
       {subTab === 'analysis' ? (
         <React.Suspense fallback={<div className="p-5 text-center text-secondary">{t("Loading Analysis...")}</div>}>

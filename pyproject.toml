@@ -61,7 +61,8 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pytest.ini_options]
-pythonpath = ["backend"]
+testpaths = ["tests"]
+pythonpath = [".", "backend"]
 filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
     "ignore:.*locale.getdefaultlocale.*:DeprecationWarning",

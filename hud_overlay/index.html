@@ -74,7 +74,8 @@
             mw2005: './mw2005/index.html',
             nfs15: './nfs15/index.html',
             shift_tacho: './shift_tacho/index.html',
-            vfd: './vfd/index.html'
+            vfd: './vfd/index.html',
+            drift: './drift/index.html'
         };
         let activeHud = localStorage.getItem('forza_hud_active') || 'simple';
         const hudIframe = document.getElementById('hud-iframe');
@@ -210,6 +211,9 @@
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
                 window._currentHudConfig = ev.data.data;
+                if (window.TelemetryCardsManager) {
+                    window.TelemetryCardsManager.update(null, ev.data.data);
+                }
                 if (ev.data.data && ev.data.data.hudStyle) {
                     activeHud = ev.data.data.hudStyle;
                 }

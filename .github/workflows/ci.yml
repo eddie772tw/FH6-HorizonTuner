@@ -132,7 +132,7 @@ jobs:
         pip install pytest python-multipart
 
     - name: Execute Pytest Test Suite
-      run: python -m pytest -v
+      run: python -m pytest tests/ -v
 
     - name: Generate Backend Pytest Summary
       if: always()

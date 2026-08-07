@@ -36,7 +36,7 @@ interface TuningViewProps {
   setActiveTab?: (tab: any) => void;
 }
 
-const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurrentStep: propSetStep }) => {
+const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurrentStep: propSetStep, setActiveTab }) => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
   const { t } = useSettings();
 
@@ -196,6 +196,13 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
   }, [selectedRaceGoal, numGears, carParams, tuning.gearing.maxRpm, tuning.gearing.simulatedTopSpeed, tuning.gearing.softMaxSpeed]);
 
   const hasCoreParams = Boolean(carParams && carParams.weight > 0 && carParams.weight_distribution > 0);
+  const [showParamsPopover, setShowParamsPopover] = useState<boolean>(!hasCoreParams);
+
+  useEffect(() => {
+    if (!hasCoreParams) {
+      setShowParamsPopover(true);
+    }
+  }, [hasCoreParams]);
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -208,7 +215,83 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
               <h2 className="text-primary fs-4 fw-bold m-0" style={{ letterSpacing: '0.5px' }}>
                 {t("Tuning Wizard")}
               </h2>
-              <span className="badge text-bg-secondary fs-7">{carName} (ID: {carId})</span>
+              <div 
+                className="position-relative d-inline-flex align-items-center gap-1"
+                onClick={() => { if (!hasCoreParams) setShowParamsPopover(prev => !prev); }}
+                onMouseEnter={() => { if (!hasCoreParams) setShowParamsPopover(true); }}
+                onMouseLeave={() => { if (!hasCoreParams) setShowParamsPopover(false); }}
+                style={{ cursor: !hasCoreParams ? 'pointer' : 'default' }}
+              >
+                <span className="badge text-bg-secondary fs-7">{carName} (ID: {carId})</span>
+                {!hasCoreParams && (
+                  <span className="badge text-bg-warning fs-7">{t("PARAMS INCOMPLETE")}</span>
+                )}
+
+                {!hasCoreParams && showParamsPopover && (
+                  <div 
+                    className="popover bs-popover-bottom show glass-panel shadow-lg border"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      left: 0,
+                      zIndex: 1050,
+                      minWidth: '320px',
+                      backdropFilter: 'blur(16px)',
+                      background: 'var(--glass-bg)',
+                      borderColor: 'var(--bs-warning)',
+                      cursor: 'default'
+                    }}
+                    role="tooltip"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        left: '20px',
+                        width: 0,
+                        height: 0,
+                        borderLeft: '6px solid transparent',
+                        borderRight: '6px solid transparent',
+                        borderBottom: '6px solid var(--bs-warning)'
+                      }} 
+                    />
+                    <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center gap-2">
+                        <span>{t("Vehicle Parameters Required")}</span>
+                        <span className="badge text-bg-warning">REQUIRED</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-close btn-sm"
+                        aria-label="Close"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowParamsPopover(false);
+                        }}
+                      ></button>
+                    </div>
+                    <div className="popover-body px-3 py-2 text-start">
+                      <div className="fs-7 text-body fw-medium">
+                        {t("Basic physics parameters (Vehicle Weight / Distribution) are missing.")}
+                      </div>
+                      <div className="fs-8 text-secondary mt-1 mb-2">
+                        {t("Complete them in Step 1 or Car Parameters tab to perform calculations.")}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline-warning btn-sm fw-bold w-100"
+                        onClick={() => {
+                          setShowParamsPopover(false);
+                          setActiveTab?.('car_params');
+                        }}
+                      >
+                        {t("Go to Car Parameters")} &gt;
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
               {t("Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard")}

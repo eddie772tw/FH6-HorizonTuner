@@ -21,6 +21,11 @@ interface HudElements {
   showTelePedals: boolean;
   showTeleCenterAnchor: boolean;
   showTeleGridLines: boolean;
+  showLiveMap?: boolean;
+  showLiveMapPOIs?: boolean;
+  showLiveMapPRStunts?: boolean;
+  showLiveMapCollectibles?: boolean;
+  showLiveMapHeading?: boolean;
 }
 
 interface MonitorOption {
@@ -34,7 +39,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -47,6 +52,8 @@ interface HudConfig {
   telemetryPedalScale?: number;
   telemetryPowerTorqueScale?: number;
   telemetryMergedChartsScale?: number;
+  telemetryLiveMapScale?: number;
+  telemetryLiveMapOpacity?: number;
   /** Independent font scale for card text (0.5–2.0) */
   telemetryCardFontScale?: number;
   /** Option to merge power/torque & pedal charts side-by-side */
@@ -61,9 +68,13 @@ interface HudConfig {
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
   telemetryMergedChartsOffsetX?: number;
+  telemetryLiveMapOffsetX?: number;
+  telemetryLiveMapOffsetY?: number;
   /** VFD Instrument Sensitivity Offsets */
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
+  /** Drift HUD Profile Preset */
+  driftProfile?: '1440P STREAM' | '1080P FULL' | '1440P CLEAN';
   glowIntensity?: number;
   customColor?: string;
   useDefaultColors?: boolean;
@@ -82,6 +93,8 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
   telemetryMergedChartsScale: 1.0,
+  telemetryLiveMapScale: 1.0,
+  telemetryLiveMapOpacity: 1.0,
   telemetryCardFontScale: 1.0,
   telemetrySideBySideCharts: true,
   telemetryPedalPosition: 'bottom',
@@ -92,8 +105,11 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
   telemetryMergedChartsOffsetX: 0,
+  telemetryLiveMapOffsetX: 0,
+  telemetryLiveMapOffsetY: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
+  driftProfile: '1440P STREAM',
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
@@ -117,6 +133,11 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showTelePedals: true,
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
+    showLiveMap: true,
+    showLiveMapPOIs: true,
+    showLiveMapPRStunts: true,
+    showLiveMapCollectibles: true,
+    showLiveMapHeading: true,
   },
   soundEnabled: false,
 };
@@ -331,6 +352,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     saveConfig({ ...config, telemetryMergedChartsScale: clamped });
   };
 
+  const handleLiveMapScaleChange = (newScale: number) => {
+    const clamped = Math.max(0.5, Math.min(2.0, newScale));
+    saveConfig({ ...config, telemetryLiveMapScale: clamped });
+  };
+
+  const handleLiveMapOpacityChange = (newOpacity: number) => {
+    const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
+    saveConfig({ ...config, telemetryLiveMapOpacity: clamped });
+  };
+
   const handleCornerOffsetXChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetX: val };
     saveConfig(updated);
@@ -338,6 +369,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const handleCornerOffsetYChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetY: val };
+    saveConfig(updated);
+  };
+
+  const handleLiveMapOffsetXChange = (val: number) => {
+    const updated = { ...config, telemetryLiveMapOffsetX: val };
+    saveConfig(updated);
+  };
+
+  const handleLiveMapOffsetYChange = (val: number) => {
+    const updated = { ...config, telemetryLiveMapOffsetY: val };
     saveConfig(updated);
   };
 
@@ -417,6 +458,11 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     saveConfig(updated);
   };
 
+  const handleDriftProfileChange = (profile: '1440P STREAM' | '1080P FULL' | '1440P CLEAN') => {
+    const updated = { ...config, driftProfile: profile };
+    saveConfig(updated);
+  };
+
   const handleGlowIntensityChange = (val: number) => {
     const clamped = Math.max(0.0, Math.min(2.0, val));
     const updated = { ...config, glowIntensity: clamped };
@@ -487,7 +533,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
-      
+
       {/* Unframed Header Banner */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-2 flex-shrink-0">
         <div>
@@ -651,6 +697,40 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     />
                   </div>
 
+                  {/* Live Map Horizontal (X) Offset Slider */}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="fs-7 text-body-secondary">{t("Live Map X-Offset")}:</span>
+                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetX ?? 0} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      className="form-range"
+                      min={-500}
+                      max={500}
+                      step={10}
+                      value={config.telemetryLiveMapOffsetX ?? 0}
+                      onChange={(e) => handleLiveMapOffsetXChange(Number(e.target.value))}
+                    />
+                  </div>
+
+                  {/* Live Map Vertical (Y) Offset Slider */}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="fs-7 text-body-secondary">{t("Live Map Y-Offset")}:</span>
+                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetY ?? 0} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      className="form-range"
+                      min={-500}
+                      max={500}
+                      step={10}
+                      value={config.telemetryLiveMapOffsetY ?? 0}
+                      onChange={(e) => handleLiveMapOffsetYChange(Number(e.target.value))}
+                    />
+                  </div>
+
                   {/* Chart Top/Bottom Positions */}
                   <div className="d-flex justify-content-between align-items-center pt-1">
                     <span className="fs-7 text-body-secondary">{t("Pedal Position")}:</span>
@@ -797,6 +877,40 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
                 />
               </div>
+
+              {/* Live Map Scale */}
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="fs-7 text-body-secondary">{t("Live Map Scale")}:</span>
+                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapScale ?? 1.0) * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  className="form-range"
+                  min={0.5}
+                  max={2.0}
+                  step={0.05}
+                  value={config.telemetryLiveMapScale ?? 1.0}
+                  onChange={(e) => handleLiveMapScaleChange(Number(e.target.value))}
+                />
+              </div>
+
+              {/* Live Map Opacity */}
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="fs-7 text-body-secondary">{t("Live Map Opacity")}:</span>
+                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapOpacity ?? 1.0) * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  className="form-range"
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  value={config.telemetryLiveMapOpacity ?? 1.0}
+                  onChange={(e) => handleLiveMapOpacityChange(Number(e.target.value))}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -850,6 +964,45 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   <label className="form-check-label fs-7" htmlFor="sw-tele-power">{t("Power & Torque Trace")}</label>
                 </div>
               </div>
+
+              <div className="col-6">
+                <div className="form-check form-switch py-1">
+                  <input type="checkbox" className="form-check-input" id="sw-tele-live-map" checked={config.elements.showLiveMap !== false} onChange={() => handleElementToggle('showLiveMap')} />
+                  <label className="form-check-label fs-7" htmlFor="sw-tele-live-map">{t("Live Map (Track & Cursor)")}</label>
+                </div>
+              </div>
+
+              {config.elements.showLiveMap !== false && (
+                <>
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pois" checked={config.elements.showLiveMapPOIs !== false} onChange={() => handleElementToggle('showLiveMapPOIs')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pois">{t("Live Map Landmarks & POIs")}</label>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pr" checked={config.elements.showLiveMapPRStunts !== false} onChange={() => handleElementToggle('showLiveMapPRStunts')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pr">{t("PR Stunts (Speed/Drift/Danger)")}</label>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-collectibles" checked={config.elements.showLiveMapCollectibles !== false} onChange={() => handleElementToggle('showLiveMapCollectibles')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-collectibles">{t("Collectibles & Mascots")}</label>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="form-check form-switch py-1">
+                      <input type="checkbox" className="form-check-input" id="sw-tele-live-heading" checked={config.elements.showLiveMapHeading !== false} onChange={() => handleElementToggle('showLiveMapHeading')} />
+                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-heading">{t("Heading Arrow & Compass")}</label>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -880,14 +1033,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 disabled={config.elements.showGauge === false}
                 className="form-select form-select-sm fw-bold"
               >
-                <option value="advanced">{t("Advanced (Race Arc HUD)")}</option>
-                <option value="simple">{t("Simple (NFSU2 Style Circle)")}</option>
-                <option value="fm4ui">{t("FM4 Style HUD")}</option>
-                <option value="gt7">{t("GT7 Style HUD")}</option>
-                <option value="mw2005">{t("NFS Most Wanted 2005 HUD")}</option>
-                <option value="nfs15">{t("NFS 2015 Style HUD")}</option>
-                <option value="shift_tacho">{t("NFS Shift Tachometer")}</option>
+                <option value="advanced">{t("Race Arc")}</option>
+                <option value="simple">{t("Simple")}</option>
+                <option value="fm4ui">{t("Forza Motorsport 4")}</option>
+                <option value="gt7">{t("GT7")}</option>
+                <option value="mw2005">{t("NFS Most Wanted '05")}</option>
+                <option value="nfs15">{t("NFS '15")}</option>
+                <option value="shift_tacho">{t("NFS Shift")}</option>
                 <option value="vfd">{t("Retro VFD")}</option>
+                <option value="drift">{t("Drift HUD")}</option>
               </select>
 
               {/* Overall HUD Scale */}
@@ -942,6 +1096,25 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     />
                   </div>
                 </>
+              )}
+
+              {/* Drift HUD Custom Profile Controls (Visible only when Drift HUD is selected) */}
+              {config.hudStyle === 'drift' && (
+                <div className="border-top pt-2">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <span className="fs-7 text-body-secondary">{t("Drift HUD Profile:")}</span>
+                    <span className="text-primary fw-bold fs-7">{config.driftProfile ?? '1440P STREAM'}</span>
+                  </div>
+                  <select
+                    className="form-select form-select-sm"
+                    value={config.driftProfile ?? '1440P STREAM'}
+                    onChange={(e) => handleDriftProfileChange(e.target.value as any)}
+                  >
+                    <option value="1440P STREAM">1440P STREAM (Full Stream Setup)</option>
+                    <option value="1080P FULL">1080P FULL (Full HD Overlay)</option>
+                    <option value="1440P CLEAN">1440P CLEAN (Minimalist Arc & Map)</option>
+                  </select>
+                </div>
               )}
 
               <button

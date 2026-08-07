@@ -134,16 +134,19 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 ---
 
-### 2.5 Alerts & Notifications (警告與通知訊息)
+### 2.5 Alerts, Popovers & Notifications (通知、懸浮 Popover 與狀態氣泡標準)
 
-* **官方組件**：`.alert`, `.alert-primary`, `.alert-success`, `.alert-danger`, `.alert-warning`, `.alert-info`, `.alert-dismissible`
+* **官方組件**：`.alert`, `.popover`, `.bs-popover-bottom`, `.toast`, `.toast-container`, `.btn-close`
 * **特定規格參數與選用原則**：
 
-| 類別組合 | 視覺與邊框規格 | 適用時機與業務場景 |
-| :--- | :--- | :--- |
-| `.alert.alert-warning` | 暖黃色半透明襯底，淡黃邊框，`padding: 0.5rem 1rem` | **遙測暫停提示**：當 HUD Overlay 啟用時於 Dashboard 頂部提醒「Telemetry rendering paused」。 |
-| `.alert.alert-danger` | 紅色半透明襯底，紅高亮邊框 | **阻斷性錯誤提示**：核心車輛參數缺漏警告（如「缺乏車重無法進行算牌」）。 |
-| `.alert.alert-success` | 綠色半透明襯底 | **成功性提示**：車輛檔案匯入/匯出成功通知。 |
+> [!IMPORTANT]
+> **版型零擠壓護欄 (Non-Disruptive Layout Guardrail)**：嚴禁在 View 視圖內部隨意動態插入會推擠 DOM 高度（Block-level in-flow）的 `<div className="alert">` 區塊，避免擠壓 60Hz 高頻繪圖與圖表 Grid。所有狀態通知必須採用以下兩種不干擾版型模式：
+
+| 模式與類別組合 | CSS 規格與 Z-Index | 適用時機與業務場景 | 互動行為與規範 |
+| :--- | :--- | :--- | :--- |
+| **Header Badge 向下 Popover 模式**<br>`position: relative` + `.popover.bs-popover-bottom.glass-panel` | `position: absolute; top: calc(100% + 8px); left: 0; z-index: 1050; backdrop-filter: blur(16px);` | **狀態/警示詳細說明**：如遙測 HUD 啟用時於頂部 `RENDER PAUSED` 標籤向下展開詳細氣泡；車輛參數未填滿時於標籤向下提示缺漏欄位。 | 切換至該視圖時**自動彈出**且**常駐不消失**，標頭附帶 `.btn-close` 關閉按鈕，點擊標籤或關閉按鈕可手動開關。 |
+| **全域懸浮 Toast 模式**<br>`.toast-container.position-fixed.top-0.end-0.p-3` + `.toast.glass-panel` | `position: fixed; top: 0; right: 0; z-index: 1060;` | **即時非阻斷動作通知**：車輛設定檔匯入/匯出成功、主題切換通知、日誌清空完成。 | 不佔用 DOM 流，帶有滑順淡入動畫與 Auto-dismiss 自動定時收起機制。 |
+| **頂部常態狀態 Alert 條**<br>`.alert.alert-danger` (頁面靜態標頭) | 靜態掛載，非動態突兀插入 | **阻斷性全頁鎖定警告**：極端錯誤導致頁面無法運作時使用。 | 僅限靜態佈局，不得在 60Hz 遙測畫面上動態切換推擠版型。 |
 
 ---
 
