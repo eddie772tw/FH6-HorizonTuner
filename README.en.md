@@ -1,35 +1,52 @@
 # FH6-HorizonTuner 🏎️
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
-[![Language](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React-purple.svg)](https://tauri.app/)
-[![Overlay](https://img.shields.io/badge/Overlay-D3D11%20%2B%20DXGI%20MPO-orange.svg)](tool/overlay/)
+[![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Uvicorn-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React%2018-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app/)
+[![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
+[![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
+[![Tests](https://img.shields.io/badge/Tests-Pytest%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
+[![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
 ## Introduction
 
-`FH6-HorizonTuner` is a dedicated telemetry data analysis and vehicle tuning assistant tool developed for *Forza Horizon 6*. This project integrates a high-performance Python backend UDP packet listener service, a modern Tauri desktop graphical user interface, and a fully injection-free DXGI MPO (Multiplane Overlay) hardware overlay rendering engine.
+`FH6-HorizonTuner` is a dedicated telemetry data analysis and vehicle tuning assistant tool developed for *Forza Horizon 6*. This project integrates a high-performance Python FastAPI backend UDP packet listener service, a modern Tauri desktop graphical user interface, and a fully injection-free HTML5 Canvas / Tauri transparent racing overlay engine.
 
-The current release provides **real-time telemetry dashboards**, a **customizable racing dashboard overlay (with a WYSIWYG visual editor)**, a **vehicle tuning workbench**, and **drag launch testing** │ helping players monitor vehicle physics and dynamic feedback in real time.
+The current release provides **real-time telemetry dashboards**, a **customizable racing dashboard overlay (with a WYSIWYG visual editor)**, a **vehicle tuning workbench**, and **drag launch testing** — helping players monitor vehicle physics and dynamic feedback in real time.
 
 ---
 
 ## Core Features
 
-* **Real-time Telemetry Dashboard (60Hz)**: High-refresh-rate data visualization including vehicle speed, engine RPM, power (HP), torque, boost, G-force radar, and driver input feedback.
-* **Custom Dashboard Overlay**:
-  - DXGI MPO hardware-level game overlay (supports exclusive fullscreen) with a three-tier defensive fallback architecture.
-  - 100% injection-free, zero hook, zero anti-cheat ban risk.
-  - Integrated **ExprTk mathematical expression engine** for dynamic expression bindings and conditional color thresholds.
-  - Supports 4 component types: **Text**, **ProgressBar**, **LEDGroup (Shift Light)**, and **Needle (Gauge)**.
-* **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor in the Tauri frontend with real-time preview, property panels, conditional color rule tables, and one-click import/export layout presets.
-* **Tire & Suspension Monitoring**: Real-time display of individual tire surface temperatures, hot pressures, and normalized suspension travel for all four wheels.
-* **Tuning Workbench**: Management, calculation, and data logging of vehicle tuning configurations.
-* **Drag Test**: Launch acceleration timing test recording, analysis, and chart playback.
-* **Diagnostic Console**: Built-in live log viewer with level filtering and Traceback merging for real-time debugging.
+* **Real-time Telemetry & Dynamics (60Hz Live Data)**:
+  - High-frequency 60Hz UDP telemetry packet ingestion and high-performance visual rendering.
+  - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
+  - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
+* **5-Step Physics Tuning Workbench**:
+  - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag) and aerodynamic efficiency parameters.
+  - **Step 2 AEGO Gearing**: Proprietary AEGO gear ratio calculation algorithm & Powerband envelope analysis, supporting 4-Speed Drag Meta, Soft Max Speed caps, and closed-loop top-speed re-distribution.
+  - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
+  - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
+  - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
+* **Racing HUD Overlay & WYSIWYG Designer**:
+  - HTML5 Canvas hardware-accelerated standalone overlays featuring GT7, Retro VFD, and 093 Drift professional HUD styles.
+  - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
+  - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
+* **Drag Launch Test & Acceleration Analyzer**:
+  - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.
+  - Speed/RPM timeline chart playback and historical session comparison.
+* **Telemetry Persistence & MoTeC i2 Exporter**:
+  - Automated backend SQLite historical telemetry logging.
+  - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
+* **Diagnostics Console, Theme System & i18n**:
+  - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
+  - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
+  - **Dynamic i18n**: Multi-language framework supporting Traditional Chinese (`zh-tw`), English (`en-us`), Japanese (`ja-jp`), and more.
 
 ---
 
@@ -39,32 +56,42 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD workflow (Ruff Lint + Pytest)
 ├── backend/                 # Python FastAPI backend core
-│   ├── main.py              # Backend entry point, API definitions & Overlay process management
-│   ├── telemetry_listener.py # UDP telemetry socket listener and parser
+│   ├── main.py              # Backend entry point, API definitions & process management
+│   ├── telemetry_listener.py # UDP 60Hz telemetry socket listener and parser
+│   ├── core/                # Core telemetry processing & calculation modules
+│   ├── routers/             # API routers (telemetry, tuning, overlay, drag, log, etc.)
+│   ├── services/            # System services & background state managers
+│   ├── telemetry_sqlite.py   # Historical telemetry SQLite storage engine
+│   ├── motec_exporter.py    # MoTeC i2 professional telemetry exporter
 │   └── car_database.json    # Built-in car database
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
-│   ├── src/components/      # Frontend UI components
-│   │   ├── TelemetryView.tsx    # Real-time telemetry dashboard
-│   │   ├── OverlayView.tsx      # WYSIWYG dashboard layout editor
-│   │   ├── TuningView.tsx       # Vehicle tuning workbench
-│   │   ├── DragTestView.tsx     # Drag launch test
-│   │   ├── AnalysisView.tsx     # Data analysis view
-│   │   ├── DiagnosticConsole.tsx # Diagnostic log console
-│   │   └── Navigation.tsx       # Navigation component
+│   ├── src/features/        # Business Domain Modules (Features Domain)
+│   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 4 dynamic cards
+│   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~5 tabs)
+│   │   ├── overlay_control/ # WYSIWYG dashboard layout editor (OverlayView)
+│   │   ├── drag_test/       # Drag launch test view (DragTestView)
+│   │   ├── analysis/        # Data analysis view (AnalysisView)
+│   │   ├── car_params/      # Vehicle parameters configuration (CarParamsView)
+│   │   ├── settings/        # Global system settings (SettingsView)
+│   │   └── theme/           # Theme color & skin view (ThemeView)
+│   ├── src/components/      # Shared UI components (Navigation, DiagnosticConsole, etc.)
+│   ├── src/utils/           # Pure calculation utilities (tuningMath.ts, tuningDiagnosis.ts, etc.)
 │   └── src-tauri/           # Tauri window bundler configuration
-├── tool/                    # External native tooling
-│   └── overlay/             # C++ DXGI MPO Overlay rendering engine
-│       ├── main.cpp             # D3D11/ImGui data-driven rendering entry
-│       ├── DXGIOverlayManager.h/.cpp # DXGI swap chain management & MPO/fallback
-│       ├── WebSocketClient.h    # WinHTTP native WebSocket client
-│       └── CMakeLists.txt       # CMake build config (auto-fetch nlohmann/json, ExprTk, ImGui)
+├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
+│   ├── index.html           # HUD launcher & Viewport renderer entry
+│   ├── gt7/                 # Gran Turismo 7 style racing dashboard
+│   ├── vfd/                 # Retro VFD simulated fluorescent gauge
+│   ├── drift/               # 093 Drift professional drift dashboard
+│   └── shared/              # Shared Canvas drawing & geometry math library
 ├── lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
 ├── tests/                   # Pytest unit testing suite
 ├── pyproject.toml           # Ruff formatting rules & Pytest configuration
 ├── requirements.txt         # Python dependency list
 ├── .pkgdirignore            # Package exclusion directory definitions
-├── start_all.bat            # One-click developer environment launcher
-└── build_all.bat        # One-click standalone release bundler
+├── start_all.bat            # One-click developer environment launcher (launches backend & frontend)
+├── start_backend.bat        # Launches Python FastAPI backend service individually
+├── start_frontend.bat       # Launches Vite + Tauri frontend UI individually
+└── build_all.bat            # One-click standalone release bundler
 ```
 
 ---
@@ -81,13 +108,16 @@ To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
 
 ### 2. Launching the Tool
 
-The project provides a highly automated launcher script that simplifies setup:
-* Double-click **`start_all.bat`**:
+The project provides highly automated launcher scripts:
+* **Double-click `start_all.bat`** (Recommended full launch):
   - Automatically searches for Python 3.13 / 3.14 on your system.
   - Automatically creates a virtual environment `.venv` in the project root.
   - Automatically installs/updates dependencies listed in `requirements.txt` (including FastAPI, Uvicorn, Websockets, Ruff, Pytest, Httpx, etc.).
   - Automatically lints and formats the codebase using `ruff`.
   - Automatically runs the backend server in the background and opens the Tauri desktop GUI.
+* **Modular launch (For standalone development)**:
+  - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener (`http://127.0.0.1:8000`).
+  - **`start_frontend.bat`**: Launches only the Vite + React dev server and Tauri window.
 
 ---
 
@@ -97,7 +127,6 @@ You can package both the frontend and backend into a **single standalone executa
 
 1. Double-click **`build_all.bat`**:
    - Builds the Tauri frontend project, producing `frontend.exe`.
-   - Automatically compiles the C++ Overlay engine via CMake and copies `HorizonTunerOverlay.exe` to `dist/tool/`.
    - Packages the FastAPI backend, translations (`lang/`), default car parameters, and the vehicle database together using PyInstaller.
    - The final bundled executable `FH6-HorizonTuner.exe` is generated inside the `dist/` directory.
 
@@ -106,7 +135,7 @@ You can package both the frontend and backend into a **single standalone executa
 > When running the standalone executable, all read-only default resources are extracted from a temporary directory. User-generated files like settings (`settings.json`), telemetry sessions (`sessions/`), and custom tunings (`tunings/`) are **automatically saved alongside the `.exe`**, ensuring your data remains fully portable.
 
 * **Excluding Non-release Directories (.pkgdirignore)**:
-    * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`, `tool` source code).
+    * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
     * If a folder is unregistered during build, the script will prompt you:
         * **Press Y**: Automatically append the folder to `.pkgdirignore`.
         * **Press N** (default after 10s timeout): Cancel the build and warn you to manually configure packaging settings.
@@ -118,7 +147,6 @@ You can package both the frontend and backend into a **single standalone executa
 * **Python**: 3.13 or 3.14 (Standard Windows installer or `uv` managed)
 * **Node.js**: 20 or higher
 * **Rust / Cargo**: Required only for local Tauri compilation (automatically falls back to web debug mode if missing)
-* **CMake + MSVC/MinGW**: Required for compiling the C++ DXGI Overlay engine (optional │ use pre-compiled binaries if no overlay changes are needed)
 
 ---
 
@@ -168,6 +196,22 @@ Current test suite coverage:
 | `test_overlay_api.py` | Overlay layout CRUD, process start/stop & status tracking |
 | `test_drag_recorder.py` | Drag launch test data recording & analysis |
 
+### Frontend Unit Testing (Vitest)
+
+Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
+```bash
+cd frontend && pnpm run test
+```
+
+Current frontend test suite covers 13 test files with 123 unit tests:
+| Test File | Coverage Area |
+| :--- | :--- |
+| `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
+| `tuningDiagnosis.test.ts` | Real-time telemetry diagnosis and chassis problem detection logic |
+| `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
+| `telemetryCards.test.ts` | Telemetry cards formatting and status mapping |
+| Other `*.test.ts` | 10 additional test suites covering ExprTk, VFD gauge, audio & CSS validation |
+
 ---
 
 ## Contributing Guidelines
@@ -193,6 +237,8 @@ Before submitting a Pull Request, please verify the following:
 - [ ] Code passes `ruff check .` static analysis (no errors or warnings)
 - [ ] All existing unit tests pass (`pytest` all green)
 - [ ] If new API routes or core logic were added, corresponding unit tests have been written
+- [ ] If `tuningMath.ts` / `tuningDiagnosis.ts` pure logic was updated, corresponding Vitest unit tests have been added
+- [ ] If significant architectural changes or core modules were added, `README.md` & `README.en.md` have been updated
 - [ ] If UI components or frontend logic were modified, functionality has been locally verified
 - [ ] If new translation keys were added, both `lang/zh-tw.json` and `lang/ja-jp.json` have been updated
 - [ ] Commit messages follow Conventional Commits conventions
@@ -219,8 +265,9 @@ The project uses GitHub Actions for automated quality control. Every push to `ma
 
 | Stage | Description |
 | :--- | :--- |
-| **Lint** | `ruff check` for static analysis + `ruff format --check` for formatting verification |
-| **Test** | Full `pytest` suite execution on both Windows and Ubuntu platforms |
+| **Lint** | `ruff check` static analysis + `ruff format --check` formatting verification |
+| **Test (Backend)** | Full `pytest` suite execution on both Windows and Ubuntu platforms |
+| **Test (Frontend)** | `cd frontend && pnpm run test` Vitest suite execution (covers `tuningMath.ts` & UI logic) |
 
 > [!IMPORTANT]
 > The CI pipeline is now fully automated and no longer requires reviewer approval to trigger. Ensure you pass `ruff format --check .` and `pytest` locally before pushing to avoid unnecessary CI failures.
@@ -232,3 +279,11 @@ The project uses GitHub Actions for automated quality control. Every push to `ma
 This project is licensed under the [MIT License](LICENSE).
 
 Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
+
+---
+
+## Credits & Acknowledgements
+
+* **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
+  Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
+

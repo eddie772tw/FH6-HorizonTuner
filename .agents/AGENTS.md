@@ -66,6 +66,7 @@
   - 修改後端 UDP 解析邏輯後，必須新增或更新 `tests/` 下對應的 Pytest 單元測試。
   - 前端 UI 開發或變更時，必須遵循並維護 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 規格書與 [halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md) 技能標準。
   - 任務結束後，必須主動回顧開發過程並更新 `.agents/Journal.md`。
+  - **主動維護說明文件 (README)**：每次涉及重大架構變更、新增核心模組或 API 路由時，**必須主動維護並更新 [README.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/README.md) 與 [README.en.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/README.en.md)**，確保專案目錄架構圖、核心功能清單與單元測試統計數據與現況完全對齊。
   - **維護 `.gitignore` 規範**：新增功能、模組或執行任務時，必須同步檢查並維護 `.gitignore` 檔案，確保所有動態生成之快取（`__pycache__`, `node_modules`, `target`）、使用者設定、運行數據與臨時檔均被嚴格排除，維護 Repository 之純潔性。
 * **詢問後才做的事**：
   - 修改 UDP 封包解構格式 (Packet Structure Byte Offsets)。
@@ -88,5 +89,7 @@
 2. 評估本次任務是否有值得傳承的「學習點/失敗經驗/架構坑點」。
 3. 若有，請自動於 `.agents/Journal.md` 追加一筆紀錄，格式嚴格遵守規範。
 4. 在評估有需要時，建議並詢問是否建立一個或多個SKILL來幫助未來開發。
-5. **維護 `.gitignore`**：檢查是否有新增或遺漏的編譯快取、運行數據或產物檔，確認 `.gitignore` 保持完備，維持 Repository 純潔。# Project Guidelines for AI Agents
+5. **維護 `.gitignore`**：檢查是否有新增或遺漏的編譯快取、運行數據或產物檔，確認 `.gitignore` 保持完備，維持 Repository 純潔。
+6. **維護 README 說明文件**：若本次任務包含重大架構變更或核心模組增修，確認已同步更新 `README.md` 與 `README.en.md` 的架構圖與功能列表。
+# Project Guidelines for AI Agents
 
