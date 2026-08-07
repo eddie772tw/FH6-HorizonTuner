@@ -99,9 +99,12 @@ export function transformTelemetryData(
       Temp_FR: ((p.TireTemp[1] - 32) * 5) / 9,
     };
     if (customChannels.length > 0) {
-      customChannels.forEach(ch => {
+      // [PERF] Optimized O(N) loop to avoid .forEach() closure allocation on every data point
+      // in high-frequency rendering paths when processing large telemetry datasets.
+      for (let i = 0; i < customChannels.length; i++) {
+        const ch = customChannels[i];
         mathCtx[ch.name] = evaluateCustomMath(ch.formula, mathCtx);
-      });
+      }
     }
     return mathCtx;
   };
