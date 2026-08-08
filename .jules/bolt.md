@@ -42,3 +42,7 @@
 ## 2026-08-07 - Cache CSS Custom Property Updates in High-Frequency DOM Loops
 **Learning:** In a 60Hz high-frequency loop (like `requestAnimationFrame` updates for HUD overlays), blindly calling `style.setProperty()` every frame forces the browser to re-evaluate styles, causing layout thrashing even if the value hasn't changed.
 **Action:** Use a closure variable object (e.g. `var _lastStyles = {}`) to cache the currently applied CSS custom property values, and conditionally invoke `style.setProperty()` only when the new value differs from the cached value to avoid redundant DOM operations.
+
+## 2026-08-08 - Prevent Heap Allocation in dict.get Defaults
+**Learning:** High-frequency backend methods (like parsing UDP telemetry or rendering hot paths) using inline list allocations (e.g. `[0.0] * 4`) as fallback default arguments in `dict.get()` will instantiate new list objects on every single function call. This places immense pressure on the Garbage Collector.
+**Action:** Extract inline list allocations used as default fallback arguments into module-level immutable constants, such as tuples (e.g. `DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)`), to completely eliminate the allocation overhead.

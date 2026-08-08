@@ -48,7 +48,11 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from system_media import get_system_media_info
-from telemetry_listener import pack_telemetry_binary, start_udp_listener
+from telemetry_listener import (
+    DEFAULT_TIRE_ARRAY,
+    pack_telemetry_binary,
+    start_udp_listener,
+)
 from telemetry_sqlite import TelemetrySQLite
 
 
@@ -578,7 +582,7 @@ class DragRecorder:
                 "BrakeInput": data.get("BrakeInput", 0),
                 "TorqueNewtons": data.get("TorqueNewtons", 0.0),
                 "PowerWatts": data.get("PowerWatts", 0.0),
-                "TireSlipRatio": list(data.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])),
+                "TireSlipRatio": list(data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)),
                 "EngineMaxRpm": data.get("EngineMaxRpm", 8000.0),
                 "EngineIdleRpm": data.get("EngineIdleRpm", 1000.0),
                 "PositionX": data.get("PositionX", 0.0),
@@ -1186,7 +1190,7 @@ async def broadcast_telemetry():
                 no_slip = True
                 if app_settings.get("dyno_filter_slip", True):
                     drivetrain = dyno_cache[car_id].get("drivetrain", "RWD")
-                    slip_ratios = data.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])
+                    slip_ratios = data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
 
                     SLIP_THRESHOLD = 0.10
                     if drivetrain == "RWD":
