@@ -2173,10 +2173,17 @@ if __name__ == "__main__":
         s.close()
         return port
 
-    try:
-        backend_port = get_free_port()
-    except Exception:
-        backend_port = 8001
+    # A standalone Vite dev server cannot call Tauri's get_backend_port command,
+    # so development must use the same deterministic port the frontend targets.
+    # The packaged application keeps its dynamic-port behaviour to avoid clashes
+    # between concurrent installed instances.
+    if getattr(sys, "frozen", False):
+        try:
+            backend_port = get_free_port()
+        except Exception:
+            backend_port = 8001
+    else:
+        backend_port = int(os.getenv("BACKEND_PORT", "8001"))
 
     def write_web_port(port):
         try:
