@@ -1091,12 +1091,21 @@ async def lifespan(app: FastAPI):
     ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
 
-    # Start UDP listener in the background
-    asyncio.create_task(start_udp_listener(ip, port, telemetry_queue))
-    # Start the broadcast loop
-    asyncio.create_task(broadcast_telemetry())
-    asyncio.create_task(broadcast_overlay_state())
-    yield
+    # Bind the UDP listener before exposing the HTTP server. Previously this
+    # ran as an unobserved task, allowing uvicorn to start even when a stale
+    # sidecar still owned the telemetry port.
+    udp_transport = await start_udp_listener(ip, port, telemetry_queue)
+    background_tasks = [
+        asyncio.create_task(broadcast_telemetry()),
+        asyncio.create_task(broadcast_overlay_state()),
+    ]
+    try:
+        yield
+    finally:
+        udp_transport.close()
+        for task in background_tasks:
+            task.cancel()
+        await asyncio.gather(*background_tasks, return_exceptions=True)
 
 
 app.router.lifespan_context = lifespan

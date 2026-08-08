@@ -4,6 +4,7 @@ use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use serde::Serialize;
 
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
@@ -50,7 +51,35 @@ fn set_backend_status(app_handle: &tauri::AppHandle, status: BackendStatus) {
 fn stop_backend_process(app_handle: &tauri::AppHandle) {
     if let Ok(mut process) = app_handle.state::<BackendProcess>().0.lock() {
         if let Some(mut child) = process.take() {
-            let _ = child.kill();
+            // Closing stdin is the sidecar's graceful shutdown signal. This is
+            // important for the Python cleanup path and releases the UDP
+            // listener before we resort to forceful termination.
+            drop(child.stdin.take());
+
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while Instant::now() < deadline {
+                match child.try_wait() {
+                    Ok(Some(_)) => return,
+                    Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+                    Err(_) => break,
+                }
+            }
+
+            // PyInstaller one-file executables have a bootloader process and
+            // a worker process with the same executable path. Killing only
+            // Child's PID can leave the worker behind and keep UDP 8000 open.
+            #[cfg(target_os = "windows")]
+            {
+                let pid = child.id().to_string();
+                let _ = Command::new("taskkill")
+                    .args(["/PID", pid.as_str(), "/T", "/F"])
+                    .status();
+            }
+
+            #[cfg(not(target_os = "windows"))]
+            {
+                let _ = child.kill();
+            }
             let _ = child.wait();
         }
     }
