@@ -95,8 +95,15 @@ window.HUD_ANIM_CONFIG = {
                         window._currentUseDefaultColors = payload.data.useDefaultColors !== false;
 
                         if (document.documentElement && typeof document.documentElement.style.setProperty === 'function') {
-                            document.documentElement.style.setProperty('--hud-glow-intensity', window._currentGlowIntensity);
-                            document.documentElement.style.setProperty('--hud-custom-color', window._currentUseDefaultColors ? 'var(--hud-default-color, #00f0ff)' : window._currentCustomColor);
+                            if (window._lastGlowIntensity !== window._currentGlowIntensity) {
+                                document.documentElement.style.setProperty('--hud-glow-intensity', window._currentGlowIntensity);
+                                window._lastGlowIntensity = window._currentGlowIntensity;
+                            }
+                            var customColorValue = window._currentUseDefaultColors ? 'var(--hud-default-color, #00f0ff)' : window._currentCustomColor;
+                            if (window._lastCustomColorValue !== customColorValue) {
+                                document.documentElement.style.setProperty('--hud-custom-color', customColorValue);
+                                window._lastCustomColorValue = customColorValue;
+                            }
                         }
 
                         // Standardized Scale calculation with a global 0.75 downscale factor

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Drift HUD</title>
+    <!-- 引入共享 Base 樣式 -->
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        /* ── Fonts ──────────────────────────────────────────────────────── */
+        @font-face {
+            font-family: 'ForzaFont';
+            src: url('../shared/assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+        }
+
+        @font-face {
+            font-family: 'ForzaGear';
+            src: url('../shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+        }
+
+        /* ── Gauge Container (1680px x 640px) ───────────────── */
+        .drift-container {
+            position: relative;
+            width: 1680px;
+            height: 640px;
+            align-self: center;
+            transform-origin: bottom center;
+            pointer-events: none;
+            background: transparent;
+        }
+
+        canvas#driftCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1680px;
+            height: 640px;
+            pointer-events: none;
+        }
+
+        /* ── Floating Tech Popups Hero Banner ────────────────────────────── */
+        #drift-popup-hero {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 16, 26, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.25), inset 0 0 10px rgba(255, 255, 255, 0.15);
+            padding: 6px 38px;
+            border-radius: 20px;
+            font-family: 'ForzaGear', Arial, sans-serif;
+            font-size: 1.4rem;
+            color: #ffffff;
+            letter-spacing: 0.16em;
+            opacity: 0;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        #drift-popup-hero.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+        }
+
+        #drift-popup-hero.hero-event {
+            border-color: rgb(255, 0, 102);
+            box-shadow: 0 0 24px rgb(255, 0, 102), inset 0 0 12px rgba(255, 0, 102, 0.3);
+            color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 共享中央遙測掛載點 -->
+    <div id="teleCardsMount"></div>
+
+    <!-- 093 LAB 標準自適應視窗根包裝 -->
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container drift-container" id="driftContainer">
+            <!-- Floating Event Popup Banner -->
+            <div id="drift-popup-hero">HANDBRAKE ENTRY</div>
+
+            <!-- 全向量 1680px x 640px 畫布 (動態 maxRpm 萬轉/萬轉以下紅線區 1500/1000rpm 跨度) -->
+            <canvas id="driftCanvas" width="1680" height="640"></canvas>
+        </div>
+    </div>
+
+    <!-- 腳本引入：Telemetry Cards & HUD Core -->
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+
+    <script>
+        (function () {
+            'use strict';
+
+            var canvas = document.getElementById('driftCanvas');
+            var ctx = canvas ? canvas.getContext('2d') : null;
+
+            // ── Color Palette Standard (093 LAB. Cyber & Street Palette) ──────
+            var C_WHITE = '#ffffff';
+            var C_WHITE_DIM = 'rgba(255, 255, 255, 0.72)';
+            var C_TRACK = 'rgba(255, 255, 255, 0.18)';
+            var C_REDLINE = 'rgb(255, 0, 102)';
+            var C_REDLINE_DIM = 'rgba(255, 0, 102, 0.40)';
+            var C_AMBER = '#FFB84A';
+            var C_MINT = '#52FFEB';
+            var C_ICE = '#55DFFF';
+            var C_LENS_BACKDROP = 'rgba(10, 16, 26, 0.25)'; // 使用者自訂 25% 透明半橢圓背景
+
+            var FLOW_LABELS = { 1: 'BUILD', 2: 'NORMAL', 3: 'CHASE', 4: 'SMOOTH', 5: 'LOCKED' };
+            var RISK_LABELS = { 1: 'SAFE', 2: 'EDGE', 3: 'RISK', 4: 'MAX' };
+
+            var FLOW_COLOR_MAP = {
+                1: C_WHITE_DIM,
+                2: C_WHITE,
+                3: C_AMBER,
+                4: C_ICE,
+                5: C_MINT
+            };
+
+            var RISK_COLOR_MAP = {
+                1: C_WHITE,
+                2: C_AMBER,
+                3: C_REDLINE,
+                4: C_REDLINE
+            };
+
+            // ── 全域幾何對稱與 5 區塊對齊變數 (Unified Offset Math) ────────────
+            var CANVAS_CX = 840;
+            var CANVAS_CY = 320;
+            var CLUSTER_OFFSET = 150;                             // 中央左/右區距離中心的對稱 Offset
+            var PEDAL_OFFSET = Math.round(CLUSTER_OFFSET * 3.4); // 兩側腳踏柱距離中心的對稱 Offset (510px)
+
+            var LEFT_PEDAL_CX = CANVAS_CX - PEDAL_OFFSET;         // 左腳踏 x: 330px
+            var LEFT_CLUSTER_X = CANVAS_CX - CLUSTER_OFFSET;       // 左區塊 x: 690px
+            var CENTER_CLUSTER_X = CANVAS_CX;                      // 中區塊 x: 840px
+            var RIGHT_CLUSTER_X = CANVAS_CX + CLUSTER_OFFSET;      // 右區塊 x: 990px
+            var RIGHT_PEDAL_CX = CANVAS_CX + PEDAL_OFFSET;        // 右腳踏 x: 1350px
+
+            // ── 左區與右區共用字體樣式與大小控制變數 (Shared Typography Controls) ──
+            var FONT_SIDE_MIDDLE_VAL = 'italic bold 60px ForzaGear'; // 中間層焦點大字 (角度 / 反打) 共用字體與大小
+            var FONT_SIDE_SUB_LABEL = 'bold 44px ForzaGear';         // 上下兩層標籤 (GRIP, DRIFT / FLOW, RISK) 共用字體與大小
+
+            // 從字體字串中動態解析像素高度
+            function parseFontSize(fontStr) {
+                var match = fontStr.match(/(\d+)px/);
+                return match ? parseInt(match[1], 10) : 40;
+            }
+
+            var SIDE_MID_FONT_SIZE = parseFontSize(FONT_SIDE_MIDDLE_VAL);
+
+            // ── Global State Engine ──────────────────────────────────────────
+            var isMetricUnit = true;
+            var currentProfile = '1440P STREAM';
+
+            var angle = 0.0;
+            var displayAngle = 0.0;
+            var holdSeconds = 0.0;
+            var speedKmh = 0;
+            var gear = 'N';
+            var rpm = 0;
+            var maxRpm = 9000; // 預設 9000 RPM，會隨遙測 data.maxRpm 動態更新
+
+            var accelPct = 0;
+            var brakePct = 0;
+            var clutchPct = 0;
+            var handbrakePct = 0;
+            var steerPct = 0;
+            var counterPct = 0;
+
+            var flowPct = 0;
+            var flowQuality = 1;
+            var spinRisk = 0;
+            var riskLevel = 1;
+
+            var inputFlashTtl = { H: 0, C: 0, B: 0, T: 0 };
+            var prevInputs = { H: 0, C: 0, B: 0, T: 0 };
+            var popupTimer = null;
+
+            function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+            function lerp(a, b, t) { return a + (b - a) * clamp(t, 0, 1); }
+
+            function triggerPopup(text, durationMs, isHero) {
+                var popup = document.getElementById('drift-popup-hero');
+                if (!popup) return;
+                popup.innerText = text;
+                if (isHero) popup.classList.add('hero-event');
+                else popup.classList.remove('hero-event');
+                popup.classList.add('active');
+                if (popupTimer) clearTimeout(popupTimer);
+                popupTimer = setTimeout(function () {
+                    popup.classList.remove('active');
+                }, durationMs || 1200);
+            }
+
+            // ── 25% 半透明縮小半橢圓 HUD 背景 (使用者自訂 rx=640) ───────────────
+            function drawSemiEllipticalBackdrop() {
+                if (!ctx) return;
+                var cx = CANVAS_CX, cy = CANVAS_CY, rx = 640, ry = 210;
+
+                ctx.save();
+                // 1. 半橢圓 fill 底罩
+                ctx.fillStyle = C_LENS_BACKDROP;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 2. 邊緣柔和亮線
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // 3. 橢圓頂部 neon 發光切線
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx, ry, 0, Math.PI * 1.15, Math.PI * 1.85);
+                ctx.strokeStyle = C_ICE;
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = C_ICE;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // ── 1. 上弧條：飄移角度 Arc & 角度數字刻度 (-60° ... 0° ... +60°) ──────
+            var topArcGeo = { cx: CANVAS_CX, cy: 125, halfWidth: 480, rise: 75 };
+
+            function topCurvePoint(t) {
+                var x = topArcGeo.cx + t * topArcGeo.halfWidth;
+                var y = topArcGeo.cy + topArcGeo.rise * (t * t);
+                return { x: x, y: y };
+            }
+
+            function renderTopAngleArc() {
+                if (!ctx) return;
+
+                var absAngle = Math.abs(displayAngle);
+                var activeT = clamp(absAngle / 60.0, 0.0, 1.0);
+                var signedT = displayAngle >= 0 ? activeT : -activeT;
+
+                var segments = 80;
+                for (var i = 0; i <= segments; i++) {
+                    var t = -1.0 + (2.0 * i) / segments;
+                    var p = topCurvePoint(t);
+                    var normAbs = Math.abs(t);
+                    var isOn = signedT >= 0 ? (t >= 0.0 && t <= signedT) : (t >= signedT && t <= 0.0);
+
+                    ctx.save();
+                    var barW = normAbs >= 0.75 ? 6.0 : 4.0;
+                    var barH = isOn ? (normAbs >= 0.75 ? 34 : 26) : (normAbs >= 0.75 ? 20 : 15);
+                    var rx = p.x - barW * 0.5;
+                    var ry = p.y;
+
+                    var col = isOn ? (normAbs >= 0.75 ? C_REDLINE : C_WHITE) : (normAbs >= 0.75 ? C_REDLINE_DIM : C_TRACK);
+                    ctx.fillStyle = col;
+                    if (isOn) {
+                        ctx.shadowColor = col;
+                        ctx.shadowBlur = normAbs >= 0.75 ? 16 : 8;
+                    }
+                    ctx.beginPath();
+                    ctx.roundRect(rx, ry, barW, barH, 1.2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // Center 0° Origin Dot
+                var originP = topCurvePoint(0.0);
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(originP.x, originP.y + 8, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.restore();
+
+                // ── 上弧：飄移角度數字刻度 (-60°, -45°, -30°, -15°, 0°, 15°, 30°, 45°, 60°) ──
+                ctx.save();
+                ctx.font = 'bold 12px Bahnschrift';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+
+                var angleTicks = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
+                angleTicks.forEach(function (tickAngle) {
+                    var tVal = tickAngle / 60.0;
+                    var tickP = topCurvePoint(tVal);
+                    var isCenter = tickAngle === 0;
+                    var isExtreme = Math.abs(tickAngle) >= 45;
+
+                    ctx.fillStyle = isCenter ? C_WHITE : (isExtreme ? C_AMBER : C_WHITE_DIM);
+                    if (isExtreme) { ctx.shadowColor = C_AMBER; ctx.shadowBlur = 6; }
+                    else { ctx.shadowBlur = 0; }
+
+                    var labelStr = tickAngle === 0 ? '0°' : (tickAngle > 0 ? '+' + tickAngle + '°' : tickAngle + '°');
+                    ctx.fillText(labelStr, tickP.x, tickP.y + 36);
+                });
+                ctx.restore();
+            }
+
+            // ── 2. 下弧條：動態 maxRpm & 動態紅線區 (萬轉以上 1500rpm / 萬轉以下 1000rpm 跨度) ─
+            var botArcGeo = { cx: CANVAS_CX, cy: 515, halfWidth: 480, rise: -75 };
+
+            function botCurvePoint(t) {
+                var x = botArcGeo.cx + t * botArcGeo.halfWidth;
+                var y = botArcGeo.cy + botArcGeo.rise * (t * t);
+                return { x: x, y: y };
+            }
+
+            function renderBottomTachoArc() {
+                if (!ctx) return;
+
+                // 2A. 動態計算錶盤上限 RPM Limit (向上取整至千轉)
+                var safeMaxRpm = Math.max(1000, maxRpm || 9000);
+                var rpmLimit = Math.ceil(safeMaxRpm / 1000) * 1000;
+                var maxK = Math.floor(rpmLimit / 1000);
+
+                // 2B. 動態計算紅線區起點 Redline Start Threshold
+                // 萬轉以上 (maxRpm >= 10000): 跨度 1500 RPM; 萬轉以下: 跨度 1000 RPM
+                var redlineSpan = safeMaxRpm >= 10000 ? 1500 : 1000;
+                var redlineStartRpm = Math.max(0, safeMaxRpm - redlineSpan);
+
+                var currentRpm = Math.max(0, rpm || 0);
+                var rpmRatio = clamp(currentRpm / rpmLimit, 0, 1);
+                var segments = 60;
+
+                for (var i = 0; i <= segments; i++) {
+                    var segRatio = i / segments;
+                    var segRpmVal = segRatio * rpmLimit;
+                    var t = -1.0 + 2.0 * segRatio;
+                    var p = botCurvePoint(t);
+
+                    var rActive = segRatio <= rpmRatio;
+                    var isRedlineSeg = segRpmVal >= redlineStartRpm; // 動態紅線判斷
+
+                    ctx.save();
+                    var barW = isRedlineSeg ? 5.8 : 4.0;
+                    var barH = rActive ? (isRedlineSeg ? 30 : 24) : (isRedlineSeg ? 16 : 13);
+                    var rx = p.x - barW * 0.5;
+                    var ry = p.y - barH;
+
+                    if (rActive) {
+                        ctx.fillStyle = isRedlineSeg ? C_REDLINE : (segRpmVal > safeMaxRpm * 0.65 ? C_AMBER : C_WHITE);
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.shadowBlur = isRedlineSeg ? 14 : 7;
+                    } else {
+                        ctx.fillStyle = isRedlineSeg ? C_REDLINE_DIM : C_TRACK;
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.beginPath();
+                    ctx.roundRect(rx, ry, barW, barH, 1.2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // ── 下弧：動態轉速 x1000 數字刻度 (0 ... maxK x1000) ────────────
+                ctx.save();
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+
+                for (var k = 0; k <= maxK; k++) {
+                    var tickRpmVal = k * 1000;
+                    var kRatio = tickRpmVal / rpmLimit;
+                    var tK = -1.0 + 2.0 * kRatio;
+                    var tickP = botCurvePoint(tK);
+                    var isRedTick = tickRpmVal >= redlineStartRpm;
+
+                    if (isRedTick) {
+                        ctx.fillStyle = C_REDLINE;
+                        ctx.shadowColor = C_REDLINE;
+                        ctx.shadowBlur = 8;
+                    } else {
+                        ctx.fillStyle = C_WHITE_DIM;
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.fillText(String(k), tickP.x, tickP.y - 36);
+                }
+                ctx.restore();
+            }
+
+            // ── 3A. 中央左區：(中間文字始終置中，上下文字切齊中間文字上下緣) ─────────────
+            function renderLeftAngleCluster() {
+                if (!ctx) return;
+
+                var absA = Math.abs(displayAngle);
+                var ratingColor = absA >= 45 ? C_REDLINE : (absA >= 30 ? C_AMBER : (absA >= 15 ? C_MINT : C_WHITE));
+
+                var midHalfH = SIDE_MID_FONT_SIZE * 0.42;
+                var topEdgeY = CANVAS_CY - midHalfH;
+                var botEdgeY = CANVAS_CY + midHalfH;
+
+                ctx.save();
+                ctx.textAlign = 'right';
+
+                // 中層：飄移角度大字 (始終垂直置中 CANVAS_CY = 320)
+                ctx.textBaseline = 'middle';
+                ctx.font = FONT_SIDE_MIDDLE_VAL;
+                ctx.fillStyle = ratingColor;
+                ctx.shadowColor = ratingColor;
+                ctx.shadowBlur = absA >= 45 ? 16 : 10;
+                ctx.fillText(displayAngle.toFixed(1) + '°', LEFT_CLUSTER_X, CANVAS_CY);
+
+                // 上層：GRIP / HOLD 秒數標籤 (貼齊中間文字上緣 textBaseline = 'bottom')
+                ctx.textBaseline = 'bottom';
+                ctx.font = FONT_SIDE_SUB_LABEL;
+                var holdText = holdSeconds > 0.5 ? 'HOLD: ' + holdSeconds.toFixed(1) + 's' : 'GRIP';
+                var holdColor = holdSeconds > 0.5 ? C_AMBER : C_WHITE_DIM;
+                ctx.fillStyle = holdColor;
+                if (holdSeconds > 0.5) { ctx.shadowColor = C_AMBER; ctx.shadowBlur = 8; }
+                ctx.fillText(holdText, LEFT_CLUSTER_X, topEdgeY);
+
+                // 下層：方向標籤 (貼齊中間文字下緣 textBaseline = 'top')
+                ctx.textBaseline = 'top';
+                ctx.font = FONT_SIDE_SUB_LABEL;
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.shadowBlur = 0;
+                var dirStr = displayAngle < -1.0 ? 'LEFT DRIFT' : (displayAngle > 1.0 ? 'RIGHT DRIFT' : 'CENTER');
+                ctx.fillText(dirStr, LEFT_CLUSTER_X, botEdgeY);
+
+                ctx.restore();
+            }
+
+            // ── 3B. 中央中區：(檔位始終置中，實時速度貼齊檔位下緣) ─────────────────────
+            function renderCenterGearCluster() {
+                if (!ctx) return;
+
+                var gearFontSize = 120;
+                var gearBottomY = CANVAS_CY + gearFontSize * 0.38;
+
+                ctx.save();
+                ctx.textAlign = 'center';
+
+                // 超大型檔位 (120px, 始終垂直置中 CANVAS_CY = 320px)
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold ' + gearFontSize + 'px ForzaGear';
+                ctx.fillStyle = C_WHITE;
+                ctx.shadowColor = C_WHITE;
+                ctx.shadowBlur = 14;
+                ctx.fillText(gear, CENTER_CLUSTER_X, CANVAS_CY);
+
+                // 實時速度 (48px, 貼齊檔位下緣 textBaseline = 'top')
+                ctx.textBaseline = 'top';
+                var unitStr = isMetricUnit ? 'KM/H' : 'MPH';
+                ctx.font = 'bold 48px ForzaGear';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.shadowBlur = 6;
+                ctx.fillText(speedKmh + ' ' + unitStr, CENTER_CLUSTER_X, gearBottomY);
+
+                ctx.restore();
+            }
+
+            // ── 3C. 中央右區：(中間文字始終置中，上下文字切齊中間文字上下緣) ─────────────
+            function renderRightRatingCluster() {
+                if (!ctx) return;
+
+                var midHalfH = SIDE_MID_FONT_SIZE * 0.42;
+                var topEdgeY = CANVAS_CY - midHalfH;
+                var botEdgeY = CANVAS_CY + midHalfH;
+
+                ctx.save();
+                ctx.textAlign = 'left';
+
+                // 2. 中層：COUNTER Steer Angle (始終垂直置中 CANVAS_CY = 320px)
+                ctx.textBaseline = 'middle';
+                var cCol = counterPct > 70 ? C_REDLINE : (counterPct > 20 ? C_AMBER : C_WHITE);
+                ctx.font = FONT_SIDE_MIDDLE_VAL;
+                ctx.fillStyle = cCol;
+                ctx.shadowColor = cCol;
+                ctx.shadowBlur = counterPct > 20 ? 12 : 0;
+                ctx.fillText('C ' + counterPct.toFixed(0) + '°', RIGHT_CLUSTER_X, CANVAS_CY);
+
+                // 1. 上層：FLOW Rating (貼齊中間文字上緣 textBaseline = 'bottom')
+                ctx.textBaseline = 'bottom';
+                var flowColor = FLOW_COLOR_MAP[flowQuality] || C_WHITE;
+                var flowStr = FLOW_LABELS[flowQuality] || 'BUILD';
+                ctx.font = FONT_SIDE_SUB_LABEL;
+                ctx.fillStyle = flowColor;
+                ctx.shadowColor = flowColor;
+                ctx.shadowBlur = flowQuality >= 4 ? 14 : 6;
+                ctx.fillText('FLOW: ' + flowStr, RIGHT_CLUSTER_X, topEdgeY);
+
+                // 3. 下層：RISK Level (貼齊中間文字下緣 textBaseline = 'top')
+                ctx.textBaseline = 'top';
+                var riskColor = RISK_COLOR_MAP[riskLevel] || C_WHITE;
+                var riskStr = RISK_LABELS[riskLevel] || 'SAFE';
+                ctx.font = FONT_SIDE_SUB_LABEL;
+                ctx.fillStyle = riskColor;
+                ctx.shadowColor = riskColor;
+                ctx.shadowBlur = riskLevel >= 3 ? 14 : 6;
+                ctx.fillText('RISK: ' + riskStr, RIGHT_CLUSTER_X, botEdgeY);
+
+                ctx.restore();
+            }
+
+            // ── 4. 兩側腳踏柱 (左: H/C 水平置中, 右: B/T 水平置中) ───────────────
+            function renderSplitPedalPanels() {
+                if (!ctx) return;
+
+                ctx.save();
+
+                var barW = 44, barH = 130, startY = 245;
+
+                // 4A. 左翼腳踏組：手煞車 (H) & 離合器 (C) (水平置中於 LEFT_PEDAL_CX)
+                var leftPedals = [
+                    { key: 'H', label: 'HANDBRAKE', pct: handbrakePct, color: C_AMBER },
+                    { key: 'C', label: 'CLUTCH', pct: clutchPct, color: C_WHITE }
+                ];
+                var leftStartX = LEFT_PEDAL_CX - (leftPedals.length * 56 - 12) * 0.5;
+
+                leftPedals.forEach(function (p, idx) {
+                    var px = leftStartX + idx * 56;
+                    var fillH = (clamp(p.pct, 0, 100) / 100.0) * barH;
+                    var pulse = (inputFlashTtl[p.key] || 0) / 18.0;
+
+                    ctx.fillStyle = C_TRACK;
+                    ctx.beginPath(); ctx.roundRect(px, startY, barW, barH, 4); ctx.fill();
+
+                    if (fillH > 0) {
+                        ctx.fillStyle = p.color;
+                        ctx.shadowColor = p.color;
+                        ctx.shadowBlur = 8 + pulse * 10;
+                        ctx.beginPath();
+                        ctx.roundRect(px, startY + (barH - fillH), barW, fillH, 4);
+                        ctx.fill();
+                    }
+
+                    ctx.font = 'bold 13px Bahnschrift';
+                    ctx.fillStyle = pulse > 0 ? '#ffffff' : C_WHITE_DIM;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.label[0], px + barW * 0.5, startY - 8);
+                });
+
+
+                // 4B. 右翼腳踏組：煞車 (B) & 油門 (T) (水平置中於 RIGHT_PEDAL_CX)
+                var rightPedals = [
+                    { key: 'B', label: 'BRAKE', pct: brakePct, color: C_REDLINE },
+                    { key: 'T', label: 'THROTTLE', pct: accelPct, color: C_WHITE }
+                ];
+                var rightStartX = RIGHT_PEDAL_CX - (rightPedals.length * 56 - 12) * 0.5;
+
+                rightPedals.forEach(function (p, idx) {
+                    var px = rightStartX + idx * 56;
+                    var fillH = (clamp(p.pct, 0, 100) / 100.0) * barH;
+                    var pulse = (inputFlashTtl[p.key] || 0) / 18.0;
+
+                    ctx.fillStyle = C_TRACK;
+                    ctx.beginPath(); ctx.roundRect(px, startY, barW, barH, 4); ctx.fill();
+
+                    if (fillH > 0) {
+                        ctx.fillStyle = p.color;
+                        ctx.shadowColor = p.color;
+                        ctx.shadowBlur = 8 + pulse * 10;
+                        ctx.beginPath();
+                        ctx.roundRect(px, startY + (barH - fillH), barW, fillH, 4);
+                        ctx.fill();
+                    }
+
+                    ctx.font = 'bold 13px Bahnschrift';
+                    ctx.fillStyle = pulse > 0 ? '#ffffff' : C_WHITE_DIM;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.label[0], px + barW * 0.5, startY - 8);
+                });
+
+                ctx.restore();
+            }
+
+            // ── Main Render Loop ─────────────────────────────────────────────
+            function renderLoop() {
+                try {
+                    if (ctx) ctx.clearRect(0, 0, 1680, 640);
+
+                    // 1. 繪製半橢圓 HUD 背景
+                    drawSemiEllipticalBackdrop();
+
+                    // 2. 繪製對稱雙弧表 (上弧角度刻度 & 下弧動態 maxRpm 萬轉1500/萬轉以下1000紅線區)
+                    renderTopAngleArc();
+                    renderBottomTachoArc();
+
+                    // 3. 繪製中央三大動態對稱資訊區塊
+                    renderLeftAngleCluster();
+                    renderCenterGearCluster();
+                    renderRightRatingCluster();
+
+                    // 4. 繪製左右兩側腳踏柱 (左: H/C, 右: B/T)
+                    renderSplitPedalPanels();
+
+                } catch (e) {
+                    console.error('[Drift HUD] Render loop exception:', e);
+                } finally {
+                    requestAnimationFrame(renderLoop);
+                }
+            }
+
+            // ── Telemetry Packet Parser ──────────────────────────────────────
+            function parseTelemetryData(data, payload) {
+                if (!data) return;
+
+                if (payload && payload.isMetric !== undefined) {
+                    isMetricUnit = payload.isMetric !== false;
+                }
+
+                speedKmh = Math.round(data.speed_kmh || data.speed || 0);
+                rpm = data.rpm || 0;
+                maxRpm = data.maxRpm || data.max_rpm || 9000;
+
+                var rawGear = data.gear;
+                gear = rawGear === 0 ? 'R' : (rawGear === 11 || rawGear === 10 ? 'N' : (rawGear || 'N'));
+
+                accelPct = (data.throttle || 0) * 100;
+                brakePct = (data.brake || 0) * 100;
+                clutchPct = (data.clutch || 0) * 100;
+                handbrakePct = (data.hand_brake || 0) * 100;
+                steerPct = clamp((data.steer || 0) / 1.27, -100, 100);
+
+                var vx = data.vel_x || 0;
+                var vz = data.vel_z || 0;
+                var speedPlane = Math.hypot(vx, vz);
+                if (speedPlane > 0.5) {
+                    angle = (Math.atan2(vx, vz) * 180.0) / Math.PI;
+                    angle = clamp(angle, -90, 90);
+                } else {
+                    angle = 0;
+                }
+
+                displayAngle = lerp(displayAngle, angle, 0.25);
+                var absA = Math.abs(displayAngle);
+
+                if (speedKmh > 10 && absA >= 10) {
+                    holdSeconds += 0.016;
+                } else {
+                    holdSeconds = 0;
+                }
+
+                if (absA >= 8 && displayAngle * steerPct > 0) {
+                    counterPct = Math.abs(steerPct) * (0.45 + 0.55 * clamp((absA - 8) / 42, 0, 1));
+                } else {
+                    counterPct = 0;
+                }
+
+                // Compute Flow & Risk Rating Integer Levels (1~5 & 1~4)
+                if (absA >= 30 && speedKmh > 20 && counterPct > 30) {
+                    flowQuality = 5; // LOCKED
+                } else if (absA >= 20 && speedKmh > 15) {
+                    flowQuality = 4; // SMOOTH
+                } else if (absA >= 10) {
+                    flowQuality = 3; // CHASE
+                } else if (speedKmh > 5) {
+                    flowQuality = 2; // NORMAL
+                } else {
+                    flowQuality = 1; // BUILD
+                }
+
+                if (absA >= 50 || (absA >= 35 && counterPct < 15)) {
+                    riskLevel = 4; // MAX
+                } else if (absA >= 35) {
+                    riskLevel = 3; // RISK
+                } else if (absA >= 22) {
+                    riskLevel = 2; // EDGE
+                } else {
+                    riskLevel = 1; // SAFE
+                }
+
+                if (handbrakePct > 40 && prevInputs.H <= 40) { inputFlashTtl.H = 18; triggerPopup('HANDBRAKE ENTRY', 1000, false); }
+                if (clutchPct > 40 && prevInputs.C <= 40) { inputFlashTtl.C = 18; if (accelPct > 50) triggerPopup('CLUTCH KICK', 1000, false); }
+                if (brakePct > 40 && prevInputs.B <= 40) inputFlashTtl.B = 18;
+                if (accelPct > 40 && prevInputs.T <= 40) inputFlashTtl.T = 18;
+
+                prevInputs.H = handbrakePct;
+                prevInputs.C = clutchPct;
+                prevInputs.B = brakePct;
+                prevInputs.T = accelPct;
+            }
+
+            function applyProfileLayout(profileName) {
+                currentProfile = profileName || '1440P STREAM';
+            }
+
+            // ── HUDCore Registration ─────────────────────────────────────────
+            HUDCore.registerStyle('drift', {
+                containerId: 'driftContainer',
+                scaleMultiplier: 0.95,
+                onInit: function (payload) {
+                    if (payload && payload.isMetric !== undefined) {
+                        isMetricUnit = payload.isMetric !== false;
+                    }
+                    if (payload && payload.driftProfile) {
+                        applyProfileLayout(payload.driftProfile);
+                    }
+                },
+                onElementsChange: function (elements) {
+                    var c = document.getElementById('driftContainer');
+                    if (c) c.style.display = elements.showGauge === false ? 'none' : 'block';
+                },
+                onFrame: function (data, payload) {
+                    parseTelemetryData(data, payload);
+                },
+                onAnimate: function () {
+                    triggerPopup('DRIFT HUD READY', 1500, false);
+                }
+            });
+
+            // Start HUD Engine
+            HUDCore.init('drift');
+            requestAnimationFrame(renderLoop);
+        })();
+    </script>
+</body>
+
+</html>

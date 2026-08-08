@@ -50,6 +50,23 @@ ProxyWebSocket.CLOSING = OriginalWebSocket.CLOSING;
 ProxyWebSocket.CLOSED = OriginalWebSocket.CLOSED;
 window.WebSocket = ProxyWebSocket;
 
+const waitForBackend = async (port: number, maxAttempts = 20) => {
+  const healthUrl = `http://127.0.0.1:${port}/api/settings`;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const response = await originalFetch(healthUrl);
+      if (response.ok) return true;
+    } catch {
+      // The sidecar can still be importing modules while Vite/Tauri is ready.
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+
+  return false;
+};
+
 // 3. 防 FOUC：在 React 掛載前同步從 localStorage 讀取主題設定並立即套用
 // 這確保頁面第一幀已有正確的 data-bs-theme/core 屬性，避免主題閃白
 (function applyThemeEarly() {
@@ -81,21 +98,45 @@ window.WebSocket = ProxyWebSocket;
 })();
 
 // 4. 非同步載入 Port 並啟動 React
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+
+const renderApp = () => {
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+};
+
+root.render(
+  <div className="min-vh-100 d-flex align-items-center justify-content-center p-4">
+    <div className="glass-panel d-flex align-items-center gap-3 p-4">
+      <span className="spinner-border spinner-border-sm text-primary" aria-hidden="true" />
+      <span style={{ color: "var(--text-primary)" }}>Connecting to Horizon Tuner…</span>
+    </div>
+  </div>,
+);
+
 async function initApp() {
   let backendPort = 8001;
   try {
-    backendPort = await invoke<number>("get_backend_port");
+    backendPort = await Promise.race([
+      invoke<number>("get_backend_port"),
+      new Promise<number>((_, reject) => {
+        window.setTimeout(() => reject(new Error("Backend port lookup timed out")), 1500);
+      }),
+    ]);
     console.log("Dynamically resolved backend port:", backendPort);
   } catch (e) {
     console.warn("Failed to get backend port from Tauri, using default 8001:", e);
   }
   (window as any).BACKEND_PORT = backendPort;
 
-  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-  );
+  if (!(await waitForBackend(backendPort))) {
+    console.warn(`Backend did not become ready at port ${backendPort}; starting the UI with reconnect handling.`);
+  }
+
+  renderApp();
 }
 
 initApp();

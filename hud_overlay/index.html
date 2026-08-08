@@ -15,11 +15,11 @@
         /* ── Fonts ─────────────────────────────────────────────────────────── */
         @font-face {
             font-family: 'ForzaFont';
-            src: url('./assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+            src: url('./shared/assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
         }
         @font-face {
             font-family: 'ForzaGear';
-            src: url('./assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+            src: url('./shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
 
         /* ── Central Telemetry Cluster Mount Point ─────────────────────────── */
@@ -74,7 +74,8 @@
             mw2005: './mw2005/index.html',
             nfs15: './nfs15/index.html',
             shift_tacho: './shift_tacho/index.html',
-            vfd: './vfd/index.html'
+            vfd: './vfd/index.html',
+            drift: './drift/index.html'
         };
         let activeHud = localStorage.getItem('forza_hud_active') || 'simple';
         const hudIframe = document.getElementById('hud-iframe');
@@ -209,14 +210,25 @@
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
-                window._currentHudConfig = ev.data.data;
-                if (ev.data.data && ev.data.data.hudStyle) {
-                    activeHud = ev.data.data.hudStyle;
+                const config = ev.data.data || {};
+                window._currentHudConfig = config;
+                if (window.TelemetryCardsManager) {
+                    window.TelemetryCardsManager.update(null, config);
                 }
-                postToHud('config', { data: ev.data.data });
-                if (ev.data.data && ev.data.data.elements) {
-                    window._currentHudElements = ev.data.data.elements;
-                    postToHud('hud:elements', ev.data.data.elements);
+
+                // The control panel sends live edits through BroadcastChannel.  A
+                // style change needs a new iframe, rather than only changing the
+                // remembered style for a later reload.
+                if (config.hudStyle && config.hudStyle !== activeHud) {
+                    console.log('[Launcher] BroadcastChannel requested HUD style change to:', config.hudStyle);
+                    loadHud(config.hudStyle);
+                    return;
+                }
+
+                postToHud('config', { data: config });
+                if (config.elements) {
+                    window._currentHudElements = config.elements;
+                    postToHud('hud:elements', config.elements);
                 }
             }
         };
