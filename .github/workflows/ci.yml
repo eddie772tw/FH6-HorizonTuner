@@ -214,6 +214,7 @@ jobs:
     name: Build & Verify Executable Bundle
     needs: [backend-unit-test, frontend-unit-test]
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

@@ -105,28 +105,39 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
     test_data_dir.mkdir(parents=True, exist_ok=True)
 
     # Launch Executable as sidecar with --data-dir argument
+    # The sidecar is a long-running server. Do not call communicate() here:
+    # it waits for the server to exit and can hang on Windows when a frozen
+    # child process still owns one of the inherited pipe handles.
     proc = subprocess.Popen(
         [target_exe, "--data-dir", str(test_data_dir)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         stdin=subprocess.PIPE,
         text=True,
     )
 
-    # Allow startup initialization
-    time.sleep(3.0)
-
-    # Gracefully close
+    settings_file = test_data_dir / "settings.json"
+    startup_deadline = time.monotonic() + 15.0
     try:
-        stdout, stderr = proc.communicate(timeout=3.0)
-    except Exception:
-        proc.kill()
-        stdout, stderr = proc.communicate()
+        while not settings_file.exists() and time.monotonic() < startup_deadline:
+            if proc.poll() is not None:
+                break
+            time.sleep(0.25)
+    finally:
+        # Closing stdin is the sidecar's graceful shutdown signal. Fall back
+        # to terminate/kill so a failed startup can never leave CI hanging.
+        if proc.stdin is not None and not proc.stdin.closed:
+            proc.stdin.close()
+        try:
+            proc.wait(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5.0)
 
     # Assert 1: settings.json created and readable
-    settings_file = test_data_dir / "settings.json"
     assert settings_file.exists(), (
-        f"settings.json was not created in --data-dir. stdout: {stdout}, stderr: {stderr}"
+        "settings.json was not created in --data-dir. "
+        f"backend log: {test_data_dir / 'logs' / 'backend.log'}"
     )
     with open(settings_file, "r", encoding="utf-8") as f:
         settings = json.load(f)
