@@ -914,5 +914,17 @@
   "AWD Center Rear Split": "AWD Center Rear Split",
   "Chassis Tuning": "Chassis Tuning",
   "Please set basic vehicle parameters in Step 1 to proceed.": "Please set basic vehicle parameters in Step 1 to proceed.",
-  "Please define basic vehicle parameters in Step 1 first.": "Please define basic vehicle parameters in Step 1 first."
+  "Please define basic vehicle parameters in Step 1 first.": "Please define basic vehicle parameters in Step 1 first.",
+  "Drift HUD Profile:": "Drift HUD Profile:",
+  "1440P STREAM (Full Stream Setup)": "1440P STREAM (Full Stream Setup)",
+  "1080P FULL (Full HD Overlay)": "1080P FULL (Full HD Overlay)",
+  "1440P CLEAN (Minimalist Arc & Map)": "1440P CLEAN (Minimalist Arc & Map)",
+  "Race Arc": "Race Arc",
+  "Simple": "Simple",
+  "Forza Motorsport 4": "Forza Motorsport 4",
+  "GT7": "GT7",
+  "NFS Most Wanted '05": "NFS Most Wanted '05",
+  "NFS '15": "NFS '15",
+  "NFS Shift": "NFS Shift",
+  "Drift HUD": "Drift HUD"
 }

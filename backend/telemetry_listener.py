@@ -25,6 +25,8 @@ TELEMETRY_STRUCT_FORMAT = (
     "<iffffffffffff" + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "16s"
 )
 
+DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)
+
 
 def pack_telemetry_binary(data: dict) -> bytes:
     try:
@@ -46,16 +48,20 @@ def pack_telemetry_binary(data: dict) -> bytes:
         pitch = 0.0
         roll = 0.0
 
-        tire_temps = data.get("TireTemp", [0.0] * 4)
-        susp_travels = data.get("NormalizedSuspensionTravel", [0.0] * 4)
-        slip_ratios = data.get("TireSlipRatio", [0.0] * 4)
-        slip_angles = data.get("TireSlipAngle", [0.0] * 4)
+        tire_temps = data.get("TireTemp", DEFAULT_TIRE_ARRAY)
+        susp_travels = data.get("NormalizedSuspensionTravel", DEFAULT_TIRE_ARRAY)
+        slip_ratios = data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
+        slip_angles = data.get("TireSlipAngle", DEFAULT_TIRE_ARRAY)
 
         # 確保陣列長度皆為 4
-        tire_temps += [0.0] * (4 - len(tire_temps))
-        susp_travels += [0.0] * (4 - len(susp_travels))
-        slip_ratios += [0.0] * (4 - len(slip_ratios))
-        slip_angles += [0.0] * (4 - len(slip_angles))
+        if len(tire_temps) < 4:
+            tire_temps = list(tire_temps) + [0.0] * (4 - len(tire_temps))
+        if len(susp_travels) < 4:
+            susp_travels = list(susp_travels) + [0.0] * (4 - len(susp_travels))
+        if len(slip_ratios) < 4:
+            slip_ratios = list(slip_ratios) + [0.0] * (4 - len(slip_ratios))
+        if len(slip_angles) < 4:
+            slip_angles = list(slip_angles) + [0.0] * (4 - len(slip_angles))
 
         # 轉換弧度為度
         slip_angles_deg = [sa * 57.29578 for sa in slip_angles]

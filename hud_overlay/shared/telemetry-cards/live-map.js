@@ -11,10 +11,10 @@ var mapImageFailed = false;
 
 // Local 3.24MB High-Res Map Background Asset with online fallbacks
 var MAP_IMAGE_URLS = [
-    '../assets/live_map_bg.png',
-    './assets/live_map_bg.png',
-    'assets/live_map_bg.png',
-    '../../assets/live_map_bg.png',
+    '../shared/assets/live_map_bg.png',
+    './shared/assets/live_map_bg.png',
+    'shared/assets/live_map_bg.png',
+    '../../shared/assets/live_map_bg.png',
     'https://forza.labsgg.com/_astro/FH6-full-map.59v5pH0D.jpg',
     'https://media.mapgenie.io/v2/assets/prod/games/forza-horizon-6/preview.jpg'
 ];
@@ -66,10 +66,10 @@ export var JAPAN_POIS = [
 // Dynamically load local JSON POIs if available
 if (typeof fetch !== 'undefined') {
     var jsonUrls = [
-        '../assets/japan_pois.json',
-        './assets/japan_pois.json',
-        'assets/japan_pois.json',
-        '../../assets/japan_pois.json'
+        '../shared/assets/japan_pois.json',
+        './shared/assets/japan_pois.json',
+        'shared/assets/japan_pois.json',
+        '../../shared/assets/japan_pois.json'
     ];
     var loadJson = function (index) {
         if (index >= jsonUrls.length) return;
@@ -332,10 +332,17 @@ export function renderLiveMap(canvas, data, config) {
     var nearbyEl = document.getElementById('tcLiveMapNearby');
     if (nearbyEl) {
         if (nearestPoi && nearestDist <= 250) {
-            nearbyEl.innerText = 'NEARBY: ' + nearestPoi.name + ' (' + Math.round(nearestDist) + 'm)';
-            nearbyEl.style.display = 'block';
+            var newText = 'NEARBY: ' + nearestPoi.name + ' (' + Math.round(nearestDist) + 'm)';
+            if (nearbyEl.innerText !== newText) {
+                nearbyEl.innerText = newText;
+            }
+            if (nearbyEl.style.display !== 'block') {
+                nearbyEl.style.display = 'block';
+            }
         } else {
-            nearbyEl.style.display = 'none';
+            if (nearbyEl.style.display !== 'none') {
+                nearbyEl.style.display = 'none';
+            }
         }
     }
 
@@ -425,6 +432,9 @@ export function renderLiveMap(canvas, data, config) {
     // Update coordinate readout if element exists
     var coordEl = document.getElementById('tcLiveMapCoord');
     if (coordEl) {
-        coordEl.innerText = 'X:' + Math.round(rawX) + ' Z:' + Math.round(rawZ);
+        var newCoordText = 'X:' + Math.round(rawX) + ' Z:' + Math.round(rawZ);
+        if (coordEl.innerText !== newCoordText) {
+            coordEl.innerText = newCoordText;
+        }
     }
 }
