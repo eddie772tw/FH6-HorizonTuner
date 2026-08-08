@@ -1103,16 +1103,20 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 <div className="border-top pt-2">
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <span className="fs-7 text-body-secondary">{t("Drift HUD Profile:")}</span>
-                    <span className="text-primary fw-bold fs-7">{config.driftProfile ?? '1440P STREAM'}</span>
+                    <span className="text-primary fw-bold fs-7">{
+                      config.driftProfile === "1080P FULL" ? t("1080P FULL (Full HD Overlay)") :
+                      config.driftProfile === "1440P CLEAN" ? t("1440P CLEAN (Minimalist Arc & Map)") :
+                      t("1440P STREAM (Full Stream Setup)")
+                    }</span>
                   </div>
                   <select
                     className="form-select form-select-sm"
                     value={config.driftProfile ?? '1440P STREAM'}
                     onChange={(e) => handleDriftProfileChange(e.target.value as any)}
                   >
-                    <option value="1440P STREAM">1440P STREAM (Full Stream Setup)</option>
-                    <option value="1080P FULL">1080P FULL (Full HD Overlay)</option>
-                    <option value="1440P CLEAN">1440P CLEAN (Minimalist Arc & Map)</option>
+                    <option value="1440P STREAM">{t("1440P STREAM (Full Stream Setup)")}</option>
+                    <option value="1080P FULL">{t("1080P FULL (Full HD Overlay)")}</option>
+                    <option value="1440P CLEAN">{t("1440P CLEAN (Minimalist Arc & Map)")}</option>
                   </select>
                 </div>
               )}
