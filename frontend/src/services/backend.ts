@@ -61,7 +61,7 @@ export function installBackendTransport(port: number): void {
   window.WebSocket = BackendWebSocket;
 }
 
-export async function waitForBackendReady(timeoutMs = 15_000): Promise<BackendStatus> {
+export async function waitForBackendReady(timeoutMs = 30_000): Promise<BackendStatus> {
   if (!isTauriRuntime()) {
     return { state: "ready", port: DEFAULT_DEV_PORT, error: null };
   }

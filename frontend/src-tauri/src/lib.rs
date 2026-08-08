@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use serde::Serialize;
 use tauri_plugin_shell::process::CommandEvent;
@@ -38,6 +39,59 @@ fn parse_backend_ready_port(line: &[u8]) -> Option<u16> {
         .get("port")?
         .as_u64()
         .and_then(|port| u16::try_from(port).ok())
+}
+
+fn find_external_backend_port_file() -> Option<PathBuf> {
+    let mut bases = Vec::new();
+    if let Ok(current_dir) = std::env::current_dir() {
+        bases.push(current_dir);
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            bases.push(parent.to_path_buf());
+        }
+    }
+
+    for base in bases {
+        let mut directory = Some(base.as_path());
+        while let Some(dir) = directory {
+            for candidate in [
+                dir.join("backend").join("logs").join("web_port.txt"),
+                dir.join("logs").join("web_port.txt"),
+            ] {
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+            directory = dir.parent();
+        }
+    }
+    None
+}
+
+fn watch_external_backend(app_handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        for _ in 0..600 {
+            if let Some(port_file) = find_external_backend_port_file() {
+                if let Ok(contents) = fs::read_to_string(port_file) {
+                    if let Ok(port) = contents.trim().parse::<u16>() {
+                        set_backend_status(&app_handle, BackendStatus {
+                            state: "ready".to_string(),
+                            port: Some(port),
+                            error: None,
+                        });
+                        return;
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        set_backend_status(&app_handle, BackendStatus {
+            state: "failed".to_string(),
+            port: None,
+            error: Some("Could not find the externally started development backend port.".to_string()),
+        });
+    });
 }
 
 #[tauri::command]
@@ -246,8 +300,22 @@ pub fn run() {
 
 
             let args: Vec<String> = std::env::args().collect();
-            if args.contains(&"--no-sidecar".to_string()) || std::env::var("FH6_NO_SIDECAR").is_ok() {
-                println!("Skipping sidecar startup as --no-sidecar was passed or FH6_NO_SIDECAR env var is set.");
+            let external_backend = cfg!(debug_assertions)
+                || args.contains(&"--no-sidecar".to_string())
+                || std::env::var("FH6_NO_SIDECAR").is_ok();
+            if external_backend {
+                println!("Using externally started backend (debug/no-sidecar mode).");
+                if let Ok(port_str) = std::env::var("BACKEND_PORT") {
+                    if let Ok(port) = port_str.parse::<u16>() {
+                        set_backend_status(app.handle(), BackendStatus {
+                            state: "ready".to_string(),
+                            port: Some(port),
+                            error: None,
+                        });
+                        return Ok(());
+                    }
+                }
+                watch_external_backend(app.handle().clone());
                 return Ok(());
             }
 
@@ -273,7 +341,7 @@ pub fn run() {
                             // Windows. The ready file is a deterministic fallback in the same
                             // user-writable directory passed to this exact sidecar instance.
                             std::thread::spawn(move || {
-                                for _ in 0..300 {
+                                for _ in 0..600 {
                                     if let Ok(contents) = fs::read_to_string(&ready_file) {
                                         if let Ok(port) = contents.trim().parse::<u16>() {
                                             set_backend_status(&ready_app_handle, BackendStatus {
