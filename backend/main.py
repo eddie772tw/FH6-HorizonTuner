@@ -33,6 +33,7 @@ def emit_sidecar_event(event: str, **payload) -> None:
         # must not prevent the backend itself from starting.
         pass
 
+
 if getattr(sys, "frozen", False):
     RESOURCE_ROOT = sys._MEIPASS
     if parsed_args.data_dir:
