@@ -36,7 +36,7 @@ export function createTelemetryCardsManager() {
         lastTime: typeof performance !== 'undefined' ? performance.now() : Date.now(),
 
         // -----------------------------------------------------------------------
-        init: function (parentEl) {
+init: function (parentEl) {
             if (!parentEl) return;
             this.containerEl = parentEl;
 
@@ -44,6 +44,33 @@ export function createTelemetryCardsManager() {
 
             parentEl.innerHTML = getClusterHTML(1.0, initialOpacity);
             this.initialized = true;
+
+            // Cache DOM elements
+            this.domCache = {
+                wrapper: document.getElementById('tcClusterWrapper'),
+                liveMapContainer: document.getElementById('tcLiveMapContainer'),
+                centerAnchor: document.getElementById('tcCenterAnchor'),
+                centerRadar: document.getElementById('tcCenterRadarContainer'),
+                gridLinesEl: document.getElementById('tcGridLines'),
+                topEdgeContainer: document.getElementById('tcTopEdgeContainer'),
+                bottomEdgeContainer: document.getElementById('tcBottomEdgeContainer'),
+                pedalContainer: document.getElementById('tcPedalWaveContainer'),
+                ptContainer: document.getElementById('tcPowerTorqueContainer'),
+                gridContainer: document.getElementById('tcGridContainer'),
+                liveMapCanvas: document.getElementById('tcLiveMapCanvas'),
+                gCircle: document.getElementById('tcGRadarCircle'),
+                gDot: document.getElementById('tcGDot'),
+                corners: {}
+            };
+            for (var i = 0; i < corners.length; i++) {
+                var tag = corners[i];
+                this.domCache.corners[tag] = {
+                    el: document.getElementById('tcCorner' + tag),
+                    suspBlock: document.getElementById('tcSuspBlock' + tag),
+                    slipBlock: document.getElementById('tcSlipBlock' + tag),
+                    tempBlock: document.getElementById('tcTempBlock' + tag)
+                };
+            }
         },
 
         // -----------------------------------------------------------------------
@@ -85,7 +112,7 @@ export function createTelemetryCardsManager() {
                 : (fullConfig.customColor || DEFAULT_PRIMARY_COLOR);
             var contrastColor = computeContrastColor(primaryColor);
 
-            var wrapper = document.getElementById('tcClusterWrapper');
+            var wrapper = this.domCache ? this.domCache.wrapper : (typeof document !== 'undefined' ? document.getElementById('tcClusterWrapper') : null);
             if (wrapper) {
                 wrapper.style.opacity = tOpacity;
                 if (typeof wrapper.style.setProperty === 'function') {
@@ -99,12 +126,12 @@ export function createTelemetryCardsManager() {
                 }
             }
 
-            var liveMapContainer = document.getElementById('tcLiveMapContainer');
+            var liveMapContainer = this.domCache ? this.domCache.liveMapContainer : document.getElementById('tcLiveMapContainer');
             if (liveMapContainer && typeof liveMapContainer.style.setProperty === 'function') {
-                liveMapContainer.style.setProperty('--tc-live-map-offset-x', liveMapOffsetX + 'px');
-                liveMapContainer.style.setProperty('--tc-live-map-offset-y', liveMapOffsetY + 'px');
-                liveMapContainer.style.setProperty('--tc-live-map-opacity',  liveMapOpacity.toString());
-                liveMapContainer.style.setProperty('--tc-live-map-scale',    liveMapScale.toString());
+                if (_lastStyles['liveMapOffsetX'] !== liveMapOffsetX) { liveMapContainer.style.setProperty('--tc-live-map-offset-x', liveMapOffsetX + 'px'); _lastStyles['liveMapOffsetX'] = liveMapOffsetX; }
+                if (_lastStyles['liveMapOffsetY'] !== liveMapOffsetY) { liveMapContainer.style.setProperty('--tc-live-map-offset-y', liveMapOffsetY + 'px'); _lastStyles['liveMapOffsetY'] = liveMapOffsetY; }
+                if (_lastStyles['liveMapOpacity'] !== liveMapOpacity) { liveMapContainer.style.setProperty('--tc-live-map-opacity',  liveMapOpacity.toString()); _lastStyles['liveMapOpacity'] = liveMapOpacity; }
+                if (_lastStyles['liveMapScale'] !== liveMapScale) { liveMapContainer.style.setProperty('--tc-live-map-scale',    liveMapScale.toString()); _lastStyles['liveMapScale'] = liveMapScale; }
             }
 
             // ---- Element Visibility Toggles ----
@@ -122,19 +149,19 @@ export function createTelemetryCardsManager() {
             var showCenterAnchor = elements.showTeleCenterAnchor !== false;
             var showGridLines    = elements.showTeleGridLines === true;
 
-            var centerAnchor = document.getElementById('tcCenterAnchor');
+            var centerAnchor = this.domCache ? this.domCache.centerAnchor : document.getElementById('tcCenterAnchor');
             if (centerAnchor) {
                 centerAnchor.style.display     = (showAttitude || showCenterAnchor) ? 'flex' : 'flex';
                 centerAnchor.style.visibility  = (showAttitude || showCenterAnchor) ? 'visible' : 'hidden';
                 centerAnchor.style.borderStyle = showCenterAnchor ? 'dashed' : 'none';
             }
 
-            var centerRadar = document.getElementById('tcCenterRadarContainer');
+            var centerRadar = this.domCache ? this.domCache.centerRadar : document.getElementById('tcCenterRadarContainer');
             if (centerRadar) {
                 centerRadar.style.display = showAttitude ? 'flex' : 'none';
             }
 
-            var gridLinesEl = document.getElementById('tcGridLines');
+            var gridLinesEl = this.domCache ? this.domCache.gridLinesEl : document.getElementById('tcGridLines');
             if (gridLinesEl) {
                 gridLinesEl.style.display = showGridLines ? 'block' : 'none';
             }
@@ -147,8 +174,8 @@ export function createTelemetryCardsManager() {
             var mergedScale   = (fullConfig.telemetryMergedChartsScale !== undefined) ? fullConfig.telemetryMergedChartsScale : 1.0;
             var sideBySide   = fullConfig.telemetrySideBySideCharts === true || elements.showTeleSideBySideCharts === true;
 
-            var topEdgeContainer    = document.getElementById('tcTopEdgeContainer');
-            var bottomEdgeContainer = document.getElementById('tcBottomEdgeContainer');
+            var topEdgeContainer    = this.domCache ? this.domCache.topEdgeContainer : document.getElementById('tcTopEdgeContainer');
+            var bottomEdgeContainer = this.domCache ? this.domCache.bottomEdgeContainer : document.getElementById('tcBottomEdgeContainer');
 
             var edgeContainers = [topEdgeContainer, bottomEdgeContainer];
             for (var i = 0; i < edgeContainers.length; i++) {
@@ -173,7 +200,7 @@ export function createTelemetryCardsManager() {
                 }
             }
 
-            var pedalContainer = document.getElementById('tcPedalWaveContainer');
+            var pedalContainer = this.domCache ? this.domCache.pedalContainer : document.getElementById('tcPedalWaveContainer');
             if (pedalContainer) {
                 pedalContainer.style.display = showPedals ? 'flex' : 'none';
                 if (sideBySide) {
@@ -193,7 +220,7 @@ export function createTelemetryCardsManager() {
                 }
             }
 
-            var ptContainer = document.getElementById('tcPowerTorqueContainer');
+            var ptContainer = this.domCache ? this.domCache.ptContainer : document.getElementById('tcPowerTorqueContainer');
             if (ptContainer) {
                 ptContainer.style.display = showPT ? 'flex' : 'none';
                 if (sideBySide) {
@@ -217,7 +244,7 @@ export function createTelemetryCardsManager() {
             // ---- Corner Cards (Grid vs Screen Edge Snap Layout) ----
             var cornerEdgeSnap = fullConfig.telemetryCornerEdgeSnap === true || elements.showTeleCornerEdgeSnap === true;
 
-            var gridContainer = document.getElementById('tcGridContainer');
+            var gridContainer = this.domCache ? this.domCache.gridContainer : document.getElementById('tcGridContainer');
             if (gridContainer) {
                 if (cornerEdgeSnap) {
                     gridContainer.classList.add('tc-edge-snapped-corners');
@@ -240,10 +267,11 @@ export function createTelemetryCardsManager() {
 
             for (var i = 0; i < corners.length; i++) {
                 var tag = corners[i];
-                var cornerEl  = document.getElementById('tcCorner'    + tag);
-                var suspBlock = document.getElementById('tcSuspBlock' + tag);
-                var slipBlock = document.getElementById('tcSlipBlock' + tag);
-                var tempBlock = document.getElementById('tcTempBlock' + tag);
+                var cached = this.domCache && this.domCache.corners ? this.domCache.corners[tag] : null;
+                var cornerEl  = cached ? cached.el : document.getElementById('tcCorner' + tag);
+                var suspBlock = cached ? cached.suspBlock : document.getElementById('tcSuspBlock' + tag);
+                var slipBlock = cached ? cached.slipBlock : document.getElementById('tcSlipBlock' + tag);
+                var tempBlock = cached ? cached.tempBlock : document.getElementById('tcTempBlock' + tag);
 
                 if (cornerEl) {
                     cornerEl.style.transformOrigin = cornerOrigins[tag];
@@ -260,7 +288,7 @@ export function createTelemetryCardsManager() {
                 if (tempBlock) tempBlock.style.display = showTemp ? 'flex' : 'none';
             }
 
-            var liveMapContainer = document.getElementById('tcLiveMapContainer');
+            var liveMapContainer = this.domCache ? this.domCache.liveMapContainer : document.getElementById('tcLiveMapContainer');
             if (liveMapContainer) {
                 liveMapContainer.style.display = showLiveMap ? 'block' : 'none';
             }
@@ -302,7 +330,7 @@ export function createTelemetryCardsManager() {
             }
 
             if (showLiveMap) {
-                var liveMapCanvas = document.getElementById('tcLiveMapCanvas');
+                var liveMapCanvas = this.domCache ? this.domCache.liveMapCanvas : document.getElementById('tcLiveMapCanvas');
                 if (liveMapCanvas) {
                     renderLiveMap(liveMapCanvas, data, fullConfig);
                 }
@@ -311,9 +339,9 @@ export function createTelemetryCardsManager() {
 
         // -----------------------------------------------------------------------
         triggerClusterSweepAnimation: function () {
-            var wrapper = document.getElementById('tcClusterWrapper');
-            var gCircle = document.getElementById('tcGRadarCircle');
-            var gDot    = document.getElementById('tcGDot');
+            var wrapper = this.domCache ? this.domCache.wrapper : (typeof document !== 'undefined' ? document.getElementById('tcClusterWrapper') : null);
+            var gCircle = this.domCache ? this.domCache.gCircle : document.getElementById('tcGRadarCircle');
+            var gDot    = this.domCache ? this.domCache.gDot : document.getElementById('tcGDot');
             if (!wrapper) return;
 
             wrapper.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease';

@@ -332,10 +332,17 @@ export function renderLiveMap(canvas, data, config) {
     var nearbyEl = document.getElementById('tcLiveMapNearby');
     if (nearbyEl) {
         if (nearestPoi && nearestDist <= 250) {
-            nearbyEl.innerText = 'NEARBY: ' + nearestPoi.name + ' (' + Math.round(nearestDist) + 'm)';
-            nearbyEl.style.display = 'block';
+            var newText = 'NEARBY: ' + nearestPoi.name + ' (' + Math.round(nearestDist) + 'm)';
+            if (nearbyEl.innerText !== newText) {
+                nearbyEl.innerText = newText;
+            }
+            if (nearbyEl.style.display !== 'block') {
+                nearbyEl.style.display = 'block';
+            }
         } else {
-            nearbyEl.style.display = 'none';
+            if (nearbyEl.style.display !== 'none') {
+                nearbyEl.style.display = 'none';
+            }
         }
     }
 
@@ -425,6 +432,9 @@ export function renderLiveMap(canvas, data, config) {
     // Update coordinate readout if element exists
     var coordEl = document.getElementById('tcLiveMapCoord');
     if (coordEl) {
-        coordEl.innerText = 'X:' + Math.round(rawX) + ' Z:' + Math.round(rawZ);
+        var newCoordText = 'X:' + Math.round(rawX) + ' Z:' + Math.round(rawZ);
+        if (coordEl.innerText !== newCoordText) {
+            coordEl.innerText = newCoordText;
+        }
     }
 }
