@@ -79,7 +79,26 @@ const host = process.env.TAURI_DEV_HOST;
 
 let gitCommit = "unknown";
 let gitBranch = "unknown";
-const isReleaseBuild = process.env.FH6_RELEASE_BUILD === "1";
+
+const generatedPathPrefixes = [
+  "dist/",
+  "build/",
+  "frontend/dist/",
+  "frontend/src-tauri/bin/",
+  "frontend/src-tauri/gen/",
+  "frontend/src-tauri/target/",
+  "logs/",
+  ".pytest_cache/",
+  ".ruff_cache/",
+  "__pycache__/",
+];
+
+function isGeneratedPath(filePath: string): boolean {
+  const normalizedPath = filePath.replaceAll("\\", "/").replace(/^\.\//, "");
+  return generatedPathPrefixes.some(
+    (prefix) => normalizedPath === prefix.slice(0, -1) || normalizedPath.startsWith(prefix),
+  );
+}
 
 try {
   gitBranch = execSync("git rev-parse --abbrev-ref HEAD", { cwd: ".." }).toString().trim();
@@ -90,28 +109,17 @@ try {
   }
   
   try {
-    const status = execSync("git status --porcelain -uno", { cwd: ".." }).toString().trim();
+    const status = execSync("git status --porcelain=v1 --untracked-files=all", { cwd: ".." }).toString().trim();
     if (status.length > 0) {
       const changedFiles = status.split("\n").map(line => line.trim());
       const hasRealChanges = changedFiles.some(line => {
-        const filePath = line.substring(2).trim().toLowerCase();
-
-        const ignoredPatterns = [
-          "cargo.lock", "cargo.toml",
-          "package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
-          "tauri.conf.json",
-          "logs/", "__pycache__", ".pytest_cache", ".ruff_cache",
-          "backend/car_database.json"
-        ];
-
-        for (const pattern of ignoredPatterns) {
-          if (filePath.endsWith(pattern) || filePath.includes(pattern)) {
-            return false;
-          }
+        let filePath = line.substring(3).trim();
+        if (line.startsWith("R") || line.startsWith("C")) {
+          filePath = filePath.split(" -> ").pop() || filePath;
         }
-        return true;
+        return !isGeneratedPath(filePath.toLowerCase());
       });
-      if (hasRealChanges && !isReleaseBuild) {
+      if (hasRealChanges) {
         gitCommit = "post-" + gitCommit;
       }
     }

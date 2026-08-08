@@ -122,7 +122,6 @@ call pnpm audit
 if errorlevel 1 (
     echo [WARNING] pnpm audit could not complete or found vulnerabilities; continuing with the locked dependency set.
 )
-set "FH6_RELEASE_BUILD=1"
 call pnpm run tauri build --no-bundle || exit /b 1
 
 if errorlevel 1 (
