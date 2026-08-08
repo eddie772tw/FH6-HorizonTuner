@@ -1,9 +1,11 @@
 import json
 import os
+import socket
 import sqlite3
 import subprocess
 import sys
 import time
+from ctypes import wintypes
 
 import pytest
 
@@ -191,3 +193,95 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
     with open(log_file, "r", encoding="utf-8") as f:
         log_content = f.read()
         assert len(log_content) > 0, "backend.log is empty"
+
+
+def wait_for_process_exit(proc, timeout=10.0):
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if sys.platform == "win32":
+            subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        else:
+            proc.kill()
+        proc.wait(timeout=5.0)
+        pytest.fail("portable executable did not terminate within the timeout")
+
+
+def close_portable_process(proc):
+    if sys.platform == "win32":
+        import ctypes
+
+        user32 = ctypes.windll.user32
+        window_handle = wintypes.HWND()
+        enum_windows = user32.EnumWindows
+        get_window_pid = user32.GetWindowThreadProcessId
+
+        @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        def find_main_window(hwnd, _lparam):
+            process_id = wintypes.DWORD()
+            get_window_pid(hwnd, ctypes.byref(process_id))
+            if process_id.value == proc.pid and user32.IsWindowVisible(hwnd):
+                window_handle.value = hwnd
+                return False
+            return True
+
+        enum_windows(find_main_window, 0)
+        if window_handle.value:
+            user32.PostMessageW(window_handle, 0x0010, 0, 0)  # WM_CLOSE
+
+    if proc.stdin is not None and not proc.stdin.closed:
+        proc.stdin.close()
+    wait_for_process_exit(proc)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Portable lifecycle is Windows-specific")
+def test_portable_executable_releases_udp_port_for_restart(tmp_path):
+    _, standalone_exe = find_executable_paths()
+    if not os.path.exists(standalone_exe):
+        pytest.skip("No portable Tauri executable found to run lifecycle test.")
+
+    telemetry_port = 8000
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as availability_probe:
+        try:
+            availability_probe.bind(("127.0.0.1", telemetry_port))
+        except OSError as error:
+            pytest.fail(f"UDP {telemetry_port} must be available for this test: {error}")
+
+    environment = os.environ.copy()
+    environment["TELEMETRY_IP"] = "127.0.0.1"
+    environment["TELEMETRY_PORT"] = str(telemetry_port)
+
+    for run_number in (1, 2):
+        data_dir = tmp_path / f"lifecycle_run_{run_number}"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        proc = subprocess.Popen(
+            [standalone_exe, "--data-dir", str(data_dir)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.PIPE,
+            env=environment,
+            text=True,
+        )
+
+        port_file = data_dir / "logs" / "web_port.txt"
+        deadline = time.monotonic() + 15.0
+        while not port_file.exists() and time.monotonic() < deadline:
+            if proc.poll() is not None:
+                break
+            time.sleep(0.25)
+
+        try:
+            assert port_file.exists(), (
+                f"backend did not publish a web port on lifecycle run {run_number}; "
+                f"log: {data_dir / 'logs' / 'backend.log'}"
+            )
+        finally:
+            close_portable_process(proc)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.bind(("127.0.0.1", telemetry_port))
