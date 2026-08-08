@@ -1,8 +1,44 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::fs;
-use std::path::PathBuf;
+use std::sync::Mutex;
+use serde::Serialize;
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
+
+#[derive(Clone, Serialize)]
+struct BackendStatus {
+    state: String,
+    port: Option<u16>,
+    error: Option<String>,
+}
+
+struct BackendState(Mutex<BackendStatus>);
+
+impl BackendState {
+    fn new() -> Self {
+        Self(Mutex::new(BackendStatus {
+            state: "starting".to_string(),
+            port: None,
+            error: None,
+        }))
+    }
+}
+
+fn set_backend_status(app_handle: &tauri::AppHandle, status: BackendStatus) {
+    if let Ok(mut current) = app_handle.state::<BackendState>().0.lock() {
+        *current = status;
+    }
+}
+
+fn parse_backend_ready_port(line: &[u8]) -> Option<u16> {
+    let line = std::str::from_utf8(line).ok()?.trim();
+    let payload = line.strip_prefix("FH6_BACKEND_READY:")?;
+    serde_json::from_str::<serde_json::Value>(payload)
+        .ok()?
+        .get("port")?
+        .as_u64()
+        .and_then(|port| u16::try_from(port).ok())
+}
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -10,59 +46,26 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn get_backend_port() -> Result<u16, String> {
-    if let Ok(port_str) = std::env::var("BACKEND_PORT") {
-        if let Ok(port) = port_str.parse::<u16>() {
-            return Ok(port);
-        }
-    }
-
-    let exe_dir = std::env::current_exe()
-        .map(|p| p.parent().unwrap().to_path_buf())
-        .ok();
-
-    let cwd_dir = std::env::current_dir().ok();
-
-    let mut search_dirs = Vec::new();
-    if let Some(ref d) = exe_dir {
-        search_dirs.push(d.clone());
-    }
-    if let Some(ref d) = cwd_dir {
-        search_dirs.push(d.clone());
-    }
-
-    search_dirs.push(PathBuf::from("."));
-    search_dirs.push(PathBuf::from(".."));
-    search_dirs.push(PathBuf::from("../.."));
-
-    for base_dir in search_dirs {
-        let mut curr = Some(base_dir.as_path());
-        while let Some(dir) = curr {
-            let p1 = dir.join("logs").join("web_port.txt");
-            if p1.exists() {
-                return read_port_from_file(&p1);
-            }
-            let p2 = dir.join("backend").join("logs").join("web_port.txt");
-            if p2.exists() {
-                return read_port_from_file(&p2);
-            }
-            curr = dir.parent();
-        }
-    }
-
-    Err("Could not find web_port.txt in any searched paths".to_string())
+fn get_backend_port(state: tauri::State<'_, BackendState>) -> Result<u16, String> {
+    backend_port_from_state(&state)
 }
 
-fn read_port_from_file(path: &std::path::Path) -> Result<u16, String> {
-    match fs::read_to_string(path) {
-        Ok(content) => {
-            let port_str = content.trim();
-            port_str
-                .parse::<u16>()
-                .map_err(|e| format!("Failed to parse port '{}' from {:?}: {}", port_str, path, e))
-        }
-        Err(e) => Err(format!("Failed to read port file at {:?}: {}", path, e)),
-    }
+fn backend_port_from_state(state: &BackendState) -> Result<u16, String> {
+    let status = state.0.lock().map_err(|_| "Backend state lock poisoned".to_string())?;
+    status.port.ok_or_else(|| status.error.clone().unwrap_or_else(|| {
+        "Backend is still starting".to_string()
+    }))
+}
+
+fn backend_port_from_app(app_handle: &tauri::AppHandle) -> Result<u16, String> {
+    backend_port_from_state(&app_handle.state::<BackendState>())
+}
+
+#[tauri::command]
+fn get_backend_status(state: tauri::State<'_, BackendState>) -> Result<BackendStatus, String> {
+    state.0.lock()
+        .map(|status| status.clone())
+        .map_err(|_| "Backend state lock poisoned".to_string())
 }
 
 use tauri::Manager;
@@ -82,7 +85,7 @@ fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(
 fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
-            let port = get_backend_port().unwrap_or(8001);
+            let port = backend_port_from_app(&app_handle).unwrap_or(8001);
             let url = format!("http://127.0.0.1:{}/hud/index.html", port);
             let _ = window.eval(&format!(
                 "if (!window.location.href.includes('127.0.0.1:{}')) window.location.href = '{}';",
@@ -104,7 +107,7 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
 #[tauri::command]
 fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        let port = get_backend_port().unwrap_or(8001);
+        let port = backend_port_from_app(&app_handle).unwrap_or(8001);
         let url = format!("http://127.0.0.1:{}/hud/index.html", port);
 
         let _ = window.eval("window.location.href = 'about:blank';");
@@ -190,6 +193,7 @@ fn move_hud_to_monitor(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(BackendState::new())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
@@ -247,20 +251,53 @@ pub fn run() {
                 return Ok(());
             }
 
-            let current_exe_dir = std::env::current_exe()
-                .ok()
-                .and_then(|p| p.parent().map(|p| p.to_string_lossy().into_owned()))
-                .unwrap_or_else(|| ".".to_string());
+            let data_dir = app.path().app_data_dir()
+                .map_err(|e| format!("Failed to resolve application data directory: {e}"))?;
+            fs::create_dir_all(&data_dir)
+                .map_err(|e| format!("Failed to create application data directory: {e}"))?;
+            let ready_file = data_dir.join("logs").join("web_port.txt");
+            // A previous process' port is never valid for a newly spawned sidecar.
+            let _ = fs::remove_file(&ready_file);
+            let data_dir = data_dir.to_string_lossy().into_owned();
 
             match app.shell().sidecar("bin/server-sidecar") {
                 Ok(sidecar_command) => {
-                    let sidecar_with_args = sidecar_command.args(["--data-dir", &current_exe_dir]);
+                    let sidecar_with_args = sidecar_command.args(["--data-dir", &data_dir]);
                     match sidecar_with_args.spawn() {
                         Ok((mut rx, _child)) => {
                             println!("Sidecar process spawned successfully!");
+                            let app_handle = app.handle().clone();
+                            let ready_file = ready_file.clone();
+                            let ready_app_handle = app.handle().clone();
+                            // Windowed PyInstaller executables can expose no stdout stream on
+                            // Windows. The ready file is a deterministic fallback in the same
+                            // user-writable directory passed to this exact sidecar instance.
+                            std::thread::spawn(move || {
+                                for _ in 0..300 {
+                                    if let Ok(contents) = fs::read_to_string(&ready_file) {
+                                        if let Ok(port) = contents.trim().parse::<u16>() {
+                                            set_backend_status(&ready_app_handle, BackendStatus {
+                                                state: "ready".to_string(),
+                                                port: Some(port),
+                                                error: None,
+                                            });
+                                            return;
+                                        }
+                                    }
+                                    std::thread::sleep(std::time::Duration::from_millis(50));
+                                }
+                            });
                             tauri::async_runtime::spawn(async move {
                                 while let Some(event) = rx.recv().await {
                                     if let CommandEvent::Stdout(line) = event {
+                                        if let Some(port) = parse_backend_ready_port(&line) {
+                                            set_backend_status(&app_handle, BackendStatus {
+                                                state: "ready".to_string(),
+                                                port: Some(port),
+                                                error: None,
+                                            });
+                                            println!("Backend sidecar is ready on port {port}");
+                                        }
                                         println!("sidecar: {}", String::from_utf8_lossy(&line));
                                     } else if let CommandEvent::Stderr(line) = event {
                                         println!("sidecar err: {}", String::from_utf8_lossy(&line));
@@ -270,11 +307,21 @@ pub fn run() {
                         }
                         Err(e) => {
                             eprintln!("Failed to spawn sidecar process: {:?}", e);
+                            set_backend_status(app.handle(), BackendStatus {
+                                state: "failed".to_string(),
+                                port: None,
+                                error: Some(format!("Failed to start backend sidecar: {e}")),
+                            });
                         }
                     }
                 }
                 Err(e) => {
                     eprintln!("Failed to create sidecar command: {:?}", e);
+                    set_backend_status(app.handle(), BackendStatus {
+                        state: "failed".to_string(),
+                        port: None,
+                        error: Some(format!("Failed to create backend sidecar command: {e}")),
+                    });
                 }
             }
             Ok(())
@@ -282,6 +329,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             get_backend_port,
+            get_backend_status,
             set_hud_click_through,
             toggle_hud_window,
             reload_hud_window,

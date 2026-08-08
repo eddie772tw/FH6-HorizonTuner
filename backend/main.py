@@ -3,6 +3,11 @@ import os
 import re
 import sys
 
+# Keep the original process streams available for the Tauri sidecar protocol.
+# Frozen builds redirect normal output to backend.log below, so using sys.stdout
+# later would prevent the host process from receiving readiness notifications.
+SIDECAR_STDOUT = sys.stdout
+
 if getattr(sys, "frozen", False):
     if sys.platform == "win32":
         try:
@@ -15,6 +20,18 @@ parser.add_argument(
     "--data-dir", type=str, default=None, help="Directory for user persistent data"
 )
 parsed_args, _ = parser.parse_known_args()
+
+
+def emit_sidecar_event(event: str, **payload) -> None:
+    """Send a machine-readable lifecycle event to the Tauri host process."""
+    try:
+        message = json.dumps(payload, separators=(",", ":"))
+        SIDECAR_STDOUT.write(f"FH6_{event}:{message}\n")
+        SIDECAR_STDOUT.flush()
+    except Exception:
+        # Logging is not configured this early and failure to notify the host
+        # must not prevent the backend itself from starting.
+        pass
 
 if getattr(sys, "frozen", False):
     RESOURCE_ROOT = sys._MEIPASS
@@ -2252,6 +2269,7 @@ if __name__ == "__main__":
                 sys.exit(1)
 
     if bound:
+        emit_sidecar_event("BACKEND_READY", port=backend_port)
 
         class EndpointFilter(logging.Filter):
             def filter(self, record: logging.LogRecord) -> bool:

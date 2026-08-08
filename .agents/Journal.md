@@ -138,11 +138,44 @@
   - PyInstaller 在 Phase 1 打包產出的 `server-sidecar-x86_64-pc-windows-msvc.exe` 僅作為供 Tauri 在 Phase 2 嵌入的資源。
   - 在發行 Release 時**只需提供 `dist/FH6-HorizonTuner.exe`**，不需要提供 Sidecar 中間檔。已在 `build_all.bat` 末尾自動加上清理邏輯。發行打包時，善用 `.pkgdirignore` 排除開發快取與資源，發行版 `.exe` 會自動於同級目錄建立 `settings.json` 與數據資料夾，實現綠色隨身攜帶。
 
-### 5. Tauri Sidecar 正向轉移與「進程/路徑分離」免安裝隔離
+### 5. Tauri Sidecar 路徑與使用者資料目錄（已修正）
 * **學習點 (Learning)**：
-  - **Sidecar 進程與路徑分離陷阱**：在單檔免安裝 (Single Portable EXE) 模式下，Tauri 將二進位 Sidecar (`server-sidecar`) 釋放至 `%TEMP%` 目錄執行。若 Python 端仍以 `sys.executable` 作為 `DATA_ROOT`，使用者產生的 `settings.json`、`tunings/` 與 SQLite `telemetry_sessions.db` 將寫入 Temp 區，隨時有遺失風險。
-  - **Host EXE 目錄傳參**：Rust 端在 `setup()` 時取得 `std::env::current_exe().parent()`，以 `--data-dir` 參數主動傳給 Sidecar，確保資料與 Host EXE 100% 保持在同級目錄下，實現隨身帶走。
-  - **資料夾初始與動態 Fallback 規範**：
-    - `lang/`：初始化時自動複製專案內完整語系檔至 `DATA_ROOT/lang/` 供使用者直接調整。
-    - `car_params/`：`DATA_ROOT/car_params/` 預設為空，僅在使用者儲存時寫入；讀取時優先嘗試 `DATA_ROOT/car_params/`，若未命中則 Fallback 讀取二進位內建 `RESOURCE_ROOT/car_params/`。
-    - `hud_overlay/`：`DATA_ROOT/hud_overlay/` 預設為空，保留內建原生 HUD 掛載，同時允許使用者放入自訂 HTML/CSS 面板進行動態掃描與追加。
+  - Tauri 可能將 sidecar 解壓到暫存位置執行；`sys.executable`、`sys._MEIPASS` 與主程式所在路徑不是同一個概念，不能直接用來決定使用者資料位置。
+  - Release 版由 Rust 端解析 Tauri `app_data_dir()`，再以 `--data-dir` 傳給 Python sidecar。settings、logs、tunings、HUD 設定與 SQLite 必須寫入該可寫入目錄，不能假設安裝目錄可寫。
+  - `RESOURCE_ROOT` 僅用於唯讀內建資源（語系、車輛資料、內建 HUD）；`DATA_ROOT` 用於使用者資料。兩者不可混用。
+
+### 6. Dev 與 Release 啟動／除錯差異總整理（Release 連線事故避坑）
+* **環境差異 (Environment)**：
+  - `start_all.bat` 是外部啟動兩個程序：Python `backend/main.py` + Vite dev server。此路徑沒有 Tauri host、沒有 sidecar command、也沒有 Tauri `invoke()` 狀態。
+  - `build_all.bat` 先以 PyInstaller 建立 `server-sidecar-x86_64-pc-windows-msvc.exe`，再由 Tauri Release host 透過 `externalBin` 啟動 sidecar。Release 不會啟動 Vite，也不會使用 `start_frontend.bat`。
+  - PyInstaller 的 `console=False` 可能令 Windows frozen process 沒有可用的 stdout/stderr；不能只依賴 stdout 文字完成 host/sidecar 握手。
+
+* **埠號與啟動時序 (Port / Race Condition)**：
+  - 後端啟動時會先 bind `127.0.0.1` 的可用埠並寫入 `logs/web_port.txt`；此埠不保證是 `8001`。
+  - Release 啟動順序是「Tauri spawn sidecar → Python 初始化 → bind port → 前端載入」。前端若在 port 檔產生前就固定 fallback 到 `8001`，會造成只在 Release 出現的所有 API／WebSocket 連線失敗。
+  - 正確流程是由 Tauri state 保存 `starting / ready / failed` 與實際 port；前端必須等待 ready 後才 render。已加入 `get_backend_status` 與 15 秒啟動等待。
+  - Windows 無 console 時，Tauri 會優先解析 `FH6_BACKEND_READY:{"port":...}`；若收不到 stdout，改從本次啟動指定的 App Data `logs/web_port.txt` 輪詢。啟動前要刪除舊 port 檔，避免誤連上一個已終止的 process。
+
+* **前端連線差異 (Frontend Transport)**：
+  - Dev 環境目前使用 `8001` 作為相容 fallback；Release 必須使用 Tauri 回報的動態埠。
+  - 既有頁面仍有 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001` 字串，因此不可在 `main.tsx` 取得 port 後只設定一個全域變數就宣稱完成切換；既有字串不會自動變更。
+  - 動態埠轉送已集中在 `frontend/src/services/backend.ts`，且只在 backend ready 後安裝。新功能應直接使用 `backendHttpUrl()`／`backendWebSocketUrl()`，不要新增更多硬編碼 `8001`。
+
+* **只會在 Dev 出現的問題**：
+  - Vite dev server 啟動失敗、port `1420` 被占用、HMR 或 `start_all.bat` 的 Python／venv／依賴問題，Release 不會重現。
+  - Dev 直接執行 Python，例外會出現在 console；不可用此行為推論 PyInstaller 版一定能看到相同 traceback。Release 應檢查 App Data 下的 `logs/backend.log`。
+  - Dev 可能依賴工作目錄、專案相對路徑或本機 Python 套件；這些在 frozen sidecar 中不存在。
+
+* **只會在 Release 出現的問題**：
+  - sidecar 未被放入 Tauri `bin/`、target triple／檔名不符合、capability 未授權 `shell:allow-execute`，會造成 Tauri 啟動失敗但 dev 完全正常。
+  - `sys._MEIPASS` 下的內建資源與使用者可寫資料目錄不同；將資料寫到安裝目錄或 Temp 可能導致權限錯誤、設定遺失或 port 檔不可見。
+  - `console=False`、Tauri WebView 來源（`tauri://localhost`／`http://tauri.localhost`）與 CORS／capability 限制只會在 Release 暴露。
+  - Release 必須在重新建置 sidecar 後才包含 Python 端的協定變更；只重建前端或 Rust 不會更新舊的 `.exe`。
+
+* **除錯與驗收順序 (Required Checklist)**：
+  1. 先確認 `build_all.bat` 的 PyInstaller 階段真的產生並複製最新 sidecar，再確認 Tauri bundle 內含該檔案。
+  2. 安裝／執行 Release 後，查看 `%LOCALAPPDATA%` 對應 App Data 目錄的 `logs/backend.log`、`logs/web_port.txt`。
+  3. 確認 `web_port.txt` 的埠能以 `127.0.0.1:<port>/api/...` 存取，且不是預設猜測的 `8001`。
+  4. 分別驗證 REST、`/ws/telemetry`、`/ws/overlay` 與 HUD 視窗；REST 成功不代表 WebSocket 或 overlay 已成功。
+  5. 測試 `8001` 被其他程序占用的情況；Release 應仍能使用另一個動態埠。
+  6. 變更啟動協定、`--data-dir` 或 sidecar spec 後，必須同時跑前端測試、`cargo check`、重新打包，並做一次安裝後 smoke test。
