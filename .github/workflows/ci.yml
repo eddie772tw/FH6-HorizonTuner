@@ -255,6 +255,8 @@ jobs:
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
     - name: Build Portable Tauri Executable
+      env:
+        FH6_RELEASE_BUILD: "1"
       run: pnpm --prefix frontend run tauri build --no-bundle
 
     - name: Verify Executable Metadata and Config Interaction Test

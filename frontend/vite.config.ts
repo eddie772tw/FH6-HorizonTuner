@@ -79,6 +79,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 let gitCommit = "unknown";
 let gitBranch = "unknown";
+const isReleaseBuild = process.env.FH6_RELEASE_BUILD === "1";
 
 try {
   gitBranch = execSync("git rev-parse --abbrev-ref HEAD", { cwd: ".." }).toString().trim();
@@ -110,7 +111,7 @@ try {
         }
         return true;
       });
-      if (hasRealChanges) {
+      if (hasRealChanges && !isReleaseBuild) {
         gitCommit = "post-" + gitCommit;
       }
     }
