@@ -84,3 +84,4 @@ FH6 遙測調校工具設計計畫.md
 # Development tool scripts & raw data outputs (one-time use, not for production)
 /tools/
 /benchmark_results.json
+frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe
