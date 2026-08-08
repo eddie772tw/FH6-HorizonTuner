@@ -308,3 +308,13 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 * **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
   Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
 
+---
+
+## Portable Release Contract
+
+The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
+separate sidecar file are required. The PyInstaller backend is embedded into
+the Tauri host and extracted to a versioned temporary directory at startup.
+User data is stored beside the executable when that directory is writable,
+with an AppData fallback for protected locations.
+

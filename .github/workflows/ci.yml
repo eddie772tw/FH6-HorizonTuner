@@ -247,6 +247,16 @@ jobs:
     - name: Build Python Sidecar Executable
       run: python -m PyInstaller server-sidecar.spec --clean
 
+    - name: Stage Embedded Sidecar
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force frontend/src-tauri/bin | Out-Null
+        Copy-Item dist/server-sidecar-x86_64-pc-windows-msvc.exe `
+          frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
+
+    - name: Build Portable Tauri Executable
+      run: pnpm --prefix frontend run tauri build --no-bundle
+
     - name: Verify Executable Metadata and Config Interaction Test
       run: python -m pytest tests/test_executable_bundle.py -v
 

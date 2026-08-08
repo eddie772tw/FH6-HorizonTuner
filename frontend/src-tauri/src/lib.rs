@@ -1,10 +1,18 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::fs;
+use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
+use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use serde::Serialize;
-use tauri_plugin_shell::process::CommandEvent;
-use tauri_plugin_shell::ShellExt;
+
+#[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+const EMBEDDED_SIDECAR: &[u8] = include_bytes!(
+    "../bin/server-sidecar-x86_64-pc-windows-msvc.exe"
+);
+
+#[cfg(not(all(target_os = "windows", target_arch = "x86_64")))]
+const EMBEDDED_SIDECAR: &[u8] = &[];
 
 #[derive(Clone, Serialize)]
 struct BackendStatus {
@@ -14,6 +22,14 @@ struct BackendStatus {
 }
 
 struct BackendState(Mutex<BackendStatus>);
+
+struct BackendProcess(Mutex<Option<Child>>);
+
+impl Default for BackendProcess {
+    fn default() -> Self {
+        Self(Mutex::new(None))
+    }
+}
 
 impl BackendState {
     fn new() -> Self {
@@ -29,6 +45,91 @@ fn set_backend_status(app_handle: &tauri::AppHandle, status: BackendStatus) {
     if let Ok(mut current) = app_handle.state::<BackendState>().0.lock() {
         *current = status;
     }
+}
+
+fn stop_backend_process(app_handle: &tauri::AppHandle) {
+    if let Ok(mut process) = app_handle.state::<BackendProcess>().0.lock() {
+        if let Some(mut child) = process.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+}
+
+fn extract_embedded_sidecar() -> Result<PathBuf, String> {
+    if EMBEDDED_SIDECAR.is_empty() {
+        return Err("No embedded Windows x64 sidecar is available for this build.".to_string());
+    }
+
+    let sidecar_dir = std::env::temp_dir()
+        .join("FH6-HorizonTuner")
+        .join(format!("sidecar-{}-{}", env!("CARGO_PKG_VERSION"), EMBEDDED_SIDECAR.len()));
+    let sidecar_path = sidecar_dir.join("server-sidecar.exe");
+    fs::create_dir_all(&sidecar_dir)
+        .map_err(|e| format!("Failed to create sidecar extraction directory {:?}: {}", sidecar_dir, e))?;
+
+    let needs_write = fs::metadata(&sidecar_path)
+        .map(|metadata| metadata.len() != EMBEDDED_SIDECAR.len() as u64)
+        .unwrap_or(true);
+    if needs_write {
+        fs::write(&sidecar_path, EMBEDDED_SIDECAR)
+            .map_err(|e| format!("Failed to extract embedded sidecar to {:?}: {}", sidecar_path, e))?;
+    }
+
+    Ok(sidecar_path)
+}
+
+fn resolve_portable_data_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let mut args = std::env::args().skip(1);
+    while let Some(argument) = args.next() {
+        if argument == "--data-dir" {
+            if let Some(explicit_dir) = args.next() {
+                return Ok(PathBuf::from(explicit_dir));
+            }
+        }
+    }
+
+    if let Ok(executable) = std::env::current_exe() {
+        if let Some(parent) = executable.parent() {
+            let portable_dir = parent.to_path_buf();
+            if fs::create_dir_all(&portable_dir).is_ok() {
+                let probe = portable_dir.join(".fh6-write-test");
+                if fs::write(&probe, b"ok").is_ok() {
+                    let _ = fs::remove_file(probe);
+                    return Ok(portable_dir);
+                }
+            }
+        }
+    }
+
+    app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve portable data directory: {e}"))
+}
+
+fn spawn_sidecar_output_reader<R>(reader: R, app_handle: tauri::AppHandle, is_stderr: bool)
+where
+    R: Read + Send + 'static,
+{
+    std::thread::spawn(move || {
+        for line in BufReader::new(reader).lines().flatten() {
+            if !is_stderr {
+                if let Some(port) = parse_backend_ready_port(line.as_bytes()) {
+                    set_backend_status(&app_handle, BackendStatus {
+                        state: "ready".to_string(),
+                        port: Some(port),
+                        error: None,
+                    });
+                }
+            }
+            if is_stderr {
+                eprintln!("sidecar err: {line}");
+            } else {
+                println!("sidecar: {line}");
+            }
+        }
+    });
 }
 
 fn parse_backend_ready_port(line: &[u8]) -> Option<u16> {
@@ -248,12 +349,13 @@ fn move_hud_to_monitor(
 pub fn run() {
     tauri::Builder::default()
         .manage(BackendState::new())
-        .plugin(tauri_plugin_shell::init())
+        .manage(BackendProcess::default())
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
                     println!("Main window closed/destroyed — terminating all windows and backend sidecar.");
+                    stop_backend_process(&window.app_handle());
                     window.app_handle().exit(0);
                 }
             }
@@ -319,27 +421,39 @@ pub fn run() {
                 return Ok(());
             }
 
-            let data_dir = app.path().app_data_dir()
-                .map_err(|e| format!("Failed to resolve application data directory: {e}"))?;
+            let data_dir = resolve_portable_data_dir(app.handle())?;
             fs::create_dir_all(&data_dir)
                 .map_err(|e| format!("Failed to create application data directory: {e}"))?;
             let ready_file = data_dir.join("logs").join("web_port.txt");
             // A previous process' port is never valid for a newly spawned sidecar.
             let _ = fs::remove_file(&ready_file);
-            let data_dir = data_dir.to_string_lossy().into_owned();
+            let data_dir_arg = data_dir.to_string_lossy().into_owned();
 
-            match app.shell().sidecar("bin/server-sidecar") {
-                Ok(sidecar_command) => {
-                    let sidecar_with_args = sidecar_command.args(["--data-dir", &data_dir]);
-                    match sidecar_with_args.spawn() {
-                        Ok((mut rx, _child)) => {
-                            println!("Sidecar process spawned successfully!");
-                            let app_handle = app.handle().clone();
-                            let ready_file = ready_file.clone();
+            match extract_embedded_sidecar() {
+                Ok(sidecar_path) => {
+                    let spawn_result = Command::new(&sidecar_path)
+                        .args(["--data-dir", data_dir_arg.as_str()])
+                        .stdin(Stdio::piped())
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .spawn();
+                    match spawn_result {
+                        Ok(mut child) => {
+                            println!("Embedded sidecar extracted to {:?}", sidecar_path);
+                            let stdout = child.stdout.take();
+                            let stderr = child.stderr.take();
+                            if let Some(stdout) = stdout {
+                                spawn_sidecar_output_reader(stdout, app.handle().clone(), false);
+                            }
+                            if let Some(stderr) = stderr {
+                                spawn_sidecar_output_reader(stderr, app.handle().clone(), true);
+                            }
+                            if let Ok(mut process) = app.state::<BackendProcess>().0.lock() {
+                                *process = Some(child);
+                            }
+
                             let ready_app_handle = app.handle().clone();
-                            // Windowed PyInstaller executables can expose no stdout stream on
-                            // Windows. The ready file is a deterministic fallback in the same
-                            // user-writable directory passed to this exact sidecar instance.
+                            let ready_file = ready_file.clone();
                             std::thread::spawn(move || {
                                 for _ in 0..600 {
                                     if let Ok(contents) = fs::read_to_string(&ready_file) {
@@ -355,40 +469,27 @@ pub fn run() {
                                     std::thread::sleep(std::time::Duration::from_millis(50));
                                 }
                             });
-                            tauri::async_runtime::spawn(async move {
-                                while let Some(event) = rx.recv().await {
-                                    if let CommandEvent::Stdout(line) = event {
-                                        if let Some(port) = parse_backend_ready_port(&line) {
-                                            set_backend_status(&app_handle, BackendStatus {
-                                                state: "ready".to_string(),
-                                                port: Some(port),
-                                                error: None,
-                                            });
-                                            println!("Backend sidecar is ready on port {port}");
-                                        }
-                                        println!("sidecar: {}", String::from_utf8_lossy(&line));
-                                    } else if let CommandEvent::Stderr(line) = event {
-                                        println!("sidecar err: {}", String::from_utf8_lossy(&line));
-                                    }
-                                }
-                            });
                         }
                         Err(e) => {
-                            eprintln!("Failed to spawn sidecar process: {:?}", e);
+                            let message = format!(
+                                "Failed to start embedded backend sidecar at {:?}: {e}",
+                                sidecar_path
+                            );
+                            eprintln!("{message}");
                             set_backend_status(app.handle(), BackendStatus {
                                 state: "failed".to_string(),
                                 port: None,
-                                error: Some(format!("Failed to start backend sidecar: {e}")),
+                                error: Some(message),
                             });
                         }
                     }
                 }
                 Err(e) => {
-                    eprintln!("Failed to create sidecar command: {:?}", e);
+                    eprintln!("Failed to prepare embedded backend sidecar: {e}");
                     set_backend_status(app.handle(), BackendStatus {
                         state: "failed".to_string(),
                         port: None,
-                        error: Some(format!("Failed to create backend sidecar command: {e}")),
+                        error: Some(e),
                     });
                 }
             }

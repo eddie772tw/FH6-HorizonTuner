@@ -104,11 +104,16 @@ if errorlevel 1 (
     if not "%GITHUB_ACTIONS%" == "true" pause
     exit /b 1
 )
+if not exist "%TAURI_BIN_DIR%\server-sidecar-x86_64-pc-windows-msvc.exe" (
+    echo [ERROR] Embedded sidecar input is missing from the Tauri source directory.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
+)
 echo [SUCCESS] Python Backend Sidecar created and placed in Tauri bin directory.
 echo.
 
 :: 3. Run Tauri Build
-echo [INFO] Running Tauri Build (Packaging Single Standalone Bundle)...
+echo [INFO] Running Tauri Build (Single Portable Executable, no installer)...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 :: Release builds must use the committed lockfile. Do not mutate dependencies during packaging.
@@ -117,7 +122,7 @@ call pnpm audit
 if errorlevel 1 (
     echo [WARNING] pnpm audit could not complete or found vulnerabilities; continuing with the locked dependency set.
 )
-call pnpm run tauri build || exit /b 1
+call pnpm run tauri build --no-bundle || exit /b 1
 
 if errorlevel 1 (
     echo.
@@ -133,6 +138,11 @@ cd "%~dp0"
 if not exist "%~dp0dist" mkdir "%~dp0dist"
 if exist "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" (
     copy /Y "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" "%~dp0dist\FH6-HorizonTuner.exe"
+)
+if not exist "%~dp0dist\FH6-HorizonTuner.exe" (
+    echo [ERROR] Portable executable was not produced.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
 )
 
 :: 5. Success screen

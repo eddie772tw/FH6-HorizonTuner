@@ -53,7 +53,21 @@ def find_executable_paths():
             root_dir, "dist", "server-sidecar-x86_64-pc-windows-msvc.exe"
         )
 
-    standalone_exe = os.path.join(root_dir, "dist", "FH6-HorizonTuner.exe")
+    standalone_candidates = [
+        os.path.join(root_dir, "dist", "FH6-HorizonTuner.exe"),
+        os.path.join(
+            root_dir,
+            "frontend",
+            "src-tauri",
+            "target",
+            "release",
+            "FH6-HorizonTuner.exe",
+        ),
+    ]
+    standalone_exe = next(
+        (path for path in standalone_candidates if os.path.exists(path)),
+        standalone_candidates[0],
+    )
     return sidecar_path, standalone_exe
 
 
@@ -92,14 +106,10 @@ def test_sidecar_executable_existence_and_metadata():
 def test_executable_bootstrap_and_config_interaction(tmp_path):
     sidecar_path, standalone_exe = find_executable_paths()
 
-    target_exe = None
-    if os.path.exists(sidecar_path):
-        target_exe = sidecar_path
-    elif os.path.exists(standalone_exe):
-        target_exe = standalone_exe
+    target_exe = standalone_exe if os.path.exists(standalone_exe) else None
 
     if not target_exe:
-        pytest.skip("No compiled executable found to run integration test.")
+        pytest.skip("No portable Tauri executable found to run integration test.")
 
     test_data_dir = tmp_path / "test_data_root"
     test_data_dir.mkdir(parents=True, exist_ok=True)

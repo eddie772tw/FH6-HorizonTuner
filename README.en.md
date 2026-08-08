@@ -127,7 +127,7 @@ You can package both the frontend and backend into a **single standalone executa
 
 1. Double-click **`build_all.bat`**:
    - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
-   - **Phase 2 (Tauri Bundle)**: Tauri bundles the React frontend and Python Sidecar binary into a single standalone portable package inside `frontend/src-tauri/target/release/bundle/`.
+   - **Phase 2 (Portable Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single portable executable `dist/FH6-HorizonTuner.exe` without an installer.
 
 > [!NOTE]
 > **Portable Path Strategy**:
@@ -285,4 +285,14 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 * **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
   Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
+
+---
+
+## Portable Release Contract
+
+The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
+separate sidecar file are required. The PyInstaller backend is embedded into
+the Tauri host and extracted to a versioned temporary directory at startup.
+User data is stored beside the executable when that directory is writable,
+with an AppData fallback for protected locations.
 

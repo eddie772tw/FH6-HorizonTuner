@@ -53,9 +53,6 @@
     "copyright": "Copyright (C) 2026 eddie772tw. All rights reserved.",
     "shortDescription": "FH6 HorizonTuner Telemetry Tuning App",
     "longDescription": "FH6 HorizonTuner Telemetry Tuning Tool for Forza Horizon 6",
-    "externalBin": [
-      "bin/server-sidecar"
-    ],
     "icon": [
       "../../app.ico"
     ],
