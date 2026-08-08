@@ -15,11 +15,11 @@
         /* ── Fonts ─────────────────────────────────────────────────────────── */
         @font-face {
             font-family: 'ForzaFont';
-            src: url('./shared/assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+            src: url('./assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
         }
         @font-face {
             font-family: 'ForzaGear';
-            src: url('./shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+            src: url('./assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
 
         /* ── Central Telemetry Cluster Mount Point ─────────────────────────── */
@@ -75,6 +75,13 @@
             nfs15: './nfs15/index.html',
             shift_tacho: './shift_tacho/index.html',
             vfd: './vfd/index.html',
+            s650_normal: './s650_normal/index.html',
+            s650_sport: './s650_sport/index.html',
+            s650_track: './s650_track/index.html',
+            s650_calm: './s650_calm/index.html',
+            s650_foxbody: './s650_foxbody/index.html',
+            s650_heritage67: './s650_heritage67/index.html',
+            s650_svt_cobra: './s650_svt_cobra/index.html',
             drift: './drift/index.html'
         };
         let activeHud = localStorage.getItem('forza_hud_active') || 'simple';
@@ -210,25 +217,14 @@
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
-                const config = ev.data.data || {};
-                window._currentHudConfig = config;
-                if (window.TelemetryCardsManager) {
-                    window.TelemetryCardsManager.update(null, config);
+                window._currentHudConfig = ev.data.data;
+                if (ev.data.data && ev.data.data.hudStyle) {
+                    activeHud = ev.data.data.hudStyle;
                 }
-
-                // The control panel sends live edits through BroadcastChannel.  A
-                // style change needs a new iframe, rather than only changing the
-                // remembered style for a later reload.
-                if (config.hudStyle && config.hudStyle !== activeHud) {
-                    console.log('[Launcher] BroadcastChannel requested HUD style change to:', config.hudStyle);
-                    loadHud(config.hudStyle);
-                    return;
-                }
-
-                postToHud('config', { data: config });
-                if (config.elements) {
-                    window._currentHudElements = config.elements;
-                    postToHud('hud:elements', config.elements);
+                postToHud('config', { data: ev.data.data });
+                if (ev.data.data && ev.data.data.elements) {
+                    window._currentHudElements = ev.data.data.elements;
+                    postToHud('hud:elements', ev.data.data.elements);
                 }
             }
         };

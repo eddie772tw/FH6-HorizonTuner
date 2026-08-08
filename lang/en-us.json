@@ -869,6 +869,13 @@
   "⚠️ Tire Slip Detected! Recording paused.": "⚠️ Tire Slip Detected! Recording paused.",
   "📥 Import Max HP / Torque from Dyno (includes RPM)": "📥 Import Max HP / Torque from Dyno (includes RPM)",
   "🚀 Launch Control Active! Recording paused.": "🚀 Launch Control Active! Recording paused.",
+  "S650 Normal": "S650 Normal",
+  "S650 Sport": "S650 Sport",
+  "S650 Track": "S650 Track",
+  "S650 Calm": "S650 Calm",
+  "S650 Foxbody": "S650 Foxbody",
+  "S650 Heritage '67": "S650 Heritage '67",
+  "S650 SVT Cobra": "S650 SVT Cobra"
   "Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.": "Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.",
   "Drift mode configures extreme front-soft rear-stiff anti-roll bars, softened springs, and wheelspin-focused differential.": "Drift mode configures extreme front-soft rear-stiff anti-roll bars, softened springs, and wheelspin-focused differential.",
   "Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.": "Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.",
