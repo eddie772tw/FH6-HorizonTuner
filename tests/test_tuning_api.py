@@ -35,6 +35,13 @@ def test_tuning_path_traversal_get():
 
     # If the fix works, '.../../../secret' will become 'secret'
     # So it will look for 'TUNINGS_DIR/secret-test.json' instead of somewhere else
+    secret_out_path = os.path.abspath(os.path.join(TUNINGS_DIR, "..", "secret-test.json"))
+    with open(secret_out_path, "w") as f:
+        json.dump({"secret": "hacked"}, f)
+
+    secret_in_path = os.path.join(TUNINGS_DIR, "secret-test.json")
+    with open(secret_in_path, "w") as f:
+        json.dump({"safe": "data"}, f)
 
     # Let's put a legitimate tuning to see if it works with valid data
     test_car_id = "test_car_get"
@@ -60,23 +67,25 @@ def test_tuning_path_traversal_get():
     # For the sake of testing our code, we will assume Starlette might let something through or we test the function directly.
     # But let's try via the TestClient anyway.
 
-    # URL encoded payload for ../../hacked
-    response = client.get("/api/tunings/..%2F..%2Fhacked/test")
-    # Even if Starlette normalizes it to /api/hacked/test (which would 404),
+    # URL encoded payload for ../../secret
+    response = client.get("/api/tunings/..%2F..%2Fsecret/test")
+    # Even if Starlette normalizes it to /api/secret/test (which would 404),
     # let's just assert it doesn't give us some arbitrary file.
     # What we really care about is that it doesn't crash or read outside.
 
-    # Actually let's just make sure it returns 200 and "Tuning not found"
-    # or 404 if Starlette normalizes it away entirely.
+    # If it returns 200, we must assert it returned the safe data from TUNINGS_DIR/secret-test.json
+    # and NOT the hacked data from the outer folder.
     assert response.status_code in (200, 404)
     if response.status_code == 200:
-        assert response.json() == {"error": "Tuning not found"}
+        assert response.json() == {"safe": "data"}
 
-    # Clean up the test file
+    # Clean up the test files
     if os.path.exists(file_path):
         os.remove(file_path)
-    if os.path.exists(secret_file_path):
-        os.remove(secret_file_path)
+    if os.path.exists(secret_out_path):
+        os.remove(secret_out_path)
+    if os.path.exists(secret_in_path):
+        os.remove(secret_in_path)
 
 
 def test_tuning_path_traversal_save():
