@@ -12,6 +12,8 @@ interface GearingTuning {
   finalDrive: number;
   gears: number[];
   maxRpm: number;
+  simulatedTopSpeed?: number;
+  softMaxSpeed?: number;
 }
 
 interface TuningState {
@@ -26,22 +28,23 @@ const initialTuning = (numGears: number): TuningState => ({
   }
 });
 
-const btnStyle: React.CSSProperties = {
-  border: 'none',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  fontWeight: 'bold',
-  padding: '0.4rem 1rem',
-  fontSize: '0.85rem',
-  transition: 'all 0.2s ease'
-};
 
-const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
+
+interface TuningViewProps {
+  currentStep?: number;
+  setCurrentStep?: (step: number | ((prev: number) => number)) => void;
+  setActiveTab?: (tab: any) => void;
+}
+
+const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurrentStep: propSetStep, setActiveTab }) => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
   const { t } = useSettings();
 
-  // Wizard Steps State
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  // Wizard Steps Internal Fallback State
+  const [internalStep, setInternalStep] = useState<number>(1);
+  const currentStep = propStep !== undefined ? propStep : internalStep;
+  const setCurrentStep = propSetStep !== undefined ? propSetStep : setInternalStep;
+
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
   const [season, setSeason] = useState<Season>('Summer');
 
@@ -144,7 +147,11 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
       selectedRaceGoal,
       numGears,
       carParams,
-      tuning.gearing.maxRpm
+      tuning.gearing.maxRpm,
+      {
+        simulatedTopSpeed: tuning.gearing.simulatedTopSpeed,
+        softMaxSpeed: tuning.gearing.softMaxSpeed
+      }
     );
 
     setTuning(prev => ({
@@ -157,55 +164,146 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
     }));
   };
 
-  const hasCoreParams = Boolean(carParams && carParams.weight > 0 && carParams.weight_distribution > 0);
+  useEffect(() => {
+    if (!carParams) return;
+    const result = calculateAEGOGearing(
+      selectedRaceGoal,
+      numGears,
+      carParams,
+      tuning.gearing.maxRpm,
+      {
+        simulatedTopSpeed: tuning.gearing.simulatedTopSpeed,
+        softMaxSpeed: tuning.gearing.softMaxSpeed
+      }
+    );
 
-  // Stepper Header Button Style
-  const stepHeaderStyle = (stepNum: number) => ({
-    padding: '0.5rem 0.9rem',
-    background: currentStep === stepNum 
-      ? 'var(--primary)' 
-      : currentStep > stepNum 
-        ? 'rgba(0, 230, 118, 0.15)' 
-        : 'rgba(255,255,255,0.03)',
-    color: currentStep === stepNum 
-      ? 'black' 
-      : currentStep > stepNum 
-        ? '#00e676' 
-        : 'var(--text-secondary)',
-    border: currentStep === stepNum 
-      ? '1px solid var(--primary)' 
-      : currentStep > stepNum 
-        ? '1px solid rgba(0, 230, 118, 0.3)' 
-        : '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '20px',
-    fontWeight: 'bold',
-    fontSize: '0.8rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.3rem',
-    cursor: stepNum === 1 || hasCoreParams ? 'pointer' : 'not-allowed',
-    transition: 'all 0.3s ease',
-    boxShadow: currentStep === stepNum ? '0 0 12px rgba(0, 180, 255, 0.3)' : 'none'
-  });
+    setTuning(prev => {
+      if (
+        prev.gearing.finalDrive === result.finalDrive &&
+        JSON.stringify(prev.gearing.gears) === JSON.stringify(result.gears)
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        gearing: {
+          ...prev.gearing,
+          finalDrive: result.finalDrive,
+          gears: result.gears
+        }
+      };
+    });
+  }, [selectedRaceGoal, numGears, carParams, tuning.gearing.maxRpm, tuning.gearing.simulatedTopSpeed, tuning.gearing.softMaxSpeed]);
+
+  const hasCoreParams = Boolean(carParams && carParams.weight > 0 && carParams.weight_distribution > 0);
+  const [showParamsPopover, setShowParamsPopover] = useState<boolean>(!hasCoreParams);
+
+  useEffect(() => {
+    if (!hasCoreParams) {
+      setShowParamsPopover(true);
+    }
+  }, [hasCoreParams]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%', overflow: 'hidden' }}>
+    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
       
-      {/* Stepper Navigation Header */}
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '1rem', flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem' }}>{t("Tuning Wizard")}</span>
-            <span style={{ color: 'gray' }}>|</span>
-            <span style={{ color: 'white', fontWeight: 600 }}>{carName} (ID: {carId})</span>
+      {/* Standardized Header Banner (Aligned with OverlayView) */}
+      <div className="border-bottom pb-3 mb-2 flex-shrink-0">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <div>
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <h2 className="text-primary fs-4 fw-bold m-0" style={{ letterSpacing: '0.5px' }}>
+                {t("Tuning Wizard")}
+              </h2>
+              <div 
+                className="position-relative d-inline-flex align-items-center gap-1"
+                onClick={() => { if (!hasCoreParams) setShowParamsPopover(prev => !prev); }}
+                onMouseEnter={() => { if (!hasCoreParams) setShowParamsPopover(true); }}
+                onMouseLeave={() => { if (!hasCoreParams) setShowParamsPopover(false); }}
+                style={{ cursor: !hasCoreParams ? 'pointer' : 'default' }}
+              >
+                <span className="badge text-bg-secondary fs-7">{carName} (ID: {carId})</span>
+                {!hasCoreParams && (
+                  <span className="badge text-bg-warning fs-7">{t("PARAMS INCOMPLETE")}</span>
+                )}
+
+                {!hasCoreParams && showParamsPopover && (
+                  <div 
+                    className="popover bs-popover-bottom show glass-panel shadow-lg border"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      left: 0,
+                      zIndex: 1050,
+                      minWidth: '320px',
+                      backdropFilter: 'blur(16px)',
+                      background: 'var(--glass-bg)',
+                      borderColor: 'var(--bs-warning)',
+                      cursor: 'default'
+                    }}
+                    role="tooltip"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        left: '20px',
+                        width: 0,
+                        height: 0,
+                        borderLeft: '6px solid transparent',
+                        borderRight: '6px solid transparent',
+                        borderBottom: '6px solid var(--bs-warning)'
+                      }} 
+                    />
+                    <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center gap-2">
+                        <span>{t("Vehicle Parameters Required")}</span>
+                        <span className="badge text-bg-warning">REQUIRED</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-close btn-sm"
+                        aria-label="Close"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowParamsPopover(false);
+                        }}
+                      ></button>
+                    </div>
+                    <div className="popover-body px-3 py-2 text-start">
+                      <div className="fs-7 text-body fw-medium">
+                        {t("Basic physics parameters (Vehicle Weight / Distribution) are missing.")}
+                      </div>
+                      <div className="fs-8 text-secondary mt-1 mb-2">
+                        {t("Complete them in Step 1 or Car Parameters tab to perform calculations.")}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline-warning btn-sm fw-bold w-100"
+                        onClick={() => {
+                          setShowParamsPopover(false);
+                          setActiveTab?.('car_params');
+                        }}
+                      >
+                        {t("Go to Car Parameters")} &gt;
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
+              {t("Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard")}
+            </p>
           </div>
           
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="d-flex gap-2">
             {currentStep > 1 && (
               <button 
                 type="button"
+                className="btn btn-outline-secondary fw-bold px-3 py-2"
                 onClick={() => setCurrentStep(prev => prev - 1)} 
-                style={{ ...btnStyle, background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}
               >
                 &lt; {t("Previous")}
               </button>
@@ -215,17 +313,12 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
               <span title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}>
                 <button
                   type="button"
+                  className="btn btn-primary fw-bold px-4 py-2"
                   onClick={() => {
                     if (currentStep === 1) applyScientificGearing();
                     setCurrentStep(prev => prev + 1);
                   }}
                   disabled={!hasCoreParams}
-                  style={{
-                    ...btnStyle,
-                    background: !hasCoreParams ? 'gray' : 'var(--primary)',
-                    color: !hasCoreParams ? 'rgba(255,255,255,0.4)' : 'black',
-                    cursor: !hasCoreParams ? 'not-allowed' : 'pointer'
-                  }}
                 >
                   {t("Next")} &gt;
                 </button>
@@ -234,22 +327,57 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
           </div>
         </div>
 
-        {/* Wizard Stepper Progress Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-          <div style={stepHeaderStyle(1)} onClick={() => setCurrentStep(1)}>1. {t("Goal & Setup")}</div>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
-          <div style={stepHeaderStyle(2)} onClick={() => hasCoreParams && setCurrentStep(2)}>2. {t("Gearbox")}</div>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
-          <div style={stepHeaderStyle(3)} onClick={() => hasCoreParams && setCurrentStep(3)}>3. {t("Chassis")}</div>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
-          <div style={stepHeaderStyle(4)} onClick={() => hasCoreParams && setCurrentStep(4)}>4. {t("Tire & Alignment")}</div>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }} />
-          <div style={stepHeaderStyle(5)} onClick={() => hasCoreParams && setCurrentStep(5)}>5. {t("Telemetry Calibration")}</div>
-        </div>
+        {/* Wizard Stepper Nav Pills */}
+        <ul className="nav nav-pills nav-justified gap-2 bg-body-tertiary p-1.5 rounded border">
+          <li className="nav-item">
+            <button 
+              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 1 ? 'active fw-bold' : ''}`}
+              onClick={() => setCurrentStep(1)}
+            >
+              <span className="badge text-bg-secondary">1</span> {t("Goal & Setup")}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button 
+              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 2 ? 'active fw-bold' : ''}`}
+              disabled={!hasCoreParams}
+              onClick={() => hasCoreParams && setCurrentStep(2)}
+            >
+              <span className="badge text-bg-secondary">2</span> {t("Gearbox")}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button 
+              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 3 ? 'active fw-bold' : ''}`}
+              disabled={!hasCoreParams}
+              onClick={() => hasCoreParams && setCurrentStep(3)}
+            >
+              <span className="badge text-bg-secondary">3</span> {t("Chassis")}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button 
+              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 4 ? 'active fw-bold' : ''}`}
+              disabled={!hasCoreParams}
+              onClick={() => hasCoreParams && setCurrentStep(4)}
+            >
+              <span className="badge text-bg-secondary">4</span> {t("Tire & Alignment")}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button 
+              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 5 ? 'active fw-bold' : ''}`}
+              disabled={!hasCoreParams}
+              onClick={() => hasCoreParams && setCurrentStep(5)}
+            >
+              <span className="badge text-bg-secondary">5</span> {t("Telemetry Calibration")}
+            </button>
+          </li>
+        </ul>
       </div>
 
-      {/* Step Content Area */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.2rem' }}>
+      {/* Step Content Area Container */}
+      <div className="flex-grow-1 overflow-auto p-2">
         {currentStep === 1 && (
           <Step1GoalSetup
             selectedRaceGoal={selectedRaceGoal}
@@ -296,6 +424,7 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
             selectedRaceGoal={selectedRaceGoal}
             carParams={carParams}
             chassisTuning={chassisResult}
+            alignment={tireAlignResult}
             targetPhot={tireAlignResult?.targetPhot || 32.5}
           />
         )}
@@ -306,3 +435,4 @@ const TuningView: React.FC<{ setActiveTab?: (tab: any) => void }> = () => {
 };
 
 export default TuningView;
+

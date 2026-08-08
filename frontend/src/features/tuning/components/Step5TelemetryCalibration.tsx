@@ -9,13 +9,18 @@ interface Step5TelemetryCalibrationProps {
   selectedRaceGoal: string;
   carParams: CarParams | null;
   chassisTuning: ChassisTuningResult | null;
+  alignment?: {
+    camber: { front: number; rear: number };
+    toe: { front: number | string; rear: number | string };
+    caster: number;
+  } | null;
   targetPhot: number;
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.5)',
-  border: '1px solid rgba(255,255,255,0.15)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.4rem 0.6rem',
   borderRadius: '6px',
   fontSize: '0.9rem',
@@ -24,12 +29,12 @@ const inputStyle: React.CSSProperties = {
 };
 
 const selectStyle: React.CSSProperties = {
-  background: 'black',
-  border: '1px solid rgba(255,255,255,0.2)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.4rem 0.6rem',
   borderRadius: '6px',
-  fontSize: '0.85rem',
+  fontSize: '0.9rem',
   width: '100%'
 };
 
@@ -37,16 +42,21 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
   selectedRaceGoal,
   carParams,
   chassisTuning,
+  alignment,
   targetPhot
 }) => {
-  const { t } = useSettings();
+  const { convertTemp, t } = useSettings();
   const { data: telemetry, isConnected } = useTelemetry();
+
+  const tempUnitObj = convertTemp(0);
+  const tempUnitLabel = tempUnitObj.label;
+  const tempUnit: 'C' | 'F' = tempUnitLabel.includes('F') ? 'F' : 'C';
 
   // Telemetry Inputs state
   const [photF, setPhotF] = useState<number>(33.5);
   const [photR, setPhotR] = useState<number>(32.5);
-  const [tempF, setTempF] = useState<number>(92);
-  const [tempR, setTempR] = useState<number>(88);
+  const [tempF, setTempF] = useState<number>(tempUnit === 'F' ? 198 : 92);
+  const [tempR, setTempR] = useState<number>(tempUnit === 'F' ? 190 : 88);
   const [handlingIssue, setHandlingIssue] = useState<string>('none');
   const [autoSyncTemp, setAutoSyncTemp] = useState<boolean>(true);
 
@@ -59,13 +69,39 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
       const rr = telemetry.TireTemp[3] || 0;
 
       if (fl > 0 || fr > 0 || rl > 0 || rr > 0) {
-        const avgF = Math.round((fl + fr) / 2);
-        const avgR = Math.round((rl + rr) / 2);
-        setTempF(avgF);
-        setTempR(avgR);
+        const rawAvgF = (fl + fr) / 2;
+        const rawAvgR = (rl + rr) / 2;
+
+        if (tempUnit === 'C') {
+          // Convert raw Fahrenheit from UDP stream to Celsius
+          setTempF(Math.round((rawAvgF - 32) * 5 / 9));
+          setTempR(Math.round((rawAvgR - 32) * 5 / 9));
+        } else {
+          setTempF(Math.round(rawAvgF));
+          setTempR(Math.round(rawAvgR));
+        }
       }
     }
-  }, [telemetry, autoSyncTemp]);
+  }, [telemetry, autoSyncTemp, tempUnit]);
+
+  // Extract live telemetry grip metrics if stream is active
+  const telemetryGripMetrics = React.useMemo(() => {
+    if (!telemetry) return null;
+    const slipRatio = Array.isArray(telemetry.TireSlipRatio) ? telemetry.TireSlipRatio : [0, 0, 0, 0];
+    const slipAngle = Array.isArray(telemetry.TireSlipAngle) ? telemetry.TireSlipAngle : [0, 0, 0, 0];
+    const suspTravel = Array.isArray(telemetry.NormalizedSuspensionTravel) ? telemetry.NormalizedSuspensionTravel : [0, 0, 0, 0];
+
+    const slipAngleDeg = slipAngle.map(a => Math.abs(a) * (180 / Math.PI));
+
+    return {
+      avgSlipRatioF: (slipRatio[0] + slipRatio[1]) / 2,
+      avgSlipRatioR: (slipRatio[2] + slipRatio[3]) / 2,
+      maxSlipAngleF: Math.max(slipAngleDeg[0], slipAngleDeg[1]),
+      maxSlipAngleR: Math.max(slipAngleDeg[2], slipAngleDeg[3]),
+      maxSuspTravelF: Math.max(suspTravel[0], suspTravel[1]),
+      maxSuspTravelR: Math.max(suspTravel[2], suspTravel[3])
+    };
+  }, [telemetry]);
 
   if (!carParams) {
     return (
@@ -83,7 +119,10 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     tempR,
     targetPhot: targetPhot || 32.5,
     handlingIssue,
-    chassis: chassisTuning
+    tempUnit,
+    alignment,
+    chassis: chassisTuning,
+    telemetryGripMetrics
   });
 
   return (
@@ -99,7 +138,6 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
             {t("Closed-loop telemetry diagnosis with live temperature sync and pressure fine-tuning")}
           </p>
         </div>
-
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', background: 'rgba(0,0,0,0.4)', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span style={{ height: '8px', width: '8px', borderRadius: '50%', background: isConnected ? '#00e676' : 'gray' }} />
@@ -162,10 +200,10 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
             </div>
           </div>
 
-          {/* 2. Tire Temperature Inputs (deg C) */}
+          {/* 2. Tire Temperature Inputs (deg C / F) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              2. {t("Axle Average Temperatures (°C)")}
+              2. {t("Axle Average Temperatures")} ({tempUnitLabel})
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
@@ -222,7 +260,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
             <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
               <span style={{ fontSize: '0.7rem', color: 'gray', display: 'block' }}>{t("Axle Temp Delta")}</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white', display: 'block', margin: '0.2rem 0' }}>
-                {diagResult.deltaTaxle >= 0 ? '+' : ''}{diagResult.deltaTaxle} °C
+                {diagResult.deltaTaxle >= 0 ? '+' : ''}{diagResult.deltaTaxle} {tempUnitLabel}
               </span>
               <span style={{ fontSize: '0.7rem', color: diagResult.axleBalanceStatus === 'balanced' ? '#00e676' : (diagResult.axleBalanceStatus === 'front_overheat' ? '#ff2a5f' : '#ffb703') }}>
                 {diagResult.axleBalanceStatus === 'balanced' && t("Balanced")}
@@ -264,7 +302,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
               </span>
             </h4>
 
-            {/* Directive 1: Cold Pressure */}
+            {/* Priority Directive 1: Cold Pressure */}
             <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '6px', borderLeft: '3px solid #00b4d8' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#00b4d8', display: 'block', marginBottom: '0.2rem' }}>
                 {t("Priority 1: Cold Tire Pressure Directive")}
@@ -274,15 +312,59 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
               </span>
             </div>
 
-            {/* Directive 2: Suspension & Geometry */}
-            <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '6px', borderLeft: '3px solid #ffb703' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#ffb703', display: 'block', marginBottom: '0.2rem' }}>
+            {/* Priority Directive 2: Suspension & Geometry */}
+            <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '6px', borderLeft: '3px solid #ffb703', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#ffb703', display: 'block' }}>
                 {t("Priority 2: Alignment & Suspension Linkage Directive")}
               </span>
               <span style={{ fontSize: '0.85rem', color: 'white', lineHeight: '1.4' }}>
                 {diagResult.secondarySuspensionAdvice}
               </span>
+
+              {/* Explicit Target Badges / Micro-Adjustment Items */}
+              {diagResult.specificAdjustments.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.3rem' }}>
+                  {diagResult.specificAdjustments.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'rgba(255, 183, 3, 0.12)',
+                        border: '1px solid rgba(255, 183, 3, 0.3)',
+                        borderRadius: '4px',
+                        padding: '0.3rem 0.6rem',
+                        fontSize: '0.78rem',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem'
+                      }}
+                    >
+                      <span style={{ color: 'var(--text-secondary)' }}>{item.name}:</span>
+                      <strong style={{ color: '#ffb703' }}>
+                        {item.current.toFixed(item.unit === '°' ? 2 : 1)}{item.unit} → {item.target.toFixed(item.unit === '°' ? 2 : 1)}{item.unit}
+                      </strong>
+                      <span style={{ fontSize: '0.7rem', color: item.delta > 0 ? '#00e676' : '#ff2a5f' }}>
+                        ({item.delta > 0 ? `+${item.delta}` : item.delta})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Live Telemetry Grip Insights (if available) */}
+            {diagResult.gripAnalysisAdvice.length > 0 && (
+              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '6px', borderLeft: '3px solid #00e676', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#00e676', display: 'block' }}>
+                  {t("Telemetry Dynamic Grip Insights")}
+                </span>
+                {diagResult.gripAnalysisAdvice.map((advice, idx) => (
+                  <div key={idx} style={{ fontSize: '0.8rem', color: 'white', lineHeight: '1.4' }}>
+                    {advice}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Convergence Note */}
             <div style={{ fontSize: '0.75rem', color: 'gray', marginTop: 'auto', paddingTop: '0.4rem' }}>
@@ -297,3 +379,4 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     </div>
   );
 };
+

@@ -34,7 +34,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 's650_normal' | 's650_sport' | 's650_track' | 's650_calm' | 's650_foxbody' | 's650_heritage67' | 's650_svt_cobra';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift' | 's650_normal' | 's650_sport' | 's650_track' | 's650_calm' | 's650_foxbody' | 's650_heritage67' | 's650_svt_cobra';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';

@@ -91,14 +91,185 @@ describe('calculateAEGOGearing', () => {
     expect(result.finalDrive).toBeGreaterThanOrEqual(2.0);
   });
 
-  it('should reflect mechBalance, aeroBalance, and aeroEfficiency on Road gearing calculations', () => {
-    const defaultBalanceCar: TuningCarParams = { ...sampleCar, mechBalance: 0.50, aeroBalance: 0.50, aeroEfficiency: 0.50 };
-    const customBalanceCar: TuningCarParams = { ...sampleCar, mechBalance: 0.80, aeroBalance: 0.80, aeroEfficiency: 0.80 };
+  it('should reflect aeroEfficiency on Road gearing calculations', () => {
+    const lowEfficiencyCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.20 };
+    const highEfficiencyCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.80 };
     
-    const defaultRes = calculateAEGOGearing('Road', 6, defaultBalanceCar, 7500);
-    const customRes = calculateAEGOGearing('Road', 6, customBalanceCar, 7500);
+    const lowRes = calculateAEGOGearing('Road', 6, lowEfficiencyCar, 7500);
+    const highRes = calculateAEGOGearing('Road', 6, highEfficiencyCar, 7500);
 
-    expect(customRes.finalDrive).not.toBe(defaultRes.finalDrive);
+    expect(highRes.finalDrive).not.toBe(lowRes.finalDrive);
+  });
+
+  it('Vehicle 3847 (Mustang Dark Horse) Road gearing should maintain physical reasonableness and closed-loop smooth progression', () => {
+    const mustang3847: TuningCarParams = {
+      weight: 1804,
+      weight_distribution: 54,
+      drivetrain: 'RWD',
+      induction: 'Supercharger',
+      maxHp: 882,
+      maxTorque: 665,
+      maxHpRpm: 7500,
+      maxTorqueRpm: 4750,
+      aeroEfficiency: 0.68,
+      rearTireWidth: 335,
+      rearTireAspect: 25,
+      rearTireRim: 20
+    };
+
+    const res = calculateAEGOGearing('Road', 6, mustang3847, 8625);
+    expect(res.gears).toHaveLength(6);
+
+    // 1. Verify FD is within valid physical range [2.0, 6.5]
+    expect(res.finalDrive).toBeGreaterThanOrEqual(2.0);
+    expect(res.finalDrive).toBeLessThanOrEqual(6.5);
+
+    // 2. Verify monotonic decrease (g1 > g2 > ... > g6)
+    for (let i = 1; i < res.gears.length; i++) {
+      expect(res.gears[i]).toBeLessThan(res.gears[i - 1]);
+    }
+
+    // 3. Verify shift RPM drops from maxHpRpm (7500 RPM) remain inside powerband (>= maxTorqueRpm 4750 RPM)
+    for (let i = 1; i < res.gears.length; i++) {
+      const shiftRpm = 7500 * (res.gears[i] / res.gears[i - 1]);
+      expect(shiftRpm).toBeGreaterThanOrEqual(4750);
+    }
+
+    // 5. Verify smooth step ratio progression without cliff drop (R_{i+1} >= R_i - 0.05)
+    for (let i = 1; i < res.gears.length - 1; i++) {
+      const stepRatioCurrent = res.gears[i] / res.gears[i - 1];
+      const stepRatioNext = res.gears[i + 1] / res.gears[i];
+      expect(stepRatioNext).toBeGreaterThanOrEqual(stepRatioCurrent - 0.05);
+    }
+  });
+
+  it('should support secondary correction with simulatedTopSpeed and softMaxSpeed', () => {
+    const baseRes = calculateAEGOGearing('Road', 6, sampleCar, 7500);
+
+    // 1. Lower simulatedTopSpeed should adjust top gear / FD setup to be shorter
+    const correctedLower = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      simulatedTopSpeed: 200
+    });
+    expect(correctedLower.gears[5] * correctedLower.finalDrive).toBeGreaterThan(baseRes.gears[5] * baseRes.finalDrive);
+
+    // 2. softMaxSpeed clamping
+    const correctedSoftCap = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      softMaxSpeed: 180
+    });
+    expect(correctedSoftCap.gears[5] * correctedSoftCap.finalDrive).toBeGreaterThan(baseRes.gears[5] * baseRes.finalDrive);
+
+    // 3. Graceful handling of invalid or empty secondary correction
+    const fallbackRes = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      simulatedTopSpeed: 0,
+      softMaxSpeed: -10
+    });
+    expect(fallbackRes.finalDrive).toBe(baseRes.finalDrive);
+  });
+
+  it('should dynamically bound top gear speed within softMaxSpeed at redline RPM without hardcoded values', () => {
+    const carParams: TuningCarParams = {
+      weight: 1679,
+      weight_distribution: 54,
+      drivetrain: 'RWD',
+      induction: 'Supercharger',
+      maxHp: 909,
+      maxTorque: 687,
+      maxHpRpm: 7500,
+      maxTorqueRpm: 4750,
+      aeroEfficiency: 0.68,
+      rearTireWidth: 335,
+      rearTireAspect: 30,
+      rearTireRim: 19
+    };
+
+    const maxRpm = Math.round((carParams.maxHpRpm || 7000) * 1.15);
+    const softMaxSpeed = 334;
+    const simulatedTopSpeed = 310.2;
+
+    const res = calculateAEGOGearing('Road', 6, carParams, maxRpm, {
+      simulatedTopSpeed,
+      softMaxSpeed
+    });
+
+    // Compute tire radius dynamically from car parameters
+    const wallMm = ((carParams.rearTireWidth || 245) * (carParams.rearTireAspect || 40)) / 100;
+    const rimMm = (carParams.rearTireRim || 18) * 25.4;
+    const tireRadiusM = (wallMm * 2 + rimMm) / 2000;
+
+    const topGearRatio = res.gears[5];
+    const speedAtRedlineKmh = calcGearSpeed(maxRpm, topGearRatio, res.finalDrive, tireRadiusM) * 3.6;
+    const speedAtPeakHpKmh = calcGearSpeed(carParams.maxHpRpm, topGearRatio, res.finalDrive, tireRadiusM) * 3.6;
+
+    // 1. Dynamic Assertion: Redline speed must be bounded within softMaxSpeed (with tiny float margin)
+    expect(speedAtRedlineKmh).toBeLessThanOrEqual(softMaxSpeed + 0.5);
+
+    // 2. Dynamic Assertion: Peak HP speed must be bounded by simulatedTopSpeed or softMaxSpeed scaled
+    const expectedPeakHpCap = Math.min(simulatedTopSpeed, softMaxSpeed * (carParams.maxHpRpm / maxRpm));
+    expect(speedAtPeakHpKmh).toBeLessThanOrEqual(expectedPeakHpCap + 0.5);
+
+    // 3. Dynamic Assertion: All gear ratios must remain strictly monotonically decreasing
+    for (let i = 1; i < res.gears.length; i++) {
+      expect(res.gears[i]).toBeLessThan(res.gears[i - 1]);
+    }
+  });
+
+  it('Vehicle 3594 Road gearing should tighten final drive, align shift RPMs to powerband, and correct simulatedTopSpeed at redline', () => {
+    const car3594: TuningCarParams = {
+      weight: 1668.77,
+      weight_distribution: 50,
+      drivetrain: 'RWD',
+      induction: 'TwinTurbo',
+      maxHp: 770,
+      maxTorque: 666,
+      maxHpRpm: 5750,
+      maxTorqueRpm: 2750,
+      aeroEfficiency: 0.685,
+      rearTireWidth: 315,
+      rearTireAspect: 30,
+      rearTireRim: 20
+    };
+
+    const maxRpm = Math.round(car3594.maxHpRpm * 1.15); // 6613 RPM
+    
+    // 1. Baseline Road Gearing
+    const baseRes = calculateAEGOGearing('Road', 7, car3594, maxRpm);
+    expect(baseRes.gears).toHaveLength(7);
+    expect(baseRes.finalDrive).toBeGreaterThanOrEqual(3.0); // Should be tightened compared to old ~2.96
+
+    // 2. Verify monotonic decrease
+    for (let i = 1; i < baseRes.gears.length; i++) {
+      expect(baseRes.gears[i]).toBeLessThan(baseRes.gears[i - 1]);
+    }
+
+    // 3. Verify ALL shift RPMs (from 1->2 up to highest gear) drop into effective powerband <= maxHpRpm
+    for (let i = 1; i < baseRes.gears.length; i++) {
+      const shiftRpm = maxRpm * (baseRes.gears[i] / baseRes.gears[i - 1]);
+      expect(shiftRpm).toBeLessThanOrEqual(car3594.maxHpRpm + 50);
+    }
+
+    // 4. Secondary Correction with simulatedTopSpeed = 290 km/h
+    const correctedRes = calculateAEGOGearing('Road', 7, car3594, maxRpm, {
+      simulatedTopSpeed: 290
+    });
+
+    const wallMm = (car3594.rearTireWidth! * car3594.rearTireAspect!) / 100;
+    const rimMm = car3594.rearTireRim! * 25.4;
+    const tireRadiusM = (wallMm * 2 + rimMm) / 2000;
+    const topGearRatio = correctedRes.gears[6];
+
+    const redlineSpeedKmh = calcGearSpeed(maxRpm, topGearRatio, correctedRes.finalDrive, tireRadiusM) * 3.6;
+    expect(redlineSpeedKmh).toBeLessThanOrEqual(290 + 1.0);
+  });
+
+  it('drivetrain launch factor should adjust 1st gear target speed (AWD shorter 1st gear than RWD)', () => {
+    const awdCar: TuningCarParams = { ...sampleCar, drivetrain: 'AWD' };
+    const rwdCar: TuningCarParams = { ...sampleCar, drivetrain: 'RWD' };
+
+    const awdRes = calculateAEGOGearing('Road', 6, awdCar, 7500);
+    const rwdRes = calculateAEGOGearing('Road', 6, rwdCar, 7500);
+
+    // AWD 1st gear ratio should be larger than RWD for shorter 1st gear launch
+    expect(awdRes.gears[0]).toBeGreaterThan(rwdRes.gears[0]);
   });
 });
 
@@ -210,16 +381,68 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(rallyRes.damping.bumpF).toBe(Math.round(rallyRes.damping.reboundF * 0.40 * 10) / 10);
   });
 
-  it('Drag goal should set unconstrained front ARB and rake angle height', () => {
+  it('Drag goal should set soft front ARB, stiff rear ARB, and forward rake ride height (Front Low, Rear High)', () => {
     const res = calculateChassisTuning('Drag', roadCar);
     expect(res.arb.front).toBe(1.0);
-    expect(res.arb.rear).toBe(2.0);
-    expect(res.springs.heightF).toBe(roadCar.height_front_max);
-    expect(res.springs.heightR).toBe(roadCar.height_rear_min);
-    expect(res.damping.reboundF).toBe(1.0);
-    expect(res.damping.bumpF).toBe(20.0);
-    expect(res.damping.reboundR).toBe(20.0);
-    expect(res.damping.bumpR).toBe(1.0);
+    expect(res.arb.rear).toBe(65.0);
+    expect(res.springs.heightF).toBe(roadCar.height_front_min);
+    expect(res.springs.heightR).toBe(roadCar.height_rear_max);
+    expect(res.springs.rear).toBeGreaterThan(res.springs.front);
+    expect(res.damping.reboundF).toBe(3.0);
+    expect(res.damping.bumpF).toBe(4.0);
+    expect(res.damping.reboundR).toBe(12.0);
+    expect(res.damping.bumpR).toBe(10.0);
+  });
+
+  it('Car 1601 (930 HP AWD Lambo) Drag goal should achieve >360 km/h top speed in 4th gear and correct Forward Rake stance', () => {
+    const car1601: TuningCarParams = {
+      weight: 1419.29,
+      weight_distribution: 44,
+      drivetrain: 'AWD',
+      induction: 'TwinTurbo',
+      maxHp: 930,
+      maxTorque: 628,
+      maxHpRpm: 8500,
+      maxTorqueRpm: 6500,
+      aeroBalance: 0.5,
+      aeroEfficiency: 0.46,
+      frontTireWidth: 285,
+      frontTireAspect: 30,
+      frontTireRim: 19,
+      rearTireWidth: 345,
+      rearTireAspect: 25,
+      rearTireRim: 19,
+      spring_front_min: 57.9,
+      spring_front_max: 289.5,
+      spring_rear_min: 57.9,
+      spring_rear_max: 289.5,
+      height_front_min: 10.5,
+      height_front_max: 15.0,
+      height_rear_min: 9.5,
+      height_rear_max: 14.0
+    };
+
+    // 1. Gearing test for 6-speed gearbox
+    const gearingRes = calculateAEGOGearing('Drag', 6, car1601, 8500);
+    expect(gearingRes.gears).toHaveLength(6);
+    expect(gearingRes.gears[3]).toBe(1.0); // 4th gear = 1.0
+    expect(gearingRes.gears[4]).toBe(1.0); // 5th gear = 4th gear (4-speed constraint)
+    expect(gearingRes.gears[5]).toBe(1.0); // 6th gear = 4th gear (4-speed constraint)
+
+    // Calculate speed in 4th gear at peak HP RPM (8500 RPM)
+    const wallMm = (345 * 25) / 100;
+    const rimMm = 19 * 25.4;
+    const tireRadiusM = (wallMm * 2 + rimMm) / 2000;
+    const speedAtPeakHpKmh = calcGearSpeed(8500, gearingRes.gears[3], gearingRes.finalDrive, tireRadiusM) * 3.6;
+
+    // 4th gear speed at Peak HP RPM MUST exceed 360 km/h for 930 HP AWD Drag car
+    expect(speedAtPeakHpKmh).toBeGreaterThan(360.0);
+
+    // 2. Chassis test
+    const chassisRes = calculateChassisTuning('Drag', car1601);
+    expect(chassisRes.springs.heightF).toBe(10.5); // Front MIN
+    expect(chassisRes.springs.heightR).toBe(14.0); // Rear MAX (Forward Rake)
+    expect(chassisRes.springs.rear).toBeGreaterThan(chassisRes.springs.front); // Stiff Rear Springs for heavy launch torque
   });
 
   it('should enforce safety clamping within user-defined slider limits', () => {

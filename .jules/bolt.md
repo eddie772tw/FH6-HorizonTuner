@@ -29,3 +29,20 @@
 ## 2026-08-04 - Chassis Tuning Refactoring & UI Input Bypass for E2E
 **Learning:** Refactoring the React TuningView required separating the tuning setup step (`Step 1`), gearing calculation (`Step 2`), and chassis logic (`Step 3`) into distinct stages. Because React state strictly controls input fields mapped via `useCarParams`, directly injecting test variables or dispatching raw JavaScript `click()` events might fail if `onChange` listeners and state hooks are not fully initialized or if they block standard Playwright interactions due to the component structure.
 **Action:** When E2E testing multistep React forms in Playwright, bypass UI constraints directly using `CustomEvent` injection tied to window listeners where possible, or directly access `__reactProps$` on DOM elements if necessary to simulate user typing, rather than relying solely on Playwright's native `fill` and `click` actions.
+## 2024-08-05 - Avoid .forEach and Object allocation in 60Hz Render Loops
+**Learning:** In high-frequency rendering loops (like HUD telemetry updates running at 60Hz), using functional iterations (e.g., `[].forEach`, `Object.keys().forEach`) or allocating objects dynamically every frame creates significant Garbage Collection (GC) pressure, causing visual stuttering and frame drops.
+**Action:** Always replace `.forEach` with native `for` loops, pre-compute keys outside the render loop instead of calling `Object.keys()`, and use pre-allocated static variables or objects instead of creating zero-values (like `{x: 0, y: 0}`) on the fly.
+## 2025-03-10 - Avoid Higher-Order Array Methods in Large Array Processors
+**Learning:** Chained array methods like `.filter().map()` or nested `.forEach` loops inside React hooks or utility functions that process large sets of data (like historical telemetry points in `ChartEditModal.tsx` or `tuningDiagnosis.ts`) cause excessive memory allocations and GC spikes. This leads to noticeable UI stuttering when charts update or calculations run.
+**Action:** Always replace `.forEach()`, `.map()`, `.filter()`, and `.reduce()` with standard `for` loops when handling potentially large arrays. For example, merge a map/reduce combination into a single loop accumulator to improve computational throughput and reduce memory footprint.
+
+## 2024-05-18 - Replacing forEach closures in high-frequency React loop
+**Learning:** In high-frequency rendering paths (like processing large telemetry dataset for Chart previews), using array methods like `.forEach` creates a new function closure allocation for every data point. This can cause unnecessary garbage collection overhead when parsing thousands of items continuously.
+**Action:** Replace `.forEach` or chained array iteration methods with native `for` loops inside expensive data-parsing contexts like `transformTelemetryData` or high-rate UI loops to reduce GC pressure.
+## 2026-08-07 - Cache CSS Custom Property Updates in High-Frequency DOM Loops
+**Learning:** In a 60Hz high-frequency loop (like `requestAnimationFrame` updates for HUD overlays), blindly calling `style.setProperty()` every frame forces the browser to re-evaluate styles, causing layout thrashing even if the value hasn't changed.
+**Action:** Use a closure variable object (e.g. `var _lastStyles = {}`) to cache the currently applied CSS custom property values, and conditionally invoke `style.setProperty()` only when the new value differs from the cached value to avoid redundant DOM operations.
+
+## 2026-08-08 - Prevent Heap Allocation in dict.get Defaults
+**Learning:** High-frequency backend methods (like parsing UDP telemetry or rendering hot paths) using inline list allocations (e.g. `[0.0] * 4`) as fallback default arguments in `dict.get()` will instantiate new list objects on every single function call. This places immense pressure on the Garbage Collector.
+**Action:** Extract inline list allocations used as default fallback arguments into module-level immutable constants, such as tuples (e.g. `DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)`), to completely eliminate the allocation overhead.

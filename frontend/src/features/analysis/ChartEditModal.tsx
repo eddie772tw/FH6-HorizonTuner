@@ -99,9 +99,12 @@ export function transformTelemetryData(
       Temp_FR: ((p.TireTemp[1] - 32) * 5) / 9,
     };
     if (customChannels.length > 0) {
-      customChannels.forEach(ch => {
+      // [PERF] Optimized O(N) loop to avoid .forEach() closure allocation on every data point
+      // in high-frequency rendering paths when processing large telemetry datasets.
+      for (let i = 0; i < customChannels.length; i++) {
+        const ch = customChannels[i];
         mathCtx[ch.name] = evaluateCustomMath(ch.formula, mathCtx);
-      });
+      }
     }
     return mathCtx;
   };
@@ -110,7 +113,8 @@ export function transformTelemetryData(
   if (chartType === 'pie') {
     const counts: Record<string, number> = {};
     let localLastValidGear = 0;
-    sampleData.forEach(p => {
+    for (let i = 0; i < sampleData.length; i++) {
+      const p = sampleData[i];
       if (p.Gear !== 11) {
         localLastValidGear = p.Gear;
       }
@@ -118,12 +122,18 @@ export function transformTelemetryData(
 
       const gKey = `Gear ${currentGear}`;
       counts[gKey] = (counts[gKey] || 0) + 1;
-    });
-    return Object.keys(counts).map((key, idx) => ({
-      name: key,
-      value: counts[key],
-      color: COLOR_SWATCHES[idx % COLOR_SWATCHES.length]
-    }));
+    }
+    const keys = Object.keys(counts);
+    const result = new Array(keys.length);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      result[i] = {
+        name: key,
+        value: counts[key],
+        color: COLOR_SWATCHES[i % COLOR_SWATCHES.length]
+      };
+    }
+    return result;
   }
 
   // MODE 2: HISTOGRAM (Binning Distribution of primary channel)
@@ -166,24 +176,34 @@ export function transformTelemetryData(
   // MODE 3: RADAR CHART (Multi-Wheel / Vehicle Dynamic Balance)
   if (chartType === 'radar') {
     const averages: Record<string, number> = {};
-    channels.forEach(ch => averages[ch.name] = 0);
+    for (let i = 0; i < channels.length; i++) {
+      averages[channels[i].name] = 0;
+    }
 
-    sampleData.forEach(p => {
-      const ctx = getContext(p);
-      channels.forEach(ch => {
+    for (let i = 0; i < sampleData.length; i++) {
+      const ctx = getContext(sampleData[i]);
+      for (let j = 0; j < channels.length; j++) {
+        const ch = channels[j];
         averages[ch.name] += evaluateCustomMath(ch.formula, ctx);
-      });
-    });
+      }
+    }
 
-    return channels.map(ch => ({
-      metric: ch.name,
-      value: Number((averages[ch.name] / sampleData.length).toFixed(2))
-    }));
+    const result = new Array(channels.length);
+    for (let i = 0; i < channels.length; i++) {
+      const ch = channels[i];
+      result[i] = {
+        metric: ch.name,
+        value: Number((averages[ch.name] / sampleData.length).toFixed(2))
+      };
+    }
+    return result;
   }
 
   // MODE 4 & 5: LINE & BAR CHART (TimeSeries / Distance Domain)
   const step = Math.max(1, Math.floor(sampleData.length / 200));
-  return sampleData.filter((_, idx) => idx % step === 0).map(p => {
+  const result = [];
+  for (let i = 0; i < sampleData.length; i += step) {
+    const p = sampleData[i];
     let xVal = p.time;
     if (domain === 'distance') {
       xVal = Number((p.lap_distance ?? p.time * 20).toFixed(1));
@@ -195,11 +215,13 @@ export function transformTelemetryData(
 
     const ctx = getContext(p);
     const row: Record<string, any> = { xDomain: xVal };
-    channels.forEach(ch => {
+    for (let j = 0; j < channels.length; j++) {
+      const ch = channels[j];
       row[ch.name] = Number(evaluateCustomMath(ch.formula, ctx).toFixed(2));
-    });
-    return row;
-  });
+    }
+    result.push(row);
+  }
+  return result;
 }
 
 const ChartEditModal: React.FC<ChartEditModalProps> = ({
@@ -452,10 +474,10 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
 };
 
 const inputStyle: React.CSSProperties = {
-  background: '#111', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box'
+  background: 'var(--input-bg)', color: 'var(--input-text)', border: '1px solid var(--glass-border)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', width: '100%', boxSizing: 'border-box'
 };
 const selectStyle: React.CSSProperties = {
-  background: '#111', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', width: '100%'
+  background: 'var(--input-bg)', color: 'var(--input-text)', border: '1px solid var(--glass-border)', padding: '0.35rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', width: '100%'
 };
 const btnStyle: React.CSSProperties = {
   padding: '0.4rem 1rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', border: 'none'

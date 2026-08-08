@@ -5,16 +5,16 @@ import { calcGearSpeed } from '../../../utils/tuningMath';
 
 interface GearingTunerProps {
   tuning: any;
-  updateSection: (section: any, field: string, value: any) => void;
+  updateSection?: (section: any, field: string, value: any) => void;
   numGears: number;
   carParams?: any;
   gearingMethod?: string;
 }
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.4)',
-  border: '1px solid rgba(255,255,255,0.2)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   borderRadius: '4px'
 };
 
@@ -26,7 +26,7 @@ const formRowStyle: React.CSSProperties = {
 
 const GearingTunerComponent: React.FC<GearingTunerProps> = ({ 
   tuning, 
-  updateSection, 
+  updateSection,
   numGears,
   carParams
 }) => {
@@ -77,7 +77,11 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
       currentStartSpeed = validEndSpeed;
     }
 
-    const overallTopSpeed = gearRanges[gearRanges.length - 1]?.endSpeed || 300;
+    const overallTopSpeed = Math.max(
+      gearRanges[gearRanges.length - 1]?.endSpeed || 300,
+      tuning?.gearing?.simulatedTopSpeed || 0,
+      tuning?.gearing?.softMaxSpeed || 0
+    );
     const xLimit = Math.max(120, Math.ceil(overallTopSpeed / 20) * 20);
 
     // 4. Collect critical speed sample points
@@ -120,7 +124,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
     });
 
     return { chartData: points, xMax: xLimit, yMax: yLimit };
-  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, numGears, carParams]);
+  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, tuning?.gearing?.simulatedTopSpeed, tuning?.gearing?.softMaxSpeed, numGears, carParams]);
 
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
@@ -131,36 +135,72 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.2rem', alignItems: 'start' }}>
         
         {/* Left Column: Final Drive & Gears Table */}
-        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '400px', overflowY: 'auto' }}>
-          <div style={{ ...formRowStyle, marginBottom: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
-            <input 
-              type="number" step="0.01" value={tuning.gearing.finalDrive} 
-              onChange={(e) => updateSection('gearing', 'finalDrive', parseFloat(e.target.value) || 3.40)} 
-              style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)' }} 
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '320px', overflowY: 'auto' }}>
+            <div style={{ ...formRowStyle, marginBottom: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
+              <input 
+                type="number" step="0.01" value={tuning.gearing.finalDrive} 
+                readOnly
+                title={t("Auto-calculated by AEGO algorithm")}
+                style={{ ...inputStyle, width: '80px', padding: '0.3rem', fontSize: '0.9rem', textAlign: 'right', border: '1px solid var(--primary)', opacity: 0.85, cursor: 'not-allowed' }} 
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {Array.from({length: numGears}).map((_, i) => (
+                <div key={`gear-in-${i}`} style={{ ...formRowStyle, background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gear")} {i + 1}</span>
+                  <input 
+                    type="number" step="0.01" value={tuning.gearing.gears[i] || 0.0} 
+                    readOnly
+                    title={t("Auto-calculated by AEGO algorithm")}
+                    style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right', opacity: 0.85, cursor: 'not-allowed' }} 
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {Array.from({length: numGears}).map((_, i) => (
-              <div key={`gear-in-${i}`} style={{ ...formRowStyle, background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gear")} {i + 1}</span>
+          {/* Secondary Correction Mechanism Input Card */}
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.9rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.6rem' }}>
+              {t("Secondary Correction Mechanism")}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  {t("Simulated Top Speed (km/h)")}
+                </label>
                 <input 
-                  type="number" step="0.01" value={tuning.gearing.gears[i] || 0.0} 
-                  onChange={(e) => {
-                    const newGears = [...tuning.gearing.gears];
-                    newGears[i] = parseFloat(e.target.value) || 0.0;
-                    updateSection('gearing', 'gears', newGears);
-                  }} 
-                  style={{ ...inputStyle, width: '65px', padding: '0.25rem', fontSize: '0.85rem', textAlign: 'right' }} 
+                  type="number" 
+                  placeholder="e.g. 280"
+                  value={tuning?.gearing?.simulatedTopSpeed ?? ''} 
+                  onChange={e => updateSection && updateSection('gearing', 'simulatedTopSpeed', parseFloat(e.target.value) || undefined)}
+                  style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
+                  title={t("In-game simulated or actual top speed under baseline gearing to correct aero & grip drag")}
                 />
               </div>
-            ))}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                  {t("Soft Max Speed Cap (km/h)")}
+                </label>
+                <input 
+                  type="number" 
+                  placeholder="e.g. 310"
+                  value={tuning?.gearing?.softMaxSpeed ?? ''} 
+                  onChange={e => updateSection && updateSection('gearing', 'softMaxSpeed', parseFloat(e.target.value) || undefined)}
+                  style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
+                  title={t("Speed limits on the X-axis right end of the in-game transmission preview chart")}
+                />
+              </div>
+            </div>
           </div>
+
         </div>
 
         {/* Right Column: Speed-RPM LineChart Graph */}
-        <div style={{ height: '400px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.8rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ height: '440px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.8rem', border: '1px solid rgba(255,255,255,0.08)' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
               <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="rgba(255,255,255,0.4)" fontSize={10} unit=" km/h" />
@@ -196,6 +236,27 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                   label={{ value: `${t("Max Torque")}: ${carParams.maxTorqueRpm} RPM`, fill: '#ffaa00', fontSize: 10, position: 'bottom' }} 
                 />
               )}
+
+              {/* 4. Simulated Top Speed Vertical Reference Line */}
+              {Boolean(tuning?.gearing?.simulatedTopSpeed && tuning.gearing.simulatedTopSpeed > 0) && (
+                <ReferenceLine 
+                  x={tuning.gearing.simulatedTopSpeed} 
+                  stroke="#00e5ff" 
+                  strokeDasharray="3 3" 
+                  label={{ value: `${t("Simulated Top Speed")}: ${tuning.gearing.simulatedTopSpeed} km/h`, fill: '#00e5ff', fontSize: 10, position: 'insideTopLeft' }} 
+                />
+              )}
+
+              {/* 5. Soft Max Speed Cap Vertical Reference Line */}
+              {Boolean(tuning?.gearing?.softMaxSpeed && tuning.gearing.softMaxSpeed > 0) && (
+                <ReferenceLine 
+                  x={tuning.gearing.softMaxSpeed} 
+                  stroke="#d500f9" 
+                  strokeDasharray="4 4" 
+                  label={{ value: `${t("Soft Cap")}: ${tuning.gearing.softMaxSpeed} km/h`, fill: '#d500f9', fontSize: 10, position: 'insideTopRight' }} 
+                />
+              )}
+
               {Array.from({length: numGears}).map((_, i) => (
                 <Line 
                   key={`gear-graph-${i}`} 

@@ -7,9 +7,9 @@ interface SuspensionTunerProps {
 }
 
 const smallInputStyle: React.CSSProperties = {
-  background: 'transparent',
-  border: '1px solid rgba(255,255,255,0.2)',
-  color: 'white',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--glass-border)',
+  color: 'var(--input-text)',
   padding: '0.2rem',
   borderRadius: '4px',
   width: '50px',
@@ -20,8 +20,8 @@ const SuspensionTunerComponent: React.FC<SuspensionTunerProps> = ({ tuning, upda
   const { convertSpringRate, convertSpringRateToKgfmm, convertHeight, convertHeightToCm, t } = useSettings();
 
   return (
-    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-      <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--primary)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem', fontSize: '0.95rem' }}>
+    <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--divider)' }}>
+      <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--primary)', borderBottom: '1px solid var(--divider)', paddingBottom: '0.4rem', fontSize: '0.95rem' }}>
         {t("Suspension Settings")}
       </h4>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>

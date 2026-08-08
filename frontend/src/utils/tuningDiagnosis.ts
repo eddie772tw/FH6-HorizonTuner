@@ -69,7 +69,8 @@ export function analyzeTelemetrySession(
   let frontMax = 0;
   let rearMax = 0;
 
-  points.forEach(p => {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     const travel = p.SuspTravel || [0.0, 0.0, 0.0, 0.0];
     const fl = travel[0] || 0;
     const fr = travel[1] || 0;
@@ -84,7 +85,7 @@ export function analyzeTelemetrySession(
 
     if (frontVal >= 0.95) frontBottomOutCount++;
     if (rearVal >= 0.95) rearBottomOutCount++;
-  });
+  }
 
   report.suspension.frontMaxTravel = frontMax;
   report.suspension.rearMaxTravel = rearMax;
@@ -208,7 +209,8 @@ export function analyzeTelemetrySession(
   let driftPointsCount = 0;
   let totalDriftAngleSum = 0;
   
-  points.forEach(p => {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     // Average rear tire slip angle is a reliable indicator of drift angle
     const slipAngles = p.TireSlipAngle || [0.0, 0.0, 0.0, 0.0];
     const rlSlip = Math.abs(slipAngles[2] || 0) * (180 / Math.PI);
@@ -220,7 +222,7 @@ export function analyzeTelemetrySession(
       driftPointsCount++;
       totalDriftAngleSum += rearSlipAvg;
     }
-  });
+  }
 
   const driftTimePercent = (driftPointsCount / totalPoints) * 100;
 
@@ -232,16 +234,24 @@ export function analyzeTelemetrySession(
     let latGVariance = 0;
     if (driftPointsCount > 1) {
       const latGs: number[] = [];
-      points.forEach(p => {
+      let latGsSum = 0;
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
         const slipAngles = p.TireSlipAngle || [0.0, 0.0, 0.0, 0.0];
         const rearSlipAvg = (Math.abs(slipAngles[2]) + Math.abs(slipAngles[3])) / 2 * (180 / Math.PI);
         if (rearSlipAvg > 8.0 && p.SpeedMetersPerSecond > 5.0) {
-          latGs.push(p.AccelerationX / 9.81);
+          const latG = p.AccelerationX / 9.81;
+          latGs.push(latG);
+          latGsSum += latG;
         }
-      });
-      const meanLatG = latGs.reduce((a, b) => a + b, 0) / latGs.length;
-      const squaredDiffs = latGs.map(g => Math.pow(g - meanLatG, 2));
-      const variance = squaredDiffs.reduce((a, b) => a + b, 0) / (latGs.length - 1);
+      }
+
+      const meanLatG = latGsSum / latGs.length;
+      let squaredDiffsSum = 0;
+      for (let i = 0; i < latGs.length; i++) {
+        squaredDiffsSum += Math.pow(latGs[i] - meanLatG, 2);
+      }
+      const variance = squaredDiffsSum / (latGs.length - 1);
       latGVariance = Math.sqrt(variance); // Standard Deviation
     }
 
@@ -287,7 +297,8 @@ export function analyzeTelemetrySession(
   const powerbandMin = maxHpRpm * 0.80; // 80% to 105% of peak RPM
   const powerbandMax = maxHpRpm * 1.05;
 
-  points.forEach((p, idx) => {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     const speed = p.SpeedMetersPerSecond * 3.6; // convert to km/h
     if (speed > maxSpeed) maxSpeed = speed;
 
@@ -298,7 +309,7 @@ export function analyzeTelemetrySession(
     if (latG > 0.45) {
       if (!insideCorner) {
         insideCorner = true;
-        const entryPt = points[Math.max(0, idx - 5)];
+        const entryPt = points[Math.max(0, i - 5)];
         entrySpeed = entryPt.SpeedMetersPerSecond * 3.6;
       }
       if (speed < minSpeedInCorner) {
@@ -316,7 +327,7 @@ export function analyzeTelemetrySession(
         insidePowerbandCount++;
       }
     }
-  });
+  }
 
   const speedDrop = entrySpeed > 0 ? ((entrySpeed - minSpeedInCorner) / entrySpeed) * 100 : 0;
   const powerbandEff = accelTimeCount > 0 ? (insidePowerbandCount / accelTimeCount) * 100 : 0;
@@ -371,18 +382,42 @@ export function analyzeTelemetrySession(
   return report;
 }
 
+export interface SpecificAdjustmentItem {
+  name: string;
+  current: number;
+  target: number;
+  delta: number;
+  unit: string;
+}
+
 export interface TireDiagnosisInput {
   photF: number; // Front hot pressure (PSI)
   photR: number; // Rear hot pressure (PSI)
-  tempF: number; // Front axle average temp (deg C)
-  tempR: number; // Rear axle average temp (deg C)
+  tempF: number; // Front axle average temp (deg C or deg F)
+  tempR: number; // Rear axle average temp (deg C or deg F)
   targetPhot: number; // Target hot pressure (PSI)
   handlingIssue: string; // Dynamic handling anomaly key
+  tempUnit?: 'C' | 'F'; // Default 'C'
+  alignment?: {
+    camber: { front: number; rear: number };
+    toe: { front: number | string; rear: number | string };
+    caster: number;
+  } | null;
   chassis?: {
     arb: { front: number; rear: number };
     springs: { front: number; rear: number; heightF: number; heightR: number };
     damping: { reboundF: number; reboundR: number; bumpF: number; bumpR: number };
     diff: { accelF: number; decelF: number; accelR: number; decelR: number; centerRear: number };
+  } | null;
+  telemetryGripMetrics?: {
+    avgSlipRatioF?: number;
+    avgSlipRatioR?: number;
+    maxSlipAngleF?: number;
+    maxSlipAngleR?: number;
+    maxCombinedSlipF?: number;
+    maxCombinedSlipR?: number;
+    maxSuspTravelF?: number;
+    maxSuspTravelR?: number;
   } | null;
 }
 
@@ -394,6 +429,8 @@ export interface TireDiagnosisResult {
   primaryPressureAdvice: string;
   secondarySuspensionAdvice: string;
   isConverged: boolean;
+  specificAdjustments: SpecificAdjustmentItem[];
+  gripAnalysisAdvice: string[];
 }
 
 /**
@@ -402,16 +439,35 @@ export interface TireDiagnosisResult {
 export function evaluateTireTelemetryDiagnosis(
   input: TireDiagnosisInput
 ): TireDiagnosisResult {
-  const { photF, photR, tempF, tempR, targetPhot, handlingIssue, chassis } = input;
+  const {
+    photF,
+    photR,
+    tempF,
+    tempR,
+    targetPhot,
+    handlingIssue,
+    tempUnit = 'C',
+    alignment,
+    chassis,
+    telemetryGripMetrics
+  } = input;
 
+  const tempLabel = tempUnit === 'F' ? '°F' : '°C';
+
+  // Normalize temperature to Celsius for threshold comparisons
+  const tempFC = tempUnit === 'F' ? (tempF - 32) * 5 / 9 : tempF;
+  const tempRC = tempUnit === 'F' ? (tempR - 32) * 5 / 9 : tempR;
+  const deltaTaxleC = Math.round((tempFC - tempRC) * 10) / 10;
+
+  // Reported delta in user's unit
   const deltaTaxle = Math.round((tempF - tempR) * 10) / 10;
   const biasF = Math.round((photF - targetPhot) * 10) / 10;
   const biasR = Math.round((photR - targetPhot) * 10) / 10;
 
   let axleBalanceStatus: 'balanced' | 'front_overheat' | 'rear_overheat' = 'balanced';
-  if (Math.abs(deltaTaxle) <= 3.0) {
+  if (Math.abs(deltaTaxleC) <= 3.0) {
     axleBalanceStatus = 'balanced';
-  } else if (deltaTaxle > 3.0) {
+  } else if (deltaTaxleC > 3.0) {
     axleBalanceStatus = 'front_overheat';
   } else {
     axleBalanceStatus = 'rear_overheat';
@@ -429,29 +485,204 @@ export function evaluateTireTelemetryDiagnosis(
     primaryPressureAdvice = `第一優先微調：建議 ${adjF}，且 ${adjR}。`;
   }
 
-  // Secondary Suspension Advice (linked with Step 3 Chassis outputs if present)
-  let secondarySuspensionAdvice = '';
-  const currentArbF = chassis?.arb?.front ?? 1.0;
-  const currentArbR = chassis?.arb?.rear ?? 1.0;
+  // Secondary Suspension & Alignment Specific Adjustments
+  const specificAdjustments: SpecificAdjustmentItem[] = [];
+  const gripAnalysisAdvice: string[] = [];
+
+  const parseNum = (val: number | string | undefined, defaultVal: number) => {
+    if (val === undefined || val === null) return defaultVal;
+    if (typeof val === 'number') return val;
+    const parsed = parseFloat(String(val).replace('°', '').replace('+', ''));
+    return isNaN(parsed) ? defaultVal : parsed;
+  };
+
+  const currentArbF = chassis?.arb?.front ?? 15.0;
+  const currentArbR = chassis?.arb?.rear ?? 35.0;
+  const currentCamberF = alignment?.camber?.front ?? -1.5;
+  const currentCamberR = alignment?.camber?.rear ?? -1.0;
+  const currentToeF = parseNum(alignment?.toe?.front, 0.0);
+  const currentToeR = parseNum(alignment?.toe?.rear, 0.0);
+  const currentCaster = alignment?.caster ?? 5.5;
   const currentDecelR = chassis?.diff?.decelR ?? 20;
+  const currentAccelR = chassis?.diff?.accelR ?? 50;
+
+  const clamp = (val: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, Number(val.toFixed(2))));
+
+  let secondarySuspensionAdvice = '';
 
   if (handlingIssue === 'understeer_entry') {
-    secondarySuspensionAdvice = `入彎轉向不足：建議增加前輪外展前束角 (Toe-out +0.1度)，或將後防傾桿由目前的 ${currentArbR.toFixed(1)} 適度調硬 +2.0。`;
+    const targetToeF = clamp(currentToeF + 0.1, -1.0, 1.0);
+    const targetArbR = clamp(currentArbR + 2.0, 1.0, 65.0);
+
+    specificAdjustments.push({
+      name: '前輪束角 (Front Toe)',
+      current: currentToeF,
+      target: targetToeF,
+      delta: 0.1,
+      unit: '°'
+    });
+    specificAdjustments.push({
+      name: '後防傾桿 (Rear ARB)',
+      current: currentArbR,
+      target: targetArbR,
+      delta: 2.0,
+      unit: ''
+    });
+
+    secondarySuspensionAdvice = `入彎轉向不足：建議增加前輪外展束角 (Toe-out: ${currentToeF.toFixed(2)}° → ${targetToeF.toFixed(2)}°)，或將後防傾桿由 ${currentArbR.toFixed(1)} 調硬至 ${targetArbR.toFixed(1)} (+2.0)。`;
   } else if (handlingIssue === 'understeer_mid') {
-    secondarySuspensionAdvice = `彎中極限轉向不足：前輪側向變形過大。建議增加前負外傾角 (Camber 向左 -0.2度)，或將前防傾桿由 ${currentArbF.toFixed(1)} 調軟 -3.0。`;
+    const targetCamberF = clamp(currentCamberF - 0.3, -5.0, 0.0);
+    const targetArbF = clamp(currentArbF - 3.0, 1.0, 65.0);
+
+    specificAdjustments.push({
+      name: '前輪外傾角 (Front Camber)',
+      current: currentCamberF,
+      target: targetCamberF,
+      delta: -0.3,
+      unit: '°'
+    });
+    specificAdjustments.push({
+      name: '前防傾桿 (Front ARB)',
+      current: currentArbF,
+      target: targetArbF,
+      delta: -3.0,
+      unit: ''
+    });
+
+    secondarySuspensionAdvice = `彎中極限轉向不足：前輪側向變形過大。建議增加前負外傾角 (Camber: ${currentCamberF.toFixed(1)}° → ${targetCamberF.toFixed(1)}°)，或將前防傾桿由 ${currentArbF.toFixed(1)} 調軟至 ${targetArbF.toFixed(1)} (-3.0)。`;
   } else if (handlingIssue === 'oversteer_snap') {
-    secondarySuspensionAdvice = `車尾突兀失控：後輪過熱或氣壓偏差。建議提高後束角內收 (Toe-in -0.1度)，或將後減速鎖定率由 ${currentDecelR}% 調高至 ${Math.min(100, currentDecelR + 5)}% 以穩定車尾。`;
+    const targetToeR = clamp(currentToeR - 0.1, -1.0, 1.0);
+    const targetDecelR = clamp(currentDecelR + 5, 0, 100);
+    const targetArbR = clamp(currentArbR - 2.0, 1.0, 65.0);
+    const targetCamberR = clamp(currentCamberR - 0.2, -5.0, 0.0);
+
+    specificAdjustments.push({
+      name: '後輪束角 (Rear Toe)',
+      current: currentToeR,
+      target: targetToeR,
+      delta: -0.1,
+      unit: '°'
+    });
+    specificAdjustments.push({
+      name: '後輪外傾角 (Rear Camber)',
+      current: currentCamberR,
+      target: targetCamberR,
+      delta: -0.2,
+      unit: '°'
+    });
+    specificAdjustments.push({
+      name: '後減速鎖定率 (Rear Decel)',
+      current: currentDecelR,
+      target: targetDecelR,
+      delta: 5,
+      unit: '%'
+    });
+    specificAdjustments.push({
+      name: '後防傾桿 (Rear ARB)',
+      current: currentArbR,
+      target: targetArbR,
+      delta: -2.0,
+      unit: ''
+    });
+
+    secondarySuspensionAdvice = `車尾突兀失控：後輪過熱或氣壓偏差。建議增加後束角內收 (Toe-in: ${currentToeR.toFixed(2)}° → ${targetToeR.toFixed(2)}°)，增加後負外傾角 (Camber: ${currentCamberR.toFixed(1)}° → ${targetCamberR.toFixed(1)}°)，將後減速鎖定由 ${currentDecelR}% 調高至 ${targetDecelR}%，並調軟後防傾桿 (${currentArbR.toFixed(1)} → ${targetArbR.toFixed(1)})。`;
   } else if (handlingIssue === 'braking_lockup') {
-    secondarySuspensionAdvice = `煞車鎖死前輪滑移：前負外傾過大減少煞車接觸面。建議減少前負外傾角 (Camber +0.3度)，並增加主銷後傾角 (Caster +0.5度) 作為補償。`;
+    const targetCamberF = clamp(currentCamberF + 0.3, -5.0, 0.0);
+    const targetCaster = clamp(currentCaster + 0.5, 1.0, 10.0);
+
+    specificAdjustments.push({
+      name: '前輪外傾角 (Front Camber)',
+      current: currentCamberF,
+      target: targetCamberF,
+      delta: 0.3,
+      unit: '°'
+    });
+    specificAdjustments.push({
+      name: '主銷後傾角 (Caster Angle)',
+      current: currentCaster,
+      target: targetCaster,
+      delta: 0.5,
+      unit: '°'
+    });
+
+    secondarySuspensionAdvice = `煞車鎖死前輪滑移：前負外傾過大減少直行接地面積。建議減少前負外傾角 (Camber: ${currentCamberF.toFixed(1)}° → ${targetCamberF.toFixed(1)}°)，並調高主銷後傾角 (Caster: ${currentCaster.toFixed(1)}° → ${targetCaster.toFixed(1)}°)。`;
   } else if (handlingIssue === 'cold_tires') {
     secondarySuspensionAdvice = `胎溫過低無法升溫：適度調高冷胎壓 (+0.5 至 +1.0 PSI) 增加發酵速度，或選用軟質輪胎配方。`;
   } else {
     if (axleBalanceStatus === 'front_overheat') {
-      secondarySuspensionAdvice = `前軸溫度偏高 (溫差 +${deltaTaxle.toFixed(1)} deg C)：前輪負擔較重，可適度調軟前防傾桿 (目前 ${currentArbF.toFixed(1)}) 或增加前負外傾角。`;
+      const targetArbF = clamp(currentArbF - 2.0, 1.0, 65.0);
+      const targetCamberF = clamp(currentCamberF - 0.2, -5.0, 0.0);
+
+      specificAdjustments.push({
+        name: '前防傾桿 (Front ARB)',
+        current: currentArbF,
+        target: targetArbF,
+        delta: -2.0,
+        unit: ''
+      });
+      specificAdjustments.push({
+        name: '前輪外傾角 (Front Camber)',
+        current: currentCamberF,
+        target: targetCamberF,
+        delta: -0.2,
+        unit: '°'
+      });
+
+      secondarySuspensionAdvice = `前軸溫度偏高 (溫差 +${deltaTaxle.toFixed(1)} ${tempLabel})：前輪負擔較重，建議將前防傾桿由 ${currentArbF.toFixed(1)} 調軟至 ${targetArbF.toFixed(1)}，並增加前負外傾角 (${currentCamberF.toFixed(1)}° → ${targetCamberF.toFixed(1)}°)。`;
     } else if (axleBalanceStatus === 'rear_overheat') {
-      secondarySuspensionAdvice = `後軸溫度偏高 (溫差 ${deltaTaxle.toFixed(1)} deg C)：後輪滑移量較大，可適度調軟後防傾桿 (目前 ${currentArbR.toFixed(1)}) 或降低差速器加速鎖定率。`;
+      const targetArbR = clamp(currentArbR - 2.0, 1.0, 65.0);
+      const targetAccelR = clamp(currentAccelR - 5, 0, 100);
+
+      specificAdjustments.push({
+        name: '後防傾桿 (Rear ARB)',
+        current: currentArbR,
+        target: targetArbR,
+        delta: -2.0,
+        unit: ''
+      });
+      specificAdjustments.push({
+        name: '後加速鎖定率 (Rear Accel)',
+        current: currentAccelR,
+        target: targetAccelR,
+        delta: -5,
+        unit: '%'
+      });
+
+      secondarySuspensionAdvice = `後軸溫度偏高 (溫差 ${deltaTaxle.toFixed(1)} ${tempLabel})：後輪滑移量過大，建議將後防傾桿由 ${currentArbR.toFixed(1)} 調軟至 ${targetArbR.toFixed(1)}，並降低後加速鎖定率 (${currentAccelR}% → ${targetAccelR}%)。`;
     } else {
       secondarySuspensionAdvice = `底盤動態表現均衡。懸吊幾何與胎溫契合良好。`;
+    }
+  }
+
+  // Process live/session telemetry grip metrics if present
+  if (telemetryGripMetrics) {
+    const {
+      avgSlipRatioF = 0,
+      avgSlipRatioR = 0,
+      maxSlipAngleF = 0,
+      maxSlipAngleR = 0,
+      maxSuspTravelF = 0,
+      maxSuspTravelR = 0
+    } = telemetryGripMetrics;
+
+    if (maxSuspTravelF >= 0.95 || maxSuspTravelR >= 0.95) {
+      const loc = maxSuspTravelF >= 0.95 && maxSuspTravelR >= 0.95 ? '前後' : (maxSuspTravelF >= 0.95 ? '前' : '後');
+      gripAnalysisAdvice.push(`【遙測觸底警訊】${loc}軸懸吊極限壓縮率達 ${(Math.max(maxSuspTravelF, maxSuspTravelR) * 100).toFixed(0)}%！撞擊底盤會破壞動態抓地力，建議調硬彈簧或增加 Bump 壓縮阻尼。`);
+    }
+
+    if (avgSlipRatioF < -0.15) {
+      gripAnalysisAdvice.push(`【遙測煞車滑移】重煞時前輪鎖死滑移率達 ${(avgSlipRatioF * 100).toFixed(1)}%，建議減少前負外傾角以增加煞車接地面積。`);
+    }
+
+    if (avgSlipRatioR > 0.15) {
+      gripAnalysisAdvice.push(`【遙測驅動打滑】出彎加速時後輪驅動打滑率達 +${(avgSlipRatioR * 100).toFixed(1)}%，建議將後加速鎖定率調硬 +5% 或微幅降低後輪胎壓。`);
+    }
+
+    if (maxSlipAngleF > maxSlipAngleR + 3.0) {
+      gripAnalysisAdvice.push(`【遙測轉向飽和】前輪側向滑移角 (${maxSlipAngleF.toFixed(1)}°) 顯著高於後輪 (${maxSlipAngleR.toFixed(1)}°)，彎中持續推頭飽和。建議調軟前防傾桿。`);
+    } else if (maxSlipAngleR > maxSlipAngleF + 3.0) {
+      gripAnalysisAdvice.push(`【遙測車尾擺動】後輪側向滑移角 (${maxSlipAngleR.toFixed(1)}°) 顯著高於前輪 (${maxSlipAngleF.toFixed(1)}°)，車尾過度橫移。建議增加後束角內收。`);
     }
   }
 
@@ -462,7 +693,10 @@ export function evaluateTireTelemetryDiagnosis(
     biasR,
     primaryPressureAdvice,
     secondarySuspensionAdvice,
-    isConverged
+    isConverged,
+    specificAdjustments,
+    gripAnalysisAdvice
   };
 }
+
 

@@ -83,8 +83,8 @@ const DiagnosisPanelComponent: React.FC<DiagnosisPanelProps> = ({ diagnosisRepor
                 </div>
               </div>
               <div>
-                <div style={{ color: 'gray' }}>{t("Drift Time Ratio")}</div>
-                <div style={{ fontSize: '1.1rem', color: 'white', fontWeight: 'bold' }}>{diagnosisReport.driftAnalysis.driftTimePercent}%</div>
+                <div style={{ color: 'var(--text-secondary)' }}>{t("Drift Time Ratio")}</div>
+                <div style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>{diagnosisReport.driftAnalysis.driftTimePercent}%</div>
               </div>
             </div>
           </div>
@@ -93,22 +93,22 @@ const DiagnosisPanelComponent: React.FC<DiagnosisPanelProps> = ({ diagnosisRepor
         {/* Speed Cornering and Powerband efficiency */}
         {diagnosisReport.speedAnalysis && (
           <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>🏁 {t("Cornering Speed & Powerband Overlap")}</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.8rem', textAlign: 'center' }}>
+            <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>{t("Cornering Speed & Powerband Overlap")}</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.8rem', textAlign: 'center' }}>
               <div>
-                <div style={{ color: 'gray' }}>{t("Max Speed")}</div>
-                <div style={{ fontSize: '1.1rem', color: 'white', fontWeight: 'bold' }}>
+                <div style={{ color: 'var(--text-secondary)' }}>{t("Max Speed")}</div>
+                <div style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>
                   {convertSpeed(diagnosisReport.speedAnalysis.maxSpeed / 3.6).value.toFixed(1)} {convertSpeed(1/3.6).label}
                 </div>
               </div>
               <div>
-                <div style={{ color: 'gray' }}>{t("Corner Speed Loss")}</div>
-                <div style={{ fontSize: '1.1rem', color: diagnosisReport.speedAnalysis.speedDropPercent > 35 ? '#ff5f5f' : 'white', fontWeight: 'bold' }}>
+                <div style={{ color: 'var(--text-secondary)' }}>{t("Corner Speed Loss")}</div>
+                <div style={{ fontSize: '1.1rem', color: diagnosisReport.speedAnalysis.speedDropPercent > 35 ? '#ff5f5f' : 'var(--text-primary)', fontWeight: 'bold' }}>
                   {diagnosisReport.speedAnalysis.speedDropPercent}%
                 </div>
               </div>
               <div>
-                <div style={{ color: 'gray' }}>{t("Powerband Overlap")}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>{t("Powerband Overlap")}</div>
                 <div style={{ fontSize: '1.1rem', color: diagnosisReport.speedAnalysis.powerbandEfficiency >= 70 ? '#00e676' : 'yellow', fontWeight: 'bold' }}>
                   {diagnosisReport.speedAnalysis.powerbandEfficiency}%
                 </div>
@@ -120,15 +120,15 @@ const DiagnosisPanelComponent: React.FC<DiagnosisPanelProps> = ({ diagnosisRepor
         {/* Suspension Travel Chart */}
         <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
           <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '0.95rem' }}>{t("Suspension Damping Travel & Bottom-Out Rates")}</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--surface-1)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}>
             <div>
-              <span style={{ color: 'gray' }}>{t("Front Max Travel:")}</span> <strong style={{ color: 'white' }}>{(diagnosisReport.suspension.frontMaxTravel * 100).toFixed(0)}%</strong>
+              <span style={{ color: 'var(--text-secondary)' }}>{t("Front Max Travel:")}</span> <strong style={{ color: 'var(--text-primary)' }}>{(diagnosisReport.suspension.frontMaxTravel * 100).toFixed(0)}%</strong>
               <div style={{ color: diagnosisReport.suspension.frontBottomOutRate > 1.5 ? '#ff3d00' : '#00e676', fontSize: '0.75rem', marginTop: '0.2rem' }}>
                 {t("Front Bottom-Out Rate:")} {diagnosisReport.suspension.frontBottomOutRate}%
               </div>
             </div>
             <div>
-              <span style={{ color: 'gray' }}>{t("Rear Max Travel:")}</span> <strong style={{ color: 'white' }}>{(diagnosisReport.suspension.rearMaxTravel * 100).toFixed(0)}%</strong>
+              <span style={{ color: 'var(--text-secondary)' }}>{t("Rear Max Travel:")}</span> <strong style={{ color: 'var(--text-primary)' }}>{(diagnosisReport.suspension.rearMaxTravel * 100).toFixed(0)}%</strong>
               <div style={{ color: diagnosisReport.suspension.rearBottomOutRate > 1.5 ? '#ff3d00' : '#00e676', fontSize: '0.75rem', marginTop: '0.2rem' }}>
                 {t("Rear Bottom-Out Rate:")} {diagnosisReport.suspension.rearBottomOutRate}%
               </div>

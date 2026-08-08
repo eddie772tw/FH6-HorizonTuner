@@ -1,44 +1,136 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
+/* =============================================================================
+   FH6-HorizonTuner - App.css
+   Layer 2 (Skin) on top of Halfmoon CSS v2.0.2 (Layer 1)
+
+   Strategy:
+   - Halfmoon controls dark/light + core theme via data-bs-theme / data-bs-core.
+   - This file provides:
+     (A) Universal Defaults & Fallbacks for first render frame
+     (B) Rich Dark & Light mode semantic color tokens (contrast-optimized)
+     (C) Per-Core-Theme Visual Differentiation (Default, Modern, Elegant)
+     (D) Halfmoon v2 Class Enhancements (.card, .btn, .form-control)
+     (E) Glassmorphism Skin (.glass-panel, .cyber-*)
+   ============================================================================= */
+
+/* =============================================================================
+   (A) :root — Universal Defaults & Fallbacks
+   ============================================================================= */
+
 :root {
-  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+  /* Font Stack */
+  --bs-body-font-family: 'Outfit', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  color-scheme: dark;
-  color: #e0e0e0;
-  
-  --primary: #00f0ff; /* Neon cyan */
-  --secondary: #ff003c; /* Neon pink/red */
-  --accent: #7000ff; /* Deep purple */
-  --glass-bg: rgba(25, 28, 36, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --glass-blur: 12px;
-  --panel-radius: 16px;
-  --input-radius: 6px;
-  --input-bg: rgba(0, 0, 0, 0.4);
-  --input-text: #ffffff;
-  --bg-gradient: radial-gradient(circle at top right, #1a1c23, #0f1115);
-  --text-primary: #ffffff;
-  --text-secondary: #9ba1a6;
+  /* Brand Accent Colors — overridable via ThemeContext */
+  --primary:      #00f0ff;
+  --secondary:    #ff003c;
+  --accent:       #7000ff;
   --primary-glow: rgba(0, 240, 255, 0.25);
+
+  /* Semantic Mappings */
+  --text-primary:   var(--bs-body-color, #e0e0e0);
+  --text-secondary: var(--bs-secondary-color, #9ca3af);
+  --glass-border:   var(--bs-border-color-translucent, rgba(255,255,255,0.10));
+  --input-bg:       var(--bs-form-bg, rgba(0, 0, 0, 0.35));
+  --input-text:     var(--bs-form-color, #e0e0e0);
+
+  /* Default Surface Tokens */
+  --glass-bg:       rgba(25, 28, 36, 0.65);
+  --glass-shadow:   0 12px 40px 0 rgba(0, 0, 0, 0.35);
+  --glass-blur:     14px;
+  --panel-radius:   16px;
+  --input-radius:   8px;
+  --bg-gradient:    radial-gradient(circle at top right, #1a1c23, #0f1115);
+
+  /* Interior Surfaces */
+  --surface-1:  rgba(0, 0, 0, 0.25);   /* Elevated inner card */
+  --surface-2:  rgba(0, 0, 0, 0.15);   /* Input/Control track */
+  --surface-3:  rgba(255, 255, 255, 0.05); /* Hover highlight */
+  --divider:    rgba(255, 255, 255, 0.08);
+  --divider-md: rgba(255, 255, 255, 0.15);
 }
 
-[data-theme="light"] {
-  color-scheme: light;
-  color: #1e293b;
-  --glass-bg: rgba(255, 255, 255, 0.78);
-  --glass-border: rgba(0, 0, 0, 0.12);
-  --glass-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.08);
-  --input-bg: rgba(255, 255, 255, 0.9);
-  --input-text: #0f172a;
-  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --primary-glow: rgba(0, 240, 255, 0.15);
+/* =============================================================================
+   (B) Dark / Light Mode Semantic Overrides
+   ============================================================================= */
+
+[data-bs-theme="dark"] {
+  --text-primary:   var(--bs-body-color, #f1f5f9);
+  --text-secondary: var(--bs-secondary-color, #94a3b8);
+  --glass-bg:       rgba(20, 24, 33, 0.70);
+  --glass-border:   rgba(255, 255, 255, 0.10);
+  --bg-gradient:    radial-gradient(circle at top right, #12151d, #0a0c10);
+  --surface-1:      rgba(0, 0, 0, 0.28);
+  --surface-2:      rgba(0, 0, 0, 0.18);
+  --surface-3:      rgba(255, 255, 255, 0.05);
+  --divider:        rgba(255, 255, 255, 0.08);
+  --divider-md:     rgba(255, 255, 255, 0.15);
+  --input-bg:       rgba(0, 0, 0, 0.40);
+  --input-text:     #f8fafc;
+  --glass-shadow:   0 16px 40px rgba(0, 0, 0, 0.45);
 }
+
+[data-bs-theme="light"] {
+  --text-primary:   #0f172a;                     /* Dark Slate 900 for high readability */
+  --text-secondary: #475569;                     /* Slate 600 */
+  --glass-bg:       rgba(255, 255, 255, 0.82);   /* Crystal clear white glass */
+  --glass-border:   rgba(0, 0, 0, 0.10);         /* Crisp subtle outline */
+  --bg-gradient:    linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  --surface-1:      rgba(241, 245, 249, 0.85);   /* Crisp light container */
+  --surface-2:      rgba(226, 232, 240, 0.75);   /* Interactive control background */
+  --surface-3:      rgba(203, 213, 225, 0.50);   /* Active/Hover state */
+  --divider:        rgba(0, 0, 0, 0.09);
+  --divider-md:     rgba(0, 0, 0, 0.16);
+  --input-bg:       #ffffff;                     /* Pure white input box */
+  --input-text:     #0f172a;
+  --glass-shadow:   0 12px 36px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* =============================================================================
+   (C) Core Theme Visual Differentiation (data-bs-core x data-bs-theme)
+   ============================================================================= */
+
+/* --- Default (Cyan / Slate Tone) --- */
+[data-bs-core="default"][data-bs-theme="dark"] {
+  --bg-gradient: radial-gradient(ellipse at top right, #111a2e, #080b12);
+  --glass-bg:    rgba(16, 22, 36, 0.72);
+}
+[data-bs-core="default"][data-bs-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f0f4fa 0%, #dbe4f0 100%);
+  --glass-bg:    rgba(255, 255, 255, 0.85);
+}
+
+/* --- Modern (Deep Indigo / Slate Navy) --- */
+[data-bs-core="modern"][data-bs-theme="dark"] {
+  --bg-gradient: radial-gradient(ellipse at top left, #0e172a, #050a16);
+  --glass-bg:    rgba(15, 23, 42, 0.75);
+  --divider:     rgba(99, 102, 241, 0.15);
+}
+[data-bs-core="modern"][data-bs-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f0f3ff 0%, #dbe1f7 100%);
+  --glass-bg:    rgba(255, 255, 255, 0.88);
+  --surface-1:   rgba(238, 242, 255, 0.85);
+  --surface-2:   rgba(224, 231, 255, 0.70);
+}
+
+/* --- Elegant (Warm Sand / Espresso) --- */
+[data-bs-core="elegant"][data-bs-theme="dark"] {
+  --bg-gradient: radial-gradient(ellipse at bottom right, #1c1813, #0d0a07);
+  --glass-bg:    rgba(28, 23, 18, 0.78);
+  --divider:     rgba(212, 169, 106, 0.15);
+}
+[data-bs-core="elegant"][data-bs-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #f7f4ee 0%, #e8decb 100%);
+  --glass-bg:    rgba(255, 253, 248, 0.90);
+  --surface-1:   rgba(247, 242, 233, 0.85);
+  --surface-2:   rgba(237, 228, 212, 0.75);
+  --text-primary:#292219;
+}
+
+/* =============================================================================
+   (D) Base Layout & Halfmoon Native Class Integration
+   ============================================================================= */
 
 body {
   margin: 0;
@@ -48,13 +140,15 @@ body {
   min-height: 100vh;
   background: var(--bg-gradient);
   color: var(--text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.4s ease, color 0.3s ease;
+  font-family: var(--bs-body-font-family);
+  -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 {
+h1, h2, h3, h4, h5, h6 {
   margin: 0;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   color: var(--text-primary);
 }
 
@@ -65,7 +159,92 @@ h1, h2, h3, h4 {
   flex-direction: column;
 }
 
-/* Glassmorphism utility */
+/* Halfmoon .card integration */
+.card, .halfmoon-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+}
+
+/* Halfmoon form-control integration */
+.form-control, .form-select {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--glass-border) !important;
+  border-radius: var(--input-radius) !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 0.25rem var(--primary-glow) !important;
+}
+
+/* =============================================================================
+   (E) Global Element Overrides
+   ============================================================================= */
+
+select {
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--input-radius);
+  padding: 0.4rem 0.6rem;
+  font-family: var(--bs-body-font-family);
+  transition: border-color 0.2s ease, background 0.3s ease;
+}
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--divider);
+  margin: 0.75rem 0;
+}
+
+.glass-panel strong,
+.glass-panel label {
+  color: var(--text-primary);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+}
+canvas, [class*="recharts"], input[type="range"], input[type="color"] {
+  transition: none !important;
+}
+
+/* Navigation Bar Overflow Exception — Dropdown menus must pop out without clipping */
+.navbar,
+.navbar .container-fluid {
+  overflow: visible !important;
+}
+
+/* Prevent Horizontal Scrollbar Overflow Across Main View Containers */
+main .container-fluid {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+.row {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* =============================================================================
+   (F) Glassmorphism Skin Layer
+   ============================================================================= */
+
+/* Standard Static Glass Panel — stable, non-floating */
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -74,12 +253,23 @@ h1, h2, h3, h4 {
   box-shadow: var(--glass-shadow);
   border-radius: var(--panel-radius);
   padding: 1.5rem;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: background 0.3s ease, border-color 0.2s ease, box-shadow 0.3s ease;
 }
-.glass-panel:hover {
-  transform: translateY(-2px);
-  border-color: var(--primary);
-  box-shadow: 0 0 15px var(--primary-glow), var(--glass-shadow);
+
+/* Interactive Cards — apply ONLY to cards that are clickable or expandable */
+.glass-panel-interactive,
+.card-interactive {
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              border-color 0.2s ease, 
+              box-shadow 0.25s ease !important;
+}
+
+.glass-panel-interactive:hover,
+.card-interactive:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 18px var(--primary-glow), var(--glass-shadow) !important;
 }
 
 /* Cyber Form Inputs */
@@ -89,38 +279,73 @@ h1, h2, h3, h4 {
   color: var(--input-text) !important;
   padding: 0.5rem 0.8rem !important;
   border-radius: var(--input-radius) !important;
-  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-family: var(--bs-body-font-family) !important;
   font-size: 0.9rem !important;
   outline: none !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer;
 }
 .cyber-input:focus, .cyber-select:focus,
 .cyber-input:hover, .cyber-select:hover {
   border-color: var(--primary) !important;
-  box-shadow: 0 0 8px var(--primary-glow) !important;
+  box-shadow: 0 0 10px var(--primary-glow) !important;
 }
 
-/* Cyber Button Glow Effect */
+/* Cyber Button Glow */
 .cyber-btn-glow {
   position: relative;
   overflow: hidden;
-  transition: all 0.2s ease-in-out;
 }
 .cyber-btn-glow:hover {
-  box-shadow: 0 0 10px var(--primary-glow);
+  box-shadow: 0 0 12px var(--primary-glow);
   transform: scale(1.02);
 }
 
-/* Accessibility Utilities */
+/* Range Input Slider Theme Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  margin-top: -5px;
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  border: none;
+  cursor: pointer;
+}
+
+/* =============================================================================
+   (G) Scrollbar & Utilities
+   ============================================================================= */
+
 .sr-only {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip: rect(0,0,0,0);
   white-space: nowrap;
   border-width: 0;
 }
@@ -130,17 +355,7 @@ h1, h2, h3, h4 {
   outline-offset: 2px;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.1); 
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(128,128,128,0.3); 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(128,128,128,0.5); 
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }

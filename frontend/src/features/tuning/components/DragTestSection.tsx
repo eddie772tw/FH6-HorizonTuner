@@ -61,7 +61,7 @@ const DragTestSectionComponent: React.FC<DragTestSectionProps> = ({
         <select 
           value={selectedDragSession} 
           onChange={(e) => handleLoadDragSession(e.target.value)}
-          style={{ background: 'black', color: 'white', border: '1px solid gray', padding: '0.3rem', borderRadius: '4px', flex: 1, fontSize: '0.8rem' }}
+          style={{ background: 'var(--input-bg)', color: 'var(--input-text)', border: '1px solid var(--glass-border)', padding: '0.3rem', borderRadius: '4px', flex: 1, fontSize: '0.8rem' }}
         >
           <option value="">-- {t("Select Drag Test Run")} --</option>
           {globalSavedSessions.map((s: any) => (

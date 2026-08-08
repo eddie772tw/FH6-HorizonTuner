@@ -241,14 +241,15 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
           position: 'absolute',
           left: hoverPos.x + 12,
           top: hoverPos.y - 12,
-          background: 'rgba(10, 10, 18, 0.95)',
+          background: 'var(--glass-bg)',
+          backdropFilter: 'blur(var(--glass-blur))',
           border: '1px solid var(--primary)',
           borderRadius: '6px',
           padding: '0.5rem 0.75rem',
           fontSize: '0.8rem',
-          color: '#fff',
+          color: 'var(--text-primary)',
           pointerEvents: 'none',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          boxShadow: 'var(--glass-shadow)',
           zIndex: 10
         }}>
           <div><strong>{selectedMetricLabel}:</strong> {(hoveredPoint.val * 100).toFixed(0)}%</div>

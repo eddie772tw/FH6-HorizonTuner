@@ -34,7 +34,9 @@ def main():
 
         ordinal_s = str(ordinal)
 
-        # Parse the name only for new entries
+        # Skip custom Easter Egg car 1215 (NUL_CAR_00 / Yamaha YZF-R15)
+        if ordinal == 1215 or name_str == "NUL_CAR_00":
+            continue
         match = re.match(r"^(\d{4})\s+(.+?)\s+(.+)$", name_str)
         if match:
             year = int(match.group(1))

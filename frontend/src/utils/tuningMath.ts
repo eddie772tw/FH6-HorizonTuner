@@ -116,15 +116,22 @@ export function calcGearRpm(
   return (speedMs * gearRatio * finalDrive * 60) / (2 * Math.PI * tireRadiusM);
 }
 
+export interface GearingSecondaryCorrection {
+  simulatedTopSpeed?: number; // Simulated/Theoretical top speed from initial gearing (km/h)
+  softMaxSpeed?: number;      // Transmission preview soft max speed limit cap (km/h)
+}
+
 /**
  * AEGO (Adaptive Envelope & Gearing Optimization) Algorithm
  * Generates custom, physically-sound gearing setup for different race goals.
+ * Supports secondary correction based on in-game simulated top speed & soft cap.
  */
 export function calculateAEGOGearing(
   raceGoal: string,
   numGears: number,
   carParams: TuningCarParams | null,
-  maxRpm: number
+  maxRpm: number,
+  secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
@@ -141,8 +148,6 @@ export function calculateAEGOGearing(
   }
 
   // Advanced variables
-  const mechBalance = carParams?.mechBalance ?? 0.5;
-  const aeroBalance = carParams?.aeroBalance ?? 0.5;
   const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
   const tireType = carParams?.tireType;
@@ -200,11 +205,9 @@ export function calculateAEGOGearing(
     fd = Math.max(2.0, Math.min(6.5, fd));
 
   } else if (raceGoal === 'Drag') {
-    // Drag Profile
-    const vTrap = 255 * Math.pow(maxHp / weight, 1 / 3);
-    const fDriveDrag = drivetrain === 'AWD' ? 1.0 : 0.6;
-    const rDrag = Math.max(0.65, Math.min(0.78, 0.72 + 0.03 * (fDriveDrag - 0.8)));
-    const is3Speed = (1 / rDrag) < 1.18;
+    // Drag Profile - 4-Speed Hard Constraint Meta with Power-Calibrated Top Speed
+    const hpPerKg = weight > 0 ? maxHp / weight : 0.5;
+    const vDragTop = 410.0 * Math.pow(hpPerKg, 0.30) * (1 + 0.12 * aeroEfficiency);
 
     const calcGears = Math.min(4, numGears);
     gears = new Array(numGears).fill(0);
@@ -212,43 +215,132 @@ export function calculateAEGOGearing(
     const idxTop = calcGears - 1;
     gears[idxTop] = 1.0;
 
+    const rawFd = (rpmHp * C * 60) / (gears[idxTop] * vDragTop * 1000);
+    fd = Math.max(2.0, Math.min(6.5, rawFd));
+
     if (calcGears > 1) {
-      gears[idxTop - 1] = is3Speed ? 1.0 : (1 / rDrag);
-      
-      for (let i = idxTop - 2; i >= 1; i--) {
-        gears[i] = gears[i + 1] / rDrag;
+      const v1Target = drivetrain === 'AWD' ? 110.0 : (drivetrain === 'FWD' ? 100.0 : 125.0);
+      const rawG1 = (rpmHp * C * 60) / (v1Target * fd * 1000);
+      gears[0] = Math.max(2.2, Math.min(5.0, rawG1));
+
+      const rDrag = Math.pow(gears[idxTop] / gears[0], 1 / idxTop);
+      for (let i = 1; i < idxTop; i++) {
+        gears[i] = gears[i - 1] * rDrag;
       }
-      
-      gears[0] = gears[1] * (fDriveDrag === 1.0 ? 1.3 : 1.0);
-    }
-    
-    for (let i = calcGears; i < numGears; i++) {
-      gears[i] = gears[calcGears - 1];
     }
 
-    fd = (rpmHp * C * 60) / (gears[idxTop] * vTrap * 1000);
-    fd = Math.max(2.0, Math.min(6.5, fd));
+    for (let i = calcGears; i < numGears; i++) {
+      gears[i] = gears[idxTop];
+    }
 
   } else {
-    // Road / Circuit (Default)
-    const p = 1 + (maxHp / 1000) * ((0.95 - aeroEfficiency) * 5) * (1.2 - 0.4 * aeroBalance);
-    const vTop = Math.pow(maxHp, 1 / 3) * 38 * (aeroEfficiency / 0.85);
-    const d = Math.max(rpmT / rpmHp, 0.75);
+    // Road / Circuit (Default) - Closed-loop Geometric Step Ratio Smooth Correction Model
+    const kTrack = 0.915;
+    const vTarget = Math.pow(maxHp, 1 / 3) * 32.5 * (1 + 0.15 * aeroEfficiency);
+    const vCircuit = vTarget * kTrack;
+    const gNgears = 0.85;
 
-    fd = ((rpmHp * C * 60) / (vTop * 0.85 * 1000)) * (0.8 + 0.4 * mechBalance);
-    fd = Math.max(2.0, Math.min(6.5, fd));
+    // Final Drive calculation anchored to maxRpm target redline speed
+    const vCircuitPeakHp = (maxRpm && maxRpm > 0) ? vCircuit * (rpmHp / maxRpm) : vCircuit;
+    const rawFd = (rpmHp * C * 60) / (vCircuitPeakHp * gNgears * 1000);
+    fd = Math.max(2.0, Math.min(6.5, rawFd));
+
+    // 1st Gear target speed with drivetrain launch modifier kDrive
+    const vBase = 90.0;
+    const kDrive = drivetrain === 'AWD' ? 0.85 : (drivetrain === 'FWD' ? 1.05 : 1.15);
+    const v1 = vBase * kDrive;
+
+    const g1 = (rpmHp * C * 60) / (v1 * fd * 1000);
+
+    // Powerband progression range definition anchored to redline vs peak HP ratio
+    const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
+    const rRedlineHp = (maxRpm && maxRpm > 0) ? rpmHp / maxRpm : 0.85;
+    const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
+    const rMin = isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand));
+    const rMax = Math.min(0.92, rRedlineHp);
 
     gears = new Array(numGears).fill(0);
+    gears[0] = Math.max(0.48, Math.min(6.0, g1));
 
-    const g1Base = (weight * fDrive * fTire * 2 * C) / (maxTorque * fd);
-    const g1Mult = Math.max(1.0, (maxTorque * 3.2) / (weight * fDrive));
-    gears[0] = Math.max(0.48, Math.min(6.0, g1Base * g1Mult));
+    if (numGears > 1) {
+      const numSteps = numGears - 1;
+      for (let i = 1; i < numGears; i++) {
+        const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
+        const rVal = rMin + (rMax - rMin) * fraction;
+        gears[i] = gears[i - 1] * rVal;
+      }
+    }
+  }
 
-    gears[numGears - 1] = (rpmHp * C * 60) / (vTop * fd * 1000);
+  // Secondary Correction Mechanism (Dual-Anchored Top-Gear & Closed-Loop Gear Ratio Re-distribution)
+  if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
+    const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
+    const tireRadiusM = C / (2 * Math.PI);
+    const topGearIdx = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) - 1 : numGears - 1;
+    
+    // Baseline top speed for highest active gear at Peak HP RPM
+    const baselineTopSpeedMs = calcGearSpeed(rpmHp, gears[topGearIdx], fd, tireRadiusM);
+    const baselineTopSpeedKmh = baselineTopSpeedMs * 3.6;
 
-    for (let n = 2; n < numGears; n++) {
-      const exp = 1 - ((n - 1) - 1) / Math.max(1, numGears - 3) * (1 - 1 / p);
-      gears[n - 1] = Math.max(0.48, Math.min(6.0, gears[n - 2] * Math.pow(d, exp)));
+    let targetTopSpeedAtPeakHpKmh = baselineTopSpeedKmh;
+
+    // 1. Soft Max Speed Cap Constraint at Redline RPM
+    if (softMaxSpeed && softMaxSpeed > 0 && maxRpm > 0) {
+      const maxSpeedAtPeakHpFromSoftCap = softMaxSpeed * (rpmHp / maxRpm);
+      targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSoftCap);
+    }
+
+    // 2. Simulated Top Speed Correction at Peak HP RPM
+    if (simulatedTopSpeed && simulatedTopSpeed > 0) {
+      const maxSpeedAtPeakHpFromSimulated = (maxRpm && maxRpm > 0) 
+        ? simulatedTopSpeed * (rpmHp / maxRpm) 
+        : simulatedTopSpeed;
+      targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSimulated);
+    }
+
+    // 3. Re-calculate top gear total drive ratio (i_top_total = FD * G_top)
+    if (targetTopSpeedAtPeakHpKmh > 0 && Math.abs(targetTopSpeedAtPeakHpKmh - baselineTopSpeedKmh) > 0.1) {
+      const topTotalRatio = (rpmHp * C * 60) / (targetTopSpeedAtPeakHpKmh * 1000);
+      
+      // Determine new top gear ratio and balance with Final Drive
+      let newGtop = topTotalRatio / fd;
+      if (newGtop < 0.48 || newGtop > 1.25) {
+        const clampedGtop = Math.max(0.50, Math.min(1.10, newGtop));
+        fd = Math.max(2.0, Math.min(6.5, topTotalRatio / clampedGtop));
+        newGtop = topTotalRatio / fd;
+      }
+      gears[topGearIdx] = newGtop;
+
+      // 4. Full Closed-Loop Gear Ratio Re-distribution for all intermediate gears
+      if (topGearIdx > 0 && gears[0] > 0) {
+        const numSteps = topGearIdx;
+        const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
+        const rRedlineHp = (maxRpm && maxRpm > 0) ? rpmHp / maxRpm : 0.85;
+        const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
+        const rMin = isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand));
+        const rMax = Math.min(0.92, rRedlineHp);
+
+        const rRaw: number[] = [];
+        let prodRaw = 1.0;
+        for (let i = 1; i <= numSteps; i++) {
+          const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
+          const rVal = rMin + (rMax - rMin) * fraction;
+          rRaw.push(rVal);
+          prodRaw *= rVal;
+        }
+
+        const s = Math.pow(newGtop / (gears[0] * prodRaw), 1 / numSteps);
+        for (let i = 1; i < topGearIdx; i++) {
+          const rAdj = rRaw[i - 1] * s;
+          gears[i] = gears[i - 1] * rAdj;
+        }
+        gears[topGearIdx] = newGtop;
+
+        // Fill remaining gears if Drift/Drag
+        for (let i = topGearIdx + 1; i < numGears; i++) {
+          gears[i] = gears[topGearIdx];
+        }
+      }
     }
   }
 
@@ -456,23 +548,23 @@ export function calculateChassisTuning(
     }
 
   } else if (raceGoal === 'Drag') {
-    // 1. Anti-Roll Bars (Front Unconstrained)
+    // 1. Anti-Roll Bars (Soft Front for compliance, Stiff Rear to suppress torque twist)
     arbF = 1.0;
-    arbR = 2.0;
+    arbR = 65.0;
 
-    // 2. Springs (Front Max, Rear Min for Weight Transfer)
-    springF = kMaxF * 0.90;
-    springR = kMinR;
+    // 2. Springs (Soft Front for weight transfer launch, Stiff Rear 90% to suppress heavy launch torque squat)
+    springF = kMinF + 0.20 * (kMaxF - kMinF);
+    springR = kMinR + 0.90 * (kMaxR - kMinR);
 
-    // 3. Rake Angle Ride Height (Front Highest, Rear Lowest)
-    heightF = hMaxF;
-    heightR = hMinR;
+    // 3. Forward Rake Ride Height (Front Lowest for low aero drag/lift, Rear Highest for downforce/grip)
+    heightF = hMinF;
+    heightR = hMaxR;
 
-    // 4. Diagonal Extreme Damping
-    rebF = 1.0;
-    bumpF = 20.0;
-    rebR = 20.0;
-    bumpR = 1.0;
+    // 4. Balanced Damping (Soft Front to extend, Stiff Rear to damp heavy launch torque compression)
+    rebF = 3.0;
+    bumpF = 4.0;
+    rebR = 12.0;
+    bumpR = 10.0;
 
     // 5. Differential
     accelF = drivetrain === 'FWD' || drivetrain === 'AWD' ? 100 : 0;
@@ -666,7 +758,7 @@ export function calculateStaticTireAlignment(
     camberR = -0.1;
     toeF = '0.0°';
     toeR = '0.0°';
-    caster = 5.0;
+    caster = 7.0;
   } else {
     // Default Road / Circuit
     targetPhot = 32.5;
