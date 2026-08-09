@@ -31,6 +31,7 @@ def test_get_hud_config_default(temp_hud_config_file):
 
     data = response.json()
     assert data["hudStyle"] == "vfd"
+    assert data["s650Theme"] == "normal"
     assert "elements" in data
     assert data["elements"]["showRPM"] is True
 
@@ -66,6 +67,130 @@ def test_save_and_get_hud_config(temp_hud_config_file):
     loaded_data = get_res.json()
     assert loaded_data["hudStyle"] == "simple"
     assert loaded_data["elements"]["showSpeed"] is False
+
+
+@pytest.mark.parametrize(
+    ("legacy_style", "expected_theme"),
+    [
+        ("s650_normal", "normal"),
+        ("s650_sport", "sport"),
+        ("s650_track", "track"),
+        ("s650_calm", "calm"),
+        ("s650_foxbody", "foxbody"),
+        ("s650_heritage67", "heritage67"),
+        ("s650_svt_cobra", "svt_cobra"),
+    ],
+)
+def test_legacy_s650_styles_are_migrated_to_hmi_mode(
+    temp_hud_config_file, legacy_style, expected_theme
+):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={"hudStyle": legacy_style, "enabled": True},
+    )
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == expected_theme
+
+
+@pytest.mark.parametrize(
+    ("legacy_style", "expected_theme"),
+    [
+        ("s650_normal", "normal"),
+        ("s650_sport", "sport"),
+        ("s650_track", "track"),
+        ("s650_calm", "calm"),
+        ("s650_foxbody", "foxbody"),
+        ("s650_heritage67", "heritage67"),
+        ("s650_svt_cobra", "svt_cobra"),
+    ],
+)
+def test_existing_legacy_s650_config_is_migrated_on_load(
+    temp_hud_config_file, legacy_style, expected_theme
+):
+    with open(temp_hud_config_file, "w", encoding="utf-8") as config_file:
+        config_file.write('{"hudStyle": "' + legacy_style + '", "enabled": true}')
+
+    client = TestClient(app)
+    response = client.get("/api/overlay/config")
+
+    assert response.status_code == 200
+    loaded_data = response.json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == expected_theme
+
+
+@pytest.mark.parametrize("invalid_theme", ["not-a-theme", "", None])
+def test_invalid_s650_hmi_theme_defaults_to_normal(temp_hud_config_file, invalid_theme):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={"hudStyle": "s650_hmi", "s650Theme": invalid_theme},
+    )
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == "normal"
+
+
+def test_default_hud_config_includes_all_live_map_controls(temp_hud_config_file):
+    client = TestClient(app)
+
+    elements = client.get("/api/overlay/config").json()["elements"]
+    for key in (
+        "showLiveMap",
+        "showLiveMapPOIs",
+        "showLiveMapPRStunts",
+        "showLiveMapCollectibles",
+        "showLiveMapHeading",
+    ):
+        assert elements[key] is True
+
+    config = client.get("/api/overlay/config").json()
+    assert config["telemetryLiveMapScale"] == 1.0
+    assert config["telemetryLiveMapOpacity"] == 1.0
+    assert config["telemetryLiveMapOffsetX"] == 0
+    assert config["telemetryLiveMapOffsetY"] == 0
+
+
+def test_live_map_fields_round_trip(temp_hud_config_file):
+    client = TestClient(app)
+    custom_config = {
+        "hudStyle": "s650_hmi",
+        "s650Theme": "track",
+        "elements": {
+            "showLiveMap": False,
+            "showLiveMapPOIs": False,
+            "showLiveMapPRStunts": True,
+            "showLiveMapCollectibles": False,
+            "showLiveMapHeading": True,
+        },
+        "telemetryLiveMapScale": 1.5,
+        "telemetryLiveMapOpacity": 0.75,
+        "telemetryLiveMapOffsetX": -24,
+        "telemetryLiveMapOffsetY": 18,
+    }
+
+    post_res = client.post("/api/overlay/config", json=custom_config)
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == "track"
+    assert loaded_data["elements"] == custom_config["elements"]
+    assert loaded_data["telemetryLiveMapScale"] == 1.5
+    assert loaded_data["telemetryLiveMapOpacity"] == 0.75
+    assert loaded_data["telemetryLiveMapOffsetX"] == -24
+    assert loaded_data["telemetryLiveMapOffsetY"] == 18
 
 
 def test_reset_hud_config(temp_hud_config_file):
@@ -121,6 +246,10 @@ def test_get_hud_styles_scan():
     # Verify builtin HUDs are present
     for expected_hud in ["simple", "advanced", "vfd", "gt7", "drift"]:
         assert expected_hud in style_ids
+
+    s650_style = next(style for style in data["styles"] if style["id"] == "s650_hmi")
+    assert s650_style["source"] == "builtin"
+    assert s650_style["urlPrefix"] == "/hud"
 
     # Verify non-HUD helper directories are excluded
     for ignored in ["shared", "assets", "telemetry"]:
