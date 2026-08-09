@@ -93,3 +93,12 @@
 6. **維護 README 說明文件**：若本次任務包含重大架構變更或核心模組增修，確認已同步更新 `README.md` 與 `README.en.md` 的架構圖與功能列表。
 # Project Guidelines for AI Agents
 
+## Port Contract
+
+Keep the two local transports separate during development:
+
+- Forza Horizon Data Out is UDP on `127.0.0.1:8000` by default (`TELEMETRY_IP` / `TELEMETRY_PORT`).
+- FastAPI REST and WebSocket traffic is HTTP/TCP on `127.0.0.1:8001` by default (`BACKEND_PORT`).
+- In portable releases, the HTTP port may be dynamic; use `logs/web_port.txt` or the sidecar readiness event. The UDP telemetry port remains `8000` by default.
+- Do not use the UDP telemetry port as the FastAPI HTTP URL.
+

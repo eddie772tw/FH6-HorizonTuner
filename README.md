@@ -117,26 +117,22 @@ FH6-HorizonTuner/
   - 自動使用 `ruff` 對整個專案代碼進行靜態檢查與格式化排版。
   - 自動在背景執行後端服務，並開啟 Tauri 桌面端圖形介面。
 * **分開啟動（模組化開發時使用）**：
-  - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務 (`http://127.0.0.1:8000`)。
+  - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務。開發模式下 FastAPI / WebSocket 使用 `http://127.0.0.1:8001`，Forza UDP Telemetry 使用 `127.0.0.1:8000`。
   - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。
 
 ---
 
 ## 一鍵打包發行 / Build Standalone Release (.exe)
 
-您可以將後端與前端打包成一個**單一可執行檔 (.exe)**，方便綠色免安裝執行：
+您可以將後端與前端打包成一個**單一免安裝可執行檔 (.exe)**，採用標準的 **Tauri (Rust Host) + Python Sidecar** 正向架構發布：
 
 > [!NOTE]
 > **路徑設計說明**：
-> 發行版的獨立執行檔在運行時，所有的預設資源會由暫存目錄釋放讀取；而由使用者操作產生的個人設定檔（`settings.json`）、遙測紀錄（`sessions/`）以及車輛調校資料（`tunings/`）皆會**自動儲存於該 `.exe` 執行檔的同級目錄下**，確保您的調校數據能隨身帶走。
+> 發行版的獨立執行檔在運行時，所有的預設靜態資源由 Sidecar 內建釋放；而由使用者操作產生的個人設定檔（`settings.json`）、遙測紀錄（`sessions/`）、車輛調校資料（`tunings/`）、自訂車輛參數（`car_params/`）、i18n 語系檔（`lang/`）與自訂 HUD 樣式（`hud_overlay/`）皆會**自動儲存與維護於該 `.exe` 執行檔的同級目錄下**，實現 100% 可攜與自訂擴充自由。
 
-* **排除非發行資源目錄 (.pkgdirignore)**：
-    專案提供了 `build_all.bat`，該腳本會自動檢查環境、建置前端並透過 PyInstaller 打包整個應用程式：
-
-1. 雙擊執行 **`build_all.bat`**：
-    * 當執行 `build_all.bat` 時，腳本會自動掃描根目錄。若發現有新增的資料夾既不在 `.pkgdirignore` 中、也未在打包指令中進行 `--add-data` 配置，將會主動彈出互動提示：
-        * **輸入 Y**：自動將該資料夾新增至 `.pkgdirignore` 以在未來忽略它。
-        * **輸入 N**（超時 10 秒亦為 N）：警示開發者需要手動將其加入打包設定，並中止建置流程。
+* **兩階段自動化打包腳本 (`build_all.bat`)**：
+    1. **Phase 1 (Python Sidecar)**：PyInstaller 將 Python 後端單獨編譯為專用 Sidecar 可執行檔 `server-sidecar-x86_64-pc-windows-msvc.exe`，放置於 `frontend/src-tauri/bin/`。
+    2. **Phase 2 (Tauri Bundle)**：Tauri 自動整合前端靜態資源與 Python Sidecar，產出最終的綠色免安裝 Executable。
 
 ---
 
@@ -311,4 +307,27 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 * **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
   Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
+
+---
+
+## Portable Release Contract
+
+The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
+separate sidecar file are required. The PyInstaller backend is embedded into
+the Tauri host and extracted to a versioned temporary directory at startup.
+User data is stored beside the executable when that directory is writable,
+with an AppData fallback for protected locations.
+
+## 開發環境連接埠
+
+本專案使用兩個不同的本機連接埠，請勿將它們混用：
+
+| 用途 | 協定 | 預設連接埠 |
+| --- | --- | ---: |
+| Forza Horizon Data Out Telemetry | UDP | `8000` |
+| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
+
+在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式則連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠，透過 `BACKEND_PORT` 修改開發模式的 HTTP 連接埠。
+
+打包後的 portable release 會為 FastAPI HTTP 服務選擇可用的動態 TCP 連接埠，並將實際連接埠寫入資料目錄的 `logs/web_port.txt`；Forza UDP Telemetry 預設仍監聽 `8000`。
 
