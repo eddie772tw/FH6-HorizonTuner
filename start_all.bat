@@ -105,10 +105,10 @@ if exist "%VENV_DIR%\Scripts\ruff.exe" (
     "%VENV_DIR%\Scripts\ruff.exe" format .
 )
 
-:: Terminate old instances to prevent port conflicts (Port 8000 for FastAPI)
+:: Terminate old instances to prevent backend port conflicts (HTTP defaults to 8001; UDP telemetry defaults to 8000)
 echo [INFO] Terminating old backend instances to prevent port conflicts...
 taskkill /F /FI "WINDOWTITLE eq FH6 Telemetry Backend*" /T >nul 2>nul
-for /f "tokens=5" %%a in ('netstat -aon ^| find ":8000" ^| find "LISTENING"') do (
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":8001" ^| find "LISTENING"') do (
     taskkill /F /PID %%a >nul 2>nul
 )
 

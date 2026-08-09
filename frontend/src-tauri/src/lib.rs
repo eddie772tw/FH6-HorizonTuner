@@ -1,8 +1,228 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::fs;
+use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
-use tauri_plugin_shell::process::CommandEvent;
-use tauri_plugin_shell::ShellExt;
+use std::process::{Child, Command, Stdio};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+use serde::Serialize;
+
+#[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+const EMBEDDED_SIDECAR: &[u8] = include_bytes!(
+    "../bin/server-sidecar-x86_64-pc-windows-msvc.exe"
+);
+
+#[cfg(not(all(target_os = "windows", target_arch = "x86_64")))]
+const EMBEDDED_SIDECAR: &[u8] = &[];
+
+#[derive(Clone, Serialize)]
+struct BackendStatus {
+    state: String,
+    port: Option<u16>,
+    error: Option<String>,
+}
+
+struct BackendState(Mutex<BackendStatus>);
+
+struct BackendProcess(Mutex<Option<Child>>);
+
+impl Default for BackendProcess {
+    fn default() -> Self {
+        Self(Mutex::new(None))
+    }
+}
+
+impl BackendState {
+    fn new() -> Self {
+        Self(Mutex::new(BackendStatus {
+            state: "starting".to_string(),
+            port: None,
+            error: None,
+        }))
+    }
+}
+
+fn set_backend_status(app_handle: &tauri::AppHandle, status: BackendStatus) {
+    if let Ok(mut current) = app_handle.state::<BackendState>().0.lock() {
+        *current = status;
+    }
+}
+
+fn stop_backend_process(app_handle: &tauri::AppHandle) {
+    if let Ok(mut process) = app_handle.state::<BackendProcess>().0.lock() {
+        if let Some(mut child) = process.take() {
+            // Closing stdin is the sidecar's graceful shutdown signal. This is
+            // important for the Python cleanup path and releases the UDP
+            // listener before we resort to forceful termination.
+            drop(child.stdin.take());
+
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while Instant::now() < deadline {
+                match child.try_wait() {
+                    Ok(Some(_)) => return,
+                    Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+                    Err(_) => break,
+                }
+            }
+
+            // PyInstaller one-file executables have a bootloader process and
+            // a worker process with the same executable path. Killing only
+            // Child's PID can leave the worker behind and keep UDP 8000 open.
+            #[cfg(target_os = "windows")]
+            {
+                let pid = child.id().to_string();
+                let _ = Command::new("taskkill")
+                    .args(["/PID", pid.as_str(), "/T", "/F"])
+                    .status();
+            }
+
+            #[cfg(not(target_os = "windows"))]
+            {
+                let _ = child.kill();
+            }
+            let _ = child.wait();
+        }
+    }
+}
+
+fn extract_embedded_sidecar() -> Result<PathBuf, String> {
+    if EMBEDDED_SIDECAR.is_empty() {
+        return Err("No embedded Windows x64 sidecar is available for this build.".to_string());
+    }
+
+    let sidecar_dir = std::env::temp_dir()
+        .join("FH6-HorizonTuner")
+        .join(format!("sidecar-{}-{}", env!("CARGO_PKG_VERSION"), EMBEDDED_SIDECAR.len()));
+    let sidecar_path = sidecar_dir.join("server-sidecar.exe");
+    fs::create_dir_all(&sidecar_dir)
+        .map_err(|e| format!("Failed to create sidecar extraction directory {:?}: {}", sidecar_dir, e))?;
+
+    let needs_write = fs::metadata(&sidecar_path)
+        .map(|metadata| metadata.len() != EMBEDDED_SIDECAR.len() as u64)
+        .unwrap_or(true);
+    if needs_write {
+        fs::write(&sidecar_path, EMBEDDED_SIDECAR)
+            .map_err(|e| format!("Failed to extract embedded sidecar to {:?}: {}", sidecar_path, e))?;
+    }
+
+    Ok(sidecar_path)
+}
+
+fn resolve_portable_data_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let mut args = std::env::args().skip(1);
+    while let Some(argument) = args.next() {
+        if argument == "--data-dir" {
+            if let Some(explicit_dir) = args.next() {
+                return Ok(PathBuf::from(explicit_dir));
+            }
+        }
+    }
+
+    if let Ok(executable) = std::env::current_exe() {
+        if let Some(parent) = executable.parent() {
+            let portable_dir = parent.to_path_buf();
+            if fs::create_dir_all(&portable_dir).is_ok() {
+                let probe = portable_dir.join(".fh6-write-test");
+                if fs::write(&probe, b"ok").is_ok() {
+                    let _ = fs::remove_file(probe);
+                    return Ok(portable_dir);
+                }
+            }
+        }
+    }
+
+    app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve portable data directory: {e}"))
+}
+
+fn spawn_sidecar_output_reader<R>(reader: R, app_handle: tauri::AppHandle, is_stderr: bool)
+where
+    R: Read + Send + 'static,
+{
+    std::thread::spawn(move || {
+        for line in BufReader::new(reader).lines().flatten() {
+            if !is_stderr {
+                if let Some(port) = parse_backend_ready_port(line.as_bytes()) {
+                    set_backend_status(&app_handle, BackendStatus {
+                        state: "ready".to_string(),
+                        port: Some(port),
+                        error: None,
+                    });
+                }
+            }
+            if is_stderr {
+                eprintln!("sidecar err: {line}");
+            } else {
+                println!("sidecar: {line}");
+            }
+        }
+    });
+}
+
+fn parse_backend_ready_port(line: &[u8]) -> Option<u16> {
+    let line = std::str::from_utf8(line).ok()?.trim();
+    let payload = line.strip_prefix("FH6_BACKEND_READY:")?;
+    serde_json::from_str::<serde_json::Value>(payload)
+        .ok()?
+        .get("port")?
+        .as_u64()
+        .and_then(|port| u16::try_from(port).ok())
+}
+
+fn find_external_backend_port_file() -> Option<PathBuf> {
+    let mut bases = Vec::new();
+    if let Ok(current_dir) = std::env::current_dir() {
+        bases.push(current_dir);
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            bases.push(parent.to_path_buf());
+        }
+    }
+
+    for base in bases {
+        let mut directory = Some(base.as_path());
+        while let Some(dir) = directory {
+            for candidate in [
+                dir.join("backend").join("logs").join("web_port.txt"),
+                dir.join("logs").join("web_port.txt"),
+            ] {
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+            directory = dir.parent();
+        }
+    }
+    None
+}
+
+fn watch_external_backend(app_handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        for _ in 0..600 {
+            if let Some(port_file) = find_external_backend_port_file() {
+                if let Ok(contents) = fs::read_to_string(port_file) {
+                    if let Ok(port) = contents.trim().parse::<u16>() {
+                        set_backend_status(&app_handle, BackendStatus {
+                            state: "ready".to_string(),
+                            port: Some(port),
+                            error: None,
+                        });
+                        return;
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        set_backend_status(&app_handle, BackendStatus {
+            state: "failed".to_string(),
+            port: None,
+            error: Some("Could not find the externally started development backend port.".to_string()),
+        });
+    });
+}
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -10,57 +230,26 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn get_backend_port() -> Result<u16, String> {
-    if let Ok(port_str) = std::env::var("BACKEND_PORT") {
-        if let Ok(port) = port_str.parse::<u16>() {
-            return Ok(port);
-        }
-    }
-
-    let exe_dir = std::env::current_exe()
-        .map(|p| p.parent().unwrap().to_path_buf())
-        .ok();
-
-    let cwd_dir = std::env::current_dir().ok();
-
-    let mut search_dirs = Vec::new();
-    if let Some(ref d) = exe_dir {
-        search_dirs.push(d.clone());
-    }
-    if let Some(ref d) = cwd_dir {
-        search_dirs.push(d.clone());
-    }
-
-    search_dirs.push(PathBuf::from("."));
-    search_dirs.push(PathBuf::from(".."));
-    search_dirs.push(PathBuf::from("../.."));
-
-    for base_dir in search_dirs {
-        let mut curr = Some(base_dir.as_path());
-        while let Some(dir) = curr {
-            // Only trust the backend's port file. Build output can contain a
-            // stale logs/web_port.txt from an earlier packaged run.
-            let p2 = dir.join("backend").join("logs").join("web_port.txt");
-            if p2.exists() {
-                return read_port_from_file(&p2);
-            }
-            curr = dir.parent();
-        }
-    }
-
-    Err("Could not find web_port.txt in any searched paths".to_string())
+fn get_backend_port(state: tauri::State<'_, BackendState>) -> Result<u16, String> {
+    backend_port_from_state(&state)
 }
 
-fn read_port_from_file(path: &std::path::Path) -> Result<u16, String> {
-    match fs::read_to_string(path) {
-        Ok(content) => {
-            let port_str = content.trim();
-            port_str
-                .parse::<u16>()
-                .map_err(|e| format!("Failed to parse port '{}' from {:?}: {}", port_str, path, e))
-        }
-        Err(e) => Err(format!("Failed to read port file at {:?}: {}", path, e)),
-    }
+fn backend_port_from_state(state: &BackendState) -> Result<u16, String> {
+    let status = state.0.lock().map_err(|_| "Backend state lock poisoned".to_string())?;
+    status.port.ok_or_else(|| status.error.clone().unwrap_or_else(|| {
+        "Backend is still starting".to_string()
+    }))
+}
+
+fn backend_port_from_app(app_handle: &tauri::AppHandle) -> Result<u16, String> {
+    backend_port_from_state(&app_handle.state::<BackendState>())
+}
+
+#[tauri::command]
+fn get_backend_status(state: tauri::State<'_, BackendState>) -> Result<BackendStatus, String> {
+    state.0.lock()
+        .map(|status| status.clone())
+        .map_err(|_| "Backend state lock poisoned".to_string())
 }
 
 use tauri::Manager;
@@ -80,7 +269,7 @@ fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(
 fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
-            let port = get_backend_port().unwrap_or(8001);
+            let port = backend_port_from_app(&app_handle).unwrap_or(8001);
             let url = format!("http://127.0.0.1:{}/hud/index.html", port);
             let _ = window.eval(&format!(
                 "if (!window.location.href.includes('127.0.0.1:{}')) window.location.href = '{}';",
@@ -102,7 +291,7 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
 #[tauri::command]
 fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        let port = get_backend_port().unwrap_or(8001);
+        let port = backend_port_from_app(&app_handle).unwrap_or(8001);
         let url = format!("http://127.0.0.1:{}/hud/index.html", port);
 
         let _ = window.eval("window.location.href = 'about:blank';");
@@ -188,12 +377,14 @@ fn move_hud_to_monitor(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
+        .manage(BackendState::new())
+        .manage(BackendProcess::default())
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
                     println!("Main window closed/destroyed — terminating all windows and backend sidecar.");
+                    stop_backend_process(&window.app_handle());
                     window.app_handle().exit(0);
                 }
             }
@@ -240,34 +431,103 @@ pub fn run() {
 
 
             let args: Vec<String> = std::env::args().collect();
-            if args.contains(&"--no-sidecar".to_string()) || std::env::var("FH6_NO_SIDECAR").is_ok() {
-                println!("Skipping sidecar startup as --no-sidecar was passed or FH6_NO_SIDECAR env var is set.");
+            let external_backend = cfg!(debug_assertions)
+                || args.contains(&"--no-sidecar".to_string())
+                || std::env::var("FH6_NO_SIDECAR").is_ok();
+            if external_backend {
+                println!("Using externally started backend (debug/no-sidecar mode).");
+                if let Ok(port_str) = std::env::var("BACKEND_PORT") {
+                    if let Ok(port) = port_str.parse::<u16>() {
+                        set_backend_status(app.handle(), BackendStatus {
+                            state: "ready".to_string(),
+                            port: Some(port),
+                            error: None,
+                        });
+                        return Ok(());
+                    }
+                }
+                watch_external_backend(app.handle().clone());
                 return Ok(());
             }
 
-            if let Ok(sidecar_command) = app.shell().sidecar("server-sidecar") {
-                if let Ok((mut rx, child)) = sidecar_command.spawn() {
-                    tauri::async_runtime::spawn(async move {
-                        let _child_handle = child;
-                        while let Some(event) = rx.recv().await {
-                            if let CommandEvent::Stdout(line) = event {
-                                println!("sidecar: {}", String::from_utf8_lossy(&line));
-                            } else if let CommandEvent::Stderr(line) = event {
-                                println!("sidecar err: {}", String::from_utf8_lossy(&line));
+            let data_dir = resolve_portable_data_dir(app.handle())?;
+            fs::create_dir_all(&data_dir)
+                .map_err(|e| format!("Failed to create application data directory: {e}"))?;
+            let ready_file = data_dir.join("logs").join("web_port.txt");
+            // A previous process' port is never valid for a newly spawned sidecar.
+            let _ = fs::remove_file(&ready_file);
+            let data_dir_arg = data_dir.to_string_lossy().into_owned();
+
+            match extract_embedded_sidecar() {
+                Ok(sidecar_path) => {
+                    let spawn_result = Command::new(&sidecar_path)
+                        .args(["--data-dir", data_dir_arg.as_str()])
+                        .stdin(Stdio::piped())
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .spawn();
+                    match spawn_result {
+                        Ok(mut child) => {
+                            println!("Embedded sidecar extracted to {:?}", sidecar_path);
+                            let stdout = child.stdout.take();
+                            let stderr = child.stderr.take();
+                            if let Some(stdout) = stdout {
+                                spawn_sidecar_output_reader(stdout, app.handle().clone(), false);
                             }
+                            if let Some(stderr) = stderr {
+                                spawn_sidecar_output_reader(stderr, app.handle().clone(), true);
+                            }
+                            if let Ok(mut process) = app.state::<BackendProcess>().0.lock() {
+                                *process = Some(child);
+                            }
+
+                            let ready_app_handle = app.handle().clone();
+                            let ready_file = ready_file.clone();
+                            std::thread::spawn(move || {
+                                for _ in 0..600 {
+                                    if let Ok(contents) = fs::read_to_string(&ready_file) {
+                                        if let Ok(port) = contents.trim().parse::<u16>() {
+                                            set_backend_status(&ready_app_handle, BackendStatus {
+                                                state: "ready".to_string(),
+                                                port: Some(port),
+                                                error: None,
+                                            });
+                                            return;
+                                        }
+                                    }
+                                    std::thread::sleep(std::time::Duration::from_millis(50));
+                                }
+                            });
                         }
-                    });
-                } else {
-                    println!("Failed to spawn sidecar, continuing without it.");
+                        Err(e) => {
+                            let message = format!(
+                                "Failed to start embedded backend sidecar at {:?}: {e}",
+                                sidecar_path
+                            );
+                            eprintln!("{message}");
+                            set_backend_status(app.handle(), BackendStatus {
+                                state: "failed".to_string(),
+                                port: None,
+                                error: Some(message),
+                            });
+                        }
+                    }
                 }
-            } else {
-                println!("Sidecar configuration not found, continuing without it.");
+                Err(e) => {
+                    eprintln!("Failed to prepare embedded backend sidecar: {e}");
+                    set_backend_status(app.handle(), BackendStatus {
+                        state: "failed".to_string(),
+                        port: None,
+                        error: Some(e),
+                    });
+                }
             }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             greet,
             get_backend_port,
+            get_backend_status,
             set_hud_click_through,
             toggle_hud_window,
             reload_hud_window,

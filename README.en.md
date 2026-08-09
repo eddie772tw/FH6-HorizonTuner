@@ -116,23 +116,22 @@ The project provides highly automated launcher scripts:
   - Automatically lints and formats the codebase using `ruff`.
   - Automatically runs the backend server in the background and opens the Tauri desktop GUI.
 * **Modular launch (For standalone development)**:
-  - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener (`http://127.0.0.1:8000`).
+  - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener. In development, FastAPI/WebSocket uses `http://127.0.0.1:8001`, while Forza UDP telemetry uses `127.0.0.1:8000`.
   - **`start_frontend.bat`**: Launches only the Vite + React dev server and Tauri window.
 
 ---
 
 ## Standalone Release Bundling
 
-You can package both the frontend and backend into a **single standalone executable (.exe)** for clean, portable, installation-free execution:
+You can package both the frontend and backend into a **single standalone executable (.exe)** using the standard **Tauri (Rust Host) + Python Sidecar** architecture:
 
 1. Double-click **`build_all.bat`**:
-   - Builds the Tauri frontend project, producing `frontend.exe`.
-   - Packages the FastAPI backend, translations (`lang/`), default car parameters, and the vehicle database together using PyInstaller.
-   - The final bundled executable `FH6-HorizonTuner.exe` is generated inside the `dist/` directory.
+   - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
+   - **Phase 2 (Portable Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single portable executable `dist/FH6-HorizonTuner.exe` without an installer.
 
 > [!NOTE]
 > **Portable Path Strategy**:
-> When running the standalone executable, all read-only default resources are extracted from a temporary directory. User-generated files like settings (`settings.json`), telemetry sessions (`sessions/`), and custom tunings (`tunings/`) are **automatically saved alongside the `.exe`**, ensuring your data remains fully portable.
+> When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
 
 * **Excluding Non-release Directories (.pkgdirignore)**:
     * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
@@ -286,4 +285,27 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 * **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
   Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
+
+---
+
+## Portable Release Contract
+
+The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
+separate sidecar file are required. The PyInstaller backend is embedded into
+the Tauri host and extracted to a versioned temporary directory at startup.
+User data is stored beside the executable when that directory is writable,
+with an AppData fallback for protected locations.
+
+## Development Ports
+
+This project uses two separate localhost ports; do not configure them interchangeably:
+
+| Purpose | Protocol | Default port |
+| --- | --- | ---: |
+| Forza Horizon Data Out telemetry | UDP | `8000` |
+| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
+
+In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Use `TELEMETRY_PORT` to change the UDP port and `BACKEND_PORT` to change the development HTTP port.
+
+In a portable release, the FastAPI HTTP service selects an available dynamic TCP port and writes it to `logs/web_port.txt` under the data directory. Forza UDP telemetry still listens on `8000` by default.
 
