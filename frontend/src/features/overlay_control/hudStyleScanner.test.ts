@@ -66,12 +66,23 @@ describe('hudStyleScanner frontend module tests', () => {
     });
   });
 
+  it('formatHudDropdownOptions should display the unified S650 HMI name', () => {
+    const options = formatHudDropdownOptions([
+      { id: 's650_hmi', source: 'builtin', urlPrefix: '/hud' },
+    ]);
+
+    expect(options).toEqual([
+      { value: 's650_hmi', label: 'S650 HMI', isCustom: false },
+    ]);
+  });
+
   it('formatHudDropdownOptions should return default fallback options when styles list is empty', () => {
     const options = formatHudDropdownOptions([]);
 
     expect(options.length).toBeGreaterThan(0);
     expect(options.some((opt) => opt.value === 'vfd' && opt.label === 'Retro VFD')).toBe(true);
     expect(options.some((opt) => opt.value === 'drift' && opt.label === 'Drift HUD')).toBe(true);
+    expect(options.some((opt) => opt.value === 's650_hmi' && opt.label === 'S650 HMI')).toBe(true);
   });
 
   it('getHudUrlPrefix should return /hud_user for custom HUD and /hud for builtin or unknown HUD', () => {

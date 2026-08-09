@@ -2044,6 +2044,7 @@ CAR_LEARNING_FILE = os.path.join(DATA_ROOT, "car_learning.json")
 DEFAULT_HUD_CONFIG = {
     "enabled": False,
     "hudStyle": "vfd",
+    "s650Theme": "normal",
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
@@ -2053,6 +2054,10 @@ DEFAULT_HUD_CONFIG = {
     "telemetryPedalScale": 1.0,
     "telemetryPowerTorqueScale": 1.0,
     "telemetryMergedChartsScale": 1.0,
+    "telemetryLiveMapScale": 1.0,
+    "telemetryLiveMapOpacity": 1.0,
+    "telemetryLiveMapOffsetX": 0,
+    "telemetryLiveMapOffsetY": 0,
     "telemetrySideBySideCharts": True,
     "pauseTelemetryViewWhenActive": True,
     "elements": {
@@ -2074,9 +2079,39 @@ DEFAULT_HUD_CONFIG = {
         "showTeleCenterAnchor": True,
         "showTeleGridLines": False,
         "showLiveMap": True,
+        "showLiveMapPOIs": True,
+        "showLiveMapPRStunts": True,
+        "showLiveMapCollectibles": True,
+        "showLiveMapHeading": True,
     },
     "soundEnabled": False,
 }
+
+
+LEGACY_S650_STYLE_MAP = {
+    "s650_normal": "normal",
+    "s650_sport": "sport",
+    "s650_track": "track",
+    "s650_calm": "calm",
+    "s650_foxbody": "foxbody",
+    "s650_heritage67": "heritage67",
+    "s650_svt_cobra": "svt_cobra",
+}
+S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values())
+
+
+def normalize_hud_config(data: dict) -> dict:
+    """Normalize S650 HUD ids while leaving other HUD configurations untouched."""
+    normalized = dict(data or {})
+    hud_style = normalized.get("hudStyle")
+
+    if hud_style in LEGACY_S650_STYLE_MAP:
+        normalized["hudStyle"] = "s650_hmi"
+        normalized["s650Theme"] = LEGACY_S650_STYLE_MAP[hud_style]
+    elif hud_style == "s650_hmi" and normalized.get("s650Theme") not in S650_HMI_THEMES:
+        normalized["s650Theme"] = "normal"
+
+    return normalized
 
 
 @app.get("/api/overlay/config")
@@ -2085,7 +2120,7 @@ async def get_overlay_config():
     if os.path.exists(HUD_CONFIG_FILE):
         try:
             with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return normalize_hud_config(json.load(f))
         except Exception as e:
             logger.error(f"Failed to load hud_config.json: {e}")
     return DEFAULT_HUD_CONFIG
@@ -2095,6 +2130,7 @@ async def get_overlay_config():
 @app.post("/api/overlay/layout")
 async def save_overlay_config(data: dict):
     try:
+        data = normalize_hud_config(data)
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 

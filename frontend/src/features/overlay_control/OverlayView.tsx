@@ -6,6 +6,12 @@ import {
   getHudUrlPrefix,
   HudStyleEntry,
 } from './hudStyleScanner';
+import {
+  S650_HMI_STYLE_ID,
+  S650_HMI_THEMES,
+  normalizeS650HmiConfig,
+  type S650HmiTheme,
+} from './s650Hmi';
 import '../../App.css';
 
 interface HudElements {
@@ -46,6 +52,7 @@ interface MonitorOption {
 interface HudConfig {
   enabled: boolean;
   hudStyle: string;
+  s650Theme?: S650HmiTheme;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -90,6 +97,7 @@ interface HudConfig {
 const DEFAULT_HUD_CONFIG: HudConfig = {
   enabled: false,
   hudStyle: 'vfd',
+  s650Theme: 'normal',
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -247,12 +255,17 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
       if (res.ok) {
         const data = await res.json();
+        const normalizedData = normalizeS650HmiConfig(data as {
+          hudStyle?: string;
+          s650Theme?: unknown;
+          [key: string]: unknown;
+        });
         const merged = {
           ...DEFAULT_HUD_CONFIG,
-          ...data,
+          ...normalizedData,
           enabled: preserveEnabled,
-          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(data.elements || {}) }
-        };
+          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(normalizedData.elements || {}) }
+        } as HudConfig;
         setConfig(merged);
         broadcastConfig(merged);
         loadAuthorInfo(merged.hudStyle, forceAuthorUpdate);
@@ -266,14 +279,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const saveConfig = async (newConfig: HudConfig) => {
-    setConfig(newConfig);
-    broadcastConfig(newConfig);
+    const normalizedConfig = normalizeS650HmiConfig(newConfig);
+    setConfig(normalizedConfig);
+    broadcastConfig(normalizedConfig);
     try {
       const port = (window as any).BACKEND_PORT || 8001;
       await fetch(`http://127.0.0.1:${port}/api/overlay/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig),
+        body: JSON.stringify(normalizedConfig),
       });
     } catch (e) {
       console.error('Failed to save HUD config:', e);
@@ -543,9 +557,13 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const handleStyleChange = (style: string) => {
-    const updated = { ...config, hudStyle: style };
+    const updated = normalizeS650HmiConfig({ ...config, hudStyle: style });
     saveConfig(updated);
-    loadAuthorInfo(style);
+    loadAuthorInfo(updated.hudStyle);
+  };
+
+  const handleS650ThemeChange = (theme: S650HmiTheme) => {
+    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
   };
 
   return (
@@ -1056,6 +1074,26 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   </option>
                 ))}
               </select>
+
+              {config.hudStyle === S650_HMI_STYLE_ID && (
+                <div className="border-top pt-2">
+                  <label htmlFor="s650-hmi-theme" className="form-label fs-7 text-body-secondary mb-1">
+                    {t("S650 HMI Mode")}:
+                  </label>
+                  <select
+                    id="s650-hmi-theme"
+                    className="form-select form-select-sm fw-bold"
+                    value={config.s650Theme ?? 'normal'}
+                    onChange={(e) => handleS650ThemeChange(e.target.value as S650HmiTheme)}
+                  >
+                    {S650_HMI_THEMES.map((theme) => (
+                      <option key={theme.value} value={theme.value}>
+                        {t(theme.label)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Overall HUD Scale */}
               <div>

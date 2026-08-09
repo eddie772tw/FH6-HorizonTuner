@@ -1,0 +1,116 @@
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import {
+  DEFAULT_S650_HMI_THEME,
+  LEGACY_S650_STYLE_MAP,
+  S650_HMI_STYLE_ID,
+  S650_HMI_THEMES,
+  type S650HmiTheme,
+  isS650HmiTheme,
+  normalizeS650HmiConfig,
+} from './s650Hmi';
+
+describe('S650 HMI config contract', () => {
+  it('exposes the seven supported themes in the stable selector order', () => {
+    expect(S650_HMI_THEMES.map((theme) => theme.value)).toEqual([
+      'normal',
+      'sport',
+      'track',
+      'calm',
+      'foxbody',
+      'heritage67',
+      'svt_cobra',
+    ]);
+  });
+
+  it.each(Object.entries(LEGACY_S650_STYLE_MAP))('migrates legacy style id %s', (legacyStyle, theme) => {
+    const config = {
+      hudStyle: legacyStyle,
+      s650Theme: 'stale-theme',
+      customSetting: { enabled: true },
+    };
+
+    expect(normalizeS650HmiConfig(config)).toEqual({
+      ...config,
+      hudStyle: S650_HMI_STYLE_ID,
+      s650Theme: theme,
+    });
+    expect(config).toEqual({
+      hudStyle: legacyStyle,
+      s650Theme: 'stale-theme',
+      customSetting: { enabled: true },
+    });
+  });
+
+  it.each([
+    ['unknown', 'unknown string'],
+    ['', 'empty string'],
+    [null, 'null'],
+    [42, 'number'],
+    [{ value: 'track' }, 'object'],
+  ])('falls back to normal for an invalid theme (%s)', (invalidTheme, label) => {
+    expect(label).toBeTypeOf('string');
+    expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650Theme: invalidTheme }).s650Theme).toBe(
+      DEFAULT_S650_HMI_THEME
+    );
+  });
+
+  it('preserves a valid HMI theme and unrelated config fields', () => {
+    const config = {
+      hudStyle: S650_HMI_STYLE_ID,
+      s650Theme: 'foxbody',
+      telemetry: { showGear: true },
+    };
+
+    const normalized = normalizeS650HmiConfig(config);
+
+    expect(normalized).toEqual(config);
+    expect(normalized).not.toBe(config);
+    expect(normalized.telemetry).toBe(config.telemetry);
+  });
+
+  it('defaults a missing theme for an already-normalized HMI config', () => {
+    expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID })).toEqual({
+      hudStyle: S650_HMI_STYLE_ID,
+      s650Theme: DEFAULT_S650_HMI_THEME,
+    });
+  });
+
+  it.each([
+    { hudStyle: 'vfd', s650Theme: 'track', customSetting: true },
+    { hudStyle: 'advanced', s650Theme: 'invalid', customSetting: true },
+    { customSetting: true },
+  ])('does not alter non-S650 HUD configs or their object identity', (config) => {
+    const before = { ...config };
+
+    expect(normalizeS650HmiConfig(config)).toBe(config);
+    expect(normalizeS650HmiConfig(config)).toEqual(config);
+    expect(config).toEqual(before);
+  });
+
+  it('recognizes only registered HMI themes', () => {
+    expect(isS650HmiTheme('heritage67')).toBe(true);
+    expect(isS650HmiTheme('s650_heritage67')).toBe(false);
+    expect(isS650HmiTheme('')).toBe(false);
+    expect(isS650HmiTheme(undefined)).toBe(false);
+    expect(isS650HmiTheme(null)).toBe(false);
+    expect(isS650HmiTheme(42)).toBe(false);
+    expect(isS650HmiTheme({ value: 'heritage67' })).toBe(false);
+  });
+
+  it('keeps the generic config shape while exposing the theme type guard', () => {
+    const config = {
+      hudStyle: S650_HMI_STYLE_ID,
+      s650Theme: 'track' as const,
+      customSetting: 7,
+    };
+    const normalized = normalizeS650HmiConfig(config);
+
+    expectTypeOf(normalized).toMatchTypeOf<typeof config>();
+    expectTypeOf(isS650HmiTheme).guards.toEqualTypeOf<S650HmiTheme>();
+
+    const candidate: unknown = 'track';
+    if (isS650HmiTheme(candidate)) {
+      expectTypeOf(candidate).toEqualTypeOf<S650HmiTheme>();
+    }
+  });
+});

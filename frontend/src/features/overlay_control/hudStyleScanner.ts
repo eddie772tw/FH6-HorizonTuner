@@ -20,6 +20,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   shift_tacho: 'NFS Shift',
   vfd: 'Retro VFD',
   drift: 'Drift HUD',
+  s650_hmi: 'S650 HMI',
 };
 
 /**

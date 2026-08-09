@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S650 Unified HMI MVP</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .s650-hmi-container {
+            align-self: center;
+            width: 1260px;
+            height: 240px;
+            transform-origin: bottom center;
+            pointer-events: none;
+        }
+
+        #s650Canvas {
+            display: block;
+            width: 1260px;
+            height: 240px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="teleCardsMount"></div>
+
+    <div class="hud-root-wrapper">
+        <div id="s650Container" class="hud-gauge-container s650-hmi-container">
+            <canvas id="s650Canvas" width="1260" height="240" aria-label="S650 unified HMI"></canvas>
+        </div>
+    </div>
+
+    <script type="module" src="../shared/telemetry-cards.js"></script>
+    <script src="../shared/hud-core.js"></script>
+    <script src="./assets/s650_renderer.js"></script>
+</body>
+
+</html>
