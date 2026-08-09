@@ -46,3 +46,6 @@
 ## 2026-08-08 - Prevent Heap Allocation in dict.get Defaults
 **Learning:** High-frequency backend methods (like parsing UDP telemetry or rendering hot paths) using inline list allocations (e.g. `[0.0] * 4`) as fallback default arguments in `dict.get()` will instantiate new list objects on every single function call. This places immense pressure on the Garbage Collector.
 **Action:** Extract inline list allocations used as default fallback arguments into module-level immutable constants, such as tuples (e.g. `DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)`), to completely eliminate the allocation overhead.
+## 2024-05-18 - Nested Fallback Ternary Danger
+**Learning:** Using a ternary operator `obj ? obj.prop : fallback` to check for nested object properties is unsafe if `obj` exists but `obj.prop` does not. In JavaScript, this evaluates to `undefined`, silently bypassing the fallback.
+**Action:** Use logical OR evaluation `(obj && obj.prop) || fallback` to ensure the fallback triggers when intermediate properties are missing.

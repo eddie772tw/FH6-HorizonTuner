@@ -68,7 +68,17 @@ init: function (parentEl) {
                     el: document.getElementById('tcCorner' + tag),
                     suspBlock: document.getElementById('tcSuspBlock' + tag),
                     slipBlock: document.getElementById('tcSlipBlock' + tag),
-                    tempBlock: document.getElementById('tcTempBlock' + tag)
+                    tempBlock: document.getElementById('tcTempBlock' + tag),
+                    angEl: document.getElementById('tcTireAng' + tag),
+                    ratEl: document.getElementById('tcTireRat' + tag),
+                    rCanvas: document.getElementById('tcTireRadar' + tag),
+                    tempEl: document.getElementById('tcTireTemp' + tag),
+                    tCanvas: document.getElementById('tcTireHist' + tag),
+                    txtEl: document.getElementById('tcSuspText' + tag),
+                    barEl: document.getElementById('tcSuspBar' + tag),
+                    minEl: document.getElementById('tcSuspMin' + tag),
+                    maxEl: document.getElementById('tcSuspMax' + tag),
+                    wCanvas: document.getElementById('tcSuspWave' + tag)
                 };
             }
         },
@@ -322,7 +332,7 @@ init: function (parentEl) {
             }
 
             if (showCorners) {
-                renderCorners(data, showSusp, showSlip, showTemp, this.tireHist, this.suspHist, this.suspMinMax, now);
+                renderCorners(data, showSusp, showSlip, showTemp, this.tireHist, this.suspHist, this.suspMinMax, now, this.domCache);
             }
 
             if (showPT) {

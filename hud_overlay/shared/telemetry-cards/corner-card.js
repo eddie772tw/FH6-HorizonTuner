@@ -18,7 +18,7 @@ import {
 } from './utils.js';
 
 
-export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now) {
+export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
     var rawSlipAngles = data.TireSlipAngle || [];
     var rawTemps = data.TireTemp || [];
@@ -70,13 +70,14 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
         // ---- Slip Radar ----------------------------------------------------
         if (showSlip) {
-            var angEl  = document.getElementById('tcTireAng' + tag);
+            var cached = domCache && domCache.corners ? domCache.corners[tag] : null;
+            var angEl  = cached ? cached.angEl : document.getElementById('tcTireAng' + tag);
             if (angEl)  angEl.textContent = radToDeg(cAngle).toFixed(1) + '\u00b0';
 
-            var ratEl  = document.getElementById('tcTireRat' + tag);
+            var ratEl  = cached ? cached.ratEl : document.getElementById('tcTireRat' + tag);
             if (ratEl)  ratEl.textContent = cRatio.toFixed(2);
 
-            var rCanvas = document.getElementById('tcTireRadar' + tag);
+            var rCanvas = cached ? cached.rCanvas : document.getElementById('tcTireRadar' + tag);
             if (rCanvas) {
                 var cData = getCanvasContext(rCanvas);
                 if (cData && cData.ctx) {
@@ -121,12 +122,12 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
         // ---- Tire Temperature ----------------------------------------------
         if (showTemp) {
-            var tempEl = document.getElementById('tcTireTemp' + tag);
+            var tempEl = cached ? cached.tempEl : document.getElementById('tcTireTemp' + tag);
             if (tempEl) {
                 tempEl.style.display = 'none';
             }
 
-            var tCanvas = document.getElementById('tcTireHist' + tag);
+            var tCanvas = cached ? cached.tCanvas : document.getElementById('tcTireHist' + tag);
             if (tCanvas && tHist.length > 0) {
                 var tData = getCanvasContext(tCanvas);
                 if (tData && tData.ctx) {
@@ -214,17 +215,17 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
         // ---- Suspension Bar & Waveform -------------------------------------
         if (showSusp) {
-            var txtEl = document.getElementById('tcSuspText' + tag);
+            var txtEl = cached ? cached.txtEl : document.getElementById('tcSuspText' + tag);
             if (txtEl) txtEl.textContent = cTravel.toFixed(2);
 
-            var barEl = document.getElementById('tcSuspBar' + tag);
+            var barEl = cached ? cached.barEl : document.getElementById('tcSuspBar' + tag);
             if (barEl) barEl.style.height = (cTravel * 100) + '%';
 
             var mm = suspMinMax[i];
             if (mm.min === null || cTravel < mm.min) mm.min = cTravel;
             if (mm.max === null || cTravel > mm.max) mm.max = cTravel;
-            var minEl = document.getElementById('tcSuspMin' + tag); if (minEl) minEl.textContent = mm.min.toFixed(2);
-            var maxEl = document.getElementById('tcSuspMax' + tag); if (maxEl) maxEl.textContent = mm.max.toFixed(2);
+            var minEl = cached ? cached.minEl : document.getElementById('tcSuspMin' + tag); if (minEl) minEl.textContent = mm.min.toFixed(2);
+            var maxEl = cached ? cached.maxEl : document.getElementById('tcSuspMax' + tag); if (maxEl) maxEl.textContent = mm.max.toFixed(2);
 
             var sHist = suspHist[i];
             if (sHist.length < 150) {
@@ -234,7 +235,7 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                 if (oldS) { oldS.travel = cTravel; oldS.time = now; sHist.push(oldS); }
             }
 
-            var wCanvas = document.getElementById('tcSuspWave' + tag);
+            var wCanvas = cached ? cached.wCanvas : document.getElementById('tcSuspWave' + tag);
             if (wCanvas && sHist.length > 0) {
                 var wData = getCanvasContext(wCanvas);
                 if (wData && wData.ctx) {
@@ -255,7 +256,7 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                         else         wCtx.lineTo(wx, wy);
                     }
 
-                    var wrapperEl = document.getElementById('tcClusterWrapper');
+                    var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
                     var primaryColor = '#00f0ff';
                     if (wrapperEl && typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
                         var cssVal = wrapperEl.style.getPropertyValue('--card-primary');
