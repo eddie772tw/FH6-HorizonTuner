@@ -222,24 +222,6 @@ canvas, [class*="recharts"], input[type="range"], input[type="color"] {
   transition: none !important;
 }
 
-/* Navigation Bar Overflow Exception — Dropdown menus must pop out without clipping */
-.navbar,
-.navbar .container-fluid {
-  overflow: visible !important;
-}
-
-/* Prevent Horizontal Scrollbar Overflow Across Main View Containers */
-main .container-fluid {
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  box-sizing: border-box !important;
-}
-.row {
-  max-width: 100% !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
 /* =============================================================================
    (F) Glassmorphism Skin Layer
    ============================================================================= */

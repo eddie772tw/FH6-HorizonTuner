@@ -48,11 +48,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from system_media import get_system_media_info
-from telemetry_listener import (
-    DEFAULT_TIRE_ARRAY,
-    pack_telemetry_binary,
-    start_udp_listener,
-)
+from telemetry_listener import pack_telemetry_binary, start_udp_listener
 from telemetry_sqlite import TelemetrySQLite
 
 
@@ -582,7 +578,7 @@ class DragRecorder:
                 "BrakeInput": data.get("BrakeInput", 0),
                 "TorqueNewtons": data.get("TorqueNewtons", 0.0),
                 "PowerWatts": data.get("PowerWatts", 0.0),
-                "TireSlipRatio": list(data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)),
+                "TireSlipRatio": list(data.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])),
                 "EngineMaxRpm": data.get("EngineMaxRpm", 8000.0),
                 "EngineIdleRpm": data.get("EngineIdleRpm", 1000.0),
                 "PositionX": data.get("PositionX", 0.0),
@@ -1190,7 +1186,7 @@ async def broadcast_telemetry():
                 no_slip = True
                 if app_settings.get("dyno_filter_slip", True):
                     drivetrain = dyno_cache[car_id].get("drivetrain", "RWD")
-                    slip_ratios = data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
+                    slip_ratios = data.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])
 
                     SLIP_THRESHOLD = 0.10
                     if drivetrain == "RWD":
@@ -1542,8 +1538,7 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to read language file: {e}")
-            return {"error": "Failed to read language file"}
+            return {"error": f"Failed to read language file: {e}"}
 
     return {"error": "Language not found"}
 
@@ -1614,7 +1609,7 @@ async def save_analysis_config(config: dict):
         return {"message": "Analysis layout saved successfully"}
     except Exception as e:
         logger.error(f"Failed to save analysis layout: {e}")
-        return {"error": "Failed to save analysis layout"}
+        return {"error": f"Failed to save analysis layout: {e}"}
 
 
 @app.get("/api/analysis/status")
@@ -1717,8 +1712,7 @@ async def load_saved_session(session_id: str, lap: int = 0):
         if data:
             return data
     except Exception as e:
-        logger.error(f"Failed to read session telemetry: {e}")
-        return {"error": "Failed to read session telemetry"}
+        return {"error": f"Failed to read session telemetry: {e}"}
     return []
 
 
@@ -1729,8 +1723,7 @@ async def delete_saved_session(session_id: str):
         if success:
             return {"message": "Session deleted successfully"}
     except Exception as e:
-        logger.error(f"Failed to delete session: {e}")
-        return {"error": "Failed to delete session"}
+        return {"error": f"Failed to delete session: {e}"}
     return {"error": "Session not found"}
 
 
@@ -1786,7 +1779,7 @@ async def import_motec_session(file: UploadFile = File(...)):
         }
     except Exception as e:
         logger.error(f"Failed to import MoTeC CSV: {e}")
-        return {"error": "Failed to import MoTeC CSV"}
+        return {"error": f"Failed to import MoTeC CSV: {e}"}
 
 
 # --- Drag Test API Endpoints ---
@@ -1853,7 +1846,7 @@ async def drag_save_session():
         return {"message": "Drag session saved successfully", "filename": filename}
     except Exception as e:
         logger.error(f"Failed to save drag session to {filename}: {e}")
-        return {"error": "Failed to save session"}
+        return {"error": f"Failed to save session: {e}"}
 
 
 @app.get("/api/drag/sessions")
@@ -1887,8 +1880,7 @@ async def get_drag_session(filename: str):
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to read drag session file: {e}")
-            return {"error": "Failed to read drag session file"}
+            return {"error": f"Failed to read drag session file: {e}"}
     return {"error": "Drag session file not found"}
 
 
@@ -1901,8 +1893,7 @@ async def delete_drag_session(filename: str):
             os.remove(file_path)
             return {"message": "Drag session deleted successfully"}
         except Exception as e:
-            logger.error(f"Failed to delete drag session file: {e}")
-            return {"error": "Failed to delete drag session file"}
+            return {"error": f"Failed to delete drag session file: {e}"}
     return {"error": "Drag session file not found"}
 
 
@@ -1920,8 +1911,7 @@ async def get_logs(level: str = None, limit: int = 300):
         with open(backend_log_path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
     except Exception as e:
-        logger.error(f"Failed to read log file: {e}")
-        return {"error": "Failed to read log file"}
+        return {"error": f"Failed to read log file: {e}"}
 
     parsed_logs = []
     current_entry = None
@@ -1973,8 +1963,7 @@ async def clear_logs():
                 f.write("")
             return {"message": "Logs cleared successfully"}
         except Exception as e:
-            logger.error(f"Failed to clear logs: {e}")
-            return {"error": "Failed to clear logs"}
+            return {"error": f"Failed to clear logs: {e}"}
     return {"message": "Log file does not exist"}
 
 
@@ -2027,7 +2016,6 @@ DEFAULT_HUD_CONFIG = {
         "showTelePedals": True,
         "showTeleCenterAnchor": True,
         "showTeleGridLines": False,
-        "showLiveMap": True,
     },
     "soundEnabled": False,
 }
@@ -2058,7 +2046,7 @@ async def save_overlay_config(data: dict):
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save hud_config.json: {e}")
-        return {"error": "Failed to save HUD config", "success": False}
+        return {"error": f"Failed to save HUD config: {e}", "success": False}
 
 
 @app.post("/api/overlay/reset")
@@ -2077,7 +2065,7 @@ async def reset_overlay_config():
         }
     except Exception as e:
         logger.error(f"Failed to reset hud_config.json: {e}")
-        return {"error": "Failed to reset HUD config", "success": False}
+        return {"error": f"Failed to reset HUD config: {e}", "success": False}
 
 
 @app.get("/api/overlay/car_learning")
@@ -2099,7 +2087,7 @@ async def save_car_learning(data: dict):
         return {"message": "Car learning data saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save car_learning.json: {e}")
-        return {"error": "Failed to save car learning data", "success": False}
+        return {"error": f"Failed to save car learning data: {e}", "success": False}
 
 
 @app.get("/api/overlay/system_media")
@@ -2173,17 +2161,10 @@ if __name__ == "__main__":
         s.close()
         return port
 
-    # A standalone Vite dev server cannot call Tauri's get_backend_port command,
-    # so development must use the same deterministic port the frontend targets.
-    # The packaged application keeps its dynamic-port behaviour to avoid clashes
-    # between concurrent installed instances.
-    if getattr(sys, "frozen", False):
-        try:
-            backend_port = get_free_port()
-        except Exception:
-            backend_port = 8001
-    else:
-        backend_port = int(os.getenv("BACKEND_PORT", "8001"))
+    try:
+        backend_port = get_free_port()
+    except Exception:
+        backend_port = 8001
 
     def write_web_port(port):
         try:

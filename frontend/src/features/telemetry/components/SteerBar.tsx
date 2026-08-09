@@ -21,16 +21,16 @@ const SteerBar: React.FC = React.memo(() => {
   }, []);
   return (
     <div className="d-flex flex-column justify-content-center flex-grow-1">
-      <div className="d-flex justify-content-between text-body-secondary fs-7 fw-medium">
+      <div className="d-flex justify-content-between text-secondary" style={{ fontSize: '0.85rem' }}>
         <span>{t("Steer L")}</span>
         <span>{t("Steer R")}</span>
       </div>
-      <div className="w-100 position-relative mt-1 border rounded-pill overflow-hidden" style={{ height: '14px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important' }}>
-        <div ref={barRef} className="position-absolute h-100 rounded-pill" style={{
+      <div className="w-100 position-relative mt-1 border" style={{ height: '16px', background: 'var(--surface-2)', borderColor: 'var(--glass-border) !important', borderRadius: '8px' }}>
+        <div ref={barRef} className="position-absolute h-100" style={{
           background: 'var(--primary)',
           width: '0%', left: '50%'
         }} />
-        <div className="position-absolute" style={{ left: '50%', top: 0, bottom: 0, width: '2px', background: 'var(--divider)', zIndex: 2 }} />
+        <div className="position-absolute" style={{ left: '50%', top: '-2px', bottom: '-2px', width: '2px', background: 'var(--divider)' }} />
       </div>
     </div>
   );

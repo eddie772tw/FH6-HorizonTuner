@@ -3,8 +3,6 @@ import logging
 import os
 from typing import Any, Dict, List, Tuple
 
-from telemetry_listener import DEFAULT_TIRE_ARRAY
-
 logger = logging.getLogger(__name__)
 
 
@@ -109,10 +107,10 @@ def export_session_to_motec_csv(
 
             # Data Rows
             for p in telemetry_points:
-                susp = p.get("SuspTravel", DEFAULT_TIRE_ARRAY)
-                s_angle = p.get("TireSlipAngle", DEFAULT_TIRE_ARRAY)
-                s_ratio = p.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
-                temp = p.get("TireTemp", DEFAULT_TIRE_ARRAY)
+                susp = p.get("SuspTravel", [0, 0, 0, 0])
+                s_angle = p.get("TireSlipAngle", [0, 0, 0, 0])
+                s_ratio = p.get("TireSlipRatio", [0, 0, 0, 0])
+                temp = p.get("TireTemp", [0, 0, 0, 0])
 
                 speed_kmh = p.get("SpeedMetersPerSecond", 0.0) * 3.6
                 accel_x_g = p.get("AccelerationX", 0.0) / 9.81

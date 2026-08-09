@@ -3,68 +3,18 @@ import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 
 // --- COMPONENT: PedalTraceCanvas ---
-interface PedalTraceCanvasProps {
-  height?: string | number;
-  enabled?: boolean;
-}
-
-const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height = '140px', enabled = true }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+const PedalTraceCanvas: React.FC = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ throttle: number; brake: number; time: number }[]>([]);
   const lastTimeRef = useRef(performance.now());
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
-  const isLightRef = useRef(false);
   const { t } = useSettings();
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas && !enabled) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      hist.current = [];
-    }
-  }, [enabled]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    // 策略 A：快取 isLight 主題屬性
-    const updateIsLight = () => {
-      isLightRef.current = document.documentElement.getAttribute('data-bs-theme') === 'light';
-    };
-    updateIsLight();
-    const themeObserver = new MutationObserver(updateIsLight);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = Math.floor(width * dpr);
-          canvas.height = Math.floor(height * dpr);
-        }
-      }
-    });
-
-    resizeObserver.observe(container);
-
     const handleUpdate = (e: any) => {
       const liveData = e.detail;
       if ((window as any).__IS_HUD_PAUSED__ || !liveData) return;
-
-      if (!enabled) {
-        if (canvas && canvas.width > 0 && canvas.height > 0) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-        hist.current = [];
-        return;
-      }
 
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
@@ -88,64 +38,51 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
         if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; hist.current.push(oldP); }
       }
 
-      if (canvas && hist.current.length > 0 && canvas.width > 0 && canvas.height > 0) {
+      const canvas = canvasRef.current;
+      if (canvas && hist.current.length > 0) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           const w = canvas.width, h = canvas.height;
-          const dpr = window.devicePixelRatio || 1;
           ctx.clearRect(0, 0, w, h);
 
-          const padTop = 26 * dpr;
-          const padBottom = 12 * dpr;
-          const plotH = Math.max(10, h - padTop - padBottom);
-
-          // Dashed Guidelines (0% baseline, 25%, 50%, 75%)（使用快取的 isLight）
-          ctx.strokeStyle = isLightRef.current ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)';
-          ctx.lineWidth = 1 * dpr;
-          ctx.setLineDash([4 * dpr, 4 * dpr]);
+          // 50% Guideline
+          const isLight = document.documentElement.getAttribute('data-bs-theme') === 'light';
+          ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)';
+          ctx.lineWidth = 1;
           ctx.beginPath();
-          const y0 = h - padBottom;
-          const y25 = h - padBottom - plotH * 0.25;
-          const y50 = h - padBottom - plotH * 0.50;
-          const y75 = h - padBottom - plotH * 0.75;
-          ctx.moveTo(0, y0); ctx.lineTo(w, y0);
-          ctx.moveTo(0, y25); ctx.lineTo(w, y25);
-          ctx.moveTo(0, y50); ctx.lineTo(w, y50);
-          ctx.moveTo(0, y75); ctx.lineTo(w, y75);
+          ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5);
           ctx.stroke();
-          ctx.setLineDash([]);
 
           const len = hist.current.length;
-          const stepX = (w - 12 * dpr) / 299;
-          const rightEdgeX = w - 6 * dpr;
+          const stepX = w / (300 - 1);
 
-          // Throttle Trace (Green #00ff66) - Anchored to right edge, scrolling left smoothly
+          // Throttle Trace (Green #00ff66) - Latest on right
           ctx.beginPath();
           for (let k = 0; k < len; k++) {
-            const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - padBottom - (hist.current[k].throttle * plotH);
+            const px = k * stepX;
+            const py = h - (hist.current[k].throttle * (h - 6)) - 3;
             if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.lineWidth = 2.2 * dpr;
+          ctx.lineWidth = 2.5;
           ctx.strokeStyle = '#00ff66';
-          ctx.shadowColor = 'rgba(0, 255, 102, 0.5)';
-          ctx.shadowBlur = 4 * dpr;
+          ctx.shadowColor = 'rgba(0, 255, 102, 0.6)';
+          ctx.shadowBlur = 4;
           ctx.stroke();
           ctx.shadowBlur = 0;
 
-          // Brake Trace (Red #ff0055) - Anchored to right edge, scrolling left smoothly
+          // Brake Trace (Red #ff0055) - Latest on right
           ctx.beginPath();
           for (let k = 0; k < len; k++) {
-            const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - padBottom - (hist.current[k].brake * plotH);
+            const px = k * stepX;
+            const py = h - (hist.current[k].brake * (h - 6)) - 3;
             if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.lineWidth = 2.2 * dpr;
+          ctx.lineWidth = 2.5;
           ctx.strokeStyle = '#ff0055';
-          ctx.shadowColor = 'rgba(255, 0, 85, 0.5)';
-          ctx.shadowBlur = 4 * dpr;
+          ctx.shadowColor = 'rgba(255, 0, 85, 0.6)';
+          ctx.shadowBlur = 4;
           ctx.stroke();
           ctx.shadowBlur = 0;
         }
@@ -154,37 +91,19 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
 
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => {
-      resizeObserver.disconnect();
-      themeObserver.disconnect();
       telemetryEmitter.removeEventListener('update', handleUpdate);
     };
-  }, [enabled]);
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="position-relative w-100 rounded-3 border overflow-hidden flex-grow-1"
-      style={{
-        height: typeof height === 'number' ? `${height}px` : height,
-        minHeight: typeof height === 'number' ? `${height}px` : undefined,
-        background: 'var(--surface-1)',
-        borderColor: 'var(--glass-border) !important'
-      }}
-    >
-      <canvas ref={canvasRef} className="w-100 h-100 d-block" />
-      <div className="position-absolute top-0 start-0 end-0 p-2 d-flex justify-content-between align-items-center pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--surface-1), transparent)' }}>
-        <div className="d-flex align-items-center gap-3 fs-8">
-          <div className="d-flex align-items-center gap-1">
-            <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: '#00ff66' }} />
-            <span className="font-monospace fw-bold text-success">{t("THROTTLE")}</span>
-          </div>
-          <div className="d-flex align-items-center gap-1">
-            <span className="d-inline-block rounded-circle" style={{ width: '8px', height: '8px', background: '#ff0055' }} />
-            <span className="font-monospace fw-bold text-danger">{t("BRAKE")}</span>
-          </div>
-        </div>
-        <span className="font-monospace text-body-secondary fs-8 fw-semibold">{t("INPUT WAVEFORM")}</span>
-      </div>
+    <div style={{ position: 'relative', width: '100%', height: '95px', background: 'var(--surface-1)', borderRadius: '6px', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
+      <canvas ref={canvasRef} width={480} height={95} style={{ width: '100%', height: '100%' }} />
+      <span style={{ position: 'absolute', top: '6px', right: '10px', color: '#00ff66', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'monospace' }}>
+        {t("THROTTLE")}
+      </span>
+      <span style={{ position: 'absolute', bottom: '6px', right: '10px', color: '#ff0055', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'monospace' }}>
+        {t("BRAKE")}
+      </span>
     </div>
   );
 });

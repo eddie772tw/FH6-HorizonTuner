@@ -5,7 +5,7 @@ description: 當需要拆分龐大組件、重構底層邏輯或建立全新功�
 
 # 模組化拆分與重構實踐指南 (Modular Refactoring Skill)
 
-## 模組拆分 CheckList (SOP)
+## 🎯 模組拆分 CheckList (SOP)
 
 當你準備重構或新建一個模組時，請嚴格執行以下步驟：
 
@@ -25,6 +25,6 @@ description: 當需要拆分龐大組件、重構底層邏輯或建立全新功�
 ### 步驟 4：組件/介面對接 (Wire Up)
 - 在 UI 組件或主流程中引用新模組，並確認前後端單元測試全數通過。
 
-## 反模式 (Anti-Patterns to Avoid)
+## 🚫 反模式 (Anti-Patterns to Avoid)
 - **循環依賴 (Circular Dependency)**：A 模組引用 B 模組，B 模組又引用 A 模組。
 - **巨型組件 (God Component)**：一個元件同時處理 WebSocket 接收、物理計算、State 管理與 UI 繪製。

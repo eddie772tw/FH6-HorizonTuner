@@ -7,75 +7,50 @@ import PresetPanel from './components/PresetPanel';
 import SlotManagerPanel from './components/SlotManagerPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
 
-interface ThemeViewProps {
-  show: boolean;
-  onClose: () => void;
-}
-
-const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
+const ThemeView: React.FC = () => {
   const { themeSettings } = useTheme();
   const { t } = useSettings();
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
-        style={{
-          display: show ? 'block' : 'none',
-          zIndex: 1040,
-        }}
-        onClick={onClose}
-      />
+    <div style={{ padding: '2rem', color: 'var(--text-primary)', height: '100%', overflowY: 'auto' }}>
+      <div className="glass-panel" style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
-      {/* Offcanvas panel */}
-      <div
-        className={`offcanvas offcanvas-start border-end glass-panel shadow-lg${show ? ' show' : ''}`}
-        tabIndex={-1}
-        aria-modal="true"
-        role="dialog"
-        style={{
-          width: '480px',
-          zIndex: 1050,
-          visibility: show ? 'visible' : 'hidden',
-          transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
-        }}
-      >
-        {/* Header */}
-        <div className="offcanvas-header border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
-          <div>
-            <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0">
-              {t("Theme Customization")}
-            </h5>
-            <p className="text-body-secondary fs-8 mb-0 mt-1" style={{ lineHeight: '1.3' }}>
-              {t("Personalize skin, colors, and custom CSS")}
-            </p>
-          </div>
-          <div className="d-flex align-items-center gap-2">
-            <span className="badge text-bg-primary fs-8 px-2 py-1 fw-bold">
-              {themeSettings.mode.toUpperCase()}
+        {/* Title & Architecture Banner */}
+        <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.2rem' }}>
+          <h2 style={{ color: 'var(--primary)', margin: 0, textShadow: '0 0 10px var(--primary-glow)', fontSize: '1.8rem' }}>
+            {t('Theme Settings')}
+          </h2>
+          <div style={{
+            marginTop: '0.8rem',
+            padding: '0.65rem 1rem',
+            borderRadius: '8px',
+            background: 'var(--primary-glow)',
+            border: '1px solid var(--primary)',
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+          }}>
+            <strong style={{ color: 'var(--text-primary)' }}>{t('CSS Engine')}: </strong>
+            {t('Halfmoon CSS v2.0.2')} + Glassmorphism Skin
+            &nbsp;|&nbsp;
+            <strong style={{ color: 'var(--text-primary)' }}>{t('Core Theme')}: </strong>
+            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
+              {(themeSettings.halfmoonCore || 'default').charAt(0).toUpperCase() +
+               (themeSettings.halfmoonCore || 'default').slice(1)}
             </span>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onClose}
-              aria-label={t("Close Theme Panel")}
-            />
+            &nbsp;/&nbsp;
+            <span style={{ textTransform: 'capitalize' }}>{themeSettings.mode}</span>
           </div>
         </div>
 
-        {/* Offcanvas Body */}
-        <div className="offcanvas-body p-0 overflow-y-auto">
-          <div className="d-flex flex-column gap-4 p-4">
-            <AppearanceModePanel />
-            <ColorPickerPanel />
-            <PresetPanel />
-            <SlotManagerPanel />
-            <CustomCSSEditorPanel />
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+          <AppearanceModePanel />
+          <ColorPickerPanel />
+          <PresetPanel />
+          <SlotManagerPanel />
+          <CustomCSSEditorPanel />
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

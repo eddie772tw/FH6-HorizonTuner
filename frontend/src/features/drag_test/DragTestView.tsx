@@ -50,7 +50,6 @@ const DragTestView: React.FC = () => {
   const { convertSpeed, t } = useSettings();
 
   const [status, setStatus] = useState<'idle' | 'waiting' | 'recording' | 'finished'>('idle');
-  const [showDragPopover, setShowDragPopover] = useState<boolean>(false);
   const [pointsCount, setPointsCount] = useState(0);
   const [sessionData, setSessionData] = useState<DragPoint[]>([]);
   const [analysis, setAnalysis] = useState<DragAnalysis | null>(null);
@@ -352,78 +351,9 @@ const DragTestView: React.FC = () => {
           )}
 
           {status === 'idle' && (
-            <div className="d-flex align-items-center gap-2">
-              <div 
-                className="position-relative d-inline-block"
-                onClick={() => setShowDragPopover(prev => !prev)}
-                onMouseEnter={() => setShowDragPopover(true)}
-                onMouseLeave={() => setShowDragPopover(false)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span className="badge text-bg-info px-2 py-1 fw-bold fs-7">
-                  {t("RUN CONDITIONS READY")}
-                </span>
-
-                {showDragPopover && (
-                  <div 
-                    className="popover bs-popover-bottom show glass-panel shadow-lg border"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      left: 0,
-                      zIndex: 1050,
-                      minWidth: '320px',
-                      backdropFilter: 'blur(16px)',
-                      background: 'var(--glass-bg)',
-                      borderColor: 'var(--bs-info)',
-                      cursor: 'default'
-                    }}
-                    role="tooltip"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div 
-                      style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        left: '20px',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '6px solid transparent',
-                        borderRight: '6px solid transparent',
-                        borderBottom: '6px solid var(--bs-info)'
-                      }} 
-                    />
-                    <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-info fw-bold fs-7 d-flex align-items-center justify-content-between">
-                      <div className="d-flex align-items-center gap-2">
-                        <span>{t("Drag Launch Conditions")}</span>
-                        <span className="badge text-bg-info">READY</span>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn-close btn-sm"
-                        aria-label="Close"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDragPopover(false);
-                        }}
-                      ></button>
-                    </div>
-                    <div className="popover-body px-3 py-2 text-start">
-                      <div className="fs-7 text-body fw-medium">
-                        {t("1. Bring car to a complete stop (0 km/h).")}
-                      </div>
-                      <div className="fs-7 text-body fw-medium mt-1">
-                        {t("2. Press throttle (> 5%) to automatically trigger run timing.")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button className="btn-primary" onClick={handlePrepare} style={{ padding: '0.6rem 1.4rem', fontWeight: 600, borderRadius: '6px', cursor: 'pointer' }}>
-                {t("Start Test")}
-              </button>
-            </div>
+            <button className="btn-primary" onClick={handlePrepare} style={{ padding: '0.6rem 1.5rem', fontWeight: 600, borderRadius: '6px', background: 'var(--primary)', border: 'none', color: 'white', cursor: 'pointer' }}>
+              {t("Start Test")}
+            </button>
           )}
           
           {status === 'waiting' && (

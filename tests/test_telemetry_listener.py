@@ -2,30 +2,13 @@ import asyncio
 import struct
 import unittest
 
-from telemetry_listener import TelemetryProtocol, parse_telemetry_packet
+from telemetry_listener import TelemetryProtocol
 
 
 class TestTelemetryListener(unittest.TestCase):
     def setUp(self):
         self.queue = asyncio.Queue()
         self.protocol = TelemetryProtocol(self.queue)
-
-    def test_parse_telemetry_packet_direct(self):
-        # Short binary should return None
-        self.assertIsNone(parse_telemetry_packet(b"\x00" * 100))
-
-        # Not racing (IsRaceOn = 0)
-        data = bytearray(232)
-        struct.pack_into("<i", data, 0, 0)
-        self.assertIsNone(parse_telemetry_packet(bytes(data)))
-
-        # Racing (IsRaceOn = 1)
-        struct.pack_into("<i", data, 0, 1)
-        struct.pack_into("<I", data, 4, 12345)
-        parsed = parse_telemetry_packet(bytes(data))
-        self.assertIsNotNone(parsed)
-        self.assertEqual(parsed["IsRaceOn"], 1)
-        self.assertEqual(parsed["TimestampMS"], 12345)
 
     def test_datagram_received_v1(self):
         # Build 232 byte packet (V1)

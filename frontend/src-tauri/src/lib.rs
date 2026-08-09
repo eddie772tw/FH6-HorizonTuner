@@ -38,8 +38,10 @@ fn get_backend_port() -> Result<u16, String> {
     for base_dir in search_dirs {
         let mut curr = Some(base_dir.as_path());
         while let Some(dir) = curr {
-            // Only trust the backend's port file. Build output can contain a
-            // stale logs/web_port.txt from an earlier packaged run.
+            let p1 = dir.join("logs").join("web_port.txt");
+            if p1.exists() {
+                return read_port_from_file(&p1);
+            }
             let p2 = dir.join("backend").join("logs").join("web_port.txt");
             if p2.exists() {
                 return read_port_from_file(&p2);

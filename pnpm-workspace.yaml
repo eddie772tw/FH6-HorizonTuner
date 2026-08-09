@@ -4,6 +4,3 @@ packages:
 allowBuilds:
   '0': esbuild
   esbuild: true
-
-minimumReleaseAgeExclude:
-  - nanoid@3.3.17

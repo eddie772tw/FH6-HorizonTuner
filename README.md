@@ -2,21 +2,16 @@
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 > **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
 
-[![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Uvicorn-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React%2018-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app/)
-[![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
-[![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
-[![Tests](https://img.shields.io/badge/Tests-Pytest%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
-[![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
-[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
+[![Language](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React-purple.svg)](https://tauri.app/)
+[![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 
 ---
 
 ## 簡介 / Introduction
 
-`FH6-HorizonTuner` 是一款專為《極限競速：地平線 6》開發的專屬遙測資料分析與車輛調校輔助工具。此專案整合了高效能的 Python FastAPI 後端封包監聽服務、現代化的 Tauri 桌面端圖形介面，以及完全免注入的 HTML5 Canvas / Tauri 透明儀表覆蓋層引擎。
+`FH6-HorizonTuner` 是一款專為《極限競速：地平線 6》開發的專屬遙測資料分析與車輛調校輔助工具。此專案整合了高效能的 Python 後端封包監聽服務、現代化的 Tauri 桌面端圖形介面，以及完全免注入的 DXGI MPO (Multiplane Overlay) 硬體覆蓋層渲染引擎。
 
 目前此專案提供**即時遙測面板**、**自定義賽車儀表覆蓋層 (含視覺化編輯器)**、**車輛調校輔助**與**彈射起步測試**等核心功能，幫助玩家在操駕時即時監控車輛物理與動態反饋。
 
@@ -24,30 +19,17 @@
 
 ## 核心功能 / Core Features
 
-* **即時遙測與物理動態分析 (60Hz Live Telemetry & Dynamics)**:
-  - 60Hz 高頻 UDP 遙測封包接收與極致效能視效渲染。
-  - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
-  - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
-* **5 步驟公式化車輛調校工作台 (5-Step Physics Tuning Workbench)**:
-  - **Step 1 賽事目標 (Goal Setup)**：支援公路環道 (Road)、甩尾 (Drift)、越野拉力 (Rally) 與直線加速 (Drag) 四大賽事取向及空力效率配比。
-  - **Step 2 AEGO 齒比 (AEGO Gearing)**：獨家 AEGO 齒比演算法與動力帶 (Powerband) 分析，支援 4-Speed Drag Meta、軟上限 (Soft Cap) 與極速閉環幾何二次修正。
-  - **Step 3 底盤懸吊 (Chassis Tuner)**：防傾桿 (ARB 1/65 Meta 策略)、彈簧剛性、前傾姿態 (Forward Rake) 車高、黃金比例阻尼 (60% Bump Ratio) 與差速器鎖定率。
-  - **Step 4 胎壓與對齊 (Alignment & Tires)**：季節偏置靜態冷胎壓算牌、Camber / Toe / Caster 幾何計算。
-  - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
-* **客製化賽車儀表覆蓋層與視覺編輯器 (Racing HUD Overlay & WYSIWYG Designer)**:
-  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
-  - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
-  - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
-* **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
-  - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。
-  - 速度/轉速時間軸圖表回放與歷史 Session 紀錄對比。
-* **遙測持久化與 MoTeC i2 數據匯出 (SQLite Storage & MoTeC Exporter)**:
-  - 後端 SQLite 遙測歷程資料庫自動記錄。
-  - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
-* **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
-  - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
-  - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
-  - **動態多語言**：預設支援繁體中文 (zh-tw)、英文 (en-us)、日文 (ja-jp) 等。
+* **即時遙測面板 (60Hz Live Telemetry)**: 高更新率數據可視化，包含車速、引擎轉速、馬力、扭力、渦輪增壓值 (Boost)、G 力雷達與駕駛輸入反饋。
+* **自定義儀表覆蓋層 (Custom Dashboard Overlay)**:
+  - 提供基於 DXGI MPO 的硬體級遊戲覆蓋層（支援獨佔全螢幕），採用三層防禦漸進式降級架構。
+  - 100% 免注入、免 Hook，零反作弊封號風險。
+  - 整合 **ExprTk 數學表達式引擎**，支援動態表達式綁定與條件變色邏輯。
+  - 支援 4 種組件類型：**文字 (Text)**、**進度條 (ProgressBar)**、**超轉燈 (LEDGroup)** 與 **旋轉指針 (Needle)**。
+* **WYSIWYG 儀表編輯器 (Visual Dashboard Designer)**: 在 Tauri 前端中提供拖曳式佈局編輯器，支援即時預覽、屬性面板、條件色彩規則表與一鍵匯入/匯出佈局設定。
+* **輪胎與懸吊監控**: 即時顯示四輪獨立的輪胎表面溫度、熱胎壓與正規化懸吊行程。
+* **車輛調校工作台 (Tuning Workbench)**: 提供調校設定的管理、計算與數據記錄功能。
+* **彈射起步測試 (Drag Test)**: 提供起步加速度計時測試的記錄、分析與圖表回放功能。
+* **診斷主控台 (Diagnostic Console)**: 內建即時日誌檢視器，支援層級篩選與 Traceback 拼接，方便即時排查問題。
 
 ---
 
@@ -57,41 +39,31 @@
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD 工作流設定 (Ruff Lint + Pytest)
 ├── backend/                 # Python FastAPI 後端核心
-│   ├── main.py              # 後端服務主入口與 API 宣告
-│   ├── telemetry_listener.py # UDP 60Hz 遙測數據流監聽與解析
-│   ├── core/                # 遙測數據處理、算牌與系統核心
-│   ├── routers/             # API 路由 (telemetry, tuning, overlay, drag, log, etc.)
-│   ├── services/            # 後端系統服務與狀態管理
-│   ├── telemetry_sqlite.py   # 遙測歷史紀錄 SQLite 資料庫持久化
-│   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器
+│   ├── main.py              # 後端服務主入口、API 宣告與 Overlay 進程管理
+│   ├── telemetry_listener.py # UDP 遙測數據流監聽與解析
 │   └── car_database.json    # 內建車輛資料庫
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
-│   ├── src/features/        # 業務領域模組 (Features Domain)
-│   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 4 大動態卡片
-│   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~5 分頁)
-│   │   ├── overlay_control/ # WYSIWYG 儀表佈局編輯器 (OverlayView)
-│   │   ├── drag_test/       # 彈射起步測試 (DragTestView)
-│   │   ├── analysis/        # 數據分析檢視 (AnalysisView)
-│   │   ├── car_params/      # 車輛參數設定 (CarParamsView)
-│   │   ├── settings/        # 系統全域設定 (SettingsView)
-│   │   └── theme/           # 主題色調與皮膚視圖 (ThemeView)
-│   ├── src/components/      # 通用 UI 元件 (Navigation, DiagnosticConsole 等)
-│   ├── src/utils/           # 純函數計算庫 (tuningMath.ts, tuningDiagnosis.ts 等)
-│   └── src-tauri/           # Tauri 視窗與打包設定
-├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
-│   ├── index.html           # HUD 載入與 Viewport 渲染入口
-│   ├── gt7/                 # Gran Turismo 7 風格賽車儀表
-│   ├── vfd/                 # Retro VFD 擬真螢光顯示儀表
-│   ├── drift/               # 093 Drift 專業甩尾賽車儀表
-│   └── shared/              # 共用 Canvas 幾何繪圖與數學庫
+│   ├── src/components/      # 前端 UI 元件
+│   │   ├── TelemetryView.tsx    # 即時遙測面板
+│   │   ├── OverlayView.tsx      # WYSIWYG 儀表佈局編輯器
+│   │   ├── TuningView.tsx       # 車輛調校設定工作台
+│   │   ├── DragTestView.tsx     # 彈射起步測試
+│   │   ├── AnalysisView.tsx     # 資料分析檢視
+│   │   ├── DiagnosticConsole.tsx # 診斷日誌主控台
+│   │   └── Navigation.tsx       # 導航元件
+│   └── src-tauri/           # Tauri 視窗打包設定
+├── tool/                    # 外部原生工具集
+│   └── overlay/             # C++ DXGI MPO Overlay 渲染引擎
+│       ├── main.cpp             # D3D11/ImGui 資料驅動渲染主入口
+│       ├── DXGIOverlayManager.h/.cpp # DXGI 交換鏈管理與 MPO/降級機制
+│       ├── WebSocketClient.h    # WinHTTP 原生 WebSocket 用戶端
+│       └── CMakeLists.txt       # CMake 編譯設定 (自動 Fetch nlohmann/json, ExprTk, ImGui)
 ├── lang/                    # 系統多語言翻譯字典 (zh-tw, ja-jp 等)
 ├── tests/                   # Pytest 單元測試套件
 ├── pyproject.toml           # Ruff 格式化規則與 Pytest 設定
 ├── requirements.txt         # Python 依賴套件清單
 ├── .pkgdirignore            # 打包排除目錄定義
-├── start_all.bat            # 一鍵開發啟動器 (同步開啟後端與前端)
-├── start_backend.bat        # 獨立啟動 Python FastAPI 後端服務
-├── start_frontend.bat       # 獨立啟動 Vite + Tauri 前端 UI 介面
+├── start_all.bat            # 一鍵開發啟動器
 └── build_all.bat            # 一鍵打包發行腳本
 ```
 
@@ -110,15 +82,12 @@ FH6-HorizonTuner/
 ### 2. 啟動本工具
 
 專案提供了高度自動化的一鍵啟動腳本，免去繁瑣的環境設定步驟：
-* **雙擊執行 `start_all.bat`** (推薦全套啟動)：
+* 雙擊執行 **`start_all.bat`**：
   - 自動搜尋系統中的 Python 3.13 / 3.14 執行檔。
   - 自動於專案根目錄下建立虛擬環境 `.venv`。
   - 自動安裝並更新 `requirements.txt` 中的所有依賴（包含 FastAPI, Uvicorn, Websockets, Ruff, Pytest, Httpx 等）。
   - 自動使用 `ruff` 對整個專案代碼進行靜態檢查與格式化排版。
   - 自動在背景執行後端服務，並開啟 Tauri 桌面端圖形介面。
-* **分開啟動（模組化開發時使用）**：
-  - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務 (`http://127.0.0.1:8000`)。
-  - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。
 
 ---
 
@@ -145,6 +114,7 @@ FH6-HorizonTuner/
 * **Python**: 3.13 或 3.14 (標準 Windows 安裝版或 `uv` 託管版本均可)
 * **Node.js**: 20 或以上版本
 * **Rust / Cargo**: 本地端 Tauri 編譯所需 (非必須，若無則自動降級至 Web 瀏覽器調試模式)
+* **CMake + MSVC/MinGW**: 編譯 C++ DXGI Overlay 渲染引擎所需 (選用，若不需要修改 Overlay 可直接使用預編譯二進位)
 
 ---
 
@@ -206,14 +176,10 @@ cd frontend && pnpm run test
 cd frontend && pnpm run test
 ```
 
-目前的前端測試套件涵蓋 13 個測試檔案，共 123 個單元測試案例：
+目前的前端測試套件涵蓋：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
-| `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |
-| `tuningDiagnosis.test.ts` | 底盤遙測即時問題與動態調校診斷邏輯測試 |
-| `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
-| `telemetryCards.test.ts` | 遙測數據卡片格式化與狀態映射測試 |
-| 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等 10 個測試套件 |
+| `tuningMath.test.ts` | 彈簧 / ARB / 阻尼器 / 齒輪比 / 對齊 / 胎壓等11個導出純函數的單元測試 |
 
 > [!TIP]
 > 新增或修改 `frontend/src/utils/` 下的物理計算模組時，請同步新增對應的 `.test.ts` 單元測試，確保所有測試通過後才提交 PR。
@@ -245,7 +211,6 @@ cd frontend && pnpm run test
 - [ ] 前端單元測試已全數通過 (`cd frontend && pnpm run test` Pass)
 - [ ] 若新增了 API 路由或後端核心邏輯，已補充對應的 Pytest 單元測試
 - [ ] 若修改了 `tuningMath.ts` / `tuningDiagnosis.ts` 等前端計算邏輯，已補充對應的 Vitest 單元測試
-- [ ] 若本次任務包含重大架構變更、核心模組增修或 API 重構，已同步維護並更新 `README.md` 與 `README.en.md`
 - [ ] 若修改了 UI 元件或前端邏輯，已在本地驗證功能運作正常
 - [ ] 若新增了多語言鍵值，已同步更新 `lang/zh-tw.json` 與 `lang/ja-jp.json`
 - [ ] Commit message 符合 Conventional Commits 規範
@@ -309,6 +274,5 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ## 致謝與專案參考 / Credits & Acknowledgements
 
-* **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
-  Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.
-
+Credits:Paburrito/forza-horizon-6-custom-hud
+Special thanks to Paburrito for the original "Forza Horizon 6 - Custom HUD" design and inspiration.

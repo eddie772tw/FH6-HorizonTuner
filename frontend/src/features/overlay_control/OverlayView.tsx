@@ -21,11 +21,6 @@ interface HudElements {
   showTelePedals: boolean;
   showTeleCenterAnchor: boolean;
   showTeleGridLines: boolean;
-  showLiveMap?: boolean;
-  showLiveMapPOIs?: boolean;
-  showLiveMapPRStunts?: boolean;
-  showLiveMapCollectibles?: boolean;
-  showLiveMapHeading?: boolean;
 }
 
 interface MonitorOption {
@@ -39,7 +34,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho';
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -52,8 +47,6 @@ interface HudConfig {
   telemetryPedalScale?: number;
   telemetryPowerTorqueScale?: number;
   telemetryMergedChartsScale?: number;
-  telemetryLiveMapScale?: number;
-  telemetryLiveMapOpacity?: number;
   /** Independent font scale for card text (0.5–2.0) */
   telemetryCardFontScale?: number;
   /** Option to merge power/torque & pedal charts side-by-side */
@@ -68,13 +61,9 @@ interface HudConfig {
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
   telemetryMergedChartsOffsetX?: number;
-  telemetryLiveMapOffsetX?: number;
-  telemetryLiveMapOffsetY?: number;
   /** VFD Instrument Sensitivity Offsets */
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
-  /** Drift HUD Profile Preset */
-  driftProfile?: '1440P STREAM' | '1080P FULL' | '1440P CLEAN';
   glowIntensity?: number;
   customColor?: string;
   useDefaultColors?: boolean;
@@ -93,8 +82,6 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
   telemetryMergedChartsScale: 1.0,
-  telemetryLiveMapScale: 1.0,
-  telemetryLiveMapOpacity: 1.0,
   telemetryCardFontScale: 1.0,
   telemetrySideBySideCharts: true,
   telemetryPedalPosition: 'bottom',
@@ -105,11 +92,8 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
   telemetryMergedChartsOffsetX: 0,
-  telemetryLiveMapOffsetX: 0,
-  telemetryLiveMapOffsetY: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
-  driftProfile: '1440P STREAM',
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
@@ -133,11 +117,6 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
     showTelePedals: true,
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
-    showLiveMap: true,
-    showLiveMapPOIs: true,
-    showLiveMapPRStunts: true,
-    showLiveMapCollectibles: true,
-    showLiveMapHeading: true,
   },
   soundEnabled: false,
 };
@@ -147,12 +126,7 @@ interface AuthorInfo {
   description: string;
 }
 
-interface OverlayViewProps {
-  category?: 'general' | 'displays' | 'gauges' | 'performance';
-  setCategory?: (cat: 'general' | 'displays' | 'gauges' | 'performance') => void;
-}
-
-export const OverlayView: React.FC<OverlayViewProps> = () => {
+export const OverlayView: React.FC = () => {
   const { t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);
@@ -230,6 +204,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
       if (res.ok) {
         const data = await res.json();
+        // Always reset enabled to false on startup so user manually toggles it unless preserveEnabled is true
         const merged = {
           ...DEFAULT_HUD_CONFIG,
           ...data,
@@ -247,6 +222,21 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
     }
   };
+
+  /*
+    const fetchCarLearning = async () => {
+      try {
+        const port = (window as any).BACKEND_PORT || 8001;
+        const res = await fetch(`http://127.0.0.1:${port}/api/overlay/car_learning`);
+        if (res.ok) {
+          const data = await res.json();
+          // setCarLearningData(data);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch car learning data:', e);
+      }
+    };
+  */
 
   const saveConfig = async (newConfig: HudConfig) => {
     setConfig(newConfig);
@@ -352,16 +342,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     saveConfig({ ...config, telemetryMergedChartsScale: clamped });
   };
 
-  const handleLiveMapScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryLiveMapScale: clamped });
-  };
-
-  const handleLiveMapOpacityChange = (newOpacity: number) => {
-    const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    saveConfig({ ...config, telemetryLiveMapOpacity: clamped });
-  };
-
   const handleCornerOffsetXChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetX: val };
     saveConfig(updated);
@@ -369,16 +349,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const handleCornerOffsetYChange = (val: number) => {
     const updated = { ...config, telemetryCornerOffsetY: val };
-    saveConfig(updated);
-  };
-
-  const handleLiveMapOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryLiveMapOffsetX: val };
-    saveConfig(updated);
-  };
-
-  const handleLiveMapOffsetYChange = (val: number) => {
-    const updated = { ...config, telemetryLiveMapOffsetY: val };
     saveConfig(updated);
   };
 
@@ -446,6 +416,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     saveConfig(updated);
   };
 
+
   const handleVfdVuOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
     const updated = { ...config, vfdVuOffset: clamped };
@@ -455,11 +426,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   const handleVfdAudioOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
     const updated = { ...config, vfdAudioOffset: clamped };
-    saveConfig(updated);
-  };
-
-  const handleDriftProfileChange = (profile: '1440P STREAM' | '1080P FULL' | '1440P CLEAN') => {
-    const updated = { ...config, driftProfile: profile };
     saveConfig(updated);
   };
 
@@ -483,6 +449,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     broadcastConfig(config);
     channelRef.current?.postMessage({ type: 'hud:reload', hudStyle: config.hudStyle });
 
+    // Attempt hard reload of iframe through tauri window command
     if ((window as any).__TAURI__?.core?.invoke) {
       try {
         await (window as any).__TAURI__.core.invoke('reload_hud_window');
@@ -531,16 +498,33 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     loadAuthorInfo(style);
   };
 
-  return (
-    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
+  /*
+    const handleResetCarLearning = async () => {
+      if (!window.confirm(t('Are you sure you want to reset car limiter database?'))) return;
+      try {
+        const port = (window as any).BACKEND_PORT || 8001;
+        await fetch(`http://127.0.0.1:${port}/api/overlay/car_learning`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        // setCarLearningData({});
+        setStatusMsg(t('Car learning reset successfully'));
+      } catch (e) {
+        console.error('Failed to reset car learning:', e);
+      }
+    };
+  */
 
-      {/* Unframed Header Banner */}
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-2 flex-shrink-0">
+  return (
+    <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Header Banner */}
+      <div className="cyber-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
         <div>
-          <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
+          <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.6rem', letterSpacing: '1px' }}>
             {t("HUD Control Panel")}
           </h2>
-          <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
+          <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
             {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6")}
             <br />
             {t('Simple & Advanced HUD Style:')} Paburrito
@@ -555,11 +539,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
           <button
             onClick={() => toggleHudWindow(!config.enabled)}
             disabled={loading}
-            className={`btn fw-bold px-4 py-2 ${config.enabled ? 'btn-outline-danger' : 'btn-primary'}`}
+            className="cyber-btn-glow"
             style={{
-              fontSize: '1rem',
+              padding: '0.8rem 2rem',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
               borderRadius: '6px',
               cursor: loading ? 'wait' : 'pointer',
+              background: config.enabled ? 'rgba(255, 50, 50, 0.2)' : 'var(--primary-glow)',
+              border: config.enabled ? '1px solid rgba(255, 50, 50, 0.6)' : '1px solid var(--primary)',
+              color: config.enabled ? '#ff5555' : 'var(--primary)',
               boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px var(--primary-glow)',
               pointerEvents: loading ? 'none' : 'auto'
             }}
@@ -569,771 +558,685 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         </span>
       </div>
 
+      {/*
+      statusMsg && (
+        <div style={{ padding: '0.8rem 1rem', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)' }}>
+          {statusMsg}
+        </div>
+      )
+      */}
+
       {/* Main Settings Grid: 3 columns x 2 rows fixed grid layout */}
-      <div className="row g-4 m-0 w-100 flex-grow-1">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
 
         {/* --- COLUMN 1 ROW 1: Offset & Position Settings --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("Offset & Position Settings")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-              {/* Corner Cards Horizontal (X) Offset Slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Corner Cards X-Offset")}:</span>
-                  <span className="text-primary fw-bold fs-7">{config.telemetryCornerOffsetX ?? 0} px</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={-500}
-                  max={500}
-                  step={5}
-                  value={config.telemetryCornerOffsetX ?? 0}
-                  onChange={(e) => handleCornerOffsetXChange(Number(e.target.value))}
-                />
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("Offset & Position Settings")}
+          </h3>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* Corner Cards Horizontal (X) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Corner Cards X-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetX ?? 0} px</span>
               </div>
-
-              {/* Corner Cards Vertical (Y) Offset Slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Corner Cards Y-Offset")}:</span>
-                  <span className="text-primary fw-bold fs-7">{config.telemetryCornerOffsetY ?? 0} px</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={-300}
-                  max={300}
-                  step={5}
-                  value={config.telemetryCornerOffsetY ?? 0}
-                  onChange={(e) => handleCornerOffsetYChange(Number(e.target.value))}
-                />
-              </div>
-
-              {/* Merge Power/Torque & Pedal Position Chart Switch */}
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-side-by-side"
-                  checked={config.telemetrySideBySideCharts === true}
-                  onChange={handleSideBySideChartsToggle}
-                />
-                <label className="form-check-label fs-7 fw-bold text-primary" htmlFor="sw-side-by-side">
-                  {t("Merge Power & Pedal Charts")}
-                </label>
-              </div>
-
-              {/* Conditional Display: Merged vs Individual Offsets & Positions */}
-              {config.telemetrySideBySideCharts ? (
-                <>
-                  {/* Merged Charts Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Merged Charts X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryMergedChartsOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryMergedChartsOffsetX ?? 0}
-                      onChange={(e) => handleMergedChartsOffsetXChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Merged Charts Top/Bottom Position */}
-                  <div className="d-flex justify-content-between align-items-center pt-1">
-                    <span className="fs-7 text-body-secondary">{t("Merged Charts Position")}:</span>
-                    <select
-                      value={config.telemetryMergedChartsPosition ?? 'bottom'}
-                      onChange={(e) => handleMergedChartsPositionChange(e.target.value as 'top' | 'bottom')}
-                      className="form-select form-select-sm"
-                      style={{ width: 'auto', minWidth: '110px' }}
-                    >
-                      <option value="bottom">{t("Bottom")}</option>
-                      <option value="top">{t("Top")}</option>
-                    </select>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Pedal Wave Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Pedal Chart X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryPedalOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryPedalOffsetX ?? 0}
-                      onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Power / Torque Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Power / Torque X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryPowerTorqueOffsetX ?? 0}
-                      onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Live Map Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Live Map X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryLiveMapOffsetX ?? 0}
-                      onChange={(e) => handleLiveMapOffsetXChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Live Map Vertical (Y) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Live Map Y-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetY ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryLiveMapOffsetY ?? 0}
-                      onChange={(e) => handleLiveMapOffsetYChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Chart Top/Bottom Positions */}
-                  <div className="d-flex justify-content-between align-items-center pt-1">
-                    <span className="fs-7 text-body-secondary">{t("Pedal Position")}:</span>
-                    <select
-                      value={config.telemetryPedalPosition ?? 'bottom'}
-                      onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
-                      className="form-select form-select-sm"
-                      style={{ width: 'auto', minWidth: '110px' }}
-                    >
-                      <option value="bottom">{t("Bottom")}</option>
-                      <option value="top">{t("Top")}</option>
-                    </select>
-                  </div>
-
-                  <div className="d-flex justify-content-between align-items-center pt-1">
-                    <span className="fs-7 text-body-secondary">{t("Power/Torque Position")}:</span>
-                    <select
-                      value={config.telemetryPowerTorquePosition ?? 'top'}
-                      onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
-                      className="form-select form-select-sm"
-                      style={{ width: 'auto', minWidth: '110px' }}
-                    >
-                      <option value="bottom">{t("Bottom")}</option>
-                      <option value="top">{t("Top")}</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
+              <input
+                type="range"
+                min={-500}
+                max={500}
+                step={5}
+                value={config.telemetryCornerOffsetX ?? 0}
+                onChange={(e) => handleCornerOffsetXChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
             </div>
+
+            {/* Corner Cards Vertical (Y) Offset Slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Corner Cards Y-Offset")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryCornerOffsetY ?? 0} px</span>
+              </div>
+              <input
+                type="range"
+                min={-300}
+                max={300}
+                step={5}
+                value={config.telemetryCornerOffsetY ?? 0}
+                onChange={(e) => handleCornerOffsetYChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Merge Power/Torque & Pedal Position Chart Switch */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: '0.2rem 0' }}>
+              <input
+                type="checkbox"
+                checked={config.telemetrySideBySideCharts === true}
+                onChange={handleSideBySideChartsToggle}
+              />
+              <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>{t("Merge Power & Pedal Charts")}</span>
+            </label>
+
+            {/* Conditional Display: Merged vs Individual Offsets & Positions */}
+            {config.telemetrySideBySideCharts ? (
+              <>
+                {/* Merged Charts Horizontal (X) Offset Slider */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Merged Charts X-Offset")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryMergedChartsOffsetX ?? 0} px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-500}
+                    max={500}
+                    step={10}
+                    value={config.telemetryMergedChartsOffsetX ?? 0}
+                    onChange={(e) => handleMergedChartsOffsetXChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                {/* Merged Charts Top/Bottom Position */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Merged Charts Position")}:</span>
+                  <select
+                    value={config.telemetryMergedChartsPosition ?? 'bottom'}
+                    onChange={(e) => handleMergedChartsPositionChange(e.target.value as 'top' | 'bottom')}
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--input-text)',
+                      borderRadius: '4px',
+                      padding: '0.25rem 0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <option value="bottom">{t("Bottom")}</option>
+                    <option value="top">{t("Top")}</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Pedal Wave Horizontal (X) Offset Slider */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Pedal Chart X-Offset")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPedalOffsetX ?? 0} px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-500}
+                    max={500}
+                    step={10}
+                    value={config.telemetryPedalOffsetX ?? 0}
+                    onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                {/* Power / Torque Horizontal (X) Offset Slider */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Power / Torque X-Offset")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-500}
+                    max={500}
+                    step={10}
+                    value={config.telemetryPowerTorqueOffsetX ?? 0}
+                    onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                {/* Chart Top/Bottom Positions */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Pedal Position")}:</span>
+                  <select
+                    value={config.telemetryPedalPosition ?? 'bottom'}
+                    onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--input-text)',
+                      borderRadius: '4px',
+                      padding: '0.25rem 0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <option value="bottom">{t("Bottom")}</option>
+                    <option value="top">{t("Top")}</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Power/Torque Position")}:</span>
+                  <select
+                    value={config.telemetryPowerTorquePosition ?? 'top'}
+                    onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--input-text)',
+                      borderRadius: '4px',
+                      padding: '0.25rem 0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <option value="bottom">{t("Bottom")}</option>
+                    <option value="top">{t("Top")}</option>
+                  </select>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
 
         {/* --- COLUMN 2 ROW 1: HUD Scale Size --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("HUD Scale Size")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
 
-              {/* G-Force Radar Scale */}
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("HUD Scale Size")}
+          </h3>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+
+
+            {/* G-Force Radar Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("G-Force Radar Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryGRadarScale ?? 1.0) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryGRadarScale ?? 1.0}
+                onChange={(e) => handleGRadarScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* 4-Corner Cards Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("4-Corner Wheel Cards Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryCornersScale ?? 1.0) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryCornersScale ?? 1.0}
+                onChange={(e) => handleCornersScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {config.telemetrySideBySideCharts ? (
+              /* Merged Charts Scale */
               <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("G-Force Radar Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryGRadarScale ?? 1.0) * 100)}%</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Merged Charts Scale")}:</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryMergedChartsScale ?? 1.0) * 100)}%</span>
                 </div>
                 <input
                   type="range"
-                  className="form-range"
                   min={0.5}
                   max={2.0}
                   step={0.05}
-                  value={config.telemetryGRadarScale ?? 1.0}
-                  onChange={(e) => handleGRadarScaleChange(Number(e.target.value))}
+                  value={config.telemetryMergedChartsScale ?? 1.0}
+                  onChange={(e) => handleMergedChartsScaleChange(Number(e.target.value))}
+                  style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
                 />
               </div>
-
-              {/* 4-Corner Cards Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("4-Corner Wheel Cards Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryCornersScale ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryCornersScale ?? 1.0}
-                  onChange={(e) => handleCornersScaleChange(Number(e.target.value))}
-                />
-              </div>
-
-              {config.telemetrySideBySideCharts ? (
-                /* Merged Charts Scale */
+            ) : (
+              <>
+                {/* Pedal Chart Scale */}
                 <div>
-                  <div className="d-flex justify-content-between align-items-center mb-1">
-                    <span className="fs-7 text-body-secondary">{t("Merged Charts Scale")}:</span>
-                    <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryMergedChartsScale ?? 1.0) * 100)}%</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Pedal Chart Scale")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
                   </div>
                   <input
                     type="range"
-                    className="form-range"
                     min={0.5}
                     max={2.0}
                     step={0.05}
-                    value={config.telemetryMergedChartsScale ?? 1.0}
-                    onChange={(e) => handleMergedChartsScaleChange(Number(e.target.value))}
+                    value={config.telemetryPedalScale ?? 1.0}
+                    onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
                   />
                 </div>
-              ) : (
-                <>
-                  {/* Pedal Chart Scale */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Pedal Chart Scale")}:</span>
-                      <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={0.5}
-                      max={2.0}
-                      step={0.05}
-                      value={config.telemetryPedalScale ?? 1.0}
-                      onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
-                    />
+
+                {/* Power / Torque Chart Scale */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Power / Torque Scale")}:</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
                   </div>
-
-                  {/* Power / Torque Chart Scale */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Power / Torque Scale")}:</span>
-                      <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={0.5}
-                      max={2.0}
-                      step={0.05}
-                      value={config.telemetryPowerTorqueScale ?? 1.0}
-                      onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Card Font Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Card Font Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryCardFontScale ?? 1.0) * 100)}%</span>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2.0}
+                    step={0.05}
+                    value={config.telemetryPowerTorqueScale ?? 1.0}
+                    onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
                 </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryCardFontScale ?? 1.0}
-                  onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
-                />
-              </div>
+              </>
+            )}
 
-              {/* Live Map Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Live Map Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapScale ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryLiveMapScale ?? 1.0}
-                  onChange={(e) => handleLiveMapScaleChange(Number(e.target.value))}
-                />
+            {/* Card Font Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Card Font Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round((config.telemetryCardFontScale ?? 1.0) * 100)}%</span>
               </div>
-
-              {/* Live Map Opacity */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Live Map Opacity")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapOpacity ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.05}
-                  value={config.telemetryLiveMapOpacity ?? 1.0}
-                  onChange={(e) => handleLiveMapOpacityChange(Number(e.target.value))}
-                />
-              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.telemetryCardFontScale ?? 1.0}
+                onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
             </div>
           </div>
         </div>
 
         {/* --- COLUMN 3 ROW 1: HUD Elements --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("HUD Elements")}
-            </h3>
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("HUD Elements")}
+          </h3>
 
-            <div className="row g-3 pt-1">
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-susp" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-susp">{t("Suspension Travel")}</label>
-                </div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginTop: '1rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
+              <span>{t("Suspension Travel")}</span>
+            </label>
 
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-slip" checked={config.elements.showTeleTiresSlip !== false} onChange={() => handleElementToggle('showTeleTiresSlip')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-slip">{t("Tire Slip Radar")}</label>
-                </div>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTeleTiresSlip !== false} onChange={() => handleElementToggle('showTeleTiresSlip')} />
+              <span>{t("Tire Slip Radar")}</span>
+            </label>
 
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-temp" checked={config.elements.showTeleTiresTemp !== false} onChange={() => handleElementToggle('showTeleTiresTemp')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-temp">{t("Tire Temp Histogram")}</label>
-                </div>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTeleTiresTemp !== false} onChange={() => handleElementToggle('showTeleTiresTemp')} />
+              <span>{t("Tire Temp Histogram")}</span>
+            </label>
 
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-att" checked={config.elements.showTeleAttitude} onChange={() => handleElementToggle('showTeleAttitude')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-att">{t("G-Force & Attitude")}</label>
-                </div>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTeleAttitude} onChange={() => handleElementToggle('showTeleAttitude')} />
+              <span>{t("G-Force & Attitude")}</span>
+            </label>
 
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-pedal" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-pedal">{t("Throttle & Brake Trace")}</label>
-                </div>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />
+              <span>{t("Throttle & Brake Trace")}</span>
+            </label>
 
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-power" checked={config.elements.showPowerTorque !== false} onChange={() => handleElementToggle('showPowerTorque')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-power">{t("Power & Torque Trace")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-live-map" checked={config.elements.showLiveMap !== false} onChange={() => handleElementToggle('showLiveMap')} />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-live-map">{t("Live Map (Track & Cursor)")}</label>
-                </div>
-              </div>
-
-              {config.elements.showLiveMap !== false && (
-                <>
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pois" checked={config.elements.showLiveMapPOIs !== false} onChange={() => handleElementToggle('showLiveMapPOIs')} />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pois">{t("Live Map Landmarks & POIs")}</label>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pr" checked={config.elements.showLiveMapPRStunts !== false} onChange={() => handleElementToggle('showLiveMapPRStunts')} />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pr">{t("PR Stunts (Speed/Drift/Danger)")}</label>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-collectibles" checked={config.elements.showLiveMapCollectibles !== false} onChange={() => handleElementToggle('showLiveMapCollectibles')} />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-collectibles">{t("Collectibles & Mascots")}</label>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-heading" checked={config.elements.showLiveMapHeading !== false} onChange={() => handleElementToggle('showLiveMapHeading')} />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-heading">{t("Heading Arrow & Compass")}</label>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.elements.showPowerTorque !== false} onChange={() => handleElementToggle('showPowerTorque')} />
+              <span>{t("Power & Torque Trace")}</span>
+            </label>
           </div>
         </div>
 
         {/* --- COLUMN 1 ROW 2: Speedometer Settings --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("Speedometer Settings")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-main-gauge"
-                  checked={config.elements.showGauge !== false}
-                  onChange={() => handleElementToggle('showGauge')}
-                />
-                <label className="form-check-label fs-7 fw-bold text-primary" htmlFor="sw-main-gauge">
-                  {t("Enabled")}
-                </label>
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("Speedometer Settings")}
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.2rem' }}>
+              <input
+                type="checkbox"
+                checked={config.elements.showGauge !== false}
+                onChange={() => handleElementToggle('showGauge')}
+              />
+              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{t("Enabled")}</span>
+            </label>
+
+            <select
+              value={config.hudStyle}
+              onChange={(e) => handleStyleChange(e.target.value as any)}
+              disabled={config.elements.showGauge === false}
+              style={{
+                width: '100%',
+                padding: '0.8rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'var(--input-bg)',
+                color: 'var(--input-text)',
+                cursor: config.elements.showGauge === false ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+                outline: 'none',
+                opacity: config.elements.showGauge === false ? 0.5 : 1
+              }}
+            >
+              <option value="advanced">{t("Advanced (Race Arc HUD)")}</option>
+              <option value="simple">{t("Simple (NFSU2 Style Circle)")}</option>
+              <option value="fm4ui">{t("FM4 Style HUD")}</option>
+              <option value="gt7">{t("GT7 Style HUD")}</option>
+              <option value="mw2005">{t("NFS Most Wanted 2005 HUD")}</option>
+              <option value="nfs15">{t("NFS 2015 Style HUD")}</option>
+              <option value="shift_tacho">{t("NFS Shift Tachometer")}</option>
+              <option value="vfd">{t("Retro VFD")}</option>
+            </select>
+
+            {/* Overall HUD Scale */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Overall HUD Scale")}:</span>
+                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{Math.round(config.scale * 100)}%</span>
               </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={config.scale}
+                onChange={(e) => handleScaleChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
 
-              <select
-                value={config.hudStyle}
-                onChange={(e) => handleStyleChange(e.target.value as any)}
-                disabled={config.elements.showGauge === false}
-                className="form-select form-select-sm fw-bold"
-              >
-                <option value="advanced">{t("Race Arc")}</option>
-                <option value="simple">{t("Simple")}</option>
-                <option value="fm4ui">{t("Forza Motorsport 4")}</option>
-                <option value="gt7">{t("GT7")}</option>
-                <option value="mw2005">{t("NFS Most Wanted '05")}</option>
-                <option value="nfs15">{t("NFS '15")}</option>
-                <option value="shift_tacho">{t("NFS Shift")}</option>
-                <option value="vfd">{t("Retro VFD")}</option>
-                <option value="drift">{t("Drift HUD")}</option>
-              </select>
-
-              {/* Overall HUD Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Overall HUD Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round(config.scale * 100)}%</span>
+            {/* VFD Instrument Waveform Sensitivity Offsets (Visible only when Retro VFD is selected) */}
+            {config.hudStyle === 'vfd' && (
+              <>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("VU Offset:")}</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdVuOffset ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-5}
+                    max={5}
+                    step={1}
+                    value={config.vfdVuOffset ?? 0}
+                    onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
                 </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.scale}
-                  onChange={(e) => handleScaleChange(Number(e.target.value))}
-                />
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Audio Visualizer Offset:")}</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>{config.vfdAudioOffset ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-5}
+                    max={5}
+                    step={1}
+                    value={config.vfdAudioOffset ?? 0}
+                    onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
+                    style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={handleReloadHud}
+              style={{
+                width: '100%',
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                background: 'var(--primary-glow)',
+                border: '1px solid var(--primary)',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              {t("Refresh HUD List & Reload HTML")}
+            </button>
+
+            {/* HUD Author & Simple Description Info Box */}
+            <div style={{ padding: '0.8rem', background: 'var(--surface-1)', border: '1px solid var(--divider)', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>
+                {t("Author")}: <strong style={{ color: 'var(--primary)' }}>{currentAuthorInfo.author === 'Author' ? t('Author') : currentAuthorInfo.author}</strong>
               </div>
-
-              {/* VFD Instrument Waveform Sensitivity Offsets (Visible only when Retro VFD is selected) */}
-              {config.hudStyle === 'vfd' && (
-                <>
-                  <div className="border-top pt-2">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("VU Offset:")}</span>
-                      <span className="text-primary fw-bold fs-7">{config.vfdVuOffset ?? 0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-5}
-                      max={5}
-                      step={1}
-                      value={config.vfdVuOffset ?? 0}
-                      onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Audio Visualizer Offset:")}</span>
-                      <span className="text-primary fw-bold fs-7">{config.vfdAudioOffset ?? 0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-5}
-                      max={5}
-                      step={1}
-                      value={config.vfdAudioOffset ?? 0}
-                      onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Drift HUD Custom Profile Controls (Visible only when Drift HUD is selected) */}
-              {config.hudStyle === 'drift' && (
-                <div className="border-top pt-2">
-                  <div className="d-flex justify-content-between align-items-center mb-1">
-                    <span className="fs-7 text-body-secondary">{t("Drift HUD Profile:")}</span>
-                    <span className="text-primary fw-bold fs-7">{
-                      config.driftProfile === "1080P FULL" ? t("1080P FULL (Full HD Overlay)") :
-                      config.driftProfile === "1440P CLEAN" ? t("1440P CLEAN (Minimalist Arc & Map)") :
-                      t("1440P STREAM (Full Stream Setup)")
-                    }</span>
-                  </div>
-                  <select
-                    className="form-select form-select-sm"
-                    value={config.driftProfile ?? '1440P STREAM'}
-                    onChange={(e) => handleDriftProfileChange(e.target.value as any)}
-                  >
-                    <option value="1440P STREAM">{t("1440P STREAM (Full Stream Setup)")}</option>
-                    <option value="1080P FULL">{t("1080P FULL (Full HD Overlay)")}</option>
-                    <option value="1440P CLEAN">{t("1440P CLEAN (Minimalist Arc & Map)")}</option>
-                  </select>
-                </div>
-              )}
-
-              <button
-                onClick={handleReloadHud}
-                className="btn btn-outline-primary btn-sm w-100 fw-bold py-2 mt-1"
-              >
-                {t("Refresh HUD List & Reload HTML")}
-              </button>
-
-              {/* HUD Author & Simple Description Info Box */}
-              <div className="p-3 border rounded glass-panel">
-                <div className="fs-7 text-body-secondary mb-1">
-                  {t("Author")}: <strong className="text-primary">{currentAuthorInfo.author === 'Author' ? t('Author') : currentAuthorInfo.author}</strong>
-                </div>
-                <div className="fs-7 text-body-secondary" style={{ lineHeight: '1.4' }}>
-                  {currentAuthorInfo.description === 'Loading author metadata...' ? t('Loading author metadata...') : currentAuthorInfo.description === 'Author metadata unavailable.' ? t('Author metadata unavailable.') : currentAuthorInfo.description === 'No description provided.' ? t('No description provided.') : currentAuthorInfo.description}
-                </div>
+              <div style={{ fontSize: '0.8rem', color: '#ccc', lineHeight: '1.4' }}>
+                {currentAuthorInfo.description === 'Loading author metadata...' ? t('Loading author metadata...') : currentAuthorInfo.description === 'Author metadata unavailable.' ? t('Author metadata unavailable.') : currentAuthorInfo.description === 'No description provided.' ? t('No description provided.') : currentAuthorInfo.description}
               </div>
             </div>
           </div>
         </div>
 
-        {/* --- COLUMN 2 ROW 2: HUD Style Settings --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("HUD Style Settings")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-              {/* Telemetry Opacity slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Telemetry Opacity")}:</span>
-                  <div className="d-flex align-items-center gap-1">
-                    <input
-                      type="number"
-                      min={10}
-                      max={100}
-                      value={Math.round((config.telemetryOpacity ?? 0.65) * 100)}
-                      onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value) / 100)}
-                      className="form-control form-control-sm text-center fw-bold text-primary"
-                      style={{ width: '65px' }}
-                    />
-                    <span className="text-primary fw-bold fs-7">%</span>
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.05}
-                  value={config.telemetryOpacity ?? 0.65}
-                  onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
-                />
-              </div>
-
-              {/* Glow Intensity slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Glow Intensity")}:</span>
-                  <div className="d-flex align-items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      max={200}
-                      value={Math.round((config.glowIntensity ?? 1.0) * 100)}
-                      onChange={(e) => handleGlowIntensityChange(Number(e.target.value) / 100)}
-                      className="form-control form-control-sm text-center fw-bold text-primary"
-                      style={{ width: '65px' }}
-                    />
-                    <span className="text-primary fw-bold fs-7">%</span>
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.0}
-                  max={2.0}
-                  step={0.05}
-                  value={config.glowIntensity ?? 1.0}
-                  onChange={(e) => handleGlowIntensityChange(Number(e.target.value))}
-                />
-              </div>
-
-              {/* Gauge Color Palette Customization */}
-              <div className="d-flex flex-column gap-2">
-                <div className="form-check form-switch py-1">
+        {/* --- COLUMN 2 ROW 2: HUD Style Settings (改名自中央遙測叢集設定) --- */}
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("HUD Style Settings")}
+          </h3>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            {/* Telemetry Opacity slider */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Telemetry Opacity")}:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-default-colors"
-                    checked={config.useDefaultColors !== false}
-                    onChange={handleUseDefaultColorsToggle}
+                    type="number"
+                    min={10}
+                    max={100}
+                    value={Math.round((config.telemetryOpacity ?? 0.65) * 100)}
+                    onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value) / 100)}
+                    style={{
+                      width: '65px',
+                      padding: '0.3rem',
+                      borderRadius: '4px',
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--input-text)',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
                   />
-                  <label className="form-check-label fs-7" htmlFor="sw-default-colors">
-                    {t("Use Default Gauge Colors")}
-                  </label>
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
                 </div>
-
-                {config.useDefaultColors === false && (
-                  <div className="d-flex justify-content-between align-items-center ps-4">
-                    <span className="fs-7 text-body-secondary">{t("Custom Gauge Color")}:</span>
-                    <input
-                      type="color"
-                      value={config.customColor || '#00f0ff'}
-                      onChange={(e) => handleCustomColorChange(e.target.value)}
-                      className="form-control form-control-color"
-                      style={{ width: '45px', height: '28px', cursor: 'pointer' }}
-                    />
-                  </div>
-                )}
               </div>
+              <input
+                type="range"
+                min={0.1}
+                max={1.0}
+                step={0.05}
+                value={config.telemetryOpacity ?? 0.65}
+                onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
 
-              {/* Motion Effect Toggle */}
-              <div className="form-check form-switch py-1">
+
+
+            {/* Glow Intensity slider (發光強度拉桿) */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t("Glow Intensity")}:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={200}
+                    value={Math.round((config.glowIntensity ?? 1.0) * 100)}
+                    onChange={(e) => handleGlowIntensityChange(Number(e.target.value) / 100)}
+                    style={{
+                      width: '65px',
+                      padding: '0.3rem',
+                      borderRadius: '4px',
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--input-text)',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={0.0}
+                max={2.0}
+                step={0.05}
+                value={config.glowIntensity ?? 1.0}
+                onChange={(e) => handleGlowIntensityChange(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+              />
+            </div>
+
+            {/* Gauge Color Palette Customization */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
-                  className="form-check-input"
-                  id="sw-motion-effect"
-                  checked={config.elements.showMotionEffect !== false}
-                  onChange={() => handleElementToggle('showMotionEffect')}
+                  checked={config.useDefaultColors !== false}
+                  onChange={handleUseDefaultColorsToggle}
                 />
-                <label className="form-check-label fs-7" htmlFor="sw-motion-effect">
-                  {t("Motion Effect")}
-                </label>
-              </div>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t("Use Default Gauge Colors")}</span>
+              </label>
+
+              {config.useDefaultColors === false && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '1.4rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Custom Gauge Color")}:</span>
+                  <input
+                    type="color"
+                    value={config.customColor || '#00f0ff'}
+                    onChange={(e) => handleCustomColorChange(e.target.value)}
+                    style={{ width: '45px', height: '28px', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '4px', background: 'transparent', cursor: 'pointer' }}
+                  />
+                </div>
+              )}
             </div>
+
+            {/* Motion Effect Toggle */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginTop: '0.2rem' }}>
+              <input
+                type="checkbox"
+                checked={config.elements.showMotionEffect !== false}
+                onChange={() => handleElementToggle('showMotionEffect')}
+              />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t("Motion Effect")}</span>
+            </label>
           </div>
         </div>
 
         {/* --- COLUMN 3 ROW 2: Performance & System Options --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("Performance & System Options")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
+        <div className="cyber-card" style={{ padding: '1.2rem' }}>
+          <h3 style={{ borderBottom: '1px solid var(--divider)', paddingBottom: '0.5rem', marginTop: 0, color: 'var(--primary)' }}>
+            {t("Performance & System Options")}
+          </h3>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
 
-              {/* Target Display Monitor Selector */}
-              <div className="border-bottom pb-3">
-                <label className="form-label fs-7 text-body-secondary mb-1">
-                  {t("Select Monitor for HUD Overlay")}:
-                </label>
-                <select
-                  value={config.selectedMonitorIndex}
-                  onChange={(e) => handleMonitorChange(Number(e.target.value))}
-                  className="form-select form-select-sm"
-                >
-                  {monitors.length > 0 ? (
-                    monitors.map((m, idx) => (
-                      <option key={idx} value={idx}>
-                        {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary")}]` : ''}
-                      </option>
-                    ))
-                  ) : (
-                    <option value={0}>{t("Default Primary Display")}</option>
-                  )}
-                </select>
-              </div>
+            {/* Target Display Monitor Selector */}
+            <div style={{ marginBottom: '0.4rem', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                {t("Select Monitor for HUD Overlay")}:
+              </label>
+              <select
+                value={config.selectedMonitorIndex}
+                onChange={(e) => handleMonitorChange(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  borderRadius: '4px',
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--primary)',
+                  color: 'var(--input-text)',
+                  fontSize: '0.85rem'
+                }}
+              >
+                {monitors.length > 0 ? (
+                  monitors.map((m, idx) => (
+                    <option key={idx} value={idx}>
+                      {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary")}]` : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value={0}>{t("Default Primary Display")}</option>
+                )}
+              </select>
+            </div>
 
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-pause-telemetry"
-                  checked={!!config.pauseTelemetryViewWhenActive}
-                  onChange={(e) => {
-                    const updated = { ...config, pauseTelemetryViewWhenActive: e.target.checked };
-                    saveConfig(updated);
-                  }}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-pause-telemetry">
-                  {t("Pause Telemetry View when HUD is active")}
-                </label>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!config.pauseTelemetryViewWhenActive}
+                onChange={(e) => {
+                  const updated = { ...config, pauseTelemetryViewWhenActive: e.target.checked };
+                  saveConfig(updated);
+                }}
+              />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                {t("Pause Telemetry View when HUD is active")}
+              </span>
+            </label>
 
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-center-anchor"
-                  checked={config.elements.showTeleCenterAnchor !== false}
-                  onChange={() => handleElementToggle('showTeleCenterAnchor')}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-center-anchor">
-                  {t("Center Alignment Anchor Frame")}
-                </label>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={config.elements.showTeleCenterAnchor !== false}
+                onChange={() => handleElementToggle('showTeleCenterAnchor')}
+              />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                {t("Center Alignment Anchor Frame")}
+              </span>
+            </label>
 
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-gridlines"
-                  checked={!!config.elements.showTeleGridLines}
-                  onChange={() => handleElementToggle('showTeleGridLines')}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-gridlines">
-                  {t("Alignment Grid Lines")}
-                </label>
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!config.elements.showTeleGridLines}
+                onChange={() => handleElementToggle('showTeleGridLines')}
+              />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                {t("Alignment Grid Lines")}
+              </span>
+            </label>
 
-              {/* Reset HUD Settings Action */}
-              <div className="pt-3 border-top mt-auto">
-                <button
-                  onClick={handleResetHudConfig}
-                  className="btn btn-outline-danger btn-sm w-100 fw-bold py-2"
-                >
-                  {t("Reset HUD Settings")}
-                </button>
-                <span className="d-block text-body-secondary fs-8 mt-1 text-center">
-                  {t("Reset all HUD elements, scaling, colors, and positions to default values.")}
-                </span>
-              </div>
+            {/* Reset HUD Settings Action */}
+            <div style={{ marginTop: '0.6rem', paddingTop: '0.8rem', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+              <button
+                onClick={handleResetHudConfig}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem',
+                  borderRadius: '4px',
+                  background: 'rgba(255, 60, 60, 0.15)',
+                  border: '1px solid rgba(255, 60, 60, 0.4)',
+                  color: '#ff6b6b',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 60, 60, 0.3)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 60, 60, 0.15)')}
+              >
+                {t("Reset HUD Settings")}
+              </button>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: '#888', marginTop: '0.4rem', textAlign: 'center' }}>
+                {t("Reset all HUD elements, scaling, colors, and positions to default values.")}
+              </span>
             </div>
           </div>
         </div>

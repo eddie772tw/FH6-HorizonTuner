@@ -18,26 +18,19 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const thirdStatValueRef = useRef<HTMLSpanElement>(null);
   const thirdStatContainerRef = useRef<HTMLDivElement>(null);
 
-  const topSpeedRef = useRef<HTMLSpanElement>(null);
   const currentLapRef = useRef<HTMLSpanElement>(null);
   const lastLapRef = useRef<HTMLSpanElement>(null);
   const bestLapRef = useRef<HTMLSpanElement>(null);
 
-  const maxSpeedRecord = useRef<number>(0);
-  const { t, convertPower, convertTorque, convertBoost, convertSpeed } = useSettings();
+  const { t, convertPower, convertTorque, convertBoost } = useSettings();
   const powerLabelRef = useRef<HTMLSpanElement>(null);
   const torqueLabelRef = useRef<HTMLSpanElement>(null);
   const thirdStatLabelRef = useRef<HTMLSpanElement>(null);
-  const topSpeedLabelRef = useRef<HTMLSpanElement>(null);
-  // 策略 C：用 ref 追蹤 EV 狀態，避免 useState 觸發 re-render
-  const isEvRef = useRef(false);
-  // EV 標籤 label的 ref
-  const boostOrRegenLabelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Initial label setup
     if (powerLabelRef.current) powerLabelRef.current.innerText = convertPower(0).label;
     if (torqueLabelRef.current) torqueLabelRef.current.innerText = convertTorque(0).label;
-    if (topSpeedLabelRef.current) topSpeedLabelRef.current.innerText = convertSpeed(0).label;
 
     const handleUpdate = (e: any) => {
       const data = e.detail;
@@ -48,11 +41,6 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       const torqueData = convertTorque(data.TorqueNewtons || 0);
       const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
       const boostData = convertBoost(data.Boost || 0);
-      const curSpeedData = convertSpeed(data.SpeedMetersPerSecond || 0);
-
-      if (curSpeedData.value > maxSpeedRecord.current) {
-        maxSpeedRecord.current = curSpeedData.value;
-      }
 
       if (powerRef.current) powerRef.current.innerText = Math.round(powerData.value).toString();
       if (powerContainerRef.current) {
@@ -74,8 +62,6 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
         if (thirdStatContainerRef.current) thirdStatContainerRef.current.style.color = boostData.value > 0 ? 'var(--secondary)' : 'var(--text-primary)';
       }
 
-      if (topSpeedRef.current) topSpeedRef.current.innerText = Math.round(maxSpeedRecord.current).toString();
-
       const currentLap = data.CurrentLap || 0;
       const bestLap = data.BestLap || 0;
       const lastLap = data.LastLap || 0;
@@ -83,56 +69,56 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       if (currentLapRef.current) currentLapRef.current.innerText = formatTime(currentLap);
       if (lastLapRef.current) lastLapRef.current.innerText = formatTime(lastLap);
       if (bestLapRef.current) bestLapRef.current.innerText = formatTime(bestLap);
-
-      // 策略 C：合併 EV 狀態偵測，只在狀態改變時更新 DOM label
-      if (isEV !== isEvRef.current) {
-        isEvRef.current = isEV;
-        if (boostOrRegenLabelRef.current) {
-          boostOrRegenLabelRef.current.innerText = isEV ? t("Regen") : t("Boost");
-        }
-      }
     };
 
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => telemetryEmitter.removeEventListener('update', handleUpdate);
-  }, [convertPower, convertTorque, convertBoost, convertSpeed, t]);
+  }, [convertPower, convertTorque, convertBoost, t]);
+
+  // Determine static labels for render (isEV check requires React state normally, but here we can't easily, so we just use placeholders and update in hook)
+  // Let's use a small React state just for EV toggle so we can render the right titles, but the fast updates happen in the ref.
+  const [isEV, setIsEV] = React.useState(false);
+
+  useEffect(() => {
+    const handleUpdateEV = (e: any) => {
+      const data = e.detail;
+      if (!data) return;
+      const ev = data.EngineIdleRpm === 0;
+      if (ev !== isEV) {
+        setIsEV(ev);
+      }
+    };
+    telemetryEmitter.addEventListener('update', handleUpdateEV);
+    return () => telemetryEmitter.removeEventListener('update', handleUpdateEV);
+  }, [isEV]);
+
 
   return (
-    <div className="d-flex flex-column justify-content-center h-100 gap-2 p-1">
-      {/* Power / Torque / Boost Summary */}
-      <div className="d-grid gap-2 border rounded-3 p-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+    <div className="d-flex flex-column justify-content-center flex-grow-1">
+      <div className="d-grid gap-2 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
         <div>
-          <div className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Power")}</div>
-          <div ref={powerContainerRef} className="fw-bold font-monospace" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-            <span ref={powerRef}>0</span><span ref={powerLabelRef} className="ms-1 fs-8 fw-normal text-body-secondary"></span>
+          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>{t("Power")}</div>
+          <div ref={powerContainerRef} className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+            <span ref={powerRef}>0</span><span ref={powerLabelRef} className="ms-1" style={{ fontSize: '0.8rem' }}></span>
           </div>
         </div>
         <div>
-          <div className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Torque")}</div>
-          <div ref={torqueContainerRef} className="fw-bold font-monospace" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-            <span ref={torqueRef}>0</span><span ref={torqueLabelRef} className="ms-1 fs-8 fw-normal text-body-secondary"></span>
+          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>{t("Torque")}</div>
+          <div ref={torqueContainerRef} className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+            <span ref={torqueRef}>0</span><span ref={torqueLabelRef} className="ms-1" style={{ fontSize: '0.8rem' }}></span>
           </div>
         </div>
         <div>
-          {/* 策略 C： Boost/Regen label 由 DOM ref 直接更新，不再依賴 isEV state */}
-          <div ref={boostOrRegenLabelRef} className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Boost")}</div>
-          <div ref={thirdStatContainerRef} className="fw-bold font-monospace" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-             <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} className="ms-1 fs-8 fw-normal text-body-secondary"></span>
+          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>{isEV ? t("Regen") : t("Boost")}</div>
+          <div ref={thirdStatContainerRef} className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+             <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} className="ms-1" style={{ fontSize: '0.8rem' }}></span>
           </div>
         </div>
       </div>
-
-      {/* Top Speed Badge Banner */}
-      <div className="d-flex justify-content-between align-items-center px-2 py-1 border rounded-3 fs-8" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-        <span className="text-body-secondary fw-semibold text-uppercase">{t("Session Top Speed")}</span>
-        <span className="fw-bold font-monospace text-info"><span ref={topSpeedRef}>0</span> <span ref={topSpeedLabelRef} className="fs-8 fw-normal text-body-secondary"></span></span>
-      </div>
-
-      {/* Lap Times Card */}
-      <div className="d-flex flex-column gap-1 p-2 border rounded-3" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-        <div className="d-flex justify-content-between fs-8"><span className="text-body-secondary">{t("Current Lap")}:</span><span ref={currentLapRef} className="font-monospace text-body fw-bold">--:--.---</span></div>
-        <div className="d-flex justify-content-between fs-8"><span className="text-body-secondary">{t("Last Lap")}:</span><span ref={lastLapRef} className="font-monospace text-body">--:--.---</span></div>
-        <div className="d-flex justify-content-between fs-8"><span className="text-primary fw-bold">{t("Best Lap")}:</span><span ref={bestLapRef} className="fw-bold font-monospace text-primary">--:--.---</span></div>
+      <div className="d-flex flex-column gap-1 pt-2 border-top" style={{ borderColor: 'var(--divider) !important' }}>
+        <div className="d-flex justify-content-between" style={{ fontSize: '0.9rem' }}><span className="text-secondary">{t("Current Lap")}:</span><span ref={currentLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
+        <div className="d-flex justify-content-between" style={{ fontSize: '0.9rem' }}><span className="text-secondary">{t("Last Lap")}:</span><span ref={lastLapRef} style={{ fontFamily: 'monospace' }}>--:--.---</span></div>
+        <div className="d-flex justify-content-between" style={{ fontSize: '0.9rem' }}><span style={{ color: 'var(--primary)' }}>{t("Best Lap")}:</span><span ref={bestLapRef} className="fw-bold" style={{ fontFamily: 'monospace', color: 'var(--primary)' }}>--:--.---</span></div>
       </div>
     </div>
   );

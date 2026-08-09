@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from main import DragRecorder

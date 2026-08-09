@@ -99,12 +99,9 @@ export function transformTelemetryData(
       Temp_FR: ((p.TireTemp[1] - 32) * 5) / 9,
     };
     if (customChannels.length > 0) {
-      // [PERF] Optimized O(N) loop to avoid .forEach() closure allocation on every data point
-      // in high-frequency rendering paths when processing large telemetry datasets.
-      for (let i = 0; i < customChannels.length; i++) {
-        const ch = customChannels[i];
+      customChannels.forEach(ch => {
         mathCtx[ch.name] = evaluateCustomMath(ch.formula, mathCtx);
-      }
+      });
     }
     return mathCtx;
   };
@@ -113,8 +110,7 @@ export function transformTelemetryData(
   if (chartType === 'pie') {
     const counts: Record<string, number> = {};
     let localLastValidGear = 0;
-    for (let i = 0; i < sampleData.length; i++) {
-      const p = sampleData[i];
+    sampleData.forEach(p => {
       if (p.Gear !== 11) {
         localLastValidGear = p.Gear;
       }
@@ -122,18 +118,12 @@ export function transformTelemetryData(
 
       const gKey = `Gear ${currentGear}`;
       counts[gKey] = (counts[gKey] || 0) + 1;
-    }
-    const keys = Object.keys(counts);
-    const result = new Array(keys.length);
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      result[i] = {
-        name: key,
-        value: counts[key],
-        color: COLOR_SWATCHES[i % COLOR_SWATCHES.length]
-      };
-    }
-    return result;
+    });
+    return Object.keys(counts).map((key, idx) => ({
+      name: key,
+      value: counts[key],
+      color: COLOR_SWATCHES[idx % COLOR_SWATCHES.length]
+    }));
   }
 
   // MODE 2: HISTOGRAM (Binning Distribution of primary channel)
@@ -176,34 +166,24 @@ export function transformTelemetryData(
   // MODE 3: RADAR CHART (Multi-Wheel / Vehicle Dynamic Balance)
   if (chartType === 'radar') {
     const averages: Record<string, number> = {};
-    for (let i = 0; i < channels.length; i++) {
-      averages[channels[i].name] = 0;
-    }
+    channels.forEach(ch => averages[ch.name] = 0);
 
-    for (let i = 0; i < sampleData.length; i++) {
-      const ctx = getContext(sampleData[i]);
-      for (let j = 0; j < channels.length; j++) {
-        const ch = channels[j];
+    sampleData.forEach(p => {
+      const ctx = getContext(p);
+      channels.forEach(ch => {
         averages[ch.name] += evaluateCustomMath(ch.formula, ctx);
-      }
-    }
+      });
+    });
 
-    const result = new Array(channels.length);
-    for (let i = 0; i < channels.length; i++) {
-      const ch = channels[i];
-      result[i] = {
-        metric: ch.name,
-        value: Number((averages[ch.name] / sampleData.length).toFixed(2))
-      };
-    }
-    return result;
+    return channels.map(ch => ({
+      metric: ch.name,
+      value: Number((averages[ch.name] / sampleData.length).toFixed(2))
+    }));
   }
 
   // MODE 4 & 5: LINE & BAR CHART (TimeSeries / Distance Domain)
   const step = Math.max(1, Math.floor(sampleData.length / 200));
-  const result = [];
-  for (let i = 0; i < sampleData.length; i += step) {
-    const p = sampleData[i];
+  return sampleData.filter((_, idx) => idx % step === 0).map(p => {
     let xVal = p.time;
     if (domain === 'distance') {
       xVal = Number((p.lap_distance ?? p.time * 20).toFixed(1));
@@ -215,13 +195,11 @@ export function transformTelemetryData(
 
     const ctx = getContext(p);
     const row: Record<string, any> = { xDomain: xVal };
-    for (let j = 0; j < channels.length; j++) {
-      const ch = channels[j];
+    channels.forEach(ch => {
       row[ch.name] = Number(evaluateCustomMath(ch.formula, ctx).toFixed(2));
-    }
-    result.push(row);
-  }
-  return result;
+    });
+    return row;
+  });
 }
 
 const ChartEditModal: React.FC<ChartEditModalProps> = ({

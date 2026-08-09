@@ -5,8 +5,6 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ARRAY = (0.0, 0.0, 0.0, 0.0)
-
 
 class TelemetrySQLite:
     """SQLite telemetry storage engine aligned with MoTeC i2 Channel Standard.
@@ -184,10 +182,10 @@ class TelemetrySQLite:
 
         records = []
         for p in points:
-            susp = p.get("SuspTravel", DEFAULT_ARRAY)
-            s_angle = p.get("TireSlipAngle", DEFAULT_ARRAY)
-            s_ratio = p.get("TireSlipRatio", DEFAULT_ARRAY)
-            temp = p.get("TireTemp", DEFAULT_ARRAY)
+            susp = p.get("SuspTravel", [0.0, 0.0, 0.0, 0.0])
+            s_angle = p.get("TireSlipAngle", [0.0, 0.0, 0.0, 0.0])
+            s_ratio = p.get("TireSlipRatio", [0.0, 0.0, 0.0, 0.0])
+            temp = p.get("TireTemp", [0.0, 0.0, 0.0, 0.0])
 
             records.append(
                 (

@@ -18,27 +18,9 @@ import OverlayView from './features/overlay_control/OverlayView';
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
   useOverlayWebSocket();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings' | 'theme'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
-  const [showTheme, setShowTheme] = useState(false);
-
-  // SubTab States for Quick Jumps
-  const [telemetrySubTab, setTelemetrySubTab] = useState<'live' | 'analysis' | 'drag'>('live');
-  const [tuningStep, setTuningStep] = useState<number>(1);
-  const [carParamsSubTab, setCarParamsSubTab] = useState<'config' | 'dyno'>('config');
-  const [overlayCategory, setOverlayCategory] = useState<'general' | 'displays' | 'gauges' | 'performance'>('general');
-
-  // Quick jump handler triggered by Navbar Dropdown
-  const handleSubTabJump = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
-    setActiveTab(tab);
-    if (subTarget) {
-      if (tab === 'telemetry') setTelemetrySubTab(subTarget);
-      else if (tab === 'tuning') setTuningStep(typeof subTarget === 'number' ? subTarget : 1);
-      else if (tab === 'car_params') setCarParamsSubTab(subTarget);
-      else if (tab === 'overlay') setOverlayCategory(subTarget);
-    }
-  };
 
   // Auto-synchronize back to telemetry car when returning to telemetry tab
   React.useEffect(() => {
@@ -49,55 +31,43 @@ const AppContent: React.FC = () => {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>
-      <Navigation 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onSubTabJump={handleSubTabJump}
-        isConnected={isConnected}
-        onShowLogs={() => setShowLogs(true)}
-        onShowTheme={() => setShowTheme(true)}
-      />
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} isConnected={isConnected} onShowLogs={() => setShowLogs(true)} />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <TelemetryView subTab={telemetrySubTab} setSubTab={setTelemetrySubTab} />
+          <TelemetryView />
         </div>
         <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+          <TuningView setActiveTab={setActiveTab} />
         </div>
         <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <CarParamsView subTab={carParamsSubTab} setSubTab={setCarParamsSubTab} setActiveTab={setActiveTab} />
+          <CarParamsView setActiveTab={setActiveTab} />
         </div>
         <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <OverlayView category={overlayCategory} setCategory={setOverlayCategory} />
+          <OverlayView />
         </div>
         <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <SettingsView />
         </div>
+        <div style={{ display: activeTab === 'theme' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <ThemeView />
+        </div>
       </main>
-      <DiagnosticConsole show={showLogs} onClose={() => setShowLogs(false)} />
-      <ThemeView show={showTheme} onClose={() => setShowTheme(false)} />
+      {showLogs && <DiagnosticConsole onClose={() => setShowLogs(false)} />}
     </div>
   );
 };
 
-
 import { TelemetryRecorderProvider } from './context/TelemetryRecorderContext';
-
-import { ToastProvider } from './context/ToastContext';
-import ToastContainer from './components/common/ToastContainer';
 
 const App: React.FC = () => {
   return (
     <ThemeProvider>
       <SettingsProvider>
-        <ToastProvider>
-          <CarParamsProvider>
-            <TelemetryRecorderProvider>
-              <AppContent />
-              <ToastContainer />
-            </TelemetryRecorderProvider>
-          </CarParamsProvider>
-        </ToastProvider>
+      <CarParamsProvider>
+        <TelemetryRecorderProvider>
+          <AppContent />
+        </TelemetryRecorderProvider>
+      </CarParamsProvider>
       </SettingsProvider>
     </ThemeProvider>
   );
