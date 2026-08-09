@@ -2,6 +2,8 @@
 
 本文件為 [telemetry-udp-protocol SKILL](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/telemetry-udp-protocol/SKILL.md) 之擴充參考資料，詳細記錄 Forza Horizon UDP Data Out 廣播封包全數 324 位元組 (0 ~ 323 Bytes) 的資料結構、物理意義、單位轉換公式以及在 **FH6-HorizonTuner** 專案中的實際解析與使用狀態。
 
+> **連接埠邊界**：Forza Data Out 封包預設經由 UDP `127.0.0.1:8000` 接收；這與開發模式的 FastAPI/WebSocket HTTP/TCP `127.0.0.1:8001` 分離。下方 `--scan --port 8000` 範例只針對 UDP。
+
 ---
 
 ## 統計摘要 (Usage Summary)
