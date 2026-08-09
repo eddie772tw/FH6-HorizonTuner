@@ -68,6 +68,36 @@ def test_save_and_get_hud_config(temp_hud_config_file):
     assert loaded_data["elements"]["showSpeed"] is False
 
 
+def test_legacy_s650_style_is_migrated_to_hmi_mode(temp_hud_config_file):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={"hudStyle": "s650_sport", "enabled": True},
+    )
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+
+    get_res = client.get("/api/overlay/config")
+    assert get_res.status_code == 200
+    loaded_data = get_res.json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == "sport"
+
+
+def test_invalid_s650_hmi_mode_defaults_to_normal(temp_hud_config_file):
+    client = TestClient(app)
+
+    client.post(
+        "/api/overlay/config",
+        json={"hudStyle": "s650_hmi", "s650Theme": "does-not-exist"},
+    )
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == "normal"
+
+
 def test_reset_hud_config(temp_hud_config_file):
     client = TestClient(app)
 

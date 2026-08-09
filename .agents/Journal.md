@@ -4,6 +4,11 @@
 
 ---
 
+### 8. S650 HMI unified style contract
+* The seven standalone S650 HUD pages are now one `hud_overlay/s650_hmi/index.html` page. S650-specific renderer code lives under `s650_hmi/assets`, while shared fonts and base CSS remain in `shared/assets` and `shared` for reuse by other HUDs.
+* `hudStyle: "s650_hmi"` selects the renderer while `s650Theme` selects the instrument presentation. Backend, frontend, and launcher boundaries migrate legacy IDs such as `s650_sport` automatically.
+* Mode selection is isolated in `frontend/src/features/overlay_control/s650Hmi.ts` with Vitest coverage; the canvas renderer redraws the latest telemetry frame when the mode changes without changing the active HUD route.
+
 ## 記錄準則
 
 只有在遇到以下情況時才新增日誌紀錄：
@@ -179,3 +184,8 @@
   4. 分別驗證 REST、`/ws/telemetry`、`/ws/overlay` 與 HUD 視窗；REST 成功不代表 WebSocket 或 overlay 已成功。
   5. 測試 `8001` 被其他程序占用的情況；Release 應仍能使用另一個動態埠。
   6. 變更啟動協定、`--data-dir` 或 sidecar spec 後，必須同時跑前端測試、`cargo check`、重新打包，並做一次安裝後 smoke test。
+
+### 7. HUD 靜態資產與 PyInstaller import 名稱對齊
+* **學習點 (Learning)**：
+  - HUD 合併主線後若將資產搬到 `shared/assets`，所有 iframe 內的相對 URL 必須同步更新；0-byte 的二進位占位檔不能視為可載入資產，應在提交前做檔案大小與 URL 解析檢查。
+  - PyPI 發行名稱與 Python import 名稱可能不同，例如 `python-multipart` 的 import 名稱是 `multipart`。PyInstaller spec 的 `hiddenimports` 與 `collect_all` 必須使用 import 名稱，否則會產生誤導性的 hidden-import 錯誤。

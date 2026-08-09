@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import '../../App.css';
+import {
+  S650_HMI_THEMES,
+  type S650HmiTheme,
+  normalizeS650HmiConfig,
+} from './s650Hmi';
 
 interface HudElements {
   showGauge: boolean;
@@ -34,7 +39,8 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift' | 's650_normal' | 's650_sport' | 's650_track' | 's650_calm' | 's650_foxbody' | 's650_heritage67' | 's650_svt_cobra';
+  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift' | 's650_hmi';
+  s650Theme?: S650HmiTheme;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -73,6 +79,7 @@ interface HudConfig {
 const DEFAULT_HUD_CONFIG: HudConfig = {
   enabled: false,
   hudStyle: 'vfd',
+  s650Theme: 'normal',
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -126,7 +133,12 @@ interface AuthorInfo {
   description: string;
 }
 
-export const OverlayView: React.FC = () => {
+interface OverlayViewProps {
+  category?: 'general' | 'displays' | 'gauges' | 'performance';
+  setCategory?: (category: 'general' | 'displays' | 'gauges' | 'performance') => void;
+}
+
+export const OverlayView: React.FC<OverlayViewProps> = () => {
   const { t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);
@@ -204,13 +216,14 @@ export const OverlayView: React.FC = () => {
       const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
       if (res.ok) {
         const data = await res.json();
+        const normalizedData = normalizeS650HmiConfig(data as { hudStyle?: string; s650Theme?: unknown } & Record<string, unknown>);
         // Always reset enabled to false on startup so user manually toggles it unless preserveEnabled is true
         const merged = {
           ...DEFAULT_HUD_CONFIG,
-          ...data,
+          ...normalizedData,
           enabled: preserveEnabled,
-          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(data.elements || {}) }
-        };
+          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(normalizedData.elements || {}) }
+        } as HudConfig;
         setConfig(merged);
         broadcastConfig(merged);
         loadAuthorInfo(merged.hudStyle, forceAuthorUpdate);
@@ -493,9 +506,17 @@ export const OverlayView: React.FC = () => {
   };
 
   const handleStyleChange = (style: HudConfig['hudStyle']) => {
-    const updated = { ...config, hudStyle: style };
+    const updated: HudConfig = {
+      ...config,
+      hudStyle: style,
+      ...(style === 's650_hmi' ? { s650Theme: config.s650Theme ?? 'normal' } : {}),
+    };
     saveConfig(updated);
     loadAuthorInfo(style);
+  };
+
+  const handleS650ThemeChange = (theme: S650HmiTheme) => {
+    saveConfig({ ...config, hudStyle: 's650_hmi', s650Theme: theme });
   };
 
   /*
@@ -938,14 +959,29 @@ export const OverlayView: React.FC = () => {
               <option value="nfs15" style={{ background: '#222', color: '#fff' }}>{t("NFS 2015 Style HUD")}</option>
               <option value="shift_tacho" style={{ background: '#222', color: '#fff' }}>{t("NFS Shift Tachometer")}</option>
               <option value="vfd" style={{ background: '#222', color: '#fff' }}>{t("Retro VFD")}</option>
-              <option value="s650_normal" style={{ background: '#222', color: '#fff' }}>{t("S650 Normal")}</option>
-              <option value="s650_sport" style={{ background: '#222', color: '#fff' }}>{t("S650 Sport")}</option>
-              <option value="s650_track" style={{ background: '#222', color: '#fff' }}>{t("S650 Track")}</option>
-              <option value="s650_calm" style={{ background: '#222', color: '#fff' }}>{t("S650 Calm")}</option>
-              <option value="s650_foxbody" style={{ background: '#222', color: '#fff' }}>{t("S650 Foxbody")}</option>
-              <option value="s650_heritage67" style={{ background: '#222', color: '#fff' }}>{t("S650 Heritage '67")}</option>
-              <option value="s650_svt_cobra" style={{ background: '#222', color: '#fff' }}>{t("S650 SVT Cobra")}</option>
+              <option value="s650_hmi" style={{ background: '#222', color: '#fff' }}>{t("S650 HMI")}</option>
             </select>
+
+            {config.hudStyle === 's650_hmi' && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.7rem' }}>
+                <label htmlFor="s650-hmi-theme" style={{ display: 'block', fontSize: '0.85rem', color: '#ccc', marginBottom: '0.35rem' }}>
+                  {t("S650 HMI Mode")}
+                </label>
+                <select
+                  id="s650-hmi-theme"
+                  className="form-select"
+                  value={config.s650Theme ?? 'normal'}
+                  onChange={(e) => handleS650ThemeChange(e.target.value as S650HmiTheme)}
+                  style={{ width: '100%' }}
+                >
+                  {S650_HMI_THEMES.map((theme) => (
+                    <option key={theme.value} value={theme.value} style={{ background: '#222', color: '#fff' }}>
+                      {t(theme.label)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Overall HUD Scale */}
             <div>

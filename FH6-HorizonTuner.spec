@@ -18,7 +18,7 @@ hiddenimports = [
     "numpy",
     "soundcard",
     "multiprocessing",
-    "python-multipart",
+    "multipart",
     "httpx",
 ]
 
@@ -32,7 +32,7 @@ packages_to_collect = [
     "numpy",
     "soundcard",
     "multiprocessing",
-    "python-multipart",
+    "multipart",
     "httpx",
 ]
 

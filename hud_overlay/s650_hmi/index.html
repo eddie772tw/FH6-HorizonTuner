@@ -2,24 +2,24 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>S650 normal HUD</title>
+    <title>S650 HMI</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         @font-face {
             font-family: 'MustangModernDigits';
-            src: url('../assets/fonts/mustang_sans_bold.ttf') format('truetype');
+            src: url('../shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
         @font-face {
             font-family: 'FoxBodyRetro';
-            src: url('../assets/fonts/foxbody_1987.ttf') format('truetype');
+            src: url('../shared/assets/fonts/VT323-Regular.otf') format('opentype');
         }
         @font-face {
             font-family: 'MustangHeritage1967';
-            src: url('../assets/fonts/ford_classic_serif.ttf') format('truetype');
+            src: url('../shared/assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
         }
         @font-face {
             font-family: 'SVTCobraBold';
-            src: url('../assets/fonts/svt_cobra_digits.ttf') format('truetype');
+            src: url('../shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
 
         .s650-container {
@@ -46,11 +46,9 @@
     </div>
     <script type="module" src="../shared/telemetry-cards.js"></script>
     <script src="../shared/hud-core.js"></script>
-    <script src="../shared/s650_renderer.js"></script>
+    <script src="./assets/s650_renderer.js"></script>
     <script>
-        (function() {
-            window.registerS650Style('s650_normal', 'normal');
-        })();
+        window.registerS650Style('s650_hmi');
     </script>
 </body>
 </html>

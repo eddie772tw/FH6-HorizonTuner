@@ -1,52 +1,59 @@
-window.registerS650Style = function(styleId, themeName) {
+window.registerS650Style = function(styleId) {
     var canvas = document.getElementById('s650Canvas');
     var ctx = canvas ? canvas.getContext('2d') : null;
-    var images = {};
-    var isReady = false;
+    var isReady = Boolean(ctx);
     var sweepPending = false;
 
-    // Mustang S650 asset map
-    var assetMap = {
-        bg_normal: "../assets/img/s650/bg_normal.png",
-        foxbody_day: "../assets/img/s650/foxbody_day.png",
-        foxbody_night: "../assets/img/s650/foxbody_night.png",
-        chrome_ring: "../assets/img/s650/chrome_ring.png",
-        svt_dial: "../assets/img/s650/svt_white_dial.png",
-        brake_gauge: "../assets/img/gauge_left.png",
-        throttle_gauge: "../assets/img/gauge_right.png"
-    };
-
-    var keys = Object.keys(assetMap);
-    var loaded = 0;
-    keys.forEach(function (k) {
-        var img = new Image();
-        img.onload = img.onerror = function () {
-            images[k] = img;
-            loaded++;
-            if (loaded >= keys.length) {
-                isReady = true;
-                if (sweepPending) {
-                    sweepPending = false;
-                    triggerSweep();
-                }
-            }
-        };
-        img.src = assetMap[k];
-    });
-
-    var currentTheme = themeName;
+    var currentTheme = 'normal';
     var isHeadlightsOn = true;
     var isMetricUnit = true;
+    var lastFrame = { rpm: 0, maxRpm: 8000, speed_kmh: 0, speed_mph: 0, gear: 11 };
 
     function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
     function mix(a, b, amt) { return a + (b - a) * clamp(amt, 0, 1); }
     function degToRad(deg) { return deg * (Math.PI / 180); }
+    function normalizeTheme(theme) {
+        var validThemes = ['normal', 'sport', 'track', 'calm', 'foxbody', 'heritage67', 'svt_cobra'];
+        return validThemes.indexOf(theme) >= 0 ? theme : 'normal';
+    }
+
+    // The coordinator supplies both canonical speed fields and a unit-aware
+    // `speed` field. Prefer the canonical fields so a HUD unit switch cannot
+    // accidentally convert an already-converted value a second time.
+    function getSpeed(data) {
+        data = data || {};
+        if (isMetricUnit) {
+            if (data.speed_kmh !== undefined) return Number(data.speed_kmh) || 0;
+            if (data.speed_mps !== undefined) return (Number(data.speed_mps) || 0) * 3.6;
+            return Number(data.speed) || 0;
+        }
+
+        if (data.speed_mph !== undefined) return Number(data.speed_mph) || 0;
+        if (data.speed_kmh !== undefined) return (Number(data.speed_kmh) || 0) * 0.621371;
+        return Number(data.speed) || 0;
+    }
+
+    function getMaxRpm(data) {
+        data = data || {};
+        return Number(data.maxRpm ?? data.max_rpm) || 8000;
+    }
+
+    function getGearLabel(data, fallback) {
+        var gear = data && data.gear;
+        if (gear === 0) return 'R';
+        if (gear === 11) return 'N';
+        return gear !== undefined && gear !== null ? String(gear) : fallback;
+    }
+
+    function getSpeedUnitLabel() {
+        return isMetricUnit ? 'KM/H' : 'MPH';
+    }
 
     // 1. FOX BODY 1987-1993
     function drawFoxBodyTheme(data, time) {
-        var speed = isMetricUnit ? (data.speed_kmh || data.speed || 0) : ((data.speed_kmh || data.speed || 0) * 0.621371);
+        var speed = getSpeed(data);
         var rpm = data.rpm || 0;
-        var maxRpm = data.maxRpm || 8000;
+        var maxRpm = getMaxRpm(data);
 
         var mainColor = isHeadlightsOn ? '#00FF66' : '#FFFFFF';
         var bgGlowColor = isHeadlightsOn ? 'rgba(0, 255, 102, 0.15)' : 'transparent';
@@ -64,7 +71,7 @@ window.registerS650Style = function(styleId, themeName) {
             ctx.fillRect(0, 0, 1260, 240);
         }
 
-        drawAnalogDial(ctx, 360, 120, 95, 0, 180, speed, mainColor, needleColor, 'FoxBodyRetro', 'MPH');
+        drawAnalogDial(ctx, 360, 120, 95, 0, 180, speed, mainColor, needleColor, 'FoxBodyRetro', getSpeedUnitLabel());
         drawAnalogDial(ctx, 900, 120, 95, 0, maxRpm / 1000, rpm / 1000, mainColor, needleColor, 'FoxBodyRetro', 'RPMx1000');
 
         ctx.font = '28px FoxBodyRetro, sans-serif';
@@ -74,20 +81,20 @@ window.registerS650Style = function(styleId, themeName) {
             ctx.shadowColor = '#00FF66';
             ctx.shadowBlur = 8;
         }
-        var gearStr = data.gear === 0 ? 'R' : (data.gear === 11 ? 'N' : (data.gear || 'N'));
+        var gearStr = getGearLabel(data, 'N');
         ctx.fillText("GEAR " + gearStr, 630, 110);
         ctx.font = '18px FoxBodyRetro, sans-serif';
-        ctx.fillText("TRIP 087.3 MI", 630, 150);
+        ctx.fillText("S650 FOXBODY", 630, 150);
         ctx.restore();
     }
 
     // 2. TRACK
     function drawTrackTheme(data, time) {
         var rpm = data.rpm || 0;
-        var maxRpm = data.maxRpm || 8000;
+        var maxRpm = getMaxRpm(data);
         var rpmRatio = clamp(rpm / maxRpm, 0, 1);
-        var gear = data.gear === 0 ? 'R' : (data.gear === 11 ? 'N' : (data.gear || '1'));
-        var speed = Math.round(isMetricUnit ? (data.speed_kmh || data.speed || 0) : ((data.speed_kmh || data.speed || 0) * 0.621371));
+        var gear = getGearLabel(data, '1');
+        var speed = Math.round(getSpeed(data));
 
         ctx.save();
         ctx.fillStyle = '#0a0b0d';
@@ -143,8 +150,9 @@ window.registerS650Style = function(styleId, themeName) {
 
     // 3. HERITAGE 1967-1968
     function drawHeritage67Theme(data) {
-        var speed = isMetricUnit ? (data.speed_kmh || data.speed || 0) : ((data.speed_kmh || data.speed || 0) * 0.621371);
+        var speed = getSpeed(data);
         var rpm = data.rpm || 0;
+        var maxRpm = getMaxRpm(data);
 
         ctx.save();
         ctx.fillStyle = '#12100e';
@@ -153,25 +161,33 @@ window.registerS650Style = function(styleId, themeName) {
         drawChromeRing(ctx, 360, 120, 102);
         drawChromeRing(ctx, 900, 120, 102);
 
-        drawAnalogDial(ctx, 360, 120, 90, 0, 140, speed, '#f5e8c8', '#e63946', 'MustangHeritage1967', 'MPH');
-        drawAnalogDial(ctx, 900, 120, 90, 0, 8000, rpm, '#f5e8c8', '#e63946', 'MustangHeritage1967', 'RPM');
+        drawAnalogDial(ctx, 360, 120, 90, 0, 140, speed, '#f5e8c8', '#e63946', 'MustangHeritage1967', getSpeedUnitLabel());
+        drawAnalogDial(ctx, 900, 120, 90, 0, maxRpm, rpm, '#f5e8c8', '#e63946', 'MustangHeritage1967', 'RPM');
 
         ctx.restore();
     }
 
-    // NORMAL, SPORT, CALM, SVT_COBRA (using Foxbody as a fallback for ones not fully detailed in the prompt, or basic implementations)
+    // S650 HMI modes. Each mode changes the instrument presentation while the
+    // host continues to expose one HMI style to the rest of the application.
     function drawGenericTheme(data, time, theme) {
         var rpm = data.rpm || 0;
-        var maxRpm = data.maxRpm || 8000;
-        var speed = Math.round(isMetricUnit ? (data.speed_kmh || data.speed || 0) : ((data.speed_kmh || data.speed || 0) * 0.621371));
-        var gear = data.gear === 0 ? 'R' : (data.gear === 11 ? 'N' : (data.gear || '1'));
+        var maxRpm = getMaxRpm(data);
+        var speed = Math.round(getSpeed(data));
+        var gear = getGearLabel(data, '1');
+
+        var palette = {
+            normal: { background: '#101820', dial: '#c7f4ff', needle: '#29d8ff', text: '#f4fbff' },
+            sport: { background: '#1c1012', dial: '#ffd2cc', needle: '#ff4438', text: '#fff7f5' },
+            svt_cobra: { background: isHeadlightsOn ? '#111111' : '#f5f5f5', dial: isHeadlightsOn ? '#ffffff' : '#171717', needle: '#e63946', text: isHeadlightsOn ? '#ffffff' : '#111111' },
+            calm: { background: '#0d1117', dial: '#d6e4f0', needle: '#7cc7ff', text: '#f3f7fb' }
+        }[theme] || { background: '#111111', dial: '#ffffff', needle: '#e63946', text: '#ffffff' };
 
         ctx.save();
-        ctx.fillStyle = theme === 'calm' ? '#0d1117' : (theme === 'svt_cobra' && !isHeadlightsOn ? '#ffffff' : '#111');
+        ctx.fillStyle = palette.background;
         ctx.fillRect(0, 0, 1260, 240);
 
         ctx.font = 'bold 32px MustangModernDigits, sans-serif';
-        ctx.fillStyle = theme === 'svt_cobra' && !isHeadlightsOn ? '#000000' : '#ffffff';
+        ctx.fillStyle = palette.text;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
@@ -179,10 +195,10 @@ window.registerS650Style = function(styleId, themeName) {
             ctx.font = 'bold 64px MustangModernDigits, sans-serif';
             ctx.fillText(speed.toString(), 630, 120);
             ctx.font = 'bold 24px MustangModernDigits, sans-serif';
-            ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', 630, 170);
+            ctx.fillText(getSpeedUnitLabel(), 630, 170);
         } else {
-            drawAnalogDial(ctx, 360, 120, 90, 0, 140, speed, theme === 'svt_cobra' && !isHeadlightsOn ? '#000' : '#fff', '#e63946', 'MustangModernDigits', isMetricUnit ? 'KM/H' : 'MPH');
-            drawAnalogDial(ctx, 900, 120, 90, 0, 8000, rpm, theme === 'svt_cobra' && !isHeadlightsOn ? '#000' : '#fff', '#e63946', 'MustangModernDigits', 'RPM');
+            drawAnalogDial(ctx, 360, 120, 90, 0, 140, speed, palette.dial, palette.needle, 'MustangModernDigits', getSpeedUnitLabel());
+            drawAnalogDial(ctx, 900, 120, 90, 0, maxRpm, rpm, palette.dial, palette.needle, 'MustangModernDigits', 'RPM');
             ctx.fillText("GEAR " + gear, 630, 120);
         }
 
@@ -339,6 +355,13 @@ window.registerS650Style = function(styleId, themeName) {
             if (payload) {
                 if (payload.headlights !== undefined) isHeadlightsOn = payload.headlights;
                 if (payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
+                if (payload.s650Theme !== undefined) {
+                    var nextTheme = normalizeTheme(payload.s650Theme);
+                    if (nextTheme !== currentTheme) {
+                        currentTheme = nextTheme;
+                        renderMustang(lastFrame);
+                    }
+                }
             }
         },
         onElementsChange: function (elements) {
@@ -348,8 +371,10 @@ window.registerS650Style = function(styleId, themeName) {
         onFrame: function (data, payload) {
             if (payload) {
                 if (payload.headlights !== undefined) isHeadlightsOn = payload.headlights;
+                if (payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
             }
-            if (!sweepActive) renderMustang(data);
+            lastFrame = data || lastFrame;
+            if (!sweepActive) renderMustang(lastFrame);
         },
         onAnimate: function () {
             if (isReady) {
@@ -361,4 +386,5 @@ window.registerS650Style = function(styleId, themeName) {
     });
 
     HUDCore.init(styleId);
+    renderMustang(lastFrame);
 };

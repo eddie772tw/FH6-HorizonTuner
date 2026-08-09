@@ -8,6 +8,10 @@
 [![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
 [![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
 [![Tests](https://img.shields.io/badge/Tests-Pytest%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
+
+### S650 HMI
+
+The S650 Mustang instrument-cluster variants are exposed as one HUD style. The registered HMI mode option selects Normal, Sport, Track, Calm, Foxbody, Heritage '67, or SVT Cobra presentations, while legacy per-mode style IDs are migrated automatically.
 [![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
