@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../context/SettingsContext';
+import {
+  fetchHudStylesList,
+  formatHudDropdownOptions,
+  getHudUrlPrefix,
+  HudStyleEntry,
+} from './hudStyleScanner';
 import '../../App.css';
 
 interface HudElements {
@@ -39,7 +45,7 @@ interface MonitorOption {
 
 interface HudConfig {
   enabled: boolean;
-  hudStyle: 'vfd' | 'simple' | 'advanced' | 'fm4ui' | 'gt7' | 'mw2005' | 'nfs15' | 'shift_tacho' | 'drift';
+  hudStyle: string;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -157,6 +163,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
+  const [hudStyles, setHudStyles] = useState<HudStyleEntry[]>([]);
 
   // Cache author metadata loaded dynamically per HUD style
   const [authorCache, setAuthorCache] = useState<Record<string, AuthorInfo>>({});
@@ -170,6 +177,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   useEffect(() => {
     channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
     fetchMonitors();
+    loadStyles();
     fetchConfig(false, false);
 
     return () => {
@@ -177,14 +185,23 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     };
   }, []);
 
-  const loadAuthorInfo = async (styleName: string, force: boolean = false) => {
+  const loadStyles = async () => {
+    const port = (window as any).BACKEND_PORT || 8001;
+    const styles = await fetchHudStylesList(`http://127.0.0.1:${port}`);
+    if (styles.length > 0) {
+      setHudStyles(styles);
+    }
+  };
+
+  const loadAuthorInfo = async (styleName: string, force: boolean = false, overridePrefix?: string) => {
     if (!force && authorCache[styleName]) {
       setCurrentAuthorInfo(authorCache[styleName]);
       return;
     }
     try {
       const cacheBuster = force ? `?t=${Date.now()}` : '';
-      const res = await fetch(`./hud/${styleName}/author.json${cacheBuster}`);
+      const prefix = overridePrefix || getHudUrlPrefix(hudStyles, styleName);
+      const res = await fetch(`.${prefix}/${styleName}/author.json${cacheBuster}`);
       if (res.ok) {
         const data = await res.json();
         const info: AuthorInfo = {
@@ -525,7 +542,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     saveConfig(updated);
   };
 
-  const handleStyleChange = (style: HudConfig['hudStyle']) => {
+  const handleStyleChange = (style: string) => {
     const updated = { ...config, hudStyle: style };
     saveConfig(updated);
     loadAuthorInfo(style);
@@ -1029,19 +1046,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
               <select
                 value={config.hudStyle}
-                onChange={(e) => handleStyleChange(e.target.value as any)}
+                onChange={(e) => handleStyleChange(e.target.value)}
                 disabled={config.elements.showGauge === false}
                 className="form-select form-select-sm fw-bold"
               >
-                <option value="advanced">{t("Race Arc")}</option>
-                <option value="simple">{t("Simple")}</option>
-                <option value="fm4ui">{t("Forza Motorsport 4")}</option>
-                <option value="gt7">{t("GT7")}</option>
-                <option value="mw2005">{t("NFS Most Wanted '05")}</option>
-                <option value="nfs15">{t("NFS '15")}</option>
-                <option value="shift_tacho">{t("NFS Shift")}</option>
-                <option value="vfd">{t("Retro VFD")}</option>
-                <option value="drift">{t("Drift HUD")}</option>
+                {formatHudDropdownOptions(hudStyles).map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
 
               {/* Overall HUD Scale */}
