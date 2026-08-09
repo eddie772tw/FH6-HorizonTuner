@@ -7,6 +7,13 @@ description: 處理 Forza Horizon UDP 遙測封包解析、324-byte 二進位 st
 
 ## 核心原則與開發守則
 
+## 連接埠契約
+
+- Forza Horizon Data Out 是 UDP 流量，開發預設送至 `127.0.0.1:8000`，由 `TELEMETRY_IP` / `TELEMETRY_PORT` 控制。
+- FastAPI REST API 與 WebSocket 是獨立的 HTTP/TCP 服務，開發預設位於 `127.0.0.1:8001`，由 `BACKEND_PORT` 控制。
+- portable release 可能使用動態 HTTP 端口；請讀取 `logs/web_port.txt` 或 sidecar readiness event。UDP 遙測仍使用設定的 telemetry port，預設為 `8000`。
+- 本技能中的 `--scan --port 8000` 僅代表 UDP 探針，不代表 FastAPI HTTP 服務端口。
+
 1. **零同步阻塞 (Zero Blocking I/O)**：
    - UDP 接收主循環 (`telemetry_listener.py`) 執行頻率高達 60Hz+。
    - **嚴禁**在主循環中放置同步阻塞檔案寫入、HTTP 請求或高開銷運算。

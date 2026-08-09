@@ -58,7 +58,8 @@ async def test_lifespan_cancels_background_tasks(monkeypatch):
     await asyncio.sleep(0)
     current_tasks = asyncio.all_tasks()
     assert all(
-        task.get_coro().__name__ not in {
+        task.get_coro().__name__
+        not in {
             "broadcast_telemetry",
             "broadcast_overlay_state",
         }

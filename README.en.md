@@ -116,7 +116,7 @@ The project provides highly automated launcher scripts:
   - Automatically lints and formats the codebase using `ruff`.
   - Automatically runs the backend server in the background and opens the Tauri desktop GUI.
 * **Modular launch (For standalone development)**:
-  - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener (`http://127.0.0.1:8000`).
+  - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener. In development, FastAPI/WebSocket uses `http://127.0.0.1:8001`, while Forza UDP telemetry uses `127.0.0.1:8000`.
   - **`start_frontend.bat`**: Launches only the Vite + React dev server and Tauri window.
 
 ---
@@ -295,4 +295,17 @@ separate sidecar file are required. The PyInstaller backend is embedded into
 the Tauri host and extracted to a versioned temporary directory at startup.
 User data is stored beside the executable when that directory is writable,
 with an AppData fallback for protected locations.
+
+## Development Ports
+
+This project uses two separate localhost ports; do not configure them interchangeably:
+
+| Purpose | Protocol | Default port |
+| --- | --- | ---: |
+| Forza Horizon Data Out telemetry | UDP | `8000` |
+| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
+
+In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Use `TELEMETRY_PORT` to change the UDP port and `BACKEND_PORT` to change the development HTTP port.
+
+In a portable release, the FastAPI HTTP service selects an available dynamic TCP port and writes it to `logs/web_port.txt` under the data directory. Forza UDP telemetry still listens on `8000` by default.
 

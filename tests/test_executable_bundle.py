@@ -239,7 +239,9 @@ def close_portable_process(proc):
     wait_for_process_exit(proc)
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Portable lifecycle is Windows-specific")
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="Portable lifecycle is Windows-specific"
+)
 def test_portable_executable_releases_udp_port_for_restart(tmp_path):
     _, standalone_exe = find_executable_paths()
     if not os.path.exists(standalone_exe):
@@ -250,7 +252,9 @@ def test_portable_executable_releases_udp_port_for_restart(tmp_path):
         try:
             availability_probe.bind(("127.0.0.1", telemetry_port))
         except OSError as error:
-            pytest.fail(f"UDP {telemetry_port} must be available for this test: {error}")
+            pytest.fail(
+                f"UDP {telemetry_port} must be available for this test: {error}"
+            )
 
     environment = os.environ.copy()
     environment["TELEMETRY_IP"] = "127.0.0.1"

@@ -117,7 +117,7 @@ FH6-HorizonTuner/
   - 自動使用 `ruff` 對整個專案代碼進行靜態檢查與格式化排版。
   - 自動在背景執行後端服務，並開啟 Tauri 桌面端圖形介面。
 * **分開啟動（模組化開發時使用）**：
-  - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務 (`http://127.0.0.1:8000`)。
+  - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務。開發模式下 FastAPI / WebSocket 使用 `http://127.0.0.1:8001`，Forza UDP Telemetry 使用 `127.0.0.1:8000`。
   - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。
 
 ---
@@ -317,4 +317,17 @@ separate sidecar file are required. The PyInstaller backend is embedded into
 the Tauri host and extracted to a versioned temporary directory at startup.
 User data is stored beside the executable when that directory is writable,
 with an AppData fallback for protected locations.
+
+## 開發環境連接埠
+
+本專案使用兩個不同的本機連接埠，請勿將它們混用：
+
+| 用途 | 協定 | 預設連接埠 |
+| --- | --- | ---: |
+| Forza Horizon Data Out Telemetry | UDP | `8000` |
+| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
+
+在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式則連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠，透過 `BACKEND_PORT` 修改開發模式的 HTTP 連接埠。
+
+打包後的 portable release 會為 FastAPI HTTP 服務選擇可用的動態 TCP 連接埠，並將實際連接埠寫入資料目錄的 `logs/web_port.txt`；Forza UDP Telemetry 預設仍監聽 `8000`。
 
