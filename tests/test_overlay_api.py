@@ -138,3 +138,44 @@ def test_get_audio_spectrum_endpoint():
     assert "vu_left" in data
     assert "vu_right" in data
     assert data["success"] is True
+
+
+def test_get_hud_styles_scan():
+    client = TestClient(app)
+    res = client.get("/api/hud/styles")
+    assert res.status_code == 200
+    data = res.json()
+    assert "styles" in data
+    style_ids = [style["id"] for style in data["styles"]]
+
+    for expected_hud in ["simple", "advanced", "vfd", "gt7", "drift", "s650_hmi"]:
+        assert expected_hud in style_ids
+
+    for ignored in ["shared", "assets", "telemetry"]:
+        assert ignored not in style_ids
+
+    for style in data["styles"]:
+        assert "id" in style
+        assert "source" in style
+        assert "urlPrefix" in style
+
+
+def test_hud_styles_strict_filesystem_consistency():
+    client = TestClient(app)
+    res = client.get("/api/hud/styles")
+    assert res.status_code == 200
+    api_style_ids = {style["id"] for style in res.json()["styles"]}
+
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    hud_dir = os.path.join(project_root, "hud_overlay")
+    expected_hud_ids = {
+        entry.name
+        for entry in os.scandir(hud_dir)
+        if (
+            entry.is_dir()
+            and entry.name.lower() not in main.IGNORED_HUD_DIRS
+            and os.path.isfile(os.path.join(entry.path, "index.html"))
+        )
+    }
+
+    assert api_style_ids == expected_hud_ids

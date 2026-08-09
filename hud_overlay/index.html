@@ -15,11 +15,11 @@
         /* ── Fonts ─────────────────────────────────────────────────────────── */
         @font-face {
             font-family: 'ForzaFont';
-            src: url('./assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
+            src: url('./shared/assets/fonts/HelveticaNowDisplay-CnIta.otf') format('opentype');
         }
         @font-face {
             font-family: 'ForzaGear';
-            src: url('./assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
+            src: url('./shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
 
         /* ── Central Telemetry Cluster Mount Point ─────────────────────────── */
@@ -65,19 +65,8 @@
             TelemetryCardsManager.init(document.getElementById('teleCardsMount'));
         }
 
-        // ── HUD switcher ──────────────────────────────────────────────────
-        const HUDS = {
-            simple: './simple/index.html',
-            advanced: './advanced/index.html',
-            fm4ui: './fm4ui/index.html',
-            gt7: './gt7/index.html',
-            mw2005: './mw2005/index.html',
-            nfs15: './nfs15/index.html',
-            shift_tacho: './shift_tacho/index.html',
-            vfd: './vfd/index.html',
-            s650_hmi: './s650_hmi/index.html',
-            drift: './drift/index.html'
-        };
+        // ── Dynamic HUD switcher ──────────────────────────────────────────
+        let hudStyles = {};
         const LEGACY_S650_STYLE_MAP = {
             s650_normal: 'normal',
             s650_sport: 'sport',
@@ -104,12 +93,32 @@
         }
 
         function normalizeHudStyle(name) {
-            const canonicalName = LEGACY_S650_STYLE_MAP[name] ? 's650_hmi' : name;
-            return HUDS[canonicalName] ? canonicalName : 'simple';
+            return LEGACY_S650_STYLE_MAP[name] ? 's650_hmi' : name;
         }
 
         let activeHud = normalizeHudStyle(localStorage.getItem('forza_hud_active') || 'simple');
         const hudIframe = document.getElementById('hud-iframe');
+
+        async function loadHudStyles() {
+            const host = window.location.port ? window.location.host : '127.0.0.1:8001';
+            try {
+                const res = await fetch(`http://${host}/api/hud/styles`);
+                if (res.ok) {
+                    const data = await res.json();
+                    hudStyles = {};
+                    (data.styles || []).forEach(s => {
+                        // The launcher itself is served from /hud/index.html,
+                        // so the API prefix must remain an absolute same-origin
+                        // path (otherwise /hud/hud/... would be generated).
+                        hudStyles[s.id] = `${s.urlPrefix}/${s.id}/index.html`;
+                    });
+                    console.log('[Launcher] Dynamic HUD styles loaded:', Object.keys(hudStyles));
+                    return;
+                }
+            } catch (e) {
+                console.warn('[Launcher] Failed to fetch dynamic HUD styles from API:', e);
+            }
+        }
 
         // Post a message to the active HUD iframe
         function postToHud(type, detail = {}) {
@@ -125,7 +134,8 @@
             localStorage.setItem('forza_hud_active', name);
 
             const cacheBuster = force ? `?t=${Date.now()}` : '';
-            hudIframe.src = (HUDS[name] || HUDS.simple) + cacheBuster;
+            const targetUrl = hudStyles[name] || `./${name}/index.html`;
+            hudIframe.src = targetUrl + cacheBuster;
 
             hudIframe.onload = async () => {
                 initPhysics();
@@ -151,12 +161,13 @@
                 });
 
                 setTimeout(() => postToHud('hud:scale'), 30);
-                console.log(`[Launcher] Loaded HUD: ${name}`);
+                console.log(`[Launcher] Loaded HUD: ${name} (${targetUrl})`);
             };
         }
 
         // ── Boot ──────────────────────────────────────────────────────────
         const host = window.location.port ? window.location.host : '127.0.0.1:8001';
+        await loadHudStyles();
         try {
             const res = await fetch(`http://${host}/api/overlay/config`);
             const config = normalizeHudConfig(await res.json());
@@ -242,18 +253,26 @@
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
-                const config = normalizeHudConfig(ev.data.data);
-                const requestedHud = config.hudStyle ? normalizeHudStyle(config.hudStyle) : activeHud;
-                const hudChanged = requestedHud !== activeHud;
+                const config = normalizeHudConfig(ev.data.data || {});
                 window._currentHudConfig = config;
-                activeHud = requestedHud;
+                if (window.TelemetryCardsManager) {
+                    window.TelemetryCardsManager.update(null, config);
+                }
+
+                // The control panel sends live edits through BroadcastChannel.  A
+                // style change needs a new iframe, rather than only changing the
+                // remembered style for a later reload.
+                const requestedHud = config.hudStyle ? normalizeHudStyle(config.hudStyle) : activeHud;
+                if (requestedHud !== activeHud) {
+                    console.log('[Launcher] BroadcastChannel requested HUD style change to:', requestedHud);
+                    loadHud(requestedHud);
+                    return;
+                }
+
                 postToHud('config', { data: config });
                 if (config.elements) {
                     window._currentHudElements = config.elements;
                     postToHud('hud:elements', config.elements);
-                }
-                if (hudChanged) {
-                    loadHud(requestedHud);
                 }
             }
         };
