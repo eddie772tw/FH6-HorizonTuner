@@ -51,13 +51,7 @@
             ctx.stroke();
             ctx.restore();
 
-            if (view.centerWidget === 'tire_temp') {
-                p.drawTireTemperatureWidget(view, data, palette, 425, 132, 430, 224);
-            } else if (view.centerWidget === 'performance') {
-                p.drawPerformanceWidget(view, data, palette, 425, 132, 430, 224);
-            } else {
-                p.drawGearAndSpeed(view, data, palette, 640, 190, 302, type.speedHero + 12, type.speedHero + 18);
-            }
+            centerInfo.draw(view, data, palette, 425, 132, 430, 224);
             p.drawPedalBars(view, data, palette, 454, 390, 170, true);
             p.drawPedalBars(view, data, palette, 656, 390, 170, true);
 

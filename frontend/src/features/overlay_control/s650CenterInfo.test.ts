@@ -10,12 +10,31 @@ type CenterInfoModule = {
   create: (options: {
     primitives: Record<string, (...args: unknown[]) => void>;
     contract: { centerWidgets: Widget[] };
+    ctx?: Record<string, unknown>;
   }) => {
     draw: (view: { centerWidget?: string }, data: unknown, palette: unknown, x: number, y: number, width: number, height: number) => void;
     normalizeWidget: (view: { centerWidget?: string }) => Widget;
     widgets: Widget[];
   };
 };
+
+function createCanvasSpy() {
+  const text: string[] = [];
+  const ctx = {
+    text,
+    save: () => undefined,
+    restore: () => undefined,
+    beginPath: () => undefined,
+    closePath: () => undefined,
+    moveTo: () => undefined,
+    lineTo: () => undefined,
+    fill: () => undefined,
+    stroke: () => undefined,
+    fillRect: () => undefined,
+    fillText: (value: string) => text.push(value),
+  } as unknown as Record<string, unknown>;
+  return ctx;
+}
 
 function loadCenterInfoModule(): CenterInfoModule {
   const sourceFiles = [
@@ -37,33 +56,72 @@ function loadCenterInfoModule(): CenterInfoModule {
 }
 
 describe('S650 center-information registry contract', () => {
-  it.each([
-    ['drive', 'drawGearAndSpeed'],
-    ['tire_temp', 'drawTireTemperatureWidget'],
-    ['performance', 'drawPerformanceWidget'],
-  ] as const)('dispatches %s to the matching primitive', (widget, primitiveName) => {
+  it('dispatches drive to the reusable gear-and-speed primitive', () => {
     const calls: string[] = [];
     const primitives = {
       drawGearAndSpeed: () => calls.push('drawGearAndSpeed'),
-      drawTireTemperatureWidget: () => calls.push('drawTireTemperatureWidget'),
-      drawPerformanceWidget: () => calls.push('drawPerformanceWidget'),
     };
     const centerInfo = loadCenterInfoModule().create({
       primitives,
       contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
     });
 
-    centerInfo.draw({ centerWidget: widget }, {}, {}, 425, 126, 430, 230);
+    centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 425, 126, 430, 230);
 
-    expect(calls).toEqual([primitiveName]);
+    expect(calls).toEqual(['drawGearAndSpeed']);
+  });
+
+  it('renders tire temperature as an isolated page on the shared Canvas', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'tire_temp',
+      getTireTemperatures: () => [80, 81, 82, 83],
+      tireTemperatureUnit: () => '°C',
+      formatTireTemperature: (value) => `${value}°`,
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 100);
+
+    expect((ctx.text as string[])[0]).toBe('TIRE TEMPERATURE');
+  });
+
+  it('renders performance as an isolated page on the shared Canvas', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'performance',
+      getRpm: () => 4200,
+      getMaxRpm: () => 8000,
+      getPedalValue: (_data, pedal) => pedal === 'throttle' ? 0.75 : 0.2,
+      getGearLabel: () => '4',
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 100);
+
+    expect((ctx.text as string[]).slice(0, 3)).toEqual([
+      'PERFORMANCE',
+      '4200 / 8000 RPM',
+      '4',
+    ]);
   });
 
   it('uses the contract widget list and falls back to drive', () => {
     const centerInfo = loadCenterInfoModule().create({
       primitives: {
         drawGearAndSpeed: () => undefined,
-        drawTireTemperatureWidget: () => undefined,
-        drawPerformanceWidget: () => undefined,
       },
       contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
     });
@@ -77,8 +135,6 @@ describe('S650 center-information registry contract', () => {
     const centerInfo = loadCenterInfoModule().create({
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
-        drawTireTemperatureWidget: () => undefined,
-        drawPerformanceWidget: () => undefined,
       },
       contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
     });

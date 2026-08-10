@@ -34,7 +34,9 @@
     }
 
     function create(options) {
-        var primitives = options.primitives;
+        options = options || {};
+        var primitives = options.primitives || {};
+        var ctx = options.ctx || null;
         var contract = options.contract;
         var supportedWidgets = contract && Array.isArray(contract.centerWidgets)
             ? contract.centerWidgets
@@ -58,7 +60,8 @@
                 data: data,
                 palette: palette,
                 region: region,
-                primitives: primitives
+                primitives: primitives,
+                ctx: ctx
             });
         }
 
