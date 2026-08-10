@@ -33,6 +33,26 @@
         return Object.keys(pageRegistry);
     }
 
+    function numberOr(value, fallback) {
+        return typeof value === 'number' && isFinite(value) ? value : fallback;
+    }
+
+    function normalizeRegion(region) {
+        region = region && typeof region === 'object' ? region : {};
+        var normalized = {
+            x: numberOr(region.x, 425),
+            y: numberOr(region.y, 122),
+            width: numberOr(region.width, 430),
+            height: numberOr(region.height, 210)
+        };
+        ['centerX', 'speedY', 'gearY', 'speedSize', 'gearSize'].forEach(function (key) {
+            if (typeof region[key] === 'number' && isFinite(region[key])) {
+                normalized[key] = region[key];
+            }
+        });
+        return normalized;
+    }
+
     function create(options) {
         options = options || {};
         var primitives = options.primitives || {};
@@ -59,7 +79,7 @@
                 view: view,
                 data: data,
                 palette: palette,
-                region: region,
+                region: normalizeRegion(region),
                 primitives: primitives,
                 ctx: ctx
             });
@@ -67,12 +87,10 @@
 
         return {
             draw: function (view, data, palette, x, y, width, height) {
-                render(view, data, palette, {
-                    x: x || 425,
-                    y: y || 122,
-                    width: width || 430,
-                    height: height || 210
-                });
+                var region = x && typeof x === 'object'
+                    ? x
+                    : { x: x, y: y, width: width, height: height };
+                render(view, data, palette, region);
             },
             normalizeWidget: normalizeWidget,
             render: render,

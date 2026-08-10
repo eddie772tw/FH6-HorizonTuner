@@ -13,6 +13,26 @@
         var gauge = view.gauge;
         var speedScaleMax = gauge.speedScaleMax;
         var type = view.typography;
+        var centerRegions = Object.freeze({
+            normal: Object.freeze({
+                x: 425,
+                y: 132,
+                width: 430,
+                height: 224,
+                centerX: 640,
+                speedY: 190,
+                gearY: 302,
+                speedSize: type.speedHero + 12,
+                gearSize: type.speedHero + 18
+            }),
+            foxbody: Object.freeze({ x: 425, y: 122, width: 430, height: 210 }),
+            heritage67: Object.freeze({ x: 425, y: 126, width: 430, height: 230 })
+        });
+
+        function drawCenterInfo(data, palette, theme) {
+            var region = centerRegions[theme] || centerRegions.normal;
+            centerInfo.draw(view, data, palette, region);
+        }
 
         function clear(palette, transparent) {
             // The overlay host owns the backdrop. Every S650 theme paints only
@@ -51,7 +71,7 @@
             ctx.stroke();
             ctx.restore();
 
-            centerInfo.draw(view, data, palette, 425, 132, 430, 224);
+            drawCenterInfo(data, palette, 'normal');
             p.drawPedalBars(view, data, palette, 454, 390, 170, true);
             p.drawPedalBars(view, data, palette, 656, 390, 170, true);
 
@@ -126,7 +146,7 @@
                         baseWidth: 7
                     });
             }
-            centerInfo.draw(view, data, palette);
+            drawCenterInfo(data, palette, 'foxbody');
             p.drawGearCarousel(view, data, palette, 640, 399);
         }
 
@@ -138,7 +158,7 @@
             // The center information intentionally sits below the dial layer. The
             // real cluster lets both rings overlap the center boundary, so the
             // rings and needles must always be painted after this content.
-            centerInfo.draw(view, data, palette, 425, 126, 430, 230);
+            drawCenterInfo(data, palette, 'heritage67');
 
             var rpmScale = p.getHeritageDialScale(view.getMaxRpm(data) / 100);
             // Heritage speed markings are fixed by its analog face artwork;
@@ -350,7 +370,8 @@
                 layout(data, palette, redlineRatio);
                 ctx.restore();
             },
-            names: Object.keys(layouts)
+            names: Object.keys(layouts),
+            centerRegions: centerRegions
         };
     }
 

@@ -3,6 +3,17 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 type Widget = 'drive' | 'tire_temp' | 'performance';
+type Region = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  centerX?: number;
+  speedY?: number;
+  gearY?: number;
+  speedSize?: number;
+  gearSize?: number;
+};
 
 type CenterInfoModule = {
   register: (definition: { id: string; render: (context: unknown) => void }) => void;
@@ -12,7 +23,7 @@ type CenterInfoModule = {
     contract: { centerWidgets: Widget[] };
     ctx?: Record<string, unknown>;
   }) => {
-    draw: (view: { centerWidget?: string }, data: unknown, palette: unknown, x: number, y: number, width: number, height: number) => void;
+    draw: (view: { centerWidget?: string }, data: unknown, palette: unknown, regionOrX: Region | number, y?: number, width?: number, height?: number) => void;
     normalizeWidget: (view: { centerWidget?: string }) => Widget;
     widgets: Widget[];
   };
@@ -144,6 +155,30 @@ describe('S650 center-information registry contract', () => {
     expect(driveArgs[3]).toBe(200);
     expect(driveArgs[4]).toBe(88);
     expect(driveArgs[5]).toBe(128);
+  });
+
+  it('accepts explicit drive anchors for a non-default layout region', () => {
+    let driveArgs: unknown[] = [];
+    const centerInfo = loadCenterInfoModule().create({
+      primitives: {
+        drawGearAndSpeed: (...args) => { driveArgs = args; },
+      },
+      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+    });
+
+    centerInfo.draw({ centerWidget: 'drive' }, {}, {}, {
+      x: 10,
+      y: 20,
+      width: 300,
+      height: 120,
+      centerX: 170,
+      speedY: 64,
+      gearY: 106,
+      speedSize: 46,
+      gearSize: 68,
+    });
+
+    expect(driveArgs.slice(3)).toEqual([170, 64, 106, 46, 68]);
   });
 
   it('rejects duplicate page registration', () => {
