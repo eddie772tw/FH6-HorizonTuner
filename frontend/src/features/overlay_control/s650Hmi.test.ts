@@ -1,25 +1,26 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   DEFAULT_S650_HMI_THEME,
+  DEFAULT_S650_CENTER_WIDGET,
   LEGACY_S650_STYLE_MAP,
+  S650_CENTER_WIDGETS,
   S650_HMI_STYLE_ID,
   S650_HMI_THEMES,
   type S650HmiTheme,
+  isS650CenterWidget,
   isS650HmiTheme,
   normalizeS650HmiConfig,
 } from './s650Hmi';
 
 describe('S650 HMI config contract', () => {
-  it('exposes the seven supported themes in the stable selector order', () => {
+  it('exposes only the production-ready Heritage theme in the selector', () => {
     expect(S650_HMI_THEMES.map((theme) => theme.value)).toEqual([
-      'normal',
-      'sport',
-      'track',
-      'calm',
-      'foxbody',
       'heritage67',
-      'svt_cobra',
     ]);
+  });
+
+  it('exposes stable central information pages for dual-ring themes', () => {
+    expect(S650_CENTER_WIDGETS.map((widget) => widget.value)).toEqual(['drive', 'tire_temp', 'performance']);
   });
 
   it.each(Object.entries(LEGACY_S650_STYLE_MAP))('migrates legacy style id %s', (legacyStyle, theme) => {
@@ -33,6 +34,7 @@ describe('S650 HMI config contract', () => {
       ...config,
       hudStyle: S650_HMI_STYLE_ID,
       s650Theme: theme,
+      s650CenterWidget: DEFAULT_S650_CENTER_WIDGET,
     });
     expect(config).toEqual({
       hudStyle: legacyStyle,
@@ -47,7 +49,7 @@ describe('S650 HMI config contract', () => {
     [null, 'null'],
     [42, 'number'],
     [{ value: 'track' }, 'object'],
-  ])('falls back to normal for an invalid theme (%s)', (invalidTheme, label) => {
+  ])('falls back to Heritage for an invalid theme (%s)', (invalidTheme, label) => {
     expect(label).toBeTypeOf('string');
     expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650Theme: invalidTheme }).s650Theme).toBe(
       DEFAULT_S650_HMI_THEME
@@ -63,7 +65,7 @@ describe('S650 HMI config contract', () => {
 
     const normalized = normalizeS650HmiConfig(config);
 
-    expect(normalized).toEqual(config);
+    expect(normalized).toEqual({ ...config, s650CenterWidget: DEFAULT_S650_CENTER_WIDGET });
     expect(normalized).not.toBe(config);
     expect(normalized.telemetry).toBe(config.telemetry);
   });
@@ -72,6 +74,7 @@ describe('S650 HMI config contract', () => {
     expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID })).toEqual({
       hudStyle: S650_HMI_STYLE_ID,
       s650Theme: DEFAULT_S650_HMI_THEME,
+      s650CenterWidget: DEFAULT_S650_CENTER_WIDGET,
     });
   });
 
@@ -95,6 +98,15 @@ describe('S650 HMI config contract', () => {
     expect(isS650HmiTheme(null)).toBe(false);
     expect(isS650HmiTheme(42)).toBe(false);
     expect(isS650HmiTheme({ value: 'heritage67' })).toBe(false);
+  });
+
+  it('normalizes central information pages independently from the selected theme', () => {
+    expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: 'tire_temp' }).s650CenterWidget).toBe('tire_temp');
+    expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: 'unknown' }).s650CenterWidget).toBe(
+      DEFAULT_S650_CENTER_WIDGET
+    );
+    expect(isS650CenterWidget('performance')).toBe(true);
+    expect(isS650CenterWidget('tpms')).toBe(false);
   });
 
   it('keeps the generic config shape while exposing the theme type guard', () => {

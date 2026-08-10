@@ -31,7 +31,8 @@ def test_get_hud_config_default(temp_hud_config_file):
 
     data = response.json()
     assert data["hudStyle"] == "vfd"
-    assert data["s650Theme"] == "normal"
+    assert data["s650Theme"] == "heritage67"
+    assert data["s650CenterWidget"] == "drive"
     assert "elements" in data
     assert data["elements"]["showRPM"] is True
 
@@ -126,7 +127,7 @@ def test_existing_legacy_s650_config_is_migrated_on_load(
 
 
 @pytest.mark.parametrize("invalid_theme", ["not-a-theme", "", None])
-def test_invalid_s650_hmi_theme_defaults_to_normal(temp_hud_config_file, invalid_theme):
+def test_invalid_s650_hmi_theme_defaults_to_heritage(temp_hud_config_file, invalid_theme):
     client = TestClient(app)
 
     post_res = client.post(
@@ -138,7 +139,28 @@ def test_invalid_s650_hmi_theme_defaults_to_normal(temp_hud_config_file, invalid
 
     loaded_data = client.get("/api/overlay/config").json()
     assert loaded_data["hudStyle"] == "s650_hmi"
-    assert loaded_data["s650Theme"] == "normal"
+    assert loaded_data["s650Theme"] == "heritage67"
+
+
+@pytest.mark.parametrize("invalid_widget", ["tpms", "", None])
+def test_invalid_s650_center_widget_defaults_to_drive(
+    temp_hud_config_file, invalid_widget
+):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={
+            "hudStyle": "s650_hmi",
+            "s650Theme": "heritage67",
+            "s650CenterWidget": invalid_widget,
+        },
+    )
+    assert post_res.status_code == 200
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["s650Theme"] == "heritage67"
+    assert loaded_data["s650CenterWidget"] == "drive"
 
 
 def test_default_hud_config_includes_all_live_map_controls(temp_hud_config_file):

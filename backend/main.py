@@ -2044,7 +2044,8 @@ CAR_LEARNING_FILE = os.path.join(DATA_ROOT, "car_learning.json")
 DEFAULT_HUD_CONFIG = {
     "enabled": False,
     "hudStyle": "vfd",
-    "s650Theme": "normal",
+    "s650Theme": "heritage67",
+    "s650CenterWidget": "drive",
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
@@ -2098,6 +2099,7 @@ LEGACY_S650_STYLE_MAP = {
     "s650_svt_cobra": "svt_cobra",
 }
 S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values())
+S650_HMI_CENTER_WIDGETS = {"drive", "tire_temp", "performance"}
 
 
 def normalize_hud_config(data: dict) -> dict:
@@ -2109,7 +2111,13 @@ def normalize_hud_config(data: dict) -> dict:
         normalized["hudStyle"] = "s650_hmi"
         normalized["s650Theme"] = LEGACY_S650_STYLE_MAP[hud_style]
     elif hud_style == "s650_hmi" and normalized.get("s650Theme") not in S650_HMI_THEMES:
-        normalized["s650Theme"] = "normal"
+        normalized["s650Theme"] = "heritage67"
+
+    if (
+        normalized.get("hudStyle") == "s650_hmi"
+        and normalized.get("s650CenterWidget") not in S650_HMI_CENTER_WIDGETS
+    ):
+        normalized["s650CenterWidget"] = "drive"
 
     return normalized
 

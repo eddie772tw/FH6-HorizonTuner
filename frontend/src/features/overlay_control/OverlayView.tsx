@@ -8,8 +8,10 @@ import {
 } from './hudStyleScanner';
 import {
   S650_HMI_STYLE_ID,
+  S650_CENTER_WIDGETS,
   S650_HMI_THEMES,
   normalizeS650HmiConfig,
+  type S650CenterWidget,
   type S650HmiTheme,
 } from './s650Hmi';
 import '../../App.css';
@@ -53,6 +55,7 @@ interface HudConfig {
   enabled: boolean;
   hudStyle: string;
   s650Theme?: S650HmiTheme;
+  s650CenterWidget?: S650CenterWidget;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -97,7 +100,8 @@ interface HudConfig {
 const DEFAULT_HUD_CONFIG: HudConfig = {
   enabled: false,
   hudStyle: 'vfd',
-  s650Theme: 'normal',
+  s650Theme: 'heritage67',
+  s650CenterWidget: 'drive',
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -564,6 +568,10 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const handleS650ThemeChange = (theme: S650HmiTheme) => {
     saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
+  };
+
+  const handleS650CenterWidgetChange = (widget: S650CenterWidget) => {
+    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
   };
 
   return (
@@ -1083,12 +1091,27 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   <select
                     id="s650-hmi-theme"
                     className="form-select form-select-sm fw-bold"
-                    value={config.s650Theme ?? 'normal'}
+                    value={config.s650Theme ?? 'heritage67'}
                     onChange={(e) => handleS650ThemeChange(e.target.value as S650HmiTheme)}
                   >
                     {S650_HMI_THEMES.map((theme) => (
                       <option key={theme.value} value={theme.value}>
                         {t(theme.label)}
+                      </option>
+                    ))}
+                  </select>
+                  <label htmlFor="s650-center-widget" className="form-label fs-7 text-body-secondary mb-1 mt-2">
+                    {t("S650 center information")}:
+                  </label>
+                  <select
+                    id="s650-center-widget"
+                    className="form-select form-select-sm fw-bold"
+                    value={config.s650CenterWidget ?? 'drive'}
+                    onChange={(e) => handleS650CenterWidgetChange(e.target.value as S650CenterWidget)}
+                  >
+                    {S650_CENTER_WIDGETS.map((widget) => (
+                      <option key={widget.value} value={widget.value}>
+                        {t(widget.label)}
                       </option>
                     ))}
                   </select>

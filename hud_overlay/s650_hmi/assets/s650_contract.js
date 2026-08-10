@@ -27,29 +27,50 @@
         'custom'
     ];
 
+    var CENTER_WIDGETS = [
+        'drive',
+        'tire_temp',
+        'performance'
+    ];
+
+    // Code-only assignment for Heritage dual-ring telemetry slots. This is
+    // intentionally separate from user-facing HMI configuration.
+    var HERITAGE_TELEMETRY_SLOTS = Object.freeze({
+        center: Object.freeze({
+            topLeft: 'odometer',
+            topRight: 'heading',
+            bottomLeft: 'rpm',
+            bottomRight: 'speed'
+        }),
+        side: Object.freeze({
+            left: 'power',
+            right: 'boost'
+        })
+    });
+
     var CANVAS = {
-        width: 1260,
-        height: 240,
+        width: 1280,
+        height: 480,
         safeZone: {
-            top: 32,
-            left: 34,
-            right: 34,
-            bottom: 28
+            top: 40,
+            left: 48,
+            right: 48,
+            bottom: 40
         },
         gauge: {
-            leftCenterX: 232,
-            rightCenterX: 1028,
-            centerY: 122,
-            radius: 90,
+            leftCenterX: 256,
+            rightCenterX: 1024,
+            centerY: 250,
+            radius: 180,
             speedScaleMax: 360
         },
         regions: {
-            header: { x: 0, y: 0, width: 1260, height: 32 },
-            left: { x: 34, y: 32, width: 326, height: 180 },
-            center: { x: 385, y: 32, width: 490, height: 180 },
-            right: { x: 890, y: 32, width: 326, height: 180 },
-            footer: { x: 34, y: 212, width: 1182, height: 28 },
-            telltales: { x: 34, y: 212, width: 360, height: 28 }
+            header: { x: 0, y: 0, width: 1280, height: 64 },
+            left: { x: 48, y: 64, width: 352, height: 360 },
+            center: { x: 400, y: 64, width: 480, height: 360 },
+            right: { x: 880, y: 64, width: 352, height: 360 },
+            footer: { x: 48, y: 424, width: 1184, height: 56 },
+            telltales: { x: 48, y: 424, width: 360, height: 56 }
         }
     };
 
@@ -85,11 +106,15 @@
     }
 
     function normalizeTheme(theme) {
-        return THEMES.indexOf(theme) >= 0 ? theme : 'normal';
+        return THEMES.indexOf(theme) >= 0 ? theme : 'heritage67';
     }
 
     function normalizeDriveMode(mode) {
         return DRIVE_MODES.indexOf(mode) >= 0 ? mode : 'normal';
+    }
+
+    function normalizeCenterWidget(widget) {
+        return CENTER_WIDGETS.indexOf(widget) >= 0 ? widget : 'drive';
     }
 
     function readValue(payload, key) {
@@ -118,6 +143,7 @@
             contractVersion: 's650-hmi/v1',
             theme: normalizeTheme(rawTheme),
             driveMode: normalizeDriveMode(rawDriveMode),
+            centerWidget: normalizeCenterWidget(firstDefined(readValue(payload, 's650CenterWidget'), readValue(payload, 'centerWidget'))),
             matchDriveMode: readValue(payload, 'matchDriveMode') === true,
             isMetric: isMetric,
             elements: readElements(payload)
@@ -172,12 +198,15 @@
         version: 's650-hmi/v1',
         themes: Object.freeze(THEMES.slice()),
         driveModes: Object.freeze(DRIVE_MODES.slice()),
+        centerWidgets: Object.freeze(CENTER_WIDGETS.slice()),
+        heritageTelemetrySlots: HERITAGE_TELEMETRY_SLOTS,
         canvas: CANVAS,
         defaultFrame: Object.freeze(Object.assign({}, DEFAULT_FRAME)),
         clamp: clamp,
         finiteNumber: finiteNumber,
         normalizeTheme: normalizeTheme,
         normalizeDriveMode: normalizeDriveMode,
+        normalizeCenterWidget: normalizeCenterWidget,
         normalizeConfig: normalizeConfig,
         normalizeFrame: normalizeFrame
     };

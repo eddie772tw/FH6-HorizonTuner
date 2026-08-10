@@ -20,23 +20,23 @@
             safePaddingLeft: 64,
             safePaddingRight: 64,
             safePaddingBottom: 40,
-            leftCenterX: 432,
-            rightCenterX: 1488,
+            leftCenterX: 384,
+            rightCenterX: 1536,
             ringDiameter: 400,
             centerAdasWidth: 650
         }),
         // The active S650 HUD is a deliberately shorter overlay viewport.
         overlay: Object.freeze({
-            width: 1260,
-            height: 240,
-            safePaddingTop: 32,
-            safePaddingLeft: 34,
-            safePaddingRight: 34,
-            safePaddingBottom: 28,
-            leftCenterX: 232,
-            rightCenterX: 1028,
-            ringDiameter: 180,
-            centerAdasWidth: 490
+            width: 1280,
+            height: 480,
+            safePaddingTop: 40,
+            safePaddingLeft: 48,
+            safePaddingRight: 48,
+            safePaddingBottom: 40,
+            leftCenterX: 256,
+            rightCenterX: 1024,
+            ringDiameter: 360,
+            centerAdasWidth: 480
         })
     };
 
@@ -55,6 +55,21 @@
         headingL: 32,
         bodyM: 24,
         captionLegal: 16,
+        // Heritage dual-ring typography is independently tunable so visual
+        // sizing tests do not alter the remaining S650 themes.
+        heritageDialTickNumber: 70,
+        heritageDialTickInset: 55,
+        heritageDialTickWidthScale: 0.30,
+        heritageDialFaceLabel: 16,
+        heritageDialFaceLabelOffset: 0.45,
+        heritageDialAuxLabel: 16,
+        heritageDialAuxLabelOffset: 44,
+        heritageCenterTopReadout: 22,
+        heritageCenterBottomReadout: 20,
+        dualRingCenterTitle: 24,
+        dualRingCenterSubtitle: 15,
+        dualRingCenterValue: 22,
+        dualRingCenterPosition: 12,
         weightHero: 800,
         weightHeading: 600,
         weightBody: 500,

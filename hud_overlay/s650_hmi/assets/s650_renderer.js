@@ -19,13 +19,14 @@
     var ctx = canvas ? canvas.getContext('2d') : null;
     var container = document.getElementById('s650Container');
 
-    if (!contract || !tokens || !window.S650HmiPrimitives || !window.S650HmiLayouts || !window.S650HmiFrame) {
+    if (!contract || !tokens || !window.S650HmiPrimitives || !window.S650HmiCenterInfo || !window.S650HmiLayouts || !window.S650HmiFrame) {
         console.error('[S650 HMI] Renderer modules are incomplete.');
         return;
     }
 
     var frame;
     var primitives;
+    var centerInfo;
     var layouts;
 
     if (ctx) {
@@ -39,10 +40,13 @@
             layouts: layoutHost
         });
         primitives = window.S650HmiPrimitives.create(ctx, contract);
+        centerInfo = window.S650HmiCenterInfo.create({ primitives: primitives });
         layouts = window.S650HmiLayouts.create({
             ctx: ctx,
+            contract: contract,
             view: frame.view,
             primitives: primitives,
+            centerInfo: centerInfo,
             width: contract.canvas.width,
             height: contract.canvas.height
         });
@@ -63,7 +67,9 @@
 
     HUDCore.registerStyle('s650_hmi', {
         containerId: 's650Container',
-        scaleMultiplier: 1.0,
+        // The native cluster is now the real 8:3 proportion. Keep its default
+        // footprint practical in an overlay while preserving the user scale.
+        scaleMultiplier: 0.75,
         onInit: frame.onInit,
         onElementsChange: frame.onElementsChange,
         onFrame: frame.onFrame,
@@ -73,4 +79,12 @@
     HUDCore.init('s650_hmi');
     frame.flushPendingAnimation();
     frame.renderInitial();
+
+    // Canvas text is rasterized at draw time. Repaint after @font-face assets
+    // settle so Heritage dial typography never remains on a fallback face.
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+            frame.renderInitial();
+        });
+    }
 })(window);

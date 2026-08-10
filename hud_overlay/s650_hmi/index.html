@@ -7,18 +7,26 @@
     <title>S650 Unified HMI MVP</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        @font-face {
+            font-family: 'RobotoFlexDial';
+            src: url('./assets/fonts/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 100 900;
+            font-stretch: 25% 151%;
+        }
+
         .s650-hmi-container {
             align-self: center;
-            width: 1260px;
-            height: 240px;
+            width: 1280px;
+            height: 480px;
             transform-origin: bottom center;
             pointer-events: none;
         }
 
         #s650Canvas {
             display: block;
-            width: 1260px;
-            height: 240px;
+            width: 1280px;
+            height: 480px;
         }
     </style>
 </head>
@@ -26,7 +34,7 @@
 <body>
     <div class="hud-root-wrapper">
         <div id="s650Container" class="hud-gauge-container s650-hmi-container">
-            <canvas id="s650Canvas" width="1260" height="240" aria-label="S650 unified HMI"></canvas>
+            <canvas id="s650Canvas" width="1280" height="480" aria-label="S650 unified HMI"></canvas>
         </div>
     </div>
 
@@ -34,6 +42,7 @@
     <script src="./assets/s650_contract.js"></script>
     <script src="./assets/s650_tokens.js"></script>
     <script src="./assets/s650_primitives.js"></script>
+    <script src="./assets/s650_center_info.js"></script>
     <script src="./assets/s650_layouts.js"></script>
     <script src="./assets/s650_frame.js"></script>
     <script src="./assets/s650_renderer.js"></script>

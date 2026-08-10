@@ -75,12 +75,12 @@ Canvas 的邏輯尺寸固定為 **1260×240**；CSS zoom／HUD scale 由既有 H
 
 ### 0.1.3 HMI 核心參數字典
 
-`hud_overlay/s650_hmi/assets/s650_tokens.js` 現在同時提供設計交接用的參考網格與實際 overlay 網格，避免 Figma 的 1920×720 參考數值直接套入 1260×240 的 HUD。
+`hud_overlay/s650_hmi/assets/s650_tokens.js` 現在同時提供設計交接用的參考網格與實際 overlay 網格；實際 Canvas 採用 1280×480（8:3），避免 Figma 的 1920×720 參考數值直接套入不同的 HUD 比例。
 
 | 類別 | Token | 參考值／目前值 | 本次使用方式 |
 |---|---|---|---|
 | Grid | `grid.reference` | 1920×720、top 40、left/right 64、雙環直徑 400、中央區 650 | Figma／Qt／Unreal 交接基準，不直接 render。 |
-| Grid | `grid.overlay` | 1260×240、top 32、left/right 34、雙環直徑 180、中央區 490 | S650 Canvas 實際版面基準。 |
+| Grid | `grid.overlay` | 1280×480、top 40、left/right 48、雙環直徑 360、中央區 480 | S650 Canvas 實際版面基準。 |
 | Touch | `touch.targetMin`／`targetRecommended` | 44／64 px | `touch.enabled=false`；本次不建立觸控或盲操功能，只保留未來共用字典。 |
 | Touch | `touch.gapRecommended`／`listItemRecommended` | 16／76 px | 僅供未來中央視窗／設定頁使用。 |
 | Typography | `typography.speedHero` | 64 px | 主速度、主要駕駛讀數。 |
