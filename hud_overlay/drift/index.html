@@ -139,6 +139,8 @@
             var RIGHT_CLUSTER_X = CANVAS_CX + CLUSTER_OFFSET;      // 右區塊 x: 990px
             var RIGHT_PEDAL_CX = CANVAS_CX + PEDAL_OFFSET;        // 右腳踏 x: 1350px
 
+            var ANGLE_TICKS = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
+
             // ── 左區與右區共用字體樣式與大小控制變數 (Shared Typography Controls) ──
             var FONT_SIDE_MIDDLE_VAL = 'italic bold 60px ForzaGear'; // 中間層焦點大字 (角度 / 反打) 共用字體與大小
             var FONT_SIDE_SUB_LABEL = 'bold 44px ForzaGear';         // 上下兩層標籤 (GRIP, DRIFT / FLOW, RISK) 共用字體與大小
@@ -282,8 +284,8 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
 
-                var angleTicks = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
-                angleTicks.forEach(function (tickAngle) {
+                for (var i = 0; i < ANGLE_TICKS.length; i++) {
+                    var tickAngle = ANGLE_TICKS[i];
                     var tVal = tickAngle / 60.0;
                     var tickP = topCurvePoint(tVal);
                     var isCenter = tickAngle === 0;
@@ -295,7 +297,7 @@
 
                     var labelStr = tickAngle === 0 ? '0°' : (tickAngle > 0 ? '+' + tickAngle + '°' : tickAngle + '°');
                     ctx.fillText(labelStr, tickP.x, tickP.y + 36);
-                });
+                }
                 ctx.restore();
             }
 
@@ -497,6 +499,28 @@
             }
 
             // ── 4. 兩側腳踏柱 (左: H/C 水平置中, 右: B/T 水平置中) ───────────────
+            function drawPedal(px, startY, barW, barH, pct, color, key, labelInitial) {
+                var fillH = (clamp(pct, 0, 100) / 100.0) * barH;
+                var pulse = (inputFlashTtl[key] || 0) / 18.0;
+
+                ctx.fillStyle = C_TRACK;
+                ctx.beginPath(); ctx.roundRect(px, startY, barW, barH, 4); ctx.fill();
+
+                if (fillH > 0) {
+                    ctx.fillStyle = color;
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 8 + pulse * 10;
+                    ctx.beginPath();
+                    ctx.roundRect(px, startY + (barH - fillH), barW, fillH, 4);
+                    ctx.fill();
+                }
+
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.fillStyle = pulse > 0 ? '#ffffff' : C_WHITE_DIM;
+                ctx.textAlign = 'center';
+                ctx.fillText(labelInitial, px + barW * 0.5, startY - 8);
+            }
+
             function renderSplitPedalPanels() {
                 if (!ctx) return;
 
@@ -505,65 +529,14 @@
                 var barW = 44, barH = 130, startY = 245;
 
                 // 4A. 左翼腳踏組：手煞車 (H) & 離合器 (C) (水平置中於 LEFT_PEDAL_CX)
-                var leftPedals = [
-                    { key: 'H', label: 'HANDBRAKE', pct: handbrakePct, color: C_AMBER },
-                    { key: 'C', label: 'CLUTCH', pct: clutchPct, color: C_WHITE }
-                ];
-                var leftStartX = LEFT_PEDAL_CX - (leftPedals.length * 56 - 12) * 0.5;
-
-                leftPedals.forEach(function (p, idx) {
-                    var px = leftStartX + idx * 56;
-                    var fillH = (clamp(p.pct, 0, 100) / 100.0) * barH;
-                    var pulse = (inputFlashTtl[p.key] || 0) / 18.0;
-
-                    ctx.fillStyle = C_TRACK;
-                    ctx.beginPath(); ctx.roundRect(px, startY, barW, barH, 4); ctx.fill();
-
-                    if (fillH > 0) {
-                        ctx.fillStyle = p.color;
-                        ctx.shadowColor = p.color;
-                        ctx.shadowBlur = 8 + pulse * 10;
-                        ctx.beginPath();
-                        ctx.roundRect(px, startY + (barH - fillH), barW, fillH, 4);
-                        ctx.fill();
-                    }
-
-                    ctx.font = 'bold 13px Bahnschrift';
-                    ctx.fillStyle = pulse > 0 ? '#ffffff' : C_WHITE_DIM;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(p.label[0], px + barW * 0.5, startY - 8);
-                });
-
+                var leftStartX = LEFT_PEDAL_CX - (2 * 56 - 12) * 0.5;
+                drawPedal(leftStartX, startY, barW, barH, handbrakePct, C_AMBER, 'H', 'H');
+                drawPedal(leftStartX + 56, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
 
                 // 4B. 右翼腳踏組：煞車 (B) & 油門 (T) (水平置中於 RIGHT_PEDAL_CX)
-                var rightPedals = [
-                    { key: 'B', label: 'BRAKE', pct: brakePct, color: C_REDLINE },
-                    { key: 'T', label: 'THROTTLE', pct: accelPct, color: C_WHITE }
-                ];
-                var rightStartX = RIGHT_PEDAL_CX - (rightPedals.length * 56 - 12) * 0.5;
-
-                rightPedals.forEach(function (p, idx) {
-                    var px = rightStartX + idx * 56;
-                    var fillH = (clamp(p.pct, 0, 100) / 100.0) * barH;
-                    var pulse = (inputFlashTtl[p.key] || 0) / 18.0;
-
-                    ctx.fillStyle = C_TRACK;
-                    ctx.beginPath(); ctx.roundRect(px, startY, barW, barH, 4); ctx.fill();
-
-                    if (fillH > 0) {
-                        ctx.fillStyle = p.color;
-                        ctx.shadowColor = p.color;
-                        ctx.shadowBlur = 8 + pulse * 10;
-                        ctx.beginPath();
-                        ctx.roundRect(px, startY + (barH - fillH), barW, fillH, 4);
-                        ctx.fill();
-                    }
-
-                    ctx.font = 'bold 13px Bahnschrift';
-                    ctx.fillStyle = pulse > 0 ? '#ffffff' : C_WHITE_DIM;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(p.label[0], px + barW * 0.5, startY - 8);
-                });
+                var rightStartX = RIGHT_PEDAL_CX - (2 * 56 - 12) * 0.5;
+                drawPedal(rightStartX, startY, barW, barH, brakePct, C_REDLINE, 'B', 'B');
+                drawPedal(rightStartX + 56, startY, barW, barH, accelPct, C_WHITE, 'T', 'T');
 
                 ctx.restore();
             }
