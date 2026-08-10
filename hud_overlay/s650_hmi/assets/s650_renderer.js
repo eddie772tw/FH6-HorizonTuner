@@ -19,7 +19,7 @@
     var ctx = canvas ? canvas.getContext('2d') : null;
     var container = document.getElementById('s650Container');
 
-    if (!contract || !tokens || !window.S650HmiPrimitives || !window.S650HmiBaseDriving || !window.S650HmiCenterInfo || !window.S650HmiLayouts || !window.S650HmiFrame) {
+    if (!contract || !tokens || !window.S650HmiPrimitives || !window.S650HmiBaseDriving || !window.S650HmiCenterInfo || !window.S650HmiLayoutProfiles || !window.S650HmiLayouts || !window.S650HmiFrame) {
         console.error('[S650 HMI] Renderer modules are incomplete.');
         return;
     }
@@ -54,6 +54,7 @@
             primitives: primitives,
             baseDriving: baseDriving,
             centerInfo: centerInfo,
+            layoutProfiles: window.S650HmiLayoutProfiles,
             width: contract.canvas.width,
             height: contract.canvas.height
         });
