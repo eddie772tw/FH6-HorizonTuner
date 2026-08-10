@@ -67,7 +67,7 @@ function loadCenterInfoModule(): CenterInfoModule {
 }
 
 describe('S650 center-information registry contract', () => {
-  it('dispatches drive to the reusable gear-and-speed primitive', () => {
+  it('keeps drive as a non-core registry page', () => {
     const calls: string[] = [];
     const primitives = {
       drawGearAndSpeed: () => calls.push('drawGearAndSpeed'),
@@ -79,7 +79,7 @@ describe('S650 center-information registry contract', () => {
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 425, 126, 430, 230);
 
-    expect(calls).toEqual(['drawGearAndSpeed']);
+    expect(calls).toEqual([]);
   });
 
   it('renders tire temperature as an isolated page on the shared Canvas', () => {
@@ -122,11 +122,11 @@ describe('S650 center-information registry contract', () => {
       getGearLabel: () => '4',
     }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 100);
 
-    expect((ctx.text as string[]).slice(0, 3)).toEqual([
+    expect((ctx.text as string[]).slice(0, 2)).toEqual([
       'PERFORMANCE',
       '4200 / 8000 RPM',
-      '4',
     ]);
+    expect((ctx.text as string[])).not.toContain('4');
   });
 
   it('uses the contract widget list and falls back to drive', () => {
@@ -141,7 +141,7 @@ describe('S650 center-information registry contract', () => {
     expect(centerInfo.normalizeWidget({ centerWidget: 'unknown' })).toBe('drive');
   });
 
-  it('passes the layout region into the selected page renderer', () => {
+  it('does not use a layout region to render core drive values', () => {
     let driveArgs: unknown[] = [];
     const centerInfo = loadCenterInfoModule().create({
       primitives: {
@@ -152,12 +152,10 @@ describe('S650 center-information registry contract', () => {
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 100, 50, 200, 100);
 
-    expect(driveArgs[3]).toBe(200);
-    expect(driveArgs[4]).toBe(88);
-    expect(driveArgs[5]).toBe(128);
+    expect(driveArgs).toEqual([]);
   });
 
-  it('accepts explicit drive anchors for a non-default layout region', () => {
+  it('does not use explicit drive anchors to render core values', () => {
     let driveArgs: unknown[] = [];
     const centerInfo = loadCenterInfoModule().create({
       primitives: {
@@ -178,7 +176,7 @@ describe('S650 center-information registry contract', () => {
       gearSize: 68,
     });
 
-    expect(driveArgs.slice(3)).toEqual([170, 64, 106, 46, 68]);
+    expect(driveArgs).toEqual([]);
   });
 
   it('rejects duplicate page registration', () => {

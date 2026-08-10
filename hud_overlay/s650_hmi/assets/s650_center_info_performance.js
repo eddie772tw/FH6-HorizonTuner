@@ -33,9 +33,6 @@
             p.setFont(12, '700', 'Arial Narrow');
             ctx.fillStyle = palette.secondary;
             ctx.fillText(rpm + ' / ' + maxRpm + ' RPM', centerX, y + 40);
-            p.setFont(42, '700', 'ForzaGear');
-            ctx.fillStyle = palette.primary;
-            ctx.fillText(view.getGearLabel(context.data), centerX, y + 76);
             p.setFont(11, '700', 'Arial Narrow');
             ctx.fillStyle = palette.secondary;
             ctx.textAlign = 'left';

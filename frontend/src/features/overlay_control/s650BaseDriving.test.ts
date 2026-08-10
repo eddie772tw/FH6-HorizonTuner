@@ -23,7 +23,7 @@ function loadBaseDrivingModule(): BaseDrivingModule {
 }
 
 describe('S650 base driving layer', () => {
-  it('renders speed and gear carousel without requiring center-info pages', () => {
+  it('renders only the lower gear carousel without requiring center-info pages', () => {
     const calls: Array<{ name: string; args: unknown[] }> = [];
     const baseDriving = loadBaseDrivingModule().create({
       primitives: {
@@ -42,10 +42,8 @@ describe('S650 base driving layer', () => {
       },
     );
 
-    expect(calls.map((call) => call.name)).toEqual(['speed', 'carousel']);
-    expect(calls[0].args.slice(3, 8)).toEqual([640, 190, 190, 76, 76]);
-    expect(calls[0].args[8]).toEqual({ showGear: false });
-    expect(calls[1].args.slice(3)).toEqual([640, 399]);
+    expect(calls.map((call) => call.name)).toEqual(['carousel']);
+    expect(calls[0].args.slice(3)).toEqual([640, 399]);
   });
 
   it('allows a theme to disable a base sub-region without touching center-info', () => {

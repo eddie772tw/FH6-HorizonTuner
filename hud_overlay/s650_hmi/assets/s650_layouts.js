@@ -30,15 +30,12 @@
         });
         var baseDrivingRegions = Object.freeze({
             normal: Object.freeze({
-                speed: Object.freeze({ centerX: 640, y: 190, size: type.speedHero + 12 }),
                 carousel: Object.freeze({ centerX: 640, y: 399 })
             }),
             foxbody: Object.freeze({
-                speed: Object.freeze({ centerX: 640, y: 202, size: 58 }),
                 carousel: Object.freeze({ centerX: 640, y: 399 })
             }),
             heritage67: Object.freeze({
-                speed: Object.freeze({ centerX: 640, y: 214, size: 58 }),
                 carousel: Object.freeze({ centerX: 640, y: 399 })
             })
         });

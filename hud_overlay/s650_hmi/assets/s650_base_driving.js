@@ -7,22 +7,7 @@
 
         function draw(view, data, palette, region) {
             region = region || {};
-            var speed = region.speed || {};
             var carousel = region.carousel || {};
-
-            if (speed.enabled !== false) {
-                primitives.drawGearAndSpeed(
-                    view,
-                    data,
-                    palette,
-                    speed.centerX,
-                    speed.y,
-                    speed.gearY || speed.y,
-                    speed.size,
-                    speed.gearSize || speed.size,
-                    { showGear: false }
-                );
-            }
 
             if (carousel.enabled !== false) {
                 primitives.drawGearCarousel(
