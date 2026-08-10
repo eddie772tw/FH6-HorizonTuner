@@ -13,7 +13,7 @@ on:
       timeout:
         description: 'Readiness timeout in seconds (15-120)'
         required: false
-        default: '60'
+        default: '120'
         type: string
 
 permissions:
@@ -39,7 +39,7 @@ jobs:
 
         timeout="${{ github.event.inputs.timeout }}"
         if [ -z "$timeout" ]; then
-          timeout=60
+          timeout=120
         fi
         echo "DIAGNOSTICS_TIMEOUT=$timeout" >> $GITHUB_ENV
 

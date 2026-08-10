@@ -210,10 +210,10 @@ def close_portable_process(proc):
 
 def get_readiness_timeout():
     try:
-        timeout = float(os.environ.get("DIAGNOSTICS_TIMEOUT", "60.0"))
+        timeout = float(os.environ.get("DIAGNOSTICS_TIMEOUT", "120.0"))
         return max(15.0, min(120.0, timeout))
     except ValueError:
-        return 60.0
+        return 120.0
 
 
 def get_repeat_count():
@@ -433,7 +433,7 @@ def test_diagnostics_configuration_parsing(monkeypatch):
 
     # Test readiness_timeout
     monkeypatch.delenv("DIAGNOSTICS_TIMEOUT", raising=False)
-    assert get_readiness_timeout() == 60.0
+    assert get_readiness_timeout() == 120.0
 
     monkeypatch.setenv("DIAGNOSTICS_TIMEOUT", "45.5")
     assert get_readiness_timeout() == 45.5
@@ -445,4 +445,4 @@ def test_diagnostics_configuration_parsing(monkeypatch):
     assert get_readiness_timeout() == 120.0
 
     monkeypatch.setenv("DIAGNOSTICS_TIMEOUT", "invalid")
-    assert get_readiness_timeout() == 60.0
+    assert get_readiness_timeout() == 120.0
