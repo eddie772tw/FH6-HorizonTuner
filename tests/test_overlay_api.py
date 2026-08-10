@@ -156,8 +156,12 @@ def test_invalid_s650_center_widget_defaults_to_drive(
     assert loaded_data["s650Theme"] == "heritage67"
 
 
-@pytest.mark.parametrize("removed_style", ["s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"])
-def test_removed_s650_legacy_style_defaults_to_heritage(temp_hud_config_file, removed_style):
+@pytest.mark.parametrize(
+    "removed_style", ["s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"]
+)
+def test_removed_s650_legacy_style_defaults_to_heritage(
+    temp_hud_config_file, removed_style
+):
     client = TestClient(app)
 
     response = client.post("/api/overlay/config", json={"hudStyle": removed_style})
