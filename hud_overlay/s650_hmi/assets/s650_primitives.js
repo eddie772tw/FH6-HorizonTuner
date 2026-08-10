@@ -593,7 +593,7 @@
             ctx.restore();
         }
 
-        function drawHeritageSideGauge(x, y, label, ratio, options) {
+        function drawSideGauge(x, y, label, ratio, options) {
             options = options || {};
             var available = ratio !== null && ratio !== undefined;
             // One eighth of a circle, starting at the outward horizontal
@@ -605,7 +605,9 @@
             // The visual scale reads bottom-to-top: minimum at the descending
             // endpoint, maximum at the outward horizontal start point.
             var indicatorAngle = end - direction * arcLength * (available ? clamp(ratio, 0, 1) : 0.5);
-            var activeColor = options.activeColor || '#E9EFF0';
+            var activeColor = options.activeColor || '#C98D5A';
+            var tickColor = options.tickColor || '#98A0A8';
+            var pointerColor = options.pointerColor || activeColor;
             var radius = options.radius || 205;
             var tickOuter = radius;
             var tickInnerMajor = radius - 17;
@@ -626,7 +628,7 @@
                 ctx.beginPath();
                 ctx.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
                 ctx.lineTo(x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
-                ctx.strokeStyle = i === 0 && options.dangerAtStart ? '#F1373F' : '#E9EFF0';
+                ctx.strokeStyle = i === 0 && options.dangerAtStart ? '#F1373F' : tickColor;
                 ctx.lineWidth = 2;
                 ctx.stroke();
             }
@@ -635,6 +637,23 @@
             ctx.strokeStyle = available ? activeColor : 'rgba(233, 239, 240, 0.28)';
             ctx.lineWidth = 4;
             ctx.stroke();
+
+            // Use a filled pointer instead of relying on a white arc endpoint.
+            // The pointer remains legible against the muted side-gauge ticks.
+            var pointerTip = radius + 5;
+            var pointerBase = radius - 21;
+            var pointerHalfWidth = options.pointerHalfWidth || 3;
+            var radialX = Math.cos(indicatorAngle);
+            var radialY = Math.sin(indicatorAngle);
+            var tangentX = -radialY;
+            var tangentY = radialX;
+            ctx.beginPath();
+            ctx.moveTo(x + radialX * pointerTip, y + radialY * pointerTip);
+            ctx.lineTo(x + radialX * pointerBase + tangentX * pointerHalfWidth, y + radialY * pointerBase + tangentY * pointerHalfWidth);
+            ctx.lineTo(x + radialX * pointerBase - tangentX * pointerHalfWidth, y + radialY * pointerBase - tangentY * pointerHalfWidth);
+            ctx.closePath();
+            ctx.fillStyle = available ? pointerColor : 'rgba(233, 239, 240, 0.32)';
+            ctx.fill();
             if (options.showText === false) {
                 if (options.auxiliaryLabel) {
                     var labelAngle = start + direction * arcLength * 0.5;
@@ -644,7 +663,7 @@
                     // intentionally beyond the auxiliary arc near each edge.
                     ctx.textAlign = options.mirror ? 'right' : 'left';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#D6DCDB';
+                    ctx.fillStyle = tickColor;
                     ctx.fillText(options.auxiliaryLabel, x + Math.cos(labelAngle) * labelRadius, y + Math.sin(labelAngle) * labelRadius);
                 }
                 ctx.restore();
@@ -653,7 +672,7 @@
             setFont(12, '700', 'Arial Narrow');
             ctx.textAlign = options.mirror ? 'left' : 'right';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#E9EFF0';
+            ctx.fillStyle = tickColor;
             ctx.fillText(options.endText || '', readoutX, y - 25);
             ctx.fillText(options.startText || '', readoutX, y + 47);
             if (options.valueText !== undefined) {
@@ -671,8 +690,14 @@
             ctx.restore();
         }
 
+        // Backward-compatible name for Heritage callers while allowing the
+        // same side-gauge primitive to be reused by Normal.
+        var drawHeritageSideGauge = drawSideGauge;
+
         function drawHeritageStatus(view, data, slots) {
             var centerX = view.width / 2;
+            var topOffset = 147;
+            var bottomOffset = 141;
             var topLeft = view.getTelemetryReadout(slots.topLeft, data);
             var topRight = view.getTelemetryReadout(slots.topRight, data);
             var bottomLeft = view.getTelemetryReadout(slots.bottomLeft, data);
@@ -686,10 +711,9 @@
             ctx.textBaseline = 'middle';
             setFont(fontSize(view, 'heritageCenterTopReadout', 18), '700', 'Arial Narrow');
             ctx.fillStyle = '#D6DCDB';
-            ctx.textAlign = 'right';
-            ctx.fillText(text(topLeft), centerX - 115, 82);
-            ctx.textAlign = 'left';
-            ctx.fillText(text(topRight), centerX + 115, 82);
+            ctx.textAlign = 'center';
+            ctx.fillText(text(topLeft), centerX - topOffset, 82);
+            ctx.fillText(text(topRight), centerX + topOffset, 82);
             ctx.strokeStyle = 'rgba(207, 216, 215, 0.28)';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -698,10 +722,9 @@
             ctx.stroke();
             setFont(fontSize(view, 'heritageCenterBottomReadout', 15), '700', 'Arial Narrow');
             ctx.fillStyle = '#C5CDCC';
-            ctx.textAlign = 'right';
-            ctx.fillText(text(bottomLeft), centerX - 110, 392);
-            ctx.textAlign = 'left';
-            ctx.fillText(text(bottomRight), centerX + 110, 392);
+            ctx.textAlign = 'center';
+            ctx.fillText(text(bottomLeft), centerX - bottomOffset, 392);
+            ctx.fillText(text(bottomRight), centerX + bottomOffset, 392);
             ctx.strokeStyle = 'rgba(201, 112, 73, 0.72)';
             ctx.beginPath();
             ctx.moveTo(centerX - 176, 410);
@@ -709,6 +732,36 @@
             ctx.moveTo(centerX + 118, 410);
             ctx.lineTo(centerX + 176, 410);
             ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawNormalStatus(view, data, palette, slots, options) {
+            options = options || {};
+            var centerX = options.centerX === undefined ? view.width / 2 : options.centerX;
+            var topOffset = options.topOffset || 132;
+            var bottomOffset = options.bottomOffset || 126;
+            var topY = options.topY || 82;
+            var bottomY = options.bottomY || 374;
+            var topLeft = view.getTelemetryReadout(slots.topLeft, data);
+            var topRight = view.getTelemetryReadout(slots.topRight, data);
+            var bottomLeft = view.getTelemetryReadout(slots.bottomLeft, data);
+            var bottomRight = view.getTelemetryReadout(slots.bottomRight, data);
+
+            function text(readout) {
+                return readout.value + (readout.unit ? ' ' + readout.unit : '');
+            }
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            setFont(fontSize(view, 'normalCenterTopReadout', 28), '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText(text(topLeft), centerX - topOffset, topY);
+            ctx.fillText(text(topRight), centerX + topOffset, topY);
+            setFont(fontSize(view, 'normalCenterBottomReadout', 26), '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText(text(bottomLeft), centerX - bottomOffset, bottomY);
+            ctx.fillText(text(bottomRight), centerX + bottomOffset, bottomY);
             ctx.restore();
         }
 
@@ -727,8 +780,10 @@
             getHeritageDialScale: getHeritageDialScale,
             drawHeritageBackdrop: drawHeritageBackdrop,
             drawHeritageDial: drawHeritageDial,
+            drawSideGauge: drawSideGauge,
             drawHeritageSideGauge: drawHeritageSideGauge,
-            drawHeritageStatus: drawHeritageStatus
+            drawHeritageStatus: drawHeritageStatus,
+            drawNormalStatus: drawNormalStatus
         };
     }
 

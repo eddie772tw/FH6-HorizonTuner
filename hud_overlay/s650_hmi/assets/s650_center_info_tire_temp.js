@@ -26,8 +26,8 @@
             var positions = [
                 { x: cx - valueSpread, y: y + 48, align: 'right' },
                 { x: cx + valueSpread, y: y + 48, align: 'left' },
-                { x: cx - valueSpread, y: y + height - 17, align: 'right' },
-                { x: cx + valueSpread, y: y + height - 17, align: 'left' }
+                { x: cx - valueSpread, y: y + height - 45, align: 'right' },
+                { x: cx + valueSpread, y: y + height - 45, align: 'left' }
             ];
             var fontSize = p.getFontSize;
             var setFont = p.setFont;

@@ -47,6 +47,44 @@
             }
         }
 
+        function drawSideGauges(data, palette) {
+            var slots = contract && contract.heritageTelemetrySlots && contract.heritageTelemetrySlots.side;
+            var drawSideGauge = p.drawSideGauge || p.drawHeritageSideGauge;
+            if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof drawSideGauge !== 'function') return;
+
+            var leftSideReadout = view.getTelemetryReadout(slots.left, data);
+            var rightSideReadout = view.getTelemetryReadout(slots.right, data);
+            var sharedOptions = {
+                showText: false,
+                labelSize: type.heritageDialAuxLabel,
+                labelOffset: type.heritageDialAuxLabelOffset,
+                radius: gauge.radius + 24,
+                activeColor: palette.primary,
+                pointerColor: palette.primary,
+                tickColor: palette.secondary
+            };
+
+            drawSideGauge(gauge.leftCenterX, gauge.centerY + 1, leftSideReadout.unit, leftSideReadout.ratio, Object.assign({}, sharedOptions, {
+                auxiliaryLabel: 'POWER'
+            }));
+            drawSideGauge(gauge.rightCenterX, gauge.centerY + 1, rightSideReadout.unit, rightSideReadout.ratio, Object.assign({}, sharedOptions, {
+                auxiliaryLabel: 'BOOST',
+                mirror: true
+            }));
+        }
+
+        function drawNormalFixedReadouts(data, palette) {
+            var slots = contract && contract.heritageTelemetrySlots && contract.heritageTelemetrySlots.center;
+            if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof p.drawNormalStatus !== 'function') return;
+            p.drawNormalStatus(view, data, palette, slots, {
+                centerX: 640,
+                topOffset: 147,
+                bottomOffset: 141,
+                topY: 82,
+                bottomY: 374
+            });
+        }
+
         function drawCenterInfo(data, palette, theme) {
             var region = centerRegions[theme] || centerRegions.normal;
             if (view.showCenterInfo === false || !centerInfo || typeof centerInfo.draw !== 'function') return;
@@ -94,10 +132,12 @@
             ctx.lineTo(824, 144);
             ctx.moveTo(640, 158);
             ctx.lineTo(640, 348);
-            ctx.moveTo(425, 368);
-            ctx.lineTo(580, 368);
-            ctx.moveTo(700, 368);
-            ctx.lineTo(855, 368);
+            // Keep the lower guide above the fixed readouts and the shared
+            // gear carousel; it is a center-panel separator, not a footer.
+            ctx.moveTo(425, 350);
+            ctx.lineTo(580, 350);
+            ctx.moveTo(700, 350);
+            ctx.lineTo(855, 350);
             ctx.stroke();
             ctx.restore();
         }
@@ -105,6 +145,7 @@
         function drawNormal(data, palette, redlineRatio) {
             clear(palette);
             p.drawHeader(view, palette, view.theme.toUpperCase(), view.theme === 'normal' ? 'BALANCED CLUSTER' : 'MVP FALLBACK');
+            drawSideGauges(data, palette);
 
             if (view.showSpeed) {
                 var speedTicks = normalSpeedTicks(view);
@@ -132,16 +173,9 @@
 
             drawBaseDriving(data, palette, 'normal');
             drawCenterInfo(data, palette, 'normal');
-            p.drawPedalBars(view, data, palette, 454, 390, 170, true);
-            p.drawPedalBars(view, data, palette, 656, 390, 170, true);
-
-            ctx.save();
-            p.setFont(type.captionLegal, '700');
-            ctx.fillStyle = palette.secondary;
-            ctx.textAlign = 'center';
-            if (view.showSpeed) ctx.fillText('SPEED', gauge.leftCenterX, 440);
-            if (view.showRPM) ctx.fillText('ENGINE', gauge.rightCenterX, 440);
-            ctx.restore();
+            drawNormalFixedReadouts(data, palette);
+            p.drawPedalBars(view, data, palette, 454, 405, 170, true);
+            p.drawPedalBars(view, data, palette, 656, 405, 170, true);
         }
 
         function drawFoxbody(data, palette, redlineRatio) {
@@ -200,7 +234,8 @@
             var heritageRedlineStart = Math.max(0, (data.redlineRpm - redlinePaddingRpm) / 100);
             var leftSideReadout = view.getTelemetryReadout(heritageSlots.side.left, data);
             var rightSideReadout = view.getTelemetryReadout(heritageSlots.side.right, data);
-            p.drawHeritageSideGauge(gauge.leftCenterX, gauge.centerY + 1, leftSideReadout.unit, leftSideReadout.ratio, {
+            var drawSideGauge = p.drawSideGauge || p.drawHeritageSideGauge;
+            drawSideGauge(gauge.leftCenterX, gauge.centerY + 1, leftSideReadout.unit, leftSideReadout.ratio, {
                 startText: leftSideReadout.min,
                 endText: leftSideReadout.max,
                 valueText: leftSideReadout.value,
@@ -209,9 +244,12 @@
                 auxiliaryLabel: 'POWER',
                 labelSize: type.heritageDialAuxLabel,
                 labelOffset: type.heritageDialAuxLabelOffset,
+                activeColor: palette.primary,
+                pointerColor: palette.primary,
+                tickColor: palette.secondary,
                 radius: gauge.radius + 24
             });
-            p.drawHeritageSideGauge(gauge.rightCenterX, gauge.centerY + 1, rightSideReadout.unit, rightSideReadout.ratio, {
+            drawSideGauge(gauge.rightCenterX, gauge.centerY + 1, rightSideReadout.unit, rightSideReadout.ratio, {
                 startText: rightSideReadout.min,
                 endText: rightSideReadout.max,
                 valueText: rightSideReadout.value,
@@ -220,7 +258,9 @@
                 auxiliaryLabel: 'BOOST',
                 labelSize: type.heritageDialAuxLabel,
                 labelOffset: type.heritageDialAuxLabelOffset,
-                activeColor: '#E9EFF0',
+                activeColor: palette.primary,
+                pointerColor: palette.primary,
+                tickColor: palette.secondary,
                 mirror: true,
                 radius: gauge.radius + 24
             });

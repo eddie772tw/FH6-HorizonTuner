@@ -75,14 +75,27 @@
             var page = pageRegistry[pageId];
             if (!page) return;
 
+            var normalizedRegion = normalizeRegion(region);
+
             page.render({
                 view: view,
                 data: data,
                 palette: palette,
-                region: normalizeRegion(region),
+                region: normalizedRegion,
                 primitives: primitives,
                 ctx: ctx
             });
+
+            // Pedal bars belong to the shared center-information container so
+            // they remain available to every registered page and theme.
+            if (typeof primitives.drawPedalBars === 'function' && view && typeof view.getPedalValue === 'function') {
+                var sidePadding = 29;
+                var gap = 32;
+                var barWidth = Math.max(0, Math.min(170, (normalizedRegion.width - sidePadding * 2 - gap) / 2));
+                var pedalY = normalizedRegion.y + normalizedRegion.height - 27;
+                primitives.drawPedalBars(view, data, palette, normalizedRegion.x + sidePadding, pedalY, barWidth, true);
+                primitives.drawPedalBars(view, data, palette, normalizedRegion.x + normalizedRegion.width - sidePadding - barWidth, pedalY, barWidth, true);
+            }
         }
 
         return {

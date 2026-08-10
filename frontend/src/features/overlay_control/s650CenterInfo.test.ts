@@ -129,6 +129,33 @@ describe('S650 center-information registry contract', () => {
     expect((ctx.text as string[])).not.toContain('4');
   });
 
+  it('renders common pedal bars inside the center-information container', () => {
+    const pedalCalls: unknown[][] = [];
+    const centerInfo = loadCenterInfoModule().create({
+      ctx: createCanvasSpy(),
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+        drawPedalBars: (...args) => pedalCalls.push(args),
+      },
+      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'drive',
+      getPedalValue: () => 0.5,
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+      x: 425,
+      y: 132,
+      width: 430,
+      height: 224,
+    });
+
+    expect(pedalCalls).toHaveLength(2);
+    expect(pedalCalls[0].slice(3)).toEqual([454, 329, 170, true]);
+    expect(pedalCalls[1].slice(3)).toEqual([656, 329, 170, true]);
+  });
+
   it('uses the contract widget list and falls back to drive', () => {
     const centerInfo = loadCenterInfoModule().create({
       primitives: {
