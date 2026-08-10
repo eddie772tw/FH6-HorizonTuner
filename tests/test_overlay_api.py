@@ -229,7 +229,8 @@ def test_invalid_s650_center_widget_defaults_to_drive(
 
 
 @pytest.mark.parametrize(
-    "removed_style", ["s650_foxbody", "s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"]
+    "removed_style",
+    ["s650_foxbody", "s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"],
 )
 def test_removed_s650_legacy_style_defaults_to_heritage(
     temp_hud_config_file, removed_style
