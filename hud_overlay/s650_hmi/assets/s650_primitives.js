@@ -694,6 +694,32 @@
         // same side-gauge primitive to be reused by Normal.
         var drawHeritageSideGauge = drawSideGauge;
 
+        function drawCenterDecorations(view, palette, options) {
+            options = options || {};
+            var centerX = options.centerX === undefined ? view.width / 2 : options.centerX;
+            var topY = options.topY === undefined ? 84 : options.topY;
+            var bottomY = options.bottomY === undefined ? 410 : options.bottomY;
+            var innerOffset = options.innerOffset === undefined ? 118 : options.innerOffset;
+            var outerOffset = options.outerOffset === undefined ? 176 : options.outerOffset;
+
+            ctx.save();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = options.topColor || 'rgba(207, 216, 215, 0.28)';
+            ctx.beginPath();
+            ctx.moveTo(centerX - innerOffset, topY);
+            ctx.lineTo(centerX + innerOffset, topY);
+            ctx.stroke();
+
+            ctx.strokeStyle = options.bottomColor || 'rgba(201, 112, 73, 0.72)';
+            ctx.beginPath();
+            ctx.moveTo(centerX - outerOffset, bottomY);
+            ctx.lineTo(centerX - innerOffset, bottomY);
+            ctx.moveTo(centerX + innerOffset, bottomY);
+            ctx.lineTo(centerX + outerOffset, bottomY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         function drawHeritageStatus(view, data, slots, options) {
             options = options || {};
             var centerX = options.centerX === undefined ? view.width / 2 : options.centerX;
@@ -715,24 +741,11 @@
             ctx.textAlign = 'center';
             ctx.fillText(text(topLeft), centerX - topOffset, 82);
             ctx.fillText(text(topRight), centerX + topOffset, 82);
-            ctx.strokeStyle = 'rgba(207, 216, 215, 0.28)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(centerX - 118, 84);
-            ctx.lineTo(centerX + 118, 84);
-            ctx.stroke();
             setFont(fontSize(view, 'heritageCenterBottomReadout', 15), '700', 'Arial Narrow');
             ctx.fillStyle = '#C5CDCC';
             ctx.textAlign = 'center';
             ctx.fillText(text(bottomLeft), centerX - bottomOffset, 392);
             ctx.fillText(text(bottomRight), centerX + bottomOffset, 392);
-            ctx.strokeStyle = 'rgba(201, 112, 73, 0.72)';
-            ctx.beginPath();
-            ctx.moveTo(centerX - 176, 410);
-            ctx.lineTo(centerX - 118, 410);
-            ctx.moveTo(centerX + 118, 410);
-            ctx.lineTo(centerX + 176, 410);
-            ctx.stroke();
             ctx.restore();
         }
 
@@ -742,7 +755,7 @@
             var topOffset = options.topOffset || 132;
             var bottomOffset = options.bottomOffset || 126;
             var topY = options.topY || 82;
-            var bottomY = options.bottomY || 374;
+            var bottomY = options.bottomY === undefined ? 392 : options.bottomY;
             var topLeft = view.getTelemetryReadout(slots.topLeft, data);
             var topRight = view.getTelemetryReadout(slots.topRight, data);
             var bottomLeft = view.getTelemetryReadout(slots.bottomLeft, data);
@@ -774,6 +787,7 @@
             drawArcGauge: drawArcGauge,
             drawNormalEnergyDial: drawNormalEnergyDial,
             drawPedalBars: drawPedalBars,
+            drawCenterDecorations: drawCenterDecorations,
             drawGearAndSpeed: drawGearAndSpeed,
             drawGearCarousel: drawGearCarousel,
             drawHeader: drawHeader,

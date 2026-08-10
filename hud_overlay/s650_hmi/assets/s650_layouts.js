@@ -85,7 +85,7 @@
             if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof p.drawNormalStatus !== 'function') return;
             p.drawNormalStatus(view, data, palette, slots, Object.assign({}, centerReadoutOffsets, {
                 topY: 82,
-                bottomY: 374
+                bottomY: 392
             }));
         }
 
@@ -125,25 +125,9 @@
         }
 
         function drawNormalDecorations(palette) {
-            ctx.save();
-            ctx.strokeStyle = palette.secondary;
-            ctx.globalAlpha = 0.24;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            // The reference cluster uses lines to divide information groups;
-            // these remain meaningful after the global background is removed.
-            ctx.moveTo(456, 144);
-            ctx.lineTo(824, 144);
-            ctx.moveTo(640, 158);
-            ctx.lineTo(640, 348);
-            // Keep the lower guide above the fixed readouts and the shared
-            // gear carousel; it is a center-panel separator, not a footer.
-            ctx.moveTo(425, 350);
-            ctx.lineTo(580, 350);
-            ctx.moveTo(700, 350);
-            ctx.lineTo(855, 350);
-            ctx.stroke();
-            ctx.restore();
+            if (typeof p.drawCenterDecorations === 'function') {
+                p.drawCenterDecorations(view, palette, { centerX: width / 2 });
+            }
         }
 
         function drawNormal(data, palette, redlineRatio) {
@@ -214,6 +198,9 @@
         function drawHeritage67(data, palette, redlineRatio) {
             clear(palette);
             var heritageSlots = contract.heritageTelemetrySlots;
+            if (typeof p.drawCenterDecorations === 'function') {
+                p.drawCenterDecorations(view, palette, centerReadoutOffsets);
+            }
             p.drawHeritageStatus(view, data, heritageSlots.center, centerReadoutOffsets);
 
             // The center information intentionally sits below the dial layer. The

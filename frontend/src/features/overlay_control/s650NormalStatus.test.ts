@@ -50,13 +50,13 @@ describe('S650 Normal fixed center readouts', () => {
       {},
       { secondary: '#98A0A8' },
       { topLeft: 'odometer', topRight: 'heading', bottomLeft: 'rpm', bottomRight: 'speed' },
-      { centerX: 640, topOffset: 147, bottomOffset: 141, topY: 82, bottomY: 374 },
+      { centerX: 640, topOffset: 147, bottomOffset: 141, topY: 82, bottomY: 392 },
     );
 
     expect(readouts).toHaveLength(4);
     expect(readouts.map(({ x, y }) => [x, y])).toEqual([
       [493, 82], [787, 82],
-      [499, 374], [781, 374],
+      [499, 392], [781, 392],
     ]);
     expect(readouts.every((readout) => readout.textAlign === 'center')).toBe(true);
     expect(readouts[0].font).toContain('28px');

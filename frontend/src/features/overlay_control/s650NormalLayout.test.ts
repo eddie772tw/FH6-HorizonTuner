@@ -28,14 +28,14 @@ describe('S650 Normal layout', () => {
     const sideGauges: unknown[][] = [];
     const status: unknown[][] = [];
     const pedalBars: unknown[][] = [];
-    const structureLines: number[][] = [];
+    const decorations: unknown[][] = [];
     const layouts = loadLayoutsModule().create({
       ctx: {
         save: () => undefined,
         restore: () => undefined,
         beginPath: () => undefined,
-        moveTo: (...args: number[]) => structureLines.push(args),
-        lineTo: (...args: number[]) => structureLines.push(args),
+        moveTo: () => undefined,
+        lineTo: () => undefined,
         stroke: () => undefined,
         fillText: () => undefined,
       },
@@ -62,6 +62,7 @@ describe('S650 Normal layout', () => {
         drawNormalEnergyDial: (...args: unknown[]) => dials.push(args),
         drawSideGauge: (...args: unknown[]) => sideGauges.push(args),
         drawNormalStatus: (...args: unknown[]) => status.push(args),
+        drawCenterDecorations: (...args: unknown[]) => decorations.push(args),
         drawRoundedPanel: () => undefined,
         drawPedalBars: (...args: unknown[]) => pedalBars.push(args),
         setFont: () => undefined,
@@ -82,7 +83,7 @@ describe('S650 Normal layout', () => {
       topOffset: 195,
       bottomOffset: 170,
       topY: 82,
-      bottomY: 374,
+      bottomY: 392,
     });
     expect(pedalBars).toHaveLength(0);
     expect(sideGauges[0][0]).toBe(256);
@@ -93,12 +94,8 @@ describe('S650 Normal layout', () => {
     expect(dials[1][2]).toBe(256);
     expect(dials[1][7]).toBe('RPMx1000');
     expect(dials[1][10]).toMatchObject({ tickCount: 8, tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'] });
-    expect(structureLines).toEqual([
-      [456, 144], [824, 144],
-      [640, 158], [640, 348],
-      [425, 350], [580, 350],
-      [700, 350], [855, 350],
-    ]);
+    expect(decorations).toHaveLength(1);
+    expect(decorations[0][2]).toEqual({ centerX: 640 });
     expect(layouts.baseDrivingRegions.normal).toEqual({ carousel: { centerX: 640, y: 399 } });
   });
 });
