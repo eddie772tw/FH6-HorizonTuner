@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import socket
@@ -5,10 +6,9 @@ import sqlite3
 import subprocess
 import sys
 import time
-import hashlib
+import traceback
 from ctypes import wintypes
 from pathlib import Path
-import traceback
 
 import pytest
 
@@ -82,7 +82,9 @@ def get_file_sha256(filepath: str) -> str:
     return sha256_hash.hexdigest()
 
 
-def collect_diagnostics(target_exe, proc, data_dir, cmdline, run_label, stdout_file, stderr_file):
+def collect_diagnostics(
+    target_exe, proc, data_dir, cmdline, run_label, stdout_file, stderr_file
+):
     diag_dir = Path("diagnostics_output") / run_label
     diag_dir.mkdir(parents=True, exist_ok=True)
 
@@ -103,7 +105,9 @@ def collect_diagnostics(target_exe, proc, data_dir, cmdline, run_label, stdout_f
             "Select-Object ProcessId, ParentProcessId, Name, CommandLine | "
             "ConvertTo-Json -Depth 2"
         )
-        ps_proc = subprocess.run(["powershell", "-Command", ps_cmd], capture_output=True, text=True)
+        ps_proc = subprocess.run(
+            ["powershell", "-Command", ps_cmd], capture_output=True, text=True
+        )
         with open(diag_dir / "process_tree.json", "w", encoding="utf-8") as f:
             f.write(ps_proc.stdout)
 
@@ -125,7 +129,9 @@ function Get-Tree($pid) {{
 }}
 Get-Tree $root_pid | ConvertTo-Json -Depth 2
 """
-        ps_tree_proc = subprocess.run(["powershell", "-Command", tree_script], capture_output=True, text=True)
+        ps_tree_proc = subprocess.run(
+            ["powershell", "-Command", tree_script], capture_output=True, text=True
+        )
         with open(diag_dir / "process_tree_rooted.json", "w", encoding="utf-8") as f:
             f.write(ps_tree_proc.stdout)
     except Exception as e:
@@ -143,13 +149,17 @@ Get-Tree $root_pid | ConvertTo-Json -Depth 2
 
     if stdout_file and os.path.exists(stdout_file):
         try:
-            (diag_dir / "stdout.txt").write_text(Path(stdout_file).read_text(encoding="utf-8"), encoding="utf-8")
+            (diag_dir / "stdout.txt").write_text(
+                Path(stdout_file).read_text(encoding="utf-8"), encoding="utf-8"
+            )
         except Exception:
             pass
 
     if stderr_file and os.path.exists(stderr_file):
         try:
-            (diag_dir / "stderr.txt").write_text(Path(stderr_file).read_text(encoding="utf-8"), encoding="utf-8")
+            (diag_dir / "stderr.txt").write_text(
+                Path(stderr_file).read_text(encoding="utf-8"), encoding="utf-8"
+            )
         except Exception:
             pass
 
@@ -229,9 +239,10 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
 
         cmd = [target_exe, "--data-dir", str(test_data_dir)]
 
-        with open(stdout_path, "w", encoding="utf-8") as stdout_f, \
-             open(stderr_path, "w", encoding="utf-8") as stderr_f:
-
+        with (
+            open(stdout_path, "w", encoding="utf-8") as stdout_f,
+            open(stderr_path, "w", encoding="utf-8") as stderr_f,
+        ):
             proc = subprocess.Popen(
                 cmd,
                 stdout=stdout_f,
@@ -256,7 +267,9 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
             with open(settings_file, "r", encoding="utf-8") as f:
                 settings = json.load(f)
                 assert "units" in settings, "settings.json is missing 'units' key"
-                assert "telemetry_port" in settings, "settings.json is missing 'telemetry_port'"
+                assert "telemetry_port" in settings, (
+                    "settings.json is missing 'telemetry_port'"
+                )
 
             lang_dir = test_data_dir / "lang"
             assert lang_dir.exists(), "lang directory was not created"
@@ -265,16 +278,26 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
                 "lang directory does not contain bootstrapped language files"
             )
 
-            assert (test_data_dir / "car_params").exists(), "car_params directory missing"
-            assert (test_data_dir / "hud_overlay").exists(), "hud_overlay directory missing"
+            assert (test_data_dir / "car_params").exists(), (
+                "car_params directory missing"
+            )
+            assert (test_data_dir / "hud_overlay").exists(), (
+                "hud_overlay directory missing"
+            )
             assert (test_data_dir / "tunings").exists(), "tunings directory missing"
-            assert (test_data_dir / "drag_sessions").exists(), "drag_sessions directory missing"
-            assert (test_data_dir / "user_configs").exists(), "user_configs directory missing"
+            assert (test_data_dir / "drag_sessions").exists(), (
+                "drag_sessions directory missing"
+            )
+            assert (test_data_dir / "user_configs").exists(), (
+                "user_configs directory missing"
+            )
 
             sessions_dir = test_data_dir / "sessions"
             assert sessions_dir.exists(), "sessions directory missing"
             db_file = sessions_dir / "telemetry_sessions.db"
-            assert db_file.exists(), "SQLite database telemetry_sessions.db was not created"
+            assert db_file.exists(), (
+                "SQLite database telemetry_sessions.db was not created"
+            )
 
             conn = sqlite3.connect(str(db_file))
             cursor = conn.cursor()
@@ -292,7 +315,15 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
                 assert len(log_content) > 0, "backend.log is empty"
 
         except Exception:
-            collect_diagnostics(target_exe, proc, test_data_dir, cmd, run_label, stdout_path, stderr_path)
+            collect_diagnostics(
+                target_exe,
+                proc,
+                test_data_dir,
+                cmd,
+                run_label,
+                stdout_path,
+                stderr_path,
+            )
             raise
         finally:
             if proc.stdin is not None and not proc.stdin.closed:
@@ -335,9 +366,10 @@ def test_portable_executable_releases_udp_port_for_restart(tmp_path):
 
         cmd = [standalone_exe, "--data-dir", str(data_dir)]
 
-        with open(stdout_path, "w", encoding="utf-8") as stdout_f, \
-             open(stderr_path, "w", encoding="utf-8") as stderr_f:
-
+        with (
+            open(stdout_path, "w", encoding="utf-8") as stdout_f,
+            open(stderr_path, "w", encoding="utf-8") as stderr_f,
+        ):
             proc = subprocess.Popen(
                 cmd,
                 stdout=stdout_f,
@@ -362,7 +394,9 @@ def test_portable_executable_releases_udp_port_for_restart(tmp_path):
             )
         except Exception:
             run_label = f"lifecycle_run_{run_number}"
-            collect_diagnostics(standalone_exe, proc, data_dir, cmd, run_label, stdout_path, stderr_path)
+            collect_diagnostics(
+                standalone_exe, proc, data_dir, cmd, run_label, stdout_path, stderr_path
+            )
             raise
         finally:
             close_portable_process(proc)
