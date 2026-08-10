@@ -185,26 +185,6 @@
             ctx.restore();
         }
 
-        function drawHeader(view, palette, label, rightLabel) {
-            var headerY = Math.round(view.height * 0.08);
-            var edge = Math.round(view.width * 0.038);
-            ctx.save();
-            setFont(fontSize(view, 'captionLegal', 16), '700');
-            ctx.textBaseline = 'middle';
-            ctx.textAlign = 'left';
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText('MUSTANG // S650', edge, headerY);
-            ctx.textAlign = 'right';
-            ctx.fillStyle = palette.primary;
-            ctx.fillText(label, view.width - edge, headerY);
-            if (rightLabel) {
-                ctx.textAlign = 'left';
-                ctx.fillStyle = palette.secondary;
-                ctx.fillText(rightLabel, edge + 140, headerY);
-            }
-            ctx.restore();
-        }
-
         function drawRetroDial(view, data, palette, cx, cy, radius, ratio, redlineRatio, label, value, unit, options) {
             options = options || {};
             var startAngle = options.startAngle || Math.PI * 0.78;
@@ -825,7 +805,6 @@
             drawCenterDecorations: drawCenterDecorations,
             drawGearAndSpeed: drawGearAndSpeed,
             drawGearCarousel: drawGearCarousel,
-            drawHeader: drawHeader,
             drawRetroDial: drawRetroDial,
             getHeritageDialScale: getHeritageDialScale,
             drawHeritageBackdrop: drawHeritageBackdrop,

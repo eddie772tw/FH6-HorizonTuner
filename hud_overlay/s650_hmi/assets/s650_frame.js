@@ -24,6 +24,8 @@
             showSpeed: true,
             showGear: true,
             showRPM: true,
+            customColor: '#00f0ff',
+            useDefaultColors: true,
             sweepActive: false,
             sweepPending: false,
             gearCarouselPosition: null,
@@ -81,6 +83,13 @@
             }
             if (hasValue(payload, 'elements')) {
                 updateElementVisibility(contract.normalizeConfig(payload).elements);
+            }
+            if (hasValue(payload, 'customColor')) {
+                var customColor = readValue(payload, 'customColor');
+                if (typeof customColor === 'string') state.customColor = customColor;
+            }
+            if (hasValue(payload, 'useDefaultColors')) {
+                state.useDefaultColors = readValue(payload, 'useDefaultColors') !== false;
             }
         }
 
@@ -270,7 +279,10 @@
             var maxRpm = getMaxRpm(frame);
             var redlineRatio = contract.clamp(frame.redlineRpm / maxRpm, 0, 1);
             state.lastRenderTime = renderTime || 0;
-            layouts.render(state.theme, frame, tokens.paletteFor(state.theme), redlineRatio);
+            layouts.render(state.theme, frame, tokens.paletteFor(state.theme, {
+                customColor: state.customColor,
+                useDefaultColors: state.useDefaultColors
+            }), redlineRatio);
         }
 
         function triggerSweep() {

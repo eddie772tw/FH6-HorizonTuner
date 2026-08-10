@@ -10,7 +10,6 @@
 
     var THEMES = [
         'normal',
-        'foxbody',
         'heritage67'
     ];
 

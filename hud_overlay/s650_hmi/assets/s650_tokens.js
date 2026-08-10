@@ -95,15 +95,6 @@
             warning: colors.telltaleYellow,
             danger: colors.telltaleRed
         },
-        foxbody: {
-            background: '#050B08',
-            surface: '#0D1B13',
-            primary: '#00FF66',
-            secondary: '#86B79A',
-            text: '#EFFFF4',
-            warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
-        },
         heritage67: {
             background: '#12100E',
             surface: '#211D17',
@@ -142,8 +133,13 @@
             pointerWidthPx: 3
         }),
         palettes: palettes,
-        paletteFor: function (theme) {
-            return clonePalette(palettes[theme] || palettes.normal);
+        paletteFor: function (theme, options) {
+            var palette = clonePalette(palettes[theme] || palettes.normal);
+            options = options || {};
+            if (options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
+                palette.primary = options.customColor;
+            }
+            return palette;
         }
     };
 })(window);

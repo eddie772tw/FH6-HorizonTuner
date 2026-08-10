@@ -111,9 +111,8 @@ describe('S650 center-information layout regions', () => {
       width: 430,
       height: 230,
     });
-    expect(layouts.centerRegions.foxbody).toBe(layouts.centerRegions.normal);
     expect(layouts.centerRegions.heritage67).toBe(layouts.centerRegions.normal);
-    expect(layouts.names).toEqual(['normal', 'foxbody', 'heritage67']);
+    expect(layouts.names).toEqual(['normal', 'heritage67']);
   });
 
   it('routes Normal through the named region instead of inline coordinates', () => {
@@ -140,12 +139,11 @@ describe('S650 center-information layout regions', () => {
       false,
     );
 
-    (['normal', 'foxbody', 'heritage67'] as const).forEach((theme) => {
+    (['normal', 'heritage67'] as const).forEach((theme) => {
       layouts.render(theme, { redlineRpm: 6500 }, { background: '#000' }, 1);
     });
 
     expect(baseCalls.map((call) => call[3])).toEqual([
-      layouts.baseDrivingRegions.normal,
       layouts.baseDrivingRegions.normal,
       layouts.baseDrivingRegions.normal,
     ]);

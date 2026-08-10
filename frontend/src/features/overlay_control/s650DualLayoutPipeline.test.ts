@@ -77,7 +77,6 @@ function createLayouts(events: string[]) {
 describe('S650 dual layout pipeline', () => {
   it.each([
     ['normal', ['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']],
-    ['foxbody', ['centerInfo', 'decorations', 'status', 'baseDriving', 'mainDial', 'mainDial']],
     ['heritage67', ['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']],
   ])('renders %s center layers before the main rings', (theme, expected) => {
     const events: string[] = [];

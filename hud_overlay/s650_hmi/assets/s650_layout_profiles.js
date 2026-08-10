@@ -10,7 +10,6 @@
     var PROFILES = Object.freeze({
         normal: Object.freeze({
             type: DUAL_LAYOUT_TYPE,
-            header: Object.freeze({ label: 'NORMAL', rightLabel: 'BALANCED CLUSTER' }),
             statusRenderer: 'normal',
             centerRoles: Object.freeze({
                 topLeft: 'odometer',
@@ -33,25 +32,6 @@
             sideGauge: Object.freeze({
                 fillColor: 'primary',
                 pointerColor: 'danger'
-            })
-        }),
-        foxbody: Object.freeze({
-            type: DUAL_LAYOUT_TYPE,
-            header: Object.freeze({ label: 'FOXBODY', rightLabel: 'ANALOG // NIGHT' }),
-            statusRenderer: 'normal',
-            centerRoles: Object.freeze({
-                topLeft: 'odometer',
-                topRight: 'heading',
-                bottomLeft: 'rpm',
-                bottomRight: 'speed'
-            }),
-            sideRoles: Object.freeze({ left: 'power', right: 'boost' }),
-            sideGauges: false,
-            dial: Object.freeze({
-                renderer: 'retro',
-                leftRole: 'speed',
-                rightRole: 'rpm',
-                outerInset: 7
             })
         }),
         heritage67: Object.freeze({
@@ -82,7 +62,7 @@
             width: region.width,
             height: region.height
         });
-        return Object.freeze({ normal: frozen, foxbody: frozen, heritage67: frozen });
+        return Object.freeze({ normal: frozen, heritage67: frozen });
     }
 
     function create(options) {

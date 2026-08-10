@@ -31,11 +31,6 @@
             p.clearAndPaintBackground(palette, width, height, true);
         }
 
-        function drawHeader(data, palette, profile) {
-            if (!profile.header || typeof p.drawHeader !== 'function') return;
-            p.drawHeader(view, palette, profile.header.label, profile.header.rightLabel);
-        }
-
         function drawCenterInfo(data, palette) {
             if (view.showCenterInfo === false || !centerInfo || typeof centerInfo.draw !== 'function') return;
             centerInfo.draw(view, data, palette, geometry.centerInfo);
@@ -231,7 +226,6 @@
 
         function drawDual(data, palette, redlineRatio, profile) {
             clear(palette);
-            drawHeader(data, palette, profile);
 
             // All dual-ring styles render center content before their rings.
             // The ring renderer remains theme-owned and is always last.
@@ -246,7 +240,6 @@
         var centerRegions = geometry.centerRegions;
         var baseDrivingRegions = Object.freeze({
             normal: geometry.baseDriving,
-            foxbody: geometry.baseDriving,
             heritage67: geometry.baseDriving
         });
 

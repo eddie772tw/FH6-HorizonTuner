@@ -2093,7 +2093,6 @@ DEFAULT_HUD_CONFIG = {
 
 LEGACY_S650_STYLE_MAP = {
     "s650_normal": "normal",
-    "s650_foxbody": "foxbody",
     "s650_heritage67": "heritage67",
 }
 S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values())
