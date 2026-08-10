@@ -41,9 +41,9 @@
         region = region && typeof region === 'object' ? region : {};
         var normalized = {
             x: numberOr(region.x, 425),
-            y: numberOr(region.y, 122),
+            y: numberOr(region.y, 126),
             width: numberOr(region.width, 430),
-            height: numberOr(region.height, 210)
+            height: numberOr(region.height, 230)
         };
         ['centerX', 'speedY', 'gearY', 'speedSize', 'gearSize'].forEach(function (key) {
             if (typeof region[key] === 'number' && isFinite(region[key])) {

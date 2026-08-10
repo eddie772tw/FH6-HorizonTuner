@@ -3,59 +3,70 @@
     'use strict';
 
     function createLayouts(options) {
-        var ctx = options.ctx;
-        var contract = options.contract || window.S650HmiContract;
         var view = options.view;
         var p = options.primitives;
         var baseDriving = options.baseDriving;
         var centerInfo = options.centerInfo;
         var width = options.width;
         var height = options.height;
-        var gauge = view.gauge;
-        var type = view.typography;
-        // The current 1280x480 calibration is shared by the four-corner
-        // readouts. Vertical placement remains theme-specific below.
-        var centerReadoutOffsets = Object.freeze({
-            centerX: width / 2,
-            topOffset: 195,
-            bottomOffset: 170
+        var typography = view.typography;
+        var profilesModule = options.layoutProfiles || window.S650HmiLayoutProfiles;
+        var profileRegistry = profilesModule.create({
+            width: width,
+            height: height,
+            gauge: view.gauge
         });
-        var centerRegions = Object.freeze({
-            normal: Object.freeze({
-                x: 425,
-                y: 132,
-                width: 430,
-                height: 224,
-                centerX: 640,
-                speedY: 190,
-                gearY: 302,
-                speedSize: type.speedHero + 12,
-                gearSize: type.speedHero + 18
-            }),
-            foxbody: Object.freeze({ x: 425, y: 122, width: 430, height: 210 }),
-            heritage67: Object.freeze({ x: 425, y: 126, width: 430, height: 230 })
-        });
-        var baseDrivingRegions = Object.freeze({
-            normal: Object.freeze({
-                carousel: Object.freeze({ centerX: 640, y: 399 })
-            }),
-            foxbody: Object.freeze({
-                carousel: Object.freeze({ centerX: 640, y: 399 })
-            }),
-            heritage67: Object.freeze({
-                carousel: Object.freeze({ centerX: 640, y: 399 })
-            })
-        });
+        var geometry = profileRegistry.geometry;
+        var profiles = profileRegistry.profiles;
+        var gauge = geometry.mainGauge;
+        var centerReadouts = geometry.centerReadouts;
 
-        function drawBaseDriving(data, palette, theme) {
-            var region = baseDrivingRegions[theme];
-            if (baseDriving && region) {
-                baseDriving.draw(view, data, palette, region);
+        function profileFor(theme) {
+            return profiles[theme] || profiles.normal;
+        }
+
+        function clear(palette) {
+            // The overlay host owns the backdrop. Every S650 theme paints only
+            // its instruments, preserving transparency outside the HMI marks.
+            p.clearAndPaintBackground(palette, width, height, true);
+        }
+
+        function drawHeader(data, palette, profile) {
+            if (!profile.header || typeof p.drawHeader !== 'function') return;
+            p.drawHeader(view, palette, profile.header.label, profile.header.rightLabel);
+        }
+
+        function drawCenterInfo(data, palette) {
+            if (view.showCenterInfo === false || !centerInfo || typeof centerInfo.draw !== 'function') return;
+            centerInfo.draw(view, data, palette, geometry.centerInfo);
+        }
+
+        function drawCenterDecorations(data, palette) {
+            if (typeof p.drawCenterDecorations !== 'function') return;
+            p.drawCenterDecorations(view, palette, geometry.decorations);
+        }
+
+        function drawFixedReadouts(data, palette, profile) {
+            if (typeof view.getTelemetryReadout !== 'function') return;
+            var options = Object.assign({}, centerReadouts);
+            if (profile.statusRenderer === 'heritage' && typeof p.drawHeritageStatus === 'function') {
+                p.drawHeritageStatus(view, data, profile.centerRoles, options);
+                return;
+            }
+            if (typeof p.drawNormalStatus === 'function') {
+                p.drawNormalStatus(view, data, palette, profile.centerRoles, options);
             }
         }
 
-        function drawSideGauges(data, palette) {
-            var slots = contract && contract.heritageTelemetrySlots && contract.heritageTelemetrySlots.side;
+        function drawBaseDriving(data, palette) {
+            if (baseDriving && typeof baseDriving.draw === 'function') {
+                baseDriving.draw(view, data, palette, geometry.baseDriving);
+            }
+        }
+
+        function drawSideGauges(data, palette, profile) {
+            if (!profile.sideGauges) return;
+            var slots = profile.sideRoles;
             var drawSideGauge = p.drawSideGauge || p.drawHeritageSideGauge;
             if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof drawSideGauge !== 'function') return;
 
@@ -63,51 +74,30 @@
             var rightSideReadout = view.getTelemetryReadout(slots.right, data);
             var sharedOptions = {
                 showText: false,
-                labelSize: type.heritageDialAuxLabel,
-                labelOffset: type.heritageDialAuxLabelOffset,
-                radius: gauge.radius + 24,
+                labelSize: typography.heritageDialAuxLabel,
+                labelOffset: typography.heritageDialAuxLabelOffset,
+                radius: geometry.sideGauges.radius,
                 activeColor: palette.primary,
                 pointerColor: palette.primary,
                 tickColor: palette.secondary
             };
 
-            drawSideGauge(gauge.leftCenterX, gauge.centerY + 1, leftSideReadout.unit, leftSideReadout.ratio, Object.assign({}, sharedOptions, {
+            drawSideGauge(gauge.leftCenterX, geometry.sideGauges.centerY, leftSideReadout.unit, leftSideReadout.ratio, Object.assign({}, sharedOptions, {
                 auxiliaryLabel: 'POWER'
             }));
-            drawSideGauge(gauge.rightCenterX, gauge.centerY + 1, rightSideReadout.unit, rightSideReadout.ratio, Object.assign({}, sharedOptions, {
+            drawSideGauge(gauge.rightCenterX, geometry.sideGauges.centerY, rightSideReadout.unit, rightSideReadout.ratio, Object.assign({}, sharedOptions, {
                 auxiliaryLabel: 'BOOST',
                 mirror: true
             }));
         }
 
-        function drawNormalFixedReadouts(data, palette) {
-            var slots = contract && contract.heritageTelemetrySlots && contract.heritageTelemetrySlots.center;
-            if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof p.drawNormalStatus !== 'function') return;
-            p.drawNormalStatus(view, data, palette, slots, Object.assign({}, centerReadoutOffsets, {
-                topY: 82,
-                bottomY: 392
-            }));
-        }
-
-        function drawCenterInfo(data, palette, theme) {
-            var region = centerRegions[theme] || centerRegions.normal;
-            if (view.showCenterInfo === false || !centerInfo || typeof centerInfo.draw !== 'function') return;
-            centerInfo.draw(view, data, palette, region);
-        }
-
-        function clear(palette, transparent) {
-            // The overlay host owns the backdrop. Every S650 theme paints only
-            // its instruments, preserving transparency outside the HMI marks.
-            p.clearAndPaintBackground(palette, width, height, true);
-        }
-
-        function normalSpeedScale(view) {
+        function normalSpeedScale() {
             return view.isMetric === false ? 180 : 300;
         }
 
-        function normalSpeedTicks(view) {
+        function normalSpeedTicks() {
             var divisions = view.isMetric === false ? 9 : 10;
-            var maximum = normalSpeedScale(view);
+            var maximum = normalSpeedScale();
             var labels = [];
             for (var index = 0; index <= divisions; index += 1) {
                 labels.push(String(Math.round(maximum * index / divisions)));
@@ -115,7 +105,7 @@
             return { count: divisions, labels: labels };
         }
 
-        function normalRpmTicks(view, data) {
+        function normalRpmTicks(data) {
             var maximum = Math.max(1, Math.round(view.getMaxRpm(data) / 1000));
             var labels = [];
             for (var index = 0; index <= maximum; index += 1) {
@@ -124,144 +114,78 @@
             return { count: maximum, labels: labels };
         }
 
-        function drawNormalDecorations(palette) {
-            if (typeof p.drawCenterDecorations === 'function') {
-                p.drawCenterDecorations(view, palette, { centerX: width / 2 });
-            }
-        }
-
-        function drawNormal(data, palette, redlineRatio) {
-            clear(palette);
-            p.drawHeader(view, palette, view.theme.toUpperCase(), view.theme === 'normal' ? 'BALANCED CLUSTER' : 'MVP FALLBACK');
-            drawSideGauges(data, palette);
-
-            if (view.showSpeed) {
-                var speedTicks = normalSpeedTicks(view);
-                p.drawNormalEnergyDial(view, palette, gauge.rightCenterX, gauge.centerY, gauge.radius,
-                    view.getSpeed(data) / normalSpeedScale(view), 1, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
+        function drawNormalEnergyDial(data, palette, role, centerX, redlineRatio, profile) {
+            if (role === 'speed') {
+                if (!view.showSpeed) return;
+                var speedTicks = normalSpeedTicks();
+                p.drawNormalEnergyDial(view, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
+                    view.getSpeed(data) / normalSpeedScale(), 1, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
                         tickCount: speedTicks.count,
                         tickLabels: speedTicks.labels,
-                        valueSize: type.bodyM,
+                        valueSize: typography.bodyM,
                         activeColor: palette.primary
                     });
+                return;
             }
-            if (view.showRPM) {
-                var rpmTicks = normalRpmTicks(view, data);
-                p.drawNormalEnergyDial(view, palette, gauge.leftCenterX, gauge.centerY, gauge.radius,
-                    view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', Math.round(view.getRpm(data) / 100) * 100, '', {
-                        tickCount: rpmTicks.count,
-                        tickLabels: rpmTicks.labels,
-                        valueSize: type.bodyM,
-                        activeColor: palette.primary,
-                        redlineRatio: redlineRatio
-                    });
-            }
-
-            drawNormalDecorations(palette);
-
-            drawBaseDriving(data, palette, 'normal');
-            drawCenterInfo(data, palette, 'normal');
-            drawNormalFixedReadouts(data, palette);
+            if (role !== 'rpm' || !view.showRPM) return;
+            var rpmTicks = normalRpmTicks(data);
+            p.drawNormalEnergyDial(view, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
+                view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', Math.round(view.getRpm(data) / 100) * 100, '', {
+                    tickCount: rpmTicks.count,
+                    tickLabels: rpmTicks.labels,
+                    valueSize: typography.bodyM,
+                    activeColor: palette.primary,
+                    redlineRatio: redlineRatio
+                });
         }
 
-        function drawFoxbody(data, palette, redlineRatio) {
-            clear(palette);
-            p.drawHeader(view, palette, 'FOXBODY', 'ANALOG // NIGHT');
-
+        function drawRetroDial(data, palette, role, centerX, redlineRatio, profile) {
             var pointer = '#FF7A3D';
-            if (view.showSpeed) {
-                p.drawRetroDial(view, data, palette, gauge.leftCenterX, gauge.centerY, gauge.radius, view.getSpeed(data) / speedScaleMax, 1,
-                    'SPEED', view.roundedSpeed(data), view.unitLabel(), {
+            if (role === 'speed') {
+                if (!view.showSpeed) return;
+                p.drawRetroDial(view, data, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
+                    view.getSpeed(data) / normalSpeedScale(), 1, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
                         pointerColor: pointer,
                         ringColor: palette.primary,
                         ringHighlight: palette.primary,
                         tickColor: palette.secondary,
-                        valueSize: type.bodyM,
+                        valueSize: typography.bodyM,
                         baseWidth: 7
                     });
+                return;
             }
-            if (view.showRPM) {
-                p.drawRetroDial(view, data, palette, gauge.rightCenterX, gauge.centerY, gauge.radius, view.getRpm(data) / view.getMaxRpm(data), redlineRatio,
-                    'RPM', Math.round(view.getRpm(data) / 100) * 100, 'RPM', {
-                        pointerColor: pointer,
-                        ringColor: palette.primary,
-                        ringHighlight: palette.primary,
-                        tickColor: palette.secondary,
-                        valueSize: type.bodyM,
-                        baseWidth: 7
-                    });
-            }
-            drawBaseDriving(data, palette, 'foxbody');
-            drawCenterInfo(data, palette, 'foxbody');
+            if (role !== 'rpm' || !view.showRPM) return;
+            p.drawRetroDial(view, data, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
+                view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPM', Math.round(view.getRpm(data) / 100) * 100, 'RPM', {
+                    pointerColor: pointer,
+                    ringColor: palette.primary,
+                    ringHighlight: palette.primary,
+                    tickColor: palette.secondary,
+                    valueSize: typography.bodyM,
+                    baseWidth: 7
+                });
         }
 
-        function drawHeritage67(data, palette, redlineRatio) {
-            clear(palette);
-            var heritageSlots = contract.heritageTelemetrySlots;
-            if (typeof p.drawCenterDecorations === 'function') {
-                p.drawCenterDecorations(view, palette, centerReadoutOffsets);
-            }
-            p.drawHeritageStatus(view, data, heritageSlots.center, centerReadoutOffsets);
-
-            // The center information intentionally sits below the dial layer. The
-            // real cluster lets both rings overlap the center boundary, so the
-            // rings and needles must always be painted after this content.
-            drawBaseDriving(data, palette, 'heritage67');
-            drawCenterInfo(data, palette, 'heritage67');
-
+        function drawHeritageDials(data, palette, redlineRatio, profile) {
             var rpmScale = p.getHeritageDialScale(view.getMaxRpm(data) / 100);
-            // Heritage speed markings are fixed by its analog face artwork;
-            // only the tachometer uses the adaptive integer scale.
             var speedScale = view.isMetric
                 ? { max: 300, majorStep: 30, majorCount: 10, minorPerMajor: 5, minorCount: 50 }
                 : { max: 180, majorStep: 20, majorCount: 9, minorPerMajor: 5, minorCount: 45 };
             var rpmRatio = view.getRpm(data) / (rpmScale.max * 100);
             var speedRatio = view.getSpeed(data) / speedScale.max;
-            // Heritage retains a broader all-red danger band than the other
-            // dynamic styles: 1,500 RPM below a 10k limiter, 2,000 above it.
             var redlinePaddingRpm = view.getMaxRpm(data) > 10000 ? 2000 : 1500;
             var heritageRedlineStart = Math.max(0, (data.redlineRpm - redlinePaddingRpm) / 100);
-            var leftSideReadout = view.getTelemetryReadout(heritageSlots.side.left, data);
-            var rightSideReadout = view.getTelemetryReadout(heritageSlots.side.right, data);
-            var drawSideGauge = p.drawSideGauge || p.drawHeritageSideGauge;
-            drawSideGauge(gauge.leftCenterX, gauge.centerY + 1, leftSideReadout.unit, leftSideReadout.ratio, {
-                startText: leftSideReadout.min,
-                endText: leftSideReadout.max,
-                valueText: leftSideReadout.value,
-                valueUnit: leftSideReadout.unit,
-                showText: false,
-                auxiliaryLabel: 'POWER',
-                labelSize: type.heritageDialAuxLabel,
-                labelOffset: type.heritageDialAuxLabelOffset,
-                activeColor: palette.primary,
-                pointerColor: palette.primary,
-                tickColor: palette.secondary,
-                radius: gauge.radius + 24
-            });
-            drawSideGauge(gauge.rightCenterX, gauge.centerY + 1, rightSideReadout.unit, rightSideReadout.ratio, {
-                startText: rightSideReadout.min,
-                endText: rightSideReadout.max,
-                valueText: rightSideReadout.value,
-                valueUnit: rightSideReadout.unit,
-                showText: false,
-                auxiliaryLabel: 'BOOST',
-                labelSize: type.heritageDialAuxLabel,
-                labelOffset: type.heritageDialAuxLabelOffset,
-                activeColor: palette.primary,
-                pointerColor: palette.primary,
-                tickColor: palette.secondary,
-                mirror: true,
-                radius: gauge.radius + 24
-            });
+            var ringRadius = gauge.outerRadius - profile.dial.outerInset;
+
             if (view.showSpeed) {
-                p.drawHeritageDial(view, palette, gauge.rightCenterX, gauge.centerY + 1, gauge.radius - 5, speedRatio, {
+                p.drawHeritageDial(view, palette, gauge.rightCenterX, gauge.centerY, ringRadius, speedRatio, {
                     scale: speedScale,
                     faceLabel: view.unitLabel(),
                     needleColor: '#F1373F'
                 });
             }
             if (view.showRPM) {
-                p.drawHeritageDial(view, palette, gauge.leftCenterX, gauge.centerY + 1, gauge.radius - 5, rpmRatio, {
+                p.drawHeritageDial(view, palette, gauge.leftCenterX, gauge.centerY, ringRadius, rpmRatio, {
                     scale: rpmScale,
                     redlineFrom: heritageRedlineStart,
                     faceLabel: 'RPM × 100',
@@ -270,18 +194,55 @@
             }
         }
 
-        var layouts = {
-            normal: drawNormal,
-            foxbody: drawFoxbody,
-            heritage67: drawHeritage67
-        };
+        function drawMainDials(data, palette, redlineRatio, profile) {
+            var leftRole = profile.dial.leftRole;
+            var rightRole = profile.dial.rightRole;
+            if (profile.dial.renderer === 'normalEnergy') {
+                drawNormalEnergyDial(data, palette, leftRole, gauge.leftCenterX, redlineRatio, profile);
+                drawNormalEnergyDial(data, palette, rightRole, gauge.rightCenterX, redlineRatio, profile);
+                return;
+            }
+            if (profile.dial.renderer === 'retro') {
+                drawRetroDial(data, palette, leftRole, gauge.leftCenterX, redlineRatio, profile);
+                drawRetroDial(data, palette, rightRole, gauge.rightCenterX, redlineRatio, profile);
+                return;
+            }
+            drawHeritageDials(data, palette, redlineRatio, profile);
+        }
+
+        function drawDual(data, palette, redlineRatio, profile) {
+            clear(palette);
+            drawHeader(data, palette, profile);
+
+            // All dual-ring styles render center content before their rings.
+            // The ring renderer remains theme-owned and is always last.
+            drawCenterInfo(data, palette);
+            drawCenterDecorations(data, palette);
+            drawFixedReadouts(data, palette, profile);
+            drawBaseDriving(data, palette);
+            drawSideGauges(data, palette, profile);
+            drawMainDials(data, palette, redlineRatio, profile);
+        }
+
+        var centerRegions = geometry.centerRegions;
+        var baseDrivingRegions = Object.freeze({
+            normal: geometry.baseDriving,
+            foxbody: geometry.baseDriving,
+            heritage67: geometry.baseDriving
+        });
 
         return {
             render: function (theme, data, palette, redlineRatio) {
-                var layout = layouts[theme] || layouts.normal;
-                layout(data, palette, redlineRatio);
+                var profile = profileFor(theme);
+                // The current supported theme set is dual-ring. Keeping this
+                // check explicit makes future non-dual families easy to add.
+                if (profile.type !== profileRegistry.type) profile = profiles.normal;
+                drawDual(data, palette, redlineRatio, profile);
             },
-            names: Object.keys(layouts),
+            names: profileRegistry.names,
+            type: profileRegistry.type,
+            profiles: profiles,
+            geometry: geometry,
             centerRegions: centerRegions,
             baseDrivingRegions: baseDrivingRegions
         };

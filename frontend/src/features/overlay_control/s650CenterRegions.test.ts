@@ -17,6 +17,7 @@ type Region = {
 type LayoutModule = {
   create: (options: Record<string, unknown>) => {
     render: (theme: string, data: unknown, palette: unknown, redlineRatio: number) => void;
+    type: string;
     names: string[];
     centerRegions: Record<string, Region>;
     baseDrivingRegions: Record<string, unknown>;
@@ -24,11 +25,16 @@ type LayoutModule = {
 };
 
 function loadLayoutsModule(): LayoutModule {
+  const profileSource = readFileSync(
+    resolve(process.cwd(), '../hud_overlay/s650_hmi/assets/s650_layout_profiles.js'),
+    'utf8',
+  );
   const source = readFileSync(
     resolve(process.cwd(), '../hud_overlay/s650_hmi/assets/s650_layouts.js'),
     'utf8',
   );
   const window = {} as { S650HmiLayouts?: LayoutModule };
+  new Function('window', profileSource)(window);
   new Function('window', source)(window);
 
   if (!window.S650HmiLayouts) {
@@ -95,30 +101,18 @@ function createLayouts(
 }
 
 describe('S650 center-information layout regions', () => {
-  it('exposes independent coordinate regions for supported analog layouts', () => {
+  it('shares the Heritage-based center region across the dual-ring themes', () => {
     const layouts = createLayouts({ draw: () => undefined });
 
-    expect(layouts.centerRegions.normal).toMatchObject({
-      x: 425,
-      y: 132,
-      width: 430,
-      height: 224,
-      centerX: 640,
-      speedY: 190,
-      gearY: 302,
-    });
-    expect(layouts.centerRegions.foxbody).toEqual({
-      x: 425,
-      y: 122,
-      width: 430,
-      height: 210,
-    });
-    expect(layouts.centerRegions.heritage67).toEqual({
+    expect(layouts.type).toBe('dual');
+    expect(layouts.centerRegions.normal).toEqual({
       x: 425,
       y: 126,
       width: 430,
       height: 230,
     });
+    expect(layouts.centerRegions.foxbody).toBe(layouts.centerRegions.normal);
+    expect(layouts.centerRegions.heritage67).toBe(layouts.centerRegions.normal);
     expect(layouts.names).toEqual(['normal', 'foxbody', 'heritage67']);
   });
 
@@ -152,8 +146,8 @@ describe('S650 center-information layout regions', () => {
 
     expect(baseCalls.map((call) => call[3])).toEqual([
       layouts.baseDrivingRegions.normal,
-      layouts.baseDrivingRegions.foxbody,
-      layouts.baseDrivingRegions.heritage67,
+      layouts.baseDrivingRegions.normal,
+      layouts.baseDrivingRegions.normal,
     ]);
   });
 
@@ -172,6 +166,8 @@ describe('S650 center-information layout regions', () => {
       centerX: 630,
       topOffset: 195,
       bottomOffset: 170,
+      topY: 82,
+      bottomY: 392,
     });
   });
 });

@@ -9,11 +9,16 @@ type LayoutModule = {
 };
 
 function loadLayoutsModule(): LayoutModule {
+  const profileSource = readFileSync(
+    resolve(process.cwd(), '../hud_overlay/s650_hmi/assets/s650_layout_profiles.js'),
+    'utf8',
+  );
   const source = readFileSync(
     resolve(process.cwd(), '../hud_overlay/s650_hmi/assets/s650_layouts.js'),
     'utf8',
   );
   const window = {} as { S650HmiLayouts?: LayoutModule };
+  new Function('window', profileSource)(window);
   new Function('window', source)(window);
 
   if (!window.S650HmiLayouts) {
@@ -88,14 +93,20 @@ describe('S650 Normal layout', () => {
     expect(pedalBars).toHaveLength(0);
     expect(sideGauges[0][0]).toBe(256);
     expect(sideGauges[1][0]).toBe(1024);
-    expect(dials[0][2]).toBe(1024);
-    expect(dials[0][7]).toBe('SPEED');
-    expect(dials[0][10]).toMatchObject({ tickCount: 10, tickLabels: ['0', '30', '60', '90', '120', '150', '180', '210', '240', '270', '300'] });
-    expect(dials[1][2]).toBe(256);
-    expect(dials[1][7]).toBe('RPMx1000');
-    expect(dials[1][10]).toMatchObject({ tickCount: 8, tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'] });
+    expect(dials[0][2]).toBe(256);
+    expect(dials[0][7]).toBe('RPMx1000');
+    expect(dials[0][10]).toMatchObject({ tickCount: 8, tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'] });
+    expect(dials[1][2]).toBe(1024);
+    expect(dials[1][7]).toBe('SPEED');
+    expect(dials[1][10]).toMatchObject({ tickCount: 10, tickLabels: ['0', '30', '60', '90', '120', '150', '180', '210', '240', '270', '300'] });
     expect(decorations).toHaveLength(1);
-    expect(decorations[0][2]).toEqual({ centerX: 640 });
+    expect(decorations[0][2]).toEqual({
+      centerX: 640,
+      topY: 84,
+      bottomY: 410,
+      innerOffset: 118,
+      outerOffset: 176,
+    });
     expect(layouts.baseDrivingRegions.normal).toEqual({ carousel: { centerX: 640, y: 399 } });
   });
 });
