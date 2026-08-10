@@ -331,3 +331,26 @@ with an AppData fallback for protected locations.
 
 打包後的 portable release 會為 FastAPI HTTP 服務選擇可用的動態 TCP 連接埠，並將實際連接埠寫入資料目錄的 `logs/web_port.txt`；Forza UDP Telemetry 預設仍監聽 `8000`。
 
+
+---
+
+## Testing & Diagnostics
+
+### CI & PR Blocking
+Our standard CI pipeline blocks pull requests on package existence and metadata validation to ensure that dependencies and compilation processes succeed. However, tests that verify the headless launch of the portable Tauri host are historically flaky in Windows GitHub Actions runners.
+
+### Portable Host Diagnostics Workflow
+To debug and monitor headless host behavior without blocking PRs, we run the **FH6 HorizonTuner Host Diagnostics** workflow.
+- **Scheduled:** Runs nightly via cron.
+- **Manual Trigger:** Maintainers can manually trigger this workflow via the `workflow_dispatch` event on the Actions tab. You can optionally specify a `repeat_count` (between 1 and 10, defaulting to 1) to repeatedly probe host startup using the same compiled binaries.
+
+If a diagnostics run fails, the workflow uploads a diagnostic artifact (retained for several days) containing:
+- Output from `stdout` and `stderr`
+- Parent PID, Exit codes, and a full child process tree (collected via PowerShell `Get-CimInstance`)
+- Executable SHA-256 hashes
+- The generated `backend.log` and `web_port.txt`
+
+### Release Candidate Approval
+To sign off on a new release candidate, you must ensure:
+1. **One successful automated diagnostics run** via GitHub Actions.
+2. **Manual portable smoke testing** performed on a clean Windows environment.
