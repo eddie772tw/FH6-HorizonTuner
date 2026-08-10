@@ -52,7 +52,6 @@
 
     var typography = Object.freeze({
         speedHero: 64,
-        headingL: 32,
         bodyM: 24,
         captionLegal: 16,
         // Heritage dual-ring typography is independently tunable so visual
@@ -86,33 +85,6 @@
             warning: colors.telltaleYellow,
             danger: colors.telltaleRed
         },
-        sport: {
-            background: '#120D0B',
-            surface: '#211814',
-            primary: '#FFB566',
-            secondary: '#C9A48B',
-            text: '#FFF7F0',
-            warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
-        },
-        track: {
-            background: '#080A0D',
-            surface: '#15191F',
-            primary: '#FFFFFF',
-            secondary: '#98A0A8',
-            text: '#FFFFFF',
-            warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
-        },
-        calm: {
-            background: '#0D1117',
-            surface: '#151C24',
-            primary: '#8EA1B5',
-            secondary: '#89939E',
-            text: '#F3F7FB',
-            warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
-        },
         foxbody: {
             background: '#050B08',
             surface: '#0D1B13',
@@ -128,15 +100,6 @@
             primary: '#F5E8C8',
             secondary: '#B7A98D',
             text: '#FFF8E7',
-            warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
-        },
-        svt_cobra: {
-            background: '#090A0D',
-            surface: '#171A20',
-            primary: '#DCE7F2',
-            secondary: '#8798A8',
-            text: '#F8FBFF',
             warning: colors.telltaleYellow,
             danger: colors.telltaleRed
         }

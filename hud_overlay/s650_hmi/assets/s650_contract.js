@@ -10,12 +10,8 @@
 
     var THEMES = [
         'normal',
-        'sport',
-        'track',
-        'calm',
         'foxbody',
-        'heritage67',
-        'svt_cobra'
+        'heritage67'
     ];
 
     var DRIVE_MODES = [

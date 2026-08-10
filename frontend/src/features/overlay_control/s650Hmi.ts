@@ -4,20 +4,15 @@ export const DEFAULT_S650_CENTER_WIDGET = 'drive' as const;
 
 const S650_HMI_THEME_VALUES = [
   'normal',
-  'sport',
-  'track',
-  'calm',
   'foxbody',
   'heritage67',
-  'svt_cobra',
 ] as const;
 
 export type S650HmiTheme = (typeof S650_HMI_THEME_VALUES)[number];
 
-// Only production-ready themes are exposed in the HMI Mode selector. The
-// complete value set remains recognized below so existing configurations and
-// legacy identifiers can still be loaded without data loss.
 export const S650_HMI_THEMES = [
+  { value: 'normal', label: 'S650 Normal' },
+  { value: 'foxbody', label: 'S650 Foxbody' },
   { value: 'heritage67', label: "S650 Heritage '67" },
 ] as const;
 
@@ -31,12 +26,8 @@ export type S650CenterWidget = (typeof S650_CENTER_WIDGETS)[number]['value'];
 
 export const LEGACY_S650_STYLE_MAP: Readonly<Record<string, S650HmiTheme>> = {
   s650_normal: 'normal',
-  s650_sport: 'sport',
-  s650_track: 'track',
-  s650_calm: 'calm',
   s650_foxbody: 'foxbody',
   s650_heritage67: 'heritage67',
-  s650_svt_cobra: 'svt_cobra',
 };
 
 export function isS650HmiTheme(value: unknown): value is S650HmiTheme {
@@ -48,13 +39,18 @@ export function isS650CenterWidget(value: unknown): value is S650CenterWidget {
 }
 
 /**
- * Converts the seven pre-HMI style ids into one HUD style plus a theme.
- * Non-S650 configurations are returned by identity so this helper can be
- * applied at every config boundary without changing other HUDs.
+ * Converts retained and unknown legacy S650 style ids into one HUD style plus
+ * a theme. Unknown S650 ids are treated as removed styles and fall back to
+ * Heritage. Non-S650 configurations are returned by identity so this helper
+ * can be applied at every config boundary without changing other HUDs.
  */
 export function normalizeS650HmiConfig<T extends { hudStyle?: string; s650Theme?: unknown; s650CenterWidget?: unknown }>(config: T): T {
   const legacyTheme = config.hudStyle ? LEGACY_S650_STYLE_MAP[config.hudStyle] : undefined;
-  if (!legacyTheme && config.hudStyle !== S650_HMI_STYLE_ID) {
+  const isLegacyS650Style =
+    typeof config.hudStyle === 'string' &&
+    config.hudStyle !== S650_HMI_STYLE_ID &&
+    config.hudStyle.startsWith('s650_');
+  if (!legacyTheme && !isLegacyS650Style && config.hudStyle !== S650_HMI_STYLE_ID) {
     return config;
   }
 

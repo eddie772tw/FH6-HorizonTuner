@@ -17,7 +17,9 @@ type Region = {
 type LayoutModule = {
   create: (options: Record<string, unknown>) => {
     render: (theme: string, data: unknown, palette: unknown, redlineRatio: number) => void;
+    names: string[];
     centerRegions: Record<string, Region>;
+    baseDrivingRegions: Record<string, unknown>;
   };
 };
 
@@ -35,7 +37,10 @@ function loadLayoutsModule(): LayoutModule {
   return window.S650HmiLayouts;
 }
 
-function createLayouts(centerInfo: { draw: (...args: unknown[]) => void }) {
+function createLayouts(
+  centerInfo: { draw: (...args: unknown[]) => void },
+  baseDriving: { draw: (...args: unknown[]) => void } = { draw: () => undefined },
+) {
   return loadLayoutsModule().create({
     ctx: {
       save: () => undefined,
@@ -70,6 +75,7 @@ function createLayouts(centerInfo: { draw: (...args: unknown[]) => void }) {
       setFont: () => undefined,
     },
     centerInfo,
+    baseDriving,
     width: 1260,
     height: 472,
   });
@@ -100,15 +106,22 @@ describe('S650 center-information layout regions', () => {
       width: 430,
       height: 230,
     });
+    expect(layouts.names).toEqual(['normal', 'foxbody', 'heritage67']);
   });
 
   it('routes Normal through the named region instead of inline coordinates', () => {
-    const calls: unknown[][] = [];
-    const layouts = createLayouts({ draw: (...args) => calls.push(args) });
+    const centerCalls: unknown[][] = [];
+    const baseCalls: unknown[][] = [];
+    const layouts = createLayouts(
+      { draw: (...args) => centerCalls.push(args) },
+      { draw: (...args) => baseCalls.push(args) },
+    );
 
     layouts.render('normal', {}, { background: '#000' }, 1);
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0][3]).toEqual(layouts.centerRegions.normal);
+    expect(centerCalls).toHaveLength(1);
+    expect(centerCalls[0][3]).toEqual(layouts.centerRegions.normal);
+    expect(baseCalls).toHaveLength(1);
+    expect(baseCalls[0][3]).toEqual(layouts.baseDrivingRegions.normal);
   });
 });

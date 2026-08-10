@@ -69,34 +69,28 @@
         let hudStyles = {};
         const LEGACY_S650_STYLE_MAP = {
             s650_normal: 'normal',
-            s650_sport: 'sport',
-            s650_track: 'track',
-            s650_calm: 'calm',
             s650_foxbody: 'foxbody',
-            s650_heritage67: 'heritage67',
-            s650_svt_cobra: 'svt_cobra'
+            s650_heritage67: 'heritage67'
         };
         const S650_HMI_THEMES = new Set([
-            'normal', 'sport', 'track', 'calm', 'foxbody', 'heritage67', 'svt_cobra'
+            'normal', 'foxbody', 'heritage67'
         ]);
+        const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
 
         function normalizeHudConfig(config) {
             const normalized = { ...(config || {}) };
             const legacyTheme = LEGACY_S650_STYLE_MAP[normalized.hudStyle];
-            if (legacyTheme) {
+            if (legacyTheme || isLegacyS650Style(normalized.hudStyle)) {
                 normalized.hudStyle = 's650_hmi';
-                normalized.s650Theme = legacyTheme;
+                normalized.s650Theme = legacyTheme || (S650_HMI_THEMES.has(normalized.s650Theme) ? normalized.s650Theme : 'heritage67');
             } else if (normalized.hudStyle === 's650_hmi' && !S650_HMI_THEMES.has(normalized.s650Theme)) {
-                // Heritage is the only production-ready S650 theme. Keep the
-                // launcher fallback aligned with backend, frontend and the
-                // renderer contract when a direct config payload is invalid.
                 normalized.s650Theme = 'heritage67';
             }
             return normalized;
         }
 
         function normalizeHudStyle(name) {
-            return LEGACY_S650_STYLE_MAP[name] ? 's650_hmi' : name;
+            return LEGACY_S650_STYLE_MAP[name] || isLegacyS650Style(name) ? 's650_hmi' : name;
         }
 
         let activeHud = normalizeHudStyle(localStorage.getItem('forza_hud_active') || 'simple');

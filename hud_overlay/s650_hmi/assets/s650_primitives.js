@@ -205,77 +205,6 @@
             ctx.restore();
         }
 
-        function drawShiftLights(rpmRatio, palette, x, y, width, height, count, large) {
-            var activeCount = Math.ceil(clamp((rpmRatio - 0.58) / 0.42, 0, 1) * count);
-            var gap = large ? 7 : 4;
-            var segmentWidth = (width - gap * (count - 1)) / count;
-
-            ctx.save();
-            for (var i = 0; i < count; i += 1) {
-                var segmentX = x + i * (segmentWidth + gap);
-                var color = i >= count - 2 ? palette.danger : (i >= count - 4 ? palette.warning : palette.primary);
-                ctx.fillStyle = i < activeCount ? color : 'rgba(255, 255, 255, 0.1)';
-                ctx.fillRect(segmentX, y, segmentWidth, height);
-            }
-            ctx.restore();
-        }
-
-        function drawRpmBand(view, data, palette, redlineRatio, x, y, width, height, large) {
-            var maxRpm = view.getMaxRpm(data);
-            var rpmRatio = clamp(view.getRpm(data) / maxRpm, 0, 1);
-            var redlineX = x + width * redlineRatio;
-
-            ctx.save();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
-            ctx.fillRect(x, y, width, height);
-            ctx.fillStyle = palette.primary;
-            ctx.fillRect(x, y, width * rpmRatio, height);
-
-            if (redlineX < x + width) {
-                ctx.fillStyle = 'rgba(255, 42, 42, 0.42)';
-                ctx.fillRect(redlineX, y, x + width - redlineX, height);
-            }
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-            ctx.lineWidth = 1;
-            for (var tick = 1; tick < 10; tick += 1) {
-                var tickX = x + width * tick / 10;
-                ctx.beginPath();
-                ctx.moveTo(tickX, y);
-                ctx.lineTo(tickX, y + height);
-                ctx.stroke();
-            }
-            ctx.restore();
-
-            drawShiftLights(rpmRatio, palette, x, y + height + (large ? 10 : 6), width, large ? 18 : 12, large ? 12 : 16, large);
-        }
-
-        function drawMinimalRpmBar(view, data, palette, redlineRatio, x, y, width, height) {
-            var maxRpm = view.getMaxRpm(data);
-            var rpmRatio = clamp(view.getRpm(data) / maxRpm, 0, 1);
-            var redlineX = x + width * redlineRatio;
-
-            ctx.save();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-            ctx.fillRect(x, y, width, height);
-            ctx.fillStyle = palette.primary;
-            ctx.fillRect(x, y, width * rpmRatio, height);
-            if (redlineX < x + width) {
-                ctx.fillStyle = 'rgba(217, 101, 101, 0.42)';
-                ctx.fillRect(redlineX, y, x + width - redlineX, height);
-            }
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
-            ctx.lineWidth = 1;
-            for (var tick = 1; tick < 5; tick += 1) {
-                var tickX = x + width * tick / 5;
-                ctx.beginPath();
-                ctx.moveTo(tickX, y);
-                ctx.lineTo(tickX, y + height);
-                ctx.stroke();
-            }
-            ctx.restore();
-        }
-
         function drawRetroDial(view, data, palette, cx, cy, radius, ratio, redlineRatio, label, value, unit, options) {
             options = options || {};
             var startAngle = options.startAngle || Math.PI * 0.78;
@@ -362,47 +291,6 @@
                 setFont(fontSize(view, 'captionLegal', 16), '700');
                 ctx.fillStyle = tickColor;
                 ctx.fillText(unit, cx, cy + 23);
-            }
-            ctx.restore();
-        }
-
-        function drawRetroCenter(view, data, palette, x, y, width, height, options) {
-            options = options || {};
-            var centerX = x + width / 2;
-            var border = options.border || palette.primary;
-            var panel = options.panel || 'rgba(0, 0, 0, 0.28)';
-            var secondary = options.secondary || palette.secondary;
-
-            ctx.save();
-            ctx.fillStyle = panel;
-            ctx.fillRect(x, y, width, height);
-            ctx.strokeStyle = border;
-            ctx.globalAlpha = options.borderAlpha || 0.72;
-            ctx.lineWidth = options.borderWidth || 1;
-            ctx.strokeRect(x, y, width, height);
-            ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.moveTo(x + 25, y + 29);
-            ctx.lineTo(x + width - 25, y + 29);
-            ctx.strokeStyle = secondary;
-            ctx.globalAlpha = 0.45;
-            ctx.stroke();
-            ctx.globalAlpha = 1;
-
-            setFont(fontSize(view, 'captionLegal', 16), '700');
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = secondary;
-            ctx.fillText(options.label || 'GEAR', centerX, y + 16);
-            if (view.showGear && options.showGear !== false) {
-                setFont(options.gearSize || 60, '700', options.fontFamily || 'ForzaGear');
-                ctx.fillStyle = options.gearColor || palette.text;
-                ctx.fillText(view.getGearLabel(data), centerX, y + height * 0.64);
-            }
-            if (view.showSpeed) {
-                setFont(fontSize(view, 'captionLegal', 16), '700');
-                ctx.fillStyle = secondary;
-                ctx.fillText(String(view.roundedSpeed(data)) + ' ' + view.unitLabel(), centerX, y + height - 13);
             }
             ctx.restore();
         }
@@ -719,22 +607,6 @@
             ctx.restore();
         }
 
-        function drawCobraReadout(view, label, value, unit, x, y, align, palette) {
-            ctx.save();
-            ctx.textAlign = align;
-            ctx.textBaseline = 'middle';
-            setFont(fontSize(view, 'captionLegal', 16), '700');
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText(label, x, y - 31);
-            setFont(fontSize(view, 'speedHero', 64), '700', 'ForzaGear');
-            ctx.fillStyle = palette.text;
-            ctx.fillText(String(value), x, y);
-            setFont(fontSize(view, 'captionLegal', 16), '700');
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText(unit, x, y + 28);
-            ctx.restore();
-        }
-
         return {
             setFont: setFont,
             getFontSize: fontSize,
@@ -745,17 +617,12 @@
             drawGearAndSpeed: drawGearAndSpeed,
             drawGearCarousel: drawGearCarousel,
             drawHeader: drawHeader,
-            drawShiftLights: drawShiftLights,
-            drawRpmBand: drawRpmBand,
-            drawMinimalRpmBar: drawMinimalRpmBar,
             drawRetroDial: drawRetroDial,
-            drawRetroCenter: drawRetroCenter,
             getHeritageDialScale: getHeritageDialScale,
             drawHeritageBackdrop: drawHeritageBackdrop,
             drawHeritageDial: drawHeritageDial,
             drawHeritageSideGauge: drawHeritageSideGauge,
-            drawHeritageStatus: drawHeritageStatus,
-            drawCobraReadout: drawCobraReadout
+            drawHeritageStatus: drawHeritageStatus
         };
     }
 

@@ -7,6 +7,7 @@
         var contract = options.contract || window.S650HmiContract;
         var view = options.view;
         var p = options.primitives;
+        var baseDriving = options.baseDriving;
         var centerInfo = options.centerInfo;
         var width = options.width;
         var height = options.height;
@@ -28,6 +29,27 @@
             foxbody: Object.freeze({ x: 425, y: 122, width: 430, height: 210 }),
             heritage67: Object.freeze({ x: 425, y: 126, width: 430, height: 230 })
         });
+        var baseDrivingRegions = Object.freeze({
+            normal: Object.freeze({
+                speed: Object.freeze({ centerX: 640, y: 190, size: type.speedHero + 12 }),
+                carousel: Object.freeze({ centerX: 640, y: 399 })
+            }),
+            foxbody: Object.freeze({
+                speed: Object.freeze({ centerX: 640, y: 202, size: 58 }),
+                carousel: Object.freeze({ centerX: 640, y: 399 })
+            }),
+            heritage67: Object.freeze({
+                speed: Object.freeze({ centerX: 640, y: 214, size: 58 }),
+                carousel: Object.freeze({ centerX: 640, y: 399 })
+            })
+        });
+
+        function drawBaseDriving(data, palette, theme) {
+            var region = baseDrivingRegions[theme];
+            if (baseDriving && region) {
+                baseDriving.draw(view, data, palette, region);
+            }
+        }
 
         function drawCenterInfo(data, palette, theme) {
             var region = centerRegions[theme] || centerRegions.normal;
@@ -71,6 +93,7 @@
             ctx.stroke();
             ctx.restore();
 
+            drawBaseDriving(data, palette, 'normal');
             drawCenterInfo(data, palette, 'normal');
             p.drawPedalBars(view, data, palette, 454, 390, 170, true);
             p.drawPedalBars(view, data, palette, 656, 390, 170, true);
@@ -82,41 +105,6 @@
             if (view.showSpeed) ctx.fillText('SPEED', gauge.leftCenterX, 440);
             if (view.showRPM) ctx.fillText('ENGINE', gauge.rightCenterX, 440);
             ctx.restore();
-        }
-
-        function drawCalm(data, palette, redlineRatio) {
-            clear(palette);
-            p.drawHeader(view, palette, 'CALM', 'REDUCED VIEW');
-
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            if (view.showSpeed) {
-                p.setFont(type.speedHero + 12, '700', 'ForzaGear');
-                ctx.fillStyle = palette.text;
-                ctx.fillText(String(view.roundedSpeed(data)), 630, 101);
-                p.setFont(type.captionLegal, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.fillText(view.unitLabel(), 630, 139);
-            }
-            if (view.showGear) {
-                p.setFont(type.headingL + 7, '700', 'ForzaGear');
-                ctx.fillStyle = palette.primary;
-                ctx.fillText(view.getGearLabel(data), 630, 176);
-            }
-            ctx.restore();
-
-            if (view.showRPM) {
-                ctx.save();
-                p.setFont(type.captionLegal, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.textAlign = 'left';
-                ctx.fillText('RPM', 252, 197);
-                ctx.textAlign = 'right';
-                ctx.fillText(Math.round(view.getRpm(data)) + ' / ' + Math.round(view.getMaxRpm(data)), 1008, 197);
-                ctx.restore();
-                p.drawMinimalRpmBar(view, data, palette, redlineRatio, 252, 207, 756, 7);
-            }
         }
 
         function drawFoxbody(data, palette, redlineRatio) {
@@ -146,8 +134,8 @@
                         baseWidth: 7
                     });
             }
+            drawBaseDriving(data, palette, 'foxbody');
             drawCenterInfo(data, palette, 'foxbody');
-            p.drawGearCarousel(view, data, palette, 640, 399);
         }
 
         function drawHeritage67(data, palette, redlineRatio) {
@@ -158,6 +146,7 @@
             // The center information intentionally sits below the dial layer. The
             // real cluster lets both rings overlap the center boundary, so the
             // rings and needles must always be painted after this content.
+            drawBaseDriving(data, palette, 'heritage67');
             drawCenterInfo(data, palette, 'heritage67');
 
             var rpmScale = p.getHeritageDialScale(view.getMaxRpm(data) / 100);
@@ -215,163 +204,20 @@
             }
         }
 
-        function drawSvtCobra(data, palette, redlineRatio) {
-            clear(palette);
-            p.drawHeader(view, palette, 'SVT COBRA', 'HIGH CONTRAST // PERFORMANCE');
-            if (view.showRPM) p.drawRpmBand(view, data, palette, redlineRatio, 78, 35, 1104, 24, true);
-
-            ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.30)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(78, 103);
-            ctx.lineTo(1182, 103);
-            ctx.moveTo(630, 111);
-            ctx.lineTo(630, 219);
-            ctx.stroke();
-            ctx.restore();
-
-            if (view.showSpeed) p.drawCobraReadout(view, 'SPEED', view.roundedSpeed(data), view.unitLabel(), 270, 160, 'center', palette);
-            if (view.showRPM) p.drawCobraReadout(view, 'RPM', Math.round(view.getRpm(data) / 100) * 100, 'RPM', 990, 160, 'center', palette);
-
-            if (view.showGear) {
-                ctx.save();
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                p.setFont(type.captionLegal, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.fillText('GEAR', 630, 124);
-                p.setFont(type.speedHero + 22, '700', 'ForzaGear');
-                ctx.fillStyle = palette.text;
-                ctx.fillText(view.getGearLabel(data), 630, 175);
-                ctx.restore();
-            }
-        }
-
-        function drawSport(data, palette, redlineRatio) {
-            clear(palette);
-            p.drawHeader(view, palette, 'SPORT', 'PERFORMANCE CLUSTER');
-            if (view.showRPM) p.drawRpmBand(view, data, palette, redlineRatio, 108, 36, 1044, 28, false);
-
-            if (view.showRPM) {
-                ctx.save();
-                p.setFont(type.captionLegal, '700');
-                ctx.textAlign = 'left';
-                ctx.fillStyle = palette.secondary;
-                ctx.fillText('0', 108, 91);
-                ctx.textAlign = 'right';
-                ctx.fillText(Math.round(view.getMaxRpm(data) / 1000) + 'K RPM', 1152, 91);
-                ctx.restore();
-            }
-
-            if (view.showSpeed) {
-                p.drawArcGauge(view, data, palette, 228, 160, 52, Math.PI * 0.86, Math.PI * 2.14,
-                    view.getSpeed(data) / speedScaleMax, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
-                        lineWidth: 6,
-                        valueSize: type.bodyM,
-                        activeColor: palette.secondary
-                    });
-            }
-
-            p.drawRoundedPanel(397, 95, 466, 115, 6, palette.surface, 'rgba(255, 181, 102, 0.34)');
-            p.drawGearAndSpeed(view, data, palette, 630, 114, 184, type.speedHero - 8, type.speedHero + 3);
-
-            ctx.save();
-            p.setFont(type.captionLegal, '700');
-            ctx.textAlign = 'center';
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText('THROTTLE', 921, 119);
-            ctx.fillText('BRAKE', 1042, 119);
-            ctx.fillStyle = palette.primary;
-            ctx.fillRect(906, 134, 151 * view.getPedalValue(data, 'throttle'), 7);
-            ctx.fillStyle = palette.warning;
-            ctx.fillRect(906, 153, 151 * view.getPedalValue(data, 'brake'), 7);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-            ctx.strokeRect(906, 134, 151, 7);
-            ctx.strokeRect(906, 153, 151, 7);
-            ctx.restore();
-        }
-
-        function drawTrack(data, palette, redlineRatio) {
-            clear(palette);
-            p.drawHeader(view, palette, 'TRACK', 'SHIFT PRIORITY');
-
-            var bandX = 78;
-            var bandWidth = 1104;
-            if (view.showRPM) p.drawRpmBand(view, data, palette, redlineRatio, bandX, 35, bandWidth, 35, true);
-
-            if (view.showRPM) {
-                ctx.save();
-                p.setFont(type.captionLegal, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.textAlign = 'left';
-                ctx.fillText('RPM', bandX, 115);
-                ctx.textAlign = 'right';
-                ctx.fillText(Math.round(view.getRpm(data)) + ' / ' + Math.round(view.getMaxRpm(data)), bandX + bandWidth, 115);
-                ctx.restore();
-            }
-
-            p.drawRoundedPanel(445, 124, 370, 92, 4, palette.surface, 'rgba(255, 255, 255, 0.18)');
-            if (view.showGear) {
-                ctx.save();
-                p.setFont(type.captionLegal, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.textAlign = 'center';
-                ctx.fillText('GEAR', 630, 138);
-                p.setFont(type.speedHero + 12, '700', 'ForzaGear');
-                ctx.fillStyle = palette.text;
-                ctx.fillText(view.getGearLabel(data), 630, 182);
-                ctx.restore();
-            }
-
-            if (view.showSpeed) {
-                ctx.save();
-                p.setFont(type.speedHero - 8, '700', 'ForzaGear');
-                ctx.textAlign = 'left';
-                ctx.fillStyle = palette.text;
-                ctx.fillText(String(view.roundedSpeed(data)), 92, 169);
-                p.setFont(type.captionLegal, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.fillText(view.unitLabel(), 94, 188);
-                ctx.restore();
-            }
-
-            p.drawPedalBars(view, data, palette, 891, 151, 270, false);
-        }
-
         var layouts = {
             normal: drawNormal,
-            sport: drawSport,
-            track: drawTrack,
-            calm: drawCalm,
             foxbody: drawFoxbody,
-            heritage67: drawHeritage67,
-            svt_cobra: drawSvtCobra
+            heritage67: drawHeritage67
         };
 
         return {
             render: function (theme, data, palette, redlineRatio) {
                 var layout = layouts[theme] || layouts.normal;
-                var compactTheme = theme === 'sport' || theme === 'track' || theme === 'calm' || theme === 'svt_cobra';
-                if (!compactTheme) {
-                    layout(data, palette, redlineRatio);
-                    return;
-                }
-
-                // These themes retain their compact information density, but
-                // live in the vertical center of the real 8:3 cluster canvas.
-                // The prefill keeps the translated legacy clear pass from
-                // leaving transparent pixels above the compact band.
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = palette.background;
-                ctx.fillRect(0, 0, width, height);
-                ctx.save();
-                ctx.translate(10, 120);
                 layout(data, palette, redlineRatio);
-                ctx.restore();
             },
             names: Object.keys(layouts),
-            centerRegions: centerRegions
+            centerRegions: centerRegions,
+            baseDrivingRegions: baseDrivingRegions
         };
     }
 

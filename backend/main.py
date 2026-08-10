@@ -2091,12 +2091,8 @@ DEFAULT_HUD_CONFIG = {
 
 LEGACY_S650_STYLE_MAP = {
     "s650_normal": "normal",
-    "s650_sport": "sport",
-    "s650_track": "track",
-    "s650_calm": "calm",
     "s650_foxbody": "foxbody",
     "s650_heritage67": "heritage67",
-    "s650_svt_cobra": "svt_cobra",
 }
 S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values())
 S650_HMI_CENTER_WIDGETS = {"drive", "tire_temp", "performance"}
@@ -2106,10 +2102,15 @@ def normalize_hud_config(data: dict) -> dict:
     """Normalize S650 HUD ids while leaving other HUD configurations untouched."""
     normalized = dict(data or {})
     hud_style = normalized.get("hudStyle")
+    is_legacy_s650_style = (
+        isinstance(hud_style, str)
+        and hud_style != "s650_hmi"
+        and hud_style.startswith("s650_")
+    )
 
-    if hud_style in LEGACY_S650_STYLE_MAP:
+    if hud_style in LEGACY_S650_STYLE_MAP or is_legacy_s650_style:
         normalized["hudStyle"] = "s650_hmi"
-        normalized["s650Theme"] = LEGACY_S650_STYLE_MAP[hud_style]
+        normalized["s650Theme"] = LEGACY_S650_STYLE_MAP.get(hud_style, "heritage67")
     elif hud_style == "s650_hmi" and normalized.get("s650Theme") not in S650_HMI_THEMES:
         normalized["s650Theme"] = "heritage67"
 

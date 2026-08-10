@@ -13,8 +13,10 @@ import {
 } from './s650Hmi';
 
 describe('S650 HMI config contract', () => {
-  it('exposes only the production-ready Heritage theme in the selector', () => {
+  it('exposes only the retained S650 themes in the selector', () => {
     expect(S650_HMI_THEMES.map((theme) => theme.value)).toEqual([
+      'normal',
+      'foxbody',
       'heritage67',
     ]);
   });
@@ -42,6 +44,11 @@ describe('S650 HMI config contract', () => {
       customSetting: { enabled: true },
     });
   });
+
+  it.each(['s650_sport', 's650_track', 's650_calm', 's650_svt_cobra'])
+    ('falls back removed legacy style id %s to Heritage', (legacyStyle) => {
+      expect(normalizeS650HmiConfig({ hudStyle: legacyStyle }).s650Theme).toBe(DEFAULT_S650_HMI_THEME);
+    });
 
   it.each([
     ['unknown', 'unknown string'],
@@ -91,7 +98,10 @@ describe('S650 HMI config contract', () => {
   });
 
   it('recognizes only registered HMI themes', () => {
+    expect(isS650HmiTheme('normal')).toBe(true);
+    expect(isS650HmiTheme('foxbody')).toBe(true);
     expect(isS650HmiTheme('heritage67')).toBe(true);
+    expect(isS650HmiTheme('track')).toBe(false);
     expect(isS650HmiTheme('s650_heritage67')).toBe(false);
     expect(isS650HmiTheme('')).toBe(false);
     expect(isS650HmiTheme(undefined)).toBe(false);
@@ -112,7 +122,7 @@ describe('S650 HMI config contract', () => {
   it('keeps the generic config shape while exposing the theme type guard', () => {
     const config = {
       hudStyle: S650_HMI_STYLE_ID,
-      s650Theme: 'track' as const,
+      s650Theme: 'normal' as const,
       customSetting: 7,
     };
     const normalized = normalizeS650HmiConfig(config);
@@ -120,7 +130,7 @@ describe('S650 HMI config contract', () => {
     expectTypeOf(normalized).toMatchTypeOf<typeof config>();
     expectTypeOf(isS650HmiTheme).guards.toEqualTypeOf<S650HmiTheme>();
 
-    const candidate: unknown = 'track';
+    const candidate: unknown = 'normal';
     if (isS650HmiTheme(candidate)) {
       expectTypeOf(candidate).toEqualTypeOf<S650HmiTheme>();
     }
