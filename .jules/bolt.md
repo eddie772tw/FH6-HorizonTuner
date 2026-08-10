@@ -46,3 +46,6 @@
 ## 2026-08-08 - Prevent Heap Allocation in dict.get Defaults
 **Learning:** High-frequency backend methods (like parsing UDP telemetry or rendering hot paths) using inline list allocations (e.g. `[0.0] * 4`) as fallback default arguments in `dict.get()` will instantiate new list objects on every single function call. This places immense pressure on the Garbage Collector.
 **Action:** Extract inline list allocations used as default fallback arguments into module-level immutable constants, such as tuples (e.g. `DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)`), to completely eliminate the allocation overhead.
+## 2026-08-05 - Avoid inline IIFE in for-loops
+**Learning:** The code review flagged that replacing `.forEach` with a `for` loop while simultaneously introducing an Immediately Invoked Function Expression (IIFE) inside the loop entirely defeats the purpose of the optimization. Creating a new closure every iteration maintains high GC pressure.
+**Action:** Ensure that variables inside `for` loops in high-frequency functions avoid inline functions or IIFEs where performance is critical. If variable capturing is needed (like for async callbacks or `onload`), handle the closure effectively or use modern `let` scoping where permissible without breaking old targets.
