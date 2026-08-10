@@ -77,7 +77,7 @@
         redlineRpm: 7000,
         speed_kmh: 0,
         speed_mph: 0,
-        gear: 0,
+        gear: 1,
         throttle: 0,
         brake: 0
     };
@@ -186,7 +186,7 @@
             redlineRpm: redline,
             speed_kmh: Math.max(0, finiteNumber(speedKmh, 0)),
             speed_mph: Math.max(0, finiteNumber(speedMph, 0)),
-            gear: firstDefined(source.gear, source.Gear, 0),
+            gear: firstDefined(source.gear, source.Gear, DEFAULT_FRAME.gear),
             throttle: getPedalValue(source, 'throttle'),
             brake: getPedalValue(source, 'brake')
         });
