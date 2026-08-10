@@ -40,6 +40,7 @@ function loadLayoutsModule(): LayoutModule {
 function createLayouts(
   centerInfo: { draw: (...args: unknown[]) => void },
   baseDriving: { draw: (...args: unknown[]) => void } = { draw: () => undefined },
+  showCenterInfo = true,
 ) {
   return loadLayoutsModule().create({
     ctx: {
@@ -64,14 +65,25 @@ function createLayouts(
       },
       typography: { speedHero: 64 },
       theme: 'normal',
+      showCenterInfo,
       showSpeed: false,
       showRPM: false,
+      isMetric: true,
+      width: 1260,
+      getSpeed: () => 0,
+      getMaxRpm: () => 8000,
+      getRpm: () => 0,
+      getTelemetryReadout: () => ({ value: '--', unit: '', ratio: null }),
     },
     primitives: {
       clearAndPaintBackground: () => undefined,
       drawHeader: () => undefined,
       drawRoundedPanel: () => undefined,
       drawPedalBars: () => undefined,
+      drawHeritageStatus: () => undefined,
+      drawHeritageSideGauge: () => undefined,
+      drawHeritageDial: () => undefined,
+      getHeritageDialScale: () => ({ max: 80 }),
       setFont: () => undefined,
     },
     centerInfo,
@@ -123,5 +135,24 @@ describe('S650 center-information layout regions', () => {
     expect(centerCalls[0][3]).toEqual(layouts.centerRegions.normal);
     expect(baseCalls).toHaveLength(1);
     expect(baseCalls[0][3]).toEqual(layouts.baseDrivingRegions.normal);
+  });
+
+  it('keeps base driving active when center information is hidden', () => {
+    const baseCalls: unknown[][] = [];
+    const layouts = createLayouts(
+      { draw: () => { throw new Error('center info must be skipped'); } },
+      { draw: (...args) => baseCalls.push(args) },
+      false,
+    );
+
+    (['normal', 'foxbody', 'heritage67'] as const).forEach((theme) => {
+      layouts.render(theme, { redlineRpm: 6500 }, { background: '#000' }, 1);
+    });
+
+    expect(baseCalls.map((call) => call[3])).toEqual([
+      layouts.baseDrivingRegions.normal,
+      layouts.baseDrivingRegions.foxbody,
+      layouts.baseDrivingRegions.heritage67,
+    ]);
   });
 });

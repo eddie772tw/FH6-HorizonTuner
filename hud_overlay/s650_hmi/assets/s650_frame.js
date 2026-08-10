@@ -18,6 +18,7 @@
             driveMode: 'normal',
             matchDriveMode: false,
             centerWidget: 'drive',
+            showCenterInfo: true,
             isMetric: true,
             showGauge: true,
             showSpeed: true,
@@ -54,6 +55,7 @@
             if (elements.showSpeed !== undefined) state.showSpeed = elements.showSpeed !== false;
             if (elements.showGear !== undefined) state.showGear = elements.showGear !== false;
             if (elements.showRPM !== undefined) state.showRPM = elements.showRPM !== false;
+            if (elements.showCenterInfo !== undefined) state.showCenterInfo = elements.showCenterInfo !== false;
             if (container && elements.showGauge !== undefined) {
                 container.style.display = state.showGauge ? 'block' : 'none';
             }
@@ -229,6 +231,7 @@
             get theme() { return state.theme; },
             get isMetric() { return state.isMetric; },
             get centerWidget() { return state.centerWidget; },
+            get showCenterInfo() { return state.showCenterInfo; },
             get showSpeed() { return state.showSpeed; },
             get showGear() { return state.showGear; },
             get showRPM() { return state.showRPM; },

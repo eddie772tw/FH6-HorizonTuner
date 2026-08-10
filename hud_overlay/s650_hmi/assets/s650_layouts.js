@@ -53,6 +53,7 @@
 
         function drawCenterInfo(data, palette, theme) {
             var region = centerRegions[theme] || centerRegions.normal;
+            if (view.showCenterInfo === false || !centerInfo || typeof centerInfo.draw !== 'function') return;
             centerInfo.draw(view, data, palette, region);
         }
 
