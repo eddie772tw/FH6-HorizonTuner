@@ -12,7 +12,6 @@
         var width = options.width;
         var height = options.height;
         var gauge = view.gauge;
-        var speedScaleMax = gauge.speedScaleMax;
         var type = view.typography;
         var centerRegions = Object.freeze({
             normal: Object.freeze({
@@ -63,20 +62,49 @@
             p.clearAndPaintBackground(palette, width, height, true);
         }
 
+        function normalSpeedScale(view) {
+            return view.isMetric === false ? 180 : 300;
+        }
+
+        function normalSpeedTicks(view) {
+            var divisions = view.isMetric === false ? 9 : 10;
+            var maximum = normalSpeedScale(view);
+            var labels = [];
+            for (var index = 0; index <= divisions; index += 1) {
+                labels.push(String(Math.round(maximum * index / divisions)));
+            }
+            return { count: divisions, labels: labels };
+        }
+
+        function normalRpmTicks(view, data) {
+            var maximum = Math.max(1, Math.round(view.getMaxRpm(data) / 1000));
+            var labels = [];
+            for (var index = 0; index <= maximum; index += 1) {
+                labels.push(String(index));
+            }
+            return { count: maximum, labels: labels };
+        }
+
         function drawNormal(data, palette, redlineRatio) {
             clear(palette);
             p.drawHeader(view, palette, view.theme.toUpperCase(), view.theme === 'normal' ? 'BALANCED CLUSTER' : 'MVP FALLBACK');
 
             if (view.showSpeed) {
-                p.drawArcGauge(view, data, palette, gauge.leftCenterX, gauge.centerY, gauge.radius, Math.PI * 0.78, Math.PI * 2.22,
-                    view.getSpeed(data) / speedScaleMax, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
+                var speedTicks = normalSpeedTicks(view);
+                p.drawNormalEnergyDial(view, palette, gauge.rightCenterX, gauge.centerY, gauge.radius,
+                    view.getSpeed(data) / normalSpeedScale(view), 1, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
+                        tickCount: speedTicks.count,
+                        tickLabels: speedTicks.labels,
                         valueSize: type.bodyM,
                         activeColor: palette.primary
                     });
             }
             if (view.showRPM) {
-                p.drawArcGauge(view, data, palette, gauge.rightCenterX, gauge.centerY, gauge.radius, Math.PI * 0.78, Math.PI * 2.22,
-                    view.getRpm(data) / view.getMaxRpm(data), 'RPM', Math.round(view.getRpm(data) / 100) * 100, 'RPM', {
+                var rpmTicks = normalRpmTicks(view, data);
+                p.drawNormalEnergyDial(view, palette, gauge.leftCenterX, gauge.centerY, gauge.radius,
+                    view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', Math.round(view.getRpm(data) / 100) * 100, '', {
+                        tickCount: rpmTicks.count,
+                        tickLabels: rpmTicks.labels,
                         valueSize: type.bodyM,
                         activeColor: palette.primary,
                         redlineRatio: redlineRatio
