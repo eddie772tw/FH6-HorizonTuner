@@ -18,6 +18,7 @@ import '../../App.css';
 
 interface HudElements {
   showGauge: boolean;
+  showCenterInfo: boolean;
   showRPM: boolean;
   showSpeed: boolean;
   showGear: boolean;
@@ -135,6 +136,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
 
   elements: {
     showGauge: true,
+    showCenterInfo: true,
     showRPM: true,
     showSpeed: true,
     showGear: true,
@@ -572,6 +574,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const handleS650CenterWidgetChange = (widget: S650CenterWidget) => {
     saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
+  };
+
+  const handleS650CenterInfoToggle = () => {
+    saveConfig({
+      ...config,
+      elements: {
+        ...config.elements,
+        showCenterInfo: config.elements.showCenterInfo === false,
+      },
+    });
   };
 
   return (
@@ -1100,9 +1112,20 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       </option>
                     ))}
                   </select>
-                  <label htmlFor="s650-center-widget" className="form-label fs-7 text-body-secondary mb-1 mt-2">
-                    {t("S650 center information")}:
-                  </label>
+                  <div className="d-flex justify-content-between align-items-center mt-2 mb-1">
+                    <label htmlFor="s650-center-widget" className="form-label fs-7 text-body-secondary mb-0">
+                      {t("S650 center information")}:
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      aria-label={t("S650 center information")}
+                      aria-pressed={config.elements.showCenterInfo !== false}
+                      onClick={handleS650CenterInfoToggle}
+                    >
+                      {t(config.elements.showCenterInfo !== false ? "Enabled" : "Disabled")}
+                    </button>
+                  </div>
                   <select
                     id="s650-center-widget"
                     className="form-select form-select-sm fw-bold"

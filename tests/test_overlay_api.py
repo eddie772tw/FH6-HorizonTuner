@@ -34,6 +34,7 @@ def test_get_hud_config_default(temp_hud_config_file):
     assert data["s650Theme"] == "heritage67"
     assert data["s650CenterWidget"] == "drive"
     assert "elements" in data
+    assert data["elements"]["showCenterInfo"] is True
     assert data["elements"]["showRPM"] is True
 
 
@@ -68,6 +69,25 @@ def test_save_and_get_hud_config(temp_hud_config_file):
     loaded_data = get_res.json()
     assert loaded_data["hudStyle"] == "simple"
     assert loaded_data["elements"]["showSpeed"] is False
+
+
+def test_s650_center_information_visibility_is_persisted(temp_hud_config_file):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={
+            "hudStyle": "s650_hmi",
+            "s650Theme": "normal",
+            "elements": {"showCenterInfo": False},
+        },
+    )
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["elements"]["showCenterInfo"] is False
 
 
 @pytest.mark.parametrize(

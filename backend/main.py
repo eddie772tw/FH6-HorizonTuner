@@ -2063,6 +2063,7 @@ DEFAULT_HUD_CONFIG = {
     "pauseTelemetryViewWhenActive": True,
     "elements": {
         "showGauge": True,
+        "showCenterInfo": True,
         "showRPM": True,
         "showSpeed": True,
         "showGear": True,
