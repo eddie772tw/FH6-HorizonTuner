@@ -694,10 +694,11 @@
         // same side-gauge primitive to be reused by Normal.
         var drawHeritageSideGauge = drawSideGauge;
 
-        function drawHeritageStatus(view, data, slots) {
-            var centerX = view.width / 2;
-            var topOffset = 147;
-            var bottomOffset = 141;
+        function drawHeritageStatus(view, data, slots, options) {
+            options = options || {};
+            var centerX = options.centerX === undefined ? view.width / 2 : options.centerX;
+            var topOffset = options.topOffset === undefined ? 147 : options.topOffset;
+            var bottomOffset = options.bottomOffset === undefined ? 141 : options.bottomOffset;
             var topLeft = view.getTelemetryReadout(slots.topLeft, data);
             var topRight = view.getTelemetryReadout(slots.topRight, data);
             var bottomLeft = view.getTelemetryReadout(slots.bottomLeft, data);

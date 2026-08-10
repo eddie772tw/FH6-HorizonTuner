@@ -13,6 +13,13 @@
         var height = options.height;
         var gauge = view.gauge;
         var type = view.typography;
+        // The current 1280x480 calibration is shared by the four-corner
+        // readouts. Vertical placement remains theme-specific below.
+        var centerReadoutOffsets = Object.freeze({
+            centerX: width / 2,
+            topOffset: 195,
+            bottomOffset: 170
+        });
         var centerRegions = Object.freeze({
             normal: Object.freeze({
                 x: 425,
@@ -76,13 +83,10 @@
         function drawNormalFixedReadouts(data, palette) {
             var slots = contract && contract.heritageTelemetrySlots && contract.heritageTelemetrySlots.center;
             if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof p.drawNormalStatus !== 'function') return;
-            p.drawNormalStatus(view, data, palette, slots, {
-                centerX: 640,
-                topOffset: 147,
-                bottomOffset: 141,
+            p.drawNormalStatus(view, data, palette, slots, Object.assign({}, centerReadoutOffsets, {
                 topY: 82,
                 bottomY: 374
-            });
+            }));
         }
 
         function drawCenterInfo(data, palette, theme) {
@@ -174,8 +178,6 @@
             drawBaseDriving(data, palette, 'normal');
             drawCenterInfo(data, palette, 'normal');
             drawNormalFixedReadouts(data, palette);
-            p.drawPedalBars(view, data, palette, 454, 405, 170, true);
-            p.drawPedalBars(view, data, palette, 656, 405, 170, true);
         }
 
         function drawFoxbody(data, palette, redlineRatio) {
@@ -212,7 +214,7 @@
         function drawHeritage67(data, palette, redlineRatio) {
             clear(palette);
             var heritageSlots = contract.heritageTelemetrySlots;
-            p.drawHeritageStatus(view, data, heritageSlots.center);
+            p.drawHeritageStatus(view, data, heritageSlots.center, centerReadoutOffsets);
 
             // The center information intentionally sits below the dial layer. The
             // real cluster lets both rings overlap the center boundary, so the

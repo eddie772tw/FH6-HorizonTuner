@@ -41,6 +41,7 @@ function createLayouts(
   centerInfo: { draw: (...args: unknown[]) => void },
   baseDriving: { draw: (...args: unknown[]) => void } = { draw: () => undefined },
   showCenterInfo = true,
+  heritageStatus: (...args: unknown[]) => void = () => undefined,
 ) {
   return loadLayoutsModule().create({
     ctx: {
@@ -80,7 +81,7 @@ function createLayouts(
       drawHeader: () => undefined,
       drawRoundedPanel: () => undefined,
       drawPedalBars: () => undefined,
-      drawHeritageStatus: () => undefined,
+      drawHeritageStatus: heritageStatus,
       drawHeritageSideGauge: () => undefined,
       drawHeritageDial: () => undefined,
       getHeritageDialScale: () => ({ max: 80 }),
@@ -154,5 +155,23 @@ describe('S650 center-information layout regions', () => {
       layouts.baseDrivingRegions.foxbody,
       layouts.baseDrivingRegions.heritage67,
     ]);
+  });
+
+  it('passes the shared horizontal readout calibration to Heritage', () => {
+    const heritageStatusCalls: unknown[][] = [];
+    const layouts = createLayouts(
+      { draw: () => undefined },
+      { draw: () => undefined },
+      false,
+      (...args) => heritageStatusCalls.push(args),
+    );
+
+    layouts.render('heritage67', { redlineRpm: 6500 }, { background: '#000' }, 1);
+
+    expect(heritageStatusCalls[0][3]).toEqual({
+      centerX: 630,
+      topOffset: 195,
+      bottomOffset: 170,
+    });
   });
 });

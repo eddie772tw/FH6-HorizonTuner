@@ -27,6 +27,7 @@ describe('S650 Normal layout', () => {
     const dials: unknown[][] = [];
     const sideGauges: unknown[][] = [];
     const status: unknown[][] = [];
+    const pedalBars: unknown[][] = [];
     const structureLines: number[][] = [];
     const layouts = loadLayoutsModule().create({
       ctx: {
@@ -62,7 +63,7 @@ describe('S650 Normal layout', () => {
         drawSideGauge: (...args: unknown[]) => sideGauges.push(args),
         drawNormalStatus: (...args: unknown[]) => status.push(args),
         drawRoundedPanel: () => undefined,
-        drawPedalBars: () => undefined,
+        drawPedalBars: (...args: unknown[]) => pedalBars.push(args),
         setFont: () => undefined,
       },
       baseDriving: { draw: () => undefined },
@@ -78,11 +79,12 @@ describe('S650 Normal layout', () => {
     expect(status).toHaveLength(1);
     expect(status[0][4]).toEqual({
       centerX: 640,
-      topOffset: 147,
-      bottomOffset: 141,
+      topOffset: 195,
+      bottomOffset: 170,
       topY: 82,
       bottomY: 374,
     });
+    expect(pedalBars).toHaveLength(0);
     expect(sideGauges[0][0]).toBe(256);
     expect(sideGauges[1][0]).toBe(1024);
     expect(dials[0][2]).toBe(1024);
