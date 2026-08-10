@@ -342,7 +342,7 @@ Our standard CI pipeline blocks pull requests on package existence and metadata 
 ### Portable Host Diagnostics Workflow
 To debug and monitor headless host behavior without blocking PRs, we run the **FH6 HorizonTuner Host Diagnostics** workflow.
 - **Scheduled:** Runs nightly via cron.
-- **Manual Trigger:** Maintainers can manually trigger this workflow via the `workflow_dispatch` event on the Actions tab. You can optionally specify a `repeat_count` (between 1 and 10, defaulting to 1) to repeatedly probe host startup using the same compiled binaries, and a `timeout` (between 15 and 120 seconds, defaulting to 60) to accommodate slow or loaded headless Windows runners.
+- **Manual Trigger:** Maintainers can manually trigger this workflow via the `workflow_dispatch` event on the Actions tab. You can optionally specify a `repeat_count` (between 1 and 10, defaulting to 1) to repeatedly probe host startup using the same compiled binaries, and a `timeout` (between 15 and 120 seconds, defaulting to 120) to accommodate slow or loaded headless Windows runners.
 
 If a diagnostics run fails, the workflow uploads a diagnostic artifact (retained for several days) containing:
 - Output from `stdout` and `stderr`
