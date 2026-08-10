@@ -127,7 +127,9 @@ def test_existing_legacy_s650_config_is_migrated_on_load(
 
 
 @pytest.mark.parametrize("invalid_theme", ["not-a-theme", "", None])
-def test_invalid_s650_hmi_theme_defaults_to_heritage(temp_hud_config_file, invalid_theme):
+def test_invalid_s650_hmi_theme_defaults_to_heritage(
+    temp_hud_config_file, invalid_theme
+):
     client = TestClient(app)
 
     post_res = client.post(
