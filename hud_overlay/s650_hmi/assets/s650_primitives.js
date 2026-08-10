@@ -446,18 +446,23 @@
             if (label) {
                 setFont(options.labelSize || fontSize(view, 'captionLegal', 16), '700');
                 ctx.fillStyle = palette.secondary;
-                var labelY;
+                var labelLines = Array.isArray(options.labelLines) && options.labelLines.length
+                    ? options.labelLines
+                    : [label];
                 if (options.centerLabel) {
                     var labelOffset = unit
                         ? (options.labelOffsetY === undefined ? 42 : options.labelOffsetY)
                         : (options.labelOffsetYWithoutUnit === undefined
                             ? (options.labelOffsetY === undefined ? 30 : options.labelOffsetY)
                             : options.labelOffsetYWithoutUnit);
-                    labelY = cy + labelOffset;
+                    var labelLineGap = options.labelLineGap === undefined ? 16 : options.labelLineGap;
+                    var firstLabelOffset = labelOffset - ((labelLines.length - 1) * labelLineGap) / 2;
+                    for (var labelIndex = 0; labelIndex < labelLines.length; labelIndex += 1) {
+                        ctx.fillText(labelLines[labelIndex], cx, cy + firstLabelOffset + labelIndex * labelLineGap);
+                    }
                 } else {
-                    labelY = cy + (options.labelOffsetY === undefined ? radius - 31 : options.labelOffsetY);
+                    ctx.fillText(labelLines[0], cx, cy + (options.labelOffsetY === undefined ? radius - 31 : options.labelOffsetY));
                 }
-                ctx.fillText(label, cx, labelY);
             }
             ctx.restore();
         }

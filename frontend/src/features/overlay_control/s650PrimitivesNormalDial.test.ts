@@ -124,6 +124,40 @@ describe('S650 Normal energy dial primitive', () => {
     ]));
   });
 
+  it('renders a gear value with the two-line Normal RPM label', () => {
+    const spy = createCanvasSpy();
+    const primitives = loadPrimitivesModule().create(spy.ctx, {
+      clamp: (value: number, min: number, max: number) => Math.max(min, Math.min(max, value)),
+    });
+
+    primitives.drawNormalEnergyDial(
+      { typography: { bodyM: 24, captionLegal: 16 } },
+      { primary: '#1351D8', secondary: '#98A0A8', danger: '#FF3B30', text: '#FFFFFF' },
+      320,
+      240,
+      180,
+      0.5,
+      0.75,
+      'RPMx1000',
+      '4',
+      '',
+      {
+        centerLabel: true,
+        valueSize: 56,
+        labelSize: 16,
+        labelOffsetYWithoutUnit: 30,
+        labelLineGap: 16,
+        labelLines: ['GEAR', 'RPMx1000'],
+      },
+    );
+
+    expect(spy.textLayout).toEqual(expect.arrayContaining([
+      { value: '4', x: 320, y: 224 },
+      { value: 'GEAR', x: 320, y: 262 },
+      { value: 'RPMx1000', x: 320, y: 278 },
+    ]));
+  });
+
   it('does not depend on Heritage dial rendering semantics', () => {
     const spy = createCanvasSpy();
     const primitives = loadPrimitivesModule().create(spy.ctx, {

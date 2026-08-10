@@ -130,6 +130,7 @@
                 unitOffsetY: typography.normalDialUnitOffset,
                 labelOffsetY: typography.normalDialLabelOffset,
                 labelOffsetYWithoutUnit: typography.normalDialLabelWithoutUnitOffset,
+                labelLineGap: typography.normalDialLabelLineGap,
                 centerLabel: true,
                 activeColor: palette.primary
             };
@@ -145,10 +146,14 @@
             }
             if (role !== 'rpm' || !view.showRPM) return;
             var rpmTicks = normalRpmTicks(data);
+            var gearValue = typeof view.getGearLabel === 'function'
+                ? view.getGearLabel(data)
+                : '--';
             p.drawNormalEnergyDial(view, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
-                view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', Math.round(view.getRpm(data) / 100) * 100, '', Object.assign({}, dialText, {
+                view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', gearValue, '', Object.assign({}, dialText, {
                     tickCount: rpmTicks.count,
                     tickLabels: rpmTicks.labels,
+                    labelLines: ['GEAR', 'RPMx1000'],
                     redlineRatio: redlineRatio
                 }));
         }

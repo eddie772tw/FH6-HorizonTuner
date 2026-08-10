@@ -74,6 +74,7 @@
         normalDialUnitOffset: 18,
         normalDialLabelOffset: 42,
         normalDialLabelWithoutUnitOffset: 30,
+        normalDialLabelLineGap: 16,
         dualRingCenterTitle: 24,
         dualRingCenterSubtitle: 15,
         dualRingCenterValue: 22,

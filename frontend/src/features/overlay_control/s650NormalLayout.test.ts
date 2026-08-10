@@ -58,6 +58,7 @@ describe('S650 Normal layout', () => {
           normalDialUnitOffset: 18,
           normalDialLabelOffset: 42,
           normalDialLabelWithoutUnitOffset: 30,
+          normalDialLabelLineGap: 16,
           heritageDialAuxLabel: 16,
           heritageDialAuxLabelOffset: 44,
         },
@@ -71,6 +72,7 @@ describe('S650 Normal layout', () => {
         unitLabel: () => 'KM/H',
         getRpm: () => 4200,
         getMaxRpm: () => 8000,
+        getGearLabel: () => '4',
         getPedalValue: () => 0,
         getTelemetryReadout: (slot: string) => ({ value: slot, unit: '%', ratio: 0.5 }),
       },
@@ -117,6 +119,7 @@ describe('S650 Normal layout', () => {
     });
     expect(dials[0][2]).toBe(256);
     expect(dials[0][7]).toBe('RPMx1000');
+    expect(dials[0][8]).toBe('4');
     expect(dials[0][10]).toMatchObject({
       tickCount: 8,
       tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
@@ -124,6 +127,7 @@ describe('S650 Normal layout', () => {
       redlineWidth: 56,
       valueSize: 56,
       centerLabel: true,
+      labelLines: ['GEAR', 'RPMx1000'],
     });
     expect(dials[1][2]).toBe(1024);
     expect(dials[1][7]).toBe('SPEED');
