@@ -19,13 +19,14 @@
     var ctx = canvas ? canvas.getContext('2d') : null;
     var container = document.getElementById('s650Container');
 
-    if (!contract || !tokens || !window.S650HmiPrimitives || !window.S650HmiCenterInfo || !window.S650HmiLayouts || !window.S650HmiFrame) {
+    if (!contract || !tokens || !window.S650HmiPrimitives || !window.S650HmiBaseDriving || !window.S650HmiCenterInfo || !window.S650HmiLayouts || !window.S650HmiFrame) {
         console.error('[S650 HMI] Renderer modules are incomplete.');
         return;
     }
 
     var frame;
     var primitives;
+    var baseDriving;
     var centerInfo;
     var layouts;
 
@@ -40,6 +41,7 @@
             layouts: layoutHost
         });
         primitives = window.S650HmiPrimitives.create(ctx, contract);
+        baseDriving = window.S650HmiBaseDriving.create({ primitives: primitives });
         centerInfo = window.S650HmiCenterInfo.create({
             ctx: ctx,
             primitives: primitives,
@@ -50,6 +52,7 @@
             contract: contract,
             view: frame.view,
             primitives: primitives,
+            baseDriving: baseDriving,
             centerInfo: centerInfo,
             width: contract.canvas.width,
             height: contract.canvas.height
