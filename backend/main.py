@@ -2172,7 +2172,9 @@ async def save_overlay_config(data: dict):
         broadcast_data = hud_config_with_gui_theme(data)
 
         # Broadcast config update to all connected WebSockets (including the HUD)
-        await overlay_manager.broadcast_json({"type": "hud:config", "data": broadcast_data})
+        await overlay_manager.broadcast_json(
+            {"type": "hud:config", "data": broadcast_data}
+        )
 
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
