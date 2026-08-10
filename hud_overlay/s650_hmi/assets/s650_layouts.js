@@ -208,6 +208,32 @@
             }
         }
 
+        function drawFoxbodyDials(data, palette, profile) {
+            var ringRadius = gauge.outerRadius - profile.dial.outerInset;
+            var rpmMax = Math.max(8, Math.ceil(view.getMaxRpm(data) / 1000));
+            var speedScale = view.isMetric
+                ? { max: 240, majorStep: 20, majorCount: 12, minorPerMajor: 5 }
+                : { max: 160, majorStep: 20, majorCount: 8, minorPerMajor: 5 };
+
+            if (view.showRPM) {
+                p.drawFoxbodyDial(view, palette, gauge.leftCenterX, gauge.centerY, ringRadius,
+                    view.getRpm(data) / (rpmMax * 1000), {
+                        scale: { max: rpmMax, majorStep: 1, majorCount: rpmMax, minorPerMajor: 5 },
+                        faceLabel: 'RPM X 1000',
+                        redlineFrom: Math.max(0, data.redlineRpm / 1000),
+                        warningFrom: Math.max(0, data.redlineRpm / 1000 - 1)
+                    });
+            }
+            if (view.showSpeed) {
+                p.drawFoxbodyDial(view, palette, gauge.rightCenterX, gauge.centerY, ringRadius,
+                    view.getSpeed(data) / speedScale.max, {
+                        scale: speedScale,
+                        faceLabel: view.unitLabel(),
+                        specialMark: view.isMetric ? 60 : 55
+                    });
+            }
+        }
+
         function drawMainDials(data, palette, redlineRatio, profile) {
             var leftRole = profile.dial.leftRole;
             var rightRole = profile.dial.rightRole;
@@ -219,6 +245,10 @@
             if (profile.dial.renderer === 'retro') {
                 drawRetroDial(data, palette, leftRole, gauge.leftCenterX, redlineRatio, profile);
                 drawRetroDial(data, palette, rightRole, gauge.rightCenterX, redlineRatio, profile);
+                return;
+            }
+            if (profile.dial.renderer === 'foxbodyAnalog') {
+                drawFoxbodyDials(data, palette, profile);
                 return;
             }
             drawHeritageDials(data, palette, redlineRatio, profile);
@@ -240,7 +270,8 @@
         var centerRegions = geometry.centerRegions;
         var baseDrivingRegions = Object.freeze({
             normal: geometry.baseDriving,
-            heritage67: geometry.baseDriving
+            heritage67: geometry.baseDriving,
+            foxbody: geometry.baseDriving
         });
 
         return {

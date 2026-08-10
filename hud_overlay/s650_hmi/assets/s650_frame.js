@@ -18,6 +18,7 @@
             driveMode: 'normal',
             matchDriveMode: false,
             centerWidget: 'drive',
+            guiThemeMode: 'dark',
             showCenterInfo: true,
             isMetric: true,
             showGauge: true,
@@ -77,6 +78,9 @@
             }
             if (hasValue(payload, 's650CenterWidget') || hasValue(payload, 'centerWidget')) {
                 state.centerWidget = contract.normalizeConfig(payload).centerWidget;
+            }
+            if (hasValue(payload, 's650GuiThemeMode')) {
+                state.guiThemeMode = contract.normalizeConfig(payload).guiThemeMode;
             }
             if (hasValue(payload, 'isMetric') || hasValue(payload, 'metric') || hasValue(payload, 'unit')) {
                 state.isMetric = contract.normalizeConfig(payload).isMetric;
@@ -253,6 +257,7 @@
             get theme() { return state.theme; },
             get isMetric() { return state.isMetric; },
             get centerWidget() { return state.centerWidget; },
+            get foxbodyNightMode() { return state.guiThemeMode === 'dark'; },
             get showCenterInfo() { return state.showCenterInfo; },
             get showSpeed() { return state.showSpeed; },
             get showGear() { return state.showGear; },
@@ -281,7 +286,8 @@
             state.lastRenderTime = renderTime || 0;
             layouts.render(state.theme, frame, tokens.paletteFor(state.theme, {
                 customColor: state.customColor,
-                useDefaultColors: state.useDefaultColors
+                useDefaultColors: state.useDefaultColors,
+                guiThemeMode: state.guiThemeMode
             }), redlineRatio);
         }
 

@@ -69,10 +69,11 @@
         let hudStyles = {};
         const LEGACY_S650_STYLE_MAP = {
             s650_normal: 'normal',
-            s650_heritage67: 'heritage67'
+            s650_heritage67: 'heritage67',
+            s650_foxbody: 'foxbody'
         };
         const S650_HMI_THEMES = new Set([
-            'normal', 'heritage67'
+            'normal', 'heritage67', 'foxbody'
         ]);
         const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
 

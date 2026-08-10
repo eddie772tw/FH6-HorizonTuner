@@ -27,7 +27,7 @@ function loadLayoutsModule(): LayoutModule {
   return window.S650HmiLayouts;
 }
 
-function createLayouts(events: string[]) {
+function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
   return loadLayoutsModule().create({
     ctx: {
       save: () => undefined,
@@ -65,6 +65,10 @@ function createLayouts(events: string[]) {
       drawNormalEnergyDial: () => events.push('mainDial'),
       drawRetroDial: () => events.push('mainDial'),
       drawHeritageDial: () => events.push('mainDial'),
+      drawFoxbodyDial: (...args: unknown[]) => {
+        events.push('mainDial');
+        foxbodyCalls.push(args);
+      },
       getHeritageDialScale: () => ({ max: 80 }),
     },
     baseDriving: { draw: () => events.push('baseDriving') },
@@ -78,6 +82,7 @@ describe('S650 dual layout pipeline', () => {
   it.each([
     ['normal', ['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']],
     ['heritage67', ['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']],
+    ['foxbody', ['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']],
   ])('renders %s center layers before the main rings', (theme, expected) => {
     const events: string[] = [];
     const layouts = createLayouts(events);
@@ -85,5 +90,15 @@ describe('S650 dual layout pipeline', () => {
     layouts.render(theme, { redlineRpm: 7000 }, { primary: '#C98D5A', secondary: '#98A0A8' }, 0.875);
 
     expect(events).toEqual(expected);
+  });
+
+  it('uses the metric Fox Body speed reminder at 60 km/h', () => {
+    const events: string[] = [];
+    const foxbodyCalls: unknown[][] = [];
+    const layouts = createLayouts(events, foxbodyCalls);
+
+    layouts.render('foxbody', { redlineRpm: 7000 }, { primary: '#C98D5A', secondary: '#98A0A8' }, 0.875);
+
+    expect((foxbodyCalls[1][6] as { specialMark: number }).specialMark).toBe(60);
   });
 });

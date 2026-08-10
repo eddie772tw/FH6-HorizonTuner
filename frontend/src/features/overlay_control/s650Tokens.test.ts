@@ -51,4 +51,17 @@ describe('S650 HMI palette', () => {
       useDefaultColors: false,
     }).primary).toBe('#1351D8');
   });
+
+  it('selects the Fox Body palette from the GUI appearance mode', () => {
+    const tokens = loadTokensModule();
+    expect(tokens.paletteFor('foxbody', { customColor: '#ff00aa', useDefaultColors: false, guiThemeMode: 'light' })).toMatchObject({
+      primary: '#F3F6F1',
+      secondary: '#B9C0B8',
+    });
+    expect(tokens.paletteFor('foxbody', { guiThemeMode: 'dark' })).toMatchObject({
+      primary: '#9CFF88',
+      secondary: '#71C866',
+      text: '#D5FFD0',
+    });
+  });
 });

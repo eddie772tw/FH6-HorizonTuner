@@ -36,7 +36,7 @@ describe('S650 dual layout profiles', () => {
     });
 
     expect(layout.type).toBe('dual');
-    expect(Object.values(layout.profiles).map((profile) => profile.type)).toEqual(['dual', 'dual']);
+    expect(Object.values(layout.profiles).map((profile) => profile.type)).toEqual(['dual', 'dual', 'dual']);
     expect(layout.geometry.centerInfo).toEqual({ x: 425, y: 126, width: 430, height: 230 });
     expect(layout.geometry.mainGauge).toMatchObject({
       leftCenterX: 256,
@@ -44,5 +44,6 @@ describe('S650 dual layout profiles', () => {
       outerRadius: 188,
     });
     expect(new Set(Object.values(layout.profiles).map((profile) => profile.dial.outerInset))).toEqual(new Set([7, 8]));
+    expect(layout.profiles.foxbody.dial.renderer).toBe('foxbodyAnalog');
   });
 });

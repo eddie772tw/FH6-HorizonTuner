@@ -1478,6 +1478,7 @@ async def get_settings():
 @app.post("/api/settings")
 async def update_settings(data: dict):
     global current_udp_transport, current_udp_ip_port
+    theme_updated = "theme" in data and isinstance(data["theme"], dict)
 
     if "dyno_recording" in data:
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
@@ -1523,6 +1524,18 @@ async def update_settings(data: dict):
         logger.info(f"Saved settings to {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
+
+    if theme_updated:
+        hud_data = DEFAULT_HUD_CONFIG
+        if os.path.exists(HUD_CONFIG_FILE):
+            try:
+                with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    hud_data = json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load HUD config after theme update: {e}")
+        await overlay_manager.broadcast_json(
+            {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
+        )
 
     # 若 IP 或 Port 變更，在執行期動態重啟 UDP listener
     if ip_port_changed:
@@ -2094,6 +2107,7 @@ DEFAULT_HUD_CONFIG = {
 LEGACY_S650_STYLE_MAP = {
     "s650_normal": "normal",
     "s650_heritage67": "heritage67",
+    "s650_foxbody": "foxbody",
 }
 S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values())
 S650_HMI_CENTER_WIDGETS = {"disable", "drive", "tire_temp", "performance"}
@@ -2105,6 +2119,7 @@ def normalize_hud_config(data: dict) -> dict:
     # actualScale used to be a derived compatibility field. Scaling now has a
     # single owner (HUDCore), so discard stale values from older config files.
     normalized.pop("actualScale", None)
+    normalized.pop("s650GuiThemeMode", None)
     hud_style = normalized.get("hudStyle")
     is_legacy_s650_style = (
         isinstance(hud_style, str)
@@ -2127,16 +2142,24 @@ def normalize_hud_config(data: dict) -> dict:
     return normalized
 
 
+def hud_config_with_gui_theme(data: dict) -> dict:
+    normalized = normalize_hud_config(data)
+    theme = app_settings.get("theme", {})
+    mode = theme.get("mode") if isinstance(theme, dict) else None
+    normalized["s650GuiThemeMode"] = "light" if mode == "light" else "dark"
+    return normalized
+
+
 @app.get("/api/overlay/config")
 @app.get("/api/overlay/layout")
 async def get_overlay_config():
     if os.path.exists(HUD_CONFIG_FILE):
         try:
             with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return normalize_hud_config(json.load(f))
+                return hud_config_with_gui_theme(json.load(f))
         except Exception as e:
             logger.error(f"Failed to load hud_config.json: {e}")
-    return normalize_hud_config(DEFAULT_HUD_CONFIG)
+    return hud_config_with_gui_theme(DEFAULT_HUD_CONFIG)
 
 
 @app.post("/api/overlay/config")
@@ -2146,9 +2169,10 @@ async def save_overlay_config(data: dict):
         data = normalize_hud_config(data)
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        broadcast_data = hud_config_with_gui_theme(data)
 
         # Broadcast config update to all connected WebSockets (including the HUD)
-        await overlay_manager.broadcast_json({"type": "hud:config", "data": data})
+        await overlay_manager.broadcast_json({"type": "hud:config", "data": broadcast_data})
 
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
@@ -2166,7 +2190,7 @@ async def reset_overlay_config():
         await overlay_manager.broadcast_json(
             {
                 "type": "hud:config",
-                "data": data,
+                "data": hud_config_with_gui_theme(data),
             }
         )
 

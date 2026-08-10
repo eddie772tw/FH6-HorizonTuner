@@ -110,6 +110,16 @@ def test_s650_hmi_y_offset_round_trips(temp_hud_config_file):
     assert "actualScale" not in loaded_data
 
 
+def test_s650_hmi_receives_the_active_gui_appearance_mode(
+    temp_hud_config_file, monkeypatch
+):
+    monkeypatch.setitem(main.app_settings["theme"], "mode", "light")
+
+    loaded_data = TestClient(app).get("/api/overlay/config").json()
+
+    assert loaded_data["s650GuiThemeMode"] == "light"
+
+
 def test_s650_runtime_scale_tracks_user_scale(temp_hud_config_file):
     client = TestClient(app)
 
@@ -149,6 +159,7 @@ def test_legacy_actual_scale_is_removed_on_load(temp_hud_config_file):
     [
         ("s650_normal", "normal"),
         ("s650_heritage67", "heritage67"),
+        ("s650_foxbody", "foxbody"),
     ],
 )
 def test_legacy_s650_styles_are_migrated_to_hmi_mode(
@@ -173,6 +184,7 @@ def test_legacy_s650_styles_are_migrated_to_hmi_mode(
     [
         ("s650_normal", "normal"),
         ("s650_heritage67", "heritage67"),
+        ("s650_foxbody", "foxbody"),
     ],
 )
 def test_existing_legacy_s650_config_is_migrated_on_load(
@@ -230,7 +242,7 @@ def test_invalid_s650_center_widget_defaults_to_drive(
 
 @pytest.mark.parametrize(
     "removed_style",
-    ["s650_foxbody", "s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"],
+    ["s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"],
 )
 def test_removed_s650_legacy_style_defaults_to_heritage(
     temp_hud_config_file, removed_style

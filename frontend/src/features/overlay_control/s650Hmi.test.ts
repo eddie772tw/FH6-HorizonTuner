@@ -17,6 +17,7 @@ describe('S650 HMI config contract', () => {
     expect(S650_HMI_THEMES.map((theme) => theme.value)).toEqual([
       'normal',
       'heritage67',
+      'foxbody',
     ]);
   });
 
@@ -44,7 +45,7 @@ describe('S650 HMI config contract', () => {
     });
   });
 
-  it.each(['s650_foxbody', 's650_sport', 's650_track', 's650_calm', 's650_svt_cobra'])
+  it.each(['s650_sport', 's650_track', 's650_calm', 's650_svt_cobra'])
     ('falls back removed legacy style id %s to Heritage', (legacyStyle) => {
       expect(normalizeS650HmiConfig({ hudStyle: legacyStyle }).s650Theme).toBe(DEFAULT_S650_HMI_THEME);
     });
@@ -99,7 +100,7 @@ describe('S650 HMI config contract', () => {
   it('recognizes only registered HMI themes', () => {
     expect(isS650HmiTheme('normal')).toBe(true);
     expect(isS650HmiTheme('heritage67')).toBe(true);
-    expect(isS650HmiTheme('foxbody')).toBe(false);
+    expect(isS650HmiTheme('foxbody')).toBe(true);
     expect(isS650HmiTheme('track')).toBe(false);
     expect(isS650HmiTheme('s650_heritage67')).toBe(false);
     expect(isS650HmiTheme('')).toBe(false);

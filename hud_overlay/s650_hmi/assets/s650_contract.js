@@ -10,7 +10,8 @@
 
     var THEMES = [
         'normal',
-        'heritage67'
+        'heritage67',
+        'foxbody'
     ];
 
     var DRIVE_MODES = [
@@ -140,6 +141,7 @@
             theme: normalizeTheme(rawTheme),
             driveMode: normalizeDriveMode(rawDriveMode),
             centerWidget: normalizeCenterWidget(firstDefined(readValue(payload, 's650CenterWidget'), readValue(payload, 'centerWidget'))),
+            guiThemeMode: readValue(payload, 's650GuiThemeMode') === 'light' ? 'light' : 'dark',
             matchDriveMode: readValue(payload, 'matchDriveMode') === true,
             isMetric: isMetric,
             elements: readElements(payload)

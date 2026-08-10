@@ -5,6 +5,7 @@ export const DEFAULT_S650_CENTER_WIDGET = 'drive' as const;
 const S650_HMI_THEME_VALUES = [
   'normal',
   'heritage67',
+  'foxbody',
 ] as const;
 
 export type S650HmiTheme = (typeof S650_HMI_THEME_VALUES)[number];
@@ -12,6 +13,7 @@ export type S650HmiTheme = (typeof S650_HMI_THEME_VALUES)[number];
 export const S650_HMI_THEMES = [
   { value: 'normal', label: 'S650 Normal' },
   { value: 'heritage67', label: "S650 Heritage '67" },
+  { value: 'foxbody', label: "S650 Fox Body '87–'93" },
 ] as const;
 
 export const S650_CENTER_WIDGETS = [
@@ -26,6 +28,7 @@ export type S650CenterWidget = (typeof S650_CENTER_WIDGETS)[number]['value'];
 export const LEGACY_S650_STYLE_MAP: Readonly<Record<string, S650HmiTheme>> = {
   s650_normal: 'normal',
   s650_heritage67: 'heritage67',
+  s650_foxbody: 'foxbody',
 };
 
 export function isS650HmiTheme(value: unknown): value is S650HmiTheme {

@@ -608,6 +608,96 @@
             ctx.restore();
         }
 
+        // Fox Body '87–'93 is intentionally flatter than the chrome-bezel
+        // Heritage dial: square-end ticks, upright numerals and a pale needle
+        // carry the original's analog language while the screen remains live.
+        function drawFoxbodyDial(view, palette, cx, cy, radius, ratio, options) {
+            options = options || {};
+            var startAngle = Math.PI * 0.70;
+            var endAngle = Math.PI * 2.30;
+            var scale = options.scale || { max: 8, majorStep: 1, majorCount: 8, minorPerMajor: 5 };
+            var minorPerMajor = scale.minorPerMajor || 5;
+            var minorCount = scale.majorCount * minorPerMajor;
+            var needleAngle = startAngle + (endAngle - startAngle) * clamp(ratio, 0, 1);
+            var faceColor = palette.primary;
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#050605';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#080A08';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            for (var tick = 0; tick <= minorCount; tick += 1) {
+                var tickRatio = tick / minorCount;
+                var tickAngle = startAngle + (endAngle - startAngle) * tickRatio;
+                var isMajor = tick % minorPerMajor === 0;
+                var value = isMajor ? (tick / minorPerMajor) * scale.majorStep : scale.max * tickRatio;
+                var tickOuter = radius - 10;
+                var tickInner = tickOuter - (isMajor ? 15 : 7);
+                var tickColor = faceColor;
+                if (options.redlineFrom !== undefined && value >= options.redlineFrom) tickColor = palette.danger;
+                else if (options.warningFrom !== undefined && value >= options.warningFrom) tickColor = palette.warning;
+                if (options.specialMark !== null && options.specialMark !== undefined && Math.abs(value - options.specialMark) < (scale.majorStep / minorPerMajor) / 2) tickColor = palette.danger;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(tickAngle) * tickInner, cy + Math.sin(tickAngle) * tickInner);
+                ctx.lineTo(cx + Math.cos(tickAngle) * tickOuter, cy + Math.sin(tickAngle) * tickOuter);
+                ctx.strokeStyle = tickColor;
+                ctx.lineWidth = isMajor ? 2.5 : 1.2;
+                ctx.stroke();
+
+                if (isMajor) {
+                    setFont(fontSize(view, 'foxbodyDialTickNumber', 23), '700', 'Arial Narrow');
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = tickColor;
+                    ctx.fillText(String(Math.round(value)),
+                        cx + Math.cos(tickAngle) * (radius - fontSize(view, 'foxbodyDialTickInset', 42)),
+                        cy + Math.sin(tickAngle) * (radius - fontSize(view, 'foxbodyDialTickInset', 42)));
+                }
+            }
+
+            setFont(fontSize(view, 'foxbodyDialFaceLabel', 14), '700', 'Arial Narrow');
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = faceColor;
+            ctx.fillText(options.faceLabel || '', cx, cy - radius * fontSize(view, 'foxbodyDialFaceLabelOffset', 0.42));
+
+            ctx.save();
+            ctx.shadowColor = palette.primary;
+            ctx.shadowBlur = view.foxbodyNightMode ? 7 : 0;
+            ctx.beginPath();
+            ctx.moveTo(cx - Math.cos(needleAngle + Math.PI / 2) * 2.8, cy - Math.sin(needleAngle + Math.PI / 2) * 2.8);
+            ctx.lineTo(cx + Math.cos(needleAngle) * (radius - 32), cy + Math.sin(needleAngle) * (radius - 32));
+            ctx.lineTo(cx + Math.cos(needleAngle + Math.PI / 2) * 2.8, cy + Math.sin(needleAngle + Math.PI / 2) * 2.8);
+            ctx.closePath();
+            ctx.fillStyle = '#E7ECE6';
+            ctx.fill();
+            ctx.restore();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+            ctx.fillStyle = '#151815';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#090A09';
+            ctx.fill();
+            ctx.restore();
+        }
+
         function drawSideGauge(x, y, label, ratio, options) {
             options = options || {};
             var available = ratio !== null && ratio !== undefined;
@@ -809,6 +899,7 @@
             getHeritageDialScale: getHeritageDialScale,
             drawHeritageBackdrop: drawHeritageBackdrop,
             drawHeritageDial: drawHeritageDial,
+            drawFoxbodyDial: drawFoxbodyDial,
             drawSideGauge: drawSideGauge,
             drawHeritageSideGauge: drawHeritageSideGauge,
             drawHeritageStatus: drawHeritageStatus,

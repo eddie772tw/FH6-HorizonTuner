@@ -75,6 +75,10 @@
         normalDialLabelOffset: 42,
         normalDialLabelWithoutUnitOffset: 30,
         normalDialLabelLineGap: 16,
+        foxbodyDialTickNumber: 23,
+        foxbodyDialTickInset: 42,
+        foxbodyDialFaceLabel: 14,
+        foxbodyDialFaceLabelOffset: 0.42,
         dualRingCenterTitle: 24,
         dualRingCenterSubtitle: 15,
         dualRingCenterValue: 22,
@@ -103,6 +107,15 @@
             text: '#FFF8E7',
             warning: colors.telltaleYellow,
             danger: colors.telltaleRed
+        },
+        foxbody: {
+            background: '#050605',
+            surface: '#0A0D0A',
+            primary: '#F3F6F1',
+            secondary: '#B9C0B8',
+            text: '#FFFFFF',
+            warning: colors.telltaleYellow,
+            danger: '#F04646'
         }
     };
 
@@ -136,8 +149,13 @@
         paletteFor: function (theme, options) {
             var palette = clonePalette(palettes[theme] || palettes.normal);
             options = options || {};
-            if (options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
+            if (theme !== 'foxbody' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
                 palette.primary = options.customColor;
+            }
+            if (theme === 'foxbody' && options.guiThemeMode === 'dark') {
+                palette.primary = '#9CFF88';
+                palette.secondary = '#71C866';
+                palette.text = '#D5FFD0';
             }
             return palette;
         }

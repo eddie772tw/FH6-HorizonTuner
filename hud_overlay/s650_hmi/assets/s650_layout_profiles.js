@@ -52,6 +52,28 @@
                 rightRole: 'speed',
                 outerInset: 7
             })
+        }),
+        foxbody: Object.freeze({
+            type: DUAL_LAYOUT_TYPE,
+            statusRenderer: 'heritage',
+            centerRoles: Object.freeze({
+                topLeft: 'odometer',
+                topRight: 'heading',
+                bottomLeft: 'rpm',
+                bottomRight: 'speed'
+            }),
+            sideRoles: Object.freeze({ left: 'power', right: 'boost' }),
+            sideGauges: true,
+            sideGauge: Object.freeze({
+                fillColor: 'primary',
+                pointerColor: 'primary'
+            }),
+            dial: Object.freeze({
+                renderer: 'foxbodyAnalog',
+                leftRole: 'rpm',
+                rightRole: 'speed',
+                outerInset: 8
+            })
         })
     });
 
@@ -62,7 +84,7 @@
             width: region.width,
             height: region.height
         });
-        return Object.freeze({ normal: frozen, heritage67: frozen });
+        return Object.freeze({ normal: frozen, heritage67: frozen, foxbody: frozen });
     }
 
     function create(options) {
