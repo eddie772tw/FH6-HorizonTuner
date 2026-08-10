@@ -148,7 +148,6 @@ def test_legacy_actual_scale_is_removed_on_load(temp_hud_config_file):
     ("legacy_style", "expected_theme"),
     [
         ("s650_normal", "normal"),
-        ("s650_foxbody", "foxbody"),
         ("s650_heritage67", "heritage67"),
     ],
 )
@@ -173,7 +172,6 @@ def test_legacy_s650_styles_are_migrated_to_hmi_mode(
     ("legacy_style", "expected_theme"),
     [
         ("s650_normal", "normal"),
-        ("s650_foxbody", "foxbody"),
         ("s650_heritage67", "heritage67"),
     ],
 )
@@ -231,7 +229,7 @@ def test_invalid_s650_center_widget_defaults_to_drive(
 
 
 @pytest.mark.parametrize(
-    "removed_style", ["s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"]
+    "removed_style", ["s650_foxbody", "s650_sport", "s650_track", "s650_calm", "s650_svt_cobra"]
 )
 def test_removed_s650_legacy_style_defaults_to_heritage(
     temp_hud_config_file, removed_style
