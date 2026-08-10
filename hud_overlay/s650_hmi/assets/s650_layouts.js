@@ -70,6 +70,10 @@
             var drawSideGauge = p.drawSideGauge || p.drawHeritageSideGauge;
             if (!slots || typeof view.getTelemetryReadout !== 'function' || typeof drawSideGauge !== 'function') return;
 
+            var sideGaugeStyle = profile.sideGauge || {};
+            var fillColor = palette[sideGaugeStyle.fillColor] || palette.primary;
+            var pointerColor = palette[sideGaugeStyle.pointerColor] || palette.primary;
+
             var leftSideReadout = view.getTelemetryReadout(slots.left, data);
             var rightSideReadout = view.getTelemetryReadout(slots.right, data);
             var sharedOptions = {
@@ -77,8 +81,8 @@
                 labelSize: typography.heritageDialAuxLabel,
                 labelOffset: typography.heritageDialAuxLabelOffset,
                 radius: geometry.sideGauges.radius,
-                activeColor: palette.primary,
-                pointerColor: palette.primary,
+                activeColor: fillColor,
+                pointerColor: pointerColor,
                 tickColor: palette.secondary
             };
 
@@ -115,28 +119,38 @@
         }
 
         function drawNormalEnergyDial(data, palette, role, centerX, redlineRatio, profile) {
+            var dialStyle = profile.dial;
+            var dialText = {
+                baseWidth: dialStyle.energyWidth,
+                redlineWidth: dialStyle.redlineWidth,
+                valueSize: typography.normalDialValue || typography.bodyM,
+                unitSize: typography.normalDialUnit || typography.captionLegal,
+                labelSize: typography.normalDialLabel || typography.captionLegal,
+                valueOffsetY: typography.normalDialValueOffset,
+                unitOffsetY: typography.normalDialUnitOffset,
+                labelOffsetY: typography.normalDialLabelOffset,
+                labelOffsetYWithoutUnit: typography.normalDialLabelWithoutUnitOffset,
+                centerLabel: true,
+                activeColor: palette.primary
+            };
             if (role === 'speed') {
                 if (!view.showSpeed) return;
                 var speedTicks = normalSpeedTicks();
                 p.drawNormalEnergyDial(view, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
-                    view.getSpeed(data) / normalSpeedScale(), 1, 'SPEED', view.roundedSpeed(data), view.unitLabel(), {
+                    view.getSpeed(data) / normalSpeedScale(), 1, 'SPEED', view.roundedSpeed(data), view.unitLabel(), Object.assign({}, dialText, {
                         tickCount: speedTicks.count,
-                        tickLabels: speedTicks.labels,
-                        valueSize: typography.bodyM,
-                        activeColor: palette.primary
-                    });
+                        tickLabels: speedTicks.labels
+                    }));
                 return;
             }
             if (role !== 'rpm' || !view.showRPM) return;
             var rpmTicks = normalRpmTicks(data);
             p.drawNormalEnergyDial(view, palette, centerX, gauge.centerY, gauge.outerRadius - profile.dial.outerInset,
-                view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', Math.round(view.getRpm(data) / 100) * 100, '', {
+                view.getRpm(data) / view.getMaxRpm(data), redlineRatio, 'RPMx1000', Math.round(view.getRpm(data) / 100) * 100, '', Object.assign({}, dialText, {
                     tickCount: rpmTicks.count,
                     tickLabels: rpmTicks.labels,
-                    valueSize: typography.bodyM,
-                    activeColor: palette.primary,
                     redlineRatio: redlineRatio
-                });
+                }));
         }
 
         function drawRetroDial(data, palette, role, centerX, redlineRatio, profile) {

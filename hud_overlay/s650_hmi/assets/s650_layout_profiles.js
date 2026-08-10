@@ -24,7 +24,15 @@
                 renderer: 'normalEnergy',
                 leftRole: 'rpm',
                 rightRole: 'speed',
-                outerInset: 8
+                outerInset: 8,
+                // Normal treats the dial as an energy band. Keep its width
+                // profile-owned so Heritage can retain its own analog logic.
+                energyWidth: 48,
+                redlineWidth: 56
+            }),
+            sideGauge: Object.freeze({
+                fillColor: 'primary',
+                pointerColor: 'danger'
             })
         }),
         foxbody: Object.freeze({

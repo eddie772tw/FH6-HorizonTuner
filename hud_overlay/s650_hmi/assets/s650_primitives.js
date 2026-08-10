@@ -338,9 +338,18 @@
             var baseWidth = options.baseWidth || 10;
             var activeColor = options.activeColor || palette.primary;
             var trackColor = options.trackColor || 'rgba(255, 255, 255, 0.16)';
+            // Normal's thick energy band is inset from the shared outer
+            // boundary. Legacy callers without centerLabel keep the original
+            // radius semantics.
+            var energyRadius = options.energyRadius === undefined
+                ? (options.centerLabel ? radius - baseWidth / 2 : radius)
+                : options.energyRadius;
             var redlineStart = startAngle + (endAngle - startAngle) * clamp(redlineRatio, 0, 1);
             var activeEnd = startAngle + (endAngle - startAngle) * clamp(ratio, 0, 1);
-            var innerRadius = radius - (options.innerInset || 20);
+            var innerInset = options.innerInset === undefined
+                ? (options.centerLabel ? baseWidth / 2 + 20 : 20)
+                : options.innerInset;
+            var innerRadius = energyRadius - innerInset;
             var tickLabels = options.tickLabels || [];
             var tickCount = options.tickCount || 10;
             var tickColor = options.tickColor || palette.secondary;
@@ -360,9 +369,17 @@
             ctx.lineWidth = options.innerWidth || 2;
             ctx.stroke();
 
+            ctx.beginPath();
+            ctx.arc(cx, cy, energyRadius, startAngle, endAngle);
+            ctx.strokeStyle = trackColor;
+            ctx.lineWidth = baseWidth;
+            ctx.stroke();
+
+            // Paint the redline after the full energy track so it remains a
+            // real, readable region even when the Normal band is thick.
             if (redlineRatio < 1) {
                 ctx.beginPath();
-                ctx.arc(cx, cy, radius, redlineStart, endAngle);
+                ctx.arc(cx, cy, energyRadius, redlineStart, endAngle);
                 ctx.strokeStyle = palette.danger;
                 ctx.globalAlpha = options.redlineAlpha || 0.88;
                 ctx.lineWidth = options.redlineWidth || baseWidth + 4;
@@ -370,15 +387,9 @@
                 ctx.globalAlpha = 1;
             }
 
-            ctx.beginPath();
-            ctx.arc(cx, cy, radius, startAngle, endAngle);
-            ctx.strokeStyle = trackColor;
-            ctx.lineWidth = baseWidth;
-            ctx.stroke();
-
             if (ratio > 0) {
                 ctx.beginPath();
-                ctx.arc(cx, cy, radius, startAngle, activeEnd);
+                ctx.arc(cx, cy, energyRadius, startAngle, Math.min(activeEnd, redlineStart));
                 ctx.strokeStyle = activeColor;
                 ctx.lineWidth = baseWidth;
                 ctx.stroke();
@@ -401,33 +412,52 @@
                     ctx.fillStyle = tickRatio >= clamp(redlineRatio, 0, 1) ? palette.danger : tickColor;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(String(tickLabels[tick]), cx + Math.cos(tickAngle) * (radius - 30), cy + Math.sin(tickAngle) * (radius - 30));
+                    var tickLabelRadius = options.centerLabel ? energyRadius - 30 : radius - 30;
+                    ctx.fillText(String(tickLabels[tick]), cx + Math.cos(tickAngle) * tickLabelRadius, cy + Math.sin(tickAngle) * tickLabelRadius);
                 }
             }
 
             if (options.showIndicator !== false) {
                 ctx.beginPath();
-                ctx.moveTo(cx + Math.cos(activeEnd) * (radius - baseWidth), cy + Math.sin(activeEnd) * (radius - baseWidth));
-                ctx.lineTo(cx + Math.cos(activeEnd) * (radius + 9), cy + Math.sin(activeEnd) * (radius + 9));
+                ctx.moveTo(cx + Math.cos(activeEnd) * (energyRadius - baseWidth), cy + Math.sin(activeEnd) * (energyRadius - baseWidth));
+                ctx.lineTo(cx + Math.cos(activeEnd) * (energyRadius + 9), cy + Math.sin(activeEnd) * (energyRadius + 9));
                 ctx.strokeStyle = options.indicatorColor || palette.text;
                 ctx.lineWidth = options.indicatorWidth || 3;
                 ctx.stroke();
             }
 
-            setFont(options.valueSize || fontSize(view, 'bodyM', 24), '700', options.valueFamily || 'ForzaGear');
+            var valueSize = options.valueSize || fontSize(view, 'bodyM', 24);
+            var valueY = cy + (options.centerLabel
+                ? (options.valueOffsetY === undefined ? -16 : options.valueOffsetY)
+                : (options.valueOffsetY === undefined ? 2 : options.valueOffsetY));
+            setFont(valueSize, '700', options.valueFamily || 'ForzaGear');
             ctx.fillStyle = palette.text;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(String(value), cx, cy + (options.valueOffsetY || 2));
+            ctx.fillText(String(value), cx, valueY);
             if (unit) {
+                var unitY = cy + (options.centerLabel
+                    ? (options.unitOffsetY === undefined ? 18 : options.unitOffsetY)
+                    : (options.unitOffsetY === undefined ? 25 : options.unitOffsetY));
                 setFont(options.unitSize || fontSize(view, 'captionLegal', 16), '700');
                 ctx.fillStyle = palette.secondary;
-                ctx.fillText(unit, cx, cy + (options.unitOffsetY || 25));
+                ctx.fillText(unit, cx, unitY);
             }
             if (label) {
                 setFont(options.labelSize || fontSize(view, 'captionLegal', 16), '700');
                 ctx.fillStyle = palette.secondary;
-                ctx.fillText(label, cx, cy + (options.labelOffsetY || radius - 31));
+                var labelY;
+                if (options.centerLabel) {
+                    var labelOffset = unit
+                        ? (options.labelOffsetY === undefined ? 42 : options.labelOffsetY)
+                        : (options.labelOffsetYWithoutUnit === undefined
+                            ? (options.labelOffsetY === undefined ? 30 : options.labelOffsetY)
+                            : options.labelOffsetYWithoutUnit);
+                    labelY = cy + labelOffset;
+                } else {
+                    labelY = cy + (options.labelOffsetY === undefined ? radius - 31 : options.labelOffsetY);
+                }
+                ctx.fillText(label, cx, labelY);
             }
             ctx.restore();
         }

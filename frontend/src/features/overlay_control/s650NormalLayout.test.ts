@@ -47,7 +47,20 @@ describe('S650 Normal layout', () => {
       contract: { heritageTelemetrySlots: { center: {}, side: {} } },
       view: {
         gauge: { speedScaleMax: 360, leftCenterX: 256, rightCenterX: 1024, centerY: 250, radius: 180 },
-        typography: { speedHero: 64, bodyM: 24, captionLegal: 16 },
+        typography: {
+          speedHero: 64,
+          bodyM: 24,
+          captionLegal: 16,
+          normalDialValue: 56,
+          normalDialUnit: 16,
+          normalDialLabel: 16,
+          normalDialValueOffset: -16,
+          normalDialUnitOffset: 18,
+          normalDialLabelOffset: 42,
+          normalDialLabelWithoutUnitOffset: 30,
+          heritageDialAuxLabel: 16,
+          heritageDialAuxLabelOffset: 44,
+        },
         theme: 'normal',
         isMetric: true,
         showCenterInfo: false,
@@ -78,7 +91,12 @@ describe('S650 Normal layout', () => {
       height: 480,
     });
 
-    layouts.render('normal', { redlineRpm: 7000 }, { background: '#000' }, 0.875);
+    layouts.render(
+      'normal',
+      { redlineRpm: 7000 },
+      { background: '#000', primary: '#1351D8', secondary: '#98A0A8', danger: '#FF3B30' },
+      0.875,
+    );
 
     expect(dials).toHaveLength(2);
     expect(sideGauges).toHaveLength(2);
@@ -93,12 +111,29 @@ describe('S650 Normal layout', () => {
     expect(pedalBars).toHaveLength(0);
     expect(sideGauges[0][0]).toBe(256);
     expect(sideGauges[1][0]).toBe(1024);
+    expect(sideGauges[0][4]).toMatchObject({
+      activeColor: '#1351D8',
+      pointerColor: '#FF3B30',
+    });
     expect(dials[0][2]).toBe(256);
     expect(dials[0][7]).toBe('RPMx1000');
-    expect(dials[0][10]).toMatchObject({ tickCount: 8, tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'] });
+    expect(dials[0][10]).toMatchObject({
+      tickCount: 8,
+      tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
+      baseWidth: 48,
+      redlineWidth: 56,
+      valueSize: 56,
+      centerLabel: true,
+    });
     expect(dials[1][2]).toBe(1024);
     expect(dials[1][7]).toBe('SPEED');
-    expect(dials[1][10]).toMatchObject({ tickCount: 10, tickLabels: ['0', '30', '60', '90', '120', '150', '180', '210', '240', '270', '300'] });
+    expect(dials[1][10]).toMatchObject({
+      tickCount: 10,
+      tickLabels: ['0', '30', '60', '90', '120', '150', '180', '210', '240', '270', '300'],
+      baseWidth: 48,
+      valueSize: 56,
+      centerLabel: true,
+    });
     expect(decorations).toHaveLength(1);
     expect(decorations[0][2]).toEqual({
       centerX: 640,
