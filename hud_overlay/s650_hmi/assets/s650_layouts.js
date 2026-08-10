@@ -85,6 +85,26 @@
             return { count: maximum, labels: labels };
         }
 
+        function drawNormalDecorations(palette) {
+            ctx.save();
+            ctx.strokeStyle = palette.secondary;
+            ctx.globalAlpha = 0.24;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            // The reference cluster uses lines to divide information groups;
+            // these remain meaningful after the global background is removed.
+            ctx.moveTo(456, 144);
+            ctx.lineTo(824, 144);
+            ctx.moveTo(640, 158);
+            ctx.lineTo(640, 348);
+            ctx.moveTo(425, 368);
+            ctx.lineTo(580, 368);
+            ctx.moveTo(700, 368);
+            ctx.lineTo(855, 368);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         function drawNormal(data, palette, redlineRatio) {
             clear(palette);
             p.drawHeader(view, palette, view.theme.toUpperCase(), view.theme === 'normal' ? 'BALANCED CLUSTER' : 'MVP FALLBACK');
@@ -111,16 +131,7 @@
                     });
             }
 
-            p.drawRoundedPanel(410, 102, 460, 274, 12, palette.surface, 'rgba(255, 255, 255, 0.12)');
-            ctx.save();
-            ctx.strokeStyle = palette.primary;
-            ctx.globalAlpha = 0.65;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(456, 144);
-            ctx.lineTo(824, 144);
-            ctx.stroke();
-            ctx.restore();
+            drawNormalDecorations(palette);
 
             drawBaseDriving(data, palette, 'normal');
             drawCenterInfo(data, palette, 'normal');

@@ -25,13 +25,14 @@ function loadLayoutsModule(): LayoutModule {
 describe('S650 Normal layout', () => {
   it('maps the reference layout to left RPM and right speed energy dials', () => {
     const dials: unknown[][] = [];
+    const structureLines: number[][] = [];
     const layouts = loadLayoutsModule().create({
       ctx: {
         save: () => undefined,
         restore: () => undefined,
         beginPath: () => undefined,
-        moveTo: () => undefined,
-        lineTo: () => undefined,
+        moveTo: (...args: number[]) => structureLines.push(args),
+        lineTo: (...args: number[]) => structureLines.push(args),
         stroke: () => undefined,
         fillText: () => undefined,
       },
@@ -74,5 +75,11 @@ describe('S650 Normal layout', () => {
     expect(dials[1][2]).toBe(256);
     expect(dials[1][7]).toBe('RPMx1000');
     expect(dials[1][10]).toMatchObject({ tickCount: 8, tickLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8'] });
+    expect(structureLines).toEqual([
+      [456, 144], [824, 144],
+      [640, 158], [640, 348],
+      [425, 368], [580, 368],
+      [700, 368], [855, 368],
+    ]);
   });
 });
