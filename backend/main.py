@@ -887,7 +887,6 @@ class DragRecorder:
 
         # 5. Yaw stability (using vector average to handle -pi/pi wrap-around)
         yaws = [p.get("Yaw", 0.0) for p in self.current_session]
-        import math
 
         cos_sum = sum(math.cos(y) for y in yaws)
         sin_sum = sum(math.sin(y) for y in yaws)
@@ -2098,19 +2097,15 @@ LEGACY_S650_STYLE_MAP = {
     "s650_heritage67": "heritage67",
 }
 S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values())
-S650_HMI_CENTER_WIDGETS = {"drive", "tire_temp", "performance"}
-
-# The calibrated visual footprint is the former 150% baseline at the tested
-# 200% user setting. Keep this runtime value in the config payload as well as
-# in the S650 renderer so an older cached HUDCore still receives the same zoom.
-S650_HMI_SCALE_BASELINE = 3.0
-S650_HMI_SCALE_MULTIPLIER = 0.75
-HUD_GLOBAL_SCALE_FACTOR = 0.75
+S650_HMI_CENTER_WIDGETS = {"disable", "drive", "tire_temp", "performance"}
 
 
 def normalize_hud_config(data: dict) -> dict:
     """Normalize S650 HUD ids while leaving other HUD configurations untouched."""
     normalized = dict(data or {})
+    # actualScale used to be a derived compatibility field. Scaling now has a
+    # single owner (HUDCore), so discard stale values from older config files.
+    normalized.pop("actualScale", None)
     hud_style = normalized.get("hudStyle")
     is_legacy_s650_style = (
         isinstance(hud_style, str)
@@ -2133,58 +2128,28 @@ def normalize_hud_config(data: dict) -> dict:
     return normalized
 
 
-def with_runtime_hud_scale(data: dict) -> dict:
-    """Add the calibrated runtime zoom for the S650 HMI without changing user scale."""
-    normalized = normalize_hud_config(data)
-    if normalized.get("hudStyle") != "s650_hmi":
-        normalized.pop("actualScale", None)
-        return normalized
-
-    raw_scale = normalized.get("scale", 1.0)
-    try:
-        user_scale = float(raw_scale)
-    except (TypeError, ValueError):
-        user_scale = 1.0
-    if not math.isfinite(user_scale):
-        user_scale = 1.0
-
-    normalized["actualScale"] = (
-        user_scale
-        * S650_HMI_SCALE_BASELINE
-        * S650_HMI_SCALE_MULTIPLIER
-        * HUD_GLOBAL_SCALE_FACTOR
-    )
-    return normalized
-
-
 @app.get("/api/overlay/config")
 @app.get("/api/overlay/layout")
 async def get_overlay_config():
     if os.path.exists(HUD_CONFIG_FILE):
         try:
             with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return with_runtime_hud_scale(json.load(f))
+                return normalize_hud_config(json.load(f))
         except Exception as e:
             logger.error(f"Failed to load hud_config.json: {e}")
-    return with_runtime_hud_scale(DEFAULT_HUD_CONFIG)
+    return normalize_hud_config(DEFAULT_HUD_CONFIG)
 
 
 @app.post("/api/overlay/config")
 @app.post("/api/overlay/layout")
 async def save_overlay_config(data: dict):
     try:
-        # Do not persist the derived value; it is regenerated on every read so
-        # changing the calibration remains backward-compatible with old files.
         data = normalize_hud_config(data)
-        data.pop("actualScale", None)
-        runtime_data = with_runtime_hud_scale(data)
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         # Broadcast config update to all connected WebSockets (including the HUD)
-        await overlay_manager.broadcast_json(
-            {"type": "hud:config", "data": runtime_data}
-        )
+        await overlay_manager.broadcast_json({"type": "hud:config", "data": data})
 
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
@@ -2202,7 +2167,7 @@ async def reset_overlay_config():
         await overlay_manager.broadcast_json(
             {
                 "type": "hud:config",
-                "data": with_runtime_hud_scale(data),
+                "data": data,
             }
         )
 

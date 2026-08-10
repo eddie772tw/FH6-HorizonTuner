@@ -22,7 +22,7 @@ describe('S650 HMI config contract', () => {
   });
 
   it('exposes stable central information pages for dual-ring themes', () => {
-    expect(S650_CENTER_WIDGETS.map((widget) => widget.value)).toEqual(['drive', 'tire_temp', 'performance']);
+    expect(S650_CENTER_WIDGETS.map((widget) => widget.value)).toEqual(['disable', 'drive', 'tire_temp', 'performance']);
   });
 
   it.each(Object.entries(LEGACY_S650_STYLE_MAP))('migrates legacy style id %s', (legacyStyle, theme) => {
@@ -110,11 +110,12 @@ describe('S650 HMI config contract', () => {
     expect(isS650HmiTheme({ value: 'heritage67' })).toBe(false);
   });
 
-  it.each(['drive', 'tire_temp', 'performance'] as const)('preserves the supported central information page %s', (widget) => {
+  it.each(['disable', 'drive', 'tire_temp', 'performance'] as const)('preserves the supported central information page %s', (widget) => {
     expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget }).s650CenterWidget).toBe(widget);
     expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: 'unknown' }).s650CenterWidget).toBe(
       DEFAULT_S650_CENTER_WIDGET
     );
+    expect(isS650CenterWidget('disable')).toBe(true);
     expect(isS650CenterWidget('performance')).toBe(true);
     expect(isS650CenterWidget('tpms')).toBe(false);
   });

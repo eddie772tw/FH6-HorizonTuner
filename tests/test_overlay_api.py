@@ -107,7 +107,7 @@ def test_s650_hmi_y_offset_round_trips(temp_hud_config_file):
     loaded_data = client.get("/api/overlay/config").json()
     assert loaded_data["hudStyle"] == "s650_hmi"
     assert loaded_data["s650HmiOffsetY"] == 120
-    assert loaded_data["actualScale"] == pytest.approx(1.6875)
+    assert "actualScale" not in loaded_data
 
 
 def test_s650_runtime_scale_tracks_user_scale(temp_hud_config_file):
@@ -121,11 +121,27 @@ def test_s650_runtime_scale_tracks_user_scale(temp_hud_config_file):
 
     loaded_data = client.get("/api/overlay/config").json()
     assert loaded_data["scale"] == 2.0
-    assert loaded_data["actualScale"] == pytest.approx(3.375)
+    assert "actualScale" not in loaded_data
 
     with open(temp_hud_config_file, "r", encoding="utf-8") as config_file:
         persisted_data = json.load(config_file)
     assert "actualScale" not in persisted_data
+
+
+def test_legacy_actual_scale_is_removed_on_load(temp_hud_config_file):
+    with open(temp_hud_config_file, "w", encoding="utf-8") as config_file:
+        json.dump(
+            {
+                "hudStyle": "s650_hmi",
+                "scale": 1.0,
+                "actualScale": 1.6875,
+            },
+            config_file,
+        )
+
+    loaded_data = TestClient(app).get("/api/overlay/config").json()
+
+    assert "actualScale" not in loaded_data
 
 
 @pytest.mark.parametrize(
@@ -231,7 +247,7 @@ def test_removed_s650_legacy_style_defaults_to_heritage(
     assert loaded_data["s650CenterWidget"] == "drive"
 
 
-@pytest.mark.parametrize("widget", ["drive", "tire_temp", "performance"])
+@pytest.mark.parametrize("widget", ["disable", "drive", "tire_temp", "performance"])
 def test_valid_s650_center_widget_round_trips(temp_hud_config_file, widget):
     client = TestClient(app)
 

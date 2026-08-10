@@ -30,19 +30,21 @@ function loadHudCore(container: { style: { zoom?: number } }): HudCore {
 }
 
 describe('HUD scale baseline', () => {
-  it('maps the previous 150%-baseline 200% size to the new 100% setting', () => {
+  it('applies the S650 calibration through HUDCore at the 100% setting', () => {
     const container = { style: {} as { zoom?: number } };
     const hudCore = loadHudCore(container);
 
     hudCore.registerStyle('s650_hmi', {
       containerId: 's650Container',
-      scaleBaseline: 3.0,
+      scaleBaseline: 3.0 * 0.7,
       scaleMultiplier: 0.75,
     });
     hudCore.init('s650_hmi');
-    hudCore.handleMessage('config', { data: { scale: 1.0, elements: {} } });
+    hudCore.handleMessage('config', {
+      data: { scale: 1.0, actualScale: 99.0, elements: {} },
+    });
 
-    // 1.0 * 3.0 * 0.75 * 0.75 === 2.0 * 1.5 * 0.75 * 0.75
-    expect(container.style.zoom).toBe(1.6875);
+    // 1.0 * (3.0 * 0.7) * 0.75 * 0.75 === 1.18125
+    expect(container.style.zoom).toBe(1.18125);
   });
 });

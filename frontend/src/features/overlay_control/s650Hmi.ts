@@ -17,9 +17,10 @@ export const S650_HMI_THEMES = [
 ] as const;
 
 export const S650_CENTER_WIDGETS = [
-  { value: 'drive', label: 'Drive summary' },
+  { value: 'disable', label: 'Disable' },
+  { value: 'drive', label: 'Driving overview' },
   { value: 'tire_temp', label: 'Tire temperature' },
-  { value: 'performance', label: 'Performance telemetry' },
+  { value: 'performance', label: 'Powertrain telemetry' },
 ] as const;
 
 export type S650CenterWidget = (typeof S650_CENTER_WIDGETS)[number]['value'];

@@ -73,15 +73,17 @@
         });
     }
 
+    // The previous baseline produced an effective zoom of 1.6875 at the
+    // user-facing 100% setting. Field calibration showed that 70% of that
+    // footprint is the intended size, so fold that correction into the
+    // style baseline. HUDCore then applies the same standard formula as
+    // every other HUD: user scale × baseline × style multiplier × shared
+    // viewport factor.
+    var S650_HMI_SCALE_BASELINE = 3.0 * 0.70;
+
     HUDCore.registerStyle('s650_hmi', {
         containerId: 's650Container',
-        // The existing 200% user setting is the new 100% visual baseline.
-        // Keep the native cluster footprint multiplier separate so the
-        // overall calibration does not touch any Canvas-internal coordinates.
-        // HUDCore multiplies the user scale by this baseline, the S650
-        // footprint multiplier and its shared 0.75 factor. Therefore the
-        // former user scale 2.0 maps to the new user-facing scale 1.0.
-        scaleBaseline: 3.0,
+        scaleBaseline: S650_HMI_SCALE_BASELINE,
         scaleMultiplier: 0.75,
         onInit: frame.onInit,
         onElementsChange: frame.onElementsChange,

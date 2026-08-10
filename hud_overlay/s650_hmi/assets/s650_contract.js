@@ -24,6 +24,7 @@
     ];
 
     var CENTER_WIDGETS = [
+        'disable',
         'drive',
         'tire_temp',
         'performance'

@@ -1,37 +1,37 @@
-/* Performance center-information page. */
+/* Powertrain center-information page. */
 (function (window) {
     'use strict';
 
+    var common = window.S650HmiCenterInfoCommon;
+
     window.S650HmiCenterInfo.register({
         id: 'performance',
-        label: 'Performance telemetry',
+        label: 'Powertrain telemetry',
         status: 'production',
         render: function (context) {
             var ctx = context.ctx;
-            var p = context.primitives;
-            if (!ctx || !p) return;
-
-            var region = context.region;
             var view = context.view;
             var palette = context.palette;
-            var x = region.x;
-            var y = region.y;
-            var width = region.width;
-            var height = region.height;
-            var centerX = x + width / 2;
+            var region = context.region;
+            if (!ctx || !common) return;
+
             var rpm = Math.round(view.getRpm(context.data));
             var maxRpm = Math.round(view.getMaxRpm(context.data));
+            var power = common.displayPower(view, context.data);
+            var torque = common.displayTorque(view, context.data);
+            var boost = common.displayBoost(view, context.data);
+            var fuel = common.displayFuel(context.data);
+            var xLeft = region.x + 105;
+            var xRight = region.x + region.width - 105;
+            var rpmRatio = maxRpm > 0 ? rpm / maxRpm : 0;
 
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            p.setFont(16, '700', 'Arial Narrow');
-            ctx.fillStyle = palette.text;
-            ctx.fillText('PERFORMANCE', centerX, y + 16);
-            p.setFont(12, '700', 'Arial Narrow');
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText(rpm + ' / ' + maxRpm + ' RPM', centerX, y + 40);
-            ctx.restore();
+            common.drawTitle(context, 'POWERTRAIN', 'LIVE OUTPUT');
+            common.drawMetric(context, xLeft, region.y + 54, 'POWER', power.value, power.unit, 'center');
+            common.drawMetric(context, xRight, region.y + 54, 'TORQUE', torque.value, torque.unit, 'center');
+            common.drawMetric(context, xLeft, region.y + 105, 'BOOST', boost.value, boost.unit, 'center');
+            common.drawMetric(context, xRight, region.y + 105, 'FUEL', fuel.value, fuel.unit, 'center');
+            common.drawMetric(context, region.x + region.width / 2, region.y + 151, 'RPM', rpm + ' / ' + maxRpm, '', 'center');
+            common.drawBar(context, region.x + 38, region.y + 187, region.width - 76, rpmRatio, palette.primary, 'RPM');
         }
     });
 })(window);

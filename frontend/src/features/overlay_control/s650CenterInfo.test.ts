@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-type Widget = 'drive' | 'tire_temp' | 'performance';
+type Widget = 'disable' | 'drive' | 'tire_temp' | 'performance';
 type Region = {
   x: number;
   y: number;
@@ -41,6 +41,7 @@ function createCanvasSpy() {
     lineTo: () => undefined,
     fill: () => undefined,
     stroke: () => undefined,
+    strokeRect: () => undefined,
     fillRect: () => undefined,
     fillText: (value: string) => text.push(value),
   } as unknown as Record<string, unknown>;
@@ -50,6 +51,8 @@ function createCanvasSpy() {
 function loadCenterInfoModule(): CenterInfoModule {
   const sourceFiles = [
     's650_center_info.js',
+    's650_center_info_common.js',
+    's650_center_info_disable.js',
     's650_center_info_drive.js',
     's650_center_info_tire_temp.js',
     's650_center_info_performance.js',
@@ -67,17 +70,17 @@ function loadCenterInfoModule(): CenterInfoModule {
 }
 
 describe('S650 center-information registry contract', () => {
-  it('keeps drive as a non-core registry page', () => {
+  it('keeps Disable as an explicit blank page', () => {
     const calls: string[] = [];
     const primitives = {
       drawGearAndSpeed: () => calls.push('drawGearAndSpeed'),
     };
     const centerInfo = loadCenterInfoModule().create({
       primitives,
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
-    centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 425, 126, 430, 230);
+    centerInfo.draw({ centerWidget: 'disable' }, {}, {}, 425, 126, 430, 230);
 
     expect(calls).toEqual([]);
   });
@@ -90,7 +93,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
     centerInfo.draw({
@@ -111,25 +114,24 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
     centerInfo.draw({
       centerWidget: 'performance',
+      isMetric: true,
       getRpm: () => 4200,
       getMaxRpm: () => 8000,
       getPedalValue: (_data, pedal) => pedal === 'throttle' ? 0.75 : 0.2,
       getGearLabel: () => '4',
     }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 100);
 
-    expect((ctx.text as string[]).slice(0, 2)).toEqual([
-      'PERFORMANCE',
-      '4200 / 8000 RPM',
-    ]);
+    expect((ctx.text as string[])).toContain('POWERTRAIN');
+    expect((ctx.text as string[])).toContain('4200 / 8000');
     expect((ctx.text as string[])).not.toContain('4');
   });
 
-  it('renders common pedal bars inside the center-information container', () => {
+  it('does not inject pedal bars into every page', () => {
     const pedalCalls: unknown[][] = [];
     const centerInfo = loadCenterInfoModule().create({
       ctx: createCanvasSpy(),
@@ -138,22 +140,46 @@ describe('S650 center-information registry contract', () => {
         getFontSize: (_view, _role, fallback) => fallback,
         drawPedalBars: (...args) => pedalCalls.push(args),
       },
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
-    centerInfo.draw({
-      centerWidget: 'drive',
-      getPedalValue: () => 0.5,
-    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+    centerInfo.draw({ centerWidget: 'disable' }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
       x: 425,
       y: 132,
       width: 430,
       height: 224,
     });
 
-    expect(pedalCalls).toHaveLength(2);
-    expect(pedalCalls[0].slice(3)).toEqual([454, 329, 170, true]);
-    expect(pedalCalls[1].slice(3)).toEqual([656, 329, 170, true]);
+    expect(pedalCalls).toHaveLength(0);
+  });
+
+  it('keeps pedal bars local to the driving page', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'drive',
+      roundedSpeed: () => 120,
+      unitLabel: () => 'KM/H',
+      getGearLabel: () => '4',
+      getTelemetryReadout: () => ({ value: '--', unit: '' }),
+      getPedalValue: (_data, pedal) => pedal === 'throttle' ? 0.75 : 0.2,
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff', warning: '#ff0' }, {
+      x: 425,
+      y: 126,
+      width: 430,
+      height: 230,
+    });
+
+    expect((ctx.text as string[])).toContain('THR');
+    expect((ctx.text as string[])).toContain('BRK');
   });
 
   it('uses the contract widget list and falls back to drive', () => {
@@ -161,10 +187,10 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: () => undefined,
       },
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
-    expect(centerInfo.widgets).toEqual(['drive', 'tire_temp', 'performance']);
+    expect(centerInfo.widgets).toEqual(['disable', 'drive', 'tire_temp', 'performance']);
     expect(centerInfo.normalizeWidget({ centerWidget: 'unknown' })).toBe('drive');
   });
 
@@ -174,7 +200,7 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
       },
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 100, 50, 200, 100);
@@ -188,7 +214,7 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
       },
-      contract: { centerWidgets: ['drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
     });
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, {

@@ -59,8 +59,6 @@ interface HudConfig {
   s650CenterWidget?: S650CenterWidget;
   /** S650-only outer container Y offset; positive values move down. */
   s650HmiOffsetY?: number;
-  /** Derived S650 zoom sent to legacy/current HUDCore implementations. */
-  actualScale?: number;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -166,18 +164,6 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   },
   soundEnabled: false,
 };
-
-const S650_HMI_RUNTIME_SCALE = 3.0 * 0.75 * 0.75;
-
-function withS650RuntimeScale(config: HudConfig): HudConfig {
-  if (config.hudStyle !== S650_HMI_STYLE_ID) return config;
-
-  const userScale = Number(config.scale);
-  return {
-    ...config,
-    actualScale: (Number.isFinite(userScale) ? userScale : 1.0) * S650_HMI_RUNTIME_SCALE,
-  };
-}
 
 interface AuthorInfo {
   author: string;
@@ -302,7 +288,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const saveConfig = async (newConfig: HudConfig) => {
-    const normalizedConfig = withS650RuntimeScale(normalizeS650HmiConfig(newConfig));
+    const normalizedConfig = normalizeS650HmiConfig(newConfig);
     setConfig(normalizedConfig);
     broadcastConfig(normalizedConfig);
     try {
@@ -594,6 +580,17 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const handleS650CenterInfoToggle = () => {
+    if (config.s650CenterWidget === 'disable') {
+      saveConfig({
+        ...config,
+        s650CenterWidget: 'drive',
+        elements: {
+          ...config.elements,
+          showCenterInfo: true,
+        },
+      });
+      return;
+    }
     saveConfig({
       ...config,
       elements: {
@@ -602,6 +599,9 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       },
     });
   };
+
+  const s650CenterInfoEnabled =
+    config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -1137,10 +1137,10 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       type="button"
                       className="btn btn-sm btn-outline-secondary"
                       aria-label={t("S650 center information")}
-                      aria-pressed={config.elements.showCenterInfo !== false}
+                      aria-pressed={s650CenterInfoEnabled}
                       onClick={handleS650CenterInfoToggle}
                     >
-                      {t(config.elements.showCenterInfo !== false ? "Enabled" : "Disabled")}
+                      {t(s650CenterInfoEnabled ? "Enabled" : "Disabled")}
                     </button>
                   </div>
                   <select

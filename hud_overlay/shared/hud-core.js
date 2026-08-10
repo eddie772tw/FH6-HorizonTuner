@@ -18,6 +18,12 @@ window.HUD_ANIM_CONFIG = {
     var activeStyle = null;
     var currentFullConfig = {};
     var currentElements = {};
+    var DEFAULT_GLOBAL_SCALE_FACTOR = 0.75;
+
+    function readPositiveScale(value, fallback) {
+        var parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    }
 
     var HUDCore = {
         /**
@@ -26,7 +32,8 @@ window.HUD_ANIM_CONFIG = {
          * @param {object} definition Style hooks and metadata:
          *   - containerId: string (e.g., 'simpleContainer')
          *   - scaleBaseline: number (default 1.0)
-         *   - scaleMultiplier: number (default 0.5)
+         *   - scaleMultiplier: number (default 1.0)
+         *   - globalScaleFactor: number (default 0.75)
          *   - onInit: function(payload)
          *   - onFrame: function(data, payload)
          *   - onElementsChange: function(elements)
@@ -107,12 +114,18 @@ window.HUD_ANIM_CONFIG = {
                             }
                         }
 
-                        // Standardized scale calculation with a global 0.75 downscale factor.
-                        // A style may define a baseline so its user-facing 100% can
-                        // intentionally match an existing calibrated footprint.
-                        var multiplier = activeStyle.scaleMultiplier !== undefined ? activeStyle.scaleMultiplier : 1.0;
-                        var baseline = activeStyle.scaleBaseline !== undefined ? activeStyle.scaleBaseline : 1.0;
-                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * baseline * multiplier * 0.75);
+                        // Keep the user setting, style calibration and shared
+                        // viewport factor separate. Derived values from older
+                        // configs (such as actualScale) are intentionally ignored
+                        // so HUDCore remains the single scale authority.
+                        var userScale = readPositiveScale(payload.data.scale, 1.0);
+                        var baseline = readPositiveScale(activeStyle.scaleBaseline, 1.0);
+                        var multiplier = readPositiveScale(activeStyle.scaleMultiplier, 1.0);
+                        var globalScale = readPositiveScale(
+                            activeStyle.globalScaleFactor,
+                            DEFAULT_GLOBAL_SCALE_FACTOR
+                        );
+                        var finalScale = userScale * baseline * multiplier * globalScale;
                         window._currentHudScale = finalScale;
 
                         var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;
