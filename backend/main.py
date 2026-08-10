@@ -2182,7 +2182,9 @@ async def save_overlay_config(data: dict):
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         # Broadcast config update to all connected WebSockets (including the HUD)
-        await overlay_manager.broadcast_json({"type": "hud:config", "data": runtime_data})
+        await overlay_manager.broadcast_json(
+            {"type": "hud:config", "data": runtime_data}
+        )
 
         return {"message": "HUD config saved successfully", "success": True}
     except Exception as e:
@@ -2197,10 +2199,12 @@ async def reset_overlay_config():
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-        await overlay_manager.broadcast_json({
-            "type": "hud:config",
-            "data": with_runtime_hud_scale(data),
-        })
+        await overlay_manager.broadcast_json(
+            {
+                "type": "hud:config",
+                "data": with_runtime_hud_scale(data),
+            }
+        )
 
         return {
             "message": "HUD config reset to defaults successfully",
