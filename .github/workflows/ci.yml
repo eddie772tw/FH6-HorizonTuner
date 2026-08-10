@@ -132,7 +132,9 @@ jobs:
         pip install pytest python-multipart
 
     - name: Execute Pytest Test Suite
-      run: python -m pytest tests/ -v
+      # The Windows-only portable process contract runs in build-portable-sidecar
+      # before any executable compilation, so do not run it twice here.
+      run: python -m pytest tests/ -v --ignore=tests/test_sidecar_process_contract.py
 
     - name: Generate Backend Pytest Summary
       if: always()
@@ -210,9 +212,47 @@ jobs:
   # 僅在前後端單元測試全數通過後，於 Windows 環境編譯並驗證 Sidecar / Executable。
   # ============================================================================
 
+  build-portable-sidecar:
+    name: Verify & Build Portable Sidecar
+    needs: [backend-static-check]
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        cache: 'pip'
+
+    - name: Install backend test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest python-multipart
+
+    - name: Verify source sidecar lifecycle contract
+      run: python -m pytest tests/test_sidecar_process_contract.py -v
+
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+
+    - name: Build Python sidecar executable
+      run: python -m PyInstaller server-sidecar.spec --clean
+
+    - name: Publish sidecar executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: portable-sidecar-${{ github.sha }}
+        path: dist/server-sidecar-x86_64-pc-windows-msvc.exe
+        if-no-files-found: error
+        retention-days: 1
+
   verify-executable-bundle:
     name: Build & Verify Executable Bundle
-    needs: [backend-unit-test, frontend-unit-test]
+    needs: [backend-unit-test, frontend-unit-test, build-portable-sidecar]
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -241,11 +281,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pyinstaller pytest python-multipart
+        pip install pytest python-multipart
         pnpm --prefix frontend install
 
-    - name: Build Python Sidecar Executable
-      run: python -m PyInstaller server-sidecar.spec --clean
+    - name: Download verified sidecar executable
+      uses: actions/download-artifact@v4
+      with:
+        name: portable-sidecar-${{ github.sha }}
+        path: dist
 
     - name: Stage Embedded Sidecar
       shell: pwsh

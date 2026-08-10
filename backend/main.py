@@ -241,30 +241,7 @@ backend_port = 8000
 overlay_process = None
 
 
-@asynccontextmanager
-async def lifespan(app_inst: FastAPI):
-    global current_udp_transport, current_udp_ip_port
-    # Startup
-    ip = app_settings.get("telemetry_ip", os.getenv("TELEMETRY_IP", "0.0.0.0"))
-    port = int(app_settings.get("telemetry_port", os.getenv("TELEMETRY_PORT", 8000)))
-    current_udp_ip_port = (ip, port)
-
-    # Start UDP listener in the background
-    try:
-        current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
-    except Exception as e:
-        logger.error(f"Failed to start UDP Telemetry listener on {ip}:{port}: {e}")
-
-    # Start the broadcast loop
-    asyncio.create_task(broadcast_telemetry())
-    asyncio.create_task(broadcast_overlay_state())
-    yield
-    # Shutdown
-    if current_udp_transport:
-        current_udp_transport.close()
-
-
-app = FastAPI(title="FH6 Telemetry Tuning Tool API", lifespan=lifespan)
+app = FastAPI(title="FH6 Telemetry Tuning Tool API")
 
 IGNORED_HUD_DIRS = {
     "shared",
@@ -1114,6 +1091,8 @@ def save_car_params(car_id: str, data: dict):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global current_udp_transport, current_udp_ip_port
+
     # Customizable IP and Port
     ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
@@ -1121,7 +1100,8 @@ async def lifespan(app: FastAPI):
     # Bind the UDP listener before exposing the HTTP server. Previously this
     # ran as an unobserved task, allowing uvicorn to start even when a stale
     # sidecar still owned the telemetry port.
-    udp_transport = await start_udp_listener(ip, port, telemetry_queue)
+    current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
+    current_udp_ip_port = (ip, port)
     background_tasks = [
         asyncio.create_task(broadcast_telemetry()),
         asyncio.create_task(broadcast_overlay_state()),
@@ -1129,7 +1109,8 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        udp_transport.close()
+        current_udp_transport.close()
+        current_udp_transport = None
         for task in background_tasks:
             task.cancel()
         await asyncio.gather(*background_tasks, return_exceptions=True)
@@ -2326,20 +2307,23 @@ if __name__ == "__main__":
 
     atexit.register(cleanup_resources)
 
-    # 在 Sidecar 模式下，監聽 stdin EOF 以在父程序 (Tauri Host) 關閉時連帶優雅退出
+    # 在 Sidecar 模式下，監聽 stdin EOF 以在父程序 (Tauri Host) 關閉時連帶退出。
     def monitor_stdin_eof():
-        start_t = time.time()
         try:
             if sys.stdin is not None:
                 sys.stdin.read()
         except Exception:
             pass
-        # 若啟動不到 2 秒即收到 EOF，說明為無 console/pipe 之環境，忽視假 EOF 以免誤殺 Sidecar
-        if time.time() - start_t > 2.0:
-            cleanup_resources()
-            os._exit(0)
+        # EOF 是 Tauri host 的明確 shutdown 合約；不能依賴啟動後經過的時間，
+        # 否則 ready 後快速關閉時可能留下仍持有 UDP socket 的 sidecar。
+        cleanup_resources()
+        os._exit(0)
 
-    threading.Thread(target=monitor_stdin_eof, daemon=True).start()
+    # Tauri always passes --data-dir when it owns the sidecar. A manually
+    # launched executable may have an inherited console stdin whose EOF must
+    # not terminate the server.
+    if parsed_args.data_dir:
+        threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     import socket
 
