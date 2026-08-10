@@ -1,11 +1,37 @@
-/* Shared dual-ring center-information module.
- *
- * The center slot is intentionally a small, closed contract. It must render
- * one of the widgets declared by s650_contract.js and must not create a second
- * telemetry or configuration path of its own.
- */
+/* S650 center-information registry and Canvas container. */
 (function (window) {
     'use strict';
+
+    var pageRegistry = Object.create(null);
+
+    function validatePageDefinition(definition) {
+        if (!definition || typeof definition !== 'object') {
+            throw new TypeError('[S650 Center Info] Page definition must be an object.');
+        }
+        if (!definition.id || typeof definition.id !== 'string') {
+            throw new TypeError('[S650 Center Info] Page definition requires a string id.');
+        }
+        if (typeof definition.render !== 'function') {
+            throw new TypeError('[S650 Center Info] Page definition requires a render function.');
+        }
+        if (pageRegistry[definition.id]) {
+            throw new Error('[S650 Center Info] Duplicate page id: ' + definition.id);
+        }
+    }
+
+    function register(definition) {
+        validatePageDefinition(definition);
+        pageRegistry[definition.id] = Object.freeze({
+            id: definition.id,
+            label: definition.label || definition.id,
+            status: definition.status || 'experimental',
+            render: definition.render
+        });
+    }
+
+    function list() {
+        return Object.keys(pageRegistry);
+    }
 
     function create(options) {
         var primitives = options.primitives;
@@ -16,42 +42,44 @@
 
         function normalizeWidget(view) {
             var candidate = view && view.centerWidget;
-            return supportedWidgets.indexOf(candidate) >= 0 ? candidate : 'drive';
+            if (supportedWidgets.indexOf(candidate) >= 0 && pageRegistry[candidate]) {
+                return candidate;
+            }
+            return pageRegistry.drive ? 'drive' : list()[0];
         }
 
-        function drawDrive(view, data, palette, x, y, width, height) {
-            primitives.drawGearAndSpeed(
-                view,
-                data,
-                palette,
-                x + width / 2,
-                y + Math.round(height * 0.38),
-                y + Math.round(height * 0.78),
-                58,
-                82
-            );
+        function render(view, data, palette, region) {
+            var pageId = normalizeWidget(view);
+            var page = pageRegistry[pageId];
+            if (!page) return;
+
+            page.render({
+                view: view,
+                data: data,
+                palette: palette,
+                region: region,
+                primitives: primitives
+            });
         }
 
         return {
             draw: function (view, data, palette, x, y, width, height) {
-                var originX = x || 425;
-                var originY = y || 122;
-                var regionWidth = width || 430;
-                var regionHeight = height || 210;
-                var widget = normalizeWidget(view);
-
-                if (widget === 'tire_temp') {
-                    primitives.drawTireTemperatureWidget(view, data, palette, originX, originY, regionWidth, regionHeight);
-                } else if (widget === 'performance') {
-                    primitives.drawPerformanceWidget(view, data, palette, originX, originY, regionWidth, regionHeight);
-                } else {
-                    drawDrive(view, data, palette, originX, originY, regionWidth, regionHeight);
-                }
+                render(view, data, palette, {
+                    x: x || 425,
+                    y: y || 122,
+                    width: width || 430,
+                    height: height || 210
+                });
             },
             normalizeWidget: normalizeWidget,
-            widgets: supportedWidgets.slice()
+            render: render,
+            widgets: list()
         };
     }
 
-window.S650HmiCenterInfo = { create: create };
+    window.S650HmiCenterInfo = {
+        create: create,
+        list: list,
+        register: register
+    };
 })(window);
