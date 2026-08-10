@@ -327,6 +327,111 @@
             ctx.restore();
         }
 
+        // Normal uses an energy-dial language rather than Heritage's physical
+        // needle and bezel. The active value is an arc contained by concentric
+        // tracks; the redline is a thick, explicit region and the indicator is
+        // only an endpoint marker for that energy arc.
+        function drawNormalEnergyDial(view, palette, cx, cy, radius, ratio, redlineRatio, label, value, unit, options) {
+            options = options || {};
+            var startAngle = options.startAngle || Math.PI * 0.78;
+            var endAngle = options.endAngle || Math.PI * 2.22;
+            var baseWidth = options.baseWidth || 10;
+            var activeColor = options.activeColor || palette.primary;
+            var trackColor = options.trackColor || 'rgba(255, 255, 255, 0.16)';
+            var redlineStart = startAngle + (endAngle - startAngle) * clamp(redlineRatio, 0, 1);
+            var activeEnd = startAngle + (endAngle - startAngle) * clamp(ratio, 0, 1);
+            var innerRadius = radius - (options.innerInset || 20);
+            var tickLabels = options.tickLabels || [];
+            var tickCount = options.tickCount || 10;
+            var tickColor = options.tickColor || palette.secondary;
+
+            ctx.save();
+            ctx.lineCap = 'butt';
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 8, startAngle, endAngle);
+            ctx.strokeStyle = options.outerColor || 'rgba(235, 243, 243, 0.72)';
+            ctx.lineWidth = options.outerWidth || 2;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, innerRadius, startAngle, endAngle);
+            ctx.strokeStyle = trackColor;
+            ctx.lineWidth = options.innerWidth || 2;
+            ctx.stroke();
+
+            if (redlineRatio < 1) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, redlineStart, endAngle);
+                ctx.strokeStyle = palette.danger;
+                ctx.globalAlpha = options.redlineAlpha || 0.88;
+                ctx.lineWidth = options.redlineWidth || baseWidth + 4;
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.strokeStyle = trackColor;
+            ctx.lineWidth = baseWidth;
+            ctx.stroke();
+
+            if (ratio > 0) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, activeEnd);
+                ctx.strokeStyle = activeColor;
+                ctx.lineWidth = baseWidth;
+                ctx.stroke();
+            }
+
+            for (var tick = 0; tick <= tickCount; tick += 1) {
+                var tickRatio = tick / tickCount;
+                var tickAngle = startAngle + (endAngle - startAngle) * tickRatio;
+                var tickOuter = radius + 2;
+                var tickInner = radius - (tick % 5 === 0 ? 18 : 10);
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(tickAngle) * tickInner, cy + Math.sin(tickAngle) * tickInner);
+                ctx.lineTo(cx + Math.cos(tickAngle) * tickOuter, cy + Math.sin(tickAngle) * tickOuter);
+                ctx.strokeStyle = tickRatio >= clamp(redlineRatio, 0, 1) ? palette.danger : tickColor;
+                ctx.lineWidth = tick % 5 === 0 ? 3 : 2;
+                ctx.stroke();
+
+                if (tickLabels[tick] !== undefined) {
+                    setFont(options.tickLabelSize || 16, '700', options.tickLabelFamily || 'Arial Narrow');
+                    ctx.fillStyle = tickRatio >= clamp(redlineRatio, 0, 1) ? palette.danger : tickColor;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(tickLabels[tick]), cx + Math.cos(tickAngle) * (radius - 30), cy + Math.sin(tickAngle) * (radius - 30));
+                }
+            }
+
+            if (options.showIndicator !== false) {
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(activeEnd) * (radius - baseWidth), cy + Math.sin(activeEnd) * (radius - baseWidth));
+                ctx.lineTo(cx + Math.cos(activeEnd) * (radius + 9), cy + Math.sin(activeEnd) * (radius + 9));
+                ctx.strokeStyle = options.indicatorColor || palette.text;
+                ctx.lineWidth = options.indicatorWidth || 3;
+                ctx.stroke();
+            }
+
+            setFont(options.valueSize || fontSize(view, 'bodyM', 24), '700', options.valueFamily || 'ForzaGear');
+            ctx.fillStyle = palette.text;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(value), cx, cy + (options.valueOffsetY || 2));
+            if (unit) {
+                setFont(options.unitSize || fontSize(view, 'captionLegal', 16), '700');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(unit, cx, cy + (options.unitOffsetY || 25));
+            }
+            if (label) {
+                setFont(options.labelSize || fontSize(view, 'captionLegal', 16), '700');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(label, cx, cy + (options.labelOffsetY || radius - 31));
+            }
+            ctx.restore();
+        }
+
         function drawHeritageBackdrop(view) {
             var centerY = view.height * 0.52;
             var centerGlow = ctx.createRadialGradient(view.width / 2, centerY, 28, view.width / 2, centerY, 500);
@@ -613,6 +718,7 @@
             clearAndPaintBackground: clearAndPaintBackground,
             drawRoundedPanel: drawRoundedPanel,
             drawArcGauge: drawArcGauge,
+            drawNormalEnergyDial: drawNormalEnergyDial,
             drawPedalBars: drawPedalBars,
             drawGearAndSpeed: drawGearAndSpeed,
             drawGearCarousel: drawGearCarousel,
