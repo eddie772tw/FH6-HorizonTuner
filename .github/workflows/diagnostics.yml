@@ -10,6 +10,11 @@ on:
         required: false
         default: '1'
         type: string
+      timeout:
+        description: 'Readiness timeout in seconds (15-120)'
+        required: false
+        default: '60'
+        type: string
 
 permissions:
   contents: read
@@ -23,7 +28,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set repeat_count from input
+    - name: Set configuration from input
       shell: bash
       run: |
         count="${{ github.event.inputs.repeat_count }}"
@@ -31,6 +36,12 @@ jobs:
           count=1
         fi
         echo "DIAGNOSTICS_REPEAT_COUNT=$count" >> $GITHUB_ENV
+
+        timeout="${{ github.event.inputs.timeout }}"
+        if [ -z "$timeout" ]; then
+          timeout=60
+        fi
+        echo "DIAGNOSTICS_TIMEOUT=$timeout" >> $GITHUB_ENV
 
     - name: Set up Python
       uses: actions/setup-python@v5

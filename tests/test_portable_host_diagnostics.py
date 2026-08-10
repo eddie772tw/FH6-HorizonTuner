@@ -208,6 +208,14 @@ def close_portable_process(proc):
     wait_for_process_exit(proc)
 
 
+def get_readiness_timeout():
+    try:
+        timeout = float(os.environ.get("DIAGNOSTICS_TIMEOUT", "60.0"))
+        return max(15.0, min(120.0, timeout))
+    except ValueError:
+        return 60.0
+
+
 def get_repeat_count():
     try:
         count = int(os.environ.get("DIAGNOSTICS_REPEAT_COUNT", "1"))
@@ -252,7 +260,7 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
             )
 
         settings_file = test_data_dir / "settings.json"
-        startup_deadline = time.monotonic() + 15.0
+        startup_deadline = time.monotonic() + get_readiness_timeout()
 
         try:
             while not settings_file.exists() and time.monotonic() < startup_deadline:
@@ -380,7 +388,7 @@ def test_portable_executable_releases_udp_port_for_restart(tmp_path):
             )
 
         port_file = data_dir / "logs" / "web_port.txt"
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + get_readiness_timeout()
 
         try:
             while not port_file.exists() and time.monotonic() < deadline:
@@ -403,3 +411,38 @@ def test_portable_executable_releases_udp_port_for_restart(tmp_path):
 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.bind(("127.0.0.1", telemetry_port))
+
+
+def test_diagnostics_configuration_parsing(monkeypatch):
+
+    # Test repeat_count
+    monkeypatch.delenv("DIAGNOSTICS_REPEAT_COUNT", raising=False)
+    assert get_repeat_count() == 1
+
+    monkeypatch.setenv("DIAGNOSTICS_REPEAT_COUNT", "5")
+    assert get_repeat_count() == 5
+
+    monkeypatch.setenv("DIAGNOSTICS_REPEAT_COUNT", "0")
+    assert get_repeat_count() == 1
+
+    monkeypatch.setenv("DIAGNOSTICS_REPEAT_COUNT", "15")
+    assert get_repeat_count() == 10
+
+    monkeypatch.setenv("DIAGNOSTICS_REPEAT_COUNT", "invalid")
+    assert get_repeat_count() == 1
+
+    # Test readiness_timeout
+    monkeypatch.delenv("DIAGNOSTICS_TIMEOUT", raising=False)
+    assert get_readiness_timeout() == 60.0
+
+    monkeypatch.setenv("DIAGNOSTICS_TIMEOUT", "45.5")
+    assert get_readiness_timeout() == 45.5
+
+    monkeypatch.setenv("DIAGNOSTICS_TIMEOUT", "10.0")
+    assert get_readiness_timeout() == 15.0
+
+    monkeypatch.setenv("DIAGNOSTICS_TIMEOUT", "150.0")
+    assert get_readiness_timeout() == 120.0
+
+    monkeypatch.setenv("DIAGNOSTICS_TIMEOUT", "invalid")
+    assert get_readiness_timeout() == 60.0
