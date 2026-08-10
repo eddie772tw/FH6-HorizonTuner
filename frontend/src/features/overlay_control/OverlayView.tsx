@@ -6,10 +6,19 @@ import {
   getHudUrlPrefix,
   HudStyleEntry,
 } from './hudStyleScanner';
+import {
+  S650_HMI_STYLE_ID,
+  S650_CENTER_WIDGETS,
+  S650_HMI_THEMES,
+  normalizeS650HmiConfig,
+  type S650CenterWidget,
+  type S650HmiTheme,
+} from './s650Hmi';
 import '../../App.css';
 
 interface HudElements {
   showGauge: boolean;
+  showCenterInfo: boolean;
   showRPM: boolean;
   showSpeed: boolean;
   showGear: boolean;
@@ -46,6 +55,10 @@ interface MonitorOption {
 interface HudConfig {
   enabled: boolean;
   hudStyle: string;
+  s650Theme?: S650HmiTheme;
+  s650CenterWidget?: S650CenterWidget;
+  /** S650-only outer container Y offset; positive values move down. */
+  s650HmiOffsetY?: number;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -90,6 +103,9 @@ interface HudConfig {
 const DEFAULT_HUD_CONFIG: HudConfig = {
   enabled: false,
   hudStyle: 'vfd',
+  s650Theme: 'heritage67',
+  s650CenterWidget: 'drive',
+  s650HmiOffsetY: 60,
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -123,6 +139,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
 
   elements: {
     showGauge: true,
+    showCenterInfo: true,
     showRPM: true,
     showSpeed: true,
     showGear: true,
@@ -247,12 +264,17 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
       if (res.ok) {
         const data = await res.json();
+        const normalizedData = normalizeS650HmiConfig(data as {
+          hudStyle?: string;
+          s650Theme?: unknown;
+          [key: string]: unknown;
+        });
         const merged = {
           ...DEFAULT_HUD_CONFIG,
-          ...data,
+          ...normalizedData,
           enabled: preserveEnabled,
-          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(data.elements || {}) }
-        };
+          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(normalizedData.elements || {}) }
+        } as HudConfig;
         setConfig(merged);
         broadcastConfig(merged);
         loadAuthorInfo(merged.hudStyle, forceAuthorUpdate);
@@ -266,14 +288,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const saveConfig = async (newConfig: HudConfig) => {
-    setConfig(newConfig);
-    broadcastConfig(newConfig);
+    const normalizedConfig = normalizeS650HmiConfig(newConfig);
+    setConfig(normalizedConfig);
+    broadcastConfig(normalizedConfig);
     try {
       const port = (window as any).BACKEND_PORT || 8001;
       await fetch(`http://127.0.0.1:${port}/api/overlay/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig),
+        body: JSON.stringify(normalizedConfig),
       });
     } catch (e) {
       console.error('Failed to save HUD config:', e);
@@ -543,10 +566,42 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const handleStyleChange = (style: string) => {
-    const updated = { ...config, hudStyle: style };
+    const updated = normalizeS650HmiConfig({ ...config, hudStyle: style });
     saveConfig(updated);
-    loadAuthorInfo(style);
+    loadAuthorInfo(updated.hudStyle);
   };
+
+  const handleS650ThemeChange = (theme: S650HmiTheme) => {
+    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
+  };
+
+  const handleS650CenterWidgetChange = (widget: S650CenterWidget) => {
+    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
+  };
+
+  const handleS650CenterInfoToggle = () => {
+    if (config.s650CenterWidget === 'disable') {
+      saveConfig({
+        ...config,
+        s650CenterWidget: 'drive',
+        elements: {
+          ...config.elements,
+          showCenterInfo: true,
+        },
+      });
+      return;
+    }
+    saveConfig({
+      ...config,
+      elements: {
+        ...config.elements,
+        showCenterInfo: config.elements.showCenterInfo === false,
+      },
+    });
+  };
+
+  const s650CenterInfoEnabled =
+    config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -1056,6 +1111,52 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   </option>
                 ))}
               </select>
+
+              {config.hudStyle === S650_HMI_STYLE_ID && (
+                <div className="border-top pt-2">
+                  <label htmlFor="s650-hmi-theme" className="form-label fs-7 text-body-secondary mb-1">
+                    {t("S650 HMI Mode")}:
+                  </label>
+                  <select
+                    id="s650-hmi-theme"
+                    className="form-select form-select-sm fw-bold"
+                    value={config.s650Theme ?? 'heritage67'}
+                    onChange={(e) => handleS650ThemeChange(e.target.value as S650HmiTheme)}
+                  >
+                    {S650_HMI_THEMES.map((theme) => (
+                      <option key={theme.value} value={theme.value}>
+                        {t(theme.label)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="d-flex justify-content-between align-items-center mt-2 mb-1">
+                    <label htmlFor="s650-center-widget" className="form-label fs-7 text-body-secondary mb-0">
+                      {t("S650 center information")}:
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      aria-label={t("S650 center information")}
+                      aria-pressed={s650CenterInfoEnabled}
+                      onClick={handleS650CenterInfoToggle}
+                    >
+                      {t(s650CenterInfoEnabled ? "Enabled" : "Disabled")}
+                    </button>
+                  </div>
+                  <select
+                    id="s650-center-widget"
+                    className="form-select form-select-sm fw-bold"
+                    value={config.s650CenterWidget ?? 'drive'}
+                    onChange={(e) => handleS650CenterWidgetChange(e.target.value as S650CenterWidget)}
+                  >
+                    {S650_CENTER_WIDGETS.map((widget) => (
+                      <option key={widget.value} value={widget.value}>
+                        {t(widget.label)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Overall HUD Scale */}
               <div>

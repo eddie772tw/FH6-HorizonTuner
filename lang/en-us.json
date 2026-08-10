@@ -249,6 +249,7 @@
   "Dyno Run Completed! Check your new curve.": "Dyno Run Completed! Check your new curve.",
   "Dyno Test Wizard": "Dyno Test Wizard",
   "Enabled": "Enabled",
+  "Disabled": "Disabled",
   "Engine Power Output": "Engine Power Output",
   "Engine RPM": "Engine RPM",
   "Enter the game's theoretical performance data here to reverse-calculate locked tuning settings. Calculated values will try to update when tuning changes.": "Enter the game's theoretical performance data here to reverse-calculate locked tuning settings. Calculated values will try to update when tuning changes.",

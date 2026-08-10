@@ -67,7 +67,33 @@
 
         // ── Dynamic HUD switcher ──────────────────────────────────────────
         let hudStyles = {};
-        let activeHud = localStorage.getItem('forza_hud_active') || 'simple';
+        const LEGACY_S650_STYLE_MAP = {
+            s650_normal: 'normal',
+            s650_heritage67: 'heritage67',
+            s650_foxbody: 'foxbody'
+        };
+        const S650_HMI_THEMES = new Set([
+            'normal', 'heritage67', 'foxbody'
+        ]);
+        const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
+
+        function normalizeHudConfig(config) {
+            const normalized = { ...(config || {}) };
+            const legacyTheme = LEGACY_S650_STYLE_MAP[normalized.hudStyle];
+            if (legacyTheme || isLegacyS650Style(normalized.hudStyle)) {
+                normalized.hudStyle = 's650_hmi';
+                normalized.s650Theme = legacyTheme || (S650_HMI_THEMES.has(normalized.s650Theme) ? normalized.s650Theme : 'heritage67');
+            } else if (normalized.hudStyle === 's650_hmi' && !S650_HMI_THEMES.has(normalized.s650Theme)) {
+                normalized.s650Theme = 'heritage67';
+            }
+            return normalized;
+        }
+
+        function normalizeHudStyle(name) {
+            return LEGACY_S650_STYLE_MAP[name] || isLegacyS650Style(name) ? 's650_hmi' : name;
+        }
+
+        let activeHud = normalizeHudStyle(localStorage.getItem('forza_hud_active') || 'simple');
         const hudIframe = document.getElementById('hud-iframe');
 
         async function loadHudStyles() {
@@ -78,7 +104,9 @@
                     const data = await res.json();
                     hudStyles = {};
                     (data.styles || []).forEach(s => {
-                        hudStyles[s.id] = `.${s.urlPrefix}/${s.id}/index.html`;
+                        // The launcher is itself served from /hud/index.html.
+                        // Keep the API prefix absolute to avoid /hud/hud/... paths.
+                        hudStyles[s.id] = `${s.urlPrefix}/${s.id}/index.html`;
                     });
                     console.log('[Launcher] Dynamic HUD styles loaded:', Object.keys(hudStyles));
                     return;
@@ -96,12 +124,19 @@
         async function loadHud(name, force = false) {
             if (window.demoActive) window.dispatchEvent(new CustomEvent('demo:stop'));
 
+            name = normalizeHudStyle(name);
             activeHud = name;
             window._activeHud = name;
             localStorage.setItem('forza_hud_active', name);
 
-            const cacheBuster = force ? `?t=${Date.now()}` : '';
             const targetUrl = hudStyles[name] || `./${name}/index.html`;
+            // S650 HMI calibration lives in its static renderer modules. Always
+            // refresh that iframe URL so a Dev WebView cannot keep an older
+            // renderer after a source edit; other HUDs retain the old behavior.
+            const shouldBustCache = force || name === 's650_hmi';
+            const cacheBuster = shouldBustCache
+                ? `${targetUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
+                : '';
             hudIframe.src = targetUrl + cacheBuster;
 
             hudIframe.onload = async () => {
@@ -137,10 +172,10 @@
         await loadHudStyles();
         try {
             const res = await fetch(`http://${host}/api/overlay/config`);
-            const config = await res.json();
+            const config = normalizeHudConfig(await res.json());
             window._currentHudConfig = config;
             if (config.elements) window._currentHudElements = config.elements;
-            if (config.hudStyle) activeHud = config.hudStyle;
+            if (config.hudStyle) activeHud = normalizeHudStyle(config.hudStyle);
         } catch(e) {
             console.warn('[Launcher] Failed to fetch initial config', e);
         }
@@ -191,7 +226,7 @@
         });
 
         window.addEventListener('hud:config', (e) => {
-            const config = e.detail || {};
+            const config = normalizeHudConfig(e.detail || {});
             window._currentHudConfig = config;
             if (window.TelemetryCardsManager) {
                 window.TelemetryCardsManager.update(null, config);
@@ -201,9 +236,10 @@
                 window._currentHudElements = config.elements;
                 postToHud('hud:elements', config.elements);
             }
-            if (config.hudStyle && config.hudStyle !== activeHud) {
-                console.log('[Launcher] Config requested HUD style change to:', config.hudStyle);
-                loadHud(config.hudStyle);
+            const requestedHud = config.hudStyle ? normalizeHudStyle(config.hudStyle) : activeHud;
+            if (requestedHud !== activeHud) {
+                console.log('[Launcher] Config requested HUD style change to:', requestedHud);
+                loadHud(requestedHud);
             }
         });
 
@@ -214,13 +250,13 @@
                 postToHud('hud:animate');
             } else if (ev.data && ev.data.type === 'hud:reload') {
                 if (ev.data.hudStyle) {
-                    activeHud = ev.data.hudStyle;
+                    activeHud = normalizeHudStyle(ev.data.hudStyle);
                 }
                 console.log('[Launcher] Received hud:reload, reloading HUD:', activeHud);
                 postToHud('hud:reload');
                 loadHud(activeHud, true);
             } else if (ev.data && ev.data.type === 'config') {
-                const config = ev.data.data || {};
+                const config = normalizeHudConfig(ev.data.data || {});
                 window._currentHudConfig = config;
                 if (window.TelemetryCardsManager) {
                     window.TelemetryCardsManager.update(null, config);
@@ -229,9 +265,10 @@
                 // The control panel sends live edits through BroadcastChannel.  A
                 // style change needs a new iframe, rather than only changing the
                 // remembered style for a later reload.
-                if (config.hudStyle && config.hudStyle !== activeHud) {
-                    console.log('[Launcher] BroadcastChannel requested HUD style change to:', config.hudStyle);
-                    loadHud(config.hudStyle);
+                const requestedHud = config.hudStyle ? normalizeHudStyle(config.hudStyle) : activeHud;
+                if (requestedHud !== activeHud) {
+                    console.log('[Launcher] BroadcastChannel requested HUD style change to:', requestedHud);
+                    loadHud(requestedHud);
                     return;
                 }
 

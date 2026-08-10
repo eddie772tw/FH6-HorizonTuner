@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S650 Unified HMI MVP</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        @font-face {
+            font-family: 'RobotoFlexDial';
+            src: url('./assets/fonts/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 100 900;
+            font-stretch: 25% 151%;
+        }
+
+        .s650-hmi-container {
+            align-self: center;
+            width: 1280px;
+            height: 480px;
+            transform-origin: bottom center;
+            pointer-events: none;
+        }
+
+        .s650-hmi-root-wrapper {
+            /* Keep the complete cluster anchored near the HUD lower edge. */
+            padding-bottom: 10px;
+        }
+
+        #s650Canvas {
+            display: block;
+            width: 1280px;
+            height: 480px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hud-root-wrapper s650-hmi-root-wrapper">
+        <div id="s650Container" class="hud-gauge-container s650-hmi-container">
+            <canvas id="s650Canvas" width="1280" height="480" aria-label="S650 unified HMI"></canvas>
+        </div>
+    </div>
+
+    <!-- Bump this value when the S650 static modules change. The launcher also
+         appends a per-load timestamp so Dev WebViews do not reuse stale code. -->
+    <script src="../shared/hud-core.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_contract.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_tokens.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_primitives.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_base_driving.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_center_info.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_center_info_common.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_center_info_disable.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_center_info_drive.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_center_info_tire_temp.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_center_info_performance.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_layout_profiles.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_layouts.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_frame.js?v=s650-foxbody-20260810"></script>
+    <script src="./assets/s650_renderer.js?v=s650-foxbody-20260810"></script>
+</body>
+
+</html>
