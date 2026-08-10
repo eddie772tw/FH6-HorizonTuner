@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 type FrameModule = {
   create: (options: Record<string, unknown>) => {
     update: (payload: unknown) => void;
+    onInit: (payload: unknown) => void;
     view: { showCenterInfo: boolean };
   };
 };
@@ -23,11 +24,11 @@ function loadFrameModule(): FrameModule {
   return window.S650HmiFrame;
 }
 
-function createFrame() {
+function createFrame(container: { style: { transform?: string } } | null = null) {
   return loadFrameModule().create({
     canvas: null,
     ctx: null,
-    container: null,
+    container,
     contract: {
       canvas: { width: 1280, height: 480 },
       defaultFrame: {},
@@ -56,5 +57,19 @@ describe('S650 center-information visibility contract', () => {
 
     frame.update({ elements: { showCenterInfo: true } });
     expect(frame.view.showCenterInfo).toBe(true);
+  });
+
+  it('applies the outer Y offset and clamps unsafe values', () => {
+    const container = { style: {} as { transform?: string } };
+    const frame = createFrame(container);
+
+    frame.onInit({ s650HmiOffsetY: 120 });
+    expect(container.style.transform).toBe('translateY(120px)');
+
+    frame.onInit({ s650HmiOffsetY: 999 });
+    expect(container.style.transform).toBe('translateY(300px)');
+
+    frame.onInit({ s650HmiOffsetY: -999 });
+    expect(container.style.transform).toBe('translateY(-300px)');
   });
 });

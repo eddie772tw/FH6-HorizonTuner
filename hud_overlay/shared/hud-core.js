@@ -25,6 +25,7 @@ window.HUD_ANIM_CONFIG = {
          * @param {string} id Unique identifier for the HUD style (e.g., 'simple', 'advanced')
          * @param {object} definition Style hooks and metadata:
          *   - containerId: string (e.g., 'simpleContainer')
+         *   - scaleBaseline: number (default 1.0)
          *   - scaleMultiplier: number (default 0.5)
          *   - onInit: function(payload)
          *   - onFrame: function(data, payload)
@@ -106,9 +107,12 @@ window.HUD_ANIM_CONFIG = {
                             }
                         }
 
-                        // Standardized Scale calculation with a global 0.75 downscale factor
+                        // Standardized scale calculation with a global 0.75 downscale factor.
+                        // A style may define a baseline so its user-facing 100% can
+                        // intentionally match an existing calibrated footprint.
                         var multiplier = activeStyle.scaleMultiplier !== undefined ? activeStyle.scaleMultiplier : 1.0;
-                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * multiplier * 0.75);
+                        var baseline = activeStyle.scaleBaseline !== undefined ? activeStyle.scaleBaseline : 1.0;
+                        var finalScale = payload.data.actualScale ?? ((payload.data.scale || 1.0) * baseline * multiplier * 0.75);
                         window._currentHudScale = finalScale;
 
                         var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;

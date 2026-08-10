@@ -219,6 +219,19 @@
             }
         }
 
+        function updateContainerYOffset(payload) {
+            if (!container) return;
+            var offset = contract.clamp(
+                contract.finiteNumber(readValue(payload, 's650HmiOffsetY'), 0),
+                -300,
+                300
+            );
+            // This is intentionally applied to the outer container only. The
+            // Canvas coordinate system and all Normal/Heritage component
+            // positions remain unchanged by the calibration offset.
+            container.style.transform = 'translateY(' + offset + 'px)';
+        }
+
         var view = {
             width: width,
             height: height,
@@ -308,6 +321,7 @@
             update: updateStateFromPayload,
             render: render,
             onInit: function (payload) {
+                updateContainerYOffset(payload);
                 updateStateFromPayload(payload);
                 if (isReady && state.showGauge && !state.sweepActive) render(state.lastFrame, payload, 0);
             },

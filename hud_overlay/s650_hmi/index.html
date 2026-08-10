@@ -23,6 +23,11 @@
             pointer-events: none;
         }
 
+        .s650-hmi-root-wrapper {
+            /* Keep the complete cluster anchored near the HUD lower edge. */
+            padding-bottom: 10px;
+        }
+
         #s650Canvas {
             display: block;
             width: 1280px;
@@ -32,25 +37,27 @@
 </head>
 
 <body>
-    <div class="hud-root-wrapper">
+    <div class="hud-root-wrapper s650-hmi-root-wrapper">
         <div id="s650Container" class="hud-gauge-container s650-hmi-container">
             <canvas id="s650Canvas" width="1280" height="480" aria-label="S650 unified HMI"></canvas>
         </div>
     </div>
 
-    <script src="../shared/hud-core.js"></script>
-    <script src="./assets/s650_contract.js"></script>
-    <script src="./assets/s650_tokens.js"></script>
-    <script src="./assets/s650_primitives.js"></script>
-    <script src="./assets/s650_base_driving.js"></script>
-    <script src="./assets/s650_center_info.js"></script>
-    <script src="./assets/s650_center_info_drive.js"></script>
-    <script src="./assets/s650_center_info_tire_temp.js"></script>
-    <script src="./assets/s650_center_info_performance.js"></script>
-    <script src="./assets/s650_layout_profiles.js"></script>
-    <script src="./assets/s650_layouts.js"></script>
-    <script src="./assets/s650_frame.js"></script>
-    <script src="./assets/s650_renderer.js"></script>
+    <!-- Bump this value when the S650 static modules change. The launcher also
+         appends a per-load timestamp so Dev WebViews do not reuse stale code. -->
+    <script src="../shared/hud-core.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_contract.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_tokens.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_primitives.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_base_driving.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_center_info.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_center_info_drive.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_center_info_tire_temp.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_center_info_performance.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_layout_profiles.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_layouts.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_frame.js?v=s650-baseline-20260810"></script>
+    <script src="./assets/s650_renderer.js?v=s650-baseline-20260810"></script>
 </body>
 
 </html>

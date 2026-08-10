@@ -57,6 +57,10 @@ interface HudConfig {
   hudStyle: string;
   s650Theme?: S650HmiTheme;
   s650CenterWidget?: S650CenterWidget;
+  /** S650-only outer container Y offset; positive values move down. */
+  s650HmiOffsetY?: number;
+  /** Derived S650 zoom sent to legacy/current HUDCore implementations. */
+  actualScale?: number;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -103,6 +107,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   hudStyle: 'vfd',
   s650Theme: 'heritage67',
   s650CenterWidget: 'drive',
+  s650HmiOffsetY: 60,
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -161,6 +166,18 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   },
   soundEnabled: false,
 };
+
+const S650_HMI_RUNTIME_SCALE = 3.0 * 0.75 * 0.75;
+
+function withS650RuntimeScale(config: HudConfig): HudConfig {
+  if (config.hudStyle !== S650_HMI_STYLE_ID) return config;
+
+  const userScale = Number(config.scale);
+  return {
+    ...config,
+    actualScale: (Number.isFinite(userScale) ? userScale : 1.0) * S650_HMI_RUNTIME_SCALE,
+  };
+}
 
 interface AuthorInfo {
   author: string;
@@ -285,7 +302,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const saveConfig = async (newConfig: HudConfig) => {
-    const normalizedConfig = normalizeS650HmiConfig(newConfig);
+    const normalizedConfig = withS650RuntimeScale(normalizeS650HmiConfig(newConfig));
     setConfig(normalizedConfig);
     broadcastConfig(normalizedConfig);
     try {

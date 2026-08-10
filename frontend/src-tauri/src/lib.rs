@@ -272,8 +272,10 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
             let port = backend_port_from_app(&app_handle).unwrap_or(8001);
             let url = format!("http://127.0.0.1:{}/hud/index.html", port);
             let _ = window.eval(&format!(
-                "if (!window.location.href.includes('127.0.0.1:{}')) window.location.href = '{}';",
-                port, url
+                // Reload on every show so Dev WebViews cannot retain an older
+                // launcher/HUD asset set after a source edit.
+                "window.location.href = '{}?t=' + Date.now();",
+                url
             ));
             window.show().map_err(|e| e.to_string())?;
             window.set_focus().map_err(|e| e.to_string())?;
@@ -296,7 +298,7 @@ fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
 
         let _ = window.eval("window.location.href = 'about:blank';");
         std::thread::sleep(std::time::Duration::from_millis(50));
-        let _ = window.eval(&format!("window.location.href = '{}';", url));
+        let _ = window.eval(&format!("window.location.href = '{}?t=' + Date.now();", url));
         Ok(())
     } else {
         Err("Overlay window not found".to_string())

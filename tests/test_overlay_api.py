@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 
@@ -88,6 +89,43 @@ def test_s650_center_information_visibility_is_persisted(temp_hud_config_file):
     loaded_data = client.get("/api/overlay/config").json()
     assert loaded_data["hudStyle"] == "s650_hmi"
     assert loaded_data["elements"]["showCenterInfo"] is False
+
+
+def test_s650_hmi_y_offset_round_trips(temp_hud_config_file):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={
+            "hudStyle": "s650_hmi",
+            "s650HmiOffsetY": 120,
+        },
+    )
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650HmiOffsetY"] == 120
+    assert loaded_data["actualScale"] == pytest.approx(1.6875)
+
+
+def test_s650_runtime_scale_tracks_user_scale(temp_hud_config_file):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={"hudStyle": "s650_hmi", "scale": 2.0},
+    )
+    assert post_res.status_code == 200
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["scale"] == 2.0
+    assert loaded_data["actualScale"] == pytest.approx(3.375)
+
+    with open(temp_hud_config_file, "r", encoding="utf-8") as config_file:
+        persisted_data = json.load(config_file)
+    assert "actualScale" not in persisted_data
 
 
 @pytest.mark.parametrize(

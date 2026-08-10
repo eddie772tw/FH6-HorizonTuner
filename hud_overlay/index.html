@@ -75,6 +75,7 @@
         const S650_HMI_THEMES = new Set([
             'normal', 'foxbody', 'heritage67'
         ]);
+        const S650_HMI_RUNTIME_SCALE = 3.0 * 0.75 * 0.75;
         const isLegacyS650Style = (name) => typeof name === 'string' && name !== 's650_hmi' && name.startsWith('s650_');
 
         function normalizeHudConfig(config) {
@@ -85,6 +86,13 @@
                 normalized.s650Theme = legacyTheme || (S650_HMI_THEMES.has(normalized.s650Theme) ? normalized.s650Theme : 'heritage67');
             } else if (normalized.hudStyle === 's650_hmi' && !S650_HMI_THEMES.has(normalized.s650Theme)) {
                 normalized.s650Theme = 'heritage67';
+            }
+            if (normalized.hudStyle === 's650_hmi') {
+                const userScale = Number(normalized.scale);
+                normalized.actualScale =
+                    (Number.isFinite(userScale) ? userScale : 1.0) * S650_HMI_RUNTIME_SCALE;
+            } else {
+                delete normalized.actualScale;
             }
             return normalized;
         }
@@ -129,8 +137,14 @@
             window._activeHud = name;
             localStorage.setItem('forza_hud_active', name);
 
-            const cacheBuster = force ? `?t=${Date.now()}` : '';
             const targetUrl = hudStyles[name] || `./${name}/index.html`;
+            // S650 HMI calibration lives in its static renderer modules. Always
+            // refresh that iframe URL so a Dev WebView cannot keep an older
+            // renderer after a source edit; other HUDs retain the old behavior.
+            const shouldBustCache = force || name === 's650_hmi';
+            const cacheBuster = shouldBustCache
+                ? `${targetUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
+                : '';
             hudIframe.src = targetUrl + cacheBuster;
 
             hudIframe.onload = async () => {

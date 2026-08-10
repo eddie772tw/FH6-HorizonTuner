@@ -75,8 +75,13 @@
 
     HUDCore.registerStyle('s650_hmi', {
         containerId: 's650Container',
-        // The native cluster is now the real 8:3 proportion. Keep its default
-        // footprint practical in an overlay while preserving the user scale.
+        // The existing 200% user setting is the new 100% visual baseline.
+        // Keep the native cluster footprint multiplier separate so the
+        // overall calibration does not touch any Canvas-internal coordinates.
+        // HUDCore multiplies the user scale by this baseline, the S650
+        // footprint multiplier and its shared 0.75 factor. Therefore the
+        // former user scale 2.0 maps to the new user-facing scale 1.0.
+        scaleBaseline: 3.0,
         scaleMultiplier: 0.75,
         onInit: frame.onInit,
         onElementsChange: frame.onElementsChange,
