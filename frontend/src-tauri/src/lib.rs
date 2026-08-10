@@ -391,7 +391,7 @@ pub fn run() {
         })
         .setup(|app| {
             #[allow(unused_variables)]
-            let overlay_window = tauri::WebviewWindowBuilder::new(
+            let mut overlay_builder = tauri::WebviewWindowBuilder::new(
                 app,
                 "overlay",
                 tauri::WebviewUrl::App("about:blank".into())
@@ -403,9 +403,17 @@ pub fn run() {
             .transparent(true)
             .always_on_top(true)
             .shadow(false)
-            .visible(false)
-            .build()
-            .expect("failed to build overlay window");
+            .visible(false);
+
+            #[cfg(target_os = "windows")]
+            {
+                overlay_builder = overlay_builder.additional_browser_args("--disable-gpu --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection");
+            }
+
+            let overlay_window = overlay_builder
+                .build()
+                .expect("failed to build overlay window");
+
             #[cfg(target_os = "windows")]
             {
                 use windows::Win32::Foundation::HWND;
