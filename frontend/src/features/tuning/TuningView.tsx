@@ -332,6 +332,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <button 
               className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 1 ? 'active fw-bold' : ''}`}
+              aria-current={currentStep === 1 ? 'step' : undefined}
               onClick={() => setCurrentStep(1)}
             >
               <span className="badge text-bg-secondary">1</span> {t("Goal & Setup")}
@@ -340,6 +341,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <button 
               className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 2 ? 'active fw-bold' : ''}`}
+              aria-current={currentStep === 2 ? 'step' : undefined}
               disabled={!hasCoreParams}
               onClick={() => hasCoreParams && setCurrentStep(2)}
             >
@@ -349,6 +351,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <button 
               className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 3 ? 'active fw-bold' : ''}`}
+              aria-current={currentStep === 3 ? 'step' : undefined}
               disabled={!hasCoreParams}
               onClick={() => hasCoreParams && setCurrentStep(3)}
             >
@@ -358,6 +361,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <button 
               className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 4 ? 'active fw-bold' : ''}`}
+              aria-current={currentStep === 4 ? 'step' : undefined}
               disabled={!hasCoreParams}
               onClick={() => hasCoreParams && setCurrentStep(4)}
             >
@@ -367,6 +371,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <button 
               className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 5 ? 'active fw-bold' : ''}`}
+              aria-current={currentStep === 5 ? 'step' : undefined}
               disabled={!hasCoreParams}
               onClick={() => hasCoreParams && setCurrentStep(5)}
             >

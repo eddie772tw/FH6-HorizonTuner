@@ -235,13 +235,13 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
 
           <ul className="nav nav-pills gap-1" role="tablist">
             <li className="nav-item" role="presentation">
-              <button className={`nav-link btn-sm ${subTab === 'live' ? 'active fw-bold' : ''}`} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
+              <button className={`nav-link btn-sm ${subTab === 'live' ? 'active fw-bold' : ''}`} aria-current={subTab === 'live' ? 'page' : undefined} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
             </li>
             <li className="nav-item" role="presentation">
-              <button className={`nav-link btn-sm ${subTab === 'analysis' ? 'active fw-bold' : ''}`} onClick={() => setSubTab('analysis')}>{t("Post-Race Analysis")}</button>
+              <button className={`nav-link btn-sm ${subTab === 'analysis' ? 'active fw-bold' : ''}`} aria-current={subTab === 'analysis' ? 'page' : undefined} onClick={() => setSubTab('analysis')}>{t("Post-Race Analysis")}</button>
             </li>
             <li className="nav-item" role="presentation">
-              <button className={`nav-link btn-sm ${subTab === 'drag' ? 'active fw-bold' : ''}`} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
+              <button className={`nav-link btn-sm ${subTab === 'drag' ? 'active fw-bold' : ''}`} aria-current={subTab === 'drag' ? 'page' : undefined} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
             </li>
           </ul>
         </div>

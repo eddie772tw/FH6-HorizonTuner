@@ -121,6 +121,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               <button 
                 onClick={() => handleDropdownItemClick('telemetry', 'live')}
                 className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'telemetry' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                aria-current={activeTab === 'telemetry' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
               >
                 {t("Telemetry")}
@@ -156,6 +157,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               <button 
                 onClick={() => handleDropdownItemClick('tuning', 1)}
                 className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'tuning' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                aria-current={activeTab === 'tuning' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
               >
                 {t("Tuning Setup")}
@@ -201,6 +203,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               <button 
                 onClick={() => handleDropdownItemClick('car_params', 'config')}
                 className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'car_params' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                aria-current={activeTab === 'car_params' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
               >
                 {t("Car Parameters")}
@@ -231,6 +234,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               <button 
                 onClick={() => handleDropdownItemClick('overlay', 'general')}
                 className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'overlay' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+                aria-current={activeTab === 'overlay' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
               >
                 {t("HUD Overlay")}
