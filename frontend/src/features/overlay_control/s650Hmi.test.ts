@@ -100,8 +100,8 @@ describe('S650 HMI config contract', () => {
     expect(isS650HmiTheme({ value: 'heritage67' })).toBe(false);
   });
 
-  it('normalizes central information pages independently from the selected theme', () => {
-    expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: 'tire_temp' }).s650CenterWidget).toBe('tire_temp');
+  it.each(['drive', 'tire_temp', 'performance'] as const)('preserves the supported central information page %s', (widget) => {
+    expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget }).s650CenterWidget).toBe(widget);
     expect(normalizeS650HmiConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: 'unknown' }).s650CenterWidget).toBe(
       DEFAULT_S650_CENTER_WIDGET
     );

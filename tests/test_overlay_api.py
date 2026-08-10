@@ -165,6 +165,26 @@ def test_invalid_s650_center_widget_defaults_to_drive(
     assert loaded_data["s650CenterWidget"] == "drive"
 
 
+@pytest.mark.parametrize("widget", ["drive", "tire_temp", "performance"])
+def test_valid_s650_center_widget_round_trips(temp_hud_config_file, widget):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={
+            "hudStyle": "s650_hmi",
+            "s650Theme": "heritage67",
+            "s650CenterWidget": widget,
+        },
+    )
+    assert post_res.status_code == 200
+
+    loaded_data = client.get("/api/overlay/config").json()
+    assert loaded_data["hudStyle"] == "s650_hmi"
+    assert loaded_data["s650Theme"] == "heritage67"
+    assert loaded_data["s650CenterWidget"] == widget
+
+
 def test_default_hud_config_includes_all_live_map_controls(temp_hud_config_file):
     client = TestClient(app)
 

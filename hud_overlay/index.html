@@ -87,7 +87,10 @@
                 normalized.hudStyle = 's650_hmi';
                 normalized.s650Theme = legacyTheme;
             } else if (normalized.hudStyle === 's650_hmi' && !S650_HMI_THEMES.has(normalized.s650Theme)) {
-                normalized.s650Theme = 'normal';
+                // Heritage is the only production-ready S650 theme. Keep the
+                // launcher fallback aligned with backend, frontend and the
+                // renderer contract when a direct config payload is invalid.
+                normalized.s650Theme = 'heritage67';
             }
             return normalized;
         }

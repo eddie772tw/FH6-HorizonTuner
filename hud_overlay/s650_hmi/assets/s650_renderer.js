@@ -40,7 +40,7 @@
             layouts: layoutHost
         });
         primitives = window.S650HmiPrimitives.create(ctx, contract);
-        centerInfo = window.S650HmiCenterInfo.create({ primitives: primitives });
+        centerInfo = window.S650HmiCenterInfo.create({ primitives: primitives, contract: contract });
         layouts = window.S650HmiLayouts.create({
             ctx: ctx,
             contract: contract,
