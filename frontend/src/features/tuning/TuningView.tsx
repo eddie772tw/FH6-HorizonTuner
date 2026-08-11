@@ -310,7 +310,12 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
             )}
 
             {currentStep < 5 && (
-              <span title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}>
+              <span
+                title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+                tabIndex={!hasCoreParams ? 0 : undefined}
+                role={!hasCoreParams ? "group" : undefined}
+                aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              >
                 <button
                   type="button"
                   className="btn btn-primary fw-bold px-4 py-2"
@@ -341,6 +346,9 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <span
               title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              tabIndex={!hasCoreParams ? 0 : undefined}
+              role={!hasCoreParams ? "group" : undefined}
+              aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
               style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
               <button
@@ -357,6 +365,9 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <span
               title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              tabIndex={!hasCoreParams ? 0 : undefined}
+              role={!hasCoreParams ? "group" : undefined}
+              aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
               style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
               <button
@@ -373,6 +384,9 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <span
               title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              tabIndex={!hasCoreParams ? 0 : undefined}
+              role={!hasCoreParams ? "group" : undefined}
+              aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
               style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
               <button
@@ -389,6 +403,9 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           <li className="nav-item">
             <span
               title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              tabIndex={!hasCoreParams ? 0 : undefined}
+              role={!hasCoreParams ? "group" : undefined}
+              aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
               style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
               <button
