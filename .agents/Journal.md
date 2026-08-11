@@ -257,6 +257,17 @@
 
 ---
 
+## 2026-08-11 / Frontend Transport Contract
+
+- **Scope**: local / V1.4.1 `codex/v1.4.1-transport-contract`
+- **Status**: adopted
+- **Decision**: The frontend owns one explicit `BackendTransport` configured after Tauri reports the verified sidecar port. `backendFetch()`, `backendHttpUrl()`, and `backendWebSocketUrl()` are the only application entry points for backend HTTP/WebSocket endpoints; development keeps the explicit port-8001 transport default.
+- **Rationale**: Replacing `window.fetch` and `window.WebSocket` globally could rewrite HUD assets, GitHub release checks, or future external connections. The explicit contract makes the portable dynamic-port boundary testable and keeps ownership visible at each call site.
+- **Hot-path boundary**: `useTelemetry` still dispatches parsed frames directly to `telemetryEmitter` for Canvas consumers at source frequency, while React state remains sampled at 5Hz. This change only selects the WebSocket endpoint and does not add work to telemetry frame handling.
+- **Evidence**: Frontend Vitest from `frontend/`: 31 files / 197 tests passed. Vite production bundle passed. Portable-sidecar contract pytest: 5 passed (`test_portable_host_diagnostics.py`, `test_sidecar_process_contract.py`, `test_executable_bundle.py`). `tsc -b` remains blocked by pre-existing Node typings/target errors in `vite.config.ts`; Vite module bundling succeeds.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

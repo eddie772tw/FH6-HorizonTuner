@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../context/SettingsContext';
+import { backendFetch } from '../services/backend';
 
 interface LogEntry {
   timestamp: string;
@@ -27,7 +28,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
   const fetchLogs = async () => {
     if (isPaused) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/logs?level=${level}&limit=300`);
+      const res = await backendFetch(`/api/logs?level=${level}&limit=300`);
       const data = await res.json();
       if (data.logs) {
         setLogs(data.logs);
@@ -57,7 +58,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
   const handleClearLogs = async () => {
     if (!window.confirm(t("Are you sure you want to clear all logs?"))) return;
     try {
-      await fetch('http://127.0.0.1:8001/api/logs', { method: 'DELETE' });
+      await backendFetch('/api/logs', { method: 'DELETE' });
       setLogs([]);
     } catch (err) {
       alert("Failed to clear logs on server.");

@@ -6,6 +6,7 @@ import { BasicCarInfo } from './components/BasicCarInfo';
 import { AdjustabilityLimits } from './components/AdjustabilityLimits';
 import { AdvancedGeometry } from './components/AdvancedGeometry';
 import { DynoChart } from './components/DynoChart';
+import { backendFetch } from '../../services/backend';
 
 interface CarParamsViewProps {
   subTab?: 'config' | 'dyno';
@@ -50,7 +51,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
           const prefix = `${carId}-`;
           if (lastTuning.startsWith(prefix)) {
             const saveName = lastTuning.substring(prefix.length);
-            const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}/${saveName}`);
+            const res = await backendFetch(`/api/tunings/${carId}/${saveName}`);
             const data = await res.json();
             if (data && data.gearing) {
               setGearingData(data.gearing);

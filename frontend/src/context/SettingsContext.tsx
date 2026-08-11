@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { backendFetch } from '../services/backend';
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -105,7 +106,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         // Fetch languages first
         try {
-          const langRes = await fetch('http://127.0.0.1:8001/api/languages');
+          const langRes = await backendFetch('/api/languages');
           const langData = await langRes.json();
           if (Array.isArray(langData)) {
             setAvailableLanguages(langData);
@@ -114,7 +115,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.error('Failed to fetch available languages', e);
         }
 
-        const res = await fetch('http://127.0.0.1:8001/api/settings');
+        const res = await backendFetch('/api/settings');
         const data = await res.json();
         if (data && !data.error) {
           // Merge defaults to handle cases where units might be missing or partially set
@@ -149,7 +150,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
       try {
-        const res = await fetch(`http://127.0.0.1:8001/api/languages/${settings.language}`);
+        const res = await backendFetch(`/api/languages/${settings.language}`);
         const data = await res.json();
         if (data && !data.error) {
           setTranslations(data);
@@ -173,7 +174,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSettings(newSettings);
 
     try {
-      await fetch('http://127.0.0.1:8001/api/settings', {
+      await backendFetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)

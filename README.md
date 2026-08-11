@@ -336,6 +336,7 @@ with an AppData fallback for protected locations.
 在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式則連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠，透過 `BACKEND_PORT` 修改開發模式的 HTTP 連接埠。
 
 打包後的 portable release 會為 FastAPI HTTP 服務選擇可用的動態 TCP 連接埠，並將實際連接埠寫入資料目錄的 `logs/web_port.txt`；Forza UDP Telemetry 預設仍監聽 `8000`。
+前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。
 
 
 ---

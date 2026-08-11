@@ -15,6 +15,7 @@ import {
   type S650HmiTheme,
 } from './s650Hmi';
 import '../../App.css';
+import { backendFetch, backendHttpUrl } from '../../services/backend';
 
 interface HudElements {
   showGauge: boolean;
@@ -203,8 +204,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   }, []);
 
   const loadStyles = async () => {
-    const port = (window as any).BACKEND_PORT || 8001;
-    const styles = await fetchHudStylesList(`http://127.0.0.1:${port}`);
+    const styles = await fetchHudStylesList(backendHttpUrl(''));
     if (styles.length > 0) {
       setHudStyles(styles);
     }
@@ -260,8 +260,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const fetchConfig = async (preserveEnabled: boolean = false, forceAuthorUpdate: boolean = false) => {
     try {
-      const port = (window as any).BACKEND_PORT || 8001;
-      const res = await fetch(`http://127.0.0.1:${port}/api/overlay/config`);
+      const res = await backendFetch('/api/overlay/config');
       if (res.ok) {
         const data = await res.json();
         const normalizedData = normalizeS650HmiConfig(data as {
@@ -292,8 +291,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     setConfig(normalizedConfig);
     broadcastConfig(normalizedConfig);
     try {
-      const port = (window as any).BACKEND_PORT || 8001;
-      await fetch(`http://127.0.0.1:${port}/api/overlay/config`, {
+      await backendFetch('/api/overlay/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(normalizedConfig),

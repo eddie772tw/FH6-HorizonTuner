@@ -7,6 +7,7 @@ import { Step2GearboxSetup } from './components/Step2GearboxSetup';
 import { Step3ChassisTuner } from './components/Step3ChassisTuner';
 import { Step4TireAlignSetup } from './components/Step4TireAlignSetup';
 import { Step5TelemetryCalibration } from './components/Step5TelemetryCalibration';
+import { backendFetch } from '../../services/backend';
 
 interface GearingTuning {
   finalDrive: number;
@@ -93,7 +94,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
   const fetchTunings = async () => {
     if (!carId) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/tunings/${carId}`);
+      const res = await backendFetch(`/api/tunings/${carId}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setSavedTunings(data.filter((t: string) => t.includes('gearing_')));
@@ -114,7 +115,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
     const cid = parts[0];
     const sname = parts.slice(1).join('-');
     try {
-      const res = await fetch(`http://127.0.0.1:8001/api/tunings/${cid}/${sname}`);
+      const res = await backendFetch(`/api/tunings/${cid}/${sname}`);
       const data = await res.json();
       if (!data.error && latestCarIdRef.current === cid) {
         setTuning(data);

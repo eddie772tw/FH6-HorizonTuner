@@ -28,7 +28,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
  */
 export async function fetchHudStylesList(baseUrl: string, fetchFn: typeof fetch = fetch): Promise<HudStyleEntry[]> {
   try {
-    const res = await fetchFn(`${baseUrl}/api/hud/styles`);
+    const res = await fetchFn(`${baseUrl.replace(/\/$/, '')}/api/hud/styles`);
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.styles)) {

@@ -13,6 +13,7 @@ import VehicleDynamicsDisplay from './components/VehicleDynamicsDisplay';
 import PowerTorqueCanvas from './components/PowerTorqueCanvas';
 import ArcSteerGauge from './components/ArcSteerGauge';
 import RenderSwitch from './components/RenderSwitch';
+import { backendFetch } from '../../services/backend';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
@@ -103,8 +104,7 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
       }
     };
 
-    const port = (window as any).BACKEND_PORT || 8001;
-    fetch(`http://127.0.0.1:${port}/api/overlay/config`)
+    backendFetch('/api/overlay/config')
       .then(res => res.json())
       .then(data => { if (data) checkConfig(data); })
       .catch(() => { });

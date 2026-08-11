@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "halfmoon/css/halfmoon.min.css";
 import "halfmoon/css/cores/halfmoon.cores.css";
 import App from "./App";
-import { installBackendTransport, waitForBackendReady } from "./services/backend";
+import { configureBackendTransport, waitForBackendReady } from "./services/backend";
 
 // Apply the saved theme before React renders to avoid a flash of the default theme.
 (function applyThemeEarly() {
@@ -28,9 +28,7 @@ async function initApp() {
       throw new Error(backend.error || "Backend did not report a listening port.");
     }
 
-    // Existing views still read this during the incremental API-client migration.
-    (window as any).BACKEND_PORT = backend.port;
-    installBackendTransport(backend.port);
+    configureBackendTransport(backend.port);
     console.log("Backend sidecar is ready on port:", backend.port);
   } catch (error) {
     console.error("Backend startup failed:", error);
