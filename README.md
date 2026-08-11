@@ -148,6 +148,8 @@ FH6-HorizonTuner/
 
 ## 開發者規範與程式碼格式化 / Developer Guide & Formatting
 
+協作代理規範位於 [`.agents/AGENTS.md`](.agents/AGENTS.md)，變更前請先閱讀；專案決策與經驗紀錄維護於 [`.agents/Journal.md`](.agents/Journal.md)。
+
 專案採用 **[Ruff](https://github.com/astral-sh/ruff)** 作為標準的 Python 程式碼格式化與風格檢查工具，並採用 **Black-compatible** 排版風格。為確保代碼風格一致，並能順利通過 GitHub Actions 的 CI 檢查，請在提交代碼前遵循以下程序：
 
 ### Python 格式化 (Ruff)

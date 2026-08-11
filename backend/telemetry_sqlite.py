@@ -282,6 +282,66 @@ class TelemetrySQLite:
             )
             conn.commit()
 
+    def finalize_session(self, session_id: str) -> Dict[str, Any]:
+        """Calculate and persist a session summary after all point batches finish."""
+        points = self.get_telemetry_points(session_id)
+        if not points:
+            return {
+                "session_id": session_id,
+                "total_laps": 0,
+                "best_lap_time": 0.0,
+                "total_distance": 0.0,
+            }
+
+        laps_map: Dict[int, List[Dict[str, Any]]] = {}
+        for point in points:
+            lap_number = point.get("LapNumber", 1)
+            laps_map.setdefault(lap_number, []).append(point)
+
+        laps_summary = []
+        best_lap_time = float("inf")
+        total_distance = 0.0
+        for lap_number, lap_points in laps_map.items():
+            if not lap_points:
+                continue
+            lap_time = lap_points[-1]["time"] - lap_points[0]["time"]
+            start_distance = lap_points[0].get("lap_distance", 0.0)
+            end_distance = lap_points[-1].get("lap_distance", 0.0)
+            speeds = [point["SpeedMetersPerSecond"] * 3.6 for point in lap_points]
+            max_speed = max(speeds) if speeds else 0.0
+            average_speed = sum(speeds) / len(speeds) if speeds else 0.0
+
+            if 1.0 < lap_time < best_lap_time:
+                best_lap_time = lap_time
+
+            laps_summary.append(
+                {
+                    "lap_number": lap_number,
+                    "lap_time": round(lap_time, 3),
+                    "start_distance": round(start_distance, 1),
+                    "end_distance": round(end_distance, 1),
+                    "max_speed_kmh": round(max_speed, 1),
+                    "avg_speed_kmh": round(average_speed, 1),
+                }
+            )
+            total_distance = max(total_distance, end_distance)
+
+        if best_lap_time == float("inf"):
+            best_lap_time = 0.0
+        self.save_laps_summary(session_id, laps_summary)
+        self.update_session_summary(
+            session_id,
+            total_laps=len(laps_summary),
+            best_lap_time=round(best_lap_time, 3),
+            total_distance=round(total_distance, 1),
+        )
+        return {
+            "session_id": session_id,
+            "total_laps": len(laps_summary),
+            "best_lap_time": round(best_lap_time, 3),
+            "total_distance": round(total_distance, 1),
+        }
+
     def list_all_sessions(self) -> List[Dict[str, Any]]:
         with self._get_connection() as conn:
             cursor = conn.cursor()

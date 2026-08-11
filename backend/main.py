@@ -79,6 +79,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
+from race_recorder import AsyncRacePersistence, RaceRecorder
 from system_media import get_system_media_info
 from telemetry_listener import (
     DEFAULT_TIRE_ARRAY,
@@ -368,185 +369,9 @@ else:
         logger.error(f"Failed to save default settings to {SETTINGS_FILE}: {e}")
 
 
-# --- Race Telemetry Recorder Class ---
-class RaceRecorder:
-    def __init__(self):
-        self.is_recording = False
-        self.manual_mode = False
-        self.current_session_id = None
-        self.in_memory_batch = []
-        self.first_timestamp = None
-        self.last_sample_time = 0
-        self.max_samples = 50000
-        self.downsample_interval = 0.1  # 100ms (10Hz)
-        self.lap_start_times = {}  # {lap_num: relative_time}
-        self.total_count = 0
-
-    def clear(self):
-        self.is_recording = False
-        self.manual_mode = False
-        self.current_session_id = None
-        self.in_memory_batch = []
-        self.first_timestamp = None
-        self.last_sample_time = 0
-        self.lap_start_times = {}
-        self.total_count = 0
-
-    def _flush_to_sqlite(self):
-        """Batch insert in-memory points into SQLite database asynchronously."""
-        if not self.in_memory_batch or not self.current_session_id:
-            return
-
-        batch_to_write = list(self.in_memory_batch)
-        self.in_memory_batch = []
-
-        try:
-            telemetry_db.insert_points_batch(self.current_session_id, batch_to_write)
-        except Exception as e:
-            logger.error(f"Failed to flush telemetry batch to SQLite: {e}")
-
-    def record(self, data: dict):
-        if not app_settings.get("race_recording", True):
-            if self.is_recording:
-                self.clear()
-            return
-
-        # Accurate race active gate: Must be IsRaceOn=1 AND CurrentRaceTime > 0 AND CurrentLap > 0 (or manual_mode)
-        is_race_on = data.get("IsRaceOn", 0) == 1
-        current_race_time = data.get("CurrentRaceTime", 0.0)
-        current_lap = data.get("CurrentLap", data.get("LapNumber", 0))
-
-        is_race_active = self.manual_mode or (
-            is_race_on and current_race_time > 0.0 and current_lap > 0
-        )
-
-        if is_race_active:
-            if not self.is_recording:
-                self.clear()
-                self.is_recording = True
-                self.current_session_id = f"session_{int(time.time())}"
-
-                car_ordinal = data.get("CarOrdinal", 0)
-                car_info = car_database.get(str(car_ordinal), {})
-                car_name = f"{car_info.get('year', '')} {car_info.get('make', '')} {car_info.get('model', '')}".strip()
-                if not car_name:
-                    car_name = (
-                        f"Car #{car_ordinal}" if car_ordinal > 0 else "Unknown Car"
-                    )
-
-                car_class = data.get("CarClass", 0)
-                car_pi = data.get("CarPerformanceIndex", 0)
-
-                telemetry_db.create_session(
-                    session_id=self.current_session_id,
-                    car_ordinal=car_ordinal,
-                    car_name=car_name,
-                    car_class=car_class,
-                    car_pi=car_pi,
-                    start_time=time.time(),
-                )
-                logger.info(
-                    f"Started new telemetry recording session: {self.current_session_id}"
-                )
-
-            now = time.time()
-            if now - self.last_sample_time >= self.downsample_interval:
-                if self.total_count >= self.max_samples:
-                    self.is_recording = False
-                    return
-
-                timestamp_ms = data.get("TimestampMS", 0)
-                if self.first_timestamp is None:
-                    self.first_timestamp = timestamp_ms
-
-                relative_time = (timestamp_ms - self.first_timestamp) / 1000.0
-                c_lap = data.get("CurrentLap", 1)
-
-                if c_lap not in self.lap_start_times:
-                    self.lap_start_times[c_lap] = relative_time
-
-                # Clone data dictionary for SQLite batch insert
-                point = dict(data)
-                point["time"] = round(relative_time, 2)
-
-                self.in_memory_batch.append(point)
-                self.total_count += 1
-                self.last_sample_time = now
-
-                if len(self.in_memory_batch) >= 50:
-                    self._flush_to_sqlite()
-        else:
-            if self.is_recording:
-                self.save_latest_and_clear(data)
-
-    def save_latest_and_clear(self, last_data: dict):
-        """Flush remaining batch to SQLite, calculate lap summaries, and clear memory."""
-        if not self.current_session_id:
-            self.clear()
-            return
-
-        self._flush_to_sqlite()
-
-        # Calculate Laps summary from SQLite
-        try:
-            points = telemetry_db.get_telemetry_points(self.current_session_id)
-            if points:
-                laps_map: dict[int, list[dict]] = {}
-                for p in points:
-                    l_num = p.get("LapNumber", 1)
-                    if l_num not in laps_map:
-                        laps_map[l_num] = []
-                    laps_map[l_num].append(p)
-
-                laps_summary = []
-                best_lap_time = 999999.0
-                total_distance = 0.0
-
-                for l_num, l_points in laps_map.items():
-                    if not l_points:
-                        continue
-                    l_time = l_points[-1]["time"] - l_points[0]["time"]
-                    start_dist = l_points[0].get("lap_distance", 0.0)
-                    end_dist = l_points[-1].get("lap_distance", 0.0)
-                    speeds = [p["SpeedMetersPerSecond"] * 3.6 for p in l_points]
-                    max_sp = max(speeds) if speeds else 0.0
-                    avg_sp = sum(speeds) / len(speeds) if speeds else 0.0
-
-                    if l_time > 1.0 and l_time < best_lap_time:
-                        best_lap_time = l_time
-
-                    laps_summary.append(
-                        {
-                            "lap_number": l_num,
-                            "lap_time": round(l_time, 3),
-                            "start_distance": round(start_dist, 1),
-                            "end_distance": round(end_dist, 1),
-                            "max_speed_kmh": round(max_sp, 1),
-                            "avg_speed_kmh": round(avg_sp, 1),
-                        }
-                    )
-                    total_distance = max(total_distance, end_dist)
-
-                if best_lap_time == 999999.0:
-                    best_lap_time = 0.0
-
-                telemetry_db.save_laps_summary(self.current_session_id, laps_summary)
-                telemetry_db.update_session_summary(
-                    self.current_session_id,
-                    total_laps=len(laps_summary),
-                    best_lap_time=round(best_lap_time, 3),
-                    total_distance=round(total_distance, 1),
-                )
-                logger.info(
-                    f"Finished session {self.current_session_id}: {len(laps_summary)} laps recorded in SQLite."
-                )
-        except Exception as e:
-            logger.error(f"Error finalizing session summary in SQLite: {e}")
-
-        self.clear()
-
-
-race_recorder = RaceRecorder()
+# --- Race Telemetry Recorder ---
+race_persistence = AsyncRacePersistence(telemetry_db)
+race_recorder = RaceRecorder(race_persistence, app_settings, car_database)
 
 
 # --- Drag Telemetry Recorder Class ---
@@ -1134,6 +959,7 @@ async def lifespan(app: FastAPI):
     # sidecar still owned the telemetry port.
     current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
     current_udp_ip_port = (ip, port)
+    race_persistence.start()
     background_tasks = [
         asyncio.create_task(broadcast_telemetry()),
         asyncio.create_task(broadcast_overlay_state()),
@@ -1148,6 +974,7 @@ async def lifespan(app: FastAPI):
         await asyncio.gather(*background_tasks, return_exceptions=True)
         await car_params_writer.flush()
         await car_params_cache.cancel_pending()
+        await race_persistence.shutdown()
 
 
 app.router.lifespan_context = lifespan
@@ -1396,6 +1223,7 @@ async def get_telemetry_pipeline_metrics():
         "pendingWrites": car_params_writer.pending_write_count,
         "failedWrites": car_params_writer.failed_writes,
     }
+    snapshot["raceRecorderPersistence"] = race_persistence.snapshot()
     return snapshot
 
 
@@ -1751,21 +1579,13 @@ async def clear_analysis_data():
 
 @app.post("/api/analysis/recorder/start")
 async def start_manual_recording():
-    race_recorder.clear()
-    race_recorder.manual_mode = True
-    race_recorder.is_recording = True
-    race_recorder.current_session_id = f"session_{int(time.time())}"
-
-    telemetry_db.create_session(
-        session_id=race_recorder.current_session_id,
-        car_ordinal=0,
-        car_name="Manual Session",
-        start_time=time.time(),
-    )
+    race_persistence.start()
+    session_id = race_recorder.start_manual()
+    await race_persistence.flush()
     logger.info("Manual recording started.")
     return {
         "message": "Manual recording started successfully",
-        "sessionId": race_recorder.current_session_id,
+        "sessionId": session_id,
     }
 
 
@@ -1774,8 +1594,8 @@ async def stop_manual_recording():
     if not race_recorder.is_recording or not race_recorder.manual_mode:
         return {"error": "Manual recording is not active"}
 
-    race_recorder.manual_mode = False
-    race_recorder.save_latest_and_clear({})
+    race_recorder.save_latest_and_clear()
+    await race_persistence.flush()
     logger.info("Manual recording stopped and saved.")
     return {"message": "Manual recording stopped and saved successfully"}
 

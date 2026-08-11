@@ -246,6 +246,17 @@
 
 ---
 
+## 2026-08-11 / RaceRecorder Persistence Queue
+
+- **Scope**: local / V1.4.1 `codex/v1.4.1-contract-hotpath`
+- **Status**: adopted
+- **Learning**: SQLite batches issued by RaceRecorder can delay unrelated UDP, dyno, and WebSocket work even when samples are downsampled to 10Hz.
+- **Action**: RaceRecorder remains a synchronous state machine. One FIFO `AsyncRacePersistence` worker owns session creation, point batches, and finalization, and executes every SQLite operation through `asyncio.to_thread()`. A bounded queue drops only recorder samples under sustained saturation; finalization is deferred rather than dropped.
+- **Contract**: Existing analysis endpoints and the SQLite schema remain unchanged. `/api/diagnostics/telemetry-pipeline` adds the backward-compatible `raceRecorderPersistence` object.
+- **Evidence**: `backend/race_recorder.py`, `TelemetrySQLite.finalize_session()`, `tests/test_race_recorder.py`, and lifecycle/diagnostics test extensions. Targeted pytest: 16 passed.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

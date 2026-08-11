@@ -153,6 +153,8 @@ You can package both the frontend and backend into a **single standalone executa
 
 ## Developer Guide & Formatting
 
+Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
+
 The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard Python code formatter and linter with a **Black-compatible** style. To ensure consistent code style and pass GitHub Actions CI checks, follow these procedures before committing:
 
 ### Python Formatting (Ruff)

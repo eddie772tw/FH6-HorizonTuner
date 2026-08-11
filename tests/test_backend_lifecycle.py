@@ -62,6 +62,7 @@ async def test_lifespan_cancels_background_tasks(monkeypatch):
         not in {
             "broadcast_telemetry",
             "broadcast_overlay_state",
+            "_run",
         }
         for task in current_tasks
         if task is not asyncio.current_task()
