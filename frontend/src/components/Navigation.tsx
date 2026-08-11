@@ -354,7 +354,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                     {t("Forza Horizon UDP telemetry stream is disconnected.")}
                   </div>
                   <div className="fs-8 text-secondary mt-1">
-                    {t("Ensure Data Out is turned ON in game HUD settings (Port 8000/8001).")}
+                    {t("Ensure Data Out is turned ON in game HUD settings (Port 8000).")}
                   </div>
                 </div>
               </div>

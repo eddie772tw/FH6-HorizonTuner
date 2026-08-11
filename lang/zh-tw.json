@@ -991,5 +991,15 @@
   "NFS Most Wanted '05": "NFS Most Wanted '05 (極速快感：全民公敵)",
   "NFS '15": "NFS '15 (極速快感 2015)",
   "NFS Shift": "NFS Shift (極速快感：進化世代)",
-  "Drift HUD": "Drift HUD (甩尾介面)"
+  "Drift HUD": "Drift HUD (甩尾介面)",
+  "Chassis": "底盤",
+  "General Settings": "一般設定",
+  "Displays & Layout": "顯示與佈局",
+  "Gauges & Scales": "儀表與刻度",
+  "Performance & System": "效能與系統",
+  "UDP SIGNAL ACTIVE": "UDP 訊號活躍",
+  "UDP DISCONNECTED": "UDP 已斷線",
+  "UDP Connection Alert": "UDP 連線警告",
+  "Forza Horizon UDP telemetry stream is disconnected.": "Forza Horizon UDP 遙測串流已斷線。",
+  "Ensure Data Out is turned ON in game HUD settings (Port 8000).": "請確保在遊戲 HUD 設定中開啟「資料輸出」 (連接埠 8000)。"
 }
