@@ -268,6 +268,43 @@
 
 ---
 
+## 2026-08-11 / Drift Style MVP
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Status**: adopted
+- **Decision**: The first implementation phase leaves the existing Drift HUD
+  primary instrument unchanged. A dependency-free `drift_style_engine.js` owns
+  scoring, rank decay, source-local FLOW/HOLD/RISK aggregation, Hero special
+  events, direction-swap continuity, and settlement snapshots. The display is a fixed container inside
+  `hud_overlay/drift/index.html`, not a shared TelemetryCard.
+- **Hot-path boundary**: The engine receives a preallocated normalized frame in
+  the existing RAF loop. Its DOM container is updated at 12.5 Hz with no CSS
+  transition, preserving the 60 Hz Canvas and telemetry path.
+- **Evidence**: `frontend/src/utils/driftStyleEngine.test.ts` covers source
+  aggregation, Hero special events, direction swaps, and sustained-loss settlement.
+
+---
+
+## 2026-08-11 / Drift HUD Primary-Secondary Split
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Decision**: The central oval is now the primary instrument and renders only
+  the drift-angle arc, tachometer arc, and a speed / gear / torque 1+1+1
+  hierarchy. A lower-right oval secondary instrument owns drift angle,
+  direction, FLOW, RISK, HOLD, and the four driver-input columns.
+- **Telemetry contract**: `SteerInput` is normalized to a clamped percentage
+  and projected onto the shared plus-or-minus 60 degree drift arc as an amber
+  counter-steer pointer. It is deliberately not displayed as a physical
+  wheel-angle measurement. Torque uses the existing normalized telemetry unit.
+- **Hot-path boundary**: `drift_display_math.js` is dependency-free and the
+  Canvas loop only consumes normalized scalar state; no React work or
+  allocations were introduced into the telemetry path.
+- **Evidence**: `frontend/src/utils/driftDisplayMath.test.ts` covers steering
+  normalization, counter-steer direction, visual arc mapping, and torque
+  units. Frontend Vitest: 33 files / 205 tests passed.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。
