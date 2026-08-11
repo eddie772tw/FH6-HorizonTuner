@@ -267,6 +267,13 @@
             drawMainDials(data, palette, redlineRatio, profile);
         }
 
+        function drawTrack(data, palette, redlineRatio) {
+            clear(palette);
+            if (typeof p.drawTrackCluster === 'function') {
+                p.drawTrackCluster(view, data, palette, redlineRatio);
+            }
+        }
+
         var centerRegions = geometry.centerRegions;
         var baseDrivingRegions = Object.freeze({
             normal: geometry.baseDriving,
@@ -277,6 +284,10 @@
         return {
             render: function (theme, data, palette, redlineRatio) {
                 var profile = profileFor(theme);
+                if (profile.type === 'track') {
+                    drawTrack(data, palette, redlineRatio);
+                    return;
+                }
                 // The current supported theme set is dual-ring. Keeping this
                 // check explicit makes future non-dual families easy to add.
                 if (profile.type !== profileRegistry.type) profile = profiles.normal;

@@ -42,11 +42,17 @@
 
 **目前未實作、仍在評估：**
 
-- Sport、Track、Calm 與 SVT Cobra 四個額外主題。它們目前只能作為視覺研究與候選方向，不得寫成現行 selector 或 renderer 支援。
+- Sport、Calm 與 SVT Cobra 三個額外主題。它們目前只能作為視覺研究與候選方向，不得寫成現行 selector 或 renderer 支援。
 - Header、Footer、獨立 Shift Light、telltale 與通用 warning state 的完整呈現方式。現有 Canvas 只保留對應版位或紅線／警示色語意，後續仍需另行評估與實作。
 - 任何副螢幕、中央娛樂系統、Track Apps、Auxiliary Gauges、導航、電話、媒體、3D 車輛模型、觸控操作或外部服務整合。
 
 `driveMode` 與 `matchDriveMode` 曾存在於早期設計與相容 contract，但隨副螢幕及無關儀表的中控娛樂系統移除，已不是目前 S650 HMI 的有效參數。現行 HMI 只以 Cluster Theme 作為主題選擇；後續應清理 renderer 對過時 Drive Mode 參數的依賴。
+
+### 0.1.3 Track 產品決策（2026-08-11）
+
+Track 已納入現行 selector 與 renderer，採用獨立的單一 performance layout，而非在 dual-ring 架構上只更換色彩。其資訊優先順序為：頂部 24 段 RPM／換檔帶、中央檔位與 RPM、左側速度、右側 Power／Boost／Fuel，底部才保留方位與里程。中央資訊頁在此 theme 不繪製，因為賽道模式的目標是降低競爭資訊；`showSpeed`、`showGear`、`showRPM` 仍沿用共用 element visibility controls。
+
+Ford GT 的數位儀表是本次的**外部設計借鑑**：其 Track 視圖可觀察到黑／紅高對比、橫向轉速／換檔訊號、中央檔位，以及將速度、動力資料退居周邊的層級。本專案只採用這套資訊架構與可讀性原則；不複製 Ford GT 的資產、字體或宣稱為 S650 原廠 Track 逐像素還原。
 
 本文件中的未實作項目是評估邊界，不代表已建立可互動的 placeholder。不得因此新增 click handler、API 呼叫、假資料或第二條媒體資料路徑。
 
@@ -74,7 +80,7 @@ Canvas 的邏輯尺寸固定為 **1280×480**；CSS zoom／HUD scale 由既有 H
 | Footer | `x:48, y:424, w:1184, h:56` | 目前為保留區；單位、底部狀態與完整 warning／Shift Light 的呈現方式尚未定案。 |
 | Telltale reserved area | `x:48, y:424, w:360, h:56` | 只保留版位契約，尚未接入通用 telltale 資料。 |
 
-模組責任固定為：`contract` 正規化資料與設定、`tokens` 提供色彩、`primitives` 提供 Canvas 基元、`layouts` 目前管理三個 dual-ring 主題版型、`frame` 管理 60Hz frame／sweep 狀態、`renderer` 只負責 HUDCore facade。未來新增主題或 Header／Footer／warning renderer 時，仍不得讓副螢幕或周邊娛樂系統穿透這條依賴鏈。
+模組責任固定為：`contract` 正規化資料與設定、`tokens` 提供色彩、`primitives` 提供 Canvas 基元、`layouts` 管理三個 dual-ring 主題與獨立 Track performance layout、`frame` 管理 60Hz frame／sweep 狀態、`renderer` 只負責 HUDCore facade。未來新增主題或 Header／Footer／warning renderer 時，仍不得讓副螢幕或周邊娛樂系統穿透這條依賴鏈。
 
 ### 0.1.3 HMI 核心參數字典
 
@@ -549,13 +555,13 @@ S650 Canvas 內部不應延續設定頁大量的 Glassmorphism 卡片。建議�
 
 #### 現行實作
 
-- [x] `1280×480` Canvas、三個已完成主題與四個中央資訊頁的契約已固定。
+- [x] `1280×480` Canvas、四個已完成主題與四個中央資訊頁的契約已固定（Track 不繪製中央頁）。
 - [x] 速度、檔位、RPM、單位、紅線、主環、側邊 gauge、fallback、scale 與啟動 sweep 已納入現行路徑。
 - [x] Cluster 不依賴副螢幕、中控娛樂、媒體、導航或電話資料。
 
 #### 後續評估／待修正
 
-- [ ] Sport、Track、Calm、SVT Cobra 的需求、版型、色彩與資料優先級完成確認。
+- [ ] Sport、Calm、SVT Cobra 的需求、版型、色彩與資料優先級完成確認。
 - [ ] Header、Footer、Shift Light、telltale 與 warning state 的資料來源與視覺呈現完成設計。
 - [ ] renderer 完全只接受 canonical telemetry，不再處理 legacy alias 或單位轉換。
 - [ ] 警告狀態不依賴顏色單獨傳達，並有文字或位置提示。
@@ -584,6 +590,7 @@ S650 Canvas 內部不應延續設定頁大量的 Glassmorphism 卡片。建議�
 - [Ford Mustang 官方車款頁：12.4 吋 IOD Cluster、13.2 吋中央螢幕、Driver-centric Cockpit、Track Apps 與 2026 RTR 歡迎／離開動畫案例](https://www.ford.com/cars/mustang/)（本輪於 2026-08-10 查閱）
 - [Ford Mustang 官方車主教學：Cluster Theme、Normal、Sport、Track、Calm、Fox Body、Match Drive Mode、MyColor 與 Auxiliary Gauges](https://www.me.ford.com/en/sau/ownersite/discover-your-ford/mustang/customizing-mymustang-car-controls/)（本輪於 2026-08-10 查閱）
 - [Ford Mustang 官方 Drive Modes 說明：Normal、Sport、Slippery、Track、Drag Strip、Custom 與 cluster graphics](https://www.ford.com/support/how-tos/ford-technology/mustang-features/how-do-i-use-the-mustang-drive-modes/)
+- [Ford GT 官方媒體資料：數位儀表的 Normal／Wet／Track 視圖與賽道資訊層級](https://media.lincoln.com/content/fordmedia/feu/fr/fr/news/2017/01/12/ford-gt-supercar-digital-instrument-display-dashboard-of-future.html)
 - [Ford Mustang 官方 Track Apps 說明：Acceleration、Brake、Lap、Launch、Shift Indicator、Line Lock、Drift Brake、Rev Match](https://www.ford.com/support/how-tos/ford-technology/mustang-features/how-do-i-use-the-mustang-track-apps/)
 - [Ford Media Center：S650 driver-centric cockpit、12.4 吋 cluster、13.2 吋 SYNC 4、銅色／深色預設與 Unreal Engine 互動圖形](https://media.ford.com/content/fordmedia/feu/gb/en/products/passenger-vehicles/mustang.html)
 - [Ford Media Center：Mustang GT 數位座艙、Drive Mode-dependent visuals、動畫設計與銅色基準](https://media.ford.com/content/fordmedia/img/za/en/news/2024/07/New-Ford-Mustang-GT-Redefines-Driving-Freedom-with-Immersive-Digital-Cockpit-Advanced-50L-V8-Engine-and-Bold-Style.html)

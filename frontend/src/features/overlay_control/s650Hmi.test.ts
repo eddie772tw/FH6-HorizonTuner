@@ -18,6 +18,7 @@ describe('S650 HMI config contract', () => {
       'normal',
       'heritage67',
       'foxbody',
+      'track',
     ]);
   });
 
@@ -101,7 +102,7 @@ describe('S650 HMI config contract', () => {
     expect(isS650HmiTheme('normal')).toBe(true);
     expect(isS650HmiTheme('heritage67')).toBe(true);
     expect(isS650HmiTheme('foxbody')).toBe(true);
-    expect(isS650HmiTheme('track')).toBe(false);
+    expect(isS650HmiTheme('track')).toBe(true);
     expect(isS650HmiTheme('s650_heritage67')).toBe(false);
     expect(isS650HmiTheme('')).toBe(false);
     expect(isS650HmiTheme(undefined)).toBe(false);

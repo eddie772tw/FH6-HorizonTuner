@@ -23,8 +23,8 @@
 | 項目 | 目前基準 |
 | --- | --- |
 | Canvas | `1280 × 480` |
-| 已完成 Theme | `normal`、`heritage67`、`foxbody` |
-| 評估中 Theme | `sport`、`track`、`calm`、`svt_cobra` |
+| 已完成 Theme | `normal`、`heritage67`、`foxbody`、`track` |
+| 評估中 Theme | `sport`、`calm`、`svt_cobra` |
 | 中央頁面 | `disable`、`drive`、`tire_temp`、`performance` |
 | 主要版面 | 左右雙環儀表、中央資訊區、Header/Footer 保留區 |
 | 有意義的使用者參數 | `Cluster Theme`、中央頁面、GUI theme、單位、元素可見性、顏色與垂直位移 |
@@ -361,3 +361,12 @@ UDP packet reference 與既有 parser fixture 證實：`Yaw` 為 rad、`TireTemp
 | S650 offset、canonical input 與 central-data boundary | `s650FrameVisibility.test.ts`、`s650FrameCanonicalInput.test.ts`、`s650Contract.test.ts`、`s650CenterInfoCanonicalData.test.ts` |
 
 驗收結果：`cmd /c "pnpm -C frontend run test"` 為 33 test files、203 tests 通過。Header、Footer、Shift Light、telltale 與 warning 仍維持 Phase 5 的獨立評估範圍，不視為目前基線缺陷。
+
+## Appendix E：Track theme 實作（2026-08-11）
+
+Track 為本分支第一個完成的候選 Theme，並以獨立 `track` layout type 實作，不再套用 dual-ring 的中央頁、side gauges 或 base-driving layers。它使用 canonical frame 既有的 `rpm`、`maxRpm`、`speed_*`、`gear`、`power_hp`、`boost_psi`、`fuel_ratio`、`heading_deg`、`distance_m`，沒有新增 telemetry contract。
+
+- 視覺與資訊層級：24 段橫向 RPM／換檔帶、中央檔位與 RPM、左側速度、右側 Power／Boost／Fuel、底部方位與里程。
+- Ford GT 為外部資訊架構借鑑：採黑／紅高對比、橫向轉速訊號與中央檔位；不複製 OEM 資產、不宣稱為 S650 原廠像素還原。
+- 設定與相容性：`s650Theme: "track"` 由 frontend type guard、backend API 與 Canvas contract 一致接受；通用 custom gauge color 不覆寫 Track 的安全關鍵紅色 RPM 語意。
+- 回歸範圍：`s650TrackCluster.test.ts` 驗證 24 段 band、資訊層級與 visibility controls；`s650DualLayoutPipeline.test.ts` 驗證不會混入 dual-ring layers；既有 config、palette、profile 與 API test 一併擴充。

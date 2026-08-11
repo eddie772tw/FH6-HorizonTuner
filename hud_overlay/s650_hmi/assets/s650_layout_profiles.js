@@ -3,6 +3,7 @@
     'use strict';
 
     var DUAL_LAYOUT_TYPE = 'dual';
+    var TRACK_LAYOUT_TYPE = 'track';
 
     // Roles remain owned by each theme profile even when two themes currently
     // display the same telemetry slots. This keeps the profile independent
@@ -73,6 +74,16 @@
                 leftRole: 'rpm',
                 rightRole: 'speed',
                 outerInset: 8
+            })
+        }),
+        track: Object.freeze({
+            type: TRACK_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'trackPerformance',
+                leftRole: 'rpm',
+                rightRole: 'speed',
+                outerInset: 0
             })
         })
     });

@@ -11,7 +11,8 @@
     var THEMES = [
         'normal',
         'heritage67',
-        'foxbody'
+        'foxbody',
+        'track'
     ];
 
     var CENTER_WIDGETS = [

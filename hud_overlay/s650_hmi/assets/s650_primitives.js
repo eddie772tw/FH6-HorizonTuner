@@ -884,6 +884,73 @@
             ctx.restore();
         }
 
+        function drawTrackCluster(view, data, palette, redlineRatio) {
+            var tachX = 96;
+            var tachY = 54;
+            var tachWidth = view.width - tachX * 2;
+            var segmentCount = 24;
+            var segmentGap = 5;
+            var segmentWidth = (tachWidth - segmentGap * (segmentCount - 1)) / segmentCount;
+            var rpmRatio = Math.max(0, Math.min(1, view.getRpm(data) / view.getMaxRpm(data)));
+            var speed = view.roundedSpeed(data);
+            var gear = view.getGearLabel(data);
+            var fuel = view.getFuelLevel(data);
+            var power = view.getTelemetryReadout('power', data);
+            var boost = view.getTelemetryReadout('boost', data);
+            var heading = view.getTelemetryReadout('heading', data);
+            var odometer = view.getTelemetryReadout('odometer', data);
+            var panelX = 48;
+            var panelY = 32;
+            var panelWidth = view.width - panelX * 2;
+            var panelHeight = view.height - panelY * 2;
+
+            ctx.save();
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+            for (var index = 0; index < segmentCount; index += 1) {
+                var ratio = index / segmentCount;
+                ctx.fillStyle = ratio >= redlineRatio ? palette.danger : (ratio <= rpmRatio ? palette.primary : 'rgba(255,255,255,0.14)');
+                ctx.fillRect(tachX + index * (segmentWidth + segmentGap), tachY, segmentWidth, 13);
+            }
+            if (view.showSpeed) {
+                ctx.textAlign = 'left';
+                setFont(15, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('SPEED', 96, 104);
+                setFont(46, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(speed), 96, 148);
+                setFont(15, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(view.unitLabel(), 96, 171);
+            }
+            if (view.showGear) {
+                ctx.textAlign = 'center';
+                setFont(104, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(gear, view.width / 2, 218);
+            }
+            if (view.showRPM) {
+                ctx.textAlign = 'center';
+                setFont(20, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(Math.round(view.getRpm(data)) + ' RPM', view.width / 2, 248);
+            }
+            ctx.textAlign = 'center';
+            setFont(15, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.primary;
+            ctx.fillText('TRACK', view.width / 2, 286);
+            ctx.textAlign = 'right';
+            setFont(15, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('POWER  ' + power.value + ' ' + power.unit, view.width - 96, 124);
+            ctx.fillText('BOOST  ' + boost.value + ' ' + boost.unit, view.width - 96, 164);
+            ctx.fillText('FUEL  ' + (fuel === null ? '--' : Math.round(fuel * 100) + '%'), view.width - 96, 204);
+            ctx.textAlign = 'center';
+            ctx.fillText(heading.value + '  /  ' + odometer.value + ' ' + odometer.unit, view.width / 2, view.height - 52);
+            ctx.restore();
+        }
+
         return {
             setFont: setFont,
             getFontSize: fontSize,
@@ -903,7 +970,8 @@
             drawSideGauge: drawSideGauge,
             drawHeritageSideGauge: drawHeritageSideGauge,
             drawHeritageStatus: drawHeritageStatus,
-            drawNormalStatus: drawNormalStatus
+            drawNormalStatus: drawNormalStatus,
+            drawTrackCluster: drawTrackCluster
         };
     }
 

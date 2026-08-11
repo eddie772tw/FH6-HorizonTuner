@@ -64,4 +64,16 @@ describe('S650 HMI palette', () => {
       text: '#D5FFD0',
     });
   });
+
+  it('keeps Track high-contrast and immune to the general custom gauge color', () => {
+    expect(loadTokensModule().paletteFor('track', {
+      customColor: '#ff00aa',
+      useDefaultColors: false,
+    })).toMatchObject({
+      background: '#050608',
+      primary: '#F04A3E',
+      secondary: '#9AA3AD',
+      danger: '#FF3B30',
+    });
+  });
 });

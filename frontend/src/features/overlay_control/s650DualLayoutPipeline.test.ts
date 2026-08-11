@@ -69,6 +69,7 @@ function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
         events.push('mainDial');
         foxbodyCalls.push(args);
       },
+      drawTrackCluster: () => events.push('trackCluster'),
       getHeritageDialScale: () => ({ max: 80 }),
     },
     baseDriving: { draw: () => events.push('baseDriving') },
@@ -100,5 +101,14 @@ describe('S650 dual layout pipeline', () => {
     layouts.render('foxbody', { redlineRpm: 7000 }, { primary: '#C98D5A', secondary: '#98A0A8' }, 0.875);
 
     expect((foxbodyCalls[1][6] as { specialMark: number }).specialMark).toBe(60);
+  });
+
+  it('routes Track through its dedicated cluster without rendering dual-ring layers', () => {
+    const events: string[] = [];
+    const layouts = createLayouts(events);
+
+    layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
+
+    expect(events).toEqual(['trackCluster']);
   });
 });
