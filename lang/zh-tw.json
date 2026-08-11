@@ -860,7 +860,7 @@
   "Please set basic vehicle parameters in Step 1 to proceed.": "請先在 Step 1 完成基本車輛參數輸入以繼續。",
   "Please define basic vehicle parameters in Step 1 first.": "請先在 Step 1 完成基本車輛參數輸入。",
   "Tire & Alignment": "輪胎與定位",
-  "Telemetry Calibration": "遙測校準",
+  "Telemetry Calibration": "遙測校正",
   "Current Season:": "當前遊戲季節：",
 
   "Summer (-0.5 PSI)": "夏日 (-0.5 PSI)",
@@ -1001,5 +1001,5 @@
   "UDP DISCONNECTED": "UDP 已斷線",
   "UDP Connection Alert": "UDP 連線警告",
   "Forza Horizon UDP telemetry stream is disconnected.": "Forza Horizon UDP 遙測串流已斷線。",
-  "Ensure Data Out is turned ON in game HUD settings (Port 8000/8001).": "請確保在遊戲 HUD 設定中開啟「資料輸出」 (連接埠 8000/8001)。"
+  "Ensure Data Out is turned ON in game HUD settings (Port 8000).": "請確保在遊戲 HUD 設定中開啟「資料輸出」 (連接埠 8000)。"
 }

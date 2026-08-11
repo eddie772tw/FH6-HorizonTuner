@@ -939,5 +939,5 @@
   "UDP DISCONNECTED": "UDP 切断",
   "UDP Connection Alert": "UDP 接続アラート",
   "Forza Horizon UDP telemetry stream is disconnected.": "Forza Horizon の UDP テレメトリストリームが切断されています。",
-  "Ensure Data Out is turned ON in game HUD settings (Port 8000/8001).": "ゲーム内のHUD設定で「データ出力」がオンになっていることを確認してください (ポート 8000/8001)。"
+  "Ensure Data Out is turned ON in game HUD settings (Port 8000).": "ゲーム内のHUD設定で「データ出力」がオンになっていることを確認してください (ポート 8000)。"
 }
