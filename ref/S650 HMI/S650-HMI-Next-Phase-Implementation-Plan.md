@@ -384,3 +384,9 @@ SVT Cobra 是 FH6-HorizonTuner 的產品延伸，不是 S650 OEM Cluster Theme�
 
 - 色彩：固定白色 primary 與紅色 danger，避免 general custom gauge color 稀釋這個延伸主題的黑白高對比語言。
 - 回歸範圍：`s650SvtCobraCluster.test.ts` 驗證資訊層級與紅線帶；profile、layout pipeline、theme guard、palette 及 backend config test 皆已擴充。
+
+## Appendix H：60Hz palette cache（2026-08-11）
+
+`s650_frame.js` 原本在每個 frame 呼叫 `tokens.paletteFor()`，造成色票 clone 與 options object allocation，即使 telemetry-only frame 沒有任何視覺設定改變。現在 palette 僅在 Theme、GUI theme mode、custom color 或 default-color 設定變更時重算；render hot path 直接重用 cache。
+
+`s650FramePaletteCache.test.ts` 驗證連續 telemetry frame 共用相同 palette reference，並確認主題切換會重新取用正確色票。這是獨立且可回歸的效能提交，不改變資料契約或畫面輸出。

@@ -33,8 +33,17 @@
             gearCarouselStartedAt: 0,
             heritageGaugeMaximums: { power: 1000, boost: 30 },
             lastRenderTime: 0,
-            lastFrame: Object.assign({}, contract.defaultFrame)
+            lastFrame: Object.assign({}, contract.defaultFrame),
+            palette: null
         };
+
+        function refreshPalette() {
+            state.palette = tokens.paletteFor(state.theme, {
+                customColor: state.customColor,
+                useDefaultColors: state.useDefaultColors,
+                guiThemeMode: state.guiThemeMode
+            });
+        }
 
         function hasValue(payload, key) {
             return payload && typeof payload === 'object' && (
@@ -64,15 +73,18 @@
 
         function updateStateFromPayload(payload) {
             if (!payload || typeof payload !== 'object') return;
+            var paletteChanged = false;
 
             if (hasValue(payload, 's650Theme') || hasValue(payload, 'clusterTheme')) {
                 state.theme = contract.normalizeConfig(payload).theme;
+                paletteChanged = true;
             }
             if (hasValue(payload, 's650CenterWidget') || hasValue(payload, 'centerWidget')) {
                 state.centerWidget = contract.normalizeConfig(payload).centerWidget;
             }
             if (hasValue(payload, 's650GuiThemeMode')) {
                 state.guiThemeMode = contract.normalizeConfig(payload).guiThemeMode;
+                paletteChanged = true;
             }
             if (hasValue(payload, 'isMetric') || hasValue(payload, 'metric') || hasValue(payload, 'unit')) {
                 state.isMetric = contract.normalizeConfig(payload).isMetric;
@@ -82,11 +94,16 @@
             }
             if (hasValue(payload, 'customColor')) {
                 var customColor = readValue(payload, 'customColor');
-                if (typeof customColor === 'string') state.customColor = customColor;
+                if (typeof customColor === 'string') {
+                    state.customColor = customColor;
+                    paletteChanged = true;
+                }
             }
             if (hasValue(payload, 'useDefaultColors')) {
                 state.useDefaultColors = readValue(payload, 'useDefaultColors') !== false;
+                paletteChanged = true;
             }
+            if (paletteChanged) refreshPalette();
         }
 
         function getSpeed(data) {
@@ -269,11 +286,8 @@
             var maxRpm = getMaxRpm(frame);
             var redlineRatio = contract.clamp(frame.redlineRpm / maxRpm, 0, 1);
             state.lastRenderTime = renderTime || 0;
-            layouts.render(state.theme, frame, tokens.paletteFor(state.theme, {
-                customColor: state.customColor,
-                useDefaultColors: state.useDefaultColors,
-                guiThemeMode: state.guiThemeMode
-            }), redlineRatio);
+            if (!state.palette) refreshPalette();
+            layouts.render(state.theme, frame, state.palette, redlineRatio);
         }
 
         function triggerSweep() {
