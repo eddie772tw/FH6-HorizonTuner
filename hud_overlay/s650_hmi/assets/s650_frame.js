@@ -15,8 +15,6 @@
 
         var state = {
             theme: 'heritage67',
-            driveMode: 'normal',
-            matchDriveMode: false,
             centerWidget: 'drive',
             guiThemeMode: 'dark',
             showCenterInfo: true,
@@ -70,12 +68,6 @@
             if (hasValue(payload, 's650Theme') || hasValue(payload, 'clusterTheme')) {
                 state.theme = contract.normalizeConfig(payload).theme;
             }
-            if (hasValue(payload, 'driveMode') || hasValue(payload, 'drive_mode')) {
-                state.driveMode = contract.normalizeConfig(payload).driveMode;
-            }
-            if (hasValue(payload, 'matchDriveMode')) {
-                state.matchDriveMode = readValue(payload, 'matchDriveMode') === true;
-            }
             if (hasValue(payload, 's650CenterWidget') || hasValue(payload, 'centerWidget')) {
                 state.centerWidget = contract.normalizeConfig(payload).centerWidget;
             }
@@ -100,13 +92,7 @@
         function getSpeed(data) {
             var frame = data || {};
             var canonical = state.isMetric ? frame.speed_kmh : frame.speed_mph;
-            if (canonical !== undefined && canonical !== null) {
-                return Math.max(0, contract.finiteNumber(canonical, 0));
-            }
-            if (frame.speed !== undefined && frame.speed !== null) {
-                return Math.max(0, contract.finiteNumber(frame.speed, 0));
-            }
-            return 0;
+            return Math.max(0, contract.finiteNumber(canonical, 0));
         }
 
         function getRpm(data) {
@@ -171,22 +157,18 @@
         }
 
         function getFuelLevel(data) {
-            var rawFuel = data && (data.Fuel !== undefined ? data.Fuel : data.fuel);
-            if (rawFuel === undefined || rawFuel === null || rawFuel === '') return null;
-            var fuel = contract.finiteNumber(rawFuel, -1);
+            var fuel = contract.finiteNumber(data && data.fuel_ratio, -1);
             if (fuel < 0) return null;
-            return contract.clamp(fuel > 1 ? fuel / 100 : fuel, 0, 1);
+            return contract.clamp(fuel, 0, 1);
         }
 
         var _tireTempCache = [null, null, null, null];
         function getTireTemperatures(data) {
             var source = data || {};
-            var temperatures = Array.isArray(source.TireTemp)
-                ? source.TireTemp
-                : null;
+            var temperatures = Array.isArray(source.tire_temp_f) ? source.tire_temp_f : null;
 
             for (var i = 0; i < 4; i++) {
-                var rawValue = temperatures ? temperatures[i] : (i === 0 ? source.temp_fl : (i === 1 ? source.temp_fr : (i === 2 ? source.temp_rl : source.temp_rr)));
+                var rawValue = temperatures ? temperatures[i] : null;
                 var value = contract.finiteNumber(rawValue, 0);
                 _tireTempCache[i] = value > 0 ? value : null;
             }
@@ -205,17 +187,17 @@
             var distanceMeters;
             var yaw;
             var degrees;
-            var powerWatts;
+            var horsepower;
             var boost;
 
             switch (slot) {
             case 'odometer':
-                distanceMeters = contract.finiteNumber(frame.DistanceTraveled !== undefined ? frame.DistanceTraveled : frame.distanceTraveled, 0);
+                distanceMeters = contract.finiteNumber(frame.distance_m, 0);
                 if (state.isMetric) return { value: (distanceMeters / 1000).toFixed(1), unit: 'km', ratio: null };
                 return { value: (distanceMeters / 1609.344).toFixed(1), unit: 'mi', ratio: null };
             case 'heading':
-                yaw = contract.finiteNumber(frame.Yaw !== undefined ? frame.Yaw : frame.yaw, 0);
-                degrees = Math.abs(yaw) <= Math.PI * 2.1 ? yaw * 180 / Math.PI : yaw;
+                yaw = contract.finiteNumber(frame.heading_deg, 0);
+                degrees = yaw;
                 degrees = ((degrees % 360) + 360) % 360;
                 return { value: headingNames[Math.round(degrees / 45) % 8], unit: '', ratio: null };
             case 'rpm':
@@ -223,12 +205,11 @@
             case 'speed':
                 return { value: String(Math.round(getSpeed(frame))), unit: state.isMetric ? 'KM/H' : 'MPH', ratio: null };
             case 'power':
-                powerWatts = contract.finiteNumber(frame.PowerWatts !== undefined ? frame.PowerWatts : frame.powerWatts, 0);
-                var horsepower = Math.max(0, powerWatts / 745.7);
+                horsepower = Math.max(0, contract.finiteNumber(frame.power_hp, 0));
                 if (horsepower > state.heritageGaugeMaximums.power) state.heritageGaugeMaximums.power = Math.ceil(horsepower / 50) * 50;
                 return { value: String(Math.round(horsepower)), unit: 'HP', ratio: contract.clamp(horsepower / state.heritageGaugeMaximums.power, 0, 1), min: '0', max: String(state.heritageGaugeMaximums.power) };
             case 'boost':
-                boost = Math.max(0, contract.finiteNumber(frame.Boost !== undefined ? frame.Boost : frame.boost, 0) / 6894.75729);
+                boost = Math.max(0, contract.finiteNumber(frame.boost_psi, 0));
                 if (boost > state.heritageGaugeMaximums.boost) state.heritageGaugeMaximums.boost = Math.ceil(boost);
                 return { value: boost.toFixed(1), unit: 'PSI', ratio: contract.clamp(boost / state.heritageGaugeMaximums.boost, 0, 1), min: '0', max: String(state.heritageGaugeMaximums.boost) };
             default:
@@ -281,10 +262,10 @@
             unitLabel: function () { return state.isMetric ? 'KM/H' : 'MPH'; }
         };
 
-        function render(data, payload, renderTime) {
+        function render(data, renderTime) {
             if (!isReady || !state.showGauge) return;
 
-            var frame = contract.normalizeFrame(data, payload);
+            var frame = data || state.lastFrame;
             var maxRpm = getMaxRpm(frame);
             var redlineRatio = contract.clamp(frame.redlineRpm / maxRpm, 0, 1);
             state.lastRenderTime = renderTime || 0;
@@ -301,7 +282,7 @@
             var startedAt = performance.now();
             var duration = 1200;
             var maxRpm = getMaxRpm(state.lastFrame);
-            var redline = contract.normalizeFrame(state.lastFrame, null).redlineRpm;
+            var redline = state.lastFrame.redlineRpm;
 
             function animate(now) {
                 var progress = contract.clamp((now - startedAt) / duration, 0, 1);
@@ -323,13 +304,13 @@
                     throttle: progress < 0.5 ? progress * 2 : 0,
                     brake: progress >= 0.5 ? (progress - 0.5) * 2 : 0
                 };
-                render(sweepFrame, { redlineRpm: redline }, (now - startedAt) / 1000);
+                render(sweepFrame, (now - startedAt) / 1000);
 
                 if (progress < 1) {
                     window.requestAnimationFrame(animate);
                 } else {
                     state.sweepActive = false;
-                    render(state.lastFrame, null, 0);
+                    render(state.lastFrame, 0);
                 }
             }
 
@@ -345,16 +326,16 @@
             onInit: function (payload) {
                 updateContainerYOffset(payload);
                 updateStateFromPayload(payload);
-                if (isReady && state.showGauge && !state.sweepActive) render(state.lastFrame, payload, 0);
+                if (isReady && state.showGauge && !state.sweepActive) render(state.lastFrame, 0);
             },
             onElementsChange: function (elements) {
                 updateElementVisibility(elements);
-                if (state.showGauge && !state.sweepActive) render(state.lastFrame, null, 0);
+                if (state.showGauge && !state.sweepActive) render(state.lastFrame, 0);
             },
             onFrame: function (data, payload) {
                 updateStateFromPayload(payload);
-                state.lastFrame = contract.normalizeFrame(data, payload);
-                if (!state.sweepActive && state.showGauge) render(state.lastFrame, payload, 0);
+                state.lastFrame = contract.normalizeFrame(data);
+                if (!state.sweepActive && state.showGauge) render(state.lastFrame, 0);
             },
             onAnimate: function () {
                 if (isReady) {
@@ -369,7 +350,7 @@
                 triggerSweep();
             },
             renderInitial: function () {
-                if (isReady) render(state.lastFrame, null, 0);
+            if (isReady) render(state.lastFrame, 0);
             }
         };
     }

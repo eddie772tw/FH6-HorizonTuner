@@ -14,15 +14,6 @@
         'foxbody'
     ];
 
-    var DRIVE_MODES = [
-        'normal',
-        'sport',
-        'slippery',
-        'track',
-        'drag_strip',
-        'custom'
-    ];
-
     var CENTER_WIDGETS = [
         'disable',
         'drive',
@@ -71,6 +62,11 @@
         }
     };
 
+    var EMPTY_TIRE_TEMPERATURES = Object.freeze([null, null, null, null]);
+
+    // This is deliberately a closed shape. The coordinator is the only
+    // upstream owner that converts raw Forza telemetry into these fixed-unit
+    // values; the renderer must never infer aliases or source units.
     var DEFAULT_FRAME = {
         rpm: 0,
         maxRpm: 8000,
@@ -79,7 +75,19 @@
         speed_mph: 0,
         gear: 1,
         throttle: 0,
-        brake: 0
+        brake: 0,
+        distance_m: 0,
+        heading_deg: 0,
+        tire_temp_f: EMPTY_TIRE_TEMPERATURES,
+        power_hp: 0,
+        power_kw: 0,
+        torque_nm: 0,
+        torque_ftlbs: 0,
+        boost_psi: 0,
+        boost_bar: 0,
+        fuel_ratio: null,
+        lap: null,
+        race_position: null
     };
 
     function isObject(value) {
@@ -106,10 +114,6 @@
         return THEMES.indexOf(theme) >= 0 ? theme : 'heritage67';
     }
 
-    function normalizeDriveMode(mode) {
-        return DRIVE_MODES.indexOf(mode) >= 0 ? mode : 'normal';
-    }
-
     function normalizeCenterWidget(widget) {
         return CENTER_WIDGETS.indexOf(widget) >= 0 ? widget : 'drive';
     }
@@ -128,7 +132,6 @@
 
     function normalizeConfig(payload) {
         var rawTheme = firstDefined(readValue(payload, 's650Theme'), readValue(payload, 'clusterTheme'));
-        var rawDriveMode = firstDefined(readValue(payload, 'driveMode'), readValue(payload, 'drive_mode'));
         var rawMetric = firstDefined(readValue(payload, 'isMetric'), readValue(payload, 'metric'));
         var unit = readValue(payload, 'unit');
 
@@ -137,65 +140,66 @@
             : rawMetric !== false;
 
         return {
-            contractVersion: 's650-hmi/v1',
+            contractVersion: 's650-hmi/v2',
             theme: normalizeTheme(rawTheme),
-            driveMode: normalizeDriveMode(rawDriveMode),
             centerWidget: normalizeCenterWidget(firstDefined(readValue(payload, 's650CenterWidget'), readValue(payload, 'centerWidget'))),
             guiThemeMode: readValue(payload, 's650GuiThemeMode') === 'light' ? 'light' : 'dark',
-            matchDriveMode: readValue(payload, 'matchDriveMode') === true,
             isMetric: isMetric,
             elements: readElements(payload)
         };
     }
 
-    function getPedalValue(source, key) {
-        var direct = source[key];
-        if (direct !== undefined && direct !== null && direct !== '') {
-            return clamp(finiteNumber(direct, 0), 0, 1);
-        }
-
-        var rawKey = key === 'throttle' ? 'AccelInput' : 'BrakeInput';
-        var rawValue = source[rawKey];
-        if (rawValue !== undefined && rawValue !== null) {
-            return clamp(finiteNumber(rawValue, 0) / 255, 0, 1);
-        }
-
-        var legacyKey = key === 'throttle' ? 'Accel' : 'Brake';
-        return clamp(finiteNumber(source[legacyKey], 0) / 255, 0, 1);
+    function nullableNumber(value) {
+        if (value === undefined || value === null || value === '') return null;
+        var number = Number(value);
+        return Number.isFinite(number) ? number : null;
     }
 
-    function normalizeFrame(data, payload) {
+    function normalizeTireTemperatures(source) {
+        return Array.isArray(source.tire_temp_f)
+            ? source.tire_temp_f
+            : EMPTY_TIRE_TEMPERATURES;
+    }
+
+    function normalizeFrame(data) {
         var source = isObject(data) ? data : {};
-        var maxRpm = Math.max(1, finiteNumber(firstDefined(source.maxRpm, source.max_rpm, source.EngineMaxRpm), DEFAULT_FRAME.maxRpm));
-        var rpm = Math.max(0, finiteNumber(firstDefined(source.rpm, source.CurrentEngineRpm), 0));
+        var maxRpm = Math.max(1, finiteNumber(source.maxRpm, DEFAULT_FRAME.maxRpm));
+        var rpm = Math.max(0, finiteNumber(source.rpm, DEFAULT_FRAME.rpm));
         var redline = clamp(
-            finiteNumber(firstDefined(payload && payload.redlineRpm, source.redlineRpm), maxRpm - 1000),
+            finiteNumber(source.redlineRpm, maxRpm - 1000),
             1,
             maxRpm
         );
-        var speedKmh = firstDefined(source.speed_kmh, source.SpeedKmh);
-        var speedMph = firstDefined(source.speed_mph, source.SpeedMph);
-        var metersPerSecond = firstDefined(source.SpeedMetersPerSecond, source.speed_mps);
+        var heading = finiteNumber(source.heading_deg, DEFAULT_FRAME.heading_deg);
+        var fuelRatio = nullableNumber(source.fuel_ratio);
 
-        if (speedKmh === undefined) speedKmh = metersPerSecond === undefined ? 0 : finiteNumber(metersPerSecond, 0) * 3.6;
-        if (speedMph === undefined) speedMph = metersPerSecond === undefined ? 0 : finiteNumber(metersPerSecond, 0) * 2.23694;
-
-        return Object.assign({}, DEFAULT_FRAME, source, {
+        return {
             rpm: rpm,
             maxRpm: maxRpm,
             redlineRpm: redline,
-            speed_kmh: Math.max(0, finiteNumber(speedKmh, 0)),
-            speed_mph: Math.max(0, finiteNumber(speedMph, 0)),
-            gear: firstDefined(source.gear, source.Gear, DEFAULT_FRAME.gear),
-            throttle: getPedalValue(source, 'throttle'),
-            brake: getPedalValue(source, 'brake')
-        });
+            speed_kmh: Math.max(0, finiteNumber(source.speed_kmh, DEFAULT_FRAME.speed_kmh)),
+            speed_mph: Math.max(0, finiteNumber(source.speed_mph, DEFAULT_FRAME.speed_mph)),
+            gear: finiteNumber(source.gear, DEFAULT_FRAME.gear),
+            throttle: clamp(finiteNumber(source.throttle, DEFAULT_FRAME.throttle), 0, 1),
+            brake: clamp(finiteNumber(source.brake, DEFAULT_FRAME.brake), 0, 1),
+            distance_m: Math.max(0, finiteNumber(source.distance_m, DEFAULT_FRAME.distance_m)),
+            heading_deg: ((heading % 360) + 360) % 360,
+            tire_temp_f: normalizeTireTemperatures(source),
+            power_hp: Math.max(0, finiteNumber(source.power_hp, DEFAULT_FRAME.power_hp)),
+            power_kw: Math.max(0, finiteNumber(source.power_kw, DEFAULT_FRAME.power_kw)),
+            torque_nm: finiteNumber(source.torque_nm, DEFAULT_FRAME.torque_nm),
+            torque_ftlbs: finiteNumber(source.torque_ftlbs, DEFAULT_FRAME.torque_ftlbs),
+            boost_psi: Math.max(0, finiteNumber(source.boost_psi, DEFAULT_FRAME.boost_psi)),
+            boost_bar: Math.max(0, finiteNumber(source.boost_bar, DEFAULT_FRAME.boost_bar)),
+            fuel_ratio: fuelRatio === null ? null : clamp(fuelRatio, 0, 1),
+            lap: nullableNumber(source.lap),
+            race_position: nullableNumber(source.race_position)
+        };
     }
 
     window.S650HmiContract = {
-        version: 's650-hmi/v1',
+        version: 's650-hmi/v2',
         themes: Object.freeze(THEMES.slice()),
-        driveModes: Object.freeze(DRIVE_MODES.slice()),
         centerWidgets: Object.freeze(CENTER_WIDGETS.slice()),
         heritageTelemetrySlots: HERITAGE_TELEMETRY_SLOTS,
         canvas: CANVAS,
@@ -203,7 +207,6 @@
         clamp: clamp,
         finiteNumber: finiteNumber,
         normalizeTheme: normalizeTheme,
-        normalizeDriveMode: normalizeDriveMode,
         normalizeCenterWidget: normalizeCenterWidget,
         normalizeConfig: normalizeConfig,
         normalizeFrame: normalizeFrame

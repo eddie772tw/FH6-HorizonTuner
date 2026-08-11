@@ -321,3 +321,22 @@ renderer 可在 contract 層做有限數值、範圍與缺值防護，但不得�
 ### config 影響
 
 新 renderer config contract 不含 `driveMode` 或 `matchDriveMode`。這兩個欄位可在 backend/前端的既有設定 migration 中被讀取並忽略，但不可進入 S650 frame state、Theme 選擇或 layout decision path。
+
+## Appendix B：Phase 2 canonical-only migration（2026-08-11）
+
+### 已完成的邊界調整
+
+- `S650HmiContract` 升為 `s650-hmi/v2`，`normalizeFrame()` 輸出固定 closed shape；raw key、legacy alias、m/s 速度與 `0..255` pedal input 不再被 renderer contract 接受。
+- `hud_overlay/shared/coordinator.js` 仍保留 raw telemetry 給其他 HUD，但額外建立 S650 可讀的 `distance_m`、`heading_deg`、`tire_temp_f`、`fuel_ratio`、`lap` 與 `race_position`；既有 `speed_*`、`power_*`、`torque_*`、`boost_*`、`rpm`、`gear`、`throttle`、`brake` 一併構成 canonical frame。
+- S650 frame、中央資訊頁面與共享 center helper 均只讀取 canonical key；standby frame 也改為 canonical shape。
+- render hot path 不再對同一 frame 進行第二次 normalization；`onFrame()` 在邊界驗證一次後，layout 直接使用已驗證 frame。
+
+### 單位確認
+
+UDP packet reference 與既有 parser fixture 證實：`Yaw` 為 rad、`TireTemp` 為 ℉、`Boost` 為 PSI、`Fuel` 為 `0..1`。因此本階段未修改 packet parser、offset 或原始資料單位；只在 coordinator 建立明確命名的衍生欄位。先前 S650 Heritage boost readout 對 raw `Boost` 再除以 Pa→PSI 常數的錯誤路徑已改為直接讀取 `boost_psi`。
+
+### 驗證
+
+- `s650Contract.test.ts` 覆蓋 v2 canonical shape 與拒絕 raw alias。
+- `s650FrameCanonicalInput.test.ts` 覆蓋 raw input 無法穿透 S650 layout renderer。
+- `cmd /c "pnpm -C frontend run test -- ..."`：32 test files、200 tests 通過。

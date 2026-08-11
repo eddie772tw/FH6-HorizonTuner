@@ -43,6 +43,14 @@
 - **Action**：Jules 原始日誌統一使用 lowercase `.jules/`；新增日誌前先檢查大小寫等價路徑，禁止建立只差大小寫的 duplicate path。
 - **Evidence**：`git ls-files -s` 在整理前出現兩個 palette path；整理後只保留 `.jules/bolt.md`、`.jules/narrator.md`、`.jules/palette.md`、`.jules/sentinel.md`。
 
+## 2026-08-11 / S650 HMI canonical telemetry contract
+
+- **來源**：`local`，S650 HMI Phase 2 canonical-only migration。
+- **狀態**：`adopted`。
+- **Learning**：S650 renderer 的 raw telemetry ingress 是 `hud_overlay/shared/coordinator.js` 發出的 `hud:frame`；UDP `Yaw` 為 rad、`TireTemp` 為 ℉、`Boost` 為 PSI、`Fuel` 為 `0..1`。S650 renderer 若繼續讀取 raw alias，會讓不同中央頁面各自重複轉換單位，且 Heritage boost 曾因此走到錯誤的 Pa→PSI 再轉換路徑。
+- **Action**：S650 renderer 只讀取 `s650-hmi/v2` canonical frame。coordinator 負責產生 `distance_m`、`heading_deg`、`tire_temp_f`、`fuel_ratio`、`lap`、`race_position`，並沿用既有的 `speed_*`、`power_*`、`torque_*`、`boost_*` 欄位；renderer、layout 與 central pages 不得接受 raw key、legacy alias、m/s 速度或 `0..255` pedal input。
+- **Evidence**：`hud_overlay/s650_hmi/assets/s650_contract.js`、`hud_overlay/shared/coordinator.js`；`s650Contract.test.ts`、`s650FrameCanonicalInput.test.ts`、`s650CenterInfoCanonicalData.test.ts` 共 202 個 frontend tests 通過；packet unit evidence 位於 `.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md`。
+
 本文件用於記錄與歸納 Agent 在 FH6-HorizonTuner 開發過程（含 `.jules/` 歷史模組）中積累的**核心學習點（Critical Learnings）、無障礙規範與安全避坑指南**。
 
 ---

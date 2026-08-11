@@ -157,8 +157,16 @@
 
                 // Send immediate zero standby initial frame for clean load
                 postToHud('hud:frame', {
-                    data: { isRaceOn: 0, rpm: 0, maxRpm: 8000, idleRpm: 1000, speed: 0, gear: 0 },
-                    redlineRpm: 7200,
+                    data: {
+                        rpm: 0,
+                        maxRpm: 8000,
+                        redlineRpm: 7200,
+                        speed_kmh: 0,
+                        speed_mph: 0,
+                        gear: 0,
+                        throttle: 0,
+                        brake: 0
+                    },
                     lockup: { fl: false, fr: false, rl: false, rr: false }
                 });
 

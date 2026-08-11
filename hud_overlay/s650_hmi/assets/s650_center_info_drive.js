@@ -28,8 +28,8 @@
             var gear = typeof view.getGearLabel === 'function' ? view.getGearLabel(context.data) : '--';
             var heading = view.getTelemetryReadout ? view.getTelemetryReadout('heading', context.data).value : '--';
             var distance = view.getTelemetryReadout ? view.getTelemetryReadout('odometer', context.data) : { value: '--', unit: '' };
-            var lap = common.number(common.read(context.data, ['LapNumber', 'lap_number'], -1), -1);
-            var position = common.number(common.read(context.data, ['RacePosition', 'race_position'], -1), -1);
+            var lap = common.number(context.data && context.data.lap, -1);
+            var position = common.number(context.data && context.data.race_position, -1);
 
             common.drawTitle(context, 'DRIVE OVERVIEW', 'LIVE VEHICLE STATUS');
             common.drawMetric(context, leftX, region.y + 54, 'SPEED', speed, unit, 'center');
