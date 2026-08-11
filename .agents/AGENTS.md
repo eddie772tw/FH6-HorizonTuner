@@ -1,5 +1,24 @@
 # FH6-HorizonTuner 開發守則 (AGENTS.md)
 
+## 任務入口與技能發現 Gate
+
+每個任務在執行程式碼修改或任務專用命令前，必須先完成以下步驟：
+
+1. 閱讀本檔、`.agents/rules/workspace.md`、`.agents/Journal.md`，並檢查 `.agents/skills/README.md`。
+2. 以 `.agents/skills/<directory>/SKILL.md` 的資料夾名稱作為 canonical skill ID；不要從舊日誌或非現存名稱推測技能名稱。
+3. 依任務觸發條件選取技能，完整讀取被選取的 `SKILL.md`，再讀取它明確要求的 references。
+4. 若修改 UI、巨型元件、物理公式、UDP 協定、模組架構或執行 Jules 委派，必須在任務紀錄中列出實際採用的 skill ID。
+5. 任務結束時檢查技能名稱、文件路徑與驗證命令是否仍然有效；發現命名不一致時先修正索引與 frontmatter。
+
+Canonical skill registry 位於 `.agents/skills/README.md`。目前專案技能 ID 包含：
+`halfmoon-design-system`、`huge-component-refactoring`、`jules_coding`、
+`modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、
+`cross-agent-collaboration`。
+
+Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。
+
+特別注意：`modular-refactoring` 與 `huge-component-refactoring` 是兩個不同技能；前者處理模組邊界與邏輯拆分，後者處理超過 250 行的 UI 元件或 60Hz rendering。Jules 流程則使用 `jules_coding`，且必須先確認授權、API key、GitHub binding 與可用整合。
+
 ## 專案核心事實與領域規範
 1. **UDP 高頻效能保護**：`backend/telemetry_listener.py` 負責以 60Hz+ 頻率接收 Forza 遊戲 UDP 遙測封包。此循環內**絕不可放置同步阻塞 (Synchronous Blocking) 或高開銷的 I/O 操作**。
 2. **車輛物理與調校邏輯單一真理 (Single Source of Truth)**：所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，且統一收攏於 `frontend/src/utils/tuningMath.ts`。
@@ -10,7 +29,7 @@
 ### 核心原則
 1. **效能與即時性為先**：作為遊戲 Overlay / HUD，畫面渲染與數據傳遞的延遲（Latency）直接影響玩家體驗。避免在大數據流中進行不必要的深拷貝 (Deep Copy) 或頻繁的 DOM 重新渲染。
 2. **測試驗證需求**：在提交任何程式碼修改前，請務必執行以下測試：
-   - 語法檢查：`ruff check . --fix`以及`ruff format .`
+   - 靜態檢查：`ruff check .` 以及 `ruff format --check .`
    - 後端 UDP 與邏輯測試：`pytest tests/`
    - 前端物理與算牌測試：`pnpm -C frontend run test`
 3. **無副作用設計**：`tuningMath.ts` 與 `tuningDiagnosis.ts` 中的計算工具不可以依賴 React Component State 或外部全域變數。
@@ -49,8 +68,8 @@
 
 5. **UI 視覺與設計系統規範 (Halfmoon CSS & Design System Mandate)**：
    - 所有 Agent 在開發、重構或維護前端 UI 組件、頁面佈局與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護**：
-     1. 前端 Halfmoon CSS 規格書：[HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md)
-     2. Agent 設計系統 Skill：[halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md)
+     1. 前端 Halfmoon CSS 規格書：[HALFMOON_SPECIFICATION.md](skills/halfmoon-design-system/HALFMOON_SPECIFICATION.md)
+     2. Agent 設計系統 Skill：[halfmoon-design-system](skills/halfmoon-design-system/SKILL.md)
    - **雙層架構**：遵守 Layer 1 (Halfmoon CSS v2.0.2 核心語意標籤與 Layout) + Layer 2 (`App.css` Glassmorphism 賽車暗色/亮色皮膚與霓虹變數) 的權責劃分。
    - **防閃爍 (Anti-FOUC)**：確保頁面首幀依據 `data-bs-theme` / `data-bs-core` 正確無縫渲染。
    - **禁用硬編碼與 Emoji**：嚴禁在組件內硬編碼背景色或字體色，統一使用 CSS 語意變數；嚴禁在 UI 字串或組件內加入裝飾性 Emoji 圖示。
@@ -64,9 +83,9 @@
 * **必須做的事**：
   - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "pnpm -C frontend run test"`）。
   - 修改後端 UDP 解析邏輯後，必須新增或更新 `tests/` 下對應的 Pytest 單元測試。
-  - 前端 UI 開發或變更時，必須遵循並維護 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 規格書與 [halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md) 技能標準。
+  - 前端 UI 開發或變更時，必須遵循並維護 [HALFMOON_SPECIFICATION.md](skills/halfmoon-design-system/HALFMOON_SPECIFICATION.md) 規格書與 [halfmoon-design-system](skills/halfmoon-design-system/SKILL.md) 技能標準。
   - 任務結束後，必須主動回顧開發過程並更新 `.agents/Journal.md`。
-  - **主動維護說明文件 (README)**：每次涉及重大架構變更、新增核心模組或 API 路由時，**必須主動維護並更新 [README.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/README.md) 與 [README.en.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/README.en.md)**，確保專案目錄架構圖、核心功能清單與單元測試統計數據與現況完全對齊。
+  - **主動維護說明文件 (README)**：每次涉及重大架構變更、新增核心模組或 API 路由時，**必須主動維護並更新 [README.md](../README.md) 與 [README.en.md](../README.en.md)**，確保專案目錄架構圖、核心功能清單與單元測試統計數據與現況完全對齊。
   - **維護 `.gitignore` 規範**：新增功能、模組或執行任務時，必須同步檢查並維護 `.gitignore` 檔案，確保所有動態生成之快取（`__pycache__`, `node_modules`, `target`）、使用者設定、運行數據與臨時檔均被嚴格排除，維護 Repository 之純潔性。
 * **詢問後才做的事**：
   - 修改 UDP 封包解構格式 (Packet Structure Byte Offsets)。
@@ -75,12 +94,12 @@
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
   - 嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示（請保持極簡專業視覺）。
-  - **嚴禁使用命令列操作 (如 `echo` 或 `>>`) 來寫入或附加內容至檔案** (尤其是 Markdown 文件如 Journal.md)。由於 Windows 命令列的字元編碼 (Code Page) 差異，這將導致中文編碼毀損。必須使用專屬的檔案讀寫工具 (如 `write_to_file` 或 `replace_file_content`)。
+  - **嚴禁使用命令列操作 (如 `echo` 或 `>>`) 來寫入或附加內容至檔案** (尤其是 Markdown 文件如 Journal.md)。由於 Windows 命令列的字元編碼 (Code Page) 差異，這將導致中文編碼毀損。必須使用 `apply_patch` 或其他能保留 UTF-8 的檔案編輯工具。
 
 ## 開發紀錄日誌 (Journal.md)
-專案設有 [.agents/Journal.md](.agents/Journal.md) 機制：
-* **任務開始前**：優先閱讀 [.agents/Journal.md](.agents/Journal.md) 以瞭解之前的避坑指南與極限邊界。
-* **任務結束後**：若發現物理計算陷阱、UDP 解包效能瓶頸或異步 Bug，強制寫入 [.agents/Journal.md]。
+專案設有 [Journal.md](Journal.md) 機制：
+* **任務開始前**：優先閱讀 [Journal.md](Journal.md) 以瞭解之前的避坑指南與極限邊界。
+* **任務結束後**：若發現物理計算陷阱、UDP 解包效能瓶頸或異步 Bug，強制寫入 [Journal.md](Journal.md)。
 * **完成寫入後**：若發現特定錯誤或是行動出現兩次以上，代表這是一個潛在的邊界限制，應該建議寫入 [.agents/AGENTS.md]。
 
 ## Task Completion Checklist
@@ -91,14 +110,4 @@
 4. 在評估有需要時，建議並詢問是否建立一個或多個SKILL來幫助未來開發。
 5. **維護 `.gitignore`**：檢查是否有新增或遺漏的編譯快取、運行數據或產物檔，確認 `.gitignore` 保持完備，維持 Repository 純潔。
 6. **維護 README 說明文件**：若本次任務包含重大架構變更或核心模組增修，確認已同步更新 `README.md` 與 `README.en.md` 的架構圖與功能列表。
-# Project Guidelines for AI Agents
-
-## Port Contract
-
-Keep the two local transports separate during development:
-
-- Forza Horizon Data Out is UDP on `127.0.0.1:8000` by default (`TELEMETRY_IP` / `TELEMETRY_PORT`).
-- FastAPI REST and WebSocket traffic is HTTP/TCP on `127.0.0.1:8001` by default (`BACKEND_PORT`).
-- In portable releases, the HTTP port may be dynamic; use `logs/web_port.txt` or the sidecar readiness event. The UDP telemetry port remains `8000` by default.
-- Do not use the UDP telemetry port as the FastAPI HTTP URL.
 

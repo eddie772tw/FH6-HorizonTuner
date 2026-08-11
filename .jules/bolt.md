@@ -1,3 +1,5 @@
+<!-- Raw Jules work log. Promote only after local verification; see .jules/README.md. -->
+
 ## 2025-03-03 - Decouple WebSocket Streams to Prevent Concurrent Write Crashes
 **Learning:** High-frequency backend asyncio broadcast tasks (e.g., telemetry vs overlay states) writing to the same FastAPI/Uvicorn WebSocket endpoint concurrently will corrupt frame headers and force the client to disconnect with protocol errors.
 **Action:** Decouple logically distinct high-frequency data streams into separate WebSocket endpoints (e.g., `/ws/telemetry` and `/ws/overlay`), each managed by its own `ConnectionManager` instance, eliminating the need for slow runtime locks while fixing concurrent write drops.

@@ -36,7 +36,7 @@ description: 處理 Forza Horizon UDP 遙測封包解析、324-byte 二進位 st
 ## 324 位元組 Data Out 數據結構與使用狀態總覽
 
 全數 324 位元組、41 項欄位細節、物理定義與專案使用狀態（34 項已解析使用、7 項未解析）已收錄於獨立參考手冊：
-👉 **[完整 324 位元組欄位對照與使用狀態參考表](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)**
+👉 **[完整 324 位元組欄位對照與使用狀態參考表](references/packet_format_reference.md)**
 
 ### 區塊概覽 (Data Out Section Summary)
 

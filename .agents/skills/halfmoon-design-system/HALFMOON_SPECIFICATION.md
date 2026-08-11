@@ -2,7 +2,7 @@
 
 > **文件版本**：2.1.0  
 > **參考標準**：[Halfmoon CSS v2.0.2 官方文件 (gethalfmoon.com/docs)](https://www.gethalfmoon.com/docs/) + Bootstrap 5 相容語意層  
-> ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md) 技能標準。  
+> ** Agent 遵循與維護宣告**：所有 AI Agent 在開發、重構或維護前端 UI 組件與 Halfmoon CSS 樣式時，**必須嚴格遵循並主動維護本規格書**與 [halfmoon-design-system](SKILL.md) 技能標準。
 > **目標與任務**：定義與規範 FH6-HorizonTuner 專案在實際前端開發時套用 Halfmoon CSS 所有 Components、Layout、Helpers 與 Utilities 的特定規格、參數、語意 Token、視覺行為與使用時機。
 
 ---
@@ -340,7 +340,7 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 
 1. **Agent 開發與維護義務**：
    - 所有 AI Agent 在建立、重構或微調前端 UI 組件、CSS 樣式或佈局時，必須強制對照並維持本規格書之要求。
-   - 若引入新的 Halfmoon 組件或變更全域設計變數，必須同步更新 [HALFMOON_SPECIFICATION.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/frontend/docs/HALFMOON_SPECIFICATION.md) 與 [SKILL.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/skills/halfmoon-design-system/SKILL.md)。
+   - 若引入新的 Halfmoon 組件或變更全域設計變數，必須同步更新 [HALFMOON_SPECIFICATION.md](HALFMOON_SPECIFICATION.md) 與 [SKILL.md](SKILL.md)。
 2. **變更測試流程**：
    - 修改 `frontend/src/App.css` 或組件樣式前，請執行 Vite 畫面測試。
    - 修改完畢後，執行前端測試確保零語法與邏輯錯誤：

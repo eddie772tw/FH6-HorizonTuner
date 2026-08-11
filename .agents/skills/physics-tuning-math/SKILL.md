@@ -24,9 +24,9 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 ## 現行演算法架構速查
 
 詳細物理模型與符號推導請參閱：
-- [公式化底盤調校.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/docs/%E5%85%AC%E5%BC%8F%E5%8C%96%E5%BA%95%E7%9B%A4%E8%AA%BF%E6%A0%A1.md)
-- [公式化齒比調校.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/docs/%E5%85%AC%E5%BC%8F%E5%8C%96%E9%BD%92%E6%AF%94%E8%AA%BF%E6%A0%A1.md)
-- [底盤調校研究原檔.md](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/docs/%E5%BA%95%E7%9B%A4%E8%AA%BF%E6%A0%A1%E7%A0%94%E7%A9%B6%E5%8E%9F%E6%AA%94.md)
+- [公式化底盤調校.md](../../docs/公式化底盤調校.md)
+- [公式化齒比調校.md](../../docs/公式化齒比調校.md)
+- [底盤調校研究原檔.md](../../docs/底盤調校研究原檔.md)
 
 ### 1. 四大賽事取向 (Race Goals) 底盤算牌速查
 

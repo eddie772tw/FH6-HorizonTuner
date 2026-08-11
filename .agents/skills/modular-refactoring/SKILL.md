@@ -1,5 +1,5 @@
 ---
-name: modular-refactoring-expert
+name: modular-refactoring
 description: 當需要拆分龐大組件、重構底層邏輯或建立全新功能模組時觸發此技能。
 ---
 

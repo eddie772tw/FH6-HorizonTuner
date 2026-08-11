@@ -1,5 +1,48 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 日誌定位與同步規則
+
+本檔是專案的「已採納、已驗證知識庫」，不是 Jules 原始工作紀錄的鏡像。Jules 的原始紀錄保留於 `.jules/*.md`；只有在本地完成驗證、確認適用範圍後，才同步到本檔。
+
+每筆新紀錄應盡量包含以下欄位：
+
+- **日期與領域**：例如 `2026-08-11 / Agent Workflow`。
+- **來源**：`local` 或 `.jules/<file>.md`。
+- **狀態**：`proposed`、`adopted` 或 `superseded`。
+- **Learning**：觀察到的問題或可重複的學習點。
+- **Action**：已採取或要求後續採取的規則。
+- **Evidence**：測試、commit、檔案或可重現步驟。
+
+`.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
+
+---
+
+## 2026-08-11 / Agent Workflow
+
+### 技能名稱與技能發現入口混淆
+
+- **來源**：`local`，V1.4.1 計畫檢討。
+- **狀態**：`adopted`。
+- **Learning**：`modular-refactoring/SKILL.md` 的資料夾名稱是 `modular-refactoring`，但舊 frontmatter 寫成 `modular-refactoring-expert`；缺乏中央索引時，Agent 容易採用不存在的名稱。`jules_coding/SKILL.md` 也沒有正式 frontmatter，導致它不容易被技能清單辨識。
+- **Action**：使用 `.agents/skills/README.md` 作為 canonical registry；以技能資料夾名稱為 ID；任務開始前先盤點並完整讀取觸發的 `SKILL.md`；已修正 `modular-refactoring` frontmatter 並補上 `jules_coding` frontmatter。
+- **Evidence**：技能 frontmatter inventory、`.agents/AGENTS.md` 的 discovery gate，以及目前 repository 的技能目錄。
+
+### Jules 原始日誌與專案 Journal 的責任分界
+
+- **來源**：`local`，Jules 日誌整理檢討。
+- **狀態**：`adopted`。
+- **Learning**：`.agents/Journal.md` 已混入 `.jules/bolt.md`、`palette.md`、`sentinel.md`、`narrator.md` 的內容，但缺乏來源、驗證狀態與同步規則；`.jules/palette.md` 也存在重複的無障礙條目。
+- **Action**：`.jules/*.md` 保留為原始、逐次、可追溯紀錄；`.agents/Journal.md` 只收錄已驗證的專案規則，並要求記錄來源與 Evidence。重複條目應在整理時合併，不直接刪除無法追溯的歷史。
+- **Evidence**：`.agents/skills/jules_coding/SKILL.md` 的 Journal boundary 與本檔的日誌規則。
+
+### Windows 大小寫不敏感造成 Jules 日誌 duplicate path
+
+- **來源**：`local`，Git index 檢查。
+- **狀態**：`adopted`。
+- **Learning**：Git index 同時追蹤 `.Jules/palette.md` 與 `.jules/palette.md`；Windows 工作樹會將兩者解析為同一個實體檔案，造成 Agent 看到重複路徑、staging 不一致與非同步協作歧義。
+- **Action**：Jules 原始日誌統一使用 lowercase `.jules/`；新增日誌前先檢查大小寫等價路徑，禁止建立只差大小寫的 duplicate path。
+- **Evidence**：`git ls-files -s` 在整理前出現兩個 palette path；整理後只保留 `.jules/bolt.md`、`.jules/narrator.md`、`.jules/palette.md`、`.jules/sentinel.md`。
+
 本文件用於記錄與歸納 Agent 在 FH6-HorizonTuner 開發過程（含 `.jules/` 歷史模組）中積累的**核心學習點（Critical Learnings）、無障礙規範與安全避坑指南**。
 
 ---
