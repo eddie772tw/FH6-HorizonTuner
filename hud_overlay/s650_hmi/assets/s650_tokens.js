@@ -117,6 +117,15 @@
             warning: colors.telltaleYellow,
             danger: '#F04646'
         },
+        sport: {
+            background: '#090807',
+            surface: '#1A1410',
+            primary: '#E78B3F',
+            secondary: '#B8AAA0',
+            text: '#FFF8F1',
+            warning: colors.telltaleYellow,
+            danger: colors.telltaleRed
+        },
         track: {
             background: '#050608',
             surface: '#101318',

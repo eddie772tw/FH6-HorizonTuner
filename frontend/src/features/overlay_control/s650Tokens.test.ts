@@ -76,4 +76,14 @@ describe('S650 HMI palette', () => {
       danger: '#FF3B30',
     });
   });
+
+  it('keeps Sport warm by default while allowing the established custom primary override', () => {
+    const tokens = loadTokensModule();
+    expect(tokens.paletteFor('sport')).toMatchObject({
+      background: '#090807',
+      primary: '#E78B3F',
+      secondary: '#B8AAA0',
+    });
+    expect(tokens.paletteFor('sport', { customColor: '#ff00aa', useDefaultColors: false }).primary).toBe('#ff00aa');
+  });
 });

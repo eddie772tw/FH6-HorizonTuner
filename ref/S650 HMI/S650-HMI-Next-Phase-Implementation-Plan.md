@@ -23,8 +23,8 @@
 | 項目 | 目前基準 |
 | --- | --- |
 | Canvas | `1280 × 480` |
-| 已完成 Theme | `normal`、`heritage67`、`foxbody`、`track` |
-| 評估中 Theme | `sport`、`calm`、`svt_cobra` |
+| 已完成 Theme | `normal`、`heritage67`、`foxbody`、`sport`、`track` |
+| 評估中 Theme | `calm`、`svt_cobra` |
 | 中央頁面 | `disable`、`drive`、`tire_temp`、`performance` |
 | 主要版面 | 左右雙環儀表、中央資訊區、Header/Footer 保留區 |
 | 有意義的使用者參數 | `Cluster Theme`、中央頁面、GUI theme、單位、元素可見性、顏色與垂直位移 |
@@ -370,3 +370,10 @@ Track 為本分支第一個完成的候選 Theme，並以獨立 `track` layout t
 - Ford GT 為外部資訊架構借鑑：採黑／紅高對比、橫向轉速訊號與中央檔位；不複製 OEM 資產、不宣稱為 S650 原廠像素還原。
 - 設定與相容性：`s650Theme: "track"` 由 frontend type guard、backend API 與 Canvas contract 一致接受；通用 custom gauge color 不覆寫 Track 的安全關鍵紅色 RPM 語意。
 - 回歸範圍：`s650TrackCluster.test.ts` 驗證 24 段 band、資訊層級與 visibility controls；`s650DualLayoutPipeline.test.ts` 驗證不會混入 dual-ring layers；既有 config、palette、profile 與 API test 一併擴充。
+
+## Appendix F：Sport theme 實作（2026-08-11）
+
+Sport 以獨立 `sport` layout type 實作，使用既有 canonical frame，沒有建立 Drive Mode 依賴或新增資料來源。與 Track 相比，Sport 保留較高的動態資訊密度：中央速度與檔位、18 段暖色 RPM band、Power／Boost，以及油門／煞車輸入條。
+
+- 色彩：預設為深色、暖橘 accent、黃色的接近紅線提示與紅色 danger；唯 Sport 維持現有 custom gauge color 行為，讓使用者可在關閉 default colors 時覆寫 primary accent。
+- 回歸範圍：`s650SportCluster.test.ts` 驗證 central hierarchy、暖色／黃／紅 RPM band 與 pedal bars；`s650DualLayoutPipeline.test.ts` 驗證不會混入 dual-ring layers；frontend、backend config test 一併擴充。

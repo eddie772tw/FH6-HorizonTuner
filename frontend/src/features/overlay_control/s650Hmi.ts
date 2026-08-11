@@ -6,6 +6,7 @@ const S650_HMI_THEME_VALUES = [
   'normal',
   'heritage67',
   'foxbody',
+  'sport',
   'track',
 ] as const;
 
@@ -13,6 +14,7 @@ export type S650HmiTheme = (typeof S650_HMI_THEME_VALUES)[number];
 
 export const S650_HMI_THEMES = [
   { value: 'normal', label: 'S650 Normal' },
+  { value: 'sport', label: 'S650 Sport' },
   { value: 'heritage67', label: "S650 Heritage '67" },
   { value: 'foxbody', label: "S650 Fox Body '87–'93" },
   { value: 'track', label: 'S650 Track' },

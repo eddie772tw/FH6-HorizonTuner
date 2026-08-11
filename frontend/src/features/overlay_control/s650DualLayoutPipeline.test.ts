@@ -69,6 +69,7 @@ function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
         events.push('mainDial');
         foxbodyCalls.push(args);
       },
+      drawSportCluster: () => events.push('sportCluster'),
       drawTrackCluster: () => events.push('trackCluster'),
       getHeritageDialScale: () => ({ max: 80 }),
     },
@@ -110,5 +111,14 @@ describe('S650 dual layout pipeline', () => {
     layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
 
     expect(events).toEqual(['trackCluster']);
+  });
+
+  it('routes Sport through its dedicated cluster without rendering dual-ring layers', () => {
+    const events: string[] = [];
+    const layouts = createLayouts(events);
+
+    layouts.render('sport', { redlineRpm: 7000 }, { primary: '#E78B3F', secondary: '#B8AAA0' }, 0.875);
+
+    expect(events).toEqual(['sportCluster']);
   });
 });

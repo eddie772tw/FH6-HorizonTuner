@@ -1971,7 +1971,7 @@ LEGACY_S650_STYLE_MAP = {
     "s650_heritage67": "heritage67",
     "s650_foxbody": "foxbody",
 }
-S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values()) | {"track"}
+S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values()) | {"sport", "track"}
 S650_HMI_CENTER_WIDGETS = {"disable", "drive", "tire_temp", "performance"}
 
 

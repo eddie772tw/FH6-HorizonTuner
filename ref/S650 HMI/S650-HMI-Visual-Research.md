@@ -42,7 +42,7 @@
 
 **目前未實作、仍在評估：**
 
-- Sport、Calm 與 SVT Cobra 三個額外主題。它們目前只能作為視覺研究與候選方向，不得寫成現行 selector 或 renderer 支援。
+- Calm 與 SVT Cobra 兩個額外主題。它們目前只能作為視覺研究與候選方向，不得寫成現行 selector 或 renderer 支援。
 - Header、Footer、獨立 Shift Light、telltale 與通用 warning state 的完整呈現方式。現有 Canvas 只保留對應版位或紅線／警示色語意，後續仍需另行評估與實作。
 - 任何副螢幕、中央娛樂系統、Track Apps、Auxiliary Gauges、導航、電話、媒體、3D 車輛模型、觸控操作或外部服務整合。
 
@@ -371,7 +371,7 @@ ISO 15008:2017 的官方定位是行進中車載動態視覺資訊的影像品�
 
 **視覺原則：** 保持類似 OEM 儀表的安定感，Glow 只用於焦點與目前值。
 
-### 5.2 Sport（評估中，尚未實作）
+### 5.2 Sport（已實作，2026-08-11）
 
 **定位：** 以性能駕駛為中心，增加動態感與換檔判讀效率。
 
@@ -387,7 +387,7 @@ ISO 15008:2017 的官方定位是行進中車載動態視覺資訊的影像品�
 
 **視覺原則：** 讓 RPM 與換檔提示成為畫面上方的主要動態元素，速度與檔位保持在中央。
 
-### 5.3 Track（評估中，尚未實作）
+### 5.3 Track（已實作，2026-08-11）
 
 **定位：** 賽道專用，低干擾、高判讀效率。
 
@@ -555,13 +555,13 @@ S650 Canvas 內部不應延續設定頁大量的 Glassmorphism 卡片。建議�
 
 #### 現行實作
 
-- [x] `1280×480` Canvas、四個已完成主題與四個中央資訊頁的契約已固定（Track 不繪製中央頁）。
+- [x] `1280×480` Canvas、五個已完成主題與四個中央資訊頁的契約已固定（Sport／Track 不繪製中央頁）。
 - [x] 速度、檔位、RPM、單位、紅線、主環、側邊 gauge、fallback、scale 與啟動 sweep 已納入現行路徑。
 - [x] Cluster 不依賴副螢幕、中控娛樂、媒體、導航或電話資料。
 
 #### 後續評估／待修正
 
-- [ ] Sport、Calm、SVT Cobra 的需求、版型、色彩與資料優先級完成確認。
+- [ ] Calm、SVT Cobra 的需求、版型、色彩與資料優先級完成確認。
 - [ ] Header、Footer、Shift Light、telltale 與 warning state 的資料來源與視覺呈現完成設計。
 - [ ] renderer 完全只接受 canonical telemetry，不再處理 legacy alias 或單位轉換。
 - [ ] 警告狀態不依賴顏色單獨傳達，並有文字或位置提示。
@@ -618,3 +618,15 @@ S650 Canvas 內部不應延續設定頁大量的 Glassmorphism 卡片。建議�
 > 補充性資料只用於觀察實際畫面版型；若與 Ford 官方資料衝突，以 Ford 官方資料為準。
 
 > 本輪研究的外部結論只將官方資料作為 OEM 事實；銅色 token、各模式 layout、Heritage／SVT Cobra 延伸主題與動效限制，均屬本專案的產品決策。
+
+### 已實作候選 Theme 更新（2026-08-11）
+
+本節優先於文件中較早的「Sport／Track／Calm／SVT Cobra 全部評估中」敘述：
+
+| Theme | 現況 | 實作重點 |
+|---|---|---|
+| `sport` | 已實作 | 18 段暖色 RPM band、中央速度／檔位、Power／Boost 與油門／煞車輸入條。 |
+| `track` | 已實作 | 24 段 RPM／換檔帶、中央檔位、周邊速度與必要動力資料的低干擾 performance layout。 |
+| `calm`、`svt_cobra` | 評估中 | 尚未加入 selector、contract 或 layout。 |
+
+Sport 的預設 primary 為 `#E78B3F`，可沿用既有 custom gauge color 覆寫；Track 的 primary 固定為 `#F04A3E`，避免把 RPM／換檔的安全關鍵紅色語意覆寫為自訂色。

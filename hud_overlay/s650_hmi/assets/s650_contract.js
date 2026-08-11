@@ -12,6 +12,7 @@
         'normal',
         'heritage67',
         'foxbody',
+        'sport',
         'track'
     ];
 

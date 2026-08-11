@@ -3,6 +3,7 @@
     'use strict';
 
     var DUAL_LAYOUT_TYPE = 'dual';
+    var SPORT_LAYOUT_TYPE = 'sport';
     var TRACK_LAYOUT_TYPE = 'track';
 
     // Roles remain owned by each theme profile even when two themes currently
@@ -74,6 +75,16 @@
                 leftRole: 'rpm',
                 rightRole: 'speed',
                 outerInset: 8
+            })
+        }),
+        sport: Object.freeze({
+            type: SPORT_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'sportPerformance',
+                leftRole: 'speed',
+                rightRole: 'rpm',
+                outerInset: 0
             })
         }),
         track: Object.freeze({

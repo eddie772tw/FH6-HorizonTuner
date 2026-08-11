@@ -16,6 +16,7 @@ describe('S650 HMI config contract', () => {
   it('exposes only the retained S650 themes in the selector', () => {
     expect(S650_HMI_THEMES.map((theme) => theme.value)).toEqual([
       'normal',
+      'sport',
       'heritage67',
       'foxbody',
       'track',
@@ -102,6 +103,7 @@ describe('S650 HMI config contract', () => {
     expect(isS650HmiTheme('normal')).toBe(true);
     expect(isS650HmiTheme('heritage67')).toBe(true);
     expect(isS650HmiTheme('foxbody')).toBe(true);
+    expect(isS650HmiTheme('sport')).toBe(true);
     expect(isS650HmiTheme('track')).toBe(true);
     expect(isS650HmiTheme('s650_heritage67')).toBe(false);
     expect(isS650HmiTheme('')).toBe(false);
