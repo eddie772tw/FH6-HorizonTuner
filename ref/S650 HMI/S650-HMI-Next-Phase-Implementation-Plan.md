@@ -346,3 +346,18 @@ UDP packet reference 與既有 parser fixture 證實：`Yaw` 為 rad、`TireTemp
 - S650 contract 與 frame state 已移除 `driveMode`、`drive_mode`、`matchDriveMode`；Theme 選擇只依 `s650Theme`。
 - backend 與前端的 generic config migration 繼續保留未知欄位，避免破壞既有持久化設定；這些 legacy 欄位即使隨 payload 到達 renderer，也會被 contract 忽略，無法影響 Theme、layout 或 render 結果。
 - 搜尋確認 S650 實作路徑不存在剩餘 drive-mode 消費點；新增 contract test 針對此 migration boundary 驗證。
+
+## Appendix D：Phase 4 current-baseline regression gate（2026-08-11）
+
+現有測試已覆蓋目前承諾的基線，無需為未核可功能加入 placeholder implementation：
+
+| 基線 | 驗證來源 |
+| --- | --- |
+| 三種 retained Theme 與雙環 profile | `s650Hmi.test.ts`、`s650LayoutProfiles.test.ts`、`s650DualLayoutPipeline.test.ts` |
+| 四種中央頁面與顯示／隱藏隔離 | `s650CenterInfo.test.ts`、`s650CenterRegions.test.ts`、`s650FrameVisibility.test.ts` |
+| geometry、中心固定 readout 與 side gauges | `s650NormalLayout.test.ts`、`s650NormalStatus.test.ts`、`s650HeritageStatus.test.ts`、`s650CenterDecorations.test.ts`、`s650SideGauge.test.ts` |
+| Palette 與 Foxbody GUI override | `s650Tokens.test.ts` |
+| Normal dial、gear carousel、base driving | `s650PrimitivesNormalDial.test.ts`、`s650BaseDriving.test.ts` |
+| S650 offset、canonical input 與 central-data boundary | `s650FrameVisibility.test.ts`、`s650FrameCanonicalInput.test.ts`、`s650Contract.test.ts`、`s650CenterInfoCanonicalData.test.ts` |
+
+驗收結果：`cmd /c "pnpm -C frontend run test"` 為 33 test files、203 tests 通過。Header、Footer、Shift Light、telltale 與 warning 仍維持 Phase 5 的獨立評估範圍，不視為目前基線缺陷。
