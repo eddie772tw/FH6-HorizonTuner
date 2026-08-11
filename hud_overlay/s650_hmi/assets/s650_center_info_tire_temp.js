@@ -96,7 +96,13 @@
             var view = context.view;
             var palette = context.palette;
             var temps = view.getTireTemperatures(context.data);
-            var hasTemperature = temps.some(function (value) { return value !== null; });
+            var hasTemperature = false;
+            for (var i = 0; i < temps.length; i++) {
+                if (temps[i] !== null) {
+                    hasTemperature = true;
+                    break;
+                }
+            }
             common.drawTitle(context, 'TIRE TEMPERATURE', hasTemperature ? view.tireTemperatureUnit() : 'SENSOR UNAVAILABLE');
             drawVehicle(context, temps);
         }

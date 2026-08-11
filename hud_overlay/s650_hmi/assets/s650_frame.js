@@ -178,15 +178,19 @@
             return contract.clamp(fuel > 1 ? fuel / 100 : fuel, 0, 1);
         }
 
+        var _tireTempCache = [null, null, null, null];
         function getTireTemperatures(data) {
             var source = data || {};
             var temperatures = Array.isArray(source.TireTemp)
                 ? source.TireTemp
-                : [source.temp_fl, source.temp_fr, source.temp_rl, source.temp_rr];
-            return [0, 1, 2, 3].map(function (index) {
-                var value = contract.finiteNumber(temperatures[index], 0);
-                return value > 0 ? value : null;
-            });
+                : null;
+
+            for (var i = 0; i < 4; i++) {
+                var rawValue = temperatures ? temperatures[i] : (i === 0 ? source.temp_fl : (i === 1 ? source.temp_fr : (i === 2 ? source.temp_rl : source.temp_rr)));
+                var value = contract.finiteNumber(rawValue, 0);
+                _tireTempCache[i] = value > 0 ? value : null;
+            }
+            return _tireTempCache;
         }
 
         function formatTireTemperature(value) {

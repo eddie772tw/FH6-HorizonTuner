@@ -108,12 +108,11 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-start border-end glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
         aria-modal="true"
         role="dialog"
         style={{
-          width: '520px',
           zIndex: 1050,
           visibility: show ? 'visible' : 'hidden',
           transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
