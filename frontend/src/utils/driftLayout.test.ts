@@ -8,6 +8,12 @@ type DriftLayout = {
     offsetX: number;
     offsetY: number;
   };
+  getBottomRightAnchor: (width: number, height: number, contentWidth: number, contentHeight: number, padding: number) => {
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+  };
   ellipsePoint: (t: number, centerX: number, centerY: number, halfWidth: number, radiusX: number, radiusY: number, side: string) => { x: number; y: number };
   fillSweepState: (progress: number, maxRpm: number, target: { rpm: number; angle: number; speed: number }) => { rpm: number; angle: number; speed: number };
 };
@@ -26,11 +32,12 @@ function loadLayout(): DriftLayout {
 describe('Drift viewport layout', () => {
   it('anchors the logical instrument group to the full viewport above the bottom HUD', () => {
     const layout = loadLayout();
-    const transform = layout.getViewportTransform(2048, 1152, 72);
+    const transform = layout.getViewportTransform(2048, 1152, 0);
 
     expect(transform.scale).toBeCloseTo(2048 / 1680);
     expect(transform.offsetX).toBeCloseTo(0);
     expect(transform.offsetY).toBeGreaterThan(0);
+    expect(transform.offsetY + 611 * transform.scale).toBeCloseTo(1117.1, 0);
   });
 
   it('keeps top and bottom arc points on the same ellipse as the frame decoration', () => {
@@ -40,6 +47,16 @@ describe('Drift viewport layout', () => {
 
     expect(top.x).toBe(bottom.x);
     expect(top.y).toBeCloseTo(320 - (bottom.y - 320));
+  });
+
+  it('anchors the secondary box like the conventional bottom-right HUDs', () => {
+    const layout = loadLayout();
+    const anchor = layout.getBottomRightAnchor(2048, 1152, 590, 288, 30);
+
+    expect(anchor.centerX).toBe(1723);
+    expect(anchor.centerY).toBe(978);
+    expect(anchor.width).toBe(590);
+    expect(anchor.height).toBe(288);
   });
 
   it('sweeps the visual RPM and angle before settling at idle', () => {

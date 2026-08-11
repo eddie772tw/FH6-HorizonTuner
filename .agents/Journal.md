@@ -396,6 +396,20 @@
 
 ---
 
+## 2026-08-11 / Drift Secondary Conventional Bottom-Right Anchor
+
+- **Decision**: compare the Drift secondary instrument with Advanced and VFD,
+  which use fixed-size containers, shared root `padding: 30px`, and
+  `transform-origin: bottom right`. The secondary therefore uses the viewport
+  transform with zero extra bottom margin, preserving its current size while
+  aligning its lower edge to the conventional HUD anchor.
+- **Primary isolation**: the primary keeps its independent compact scale and a
+  compensating upward offset, so secondary anchoring does not move it back over
+  the game's score indicator.
+- **Verification**: Drift layout targeted tests passed (2 files / 6 tests).
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

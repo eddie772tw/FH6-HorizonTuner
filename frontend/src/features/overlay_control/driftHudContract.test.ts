@@ -35,6 +35,8 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('function renderCenterGearCluster()');
     expect(html).toContain('function renderPrimaryInstrument()');
     expect(html).toContain('function renderSecondaryInstrument()');
+    expect(html).toContain('function renderSecondaryInstrumentAtConventionalAnchor()');
+    expect(html).toContain('var SECONDARY_BOX_PADDING = 30;');
     expect(html).toContain('var PRIMARY_RENDER_SCALE = 0.62;');
     expect(html).toContain('renderCenterGearCluster();');
     expect(html).toContain('renderSecondaryInstrument();');
