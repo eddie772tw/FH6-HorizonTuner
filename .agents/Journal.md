@@ -383,6 +383,19 @@
 
 ---
 
+## 2026-08-11 / Drift Primary Scale and Score Layer Feedback
+
+- **Feedback**: the full-viewport transform made the primary instrument too
+  large and the Style Meter overlapped the primary/secondary instruments.
+- **Decision**: keep the secondary instrument at viewport fit scale, apply a
+  dedicated `PRIMARY_RENDER_SCALE = 0.62` around the primary center, and anchor
+  the Style Meter to the viewport upper-right (`right: 4vw`, `top: 28vh`).
+- **Verification**: frontend Vitest baseline passed (35 files / 216 tests).
+- **Pending**: in-game screenshot review for the final primary scale and the
+  selected score-layer clearance.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

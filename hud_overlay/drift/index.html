@@ -82,8 +82,8 @@
            secondary rectangular dock behind the text. */
         #drift-style-container {
             position: fixed;
-            left: calc(50% + 19vw);
-            bottom: 25vh;
+            right: 4vw;
+            top: 28vh;
             width: min(360px, 21vw);
             display: flex;
             flex-direction: column;
@@ -233,6 +233,7 @@
             var SECONDARY_CY = 485;
             var FRAME_RX = 412;
             var FRAME_RY = 174;
+            var PRIMARY_RENDER_SCALE = 0.62;
 
             var ANGLE_TICKS = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
 
@@ -882,6 +883,23 @@
                 ctx.restore();
             }
 
+            function renderPrimaryInstrument() {
+                if (!ctx) return;
+
+                // The canvas is viewport-sized so each layer can use screen
+                // space. Keep the primary instrument compact independently of
+                // the viewport fit scale used by the secondary instrument.
+                ctx.save();
+                ctx.translate(CANVAS_CX, CANVAS_CY);
+                ctx.scale(PRIMARY_RENDER_SCALE, PRIMARY_RENDER_SCALE);
+                ctx.translate(-CANVAS_CX, -CANVAS_CY);
+                drawModernFrame();
+                renderTopAngleArc();
+                renderBottomTachoArc();
+                renderCenterGearCluster();
+                ctx.restore();
+            }
+
             function renderLoop() {
                 try {
                     var now = performance.now();
@@ -926,17 +944,10 @@
                         );
                     }
 
-                    // 1. Draw modern framed HUD background
-                    drawModernFrame();
+                    // 1-3. Primary instrument uses its own compact layer scale.
+                    renderPrimaryInstrument();
 
-                    // 2. 繪製對稱雙弧表 (上弧角度刻度 & 下弧動態 maxRpm 萬轉1500/萬轉以下1000紅線區)
-                    renderTopAngleArc();
-                    renderBottomTachoArc();
-
-                    // 3. 繪製中央三大動態對稱資訊區塊
-                    renderCenterGearCluster();
-
-                    // 4. 繪製左右兩側腳踏柱 (左: H/C, 右: B/T)
+                    // 4. Secondary instrument remains independently viewport-sized.
                     renderSecondaryInstrument();
 
                     displayAngle = liveAngle;

@@ -29,9 +29,13 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('<canvas id="driftCanvas" width="1920" height="1080"></canvas>');
     expect(html).toContain('<div id="drift-style-container" aria-hidden="true">');
     expect(html).toContain('./assets/drift_layout.js?v=drift-layout-20260812');
+    expect(html).toContain('right: 4vw;');
+    expect(html).toContain('top: 28vh;');
     expect(html).toContain('id="drift-style-meter-fill"');
     expect(html).toContain('function renderCenterGearCluster()');
+    expect(html).toContain('function renderPrimaryInstrument()');
     expect(html).toContain('function renderSecondaryInstrument()');
+    expect(html).toContain('var PRIMARY_RENDER_SCALE = 0.62;');
     expect(html).toContain('renderCenterGearCluster();');
     expect(html).toContain('renderSecondaryInstrument();');
     expect(html).toContain('function triggerDriftSweepAnimation()');
