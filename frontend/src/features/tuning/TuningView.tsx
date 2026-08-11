@@ -339,44 +339,68 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
             </button>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 2 ? 'active fw-bold' : ''}`}
-              aria-current={currentStep === 2 ? 'step' : undefined}
-              disabled={!hasCoreParams}
-              onClick={() => hasCoreParams && setCurrentStep(2)}
+            <span
+              title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
-              <span className="badge text-bg-secondary">2</span> {t("Gearbox")}
-            </button>
+              <button
+                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 2 ? 'active fw-bold' : ''}`}
+                aria-current={currentStep === 2 ? 'step' : undefined}
+                disabled={!hasCoreParams}
+                style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }}
+                onClick={() => hasCoreParams && setCurrentStep(2)}
+              >
+                <span className="badge text-bg-secondary">2</span> {t("Gearbox")}
+              </button>
+            </span>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 3 ? 'active fw-bold' : ''}`}
-              aria-current={currentStep === 3 ? 'step' : undefined}
-              disabled={!hasCoreParams}
-              onClick={() => hasCoreParams && setCurrentStep(3)}
+            <span
+              title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
-              <span className="badge text-bg-secondary">3</span> {t("Chassis")}
-            </button>
+              <button
+                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 3 ? 'active fw-bold' : ''}`}
+                aria-current={currentStep === 3 ? 'step' : undefined}
+                disabled={!hasCoreParams}
+                style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }}
+                onClick={() => hasCoreParams && setCurrentStep(3)}
+              >
+                <span className="badge text-bg-secondary">3</span> {t("Chassis")}
+              </button>
+            </span>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 4 ? 'active fw-bold' : ''}`}
-              aria-current={currentStep === 4 ? 'step' : undefined}
-              disabled={!hasCoreParams}
-              onClick={() => hasCoreParams && setCurrentStep(4)}
+            <span
+              title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
-              <span className="badge text-bg-secondary">4</span> {t("Tire & Alignment")}
-            </button>
+              <button
+                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 4 ? 'active fw-bold' : ''}`}
+                aria-current={currentStep === 4 ? 'step' : undefined}
+                disabled={!hasCoreParams}
+                style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }}
+                onClick={() => hasCoreParams && setCurrentStep(4)}
+              >
+                <span className="badge text-bg-secondary">4</span> {t("Tire & Alignment")}
+              </button>
+            </span>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 5 ? 'active fw-bold' : ''}`}
-              aria-current={currentStep === 5 ? 'step' : undefined}
-              disabled={!hasCoreParams}
-              onClick={() => hasCoreParams && setCurrentStep(5)}
+            <span
+              title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+              style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
             >
-              <span className="badge text-bg-secondary">5</span> {t("Telemetry Calibration")}
-            </button>
+              <button
+                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 5 ? 'active fw-bold' : ''}`}
+                aria-current={currentStep === 5 ? 'step' : undefined}
+                disabled={!hasCoreParams}
+                style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }}
+                onClick={() => hasCoreParams && setCurrentStep(5)}
+              >
+                <span className="badge text-bg-secondary">5</span> {t("Telemetry Calibration")}
+              </button>
+            </span>
           </li>
         </ul>
       </div>
