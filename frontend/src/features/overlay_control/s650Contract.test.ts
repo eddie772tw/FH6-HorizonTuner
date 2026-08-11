@@ -29,6 +29,7 @@ type S650Contract = {
   version: string;
   defaultFrame: CanonicalFrame;
   normalizeFrame: (data: unknown) => CanonicalFrame;
+  normalizeConfig: (payload: unknown) => Record<string, unknown>;
 };
 
 function loadContract(): S650Contract {
@@ -134,5 +135,19 @@ describe('S650 frame defaults', () => {
     expect(frame).not.toHaveProperty('SpeedMetersPerSecond');
     expect(frame).not.toHaveProperty('AccelInput');
     expect(frame).not.toHaveProperty('TireTemp');
+  });
+
+  it('ignores obsolete drive-mode settings at the S650 renderer boundary', () => {
+    const contract = loadContract();
+    const config = contract.normalizeConfig({
+      s650Theme: 'foxbody',
+      driveMode: 'track',
+      drive_mode: 'sport',
+      matchDriveMode: true,
+    });
+
+    expect(config.theme).toBe('foxbody');
+    expect(config).not.toHaveProperty('driveMode');
+    expect(config).not.toHaveProperty('matchDriveMode');
   });
 });

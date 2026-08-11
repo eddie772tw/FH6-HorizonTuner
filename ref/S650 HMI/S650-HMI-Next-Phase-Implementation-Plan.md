@@ -340,3 +340,9 @@ UDP packet reference 與既有 parser fixture 證實：`Yaw` 為 rad、`TireTemp
 - `s650Contract.test.ts` 覆蓋 v2 canonical shape 與拒絕 raw alias。
 - `s650FrameCanonicalInput.test.ts` 覆蓋 raw input 無法穿透 S650 layout renderer。
 - `cmd /c "pnpm -C frontend run test -- ..."`：32 test files、200 tests 通過。
+
+## Appendix C：Phase 3 obsolete drive-mode cleanup（2026-08-11）
+
+- S650 contract 與 frame state 已移除 `driveMode`、`drive_mode`、`matchDriveMode`；Theme 選擇只依 `s650Theme`。
+- backend 與前端的 generic config migration 繼續保留未知欄位，避免破壞既有持久化設定；這些 legacy 欄位即使隨 payload 到達 renderer，也會被 contract 忽略，無法影響 Theme、layout 或 render 結果。
+- 搜尋確認 S650 實作路徑不存在剩餘 drive-mode 消費點；新增 contract test 針對此 migration boundary 驗證。
