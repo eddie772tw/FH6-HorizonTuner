@@ -23,6 +23,8 @@
 | `modular-refactoring` | `modular-refactoring/SKILL.md` | Domain 重構、新模組，或將邏輯與 UI 分離 | Isolation tests 與 typed contracts |
 | `physics-tuning-math` | `physics-tuning-math/SKILL.md` | 車輛物理、調校公式、校準常數或診斷數學 | 對應的 Vitest/Pytest 覆蓋 |
 | `telemetry-udp-protocol` | `telemetry-udp-protocol/SKILL.md` | Forza UDP 封包解析、324-byte layout、單位換算或高頻遙測 | 涉及 offset 時讀取 `telemetry-udp-protocol/references/packet_format_reference.md` |
+| `agent-governance-audit` | `agent-governance-audit/SKILL.md` | 稽核 .agents、Journal、Jules 原始日誌、skill ID 與跨 agent 文件漂移 | 調整 agent 治理文件或發現 skill/path/language 錯誤時使用 |
+| `portable-release-validation` | `portable-release-validation/SKILL.md` | V1.x portable/exe、sidecar、動態 port 與 Windows 發行驗證 | 發行、打包、啟動流程或 runtime path 變更時使用 |
 
 ## Jules 邊界
 
@@ -43,3 +45,10 @@
 ## 語言規則
 
 Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。
+
+## Skill 選擇補充
+
+- 巨型 UI 元件、Canvas 或 60Hz render hot path 使用 `huge-component-refactoring`。
+- Domain/API/型別邊界與底層模組使用 `modular-refactoring`；兩者同時適用時先讀前者。
+- 調整 `.agents`、`.jules`、Journal 或 skill 索引時使用 `agent-governance-audit`。
+- 發行 portable/exe、sidecar 或動態 HTTP port 時使用 `portable-release-validation`。

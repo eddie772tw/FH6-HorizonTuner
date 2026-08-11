@@ -1,30 +1,30 @@
 ---
 name: modular-refactoring
-description: 當需要拆分龐大組件、重構底層邏輯或建立全新功能模組時觸發此技能。
+description: 當需要拆分底層邏輯、建立功能模組、整理 domain/API 邊界或建立跨前後端型別契約時觸發此技能。
 ---
 
-# 模組化拆分與重構實踐指南 (Modular Refactoring Skill)
+# 模組化拆分與重構
 
-## 模組拆分 CheckList (SOP)
+## 與其他 skill 的分工
 
-當你準備重構或新建一個模組時，請嚴格執行以下步驟：
+- 巨型 UI 元件、Canvas 或 60Hz render hot path：使用 `huge-component-refactoring`。
+- Python/TypeScript 模組邊界、domain logic、API contract 與可測試性：使用本技能。
+- 兩者皆適用時，先讀 `huge-component-refactoring` 保護高頻行為，再用本技能整理契約。
+- Codex、Antigravity 或 Jules 非同步協作時，同時讀 `cross-agent-collaboration`。
 
-### 步驟 1：定義模組合約 (Interface Definition)
-- 先定義輸入與輸出的 TypeScript Interface (前端) 或 TypedDict / Dataclass (後端)。
-- 確保邊界清晰，不露出內部實作細節。
+## SOP
 
-### 步驟 2：抽離純邏輯 (Extract Pure Logic)
-- 將所有涉及數學運算、物理計算或遙測解析的程式碼，移動至獨立的 `.ts` 或 `.py` 模組中。
-- 範例：將懸吊計算從 `TuningView.tsx` 抽離至 `tuningMath.ts`。
+1. 讀取 `AGENTS.md`、相關 rule、Journal 與目標 skill；確認 ownership、dirty worktree 與不可變更範圍。
+2. 先定義輸入/輸出的 TypeScript Interface、TypedDict 或 Dataclass，不以內部實作細節作為跨模組契約。
+3. 抽離純函式與 domain logic；物理計算、遙測解析與單位轉換不得散落在 UI。
+4. 先補 isolation tests，再接回 UI 或主流程：前端使用 Vitest，後端使用 Pytest。
+5. 驗證循環依賴、錯誤處理、向後相容性與序列化格式；不得以重構名義改變公式或 API 語意。
+6. 執行 `cmd /c "pnpm -C frontend run test"`、`pytest tests/` 或與範圍相符的測試，最後執行 `git diff --check`。
+7. 將已驗證的新邊界或決策記錄到 Journal，並在 handoff 中寫出剩餘工作與驗證結果。
 
-### 步驟 3：建立單元測試 (Add Isolation Tests)
-- 在不啟動 UI 的情況下，針對新模組編寫測試：
-  - 前端模組：於 `*.test.ts` 中撰寫 Vitest（在 Windows PowerShell 下執行 `cmd /c "pnpm -C frontend run test"`）。
-  - 後端模組：於 `tests/` 中撰寫 Pytest（執行 `pytest tests/`）。
+## 反模式
 
-### 步驟 4：組件/介面對接 (Wire Up)
-- 在 UI 組件或主流程中引用新模組，並確認前後端單元測試全數通過。
-
-## 反模式 (Anti-Patterns to Avoid)
-- **循環依賴 (Circular Dependency)**：A 模組引用 B 模組，B 模組又引用 A 模組。
-- **巨型組件 (God Component)**：一個元件同時處理 WebSocket 接收、物理計算、State 管理與 UI 繪製。
+- 循環依賴或把 shared module 變成無界的 God module。
+- 一個元件同時處理 WebSocket、物理計算、State 與 UI 繪製。
+- 沒有測試基準就大量搬移檔案。
+- 把未驗證的 Jules/Antigravity 建議直接升格為專案規則。

@@ -222,3 +222,24 @@
   4. 分別驗證 REST、`/ws/telemetry`、`/ws/overlay` 與 HUD 視窗；REST 成功不代表 WebSocket 或 overlay 已成功。
   5. 測試 `8001` 被其他程序占用的情況；Release 應仍能使用另一個動態埠。
   6. 變更啟動協定、`--data-dir` 或 sidecar spec 後，必須同時跑前端測試、`cargo check`、重新打包，並做一次安裝後 smoke test。
+
+## 2026-08-11 Agent 治理 skill 工作流補強
+
+### 已驗證的問題
+
+- 過往工作反覆涉及 60Hz telemetry/Canvas/GC、Jules 安全與 accessibility 委派、portable sidecar 與動態 port，但相關流程分散在 Journal、Jules 原始日誌與 AGENTS，導致 skill 選擇與驗收標準不穩定。
+- `huge-component-refactoring` 與 `modular-refactoring` 的責任邊界不夠明確，容易把 UI hot path 與 domain/API 模組重構混用。
+- skill 名稱、`.Jules`/`.jules` 大小寫路徑、Journal 語言邊界與 release port 契約需要週期性稽核。
+
+### 本次採納的治理規則
+
+- 新增 `agent-governance-audit`，負責檢查 canonical skill ID、frontmatter、路徑大小寫、stale references、中文 agent 文件與英文 Jules 原始日誌邊界。
+- 新增 `portable-release-validation`，集中驗證 V1.x portable/exe、sidecar lifecycle、dynamic HTTP port、UDP port、Windows clean smoke test 與 artifact 證據。
+- `huge-component-refactoring` 專注巨型 UI、Canvas 與高頻 render path；`modular-refactoring` 專注模組邊界、純邏輯與型別契約。
+- `jules_coding` 的遠端結果必須經本地 diff、測試、安全性與效能檢查後，才能進入 Journal 或合併。
+
+### 驗證狀態
+
+- Status: adopted
+- Source: `.jules/bolt.md`、`.jules/sentinel.md`、`.jules/palette.md`、`.jules/narrator.md` 與近期 Git history
+- Verification: skill frontmatter/registry consistency、skill validator、`git diff --check`

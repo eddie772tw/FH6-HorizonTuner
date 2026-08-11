@@ -1,32 +1,30 @@
 ---
 name: jules_coding
-description: 當需要在使用者明確授權且環境可用時，透過 Google Jules 委派高風險重構、大型相依套件升級或本機資源不足的測試工作。
+description: 當使用者明確授權且 Jules connector/API client 可用時，委派高風險重構、大型相依升級、資源密集測試或需要遠端工作區的任務。
 ---
 
-# Skill: Cloud Autonomous Coding with Jules API
+# Google Jules 委派與驗收流程
 
-## Description
-當需要執行高風險的重構、相依性大版本升級（如升級 Next.js/Spring Boot）、或是本地資源不足以跑完大型測試套件時，將任務外包給遠端的 Google Jules Agent。
+## 使用邊界
 
-## Requirements
-- 必須在本機環境變數中設定 `JULES_API_KEY`。
-- 本地專案必須已推送到與 Jules 綁定的 GitHub 倉庫。
-- 必須先取得使用者對「委派至遠端 Agent」的明確授權；大型任務本身不等於已授權。
-- 若環境沒有 Jules connector/API client，或缺少 `JULES_API_KEY`，不得假造 endpoint、session、狀態或 PR；應回報無法委派並採用安全的本地流程。
+- 必須取得使用者明確授權；任務很大不代表已授權。
+- 必須具備可驗證的 Jules connector/API client、`JULES_API_KEY` 與已綁定的 GitHub repository。
+- 沒有正式 connector 時，不得猜測 endpoint、session、狀態、PR 或測試結果。
+- 小型文件調整、可在本地快速完成的修復，以及沒有清楚驗收條件的探索任務，不應委派。
 
-## Journal boundary
+## 委派前
 
-- `.jules/*.md` 是 Jules 的原始工作日誌，保留逐次任務紀錄。
-- `.agents/Journal.md` 是本專案已採納且已驗證的知識庫；只有完成驗證的學習點才同步進去。
-- 同步時保留來源檔案、日期、驗證方式與狀態（`proposed`、`adopted`、`superseded`）。
+在 request 或 handoff 中明確寫出：任務目標、檔案範圍、不可修改範圍、驗收條件、測試命令、branch/PR 預期與風險。遵守 `cross-agent-collaboration` 的 ownership 規則，不得與本地或 Antigravity 同時修改同一檔案。
 
-## Execution Protocol (執行流程)
+## 追蹤與驗收
 
-1. **規劃與初始會話 (Trigger Session)**
-   使用環境已配置且可驗證的 Jules connector/API client 建立遠端編碼工作區；不要猜測或硬編碼 API endpoint。若整合工具不可用，停止委派並回報限制。
+1. 透過正式 connector 建立任務並追蹤狀態。
+2. 若 Jules 回報 `AWAITING_PLAN_APPROVAL`，先把計畫交給使用者確認，不得自行批准。
+3. 完成後取得 diff、測試結果與相關 artifact；本地檢查範圍、相依套件、安全性、效能與回歸風險。
+4. 在本地重新執行必要測試與 `git diff --check`；未驗證前不得合併、覆蓋 dirty worktree 或推送。
 
-2. **追蹤與進度管理 (Polling & Artifacts)**
-   依 Jules connector 的正式介面追蹤進度。當 Jules 的狀態轉為 `AWAITING_PLAN_APPROVAL` 時，先將計畫呈現給使用者確認，不得自行批准或直接套用遠端變更。
+## 日誌邊界
 
-3. **雙向同步與合併 (PR Review)**
-   Jules 完成遠端測試並建立 GitHub Pull Request 後，先取得 PR 的 diff 與測試結果，再在本地檢視。未經使用者確認，不得自動合併、覆蓋本地變更或推送遠端分支。
+- `.jules/*.md` 是 Jules 原始英文工作日誌，保留英文與原始紀錄，不翻譯、不重寫。
+- `.agents/Journal.md` 只收錄本地驗證後的結論，並標記來源、日期、驗證方式與 `proposed`、`adopted` 或 `superseded` 狀態。
+- 只有重複且已驗證的結論，才可升格到 `AGENTS.md`、rules 或其他 skill。
