@@ -73,6 +73,7 @@ playwright-report/
 frontend/playwright-report/
 test-results/
 frontend/test-results/
+/diagnostics_output/
 
 # Miscellaneous / Repository cleanup exclusions
 /.ref

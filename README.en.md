@@ -27,6 +27,7 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - High-frequency 60Hz UDP telemetry packet ingestion and high-performance visual rendering.
   - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
   - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
+  - Bounded backend pipeline metrics, with initial dyno-profile reads and persistence kept off the realtime telemetry loop.
 * **5-Step Physics Tuning Workbench**:
   - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag) and aerodynamic efficiency parameters.
   - **Step 2 AEGO Gearing**: Proprietary AEGO gear ratio calculation algorithm & Powerband envelope analysis, supporting 4-Speed Drag Meta, Soft Max Speed caps, and closed-loop top-speed re-distribution.
@@ -58,6 +59,7 @@ FH6-HorizonTuner/
 ├── backend/                 # Python FastAPI backend core
 │   ├── main.py              # Backend entry point, API definitions & process management
 │   ├── telemetry_listener.py # UDP 60Hz telemetry socket listener and parser
+│   ├── telemetry_runtime.py  # Pipeline metrics and non-blocking dyno profile cache/persistence
 │   ├── core/                # Core telemetry processing & calculation modules
 │   ├── routers/             # API routers (telemetry, tuning, overlay, drag, log, etc.)
 │   ├── services/            # System services & background state managers
@@ -151,6 +153,8 @@ You can package both the frontend and backend into a **single standalone executa
 
 ## Developer Guide & Formatting
 
+Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
+
 The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard Python code formatter and linter with a **Black-compatible** style. To ensure consistent code style and pass GitHub Actions CI checks, follow these procedures before committing:
 
 ### Python Formatting (Ruff)
@@ -191,6 +195,8 @@ Current test suite coverage:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `test_telemetry_listener.py` | UDP telemetry packet parsing & listener logic |
+| `test_telemetry_runtime.py` | Pipeline metrics contract and non-blocking profile load/write coalescing |
+| `test_telemetry_metrics_api.py` | Telemetry diagnostics API response contract |
 | `test_log_api.py` | Backend log API, Traceback merging & level filtering |
 | `test_overlay_api.py` | Overlay layout CRUD, process start/stop & status tracking |
 | `test_drag_recorder.py` | Drag launch test data recording & analysis |
