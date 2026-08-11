@@ -12,6 +12,7 @@ import DynamicChartGrid, {
   DEFAULT_CHART_SLOTS,
 } from "./DynamicChartGrid";
 import ChartEditModal from "./ChartEditModal";
+import { backendFetch } from "../../services/backend";
 
 type MetricType = "speed" | "throttle" | "brake" | "grip" | "suspension";
 
@@ -140,8 +141,8 @@ const AnalysisView: React.FC = () => {
         const laps = await loadSessionLaps(selectedFilename);
         setLapsList(laps);
 
-        const res = await fetch(
-          `http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=0`,
+        const res = await backendFetch(
+          `/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=0`,
         );
         const data = await res.json();
         if (Array.isArray(data)) setFullSessionTrackData(data);
@@ -171,14 +172,14 @@ const AnalysisView: React.FC = () => {
     const fetchCompareData = async () => {
       if (compareLap > 0 && selectedFilename !== "local") {
         if (selectedFilename === "current") {
-          const res = await fetch(
-            `http://127.0.0.1:8001/api/analysis/data?lap=${compareLap}`,
+          const res = await backendFetch(
+            `/api/analysis/data?lap=${compareLap}`,
           );
           const data = await res.json();
           if (Array.isArray(data)) setCompareSessionData(data);
         } else {
-          const res = await fetch(
-            `http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=${compareLap}`,
+          const res = await backendFetch(
+            `/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=${compareLap}`,
           );
           const data = await res.json();
           if (Array.isArray(data)) setCompareSessionData(data);

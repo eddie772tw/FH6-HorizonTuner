@@ -314,4 +314,5 @@ This project uses two separate localhost ports; do not configure them interchang
 In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Use `TELEMETRY_PORT` to change the UDP port and `BACKEND_PORT` to change the development HTTP port.
 
 In a portable release, the FastAPI HTTP service selects an available dynamic TCP port and writes it to `logs/web_port.txt` under the data directory. Forza UDP telemetry still listens on `8000` by default.
+After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
 

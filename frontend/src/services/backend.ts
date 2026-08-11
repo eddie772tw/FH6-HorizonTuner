@@ -8,57 +8,63 @@ export interface BackendStatus {
 
 const DEFAULT_DEV_PORT = 8001;
 
+type FetchImplementation = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
+export interface BackendTransport {
+  readonly port: number;
+  httpUrl(path: string): string;
+  webSocketUrl(path: string): string;
+  fetch(path: string, init?: RequestInit): Promise<Response>;
+}
+
 function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && Boolean((window as any).__TAURI__);
 }
 
-export function backendHttpUrl(port: number, path: string): string {
-  return `http://127.0.0.1:${port}${path.startsWith("/") ? path : `/${path}`}`;
+function normalizePath(path: string): string {
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
-export function backendWebSocketUrl(port: number, path: string): string {
-  return `ws://127.0.0.1:${port}${path.startsWith("/") ? path : `/${path}`}`;
+export function createBackendTransport(
+  port: number,
+  fetchImplementation: FetchImplementation = fetch,
+): BackendTransport {
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error(`Invalid backend port: ${port}`);
+  }
+
+  const httpUrl = (path: string) => `http://127.0.0.1:${port}${normalizePath(path)}`;
+  const webSocketUrl = (path: string) => `ws://127.0.0.1:${port}${normalizePath(path)}`;
+
+  return {
+    port,
+    httpUrl,
+    webSocketUrl,
+    fetch: (path, init) => fetchImplementation(httpUrl(path), init),
+  };
 }
 
-function replaceLegacyBackendPort(value: string, port: number): string {
-  return value.replace(/(127\.0\.0\.1|localhost):8001/g, `$1:${port}`);
-}
+let backendTransport = createBackendTransport(DEFAULT_DEV_PORT);
 
 /**
- * Compatibility bridge for views that have not yet moved to backendHttpUrl()
- * and backendWebSocketUrl(). It is installed only after a verified port exists,
- * so no request can be sent to an arbitrary fallback port during startup.
+ * Configured once the Tauri sidecar reports a verified listening port. Keeping
+ * this as an explicit client avoids globally replacing window.fetch/WebSocket,
+ * which could accidentally reroute non-backend resources.
  */
-export function installBackendTransport(port: number): void {
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-    if (typeof input === "string") {
-      return originalFetch(replaceLegacyBackendPort(input, port), init);
-    }
-    if (input instanceof URL) {
-      return originalFetch(new URL(replaceLegacyBackendPort(input.toString(), port)), init);
-    }
-    const replacement = replaceLegacyBackendPort(input.url, port);
-    return replacement === input.url
-      ? originalFetch(input, init)
-      : originalFetch(new Request(replacement, input), init);
-  };
+export function configureBackendTransport(port: number): void {
+  backendTransport = createBackendTransport(port);
+}
 
-  const OriginalWebSocket = window.WebSocket;
-  const BackendWebSocket = function (
-    this: WebSocket,
-    url: string | URL,
-    protocols?: string | string[],
-  ) {
-    const endpoint = replaceLegacyBackendPort(url.toString(), port);
-    return protocols === undefined
-      ? Reflect.construct(OriginalWebSocket, [endpoint], BackendWebSocket)
-      : Reflect.construct(OriginalWebSocket, [endpoint, protocols], BackendWebSocket);
-  } as unknown as typeof WebSocket;
+export function backendHttpUrl(path: string): string {
+  return backendTransport.httpUrl(path);
+}
 
-  BackendWebSocket.prototype = OriginalWebSocket.prototype;
-  Object.setPrototypeOf(BackendWebSocket, OriginalWebSocket);
-  window.WebSocket = BackendWebSocket;
+export function backendWebSocketUrl(path: string): string {
+  return backendTransport.webSocketUrl(path);
+}
+
+export function backendFetch(path: string, init?: RequestInit): Promise<Response> {
+  return backendTransport.fetch(path, init);
 }
 
 export async function waitForBackendReady(timeoutMs = 30_000): Promise<BackendStatus> {

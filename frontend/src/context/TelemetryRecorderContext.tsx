@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "./SettingsContext";
+import { backendFetch, backendHttpUrl } from "../services/backend";
 
 export interface AnalysisDataPoint {
   time: number; // Seconds since recording started
@@ -109,7 +110,7 @@ export const TelemetryRecorderProvider: React.FC<{
         return;
       }
       try {
-        const res = await fetch("http://127.0.0.1:8001/api/analysis/status");
+        const res = await backendFetch("/api/analysis/status");
         const data = await res.json();
         if (active && data) {
           setIsRecording(data.isRecording);
@@ -138,7 +139,7 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const fetchSavedSessionsList = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8001/api/analysis/sessions");
+      const res = await backendFetch("/api/analysis/sessions");
       const data = await res.json();
       if (Array.isArray(data)) {
         setSavedSessions(data);
@@ -152,8 +153,8 @@ export const TelemetryRecorderProvider: React.FC<{
     lap: number = 0,
   ): Promise<AnalysisDataPoint[]> => {
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8001/api/analysis/data?lap=${lap}`,
+      const res = await backendFetch(
+        `/api/analysis/data?lap=${lap}`,
       );
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -168,7 +169,7 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const clearCurrentSession = async () => {
     try {
-      await fetch("http://127.0.0.1:8001/api/analysis/clear", {
+      await backendFetch("/api/analysis/clear", {
         method: "POST",
       });
       setLoadedSession(null);
@@ -180,8 +181,8 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const saveCurrentSessionToBackend = async (): Promise<string | null> => {
     try {
-      const res = await fetch(
-        "http://127.0.0.1:8001/api/analysis/sessions/save_latest",
+      const res = await backendFetch(
+        "/api/analysis/sessions/save_latest",
         { method: "POST" },
       );
       const data = await res.json();
@@ -200,8 +201,8 @@ export const TelemetryRecorderProvider: React.FC<{
     lap: number = 0,
   ): Promise<AnalysisDataPoint[] | null> => {
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}?lap=${lap}`,
+      const res = await backendFetch(
+        `/api/analysis/sessions/${encodeURIComponent(filename)}?lap=${lap}`,
       );
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -216,8 +217,8 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const loadSessionLaps = async (filename: string): Promise<LapSummary[]> => {
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}/laps`,
+      const res = await backendFetch(
+        `/api/analysis/sessions/${encodeURIComponent(filename)}/laps`,
       );
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -231,8 +232,8 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const deleteSavedSession = async (filename: string): Promise<boolean> => {
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8001/api/analysis/sessions/${encodeURIComponent(filename)}`,
+      const res = await backendFetch(
+        `/api/analysis/sessions/${encodeURIComponent(filename)}`,
         { method: "DELETE" },
       );
       const data = await res.json();
@@ -248,7 +249,7 @@ export const TelemetryRecorderProvider: React.FC<{
   };
 
   const exportMoTecCsv = (filename: string) => {
-    const url = `http://127.0.0.1:8001/api/analysis/export/motec/${encodeURIComponent(filename)}`;
+    const url = backendHttpUrl(`/api/analysis/export/motec/${encodeURIComponent(filename)}`);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${filename}_motec.csv`;
@@ -263,8 +264,8 @@ export const TelemetryRecorderProvider: React.FC<{
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(
-        `http://127.0.0.1:8001/api/analysis/import/motec`,
+      const res = await backendFetch(
+        "/api/analysis/import/motec",
         {
           method: "POST",
           body: formData,
@@ -282,7 +283,7 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const loadAnalysisConfig = async (): Promise<AnalysisLayoutConfig | null> => {
     try {
-      const res = await fetch("http://127.0.0.1:8001/api/analysis/config");
+      const res = await backendFetch("/api/analysis/config");
       const data = await res.json();
       if (data && !data.error) {
         return data;
@@ -297,7 +298,7 @@ export const TelemetryRecorderProvider: React.FC<{
     config: AnalysisLayoutConfig,
   ): Promise<boolean> => {
     try {
-      const res = await fetch("http://127.0.0.1:8001/api/analysis/config", {
+      const res = await backendFetch("/api/analysis/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),

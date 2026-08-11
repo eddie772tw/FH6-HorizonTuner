@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { backendFetch } from '../services/backend';
 
 export type HalfmoonCore = 'default' | 'modern' | 'elegant';
 
@@ -140,7 +141,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const fetchBackendTheme = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8001/api/settings');
+        const res = await backendFetch('/api/settings');
         const data = await res.json();
         if (data && data.theme) {
           setThemeSettings(prev => ({
@@ -185,7 +186,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const syncToBackend = async (newSettings: ThemeSettings) => {
     try {
-      await fetch('http://127.0.0.1:8001/api/settings', {
+      await backendFetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ theme: newSettings })
