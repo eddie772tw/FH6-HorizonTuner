@@ -410,6 +410,29 @@
 
 ---
 
+## 2026-08-12 / FH6 Native UI Safe Zones and Drift Panel
+
+- **Evidence**: downloaded four public FH6 gameplay captures to the ignored
+  `ref/fh6-ui-layout-reference/` directory and compared them with the
+  project's Drift HUD screenshots. The observed persistent regions are:
+  top-center skill score, bottom-center Drift Zone total, lower-left map /
+  ANNA, lower-right native gauge, and race-only upper-left progress plus
+  upper-right leaderboard.
+- **Primary layout**: GT7's bottom-center visual language remains useful, but
+  direct placement conflicts with FH6's Drift Zone total. Added
+  `getFh6PrimaryAnchor()` to put the primary in the central safe lane at 54%
+  viewport height, bounded by the observed top and bottom bands. The anchor
+  is recalculated only during resize, not in the RAF hot path.
+- **Secondary visual**: replaced the oval secondary outline with an
+  Advanced-inspired cut-corner rectangle. It keeps the conventional
+  bottom-right anchor and adopts the Drift cyan/pink/amber palette.
+- **Boundary**: Style Meter remains at its user-confirmed right-mid free-roam
+  placement. Race leaderboards can occupy the same column, but telemetry has
+  no reliable visibility signal, so the runtime does not guess a mode switch.
+  This is documented in `docs/fh6-ui-safe-zones.md`.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

@@ -234,18 +234,22 @@
             var FRAME_RX = 412;
             var FRAME_RY = 174;
             var PRIMARY_RENDER_SCALE = 0.62;
-            // GT7 keeps its short/wide instrument at the viewport bottom
-            // center. Preserve Drift's existing visual scale, but use the
-            // same anchor with a 180px clear zone for the game's bottom HUD.
+            // FH6 reserves center-top for skills and center-bottom for Drift
+            // Zone totals. This logical box keeps the primary in the central
+            // safe lane between those native UI bands.
             var PRIMARY_LAYOUT_WIDTH = 680;
             var PRIMARY_LAYOUT_HEIGHT = 288;
-            var PRIMARY_BOTTOM_PADDING = 180;
+            var primaryAnchor = null;
             // Advanced effective width is ~544px and VFD is ~630px at their
             // shared default scale. Use the midpoint as Drift's conventional
             // bottom-right secondary box.
             var SECONDARY_BOX_WIDTH = 590;
             var SECONDARY_BOX_HEIGHT = 288;
             var SECONDARY_BOX_PADDING = 30;
+            var SECONDARY_SOURCE_WIDTH = 520;
+            var SECONDARY_SOURCE_HEIGHT = 252;
+            var SECONDARY_HALF_WIDTH = SECONDARY_SOURCE_WIDTH * 0.5;
+            var SECONDARY_HALF_HEIGHT = SECONDARY_SOURCE_HEIGHT * 0.5;
 
             var ANGLE_TICKS = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
 
@@ -327,6 +331,12 @@
                 var height = Math.max(1, window.innerHeight || 1080);
                 canvasDpr = Math.min(2, window.devicePixelRatio || 1);
                 viewportTransform = driftLayout.getViewportTransform(width, height, 0);
+                primaryAnchor = driftLayout.getFh6PrimaryAnchor(
+                    width,
+                    height,
+                    PRIMARY_LAYOUT_WIDTH,
+                    PRIMARY_LAYOUT_HEIGHT
+                );
                 canvas.width = Math.round(width * canvasDpr);
                 canvas.height = Math.round(height * canvasDpr);
                 canvas.style.width = width + 'px';
@@ -823,10 +833,29 @@
             }
 
             // ── Main Render Loop ─────────────────────────────────────────────
+            function drawSecondaryPanelPath(left, top, right, bottom, cut) {
+                ctx.beginPath();
+                ctx.moveTo(left + cut, top);
+                ctx.lineTo(right - cut, top);
+                ctx.lineTo(right, top + cut);
+                ctx.lineTo(right, bottom - cut);
+                ctx.lineTo(right - cut, bottom);
+                ctx.lineTo(left + cut, bottom);
+                ctx.lineTo(left, bottom - cut);
+                ctx.lineTo(left, top + cut);
+                ctx.closePath();
+            }
+
+            // Advanced-inspired hard-edged panel with Drift's cyan tracking
+            // lines and pink risk accents.
             function renderSecondaryInstrument() {
                 if (!ctx) return;
 
-                var rx = 220, ry = 126;
+                var left = SECONDARY_CX - SECONDARY_HALF_WIDTH;
+                var right = SECONDARY_CX + SECONDARY_HALF_WIDTH;
+                var top = SECONDARY_CY - SECONDARY_HALF_HEIGHT;
+                var bottom = SECONDARY_CY + SECONDARY_HALF_HEIGHT;
+                var cut = 20;
                 var absA = Math.abs(displayAngle);
                 var angleColor = absA >= 45 ? C_REDLINE : (absA >= 20 ? C_AMBER : C_WHITE);
                 var flowColor = flowQuality > 1 ? (FLOW_COLOR_MAP[flowQuality] || C_WHITE) : C_WHITE_DIM;
@@ -834,58 +863,86 @@
                 var direction = displayAngle < -1 ? 'LEFT DRIFT' : (displayAngle > 1 ? 'RIGHT DRIFT' : 'CENTER');
 
                 ctx.save();
-                var fill = ctx.createRadialGradient(SECONDARY_CX, SECONDARY_CY, 18, SECONDARY_CX, SECONDARY_CY, 245);
-                fill.addColorStop(0, 'rgba(11, 19, 30, 0.78)');
-                fill.addColorStop(0.7, 'rgba(7, 14, 24, 0.66)');
-                fill.addColorStop(1, 'rgba(7, 14, 24, 0.12)');
+                var fill = ctx.createLinearGradient(left, top, right, bottom);
+                fill.addColorStop(0, 'rgba(13, 28, 43, 0.88)');
+                fill.addColorStop(0.56, 'rgba(7, 15, 27, 0.78)');
+                fill.addColorStop(1, 'rgba(7, 14, 24, 0.58)');
                 ctx.fillStyle = fill;
-                ctx.beginPath();
-                ctx.ellipse(SECONDARY_CX, SECONDARY_CY, rx, ry, 0, 0, Math.PI * 2);
+                drawSecondaryPanelPath(left, top, right, bottom, cut);
                 ctx.fill();
 
-                ctx.strokeStyle = 'rgba(102, 224, 255, 0.34)';
+                ctx.strokeStyle = 'rgba(102, 224, 255, 0.52)';
                 ctx.lineWidth = 2;
                 ctx.shadowColor = C_ICE;
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.ellipse(SECONDARY_CX, SECONDARY_CY, rx, ry, 0, 0, Math.PI * 2);
+                ctx.shadowBlur = 8;
+                drawSecondaryPanelPath(left, top, right, bottom, cut);
                 ctx.stroke();
 
                 ctx.shadowBlur = 0;
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = C_ICE;
+                ctx.beginPath();
+                ctx.moveTo(left + cut, top + 1.5);
+                ctx.lineTo(left + 150, top + 1.5);
+                ctx.moveTo(right - 132, top + 1.5);
+                ctx.lineTo(right - cut, top + 1.5);
+                ctx.stroke();
+
+                ctx.strokeStyle = C_REDLINE;
+                ctx.globalAlpha = 0.72;
+                ctx.beginPath();
+                ctx.moveTo(left + cut, bottom - 1.5);
+                ctx.lineTo(left + 104, bottom - 1.5);
+                ctx.moveTo(right - 86, bottom - 1.5);
+                ctx.lineTo(right - cut, bottom - 1.5);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(SECONDARY_CX, top + 36);
+                ctx.lineTo(SECONDARY_CX, bottom - 38);
+                ctx.stroke();
                 ctx.fillStyle = C_WHITE_DIM;
                 ctx.font = 'bold 16px Bahnschrift';
-                ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('DRIFT STATUS', SECONDARY_CX, SECONDARY_CY - 100);
+                ctx.textAlign = 'left';
+                ctx.fillText('DRIFT STATUS', left + 28, top + 26);
+
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.fillStyle = C_ICE;
+                ctx.fillText('LIVE', right - 28, top + 26);
 
                 ctx.textAlign = 'left';
                 ctx.font = '900 72px Bahnschrift';
                 ctx.fillStyle = angleColor;
                 ctx.shadowColor = angleColor;
                 ctx.shadowBlur = absA >= 20 ? 12 : 6;
-                ctx.fillText(absA.toFixed(1) + '°', SECONDARY_CX - 184, SECONDARY_CY - 30);
+                ctx.fillText(absA.toFixed(1) + '°', left + 28, SECONDARY_CY - 30);
 
                 ctx.font = 'bold 16px Bahnschrift';
                 ctx.fillStyle = C_WHITE_DIM;
                 ctx.shadowBlur = 0;
-                ctx.fillText(direction, SECONDARY_CX - 180, SECONDARY_CY + 8);
+                ctx.fillText(direction, left + 32, SECONDARY_CY + 8);
                 ctx.fillStyle = isCountering ? C_AMBER : C_WHITE_DIM;
-                ctx.fillText('COUNTER ' + counterPct.toFixed(0) + '%', SECONDARY_CX - 180, SECONDARY_CY + 28);
+                ctx.fillText('COUNTER ' + counterPct.toFixed(0) + '%', left + 32, SECONDARY_CY + 28);
 
                 ctx.textAlign = 'right';
                 ctx.font = 'italic 900 30px Bahnschrift';
                 ctx.fillStyle = flowColor;
                 ctx.shadowColor = flowColor;
                 ctx.shadowBlur = flowQuality >= 4 ? 10 : 0;
-                ctx.fillText(FLOW_LABELS[flowQuality] || 'BUILD', SECONDARY_CX + 182, SECONDARY_CY - 32);
+                ctx.fillText(FLOW_LABELS[flowQuality] || 'BUILD', right - 28, SECONDARY_CY - 32);
                 ctx.font = 'bold 16px Bahnschrift';
                 ctx.fillStyle = riskColor;
                 ctx.shadowColor = riskColor;
                 ctx.shadowBlur = riskLevel >= 3 ? 8 : 0;
-                ctx.fillText('RISK ' + (RISK_LABELS[riskLevel] || 'SAFE'), SECONDARY_CX + 182, SECONDARY_CY - 8);
+                ctx.fillText('RISK ' + (RISK_LABELS[riskLevel] || 'SAFE'), right - 28, SECONDARY_CY - 8);
                 ctx.fillStyle = holdSeconds > 0.5 ? C_AMBER : C_WHITE_DIM;
                 ctx.shadowBlur = 0;
-                ctx.fillText(holdSeconds > 0.5 ? 'HOLD ' + holdSeconds.toFixed(1) + 's' : 'GRIP', SECONDARY_CX + 182, SECONDARY_CY + 14);
+                ctx.fillText(holdSeconds > 0.5 ? 'HOLD ' + holdSeconds.toFixed(1) + 's' : 'GRIP', right - 28, SECONDARY_CY + 14);
 
                 var barW = 28, barH = 62, startY = SECONDARY_CY + 49;
                 drawPedal(SECONDARY_CX - 92, startY, barW, barH, handbrakePct, C_AMBER, 'H', 'H');
@@ -907,8 +964,8 @@
                 );
                 var logicalCenterX = (anchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
                 var logicalCenterY = (anchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
-                var scaleX = anchor.width / (440 * viewportTransform.scale);
-                var scaleY = anchor.height / (252 * viewportTransform.scale);
+                var scaleX = anchor.width / (SECONDARY_SOURCE_WIDTH * viewportTransform.scale);
+                var scaleY = anchor.height / (SECONDARY_SOURCE_HEIGHT * viewportTransform.scale);
 
                 ctx.save();
                 ctx.translate(logicalCenterX, logicalCenterY);
@@ -919,17 +976,10 @@
             }
 
             function renderPrimaryInstrument() {
-                if (!ctx || !driftLayout) return;
+                if (!ctx || !primaryAnchor) return;
 
-                var anchor = driftLayout.getCenteredBottomAnchor(
-                    window.innerWidth,
-                    window.innerHeight,
-                    PRIMARY_LAYOUT_WIDTH,
-                    PRIMARY_LAYOUT_HEIGHT,
-                    PRIMARY_BOTTOM_PADDING
-                );
-                var logicalCenterX = (anchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
-                var logicalCenterY = (anchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
+                var logicalCenterX = (primaryAnchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
+                var logicalCenterY = (primaryAnchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
 
                 // The canvas is viewport-sized so this layer can use screen
                 // space while retaining the existing Drift visual scale.

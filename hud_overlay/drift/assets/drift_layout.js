@@ -67,6 +67,29 @@
         };
     }
 
+    // Measured from FH6 gameplay captures: skills occupy the top-center band
+    // and Drift Zone totals occupy the bottom-center band. Keep the primary
+    // instrument in the central lane between them instead of using GT7's
+    // direct bottom-center placement.
+    function getFh6PrimaryAnchor(width, height, contentWidth, contentHeight) {
+        var viewportWidth = finitePositive(width, LOGICAL_WIDTH);
+        var viewportHeight = finitePositive(height, LOGICAL_HEIGHT);
+        var boxWidth = Math.max(1, Number(contentWidth) || 1);
+        var boxHeight = Math.max(1, Number(contentHeight) || 1);
+        var topSkillBandEnd = viewportHeight * 0.22;
+        var bottomDriftScoreBandStart = viewportHeight * 0.80;
+        var padding = Math.max(16, viewportHeight * 0.025);
+        var minCenterY = topSkillBandEnd + boxHeight * 0.5 + padding;
+        var maxCenterY = bottomDriftScoreBandStart - boxHeight * 0.5 - padding;
+
+        return {
+            centerX: viewportWidth * 0.5,
+            centerY: clamp(viewportHeight * 0.54, minCenterY, maxCenterY),
+            width: boxWidth,
+            height: boxHeight
+        };
+    }
+
     function ellipsePoint(t, centerX, centerY, halfWidth, radiusX, radiusY, side) {
         var normalizedX = clamp((Number(t) || 0) * halfWidth / radiusX, -1, 1);
         var x = centerX + (Number(t) || 0) * halfWidth;
@@ -104,6 +127,7 @@
         getViewportTransform: getViewportTransform,
         getBottomRightAnchor: getBottomRightAnchor,
         getCenteredBottomAnchor: getCenteredBottomAnchor,
+        getFh6PrimaryAnchor: getFh6PrimaryAnchor,
         ellipsePoint: ellipsePoint,
         fillSweepState: fillSweepState
     };

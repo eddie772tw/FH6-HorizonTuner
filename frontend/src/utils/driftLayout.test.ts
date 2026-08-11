@@ -20,6 +20,12 @@ type DriftLayout = {
     width: number;
     height: number;
   };
+  getFh6PrimaryAnchor: (width: number, height: number, contentWidth: number, contentHeight: number) => {
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+  };
   ellipsePoint: (t: number, centerX: number, centerY: number, halfWidth: number, radiusX: number, radiusY: number, side: string) => { x: number; y: number };
   fillSweepState: (progress: number, maxRpm: number, target: { rpm: number; angle: number; speed: number }) => { rpm: number; angle: number; speed: number };
 };
@@ -73,6 +79,16 @@ describe('Drift viewport layout', () => {
     expect(anchor.centerY).toBe(828);
     expect(anchor.width).toBe(680);
     expect(anchor.height).toBe(288);
+  });
+
+  it('keeps the FH6 primary layer between the top skill and bottom Drift Zone score bands', () => {
+    const layout = loadLayout();
+    const anchor = layout.getFh6PrimaryAnchor(1280, 720, 680, 288);
+
+    expect(anchor.centerX).toBe(640);
+    expect(anchor.centerY).toBeCloseTo(388.8);
+    expect(anchor.centerY - anchor.height * 0.5).toBeGreaterThan(720 * 0.22);
+    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(720 * 0.8);
   });
 
   it('sweeps the visual RPM and angle before settling at idle', () => {
