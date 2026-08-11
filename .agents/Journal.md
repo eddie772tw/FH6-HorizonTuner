@@ -365,6 +365,24 @@
 
 ---
 
+## 2026-08-11 / Drift HUD Full-Viewport Feedback
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Feedback addressed**: implemented a real 1.5s startup/Sweep animation,
+  moved Drift layers to viewport anchoring, enlarged the HUD typography, moved
+  the logical canvas above the game's bottom score area, generalized the
+  steering pointer to render for any non-zero steering input, and aligned both
+  tachometer/angle arcs to the same ellipse as the frame decoration.
+- **Architecture**: kept one HUD HTML and one HUDCore telemetry lifecycle;
+  viewport-fixed DOM layers and a DPR-aware full-screen canvas avoid duplicate
+  telemetry registrations while escaping the conventional bottom-right slot.
+- **Hot-path boundary**: viewport transform is recalculated only on resize;
+  canvas rendering remains RAF-driven and Style Meter DOM painting remains
+  throttled to 80ms.
+- **Verification**: frontend Vitest baseline passed (35 files / 216 tests).
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

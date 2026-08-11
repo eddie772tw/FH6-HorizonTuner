@@ -26,13 +26,16 @@ describe('Drift HUD contract', () => {
     const html = readDriftHud();
 
     expect(html).toContain('<div id="teleCardsMount"></div>');
-    expect(html).toContain('<canvas id="driftCanvas" width="1680" height="640"></canvas>');
+    expect(html).toContain('<canvas id="driftCanvas" width="1920" height="1080"></canvas>');
     expect(html).toContain('<div id="drift-style-container" aria-hidden="true">');
+    expect(html).toContain('./assets/drift_layout.js?v=drift-layout-20260812');
     expect(html).toContain('id="drift-style-meter-fill"');
     expect(html).toContain('function renderCenterGearCluster()');
     expect(html).toContain('function renderSecondaryInstrument()');
     expect(html).toContain('renderCenterGearCluster();');
     expect(html).toContain('renderSecondaryInstrument();');
+    expect(html).toContain('function triggerDriftSweepAnimation()');
+    expect(html).toContain('setTimeout(triggerDriftSweepAnimation, 80);');
   });
 
   it('preserves the 60 Hz canvas loop and throttled Style Meter DOM paint', () => {

@@ -18,13 +18,21 @@
             src: url('../shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
 
+        .hud-root-wrapper {
+            position: fixed;
+            inset: 0;
+            display: block;
+            padding: 0;
+            overflow: visible;
+        }
+
         /* ── Gauge Container (1680px x 640px) ───────────────── */
         .drift-container {
-            position: relative;
-            width: 1680px;
-            height: 640px;
-            align-self: center;
-            transform-origin: bottom center;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            transform-origin: center center;
             pointer-events: none;
             background: transparent;
         }
@@ -33,15 +41,15 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 1680px;
-            height: 640px;
+            width: 100vw;
+            height: 100vh;
             pointer-events: none;
         }
 
         /* ── Floating Tech Popups Hero Banner ────────────────────────────── */
         #drift-popup-hero {
-            position: absolute;
-            top: 20px;
+            position: fixed;
+            top: 18vh;
             left: 50%;
             transform: translateX(-50%);
             background: transparent;
@@ -50,7 +58,7 @@
             padding: 0;
             border-radius: 0;
             font-family: 'ForzaGear', Arial, sans-serif;
-            font-size: 1.25rem;
+            font-size: 2rem;
             color: #ffffff;
             letter-spacing: 0.2em;
             text-transform: uppercase;
@@ -73,13 +81,13 @@
         /* Drift Style MVP: transparent HUD-local information layer, with no
            secondary rectangular dock behind the text. */
         #drift-style-container {
-            position: absolute;
-            top: 84px;
-            right: 42px;
-            width: 270px;
+            position: fixed;
+            left: calc(50% + 19vw);
+            bottom: 25vh;
+            width: min(360px, 21vw);
             display: flex;
             flex-direction: column;
-            gap: 7px;
+            gap: 10px;
             opacity: 0;
             pointer-events: none;
             font-family: 'ForzaGear', Arial, sans-serif;
@@ -95,19 +103,19 @@
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 0.73rem;
+            font-size: 1rem;
             color: rgba(255, 255, 255, 0.72);
         }
 
         .drift-style-rank {
-            font-size: 1.2rem;
+            font-size: 2rem;
             font-weight: 700;
             color: #55dfff;
             text-shadow: 0 0 9px rgba(85, 223, 255, 0.72);
         }
 
         .drift-style-meter {
-            height: 3px;
+            height: 5px;
             background: rgba(255, 255, 255, 0.18);
             overflow: hidden;
         }
@@ -123,14 +131,14 @@
             display: none;
             justify-content: space-between;
             align-items: baseline;
-            min-height: 19px;
-            font-size: 0.92rem;
+            min-height: 26px;
+            font-size: 1.2rem;
             font-weight: 700;
             white-space: nowrap;
         }
 
         .drift-style-event .event-source {
-            font-size: 0.65rem;
+            font-size: 0.8rem;
             font-family: Bahnschrift, Arial, sans-serif;
             letter-spacing: 0.14em;
             color: rgba(255, 255, 255, 0.58);
@@ -146,33 +154,32 @@
     <!-- 共享中央遙測掛載點 -->
     <div id="teleCardsMount"></div>
 
+    <!-- Viewport-anchored Drift layers stay outside the logical canvas. -->
+    <div id="drift-popup-hero">HANDBRAKE ENTRY</div>
+    <div id="drift-style-container" aria-hidden="true">
+        <div class="drift-style-heading">
+            <span id="drift-style-title">STYLE METER</span>
+            <span id="drift-style-rank" class="drift-style-rank">D</span>
+        </div>
+        <div class="drift-style-meter"><div id="drift-style-meter-fill" class="drift-style-meter-fill"></div></div>
+        <div id="drift-style-flow" class="drift-style-event flow"><span class="event-source">FLOW</span><span class="event-value"></span></div>
+        <div id="drift-style-hold" class="drift-style-event hold"><span class="event-source">HOLD</span><span class="event-value"></span></div>
+        <div id="drift-style-risk" class="drift-style-event risk"><span class="event-source">RISK</span><span class="event-value"></span></div>
+    </div>
+
     <!-- 093 LAB 標準自適應視窗根包裝 -->
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container drift-container" id="driftContainer">
             <!-- Floating Event Popup Banner -->
-            <div id="drift-popup-hero">HANDBRAKE ENTRY</div>
-
-            <!-- HUD-local Drift Style MVP container. It is not a shared
-                 TelemetryCard because its timing is Drift-specific. -->
-            <div id="drift-style-container" aria-hidden="true">
-                <div class="drift-style-heading">
-                    <span id="drift-style-title">STYLE METER</span>
-                    <span id="drift-style-rank" class="drift-style-rank">D</span>
-                </div>
-                <div class="drift-style-meter"><div id="drift-style-meter-fill" class="drift-style-meter-fill"></div></div>
-                <div id="drift-style-flow" class="drift-style-event flow"><span class="event-source">FLOW</span><span class="event-value"></span></div>
-                <div id="drift-style-hold" class="drift-style-event hold"><span class="event-source">HOLD</span><span class="event-value"></span></div>
-                <div id="drift-style-risk" class="drift-style-event risk"><span class="event-source">RISK</span><span class="event-value"></span></div>
-            </div>
-
             <!-- 全向量 1680px x 640px 畫布 (動態 maxRpm 萬轉/萬轉以下紅線區 1500/1000rpm 跨度) -->
-            <canvas id="driftCanvas" width="1680" height="640"></canvas>
+            <canvas id="driftCanvas" width="1920" height="1080"></canvas>
         </div>
     </div>
 
     <!-- 腳本引入：Telemetry Cards & HUD Core -->
     <script type="module" src="../shared/telemetry-cards.js"></script>
     <script src="../shared/hud-core.js"></script>
+    <script src="./assets/drift_layout.js?v=drift-layout-20260812"></script>
     <script src="./assets/drift_display_math.js?v=drift-layout-20260811"></script>
     <script src="./assets/drift_style_engine.js?v=drift-style-mvp-20260811"></script>
 
@@ -182,6 +189,11 @@
 
             var canvas = document.getElementById('driftCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
+            var driftLayout = window.DriftLayout;
+            var viewportTransform = driftLayout
+                ? driftLayout.getViewportTransform(window.innerWidth, window.innerHeight, 72)
+                : { scale: 1, offsetX: 0, offsetY: 0 };
+            var canvasDpr = 1;
 
             // ── Color Palette Standard (093 LAB. Cyber & Street Palette) ──────
             var C_WHITE = '#ffffff';
@@ -219,14 +231,16 @@
             var MAIN_ARC_HALF_WIDTH = 350;
             var SECONDARY_CX = 1430;
             var SECONDARY_CY = 485;
+            var FRAME_RX = 412;
+            var FRAME_RY = 174;
 
             var ANGLE_TICKS = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
 
             // ── 左區與右區共用字體樣式與大小控制變數 (Shared Typography Controls) ──
-            var FONT_SIDE_MIDDLE_VAL = 'italic bold 60px ForzaGear';
-            var FONT_SIDE_SUB_LABEL = 'italic bold 30px ForzaGear';
-            var FONT_GEAR_VALUE = 'italic bold 120px ForzaGear';
-            var FONT_SPEED_VALUE = 'italic bold 46px ForzaGear';
+            var FONT_SIDE_MIDDLE_VAL = 'italic bold 72px ForzaGear';
+            var FONT_SIDE_SUB_LABEL = 'italic bold 38px ForzaGear';
+            var FONT_GEAR_VALUE = 'italic bold 160px ForzaGear';
+            var FONT_SPEED_VALUE = 'italic bold 62px ForzaGear';
 
             // 從字體字串中動態解析像素高度
             function parseFontSize(fontStr) {
@@ -266,6 +280,10 @@
 
             var inputFlashTtl = { H: 0, C: 0, B: 0, T: 0 };
             var prevInputs = { H: 0, C: 0, B: 0, T: 0 };
+            var driftSweepActive = false;
+            var driftSweepStartedAt = 0;
+            var driftSweepFrame = { rpm: 0, angle: 0, speed: 0 };
+            var DRIFT_SWEEP_DURATION = 1500;
 
             // Drift Style is a HUD-local domain module. Keep this snapshot
             // preallocated so the render hot path does not create frame objects.
@@ -289,8 +307,38 @@
             function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
             function lerp(a, b, t) { return a + (b - a) * clamp(t, 0, 1); }
 
+            function resizeDriftCanvas() {
+                if (!canvas || !ctx || !driftLayout) return;
+
+                var width = Math.max(1, window.innerWidth || 1920);
+                var height = Math.max(1, window.innerHeight || 1080);
+                canvasDpr = Math.min(2, window.devicePixelRatio || 1);
+                viewportTransform = driftLayout.getViewportTransform(width, height, 72);
+                canvas.width = Math.round(width * canvasDpr);
+                canvas.height = Math.round(height * canvasDpr);
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                ctx.setTransform(
+                    canvasDpr * viewportTransform.scale,
+                    0,
+                    0,
+                    canvasDpr * viewportTransform.scale,
+                    canvasDpr * viewportTransform.offsetX,
+                    canvasDpr * viewportTransform.offsetY
+                );
+            }
+
+            window.addEventListener('resize', resizeDriftCanvas);
+
             function triggerDriftStyleSpecial(id) {
-                if (driftStyleEngine) driftStyleEngine.triggerSpecial(id, performance.now());
+                if (!driftSweepActive && driftStyleEngine) driftStyleEngine.triggerSpecial(id, performance.now());
+            }
+
+            function triggerDriftSweepAnimation() {
+                if (driftSweepActive) return;
+                driftSweepActive = true;
+                driftSweepStartedAt = performance.now();
+                if (driftStyleEngine) driftStyleEngine.reset();
             }
 
             function setDriftStyleText(element, value) {
@@ -370,8 +418,8 @@
                 if (!ctx) return;
 
                 ctx.save();
-                var rx = 430;
-                var ry = 190;
+                var rx = FRAME_RX + 18;
+                var ry = FRAME_RY + 16;
                 var frameGradient = ctx.createRadialGradient(CANVAS_CX, CANVAS_CY, 20, CANVAS_CX, CANVAS_CY, 470);
                 frameGradient.addColorStop(0, 'rgba(14, 29, 45, 0.62)');
                 frameGradient.addColorStop(0.58, C_FRAME_FILL);
@@ -389,7 +437,7 @@
                 ctx.strokeStyle = C_FRAME_EDGE;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.ellipse(CANVAS_CX, CANVAS_CY, rx - 18, ry - 16, 0, 0, Math.PI * 2);
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, FRAME_RX, FRAME_RY, 0, 0, Math.PI * 2);
                 ctx.stroke();
 
                 ctx.globalAlpha = 0.74;
@@ -398,26 +446,24 @@
                 ctx.shadowBlur = 10;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.ellipse(CANVAS_CX, CANVAS_CY, rx - 18, ry - 16, 0, Math.PI * 1.15, Math.PI * 1.85);
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, FRAME_RX, FRAME_RY, 0, Math.PI * 1.15, Math.PI * 1.85);
                 ctx.stroke();
                 ctx.shadowBlur = 0;
 
                 ctx.globalAlpha = 0.4;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.ellipse(CANVAS_CX, CANVAS_CY, rx - 18, ry - 16, 0, Math.PI * 0.15, Math.PI * 0.85);
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, FRAME_RX, FRAME_RY, 0, Math.PI * 0.15, Math.PI * 0.85);
                 ctx.strokeStyle = C_ICE;
                 ctx.stroke();
                 ctx.restore();
             }
 
             // ── 1. 上弧條：飄移角度 Arc & 角度數字刻度 (-60° ... 0° ... +60°) ──────
-            var topArcGeo = { cx: CANVAS_CX, cy: 155, halfWidth: MAIN_ARC_HALF_WIDTH, rise: 62 };
+            var topArcGeo = { cx: CANVAS_CX, cy: CANVAS_CY, halfWidth: MAIN_ARC_HALF_WIDTH };
 
             function topCurvePoint(t) {
-                var x = topArcGeo.cx + t * topArcGeo.halfWidth;
-                var y = topArcGeo.cy + topArcGeo.rise * (t * t);
-                return { x: x, y: y };
+                return driftLayout.ellipsePoint(t, topArcGeo.cx, topArcGeo.cy, topArcGeo.halfWidth, FRAME_RX, FRAME_RY, 'top');
             }
 
             function renderTopAngleArc() {
@@ -465,7 +511,7 @@
 
                 // ── 上弧：飄移角度數字刻度 (-60°, -45°, -30°, -15°, 0°, 15°, 30°, 45°, 60°) ──
                 ctx.save();
-                ctx.font = 'bold 12px Bahnschrift';
+                ctx.font = 'bold 16px Bahnschrift';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
 
@@ -488,11 +534,12 @@
                 // Steering input is normalized onto the ±45° steering range
                 // inside the wider ±60° drift-angle scale. It is intentionally
                 // a pointer, not a falsely precise wheel-angle number.
-                if (isCountering) {
+                if (Math.abs(steerPct) > 0.5) {
                     var pointerPoint = topCurvePoint(counterArcAngle / 60.0);
+                    var pointerColor = isCountering ? C_AMBER : C_ICE;
                     ctx.save();
-                    ctx.fillStyle = C_AMBER;
-                    ctx.shadowColor = C_AMBER;
+                    ctx.fillStyle = pointerColor;
+                    ctx.shadowColor = pointerColor;
                     ctx.shadowBlur = 12;
                     ctx.beginPath();
                     ctx.moveTo(pointerPoint.x, pointerPoint.y - 15);
@@ -505,12 +552,10 @@
             }
 
             // ── 2. 下弧條：動態 maxRpm & 動態紅線區 (萬轉以上 1500rpm / 萬轉以下 1000rpm 跨度) ─
-            var botArcGeo = { cx: CANVAS_CX, cy: 475, halfWidth: MAIN_ARC_HALF_WIDTH, rise: -62 };
+            var botArcGeo = { cx: CANVAS_CX, cy: CANVAS_CY, halfWidth: MAIN_ARC_HALF_WIDTH };
 
             function botCurvePoint(t) {
-                var x = botArcGeo.cx + t * botArcGeo.halfWidth;
-                var y = botArcGeo.cy + botArcGeo.rise * (t * t);
-                return { x: x, y: y };
+                return driftLayout.ellipsePoint(t, botArcGeo.cx, botArcGeo.cy, botArcGeo.halfWidth, FRAME_RX, FRAME_RY, 'bottom');
             }
 
             function renderBottomTachoArc() {
@@ -795,19 +840,19 @@
 
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = C_WHITE_DIM;
-                ctx.font = 'bold 12px Bahnschrift';
+                ctx.font = 'bold 16px Bahnschrift';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('DRIFT STATUS', SECONDARY_CX, SECONDARY_CY - 100);
 
                 ctx.textAlign = 'left';
-                ctx.font = '900 50px Bahnschrift';
+                ctx.font = '900 72px Bahnschrift';
                 ctx.fillStyle = angleColor;
                 ctx.shadowColor = angleColor;
                 ctx.shadowBlur = absA >= 20 ? 12 : 6;
                 ctx.fillText(absA.toFixed(1) + '°', SECONDARY_CX - 184, SECONDARY_CY - 30);
 
-                ctx.font = 'bold 12px Bahnschrift';
+                ctx.font = 'bold 16px Bahnschrift';
                 ctx.fillStyle = C_WHITE_DIM;
                 ctx.shadowBlur = 0;
                 ctx.fillText(direction, SECONDARY_CX - 180, SECONDARY_CY + 8);
@@ -815,12 +860,12 @@
                 ctx.fillText('COUNTER ' + counterPct.toFixed(0) + '%', SECONDARY_CX - 180, SECONDARY_CY + 28);
 
                 ctx.textAlign = 'right';
-                ctx.font = 'italic 900 22px Bahnschrift';
+                ctx.font = 'italic 900 30px Bahnschrift';
                 ctx.fillStyle = flowColor;
                 ctx.shadowColor = flowColor;
                 ctx.shadowBlur = flowQuality >= 4 ? 10 : 0;
                 ctx.fillText(FLOW_LABELS[flowQuality] || 'BUILD', SECONDARY_CX + 182, SECONDARY_CY - 32);
-                ctx.font = 'bold 12px Bahnschrift';
+                ctx.font = 'bold 16px Bahnschrift';
                 ctx.fillStyle = riskColor;
                 ctx.shadowColor = riskColor;
                 ctx.shadowBlur = riskLevel >= 3 ? 8 : 0;
@@ -829,7 +874,7 @@
                 ctx.shadowBlur = 0;
                 ctx.fillText(holdSeconds > 0.5 ? 'HOLD ' + holdSeconds.toFixed(1) + 's' : 'GRIP', SECONDARY_CX + 182, SECONDARY_CY + 14);
 
-                var barW = 22, barH = 48, startY = SECONDARY_CY + 49;
+                var barW = 28, barH = 62, startY = SECONDARY_CY + 49;
                 drawPedal(SECONDARY_CX - 92, startY, barW, barH, handbrakePct, C_AMBER, 'H', 'H');
                 drawPedal(SECONDARY_CX - 54, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
                 drawPedal(SECONDARY_CX + 42, startY, barW, barH, brakePct, C_REDLINE, 'B', 'B');
@@ -840,15 +885,46 @@
             function renderLoop() {
                 try {
                     var now = performance.now();
-                    if (driftStyleEngine) {
+                    var sweepProgress = driftSweepActive
+                        ? clamp((now - driftSweepStartedAt) / DRIFT_SWEEP_DURATION, 0, 1)
+                        : 0;
+                    var liveAngle = displayAngle;
+                    var liveRpm = rpm;
+                    var liveSpeed = displaySpeed;
+                    var liveGear = gear;
+                    var liveCounterPct = counterPct;
+                    var liveCounterArcAngle = counterArcAngle;
+                    var liveCountering = isCountering;
+
+                    if (driftSweepActive) {
+                        driftLayout.fillSweepState(sweepProgress, maxRpm, driftSweepFrame);
+                        displayAngle = driftSweepFrame.angle;
+                        rpm = driftSweepFrame.rpm;
+                        displaySpeed = driftSweepFrame.speed;
+                        gear = 'N';
+                        counterPct = 0;
+                        counterArcAngle = 0;
+                        isCountering = false;
+                    } else if (driftStyleEngine) {
                         driftStyleFrame.speedKmh = speedKmh;
                         driftStyleFrame.angle = displayAngle;
                         driftStyleFrame.flowQuality = flowQuality;
                         driftStyleFrame.riskLevel = riskLevel;
                         driftStyleEngine.update(driftStyleFrame, now);
-                        renderDriftStyleContainer(now);
                     }
-                    if (ctx) ctx.clearRect(0, 0, 1680, 640);
+                    if (driftStyleEngine) renderDriftStyleContainer(now);
+                    if (ctx) {
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.setTransform(
+                            canvasDpr * viewportTransform.scale,
+                            0,
+                            0,
+                            canvasDpr * viewportTransform.scale,
+                            canvasDpr * viewportTransform.offsetX,
+                            canvasDpr * viewportTransform.offsetY
+                        );
+                    }
 
                     // 1. Draw modern framed HUD background
                     drawModernFrame();
@@ -862,6 +938,16 @@
 
                     // 4. 繪製左右兩側腳踏柱 (左: H/C, 右: B/T)
                     renderSecondaryInstrument();
+
+                    displayAngle = liveAngle;
+                    rpm = liveRpm;
+                    displaySpeed = liveSpeed;
+                    gear = liveGear;
+                    counterPct = liveCounterPct;
+                    counterArcAngle = liveCounterArcAngle;
+                    isCountering = liveCountering;
+
+                    if (driftSweepActive && sweepProgress >= 1) driftSweepActive = false;
 
                 } catch (e) {
                     console.error('[Drift HUD] Render loop exception:', e);
@@ -965,7 +1051,8 @@
             // ── HUDCore Registration ─────────────────────────────────────────
             HUDCore.registerStyle('drift', {
                 containerId: 'driftContainer',
-                scaleMultiplier: 0.95,
+                scaleMultiplier: 1.0,
+                globalScaleFactor: 1.0,
                 onInit: function (payload) {
                     if (payload && payload.isMetric !== undefined) {
                         isMetricUnit = payload.isMetric !== false;
@@ -981,13 +1068,15 @@
                 onAnimate: function () {
                     // Sweep is the HUD's mechanical zero/calibration action;
                     // reset the Drift Style run together with the instrument.
-                    if (driftStyleEngine) driftStyleEngine.reset();
+                    triggerDriftSweepAnimation();
                 }
             });
 
             // Start HUD Engine
+            resizeDriftCanvas();
             HUDCore.init('drift');
             requestAnimationFrame(renderLoop);
+            setTimeout(triggerDriftSweepAnimation, 80);
         })();
     </script>
 </body>
