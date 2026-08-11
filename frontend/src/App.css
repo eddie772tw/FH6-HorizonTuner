@@ -257,6 +257,14 @@ main .container-fluid {
 }
 
 /* Interactive Cards — apply ONLY to cards that are clickable or expandable */
+.theme-sidebar {
+  --bs-offcanvas-width: min(440px, 100vw);
+}
+
+.terminal-sidebar {
+  --bs-offcanvas-width: min(560px, 100vw);
+}
+
 .glass-panel-interactive,
 .card-interactive {
   cursor: pointer;

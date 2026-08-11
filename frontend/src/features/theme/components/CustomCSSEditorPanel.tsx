@@ -1,190 +1,246 @@
-import React, { useState, useEffect } from 'react';
-import { useTheme, getDefaultCSSTemplate } from '../../../context/ThemeContext';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTheme } from '../../../context/ThemeContext';
 import { useSettings } from '../../../context/SettingsContext';
-import { validateCSS } from '../../../utils/cssValidator';
+import { validateCSS, CSSValidationResult } from '../../../utils/cssValidator';
 
-const codeStyle: React.CSSProperties = {
-  background: 'var(--surface-2)',
-  padding: '0.1rem 0.3rem',
-  borderRadius: '3px',
-  color: 'var(--primary)',
-  fontFamily: 'monospace',
-};
+const STARTER_CSS = `/* Optional UI overrides. Keep selectors scoped to the app. */
+.glass-panel {
+  border-radius: calc(var(--panel-radius) + 2px);
+}
+
+.cyber-btn-glow {
+  box-shadow: 0 0 12px var(--primary-glow);
+}`;
+
+const CUSTOM_VARIABLES = [
+  ['--primary', 'Brand accent color (user-defined)'],
+  ['--secondary', 'Secondary accent color'],
+  ['--accent', 'Tertiary accent color'],
+  ['--primary-glow', 'Glow shadow for primary'],
+  ['--glass-bg', 'Glassmorphism panel background'],
+  ['--glass-border', 'Panel border (translucent)'],
+  ['--glass-blur', 'Backdrop blur radius'],
+  ['--panel-radius', 'Card corner radius'],
+  ['--input-radius', 'Input field corner radius'],
+  ['--text-primary', 'Maps from --bs-body-color'],
+  ['--text-secondary', 'Maps from --bs-secondary-color'],
+] as const;
+
+const TARGET_SELECTORS = [
+  ['.glass-panel', 'Main content cards & panels'],
+  ['.card', 'Main content cards & panels'],
+  ['.navbar', 'Navigation bar'],
+  ['.offcanvas', 'Theme and terminal sidebars'],
+  ['.cyber-input', 'Text inputs & textareas'],
+  ['.cyber-btn-glow', 'Interactive glow buttons'],
+  ['[data-bs-theme="dark"]', 'Dark mode root target'],
+  ['[data-bs-theme="light"]', 'Light mode root target'],
+  ['[data-bs-core="modern"]', 'Modern core theme'],
+  ['[data-bs-core="elegant"]', 'Elegant core theme'],
+] as const;
 
 const CustomCSSEditorPanel: React.FC = () => {
-  const { themeSettings, updateThemeSettings, resetTheme } = useTheme();
+  const {
+    themeSettings,
+    updateThemeSettings,
+    exportThemeJSON,
+    importThemeJSON,
+  } = useTheme();
   const { t } = useSettings();
-  const [cssValidation, setCssValidation] = useState<{ isValid: boolean; error?: string }>({ isValid: true });
+  const [draftCSS, setDraftCSS] = useState(themeSettings.customCSS);
+  const [cssValidation, setCssValidation] = useState<CSSValidationResult>({ isValid: true });
+  const [fileError, setFileError] = useState<string | null>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastAppliedCSS = useRef(themeSettings.customCSS);
+  const isDirty = draftCSS !== themeSettings.customCSS;
 
-  // Auto-populate template if customCSS is empty
+  // External imports and backend updates update the saved value; keep the local draft in sync.
   useEffect(() => {
-    if (!themeSettings.customCSS || themeSettings.customCSS.trim() === '') {
-      const defaultTemplate = getDefaultCSSTemplate(themeSettings);
-      updateThemeSettings({ customCSS: defaultTemplate });
+    if (themeSettings.customCSS !== lastAppliedCSS.current) {
+      setDraftCSS(themeSettings.customCSS);
+      lastAppliedCSS.current = themeSettings.customCSS;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Validate CSS on change
-  useEffect(() => {
-    const res = validateCSS(themeSettings.customCSS);
-    setCssValidation(res);
   }, [themeSettings.customCSS]);
 
-  const handlePopulateTemplate = () => {
-    const defaultTemplate = getDefaultCSSTemplate(themeSettings);
-    updateThemeSettings({ customCSS: defaultTemplate });
+  useEffect(() => {
+    setCssValidation(validateCSS(draftCSS));
+  }, [draftCSS]);
+
+  const handleApply = () => {
+    if (!cssValidation.isValid) return;
+    lastAppliedCSS.current = draftCSS;
+    updateThemeSettings({ customCSS: draftCSS });
   };
+
+  const handleDiscard = () => {
+    setDraftCSS(themeSettings.customCSS);
+    setFileError(null);
+  };
+
+  const handleInsertStarter = () => {
+    const textarea = editorRef.current;
+    const start = textarea?.selectionStart ?? draftCSS.length;
+    const end = textarea?.selectionEnd ?? draftCSS.length;
+    const prefix = draftCSS.slice(0, start);
+    const suffix = draftCSS.slice(end);
+    const separator = prefix && !prefix.endsWith('\n') ? '\n\n' : '';
+    setDraftCSS(`${prefix}${separator}${STARTER_CSS}${suffix}`);
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([exportThemeJSON()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `fh6-theme-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const content = loadEvent.target?.result;
+      if (typeof content !== 'string' || !importThemeJSON(content)) {
+        setFileError(t('Invalid Theme JSON file format.'));
+        return;
+      }
+      setFileError(null);
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  const statusLabel = !isDirty
+    ? t('Changes saved')
+    : cssValidation.isValid
+      ? t('Unsaved changes')
+      : (cssValidation.error || t('Invalid CSS Syntax'));
 
   return (
     <div>
-      {/* Header + Validation Badge */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-        <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.15rem' }}>
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <h3 className="text-primary fs-6 fw-bold m-0">
           {t('Custom CSS & Style Editor')}
         </h3>
-        <div style={{
-          padding: '0.35rem 0.8rem',
-          borderRadius: '20px',
-          fontSize: '0.82rem',
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          background: cssValidation.isValid ? 'rgba(0, 255, 136, 0.12)' : 'rgba(255, 0, 60, 0.18)',
-          border: cssValidation.isValid ? '1px solid #00ff88' : '1px solid #ff003c',
-          color: cssValidation.isValid ? '#00ff88' : '#ff003c',
-        }}>
-          <span>{cssValidation.isValid ? t('Valid CSS Syntax') : (cssValidation.error || t('Invalid CSS Syntax'))}</span>
-        </div>
+        <span className={`badge ${!isDirty ? 'text-bg-success' : cssValidation.isValid ? 'text-bg-warning' : 'text-bg-danger'}`}>
+          {statusLabel}
+        </span>
       </div>
 
-      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '0.8rem', lineHeight: '1.4' }}>
-        {t('Add your custom CSS rules. The current active style rules are loaded below by default so you can start customizing directly:')}
+      <p className="text-body-secondary fs-7 mb-3" style={{ lineHeight: '1.45' }}>
+        {t('Custom CSS is optional. Edit a draft, then apply it after validation.')}
       </p>
 
       <textarea
+        ref={editorRef}
         id="custom-css-editor"
-        value={themeSettings.customCSS}
-        onChange={e => updateThemeSettings({ customCSS: e.target.value })}
-        className="cyber-input"
+        value={draftCSS}
+        onChange={event => setDraftCSS(event.target.value)}
+        className="form-control font-monospace"
+        aria-describedby="custom-css-help"
+        spellCheck={false}
+        wrap="off"
         style={{
-          width: '100%',
-          minHeight: '260px',
-          fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-          fontSize: '0.9rem',
-          lineHeight: '1.5',
+          minHeight: '280px',
           resize: 'vertical',
-          padding: '1rem',
+          lineHeight: '1.55',
           tabSize: 2,
-          boxSizing: 'border-box',
+          background: 'var(--surface-2)',
         }}
       />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.8rem' }}>
-        <button
-          id="load-css-template"
-          onClick={handlePopulateTemplate}
-          className="cyber-btn-glow"
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--primary)',
-            color: 'var(--primary)',
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-          }}
-        >
-          {t('Load Current CSS Template')}
-        </button>
-
-        <button
-          id="reset-theme"
-          onClick={resetTheme}
-          className="cyber-btn-glow"
-          style={{
-            background: 'rgba(255, 0, 60, 0.15)',
-            border: '1px solid var(--secondary)',
-            color: 'var(--secondary)',
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-          }}
-        >
-          {t('Reset to Defaults')}
-        </button>
+      <div id="custom-css-help" className="text-body-secondary fs-8 mt-2">
+        {cssValidation.error && (
+          <span className="text-danger">
+            {cssValidation.error}
+            {cssValidation.errorLine ? ` (${t('Line #')}${cssValidation.errorLine})` : ''}
+          </span>
+        )}
+        {!cssValidation.error && t('The last applied CSS remains active until you apply valid CSS.')}
       </div>
 
-      {/* Updated CSS Cheatsheet — reflects Halfmoon + FH6 bridge variables */}
-      <div style={{
-        marginTop: '1.5rem',
-        padding: '1.2rem',
-        borderRadius: '12px',
-        background: 'var(--surface-1)',
-        border: '1px solid var(--glass-border)',
-      }}>
-        <h4 style={{ color: 'var(--primary)', marginBottom: '0.8rem', fontSize: '1rem' }}>
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+        <div className="d-flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn btn-primary btn-sm fw-bold"
+            onClick={handleApply}
+            disabled={!isDirty || !cssValidation.isValid}
+          >
+            {t('Apply')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            onClick={handleDiscard}
+            disabled={!isDirty}
+          >
+            {t('Cancel')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            onClick={handleInsertStarter}
+          >
+            {t('Insert Starter CSS')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-danger btn-sm"
+            onClick={() => setDraftCSS('')}
+            disabled={!draftCSS}
+          >
+            {t('Clear Current')}
+          </button>
+        </div>
+
+        <div className="d-flex flex-wrap gap-2">
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExport}>
+            {t('Export Theme JSON')}
+          </button>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>
+            {t('Import Theme JSON')}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            onChange={handleImportFile}
+            hidden
+          />
+        </div>
+      </div>
+
+      {fileError && <div className="alert alert-danger mt-3 mb-0 py-2 fs-8">{fileError}</div>}
+
+      <div className="glass-panel p-3 mt-4">
+        <h4 className="text-primary fs-7 fw-bold mb-3">
           {t('CSS Cheatsheet & Supported Variables')}
         </h4>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem', fontSize: '0.85rem' }}>
-          {/* FH6 Custom Variables */}
-          <div>
-            <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>
-              {t('FH6 Custom Variables (brand colors):')}
-            </strong>
-            <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.8' }}>
-              <li><code style={codeStyle}>--primary</code>: {t('Brand accent color (user-defined)')}</li>
-              <li><code style={codeStyle}>--secondary</code>: {t('Secondary accent color')}</li>
-              <li><code style={codeStyle}>--accent</code>: {t('Tertiary accent color')}</li>
-              <li><code style={codeStyle}>--primary-glow</code>: {t('Glow shadow for primary')}</li>
-              <li><code style={codeStyle}>--glass-bg</code>: {t('Glassmorphism panel background')}</li>
-              <li><code style={codeStyle}>--glass-border</code>: {t('Panel border (translucent)')}</li>
-              <li><code style={codeStyle}>--glass-blur</code>: {t('Backdrop blur radius')}</li>
-              <li><code style={codeStyle}>--panel-radius</code>: {t('Card corner radius')}</li>
-              <li><code style={codeStyle}>--text-primary</code>: {t('Maps from --bs-body-color')}</li>
-              <li><code style={codeStyle}>--text-secondary</code>: {t('Maps from --bs-secondary-color')}</li>
+        <div className="row g-3 fs-8">
+          <div className="col-12 col-lg-6">
+            <strong className="d-block mb-2">{t('Available CSS Variables:')}</strong>
+            <ul className="mb-0 ps-3 text-body-secondary" style={{ lineHeight: '1.8' }}>
+              {CUSTOM_VARIABLES.map(([name, description]) => (
+                <li key={name}>
+                  <code className="text-primary bg-body-secondary px-1 rounded">{name}</code>: {t(description)}
+                </li>
+              ))}
             </ul>
           </div>
-
-          {/* Halfmoon Semantic Variables */}
-          <div>
-            <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>
-              {t('Halfmoon Semantic Variables (--bs-*):')}
-            </strong>
-            <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.8' }}>
-              <li><code style={codeStyle}>--bs-primary</code>: {t('Halfmoon theme primary color')}</li>
-              <li><code style={codeStyle}>--bs-primary-hsl</code>: {t('Primary in HSL for rgba()')}</li>
-              <li><code style={codeStyle}>--bs-body-color</code>: {t('Body text color (auto dark/light)')}</li>
-              <li><code style={codeStyle}>--bs-secondary-color</code>: {t('Muted text color')}</li>
-              <li><code style={codeStyle}>--bs-body-bg</code>: {t('Page background (Halfmoon managed)')}</li>
-              <li><code style={codeStyle}>--bs-body-bg-hsl</code>: {t('Background in HSL')}</li>
-              <li><code style={codeStyle}>--bs-border-color</code>: {t('Default border color')}</li>
-              <li><code style={codeStyle}>--bs-border-color-translucent</code>: {t('Translucent border')}</li>
-              <li><code style={codeStyle}>--bs-secondary-bg</code>: {t('Subtle background for cards')}</li>
-              <li><code style={codeStyle}>--bs-form-bg</code>: {t('Input/form background')}</li>
-            </ul>
-          </div>
-
-          {/* Target Selectors */}
-          <div>
-            <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>
-              {t('Target UI Selectors:')}
-            </strong>
-            <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', lineHeight: '1.8' }}>
-              <li><code style={codeStyle}>.glass-panel</code>: {t('Main content cards & panels')}</li>
-              <li><code style={codeStyle}>.cyber-input</code>: {t('Text inputs & textareas')}</li>
-              <li><code style={codeStyle}>.cyber-select</code>: {t('Dropdown selects')}</li>
-              <li><code style={codeStyle}>.cyber-btn-glow</code>: {t('Interactive glow buttons')}</li>
-              <li><code style={codeStyle}>[data-bs-theme="dark"]</code>: {t('Dark mode root target')}</li>
-              <li><code style={codeStyle}>[data-bs-theme="light"]</code>: {t('Light mode root target')}</li>
-              <li><code style={codeStyle}>[data-bs-core="default"]</code>: {t('Default core theme')}</li>
-              <li><code style={codeStyle}>[data-bs-core="modern"]</code>: {t('Modern core theme')}</li>
-              <li><code style={codeStyle}>[data-bs-core="elegant"]</code>: {t('Elegant core theme')}</li>
+          <div className="col-12 col-lg-6">
+            <strong className="d-block mb-2">{t('Target UI Selectors:')}</strong>
+            <ul className="mb-0 ps-3 text-body-secondary" style={{ lineHeight: '1.8' }}>
+              {TARGET_SELECTORS.map(([selector, description]) => (
+                <li key={selector}>
+                  <code className="text-primary bg-body-secondary px-1 rounded">{selector}</code>: {t(description)}
+                </li>
+              ))}
             </ul>
           </div>
         </div>

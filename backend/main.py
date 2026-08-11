@@ -324,11 +324,11 @@ DEFAULT_SETTINGS = {
     },
     "theme": {
         "mode": "dark",
+        "halfmoonCore": "default",
         "primaryColor": "#00f0ff",
         "secondaryColor": "#ff003c",
         "accentColor": "#7000ff",
         "customCSS": "",
-        "slots": [],
     },
 }
 
@@ -1382,7 +1382,10 @@ async def update_settings(data: dict):
     if "theme" in data and isinstance(data["theme"], dict):
         if "theme" not in app_settings:
             app_settings["theme"] = {}
+        # Theme storage slots were removed from the UI and are no longer persisted.
+        app_settings["theme"].pop("slots", None)
         app_settings["theme"].update(data["theme"])
+        app_settings["theme"].pop("slots", None)
 
     # Save to file asynchronously to avoid blocking the event loop
     def _save_settings():

@@ -4,7 +4,6 @@ import { useSettings } from '../../context/SettingsContext';
 import AppearanceModePanel from './components/AppearanceModePanel';
 import ColorPickerPanel from './components/ColorPickerPanel';
 import PresetPanel from './components/PresetPanel';
-import SlotManagerPanel from './components/SlotManagerPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
 
 interface ThemeViewProps {
@@ -30,12 +29,11 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-start border-end glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-start theme-sidebar border-end glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
         aria-modal="true"
         role="dialog"
         style={{
-          width: '480px',
           zIndex: 1050,
           visibility: show ? 'visible' : 'hidden',
           transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
@@ -70,7 +68,6 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
             <AppearanceModePanel />
             <ColorPickerPanel />
             <PresetPanel />
-            <SlotManagerPanel />
             <CustomCSSEditorPanel />
           </div>
         </div>
