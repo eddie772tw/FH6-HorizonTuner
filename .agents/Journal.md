@@ -442,6 +442,27 @@
 - **Action**: Removed legacy theme slots and their persistence path, kept validated JSON import/export, and changed custom CSS editing to a local draft with explicit Apply/Cancel/Clear actions. Custom CSS is now validated before it is persisted or imported.
 - **Evidence**: Frontend Vitest: 31 files / 197 tests passed; Vite production build passed; backend overlay API tests: 35 passed; all six locale JSON files parsed successfully.
 
+## 2026-08-12 / Drift Zone Side-Wing Primary and Compound Secondary
+
+- **Feedback applied**: the centered primary obscures the driving view even
+  when it avoids native UI. The primary now uses the lower-left wing between
+  the observed map edge and the left edge of the Drift Zone total. Its width
+  is calculated from the real viewport slot on resize and the visual frame
+  scales proportionally.
+- **Compact readability**: enlarged the gear, speed, torque, and unit source
+  text. Compact mode retains only the key +45/0/-45 steering and low/mid/high
+  RPM labels, preventing unreadable dense tick text at the new size.
+- **Secondary design**: changed the status panel from text rows to two
+  Advanced-inspired compound segment arcs (FLOW and RISK), each with a track,
+  active segments, state label, and value. The central drift-angle/counter
+  readout remains the immediate focal point.
+- **Composition decision**: chose the left side-wing primary rather than a
+  right-bottom cluster, so the Style Meter and conventional secondary do not
+  need a shared expanded oval background. Cyan/pink danger language and the
+  same dark translucent surface retain visual coherence across both modules.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

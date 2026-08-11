@@ -67,24 +67,26 @@
         };
     }
 
-    // Measured from FH6 gameplay captures: skills occupy the top-center band
-    // and Drift Zone totals occupy the bottom-center band. Keep the primary
-    // instrument in the central lane between them instead of using GT7's
-    // direct bottom-center placement.
-    function getFh6PrimaryAnchor(width, height, contentWidth, contentHeight) {
+    // Measured from FH6 gameplay captures: the lower-left map ends before the
+    // Drift Zone total begins near the lower center. Use that left-side wing
+    // for a compact primary instrument, leaving the road view and score clear.
+    function getFh6PrimaryAnchor(width, height, preferredWidth, aspectRatio) {
         var viewportWidth = finitePositive(width, LOGICAL_WIDTH);
         var viewportHeight = finitePositive(height, LOGICAL_HEIGHT);
-        var boxWidth = Math.max(1, Number(contentWidth) || 1);
-        var boxHeight = Math.max(1, Number(contentHeight) || 1);
-        var topSkillBandEnd = viewportHeight * 0.22;
+        var preferred = Math.max(1, Number(preferredWidth) || 1);
+        var safeAspectRatio = Math.max(1, Number(aspectRatio) || 2);
+        var mapRight = viewportWidth * 0.28;
+        var driftScoreLeft = viewportWidth * 0.40;
         var bottomDriftScoreBandStart = viewportHeight * 0.80;
-        var padding = Math.max(16, viewportHeight * 0.025);
-        var minCenterY = topSkillBandEnd + boxHeight * 0.5 + padding;
-        var maxCenterY = bottomDriftScoreBandStart - boxHeight * 0.5 - padding;
+        var horizontalPadding = Math.max(12, viewportWidth * 0.008);
+        var scorePadding = Math.max(16, viewportHeight * 0.025);
+        var availableWidth = Math.max(1, driftScoreLeft - mapRight - horizontalPadding * 2);
+        var boxWidth = Math.min(preferred, availableWidth);
+        var boxHeight = boxWidth / safeAspectRatio;
 
         return {
-            centerX: viewportWidth * 0.5,
-            centerY: clamp(viewportHeight * 0.54, minCenterY, maxCenterY),
+            centerX: mapRight + horizontalPadding + boxWidth * 0.5,
+            centerY: bottomDriftScoreBandStart - scorePadding - boxHeight * 0.5,
             width: boxWidth,
             height: boxHeight
         };

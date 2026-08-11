@@ -233,12 +233,13 @@
             var SECONDARY_CY = 485;
             var FRAME_RX = 412;
             var FRAME_RY = 174;
-            var PRIMARY_RENDER_SCALE = 0.62;
-            // FH6 reserves center-top for skills and center-bottom for Drift
-            // Zone totals. This logical box keeps the primary in the central
-            // safe lane between those native UI bands.
-            var PRIMARY_LAYOUT_WIDTH = 680;
-            var PRIMARY_LAYOUT_HEIGHT = 288;
+            var PRIMARY_SOURCE_WIDTH = (FRAME_RX + 18) * 2;
+            var PRIMARY_SOURCE_HEIGHT = (FRAME_RY + 16) * 2;
+            var PRIMARY_SOURCE_ASPECT = PRIMARY_SOURCE_WIDTH / PRIMARY_SOURCE_HEIGHT;
+            // The compact primary occupies the lower-left wing between FH6's
+            // map and Drift Zone total. Its scale is calculated on resize.
+            var PRIMARY_SLOT_PREFERRED_WIDTH = 260;
+            var primaryRenderScale = 0.30;
             var primaryAnchor = null;
             // Advanced effective width is ~544px and VFD is ~630px at their
             // shared default scale. Use the midpoint as Drift's conventional
@@ -256,8 +257,9 @@
             // ── 左區與右區共用字體樣式與大小控制變數 (Shared Typography Controls) ──
             var FONT_SIDE_MIDDLE_VAL = 'italic bold 72px ForzaGear';
             var FONT_SIDE_SUB_LABEL = 'italic bold 38px ForzaGear';
-            var FONT_GEAR_VALUE = 'italic bold 160px ForzaGear';
-            var FONT_SPEED_VALUE = 'italic bold 62px ForzaGear';
+            var FONT_GEAR_VALUE = 'italic bold 190px ForzaGear';
+            var FONT_SPEED_VALUE = 'italic bold 90px ForzaGear';
+            var PRIMARY_UNIT_FONT = 'bold 42px Bahnschrift';
 
             // 從字體字串中動態解析像素高度
             function parseFontSize(fontStr) {
@@ -334,9 +336,10 @@
                 primaryAnchor = driftLayout.getFh6PrimaryAnchor(
                     width,
                     height,
-                    PRIMARY_LAYOUT_WIDTH,
-                    PRIMARY_LAYOUT_HEIGHT
+                    PRIMARY_SLOT_PREFERRED_WIDTH,
+                    PRIMARY_SOURCE_ASPECT
                 );
+                primaryRenderScale = primaryAnchor.width / (PRIMARY_SOURCE_WIDTH * viewportTransform.scale);
                 canvas.width = Math.round(width * canvasDpr);
                 canvas.height = Math.round(height * canvasDpr);
                 canvas.style.width = width + 'px';
@@ -534,12 +537,14 @@
 
                 // ── 上弧：飄移角度數字刻度 (-60°, -45°, -30°, -15°, 0°, 15°, 30°, 45°, 60°) ──
                 ctx.save();
-                ctx.font = 'bold 16px Bahnschrift';
+                var compactPrimary = primaryRenderScale < 0.35;
+                ctx.font = compactPrimary ? 'bold 42px Bahnschrift' : 'bold 16px Bahnschrift';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
 
                 for (var i = 0; i < ANGLE_TICKS.length; i++) {
                     var tickAngle = ANGLE_TICKS[i];
+                    if (compactPrimary && tickAngle !== 0 && Math.abs(tickAngle) !== 45) continue;
                     var tVal = tickAngle / 60.0;
                     var tickP = topCurvePoint(tVal);
                     var isCenter = tickAngle === 0;
@@ -630,11 +635,13 @@
 
                 // ── 下弧：動態轉速 x1000 數字刻度 (0 ... maxK x1000) ────────────
                 ctx.save();
-                ctx.font = 'bold 13px Bahnschrift';
+                var compactPrimary = primaryRenderScale < 0.35;
+                ctx.font = compactPrimary ? 'bold 42px Bahnschrift' : 'bold 13px Bahnschrift';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
 
                 for (var k = 0; k <= maxK; k++) {
+                    if (compactPrimary && k !== 0 && k !== maxK && k !== Math.round(maxK * 0.5)) continue;
                     var tickRpmVal = k * 1000;
                     var kRatio = tickRpmVal / rpmLimit;
                     var tK = -1.0 + 2.0 * kRatio;
@@ -732,7 +739,7 @@
                 ctx.fillText(torqueValue, CANVAS_CX + 92, CANVAS_CY);
 
                 ctx.textBaseline = 'top';
-                ctx.font = 'bold 13px Bahnschrift';
+                ctx.font = PRIMARY_UNIT_FONT;
                 ctx.fillStyle = C_WHITE_DIM;
                 ctx.shadowColor = C_WHITE_DIM;
                 ctx.shadowBlur = 0;
@@ -846,6 +853,45 @@
                 ctx.closePath();
             }
 
+            function drawSecondaryArcGauge(centerX, centerY, radius, ratio, color, label, value) {
+                var start = Math.PI * 1.05;
+                var end = Math.PI * 1.95;
+                var span = end - start;
+                var clampedRatio = clamp(ratio, 0, 1);
+                var segments = 10;
+
+                ctx.save();
+                ctx.lineCap = 'butt';
+                ctx.lineWidth = 7;
+                ctx.strokeStyle = C_TRACK;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, start, end);
+                ctx.stroke();
+
+                for (var i = 0; i < segments; i++) {
+                    var segmentStart = start + (i / segments) * span + 0.018;
+                    var segmentEnd = start + ((i + 1) / segments) * span - 0.018;
+                    var active = (i + 1) / segments <= clampedRatio + 0.001;
+                    ctx.strokeStyle = active ? color : C_TRACK;
+                    ctx.shadowColor = active ? color : 'transparent';
+                    ctx.shadowBlur = active ? 7 : 0;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, segmentStart, segmentEnd);
+                    ctx.stroke();
+                }
+
+                ctx.shadowBlur = 0;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.fillText(label, centerX, centerY - 14);
+                ctx.font = 'italic bold 28px ForzaGear';
+                ctx.fillStyle = color;
+                ctx.fillText(value, centerX, centerY + 14);
+                ctx.restore();
+            }
+
             // Advanced-inspired hard-edged panel with Drift's cyan tracking
             // lines and pink risk accents.
             function renderSecondaryInstrument() {
@@ -915,36 +961,30 @@
                 ctx.fillStyle = C_ICE;
                 ctx.fillText('LIVE', right - 28, top + 26);
 
-                ctx.textAlign = 'left';
-                ctx.font = '900 72px Bahnschrift';
+                drawSecondaryArcGauge(left + 112, top + 112, 72, flowPct / 100, flowColor, 'FLOW', FLOW_LABELS[flowQuality] || 'BUILD');
+                drawSecondaryArcGauge(right - 112, top + 112, 72, spinRisk / 100, riskColor, 'RISK', RISK_LABELS[riskLevel] || 'SAFE');
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '900 76px Bahnschrift';
                 ctx.fillStyle = angleColor;
                 ctx.shadowColor = angleColor;
                 ctx.shadowBlur = absA >= 20 ? 12 : 6;
-                ctx.fillText(absA.toFixed(1) + '°', left + 28, SECONDARY_CY - 30);
+                ctx.fillText(absA.toFixed(1) + '°', SECONDARY_CX, top + 110);
 
-                ctx.font = 'bold 16px Bahnschrift';
+                ctx.font = 'bold 14px Bahnschrift';
                 ctx.fillStyle = C_WHITE_DIM;
                 ctx.shadowBlur = 0;
-                ctx.fillText(direction, left + 32, SECONDARY_CY + 8);
+                ctx.fillText(direction, SECONDARY_CX, top + 143);
                 ctx.fillStyle = isCountering ? C_AMBER : C_WHITE_DIM;
-                ctx.fillText('COUNTER ' + counterPct.toFixed(0) + '%', left + 32, SECONDARY_CY + 28);
+                ctx.fillText('COUNTER ' + counterPct.toFixed(0) + '%', SECONDARY_CX, top + 162);
 
                 ctx.textAlign = 'right';
-                ctx.font = 'italic 900 30px Bahnschrift';
-                ctx.fillStyle = flowColor;
-                ctx.shadowColor = flowColor;
-                ctx.shadowBlur = flowQuality >= 4 ? 10 : 0;
-                ctx.fillText(FLOW_LABELS[flowQuality] || 'BUILD', right - 28, SECONDARY_CY - 32);
-                ctx.font = 'bold 16px Bahnschrift';
-                ctx.fillStyle = riskColor;
-                ctx.shadowColor = riskColor;
-                ctx.shadowBlur = riskLevel >= 3 ? 8 : 0;
-                ctx.fillText('RISK ' + (RISK_LABELS[riskLevel] || 'SAFE'), right - 28, SECONDARY_CY - 8);
+                ctx.font = 'bold 14px Bahnschrift';
                 ctx.fillStyle = holdSeconds > 0.5 ? C_AMBER : C_WHITE_DIM;
-                ctx.shadowBlur = 0;
-                ctx.fillText(holdSeconds > 0.5 ? 'HOLD ' + holdSeconds.toFixed(1) + 's' : 'GRIP', right - 28, SECONDARY_CY + 14);
+                ctx.fillText(holdSeconds > 0.5 ? 'HOLD ' + holdSeconds.toFixed(1) + 's' : 'GRIP', right - 28, top + 162);
 
-                var barW = 28, barH = 62, startY = SECONDARY_CY + 49;
+                var barW = 26, barH = 48, startY = bottom - 54;
                 drawPedal(SECONDARY_CX - 92, startY, barW, barH, handbrakePct, C_AMBER, 'H', 'H');
                 drawPedal(SECONDARY_CX - 54, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
                 drawPedal(SECONDARY_CX + 42, startY, barW, barH, brakePct, C_REDLINE, 'B', 'B');
@@ -985,7 +1025,7 @@
                 // space while retaining the existing Drift visual scale.
                 ctx.save();
                 ctx.translate(logicalCenterX, logicalCenterY);
-                ctx.scale(PRIMARY_RENDER_SCALE, PRIMARY_RENDER_SCALE);
+                ctx.scale(primaryRenderScale, primaryRenderScale);
                 ctx.translate(-CANVAS_CX, -CANVAS_CY);
                 drawModernFrame();
                 renderTopAngleArc();

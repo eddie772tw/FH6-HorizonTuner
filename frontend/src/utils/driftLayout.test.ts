@@ -81,14 +81,23 @@ describe('Drift viewport layout', () => {
     expect(anchor.height).toBe(288);
   });
 
-  it('keeps the FH6 primary layer between the top skill and bottom Drift Zone score bands', () => {
+  it('fits the FH6 primary layer between the lower-left map and Drift Zone total', () => {
     const layout = loadLayout();
-    const anchor = layout.getFh6PrimaryAnchor(1280, 720, 680, 288);
+    const anchor = layout.getFh6PrimaryAnchor(1920, 1080, 260, 860 / 380);
 
-    expect(anchor.centerX).toBe(640);
-    expect(anchor.centerY).toBeCloseTo(388.8);
-    expect(anchor.centerY - anchor.height * 0.5).toBeGreaterThan(720 * 0.22);
-    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(720 * 0.8);
+    expect(anchor.centerX).toBeCloseTo(652.8);
+    expect(anchor.width).toBeCloseTo(199.68);
+    expect(anchor.centerX - anchor.width * 0.5).toBeGreaterThan(1920 * 0.28);
+    expect(anchor.centerX + anchor.width * 0.5).toBeLessThan(1920 * 0.4);
+    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(1080 * 0.8);
+  });
+
+  it('does not expand the compact primary past the side-wing width on narrow viewports', () => {
+    const layout = loadLayout();
+    const anchor = layout.getFh6PrimaryAnchor(1024, 576, 260, 860 / 380);
+
+    expect(anchor.width).toBeLessThan(120);
+    expect(anchor.centerX + anchor.width * 0.5).toBeLessThan(1024 * 0.4);
   });
 
   it('sweeps the visual RPM and angle before settling at idle', () => {

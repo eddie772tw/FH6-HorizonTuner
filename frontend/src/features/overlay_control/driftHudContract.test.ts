@@ -38,10 +38,12 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('var primaryAnchor = null;');
     expect(html).toContain('function renderSecondaryInstrument()');
     expect(html).toContain('function drawSecondaryPanelPath(');
+    expect(html).toContain('function drawSecondaryArcGauge(');
     expect(html).toContain('var SECONDARY_SOURCE_WIDTH = 520;');
     expect(html).toContain('function renderSecondaryInstrumentAtConventionalAnchor()');
     expect(html).toContain('var SECONDARY_BOX_PADDING = 30;');
-    expect(html).toContain('var PRIMARY_RENDER_SCALE = 0.62;');
+    expect(html).toContain('var PRIMARY_SLOT_PREFERRED_WIDTH = 260;');
+    expect(html).toContain('var primaryRenderScale = 0.30;');
     expect(html).toContain('renderCenterGearCluster();');
     expect(html).toContain('renderSecondaryInstrument();');
     expect(html).toContain('function triggerDriftSweepAnimation()');

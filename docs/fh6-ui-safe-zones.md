@@ -25,11 +25,13 @@ Primary sources: [Forza Support FH6 FAQ](https://support.forza.net/hc/en-us/arti
 
 GT7's compact bottom-center layer remains a good visual reference, but it is
 not a safe direct anchor for FH6 Drift Zone gameplay: FH6 places its total in
-the same region. `DriftLayout.getFh6PrimaryAnchor()` instead keeps the primary
-instrument centered horizontally at the 54% vertical lane, clamped between
-the observed top skill band (ending at 22% of viewport height) and bottom
-Drift Zone score band (starting at 80%). The primary anchor is recalculated on
-resize only, so it adds no per-frame allocation to the 60 Hz Canvas path.
+the same region. `DriftLayout.getFh6PrimaryAnchor()` now uses the narrow
+lower-left wing between the observed map boundary (28% viewport width) and
+Drift Zone total (40% viewport width). The frame scales to the available slot;
+the key gear, speed, torque, unit text, and only the essential arc labels are
+enlarged or retained so the compact version remains readable. The anchor and
+scale are recalculated on resize only, so they add no per-frame allocation to
+the 60 Hz Canvas path.
 
 ### Style Meter
 
@@ -46,10 +48,10 @@ signal, so this is intentionally not guessed at runtime.
 
 The secondary stays at the established Advanced/VFD-style bottom-right anchor
 at 30px padding, per the project decision that it represents the conventional
-gauge slot. Its oval has been replaced with a compact cut-corner rectangle:
-the information density and hard edges reference Advanced, while the cyan
-tracking strokes, pink risk accents, amber warning color, and dark translucent
-surface match the Drift primary instrument.
+gauge slot. Its oval has been replaced with a compact cut-corner rectangle and
+two Advanced-inspired compound segment arcs: FLOW uses cyan tracking strokes;
+RISK uses the same pink/amber danger language as the primary. The central
+angle and counter-steer readout remain text-first for quick recognition.
 
 This placement assumes the player has hidden or accepts overlap with FH6's
 native speedometer. If the native gauge must always remain visible, moving the
