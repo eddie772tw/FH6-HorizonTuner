@@ -34,7 +34,7 @@
 ## 2024-08-05 - Avoid .forEach and Object allocation in 60Hz Render Loops
 **Learning:** In high-frequency rendering loops (like HUD telemetry updates running at 60Hz), using functional iterations (e.g., `[].forEach`, `Object.keys().forEach`) or allocating objects dynamically every frame creates significant Garbage Collection (GC) pressure, causing visual stuttering and frame drops.
 **Action:** Always replace `.forEach` with native `for` loops, pre-compute keys outside the render loop instead of calling `Object.keys()`, and use pre-allocated static variables or objects instead of creating zero-values (like `{x: 0, y: 0}`) on the fly.
-## 2025-03-10 - Avoid Higher-Order Array Methods in Large Array Processors
+## 2025-03-03 - Avoid Higher-Order Array Methods in Large Array Processors
 **Learning:** Chained array methods like `.filter().map()` or nested `.forEach` loops inside React hooks or utility functions that process large sets of data (like historical telemetry points in `ChartEditModal.tsx` or `tuningDiagnosis.ts`) cause excessive memory allocations and GC spikes. This leads to noticeable UI stuttering when charts update or calculations run.
 **Action:** Always replace `.forEach()`, `.map()`, `.filter()`, and `.reduce()` with standard `for` loops when handling potentially large arrays. For example, merge a map/reduce combination into a single loop accumulator to improve computational throughput and reduce memory footprint.
 
@@ -52,6 +52,6 @@
 **Learning:** In HUD canvas overlays (`hud_overlay/drift/index.html`), drawing dynamic lists via `.forEach` (like rendering tick marks or multiple pedal UI elements) created closures on every single frame, leading to noticeable GC pauses in high frame rate scenarios.
 **Action:** Replace `.forEach` with standard `for` loops and extract helper functions (e.g., `drawPedal`) into the outer scope to remove frame-by-frame closure allocations entirely. Pre-calculate static constant arrays where possible to avoid redundant heap allocation inside `requestAnimationFrame`.
 
-## 2025-03-10 - Eliminate array methods in hot paths like HUD requestAnimationFrame loops
+## 2025-03-03 - Eliminate array methods in hot paths like HUD requestAnimationFrame loops
 **Learning:** High-frequency rendering loops (like HUD telemetry updates running at 60Hz via `requestAnimationFrame`) that use functional iterations or array allocations create significant Garbage Collection (GC) pressure, causing visual stuttering. In `hud_overlay/s650_hmi/assets/s650_frame.js`, the `getTireTemperatures` function used `.map()` and was allocating closures and temporary arrays continuously.
 **Action:** Replace `.map()`, `.filter()`, and `.forEach()` with native `for` loops in any code path executed per-frame. Pre-allocate arrays if their size is known (e.g., `new Array(4)`) to minimize heap allocations during rendering.
