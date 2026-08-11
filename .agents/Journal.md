@@ -463,6 +463,27 @@
 
 ---
 
+## 2026-08-12 / Screenshot-Calibrated Primary and S650 Center Void
+
+- **Evidence**: the latest 2048x1152 gameplay screenshot shows the left-wing
+  primary still too small, while the native Drift Zone total remains a strict
+  lower-center exclusion. S650 HMI confirms the composition pattern: its
+  1280px cluster assigns an explicit 480px center region and its `disable`
+  center page deliberately leaves that area blank without disabling the two
+  surrounding dials.
+- **Primary correction**: the side-wing fit is now treated as the compact
+  base frame. The visible primary is doubled, with that base frame's previous
+  left edge promoted to the new center, and its lower edge is still calculated
+  to clear the Drift Zone score band on each resize.
+- **Secondary correction**: replaced the generic circular progress arcs with
+  Advanced-derived Canvas superellipse traces: outer boundary, inset track,
+  glow-underlaid active segments, solid segments, and an endpoint marker. The
+  cut-corner panel and Drift cyan/pink palette remain unchanged.
+- **Verification**: targeted Drift layout and overlay-contract tests passed
+  (2 files / 10 tests); full frontend Vitest passed (35 files / 220 tests).
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

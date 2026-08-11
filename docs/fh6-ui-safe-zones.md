@@ -25,13 +25,22 @@ Primary sources: [Forza Support FH6 FAQ](https://support.forza.net/hc/en-us/arti
 
 GT7's compact bottom-center layer remains a good visual reference, but it is
 not a safe direct anchor for FH6 Drift Zone gameplay: FH6 places its total in
-the same region. `DriftLayout.getFh6PrimaryAnchor()` now uses the narrow
-lower-left wing between the observed map boundary (28% viewport width) and
-Drift Zone total (40% viewport width). The frame scales to the available slot;
-the key gear, speed, torque, unit text, and only the essential arc labels are
-enlarged or retained so the compact version remains readable. The anchor and
-scale are recalculated on resize only, so they add no per-frame allocation to
-the 60 Hz Canvas path.
+the same region. `DriftLayout.getFh6PrimaryAnchor()` uses the lower-left wing
+between the observed map boundary (28% viewport width) and Drift Zone total
+(40% viewport width). In-game review found the exact-fit version too small,
+so the visible frame is doubled while the former left edge becomes the new
+horizontal center; its lower edge still clears the Drift Zone score. The key
+gear, speed, torque, unit text, and only the essential arc labels are enlarged
+or retained so the compact version remains readable. The anchor and scale are
+recalculated on resize only, so they add no per-frame allocation to the 60 Hz
+Canvas path.
+
+S650 HMI provides the composition rule: its two main dials explicitly leave a
+reserved center region (`x=400..880` within a 1280px canvas), and the
+`disable` center-information page leaves that region intentionally blank while
+the surrounding dials remain active. Drift applies the same idea at screen
+level: the lower-center Drift Zone total is a first-class empty region, not
+space that a scaled primary may consume.
 
 ### Style Meter
 

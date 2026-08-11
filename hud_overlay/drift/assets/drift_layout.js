@@ -67,9 +67,10 @@
         };
     }
 
-    // Measured from FH6 gameplay captures: the lower-left map ends before the
-    // Drift Zone total begins near the lower center. Use that left-side wing
-    // for a compact primary instrument, leaving the road view and score clear.
+    // The initial compact primary fits exactly in the side wing between the
+    // map and Drift Zone total. In-game review showed it was too small, so the
+    // final frame is doubled with that compact frame's left edge as its new
+    // center. Keep its lower edge above the Drift Zone score.
     function getFh6PrimaryAnchor(width, height, preferredWidth, aspectRatio) {
         var viewportWidth = finitePositive(width, LOGICAL_WIDTH);
         var viewportHeight = finitePositive(height, LOGICAL_HEIGHT);
@@ -81,11 +82,12 @@
         var horizontalPadding = Math.max(12, viewportWidth * 0.008);
         var scorePadding = Math.max(16, viewportHeight * 0.025);
         var availableWidth = Math.max(1, driftScoreLeft - mapRight - horizontalPadding * 2);
-        var boxWidth = Math.min(preferred, availableWidth);
+        var compactWidth = Math.min(preferred, availableWidth);
+        var boxWidth = compactWidth * 2;
         var boxHeight = boxWidth / safeAspectRatio;
 
         return {
-            centerX: mapRight + horizontalPadding + boxWidth * 0.5,
+            centerX: mapRight + horizontalPadding,
             centerY: bottomDriftScoreBandStart - scorePadding - boxHeight * 0.5,
             width: boxWidth,
             height: boxHeight

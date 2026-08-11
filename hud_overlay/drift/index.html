@@ -853,34 +853,80 @@
                 ctx.closePath();
             }
 
-            function drawSecondaryArcGauge(centerX, centerY, radius, ratio, color, label, value) {
+            function traceSecondarySuperArc(centerX, centerY, radiusX, radiusY, exponent, start, end) {
+                var steps = Math.max(6, Math.ceil(Math.abs(end - start) * 18));
+                var power = 2 / exponent;
+                ctx.beginPath();
+                for (var step = 0; step <= steps; step++) {
+                    var t = start + (end - start) * step / steps;
+                    var cosT = Math.cos(t);
+                    var sinT = Math.sin(t);
+                    var x = centerX + radiusX * Math.sign(cosT) * Math.pow(Math.abs(cosT), power);
+                    var y = centerY + radiusY * Math.sign(sinT) * Math.pow(Math.abs(sinT), power);
+                    if (step === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+            }
+
+            // Mirror Advanced's Canvas grammar: a superellipse outer boundary,
+            // inset auxiliary track, broad glow layer, then compact solid
+            // segments and an endpoint marker. This reads as a real gauge,
+            // rather than a generic circular progress control.
+            function drawSecondaryAdvancedArcGauge(centerX, centerY, ratio, color, label, value) {
                 var start = Math.PI * 1.05;
                 var end = Math.PI * 1.95;
                 var span = end - start;
                 var clampedRatio = clamp(ratio, 0, 1);
                 var segments = 10;
+                var outerX = 78, outerY = 66;
+                var energyX = 68, energyY = 56;
+                var exponent = 2.35;
 
                 ctx.save();
                 ctx.lineCap = 'butt';
-                ctx.lineWidth = 7;
-                ctx.strokeStyle = C_TRACK;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, start, end);
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = 'rgba(235, 243, 243, 0.42)';
+                traceSecondarySuperArc(centerX, centerY, outerX, outerY, exponent, start, end);
+                ctx.stroke();
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+                traceSecondarySuperArc(centerX, centerY, energyX - 14, energyY - 14, exponent, start, end);
                 ctx.stroke();
 
                 for (var i = 0; i < segments; i++) {
                     var segmentStart = start + (i / segments) * span + 0.018;
                     var segmentEnd = start + ((i + 1) / segments) * span - 0.018;
                     var active = (i + 1) / segments <= clampedRatio + 0.001;
+
+                    ctx.lineWidth = 13;
                     ctx.strokeStyle = active ? color : C_TRACK;
+                    ctx.globalAlpha = active ? 0.30 : 1;
                     ctx.shadowColor = active ? color : 'transparent';
-                    ctx.shadowBlur = active ? 7 : 0;
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, radius, segmentStart, segmentEnd);
+                    ctx.shadowBlur = active ? 10 : 0;
+                    traceSecondarySuperArc(centerX, centerY, energyX, energyY, exponent, segmentStart, segmentEnd);
+                    ctx.stroke();
+
+                    ctx.globalAlpha = 1;
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = active ? color : 'rgba(255, 255, 255, 0.18)';
+                    ctx.shadowBlur = active ? 5 : 0;
+                    traceSecondarySuperArc(centerX, centerY, energyX, energyY, exponent, segmentStart, segmentEnd);
                     ctx.stroke();
                 }
 
+                var indicatorAngle = start + span * clampedRatio;
+                var cosI = Math.cos(indicatorAngle);
+                var sinI = Math.sin(indicatorAngle);
+                var powerI = 2 / exponent;
+                var markerX = centerX + energyX * Math.sign(cosI) * Math.pow(Math.abs(cosI), powerI);
+                var markerY = centerY + energyY * Math.sign(sinI) * Math.pow(Math.abs(sinI), powerI);
                 ctx.shadowBlur = 0;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(markerX, markerY, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.font = 'bold 13px Bahnschrift';
@@ -961,8 +1007,8 @@
                 ctx.fillStyle = C_ICE;
                 ctx.fillText('LIVE', right - 28, top + 26);
 
-                drawSecondaryArcGauge(left + 112, top + 112, 72, flowPct / 100, flowColor, 'FLOW', FLOW_LABELS[flowQuality] || 'BUILD');
-                drawSecondaryArcGauge(right - 112, top + 112, 72, spinRisk / 100, riskColor, 'RISK', RISK_LABELS[riskLevel] || 'SAFE');
+                drawSecondaryAdvancedArcGauge(left + 112, top + 112, flowPct / 100, flowColor, 'FLOW', FLOW_LABELS[flowQuality] || 'BUILD');
+                drawSecondaryAdvancedArcGauge(right - 112, top + 112, spinRisk / 100, riskColor, 'RISK', RISK_LABELS[riskLevel] || 'SAFE');
 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';

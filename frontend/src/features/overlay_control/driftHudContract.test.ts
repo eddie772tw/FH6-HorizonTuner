@@ -38,7 +38,8 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('var primaryAnchor = null;');
     expect(html).toContain('function renderSecondaryInstrument()');
     expect(html).toContain('function drawSecondaryPanelPath(');
-    expect(html).toContain('function drawSecondaryArcGauge(');
+    expect(html).toContain('function drawSecondaryAdvancedArcGauge(');
+    expect(html).toContain('function traceSecondarySuperArc(');
     expect(html).toContain('var SECONDARY_SOURCE_WIDTH = 520;');
     expect(html).toContain('function renderSecondaryInstrumentAtConventionalAnchor()');
     expect(html).toContain('var SECONDARY_BOX_PADDING = 30;');
