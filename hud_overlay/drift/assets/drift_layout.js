@@ -49,6 +49,24 @@
         };
     }
 
+    // GT7 uses a short, wide layer aligned to the viewport's bottom center.
+    // Keep this as a geometry primitive so Drift can use the same safe anchor
+    // without introducing another HTML lifecycle or a second canvas.
+    function getCenteredBottomAnchor(width, height, contentWidth, contentHeight, padding) {
+        var viewportWidth = finitePositive(width, LOGICAL_WIDTH);
+        var viewportHeight = finitePositive(height, LOGICAL_HEIGHT);
+        var safePadding = Math.max(0, Number(padding) || 0);
+        var boxWidth = Math.max(1, Number(contentWidth) || 1);
+        var boxHeight = Math.max(1, Number(contentHeight) || 1);
+
+        return {
+            centerX: viewportWidth * 0.5,
+            centerY: viewportHeight - safePadding - boxHeight * 0.5,
+            width: boxWidth,
+            height: boxHeight
+        };
+    }
+
     function ellipsePoint(t, centerX, centerY, halfWidth, radiusX, radiusY, side) {
         var normalizedX = clamp((Number(t) || 0) * halfWidth / radiusX, -1, 1);
         var x = centerX + (Number(t) || 0) * halfWidth;
@@ -85,6 +103,7 @@
         LOGICAL_HEIGHT: LOGICAL_HEIGHT,
         getViewportTransform: getViewportTransform,
         getBottomRightAnchor: getBottomRightAnchor,
+        getCenteredBottomAnchor: getCenteredBottomAnchor,
         ellipsePoint: ellipsePoint,
         fillSweepState: fillSweepState
     };

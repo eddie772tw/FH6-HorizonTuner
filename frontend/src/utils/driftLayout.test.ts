@@ -14,6 +14,12 @@ type DriftLayout = {
     width: number;
     height: number;
   };
+  getCenteredBottomAnchor: (width: number, height: number, contentWidth: number, contentHeight: number, padding: number) => {
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+  };
   ellipsePoint: (t: number, centerX: number, centerY: number, halfWidth: number, radiusX: number, radiusY: number, side: string) => { x: number; y: number };
   fillSweepState: (progress: number, maxRpm: number, target: { rpm: number; angle: number; speed: number }) => { rpm: number; angle: number; speed: number };
 };
@@ -56,6 +62,16 @@ describe('Drift viewport layout', () => {
     expect(anchor.centerX).toBe(1723);
     expect(anchor.centerY).toBe(978);
     expect(anchor.width).toBe(590);
+    expect(anchor.height).toBe(288);
+  });
+
+  it('anchors a primary layer to the viewport bottom center like GT7', () => {
+    const layout = loadLayout();
+    const anchor = layout.getCenteredBottomAnchor(2048, 1152, 680, 288, 180);
+
+    expect(anchor.centerX).toBe(1024);
+    expect(anchor.centerY).toBe(828);
+    expect(anchor.width).toBe(680);
     expect(anchor.height).toBe(288);
   });
 

@@ -34,6 +34,8 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('id="drift-style-meter-fill"');
     expect(html).toContain('function renderCenterGearCluster()');
     expect(html).toContain('function renderPrimaryInstrument()');
+    expect(html).toContain('getCenteredBottomAnchor(');
+    expect(html).toContain('var PRIMARY_BOTTOM_PADDING = 180;');
     expect(html).toContain('function renderSecondaryInstrument()');
     expect(html).toContain('function renderSecondaryInstrumentAtConventionalAnchor()');
     expect(html).toContain('var SECONDARY_BOX_PADDING = 30;');

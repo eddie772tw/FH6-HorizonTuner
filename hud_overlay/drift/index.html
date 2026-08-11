@@ -234,7 +234,12 @@
             var FRAME_RX = 412;
             var FRAME_RY = 174;
             var PRIMARY_RENDER_SCALE = 0.62;
-            var PRIMARY_OFFSET_Y = -72;
+            // GT7 keeps its short/wide instrument at the viewport bottom
+            // center. Preserve Drift's existing visual scale, but use the
+            // same anchor with a 180px clear zone for the game's bottom HUD.
+            var PRIMARY_LAYOUT_WIDTH = 680;
+            var PRIMARY_LAYOUT_HEIGHT = 288;
+            var PRIMARY_BOTTOM_PADDING = 180;
             // Advanced effective width is ~544px and VFD is ~630px at their
             // shared default scale. Use the midpoint as Drift's conventional
             // bottom-right secondary box.
@@ -914,13 +919,22 @@
             }
 
             function renderPrimaryInstrument() {
-                if (!ctx) return;
+                if (!ctx || !driftLayout) return;
 
-                // The canvas is viewport-sized so each layer can use screen
-                // space. Keep the primary instrument compact independently of
-                // the viewport fit scale used by the secondary instrument.
+                var anchor = driftLayout.getCenteredBottomAnchor(
+                    window.innerWidth,
+                    window.innerHeight,
+                    PRIMARY_LAYOUT_WIDTH,
+                    PRIMARY_LAYOUT_HEIGHT,
+                    PRIMARY_BOTTOM_PADDING
+                );
+                var logicalCenterX = (anchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
+                var logicalCenterY = (anchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
+
+                // The canvas is viewport-sized so this layer can use screen
+                // space while retaining the existing Drift visual scale.
                 ctx.save();
-                ctx.translate(CANVAS_CX, CANVAS_CY + PRIMARY_OFFSET_Y);
+                ctx.translate(logicalCenterX, logicalCenterY);
                 ctx.scale(PRIMARY_RENDER_SCALE, PRIMARY_RENDER_SCALE);
                 ctx.translate(-CANVAS_CX, -CANVAS_CY);
                 drawModernFrame();
