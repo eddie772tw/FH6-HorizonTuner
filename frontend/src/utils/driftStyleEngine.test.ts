@@ -89,4 +89,41 @@ describe('Drift Style engine', () => {
     expect(state.special).toMatchObject({ label: 'HANDBRAKE ENTRY', count: 1, points: 15, active: true });
     expect(state.score).toBeGreaterThanOrEqual(15);
   });
+
+  it('does not apply an expired pending special event to a later drift run', () => {
+    const engine = loadEngine();
+    engine.triggerSpecial('handbrake', 1000);
+    const state = advance(engine, { speedKmh: 0, angle: 0, flowQuality: 1, riskLevel: 1 }, 1000, 2500);
+
+    expect(state.special.label).toBe('');
+    expect(state.special.count).toBe(0);
+    expect(state.score).toBe(0);
+  });
+
+  it('ignores invalid timestamps without mutating the current state', () => {
+    const engine = loadEngine();
+    const before = engine.getState();
+    engine.update(smoothFrame, Number.NaN);
+
+    expect(engine.getState()).toBe(before);
+    expect(before.score).toBe(0);
+    expect(before.mode).toBe('idle');
+  });
+
+  it('resets the run and summary state for a fresh HUD lifecycle', () => {
+    const engine = loadEngine();
+    engine.update({ ...smoothFrame, riskLevel: 4 }, 1000);
+    advance(engine, { ...smoothFrame, riskLevel: 4 }, 1000, 2100);
+    const settled = advance(engine, { speedKmh: 0, angle: 0, flowQuality: 1, riskLevel: 1 }, 2100, 3200);
+
+    expect(settled.summary.active).toBe(true);
+    engine.reset();
+    const reset = engine.getState();
+
+    expect(reset).toMatchObject({ mode: 'idle', score: 0, rankCode: 'D' });
+    expect(reset.summary.active).toBe(false);
+    expect(reset.events.flow.label).toBe('');
+    expect(reset.events.risk.label).toBe('');
+    expect(reset.special.active).toBe(false);
+  });
 });

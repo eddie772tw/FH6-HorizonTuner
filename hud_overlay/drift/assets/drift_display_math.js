@@ -35,8 +35,15 @@
 
     function resolveTorque(data, isMetric) {
         var source = data || {};
-        var torque = Number(source.torque);
-        if (!Number.isFinite(torque)) torque = isMetric ? Number(source.torque_nm) : Number(source.torque_ftlbs);
+        function readFinite(value) {
+            // Null and empty strings are missing payload values, not valid zero torque.
+            if (value === null || value === undefined || value === '') return NaN;
+            var number = Number(value);
+            return Number.isFinite(number) ? number : NaN;
+        }
+
+        var torque = readFinite(source.torque);
+        if (!Number.isFinite(torque)) torque = isMetric ? readFinite(source.torque_nm) : readFinite(source.torque_ftlbs);
         if (!Number.isFinite(torque)) torque = 0;
 
         return {

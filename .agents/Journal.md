@@ -268,6 +268,34 @@
 
 ---
 
+## 2026-08-11 / PR #185 Codex Takeover
+
+- **Scope**: GitHub PR #185, `feat(drift-hud): style meter and split instruments`.
+- **Status**: active.
+- **Owner**: Codex.
+- **Branch**: `codex/drift-hud-modernize-remove-presets` at `283fe39`.
+- **Changed**: Checked out the PR branch from `origin`; no implementation changes made after takeover.
+- **Pending**: Continue the Drift HUD visual iteration and address any CI or review feedback that appears.
+- **Blocked by**: None. PR is open and currently Ready for Review; no review submissions or inline threads are present.
+- **Verification**: Clean worktree at takeover; PR reports 33 frontend test files / 205 tests and `git diff --check` passed.
+- **Next action**: Run the local frontend validation baseline before the next implementation change; move the PR back to Draft if active iteration requires it.
+
+---
+
+## 2026-08-11 / Telemetry HUD Reference Research Documentation
+
+- **Scope**: PR #185 follow-up research; document the five shallow-cloned reference repositories within the Drift HUD visual-slice boundary.
+- **Status**: active.
+- **Owner**: Codex.
+- **Branch**: `codex/drift-hud-modernize-remove-presets`.
+- **Changed**: Added `docs/reference-projects/` overview plus one PR-scoped evaluation per reference project, and `docs/telemetry-hud-implementation-plan.md`.
+- **Research boundary**: `ref/forza-hud-references/` remains ignored and is source-level research material only. Proprietary Horizon HUD assets/code and GPL Forza Data Tools code are explicitly excluded from reuse.
+- **Key decision**: Keep the existing 60Hz frame/emitter, TelemetryView, and HUD card behavior unchanged; PR#185 only validates and refines the Drift HUD-local presentation layer and its existing frame integration.
+- **Verification**: `git diff --check` passed; docs are visible as untracked files; existing `.agents/Journal.md` takeover entry remains preserved.
+- **Pending**: Complete the PR-scoped Drift HUD edge-case and visual validation; telemetry architecture work must be a separate issue/PR.
+
+---
+
 ## 2026-08-11 / Drift Style MVP
 
 - **Scope**: local / `codex/drift-hud-modernize-remove-presets`
@@ -302,6 +330,25 @@
 - **Evidence**: `frontend/src/utils/driftDisplayMath.test.ts` covers steering
   normalization, counter-steer direction, visual arc mapping, and torque
   units. Frontend Vitest: 33 files / 205 tests passed.
+
+---
+
+## 2026-08-11 / PR #185 Drift Edge-Case Hardening
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Implementation**: `drift_display_math.js` now treats null, undefined, and
+  empty-string torque payloads as missing values before selecting the metric or
+  imperial fallback field. Non-finite fallback values still resolve to zero.
+- **Tests**: added boundary and clamp coverage for steering and counter-steer
+  projection, torque fallback coverage, expired pending Hero events, invalid
+  timestamps, and full Drift engine reset lifecycle.
+- **Verification**: targeted Drift tests passed (2 files / 13 tests); frontend
+  Vitest baseline passed (33 files / 210 tests). Added `driftHudContract.test.ts`
+  to compile the inline controller and protect the primary/secondary/shared-card
+  mounts plus RAF/12.5 Hz rendering boundary. Current baseline: 34 files / 213
+  tests passed.
+- **Boundary preserved**: no changes to TelemetryView, HUD card toggles,
+  telemetry transport, or the existing 60 Hz Canvas/telemetry path.
 
 ---
 
