@@ -2,9 +2,9 @@
  * Drift HUD display math.
  *
  * The Forza packet exposes normalized steering input, not the physical front
- * wheel angle. This module maps it onto the Drift HUD's ±60 degree arc so the
- * counter-steer pointer is an honest visual indicator rather than a falsely
- * precise wheel-angle readout.
+ * wheel angle. This module maps it onto the Drift HUD's ±45 degree steering
+ * indicator range so the counter-steer pointer is an honest visual indicator
+ * rather than a falsely precise wheel-angle readout.
  */
 (function (window) {
     'use strict';
@@ -29,7 +29,10 @@
         return {
             isCountering: isCountering,
             percent: isCountering ? Math.abs(steer) * controlWeight : 0,
-            arcAngle: clamp(steer * 0.6, -60, 60)
+            // The drift-angle scale remains ±60 degrees, but the steering
+            // indicator itself is bounded to the ±45 degree ticks: 100%
+            // normalized steer maps exactly to 45 degrees.
+            arcAngle: clamp(steer * 0.45, -45, 45)
         };
     }
 

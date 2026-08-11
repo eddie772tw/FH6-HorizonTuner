@@ -49,7 +49,7 @@ raw steer
   → normalize to [-100, 100]
   → require |driftAngle| >= 8 and angle * steer > 0
   → counter percent with angle-dependent weight
-  → pointer arc clamp to [-60°, 60°]
+  → pointer arc clamp to [-45°, 45°] inside the wider drift-angle scale
 ```
 
 這個 pointer 是「counter-steer input 的視覺投影」，不是物理前輪角度。需要固定驗證：

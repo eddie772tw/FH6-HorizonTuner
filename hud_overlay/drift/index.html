@@ -485,8 +485,9 @@
                 }
                 ctx.restore();
 
-                // Steering input is normalized onto the same ±60° visual arc.
-                // It is intentionally a pointer, not a falsely precise wheel-angle number.
+                // Steering input is normalized onto the ±45° steering range
+                // inside the wider ±60° drift-angle scale. It is intentionally
+                // a pointer, not a falsely precise wheel-angle number.
                 if (isCountering) {
                     var pointerPoint = topCurvePoint(counterArcAngle / 60.0);
                     ctx.save();
@@ -921,7 +922,7 @@
                 var counterState = driftDisplayMath ? driftDisplayMath.getCounterState(displayAngle, steerPct) : {
                     isCountering: fallbackIsCountering,
                     percent: fallbackIsCountering ? Math.abs(steerPct) * (0.45 + 0.55 * clamp((absA - 8) / 42, 0, 1)) : 0,
-                    arcAngle: clamp(steerPct * 0.6, -60, 60)
+                    arcAngle: clamp(steerPct * 0.45, -45, 45)
                 };
                 isCountering = counterState.isCountering;
                 counterPct = counterState.percent;
@@ -978,6 +979,8 @@
                     parseTelemetryData(data, payload);
                 },
                 onAnimate: function () {
+                    // Sweep is the HUD's mechanical zero/calibration action;
+                    // reset the Drift Style run together with the instrument.
                     if (driftStyleEngine) driftStyleEngine.reset();
                 }
             });

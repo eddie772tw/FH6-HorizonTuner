@@ -42,5 +42,6 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('driftStyleUi.nextPaintAt = now + 80;');
     expect(html).toContain('The engine advances at RAF cadence');
     expect(html).toContain('refreshed at 12.5 Hz');
+    expect(html).toContain('driftStyleEngine.reset()');
   });
 });

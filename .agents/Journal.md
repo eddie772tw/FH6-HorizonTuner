@@ -352,6 +352,19 @@
 
 ---
 
+## 2026-08-11 / Drift Sweep Semantics and Steering Range
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Decision**: other HUDs use `onAnimate` for their Sweep action; for Drift,
+  Sweep is additionally the mechanical zero/calibration operation, so it must
+  reset the Drift Style engine and combo state.
+- **Decision**: the drift-angle background scale remains ±60°, while normalized
+  steering maps to a separate ±45° indicator range. 100% steer is exactly 45°;
+  higher raw values are clamped at that boundary.
+- **Verification**: frontend Vitest baseline passed (34 files / 213 tests).
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

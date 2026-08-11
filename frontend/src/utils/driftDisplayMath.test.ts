@@ -30,24 +30,24 @@ describe('Drift display math', () => {
     expect(math.normalizeSteerPercent(Number.NaN)).toBe(0);
   });
 
-  it('maps counter-steer to the shared ±60 degree visual arc', () => {
+  it('maps counter-steer to the ±45 degree steering indicator range', () => {
     const math = loadMath();
     const counter = math.getCounterState(36, 50);
     expect(counter.isCountering).toBe(true);
-    expect(counter.arcAngle).toBe(30);
+    expect(counter.arcAngle).toBe(22.5);
     expect(counter.percent).toBeGreaterThan(35);
   });
 
   it('does not present non-counter steering as counter-steer', () => {
     const math = loadMath();
-    expect(math.getCounterState(24, -40)).toMatchObject({ isCountering: false, percent: 0, arcAngle: -24 });
+    expect(math.getCounterState(24, -40)).toMatchObject({ isCountering: false, percent: 0, arcAngle: -18 });
   });
 
   it('uses the threshold boundary and clamps the visual pointer arc', () => {
     const math = loadMath();
     expect(math.getCounterState(7.99, 50)).toMatchObject({ isCountering: false, percent: 0 });
-    expect(math.getCounterState(8, 50)).toMatchObject({ isCountering: true, percent: 22.5, arcAngle: 30 });
-    expect(math.getCounterState(45, 200).arcAngle).toBe(60);
+    expect(math.getCounterState(8, 50)).toMatchObject({ isCountering: true, percent: 22.5, arcAngle: 22.5 });
+    expect(math.getCounterState(45, 200).arcAngle).toBe(45);
   });
 
   it('preserves the normalized torque unit selected by the telemetry payload', () => {
