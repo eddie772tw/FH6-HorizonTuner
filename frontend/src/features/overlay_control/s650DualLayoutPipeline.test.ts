@@ -70,6 +70,7 @@ function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
         foxbodyCalls.push(args);
       },
       drawSportCluster: () => events.push('sportCluster'),
+      drawSvtCobraCluster: () => events.push('svtCobraCluster'),
       drawTrackCluster: () => events.push('trackCluster'),
       getHeritageDialScale: () => ({ max: 80 }),
     },
@@ -120,5 +121,14 @@ describe('S650 dual layout pipeline', () => {
     layouts.render('sport', { redlineRpm: 7000 }, { primary: '#E78B3F', secondary: '#B8AAA0' }, 0.875);
 
     expect(events).toEqual(['sportCluster']);
+  });
+
+  it('routes SVT Cobra through its dedicated cluster without rendering dual-ring layers', () => {
+    const events: string[] = [];
+    const layouts = createLayouts(events);
+
+    layouts.render('svt_cobra', { redlineRpm: 7000 }, { primary: '#E8ECE7', secondary: '#A7AFA7' }, 0.875);
+
+    expect(events).toEqual(['svtCobraCluster']);
   });
 });

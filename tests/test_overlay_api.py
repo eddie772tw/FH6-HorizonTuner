@@ -220,7 +220,7 @@ def test_invalid_s650_hmi_theme_defaults_to_heritage(
     assert loaded_data["s650Theme"] == "heritage67"
 
 
-@pytest.mark.parametrize("theme", ["sport", "track"])
+@pytest.mark.parametrize("theme", ["sport", "svt_cobra", "track"])
 def test_new_s650_hmi_theme_round_trips(temp_hud_config_file, theme):
     client = TestClient(app)
 

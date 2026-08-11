@@ -126,6 +126,15 @@
             warning: colors.telltaleYellow,
             danger: colors.telltaleRed
         },
+        svt_cobra: {
+            background: '#030403',
+            surface: '#0C0E0C',
+            primary: '#E8ECE7',
+            secondary: '#A7AFA7',
+            text: '#FFFFFF',
+            warning: colors.telltaleYellow,
+            danger: '#E33B3B'
+        },
         track: {
             background: '#050608',
             surface: '#101318',
@@ -167,7 +176,7 @@
         paletteFor: function (theme, options) {
             var palette = clonePalette(palettes[theme] || palettes.normal);
             options = options || {};
-            if (theme !== 'foxbody' && theme !== 'track' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
+            if (theme !== 'foxbody' && theme !== 'svt_cobra' && theme !== 'track' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
                 palette.primary = options.customColor;
             }
             if (theme === 'foxbody' && options.guiThemeMode === 'dark') {

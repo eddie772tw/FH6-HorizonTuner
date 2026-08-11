@@ -1030,6 +1030,78 @@
             ctx.restore();
         }
 
+        function drawSvtCobraCluster(view, data, palette, redlineRatio) {
+            var bandX = 144;
+            var bandY = view.height - 94;
+            var bandWidth = view.width - bandX * 2;
+            var segmentCount = 10;
+            var segmentGap = 8;
+            var segmentWidth = (bandWidth - segmentGap * (segmentCount - 1)) / segmentCount;
+            var rpm = view.getRpm(data);
+            var rpmRatio = Math.max(0, Math.min(1, rpm / view.getMaxRpm(data)));
+            var speed = view.roundedSpeed(data);
+            var gear = view.getGearLabel(data);
+            var power = view.getTelemetryReadout('power', data);
+            var boost = view.getTelemetryReadout('boost', data);
+            var panelX = 48;
+            var panelY = 32;
+            var panelWidth = view.width - panelX * 2;
+            var panelHeight = view.height - panelY * 2;
+
+            ctx.save();
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+            ctx.fillStyle = palette.primary;
+            ctx.fillRect(112, 82, view.width - 224, 2);
+            ctx.fillRect(112, view.height - 62, view.width - 224, 2);
+            ctx.textAlign = 'left';
+            setFont(17, '800', 'Arial Narrow');
+            ctx.fillStyle = palette.primary;
+            ctx.fillText('SVT COBRA', 112, 120);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('PERFORMANCE CLUSTER', view.width - 112, 120);
+            if (view.showRPM) {
+                ctx.textAlign = 'center';
+                setFont(58, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(Math.round(rpm)), 340, 222);
+                setFont(16, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('RPM', 340, 250);
+            }
+            if (view.showGear) {
+                ctx.textAlign = 'center';
+                setFont(90, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.primary;
+                ctx.fillText(gear, view.width / 2, 236);
+                setFont(15, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('GEAR', view.width / 2, 264);
+            }
+            if (view.showSpeed) {
+                ctx.textAlign = 'center';
+                setFont(58, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(speed), 940, 222);
+                setFont(16, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(view.unitLabel(), 940, 250);
+            }
+            ctx.textAlign = 'center';
+            setFont(16, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('POWER  ' + power.value + ' ' + power.unit + '    BOOST  ' + boost.value + ' ' + boost.unit, view.width / 2, 316);
+            for (var index = 0; index < segmentCount; index += 1) {
+                var ratio = index / segmentCount;
+                ctx.fillStyle = ratio >= redlineRatio
+                    ? palette.danger
+                    : (ratio <= rpmRatio ? palette.primary : 'rgba(255,255,255,0.16)');
+                ctx.fillRect(bandX + index * (segmentWidth + segmentGap), bandY, segmentWidth, 14);
+            }
+            ctx.restore();
+        }
+
         return {
             setFont: setFont,
             getFontSize: fontSize,
@@ -1051,6 +1123,7 @@
             drawHeritageStatus: drawHeritageStatus,
             drawNormalStatus: drawNormalStatus,
             drawSportCluster: drawSportCluster,
+            drawSvtCobraCluster: drawSvtCobraCluster,
             drawTrackCluster: drawTrackCluster
         };
     }

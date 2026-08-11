@@ -4,6 +4,7 @@
 
     var DUAL_LAYOUT_TYPE = 'dual';
     var SPORT_LAYOUT_TYPE = 'sport';
+    var SVT_COBRA_LAYOUT_TYPE = 'svtCobra';
     var TRACK_LAYOUT_TYPE = 'track';
 
     // Roles remain owned by each theme profile even when two themes currently
@@ -84,6 +85,16 @@
                 renderer: 'sportPerformance',
                 leftRole: 'speed',
                 rightRole: 'rpm',
+                outerInset: 0
+            })
+        }),
+        svt_cobra: Object.freeze({
+            type: SVT_COBRA_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'svtCobraPerformance',
+                leftRole: 'rpm',
+                rightRole: 'speed',
                 outerInset: 0
             })
         }),

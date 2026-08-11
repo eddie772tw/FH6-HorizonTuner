@@ -281,6 +281,13 @@
             }
         }
 
+        function drawSvtCobra(data, palette, redlineRatio) {
+            clear(palette);
+            if (typeof p.drawSvtCobraCluster === 'function') {
+                p.drawSvtCobraCluster(view, data, palette, redlineRatio);
+            }
+        }
+
         var centerRegions = geometry.centerRegions;
         var baseDrivingRegions = Object.freeze({
             normal: geometry.baseDriving,
@@ -293,6 +300,10 @@
                 var profile = profileFor(theme);
                 if (profile.type === 'sport') {
                     drawSport(data, palette, redlineRatio);
+                    return;
+                }
+                if (profile.type === 'svtCobra') {
+                    drawSvtCobra(data, palette, redlineRatio);
                     return;
                 }
                 if (profile.type === 'track') {

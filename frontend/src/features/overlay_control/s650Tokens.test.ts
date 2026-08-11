@@ -86,4 +86,15 @@ describe('S650 HMI palette', () => {
     });
     expect(tokens.paletteFor('sport', { customColor: '#ff00aa', useDefaultColors: false }).primary).toBe('#ff00aa');
   });
+
+  it('keeps SVT Cobra monochrome when the general custom gauge color is set', () => {
+    expect(loadTokensModule().paletteFor('svt_cobra', {
+      customColor: '#ff00aa',
+      useDefaultColors: false,
+    })).toMatchObject({
+      primary: '#E8ECE7',
+      secondary: '#A7AFA7',
+      danger: '#E33B3B',
+    });
+  });
 });

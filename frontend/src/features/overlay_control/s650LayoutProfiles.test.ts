@@ -36,7 +36,7 @@ describe('S650 layout profiles', () => {
     });
 
     expect(layout.type).toBe('dual');
-    expect(Object.values(layout.profiles).map((profile) => profile.type)).toEqual(['dual', 'dual', 'dual', 'sport', 'track']);
+    expect(Object.values(layout.profiles).map((profile) => profile.type)).toEqual(['dual', 'dual', 'dual', 'sport', 'svtCobra', 'track']);
     expect(layout.geometry.centerInfo).toEqual({ x: 425, y: 126, width: 430, height: 230 });
     expect(layout.geometry.mainGauge).toMatchObject({
       leftCenterX: 256,
@@ -54,6 +54,11 @@ describe('S650 layout profiles', () => {
       type: 'sport',
       sideGauges: false,
       dial: { renderer: 'sportPerformance', outerInset: 0 },
+    });
+    expect(layout.profiles.svt_cobra).toMatchObject({
+      type: 'svtCobra',
+      sideGauges: false,
+      dial: { renderer: 'svtCobraPerformance', outerInset: 0 },
     });
   });
 });

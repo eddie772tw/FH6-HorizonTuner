@@ -13,6 +13,7 @@
         'heritage67',
         'foxbody',
         'sport',
+        'svt_cobra',
         'track'
     ];
 
