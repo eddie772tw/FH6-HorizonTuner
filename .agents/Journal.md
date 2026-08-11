@@ -243,3 +243,14 @@
 - Status: adopted
 - Source: `.jules/bolt.md`、`.jules/sentinel.md`、`.jules/palette.md`、`.jules/narrator.md` 與近期 Git history
 - Verification: skill frontmatter/registry consistency、skill validator、`git diff --check`
+
+---
+
+## 2026-08-11 / Telemetry Hot Path
+
+- **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。
+- **狀態**：`adopted`。
+- **Learning**：在 `broadcast_telemetry()` 首次同步載入車輛 profile，或直接寫入自動建立的 profile，會把磁碟 I/O 放進 60Hz consumer。僅把單次寫入包成背景 task 不足以保證正確性：舊快照可能在使用者 API 更新後覆寫最新設定。
+- **Action**：profile 首次載入必須只啟動背景工作並略過尚未就緒的 dyno 收集；所有 dyno profile 的自動與 API 寫入都透過同一個 coalescing writer，以最後一份 snapshot 為準。後端以 `telemetry-pipeline-metrics/v1` 暴露 bounded queue、drop、client 與 stage timing 診斷資料。
+- **Evidence**：`backend/telemetry_runtime.py`、`tests/test_telemetry_runtime.py`、`tests/test_telemetry_metrics_api.py`、`tests/test_car_params.py`；前端 Vitest `31 files / 194 tests` 通過。首次完整 pytest 使用舊 `dist/FH6-HorizonTuner.exe` 時，portable diagnostics 無法代表目前原始碼；執行 `build_all.bat` 後，新的 metadata test、portable host diagnostics（3 項）與完整 pytest（96 項）皆通過。
+- **Pending**：`RaceRecorder` 的 SQLite flush 仍位於 telemetry consumer；下一輪以新 metrics 的 `recorders` stage 為基準後，再拆為背景持久化工作。

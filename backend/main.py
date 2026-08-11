@@ -85,6 +85,11 @@ from telemetry_listener import (
     pack_telemetry_binary,
     start_udp_listener,
 )
+from telemetry_runtime import (
+    AsyncCarParamsCache,
+    AsyncCarParamsWriter,
+    TelemetryPipelineMetrics,
+)
 from telemetry_sqlite import TelemetrySQLite
 
 
@@ -235,6 +240,7 @@ class ConnectionManager:
 telemetry_manager = ConnectionManager()
 overlay_manager = ConnectionManager()
 telemetry_queue = asyncio.Queue(maxsize=10)
+telemetry_pipeline_metrics = TelemetryPipelineMetrics()
 
 current_udp_transport = None
 current_udp_ip_port = (None, None)
@@ -1089,6 +1095,32 @@ def save_car_params(car_id: str, data: dict):
         json.dump(data, f, indent=4)
 
 
+def create_default_car_params() -> dict:
+    """Create the initial dyno profile without performing persistence work."""
+    return {
+        "weight": 1500,
+        "weight_distribution": 50,
+        "drivetrain": "RWD",
+        "frontTireWidth": 245,
+        "frontTireAspect": 40,
+        "frontTireRim": 18,
+        "rearTireWidth": 245,
+        "rearTireAspect": 40,
+        "rearTireRim": 18,
+        "adjustability": {
+            "gearbox": "Full",
+            "gears": 6,
+            "suspension": "Race",
+            "arb": "Adjustable",
+        },
+        "dyno_curve": {},
+    }
+
+
+car_params_cache = AsyncCarParamsCache(load_car_params)
+car_params_writer = AsyncCarParamsWriter(save_car_params)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global current_udp_transport, current_udp_ip_port
@@ -1114,6 +1146,8 @@ async def lifespan(app: FastAPI):
         for task in background_tasks:
             task.cancel()
         await asyncio.gather(*background_tasks, return_exceptions=True)
+        await car_params_writer.flush()
+        await car_params_cache.cancel_pending()
 
 
 app.router.lifespan_context = lifespan
@@ -1163,43 +1197,29 @@ async def broadcast_telemetry():
 
     while True:
         data = await telemetry_queue.get()
+        frame_started_at = time.perf_counter()
+        telemetry_pipeline_metrics.observe_queue_depth(telemetry_queue.qsize())
 
         # --- Record Race Telemetry ---
-        race_recorder.record(data)
+        with telemetry_pipeline_metrics.measure_stage("recorders"):
+            race_recorder.record(data)
 
-        # --- Record Drag Test Telemetry ---
-        drag_recorder.record(data)
+            # --- Record Drag Test Telemetry ---
+            drag_recorder.record(data)
 
         # --- Dyno Collection Logic ---
+        dyno_stage_started_at = time.perf_counter()
         car_id = str(data.get("CarOrdinal", 0))
         if car_id and car_id != "0":
-            # Load existing params into cache (always), auto-create only if race_recording
-            if car_id not in dyno_cache:
-                params = load_car_params(car_id)
-                if params:
-                    dyno_cache[car_id] = params
-                elif app_settings.get("race_recording", True):
-                    # Auto-create default profile
-                    params = {
-                        "weight": 1500,
-                        "weight_distribution": 50,
-                        "drivetrain": "RWD",
-                        "frontTireWidth": 245,
-                        "frontTireAspect": 40,
-                        "frontTireRim": 18,
-                        "rearTireWidth": 245,
-                        "rearTireAspect": 40,
-                        "rearTireRim": 18,
-                        "adjustability": {
-                            "gearbox": "Full",
-                            "gears": 6,
-                            "suspension": "Race",
-                            "arb": "Adjustable",
-                        },
-                        "dyno_curve": {},
-                    }
-                    save_car_params(car_id, params)
-                    dyno_cache[car_id] = params
+            # The first disk read is deliberately deferred. The current frame
+            # continues without dyno collection until the profile is ready.
+            profile_lookup = car_params_cache.resolve(dyno_cache, car_id)
+            if profile_lookup.state == "missing" and app_settings.get(
+                "race_recording", True
+            ):
+                params = create_default_car_params()
+                dyno_cache[car_id] = params
+                car_params_writer.schedule(car_id, params)
 
             # Only collect dyno data if recording is enabled AND car is in cache
             if app_settings.get("dyno_recording", True) and car_id in dyno_cache:
@@ -1314,11 +1334,7 @@ async def broadcast_telemetry():
                         # Periodic save to disk (every 5 seconds max)
                         current_time = time.time()
                         if current_time - last_dyno_save_time > 5.0:
-                            asyncio.create_task(
-                                asyncio.to_thread(
-                                    save_car_params, car_id, dyno_cache[car_id]
-                                )
-                            )
+                            car_params_writer.schedule(car_id, dyno_cache[car_id])
                             last_dyno_save_time = current_time
 
         # --- Cache capacity limiting for dyno_cache (LRU/Cap to 20) ---
@@ -1326,6 +1342,9 @@ async def broadcast_telemetry():
             # Pop the oldest inserted key
             oldest_key = next(iter(dyno_cache))
             dyno_cache.pop(oldest_key, None)
+        telemetry_pipeline_metrics.record_stage(
+            "dyno", time.perf_counter() - dyno_stage_started_at
+        )
 
         # --- Periodic GC (every 60 seconds) ---
         current_time = time.time()
@@ -1337,19 +1356,25 @@ async def broadcast_telemetry():
         # --- Backpressure: If queue is filling up, drop old frames ---
         # Note: telemetry_queue size is 10. If it gets larger than 5, we clear all but the latest.
         if telemetry_queue.qsize() > 5:
+            dropped_frames = 0
             try:
                 while telemetry_queue.qsize() > 1:
                     telemetry_queue.get_nowait()
+                    dropped_frames += 1
             except asyncio.QueueEmpty:
                 pass
+            telemetry_pipeline_metrics.record_dropped_frames(dropped_frames)
 
         # --- Broadcast telemetry ---
-        if telemetry_manager.active_connections:
-            await telemetry_manager.broadcast_json(data)
+        with telemetry_pipeline_metrics.measure_stage("broadcast"):
+            if telemetry_manager.active_connections:
+                await telemetry_manager.broadcast_json(data)
 
-        if telemetry_manager.active_binary_connections:
-            binary_data = pack_telemetry_binary(data)
-            await telemetry_manager.broadcast_binary(binary_data)
+            if telemetry_manager.active_binary_connections:
+                binary_data = pack_telemetry_binary(data)
+                await telemetry_manager.broadcast_binary(binary_data)
+
+        telemetry_pipeline_metrics.record_frame(time.perf_counter() - frame_started_at)
 
         # Yield control immediately back to event loop without forced delay
         await asyncio.sleep(0)
@@ -1357,6 +1382,21 @@ async def broadcast_telemetry():
 
 # Initialize static variable for GC tracking
 broadcast_telemetry.last_gc_time = time.time()
+
+
+@app.get("/api/diagnostics/telemetry-pipeline")
+async def get_telemetry_pipeline_metrics():
+    """Expose bounded telemetry health metrics for diagnostics tooling."""
+    snapshot = telemetry_pipeline_metrics.snapshot(
+        queue_depth=telemetry_queue.qsize(),
+        json_clients=len(telemetry_manager.active_connections),
+        binary_clients=len(telemetry_manager.active_binary_connections),
+    )
+    snapshot["profilePersistence"] = {
+        "pendingWrites": car_params_writer.pending_write_count,
+        "failedWrites": car_params_writer.failed_writes,
+    }
+    return snapshot
 
 
 @app.websocket("/ws/telemetry")
@@ -1427,7 +1467,7 @@ async def get_cars_with_params():
 
 @app.get("/api/car_params/{car_id}")
 async def get_car_params(car_id: str):
-    params = load_car_params(car_id)
+    params = dyno_cache.get(car_id) or load_car_params(car_id)
     if params:
         return params
     return {"error": "Car parameters not found"}
@@ -1436,11 +1476,11 @@ async def get_car_params(car_id: str):
 @app.post("/api/car_params/{car_id}")
 async def update_car_params(car_id: str, data: dict):
     # Merge with existing to avoid overwriting dyno curve if not provided
-    params = load_car_params(car_id) or {}
+    params = dyno_cache.get(car_id) or load_car_params(car_id) or {}
     params.update(data)
-    save_car_params(car_id, params)
-    # Update cache
     dyno_cache[car_id] = params
+    car_params_cache.mark_ready(car_id)
+    car_params_writer.schedule(car_id, params)
     return {"message": "Car parameters saved successfully"}
 
 
@@ -1452,7 +1492,8 @@ async def clear_dyno_curve(car_id: str):
         dyno_cache[car_id]["dyno_curve"] = {}
         dyno_cache[car_id].pop("maxHpRpm", None)
         dyno_cache[car_id].pop("maxTorqueRpm", None)
-        save_car_params(car_id, dyno_cache[car_id])
+        car_params_cache.mark_ready(car_id)
+        car_params_writer.schedule(car_id, dyno_cache[car_id])
     else:
         # Also handle case where data is only on disk
         params = load_car_params(car_id)
@@ -1460,8 +1501,9 @@ async def clear_dyno_curve(car_id: str):
             params["dyno_curve"] = {}
             params.pop("maxHpRpm", None)
             params.pop("maxTorqueRpm", None)
-            save_car_params(car_id, params)
             dyno_cache[car_id] = params
+            car_params_cache.mark_ready(car_id)
+            car_params_writer.schedule(car_id, params)
         else:
             return {"error": "Car parameters not found"}
     return {"message": "Dyno curve data cleared successfully"}

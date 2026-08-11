@@ -28,6 +28,7 @@
   - 60Hz 高頻 UDP 遙測封包接收與極致效能視效渲染。
   - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
   - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
+  - 後端提供有界的 pipeline metrics，並將 dyno profile 的首次讀取與持久化移出即時遙測迴圈。
 * **5 步驟公式化車輛調校工作台 (5-Step Physics Tuning Workbench)**:
   - **Step 1 賽事目標 (Goal Setup)**：支援公路環道 (Road)、甩尾 (Drift)、越野拉力 (Rally) 與直線加速 (Drag) 四大賽事取向及空力效率配比。
   - **Step 2 AEGO 齒比 (AEGO Gearing)**：獨家 AEGO 齒比演算法與動力帶 (Powerband) 分析，支援 4-Speed Drag Meta、軟上限 (Soft Cap) 與極速閉環幾何二次修正。
@@ -59,6 +60,7 @@ FH6-HorizonTuner/
 ├── backend/                 # Python FastAPI 後端核心
 │   ├── main.py              # 後端服務主入口與 API 宣告
 │   ├── telemetry_listener.py # UDP 60Hz 遙測數據流監聽與解析
+│   ├── telemetry_runtime.py  # Pipeline metrics 與非阻塞 dyno profile 快取/寫入
 │   ├── core/                # 遙測數據處理、算牌與系統核心
 │   ├── routers/             # API 路由 (telemetry, tuning, overlay, drag, log, etc.)
 │   ├── services/            # 後端系統服務與狀態管理
@@ -186,6 +188,8 @@ FH6-HorizonTuner/
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `test_telemetry_listener.py` | UDP 遙測封包解析與監聽器邏輯 |
+| `test_telemetry_runtime.py` | Pipeline metrics 契約與非阻塞 profile 載入/合併寫入 |
+| `test_telemetry_metrics_api.py` | Telemetry diagnostics API 回應契約 |
 | `test_log_api.py` | 後端日誌 API、Traceback 拼接與層級篩選 |
 | `test_overlay_api.py` | Overlay 佈局存取、進程啟動/終止與狀態查詢 |
 | `test_drag_recorder.py` | 彈射起步測試的資料記錄與分析 |
