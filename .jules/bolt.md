@@ -51,3 +51,7 @@
 ## 2026-08-10 - Eliminate .forEach in Vanilla Canvas Rendering
 **Learning:** In HUD canvas overlays (`hud_overlay/drift/index.html`), drawing dynamic lists via `.forEach` (like rendering tick marks or multiple pedal UI elements) created closures on every single frame, leading to noticeable GC pauses in high frame rate scenarios.
 **Action:** Replace `.forEach` with standard `for` loops and extract helper functions (e.g., `drawPedal`) into the outer scope to remove frame-by-frame closure allocations entirely. Pre-calculate static constant arrays where possible to avoid redundant heap allocation inside `requestAnimationFrame`.
+
+## 2025-03-10 - Eliminate array methods in hot paths like HUD requestAnimationFrame loops
+**Learning:** High-frequency rendering loops (like HUD telemetry updates running at 60Hz via `requestAnimationFrame`) that use functional iterations or array allocations create significant Garbage Collection (GC) pressure, causing visual stuttering. In `hud_overlay/s650_hmi/assets/s650_frame.js`, the `getTireTemperatures` function used `.map()` and was allocating closures and temporary arrays continuously.
+**Action:** Replace `.map()`, `.filter()`, and `.forEach()` with native `for` loops in any code path executed per-frame. Pre-allocate arrays if their size is known (e.g., `new Array(4)`) to minimize heap allocations during rendering.

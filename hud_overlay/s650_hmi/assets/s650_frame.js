@@ -183,10 +183,12 @@
             var temperatures = Array.isArray(source.TireTemp)
                 ? source.TireTemp
                 : [source.temp_fl, source.temp_fr, source.temp_rl, source.temp_rr];
-            return [0, 1, 2, 3].map(function (index) {
-                var value = contract.finiteNumber(temperatures[index], 0);
-                return value > 0 ? value : null;
-            });
+            var result = new Array(4);
+            for (var i = 0; i < 4; i++) {
+                var value = contract.finiteNumber(temperatures[i], 0);
+                result[i] = value > 0 ? value : null;
+            }
+            return result;
         }
 
         function formatTireTemperature(value) {
