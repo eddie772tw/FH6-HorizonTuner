@@ -268,6 +268,16 @@
 
 ---
 
+---
+
+## 2026-08-11 / Theme Customization Cleanup
+
+- **Scope**: local / frontend ThemeView and persisted theme settings.
+- **Status**: adopted
+- **Learning**: The three-slot theme storage UI had no active consumer outside ThemeView, and the generated CSS template duplicated current token values while forcing an empty custom CSS field to become non-empty on mount.
+- **Action**: Removed legacy theme slots and their persistence path, kept validated JSON import/export, and changed custom CSS editing to a local draft with explicit Apply/Cancel/Clear actions. Custom CSS is now validated before it is persisted or imported.
+- **Evidence**: Frontend Vitest: 31 files / 197 tests passed; Vite production build passed; backend overlay API tests: 35 passed; all six locale JSON files parsed successfully.
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。
