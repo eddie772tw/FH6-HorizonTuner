@@ -927,5 +927,17 @@
   "NFS Most Wanted '05": "NFS Most Wanted '05",
   "NFS '15": "NFS '15",
   "NFS Shift": "NFS Shift",
-  "Drift HUD": "Drift HUD"
+  "Drift HUD": "Drift HUD",
+  "Chassis": "Chassis",
+  "Tire & Alignment": "Tire & Alignment",
+  "Telemetry Calibration": "Telemetry Calibration",
+  "General Settings": "General Settings",
+  "Displays & Layout": "Displays & Layout",
+  "Gauges & Scales": "Gauges & Scales",
+  "Performance & System": "Performance & System",
+  "UDP SIGNAL ACTIVE": "UDP SIGNAL ACTIVE",
+  "UDP DISCONNECTED": "UDP DISCONNECTED",
+  "UDP Connection Alert": "UDP Connection Alert",
+  "Forza Horizon UDP telemetry stream is disconnected.": "Forza Horizon UDP telemetry stream is disconnected.",
+  "Ensure Data Out is turned ON in game HUD settings (Port 8000/8001).": "Ensure Data Out is turned ON in game HUD settings (Port 8000/8001)."
 }

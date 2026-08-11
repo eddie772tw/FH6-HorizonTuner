@@ -927,5 +927,17 @@
   "NFS Most Wanted '05": "NFS Most Wanted '05 (モスト・ウォンテッド)",
   "NFS '15": "NFS '15",
   "NFS Shift": "NFS Shift (シフト)",
-  "Drift HUD": "ドリフト HUD (Drift HUD)"
+  "Drift HUD": "ドリフト HUD (Drift HUD)",
+  "Chassis": "シャーシ",
+  "Tire & Alignment": "タイヤとアライメント",
+  "Telemetry Calibration": "テレメトリ調整",
+  "General Settings": "一般設定",
+  "Displays & Layout": "ディスプレイとレイアウト",
+  "Gauges & Scales": "ゲージとスケール",
+  "Performance & System": "パフォーマンスとシステム",
+  "UDP SIGNAL ACTIVE": "UDP 信号アクティブ",
+  "UDP DISCONNECTED": "UDP 切断",
+  "UDP Connection Alert": "UDP 接続アラート",
+  "Forza Horizon UDP telemetry stream is disconnected.": "Forza Horizon の UDP テレメトリストリームが切断されています。",
+  "Ensure Data Out is turned ON in game HUD settings (Port 8000/8001).": "ゲーム内のHUD設定で「データ出力」がオンになっていることを確認してください (ポート 8000/8001)。"
 }
