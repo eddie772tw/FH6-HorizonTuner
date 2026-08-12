@@ -38,6 +38,29 @@ let peakSessionPower = 100;
 let peakSessionTorque = 100;
 let peakSessionBoost = 1.5;
 let lastCarOrdinal = null;
+const EMPTY_TIRE_TEMPERATURES = Object.freeze([null, null, null, null]);
+
+function finiteNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+}
+
+function nullableNumber(value) {
+    if (value === undefined || value === null || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function normalizeHeadingDegrees(yawRadians) {
+    const degrees = finiteNumber(yawRadians, 0) * 180 / Math.PI;
+    return ((degrees % 360) + 360) % 360;
+}
+
+function normalizeFuelRatio(value) {
+    const fuel = nullableNumber(value);
+    if (fuel === null) return null;
+    return Math.max(0, Math.min(1, fuel > 1 ? fuel / 100 : fuel));
+}
 
 function formatHudTelemetry(raw) {
     const isMetric = typeof window.isMetric === 'function' ? window.isMetric() : true;
@@ -49,6 +72,12 @@ function formatHudTelemetry(raw) {
     const nm = raw.TorqueNewtons || 0;
     const boostPsi = Math.max(0, raw.Boost || 0);
     const boostBar = Math.max(0, (raw.Boost || 0) / 14.5038);
+    const tireTempF = Array.isArray(raw.TireTemp) ? raw.TireTemp : EMPTY_TIRE_TEMPERATURES;
+    const distanceM = Math.max(0, finiteNumber(raw.DistanceTraveled, 0));
+    const headingDeg = normalizeHeadingDegrees(raw.Yaw);
+    const fuelRatio = normalizeFuelRatio(raw.Fuel);
+    const lap = nullableNumber(raw.LapNumber);
+    const racePosition = nullableNumber(raw.RacePosition);
 
     const maxRpm = raw.EngineMaxRpm || 7000;
     const idleRpm = raw.EngineIdleRpm || 1000;
@@ -114,6 +143,8 @@ function formatHudTelemetry(raw) {
         speed: isMetric ? speedKmh : speedMph,
         speed_kmh: speedKmh,
         speed_mph: speedMph,
+        distance_m: distanceM,
+        heading_deg: headingDeg,
         power: isMetric ? kw : hp,
         power_hp: hp,
         power_kw: kw,
@@ -140,6 +171,7 @@ function formatHudTelemetry(raw) {
         TireTemp: raw.TireTemp || [0, 0, 0, 0],
         TireSlipRatio: raw.TireSlipRatio || [slipFL, slipFR, slipRL, slipRR],
         TireSlipAngle: raw.TireSlipAngle || [0, 0, 0, 0],
+        tire_temp_f: tireTempF,
         temp_fl: raw.TireTemp?.[0] ?? 0,
         temp_fr: raw.TireTemp?.[1] ?? 0,
         temp_rl: raw.TireTemp?.[2] ?? 0,
@@ -153,6 +185,9 @@ function formatHudTelemetry(raw) {
         pos_x: raw.PositionX || 0,
         pos_y: raw.PositionY || 0,
         pos_z: raw.PositionZ || 0,
+        fuel_ratio: fuelRatio,
+        lap,
+        race_position: racePosition,
         num_cylinders: raw.Cylinders || 4,
         lockup,
         sessionMaxima,

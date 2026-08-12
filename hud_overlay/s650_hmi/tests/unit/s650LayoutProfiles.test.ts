@@ -27,8 +27,8 @@ function loadProfilesModule(): ProfilesModule {
   return window.S650HmiLayoutProfiles;
 }
 
-describe('S650 dual layout profiles', () => {
-  it('declares all retained themes as dual layouts with a shared outer gauge boundary', () => {
+describe('S650 layout profiles', () => {
+  it('keeps dual-ring themes on their shared outer gauge boundary and declares Track independently', () => {
     const layout = loadProfilesModule().create({
       width: 1280,
       height: 480,
@@ -36,14 +36,21 @@ describe('S650 dual layout profiles', () => {
     });
 
     expect(layout.type).toBe('dual');
-    expect(Object.values(layout.profiles).map((profile) => profile.type)).toEqual(['dual', 'dual', 'dual']);
+    expect(Object.values(layout.profiles).map((profile) => profile.type)).toEqual(['dual', 'dual', 'dual', 'track']);
     expect(layout.geometry.centerInfo).toEqual({ x: 425, y: 126, width: 430, height: 230 });
     expect(layout.geometry.mainGauge).toMatchObject({
       leftCenterX: 256,
       rightCenterX: 1024,
       outerRadius: 188,
     });
-    expect(new Set(Object.values(layout.profiles).map((profile) => profile.dial.outerInset))).toEqual(new Set([7, 8]));
+    expect(new Set(Object.values(layout.profiles).filter((profile) => profile.type === 'dual').map((profile) => profile.dial.outerInset))).toEqual(new Set([7, 8]));
     expect(layout.profiles.foxbody.dial.renderer).toBe('foxbodyAnalog');
+    expect(layout.profiles.track).toMatchObject({
+      type: 'track',
+      sideGauges: false,
+      dial: { renderer: 'trackPerformance', outerInset: 0 },
+    });
+    expect(layout.profiles.sport).toBeUndefined();
+    expect(layout.profiles.svt_cobra).toBeUndefined();
   });
 });

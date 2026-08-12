@@ -27,7 +27,11 @@ function loadLayoutsModule(): LayoutModule {
   return window.S650HmiLayouts;
 }
 
-function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
+function createLayouts(
+  events: string[],
+  foxbodyCalls: unknown[][] = [],
+  performanceClusters: Record<string, unknown> | undefined = undefined,
+) {
   return loadLayoutsModule().create({
     ctx: {
       save: () => undefined,
@@ -65,12 +69,17 @@ function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
       drawNormalEnergyDial: () => events.push('mainDial'),
       drawRetroDial: () => events.push('mainDial'),
       drawHeritageDial: () => events.push('mainDial'),
+      drawGearCarousel: () => events.push('gearCarousel'),
       drawFoxbodyDial: (...args: unknown[]) => {
         events.push('mainDial');
         foxbodyCalls.push(args);
       },
+      drawSportCluster: () => events.push('sportCluster'),
+      drawSvtCobraCluster: () => events.push('svtCobraCluster'),
+      drawTrackCluster: () => events.push('trackCluster'),
       getHeritageDialScale: () => ({ max: 80 }),
     },
+    performanceClusters,
     baseDriving: { draw: () => events.push('baseDriving') },
     centerInfo: { draw: () => events.push('centerInfo') },
     width: 1280,
@@ -100,5 +109,52 @@ describe('S650 dual layout pipeline', () => {
     layouts.render('foxbody', { redlineRpm: 7000 }, { primary: '#C98D5A', secondary: '#98A0A8' }, 0.875);
 
     expect((foxbodyCalls[1][6] as { specialMark: number }).specialMark).toBe(60);
+  });
+
+  it('routes Track through its dedicated cluster without rendering dual-ring layers', () => {
+    const events: string[] = [];
+    const layouts = createLayouts(events);
+
+    layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
+
+    expect(events).toEqual(['trackCluster']);
+  });
+
+  it.each(['sport', 'svt_cobra'])('falls back from the unregistered %s prototype to Normal', (theme) => {
+    const events: string[] = [];
+    const layouts = createLayouts(events);
+
+    layouts.render(theme, { redlineRpm: 7000 }, { primary: '#1351D8', secondary: '#9AA3AD' }, 0.875);
+
+    expect(events).toEqual(['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']);
+    expect(events).not.toContain('sportCluster');
+    expect(events).not.toContain('svtCobraCluster');
+  });
+
+  it('prefers the dedicated Track renderer when it is available', () => {
+    const events: string[] = [];
+    const layouts = createLayouts(events, [], {
+      drawTrack: () => events.push('trackPerformance'),
+    });
+
+    layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
+
+    expect(events).toEqual(['trackPerformance']);
+  });
+
+  it('passes Track the shared center-information and gear components', () => {
+    const events: string[] = [];
+    const dependencies: Array<Record<string, unknown>> = [];
+    const layouts = createLayouts(events, [], {
+      drawTrack: (...args: unknown[]) => dependencies.push(args[5] as Record<string, unknown>),
+    });
+
+    layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
+
+    expect(dependencies).toHaveLength(1);
+    expect(dependencies[0]).toEqual(expect.objectContaining({
+      centerInfo: expect.objectContaining({ draw: expect.any(Function) }),
+      primitives: expect.objectContaining({ drawGearCarousel: expect.any(Function) }),
+    }));
   });
 });

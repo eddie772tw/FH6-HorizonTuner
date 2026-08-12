@@ -14,6 +14,9 @@
         if (typeof definition.render !== 'function') {
             throw new TypeError('[S650 Center Info] Page definition requires a render function.');
         }
+        if (definition.renderCompact !== undefined && typeof definition.renderCompact !== 'function') {
+            throw new TypeError('[S650 Center Info] Compact page renderer must be a function.');
+        }
         if (pageRegistry[definition.id]) {
             throw new Error('[S650 Center Info] Duplicate page id: ' + definition.id);
         }
@@ -25,7 +28,8 @@
             id: definition.id,
             label: definition.label || definition.id,
             status: definition.status || 'experimental',
-            render: definition.render
+            render: definition.render,
+            renderCompact: definition.renderCompact || null
         });
     }
 
@@ -35,6 +39,12 @@
 
     function numberOr(value, fallback) {
         return typeof value === 'number' && isFinite(value) ? value : fallback;
+    }
+
+    function normalizeLayoutStyle(region) {
+        if (region && region.layoutStyle === 'trackSidebar') return 'trackSidebar';
+        // Compatibility for recipes created before layoutStyle was explicit.
+        return region && region.variant === 'trackCompact' ? 'trackSidebar' : 'dualRing';
     }
 
     function normalizeRegion(region) {
@@ -49,6 +59,12 @@
             if (typeof region[key] === 'number' && isFinite(region[key])) {
                 normalized[key] = region[key];
             }
+        });
+        var layoutStyle = normalizeLayoutStyle(region);
+        normalized.layout = Object.freeze({
+            style: layoutStyle,
+            aspectRatio: normalized.height > 0 ? normalized.width / normalized.height : 1,
+            isCompact: layoutStyle === 'trackSidebar'
         });
         return normalized;
     }
@@ -77,14 +93,15 @@
 
             var normalizedRegion = normalizeRegion(region);
 
-            page.render({
+            var context = {
                 view: view,
                 data: data,
                 palette: palette,
                 region: normalizedRegion,
                 primitives: primitives,
                 ctx: ctx
-            });
+            };
+            (normalizedRegion.layout.isCompact && typeof page.renderCompact === 'function' ? page.renderCompact : page.render)(context);
 
         }
 

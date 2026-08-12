@@ -13,7 +13,7 @@ import {
   normalizeS650HmiConfig,
   type S650CenterWidget,
   type S650HmiTheme,
-} from './s650Hmi';
+} from './s650/config';
 import '../../App.css';
 import { backendFetch, backendHttpUrl } from '../../services/backend';
 

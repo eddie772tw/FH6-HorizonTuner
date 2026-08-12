@@ -43,6 +43,14 @@
 - **Action**：Jules 原始日誌統一使用 lowercase `.jules/`；新增日誌前先檢查大小寫等價路徑，禁止建立只差大小寫的 duplicate path。
 - **Evidence**：`git ls-files -s` 在整理前出現兩個 palette path；整理後只保留 `.jules/bolt.md`、`.jules/narrator.md`、`.jules/palette.md`、`.jules/sentinel.md`。
 
+## 2026-08-11 / S650 HMI canonical telemetry contract
+
+- **來源**：`local`，S650 HMI Phase 2 canonical-only migration。
+- **狀態**：`adopted`。
+- **Learning**：S650 renderer 的 raw telemetry ingress 是 `hud_overlay/shared/coordinator.js` 發出的 `hud:frame`；UDP `Yaw` 為 rad、`TireTemp` 為 ℉、`Boost` 為 PSI、`Fuel` 為 `0..1`。S650 renderer 若繼續讀取 raw alias，會讓不同中央頁面各自重複轉換單位，且 Heritage boost 曾因此走到錯誤的 Pa→PSI 再轉換路徑。
+- **Action**：S650 renderer 只讀取 `s650-hmi/v2` canonical frame。coordinator 負責產生 `distance_m`、`heading_deg`、`tire_temp_f`、`fuel_ratio`、`lap`、`race_position`，並沿用既有的 `speed_*`、`power_*`、`torque_*`、`boost_*` 欄位；renderer、layout 與 central pages 不得接受 raw key、legacy alias、m/s 速度或 `0..255` pedal input。
+- **Evidence**：`hud_overlay/s650_hmi/assets/s650_contract.js`、`hud_overlay/shared/coordinator.js`；`s650Contract.test.ts`、`s650FrameCanonicalInput.test.ts`、`s650CenterInfoCanonicalData.test.ts` 共 202 個 frontend tests 通過；packet unit evidence 位於 `.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md`。
+
 本文件用於記錄與歸納 Agent 在 FH6-HorizonTuner 開發過程（含 `.jules/` 歷史模組）中積累的**核心學習點（Critical Learnings）、無障礙規範與安全避坑指南**。
 
 ---
@@ -268,6 +276,137 @@
 
 ---
 
+## 2026-08-12 / S650 Launcher Theme Contract
+
+- **Scope**: local / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: adopted
+- **Learning**: The control panel, backend, and S650 canvas contract recognized the three performance themes, but the HUD launcher retained the earlier three-theme allowlist. Launcher normalization silently rewrote each performance selection to `heritage67` before it reached the iframe.
+- **Action**: Keep the launcher's allowlist aligned with the S650 renderer contract and cover it with a launcher-specific Vitest regression test.
+- **Evidence**: `hud_overlay/index.html`, `s650HudLauncherConfig.test.ts`
+---
+
+## 2026-08-12 / S650 Track and SVT Cobra Visual Rework
+
+- **Scope**: local / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: pending visual review
+- **Decision**: Keep Sport on its existing implementation while its product direction is evaluated. Rebuild only Track and SVT Cobra as transparent overlays so they do not mask the game image.
+- **Action**: Track now uses the S650-oriented wide RPM band, central speed, discrete gear readout, fuel bar, and tire-temperature perimeter. SVT Cobra uses two analog rings with white/silver ticks, red needles, an 8k SVT tachometer, and a 160 mph-equivalent speed scale. The layout dispatcher prefers these renderers and retains the existing primitive clusters solely as a fallback.
+- **Evidence**: `hud_overlay/s650_hmi/assets/s650_performance_clusters.js`, `s650_layouts.js`, `s650PerformanceClusters.test.ts`, `s650DualLayoutPipeline.test.ts`; frontend Vitest: 40 files / 221 tests passed.
+---
+
+## 2026-08-12 / S650 Track Recipe Skeleton
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Architecture**: Every S650 cluster composes shared component categories through its own layout recipe. A recipe owns geometry and presentation variants; component modules own Canvas drawing and canonical-frame reads. Track is the first performance layout migrated to this model.
+- **Action**: Added `S650HmiClusterComponents` and a Track recipe selecting a `trackWide` tachometer, smoked center-info container with tire overview, left thermal rail, right fuel rail, and footer status/gear layout. The central speed and `Track use only` copy are intentionally deferred for a separate information-hierarchy review.
+- **Data boundary**: Tire temperature and fuel use canonical data. The thermal rail visibly reports unavailable because no coolant/oil-temperature datum has entered the canonical S650 frame; no placeholder measurement is invented.
+- **Verification**: Frontend Vitest: 40 files / 221 tests passed; `node --check` and `git diff --check` passed.
+---
+
+## 2026-08-12 / S650 Track Skeleton Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Decision**: A Track recipe must compose the existing center-info and dynamic-gear children, not recreate a fixed tire page or a transmission label list. Footer readouts must be recipe slots with explicit positions, as in every other cluster.
+- **Action**: Removed the irregular smoked-blue panel and fixed tire sketch. Track now invokes the registered center-info module in a right-side region. Its rails select canonical `power` and `boost` roles rather than hard-coding thermal/fuel text. The tachometer clips base, redline, and active fills to its trapezoid. The footer defines all four canonical readout slots and delegates the middle gear display to `drawGearCarousel`.
+- **Verification**: `s650PerformanceClusters.test.ts` verifies clipping, right-side center-info injection, role-driven rails, all footer slots, and dynamic gear delegation. `s650DualLayoutPipeline.test.ts` verifies the layout dispatcher passes the shared center-info and gear primitives.
+---
+
+## 2026-08-12 / S650 Track Gauge Density Tuning
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Finding**: Track and dual-ring themes share the same fixed 1280x480 Canvas and CSS dimensions. The reported central visual weight is recipe density from Track's continuous 1120px tachometer and 808px footer, not a theme-specific scaling defect.
+- **Action**: Track's active RPM fill now uses the normal/default primary blue and accepts the GUI custom primary palette. Its base, active, and redline bands are clipped to a lower-edge center peak, reducing the central fill depth by 20%. The side rails are larger, positioned inward, and use 8px active bands for quicker reading.
+- **Guardrail**: Preserve the wide Track tachometer as a Track presentation variant. Future density tuning should reduce footer contrast or width before changing canvas size or globally scaling the cluster.
+- **Verification**: Frontend Vitest: 40 files / 222 tests passed; `node --check` and `git diff --check` passed.
+---
+
+## 2026-08-12 / S650 Track Lowered Tachometer Reflow
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Finding**: HUD zoom is bottom-anchored. The former Track tachometer at y=86 appears near y=184-204 when zoomed to 70-75%; its full-size compromise position is y=194.
+- **Action**: Moved the Track wide tachometer to y=194 and changed its lower edge from a central triangle to a trapezoid mirroring the upper edge. Track now uses a compact right-side center-info variant at y=298 and moves the footer/gear carousel to y=414/447. Drive, tire-temperature, and performance center pages each define a compact renderer so Track retains user-selected center content without reintroducing a fixed wheel display.
+- **Verification**: `s650CenterInfo.test.ts` covers compact renderer selection; Track recipe tests cover the compact region and gear anchor. Frontend Vitest: 40 files / 223 tests passed.
+---
+
+## 2026-08-12 / S650 Track Anchor Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: pending visual review
+- **Finding**: The review baseline is a 2560×1440 display. At that target, the shared S650 effective zoom of 1.18125 is correct and must not be reduced. The prior recipe's downward reflow instead pushed Track's lower readouts into the screen edge, where they were clipped.
+- **Decision**: Preserve the shared S650 scale. Revert only the Track recipe's vertical displacement: tachometer y=86, center-info y=184, rails y=202, and footer/gear y=374/407. Keep the later component fixes, including the trapezoid-clipped theme-aware tach fill and compact center-info renderers.
+- **Verification**: `s650PerformanceClusters.test.ts` locks the restored center-info, gear, and tachometer outline anchors. Manual 2560×1440 HUD review remains required before merge.
+---
+
+## 2026-08-12 / S650 Track Detail Alignment
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: Track's tick marks used an inset RPM scale, while redline and active fill rectangles used the full trapezoid width. That mixed coordinate system made the redline edge and live RPM color appear under the wrong ticks. The compact center-information behaviour was also implicit in a renderer variant instead of being part of the layout contract.
+- **Action**: `trackWide` now derives active and redline fill geometry from the same inset scale as ticks. Center-information normalizes an explicit `layoutStyle: 'trackSidebar'` into style, aspect-ratio, and compact-layout context. Track adds a shared `trackSpeedGear` component to the left-side counterpart of center information; speed and gear use separate fixed right alignment anchors, so speed digit count cannot move either field.
+- **Verification**: `s650PerformanceClusters.test.ts` locks the redline/active fill scale and both speed/gear text anchors. `s650CenterInfo.test.ts` covers explicit Track sidebar selection. Frontend Vitest: 40 files / 223 tests passed.
+---
+
+## 2026-08-12 / S650 Track Speed-Gear Hierarchy
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Decision**: The Track left-side companion must read from the center outward: gear on the left, speed on the right, separated by the actual geometric center line. This preserves the right-edge anchoring required for speed digit stability while making the two fields visually symmetrical with the right-side center-information region.
+- **Action**: `trackSpeedGear` now accepts recipe-owned divider and vertical anchors. Track sets the divider at its center (`x=355`), gear/speed right bounds at either side, 69px/57px value typography (150% of the prior values), and a vertically centered text group.
+- **Verification**: `s650PerformanceClusters.test.ts` locks both aligned values, the enlarged fonts, and the center divider start. Frontend Vitest: 40 files / 223 tests passed.
+---
+
+## 2026-08-12 / S650 Track Speed-Gear Balance Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: Enlarging the prior near-center gear anchor to 69px caused it to collide with its label and made the left/right halves read unevenly. The lower speed unit also competed for the same vertical space, leaving the whole group visually high.
+- **Action**: Track now uses outward-facing columns around its geometric center line: gear is left-aligned at the left outer edge and speed is right-aligned at the right outer edge. Both values use balanced 57px typography; speed's unit is folded into the `SPEED <unit>` label. The recipe shifts the block down 14px and assigns independent label/value anchors, preserving a clear gap above enlarged values.
+- **Verification**: `s650PerformanceClusters.test.ts` locks the left gear and right speed anchors, 57px font size, and the lower central divider anchor. Frontend Vitest: 40 files / 223 tests passed.
+---
+
+## 2026-08-12 / S650 Track Redline Live-Fill Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: Track painted the active band after the redline band, but incorrectly capped its width at `redlineRatio`. Once engine RPM crossed redline, the active indication stopped at the warning boundary and the static red region was the only visible state.
+- **Action**: Preserve the redline band as a threshold underlay, then extend the final active fill to the true current RPM ratio. The tick/redline scale remains unchanged; only the live-fill upper bound is corrected.
+- **Verification**: `s650PerformanceClusters.test.ts` exercises 7800/8000 RPM against an 87.5% redline and confirms the active band is painted after redline through the 97.5% current-RPM position. Frontend Vitest: 40 files / 224 tests passed.
+---
+
+## 2026-08-12 / S650 Track Trapezoid Endcaps
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: The Track fill rectangles used the inset tick span as both the ratio scale and the painted extent. Although the ratio boundary was correct, this left the left active and right redline trapezoid endcaps uncoloured.
+- **Action**: Keep the inset span exclusively for RPM/redline ratio calculation. The clipped active band now starts at the full left outline point and the redline band ends at the full right outline point, so both angled endcaps receive the correct live/warning color. The Track gear value moves from the left outer edge to the center of its left half-column.
+- **Verification**: `s650PerformanceClusters.test.ts` locks full endcap fill extents and the centered gear anchor (`x=284`). Frontend Vitest: 40 files / 224 tests passed.
+---
+
+## 2026-08-12 / S650 Track Sidebar Safe Corridor
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: The wider Track sidebar components crossed the game's live race-message area from both sides. The reference design also terminates its redline segment as a flat-sided block, rather than extending the full trapezoid into a downward right tip.
+- **Action**: Track reserves an explicit central safe corridor: `trackSpeedGear` ends at x=420 and `trackSidebar` begins at x=840. The tachometer retains its left slanted entry but ends at the final scale point with a vertical redline edge; fill clipping and tick ratios remain shared-component behaviour.
+- **Verification**: `s650PerformanceClusters.test.ts` locks both sidebar recipe bounds and the flat right outline points at x=1122. Frontend Vitest: 40 files / 224 tests passed.
+---
+
+## 2026-08-12 / S650 Track Release Scope and Prototype Quarantine
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: Track implementation complete; Sport and SVT Cobra retained as early visual-development prototypes.
+- **Decision**: This branch is the merge candidate for the reviewed Track layout. Sport and SVT Cobra do not meet visual acceptance and must not be selectable, normalized as valid themes, or dispatched by the renderer. Their local recipes, palettes, primitive renderers, and isolated tests remain in place for later design work.
+- **Action**: Restricted the public S650 registry to Normal, Heritage '67, Fox Body, and Track across the frontend selector, launcher, Canvas contract, backend normalizer, and layout registry. Stored `sport` / `svt_cobra` values now safely fall back to `heritage67`; direct renderer calls also resolve to the Normal dual-ring profile. Annotated retained prototype code with `TODO(s650-sport*)` / `TODO(s650-svt-cobra*)` markers.
+- **Verification**: Frontend and backend regression tests assert both prototype ids are unregistered and cannot dispatch their renderers; their isolated palette/renderer tests remain as development references.
+---
+
+## 2026-08-12 / S650 HMI Ownership Boundary Refactor
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Decision**: The React control panel owns only the typed S650 configuration boundary: selector values, legacy-id normalization before save, and UI-specific type guards. The standalone Canvas contract, frame, renderer, layouts, primitives, and their tests belong to `hud_overlay/s650_hmi`.
+- **Action**: Moved Canvas unit tests to `hud_overlay/s650_hmi/tests/unit`, launcher-boundary coverage to `tests/integration`, and moved the React configuration helper to `frontend/src/features/overlay_control/s650/config.ts`. Frontend Vitest explicitly includes the HUD-owned tests so the existing `pnpm -C frontend run test` command remains the single test entry point.
+- **Release boundary**: The frontend build now copies HUD assets through `frontend/scripts/copy-hud.mjs`, excluding every `tests` directory from `dist/hud`; test relocation therefore does not enlarge production artifacts.
+- **Guardrail**: This is an ownership-only move: no renderer hot-path logic, telemetry contract, or UI behaviour changes. A later phase may replace duplicated theme allowlists with a generated or shared manifest, but must not make the static HUD import the React bundle.
 ---
 
 ## 2026-08-11 / Theme Customization Cleanup

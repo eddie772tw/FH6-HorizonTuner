@@ -10,12 +10,13 @@ import {
   isS650CenterWidget,
   isS650HmiTheme,
   normalizeS650HmiConfig,
-} from './s650Hmi';
+} from './config';
 
 describe('S650 HMI config contract', () => {
   it('exposes only the retained S650 themes in the selector', () => {
     expect(S650_HMI_THEMES.map((theme) => theme.value)).toEqual([
       'normal',
+      'track',
       'heritage67',
       'foxbody',
     ]);
@@ -51,6 +52,8 @@ describe('S650 HMI config contract', () => {
     });
 
   it.each([
+    ['sport', 'unregistered Sport prototype'],
+    ['svt_cobra', 'unregistered SVT Cobra prototype'],
     ['unknown', 'unknown string'],
     ['', 'empty string'],
     [null, 'null'],
@@ -101,7 +104,9 @@ describe('S650 HMI config contract', () => {
     expect(isS650HmiTheme('normal')).toBe(true);
     expect(isS650HmiTheme('heritage67')).toBe(true);
     expect(isS650HmiTheme('foxbody')).toBe(true);
-    expect(isS650HmiTheme('track')).toBe(false);
+    expect(isS650HmiTheme('sport')).toBe(false);
+    expect(isS650HmiTheme('svt_cobra')).toBe(false);
+    expect(isS650HmiTheme('track')).toBe(true);
     expect(isS650HmiTheme('s650_heritage67')).toBe(false);
     expect(isS650HmiTheme('')).toBe(false);
     expect(isS650HmiTheme(undefined)).toBe(false);

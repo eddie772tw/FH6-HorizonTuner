@@ -101,29 +101,28 @@
 
     function displayPower(view, data) {
         if (view.isMetric) {
-            return { value: Math.round(number(read(data, ['power_kw'], number(data && data.PowerWatts, 0) / 1000), 0)), unit: 'kW' };
+            return { value: Math.round(number(data && data.power_kw, 0)), unit: 'kW' };
         }
-        return { value: Math.round(number(read(data, ['power_hp'], number(data && data.PowerWatts, 0) / 745.7), 0)), unit: 'HP' };
+        return { value: Math.round(number(data && data.power_hp, 0)), unit: 'HP' };
     }
 
     function displayTorque(view, data) {
         if (view.isMetric) {
-            return { value: Math.round(number(read(data, ['torque_nm'], data && data.TorqueNewtons), 0)), unit: 'N·m' };
+            return { value: Math.round(number(data && data.torque_nm, 0)), unit: 'N·m' };
         }
-        return { value: Math.round(number(read(data, ['torque_ftlbs'], number(data && data.TorqueNewtons, 0) * 0.737562), 0)), unit: 'FT·LB' };
+        return { value: Math.round(number(data && data.torque_ftlbs, 0)), unit: 'FT·LB' };
     }
 
     function displayBoost(view, data) {
         if (view.isMetric) {
-            return { value: number(read(data, ['boost_bar'], number(data && data.Boost, 0) / 14.5038), 0).toFixed(1), unit: 'BAR' };
+            return { value: number(data && data.boost_bar, 0).toFixed(1), unit: 'BAR' };
         }
-        return { value: number(read(data, ['boost_psi', 'boost'], data && data.Boost), 0).toFixed(1), unit: 'PSI' };
+        return { value: number(data && data.boost_psi, 0).toFixed(1), unit: 'PSI' };
     }
 
     function displayFuel(data) {
-        var fuel = number(read(data, ['Fuel', 'fuel'], -1), -1);
+        var fuel = number(data && data.fuel_ratio, -1);
         if (fuel < 0) return { value: '--', unit: '%' };
-        if (fuel > 1) fuel /= 100;
         return { value: Math.round(clamp(fuel, 0, 1) * 100), unit: '%' };
     }
 
