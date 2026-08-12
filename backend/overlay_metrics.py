@@ -28,9 +28,7 @@ class OverlayPerformanceMetrics:
 
     def record_duration(self, name: str, elapsed_seconds: float) -> None:
         """Record a non-negative duration in milliseconds."""
-        samples = self._durations_ms.setdefault(
-            name, deque(maxlen=self._sample_window)
-        )
+        samples = self._durations_ms.setdefault(name, deque(maxlen=self._sample_window))
         samples.append(max(0.0, elapsed_seconds * 1000.0))
 
     def snapshot(self, *, active_clients: int, render_mode: str) -> dict[str, Any]:
@@ -60,9 +58,7 @@ class _OverlayTimer:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self._metrics.record_duration(
-            self._name, perf_counter() - self._started_at
-        )
+        self._metrics.record_duration(self._name, perf_counter() - self._started_at)
 
 
 def _summarize_samples(samples: deque[float]) -> dict[str, float | int]:
@@ -71,9 +67,7 @@ def _summarize_samples(samples: deque[float]) -> dict[str, float | int]:
         return {"count": 0, "last": 0.0, "avg": 0.0, "max": 0.0, "p95": 0.0}
 
     values = sorted(samples)
-    percentile_index = min(
-        len(values) - 1, max(0, (len(values) * 95 + 99) // 100 - 1)
-    )
+    percentile_index = min(len(values) - 1, max(0, (len(values) * 95 + 99) // 100 - 1))
     return {
         "count": len(samples),
         "last": round(samples[-1], 3),

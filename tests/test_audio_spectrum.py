@@ -43,4 +43,3 @@ def test_audio_snapshot_sequence_and_state_follow_sample_age(monkeypatch):
     assert unavailable["state"] == "unavailable"
     assert unavailable["vu_left"] == 0.0
     assert unavailable["vu_right"] == 0.0
-

@@ -204,7 +204,11 @@ async def get_audio_spectrum_data() -> dict:
     start_audio_spectrum_service()
     now = time.monotonic()
     with _lock:
-        age = now - _audio_cache["last_update"] if _audio_cache["sequence"] else float("inf")
+        age = (
+            now - _audio_cache["last_update"]
+            if _audio_cache["sequence"]
+            else float("inf")
+        )
         if age > AUDIO_SILENT_AFTER_SECONDS:
             state = "unavailable"
         elif age > AUDIO_STALE_AFTER_SECONDS:
@@ -217,8 +221,12 @@ async def get_audio_spectrum_data() -> dict:
         has_audio = bool(_audio_cache["has_audio"]) and state == "live"
         return {
             "spectrum": list(_audio_cache["spectrum"]),
-            "vu_left": float(_audio_cache["vu_left"]) if state != "unavailable" else 0.0,
-            "vu_right": float(_audio_cache["vu_right"]) if state != "unavailable" else 0.0,
+            "vu_left": float(_audio_cache["vu_left"])
+            if state != "unavailable"
+            else 0.0,
+            "vu_right": float(_audio_cache["vu_right"])
+            if state != "unavailable"
+            else 0.0,
             "has_audio": has_audio,
             "state": state,
             "sequence": int(_audio_cache["sequence"]),

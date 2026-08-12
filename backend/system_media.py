@@ -73,8 +73,10 @@ def _query_powershell_gsmtc() -> dict | None:
             data = json.loads(res.stdout.strip())
             if data and not data.get("has_media"):
                 return {"available": True, "has_media": False}
-            if data and data.get("has_media") and (
-                data.get("title") or data.get("artist")
+            if (
+                data
+                and data.get("has_media")
+                and (data.get("title") or data.get("artist"))
             ):
                 return {
                     "title": (data.get("title") or "").strip() or DEFAULT_TITLE,
@@ -356,7 +358,10 @@ def _apply_media_failure(now: float) -> None:
     _media_cache["failure_count"] += 1
     _media_cache["next_retry_at"] = now + MEDIA_FAILURE_BACKOFF_SECONDS[failure_count]
 
-    if _media_cache["last_valid"] and now - _media_cache["last_valid"] <= MEDIA_STALE_GRACE_SECONDS:
+    if (
+        _media_cache["last_valid"]
+        and now - _media_cache["last_valid"] <= MEDIA_STALE_GRACE_SECONDS
+    ):
         _media_cache["state"] = "stale"
         _media_cache["source"] = "stale"
         return
