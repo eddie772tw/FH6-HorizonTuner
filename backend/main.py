@@ -79,6 +79,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
+from overlay_metrics import OverlayPerformanceMetrics
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from system_media import get_system_media_info
 from telemetry_listener import (
@@ -242,6 +243,7 @@ telemetry_manager = ConnectionManager()
 overlay_manager = ConnectionManager()
 telemetry_queue = asyncio.Queue(maxsize=10)
 telemetry_pipeline_metrics = TelemetryPipelineMetrics()
+overlay_performance_metrics = OverlayPerformanceMetrics()
 
 current_udp_transport = None
 current_udp_ip_port = (None, None)
@@ -990,20 +992,28 @@ async def broadcast_overlay_state():
             if overlay_manager.active_connections:
                 current_time = time.time()
 
-                # Fetch audio spectrum every iteration (approx 60ms)
-                audio_data = await get_audio_spectrum_data()
+                # Fetch audio spectrum every overlay loop iteration for baseline data.
+                overlay_performance_metrics.increment("audioPolls")
+                with overlay_performance_metrics.measure("audioSnapshot"):
+                    audio_data = await get_audio_spectrum_data()
                 if audio_data:
-                    await overlay_manager.broadcast_json(
-                        {"type": "hud:audio", "data": audio_data}
-                    )
+                    overlay_performance_metrics.increment("audioPublishes")
+                    with overlay_performance_metrics.measure("audioBroadcast"):
+                        await overlay_manager.broadcast_json(
+                            {"type": "hud:audio", "data": audio_data}
+                        )
 
                 # Fetch media info every 1000ms
                 if current_time - last_media_time >= 1.0:
-                    media_data = await get_system_media_info()
+                    overlay_performance_metrics.increment("mediaPolls")
+                    with overlay_performance_metrics.measure("mediaSnapshot"):
+                        media_data = await get_system_media_info()
                     if media_data:
-                        await overlay_manager.broadcast_json(
-                            {"type": "hud:media", "data": media_data}
-                        )
+                        overlay_performance_metrics.increment("mediaPublishes")
+                        with overlay_performance_metrics.measure("mediaBroadcast"):
+                            await overlay_manager.broadcast_json(
+                                {"type": "hud:media", "data": media_data}
+                            )
                     last_media_time = current_time
 
             # 60Hz loop interval (approx 16.6ms) - we run it at roughly 16-20ms to allow smooth audio
@@ -1225,6 +1235,15 @@ async def get_telemetry_pipeline_metrics():
     }
     snapshot["raceRecorderPersistence"] = race_persistence.snapshot()
     return snapshot
+
+
+@app.get("/api/diagnostics/overlay")
+async def get_overlay_performance_metrics():
+    """Expose bounded overlay diagnostics and the active VFD renderer mode."""
+    return overlay_performance_metrics.snapshot(
+        active_clients=len(overlay_manager.active_connections),
+        render_mode=VFD_RENDER_MODE,
+    )
 
 
 @app.websocket("/ws/telemetry")
@@ -1916,6 +1935,14 @@ DEFAULT_LAYOUT = {
 HUD_CONFIG_FILE = os.path.join(DATA_ROOT, "hud_config.json")
 CAR_LEARNING_FILE = os.path.join(DATA_ROOT, "car_learning.json")
 
+
+def normalize_vfd_render_mode(value: object) -> str:
+    """Return the supported VFD renderer mode, defaulting to the safe legacy path."""
+    return "optimized" if value == "optimized" else "legacy"
+
+
+VFD_RENDER_MODE = normalize_vfd_render_mode(os.getenv("VFD_RENDER_MODE", "legacy"))
+
 DEFAULT_HUD_CONFIG = {
     "enabled": False,
     "hudStyle": "vfd",
@@ -1978,6 +2005,7 @@ S650_HMI_CENTER_WIDGETS = {"disable", "drive", "tire_temp", "performance"}
 def normalize_hud_config(data: dict) -> dict:
     """Normalize S650 HUD ids while leaving other HUD configurations untouched."""
     normalized = dict(data or {})
+    normalized.pop("vfdRenderMode", None)
     # actualScale used to be a derived compatibility field. Scaling now has a
     # single owner (HUDCore), so discard stale values from older config files.
     normalized.pop("actualScale", None)
@@ -2009,6 +2037,7 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     theme = app_settings.get("theme", {})
     mode = theme.get("mode") if isinstance(theme, dict) else None
     normalized["s650GuiThemeMode"] = "light" if mode == "light" else "dark"
+    normalized["vfdRenderMode"] = VFD_RENDER_MODE
     return normalized
 
 

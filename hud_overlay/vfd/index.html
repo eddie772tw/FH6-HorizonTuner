@@ -61,6 +61,12 @@
 
             var currentPalette = Object.assign({}, defaultPalette);
             var isMetricUnit = true;
+            var vfdRenderMode = 'legacy';
+
+            function syncVFDRenderMode() {
+                var configuredMode = window._currentFullConfig && window._currentFullConfig.vfdRenderMode;
+                vfdRenderMode = configuredMode === 'optimized' ? 'optimized' : 'legacy';
+            }
 
             // ── Motion Effect Smooth Lerp State ─────────────────────────────────────
             var motionState = {
@@ -684,6 +690,8 @@
             function renderVFDSuite(data, payload) {
                 if (!ctx) return;
 
+                syncVFDRenderMode();
+
                 // ── Glow Intensity & Dynamic Waveform Modulated Radius ─────────────────────
                 var baseGlowFactor = (window._currentFullConfig && window._currentFullConfig.glowIntensity !== undefined) ? window._currentFullConfig.glowIntensity : 1.0;
                 var rpmRatio = (data && data.maxRpm) ? clamp((data.rpm || 0) / data.maxRpm, 0, 1) : 0;
@@ -812,6 +820,7 @@
                 onInit: function (payload) {
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     if (payload) latestTelemetryPayload = payload;
+                    syncVFDRenderMode();
                 },
                 onElementsChange: function (elements) {
                     var c = document.getElementById('vfdContainer');
