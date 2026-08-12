@@ -148,8 +148,13 @@
             var x = recipe.x;
             var y = recipe.y;
             var width = recipe.width;
-            var speedRight = x + (recipe.speedRight === undefined ? width * 0.55 : recipe.speedRight);
-            var gearRight = x + (recipe.gearRight === undefined ? width : recipe.gearRight);
+            var dividerX = x + (recipe.dividerX === undefined ? width / 2 : recipe.dividerX);
+            var gearRight = recipe.gearRight === undefined ? dividerX - 14 : x + recipe.gearRight;
+            var speedRight = x + (recipe.speedRight === undefined ? width : recipe.speedRight);
+            var labelY = y + (recipe.labelY === undefined ? 17 : recipe.labelY);
+            var valueY = y + (recipe.valueY === undefined ? 52 : recipe.valueY);
+            var unitY = y + (recipe.unitY === undefined ? 79 : recipe.unitY);
+            var dividerInset = recipe.dividerInset === undefined ? 10 : recipe.dividerInset;
             var speed = typeof view.roundedSpeed === 'function' ? view.roundedSpeed(data) : '--';
             var unit = typeof view.unitLabel === 'function' ? view.unitLabel() : '';
             var gear = typeof view.getGearLabel === 'function' ? view.getGearLabel(data) : '--';
@@ -160,28 +165,28 @@
 
             setFont(ctx, recipe.labelSize || 10, '700');
             ctx.fillStyle = palette.secondary;
-            ctx.fillText('SPEED', speedRight, y + 10);
-            ctx.fillText('GEAR', gearRight, y + 10);
+            ctx.fillText('GEAR', gearRight, labelY);
+            ctx.fillText('SPEED', speedRight, labelY);
 
             if (recipe.divider !== false) {
-                drawRule(ctx, speedRight + (recipe.dividerOffset || 14), y + 4,
-                    speedRight + (recipe.dividerOffset || 14), y + (recipe.height || 72) - 4,
+                drawRule(ctx, dividerX, y + dividerInset,
+                    dividerX, y + (recipe.height || 72) - dividerInset,
                     'rgba(194, 226, 234, 0.26)');
             }
 
             if (view.showSpeed !== false) {
                 setFont(ctx, recipe.speedSize || 38, '700');
                 ctx.fillStyle = palette.text;
-                ctx.fillText(String(speed), speedRight, y + (recipe.valueY || 42));
+                ctx.fillText(String(speed), speedRight, valueY);
                 setFont(ctx, recipe.unitSize || 10, '700');
                 ctx.fillStyle = palette.secondary;
-                ctx.fillText(unit, speedRight, y + (recipe.unitY || 61));
+                ctx.fillText(unit, speedRight, unitY);
             }
 
             if (view.showGear !== false) {
                 setFont(ctx, recipe.gearSize || 46, '700');
                 ctx.fillStyle = palette.primary;
-                ctx.fillText(String(gear), gearRight, y + (recipe.valueY || 42));
+                ctx.fillText(String(gear), gearRight, valueY);
             }
             ctx.restore();
         }

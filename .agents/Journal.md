@@ -346,6 +346,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` locks the redline/active fill scale and both speed/gear text anchors. `s650CenterInfo.test.ts` covers explicit Track sidebar selection. Frontend Vitest: 40 files / 223 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Speed-Gear Hierarchy
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Decision**: The Track left-side companion must read from the center outward: gear on the left, speed on the right, separated by the actual geometric center line. This preserves the right-edge anchoring required for speed digit stability while making the two fields visually symmetrical with the right-side center-information region.
+- **Action**: `trackSpeedGear` now accepts recipe-owned divider and vertical anchors. Track sets the divider at its center (`x=355`), gear/speed right bounds at either side, 69px/57px value typography (150% of the prior values), and a vertically centered text group.
+- **Verification**: `s650PerformanceClusters.test.ts` locks both aligned values, the enlarged fonts, and the center divider start. Frontend Vitest: 40 files / 223 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

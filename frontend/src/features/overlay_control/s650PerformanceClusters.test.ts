@@ -27,7 +27,7 @@ function createCanvasSpy() {
   const rectangles: Array<{ color: string; x: number; y: number; width: number; height: number }> = [];
   const fills: string[] = [];
   const text: string[] = [];
-  const textEntries: Array<{ value: string; x: number; y: number; align: string }> = [];
+  const textEntries: Array<{ value: string; x: number; y: number; align: string; font: string }> = [];
   const arcs: number[] = [];
   const clips: number[] = [];
   const moves: Array<{ x: number; y: number }> = [];
@@ -49,7 +49,7 @@ function createCanvasSpy() {
     }),
     fillText: (value: string, x: number, y: number) => {
       text.push(value);
-      textEntries.push({ value, x, y, align: String(ctx.textAlign || '') });
+      textEntries.push({ value, x, y, align: String(ctx.textAlign || ''), font: String(ctx.font || '') });
     },
     fillStyle: '',
     strokeStyle: '',
@@ -129,9 +129,10 @@ describe('S650 transparent performance layouts', () => {
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
     expect(spy.textEntries).toEqual(expect.arrayContaining([
-      { value: '140', x: 354, y: 230, align: 'right' },
-      { value: '4', x: 486, y: 230, align: 'right' },
+      { value: '4', x: 341, y: 236, align: 'right', font: '700 69px Arial Narrow, Arial, sans-serif' },
+      { value: '140', x: 486, y: 236, align: 'right', font: '700 57px Arial Narrow, Arial, sans-serif' },
     ]));
+    expect(spy.moves).toEqual(expect.arrayContaining([{ x: 355, y: 194 }]));
     expect(centerCalls).toHaveLength(1);
     expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' });
     expect(gearCalls).toHaveLength(1);

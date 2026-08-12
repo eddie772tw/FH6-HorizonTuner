@@ -31,7 +31,12 @@
             lowerRiseRatio: 0.20, activeFillAlpha: 0.82
         }),
         centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' }),
-        speedGear: Object.freeze({ x: 212, y: 184, width: 286, height: 88, speedRight: 142, gearRight: 274, valueY: 46, unitY: 68 }),
+        speedGear: Object.freeze({
+            x: 212, y: 184, width: 286, height: 88,
+            dividerX: 143, gearRight: 129, speedRight: 274,
+            labelY: 17, valueY: 52, unitY: 79, dividerInset: 10,
+            labelSize: 15, speedSize: 57, gearSize: 69, unitSize: 10
+        }),
         leftRail: Object.freeze({ x: 172, y: 202, height: 110, side: 'left', role: 'power', axisWidth: 3, tickLength: 12, fillWidth: 8, valueSize: 16, valueOffset: 18 }),
         rightRail: Object.freeze({ x: 1108, y: 202, height: 110, side: 'right', role: 'boost', axisWidth: 3, tickLength: 12, fillWidth: 8, valueSize: 16, valueOffset: 18 }),
         footer: Object.freeze({
