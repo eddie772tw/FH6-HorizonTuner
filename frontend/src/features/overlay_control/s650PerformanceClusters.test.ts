@@ -8,11 +8,16 @@ type PerformanceModule = {
 };
 
 function loadPerformanceModule(): PerformanceModule {
+  const componentSource = readFileSync(
+    resolve(process.cwd(), '../hud_overlay/s650_hmi/assets/s650_cluster_components.js'),
+    'utf8',
+  );
   const source = readFileSync(
     resolve(process.cwd(), '../hud_overlay/s650_hmi/assets/s650_performance_clusters.js'),
     'utf8',
   );
   const window = {} as { S650HmiPerformanceClusters?: PerformanceModule };
+  new Function('window', componentSource)(window);
   new Function('window', source)(window);
   if (!window.S650HmiPerformanceClusters) throw new Error('performance layouts did not register');
   return window.S650HmiPerformanceClusters;
@@ -20,6 +25,7 @@ function loadPerformanceModule(): PerformanceModule {
 
 function createCanvasSpy() {
   const rectangles: Array<{ color: string; width: number; height: number }> = [];
+  const fills: string[] = [];
   const text: string[] = [];
   const arcs: number[] = [];
   const ctx: Record<string, unknown> = {
@@ -28,9 +34,11 @@ function createCanvasSpy() {
     beginPath: () => undefined,
     moveTo: () => undefined,
     lineTo: () => undefined,
+    quadraticCurveTo: () => undefined,
+    closePath: () => undefined,
     arc: () => arcs.push(1),
     stroke: () => undefined,
-    fill: () => undefined,
+    fill: () => fills.push(String(ctx.fillStyle || '')),
     fillRect: (_x: number, _y: number, width: number, height: number) => rectangles.push({
       color: String(ctx.fillStyle || ''), width, height,
     }),
@@ -42,7 +50,7 @@ function createCanvasSpy() {
     textAlign: '',
     lineCap: '',
   };
-  return { arcs, ctx, rectangles, text };
+  return { arcs, ctx, fills, rectangles, text };
 }
 
 const palette = {
@@ -79,16 +87,16 @@ const view = {
 };
 
 describe('S650 transparent performance layouts', () => {
-  it('gives Track its S650 wide-tach, tire/fuel perimeter and no opaque backdrop', () => {
+  it('composes Track from the shared components without a full opaque backdrop', () => {
     const spy = createCanvasSpy();
     loadPerformanceModule().drawTrack(view, {}, palette, 0.875, spy.ctx);
 
     expect(spy.rectangles.filter((rectangle) => rectangle.color === palette.background)).toHaveLength(0);
-    expect(spy.rectangles.filter((rectangle) => rectangle.height === 10)).toHaveLength(24);
+    expect(spy.fills).toContain('rgba(19, 55, 79, 0.68)');
     expect(spy.text).toEqual(expect.arrayContaining([
-      'TRACK', 'TRACK USE ONLY', '140', '4 GEAR', 'TIRE TEMP', 'FUEL',
-      'FL 170°', 'FR 172°', 'RL 168°', 'RR 169°',
+      'RPM', 'TIRE TEMP', 'TEMP', 'FUEL', 'FL', 'FR', 'RL', 'RR',
     ]));
+    expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', '140', '4 GEAR']));
   });
 
   it('gives SVT Cobra two analog rings with distinct SVT labels and red needles', () => {

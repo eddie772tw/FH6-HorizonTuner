@@ -294,6 +294,15 @@
 - **Evidence**: `hud_overlay/s650_hmi/assets/s650_performance_clusters.js`, `s650_layouts.js`, `s650PerformanceClusters.test.ts`, `s650DualLayoutPipeline.test.ts`; frontend Vitest: 40 files / 221 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Recipe Skeleton
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Architecture**: Every S650 cluster composes shared component categories through its own layout recipe. A recipe owns geometry and presentation variants; component modules own Canvas drawing and canonical-frame reads. Track is the first performance layout migrated to this model.
+- **Action**: Added `S650HmiClusterComponents` and a Track recipe selecting a `trackWide` tachometer, smoked center-info container with tire overview, left thermal rail, right fuel rail, and footer status/gear layout. The central speed and `Track use only` copy are intentionally deferred for a separate information-hierarchy review.
+- **Data boundary**: Tire temperature and fuel use canonical data. The thermal rail visibly reports unavailable because no coolant/oil-temperature datum has entered the canonical S650 frame; no placeholder measurement is invented.
+- **Verification**: Frontend Vitest: 40 files / 221 tests passed; `node --check` and `git diff --check` passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

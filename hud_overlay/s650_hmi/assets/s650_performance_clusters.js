@@ -19,86 +19,35 @@
         ctx.stroke();
     }
 
-    function drawRpmBand(ctx, x, y, width, count, gap, ratio, redlineRatio, palette, height) {
-        var segmentWidth = (width - gap * (count - 1)) / count;
-        for (var index = 0; index < count; index += 1) {
-            var position = index / count;
-            ctx.fillStyle = position >= redlineRatio
-                ? palette.danger
-                : (position <= ratio ? palette.primary : 'rgba(255,255,255,0.16)');
-            ctx.fillRect(x + index * (segmentWidth + gap), y, segmentWidth, height);
-        }
-    }
+    // A cluster recipe only selects component variants and their geometry. It
+    // deliberately contains no Canvas calls or data interpretation. Future
+    // clusters can reuse the same component registry with another recipe.
+    var TRACK_RECIPE = Object.freeze({
+        tachometer: Object.freeze({ variant: 'trackWide', x: 96, y: 86, width: 1120, height: 96, slant: 94, divisions: 9 }),
+        panel: Object.freeze({ x: 166, y: 178, width: 948, height: 144, notch: 42 }),
+        tireOverview: Object.freeze({ centerX: 640, centerY: 246, carWidth: 42, carHeight: 92, label: 'TIRE TEMP' }),
+        thermalRail: Object.freeze({ x: 118, y: 202, height: 104, side: 'left', label: 'TEMP' }),
+        fuelRail: Object.freeze({ x: 1162, y: 202, height: 104, side: 'right', label: 'FUEL' }),
+        footer: Object.freeze({ x: 236, y: 376, width: 808, centerX: 640 })
+    });
 
     function drawTrack(view, data, palette, redlineRatio, ctx) {
-        var rpmRatio = clamp(view.getRpm(data) / view.getMaxRpm(data), 0, 1);
-        var fuel = view.getFuelLevel(data);
-        var heading = view.getTelemetryReadout('heading', data);
-        var odometer = view.getTelemetryReadout('odometer', data);
-        var tires = view.getTireTemperatures(data);
-        var centerX = view.width / 2;
-        var fuelHeight = fuel === null ? 0 : Math.round(118 * clamp(fuel, 0, 1));
+        var componentModule = window.S650HmiClusterComponents;
+        if (!componentModule || typeof componentModule.create !== 'function') return;
+        var components = componentModule.create(ctx);
+        var tachometer = Object.assign({}, TRACK_RECIPE.tachometer, { redlineRatio: redlineRatio });
+        var fuelRail = Object.assign({}, TRACK_RECIPE.fuelRail, {
+            getRatio: function (trackView, trackData) { return trackView.getFuelLevel(trackData); }
+        });
 
-        ctx.save();
-        drawRpmBand(ctx, 128, 54, view.width - 256, 24, 6, rpmRatio, redlineRatio, palette, 10);
-        drawRule(ctx, 128, 78, view.width - 128, 78, 'rgba(255,255,255,0.26)');
-        ctx.textAlign = 'left';
-        setFont(ctx, 13, '800');
-        ctx.fillStyle = palette.primary;
-        ctx.fillText('TRACK', 128, 106);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = palette.secondary;
-        ctx.fillText('TRACK USE ONLY', view.width - 128, 106);
-
-        if (view.showSpeed) {
-            ctx.textAlign = 'center';
-            setFont(ctx, 112, '800');
-            ctx.fillStyle = palette.text;
-            ctx.fillText(String(view.roundedSpeed(data)), centerX, 258);
-            setFont(ctx, 14, '800');
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText(view.unitLabel(), centerX, 282);
-        }
-        if (view.showGear) {
-            ctx.textAlign = 'center';
-            setFont(ctx, 22, '800');
-            ctx.fillStyle = palette.primary;
-            ctx.fillText(view.getGearLabel(data) + ' GEAR', centerX, 318);
-        }
-        if (view.showRPM) {
-            ctx.textAlign = 'center';
-            setFont(ctx, 13, '700');
-            ctx.fillStyle = palette.secondary;
-            ctx.fillText(Math.round(view.getRpm(data)) + ' RPM', centerX, 340);
-        }
-
-        ctx.textAlign = 'right';
-        setFont(ctx, 12, '800');
-        ctx.fillStyle = palette.secondary;
-        ctx.fillText('TIRE TEMP', view.width - 128, 160);
-        ctx.textAlign = 'left';
-        ctx.fillText('FUEL', view.width - 104, 194);
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.fillRect(view.width - 104, 202, 6, 118);
-        ctx.fillStyle = palette.primary;
-        ctx.fillRect(view.width - 104, 320 - fuelHeight, 6, fuelHeight);
-
-        ctx.textAlign = 'left';
-        setFont(ctx, 12, '700');
-        ctx.fillStyle = palette.secondary;
-        ctx.fillText('FL ' + view.formatTireTemperature(tires[0]) + '°', 128, 350);
-        ctx.fillText('RL ' + view.formatTireTemperature(tires[2]) + '°', 128, 374);
-        ctx.textAlign = 'right';
-        ctx.fillText('FR ' + view.formatTireTemperature(tires[1]) + '°', view.width - 128, 350);
-        ctx.fillText('RR ' + view.formatTireTemperature(tires[3]) + '°', view.width - 128, 374);
-        drawRule(ctx, 128, 386, 220, 386, 'rgba(255,255,255,0.28)');
-        drawRule(ctx, view.width - 220, 386, view.width - 128, 386, 'rgba(255,255,255,0.28)');
-
-        ctx.textAlign = 'center';
-        setFont(ctx, 13, '700');
-        ctx.fillStyle = palette.secondary;
-        ctx.fillText(heading.value + '  /  ' + odometer.value + ' ' + odometer.unit, centerX, 412);
-        ctx.restore();
+        components.drawTachometer(view, data, palette, tachometer);
+        components.drawSmokedInfoPanel(palette, TRACK_RECIPE.panel);
+        components.drawTireOverview(view, data, palette, TRACK_RECIPE.tireOverview);
+        // The source telemetry has no coolant/oil-temperature datum yet. The
+        // thermal rail stays visibly unavailable instead of inventing a value.
+        components.drawVerticalRail(view, data, palette, TRACK_RECIPE.thermalRail);
+        components.drawVerticalRail(view, data, palette, fuelRail);
+        components.drawTrackFooter(view, data, palette, TRACK_RECIPE.footer);
     }
 
     function drawCobraDial(ctx, cx, cy, radius, ratio, options, palette) {
