@@ -276,6 +276,14 @@
 
 ---
 
+## 2026-08-12 / S650 Launcher Theme Contract
+
+- **Scope**: local / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: adopted
+- **Learning**: The control panel, backend, and S650 canvas contract recognized the three performance themes, but the HUD launcher retained the earlier three-theme allowlist. Launcher normalization silently rewrote each performance selection to `heritage67` before it reached the iframe.
+- **Action**: Keep the launcher's allowlist aligned with the S650 renderer contract and cover it with a launcher-specific Vitest regression test.
+- **Evidence**: `hud_overlay/index.html`, `s650HudLauncherConfig.test.ts`
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。
