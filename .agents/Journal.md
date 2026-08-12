@@ -328,6 +328,15 @@
 - **Verification**: `s650CenterInfo.test.ts` covers compact renderer selection; Track recipe tests cover the compact region and gear anchor. Frontend Vitest: 40 files / 223 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Anchor Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: pending visual review
+- **Finding**: The review baseline is a 2560×1440 display. At that target, the shared S650 effective zoom of 1.18125 is correct and must not be reduced. The prior recipe's downward reflow instead pushed Track's lower readouts into the screen edge, where they were clipped.
+- **Decision**: Preserve the shared S650 scale. Revert only the Track recipe's vertical displacement: tachometer y=86, center-info y=184, rails y=202, and footer/gear y=374/407. Keep the later component fixes, including the trapezoid-clipped theme-aware tach fill and compact center-info renderers.
+- **Verification**: `s650PerformanceClusters.test.ts` locks the restored center-info, gear, and tachometer outline anchors. Manual 2560×1440 HUD review remains required before merge.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

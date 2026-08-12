@@ -29,12 +29,13 @@ function createCanvasSpy() {
   const text: string[] = [];
   const arcs: number[] = [];
   const clips: number[] = [];
+  const moves: Array<{ x: number; y: number }> = [];
   const strokes: Array<{ color: string; width: number }> = [];
   const ctx: Record<string, unknown> = {
     save: () => undefined,
     restore: () => undefined,
     beginPath: () => undefined,
-    moveTo: () => undefined,
+    moveTo: (x: number, y: number) => moves.push({ x, y }),
     lineTo: () => undefined,
     quadraticCurveTo: () => undefined,
     closePath: () => undefined,
@@ -54,7 +55,7 @@ function createCanvasSpy() {
     lineCap: '',
     globalAlpha: 1,
   };
-  return { arcs, clips, ctx, fills, rectangles, strokes, text };
+  return { arcs, clips, ctx, fills, moves, rectangles, strokes, text };
 }
 
 const palette = {
@@ -106,6 +107,9 @@ describe('S650 transparent performance layouts', () => {
 
     expect(spy.rectangles.filter((rectangle) => rectangle.color === palette.background)).toHaveLength(0);
     expect(spy.clips).toHaveLength(1);
+    // The lower-game UI needs the Track band at its original upper anchor.
+    // The first path starts at the tachometer's lower-left outline point.
+    expect(spy.moves[0]).toEqual({ x: 96, y: 182 });
     expect(spy.rectangles.map((rectangle) => rectangle.color)).toEqual(expect.arrayContaining([
       'rgba(160, 144, 255, 0.12)', 'rgba(255, 59, 48, 0.50)', palette.primary,
     ]));
@@ -115,9 +119,9 @@ describe('S650 transparent performance layouts', () => {
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
     expect(centerCalls).toHaveLength(1);
-    expect(centerCalls[0][3]).toEqual({ x: 782, y: 298, width: 286, height: 88, variant: 'trackCompact' });
+    expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 88, variant: 'trackCompact' });
     expect(gearCalls).toHaveLength(1);
-    expect(gearCalls[0].slice(3)).toEqual([640, 447]);
+    expect(gearCalls[0].slice(3)).toEqual([640, 407]);
   });
 
   it('gives SVT Cobra two analog rings with distinct SVT labels and red needles', () => {
