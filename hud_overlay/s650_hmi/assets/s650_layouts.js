@@ -10,6 +10,7 @@
         var width = options.width;
         var height = options.height;
         var typography = view.typography;
+        var performanceClusters = options.performanceClusters || window.S650HmiPerformanceClusters;
         var profilesModule = options.layoutProfiles || window.S650HmiLayoutProfiles;
         var profileRegistry = profilesModule.create({
             width: width,
@@ -267,6 +268,20 @@
             drawMainDials(data, palette, redlineRatio, profile);
         }
 
+        function drawTrack(data, palette, redlineRatio) {
+            clear(palette);
+            if (performanceClusters && typeof performanceClusters.drawTrack === 'function') {
+                performanceClusters.drawTrack(view, data, palette, redlineRatio, options.ctx, {
+                    centerInfo: centerInfo,
+                    primitives: p
+                });
+                return;
+            }
+            if (typeof p.drawTrackCluster === 'function') {
+                p.drawTrackCluster(view, data, palette, redlineRatio);
+            }
+        }
+
         var centerRegions = geometry.centerRegions;
         var baseDrivingRegions = Object.freeze({
             normal: geometry.baseDriving,
@@ -277,6 +292,10 @@
         return {
             render: function (theme, data, palette, redlineRatio) {
                 var profile = profileFor(theme);
+                if (profile.type === 'track') {
+                    drawTrack(data, palette, redlineRatio);
+                    return;
+                }
                 // The current supported theme set is dual-ring. Keeping this
                 // check explicit makes future non-dual families easy to add.
                 if (profile.type !== profileRegistry.type) profile = profiles.normal;

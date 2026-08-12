@@ -64,4 +64,39 @@ describe('S650 HMI palette', () => {
       text: '#D5FFD0',
     });
   });
+
+  it('uses the Normal blue by default and accepts the general custom gauge color for Track', () => {
+    const tokens = loadTokensModule();
+    expect(tokens.paletteFor('track')).toMatchObject({
+      background: '#050608',
+      primary: '#1351D8',
+      secondary: '#9AA3AD',
+      danger: '#FF3B30',
+    });
+    expect(tokens.paletteFor('track', {
+      customColor: '#ff00aa',
+      useDefaultColors: false,
+    }).primary).toBe('#ff00aa');
+  });
+
+  it('retains the unregistered Sport prototype palette for isolated visual work', () => {
+    const tokens = loadTokensModule();
+    expect(tokens.paletteFor('sport')).toMatchObject({
+      background: '#090807',
+      primary: '#E78B3F',
+      secondary: '#B8AAA0',
+    });
+    expect(tokens.paletteFor('sport', { customColor: '#ff00aa', useDefaultColors: false }).primary).toBe('#ff00aa');
+  });
+
+  it('retains the unregistered SVT Cobra prototype palette for isolated visual work', () => {
+    expect(loadTokensModule().paletteFor('svt_cobra', {
+      customColor: '#ff00aa',
+      useDefaultColors: false,
+    })).toMatchObject({
+      primary: '#E8ECE7',
+      secondary: '#A7AFA7',
+      danger: '#E33B3B',
+    });
+  });
 });

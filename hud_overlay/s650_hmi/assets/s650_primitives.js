@@ -884,6 +884,228 @@
             ctx.restore();
         }
 
+        function drawTrackCluster(view, data, palette, redlineRatio) {
+            var tachX = 96;
+            var tachY = 54;
+            var tachWidth = view.width - tachX * 2;
+            var segmentCount = 24;
+            var segmentGap = 5;
+            var segmentWidth = (tachWidth - segmentGap * (segmentCount - 1)) / segmentCount;
+            var rpmRatio = Math.max(0, Math.min(1, view.getRpm(data) / view.getMaxRpm(data)));
+            var speed = view.roundedSpeed(data);
+            var gear = view.getGearLabel(data);
+            var fuel = view.getFuelLevel(data);
+            var power = view.getTelemetryReadout('power', data);
+            var boost = view.getTelemetryReadout('boost', data);
+            var heading = view.getTelemetryReadout('heading', data);
+            var odometer = view.getTelemetryReadout('odometer', data);
+            var panelX = 48;
+            var panelY = 32;
+            var panelWidth = view.width - panelX * 2;
+            var panelHeight = view.height - panelY * 2;
+
+            ctx.save();
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+            for (var index = 0; index < segmentCount; index += 1) {
+                var ratio = index / segmentCount;
+                ctx.fillStyle = ratio >= redlineRatio ? palette.danger : (ratio <= rpmRatio ? palette.primary : 'rgba(255,255,255,0.14)');
+                ctx.fillRect(tachX + index * (segmentWidth + segmentGap), tachY, segmentWidth, 13);
+            }
+            if (view.showSpeed) {
+                ctx.textAlign = 'left';
+                setFont(15, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('SPEED', 96, 104);
+                setFont(46, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(speed), 96, 148);
+                setFont(15, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(view.unitLabel(), 96, 171);
+            }
+            if (view.showGear) {
+                ctx.textAlign = 'center';
+                setFont(104, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(gear, view.width / 2, 218);
+            }
+            if (view.showRPM) {
+                ctx.textAlign = 'center';
+                setFont(20, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(Math.round(view.getRpm(data)) + ' RPM', view.width / 2, 248);
+            }
+            ctx.textAlign = 'center';
+            setFont(15, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.primary;
+            ctx.fillText('TRACK', view.width / 2, 286);
+            ctx.textAlign = 'right';
+            setFont(15, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('POWER  ' + power.value + ' ' + power.unit, view.width - 96, 124);
+            ctx.fillText('BOOST  ' + boost.value + ' ' + boost.unit, view.width - 96, 164);
+            ctx.fillText('FUEL  ' + (fuel === null ? '--' : Math.round(fuel * 100) + '%'), view.width - 96, 204);
+            ctx.textAlign = 'center';
+            ctx.fillText(heading.value + '  /  ' + odometer.value + ' ' + odometer.unit, view.width / 2, view.height - 52);
+            ctx.restore();
+        }
+
+        // TODO(s650-sport): Early visual prototype retained for reference.
+        // It is deliberately not registered by the S650 contract or dispatcher.
+        function drawSportCluster(view, data, palette, redlineRatio) {
+            var tachX = 172;
+            var tachY = 58;
+            var tachWidth = view.width - tachX * 2;
+            var segmentCount = 18;
+            var segmentGap = 6;
+            var segmentWidth = (tachWidth - segmentGap * (segmentCount - 1)) / segmentCount;
+            var rpm = view.getRpm(data);
+            var rpmRatio = Math.max(0, Math.min(1, rpm / view.getMaxRpm(data)));
+            var speed = view.roundedSpeed(data);
+            var gear = view.getGearLabel(data);
+            var power = view.getTelemetryReadout('power', data);
+            var boost = view.getTelemetryReadout('boost', data);
+            var throttle = view.getPedalValue(data, 'throttle');
+            var brake = view.getPedalValue(data, 'brake');
+            var panelX = 48;
+            var panelY = 32;
+            var panelWidth = view.width - panelX * 2;
+            var panelHeight = view.height - panelY * 2;
+            var pedalWidth = 260;
+            var pedalY = view.height - 96;
+
+            ctx.save();
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+            for (var index = 0; index < segmentCount; index += 1) {
+                var ratio = index / segmentCount;
+                var active = ratio <= rpmRatio;
+                ctx.fillStyle = ratio >= redlineRatio
+                    ? palette.danger
+                    : (active && ratio >= redlineRatio * 0.86 ? palette.warning : (active ? palette.primary : 'rgba(255,255,255,0.14)'));
+                ctx.fillRect(tachX + index * (segmentWidth + segmentGap), tachY, segmentWidth, 12);
+            }
+            ctx.textAlign = 'center';
+            if (view.showSpeed) {
+                setFont(76, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(speed), 500, 222);
+                setFont(16, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(view.unitLabel(), 500, 248);
+            }
+            if (view.showGear) {
+                setFont(76, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(gear, 780, 222);
+                setFont(16, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('GEAR', 780, 248);
+            }
+            if (view.showRPM) {
+                setFont(20, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.primary;
+                ctx.fillText(Math.round(rpm) + ' RPM', view.width / 2, 296);
+            }
+            ctx.textAlign = 'left';
+            setFont(16, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('BOOST  ' + boost.value + ' ' + boost.unit, 132, 148);
+            ctx.fillText('POWER  ' + power.value + ' ' + power.unit, 132, 178);
+            ctx.textAlign = 'right';
+            ctx.fillText('SPORT', view.width - 132, 148);
+            ctx.fillText('RPM BAND ACTIVE', view.width - 132, 178);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(255,255,255,0.14)';
+            ctx.fillRect(132, pedalY, pedalWidth, 10);
+            ctx.fillStyle = palette.primary;
+            ctx.fillRect(132, pedalY, pedalWidth * throttle, 10);
+            ctx.fillStyle = 'rgba(255,255,255,0.14)';
+            ctx.fillRect(view.width - 132 - pedalWidth, pedalY, pedalWidth, 10);
+            ctx.fillStyle = palette.danger;
+            ctx.fillRect(view.width - 132 - pedalWidth, pedalY, pedalWidth * brake, 10);
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('THROTTLE', 132, pedalY - 12);
+            ctx.textAlign = 'right';
+            ctx.fillText('BRAKE', view.width - 132, pedalY - 12);
+            ctx.restore();
+        }
+
+        // TODO(s650-svt-cobra): Early visual prototype retained for reference.
+        // It is deliberately not registered by the S650 contract or dispatcher.
+        function drawSvtCobraCluster(view, data, palette, redlineRatio) {
+            var bandX = 144;
+            var bandY = view.height - 94;
+            var bandWidth = view.width - bandX * 2;
+            var segmentCount = 10;
+            var segmentGap = 8;
+            var segmentWidth = (bandWidth - segmentGap * (segmentCount - 1)) / segmentCount;
+            var rpm = view.getRpm(data);
+            var rpmRatio = Math.max(0, Math.min(1, rpm / view.getMaxRpm(data)));
+            var speed = view.roundedSpeed(data);
+            var gear = view.getGearLabel(data);
+            var power = view.getTelemetryReadout('power', data);
+            var boost = view.getTelemetryReadout('boost', data);
+            var panelX = 48;
+            var panelY = 32;
+            var panelWidth = view.width - panelX * 2;
+            var panelHeight = view.height - panelY * 2;
+
+            ctx.save();
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+            ctx.fillStyle = palette.primary;
+            ctx.fillRect(112, 82, view.width - 224, 2);
+            ctx.fillRect(112, view.height - 62, view.width - 224, 2);
+            ctx.textAlign = 'left';
+            setFont(17, '800', 'Arial Narrow');
+            ctx.fillStyle = palette.primary;
+            ctx.fillText('SVT COBRA', 112, 120);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('PERFORMANCE CLUSTER', view.width - 112, 120);
+            if (view.showRPM) {
+                ctx.textAlign = 'center';
+                setFont(58, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(Math.round(rpm)), 340, 222);
+                setFont(16, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('RPM', 340, 250);
+            }
+            if (view.showGear) {
+                ctx.textAlign = 'center';
+                setFont(90, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.primary;
+                ctx.fillText(gear, view.width / 2, 236);
+                setFont(15, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText('GEAR', view.width / 2, 264);
+            }
+            if (view.showSpeed) {
+                ctx.textAlign = 'center';
+                setFont(58, '800', 'Arial Narrow');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(speed), 940, 222);
+                setFont(16, '700', 'Arial Narrow');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(view.unitLabel(), 940, 250);
+            }
+            ctx.textAlign = 'center';
+            setFont(16, '700', 'Arial Narrow');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('POWER  ' + power.value + ' ' + power.unit + '    BOOST  ' + boost.value + ' ' + boost.unit, view.width / 2, 316);
+            for (var index = 0; index < segmentCount; index += 1) {
+                var ratio = index / segmentCount;
+                ctx.fillStyle = ratio >= redlineRatio
+                    ? palette.danger
+                    : (ratio <= rpmRatio ? palette.primary : 'rgba(255,255,255,0.16)');
+                ctx.fillRect(bandX + index * (segmentWidth + segmentGap), bandY, segmentWidth, 14);
+            }
+            ctx.restore();
+        }
+
         return {
             setFont: setFont,
             getFontSize: fontSize,
@@ -903,7 +1125,10 @@
             drawSideGauge: drawSideGauge,
             drawHeritageSideGauge: drawHeritageSideGauge,
             drawHeritageStatus: drawHeritageStatus,
-            drawNormalStatus: drawNormalStatus
+            drawNormalStatus: drawNormalStatus,
+            drawSportCluster: drawSportCluster,
+            drawSvtCobraCluster: drawSvtCobraCluster,
+            drawTrackCluster: drawTrackCluster
         };
     }
 

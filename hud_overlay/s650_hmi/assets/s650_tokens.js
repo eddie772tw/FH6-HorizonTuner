@@ -116,6 +116,35 @@
             text: '#FFFFFF',
             warning: colors.telltaleYellow,
             danger: '#F04646'
+        },
+        // TODO(s650-sport): Retained for the unregistered visual prototype.
+        sport: {
+            background: '#090807',
+            surface: '#1A1410',
+            primary: '#E78B3F',
+            secondary: '#B8AAA0',
+            text: '#FFF8F1',
+            warning: colors.telltaleYellow,
+            danger: colors.telltaleRed
+        },
+        // TODO(s650-svt-cobra): Retained for the unregistered visual prototype.
+        svt_cobra: {
+            background: '#030403',
+            surface: '#0C0E0C',
+            primary: '#E8ECE7',
+            secondary: '#A7AFA7',
+            text: '#FFFFFF',
+            warning: colors.telltaleYellow,
+            danger: '#E33B3B'
+        },
+        track: {
+            background: '#050608',
+            surface: '#101318',
+            primary: '#1351D8',
+            secondary: '#9AA3AD',
+            text: '#F7F8FA',
+            warning: colors.telltaleYellow,
+            danger: '#FF3B30'
         }
     };
 
@@ -149,7 +178,7 @@
         paletteFor: function (theme, options) {
             var palette = clonePalette(palettes[theme] || palettes.normal);
             options = options || {};
-            if (theme !== 'foxbody' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
+            if (theme !== 'foxbody' && theme !== 'svt_cobra' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
                 palette.primary = options.customColor;
             }
             if (theme === 'foxbody' && options.guiThemeMode === 'dark') {

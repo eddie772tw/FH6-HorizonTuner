@@ -203,7 +203,9 @@ def test_existing_legacy_s650_config_is_migrated_on_load(
     assert loaded_data["s650Theme"] == expected_theme
 
 
-@pytest.mark.parametrize("invalid_theme", ["not-a-theme", "", None])
+@pytest.mark.parametrize(
+    "invalid_theme", ["sport", "svt_cobra", "not-a-theme", "", None]
+)
 def test_invalid_s650_hmi_theme_defaults_to_heritage(
     temp_hud_config_file, invalid_theme
 ):
@@ -219,6 +221,19 @@ def test_invalid_s650_hmi_theme_defaults_to_heritage(
     loaded_data = client.get("/api/overlay/config").json()
     assert loaded_data["hudStyle"] == "s650_hmi"
     assert loaded_data["s650Theme"] == "heritage67"
+
+
+def test_track_s650_hmi_theme_round_trips(temp_hud_config_file):
+    client = TestClient(app)
+
+    post_res = client.post(
+        "/api/overlay/config",
+        json={"hudStyle": "s650_hmi", "s650Theme": "track"},
+    )
+
+    assert post_res.status_code == 200
+    assert post_res.json()["success"] is True
+    assert client.get("/api/overlay/config").json()["s650Theme"] == "track"
 
 
 @pytest.mark.parametrize("invalid_widget", ["tpms", "", None])

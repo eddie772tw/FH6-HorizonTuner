@@ -32,6 +32,16 @@
             common.drawMetric(context, xRight, region.y + 105, 'FUEL', fuel.value, fuel.unit, 'center');
             common.drawMetric(context, region.x + region.width / 2, region.y + 151, 'RPM', rpm + ' / ' + maxRpm, '', 'center');
             common.drawBar(context, region.x + 38, region.y + 187, region.width - 76, rpmRatio, palette.primary, 'RPM');
+        },
+        renderCompact: function (context) {
+            var view = context.view;
+            var region = context.region;
+            var power = common.displayPower(view, context.data);
+            var boost = common.displayBoost(view, context.data);
+
+            common.drawTitle(context, 'POWERTRAIN', '');
+            common.drawMetric(context, region.x + 82, region.y + 35, 'POWER', power.value, power.unit, 'center');
+            common.drawMetric(context, region.x + region.width - 82, region.y + 35, 'BOOST', boost.value, boost.unit, 'center');
         }
     });
 })(window);

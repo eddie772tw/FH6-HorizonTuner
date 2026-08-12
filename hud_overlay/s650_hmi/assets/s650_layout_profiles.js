@@ -3,6 +3,9 @@
     'use strict';
 
     var DUAL_LAYOUT_TYPE = 'dual';
+    var SPORT_LAYOUT_TYPE = 'sport';
+    var SVT_COBRA_LAYOUT_TYPE = 'svtCobra';
+    var TRACK_LAYOUT_TYPE = 'track';
 
     // Roles remain owned by each theme profile even when two themes currently
     // display the same telemetry slots. This keeps the profile independent
@@ -73,6 +76,43 @@
                 leftRole: 'rpm',
                 rightRole: 'speed',
                 outerInset: 8
+            })
+        }),
+        track: Object.freeze({
+            type: TRACK_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'trackPerformance',
+                leftRole: 'rpm',
+                rightRole: 'speed',
+                outerInset: 0
+            })
+        })
+    });
+
+    // TODO(s650-sport-svt): These early recipes are intentionally retained as
+    // design references, but are not exported through PROFILES. Sport needs a
+    // distinct production direction; SVT Cobra needs an approved twin-ring
+    // visual pass before either can be registered by the HMI contract.
+    var PROTOTYPE_PROFILES = Object.freeze({
+        sport: Object.freeze({
+            type: SPORT_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'sportPerformance',
+                leftRole: 'speed',
+                rightRole: 'rpm',
+                outerInset: 0
+            })
+        }),
+        svt_cobra: Object.freeze({
+            type: SVT_COBRA_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'svtCobraPerformance',
+                leftRole: 'rpm',
+                rightRole: 'speed',
+                outerInset: 0
             })
         })
     });

@@ -113,7 +113,10 @@ describe('S650 center-information layout regions', () => {
     });
     expect(layouts.centerRegions.heritage67).toBe(layouts.centerRegions.normal);
     expect(layouts.centerRegions.foxbody).toBe(layouts.centerRegions.normal);
-    expect(layouts.names).toEqual(['normal', 'heritage67', 'foxbody']);
+    expect(layouts.names).toEqual(['normal', 'heritage67', 'foxbody', 'track']);
+    expect(layouts.centerRegions.sport).toBeUndefined();
+    expect(layouts.centerRegions.svt_cobra).toBeUndefined();
+    expect(layouts.centerRegions.track).toBeUndefined();
   });
 
   it('routes Normal through the named region instead of inline coordinates', () => {
