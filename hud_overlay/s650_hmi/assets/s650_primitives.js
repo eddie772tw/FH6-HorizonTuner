@@ -951,6 +951,8 @@
             ctx.restore();
         }
 
+        // TODO(s650-sport): Early visual prototype retained for reference.
+        // It is deliberately not registered by the S650 contract or dispatcher.
         function drawSportCluster(view, data, palette, redlineRatio) {
             var tachX = 172;
             var tachY = 58;
@@ -1030,6 +1032,8 @@
             ctx.restore();
         }
 
+        // TODO(s650-svt-cobra): Early visual prototype retained for reference.
+        // It is deliberately not registered by the S650 contract or dispatcher.
         function drawSvtCobraCluster(view, data, palette, redlineRatio) {
             var bandX = 144;
             var bandY = view.height - 94;

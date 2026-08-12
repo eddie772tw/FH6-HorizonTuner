@@ -282,24 +282,6 @@
             }
         }
 
-        function drawSport(data, palette, redlineRatio) {
-            clear(palette);
-            if (typeof p.drawSportCluster === 'function') {
-                p.drawSportCluster(view, data, palette, redlineRatio);
-            }
-        }
-
-        function drawSvtCobra(data, palette, redlineRatio) {
-            clear(palette);
-            if (performanceClusters && typeof performanceClusters.drawSvtCobra === 'function') {
-                performanceClusters.drawSvtCobra(view, data, palette, redlineRatio, options.ctx);
-                return;
-            }
-            if (typeof p.drawSvtCobraCluster === 'function') {
-                p.drawSvtCobraCluster(view, data, palette, redlineRatio);
-            }
-        }
-
         var centerRegions = geometry.centerRegions;
         var baseDrivingRegions = Object.freeze({
             normal: geometry.baseDriving,
@@ -310,14 +292,6 @@
         return {
             render: function (theme, data, palette, redlineRatio) {
                 var profile = profileFor(theme);
-                if (profile.type === 'sport') {
-                    drawSport(data, palette, redlineRatio);
-                    return;
-                }
-                if (profile.type === 'svtCobra') {
-                    drawSvtCobra(data, palette, redlineRatio);
-                    return;
-                }
                 if (profile.type === 'track') {
                     drawTrack(data, palette, redlineRatio);
                     return;

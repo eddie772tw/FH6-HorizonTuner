@@ -79,7 +79,7 @@ describe('S650 HMI palette', () => {
     }).primary).toBe('#ff00aa');
   });
 
-  it('keeps Sport warm by default while allowing the established custom primary override', () => {
+  it('retains the unregistered Sport prototype palette for isolated visual work', () => {
     const tokens = loadTokensModule();
     expect(tokens.paletteFor('sport')).toMatchObject({
       background: '#090807',
@@ -89,7 +89,7 @@ describe('S650 HMI palette', () => {
     expect(tokens.paletteFor('sport', { customColor: '#ff00aa', useDefaultColors: false }).primary).toBe('#ff00aa');
   });
 
-  it('keeps SVT Cobra monochrome when the general custom gauge color is set', () => {
+  it('retains the unregistered SVT Cobra prototype palette for isolated visual work', () => {
     expect(loadTokensModule().paletteFor('svt_cobra', {
       customColor: '#ff00aa',
       useDefaultColors: false,

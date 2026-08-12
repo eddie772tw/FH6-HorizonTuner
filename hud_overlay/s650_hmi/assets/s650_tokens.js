@@ -117,6 +117,7 @@
             warning: colors.telltaleYellow,
             danger: '#F04646'
         },
+        // TODO(s650-sport): Retained for the unregistered visual prototype.
         sport: {
             background: '#090807',
             surface: '#1A1410',
@@ -126,6 +127,7 @@
             warning: colors.telltaleYellow,
             danger: colors.telltaleRed
         },
+        // TODO(s650-svt-cobra): Retained for the unregistered visual prototype.
         svt_cobra: {
             background: '#030403',
             surface: '#0C0E0C',

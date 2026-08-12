@@ -78,6 +78,23 @@
                 outerInset: 8
             })
         }),
+        track: Object.freeze({
+            type: TRACK_LAYOUT_TYPE,
+            sideGauges: false,
+            dial: Object.freeze({
+                renderer: 'trackPerformance',
+                leftRole: 'rpm',
+                rightRole: 'speed',
+                outerInset: 0
+            })
+        })
+    });
+
+    // TODO(s650-sport-svt): These early recipes are intentionally retained as
+    // design references, but are not exported through PROFILES. Sport needs a
+    // distinct production direction; SVT Cobra needs an approved twin-ring
+    // visual pass before either can be registered by the HMI contract.
+    var PROTOTYPE_PROFILES = Object.freeze({
         sport: Object.freeze({
             type: SPORT_LAYOUT_TYPE,
             sideGauges: false,
@@ -93,16 +110,6 @@
             sideGauges: false,
             dial: Object.freeze({
                 renderer: 'svtCobraPerformance',
-                leftRole: 'rpm',
-                rightRole: 'speed',
-                outerInset: 0
-            })
-        }),
-        track: Object.freeze({
-            type: TRACK_LAYOUT_TYPE,
-            sideGauges: false,
-            dial: Object.freeze({
-                renderer: 'trackPerformance',
                 leftRole: 'rpm',
                 rightRole: 'speed',
                 outerInset: 0

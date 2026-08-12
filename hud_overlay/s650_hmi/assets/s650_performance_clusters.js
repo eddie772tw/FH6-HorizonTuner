@@ -128,6 +128,8 @@
         ctx.restore();
     }
 
+    // TODO(s650-svt-cobra): Retain this twin-ring research renderer without
+    // registering it until a future visual review approves the production form.
     function drawSvtCobra(view, data, palette, redlineRatio, ctx) {
         var rpmRatio = clamp(view.getRpm(data) / view.getMaxRpm(data), 0, 1);
         var speedMax = view.isMetric ? 260 : 160;

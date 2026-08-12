@@ -391,6 +391,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` locks both sidebar recipe bounds and the flat right outline points at x=1122. Frontend Vitest: 40 files / 224 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Release Scope and Prototype Quarantine
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: Track implementation complete; Sport and SVT Cobra retained as early visual-development prototypes.
+- **Decision**: This branch is the merge candidate for the reviewed Track layout. Sport and SVT Cobra do not meet visual acceptance and must not be selectable, normalized as valid themes, or dispatched by the renderer. Their local recipes, palettes, primitive renderers, and isolated tests remain in place for later design work.
+- **Action**: Restricted the public S650 registry to Normal, Heritage '67, Fox Body, and Track across the frontend selector, launcher, Canvas contract, backend normalizer, and layout registry. Stored `sport` / `svt_cobra` values now safely fall back to `heritage67`; direct renderer calls also resolve to the Normal dual-ring profile. Annotated retained prototype code with `TODO(s650-sport*)` / `TODO(s650-svt-cobra*)` markers.
+- **Verification**: Frontend and backend regression tests assert both prototype ids are unregistered and cannot dispatch their renderers; their isolated palette/renderer tests remain as development references.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

@@ -11,8 +11,6 @@ describe('S650 HUD launcher config contract', () => {
       'normal',
       'heritage67',
       'foxbody',
-      'sport',
-      'svt_cobra',
       'track',
     ]);
   });

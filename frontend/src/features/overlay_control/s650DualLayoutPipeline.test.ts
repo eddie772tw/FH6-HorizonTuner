@@ -120,35 +120,26 @@ describe('S650 dual layout pipeline', () => {
     expect(events).toEqual(['trackCluster']);
   });
 
-  it('routes Sport through its dedicated cluster without rendering dual-ring layers', () => {
+  it.each(['sport', 'svt_cobra'])('falls back from the unregistered %s prototype to Normal', (theme) => {
     const events: string[] = [];
     const layouts = createLayouts(events);
 
-    layouts.render('sport', { redlineRpm: 7000 }, { primary: '#E78B3F', secondary: '#B8AAA0' }, 0.875);
+    layouts.render(theme, { redlineRpm: 7000 }, { primary: '#1351D8', secondary: '#9AA3AD' }, 0.875);
 
-    expect(events).toEqual(['sportCluster']);
+    expect(events).toEqual(['centerInfo', 'decorations', 'status', 'baseDriving', 'sideGauge', 'sideGauge', 'mainDial', 'mainDial']);
+    expect(events).not.toContain('sportCluster');
+    expect(events).not.toContain('svtCobraCluster');
   });
 
-  it('routes SVT Cobra through its dedicated cluster without rendering dual-ring layers', () => {
-    const events: string[] = [];
-    const layouts = createLayouts(events);
-
-    layouts.render('svt_cobra', { redlineRpm: 7000 }, { primary: '#E8ECE7', secondary: '#A7AFA7' }, 0.875);
-
-    expect(events).toEqual(['svtCobraCluster']);
-  });
-
-  it('prefers the transparent Track and SVT Cobra renderers when they are available', () => {
+  it('prefers the dedicated Track renderer when it is available', () => {
     const events: string[] = [];
     const layouts = createLayouts(events, [], {
       drawTrack: () => events.push('trackPerformance'),
-      drawSvtCobra: () => events.push('svtPerformance'),
     });
 
     layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
-    layouts.render('svt_cobra', { redlineRpm: 7000 }, { primary: '#E8ECE7', secondary: '#A7AFA7' }, 0.875);
 
-    expect(events).toEqual(['trackPerformance', 'svtPerformance']);
+    expect(events).toEqual(['trackPerformance']);
   });
 
   it('passes Track the shared center-information and gear components', () => {

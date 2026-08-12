@@ -113,7 +113,7 @@ describe('S650 center-information layout regions', () => {
     });
     expect(layouts.centerRegions.heritage67).toBe(layouts.centerRegions.normal);
     expect(layouts.centerRegions.foxbody).toBe(layouts.centerRegions.normal);
-    expect(layouts.names).toEqual(['normal', 'heritage67', 'foxbody', 'sport', 'svt_cobra', 'track']);
+    expect(layouts.names).toEqual(['normal', 'heritage67', 'foxbody', 'track']);
     expect(layouts.centerRegions.sport).toBeUndefined();
     expect(layouts.centerRegions.svt_cobra).toBeUndefined();
     expect(layouts.centerRegions.track).toBeUndefined();
