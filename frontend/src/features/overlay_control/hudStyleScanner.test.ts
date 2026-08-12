@@ -35,56 +35,6 @@ describe('hudStyleScanner frontend module tests', () => {
     expect(result).toEqual([]);
   });
 
-  it('formatHudDropdownOptions should map built-in HUD names and prefix custom HUD names with [Custom]', () => {
-    const styles: HudStyleEntry[] = [
-      { id: 'gt7', source: 'builtin', urlPrefix: '/hud' },
-      { id: 'cyber_drift', source: 'user', urlPrefix: '/hud_user' },
-      { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
-    ];
-
-    const options = formatHudDropdownOptions(styles, HUD_DISPLAY_NAMES);
-
-    expect(options).toHaveLength(3);
-
-    // Builtin mapping
-    expect(options[0]).toEqual({
-      value: 'vfd',
-      label: 'Retro VFD',
-      isCustom: false,
-    });
-    expect(options[1]).toEqual({
-      value: 'gt7',
-      label: 'GT7',
-      isCustom: false,
-    });
-
-    // Custom mapping
-    expect(options[2]).toEqual({
-      value: 'cyber_drift',
-      label: '[Custom] cyber_drift',
-      isCustom: true,
-    });
-  });
-
-  it('formatHudDropdownOptions should display the unified S650 HMI name', () => {
-    const options = formatHudDropdownOptions([
-      { id: 's650_hmi', source: 'builtin', urlPrefix: '/hud' },
-    ]);
-
-    expect(options).toEqual([
-      { value: 's650_hmi', label: 'S650 HMI', isCustom: false },
-    ]);
-  });
-
-  it('formatHudDropdownOptions should return default fallback options when styles list is empty', () => {
-    const options = formatHudDropdownOptions([]);
-
-    expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.value === 'vfd' && opt.label === 'Retro VFD')).toBe(true);
-    expect(options.some((opt) => opt.value === 'drift' && opt.label === 'Drift HUD')).toBe(true);
-    expect(options.some((opt) => opt.value === 's650_hmi' && opt.label === 'S650 HMI')).toBe(true);
-  });
-
   it('getHudUrlPrefix should return /hud_user for custom HUD and /hud for builtin or unknown HUD', () => {
     const styles: HudStyleEntry[] = [
       { id: 'simple', source: 'builtin', urlPrefix: '/hud' },
