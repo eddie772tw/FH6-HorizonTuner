@@ -81,7 +81,7 @@ describe('Drift viewport layout', () => {
     expect(anchor.height).toBe(288);
   });
 
-  it('doubles the primary from the left side-wing edge while clearing the Drift Zone total', () => {
+  it('doubles and lowers the primary from the left side-wing edge', () => {
     const layout = loadLayout();
     const anchor = layout.getFh6PrimaryAnchor(1920, 1080, 260, 860 / 380);
 
@@ -89,15 +89,16 @@ describe('Drift viewport layout', () => {
     expect(anchor.width).toBeCloseTo(399.36);
     expect(anchor.centerX - anchor.width * 0.5).toBeCloseTo(353.28);
     expect(anchor.centerX + anchor.width * 0.5).toBeCloseTo(752.64);
-    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(1080 * 0.8);
+    expect(anchor.centerY).toBeCloseTo(1080 * 0.8 - 1080 * 0.025 - anchor.height * 0.5 + anchor.height * 0.75);
+    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(1080);
   });
 
-  it('keeps the doubled primary lower edge above the Drift Zone score on narrow viewports', () => {
+  it('keeps the lowered primary inside the viewport on narrow viewports', () => {
     const layout = loadLayout();
     const anchor = layout.getFh6PrimaryAnchor(1024, 576, 260, 860 / 380);
 
     expect(anchor.width).toBeLessThan(240);
-    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(576 * 0.8);
+    expect(anchor.centerY + anchor.height * 0.5).toBeLessThan(576);
   });
 
   it('sweeps the visual RPM and angle before settling at idle', () => {

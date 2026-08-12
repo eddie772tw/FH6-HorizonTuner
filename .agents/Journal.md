@@ -484,6 +484,82 @@
 
 ---
 
+## 2026-08-12 / Drift Secondary Instrument User-Needs Iteration
+
+- **Feedback applied**: lowered the screenshot-calibrated primary by about
+  three quarters of its own height after preserving the doubled size and
+  left-edge-as-center geometry. The left-side horizontal lane remains the
+  Drift Zone clearance rule.
+- **Research conclusion**: the secondary should stop duplicating the primary
+  and should not repeat Style Meter's `FLOW / RISK` score language. General
+  drift driving needs a compact control surface for tire response, vehicle
+  rotation state, and throttle/brake/handbrake/clutch input.
+- **Boundary**: detailed tire temperatures, suspension, replay, score and
+  line analysis remain TelemetryView / HUD-card / native-UI responsibilities.
+  Yaw rate is a P1 input because the packet field exists but the current
+  backend does not yet expose a canonical HUD alias.
+- **Artifact**: `docs/drift-secondary-instrument-user-needs-iteration-report.md`
+  records the evidence, priority matrix, proposed Canvas vocabulary, and
+  staged implementation plan. No secondary renderer rewrite is included yet.
+- **Verification**: frontend Vitest passed (35 files / 220 tests).
+
+---
+
+## 2026-08-12 / Drift Secondary Implementation Plan Revision
+
+- **Source of truth**: revised `docs/telemetry-hud-implementation-plan.md` to
+  follow the edited user-needs report. The secondary is now planned as a
+  Drift Dynamics / Control Surface with Traction, Motion State and Driver
+  Inputs columns; the old angle/counter/flow/risk/hold split is no longer the
+  target architecture.
+- **Sequencing**: contract and fixture work now precede any Canvas rewrite;
+  Advanced primitives are migrated as reusable drawing capability, followed
+  by P0 slip/input state, P1 yaw-rate contract, and real-device calibration.
+- **Boundary**: TelemetryView, HUD cards, native score/style layers, recorder,
+  replay, map and telemetry topology remain outside this work package.
+- **Verification**: plan document passed `git diff --check`; no secondary
+  renderer implementation was started in this revision.
+
+---
+
+## 2026-08-12 / Drift Secondary Single-Panel Correction
+
+- **Layout recheck**: confirmed `getFh6PrimaryAnchor()` applies the requested
+  `boxHeight * 0.75` downward shift and `renderPrimaryInstrument()` consumes the
+  same anchor. Node geometry checks stayed inside the viewport at 1920x1080,
+  2048x1152, 2560x1440, 3440x1440 and 1024x576; targeted tests passed 10/10.
+- **Design correction**: the edited needs report explicitly replaces the
+  former semantic three-column secondary with one integrated single-panel
+  control display. The visual structure is three vertical pillars: full-height
+  throttle, full-height brake, and half-height handbrake/clutch sharing the
+  third pillar.
+- **Scope**: traction, motion state, slip and yaw-rate data remain contract or
+  future-event candidates, but this secondary version renders only T/B/H/C and
+  input events. Advanced Canvas primitives remain reusable drawing technology,
+  not a reason to restore separate traction or motion panels.
+
+---
+
+## 2026-08-12 / Drift Secondary Advanced Remap Increment
+
+- **Implementation**: the active Drift secondary renderer now uses an
+  Advanced-derived superellipse/inner-band Canvas grammar. The outer arc is
+  throttle; the three inner bands are brake, clutch and handbrake.
+- **Supporting state**: speed, unit, gear and the shared `lcState` badge remain
+  in the panel. Four wheel grip-light groups use the existing slip-ratio and
+  lockup data.
+- **Attitude replacement**: the old angle/Flow/Risk text block is replaced by
+  cyan heading, amber travel and four tire slip-angle arrows. Arrow length is
+  normalized from absolute slip ratio.
+- **Boundary**: this remains one HUDCore frame / one Canvas render loop. The
+  new `Yaw` use is presentation-only and does not introduce a new telemetry
+  contract or polling path.
+- **Review items**: real FH6 capture is still required for yaw sign, slip-ratio
+  saturation and compact-scale readability; details are in
+  `docs/drift-secondary-advanced-remap-implementation.md`.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。

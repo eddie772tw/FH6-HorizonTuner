@@ -292,6 +292,14 @@
             var counterArcAngle = 0;
             var isCountering = false;
 
+            // Secondary Advanced-style instrument state. Keep the attitude
+            // indicator on the same HUDCore frame as the input gauges.
+            var travelAngleDeg = 0;
+            var slipAnglesDeg = [0, 0, 0, 0];
+            var slipRatios = [0, 0, 0, 0];
+            var wheelLockup = { fl: false, fr: false, rl: false, rr: false };
+            var lcState = 'inactive';
+
             var flowPct = 0;
             var flowQuality = 1;
             var spinRisk = 0;
@@ -868,11 +876,9 @@
                 }
             }
 
-            // Mirror Advanced's Canvas grammar: a superellipse outer boundary,
-            // inset auxiliary track, broad glow layer, then compact solid
-            // segments and an endpoint marker. This reads as a real gauge,
-            // rather than a generic circular progress control.
-            function drawSecondaryAdvancedArcGauge(centerX, centerY, ratio, color, label, value) {
+            // Legacy renderer retained temporarily for comparison while the
+            // new active renderer below is validated against screenshots.
+            function drawSecondaryLegacyArcGauge(centerX, centerY, ratio, color, label, value) {
                 var start = Math.PI * 1.05;
                 var end = Math.PI * 1.95;
                 var span = end - start;
@@ -940,7 +946,7 @@
 
             // Advanced-inspired hard-edged panel with Drift's cyan tracking
             // lines and pink risk accents.
-            function renderSecondaryInstrument() {
+            function renderSecondaryLegacyInstrument() {
                 if (!ctx) return;
 
                 var left = SECONDARY_CX - SECONDARY_HALF_WIDTH;
@@ -1007,8 +1013,8 @@
                 ctx.fillStyle = C_ICE;
                 ctx.fillText('LIVE', right - 28, top + 26);
 
-                drawSecondaryAdvancedArcGauge(left + 112, top + 112, flowPct / 100, flowColor, 'FLOW', FLOW_LABELS[flowQuality] || 'BUILD');
-                drawSecondaryAdvancedArcGauge(right - 112, top + 112, spinRisk / 100, riskColor, 'RISK', RISK_LABELS[riskLevel] || 'SAFE');
+                drawSecondaryLegacyArcGauge(left + 112, top + 112, flowPct / 100, flowColor, 'FLOW', FLOW_LABELS[flowQuality] || 'BUILD');
+                drawSecondaryLegacyArcGauge(right - 112, top + 112, spinRisk / 100, riskColor, 'RISK', RISK_LABELS[riskLevel] || 'SAFE');
 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -1035,6 +1041,335 @@
                 drawPedal(SECONDARY_CX - 54, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
                 drawPedal(SECONDARY_CX + 42, startY, barW, barH, brakePct, C_REDLINE, 'B', 'B');
                 drawPedal(SECONDARY_CX + 80, startY, barW, barH, accelPct, C_WHITE, 'T', 'T');
+                ctx.restore();
+            }
+
+            // Advanced Canvas grammar adapted to the compact Drift secondary:
+            // superellipse tracks, inset bands, glow layers, needles and a
+            // small state badge. Geometry stays in source space and is scaled
+            // only by renderSecondaryInstrumentAtConventionalAnchor().
+            function secondarySuperPoint(centerX, centerY, radiusX, radiusY, exponent, t) {
+                var power = 2 / exponent;
+                var cosT = Math.cos(t);
+                var sinT = Math.sin(t);
+                return {
+                    x: centerX + radiusX * Math.sign(cosT) * Math.pow(Math.abs(cosT), power),
+                    y: centerY + radiusY * Math.sign(sinT) * Math.pow(Math.abs(sinT), power)
+                };
+            }
+
+            function secondarySuperNormal(centerX, centerY, radiusX, radiusY, exponent, t) {
+                var dt = 0.0005;
+                var p1 = secondarySuperPoint(centerX, centerY, radiusX, radiusY, exponent, t - dt);
+                var p2 = secondarySuperPoint(centerX, centerY, radiusX, radiusY, exponent, t + dt);
+                var dx = p2.x - p1.x;
+                var dy = p2.y - p1.y;
+                var length = Math.max(0.0001, Math.sqrt(dx * dx + dy * dy));
+                return { x: dy / length, y: -dx / length };
+            }
+
+            function traceSecondaryOffsetArc(centerX, centerY, radiusX, radiusY, exponent, start, end, offset) {
+                var steps = Math.max(8, Math.ceil(Math.abs(end - start) * 120));
+                ctx.beginPath();
+                for (var i = 0; i <= steps; i++) {
+                    var t = start + (end - start) * i / steps;
+                    var point = secondarySuperPoint(centerX, centerY, radiusX, radiusY, exponent, t);
+                    var normal = secondarySuperNormal(centerX, centerY, radiusX, radiusY, exponent, t);
+                    var x = point.x - normal.x * offset;
+                    var y = point.y - normal.y * offset;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+            }
+
+            function secondaryArcPoint(centerX, centerY, radiusX, radiusY, exponent, t, offset) {
+                var point = secondarySuperPoint(centerX, centerY, radiusX, radiusY, exponent, t);
+                var normal = secondarySuperNormal(centerX, centerY, radiusX, radiusY, exponent, t);
+                return { x: point.x - normal.x * offset, y: point.y - normal.y * offset };
+            }
+
+            function drawSecondaryAdvancedArcBand(centerX, centerY, radiusX, radiusY, exponent, start, end, offset, ratio, color, segments) {
+                var span = end - start;
+                var clampedRatio = clamp(ratio, 0, 1);
+                var gap = 0.018;
+
+                for (var i = 0; i < segments; i++) {
+                    var segmentStart = start + (i / segments) * span + gap;
+                    var segmentEnd = start + ((i + 1) / segments) * span - gap;
+                    var active = (i + 1) / segments <= clampedRatio + 0.001;
+                    ctx.lineCap = 'butt';
+                    ctx.lineWidth = 14;
+                    ctx.strokeStyle = active ? color : C_TRACK;
+                    ctx.globalAlpha = active ? 0.34 : 0.95;
+                    ctx.shadowColor = active ? color : 'transparent';
+                    ctx.shadowBlur = active ? 10 : 0;
+                    traceSecondaryOffsetArc(centerX, centerY, radiusX, radiusY, exponent, segmentStart, segmentEnd, offset);
+                    ctx.stroke();
+
+                    ctx.globalAlpha = 1;
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = active ? color : 'rgba(255, 255, 255, 0.18)';
+                    ctx.shadowBlur = active ? 5 : 0;
+                    traceSecondaryOffsetArc(centerX, centerY, radiusX, radiusY, exponent, segmentStart, segmentEnd, offset);
+                    ctx.stroke();
+                }
+            }
+
+            function drawSecondaryAdvancedNeedle(centerX, centerY, radiusX, radiusY, exponent, start, end, offset, ratio, color) {
+                var t = start + (end - start) * clamp(ratio, 0, 1);
+                var point = secondaryArcPoint(centerX, centerY, radiusX, radiusY, exponent, t, offset);
+                var normal = secondarySuperNormal(centerX, centerY, radiusX, radiusY, exponent, t);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.moveTo(point.x - normal.x * 18, point.y - normal.y * 18);
+                ctx.lineTo(point.x + normal.x * 8, point.y + normal.y * 8);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // The former Advanced RPM arc is now a throttle input arc.
+            function drawSecondaryAdvancedArcGauge(centerX, centerY, ratio, color, label, value) {
+                var start = Math.PI * 0.96;
+                var end = Math.PI * 2.04;
+                var exponent = 2.35;
+                var radiusX = 214;
+                var radiusY = 100;
+
+                ctx.save();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = 'rgba(235, 243, 243, 0.38)';
+                traceSecondaryOffsetArc(centerX, centerY, radiusX + 7, radiusY + 7, exponent, start, end, 0);
+                ctx.stroke();
+                drawSecondaryAdvancedArcBand(centerX, centerY, radiusX, radiusY, exponent, start, end, 0, ratio, color, 12);
+                drawSecondaryAdvancedNeedle(centerX, centerY, radiusX, radiusY, exponent, start, end, 0, ratio, color);
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 11px Bahnschrift';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.fillText(label, centerX, centerY - 51);
+                ctx.font = 'bold 18px ForzaGear';
+                ctx.fillStyle = color;
+                ctx.fillText(value, centerX, centerY - 29);
+                ctx.font = 'bold 10px Bahnschrift';
+                ctx.fillStyle = C_WHITE_MID;
+                ctx.fillText('0', centerX - 204, centerY + 10);
+                ctx.fillText('25', centerX - 116, centerY - 77);
+                ctx.fillText('50', centerX, centerY - 99);
+                ctx.fillText('75', centerX + 116, centerY - 77);
+                ctx.fillText('100', centerX + 204, centerY + 10);
+                ctx.restore();
+            }
+
+            // The former Advanced HP/TQ/Boost inner bands are now
+            // brake/clutch/handbrake input gauges.
+            function drawSecondaryAdvancedInputArc(centerX, centerY, fractionStart, fractionEnd, ratio, color, label, value) {
+                var start = Math.PI * (0.96 + 1.08 * fractionStart);
+                var end = Math.PI * (0.96 + 1.08 * fractionEnd);
+                var radiusX = 183;
+                var radiusY = 84;
+                var offset = 31;
+                var exponent = 2.35;
+
+                drawSecondaryAdvancedArcBand(centerX, centerY, radiusX, radiusY, exponent, start, end, offset, ratio, color, 5);
+                drawSecondaryAdvancedNeedle(centerX, centerY, radiusX, radiusY, exponent, start, end, offset, ratio, color);
+
+                var labelPoint = secondaryArcPoint(centerX, centerY, radiusX, radiusY, exponent, (start + end) * 0.5, offset + 22);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 9px Bahnschrift';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.fillText(label, labelPoint.x, labelPoint.y);
+                ctx.font = 'bold 10px ForzaGear';
+                ctx.fillStyle = color;
+                ctx.fillText(value, labelPoint.x, labelPoint.y + 11);
+            }
+
+            function drawSecondaryArrow(x, y, angleDeg, length, color, width) {
+                var angleRad = angleDeg * Math.PI / 180;
+                var dx = Math.sin(angleRad) * length;
+                var dy = -Math.cos(angleRad) * length;
+                var endX = x + dx;
+                var endY = y + dy;
+                var head = Math.max(3, width * 1.7);
+
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = width > 2 ? 5 : 3;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - Math.sin(angleRad - 0.7) * head, endY + Math.cos(angleRad - 0.7) * head);
+                ctx.lineTo(endX - Math.sin(angleRad + 0.7) * head, endY + Math.cos(angleRad + 0.7) * head);
+                ctx.closePath();
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawSecondaryAttitudeIndicator(centerX, centerY) {
+                var wheelPoints = [
+                    { x: centerX - 18, y: centerY - 12, angle: slipAnglesDeg[0], ratio: slipRatios[0], lock: wheelLockup.fl },
+                    { x: centerX + 18, y: centerY - 12, angle: slipAnglesDeg[1], ratio: slipRatios[1], lock: wheelLockup.fr },
+                    { x: centerX - 18, y: centerY + 13, angle: slipAnglesDeg[2], ratio: slipRatios[2], lock: wheelLockup.rl },
+                    { x: centerX + 18, y: centerY + 13, angle: slipAnglesDeg[3], ratio: slipRatios[3], lock: wheelLockup.rr }
+                ];
+
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 30);
+                ctx.lineTo(centerX, centerY + 30);
+                ctx.moveTo(centerX - 47, centerY);
+                ctx.lineTo(centerX + 47, centerY);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(11, 25, 39, 0.86)';
+                ctx.strokeStyle = C_ICE;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(centerX - 13, centerY - 19, 26, 38, 6);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = C_ICE;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 24);
+                ctx.lineTo(centerX - 5, centerY - 16);
+                ctx.lineTo(centerX + 5, centerY - 16);
+                ctx.closePath();
+                ctx.fill();
+
+                // Cyan is vehicle heading; amber is travel direction. The
+                // four tire vectors use slip angle for direction and slip
+                // ratio for length, so the panel is useful outside countersteer.
+                drawSecondaryArrow(centerX, centerY - 19, 0, 24, C_ICE, 2.2);
+                drawSecondaryArrow(centerX, centerY + 3, travelAngleDeg, 17, C_AMBER, 2.6);
+                for (var i = 0; i < wheelPoints.length; i++) {
+                    var wheel = wheelPoints[i];
+                    var slipStrength = clamp(Math.abs(wheel.ratio) / 0.5, 0, 1);
+                    var arrowLength = 6 + slipStrength * 19;
+                    var arrowColor = wheel.lock || slipStrength >= 0.75 ? C_REDLINE : (slipStrength >= 0.35 ? C_AMBER : C_WHITE_DIM);
+                    drawSecondaryArrow(wheel.x, wheel.y, wheel.angle, arrowLength, arrowColor, 1.5);
+                }
+
+                ctx.font = 'bold 8px Bahnschrift';
+                ctx.textAlign = 'left';
+                ctx.fillStyle = C_ICE;
+                ctx.fillText('HEAD', centerX - 54, centerY - 31);
+                ctx.fillStyle = C_AMBER;
+                ctx.fillText('TRAVEL', centerX + 28, centerY - 31);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = C_WHITE_MID;
+                ctx.fillText('SLIP VECTOR', centerX, centerY + 38);
+                ctx.restore();
+            }
+
+            function drawSecondaryGripLights(left, top, ratios) {
+                var labels = ['FL', 'FR', 'RL', 'RR'];
+                for (var i = 0; i < 4; i++) {
+                    var ratio = clamp(Math.abs(ratios[i] || 0) / 0.5, 0, 1);
+                    var activeCount = Math.ceil(ratio * 4);
+                    var x = left + (i % 2) * 54;
+                    var y = top + Math.floor(i / 2) * 14;
+                    ctx.font = 'bold 8px Bahnschrift';
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = C_WHITE_MID;
+                    ctx.fillText(labels[i], x - 4, y + 3);
+                    for (var dot = 0; dot < 4; dot++) {
+                        var dotActive = dot < activeCount;
+                        var lock = i === 0 ? wheelLockup.fl : (i === 1 ? wheelLockup.fr : (i === 2 ? wheelLockup.rl : wheelLockup.rr));
+                        ctx.fillStyle = dotActive ? ((ratio >= 0.75 || lock) ? C_REDLINE : C_ICE) : 'rgba(255,255,255,0.17)';
+                        ctx.beginPath();
+                        ctx.roundRect(x + dot * 7, y - 3, 5, 6, 1.5);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function drawSecondaryLcBadge(top, right) {
+                var active = lcState === 'armed' || lcState === 'launched';
+                var launched = lcState === 'launched';
+                var badgeWidth = 42;
+                var badgeLeft = right - badgeWidth - 16;
+                var pulse = active ? (0.55 + 0.45 * Math.sin(Date.now() / (launched ? 120 : 250) * Math.PI)) : 0.32;
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                ctx.strokeStyle = active ? C_REDLINE : C_WHITE_DIM;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(badgeLeft, top + 10, badgeWidth, 22, 3);
+                ctx.stroke();
+                ctx.fillStyle = active ? C_REDLINE : C_WHITE_DIM;
+                ctx.font = 'bold 12px ForzaGear';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('LC', badgeLeft + badgeWidth * 0.5, top + 21);
+                ctx.restore();
+            }
+
+            function renderSecondaryInstrument() {
+                if (!ctx) return;
+
+                var left = SECONDARY_CX - SECONDARY_HALF_WIDTH;
+                var right = SECONDARY_CX + SECONDARY_HALF_WIDTH;
+                var top = SECONDARY_CY - SECONDARY_HALF_HEIGHT;
+                var bottom = SECONDARY_CY + SECONDARY_HALF_HEIGHT;
+                var centerX = SECONDARY_CX;
+                var arcCenterY = top + 143;
+
+                ctx.save();
+                var fill = ctx.createLinearGradient(left, top, right, bottom);
+                fill.addColorStop(0, 'rgba(13, 28, 43, 0.90)');
+                fill.addColorStop(0.56, 'rgba(7, 15, 27, 0.80)');
+                fill.addColorStop(1, 'rgba(7, 14, 24, 0.64)');
+                ctx.fillStyle = fill;
+                drawSecondaryPanelPath(left, top, right, bottom, 18);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(102, 224, 255, 0.62)';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = C_ICE;
+                ctx.shadowBlur = 8;
+                drawSecondaryPanelPath(left, top, right, bottom, 18);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.fillText('DRIFT CONTROL', left + 18, top + 21);
+                ctx.font = 'bold 15px ForzaGear';
+                ctx.fillStyle = C_WHITE;
+                ctx.textAlign = 'right';
+                ctx.fillText(String(displaySpeed), right - 70, top + 20);
+                ctx.font = 'bold 8px Bahnschrift';
+                ctx.fillStyle = C_WHITE_MID;
+                ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', right - 70, top + 31);
+                ctx.font = 'bold 18px ForzaGear';
+                ctx.fillStyle = C_AMBER;
+                ctx.fillText(String(gear), right - 43, top + 21);
+                drawSecondaryLcBadge(top, right);
+
+                drawSecondaryAdvancedArcGauge(centerX, arcCenterY, accelPct / 100, C_ICE, 'THROTTLE', Math.round(accelPct) + '%');
+                drawSecondaryAdvancedInputArc(centerX, arcCenterY, 0.08, 0.31, brakePct / 100, C_REDLINE, 'BRAKE', Math.round(brakePct) + '%');
+                drawSecondaryAdvancedInputArc(centerX, arcCenterY, 0.37, 0.61, clutchPct / 100, C_WHITE, 'CLUTCH', Math.round(clutchPct) + '%');
+                drawSecondaryAdvancedInputArc(centerX, arcCenterY, 0.67, 0.91, handbrakePct / 100, C_AMBER, 'HANDBRAKE', Math.round(handbrakePct) + '%');
+
+                // The former angle/flow/risk text block is now a compact
+                // attitude instrument with heading, travel and slip vectors.
+                drawSecondaryAttitudeIndicator(centerX, top + 186);
+                drawSecondaryGripLights(left + 22, top + 182, slipRatios);
                 ctx.restore();
             }
 
@@ -1186,6 +1521,37 @@
                 } else {
                     angle = 0;
                 }
+
+                // The attitude panel uses vehicle yaw as its reference. The
+                // existing Drift angle remains unchanged for Style semantics;
+                // this relative travel angle is only for the visual vectors.
+                var rawYaw = Number(data.Yaw !== undefined ? data.Yaw : data.yaw) || 0;
+                var yawDegrees = Math.abs(rawYaw) <= Math.PI * 2.1 ? rawYaw * 180 / Math.PI : rawYaw;
+                var worldTravelDegrees = speedPlane > 0.5 ? (Math.atan2(vx, vz) * 180.0) / Math.PI : yawDegrees;
+                travelAngleDeg = worldTravelDegrees - yawDegrees;
+                while (travelAngleDeg > 180) travelAngleDeg -= 360;
+                while (travelAngleDeg < -180) travelAngleDeg += 360;
+                travelAngleDeg = clamp(travelAngleDeg, -90, 90);
+
+                var rawSlipRatios = Array.isArray(data.TireSlipRatio) ? data.TireSlipRatio : [];
+                var rawSlipAngles = Array.isArray(data.TireSlipAngle) ? data.TireSlipAngle : [];
+                slipRatios[0] = Number(data.slip_fl !== undefined ? data.slip_fl : rawSlipRatios[0]) || 0;
+                slipRatios[1] = Number(data.slip_fr !== undefined ? data.slip_fr : rawSlipRatios[1]) || 0;
+                slipRatios[2] = Number(data.slip_rl !== undefined ? data.slip_rl : rawSlipRatios[2]) || 0;
+                slipRatios[3] = Number(data.slip_rr !== undefined ? data.slip_rr : rawSlipRatios[3]) || 0;
+                slipAnglesDeg[0] = (Number(data.slip_angle_fl !== undefined ? data.slip_angle_fl : rawSlipAngles[0]) || 0) * 180 / Math.PI;
+                slipAnglesDeg[1] = (Number(data.slip_angle_fr !== undefined ? data.slip_angle_fr : rawSlipAngles[1]) || 0) * 180 / Math.PI;
+                slipAnglesDeg[2] = (Number(data.slip_angle_rl !== undefined ? data.slip_angle_rl : rawSlipAngles[2]) || 0) * 180 / Math.PI;
+                slipAnglesDeg[3] = (Number(data.slip_angle_rr !== undefined ? data.slip_angle_rr : rawSlipAngles[3]) || 0) * 180 / Math.PI;
+                for (var slipIndex = 0; slipIndex < 4; slipIndex++) {
+                    slipAnglesDeg[slipIndex] = clamp(slipAnglesDeg[slipIndex], -45, 45);
+                }
+                var lockup = (payload && payload.lockup) || data.lockup || {};
+                wheelLockup.fl = !!lockup.fl;
+                wheelLockup.fr = !!lockup.fr;
+                wheelLockup.rl = !!lockup.rl;
+                wheelLockup.rr = !!lockup.rr;
+                lcState = (payload && payload.lcState) || data.lcState || 'inactive';
 
                 displayAngle = lerp(displayAngle, angle, 0.25);
                 var absA = Math.abs(displayAngle);

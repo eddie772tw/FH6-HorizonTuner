@@ -29,7 +29,9 @@ the same region. `DriftLayout.getFh6PrimaryAnchor()` uses the lower-left wing
 between the observed map boundary (28% viewport width) and Drift Zone total
 (40% viewport width). In-game review found the exact-fit version too small,
 so the visible frame is doubled while the former left edge becomes the new
-horizontal center; its lower edge still clears the Drift Zone score. The key
+horizontal center. The latest in-game calibration then moves it down by about
+three quarters of its own height; the left-side horizontal separation remains
+the primary Drift Zone clearance rule. The key
 gear, speed, torque, unit text, and only the essential arc labels are enlarged
 or retained so the compact version remains readable. The anchor and scale are
 recalculated on resize only, so they add no per-frame allocation to the 60 Hz
@@ -40,7 +42,8 @@ reserved center region (`x=400..880` within a 1280px canvas), and the
 `disable` center-information page leaves that region intentionally blank while
 the surrounding dials remain active. Drift applies the same idea at screen
 level: the lower-center Drift Zone total is a first-class empty region, not
-space that a scaled primary may consume.
+space that the new secondary panel may consume; the primary remains in the
+left-side horizontal lane.
 
 ### Style Meter
 

@@ -70,7 +70,9 @@
     // The initial compact primary fits exactly in the side wing between the
     // map and Drift Zone total. In-game review showed it was too small, so the
     // final frame is doubled with that compact frame's left edge as its new
-    // center. Keep its lower edge above the Drift Zone score.
+    // center. The latest in-game review also moves the primary down by about
+    // three quarters of its own height; the left-side horizontal separation
+    // remains the primary Drift Zone clearance rule after that shift.
     function getFh6PrimaryAnchor(width, height, preferredWidth, aspectRatio) {
         var viewportWidth = finitePositive(width, LOGICAL_WIDTH);
         var viewportHeight = finitePositive(height, LOGICAL_HEIGHT);
@@ -85,10 +87,11 @@
         var compactWidth = Math.min(preferred, availableWidth);
         var boxWidth = compactWidth * 2;
         var boxHeight = boxWidth / safeAspectRatio;
+        var verticalShift = boxHeight * 0.75;
 
         return {
             centerX: mapRight + horizontalPadding,
-            centerY: bottomDriftScoreBandStart - scorePadding - boxHeight * 0.5,
+            centerY: bottomDriftScoreBandStart - scorePadding - boxHeight * 0.5 + verticalShift,
             width: boxWidth,
             height: boxHeight
         };

@@ -39,6 +39,18 @@ describe('Drift HUD contract', () => {
     expect(html).toContain('function renderSecondaryInstrument()');
     expect(html).toContain('function drawSecondaryPanelPath(');
     expect(html).toContain('function drawSecondaryAdvancedArcGauge(');
+    expect(html).toContain('function drawSecondaryAdvancedInputArc(');
+    expect(html).toContain('function drawSecondaryAttitudeIndicator(');
+    expect(html).toContain('function drawSecondaryGripLights(');
+    expect(html).toContain("drawSecondaryAdvancedArcGauge(centerX, arcCenterY, accelPct / 100, C_ICE, 'THROTTLE'");
+    expect(html).toContain("'BRAKE', Math.round(brakePct) + '%'");
+    expect(html).toContain("'CLUTCH', Math.round(clutchPct) + '%'");
+    expect(html).toContain("'HANDBRAKE', Math.round(handbrakePct) + '%'");
+    expect(html).toContain('var slipAnglesDeg = [0, 0, 0, 0];');
+    expect(html).toContain('var travelAngleDeg = 0;');
+    expect(html).toContain("lcState === 'armed' || lcState === 'launched'");
+    expect(html).toContain('TireSlipAngle');
+    expect(html).toContain('DRIFT CONTROL');
     expect(html).toContain('function traceSecondarySuperArc(');
     expect(html).toContain('var SECONDARY_SOURCE_WIDTH = 520;');
     expect(html).toContain('function renderSecondaryInstrumentAtConventionalAnchor()');
