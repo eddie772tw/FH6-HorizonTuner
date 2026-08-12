@@ -43,7 +43,6 @@
 
             function lowerBoundaryY(ratio) {
                 if (ratio <= lowerSlantRatio) return y + height - lowerRise * ratio / lowerSlantRatio;
-                if (ratio >= 1 - lowerSlantRatio) return y + height - lowerRise * (1 - ratio) / lowerSlantRatio;
                 return y + height - lowerRise;
             }
 
@@ -51,7 +50,6 @@
                 ctx.moveTo(x, y + height);
                 ctx.lineTo(x + slant, y);
                 ctx.lineTo(x + width - slant, y);
-                ctx.lineTo(x + width, y + height);
                 ctx.lineTo(x + width - slant, y + height - lowerRise);
                 ctx.lineTo(x + slant, y + height - lowerRise);
                 ctx.lineTo(x, y + height);
@@ -79,7 +77,7 @@
             ctx.fillRect(x, y, width, height);
             if (redlineRatio < 1) {
                 ctx.fillStyle = 'rgba(255, 59, 48, 0.50)';
-                ctx.fillRect(redlineStart, y, x + width - redlineStart, height);
+                ctx.fillRect(redlineStart, y, scaleStart + scaleWidth - redlineStart, height);
             }
             if (rpmRatio > 0) {
                 ctx.fillStyle = palette.primary;

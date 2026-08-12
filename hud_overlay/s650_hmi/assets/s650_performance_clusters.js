@@ -30,10 +30,12 @@
             variant: 'trackWide', x: 96, y: 86, width: 1120, height: 96, slant: 94, divisions: 9,
             lowerRiseRatio: 0.20, activeFillAlpha: 0.82
         }),
-        centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' }),
+        // Keep the game's central race presentation clear. Track owns the
+        // sidebar safe bounds while the center-info component owns rendering.
+        centerInfo: Object.freeze({ x: 840, y: 184, width: 220, height: 88, layoutStyle: 'trackSidebar' }),
         speedGear: Object.freeze({
-            x: 212, y: 198, width: 286, height: 88,
-            dividerX: 143, gearX: 72, speedX: 272,
+            x: 200, y: 198, width: 220, height: 88,
+            dividerX: 110, gearX: 55, speedX: 208,
             gearAlign: 'center', speedAlign: 'right',
             labelY: 12, valueY: 55, dividerInset: 10,
             labelSize: 15, speedSize: 57, gearSize: 57, unitInLabel: true

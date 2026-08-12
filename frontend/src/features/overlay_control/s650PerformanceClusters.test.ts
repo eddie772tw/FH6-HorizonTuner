@@ -31,13 +31,14 @@ function createCanvasSpy() {
   const arcs: number[] = [];
   const clips: number[] = [];
   const moves: Array<{ x: number; y: number }> = [];
+  const lines: Array<{ x: number; y: number }> = [];
   const strokes: Array<{ color: string; width: number }> = [];
   const ctx: Record<string, unknown> = {
     save: () => undefined,
     restore: () => undefined,
     beginPath: () => undefined,
     moveTo: (x: number, y: number) => moves.push({ x, y }),
-    lineTo: () => undefined,
+    lineTo: (x: number, y: number) => lines.push({ x, y }),
     quadraticCurveTo: () => undefined,
     closePath: () => undefined,
     clip: () => clips.push(1),
@@ -59,7 +60,7 @@ function createCanvasSpy() {
     lineCap: '',
     globalAlpha: 1,
   };
-  return { arcs, clips, ctx, fills, moves, rectangles, strokes, text, textEntries };
+  return { arcs, clips, ctx, fills, lines, moves, rectangles, strokes, text, textEntries };
 }
 
 const palette = {
@@ -114,11 +115,15 @@ describe('S650 transparent performance layouts', () => {
     // The lower-game UI needs the Track band at its original upper anchor.
     // The first path starts at the tachometer's lower-left outline point.
     expect(spy.moves[0]).toEqual({ x: 96, y: 182 });
+    expect(spy.lines.slice(0, 4)).toEqual([
+      { x: 190, y: 86 }, { x: 1122, y: 86 },
+      { x: 1122, y: 162.8 }, { x: 190, y: 162.8 },
+    ]);
     expect(spy.rectangles.map((rectangle) => rectangle.color)).toEqual(expect.arrayContaining([
       'rgba(160, 144, 255, 0.12)', 'rgba(255, 59, 48, 0.50)', palette.primary,
     ]));
     expect(spy.rectangles.find((rectangle) => rectangle.color === 'rgba(255, 59, 48, 0.50)')).toMatchObject({
-      x: 1005.5, width: 210.5,
+      x: 1005.5, width: 116.5,
     });
     const activeBand = spy.rectangles.find((rectangle) => rectangle.color === palette.primary);
     expect(activeBand).toMatchObject({ x: 96 });
@@ -129,12 +134,12 @@ describe('S650 transparent performance layouts', () => {
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
     expect(spy.textEntries).toEqual(expect.arrayContaining([
-      { value: '4', x: 284, y: 253, align: 'center', font: '700 57px Arial Narrow, Arial, sans-serif' },
-      { value: '140', x: 484, y: 253, align: 'right', font: '700 57px Arial Narrow, Arial, sans-serif' },
+      { value: '4', x: 255, y: 253, align: 'center', font: '700 57px Arial Narrow, Arial, sans-serif' },
+      { value: '140', x: 408, y: 253, align: 'right', font: '700 57px Arial Narrow, Arial, sans-serif' },
     ]));
-    expect(spy.moves).toEqual(expect.arrayContaining([{ x: 355, y: 208 }]));
+    expect(spy.moves).toEqual(expect.arrayContaining([{ x: 310, y: 208 }]));
     expect(centerCalls).toHaveLength(1);
-    expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' });
+    expect(centerCalls[0][3]).toEqual({ x: 840, y: 184, width: 220, height: 88, layoutStyle: 'trackSidebar' });
     expect(gearCalls).toHaveLength(1);
     expect(gearCalls[0].slice(3)).toEqual([640, 407]);
   });

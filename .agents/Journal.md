@@ -382,6 +382,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` locks full endcap fill extents and the centered gear anchor (`x=284`). Frontend Vitest: 40 files / 224 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Sidebar Safe Corridor
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: The wider Track sidebar components crossed the game's live race-message area from both sides. The reference design also terminates its redline segment as a flat-sided block, rather than extending the full trapezoid into a downward right tip.
+- **Action**: Track reserves an explicit central safe corridor: `trackSpeedGear` ends at x=420 and `trackSidebar` begins at x=840. The tachometer retains its left slanted entry but ends at the final scale point with a vertical redline edge; fill clipping and tick ratios remain shared-component behaviour.
+- **Verification**: `s650PerformanceClusters.test.ts` locks both sidebar recipe bounds and the flat right outline points at x=1122. Frontend Vitest: 40 files / 224 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.
