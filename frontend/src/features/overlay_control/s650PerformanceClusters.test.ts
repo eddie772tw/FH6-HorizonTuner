@@ -125,14 +125,14 @@ describe('S650 transparent performance layouts', () => {
     expect(activeBand?.width).toBeCloseTo(722.3, 8);
     expect(spy.strokes).toContainEqual({ color: palette.primary, width: 8 });
     expect(spy.text).toEqual(expect.arrayContaining([
-      'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H', 'SPEED', 'GEAR', '140', '4',
+      'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H', 'SPEED KM/H', 'GEAR', '140', '4',
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
     expect(spy.textEntries).toEqual(expect.arrayContaining([
-      { value: '4', x: 341, y: 236, align: 'right', font: '700 69px Arial Narrow, Arial, sans-serif' },
-      { value: '140', x: 486, y: 236, align: 'right', font: '700 57px Arial Narrow, Arial, sans-serif' },
+      { value: '4', x: 226, y: 253, align: 'left', font: '700 57px Arial Narrow, Arial, sans-serif' },
+      { value: '140', x: 484, y: 253, align: 'right', font: '700 57px Arial Narrow, Arial, sans-serif' },
     ]));
-    expect(spy.moves).toEqual(expect.arrayContaining([{ x: 355, y: 194 }]));
+    expect(spy.moves).toEqual(expect.arrayContaining([{ x: 355, y: 208 }]));
     expect(centerCalls).toHaveLength(1);
     expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' });
     expect(gearCalls).toHaveLength(1);

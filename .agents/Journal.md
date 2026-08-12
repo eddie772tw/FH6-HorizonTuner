@@ -355,6 +355,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` locks both aligned values, the enlarged fonts, and the center divider start. Frontend Vitest: 40 files / 223 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Speed-Gear Balance Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: Enlarging the prior near-center gear anchor to 69px caused it to collide with its label and made the left/right halves read unevenly. The lower speed unit also competed for the same vertical space, leaving the whole group visually high.
+- **Action**: Track now uses outward-facing columns around its geometric center line: gear is left-aligned at the left outer edge and speed is right-aligned at the right outer edge. Both values use balanced 57px typography; speed's unit is folded into the `SPEED <unit>` label. The recipe shifts the block down 14px and assigns independent label/value anchors, preserving a clear gap above enlarged values.
+- **Verification**: `s650PerformanceClusters.test.ts` locks the left gear and right speed anchors, 57px font size, and the lower central divider anchor. Frontend Vitest: 40 files / 223 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

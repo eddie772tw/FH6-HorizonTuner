@@ -149,8 +149,10 @@
             var y = recipe.y;
             var width = recipe.width;
             var dividerX = x + (recipe.dividerX === undefined ? width / 2 : recipe.dividerX);
-            var gearRight = recipe.gearRight === undefined ? dividerX - 14 : x + recipe.gearRight;
-            var speedRight = x + (recipe.speedRight === undefined ? width : recipe.speedRight);
+            var gearX = x + (recipe.gearX === undefined ? 14 : recipe.gearX);
+            var speedX = x + (recipe.speedX === undefined ? width - 14 : recipe.speedX);
+            var gearAlign = recipe.gearAlign || 'right';
+            var speedAlign = recipe.speedAlign || 'right';
             var labelY = y + (recipe.labelY === undefined ? 17 : recipe.labelY);
             var valueY = y + (recipe.valueY === undefined ? 52 : recipe.valueY);
             var unitY = y + (recipe.unitY === undefined ? 79 : recipe.unitY);
@@ -160,13 +162,14 @@
             var gear = typeof view.getGearLabel === 'function' ? view.getGearLabel(data) : '--';
 
             ctx.save();
-            ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
 
             setFont(ctx, recipe.labelSize || 10, '700');
             ctx.fillStyle = palette.secondary;
-            ctx.fillText('GEAR', gearRight, labelY);
-            ctx.fillText('SPEED', speedRight, labelY);
+            ctx.textAlign = gearAlign;
+            ctx.fillText('GEAR', gearX, labelY);
+            ctx.textAlign = speedAlign;
+            ctx.fillText(recipe.unitInLabel && unit ? 'SPEED ' + unit : 'SPEED', speedX, labelY);
 
             if (recipe.divider !== false) {
                 drawRule(ctx, dividerX, y + dividerInset,
@@ -177,16 +180,20 @@
             if (view.showSpeed !== false) {
                 setFont(ctx, recipe.speedSize || 38, '700');
                 ctx.fillStyle = palette.text;
-                ctx.fillText(String(speed), speedRight, valueY);
-                setFont(ctx, recipe.unitSize || 10, '700');
-                ctx.fillStyle = palette.secondary;
-                ctx.fillText(unit, speedRight, unitY);
+                ctx.textAlign = speedAlign;
+                ctx.fillText(String(speed), speedX, valueY);
+                if (!recipe.unitInLabel) {
+                    setFont(ctx, recipe.unitSize || 10, '700');
+                    ctx.fillStyle = palette.secondary;
+                    ctx.fillText(unit, speedX, unitY);
+                }
             }
 
             if (view.showGear !== false) {
                 setFont(ctx, recipe.gearSize || 46, '700');
                 ctx.fillStyle = palette.primary;
-                ctx.fillText(String(gear), gearRight, valueY);
+                ctx.textAlign = gearAlign;
+                ctx.fillText(String(gear), gearX, valueY);
             }
             ctx.restore();
         }
