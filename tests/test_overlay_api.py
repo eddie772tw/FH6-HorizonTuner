@@ -34,6 +34,7 @@ def test_get_hud_config_default(temp_hud_config_file):
     assert data["hudStyle"] == "vfd"
     assert data["s650Theme"] == "heritage67"
     assert data["s650CenterWidget"] == "drive"
+    assert data["vfdRenderMode"] == main.VFD_RENDER_MODE
     assert "elements" in data
     assert data["elements"]["showCenterInfo"] is True
     assert data["elements"]["showRPM"] is True

@@ -45,6 +45,16 @@
         (function () {
             var canvas = document.getElementById('vfdCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
+            var staticLayerCanvas = document.createElement('canvas');
+            staticLayerCanvas.width = 1120;
+            staticLayerCanvas.height = 520;
+            var staticLayerCtx = staticLayerCanvas.getContext('2d');
+            var skipPanelFrames = false;
+            var staticLayerDirty = true;
+            var optimizedGaugeDirty = true;
+            var optimizedRadioDirty = true;
+            var optimizedRenderPending = false;
+            var optimizedAnimationTimer = null;
 
             // ── VFD Phosphor Palette & Constant Glow ────────────────────────────────
             var VFD_CLASSIC_GLOW = "#8ffff0";
@@ -61,6 +71,18 @@
 
             var currentPalette = Object.assign({}, defaultPalette);
             var isMetricUnit = true;
+            var vfdRenderMode = 'legacy';
+
+            function syncVFDRenderMode() {
+                var configuredMode = window._currentFullConfig && window._currentFullConfig.vfdRenderMode;
+                var nextMode = configuredMode === 'optimized' ? 'optimized' : 'legacy';
+                if (nextMode !== vfdRenderMode) {
+                    vfdRenderMode = nextMode;
+                    staticLayerDirty = true;
+                    optimizedGaugeDirty = true;
+                    optimizedRadioDirty = true;
+                }
+            }
 
             // ── Motion Effect Smooth Lerp State ─────────────────────────────────────
             var motionState = {
@@ -96,6 +118,7 @@
             function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
             function updateDynamicColors() {
+                var previousPaletteKey = currentPalette.primary + '|' + currentPalette.accent + '|' + currentPalette.dim + '|' + currentPalette.glow;
                 var customColor = window._currentCustomColor;
                 var useDefault = window._currentUseDefaultColors !== false;
 
@@ -110,6 +133,9 @@
                     currentPalette.dim = defaultPalette.dim;
                     currentPalette.glow = VFD_CLASSIC_GLOW;
                 }
+
+                var nextPaletteKey = currentPalette.primary + '|' + currentPalette.accent + '|' + currentPalette.dim + '|' + currentPalette.glow;
+                return previousPaletteKey !== nextPaletteKey;
             }
 
 
@@ -144,6 +170,7 @@
 
             // ── VFD Drawing Primitives ──────────────────────────────────────────────
             function drawVFDPanelFrame(x, y, w, h, title) {
+                if (skipPanelFrames) return;
                 ctx.save();
                 ctx.fillStyle = '#040d0c';
                 ctx.fillRect(x, y, w, h);
@@ -681,13 +708,70 @@
             var latestTelemetryData = {};
             var latestTelemetryPayload = {};
 
+            function rebuildStaticLayer() {
+                if (!staticLayerCtx) return;
+
+                var displayContext = ctx;
+                ctx = staticLayerCtx;
+                skipPanelFrames = false;
+                ctx.clearRect(0, 0, 1120, 520);
+                drawVFDPanelFrame(0, 0, 1120, 115, "RPM x1000");
+                drawVFDPanelFrame(0, 123, 420, 145, "SPEED");
+                drawVFDPanelFrame(430, 123, 210, 145, "GEAR");
+                drawVFDPanelFrame(650, 123, 470, 145, "TELEMETRY");
+                drawVFDPanelFrame(0, 278, 1120, 235, "AUDIO EQUALIZER");
+                ctx = displayContext;
+                skipPanelFrames = true;
+                staticLayerDirty = false;
+            }
+
+            function hasActiveOptimizedAnimation() {
+                if (marqueeText.length > 48) return true;
+                for (var i = 0; i < 32; i++) {
+                    if (spectrumBands[i] > 0.01 || peakHoldVals[i] > 0.01 || peakHoldTicks[i] > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function scheduleOptimizedAnimation() {
+                if (vfdRenderMode !== 'optimized' || sweepActive || optimizedAnimationTimer || !hasActiveOptimizedAnimation()) {
+                    return;
+                }
+
+                optimizedAnimationTimer = setTimeout(function () {
+                    optimizedAnimationTimer = null;
+                    optimizedRadioDirty = true;
+                    requestOptimizedRender();
+                }, 100);
+            }
+
+            function requestOptimizedRender() {
+                if (vfdRenderMode !== 'optimized' || optimizedRenderPending || sweepActive) return;
+                optimizedRenderPending = true;
+                requestAnimationFrame(function () {
+                    optimizedRenderPending = false;
+                    if (optimizedGaugeDirty || optimizedRadioDirty || staticLayerDirty) {
+                        renderVFDSuite(latestTelemetryData, latestTelemetryPayload);
+                    }
+                });
+            }
+
             function renderVFDSuite(data, payload) {
                 if (!ctx) return;
+
+                syncVFDRenderMode();
+                if (updateDynamicColors()) staticLayerDirty = true;
 
                 // ── Glow Intensity & Dynamic Waveform Modulated Radius ─────────────────────
                 var baseGlowFactor = (window._currentFullConfig && window._currentFullConfig.glowIntensity !== undefined) ? window._currentFullConfig.glowIntensity : 1.0;
                 var rpmRatio = (data && data.maxRpm) ? clamp((data.rpm || 0) / data.maxRpm, 0, 1) : 0;
-                var avgSpectrum = spectrumBands.length ? (spectrumBands.reduce(function (a, b) { return a + b; }, 0) / spectrumBands.length) : 0;
+                var spectrumTotal = 0;
+                for (var spectrumIndex = 0; spectrumIndex < spectrumBands.length; spectrumIndex++) {
+                    spectrumTotal += spectrumBands[spectrumIndex];
+                }
+                var avgSpectrum = spectrumBands.length ? spectrumTotal / spectrumBands.length : 0;
                 var dynamicWaveBoost = Math.max(rpmRatio, avgSpectrum) * 0.5;
                 VFD_GLOW_RADIUS = Math.round(9 * baseGlowFactor * (1.0 + dynamicWaveBoost));
 
@@ -743,9 +827,21 @@
                     }
                 }
 
+                if (vfdRenderMode === 'optimized' && staticLayerDirty) {
+                    rebuildStaticLayer();
+                }
+
+                skipPanelFrames = vfdRenderMode === 'optimized';
                 ctx.clearRect(0, 0, 1120, 520);
+                if (skipPanelFrames) {
+                    ctx.drawImage(staticLayerCanvas, 0, 0);
+                }
                 renderVFDGaugeCluster(data || {}, payload || latestTelemetryPayload || {});
                 renderVFDRadioSection();
+                skipPanelFrames = false;
+                optimizedGaugeDirty = false;
+                optimizedRadioDirty = false;
+                scheduleOptimizedAnimation();
             }
 
 
@@ -793,13 +889,17 @@
             function startContinuousRenderLoop() {
                 function renderLoop() {
                     try {
-                        if (!sweepActive) {
+                        if (!sweepActive && vfdRenderMode === 'legacy') {
                             renderVFDSuite(latestTelemetryData, latestTelemetryPayload);
                         }
                     } catch (err) {
                         console.error("VFD Render loop notice:", err);
                     } finally {
-                        requestAnimationFrame(renderLoop);
+                        if (vfdRenderMode === 'legacy') {
+                            requestAnimationFrame(renderLoop);
+                        } else {
+                            setTimeout(renderLoop, 250);
+                        }
                     }
                 }
                 requestAnimationFrame(renderLoop);
@@ -812,6 +912,10 @@
                 onInit: function (payload) {
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     if (payload) latestTelemetryPayload = payload;
+                    syncVFDRenderMode();
+                    optimizedGaugeDirty = true;
+                    optimizedRadioDirty = true;
+                    requestOptimizedRender();
                 },
                 onElementsChange: function (elements) {
                     var c = document.getElementById('vfdContainer');
@@ -821,22 +925,36 @@
                     if (payload && payload.isMetric !== undefined) isMetricUnit = payload.isMetric !== false;
                     latestTelemetryData = data || {};
                     latestTelemetryPayload = payload || {};
+                    optimizedGaugeDirty = true;
+                    requestOptimizedRender();
                 },
                 onAudio: function (data) {
                     if (data && data.success && Array.isArray(data.spectrum)) {
-                        hasBackendAudio = !!data.has_audio;
+                        var audioState = data.state || 'live';
+                        var isLiveAudio = audioState === 'live' || audioState === 'silence';
+                        hasBackendAudio = isLiveAudio && !!data.has_audio;
                         backendVuL = clamp(data.vu_left || 0, 0, 1);
                         backendVuR = clamp(data.vu_right || 0, 0, 1);
 
                         if (data.spectrum.length === 32) {
                             for (var b = 0; b < 32; b++) {
-                                var raw = clamp(data.spectrum[b] || 0, 0, 1);
-                                spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                                if (isLiveAudio) {
+                                    var raw = clamp(data.spectrum[b] || 0, 0, 1);
+                                    spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                                } else {
+                                    spectrumBands[b] = 0;
+                                    peakHoldVals[b] = 0;
+                                    peakHoldTicks[b] = 0;
+                                }
                             }
                         }
                     } else {
                         hasBackendAudio = false;
+                        backendVuL = 0;
+                        backendVuR = 0;
                     }
+                    optimizedRadioDirty = true;
+                    requestOptimizedRender();
                 },
                 onMedia: function (data) {
                     if (data && data.success) {
@@ -879,6 +997,8 @@
                             marqueeScrollPos = 0;
                         }
                     }
+                    optimizedRadioDirty = true;
+                    requestOptimizedRender();
                 },
                 onAnimate: function () {
                     triggerSweep();

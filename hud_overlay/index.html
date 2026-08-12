@@ -57,6 +57,7 @@
         import { TelemetryCardsManager }                                                        from './shared/telemetry-cards.js';
         import { initCoordinator }                                                              from './shared/coordinator.js';
         import { initWebSocket }                                                                from './shared/ws.js';
+        import { createOverlayEventForwarder }                                                  from './shared/overlay-forwarding.js';
         import { initPhysics }                                                                  from './shared/physics.js';
         import { initUtils, isMetric }                                                          from './shared/utils.js';
 
@@ -120,6 +121,8 @@
         function postToHud(type, detail = {}) {
             hudIframe.contentWindow?.postMessage({ type, ...detail }, '*');
         }
+
+        const overlayEventForwarder = createOverlayEventForwarder(postToHud);
 
         async function loadHud(name, force = false) {
             if (window.demoActive) window.dispatchEvent(new CustomEvent('demo:stop'));
@@ -227,10 +230,10 @@
 
         // ── WebSocket state forwarding ─────────────────────────────
         window.addEventListener('hud:audio', (e) => {
-            postToHud('hud:audio', { data: e.detail });
+            overlayEventForwarder.onAudio(e.detail);
         });
         window.addEventListener('hud:media', (e) => {
-            postToHud('hud:media', { data: e.detail });
+            overlayEventForwarder.onMedia(e.detail);
         });
 
         window.addEventListener('hud:config', (e) => {

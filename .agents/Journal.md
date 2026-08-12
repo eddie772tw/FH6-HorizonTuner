@@ -283,6 +283,15 @@
 - **Learning**: The control panel, backend, and S650 canvas contract recognized the three performance themes, but the HUD launcher retained the earlier three-theme allowlist. Launcher normalization silently rewrote each performance selection to `heritage67` before it reached the iframe.
 - **Action**: Keep the launcher's allowlist aligned with the S650 renderer contract and cover it with a launcher-specific Vitest regression test.
 - **Evidence**: `hud_overlay/index.html`, `s650HudLauncherConfig.test.ts`
+---
+
+## 2026-08-11 / Theme Customization Cleanup
+
+- **Scope**: local / frontend ThemeView and persisted theme settings.
+- **Status**: adopted
+- **Learning**: The three-slot theme storage UI had no active consumer outside ThemeView, and the generated CSS template duplicated current token values while forcing an empty custom CSS field to become non-empty on mount.
+- **Action**: Removed legacy theme slots and their persistence path, kept validated JSON import/export, and changed custom CSS editing to a local draft with explicit Apply/Cancel/Clear actions. Custom CSS is now validated before it is persisted or imported.
+- **Evidence**: Frontend Vitest: 31 files / 197 tests passed; Vite production build passed; backend overlay API tests: 35 passed; all six locale JSON files parsed successfully.
 
 ## 2026-08-11 / Telemetry Hot Path
 
