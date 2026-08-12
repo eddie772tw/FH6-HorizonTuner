@@ -34,13 +34,28 @@
             var width = recipe.width;
             var height = recipe.height;
             var slant = recipe.slant || 76;
+            var lowerRise = height * (recipe.lowerRiseRatio === undefined ? 0.20 : recipe.lowerRiseRatio);
+            var lowerSlantRatio = slant / width;
+
+            function lowerBoundaryY(ratio) {
+                if (ratio <= lowerSlantRatio) return y + height - lowerRise * ratio / lowerSlantRatio;
+                if (ratio >= 1 - lowerSlantRatio) return y + height - lowerRise * (1 - ratio) / lowerSlantRatio;
+                return y + height - lowerRise;
+            }
+
+            function traceTrackWideOutline() {
+                ctx.moveTo(x, y + height);
+                ctx.lineTo(x + slant, y);
+                ctx.lineTo(x + width - slant, y);
+                ctx.lineTo(x + width, y + height);
+                ctx.lineTo(x + width - slant, y + height - lowerRise);
+                ctx.lineTo(x + slant, y + height - lowerRise);
+                ctx.lineTo(x, y + height);
+            }
 
             ctx.save();
             ctx.beginPath();
-            ctx.moveTo(x, y + height);
-            ctx.lineTo(x + slant, y);
-            ctx.lineTo(x + width - slant, y);
-            ctx.lineTo(x + width, y + height);
+            traceTrackWideOutline();
             ctx.strokeStyle = 'rgba(135, 115, 255, 0.86)';
             ctx.lineWidth = 2;
             ctx.stroke();
@@ -50,10 +65,7 @@
             // fills prevents them from reading as a detached horizontal bar.
             ctx.save();
             ctx.beginPath();
-            ctx.moveTo(x, y + height);
-            ctx.lineTo(x + slant, y);
-            ctx.lineTo(x + width - slant, y);
-            ctx.lineTo(x + width, y + height);
+            traceTrackWideOutline();
             ctx.closePath();
             ctx.clip();
             ctx.fillStyle = 'rgba(160, 144, 255, 0.12)';
@@ -64,9 +76,10 @@
             }
             if (rpmRatio > 0) {
                 ctx.fillStyle = palette.primary;
-                ctx.globalAlpha = 0.40;
+                ctx.globalAlpha = recipe.activeFillAlpha === undefined ? 0.82 : recipe.activeFillAlpha;
                 ctx.fillRect(x, y, width * Math.min(rpmRatio, redlineRatio), height);
             }
+            ctx.globalAlpha = 1;
             ctx.restore();
 
             for (var tick = 0; tick <= divisions * 4; tick += 1) {
@@ -81,7 +94,7 @@
                     ctx.textAlign = 'center';
                     setFont(ctx, 21, '700');
                     ctx.fillStyle = redline ? palette.danger : palette.text;
-                    ctx.fillText(String(Math.round(maxRpm * ratio / 1000)), tickX, y + height - 14);
+                    ctx.fillText(String(Math.round(maxRpm * ratio / 1000)), tickX, lowerBoundaryY(ratio) - 14);
                 }
             }
 
@@ -103,23 +116,28 @@
             var available = ratio !== null && ratio !== undefined;
             var activeHeight = available ? Math.round(height * clamp(ratio, 0, 1)) : 0;
             var side = recipe.side === 'right' ? 1 : -1;
+            var axisWidth = recipe.axisWidth || 2;
+            var tickLength = recipe.tickLength || 8;
+            var fillWidth = recipe.fillWidth || 4;
+            var valueSize = recipe.valueSize || 13;
+            var valueOffset = recipe.valueOffset || 12;
 
             ctx.save();
             ctx.textAlign = side > 0 ? 'left' : 'right';
-            drawRule(ctx, x, y, x, y + height, 'rgba(219, 239, 241, 0.54)', 2);
+            drawRule(ctx, x, y, x, y + height, 'rgba(219, 239, 241, 0.54)', axisWidth);
             for (var tick = 0; tick <= 4; tick += 1) {
                 var tickY = y + height * tick / 4;
-                drawRule(ctx, x, tickY, x + side * 8, tickY, 'rgba(219, 239, 241, 0.55)', 1);
+                drawRule(ctx, x, tickY, x + side * tickLength, tickY, 'rgba(219, 239, 241, 0.55)', axisWidth - 1);
             }
             if (available) {
-                drawRule(ctx, x, y + height, x, y + height - activeHeight, recipe.activeColor || palette.primary, 4);
-                setFont(ctx, 13, '800');
+                drawRule(ctx, x, y + height, x, y + height - activeHeight, recipe.activeColor || palette.primary, fillWidth);
+                setFont(ctx, valueSize, '800');
                 ctx.fillStyle = palette.text;
-                ctx.fillText(readout.value + (readout.unit ? ' ' + readout.unit : ''), x + side * 12, y + height + 16);
+                ctx.fillText(readout.value + (readout.unit ? ' ' + readout.unit : ''), x + side * valueOffset, y + height + valueSize + 3);
             } else {
-                setFont(ctx, 13, '700');
+                setFont(ctx, valueSize, '700');
                 ctx.fillStyle = 'rgba(219, 239, 241, 0.46)';
-                ctx.fillText('--', x + side * 12, y + height + 16);
+                ctx.fillText('--', x + side * valueOffset, y + height + valueSize + 3);
             }
             ctx.restore();
         }

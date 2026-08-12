@@ -29,6 +29,7 @@ function createCanvasSpy() {
   const text: string[] = [];
   const arcs: number[] = [];
   const clips: number[] = [];
+  const strokes: Array<{ color: string; width: number }> = [];
   const ctx: Record<string, unknown> = {
     save: () => undefined,
     restore: () => undefined,
@@ -39,7 +40,7 @@ function createCanvasSpy() {
     closePath: () => undefined,
     clip: () => clips.push(1),
     arc: () => arcs.push(1),
-    stroke: () => undefined,
+    stroke: () => strokes.push({ color: String(ctx.strokeStyle || ''), width: Number(ctx.lineWidth || 0) }),
     fill: () => fills.push(String(ctx.fillStyle || '')),
     fillRect: (x: number, y: number, width: number, height: number) => rectangles.push({
       color: String(ctx.fillStyle || ''), x, y, width, height,
@@ -53,7 +54,7 @@ function createCanvasSpy() {
     lineCap: '',
     globalAlpha: 1,
   };
-  return { arcs, clips, ctx, fills, rectangles, text };
+  return { arcs, clips, ctx, fills, rectangles, strokes, text };
 }
 
 const palette = {
@@ -108,14 +109,15 @@ describe('S650 transparent performance layouts', () => {
     expect(spy.rectangles.map((rectangle) => rectangle.color)).toEqual(expect.arrayContaining([
       'rgba(160, 144, 255, 0.12)', 'rgba(255, 59, 48, 0.50)', palette.primary,
     ]));
+    expect(spy.strokes).toContainEqual({ color: palette.primary, width: 8 });
     expect(spy.text).toEqual(expect.arrayContaining([
       'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H',
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
     expect(centerCalls).toHaveLength(1);
-    expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 164 });
+    expect(centerCalls[0][3]).toEqual({ x: 782, y: 298, width: 286, height: 88, variant: 'trackCompact' });
     expect(gearCalls).toHaveLength(1);
-    expect(gearCalls[0].slice(3)).toEqual([640, 407]);
+    expect(gearCalls[0].slice(3)).toEqual([640, 447]);
   });
 
   it('gives SVT Cobra two analog rings with distinct SVT labels and red needles', () => {

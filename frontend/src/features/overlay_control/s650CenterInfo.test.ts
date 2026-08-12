@@ -13,6 +13,7 @@ type Region = {
   gearY?: number;
   speedSize?: number;
   gearSize?: number;
+  variant?: string;
 };
 
 type CenterInfoModule = {
@@ -129,6 +130,35 @@ describe('S650 center-information registry contract', () => {
     expect((ctx.text as string[])).toContain('POWERTRAIN');
     expect((ctx.text as string[])).toContain('4200 / 8000');
     expect((ctx.text as string[])).not.toContain('4');
+  });
+
+  it('uses the compact page renderer for a Track recipe region', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'performance',
+      isMetric: true,
+      getRpm: () => 4200,
+      getMaxRpm: () => 8000,
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+      x: 782,
+      y: 298,
+      width: 286,
+      height: 88,
+      variant: 'trackCompact',
+    });
+
+    expect((ctx.text as string[])).toContain('POWERTRAIN');
+    expect((ctx.text as string[])).toContain('BOOST');
+    expect((ctx.text as string[])).not.toContain('4200 / 8000');
   });
 
   it('does not inject pedal bars into every page', () => {

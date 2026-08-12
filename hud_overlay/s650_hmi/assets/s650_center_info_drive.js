@@ -43,6 +43,16 @@
             // container-level renderer adds these bars to other pages.
             drawInput(context, region.x + 22, region.y + region.height - 27, 'THR', 'throttle', palette.primary);
             drawInput(context, region.x + region.width - 192, region.y + region.height - 27, 'BRK', 'brake', palette.warning);
+        },
+        renderCompact: function (context) {
+            var view = context.view;
+            var region = context.region;
+            var heading = view.getTelemetryReadout ? view.getTelemetryReadout('heading', context.data).value : '--';
+            var distance = view.getTelemetryReadout ? view.getTelemetryReadout('odometer', context.data) : { value: '--', unit: '' };
+
+            common.drawTitle(context, 'DRIVE', '');
+            common.drawMetric(context, region.x + 82, region.y + 35, 'HEADING', heading, '', 'center');
+            common.drawMetric(context, region.x + region.width - 82, region.y + 35, 'DISTANCE', distance.value, distance.unit, 'center');
         }
     });
 })(window);

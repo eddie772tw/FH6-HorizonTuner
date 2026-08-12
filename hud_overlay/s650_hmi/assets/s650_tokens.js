@@ -138,7 +138,7 @@
         track: {
             background: '#050608',
             surface: '#101318',
-            primary: '#F04A3E',
+            primary: '#1351D8',
             secondary: '#9AA3AD',
             text: '#F7F8FA',
             warning: colors.telltaleYellow,
@@ -176,7 +176,7 @@
         paletteFor: function (theme, options) {
             var palette = clonePalette(palettes[theme] || palettes.normal);
             options = options || {};
-            if (theme !== 'foxbody' && theme !== 'svt_cobra' && theme !== 'track' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
+            if (theme !== 'foxbody' && theme !== 'svt_cobra' && options.useDefaultColors === false && /^#[0-9a-f]{6}$/i.test(options.customColor || '')) {
                 palette.primary = options.customColor;
             }
             if (theme === 'foxbody' && options.guiThemeMode === 'dark') {

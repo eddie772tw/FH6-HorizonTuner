@@ -65,16 +65,18 @@ describe('S650 HMI palette', () => {
     });
   });
 
-  it('keeps Track high-contrast and immune to the general custom gauge color', () => {
-    expect(loadTokensModule().paletteFor('track', {
-      customColor: '#ff00aa',
-      useDefaultColors: false,
-    })).toMatchObject({
+  it('uses the Normal blue by default and accepts the general custom gauge color for Track', () => {
+    const tokens = loadTokensModule();
+    expect(tokens.paletteFor('track')).toMatchObject({
       background: '#050608',
-      primary: '#F04A3E',
+      primary: '#1351D8',
       secondary: '#9AA3AD',
       danger: '#FF3B30',
     });
+    expect(tokens.paletteFor('track', {
+      customColor: '#ff00aa',
+      useDefaultColors: false,
+    }).primary).toBe('#ff00aa');
   });
 
   it('keeps Sport warm by default while allowing the established custom primary override', () => {

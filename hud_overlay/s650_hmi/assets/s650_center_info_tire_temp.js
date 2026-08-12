@@ -84,6 +84,58 @@
         ctx.restore();
     }
 
+    function drawCompactVehicle(context, temps) {
+        var ctx = context.ctx;
+        var view = context.view;
+        var palette = context.palette;
+        var region = context.region;
+        var cx = region.x + region.width / 2;
+        var bodyY = region.y + 27;
+        var bodyHeight = 50;
+        var wheelX = 31;
+        var positions = [
+            { x: cx - wheelX - 10, y: bodyY + 14, align: 'right', label: 'FL' },
+            { x: cx + wheelX + 10, y: bodyY + 14, align: 'left', label: 'FR' },
+            { x: cx - wheelX - 10, y: bodyY + 38, align: 'right', label: 'RL' },
+            { x: cx + wheelX + 10, y: bodyY + 38, align: 'left', label: 'RR' }
+        ];
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(cx - 13, bodyY);
+        ctx.lineTo(cx + 13, bodyY);
+        ctx.lineTo(cx + 19, bodyY + 10);
+        ctx.lineTo(cx + 19, bodyY + bodyHeight - 10);
+        ctx.lineTo(cx + 13, bodyY + bodyHeight);
+        ctx.lineTo(cx - 13, bodyY + bodyHeight);
+        ctx.lineTo(cx - 19, bodyY + bodyHeight - 10);
+        ctx.lineTo(cx - 19, bodyY + 10);
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(128, 177, 244, 0.82)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        for (var index = 0; index < positions.length; index += 1) {
+            var position = positions[index];
+            var wheelCenterX = index % 2 === 0 ? cx - wheelX : cx + wheelX;
+            var wheelCenterY = position.y;
+            ctx.fillStyle = temperatureColor(context, temps[index]);
+            ctx.fillRect(wheelCenterX - 4, wheelCenterY - 7, 8, 14);
+            ctx.textAlign = position.align;
+            if (context.primitives && typeof context.primitives.setFont === 'function') {
+                context.primitives.setFont(11, '700', 'Arial Narrow');
+            }
+            ctx.fillStyle = temps[index] === null ? palette.secondary : palette.text;
+            ctx.fillText(view.formatTireTemperature(temps[index]), position.x, position.y - 2);
+            if (context.primitives && typeof context.primitives.setFont === 'function') {
+                context.primitives.setFont(7, '700', 'Arial Narrow');
+            }
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText(position.label, position.x, position.y + 8);
+        }
+        ctx.restore();
+    }
+
     window.S650HmiCenterInfo.register({
         id: 'tire_temp',
         label: 'Tire temperature',
@@ -105,6 +157,13 @@
             }
             common.drawTitle(context, 'TIRE TEMPERATURE', hasTemperature ? view.tireTemperatureUnit() : 'SENSOR UNAVAILABLE');
             drawVehicle(context, temps);
+        },
+        renderCompact: function (context) {
+            var view = context.view;
+            var temps = view.getTireTemperatures(context.data);
+
+            common.drawTitle(context, 'TIRE TEMP', '');
+            drawCompactVehicle(context, temps);
         }
     });
 })(window);

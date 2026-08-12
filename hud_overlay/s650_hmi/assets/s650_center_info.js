@@ -14,6 +14,9 @@
         if (typeof definition.render !== 'function') {
             throw new TypeError('[S650 Center Info] Page definition requires a render function.');
         }
+        if (definition.renderCompact !== undefined && typeof definition.renderCompact !== 'function') {
+            throw new TypeError('[S650 Center Info] Compact page renderer must be a function.');
+        }
         if (pageRegistry[definition.id]) {
             throw new Error('[S650 Center Info] Duplicate page id: ' + definition.id);
         }
@@ -25,7 +28,8 @@
             id: definition.id,
             label: definition.label || definition.id,
             status: definition.status || 'experimental',
-            render: definition.render
+            render: definition.render,
+            renderCompact: definition.renderCompact || null
         });
     }
 
@@ -50,6 +54,7 @@
                 normalized[key] = region[key];
             }
         });
+        if (typeof region.variant === 'string') normalized.variant = region.variant;
         return normalized;
     }
 
@@ -77,14 +82,15 @@
 
             var normalizedRegion = normalizeRegion(region);
 
-            page.render({
+            var context = {
                 view: view,
                 data: data,
                 palette: palette,
                 region: normalizedRegion,
                 primitives: primitives,
                 ctx: ctx
-            });
+            };
+            (normalizedRegion.variant && typeof page.renderCompact === 'function' ? page.renderCompact : page.render)(context);
 
         }
 

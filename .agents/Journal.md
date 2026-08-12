@@ -311,6 +311,23 @@
 - **Verification**: `s650PerformanceClusters.test.ts` verifies clipping, right-side center-info injection, role-driven rails, all footer slots, and dynamic gear delegation. `s650DualLayoutPipeline.test.ts` verifies the layout dispatcher passes the shared center-info and gear primitives.
 ---
 
+## 2026-08-12 / S650 Track Gauge Density Tuning
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Finding**: Track and dual-ring themes share the same fixed 1280x480 Canvas and CSS dimensions. The reported central visual weight is recipe density from Track's continuous 1120px tachometer and 808px footer, not a theme-specific scaling defect.
+- **Action**: Track's active RPM fill now uses the normal/default primary blue and accepts the GUI custom primary palette. Its base, active, and redline bands are clipped to a lower-edge center peak, reducing the central fill depth by 20%. The side rails are larger, positioned inward, and use 8px active bands for quicker reading.
+- **Guardrail**: Preserve the wide Track tachometer as a Track presentation variant. Future density tuning should reduce footer contrast or width before changing canvas size or globally scaling the cluster.
+- **Verification**: Frontend Vitest: 40 files / 222 tests passed; `node --check` and `git diff --check` passed.
+---
+
+## 2026-08-12 / S650 Track Lowered Tachometer Reflow
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Finding**: HUD zoom is bottom-anchored. The former Track tachometer at y=86 appears near y=184-204 when zoomed to 70-75%; its full-size compromise position is y=194.
+- **Action**: Moved the Track wide tachometer to y=194 and changed its lower edge from a central triangle to a trapezoid mirroring the upper edge. Track now uses a compact right-side center-info variant at y=298 and moves the footer/gear carousel to y=414/447. Drive, tire-temperature, and performance center pages each define a compact renderer so Track retains user-selected center content without reintroducing a fixed wheel display.
+- **Verification**: `s650CenterInfo.test.ts` covers compact renderer selection; Track recipe tests cover the compact region and gear anchor. Frontend Vitest: 40 files / 223 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

@@ -23,22 +23,28 @@
     // deliberately contains no Canvas calls or data interpretation. Future
     // clusters can reuse the same component registry with another recipe.
     var TRACK_RECIPE = Object.freeze({
-        tachometer: Object.freeze({ variant: 'trackWide', x: 96, y: 86, width: 1120, height: 96, slant: 94, divisions: 9 }),
-        centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 164 }),
-        leftRail: Object.freeze({ x: 118, y: 202, height: 104, side: 'left', role: 'power' }),
-        rightRail: Object.freeze({ x: 1162, y: 202, height: 104, side: 'right', role: 'boost' }),
+        tachometer: Object.freeze({
+            // The HUD zoom is bottom-anchored. y=194 matches the visual
+            // position of the former y=86 tachometer around 72.5% zoom while
+            // leaving Track at the same full-size Canvas scale as other themes.
+            variant: 'trackWide', x: 96, y: 194, width: 1120, height: 96, slant: 94, divisions: 9,
+            lowerRiseRatio: 0.20, activeFillAlpha: 0.82
+        }),
+        centerInfo: Object.freeze({ x: 782, y: 298, width: 286, height: 88, variant: 'trackCompact' }),
+        leftRail: Object.freeze({ x: 172, y: 292, height: 110, side: 'left', role: 'power', axisWidth: 3, tickLength: 12, fillWidth: 8, valueSize: 16, valueOffset: 18 }),
+        rightRail: Object.freeze({ x: 1108, y: 292, height: 110, side: 'right', role: 'boost', axisWidth: 3, tickLength: 12, fillWidth: 8, valueSize: 16, valueOffset: 18 }),
         footer: Object.freeze({
             x: 236,
-            y: 374,
+            y: 414,
             width: 808,
             slots: Object.freeze({ topLeft: 'odometer', topRight: 'heading', bottomLeft: 'rpm', bottomRight: 'speed' }),
             positions: Object.freeze({
-                topLeft: Object.freeze({ x: 430, y: 364, align: 'center' }),
-                topRight: Object.freeze({ x: 850, y: 364, align: 'center' }),
-                bottomLeft: Object.freeze({ x: 430, y: 407, align: 'center' }),
-                bottomRight: Object.freeze({ x: 850, y: 407, align: 'center' })
+                topLeft: Object.freeze({ x: 430, y: 404, align: 'center' }),
+                topRight: Object.freeze({ x: 850, y: 404, align: 'center' }),
+                bottomLeft: Object.freeze({ x: 430, y: 447, align: 'center' }),
+                bottomRight: Object.freeze({ x: 850, y: 447, align: 'center' })
             }),
-            gear: Object.freeze({ centerX: 640, centerY: 407 })
+            gear: Object.freeze({ centerX: 640, centerY: 447 })
         })
     });
 
