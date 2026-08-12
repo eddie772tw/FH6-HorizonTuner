@@ -27,7 +27,11 @@ function loadLayoutsModule(): LayoutModule {
   return window.S650HmiLayouts;
 }
 
-function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
+function createLayouts(
+  events: string[],
+  foxbodyCalls: unknown[][] = [],
+  performanceClusters: Record<string, unknown> | undefined = undefined,
+) {
   return loadLayoutsModule().create({
     ctx: {
       save: () => undefined,
@@ -74,6 +78,7 @@ function createLayouts(events: string[], foxbodyCalls: unknown[][] = []) {
       drawTrackCluster: () => events.push('trackCluster'),
       getHeritageDialScale: () => ({ max: 80 }),
     },
+    performanceClusters,
     baseDriving: { draw: () => events.push('baseDriving') },
     centerInfo: { draw: () => events.push('centerInfo') },
     width: 1280,
@@ -130,5 +135,18 @@ describe('S650 dual layout pipeline', () => {
     layouts.render('svt_cobra', { redlineRpm: 7000 }, { primary: '#E8ECE7', secondary: '#A7AFA7' }, 0.875);
 
     expect(events).toEqual(['svtCobraCluster']);
+  });
+
+  it('prefers the transparent Track and SVT Cobra renderers when they are available', () => {
+    const events: string[] = [];
+    const layouts = createLayouts(events, [], {
+      drawTrack: () => events.push('trackPerformance'),
+      drawSvtCobra: () => events.push('svtPerformance'),
+    });
+
+    layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
+    layouts.render('svt_cobra', { redlineRpm: 7000 }, { primary: '#E8ECE7', secondary: '#A7AFA7' }, 0.875);
+
+    expect(events).toEqual(['trackPerformance', 'svtPerformance']);
   });
 });

@@ -10,6 +10,7 @@
         var width = options.width;
         var height = options.height;
         var typography = view.typography;
+        var performanceClusters = options.performanceClusters || window.S650HmiPerformanceClusters;
         var profilesModule = options.layoutProfiles || window.S650HmiLayoutProfiles;
         var profileRegistry = profilesModule.create({
             width: width,
@@ -269,6 +270,10 @@
 
         function drawTrack(data, palette, redlineRatio) {
             clear(palette);
+            if (performanceClusters && typeof performanceClusters.drawTrack === 'function') {
+                performanceClusters.drawTrack(view, data, palette, redlineRatio, options.ctx);
+                return;
+            }
             if (typeof p.drawTrackCluster === 'function') {
                 p.drawTrackCluster(view, data, palette, redlineRatio);
             }
@@ -283,6 +288,10 @@
 
         function drawSvtCobra(data, palette, redlineRatio) {
             clear(palette);
+            if (performanceClusters && typeof performanceClusters.drawSvtCobra === 'function') {
+                performanceClusters.drawSvtCobra(view, data, palette, redlineRatio, options.ctx);
+                return;
+            }
             if (typeof p.drawSvtCobraCluster === 'function') {
                 p.drawSvtCobraCluster(view, data, palette, redlineRatio);
             }

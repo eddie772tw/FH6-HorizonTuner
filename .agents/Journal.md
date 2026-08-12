@@ -285,6 +285,15 @@
 - **Evidence**: `hud_overlay/index.html`, `s650HudLauncherConfig.test.ts`
 ---
 
+## 2026-08-12 / S650 Track and SVT Cobra Visual Rework
+
+- **Scope**: local / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: pending visual review
+- **Decision**: Keep Sport on its existing implementation while its product direction is evaluated. Rebuild only Track and SVT Cobra as transparent overlays so they do not mask the game image.
+- **Action**: Track now uses the S650-oriented wide RPM band, central speed, discrete gear readout, fuel bar, and tire-temperature perimeter. SVT Cobra uses two analog rings with white/silver ticks, red needles, an 8k SVT tachometer, and a 160 mph-equivalent speed scale. The layout dispatcher prefers these renderers and retains the existing primitive clusters solely as a fallback.
+- **Evidence**: `hud_overlay/s650_hmi/assets/s650_performance_clusters.js`, `s650_layouts.js`, `s650PerformanceClusters.test.ts`, `s650DualLayoutPipeline.test.ts`; frontend Vitest: 40 files / 221 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.
