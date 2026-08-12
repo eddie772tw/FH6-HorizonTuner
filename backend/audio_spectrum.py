@@ -18,12 +18,20 @@ _audio_cache = {
     "vu_left": 0.0,
     "vu_right": 0.0,
     "has_audio": False,
-    "last_update": 0,
+    "last_update": 0.0,
+    "sequence": 0,
+    "captured_at_ms": 0,
+    "source": "unavailable",
 }
 
 _listener_thread = None
 _listener_running = False
 _lock = threading.Lock()
+_last_start_attempt = 0.0
+RESTART_BACKOFF_SECONDS = 5.0
+AUDIO_STALE_AFTER_SECONDS = 0.15
+AUDIO_SILENT_AFTER_SECONDS = 0.25
+AUDIO_BAND_COUNT = 32
 
 
 def _compute_fft_bands(
@@ -112,7 +120,7 @@ def _wasapi_loopback_worker():
                     m_len = len(mono)
 
                     has_audio = vu_l > 0.005 or vu_r > 0.005
-                    spectrum = [0.0] * 32
+                    spectrum = [0.0] * AUDIO_BAND_COUNT
 
                     if has_audio and m_len > 32:
                         windowed = mono * np.hanning(m_len)
@@ -135,7 +143,10 @@ def _wasapi_loopback_worker():
                         _audio_cache["vu_left"] = vu_l
                         _audio_cache["vu_right"] = vu_r
                         _audio_cache["has_audio"] = has_audio
-                        _audio_cache["last_update"] = time.time()
+                        _audio_cache["last_update"] = time.monotonic()
+                        _audio_cache["captured_at_ms"] = int(time.time() * 1000)
+                        _audio_cache["sequence"] += 1
+                        _audio_cache["source"] = "wasapi"
 
                 except Exception as e:
                     logger.debug(f"WASAPI loopback frame record notice: {e}")
@@ -144,17 +155,32 @@ def _wasapi_loopback_worker():
     except Exception as e:
         logger.debug(f"WASAPI loopback service error: {e}")
         _listener_running = False
+    finally:
+        _listener_running = False
 
 
 def start_audio_spectrum_service():
     """Start background system audio spectrum listener if not already running."""
-    global _listener_thread, _listener_running
-    if _listener_running:
+    global _last_start_attempt, _listener_thread, _listener_running
+    now = time.monotonic()
+    if _listener_running or (
+        _listener_thread is not None and _listener_thread.is_alive()
+    ):
+        return
+    if now - _last_start_attempt < RESTART_BACKOFF_SECONDS:
         return
 
+    _last_start_attempt = now
     _listener_running = True
     _listener_thread = threading.Thread(target=_wasapi_loopback_worker, daemon=True)
     _listener_thread.start()
+
+
+def stop_audio_spectrum_service() -> None:
+    """Ask the background capture worker to stop when no HUD needs audio."""
+    global _last_start_attempt, _listener_running
+    _listener_running = False
+    _last_start_attempt = 0.0
 
 
 def update_audio_spectrum_buffer(pcm_samples: list[float]):
@@ -167,17 +193,44 @@ def update_audio_spectrum_buffer(pcm_samples: list[float]):
         _audio_cache["vu_left"] = vu_l
         _audio_cache["vu_right"] = vu_r
         _audio_cache["has_audio"] = has_audio
-        _audio_cache["last_update"] = time.time()
+        _audio_cache["last_update"] = time.monotonic()
+        _audio_cache["captured_at_ms"] = int(time.time() * 1000)
+        _audio_cache["sequence"] += 1
+        _audio_cache["source"] = "external"
 
 
 async def get_audio_spectrum_data() -> dict:
     """Get latest system audio spectrum frequency bands and L/R VU meters."""
     start_audio_spectrum_service()
+    now = time.monotonic()
     with _lock:
+        age = (
+            now - _audio_cache["last_update"]
+            if _audio_cache["sequence"]
+            else float("inf")
+        )
+        if age > AUDIO_SILENT_AFTER_SECONDS:
+            state = "unavailable"
+        elif age > AUDIO_STALE_AFTER_SECONDS:
+            state = "stale"
+        elif _audio_cache["has_audio"]:
+            state = "live"
+        else:
+            state = "silence"
+
+        has_audio = bool(_audio_cache["has_audio"]) and state == "live"
         return {
             "spectrum": list(_audio_cache["spectrum"]),
-            "vu_left": float(_audio_cache["vu_left"]),
-            "vu_right": float(_audio_cache["vu_right"]),
-            "has_audio": bool(_audio_cache["has_audio"]),
+            "vu_left": float(_audio_cache["vu_left"])
+            if state != "unavailable"
+            else 0.0,
+            "vu_right": float(_audio_cache["vu_right"])
+            if state != "unavailable"
+            else 0.0,
+            "has_audio": has_audio,
+            "state": state,
+            "sequence": int(_audio_cache["sequence"]),
+            "captured_at_ms": int(_audio_cache["captured_at_ms"]),
+            "source": _audio_cache["source"],
             "success": True,
         }
