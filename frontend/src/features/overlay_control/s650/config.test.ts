@@ -10,7 +10,7 @@ import {
   isS650CenterWidget,
   isS650HmiTheme,
   normalizeS650HmiConfig,
-} from './s650Hmi';
+} from './config';
 
 describe('S650 HMI config contract', () => {
   it('exposes only the retained S650 themes in the selector', () => {

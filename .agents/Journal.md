@@ -400,6 +400,15 @@
 - **Verification**: Frontend and backend regression tests assert both prototype ids are unregistered and cannot dispatch their renderers; their isolated palette/renderer tests remain as development references.
 ---
 
+## 2026-08-12 / S650 HMI Ownership Boundary Refactor
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Decision**: The React control panel owns only the typed S650 configuration boundary: selector values, legacy-id normalization before save, and UI-specific type guards. The standalone Canvas contract, frame, renderer, layouts, primitives, and their tests belong to `hud_overlay/s650_hmi`.
+- **Action**: Moved Canvas unit tests to `hud_overlay/s650_hmi/tests/unit`, launcher-boundary coverage to `tests/integration`, and moved the React configuration helper to `frontend/src/features/overlay_control/s650/config.ts`. Frontend Vitest explicitly includes the HUD-owned tests so the existing `pnpm -C frontend run test` command remains the single test entry point.
+- **Release boundary**: The frontend build now copies HUD assets through `frontend/scripts/copy-hud.mjs`, excluding every `tests` directory from `dist/hud`; test relocation therefore does not enlarge production artifacts.
+- **Guardrail**: This is an ownership-only move: no renderer hot-path logic, telemetry contract, or UI behaviour changes. A later phase may replace duplicated theme allowlists with a generated or shared manifest, but must not make the static HUD import the React bundle.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.
