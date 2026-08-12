@@ -4,10 +4,15 @@
 // Data Flow: Backend -> HUD Window
 // =============================================================================
 
+import { createOverlayEventDedupe } from './overlay-dedupe.js';
+
 let telemetryWs = null;
 let overlayWs = null;
 let isConnected = false;
 let isOverlayConnected = false;
+const overlayEventDedupe = createOverlayEventDedupe((type, data) => {
+    window.dispatchEvent(new CustomEvent(type, { detail: data }));
+});
 
 export function initWebSocket() {
     console.log('[HUD Receiver] Initializing Backend WebSocket connection');
@@ -67,6 +72,7 @@ function initOverlayWebSocket(host) {
     overlayWs.onopen = () => {
         console.log('[HUD Receiver] Overlay WebSocket connected');
         isOverlayConnected = true;
+        overlayEventDedupe.reset();
     };
 
     overlayWs.onmessage = async (event) => {
@@ -78,9 +84,9 @@ function initOverlayWebSocket(host) {
                 } else if (msg.type === 'hud:animate') {
                     window.dispatchEvent(new CustomEvent('hud:animate'));
                 } else if (msg.type === 'hud:audio') {
-                    window.dispatchEvent(new CustomEvent('hud:audio', { detail: msg.data }));
+                    overlayEventDedupe.onAudio(msg.data);
                 } else if (msg.type === 'hud:media') {
-                    window.dispatchEvent(new CustomEvent('hud:media', { detail: msg.data }));
+                    overlayEventDedupe.onMedia(msg.data);
                 }
             }
         } catch (e) {
@@ -91,6 +97,7 @@ function initOverlayWebSocket(host) {
     overlayWs.onclose = () => {
         console.log('[HUD Receiver] Overlay WebSocket disconnected');
         isOverlayConnected = false;
+        overlayEventDedupe.onDisconnect();
         setTimeout(() => initOverlayWebSocket(host), 2000); // Auto-reconnect
     };
 }
