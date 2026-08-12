@@ -24,30 +24,38 @@
     // clusters can reuse the same component registry with another recipe.
     var TRACK_RECIPE = Object.freeze({
         tachometer: Object.freeze({ variant: 'trackWide', x: 96, y: 86, width: 1120, height: 96, slant: 94, divisions: 9 }),
-        panel: Object.freeze({ x: 166, y: 178, width: 948, height: 144, notch: 42 }),
-        tireOverview: Object.freeze({ centerX: 640, centerY: 246, carWidth: 42, carHeight: 92, label: 'TIRE TEMP' }),
-        thermalRail: Object.freeze({ x: 118, y: 202, height: 104, side: 'left', label: 'TEMP' }),
-        fuelRail: Object.freeze({ x: 1162, y: 202, height: 104, side: 'right', label: 'FUEL' }),
-        footer: Object.freeze({ x: 236, y: 376, width: 808, centerX: 640 })
+        centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 164 }),
+        leftRail: Object.freeze({ x: 118, y: 202, height: 104, side: 'left', role: 'power' }),
+        rightRail: Object.freeze({ x: 1162, y: 202, height: 104, side: 'right', role: 'boost' }),
+        footer: Object.freeze({
+            x: 236,
+            y: 374,
+            width: 808,
+            slots: Object.freeze({ topLeft: 'odometer', topRight: 'heading', bottomLeft: 'rpm', bottomRight: 'speed' }),
+            positions: Object.freeze({
+                topLeft: Object.freeze({ x: 430, y: 364, align: 'center' }),
+                topRight: Object.freeze({ x: 850, y: 364, align: 'center' }),
+                bottomLeft: Object.freeze({ x: 430, y: 407, align: 'center' }),
+                bottomRight: Object.freeze({ x: 850, y: 407, align: 'center' })
+            }),
+            gear: Object.freeze({ centerX: 640, centerY: 407 })
+        })
     });
 
-    function drawTrack(view, data, palette, redlineRatio, ctx) {
+    function drawTrack(view, data, palette, redlineRatio, ctx, dependencies) {
         var componentModule = window.S650HmiClusterComponents;
         if (!componentModule || typeof componentModule.create !== 'function') return;
         var components = componentModule.create(ctx);
         var tachometer = Object.assign({}, TRACK_RECIPE.tachometer, { redlineRatio: redlineRatio });
-        var fuelRail = Object.assign({}, TRACK_RECIPE.fuelRail, {
-            getRatio: function (trackView, trackData) { return trackView.getFuelLevel(trackData); }
-        });
+        dependencies = dependencies || {};
 
         components.drawTachometer(view, data, palette, tachometer);
-        components.drawSmokedInfoPanel(palette, TRACK_RECIPE.panel);
-        components.drawTireOverview(view, data, palette, TRACK_RECIPE.tireOverview);
-        // The source telemetry has no coolant/oil-temperature datum yet. The
-        // thermal rail stays visibly unavailable instead of inventing a value.
-        components.drawVerticalRail(view, data, palette, TRACK_RECIPE.thermalRail);
-        components.drawVerticalRail(view, data, palette, fuelRail);
-        components.drawTrackFooter(view, data, palette, TRACK_RECIPE.footer);
+        if (view.showCenterInfo !== false && dependencies.centerInfo && typeof dependencies.centerInfo.draw === 'function') {
+            dependencies.centerInfo.draw(view, data, palette, TRACK_RECIPE.centerInfo);
+        }
+        components.drawVerticalRail(view, data, palette, TRACK_RECIPE.leftRail);
+        components.drawVerticalRail(view, data, palette, TRACK_RECIPE.rightRail);
+        components.drawFooter(view, data, palette, TRACK_RECIPE.footer, dependencies.primitives);
     }
 
     function drawCobraDial(ctx, cx, cy, radius, ratio, options, palette) {

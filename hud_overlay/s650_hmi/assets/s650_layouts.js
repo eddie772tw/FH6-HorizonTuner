@@ -271,7 +271,10 @@
         function drawTrack(data, palette, redlineRatio) {
             clear(palette);
             if (performanceClusters && typeof performanceClusters.drawTrack === 'function') {
-                performanceClusters.drawTrack(view, data, palette, redlineRatio, options.ctx);
+                performanceClusters.drawTrack(view, data, palette, redlineRatio, options.ctx, {
+                    centerInfo: centerInfo,
+                    primitives: p
+                });
                 return;
             }
             if (typeof p.drawTrackCluster === 'function') {

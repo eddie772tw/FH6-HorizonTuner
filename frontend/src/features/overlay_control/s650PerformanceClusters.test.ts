@@ -24,10 +24,11 @@ function loadPerformanceModule(): PerformanceModule {
 }
 
 function createCanvasSpy() {
-  const rectangles: Array<{ color: string; width: number; height: number }> = [];
+  const rectangles: Array<{ color: string; x: number; y: number; width: number; height: number }> = [];
   const fills: string[] = [];
   const text: string[] = [];
   const arcs: number[] = [];
+  const clips: number[] = [];
   const ctx: Record<string, unknown> = {
     save: () => undefined,
     restore: () => undefined,
@@ -36,11 +37,12 @@ function createCanvasSpy() {
     lineTo: () => undefined,
     quadraticCurveTo: () => undefined,
     closePath: () => undefined,
+    clip: () => clips.push(1),
     arc: () => arcs.push(1),
     stroke: () => undefined,
     fill: () => fills.push(String(ctx.fillStyle || '')),
-    fillRect: (_x: number, _y: number, width: number, height: number) => rectangles.push({
-      color: String(ctx.fillStyle || ''), width, height,
+    fillRect: (x: number, y: number, width: number, height: number) => rectangles.push({
+      color: String(ctx.fillStyle || ''), x, y, width, height,
     }),
     fillText: (value: string) => text.push(value),
     fillStyle: '',
@@ -49,8 +51,9 @@ function createCanvasSpy() {
     font: '',
     textAlign: '',
     lineCap: '',
+    globalAlpha: 1,
   };
-  return { arcs, ctx, fills, rectangles, text };
+  return { arcs, clips, ctx, fills, rectangles, text };
 }
 
 const palette = {
@@ -77,26 +80,42 @@ const view = {
   getTireTemperatures: () => [170, 172, 168, 169],
   formatTireTemperature: (value: number) => String(Math.round(value)),
   getTelemetryReadout: (slot: string) => slot === 'power'
-    ? { value: '540', unit: 'HP' }
+    ? { value: '540', unit: 'HP', ratio: 0.54 }
     : slot === 'boost'
-      ? { value: '12.5', unit: 'PSI' }
+      ? { value: '12.5', unit: 'PSI', ratio: 0.42 }
       : slot === 'heading'
         ? { value: 'NE', unit: '' }
-        : { value: '12.4', unit: 'km' },
+        : slot === 'rpm'
+          ? { value: '6200', unit: 'RPM' }
+          : slot === 'speed'
+            ? { value: '140', unit: 'KM/H' }
+            : { value: '12.4', unit: 'km' },
   unitLabel: () => 'KM/H',
 };
 
 describe('S650 transparent performance layouts', () => {
-  it('composes Track from the shared components without a full opaque backdrop', () => {
+  it('uses a clipped Track tachometer, right-aligned center info, dynamic rails and footer slots', () => {
     const spy = createCanvasSpy();
-    loadPerformanceModule().drawTrack(view, {}, palette, 0.875, spy.ctx);
+    const centerCalls: unknown[][] = [];
+    const gearCalls: unknown[][] = [];
+    loadPerformanceModule().drawTrack(view, {}, palette, 0.875, spy.ctx, {
+      centerInfo: { draw: (...args: unknown[]) => centerCalls.push(args) },
+      primitives: { drawGearCarousel: (...args: unknown[]) => gearCalls.push(args) },
+    });
 
     expect(spy.rectangles.filter((rectangle) => rectangle.color === palette.background)).toHaveLength(0);
-    expect(spy.fills).toContain('rgba(19, 55, 79, 0.68)');
-    expect(spy.text).toEqual(expect.arrayContaining([
-      'RPM', 'TIRE TEMP', 'TEMP', 'FUEL', 'FL', 'FR', 'RL', 'RR',
+    expect(spy.clips).toHaveLength(1);
+    expect(spy.rectangles.map((rectangle) => rectangle.color)).toEqual(expect.arrayContaining([
+      'rgba(160, 144, 255, 0.12)', 'rgba(255, 59, 48, 0.50)', palette.primary,
     ]));
-    expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', '140', '4 GEAR']));
+    expect(spy.text).toEqual(expect.arrayContaining([
+      'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H',
+    ]));
+    expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
+    expect(centerCalls).toHaveLength(1);
+    expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 164 });
+    expect(gearCalls).toHaveLength(1);
+    expect(gearCalls[0].slice(3)).toEqual([640, 407]);
   });
 
   it('gives SVT Cobra two analog rings with distinct SVT labels and red needles', () => {

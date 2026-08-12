@@ -303,6 +303,14 @@
 - **Verification**: Frontend Vitest: 40 files / 221 tests passed; `node --check` and `git diff --check` passed.
 ---
 
+## 2026-08-12 / S650 Track Skeleton Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Decision**: A Track recipe must compose the existing center-info and dynamic-gear children, not recreate a fixed tire page or a transmission label list. Footer readouts must be recipe slots with explicit positions, as in every other cluster.
+- **Action**: Removed the irregular smoked-blue panel and fixed tire sketch. Track now invokes the registered center-info module in a right-side region. Its rails select canonical `power` and `boost` roles rather than hard-coding thermal/fuel text. The tachometer clips base, redline, and active fills to its trapezoid. The footer defines all four canonical readout slots and delegates the middle gear display to `drawGearCarousel`.
+- **Verification**: `s650PerformanceClusters.test.ts` verifies clipping, right-side center-info injection, role-driven rails, all footer slots, and dynamic gear delegation. `s650DualLayoutPipeline.test.ts` verifies the layout dispatcher passes the shared center-info and gear primitives.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

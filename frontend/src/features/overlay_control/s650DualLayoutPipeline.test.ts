@@ -69,6 +69,7 @@ function createLayouts(
       drawNormalEnergyDial: () => events.push('mainDial'),
       drawRetroDial: () => events.push('mainDial'),
       drawHeritageDial: () => events.push('mainDial'),
+      drawGearCarousel: () => events.push('gearCarousel'),
       drawFoxbodyDial: (...args: unknown[]) => {
         events.push('mainDial');
         foxbodyCalls.push(args);
@@ -148,5 +149,21 @@ describe('S650 dual layout pipeline', () => {
     layouts.render('svt_cobra', { redlineRpm: 7000 }, { primary: '#E8ECE7', secondary: '#A7AFA7' }, 0.875);
 
     expect(events).toEqual(['trackPerformance', 'svtPerformance']);
+  });
+
+  it('passes Track the shared center-information and gear components', () => {
+    const events: string[] = [];
+    const dependencies: Array<Record<string, unknown>> = [];
+    const layouts = createLayouts(events, [], {
+      drawTrack: (...args: unknown[]) => dependencies.push(args[5] as Record<string, unknown>),
+    });
+
+    layouts.render('track', { redlineRpm: 7000 }, { primary: '#F04A3E', secondary: '#9AA3AD' }, 0.875);
+
+    expect(dependencies).toHaveLength(1);
+    expect(dependencies[0]).toEqual(expect.objectContaining({
+      centerInfo: expect.objectContaining({ draw: expect.any(Function) }),
+      primitives: expect.objectContaining({ drawGearCarousel: expect.any(Function) }),
+    }));
   });
 });
