@@ -930,18 +930,28 @@
                 },
                 onAudio: function (data) {
                     if (data && data.success && Array.isArray(data.spectrum)) {
-                        hasBackendAudio = !!data.has_audio;
+                        var audioState = data.state || 'live';
+                        var isLiveAudio = audioState === 'live' || audioState === 'silence';
+                        hasBackendAudio = isLiveAudio && !!data.has_audio;
                         backendVuL = clamp(data.vu_left || 0, 0, 1);
                         backendVuR = clamp(data.vu_right || 0, 0, 1);
 
                         if (data.spectrum.length === 32) {
                             for (var b = 0; b < 32; b++) {
-                                var raw = clamp(data.spectrum[b] || 0, 0, 1);
-                                spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                                if (isLiveAudio) {
+                                    var raw = clamp(data.spectrum[b] || 0, 0, 1);
+                                    spectrumBands[b] = spectrumBands[b] * 0.3 + raw * 0.7;
+                                } else {
+                                    spectrumBands[b] = 0;
+                                    peakHoldVals[b] = 0;
+                                    peakHoldTicks[b] = 0;
+                                }
                             }
                         }
                     } else {
                         hasBackendAudio = false;
+                        backendVuL = 0;
+                        backendVuR = 0;
                     }
                     optimizedRadioDirty = true;
                     requestOptimizedRender();
