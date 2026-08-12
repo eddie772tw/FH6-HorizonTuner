@@ -3,15 +3,26 @@
 日期：2026-08-12
 需求基準：[Drift HUD 子儀表使用者需求迭代報告](drift-secondary-instrument-user-needs-iteration-report.md)
 
+> **Source of truth 狀態（2026-08-12）**：active renderer 是 `hud_overlay/drift/index.html`。P1–P3 與 G3 已收斂到 active secondary：speed／unit／gear 已回到 primary-owned；LC 僅保留小型 control-state badge；secondary 現在採左側 Driver Inputs／右側 Vehicle Dynamics 的低 surface／低 glow 二分結構。主儀表弧表公式維持不動，只微調 compact 刻度字級。
+
 ## 1. 計畫目標
 
 本計畫承接已完成的 Drift 主儀表、Style Meter、Sweep、counter-steer pointer 與螢幕佈局校正，專注於子儀表的內部重製。
 
-子儀表的產品定位改為 **Drift Input Control Surface**，不再是縮小版主儀表，也不再把 Traction、Motion State 與 Driver Inputs 排成三個視覺欄位。本版子儀表只負責讓玩家快速讀取四個控制輸入：油門、煞車、手煞車與離合器。
+子儀表的目標產品定位為 **Drift Input / Vehicle Dynamics Surface**，不再是縮小版主儀表，也不再把多組曲線疊在同一個中央區域。左半只負責四個控制輸入，右半只負責車身姿態與輪胎動態摘要。
 
-畫面採單一整合面板，形成三柱結構：油門與煞車各佔一個完整高度柱，手煞車與離合器共用第三柱並上下半高排列。輪胎滑移、yaw rate、抓地與車身狀態仍可作為未來資料契約或事件判斷來源，但不在本版子儀表中建立獨立讀值區。
+畫面仍採單一整合面板，但內部分成左右二區：左側以 G3 連續 rail 表示 throttle、brake、clutch、handbrake；右側放大 attitude glyph 與 2×2 grip mini-bars。輪胎滑移、yaw rate、抓地與車身狀態只在右側以摘要方式呈現，不建立第二 telemetry source。
 
-主儀表繼續負責速度、RPM、檔位、扭力、漂移角度與方向盤輸入；Style Meter 與 FH6 原生 Drift Zone 分數繼續負責表現／得分語意。子儀表不得重新引入大型速度、RPM、角度或 `FLOW / RISK` 評分區塊。
+責任邊界由主儀表負責速度、RPM、檔位、扭力、漂移角度與方向盤輸入；Style Meter 與 FH6 原生 Drift Zone 分數繼續負責表現／得分語意。active renderer 已移除大型角度與 `FLOW / RISK`，P1 也已收回 secondary 的 speed／unit／gear；secondary 只保留輸入、姿態／滑移提示、grip lights 與小型 LC control badge。`FLOW`、`RISK`、`STYLE` 是 coaching／performance layer 的 heuristic/event vocabulary，不是 FH 原生分數。
+
+### P1–P3 current boundary
+
+- **P1（implemented）**：secondary 不繪製 speed、unit、gear；主儀表仍保留並驗證 speed／gear。LC 只作為小型控制狀態 badge，不形成第二車輛 readout。
+- **P2（implemented）**：secondary 保留切角 control-surface silhouette，但採較低 gradient opacity、cyan edge alpha 與 shadow/glow；throttle 是最高權重、brake 是第二權重，clutch／handbrake 降為低權重輔助 rail。
+- **G3（implemented）**：副儀表量尺使用連續 quadratic rail，不使用 superellipse、數值微分 normal、segment gap 或曲線 midpoint label。`x(u)` 對 ratio 線性，`y(u)` 只加入小幅 `4H u(1-u)` 淺曲率；active fill 使用 De Casteljau 子曲線與 track 完全重合；clutch 與 handbrake 由外下向內上鏡像成長。
+- **P3（implemented）**：inline CSS custom properties 與 Canvas `DRIFT_STYLE_TOKENS` 統一 label／value／warning 字級、track／edge alpha 與 glow radius family；Style Meter 維持無框、低頻 DOM paint，沿用相同 text／track／color semantics。
+- **Color semantics**：brake 使用穩定 input pink；redline 保持 primary 的固定 boundary pink；slip／lockup 才使用局部 warning/pulse；Style risk 只在 event text／pulse 層表達。
+- **Target distinction**：traction、combined slip、lateral G、yaw rate 的 canonical contract 與更完整 motion coaching 仍是後續 target，不得把 heuristic `FLOW`／`RISK`／`STYLE` 描述成 FH 原生分數。
 
 ## 2. 已完成基線與本階段邊界
 
@@ -32,22 +43,30 @@
 - `frontend/src/utils/`、backend tests 與 HUD contract tests：為資料語意、閾值與退化行為建立隔離測試。
 - `docs/`：持續維護需求、資料語意、佈局與驗收紀錄。
 
-## 3. 目標資訊架構
+## 3. 目前資訊架構
 
 ### 3.1 單一整合面板
 
-- 不建立 Traction、Motion State、Driver Inputs 三個並排區域。
+- 不建立 Traction、Motion State、Driver Inputs 三個並排區域；active layout 明確分成左側 Driver Inputs 與右側 Vehicle Dynamics。
 - 不顯示速度、RPM、檔位、扭力、漂移角度、counter-steer、FLOW、RISK 或 HOLD。
 - 外框只包住一個共享的控制輸入面板，讓四個輸入通道使用同一套幾何與刻度語言。
 
-### 3.2 三柱輸入結構
+### 3.2 G3 左側輸入結構
 
-- **T／油門柱**：完整高度，使用最主要的辨讀尺寸與較高對比，代表維持甩尾的主要輸入。
-- **B／煞車柱**：完整高度，只有實際施加煞車時提高紅色對比。
-- **H／手煞車與 C／離合器柱**：同一個完整寬度柱內上下排列，各佔半高；手煞車與離合器事件使用短暫 glow／pulse。
-- 四個控制值應以相同方向、相同百分比尺度與一致的零值基線呈現，避免玩家需要重新解讀每個柱子的方向。
+- **T／油門 rail**：左側最長、最粗、最亮，代表維持甩尾的主要輸入。
+- **B／煞車 rail**：位於左區中央槽位，使用 stable brake-pink，視覺權重僅次於 throttle。
+- **C／離合器 rail**：左外下向中央上方成長，低權重白色。
+- **H／手煞車 rail**：右外下向中央上方成長，低權重琥珀色；與 clutch 的 x 方向相反但 y 方向相同。
+- 四個控制值使用固定文字槽位與可預期的連續 rail，不用曲線 midpoint 推導 label/value。
 
-### 3.3 非顯示資料
+### 3.3 右側 Vehicle Dynamics 結構
+
+- 放大的 vehicle body、heading／travel arrows 與固定 `HD`／`TRV`／`SLIP` legend。
+- 右下使用 2×2 `FL`／`FR`／`RL`／`RR` grip mini-bars；只有高 slip 或 lockup 才 pulse。vehicle body 與 tire vectors 依相對 travel angle 旋轉，heading／travel reference 保持可比較。
+- LC badge 顯示 `LC`／`LC ARM`／`LC GO`；upstream canonical state 優先，缺少時使用明確的低速一檔、高油門、手煞車 fallback heuristic。
+- 右側動態區吸收原本的中央空白，不回復 speed／unit／gear 或大型分數文字。
+
+### 3.4 非顯示資料
 
 - slip ratio、slip angle、combined slip、lateral G 與 yaw rate 可先完成資料契約與 fixture，但不在本版子儀表形成獨立圖表或狀態欄位。
 - 若未來要利用這些資料觸發輸入柱的外框警示，必須先另立事件語意與驗收條件，不能偷偷恢復成 Traction／Motion 三欄設計。
@@ -66,9 +85,9 @@
 
 缺少輪胎資料時必須保留 `unknown`／`--` 狀態，不得把缺值當成零滑移後渲染成安全狀態。
 
-### 4.2 P1：yaw rate contract
+### 4.2 後續資料工作：yaw rate contract（不等同於 P1 renderer boundary）
 
-Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形成一致的 HUD aliases。這個工作包必須先完成：
+Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形成一致的 HUD aliases。這是後續 canonical data contract，不會撤回本輪已完成的 P1 primary-owned readout boundary。這個工作包必須先完成：
 
 1. `backend/telemetry_listener.py` 解析 angular velocity 欄位。
 2. `hud_overlay/shared/coordinator.js` 與 `frontend/src/hooks/useTelemetry.ts` 提供 `angular_velocity_y` 等 canonical aliases。
@@ -89,20 +108,20 @@ Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形
 
 ## 5. Canvas 與視覺語彙實作
 
-### 5.1 Advanced Canvas 能力的保留與遷移
+### 5.1 G3 Canvas 能力與主儀表邊界
 
-保留甚至遷移 Advanced 儀表已驗證的 Canvas 技術能力，但必須遷移「可重用的繪製原語」，而不是複製 Advanced 的完整儀表語意：
+主儀表已驗證的弧表公式維持不動；副儀表不再複製 Advanced 的 superellipse 量表語意，只保留切角外框、DPR、viewport scale 與低頻 glow 等可重用能力：
 
-- outer boundary、inner track、energy band、segment glow、endpoint marker。
-- arc／superellipse trace、刻度與文字基線處理。
+- outer boundary、continuous track、active fill、endpoint marker。
+- quadratic rail、固定文字基線與單調 ratio mapping。
 - DPR、viewport scale、resize-only layout calculation。
 - 預先配置的顏色、字體與幾何物件，避免 60Hz path 持續配置。
 
 建議先抽出無 Drift 語意的 primitives，再由 secondary renderer 決定 `T`／`B`／`H`／`C` 的顏色、刻度與事件效果。若抽取成本高於本階段收益，可先在 Drift-local module 實作相同 primitives，但必須保留未來共用的函式邊界。
 
-### 5.2 單一整合式輸入面板
+### 5.2 左右二分的單一整合式面板
 
-子儀表不沿用原本的三欄式設計，也不建立 Traction／Motion／Inputs 三個互相獨立的 panel。它使用一個共享外框、共享基線與共享視覺節奏的單一整合式輸入面板：
+子儀表不沿用原本的多層曲線設計，也不建立三個互相獨立的 panel。它使用一個共享外框，左側是 inputs、右側是 dynamics：
 
 ```text
       ┌─────────────────────┐
@@ -116,20 +135,19 @@ Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形
       └─────────────────────┘
 ```
 
-空間配置採「單一面板內的三柱垂直輸入」語法，而不是三個資訊欄位：
+空間配置採「左側輸入、右側車身動態」語法：
 
-- **第一柱**：T／油門完整高度。
-- **第二柱**：B／煞車完整高度。
-- **第三柱**：H／手煞車與 C／離合器上下半高排列。
-- **共享外框**：可使用 Advanced-derived boundary、刻度、能量帶與 glow，但所有繪製都服務於四個輸入，不加入獨立 traction 或 motion 面板。
-- **事件效果**：只附著在 H／C 輸入柱或共享外框，不形成常駐狀態欄位。
+- **左側**：T／B 使用最高權重的連續 rail；C／H 以外下向內上鏡像 rail 呈現。
+- **右側**：放大姿態 glyph 與四輪 2×2 mini-bars，消化原本的空白。
+- **共享外框**：只保留切角 boundary、低對比 track 與少量 glow，不加入 speed／gear 或分數語意。
+- **事件效果**：只附著在 H／C rail、grip mini-bars 或共享外框，不形成常駐狀態欄位。
 
 骨架階段只使用 fixture 值，不接既有 heuristic `FLOW / RISK`，先確認：
 
-- Advanced-derived Canvas primitives 與三柱輸入面板的視覺協調。
+- G3 continuous rail 與左右二分面板的視覺協調。
 - 與主儀表、Style Meter、FH6 原生 Drift Zone 分數及右下原生 gauge 的距離。
 - 1920×1080、2560×1440、3440×1440 與 global HUD scale 下的字體可讀性。
-- T／B／H／C 在低解析度下仍能一眼分辨，且零值與滿值方向一致。
+- T／B／H／C 在低解析度下仍能一眼分辨；C 向右上、H 向左上成長，且零值與滿值方向不反轉。
 
 ### 5.3 60Hz hot path 原則
 
@@ -149,12 +167,12 @@ Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形
 4. 對照 `TelemetryView`、G-radar 與既有 HUD cards，確認不重複建立 consumer。
 5. 建立 secondary state module 與 isolation tests；此階段不修改 secondary Canvas 外觀。
 
-### Iteration 1：Advanced primitives 與整合式 Canvas 骨架
+### Iteration 1：G3 rails 與左右二分 Canvas 骨架
 
-1. 整理 Advanced Canvas 原語，形成可被 Drift secondary 呼叫的 primitives。
+1. 建立 G3 continuous rail、固定文字槽位與右側 dynamics primitives。
 2. 移除舊 secondary 的大型 angle、counter、`FLOW / RISK` 與 hold 版面責任。
-3. 建立共享外框、T／B 完整柱、H／C 半高柱與事件標記的 source layout。
-4. 使用 fixture 值繪製 outer boundary、垂直能量帶、輸入刻度、四個標籤與 transient markers。
+3. 建立共享外框、左側 T／B／C／H rails、右側 attitude glyph、2×2 grip mini-bars 與事件標記的 source layout。
+4. 使用 fixture 值繪製 continuous track、active fill、endpoint marker、固定 label/value 與 transient markers。
 5. 完成多解析度、global scale、DPR 與 native UI 避讓測試。
 
 ### Iteration 2：P0 物理摘要與輸入事件
@@ -167,7 +185,7 @@ Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形
 ### Iteration 3：Yaw rate contract 與實機校正
 
 1. 解析並轉送 `AngularVelocityX/Y/Z`，尤其是 canonical `angular_velocity_y`。
-2. 以實機資料確認 yaw rate 的單位、正負方向、雜訊與可用性，但不把它加入本版三柱面板的獨立視覺區。
+2. 以實機資料確認 yaw rate 的單位、正負方向、雜訊與可用性，但不把它加入本版右側 dynamics 區之外的獨立視覺欄位。
 3. 將 yaw rate、combined slip 與 transition／spin risk 留作後續事件語意的資料基礎，不在本輪新增狀態字或 traction 圖表。
 4. 若未來要讓這些資料改變輸入柱或共享外框，必須另增明確的事件 contract 與驗收案例。
 
@@ -196,9 +214,9 @@ Forza Data Out 封包包含 `AngularVelocityX/Y/Z`，但目前 backend 尚未形
 
 ## 8. 驗收條件
 
-- 玩家能在一眼內辨識 T／B／H／C 四個控制輸入的大小。
+- 玩家能在一眼內辨識 T／B／C／H 四個控制輸入的大小，且理解左側是輸入、右側是車身動態。
 - 玩家能辨識 handbrake／clutch kick 事件，且事件效果不會形成額外的常駐資訊欄位。
-- T／B 使用完整高度柱，H／C 在同一柱內上下半高排列，四個輸入共享一致的百分比方向與零值基線。
+- T／B 使用最高視覺權重的連續 rail，C／H 由外下向內上鏡像成長，四個輸入共享可預期的百分比方向與零值基線。
 - 子儀表不重複主儀表的速度、RPM、檔位、扭力與大型漂移角度。
 - Style Meter、原生 Drift Zone 分數與子儀表各自維持清楚責任。
 - 60Hz 更新仍只使用單一 HUDCore frame；沒有新增 DOM layout、socket、polling 或不必要的每幀配置。

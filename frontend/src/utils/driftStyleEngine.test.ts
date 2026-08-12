@@ -80,7 +80,7 @@ describe('Drift Style engine', () => {
     expect(state.summary.riskLabel).toBe('MAXIMUM');
   });
 
-  it('turns a pending Hero input into a scored special event once drift starts', () => {
+  it('turns a pending input into a scored special event once drift starts', () => {
     const engine = loadEngine();
     engine.update({ speedKmh: 0, angle: 0, flowQuality: 1, riskLevel: 1 }, 1000);
     engine.triggerSpecial('handbrake', 1050);
@@ -88,6 +88,27 @@ describe('Drift Style engine', () => {
 
     expect(state.special).toMatchObject({ label: 'HANDBRAKE ENTRY', count: 1, points: 15, active: true });
     expect(state.score).toBeGreaterThanOrEqual(15);
+  });
+
+  it('supports varied special events inside the same Style Meter event channel', () => {
+    const cases = [
+      ['brake_rotation', 'BRAKE ROTATION'],
+      ['throttle_punch', 'THROTTLE PUNCH'],
+      ['counter_snap', 'COUNTER SNAP'],
+      ['direction_switch', 'DIRECTION SWITCH'],
+      ['angle_lock', 'ANGLE LOCK'],
+      ['grip_save', 'GRIP SAVE'],
+    ] as const;
+
+    for (const [id, label] of cases) {
+      const engine = loadEngine();
+      engine.update(smoothFrame, 1000);
+      engine.triggerSpecial(id, 1050);
+      const state = advance(engine, smoothFrame, 1050, 1200);
+
+      expect(state.special).toMatchObject({ label, count: 1, active: true });
+      expect(state.score).toBeGreaterThan(0);
+    }
   });
 
   it('does not apply an expired pending special event to a later drift run', () => {

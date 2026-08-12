@@ -34,7 +34,13 @@
 
     var SPECIAL_EVENTS = {
         handbrake: { label: 'HANDBRAKE ENTRY', points: 15 },
-        clutch_kick: { label: 'CLUTCH KICK', points: 20 }
+        clutch_kick: { label: 'CLUTCH KICK', points: 20 },
+        brake_rotation: { label: 'BRAKE ROTATION', points: 18 },
+        throttle_punch: { label: 'THROTTLE PUNCH', points: 14 },
+        counter_snap: { label: 'COUNTER SNAP', points: 18 },
+        direction_switch: { label: 'DIRECTION SWITCH', points: 24 },
+        angle_lock: { label: 'ANGLE LOCK', points: 22 },
+        grip_save: { label: 'GRIP SAVE', points: 22 }
     };
 
     var CONFIG = {

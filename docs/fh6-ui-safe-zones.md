@@ -47,6 +47,14 @@ left-side horizontal lane.
 
 ### Style Meter
 
+The Style Meter remains borderless, but now uses a translucent dark backing and
+soft shadow layer behind the score/event text so daylight gameplay does not
+wash out the rating information.
+Special Hero-style events are rendered as the in-panel EVENT row; no separate
+toast surface is mounted. The row can show handbrake entry, clutch kick, brake
+rotation, throttle punch, counter snap, direction switch, angle lock, or grip
+save.
+
 The current `right: 4vw; top: 28vh` placement is appropriate for the
 free-roam/Drift Zone profile: it remains outside the primary instrument and
 does not overlap the lower-left map or lower-right gauge. It is *not* a
@@ -60,10 +68,18 @@ signal, so this is intentionally not guessed at runtime.
 
 The secondary stays at the established Advanced/VFD-style bottom-right anchor
 at 30px padding, per the project decision that it represents the conventional
-gauge slot. Its oval has been replaced with a compact cut-corner rectangle and
-two Advanced-inspired compound segment arcs: FLOW uses cyan tracking strokes;
-RISK uses the same pink/amber danger language as the primary. The central
-angle and counter-steer readout remain text-first for quick recognition.
+gauge slot. Active architecture 使用 compact cut-corner rectangle；安全區責任涵蓋
+左側 Driver Inputs、右側 Vehicle Dynamics、小型 LC control-state badge，以及
+右側四輪 slip／grip mini-bars。speed／unit／gear 已由 primary-owned boundary 負責，
+不再由 secondary renderer 繪製；所有 secondary 內容都必須維持在同一 bottom-right
+secondary bounding box 內。G3 continuous rails、放大的 attitude glyph 與 2×2 grip
+mini-bars 共同消化 panel 內部空白，但不改變外框與 anchor。
+
+較早版本曾在此位置使用 FLOW／RISK compound arcs，以及中央 angle／
+counter-steer text。該描述只保留為 historical context，已被目前
+Advanced-style control／attitude architecture superseded，不再是 active safe-zone
+配置。safe-zone 檢查以 current implementation 的完整 bounding box 為準，並將
+primary、secondary input 與 secondary dynamics 的資訊責任視為三個明確邊界。
 
 This placement assumes the player has hidden or accepts overlap with FH6's
 native speedometer. If the native gauge must always remain visible, moving the

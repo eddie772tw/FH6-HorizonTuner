@@ -707,3 +707,48 @@
 - **Action**：profile 首次載入必須只啟動背景工作並略過尚未就緒的 dyno 收集；所有 dyno profile 的自動與 API 寫入都透過同一個 coalescing writer，以最後一份 snapshot 為準。後端以 `telemetry-pipeline-metrics/v1` 暴露 bounded queue、drop、client 與 stage timing 診斷資料。
 - **Evidence**：`backend/telemetry_runtime.py`、`tests/test_telemetry_runtime.py`、`tests/test_telemetry_metrics_api.py`、`tests/test_car_params.py`；前端 Vitest `31 files / 194 tests` 通過。首次完整 pytest 使用舊 `dist/FH6-HorizonTuner.exe` 時，portable diagnostics 無法代表目前原始碼；執行 `build_all.bat` 後，新的 metadata test、portable host diagnostics（3 項）與完整 pytest（96 項）皆通過。
 - **Pending**：`RaceRecorder` 的 SQLite flush 仍位於 telemetry consumer；下一輪以新 metrics 的 `recorders` stage 為基準後，再拆為背景持久化工作。
+
+---
+
+## 2026-08-12 / Drift HUD Runtime and Visual Token Convergence
+
+- **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
+- **狀態**：`adopted`。
+- **Learning**：inline Canvas HUD 的 contract test 若只檢查字串存在，無法捕捉 render loop 對未宣告 palette token 的依賴；本輪補上真實 fake Canvas／DOM／RAF harness，並將 active secondary 的 speed／unit／gear 邊界、共享視覺 token 與 one-frame console-error 檢查固定成可重複驗證的 contract。
+- **Action**：secondary 維持既有 bottom-right anchor、single Canvas／HUDCore frame path 與主儀表幾何；移除 secondary 的 speed／unit／gear draw call，保留小型 LC badge，降低 surface／glow density，並分離 brake、redline、slip／lockup 與 Style risk 的語意色彩。同步將 safe-zone、implementation plan 與 Advanced remap 文件更新為 current implementation。
+- **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/fh6-ui-safe-zones.md`、`docs/telemetry-hud-implementation-plan.md`、`docs/drift-secondary-advanced-remap-implementation.md`；frontend Vitest `44 files / 247 tests`、frontend build、pytest `108 passed`、ruff check／format check 均通過。
+- **Boundary**：真實 FH6 screenshot／frame capture 仍需確認 Yaw sign、slip-ratio saturation、compact-scale readability、LC transition 與不同解析度下的低 glow 可讀性；fake Canvas contract 不取代畫素級視覺驗收。
+
+---
+
+## 2026-08-12 / Drift HUD G3 Readability Rework
+
+- **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
+- **狀態**：`adopted`。
+- **Learning**：副儀表把 throttle、brake、clutch、handbrake 疊在同一組 superellipse arc 上時，segment gap、曲率、曲線 normal offset 與 midpoint label 會同時降低量表進度與文字可讀性；主儀表已驗證的 arc grammar 不應被這個副儀表問題牽連修改。
+- **Action**：將 active secondary 重構為左右二分：左側 Driver Inputs、右側 Vehicle Dynamics。G3 使用連續 quadratic rail，`x(u)` 對 ratio 線性，`y(u)` 只加入小幅 `4H u(1-u)` 淺曲率；throttle／brake 提高權重，clutch／handbrake 由外下向內上鏡像成長，label/value 固定在文字槽位。姿態 vehicle body 與右下 2×2 grip mini-bars 同步放大；primary compact arc 僅微調刻度字級。
+- **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/drift-secondary-advanced-remap-implementation.md`、`docs/telemetry-hud-implementation-plan.md`、`docs/fh6-ui-safe-zones.md`；fake Canvas one-frame contract 已驗證新 G3 rail、左右二分 label、primary readout boundary 與無 renderer error。
+- **Boundary**：真實 FH6 screenshot／frame capture 仍需確認 G3 rail 的低解析度可讀性、clutch／handbrake 由外下向內上的視覺對稱、右側 attitude／grip 區比例，以及主儀表刻度字級調整是否造成局部擁擠。
+
+---
+
+## 2026-08-12 / Drift G3 Active-Fill and State Feedback Correction
+
+### Style event integration follow-up
+
+- 移除獨立 Hero toast，將 special event 整合到 Style Meter 的 EVENT row，沿用既有 12.5Hz DOM paint。
+- 擴充事件語彙：clutch kick、brake rotation、throttle punch、counter snap、direction switch、angle lock、grip save。
+- Handbrake Entry 改為兩階段判定：先確認高門檻手煞車上升、高速、油門、低腳煞車與轉向，再要求短時間內形成有效甩尾角度，避免直線誤觸發。
+
+### Follow-up review corrections
+
+- 修正 LC fallback 的狀態轉移：手煞車釋放不再立即清除 ARM，車速跨過啟動門檻後進入短暫 GO 視窗。
+- 車身動態改用主儀表相同的 `atan2(VelocityX, VelocityZ)`／`displayAngle`，不再重複扣除世界 Yaw；車身與 HD 箭頭反向旋轉，TRV 軸固定。
+- Style Meter 維持無框設計，新增半透明深色底與陰影，以提升日間背景上的分數／事件文字對比。
+
+- **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
+- **狀態**：`adopted`。
+- **Learning**：quadratic rail 的完整 track 與 active charge path 必須使用同一條 Bézier 的 De Casteljau 子曲線；只插入線性 endpoint 會讓 throttle、clutch、handbrake 的充能條看起來脫離 rail。離散 LC 狀態也不能只依賴目前永遠為 `inactive` 的 fallback payload。
+- **Action**：修正 G3 active sub-curve，改以 rail 法線產生 throttle／brake 的淺弧與 clutch／handbrake 的鏡像曲率；統一四組 caption 的中心基線與 label/value 間距；vehicle body／tire vectors 依 `travelAngleDeg` 旋轉；LC badge 顯示 `LC ARM`／`LC GO`，並在缺少 canonical state 時使用低速一檔、高油門、手煞車 fallback heuristic。
+- **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/drift-secondary-advanced-remap-implementation.md`、`docs/telemetry-hud-implementation-plan.md`；full frontend Vitest `44 files / 247 tests`、build `679 modules`、fake Canvas contract 均通過。
+- **Boundary**：仍需實機 capture 確認四組 caption 在縮放後的實際間距、vehicle rotation 的方向語意，以及 fallback LC 狀態是否與遊戲中的 launch-control 操作一致。
