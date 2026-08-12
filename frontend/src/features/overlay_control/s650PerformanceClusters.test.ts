@@ -118,18 +118,18 @@ describe('S650 transparent performance layouts', () => {
       'rgba(160, 144, 255, 0.12)', 'rgba(255, 59, 48, 0.50)', palette.primary,
     ]));
     expect(spy.rectangles.find((rectangle) => rectangle.color === 'rgba(255, 59, 48, 0.50)')).toMatchObject({
-      x: 1005.5, width: 116.5,
+      x: 1005.5, width: 210.5,
     });
     const activeBand = spy.rectangles.find((rectangle) => rectangle.color === palette.primary);
-    expect(activeBand).toMatchObject({ x: 190 });
-    expect(activeBand?.width).toBeCloseTo(722.3, 8);
+    expect(activeBand).toMatchObject({ x: 96 });
+    expect(activeBand?.width).toBeCloseTo(816.3, 8);
     expect(spy.strokes).toContainEqual({ color: palette.primary, width: 8 });
     expect(spy.text).toEqual(expect.arrayContaining([
       'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H', 'SPEED KM/H', 'GEAR', '140', '4',
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
     expect(spy.textEntries).toEqual(expect.arrayContaining([
-      { value: '4', x: 226, y: 253, align: 'left', font: '700 57px Arial Narrow, Arial, sans-serif' },
+      { value: '4', x: 284, y: 253, align: 'center', font: '700 57px Arial Narrow, Arial, sans-serif' },
       { value: '140', x: 484, y: 253, align: 'right', font: '700 57px Arial Narrow, Arial, sans-serif' },
     ]));
     expect(spy.moves).toEqual(expect.arrayContaining([{ x: 355, y: 208 }]));
@@ -150,8 +150,8 @@ describe('S650 transparent performance layouts', () => {
     const activeIndex = spy.rectangles.findIndex((rectangle) => rectangle.color === palette.primary);
     expect(redlineIndex).toBeGreaterThanOrEqual(0);
     expect(activeIndex).toBeGreaterThan(redlineIndex);
-    expect(spy.rectangles[activeIndex]).toMatchObject({ x: 190 });
-    expect(spy.rectangles[activeIndex].width).toBeCloseTo(908.7, 8);
+    expect(spy.rectangles[activeIndex]).toMatchObject({ x: 96 });
+    expect(spy.rectangles[activeIndex].width).toBeCloseTo(1002.7, 8);
   });
 
   it('gives SVT Cobra two analog rings with distinct SVT labels and red needles', () => {

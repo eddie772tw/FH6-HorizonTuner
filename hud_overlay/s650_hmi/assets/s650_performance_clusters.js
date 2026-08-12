@@ -33,8 +33,8 @@
         centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' }),
         speedGear: Object.freeze({
             x: 212, y: 198, width: 286, height: 88,
-            dividerX: 143, gearX: 14, speedX: 272,
-            gearAlign: 'left', speedAlign: 'right',
+            dividerX: 143, gearX: 72, speedX: 272,
+            gearAlign: 'center', speedAlign: 'right',
             labelY: 12, valueY: 55, dividerInset: 10,
             labelSize: 15, speedSize: 57, gearSize: 57, unitInLabel: true
         }),

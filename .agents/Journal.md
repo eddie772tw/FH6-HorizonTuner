@@ -373,6 +373,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` exercises 7800/8000 RPM against an 87.5% redline and confirms the active band is painted after redline through the 97.5% current-RPM position. Frontend Vitest: 40 files / 224 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Trapezoid Endcaps
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: The Track fill rectangles used the inset tick span as both the ratio scale and the painted extent. Although the ratio boundary was correct, this left the left active and right redline trapezoid endcaps uncoloured.
+- **Action**: Keep the inset span exclusively for RPM/redline ratio calculation. The clipped active band now starts at the full left outline point and the redline band ends at the full right outline point, so both angled endcaps receive the correct live/warning color. The Track gear value moves from the left outer edge to the center of its left half-column.
+- **Verification**: `s650PerformanceClusters.test.ts` locks full endcap fill extents and the centered gear anchor (`x=284`). Frontend Vitest: 40 files / 224 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

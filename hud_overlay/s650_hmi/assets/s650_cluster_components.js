@@ -38,6 +38,8 @@
             var scaleStart = x + slant;
             var scaleWidth = Math.max(0, width - slant * 2);
             var lowerSlantRatio = slant / width;
+            var redlineStart = scaleStart + scaleWidth * redlineRatio;
+            var activeEnd = scaleStart + scaleWidth * rpmRatio;
 
             function lowerBoundaryY(ratio) {
                 if (ratio <= lowerSlantRatio) return y + height - lowerRise * ratio / lowerSlantRatio;
@@ -77,12 +79,12 @@
             ctx.fillRect(x, y, width, height);
             if (redlineRatio < 1) {
                 ctx.fillStyle = 'rgba(255, 59, 48, 0.50)';
-                ctx.fillRect(scaleStart + scaleWidth * redlineRatio, y, scaleWidth * (1 - redlineRatio), height);
+                ctx.fillRect(redlineStart, y, x + width - redlineStart, height);
             }
             if (rpmRatio > 0) {
                 ctx.fillStyle = palette.primary;
                 ctx.globalAlpha = recipe.activeFillAlpha === undefined ? 0.82 : recipe.activeFillAlpha;
-                ctx.fillRect(scaleStart, y, scaleWidth * rpmRatio, height);
+                ctx.fillRect(x, y, activeEnd - x, height);
             }
             ctx.globalAlpha = 1;
             ctx.restore();
