@@ -136,7 +136,8 @@ export function analyzeTelemetrySession(
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
     const travel = p.SuspTravel || [0.0, 0.0, 0.0, 0.0];
-    const isSuspExtended = travel.every((t: number) => t < 0.08); // all wheels near fully extended
+    // [PERF] Optimized O(1) manual property access instead of .every() to avoid functional closure allocation and GC pressure in high frequency loops
+    const isSuspExtended = travel[0] < 0.08 && travel[1] < 0.08 && travel[2] < 0.08 && travel[3] < 0.08; // all wheels near fully extended
     
     if (isSuspExtended && !inAir) {
       // Start of jump
@@ -165,7 +166,8 @@ export function analyzeTelemetrySession(
           for (let j = i; j < landingEndIndex; j++) {
             const lp = points[j];
             const lTravel = lp.SuspTravel || [0.0, 0.0, 0.0, 0.0];
-            const maxLTravel = Math.max(...lTravel);
+            // [PERF] Avoid spread operator (...) which clones the array internally
+            const maxLTravel = Math.max(lTravel[0], lTravel[1], lTravel[2], lTravel[3]);
             if (maxLTravel > landingPeakSusp) landingPeakSusp = maxLTravel;
 
             // Estimate landing G from AccelerationX/Z or simply travel
