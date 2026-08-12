@@ -27,6 +27,7 @@ function createCanvasSpy() {
   const rectangles: Array<{ color: string; x: number; y: number; width: number; height: number }> = [];
   const fills: string[] = [];
   const text: string[] = [];
+  const textEntries: Array<{ value: string; x: number; y: number; align: string }> = [];
   const arcs: number[] = [];
   const clips: number[] = [];
   const moves: Array<{ x: number; y: number }> = [];
@@ -46,7 +47,10 @@ function createCanvasSpy() {
     fillRect: (x: number, y: number, width: number, height: number) => rectangles.push({
       color: String(ctx.fillStyle || ''), x, y, width, height,
     }),
-    fillText: (value: string) => text.push(value),
+    fillText: (value: string, x: number, y: number) => {
+      text.push(value);
+      textEntries.push({ value, x, y, align: String(ctx.textAlign || '') });
+    },
     fillStyle: '',
     strokeStyle: '',
     lineWidth: 1,
@@ -55,7 +59,7 @@ function createCanvasSpy() {
     lineCap: '',
     globalAlpha: 1,
   };
-  return { arcs, clips, ctx, fills, moves, rectangles, strokes, text };
+  return { arcs, clips, ctx, fills, moves, rectangles, strokes, text, textEntries };
 }
 
 const palette = {
@@ -113,13 +117,23 @@ describe('S650 transparent performance layouts', () => {
     expect(spy.rectangles.map((rectangle) => rectangle.color)).toEqual(expect.arrayContaining([
       'rgba(160, 144, 255, 0.12)', 'rgba(255, 59, 48, 0.50)', palette.primary,
     ]));
+    expect(spy.rectangles.find((rectangle) => rectangle.color === 'rgba(255, 59, 48, 0.50)')).toMatchObject({
+      x: 1005.5, width: 116.5,
+    });
+    const activeBand = spy.rectangles.find((rectangle) => rectangle.color === palette.primary);
+    expect(activeBand).toMatchObject({ x: 190 });
+    expect(activeBand?.width).toBeCloseTo(722.3, 8);
     expect(spy.strokes).toContainEqual({ color: palette.primary, width: 8 });
     expect(spy.text).toEqual(expect.arrayContaining([
-      'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H',
+      'RPM', '540 HP', '12.5 PSI', '12.4 km', 'NE', '6200 RPM', '140 KM/H', 'SPEED', 'GEAR', '140', '4',
     ]));
     expect(spy.text).not.toEqual(expect.arrayContaining(['TRACK USE ONLY', 'TIRE TEMP', 'TEMP', 'FUEL', 'P  R  N  D  M']));
+    expect(spy.textEntries).toEqual(expect.arrayContaining([
+      { value: '140', x: 354, y: 230, align: 'right' },
+      { value: '4', x: 486, y: 230, align: 'right' },
+    ]));
     expect(centerCalls).toHaveLength(1);
-    expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 88, variant: 'trackCompact' });
+    expect(centerCalls[0][3]).toEqual({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' });
     expect(gearCalls).toHaveLength(1);
     expect(gearCalls[0].slice(3)).toEqual([640, 407]);
   });

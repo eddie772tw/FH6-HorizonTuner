@@ -337,6 +337,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` locks the restored center-info, gear, and tachometer outline anchors. Manual 2560×1440 HUD review remains required before merge.
 ---
 
+## 2026-08-12 / S650 Track Detail Alignment
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: Track's tick marks used an inset RPM scale, while redline and active fill rectangles used the full trapezoid width. That mixed coordinate system made the redline edge and live RPM color appear under the wrong ticks. The compact center-information behaviour was also implicit in a renderer variant instead of being part of the layout contract.
+- **Action**: `trackWide` now derives active and redline fill geometry from the same inset scale as ticks. Center-information normalizes an explicit `layoutStyle: 'trackSidebar'` into style, aspect-ratio, and compact-layout context. Track adds a shared `trackSpeedGear` component to the left-side counterpart of center information; speed and gear use separate fixed right alignment anchors, so speed digit count cannot move either field.
+- **Verification**: `s650PerformanceClusters.test.ts` locks the redline/active fill scale and both speed/gear text anchors. `s650CenterInfo.test.ts` covers explicit Track sidebar selection. Frontend Vitest: 40 files / 223 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

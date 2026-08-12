@@ -30,7 +30,8 @@
             variant: 'trackWide', x: 96, y: 86, width: 1120, height: 96, slant: 94, divisions: 9,
             lowerRiseRatio: 0.20, activeFillAlpha: 0.82
         }),
-        centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 88, variant: 'trackCompact' }),
+        centerInfo: Object.freeze({ x: 782, y: 184, width: 286, height: 88, layoutStyle: 'trackSidebar' }),
+        speedGear: Object.freeze({ x: 212, y: 184, width: 286, height: 88, speedRight: 142, gearRight: 274, valueY: 46, unitY: 68 }),
         leftRail: Object.freeze({ x: 172, y: 202, height: 110, side: 'left', role: 'power', axisWidth: 3, tickLength: 12, fillWidth: 8, valueSize: 16, valueOffset: 18 }),
         rightRail: Object.freeze({ x: 1108, y: 202, height: 110, side: 'right', role: 'boost', axisWidth: 3, tickLength: 12, fillWidth: 8, valueSize: 16, valueOffset: 18 }),
         footer: Object.freeze({
@@ -59,6 +60,7 @@
         if (view.showCenterInfo !== false && dependencies.centerInfo && typeof dependencies.centerInfo.draw === 'function') {
             dependencies.centerInfo.draw(view, data, palette, TRACK_RECIPE.centerInfo);
         }
+        components.drawTrackSpeedGear(view, data, palette, TRACK_RECIPE.speedGear);
         components.drawVerticalRail(view, data, palette, TRACK_RECIPE.leftRail);
         components.drawVerticalRail(view, data, palette, TRACK_RECIPE.rightRail);
         components.drawFooter(view, data, palette, TRACK_RECIPE.footer, dependencies.primitives);

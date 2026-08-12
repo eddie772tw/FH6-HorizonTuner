@@ -41,6 +41,12 @@
         return typeof value === 'number' && isFinite(value) ? value : fallback;
     }
 
+    function normalizeLayoutStyle(region) {
+        if (region && region.layoutStyle === 'trackSidebar') return 'trackSidebar';
+        // Compatibility for recipes created before layoutStyle was explicit.
+        return region && region.variant === 'trackCompact' ? 'trackSidebar' : 'dualRing';
+    }
+
     function normalizeRegion(region) {
         region = region && typeof region === 'object' ? region : {};
         var normalized = {
@@ -54,7 +60,12 @@
                 normalized[key] = region[key];
             }
         });
-        if (typeof region.variant === 'string') normalized.variant = region.variant;
+        var layoutStyle = normalizeLayoutStyle(region);
+        normalized.layout = Object.freeze({
+            style: layoutStyle,
+            aspectRatio: normalized.height > 0 ? normalized.width / normalized.height : 1,
+            isCompact: layoutStyle === 'trackSidebar'
+        });
         return normalized;
     }
 
@@ -90,7 +101,7 @@
                 primitives: primitives,
                 ctx: ctx
             };
-            (normalizedRegion.variant && typeof page.renderCompact === 'function' ? page.renderCompact : page.render)(context);
+            (normalizedRegion.layout.isCompact && typeof page.renderCompact === 'function' ? page.renderCompact : page.render)(context);
 
         }
 

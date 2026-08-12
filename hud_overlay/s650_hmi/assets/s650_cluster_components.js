@@ -35,6 +35,8 @@
             var height = recipe.height;
             var slant = recipe.slant || 76;
             var lowerRise = height * (recipe.lowerRiseRatio === undefined ? 0.20 : recipe.lowerRiseRatio);
+            var scaleStart = x + slant;
+            var scaleWidth = Math.max(0, width - slant * 2);
             var lowerSlantRatio = slant / width;
 
             function lowerBoundaryY(ratio) {
@@ -72,19 +74,19 @@
             ctx.fillRect(x, y, width, height);
             if (redlineRatio < 1) {
                 ctx.fillStyle = 'rgba(255, 59, 48, 0.50)';
-                ctx.fillRect(x + width * redlineRatio, y, width * (1 - redlineRatio), height);
+                ctx.fillRect(scaleStart + scaleWidth * redlineRatio, y, scaleWidth * (1 - redlineRatio), height);
             }
             if (rpmRatio > 0) {
                 ctx.fillStyle = palette.primary;
                 ctx.globalAlpha = recipe.activeFillAlpha === undefined ? 0.82 : recipe.activeFillAlpha;
-                ctx.fillRect(x, y, width * Math.min(rpmRatio, redlineRatio), height);
+                ctx.fillRect(scaleStart, y, scaleWidth * Math.min(rpmRatio, redlineRatio), height);
             }
             ctx.globalAlpha = 1;
             ctx.restore();
 
             for (var tick = 0; tick <= divisions * 4; tick += 1) {
                 var ratio = tick / (divisions * 4);
-                var tickX = x + slant + (width - slant * 2) * ratio;
+                var tickX = scaleStart + scaleWidth * ratio;
                 var major = tick % 4 === 0;
                 var redline = ratio >= redlineRatio;
                 var tickHeight = major ? 28 : 9;
@@ -142,6 +144,48 @@
             ctx.restore();
         }
 
+        function drawTrackSpeedGear(view, data, palette, recipe) {
+            var x = recipe.x;
+            var y = recipe.y;
+            var width = recipe.width;
+            var speedRight = x + (recipe.speedRight === undefined ? width * 0.55 : recipe.speedRight);
+            var gearRight = x + (recipe.gearRight === undefined ? width : recipe.gearRight);
+            var speed = typeof view.roundedSpeed === 'function' ? view.roundedSpeed(data) : '--';
+            var unit = typeof view.unitLabel === 'function' ? view.unitLabel() : '';
+            var gear = typeof view.getGearLabel === 'function' ? view.getGearLabel(data) : '--';
+
+            ctx.save();
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            setFont(ctx, recipe.labelSize || 10, '700');
+            ctx.fillStyle = palette.secondary;
+            ctx.fillText('SPEED', speedRight, y + 10);
+            ctx.fillText('GEAR', gearRight, y + 10);
+
+            if (recipe.divider !== false) {
+                drawRule(ctx, speedRight + (recipe.dividerOffset || 14), y + 4,
+                    speedRight + (recipe.dividerOffset || 14), y + (recipe.height || 72) - 4,
+                    'rgba(194, 226, 234, 0.26)');
+            }
+
+            if (view.showSpeed !== false) {
+                setFont(ctx, recipe.speedSize || 38, '700');
+                ctx.fillStyle = palette.text;
+                ctx.fillText(String(speed), speedRight, y + (recipe.valueY || 42));
+                setFont(ctx, recipe.unitSize || 10, '700');
+                ctx.fillStyle = palette.secondary;
+                ctx.fillText(unit, speedRight, y + (recipe.unitY || 61));
+            }
+
+            if (view.showGear !== false) {
+                setFont(ctx, recipe.gearSize || 46, '700');
+                ctx.fillStyle = palette.primary;
+                ctx.fillText(String(gear), gearRight, y + (recipe.valueY || 42));
+            }
+            ctx.restore();
+        }
+
         function drawFooter(view, data, palette, recipe, primitives) {
             var slots = recipe.slots || {};
             var positions = recipe.positions || {};
@@ -165,6 +209,7 @@
 
         return {
             drawFooter: drawFooter,
+            drawTrackSpeedGear: drawTrackSpeedGear,
             drawVerticalRail: drawVerticalRail,
             drawTachometer: drawTachometer
         };

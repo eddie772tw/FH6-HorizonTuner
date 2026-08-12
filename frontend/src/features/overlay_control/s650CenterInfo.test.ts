@@ -14,6 +14,7 @@ type Region = {
   speedSize?: number;
   gearSize?: number;
   variant?: string;
+  layoutStyle?: string;
 };
 
 type CenterInfoModule = {
@@ -153,7 +154,7 @@ describe('S650 center-information registry contract', () => {
       y: 298,
       width: 286,
       height: 88,
-      variant: 'trackCompact',
+      layoutStyle: 'trackSidebar',
     });
 
     expect((ctx.text as string[])).toContain('POWERTRAIN');
