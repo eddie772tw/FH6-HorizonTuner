@@ -364,6 +364,15 @@
 - **Verification**: `s650PerformanceClusters.test.ts` locks the left gear and right speed anchors, 57px font size, and the lower central divider anchor. Frontend Vitest: 40 files / 223 tests passed.
 ---
 
+## 2026-08-12 / S650 Track Redline Live-Fill Correction
+
+- **Scope**: active / `codex/s650-hmi-next-phase-evaluation`
+- **Status**: implementation complete; pending visual detail review
+- **Finding**: Track painted the active band after the redline band, but incorrectly capped its width at `redlineRatio`. Once engine RPM crossed redline, the active indication stopped at the warning boundary and the static red region was the only visible state.
+- **Action**: Preserve the redline band as a threshold underlay, then extend the final active fill to the true current RPM ratio. The tick/redline scale remains unchanged; only the live-fill upper bound is corrected.
+- **Verification**: `s650PerformanceClusters.test.ts` exercises 7800/8000 RPM against an 87.5% redline and confirms the active band is painted after redline through the 97.5% current-RPM position. Frontend Vitest: 40 files / 224 tests passed.
+---
+
 ## 2026-08-11 / Theme Customization Cleanup
 
 - **Scope**: local / frontend ThemeView and persisted theme settings.

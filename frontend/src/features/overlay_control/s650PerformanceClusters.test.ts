@@ -139,6 +139,21 @@ describe('S650 transparent performance layouts', () => {
     expect(gearCalls[0].slice(3)).toEqual([640, 407]);
   });
 
+  it('keeps the live Track fill readable after it enters the redline zone', () => {
+    const spy = createCanvasSpy();
+    loadPerformanceModule().drawTrack({ ...view, getRpm: () => 7800 }, {}, palette, 0.875, spy.ctx, {
+      centerInfo: { draw: () => undefined },
+      primitives: { drawGearCarousel: () => undefined },
+    });
+
+    const redlineIndex = spy.rectangles.findIndex((rectangle) => rectangle.color === 'rgba(255, 59, 48, 0.50)');
+    const activeIndex = spy.rectangles.findIndex((rectangle) => rectangle.color === palette.primary);
+    expect(redlineIndex).toBeGreaterThanOrEqual(0);
+    expect(activeIndex).toBeGreaterThan(redlineIndex);
+    expect(spy.rectangles[activeIndex]).toMatchObject({ x: 190 });
+    expect(spy.rectangles[activeIndex].width).toBeCloseTo(908.7, 8);
+  });
+
   it('gives SVT Cobra two analog rings with distinct SVT labels and red needles', () => {
     const spy = createCanvasSpy();
     loadPerformanceModule().drawSvtCobra(view, {}, palette, 0.875, spy.ctx);

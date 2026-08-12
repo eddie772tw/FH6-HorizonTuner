@@ -65,6 +65,9 @@
             // Fill bands must live inside the same trapezoid as the tick and
             // label scale. Clipping the normal-style base, redline and active
             // fills prevents them from reading as a detached horizontal bar.
+            // The active fill is deliberately painted last and reaches the
+            // actual RPM ratio, including the redline zone, so the live limit
+            // remains readable after it crosses the warning threshold.
             ctx.save();
             ctx.beginPath();
             traceTrackWideOutline();
@@ -79,7 +82,7 @@
             if (rpmRatio > 0) {
                 ctx.fillStyle = palette.primary;
                 ctx.globalAlpha = recipe.activeFillAlpha === undefined ? 0.82 : recipe.activeFillAlpha;
-                ctx.fillRect(scaleStart, y, scaleWidth * Math.min(rpmRatio, redlineRatio), height);
+                ctx.fillRect(scaleStart, y, scaleWidth * rpmRatio, height);
             }
             ctx.globalAlpha = 1;
             ctx.restore();
