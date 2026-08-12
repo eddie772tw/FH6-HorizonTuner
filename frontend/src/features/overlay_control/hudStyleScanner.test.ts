@@ -37,9 +37,9 @@ describe('hudStyleScanner frontend module tests', () => {
 
   it('formatHudDropdownOptions should map built-in HUD names and prefix custom HUD names with [Custom]', () => {
     const styles: HudStyleEntry[] = [
-      { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
       { id: 'gt7', source: 'builtin', urlPrefix: '/hud' },
       { id: 'cyber_drift', source: 'user', urlPrefix: '/hud_user' },
+      { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
     ];
 
     const options = formatHudDropdownOptions(styles, HUD_DISPLAY_NAMES);

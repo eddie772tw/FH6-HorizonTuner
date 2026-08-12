@@ -11,16 +11,22 @@ export interface HudDropdownOption {
 }
 
 export const HUD_DISPLAY_NAMES: Record<string, string> = {
-  advanced: 'Race Arc',
-  simple: 'Simple',
-  fm4ui: 'Forza Motorsport 4',
-  gt7: 'GT7',
-  mw2005: "NFS Most Wanted '05",
-  nfs15: "NFS '15",
-  shift_tacho: 'NFS Shift',
   vfd: 'Retro VFD',
   drift: 'Drift HUD',
-  s650_hmi: 'S650 HMI',
+  s650_hmi: 'Ford Mustang HMI',
+  advanced: 'Advanced Racing Arc',
+  fm4ui: 'Forza Motorsport 4',
+  gt7: 'Gran Turismo 7',
+  mw2005: "NFS Most Wanted 2005",
+  nfs15: "Need for Speed 2015",
+  shift_tacho: 'Need for Speed Shift',
+  simple: 'Simple Gauge',
+};
+
+const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {
+  vfd: 0,
+  drift: 1,
+  s650_hmi: 2,
 };
 
 /**
@@ -56,11 +62,21 @@ export function formatHudDropdownOptions(
     }));
   }
 
-  return hudStyles.map((s) => ({
+  return hudStyles
+    .map((s, index) => ({ s, index }))
+    .sort(({ s: left, index: leftIndex }, { s: right, index: rightIndex }) => {
+      const leftPriority = left.source === 'builtin' ? HUD_DISPLAY_PRIORITY[left.id] : undefined;
+      const rightPriority = right.source === 'builtin' ? HUD_DISPLAY_PRIORITY[right.id] : undefined;
+      if (leftPriority !== undefined || rightPriority !== undefined) {
+        return (leftPriority ?? Number.MAX_SAFE_INTEGER) - (rightPriority ?? Number.MAX_SAFE_INTEGER);
+      }
+      return leftIndex - rightIndex;
+    })
+    .map(({ s }) => ({
     value: s.id,
     label: s.source === 'user' ? `[Custom] ${s.id}` : (displayNames[s.id] ?? s.id),
     isCustom: s.source === 'user',
-  }));
+    }));
 }
 
 /**
