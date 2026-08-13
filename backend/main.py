@@ -1540,7 +1540,7 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
 
 
 @app.get("/api/tunings")
-async def list_tunings():
+def list_tunings():
     files = [
         f.replace(".json", "") for f in os.listdir(TUNINGS_DIR) if f.endswith(".json")
     ]
