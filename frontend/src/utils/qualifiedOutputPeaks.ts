@@ -27,8 +27,7 @@ export const emptyQualifiedOutputPeaks = (): QualifiedOutputPeaks => ({
 
 export function isQualifiedOutputSample(sample: OutputTelemetrySample): boolean {
   const tireSlip = sample.TireSlipRatio;
-  return sample.IsRaceOn === 1
-    && sample.AccelInput === FULL_THROTTLE_INPUT
+  return sample.AccelInput === FULL_THROTTLE_INPUT
     && Number.isFinite(sample.CurrentEngineRpm)
     && (sample.CurrentEngineRpm ?? 0) > 0
     && Array.isArray(tireSlip)

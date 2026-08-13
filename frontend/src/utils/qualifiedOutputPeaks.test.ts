@@ -15,10 +15,10 @@ const qualifiedSample = {
 };
 
 describe('qualified output peaks', () => {
-  it('accepts only full-throttle, in-race, non-slipping samples', () => {
+  it('accepts full-throttle, non-slipping samples in either timing state', () => {
     expect(isQualifiedOutputSample(qualifiedSample)).toBe(true);
     expect(isQualifiedOutputSample({ ...qualifiedSample, AccelInput: 254 })).toBe(false);
-    expect(isQualifiedOutputSample({ ...qualifiedSample, IsRaceOn: 0 })).toBe(false);
+    expect(isQualifiedOutputSample({ ...qualifiedSample, IsRaceOn: 0 })).toBe(true);
     expect(isQualifiedOutputSample({ ...qualifiedSample, TireSlipRatio: [0.02, 0.03, 0.11, 0.04] })).toBe(false);
     expect(isQualifiedOutputSample({ ...qualifiedSample, TireSlipRatio: undefined })).toBe(false);
   });
