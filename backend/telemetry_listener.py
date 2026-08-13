@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import socket
 import struct
 
 logger = logging.getLogger(__name__)
@@ -258,6 +259,9 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
     return telemetry_data
 
 
+_forward_socket = None
+
+
 def forward_udp_packet(
     data: bytes,
     target_host: str = "127.0.0.1",
@@ -280,8 +284,19 @@ def forward_udp_packet(
     if not enabled or target_port is None:
         return False
 
-    # TODO: 於此處實作非同步 socket.sendto 靜態 raw 封包轉發機制
-    return False
+    global _forward_socket
+    if _forward_socket is None:
+        _forward_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        _forward_socket.setblocking(False)
+
+    try:
+        _forward_socket.sendto(data, (target_host, target_port))
+        return True
+    except BlockingIOError:
+        return False
+    except Exception as e:
+        logger.error(f"Error forwarding packet: {e}")
+        return False
 
 
 class TelemetryProtocol(asyncio.DatagramProtocol):
