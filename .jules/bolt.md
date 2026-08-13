@@ -62,3 +62,6 @@
 ## 2025-03-09 - Eliminate array allocation and closures in 60Hz loop
 **Learning:** In high-frequency 60Hz canvas rendering loops (e.g. `renderShiftTacho`), initializing arrays dynamically every frame and using `.forEach` creates unnecessary array allocations and functional closures. This rapidly increases garbage collection (GC) pressure, leading to visual stuttering over time.
 **Action:** Extract inner logic from array iteration methods (`.forEach`, `.map`, etc.) into dedicated helper functions outside of the rendering loop, and explicitly unroll the iterations inside the 60Hz loop manually to bypass allocations entirely.
+## 2025-02-23 - FastAPI Asyncio Event Loop Blocking by File I/O
+**Learning:** Synchronous File I/O (like `os.listdir` and `json.load`) executed within an `async def` FastAPI route blocks the underlying ASGI asyncio event loop, causing severe latency degradation for concurrent requests (e.g., websockets or parallel REST calls).
+**Action:** When a FastAPI route requires synchronous operations, either declare the route as a synchronous `def` (which allows FastAPI to natively offload it to an external threadpool) or use `await asyncio.to_thread()` within an `async def` route to manually offload the blocking code. Do not use `async def` with bare synchronous I/O.
