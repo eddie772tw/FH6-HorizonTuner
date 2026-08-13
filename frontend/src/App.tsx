@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navigation from './components/Navigation';
 import TelemetryView from './features/telemetry/TelemetryView';
 import TuningView from './features/tuning/TuningView';
+import TuningViewDev from './features/tuning/TuningView_dev';
 import CarParamsView from './features/car_params/CarParamsView';
 import SettingsView from './features/settings/SettingsView';
 import DiagnosticConsole from './components/DiagnosticConsole';
@@ -9,7 +10,7 @@ import ThemeView from './features/theme/ThemeView';
 import { useTelemetry } from './hooks/useTelemetry';
 import { useOverlayWebSocket } from './hooks/useOverlayWebSocket';
 import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 
@@ -17,6 +18,7 @@ import OverlayView from './features/overlay_control/OverlayView';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
+  const { settings } = useSettings();
   useOverlayWebSocket();
   const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
@@ -62,7 +64,11 @@ const AppContent: React.FC = () => {
           <TelemetryView subTab={telemetrySubTab} setSubTab={setTelemetrySubTab} />
         </div>
         <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+          {settings.developer_tuning_enabled ? (
+            <TuningViewDev currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+          ) : (
+            <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+          )}
         </div>
         <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <CarParamsView subTab={carParamsSubTab} setSubTab={setCarParamsSubTab} setActiveTab={setActiveTab} />

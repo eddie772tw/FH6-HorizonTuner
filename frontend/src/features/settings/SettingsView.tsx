@@ -152,6 +152,35 @@ const SettingsView: React.FC = () => {
               </div>
             </div>
 
+            {/* Experimental Developer Settings */}
+            <div className="d-flex flex-column gap-3">
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Developer Options")}</h5>
+
+              <div className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3">
+                <div>
+                  <label className="form-check-label fw-bold fs-6" htmlFor="chk-developer-tuning">
+                    {t("Use Developer Tuning View")}
+                  </label>
+                  <div className="form-text fs-7">
+                    {t("Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.")}
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  className="form-check-input ms-auto fs-5"
+                  id="chk-developer-tuning"
+                  checked={settings.developer_tuning_enabled}
+                  onChange={(e) => updateSettings({ developer_tuning_enabled: e.target.checked })}
+                />
+              </div>
+
+              {settings.developer_tuning_enabled && (
+                <div className="alert alert-warning mb-0 py-2" role="status">
+                  {t("Experimental mode active: verify all outputs in-game before saving a tune.")}
+                </div>
+              )}
+            </div>
+
             {/* Telemetry UDP Receiver Settings */}
             <div className="d-flex flex-column gap-3">
               <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Telemetry Receiver Settings")}</h5>

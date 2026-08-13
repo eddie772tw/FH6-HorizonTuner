@@ -17,6 +17,7 @@ export interface UnitSettings {
 export interface AppSettings {
   dyno_recording: boolean;
   race_recording: boolean;
+  developer_tuning_enabled: boolean;
   language: string;
   dyno_test_gear: number;
   dyno_filter_slip: boolean;
@@ -81,6 +82,7 @@ const defaultUnits: UnitSettings = {
 const defaultSettings: AppSettings = {
   dyno_recording: false,
   race_recording: false,
+  developer_tuning_enabled: false,
   language: 'zh-tw',
   dyno_test_gear: 4,
   dyno_filter_slip: true,
@@ -122,6 +124,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const merged: AppSettings = {
             dyno_recording: data.dyno_recording ?? defaultSettings.dyno_recording,
             race_recording: data.race_recording ?? defaultSettings.race_recording,
+            developer_tuning_enabled: data.developer_tuning_enabled ?? defaultSettings.developer_tuning_enabled,
             language: data.language ?? defaultSettings.language,
             dyno_test_gear: data.dyno_test_gear ?? defaultSettings.dyno_test_gear,
             dyno_filter_slip: data.dyno_filter_slip ?? defaultSettings.dyno_filter_slip,

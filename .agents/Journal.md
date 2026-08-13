@@ -760,3 +760,21 @@
 - **Decision**：仿造 S650 的 ownership boundary，只有主要與主 GUI 交互的 HUD 設定、normalize 與 typed boundary 放在 `frontend/src/features/overlay_control/<hud-id>/`；renderer、Canvas、inline-controller 與 standalone HUD contract tests 歸 `hud_overlay/<hud-id>/tests/` 管理。
 - **Action**：原先誤將 Drift／Advanced renderer contract 放入 `overlay_control` 子資料夾；依 S650 的真正 ownership boundary 改置於 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 與 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts`。`overlay_control/<hud-id>/` 僅保留主 GUI 交互檔案。
 - **Verification**：Vitest 改以 `../hud_overlay/*/tests/**/*.test.ts` 納入所有 HUD-owned 測試，並以完整 frontend Vitest 與 build 驗證測試入口、相對路徑與 production bundle。
+
+---
+
+## 2026-08-13 / Developer Tuning Math Boundary and Capability Contract
+
+- **Decision**：在 `codex/tuning-dev-mode` 上保留 legacy `TuningView` 為預設，透過 Settings 的 developer flag opt-in 到 `TuningView_dev`；新版只經由 `tuningMath_dev.ts` façade 進入 domain tuning modules。
+- **Action**：新增 versioned capability contract、unknown-safe control normalization、calibration fixture schema/loader、tire friction-ellipse invariant，以及輪胎／懸吊／差速器／齒比 domain modules；開發頁拆分 input/output/capability panels，避免超過 250 行 God component。
+- **Evidence**：frontend Vitest `48 files / 261 tests`、production build `690 modules`、`pytest -q tests/test_main.py` `5 passed`、`git diff --check` 通過。
+- **Boundary**：FH6 slider step、precision、upgrade lock 與 tire coefficient 仍以 `unknown` 或 `calibration-prior` 表示；未經實機 capture／reviewed community fixture 前，不得升級為 production-calibrated 常數。
+
+---
+
+## 2026-08-13 / External Evidence and MCP Read-only Boundary
+
+- **Evidence**：Subagent web research found medium/high-confidence FH6 control-family and upgrade-gate evidence, but no complete official numeric slider specification; Chinese community sources mainly provide vehicle/PI/event-specific share codes; technical tire sources support model forms but not FH6 coefficients.
+- **Action**：Added `docs/tuning-math-external-evidence-report.md`, `tuning-capture/v1` telemetry collection page with JSON/CSV export and summary analysis, and `docs/tuning-mcp-integration-evaluation.md` recommending a localhost read-only MCP adapter.
+- **MCP boundary**：A future MCP server should expose bounded capture/session resources and deterministic analysis tools, never a second UDP consumer; v1 must not expose tune writes, recorder control, arbitrary SQL, or direct game automation.
+- **Verification**：Frontend capture schema tests and build pass after fixing test fixture speed/Yaw fields; live FH6 collection still requires human test execution.

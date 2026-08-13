@@ -309,6 +309,7 @@ last_dyno_save_time = time.time()
 DEFAULT_SETTINGS = {
     "dyno_recording": False,
     "race_recording": False,
+    "developer_tuning_enabled": False,
     "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
@@ -340,6 +341,7 @@ DEFAULT_SETTINGS = {
 app_settings = {
     "dyno_recording": False,
     "race_recording": False,
+    "developer_tuning_enabled": False,
     "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
@@ -1410,6 +1412,8 @@ async def update_settings(data: dict):
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
     if "race_recording" in data:
         app_settings["race_recording"] = bool(data["race_recording"])
+    if "developer_tuning_enabled" in data:
+        app_settings["developer_tuning_enabled"] = bool(data["developer_tuning_enabled"])
     if "language" in data:
         app_settings["language"] = str(data["language"])
     if "dyno_test_gear" in data:
