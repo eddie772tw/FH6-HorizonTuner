@@ -19,6 +19,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Keep the interpreter selected by setup-uv aligned with its managed-Python cache.
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
   run-host-diagnostics:
     name: Run Portable Host Diagnostics

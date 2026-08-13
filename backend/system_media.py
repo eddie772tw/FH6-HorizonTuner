@@ -28,6 +28,7 @@ MEDIA_STALE_GRACE_SECONDS = 3.0
 MEDIA_FAILURE_BACKOFF_SECONDS = (1.0, 2.0, 5.0, 10.0)
 _media_query_lock = asyncio.Lock()
 
+
 async def _try_get_winrt_gsm_media() -> dict | None:
     """Attempt to fetch media info using Windows WinRT GSMTC session manager."""
     if sys.platform != "win32":
