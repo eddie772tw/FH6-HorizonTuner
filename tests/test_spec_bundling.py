@@ -64,3 +64,5 @@ def test_sidecar_spec_avoids_recursive_package_collection():
 
     assert "collect_all" not in spec_content
     assert "collect_dynamic_libs" in spec_content
+    assert "winrt.windows.media.control" in spec_content
+    assert "winsdk.windows.media.control" not in spec_content

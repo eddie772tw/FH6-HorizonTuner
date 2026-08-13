@@ -10,7 +10,7 @@ block_cipher = None
 datas = []
 binaries = collect_dynamic_libs("numpy") + collect_dynamic_libs("soundcard")
 hiddenimports = [
-    "winsdk.windows.media.control",
+    "winrt.windows.media.control",
     "soundcard",
 ]
 
