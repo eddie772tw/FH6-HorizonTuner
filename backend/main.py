@@ -1836,8 +1836,8 @@ async def drag_save_session():
         return {"error": "Failed to save session"}
 
 
-@app.get("/api/drag/sessions")
-async def list_drag_sessions():
+def _read_drag_sessions():
+    """Helper function to read drag sessions synchronously."""
     try:
         files = [f for f in os.listdir(DRAG_SESSIONS_DIR) if f.endswith(".json")]
         sessions = []
@@ -1856,6 +1856,11 @@ async def list_drag_sessions():
     except Exception as e:
         logger.error(f"Failed to list drag sessions: {e}")
         return []
+
+
+@app.get("/api/drag/sessions")
+async def list_drag_sessions():
+    return await asyncio.to_thread(_read_drag_sessions)
 
 
 @app.get("/api/drag/sessions/{filename}")
