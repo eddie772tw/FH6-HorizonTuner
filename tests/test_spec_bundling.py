@@ -55,3 +55,12 @@ def test_spec_hud_overlay_packaging_no_wildcard():
         assert hud_overlay_entry[0] == "hud_overlay"
         assert car_params_entry[0] == "backend/car_params"
         assert lang_entry[0] == "lang"
+
+
+def test_sidecar_spec_avoids_recursive_package_collection():
+    spec_path = os.path.join(os.path.dirname(__file__), "..", "server-sidecar.spec")
+    with open(spec_path, "r", encoding="utf-8") as f:
+        spec_content = f.read()
+
+    assert "collect_all" not in spec_content
+    assert "collect_dynamic_libs" in spec_content
