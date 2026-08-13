@@ -1413,7 +1413,9 @@ async def update_settings(data: dict):
     if "race_recording" in data:
         app_settings["race_recording"] = bool(data["race_recording"])
     if "developer_tuning_enabled" in data:
-        app_settings["developer_tuning_enabled"] = bool(data["developer_tuning_enabled"])
+        app_settings["developer_tuning_enabled"] = bool(
+            data["developer_tuning_enabled"]
+        )
     if "language" in data:
         app_settings["language"] = str(data["language"])
     if "dyno_test_gear" in data:

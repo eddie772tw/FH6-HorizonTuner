@@ -31,9 +31,11 @@ jobs:
       run: pip install ruff
 
     - name: Run Ruff Check
+      id: ruff_check
       run: ruff check .
 
     - name: Run Ruff Format Verification
+      id: ruff_format
       run: ruff format --check .
 
     - name: Generate Backend Static Check Summary
@@ -45,8 +47,8 @@ jobs:
 
         | Check Type | Status | Result |
         | :--- | :---: | :--- |
-        | **Ruff Linter** | ✅ | All Python code lint checks passed cleanly |
-        | **Ruff Formatter** | ✅ | Python code formatting strictly adheres to PEP 8 / Ruff style |
+        | **Ruff Linter** | ${{ steps.ruff_check.outcome }} | `ruff check .` |
+        | **Ruff Formatter** | ${{ steps.ruff_format.outcome }} | `ruff format --check .` |
 
         > 💡 Run `ruff check .` and `ruff format .` locally to verify Python code prior to pushing.
         EOF
