@@ -40,7 +40,7 @@ for /d %%D in ("%~dp0*") do (
     )
     
     if "!IS_IGNORED!" == "false" (
-        :: Check if it's already packaged in backend/server-sidecar.spec
+        :: Check if it's already packaged in the root server-sidecar.spec
         findstr /I /C:"%%~nxD" "%~dp0server-sidecar.spec" >nul
         if errorlevel 1 (
             echo.
