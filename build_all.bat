@@ -9,13 +9,19 @@ echo.
 :: 1. Prepare the project-local virtual environment
 set "VENV_DIR=%~dp0.venv"
 set "PY_EXE=%VENV_DIR%\Scripts\python.exe"
-set "PYINSTALLER_EXE=%VENV_DIR%\Scripts\pyinstaller.exe"
+set "UV_EXE=uv"
+
+where.exe uv >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] uv was not found on PATH. Install uv and retry.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
+)
 
 call "%~dp0setup_venv.bat"
 if errorlevel 1 exit /b 1
-"%PY_EXE%" -m pip install --disable-pip-version-check --upgrade "pyinstaller>=6.10,<7.0"
+"%UV_EXE%" pip install --python "%PY_EXE%" --upgrade "pyinstaller>=6.10,<7.0"
 if errorlevel 1 exit /b 1
-set "RUN_PYINSTALLER="%PY_EXE%" -m PyInstaller"
 
 :: 1.5. Scan for unregistered directories (not ignored and not packaged)
 echo [INFO] Scanning for unregistered resource directories...
@@ -65,7 +71,7 @@ echo.
 :: 2. Build Python Backend Sidecar Executable with PyInstaller
 echo [INFO] Building Python Backend Sidecar with PyInstaller...
 echo --------------------------------------------------------------------
-%RUN_PYINSTALLER% "%~dp0server-sidecar.spec" --clean
+"%UV_EXE%" run --no-project --python "%PY_EXE%" python -m PyInstaller "%~dp0server-sidecar.spec" --clean
 if errorlevel 1 (
     echo.
     echo [ERROR] PyInstaller Sidecar bundling encountered an error!

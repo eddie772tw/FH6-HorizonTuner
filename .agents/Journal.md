@@ -755,6 +755,18 @@
 
 ---
 
+---
+
+## 2026-08-13 / Python uv toolchain standardization
+
+- **Status**: adopted。
+- **Decision**：Python 3.13、根目錄 `.venv`、`requirements.txt` 與 Python 工具入口統一由 uv 管理。建立環境使用 `uv venv --python 3.13 --managed-python`，套件使用 `uv pip`，執行與測試使用 `uv run --no-project --python .venv\\Scripts\\python.exe`。
+- **Action**：`build_all.bat`、`setup_venv.bat`、`start_all.bat` 與 `start_backend.bat` 已移除 PATH-level Python/pip 依賴；新增的 [python-uv.md](rules/python-uv.md) 是未來本機與 CI 命令的 canonical policy。`.gitignore` 排除 `.uv-cache/`，`.pkgdirignore` 已涵蓋 `.venv` 與 `.uv-cache`。
+- **CI assessment**：`.github/workflows/ci.yml` 與 `diagnostics.yml` 已改用釘選版本的 `astral-sh/setup-uv`，由 uv 建立 managed Python 3.13、啟用 `.venv` 與 uv cache，並透過 `uv pip`、`uv run --no-project --active` 執行依賴安裝、pytest、Ruff 與 PyInstaller。
+- **Evidence**：uv-managed CPython 3.13.12、`uv pip check`、import smoke test、backend `py_compile` 與 pytest `108 passed` 均已驗證。
+
+---
+
 ## 2026-08-13 / HUD ownership boundary and contract directory standardization
 
 - **Decision**：仿造 S650 的 ownership boundary，只有主要與主 GUI 交互的 HUD 設定、normalize 與 typed boundary 放在 `frontend/src/features/overlay_control/<hud-id>/`；renderer、Canvas、inline-controller 與 standalone HUD contract tests 歸 `hud_overlay/<hud-id>/tests/` 管理。

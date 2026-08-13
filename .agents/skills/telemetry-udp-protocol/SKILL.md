@@ -25,7 +25,7 @@ description: 處理 Forza Horizon UDP 遙測封包解析、324-byte 二進位 st
 1. 先比對 `references/packet_format_reference.md`、目前 parser 與實際 fixture。
 2. 為每個變更的 offset、padding、型別與單位補固定封包 fixture 或 regression test。
 3. 使用固定封包 replay 驗證 raw value、normalized value 與 UI display value。
-4. 執行 `pytest tests/`，若涉及前端資料流再執行 `cmd /c "pnpm -C frontend run test"`。
+4. 執行 `uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/`，若涉及前端資料流再執行 `cmd /c "pnpm -C frontend run test"`。
 5. 只有測試與文件一致後，才把結論記錄到 Journal；未確認的欄位標為假設，不得寫成正式規格。
 
 ## 常用轉換
@@ -38,5 +38,5 @@ description: 處理 Forza Horizon UDP 遙測封包解析、324-byte 二進位 st
 ## 驗證命令
 
 - UDP 探針：`python tools/verify_telemetry_v2_v3.py --scan --port 8000`
-- 後端測試：`pytest tests/`
+- 後端測試：`uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/`
 - 前端測試：`cmd /c "pnpm -C frontend run test"`

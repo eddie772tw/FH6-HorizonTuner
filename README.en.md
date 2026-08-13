@@ -112,9 +112,9 @@ To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
 
 The project provides highly automated launcher scripts:
 * **Double-click `start_all.bat`** (Recommended full launch):
-  - Automatically searches for Python 3.13 / 3.14 on your system.
-  - Automatically creates a virtual environment `.venv` in the project root.
-  - Automatically installs/updates dependencies listed in `requirements.txt` (including FastAPI, Uvicorn, Websockets, Ruff, Pytest, Httpx, etc.).
+  - Requires `uv`, which selects managed CPython 3.13 and creates the project `.venv`.
+  - Installs and verifies `requirements.txt` through `uv pip`; it never falls back to a PATH-level Python or pip.
+  - Runs Ruff and the backend through `uv run` with the same `.venv` interpreter.
   - Automatically lints and formats the codebase using `ruff`.
   - Automatically runs the backend server in the background and opens the Tauri desktop GUI.
 * **Modular launch (For standalone development)**:
@@ -145,7 +145,7 @@ You can package both the frontend and backend into a **single standalone executa
 
 ## Prerequisites
 
-* **Python**: 3.13 or 3.14 (Standard Windows installer or `uv` managed)
+* **uv**: Required for Python 3.13 management, virtual environment creation, and package installation. Follow the [Python / uv toolchain policy](.agents/rules/python-uv.md).
 * **Node.js**: 20 or higher
 * **Rust / Cargo**: Required only for local Tauri compilation (automatically falls back to web debug mode if missing)
 
@@ -161,19 +161,15 @@ The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard P
 
 * **Reformat all code**:
     ```bash
-    # Outside venv
-    ruff format .
-
-    # Inside Windows venv
-    .venv\Scripts\ruff.exe format .
+    uv run --no-project --python .venv\Scripts\python.exe ruff format .
     ```
 * **Verify formatting (CI also runs this)**:
     ```bash
-    ruff format --check .
+    uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
     ```
 * **Static code analysis (Lint)**:
     ```bash
-    ruff check .
+    uv run --no-project --python .venv\Scripts\python.exe ruff check .
     ```
 
 > [!TIP]
@@ -184,11 +180,11 @@ The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard P
 All automated tests are located in the `tests/` directory. Before submitting a PR, ensure all tests pass:
 
 ```bash
-# Inside Windows venv
-.venv\Scripts\pytest
+# Run with the project-managed Python environment
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
 
 # Or run a specific test file
-.venv\Scripts\pytest tests/test_overlay_api.py -v
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/test_overlay_api.py -v
 ```
 
 Current test suite coverage:
@@ -238,9 +234,9 @@ Current frontend test suite covers 13 test files with 123 unit tests:
 
 Before submitting a Pull Request, please verify the following:
 
-- [ ] Code passes `ruff format --check .` formatting verification
-- [ ] Code passes `ruff check .` static analysis (no errors or warnings)
-- [ ] All existing unit tests pass (`pytest` all green)
+- [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
+- [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff check .`
+- [ ] All existing unit tests pass through `uv run ... python -m pytest`
 - [ ] If new API routes or core logic were added, corresponding unit tests have been written
 - [ ] If `tuningMath.ts` / `tuningDiagnosis.ts` pure logic was updated, corresponding Vitest unit tests have been added
 - [ ] If significant architectural changes or core modules were added, `README.md` & `README.en.md` have been updated
@@ -266,16 +262,18 @@ The project supports a fully dynamic multi-language framework. Contributors can 
 
 ## CI/CD Pipeline
 
+All Python tooling is governed by the [Python / uv toolchain policy](.agents/rules/python-uv.md). The local launch/build scripts and GitHub workflows use the same pinned uv bootstrap, managed Python 3.13 environment, uv cache, `uv pip`, and `uv run` contract.
+
 The project uses GitHub Actions for automated quality control. Every push to `main`/`master` or Pull Request triggers:
 
 | Stage | Description |
 | :--- | :--- |
-| **Lint** | `ruff check` static analysis + `ruff format --check` formatting verification |
+| **Lint** | uv-managed `ruff check` static analysis + `ruff format --check` formatting verification |
 | **Test (Backend)** | Full `pytest` suite execution on both Windows and Ubuntu platforms |
 | **Test (Frontend)** | `cd frontend && pnpm run test` Vitest suite execution (covers `tuningMath.ts` & UI logic) |
 
 > [!IMPORTANT]
-> The CI pipeline is now fully automated and no longer requires reviewer approval to trigger. Ensure you pass `ruff format --check .` and `pytest` locally before pushing to avoid unnecessary CI failures.
+> The CI pipeline is now fully automated and no longer requires reviewer approval to trigger. Ensure you run the uv-managed Ruff and Pytest commands locally before pushing to avoid unnecessary CI failures.
 
 ---
 

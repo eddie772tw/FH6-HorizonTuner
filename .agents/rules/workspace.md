@@ -12,9 +12,16 @@
 
 ## 任務完成驗證關卡 (Verification Gate)
 - 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試：
-  - 後端：`pytest tests/` (與語法檢查 `ruff check .`)
+  - 後端：`uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/` (與語法檢查 `uv run --no-project --python .venv\\Scripts\\python.exe ruff check .`)
   - 前端：`cmd /c "pnpm -C frontend run test"`
 - 嚴禁為了使測試通過而隨意放寬測試條件或修改斷言閾值。
+
+## Python / uv toolchain standard
+
+- Python 3.13、`.venv`、`requirements.txt` 與所有 Python 工具入口遵循 [python-uv.md](python-uv.md)。
+- 任何 Python、pip、pytest、ruff 或 PyInstaller 命令都必須透過 uv 選定 interpreter；不可使用裸 `python`、`pip`、`pytest` 或 `ruff`。
+- 後端驗證的標準入口是 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff check .`。
+- GitHub Actions 若涉及 Python，必須維持相同的 uv contract；目前 workflow 的同步需求詳見 [python-uv.md](python-uv.md)。
 
 ## HUD ownership and contract directory standard
 

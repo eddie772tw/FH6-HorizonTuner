@@ -22,19 +22,24 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up uv and managed Python 3.13
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: "3.13"
+        activate-environment: true
+        no-project: true
+        cache-python: true
+        enable-cache: true
+        cache-dependency-glob: requirements.txt
 
-    - name: Install Ruff
-      run: pip install ruff
+    - name: Install Ruff through uv
+      run: uv pip install ruff
 
     - name: Run Ruff Check
-      run: ruff check .
+      run: uv run --no-project --active ruff check .
 
     - name: Run Ruff Format Verification
-      run: ruff format --check .
+      run: uv run --no-project --active ruff format --check .
 
     - name: Generate Backend Static Check Summary
       if: always()
@@ -48,7 +53,7 @@ jobs:
         | **Ruff Linter** | ✅ | All Python code lint checks passed cleanly |
         | **Ruff Formatter** | ✅ | Python code formatting strictly adheres to PEP 8 / Ruff style |
 
-        > 💡 Run `ruff check .` and `ruff format .` locally to verify Python code prior to pushing.
+        > Run `uv run --no-project --python .venv\\Scripts\\python.exe ruff check .` and `uv run --no-project --python .venv\\Scripts\\python.exe ruff format .` locally to verify Python code prior to pushing.
         EOF
 
   frontend-build-test:
@@ -119,22 +124,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Set up uv and managed Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+        activate-environment: true
+        no-project: true
+        cache-python: true
+        enable-cache: true
+        cache-dependency-glob: requirements.txt
 
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest python-multipart
+      run: uv pip install --requirement requirements.txt
 
     - name: Execute Pytest Test Suite
       # The Windows-only portable process contract runs in build-portable-sidecar
       # before any executable compilation, so do not run it twice here.
-      run: python -m pytest tests/ -v --ignore=tests/test_sidecar_process_contract.py --ignore=tests/test_portable_host_diagnostics.py
+      run: uv run --no-project --active python -m pytest tests/ -v --ignore=tests/test_sidecar_process_contract.py --ignore=tests/test_portable_host_diagnostics.py
 
     - name: Generate Backend Pytest Summary
       if: always()
@@ -151,7 +157,7 @@ jobs:
         | :--- | :---: | :--- |
         | **Backend Core Suite** | ✅ | All telemetry, listener, drag recorder & API tests passed |
 
-        > 🛠 Run \`pytest tests/\` locally to execute backend test suite.
+        > Run \`uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/\` locally to execute backend test suite.
         EOF
 
   frontend-unit-test:
@@ -221,26 +227,27 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up uv and managed Python 3.13
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: "3.13"
-        cache: 'pip'
+        activate-environment: true
+        no-project: true
+        cache-python: true
+        enable-cache: true
+        cache-dependency-glob: requirements.txt
 
     - name: Install backend test dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest python-multipart
+      run: uv pip install --requirement requirements.txt
 
     - name: Verify source sidecar lifecycle contract
-      run: python -m pytest tests/test_sidecar_process_contract.py -v
+      run: uv run --no-project --active python -m pytest tests/test_sidecar_process_contract.py -v
 
-    - name: Install PyInstaller
-      run: pip install pyinstaller
+    - name: Install PyInstaller through uv
+      run: uv pip install "pyinstaller>=6.10,<7.0"
 
     - name: Build Python sidecar executable
-      run: python -m PyInstaller server-sidecar.spec --clean
+      run: uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
 
     - name: Publish sidecar executable
       uses: actions/upload-artifact@v4
@@ -259,11 +266,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up uv and managed Python 3.13
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: "3.13"
-        cache: 'pip'
+        activate-environment: true
+        no-project: true
+        cache-python: true
+        enable-cache: true
+        cache-dependency-glob: requirements.txt
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
@@ -279,9 +290,7 @@ jobs:
 
     - name: Install Python & Frontend Dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest python-multipart
+        uv pip install --requirement requirements.txt
         pnpm --prefix frontend install
 
     - name: Download verified sidecar executable
@@ -301,7 +310,7 @@ jobs:
       run: pnpm --prefix frontend run tauri build --no-bundle
 
     - name: Verify Executable Metadata and Existence
-      run: python -m pytest tests/test_executable_bundle.py -v
+      run: uv run --no-project --active python -m pytest tests/test_executable_bundle.py -v
 
     - name: Generate Executable Bundle Verification Summary
       if: always()
