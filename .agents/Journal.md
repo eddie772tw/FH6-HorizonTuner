@@ -755,6 +755,16 @@
 
 ---
 
+## 2026-08-13 / Drift tuning stability correction
+
+- **Task**: Investigate drift workflow feedback: poor 1st/2nd gear initiation and unstable rear grip during transitions.
+- **Branch**: `codex/drift-tuning-stability`
+- **Changed**: `frontend/src/utils/tuningMath.ts` now uses a bounded drift speed window for gearing, keeps the 1st-to-2nd ratio gap controlled, preserves the documented drift coast-lock baseline, and aligns drift cold tire pressures with a 32 PSI hot target instead of the previous extreme front/rear split.
+- **Verification**: `cmd /c "pnpm -C frontend run test -- --run src/utils/tuningMath.test.ts"` completed with 45 files / 252 tests passing; `git diff --check` passed.
+- **Next**: Validate the new baseline with real FH6 telemetry and tune the speed-window constants per drivetrain/build if required.
+
+---
+
 ## 2026-08-13 / HUD ownership boundary and contract directory standardization
 
 - **Decision**：仿造 S650 的 ownership boundary，只有主要與主 GUI 交互的 HUD 設定、normalize 與 typed boundary 放在 `frontend/src/features/overlay_control/<hud-id>/`；renderer、Canvas、inline-controller 與 standalone HUD contract tests 歸 `hud_overlay/<hud-id>/tests/` 管理。

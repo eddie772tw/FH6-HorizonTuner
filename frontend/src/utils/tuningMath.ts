@@ -1,5 +1,3 @@
-import { getTireCoefficient } from './tireCoefficients';
-
 /**
  * Interface representing vehicle parameters used for tuning calculation.
  */
@@ -150,7 +148,6 @@ export function calculateAEGOGearing(
   // Advanced variables
   const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
-  const tireType = carParams?.tireType;
 
   // Determine active tire size based on drivetrain
   const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
@@ -160,12 +157,9 @@ export function calculateAEGOGearing(
   // Tire Circumference (m)
   const C = ((((wTire * ar) / 100) * 2 + sRim * 25.4) * Math.PI) / 1000;
 
-  const fDrive = drivetrain === 'AWD' ? 1.0 : (drivetrain === 'RWD' ? 0.6 : 0.4);
-  const fTire = getTireCoefficient(tireType);
-  const fGrip = fTire;
-
   let fd = 0;
   let gears: number[] = [];
+  let driftStepRatio = 0.68;
 
   if (raceGoal === 'Drift') {
     // Drift Profile
@@ -175,6 +169,14 @@ export function calculateAEGOGearing(
     else if (engineType === 'TwinTurbo') dDrift = Math.max(rRpm, 0.65);
     else if (engineType === 'Supercharger') dDrift = Math.max(rRpm, 0.55);
     else dDrift = Math.max(rRpm, 0.82); // NA
+
+    // Keep the first two gears close enough to be usable during initiation.
+    // The old ratio could become very small for high-torque supercharged cars,
+    // creating a large 1st->2nd RPM/speed cliff and making the final-drive
+    // torque heuristic clamp at 6.1.  A drift gearbox needs a predictable
+    // speed window more than a theoretical wheel-torque target.
+    dDrift = Math.max(dDrift, 0.68);
+    driftStepRatio = dDrift;
 
     const calcGears = Math.min(4, numGears);
     gears = new Array(numGears).fill(0.5); // Fallback defaults
@@ -186,8 +188,10 @@ export function calculateAEGOGearing(
       gears[i] = gears[calcGears - 1];
     }
 
-    fd = (weight * fDrive * fGrip * 2 * C) / (maxTorque * gears[0]) * 3.5;
-    fd = Math.max(2.2, Math.min(6.1, fd));
+    const hpPerKg = maxHp / Math.max(weight, 1);
+    const v1TargetKmh = Math.min(90, Math.max(62, 62 + 18 * Math.sqrt(hpPerKg / 0.35)));
+    const speedBasedFd = (rpmHp * C * 60) / (v1TargetKmh * gears[0] * 1000);
+    fd = Math.max(2.2, Math.min(5.2, speedBasedFd));
 
   } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {
     // Rally Profile
@@ -317,8 +321,10 @@ export function calculateAEGOGearing(
         const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
         const rRedlineHp = (maxRpm && maxRpm > 0) ? rpmHp / maxRpm : 0.85;
         const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
-        const rMin = isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand));
-        const rMax = Math.min(0.92, rRedlineHp);
+        const rMin = raceGoal === 'Drift'
+          ? driftStepRatio
+          : (isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand)));
+        const rMax = raceGoal === 'Drift' ? driftStepRatio : Math.min(0.92, rRedlineHp);
 
         const rRaw: number[] = [];
         let prodRaw = 1.0;
@@ -506,6 +512,8 @@ export function calculateChassisTuning(
       centerRear = 88;
     } else {
       accelR = 100;
+      // Keep the documented 25% coast lock: enough stability for transitions
+      // without binding the rear axle on lift-off and causing snap oversteer.
       decelR = 25;
     }
 
@@ -725,9 +733,13 @@ export function calculateStaticTireAlignment(
   const normalizedDisc = discipline.toLowerCase();
 
   if (normalizedDisc === 'drift') {
-    targetPhot = 21.0;
-    pcF = 32.0 + 2.0 * ((M * Wf) / 1000) + deltaPSeason;
-    pcR = 19.5 + 1.0 * ((M * Wr) / 1000) + deltaPSeason;
+    // Keep cold pressures in the same physical range as the hot target.  The
+    // previous 33+ PSI front / ~20 PSI rear split was wider than the target
+    // hot pressure and made rear grip change sharply as the tires heated.
+    targetPhot = 32.0;
+    const pressureGripBias = params?.tireType === 'Stock' ? -0.5 : params?.tireType === 'Slick' || params?.tireType === 'Semi-Slick' ? 0.5 : 0;
+    pcF = 29.0 + pressureGripBias + deltaPSeason;
+    pcR = 30.5 + pressureGripBias + deltaPSeason;
 
     camberF = -4.8;
     camberR = -0.5;

@@ -85,6 +85,37 @@ describe('calculateAEGOGearing', () => {
     expect(drift.finalDrive).not.toBe(road.finalDrive);
   });
 
+  it('Drift gearing keeps 1st and 2nd gear in a usable initiation window', () => {
+    const drift = calculateAEGOGearing('Drift', 6, {
+      ...sampleCar,
+      weight: 1679,
+      maxHp: 909,
+      maxTorque: 687,
+      maxHpRpm: 7500,
+      maxTorqueRpm: 4750,
+      induction: 'Supercharger',
+      rearTireWidth: 335,
+      rearTireAspect: 30,
+      rearTireRim: 19
+    }, 7500);
+    const radiusM = (((335 * 0.30) * 2 + 19 * 25.4) / 1000) / 2;
+    const firstKmh = calcGearSpeed(7500, drift.gears[0], drift.finalDrive, radiusM) * 3.6;
+    const secondKmh = calcGearSpeed(7500, drift.gears[1], drift.finalDrive, radiusM) * 3.6;
+
+    expect(firstKmh).toBeGreaterThanOrEqual(60);
+    expect(firstKmh).toBeLessThanOrEqual(95);
+    expect(secondKmh).toBeGreaterThan(firstKmh);
+    expect(secondKmh / firstKmh).toBeLessThanOrEqual(1.6);
+  });
+
+  it('Drift secondary correction preserves the drift step ratio', () => {
+    const base = calculateAEGOGearing('Drift', 6, sampleCar, 7500);
+    const corrected = calculateAEGOGearing('Drift', 6, sampleCar, 7500, { simulatedTopSpeed: 180 });
+    const baseStep = base.gears[1] / base.gears[0];
+    const correctedStep = corrected.gears[1] / corrected.gears[0];
+    expect(correctedStep).toBeCloseTo(baseStep, 2);
+  });
+
   it('should gracefully handle missing carParams', () => {
     const result = calculateAEGOGearing('Road', 6, null, 7000);
     expect(result.gears).toHaveLength(6);
@@ -368,6 +399,7 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.damping.bumpF).toBe(3.0);
     expect(res.damping.bumpR).toBe(3.0);
     expect(res.diff.accelR).toBe(100);
+    expect(res.diff.decelR).toBe(25);
   });
 
   it('Rally goal should soften ARBs and springs, and set max ride height', () => {
@@ -497,7 +529,10 @@ describe('calculateStaticTireAlignment', () => {
 
   it('should calculate specific discipline values for Drift mode', () => {
     const resDrift = calculateStaticTireAlignment('Drift', 'Summer', sampleCar);
-    expect(resDrift.targetPhot).toBe(21.0);
+    expect(resDrift.targetPhot).toBe(32.0);
+    expect(resDrift.pcF).toBeGreaterThanOrEqual(28);
+    expect(resDrift.pcR).toBeGreaterThanOrEqual(29);
+    expect(Math.abs(resDrift.pcR - resDrift.pcF)).toBeLessThanOrEqual(3);
     expect(resDrift.camber.front).toBe(-4.8);
     expect(resDrift.camber.rear).toBe(-0.5);
     expect(resDrift.caster).toBe(7.0);
