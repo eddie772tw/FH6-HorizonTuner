@@ -1,8 +1,6 @@
 import asyncio
-import base64
 import ctypes
 import logging
-import subprocess
 import sys
 import time
 from ctypes import wintypes
@@ -30,74 +28,15 @@ MEDIA_STALE_GRACE_SECONDS = 3.0
 MEDIA_FAILURE_BACKOFF_SECONDS = (1.0, 2.0, 5.0, 10.0)
 _media_query_lock = asyncio.Lock()
 
-_PS_GSMTC_SCRIPT = """
-[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
-$mgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync().GetAwaiter().GetResult()
-$s = $mgr.GetCurrentSession()
-if ($s) {
-    $p = $s.TryGetMediaPropertiesAsync().GetAwaiter().GetResult()
-    $pb = $s.GetPlaybackInfo()
-    $status = if ($pb.PlaybackStatus -eq 4) { "playing" } else { "paused" }
-    [PSCustomObject]@{
-        title = $p.Title
-        artist = $p.Artist
-        status = $status
-        has_media = $true
-    } | ConvertTo-Json -Compress
-} else {
-    [PSCustomObject]@{
-        has_media = $false
-    } | ConvertTo-Json -Compress
-}
-"""
-
-_PS_GSMTC_B64 = base64.b64encode(_PS_GSMTC_SCRIPT.encode("utf-16le")).decode("ascii")
-
-
-def _query_powershell_gsmtc() -> dict | None:
-    """Query Windows WinRT GSMTC via PowerShell encoded command."""
-    try:
-        creationflags = 0x08000000 if sys.platform == "win32" else 0
-        res = subprocess.run(
-            ["powershell", "-NoProfile", "-EncodedCommand", _PS_GSMTC_B64],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="ignore",
-            timeout=2.0,
-            creationflags=creationflags,
-        )
-        if res.returncode == 0 and res.stdout.strip():
-            import json
-
-            data = json.loads(res.stdout.strip())
-            if data and not data.get("has_media"):
-                return {"available": True, "has_media": False}
-            if (
-                data
-                and data.get("has_media")
-                and (data.get("title") or data.get("artist"))
-            ):
-                return {
-                    "title": (data.get("title") or "").strip() or DEFAULT_TITLE,
-                    "artist": (data.get("artist") or "").strip(),
-                    "status": data.get("status") or "playing",
-                    "has_media": True,
-                    "available": True,
-                }
-    except Exception as e:
-        logger.debug(f"PowerShell GSMTC query notice: {e}")
-    return None
-
 
 async def _try_get_winrt_gsm_media() -> dict | None:
     """Attempt to fetch media info using Windows WinRT GSMTC session manager."""
     if sys.platform != "win32":
         return None
 
-    # 1. Try python winsdk first if available
+    # 1. Try the modular Python WinRT package first if available.
     try:
-        import winsdk.windows.media.control as wmc
+        import winrt.windows.media.control as wmc
 
         manager = (
             await wmc.GlobalSystemMediaTransportControlsSessionManager.request_async()
@@ -126,7 +65,7 @@ async def _try_get_winrt_gsm_media() -> dict | None:
                     }
         return {"available": True, "has_media": False}
     except Exception as e:
-        logger.debug(f"WinRT GSMTC winsdk fetch notice: {e}")
+        logger.debug(f"WinRT GSMTC modular package fetch notice: {e}")
     return None
 
 
@@ -296,15 +235,6 @@ async def get_system_media_info() -> dict:
                 _apply_media_result(winrt_res, source="winrt", now=now)
             else:
                 _apply_no_media(source="winrt", now=now)
-            return _media_snapshot()
-
-        # 2. PowerShell is a compatibility fallback for missing WinRT bindings.
-        powershell_res = await asyncio.to_thread(_query_powershell_gsmtc)
-        if powershell_res is not None:
-            if powershell_res.get("has_media"):
-                _apply_media_result(powershell_res, source="powershell", now=now)
-            else:
-                _apply_no_media(source="powershell", now=now)
             return _media_snapshot()
 
         _apply_media_failure(now)

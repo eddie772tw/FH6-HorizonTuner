@@ -3,6 +3,9 @@ import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
+// The portable Tauri release serves this complete directory from the embedded
+// sidecar. Copy it only for an explicit static web-HUD build, otherwise the
+// same assets would be embedded in the release twice.
 const hudSource = resolve(scriptDirectory, '../../hud_overlay');
 const hudDestination = resolve(scriptDirectory, '../dist/hud');
 

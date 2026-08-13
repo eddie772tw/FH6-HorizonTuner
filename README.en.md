@@ -135,6 +135,8 @@ You can package both the frontend and backend into a **single standalone executa
 > **Portable Path Strategy**:
 > When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
 
+> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the portable `.exe`; it is detected automatically and can be selected in the HUD menu. See [portable custom HUD packages](docs/portable-custom-hud.md).
+
 * **Excluding Non-release Directories (.pkgdirignore)**:
     * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
     * If a folder is unregistered during build, the script will prompt you:

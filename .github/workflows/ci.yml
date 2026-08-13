@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Keep the interpreter selected by setup-uv aligned with its managed-Python cache.
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
   # ============================================================================
   # 階段 1：同步進行前後端 Lint、靜態檢查與 Build 測試 (Gatekeeping Stage)
@@ -73,13 +77,21 @@ jobs:
       with:
         node-version: "22"
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Frontend Dependencies
-      run: pnpm --prefix frontend install
+      run: pnpm --prefix frontend install --frozen-lockfile
 
     - name: Run Frontend Build Verification (Build Test)
       run: pnpm --prefix frontend run build
+
+    - name: Publish verified frontend distribution
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-dist-${{ github.sha }}
+        path: frontend/dist
+        if-no-files-found: error
+        retention-days: 1
 
     - name: Check Frontend Security Audit
       shell: bash
@@ -184,10 +196,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Frontend Dependencies
-      run: pnpm --prefix frontend install
+      run: pnpm --prefix frontend install --frozen-lockfile
 
     - name: Run Frontend Vitest Unit Tests
       run: pnpm --prefix frontend run test
@@ -240,6 +252,11 @@ jobs:
     - name: Install backend test dependencies
       run: uv pip install --requirement requirements.txt
 
+    - name: Verify modular WinRT media import
+      run: >
+        uv run --no-project --active python -c
+        "import winrt.windows.media.control as wmc; print(wmc.GlobalSystemMediaTransportControlsSessionManager)"
+
     - name: Verify source sidecar lifecycle contract
       run: uv run --no-project --active python -m pytest tests/test_sidecar_process_contract.py -v
 
@@ -247,7 +264,21 @@ jobs:
       run: uv pip install "pyinstaller>=6.10,<7.0"
 
     - name: Build Python sidecar executable
-      run: uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
+      run: >
+        python scripts/release_metrics.py
+        --label "PyInstaller sidecar"
+        --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
+        --metrics-file metrics/sidecar-build.json
+        -- uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
+
+    - name: Publish sidecar build metrics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-metrics-sidecar-${{ github.sha }}
+        path: metrics/sidecar-build.json
+        if-no-files-found: ignore
+        retention-days: 14
 
     - name: Publish sidecar executable
       uses: actions/upload-artifact@v4
@@ -257,6 +288,34 @@ jobs:
         if-no-files-found: error
         retention-days: 1
 
+  ci-performance-dashboard:
+    name: CI Performance Dashboard
+    needs: [backend-static-check, frontend-build-test, backend-unit-test, frontend-unit-test, build-portable-sidecar, verify-executable-bundle]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download release build metrics
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ci-metrics-*
+        path: metrics
+        merge-multiple: true
+
+    - name: Build performance dashboard
+      run: python scripts/ci_performance_dashboard.py --metrics-dir metrics --output metrics/dashboard.json
+
+    - name: Publish performance dashboard data
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-performance-dashboard-${{ github.sha }}
+        path: metrics/dashboard.json
+        if-no-files-found: ignore
+        retention-days: 14
+
   verify-executable-bundle:
     name: Build & Verify Executable Bundle
     needs: [backend-unit-test, frontend-unit-test, build-portable-sidecar]
@@ -265,6 +324,24 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Restore Tauri Rust build cache
+      id: tauri-rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./frontend/src-tauri -> target"
+        # Share the Windows release cache with diagnostics while retaining the
+        # action's Cargo.lock/rustc environment hash for correctness.
+        shared-key: "tauri-windows-release"
+        add-job-id-key: false
+        cache-workspace-crates: true
+
+    - name: Record Tauri Rust cache state
+      shell: bash
+      run: |
+        cache_state="${{ steps.tauri-rust-cache.outputs.cache-hit == 'true' && 'hit' || 'miss' }}"
+        echo "TAURI_RUST_CACHE_STATUS=$cache_state" >> "$GITHUB_ENV"
+        echo "Tauri Rust cache: **$cache_state**" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Set up uv and managed Python 3.13
       uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
@@ -286,18 +363,24 @@ jobs:
       with:
         node-version: "22"
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Python & Frontend Dependencies
       run: |
         uv pip install --requirement requirements.txt
-        pnpm --prefix frontend install
+        pnpm --prefix frontend install --frozen-lockfile
 
     - name: Download verified sidecar executable
       uses: actions/download-artifact@v4
       with:
         name: portable-sidecar-${{ github.sha }}
         path: dist
+
+    - name: Download verified frontend distribution
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-dist-${{ github.sha }}
+        path: frontend/dist
 
     - name: Stage Embedded Sidecar
       shell: pwsh
@@ -307,7 +390,22 @@ jobs:
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
     - name: Build Portable Tauri Executable
-      run: pnpm --prefix frontend run tauri build --no-bundle
+      run: >
+        python scripts/release_metrics.py
+        --label "Tauri portable executable"
+        --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
+        --metrics-file metrics/tauri-build.json
+        --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
+        -- pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.ci.conf.json
+
+    - name: Publish Tauri build metrics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-metrics-tauri-${{ github.sha }}
+        path: metrics/tauri-build.json
+        if-no-files-found: ignore
+        retention-days: 14
 
     - name: Verify Executable Metadata and Existence
       run: uv run --no-project --active python -m pytest tests/test_executable_bundle.py -v
