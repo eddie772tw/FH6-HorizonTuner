@@ -373,13 +373,13 @@ class TelemetrySQLite:
             cursor = conn.cursor()
             query = """
                 SELECT
-                    relative_time as time, lap_number as LapNumber, lap_distance,
-                    speed / 3.6 as SpeedMetersPerSecond, rpm as CurrentEngineRpm, gear as Gear,
+                    relative_time, lap_number, lap_distance,
+                    speed / 3.6, rpm, gear,
                     accel_pct, brake_pct, steer_pct,
-                    accel_x * 9.81 as AccelerationX, accel_z * 9.81 as AccelerationZ,
-                    pos_x as PositionX, pos_y as PositionY, pos_z as PositionZ,
+                    accel_x * 9.81, accel_z * 9.81,
+                    pos_x, pos_y, pos_z,
                     susp_fl, susp_fr, susp_rl, susp_rr,
-                    slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr,
+                    slip_angle_fl / 57.29578, slip_angle_fr / 57.29578, slip_angle_rl / 57.29578, slip_angle_rr / 57.29578,
                     slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr,
                     temp_fl, temp_fr, temp_rl, temp_rr
                 FROM telemetry_channels
@@ -392,42 +392,36 @@ class TelemetrySQLite:
 
             query += " ORDER BY relative_time ASC"
 
+            cursor.row_factory = None  # type: ignore # Bypass sqlite3.Row for raw tuple performance
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-            result = []
-            for idx, r in enumerate(rows):
-                if downsample > 1 and idx % downsample != 0:
-                    continue
-                d = dict(r)
-                d["SuspTravel"] = [
-                    d.pop("susp_fl"),
-                    d.pop("susp_fr"),
-                    d.pop("susp_rl"),
-                    d.pop("susp_rr"),
-                ]
-                d["TireSlipAngle"] = [
-                    d.pop("slip_angle_fl") / 57.29578,
-                    d.pop("slip_angle_fr") / 57.29578,
-                    d.pop("slip_angle_rl") / 57.29578,
-                    d.pop("slip_angle_rr") / 57.29578,
-                ]
-                d["TireSlipRatio"] = [
-                    d.pop("slip_ratio_fl"),
-                    d.pop("slip_ratio_fr"),
-                    d.pop("slip_ratio_rl"),
-                    d.pop("slip_ratio_rr"),
-                ]
-                d["TireTemp"] = [
-                    d.pop("temp_fl"),
-                    d.pop("temp_fr"),
-                    d.pop("temp_rl"),
-                    d.pop("temp_rr"),
-                ]
-                d["AccelInput"] = int((d.get("accel_pct", 0) / 100.0) * 255)
-                d["BrakeInput"] = int((d.get("brake_pct", 0) / 100.0) * 255)
-                result.append(d)
-            return result
+            return [
+                {
+                    "time": r[0],
+                    "LapNumber": r[1],
+                    "lap_distance": r[2],
+                    "SpeedMetersPerSecond": r[3],
+                    "CurrentEngineRpm": r[4],
+                    "Gear": r[5],
+                    "accel_pct": r[6],
+                    "brake_pct": r[7],
+                    "steer_pct": r[8],
+                    "AccelerationX": r[9],
+                    "AccelerationZ": r[10],
+                    "PositionX": r[11],
+                    "PositionY": r[12],
+                    "PositionZ": r[13],
+                    "SuspTravel": [r[14], r[15], r[16], r[17]],
+                    "TireSlipAngle": [r[18], r[19], r[20], r[21]],
+                    "TireSlipRatio": [r[22], r[23], r[24], r[25]],
+                    "TireTemp": [r[26], r[27], r[28], r[29]],
+                    "AccelInput": int(((r[6] or 0) / 100.0) * 255),
+                    "BrakeInput": int(((r[7] or 0) / 100.0) * 255),
+                }
+                for i in range(0, len(rows), max(1, downsample))
+                if (r := rows[i]) or True
+            ]
 
     def delete_session(self, session_id: str) -> bool:
         with self._get_connection() as conn:
