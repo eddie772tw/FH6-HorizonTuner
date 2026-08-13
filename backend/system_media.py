@@ -95,9 +95,9 @@ async def _try_get_winrt_gsm_media() -> dict | None:
     if sys.platform != "win32":
         return None
 
-    # 1. Try python winsdk first if available
+    # 1. Try the modular Python WinRT package first if available.
     try:
-        import winsdk.windows.media.control as wmc
+        import winrt.windows.media.control as wmc
 
         manager = (
             await wmc.GlobalSystemMediaTransportControlsSessionManager.request_async()
@@ -126,7 +126,7 @@ async def _try_get_winrt_gsm_media() -> dict | None:
                     }
         return {"available": True, "has_media": False}
     except Exception as e:
-        logger.debug(f"WinRT GSMTC winsdk fetch notice: {e}")
+        logger.debug(f"WinRT GSMTC modular package fetch notice: {e}")
     return None
 
 

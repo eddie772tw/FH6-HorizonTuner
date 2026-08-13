@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 import system_media
 
@@ -20,6 +21,13 @@ def _reset_media_cache(monkeypatch):
             "next_retry_at": 0.0,
         },
     )
+
+
+def test_winrt_media_uses_modular_namespace():
+    source = Path(system_media.__file__).read_text(encoding="utf-8")
+
+    assert "import winrt.windows.media.control as wmc" in source
+    assert "import winsdk.windows.media.control as wmc" not in source
 
 
 def test_winrt_media_does_not_start_powershell_fallback(monkeypatch):

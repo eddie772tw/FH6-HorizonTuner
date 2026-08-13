@@ -240,6 +240,11 @@ jobs:
     - name: Install backend test dependencies
       run: uv pip install --requirement requirements.txt
 
+    - name: Verify modular WinRT media import
+      run: >
+        uv run --no-project --active python -c
+        "import winrt.windows.media.control as wmc; print(wmc.GlobalSystemMediaTransportControlsSessionManager)"
+
     - name: Verify source sidecar lifecycle contract
       run: uv run --no-project --active python -m pytest tests/test_sidecar_process_contract.py -v
 
