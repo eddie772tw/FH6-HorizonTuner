@@ -73,10 +73,10 @@ jobs:
       with:
         node-version: "22"
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Frontend Dependencies
-      run: pnpm --prefix frontend install
+      run: pnpm --prefix frontend install --frozen-lockfile
 
     - name: Run Frontend Build Verification (Build Test)
       run: pnpm --prefix frontend run build
@@ -184,10 +184,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Frontend Dependencies
-      run: pnpm --prefix frontend install
+      run: pnpm --prefix frontend install --frozen-lockfile
 
     - name: Run Frontend Vitest Unit Tests
       run: pnpm --prefix frontend run test
@@ -290,12 +290,12 @@ jobs:
       with:
         node-version: "22"
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Python & Frontend Dependencies
       run: |
         uv pip install --requirement requirements.txt
-        pnpm --prefix frontend install
+        pnpm --prefix frontend install --frozen-lockfile
 
     - name: Download verified sidecar executable
       uses: actions/download-artifact@v4

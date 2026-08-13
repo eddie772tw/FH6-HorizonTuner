@@ -63,13 +63,13 @@ jobs:
       with:
         node-version: "22"
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Python & Frontend Dependencies
       run: |
         uv pip install --requirement requirements.txt
         uv pip install "pyinstaller>=6.10,<7.0"
-        pnpm --prefix frontend install
+        pnpm --prefix frontend install --frozen-lockfile
 
     - name: Build Python sidecar executable
       run: >
