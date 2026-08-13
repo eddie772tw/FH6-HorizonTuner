@@ -5,8 +5,10 @@ websockets>=12.0,<14.0
 pydantic>=2.10.0,<3.0.0
 httpx>=0.28.1,<1.0.0
 python-multipart
-soundcard>=0.4.4
-winsdk; sys_platform == 'win32'
+soundcard==0.4.6
+# winsdk is distributed as a source package for this Python range; pip will
+# build its wheel locally. Pin it so the build does not drift unexpectedly.
+winsdk==1.0.0b10; sys_platform == 'win32'
 
 # 開發與測試工具
 ruff

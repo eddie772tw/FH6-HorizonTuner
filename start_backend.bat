@@ -1,8 +1,7 @@
 @echo off
 title FH6 Telemetry Backend
 echo Starting FH6 Telemetry Backend...
-cd backend
-call ..\.venv\Scripts\activate.bat
-python update_car_db.py
-python main.py
+cd /D "%~dp0backend"
+"%~dp0.venv\Scripts\python.exe" update_car_db.py
+"%~dp0.venv\Scripts\python.exe" main.py
 pause

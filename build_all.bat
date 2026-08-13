@@ -6,38 +6,16 @@ echo      FH6 HorizonTuner - Sidecar Release Bundler
 echo ====================================================================
 echo.
 
-:: 1. Check and locate virtual environment and PyInstaller
+:: 1. Prepare the project-local virtual environment
 set "VENV_DIR=%~dp0.venv"
 set "PY_EXE=%VENV_DIR%\Scripts\python.exe"
 set "PYINSTALLER_EXE=%VENV_DIR%\Scripts\pyinstaller.exe"
 
-if exist "%PY_EXE%" (
-    if not exist "%PYINSTALLER_EXE%" (
-        echo [INFO] PyInstaller not found in virtual environment, installing...
-        "%PY_EXE%" -m pip install pyinstaller
-        if errorlevel 1 (
-            echo [ERROR] Failed to install PyInstaller in virtual environment.
-            if not "%GITHUB_ACTIONS%" == "true" pause
-            exit /b 1
-        )
-    )
-    set "RUN_PYINSTALLER="%PY_EXE%" -m PyInstaller"
-) else (
-    where pyinstaller >nul 2>nul
-    if !errorlevel! equ 0 (
-        set "RUN_PYINSTALLER=pyinstaller"
-    ) else (
-        where python >nul 2>nul
-        if !errorlevel! equ 0 (
-            python -m pip install pyinstaller
-            set "RUN_PYINSTALLER=python -m PyInstaller"
-        ) else (
-            echo [ERROR] No valid Python virtual environment or global Python environment found.
-            if not "%GITHUB_ACTIONS%" == "true" pause
-            exit /b 1
-        )
-    )
-)
+call "%~dp0setup_venv.bat"
+if errorlevel 1 exit /b 1
+"%PY_EXE%" -m pip install --disable-pip-version-check --upgrade "pyinstaller>=6.10,<7.0"
+if errorlevel 1 exit /b 1
+set "RUN_PYINSTALLER="%PY_EXE%" -m PyInstaller"
 
 :: 1.5. Scan for unregistered directories (not ignored and not packaged)
 echo [INFO] Scanning for unregistered resource directories...
