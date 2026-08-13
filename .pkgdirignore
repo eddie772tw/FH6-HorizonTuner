@@ -30,3 +30,5 @@ tools
 .uv-cache
 
 diagnostics_output
+
+docs
