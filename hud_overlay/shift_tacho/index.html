@@ -66,6 +66,21 @@
             var isMetricUnit = true;
             var showLights = true;
 
+            // Pre-allocate helper function outside render loop to avoid creating closures every frame.
+            function drawIndicatorBadge(img, cx, active) {
+                ctx.beginPath();
+                ctx.arc(cx, 174, 20, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fill();
+
+                if (img) {
+                    ctx.save();
+                    ctx.globalAlpha = active ? 1 : 0.4;
+                    ctx.drawImage(img, cx - 16, 155, 32, 32);
+                    ctx.restore();
+                }
+            }
+
             function renderShiftTacho(data) {
                 if (!ctx || !isReady) return;
                 ctx.clearRect(0, 0, 440, 280);
@@ -155,24 +170,11 @@
 
                 // 4. Indicator badges (E-Brake, ABS, Traction)
                 var handbrakeActive = !!(data.handbrake || data.hand_brake);
-                var indicators = [
-                    { img: images.ebrake, active: handbrakeActive },
-                    { img: images.abs, active: false },
-                    { img: images.traction, active: false }
-                ];
 
-                indicators.forEach(function(ind, idx) {
-                    var cx = 185 + idx * 50;
-                    ctx.beginPath(); ctx.arc(cx, 174, 20, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fill();
-
-                    if (ind.img) {
-                        ctx.save();
-                        ctx.globalAlpha = ind.active ? 1 : 0.4;
-                        ctx.drawImage(ind.img, cx - 16, 155, 32, 32);
-                        ctx.restore();
-                    }
-                });
+                // Manually unrolled badge drawing to avoid array allocation and .forEach closures at 60Hz.
+                drawIndicatorBadge(images.ebrake, 185, handbrakeActive);
+                drawIndicatorBadge(images.abs, 235, false);
+                drawIndicatorBadge(images.traction, 285, false);
 
                 ctx.restore();
             }

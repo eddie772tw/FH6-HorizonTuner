@@ -1540,7 +1540,7 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
 
 
 @app.get("/api/tunings")
-async def list_tunings():
+def list_tunings():
     files = [
         f.replace(".json", "") for f in os.listdir(TUNINGS_DIR) if f.endswith(".json")
     ]
@@ -1563,8 +1563,12 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
     car_id = os.path.basename(car_id)
     save_name = os.path.basename(save_name)
     file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+
+    def _write_tuning(path: str, tuning_data: dict):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(tuning_data, f, indent=4)
+
+    await asyncio.to_thread(_write_tuning, file_path, data)
     return {"message": "Saved successfully"}
 
 
@@ -1663,20 +1667,19 @@ async def stop_manual_recording():
 async def list_saved_sessions():
     try:
         raw_sessions = telemetry_db.list_all_sessions()
-        sessions = []
-        for s in raw_sessions:
-            sessions.append(
-                {
-                    "filename": s["session_id"],
-                    "session_id": s["session_id"],
-                    "car_name": s["car_name"],
-                    "total_laps": s["total_laps"],
-                    "best_lap_time": s["best_lap_time"],
-                    "total_distance": s["total_distance"],
-                    "mtime": s["start_time"],
-                    "size": 0,
-                }
-            )
+        sessions = [
+            {
+                "filename": s["session_id"],
+                "session_id": s["session_id"],
+                "car_name": s["car_name"],
+                "total_laps": s["total_laps"],
+                "best_lap_time": s["best_lap_time"],
+                "total_distance": s["total_distance"],
+                "mtime": s["start_time"],
+                "size": 0,
+            }
+            for s in raw_sessions
+        ]
         return sessions
     except Exception as e:
         logger.error(f"Failed to list saved sessions from SQLite: {e}")
@@ -1836,8 +1839,8 @@ async def drag_save_session():
         return {"error": "Failed to save session"}
 
 
-@app.get("/api/drag/sessions")
-async def list_drag_sessions():
+def _read_drag_sessions():
+    """Helper function to read drag sessions synchronously."""
     try:
         files = [f for f in os.listdir(DRAG_SESSIONS_DIR) if f.endswith(".json")]
         sessions = []
@@ -1856,6 +1859,11 @@ async def list_drag_sessions():
     except Exception as e:
         logger.error(f"Failed to list drag sessions: {e}")
         return []
+
+
+@app.get("/api/drag/sessions")
+async def list_drag_sessions():
+    return await asyncio.to_thread(_read_drag_sessions)
 
 
 @app.get("/api/drag/sessions/{filename}")
