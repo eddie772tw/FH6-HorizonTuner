@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
+import {
+  emptyQualifiedOutputPeaks,
+  updateQualifiedOutputPeaks,
+  type QualifiedOutputPeaks,
+} from '../../../utils/qualifiedOutputPeaks';
 
 const formatTime = (seconds: number) => {
   if (seconds <= 0) return "--:--.---";
@@ -27,10 +32,17 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const { t, convertPower, convertTorque, convertBoost, convertSpeed } = useSettings();
   const powerLabelRef = useRef<HTMLSpanElement>(null);
   const torqueLabelRef = useRef<HTMLSpanElement>(null);
+  const peakPowerRef = useRef<HTMLSpanElement>(null);
+  const peakTorqueRef = useRef<HTMLSpanElement>(null);
+  const peakPowerRpmRef = useRef<HTMLDivElement>(null);
+  const peakTorqueRpmRef = useRef<HTMLDivElement>(null);
   const thirdStatLabelRef = useRef<HTMLSpanElement>(null);
   const topSpeedLabelRef = useRef<HTMLSpanElement>(null);
   // 策略 C：用 ref 追蹤 EV 狀態，避免 useState 觸發 re-render
   const isEvRef = useRef(false);
+  const peakOutputRef = useRef<QualifiedOutputPeaks>(emptyQualifiedOutputPeaks());
+  const previousCarRef = useRef<number | undefined>(undefined);
+  const previousRaceRef = useRef<number | undefined>(undefined);
   // EV 標籤 label的 ref
   const boostOrRegenLabelRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +61,23 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       const isRegenActive = isEV && (powerData.value < 0 || torqueData.value < 0);
       const boostData = convertBoost(data.Boost || 0);
       const curSpeedData = convertSpeed(data.SpeedMetersPerSecond || 0);
+
+      if (
+        (previousCarRef.current !== undefined && previousCarRef.current !== data.CarOrdinal)
+        || (previousRaceRef.current !== undefined && previousRaceRef.current !== data.IsRaceOn)
+      ) {
+        peakOutputRef.current = emptyQualifiedOutputPeaks();
+      }
+      previousCarRef.current = data.CarOrdinal;
+      previousRaceRef.current = data.IsRaceOn;
+      peakOutputRef.current = updateQualifiedOutputPeaks(peakOutputRef.current, data);
+
+      const peakPower = peakOutputRef.current.power;
+      const peakTorque = peakOutputRef.current.torque;
+      if (peakPowerRef.current) peakPowerRef.current.innerText = peakPower ? Math.round(convertPower(peakPower.value).value).toString() : '--';
+      if (peakTorqueRef.current) peakTorqueRef.current.innerText = peakTorque ? Math.round(convertTorque(peakTorque.value).value).toString() : '--';
+      if (peakPowerRpmRef.current) peakPowerRpmRef.current.innerText = peakPower ? `${Math.round(peakPower.rpm)} RPM` : '-- RPM';
+      if (peakTorqueRpmRef.current) peakTorqueRpmRef.current.innerText = peakTorque ? `${Math.round(peakTorque.rpm)} RPM` : '-- RPM';
 
       if (curSpeedData.value > maxSpeedRecord.current) {
         maxSpeedRecord.current = curSpeedData.value;
@@ -118,6 +147,23 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
           <div ref={boostOrRegenLabelRef} className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Boost")}</div>
           <div ref={thirdStatContainerRef} className="fw-bold font-monospace" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
              <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} className="ms-1 fs-8 fw-normal text-body-secondary"></span>
+          </div>
+        </div>
+      </div>
+
+      <div className="d-flex flex-column gap-1 p-2 border rounded-3" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+        <div className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Qualified Peak Output")}</div>
+        <div className="text-body-secondary fs-8">{t("100% throttle · no tire slip")}</div>
+        <div className="d-grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div>
+            <div className="text-primary fs-8 fw-semibold text-uppercase">{t("Power")}</div>
+            <div className="font-monospace fw-bold"><span ref={peakPowerRef}>--</span> <span className="fs-8 fw-normal text-body-secondary">{convertPower(0).label}</span></div>
+            <div ref={peakPowerRpmRef} className="font-monospace fs-8 text-body-secondary">-- RPM</div>
+          </div>
+          <div>
+            <div className="text-secondary fs-8 fw-semibold text-uppercase">{t("Torque")}</div>
+            <div className="font-monospace fw-bold"><span ref={peakTorqueRef}>--</span> <span className="fs-8 fw-normal text-body-secondary">{convertTorque(0).label}</span></div>
+            <div ref={peakTorqueRpmRef} className="font-monospace fs-8 text-body-secondary">-- RPM</div>
           </div>
         </div>
       </div>
