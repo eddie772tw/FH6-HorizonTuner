@@ -11,8 +11,8 @@ permissions:
 
 jobs:
   # ============================================================================
-  # ?挾 1嚗?甇仿脰???蝡?Lint???炎?亥? Build 皜祈岫 (Gatekeeping Stage)
-  # ?迂 fail-fast嚗隤?瑼Ｘ?楊霅臬仃?蝡蝯迫嚗???CI 鞈???
+  # 階段 1：同步進行前後端 Lint、靜態檢查與 Build 測試 (Gatekeeping Stage)
+  # 允許 fail-fast：若語法檢查或編譯失敗即立刻終止，節省 CI 資源。
   # ============================================================================
 
   backend-static-check:
@@ -43,14 +43,14 @@ jobs:
       shell: bash
       run: |
         cat << 'EOF' >> $GITHUB_STEP_SUMMARY
-        ## ?? Backend Static Code Analysis Summary
+        ## 🐍 Backend Static Code Analysis Summary
 
         | Check Type | Status | Result |
         | :--- | :---: | :--- |
         | **Ruff Linter** | ${{ steps.ruff_check.outcome }} | `ruff check .` |
         | **Ruff Formatter** | ${{ steps.ruff_format.outcome }} | `ruff format --check .` |
 
-        > ? Run `ruff check .` and `ruff format .` locally to verify Python code prior to pushing.
+        > 💡 Run `ruff check .` and `ruff format .` locally to verify Python code prior to pushing.
         EOF
 
   frontend-build-test:
@@ -91,20 +91,20 @@ jobs:
       shell: bash
       run: |
         cat << 'EOF' >> $GITHUB_STEP_SUMMARY
-        ## ??Frontend Build Verification & Security Audit Summary
+        ## ⚡ Frontend Build Verification & Security Audit Summary
 
         | Task | Status | Details |
         | :--- | :---: | :--- |
-        | **TypeScript Compilation (`tsc`)** | ??| Type checking passed with 0 errors |
-        | **Vite Production Bundle** | ??| Production bundle built cleanly into `dist/` |
-        | **Pnpm Dependency Audit** | ?? | Audited dependencies in `frontend/package.json` |
+        | **TypeScript Compilation (`tsc`)** | ✅ | Type checking passed with 0 errors |
+        | **Vite Production Bundle** | ✅ | Production bundle built cleanly into `dist/` |
+        | **Pnpm Dependency Audit** | 🔍 | Audited dependencies in `frontend/package.json` |
 
-        > ?? Run `pnpm --prefix frontend run build` locally to verify production build capability.
+        > 🚀 Run `pnpm --prefix frontend run build` locally to verify production build capability.
         EOF
 
   # ============================================================================
-  # ?挾 2嚗?敺垢?桀?皜祈岫 (Unit Testing Stage)
-  # ??挾 1 (Lint???炎?亥? Build Test) ?冽??敺?撟唾?????
+  # 階段 2：前後端單元測試 (Unit Testing Stage)
+  # 僅在階段 1 (Lint、靜態檢查與 Build Test) 全數通過後才平行啟動。
   # ============================================================================
 
   backend-unit-test:
@@ -143,7 +143,7 @@ jobs:
       shell: bash
       run: |
         cat << EOF >> $GITHUB_STEP_SUMMARY
-        ## ?妒 Backend Pytest Unit Tests Summary
+        ## 🧪 Backend Pytest Unit Tests Summary
 
         - **Target OS**: \`${{ matrix.os }}\`
         - **Python Version**: \`${{ matrix.python-version }}\`
@@ -151,9 +151,9 @@ jobs:
 
         | Suite | Status | Execution Details |
         | :--- | :---: | :--- |
-        | **Backend Core Suite** | ??| All telemetry, listener, drag recorder & API tests passed |
+        | **Backend Core Suite** | ✅ | All telemetry, listener, drag recorder & API tests passed |
 
-        > ?? Run \`pytest tests/\` locally to execute backend test suite.
+        > 🛠 Run \`pytest tests/\` locally to execute backend test suite.
         EOF
 
   frontend-unit-test:
@@ -193,7 +193,7 @@ jobs:
       shell: bash
       run: |
         cat << EOF >> $GITHUB_STEP_SUMMARY
-        ## ?妒 Frontend Vitest Unit Tests Summary
+        ## 🧪 Frontend Vitest Unit Tests Summary
 
         - **Target OS**: \`${{ matrix.os }}\`
         - **Node.js Version**: \`${{ matrix.node-version }}\`
@@ -202,16 +202,16 @@ jobs:
 
         | Suite | Status | Execution Details |
         | :--- | :---: | :--- |
-        | **Physics & Math Suite** | ??| \`tuningMath.test.ts\` passed |
-        | **Diagnosis Suite** | ??| \`tuningDiagnosis.test.ts\` passed |
-        | **HUD Telemetry Cards Suite** | ??| \`telemetryCards.test.ts\` passed |
+        | **Physics & Math Suite** | ✅ | \`tuningMath.test.ts\` passed |
+        | **Diagnosis Suite** | ✅ | \`tuningDiagnosis.test.ts\` passed |
+        | **HUD Telemetry Cards Suite** | ✅ | \`telemetryCards.test.ts\` passed |
 
-        > ?? Run \`pnpm --prefix frontend run test\` locally to execute Vitest unit tests.
+        > 🛠 Run \`pnpm --prefix frontend run test\` locally to execute Vitest unit tests.
         EOF
 
   # ============================================================================
-  # ?挾 3嚗?瑁?瑼銵??券?蝯?鈭??瑁?皜祈岫 (Executable Integration Stage)
-  # ???蝡臬?葫閰血?賊?敺???Windows ?啣?蝺刻陌銝阡?霅?Sidecar / Executable??
+  # 階段 3：可執行檔發行與周邊組態互動斷言測試 (Executable Integration Stage)
+  # 僅在前後端單元測試全數通過後，於 Windows 環境編譯並驗證 Sidecar / Executable。
   # ============================================================================
 
   build-portable-sidecar:
@@ -310,14 +310,13 @@ jobs:
       shell: bash
       run: |
         cat << 'EOF' >> $GITHUB_STEP_SUMMARY
-        ## ? Executable Bundle & Sidecar Verification Summary
+        ## 📦 Executable Bundle & Sidecar Verification Summary
 
         | Check Type | Status | Result |
         | :--- | :---: | :--- |
-        | **Sidecar Executable Build** | ??| `server-sidecar-x86_64-pc-windows-msvc.exe` compiled cleanly |
-        | **PE Version Metadata** | ??| `CompanyName=eddie772tw` & `FileVersion=11.4.5.14` verified |
-        | **Diagnostics** | ?對? | Flaky headless host diagnostics moved to non-blocking workflow |
+        | **Sidecar Executable Build** | ✅ | `server-sidecar-x86_64-pc-windows-msvc.exe` compiled cleanly |
+        | **PE Version Metadata** | ✅ | `CompanyName=eddie772tw` & `FileVersion=11.4.5.14` verified |
+        | **Diagnostics** | ℹ️ | Flaky headless host diagnostics moved to non-blocking workflow |
 
-        > ?? Executable bundle verification passed on Windows runner.
+        > 🚀 Executable bundle verification passed on Windows runner.
         EOF
-
