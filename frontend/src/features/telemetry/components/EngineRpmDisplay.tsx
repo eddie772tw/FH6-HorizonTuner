@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
+import { formatTelemetryGear } from '../../../utils/telemetryDisplay';
 
 const EngineRpmDisplay: React.FC = React.memo(() => {
   const rpmRef = useRef<HTMLSpanElement>(null);
@@ -133,9 +134,7 @@ const EngineRpmDisplay: React.FC = React.memo(() => {
       if (maxRpmRef.current) maxRpmRef.current.innerText = Math.round(maxRpm).toString();
       if (speedRef.current) speedRef.current.innerText = Math.round(speedData.value).toString();
 
-      let gearText = 'N';
-      if (gear === 0) gearText = 'R';
-      else if (gear > 0) gearText = gear.toString();
+      const gearText = formatTelemetryGear(gear);
       if (gearRef.current) gearRef.current.innerText = gearText;
 
       const rpmPercent = currentRpm / Math.max(1000, maxRpm);

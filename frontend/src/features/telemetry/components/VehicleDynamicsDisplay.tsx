@@ -6,6 +6,7 @@ import {
   updateQualifiedOutputPeaks,
   type QualifiedOutputPeaks,
 } from '../../../utils/qualifiedOutputPeaks';
+import { formatRacePosition } from '../../../utils/telemetryDisplay';
 
 const formatTime = (seconds: number) => {
   if (seconds <= 0) return "--:--.---";
@@ -27,6 +28,7 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
   const currentLapRef = useRef<HTMLSpanElement>(null);
   const lastLapRef = useRef<HTMLSpanElement>(null);
   const bestLapRef = useRef<HTMLSpanElement>(null);
+  const racePositionRef = useRef<HTMLSpanElement>(null);
 
   const maxSpeedRecord = useRef<number>(0);
   const { t, convertPower, convertTorque, convertBoost, convertSpeed } = useSettings();
@@ -67,6 +69,7 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
         || (previousRaceRef.current !== undefined && previousRaceRef.current !== data.IsRaceOn)
       ) {
         peakOutputRef.current = emptyQualifiedOutputPeaks();
+        maxSpeedRecord.current = 0;
       }
       previousCarRef.current = data.CarOrdinal;
       previousRaceRef.current = data.IsRaceOn;
@@ -112,6 +115,7 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       if (currentLapRef.current) currentLapRef.current.innerText = formatTime(currentLap);
       if (lastLapRef.current) lastLapRef.current.innerText = formatTime(lastLap);
       if (bestLapRef.current) bestLapRef.current.innerText = formatTime(bestLap);
+      if (racePositionRef.current) racePositionRef.current.innerText = formatRacePosition(data.RacePosition);
 
       // 策略 C：合併 EV 狀態偵測，只在狀態改變時更新 DOM label
       if (isEV !== isEvRef.current) {
@@ -143,7 +147,6 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
           </div>
         </div>
         <div>
-          {/* 策略 C： Boost/Regen label 由 DOM ref 直接更新，不再依賴 isEV state */}
           <div ref={boostOrRegenLabelRef} className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Boost")}</div>
           <div ref={thirdStatContainerRef} className="fw-bold font-monospace" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
              <span ref={thirdStatValueRef}>0</span><span ref={thirdStatLabelRef} className="ms-1 fs-8 fw-normal text-body-secondary"></span>
@@ -152,30 +155,27 @@ const VehicleDynamicsDisplay: React.FC = React.memo(() => {
       </div>
 
       <div className="d-flex flex-column gap-1 p-2 border rounded-3" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-        <div className="text-body-secondary fs-8 fw-semibold text-uppercase">{t("Qualified Peak Output")}</div>
-        <div className="text-body-secondary fs-8">{t("100% throttle · no tire slip")}</div>
-        <div className="d-grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+        <div className="d-grid gap-2" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
           <div>
-            <div className="text-primary fs-8 fw-semibold text-uppercase">{t("Power")}</div>
+            <div className="text-primary fs-8 fw-semibold text-uppercase">{t("Max Power")}</div>
             <div className="font-monospace fw-bold"><span ref={peakPowerRef}>--</span> <span className="fs-8 fw-normal text-body-secondary">{convertPower(0).label}</span></div>
             <div ref={peakPowerRpmRef} className="font-monospace fs-8 text-body-secondary">-- RPM</div>
           </div>
           <div>
-            <div className="text-secondary fs-8 fw-semibold text-uppercase">{t("Torque")}</div>
+            <div className="text-secondary fs-8 fw-semibold text-uppercase">{t("Max Torque")}</div>
             <div className="font-monospace fw-bold"><span ref={peakTorqueRef}>--</span> <span className="fs-8 fw-normal text-body-secondary">{convertTorque(0).label}</span></div>
             <div ref={peakTorqueRpmRef} className="font-monospace fs-8 text-body-secondary">-- RPM</div>
+          </div>
+          <div>
+            <div className="text-info fs-8 fw-semibold text-uppercase">{t("Top Speed")}</div>
+            <div className="font-monospace fw-bold"><span ref={topSpeedRef}>0</span> <span ref={topSpeedLabelRef} className="fs-8 fw-normal text-body-secondary"></span></div>
           </div>
         </div>
       </div>
 
-      {/* Top Speed Badge Banner */}
-      <div className="d-flex justify-content-between align-items-center px-2 py-1 border rounded-3 fs-8" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-        <span className="text-body-secondary fw-semibold text-uppercase">{t("Session Top Speed")}</span>
-        <span className="fw-bold font-monospace text-info"><span ref={topSpeedRef}>0</span> <span ref={topSpeedLabelRef} className="fs-8 fw-normal text-body-secondary"></span></span>
-      </div>
-
       {/* Lap Times Card */}
       <div className="d-flex flex-column gap-1 p-2 border rounded-3" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+        <div className="d-flex justify-content-between fs-8"><span className="text-body-secondary">{t("Race Position")}:</span><span ref={racePositionRef} className="font-monospace text-info fw-bold">--</span></div>
         <div className="d-flex justify-content-between fs-8"><span className="text-body-secondary">{t("Current Lap")}:</span><span ref={currentLapRef} className="font-monospace text-body fw-bold">--:--.---</span></div>
         <div className="d-flex justify-content-between fs-8"><span className="text-body-secondary">{t("Last Lap")}:</span><span ref={lastLapRef} className="font-monospace text-body">--:--.---</span></div>
         <div className="d-flex justify-content-between fs-8"><span className="text-primary fw-bold">{t("Best Lap")}:</span><span ref={bestLapRef} className="fw-bold font-monospace text-primary">--:--.---</span></div>

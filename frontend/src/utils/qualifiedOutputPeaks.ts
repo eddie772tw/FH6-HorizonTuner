@@ -1,5 +1,5 @@
 export const FULL_THROTTLE_INPUT = 255;
-export const MAX_QUALIFIED_TIRE_SLIP_RATIO = 0.1;
+export const MAX_QUALIFIED_TIRE_SLIP_RATIO = 0.2;
 
 export interface OutputPeak {
   value: number;
@@ -14,6 +14,9 @@ export interface QualifiedOutputPeaks {
 export interface OutputTelemetrySample {
   IsRaceOn?: number;
   AccelInput?: number;
+  BrakeInput?: number;
+  ClutchInput?: number;
+  HandBrakeInput?: number;
   CurrentEngineRpm?: number;
   PowerWatts?: number;
   TorqueNewtons?: number;
@@ -28,6 +31,9 @@ export const emptyQualifiedOutputPeaks = (): QualifiedOutputPeaks => ({
 export function isQualifiedOutputSample(sample: OutputTelemetrySample): boolean {
   const tireSlip = sample.TireSlipRatio;
   return sample.AccelInput === FULL_THROTTLE_INPUT
+    && sample.BrakeInput === 0
+    && sample.ClutchInput === 0
+    && sample.HandBrakeInput === 0
     && Number.isFinite(sample.CurrentEngineRpm)
     && (sample.CurrentEngineRpm ?? 0) > 0
     && Array.isArray(tireSlip)

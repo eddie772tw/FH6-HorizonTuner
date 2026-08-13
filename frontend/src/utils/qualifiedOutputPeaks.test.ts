@@ -8,6 +8,9 @@ import {
 const qualifiedSample = {
   IsRaceOn: 1,
   AccelInput: 255,
+  BrakeInput: 0,
+  ClutchInput: 0,
+  HandBrakeInput: 0,
   CurrentEngineRpm: 6200,
   PowerWatts: 350000,
   TorqueNewtons: 620,
@@ -18,8 +21,11 @@ describe('qualified output peaks', () => {
   it('accepts full-throttle, non-slipping samples in either timing state', () => {
     expect(isQualifiedOutputSample(qualifiedSample)).toBe(true);
     expect(isQualifiedOutputSample({ ...qualifiedSample, AccelInput: 254 })).toBe(false);
+    expect(isQualifiedOutputSample({ ...qualifiedSample, BrakeInput: 1 })).toBe(false);
+    expect(isQualifiedOutputSample({ ...qualifiedSample, ClutchInput: 1 })).toBe(false);
+    expect(isQualifiedOutputSample({ ...qualifiedSample, HandBrakeInput: 1 })).toBe(false);
     expect(isQualifiedOutputSample({ ...qualifiedSample, IsRaceOn: 0 })).toBe(true);
-    expect(isQualifiedOutputSample({ ...qualifiedSample, TireSlipRatio: [0.02, 0.03, 0.11, 0.04] })).toBe(false);
+    expect(isQualifiedOutputSample({ ...qualifiedSample, TireSlipRatio: [0.02, 0.03, 0.21, 0.04] })).toBe(false);
     expect(isQualifiedOutputSample({ ...qualifiedSample, TireSlipRatio: undefined })).toBe(false);
   });
 
@@ -43,7 +49,7 @@ describe('qualified output peaks', () => {
       CurrentEngineRpm: 7000,
       PowerWatts: 500000,
       TorqueNewtons: 800,
-      TireSlipRatio: [0.2, 0.2, 0.2, 0.2],
+      TireSlipRatio: [0.21, 0.21, 0.21, 0.21],
     });
 
     expect(result).toEqual(first);
