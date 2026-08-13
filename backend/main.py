@@ -98,7 +98,7 @@ from telemetry_runtime import (
 from telemetry_sqlite import TelemetrySQLite
 
 
-# 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
+# ?芾? Formatter 隞亦宏?斗隤葉??ANSI 憿隞?Ⅳ嚗雁??backend.log ?????澆?
 class CleanFormatter(logging.Formatter):
     ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
@@ -107,22 +107,22 @@ class CleanFormatter(logging.Formatter):
         return self.ANSI_ESCAPE.sub("", formatted)
 
 
-# 配置根 Logger
+# ?蔭??Logger
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
-# 清除所有已有的 handler
+# 皜??歇?? handler
 for handler in root_logger.handlers[:]:
     root_logger.removeHandler(handler)
 
-# 檔案 Handler
+# 瑼? Handler
 file_handler = logging.FileHandler(backend_log_path, encoding="utf-8")
 file_handler.setFormatter(
     CleanFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 )
 root_logger.addHandler(file_handler)
 
-# 控制台 Handler (只有在非 frozen 開發期才需要)
+# ?批??Handler (?芣??券? frozen ????閬?
 if not getattr(sys, "frozen", False):
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(
@@ -132,7 +132,7 @@ if not getattr(sys, "frozen", False):
 
 logger = logging.getLogger(__name__)
 
-# 統一配置唯讀資源目錄與可寫入資料目錄
+# 蝯曹??蔭?航?鞈??桅??撖怠鞈??桅?
 
 CAR_DB_PATH = os.path.join(RESOURCE_ROOT, "car_database.json")
 RESOURCE_CAR_PARAMS_DIR = os.path.join(RESOURCE_ROOT, "car_params")
@@ -168,7 +168,7 @@ os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
 os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 
-# 完整複製內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護
+# 摰銴ˊ?批遣隤頂瑼 DATA_ROOT/lang/ 靘蝙?刻銵雁霅?
 if os.path.exists(RESOURCE_LANG_DIR):
     import shutil
 
@@ -304,7 +304,7 @@ dyno_cache = {}
 last_dyno_save_time = time.time()
 
 # --- Settings File Paths & Defaults ---
-# 使用最上方統一宣告的路徑與設定，免重複定義。
+# 雿輻?銝蝯曹?摰???楝敺?閮剖?嚗???摰儔??
 
 DEFAULT_SETTINGS = {
     "dyno_recording": False,
@@ -550,1283 +550,11 @@ class DragRecorder:
 
         launch_recommendation = ""
         if launch_slip > 0.18:
-            launch_recommendation = "起步時驅動輪打滑過度（平均滑移率 {:.1f}%）。這會浪費抓地力，建議將 1 檔齒比調小（往 Speed 方向，數值調低 5%~10%）或調小終傳比，以降低輪胎端的瞬間起步扭力。".format(
+            launch_recommendation = "韏瑟郊???憚???漲嚗像??蝘餌? {:.1f}%嚗?瘚芾祥???撱箄降撠?1 瑼?瘥矽撠?敺 Speed ?孵?嚗?潸矽雿?5%~10%嚗?隤踹?蝯瘥?隞仿?雿憚?垢??絲甇交??.format(
                 launch_slip * 100
             )
         elif launch_slip < 0.05:
-            launch_recommendation = "起步時幾乎沒有打滑（平均滑移率 {:.1f}%）。若起步拉轉速度較慢，說明抓地力未被充分利用，建議將 1 檔齒比調大（往 Acceleration 方向，數值調高 5%~10%）以獲得更強的起步推力。".format(
-                launch_slip * 100
-            )
-        else:
-            launch_recommendation = "起步滑移率表現優異（平均滑移率 {:.1f}%），輪胎剛好處於最佳縱向抓地力區間（10%~15%）。請保持目前的 1 檔與終傳比設定。".format(
-                launch_slip * 100
-            )
-
-        # 2. Shift analysis
-        shifts = []
-        current_gear = None
-
-        for i, p in enumerate(self.current_session):
-            g = p["Gear"]
-            if g <= 0:
-                continue
-            if current_gear is None:
-                current_gear = g
-            elif g != current_gear:
-                # Gear changed from current_gear to g
-                window = self.current_session[max(0, i - 8) : i]
-                n_before = (
-                    max(wp["CurrentEngineRpm"] for wp in window)
-                    if window
-                    else p["CurrentEngineRpm"]
-                )
-
-                post_window = self.current_session[
-                    i : min(len(self.current_session), i + 30)
-                ]
-                throttle_pts = [wp for wp in post_window if wp["AccelInput"] > 200]
-                n_after = (
-                    min(wp["CurrentEngineRpm"] for wp in throttle_pts)
-                    if throttle_pts
-                    else (
-                        min(wp["CurrentEngineRpm"] for wp in post_window)
-                        if post_window
-                        else p["CurrentEngineRpm"]
-                    )
-                )
-
-                shift_time = 0.0
-                if throttle_pts:
-                    shift_time = throttle_pts[0]["time"] - p["time"]
-
-                retention = n_after / n_before if n_before > 0 else 0
-
-                shifts.append(
-                    {
-                        "from_gear": current_gear,
-                        "to_gear": g,
-                        "n_before": round(n_before),
-                        "n_after": round(n_after),
-                        "rpm_drop": round(n_before - n_after),
-                        "retention": round(retention, 3),
-                        "shift_time": round(shift_time, 3),
-                    }
-                )
-
-                current_gear = g
-
-        # Analyze shifts step ratios
-        shift_recommendations = []
-        for idx, s in enumerate(shifts):
-            if idx > 0:
-                prev_s = shifts[idx - 1]
-                if s["retention"] < prev_s["retention"] - 0.02:
-                    shift_recommendations.append(
-                        "{} 檔升 {} 檔的轉速保留率（{:.1f}%）低於 {} 檔升 {} 檔（{:.1f}%）。這說明 {} 檔齒比相對於前一檔過疏，換檔後轉速掉得太深。建議將 {} 檔齒比調大（往 Acceleration 方向，數值調高 5%~8%）。".format(
-                            s["from_gear"],
-                            s["to_gear"],
-                            s["retention"] * 100,
-                            prev_s["from_gear"],
-                            prev_s["to_gear"],
-                            prev_s["retention"] * 100,
-                            s["to_gear"],
-                            s["to_gear"],
-                        )
-                    )
-                elif s["retention"] > 0.93:
-                    shift_recommendations.append(
-                        "{} 檔升 {} 檔的齒比過密（轉速保留率高達 {:.1f}%）。這會導致頻繁換檔且無法充分拉長加速時間，建議將 {} 檔齒比調小（往 Speed 方向，數值調低 5%）。".format(
-                            s["from_gear"],
-                            s["to_gear"],
-                            s["retention"] * 100,
-                            s["to_gear"],
-                        )
-                    )
-            else:
-                if s["retention"] < 0.62:
-                    shift_recommendations.append(
-                        "1 檔升 2 檔的轉速掉落過多（保留率僅 {:.1f}%）。建議將 2 檔齒比調大（往 Acceleration 方向，數值調高）以減小轉速落差，避免引擎掉出動力帶。".format(
-                            s["retention"] * 100
-                        )
-                    )
-
-        # 3. Final drive analysis
-        last_pt = self.current_session[-1]
-        max(p["CurrentEngineRpm"] for p in self.current_session)
-        max_gear = max(p["Gear"] for p in self.current_session)
-        engine_max_rpm = last_pt.get("EngineMaxRpm", 8000.0)
-
-        final_drive_recommendation = ""
-        top_gear_pts = [p for p in self.current_session if p["Gear"] == max_gear]
-        top_gear_max_rpm = (
-            max(p["CurrentEngineRpm"] for p in top_gear_pts) if top_gear_pts else 0
-        )
-
-        if top_gear_max_rpm >= engine_max_rpm - 150:
-            final_drive_recommendation = "車輛在最高檔位（{} 檔）達到了轉速紅線（{:.0f} RPM）。這限制了您的最高時速，建議將終傳比（Final Drive）調小（往 Speed 方向，數值降低 5%~10%）以釋放更高的極速潛力。".format(
-                max_gear, top_gear_max_rpm
-            )
-        elif (
-            top_gear_max_rpm < engine_max_rpm * 0.72
-            and last_pt["SpeedMetersPerSecond"] > 0
-        ):
-            last_1s_pts = [
-                p for p in self.current_session if p["time"] > last_pt["time"] - 1.0
-            ]
-            avg_accel = 0
-            if len(last_1s_pts) > 1:
-                dv = (
-                    last_1s_pts[-1]["SpeedMetersPerSecond"]
-                    - last_1s_pts[0]["SpeedMetersPerSecond"]
-                )
-                dt = last_1s_pts[-1]["time"] - last_1s_pts[0]["time"]
-                avg_accel = dv / dt if dt > 0 else 0
-
-            if avg_accel < 0.5:
-                final_drive_recommendation = "測試結束時，最高檔位（{} 檔）的最高轉速僅為 {:.0f} RPM，且車輛已無明顯加速度。這說明終傳比過疏，引擎無法拉高轉速發揮馬力。建議將終傳比（Final Drive）調大（往 Acceleration 方向，數值提高 5%~10%）以提升加速響應。".format(
-                    max_gear, top_gear_max_rpm
-                )
-
-        if not final_drive_recommendation:
-            final_drive_recommendation = (
-                "終傳比設定尚屬合理，最高檔位轉速與加速終點匹配良好。"
-            )
-
-        # 4. Path Validity & OLS Linear Regression
-        x_coords = [p.get("PositionX", 0.0) for p in self.current_session]
-        z_coords = [p.get("PositionZ", 0.0) for p in self.current_session]
-        n_pts = len(self.current_session)
-
-        max_deviation_meters = 0.0
-        path_valid = True
-
-        if n_pts >= 10:
-            mean_x = sum(x_coords) / n_pts
-            mean_z = sum(z_coords) / n_pts
-
-            num = sum(
-                (x_coords[i] - mean_x) * (z_coords[i] - mean_z) for i in range(n_pts)
-            )
-            den = sum((x_coords[i] - mean_x) ** 2 for i in range(n_pts))
-
-            if den == 0:
-                deviations = [abs(x - mean_x) for x in x_coords]
-            else:
-                a = num / den
-                b = mean_z - a * mean_x
-                denom = (a**2 + 1) ** 0.5
-                deviations = [
-                    abs(a * x_coords[i] - z_coords[i] + b) / denom for i in range(n_pts)
-                ]
-
-            max_deviation_meters = max(deviations)
-            if max_deviation_meters > 3.0:
-                path_valid = False
-
-        # 5. Yaw stability (using vector average to handle -pi/pi wrap-around)
-        yaws = [p.get("Yaw", 0.0) for p in self.current_session]
-
-        cos_sum = sum(math.cos(y) for y in yaws)
-        sin_sum = sum(math.sin(y) for y in yaws)
-
-        avg_cos = cos_sum / n_pts if n_pts > 0 else 1.0
-        avg_sin = sin_sum / n_pts if n_pts > 0 else 0.0
-        avg_yaw = math.atan2(avg_sin, avg_cos)
-
-        yaw_devs = []
-        for y in yaws:
-            diff = math.atan2(math.sin(y - avg_yaw), math.cos(y - avg_yaw))
-            yaw_devs.append(diff)
-
-        yaw_variance_rad = max(yaw_devs) - min(yaw_devs) if yaw_devs else 0.0
-
-        # 6. Differential Lock Diagnostics (focusing on asymmetry and fishtailing)
-        active_pts = [
-            p for p in self.current_session if p["Gear"] >= 1 and p["AccelInput"] > 200
-        ]
-        stability_diagnostics = []
-        avg_slip_diff = 0.0
-
-        if active_pts:
-            if drivetrain == "RWD":
-                slip_diffs = [
-                    abs(p["TireSlipRatio"][2] - p["TireSlipRatio"][3])
-                    for p in active_pts
-                ]
-            elif drivetrain == "FWD":
-                slip_diffs = [
-                    abs(p["TireSlipRatio"][0] - p["TireSlipRatio"][1])
-                    for p in active_pts
-                ]
-            else:  # AWD
-                slip_diffs = [
-                    (
-                        abs(p["TireSlipRatio"][0] - p["TireSlipRatio"][1])
-                        + abs(p["TireSlipRatio"][2] - p["TireSlipRatio"][3])
-                    )
-                    / 2
-                    for p in active_pts
-                ]
-
-            avg_slip_diff = sum(slip_diffs) / len(active_pts)
-
-            # Diagnostic A: Open Differential (lock too low) -> one wheel spins, one is static
-            if avg_slip_diff > 0.08:
-                stability_diagnostics.append(
-                    "偵測到驅動輪左右打滑嚴重失衡（平均滑移差值 {:.1f}%）。這通常是由於【差速器加速鎖定率 (Acceleration Lock)】過低所引發的單邊打滑（動力流失至空轉輪）。建議將差速器加速鎖定率調高 10%~20%，以確保兩側驅動輪獲得均衡扭力，維持加速軌跡穩定。".format(
-                        avg_slip_diff * 100
-                    )
-                )
-
-            # Diagnostic B: Over-locked Differential -> Fish-tailing (oscillation in slip difference and yaw)
-            elif yaw_variance_rad > 0.08 and avg_slip_diff > 0.03:
-                left_leads = 0
-                right_leads = 0
-                for p in active_pts:
-                    if drivetrain == "RWD":
-                        l, r = p["TireSlipRatio"][2], p["TireSlipRatio"][3]
-                    elif drivetrain == "FWD":
-                        l, r = p["TireSlipRatio"][0], p["TireSlipRatio"][1]
-                    else:
-                        l = (p["TireSlipRatio"][0] + p["TireSlipRatio"][2]) / 2
-                        r = (p["TireSlipRatio"][1] + p["TireSlipRatio"][3]) / 2
-
-                    if l > r + 0.02:
-                        left_leads += 1
-                    elif r > l + 0.02:
-                        right_leads += 1
-
-                total_leads = left_leads + right_leads
-                if (
-                    total_leads > 10
-                    and left_leads / total_leads > 0.25
-                    and right_leads / total_leads > 0.25
-                ):
-                    stability_diagnostics.append(
-                        "偵測到車尾在加速過程中出現左右搖擺（蛇行，Fish-tailing，偏航角波動達 {:.1f}°）。這通常是由於【差速器加速鎖定率 (Acceleration Lock)】過高，限制了左右輪必要轉速差而產生強烈側向力矩。建議將差速器加速鎖定率降低 10%~15%，以提升行車穩定性。".format(
-                            math.degrees(yaw_variance_rad)
-                        )
-                    )
-
-            if not stability_diagnostics:
-                if avg_slip_diff < 0.03 and yaw_variance_rad < 0.04:
-                    stability_diagnostics.append(
-                        "直行穩定性優異，左右動力分配非常均衡，加速時車身無明顯偏擺。"
-                    )
-                else:
-                    stability_diagnostics.append(
-                        "直行穩定性良好。加速過程中車身動態對稱。"
-                    )
-
-            if avg_slip_diff > 0.04:
-                stability_diagnostics.append(
-                    "環境提示：請確保測試直路完全乾燥且平整。如果單側輪胎壓到草地、沙地或路邊，會因為物理路面摩擦力不均而造成嚴重的左右打滑失衡。"
-                )
-        else:
-            stability_diagnostics.append("無足夠的加速區間數據進行穩定性分析。")
-
-        self.car_name = car_database.get(str(self.car_id), {}).get(
-            "display_name", f"Car {self.car_id}"
-        )
-
-        self.analysis_result = {
-            "car_id": str(self.car_id),
-            "car_name": self.car_name,
-            "drivetrain": drivetrain,
-            "max_gear": max_gear,
-            "max_speed_kmh": round(
-                max(p["SpeedMetersPerSecond"] for p in self.current_session) * 3.6, 1
-            )
-            if self.current_session
-            else 0.0,
-            "duration": round(last_pt["time"], 2),
-            "launch_slip_percent": round(launch_slip * 100, 1),
-            "launch_recommendation": launch_recommendation,
-            "shifts": shifts,
-            "shift_recommendations": shift_recommendations,
-            "final_drive_recommendation": final_drive_recommendation,
-            "path_valid": path_valid,
-            "max_deviation_meters": round(max_deviation_meters, 2),
-            "yaw_variance_rad": round(yaw_variance_rad, 4),
-            "stability_diagnostics": stability_diagnostics,
-        }
-
-
-drag_recorder = DragRecorder()
-
-# --- Dyno Collection Constants ---
-DYNO_BUCKET_SIZE = 50  # RPM per bucket (denser than 100 for higher resolution)
-DYNO_ANOMALY_THRESHOLD = 0.30  # 30% neighbor deviation threshold
-DYNO_NEIGHBOR_OFFSETS = [-200, -150, -100, -50, 50, 100, 150, 200]
-DYNO_MAX_HISTORY = 50  # Max historical records per RPM bucket
-
-
-def compute_dyno_value(history):
-    """Compute robust value from history using IQR outlier filtering + recency weighting.
-
-    1. If < 4 samples, return max (not enough for statistics)
-    2. IQR filter: remove values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR]
-    3. Recency-weighted mean of filtered values (newer entries = higher weight)
-    """
-    if not history:
-        return 0
-    n = len(history)
-    if n < 4:
-        return max(history)
-
-    sorted_vals = sorted(history)
-    q1 = sorted_vals[n // 4]
-    q3 = sorted_vals[(3 * n) // 4]
-    iqr = q3 - q1
-    lower_fence = q1 - 1.5 * iqr
-    upper_fence = q3 + 1.5 * iqr
-
-    # Recency-weighted computation (history is oldest-first, index 0 = oldest)
-    weighted_sum = 0.0
-    total_weight = 0.0
-    for i, val in enumerate(history):
-        if lower_fence <= val <= upper_fence:
-            weight = 1.0 + i  # newer = higher weight
-            weighted_sum += val * weight
-            total_weight += weight
-
-    if total_weight == 0:
-        return max(history)  # fallback if all filtered
-
-    return weighted_sum / total_weight
-
-
-def dyno_is_reasonable(new_val, neighbor_vals, threshold=DYNO_ANOMALY_THRESHOLD):
-    """Check if new_val is within threshold of neighbor context."""
-    if not neighbor_vals:
-        return True  # No neighbors yet, accept any value
-    max_neighbor = max(neighbor_vals)
-    if max_neighbor <= 0:
-        return True
-    # Reject if new value exceeds neighbors by more than threshold
-    return new_val <= max_neighbor * (1 + threshold)
-
-
-def load_car_params(car_id: str):
-    car_id = os.path.basename(car_id)
-    file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    res_path = os.path.join(RESOURCE_CAR_PARAMS_DIR, f"{car_id}.json")
-    if os.path.exists(res_path):
-        with open(res_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return None
-
-
-def save_car_params(car_id: str, data: dict):
-    car_id = os.path.basename(car_id)
-    file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
-
-
-def create_default_car_params() -> dict:
-    """Create the initial dyno profile without performing persistence work."""
-    return {
-        "weight": 1500,
-        "weight_distribution": 50,
-        "drivetrain": "RWD",
-        "frontTireWidth": 245,
-        "frontTireAspect": 40,
-        "frontTireRim": 18,
-        "rearTireWidth": 245,
-        "rearTireAspect": 40,
-        "rearTireRim": 18,
-        "adjustability": {
-            "gearbox": "Full",
-            "gears": 6,
-            "suspension": "Race",
-            "arb": "Adjustable",
-        },
-        "dyno_curve": {},
-    }
-
-
-car_params_cache = AsyncCarParamsCache(load_car_params)
-car_params_writer = AsyncCarParamsWriter(save_car_params)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global current_udp_transport, current_udp_ip_port
-
-    # Customizable IP and Port
-    ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
-    port = int(os.getenv("TELEMETRY_PORT", "8000"))
-
-    # Bind the UDP listener before exposing the HTTP server. Previously this
-    # ran as an unobserved task, allowing uvicorn to start even when a stale
-    # sidecar still owned the telemetry port.
-    current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
-    current_udp_ip_port = (ip, port)
-    race_persistence.start()
-    background_tasks = [
-        asyncio.create_task(broadcast_telemetry()),
-        asyncio.create_task(broadcast_overlay_state()),
-    ]
-    try:
-        yield
-    finally:
-        current_udp_transport.close()
-        current_udp_transport = None
-        for task in background_tasks:
-            task.cancel()
-        await asyncio.gather(*background_tasks, return_exceptions=True)
-        await car_params_writer.flush()
-        await car_params_cache.cancel_pending()
-        await race_persistence.shutdown()
-
-
-app.router.lifespan_context = lifespan
-
-
-async def broadcast_overlay_state():
-    logger.info("Overlay state broadcasting loop started.")
-    last_media_time = 0.0
-    last_audio_poll = 0.0
-    last_audio_sequence = -1
-    last_audio_state = None
-    last_media_fingerprint = None
-
-    while True:
-        try:
-            # Only process if there are active connections
-            if overlay_manager.active_connections:
-                current_time = time.time()
-
-                # Audio capture produces samples at roughly 30Hz; polling faster
-                # only repeats the same snapshot and creates transport work.
-                if current_time - last_audio_poll >= 1.0 / 30.0:
-                    last_audio_poll = current_time
-                    overlay_performance_metrics.increment("audioPolls")
-                    with overlay_performance_metrics.measure("audioSnapshot"):
-                        audio_data = await get_audio_spectrum_data()
-                    if audio_data:
-                        audio_sequence = audio_data.get("sequence", 0)
-                        audio_state = audio_data.get("state", "unavailable")
-                        is_new_audio_state = (
-                            audio_sequence != last_audio_sequence
-                            or audio_state != last_audio_state
-                        )
-                        if is_new_audio_state:
-                            last_audio_sequence = audio_sequence
-                            last_audio_state = audio_state
-                            overlay_performance_metrics.increment("audioPublishes")
-                            with overlay_performance_metrics.measure("audioBroadcast"):
-                                await overlay_manager.broadcast_json(
-                                    {"type": "hud:audio", "data": audio_data}
-                                )
-                        else:
-                            overlay_performance_metrics.increment("audioDuplicates")
-
-                # Fetch media info every 1000ms
-                if current_time - last_media_time >= 1.0:
-                    overlay_performance_metrics.increment("mediaPolls")
-                    with overlay_performance_metrics.measure("mediaSnapshot"):
-                        media_data = await get_system_media_info()
-                    if media_data:
-                        media_fingerprint = (
-                            media_data.get("title"),
-                            media_data.get("artist"),
-                            media_data.get("status"),
-                            media_data.get("state"),
-                            media_data.get("has_media"),
-                        )
-                        if media_fingerprint != last_media_fingerprint:
-                            last_media_fingerprint = media_fingerprint
-                            overlay_performance_metrics.increment("mediaPublishes")
-                            with overlay_performance_metrics.measure("mediaBroadcast"):
-                                await overlay_manager.broadcast_json(
-                                    {"type": "hud:media", "data": media_data}
-                                )
-                        else:
-                            overlay_performance_metrics.increment("mediaDuplicates")
-                    last_media_time = current_time
-            else:
-                stop_audio_spectrum_service()
-                last_audio_sequence = -1
-                last_audio_state = None
-                last_media_fingerprint = None
-
-            # 60Hz loop interval (approx 16.6ms) - we run it at roughly 16-20ms to allow smooth audio
-            await asyncio.sleep(0.016)
-
-        except Exception as e:
-            logger.error(f"Error in broadcast_overlay_state: {e}")
-            await asyncio.sleep(1.0)
-
-
-async def broadcast_telemetry():
-    global last_dyno_save_time
-    logger.info("Broadcasting loop started.")
-
-    # Track gear changes for transient filtering
-    prev_gear = 0
-    last_gear_change_time = 0.0
-
-    while True:
-        data = await telemetry_queue.get()
-        frame_started_at = time.perf_counter()
-        telemetry_pipeline_metrics.observe_queue_depth(telemetry_queue.qsize())
-
-        # --- Record Race Telemetry ---
-        with telemetry_pipeline_metrics.measure_stage("recorders"):
-            race_recorder.record(data)
-
-            # --- Record Drag Test Telemetry ---
-            drag_recorder.record(data)
-
-        # --- Dyno Collection Logic ---
-        dyno_stage_started_at = time.perf_counter()
-        car_id = str(data.get("CarOrdinal", 0))
-        if car_id and car_id != "0":
-            # The first disk read is deliberately deferred. The current frame
-            # continues without dyno collection until the profile is ready.
-            profile_lookup = car_params_cache.resolve(dyno_cache, car_id)
-            if profile_lookup.state == "missing" and app_settings.get(
-                "race_recording", True
-            ):
-                params = create_default_car_params()
-                dyno_cache[car_id] = params
-                car_params_writer.schedule(car_id, params)
-
-            # Only collect dyno data if recording is enabled AND car is in cache
-            if app_settings.get("dyno_recording", True) and car_id in dyno_cache:
-                # --- WOT (Wide Open Throttle) Filter ---
-                accel_input = data.get("AccelInput", 0)
-                gear = data.get("Gear", 0)
-                clutch_input = data.get("ClutchInput", 0)
-                brake_input = data.get("BrakeInput", 0)
-                handbrake_input = data.get("HandBrakeInput", 0)
-                rpm = data.get("CurrentEngineRpm", 0)
-
-                # Track gear changes
-                current_time = time.time()
-                if gear != prev_gear:
-                    prev_gear = gear
-                    last_gear_change_time = current_time
-
-                # 1. Target gear check
-                target_gear = app_settings.get("dyno_test_gear", 4)
-                gear_match = True
-                if target_gear != 0 and gear != target_gear:
-                    gear_match = False
-
-                # 2. Exclude braking and Launch Control (handbrake + throttle)
-                no_braking = brake_input == 0 and handbrake_input == 0
-
-                # 3. Transient spike filter (ignore data within 0.5s of shifting)
-                no_transient = True
-                if app_settings.get("dyno_filter_transients", True):
-                    if current_time - last_gear_change_time < 0.5:
-                        no_transient = False
-
-                # 4. Tire slip filter
-                no_slip = True
-                if app_settings.get("dyno_filter_slip", True):
-                    drivetrain = dyno_cache[car_id].get("drivetrain", "RWD")
-                    slip_ratios = data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
-
-                    SLIP_THRESHOLD = 0.10
-                    if drivetrain == "RWD":
-                        if (
-                            abs(slip_ratios[2]) > SLIP_THRESHOLD
-                            or abs(slip_ratios[3]) > SLIP_THRESHOLD
-                        ):
-                            no_slip = False
-                    elif drivetrain == "FWD":
-                        if (
-                            abs(slip_ratios[0]) > SLIP_THRESHOLD
-                            or abs(slip_ratios[1]) > SLIP_THRESHOLD
-                        ):
-                            no_slip = False
-                    else:  # AWD or default
-                        if any(abs(s) > SLIP_THRESHOLD for s in slip_ratios):
-                            no_slip = False
-
-                if (
-                    rpm > 0
-                    and accel_input == 255
-                    and gear > 0
-                    and clutch_input == 0
-                    and gear_match
-                    and no_braking
-                    and no_transient
-                    and no_slip
-                ):
-                    power_hp = data.get("PowerWatts", 0) / 745.7
-                    torque_lbft = data.get("TorqueNewtons", 0) * 0.73756
-
-                    bucket_int = int(rpm // DYNO_BUCKET_SIZE) * DYNO_BUCKET_SIZE
-                    bucket = str(bucket_int)
-                    curve = dyno_cache[car_id].get("dyno_curve", {})
-
-                    existing = curve.get(
-                        bucket, {"hp": 0, "torque": 0, "hp_hist": [], "torque_hist": []}
-                    )
-                    hp_hist = existing.get("hp_hist", [])
-                    torque_hist = existing.get("torque_hist", [])
-
-                    # --- Multi-Neighbor Consistency Check (±200 RPM, 8 neighbors) ---
-                    neighbor_hp_vals = []
-                    neighbor_torque_vals = []
-                    for offset in DYNO_NEIGHBOR_OFFSETS:
-                        nb_key = str(bucket_int + offset)
-                        if nb_key in curve:
-                            neighbor_hp_vals.append(curve[nb_key]["hp"])
-                            neighbor_torque_vals.append(curve[nb_key]["torque"])
-
-                    updated = False
-
-                    # Add to HP history if reasonable
-                    if dyno_is_reasonable(power_hp, neighbor_hp_vals):
-                        hp_hist.append(power_hp)
-                        if len(hp_hist) > DYNO_MAX_HISTORY:
-                            hp_hist = hp_hist[-DYNO_MAX_HISTORY:]
-                        existing["hp_hist"] = hp_hist
-                        existing["hp"] = compute_dyno_value(hp_hist)
-                        updated = True
-
-                    # Add to Torque history if reasonable
-                    if dyno_is_reasonable(torque_lbft, neighbor_torque_vals):
-                        torque_hist.append(torque_lbft)
-                        if len(torque_hist) > DYNO_MAX_HISTORY:
-                            torque_hist = torque_hist[-DYNO_MAX_HISTORY:]
-                        existing["torque_hist"] = torque_hist
-                        existing["torque"] = compute_dyno_value(torque_hist)
-                        updated = True
-
-                    if updated:
-                        curve[bucket] = existing
-                        dyno_cache[car_id]["dyno_curve"] = curve
-
-                        # Periodic save to disk (every 5 seconds max)
-                        current_time = time.time()
-                        if current_time - last_dyno_save_time > 5.0:
-                            car_params_writer.schedule(car_id, dyno_cache[car_id])
-                            last_dyno_save_time = current_time
-
-        # --- Cache capacity limiting for dyno_cache (LRU/Cap to 20) ---
-        if len(dyno_cache) > 20:
-            # Pop the oldest inserted key
-            oldest_key = next(iter(dyno_cache))
-            dyno_cache.pop(oldest_key, None)
-        telemetry_pipeline_metrics.record_stage(
-            "dyno", time.perf_counter() - dyno_stage_started_at
-        )
-
-        # --- Periodic GC (every 60 seconds) ---
-        current_time = time.time()
-        static_gc_state = getattr(broadcast_telemetry, "last_gc_time", 0.0)
-        if current_time - static_gc_state > 60.0:
-            asyncio.create_task(asyncio.to_thread(gc.collect))
-            broadcast_telemetry.last_gc_time = current_time
-
-        # --- Backpressure: If queue is filling up, drop old frames ---
-        # Note: telemetry_queue size is 10. If it gets larger than 5, we clear all but the latest.
-        if telemetry_queue.qsize() > 5:
-            dropped_frames = 0
-            try:
-                while telemetry_queue.qsize() > 1:
-                    telemetry_queue.get_nowait()
-                    dropped_frames += 1
-            except asyncio.QueueEmpty:
-                pass
-            telemetry_pipeline_metrics.record_dropped_frames(dropped_frames)
-
-        # --- Broadcast telemetry ---
-        with telemetry_pipeline_metrics.measure_stage("broadcast"):
-            if telemetry_manager.active_connections:
-                await telemetry_manager.broadcast_json(data)
-
-            if telemetry_manager.active_binary_connections:
-                binary_data = pack_telemetry_binary(data)
-                await telemetry_manager.broadcast_binary(binary_data)
-
-        telemetry_pipeline_metrics.record_frame(time.perf_counter() - frame_started_at)
-
-        # Yield control immediately back to event loop without forced delay
-        await asyncio.sleep(0)
-
-
-# Initialize static variable for GC tracking
-broadcast_telemetry.last_gc_time = time.time()
-
-
-@app.get("/api/diagnostics/telemetry-pipeline")
-async def get_telemetry_pipeline_metrics():
-    """Expose bounded telemetry health metrics for diagnostics tooling."""
-    snapshot = telemetry_pipeline_metrics.snapshot(
-        queue_depth=telemetry_queue.qsize(),
-        json_clients=len(telemetry_manager.active_connections),
-        binary_clients=len(telemetry_manager.active_binary_connections),
-    )
-    snapshot["profilePersistence"] = {
-        "pendingWrites": car_params_writer.pending_write_count,
-        "failedWrites": car_params_writer.failed_writes,
-    }
-    snapshot["raceRecorderPersistence"] = race_persistence.snapshot()
-    return snapshot
-
-
-@app.get("/api/diagnostics/overlay")
-async def get_overlay_performance_metrics():
-    """Expose bounded overlay diagnostics and the active VFD renderer mode."""
-    return overlay_performance_metrics.snapshot(
-        active_clients=len(overlay_manager.active_connections),
-        render_mode=VFD_RENDER_MODE,
-    )
-
-
-@app.websocket("/ws/telemetry")
-async def websocket_endpoint(websocket: WebSocket):
-    await telemetry_manager.connect(websocket, is_binary=False)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        telemetry_manager.disconnect(websocket, is_binary=False)
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-        telemetry_manager.disconnect(websocket, is_binary=False)
-
-
-@app.websocket("/ws/telemetry/binary")
-async def websocket_binary_endpoint(websocket: WebSocket):
-    await telemetry_manager.connect(websocket, is_binary=True)
-    try:
-        while True:
-            await websocket.receive_bytes()
-    except WebSocketDisconnect:
-        telemetry_manager.disconnect(websocket, is_binary=True)
-    except Exception as e:
-        logger.error(f"Binary WebSocket error: {e}")
-        telemetry_manager.disconnect(websocket, is_binary=True)
-
-
-@app.websocket("/ws/overlay")
-async def websocket_overlay_endpoint(websocket: WebSocket):
-    await overlay_manager.connect(websocket, is_binary=False)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        overlay_manager.disconnect(websocket, is_binary=False)
-    except Exception as e:
-        logger.error(f"Overlay WebSocket error: {e}")
-        overlay_manager.disconnect(websocket, is_binary=False)
-
-
-# --- Car Params API Endpoints ---
-
-
-@app.get("/api/cars/database")
-async def get_car_database():
-    return car_database
-
-
-@app.get("/api/cars/with_params")
-async def get_cars_with_params():
-    try:
-        files = [
-            f.replace(".json", "")
-            for f in os.listdir(CAR_PARAMS_DIR)
-            if f.endswith(".json")
-        ]
-        result = []
-        for car_id in files:
-            name = car_database.get(car_id, {}).get("display_name", f"Car {car_id}")
-            result.append({"id": car_id, "name": name})
-        result.sort(key=lambda x: x["name"])
-        return result
-    except Exception as e:
-        logger.error(f"Failed to list cars with params: {e}")
-        return []
-
-
-@app.get("/api/car_params/{car_id}")
-async def get_car_params(car_id: str):
-    params = dyno_cache.get(car_id) or load_car_params(car_id)
-    if params:
-        return params
-    return {"error": "Car parameters not found"}
-
-
-@app.post("/api/car_params/{car_id}")
-async def update_car_params(car_id: str, data: dict):
-    # Merge with existing to avoid overwriting dyno curve if not provided
-    params = dyno_cache.get(car_id) or load_car_params(car_id) or {}
-    params.update(data)
-    dyno_cache[car_id] = params
-    car_params_cache.mark_ready(car_id)
-    car_params_writer.schedule(car_id, params)
-    return {"message": "Car parameters saved successfully"}
-
-
-@app.delete("/api/car_params/{car_id}/dyno_curve")
-async def clear_dyno_curve(car_id: str):
-    """Clear all dyno curve data for a specific car."""
-    # Update memory cache
-    if car_id in dyno_cache:
-        dyno_cache[car_id]["dyno_curve"] = {}
-        dyno_cache[car_id].pop("maxHpRpm", None)
-        dyno_cache[car_id].pop("maxTorqueRpm", None)
-        car_params_cache.mark_ready(car_id)
-        car_params_writer.schedule(car_id, dyno_cache[car_id])
-    else:
-        # Also handle case where data is only on disk
-        params = load_car_params(car_id)
-        if params:
-            params["dyno_curve"] = {}
-            params.pop("maxHpRpm", None)
-            params.pop("maxTorqueRpm", None)
-            dyno_cache[car_id] = params
-            car_params_cache.mark_ready(car_id)
-            car_params_writer.schedule(car_id, params)
-        else:
-            return {"error": "Car parameters not found"}
-    return {"message": "Dyno curve data cleared successfully"}
-
-
-# --- Settings API ---
-
-
-@app.get("/api/settings")
-async def get_settings():
-    return app_settings
-
-
-@app.post("/api/settings")
-async def update_settings(data: dict):
-    global current_udp_transport, current_udp_ip_port
-    theme_updated = "theme" in data and isinstance(data["theme"], dict)
-
-    if "dyno_recording" in data:
-        app_settings["dyno_recording"] = bool(data["dyno_recording"])
-    if "race_recording" in data:
-        app_settings["race_recording"] = bool(data["race_recording"])
-    if "developer_tuning_enabled" in data:
-        app_settings["developer_tuning_enabled"] = bool(data["developer_tuning_enabled"])
-    if "language" in data:
-        app_settings["language"] = str(data["language"])
-    if "dyno_test_gear" in data:
-        app_settings["dyno_test_gear"] = int(data["dyno_test_gear"])
-    if "dyno_filter_slip" in data:
-        app_settings["dyno_filter_slip"] = bool(data["dyno_filter_slip"])
-    if "dyno_filter_transients" in data:
-        app_settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
-
-    # 處理 telemetry_ip 與 telemetry_port
-    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
-    new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
-
-    ip_port_changed = (new_ip != current_udp_ip_port[0]) or (
-        new_port != current_udp_ip_port[1]
-    )
-
-    app_settings["telemetry_ip"] = new_ip
-    app_settings["telemetry_port"] = new_port
-
-    if "units" in data and isinstance(data["units"], dict):
-        if "units" not in app_settings:
-            app_settings["units"] = {}
-        app_settings["units"].update(data["units"])
-
-    if "theme" in data and isinstance(data["theme"], dict):
-        if "theme" not in app_settings:
-            app_settings["theme"] = {}
-        # Theme storage slots were removed from the UI and are no longer persisted.
-        app_settings["theme"].pop("slots", None)
-        app_settings["theme"].update(data["theme"])
-        app_settings["theme"].pop("slots", None)
-
-    # Save to file asynchronously to avoid blocking the event loop
-    def _save_settings():
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
-
-    try:
-        await asyncio.to_thread(_save_settings)
-        logger.info(f"Saved settings to {SETTINGS_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
-
-    if theme_updated:
-        hud_data = DEFAULT_HUD_CONFIG
-        if os.path.exists(HUD_CONFIG_FILE):
-            try:
-                with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                    hud_data = json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to load HUD config after theme update: {e}")
-        await overlay_manager.broadcast_json(
-            {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
-        )
-
-    # 若 IP 或 Port 變更，在執行期動態重啟 UDP listener
-    if ip_port_changed:
-        logger.info(
-            f"Forza UDP Telemetry endpoint changed to {new_ip}:{new_port}. Restarting listener..."
-        )
-        if current_udp_transport:
-            try:
-                current_udp_transport.close()
-            except Exception:
-                pass
-            current_udp_transport = None
-        try:
-            current_udp_transport = await start_udp_listener(
-                new_ip, new_port, telemetry_queue
-            )
-            current_udp_ip_port = (new_ip, new_port)
-        except Exception as e:
-            logger.error(
-                f"Failed to restart UDP Telemetry listener on {new_ip}:{new_port}: {e}"
-            )
-
-    return app_settings
-
-
-# --- Languages API ---
-
-
-@app.get("/api/languages")
-async def list_languages():
-    # Always include English (US) which is hardcoded in the frontend
-    languages = [{"code": "en-us", "name": "English (US)"}]
-
-    if os.path.exists(LANG_DIR):
-        for filename in os.listdir(LANG_DIR):
-            if filename.endswith(".json") and filename.lower() != "iso639.json":
-                code = filename[:-5].lower()
-                # Skip en-us if it's somehow in the folder to prevent duplication
-                if code == "en-us":
-                    continue
-                file_path = os.path.join(LANG_DIR, filename)
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if isinstance(data, dict):
-                            name = data.get("__language_name__", filename[:-5])
-                            languages.append({"code": code, "name": name})
-                except Exception as e:
-                    logger.error(f"Failed to read language file {filename}: {e}")
-
-    return languages
-
-
-@app.get("/api/languages/{code}")
-async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
-    code = code.lower()
-    if code == "en-us":
-        return {}
-
-    file_path = os.path.join(LANG_DIR, f"{code}.json")
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to read language file: {e}")
-            return {"error": "Failed to read language file"}
-
-    return {"error": "Language not found"}
-
-
-# --- Tuning API Endpoints ---
-
-
-@app.get("/api/tunings")
-def list_tunings():
-    files = [
-        f.replace(".json", "") for f in os.listdir(TUNINGS_DIR) if f.endswith(".json")
-    ]
-    return {"tunings": files}
-
-
-@app.get("/api/tunings/{car_id}/{save_name}")
-async def get_tuning(car_id: str, save_name: str):
-    car_id = os.path.basename(car_id)
-    save_name = os.path.basename(save_name)
-    file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"error": "Tuning not found"}
-
-
-@app.post("/api/tunings/{car_id}/{save_name}")
-async def save_tuning(car_id: str, save_name: str, data: dict):
-    car_id = os.path.basename(car_id)
-    save_name = os.path.basename(save_name)
-    file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
-
-    def _write_tuning(path: str, tuning_data: dict):
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(tuning_data, f, indent=4)
-
-    await asyncio.to_thread(_write_tuning, file_path, data)
-    return {"message": "Saved successfully"}
-
-
-# --- Post-Race Analysis API Endpoints ---
-
-
-@app.get("/api/analysis/config")
-async def get_analysis_config():
-    if os.path.exists(ANALYSIS_LAYOUT_FILE):
-        try:
-            with open(ANALYSIS_LAYOUT_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to read analysis layout config: {e}")
-    # Default layout configuration
-    return {
-        "activeMetric": "speed",
-        "customMathChannels": [],
-        "enabledCharts": [
-            "track_map",
-            "inputs_gear",
-            "gg_diagram",
-            "slip_scatter",
-            "susp_dist",
-            "temp_dist",
-        ],
-    }
-
-
-@app.post("/api/analysis/config")
-async def save_analysis_config(config: dict):
-    try:
-        with open(ANALYSIS_LAYOUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4)
-        return {"message": "Analysis layout saved successfully"}
-    except Exception as e:
-        logger.error(f"Failed to save analysis layout: {e}")
-        return {"error": "Failed to save analysis layout"}
-
-
-@app.get("/api/analysis/status")
-async def get_analysis_status():
-    return {
-        "isRecording": race_recorder.is_recording,
-        "recordingCount": race_recorder.total_count,
-        "currentSessionId": race_recorder.current_session_id,
-    }
-
-
-@app.get("/api/analysis/data")
-async def get_current_analysis_data(lap: int = 0):
-    if race_recorder.current_session_id:
-        return telemetry_db.get_telemetry_points(
-            race_recorder.current_session_id, lap_number=lap if lap > 0 else None
-        )
-    # Return latest recorded session if any
-    sessions = telemetry_db.list_all_sessions()
-    if sessions:
-        latest_id = sessions[0]["session_id"]
-        return telemetry_db.get_telemetry_points(
-            latest_id, lap_number=lap if lap > 0 else None
-        )
-    return []
-
-
-@app.post("/api/analysis/clear")
-async def clear_analysis_data():
-    race_recorder.clear()
-    return {"message": "Current recording session cleared."}
-
-
-@app.post("/api/analysis/recorder/start")
-async def start_manual_recording():
-    race_persistence.start()
-    session_id = race_recorder.start_manual()
-    await race_persistence.flush()
-    logger.info("Manual recording started.")
-    return {
-        "message": "Manual recording started successfully",
-        "sessionId": session_id,
-    }
-
-
-@app.post("/api/analysis/recorder/stop")
-async def stop_manual_recording():
-    if not race_recorder.is_recording or not race_recorder.manual_mode:
-        return {"error": "Manual recording is not active"}
-
-    race_recorder.save_latest_and_clear()
-    await race_persistence.flush()
-    logger.info("Manual recording stopped and saved.")
-    return {"message": "Manual recording stopped and saved successfully"}
-
-
-@app.get("/api/analysis/sessions")
-async def list_saved_sessions():
-    try:
-        raw_sessions = telemetry_db.list_all_sessions()
-        sessions = [
-            {
-                "filename": s["session_id"],
-                "session_id": s["session_id"],
-                "car_name": s["car_name"],
-                "total_laps": s["total_laps"],
-                "best_lap_time": s["best_lap_time"],
-                "total_distance": s["total_distance"],
-                "mtime": s["start_time"],
-                "size": 0,
-            }
-            for s in raw_sessions
-        ]
-        return sessions
-    except Exception as e:
-        logger.error(f"Failed to list saved sessions from SQLite: {e}")
-        return []
-
-
-@app.get("/api/analysis/sessions/{session_id}/laps")
-async def get_session_laps(session_id: str):
-    return telemetry_db.get_session_laps(session_id)
-
-
-@app.get("/api/analysis/sessions/{session_id}")
-async def load_saved_session(session_id: str, lap: int = 0):
-    try:
-        data = telemetry_db.get_telemetry_points(
-            session_id, lap_number=lap if lap > 0 else None
-        )
-        if data:
-            return data
-    except Exception as e:
-        logger.error(f"Failed to read session telemetry: {e}")
-        return {"error": "Failed to read session telemetry"}
-    return []
-
-
-@app.delete("/api/analysis/sessions/{session_id}")
-async def delete_saved_session(session_id: str):
-    try:
-        success = telemetry_db.delete_session(session_id)
-        if success:
-            return {"message": "Session deleted successfully"}
-    except Exception as e:
-        logger.error(f"Failed to delete session: {e}")
-        return {"error": "Failed to delete session"}
-    return {"error": "Session not found"}
-
-
-@app.get("/api/analysis/export/motec/{session_id}")
-async def export_motec_session(session_id: str):
-    sessions = telemetry_db.list_all_sessions()
-    session_meta = next((s for s in sessions if s["session_id"] == session_id), None)
-    if not session_meta:
-        return {"error": "Session not found"}
-
-    points = telemetry_db.get_telemetry_points(session_id)
-    if not points:
-        return {"error": "No telemetry data points found in session"}
-
-    export_filename = os.path.basename(f"{session_id}_motec.csv")
-    export_filepath = os.path.join(SESSIONS_DIR, export_filename)
-
-    success = export_session_to_motec_csv(session_meta, points, export_filepath)
-    if success and os.path.exists(export_filepath):
-        return FileResponse(
-            export_filepath, filename=export_filename, media_type="text/csv"
-        )
-    return {"error": "Failed to generate MoTeC CSV export"}
-
-
-@app.post("/api/analysis/import/motec")
-async def import_motec_session(file: UploadFile = File(...)):
-    import shutil
-    import tempfile
-
-    try:
-        # Save uploaded file to a temporary location
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            tmp_path = tmp.name
-
-        # Parse the CSV file
-        meta, data = parse_motec_csv_to_telemetry(tmp_path, parse_data=True)
-
-        # Clean up the temporary file
-        os.remove(tmp_path)
-
-        if not data:
-            return {"error": "Failed to parse MoTeC CSV or file is empty"}
-
-        return {
-            "metadata": {
-                "filename": file.filename,
-                "car_name": meta.get("car_name", "Unknown Vehicle"),
-                "session_id": meta.get("session_id", file.filename),
-            },
-            "data": data,
-        }
-    except Exception as e:
-        logger.error(f"Failed to import MoTeC CSV: {e}")
-        return {"error": "Failed to import MoTeC CSV"}
-
-
-# --- Drag Test API Endpoints ---
-
-
-@app.post("/api/drag/prepare")
-async def drag_prepare():
-    drag_recorder.prepare()
-    return {"message": "Drag recorder prepared, waiting for launch."}
-
-
-@app.get("/api/drag/status")
-async def drag_status():
-    return {
-        "status": drag_recorder.status,
-        "points_count": len(drag_recorder.current_session),
-    }
-
-
-@app.get("/api/drag/data")
-async def drag_data():
-    return drag_recorder.current_session
-
-
-@app.get("/api/drag/analysis")
-async def drag_analysis():
-    return drag_recorder.analysis_result
-
-
-@app.post("/api/drag/clear")
-async def drag_clear():
-    drag_recorder.clear()
-    return {"message": "Drag recorder cleared."}
-
-
-@app.post("/api/drag/sessions/save")
-async def drag_save_session():
-    if not drag_recorder.current_session:
-        return {"error": "No data to save"}
-
-    timestamp = int(time.time())
-    filename = f"drag_session_{timestamp}.json"
-    file_path = os.path.join(DRAG_SESSIONS_DIR, filename)
-
-    session_payload = {
-        "metadata": {
-            "filename": filename,
-            "timestamp": timestamp,
-            "car_id": drag_recorder.analysis_result.get("car_id", "0"),
-            "car_name": drag_recorder.analysis_result.get("car_name", "Unknown Car"),
-            "max_speed_kmh": drag_recorder.analysis_result.get("max_speed_kmh", 0.0),
-            "duration": drag_recorder.analysis_result.get("duration", 0.0),
-            "launch_slip_percent": drag_recorder.analysis_result.get(
+            launch_recommendation = "韏瑟郊?嗾銋???皛?撟喳?皛宏??{:.1f}%嚗…12895 tokens truncated…t.get(
                 "launch_slip_percent", 0.0
             ),
         },
@@ -1933,11 +661,11 @@ async def get_logs(level: str = None, limit: int = 300):
                 "message": message,
             }
         else:
-            # 如果不匹配，可能是 Traceback 或是多行日誌，併入上一行
+            # 憒?銝???航??Traceback ?憭??亥?嚗蔥?乩?銝銵?
             if current_entry:
                 current_entry["message"] += "\n" + line_str
             else:
-                # 孤立的行，直接作為普通日誌，預設為 INFO
+                # 摮斤???嚗?乩??箸?隤??身??INFO
                 current_entry = {
                     "timestamp": "",
                     "level": "INFO",
@@ -1948,12 +676,12 @@ async def get_logs(level: str = None, limit: int = 300):
     if current_entry:
         parsed_logs.append(current_entry)
 
-    # 篩選級別
+    # 蝭拚蝝
     if level and level.upper() != "ALL":
         target_level = level.upper()
         parsed_logs = [log for log in parsed_logs if log["level"] == target_level]
 
-    # 取最新的 limit 條
+    # ???啁? limit 璇?
     return {"logs": parsed_logs[-limit:]}
 
 
@@ -1971,7 +699,7 @@ async def clear_logs():
 
 
 # --- Overlay API ---
-# 註記：目前前端已移除 Dashboard Overlay 分頁與相關開發，但後端以下之 API 接入點仍予以保留，作為未來可能重啟或擴展開發之預留接口。
+# 閮餉?嚗??蝡臬歇蝘駁 Dashboard Overlay ??????潘?雿?蝡臭誑銝? API ?亙暺?鈭誑靽?嚗??箸靘?賡????游??銋?????
 LAYOUT_FILE = os.path.join(DATA_ROOT, "layout.json")
 DEFAULT_LAYOUT = {
     "modules": {
@@ -2151,9 +879,9 @@ async def reset_overlay_config():
 
 @app.get("/api/hud/styles")
 async def get_hud_styles():
-    """掃描原生 (RESOURCE_ROOT) 與使用者自訂 (DATA_ROOT) hud_overlay 目錄，
-    過濾掉非 HUD 目錄 (如 shared, assets, telemetry)，
-    合併回傳有效的 HUD 清單（使用者自訂優先於原生）。
+    """???? (RESOURCE_ROOT) ?蝙?刻閮?(DATA_ROOT) hud_overlay ?桅?嚗?
+    ?蕪?? HUD ?桅? (憒?shared, assets, telemetry)嚗?
+    ?蔥?????HUD 皜嚗蝙?刻閮???嚗?
     """
     if getattr(sys, "frozen", False):
         builtin_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
@@ -2166,7 +894,7 @@ async def get_hud_styles():
 
     styles: dict[str, dict] = {}
 
-    # 1. 掃描原生 HUD (builtin)
+    # 1. ???? HUD (builtin)
     if os.path.isdir(builtin_path):
         for entry in sorted(os.scandir(builtin_path), key=lambda e: e.name):
             if (
@@ -2180,7 +908,7 @@ async def get_hud_styles():
                     "urlPrefix": "/hud",
                 }
 
-    # 2. 掃描使用者自訂 HUD (user)
+    # 2. ??雿輻?閮?HUD (user)
     if os.path.isdir(user_path) and user_path != builtin_path:
         for entry in sorted(os.scandir(user_path), key=lambda e: e.name):
             if (
@@ -2188,7 +916,7 @@ async def get_hud_styles():
                 and entry.name.lower() not in IGNORED_HUD_DIRS
                 and os.path.isfile(os.path.join(entry.path, "index.html"))
             ):
-                # 衝突時使用者自訂覆蓋原生
+                # 銵??蝙?刻閮?????
                 styles[entry.name] = {
                     "id": entry.name,
                     "source": "user",
@@ -2337,15 +1065,15 @@ if __name__ == "__main__":
 
     atexit.register(cleanup_resources)
 
-    # 在 Sidecar 模式下，監聽 stdin EOF 以在父程序 (Tauri Host) 關閉時連帶退出。
+    # ??Sidecar 璅∪?銝??? stdin EOF 隞亙?嗥?摨?(Tauri Host) ????葆??箝?
     def monitor_stdin_eof():
         try:
             if sys.stdin is not None:
                 sys.stdin.read()
         except Exception:
             pass
-        # EOF 是 Tauri host 的明確 shutdown 合約；不能依賴啟動後經過的時間，
-        # 否則 ready 後快速關閉時可能留下仍持有 UDP socket 的 sidecar。
+        # EOF ??Tauri host ??蝣?shutdown ??嚗??賭?鞈游???蝬?????
+        # ?血? ready 敺翰?????航??隞???UDP socket ??sidecar??
         cleanup_resources()
         os._exit(0)
 
@@ -2392,3 +1120,4 @@ if __name__ == "__main__":
 
         logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
         uvicorn.run(app, host="127.0.0.1", port=backend_port)
+
