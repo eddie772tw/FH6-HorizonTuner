@@ -28,9 +28,11 @@ def test_winrt_media_uses_modular_namespace():
 
     assert "import winrt.windows.media.control as wmc" in source
     assert "import winsdk.windows.media.control as wmc" not in source
+    assert "_query_powershell_gsmtc" not in source
+    assert "subprocess.run" not in source
 
 
-def test_winrt_media_does_not_start_powershell_fallback(monkeypatch):
+def test_winrt_media_is_returned_directly(monkeypatch):
     _reset_media_cache(monkeypatch)
 
     async def fake_winrt():
@@ -41,11 +43,7 @@ def test_winrt_media_does_not_start_powershell_fallback(monkeypatch):
             "has_media": True,
         }
 
-    def fail_powershell():
-        raise AssertionError("PowerShell fallback must not run after WinRT success")
-
     monkeypatch.setattr(system_media, "_try_get_winrt_gsm_media", fake_winrt)
-    monkeypatch.setattr(system_media, "_query_powershell_gsmtc", fail_powershell)
 
     result = asyncio.run(system_media.get_system_media_info())
 
@@ -54,24 +52,17 @@ def test_winrt_media_does_not_start_powershell_fallback(monkeypatch):
     assert result["has_media"] is True
 
 
-def test_powershell_fallback_is_single_query_and_backed_off_on_failure(monkeypatch):
+def test_winrt_failure_is_backed_off_without_spawning_a_fallback(monkeypatch):
     _reset_media_cache(monkeypatch)
-    powershell_calls = []
 
     async def unavailable_winrt():
         return None
 
-    def failed_powershell():
-        powershell_calls.append(True)
-        return None
-
     monkeypatch.setattr(system_media, "_try_get_winrt_gsm_media", unavailable_winrt)
-    monkeypatch.setattr(system_media, "_query_powershell_gsmtc", failed_powershell)
 
     first = asyncio.run(system_media.get_system_media_info())
     second = asyncio.run(system_media.get_system_media_info())
 
-    assert len(powershell_calls) == 1
     assert first["state"] == "unavailable"
     assert second["state"] == "unavailable"
     assert second["source"] == "unavailable"
