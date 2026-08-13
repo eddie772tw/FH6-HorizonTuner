@@ -288,6 +288,34 @@ jobs:
         if-no-files-found: error
         retention-days: 1
 
+  ci-performance-dashboard:
+    name: CI Performance Dashboard
+    needs: [backend-static-check, frontend-build-test, backend-unit-test, frontend-unit-test, build-portable-sidecar, verify-executable-bundle]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download release build metrics
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ci-metrics-*
+        path: metrics
+        merge-multiple: true
+
+    - name: Build performance dashboard
+      run: python scripts/ci_performance_dashboard.py --metrics-dir metrics --output metrics/dashboard.json
+
+    - name: Publish performance dashboard data
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-performance-dashboard-${{ github.sha }}
+        path: metrics/dashboard.json
+        if-no-files-found: ignore
+        retention-days: 14
+
   verify-executable-bundle:
     name: Build & Verify Executable Bundle
     needs: [backend-unit-test, frontend-unit-test, build-portable-sidecar]
