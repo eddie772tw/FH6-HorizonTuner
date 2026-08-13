@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node scripts/copy-hud.mjs",
+    "build": "tsc && vite build",
+    "build:web-hud": "pnpm run build && node scripts/copy-hud.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run"
