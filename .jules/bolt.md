@@ -59,6 +59,9 @@
 **Learning:** Using array functional methods like `.every()` inside high-frequency loops (e.g. iterating over tens of thousands of telemetry data points in `tuningDiagnosis.ts`) creates function closures on every iteration, leading to significant garbage collection pressure. Similarly, using the spread operator `...` on arrays (e.g. `Math.max(...lTravel)`) clones the array internally, adding overhead.
 **Action:** Replace `.every()`, `.some()`, etc., with explicit `&&` or `||` index evaluations when array sizes are fixed and small (e.g., 4 wheels). Replace spread operators with direct index arguments for standard mathematical functions (e.g., `Math.max(arr[0], arr[1], arr[2], arr[3])`).
 
+## 2025-02-12 - SQLite get_telemetry_points mapping optimization
+**Learning:** For extremely large result sets in `sqlite3`, using `sqlite3.Row` and then manually transforming data using `dict()` and `.pop()` creates huge GC and object creation overhead.
+**Action:** Push math down to SQL (e.g. division `/ 57.29578`), set `cursor.row_factory = None` on the local cursor, and construct the target dictionary output in a single list comprehension using explicit tuple index access.
 ## 2025-03-09 - Eliminate array allocation and closures in 60Hz loop
 **Learning:** In high-frequency 60Hz canvas rendering loops (e.g. `renderShiftTacho`), initializing arrays dynamically every frame and using `.forEach` creates unnecessary array allocations and functional closures. This rapidly increases garbage collection (GC) pressure, leading to visual stuttering over time.
 **Action:** Extract inner logic from array iteration methods (`.forEach`, `.map`, etc.) into dedicated helper functions outside of the rendering loop, and explicitly unroll the iterations inside the 60Hz loop manually to bypass allocations entirely.
