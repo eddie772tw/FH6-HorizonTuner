@@ -28,6 +28,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Restore Tauri Rust build cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./frontend/src-tauri -> target"
+
     - name: Set configuration from input
       shell: bash
       run: |
