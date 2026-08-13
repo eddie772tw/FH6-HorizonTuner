@@ -14,6 +14,18 @@
 - Use a 32 PSI hot target with a narrow, compound-aware cold-pressure baseline around 29 PSI front and 30.5 PSI rear.
 - Keep the documented Drift coast-lock values and add tests for 1st/2nd gear speed spacing and secondary-correction invariance.
 
+## Follow-up calibration plan
+
+The community article supports a second, deliberately scoped calibration pass:
+
+- Stable RWD baseline: front 29 PSI, rear 33 PSI before season/compound offsets, front toe +0.2°, rear toe -0.3°, and rear coast lock 20%.
+- Aggressive RWD baseline: retain the same pressure window, use front toe +0.8° and rear coast lock 10% for faster rotation and transitions.
+- AWD baseline: keep front/rear cold pressure equal at 33 PSI before offsets; retain the existing 40/0 front, 100/0 rear, and 88% rear center split until vehicle samples disprove it.
+
+These values are calibration hypotheses, not universal truths. The article presents them as starting points and does not provide repeatable telemetry, controlled vehicle samples, or error bounds. Future sample data should be evaluated one vehicle and one variable at a time.
+
+Recommended measurements are launch speed, 1st-to-2nd shift RPM, drift-hold speed, rear slip stability, transition time, spin count, and score/segment time under fixed route, tire, power, and driver inputs.
+
 ## External references
 
 - RacingGames, *Forza Horizon 5 Drifting: A beginner's guide*: https://racinggames.gg/article/forza-horizon-5-get-started-with-drift-tuning

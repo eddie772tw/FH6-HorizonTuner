@@ -44,6 +44,34 @@ export interface TuningCarParams {
 
 export type Drivetrain = 'RWD' | 'AWD' | 'FWD';
 export type RaceType = 'Road' | 'Rally' | 'Drag' | 'Drift';
+export type DriftTuningStyle = 'Stable' | 'Aggressive';
+
+/** Evidence-based starting points kept in one place for future calibration. */
+export const DRIFT_CALIBRATION = {
+  Stable: {
+    rwdDecelLock: 20,
+    frontToe: 0.2,
+    rearToe: -0.3,
+    rwdFrontColdPsi: 29.0,
+    rwdRearColdPsi: 33.0,
+    awdColdPsi: 33.0
+  },
+  Aggressive: {
+    rwdDecelLock: 10,
+    frontToe: 0.8,
+    rearToe: -0.3,
+    rwdFrontColdPsi: 29.0,
+    rwdRearColdPsi: 33.0,
+    awdColdPsi: 33.0
+  }
+} as const satisfies Record<DriftTuningStyle, {
+  rwdDecelLock: number;
+  frontToe: number;
+  rearToe: number;
+  rwdFrontColdPsi: number;
+  rwdRearColdPsi: number;
+  awdColdPsi: number;
+}>;
 
 export interface GearingResult {
   finalDrive: number;
@@ -444,7 +472,8 @@ export function resolveAeroDownforce(params: TuningCarParams): { front: number; 
  */
 export function calculateChassisTuning(
   raceGoal: string,
-  carParams: TuningCarParams | null
+  carParams: TuningCarParams | null,
+  driftStyle: DriftTuningStyle = 'Stable'
 ): ChassisTuningResult {
   // Safe Fallback defaults
   const weight = carParams && carParams.weight > 0 ? carParams.weight : 1400;
@@ -512,9 +541,9 @@ export function calculateChassisTuning(
       centerRear = 88;
     } else {
       accelR = 100;
-      // Keep the documented 25% coast lock: enough stability for transitions
-      // without binding the rear axle on lift-off and causing snap oversteer.
-      decelR = 25;
+      // Keep coast lock in the article's 0..20% range. Stable mode uses the
+      // upper edge; aggressive mode leaves more freedom for lift-off rotation.
+      decelR = DRIFT_CALIBRATION[driftStyle].rwdDecelLock;
     }
 
   } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {
@@ -688,7 +717,8 @@ export interface StaticTireAlignResult {
 export function calculateStaticTireAlignment(
   discipline: string,
   season: Season = 'Summer',
-  params: TuningCarParams | null
+  params: TuningCarParams | null,
+  driftStyle: DriftTuningStyle = 'Stable'
 ): StaticTireAlignResult {
   const M = params && params.weight > 0 ? params.weight : 1350;
   const Wf = (params && params.weight_distribution > 0 ? params.weight_distribution : 54) / 100.0;
@@ -733,18 +763,22 @@ export function calculateStaticTireAlignment(
   const normalizedDisc = discipline.toLowerCase();
 
   if (normalizedDisc === 'drift') {
-    // Keep cold pressures in the same physical range as the hot target.  The
-    // previous 33+ PSI front / ~20 PSI rear split was wider than the target
-    // hot pressure and made rear grip change sharply as the tires heated.
+    // Keep cold pressures in a stable hot-pressure window. RWD uses a modest
+    // rear-pressure bias for controllable wheelspin; AWD stays more even.
     targetPhot = 32.0;
     const pressureGripBias = params?.tireType === 'Stock' ? -0.5 : params?.tireType === 'Slick' || params?.tireType === 'Semi-Slick' ? 0.5 : 0;
-    pcF = 29.0 + pressureGripBias + deltaPSeason;
-    pcR = 30.5 + pressureGripBias + deltaPSeason;
+    if (drivetrain === 'RWD') {
+      pcF = DRIFT_CALIBRATION[driftStyle].rwdFrontColdPsi + pressureGripBias + deltaPSeason;
+      pcR = DRIFT_CALIBRATION[driftStyle].rwdRearColdPsi + pressureGripBias + deltaPSeason;
+    } else {
+      pcF = DRIFT_CALIBRATION[driftStyle].awdColdPsi + pressureGripBias + deltaPSeason;
+      pcR = DRIFT_CALIBRATION[driftStyle].awdColdPsi + pressureGripBias + deltaPSeason;
+    }
 
     camberF = -4.8;
     camberR = -0.5;
-    toeF = '+1.2°';
-    toeR = '-0.3°';
+    toeF = `${DRIFT_CALIBRATION[driftStyle].frontToe >= 0 ? '+' : ''}${DRIFT_CALIBRATION[driftStyle].frontToe.toFixed(1)}°`;
+    toeR = `${DRIFT_CALIBRATION[driftStyle].rearToe.toFixed(1)}°`;
     caster = 7.0;
   } else if (normalizedDisc === 'rally' || normalizedDisc === 'dangersign') {
     targetPhot = 27.5;

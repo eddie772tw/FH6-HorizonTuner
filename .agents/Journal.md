@@ -763,6 +763,14 @@
 - **Verification**: `cmd /c "pnpm -C frontend run test -- --run src/utils/tuningMath.test.ts"` completed with 45 files / 252 tests passing; `git diff --check` passed.
 - **Next**: Validate the new baseline with real FH6 telemetry and tune the speed-window constants per drivetrain/build if required.
 
+## 2026-08-13 / Drift article calibration follow-up
+
+- **Task**: Evaluate the BaHa community article `Forza Horizon 甩尾調校模型` as evidence for a second drift-model calibration pass.
+- **Decision**: Do not replace the model wholesale. Adopt a named Stable/Aggressive calibration profile so article-supported ranges remain explicit and future vehicle samples can tune one variable at a time.
+- **Changed**: Added `DriftTuningStyle` and `DRIFT_CALIBRATION`; Stable uses RWD 29/33 PSI, front toe +0.2°, rear toe -0.3°, and 20% rear coast lock. Aggressive uses +0.8° front toe and 10% rear coast lock. AWD pressure is equalized at 33 PSI before offsets.
+- **Verification**: Frontend Vitest completed with 45 files / 255 tests passing.
+- **Pending**: Validate these hypotheses against user-provided vehicle data, fixed routes, tire compounds, and controlled telemetry samples before further formula changes.
+
 ---
 
 ## 2026-08-13 / HUD ownership boundary and contract directory standardization

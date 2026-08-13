@@ -399,7 +399,14 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.damping.bumpF).toBe(3.0);
     expect(res.damping.bumpR).toBe(3.0);
     expect(res.diff.accelR).toBe(100);
-    expect(res.diff.decelR).toBe(25);
+    expect(res.diff.decelR).toBe(20);
+  });
+
+  it('Drift chassis exposes a lower-coast-lock aggressive profile', () => {
+    const stable = calculateChassisTuning('Drift', roadCar, 'Stable');
+    const aggressive = calculateChassisTuning('Drift', roadCar, 'Aggressive');
+    expect(stable.diff.decelR).toBe(20);
+    expect(aggressive.diff.decelR).toBe(10);
   });
 
   it('Rally goal should soften ARBs and springs, and set max ride height', () => {
@@ -530,12 +537,23 @@ describe('calculateStaticTireAlignment', () => {
   it('should calculate specific discipline values for Drift mode', () => {
     const resDrift = calculateStaticTireAlignment('Drift', 'Summer', sampleCar);
     expect(resDrift.targetPhot).toBe(32.0);
-    expect(resDrift.pcF).toBeGreaterThanOrEqual(28);
-    expect(resDrift.pcR).toBeGreaterThanOrEqual(29);
-    expect(Math.abs(resDrift.pcR - resDrift.pcF)).toBeLessThanOrEqual(3);
+    expect(resDrift.pcF).toBe(32.5);
+    expect(resDrift.pcR).toBe(32.5);
     expect(resDrift.camber.front).toBe(-4.8);
     expect(resDrift.camber.rear).toBe(-0.5);
     expect(resDrift.caster).toBe(7.0);
+  });
+
+  it('should use a rear-pressure bias and neutral toe for stable RWD drift', () => {
+    const rwdCar: TuningCarParams = { ...sampleCar, drivetrain: 'RWD' };
+    const stable = calculateStaticTireAlignment('Drift', 'Summer', rwdCar, 'Stable');
+    const aggressive = calculateStaticTireAlignment('Drift', 'Summer', rwdCar, 'Aggressive');
+
+    expect(stable.pcF).toBe(28.5);
+    expect(stable.pcR).toBe(32.5);
+    expect(stable.toe.front).toBe('+0.2°');
+    expect(stable.toe.rear).toBe('-0.3°');
+    expect(aggressive.toe.front).toBe('+0.8°');
   });
 
   it('should calculate specific discipline values for Rally mode', () => {
