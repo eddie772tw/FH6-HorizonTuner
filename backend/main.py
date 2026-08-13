@@ -1663,20 +1663,19 @@ async def stop_manual_recording():
 async def list_saved_sessions():
     try:
         raw_sessions = telemetry_db.list_all_sessions()
-        sessions = []
-        for s in raw_sessions:
-            sessions.append(
-                {
-                    "filename": s["session_id"],
-                    "session_id": s["session_id"],
-                    "car_name": s["car_name"],
-                    "total_laps": s["total_laps"],
-                    "best_lap_time": s["best_lap_time"],
-                    "total_distance": s["total_distance"],
-                    "mtime": s["start_time"],
-                    "size": 0,
-                }
-            )
+        sessions = [
+            {
+                "filename": s["session_id"],
+                "session_id": s["session_id"],
+                "car_name": s["car_name"],
+                "total_laps": s["total_laps"],
+                "best_lap_time": s["best_lap_time"],
+                "total_distance": s["total_distance"],
+                "mtime": s["start_time"],
+                "size": 0,
+            }
+            for s in raw_sessions
+        ]
         return sessions
     except Exception as e:
         logger.error(f"Failed to list saved sessions from SQLite: {e}")
