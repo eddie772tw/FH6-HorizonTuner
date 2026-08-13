@@ -1098,8 +1098,10 @@
                     setAdvRpmDisplay(Math.round(data.rpm), data.rpm >= redlineRpm);
 
                     var gearEl = document.getElementById('adv-gear');
-                    if (data.gear <= 10) _advValidGear = data.gear;
-                    if (gearEl) gearEl.textContent = _advValidGear === 0 ? 'R' : _advValidGear.toString();
+                    if (data.gear <= 11) _advValidGear = data.gear;
+                    if (gearEl) gearEl.textContent = _advValidGear === 0
+                        ? 'R'
+                        : (_advValidGear === 11 ? 'N' : _advValidGear.toString());
 
                     updateDotGroup('fl', lockup.fl);
                     updateDotGroup('rl', lockup.rl);

@@ -145,8 +145,8 @@ const ArcSteerGauge: React.FC<{ size?: number }> = React.memo(() => {
   return (
     <div ref={containerRef} className="w-100 h-100 position-relative d-flex align-items-center justify-content-center p-1 overflow-hidden">
       <canvas ref={canvasRef} className="w-100 h-100 position-absolute top-0 start-0" />
-      <div className="d-flex flex-column align-items-center justify-content-center text-center pointer-events-none z-1" style={{ marginTop: '2px' }}>
-        <span ref={dirTextRef} className="text-body-secondary text-uppercase fs-8 fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>
+      <div className="telemetry-steer-gauge__readout position-absolute top-50 start-50 translate-middle d-flex flex-column align-items-center justify-content-center text-center pointer-events-none z-1">
+        <span ref={dirTextRef} className="telemetry-steer-gauge__direction text-body-secondary text-uppercase fs-8 fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>
           {t("STEER")}
         </span>
         <span ref={degTextRef} className="fw-bold font-monospace fs-6 text-body">0.0°</span>
