@@ -28,6 +28,7 @@ describe('Advanced HUD contract', () => {
     expect(html).toContain("payloadState = payload && payload.lcState");
     expect(html).toContain("dataState = data && (data.lcState || data.launchControlState)");
     expect(html).toContain('rawGear === 1 && rawSpeed < 8');
+    expect(html).toContain("_advValidGear === 11 ? 'N'");
     expect(html).toContain('throttlePercent >= 70 && handbrakePercent >= 50');
     expect(html).toContain('ADV_LC_FALLBACK_GO_FRAMES = 45');
     expect(html).toContain("stateLabel = b.launched ? 'LC GO' : (b.armed ? 'LC ARM' : b.label)");

@@ -142,6 +142,8 @@ describe('Drift HUD contract', () => {
     expect(html).toContain("lcState === 'armed' || lcState === 'launched'");
     expect(html).toContain('function resolveLaunchControlState(');
     expect(html).toContain('rawGear === 1 && rawSpeed < 8');
+    expect(html).toContain("rawGear === 0 ? 'R' : (rawGear === 11 ? 'N'");
+    expect(html).not.toContain("rawGear === 11 || rawGear === 10 ? 'N'");
     expect(html).toContain('TireSlipAngle');
     expect(html).toContain('DRIFT CONTROL');
     expect(html).toContain('function traceSecondarySuperArc(');

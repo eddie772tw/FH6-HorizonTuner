@@ -68,7 +68,7 @@
 | `316` | u8 (UInt8) | `BrakeInput` | 煞車踩踏深度（0 ~ 255） | 🟢 已解析並使用 | `PedalTraceCanvas.tsx`, 控制器踏板儀表 |
 | `317` | u8 (UInt8) | `ClutchInput` | 離合器踩踏深度（0 ~ 255） | 🟢 已解析並使用 | `PedalTraceCanvas.tsx` 離合器動態 Bar |
 | `318` | u8 (UInt8) | `HandBrakeInput` | 手煞車拉起深度（0 ~ 255） | 🟢 已解析並使用 | `PedalTraceCanvas.tsx` 手煞車燈號 |
-| `319` | u8 (UInt8) | `Gear` | 當前檔位（0 = R, 1 = N, 2 = 1檔...） | 🟢 已解析並使用 | `VfdGauge`, `GearboxWidget`, `tuningMath` |
+| `319` | u8 (UInt8) | `Gear` | 當前檔位（0 = R, 1~10 = 1~10檔, 11 = N） | 🟢 已解析並使用 | `VfdGauge`, `GearboxWidget`, `tuningMath` |
 | `320` | s8 (Int8) | `SteerInput` | 方向盤轉向角（-127 至 127，代表左轉/右轉強度） | 🟢 已解析並使用 | `PedalTraceCanvas.tsx` 轉向角指針 |
 | `321` | s8 (Int8) | `DrivingLine` | 賽道最佳行車線偏離量（-127 至 127） | ⚪ 未解析 / 未使用 | *預留未來走線精準度 (Racing Line Precision) 評分* |
 | `322` | s8 (Int8) | `AIPrbBrake` | AI 預期煞車輔助強弱參數 | ⚪ 未解析 / 未使用 | *預留未來煞車點優化提示* |

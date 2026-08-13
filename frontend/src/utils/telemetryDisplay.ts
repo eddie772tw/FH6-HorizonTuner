@@ -1,6 +1,6 @@
 /**
- * Forza's dashboard packet encodes gears as 0 = reverse, 1 = neutral,
- * and 2+ = first gear onward.
+ * Forza's dashboard packet encodes gears as 0 = reverse, 1-10 = forward
+ * gears, and 11 = neutral.
  */
 export function formatTelemetryGear(rawGear?: number): string {
   if (!Number.isFinite(rawGear)) return 'N';
