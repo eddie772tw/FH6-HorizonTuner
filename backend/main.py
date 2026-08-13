@@ -1563,8 +1563,12 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
     car_id = os.path.basename(car_id)
     save_name = os.path.basename(save_name)
     file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+
+    def _write_tuning(path: str, tuning_data: dict):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(tuning_data, f, indent=4)
+
+    await asyncio.to_thread(_write_tuning, file_path, data)
     return {"message": "Saved successfully"}
 
 
