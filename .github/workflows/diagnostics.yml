@@ -85,6 +85,7 @@ jobs:
         python scripts/release_metrics.py
         --label "PyInstaller sidecar"
         --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
+        --metrics-file metrics/sidecar-build.json
         -- uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
 
     - name: Stage Embedded Sidecar
@@ -99,6 +100,7 @@ jobs:
         python scripts/release_metrics.py
         --label "Tauri portable executable"
         --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
+        --metrics-file metrics/tauri-build.json
         -- pnpm.cmd --prefix frontend run tauri build --no-bundle
 
     - name: Run Diagnostics Probes
