@@ -903,17 +903,31 @@
                 ctx.closePath(); ctx.fill();
             }
 
-            // LC badge
-            var b = { label: 'LC', x: 750, armed: !!(window.advLCArmed), launched: !!(window.advLCLaunched) };
+            // LC badge. The controller resolves the canonical state first and
+            // keeps the legacy boolean flags in sync for compatibility with
+            // older Advanced integrations.
+            var advancedLcState = window.advLCState || 'inactive';
+            if (advancedLcState === 'inactive') {
+                advancedLcState = window.advLCLaunched ? 'launched'
+                    : (window.advLCArmed ? 'armed' : 'inactive');
+            }
+            var b = {
+                label: 'LC',
+                x: 750,
+                armed: advancedLcState === 'armed',
+                launched: advancedLcState === 'launched'
+            };
             var active = b.armed || b.launched;
+            var stateLabel = b.launched ? 'LC GO' : (b.armed ? 'LC ARM' : b.label);
             var badgeAlpha = b.armed ? 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 250 * Math.PI))
                 : b.launched ? 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 120 * Math.PI))
                     : 0.25;
             ctx.globalAlpha = badgeAlpha;
             ctx.strokeStyle = active ? C_PINK : C_WHITE; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.roundRect(695, 250, 110, 80, 4); ctx.stroke();
-            ctx.fillStyle = active ? C_PINK : C_WHITE; ctx.font = 'bold 50px ForzaGear, Arial';
-            ctx.textAlign = 'center'; ctx.fillText('LC', 750, 310);
+            ctx.fillStyle = active ? C_PINK : C_WHITE;
+            ctx.font = active ? 'bold 34px ForzaGear, Arial' : 'bold 50px ForzaGear, Arial';
+            ctx.textAlign = 'center'; ctx.fillText(stateLabel, 750, 310);
             ctx.globalAlpha = 1.0;
 
             ctx.restore();
@@ -933,6 +947,55 @@
         var _advLastSpeedValue = null;
         var _advLastRpmValue = null;
         var _advLastRpmColorRed = null;
+        var _advLcFallbackArmed = false;
+        var _advLcFallbackGoFrames = 0;
+        var ADV_LC_FALLBACK_GO_FRAMES = 45;
+        window.advLCState = 'inactive';
+
+        // Prefer an upstream LC state when one is available. Older telemetry
+        // frames do not carry it, so mirror the proven HUD fallback: first
+        // gear, near-zero speed, high throttle and handbrake held arms LC;
+        // moving away from the launch state produces a short LC GO indication.
+        function resolveAdvancedLaunchControlState(data, payload) {
+            var payloadState = payload && payload.lcState;
+            var dataState = data && (data.lcState || data.launchControlState);
+            var explicitState = payloadState || dataState;
+            if (explicitState === 'armed' || explicitState === 'launched') {
+                _advLcFallbackArmed = false;
+                _advLcFallbackGoFrames = 0;
+                return explicitState;
+            }
+
+            var rawGear = Number(data && (data.gear !== undefined ? data.gear : data.Gear));
+            var rawSpeed = Number(data && (data.speed_kmh !== undefined ? data.speed_kmh : data.speed)) || 0;
+            var rawThrottle = Number(data && (data.throttle !== undefined ? data.throttle : data.AccelInput)) || 0;
+            var rawHandbrake = Number(data && (data.hand_brake !== undefined ? data.hand_brake : data.HandBrakeInput)) || 0;
+            var throttlePercent = rawThrottle <= 1 ? rawThrottle * 100 : rawThrottle / 2.55;
+            var handbrakePercent = rawHandbrake <= 1 ? rawHandbrake * 100 : rawHandbrake / 2.55;
+            var launchReady = rawGear === 1 && rawSpeed < 8 && throttlePercent >= 70 && handbrakePercent >= 50;
+
+            if (launchReady) {
+                _advLcFallbackArmed = true;
+                _advLcFallbackGoFrames = 0;
+                return 'armed';
+            }
+            if (_advLcFallbackArmed && rawSpeed >= 8) {
+                _advLcFallbackArmed = false;
+                _advLcFallbackGoFrames = ADV_LC_FALLBACK_GO_FRAMES;
+                return 'launched';
+            }
+            if (_advLcFallbackArmed && rawGear === 1 && rawSpeed < 8 && throttlePercent >= 70) {
+                // Releasing the handbrake is the launch action. Keep ARM alive
+                // through the brief zero-speed transition.
+                return 'armed';
+            }
+            if (_advLcFallbackGoFrames > 0) {
+                _advLcFallbackGoFrames -= 1;
+                return 'launched';
+            }
+            _advLcFallbackArmed = false;
+            return 'inactive';
+        }
 
         // Set speed with digit spans for tabular spacing
         function setAdvSpeedDisplay(value) {
@@ -1005,6 +1068,9 @@
                 var redlineRpm = payload.redlineRpm || ((data.maxRpm || 8000) * 0.92);
                 var sessionMaxima = payload.sessionMaxima;
                 var lockup = payload.lockup || {};
+                window.advLCState = resolveAdvancedLaunchControlState(data, payload);
+                window.advLCArmed = window.advLCState === 'armed';
+                window.advLCLaunched = window.advLCState === 'launched';
 
                 var container = document.getElementById('advContainer');
                 if (!container) return;

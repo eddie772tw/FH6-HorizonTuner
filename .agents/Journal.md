@@ -752,3 +752,11 @@
 - **Action**：修正 G3 active sub-curve，改以 rail 法線產生 throttle／brake 的淺弧與 clutch／handbrake 的鏡像曲率；統一四組 caption 的中心基線與 label/value 間距；vehicle body／tire vectors 依 `travelAngleDeg` 旋轉；LC badge 顯示 `LC ARM`／`LC GO`，並在缺少 canonical state 時使用低速一檔、高油門、手煞車 fallback heuristic。
 - **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/drift-secondary-advanced-remap-implementation.md`、`docs/telemetry-hud-implementation-plan.md`；full frontend Vitest `44 files / 247 tests`、build `679 modules`、fake Canvas contract 均通過。
 - **Boundary**：仍需實機 capture 確認四組 caption 在縮放後的實際間距、vehicle rotation 的方向語意，以及 fallback LC 狀態是否與遊戲中的 launch-control 操作一致。
+
+---
+
+## 2026-08-13 / HUD ownership boundary and contract directory standardization
+
+- **Decision**：仿造 S650 的 ownership boundary，只有主要與主 GUI 交互的 HUD 設定、normalize 與 typed boundary 放在 `frontend/src/features/overlay_control/<hud-id>/`；renderer、Canvas、inline-controller 與 standalone HUD contract tests 歸 `hud_overlay/<hud-id>/tests/` 管理。
+- **Action**：原先誤將 Drift／Advanced renderer contract 放入 `overlay_control` 子資料夾；依 S650 的真正 ownership boundary 改置於 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 與 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts`。`overlay_control/<hud-id>/` 僅保留主 GUI 交互檔案。
+- **Verification**：Vitest 改以 `../hud_overlay/*/tests/**/*.test.ts` 納入所有 HUD-owned 測試，並以完整 frontend Vitest 與 build 驗證測試入口、相對路徑與 production bundle。
