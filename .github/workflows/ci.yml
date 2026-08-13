@@ -85,6 +85,14 @@ jobs:
     - name: Run Frontend Build Verification (Build Test)
       run: pnpm --prefix frontend run build
 
+    - name: Publish verified frontend distribution
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-dist-${{ github.sha }}
+        path: frontend/dist
+        if-no-files-found: error
+        retention-days: 1
+
     - name: Check Frontend Security Audit
       shell: bash
       run: |
@@ -340,6 +348,12 @@ jobs:
         name: portable-sidecar-${{ github.sha }}
         path: dist
 
+    - name: Download verified frontend distribution
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-dist-${{ github.sha }}
+        path: frontend/dist
+
     - name: Stage Embedded Sidecar
       shell: pwsh
       run: |
@@ -354,7 +368,7 @@ jobs:
         --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
         --metrics-file metrics/tauri-build.json
         --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
-        -- pnpm.cmd --prefix frontend run tauri build --no-bundle
+        -- pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.ci.conf.json
 
     - name: Publish Tauri build metrics
       if: always()

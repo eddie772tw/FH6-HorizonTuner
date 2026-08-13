@@ -24,3 +24,17 @@ def test_tauri_rust_cache_contract_matches_diagnostics_workflow():
     assert 'shared-key: "tauri-windows-release"' in diagnostics
     assert "add-job-id-key: false" in diagnostics
     assert "TAURI_RUST_CACHE_STATUS" in diagnostics
+
+
+def test_ci_reuses_the_verified_frontend_distribution_for_tauri():
+    workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml").read_text(
+        encoding="utf-8"
+    )
+    ci_config = (
+        REPOSITORY_ROOT / "frontend" / "src-tauri" / "tauri.ci.conf.json"
+    ).read_text(encoding="utf-8")
+
+    assert "name: frontend-dist-${{ github.sha }}" in workflow
+    assert "path: frontend/dist" in workflow
+    assert "--config src-tauri/tauri.ci.conf.json" in workflow
+    assert "Using verified frontend distribution from CI artifact" in ci_config
