@@ -138,9 +138,21 @@ FH6-HorizonTuner/
 
 ---
 
+## Python / uv 開發規範
+
+本專案固定使用 Python 3.13，並由 `uv` 管理 Python interpreter、`.venv` 與所有 Python 套件。請先安裝 uv，再使用 [Python / uv 工具鏈規範](.agents/rules/python-uv.md) 中的命令；不要使用裸 `python`、`pip`、`pytest` 或 `ruff`。
+
+標準測試命令：
+
+```powershell
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
+uv run --no-project --python .venv\Scripts\python.exe ruff check .
+uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
+```
+
 ## 開發環境要求 / Prerequisites
 
-* **Python**: 3.13 或 3.14 (標準 Windows 安裝版或 `uv` 託管版本均可)
+* **uv**：Python 3.13、`.venv` 與 Python 套件安裝的必要管理工具。詳細規範請參閱 [Python / uv 工具鏈規範](.agents/rules/python-uv.md)。
 * **Node.js**: 20 或以上版本
 * **Rust / Cargo**: 本地端 Tauri 編譯所需 (非必須，若無則自動降級至 Web 瀏覽器調試模式)
 
@@ -157,18 +169,18 @@ FH6-HorizonTuner/
 * **全量格式化代碼**：
     ```bash
     # 在虛擬環境外
-    ruff format .
+    uv run --no-project --python .venv\Scripts\python.exe ruff format .
 
     # 在 Windows 虛擬環境內
-    .venv\Scripts\ruff.exe format .
+    uv run --no-project --python .venv\Scripts\python.exe ruff format .
     ```
 * **驗證排版格式（CI 也會執行此步驟）**：
     ```bash
-    ruff format --check .
+    uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
     ```
 * **靜態代碼檢查（Lint）**：
     ```bash
-    ruff check .
+    uv run --no-project --python .venv\Scripts\python.exe ruff check .
     ```
 
 > [!TIP]
@@ -180,10 +192,10 @@ FH6-HorizonTuner/
 
 ```bash
 # 在 Windows 虛擬環境內
-.venv\Scripts\pytest
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
 
 # 或指定單一測試檔案
-.venv\Scripts\pytest tests/test_overlay_api.py -v
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/test_overlay_api.py -v
 ```
 
 目前的後端測試套件涵蓋：
@@ -241,9 +253,9 @@ cd frontend && pnpm run test
 
 在提交 Pull Request 之前，請確認以下事項：
 
-- [ ] 代碼已通過 `ruff format --check .` 格式驗證
-- [ ] 代碼已通過 `ruff check .` 靜態檢查（無 Error / Warning）
-- [ ] 後端單元測試已全數通過 (`pytest` Pass)
+- [ ] 代碼已通過 `uv run --no-project --python .venv\\Scripts\\python.exe ruff format --check .` 格式驗證
+- [ ] 代碼已通過 `uv run --no-project --python .venv\\Scripts\\python.exe ruff check .` 靜態檢查（無 Error / Warning）
+- [ ] 後端單元測試已透過 `uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/` 全數通過
 - [ ] 前端單元測試已全數通過 (`cd frontend && pnpm run test` Pass)
 - [ ] 若新增了 API 路由或後端核心邏輯，已補充對應的 Pytest 單元測試
 - [ ] 若修改了 `tuningMath.ts` / `tuningDiagnosis.ts` 等前端計算邏輯，已補充對應的 Vitest 單元測試
@@ -297,7 +309,7 @@ cd frontend && pnpm run test
 | **Test (Frontend)** | 執行 `cd frontend && pnpm run test` 前端 Vitest 單元測試（涵蓋 `tuningMath.ts` 等物理計算純函數） |
 
 > [!IMPORTANT]
-> 流程已採用全自動化 CI/CD 環境，無需等待 Approve 即可在提交 PR 後自動觸發測試。請確保在推送前已於本地通過 `ruff format --check .` 與 `pytest` 驗證，以避免不必要的 CI 失敗。
+> 流程已採用全自動化 CI/CD 環境，無需等待 Approve 即可在提交 PR 後自動觸發測試。請確保在推送前已於本地透過 uv 執行格式檢查、Ruff 與 Pytest，以避免不必要的 CI 失敗。
 
 ---
 

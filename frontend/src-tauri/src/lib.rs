@@ -381,7 +381,6 @@ pub fn run() {
     tauri::Builder::default()
         .manage(BackendState::new())
         .manage(BackendProcess::default())
-        .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {

@@ -3,6 +3,16 @@ setlocal enabledelayedexpansion
 title FH6 Telemetry Tuning Tool
 
 cd /D "%~dp0"
+set "UV_EXE=uv"
+set "VENV_PY=%~dp0.venv\Scripts\python.exe"
+
+where.exe uv >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] uv was not found on PATH. Install uv and retry.
+    pause
+    exit /b 1
+)
+
 call "%~dp0setup_venv.bat"
 if errorlevel 1 (
     pause
@@ -11,10 +21,10 @@ if errorlevel 1 (
 set "VENV_DIR=%~dp0.venv"
 
 :: Run Ruff if available.
-if exist "%VENV_DIR%\Scripts\ruff.exe" (
+if exist "%VENV_PY%" (
     echo [INFO] Running Ruff check ^& format...
-    "%VENV_DIR%\Scripts\ruff.exe" check . --fix
-    "%VENV_DIR%\Scripts\ruff.exe" format .
+    "%UV_EXE%" run --no-project --python "%VENV_PY%" ruff check . --fix
+    "%UV_EXE%" run --no-project --python "%VENV_PY%" ruff format .
 )
 
 :: Terminate old instances to prevent backend port conflicts.

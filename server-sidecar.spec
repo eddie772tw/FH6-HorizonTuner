@@ -1,49 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
 block_cipher = None
 
 # 1. 自動收集 FastAPI 與後端核心依賴
+# PyInstaller's module graph collects the statically imported web stack. Keep
+# only the DLL discovery that cannot be inferred from the optional audio path.
 datas = []
-binaries = []
+binaries = collect_dynamic_libs("numpy") + collect_dynamic_libs("soundcard")
 hiddenimports = [
-    "fastapi",
-    "starlette",
-    "uvicorn",
-    "websockets",
-    "pydantic",
-    "winsdk",
-    "winsdk.windows.media.control",
-    "numpy",
+    "winrt.windows.media.control",
     "soundcard",
-    "multiprocessing",
-    "python-multipart",
-    "httpx",
 ]
-
-packages_to_collect = [
-    "fastapi", 
-    "uvicorn", 
-    "starlette", 
-    "websockets", 
-    "pydantic", 
-    "winsdk",
-    "numpy",
-    "soundcard",
-    "multiprocessing",
-    "python-multipart",
-    "httpx",
-]
-
-for pkg in packages_to_collect:
-    try:
-        pkg_datas, pkg_bins, pkg_hidden = collect_all(pkg)
-        datas += pkg_datas
-        binaries += pkg_bins
-        hiddenimports += pkg_hidden
-    except Exception:
-        pass
 
 # 2. 靜態資源 (專案相對路徑，基於根目錄 SPECPATH)
 added_files = [

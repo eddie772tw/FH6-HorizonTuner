@@ -19,6 +19,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Keep the interpreter selected by setup-uv aligned with its managed-Python cache.
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
   run-host-diagnostics:
     name: Run Portable Host Diagnostics
@@ -27,6 +31,22 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Restore Tauri Rust build cache
+      id: tauri-rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./frontend/src-tauri -> target"
+        shared-key: "tauri-windows-release"
+        add-job-id-key: false
+        cache-workspace-crates: true
+
+    - name: Record Tauri Rust cache state
+      shell: bash
+      run: |
+        cache_state="${{ steps.tauri-rust-cache.outputs.cache-hit == 'true' && 'hit' || 'miss' }}"
+        echo "TAURI_RUST_CACHE_STATUS=$cache_state" >> "$GITHUB_ENV"
+        echo "Tauri Rust cache: **$cache_state**" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Set configuration from input
       shell: bash
@@ -43,11 +63,15 @@ jobs:
         fi
         echo "DIAGNOSTICS_TIMEOUT=$timeout" >> $GITHUB_ENV
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up uv and managed Python 3.13
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
         python-version: "3.13"
-        cache: 'pip'
+        activate-environment: true
+        no-project: true
+        cache-python: true
+        enable-cache: true
+        cache-dependency-glob: requirements.txt
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
@@ -59,17 +83,21 @@ jobs:
       with:
         node-version: "22"
         cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
     - name: Install Python & Frontend Dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest python-multipart pyinstaller
-        pnpm --prefix frontend install
+        uv pip install --requirement requirements.txt
+        uv pip install "pyinstaller>=6.10,<7.0"
+        pnpm --prefix frontend install --frozen-lockfile
 
     - name: Build Python sidecar executable
-      run: python -m PyInstaller server-sidecar.spec --clean
+      run: >
+        python scripts/release_metrics.py
+        --label "PyInstaller sidecar"
+        --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
+        --metrics-file metrics/sidecar-build.json
+        -- uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
 
     - name: Stage Embedded Sidecar
       shell: pwsh
@@ -79,10 +107,16 @@ jobs:
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
     - name: Build Portable Tauri Executable
-      run: pnpm --prefix frontend run tauri build --no-bundle
+      run: >
+        python scripts/release_metrics.py
+        --label "Tauri portable executable"
+        --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
+        --metrics-file metrics/tauri-build.json
+        --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
+        -- pnpm.cmd --prefix frontend run tauri build --no-bundle
 
     - name: Run Diagnostics Probes
-      run: python -m pytest tests/test_portable_host_diagnostics.py -v
+      run: uv run --no-project --active python -m pytest tests/test_portable_host_diagnostics.py -v
 
     - name: Upload Diagnostic Output on Failure
       if: failure()

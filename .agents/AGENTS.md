@@ -30,8 +30,8 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 ### 核心原則
 1. **效能與即時性為先**：作為遊戲 Overlay / HUD，畫面渲染與數據傳遞的延遲（Latency）直接影響玩家體驗。避免在大數據流中進行不必要的深拷貝 (Deep Copy) 或頻繁的 DOM 重新渲染。
 2. **測試驗證需求**：在提交任何程式碼修改前，請務必執行以下測試：
-   - 靜態檢查：`ruff check .` 以及 `ruff format --check .`
-   - 後端 UDP 與邏輯測試：`pytest tests/`
+   - 靜態檢查：`uv run --no-project --python .venv\\Scripts\\python.exe ruff check .` 以及 `uv run --no-project --python .venv\\Scripts\\python.exe ruff format --check .`
+   - 後端 UDP 與邏輯測試：`uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/`
    - 前端物理與算牌測試：`pnpm -C frontend run test`
 3. **無副作用設計**：`tuningMath.ts` 與 `tuningDiagnosis.ts` 中的計算工具不可以依賴 React Component State 或外部全域變數。
 
@@ -102,6 +102,16 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 * **任務開始前**：優先閱讀 [Journal.md](Journal.md) 以瞭解之前的避坑指南與極限邊界。
 * **任務結束後**：若發現物理計算陷阱、UDP 解包效能瓶頸或異步 Bug，強制寫入 [Journal.md](Journal.md)。
 * **完成寫入後**：若發現特定錯誤或是行動出現兩次以上，代表這是一個潛在的邊界限制，應該建議寫入 [.agents/AGENTS.md]。
+
+## Python / uv toolchain requirement
+
+所有 Python 開發、測試、格式化、lint、PyInstaller 與資料庫更新命令都必須遵循 [python-uv.md](rules/python-uv.md)：使用 Python 3.13、根目錄 `.venv`，並透過 `uv venv`、`uv pip` 與 `uv run` 管理。任何較早段落中的裸 `python`、`pip`、`pytest` 或 `ruff` 範例均視為 legacy，應以該規範中的命令取代。
+
+後端測試標準命令：
+
+```powershell
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
+```
 
 ## Task Completion Checklist
 在宣佈任何開發/重構任務完成前，Agent 必須執行：

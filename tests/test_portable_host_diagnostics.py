@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib.request
 from ctypes import wintypes
 from pathlib import Path
 
@@ -241,6 +242,11 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
         run_label = f"bootstrap_run_{i}"
         test_data_dir = tmp_path / f"test_data_root_{i}"
         test_data_dir.mkdir(parents=True, exist_ok=True)
+        custom_hud_dir = test_data_dir / "hud_overlay" / "portable_custom_hud"
+        custom_hud_dir.mkdir(parents=True)
+        (custom_hud_dir / "index.html").write_text(
+            "<html><body>Portable custom HUD</body></html>", encoding="utf-8"
+        )
 
         stdout_path = str(tmp_path / f"stdout_bootstrap_{i}.txt")
         stderr_path = str(tmp_path / f"stderr_bootstrap_{i}.txt")
@@ -292,6 +298,28 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
             assert (test_data_dir / "hud_overlay").exists(), (
                 "hud_overlay directory missing"
             )
+
+            port_file = test_data_dir / "logs" / "web_port.txt"
+            while not port_file.exists() and time.monotonic() < startup_deadline:
+                time.sleep(0.1)
+            assert port_file.exists(), "sidecar did not publish its HTTP port"
+            backend_port = port_file.read_text(encoding="utf-8").strip()
+
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:{backend_port}/api/hud/styles", timeout=5
+            ) as response:
+                styles = json.loads(response.read().decode("utf-8"))["styles"]
+            custom_style = next(
+                style for style in styles if style["id"] == "portable_custom_hud"
+            )
+            assert custom_style["source"] == "user"
+            assert custom_style["urlPrefix"] == "/hud_user"
+
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:{backend_port}/hud_user/portable_custom_hud/index.html",
+                timeout=5,
+            ) as response:
+                assert b"Portable custom HUD" in response.read()
             assert (test_data_dir / "tunings").exists(), "tunings directory missing"
             assert (test_data_dir / "drag_sessions").exists(), (
                 "drag_sessions directory missing"
