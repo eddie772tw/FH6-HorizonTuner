@@ -7,6 +7,19 @@
     <!-- 引入共享 Base 樣式 -->
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
+        :root {
+            --drift-label-font: Bahnschrift, Arial, sans-serif;
+            --drift-value-font: 'ForzaGear', Arial, sans-serif;
+            --drift-warning-font: 'ForzaGear', Arial, sans-serif;
+            --drift-label-color: rgba(255, 255, 255, 0.72);
+            --drift-value-color: #ffffff;
+            --drift-warning-color: rgb(255, 0, 102);
+            --drift-track-color: rgba(255, 255, 255, 0.18);
+            --drift-edge-alpha: 0.34;
+            --drift-glow-radius: 6px;
+            --drift-warning-glow-radius: 8px;
+        }
+
         /* ── Fonts ──────────────────────────────────────────────────────── */
         @font-face {
             font-family: 'ForzaFont';
@@ -18,13 +31,21 @@
             src: url('../shared/assets/fonts/HelveticaNowDisplay-CnMedIt.otf') format('opentype');
         }
 
+        .hud-root-wrapper {
+            position: fixed;
+            inset: 0;
+            display: block;
+            padding: 0;
+            overflow: visible;
+        }
+
         /* ── Gauge Container (1680px x 640px) ───────────────── */
         .drift-container {
-            position: relative;
-            width: 1680px;
-            height: 640px;
-            align-self: center;
-            transform-origin: bottom center;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            transform-origin: center center;
             pointer-events: none;
             background: transparent;
         }
@@ -33,42 +54,94 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 1680px;
-            height: 640px;
+            width: 100vw;
+            height: 100vh;
             pointer-events: none;
         }
 
-        /* ── Floating Tech Popups Hero Banner ────────────────────────────── */
-        #drift-popup-hero {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(10, 16, 26, 0.88);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.25), inset 0 0 10px rgba(255, 255, 255, 0.15);
-            padding: 6px 38px;
-            border-radius: 20px;
-            font-family: 'ForzaGear', Arial, sans-serif;
-            font-size: 1.4rem;
-            color: #ffffff;
-            letter-spacing: 0.16em;
+        /* Drift Style MVP: one HUD-local information layer. Score, rank,
+           coaching rows and special events share this same readable surface. */
+        #drift-style-container {
+            position: fixed;
+            right: 4vw;
+            top: 28vh;
+            width: min(360px, 21vw);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             opacity: 0;
-            transition: opacity 0.15s ease, transform 0.15s ease;
             pointer-events: none;
-            z-index: 200;
+            font-family: var(--drift-value-font);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--drift-value-color);
+            box-sizing: border-box;
+            padding: 12px 14px 13px;
+            background: rgba(6, 14, 26, 0.58);
+            border: 0;
+            border-radius: 12px;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.42), 0 0 18px rgba(85, 223, 255, 0.14);
+            z-index: 180;
         }
 
-        #drift-popup-hero.active {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-4px);
+        #drift-style-container.active { opacity: 1; }
+
+        .drift-style-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 1rem;
+            color: var(--drift-label-color);
         }
 
-        #drift-popup-hero.hero-event {
-            border-color: rgb(255, 0, 102);
-            box-shadow: 0 0 24px rgb(255, 0, 102), inset 0 0 12px rgba(255, 0, 102, 0.3);
-            color: #ffffff;
+        .drift-style-rank {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #55dfff;
+            text-shadow: 0 0 9px rgba(85, 223, 255, 0.72);
         }
+
+        .drift-style-meter {
+            height: 5px;
+            background: var(--drift-track-color);
+            overflow: hidden;
+        }
+
+        .drift-style-meter-fill {
+            width: 0;
+            height: 100%;
+            background: #55dfff;
+            box-shadow: 0 0 var(--drift-glow-radius) rgba(85, 223, 255, 0.72);
+        }
+
+        .drift-style-event {
+            display: none;
+            justify-content: space-between;
+            align-items: baseline;
+            min-height: 26px;
+            font-family: var(--drift-warning-font);
+            font-size: 1.2rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .drift-style-event .event-source {
+            font-size: 0.8rem;
+            font-family: var(--drift-label-font);
+            letter-spacing: 0.14em;
+            color: var(--drift-label-color);
+        }
+
+        .drift-style-event.flow .event-value { color: #55dfff; text-shadow: 0 0 8px rgba(85, 223, 255, 0.65); }
+        .drift-style-event.hold .event-value { color: #ffb84a; text-shadow: 0 0 8px rgba(255, 184, 74, 0.62); }
+        .drift-style-event.risk .event-value { color: var(--drift-warning-color); text-shadow: 0 0 var(--drift-warning-glow-radius) rgba(255, 0, 102, 0.7); }
+        .drift-style-event.special {
+            min-height: 30px;
+            font-size: 1.25rem;
+            letter-spacing: 0.1em;
+        }
+        .drift-style-event.special .event-source { color: #55dfff; }
+        .drift-style-event.special .event-value { color: #ffffff; text-shadow: 0 0 10px rgba(85, 223, 255, 0.78); }
     </style>
 </head>
 
@@ -76,20 +149,34 @@
     <!-- 共享中央遙測掛載點 -->
     <div id="teleCardsMount"></div>
 
+    <!-- Score, rank, coaching rows and special events stay in one Style Meter. -->
+    <div id="drift-style-container" aria-hidden="true">
+        <div class="drift-style-heading">
+            <span id="drift-style-title">STYLE METER</span>
+            <span id="drift-style-rank" class="drift-style-rank">D</span>
+        </div>
+        <div class="drift-style-meter"><div id="drift-style-meter-fill" class="drift-style-meter-fill"></div></div>
+        <div id="drift-style-flow" class="drift-style-event flow"><span class="event-source">FLOW</span><span class="event-value"></span></div>
+        <div id="drift-style-hold" class="drift-style-event hold"><span class="event-source">HOLD</span><span class="event-value"></span></div>
+        <div id="drift-style-risk" class="drift-style-event risk"><span class="event-source">RISK</span><span class="event-value"></span></div>
+        <div id="drift-style-special" class="drift-style-event special"><span class="event-source">EVENT</span><span class="event-value"></span></div>
+    </div>
+
     <!-- 093 LAB 標準自適應視窗根包裝 -->
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container drift-container" id="driftContainer">
-            <!-- Floating Event Popup Banner -->
-            <div id="drift-popup-hero">HANDBRAKE ENTRY</div>
-
+            <!-- Style Meter and secondary instrument share the same HUD canvas. -->
             <!-- 全向量 1680px x 640px 畫布 (動態 maxRpm 萬轉/萬轉以下紅線區 1500/1000rpm 跨度) -->
-            <canvas id="driftCanvas" width="1680" height="640"></canvas>
+            <canvas id="driftCanvas" width="1920" height="1080"></canvas>
         </div>
     </div>
 
     <!-- 腳本引入：Telemetry Cards & HUD Core -->
     <script type="module" src="../shared/telemetry-cards.js"></script>
     <script src="../shared/hud-core.js"></script>
+    <script src="./assets/drift_layout.js?v=drift-layout-20260812"></script>
+    <script src="./assets/drift_display_math.js?v=drift-layout-20260811"></script>
+    <script src="./assets/drift_style_engine.js?v=drift-style-mvp-20260811"></script>
 
     <script>
         (function () {
@@ -97,17 +184,47 @@
 
             var canvas = document.getElementById('driftCanvas');
             var ctx = canvas ? canvas.getContext('2d') : null;
+            var driftLayout = window.DriftLayout;
+            var viewportTransform = driftLayout
+                ? driftLayout.getViewportTransform(window.innerWidth, window.innerHeight, 0)
+                : { scale: 1, offsetX: 0, offsetY: 0 };
+            var canvasDpr = 1;
 
             // ── Color Palette Standard (093 LAB. Cyber & Street Palette) ──────
             var C_WHITE = '#ffffff';
             var C_WHITE_DIM = 'rgba(255, 255, 255, 0.72)';
+            var C_WHITE_MID = 'rgba(255, 255, 255, 0.52)';
             var C_TRACK = 'rgba(255, 255, 255, 0.18)';
             var C_REDLINE = 'rgb(255, 0, 102)';
             var C_REDLINE_DIM = 'rgba(255, 0, 102, 0.40)';
+            // Brake is a stable input semantic; redline remains the fixed
+            // primary boundary and is intentionally not reused for the brake.
+            var C_BRAKE = 'rgba(255, 92, 164, 0.92)';
             var C_AMBER = '#FFB84A';
             var C_MINT = '#52FFEB';
             var C_ICE = '#55DFFF';
-            var C_LENS_BACKDROP = 'rgba(10, 16, 26, 0.25)'; // 使用者自訂 25% 透明半橢圓背景
+            var C_FRAME_FILL = 'rgba(8, 16, 28, 0.46)';
+            var C_FRAME_EDGE = 'rgba(85, 223, 255, 0.42)';
+
+            // Shared Drift semantic tokens. Primary rendering keeps its
+            // existing constants and geometry; these tokens apply to the
+            // active secondary and the low-frequency Style Meter DOM layer.
+            var DRIFT_STYLE_TOKENS = {
+                labelFont: 'bold 12px Bahnschrift',
+                valueFont: 'bold 18px ForzaGear',
+                warningFont: 'bold 18px ForzaGear',
+                labelColor: C_WHITE_MID,
+                valueColor: C_WHITE,
+                warningColor: C_REDLINE,
+                trackAlpha: 0.18,
+                edgeAlpha: 0.34,
+                surface: [
+                    'rgba(13, 28, 43, 0.68)',
+                    'rgba(7, 15, 27, 0.56)',
+                    'rgba(7, 14, 24, 0.42)'
+                ],
+                glow: { edge: 4, active: 5, input: 4, warning: 7 }
+            };
 
             var FLOW_LABELS = { 1: 'BUILD', 2: 'NORMAL', 3: 'CHASE', 4: 'SMOOTH', 5: 'LOCKED' };
             var RISK_LABELS = { 1: 'SAFE', 2: 'EDGE', 3: 'RISK', 4: 'MAX' };
@@ -130,20 +247,38 @@
             // ── 全域幾何對稱與 5 區塊對齊變數 (Unified Offset Math) ────────────
             var CANVAS_CX = 840;
             var CANVAS_CY = 320;
-            var CLUSTER_OFFSET = 150;                             // 中央左/右區距離中心的對稱 Offset
-            var PEDAL_OFFSET = Math.round(CLUSTER_OFFSET * 3.4); // 兩側腳踏柱距離中心的對稱 Offset (510px)
-
-            var LEFT_PEDAL_CX = CANVAS_CX - PEDAL_OFFSET;         // 左腳踏 x: 330px
-            var LEFT_CLUSTER_X = CANVAS_CX - CLUSTER_OFFSET;       // 左區塊 x: 690px
-            var CENTER_CLUSTER_X = CANVAS_CX;                      // 中區塊 x: 840px
-            var RIGHT_CLUSTER_X = CANVAS_CX + CLUSTER_OFFSET;      // 右區塊 x: 990px
-            var RIGHT_PEDAL_CX = CANVAS_CX + PEDAL_OFFSET;        // 右腳踏 x: 1350px
+            var MAIN_ARC_HALF_WIDTH = 350;
+            var SECONDARY_CX = 1430;
+            var SECONDARY_CY = 485;
+            var FRAME_RX = 412;
+            var FRAME_RY = 174;
+            var PRIMARY_SOURCE_WIDTH = (FRAME_RX + 18) * 2;
+            var PRIMARY_SOURCE_HEIGHT = (FRAME_RY + 16) * 2;
+            var PRIMARY_SOURCE_ASPECT = PRIMARY_SOURCE_WIDTH / PRIMARY_SOURCE_HEIGHT;
+            // The compact primary occupies the lower-left wing between FH6's
+            // map and Drift Zone total. Its scale is calculated on resize.
+            var PRIMARY_SLOT_PREFERRED_WIDTH = 260;
+            var primaryRenderScale = 0.30;
+            var primaryAnchor = null;
+            // Advanced effective width is ~544px and VFD is ~630px at their
+            // shared default scale. Use the midpoint as Drift's conventional
+            // bottom-right secondary box.
+            var SECONDARY_BOX_WIDTH = 590;
+            var SECONDARY_BOX_HEIGHT = 288;
+            var SECONDARY_BOX_PADDING = 30;
+            var SECONDARY_SOURCE_WIDTH = 520;
+            var SECONDARY_SOURCE_HEIGHT = 252;
+            var SECONDARY_HALF_WIDTH = SECONDARY_SOURCE_WIDTH * 0.5;
+            var SECONDARY_HALF_HEIGHT = SECONDARY_SOURCE_HEIGHT * 0.5;
 
             var ANGLE_TICKS = [-60, -45, -30, -15, 0, 15, 30, 45, 60];
 
             // ── 左區與右區共用字體樣式與大小控制變數 (Shared Typography Controls) ──
-            var FONT_SIDE_MIDDLE_VAL = 'italic bold 60px ForzaGear'; // 中間層焦點大字 (角度 / 反打) 共用字體與大小
-            var FONT_SIDE_SUB_LABEL = 'bold 44px ForzaGear';         // 上下兩層標籤 (GRIP, DRIFT / FLOW, RISK) 共用字體與大小
+            var FONT_SIDE_MIDDLE_VAL = 'italic bold 72px ForzaGear';
+            var FONT_SIDE_SUB_LABEL = 'italic bold 38px ForzaGear';
+            var FONT_GEAR_VALUE = 'italic bold 190px ForzaGear';
+            var FONT_SPEED_VALUE = 'italic bold 90px ForzaGear';
+            var PRIMARY_UNIT_FONT = 'bold 42px Bahnschrift';
 
             // 從字體字串中動態解析像素高度
             function parseFontSize(fontStr) {
@@ -155,15 +290,17 @@
 
             // ── Global State Engine ──────────────────────────────────────────
             var isMetricUnit = true;
-            var currentProfile = '1440P STREAM';
 
             var angle = 0.0;
             var displayAngle = 0.0;
             var holdSeconds = 0.0;
             var speedKmh = 0;
+            var displaySpeed = 0;
             var gear = 'N';
             var rpm = 0;
             var maxRpm = 9000; // 預設 9000 RPM，會隨遙測 data.maxRpm 動態更新
+            var torqueValue = 0;
+            var torqueUnit = 'N·M';
 
             var accelPct = 0;
             var brakePct = 0;
@@ -171,6 +308,19 @@
             var handbrakePct = 0;
             var steerPct = 0;
             var counterPct = 0;
+            var counterArcAngle = 0;
+            var isCountering = false;
+
+            // Secondary Advanced-style instrument state. Keep the attitude
+            // indicator on the same HUDCore frame as the input gauges.
+            var travelAngleDeg = 0;
+            var slipAnglesDeg = [0, 0, 0, 0];
+            var slipRatios = [0, 0, 0, 0];
+            var wheelLockup = { fl: false, fr: false, rl: false, rr: false };
+            var lcState = 'inactive';
+            var lcFallbackArmed = false;
+            var lcFallbackGoFrames = 0;
+            var LC_FALLBACK_GO_FRAMES = 45;
 
             var flowPct = 0;
             var flowQuality = 1;
@@ -179,60 +329,265 @@
 
             var inputFlashTtl = { H: 0, C: 0, B: 0, T: 0 };
             var prevInputs = { H: 0, C: 0, B: 0, T: 0 };
-            var popupTimer = null;
+            var prevCounterPct = 0;
+            var prevRiskLevel = 1;
+            var prevEventAngleDeg = 0;
+            var handbrakeEntryCandidateUntil = 0;
+            var styleEventCooldownUntil = {
+                handbrake: 0,
+                clutch_kick: 0,
+                brake_rotation: 0,
+                throttle_punch: 0,
+                counter_snap: 0,
+                direction_switch: 0,
+                angle_lock: 0,
+                grip_save: 0
+            };
+            var driftSweepActive = false;
+            var driftSweepStartedAt = 0;
+            var driftSweepFrame = { rpm: 0, angle: 0, speed: 0 };
+            var DRIFT_SWEEP_DURATION = 1500;
+
+            // Drift Style is a HUD-local domain module. Keep this snapshot
+            // preallocated so the render hot path does not create frame objects.
+            var driftStyleEngine = window.DriftStyleEngine ? window.DriftStyleEngine.create() : null;
+            var driftDisplayMath = window.DriftDisplayMath || null;
+            var driftStyleFrame = { speedKmh: 0, angle: 0, flowQuality: 0, riskLevel: 0 };
+            var driftStyleUi = {
+                container: document.getElementById('drift-style-container'),
+                title: document.getElementById('drift-style-title'),
+                rank: document.getElementById('drift-style-rank'),
+                meterFill: document.getElementById('drift-style-meter-fill'),
+                flow: document.getElementById('drift-style-flow'),
+                hold: document.getElementById('drift-style-hold'),
+                risk: document.getElementById('drift-style-risk'),
+                special: document.getElementById('drift-style-special'),
+                nextPaintAt: 0,
+                visible: false,
+                rowVisible: { flow: false, hold: false, risk: false, special: false }
+            };
 
             function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
             function lerp(a, b, t) { return a + (b - a) * clamp(t, 0, 1); }
 
-            function triggerPopup(text, durationMs, isHero) {
-                var popup = document.getElementById('drift-popup-hero');
-                if (!popup) return;
-                popup.innerText = text;
-                if (isHero) popup.classList.add('hero-event');
-                else popup.classList.remove('hero-event');
-                popup.classList.add('active');
-                if (popupTimer) clearTimeout(popupTimer);
-                popupTimer = setTimeout(function () {
-                    popup.classList.remove('active');
-                }, durationMs || 1200);
+            // Prefer a canonical upstream LC state when one exists. The
+            // fallback keeps the lamp useful with current telemetry, where
+            // lcState may be absent or remain inactive in the shared frame.
+            function resolveLaunchControlState(data, payload) {
+                var payloadState = payload && payload.lcState;
+                var dataState = data && (data.lcState || data.launchControlState);
+                var explicitState = payloadState || dataState;
+                if (explicitState === 'armed' || explicitState === 'launched') {
+                    lcFallbackArmed = false;
+                    lcFallbackGoFrames = 0;
+                    return explicitState;
+                }
+
+                var rawGear = Number(data && (data.gear !== undefined ? data.gear : data.Gear));
+                var rawSpeed = Number(data && (data.speed_kmh !== undefined ? data.speed_kmh : data.speed)) || 0;
+                var rawThrottle = Number(data && (data.throttle !== undefined ? data.throttle : data.AccelInput)) || 0;
+                var rawHandbrake = Number(data && (data.hand_brake !== undefined ? data.hand_brake : data.HandBrakeInput)) || 0;
+                var throttlePercent = rawThrottle <= 1 ? rawThrottle * 100 : rawThrottle / 2.55;
+                var handbrakePercent = rawHandbrake <= 1 ? rawHandbrake * 100 : rawHandbrake / 2.55;
+                var launchReady = rawGear === 1 && rawSpeed < 8 && throttlePercent >= 70 && handbrakePercent >= 50;
+
+                if (launchReady) {
+                    lcFallbackArmed = true;
+                    lcFallbackGoFrames = 0;
+                    return 'armed';
+                }
+                if (lcFallbackArmed && rawSpeed >= 8) {
+                    lcFallbackArmed = false;
+                    lcFallbackGoFrames = LC_FALLBACK_GO_FRAMES;
+                    return 'launched';
+                }
+                if (lcFallbackArmed && rawGear === 1 && rawSpeed < 8 && throttlePercent >= 70) {
+                    // Releasing the handbrake is the launch action. Keep ARM
+                    // alive through the brief zero-speed transition instead
+                    // of clearing it before the car begins moving.
+                    return 'armed';
+                }
+                if (lcFallbackGoFrames > 0) {
+                    lcFallbackGoFrames -= 1;
+                    return 'launched';
+                }
+                lcFallbackArmed = false;
+                return 'inactive';
             }
 
-            // ── 25% 半透明縮小半橢圓 HUD 背景 (使用者自訂 rx=640) ───────────────
-            function drawSemiEllipticalBackdrop() {
+            function resizeDriftCanvas() {
+                if (!canvas || !ctx || !driftLayout) return;
+
+                var width = Math.max(1, window.innerWidth || 1920);
+                var height = Math.max(1, window.innerHeight || 1080);
+                canvasDpr = Math.min(2, window.devicePixelRatio || 1);
+                viewportTransform = driftLayout.getViewportTransform(width, height, 0);
+                primaryAnchor = driftLayout.getFh6PrimaryAnchor(
+                    width,
+                    height,
+                    PRIMARY_SLOT_PREFERRED_WIDTH,
+                    PRIMARY_SOURCE_ASPECT
+                );
+                primaryRenderScale = primaryAnchor.width / (PRIMARY_SOURCE_WIDTH * viewportTransform.scale);
+                canvas.width = Math.round(width * canvasDpr);
+                canvas.height = Math.round(height * canvasDpr);
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                ctx.setTransform(
+                    canvasDpr * viewportTransform.scale,
+                    0,
+                    0,
+                    canvasDpr * viewportTransform.scale,
+                    canvasDpr * viewportTransform.offsetX,
+                    canvasDpr * viewportTransform.offsetY
+                );
+            }
+
+            window.addEventListener('resize', resizeDriftCanvas);
+
+            function triggerDriftStyleSpecial(id, now, cooldownMs) {
+                if (driftSweepActive || !driftStyleEngine) return false;
+                var cooldownUntil = styleEventCooldownUntil[id] || 0;
+                if (now < cooldownUntil) return false;
+                driftStyleEngine.triggerSpecial(id, now);
+                styleEventCooldownUntil[id] = now + (cooldownMs || 1200);
+                return true;
+            }
+
+            function triggerDriftSweepAnimation() {
+                if (driftSweepActive) return;
+                driftSweepActive = true;
+                driftSweepStartedAt = performance.now();
+                if (driftStyleEngine) driftStyleEngine.reset();
+                handbrakeEntryCandidateUntil = 0;
+                prevCounterPct = 0;
+                prevRiskLevel = 1;
+                prevEventAngleDeg = 0;
+                styleEventCooldownUntil.handbrake = 0;
+                styleEventCooldownUntil.clutch_kick = 0;
+                styleEventCooldownUntil.brake_rotation = 0;
+                styleEventCooldownUntil.throttle_punch = 0;
+                styleEventCooldownUntil.counter_snap = 0;
+                styleEventCooldownUntil.direction_switch = 0;
+                styleEventCooldownUntil.angle_lock = 0;
+                styleEventCooldownUntil.grip_save = 0;
+            }
+
+            function setDriftStyleText(element, value) {
+                if (element && element.textContent !== value) element.textContent = value;
+            }
+
+            function setDriftStyleRow(source, value, visible) {
+                var row = driftStyleUi[source];
+                if (!row) return;
+                if (driftStyleUi.rowVisible[source] !== visible) {
+                    row.style.display = visible ? 'flex' : 'none';
+                    driftStyleUi.rowVisible[source] = visible;
+                }
+                if (visible) setDriftStyleText(row.lastElementChild, value);
+            }
+
+            function renderDriftStyleSpecial(style) {
+                var text = '';
+                if (style.summary.active && style.summary.specialLabel) {
+                    text = 'BEST SPECIAL · ' + style.summary.specialLabel + ' ×' + style.summary.specialCount;
+                } else if (style.special.active) {
+                    text = style.special.label + ' +' + style.special.points + (style.special.count > 1 ? ' ×' + style.special.count : '');
+                }
+
+                setDriftStyleRow('special', text, !!text);
+            }
+
+            // The engine advances at RAF cadence, while the fixed DOM container
+            // is refreshed at 12.5 Hz to avoid layout work in the 60 Hz path.
+            function renderDriftStyleContainer(now) {
+                if (!driftStyleEngine || now < driftStyleUi.nextPaintAt) return;
+                driftStyleUi.nextPaintAt = now + 80;
+
+                var style = driftStyleEngine.getState();
+                var summary = style.summary;
+                var isSummary = summary.active;
+                renderDriftStyleSpecial(style);
+                var visible = style.runActive || isSummary;
+                if (driftStyleUi.visible !== visible && driftStyleUi.container) {
+                    driftStyleUi.container.classList.toggle('active', visible);
+                    driftStyleUi.visible = visible;
+                }
+                if (!visible) return;
+
+                var rankCode = isSummary ? summary.rankCode : style.rankCode;
+                var rankLabel = isSummary ? summary.rankLabel : style.rankLabel;
+                var meterRatio = isSummary ? summary.meterRatio : style.meterRatio;
+                setDriftStyleText(driftStyleUi.title, (isSummary ? 'RUN COMPLETE · ' : 'STYLE · ') + rankLabel);
+                setDriftStyleText(driftStyleUi.rank, rankCode);
+                if (driftStyleUi.meterFill) driftStyleUi.meterFill.style.width = Math.round(meterRatio * 100) + '%';
+
+                if (isSummary) {
+                    setDriftStyleRow('special', summary.specialLabel ? summary.specialLabel + ' +' + summary.specialCount : '', !!summary.specialLabel);
+                    setDriftStyleRow('flow', summary.flowLabel ? summary.flowLabel + ' ×' + summary.flowCount : '', !!summary.flowLabel);
+                    setDriftStyleRow('hold', summary.holdSeconds > 0 ? 'HOLD ' + summary.holdSeconds.toFixed(1) + 's' : '', summary.holdSeconds > 0);
+                    setDriftStyleRow('risk', summary.riskLabel ? summary.riskLabel + ' ×' + summary.riskCount : '', !!summary.riskLabel);
+                    return;
+                }
+
+                var events = style.events;
+                setDriftStyleRow('special', style.special.active ? style.special.label + ' +' + style.special.points + (style.special.count > 1 ? ' ?' + style.special.count : '') : '', style.special.active);
+                setDriftStyleRow('flow', events.flow.label ? events.flow.label + ' ×' + events.flow.count : '', !!events.flow.label);
+                setDriftStyleRow('hold', events.hold.seconds > 0 ? 'HOLD ' + events.hold.seconds.toFixed(1) + 's' : '', events.hold.seconds > 0);
+                setDriftStyleRow('risk', events.risk.label ? events.risk.label + ' ×' + events.risk.count : '', !!events.risk.label);
+            }
+
+            // One continuous oval surface aligns the visual system with the twin arc gauges.
+            function drawModernFrame() {
                 if (!ctx) return;
-                var cx = CANVAS_CX, cy = CANVAS_CY, rx = 640, ry = 210;
 
                 ctx.save();
-                // 1. 半橢圓 fill 底罩
-                ctx.fillStyle = C_LENS_BACKDROP;
+                var rx = FRAME_RX + 18;
+                var ry = FRAME_RY + 16;
+                var frameGradient = ctx.createRadialGradient(CANVAS_CX, CANVAS_CY, 20, CANVAS_CX, CANVAS_CY, 470);
+                frameGradient.addColorStop(0, 'rgba(14, 29, 45, 0.62)');
+                frameGradient.addColorStop(0.58, C_FRAME_FILL);
+                frameGradient.addColorStop(1, 'rgba(5, 12, 22, 0.16)');
                 ctx.beginPath();
-                ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, rx, ry, 0, 0, Math.PI * 2);
+                ctx.fillStyle = frameGradient;
                 ctx.fill();
 
-                // 2. 邊緣柔和亮線
+                ctx.lineWidth = 1.25;
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-                ctx.lineWidth = 1.5;
                 ctx.stroke();
 
-                // 3. 橢圓頂部 neon 發光切線
+                ctx.globalAlpha = 0.58;
+                ctx.strokeStyle = C_FRAME_EDGE;
+                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.ellipse(cx, cy, rx, ry, 0, Math.PI * 1.15, Math.PI * 1.85);
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, FRAME_RX, FRAME_RY, 0, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.globalAlpha = 0.74;
                 ctx.strokeStyle = C_ICE;
-                ctx.lineWidth = 2.2;
                 ctx.shadowColor = C_ICE;
                 ctx.shadowBlur = 10;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, FRAME_RX, FRAME_RY, 0, Math.PI * 1.15, Math.PI * 1.85);
                 ctx.stroke();
+                ctx.shadowBlur = 0;
 
+                ctx.globalAlpha = 0.4;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.ellipse(CANVAS_CX, CANVAS_CY, FRAME_RX, FRAME_RY, 0, Math.PI * 0.15, Math.PI * 0.85);
+                ctx.strokeStyle = C_ICE;
+                ctx.stroke();
                 ctx.restore();
             }
 
             // ── 1. 上弧條：飄移角度 Arc & 角度數字刻度 (-60° ... 0° ... +60°) ──────
-            var topArcGeo = { cx: CANVAS_CX, cy: 125, halfWidth: 480, rise: 75 };
+            var topArcGeo = { cx: CANVAS_CX, cy: CANVAS_CY, halfWidth: MAIN_ARC_HALF_WIDTH };
 
             function topCurvePoint(t) {
-                var x = topArcGeo.cx + t * topArcGeo.halfWidth;
-                var y = topArcGeo.cy + topArcGeo.rise * (t * t);
-                return { x: x, y: y };
+                return driftLayout.ellipsePoint(t, topArcGeo.cx, topArcGeo.cy, topArcGeo.halfWidth, FRAME_RX, FRAME_RY, 'top');
             }
 
             function renderTopAngleArc() {
@@ -280,12 +635,14 @@
 
                 // ── 上弧：飄移角度數字刻度 (-60°, -45°, -30°, -15°, 0°, 15°, 30°, 45°, 60°) ──
                 ctx.save();
-                ctx.font = 'bold 12px Bahnschrift';
+                var compactPrimary = primaryRenderScale < 0.35;
+                ctx.font = compactPrimary ? 'bold 48px Bahnschrift' : 'bold 16px Bahnschrift';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
 
                 for (var i = 0; i < ANGLE_TICKS.length; i++) {
                     var tickAngle = ANGLE_TICKS[i];
+                    if (compactPrimary && tickAngle !== 0 && Math.abs(tickAngle) !== 45) continue;
                     var tVal = tickAngle / 60.0;
                     var tickP = topCurvePoint(tVal);
                     var isCenter = tickAngle === 0;
@@ -299,15 +656,32 @@
                     ctx.fillText(labelStr, tickP.x, tickP.y + 36);
                 }
                 ctx.restore();
+
+                // Steering input is normalized onto the ±45° steering range
+                // inside the wider ±60° drift-angle scale. It is intentionally
+                // a pointer, not a falsely precise wheel-angle number.
+                if (Math.abs(steerPct) > 0.5) {
+                    var pointerPoint = topCurvePoint(counterArcAngle / 60.0);
+                    var pointerColor = isCountering ? C_AMBER : C_ICE;
+                    ctx.save();
+                    ctx.fillStyle = pointerColor;
+                    ctx.shadowColor = pointerColor;
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.moveTo(pointerPoint.x, pointerPoint.y - 15);
+                    ctx.lineTo(pointerPoint.x - 7, pointerPoint.y - 3);
+                    ctx.lineTo(pointerPoint.x + 7, pointerPoint.y - 3);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
             }
 
             // ── 2. 下弧條：動態 maxRpm & 動態紅線區 (萬轉以上 1500rpm / 萬轉以下 1000rpm 跨度) ─
-            var botArcGeo = { cx: CANVAS_CX, cy: 515, halfWidth: 480, rise: -75 };
+            var botArcGeo = { cx: CANVAS_CX, cy: CANVAS_CY, halfWidth: MAIN_ARC_HALF_WIDTH };
 
             function botCurvePoint(t) {
-                var x = botArcGeo.cx + t * botArcGeo.halfWidth;
-                var y = botArcGeo.cy + botArcGeo.rise * (t * t);
-                return { x: x, y: y };
+                return driftLayout.ellipsePoint(t, botArcGeo.cx, botArcGeo.cy, botArcGeo.halfWidth, FRAME_RX, FRAME_RY, 'bottom');
             }
 
             function renderBottomTachoArc() {
@@ -359,11 +733,13 @@
 
                 // ── 下弧：動態轉速 x1000 數字刻度 (0 ... maxK x1000) ────────────
                 ctx.save();
-                ctx.font = 'bold 13px Bahnschrift';
+                var compactPrimary = primaryRenderScale < 0.35;
+                ctx.font = compactPrimary ? 'bold 48px Bahnschrift' : 'bold 13px Bahnschrift';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
 
                 for (var k = 0; k <= maxK; k++) {
+                    if (compactPrimary && k !== 0 && k !== maxK && k !== Math.round(maxK * 0.5)) continue;
                     var tickRpmVal = k * 1000;
                     var kRatio = tickRpmVal / rpmLimit;
                     var tK = -1.0 + 2.0 * kRatio;
@@ -389,7 +765,10 @@
                 if (!ctx) return;
 
                 var absA = Math.abs(displayAngle);
-                var ratingColor = absA >= 45 ? C_REDLINE : (absA >= 30 ? C_AMBER : (absA >= 15 ? C_MINT : C_WHITE));
+                var ratingColor = C_WHITE;
+                if (absA >= 45) ratingColor = C_REDLINE;
+                else if (absA >= 30) ratingColor = C_AMBER;
+                else if (absA >= 15) ratingColor = C_MINT;
 
                 var midHalfH = SIDE_MID_FONT_SIZE * 0.42;
                 var topEdgeY = CANVAS_CY - midHalfH;
@@ -403,7 +782,7 @@
                 ctx.font = FONT_SIDE_MIDDLE_VAL;
                 ctx.fillStyle = ratingColor;
                 ctx.shadowColor = ratingColor;
-                ctx.shadowBlur = absA >= 45 ? 16 : 10;
+                ctx.shadowBlur = absA >= 15 ? (absA >= 45 ? 16 : 10) : 8;
                 ctx.fillText(displayAngle.toFixed(1) + '°', LEFT_CLUSTER_X, CANVAS_CY);
 
                 // 上層：GRIP / HOLD 秒數標籤 (貼齊中間文字上緣 textBaseline = 'bottom')
@@ -412,13 +791,15 @@
                 var holdText = holdSeconds > 0.5 ? 'HOLD: ' + holdSeconds.toFixed(1) + 's' : 'GRIP';
                 var holdColor = holdSeconds > 0.5 ? C_AMBER : C_WHITE_DIM;
                 ctx.fillStyle = holdColor;
-                if (holdSeconds > 0.5) { ctx.shadowColor = C_AMBER; ctx.shadowBlur = 8; }
+                ctx.shadowColor = holdColor;
+                ctx.shadowBlur = holdSeconds > 0.5 ? 8 : 0;
                 ctx.fillText(holdText, LEFT_CLUSTER_X, topEdgeY);
 
                 // 下層：方向標籤 (貼齊中間文字下緣 textBaseline = 'top')
                 ctx.textBaseline = 'top';
                 ctx.font = FONT_SIDE_SUB_LABEL;
                 ctx.fillStyle = C_WHITE_DIM;
+                ctx.shadowColor = C_WHITE_DIM;
                 ctx.shadowBlur = 0;
                 var dirStr = displayAngle < -1.0 ? 'LEFT DRIFT' : (displayAngle > 1.0 ? 'RIGHT DRIFT' : 'CENTER');
                 ctx.fillText(dirStr, LEFT_CLUSTER_X, botEdgeY);
@@ -430,27 +811,40 @@
             function renderCenterGearCluster() {
                 if (!ctx) return;
 
-                var gearFontSize = 120;
-                var gearBottomY = CANVAS_CY + gearFontSize * 0.38;
-
                 ctx.save();
                 ctx.textAlign = 'center';
 
                 // 超大型檔位 (120px, 始終垂直置中 CANVAS_CY = 320px)
                 ctx.textBaseline = 'middle';
-                ctx.font = 'bold ' + gearFontSize + 'px ForzaGear';
+                ctx.font = FONT_GEAR_VALUE;
                 ctx.fillStyle = C_WHITE;
                 ctx.shadowColor = C_WHITE;
-                ctx.shadowBlur = 14;
-                ctx.fillText(gear, CENTER_CLUSTER_X, CANVAS_CY);
+                ctx.shadowBlur = 8;
+                ctx.fillText(gear, CANVAS_CX, CANVAS_CY);
 
                 // 實時速度 (48px, 貼齊檔位下緣 textBaseline = 'top')
-                ctx.textBaseline = 'top';
-                var unitStr = isMetricUnit ? 'KM/H' : 'MPH';
-                ctx.font = 'bold 48px ForzaGear';
+                ctx.textBaseline = 'middle';
+                ctx.font = FONT_SPEED_VALUE;
                 ctx.fillStyle = C_WHITE_DIM;
+                ctx.shadowColor = C_WHITE_DIM;
+                ctx.shadowBlur = 0;
+                ctx.textAlign = 'right';
+                ctx.fillText(displaySpeed, CANVAS_CX - 92, CANVAS_CY);
+                ctx.textAlign = 'left';
+                ctx.fillStyle = C_AMBER;
+                ctx.shadowColor = C_AMBER;
                 ctx.shadowBlur = 6;
-                ctx.fillText(speedKmh + ' ' + unitStr, CENTER_CLUSTER_X, gearBottomY);
+                ctx.fillText(torqueValue, CANVAS_CX + 92, CANVAS_CY);
+
+                ctx.textBaseline = 'top';
+                ctx.font = PRIMARY_UNIT_FONT;
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.shadowColor = C_WHITE_DIM;
+                ctx.shadowBlur = 0;
+                ctx.textAlign = 'right';
+                ctx.fillText(isMetricUnit ? 'KM/H' : 'MPH', CANVAS_CX - 92, CANVAS_CY + 34);
+                ctx.textAlign = 'left';
+                ctx.fillText(torqueUnit, CANVAS_CX + 92, CANVAS_CY + 34);
 
                 ctx.restore();
             }
@@ -468,31 +862,33 @@
 
                 // 2. 中層：COUNTER Steer Angle (始終垂直置中 CANVAS_CY = 320px)
                 ctx.textBaseline = 'middle';
-                var cCol = counterPct > 70 ? C_REDLINE : (counterPct > 20 ? C_AMBER : C_WHITE);
+                var cCol = C_WHITE;
+                if (counterPct > 70) cCol = C_REDLINE;
+                else if (counterPct > 20) cCol = C_AMBER;
                 ctx.font = FONT_SIDE_MIDDLE_VAL;
                 ctx.fillStyle = cCol;
                 ctx.shadowColor = cCol;
-                ctx.shadowBlur = counterPct > 20 ? 12 : 0;
+                ctx.shadowBlur = counterPct > 20 ? 12 : 8;
                 ctx.fillText('C ' + counterPct.toFixed(0) + '°', RIGHT_CLUSTER_X, CANVAS_CY);
 
                 // 1. 上層：FLOW Rating (貼齊中間文字上緣 textBaseline = 'bottom')
                 ctx.textBaseline = 'bottom';
-                var flowColor = FLOW_COLOR_MAP[flowQuality] || C_WHITE;
+                var flowColor = flowQuality > 1 ? (FLOW_COLOR_MAP[flowQuality] || C_WHITE) : C_WHITE_DIM;
                 var flowStr = FLOW_LABELS[flowQuality] || 'BUILD';
                 ctx.font = FONT_SIDE_SUB_LABEL;
                 ctx.fillStyle = flowColor;
                 ctx.shadowColor = flowColor;
-                ctx.shadowBlur = flowQuality >= 4 ? 14 : 6;
+                ctx.shadowBlur = flowQuality >= 4 ? 14 : 0;
                 ctx.fillText('FLOW: ' + flowStr, RIGHT_CLUSTER_X, topEdgeY);
 
                 // 3. 下層：RISK Level (貼齊中間文字下緣 textBaseline = 'top')
                 ctx.textBaseline = 'top';
-                var riskColor = RISK_COLOR_MAP[riskLevel] || C_WHITE;
+                var riskColor = riskLevel > 1 ? (RISK_COLOR_MAP[riskLevel] || C_WHITE) : C_WHITE_DIM;
                 var riskStr = RISK_LABELS[riskLevel] || 'SAFE';
                 ctx.font = FONT_SIDE_SUB_LABEL;
                 ctx.fillStyle = riskColor;
                 ctx.shadowColor = riskColor;
-                ctx.shadowBlur = riskLevel >= 3 ? 14 : 6;
+                ctx.shadowBlur = riskLevel >= 3 ? 14 : 0;
                 ctx.fillText('RISK: ' + riskStr, RIGHT_CLUSTER_X, botEdgeY);
 
                 ctx.restore();
@@ -526,40 +922,648 @@
 
                 ctx.save();
 
-                var barW = 44, barH = 130, startY = 245;
+                var barW = 36, barH = 96, startY = 272;
 
                 // 4A. 左翼腳踏組：手煞車 (H) & 離合器 (C) (水平置中於 LEFT_PEDAL_CX)
-                var leftStartX = LEFT_PEDAL_CX - (2 * 56 - 12) * 0.5;
+                var leftStartX = LEFT_PEDAL_CX - 48;
                 drawPedal(leftStartX, startY, barW, barH, handbrakePct, C_AMBER, 'H', 'H');
-                drawPedal(leftStartX + 56, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
+                drawPedal(leftStartX + 48, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
 
                 // 4B. 右翼腳踏組：煞車 (B) & 油門 (T) (水平置中於 RIGHT_PEDAL_CX)
-                var rightStartX = RIGHT_PEDAL_CX - (2 * 56 - 12) * 0.5;
+                var rightStartX = RIGHT_PEDAL_CX - 48;
                 drawPedal(rightStartX, startY, barW, barH, brakePct, C_REDLINE, 'B', 'B');
-                drawPedal(rightStartX + 56, startY, barW, barH, accelPct, C_WHITE, 'T', 'T');
+                drawPedal(rightStartX + 48, startY, barW, barH, accelPct, C_WHITE, 'T', 'T');
 
                 ctx.restore();
             }
 
             // ── Main Render Loop ─────────────────────────────────────────────
+            function drawSecondaryPanelPath(left, top, right, bottom, cut) {
+                ctx.beginPath();
+                ctx.moveTo(left + cut, top);
+                ctx.lineTo(right - cut, top);
+                ctx.lineTo(right, top + cut);
+                ctx.lineTo(right, bottom - cut);
+                ctx.lineTo(right - cut, bottom);
+                ctx.lineTo(left + cut, bottom);
+                ctx.lineTo(left, bottom - cut);
+                ctx.lineTo(left, top + cut);
+                ctx.closePath();
+            }
+
+            function traceSecondarySuperArc(centerX, centerY, radiusX, radiusY, exponent, start, end) {
+                var steps = Math.max(6, Math.ceil(Math.abs(end - start) * 18));
+                var power = 2 / exponent;
+                ctx.beginPath();
+                for (var step = 0; step <= steps; step++) {
+                    var t = start + (end - start) * step / steps;
+                    var cosT = Math.cos(t);
+                    var sinT = Math.sin(t);
+                    var x = centerX + radiusX * Math.sign(cosT) * Math.pow(Math.abs(cosT), power);
+                    var y = centerY + radiusY * Math.sign(sinT) * Math.pow(Math.abs(sinT), power);
+                    if (step === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+            }
+
+            // Legacy renderer retained temporarily for comparison while the
+            // new active renderer below is validated against screenshots.
+            function drawSecondaryLegacyArcGauge(centerX, centerY, ratio, color, label, value) {
+                var start = Math.PI * 1.05;
+                var end = Math.PI * 1.95;
+                var span = end - start;
+                var clampedRatio = clamp(ratio, 0, 1);
+                var segments = 10;
+                var outerX = 78, outerY = 66;
+                var energyX = 68, energyY = 56;
+                var exponent = 2.35;
+
+                ctx.save();
+                ctx.lineCap = 'butt';
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = 'rgba(235, 243, 243, 0.42)';
+                traceSecondarySuperArc(centerX, centerY, outerX, outerY, exponent, start, end);
+                ctx.stroke();
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+                traceSecondarySuperArc(centerX, centerY, energyX - 14, energyY - 14, exponent, start, end);
+                ctx.stroke();
+
+                for (var i = 0; i < segments; i++) {
+                    var segmentStart = start + (i / segments) * span + 0.018;
+                    var segmentEnd = start + ((i + 1) / segments) * span - 0.018;
+                    var active = (i + 1) / segments <= clampedRatio + 0.001;
+
+                    ctx.lineWidth = 13;
+                    ctx.strokeStyle = active ? color : C_TRACK;
+                    ctx.globalAlpha = active ? 0.30 : 1;
+                    ctx.shadowColor = active ? color : 'transparent';
+                    ctx.shadowBlur = active ? 10 : 0;
+                    traceSecondarySuperArc(centerX, centerY, energyX, energyY, exponent, segmentStart, segmentEnd);
+                    ctx.stroke();
+
+                    ctx.globalAlpha = 1;
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = active ? color : 'rgba(255, 255, 255, 0.18)';
+                    ctx.shadowBlur = active ? 5 : 0;
+                    traceSecondarySuperArc(centerX, centerY, energyX, energyY, exponent, segmentStart, segmentEnd);
+                    ctx.stroke();
+                }
+
+                var indicatorAngle = start + span * clampedRatio;
+                var cosI = Math.cos(indicatorAngle);
+                var sinI = Math.sin(indicatorAngle);
+                var powerI = 2 / exponent;
+                var markerX = centerX + energyX * Math.sign(cosI) * Math.pow(Math.abs(cosI), powerI);
+                var markerY = centerY + energyY * Math.sign(sinI) * Math.pow(Math.abs(sinI), powerI);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(markerX, markerY, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.fillText(label, centerX, centerY - 14);
+                ctx.font = 'italic bold 28px ForzaGear';
+                ctx.fillStyle = color;
+                ctx.fillText(value, centerX, centerY + 14);
+                ctx.restore();
+            }
+
+            // Advanced-inspired hard-edged panel with Drift's cyan tracking
+            // lines and pink risk accents.
+            function renderSecondaryLegacyInstrument() {
+                if (!ctx) return;
+
+                var left = SECONDARY_CX - SECONDARY_HALF_WIDTH;
+                var right = SECONDARY_CX + SECONDARY_HALF_WIDTH;
+                var top = SECONDARY_CY - SECONDARY_HALF_HEIGHT;
+                var bottom = SECONDARY_CY + SECONDARY_HALF_HEIGHT;
+                var cut = 20;
+                var absA = Math.abs(displayAngle);
+                var angleColor = absA >= 45 ? C_REDLINE : (absA >= 20 ? C_AMBER : C_WHITE);
+                var flowColor = flowQuality > 1 ? (FLOW_COLOR_MAP[flowQuality] || C_WHITE) : C_WHITE_DIM;
+                var riskColor = riskLevel > 1 ? (RISK_COLOR_MAP[riskLevel] || C_WHITE) : C_WHITE_DIM;
+                var direction = displayAngle < -1 ? 'LEFT DRIFT' : (displayAngle > 1 ? 'RIGHT DRIFT' : 'CENTER');
+
+                ctx.save();
+                var fill = ctx.createLinearGradient(left, top, right, bottom);
+                fill.addColorStop(0, 'rgba(13, 28, 43, 0.88)');
+                fill.addColorStop(0.56, 'rgba(7, 15, 27, 0.78)');
+                fill.addColorStop(1, 'rgba(7, 14, 24, 0.58)');
+                ctx.fillStyle = fill;
+                drawSecondaryPanelPath(left, top, right, bottom, cut);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(102, 224, 255, 0.52)';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = C_ICE;
+                ctx.shadowBlur = 8;
+                drawSecondaryPanelPath(left, top, right, bottom, cut);
+                ctx.stroke();
+
+                ctx.shadowBlur = 0;
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = C_ICE;
+                ctx.beginPath();
+                ctx.moveTo(left + cut, top + 1.5);
+                ctx.lineTo(left + 150, top + 1.5);
+                ctx.moveTo(right - 132, top + 1.5);
+                ctx.lineTo(right - cut, top + 1.5);
+                ctx.stroke();
+
+                ctx.strokeStyle = C_REDLINE;
+                ctx.globalAlpha = 0.72;
+                ctx.beginPath();
+                ctx.moveTo(left + cut, bottom - 1.5);
+                ctx.lineTo(left + 104, bottom - 1.5);
+                ctx.moveTo(right - 86, bottom - 1.5);
+                ctx.lineTo(right - cut, bottom - 1.5);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(SECONDARY_CX, top + 36);
+                ctx.lineTo(SECONDARY_CX, bottom - 38);
+                ctx.stroke();
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.font = 'bold 16px Bahnschrift';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'left';
+                ctx.fillText('DRIFT STATUS', left + 28, top + 26);
+
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.fillStyle = C_ICE;
+                ctx.fillText('LIVE', right - 28, top + 26);
+
+                drawSecondaryLegacyArcGauge(left + 112, top + 112, flowPct / 100, flowColor, 'FLOW', FLOW_LABELS[flowQuality] || 'BUILD');
+                drawSecondaryLegacyArcGauge(right - 112, top + 112, spinRisk / 100, riskColor, 'RISK', RISK_LABELS[riskLevel] || 'SAFE');
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '900 76px Bahnschrift';
+                ctx.fillStyle = angleColor;
+                ctx.shadowColor = angleColor;
+                ctx.shadowBlur = absA >= 20 ? 12 : 6;
+                ctx.fillText(absA.toFixed(1) + '°', SECONDARY_CX, top + 110);
+
+                ctx.font = 'bold 14px Bahnschrift';
+                ctx.fillStyle = C_WHITE_DIM;
+                ctx.shadowBlur = 0;
+                ctx.fillText(direction, SECONDARY_CX, top + 143);
+                ctx.fillStyle = isCountering ? C_AMBER : C_WHITE_DIM;
+                ctx.fillText('COUNTER ' + counterPct.toFixed(0) + '%', SECONDARY_CX, top + 162);
+
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 14px Bahnschrift';
+                ctx.fillStyle = holdSeconds > 0.5 ? C_AMBER : C_WHITE_DIM;
+                ctx.fillText(holdSeconds > 0.5 ? 'HOLD ' + holdSeconds.toFixed(1) + 's' : 'GRIP', right - 28, top + 162);
+
+                var barW = 26, barH = 48, startY = bottom - 54;
+                drawPedal(SECONDARY_CX - 92, startY, barW, barH, handbrakePct, C_AMBER, 'H', 'H');
+                drawPedal(SECONDARY_CX - 54, startY, barW, barH, clutchPct, C_WHITE, 'C', 'C');
+                drawPedal(SECONDARY_CX + 42, startY, barW, barH, brakePct, C_REDLINE, 'B', 'B');
+                drawPedal(SECONDARY_CX + 80, startY, barW, barH, accelPct, C_WHITE, 'T', 'T');
+                ctx.restore();
+            }
+
+            // G3 linear rail grammar for the active secondary. A shallow
+            // quadratic Bezier is used instead of a superellipse so ratio
+            // remains monotonic in x while the small y bulge preserves a
+            // light instrument silhouette without curvature noise.
+            function secondaryRailPointX(startX, startY, endX, endY, ratio, bulge) {
+                var r = clamp(ratio, 0, 1);
+                var dx = endX - startX;
+                var dy = endY - startY;
+                var length = Math.max(0.0001, Math.sqrt(dx * dx + dy * dy));
+                var normalX = -dy / length;
+                return startX + dx * r + normalX * bulge * 4 * r * (1 - r);
+            }
+
+            function secondaryRailPointY(startX, startY, endX, endY, ratio, bulge) {
+                var r = clamp(ratio, 0, 1);
+                var dx = endX - startX;
+                var dy = endY - startY;
+                var length = Math.max(0.0001, Math.sqrt(dx * dx + dy * dy));
+                var normalY = dx / length;
+                return startY + dy * r + normalY * bulge * 4 * r * (1 - r);
+            }
+
+            function drawSecondaryLinearRail(startX, startY, endX, endY, ratio, color, label, value, weight, bulge, captionX, captionY) {
+                var r = clamp(ratio, 0, 1);
+                var dx = endX - startX;
+                var dy = endY - startY;
+                var length = Math.max(0.0001, Math.sqrt(dx * dx + dy * dy));
+                var normalX = -dy / length;
+                var normalY = dx / length;
+                var controlX = (startX + endX) * 0.5 + normalX * bulge * 2;
+                var controlY = (startY + endY) * 0.5 + normalY * bulge * 2;
+                var q0X = startX + (controlX - startX) * r;
+                var q0Y = startY + (controlY - startY) * r;
+                var activeX = secondaryRailPointX(startX, startY, endX, endY, r, bulge);
+                var activeY = secondaryRailPointY(startX, startY, endX, endY, r, bulge);
+                var lineWidth = weight >= 1 ? 9 : (weight >= 0.8 ? 7 : 4);
+                var activeAlpha = weight >= 1 ? 0.96 : (weight >= 0.8 ? 0.90 : 0.72);
+
+                ctx.save();
+                ctx.lineCap = 'round';
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = C_TRACK;
+                ctx.globalAlpha = Math.min(1, 0.60 + DRIFT_STYLE_TOKENS.trackAlpha);
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                ctx.stroke();
+
+                if (r > 0.001) {
+                    ctx.strokeStyle = color;
+                    ctx.globalAlpha = activeAlpha;
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = weight >= 0.8 ? DRIFT_STYLE_TOKENS.glow.input : 0;
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    // De Casteljau sub-curve from 0 to ratio. This keeps the
+                    // charge fill on exactly the same rail as the track.
+                    ctx.quadraticCurveTo(q0X, q0Y, activeX, activeY);
+                    ctx.stroke();
+                }
+
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(activeX, activeY, weight >= 1 ? 6 : (weight >= 0.8 ? 5 : 4), 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'center';
+                ctx.font = weight >= 0.8 ? DRIFT_STYLE_TOKENS.labelFont : 'bold 12px Bahnschrift';
+                ctx.fillStyle = DRIFT_STYLE_TOKENS.labelColor;
+                ctx.fillText(label, captionX, captionY);
+                ctx.font = weight >= 0.8 ? DRIFT_STYLE_TOKENS.valueFont : 'bold 14px ForzaGear';
+                ctx.fillStyle = color;
+                ctx.fillText(value, captionX, captionY + 16);
+                ctx.restore();
+            }
+
+            function drawSecondaryArrow(x, y, angleDeg, length, color, width) {
+                var angleRad = angleDeg * Math.PI / 180;
+                var dx = Math.sin(angleRad) * length;
+                var dy = -Math.cos(angleRad) * length;
+                var endX = x + dx;
+                var endY = y + dy;
+                var head = Math.max(3, width * 1.7);
+
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = width > 2 ? 5 : 3;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - Math.sin(angleRad - 0.7) * head, endY + Math.cos(angleRad - 0.7) * head);
+                ctx.lineTo(endX - Math.sin(angleRad + 0.7) * head, endY + Math.cos(angleRad + 0.7) * head);
+                ctx.closePath();
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawSecondaryAttitudeIndicator(centerX, centerY) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 54);
+                ctx.lineTo(centerX, centerY + 54);
+                ctx.moveTo(centerX - 72, centerY);
+                ctx.lineTo(centerX + 72, centerY);
+                ctx.stroke();
+
+                // The main drift gauge defines angle as local planar velocity
+                // (atan2(VelocityX, VelocityZ)). The travel axis is the fixed
+                // vertical reference here, so the vehicle heading/body must
+                // rotate by the opposite signed angle to show the actual
+                // relationship between travel direction and vehicle posture.
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(-travelAngleDeg * Math.PI / 180);
+                ctx.translate(-centerX, -centerY);
+                ctx.fillStyle = 'rgba(11, 25, 39, 0.86)';
+                ctx.strokeStyle = C_ICE;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(centerX - 22, centerY - 34, 44, 68, 10);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = C_ICE;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 43);
+                ctx.lineTo(centerX - 9, centerY - 30);
+                ctx.lineTo(centerX + 9, centerY - 30);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+
+                // Cyan is vehicle heading and follows the rotated body;
+                // amber is the fixed travel axis. The four tire vectors use
+                // slip angle for direction and slip ratio for length.
+                drawSecondaryArrow(centerX, centerY, -travelAngleDeg, 38, C_ICE, 3);
+                drawSecondaryArrow(centerX, centerY + 9, 0, 29, C_AMBER, 3.2);
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(-travelAngleDeg * Math.PI / 180);
+                ctx.translate(-centerX, -centerY);
+                for (var i = 0; i < 4; i++) {
+                    var wheelX = centerX + (i % 2 === 0 ? -42 : 42);
+                    var wheelY = centerY + (i < 2 ? -24 : 26);
+                    var wheelAngle = slipAnglesDeg[i];
+                    var wheelRatio = slipRatios[i];
+                    var wheelLock = i === 0 ? wheelLockup.fl : (i === 1 ? wheelLockup.fr : (i === 2 ? wheelLockup.rl : wheelLockup.rr));
+                    var slipStrength = clamp(Math.abs(wheelRatio) / 0.5, 0, 1);
+                    var arrowLength = 10 + slipStrength * 27;
+                    var arrowColor = wheelLock || slipStrength >= 0.75
+                        ? DRIFT_STYLE_TOKENS.warningColor
+                        : (slipStrength >= 0.35 ? C_AMBER : C_WHITE_DIM);
+                    drawSecondaryArrow(wheelX, wheelY, wheelAngle, arrowLength, arrowColor, 2);
+                }
+                ctx.restore();
+
+                ctx.font = 'bold 12px Bahnschrift';
+                ctx.textAlign = 'left';
+                ctx.fillStyle = C_ICE;
+                ctx.fillText('HD', centerX - 79, centerY - 49);
+                ctx.fillStyle = C_AMBER;
+                ctx.fillText('TRV', centerX + 47, centerY - 49);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = DRIFT_STYLE_TOKENS.labelColor;
+                ctx.fillText('SLIP', centerX, centerY + 59);
+                ctx.restore();
+            }
+
+            function drawSecondaryGripLights(left, top, ratios) {
+                var labels = ['FL', 'FR', 'RL', 'RR'];
+                for (var i = 0; i < 4; i++) {
+                    var ratio = clamp(Math.abs(ratios[i] || 0) / 0.5, 0, 1);
+                    var x = left + (i % 2) * 96;
+                    var y = top + Math.floor(i / 2) * 19;
+                    ctx.font = 'bold 12px Bahnschrift';
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = DRIFT_STYLE_TOKENS.labelColor;
+                    ctx.fillText(labels[i], x - 7, y + 4);
+                    var lock = i === 0 ? wheelLockup.fl : (i === 1 ? wheelLockup.fr : (i === 2 ? wheelLockup.rl : wheelLockup.rr));
+                    var warning = ratio >= 0.75 || lock;
+                    var warningPulse = warning ? (0.62 + 0.38 * Math.sin(Date.now() / 120 * Math.PI)) : 1;
+                    var barLeft = x + 3;
+                    var barWidth = 58;
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = C_TRACK;
+                    ctx.beginPath();
+                    ctx.roundRect(barLeft, y - 5, barWidth, 10, 2);
+                    ctx.fill();
+                    if (ratio > 0.001) {
+                        ctx.globalAlpha = warning ? warningPulse : 0.92;
+                        ctx.fillStyle = warning ? DRIFT_STYLE_TOKENS.warningColor : C_ICE;
+                        ctx.beginPath();
+                        ctx.roundRect(barLeft, y - 5, Math.max(2, barWidth * ratio), 10, 2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            function drawSecondaryLcBadge(top, right) {
+                var active = lcState === 'armed' || lcState === 'launched';
+                var launched = lcState === 'launched';
+                var badgeWidth = 68;
+                var badgeLeft = right - badgeWidth - 16;
+                var stateColor = launched ? C_MINT : (active ? C_AMBER : C_WHITE_DIM);
+                var stateLabel = launched ? 'LC GO' : (active ? 'LC ARM' : 'LC');
+                var pulse = active ? (0.72 + 0.28 * Math.sin(Date.now() / (launched ? 120 : 250) * Math.PI)) : 0.42;
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                ctx.strokeStyle = stateColor;
+                ctx.lineWidth = active ? 2 : 1.5;
+                ctx.beginPath();
+                ctx.roundRect(badgeLeft, top + 8, badgeWidth, 26, 4);
+                ctx.stroke();
+                if (active) {
+                    ctx.globalAlpha = pulse * 0.20;
+                    ctx.fillStyle = stateColor;
+                    ctx.fill();
+                    ctx.globalAlpha = pulse;
+                }
+                ctx.fillStyle = stateColor;
+                ctx.font = 'bold 13px Bahnschrift';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(stateLabel, badgeLeft + badgeWidth * 0.5, top + 21);
+                ctx.restore();
+            }
+
+            function renderSecondaryInstrument() {
+                if (!ctx) return;
+
+                // P1 boundary: speed, unit and gear stay primary-owned. The
+                // secondary is a control surface; LC is only a small badge.
+                var left = SECONDARY_CX - SECONDARY_HALF_WIDTH;
+                var right = SECONDARY_CX + SECONDARY_HALF_WIDTH;
+                var top = SECONDARY_CY - SECONDARY_HALF_HEIGHT;
+                var bottom = SECONDARY_CY + SECONDARY_HALF_HEIGHT;
+                var centerX = SECONDARY_CX;
+                var inputLeft = left + 22;
+                var inputRight = centerX - 18;
+                var inputCenter = (inputLeft + inputRight) * 0.5;
+                var dynamicsLeft = centerX + 18;
+                var dynamicsCenter = (dynamicsLeft + right - 18) * 0.5;
+
+                ctx.save();
+                var fill = ctx.createLinearGradient(left, top, right, bottom);
+                fill.addColorStop(0, DRIFT_STYLE_TOKENS.surface[0]);
+                fill.addColorStop(0.56, DRIFT_STYLE_TOKENS.surface[1]);
+                fill.addColorStop(1, DRIFT_STYLE_TOKENS.surface[2]);
+                ctx.fillStyle = fill;
+                drawSecondaryPanelPath(left, top, right, bottom, 18);
+                ctx.fill();
+
+                ctx.strokeStyle = C_ICE;
+                ctx.lineWidth = 1.5;
+                ctx.shadowColor = C_ICE;
+                ctx.shadowBlur = DRIFT_STYLE_TOKENS.glow.edge;
+                ctx.globalAlpha = DRIFT_STYLE_TOKENS.edgeAlpha;
+                drawSecondaryPanelPath(left, top, right, bottom, 18);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+
+                ctx.font = DRIFT_STYLE_TOKENS.labelFont;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = DRIFT_STYLE_TOKENS.labelColor;
+                ctx.fillText('DRIFT CONTROL', left + 18, top + 21);
+                drawSecondaryLcBadge(top, right);
+
+                // G3 divides the panel into two explicit reading zones:
+                // inputs on the left, vehicle dynamics on the right.
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerX, top + 38);
+                ctx.lineTo(centerX, bottom - 16);
+                ctx.stroke();
+
+                ctx.font = 'bold 12px Bahnschrift';
+                ctx.textAlign = 'left';
+                ctx.fillStyle = C_ICE;
+                ctx.fillText('DRIVER INPUTS', inputLeft, top + 43);
+                ctx.fillText('VEHICLE DYNAMICS', dynamicsLeft, top + 43);
+
+                // Throttle is the primary rail: longest, brightest and thickest.
+                drawSecondaryLinearRail(
+                    inputLeft, top + 84, inputRight, top + 84,
+                    accelPct / 100, C_ICE, 'THROTTLE', Math.round(accelPct) + '%',
+                    1, -12, inputCenter, top + 53
+                );
+
+                // Brake is the second-weight rail and occupies the central input slot.
+                drawSecondaryLinearRail(
+                    inputLeft + 18, top + 136, inputRight - 2, top + 136,
+                    brakePct / 100, C_BRAKE, 'BRAKE', Math.round(brakePct) + '%',
+                    0.88, -10, inputCenter, top + 101
+                );
+
+                // Clutch and handbrake mirror each other from outer-lower to inner-upper.
+                drawSecondaryLinearRail(
+                    inputLeft + 2, bottom - 26, inputCenter - 14, top + 168,
+                    clutchPct / 100, C_WHITE_DIM, 'CLUTCH', Math.round(clutchPct) + '%',
+                    0.60, -7, inputCenter - 58, top + 160
+                );
+                drawSecondaryLinearRail(
+                    inputRight - 2, bottom - 26, inputCenter + 14, top + 168,
+                    handbrakePct / 100, C_AMBER, 'HANDBRAKE', Math.round(handbrakePct) + '%',
+                    0.72, 7, inputCenter + 58, top + 160
+                );
+
+                // Vehicle dynamics gets the previously unused right-side space.
+                drawSecondaryAttitudeIndicator(dynamicsCenter, top + 139);
+                drawSecondaryGripLights(dynamicsLeft + 14, bottom - 45, slipRatios);
+                ctx.restore();
+            }
+
+            function renderSecondaryInstrumentAtConventionalAnchor() {
+                if (!ctx || !driftLayout) return;
+
+                var anchor = driftLayout.getBottomRightAnchor(
+                    window.innerWidth,
+                    window.innerHeight,
+                    SECONDARY_BOX_WIDTH,
+                    SECONDARY_BOX_HEIGHT,
+                    SECONDARY_BOX_PADDING
+                );
+                var logicalCenterX = (anchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
+                var logicalCenterY = (anchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
+                var scaleX = anchor.width / (SECONDARY_SOURCE_WIDTH * viewportTransform.scale);
+                var scaleY = anchor.height / (SECONDARY_SOURCE_HEIGHT * viewportTransform.scale);
+
+                ctx.save();
+                ctx.translate(logicalCenterX, logicalCenterY);
+                ctx.scale(scaleX, scaleY);
+                ctx.translate(-SECONDARY_CX, -SECONDARY_CY);
+                renderSecondaryInstrument();
+                ctx.restore();
+            }
+
+            function renderPrimaryInstrument() {
+                if (!ctx || !primaryAnchor) return;
+
+                var logicalCenterX = (primaryAnchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
+                var logicalCenterY = (primaryAnchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
+
+                // The canvas is viewport-sized so this layer can use screen
+                // space while retaining the existing Drift visual scale.
+                ctx.save();
+                ctx.translate(logicalCenterX, logicalCenterY);
+                ctx.scale(primaryRenderScale, primaryRenderScale);
+                ctx.translate(-CANVAS_CX, -CANVAS_CY);
+                drawModernFrame();
+                renderTopAngleArc();
+                renderBottomTachoArc();
+                renderCenterGearCluster();
+                ctx.restore();
+            }
+
             function renderLoop() {
                 try {
-                    if (ctx) ctx.clearRect(0, 0, 1680, 640);
+                    var now = performance.now();
+                    var sweepProgress = driftSweepActive
+                        ? clamp((now - driftSweepStartedAt) / DRIFT_SWEEP_DURATION, 0, 1)
+                        : 0;
+                    var liveAngle = displayAngle;
+                    var liveRpm = rpm;
+                    var liveSpeed = displaySpeed;
+                    var liveGear = gear;
+                    var liveCounterPct = counterPct;
+                    var liveCounterArcAngle = counterArcAngle;
+                    var liveCountering = isCountering;
 
-                    // 1. 繪製半橢圓 HUD 背景
-                    drawSemiEllipticalBackdrop();
+                    if (driftSweepActive) {
+                        driftLayout.fillSweepState(sweepProgress, maxRpm, driftSweepFrame);
+                        displayAngle = driftSweepFrame.angle;
+                        rpm = driftSweepFrame.rpm;
+                        displaySpeed = driftSweepFrame.speed;
+                        gear = 'N';
+                        counterPct = 0;
+                        counterArcAngle = 0;
+                        isCountering = false;
+                    } else if (driftStyleEngine) {
+                        driftStyleFrame.speedKmh = speedKmh;
+                        driftStyleFrame.angle = displayAngle;
+                        driftStyleFrame.flowQuality = flowQuality;
+                        driftStyleFrame.riskLevel = riskLevel;
+                        driftStyleEngine.update(driftStyleFrame, now);
+                    }
+                    if (driftStyleEngine) renderDriftStyleContainer(now);
+                    if (ctx) {
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.setTransform(
+                            canvasDpr * viewportTransform.scale,
+                            0,
+                            0,
+                            canvasDpr * viewportTransform.scale,
+                            canvasDpr * viewportTransform.offsetX,
+                            canvasDpr * viewportTransform.offsetY
+                        );
+                    }
 
-                    // 2. 繪製對稱雙弧表 (上弧角度刻度 & 下弧動態 maxRpm 萬轉1500/萬轉以下1000紅線區)
-                    renderTopAngleArc();
-                    renderBottomTachoArc();
+                    // 1-3. Primary instrument uses its own compact layer scale.
+                    renderPrimaryInstrument();
 
-                    // 3. 繪製中央三大動態對稱資訊區塊
-                    renderLeftAngleCluster();
-                    renderCenterGearCluster();
-                    renderRightRatingCluster();
+                    // 4. Secondary instrument follows the conventional
+                    // bottom-right HUD bounding box used by Advanced/VFD.
+                    renderSecondaryInstrumentAtConventionalAnchor();
 
-                    // 4. 繪製左右兩側腳踏柱 (左: H/C, 右: B/T)
-                    renderSplitPedalPanels();
+                    displayAngle = liveAngle;
+                    rpm = liveRpm;
+                    displaySpeed = liveSpeed;
+                    gear = liveGear;
+                    counterPct = liveCounterPct;
+                    counterArcAngle = liveCounterArcAngle;
+                    isCountering = liveCountering;
+
+                    if (driftSweepActive && sweepProgress >= 1) driftSweepActive = false;
 
                 } catch (e) {
                     console.error('[Drift HUD] Render loop exception:', e);
@@ -577,8 +1581,15 @@
                 }
 
                 speedKmh = Math.round(data.speed_kmh || data.speed || 0);
+                displaySpeed = Math.round(isMetricUnit ? (data.speed_kmh || data.speed || 0) : (data.speed_mph || (speedKmh * 0.621371)));
                 rpm = data.rpm || 0;
                 maxRpm = data.maxRpm || data.max_rpm || 9000;
+                var resolvedTorque = driftDisplayMath ? driftDisplayMath.resolveTorque(data, isMetricUnit) : {
+                    value: Math.round(data.torque || 0),
+                    unit: isMetricUnit ? 'N·M' : 'LB·FT'
+                };
+                torqueValue = resolvedTorque.value;
+                torqueUnit = resolvedTorque.unit;
 
                 var rawGear = data.gear;
                 gear = rawGear === 0 ? 'R' : (rawGear === 11 || rawGear === 10 ? 'N' : (rawGear || 'N'));
@@ -586,8 +1597,9 @@
                 accelPct = (data.throttle || 0) * 100;
                 brakePct = (data.brake || 0) * 100;
                 clutchPct = (data.clutch || 0) * 100;
-                handbrakePct = (data.hand_brake || 0) * 100;
-                steerPct = clamp((data.steer || 0) / 1.27, -100, 100);
+                var rawHandbrake = Number(data.hand_brake) || 0;
+                handbrakePct = rawHandbrake <= 1 ? rawHandbrake * 100 : rawHandbrake / 2.55;
+                steerPct = driftDisplayMath ? driftDisplayMath.normalizeSteerPercent(data.steer) : clamp((data.steer || 0) / 1.27, -100, 100);
 
                 var vx = data.vel_x || 0;
                 var vz = data.vel_z || 0;
@@ -599,7 +1611,32 @@
                     angle = 0;
                 }
 
+                var rawSlipRatios = Array.isArray(data.TireSlipRatio) ? data.TireSlipRatio : [];
+                var rawSlipAngles = Array.isArray(data.TireSlipAngle) ? data.TireSlipAngle : [];
+                slipRatios[0] = Number(data.slip_fl !== undefined ? data.slip_fl : rawSlipRatios[0]) || 0;
+                slipRatios[1] = Number(data.slip_fr !== undefined ? data.slip_fr : rawSlipRatios[1]) || 0;
+                slipRatios[2] = Number(data.slip_rl !== undefined ? data.slip_rl : rawSlipRatios[2]) || 0;
+                slipRatios[3] = Number(data.slip_rr !== undefined ? data.slip_rr : rawSlipRatios[3]) || 0;
+                slipAnglesDeg[0] = (Number(data.slip_angle_fl !== undefined ? data.slip_angle_fl : rawSlipAngles[0]) || 0) * 180 / Math.PI;
+                slipAnglesDeg[1] = (Number(data.slip_angle_fr !== undefined ? data.slip_angle_fr : rawSlipAngles[1]) || 0) * 180 / Math.PI;
+                slipAnglesDeg[2] = (Number(data.slip_angle_rl !== undefined ? data.slip_angle_rl : rawSlipAngles[2]) || 0) * 180 / Math.PI;
+                slipAnglesDeg[3] = (Number(data.slip_angle_rr !== undefined ? data.slip_angle_rr : rawSlipAngles[3]) || 0) * 180 / Math.PI;
+                for (var slipIndex = 0; slipIndex < 4; slipIndex++) {
+                    slipAnglesDeg[slipIndex] = clamp(slipAnglesDeg[slipIndex], -45, 45);
+                }
+                var lockup = (payload && payload.lockup) || data.lockup || {};
+                wheelLockup.fl = !!lockup.fl;
+                wheelLockup.fr = !!lockup.fr;
+                wheelLockup.rl = !!lockup.rl;
+                wheelLockup.rr = !!lockup.rr;
+                lcState = resolveLaunchControlState(data, payload);
+
                 displayAngle = lerp(displayAngle, angle, 0.25);
+                // Keep the attitude panel on the exact same smoothed angle
+                // used by the primary drift arc. VelocityX/Z are already the
+                // local planar velocity inputs for that calculation; applying
+                // world Yaw here would double-count the vehicle orientation.
+                travelAngleDeg = displayAngle;
                 var absA = Math.abs(displayAngle);
 
                 if (speedKmh > 10 && absA >= 10) {
@@ -608,11 +1645,15 @@
                     holdSeconds = 0;
                 }
 
-                if (absA >= 8 && displayAngle * steerPct > 0) {
-                    counterPct = Math.abs(steerPct) * (0.45 + 0.55 * clamp((absA - 8) / 42, 0, 1));
-                } else {
-                    counterPct = 0;
-                }
+                var fallbackIsCountering = absA >= 8 && displayAngle * steerPct > 0;
+                var counterState = driftDisplayMath ? driftDisplayMath.getCounterState(displayAngle, steerPct) : {
+                    isCountering: fallbackIsCountering,
+                    percent: fallbackIsCountering ? Math.abs(steerPct) * (0.45 + 0.55 * clamp((absA - 8) / 42, 0, 1)) : 0,
+                    arcAngle: clamp(steerPct * 0.45, -45, 45)
+                };
+                isCountering = counterState.isCountering;
+                counterPct = counterState.percent;
+                counterArcAngle = counterState.arcAngle;
 
                 // Compute Flow & Risk Rating Integer Levels (1~5 & 1~4)
                 if (absA >= 30 && speedKmh > 20 && counterPct > 30) {
@@ -637,31 +1678,70 @@
                     riskLevel = 1; // SAFE
                 }
 
-                if (handbrakePct > 40 && prevInputs.H <= 40) { inputFlashTtl.H = 18; triggerPopup('HANDBRAKE ENTRY', 1000, false); }
-                if (clutchPct > 40 && prevInputs.C <= 40) { inputFlashTtl.C = 18; if (accelPct > 50) triggerPopup('CLUTCH KICK', 1000, false); }
+                var eventNow = performance.now();
+                var specialTriggered = false;
+                var handbrakeRising = handbrakePct >= 78 && prevInputs.H <= 20;
+                if (handbrakeRising && speedKmh >= 25 && accelPct >= 35 && brakePct <= 20 && Math.abs(steerPct) >= 30) {
+                    handbrakeEntryCandidateUntil = eventNow + 420;
+                }
+                if (handbrakeEntryCandidateUntil >= eventNow &&
+                    handbrakePct >= 60 && speedKmh >= 25 && absA >= 12 && Math.abs(steerPct) >= 30) {
+                    specialTriggered = triggerDriftStyleSpecial('handbrake', eventNow, 1600);
+                    if (specialTriggered) handbrakeEntryCandidateUntil = 0;
+                }
+                if (eventNow > handbrakeEntryCandidateUntil) handbrakeEntryCandidateUntil = 0;
+
+                if (handbrakePct > 40 && prevInputs.H <= 40) inputFlashTtl.H = 18;
+                if (clutchPct > 40 && prevInputs.C <= 40) inputFlashTtl.C = 18;
                 if (brakePct > 40 && prevInputs.B <= 40) inputFlashTtl.B = 18;
                 if (accelPct > 40 && prevInputs.T <= 40) inputFlashTtl.T = 18;
+
+                if (!specialTriggered && clutchPct >= 65 && prevInputs.C <= 20 &&
+                    accelPct >= 55 && speedKmh >= 15 && absA >= 8) {
+                    specialTriggered = triggerDriftStyleSpecial('clutch_kick', eventNow, 1200);
+                }
+                if (!specialTriggered && brakePct >= 72 && prevInputs.B <= 20 &&
+                    handbrakePct < 20 && speedKmh >= 25 && absA >= 15) {
+                    specialTriggered = triggerDriftStyleSpecial('brake_rotation', eventNow, 1300);
+                }
+                if (!specialTriggered && accelPct >= 85 && prevInputs.T <= 30 &&
+                    brakePct < 30 && speedKmh >= 15 && absA >= 12) {
+                    specialTriggered = triggerDriftStyleSpecial('throttle_punch', eventNow, 1100);
+                }
+                if (!specialTriggered && counterPct >= 65 && prevCounterPct <= 30 &&
+                    speedKmh >= 20 && absA >= 24) {
+                    specialTriggered = triggerDriftStyleSpecial('counter_snap', eventNow, 1400);
+                }
+                if (!specialTriggered && prevEventAngleDeg * displayAngle < 0 &&
+                    Math.abs(prevEventAngleDeg) >= 18 && absA >= 18 && speedKmh >= 20) {
+                    specialTriggered = triggerDriftStyleSpecial('direction_switch', eventNow, 1600);
+                }
+                if (!specialTriggered && Math.abs(prevEventAngleDeg) < 27 &&
+                    absA >= 30 && speedKmh >= 20 && counterPct >= 25) {
+                    specialTriggered = triggerDriftStyleSpecial('angle_lock', eventNow, 1400);
+                }
+                if (!specialTriggered && prevRiskLevel >= 3 && riskLevel <= 1 &&
+                    speedKmh >= 20 && absA >= 12) {
+                    specialTriggered = triggerDriftStyleSpecial('grip_save', eventNow, 1600);
+                }
 
                 prevInputs.H = handbrakePct;
                 prevInputs.C = clutchPct;
                 prevInputs.B = brakePct;
                 prevInputs.T = accelPct;
-            }
-
-            function applyProfileLayout(profileName) {
-                currentProfile = profileName || '1440P STREAM';
+                prevCounterPct = counterPct;
+                prevRiskLevel = riskLevel;
+                prevEventAngleDeg = displayAngle;
             }
 
             // ── HUDCore Registration ─────────────────────────────────────────
             HUDCore.registerStyle('drift', {
                 containerId: 'driftContainer',
-                scaleMultiplier: 0.95,
+                scaleMultiplier: 1.0,
+                globalScaleFactor: 1.0,
                 onInit: function (payload) {
                     if (payload && payload.isMetric !== undefined) {
                         isMetricUnit = payload.isMetric !== false;
-                    }
-                    if (payload && payload.driftProfile) {
-                        applyProfileLayout(payload.driftProfile);
                     }
                 },
                 onElementsChange: function (elements) {
@@ -672,13 +1752,17 @@
                     parseTelemetryData(data, payload);
                 },
                 onAnimate: function () {
-                    triggerPopup('DRIFT HUD READY', 1500, false);
+                    // Sweep is the HUD's mechanical zero/calibration action;
+                    // reset the Drift Style run together with the instrument.
+                    triggerDriftSweepAnimation();
                 }
             });
 
             // Start HUD Engine
+            resizeDriftCanvas();
             HUDCore.init('drift');
             requestAnimationFrame(renderLoop);
+            setTimeout(triggerDriftSweepAnimation, 80);
         })();
     </script>
 </body>

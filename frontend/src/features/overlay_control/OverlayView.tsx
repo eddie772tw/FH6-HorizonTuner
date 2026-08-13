@@ -93,8 +93,6 @@ interface HudConfig {
   /** VFD Instrument Sensitivity Offsets */
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
-  /** Drift HUD Profile Preset */
-  driftProfile?: '1440P STREAM' | '1080P FULL' | '1440P CLEAN';
   glowIntensity?: number;
   customColor?: string;
   useDefaultColors?: boolean;
@@ -132,7 +130,6 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryLiveMapOffsetY: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
-  driftProfile: '1440P STREAM',
   glowIntensity: 1.0,
   customColor: '#00f0ff',
   useDefaultColors: true,
@@ -493,11 +490,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   const handleVfdAudioOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
     const updated = { ...config, vfdAudioOffset: clamped };
-    saveConfig(updated);
-  };
-
-  const handleDriftProfileChange = (profile: '1440P STREAM' | '1080P FULL' | '1440P CLEAN') => {
-    const updated = { ...config, driftProfile: profile };
     saveConfig(updated);
   };
 
@@ -1208,29 +1200,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     />
                   </div>
                 </>
-              )}
-
-              {/* Drift HUD Custom Profile Controls (Visible only when Drift HUD is selected) */}
-              {config.hudStyle === 'drift' && (
-                <div className="border-top pt-2">
-                  <div className="d-flex justify-content-between align-items-center mb-1">
-                    <span className="fs-7 text-body-secondary">{t("Drift HUD Profile:")}</span>
-                    <span className="text-primary fw-bold fs-7">{
-                      config.driftProfile === "1080P FULL" ? t("1080P FULL (Full HD Overlay)") :
-                      config.driftProfile === "1440P CLEAN" ? t("1440P CLEAN (Minimalist Arc & Map)") :
-                      t("1440P STREAM (Full Stream Setup)")
-                    }</span>
-                  </div>
-                  <select
-                    className="form-select form-select-sm"
-                    value={config.driftProfile ?? '1440P STREAM'}
-                    onChange={(e) => handleDriftProfileChange(e.target.value as any)}
-                  >
-                    <option value="1440P STREAM">{t("1440P STREAM (Full Stream Setup)")}</option>
-                    <option value="1080P FULL">{t("1080P FULL (Full HD Overlay)")}</option>
-                    <option value="1440P CLEAN">{t("1440P CLEAN (Minimalist Arc & Map)")}</option>
-                  </select>
-                </div>
               )}
 
               <button

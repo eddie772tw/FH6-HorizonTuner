@@ -276,6 +276,170 @@
 
 ---
 
+## 2026-08-11 / PR #185 Codex Takeover
+
+- **Scope**: GitHub PR #185, `feat(drift-hud): style meter and split instruments`.
+- **Status**: active.
+- **Owner**: Codex.
+- **Branch**: `codex/drift-hud-modernize-remove-presets` at `283fe39`.
+- **Changed**: Checked out the PR branch from `origin`; no implementation changes made after takeover.
+- **Pending**: Continue the Drift HUD visual iteration and address any CI or review feedback that appears.
+- **Blocked by**: None. PR is open and currently Ready for Review; no review submissions or inline threads are present.
+- **Verification**: Clean worktree at takeover; PR reports 33 frontend test files / 205 tests and `git diff --check` passed.
+- **Next action**: Run the local frontend validation baseline before the next implementation change; move the PR back to Draft if active iteration requires it.
+
+---
+
+## 2026-08-11 / Telemetry HUD Reference Research Documentation
+
+- **Scope**: PR #185 follow-up research; document the five shallow-cloned reference repositories within the Drift HUD visual-slice boundary.
+- **Status**: active.
+- **Owner**: Codex.
+- **Branch**: `codex/drift-hud-modernize-remove-presets`.
+- **Changed**: Added `docs/reference-projects/` overview plus one PR-scoped evaluation per reference project, and `docs/telemetry-hud-implementation-plan.md`.
+- **Research boundary**: `ref/forza-hud-references/` remains ignored and is source-level research material only. Proprietary Horizon HUD assets/code and GPL Forza Data Tools code are explicitly excluded from reuse.
+- **Key decision**: Keep the existing 60Hz frame/emitter, TelemetryView, and HUD card behavior unchanged; PR#185 only validates and refines the Drift HUD-local presentation layer and its existing frame integration.
+- **Verification**: `git diff --check` passed; docs are visible as untracked files; existing `.agents/Journal.md` takeover entry remains preserved.
+- **Pending**: Complete the PR-scoped Drift HUD edge-case and visual validation; telemetry architecture work must be a separate issue/PR.
+
+---
+
+## 2026-08-11 / Drift Style MVP
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Status**: adopted
+- **Decision**: The first implementation phase leaves the existing Drift HUD
+  primary instrument unchanged. A dependency-free `drift_style_engine.js` owns
+  scoring, rank decay, source-local FLOW/HOLD/RISK aggregation, Hero special
+  events, direction-swap continuity, and settlement snapshots. The display is a fixed container inside
+  `hud_overlay/drift/index.html`, not a shared TelemetryCard.
+- **Hot-path boundary**: The engine receives a preallocated normalized frame in
+  the existing RAF loop. Its DOM container is updated at 12.5 Hz with no CSS
+  transition, preserving the 60 Hz Canvas and telemetry path.
+- **Evidence**: `frontend/src/utils/driftStyleEngine.test.ts` covers source
+  aggregation, Hero special events, direction swaps, and sustained-loss settlement.
+
+---
+
+## 2026-08-11 / Drift HUD Primary-Secondary Split
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Decision**: The central oval is now the primary instrument and renders only
+  the drift-angle arc, tachometer arc, and a speed / gear / torque 1+1+1
+  hierarchy. A lower-right oval secondary instrument owns drift angle,
+  direction, FLOW, RISK, HOLD, and the four driver-input columns.
+- **Telemetry contract**: `SteerInput` is normalized to a clamped percentage
+  and projected onto the shared plus-or-minus 60 degree drift arc as an amber
+  counter-steer pointer. It is deliberately not displayed as a physical
+  wheel-angle measurement. Torque uses the existing normalized telemetry unit.
+- **Hot-path boundary**: `drift_display_math.js` is dependency-free and the
+  Canvas loop only consumes normalized scalar state; no React work or
+  allocations were introduced into the telemetry path.
+- **Evidence**: `frontend/src/utils/driftDisplayMath.test.ts` covers steering
+  normalization, counter-steer direction, visual arc mapping, and torque
+  units. Frontend Vitest: 33 files / 205 tests passed.
+
+---
+
+## 2026-08-11 / PR #185 Drift Edge-Case Hardening
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Implementation**: `drift_display_math.js` now treats null, undefined, and
+  empty-string torque payloads as missing values before selecting the metric or
+  imperial fallback field. Non-finite fallback values still resolve to zero.
+- **Tests**: added boundary and clamp coverage for steering and counter-steer
+  projection, torque fallback coverage, expired pending Hero events, invalid
+  timestamps, and full Drift engine reset lifecycle.
+- **Verification**: targeted Drift tests passed (2 files / 13 tests); frontend
+  Vitest baseline passed (33 files / 210 tests). Added `driftHudContract.test.ts`
+  to compile the inline controller and protect the primary/secondary/shared-card
+  mounts plus RAF/12.5 Hz rendering boundary. Current baseline: 34 files / 213
+  tests passed.
+- **Boundary preserved**: no changes to TelemetryView, HUD card toggles,
+  telemetry transport, or the existing 60 Hz Canvas/telemetry path.
+
+---
+
+## 2026-08-11 / Drift Sweep Semantics and Steering Range
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Decision**: other HUDs use `onAnimate` for their Sweep action; for Drift,
+  Sweep is additionally the mechanical zero/calibration operation, so it must
+  reset the Drift Style engine and combo state.
+- **Decision**: the drift-angle background scale remains ±60°, while normalized
+  steering maps to a separate ±45° indicator range. 100% steer is exactly 45°;
+  higher raw values are clamped at that boundary.
+- **Verification**: frontend Vitest baseline passed (34 files / 213 tests).
+
+---
+
+## 2026-08-11 / Drift HUD Full-Viewport Feedback
+
+- **Scope**: local / `codex/drift-hud-modernize-remove-presets`
+- **Feedback addressed**: implemented a real 1.5s startup/Sweep animation,
+  moved Drift layers to viewport anchoring, enlarged the HUD typography, moved
+  the logical canvas above the game's bottom score area, generalized the
+  steering pointer to render for any non-zero steering input, and aligned both
+  tachometer/angle arcs to the same ellipse as the frame decoration.
+- **Architecture**: kept one HUD HTML and one HUDCore telemetry lifecycle;
+  viewport-fixed DOM layers and a DPR-aware full-screen canvas avoid duplicate
+  telemetry registrations while escaping the conventional bottom-right slot.
+- **Hot-path boundary**: viewport transform is recalculated only on resize;
+  canvas rendering remains RAF-driven and Style Meter DOM painting remains
+  throttled to 80ms.
+- **Verification**: frontend Vitest baseline passed (35 files / 216 tests).
+
+---
+
+## 2026-08-11 / Drift Primary Scale and Score Layer Feedback
+
+- **Feedback**: the full-viewport transform made the primary instrument too
+  large and the Style Meter overlapped the primary/secondary instruments.
+- **Decision**: keep the secondary instrument at viewport fit scale, apply a
+  dedicated `PRIMARY_RENDER_SCALE = 0.62` around the primary center, and anchor
+  the Style Meter to the viewport upper-right (`right: 4vw`, `top: 28vh`).
+- **Verification**: frontend Vitest baseline passed (35 files / 216 tests).
+- **Pending**: in-game screenshot review for the final primary scale and the
+  selected score-layer clearance.
+
+---
+
+## 2026-08-11 / Drift Secondary Conventional Bottom-Right Anchor
+
+- **Decision**: compare the Drift secondary instrument with Advanced and VFD,
+  which use fixed-size containers, shared root `padding: 30px`, and
+  `transform-origin: bottom right`. The secondary therefore uses the viewport
+  transform with zero extra bottom margin, preserving its current size while
+  aligning its lower edge to the conventional HUD anchor.
+- **Primary isolation**: the primary keeps its independent compact scale and a
+  compensating upward offset, so secondary anchoring does not move it back over
+  the game's score indicator.
+- **Verification**: Drift layout targeted tests passed (2 files / 6 tests).
+
+---
+
+## 2026-08-12 / FH6 Native UI Safe Zones and Drift Panel
+
+- **Evidence**: downloaded four public FH6 gameplay captures to the ignored
+  `ref/fh6-ui-layout-reference/` directory and compared them with the
+  project's Drift HUD screenshots. The observed persistent regions are:
+  top-center skill score, bottom-center Drift Zone total, lower-left map /
+  ANNA, lower-right native gauge, and race-only upper-left progress plus
+  upper-right leaderboard.
+- **Primary layout**: GT7's bottom-center visual language remains useful, but
+  direct placement conflicts with FH6's Drift Zone total. Added
+  `getFh6PrimaryAnchor()` to put the primary in the central safe lane at 54%
+  viewport height, bounded by the observed top and bottom bands. The anchor
+  is recalculated only during resize, not in the RAF hot path.
+- **Secondary visual**: replaced the oval secondary outline with an
+  Advanced-inspired cut-corner rectangle. It keeps the conventional
+  bottom-right anchor and adopts the Drift cyan/pink/amber palette.
+- **Boundary**: Style Meter remains at its user-confirmed right-mid free-roam
+  placement. Race leaderboards can occupy the same column, but telemetry has
+  no reliable visibility signal, so the runtime does not guess a mode switch.
+  This is documented in `docs/fh6-ui-safe-zones.md`.
+
+---
 ## 2026-08-12 / S650 Launcher Theme Contract
 
 - **Scope**: local / `codex/s650-hmi-next-phase-evaluation`
@@ -417,6 +581,124 @@
 - **Action**: Removed legacy theme slots and their persistence path, kept validated JSON import/export, and changed custom CSS editing to a local draft with explicit Apply/Cancel/Clear actions. Custom CSS is now validated before it is persisted or imported.
 - **Evidence**: Frontend Vitest: 31 files / 197 tests passed; Vite production build passed; backend overlay API tests: 35 passed; all six locale JSON files parsed successfully.
 
+## 2026-08-12 / Drift Zone Side-Wing Primary and Compound Secondary
+
+- **Feedback applied**: the centered primary obscures the driving view even
+  when it avoids native UI. The primary now uses the lower-left wing between
+  the observed map edge and the left edge of the Drift Zone total. Its width
+  is calculated from the real viewport slot on resize and the visual frame
+  scales proportionally.
+- **Compact readability**: enlarged the gear, speed, torque, and unit source
+  text. Compact mode retains only the key +45/0/-45 steering and low/mid/high
+  RPM labels, preventing unreadable dense tick text at the new size.
+- **Secondary design**: changed the status panel from text rows to two
+  Advanced-inspired compound segment arcs (FLOW and RISK), each with a track,
+  active segments, state label, and value. The central drift-angle/counter
+  readout remains the immediate focal point.
+- **Composition decision**: chose the left side-wing primary rather than a
+  right-bottom cluster, so the Style Meter and conventional secondary do not
+  need a shared expanded oval background. Cyan/pink danger language and the
+  same dark translucent surface retain visual coherence across both modules.
+
+---
+
+## 2026-08-12 / Screenshot-Calibrated Primary and S650 Center Void
+
+- **Evidence**: the latest 2048x1152 gameplay screenshot shows the left-wing
+  primary still too small, while the native Drift Zone total remains a strict
+  lower-center exclusion. S650 HMI confirms the composition pattern: its
+  1280px cluster assigns an explicit 480px center region and its `disable`
+  center page deliberately leaves that area blank without disabling the two
+  surrounding dials.
+- **Primary correction**: the side-wing fit is now treated as the compact
+  base frame. The visible primary is doubled, with that base frame's previous
+  left edge promoted to the new center, and its lower edge is still calculated
+  to clear the Drift Zone score band on each resize.
+- **Secondary correction**: replaced the generic circular progress arcs with
+  Advanced-derived Canvas superellipse traces: outer boundary, inset track,
+  glow-underlaid active segments, solid segments, and an endpoint marker. The
+  cut-corner panel and Drift cyan/pink palette remain unchanged.
+- **Verification**: targeted Drift layout and overlay-contract tests passed
+  (2 files / 10 tests); full frontend Vitest passed (35 files / 220 tests).
+
+---
+
+## 2026-08-12 / Drift Secondary Instrument User-Needs Iteration
+
+- **Feedback applied**: lowered the screenshot-calibrated primary by about
+  three quarters of its own height after preserving the doubled size and
+  left-edge-as-center geometry. The left-side horizontal lane remains the
+  Drift Zone clearance rule.
+- **Research conclusion**: the secondary should stop duplicating the primary
+  and should not repeat Style Meter's `FLOW / RISK` score language. General
+  drift driving needs a compact control surface for tire response, vehicle
+  rotation state, and throttle/brake/handbrake/clutch input.
+- **Boundary**: detailed tire temperatures, suspension, replay, score and
+  line analysis remain TelemetryView / HUD-card / native-UI responsibilities.
+  Yaw rate is a P1 input because the packet field exists but the current
+  backend does not yet expose a canonical HUD alias.
+- **Artifact**: `docs/drift-secondary-instrument-user-needs-iteration-report.md`
+  records the evidence, priority matrix, proposed Canvas vocabulary, and
+  staged implementation plan. No secondary renderer rewrite is included yet.
+- **Verification**: frontend Vitest passed (35 files / 220 tests).
+
+---
+
+## 2026-08-12 / Drift Secondary Implementation Plan Revision
+
+- **Source of truth**: revised `docs/telemetry-hud-implementation-plan.md` to
+  follow the edited user-needs report. The secondary is now planned as a
+  Drift Dynamics / Control Surface with Traction, Motion State and Driver
+  Inputs columns; the old angle/counter/flow/risk/hold split is no longer the
+  target architecture.
+- **Sequencing**: contract and fixture work now precede any Canvas rewrite;
+  Advanced primitives are migrated as reusable drawing capability, followed
+  by P0 slip/input state, P1 yaw-rate contract, and real-device calibration.
+- **Boundary**: TelemetryView, HUD cards, native score/style layers, recorder,
+  replay, map and telemetry topology remain outside this work package.
+- **Verification**: plan document passed `git diff --check`; no secondary
+  renderer implementation was started in this revision.
+
+---
+
+## 2026-08-12 / Drift Secondary Single-Panel Correction
+
+- **Layout recheck**: confirmed `getFh6PrimaryAnchor()` applies the requested
+  `boxHeight * 0.75` downward shift and `renderPrimaryInstrument()` consumes the
+  same anchor. Node geometry checks stayed inside the viewport at 1920x1080,
+  2048x1152, 2560x1440, 3440x1440 and 1024x576; targeted tests passed 10/10.
+- **Design correction**: the edited needs report explicitly replaces the
+  former semantic three-column secondary with one integrated single-panel
+  control display. The visual structure is three vertical pillars: full-height
+  throttle, full-height brake, and half-height handbrake/clutch sharing the
+  third pillar.
+- **Scope**: traction, motion state, slip and yaw-rate data remain contract or
+  future-event candidates, but this secondary version renders only T/B/H/C and
+  input events. Advanced Canvas primitives remain reusable drawing technology,
+  not a reason to restore separate traction or motion panels.
+
+---
+
+## 2026-08-12 / Drift Secondary Advanced Remap Increment
+
+- **Implementation**: the active Drift secondary renderer now uses an
+  Advanced-derived superellipse/inner-band Canvas grammar. The outer arc is
+  throttle; the three inner bands are brake, clutch and handbrake.
+- **Supporting state**: speed, unit, gear and the shared `lcState` badge remain
+  in the panel. Four wheel grip-light groups use the existing slip-ratio and
+  lockup data.
+- **Attitude replacement**: the old angle/Flow/Risk text block is replaced by
+  cyan heading, amber travel and four tire slip-angle arrows. Arrow length is
+  normalized from absolute slip ratio.
+- **Boundary**: this remains one HUDCore frame / one Canvas render loop. The
+  new `Yaw` use is presentation-only and does not introduce a new telemetry
+  contract or polling path.
+- **Review items**: real FH6 capture is still required for yaw sign, slip-ratio
+  saturation and compact-scale readability; details are in
+  `docs/drift-secondary-advanced-remap-implementation.md`.
+
+---
+
 ## 2026-08-11 / Telemetry Hot Path
 
 - **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。
@@ -425,3 +707,56 @@
 - **Action**：profile 首次載入必須只啟動背景工作並略過尚未就緒的 dyno 收集；所有 dyno profile 的自動與 API 寫入都透過同一個 coalescing writer，以最後一份 snapshot 為準。後端以 `telemetry-pipeline-metrics/v1` 暴露 bounded queue、drop、client 與 stage timing 診斷資料。
 - **Evidence**：`backend/telemetry_runtime.py`、`tests/test_telemetry_runtime.py`、`tests/test_telemetry_metrics_api.py`、`tests/test_car_params.py`；前端 Vitest `31 files / 194 tests` 通過。首次完整 pytest 使用舊 `dist/FH6-HorizonTuner.exe` 時，portable diagnostics 無法代表目前原始碼；執行 `build_all.bat` 後，新的 metadata test、portable host diagnostics（3 項）與完整 pytest（96 項）皆通過。
 - **Pending**：`RaceRecorder` 的 SQLite flush 仍位於 telemetry consumer；下一輪以新 metrics 的 `recorders` stage 為基準後，再拆為背景持久化工作。
+
+---
+
+## 2026-08-12 / Drift HUD Runtime and Visual Token Convergence
+
+- **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
+- **狀態**：`adopted`。
+- **Learning**：inline Canvas HUD 的 contract test 若只檢查字串存在，無法捕捉 render loop 對未宣告 palette token 的依賴；本輪補上真實 fake Canvas／DOM／RAF harness，並將 active secondary 的 speed／unit／gear 邊界、共享視覺 token 與 one-frame console-error 檢查固定成可重複驗證的 contract。
+- **Action**：secondary 維持既有 bottom-right anchor、single Canvas／HUDCore frame path 與主儀表幾何；移除 secondary 的 speed／unit／gear draw call，保留小型 LC badge，降低 surface／glow density，並分離 brake、redline、slip／lockup 與 Style risk 的語意色彩。同步將 safe-zone、implementation plan 與 Advanced remap 文件更新為 current implementation。
+- **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/fh6-ui-safe-zones.md`、`docs/telemetry-hud-implementation-plan.md`、`docs/drift-secondary-advanced-remap-implementation.md`；frontend Vitest `44 files / 247 tests`、frontend build、pytest `108 passed`、ruff check／format check 均通過。
+- **Boundary**：真實 FH6 screenshot／frame capture 仍需確認 Yaw sign、slip-ratio saturation、compact-scale readability、LC transition 與不同解析度下的低 glow 可讀性；fake Canvas contract 不取代畫素級視覺驗收。
+
+---
+
+## 2026-08-12 / Drift HUD G3 Readability Rework
+
+- **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
+- **狀態**：`adopted`。
+- **Learning**：副儀表把 throttle、brake、clutch、handbrake 疊在同一組 superellipse arc 上時，segment gap、曲率、曲線 normal offset 與 midpoint label 會同時降低量表進度與文字可讀性；主儀表已驗證的 arc grammar 不應被這個副儀表問題牽連修改。
+- **Action**：將 active secondary 重構為左右二分：左側 Driver Inputs、右側 Vehicle Dynamics。G3 使用連續 quadratic rail，`x(u)` 對 ratio 線性，`y(u)` 只加入小幅 `4H u(1-u)` 淺曲率；throttle／brake 提高權重，clutch／handbrake 由外下向內上鏡像成長，label/value 固定在文字槽位。姿態 vehicle body 與右下 2×2 grip mini-bars 同步放大；primary compact arc 僅微調刻度字級。
+- **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/drift-secondary-advanced-remap-implementation.md`、`docs/telemetry-hud-implementation-plan.md`、`docs/fh6-ui-safe-zones.md`；fake Canvas one-frame contract 已驗證新 G3 rail、左右二分 label、primary readout boundary 與無 renderer error。
+- **Boundary**：真實 FH6 screenshot／frame capture 仍需確認 G3 rail 的低解析度可讀性、clutch／handbrake 由外下向內上的視覺對稱、右側 attitude／grip 區比例，以及主儀表刻度字級調整是否造成局部擁擠。
+
+---
+
+## 2026-08-12 / Drift G3 Active-Fill and State Feedback Correction
+
+### Style event integration follow-up
+
+- 移除獨立 Hero toast，將 special event 整合到 Style Meter 的 EVENT row，沿用既有 12.5Hz DOM paint。
+- 擴充事件語彙：clutch kick、brake rotation、throttle punch、counter snap、direction switch、angle lock、grip save。
+- Handbrake Entry 改為兩階段判定：先確認高門檻手煞車上升、高速、油門、低腳煞車與轉向，再要求短時間內形成有效甩尾角度，避免直線誤觸發。
+
+### Follow-up review corrections
+
+- 修正 LC fallback 的狀態轉移：手煞車釋放不再立即清除 ARM，車速跨過啟動門檻後進入短暫 GO 視窗。
+- 車身動態改用主儀表相同的 `atan2(VelocityX, VelocityZ)`／`displayAngle`，不再重複扣除世界 Yaw；車身與 HD 箭頭反向旋轉，TRV 軸固定。
+- Style Meter 維持無框設計，新增半透明深色底與陰影，以提升日間背景上的分數／事件文字對比。
+
+- **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
+- **狀態**：`adopted`。
+- **Learning**：quadratic rail 的完整 track 與 active charge path 必須使用同一條 Bézier 的 De Casteljau 子曲線；只插入線性 endpoint 會讓 throttle、clutch、handbrake 的充能條看起來脫離 rail。離散 LC 狀態也不能只依賴目前永遠為 `inactive` 的 fallback payload。
+- **Action**：修正 G3 active sub-curve，改以 rail 法線產生 throttle／brake 的淺弧與 clutch／handbrake 的鏡像曲率；統一四組 caption 的中心基線與 label/value 間距；vehicle body／tire vectors 依 `travelAngleDeg` 旋轉；LC badge 顯示 `LC ARM`／`LC GO`，並在缺少 canonical state 時使用低速一檔、高油門、手煞車 fallback heuristic。
+- **Evidence**：`hud_overlay/drift/index.html`、`frontend/src/features/overlay_control/driftHudContract.test.ts`、`docs/drift-secondary-advanced-remap-implementation.md`、`docs/telemetry-hud-implementation-plan.md`；full frontend Vitest `44 files / 247 tests`、build `679 modules`、fake Canvas contract 均通過。
+- **Boundary**：仍需實機 capture 確認四組 caption 在縮放後的實際間距、vehicle rotation 的方向語意，以及 fallback LC 狀態是否與遊戲中的 launch-control 操作一致。
+
+---
+
+## 2026-08-13 / HUD ownership boundary and contract directory standardization
+
+- **Decision**：仿造 S650 的 ownership boundary，只有主要與主 GUI 交互的 HUD 設定、normalize 與 typed boundary 放在 `frontend/src/features/overlay_control/<hud-id>/`；renderer、Canvas、inline-controller 與 standalone HUD contract tests 歸 `hud_overlay/<hud-id>/tests/` 管理。
+- **Action**：原先誤將 Drift／Advanced renderer contract 放入 `overlay_control` 子資料夾；依 S650 的真正 ownership boundary 改置於 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 與 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts`。`overlay_control/<hud-id>/` 僅保留主 GUI 交互檔案。
+- **Verification**：Vitest 改以 `../hud_overlay/*/tests/**/*.test.ts` 納入所有 HUD-owned 測試，並以完整 frontend Vitest 與 build 驗證測試入口、相對路徑與 production bundle。

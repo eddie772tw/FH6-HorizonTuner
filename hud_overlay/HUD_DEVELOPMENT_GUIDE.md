@@ -449,7 +449,7 @@ function selectBand(maxRpm) {
 
 ### 4.11 設定欄位的接線驗證
 
-控制面板中存在設定欄位，不代表 HUD 已經消費它。以目前程式碼為準，VFD 會讀取 `vfdVuOffset`；`vfdAudioOffset` 雖存在於設定與控制面板，但目前未被 `vfd/index.html` 使用。`driftProfile` 會被 Drift HUD 的 `onInit` 接收並保存，但現有 `applyProfileLayout()` 尚未實際改變幾何或 CSS。新增指南內容時應區分「已接通並可觀察的功能」與「尚未接線的擴充點」。
+控制面板中存在設定欄位，不代表 HUD 已經消費它。以目前程式碼為準，VFD 會讀取 `vfdVuOffset`；`vfdAudioOffset` 雖存在於設定與控制面板，但目前未被 `vfd/index.html` 使用。Drift HUD 不再提供解析度 preset；其固定資訊框架由 HUD 本身繪製，外層縮放與可用螢幕空間則交由框架統一管理。新增指南內容時應區分「已接通並可觀察的功能」與「尚未接線的擴充點」。
 
 ### 4.12 直接繼承這些模式時的檢查清單
 

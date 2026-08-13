@@ -15,3 +15,10 @@
   - 後端：`pytest tests/` (與語法檢查 `ruff check .`)
   - 前端：`cmd /c "pnpm -C frontend run test"`
 - 嚴禁為了使測試通過而隨意放寬測試條件或修改斷言閾值。
+
+## HUD ownership and contract directory standard
+
+- `frontend/src/features/overlay_control/<hud-id>/` is reserved for files that primarily interact with the main GUI: selectors, configuration normalization, typed UI boundaries, and tests for those boundaries.
+- HUD-owned renderer, Canvas, inline-controller, and standalone asset contract tests belong under `hud_overlay/<hud-id>/tests/unit/` (or `tests/integration/` when they exercise a launcher boundary), following the S650 HMI layout.
+- The `overlay_control/` root is reserved for shared GUI components, scanners, and cross-HUD tests. Do not place HUD renderer tests there.
+- When adding a HUD, first decide ownership at the GUI/HUD boundary, then keep each file beside the owning subsystem; update the single frontend Vitest include glob when introducing a new HUD-owned test tree.
