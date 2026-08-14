@@ -32,14 +32,13 @@ describe('McpSettingsCard logic and configuration contract', () => {
 
   it('formats client snippets correctly with dynamic port settings', () => {
     const port = 8001;
-    const sseUrl = `http://127.0.0.1:${port}/mcp/sse`;
+    const mcpUrl = `http://127.0.0.1:${port}/mcp`;
 
     const claudeSnippet = JSON.stringify(
       {
         mcpServers: {
           'fh6-horizon-tuner': {
-            command: 'python',
-            args: ['-u', 'backend/mcp/server.py'],
+            url: mcpUrl,
           },
         },
       },
@@ -47,8 +46,8 @@ describe('McpSettingsCard logic and configuration contract', () => {
       2
     );
 
-    expect(sseUrl).toBe('http://127.0.0.1:8001/mcp/sse');
+    expect(mcpUrl).toBe('http://127.0.0.1:8001/mcp');
     expect(claudeSnippet).toContain('fh6-horizon-tuner');
-    expect(claudeSnippet).toContain('backend/mcp/server.py');
+    expect(claudeSnippet).toContain('http://127.0.0.1:8001/mcp');
   });
 });

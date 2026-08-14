@@ -7,13 +7,11 @@ tuning solver, and diagnostic contracts for AI assistants.
 from .protocol import McpProtocolHandler
 from .resources import McpResourceManager
 from .service import HorizonTunerMcpService
-from .sse_transport import McpSseTransportManager
 from .tools import McpToolManager
 
 __all__ = [
     "HorizonTunerMcpService",
     "McpProtocolHandler",
     "McpResourceManager",
-    "McpSseTransportManager",
     "McpToolManager",
 ]

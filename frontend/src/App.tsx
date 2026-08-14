@@ -15,6 +15,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 
 import OverlayView from './features/overlay_control/OverlayView';
+import { getBackendPort } from './services/backend';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
@@ -58,6 +59,7 @@ const AppContent: React.FC = () => {
         isConnected={isConnected}
         onShowLogs={() => setShowLogs(true)}
         onShowTheme={() => setShowTheme(true)}
+        backendPort={getBackendPort()}
       />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>

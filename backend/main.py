@@ -92,13 +92,12 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from mcp import (
     HorizonTunerMcpService,
     McpProtocolHandler,
     McpResourceManager,
-    McpSseTransportManager,
     McpToolManager,
 )
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
@@ -292,7 +291,7 @@ mcp_service = HorizonTunerMcpService(
 mcp_tools = McpToolManager(mcp_service)
 mcp_resources = McpResourceManager(mcp_service)
 mcp_protocol = McpProtocolHandler(mcp_tools, mcp_resources)
-mcp_sse_manager = McpSseTransportManager(mcp_protocol)
+mcp_total_requests_served = 0
 
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API")
@@ -1599,41 +1598,51 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
 # --- MCP Endpoints ---
 
 
-@app.get("/mcp/sse")
-async def mcp_sse_endpoint():
-    """Server-Sent Events endpoint for MCP clients."""
+def _mcp_origin_is_allowed(request: Request) -> bool:
+    """Reject non-local Origins before exposing the local MCP endpoint."""
+    origin = request.headers.get("origin")
+    if not origin:
+        return True
+
+    from urllib.parse import urlparse
+
+    parsed = urlparse(origin)
+    return parsed.scheme in {"http", "https"} and parsed.hostname in {
+        "localhost",
+        "127.0.0.1",
+        "tauri.localhost",
+    }
+
+
+@app.post("/mcp")
+async def mcp_streamable_http_endpoint(request: Request):
+    """Handle MCP JSON-RPC messages over the Streamable HTTP transport.
+
+    The endpoint is intentionally served by the same FastAPI process as the
+    telemetry listener. This keeps live MCP reads connected to the backend's
+    in-process telemetry snapshot instead of creating a second reader.
+    """
+    if not _mcp_origin_is_allowed(request):
+        raise HTTPException(status_code=403, detail="MCP Origin is not allowed")
     if not app_settings.get("mcp_enabled", True):
         raise HTTPException(
             status_code=403, detail="MCP Server is disabled in settings"
         )
-    session_id, stream = await mcp_sse_manager.connect_session()
-    return StreamingResponse(
-        stream,
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
-    )
 
-
-@app.post("/mcp/messages")
-async def mcp_post_message(request: Request, session_id: str):
-    """Receive JSON-RPC message from an MCP client."""
-    if not app_settings.get("mcp_enabled", True):
-        raise HTTPException(
-            status_code=403, detail="MCP Server is disabled in settings"
-        )
     try:
         body = await request.json()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {exc}")
-    try:
-        res = await mcp_sse_manager.handle_post_message(session_id, body)
-        return res
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="MCP payload must be a JSON object")
+
+    global mcp_total_requests_served
+    mcp_total_requests_served += 1
+    response = await mcp_protocol.handle_request(body)
+    if response is None:
+        return Response(status_code=202)
+    return JSONResponse(response)
 
 
 @app.get("/api/mcp/status")
@@ -1642,10 +1651,11 @@ async def get_mcp_status():
         "enabled": app_settings.get("mcp_enabled", True),
         "allow_live": app_settings.get("mcp_allow_live", True),
         "max_downsample": app_settings.get("mcp_max_downsample", 500),
-        "active_sse_clients": mcp_sse_manager.active_sessions_count,
-        "total_requests_served": mcp_sse_manager.total_requests_served,
-        "sse_endpoint": "/mcp/sse",
-        "stdio_command": "uv run --no-project --python .venv\\Scripts\\python.exe backend/mcp/server.py",
+        "total_requests_served": mcp_total_requests_served,
+        "transport": "streamable-http",
+        "mcp_endpoint": "/mcp",
+        "continuous_streaming": False,
+        "time_series_tools": ["query_session_telemetry", "query_capture_window"],
     }
 
 
@@ -2423,6 +2433,8 @@ if __name__ == "__main__":
 
     import uvicorn
 
+    preferred_backend_port = 8001
+
     def get_free_port():
         import socket
 
@@ -2434,27 +2446,41 @@ if __name__ == "__main__":
 
     # A standalone Vite dev server cannot call Tauri's get_backend_port command,
     # so development must use the same deterministic port the frontend targets.
-    # The packaged application keeps its dynamic-port behaviour to avoid clashes
-    # between concurrent installed instances.
+    # Development keeps the historical 8001 contract. A Release Build prefers
+    # the same port so external MCP clients can keep a stable endpoint, then
+    # falls back to a dynamic port when another process owns it.
     if getattr(sys, "frozen", False):
-        try:
-            backend_port = get_free_port()
-        except Exception:
-            backend_port = 8001
+        backend_port = preferred_backend_port
     else:
-        backend_port = int(os.getenv("BACKEND_PORT", "8001"))
+        # Dev mode intentionally keeps a stable endpoint for the Vite frontend
+        # and local MCP clients. BACKEND_PORT remains a Tauri external-backend
+        # discovery hint, not a runtime override for this entrypoint.
+        backend_port = preferred_backend_port
+    port_fallback = False
 
     def write_web_port(port):
         try:
             log_dir = os.path.join(DATA_ROOT, "logs")
             os.makedirs(log_dir, exist_ok=True)
             port_file_path = os.path.join(log_dir, "web_port.txt")
-            with open(port_file_path, "w", encoding="utf-8") as f:
+            temp_path = f"{port_file_path}.tmp"
+            with open(temp_path, "w", encoding="utf-8") as f:
                 f.write(str(port))
+            os.replace(temp_path, port_file_path)
         except Exception as e:
             print(f"Failed to write web_port.txt: {e}")
 
-    write_web_port(backend_port)
+    def clear_web_port_file():
+        try:
+            os.remove(os.path.join(DATA_ROOT, "logs", "web_port.txt"))
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print(f"Failed to clear web_port.txt: {e}")
+
+    # Never let a previous Release Build advertise a port before this process
+    # has completed its own bind attempt.
+    clear_web_port_file()
 
     _cleanup_state = {"log": None}
 
@@ -2507,14 +2533,21 @@ if __name__ == "__main__":
                     backend_port = get_free_port()
                 except Exception:
                     backend_port += 1
-                write_web_port(backend_port)
+                port_fallback = True
                 print(f"Retrying with port {backend_port}...")
             else:
                 print("Max retries reached. Backend failed to start.")
                 sys.exit(1)
 
     if bound:
-        emit_sidecar_event("BACKEND_READY", port=backend_port)
+        # This file is the source of truth for Tauri and external diagnostics;
+        # it must always contain the actual bound HTTP port, including fallback.
+        write_web_port(backend_port)
+        emit_sidecar_event(
+            "BACKEND_READY",
+            port=backend_port,
+            port_fallback=port_fallback,
+        )
 
         class EndpointFilter(logging.Filter):
             def filter(self, record: logging.LogRecord) -> bool:

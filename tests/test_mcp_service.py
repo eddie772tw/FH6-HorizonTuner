@@ -169,3 +169,45 @@ def test_diagnose_telemetry_handling(mcp_service):
     assert res["convergence_status"] == "adjustment_required"
     assert any("Front axle overheat" in act for act in res["actionable_directives"])
     assert any("Entry Understeer" in act for act in res["actionable_directives"])
+
+
+def test_query_capture_window_preserves_time_dimension(mcp_service, tmp_path):
+    capture_dir = tmp_path / "calibration"
+    capture_dir.mkdir()
+    capture_file = capture_dir / "time-series.json"
+    capture_file.write_text(
+        json.dumps(
+            {
+                "schemaVersion": "tuning-capture/v1",
+                "captureId": "time-series",
+                "createdAt": "2026-08-14T00:00:00Z",
+                "metadata": {
+                    "carOrdinal": 101,
+                    "installedParts": [],
+                    "surface": "asphalt",
+                },
+                "samples": [
+                    {"timestampMs": 0, "speedKmh": 10.0},
+                    {"timestampMs": 100, "speedKmh": 20.0},
+                    {"timestampMs": 200, "speedKmh": 30.0},
+                    {"timestampMs": 300, "speedKmh": 40.0},
+                ],
+                "confidence": "in_game_capture",
+            }
+        ),
+        encoding="utf-8",
+    )
+    mcp_service.calibration_dir = str(capture_dir)
+
+    points = mcp_service.query_capture_window(
+        "time-series",
+        start_ms=100,
+        end_ms=200,
+        channels=["timestampMs", "speedKmh"],
+        max_samples=10,
+    )
+
+    assert points == [
+        {"timestampMs": 100, "speedKmh": 20.0},
+        {"timestampMs": 200, "speedKmh": 30.0},
+    ]

@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { useToast } from '../../../context/ToastContext';
-import { backendFetch } from '../../../services/backend';
+import { backendFetch, backendHttpUrl } from '../../../services/backend';
 
 interface McpStatus {
   enabled: boolean;
   allow_live: boolean;
   max_downsample: number;
-  active_sse_clients: number;
   total_requests_served: number;
-  sse_endpoint: string;
-  stdio_command: string;
+  transport: string;
+  mcp_endpoint: string;
 }
 
 export const McpSettingsCard: React.FC = () => {
@@ -27,8 +26,10 @@ export const McpSettingsCard: React.FC = () => {
     let isMounted = true;
     const fetchStatus = async () => {
       try {
-        const data = await backendFetch<McpStatus>('/api/mcp/status');
-        if (isMounted && data) {
+        const response = await backendFetch('/api/mcp/status');
+        if (!response.ok) return;
+        const data = (await response.json()) as McpStatus;
+        if (isMounted) {
           setStatus(data);
         }
       } catch {
@@ -65,12 +66,12 @@ export const McpSettingsCard: React.FC = () => {
     }
   };
 
+  const mcpUrl = backendHttpUrl('/mcp');
   const claudeConfigSnippet = JSON.stringify(
     {
       mcpServers: {
         'fh6-horizon-tuner': {
-          command: 'python',
-          args: ['-u', 'backend/mcp/server.py'],
+          url: mcpUrl,
         },
       },
     },
@@ -78,8 +79,7 @@ export const McpSettingsCard: React.FC = () => {
     2
   );
 
-  const cursorCommandSnippet = 'uv run --no-project --python .venv\\Scripts\\python.exe backend/mcp/server.py';
-  const sseUrl = `http://127.0.0.1:${settings.telemetry_port || 8000}/mcp/sse`;
+  const codexCommandSnippet = `codex mcp add fh6-horizon-tuner --url ${mcpUrl}`;
 
   return (
     <div className="card glass-panel p-4 d-flex flex-column gap-3">
@@ -98,7 +98,6 @@ export const McpSettingsCard: React.FC = () => {
         </div>
         {status && mcpEnabled && (
           <div className="fs-7 text-secondary">
-            {t('Active SSE Clients')}: <span className="text-info fw-bold">{status.active_sse_clients}</span> |{' '}
             {t('Total Requests')}: <span className="text-info fw-bold">{status.total_requests_served}</span>
           </div>
         )}
@@ -167,6 +166,13 @@ export const McpSettingsCard: React.FC = () => {
 
           {/* Quick Copy Section */}
           <div className="d-flex flex-column gap-2 pt-1">
+            <div className="glass-panel border border-warning border-opacity-50 rounded p-3">
+              <div className="fs-7 fw-bold text-warning">{t('Current MCP Endpoint')}</div>
+              <code className="d-block fs-7 text-body mt-1 user-select-all">{mcpUrl}</code>
+              <div className="fs-8 text-secondary mt-1">
+                {t('Use this URL when configuring an Agent. The port is selected by the running backend.')}
+              </div>
+            </div>
             <span className="fs-7 fw-bold text-primary">{t('Quick Client Configuration')}</span>
             <div className="d-flex flex-wrap gap-2">
               <button
@@ -179,16 +185,16 @@ export const McpSettingsCard: React.FC = () => {
               <button
                 type="button"
                 className="btn btn-sm btn-outline-info d-flex align-items-center gap-1"
-                onClick={() => copyToClipboard(cursorCommandSnippet, 'cursor')}
+                onClick={() => copyToClipboard(codexCommandSnippet, 'codex')}
               >
-                <span>{isCopied === 'cursor' ? t('Copied!') : t('Copy Cursor CLI Command')}</span>
+                <span>{isCopied === 'codex' ? t('Copied!') : t('Copy Codex CLI Command')}</span>
               </button>
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-                onClick={() => copyToClipboard(sseUrl, 'sse')}
+                onClick={() => copyToClipboard(mcpUrl, 'mcp')}
               >
-                <span>{isCopied === 'sse' ? t('Copied!') : t('Copy SSE Endpoint URL')}</span>
+                <span>{isCopied === 'mcp' ? t('Copied!') : t('Copy MCP Endpoint URL')}</span>
               </button>
             </div>
           </div>
