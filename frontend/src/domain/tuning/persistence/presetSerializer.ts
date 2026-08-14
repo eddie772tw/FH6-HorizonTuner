@@ -33,5 +33,5 @@ export function deserializePreset(raw: unknown): TuningPresetV1 {
     obj.gameBuild = 'unknown';
   }
   
-  return obj as TuningPresetV1;
+  return obj as unknown as TuningPresetV1;
 }

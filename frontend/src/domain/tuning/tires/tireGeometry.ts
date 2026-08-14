@@ -108,12 +108,12 @@ export function calculateTireGeometry(input?: TireGeometryInput): TireGeometryOu
   const warnings: string[] = [];
 
   // 1. Width validation & clamping
-  let widthMm = input?.widthMm;
-  if (!Number.isFinite(widthMm) || (widthMm as number) <= 0) {
+  let widthMm = input?.widthMm ?? Number.NaN;
+  if (!Number.isFinite(widthMm) || widthMm <= 0) {
     widthMm = DEFAULT_WIDTH_MM;
     warnings.push(`Invalid tire width '${input?.widthMm}'; fallback to default ${DEFAULT_WIDTH_MM} mm.`);
-  } else if ((widthMm as number) < 100 || (widthMm as number) > 450) {
-    const clamped = clamp(widthMm as number, 100, 450);
+  } else if (widthMm < 100 || widthMm > 450) {
+    const clamped = clamp(widthMm, 100, 450);
     warnings.push(`Tire width ${widthMm} mm clamped to realistic range [100, 450] mm (${clamped} mm).`);
     widthMm = clamped;
   }
@@ -130,12 +130,12 @@ export function calculateTireGeometry(input?: TireGeometryInput): TireGeometryOu
   }
 
   // 3. Rim diameter validation & clamping
-  let rimDiameterIn = input?.rimDiameterIn;
-  if (!Number.isFinite(rimDiameterIn) || (rimDiameterIn as number) <= 0) {
+  let rimDiameterIn = input?.rimDiameterIn ?? Number.NaN;
+  if (!Number.isFinite(rimDiameterIn) || rimDiameterIn <= 0) {
     rimDiameterIn = DEFAULT_RIM_DIAMETER_IN;
     warnings.push(`Invalid rim diameter '${input?.rimDiameterIn}'; fallback to default ${DEFAULT_RIM_DIAMETER_IN} in.`);
-  } else if ((rimDiameterIn as number) < 10 || (rimDiameterIn as number) > 30) {
-    const clamped = clamp(rimDiameterIn as number, 10, 30);
+  } else if (rimDiameterIn < 10 || rimDiameterIn > 30) {
+    const clamped = clamp(rimDiameterIn, 10, 30);
     warnings.push(`Rim diameter ${rimDiameterIn} in clamped to realistic range [10, 30] in (${clamped} in).`);
     rimDiameterIn = clamped;
   }
@@ -193,11 +193,11 @@ export function calculateTireVerticalStiffnessPrior(
     ? (options?.baseStiffnessNPerM as number)
     : 250000;
 
-  let pressurePsi = options?.pressurePsi;
-  if (!Number.isFinite(pressurePsi) || (pressurePsi as number) <= 0) {
+  let pressurePsi = options?.pressurePsi ?? Number.NaN;
+  if (!Number.isFinite(pressurePsi) || pressurePsi <= 0) {
     pressurePsi = 30.0;
-  } else if ((pressurePsi as number) < 15 || (pressurePsi as number) > 60) {
-    const clamped = clamp(pressurePsi as number, 15, 60);
+  } else if (pressurePsi < 15 || pressurePsi > 60) {
+    const clamped = clamp(pressurePsi, 15, 60);
     warnings.push(`Tire pressure ${pressurePsi} PSI clamped to [15, 60] PSI (${clamped} PSI).`);
     pressurePsi = clamped;
   }

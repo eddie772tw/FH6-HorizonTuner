@@ -139,23 +139,23 @@ export function calculateLoadTransfer(input?: LoadTransferInput): LoadTransferOu
     : DEFAULT_GRAVITY_M_PER_S2;
 
   // 2. Mass guard
-  let massKg = input?.massKg;
-  if (!Number.isFinite(massKg) || (massKg as number) <= 0) {
+  let massKg = input?.massKg ?? Number.NaN;
+  if (!Number.isFinite(massKg) || massKg <= 0) {
     massKg = DEFAULT_MASS_KG;
     warnings.push(`Invalid vehicle mass '${input?.massKg}'; fallback to default ${DEFAULT_MASS_KG} kg.`);
-  } else if ((massKg as number) < 300 || (massKg as number) > 6000) {
-    const clampedMass = clamp(massKg as number, 300, 6000);
+  } else if (massKg < 300 || massKg > 6000) {
+    const clampedMass = clamp(massKg, 300, 6000);
     warnings.push(`Vehicle mass ${massKg} kg clamped to realistic range [300, 6000] kg (${clampedMass} kg).`);
     massKg = clampedMass;
   }
 
   // 3. Weight distribution guard
-  let weightDistFront = input?.weightDistributionFrontPct;
+  let weightDistFront = input?.weightDistributionFrontPct ?? Number.NaN;
   if (!Number.isFinite(weightDistFront)) {
     weightDistFront = DEFAULT_WEIGHT_DIST_FRONT;
     warnings.push(`Invalid front weight distribution '${input?.weightDistributionFrontPct}'; fallback to ${DEFAULT_WEIGHT_DIST_FRONT}%.`);
-  } else if ((weightDistFront as number) < 10 || (weightDistFront as number) > 90) {
-    const clampedDist = clamp(weightDistFront as number, 10, 90);
+  } else if (weightDistFront < 10 || weightDistFront > 90) {
+    const clampedDist = clamp(weightDistFront, 10, 90);
     warnings.push(`Weight distribution ${weightDistFront}% clamped to [10, 90]% (${clampedDist}%).`);
     weightDistFront = clampedDist;
   }
@@ -163,23 +163,23 @@ export function calculateLoadTransfer(input?: LoadTransferInput): LoadTransferOu
   const rearMassFraction = 1 - frontMassFraction;
 
   // 4. Wheelbase guard
-  let wheelbaseM = input?.wheelbaseM;
-  if (!Number.isFinite(wheelbaseM) || (wheelbaseM as number) <= 0) {
+  let wheelbaseM = input?.wheelbaseM ?? Number.NaN;
+  if (!Number.isFinite(wheelbaseM) || wheelbaseM <= 0) {
     wheelbaseM = DEFAULT_WHEELBASE_M;
     warnings.push(`Invalid wheelbase '${input?.wheelbaseM}'; fallback to default ${DEFAULT_WHEELBASE_M} m.`);
-  } else if ((wheelbaseM as number) < 1.0 || (wheelbaseM as number) > 5.0) {
-    const clampedWb = clamp(wheelbaseM as number, 1.0, 5.0);
+  } else if (wheelbaseM < 1.0 || wheelbaseM > 5.0) {
+    const clampedWb = clamp(wheelbaseM, 1.0, 5.0);
     warnings.push(`Wheelbase ${wheelbaseM} m clamped to [1.0, 5.0] m (${clampedWb} m).`);
     wheelbaseM = clampedWb;
   }
 
   // 5. CG height guard
-  let cgHeightM = input?.cgHeightM;
-  if (!Number.isFinite(cgHeightM) || (cgHeightM as number) <= 0) {
+  let cgHeightM = input?.cgHeightM ?? Number.NaN;
+  if (!Number.isFinite(cgHeightM) || cgHeightM <= 0) {
     cgHeightM = DEFAULT_CG_HEIGHT_M;
     warnings.push(`Invalid CG height '${input?.cgHeightM}'; fallback to default ${DEFAULT_CG_HEIGHT_M} m.`);
-  } else if ((cgHeightM as number) < 0.1 || (cgHeightM as number) > 1.5) {
-    const clampedCg = clamp(cgHeightM as number, 0.1, 1.5);
+  } else if (cgHeightM < 0.1 || cgHeightM > 1.5) {
+    const clampedCg = clamp(cgHeightM, 0.1, 1.5);
     warnings.push(`CG height ${cgHeightM} m clamped to [0.1, 1.5] m (${clampedCg} m).`);
     cgHeightM = clampedCg;
   }
@@ -210,11 +210,11 @@ export function calculateLoadTransfer(input?: LoadTransferInput): LoadTransferOu
   }
 
   // 7. Lateral roll stiffness distribution guard
-  let rollDistFront = input?.rollStiffnessDistributionFrontPct;
+  let rollDistFront = input?.rollStiffnessDistributionFrontPct ?? Number.NaN;
   if (!Number.isFinite(rollDistFront)) {
     rollDistFront = DEFAULT_ROLL_STIFFNESS_FRONT_PCT;
-  } else if ((rollDistFront as number) < 5 || (rollDistFront as number) > 95) {
-    const clampedRoll = clamp(rollDistFront as number, 5, 95);
+  } else if (rollDistFront < 5 || rollDistFront > 95) {
+    const clampedRoll = clamp(rollDistFront, 5, 95);
     warnings.push(`Roll stiffness distribution ${rollDistFront}% clamped to [5, 95]% (${clampedRoll}%).`);
     rollDistFront = clampedRoll;
   }
