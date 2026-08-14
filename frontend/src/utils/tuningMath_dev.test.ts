@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { calculateFrictionEllipse } from '../domain/tuning/tires/tireModel';
-import { calculateDevTuning, DevTuningInput, getDevTirePrior } from './tuningMath_dev';
+import {
+  calculateDevTuning,
+  calculateLoadTransfer,
+  calculateTireGeometry,
+  calculateTireVerticalStiffnessPrior,
+  DevTuningInput,
+  getDevTirePrior
+} from './tuningMath_dev';
 
 const baseInput: DevTuningInput = {
   raceGoal: 'Road',
@@ -119,5 +126,29 @@ describe('tuningMath_dev', () => {
     expect(result.warnings).toHaveLength(8);
     expect(result.warnings.some((w) => w.includes('direct wheel-load approximation'))).toBe(true);
     expect(result.warnings.some((w) => w.includes('explicit physical critical damping'))).toBe(true);
+  });
+
+  it('exposes typed load-transfer and tire-geometry pure functions through the developer façade', () => {
+    const geo = calculateTireGeometry({ widthMm: 245, aspectRatio: 40, rimDiameterIn: 18 });
+    expect(geo.sidewallHeightMm).toBeCloseTo(98.0, 2);
+    expect(geo.overallDiameterMm).toBeCloseTo(653.2, 2);
+
+    const stiffness = calculateTireVerticalStiffnessPrior(geo, { pressurePsi: 32.0 });
+    expect(stiffness.source).toBe('geometric-heuristic-prior/v1');
+    expect(stiffness.isHeuristic).toBe(true);
+    expect(stiffness.verticalStiffnessNPerM).toBeGreaterThan(200000);
+
+    const lt = calculateLoadTransfer({
+      massKg: 1500,
+      weightDistributionFrontPct: 54,
+      wheelbaseM: 2.65,
+      cgHeightM: 0.48,
+      accelLongitudinalMPerS2: 2.0,
+      accelLateralMPerS2: 3.0
+    });
+    expect(lt.staticAxleLoadsN.total).toBeCloseTo(1500 * 9.80665, 1);
+    expect(lt.transfersN.longitudinalTransferN).toBeGreaterThan(0);
+    expect(lt.transfersN.lateralTransferTotalN).toBeGreaterThan(0);
+    expect(lt.dynamicWheelLoadsN.rearRight).toBeGreaterThan(lt.dynamicWheelLoadsN.frontLeft);
   });
 });

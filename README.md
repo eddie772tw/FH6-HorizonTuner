@@ -85,6 +85,9 @@ FH6-HorizonTuner/
 │   │   ├── settings/        # 系統全域設定 (SettingsView)
 │   │   └── theme/           # 主題色調與皮膚視圖 (ThemeView)
 │   ├── src/components/      # 通用 UI 元件 (Navigation, DiagnosticConsole 等)
+│   ├── src/domain/tuning/    # 純函數調校 domain（輪胎、載荷轉移、懸吊、齒比與差速器）
+│   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
+│   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗
 │   ├── src/utils/           # 純函數計算庫 (tuningMath.ts, tuningDiagnosis.ts 等)
 │   └── src-tauri/           # Tauri 視窗與打包設定
 ├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
@@ -227,11 +230,12 @@ cd frontend && pnpm run test
 cd frontend && pnpm run test
 ```
 
-目前的前端測試套件涵蓋 13 個測試檔案，共 123 個單元測試案例：
+目前的前端測試套件涵蓋 57 個測試檔案，共 298 個單元測試案例：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |
 | `tuningDiagnosis.test.ts` | 底盤遙測即時問題與動態調校診斷邏輯測試 |
+| `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B 四輪估計垂直載荷、載荷轉移與輪胎幾何先驗 |
 | `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
 | `telemetryCards.test.ts` | 遙測數據卡片格式化與狀態映射測試 |
 | 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等 10 個測試套件 |

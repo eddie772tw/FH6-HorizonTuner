@@ -4,7 +4,9 @@ param(
     [string]$AgyPath,
     [string]$Marker = 'FH6-CODEX-AGY-SMOKE',
     [ValidateRange(10, 600)]
-    [int]$TimeoutSeconds = 90
+    [int]$TimeoutSeconds = 90,
+    [switch]$TestReadFile,
+    [string]$TestRelativeFilePath = '.agents/skills/README.md'
 )
 
 Set-StrictMode -Version Latest
@@ -37,15 +39,22 @@ if ($LASTEXITCODE -ne 0) {
 }
 $statusLines = @($statusLines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
-$prompt = "CROSS_AGENT_SMOKE_TEST marker=$Marker. Do not use tools. Reply with exactly: AGY_HANDSHAKE_OK:$Marker"
+$prompt = if ($TestReadFile) {
+    $targetFile = [System.IO.Path]::Combine($workspacePath, $TestRelativeFilePath)
+    "CROSS_AGENT_READFILE_TEST marker=$Marker. Read the first 5 lines of '$targetFile'. Reply with exactly: AGY_READFILE_OK:$Marker"
+} else {
+    "CROSS_AGENT_SMOKE_TEST marker=$Marker. Do not use tools. Reply with exactly: AGY_HANDSHAKE_OK:$Marker"
+}
+
 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
 $startInfo.FileName = $AgyPath
+$startInfo.WorkingDirectory = $workspacePath
 $startInfo.UseShellExecute = $false
 $startInfo.RedirectStandardOutput = $true
 $startInfo.RedirectStandardError = $true
 $startInfo.CreateNoWindow = $true
 
-$arguments = @('--print', '--sandbox', '--print-timeout', "${TimeoutSeconds}s", '-p', $prompt)
+$arguments = @('--add-dir', $workspacePath, '--print', '--sandbox', '--print-timeout', "${TimeoutSeconds}s", '-p', $prompt)
 if ($startInfo.PSObject.Properties.Name -contains 'ArgumentList') {
     foreach ($argument in $arguments) { [void]$startInfo.ArgumentList.Add($argument) }
 } else {
@@ -71,9 +80,9 @@ $stdout = $stdoutTask.GetAwaiter().GetResult()
 $stderr = $stderrTask.GetAwaiter().GetResult()
 $elapsedMs = [int](([DateTimeOffset]::UtcNow - $startedAt).TotalMilliseconds)
 $combinedOutput = "$stdout`n$stderr"
-$expectedToken = "AGY_HANDSHAKE_OK:$Marker"
+$expectedToken = if ($TestReadFile) { "AGY_READFILE_OK:$Marker" } else { "AGY_HANDSHAKE_OK:$Marker" }
 $observedToken = if ($combinedOutput -match [regex]::Escape($expectedToken)) { $expectedToken } else { $null }
-$permissionDenied = $combinedOutput -match '(?i)permission|auto-denied|allow-rule'
+$permissionDenied = $combinedOutput -match '(?i)permission|auto-denied|allow-rule|system protection boundary'
 $passed = (-not $timedOut) -and ($process.ExitCode -eq 0) -and ($null -ne $observedToken)
 
 $failureClass = if ($passed) { $null }
@@ -82,13 +91,18 @@ elseif ($permissionDenied) { 'permission_denied' }
 elseif ($process.ExitCode -ne 0) { 'auth_or_startup_failure' }
 else { 'agent_response_mismatch' }
 
+$diagnosticHint = if ($permissionDenied) {
+    "Headless tool execution encountered permission issues. Ensure ~/.gemini/antigravity-cli/settings.json has 'enableTerminalSandbox: true' and 'toolPermission: proceed-in-sandbox'. Run Set-AgyBridgeSettings.ps1 to configure."
+} else { $null }
+
 $result = [ordered]@{
-    protocol = 'agy-fixed-token-v1'
+    protocol = if ($TestReadFile) { 'agy-fixed-token-readfile-v1' } else { 'agy-fixed-token-v1' }
     channel = 'agy-headless'
     markerExpected = $expectedToken
     markerObserved = $observedToken
     passed = $passed
     failureClass = $failureClass
+    diagnosticHint = $diagnosticHint
     exitCode = $process.ExitCode
     timedOut = $timedOut
     elapsedMs = $elapsedMs
@@ -100,4 +114,3 @@ $result = [ordered]@{
 
 $result | ConvertTo-Json -Depth 5
 if (-not $passed) { exit 1 }
-

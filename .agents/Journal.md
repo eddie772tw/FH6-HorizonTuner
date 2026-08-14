@@ -15,6 +15,37 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-14 / Codex-Antigravity Bridge Headless Tool Permission & Workspace Binding
+
+### Headless 模式 toolPermission 授權機制與工作區邊界綁定
+
+- **來源**：`local`，解決跨 Agent（Codex/外部腳本）在 headless 模式下調用 Antigravity 觸發 `Permission denied for read_file` 權限問題。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **非互動環境權限判定**：Headless 模式下因無互動 UI 提示使用者授權，未配置 `toolPermission: proceed-in-sandbox` 時，任何需要確認的工具調用會被自動拒絕或逾時。
+  2. **系統保護硬性邊界**：工作區外部路徑（如 `~/.gemini/`、`C:\Users\...`）受 `Hardcoded system protection boundary` 保護，即使在沙盒內也會被嚴格拒絕；跨 Agent 傳遞的路徑必須在專案工作區（`D:\FH6-HorizonTuner`）內。
+  3. **工作目錄與參數綁定**：`agy 1.1.13` 不支援 `-w`；必須設定 Process `WorkingDirectory` 並傳遞 `--add-dir D:\FH6-HorizonTuner`，才能讓 workspace-relative `read_file` 正常通過。
+- **Action**：
+  1. 建立 `Set-AgyBridgeSettings.ps1` 輔助腳本，支援自動配置與驗證 `settings.json`（`enableTerminalSandbox: true` 與 `toolPermission: proceed-in-sandbox`）。
+  2. 更新 `Invoke-AgyCrossAgentSmoke.ps1`：顯式設定 `WorkingDirectory`、傳遞 `--add-dir` 參數，並新增 `-TestReadFile` 工具讀檔驗證與 `diagnosticHint` 診斷提示。
+  3. 更新 `.agents/skills/codex-antigravity-bridge/SKILL.md` 與 `skills/README.md`，完善方案 A（`settings.json` 配置）與方案 B（工作區綁定與路徑邊界）規範。
+- **Evidence**：`Set-AgyBridgeSettings.ps1` 驗證 `isValid=true`；`agy --add-dir D:\FH6-HorizonTuner ...` 讀檔 smoke test 回覆 `AGY_READFILE_OK:FH6-P4B-READFILE-005`；舊 `-w` 旗標在 agy 1.1.13 回傳 `flags provided but not defined`。
+
+---
+
+## 2026-08-14 / Phase 4B Shared Load Transfer & Tire Geometry
+
+### 四輪估計垂直載荷、動態載荷轉移與輪胎幾何先驗
+
+- **來源**：`local`，Antigravity Phase 4B handoff，Codex review。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. 建立純函式 `calculateLoadTransfer`，以 `m·ax·hCG/L` 計算縱向轉移，並以前後滾轉剛性 50/50 prior 分配 `m·ay·hCG/track` 的側向轉移；正 `ax` 將載荷移向後軸，正 `ay` 將載荷移向右側。
+  2. 輸出同時保留 `unclampedWheelLoadsN` 與非負 `dynamicWheelLoadsN`，並以 `isClamped`、`clampedWheels` 與 warnings 標示 wheel lift；所有結果標示為 `quasi-static-load-transfer/v1` estimated prior。
+  3. 建立 `calculateTireGeometry` 與 `calculateTireVerticalStiffnessPrior`，由胎寬、扁平比、輪圈尺寸計算側壁、半徑與滾動周長；垂直剛度使用 `geometric-heuristic-prior/v1`，未宣稱為 FH6 校準常數。
+- **Action**：新增 `loadTransfer.ts` / `loadTransfer.test.ts`、`tireGeometry.ts` / `tireGeometry.test.ts`，並由 `tuningMath_dev.ts` 以 backward-compatible façade re-export。
+- **Evidence**：Antigravity handoff `AGY_PHASE4B_FILES_READY:FH6-P4B-IMPLEMENT-002`；targeted Vitest 18 passed；完整 frontend 57 files / 298 tests passed；pytest 144 passed / 2 skipped；ruff check passed；`git diff --check` passed。`ruff format --check` 仍報告既有 `backend/main.py` 與 `tests/test_sidecar_process_contract.py` 格式漂移，未由本次 Phase 4B 修改。
+
 ---
 
 ## 2026-08-14 / Codex-to-Antigravity Bridge and Resume Probe

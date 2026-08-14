@@ -84,6 +84,9 @@ FH6-HorizonTuner/
 │   │   ├── settings/        # Global system settings (SettingsView)
 │   │   └── theme/           # Theme color & skin view (ThemeView)
 │   ├── src/components/      # Shared UI components (Navigation, DiagnosticConsole, etc.)
+│   ├── src/domain/tuning/    # Pure tuning domain (tires, load transfer, chassis, gearing, differential)
+│   │   ├── chassis/          # Suspension and Phase 4B four-wheel load-transfer estimates
+│   │   └── tires/            # Friction ellipse, tire geometry, and vertical-stiffness priors
 │   ├── src/utils/           # Pure calculation utilities (tuningMath.ts, tuningDiagnosis.ts, etc.)
 │   └── src-tauri/           # Tauri window bundler configuration
 ├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
@@ -213,11 +216,12 @@ Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
 cd frontend && pnpm run test
 ```
 
-Current frontend test suite covers 13 test files with 123 unit tests:
+Current frontend test suite covers 57 test files with 298 unit tests:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
 | `tuningDiagnosis.test.ts` | Real-time telemetry diagnosis and chassis problem detection logic |
+| `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B four-wheel normal-load estimates, load transfer, and tire-geometry priors |
 | `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
 | `telemetryCards.test.ts` | Telemetry cards formatting and status mapping |
 | Other `*.test.ts` | 10 additional test suites covering ExprTk, VFD gauge, audio & CSS validation |

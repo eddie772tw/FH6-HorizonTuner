@@ -12,6 +12,24 @@ import { calculateDevDifferential } from '../domain/tuning/chassis/differentialS
 import { calculateDevGearing } from '../domain/tuning/gearing/gearSpeed';
 import { getDevTirePrior as getTirePrior } from '../domain/tuning/tires/tireModel';
 
+export {
+  calculateLoadTransfer,
+  type LoadTransferInput,
+  type LoadTransferOutput,
+  type WheelLoadsN,
+  type AxleLoadsN,
+  type LoadTransferDetails
+} from '../domain/tuning/chassis/loadTransfer';
+
+export {
+  calculateTireGeometry,
+  calculateTireVerticalStiffnessPrior,
+  type TireGeometryInput,
+  type TireGeometryOutput,
+  type TireVerticalStiffnessPriorOptions,
+  type TireVerticalStiffnessPriorOutput
+} from '../domain/tuning/tires/tireGeometry';
+
 export type DevRaceGoal = 'Road' | 'Rally' | 'Drag' | 'Drift';
 export type DevSurface = 'tarmac' | 'gravel' | 'snow' | 'dragStrip';
 
