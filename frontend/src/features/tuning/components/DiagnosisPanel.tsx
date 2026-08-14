@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
 import { DiagnosisReport } from '../../../utils/tuningDiagnosis';
@@ -10,6 +10,17 @@ interface DiagnosisPanelProps {
 
 const DiagnosisPanelComponent: React.FC<DiagnosisPanelProps> = ({ diagnosisReport, telemetryPoints }) => {
   const { settings, convertSpeed, t } = useSettings();
+
+  // [PERF] Memoize the downsampled telemetry data using a native for-loop
+  // to prevent re-allocating a new array and closure on every React render
+  // via inline .filter() method, reducing GC pressure and UI stutter.
+  const filteredTelemetryPoints = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < (telemetryPoints?.length || 0); i += 4) {
+      result.push(telemetryPoints[i]);
+    }
+    return result;
+  }, [telemetryPoints]);
 
   if (!diagnosisReport) {
     return (
@@ -50,7 +61,7 @@ const DiagnosisPanelComponent: React.FC<DiagnosisPanelProps> = ({ diagnosisRepor
             </div>
             <div style={{ height: '180px', width: '100%', marginTop: '0.4rem' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={telemetryPoints.filter((_, idx) => idx % 4 === 0)} margin={{ top: 10, right: 10, bottom: 5, left: -25 }}>
+                <AreaChart data={filteredTelemetryPoints} margin={{ top: 10, right: 10, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="heightColor" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#00b4ff" stopOpacity={0.6}/>
