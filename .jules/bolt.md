@@ -68,3 +68,6 @@
 ## 2025-02-23 - FastAPI Asyncio Event Loop Blocking by File I/O
 **Learning:** Synchronous File I/O (like `os.listdir` and `json.load`) executed within an `async def` FastAPI route blocks the underlying ASGI asyncio event loop, causing severe latency degradation for concurrent requests (e.g., websockets or parallel REST calls).
 **Action:** When a FastAPI route requires synchronous operations, either declare the route as a synchronous `def` (which allows FastAPI to natively offload it to an external threadpool) or use `await asyncio.to_thread()` within an `async def` route to manually offload the blocking code. Do not use `async def` with bare synchronous I/O.
+## 2026-08-11 - Use useMemo and for loops for telemetry data in React
+**Learning:** Calling array methods like `.filter()` that execute closures directly inside the React render cycle (e.g., `<AreaChart data={telemetryPoints.filter(...)}>`) causes severe GC pressure, UI stuttering, and recalculations on every render when working with large telemetry datasets.
+**Action:** Always wrap data downsampling or transformation logic for large arrays in a `useMemo` hook, and replace `.filter()`, `.map()`, and chained methods with a native `for` loop to eliminate both redundant computations across renders and per-element closure allocations.
