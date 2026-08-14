@@ -986,6 +986,14 @@
 - **Verification**: Targeted Rally profile Vitest passed (19 tests); no new TypeScript diagnostics were found for the Rally files; `git diff --check` passed.
 - **Status**: adopted.
 
+## 2026-08-14 / Phase 5D Drag Launch Traction and Distance Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/dragProfile.ts` and its Vitest contract tests.
+- **Decision**: Add a simulated strip solver with explicit 60-ft, 100-m, eighth-mile, quarter-mile, and terminal-speed metrics. Gearing is optimized by strip length and power/traction inputs; no universal fourth-gear `1.00` assumption is used.
+- **Physics**: Launch load transfer uses `deltaFz = m*a*hCG/L`, then allocates longitudinal traction separately for FWD, RWD, and AWD. Optional drag, rolling resistance, efficiency, and power-curve inputs are priors unless supplied; outputs remain estimated/simulated.
+- **Verification**: Targeted Drag profile Vitest passed (25 tests); no new TypeScript diagnostics remain in the Drag file; `git diff --check` passed.
+- **Status**: adopted.
+
 - **Decision**: Removed the standalone stdio MCP entrypoint and the unused
   legacy HTTP+SSE transport before external deployment.
 - **Contract**: The running FastAPI backend is the only MCP host. When
