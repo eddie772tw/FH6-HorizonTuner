@@ -9,7 +9,7 @@ This branch is intended to be continued on a second device for FH6 real-world da
 - Enable `Settings → Developer Options → Use Developer Tuning View` to open `TuningView_dev`.
 - `TuningView_dev` uses only `frontend/src/utils/tuningMath_dev.ts` and the domain modules under `frontend/src/domain/tuning/`.
 - The developer solver is advisory. Its tire values and game-slider mappings are calibration priors, not validated FH6 constants.
-- **Localhost Read-Only MCP Server** has been implemented by Gemini/Antigravity under `backend/mcp/` and is fully functional (`backend/mcp/server.py`), exposing 26 tools and 5 resource URIs. Setup guide: [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
+- **Localhost Read-Only MCP Server** is provided by the running FastAPI backend under `backend/mcp/`, exposing 26 tools and 5 resource URIs through `/mcp` Streamable HTTP. Setup guide: [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
 
 ## Second-device setup
 
@@ -19,7 +19,7 @@ This branch is intended to be continued on a second device for FH6 real-world da
 4. Enable Forza telemetry output to the configured UDP address/port; confirm the app's telemetry status is connected.
 5. Open Developer Tuning and then `Open Telemetry Capture`.
 6. Before driving, enter complete metadata. Do not leave `gameBuild`, installed parts, tire type, surface, event/track or assists as `unknown` for a measured run.
-7. (Optional) Run the local MCP server (`uv run --no-project --python .venv\Scripts\python.exe backend/mcp/server.py`) or configure it in Claude Desktop / Cursor for AI-assisted analysis.
+7. Start Horizon Tuner, keep MCP enabled in Settings, and configure the client with the running backend's `/mcp` Streamable HTTP URL for AI-assisted analysis. Dev mode uses `8001`; a Release Build prefers `8001` and falls back to a dynamic port when it is occupied. Use the Settings MCP card (and its fallback Popover) to confirm the actual endpoint.
 
 ## Test-user operating procedure
 
@@ -83,7 +83,7 @@ For tire calibration, provide separate matrices for compound × surface × weath
 
 ### Ownership and verification
 
-- `backend/mcp/`: MCP protocol handler, service layer, tools, resources, and stdio server runner.
+- `backend/mcp/`: MCP protocol handler, service layer, tools, resources, and FastAPI transport integration.
 - `frontend/src/domain/tuning/`: typed contracts, capture schema, pure solver and analysis logic.
 - `frontend/src/features/tuning/`: developer UI and capture page.
 - `docs/calibration/`: unverified/community/in-game evidence packages.
@@ -92,5 +92,5 @@ For tire calibration, provide separate matrices for compound × surface × weath
 
 ## MCP operational status
 
-The localhost read-only MCP server is fully operational. It reads bounded summaries and session windows, returns structured provenance, and does not participate in the UDP/60 Hz hot path. Server entry point: `backend/mcp/server.py`.
+The localhost read-only MCP server is available only while the FastAPI backend is running with MCP enabled. It reads bounded summaries and session windows, returns structured provenance, and does not participate in the UDP/60 Hz hot path. Endpoint: `/mcp`. The current endpoint is shown in Settings; `logs/web_port.txt` always contains the actual bound HTTP port for the running Release Build.
 

@@ -858,7 +858,43 @@
 
 ---
 
+## 2026-08-14 / Release Build MCP endpoint and live validation
+
+- **Decision**: Dev mode keeps a fixed HTTP/MCP port of `8001`. Release Build
+  startup prefers `8001`, falls back to a dynamic port only when it is occupied,
+  and writes the actual bound port to `logs/web_port.txt` after binding. The
+  frontend consumes that value directly; it does not guess a fallback port.
+- **UI**: A Halfmoon Popover is attached to the Settings navigation item when
+  the Release Build uses a dynamic port. It directs the user to Settings → MCP
+  Server, where the current `/mcp` endpoint is visible and copyable.
+- **Live MCP validation**: A running Dev backend on `127.0.0.1:8001` accepted
+  `initialize`, `tools/list`, and `tools/call(get_live_telemetry_snapshot)` over
+  `POST /mcp`. The call returned `status=idle`, no active session, zero recorded
+  sessions, and no latest sample; `/api/mcp/status` reported three served MCP
+  requests and `transport=streamable-http`.
+- **Verification**: `pytest` 144 passed / 2 skipped, frontend Vitest 53 files /
+  274 tests passed, Vite production build passed, Ruff passed, Python compile
+  passed, and `git diff --check` passed.
+- **Status**: adopted.
+
 ## 2026-08-14 / MCP Server Deep Integration with FastAPI (SSE) & Frontend Settings UI
+
+---
+
+## 2026-08-14 / MCP Transport Consolidation
+
+- **Decision**: Removed the standalone stdio MCP entrypoint and the unused
+  legacy HTTP+SSE transport before external deployment.
+- **Contract**: The running FastAPI backend is the only MCP host. When
+  `mcp_enabled` is true it exposes `POST /mcp` using Streamable HTTP and shares
+  the in-process live telemetry snapshot; when the app is stopped or disabled,
+  MCP is unavailable by design.
+- **Time-series boundary**: Session and capture tools return bounded,
+  timestamped windows with slicing/downsampling. Continuous server-push of
+  future 60Hz frames is not supported; live telemetry remains a point-in-time
+  snapshot.
+- **Verification**: MCP HTTP/protocol/service/tools/resources tests passed;
+  Settings MCP card tests passed; Ruff check and `git diff --check` passed.
 
 - **Scope**: local / `backend/mcp/sse_transport.py`, `backend/main.py`, `frontend/src/features/settings/`.
 - **Status**: adopted.

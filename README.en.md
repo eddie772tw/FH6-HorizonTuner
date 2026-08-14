@@ -45,7 +45,7 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - Automated backend SQLite historical telemetry logging.
   - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
 * **Localhost Read-Only MCP Server (Model Context Protocol)**:
-  - Built-in standard JSON-RPC 2.0 `stdio` MCP server (`backend/mcp/server.py`) offering 26 dedicated read-only tools and 5 Resource URI templates.
+  - The running FastAPI backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
   - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
@@ -62,7 +62,6 @@ FH6-HorizonTuner/
 ├── backend/                 # Python FastAPI backend core
 │   ├── main.py              # Backend entry point, API definitions & process management
 │   ├── mcp/                 # Model Context Protocol (MCP) Read-Only Server
-│   │   ├── server.py        # stdio MCP server runner
 │   │   ├── service.py       # Telemetry & tuning service layer (aligned with TelemetryView)
 │   │   ├── tools.py         # 26 MCP tools declarations & dispatch
 │   │   └── resources.py     # 5 Resource URI router
@@ -137,13 +136,13 @@ You can package both the frontend and backend into a **single standalone executa
 
 1. Double-click **`build_all.bat`**:
    - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
-   - **Phase 2 (Portable Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single portable executable `dist/FH6-HorizonTuner.exe` without an installer.
+   - **Phase 2 (Release Build Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single Release Build executable `dist/FH6-HorizonTuner.exe` without an installer.
 
 > [!NOTE]
-> **Portable Path Strategy**:
+> **Release Build Path Strategy**:
 > When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
 
-> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the portable `.exe`; it is detected automatically and can be selected in the HUD menu. See [portable custom HUD packages](docs/portable-custom-hud.md).
+> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the Release Build `.exe`; it is detected automatically and can be selected in the HUD menu. See [Release Build custom HUD packages](docs/portable-custom-hud.md).
 
 * **Excluding Non-release Directories (.pkgdirignore)**:
     * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
@@ -302,7 +301,7 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ---
 
-## Portable Release Contract
+## Release Build Contract
 
 The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
 separate sidecar file are required. The PyInstaller backend is embedded into
@@ -319,8 +318,8 @@ This project uses two separate localhost ports; do not configure them interchang
 | Forza Horizon Data Out telemetry | UDP | `8000` |
 | FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
 
-In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Use `TELEMETRY_PORT` to change the UDP port and `BACKEND_PORT` to change the development HTTP port.
+In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Development uses `8001` as its fixed HTTP port. `TELEMETRY_PORT` remains available for changing the UDP port; `BACKEND_PORT` is retained for explicit test and external-backend workflows.
 
-In a portable release, the FastAPI HTTP service selects an available dynamic TCP port and writes it to `logs/web_port.txt` under the data directory. Forza UDP telemetry still listens on `8000` by default.
+In a Release Build, the FastAPI HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before configuring an Agent.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
 

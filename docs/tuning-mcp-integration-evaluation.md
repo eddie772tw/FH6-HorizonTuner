@@ -6,7 +6,7 @@ Status: **Implemented / Operational** (Completed by Gemini/Antigravity on 2026-0
 
 ## Decision
 
-There is a strong opportunity to expose the tuning evidence workflow through MCP, and the initial release has been implemented as a localhost read-only MCP server (`backend/mcp/server.py`). It lets an AI inspect live/recorded telemetry, versioned telemetry captures, calibration records, capability contracts, and deterministic solver results. It does not write car parameters, change the game, or promote calibration constants without explicit human review.
+There is a strong opportunity to expose the tuning evidence workflow through MCP, and the initial release has been implemented as a localhost read-only MCP server integrated into the FastAPI backend (`/mcp`). It lets an AI inspect live/recorded telemetry, versioned telemetry captures, calibration records, capability contracts, and deterministic solver results. It does not write car parameters, change the game, or promote calibration constants without explicit human review.
 
 Detailed setup instructions for various AI tools (Claude Desktop, Cursor, VS Code/Cline) are documented in [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
 
@@ -78,9 +78,16 @@ These would create an external-state or safety boundary and require an explicit 
 
 ## Deployment recommendation
 
-### Stage A: local stdio server (Implemented)
+### Stage A: embedded FastAPI Streamable HTTP server (Implemented)
 
-The Python MCP server (`backend/mcp/server.py`) operates as a child process via standard I/O for local AI hosts. The backend SQLite and capture files remain the source of truth.
+The MCP transport runs inside the FastAPI backend and shares its live telemetry provider. The backend SQLite and capture files remain the source of truth; no second telemetry consumer is started.
+
+For Dev mode, the backend HTTP and MCP endpoint use fixed port `8001`. For a
+Release Build, startup first attempts `8001`; if another process owns it, the
+backend selects a dynamic port and publishes the actual bound value to
+`logs/web_port.txt`. The frontend consumes that value directly. A warning
+Popover attached to Settings directs the user to the MCP settings card to
+confirm the current endpoint before configuring an Agent.
 
 ## Phased implementation plan
 
@@ -88,7 +95,7 @@ The Python MCP server (`backend/mcp/server.py`) operates as a child process via 
 |---|---|---|---|
 | MCP-0 | Capture/schema work | **Completed** | Evaluated boundaries in `docs/tuning-mcp-integration-evaluation.md` |
 | MCP-1 | MCP-0 | **Completed** | Implemented `backend/mcp/service.py` with TelemetryView aligned models |
-| MCP-2 | MCP-1 | **Completed** | Implemented `backend/mcp/protocol.py`, `resources.py`, `tools.py`, `server.py` |
-| MCP-3 | MCP-2 | **Completed** | Added test suite `tests/test_mcp_*.py` (21 passed); user setup guide in `docs/mcp-setup-guide.md` |
+| MCP-2 | MCP-1 | **Completed** | Implemented `backend/mcp/protocol.py`, `resources.py`, and `tools.py` |
+| MCP-3 | MCP-2 | **Completed** | Integrated FastAPI `POST /mcp`, added HTTP/service tests, and documented the Streamable HTTP setup |
 | MCP-4 | MCP-3 plus human approval | Deferred | Optional confirmed write workflow (deliberately out of scope for v1) |
 

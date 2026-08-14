@@ -46,7 +46,7 @@
   - 後端 SQLite 遙測歷程資料庫自動記錄。
   - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
-  - 內建標準 JSON-RPC 2.0 `stdio` MCP 伺服器（`backend/mcp/server.py`），提供 26 個專屬唯讀工具與 5 類 Resource URI。
+  - 由執行中的 FastAPI backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
@@ -63,7 +63,6 @@ FH6-HorizonTuner/
 ├── backend/                 # Python FastAPI 後端核心
 │   ├── main.py              # 後端服務主入口與 API 宣告
 │   ├── mcp/                 # Model Context Protocol (MCP) 唯讀伺服器
-│   │   ├── server.py        # stdio MCP 伺服器主程式
 │   │   ├── service.py       # 遙測與調校服務層 (對齊 TelemetryView)
 │   │   ├── tools.py         # 26 個 MCP Tools 宣告與分派
 │   │   └── resources.py     # 5 類 Resource URI 路由
@@ -336,7 +335,7 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ---
 
-## Portable Release Contract
+## Release Build Contract
 
 The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
 separate sidecar file are required. The PyInstaller backend is embedded into
@@ -353,9 +352,9 @@ with an AppData fallback for protected locations.
 | Forza Horizon Data Out Telemetry | UDP | `8000` |
 | FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
 
-在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式則連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠，透過 `BACKEND_PORT` 修改開發模式的 HTTP 連接埠。
+在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。
 
-打包後的 portable release 會為 FastAPI HTTP 服務選擇可用的動態 TCP 連接埠，並將實際連接埠寫入資料目錄的 `logs/web_port.txt`；Forza UDP Telemetry 預設仍監聽 `8000`。
+Release Build 會優先使用 `8001` 作為 FastAPI HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。
 前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。
 
 
@@ -364,9 +363,9 @@ with an AppData fallback for protected locations.
 ## Testing & Diagnostics
 
 ### CI & PR Blocking
-Our standard CI pipeline blocks pull requests on package existence and metadata validation to ensure that dependencies and compilation processes succeed. However, tests that verify the headless launch of the portable Tauri host are historically flaky in Windows GitHub Actions runners.
+Our standard CI pipeline blocks pull requests on package existence and metadata validation to ensure that dependencies and compilation processes succeed. However, tests that verify the headless launch of the Release Build Tauri host are historically flaky in Windows GitHub Actions runners.
 
-### Portable Host Diagnostics Workflow
+### Release Build Host Diagnostics Workflow
 To debug and monitor headless host behavior without blocking PRs, we run the **FH6 HorizonTuner Host Diagnostics** workflow.
 - **Scheduled:** Runs nightly via cron.
 - **Manual Trigger:** Maintainers can manually trigger this workflow via the `workflow_dispatch` event on the Actions tab. You can optionally specify a `repeat_count` (between 1 and 10, defaulting to 1) to repeatedly probe host startup using the same compiled binaries, and a `timeout` (between 15 and 120 seconds, defaulting to 120) to accommodate slow or loaded headless Windows runners.
@@ -380,4 +379,4 @@ If a diagnostics run fails, the workflow uploads a diagnostic artifact (retained
 ### Release Candidate Approval
 To sign off on a new release candidate, you must ensure:
 1. **One successful automated diagnostics run** via GitHub Actions.
-2. **Manual portable smoke testing** performed on a clean Windows environment.
+2. **Manual Release Build smoke testing** performed on a clean Windows environment.
