@@ -17,6 +17,21 @@
 
 ---
 
+## 2026-08-14 / IDE Diagnostics Exclusion
+
+### IDE Pyrefly / Pyright 虛擬路徑 (`__pyrefly_virtual__`) 診斷污染修復
+
+- **來源**：`local`，IDE 問題列表修復任務。
+- **狀態**：`adopted`。
+- **Learning**：Antigravity IDE / Python Language Server (Pyrefly / Pyright) 在解析暫存片段、無標題緩衝區或內聯計算時，會在記憶體中建立如 `d:\__pyrefly_virtual__\inmemory\11-1.py` 之虛擬路徑。由於該路徑開頭為 `d:\` 且未被 `pyproject.toml`、`pyrightconfig.json` 或 `.vscode/settings.json` 排除，語言伺服器會將未完成的暫存程式碼診斷錯誤（如語法錯誤或未匯入 `os` 等）推播至 IDE 的全域 Problems 面板中。
+- **Action**：
+  1. 在 `pyproject.toml` 中的 `[tool.ruff]` 與 `[tool.pyright]` 的 `exclude` 設定中加入 `**/__pyrefly_virtual__/**` 與 `__pyrefly_virtual__` 排除規則。
+  2. 建立 `pyrightconfig.json` 設定檔，顯式排除 `**/__pyrefly_virtual__/**` 與 `d:\__pyrefly_virtual__\**`。
+  3. 建立 `.vscode/settings.json` 配置 `python.analysis.exclude` 與 `files.watcherExclude` 排除該虛擬目錄，並於 `.gitignore` 中加入 `!.vscode/settings.json` 以便團隊與 Agent 共享設定。
+- **Evidence**：`pyproject.toml`、`pyrightconfig.json`、`.vscode/settings.json`；`ruff check .` (All checks passed), pytest (118 passed), vitest (259 passed) 全數通過。
+
+---
+
 ## 2026-08-14 / Localization & Repository Cleanup
 
 ### 後端與根目錄雙重 lang 資料夾誤納版控與 mtime 同步機制

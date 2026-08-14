@@ -8,7 +8,9 @@ exclude = [
     ".venv",
     "venv",
     "backend/venv",
-    "__pycache__"
+    "__pycache__",
+    "**/__pyrefly_virtual__/**",
+    "__pyrefly_virtual__"
 ]
 
 [tool.ruff.lint]
@@ -72,4 +74,12 @@ filterwarnings = [
 
 [tool.pyright]
 extraPaths = ["backend"]
+exclude = [
+    "**/__pyrefly_virtual__/**",
+    "__pyrefly_virtual__",
+    "**/node_modules",
+    "**/__pycache__",
+    ".venv"
+]
+
 
