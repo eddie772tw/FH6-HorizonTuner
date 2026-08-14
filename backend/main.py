@@ -12,7 +12,9 @@ SIDECAR_STDOUT = sys.stdout
 if getattr(sys, "frozen", False):
     if sys.platform == "win32":
         try:
-            os.add_dll_directory(sys._MEIPASS)
+            meipass = getattr(sys, "_MEIPASS", "")
+            if meipass:
+                os.add_dll_directory(meipass)
         except Exception:
             pass
 
@@ -36,7 +38,7 @@ def emit_sidecar_event(event: str, **payload) -> None:
 
 
 if getattr(sys, "frozen", False):
-    RESOURCE_ROOT = sys._MEIPASS
+    RESOURCE_ROOT = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     if parsed_args.data_dir:
         DATA_ROOT = os.path.abspath(parsed_args.data_dir)
     else:
@@ -170,7 +172,7 @@ os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
 os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 
-# 完整複製內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護
+# 複製與同步內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護或更新
 if os.path.exists(RESOURCE_LANG_DIR):
     import shutil
 
@@ -178,11 +180,14 @@ if os.path.exists(RESOURCE_LANG_DIR):
         if f_name.endswith(".json"):
             src = os.path.join(RESOURCE_LANG_DIR, f_name)
             dst = os.path.join(LANG_DIR, f_name)
-            if not os.path.exists(dst):
-                try:
-                    shutil.copy2(src, dst)
-                except Exception:
-                    pass
+            if os.path.abspath(src) != os.path.abspath(dst):
+                if not os.path.exists(dst) or os.path.getmtime(src) > os.path.getmtime(
+                    dst
+                ):
+                    try:
+                        shutil.copy2(src, dst)
+                    except Exception:
+                        pass
 
 telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
 
@@ -1223,11 +1228,11 @@ async def broadcast_telemetry():
         )
 
         # --- Periodic GC (every 60 seconds) ---
+        global _last_telemetry_gc_time
         current_time = time.time()
-        static_gc_state = getattr(broadcast_telemetry, "last_gc_time", 0.0)
-        if current_time - static_gc_state > 60.0:
+        if current_time - _last_telemetry_gc_time > 60.0:
             asyncio.create_task(asyncio.to_thread(gc.collect))
-            broadcast_telemetry.last_gc_time = current_time
+            _last_telemetry_gc_time = current_time
 
         # --- Backpressure: If queue is filling up, drop old frames ---
         # Note: telemetry_queue size is 10. If it gets larger than 5, we clear all but the latest.
@@ -1257,7 +1262,7 @@ async def broadcast_telemetry():
 
 
 # Initialize static variable for GC tracking
-broadcast_telemetry.last_gc_time = time.time()
+_last_telemetry_gc_time = time.time()
 
 
 @app.get("/api/diagnostics/telemetry-pipeline")
@@ -1902,7 +1907,7 @@ LOG_LINE_PATTERN = re.compile(
 
 
 @app.get("/api/logs")
-async def get_logs(level: str = None, limit: int = 300):
+async def get_logs(level: str | None = None, limit: int = 300):
     if not os.path.exists(backend_log_path):
         return {"logs": []}
 
@@ -2407,7 +2412,7 @@ if __name__ == "__main__":
 
         class EndpointFilter(logging.Filter):
             def filter(self, record: logging.LogRecord) -> bool:
-                if record.args and len(record.args) >= 3:
+                if isinstance(record.args, (tuple, list)) and len(record.args) >= 3:
                     req_path = str(record.args[2])
                     if "/api/logs" in req_path or "/api/car_params" in req_path:
                         return False

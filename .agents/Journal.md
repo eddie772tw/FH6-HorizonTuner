@@ -17,6 +17,18 @@
 
 ---
 
+## 2026-08-14 / Localization & Repository Cleanup
+
+### 後端與根目錄雙重 lang 資料夾誤納版控與 mtime 同步機制
+
+- **來源**：`local`，語系檔重複清理任務。
+- **狀態**：`adopted`。
+- **Learning**：專案設計上以根目錄 `lang/` 為內建語系檔唯一真理來源，但在開發期 (`sys.frozen == False`) 執行 `main.py` 且未指定 `--data-dir` 時，`DATA_ROOT` 預設為 `backend/`，導致 `LANG_DIR` (`backend/lang/`) 被自動建立。過去 `backend/lang/` 被誤納入 Git 版控，且 `main.py` 原先語系檔複製邏輯採用 `if not os.path.exists(dst):`，導致已存在於 `backend/lang/` 的檔案永遠無法獲取根目錄 `lang/` 最新更新的翻譯 Key。
+- **Action**：使用 `git rm -r backend/lang` 將其自 Git 版控中移除，並於 `.gitignore` 中新增 `/backend/lang/` 排除開發期數據目錄。同時更新 `main.py` 的 Bootstrapping 複製邏輯：檢查 `os.path.abspath(src) != os.path.abspath(dst)` 且當 `dst` 不存在或 `os.path.getmtime(src) > os.path.getmtime(dst)` 時自動同步內建最新語系檔。
+- **Evidence**：`git status` 驗證 `backend/lang/` 已移除且 ignored；`test_spec_bundling.py` (2 passed), `test_main.py` (5 passed), `test_overlay_api.py` (38 passed), vitest (259 passed) 全數通過。
+
+---
+
 ## 2026-08-11 / Agent Workflow
 
 ### 技能名稱與技能發現入口混淆
