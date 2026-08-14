@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FH6TuningCaptureManifest",
+  "type": "object",
+  "required": [
+    "manifestVersion",
+    "testCategory",
+    "carName",
+    "drivetrain",
+    "gameBuild",
+    "confidence",
+    "baselineCaptureFile",
+    "candidateCaptureFile",
+    "testedVariable",
+    "runs"
+  ],
+  "properties": {
+    "manifestVersion": { "type": "string", "enum": ["tuning-manifest/v1"] },
+    "testCategory": { "type": "string", "enum": ["tire_friction", "suspension_damping", "arb_balance", "gearing_powerband", "drift_slip", "drag_launch"] },
+    "carName": { "type": "string", "example": "2022 Toyota GR86" },
+    "carOrdinal": { "type": "integer", "example": 3154 },
+    "drivetrain": { "type": "string", "enum": ["FWD", "RWD", "AWD"] },
+    "piClass": { "type": "string", "example": "A 800" },
+    "gameBuild": { "type": "string", "example": "1.650.123.0" },
+    "confidence": { "type": "string", "enum": ["in_game_capture", "community", "unverified"] },
+    "installedParts": {
+      "type": "object",
+      "properties": {
+        "tires": { "type": "string", "example": "Race Tire Compound" },
+        "suspension": { "type": "string", "example": "Race Springs and Dampers" },
+        "arbs": { "type": "string", "example": "Race Anti-roll Bars Front and Rear" },
+        "differential": { "type": "string", "example": "Race Differential" },
+        "transmission": { "type": "string", "example": "Race 6-Speed Transmission" },
+        "aero": { "type": "string", "example": "Stock" }
+      }
+    },
+    "surface": { "type": "string", "enum": ["tarmac", "gravel", "dirt", "snow", "drag_strip"] },
+    "weather": { "type": "string", "enum": ["dry", "wet", "storm"] },
+    "trackOrRoute": { "type": "string", "example": "Horizon Mexico Circuit" },
+    "driverAssists": {
+      "type": "object",
+      "properties": {
+        "tcs": { "type": "boolean", "default": false },
+        "stm": { "type": "boolean", "default": false },
+        "abs": { "type": "boolean", "default": true },
+        "steering": { "type": "string", "enum": ["simulation", "normal"] },
+        "shifting": { "type": "string", "enum": ["manual", "manual_clutch"] }
+      }
+    },
+    "testedVariable": {
+      "type": "object",
+      "properties": {
+        "parameterName": { "type": "string", "example": "front_tire_pressure_psi" },
+        "baselineValue": { "type": "number", "example": 30.0 },
+        "candidateValue": { "type": "number", "example": 32.0 },
+        "unit": { "type": "string", "example": "PSI" },
+        "hypothesis": { "type": "string", "example": "Increasing front tire pressure from 30 to 32 PSI reduces front tire scrub and increases peak lateral G." }
+      },
+      "required": ["parameterName", "baselineValue", "candidateValue", "unit", "hypothesis"]
+    },
+    "baselineCaptureFile": { "type": "string", "example": "docs/calibration/in_game_captures/GR86_RWD_TirePressure_30PSI_run1.json" },
+    "candidateCaptureFile": { "type": "string", "example": "docs/calibration/in_game_captures/GR86_RWD_TirePressure_32PSI_run1.json" },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "runIndex": { "type": "integer" },
+          "type": { "type": "string", "enum": ["warmup", "baseline", "candidate"] },
+          "filePath": { "type": "string" },
+          "lapTime": { "type": "number" },
+          "valid": { "type": "boolean" },
+          "notes": { "type": "string" }
+        },
+        "required": ["runIndex", "type", "filePath", "valid"]
+      }
+    }
+  }
+}

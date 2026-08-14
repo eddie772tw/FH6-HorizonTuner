@@ -52,7 +52,7 @@ def stop_process(proc: subprocess.Popen[bytes]) -> None:
 
 
 def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
-    """The portable sidecar contract works before packaging it into an EXE."""
+    """The Release Build sidecar contract works before packaging it into an EXE."""
     data_dir = tmp_path / "portable-data"
     udp_port = get_available_udp_port()
     environment = os.environ.copy()
@@ -60,7 +60,6 @@ def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
         {
             "TELEMETRY_IP": "127.0.0.1",
             "TELEMETRY_PORT": str(udp_port),
-            "BACKEND_PORT": str(get_available_tcp_port()),
         }
     )
 
@@ -89,5 +88,52 @@ def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
         stop_process(proc)
 
     assert proc.returncode == 0
+    assert port_file.read_text(encoding="utf-8").strip() == "8001"
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+        probe.bind(("127.0.0.1", udp_port))
+
+
+def test_source_sidecar_falls_back_when_preferred_http_port_is_occupied(tmp_path):
+    """Fallback publishes the actual dynamic port, never the preferred port."""
+    data_dir = tmp_path / "release-data"
+    udp_port = get_available_udp_port()
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "TELEMETRY_IP": "127.0.0.1",
+            "TELEMETRY_PORT": str(udp_port),
+        }
+    )
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied_port:
+        try:
+            occupied_port.bind(("127.0.0.1", 8001))
+            occupied_port.listen(1)
+        except OSError:
+            pytest.skip("HTTP port 8001 is already occupied by another process")
+
+        proc = subprocess.Popen(
+            [sys.executable, "-u", "main.py", "--data-dir", str(data_dir)],
+            cwd=BACKEND_DIR,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=environment,
+        )
+
+        port_file = data_dir / "logs" / "web_port.txt"
+        deadline = time.monotonic() + 10.0
+        try:
+            while not port_file.exists() and time.monotonic() < deadline:
+                if proc.poll() is not None:
+                    break
+                time.sleep(0.1)
+
+            assert port_file.exists(), "sidecar did not publish fallback HTTP port"
+            assert int(port_file.read_text(encoding="utf-8").strip()) != 8001
+        finally:
+            stop_process(proc)
+
+        assert proc.returncode == 0
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
         probe.bind(("127.0.0.1", udp_port))

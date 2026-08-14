@@ -14,7 +14,7 @@ Canonical skill registry 位於 `.agents/skills/README.md`。目前專案技能 
 `halfmoon-design-system`、`huge-component-refactoring`、`jules_coding`、
 `modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、
 `cross-agent-collaboration`、`agent-governance-audit`、
-`portable-release-validation`。
+`portable-release-validation`、`pr-review-evaluation`。
 
 Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。
 

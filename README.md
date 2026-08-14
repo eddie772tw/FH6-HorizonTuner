@@ -45,6 +45,9 @@
 * **遙測持久化與 MoTeC i2 數據匯出 (SQLite Storage & MoTeC Exporter)**:
   - 後端 SQLite 遙測歷程資料庫自動記錄。
   - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
+* **Localhost 唯讀 MCP Server (Model Context Protocol)**:
+  - 由執行中的 FastAPI backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
+  - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
   - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
@@ -59,6 +62,10 @@ FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD 工作流設定 (Ruff Lint + Pytest)
 ├── backend/                 # Python FastAPI 後端核心
 │   ├── main.py              # 後端服務主入口與 API 宣告
+│   ├── mcp/                 # Model Context Protocol (MCP) 唯讀伺服器
+│   │   ├── service.py       # 遙測與調校服務層 (對齊 TelemetryView)
+│   │   ├── tools.py         # 26 個 MCP Tools 宣告與分派
+│   │   └── resources.py     # 5 類 Resource URI 路由
 │   ├── telemetry_listener.py # UDP 60Hz 遙測數據流監聽與解析
 │   ├── telemetry_runtime.py  # Pipeline metrics 與非阻塞 dyno profile 快取/寫入
 │   ├── core/                # 遙測數據處理、算牌與系統核心
@@ -78,6 +85,9 @@ FH6-HorizonTuner/
 │   │   ├── settings/        # 系統全域設定 (SettingsView)
 │   │   └── theme/           # 主題色調與皮膚視圖 (ThemeView)
 │   ├── src/components/      # 通用 UI 元件 (Navigation, DiagnosticConsole 等)
+│   ├── src/domain/tuning/    # 純函數調校 domain（輪胎、載荷轉移、懸吊、齒比與差速器）
+│   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
+│   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗
 │   ├── src/utils/           # 純函數計算庫 (tuningMath.ts, tuningDiagnosis.ts 等)
 │   └── src-tauri/           # Tauri 視窗與打包設定
 ├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
@@ -220,14 +230,22 @@ cd frontend && pnpm run test
 cd frontend && pnpm run test
 ```
 
-目前的前端測試套件涵蓋 13 個測試檔案，共 123 個單元測試案例：
+目前的前端測試套件涵蓋 66 個測試檔案，共 418 個單元測試案例：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |
 | `tuningDiagnosis.test.ts` | 底盤遙測即時問題與動態調校診斷邏輯測試 |
+| `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B 四輪估計垂直載荷、載荷轉移與輪胎幾何先驗 |
 | `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
 | `telemetryCards.test.ts` | 遙測數據卡片格式化與狀態映射測試 |
-| 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等 10 個測試套件 |
+| `tireModel.test.ts` | 摩擦橢圓邊界、零容量正需求修復與 feasible 判斷（7 tests） |
+| `suspensionSolver.test.ts` | 臨界阻尼、阻尼比先驗與 FH6 滑桿映射分層（3 tests） |
+| `timestampIntegration.test.ts` | Phase 6 時間戳積分—滑空、漂移時間、衝擊窗口與非單調 unknown |
+| `thermalDiagnosis.test.ts` | Phase 6 四輪胎溫梯度、Camber 與胎壓修正建議 |
+| `dynamicsDiagnosis.test.ts` | Phase 6 ARB / 阻尼 / 差速器復合滑移診斷與 confidence 分層 |
+| `capabilityFilter.test.ts` | Phase 7 改裝能力篩選函式（unlocked / locked / unknown keys） |
+| `presetSerializer.test.ts` | Phase 7 `tuning-preset/v1` 存檔序列化往返與版本驗證 |
+| 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等測試套件 |
 
 > [!TIP]
 > 新增或修改 `frontend/src/utils/` 下的物理計算模組時，請同步新增對應的 `.test.ts` 單元測試，確保所有測試通過後才提交 PR。
@@ -328,7 +346,7 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ---
 
-## Portable Release Contract
+## Release Build Contract
 
 The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
 separate sidecar file are required. The PyInstaller backend is embedded into
@@ -345,9 +363,9 @@ with an AppData fallback for protected locations.
 | Forza Horizon Data Out Telemetry | UDP | `8000` |
 | FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
 
-在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式則連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠，透過 `BACKEND_PORT` 修改開發模式的 HTTP 連接埠。
+在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。
 
-打包後的 portable release 會為 FastAPI HTTP 服務選擇可用的動態 TCP 連接埠，並將實際連接埠寫入資料目錄的 `logs/web_port.txt`；Forza UDP Telemetry 預設仍監聽 `8000`。
+Release Build 會優先使用 `8001` 作為 FastAPI HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。
 前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。
 
 
@@ -356,9 +374,9 @@ with an AppData fallback for protected locations.
 ## Testing & Diagnostics
 
 ### CI & PR Blocking
-Our standard CI pipeline blocks pull requests on package existence and metadata validation to ensure that dependencies and compilation processes succeed. However, tests that verify the headless launch of the portable Tauri host are historically flaky in Windows GitHub Actions runners.
+Our standard CI pipeline blocks pull requests on package existence and metadata validation to ensure that dependencies and compilation processes succeed. However, tests that verify the headless launch of the Release Build Tauri host are historically flaky in Windows GitHub Actions runners.
 
-### Portable Host Diagnostics Workflow
+### Release Build Host Diagnostics Workflow
 To debug and monitor headless host behavior without blocking PRs, we run the **FH6 HorizonTuner Host Diagnostics** workflow.
 - **Scheduled:** Runs nightly via cron.
 - **Manual Trigger:** Maintainers can manually trigger this workflow via the `workflow_dispatch` event on the Actions tab. You can optionally specify a `repeat_count` (between 1 and 10, defaulting to 1) to repeatedly probe host startup using the same compiled binaries, and a `timeout` (between 15 and 120 seconds, defaulting to 120) to accommodate slow or loaded headless Windows runners.
@@ -372,4 +390,4 @@ If a diagnostics run fails, the workflow uploads a diagnostic artifact (retained
 ### Release Candidate Approval
 To sign off on a new release candidate, you must ensure:
 1. **One successful automated diagnostics run** via GitHub Actions.
-2. **Manual portable smoke testing** performed on a clean Windows environment.
+2. **Manual Release Build smoke testing** performed on a clean Windows environment.

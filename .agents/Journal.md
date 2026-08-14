@@ -15,6 +15,105 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-14 / Codex-Antigravity Bridge Headless Tool Permission & Workspace Binding
+
+### Headless 模式 toolPermission 授權機制與工作區邊界綁定
+
+- **來源**：`local`，解決跨 Agent（Codex/外部腳本）在 headless 模式下調用 Antigravity 觸發 `Permission denied for read_file` 權限問題。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **非互動環境權限判定**：Headless 模式下因無互動 UI 提示使用者授權，未配置 `toolPermission: proceed-in-sandbox` 時，任何需要確認的工具調用會被自動拒絕或逾時。
+  2. **系統保護硬性邊界**：工作區外部路徑（如 `~/.gemini/`、`C:\Users\...`）受 `Hardcoded system protection boundary` 保護，即使在沙盒內也會被嚴格拒絕；跨 Agent 傳遞的路徑必須在專案工作區（`D:\FH6-HorizonTuner`）內。
+  3. **工作目錄與參數綁定**：`agy 1.1.13` 不支援 `-w`；必須設定 Process `WorkingDirectory` 並傳遞 `--add-dir D:\FH6-HorizonTuner`，才能讓 workspace-relative `read_file` 正常通過。
+- **Action**：
+  1. 建立 `Set-AgyBridgeSettings.ps1` 輔助腳本，支援自動配置與驗證 `settings.json`（`enableTerminalSandbox: true` 與 `toolPermission: proceed-in-sandbox`）。
+  2. 更新 `Invoke-AgyCrossAgentSmoke.ps1`：顯式設定 `WorkingDirectory`、傳遞 `--add-dir` 參數，並新增 `-TestReadFile` 工具讀檔驗證與 `diagnosticHint` 診斷提示。
+  3. 更新 `.agents/skills/codex-antigravity-bridge/SKILL.md` 與 `skills/README.md`，完善方案 A（`settings.json` 配置）與方案 B（工作區綁定與路徑邊界）規範。
+- **Evidence**：`Set-AgyBridgeSettings.ps1` 驗證 `isValid=true`；`agy --add-dir D:\FH6-HorizonTuner ...` 讀檔 smoke test 回覆 `AGY_READFILE_OK:FH6-P4B-READFILE-005`；舊 `-w` 旗標在 agy 1.1.13 回傳 `flags provided but not defined`。
+
+---
+
+## 2026-08-14 / Phase 6~8 多模組並行開發 (Diagnosis Engine + UI Persistence + E2E)
+
+### 閉環診斷引擎、UI 改裝能力整合、Preset 序列化與 E2E 驗證
+
+- **來源**：`local`，Antigravity 主 Agent + Phase6 Diagnosis Subagent + Phase7 UI Persistence Subagent 並行協作。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Subagent `share` workspace 的 Windows 長路徑限制**：以 `share` workspace 模式建立 git worktree 時，`hud_overlay/s650_hmi/assets/fonts/RobotoFlex-VariableFont_GRAD,...` 字型檔路徑超過 Windows MAX_PATH（260 字元），導致 `git checkout` 失敗並回傳 `Could not reset index file to revision 'HEAD': exit status 128`。唯一解法：改用 `inherit` workspace，共享主工作樹，不建立獨立分支。
+  2. **Subagent Ownership 邊界的必要性**：兩個 Subagent 若都能寫入相同目錄，會產生競態條件。解法：在 Prompt 中明確列出「不得觸碰」的目錄，由主 Agent 仲裁。此次 S1（Phase 6）與 S2（Phase 7）互不干擾，全程 Zero Conflict。
+  3. **README 多行替換的陷阱**：`multi_replace_file_content` 在大型 README 中，若 `TargetContent` 存在多個近似匹配，會觸發 fuzzy match 並插入非預期的額外段落。解法：先 `git checkout HEAD -- README.md` 還原，再改用 PowerShell `(Get-Content) + Set-Content` 逐行替換。
+  4. **純函式診斷的 `unknown` 標記規範**：缺失感測器訊號必須回傳 `DiagnosisUnknown = 'unknown'`，而非 fallback 0，確保下游消費者可區分「無法診斷」與「零值」兩種語意。
+  5. **時間戳積分 vs sample-count 積分**：Phase 6 所有時間估算必須使用 `timestamp` 欄位積分，禁止以 sample count × 固定間隔估算；`timestamp` 不存在或非單調時全部標記為 `unknown`。
+- **Action**：
+  1. 新增 `frontend/src/domain/tuning/diagnosis/` 模組：`diagnosisContracts.ts`、`timestampIntegration.ts`、`thermalDiagnosis.ts`、`dynamicsDiagnosis.ts` 及對應測試（+14 tests）。
+  2. 新增 `frontend/src/domain/tuning/capabilities/TuningCapabilityContract.ts`、`capabilityFilter.ts`、`capabilityFilter.test.ts`。
+  3. 新增 `frontend/src/domain/tuning/persistence/presetSerializer.ts`、`presetSerializer.test.ts`，定義 `tuning-preset/v1` 格式。
+  4. 新增 `frontend/src/features/tuning/components/RecommendationComparisonPanel.tsx`（雙欄建議對照，Halfmoon v2 + Glassmorphism）。
+  5. 更新 `README.md` 與 `README.en.md`：前端測試統計從 57/298 更新為 66/418。
+- **Evidence**：`pnpm -C frontend run test` → **66 files / 418 tests passed**；`pytest tests/` → **144 passed, 2 skipped**；`ruff check .` → **All checks passed!**；`ruff format --check .` → **102 files already formatted**。
+
+---
+
+## 2026-08-14 / Phase 4B Shared Load Transfer & Tire Geometry
+
+### 四輪估計垂直載荷、動態載荷轉移與輪胎幾何先驗
+
+- **來源**：`local`，Antigravity Phase 4B handoff，Codex review。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. 建立純函式 `calculateLoadTransfer`，以 `m·ax·hCG/L` 計算縱向轉移，並以前後滾轉剛性 50/50 prior 分配 `m·ay·hCG/track` 的側向轉移；正 `ax` 將載荷移向後軸，正 `ay` 將載荷移向右側。
+  2. 輸出同時保留 `unclampedWheelLoadsN` 與非負 `dynamicWheelLoadsN`，並以 `isClamped`、`clampedWheels` 與 warnings 標示 wheel lift；所有結果標示為 `quasi-static-load-transfer/v1` estimated prior。
+  3. 建立 `calculateTireGeometry` 與 `calculateTireVerticalStiffnessPrior`，由胎寬、扁平比、輪圈尺寸計算側壁、半徑與滾動周長；垂直剛度使用 `geometric-heuristic-prior/v1`，未宣稱為 FH6 校準常數。
+- **Action**：新增 `loadTransfer.ts` / `loadTransfer.test.ts`、`tireGeometry.ts` / `tireGeometry.test.ts`，並由 `tuningMath_dev.ts` 以 backward-compatible façade re-export。
+- **Evidence**：Antigravity handoff `AGY_PHASE4B_FILES_READY:FH6-P4B-IMPLEMENT-002`；targeted Vitest 18 passed；完整 frontend 57 files / 298 tests passed；pytest 144 passed / 2 skipped；ruff check passed；`git diff --check` passed。`ruff format --check` 仍報告既有 `backend/main.py` 與 `tests/test_sidecar_process_contract.py` 格式漂移，未由本次 Phase 4B 修改。
+
+---
+
+## 2026-08-14 / Codex-to-Antigravity Bridge and Resume Probe
+
+### 固定 token 交互可用；桌面會話續接需先匯入 CLI trajectory
+
+- **來源**：`local`，Codex 透過 `agy` 1.1.13 的 headless 與互動式探測。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. Gemini 的 JSON 格式輸出不可作為協定依據；固定 token `AGY_HANDSHAKE_OK:<marker>` 與本地 PowerShell wrapper 可穩定判定成功。Phase 4A review packet 也以 `AGY_PHASE4A_REVIEW_OK:FH6-P4A-ACK-001` 得到明確回覆。
+  2. `enableTerminalSandbox=true` 與 `toolPermission=proceed-in-sandbox` 可讓無工具 headless handshake 通過；要求 Antigravity 讀檔或執行工具時，仍可能要求 `escalate_admin`、被自動拒絕或逾時，應分類為通道限制，而非程式結果。
+  3. 使用者提供的桌面會話 `f0c07c3d-ea09-4252-bab8-ef2d9cc0f608` 確實存在於 CLI `last_conversations.json` 與 Antigravity brain transcript，但 `agy --conversation <id>`、`agy --continue` 均回傳 `trajectory not found`。這是桌面 UUID 與 CLI trajectory 尚未完成 clone/import 的差異。
+  4. `/resume` 以重導 stdin 測試沒有輸出並被終止，不能視為匯入成功；需要真實互動式 terminal，在 picker 選 `Antigravity` 分頁並匯入桌面會話，再使用新產生的 CLI conversation ID。
+- **Action**：建立 `.agents/skills/codex-antigravity-bridge/` 與 `Invoke-AgyCrossAgentSmoke.ps1`；把 `desktop_session_requires_cli_import`、固定 token、本地 wrapper 與 dirty worktree 保留規則納入 skill。
+- **Evidence**：script handshake `passed=true`、Phase 4A review token 通過；desktop resume exact error `trajectory not found`；Vitest 55 files/284 passed、pytest 144 passed/2 skipped、ruff 全部通過、skill validator `Skill is valid!`、`git diff --check` 通過。
+
+---
+
+## 2026-08-14 / Phase 4A Physics Invariants & Damping Layering
+
+### 懸吊彈簧邊界正名、臨界阻尼三層分離與摩擦橢圓零容量邊界修復
+
+- **來源**：`local`，Phase 4A 物理重構任務。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. 原 `calculateFrictionEllipse` 在輪胎垂直載荷 $F_z=0$ 或摩擦係數 $\mu=0$ 且需求受力 $F_{demand} > 0$ 時，因三元判斷式返回 0，導致 `utilization = 0` 且錯誤判定為 `feasible: true`。修正為需求大於 0 且容量為 0 時回傳 `Infinity` 與 `feasible: false`。
+  2. 現有彈簧公式未考慮懸吊幾何槓桿比 ($MR$) 與輪胎串聯垂直剛度 ($K_t$)，正名為 `direct_wheel_load_approx` (假設 $MR=1.0$)，避免誤稱為完整 Wheel-Rate / Ride-Rate 模型。
+  3. 阻尼輸出重構為物理層 (`physical`：臨界阻尼與目標阻尼力 $\text{N}\cdot\text{s/m}$)、先驗比率層 (`priors`：阻尼比 $\zeta$ 與 Bump/Rebound 比率) 與遊戲建議滑桿層 (`sliderMapping`：$1\sim20$)，並保留扁平欄位相容現有 UI。
+- **Action**：修改 `tireModel.ts`、`suspensionSolver.ts`、`tuningMath_dev.ts`；建立 `tireModel.test.ts` 與 `suspensionSolver.test.ts`。
+- **Evidence**：`tireModel.test.ts` (7 passed), `suspensionSolver.test.ts` (3 passed), vitest (284 passed), pytest (144 passed), ruff checks 全部通過。
+
+---
+
+## 2026-08-14 / MCP & In-Game Telemetry Calibration
+
+### MCP 連線配置與實機遙測測試資料收集規劃
+
+- **來源**：`local`，MCP 設定與實機測試環節建立任務。
+- **狀態**：`adopted`。
+- **Learning**：FastAPI 後端內建的 MCP Streamable HTTP 伺服器 (`/mcp`) 支援標準 JSON-RPC 2.0 協定；可在不引入任何外部 Python 腳本或中介層的情況下，直接透過 Antigravity / HTTP POST 發送 `initialize`、`tools/list` 與 `tools/call` 請求進行即時調用與驗證。此外，在背景啟動後端時會鎖定 `8001` port，執行 sidecar 相關單元測試前需確保該端口釋放。
+- **Action**：
+  1. 建立 `.vscode/mcp.json` 標準 MCP 連線設定檔，指定 `http://127.0.0.1:8001/mcp`。
+  2. 撰寫 `docs/calibration/in-game-telemetry-collection-guide.md`（實機測試 SOP）與 `docs/calibration/in-game-test-schedule-and-matrix.md`（車輛測試梯隊與排程）。
+  3. 建立 `docs/calibration/templates/capture_manifest_template.json` 供 A/B 測試記錄與 MCP `compare_captures` 自動化分析。
+- **Evidence**：`.vscode/mcp.json`、`docs/calibration/`；pytest (144 passed), vitest (274 passed), ruff checks 全部通過。
+
 ---
 
 ## 2026-08-14 / IDE Diagnostics Exclusion
@@ -802,6 +901,24 @@
 
 ---
 
+## 2026-08-13 / Developer Tuning Math Boundary and Capability Contract
+
+- **Decision**：在 `codex/tuning-dev-mode` 上保留 legacy `TuningView` 為預設，透過 Settings 的 developer flag opt-in 到 `TuningView_dev`；新版只經由 `tuningMath_dev.ts` façade 進入 domain tuning modules。
+- **Action**：新增 versioned capability contract、unknown-safe control normalization、calibration fixture schema/loader、tire friction-ellipse invariant，以及輪胎／懸吊／差速器／齒比 domain modules；開發頁拆分 input/output/capability panels，避免超過 250 行 God component。
+- **Evidence**：frontend Vitest `48 files / 261 tests`、production build `690 modules`、`pytest -q tests/test_main.py` `5 passed`、`git diff --check` 通過。
+- **Boundary**：FH6 slider step、precision、upgrade lock 與 tire coefficient 仍以 `unknown` 或 `calibration-prior` 表示；未經實機 capture／reviewed community fixture 前，不得升級為 production-calibrated 常數。
+
+---
+
+## 2026-08-13 / External Evidence and MCP Read-only Boundary
+
+- **Evidence**：Subagent web research found medium/high-confidence FH6 control-family and upgrade-gate evidence, but no complete official numeric slider specification; Chinese community sources mainly provide vehicle/PI/event-specific share codes; technical tire sources support model forms but not FH6 coefficients.
+- **Action**：Added `docs/tuning-math-external-evidence-report.md`, `tuning-capture/v1` telemetry collection page with JSON/CSV export and summary analysis, and `docs/tuning-mcp-integration-evaluation.md` recommending a localhost read-only MCP adapter.
+- **MCP boundary**：A future MCP server should expose bounded capture/session resources and deterministic analysis tools, never a second UDP consumer; v1 must not expose tune writes, recorder control, arbitrary SQL, or direct game automation.
+- **Verification**：Frontend capture schema tests and build pass after fixing test fixture speed/Yaw fields; live FH6 collection still requires human test execution.
+
+---
+
 ## 2026-08-14 / Telemetry HUD Elements & WASAPI Audio Capture Optimization
 
 - **Scope**: local / HUD Overlay control panel & backend system media / WASAPI audio loopback.
@@ -820,3 +937,108 @@
 - **Evidence**:
   - Pytest 測試：`test_system_media.py` (3 passed), `test_audio_spectrum.py` (2 passed), `test_overlay_api.py` (38 passed)。
   - Vitest 前端單元測試：48 個測試檔 / 259 個測試全數通過（包含新增之 `overlayElements.test.ts`）。
+
+---
+
+## 2026-08-14 / Localhost Read-Only MCP Server Implementation
+
+- **Scope**: local / `backend/mcp/` & `docs/mcp-setup-guide.md`.
+- **Status**: adopted.
+- **Learning**:
+  1. 大型 60Hz 遙測封包與高頻時序數據若直接由 AI 讀取檔案，極易遭遇 Context Window 溢出與輸出截斷。透過建立輕量 JSON-RPC 2.0 stdio MCP Server，提供帶有分頁（Pagination）、局部時間窗口（Window Slicing）與降採樣（Downsampling）的查詢工具，可兼顧即時性與 Token 效率。
+  2. MCP 服務層直接對齊 `TelemetryView` 視圖（包含儀表、踏板輸入、動力與 G-Radar、四輪胎溫/滑移角/滑移比/綜合滑移向量、四輪懸吊行程與觸底偵測），並封裝純物理調校計算（Road/Rally/Drift/Drag）與 AEGO 齒比求解器，讓 AI 能直接進行數據驅動回測與閉環診斷。
+- **Action**:
+  - 建立 `backend/mcp/protocol.py`、`backend/mcp/service.py`、`backend/mcp/resources.py`、`backend/mcp/tools.py` 與 `backend/mcp/server.py`。
+  - 實作 26 個專屬唯讀工具與 5 類 Resource URI（`fh6://telemetry/...`, `fh6://capture/...`, `fh6://car/...`, `fh6://tuning/...`, `fh6://settings/...`）。
+  - 新增說明文件 `docs/mcp-setup-guide.md`，提供 Claude Desktop、Cursor、VS Code 等客戶端設定指南。
+- **Evidence**:
+  - Pytest 測試：`tests/test_mcp_protocol.py` (5 passed), `tests/test_mcp_service.py` (8 passed), `tests/test_mcp_tools.py` (4 passed), `tests/test_mcp_resources.py` (4 passed)；後端全體 Pytest `138 passed, 2 skipped`。
+  - 前端 Vitest：`52 files / 271 passed`；`ruff check` 與 `ruff format --check` 全數通過。
+
+---
+
+## 2026-08-14 / Release Build MCP endpoint and live validation
+
+- **Decision**: Dev mode keeps a fixed HTTP/MCP port of `8001`. Release Build
+  startup prefers `8001`, falls back to a dynamic port only when it is occupied,
+  and writes the actual bound port to `logs/web_port.txt` after binding. The
+  frontend consumes that value directly; it does not guess a fallback port.
+- **UI**: A Halfmoon Popover is attached to the Settings navigation item when
+  the Release Build uses a dynamic port. It directs the user to Settings → MCP
+  Server, where the current `/mcp` endpoint is visible and copyable.
+- **Live MCP validation**: A running Dev backend on `127.0.0.1:8001` accepted
+  `initialize`, `tools/list`, and `tools/call(get_live_telemetry_snapshot)` over
+  `POST /mcp`. The call returned `status=idle`, no active session, zero recorded
+  sessions, and no latest sample; `/api/mcp/status` reported three served MCP
+  requests and `transport=streamable-http`.
+- **Verification**: `pytest` 144 passed / 2 skipped, frontend Vitest 53 files /
+  274 tests passed, Vite production build passed, Ruff passed, Python compile
+  passed, and `git diff --check` passed.
+- **Status**: adopted.
+
+## 2026-08-14 / Phase 5C Drift Slip-window Profile Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/driftProfile.ts` and its Vitest contract tests.
+- **Decision**: Add timestamp-aware Drift profiles with controllable rear differential ranges; retain `100/100` only as a named legacy-compatible preset, not a universal rule.
+- **Physics**: Separate vehicle body sideslip beta from front/rear tire slip angles. Yaw rate uses direct angular velocity when present, otherwise unwrapped-yaw finite difference marked estimated. Drift duration and stability use positive timestamp intervals with duplicate/out-of-order protection.
+- **Verification**: Targeted Drift profile Vitest passed (31 tests); no new TypeScript diagnostics remain in the Drift files. Full no-emit still reports only pre-existing Phase 4B strictness errors in `loadTransfer.ts` and `tireGeometry.ts`; `git diff --check` passed.
+- **Status**: adopted.
+
+## 2026-08-14 / MCP Server Deep Integration with FastAPI (SSE) & Frontend Settings UI
+
+---
+
+## 2026-08-14 / MCP Transport Consolidation
+
+---
+
+## 2026-08-14 / Phase 5A Road and Circuit Profile Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/roadProfile.ts` and its Vitest contract tests.
+- **Decision**: Add independent `technical`, `balanced`, and `high_speed` profiles under `tuning-profile/v1`; keep all constants marked as empirical priors or estimates because no real calibration fixtures are present.
+- **Physics**: Tire circumference and target final-drive geometry use explicit SI conversions. Optional power curves produce post-shift wheel-force advice; missing curves remain advisory. The AWD `1/65` circuit-rotation setting is an explicit prior, not a universal formula. Optional bicycle-model cornering output is marked estimated.
+- **Verification**: Targeted Road profile Vitest passed (22 tests); TypeScript no-emit remains blocked by pre-existing Phase 4B strictness errors in `loadTransfer.ts` and `tireGeometry.ts`, outside this scope; `git diff --check` passed.
+- **Status**: adopted.
+
+## 2026-08-14 / Phase 5B Rally and Off-road Profile Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/rallyProfile.ts` and its Vitest contract tests.
+- **Decision**: Add independent `gravel`, `cross_country`, and `jump` profiles under `tuning-profile/v1`; preserve dedicated Rally gearing and expose a contract proof that Road ratios are not reused.
+- **Physics**: Surface roughness, airborne state, airtime, landing impact, and bottoming are timestamp-based telemetry estimates with explicit heuristic warnings. AWD differential outputs are range priors rather than a universal 25% decel lock.
+- **Verification**: Targeted Rally profile Vitest passed (19 tests); no new TypeScript diagnostics were found for the Rally files; `git diff --check` passed.
+- **Status**: adopted.
+
+## 2026-08-14 / Phase 5D Drag Launch Traction and Distance Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/dragProfile.ts` and its Vitest contract tests.
+- **Decision**: Add a simulated strip solver with explicit 60-ft, 100-m, eighth-mile, quarter-mile, and terminal-speed metrics. Gearing is optimized by strip length and power/traction inputs; no universal fourth-gear `1.00` assumption is used.
+- **Physics**: Launch load transfer uses `deltaFz = m*a*hCG/L`, then allocates longitudinal traction separately for FWD, RWD, and AWD. Optional drag, rolling resistance, efficiency, and power-curve inputs are priors unless supplied; outputs remain estimated/simulated.
+- **Verification**: Targeted Drag profile Vitest passed (25 tests); no new TypeScript diagnostics remain in the Drag file; `git diff --check` passed.
+- **Status**: adopted.
+
+- **Decision**: Removed the standalone stdio MCP entrypoint and the unused
+  legacy HTTP+SSE transport before external deployment.
+- **Contract**: The running FastAPI backend is the only MCP host. When
+  `mcp_enabled` is true it exposes `POST /mcp` using Streamable HTTP and shares
+  the in-process live telemetry snapshot; when the app is stopped or disabled,
+  MCP is unavailable by design.
+- **Time-series boundary**: Session and capture tools return bounded,
+  timestamped windows with slicing/downsampling. Continuous server-push of
+  future 60Hz frames is not supported; live telemetry remains a point-in-time
+  snapshot.
+- **Verification**: MCP HTTP/protocol/service/tools/resources tests passed;
+  Settings MCP card tests passed; Ruff check and `git diff --check` passed.
+
+- **Scope**: local / `backend/mcp/sse_transport.py`, `backend/main.py`, `frontend/src/features/settings/`.
+- **Status**: adopted.
+- **Learning**:
+  1. 將 MCP 伺服器整合至 FastAPI 既有異步迴圈中，支援 Server-Sent Events（SSE）傳輸協定（`GET /mcp/sse` 與 `POST /mcp/messages`），使無需在本機配置 Python 子程序環境的遠端或網路型 AI Client 也能即插即用連線。
+  2. 透過在前端 `SettingsView` 增加 `McpSettingsCard` 與一鍵複製設定代碼（自動產生 Claude JSON / Cursor CLI 指令 / SSE URL），極大程度降低使用者與次要裝置 Agent 的配置門檻。
+- **Action**:
+  - 實作 `backend/mcp/sse_transport.py` 管理 Client SSE 串流與 JSON-RPC 訊息分派。
+  - 於 `backend/main.py` 掛載 `/mcp/sse`、`/mcp/messages`、`/api/mcp/status` 路由，並整合至系統全域設定 `settings.json`。
+  - 前端新增 `McpSettingsCard.tsx` 面板（含運行狀態徽章、總開關、即時遙測讀取限制、時序降採樣滑桿與一鍵複製卡片），並整合至 `SettingsView.tsx` 與多語言字典。
+- **Evidence**:
+  - Pytest 測試：`tests/test_mcp_sse.py` (4 passed)，後端全體測試 `142 passed, 2 skipped`。
+  - Vitest 測試：`McpSettingsCard.test.ts` (3 passed)，前端全體測試 53 個檔案 / 274 個測試 100% 通過。
+  - Ruff 靜態分析與格式檢查全數通過。

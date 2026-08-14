@@ -7,7 +7,7 @@
 ## 架構隔離原則
 1. **後端 (Python / FastAPI)**：僅負責 60Hz 高頻遙測 UDP 封包解碼與 WebSockets 廣播，保持非同步主循環無阻塞 (Non-blocking)。
    - 開發模式下 Forza Data Out 預設使用 UDP `127.0.0.1:8000`，FastAPI REST/WebSocket 預設使用 HTTP/TCP `127.0.0.1:8001`；兩者不可混用。
-   - `TELEMETRY_PORT` 控制 UDP 遙測端口，`BACKEND_PORT` 控制開發模式 HTTP 端口；portable release 的 HTTP 端口則以 `logs/web_port.txt` 或 sidecar readiness event 為準。
+   - `TELEMETRY_PORT` 控制 UDP 遙測端口；Dev mode 固定使用 HTTP `8001`。Release Build 優先使用 `8001`，fallback 時改用動態端口，實際 HTTP 端口以 `logs/web_port.txt` 或 sidecar readiness event 為準。
 2. **前端 (Tauri / React)**：僅負責 UI 視覺化與互動展示。
 
 ## 任務完成驗證關卡 (Verification Gate)

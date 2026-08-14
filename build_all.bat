@@ -97,7 +97,7 @@ echo [SUCCESS] Python Backend Sidecar created and placed in Tauri bin directory.
 echo.
 
 :: 3. Run Tauri Build
-echo [INFO] Running Tauri Build (Single Portable Executable, no installer)...
+echo [INFO] Running Tauri Build (Single Release Build executable, no installer)...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 :: Release builds must use the committed lockfile. Do not mutate dependencies during packaging.
@@ -124,7 +124,7 @@ if exist "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" (
     copy /Y "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" "%~dp0dist\FH6-HorizonTuner.exe"
 )
 if not exist "%~dp0dist\FH6-HorizonTuner.exe" (
-    echo [ERROR] Portable executable was not produced.
+    echo [ERROR] Release Build executable was not produced.
     if not "%GITHUB_ACTIONS%" == "true" pause
     exit /b 1
 )

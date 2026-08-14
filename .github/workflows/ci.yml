@@ -54,8 +54,8 @@ jobs:
 
         | Check Type | Status | Result |
         | :--- | :---: | :--- |
-        | **Ruff Linter** | ✅ | All Python code lint checks passed cleanly |
-        | **Ruff Formatter** | ✅ | Python code formatting strictly adheres to PEP 8 / Ruff style |
+        | **Ruff Linter** | ${{ steps.ruff_check.outcome }} | `ruff check .` |
+        | **Ruff Formatter** | ${{ steps.ruff_format.outcome }} | `ruff format --check .` |
 
         > Run `uv run --no-project --python .venv\\Scripts\\python.exe ruff check .` and `uv run --no-project --python .venv\\Scripts\\python.exe ruff format .` locally to verify Python code prior to pushing.
         EOF

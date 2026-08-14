@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
 import { useSettings } from '../context/SettingsContext';
+import { PREFERRED_BACKEND_PORT } from '../services/backend';
 
 interface NavigationProps {
   activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings';
@@ -9,6 +10,7 @@ interface NavigationProps {
   isConnected: boolean;
   onShowLogs: () => void;
   onShowTheme: () => void;
+  backendPort: number;
 }
 
 const GitInfoBadge: React.FC = () => {
@@ -85,16 +87,24 @@ const GitInfoBadge: React.FC = () => {
   );
 };
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs, onShowTheme }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs, onShowTheme, backendPort }) => {
   const { t } = useSettings();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [showUdpPopover, setShowUdpPopover] = useState<boolean>(!isConnected);
+  const [showMcpPortPopover, setShowMcpPortPopover] = useState<boolean>(backendPort !== PREFERRED_BACKEND_PORT);
+  const hasDynamicMcpPort = backendPort !== PREFERRED_BACKEND_PORT;
 
   React.useEffect(() => {
     if (!isConnected) {
       setShowUdpPopover(true);
     }
   }, [isConnected]);
+
+  React.useEffect(() => {
+    if (hasDynamicMcpPort) {
+      setShowMcpPortPopover(true);
+    }
+  }, [hasDynamicMcpPort]);
 
   const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
     onSubTabJump(tab, subTarget);
@@ -267,7 +277,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
             </li>
 
             {/* Settings Link */}
-            <li className="nav-item">
+            <li className="nav-item position-relative">
               <button 
                 onClick={() => handleDropdownItemClick('settings')}
                 className={`nav-link px-3 py-2 ${activeTab === 'settings' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
@@ -275,7 +285,75 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
               >
                 {t("Settings")}
+                {hasDynamicMcpPort && (
+                  <span className="badge text-bg-warning ms-1 fs-8">MCP</span>
+                )}
               </button>
+
+              {hasDynamicMcpPort && showMcpPortPopover && (
+                <div
+                  className="popover bs-popover-bottom show glass-panel shadow-lg border"
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    left: 0,
+                    zIndex: 1055,
+                    minWidth: '360px',
+                    backdropFilter: 'blur(16px)',
+                    background: 'var(--glass-bg)',
+                    borderColor: 'var(--bs-warning)',
+                    cursor: 'default'
+                  }}
+                  role="status"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-6px',
+                      left: '24px',
+                      width: 0,
+                      height: 0,
+                      borderLeft: '6px solid transparent',
+                      borderRight: '6px solid transparent',
+                      borderBottom: '6px solid var(--bs-warning)'
+                    }}
+                  />
+                  <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
+                    <div className="d-flex align-items-center gap-2">
+                      <span>{t("MCP Endpoint Notice")}</span>
+                      <span className="badge text-bg-warning">DYNAMIC PORT</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-close btn-sm"
+                      aria-label="Close"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMcpPortPopover(false);
+                      }}
+                    ></button>
+                  </div>
+                  <div className="popover-body px-3 py-2 text-start">
+                    <div className="fs-7 text-body fw-medium">
+                      {t("Release Build could not use backend port 8001 and selected a dynamic port.")}
+                    </div>
+                    <div className="fs-8 text-secondary mt-1 mb-2">
+                      {t("Current backend port")}: <code>{backendPort}</code>. {t("Open Settings > MCP Server to confirm the current endpoint before connecting an Agent.")}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-warning btn-sm fw-bold w-100"
+                      onClick={() => {
+                        setShowMcpPortPopover(false);
+                        handleDropdownItemClick('settings');
+                      }}
+                    >
+                      {t("Open MCP Settings")} &gt;
+                    </button>
+                  </div>
+                </div>
+              )}
             </li>
 
           </ul>

@@ -6,7 +6,7 @@ export interface BackendStatus {
   error: string | null;
 }
 
-const DEFAULT_DEV_PORT = 8001;
+export const PREFERRED_BACKEND_PORT = 8001;
 
 type FetchImplementation = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -44,7 +44,7 @@ export function createBackendTransport(
   };
 }
 
-let backendTransport = createBackendTransport(DEFAULT_DEV_PORT);
+let backendTransport = createBackendTransport(PREFERRED_BACKEND_PORT);
 
 /**
  * Configured once the Tauri sidecar reports a verified listening port. Keeping
@@ -53,6 +53,10 @@ let backendTransport = createBackendTransport(DEFAULT_DEV_PORT);
  */
 export function configureBackendTransport(port: number): void {
   backendTransport = createBackendTransport(port);
+}
+
+export function getBackendPort(): number {
+  return backendTransport.port;
 }
 
 export function backendHttpUrl(path: string): string {
@@ -69,7 +73,7 @@ export function backendFetch(path: string, init?: RequestInit): Promise<Response
 
 export async function waitForBackendReady(timeoutMs = 30_000): Promise<BackendStatus> {
   if (!isTauriRuntime()) {
-    return { state: "ready", port: DEFAULT_DEV_PORT, error: null };
+    return { state: "ready", port: PREFERRED_BACKEND_PORT, error: null };
   }
 
   const deadline = Date.now() + timeoutMs;

@@ -1,4 +1,4 @@
-# FH6-HorizonTuner 🏎️
+﻿# FH6-HorizonTuner 🏎️
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
 [![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
@@ -44,6 +44,9 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 * **Telemetry Persistence & MoTeC i2 Exporter**:
   - Automated backend SQLite historical telemetry logging.
   - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
+* **Localhost Read-Only MCP Server (Model Context Protocol)**:
+  - The running FastAPI backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
+  - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
   - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
@@ -58,6 +61,10 @@ FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD workflow (Ruff Lint + Pytest)
 ├── backend/                 # Python FastAPI backend core
 │   ├── main.py              # Backend entry point, API definitions & process management
+│   ├── mcp/                 # Model Context Protocol (MCP) Read-Only Server
+│   │   ├── service.py       # Telemetry & tuning service layer (aligned with TelemetryView)
+│   │   ├── tools.py         # 26 MCP tools declarations & dispatch
+│   │   └── resources.py     # 5 Resource URI router
 │   ├── telemetry_listener.py # UDP 60Hz telemetry socket listener and parser
 │   ├── telemetry_runtime.py  # Pipeline metrics and non-blocking dyno profile cache/persistence
 │   ├── core/                # Core telemetry processing & calculation modules
@@ -77,6 +84,9 @@ FH6-HorizonTuner/
 │   │   ├── settings/        # Global system settings (SettingsView)
 │   │   └── theme/           # Theme color & skin view (ThemeView)
 │   ├── src/components/      # Shared UI components (Navigation, DiagnosticConsole, etc.)
+│   ├── src/domain/tuning/    # Pure tuning domain (tires, load transfer, chassis, gearing, differential)
+│   │   ├── chassis/          # Suspension and Phase 4B four-wheel load-transfer estimates
+│   │   └── tires/            # Friction ellipse, tire geometry, and vertical-stiffness priors
 │   ├── src/utils/           # Pure calculation utilities (tuningMath.ts, tuningDiagnosis.ts, etc.)
 │   └── src-tauri/           # Tauri window bundler configuration
 ├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
@@ -129,13 +139,13 @@ You can package both the frontend and backend into a **single standalone executa
 
 1. Double-click **`build_all.bat`**:
    - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
-   - **Phase 2 (Portable Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single portable executable `dist/FH6-HorizonTuner.exe` without an installer.
+   - **Phase 2 (Release Build Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single Release Build executable `dist/FH6-HorizonTuner.exe` without an installer.
 
 > [!NOTE]
-> **Portable Path Strategy**:
+> **Release Build Path Strategy**:
 > When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
 
-> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the portable `.exe`; it is detected automatically and can be selected in the HUD menu. See [portable custom HUD packages](docs/portable-custom-hud.md).
+> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the Release Build `.exe`; it is detected automatically and can be selected in the HUD menu. See [Release Build custom HUD packages](docs/portable-custom-hud.md).
 
 * **Excluding Non-release Directories (.pkgdirignore)**:
     * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
@@ -206,14 +216,22 @@ Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
 cd frontend && pnpm run test
 ```
 
-Current frontend test suite covers 13 test files with 123 unit tests:
+Current frontend test suite covers 66 test files with 418 unit tests:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
 | `tuningDiagnosis.test.ts` | Real-time telemetry diagnosis and chassis problem detection logic |
+| `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B four-wheel normal-load estimates, load transfer, and tire-geometry priors |
 | `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
 | `telemetryCards.test.ts` | Telemetry cards formatting and status mapping |
-| Other `*.test.ts` | 10 additional test suites covering ExprTk, VFD gauge, audio & CSS validation |
+| `tireModel.test.ts` | Friction ellipse boundary, zero-capacity fix & feasible guard (7 tests) |
+| `suspensionSolver.test.ts` | Critical damping, damping-ratio priors & FH6 slider mapping layers (3 tests) |
+| `timestampIntegration.test.ts` | Phase 6 timestamp integration - airtime, drift ratio, impact window & non-monotonic unknown |
+| `thermalDiagnosis.test.ts` | Phase 6 four-wheel tire temperature gradient, camber & pressure advice |
+| `dynamicsDiagnosis.test.ts` | Phase 6 ARB / damping / differential combined-slip diagnosis & confidence tiers |
+| `capabilityFilter.test.ts` | Phase 7 capability filter function (unlocked / locked / unknown keys) |
+| `presetSerializer.test.ts` | Phase 7 `tuning-preset/v1` serialization round-trip & schema version validation |
+| Other `*.test.ts` | Additional test suites covering ExprTk, VFD gauge, audio & CSS validation |
 
 ---
 
@@ -294,7 +312,7 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ---
 
-## Portable Release Contract
+## Release Build Contract
 
 The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
 separate sidecar file are required. The PyInstaller backend is embedded into
@@ -311,8 +329,8 @@ This project uses two separate localhost ports; do not configure them interchang
 | Forza Horizon Data Out telemetry | UDP | `8000` |
 | FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
 
-In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Use `TELEMETRY_PORT` to change the UDP port and `BACKEND_PORT` to change the development HTTP port.
+In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Development uses `8001` as its fixed HTTP port. `TELEMETRY_PORT` remains available for changing the UDP port; `BACKEND_PORT` is retained for explicit test and external-backend workflows.
 
-In a portable release, the FastAPI HTTP service selects an available dynamic TCP port and writes it to `logs/web_port.txt` under the data directory. Forza UDP telemetry still listens on `8000` by default.
+In a Release Build, the FastAPI HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before configuring an Agent.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
 

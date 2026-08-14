@@ -1,6 +1,6 @@
-# Portable custom HUD packages
+# Release Build custom HUD packages
 
-The portable release keeps every built-in HUD package inside its embedded
+The Release Build keeps every built-in HUD package inside its embedded
 sidecar. Users can add their own packages without rebuilding the application.
 
 Place one package beside the release executable using this layout:
