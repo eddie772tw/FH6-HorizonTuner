@@ -116,6 +116,8 @@ describe('tuningMath_dev', () => {
     expect(result.chassis.arb.front).toBe(6);
     expect(result.chassis.arb.rear).toBe(8);
     expect(result.gearing.gears).toHaveLength(4);
-    expect(result.warnings).toHaveLength(7);
+    expect(result.warnings).toHaveLength(8);
+    expect(result.warnings.some((w) => w.includes('direct wheel-load approximation'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('explicit physical critical damping'))).toBe(true);
   });
 });

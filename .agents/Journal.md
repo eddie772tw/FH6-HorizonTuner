@@ -17,6 +17,52 @@
 
 ---
 
+## 2026-08-14 / Codex-to-Antigravity Bridge and Resume Probe
+
+### 固定 token 交互可用；桌面會話續接需先匯入 CLI trajectory
+
+- **來源**：`local`，Codex 透過 `agy` 1.1.13 的 headless 與互動式探測。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. Gemini 的 JSON 格式輸出不可作為協定依據；固定 token `AGY_HANDSHAKE_OK:<marker>` 與本地 PowerShell wrapper 可穩定判定成功。Phase 4A review packet 也以 `AGY_PHASE4A_REVIEW_OK:FH6-P4A-ACK-001` 得到明確回覆。
+  2. `enableTerminalSandbox=true` 與 `toolPermission=proceed-in-sandbox` 可讓無工具 headless handshake 通過；要求 Antigravity 讀檔或執行工具時，仍可能要求 `escalate_admin`、被自動拒絕或逾時，應分類為通道限制，而非程式結果。
+  3. 使用者提供的桌面會話 `f0c07c3d-ea09-4252-bab8-ef2d9cc0f608` 確實存在於 CLI `last_conversations.json` 與 Antigravity brain transcript，但 `agy --conversation <id>`、`agy --continue` 均回傳 `trajectory not found`。這是桌面 UUID 與 CLI trajectory 尚未完成 clone/import 的差異。
+  4. `/resume` 以重導 stdin 測試沒有輸出並被終止，不能視為匯入成功；需要真實互動式 terminal，在 picker 選 `Antigravity` 分頁並匯入桌面會話，再使用新產生的 CLI conversation ID。
+- **Action**：建立 `.agents/skills/codex-antigravity-bridge/` 與 `Invoke-AgyCrossAgentSmoke.ps1`；把 `desktop_session_requires_cli_import`、固定 token、本地 wrapper 與 dirty worktree 保留規則納入 skill。
+- **Evidence**：script handshake `passed=true`、Phase 4A review token 通過；desktop resume exact error `trajectory not found`；Vitest 55 files/284 passed、pytest 144 passed/2 skipped、ruff 全部通過、skill validator `Skill is valid!`、`git diff --check` 通過。
+
+---
+
+## 2026-08-14 / Phase 4A Physics Invariants & Damping Layering
+
+### 懸吊彈簧邊界正名、臨界阻尼三層分離與摩擦橢圓零容量邊界修復
+
+- **來源**：`local`，Phase 4A 物理重構任務。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. 原 `calculateFrictionEllipse` 在輪胎垂直載荷 $F_z=0$ 或摩擦係數 $\mu=0$ 且需求受力 $F_{demand} > 0$ 時，因三元判斷式返回 0，導致 `utilization = 0` 且錯誤判定為 `feasible: true`。修正為需求大於 0 且容量為 0 時回傳 `Infinity` 與 `feasible: false`。
+  2. 現有彈簧公式未考慮懸吊幾何槓桿比 ($MR$) 與輪胎串聯垂直剛度 ($K_t$)，正名為 `direct_wheel_load_approx` (假設 $MR=1.0$)，避免誤稱為完整 Wheel-Rate / Ride-Rate 模型。
+  3. 阻尼輸出重構為物理層 (`physical`：臨界阻尼與目標阻尼力 $\text{N}\cdot\text{s/m}$)、先驗比率層 (`priors`：阻尼比 $\zeta$ 與 Bump/Rebound 比率) 與遊戲建議滑桿層 (`sliderMapping`：$1\sim20$)，並保留扁平欄位相容現有 UI。
+- **Action**：修改 `tireModel.ts`、`suspensionSolver.ts`、`tuningMath_dev.ts`；建立 `tireModel.test.ts` 與 `suspensionSolver.test.ts`。
+- **Evidence**：`tireModel.test.ts` (7 passed), `suspensionSolver.test.ts` (3 passed), vitest (284 passed), pytest (144 passed), ruff checks 全部通過。
+
+---
+
+## 2026-08-14 / MCP & In-Game Telemetry Calibration
+
+### MCP 連線配置與實機遙測測試資料收集規劃
+
+- **來源**：`local`，MCP 設定與實機測試環節建立任務。
+- **狀態**：`adopted`。
+- **Learning**：FastAPI 後端內建的 MCP Streamable HTTP 伺服器 (`/mcp`) 支援標準 JSON-RPC 2.0 協定；可在不引入任何外部 Python 腳本或中介層的情況下，直接透過 Antigravity / HTTP POST 發送 `initialize`、`tools/list` 與 `tools/call` 請求進行即時調用與驗證。此外，在背景啟動後端時會鎖定 `8001` port，執行 sidecar 相關單元測試前需確保該端口釋放。
+- **Action**：
+  1. 建立 `.vscode/mcp.json` 標準 MCP 連線設定檔，指定 `http://127.0.0.1:8001/mcp`。
+  2. 撰寫 `docs/calibration/in-game-telemetry-collection-guide.md`（實機測試 SOP）與 `docs/calibration/in-game-test-schedule-and-matrix.md`（車輛測試梯隊與排程）。
+  3. 建立 `docs/calibration/templates/capture_manifest_template.json` 供 A/B 測試記錄與 MCP `compare_captures` 自動化分析。
+- **Evidence**：`.vscode/mcp.json`、`docs/calibration/`；pytest (144 passed), vitest (274 passed), ruff checks 全部通過。
+
+---
+
 ## 2026-08-14 / IDE Diagnostics Exclusion
 
 ### IDE Pyrefly / Pyright 虛擬路徑 (`__pyrefly_virtual__`) 診斷污染修復

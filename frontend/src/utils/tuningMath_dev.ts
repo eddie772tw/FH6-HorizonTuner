@@ -74,9 +74,54 @@ export interface DevTireOutput {
   source: 'calibration-prior';
 }
 
+export interface DevChassisSpringsOutput {
+  modelType: 'direct_wheel_load_approx';
+  assumedMotionRatio: 1.0;
+  frontKgfMm: number;
+  rearKgfMm: number;
+  frontRideHeightCm: number;
+  rearRideHeightCm: number;
+}
+
+export interface DevDampingPhysical {
+  frontCriticalNsM: number;
+  rearCriticalNsM: number;
+  frontReboundDampingNsM: number;
+  rearReboundDampingNsM: number;
+  frontBumpDampingNsM: number;
+  rearBumpDampingNsM: number;
+}
+
+export interface DevDampingPriors {
+  frontDampingRatio: number;
+  rearDampingRatio: number;
+  bumpToReboundRatio: number;
+  source: 'calibration-prior/v1';
+}
+
+export interface DevDampingSliderMapping {
+  frontSliderValue: number;
+  rearSliderValue: number;
+  mappingSource: 'advisory_heuristic_v1';
+}
+
+export interface DevDampingOutput {
+  // Flat backwards-compatible fields
+  frontCriticalNsM: number;
+  rearCriticalNsM: number;
+  frontSliderValue: number;
+  rearSliderValue: number;
+  bumpToReboundRatio: number;
+
+  // Separated layers
+  physical: DevDampingPhysical;
+  priors: DevDampingPriors;
+  sliderMapping: DevDampingSliderMapping;
+}
+
 export interface DevChassisOutput {
-  springs: { frontKgfMm: number; rearKgfMm: number; frontRideHeightCm: number; rearRideHeightCm: number };
-  damping: { frontCriticalNsM: number; rearCriticalNsM: number; frontSliderValue: number; rearSliderValue: number; bumpToReboundRatio: number };
+  springs: DevChassisSpringsOutput;
+  damping: DevDampingOutput;
   arb: { front: number; rear: number };
 }
 
@@ -145,7 +190,8 @@ function calculateAlignment(input: DevTuningInput): DevAlignmentOutput {
 function collectWarnings(input: DevTuningInput): string[] {
   const warnings = [
     'Experimental TuningMath: coefficients are calibration priors and require telemetry or in-game validation.',
-    'Damping slider values are a display mapping; critical damping remains the physical reference output.',
+    'Spring calculations use a direct wheel-load approximation (MR=1.0 assumed); vehicle-specific suspension motion ratios and tire vertical stiffness are not yet calibrated.',
+    'Damping is resolved into explicit physical critical damping (N·s/m), damping-ratio priors, and advisory FH6 slider mappings.',
     'FH6 slider increments and upgrade locks are not inferred from this calculation layer; verify against the selected part.'
   ];
   const adjustability = input.car.adjustability;

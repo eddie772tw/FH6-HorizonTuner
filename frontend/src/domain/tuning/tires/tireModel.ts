@@ -39,19 +39,36 @@ export function getDevTirePrior(tireType: string | undefined, surface: DevSurfac
   };
 }
 
+const calculateTerm = (demand: number, capacity: number): number => {
+  const absDemand = Math.abs(demand);
+  if (absDemand === 0) return 0;
+  if (capacity <= 0) return Infinity;
+  return absDemand / capacity;
+};
+
 export function calculateFrictionEllipse(input: FrictionEllipseInput): FrictionEllipseOutput {
   const normalForceN = Math.max(0, Number.isFinite(input.normalForceN) ? input.normalForceN : 0);
   const muLongitudinal = Math.max(0, Number.isFinite(input.muLongitudinal) ? input.muLongitudinal : 0);
   const muLateral = Math.max(0, Number.isFinite(input.muLateral) ? input.muLateral : 0);
   const maxLongitudinalForceN = muLongitudinal * normalForceN;
   const maxLateralForceN = muLateral * normalForceN;
-  const longitudinalTerm = maxLongitudinalForceN > 0 ? input.longitudinalDemandN / maxLongitudinalForceN : 0;
-  const lateralTerm = maxLateralForceN > 0 ? input.lateralDemandN / maxLateralForceN : 0;
-  const utilization = Math.sqrt(longitudinalTerm ** 2 + lateralTerm ** 2);
+  const longitudinalDemandN = Number.isFinite(input.longitudinalDemandN) ? input.longitudinalDemandN : 0;
+  const lateralDemandN = Number.isFinite(input.lateralDemandN) ? input.lateralDemandN : 0;
+
+  const longitudinalTerm = calculateTerm(longitudinalDemandN, maxLongitudinalForceN);
+  const lateralTerm = calculateTerm(lateralDemandN, maxLateralForceN);
+
+  let utilization = 0;
+  if (!Number.isFinite(longitudinalTerm) || !Number.isFinite(lateralTerm)) {
+    utilization = Infinity;
+  } else {
+    utilization = Math.sqrt(longitudinalTerm ** 2 + lateralTerm ** 2);
+  }
+
   return {
     maxLongitudinalForceN,
     maxLateralForceN,
     utilization,
-    feasible: utilization <= 1.0
+    feasible: Number.isFinite(utilization) && utilization <= 1.0
   };
 }

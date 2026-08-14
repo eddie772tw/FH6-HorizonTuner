@@ -19,6 +19,7 @@
 | `halfmoon-design-system` | `halfmoon-design-system/SKILL.md` | 前端 UI、Halfmoon、card、form、button、theme 或 glassmorphism | 修改設計行為時讀取 `HALFMOON_SPECIFICATION.md` |
 | `huge-component-refactoring` | `huge-component-refactoring/SKILL.md` | 拆分超過 250 行的 UI 組件，或優化 60Hz rendering | 為抽出的行為保留測試 |
 | `cross-agent-collaboration` | `cross-agent-collaboration/SKILL.md` | Codex、Google Antigravity 或 Jules 的非同步交接、ownership、handoff 與衝突避免 | `.agents/AGENTS.md`、`.agents/Journal.md` 與 `.jules/` 原始日誌 |
+| `codex-antigravity-bridge` | `codex-antigravity-bridge/SKILL.md` | Codex 透過 `agy` CLI 與 Antigravity 進行固定 token handshake、headless prompt、回覆輪詢與共享 worktree 驗證 | `scripts/Invoke-AgyCrossAgentSmoke.ps1`、`cross-agent-collaboration` |
 | `jules_coding` | `jules_coding/SKILL.md` | 使用者明確授權 Jules 執行高風險重構、大型相依套件升級或本機資源不足的工作 | `JULES_API_KEY`、已綁定 Jules 的 GitHub repository，以及可用的 Jules 整合 |
 | `modular-refactoring` | `modular-refactoring/SKILL.md` | Domain 重構、新模組，或將邏輯與 UI 分離 | Isolation tests 與 typed contracts |
 | `physics-tuning-math` | `physics-tuning-math/SKILL.md` | 車輛物理、調校公式、校準常數或診斷數學 | 對應的 Vitest/Pytest 覆蓋 |
