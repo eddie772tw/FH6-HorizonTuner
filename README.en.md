@@ -44,6 +44,9 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 * **Telemetry Persistence & MoTeC i2 Exporter**:
   - Automated backend SQLite historical telemetry logging.
   - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
+* **Localhost Read-Only MCP Server (Model Context Protocol)**:
+  - Built-in standard JSON-RPC 2.0 `stdio` MCP server (`backend/mcp/server.py`) offering 26 dedicated read-only tools and 5 Resource URI templates.
+  - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
   - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
@@ -58,6 +61,11 @@ FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD workflow (Ruff Lint + Pytest)
 ├── backend/                 # Python FastAPI backend core
 │   ├── main.py              # Backend entry point, API definitions & process management
+│   ├── mcp/                 # Model Context Protocol (MCP) Read-Only Server
+│   │   ├── server.py        # stdio MCP server runner
+│   │   ├── service.py       # Telemetry & tuning service layer (aligned with TelemetryView)
+│   │   ├── tools.py         # 26 MCP tools declarations & dispatch
+│   │   └── resources.py     # 5 Resource URI router
 │   ├── telemetry_listener.py # UDP 60Hz telemetry socket listener and parser
 │   ├── telemetry_runtime.py  # Pipeline metrics and non-blocking dyno profile cache/persistence
 │   ├── core/                # Core telemetry processing & calculation modules

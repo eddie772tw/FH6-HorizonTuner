@@ -1,6 +1,6 @@
 # Tuning developer workflow handoff
 
-This branch is intended to be continued on a second device for FH6 real-world data collection and MCP design.
+This branch is intended to be continued on a second device for FH6 real-world data collection, solver tuning, and MCP-assisted workflows.
 
 ## Current branch state
 
@@ -9,15 +9,17 @@ This branch is intended to be continued on a second device for FH6 real-world da
 - Enable `Settings → Developer Options → Use Developer Tuning View` to open `TuningView_dev`.
 - `TuningView_dev` uses only `frontend/src/utils/tuningMath_dev.ts` and the domain modules under `frontend/src/domain/tuning/`.
 - The developer solver is advisory. Its tire values and game-slider mappings are calibration priors, not validated FH6 constants.
+- **Localhost Read-Only MCP Server** has been implemented by Gemini/Antigravity under `backend/mcp/` and is fully functional (`backend/mcp/server.py`), exposing 26 tools and 5 resource URIs. Setup guide: [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
 
 ## Second-device setup
 
 1. Clone the repository and check out the PR branch after it is merged or fetch the PR branch directly.
 2. Install the existing frontend and backend dependencies using the repository's normal setup instructions.
-3. Start the FastAPI sidecar and frontend with the normal development launcher.
+3. Start the FastAPI sidecar and frontend with the normal development launcher (`start_all.bat`).
 4. Enable Forza telemetry output to the configured UDP address/port; confirm the app's telemetry status is connected.
 5. Open Developer Tuning and then `Open Telemetry Capture`.
 6. Before driving, enter complete metadata. Do not leave `gameBuild`, installed parts, tire type, surface, event/track or assists as `unknown` for a measured run.
+7. (Optional) Run the local MCP server (`uv run --no-project --python .venv\Scripts\python.exe backend/mcp/server.py`) or configure it in Claude Desktop / Cursor for AI-assisted analysis.
 
 ## Test-user operating procedure
 
@@ -55,12 +57,20 @@ For tire calibration, provide separate matrices for compound × surface × weath
 
 ## Agent handoff rules
 
-### Safe next tasks
+### Completed tasks (by Gemini/Antigravity)
+
+- Implemented standard JSON-RPC 2.0 Localhost Read-Only MCP Server (`backend/mcp/`):
+  - 26 tools covering live cockpit inputs, vehicle dynamics, 4-wheel tires, suspension travel, race SQLite sessions, `tuning-capture/v1` A/B comparisons, car database, tuning solvers, and diagnostics.
+  - 5 Resource URI templates (`fh6://telemetry/...`, `fh6://capture/...`, `fh6://car/...`, `fh6://tuning/...`, `fh6://settings/...`).
+  - 21 unit tests in `tests/test_mcp_*.py` with full pass rate.
+  - Documentation: [docs/mcp-setup-guide.md](./mcp-setup-guide.md) and [docs/tuning-mcp-integration-evaluation.md](./tuning-mcp-integration-evaluation.md).
+
+### Safe next tasks for upcoming agents
 
 - Add fixture files under `docs/calibration/` with URLs, build, parts, confidence and capture paths.
-- Add deterministic analysis functions and tests under `frontend/src/domain/tuning/` or a shared backend analysis module.
-- Add MCP-1 read-only contracts and fake-server tests according to [the MCP evaluation](./tuning-mcp-integration-evaluation.md).
-- Add bounded pagination/downsampling and provenance fields.
+- Add deterministic analysis functions and tests under `frontend/src/domain/tuning/` (Phase 4 / Phase 5 Road, Rally, Drift, Drag solvers).
+- Use MCP tool `run_dev_tuning_solver` and `compare_captures` to backtest solver iterations against real captured data.
+- Add bounded pagination/downsampling improvements if capture datasets exceed 100k samples.
 
 ### Do not do without review
 
@@ -73,13 +83,14 @@ For tire calibration, provide separate matrices for compound × surface × weath
 
 ### Ownership and verification
 
+- `backend/mcp/`: MCP protocol handler, service layer, tools, resources, and stdio server runner.
 - `frontend/src/domain/tuning/`: typed contracts, capture schema, pure solver and analysis logic.
 - `frontend/src/features/tuning/`: developer UI and capture page.
 - `docs/calibration/`: unverified/community/in-game evidence packages.
 - `docs/*handoff*` and `docs/*evaluation*`: instructions and decision boundaries.
-- Run `cmd /c "pnpm -C frontend run test"`, `cmd /c "pnpm -C frontend run build"`, `pytest -q tests`, and `git diff --check` before handing off.
-- Record the capture count, source URLs, build identifier and unresolved limitations in the next Journal entry.
+- Run `cmd /c "pnpm -C frontend run test"`, `cmd /c "pnpm -C frontend run build"`, `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`, and `git diff --check` before handing off.
 
-## MCP continuation point
+## MCP operational status
 
-The recommended first MCP increment is a localhost, read-only adapter mounted beside the existing FastAPI sidecar. It should read bounded summaries and session windows, return structured provenance, and never participate in the UDP/60 Hz path. The proposed resources/tools and write boundary are documented in [tuning-mcp-integration-evaluation.md](./tuning-mcp-integration-evaluation.md).
+The localhost read-only MCP server is fully operational. It reads bounded summaries and session windows, returns structured provenance, and does not participate in the UDP/60 Hz hot path. Server entry point: `backend/mcp/server.py`.
+

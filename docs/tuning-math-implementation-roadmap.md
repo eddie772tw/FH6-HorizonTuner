@@ -1,15 +1,16 @@
 # TuningMath 多階段實作計畫
 
-日期：2026-08-13
+日期：2026-08-13 (更新：2026-08-14)
 基準文件：[調校數學與 FH6 Meta 評估報告](./tuning-math-fh6-meta-evaluation-report.md)
+目前進度：**Phase 0、Phase 1、Phase 2（領域腳手架）與 Phase 3（擷取工具與 MCP Server 工具鏈）已由 Gemini/Antigravity 完成**。
 
 ## 1. 實作策略
 
 目標不是一次把 heuristic 改成「完整物理引擎」，而是分三個層次逐步收斂：
 
-1. **契約正確**：輸出的數值必須符合車輛改裝件、遊戲版本、UI step、min/max 與可調能力。
-2. **模型可校準**：所有未驗證常數都要集中、版本化，能用同一車輛/路面/改裝條件做 A/B 校準。
-3. **賽事 solver 可驗證**：Road、Rally、Drift、Drag 分別以對應 telemetry 指標驗證，而不是以單一圈速或單一分享碼宣稱 meta。
+1. **契約正確**：輸出的數值必須符合車輛改裝件、遊戲版本、UI step、min/max 與可調能力（已於 Phase 1 完成）。
+2. **模型可校準**：所有未驗證常數都要集中、版本化，能用同一車輛/路面/改裝條件做 A/B 校準（已於 Phase 3 完成擷取工具與 MCP 唯讀服務）。
+3. **賽事 solver 可驗證**：Road、Rally、Drift、Drag 分別以對應 telemetry 指標驗證，而不是以單一圈速或單一分享碼宣稱 meta（Phase 4/5 進行中）。
 
 目前的 `tuningMath.ts` 保留為相容 facade；新 domain modules 通過測試後才逐步取代內部實作。任何階段都不得直接把社群分享碼或未版本化文章轉成 production 常數。
 
@@ -17,22 +18,26 @@
 
 ```mermaid
 flowchart TD
-  P0[Phase 0 基線與安全修正] --> P1[Phase 1 Capability/Control Contract]
-  P1 --> P2[Phase 2 Domain Refactor Scaffold]
-  P1 --> P3[Phase 3 Calibration Data Pipeline]
-  P2 --> P4[Phase 4 Shared Tire/Physics Model]
+  classDef done fill:#1b4332,stroke:#40916c,stroke-width:2px,color:#d8f3dc;
+  classDef active fill:#7b2cbf,stroke:#c77dff,stroke-width:2px,color:#f3e8ff;
+  classDef pending fill:#212529,stroke:#6c757d,stroke-width:1px,color:#adb5bd;
+
+  P0[Phase 0 基線與安全修正]:::done --> P1[Phase 1 Capability/Control Contract]:::done
+  P1 --> P2[Phase 2 Domain Refactor Scaffold]:::done
+  P1 --> P3[Phase 3 Calibration Pipeline & MCP Server]:::done
+  P2 --> P4[Phase 4 Shared Tire/Physics Model]:::active
   P3 --> P4
-  P4 --> R[Phase 5A Road/Circuit Solver]
-  P4 --> Y[Phase 5B Rally/Off-road Solver]
-  P4 --> D[Phase 5C Drift Solver]
-  P4 --> G[Phase 5D Drag Solver]
-  R --> P6[Phase 6 Closed-loop Diagnosis]
+  P4 --> R[Phase 5A Road/Circuit Solver]:::pending
+  P4 --> Y[Phase 5B Rally/Off-road Solver]:::pending
+  P4 --> D[Phase 5C Drift Solver]:::pending
+  P4 --> G[Phase 5D Drag Solver]:::pending
+  R --> P6[Phase 6 Closed-loop Diagnosis]:::pending
   Y --> P6
   D --> P6
   G --> P6
-  P1 --> P7[Phase 7 UI/Capability Integration]
+  P1 --> P7[Phase 7 UI/Capability Integration]:::pending
   P6 --> P7
-  P7 --> P8[Phase 8 Regression/Calibration Release]
+  P7 --> P8[Phase 8 Regression/Calibration Release]:::pending
 ```
 
 ### 依賴規則
@@ -152,13 +157,17 @@ frontend/src/domain/tuning/
 
 **完成門檻：** UI 不直接依賴 profile 內部細節；純函式可獨立測試；原有 import path 與既有測試仍可工作。
 
-### Phase 3 — Calibration Data Pipeline 與中國社群 Fixture
+### Phase 3 — Calibration Data Pipeline, Capture Toolchain & MCP Server
 
 **順序：** P1 後；可與 P2 並行。
-**可並行性：** Data agent 與 telemetry agent 可並行，均不修改 solver。
-**目標：** 把 Bilibili/中國社群分享碼從「線索」變成可重現實驗資料，而不是直接變成常數。
+**狀態：** **已由 Gemini/Antigravity 於 2026-08-14 完成**。
+**達成成果：**
+- 建立 `tuning-capture/v1` JSON/CSV 規格與 [`TuningTelemetryCaptureView`](../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx) 即時錄製工具。
+- 實作完整 Localhost 唯讀 MCP Server（[`backend/mcp/`](../backend/mcp/)），提供 26 個專屬唯讀工具（完全對齊 `TelemetryView` 數據結構）與 5 類 Resource URI。
+- 提供 A/B 跑圈差異對比（`compare_captures`）、局部高精度時間窗口查詢（`query_capture_window`）與資料品質健全度診斷（`get_capture_summary`）。
+- 21 個單元測試全數通過（`tests/test_mcp_*.py`），並提供詳細設定指引 [`docs/mcp-setup-guide.md`](./mcp-setup-guide.md)。
 
-資料欄位至少包含：
+資料欄位包含：
 
 ```text
 car_id, drivetrain, class, pi, game_build,
@@ -176,12 +185,6 @@ telemetry_session, lap_time, launch_time, notes, confidence
 - 將「Bilibili 412/驗證碼、只有分享碼、無版本」記為 evidence limitation。
 - 定義 A/B protocol：同車、同 PI、同改裝、同路面、同輔助設定、重複至少 5 次。
 - 產生相對指標：峰值 longitudinal/lateral G、slip ratio、slip angle、60-ft/100-m、換檔後 RPM、觸底率與落地 G。
-
-**預計 commit：**
-
-- `feat(calibration): add tuning experiment schema and loader`
-- `test(calibration): validate fixture completeness and version keys`
-- `docs(calibration): add Chinese-community evidence and capture protocol`
 
 **完成門檻：** 沒有 `game_build` 或改裝清單的資料不能進入 production calibration profile，只能放在 `unverified/`。
 

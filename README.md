@@ -45,6 +45,9 @@
 * **遙測持久化與 MoTeC i2 數據匯出 (SQLite Storage & MoTeC Exporter)**:
   - 後端 SQLite 遙測歷程資料庫自動記錄。
   - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
+* **Localhost 唯讀 MCP Server (Model Context Protocol)**:
+  - 內建標準 JSON-RPC 2.0 `stdio` MCP 伺服器（`backend/mcp/server.py`），提供 26 個專屬唯讀工具與 5 類 Resource URI。
+  - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
   - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
@@ -59,6 +62,11 @@ FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD 工作流設定 (Ruff Lint + Pytest)
 ├── backend/                 # Python FastAPI 後端核心
 │   ├── main.py              # 後端服務主入口與 API 宣告
+│   ├── mcp/                 # Model Context Protocol (MCP) 唯讀伺服器
+│   │   ├── server.py        # stdio MCP 伺服器主程式
+│   │   ├── service.py       # 遙測與調校服務層 (對齊 TelemetryView)
+│   │   ├── tools.py         # 26 個 MCP Tools 宣告與分派
+│   │   └── resources.py     # 5 類 Resource URI 路由
 │   ├── telemetry_listener.py # UDP 60Hz 遙測數據流監聽與解析
 │   ├── telemetry_runtime.py  # Pipeline metrics 與非阻塞 dyno profile 快取/寫入
 │   ├── core/                # 遙測數據處理、算牌與系統核心
