@@ -970,6 +970,14 @@
 - **Verification**: Targeted Road profile Vitest passed (22 tests); TypeScript no-emit remains blocked by pre-existing Phase 4B strictness errors in `loadTransfer.ts` and `tireGeometry.ts`, outside this scope; `git diff --check` passed.
 - **Status**: adopted.
 
+## 2026-08-14 / Phase 5B Rally and Off-road Profile Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/rallyProfile.ts` and its Vitest contract tests.
+- **Decision**: Add independent `gravel`, `cross_country`, and `jump` profiles under `tuning-profile/v1`; preserve dedicated Rally gearing and expose a contract proof that Road ratios are not reused.
+- **Physics**: Surface roughness, airborne state, airtime, landing impact, and bottoming are timestamp-based telemetry estimates with explicit heuristic warnings. AWD differential outputs are range priors rather than a universal 25% decel lock.
+- **Verification**: Targeted Rally profile Vitest passed (19 tests); no new TypeScript diagnostics were found for the Rally files; `git diff --check` passed.
+- **Status**: adopted.
+
 - **Decision**: Removed the standalone stdio MCP entrypoint and the unused
   legacy HTTP+SSE transport before external deployment.
 - **Contract**: The running FastAPI backend is the only MCP host. When
