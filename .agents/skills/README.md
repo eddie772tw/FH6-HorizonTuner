@@ -26,6 +26,7 @@
 | `telemetry-udp-protocol` | `telemetry-udp-protocol/SKILL.md` | Forza UDP 封包解析、324-byte layout、單位換算或高頻遙測 | 涉及 offset 時讀取 `telemetry-udp-protocol/references/packet_format_reference.md` |
 | `agent-governance-audit` | `agent-governance-audit/SKILL.md` | 稽核 .agents、Journal、Jules 原始日誌、skill ID 與跨 agent 文件漂移 | 調整 agent 治理文件或發現 skill/path/language 錯誤時使用 |
 | `portable-release-validation` | `portable-release-validation/SKILL.md` | V1.x portable/exe、sidecar、動態 port 與 Windows 發行驗證 | 發行、打包、啟動流程或 runtime path 變更時使用 |
+| `pr-review-evaluation` | `pr-review-evaluation/SKILL.md` | 評估 PR 狀態、CI 結果並標準化發表 Review 意見 | PR review、Merge 前檢查或分支開發完畢提交 PR 時使用 |
 
 ## Jules 邊界
 
