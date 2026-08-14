@@ -838,3 +838,20 @@
 - **Evidence**:
   - Pytest 測試：`test_system_media.py` (3 passed), `test_audio_spectrum.py` (2 passed), `test_overlay_api.py` (38 passed)。
   - Vitest 前端單元測試：48 個測試檔 / 259 個測試全數通過（包含新增之 `overlayElements.test.ts`）。
+
+---
+
+## 2026-08-14 / Localhost Read-Only MCP Server Implementation
+
+- **Scope**: local / `backend/mcp/` & `docs/mcp-setup-guide.md`.
+- **Status**: adopted.
+- **Learning**:
+  1. 大型 60Hz 遙測封包與高頻時序數據若直接由 AI 讀取檔案，極易遭遇 Context Window 溢出與輸出截斷。透過建立輕量 JSON-RPC 2.0 stdio MCP Server，提供帶有分頁（Pagination）、局部時間窗口（Window Slicing）與降採樣（Downsampling）的查詢工具，可兼顧即時性與 Token 效率。
+  2. MCP 服務層直接對齊 `TelemetryView` 視圖（包含儀表、踏板輸入、動力與 G-Radar、四輪胎溫/滑移角/滑移比/綜合滑移向量、四輪懸吊行程與觸底偵測），並封裝純物理調校計算（Road/Rally/Drift/Drag）與 AEGO 齒比求解器，讓 AI 能直接進行數據驅動回測與閉環診斷。
+- **Action**:
+  - 建立 `backend/mcp/protocol.py`、`backend/mcp/service.py`、`backend/mcp/resources.py`、`backend/mcp/tools.py` 與 `backend/mcp/server.py`。
+  - 實作 26 個專屬唯讀工具與 5 類 Resource URI（`fh6://telemetry/...`, `fh6://capture/...`, `fh6://car/...`, `fh6://tuning/...`, `fh6://settings/...`）。
+  - 新增說明文件 `docs/mcp-setup-guide.md`，提供 Claude Desktop、Cursor、VS Code 等客戶端設定指南。
+- **Evidence**:
+  - Pytest 測試：`tests/test_mcp_protocol.py` (5 passed), `tests/test_mcp_service.py` (8 passed), `tests/test_mcp_tools.py` (4 passed), `tests/test_mcp_resources.py` (4 passed)；後端全體 Pytest `138 passed, 2 skipped`。
+  - 前端 Vitest：`52 files / 271 passed`；`ruff check` 與 `ruff format --check` 全數通過。
