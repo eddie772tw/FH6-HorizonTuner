@@ -1,21 +1,22 @@
 # FH6-HorizonTuner MCP (Model Context Protocol) 設定與使用指南
 
-`FH6-HorizonTuner` 內建專屬的 **Localhost 唯讀 MCP Server**，讓 AI Agent（如 Antigravity、Claude Desktop、Cursor、Cline 等）能透過標準 MCP 協議結構化讀取遊戲即時遙測、歷史賽道單圈、實測擷取封包、車輛資料庫、改裝契約與調校計算求解器。
+`FH6-HorizonTuner` 內建專屬的 **Localhost 唯讀 MCP Server**，支援 **雙傳輸模式（Stdio 子程序 + FastAPI HTTP/SSE 串流）**，讓 AI Agent（如 Antigravity、Claude Desktop、Cursor、Cline 等）能透過標準 MCP 協議結構化讀取遊戲即時遙測、歷史賽道單圈、實測擷取封包、車輛資料庫、改裝契約與調校計算求解器。
 
 ---
 
-## 一、 快速啟動與基本原理
+## 一、 快速啟動與傳輸方式
 
-### 1. 執行指令
-MCP Server 採用標準輸入輸出 (`stdio`) JSON-RPC 2.0 協議，可使用專案 uv 環境直接執行：
+### 方式 A：FastAPI 內建 HTTP / SSE 串流通道（推薦 / 零設定）
+當 FH6-HorizonTuner 主程式啟動時，FastAPI 後端會自動掛載 MCP SSE 服務：
+- **SSE 端點網址**：`http://127.0.0.1:8000/mcp/sse` (或自訂 Port)
+- **前端視覺化設定**：前往 `設定 (Settings)` → `開發者選項` → `MCP 伺服器面板`，可一鍵開啟/關閉服務、調整單次查詢樣本上限與一鍵複製連線代碼。
+
+### 方式 B：獨立 Stdio 子程序模式
+使用專案 Python uv 環境直接以命令列啟動：
 
 ```powershell
 uv run --no-project --python .venv\Scripts\python.exe backend/mcp/server.py
 ```
-
-可選參數：
-- `--data-dir <路徑>`：自訂可寫入資料目錄（預設為專案 `backend/` 目錄）。
-- `--resource-root <路徑>`：自訂唯讀資源根目錄（預設為專案 `backend/` 目錄）。
 
 ---
 
@@ -27,7 +28,7 @@ uv run --no-project --python .venv\Scripts\python.exe backend/mcp/server.py
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-在 `mcpServers` 區段中加入以下設定：
+在 `mcpServers` 區段中加入以下設定（亦可從 HorizonTuner 前端設定面板點擊「複製 Claude Desktop JSON」一鍵取得）：
 
 ```json
 {
@@ -44,8 +45,6 @@ uv run --no-project --python .venv\Scripts\python.exe backend/mcp/server.py
 }
 ```
 
-> **提示**：請將路徑替換為您電腦上的實際絕對路徑（Windows 下使用雙反斜線 `\\`）。
-
 ---
 
 ### 2. Cursor IDE 設定
@@ -54,8 +53,8 @@ uv run --no-project --python .venv\Scripts\python.exe backend/mcp/server.py
 2. 點擊 `+ Add New MCP Server`。
 3. 填寫以下欄位：
    - **Name**: `fh6-horizon-tuner`
-   - **Type**: `command` (stdio)
-   - **Command**: `d:\FH6-HorizonTuner\.venv\Scripts\python.exe -u d:\FH6-HorizonTuner\backend\mcp\server.py`
+   - **Type**: `command` (stdio) 或 `sse`
+   - **Command / URL**: `d:\FH6-HorizonTuner\.venv\Scripts\python.exe -u d:\FH6-HorizonTuner\backend\mcp\server.py` 或 `http://127.0.0.1:8000/mcp/sse`
 
 ---
 

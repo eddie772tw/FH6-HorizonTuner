@@ -855,3 +855,21 @@
 - **Evidence**:
   - Pytest 測試：`tests/test_mcp_protocol.py` (5 passed), `tests/test_mcp_service.py` (8 passed), `tests/test_mcp_tools.py` (4 passed), `tests/test_mcp_resources.py` (4 passed)；後端全體 Pytest `138 passed, 2 skipped`。
   - 前端 Vitest：`52 files / 271 passed`；`ruff check` 與 `ruff format --check` 全數通過。
+
+---
+
+## 2026-08-14 / MCP Server Deep Integration with FastAPI (SSE) & Frontend Settings UI
+
+- **Scope**: local / `backend/mcp/sse_transport.py`, `backend/main.py`, `frontend/src/features/settings/`.
+- **Status**: adopted.
+- **Learning**:
+  1. 將 MCP 伺服器整合至 FastAPI 既有異步迴圈中，支援 Server-Sent Events（SSE）傳輸協定（`GET /mcp/sse` 與 `POST /mcp/messages`），使無需在本機配置 Python 子程序環境的遠端或網路型 AI Client 也能即插即用連線。
+  2. 透過在前端 `SettingsView` 增加 `McpSettingsCard` 與一鍵複製設定代碼（自動產生 Claude JSON / Cursor CLI 指令 / SSE URL），極大程度降低使用者與次要裝置 Agent 的配置門檻。
+- **Action**:
+  - 實作 `backend/mcp/sse_transport.py` 管理 Client SSE 串流與 JSON-RPC 訊息分派。
+  - 於 `backend/main.py` 掛載 `/mcp/sse`、`/mcp/messages`、`/api/mcp/status` 路由，並整合至系統全域設定 `settings.json`。
+  - 前端新增 `McpSettingsCard.tsx` 面板（含運行狀態徽章、總開關、即時遙測讀取限制、時序降採樣滑桿與一鍵複製卡片），並整合至 `SettingsView.tsx` 與多語言字典。
+- **Evidence**:
+  - Pytest 測試：`tests/test_mcp_sse.py` (4 passed)，後端全體測試 `142 passed, 2 skipped`。
+  - Vitest 測試：`McpSettingsCard.test.ts` (3 passed)，前端全體測試 53 個檔案 / 274 個測試 100% 通過。
+  - Ruff 靜態分析與格式檢查全數通過。

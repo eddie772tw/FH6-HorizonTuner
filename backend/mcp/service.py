@@ -28,7 +28,12 @@ def find_project_root() -> str:
 class HorizonTunerMcpService:
     """Encapsulates all read-only access to telemetry, databases, captures, and solvers."""
 
-    def __init__(self, data_root: str | None = None, resource_root: str | None = None):
+    def __init__(
+        self,
+        data_root: str | None = None,
+        resource_root: str | None = None,
+        telemetry_state_provider: Any = None,
+    ):
         self.project_root = find_project_root()
         self.resource_root = (
             resource_root
@@ -44,24 +49,31 @@ class HorizonTunerMcpService:
             if os.path.exists(os.path.join(self.project_root, "backend"))
             else self.project_root
         )
+        self.telemetry_state_provider = telemetry_state_provider
 
         # File paths
         self.car_db_path = os.path.join(self.resource_root, "car_database.json")
-        self.sessions_db_path = os.path.join(
-            self.data_root, "sessions", "telemetry_sessions.db"
-        )
-        self.tunings_dir = os.path.join(self.data_root, "tunings")
-        self.drag_sessions_dir = os.path.join(self.data_root, "drag_sessions")
+        self.sessions_db_path = os.path.join(self.data_root, "telemetry_sessions.db")
         self.calibration_dir = os.path.join(self.project_root, "docs", "calibration")
+        self.captures_dir = self.calibration_dir
+        self.drag_sessions_dir = os.path.join(self.data_root, "drag_sessions")
+        self.tunings_dir = os.path.join(self.data_root, "tunings")
         self.settings_file = os.path.join(self.data_root, "settings.json")
         self.hud_config_file = os.path.join(self.data_root, "hud_config.json")
         self.logs_file = os.path.join(self.data_root, "logs", "backend.log")
+        self.backend_log_path = self.logs_file
 
-        # SQLite adapter
-        self.telemetry_db = TelemetrySQLite(self.sessions_db_path)
+        # Helpers
+        self._db: TelemetrySQLite | None = None
 
         # Cached car database
         self._car_database: dict[str, Any] | None = None
+
+    @property
+    def telemetry_db(self) -> TelemetrySQLite:
+        if self._db is None:
+            self._db = TelemetrySQLite(self.sessions_db_path)
+        return self._db
 
     def _get_car_database(self) -> dict[str, Any]:
         if self._car_database is None:
@@ -84,6 +96,15 @@ class HorizonTunerMcpService:
 
     def get_live_telemetry_snapshot(self) -> dict[str, Any]:
         """Return the latest live telemetry frame and ingestion status."""
+        if self.telemetry_state_provider is not None:
+            live_frame = self.telemetry_state_provider()
+            if live_frame:
+                return {
+                    "status": "live",
+                    "source": "udp_memory_stream",
+                    "latest_sample": live_frame,
+                }
+
         # Query latest point from SQLite if available or report offline status
         sessions = self.telemetry_db.list_all_sessions()
         latest_session_id = sessions[0]["session_id"] if sessions else None

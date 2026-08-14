@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSettings, UnitSettings } from '../../context/SettingsContext';
+import { McpSettingsCard } from './components/McpSettingsCard';
 
 const SettingsView: React.FC = () => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
@@ -180,6 +181,9 @@ const SettingsView: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* MCP Server & AI Integration */}
+            <McpSettingsCard />
 
             {/* Telemetry UDP Receiver Settings */}
             <div className="d-flex flex-column gap-3">

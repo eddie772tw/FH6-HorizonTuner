@@ -81,10 +81,26 @@ from audio_spectrum import (
     set_audio_capture_device,
     stop_audio_spectrum_service,
 )
-from fastapi import FastAPI, File, Path, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    File,
+    HTTPException,
+    Path,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from mcp import (
+    HorizonTunerMcpService,
+    McpProtocolHandler,
+    McpResourceManager,
+    McpSseTransportManager,
+    McpToolManager,
+)
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from overlay_metrics import OverlayPerformanceMetrics
 from race_recorder import AsyncRacePersistence, RaceRecorder
@@ -259,6 +275,24 @@ current_udp_transport = None
 current_udp_ip_port = (None, None)
 backend_port = 8000
 overlay_process = None
+latest_live_telemetry = None
+
+
+def get_current_telemetry_for_mcp():
+    if not app_settings.get("mcp_allow_live", True):
+        return None
+    return latest_live_telemetry
+
+
+mcp_service = HorizonTunerMcpService(
+    data_root=DATA_ROOT,
+    resource_root=RESOURCE_ROOT,
+    telemetry_state_provider=get_current_telemetry_for_mcp,
+)
+mcp_tools = McpToolManager(mcp_service)
+mcp_resources = McpResourceManager(mcp_service)
+mcp_protocol = McpProtocolHandler(mcp_tools, mcp_resources)
+mcp_sse_manager = McpSseTransportManager(mcp_protocol)
 
 
 app = FastAPI(title="FH6 Telemetry Tuning Tool API")
@@ -317,6 +351,9 @@ DEFAULT_SETTINGS = {
     "dyno_recording": False,
     "race_recording": False,
     "developer_tuning_enabled": False,
+    "mcp_enabled": True,
+    "mcp_allow_live": True,
+    "mcp_max_downsample": 500,
     "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
@@ -349,6 +386,9 @@ app_settings = {
     "dyno_recording": False,
     "race_recording": False,
     "developer_tuning_enabled": False,
+    "mcp_enabled": True,
+    "mcp_allow_live": True,
+    "mcp_max_downsample": 500,
     "language": "zh-tw",
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
@@ -1071,7 +1111,7 @@ async def broadcast_overlay_state():
 
 
 async def broadcast_telemetry():
-    global last_dyno_save_time
+    global last_dyno_save_time, latest_live_telemetry
     logger.info("Broadcasting loop started.")
 
     # Track gear changes for transient filtering
@@ -1080,6 +1120,7 @@ async def broadcast_telemetry():
 
     while True:
         data = await telemetry_queue.get()
+        latest_live_telemetry = data
         frame_started_at = time.perf_counter()
         telemetry_pipeline_metrics.observe_queue_depth(telemetry_queue.qsize())
 
@@ -1431,6 +1472,12 @@ async def update_settings(data: dict):
         app_settings["dyno_filter_slip"] = bool(data["dyno_filter_slip"])
     if "dyno_filter_transients" in data:
         app_settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
+    if "mcp_enabled" in data:
+        app_settings["mcp_enabled"] = bool(data["mcp_enabled"])
+    if "mcp_allow_live" in data:
+        app_settings["mcp_allow_live"] = bool(data["mcp_allow_live"])
+    if "mcp_max_downsample" in data:
+        app_settings["mcp_max_downsample"] = int(data["mcp_max_downsample"])
 
     # 處理 telemetry_ip 與 telemetry_port
     new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
@@ -1547,6 +1594,59 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
             return {"error": "Failed to read language file"}
 
     return {"error": "Language not found"}
+
+
+# --- MCP Endpoints ---
+
+
+@app.get("/mcp/sse")
+async def mcp_sse_endpoint():
+    """Server-Sent Events endpoint for MCP clients."""
+    if not app_settings.get("mcp_enabled", True):
+        raise HTTPException(
+            status_code=403, detail="MCP Server is disabled in settings"
+        )
+    session_id, stream = await mcp_sse_manager.connect_session()
+    return StreamingResponse(
+        stream,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.post("/mcp/messages")
+async def mcp_post_message(request: Request, session_id: str):
+    """Receive JSON-RPC message from an MCP client."""
+    if not app_settings.get("mcp_enabled", True):
+        raise HTTPException(
+            status_code=403, detail="MCP Server is disabled in settings"
+        )
+    try:
+        body = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {exc}")
+    try:
+        res = await mcp_sse_manager.handle_post_message(session_id, body)
+        return res
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/api/mcp/status")
+async def get_mcp_status():
+    return {
+        "enabled": app_settings.get("mcp_enabled", True),
+        "allow_live": app_settings.get("mcp_allow_live", True),
+        "max_downsample": app_settings.get("mcp_max_downsample", 500),
+        "active_sse_clients": mcp_sse_manager.active_sessions_count,
+        "total_requests_served": mcp_sse_manager.total_requests_served,
+        "sse_endpoint": "/mcp/sse",
+        "stdio_command": "uv run --no-project --python .venv\\Scripts\\python.exe backend/mcp/server.py",
+    }
 
 
 # --- Tuning API Endpoints ---
