@@ -954,6 +954,14 @@
   passed, and `git diff --check` passed.
 - **Status**: adopted.
 
+## 2026-08-14 / Phase 5C Drift Slip-window Profile Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/driftProfile.ts` and its Vitest contract tests.
+- **Decision**: Add timestamp-aware Drift profiles with controllable rear differential ranges; retain `100/100` only as a named legacy-compatible preset, not a universal rule.
+- **Physics**: Separate vehicle body sideslip beta from front/rear tire slip angles. Yaw rate uses direct angular velocity when present, otherwise unwrapped-yaw finite difference marked estimated. Drift duration and stability use positive timestamp intervals with duplicate/out-of-order protection.
+- **Verification**: Targeted Drift profile Vitest passed (31 tests); no new TypeScript diagnostics remain in the Drift files. Full no-emit still reports only pre-existing Phase 4B strictness errors in `loadTransfer.ts` and `tireGeometry.ts`; `git diff --check` passed.
+- **Status**: adopted.
+
 ## 2026-08-14 / MCP Server Deep Integration with FastAPI (SSE) & Frontend Settings UI
 
 ---
