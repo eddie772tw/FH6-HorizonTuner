@@ -772,3 +772,24 @@
 - **Decision**：仿造 S650 的 ownership boundary，只有主要與主 GUI 交互的 HUD 設定、normalize 與 typed boundary 放在 `frontend/src/features/overlay_control/<hud-id>/`；renderer、Canvas、inline-controller 與 standalone HUD contract tests 歸 `hud_overlay/<hud-id>/tests/` 管理。
 - **Action**：原先誤將 Drift／Advanced renderer contract 放入 `overlay_control` 子資料夾；依 S650 的真正 ownership boundary 改置於 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 與 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts`。`overlay_control/<hud-id>/` 僅保留主 GUI 交互檔案。
 - **Verification**：Vitest 改以 `../hud_overlay/*/tests/**/*.test.ts` 納入所有 HUD-owned 測試，並以完整 frontend Vitest 與 build 驗證測試入口、相對路徑與 production bundle。
+
+---
+
+## 2026-08-14 / Telemetry HUD Elements & WASAPI Audio Capture Optimization
+
+- **Scope**: local / HUD Overlay control panel & backend system media / WASAPI audio loopback.
+- **Status**: adopted.
+- **Learning**:
+  1. CPython `winrt-Windows.Media.Control` 套件在 Dev 環境下發起 WinRT 異步任務 (`request_async()`, `try_get_media_properties_async()`) 時，底層需要 `winrt-Windows.Foundation` 模組將 WinRT `IAsyncOperation` 轉譯為 Python awaitable。未宣告 `winrt-Windows.Foundation` 會導致 Dev 環境拋出 `ModuleNotFoundError`。
+  2. 桌面視窗標題列枚舉 (`_extract_windows_desktop_media()`) 會掃描全系統 OpenInputDesktop 視窗，在高頻輪詢下可能引發潛在 CPU/IO 效能瓶頸。透過補齊 `winrt-Windows.Foundation` 依賴並強化 WinRT 異步 API 呼叫，完全不需依賴桌面視窗枚舉降級。
+  3. `soundcard` loopback 預設僅綁定 `default_speaker()`，當使用者在執行期間更換系統播放輸出裝置時，既有錄音執行緒會失效。透過 `sc.all_speakers()` 列出裝置並提供動態切換 / 熱重啟 Worker 執行緒，可實現音訊視覺化裝置熱變更 (Hot-swap)。
+- **Action**:
+  - `requirements.txt` 與 `setup_venv.bat` 追加 `winrt-Windows.Foundation==3.2.1` 並於 healthcheck 進行驗證。
+  - `backend/system_media.py` 強化 WinRT async 呼叫並完全移除 `_extract_windows_desktop_media` 視窗枚舉代碼。
+  - `backend/audio_spectrum.py` 新增 `get_available_audio_devices()` 與 `set_audio_capture_device()` 支援音訊輸出裝置列舉與 WASAPI loopback 熱重啟。
+  - `backend/main.py` 新增 `/api/audio/devices` 與 `/api/audio/device` API，`DEFAULT_HUD_CONFIG` 支援 `showTeleMaster` 與 `audioDeviceId`。
+  - `OverlayView.tsx` 標題變更為 `Telemetry HUD Elements` 並補齊 i18n 翻譯，新增 `showTeleMaster` 標題按鈕（主控 AND 邏輯閥，關閉時下方開關均 `disabled`），並於系統與優化選項追加音訊擷取來源下拉選單與重新整理按鈕。
+  - `hud_overlay/shared/telemetry-cards/manager.js` 寫入 `showTeleMaster` AND 邏輯閥判斷。
+- **Evidence**:
+  - Pytest 測試：`test_system_media.py` (3 passed), `test_audio_spectrum.py` (2 passed), `test_overlay_api.py` (38 passed)。
+  - Vitest 前端單元測試：48 個測試檔 / 259 個測試全數通過（包含新增之 `overlayElements.test.ts`）。

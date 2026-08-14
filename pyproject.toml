@@ -69,3 +69,7 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore:.*starlette.testclient.*"
 ]
+
+[tool.pyright]
+extraPaths = ["backend"]
+

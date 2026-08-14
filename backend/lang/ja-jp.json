@@ -1,5 +1,10 @@
 {
   "__language_name__": "日本語",
+  "Telemetry HUD Elements": "テレメトリ HUD エレメント",
+  "Audio Capture Source": "音声キャプチャソース",
+  "Refresh Audio Devices": "音声デバイスを更新",
+  "Select Audio Device for Spectrum": "スペクトラム用の音声デバイスを選択",
+  "System Default Speaker": "システムデフォルトのスピーカー",
   "% Rear": "% 後輪",
   "*Unsaved Parameters*": "*パラメータは保存されません*",
   "-": "-",

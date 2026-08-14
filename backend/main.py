@@ -75,6 +75,8 @@ from typing import List
 
 from audio_spectrum import (
     get_audio_spectrum_data,
+    get_available_audio_devices,
+    set_audio_capture_device,
     stop_audio_spectrum_service,
 )
 from fastapi import FastAPI, File, Path, UploadFile, WebSocket, WebSocketDisconnect
@@ -1997,6 +1999,7 @@ DEFAULT_HUD_CONFIG = {
     "s650Theme": "heritage67",
     "s650CenterWidget": "drive",
     "s650HmiOffsetY": 60,
+    "audioDeviceId": "default",
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
@@ -2013,6 +2016,7 @@ DEFAULT_HUD_CONFIG = {
     "telemetrySideBySideCharts": True,
     "pauseTelemetryViewWhenActive": True,
     "elements": {
+        "showTeleMaster": True,
         "showGauge": True,
         "showCenterInfo": True,
         "showRPM": True,
@@ -2089,13 +2093,34 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     return normalized
 
 
+@app.get("/api/audio/devices")
+async def get_audio_devices():
+    """List available WASAPI audio playback output devices for loopback spectrum capture."""
+    return get_available_audio_devices()
+
+
+@app.post("/api/audio/device")
+async def select_audio_device(payload: dict):
+    """Set the active audio capture source device ID."""
+    device_id = payload.get("device_id") or payload.get("audioDeviceId") or "default"
+    set_audio_capture_device(str(device_id))
+    return {
+        "message": "Audio capture device set successfully",
+        "device_id": str(device_id),
+        "success": True,
+    }
+
+
 @app.get("/api/overlay/config")
 @app.get("/api/overlay/layout")
 async def get_overlay_config():
     if os.path.exists(HUD_CONFIG_FILE):
         try:
             with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return hud_config_with_gui_theme(json.load(f))
+                cfg = json.load(f)
+                if "audioDeviceId" in cfg:
+                    set_audio_capture_device(str(cfg["audioDeviceId"]))
+                return hud_config_with_gui_theme(cfg)
         except Exception as e:
             logger.error(f"Failed to load hud_config.json: {e}")
     return hud_config_with_gui_theme(DEFAULT_HUD_CONFIG)
@@ -2106,6 +2131,8 @@ async def get_overlay_config():
 async def save_overlay_config(data: dict):
     try:
         data = normalize_hud_config(data)
+        if "audioDeviceId" in data:
+            set_audio_capture_device(str(data["audioDeviceId"]))
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         broadcast_data = hud_config_with_gui_theme(data)

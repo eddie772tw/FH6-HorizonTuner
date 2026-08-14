@@ -18,6 +18,7 @@ import '../../App.css';
 import { backendFetch, backendHttpUrl } from '../../services/backend';
 
 interface HudElements {
+  showTeleMaster?: boolean;
   showGauge: boolean;
   showCenterInfo: boolean;
   showRPM: boolean;
@@ -53,6 +54,12 @@ interface MonitorOption {
   is_primary: boolean;
 }
 
+interface AudioDeviceOption {
+  id: string;
+  name: string;
+  is_default: boolean;
+}
+
 interface HudConfig {
   enabled: boolean;
   hudStyle: string;
@@ -60,6 +67,7 @@ interface HudConfig {
   s650CenterWidget?: S650CenterWidget;
   /** S650-only outer container Y offset; positive values move down. */
   s650HmiOffsetY?: number;
+  audioDeviceId?: string;
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
@@ -105,6 +113,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   s650Theme: 'heritage67',
   s650CenterWidget: 'drive',
   s650HmiOffsetY: 60,
+  audioDeviceId: 'default',
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
@@ -136,6 +145,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   pauseTelemetryViewWhenActive: true,
 
   elements: {
+    showTeleMaster: true,
     showGauge: true,
     showCenterInfo: true,
     showRPM: true,
@@ -189,16 +199,51 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const channelRef = React.useRef<BroadcastChannel | null>(null);
 
+  const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
+  const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
+
   useEffect(() => {
     channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
     fetchMonitors();
     loadStyles();
     fetchConfig(false, false);
+    fetchAudioDevices();
 
     return () => {
       channelRef.current?.close();
     };
   }, []);
+
+  const fetchAudioDevices = async () => {
+    setLoadingAudioDevices(true);
+    try {
+      const res = await backendFetch('/api/audio/devices');
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list)) {
+          setAudioDevices(list);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch available audio capture devices:', e);
+    } finally {
+      setLoadingAudioDevices(false);
+    }
+  };
+
+  const handleAudioDeviceChange = async (deviceId: string) => {
+    const updated = { ...config, audioDeviceId: deviceId };
+    saveConfig(updated);
+    try {
+      await backendFetch('/api/audio/device', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_id: deviceId }),
+      });
+    } catch (e) {
+      console.warn('Failed to select audio device on backend:', e);
+    }
+  };
 
   const loadStyles = async () => {
     const styles = await fetchHudStylesList(backendHttpUrl(''));
@@ -977,59 +1022,119 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
           </div>
         </div>
 
-        {/* --- COLUMN 3 ROW 1: HUD Elements --- */}
+        {/* --- COLUMN 3 ROW 1: Telemetry HUD Elements --- */}
         <div className="col-12 col-lg-4">
           <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("HUD Elements")}
-            </h3>
+            <div className="d-flex justify-content-between align-items-center border-bottom pb-2 m-0">
+              <h3 className="fs-6 fw-bold text-primary m-0">
+                {t("Telemetry HUD Elements")}
+              </h3>
+              <div className="form-check form-switch m-0" title={t("Toggle Master Telemetry HUD Switch")}>
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="sw-tele-master"
+                  checked={config.elements.showTeleMaster !== false}
+                  onChange={() => handleElementToggle('showTeleMaster')}
+                />
+              </div>
+            </div>
 
             <div className="row g-3 pt-1">
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-susp" checked={config.elements.showTeleSuspension} onChange={() => handleElementToggle('showTeleSuspension')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-susp"
+                    checked={config.elements.showTeleSuspension}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showTeleSuspension')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-susp">{t("Suspension Travel")}</label>
                 </div>
               </div>
 
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-slip" checked={config.elements.showTeleTiresSlip !== false} onChange={() => handleElementToggle('showTeleTiresSlip')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-slip"
+                    checked={config.elements.showTeleTiresSlip !== false}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showTeleTiresSlip')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-slip">{t("Tire Slip Radar")}</label>
                 </div>
               </div>
 
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-temp" checked={config.elements.showTeleTiresTemp !== false} onChange={() => handleElementToggle('showTeleTiresTemp')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-temp"
+                    checked={config.elements.showTeleTiresTemp !== false}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showTeleTiresTemp')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-temp">{t("Tire Temp Histogram")}</label>
                 </div>
               </div>
 
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-att" checked={config.elements.showTeleAttitude} onChange={() => handleElementToggle('showTeleAttitude')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-att"
+                    checked={config.elements.showTeleAttitude}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showTeleAttitude')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-att">{t("G-Force & Attitude")}</label>
                 </div>
               </div>
 
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-pedal" checked={config.elements.showTelePedals} onChange={() => handleElementToggle('showTelePedals')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-pedal"
+                    checked={config.elements.showTelePedals}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showTelePedals')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-pedal">{t("Throttle & Brake Trace")}</label>
                 </div>
               </div>
 
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-power" checked={config.elements.showPowerTorque !== false} onChange={() => handleElementToggle('showPowerTorque')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-power"
+                    checked={config.elements.showPowerTorque !== false}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showPowerTorque')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-power">{t("Power & Torque Trace")}</label>
                 </div>
               </div>
 
               <div className="col-6">
                 <div className="form-check form-switch py-1">
-                  <input type="checkbox" className="form-check-input" id="sw-tele-live-map" checked={config.elements.showLiveMap !== false} onChange={() => handleElementToggle('showLiveMap')} />
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="sw-tele-live-map"
+                    checked={config.elements.showLiveMap !== false}
+                    disabled={config.elements.showTeleMaster === false}
+                    onChange={() => handleElementToggle('showLiveMap')}
+                  />
                   <label className="form-check-label fs-7" htmlFor="sw-tele-live-map">{t("Live Map (Track & Cursor)")}</label>
                 </div>
               </div>
@@ -1038,28 +1143,56 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 <>
                   <div className="col-6">
                     <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pois" checked={config.elements.showLiveMapPOIs !== false} onChange={() => handleElementToggle('showLiveMapPOIs')} />
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="sw-tele-live-pois"
+                        checked={config.elements.showLiveMapPOIs !== false}
+                        disabled={config.elements.showTeleMaster === false}
+                        onChange={() => handleElementToggle('showLiveMapPOIs')}
+                      />
                       <label className="form-check-label fs-7" htmlFor="sw-tele-live-pois">{t("Live Map Landmarks & POIs")}</label>
                     </div>
                   </div>
 
                   <div className="col-6">
                     <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-pr" checked={config.elements.showLiveMapPRStunts !== false} onChange={() => handleElementToggle('showLiveMapPRStunts')} />
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="sw-tele-live-pr"
+                        checked={config.elements.showLiveMapPRStunts !== false}
+                        disabled={config.elements.showTeleMaster === false}
+                        onChange={() => handleElementToggle('showLiveMapPRStunts')}
+                      />
                       <label className="form-check-label fs-7" htmlFor="sw-tele-live-pr">{t("PR Stunts (Speed/Drift/Danger)")}</label>
                     </div>
                   </div>
 
                   <div className="col-6">
                     <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-collectibles" checked={config.elements.showLiveMapCollectibles !== false} onChange={() => handleElementToggle('showLiveMapCollectibles')} />
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="sw-tele-live-collectibles"
+                        checked={config.elements.showLiveMapCollectibles !== false}
+                        disabled={config.elements.showTeleMaster === false}
+                        onChange={() => handleElementToggle('showLiveMapCollectibles')}
+                      />
                       <label className="form-check-label fs-7" htmlFor="sw-tele-live-collectibles">{t("Collectibles & Mascots")}</label>
                     </div>
                   </div>
 
                   <div className="col-6">
                     <div className="form-check form-switch py-1">
-                      <input type="checkbox" className="form-check-input" id="sw-tele-live-heading" checked={config.elements.showLiveMapHeading !== false} onChange={() => handleElementToggle('showLiveMapHeading')} />
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="sw-tele-live-heading"
+                        checked={config.elements.showLiveMapHeading !== false}
+                        disabled={config.elements.showTeleMaster === false}
+                        onChange={() => handleElementToggle('showLiveMapHeading')}
+                      />
                       <label className="form-check-label fs-7" htmlFor="sw-tele-live-heading">{t("Heading Arrow & Compass")}</label>
                     </div>
                   </div>
@@ -1357,6 +1490,38 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     ))
                   ) : (
                     <option value={0}>{t("Default Primary Display")}</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Audio Spectrum Capture Device Selector */}
+              <div className="border-bottom pb-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label className="form-label fs-7 text-body-secondary mb-0">
+                    {t("Audio Capture Source")}:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={fetchAudioDevices}
+                    disabled={loadingAudioDevices}
+                    className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8"
+                  >
+                    {loadingAudioDevices ? '...' : t("Refresh Audio Devices")}
+                  </button>
+                </div>
+                <select
+                  value={config.audioDeviceId || 'default'}
+                  onChange={(e) => handleAudioDeviceChange(e.target.value)}
+                  className="form-select form-select-sm"
+                >
+                  {audioDevices.length > 0 ? (
+                    audioDevices.map((dev) => (
+                      <option key={dev.id} value={dev.id}>
+                        {dev.name === 'System Default Speaker / 系統預設輸出裝置' ? t('System Default Speaker') : dev.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="default">{t("System Default Speaker")}</option>
                   )}
                 </select>
               </div>

@@ -1,5 +1,10 @@
 {
   "__language_name__": "繁體中文",
+  "Telemetry HUD Elements": "Telemetry 遙測 HUD 元素",
+  "Audio Capture Source": "音訊擷取來源",
+  "Refresh Audio Devices": "重新整理音訊裝置",
+  "Select Audio Device for Spectrum": "選擇音訊視覺化擷取來源裝置",
+  "System Default Speaker": "系統預設輸出裝置",
   "% Rear": "% 後輪",
   "*Unsaved Parameters*": "*未儲存參數*",
   "-": "-",
