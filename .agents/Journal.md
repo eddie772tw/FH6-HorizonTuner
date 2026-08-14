@@ -960,6 +960,16 @@
 
 ## 2026-08-14 / MCP Transport Consolidation
 
+---
+
+## 2026-08-14 / Phase 5A Road and Circuit Profile Solver
+
+- **Scope**: local / `frontend/src/domain/tuning/profiles/roadProfile.ts` and its Vitest contract tests.
+- **Decision**: Add independent `technical`, `balanced`, and `high_speed` profiles under `tuning-profile/v1`; keep all constants marked as empirical priors or estimates because no real calibration fixtures are present.
+- **Physics**: Tire circumference and target final-drive geometry use explicit SI conversions. Optional power curves produce post-shift wheel-force advice; missing curves remain advisory. The AWD `1/65` circuit-rotation setting is an explicit prior, not a universal formula. Optional bicycle-model cornering output is marked estimated.
+- **Verification**: Targeted Road profile Vitest passed (22 tests); TypeScript no-emit remains blocked by pre-existing Phase 4B strictness errors in `loadTransfer.ts` and `tireGeometry.ts`, outside this scope; `git diff --check` passed.
+- **Status**: adopted.
+
 - **Decision**: Removed the standalone stdio MCP entrypoint and the unused
   legacy HTTP+SSE transport before external deployment.
 - **Contract**: The running FastAPI backend is the only MCP host. When
