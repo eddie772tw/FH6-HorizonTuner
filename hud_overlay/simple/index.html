@@ -437,8 +437,10 @@
 
                     var gearEl = document.getElementById('gearText');
                     var gearIndicator = document.getElementById('gearIndicator');
-                    if (data.gear !== undefined && data.gear <= 10) _simpleValidGear = data.gear;
-                    if (gearEl) gearEl.textContent = _simpleValidGear === 0 ? 'R' : _simpleValidGear.toString();
+                    if (data.gear !== undefined && data.gear <= 11) _simpleValidGear = data.gear;
+                    if (gearEl) gearEl.textContent = _simpleValidGear === 0
+                        ? 'R'
+                        : (_simpleValidGear === 11 ? 'N' : _simpleValidGear.toString());
                     if (gearIndicator) gearIndicator.classList.toggle('active', (data.rpm / redlineRpm) >= 0.95);
 
                     var lockBadge = document.getElementById('lockBadge');

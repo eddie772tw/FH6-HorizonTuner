@@ -17,6 +17,33 @@
 
 ---
 
+## 2026-08-14 / IDE Diagnostics Exclusion
+
+### IDE Pyrefly / Pyright 虛擬路徑 (`__pyrefly_virtual__`) 診斷污染修復
+
+- **來源**：`local`，IDE 問題列表修復任務。
+- **狀態**：`adopted`。
+- **Learning**：Antigravity IDE / Python Language Server (Pyrefly / Pyright) 在解析暫存片段、無標題緩衝區或內聯計算時，會在記憶體中建立如 `d:\__pyrefly_virtual__\inmemory\11-1.py` 之虛擬路徑。由於該路徑開頭為 `d:\` 且未被 `pyproject.toml`、`pyrightconfig.json` 或 `.vscode/settings.json` 排除，語言伺服器會將未完成的暫存程式碼診斷錯誤（如語法錯誤或未匯入 `os` 等）推播至 IDE 的全域 Problems 面板中。
+- **Action**：
+  1. 在 `pyproject.toml` 中的 `[tool.ruff]` 與 `[tool.pyright]` 的 `exclude` 設定中加入 `**/__pyrefly_virtual__/**` 與 `__pyrefly_virtual__` 排除規則。
+  2. 建立 `pyrightconfig.json` 設定檔，顯式排除 `**/__pyrefly_virtual__/**` 與 `d:\__pyrefly_virtual__\**`。
+  3. 建立 `.vscode/settings.json` 配置 `python.analysis.exclude` 與 `files.watcherExclude` 排除該虛擬目錄，並於 `.gitignore` 中加入 `!.vscode/settings.json` 以便團隊與 Agent 共享設定。
+- **Evidence**：`pyproject.toml`、`pyrightconfig.json`、`.vscode/settings.json`；`ruff check .` (All checks passed), pytest (118 passed), vitest (259 passed) 全數通過。
+
+---
+
+## 2026-08-14 / Localization & Repository Cleanup
+
+### 後端與根目錄雙重 lang 資料夾誤納版控與 mtime 同步機制
+
+- **來源**：`local`，語系檔重複清理任務。
+- **狀態**：`adopted`。
+- **Learning**：專案設計上以根目錄 `lang/` 為內建語系檔唯一真理來源，但在開發期 (`sys.frozen == False`) 執行 `main.py` 且未指定 `--data-dir` 時，`DATA_ROOT` 預設為 `backend/`，導致 `LANG_DIR` (`backend/lang/`) 被自動建立。過去 `backend/lang/` 被誤納入 Git 版控，且 `main.py` 原先語系檔複製邏輯採用 `if not os.path.exists(dst):`，導致已存在於 `backend/lang/` 的檔案永遠無法獲取根目錄 `lang/` 最新更新的翻譯 Key。
+- **Action**：使用 `git rm -r backend/lang` 將其自 Git 版控中移除，並於 `.gitignore` 中新增 `/backend/lang/` 排除開發期數據目錄。同時更新 `main.py` 的 Bootstrapping 複製邏輯：檢查 `os.path.abspath(src) != os.path.abspath(dst)` 且當 `dst` 不存在或 `os.path.getmtime(src) > os.path.getmtime(dst)` 時自動同步內建最新語系檔。
+- **Evidence**：`git status` 驗證 `backend/lang/` 已移除且 ignored；`test_spec_bundling.py` (2 passed), `test_main.py` (5 passed), `test_overlay_api.py` (38 passed), vitest (259 passed) 全數通過。
+
+---
+
 ## 2026-08-11 / Agent Workflow
 
 ### 技能名稱與技能發現入口混淆
@@ -790,3 +817,24 @@
 - **Action**：Added `docs/tuning-math-external-evidence-report.md`, `tuning-capture/v1` telemetry collection page with JSON/CSV export and summary analysis, and `docs/tuning-mcp-integration-evaluation.md` recommending a localhost read-only MCP adapter.
 - **MCP boundary**：A future MCP server should expose bounded capture/session resources and deterministic analysis tools, never a second UDP consumer; v1 must not expose tune writes, recorder control, arbitrary SQL, or direct game automation.
 - **Verification**：Frontend capture schema tests and build pass after fixing test fixture speed/Yaw fields; live FH6 collection still requires human test execution.
+
+---
+
+## 2026-08-14 / Telemetry HUD Elements & WASAPI Audio Capture Optimization
+
+- **Scope**: local / HUD Overlay control panel & backend system media / WASAPI audio loopback.
+- **Status**: adopted.
+- **Learning**:
+  1. CPython `winrt-Windows.Media.Control` 套件在 Dev 環境下發起 WinRT 異步任務 (`request_async()`, `try_get_media_properties_async()`) 時，底層需要 `winrt-Windows.Foundation` 模組將 WinRT `IAsyncOperation` 轉譯為 Python awaitable。未宣告 `winrt-Windows.Foundation` 會導致 Dev 環境拋出 `ModuleNotFoundError`。
+  2. 桌面視窗標題列枚舉 (`_extract_windows_desktop_media()`) 會掃描全系統 OpenInputDesktop 視窗，在高頻輪詢下可能引發潛在 CPU/IO 效能瓶頸。透過補齊 `winrt-Windows.Foundation` 依賴並強化 WinRT 異步 API 呼叫，完全不需依賴桌面視窗枚舉降級。
+  3. `soundcard` loopback 預設僅綁定 `default_speaker()`，當使用者在執行期間更換系統播放輸出裝置時，既有錄音執行緒會失效。透過 `sc.all_speakers()` 列出裝置並提供動態切換 / 熱重啟 Worker 執行緒，可實現音訊視覺化裝置熱變更 (Hot-swap)。
+- **Action**:
+  - `requirements.txt` 與 `setup_venv.bat` 追加 `winrt-Windows.Foundation==3.2.1` 並於 healthcheck 進行驗證。
+  - `backend/system_media.py` 強化 WinRT async 呼叫並完全移除 `_extract_windows_desktop_media` 視窗枚舉代碼。
+  - `backend/audio_spectrum.py` 新增 `get_available_audio_devices()` 與 `set_audio_capture_device()` 支援音訊輸出裝置列舉與 WASAPI loopback 熱重啟。
+  - `backend/main.py` 新增 `/api/audio/devices` 與 `/api/audio/device` API，`DEFAULT_HUD_CONFIG` 支援 `showTeleMaster` 與 `audioDeviceId`。
+  - `OverlayView.tsx` 標題變更為 `Telemetry HUD Elements` 並補齊 i18n 翻譯，新增 `showTeleMaster` 標題按鈕（主控 AND 邏輯閥，關閉時下方開關均 `disabled`），並於系統與優化選項追加音訊擷取來源下拉選單與重新整理按鈕。
+  - `hud_overlay/shared/telemetry-cards/manager.js` 寫入 `showTeleMaster` AND 邏輯閥判斷。
+- **Evidence**:
+  - Pytest 測試：`test_system_media.py` (3 passed), `test_audio_spectrum.py` (2 passed), `test_overlay_api.py` (38 passed)。
+  - Vitest 前端單元測試：48 個測試檔 / 259 個測試全數通過（包含新增之 `overlayElements.test.ts`）。

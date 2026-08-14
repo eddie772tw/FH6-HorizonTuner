@@ -12,7 +12,9 @@ SIDECAR_STDOUT = sys.stdout
 if getattr(sys, "frozen", False):
     if sys.platform == "win32":
         try:
-            os.add_dll_directory(sys._MEIPASS)
+            meipass = getattr(sys, "_MEIPASS", "")
+            if meipass:
+                os.add_dll_directory(meipass)
         except Exception:
             pass
 
@@ -36,7 +38,7 @@ def emit_sidecar_event(event: str, **payload) -> None:
 
 
 if getattr(sys, "frozen", False):
-    RESOURCE_ROOT = sys._MEIPASS
+    RESOURCE_ROOT = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     if parsed_args.data_dir:
         DATA_ROOT = os.path.abspath(parsed_args.data_dir)
     else:
@@ -75,6 +77,8 @@ from typing import List
 
 from audio_spectrum import (
     get_audio_spectrum_data,
+    get_available_audio_devices,
+    set_audio_capture_device,
     stop_audio_spectrum_service,
 )
 from fastapi import FastAPI, File, Path, UploadFile, WebSocket, WebSocketDisconnect
@@ -168,7 +172,7 @@ os.makedirs(SESSIONS_DIR, exist_ok=True)
 os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
 os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 
-# 完整複製內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護
+# 複製與同步內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護或更新
 if os.path.exists(RESOURCE_LANG_DIR):
     import shutil
 
@@ -176,11 +180,14 @@ if os.path.exists(RESOURCE_LANG_DIR):
         if f_name.endswith(".json"):
             src = os.path.join(RESOURCE_LANG_DIR, f_name)
             dst = os.path.join(LANG_DIR, f_name)
-            if not os.path.exists(dst):
-                try:
-                    shutil.copy2(src, dst)
-                except Exception:
-                    pass
+            if os.path.abspath(src) != os.path.abspath(dst):
+                if not os.path.exists(dst) or os.path.getmtime(src) > os.path.getmtime(
+                    dst
+                ):
+                    try:
+                        shutil.copy2(src, dst)
+                    except Exception:
+                        pass
 
 telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
 
@@ -1223,11 +1230,11 @@ async def broadcast_telemetry():
         )
 
         # --- Periodic GC (every 60 seconds) ---
+        global _last_telemetry_gc_time
         current_time = time.time()
-        static_gc_state = getattr(broadcast_telemetry, "last_gc_time", 0.0)
-        if current_time - static_gc_state > 60.0:
+        if current_time - _last_telemetry_gc_time > 60.0:
             asyncio.create_task(asyncio.to_thread(gc.collect))
-            broadcast_telemetry.last_gc_time = current_time
+            _last_telemetry_gc_time = current_time
 
         # --- Backpressure: If queue is filling up, drop old frames ---
         # Note: telemetry_queue size is 10. If it gets larger than 5, we clear all but the latest.
@@ -1257,7 +1264,7 @@ async def broadcast_telemetry():
 
 
 # Initialize static variable for GC tracking
-broadcast_telemetry.last_gc_time = time.time()
+_last_telemetry_gc_time = time.time()
 
 
 @app.get("/api/diagnostics/telemetry-pipeline")
@@ -1906,7 +1913,7 @@ LOG_LINE_PATTERN = re.compile(
 
 
 @app.get("/api/logs")
-async def get_logs(level: str = None, limit: int = 300):
+async def get_logs(level: str | None = None, limit: int = 300):
     if not os.path.exists(backend_log_path):
         return {"logs": []}
 
@@ -2003,6 +2010,7 @@ DEFAULT_HUD_CONFIG = {
     "s650Theme": "heritage67",
     "s650CenterWidget": "drive",
     "s650HmiOffsetY": 60,
+    "audioDeviceId": "default",
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
@@ -2019,6 +2027,7 @@ DEFAULT_HUD_CONFIG = {
     "telemetrySideBySideCharts": True,
     "pauseTelemetryViewWhenActive": True,
     "elements": {
+        "showTeleMaster": True,
         "showGauge": True,
         "showCenterInfo": True,
         "showRPM": True,
@@ -2095,13 +2104,34 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     return normalized
 
 
+@app.get("/api/audio/devices")
+async def get_audio_devices():
+    """List available WASAPI audio playback output devices for loopback spectrum capture."""
+    return get_available_audio_devices()
+
+
+@app.post("/api/audio/device")
+async def select_audio_device(payload: dict):
+    """Set the active audio capture source device ID."""
+    device_id = payload.get("device_id") or payload.get("audioDeviceId") or "default"
+    set_audio_capture_device(str(device_id))
+    return {
+        "message": "Audio capture device set successfully",
+        "device_id": str(device_id),
+        "success": True,
+    }
+
+
 @app.get("/api/overlay/config")
 @app.get("/api/overlay/layout")
 async def get_overlay_config():
     if os.path.exists(HUD_CONFIG_FILE):
         try:
             with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                return hud_config_with_gui_theme(json.load(f))
+                cfg = json.load(f)
+                if "audioDeviceId" in cfg:
+                    set_audio_capture_device(str(cfg["audioDeviceId"]))
+                return hud_config_with_gui_theme(cfg)
         except Exception as e:
             logger.error(f"Failed to load hud_config.json: {e}")
     return hud_config_with_gui_theme(DEFAULT_HUD_CONFIG)
@@ -2112,6 +2142,8 @@ async def get_overlay_config():
 async def save_overlay_config(data: dict):
     try:
         data = normalize_hud_config(data)
+        if "audioDeviceId" in data:
+            set_audio_capture_device(str(data["audioDeviceId"]))
         with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         broadcast_data = hud_config_with_gui_theme(data)
@@ -2386,7 +2418,7 @@ if __name__ == "__main__":
 
         class EndpointFilter(logging.Filter):
             def filter(self, record: logging.LogRecord) -> bool:
-                if record.args and len(record.args) >= 3:
+                if isinstance(record.args, (tuple, list)) and len(record.args) >= 3:
                     req_path = str(record.args[2])
                     if "/api/logs" in req_path or "/api/car_params" in req_path:
                         return False

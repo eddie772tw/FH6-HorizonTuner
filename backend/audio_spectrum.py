@@ -26,12 +26,65 @@ _audio_cache = {
 
 _listener_thread = None
 _listener_running = False
+_selected_device_id = "default"
 _lock = threading.Lock()
 _last_start_attempt = 0.0
 RESTART_BACKOFF_SECONDS = 5.0
 AUDIO_STALE_AFTER_SECONDS = 0.15
 AUDIO_SILENT_AFTER_SECONDS = 0.25
 AUDIO_BAND_COUNT = 32
+
+
+def get_available_audio_devices() -> list[dict]:
+    """List all available WASAPI playback speakers for loopback audio capture."""
+    devices = [
+        {
+            "id": "default",
+            "name": "System Default Speaker / 系統預設輸出裝置",
+            "is_default": True,
+        }
+    ]
+    if sys.platform != "win32":
+        return devices
+
+    try:
+        import soundcard as sc
+
+        default_spk = sc.default_speaker()
+        default_id = default_spk.id if default_spk else None
+
+        speakers = sc.all_speakers()
+        for spk in speakers:
+            is_def = spk.id == default_id
+            name_str = spk.name
+            if is_def:
+                name_str += " [Default]"
+            devices.append(
+                {
+                    "id": str(spk.id),
+                    "name": name_str,
+                    "is_default": is_def,
+                }
+            )
+    except Exception as e:
+        logger.debug(f"Failed to enumerate soundcard speakers: {e}")
+    return devices
+
+
+def set_audio_capture_device(device_id: str) -> None:
+    """Set target audio output device ID for WASAPI loopback capture and restart worker if active."""
+    global _selected_device_id, _listener_running, _last_start_attempt
+    target_id = (device_id or "default").strip()
+    if target_id == _selected_device_id:
+        return
+
+    _selected_device_id = target_id
+    logger.info(f"Audio capture target device changed to: {_selected_device_id}")
+
+    # Signal active worker to terminate; next start_audio_spectrum_service will spawn fresh worker
+    if _listener_running:
+        _listener_running = False
+        _last_start_attempt = 0.0
 
 
 def _compute_fft_bands(
@@ -57,7 +110,7 @@ def _compute_fft_bands(
 
     mono = (left + right[: len(left)]) * 0.5
 
-    # 使用快速傅立葉轉換 (FFT) 替代手動三層迴圈
+    # FFT analysis with Hann window
     windowed = mono * np.hanning(len(mono))
     fft_mags = np.abs(np.fft.rfft(windowed))
     data_len = len(fft_mags)
@@ -74,7 +127,7 @@ def _compute_fft_bands(
 
 def _wasapi_loopback_worker():
     """Worker thread that continuously captures live system audio via WASAPI Loopback."""
-    global _listener_running
+    global _listener_running, _selected_device_id
 
     if sys.platform != "win32":
         return
@@ -83,9 +136,24 @@ def _wasapi_loopback_worker():
         import numpy as np
         import soundcard as sc
 
-        spk = sc.default_speaker()
+        spk = None
+        if _selected_device_id != "default":
+            try:
+                all_spks = sc.all_speakers()
+                for s in all_spks:
+                    if str(s.id) == _selected_device_id:
+                        spk = s
+                        break
+            except Exception as e:
+                logger.debug(
+                    f"Failed to resolve selected speaker ID '{_selected_device_id}': {e}"
+                )
+
         if not spk:
-            logger.debug("No default WASAPI speaker found")
+            spk = sc.default_speaker()
+
+        if not spk:
+            logger.debug("No WASAPI speaker found for loopback capture")
             return
 
         loopback_mic = sc.get_microphone(id=spk.id, include_loopback=True)
@@ -108,7 +176,7 @@ def _wasapi_loopback_worker():
                     left = data[:, 0] if num_channels >= 1 else data
                     right = data[:, 1] if num_channels > 1 else left
 
-                    # Calculate L/R channel RMS VU levels with boosted sensitivity gain
+                    # Calculate L/R channel RMS VU levels
                     rms_l = float(np.sqrt(np.mean(left**2))) if len(left) > 0 else 0.0
                     rms_r = float(np.sqrt(np.mean(right**2))) if len(right) > 0 else 0.0
 

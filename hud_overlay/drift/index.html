@@ -1592,7 +1592,7 @@
                 torqueUnit = resolvedTorque.unit;
 
                 var rawGear = data.gear;
-                gear = rawGear === 0 ? 'R' : (rawGear === 11 || rawGear === 10 ? 'N' : (rawGear || 'N'));
+                gear = rawGear === 0 ? 'R' : (rawGear === 11 ? 'N' : (rawGear || 'N'));
 
                 accelPct = (data.throttle || 0) * 100;
                 brakePct = (data.brake || 0) * 100;

@@ -14,7 +14,15 @@ logger = logging.getLogger(__name__)
 class TelemetrySessionStore(Protocol):
     """The synchronous storage operations used by the persistence worker."""
 
-    def create_session(self, **kwargs: Any) -> None: ...
+    def create_session(
+        self,
+        session_id: str,
+        car_ordinal: int = 0,
+        car_name: str = "Unknown Car",
+        car_class: int = 0,
+        car_pi: int = 0,
+        start_time: float = 0.0,
+    ) -> None: ...
 
     def insert_points_batch(
         self, session_id: str, points: list[dict[str, Any]]
@@ -258,8 +266,20 @@ class RaceRecorder:
             return
 
         is_race_on = data.get("IsRaceOn", 0) == 1
-        current_race_time = data.get("CurrentRaceTime", 0.0)
-        current_lap = data.get("CurrentLap", data.get("LapNumber", 0))
+        raw_race_time = data.get("CurrentRaceTime", 0.0)
+        try:
+            current_race_time = float(raw_race_time or 0.0)
+        except (ValueError, TypeError):
+            current_race_time = 0.0
+
+        raw_lap = data.get("CurrentLap")
+        if raw_lap is None:
+            raw_lap = data.get("LapNumber", 0)
+        try:
+            current_lap = int(raw_lap or 0)
+        except (ValueError, TypeError):
+            current_lap = 0
+
         is_race_active = self.manual_mode or (
             is_race_on and current_race_time > 0.0 and current_lap > 0
         )

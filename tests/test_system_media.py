@@ -25,10 +25,17 @@ def _reset_media_cache(monkeypatch):
 
 def test_winrt_media_uses_modular_namespace():
     source = Path(system_media.__file__).read_text(encoding="utf-8")
+    setup_script = Path(__file__).parents[1] / "setup_venv.bat"
+    setup_source = setup_script.read_text(encoding="utf-8")
 
+    assert "import winrt.windows.foundation" in source
     assert "import winrt.windows.media.control as wmc" in source
     assert "import winsdk.windows.media.control as wmc" not in source
+    assert "import winrt.windows.foundation" in setup_source
+    assert "import winrt.windows.media.control" in setup_source
+    assert "import winsdk.windows.media.control" not in setup_source
     assert "_query_powershell_gsmtc" not in source
+    assert "_extract_windows_desktop_media" not in source
     assert "subprocess.run" not in source
 
 

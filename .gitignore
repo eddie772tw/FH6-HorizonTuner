@@ -39,6 +39,7 @@ frontend/src-tauri/bin/
 /backend/layout.json
 /backend/car_learning.json
 /backend/user_configs/
+/backend/lang/
 /backend/tunings/*.json
 /backend/car_params/*.json
 !/backend/car_params/default_car.json
@@ -63,6 +64,7 @@ ehthumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 *.swp
 *.swo
 *~

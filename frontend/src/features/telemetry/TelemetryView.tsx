@@ -271,12 +271,12 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
               <div className="w-100 flex-shrink-0">
                 <EngineRpmDisplay />
               </div>
-              <div className="d-flex gap-2 align-items-center justify-content-between flex-grow-1 border rounded-3 p-2 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
-                <div className="d-flex align-items-center justify-content-center h-100 flex-grow-1 overflow-hidden" style={{ maxWidth: '44%', minWidth: '35%' }}>
+              <div className="telemetry-driver-inputs d-flex gap-2 align-items-center justify-content-between flex-grow-1 border rounded-3 p-2 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
+                <div className="telemetry-steer-column d-flex align-items-center justify-content-center h-100 overflow-hidden">
                   <ArcSteerGauge />
                 </div>
                 <div className="vr opacity-25" style={{ height: '80%' }} />
-                <div className="d-flex gap-1 align-items-center h-100 flex-grow-1 justify-content-around ps-1">
+                <div className="telemetry-pedal-inputs d-flex gap-1 align-items-center h-100 justify-content-around ps-1">
                   <VerticalInputBar label={t("CLT")} selector={selectClutch} max={255} color="#0088ff" />
                   <VerticalInputBar label={t("THR")} selector={selectAccel} max={255} color="#00ff66" />
                   <VerticalInputBar label={t("BRK")} selector={selectBrake} max={255} color="#ff0055" />

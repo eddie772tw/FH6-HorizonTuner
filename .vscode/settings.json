@@ -1,0 +1,11 @@
+{
+  "python.analysis.exclude": [
+    "**/__pyrefly_virtual__/**",
+    "__pyrefly_virtual__",
+    "d:\\__pyrefly_virtual__\\**"
+  ],
+  "files.watcherExclude": {
+    "**/__pyrefly_virtual__/**": true,
+    "d:\\__pyrefly_virtual__\\**": true
+  }
+}

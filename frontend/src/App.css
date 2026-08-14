@@ -234,6 +234,34 @@ main .container-fluid {
   overflow-x: hidden !important;
   box-sizing: border-box !important;
 }
+
+/* Keep steering readouts from resizing the pedal-input column. */
+.telemetry-driver-inputs {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.95fr) auto minmax(0, 1.05fr);
+  min-width: 0;
+}
+
+.telemetry-steer-column,
+.telemetry-pedal-inputs {
+  min-width: 0;
+  width: 100%;
+}
+
+.telemetry-steer-gauge__readout {
+  width: 6.5rem;
+  max-width: 100%;
+  line-height: 1.1;
+}
+
+.telemetry-steer-gauge__direction,
+.telemetry-steer-gauge__readout > span:last-child {
+  display: inline-block;
+  width: 6ch;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .row {
   max-width: 100% !important;
   margin-left: 0 !important;

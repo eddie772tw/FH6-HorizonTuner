@@ -67,9 +67,9 @@ echo [INFO] Verifying all required Python dependencies ...
 "%UV_EXE%" pip check --python "%VENV_PY%" >nul
 if errorlevel 1 exit /b 1
 :: Keep this list in sync with every direct requirement in requirements.txt.
-:: winsdk is intentionally imported through its real runtime module: uv may
-:: build it from source, but a successful download alone is not sufficient.
-"%UV_EXE%" run --no-project --python "%VENV_PY%" python -c "import fastapi, httpx, numpy, pydantic, pytest, pytest_asyncio, ruff, soundcard, uvicorn, websockets; import multipart; import winsdk.windows.media.control" >nul 2>nul
+:: winrt is intentionally imported through its real runtime module: uv may
+:: install the distribution successfully, but a successful download alone is not sufficient.
+"%UV_EXE%" run --no-project --python "%VENV_PY%" python -c "import fastapi, httpx, numpy, pydantic, pytest, pytest_asyncio, ruff, soundcard, uvicorn, websockets; import multipart; import winrt.windows.foundation; import winrt.windows.media.control" >nul 2>nul
 exit /b %errorlevel%
 
 :venv_error

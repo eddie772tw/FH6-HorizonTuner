@@ -135,14 +135,15 @@ init: function (parentEl) {
             }
 
             // ---- Element Visibility Toggles ----
-            var showAttitude = elements.showTeleAttitude   !== false;
-            var showSusp     = elements.showTeleSuspension !== false;
-            var showTires    = elements.showTeleTires      !== false;
-            var showSlip     = elements.showTeleTiresSlip !== undefined ? (elements.showTeleTiresSlip !== false) : showTires;
-            var showTemp     = elements.showTeleTiresTemp !== undefined ? (elements.showTeleTiresTemp !== false) : showTires;
-            var showPedals   = elements.showTelePedals     !== false;
-            var showPT       = elements.showPowerTorque    !== false;
-            var showLiveMap  = elements.showLiveMap        !== false;
+            var showMaster   = elements.showTeleMaster     !== false;
+            var showAttitude = showMaster && (elements.showTeleAttitude   !== false);
+            var showSusp     = showMaster && (elements.showTeleSuspension !== false);
+            var showTires    = showMaster && (elements.showTeleTires      !== false);
+            var showSlip     = showMaster && (elements.showTeleTiresSlip !== undefined ? (elements.showTeleTiresSlip !== false) : showTires);
+            var showTemp     = showMaster && (elements.showTeleTiresTemp !== undefined ? (elements.showTeleTiresTemp !== false) : showTires);
+            var showPedals   = showMaster && (elements.showTelePedals     !== false);
+            var showPT       = showMaster && (elements.showPowerTorque    !== false);
+            var showLiveMap  = showMaster && (elements.showLiveMap        !== false);
             var showCorners  = showSusp || showSlip || showTemp;
 
             // ---- Central Anchor & Alignment Grid ----

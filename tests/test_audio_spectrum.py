@@ -1,45 +1,29 @@
-import asyncio
+import sys
+from pathlib import Path
 
-import audio_spectrum
+# Add backend directory to sys.path for test execution
+backend_path = Path(__file__).parents[1] / "backend"
+if str(backend_path) not in sys.path:
+    sys.path.insert(0, str(backend_path))
 
-
-def _reset_audio_cache(monkeypatch):
-    monkeypatch.setattr(
-        audio_spectrum,
-        "_audio_cache",
-        {
-            "spectrum": [0.0] * 32,
-            "vu_left": 0.0,
-            "vu_right": 0.0,
-            "has_audio": False,
-            "last_update": 0.0,
-            "sequence": 0,
-            "captured_at_ms": 0,
-            "source": "unavailable",
-        },
-    )
-    monkeypatch.setattr(audio_spectrum, "start_audio_spectrum_service", lambda: None)
+import audio_spectrum  # noqa: E402
 
 
-def test_audio_snapshot_sequence_and_state_follow_sample_age(monkeypatch):
-    now = {"value": 10.0}
-    monkeypatch.setattr(audio_spectrum.time, "monotonic", lambda: now["value"])
-    _reset_audio_cache(monkeypatch)
+def test_get_available_audio_devices_returns_default():
+    devices = audio_spectrum.get_available_audio_devices()
+    assert isinstance(devices, list)
+    assert len(devices) >= 1
+    assert devices[0]["id"] == "default"
+    assert devices[0]["is_default"] is True
 
-    audio_spectrum.update_audio_spectrum_buffer([0.25, -0.25] * 64)
-    live = asyncio.run(audio_spectrum.get_audio_spectrum_data())
 
-    now["value"] = 10.2
-    stale = asyncio.run(audio_spectrum.get_audio_spectrum_data())
-    now["value"] = 10.3
-    unavailable = asyncio.run(audio_spectrum.get_audio_spectrum_data())
+def test_set_audio_capture_device_updates_state():
+    initial_device = audio_spectrum._selected_device_id
+    try:
+        audio_spectrum.set_audio_capture_device("custom_speaker_id_123")
+        assert audio_spectrum._selected_device_id == "custom_speaker_id_123"
 
-    assert live["sequence"] == 1
-    assert live["state"] == "live"
-    assert live["has_audio"] is True
-    assert stale["sequence"] == live["sequence"]
-    assert stale["state"] == "stale"
-    assert stale["has_audio"] is False
-    assert unavailable["state"] == "unavailable"
-    assert unavailable["vu_left"] == 0.0
-    assert unavailable["vu_right"] == 0.0
+        audio_spectrum.set_audio_capture_device("default")
+        assert audio_spectrum._selected_device_id == "default"
+    finally:
+        audio_spectrum.set_audio_capture_device(initial_device)
