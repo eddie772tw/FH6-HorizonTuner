@@ -33,6 +33,28 @@
 
 ---
 
+## 2026-08-14 / Phase 6~8 多模組並行開發 (Diagnosis Engine + UI Persistence + E2E)
+
+### 閉環診斷引擎、UI 改裝能力整合、Preset 序列化與 E2E 驗證
+
+- **來源**：`local`，Antigravity 主 Agent + Phase6 Diagnosis Subagent + Phase7 UI Persistence Subagent 並行協作。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Subagent `share` workspace 的 Windows 長路徑限制**：以 `share` workspace 模式建立 git worktree 時，`hud_overlay/s650_hmi/assets/fonts/RobotoFlex-VariableFont_GRAD,...` 字型檔路徑超過 Windows MAX_PATH（260 字元），導致 `git checkout` 失敗並回傳 `Could not reset index file to revision 'HEAD': exit status 128`。唯一解法：改用 `inherit` workspace，共享主工作樹，不建立獨立分支。
+  2. **Subagent Ownership 邊界的必要性**：兩個 Subagent 若都能寫入相同目錄，會產生競態條件。解法：在 Prompt 中明確列出「不得觸碰」的目錄，由主 Agent 仲裁。此次 S1（Phase 6）與 S2（Phase 7）互不干擾，全程 Zero Conflict。
+  3. **README 多行替換的陷阱**：`multi_replace_file_content` 在大型 README 中，若 `TargetContent` 存在多個近似匹配，會觸發 fuzzy match 並插入非預期的額外段落。解法：先 `git checkout HEAD -- README.md` 還原，再改用 PowerShell `(Get-Content) + Set-Content` 逐行替換。
+  4. **純函式診斷的 `unknown` 標記規範**：缺失感測器訊號必須回傳 `DiagnosisUnknown = 'unknown'`，而非 fallback 0，確保下游消費者可區分「無法診斷」與「零值」兩種語意。
+  5. **時間戳積分 vs sample-count 積分**：Phase 6 所有時間估算必須使用 `timestamp` 欄位積分，禁止以 sample count × 固定間隔估算；`timestamp` 不存在或非單調時全部標記為 `unknown`。
+- **Action**：
+  1. 新增 `frontend/src/domain/tuning/diagnosis/` 模組：`diagnosisContracts.ts`、`timestampIntegration.ts`、`thermalDiagnosis.ts`、`dynamicsDiagnosis.ts` 及對應測試（+14 tests）。
+  2. 新增 `frontend/src/domain/tuning/capabilities/TuningCapabilityContract.ts`、`capabilityFilter.ts`、`capabilityFilter.test.ts`。
+  3. 新增 `frontend/src/domain/tuning/persistence/presetSerializer.ts`、`presetSerializer.test.ts`，定義 `tuning-preset/v1` 格式。
+  4. 新增 `frontend/src/features/tuning/components/RecommendationComparisonPanel.tsx`（雙欄建議對照，Halfmoon v2 + Glassmorphism）。
+  5. 更新 `README.md` 與 `README.en.md`：前端測試統計從 57/298 更新為 66/418。
+- **Evidence**：`pnpm -C frontend run test` → **66 files / 418 tests passed**；`pytest tests/` → **144 passed, 2 skipped**；`ruff check .` → **All checks passed!**；`ruff format --check .` → **102 files already formatted**。
+
+---
+
 ## 2026-08-14 / Phase 4B Shared Load Transfer & Tire Geometry
 
 ### 四輪估計垂直載荷、動態載荷轉移與輪胎幾何先驗

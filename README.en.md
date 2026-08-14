@@ -1,4 +1,4 @@
-# FH6-HorizonTuner 🏎️
+﻿# FH6-HorizonTuner 🏎️
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
 [![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
@@ -216,7 +216,7 @@ Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
 cd frontend && pnpm run test
 ```
 
-Current frontend test suite covers 57 test files with 298 unit tests:
+Current frontend test suite covers 66 test files with 418 unit tests:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
@@ -224,7 +224,14 @@ Current frontend test suite covers 57 test files with 298 unit tests:
 | `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B four-wheel normal-load estimates, load transfer, and tire-geometry priors |
 | `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
 | `telemetryCards.test.ts` | Telemetry cards formatting and status mapping |
-| Other `*.test.ts` | 10 additional test suites covering ExprTk, VFD gauge, audio & CSS validation |
+| `tireModel.test.ts` | Friction ellipse boundary, zero-capacity fix & feasible guard (7 tests) |
+| `suspensionSolver.test.ts` | Critical damping, damping-ratio priors & FH6 slider mapping layers (3 tests) |
+| `timestampIntegration.test.ts` | Phase 6 timestamp integration - airtime, drift ratio, impact window & non-monotonic unknown |
+| `thermalDiagnosis.test.ts` | Phase 6 four-wheel tire temperature gradient, camber & pressure advice |
+| `dynamicsDiagnosis.test.ts` | Phase 6 ARB / damping / differential combined-slip diagnosis & confidence tiers |
+| `capabilityFilter.test.ts` | Phase 7 capability filter function (unlocked / locked / unknown keys) |
+| `presetSerializer.test.ts` | Phase 7 `tuning-preset/v1` serialization round-trip & schema version validation |
+| Other `*.test.ts` | Additional test suites covering ExprTk, VFD gauge, audio & CSS validation |
 
 ---
 

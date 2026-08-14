@@ -230,7 +230,7 @@ cd frontend && pnpm run test
 cd frontend && pnpm run test
 ```
 
-目前的前端測試套件涵蓋 57 個測試檔案，共 298 個單元測試案例：
+目前的前端測試套件涵蓋 66 個測試檔案，共 418 個單元測試案例：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |
@@ -238,7 +238,14 @@ cd frontend && pnpm run test
 | `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B 四輪估計垂直載荷、載荷轉移與輪胎幾何先驗 |
 | `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
 | `telemetryCards.test.ts` | 遙測數據卡片格式化與狀態映射測試 |
-| 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等 10 個測試套件 |
+| `tireModel.test.ts` | 摩擦橢圓邊界、零容量正需求修復與 feasible 判斷（7 tests） |
+| `suspensionSolver.test.ts` | 臨界阻尼、阻尼比先驗與 FH6 滑桿映射分層（3 tests） |
+| `timestampIntegration.test.ts` | Phase 6 時間戳積分—滑空、漂移時間、衝擊窗口與非單調 unknown |
+| `thermalDiagnosis.test.ts` | Phase 6 四輪胎溫梯度、Camber 與胎壓修正建議 |
+| `dynamicsDiagnosis.test.ts` | Phase 6 ARB / 阻尼 / 差速器復合滑移診斷與 confidence 分層 |
+| `capabilityFilter.test.ts` | Phase 7 改裝能力篩選函式（unlocked / locked / unknown keys） |
+| `presetSerializer.test.ts` | Phase 7 `tuning-preset/v1` 存檔序列化往返與版本驗證 |
+| 其它 `*.test.ts` 模組 | 包含 Express引擎、VFD 儀表、音訊、CSS 驗證與 RDP 簡化器等測試套件 |
 
 > [!TIP]
 > 新增或修改 `frontend/src/utils/` 下的物理計算模組時，請同步新增對應的 `.test.ts` 單元測試，確保所有測試通過後才提交 PR。
