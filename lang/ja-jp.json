@@ -760,7 +760,6 @@
   "Tires": "タイヤの空気圧",
   "Tires & Alignment": "タイヤ＆アライメント",
   "Tires Assist": "タイヤ空気圧アシスト",
-  "TODO": "TODO",
   "Toe": "トー角",
   "Toe (F/R):": "トー角 (前/後):",
   "Toggle Metric Units": "Toggle Metric Units",
@@ -973,5 +972,6 @@
   "Copied to Clipboard": "クリップボードにコピーしました",
   "Configuration copied successfully.": "設定コードが正常にコピーされました。",
   "Copy Failed": "コピーに失敗しました",
-  "Unable to copy text to clipboard.": "クリップボードへのテキストコピーができませんでした。"
+  "Unable to copy text to clipboard.": "クリップボードへのテキストコピーができませんでした。",
+  "Coming Soon": "近日公開"
 }
