@@ -71,3 +71,6 @@
 ## 2026-08-11 - Use useMemo and for loops for telemetry data in React
 **Learning:** Calling array methods like `.filter()` that execute closures directly inside the React render cycle (e.g., `<AreaChart data={telemetryPoints.filter(...)}>`) causes severe GC pressure, UI stuttering, and recalculations on every render when working with large telemetry datasets.
 **Action:** Always wrap data downsampling or transformation logic for large arrays in a `useMemo` hook, and replace `.filter()`, `.map()`, and chained methods with a native `for` loop to eliminate both redundant computations across renders and per-element closure allocations.
+## 2025-03-09 - Eliminate array methods in data processing for Telemetry Capture
+**Learning:** Using chained array methods (e.g. `.slice().map().filter().reduce()`) or multiple `.reduce()` operations over massive arrays (e.g. `samples`) in high-frequency data summarization functions causes extreme Garbage Collection (GC) pressure and main-thread blocking due to the creation of intermediate arrays and closure allocations on every data point.
+**Action:** Replace chained array methods and multiple `.reduce` sweeps on large datasets with a single native `for` loop to compute all metrics in one pass, completely avoiding closures and redundant array allocations.
