@@ -261,11 +261,11 @@ export function renderLiveMap(canvas, data, config) {
         ctx.lineWidth = 1;
         var cxCenter = w / 2;
         var cyCenter = h / 2;
-        [40, 80, 120].forEach(function (r) {
+        for (var r = 40; r <= 120; r += 40) {
             ctx.beginPath();
             ctx.arc(cxCenter, cyCenter, r, 0, Math.PI * 2);
             ctx.stroke();
-        });
+        }
 
         if (typeof ctx.setLineDash === 'function') {
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
@@ -286,7 +286,8 @@ export function renderLiveMap(canvas, data, config) {
     var nearestPoi = null;
     var nearestDist = Infinity;
 
-    JAPAN_POIS.forEach(function (poi) {
+    for (var poiIndex = 0; poiIndex < JAPAN_POIS.length; poiIndex++) {
+        var poi = JAPAN_POIS[poiIndex];
         var isAllowed = (poi.category === 'poi' && showPOIs) ||
                         (poi.category === 'pr_stunt' && showPRStunts) ||
                         (poi.category === 'collectible' && showCollectibles);
@@ -326,7 +327,7 @@ export function renderLiveMap(canvas, data, config) {
                 ctx.restore();
             }
         }
-    });
+    }
 
     // Update Proximity Banner (#tcLiveMapNearby) - Strictly No Emojis
     var nearbyEl = document.getElementById('tcLiveMapNearby');
