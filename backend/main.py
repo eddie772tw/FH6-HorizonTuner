@@ -1332,8 +1332,31 @@ async def get_overlay_performance_metrics():
     )
 
 
+def is_allowed_origin(origin: str | None) -> bool:
+    """Check if an Origin header is permitted (local dev, Tauri, or test)."""
+    if not origin:
+        return True
+    from urllib.parse import urlparse
+
+    parsed = urlparse(origin)
+    if parsed.scheme in {"tauri", "app"}:
+        return parsed.hostname in {"localhost", None} or parsed.netloc == "localhost"
+
+    return parsed.scheme in {"http", "https"} and (
+        parsed.hostname in {"localhost", "127.0.0.1", "tauri.localhost", "testserver"}
+    )
+
+
 @app.websocket("/ws/telemetry")
 async def websocket_endpoint(websocket: WebSocket):
+    origin = websocket.headers.get("origin")
+    if not is_allowed_origin(origin):
+        logger.warning(
+            f"Rejected unauthorized WebSocket connection from origin: {origin}"
+        )
+        await websocket.close(code=1008)
+        return
+
     await telemetry_manager.connect(websocket, is_binary=False)
     try:
         while True:
@@ -1347,6 +1370,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.websocket("/ws/telemetry/binary")
 async def websocket_binary_endpoint(websocket: WebSocket):
+    origin = websocket.headers.get("origin")
+    if not is_allowed_origin(origin):
+        logger.warning(
+            f"Rejected unauthorized binary WebSocket connection from origin: {origin}"
+        )
+        await websocket.close(code=1008)
+        return
+
     await telemetry_manager.connect(websocket, is_binary=True)
     try:
         while True:
@@ -1360,6 +1391,14 @@ async def websocket_binary_endpoint(websocket: WebSocket):
 
 @app.websocket("/ws/overlay")
 async def websocket_overlay_endpoint(websocket: WebSocket):
+    origin = websocket.headers.get("origin")
+    if not is_allowed_origin(origin):
+        logger.warning(
+            f"Rejected unauthorized overlay WebSocket connection from origin: {origin}"
+        )
+        await websocket.close(code=1008)
+        return
+
     await overlay_manager.connect(websocket, is_binary=False)
     try:
         while True:

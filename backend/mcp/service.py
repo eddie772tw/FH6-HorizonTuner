@@ -478,14 +478,23 @@ class HorizonTunerMcpService:
         """Load tuning capture and report metadata, summary statistics and data hygiene."""
         target_file = None
         if os.path.exists(capture_id_or_path):
-            target_file = capture_id_or_path
-        else:
-            # Search by capture ID
+            abs_candidate = os.path.abspath(capture_id_or_path)
+            valid_roots = [
+                os.path.abspath(self.calibration_dir),
+                os.path.abspath(os.path.join(self.data_root, "captures")),
+            ]
+            if any(abs_candidate.startswith(root) for root in valid_roots):
+                target_file = abs_candidate
+
+        if not target_file:
+            # Search by capture ID with sanitized base name
+            clean_id = os.path.basename(capture_id_or_path)
             captures = self.list_tuning_captures()
             for c in captures:
                 if (
-                    c["capture_id"] == capture_id_or_path
-                    or os.path.basename(c["file_path"]) == capture_id_or_path
+                    c["capture_id"] == clean_id
+                    or c["capture_id"] == capture_id_or_path
+                    or os.path.basename(c["file_path"]) == clean_id
                 ):
                     target_file = c["file_path"]
                     break
@@ -792,13 +801,26 @@ class HorizonTunerMcpService:
         return results
 
     def get_tuning_preset(self, car_id: str, save_name: str) -> dict[str, Any] | None:
-        """Get full tuning parameters for a saved preset."""
-        target = os.path.join(self.tunings_dir, str(car_id), f"{save_name}.json")
+        """Get full tuning parameters for a saved preset with path sanitization."""
+        clean_car_id = os.path.basename(str(car_id))
+        clean_save_name = os.path.basename(str(save_name))
+
+        target = os.path.join(self.tunings_dir, clean_car_id, f"{clean_save_name}.json")
         if not os.path.exists(target):
-            target = os.path.join(self.tunings_dir, f"{save_name}.json")
+            target = os.path.join(self.tunings_dir, f"{clean_save_name}.json")
         if not os.path.exists(target):
             return None
-        with open(target, "r", encoding="utf-8") as f:
+
+        # Containment check to ensure target is within tunings_dir
+        abs_tunings_dir = os.path.abspath(self.tunings_dir)
+        abs_target = os.path.abspath(target)
+        try:
+            if os.path.commonpath([abs_tunings_dir, abs_target]) != abs_tunings_dir:
+                return None
+        except ValueError:
+            return None
+
+        with open(abs_target, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def run_dev_tuning_solver(
