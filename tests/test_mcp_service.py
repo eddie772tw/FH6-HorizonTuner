@@ -211,3 +211,44 @@ def test_query_capture_window_preserves_time_dimension(mcp_service, tmp_path):
         {"timestampMs": 100, "speedKmh": 20.0},
         {"timestampMs": 200, "speedKmh": 30.0},
     ]
+
+
+def test_get_tuning_preset_path_traversal_protection(mcp_service, tmp_path):
+    """Verify that path traversal attempts in car_id or save_name cannot escape tunings directory."""
+    tunings_dir = tmp_path / "tunings"
+    tunings_dir.mkdir(parents=True, exist_ok=True)
+    mcp_service.tunings_dir = str(tunings_dir)
+
+    # Valid preset
+    (tunings_dir / "valid_preset.json").write_text(
+        json.dumps({"tire_pressure_front": 2.1}), encoding="utf-8"
+    )
+    assert mcp_service.get_tuning_preset("101", "valid_preset") == {
+        "tire_pressure_front": 2.1
+    }
+
+    # Secret file outside tunings dir
+    secret_file = tmp_path / "secret.json"
+    secret_file.write_text(json.dumps({"secret": "sensitive"}), encoding="utf-8")
+
+    # Malicious traversal attempts
+    assert mcp_service.get_tuning_preset("..", "secret") is None
+    assert mcp_service.get_tuning_preset("../..", "../secret") is None
+    assert mcp_service.get_tuning_preset("101", "../secret") is None
+
+
+def test_get_capture_summary_path_traversal_protection(mcp_service, tmp_path):
+    """Verify that get_capture_summary restricts explicit paths to allowed directories."""
+    calib_dir = tmp_path / "calibration"
+    calib_dir.mkdir(parents=True, exist_ok=True)
+    mcp_service.calibration_dir = str(calib_dir)
+
+    # Outside file
+    outside_file = tmp_path / "outside_data.json"
+    outside_file.write_text(
+        json.dumps({"schemaVersion": "tuning-capture/v1", "samples": []}),
+        encoding="utf-8",
+    )
+
+    # Attempt to load outside file via absolute path
+    assert mcp_service.get_capture_summary(str(outside_file)) is None
