@@ -128,6 +128,20 @@
         var _simpleValidGear = 1;
         window.simpleSweepActive = false;
 
+        // Optimization: Cache DOM lookups used in 60Hz high-frequency render loops.
+        // Calling document.getElementById repeatedly causes unnecessary CPU overhead.
+        var domCache = {
+            simpleCanvas: canvas,
+            speedText: document.getElementById('speedText'),
+            simpleContainer: document.getElementById('simpleContainer'),
+            speedUnit: document.getElementById('speedUnit'),
+            tachBgImg: document.getElementById('tachBgImg'),
+            gearText: document.getElementById('gearText'),
+            gearIndicator: document.getElementById('gearIndicator'),
+            lockBadge: document.getElementById('lockBadge'),
+            lcBadge: document.getElementById('lcBadge')
+        };
+
         var defaultColorPrimary = '#00f0ff';
         var defaultColorPrimaryRgba = 'rgba(0, 240, 255, 0.9)';
         var defaultColorPrimaryDim = 'rgba(0, 240, 255, 0.4)';
@@ -197,7 +211,7 @@
         function setSimpleSpeedDisplay(value) {
             if (_simpleLastSpeedValue === value) return;
             _simpleLastSpeedValue = value;
-            var el = document.getElementById('speedText');
+            var el = domCache.speedText;
             if (!el) return;
             var valStr = value.toString();
             var out = "";
@@ -213,7 +227,7 @@
 
             var currentElements = (window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {};
             var showMotion = currentElements.showMotionEffect !== false;
-            var simpleContainer = document.getElementById('simpleContainer');
+            var simpleContainer = domCache.simpleContainer;
             if (simpleContainer) {
                 if (showMotion && data) {
                     var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);
@@ -406,17 +420,17 @@
 
             onInit: function (payload) {
                 if (payload && payload.isMetric !== undefined) {
-                    var el = document.getElementById('speedUnit');
+                    var el = domCache.speedUnit;
                     if (el) el.textContent = payload.isMetric !== false ? 'KM/H' : 'MPH';
                 }
             },
 
             onElementsChange: function (elements) {
-                var simpleCanvas = document.getElementById('simpleCanvas');
-                var bgImg = document.getElementById('tachBgImg');
-                var speedGroup = document.getElementById('speedText');
-                var speedUnit = document.getElementById('speedUnit');
-                var gearGroup = document.getElementById('gearText');
+                var simpleCanvas = domCache.simpleCanvas;
+                var bgImg = domCache.tachBgImg;
+                var speedGroup = domCache.speedText;
+                var speedUnit = domCache.speedUnit;
+                var gearGroup = domCache.gearText;
 
                 if (simpleCanvas) simpleCanvas.style.display = elements.showRPM === false ? 'none' : 'block';
                 if (bgImg) bgImg.style.display = elements.showRPM === false ? 'none' : 'block';
@@ -435,16 +449,16 @@
                     var speed = Math.round(data.speed_kmh ?? data.speed ?? 0);
                     setSimpleSpeedDisplay(speed);
 
-                    var gearEl = document.getElementById('gearText');
-                    var gearIndicator = document.getElementById('gearIndicator');
+                    var gearEl = domCache.gearText;
+                    var gearIndicator = domCache.gearIndicator;
                     if (data.gear !== undefined && data.gear <= 11) _simpleValidGear = data.gear;
                     if (gearEl) gearEl.textContent = _simpleValidGear === 0
                         ? 'R'
                         : (_simpleValidGear === 11 ? 'N' : _simpleValidGear.toString());
                     if (gearIndicator) gearIndicator.classList.toggle('active', (data.rpm / redlineRpm) >= 0.95);
 
-                    var lockBadge = document.getElementById('lockBadge');
-                    var lcBadge = document.getElementById('lcBadge');
+                    var lockBadge = domCache.lockBadge;
+                    var lcBadge = domCache.lcBadge;
                     if (lockBadge && payload.lockup) {
                         var isLocked = payload.lockup.fl || payload.lockup.fr || payload.lockup.rl || payload.lockup.rr;
                         lockBadge.classList.toggle('active', !!isLocked);

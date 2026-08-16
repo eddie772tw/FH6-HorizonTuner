@@ -71,3 +71,6 @@
 ## 2026-08-11 - Use useMemo and for loops for telemetry data in React
 **Learning:** Calling array methods like `.filter()` that execute closures directly inside the React render cycle (e.g., `<AreaChart data={telemetryPoints.filter(...)}>`) causes severe GC pressure, UI stuttering, and recalculations on every render when working with large telemetry datasets.
 **Action:** Always wrap data downsampling or transformation logic for large arrays in a `useMemo` hook, and replace `.filter()`, `.map()`, and chained methods with a native `for` loop to eliminate both redundant computations across renders and per-element closure allocations.
+## 2026-08-16 - DOM Caching in High-Frequency HUD Loops
+**Learning:** Repeatedly querying document.getElementById inside 60Hz telemetry render loops (e.g. Simple HUD) incurs high GC and CPU overhead.
+**Action:** Query elements once during initialization and cache them in a structure (e.g. domCache) to eliminate frame-level lookup overhead.
