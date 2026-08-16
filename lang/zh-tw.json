@@ -1035,5 +1035,10 @@
   "Copied to Clipboard": "已複製到剪貼簿",
   "Configuration copied successfully.": "設定代碼已成功複製。",
   "Copy Failed": "複製失敗",
-  "Unable to copy text to clipboard.": "無法將文字複製至剪貼簿。"
+  "Unable to copy text to clipboard.": "無法將文字複製至剪貼簿。",
+  "Recommendation vs Current": "建議值 vs 目前值",
+  "Parameter": "參數",
+  "Recommended": "建議",
+  "Current": "目前",
+  "Locked / Unknown": "已鎖定 / 未知"
 }

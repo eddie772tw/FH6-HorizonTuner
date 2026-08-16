@@ -973,5 +973,10 @@
   "Copied to Clipboard": "クリップボードにコピーしました",
   "Configuration copied successfully.": "設定コードが正常にコピーされました。",
   "Copy Failed": "コピーに失敗しました",
-  "Unable to copy text to clipboard.": "クリップボードへのテキストコピーができませんでした。"
+  "Unable to copy text to clipboard.": "クリップボードへのテキストコピーができませんでした。",
+  "Recommendation vs Current": "推奨値 vs 現在値",
+  "Parameter": "パラメータ",
+  "Recommended": "推奨",
+  "Current": "現在",
+  "Locked / Unknown": "ロック済み / 不明"
 }

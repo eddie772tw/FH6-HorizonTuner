@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSettings } from '../../../context/SettingsContext';
 
 export interface RecommendationComparisonPanelProps {
   recommendations: Record<string, number | string>;
@@ -11,17 +12,18 @@ export const RecommendationComparisonPanel: React.FC<RecommendationComparisonPan
   currentSettings,
   capabilityStatus,
 }) => {
+  const { t } = useSettings();
   const allKeys = Array.from(new Set([...Object.keys(recommendations), ...Object.keys(currentSettings)]));
 
   return (
     <div className="glass-panel p-4 popover bs-popover-bottom position-absolute" style={{ top: 'calc(100% + 8px)', zIndex: 1050 }}>
-      <h5 className="mb-3" style={{ color: 'var(--text-primary)' }}>Recommendation vs Current</h5>
+      <h5 className="mb-3" style={{ color: 'var(--text-primary)' }}>{t("Recommendation vs Current")}</h5>
       <table className="table table-borderless table-sm mb-0">
         <thead>
           <tr>
-            <th style={{ color: 'var(--text-secondary)' }}>Parameter</th>
-            <th style={{ color: 'var(--text-secondary)' }}>Recommended</th>
-            <th style={{ color: 'var(--text-secondary)' }}>Current</th>
+            <th style={{ color: 'var(--text-secondary)' }}>{t("Parameter")}</th>
+            <th style={{ color: 'var(--text-secondary)' }}>{t("Recommended")}</th>
+            <th style={{ color: 'var(--text-secondary)' }}>{t("Current")}</th>
           </tr>
         </thead>
         <tbody>
@@ -34,14 +36,14 @@ export const RecommendationComparisonPanel: React.FC<RecommendationComparisonPan
                 <td style={{ color: 'var(--text-primary)' }}>{key}</td>
                 <td style={{ color: 'var(--text-primary)' }}>
                   {isLockedOrUnknown ? (
-                    <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Locked / Unknown</span>
+                    <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t("Locked / Unknown")}</span>
                   ) : (
                     recommendations[key] ?? '-'
                   )}
                 </td>
                 <td style={{ color: 'var(--text-primary)' }}>
                   {isLockedOrUnknown ? (
-                    <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Locked / Unknown</span>
+                    <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t("Locked / Unknown")}</span>
                   ) : (
                     currentSettings[key] ?? '-'
                   )}
