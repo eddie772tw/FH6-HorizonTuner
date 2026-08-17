@@ -47,6 +47,11 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 * **Localhost Read-Only MCP Server (Model Context Protocol)**:
   - The running FastAPI backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
   - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.
+* **Over-The-Air (OTA) Updates & Automated Release Management**:
+  - Integrated with Tauri v2 official Updater plugin and Ed25519 asymmetric cryptographic verification.
+  - Supports silent startup checks and manual checks via Settings with a Glassmorphism racing modal and dynamic download progress bar.
+  - Sidecar lifecycle protection: ensures Python child process is gracefully killed and UDP 8000 / HTTP 8001 ports are cleanly released before restart.
+  - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions automatically builds, signs, and attaches `FH6-HorizonTuner.exe`, `.sig`, Portable ZIP, and `latest.json`.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
   - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
@@ -58,8 +63,9 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ```text
 FH6-HorizonTuner/
-├── .github/workflows/       # GitHub CI/CD workflow (Ruff Lint + Pytest)
+├── .github/workflows/       # GitHub CI/CD workflows (ci.yml gatekeeping + release.yml automated packaging)
 ├── backend/                 # Python FastAPI backend core
+├── scripts/                 # Automated release & telemetry metrics scripts (prepare_release_assets.py, release_metrics.py)
 │   ├── main.py              # Backend entry point, API definitions & process management
 │   ├── mcp/                 # Model Context Protocol (MCP) Read-Only Server
 │   │   ├── service.py       # Telemetry & tuning service layer (aligned with TelemetryView)

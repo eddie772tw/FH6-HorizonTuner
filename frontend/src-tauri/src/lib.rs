@@ -376,9 +376,19 @@ fn move_hud_to_monitor(
     }
 }
 
+#[tauri::command]
+fn prepare_update_and_restart(app_handle: tauri::AppHandle) -> Result<(), String> {
+    println!("Preparing for OTA update restart: stopping backend sidecar and terminating background processes.");
+    stop_backend_process(&app_handle);
+    std::thread::sleep(Duration::from_millis(300));
+    app_handle.restart();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(BackendState::new())
         .manage(BackendProcess::default())
         .on_window_event(|window, event| {
@@ -533,7 +543,8 @@ pub fn run() {
             toggle_hud_window,
             reload_hud_window,
             get_available_monitors,
-            move_hud_to_monitor
+            move_hud_to_monitor,
+            prepare_update_and_restart
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

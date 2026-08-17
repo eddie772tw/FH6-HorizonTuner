@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import '../App.css';
 import { useSettings } from '../context/SettingsContext';
 import { PREFERRED_BACKEND_PORT } from '../services/backend';
+import { checkForAppUpdates, UpdateInfo, isTauriEnvironment } from '../services/updaterService';
+import { 
+  getAppBuildInfo, 
+  formatBuildInfoText, 
+  getRemoteReleaseComparison 
+} from '../services/buildInfoService';
+import { UpdateModal } from './common/UpdateModal';
 
 interface NavigationProps {
   activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings';
@@ -14,76 +21,91 @@ interface NavigationProps {
 }
 
 const GitInfoBadge: React.FC = () => {
-  const [gitText, setGitText] = useState<string>(() => {
-    if (typeof __GIT_BRANCH__ !== 'undefined' && typeof __GIT_COMMIT__ !== 'undefined') {
-      return `${__GIT_BRANCH__} (${__GIT_COMMIT__})`;
-    }
-    return '';
-  });
+  const { settings, t } = useSettings();
+  const buildInfo = getAppBuildInfo();
+  const [gitText, setGitText] = useState<string>(() => formatBuildInfoText(buildInfo));
+  const [availableUpdate, setAvailableUpdate] = useState<UpdateInfo | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    if (typeof __GIT_BRANCH__ === 'undefined' || typeof __GIT_COMMIT__ === 'undefined') return;
-    if (__GIT_BRANCH__ !== 'main') return;
+    let isMounted = true;
 
-    const checkReleaseStatus = async () => {
-      try {
-        const repo = "eddie772tw/FH6-HorizonTuner";
-        const releasesRes = await fetch(`https://api.github.com/repos/${repo}/releases`);
-        if (!releasesRes.ok) return;
-        const releases = await releasesRes.json();
-        if (releases.length === 0) return;
-
-        const latestTag = releases[0].tag_name;
-        const pureCommit = __GIT_COMMIT__.replace(/^post-/, '');
-
-        const compareRes = await fetch(`https://api.github.com/repos/${repo}/compare/${latestTag}...${pureCommit}`);
-        if (!compareRes.ok) return;
-
-        const compareData = await compareRes.json();
-        let statusStr = "";
-        if (compareData.status === "ahead") {
-          statusStr = ` (ahead of ${latestTag} by ${compareData.ahead_by} commits)`;
-        } else if (compareData.status === "behind") {
-          statusStr = ` (behind ${latestTag})`;
-        } else if (compareData.status === "identical") {
-          if (!__GIT_COMMIT__.startsWith('post-')) {
-            setGitText(`${__GIT_BRANCH__} (${latestTag})`);
-            return;
+    // 1. Silent OTA Check in Tauri Desktop environment if auto_check_updates is enabled
+    if (isTauriEnvironment() && settings.auto_check_updates !== false) {
+      checkForAppUpdates()
+        .then((update) => {
+          if (isMounted && update) {
+            setAvailableUpdate(update);
           }
-        }
+        })
+        .catch((err) => {
+          console.warn('[Navigation] Silent OTA check failed:', err);
+        });
+    }
 
-        setGitText(`${__GIT_BRANCH__} (${__GIT_COMMIT__})${statusStr}`);
-      } catch (e) {
-        console.warn("Failed to check release status", e);
-      }
+    // 2. Dev mode / Browser fallback Git release comparison (Protected with SessionStorage Cache)
+    if (!isTauriEnvironment() && buildInfo.gitBranch === 'main') {
+      getRemoteReleaseComparison('eddie772tw/FH6-HorizonTuner', buildInfo)
+        .then((compareResult) => {
+          if (isMounted && compareResult) {
+            setGitText(formatBuildInfoText(buildInfo, compareResult));
+          }
+        })
+        .catch((err) => {
+          console.warn('[Navigation] Release comparison failed:', err);
+        });
+    }
+
+    return () => {
+      isMounted = false;
     };
-
-    checkReleaseStatus();
-  }, []);
-
-  if (typeof __GIT_BRANCH__ === 'undefined' || typeof __GIT_COMMIT__ === 'undefined') {
-    return null;
-  }
+  }, [settings.auto_check_updates, buildInfo]);
 
   return (
-    <span 
-      style={{
-        fontSize: '0.7rem',
-        color: 'var(--text-secondary)',
-        background: 'var(--surface-2)',
-        padding: '2px 8px',
-        borderRadius: '4px',
-        marginLeft: '10px',
-        fontWeight: 'normal',
-        border: '1px solid var(--divider)',
-        display: 'inline-block',
-        verticalAlign: 'middle',
-        textShadow: 'none',
-        letterSpacing: '0.5px'
-      }}
-    >
-      {gitText}
-    </span>
+    <>
+      {availableUpdate ? (
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1 py-0 px-2 ms-2 fw-bold"
+          style={{
+            fontSize: '0.7rem',
+            borderRadius: '4px',
+            boxShadow: '0 0 8px rgba(255, 193, 7, 0.4)',
+            letterSpacing: '0.5px'
+          }}
+          title={t('Click to review and apply software update')}
+        >
+          <span className="badge bg-warning text-dark py-0 px-1 me-1 fs-8">OTA</span>
+          <span>{t('Update Available')}: {availableUpdate.version}</span>
+        </button>
+      ) : gitText ? (
+        <span 
+          style={{
+            fontSize: '0.7rem',
+            color: 'var(--text-secondary)',
+            background: 'var(--surface-2)',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            marginLeft: '10px',
+            fontWeight: 'normal',
+            border: '1px solid var(--divider)',
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            textShadow: 'none',
+            letterSpacing: '0.5px'
+          }}
+        >
+          {gitText}
+        </span>
+      ) : null}
+
+      <UpdateModal
+        updateInfo={availableUpdate}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+      />
+    </>
   );
 };
 

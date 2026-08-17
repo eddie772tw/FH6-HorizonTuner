@@ -28,6 +28,7 @@ export interface AppSettings {
   units: UnitSettings;
   telemetry_ip?: string;
   telemetry_port?: number;
+  auto_check_updates?: boolean;
 }
 
 interface SettingsContextType {
