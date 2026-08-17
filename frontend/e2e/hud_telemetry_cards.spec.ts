@@ -25,11 +25,19 @@ const mimeTypes: Record<string, string> = {
 test.beforeAll(async () => {
     server = http.createServer((req, res) => {
         const rawReqPath = req.url === '/' ? '/index.html' : req.url?.split('?')[0] || '/index.html';
-        const sanitizedRelative = '.' + (rawReqPath.startsWith('/') ? rawReqPath : '/' + rawReqPath);
-        const resolvedPath = path.resolve(hudDir, sanitizedRelative);
+        const safeBaseName = path.basename(rawReqPath);
+
+        // Strictly validate filename pattern
+        if (!/^[a-zA-Z0-9_.-]+$/.test(safeBaseName)) {
+            res.writeHead(400, { 'Content-Type': 'text/plain' });
+            res.end('400 Bad Request');
+            return;
+        }
+
+        const normalizedHudDir = path.resolve(hudDir);
+        const resolvedPath = path.resolve(normalizedHudDir, safeBaseName);
 
         // Enforce strict directory containment
-        const normalizedHudDir = path.resolve(hudDir);
         if (!resolvedPath.startsWith(normalizedHudDir + path.sep) && resolvedPath !== normalizedHudDir) {
             res.writeHead(403, { 'Content-Type': 'text/plain' });
             res.end('403 Forbidden');

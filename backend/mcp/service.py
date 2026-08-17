@@ -7,6 +7,7 @@ import json
 import logging
 import math
 import os
+import re
 import sys
 from typing import Any
 
@@ -665,6 +666,8 @@ class HorizonTunerMcpService:
     def get_drag_analysis(self, filename: str) -> dict[str, Any] | None:
         """Get full drag run time splits and acceleration analysis."""
         clean_name = os.path.basename(filename)
+        if not re.match(r"^[a-zA-Z0-9_\-\.]+\.json$", clean_name):
+            return None
         abs_drag_dir = os.path.realpath(os.path.abspath(self.drag_sessions_dir))
         abs_target = os.path.realpath(
             os.path.abspath(os.path.join(abs_drag_dir, clean_name))
@@ -830,6 +833,10 @@ class HorizonTunerMcpService:
         """Get full tuning parameters for a saved preset with path sanitization."""
         clean_car_id = os.path.basename(str(car_id))
         clean_save_name = os.path.basename(str(save_name))
+        if not re.match(r"^[a-zA-Z0-9_\-]+$", clean_car_id) or not re.match(
+            r"^[a-zA-Z0-9_\-]+$", clean_save_name
+        ):
+            return None
         abs_tunings_dir = os.path.realpath(os.path.abspath(self.tunings_dir))
 
         candidate1 = os.path.realpath(
