@@ -15,6 +15,25 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / GitHub Security Audit Skill & Alert Collection
+
+### GitHub Security & Quality 全維度資料收集與 github-security-audit 技能建置
+
+- **來源**：`local`，建立 GitHub 自動檢測安全問題之資料收集與審計機制。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **GitHub Security API 參數限制**：`secret-scanning/alerts` 的 `state` 參數僅接受單一字串（`open` 或 `resolved`），不可傳入逗號多選值，否則會回傳 HTTP 400；而 `dependabot/alerts` 與 `code-scanning/alerts` 則支援多選狀態。
+  2. **Vulnerability Alerts 狀態碼特性**：`vulnerability-alerts` 啟用狀態端點回傳 `204 No Content`，代表該功能正常啟用。
+  3. **Windows 主控台輸出編碼防護**：Windows 預設 `cp950` 命令列環境無法編碼裝飾性 Unicode Emoji，所有工具腳本標準輸出應強制採用 `sys.stdout.reconfigure(encoding="utf-8")` 並以標準 ASCII 標籤（`[*]`, `[+]`, `[-]`）替代裝飾圖示。
+- **Action**：
+  1. 建立全新技能 `.agents/skills/github-security-audit/SKILL.md`，提供完整安全維度收集工作流與 4 大類常見漏洞（Path Injection, Bad Tag Filter, 0.0.0.0 Socket, Secret leak）修復指南。
+  2. 建立自動化資料收集腳本 `.agents/skills/github-security-audit/scripts/collect_security_alerts.py`，支援匯出 Markdown 與 JSON 報告。
+  3. 建立 API 參考指南 `.agents/skills/github-security-audit/references/github_security_api_guide.md`。
+  4. 同步更新 `.agents/skills/README.md` 與 `.agents/AGENTS.md` canonical 技能清單。
+- **Evidence**：`collect_security_alerts.py` 本地執行成功，完整拉取 32 筆 Code Scanning 警報並產出 Markdown / JSON 報告；`ruff check` 靜態檢查 100% 通過。
+
+---
+
 ## 2026-08-16 / Security Audit & Anti-Hallucination Package Protocol
 
 ### 全專案安全性稽核、CSWSH 跨來源防禦、MCP 路徑清洗與防幻覺查驗協議
