@@ -15,6 +15,23 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / Dependabot Alert #1: nanoid DoS 漏洞修復 (CVE-2026-67213)
+
+### nanoid 零長度無限迴圈拒絕服務漏洞與 pnpm.overrides 鎖定
+
+- **來源**：`local`，針對 Dependabot Alert #1 (`GHSA-2v37-7h3g-55p8` / `CVE-2026-67213`) 進行修復與供應鏈版本鎖定。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **間接依賴漏洞排查 (Transitive Dependency)**：`nanoid@3.3.17` 係由 `postcss` (透過 `halfmoon` / `rtlcss` 與 `vite`) 間接引入。當依賴層級較深時，直接更新頂層依賴未必能觸發間接依賴的 patch 升級。
+  2. **pnpm overrides 鎖定機制**：在 `frontend/package.json` 的 `pnpm.overrides` 宣告 `"nanoid": "^3.3.18"`，並執行 `pnpm --prefix frontend update nanoid --depth 99`，能強制 pnpm 解析器在整顆相依樹上將 `nanoid` 提升至修復後的 `3.3.18`，乾淨消除 CVE-2026-67213 漏洞。
+- **Action**：
+  1. 查驗官方 npm Registry 確認 `nanoid@3.3.18` 為最新 patch 版本。
+  2. 在 `frontend/package.json` 加入 `pnpm.overrides.nanoid: "^3.3.18"` 並更新 `pnpm-lock.yaml`。
+  3. 驗證前端單元測試 (440 passed)、Vite build、後端測試 (165 passed) 與 PR CI 14 個 Checks 全數 100% 綠燈通過。
+- **Evidence**：`pnpm why nanoid` 顯示僅存在 `nanoid@3.3.18`；GitHub Actions CI Run #32002847445 (14 Checks) 全數 PASS。
+
+---
+
 ## 2026-08-17 / Tauri v2 OTA 自動更新機制實作、網頁端 Release CI 與 post-release 誤判防護
 
 ### Tauri v2 官方 Updater 插件整合、Ed25519 簽名、網頁 Release 唯一觸發與版本狀態防護
