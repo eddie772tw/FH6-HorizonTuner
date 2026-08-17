@@ -15,6 +15,23 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / Code Scanning 剩餘警報 #16, #17, #45 徹底修復
+
+### MCP get_capture_summary 污點鏈根除與內部枚舉加固 (Alerts #16, #17, #45)
+
+- **來源**：`local`，針對專案剩餘的 3 筆 CodeQL Path Injection 警報進行修復與測試加固。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **外部輸入直接調用 OS API 觸發 Source 警報**：在 `get_capture_summary` 中，首行 `if os.path.exists(capture_id_or_path):` 直接對使用者輸入字串調用 OS 檔案系統存在性檢查，直接觸發 CodeQL `py/path-injection` 警報（案件 #45）。
+  2. **污點傳播導致 Sink 警報連鎖**：即使後續具有 `commonpath` 檢查，將源自外部輸入的衍生路徑賦予 `target_file` 依然會被靜態分析視為 tainted，使得下方的 `os.path.exists(target_file)`（案件 #16）與 `open(target_file, ...)`（案件 #17）連帶被判定為漏洞。
+  3. **內部枚舉查找法 (Defense Pattern B)**：改由 `self.list_tuning_captures()` 在內部安全白名單目錄掃描檔案，將外部輸入純粹作為字串比對值（`==`），僅使用內部枚舉清單記錄的合法 `file_path` 進行檔案讀取，能從根本上徹底切斷 CodeQL 污點追蹤鏈。
+- **Action**：
+  1. 重構 `backend/mcp/service.py` 的 `get_capture_summary`，移除外部字串路徑操作，改用內部枚舉查找。
+  2. 擴充 `tests/test_mcp_service.py` 中的 `test_get_capture_summary_path_traversal_protection`，新增 capture ID 載入、檔名載入、目錄跳脫防護等 4 組斷言。
+- **Evidence**：`tests/test_mcp_service.py` 與 `tests/test_path_security.py` (23 passed)；`tests/test_mcp_*.py` (28 passed)；前端 Vitest (66 files, 418 passed)；`ruff check .` 與 `ruff format --check .` (110 files) 100% 通過。
+
+---
+
 ## 2026-08-17 / GitHub Security Audit 32 筆警報全面修復與 CI/CD 治理
 
 ### CodeQL 32 筆安全警報全面加固 (Path Injection, Bad Tag Filter, Socket Binding, E2E)
