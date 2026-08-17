@@ -90,6 +90,12 @@ jobs:
     - name: Run Frontend Unit Tests (Pre-Release Gate)
       run: pnpm --prefix frontend run test
 
+    - name: Build Frontend Production Bundle
+      env:
+        VITE_GIT_COMMIT: ${{ env.TAG }}
+        VITE_GIT_BRANCH: "main"
+      run: pnpm --prefix frontend run build
+
     - name: Build Python Backend Sidecar Executable
       run: >
         uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean

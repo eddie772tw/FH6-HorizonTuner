@@ -105,6 +105,16 @@ def test_release_workflow_security_and_contract():
     assert "INPUT_TAG: ${{ github.event.inputs.tag_name }}" in content
     assert "REF_NAME: ${{ github.ref_name }}" in content
 
+    # Verify frontend production bundle is built before tauri packaging
+    assert "Build Frontend Production Bundle" in content
+    assert "pnpm --prefix frontend run build" in content
+    frontend_build_pos = content.find("Build Frontend Production Bundle")
+    tauri_build_pos = content.find("Build and Sign Tauri Release Executable")
+    assert frontend_build_pos != -1 and tauri_build_pos != -1
+    assert frontend_build_pos < tauri_build_pos, (
+        "Frontend build must precede Tauri executable packaging"
+    )
+
 
 def test_diagnostics_workflow_security_and_contract():
     repo_root = Path(__file__).resolve().parent.parent
