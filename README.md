@@ -48,6 +48,11 @@
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
   - 由執行中的 FastAPI backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
+* **OTA 自動更新與版本管理 (Over-The-Air Update & Release Management)**:
+  - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
+  - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
+  - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Python 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
+  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯、簽名並全自動附加 `FH6-HorizonTuner.exe`、`.sig`、Portable ZIP 與 `latest.json`。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
   - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
@@ -59,8 +64,9 @@
 
 ```text
 FH6-HorizonTuner/
-├── .github/workflows/       # GitHub CI/CD 工作流設定 (Ruff Lint + Pytest)
+├── .github/workflows/       # GitHub CI/CD 工作流 (ci.yml 門禁測試 + release.yml 自動發行)
 ├── backend/                 # Python FastAPI 後端核心
+├── scripts/                 # 自動化發行與度量腳本 (prepare_release_assets.py, release_metrics.py)
 │   ├── main.py              # 後端服務主入口與 API 宣告
 │   ├── mcp/                 # Model Context Protocol (MCP) 唯讀伺服器
 │   │   ├── service.py       # 遙測與調校服務層 (對齊 TelemetryView)

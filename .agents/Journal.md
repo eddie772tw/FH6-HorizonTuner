@@ -15,6 +15,38 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / Tauri v2 OTA 自動更新機制實作、網頁端 Release CI 與 post-release 誤判防護
+
+### Tauri v2 官方 Updater 插件整合、Ed25519 簽名、網頁 Release 唯一觸發與版本狀態防護
+
+- **來源**：`local`，在新分支 `feat/ota-updater` 上完成 OTA 自動更新機制與 Release 自動發布工作流實作。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Tauri v2 插件化權限體系**：Tauri 2 將 Updater 與 Process 功能完全插件化。需在 `frontend/src-tauri/Cargo.toml` 引入 `tauri-plugin-updater` 與 `tauri-plugin-process`，並於 `frontend/src-tauri/capabilities/default.json` 聲明 `"updater:default"` 與 `"process:default"`，否則前端 Webview 調用會遭安全核心拒絕。
+  2. **OTA 重啟前 Sidecar 行程與 Socket 釋放防護**：Windows PE 檔案更新重啟時，若舊的 Python Sidecar 未徹底退出，會導致 UDP `8000` 與 HTTP `8001` 埠被佔用。在 Rust 實作專屬 `prepare_update_and_restart` Command，在觸發 `app_handle.restart()` 前主動呼叫 `stop_backend_process`（關閉 stdin + `taskkill /PID /T /F`）並延遲 300ms，能確保 Socket 100% 潔淨釋放。
+  3. **Release CI 構建之 `post-` 誤判三重防護**：
+     - 在 Vite 建置時，若工作區產生中間產物，`git status` 會將 HEAD 判定為 dirty 並在版本號加上 `post-`（如 `post-v1.5.0`），導致客戶端與 GitHub Release 比對失敗。
+     - **三重防護措施**：
+       1. 在 `.github/workflows/release.yml` 注入 `VITE_GIT_COMMIT: ${{ env.TAG }}` 與 `VITE_GIT_BRANCH: "main"`。
+       2. 在 `frontend/vite.config.ts` 優先採用環境變數覆寫，繞過 dirty 檢測。
+       3. 擴充 `generatedPathPrefixes` 白名單（加入 `metrics/`, `scratch/`, `diagnostics_output/`, `dist/release/`, `.coverage` 等）。
+  4. **版本與 Release 狀態結構化重構 (Non-Breaking Refinement)**：
+     - 在 `frontend/vite.config.ts` 產出乾淨結構化的 `__APP_BUILD_INFO__`，取代模稜兩可的複合字串猜測。
+     - 抽離 `frontend/src/services/buildInfoService.ts`，封裝純函數 `formatBuildInfoText` 與具備 10 分鐘 `sessionStorage` 快取的 `getRemoteReleaseComparison`，徹底根除 GitHub API Rate Limit 403 報錯風險。
+     - 保持主 GUI 頂部導覽列視覺、字級與文字格式 100% 向後相容。
+  5. **GitHub 網頁端手動發布為唯一觸發途徑**：移除命令列 `git tag` 觸發，在 `.github/workflows/release.yml` 配置 `on: release: types: [published]`。維護者在 GitHub 網頁填寫 Tag 與說明發布後，CI 自動執行 PyInstaller Sidecar 編譯、Tauri 打包、Ed25519 簽名並透過 `scripts/prepare_release_assets.py` 與 `softprops/action-gh-release@v2` 自動將 EXE、.sig、Portable ZIP 與 `latest.json` 附加到該 Release。
+- **Action**：
+  1. 在 Rust 端配置 `tauri-plugin-updater` 與 `tauri-plugin-process`，並建立 `prepare_update_and_restart` 指令。
+  2. 在前端建立 `frontend/src/services/updaterService.ts` 與單元測試 `updaterService.test.ts`。
+  3. 建立 `frontend/src/services/buildInfoService.ts` 與單元測試 `buildInfoService.test.ts`。
+  4. 依循 Halfmoon CSS v2 與 Glassmorphism 規範建立 `UpdateModal.tsx` 與 `UpdateSettingsCard.tsx`。
+  5. 升級 `Navigation.tsx` 的 `GitInfoBadge`，使用 `buildInfoService` 實現快取保護與乾淨狀態管理。
+  6. 建立 `.github/workflows/release.yml`、`scripts/prepare_release_assets.py` 與 `tests/test_release_workflow_contract.py`。
+  7. 加固 `frontend/vite.config.ts` 的版本探測邏輯，徹底防止 Release 產物被標記為 `post-`。
+- **Evidence**：`cargo check` 通過；前端 Vitest (69 files, 440 passed)；`pnpm run build` (tsc + vite) 成功；後端 Pytest (165 passed)；`ruff check .` 與 `ruff format --check .` (113 files) 100% 通過。
+
+---
+
 ## 2026-08-17 / Code Scanning 剩餘警報 #16, #17, #45 徹底修復
 
 ### MCP get_capture_summary 污點鏈根除與內部枚舉加固 (Alerts #16, #17, #45)

@@ -77,12 +77,20 @@ function hudStaticPlugin(): Plugin {
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
-let gitCommit = "unknown";
-let gitBranch = "unknown";
+import pkg from "./package.json";
+
+let rawCommit = process.env.VITE_GIT_COMMIT || process.env.RELEASE_TAG || "unknown";
+let gitBranch = process.env.VITE_GIT_BRANCH || "unknown";
+let releaseTag: string | null = null;
+let isDirty = false;
+const isReleaseBuild = Boolean(process.env.VITE_GIT_COMMIT || process.env.RELEASE_TAG);
 
 const generatedPathPrefixes = [
   "dist/",
   "build/",
+  "metrics/",
+  "scratch/",
+  "diagnostics_output/",
   "frontend/dist/",
   "frontend/src-tauri/bin/",
   "frontend/src-tauri/gen/",
@@ -90,6 +98,7 @@ const generatedPathPrefixes = [
   "logs/",
   ".pytest_cache/",
   ".ruff_cache/",
+  ".coverage",
   "__pycache__/",
 ];
 
@@ -100,41 +109,65 @@ function isGeneratedPath(filePath: string): boolean {
   );
 }
 
-try {
-  gitBranch = execSync("git rev-parse --abbrev-ref HEAD", { cwd: ".." }).toString().trim();
+// Only perform local git CLI detection if not explicitly supplied by CI Release Environment
+if (!isReleaseBuild) {
   try {
-    gitCommit = execSync("git describe --tags --exact-match HEAD", { stdio: 'pipe', cwd: ".." }).toString().trim();
-  } catch (e) {
-    gitCommit = execSync("git rev-parse --short HEAD", { cwd: ".." }).toString().trim();
-  }
-  
-  try {
-    const status = execSync("git status --porcelain=v1 --untracked-files=all", { cwd: ".." }).toString().trim();
-    if (status.length > 0) {
-      const changedFiles = status.split("\n").map(line => line.trim());
-      const hasRealChanges = changedFiles.some(line => {
-        let filePath = line.substring(3).trim();
-        if (line.startsWith("R") || line.startsWith("C")) {
-          filePath = filePath.split(" -> ").pop() || filePath;
-        }
-        return !isGeneratedPath(filePath.toLowerCase());
-      });
-      if (hasRealChanges) {
-        gitCommit = "post-" + gitCommit;
+    gitBranch = execSync("git rev-parse --abbrev-ref HEAD", { cwd: ".." }).toString().trim();
+    try {
+      releaseTag = execSync("git describe --tags --exact-match HEAD", { stdio: "pipe", cwd: ".." }).toString().trim();
+    } catch {
+      releaseTag = null;
+    }
+    
+    try {
+      rawCommit = execSync("git rev-parse --short HEAD", { cwd: ".." }).toString().trim();
+    } catch {
+      rawCommit = "unknown";
+    }
+
+    try {
+      const status = execSync("git status --porcelain=v1 --untracked-files=all", { cwd: ".." }).toString().trim();
+      if (status.length > 0) {
+        const changedFiles = status.split("\n").map(line => line.trim());
+        isDirty = changedFiles.some(line => {
+          let filePath = line.substring(3).trim();
+          if (line.startsWith("R") || line.startsWith("C")) {
+            filePath = filePath.split(" -> ").pop() || filePath;
+          }
+          return !isGeneratedPath(filePath.toLowerCase());
+        });
       }
+    } catch {
+      // Ignore status error
     }
   } catch (e) {
-    // Ignore error checking status
+    console.warn("Could not retrieve git information.", e);
   }
-} catch (e) {
-  console.warn("Could not retrieve git information.");
+} else {
+  // Release build from CI
+  releaseTag = rawCommit.startsWith("v") ? rawCommit : `v${rawCommit}`;
 }
+
+const legacyGitCommit = isReleaseBuild 
+  ? (releaseTag || rawCommit) 
+  : (isDirty ? `post-${releaseTag || rawCommit}` : (releaseTag || rawCommit));
+
+const appBuildInfo = {
+  version: pkg.version || "1.0.0",
+  gitCommit: rawCommit,
+  gitBranch,
+  releaseTag,
+  isDirty,
+  isReleaseBuild,
+  buildTime: new Date().toISOString(),
+};
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react(), hudStaticPlugin()],
   define: {
-    __GIT_COMMIT__: JSON.stringify(gitCommit),
+    __APP_BUILD_INFO__: JSON.stringify(appBuildInfo),
+    __GIT_COMMIT__: JSON.stringify(legacyGitCommit),
     __GIT_BRANCH__: JSON.stringify(gitBranch),
   },
 

@@ -12,6 +12,7 @@ permissions:
 env:
   # Keep the interpreter selected by setup-uv aligned with its managed-Python cache.
   UV_PYTHON_PREFERENCE: only-managed
+  TAURI_RUST_CACHE_STATUS: miss
 
 jobs:
   # ============================================================================
@@ -40,9 +41,11 @@ jobs:
       run: uv pip install ruff
 
     - name: Run Ruff Check
+      id: ruff_check
       run: uv run --no-project --active ruff check .
 
     - name: Run Ruff Format Verification
+      id: ruff_format
       run: uv run --no-project --active ruff format --check .
 
     - name: Generate Backend Static Check Summary
@@ -390,6 +393,9 @@ jobs:
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
     - name: Build Portable Tauri Executable
+      env:
+        TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
       run: >
         python scripts/release_metrics.py
         --label "Tauri portable executable"

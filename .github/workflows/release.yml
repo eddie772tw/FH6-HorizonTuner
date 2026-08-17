@@ -1,0 +1,150 @@
+name: FH6 HorizonTuner Release & OTA Packaging
+
+on:
+  release:
+    types: [ published ]  # 唯一發布途徑：在 GitHub 網頁手動發布 Release 時自動觸發
+  workflow_dispatch:     # 支援手動觸發測試與補發
+    inputs:
+      tag_name:
+        description: 'Target Release Tag name (e.g. v1.5.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  UV_PYTHON_PREFERENCE: only-managed
+  TAG: ""
+
+jobs:
+  build-and-publish-release:
+    name: Build, Sign & Attach Release Assets
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+    - name: Determine Release Tag
+      id: release_meta
+      shell: bash
+      run: |
+        if [ "${{ github.event_name }}" = "release" ]; then
+          TAG="${{ github.event.release.tag_name }}"
+          BODY="${{ github.event.release.body }}"
+        else
+          TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          BODY="Manual workflow dispatch release build"
+        fi
+        echo "TAG=$TAG" >> "$GITHUB_ENV"
+        echo "RELEASE_TAG=$TAG" >> "$GITHUB_OUTPUT"
+        echo "Tag identified for release: **$TAG**" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up uv and managed Python 3.13
+      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      with:
+        python-version: "3.13"
+        activate-environment: true
+        no-project: true
+        cache-python: true
+        enable-cache: true
+        cache-dependency-glob: requirements.txt
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Restore Tauri Rust build cache
+      id: tauri-rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./frontend/src-tauri -> target"
+        shared-key: "tauri-windows-release"
+        add-job-id-key: false
+        cache-workspace-crates: true
+
+    - name: Install Dependencies
+      run: |
+        uv pip install --requirement requirements.txt
+        uv pip install "pyinstaller>=6.10,<7.0"
+        pnpm --prefix frontend install --frozen-lockfile
+
+    - name: Run Backend Unit Tests (Pre-Release Gate)
+      run: uv run --no-project --active python -m pytest tests/ -v --ignore=tests/test_portable_host_diagnostics.py
+
+    - name: Run Frontend Unit Tests (Pre-Release Gate)
+      run: pnpm --prefix frontend run test
+
+    - name: Build Python Backend Sidecar Executable
+      run: >
+        uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
+
+    - name: Stage Embedded Sidecar for Tauri Host
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force frontend/src-tauri/bin | Out-Null
+        Copy-Item dist/server-sidecar-x86_64-pc-windows-msvc.exe `
+          frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
+
+    - name: Build and Sign Tauri Release Executable
+      env:
+        VITE_GIT_COMMIT: ${{ env.TAG }}
+        VITE_GIT_BRANCH: "main"
+        TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+      run: |
+        pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.ci.conf.json
+
+    - name: Prepare Release Package & Generate latest.json Manifest
+      run: >
+        uv run --no-project --active python scripts/prepare_release_assets.py
+        --exe frontend/src-tauri/target/release/FH6-HorizonTuner.exe
+        --sig frontend/src-tauri/target/release/FH6-HorizonTuner.exe.sig
+        --output-dir dist/release
+        --tag "${{ env.TAG }}"
+        --repo "${{ github.repository }}"
+
+    - name: Upload and Attach Assets to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ env.TAG }}
+        files: |
+          dist/release/FH6-HorizonTuner.exe
+          dist/release/FH6-HorizonTuner.exe.sig
+          dist/release/FH6-HorizonTuner-*.zip
+          dist/release/latest.json
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate Release Deployment Summary
+      if: always()
+      shell: bash
+      run: |
+        cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+        ## 🚀 FH6-HorizonTuner Release & OTA Packaging Summary
+
+        - **Release Tag**: `${{ env.TAG }}`
+        - **Target OS**: Windows x86_64
+        - **OTA Signing**: Ed25519 Verified & Attached
+
+        | Asset Name | Description | Status |
+        | :--- | :--- | :---: |
+        | `FH6-HorizonTuner.exe` | Main Standalone Executable (Host + Sidecar) | ✅ Attached |
+        | `FH6-HorizonTuner.exe.sig` | Ed25519 Cryptographic Signature | ✅ Attached |
+        | `FH6-HorizonTuner-*.zip` | Standalone Portable ZIP Bundle | ✅ Attached |
+        | `latest.json` | Tauri v2 OTA Manifest for In-App Updates | ✅ Attached |
+
+        > 🎉 All release assets have been automatically attached to the GitHub Release.
+        EOF
