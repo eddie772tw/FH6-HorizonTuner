@@ -77,7 +77,8 @@ def collect_all_security_data(repo: str) -> dict[str, Any]:
     # 3. Secret Scanning Alerts (open)
     secret_scanning_open = run_gh_api(f"repos/{repo}/secret-scanning/alerts?state=open")
     if isinstance(secret_scanning_open, dict) and "error" in secret_scanning_open:
-        print(f"[-] Secret Scanning (open) 查詢失敗: {secret_scanning_open['error']}")
+        status_code = secret_scanning_open.get("status_code", "unknown")
+        print(f"[-] Secret Scanning (open) 查詢失敗 (status: {status_code})")
         secret_scanning_open = []
 
     # 4. Security Advisories
