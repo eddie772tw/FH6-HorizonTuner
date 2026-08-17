@@ -86,3 +86,33 @@ def test_prepare_release_assets_missing_exe_raises(tmp_path: Path):
             output_dir=tmp_path / "out",
             tag="v1.5.0",
         )
+
+
+def test_release_workflow_security_and_contract():
+    repo_root = Path(__file__).resolve().parent.parent
+    release_yml_path = repo_root / ".github" / "workflows" / "release.yml"
+    assert release_yml_path.is_file(), "release.yml must exist"
+
+    content = release_yml_path.read_text(encoding="utf-8")
+
+    # Ensure dangerous multi-line body template expansion in shell run script is eliminated
+    assert "${{ github.event.release.body }}" not in content
+    assert "github.event.release.body" not in content
+
+    # Verify that Determine Release Tag uses env mapping
+    assert "EVENT_NAME: ${{ github.event_name }}" in content
+    assert "EVENT_TAG: ${{ github.event.release.tag_name }}" in content
+    assert "INPUT_TAG: ${{ github.event.inputs.tag_name }}" in content
+    assert "REF_NAME: ${{ github.ref_name }}" in content
+
+
+def test_diagnostics_workflow_security_and_contract():
+    repo_root = Path(__file__).resolve().parent.parent
+    diag_yml_path = repo_root / ".github" / "workflows" / "diagnostics.yml"
+    assert diag_yml_path.is_file(), "diagnostics.yml must exist"
+
+    content = diag_yml_path.read_text(encoding="utf-8")
+
+    # Verify that Set configuration from input uses env mapping
+    assert "INPUT_REPEAT_COUNT: ${{ github.event.inputs.repeat_count }}" in content
+    assert "INPUT_TIMEOUT: ${{ github.event.inputs.timeout }}" in content

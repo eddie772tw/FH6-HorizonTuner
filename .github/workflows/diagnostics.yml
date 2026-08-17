@@ -50,18 +50,15 @@ jobs:
 
     - name: Set configuration from input
       shell: bash
+      env:
+        INPUT_REPEAT_COUNT: ${{ github.event.inputs.repeat_count }}
+        INPUT_TIMEOUT: ${{ github.event.inputs.timeout }}
       run: |
-        count="${{ github.event.inputs.repeat_count }}"
-        if [ -z "$count" ]; then
-          count=1
-        fi
-        echo "DIAGNOSTICS_REPEAT_COUNT=$count" >> $GITHUB_ENV
+        count="${INPUT_REPEAT_COUNT:-1}"
+        echo "DIAGNOSTICS_REPEAT_COUNT=$count" >> "$GITHUB_ENV"
 
-        timeout="${{ github.event.inputs.timeout }}"
-        if [ -z "$timeout" ]; then
-          timeout=120
-        fi
-        echo "DIAGNOSTICS_TIMEOUT=$timeout" >> $GITHUB_ENV
+        timeout="${INPUT_TIMEOUT:-120}"
+        echo "DIAGNOSTICS_TIMEOUT=$timeout" >> "$GITHUB_ENV"
 
     - name: Set up uv and managed Python 3.13
       uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0

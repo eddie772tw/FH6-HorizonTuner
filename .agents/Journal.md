@@ -15,6 +15,25 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / GitHub Actions Release Workflow 腳本注入防護與 Shell 語法錯誤修復
+
+### GitHub Actions 內聯範本展開崩潰、CWE-78 防護與 step env 安全傳遞
+
+- **來源**：`local`，針對 Release 工作流因 Release Body 雙引號與換行導致 Bash 腳本語法中斷（Exit code 127）進行修復。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **GitHub Actions 內聯範本展開與 Shell 語法崩潰 (Expression Injection)**：在 workflow 的 `run: |` 腳本中直接使用 `${{ github.event.release.body }}` 或類似外部上下文變數時，GitHub Actions 會在 Bash 執行前進行字串替換。若 Release 說明內含有雙引號（如 PR 標題 `"Coming Soon"`）、反引號、特殊字元或換行，將導致雙引號提前閉合，後續 Markdown 行（如 `**Full Changelog**: https://...`）會被 Bash 解析為獨立命令，引發 `No such file or directory` 與 exit code 127 錯誤。
+  2. **環境變數隔離原則 (Safe Context Passing via env)**：GitHub context 變數與 workflow inputs 應一律透過 step 的 `env:` 區塊傳入環境變數（例如 `EVENT_NAME: ${{ github.event_name }}`），由 Shell 讀取環境變數 `$EVENT_NAME`。這不僅消除了引號跳脫與腳本截斷問題，更杜絕了 CWE-78 指令注入 (Command Injection) 風險。
+  3. **Release Asset Manifest 與 OTA Notes 簡潔性**：Tauri v2 updater 的 `latest.json` 僅需簡潔版本描述（如 `f"FH6-HorizonTuner Release {tag}"`），毋需將完整的 GitHub Release Markdown Changelog 強行內嵌於 shell 腳本中。
+- **Action**：
+  1. 修改 `.github/workflows/release.yml`，移除未使用的 `BODY="${{ github.event.release.body }}"`，並將 `Determine Release Tag` 之各變數改為 `env` 映射。
+  2. 同步重構 `.github/workflows/diagnostics.yml`，將 `github.event.inputs` 透過 `env` 區塊宣告傳遞。
+  3. 在 `tests/test_release_workflow_contract.py` 建立靜態合約與安全防護測試，防範未來重新引入不安全的內嵌上下文。
+  4. 驗證後端單元測試 (171 passed)、前端 Vitest (440 passed) 與靜態檢查。
+- **Evidence**：`test_release_workflow_security_and_contract` 與 `test_diagnostics_workflow_security_and_contract` 通過；`pytest` (171 passed)；`ruff check` & `ruff format --check` 通過；前端 Vitest (69 files / 440 tests passed)。
+
+---
+
 ## 2026-08-17 / Dependabot Alert #2: glib Unsoundness 深度調查與平台隔離處置 (GHSA-wrw7-89jp-8q8g)
 
 ### Cargo SemVer 跨版不相容、Tauri Linux 目標依賴鎖定與 Windows 平台隔離決策
