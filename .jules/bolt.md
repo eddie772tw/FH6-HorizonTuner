@@ -71,3 +71,7 @@
 ## 2026-08-11 - Use useMemo and for loops for telemetry data in React
 **Learning:** Calling array methods like `.filter()` that execute closures directly inside the React render cycle (e.g., `<AreaChart data={telemetryPoints.filter(...)}>`) causes severe GC pressure, UI stuttering, and recalculations on every render when working with large telemetry datasets.
 **Action:** Always wrap data downsampling or transformation logic for large arrays in a `useMemo` hook, and replace `.filter()`, `.map()`, and chained methods with a native `for` loop to eliminate both redundant computations across renders and per-element closure allocations.
+
+## 2026-08-15 - Eliminate .forEach array allocations in Live Map Telemetry Card
+**Learning:** In high-frequency render paths like the 60Hz Live Map telemetry card, using `.forEach` inside `renderLiveMap` with inline array initializations (e.g. `[40, 80, 120].forEach`) creates unnecessary function closures and inline array allocations on every single render tick. This results in heavy garbage collection pressure, leading to potential frame stuttering and micro-freezes.
+**Action:** Replace `.forEach` loops with native `for` loops in high-frequency functions. In scenarios with known numeric step sequences, use mathematical loops (e.g. `for (var r = 40; r <= 120; r += 40)`) to completely eliminate the need for inline array declarations and closure overhead.
