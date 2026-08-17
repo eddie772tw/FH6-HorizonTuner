@@ -15,6 +15,27 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / GitHub Security Audit 32 筆警報全面修復與 CI/CD 治理
+
+### CodeQL 32 筆安全警報全面加固 (Path Injection, Bad Tag Filter, Socket Binding, E2E)
+
+- **來源**：`local`，針對 GitHub Security Audit 收集之 32 筆安全警報進行全面修復與單元測試加固。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **GitHub Security Dashboard 與 PR/CI 合併生效特性**：在 PR 處於開啟或分支 commit 階段，GitHub Security Tab 上的全域警報不會自動關閉。必須透過 PR 的 Checks 分頁與 CodeQL CI Run 日誌確認警報消除；待 PR 正式合併（Merge）至主分支後，Security Tab 的警報才會自動轉為 `Closed (Fixed)`。
+  2. **Path Injection 深度包含性檢驗 (Containment Check)**：單純使用 `os.path.basename()` 在複雜路由或 MCP 工具中仍可能觸發 CodeQL 污點分析警報；結合 `os.path.realpath` 與 `os.path.commonpath([base_dir, target_dir]) == base_dir` 進行 strict containment 檢查是最嚴謹的做法。
+  3. **HTML 標籤過濾 Regex 缺陷**：正則表達式比對 HTML 結尾標籤（如 `</script>`）時，必須考量空格（如 `</script\s*>`），避免被繞過或標記為 `js/bad-tag-filter` 漏洞。
+- **Action**：
+  1. 建立 `backend/path_security.py` 提供 `safe_resolve_path` 與 `safe_join_under_dir` 集中式安全路徑驗證。
+  2. 修復 `backend/main.py`（14 處）、`backend/motec_exporter.py`（2 處）、`backend/mcp/service.py`（8 處）路徑注入隱患。
+  3. 修復 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts` 與 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 正則標籤過濾。
+  4. 修復 `frontend/e2e/hud_telemetry_cards.spec.ts` 靜態檔案伺服器目錄遍歷防護。
+  5. 加固 `verify_telemetry_v2_v3.py` Socket 綁定（支援 `--host`，預設 `127.0.0.1`）。
+  6. 新增 `tests/test_path_security.py` 完整覆蓋目錄跳脫與邊界測試（12 tests）。
+- **Evidence**：`tests/test_path_security.py` (12 passed)；後端 `pytest` (164 passed, 0 failed)；前端 Vitest (66 files, 418 passed)；`ruff check .` 與 `ruff format --check .` 100% 通過。
+
+---
+
 ## 2026-08-17 / GitHub Security Audit Skill & Alert Collection
 
 ### GitHub Security & Quality 全維度資料收集與 github-security-audit 技能建置

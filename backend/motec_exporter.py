@@ -17,12 +17,14 @@ def export_session_to_motec_csv(
     Fully compatible with MoTeC i2 Pro, RaceRender, and TrackVision.
     """
     try:
-        os.makedirs(os.path.dirname(os.path.abspath(output_filepath)), exist_ok=True)
+        abs_output = os.path.realpath(os.path.abspath(output_filepath))
+        output_dir = os.path.dirname(abs_output)
+        os.makedirs(output_dir, exist_ok=True)
 
         car_name = session_meta.get("car_name", "Unknown Vehicle")
         session_id = session_meta.get("session_id", "session")
 
-        with open(output_filepath, "w", newline="", encoding="utf-8") as f:
+        with open(abs_output, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
             # MoTeC Standard Header Block

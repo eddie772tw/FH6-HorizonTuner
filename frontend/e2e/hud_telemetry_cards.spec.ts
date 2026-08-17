@@ -24,17 +24,26 @@ const mimeTypes: Record<string, string> = {
 
 test.beforeAll(async () => {
     server = http.createServer((req, res) => {
-        const reqPath = req.url === '/' ? '/index.html' : req.url?.split('?')[0] || '/index.html';
-        const filePath = path.join(hudDir, reqPath);
+        const rawReqPath = req.url === '/' ? '/index.html' : req.url?.split('?')[0] || '/index.html';
+        const sanitizedRelative = '.' + (rawReqPath.startsWith('/') ? rawReqPath : '/' + rawReqPath);
+        const resolvedPath = path.resolve(hudDir, sanitizedRelative);
 
-        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-            const ext = path.extname(filePath).toLowerCase();
+        // Enforce strict directory containment
+        const normalizedHudDir = path.resolve(hudDir);
+        if (!resolvedPath.startsWith(normalizedHudDir + path.sep) && resolvedPath !== normalizedHudDir) {
+            res.writeHead(403, { 'Content-Type': 'text/plain' });
+            res.end('403 Forbidden');
+            return;
+        }
+
+        if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+            const ext = path.extname(resolvedPath).toLowerCase();
             const contentType = mimeTypes[ext] || 'application/octet-stream';
             res.writeHead(200, {
                 'Content-Type': contentType,
                 'Access-Control-Allow-Origin': '*'
             });
-            fs.createReadStream(filePath).pipe(res);
+            fs.createReadStream(resolvedPath).pipe(res);
         } else {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('404 Not Found');

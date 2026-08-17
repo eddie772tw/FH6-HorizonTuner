@@ -9,7 +9,7 @@ function readDriftHud(): string {
 }
 
 function extractInlineScripts(html: string): string[] {
-  return [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+  return [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script\s*>/gi)]
     .map((match) => match[1])
     .filter((source) => source.trim().length > 0);
 }

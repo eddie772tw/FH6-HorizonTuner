@@ -102,6 +102,7 @@ from mcp import (
 )
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from overlay_metrics import OverlayPerformanceMetrics
+from path_security import safe_join_under_dir, safe_resolve_path
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from system_media import get_system_media_info
 from telemetry_listener import (
@@ -954,21 +955,23 @@ def dyno_is_reasonable(new_val, neighbor_vals, threshold=DYNO_ANOMALY_THRESHOLD)
 
 
 def load_car_params(car_id: str):
-    car_id = os.path.basename(car_id)
-    file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
-    if os.path.exists(file_path):
+    clean_id = os.path.basename(car_id)
+    file_path = safe_resolve_path(CAR_PARAMS_DIR, f"{clean_id}.json")
+    if file_path and os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
-    res_path = os.path.join(RESOURCE_CAR_PARAMS_DIR, f"{car_id}.json")
-    if os.path.exists(res_path):
+    res_path = safe_resolve_path(RESOURCE_CAR_PARAMS_DIR, f"{clean_id}.json")
+    if res_path and os.path.exists(res_path):
         with open(res_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
 
 
 def save_car_params(car_id: str, data: dict):
-    car_id = os.path.basename(car_id)
-    file_path = os.path.join(CAR_PARAMS_DIR, f"{car_id}.json")
+    clean_id = os.path.basename(car_id)
+    file_path = safe_resolve_path(CAR_PARAMS_DIR, f"{clean_id}.json", allow_create=True)
+    if not file_path:
+        raise ValueError(f"Invalid car_id: {car_id}")
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
@@ -1622,8 +1625,9 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
     if code == "en-us":
         return {}
 
-    file_path = os.path.join(LANG_DIR, f"{code}.json")
-    if os.path.exists(file_path):
+    clean_code = os.path.basename(code)
+    file_path = safe_resolve_path(LANG_DIR, f"{clean_code}.json")
+    if file_path and os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -1711,10 +1715,10 @@ def list_tunings():
 
 @app.get("/api/tunings/{car_id}/{save_name}")
 async def get_tuning(car_id: str, save_name: str):
-    car_id = os.path.basename(car_id)
-    save_name = os.path.basename(save_name)
-    file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
-    if os.path.exists(file_path):
+    clean_car_id = os.path.basename(car_id)
+    clean_save_name = os.path.basename(save_name)
+    file_path = safe_resolve_path(TUNINGS_DIR, f"{clean_car_id}-{clean_save_name}.json")
+    if file_path and os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {"error": "Tuning not found"}
@@ -1722,9 +1726,13 @@ async def get_tuning(car_id: str, save_name: str):
 
 @app.post("/api/tunings/{car_id}/{save_name}")
 async def save_tuning(car_id: str, save_name: str, data: dict):
-    car_id = os.path.basename(car_id)
-    save_name = os.path.basename(save_name)
-    file_path = os.path.join(TUNINGS_DIR, f"{car_id}-{save_name}.json")
+    clean_car_id = os.path.basename(car_id)
+    clean_save_name = os.path.basename(save_name)
+    file_path = safe_resolve_path(
+        TUNINGS_DIR, f"{clean_car_id}-{clean_save_name}.json", allow_create=True
+    )
+    if not file_path:
+        raise HTTPException(status_code=400, detail="Invalid tuning path")
 
     def _write_tuning(path: str, tuning_data: dict):
         with open(path, "w", encoding="utf-8") as f:
@@ -1891,7 +1899,11 @@ async def export_motec_session(session_id: str):
         return {"error": "No telemetry data points found in session"}
 
     export_filename = os.path.basename(f"{session_id}_motec.csv")
-    export_filepath = os.path.join(SESSIONS_DIR, export_filename)
+    export_filepath = safe_resolve_path(
+        SESSIONS_DIR, export_filename, allow_create=True
+    )
+    if not export_filepath:
+        return {"error": "Invalid session export path"}
 
     success = export_session_to_motec_csv(session_meta, points, export_filepath)
     if success and os.path.exists(export_filepath):
@@ -2030,9 +2042,9 @@ async def list_drag_sessions():
 
 @app.get("/api/drag/sessions/{filename}")
 async def get_drag_session(filename: str):
-    filename = os.path.basename(filename)
-    file_path = os.path.join(DRAG_SESSIONS_DIR, filename)
-    if os.path.exists(file_path):
+    clean_filename = os.path.basename(filename)
+    file_path = safe_resolve_path(DRAG_SESSIONS_DIR, clean_filename)
+    if file_path and os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -2044,9 +2056,9 @@ async def get_drag_session(filename: str):
 
 @app.delete("/api/drag/sessions/{filename}")
 async def delete_drag_session(filename: str):
-    filename = os.path.basename(filename)
-    file_path = os.path.join(DRAG_SESSIONS_DIR, filename)
-    if os.path.exists(file_path):
+    clean_filename = os.path.basename(filename)
+    file_path = safe_resolve_path(DRAG_SESSIONS_DIR, clean_filename)
+    if file_path and os.path.exists(file_path):
         try:
             os.remove(file_path)
             return {"message": "Drag session deleted successfully"}

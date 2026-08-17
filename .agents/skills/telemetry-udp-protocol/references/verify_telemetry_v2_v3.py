@@ -343,16 +343,18 @@ def print_comparison_report(
 # ==============================================================================
 # 實時多封包掃描引擎 (Field Address Scanner for DeltaT & DataPacketId)
 # ==============================================================================
-def scan_packets_for_tail_fields(port: int, count: int = 15, timeout: float = 5.0):
+def scan_packets_for_tail_fields(
+    port: int, count: int = 15, timeout: float = 5.0, host: str = "127.0.0.1"
+):
     """收集多個連續 Live UDP 封包並全面掃描全封包 Offset，尋找 DeltaT, DataPacketId, DrivingLine 候選位址"""
     print("\n" + "=" * 80)
     print(
-        f"  [實時多封包連貫掃描引擎] 監聽 Port {port}，收集 {count} 個連續封包進行 Offset 探測..."
+        f"  [實時多封包連貫掃描引擎] 監聽 {host}:{port}，收集 {count} 個連續封包進行 Offset 探測..."
     )
     print("=" * 80)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("0.0.0.0", port))
+    sock.bind((host, port))
     sock.settimeout(timeout)
 
     packets = []
@@ -494,16 +496,22 @@ def main():
         help="開啟全封包 Offset 探測掃描模式 (尋找 DeltaT, DataPacketId)",
     )
     parser.add_argument(
+        "--host",
+        type=str,
+        default="127.0.0.1",
+        help="UDP 監聽主機位址 (預設: 127.0.0.1)",
+    )
+    parser.add_argument(
         "--port", type=int, default=20440, help="UDP 監聽埠號 (預設: 20440)"
     )
     args = parser.parse_args()
 
     if args.scan:
-        scan_packets_for_tail_fields(port=args.port, count=15)
+        scan_packets_for_tail_fields(port=args.port, count=15, host=args.host)
     elif args.live:
-        print(f"\n[模式 2: 實時 UDP 監聽模式 (UDP Port: {args.port})]")
+        print(f"\n[模式 2: 實時 UDP 監聽模式 (UDP Host/Port: {args.host}:{args.port})]")
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(("0.0.0.0", args.port))
+        sock.bind((args.host, args.port))
         sock.settimeout(5.0)
         print("正在等待 Forza 遊戲 UDP 遙測封包 (5 秒超時)...")
         try:
