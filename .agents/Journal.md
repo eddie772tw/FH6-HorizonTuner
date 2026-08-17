@@ -15,6 +15,23 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / PR #214 & PR #215 審查、驗證與合併
+
+### SettingsView 點擊熱區擴充 (PR #214) 與 Telemetry Cards 60Hz DOM 快取最佳化 (PR #215)
+
+- **來源**：`local`，針對 Jules 建立之 PR #214 與 PR #215 依循 `pr-review-evaluation` 技能進行評估、Review 意見提交與 Squash Merge。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **設定開關點擊熱區優化 (PR #214)**：在 `SettingsView.tsx` 中將外層容器轉換為 `<label htmlFor="...">` 並替換內部重複之 `<label>` 為 `<div className="form-check-label ...">`，能在不破壞 Halfmoon CSS v2 排版前提下，大幅擴充整列可點擊範圍（Hit Area），顯著改善指標與觸控操作體驗。
+  2. **高頻遙測 60Hz 渲染 DOM 快取 (PR #215)**：在 `hud_overlay/shared/telemetry-cards/manager.js` 中建立 `this.domCache` 快取全部子渲染器（`g-radar.js`, `pedal-wave.js`, `power-torque.js`, `corner-card.js`）所需之 DOM 節點，消弭每幀約 14 次 `document.getElementById` 同步查詢（約 840 次/秒），有效降低主執行緒 CPU 開銷與 GC 壓力，並保留 fallback 機制維持向後相容。
+- **Action**：
+  1. 檢視兩項 PR 之程式碼變更、CI Checks (14/14 全綠) 與 CodeQL 分析報告。
+  2. 標準化輸出 Review Comments 並完成 Squash Merge。
+  3. 同步拉取至本地 `main` 分支並完成 165 項後端單元測試、69 檔/440 項前端單元測試與 Vite 建置驗證。
+- **Evidence**：GitHub PR #214 & PR #215 成功合併；本地 `ruff check` (pass)、`ruff format --check` (113 files pass)、後端單元測試 (165 passed)、前端 Vitest (440 passed)、`tsc && vite build` (pass)。
+
+---
+
 ## 2026-08-17 / Dependabot Alert #1: nanoid DoS 漏洞修復 (CVE-2026-67213)
 
 ### nanoid 零長度無限迴圈拒絕服務漏洞與 pnpm.overrides 鎖定
