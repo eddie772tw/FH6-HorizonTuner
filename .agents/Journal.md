@@ -15,6 +15,29 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / Dependabot Alert #2: glib Unsoundness 深度調查與平台隔離處置 (GHSA-wrw7-89jp-8q8g)
+
+### Cargo SemVer 跨版不相容、Tauri Linux 目標依賴鎖定與 Windows 平台隔離決策
+
+- **來源**：`local`，針對 Dependabot Alert #2 (`GHSA-wrw7-89jp-8q8g` / `RUSTSEC-2024-0429`) 進行深層相依性樹狀圖分析與治理處置。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Dependabot 無法自動修復根本原因 (SemVer Incompatibility)**：
+     - `glib` 是由 `tauri v2.11.5` 的 Linux 平台依賴 `gtk v0.18.2` 間接引入，其要求 `glib = "^0.18"`（被鎖定在 `0.18.5`）。
+     - 漏洞修復版本為 `glib >= 0.20.0`。在 Cargo SemVer 規範中，`0.18` 到 `0.20` 屬於 Major Incompatible Breaking Change，強制指定 `0.20.0` 會觸發 Cargo 依賴解析失敗，導致 Dependabot 無法自動建立升級 PR。
+  2. **上游 Tauri 與 GTK-rs 生態限制**：
+     - GTK-rs 官方未針對 `0.18.x` 釋出 backport patch；Tauri 官方正逐步從 `gtk3-rs` 遷移至 `gtk4-rs`。在上游完成全面升級前，下游所有 Tauri 2 專案均無法單獨升級 `glib`。
+  3. **Windows 平台隔離性與威脅模型分析 (Zero Exploitability)**：
+     - `FH6-HorizonTuner` 專為 Windows 平台的 Forza 遙測打造，發行產物均為 Windows PE 二進位檔。
+     - 在 Windows 上編譯與打包時，Tauri 採用 Windows WebView2 與 Win32 API 抽象層，`glib` / `gtk` / `webkit2gtk` 等 Linux 目標平台條件依賴**完全不會被編譯、連結或打包進 Windows 生產產物**中，對最終使用者不存在任何安全威脅。
+- **Action**：
+  1. 透過 GitHub REST API 成功將 Dependabot Alert #2 標記為 `dismissed`（理由 `tolerable_risk`，附帶平台隔離與上游依賴依據）。
+  2. 在 `.agents/skills/github-security-audit/SKILL.md` 增訂「第三方依賴漏洞與上游間接依賴鎖死 (`dependabot-transitive-lock`)」標準排查與處置 SOP。
+  3. 驗證全專案後端單元測試 (165 passed)、前端 Vitest (440 passed)、靜態檢查與 GitHub Dependabot 狀態（Open alerts = 0）。
+- **Evidence**：GitHub API PATCH 回傳 `state: dismissed`, `dismissed_reason: tolerable_risk`；`collect_security_alerts.py` 驗證 Dependabot 待處理警報為 0；後端 Pytest (165 passed)；前端 Vitest (69 files / 440 tests passed)；`ruff check .` 與 `ruff format --check .` 100% 通過。
+
+---
+
 ## 2026-08-17 / PR Review 技能升級與 GitHub 原生 Inline Comments 整合
 
 ### GitHub PR Review API 機制、Diff Hunk 邊界 Invariant 與 submit_pr_review 實作

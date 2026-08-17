@@ -98,6 +98,21 @@ description: 當需要收集、審查或修復 GitHub 自主檢測的安全問�
   2. 檢查 `.gitignore`，確保 `.env`、`*.pem`、`*.key`、`credentials.json` 被排除。
   3. 使用 GitHub Secret Scanning 介面將該警報標記為 `resolved`。
 
+### 5. 第三方依賴漏洞與上游間接依賴鎖死 (`dependabot-transitive-lock`)
+- **現象**：Dependabot 提示 "One or more other dependencies require a version that is incompatible with this update."，無法自動產生 PR。
+- **排查與處置 SOP**：
+  1. **定位依賴路徑 (Dependency Path)**：
+     - Rust / Cargo: 執行 `cargo tree --target all -i <package-name>`
+     - Node.js / pnpm: 執行 `pnpm why <package-name>`
+     - Python: 執行 `uv pip tree` 或 `pipdeptree -r -p <package-name>`
+  2. **測試版本衝突**：執行精確更新命令（如 `cargo update -p <package> --precise <version>`），獲取具體 SemVer 衝突之父層套件。
+  3. **受害面與目標平台評估 (Threat & Platform Reachability)**：
+     - 查驗該依賴是否僅存在於特定 Target 平台（如 Linux-only GTK / webkit2gtk），而專案僅發行特定平台（如 Windows-only PE 二進位檔）。
+     - 確認生產環境或最終發行產物中是否包含該易受攻擊之符號。
+  4. **處置決策**：
+     - 若為前端/Node.js 可透過 `pnpm.overrides` 覆寫者，優先執行 supply chain override。
+     - 若為上游核心框架（如 Tauri 核心）限制且生產平台完全不受影響，透過 GitHub API 或 Web UI 標記為 `dismissed`（理由 `tolerable_risk` / `inaccurate`），並於 Dismiss comment 明確載明平台隔離與上游依賴依據。
+
 ---
 
 ## 報告與審計輸出格式規範
