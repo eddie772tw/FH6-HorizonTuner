@@ -5,7 +5,7 @@
 
 import { clamp, getCanvasContext } from './utils.js';
 
-export function renderPowerTorque(data, powerTorqueHist, now) {
+export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     var maxHP = data.sessionMaxima ? (data.sessionMaxima.maxHP || 100) : 100;
     var maxTQ = data.sessionMaxima ? (data.sessionMaxima.maxTQ || 100) : 100;
     var ceilHP = Math.max(100, Math.ceil(maxHP / 100) * 100);
@@ -29,7 +29,7 @@ export function renderPowerTorque(data, powerTorqueHist, now) {
         }
     }
 
-    var ptCanvas = document.getElementById('tcPowerTorqueChart');
+    var ptCanvas = domCache ? domCache.ptCanvas : document.getElementById('tcPowerTorqueChart');
     if (!ptCanvas || powerTorqueHist.length === 0) return;
 
     var cData = getCanvasContext(ptCanvas);
@@ -53,7 +53,7 @@ export function renderPowerTorque(data, powerTorqueHist, now) {
     }
 
     // Draw Power Trace (Primary Theme Color)
-    var wrapperEl = document.getElementById('tcClusterWrapper');
+    var wrapperEl = domCache ? domCache.wrapper : document.getElementById('tcClusterWrapper');
     var primaryColor = 'rgba(255, 0, 136, 0.75)';
     if (wrapperEl && typeof wrapperEl.style !== 'undefined' && typeof wrapperEl.style.getPropertyValue === 'function') {
         var cssVal = wrapperEl.style.getPropertyValue('--card-contrast');

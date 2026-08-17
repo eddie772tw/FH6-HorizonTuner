@@ -78,3 +78,6 @@
 ## 2026-08-15 - Eliminate .forEach array allocations in Live Map Telemetry Card
 **Learning:** In high-frequency render paths like the 60Hz Live Map telemetry card, using `.forEach` inside `renderLiveMap` with inline array initializations (e.g. `[40, 80, 120].forEach`) creates unnecessary function closures and inline array allocations on every single render tick. This results in heavy garbage collection pressure, leading to potential frame stuttering and micro-freezes.
 **Action:** Replace `.forEach` loops with native `for` loops in high-frequency functions. In scenarios with known numeric step sequences, use mathematical loops (e.g. `for (var r = 40; r <= 120; r += 40)`) to completely eliminate the need for inline array declarations and closure overhead.
+## $(date +%Y-%m-%d) - Caching DOM lookups in Vanilla JS Overlays
+**Learning:** High-frequency render loops (like 60Hz telemetry overlay functions) calling `document.getElementById` synchronously bottleneck the main thread.
+**Action:** Always pre-query static DOM elements during initialization and cache them in a structure (e.g., `this.domCache`). Pass this cache down to sub-renderers instead of querying the DOM in the render loop. Use the logical OR pattern `(domCache && domCache.prop) ? domCache.prop : document.getElementById(...)` as a safe fallback.
