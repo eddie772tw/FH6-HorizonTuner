@@ -1062,3 +1062,19 @@
   - Pytest 測試：`tests/test_mcp_sse.py` (4 passed)，後端全體測試 `142 passed, 2 skipped`。
   - Vitest 測試：`McpSettingsCard.test.ts` (3 passed)，前端全體測試 53 個檔案 / 274 個測試 100% 通過。
   - Ruff 靜態分析與格式檢查全數通過。
+
+---
+
+## 2026-08-17 / GitHub SECURITY.md Implementation and Governance Integration
+
+- **Scope**: `SECURITY.md`, `README.md`, `README.en.md`, `.agents/skills/agent-governance-audit/SKILL.md`, `.agents/skills/portable-release-validation/SKILL.md`.
+- **Status**: adopted.
+- **Decision**:
+  1. 實作符合 GitHub 官方標準之 `SECURITY.md`（雙語對照），細化 Supported Versions 支援版本矩陣（`1.4.x` 獲主動安全性支援、`1.0.x - 1.3.x` 建議升級至 `1.4` 以上、`< 1.0` 停止支援）、Private Vulnerability Reporting 私密回報渠道、48h/7d SLA 回應與評估時程、協同揭露原則，並針對 Localhost 隔離、60Hz UDP 遙測解析、自訂主題/CSS 安全性等專案專屬威脅模型建立安全邊界指引。
+  2. 經評估避免 Skill 過度碎片化，採取「方案 A」將 `SECURITY.md` 的持續維護與稽核整合至現有治理體系：`agent-governance-audit` 定例檢查社群健康與安全政策連結有效性；`portable-release-validation` 在發行新版時檢查並同步更新 Supported Versions 支援矩陣。
+  3. 於中英文 `README.md` 與 `README.en.md` 中同步追加安全政策章節與指引連結。
+- **Evidence**:
+  - 後端靜態檢查：`ruff check .` 全數通過。
+  - 後端單元測試：`pytest` 150 passed。
+  - 前端單元測試：Vitest 66 個檔案 / 418 個測試全數通過。
+  - 格式與代碼檢查：`git diff --check` 完全乾淨。

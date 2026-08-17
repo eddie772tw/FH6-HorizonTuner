@@ -14,9 +14,10 @@ description: 當調整 Google-style .agents、Jules 日誌、Journal 或 skill �
 1. 檢查 `git status --short --branch`，不得覆蓋其他 agent 的 dirty worktree。
 2. 列出所有 `.agents/skills/*/SKILL.md`，確認資料夾名稱、frontmatter `name` 與 `skills/README.md` 完全一致。
 3. 搜尋大小寫衝突（例如 `.Jules`/`.jules`）、過時專案路徑、`file:///`、失效 references 與重複的規則。
-4. 檢查文件語言邊界：agent 文件以中文為主；`.jules/*.md` 保留 Jules 原始英文，不翻譯。
-5. 比對 `.jules`、Journal、AGENTS 與 rules：只有已在本地驗證且可重現的結論，才能從 Journal 升格為永久規則或 skill。
-6. 執行相關 skill validator、`git diff --check`，並記錄發現、修正與仍待處理項目。
+4. 檢查社群健康與安全檔案（如 `SECURITY.md`、`README.md`、`LICENSE`）之連結有效性與版本一致性。
+5. 檢查文件語言邊界：agent 文件以中文為主；`.jules/*.md` 保留 Jules 原始英文，不翻譯。
+6. 比對 `.jules`、Journal、AGENTS 與 rules：只有已在本地驗證且可重現的結論，才能從 Journal 升格為永久規則或 skill。
+7. 執行相關 skill validator、`git diff --check`，並記錄發現、修正與仍待處理項目。
 
 ## 治理決策
 
