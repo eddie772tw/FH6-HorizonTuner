@@ -1,4 +1,4 @@
-﻿# FH6-HorizonTuner 🏎️
+# FH6-HorizonTuner 🏎️
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
 [![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
@@ -302,6 +302,12 @@ The project uses GitHub Actions for automated quality control. Every push to `ma
 This project is licensed under the [MIT License](LICENSE).
 
 Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
+
+---
+
+## Security Policy
+
+We are committed to the security of our users and project. If you discover a security vulnerability, please refer to [SECURITY.md](SECURITY.md) to report it privately via GitHub Private Vulnerability Reporting.
 
 ---
 

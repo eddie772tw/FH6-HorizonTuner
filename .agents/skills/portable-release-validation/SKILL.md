@@ -8,9 +8,10 @@ description: 當建立 V1.x 發行版、portable/exe/sidecar、啟動流程、�
 ## 發行前檢查
 
 1. 確認版本號、release notes、build metadata 與產物來源一致。
-2. 執行 frontend build、後端測試與必要的 package/build 命令。
-3. 檢查 portable 目錄只包含必要檔案，sidecar、frontend 與設定檔路徑沒有依賴開發機絕對路徑。
-4. 確認使用者資料、log 與設定檔寫入可攜式環境允許的位置。
+2. 檢查並更新 `SECURITY.md` 的 Supported Versions（支援版本矩陣），確保新舊版本支援狀態正確。
+3. 執行 frontend build、後端測試與必要的 package/build 命令。
+4. 檢查 portable 目錄只包含必要檔案，sidecar、frontend 與設定檔路徑沒有依賴開發機絕對路徑。
+5. 確認使用者資料、log 與設定檔寫入可攜式環境允許的位置。
 
 ## 啟動與連接埠 smoke test
 

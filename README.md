@@ -339,6 +339,12 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ---
 
+## 安全性政策 / Security Policy
+
+本專案設有完善的安全性維護政策與通報流程。若發現潛在漏洞，請參閱 [SECURITY.md](SECURITY.md) 透過 GitHub Private Vulnerability Reporting 私密回報。
+
+---
+
 ## 致謝與專案參考 / Credits & Acknowledgements
 
 * **Credits**: [Paburrito/forza-horizon-6-custom-hud](https://github.com/Paburrito/forza-horizon-6-custom-hud)
