@@ -477,44 +477,25 @@ class HorizonTunerMcpService:
 
     def get_capture_summary(self, capture_id_or_path: str) -> dict[str, Any] | None:
         """Load tuning capture and report metadata, summary statistics and data hygiene."""
-        target_file = None
-        valid_roots = [
-            os.path.realpath(os.path.abspath(self.calibration_dir)),
-            os.path.realpath(os.path.abspath(os.path.join(self.data_root, "captures"))),
-        ]
+        clean_id = os.path.basename(capture_id_or_path)
+        captures = self.list_tuning_captures()
+        matched = next(
+            (
+                c
+                for c in captures
+                if c.get("capture_id") == clean_id
+                or c.get("capture_id") == capture_id_or_path
+                or os.path.basename(c.get("file_path", "")) == clean_id
+                or c.get("file_path") == capture_id_or_path
+            ),
+            None,
+        )
 
-        if os.path.exists(capture_id_or_path):
-            abs_candidate = os.path.realpath(os.path.abspath(capture_id_or_path))
-            for root in valid_roots:
-                try:
-                    if os.path.commonpath([root, abs_candidate]) == root:
-                        target_file = abs_candidate
-                        break
-                except ValueError:
-                    continue
+        if not matched or not matched.get("file_path"):
+            return None
 
-        if not target_file:
-            # Search by capture ID with sanitized base name
-            clean_id = os.path.basename(capture_id_or_path)
-            captures = self.list_tuning_captures()
-            for c in captures:
-                if (
-                    c["capture_id"] == clean_id
-                    or c["capture_id"] == capture_id_or_path
-                    or os.path.basename(c["file_path"]) == clean_id
-                ):
-                    candidate = os.path.realpath(os.path.abspath(c["file_path"]))
-                    for root in valid_roots:
-                        try:
-                            if os.path.commonpath([root, candidate]) == root:
-                                target_file = candidate
-                                break
-                        except ValueError:
-                            continue
-                    if target_file:
-                        break
-
-        if not target_file or not os.path.exists(target_file):
+        target_file = matched["file_path"]
+        if not os.path.exists(target_file):
             return None
 
         with open(target_file, "r", encoding="utf-8") as f:

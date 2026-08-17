@@ -238,17 +238,61 @@ def test_get_tuning_preset_path_traversal_protection(mcp_service, tmp_path):
 
 
 def test_get_capture_summary_path_traversal_protection(mcp_service, tmp_path):
-    """Verify that get_capture_summary restricts explicit paths to allowed directories."""
+    """Verify that get_capture_summary restricts loading to valid captures and protects against traversal."""
     calib_dir = tmp_path / "calibration"
     calib_dir.mkdir(parents=True, exist_ok=True)
     mcp_service.calibration_dir = str(calib_dir)
 
-    # Outside file
-    outside_file = tmp_path / "outside_data.json"
-    outside_file.write_text(
-        json.dumps({"schemaVersion": "tuning-capture/v1", "samples": []}),
+    # Valid capture file
+    valid_capture = calib_dir / "valid_run.json"
+    valid_capture.write_text(
+        json.dumps(
+            {
+                "schemaVersion": "tuning-capture/v1",
+                "captureId": "valid_run_01",
+                "createdAt": "2026-08-17T00:00:00Z",
+                "metadata": {
+                    "carOrdinal": 101,
+                    "installedParts": [],
+                    "surface": "asphalt",
+                },
+                "samples": [
+                    {"timestampMs": 0, "speedKmh": 50.0},
+                    {"timestampMs": 500, "speedKmh": 100.0},
+                ],
+                "confidence": "verified",
+            }
+        ),
         encoding="utf-8",
     )
 
-    # Attempt to load outside file via absolute path
+    # 1. Load by captureId
+    summary_by_id = mcp_service.get_capture_summary("valid_run_01")
+    assert summary_by_id is not None
+    assert summary_by_id["capture_id"] == "valid_run_01"
+    assert summary_by_id["summary"]["sample_count"] == 2
+    assert summary_by_id["summary"]["max_speed_kmh"] == 100.0
+
+    # 2. Load by filename
+    summary_by_filename = mcp_service.get_capture_summary("valid_run.json")
+    assert summary_by_filename is not None
+    assert summary_by_filename["capture_id"] == "valid_run_01"
+
+    # Outside file
+    outside_file = tmp_path / "outside_data.json"
+    outside_file.write_text(
+        json.dumps(
+            {
+                "schemaVersion": "tuning-capture/v1",
+                "captureId": "outside_id",
+                "samples": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # 3. Traversal attempts must return None
     assert mcp_service.get_capture_summary(str(outside_file)) is None
+    assert mcp_service.get_capture_summary("../outside_data.json") is None
+    assert mcp_service.get_capture_summary("../../secret.json") is None
+    assert mcp_service.get_capture_summary("non_existent_id") is None
