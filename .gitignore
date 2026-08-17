@@ -92,3 +92,15 @@ FH6 遙測調校工具設計計畫.md
 /benchmark_results.json
 frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe
 .codex/environments/environment.toml
+
+# Secrets, Credentials, and Environment Configuration
+.env
+.env.*
+*.pem
+*.key
+*.cert
+*.crt
+*credentials*
+id_rsa*
+
+/scratch

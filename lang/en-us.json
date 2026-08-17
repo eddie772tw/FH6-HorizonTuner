@@ -807,7 +807,6 @@
   "Tires": "Tires",
   "Tires & Alignment": "Tires & Alignment",
   "Tires Assist": "Tires Assist",
-  "TODO": "TODO",
   "Toe": "Toe",
   "Toe (F/R):": "Toe (F/R):",
   "Toggle Metric Units": "Toggle Metric Units",
@@ -950,4 +949,6 @@
   "Recommended": "Recommended",
   "Current": "Current",
   "Locked / Unknown": "Locked / Unknown"
+}
+  "Coming Soon": "Coming Soon"
 }

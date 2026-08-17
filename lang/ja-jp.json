@@ -760,7 +760,6 @@
   "Tires": "タイヤの空気圧",
   "Tires & Alignment": "タイヤ＆アライメント",
   "Tires Assist": "タイヤ空気圧アシスト",
-  "TODO": "TODO",
   "Toe": "トー角",
   "Toe (F/R):": "トー角 (前/後):",
   "Toggle Metric Units": "Toggle Metric Units",
@@ -979,4 +978,6 @@
   "Recommended": "推奨",
   "Current": "現在",
   "Locked / Unknown": "ロック済み / 不明"
+}
+  "Coming Soon": "近日公開"
 }

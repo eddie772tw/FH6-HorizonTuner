@@ -15,6 +15,26 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-16 / Security Audit & Anti-Hallucination Package Protocol
+
+### 全專案安全性稽核、CSWSH 跨來源防禦、MCP 路徑清洗與防幻覺查驗協議
+
+- **來源**：`local`，安全性深度稽核與加固任務。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **WebSocket 跨來源無 CORS 防護**：FastAPI 的 `CORSMiddleware` 僅對標準 HTTP 請求生效，對 WebSocket 握手無效；必須在 `websocket_endpoint` 中手動校驗 `websocket.headers.get("origin")` 並於異常時發送 1008 Policy Violation。
+  2. **MCP 工具路徑遍歷隱患**：MCP 讀檔工具若直接組合字串路徑，可能遭受 `..` 目錄跳脫；必須使用 `os.path.basename()` 並進行 `os.path.commonpath` 目錄包含性檢查。
+  3. **套件幻覺防護機制**：LLM 在撰寫相依套件時可能產生幻覺套件名稱或拼寫搶註套件；必須強制制定「安裝前執行 Registry 查驗指令」協議（`npm view` / `pnpm info` / `pip index versions` / `cargo search`）。
+- **Action**：
+  1. 在 `backend/main.py` 實作 `is_allowed_origin` 並保護 `/ws/telemetry`、`/ws/telemetry/binary`、`/ws/overlay`。
+  2. 在 `backend/mcp/service.py` 實作路徑清洗與目錄 containment 檢查。
+  3. 在 `frontend/src-tauri/tauri.conf.json` 配置 CSP 規則；在 `.gitignore` 追加敏感憑證與 `.env` 排除規則。
+  4. 在 `.agents/AGENTS.md` 正式增訂「第三方套件引入與防幻覺查驗協議」。
+  5. 建立 `tests/test_websocket_origin_security.py` 與 `tests/test_mcp_service.py` 安全測試。
+- **Evidence**：`pytest tests/test_websocket_origin_security.py` (5 passed)；`pytest tests/test_mcp_service.py` (11 passed)；全專案依賴 Registry 查驗 100% 通過。
+
+---
+
 ## 2026-08-14 / Codex-Antigravity Bridge Headless Tool Permission & Workspace Binding
 
 ### Headless 模式 toolPermission 授權機制與工作區邊界綁定

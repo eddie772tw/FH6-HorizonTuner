@@ -90,12 +90,25 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
   - **維護 `.gitignore` 規範**：新增功能、模組或執行任務時，必須同步檢查並維護 `.gitignore` 檔案，確保所有動態生成之快取（`__pycache__`, `node_modules`, `target`）、使用者設定、運行數據與臨時檔均被嚴格排除，維護 Repository 之純潔性。
 * **詢問後才做的事**：
   - 修改 UDP 封包解構格式 (Packet Structure Byte Offsets)。
-  - 引入全新的 npm 或 pip 第三方相依套件。
+  - 引入全新的 npm、pip 或 cargo 第三方相依套件（必須嚴格遵守下方防幻覺查驗協議）。
 * **絕對不做的事**：
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
   - 嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示（請保持極簡專業視覺）。
   - **嚴禁使用命令列操作 (如 `echo` 或 `>>`) 來寫入或附加內容至檔案** (尤其是 Markdown 文件如 Journal.md)。由於 Windows 命令列的字元編碼 (Code Page) 差異，這將導致中文編碼毀損。必須使用 `apply_patch` 或其他能保留 UTF-8 的檔案編輯工具。
+
+## 第三方套件引入與防幻覺查驗協議 (Anti-Hallucination Package Verification Protocol)
+
+為防範大語言模型 (LLM)「幻覺套件引用 (Package Hallucination)」、拼寫搶註 (Typosquatting) 與依賴混淆攻擊，所有 Agent（Google Antigravity、Codex、Jules）在提議或引入任何新依賴前，**必須嚴格執行以下三步驟驗證協議**：
+
+1. **嚴禁憑記憶直接寫入設定檔**：嚴禁未經查驗直接在 `package.json`、`requirements.txt`、`pyproject.toml` 或 `Cargo.toml` 中填入套件名稱。
+2. **強制執行 Registry 官方查驗指令**：
+   - **Node.js / npm 套件**：在終端執行 `pnpm info <package-name>` 或 `npm view <package-name>`，查驗套件真實存在、維護者、最新發布日期與版本號。
+   - **Python / PyPI 套件**：在終端執行 `uv run --no-project --python .venv\Scripts\python.exe python -m pip index versions <package-name>` 或 `uv pip show <package-name>`，驗證 PyPI 註冊資訊及 Python 3.13 / Windows 相容性。
+   - **Rust / crates.io 套件**：在終端執行 `cargo search <package-name>` 查驗官方 crates.io 註冊資訊。
+3. **開源授權與使用者確認**：
+   - 確認該套件授權為寬鬆開源授權（如 MIT、Apache-2.0、BSD-3-Clause），嚴禁引入強傳染性 GPL 導致發行版授權污染。
+   - 經由使用者明確核准後，方可安裝並同步鎖定依賴檔案（`pnpm-lock.yaml` / `requirements.txt` / `Cargo.lock`）。
 
 ## 開發紀錄日誌 (Journal.md)
 專案設有 [Journal.md](Journal.md) 機制：
