@@ -24,11 +24,11 @@
 - **Learning**：
   1. **GitHub Security Dashboard 與 PR/CI 合併生效特性**：在 PR 處於開啟或分支 commit 階段，GitHub Security Tab 上的全域警報不會自動關閉。必須透過 PR 的 Checks 分頁與 CodeQL CI Run 日誌確認警報消除；待 PR 正式合併（Merge）至主分支後，Security Tab 的警報才會自動轉為 `Closed (Fixed)`。
   2. **Path Injection 深度包含性檢驗 (Containment Check)**：單純使用 `os.path.basename()` 在複雜路由或 MCP 工具中仍可能觸發 CodeQL 污點分析警報；結合 `os.path.realpath` 與 `os.path.commonpath([base_dir, target_dir]) == base_dir` 進行 strict containment 檢查是最嚴謹的做法。
-  3. **HTML 標籤過濾 Regex 缺陷**：正則表達式比對 HTML 結尾標籤（如 `</script>`）時，必須考量空格（如 `</script\s*>`），避免被繞過或標記為 `js/bad-tag-filter` 漏洞。
+  3. **HTML 標籤過濾 Regex 缺陷 (`js/bad-tag-filter`)**：CodeQL 的 `js/bad-tag-filter` 規則會嚴格檢查 HTML end tag 是否允許屬性與換行空白（例如 `</script\t\n bar>`）；僅寫 `</script\s*>` 仍會被判定為漏洞，必須寫成 `/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi` 才能完全符合規範。
 - **Action**：
   1. 建立 `backend/path_security.py` 提供 `safe_resolve_path` 與 `safe_join_under_dir` 集中式安全路徑驗證。
   2. 修復 `backend/main.py`（14 處）、`backend/motec_exporter.py`（2 處）、`backend/mcp/service.py`（8 處）路徑注入隱患。
-  3. 修復 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts` 與 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 正則標籤過濾。
+  3. 修復 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts` 與 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 正則標籤過濾（改為 `/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi`）。
   4. 修復 `frontend/e2e/hud_telemetry_cards.spec.ts` 靜態檔案伺服器目錄遍歷防護。
   5. 加固 `verify_telemetry_v2_v3.py` Socket 綁定（支援 `--host`，預設 `127.0.0.1`）。
   6. 新增 `tests/test_path_security.py` 完整覆蓋目錄跳脫與邊界測試（12 tests）。

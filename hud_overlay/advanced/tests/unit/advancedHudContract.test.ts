@@ -9,7 +9,7 @@ function readAdvancedHud(): string {
 }
 
 function extractController(html: string): string {
-  const controller = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script\s*>/gi)]
+  const controller = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi)]
     .map((match) => match[1])
     .find((source) => source.includes("HUDCore.registerStyle('advanced'"));
   if (!controller) throw new Error('Advanced HUD controller script not found');
@@ -37,7 +37,7 @@ describe('Advanced HUD contract', () => {
   });
 
   it('keeps the Advanced HUD inline scripts syntactically valid', () => {
-    const scripts = [...readAdvancedHud().matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script\s*>/gi)]
+    const scripts = [...readAdvancedHud().matchAll(/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi)]
       .map((match) => match[1])
       .filter((source) => source.trim().length > 0);
 
