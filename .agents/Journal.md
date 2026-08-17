@@ -15,6 +15,46 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / GitHub Security Audit 32 筆警報全面修復與 CI/CD 治理
+
+### CodeQL 32 筆安全警報全面加固 (Path Injection, Bad Tag Filter, Socket Binding, E2E)
+
+- **來源**：`local`，針對 GitHub Security Audit 收集之 32 筆安全警報進行全面修復與單元測試加固。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **GitHub Security Dashboard 與 PR/CI 合併生效特性**：在 PR 處於開啟或分支 commit 階段，GitHub Security Tab 上的全域警報不會自動關閉。必須透過 PR 的 Checks 分頁與 CodeQL CI Run 日誌確認警報消除；待 PR 正式合併（Merge）至主分支後，Security Tab 的警報才會自動轉為 `Closed (Fixed)`。
+  2. **Path Injection 深度包含性檢驗與內部枚舉防禦**：單純使用 `os.path.basename()` 在複雜路由或 MCP 工具中仍可能觸發 CodeQL 污點分析警報；在後端採用 `os.path.realpath` 與 `os.path.commonpath([base_dir, target_dir]) == base_dir` 進行 strict containment，或直接在內部枚舉清單中查找檔案物件（如 `list_drag_sessions` / `list_tuning_presets`），能從根本上徹底切斷外部污點鏈。
+  3. **HTML 標籤過濾 Regex 缺陷 (`js/bad-tag-filter`)**：CodeQL 的 `js/bad-tag-filter` 規則會嚴格檢查 HTML end tag 是否允許屬性與換行空白（例如 `</script\t\n bar>`）；僅寫 `</script\s*>` 仍會被判定為漏洞，必須寫成 `/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi` 才能完全符合規範。
+- **Action**：
+  1. 建立 `backend/path_security.py` 提供 `safe_resolve_path` 與 `safe_join_under_dir` 集中式安全路徑驗證。
+  2. 修復 `backend/main.py`（14 處）、`backend/motec_exporter.py`（2 處）、`backend/mcp/service.py`（8 處）路徑注入隱患。
+  3. 修復 `hud_overlay/advanced/tests/unit/advancedHudContract.test.ts` 與 `hud_overlay/drift/tests/unit/driftHudContract.test.ts` 正則標籤過濾（改為 `/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi`）。
+  4. 修復 `frontend/e2e/hud_telemetry_cards.spec.ts` 靜態檔案伺服器目錄遍歷防護。
+  5. 加固 `verify_telemetry_v2_v3.py` Socket 綁定（支援 `--host`，預設 `127.0.0.1`）。
+  6. 新增 `tests/test_path_security.py` 完整覆蓋目錄跳脫與邊界測試（12 tests）。
+- **Evidence**：GitHub Actions PR #212 遠端 CI 中 **`CodeQL` 檢查 100% PASS (0 annotations / 0 alerts)**；`Analyze (python)`, `Analyze (javascript-typescript)`, `Analyze (rust)`, `Analyze (actions)` 全數通過；本地 `tests/test_path_security.py` (12 passed)；後端 `pytest` (164 passed)；前端 Vitest (66 files, 418 passed)；`ruff check .` 與 `ruff format --check .` 100% 通過。
+
+---
+
+## 2026-08-17 / GitHub Security Audit Skill & Alert Collection
+
+### GitHub Security & Quality 全維度資料收集與 github-security-audit 技能建置
+
+- **來源**：`local`，建立 GitHub 自動檢測安全問題之資料收集與審計機制。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **GitHub Security API 參數限制**：`secret-scanning/alerts` 的 `state` 參數僅接受單一字串（`open` 或 `resolved`），不可傳入逗號多選值，否則會回傳 HTTP 400；而 `dependabot/alerts` 與 `code-scanning/alerts` 則支援多選狀態。
+  2. **Vulnerability Alerts 狀態碼特性**：`vulnerability-alerts` 啟用狀態端點回傳 `204 No Content`，代表該功能正常啟用。
+  3. **Windows 主控台輸出編碼防護**：Windows 預設 `cp950` 命令列環境無法編碼裝飾性 Unicode Emoji，所有工具腳本標準輸出應強制採用 `sys.stdout.reconfigure(encoding="utf-8")` 並以標準 ASCII 標籤（`[*]`, `[+]`, `[-]`）替代裝飾圖示。
+- **Action**：
+  1. 建立全新技能 `.agents/skills/github-security-audit/SKILL.md`，提供完整安全維度收集工作流與 4 大類常見漏洞（Path Injection, Bad Tag Filter, 0.0.0.0 Socket, Secret leak）修復指南。
+  2. 建立自動化資料收集腳本 `.agents/skills/github-security-audit/scripts/collect_security_alerts.py`，支援匯出 Markdown 與 JSON 報告。
+  3. 建立 API 參考指南 `.agents/skills/github-security-audit/references/github_security_api_guide.md`。
+  4. 同步更新 `.agents/skills/README.md` 與 `.agents/AGENTS.md` canonical 技能清單。
+- **Evidence**：`collect_security_alerts.py` 本地執行成功，完整拉取 32 筆 Code Scanning 警報並產出 Markdown / JSON 報告；`ruff check` 靜態檢查 100% 通過。
+
+---
+
 ## 2026-08-16 / Security Audit & Anti-Hallucination Package Protocol
 
 ### 全專案安全性稽核、CSWSH 跨來源防禦、MCP 路徑清洗與防幻覺查驗協議

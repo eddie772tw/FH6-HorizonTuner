@@ -7,6 +7,7 @@ import json
 import logging
 import math
 import os
+import re
 import sys
 from typing import Any
 
@@ -477,14 +478,20 @@ class HorizonTunerMcpService:
     def get_capture_summary(self, capture_id_or_path: str) -> dict[str, Any] | None:
         """Load tuning capture and report metadata, summary statistics and data hygiene."""
         target_file = None
+        valid_roots = [
+            os.path.realpath(os.path.abspath(self.calibration_dir)),
+            os.path.realpath(os.path.abspath(os.path.join(self.data_root, "captures"))),
+        ]
+
         if os.path.exists(capture_id_or_path):
-            abs_candidate = os.path.abspath(capture_id_or_path)
-            valid_roots = [
-                os.path.abspath(self.calibration_dir),
-                os.path.abspath(os.path.join(self.data_root, "captures")),
-            ]
-            if any(abs_candidate.startswith(root) for root in valid_roots):
-                target_file = abs_candidate
+            abs_candidate = os.path.realpath(os.path.abspath(capture_id_or_path))
+            for root in valid_roots:
+                try:
+                    if os.path.commonpath([root, abs_candidate]) == root:
+                        target_file = abs_candidate
+                        break
+                except ValueError:
+                    continue
 
         if not target_file:
             # Search by capture ID with sanitized base name
@@ -496,8 +503,16 @@ class HorizonTunerMcpService:
                     or c["capture_id"] == capture_id_or_path
                     or os.path.basename(c["file_path"]) == clean_id
                 ):
-                    target_file = c["file_path"]
-                    break
+                    candidate = os.path.realpath(os.path.abspath(c["file_path"]))
+                    for root in valid_roots:
+                        try:
+                            if os.path.commonpath([root, candidate]) == root:
+                                target_file = candidate
+                                break
+                        except ValueError:
+                            continue
+                    if target_file:
+                        break
 
         if not target_file or not os.path.exists(target_file):
             return None
@@ -639,6 +654,7 @@ class HorizonTunerMcpService:
                 results.append(
                     {
                         "filename": os.path.basename(filepath),
+                        "file_path": filepath,
                         "car_name": data.get("car_name", "Unknown Car"),
                         "timestamp": data.get("timestamp"),
                         "times": data.get("times", {}),
@@ -650,10 +666,15 @@ class HorizonTunerMcpService:
 
     def get_drag_analysis(self, filename: str) -> dict[str, Any] | None:
         """Get full drag run time splits and acceleration analysis."""
-        filepath = os.path.join(self.drag_sessions_dir, filename)
-        if not os.path.exists(filepath):
+        clean_name = os.path.basename(filename)
+        sessions = self.list_drag_sessions()
+        matched = next((s for s in sessions if s.get("filename") == clean_name), None)
+        if not matched or not matched.get("file_path"):
             return None
-        with open(filepath, "r", encoding="utf-8") as f:
+        target_file = matched["file_path"]
+        if not os.path.exists(target_file):
+            return None
+        with open(target_file, "r", encoding="utf-8") as f:
             return json.load(f)
 
     # =========================================================================
@@ -709,10 +730,44 @@ class HorizonTunerMcpService:
             car = next(
                 (c for c in db.values() if str(c.get("ordinal")) == str(car_id)), None
             )
-        return car
+        if not car:
+            return None
+        return {
+            "car_id": str(car.get("car_id", car_id)),
+            "name": car.get("name") or car.get("car_name"),
+            "class": car.get("class") or car.get("car_class"),
+            "pi": car.get("pi"),
+            "drivetrain": car.get("drivetrain"),
+            "weight_kg": car.get("weight_kg") or car.get("weight"),
+            "front_weight_bias": car.get("front_weight_bias")
+            or car.get("weight_distribution"),
+            "max_rpm": car.get("max_rpm") or car.get("redline_rpm"),
+            "idle_rpm": car.get("idle_rpm", 800),
+            "torque_nm": car.get("torque_nm") or car.get("torque"),
+            "power_kw": car.get("power_kw") or car.get("power"),
+        }
+
+    def get_car_capabilities(self, car_id: str | int) -> dict[str, Any] | None:
+        """Get specific tuning sliders and capability flags for a car."""
+        db = self._get_car_database()
+        car = db.get(str(car_id))
+        if not car:
+            return None
+        return {
+            "car_id": str(car_id),
+            "name": car.get("name", "Unknown"),
+            "class": car.get("class", "D"),
+            "pi": car.get("pi", 100),
+            "drivetrain": car.get("drivetrain", "RWD"),
+            "has_aero": car.get("has_aero", False),
+            "has_diff": car.get("has_diff", True),
+            "has_gears": car.get("has_gears", True),
+            "has_dampers": car.get("has_dampers", True),
+            "has_arb": car.get("has_arb", True),
+        }
 
     def get_car_tuning_capabilities(
-        self, car_id: int | str, installed_parts: dict[str, str] | None = None
+        self, car_id: str | int, installed_parts: dict[str, str] | None = None
     ) -> dict[str, Any]:
         """Resolve capability contract and upgrade locks matching contracts.ts."""
         parts = installed_parts or {}
@@ -770,30 +825,33 @@ class HorizonTunerMcpService:
         return priors
 
     # =========================================================================
-    # 6. Tuning Presets & Pure Solvers
+    # 6. Presets & Solvers
     # =========================================================================
 
     def list_tuning_presets(self, car_id: str | None = None) -> list[dict[str, Any]]:
-        """List saved tuning presets."""
+        """List all saved user presets or filter by car_id."""
         results = []
         if not os.path.exists(self.tunings_dir):
             return results
+
+        # Support both flat and nested preset folders
         for root, _, files in os.walk(self.tunings_dir):
-            for f in files:
-                if f.endswith(".json"):
-                    full_p = os.path.join(root, f)
+            for file in files:
+                if file.endswith(".json"):
+                    preset_path = os.path.join(root, file)
                     try:
-                        with open(full_p, "r", encoding="utf-8") as fp:
-                            content = json.load(fp)
-                        c_id = content.get("car_id") or os.path.basename(root)
-                        if car_id and str(c_id) != str(car_id):
+                        with open(preset_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        p_car_id = str(data.get("car_id", data.get("carId", "")))
+                        if car_id and p_car_id != str(car_id):
                             continue
                         results.append(
                             {
-                                "car_id": c_id,
-                                "save_name": f[:-5],
-                                "file_path": full_p,
-                                "preset_data": content,
+                                "preset_name": os.path.splitext(file)[0],
+                                "car_id": p_car_id,
+                                "created_at": data.get("created_at"),
+                                "schema_version": data.get("schema_version", "unknown"),
+                                "file_path": preset_path,
                             }
                         )
                     except Exception:
@@ -804,23 +862,34 @@ class HorizonTunerMcpService:
         """Get full tuning parameters for a saved preset with path sanitization."""
         clean_car_id = os.path.basename(str(car_id))
         clean_save_name = os.path.basename(str(save_name))
-
-        target = os.path.join(self.tunings_dir, clean_car_id, f"{clean_save_name}.json")
-        if not os.path.exists(target):
-            target = os.path.join(self.tunings_dir, f"{clean_save_name}.json")
-        if not os.path.exists(target):
+        presets = self.list_tuning_presets(clean_car_id)
+        matched = next(
+            (
+                p
+                for p in presets
+                if p.get("preset_name") == clean_save_name
+                or os.path.basename(p.get("file_path", "")) == f"{clean_save_name}.json"
+            ),
+            None,
+        )
+        if not matched:
+            all_presets = self.list_tuning_presets()
+            matched = next(
+                (
+                    p
+                    for p in all_presets
+                    if p.get("preset_name") == clean_save_name
+                    or os.path.basename(p.get("file_path", ""))
+                    == f"{clean_save_name}.json"
+                ),
+                None,
+            )
+        if not matched or not matched.get("file_path"):
             return None
-
-        # Containment check to ensure target is within tunings_dir
-        abs_tunings_dir = os.path.abspath(self.tunings_dir)
-        abs_target = os.path.abspath(target)
-        try:
-            if os.path.commonpath([abs_tunings_dir, abs_target]) != abs_tunings_dir:
-                return None
-        except ValueError:
+        target_file = matched["file_path"]
+        if not os.path.exists(target_file):
             return None
-
-        with open(abs_target, "r", encoding="utf-8") as f:
+        with open(target_file, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def run_dev_tuning_solver(

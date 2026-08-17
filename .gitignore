@@ -104,3 +104,5 @@ frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe
 id_rsa*
 
 /scratch
+.agents/security_data.json
+.agents/security_report.md
