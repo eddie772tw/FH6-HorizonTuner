@@ -15,6 +15,26 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-17 / PR Review 技能升級與 GitHub 原生 Inline Comments 整合
+
+### GitHub PR Review API 機制、Diff Hunk 邊界 Invariant 與 submit_pr_review 實作
+
+- **來源**：`local`，在新分支 `feat/pr-review-inline-comments` 上升級 `pr-review-evaluation` 技能並對 PR #217 進行實機驗證。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **GitHub 原生 Inline Review Comments 提交機制**：GitHub CLI `gh pr review` 僅支援頂層 `--body`，無法直接傳入行內評論陣列。必須透過 REST API `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` 傳入包含 `commit_id`、`body`、`event` 與 `comments` 陣列（含 `path`, `line`, `side`, `start_line`, `body` 與 ````suggestion` 標籤）的 JSON Payload，方能實現原子性審查與行內評論發布。
+  2. **Diff Hunk 邊界 Invariant 與 422 錯誤防護**：GitHub REST API 嚴格限制行內評論的 `line` 必須落在該 PR 的 Unified Diff Hunk（變更行及其上下文）內；若指定超界行號，整筆 Review 會拋出 `422 Unprocessable Entity` 失敗。在提交工具中實作 Diff Hunk 解析與超界降級 (Graceful Fallback) 機制，自動將超界行號重導至頂層 Review Body，能確保審查發布 100% 成功率。
+  3. **Windows UTF-8 控制台編碼防護**：在 Windows PowerShell 環境下，命令列工具標準輸出必須配置 `sys.stdout.reconfigure(encoding="utf-8")`，並避免裝飾性 Emoji，改用標準 ASCII 標籤（`[*]`, `[+]`, `[-]`）。
+- **Action**：
+  1. 建立 `.agents/skills/pr-review-evaluation/references/github_inline_comments_guide.md` 參考指南。
+  2. 建立 `.agents/skills/pr-review-evaluation/scripts/submit_pr_review.py` 輔助工具（支援 Dry-Run、Diff 解析與自動降級）。
+  3. 重構 `.agents/skills/pr-review-evaluation/SKILL.md` 與更新 `.agents/skills/README.md` 索引。
+  4. 建立 `tests/test_submit_pr_review.py` 單元測試覆蓋 Diff 解析、邊界行號與降級邏輯。
+  5. 建立分支 `feat/pr-review-inline-comments` 與 PR #217，並實際透過工具於 PR #217 成功提交 Review #4949195332（含 2 筆原生 Inline Comments 與 Suggestions）。
+- **Evidence**：`tests/test_submit_pr_review.py` (4 passed)；`ruff check .` 與 `ruff format --check .` 100% 通過；前端 Vitest (69 files / 440 tests passed)；GitHub PR #217 成功產生 Review #4949195332 與 Discussions #3794409835, #3794409846。
+
+---
+
 ## 2026-08-17 / PR #214 & PR #215 審查、驗證與合併
 
 ### SettingsView 點擊熱區擴充 (PR #214) 與 Telemetry Cards 60Hz DOM 快取最佳化 (PR #215)
