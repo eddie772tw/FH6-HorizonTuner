@@ -74,3 +74,7 @@
 ## 2026-08-16 - DOM Caching in High-Frequency HUD Loops
 **Learning:** Repeatedly querying document.getElementById inside 60Hz telemetry render loops (e.g. Simple HUD) incurs high GC and CPU overhead.
 **Action:** Query elements once during initialization and cache them in a structure (e.g. domCache) to eliminate frame-level lookup overhead.
+
+## 2026-08-15 - Eliminate .forEach array allocations in Live Map Telemetry Card
+**Learning:** In high-frequency render paths like the 60Hz Live Map telemetry card, using `.forEach` inside `renderLiveMap` with inline array initializations (e.g. `[40, 80, 120].forEach`) creates unnecessary function closures and inline array allocations on every single render tick. This results in heavy garbage collection pressure, leading to potential frame stuttering and micro-freezes.
+**Action:** Replace `.forEach` loops with native `for` loops in high-frequency functions. In scenarios with known numeric step sequences, use mathematical loops (e.g. `for (var r = 40; r <= 120; r += 40)`) to completely eliminate the need for inline array declarations and closure overhead.

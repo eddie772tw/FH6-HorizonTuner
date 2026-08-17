@@ -760,7 +760,6 @@
   "Tires": "輪胎氣壓",
   "Tires & Alignment": "輪胎與定位",
   "Tires Assist": "輪胎氣壓輔助",
-  "TODO": "TODO",
   "Toe": "前束角",
   "Toe (F/R):": "前束角 (前/後):",
   "Toggle Metric Units": "Toggle Metric Units",
@@ -872,7 +871,6 @@
   "Tire & Alignment": "輪胎與定位",
   "Telemetry Calibration": "遙測校正",
   "Current Season:": "當前遊戲季節：",
-
   "Summer (-0.5 PSI)": "夏日 (-0.5 PSI)",
   "Autumn (-0.5 PSI)": "秋季 (-0.5 PSI)",
   "Spring (+0.5 PSI)": "春季 (+0.5 PSI)",
@@ -1035,5 +1033,12 @@
   "Copied to Clipboard": "已複製到剪貼簿",
   "Configuration copied successfully.": "設定代碼已成功複製。",
   "Copy Failed": "複製失敗",
-  "Unable to copy text to clipboard.": "無法將文字複製至剪貼簿。"
+  "Unable to copy text to clipboard.": "無法將文字複製至剪貼簿。",
+  "Recommendation vs Current": "建議值 vs 目前值",
+  "Parameter": "參數",
+  "Recommended": "建議",
+  "Current": "目前",
+  "Locked / Unknown": "已鎖定 / 未知"
+}
+  "Coming Soon": "即將推出"
 }

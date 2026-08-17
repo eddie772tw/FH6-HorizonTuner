@@ -807,7 +807,6 @@
   "Tires": "Tires",
   "Tires & Alignment": "Tires & Alignment",
   "Tires Assist": "Tires Assist",
-  "TODO": "TODO",
   "Toe": "Toe",
   "Toe (F/R):": "Toe (F/R):",
   "Toggle Metric Units": "Toggle Metric Units",
@@ -944,5 +943,12 @@
   "UDP DISCONNECTED": "UDP DISCONNECTED",
   "UDP Connection Alert": "UDP Connection Alert",
   "Forza Horizon UDP telemetry stream is disconnected.": "Forza Horizon UDP telemetry stream is disconnected.",
-  "Ensure Data Out is turned ON in game HUD settings (Port 8000).": "Ensure Data Out is turned ON in game HUD settings (Port 8000)."
+  "Ensure Data Out is turned ON in game HUD settings (Port 8000).": "Ensure Data Out is turned ON in game HUD settings (Port 8000).",
+  "Recommendation vs Current": "Recommendation vs Current",
+  "Parameter": "Parameter",
+  "Recommended": "Recommended",
+  "Current": "Current",
+  "Locked / Unknown": "Locked / Unknown"
+}
+  "Coming Soon": "Coming Soon"
 }

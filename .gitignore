@@ -103,3 +103,4 @@ frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe
 *credentials*
 id_rsa*
 
+/scratch

@@ -109,31 +109,78 @@ export function telemetryToCaptureSample(data: TelemetryData): TuningCaptureSamp
   };
 }
 
-function maxByWheel(samples: TuningCaptureSample[], selector: (sample: TuningCaptureSample) => number[]): number[] {
-  return Array.from({ length: 4 }, (_, wheel) => samples.reduce((max, sample) => Math.max(max, Math.abs(selector(sample)[wheel] ?? 0)), 0));
-}
-
 export function summarizeCapture(samples: TuningCaptureSample[]): TuningCaptureSummary {
   if (samples.length === 0) {
     return { sampleCount: 0, durationSeconds: 0, cadenceHz: 0, medianDeltaMs: 0, maxSpeedKmh: 0, maxLongitudinalG: 0, maxLateralG: 0, peakSlipRatio: [0, 0, 0, 0], peakSlipAngleDeg: [0, 0, 0, 0], maxTireTemp: [0, 0, 0, 0], maxCombinedSlip: [0, 0, 0, 0], droppedTimestampCount: 0 };
   }
-  const deltas = samples.slice(1).map((sample, index) => sample.timestampMS - samples[index].timestampMS).filter((delta) => delta > 0);
-  const sortedDeltas = [...deltas].sort((a, b) => a - b);
+
+  // [PERF] Optimized single-pass loop processing to avoid .slice(), .map(), .filter(), and .reduce()
+  // allocations over potentially large telemetry arrays (e.g., 50k+ elements).
+  const deltas: number[] = [];
+  let maxSpeedMps = 0;
+  let maxLongG = 0;
+  let maxLatG = 0;
+  let droppedTimestampCount = 0;
+
+  const peakSlipRatio = [0, 0, 0, 0];
+  const peakSlipAngleDeg = [0, 0, 0, 0];
+  const maxTireTemp = [0, 0, 0, 0];
+  const maxCombinedSlip = [0, 0, 0, 0];
+
+  for (let i = 0; i < samples.length; i++) {
+    const sample = samples[i];
+
+    if (i > 0) {
+      const prevSample = samples[i - 1];
+      const delta = sample.timestampMS - prevSample.timestampMS;
+      if (delta > 0) {
+        deltas.push(delta);
+      }
+      if (sample.timestampMS <= prevSample.timestampMS) {
+        droppedTimestampCount++;
+      }
+    }
+
+    if (sample.speedMps > maxSpeedMps) maxSpeedMps = sample.speedMps;
+
+    const absLongG = Math.abs(sample.accelerationZ);
+    if (absLongG > maxLongG) maxLongG = absLongG;
+
+    const absLatG = Math.abs(sample.accelerationX);
+    if (absLatG > maxLatG) maxLatG = absLatG;
+
+    for (let w = 0; w < 4; w++) {
+      const slipRatio = Math.abs(sample.tireSlipRatio[w] ?? 0);
+      if (slipRatio > peakSlipRatio[w]) peakSlipRatio[w] = slipRatio;
+
+      const slipAngle = Math.abs(sample.tireSlipAngle[w] ?? 0);
+      if (slipAngle > peakSlipAngleDeg[w]) peakSlipAngleDeg[w] = slipAngle;
+
+      const tireTemp = Math.abs(sample.tireTemp[w] ?? 0);
+      if (tireTemp > maxTireTemp[w]) maxTireTemp[w] = tireTemp;
+
+      const combinedSlip = Math.abs(sample.tireCombinedSlip[w] ?? 0);
+      if (combinedSlip > maxCombinedSlip[w]) maxCombinedSlip[w] = combinedSlip;
+    }
+  }
+
+  const sortedDeltas = deltas.sort((a, b) => a - b);
   const medianDeltaMs = sortedDeltas.length === 0 ? 0 : sortedDeltas[Math.floor(sortedDeltas.length / 2)];
   const durationSeconds = Math.max(0, (samples[samples.length - 1].timestampMS - samples[0].timestampMS) / 1000);
+
   return {
     sampleCount: samples.length,
     durationSeconds: round(durationSeconds, 3),
     cadenceHz: medianDeltaMs > 0 ? round(1000 / medianDeltaMs, 2) : 0,
     medianDeltaMs: round(medianDeltaMs, 3),
-    maxSpeedKmh: round(samples.reduce((max, sample) => Math.max(max, sample.speedMps * 3.6), 0), 2),
-    maxLongitudinalG: round(samples.reduce((max, sample) => Math.max(max, Math.abs(sample.accelerationZ / 9.80665)), 0), 3),
-    maxLateralG: round(samples.reduce((max, sample) => Math.max(max, Math.abs(sample.accelerationX / 9.80665)), 0), 3),
-    peakSlipRatio: maxByWheel(samples, (sample) => sample.tireSlipRatio).map((value) => round(value, 4)),
-    peakSlipAngleDeg: maxByWheel(samples, (sample) => sample.tireSlipAngle).map((value) => round(value * 180 / Math.PI, 3)),
-    maxTireTemp: maxByWheel(samples, (sample) => sample.tireTemp).map((value) => round(value, 2)),
-    maxCombinedSlip: maxByWheel(samples, (sample) => sample.tireCombinedSlip).map((value) => round(value, 4)),
-    droppedTimestampCount: samples.slice(1).reduce((count, sample, index) => count + (sample.timestampMS <= samples[index].timestampMS ? 1 : 0), 0)
+    maxSpeedKmh: round(maxSpeedMps * 3.6, 2),
+    maxLongitudinalG: round(maxLongG / 9.80665, 3),
+    maxLateralG: round(maxLatG / 9.80665, 3),
+    peakSlipRatio: peakSlipRatio.map((value) => round(value, 4)),
+    peakSlipAngleDeg: peakSlipAngleDeg.map((value) => round(value * 180 / Math.PI, 3)),
+    maxTireTemp: maxTireTemp.map((value) => round(value, 2)),
+    maxCombinedSlip: maxCombinedSlip.map((value) => round(value, 4)),
+    droppedTimestampCount
   };
 }
 
