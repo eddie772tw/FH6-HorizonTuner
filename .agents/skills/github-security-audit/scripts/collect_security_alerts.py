@@ -88,7 +88,9 @@ def collect_all_security_data(repo: str) -> dict[str, Any]:
         advisories = []
 
     # 5. Code Scanning Setup & Analyses
-    default_setup = run_gh_api(f"repos/{repo}/code-scanning/default-setup", paginate=False)
+    default_setup = run_gh_api(
+        f"repos/{repo}/code-scanning/default-setup", paginate=False
+    )
     analyses = run_gh_api(f"repos/{repo}/code-scanning/analyses")
     latest_analysis = analyses[0] if isinstance(analyses, list) and analyses else None
 
@@ -131,32 +133,40 @@ def generate_markdown_report(data: dict[str, Any]) -> str:
     for sev, count in sorted(severity_counts.items()):
         lines.append(f"  - {sev}: {count} 件")
 
-    lines.extend([
-        f"- **Dependabot 弱點依賴**：{len(dep_alerts)} 件",
-        f"- **Secret Scanning 洩漏密鑰**：{len(sec_alerts)} 件",
-        f"- **Security Advisories 通報**：{len(advs)} 件",
-        "\n## 2. Code Scanning 警報詳細清單",
-    ])
+    lines.extend(
+        [
+            f"- **Dependabot 弱點依賴**：{len(dep_alerts)} 件",
+            f"- **Secret Scanning 洩漏密鑰**：{len(sec_alerts)} 件",
+            f"- **Security Advisories 通報**：{len(advs)} 件",
+            "\n## 2. Code Scanning 警報詳細清單",
+        ]
+    )
 
     if not code_alerts:
         lines.append("無任何未修復之 Code Scanning 警報。")
     else:
-        lines.extend([
-            "| # | 等級 | 規則 ID | 檔案與行號 | 說明摘要 | 警報連結 |",
-            "| :--- | :--- | :--- | :--- | :--- | :--- |",
-        ])
+        lines.extend(
+            [
+                "| # | 等級 | 規則 ID | 檔案與行號 | 說明摘要 | 警報連結 |",
+                "| :--- | :--- | :--- | :--- | :--- | :--- |",
+            ]
+        )
         for a in sorted(code_alerts, key=lambda x: x.get("number", 0)):
             num = a.get("number", 0)
             rule = a.get("rule", {})
             rule_id = rule.get("id", "unknown")
-            sev = (rule.get("security_severity_level") or rule.get("severity") or "UNKNOWN").upper()
+            sev = (
+                rule.get("security_severity_level") or rule.get("severity") or "UNKNOWN"
+            ).upper()
             inst = a.get("most_recent_instance", {})
             loc = inst.get("location", {})
             path = loc.get("path", "unknown")
             line = loc.get("start_line", 0)
             msg = inst.get("message", {}).get("text", "").replace("\n", " ")
             url = a.get("html_url", "")
-            lines.append(f"| #{num} | `{sev}` | `{rule_id}` | `{path}:{line}` | {msg} | [檢視]({url}) |")
+            lines.append(
+                f"| #{num} | `{sev}` | `{rule_id}` | `{path}:{line}` | {msg} | [檢視]({url}) |"
+            )
 
     return "\n".join(lines)
 
@@ -171,9 +181,18 @@ def main() -> None:
             pass
 
     parser = argparse.ArgumentParser(description="收集 GitHub 安全檢測數據並輸出報告")
-    parser.add_argument("--repo", type=str, default="", help="指定目標 GitHub 儲存庫 (預設自動偵測)")
-    parser.add_argument("--json-out", type=str, default="", help="將原始數據輸出至指定的 JSON 檔案路徑")
-    parser.add_argument("--md-out", type=str, default="", help="將摘要報告輸出至指定的 Markdown 檔案路徑")
+    parser.add_argument(
+        "--repo", type=str, default="", help="指定目標 GitHub 儲存庫 (預設自動偵測)"
+    )
+    parser.add_argument(
+        "--json-out", type=str, default="", help="將原始數據輸出至指定的 JSON 檔案路徑"
+    )
+    parser.add_argument(
+        "--md-out",
+        type=str,
+        default="",
+        help="將摘要報告輸出至指定的 Markdown 檔案路徑",
+    )
     args = parser.parse_args()
 
     repo = args.repo or get_repo_slug()
