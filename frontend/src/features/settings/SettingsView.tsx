@@ -125,9 +125,9 @@ const SettingsView: React.FC = () => {
             <div className="d-flex flex-column gap-3">
               <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("General Recording Settings")}</h5>
               
-              <div className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3">
+              <label htmlFor="chk-dyno-rec" className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3" style={{ cursor: 'pointer' }}>
                 <div>
-                  <label className="form-check-label fw-bold fs-6" htmlFor="chk-dyno-rec">{t("Dyno Recording")}</label>
+                  <div className="form-check-label fw-bold fs-6">{t("Dyno Recording")}</div>
                   <div className="form-text fs-7">{t("Automatically collect and update engine output curves during full throttle acceleration.")}</div>
                 </div>
                 <input 
@@ -137,11 +137,11 @@ const SettingsView: React.FC = () => {
                   checked={settings.dyno_recording}
                   onChange={(e) => updateSettings({ dyno_recording: e.target.checked })}
                 />
-              </div>
+              </label>
 
-              <div className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3">
+              <label htmlFor="chk-race-rec" className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3" style={{ cursor: 'pointer' }}>
                 <div>
-                  <label className="form-check-label fw-bold fs-6" htmlFor="chk-race-rec">{t("Race Recording")}</label>
+                  <div className="form-check-label fw-bold fs-6">{t("Race Recording")}</div>
                   <div className="form-text fs-7">{t("Record suspension and grip data during races or driving for post-race analysis.")}</div>
                 </div>
                 <input 
@@ -151,18 +151,18 @@ const SettingsView: React.FC = () => {
                   checked={settings.race_recording}
                   onChange={(e) => updateSettings({ race_recording: e.target.checked })}
                 />
-              </div>
+              </label>
             </div>
 
             {/* Experimental Developer Settings */}
             <div className="d-flex flex-column gap-3">
               <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Developer Options")}</h5>
 
-              <div className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3">
+              <label htmlFor="chk-developer-tuning" className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3" style={{ cursor: 'pointer' }}>
                 <div>
-                  <label className="form-check-label fw-bold fs-6" htmlFor="chk-developer-tuning">
+                  <div className="form-check-label fw-bold fs-6">
                     {t("Use Developer Tuning View")}
-                  </label>
+                  </div>
                   <div className="form-text fs-7">
                     {t("Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.")}
                   </div>
@@ -174,7 +174,7 @@ const SettingsView: React.FC = () => {
                   checked={settings.developer_tuning_enabled}
                   onChange={(e) => updateSettings({ developer_tuning_enabled: e.target.checked })}
                 />
-              </div>
+              </label>
 
               {settings.developer_tuning_enabled && (
                 <div className="alert alert-warning mb-0 py-2" role="status">
