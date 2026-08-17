@@ -17,6 +17,12 @@
   ```bash
   # 抓取目前開啟中的所有 Code Scanning 警報（自動分頁）
   gh api --paginate repos/{owner}/{repo}/code-scanning/alerts
+
+  # PR 階段：查詢指定 PR 的 Check 狀態（Source of Truth）
+  gh pr checks <pr-number>
+
+  # PR 階段：查詢特定 Check Run 的 Annotations 錯誤詳情
+  gh api repos/{owner}/{repo}/check-runs/{check_run_id}/annotations
   ```
 
 ---

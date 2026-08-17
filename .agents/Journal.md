@@ -23,7 +23,7 @@
 - **狀態**：`adopted`。
 - **Learning**：
   1. **GitHub Security Dashboard 與 PR/CI 合併生效特性**：在 PR 處於開啟或分支 commit 階段，GitHub Security Tab 上的全域警報不會自動關閉。必須透過 PR 的 Checks 分頁與 CodeQL CI Run 日誌確認警報消除；待 PR 正式合併（Merge）至主分支後，Security Tab 的警報才會自動轉為 `Closed (Fixed)`。
-  2. **Path Injection 深度包含性檢驗 (Containment Check)**：單純使用 `os.path.basename()` 在複雜路由或 MCP 工具中仍可能觸發 CodeQL 污點分析警報；結合 `os.path.realpath` 與 `os.path.commonpath([base_dir, target_dir]) == base_dir` 進行 strict containment 檢查是最嚴謹的做法。
+  2. **Path Injection 深度包含性檢驗與內部枚舉防禦**：單純使用 `os.path.basename()` 在複雜路由或 MCP 工具中仍可能觸發 CodeQL 污點分析警報；在後端採用 `os.path.realpath` 與 `os.path.commonpath([base_dir, target_dir]) == base_dir` 進行 strict containment，或直接在內部枚舉清單中查找檔案物件（如 `list_drag_sessions` / `list_tuning_presets`），能從根本上徹底切斷外部污點鏈。
   3. **HTML 標籤過濾 Regex 缺陷 (`js/bad-tag-filter`)**：CodeQL 的 `js/bad-tag-filter` 規則會嚴格檢查 HTML end tag 是否允許屬性與換行空白（例如 `</script\t\n bar>`）；僅寫 `</script\s*>` 仍會被判定為漏洞，必須寫成 `/<script[^>]*>([\s\S]*?)<\/script[^>]*>/gi` 才能完全符合規範。
 - **Action**：
   1. 建立 `backend/path_security.py` 提供 `safe_resolve_path` 與 `safe_join_under_dir` 集中式安全路徑驗證。
@@ -32,7 +32,7 @@
   4. 修復 `frontend/e2e/hud_telemetry_cards.spec.ts` 靜態檔案伺服器目錄遍歷防護。
   5. 加固 `verify_telemetry_v2_v3.py` Socket 綁定（支援 `--host`，預設 `127.0.0.1`）。
   6. 新增 `tests/test_path_security.py` 完整覆蓋目錄跳脫與邊界測試（12 tests）。
-- **Evidence**：`tests/test_path_security.py` (12 passed)；後端 `pytest` (164 passed, 0 failed)；前端 Vitest (66 files, 418 passed)；`ruff check .` 與 `ruff format --check .` 100% 通過。
+- **Evidence**：GitHub Actions PR #212 遠端 CI 中 **`CodeQL` 檢查 100% PASS (0 annotations / 0 alerts)**；`Analyze (python)`, `Analyze (javascript-typescript)`, `Analyze (rust)`, `Analyze (actions)` 全數通過；本地 `tests/test_path_security.py` (12 passed)；後端 `pytest` (164 passed)；前端 Vitest (66 files, 418 passed)；`ruff check .` 與 `ruff format --check .` 100% 通過。
 
 ---
 
