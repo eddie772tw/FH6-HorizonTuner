@@ -5,7 +5,7 @@
 
 import { clamp, getCanvasContext } from './utils.js';
 
-export function renderPedalWave(data, pedalHist, now) {
+export function renderPedalWave(data, pedalHist, now, domCache) {
     var throttle = clamp(data.throttle !== undefined ? data.throttle : 0, 0, 1);
     var brake    = clamp(data.brake    !== undefined ? data.brake    : 0, 0, 1);
 
@@ -16,7 +16,7 @@ export function renderPedalWave(data, pedalHist, now) {
         if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; pedalHist.push(oldP); }
     }
 
-    var pCanvas = document.getElementById('tcPedalWave');
+    var pCanvas = domCache ? domCache.pedalWaveCanvas : document.getElementById('tcPedalWave');
     if (!pCanvas) return;
 
     var cData = getCanvasContext(pCanvas);

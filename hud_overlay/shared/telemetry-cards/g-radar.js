@@ -3,14 +3,14 @@
 // G-Force Radar Sub-Renderer (Center Circular Cluster)
 // =============================================================================
 
-export function renderGRadar(data, gHist, now) {
+export function renderGRadar(data, gHist, now, domCache) {
     var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);
     var rawAccZ = data.accel_z !== undefined ? data.accel_z : (data.AccelerationZ || 0);
     var lat = -rawAccX / 9.81; // Invert X axis (lateral G) per user requirement
     var lon = rawAccZ / 9.81;  // Keep Y axis (longitudinal G: BRAKE on top)
 
-    var gCircle = document.getElementById('tcGRadarCircle');
-    var dot = document.getElementById('tcGDot');
+    var gCircle = domCache ? domCache.gCircle : document.getElementById('tcGRadarCircle');
+    var dot = domCache ? domCache.gDot : document.getElementById('tcGDot');
     if (gCircle && dot) {
         var radius = gCircle.clientWidth / 2;
         var maxGRadius = Math.max(0, radius - 4);
@@ -24,8 +24,8 @@ export function renderGRadar(data, gHist, now) {
         dot.style.transform = 'translate(' + xPx + 'px, ' + yPx + 'px)';
     }
 
-    var latEl = document.getElementById('tcLatG'); if (latEl) latEl.textContent = Math.abs(lat).toFixed(2);
-    var lonEl = document.getElementById('tcLonG'); if (lonEl) lonEl.textContent = Math.abs(lon).toFixed(2);
+    var latEl = domCache ? domCache.latEl : document.getElementById('tcLatG'); if (latEl) latEl.textContent = Math.abs(lat).toFixed(2);
+    var lonEl = domCache ? domCache.lonEl : document.getElementById('tcLonG'); if (lonEl) lonEl.textContent = Math.abs(lon).toFixed(2);
 
     // Update 30s history & peak markers
     if (gHist.length < 900) {
@@ -35,7 +35,7 @@ export function renderGRadar(data, gHist, now) {
         if (oldG) { oldG.lat = lat; oldG.lon = lon; oldG.time = now; gHist.push(oldG); }
     }
 
-    var markersContainer = document.getElementById('tcGMarkers');
+    var markersContainer = domCache ? domCache.markersContainer : document.getElementById('tcGMarkers');
     if (markersContainer && gCircle) {
         var radiusPx = gCircle.clientWidth / 2;
         var maxMRadius = Math.max(0, radiusPx - 4);
