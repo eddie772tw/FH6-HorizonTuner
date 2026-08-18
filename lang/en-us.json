@@ -972,7 +972,13 @@
   "Parameter": "Parameter",
   "Recommended": "Recommended",
   "Current": "Current",
-  "Locked / Unknown": "Locked / Unknown"
-}
-  "Coming Soon": "Coming Soon"
+  "Locked / Unknown": "Locked / Unknown",
+  "Coming Soon": "Coming Soon",
+  "ALERT": "ALERT",
+  "SUCCESS": "SUCCESS",
+  "NOTIFICATION": "NOTIFICATION",
+  "OTA": "OTA",
+  "MCP": "MCP",
+  "DYNAMIC PORT": "DYNAMIC PORT",
+  "OFFLINE": "OFFLINE"
 }
