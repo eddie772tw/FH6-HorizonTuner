@@ -114,25 +114,50 @@ jobs:
         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
       run: |
-        pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.ci.conf.json
+        pnpm.cmd --prefix frontend run tauri build --config src-tauri/tauri.ci.conf.json
+
+    - name: Locate signed Tauri updater artifacts
+      id: updater_artifacts
+      shell: pwsh
+      run: |
+        $bundleRoot = Join-Path $PWD 'frontend/src-tauri/target/release/bundle/nsis'
+        $bundles = @(Get-ChildItem -LiteralPath $bundleRoot -Filter '*.nsis.zip' -File)
+        if ($bundles.Count -ne 1) {
+          throw "Expected exactly one Tauri updater bundle in $bundleRoot, found $($bundles.Count)."
+        }
+        $bundle = $bundles[0]
+        $signature = Get-Item -LiteralPath ($bundle.FullName + '.sig') -ErrorAction Stop
+        $config = Get-Content -Raw 'frontend/src-tauri/tauri.conf.json' | ConvertFrom-Json
+        if ([string]::IsNullOrWhiteSpace($config.version)) {
+          throw 'Tauri runtime version is missing from tauri.conf.json.'
+        }
+        "bundle=$($bundle.FullName)" >> $env:GITHUB_OUTPUT
+        "signature=$($signature.FullName)" >> $env:GITHUB_OUTPUT
+        "version=$($config.version)" >> $env:GITHUB_OUTPUT
+        "Resolved updater bundle: $($bundle.Name)" >> $env:GITHUB_STEP_SUMMARY
+        "Runtime version: $($config.version)" >> $env:GITHUB_STEP_SUMMARY
 
     - name: Prepare Release Package & Generate latest.json Manifest
-      run: >
-        uv run --no-project --active python scripts/prepare_release_assets.py
-        --exe frontend/src-tauri/target/release/FH6-HorizonTuner.exe
-        --sig frontend/src-tauri/target/release/FH6-HorizonTuner.exe.sig
-        --output-dir dist/release
-        --tag "${{ env.TAG }}"
-        --repo "${{ github.repository }}"
+      shell: pwsh
+      run: |
+        uv run --no-project --active python scripts/prepare_release_assets.py `
+          --exe frontend/src-tauri/target/release/FH6-HorizonTuner.exe `
+          --updater-bundle "${{ steps.updater_artifacts.outputs.bundle }}" `
+          --updater-signature "${{ steps.updater_artifacts.outputs.signature }}" `
+          --output-dir dist/release `
+          --tag "${{ env.TAG }}" `
+          --version "${{ steps.updater_artifacts.outputs.version }}" `
+          --repo "${{ github.repository }}"
 
     - name: Upload and Attach Assets to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.TAG }}
+        fail_on_unmatched_files: true
         files: |
           dist/release/FH6-HorizonTuner.exe
-          dist/release/FH6-HorizonTuner.exe.sig
-          dist/release/FH6-HorizonTuner-*.zip
+          dist/release/*.nsis.zip
+          dist/release/*.nsis.zip.sig
           dist/release/latest.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -151,8 +176,8 @@ jobs:
         | Asset Name | Description | Status |
         | :--- | :--- | :---: |
         | `FH6-HorizonTuner.exe` | Main Standalone Executable (Host + Sidecar) | ✅ Attached |
-        | `FH6-HorizonTuner.exe.sig` | Ed25519 Cryptographic Signature | ✅ Attached |
-        | `FH6-HorizonTuner-*.zip` | Standalone Portable ZIP Bundle | ✅ Attached |
+        | `*.nsis.zip` | Tauri OTA updater payload | ✅ Attached |
+        | `*.nsis.zip.sig` | Ed25519 signature for OTA payload | ✅ Attached |
         | `latest.json` | Tauri v2 OTA Manifest for In-App Updates | ✅ Attached |
 
         > 🎉 All release assets have been automatically attached to the GitHub Release.

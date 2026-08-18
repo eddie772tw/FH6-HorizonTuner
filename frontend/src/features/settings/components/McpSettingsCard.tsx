@@ -82,15 +82,15 @@ export const McpSettingsCard: React.FC = () => {
   const codexCommandSnippet = `codex mcp add fh6-horizon-tuner --url ${mcpUrl}`;
 
   return (
-    <div className="card glass-panel p-4 d-flex flex-column gap-3">
-      <div className="d-flex justify-content-between align-items-center border-bottom pb-2">
+    <div className="settings-section d-flex flex-column gap-3">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
         <div className="d-flex align-items-center gap-2">
           <h5 className="text-primary fs-6 fw-bold m-0">
             {t('Model Context Protocol (MCP) Server')}
           </h5>
           <span
             className={`badge ${
-              mcpEnabled ? 'bg-success text-dark' : 'bg-secondary text-white'
+              mcpEnabled ? 'text-bg-success' : 'text-bg-secondary'
             } fs-8 fw-semibold`}
           >
             {mcpEnabled ? t('ACTIVE') : t('DISABLED')}
@@ -103,8 +103,8 @@ export const McpSettingsCard: React.FC = () => {
         )}
       </div>
 
-      <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-        <div>
+      <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
+        <div className="min-width-0">
           <label htmlFor="chk-mcp-enabled" className="form-label fw-bold mb-0 fs-6">
             {t('Enable MCP Server')}
           </label>
@@ -114,7 +114,7 @@ export const McpSettingsCard: React.FC = () => {
         </div>
         <input
           type="checkbox"
-          className="form-check-input ms-auto fs-5"
+          className="form-check-input ms-auto fs-5 flex-shrink-0"
           id="chk-mcp-enabled"
           checked={mcpEnabled}
           onChange={(e) => updateSettings({ mcp_enabled: e.target.checked })}
@@ -123,8 +123,8 @@ export const McpSettingsCard: React.FC = () => {
 
       {mcpEnabled && (
         <>
-          <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-            <div>
+          <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
+            <div className="min-width-0">
               <label htmlFor="chk-mcp-live" className="form-label fw-bold mb-0 fs-6">
                 {t('Expose Real-Time 60Hz Telemetry')}
               </label>
@@ -134,15 +134,15 @@ export const McpSettingsCard: React.FC = () => {
             </div>
             <input
               type="checkbox"
-              className="form-check-input ms-auto fs-5"
+              className="form-check-input ms-auto fs-5 flex-shrink-0"
               id="chk-mcp-live"
               checked={allowLive}
               onChange={(e) => updateSettings({ mcp_allow_live: e.target.checked })}
             />
           </div>
 
-          <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-            <div>
+          <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
+            <div className="min-width-0">
               <label htmlFor="select-mcp-downsample" className="form-label fw-bold mb-0 fs-6">
                 {t('Max Time-Series Samples Limit')}
               </label>
@@ -154,8 +154,7 @@ export const McpSettingsCard: React.FC = () => {
               id="select-mcp-downsample"
               value={maxDownsample}
               onChange={(e) => updateSettings({ mcp_max_downsample: parseInt(e.target.value) || 500 })}
-              className="form-select form-select-sm"
-              style={{ width: '170px' }}
+              className="settings-control form-select form-select-sm"
             >
               <option value="200">{t('200 samples (Fastest)')}</option>
               <option value="500">{t('500 samples (Recommended)')}</option>
@@ -166,8 +165,8 @@ export const McpSettingsCard: React.FC = () => {
 
           {/* Quick Copy Section */}
           <div className="d-flex flex-column gap-2 pt-1">
-            <div className="glass-panel border border-warning border-opacity-50 rounded p-3">
-              <div className="fs-7 fw-bold text-warning">{t('Current MCP Endpoint')}</div>
+            <div className="settings-endpoint p-3">
+              <div className="fs-7 fw-bold text-primary">{t('Current MCP Endpoint')}</div>
               <code className="d-block fs-7 text-body mt-1 user-select-all">{mcpUrl}</code>
               <div className="fs-8 text-secondary mt-1">
                 {t('Use this URL when configuring an Agent. The port is selected by the running backend.')}

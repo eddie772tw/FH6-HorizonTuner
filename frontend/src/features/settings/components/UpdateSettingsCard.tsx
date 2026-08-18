@@ -64,17 +64,17 @@ export const UpdateSettingsCard: React.FC = () => {
 
   return (
     <>
-      <div className="card glass-panel p-4 d-flex flex-column gap-3">
+      <div className="settings-section d-flex flex-column gap-3">
         
         {/* Header */}
-        <div className="d-flex justify-content-between align-items-center border-bottom pb-2">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
           <div className="d-flex align-items-center gap-2">
             <h5 className="text-primary fs-6 fw-bold m-0">
               {t('Software Updates (OTA)')}
             </h5>
             <span
               className={`badge ${
-                availableUpdate ? 'bg-warning text-dark' : 'bg-success text-white'
+                availableUpdate ? 'text-bg-warning' : 'text-bg-success'
               } fs-8 fw-semibold`}
             >
               {availableUpdate ? t('UPDATE AVAILABLE') : t('UP TO DATE')}
@@ -88,8 +88,8 @@ export const UpdateSettingsCard: React.FC = () => {
         </div>
 
         {/* Auto Check Setting */}
-        <label htmlFor="chk-auto-check-update" className="d-flex justify-content-between align-items-center border-bottom pb-3" style={{ cursor: 'pointer' }}>
-          <div>
+        <label htmlFor="chk-auto-check-update" className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3" style={{ cursor: 'pointer' }}>
+          <div className="min-width-0">
             <div className="form-label fw-bold mb-0 fs-6">
               {t('Automatically Check for Updates')}
             </div>
@@ -99,7 +99,7 @@ export const UpdateSettingsCard: React.FC = () => {
           </div>
           <input
             type="checkbox"
-            className="form-check-input ms-auto fs-5"
+            className="form-check-input ms-auto fs-5 flex-shrink-0"
             id="chk-auto-check-update"
             checked={autoCheck}
             onChange={(e) => updateSettings({ auto_check_updates: e.target.checked })}
@@ -107,8 +107,8 @@ export const UpdateSettingsCard: React.FC = () => {
         </label>
 
         {/* Manual Action & Release Notes Trigger */}
-        <div className="d-flex justify-content-between align-items-center pt-1">
-          <div className="d-flex flex-column">
+        <div className="settings-row d-flex justify-content-between align-items-center pt-1">
+          <div className="d-flex flex-column min-width-0">
             <span className="fs-7 text-body-secondary">
               {t('Endpoint')}: <code className="fs-7 text-primary">GitHub Releases (Ed25519 Signed)</code>
             </span>
@@ -118,7 +118,7 @@ export const UpdateSettingsCard: React.FC = () => {
               </span>
             )}
           </div>
-          <div className="d-flex gap-2">
+          <div className="d-flex flex-wrap justify-content-end gap-2 flex-shrink-0">
             {availableUpdate && (
               <button
                 type="button"

@@ -183,12 +183,6 @@ const SettingsView: React.FC = () => {
               )}
             </div>
 
-            {/* MCP Server & AI Integration */}
-            <McpSettingsCard />
-
-            {/* Software Updates (OTA) */}
-            <UpdateSettingsCard />
-
             {/* Telemetry UDP Receiver Settings */}
             <div className="d-flex flex-column gap-3">
               <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Telemetry Receiver Settings")}</h5>
@@ -424,6 +418,12 @@ const SettingsView: React.FC = () => {
 
           </div>
 
+        </div>
+
+        {/* Full-width integrations: these sections contain long URLs and actions. */}
+        <div className="d-flex flex-column gap-4 mt-4">
+          <McpSettingsCard />
+          <UpdateSettingsCard />
         </div>
 
       </div>

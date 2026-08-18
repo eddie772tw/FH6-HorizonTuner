@@ -1,16 +1,11 @@
-"""Release assets preparation and Tauri v2 manifest generator.
-
-This script packages the standalone executable, verifies signatures, and
-generates a Tauri v2-compliant latest.json manifest for GitHub Releases.
-"""
+"""Prepare portable and Tauri updater assets for a GitHub Release."""
 
 from __future__ import annotations
 
 import argparse
 import datetime
 import json
-import os
-import zipfile
+import shutil
 from pathlib import Path
 
 
@@ -19,11 +14,11 @@ def generate_latest_manifest(
     repo: str,
     tag: str,
     signature: str,
+    download_filename: str,
     notes: str = "",
     pub_date: str | None = None,
-    download_filename: str = "FH6-HorizonTuner.exe",
 ) -> dict:
-    """Generate Tauri v2 updater latest.json manifest dictionary."""
+    """Generate a Tauri v2 static updater manifest."""
     clean_version = version.lstrip("v")
     if not pub_date:
         pub_date = datetime.datetime.now(datetime.timezone.utc).strftime(
@@ -49,102 +44,109 @@ def generate_latest_manifest(
 
 def prepare_release_assets(
     exe_path: str | Path,
-    sig_path: str | Path | None,
+    updater_bundle_path: str | Path,
+    updater_signature_path: str | Path,
     output_dir: str | Path,
     tag: str,
+    version: str,
     repo: str = "eddie772tw/FH6-HorizonTuner",
     notes: str = "",
 ) -> list[Path]:
-    """Package binary, copy signature, generate portable ZIP and latest.json.
+    """Stage the portable binary and signed Tauri updater artifacts.
 
-    Returns a list of generated artifact paths.
+    The updater bundle and signature are mandatory. A release must never be
+    published without a manifest that points at a verifiable OTA payload.
     """
     exe_file = Path(exe_path).resolve()
+    updater_bundle_file = Path(updater_bundle_path).resolve()
+    updater_signature_file = Path(updater_signature_path).resolve()
     out_dir = Path(output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    if not exe_file.is_file():
-        raise FileNotFoundError(f"Target executable does not exist: {exe_file}")
+    required_files = (
+        (exe_file, "Target executable"),
+        (updater_bundle_file, "Tauri updater bundle"),
+        (updater_signature_file, "Tauri updater signature"),
+    )
+    for path, label in required_files:
+        if not path.is_file():
+            raise FileNotFoundError(f"{label} does not exist: {path}")
 
-    created_files: list[Path] = []
-
-    # 1. Target Executable in out_dir
     dest_exe = out_dir / "FH6-HorizonTuner.exe"
-    if dest_exe != exe_file:
-        import shutil
+    dest_bundle = out_dir / updater_bundle_file.name
+    dest_signature = out_dir / updater_signature_file.name
+    for source, destination in (
+        (exe_file, dest_exe),
+        (updater_bundle_file, dest_bundle),
+        (updater_signature_file, dest_signature),
+    ):
+        if source != destination:
+            shutil.copy2(source, destination)
 
-        shutil.copy2(exe_file, dest_exe)
-    created_files.append(dest_exe)
+    signature = dest_signature.read_text(encoding="utf-8").strip()
+    if not signature:
+        raise ValueError(f"Tauri updater signature is empty: {dest_signature}")
 
-    # 2. Signature Handling
-    sig_content = ""
-    dest_sig = out_dir / "FH6-HorizonTuner.exe.sig"
-    if sig_path and Path(sig_path).is_file():
-        sig_file = Path(sig_path).resolve()
-        sig_content = sig_file.read_text(encoding="utf-8").strip()
-        if dest_sig != sig_file:
-            import shutil
+    manifest_data = generate_latest_manifest(
+        version=version,
+        repo=repo,
+        tag=tag,
+        signature=signature,
+        download_filename=dest_bundle.name,
+        notes=notes,
+    )
+    manifest_dest = out_dir / "latest.json"
+    manifest_dest.write_text(
+        json.dumps(manifest_data, indent=2) + "\n", encoding="utf-8"
+    )
 
-            shutil.copy2(sig_file, dest_sig)
-        created_files.append(dest_sig)
-    elif dest_sig.is_file():
-        sig_content = dest_sig.read_text(encoding="utf-8").strip()
-        created_files.append(dest_sig)
-
-    # 3. Create Portable ZIP
-    zip_name = f"FH6-HorizonTuner-{tag}-Windows-Portable.zip"
-    zip_dest = out_dir / zip_name
-    with zipfile.ZipFile(zip_dest, "w", zipfile.ZIP_DEFLATED) as zip_f:
-        zip_f.write(dest_exe, arcname="FH6-HorizonTuner.exe")
-        if dest_sig.is_file():
-            zip_f.write(dest_sig, arcname="FH6-HorizonTuner.exe.sig")
-    created_files.append(zip_dest)
-
-    # 4. Generate latest.json (if signature exists)
-    if sig_content:
-        manifest_data = generate_latest_manifest(
-            version=tag,
-            repo=repo,
-            tag=tag,
-            signature=sig_content,
-            notes=notes,
-        )
-        manifest_dest = out_dir / "latest.json"
-        manifest_dest.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
-        created_files.append(manifest_dest)
-
-    return created_files
+    return [dest_exe, dest_bundle, dest_signature, manifest_dest]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Prepare Release Assets and Tauri Updater Manifest"
+        description="Prepare portable assets and a Tauri updater manifest"
     )
     parser.add_argument("--exe", required=True, help="Path to FH6-HorizonTuner.exe")
-    parser.add_argument("--sig", default=None, help="Path to FH6-HorizonTuner.exe.sig")
+    parser.add_argument(
+        "--updater-bundle",
+        required=True,
+        help="Path to the signed Tauri updater bundle (.nsis.zip)",
+    )
+    parser.add_argument(
+        "--updater-signature",
+        required=True,
+        help="Path to the updater bundle signature (.sig)",
+    )
     parser.add_argument("--output-dir", default="dist/release", help="Output directory")
-    parser.add_argument("--tag", required=True, help="Release Git tag (e.g. v1.5.0)")
+    parser.add_argument("--tag", required=True, help="Git release tag (e.g. v1.5.0)")
+    parser.add_argument(
+        "--version",
+        required=True,
+        help="Tauri/Cargo runtime SemVer used by the updater manifest",
+    )
     parser.add_argument(
         "--repo",
         default="eddie772tw/FH6-HorizonTuner",
         help="GitHub repository (owner/name)",
     )
     parser.add_argument("--notes", default="", help="Release notes markdown / summary")
-
     args = parser.parse_args()
 
     results = prepare_release_assets(
         exe_path=args.exe,
-        sig_path=args.sig,
+        updater_bundle_path=args.updater_bundle,
+        updater_signature_path=args.updater_signature,
         output_dir=args.output_dir,
         tag=args.tag,
+        version=args.version,
         repo=args.repo,
         notes=args.notes,
     )
 
     print(f"[SUCCESS] Prepared {len(results)} release artifacts:")
-    for f in results:
-        print(f"  - {f.name} ({f.stat().st_size} bytes)")
+    for artifact in results:
+        print(f"  - {artifact.name} ({artifact.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":

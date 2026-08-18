@@ -1,0 +1,114 @@
+name: FH6 HorizonTuner Release Packaging Test
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - ".github/workflows/release-packaging-test.yml"
+      - "frontend/src-tauri/tauri.conf.json"
+      - "scripts/prepare_release_assets.py"
+      - "tests/test_release_workflow_contract.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-and-validate:
+    name: Package test assets without publishing a Release
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv and managed Python 3.13
+        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+        with:
+          python-version: "3.13"
+          activate-environment: true
+          no-project: true
+          cache-python: true
+          enable-cache: true
+          cache-dependency-glob: requirements.txt
+
+      - name: Install test dependencies
+        run: uv pip install --requirement requirements.txt
+
+      - name: Run release contract tests
+        run: uv run --no-project --active python -m pytest tests/test_release_workflow_contract.py -q
+
+      - name: Create synthetic Tauri release inputs
+        id: fixtures
+        shell: pwsh
+        run: |
+          $fixtureRoot = Join-Path $env:RUNNER_TEMP 'fh6-release-packaging-fixtures'
+          $outputRoot = Join-Path $env:RUNNER_TEMP 'fh6-release-packaging-output'
+          New-Item -ItemType Directory -Force $fixtureRoot, $outputRoot | Out-Null
+
+          $exePath = Join-Path $fixtureRoot 'FH6-HorizonTuner.exe'
+          [IO.File]::WriteAllBytes($exePath, [Text.Encoding]::ASCII.GetBytes('TEST_PORTABLE_EXE'))
+
+          $installerPath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.14_x64-setup.exe'
+          [IO.File]::WriteAllBytes($installerPath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
+
+          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip'
+          Compress-Archive -LiteralPath $installerPath -DestinationPath $bundlePath -Force
+
+          $signaturePath = $bundlePath + '.sig'
+          Set-Content -LiteralPath $signaturePath -Value 'TEST_ED25519_SIGNATURE' -NoNewline -Encoding utf8
+
+          "exe=$exePath" >> $env:GITHUB_OUTPUT
+          "bundle=$bundlePath" >> $env:GITHUB_OUTPUT
+          "signature=$signaturePath" >> $env:GITHUB_OUTPUT
+          "output=$outputRoot" >> $env:GITHUB_OUTPUT
+
+      - name: Run release asset preparation locally
+        shell: pwsh
+        env:
+          EXE_PATH: ${{ steps.fixtures.outputs.exe }}
+          BUNDLE_PATH: ${{ steps.fixtures.outputs.bundle }}
+          SIGNATURE_PATH: ${{ steps.fixtures.outputs.signature }}
+          OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
+        run: |
+          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.14" --repo "eddie772tw/FH6-HorizonTuner"
+
+      - name: Validate generated manifest and asset set
+        shell: pwsh
+        env:
+          OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
+        run: |
+          $validator = @'
+          import json
+          import os
+          import zipfile
+          from pathlib import Path
+
+          output = Path(os.environ["OUTPUT_DIR"])
+          files = {path.name for path in output.iterdir() if path.is_file()}
+          bundle = "FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip"
+          expected = {
+              "FH6-HorizonTuner.exe",
+              bundle,
+              f"{bundle}.sig",
+              "latest.json",
+          }
+          assert files == expected, files
+
+          manifest = json.loads((output / "latest.json").read_text(encoding="utf-8"))
+          platform = manifest["platforms"]["windows-x86_64"]
+          assert manifest["version"] == "11.45.14"
+          assert platform["signature"] == "TEST_ED25519_SIGNATURE"
+          assert platform["url"].endswith(f"/test-v0.0.0/{bundle}")
+          with zipfile.ZipFile(output / bundle) as archive:
+              assert any(name.endswith(".exe") for name in archive.namelist())
+          '@
+          $validator | uv run --no-project --active python -
+
+      - name: Upload test release assets for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: fh6-release-packaging-test-assets
+          path: ${{ steps.fixtures.outputs.output }}/*
+          if-no-files-found: error

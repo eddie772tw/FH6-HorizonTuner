@@ -56,6 +56,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": ["nsis"],
     "publisher": "eddie772tw",
     "copyright": "Copyright (C) 2026 eddie772tw. All rights reserved.",
