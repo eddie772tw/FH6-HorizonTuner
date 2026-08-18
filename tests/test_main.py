@@ -58,8 +58,8 @@ def test_get_language_search_dirs():
 
 
 def test_api_languages_discovery_and_fallback(tmp_path, monkeypatch):
-    from fastapi.testclient import TestClient
     import main
+    from fastapi.testclient import TestClient
     from main import app
 
     client = TestClient(app)

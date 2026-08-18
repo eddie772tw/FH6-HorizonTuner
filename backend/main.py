@@ -235,11 +235,11 @@ for resource_lang_dir in get_language_search_dirs():
                         try:
                             shutil.copy2(src, dst)
                         except Exception as e:
-                            logger.error(
-                                f"Failed to sync language file {f_name}: {e}"
-                            )
+                            logger.error(f"Failed to sync language file {f_name}: {e}")
     except Exception as e:
-        logger.error(f"Failed to scan resource language directory {resource_lang_dir}: {e}")
+        logger.error(
+            f"Failed to scan resource language directory {resource_lang_dir}: {e}"
+        )
 
 telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
 
@@ -1652,7 +1652,9 @@ async def list_languages():
                                 name = data.get("__language_name__", filename[:-5])
                                 languages_dict[code] = name
                     except Exception as e:
-                        logger.error(f"Failed to read language file {filename} in {lang_dir}: {e}")
+                        logger.error(
+                            f"Failed to read language file {filename} in {lang_dir}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to list language directory {lang_dir}: {e}")
 
