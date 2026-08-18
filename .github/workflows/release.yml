@@ -107,6 +107,36 @@ jobs:
         Copy-Item dist/server-sidecar-x86_64-pc-windows-msvc.exe `
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
+    - name: Validate Tauri updater signing credentials
+      shell: pwsh
+      env:
+        TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+      run: |
+        if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+          throw 'TAURI_SIGNING_PRIVATE_KEY is empty or unavailable.'
+        }
+        if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) {
+          throw 'TAURI_SIGNING_PRIVATE_KEY_PASSWORD is empty or unavailable.'
+        }
+
+        $payloadPath = Join-Path $env:RUNNER_TEMP 'fh6-tauri-signing-preflight.bin'
+        $signaturePath = "$payloadPath.sig"
+        [IO.File]::WriteAllBytes(
+          $payloadPath,
+          [Text.Encoding]::ASCII.GetBytes('FH6-HorizonTuner Tauri signing preflight')
+        )
+
+        pnpm.cmd --prefix frontend exec tauri signer sign $payloadPath | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+          throw 'Tauri updater signing preflight failed. Verify the complete minisign private key and its password in GitHub Secrets.'
+        }
+        if (-not (Test-Path -LiteralPath $signaturePath -PathType Leaf)) {
+          throw "Tauri updater signing preflight did not create $signaturePath."
+        }
+
+        Remove-Item -LiteralPath $payloadPath, $signaturePath -Force -ErrorAction SilentlyContinue
+
     - name: Build and Sign Tauri Release Executable
       env:
         VITE_GIT_COMMIT: ${{ env.TAG }}

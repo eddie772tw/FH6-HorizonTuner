@@ -23,6 +23,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Install frontend dependencies
+        run: pnpm --prefix frontend install --frozen-lockfile
+
       - name: Set up uv and managed Python 3.13
         uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
         with:
@@ -38,6 +53,38 @@ jobs:
 
       - name: Run release contract tests
         run: uv run --no-project --active python -m pytest tests/test_release_workflow_contract.py -q
+
+      - name: Verify Tauri signer with ephemeral key
+        shell: pwsh
+        run: |
+          $signerRoot = Join-Path $env:RUNNER_TEMP 'fh6-tauri-signer-fixture'
+          New-Item -ItemType Directory -Force $signerRoot | Out-Null
+
+          $keyPath = Join-Path $signerRoot 'ci-test.key'
+          $payloadPath = Join-Path $signerRoot 'payload.bin'
+          $signaturePath = "$payloadPath.sig"
+          $password = 'fh6-ci-signer-password'
+          [IO.File]::WriteAllBytes(
+            $payloadPath,
+            [Text.Encoding]::ASCII.GetBytes('FH6-HorizonTuner Tauri signer contract test')
+          )
+
+          pnpm.cmd --prefix frontend exec tauri signer generate --ci -p $password -w $keyPath | Out-Null
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $keyPath -PathType Leaf)) {
+            throw 'Tauri signer could not generate the ephemeral test key.'
+          }
+
+          $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -LiteralPath $keyPath -Raw
+          $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = $password
+          pnpm.cmd --prefix frontend exec tauri signer sign $payloadPath | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Tauri signer could not parse and use the generated private key.'
+          }
+          if (-not (Test-Path -LiteralPath $signaturePath -PathType Leaf)) {
+            throw "Tauri signer did not create $signaturePath."
+          }
+
+          Remove-Item -LiteralPath $keyPath, $payloadPath, $signaturePath -Force -ErrorAction SilentlyContinue
 
       - name: Create synthetic Tauri release inputs
         id: fixtures

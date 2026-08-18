@@ -130,6 +130,12 @@ def test_release_workflow_security_and_contract():
     tauri_build_pos = content.find("Build and Sign Tauri Release Executable")
     assert frontend_build_pos != -1 and tauri_build_pos != -1
     assert frontend_build_pos < tauri_build_pos
+    preflight_pos = content.find("Validate Tauri updater signing credentials")
+    assert preflight_pos != -1 and preflight_pos < tauri_build_pos
+    assert "TAURI_SIGNING_PRIVATE_KEY is empty or unavailable." in content
+    assert "TAURI_SIGNING_PRIVATE_KEY_PASSWORD is empty or unavailable." in content
+    assert "tauri signer sign" in content
+    assert "Tauri updater signing preflight failed" in content
 
 
 def test_packaging_test_workflow_does_not_publish_release():
@@ -143,6 +149,10 @@ def test_packaging_test_workflow_does_not_publish_release():
     assert "workflow_dispatch:" in content
     assert "pull_request:" in content
     assert "prepare_release_assets.py" in content
+    assert "tauri signer generate" in content
+    assert "tauri signer sign" in content
+    assert "TAURI_SIGNING_PRIVATE_KEY" in content
+    assert "TAURI_SIGNING_PRIVATE_KEY_PASSWORD" in content
     assert "softprops/action-gh-release" not in content
     assert "contents: write" not in content
 
