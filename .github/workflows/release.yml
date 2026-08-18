@@ -1,4 +1,4 @@
-name: FH6 HorizonTuner Release & OTA Packaging
+name: Release & OTA Packaging
 
 on:
   release:
@@ -161,24 +161,3 @@ jobs:
           dist/release/latest.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Generate Release Deployment Summary
-      if: always()
-      shell: bash
-      run: |
-        cat << 'EOF' >> $GITHUB_STEP_SUMMARY
-        ## 🚀 FH6-HorizonTuner Release & OTA Packaging Summary
-
-        - **Release Tag**: `${{ env.TAG }}`
-        - **Target OS**: Windows x86_64
-        - **OTA Signing**: Ed25519 Verified & Attached
-
-        | Asset Name | Description | Status |
-        | :--- | :--- | :---: |
-        | `FH6-HorizonTuner.exe` | Main Standalone Executable (Host + Sidecar) | ✅ Attached |
-        | `*.nsis.zip` | Tauri OTA updater payload | ✅ Attached |
-        | `*.nsis.zip.sig` | Ed25519 signature for OTA payload | ✅ Attached |
-        | `latest.json` | Tauri v2 OTA Manifest for In-App Updates | ✅ Attached |
-
-        > 🎉 All release assets have been automatically attached to the GitHub Release.
-        EOF

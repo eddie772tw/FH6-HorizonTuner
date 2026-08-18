@@ -1,4 +1,4 @@
-name: FH6 HorizonTuner Host Diagnostics
+name: Host Diagnostics
 
 on:
   schedule:

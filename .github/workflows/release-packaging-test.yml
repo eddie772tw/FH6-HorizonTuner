@@ -1,4 +1,4 @@
-name: FH6 HorizonTuner Release Packaging Test
+name: Release Packaging Test
 
 on:
   pull_request:
