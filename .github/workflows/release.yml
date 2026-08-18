@@ -151,7 +151,7 @@ jobs:
       shell: pwsh
       run: |
         $bundleRoot = Join-Path $PWD 'frontend/src-tauri/target/release/bundle/nsis'
-        $bundles = @(Get-ChildItem -LiteralPath $bundleRoot -Filter '*.nsis.zip' -File)
+        $bundles = @(Get-ChildItem -LiteralPath $bundleRoot -Filter '*-setup.exe' -File)
         if ($bundles.Count -ne 1) {
           throw "Expected exactly one Tauri updater bundle in $bundleRoot, found $($bundles.Count)."
         }
@@ -186,8 +186,8 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           dist/release/FH6-HorizonTuner.exe
-          dist/release/*.nsis.zip
-          dist/release/*.nsis.zip.sig
+          dist/release/*-setup.exe
+          dist/release/*-setup.exe.sig
           dist/release/latest.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

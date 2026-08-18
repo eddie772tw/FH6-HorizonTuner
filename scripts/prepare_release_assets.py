@@ -111,7 +111,7 @@ def main() -> None:
     parser.add_argument(
         "--updater-bundle",
         required=True,
-        help="Path to the signed Tauri updater bundle (.nsis.zip)",
+        help="Path to the signed Tauri updater bundle (-setup.exe or .nsis.zip)",
     )
     parser.add_argument(
         "--updater-signature",

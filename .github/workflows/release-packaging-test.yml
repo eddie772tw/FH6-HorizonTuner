@@ -97,11 +97,8 @@ jobs:
           $exePath = Join-Path $fixtureRoot 'FH6-HorizonTuner.exe'
           [IO.File]::WriteAllBytes($exePath, [Text.Encoding]::ASCII.GetBytes('TEST_PORTABLE_EXE'))
 
-          $installerPath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.14_x64-setup.exe'
-          [IO.File]::WriteAllBytes($installerPath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
-
-          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip'
-          Compress-Archive -LiteralPath $installerPath -DestinationPath $bundlePath -Force
+          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.14_x64-setup.exe'
+          [IO.File]::WriteAllBytes($bundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
 
           $signaturePath = $bundlePath + '.sig'
           Set-Content -LiteralPath $signaturePath -Value 'TEST_ED25519_SIGNATURE' -NoNewline -Encoding utf8
@@ -129,12 +126,11 @@ jobs:
           $validator = @'
           import json
           import os
-          import zipfile
           from pathlib import Path
 
           output = Path(os.environ["OUTPUT_DIR"])
           files = {path.name for path in output.iterdir() if path.is_file()}
-          bundle = "FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip"
+          bundle = "FH6-HorizonTuner_11.45.14_x64-setup.exe"
           expected = {
               "FH6-HorizonTuner.exe",
               bundle,
@@ -148,8 +144,6 @@ jobs:
           assert manifest["version"] == "11.45.14"
           assert platform["signature"] == "TEST_ED25519_SIGNATURE"
           assert platform["url"].endswith(f"/test-v0.0.0/{bundle}")
-          with zipfile.ZipFile(output / bundle) as archive:
-              assert any(name.endswith(".exe") for name in archive.namelist())
           '@
           $validator | uv run --no-project --active python -
 

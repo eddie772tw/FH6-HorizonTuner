@@ -1,7 +1,6 @@
 """Contract and unit tests for release packaging workflows."""
 
 import json
-import zipfile
 from pathlib import Path
 
 import pytest
@@ -18,9 +17,8 @@ def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path]:
     mock_exe = source_dir / "FH6-HorizonTuner.exe"
     mock_exe.write_bytes(b"MOCK_PE_BINARY_CONTENT")
 
-    updater_bundle = source_dir / "FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip"
-    with zipfile.ZipFile(updater_bundle, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("FH6-HorizonTuner_11.45.14_x64-setup.exe", b"MOCK_NSIS")
+    updater_bundle = source_dir / "FH6-HorizonTuner_11.45.14_x64-setup.exe"
+    updater_bundle.write_bytes(b"MOCK_NSIS_INSTALLER")
 
     updater_signature = source_dir / f"{updater_bundle.name}.sig"
     updater_signature.write_text("ED25519_SIGNATURE_BASE64_STRING\n", encoding="utf-8")
@@ -33,7 +31,7 @@ def test_generate_latest_manifest_structure():
         repo="eddie772tw/FH6-HorizonTuner",
         tag="v1.5.0",
         signature="dGVzdHNpZ25hdHVyZQ==",
-        download_filename="FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip",
+        download_filename="FH6-HorizonTuner_11.45.14_x64-setup.exe",
         notes="OTA upgrade release",
         pub_date="2026-08-17T12:00:00Z",
     )
@@ -44,7 +42,7 @@ def test_generate_latest_manifest_structure():
     win_platform = manifest["platforms"]["windows-x86_64"]
     assert win_platform["signature"] == "dGVzdHNpZ25hdHVyZQ=="
     assert win_platform["url"].endswith(
-        "/v1.5.0/FH6-HorizonTuner_11.45.14_x64-setup.nsis.zip"
+        "/v1.5.0/FH6-HorizonTuner_11.45.14_x64-setup.exe"
     )
 
 
@@ -77,10 +75,6 @@ def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
     assert manifest["version"] == "11.45.14"
     assert platform["signature"] == "ED25519_SIGNATURE_BASE64_STRING"
     assert platform["url"].endswith(f"/{updater_bundle.name}")
-
-    with zipfile.ZipFile(out_dir / updater_bundle.name) as archive:
-        assert any(name.endswith(".exe") for name in archive.namelist())
-
 
 def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
     mock_exe, updater_bundle, updater_signature = _create_packaging_fixtures(tmp_path)
@@ -123,7 +117,8 @@ def test_release_workflow_security_and_contract():
     ).read_text(encoding="utf-8")
     assert "--no-bundle" not in content
     assert "--updater-bundle" in content
-    assert "*.nsis.zip" in content
+    assert "*-setup.exe" in content
+    assert "*.nsis.zip" not in content
     assert "latest.json" in content
 
     frontend_build_pos = content.find("Build Frontend Production Bundle")
