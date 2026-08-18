@@ -88,11 +88,11 @@ export const UpdateSettingsCard: React.FC = () => {
         </div>
 
         {/* Auto Check Setting */}
-        <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
+        <label htmlFor="chk-auto-check-update" className="d-flex justify-content-between align-items-center border-bottom pb-3" style={{ cursor: 'pointer' }}>
           <div>
-            <label htmlFor="chk-auto-check-update" className="form-label fw-bold mb-0 fs-6">
+            <div className="form-label fw-bold mb-0 fs-6">
               {t('Automatically Check for Updates')}
-            </label>
+            </div>
             <div className="form-text fs-7">
               {t('Silently check for new releases when FH6-HorizonTuner launches and notify when a patch is ready.')}
             </div>
@@ -104,7 +104,7 @@ export const UpdateSettingsCard: React.FC = () => {
             checked={autoCheck}
             onChange={(e) => updateSettings({ auto_check_updates: e.target.checked })}
           />
-        </div>
+        </label>
 
         {/* Manual Action & Release Notes Trigger */}
         <div className="d-flex justify-content-between align-items-center pt-1">
