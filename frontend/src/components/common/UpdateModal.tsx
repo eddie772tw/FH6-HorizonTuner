@@ -68,7 +68,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
           {/* Header */}
           <div className="modal-header border-bottom border-secondary border-opacity-25 pb-3">
             <div className="d-flex align-items-center gap-2">
-              <span className="badge bg-primary text-white px-2 py-1 fs-7 fw-bold">OTA</span>
+              <span className="badge bg-primary text-white px-2 py-1 fs-7 fw-bold">{t("OTA")}</span>
               <h5 className="modal-title fw-bold text-primary mb-0 fs-5">
                 {t('Software Update Available')}
               </h5>
