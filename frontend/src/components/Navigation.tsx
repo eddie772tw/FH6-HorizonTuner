@@ -76,7 +76,7 @@ const GitInfoBadge: React.FC = () => {
           }}
           title={t('Click to review and apply software update')}
         >
-          <span className="badge bg-warning text-dark py-0 px-1 me-1 fs-8">OTA</span>
+          <span className="badge bg-warning text-dark py-0 px-1 me-1 fs-8">{t("OTA")}</span>
           <span>{t('Update Available')}: {availableUpdate.version}</span>
         </button>
       ) : gitText ? (
@@ -308,7 +308,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               >
                 {t("Settings")}
                 {hasDynamicMcpPort && (
-                  <span className="badge text-bg-warning ms-1 fs-8">MCP</span>
+                  <span className="badge text-bg-warning ms-1 fs-8">{t("MCP")}</span>
                 )}
               </button>
 
@@ -344,7 +344,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                   <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center gap-2">
                       <span>{t("MCP Endpoint Notice")}</span>
-                      <span className="badge text-bg-warning">DYNAMIC PORT</span>
+                      <span className="badge text-bg-warning">{t("DYNAMIC PORT")}</span>
                     </div>
                     <button
                       type="button"
@@ -437,7 +437,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                 <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-danger fw-bold fs-7 d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center gap-2">
                     <span>{t("UDP Connection Alert")}</span>
-                    <span className="badge text-bg-danger">OFFLINE</span>
+                    <span className="badge text-bg-danger">{t("OFFLINE")}</span>
                   </div>
                   <button
                     type="button"

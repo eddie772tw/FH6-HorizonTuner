@@ -1063,5 +1063,12 @@
   "Recommended": "建議",
   "Current": "目前",
   "Locked / Unknown": "已鎖定 / 未知",
-  "Coming Soon": "即將推出"
+  "Coming Soon": "即將推出",
+  "ALERT": "警告",
+  "SUCCESS": "成功",
+  "NOTIFICATION": "通知",
+  "OTA": "OTA",
+  "MCP": "MCP",
+  "DYNAMIC PORT": "DYNAMIC PORT",
+  "OFFLINE": "OFFLINE"
 }
