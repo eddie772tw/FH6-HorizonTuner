@@ -168,6 +168,31 @@ RESOURCE_HUD_DIR = (
 )
 
 LANG_DIR = os.path.join(DATA_ROOT, "lang")
+
+
+def get_language_search_dirs() -> List[str]:
+    """Return ordered candidate directories to search for language JSON files.
+
+    User-customized files in LANG_DIR take priority, followed by embedded resource
+    directories, executable-relative locations, and repo-root fallbacks.
+    """
+    candidates = [
+        LANG_DIR,
+        RESOURCE_LANG_DIR,
+        os.path.join(RESOURCE_ROOT, "lang"),
+        os.path.join(os.path.dirname(RESOURCE_ROOT), "lang"),
+        os.path.join(os.path.dirname(sys.executable), "lang"),
+    ]
+    seen = set()
+    dirs = []
+    for d in candidates:
+        norm = os.path.normpath(d)
+        if norm not in seen:
+            seen.add(norm)
+            dirs.append(norm)
+    return dirs
+
+
 TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
 CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
 HUD_OVERLAY_DIR = os.path.join(DATA_ROOT, "hud_overlay")
@@ -189,21 +214,32 @@ os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
 os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
 
 # 複製與同步內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護或更新
-if os.path.exists(RESOURCE_LANG_DIR):
-    import shutil
+import shutil
 
-    for f_name in os.listdir(RESOURCE_LANG_DIR):
-        if f_name.endswith(".json"):
-            src = os.path.join(RESOURCE_LANG_DIR, f_name)
-            dst = os.path.join(LANG_DIR, f_name)
-            if os.path.abspath(src) != os.path.abspath(dst):
-                if not os.path.exists(dst) or os.path.getmtime(src) > os.path.getmtime(
-                    dst
-                ):
-                    try:
-                        shutil.copy2(src, dst)
-                    except Exception:
-                        pass
+for resource_lang_dir in get_language_search_dirs():
+    if resource_lang_dir == os.path.normpath(LANG_DIR) or not os.path.exists(
+        resource_lang_dir
+    ):
+        continue
+    try:
+        for f_name in os.listdir(resource_lang_dir):
+            if f_name.endswith(".json"):
+                src = os.path.join(resource_lang_dir, f_name)
+                dst = os.path.join(LANG_DIR, f_name)
+                if os.path.abspath(src) != os.path.abspath(dst):
+                    if (
+                        not os.path.exists(dst)
+                        or os.path.getsize(dst) == 0
+                        or os.path.getmtime(src) > os.path.getmtime(dst)
+                    ):
+                        try:
+                            shutil.copy2(src, dst)
+                        except Exception as e:
+                            logger.error(f"Failed to sync language file {f_name}: {e}")
+    except Exception as e:
+        logger.error(
+            f"Failed to scan resource language directory {resource_lang_dir}: {e}"
+        )
 
 telemetry_db = TelemetrySQLite(SESSIONS_DB_PATH)
 
@@ -1597,26 +1633,32 @@ async def update_settings(data: dict):
 @app.get("/api/languages")
 async def list_languages():
     # Always include English (US) which is hardcoded in the frontend
-    languages = [{"code": "en-us", "name": "English (US)"}]
+    languages_dict = {"en-us": "English (US)"}
 
-    if os.path.exists(LANG_DIR):
-        for filename in os.listdir(LANG_DIR):
-            if filename.endswith(".json") and filename.lower() != "iso639.json":
-                code = filename[:-5].lower()
-                # Skip en-us if it's somehow in the folder to prevent duplication
-                if code == "en-us":
-                    continue
-                file_path = os.path.join(LANG_DIR, filename)
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if isinstance(data, dict):
-                            name = data.get("__language_name__", filename[:-5])
-                            languages.append({"code": code, "name": name})
-                except Exception as e:
-                    logger.error(f"Failed to read language file {filename}: {e}")
+    for lang_dir in get_language_search_dirs():
+        if not os.path.exists(lang_dir):
+            continue
+        try:
+            for filename in os.listdir(lang_dir):
+                if filename.endswith(".json") and filename.lower() != "iso639.json":
+                    code = filename[:-5].lower()
+                    if code in languages_dict:
+                        continue
+                    file_path = os.path.join(lang_dir, filename)
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            if isinstance(data, dict):
+                                name = data.get("__language_name__", filename[:-5])
+                                languages_dict[code] = name
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to read language file {filename} in {lang_dir}: {e}"
+                        )
+        except Exception as e:
+            logger.error(f"Failed to list language directory {lang_dir}: {e}")
 
-    return languages
+    return [{"code": code, "name": name} for code, name in languages_dict.items()]
 
 
 @app.get("/api/languages/{code}")
@@ -1626,14 +1668,16 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
         return {}
 
     clean_code = os.path.basename(code)
-    file_path = safe_resolve_path(LANG_DIR, f"{clean_code}.json")
-    if file_path and os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to read language file: {e}")
-            return {"error": "Failed to read language file"}
+    for lang_dir in get_language_search_dirs():
+        if not os.path.exists(lang_dir):
+            continue
+        file_path = safe_resolve_path(lang_dir, f"{clean_code}.json")
+        if file_path and os.path.exists(file_path):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to read language file {file_path}: {e}")
 
     return {"error": "Language not found"}
 
