@@ -27,28 +27,34 @@ description: 當需要評估一個 PR、或完成一個分支的開發並提交 
 
 ## 2. Review 結構與標準格式
 
-### 2.1 頂層 Review (Top-level Review Body)
+### 2.1 跨 Agent 身分標記規範 (`{代號} as {Agent}`)
+- **背景**：所有 Agent（Google Antigravity, OpenAI Codex, Google Jules）共用同一個開發者 GitHub 帳號發言。
+- **格式規範**：Review 報告的開頭標題與結尾簽名必須統一使用 `{代號} as {Agent}` 格式：
+  - 範例：`Gemini as Antigravity`、`Luna as Codex`、`Gemini as Jules`、`Claude as Codex` 等。
+
+### 2.2 頂層 Review (Top-level Review Body)
 頂層 Review 內文必須包含以下標準結構，語氣客觀嚴謹：
 
 ```markdown
-{Agent Name} review — {結論摘要, e.g., blocking findings recorded / ready to merge}.
+{代號} as {Agent} review — {結論摘要, e.g., blocking findings recorded / ready to merge}.
 
 **CI Status & Local Verification:**
-簡述目前的 Actions 狀態及本地驗證的結果 (例如 14/14 checks pass, 169 backend pytest passed, 440 vitest passed 等)。
+簡述目前的 Actions 狀態及本地驗證的結果 (例如 14/14 checks pass, 171 backend pytest passed, 440 vitest passed 等)。
 
 **Findings & Assessment:**
 - 條列式指出需要修正的具體問題 (型別錯誤、邏輯缺失、缺乏邊界驗證等)。
 - 提出修改建議與處理方案。
+- **CI 未涵蓋 Blocking 意見之測試代碼提供義務 (Mandatory Test Snippet)**：若 Reviewer 提出的 Blocking 意見涉及現有 CI 測試尚未涵蓋的情境（例如極端邊界值、競態條件或未測試之路徑），**Reviewer 必須一併提供可重現該問題的具體測試代碼（Pytest 或 Vitest 程式碼片段）**，供 Author/Maintainer 於本地快速重現、驗證修正並納入測試套裝中。
 - 參考其他 Agent 的意見時，明確表態同意、補充，或提出不同的獨立見解。
 
 **Next Steps:**
-- 說明通過條件 (例如：請修正上述錯誤並確保 CI 全數轉綠)。
+- 說明通過條件 (例如：請修正上述錯誤、納入附帶之單元測試並確保 CI 全數轉綠)。
 - 說明何時可以再次請求 Review 或進行 Merge。
 
-Reviewer: {Agent Name}
+Reviewer: {代號} as {Agent}
 ```
 
-### 2.2 原生 GitHub Inline Review Comments (行內評論與代碼建議)
+### 2.3 原生 GitHub Inline Review Comments (行內評論與代碼建議)
 當需要針對具體程式碼行提出意見或重構建議時，**必須提交原生的 GitHub Inline Review Comments**（而非僅於 Review Body 提及文字）。
 
 #### JSON Payload 結構規格

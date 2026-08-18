@@ -15,11 +15,11 @@ Canonical skill registry 位於 `.agents/skills/README.md`。目前專案技能 
 `modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、
 `cross-agent-collaboration`、`agent-governance-audit`、
 `portable-release-validation`、`pr-review-evaluation`、
-`github-security-audit`。
+`pr-author-maintainer`、`github-security-audit`。
 
 Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。
 
-特別注意：`modular-refactoring` 與 `huge-component-refactoring` 是兩個不同技能；前者處理模組邊界與邏輯拆分，後者處理超過 250 行的 UI 元件或 60Hz rendering。Jules 流程使用 `jules_coding`，且必須先確認授權、API key、GitHub binding 與可用整合。調整 `.agents`、`.jules`、Journal 或 skill 索引時，必須使用 `agent-governance-audit`；發行 portable/exe、sidecar 或動態 HTTP port 時，必須使用 `portable-release-validation`。
+特別注意：`modular-refactoring` 與 `huge-component-refactoring` 是兩個不同技能；前者處理模組邊界與邏輯拆分，後者處理超過 250 行的 UI 元件或 60Hz rendering。Jules 流程使用 `jules_coding`，且必須先確認授權、API key、GitHub binding 與可用整合。調整 `.agents`、`.jules`、Journal 或 skill 索引時，必須使用 `agent-governance-audit`；發行 portable/exe、sidecar 或動態 HTTP port 時，必須使用 `portable-release-validation`；評估與審查 PR 時使用 `pr-review-evaluation`（若 Blocking 意見涉及 CI 未涵蓋情境，Reviewer 必須提供對應測試代碼）；撰寫 PR、持續同步 PR Body、Pre-Commit 測試門檻與回覆 Reviewer 時使用 `pr-author-maintainer`。所有 PR 審查與作者留言均須以 `{代號} as {Agent}` 身分標記以區分共用 GitHub 帳號時之發言主體。
 
 ## 專案核心事實與領域規範
 1. **UDP 高頻效能保護**：`backend/telemetry_listener.py` 負責以 60Hz+ 頻率接收 Forza 遊戲 UDP 遙測封包。此循環內**絕不可放置同步阻塞 (Synchronous Blocking) 或高開銷的 I/O 操作**。

@@ -32,6 +32,15 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding="utf-8")
 
 
+# 身分標記正則表達式，例如 "Gemini as Antigravity", "Luna as Codex", "Gemini as Jules"
+IDENTITY_PATTERN = re.compile(r"\b[\w\.\-]+\s+as\s+[\w\.\-]+\b", re.IGNORECASE)
+
+
+def check_review_identity_tag(body_text: str) -> bool:
+    """檢查 Review Body 是否包含 '{代號} as {Agent}' 身分標記。"""
+    return bool(IDENTITY_PATTERN.search(body_text))
+
+
 def parse_unified_diff(diff_text: str) -> Dict[str, Dict[str, Set[int]]]:
     """解析 git unified diff 文本，提取每個檔案在 LEFT (舊) 與 RIGHT (新) 的有效行號集合。
 
@@ -198,6 +207,12 @@ def validate_and_sanitize_payload(
             c_body = c.get("body", "").strip()
             body_parts.append(f"- [`{c_path}:L{c_line}`] ({reason}):\n  {c_body}")
         sanitized["body"] = "\n".join(body_parts)
+
+    # 身分標記提示
+    if not check_review_identity_tag(sanitized.get("body", "")):
+        warnings.append(
+            "[*] 提示: Review Body 建議遵循 '{代號} as {Agent}' 身分標記格式 (例如: 'Gemini as Antigravity review — ...' 與 'Reviewer: Gemini as Antigravity') 以利共用 GitHub 帳號時之身分識別。"
+        )
 
     return sanitized, warnings
 

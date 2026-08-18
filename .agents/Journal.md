@@ -15,6 +15,30 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-18 / PR 技能分化 (pr-author-maintainer)、禁止自我斷言 Mergeable 與跨 Agent 身分標記
+
+### PR Author/Maintainer 職責邊界、Pre-Commit 測試門檻、Living PR Body 迭代與 {代號} as {Agent} 標記規範
+
+- **來源**：`local`，針對 PR 開發流程進行職責分化，建立 `pr-author-maintainer` 專用技能，並在 Reviewer 與 Author 兩端全面導入 `{代號} as {Agent}` 身分標記機制。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **PR 角色職責分化 (Reviewer vs. Author/Maintainer)**：審查者（`pr-review-evaluation`）專注於評估變更、檢查 CI、發表客觀 Review 與 Suggestions；而作者/維護者（`pr-author-maintainer`）則專注於本地完整驗證、撰寫 PR、隨每次 commit 迭代更新 PR Body、維護標題穩定性，並客觀回覆 Reviewer 提出的問題。
+  2. **禁止自我斷言可合併原則 (No Self-Asserted Mergeability)**：Author / Maintainer 嚴禁在 PR Body 或回覆留言中自我下定論「Ready to merge」、「LGTM」或宣告可直接合併。必須客觀陳述「變更摘要、本地與 CI 驗證數據、待審查與反饋」，將合併與審核結論交由審查者或外部流程。
+  3. **嚴格 Commit 前測試門檻 (Strict Pre-Commit Gate)**：在每次 commit/push 前強制落實通過 Python 靜態檢查（`ruff check` / `ruff format --check`）、後端 Pytest、前端 Vitest 與前端建置驗證，杜絕帶著已知測試錯誤推送。
+  4. **PR Body 活文件同步迭代 (Living PR Body)**：隨著 Review 過程中的後續修正或 commit 追加，必須同步更新 PR 頂層 Body 內文，確保 PR Body 永遠忠實反映該 PR 的最終完整狀態，防止資訊偏差 (Documentation Drift)。
+  5. **PR 標題穩定性原則 (PR Title Stability)**：遵循 Conventional Commits 格式，僅在 PR 核心範疇或目標發生重大改變時才調整標題，避免頻繁修改干擾通知與上下文。
+  6. **跨 Agent 身分標記規範 (`{代號} as {Agent}`)**：所有 Agent（Google Antigravity, OpenAI Codex, Google Jules）共用相同 GitHub 帳號發言，必須在 Review、PR Body 與所有回覆留言的頭尾明確標記 `{代號} as {Agent}`（例如 `Gemini as Antigravity`、`Luna as Codex`、`Gemini as Jules`），以利發言主體之追溯與識別。
+  7. **CI 未涵蓋 Blocking 意見之測試代碼提供義務**：當 Reviewer 提出的 Blocking 意見涉及現有 CI 尚未覆蓋之邊界、競態或例外路徑時，Reviewer **必須一併提供可重現問題的單元測試代碼**；Author/Maintainer 必須將該測試代碼納入測試套裝中，在本地重現並修復（紅燈轉綠燈）後方可進行下次 Commit。
+- **Action**：
+  1. 建立 `.agents/skills/pr-author-maintainer/SKILL.md` 與 `references/pr_author_workflow_guide.md`。
+  2. 實作 `manage_pr_author.py` 輔助管理腳本（支援 PR Body 驗證、自我斷言攔截、身分標記校驗、範本產生與 Thread 回覆）。
+  3. 建立 `tests/test_manage_pr_author.py` 單元測試（8 passed）。
+  4. 同步升級 `pr-review-evaluation/SKILL.md`、`github_inline_comments_guide.md`、`submit_pr_review.py` 與 `tests/test_submit_pr_review.py`（加入 CI 未涵蓋 Blocking 意見附帶測試代碼規範與身分標記支援）。
+  5. 更新 `.agents/skills/README.md` 與 `.agents/AGENTS.md` 治理規範。
+- **Evidence**：`tests/test_manage_pr_author.py` (8 passed)；`tests/test_submit_pr_review.py` (5 passed)；後端全套測試通過；`ruff check .` 與 `ruff format --check .` 通過；前端 Vitest 通過。
+
+---
+
 ## 2026-08-17 / GitHub Actions Release Workflow 腳本注入防護、前端打包合約與 Shell 語法錯誤修復
 
 ### GitHub Actions 內聯範本展開崩潰、tauri.ci.conf.json 前端資產依賴與 step env 安全傳遞

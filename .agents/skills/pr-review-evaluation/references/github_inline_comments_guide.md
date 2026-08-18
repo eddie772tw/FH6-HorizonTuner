@@ -7,7 +7,7 @@
 ## 1. GitHub PR Review 核心概念
 
 在 GitHub PR 審查體系中，審查分為兩個層次：
-1. **頂層 Review (Top-level Review)**：包含整體的審查結論（`body`）與狀態事件（`event`: `COMMENT` | `APPROVE` | `REQUEST_CHANGES`）。
+1. **頂層 Review (Top-level Review)**：包含整體的審查結論（`body`）與狀態事件（`event`: `COMMENT` | `APPROVE` | `REQUEST_CHANGES`）。必須包含 `{代號} as {Agent}` 頭尾身分標記（例如 `Gemini as Antigravity review — ...` 與 `Reviewer: Gemini as Antigravity`），以區分共用 GitHub 帳號時的發言主體。
 2. **行內評論 (Inline Review Comments / Review Threads)**：直接錨定在 PR 程式碼變更 Diff 特定檔案、特定行號（或行號區間）上的具體評論與程式碼修改建議（Suggestions）。
 
 ---
@@ -83,6 +83,20 @@ if (!config.enabled) {
   return null;
 }
 return calculateMetrics(config);
+```
+````
+
+### 3.3 CI 未涵蓋之 Blocking 意見測試代碼提供範例
+當 Blocking 意見未被現有 CI 涵蓋時，在 Comment 或 Review Body 中提供對應的測試案例代碼：
+````markdown
+**[Blocking Finding] 缺少極端負值或 0 的除數保護：**
+此處當 `totalWeight <= 0` 時會計算出 `NaN`。現有 CI 尚未覆蓋此情境，建議補充以下 Vitest 測試案例至 `frontend/src/utils/tuningMath.test.ts`：
+
+```typescript
+it("should return fallback when totalWeight is 0 or negative", () => {
+  expect(calculateDistribution(0, 0)).toBe(0.5);
+  expect(calculateDistribution(-10, -5)).toBe(0.5);
+});
 ```
 ````
 

@@ -76,6 +76,7 @@ def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
     assert platform["signature"] == "ED25519_SIGNATURE_BASE64_STRING"
     assert platform["url"].endswith(f"/{updater_bundle.name}")
 
+
 def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
     mock_exe, updater_bundle, updater_signature = _create_packaging_fixtures(tmp_path)
 

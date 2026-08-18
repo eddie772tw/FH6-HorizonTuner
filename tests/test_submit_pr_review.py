@@ -21,6 +21,7 @@ sys.path.insert(0, str(scripts_dir))
 
 import pytest  # noqa: E402
 from submit_pr_review import (  # noqa: E402
+    check_review_identity_tag,
     parse_unified_diff,
     validate_and_sanitize_payload,
 )
@@ -35,7 +36,7 @@ index 1111111..2222222 100644
 +  const final = base + extra;
    return base;
  }
-diff --git a/backend/main.py b/backend/main.py
+ diff --git a/backend/main.py b/backend/main.py
 index 3333333..4444444 100644
 --- a/backend/main.py
 +++ b/backend/main.py
@@ -43,7 +44,7 @@ index 3333333..4444444 100644
 -    legacy_init()
 +    modern_init()
      print("ready")
-"""
+ """
 
 
 def test_parse_unified_diff_hunk_lines():
@@ -69,7 +70,7 @@ def test_parse_unified_diff_hunk_lines():
 
 def test_validate_and_sanitize_payload_all_valid():
     payload = {
-        "body": "Initial Review Body",
+        "body": "Gemini as Antigravity review — Initial review.\n\nReviewer: Gemini as Antigravity",
         "event": "COMMENT",
         "comments": [
             {
@@ -93,12 +94,12 @@ def test_validate_and_sanitize_payload_all_valid():
 
     assert len(warnings) == 0
     assert len(sanitized["comments"]) == 2
-    assert sanitized["body"] == "Initial Review Body"
+    assert "Gemini as Antigravity" in sanitized["body"]
 
 
 def test_validate_and_sanitize_payload_fallback_on_out_of_diff():
     payload = {
-        "body": "Review Header",
+        "body": "Luna as Codex review — changes requested.\n\nReviewer: Luna as Codex",
         "comments": [
             {
                 "path": "frontend/src/utils/tuningMath.ts",
@@ -138,7 +139,7 @@ def test_validate_and_sanitize_payload_fallback_on_out_of_diff():
 
 def test_validate_and_sanitize_payload_no_fallback_raises_error():
     payload = {
-        "body": "Review Header",
+        "body": "Gemini as Antigravity review — test\n\nReviewer: Gemini as Antigravity",
         "comments": [
             {
                 "path": "frontend/src/utils/tuningMath.ts",
@@ -154,3 +155,9 @@ def test_validate_and_sanitize_payload_no_fallback_raises_error():
         match="不在檔案 'frontend/src/utils/tuningMath.ts' 的 Diff Hunk 範圍內",
     ):
         validate_and_sanitize_payload(payload, SAMPLE_DIFF, auto_fallback=False)
+
+
+def test_check_review_identity_tag():
+    assert check_review_identity_tag("Gemini as Antigravity review") is True
+    assert check_review_identity_tag("Reviewer: Luna as Codex") is True
+    assert check_review_identity_tag("Anonymous review without tags") is False

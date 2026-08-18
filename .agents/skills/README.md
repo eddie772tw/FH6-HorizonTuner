@@ -26,7 +26,8 @@
 | `telemetry-udp-protocol` | `telemetry-udp-protocol/SKILL.md` | Forza UDP 封包解析、324-byte layout、單位換算或高頻遙測 | 涉及 offset 時讀取 `telemetry-udp-protocol/references/packet_format_reference.md` |
 | `agent-governance-audit` | `agent-governance-audit/SKILL.md` | 稽核 .agents、Journal、Jules 原始日誌、skill ID 與跨 agent 文件漂移 | 調整 agent 治理文件或發現 skill/path/language 錯誤時使用 |
 | `portable-release-validation` | `portable-release-validation/SKILL.md` | V1.x portable/exe、sidecar、動態 port 與 Windows 發行驗證 | 發行、打包、啟動流程或 runtime path 變更時使用 |
-| `pr-review-evaluation` | `pr-review-evaluation/SKILL.md` | 評估 PR 狀態、CI 結果並標準化發表 Review 意見 (含原生 Inline Comments) | `pr-review-evaluation/references/github_inline_comments_guide.md` 與自動化提交腳本 |
+| `pr-review-evaluation` | `pr-review-evaluation/SKILL.md` | 評估 PR 狀態、CI 結果並標準化發表 Review 意見 (含原生 Inline Comments 與 Suggestions) | `pr-review-evaluation/references/github_inline_comments_guide.md` 與自動化提交腳本 |
+| `pr-author-maintainer` | `pr-author-maintainer/SKILL.md` | 作為 PR 作者/維護者撰寫 PR、持續同步 PR Body、落實 Commit 前測試、維護標題穩定性與身分標記回覆 | `pr-author-maintainer/references/pr_author_workflow_guide.md` 與管理腳本 |
 | `github-security-audit` | `github-security-audit/SKILL.md` | 收集、審查或修復 GitHub Code Scanning/CodeQL、Dependabot、Secret Scanning 弱點與安全通報 | `github-security-audit/references/github_security_api_guide.md` 與自動化收集腳本 |
 
 ## Jules 邊界
@@ -55,4 +56,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 - Domain/API/型別邊界與底層模組使用 `modular-refactoring`；兩者同時適用時先讀前者。
 - 調整 `.agents`、`.jules`、Journal 或 skill 索引時使用 `agent-governance-audit`。
 - 發行 portable/exe、sidecar 或動態 HTTP port 時使用 `portable-release-validation`。
+- 評估 PR 狀態、CI 與提出 Review / Inline Comments 時使用 `pr-review-evaluation`。
+- 撰寫 PR、持續同步 PR Body、Pre-Commit 測試、標題穩定性與回覆 Reviewer 時使用 `pr-author-maintainer`。
+- 所有 PR 審查與作者留言均須標註 `{代號} as {Agent}` 身分標記以利共用 GitHub 帳號時之識別。
 - 收集、審查或修復 GitHub 自主檢測的安全警報與弱點時使用 `github-security-audit`。
