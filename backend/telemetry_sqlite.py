@@ -427,7 +427,9 @@ class TelemetrySQLite:
         with self._get_connection() as conn:
             # Explicitly delete child records since ON DELETE CASCADE requires PRAGMA foreign_keys=ON,
             # which is not enabled by default or guaranteed across connections.
-            conn.execute("DELETE FROM telemetry_channels WHERE session_id = ?;", (session_id,))
+            conn.execute(
+                "DELETE FROM telemetry_channels WHERE session_id = ?;", (session_id,)
+            )
             conn.execute("DELETE FROM laps WHERE session_id = ?;", (session_id,))
             conn.execute("DELETE FROM sessions WHERE session_id = ?;", (session_id,))
             conn.commit()
