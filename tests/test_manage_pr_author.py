@@ -25,6 +25,7 @@ import pytest  # noqa: E402
 from manage_pr_author import (  # noqa: E402
     check_disallowed_assertions,
     check_identity_tag,
+    format_inline_comments_summary,
     format_reply_comment,
     generate_body_template,
     validate_pr_body,
@@ -143,3 +144,34 @@ Author: Gemini as Antigravity"""
 
     assert formatted.count("### Gemini as Antigravity response") == 1
     assert formatted.count("Author: Gemini as Antigravity") == 1
+
+
+def test_format_inline_comments_summary():
+    mock_comments = [
+        {
+            "id": 123456,
+            "path": "frontend/src/utils/tuningMath.ts",
+            "line": 45,
+            "user": {"login": "codex-bot"},
+            "body": "建議加入除數為 0 保護：\n```suggestion\nconst result = total > 0 ? value / total : 0;\n```",
+        },
+        {
+            "id": 123457,
+            "path": "backend/main.py",
+            "line": 80,
+            "user": {"login": "human-reviewer"},
+            "body": "此處應確認 thread safe。",
+        },
+    ]
+
+    summary = format_inline_comments_summary(mock_comments)
+    assert "原生 Inline Comments 盤點清單 (共 2 則)" in summary
+    assert "frontend/src/utils/tuningMath.ts:L45" in summary
+    assert "ID: `123456`" in summary
+    assert "[包含 Code Suggestion]" in summary
+    assert "--reply-thread 123456" in summary
+    assert "backend/main.py:L80" in summary
+
+    # 空評論清單測試
+    empty_summary = format_inline_comments_summary([])
+    assert "目前無任何未解決" in empty_summary

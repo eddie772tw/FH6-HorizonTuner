@@ -231,6 +231,79 @@ def reply_to_comment_thread_api(
         return {"raw_output": res.stdout.strip()}
 
 
+def fetch_pr_inline_comments(
+    pr_number: int, repo: str | None = None
+) -> List[Dict[str, Any]]:
+    """透過 gh api 抓取指定 PR 的所有原生 Inline Comments。"""
+    endpoint = f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/comments"
+    if repo:
+        endpoint = f"repos/{repo}/pulls/{pr_number}/comments"
+
+    cmd = ["gh", "api", "--paginate", endpoint]
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+    if res.returncode != 0:
+        raise RuntimeError(
+            f"抓取 PR #{pr_number} Inline Comments 失敗: {res.stderr.strip()}"
+        )
+
+    try:
+        return json.loads(res.stdout)
+    except Exception as e:
+        raise RuntimeError(f"解析 Inline Comments JSON 失敗: {e}")
+
+
+def fetch_pr_reviews(pr_number: int, repo: str | None = None) -> List[Dict[str, Any]]:
+    """透過 gh api 抓取指定 PR 的所有頂層 Reviews。"""
+    endpoint = f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/reviews"
+    if repo:
+        endpoint = f"repos/{repo}/pulls/{pr_number}/reviews"
+
+    cmd = ["gh", "api", "--paginate", endpoint]
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+    if res.returncode != 0:
+        raise RuntimeError(f"抓取 PR #{pr_number} Reviews 失敗: {res.stderr.strip()}")
+
+    try:
+        return json.loads(res.stdout)
+    except Exception as e:
+        raise RuntimeError(f"解析 Reviews JSON 失敗: {e}")
+
+
+def format_inline_comments_summary(comments: List[Dict[str, Any]]) -> str:
+    """將原生 Inline Comments 清單格式化為易於檢視與防漏盤點的 Markdown 檢核表。"""
+    if not comments:
+        return "[+] 此 PR 目前無任何未解決的原生 Inline Comments。"
+
+    lines = [
+        f"### 📋 原生 Inline Comments 盤點清單 (共 {len(comments)} 則)",
+        "",
+        "> [!IMPORTANT]",
+        "> 請逐一核對以下每則行內評論與建議，並在 PR Body 或回覆中確認處置狀態，避免遺漏！",
+        "",
+    ]
+
+    for idx, c in enumerate(comments, 1):
+        cid = c.get("id", "?")
+        path = c.get("path", "Unknown file")
+        line = c.get("line") or c.get("original_line", "?")
+        user = c.get("user", {}).get("login", "unknown")
+        body = c.get("body", "").strip()
+        has_suggestion = "```suggestion" in body
+
+        suggestion_badge = " [包含 Code Suggestion]" if has_suggestion else ""
+        lines.append(
+            f"#### {idx}. [`{path}:L{line}`] (ID: `{cid}` by @{user}){suggestion_badge}"
+        )
+        lines.append("- **評論內容**:")
+        # 縮排內文
+        for b_line in body.splitlines():
+            lines.append(f"  > {b_line}")
+        lines.append(f"- **處置狀態**: [ ] 待處理 (可使用 `--reply-thread {cid}` 回覆)")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="GitHub PR Author & Maintainer 管理與驗證工具"
@@ -244,6 +317,16 @@ def main() -> int:
     )
     parser.add_argument(
         "--update-body", type=str, help="從 Markdown 檔案讀取內容並更新 PR Body"
+    )
+    parser.add_argument(
+        "--list-comments",
+        action="store_true",
+        help="抓取並條列指定 PR 的所有原生 Inline Comments 與 Suggestions 檢核清單",
+    )
+    parser.add_argument(
+        "--fetch-reviews",
+        action="store_true",
+        help="抓取指定 PR 的頂層 Reviews 與 Inline Comments 完整資訊",
     )
     parser.add_argument("--reply-thread", type=int, help="回覆指定之 Inline Comment ID")
     parser.add_argument("--body-file", type=str, help="回覆內文 Markdown 檔案")
@@ -268,6 +351,53 @@ def main() -> int:
         template = generate_body_template(args.identity)
         print(template)
         return 0
+
+    # 2. 列出 Inline Comments 模式 (防漏清單)
+    if args.list_comments:
+        if not args.pr:
+            print(
+                "[-] 錯誤: 列出 Inline Comments 必須指定 --pr <number>", file=sys.stderr
+            )
+            return 1
+        print(f"[*] 正在抓取 PR #{args.pr} 的原生 Inline Comments...")
+        try:
+            comments = fetch_pr_inline_comments(args.pr, args.repo)
+            summary = format_inline_comments_summary(comments)
+            print(summary)
+            return 0
+        except Exception as e:
+            print(f"[-] 抓取 Inline Comments 失敗: {e}", file=sys.stderr)
+            return 1
+
+    # 3. 抓取完整 Reviews 與 Comments 模式
+    if args.fetch_reviews:
+        if not args.pr:
+            print("[-] 錯誤: 抓取 Reviews 必須指定 --pr <number>", file=sys.stderr)
+            return 1
+        print(f"[*] 正在抓取 PR #{args.pr} 的頂層 Reviews 與 Inline Comments...")
+        try:
+            reviews = fetch_pr_reviews(args.pr, args.repo)
+            comments = fetch_pr_inline_comments(args.pr, args.repo)
+            print(
+                f"### 📋 PR #{args.pr} Reviews 概覽 (共 {len(reviews)} 則頂層 Review)"
+            )
+            for r in reviews:
+                r_id = r.get("id")
+                r_user = r.get("user", {}).get("login", "unknown")
+                r_state = r.get("state", "UNKNOWN")
+                r_body = (r.get("body") or "").strip()
+                print(f"- **Review #{r_id} by @{r_user}** [{r_state}]:")
+                for line in r_body.splitlines()[:5]:
+                    print(f"  > {line}")
+                if len(r_body.splitlines()) > 5:
+                    print("  > ... (其餘省略)")
+            print("")
+            summary = format_inline_comments_summary(comments)
+            print(summary)
+            return 0
+        except Exception as e:
+            print(f"[-] 抓取 Reviews 失敗: {e}", file=sys.stderr)
+            return 1
 
     # 2. 驗證 PR Body 模式
     if args.validate_body:

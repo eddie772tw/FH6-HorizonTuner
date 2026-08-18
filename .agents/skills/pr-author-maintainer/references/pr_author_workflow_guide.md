@@ -147,6 +147,20 @@ gh pr edit <PR_NUMBER> --body-file scratch/updated_pr_body.md
 gh pr comment <PR_NUMBER> --body-file scratch/response.md
 ```
 
+### 3.4 原生 Inline Comments 盤點與防漏檢視 (Anti-Omission Guide)
+為了避免遺漏錨定在程式碼行上的 Inline Comments 與 Code Suggestions，Author / Maintainer 應在每次檢視 Review 時執行以下防漏 SOP：
+
+#### 方式 A：使用專案輔助工具產生 Markdown 盤點清單 (推薦)
+```powershell
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-author-maintainer/scripts/manage_pr_author.py --pr <PR_NUMBER> --list-comments
+```
+
+#### 方式 B：透過原生 `gh api` 查詢未解決之 Inline Comments
+```powershell
+# 列出所有行內評論的檔案、行號、作者與內容
+gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/comments --jq '.[] | {id: .id, path: .path, line: (.line // .original_line), user: .user.login, body: .body}'
+```
+
 ---
 
 ## 4. 常見互動情境與回覆範本

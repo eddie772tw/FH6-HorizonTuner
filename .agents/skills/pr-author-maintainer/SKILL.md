@@ -66,6 +66,13 @@ description: 當作為 PR 建立者、作者或維護者 (Author/Maintainer) 撰
   2. 在本地重現問題、落實邏輯修復，並確認包含該測試在內的所有檢查 100% 通過（紅燈轉綠燈）。
   3. 於下次 Commit 前納入該測試檔案，並在回覆與 PR Body Changelog 中明確記載。
 
+### 7. 雙軌檢視與 Inline Comments 防漏盤點規範 (Anti-Omission Review Gate)
+- **原則**：Reviewer 往往同時提交頂層 Review 與原生 Inline Review Comments（含 Code Suggestions）。**嚴禁僅依賴 `gh pr view` 或頂層訊息，避免遺漏行內評論與建議**。
+- **作法**：Author / Maintainer 必須執行雙軌盤點：
+  1. **第一軌 (頂層審查)**：讀取 Review Body 掌握總體結論與方向。
+  2. **第二軌 (行內評論盤點)**：執行專案工具 `manage_pr_author.py --pr <number> --list-comments`（或 `gh api repos/{owner}/{repo}/pulls/<number>/comments`）產出行內評論盤點清單。
+  3. **逐條核對處置**：對每一筆 Inline Comment 確認是否已採納 Suggestion、修復代碼或透過 `--reply-thread <comment_id>` 進行技術回覆，確保零遺漏。
+
 ---
 
 ## PR Body 標準結構範本
@@ -141,13 +148,16 @@ Author: {代號} as {Agent}
 # 1. 產生標準 PR Body 範本草稿
 uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-author-maintainer/scripts/manage_pr_author.py --generate-template --identity "Gemini as Antigravity"
 
-# 2. 驗證 PR Body 檔案格式 (檢查必填章節、身分標記、攔截自我斷言 merge)
+# 2. 抓取並盤點所有原生 Inline Comments 與 Suggestions (防漏檢視)
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-author-maintainer/scripts/manage_pr_author.py --pr <number> --list-comments
+
+# 3. 驗證 PR Body 檔案格式 (檢查必填章節、身分標記、攔截自我斷言 merge)
 uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-author-maintainer/scripts/manage_pr_author.py --validate-body scratch/pr_body.md
 
-# 3. 同步更新 GitHub PR Body
+# 4. 同步更新 GitHub PR Body
 uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-author-maintainer/scripts/manage_pr_author.py --pr <number> --update-body scratch/pr_body.md
 
-# 4. 回覆 Review 討論串
+# 5. 回覆 Review 討論串
 uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-author-maintainer/scripts/manage_pr_author.py --pr <number> --reply-thread <comment_id> --body-file scratch/reply.md --identity "Gemini as Antigravity"
 ```
 

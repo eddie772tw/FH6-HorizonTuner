@@ -29,13 +29,14 @@
   5. **PR 標題穩定性原則 (PR Title Stability)**：遵循 Conventional Commits 格式，僅在 PR 核心範疇或目標發生重大改變時才調整標題，避免頻繁修改干擾通知與上下文。
   6. **跨 Agent 身分標記規範 (`{代號} as {Agent}`)**：所有 Agent（Google Antigravity, OpenAI Codex, Google Jules）共用相同 GitHub 帳號發言，必須在 Review、PR Body 與所有回覆留言的頭尾明確標記 `{代號} as {Agent}`（例如 `Gemini as Antigravity`、`Luna as Codex`、`Gemini as Jules`），以利發言主體之追溯與識別。
   7. **CI 未涵蓋 Blocking 意見之測試代碼提供義務**：當 Reviewer 提出的 Blocking 意見涉及現有 CI 尚未覆蓋之邊界、競態或例外路徑時，Reviewer **必須一併提供可重現問題的單元測試代碼**；Author/Maintainer 必須將該測試代碼納入測試套裝中，在本地重現並修復（紅燈轉綠燈）後方可進行下次 Commit。
+  8. **雙軌檢視與 Inline Comments 防漏盤點機制**：GitHub CLI `gh pr view` 容易忽略錨定在具體代碼行上的原生 Inline Comments 與 Code Suggestions；Author / Maintainer 必須採取雙軌審查消費流程，利用 `manage_pr_author.py --list-comments` 產出條列式 Markdown 檢核表，逐條盤點並處置行內評論，徹底消弭審查盲區。
 - **Action**：
   1. 建立 `.agents/skills/pr-author-maintainer/SKILL.md` 與 `references/pr_author_workflow_guide.md`。
-  2. 實作 `manage_pr_author.py` 輔助管理腳本（支援 PR Body 驗證、自我斷言攔截、身分標記校驗、範本產生與 Thread 回覆）。
-  3. 建立 `tests/test_manage_pr_author.py` 單元測試（8 passed）。
+  2. 實作 `manage_pr_author.py` 輔助管理腳本（支援 PR Body 驗證、自我斷言攔截、身分標記校驗、範本產生、Thread 回覆與 `--list-comments` / `--fetch-reviews` 防漏盤點功能）。
+  3. 建立 `tests/test_manage_pr_author.py` 單元測試（9 passed）。
   4. 同步升級 `pr-review-evaluation/SKILL.md`、`github_inline_comments_guide.md`、`submit_pr_review.py` 與 `tests/test_submit_pr_review.py`（加入 CI 未涵蓋 Blocking 意見附帶測試代碼規範與身分標記支援）。
   5. 更新 `.agents/skills/README.md` 與 `.agents/AGENTS.md` 治理規範。
-- **Evidence**：`tests/test_manage_pr_author.py` (8 passed)；`tests/test_submit_pr_review.py` (5 passed)；後端全套測試通過；`ruff check .` 與 `ruff format --check .` 通過；前端 Vitest 通過。
+- **Evidence**：`tests/test_manage_pr_author.py` (9 passed)；`tests/test_submit_pr_review.py` (5 passed)；後端全套測試通過；`ruff check .` 與 `ruff format --check .` 通過；前端 Vitest 通過。
 
 ---
 
