@@ -81,3 +81,6 @@
 ## $(date +%Y-%m-%d) - Caching DOM lookups in Vanilla JS Overlays
 **Learning:** High-frequency render loops (like 60Hz telemetry overlay functions) calling `document.getElementById` synchronously bottleneck the main thread.
 **Action:** Always pre-query static DOM elements during initialization and cache them in a structure (e.g., `this.domCache`). Pass this cache down to sub-renderers instead of querying the DOM in the render loop. Use the logical OR pattern `(domCache && domCache.prop) ? domCache.prop : document.getElementById(...)` as a safe fallback.
+## 2024-05-24 - HUDCore DOM Lookup Optimization
+**Learning:** High-frequency event handlers in vanilla JS overlays (like HUDCore message events for `hud:elements`, `hud:scale`, and `config`) can cause slight performance degradation if they repeatedly query the DOM (e.g., `document.getElementById`) to find their container elements.
+**Action:** When initializing HUD modules, query DOM elements once and cache their references (e.g., `cachedContainer = document.getElementById(...)`), and use those cached references inside hot paths to minimize Garbage Collection and CPU overhead.
