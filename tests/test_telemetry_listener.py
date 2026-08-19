@@ -1,8 +1,13 @@
 import asyncio
 import struct
 import unittest
+from unittest.mock import MagicMock
 
-from telemetry_listener import TelemetryProtocol, parse_telemetry_packet
+from telemetry_listener import (
+    TelemetryProtocol,
+    forward_udp_packet,
+    parse_telemetry_packet,
+)
 
 
 class TestTelemetryListener(unittest.TestCase):
@@ -181,6 +186,91 @@ class TestTelemetryListener(unittest.TestCase):
 
         self.protocol.datagram_received(bytes(data), ("127.0.0.1", 20440))
         self.assertEqual(self.queue.qsize(), 0)
+
+    def test_forward_udp_packet_direct(self):
+        raw_data = b"forza_telemetry_bytes" * 10
+        mock_transport = MagicMock()
+
+        # Disabled -> returns False, sendto not called
+        self.assertFalse(
+            forward_udp_packet(
+                raw_data, "127.0.0.1", 5300, enabled=False, transport=mock_transport
+            )
+        )
+        mock_transport.sendto.assert_not_called()
+
+        # Enabled but no target_port
+        self.assertFalse(
+            forward_udp_packet(
+                raw_data, "127.0.0.1", None, enabled=True, transport=mock_transport
+            )
+        )
+        mock_transport.sendto.assert_not_called()
+
+        # Enabled but no transport
+        self.assertFalse(
+            forward_udp_packet(
+                raw_data, "127.0.0.1", 5300, enabled=True, transport=None
+            )
+        )
+
+        # Enabled with valid transport -> success
+        self.assertTrue(
+            forward_udp_packet(
+                raw_data, "127.0.0.1", 5300, enabled=True, transport=mock_transport
+            )
+        )
+        mock_transport.sendto.assert_called_once_with(raw_data, ("127.0.0.1", 5300))
+
+        # Transport exception -> gracefully caught and returns False
+        mock_transport.sendto.side_effect = OSError("Network unreachable")
+        self.assertFalse(
+            forward_udp_packet(
+                raw_data, "127.0.0.1", 5300, enabled=True, transport=mock_transport
+            )
+        )
+
+    def test_telemetry_protocol_forwarding_and_loopback_guard(self):
+        queue = asyncio.Queue()
+        proto = TelemetryProtocol(
+            queue,
+            forward_enabled=True,
+            forward_host="127.0.0.1",
+            forward_port=5300,
+            local_ip="127.0.0.1",
+            local_port=8000,
+        )
+
+        mock_transport = MagicMock()
+        proto.connection_made(mock_transport)
+
+        self.assertTrue(proto._forward_enabled)
+        self.assertEqual(proto._forward_addr, ("127.0.0.1", 5300))
+
+        # Test forwarding during datagram_received
+        raw_packet = bytearray(324)
+        struct.pack_into("<i", raw_packet, 0, 1)  # IsRaceOn = 1
+        proto.datagram_received(bytes(raw_packet), ("127.0.0.1", 20440))
+
+        mock_transport.sendto.assert_called_once_with(
+            bytes(raw_packet), ("127.0.0.1", 5300)
+        )
+        self.assertEqual(queue.qsize(), 1)
+
+        # Test loopback protection: target equals local listener
+        proto.set_forwarding(enabled=True, host="127.0.0.1", port=8000)
+        self.assertFalse(proto._forward_enabled)
+        self.assertIsNone(proto._forward_addr)
+
+        # Re-enable with safe port
+        proto.set_forwarding(enabled=True, host="192.168.1.100", port=5300)
+        self.assertTrue(proto._forward_enabled)
+        self.assertEqual(proto._forward_addr, ("192.168.1.100", 5300))
+
+        # Disable forwarding
+        proto.set_forwarding(enabled=False)
+        self.assertFalse(proto._forward_enabled)
+        self.assertIsNone(proto._forward_addr)
 
 
 if __name__ == "__main__":

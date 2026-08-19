@@ -263,38 +263,108 @@ def forward_udp_packet(
     target_host: str = "127.0.0.1",
     target_port: int | None = None,
     enabled: bool = False,
+    transport: asyncio.DatagramTransport | None = None,
 ) -> bool:
-    """SimHub / Third-party UDP passthrough raw packet forwarding placeholder function.
+    """SimHub / Third-party UDP passthrough raw packet forwarding function.
 
-    TODO: 未來預計實作完整的 SimHub / 第三方 HUD UDP 封包靜態轉發功能。
-    當 enabled=True 且 target_port 經由設定檔或控制介面傳入（例如 8001 或其他 Port）時，
-    透過非同步/零阻塞 UDP Socket 將原生的 324-byte telemetry 封包原封不動轉發至 target_host:target_port。
-    目前此功能預設不啟用 (enabled=False)，避免對主高頻 UDP 接收迴圈產生非必要的 I/O 開銷。
+    When enabled=True, target_port is specified, and a valid datagram transport is provided,
+    forwards the raw binary telemetry datagram bytes directly to target_host:target_port.
 
     :param data: Raw binary telemetry datagram bytes received from Forza
     :param target_host: Target forwarding IPv4 address (default "127.0.0.1")
-    :param target_port: Target forwarding UDP port (must be specified by caller)
+    :param target_port: Target forwarding UDP port (e.g. 5300)
     :param enabled: Whether forwarding is enabled (default False)
+    :param transport: Active asyncio.DatagramTransport instance to send through
     :return: True if successfully forwarded, False otherwise
     """
-    if not enabled or target_port is None:
+    if not enabled or target_port is None or transport is None:
         return False
 
-    # TODO: 於此處實作非同步 socket.sendto 靜態 raw 封包轉發機制
-    return False
+    try:
+        transport.sendto(data, (target_host, target_port))
+        return True
+    except Exception as e:
+        logger.debug(
+            f"Failed to forward UDP packet to {target_host}:{target_port}: {e}"
+        )
+        return False
 
 
 class TelemetryProtocol(asyncio.DatagramProtocol):
-    def __init__(self, message_queue: asyncio.Queue):
+    def __init__(
+        self,
+        message_queue: asyncio.Queue,
+        forward_enabled: bool = False,
+        forward_host: str = "127.0.0.1",
+        forward_port: int = 5300,
+        local_ip: str = "0.0.0.0",
+        local_port: int = 8000,
+    ):
         self.message_queue = message_queue
+        self.local_ip = local_ip
+        self.local_port = local_port
+        self.transport: asyncio.DatagramTransport | None = None
+        self._forward_enabled = False
+        self._forward_addr: tuple[str, int] | None = None
+        self.set_forwarding(forward_enabled, forward_host, forward_port)
+
+    def set_forwarding(
+        self,
+        enabled: bool,
+        host: str = "127.0.0.1",
+        port: int | None = 5300,
+    ) -> None:
+        """Dynamically update raw UDP packet forwarding target.
+
+        Guards against loopback packet storms by rejecting targets that match the local listener.
+        """
+        if not enabled or port is None:
+            self._forward_enabled = False
+            self._forward_addr = None
+            return
+
+        normalized_host = host.strip() if host else "127.0.0.1"
+        is_loopback_target = port == self.local_port and normalized_host in (
+            "127.0.0.1",
+            "localhost",
+            "0.0.0.0",
+            self.local_ip,
+        )
+
+        if is_loopback_target:
+            logger.warning(
+                f"UDP forwarding target {normalized_host}:{port} matches local listener. "
+                "Disabling forwarding to prevent loopback packet storm."
+            )
+            self._forward_enabled = False
+            self._forward_addr = None
+            return
+
+        self._forward_enabled = True
+        self._forward_addr = (normalized_host, port)
+        logger.info(
+            f"UDP Telemetry Forwarding configured to {normalized_host}:{port} (enabled={enabled})"
+        )
 
     def connection_made(self, transport):
         self.transport = transport
         logger.info("UDP Telemetry Listener started.")
 
     def datagram_received(self, data, addr):
+        # 1. Forward raw datagram if enabled (Full Passthrough)
+        if (
+            self._forward_enabled
+            and self.transport is not None
+            and self._forward_addr is not None
+        ):
+            try:
+                self.transport.sendto(data, self._forward_addr)
+            except Exception as e:
+                # Keep high-frequency loop non-blocking and prevent log spam
+                logger.debug(f"UDP forward error: {e}")
+
+        # 2. Parse telemetry packet for local processing
         try:
-            # TODO: 未來在此處依設定呼叫 forward_udp_packet(data, target_host, target_port, enabled)
             telemetry_data = parse_telemetry_packet(data)
             if telemetry_data is not None:
                 try:
@@ -305,10 +375,25 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
             logger.error(f"Error parsing UDP packet: {e}")
 
 
-async def start_udp_listener(ip: str, port: int, message_queue: asyncio.Queue):
+async def start_udp_listener(
+    ip: str,
+    port: int,
+    message_queue: asyncio.Queue,
+    forward_enabled: bool = False,
+    forward_host: str = "127.0.0.1",
+    forward_port: int = 5300,
+):
     loop = asyncio.get_running_loop()
     transport, protocol = await loop.create_datagram_endpoint(
-        lambda: TelemetryProtocol(message_queue), local_addr=(ip, port)
+        lambda: TelemetryProtocol(
+            message_queue,
+            forward_enabled=forward_enabled,
+            forward_host=forward_host,
+            forward_port=forward_port,
+            local_ip=ip,
+            local_port=port,
+        ),
+        local_addr=(ip, port),
     )
     logger.info(f"Listening for Forza Telemetry on UDP {ip}:{port}")
     return transport

@@ -1,5 +1,11 @@
 {
   "__language_name__": "日本語",
+  "Telemetry UDP Forwarding": "テレメトリ UDP 転送",
+  "Forward raw binary telemetry datagrams to third-party tools (e.g. SimHub or external dashboard).": "生のバイナリテレメトリパケットをサードパーティ製ツール（SimHub、外部ダッシュボードなど）へ転送します。",
+  "Forward Target Host": "転送先ホスト (Host)",
+  "Target IPv4 address to forward raw UDP packets to.": "生の UDP パケットを転送する宛先 IPv4 アドレス。",
+  "Forward Target Port": "転送先ポート (Port)",
+  "Target UDP port to forward raw UDP packets to (Default: 5300).": "生の UDP パケットを転送する宛先ポート（デフォルト：5300）。",
   "Telemetry HUD Elements": "テレメトリ HUD エレメント",
   "Audio Capture Source": "音声キャプチャソース",
   "Refresh Audio Devices": "音声デバイスを更新",

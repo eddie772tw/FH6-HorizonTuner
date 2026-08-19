@@ -370,12 +370,13 @@ with an AppData fallback for protected locations.
 
 本專案使用兩個不同的本機連接埠，請勿將它們混用：
 
-| 用途 | 協定 | 預設連接埠 |
-| --- | --- | ---: |
-| Forza Horizon Data Out Telemetry | UDP | `8000` |
-| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
+| 服務名稱 | 協議 | 預設連接埠 / 說明 |
+| :--- | :--- | :--- |
+| Forza Horizon Data Out Telemetry | UDP | `8000` (接收遊戲遙測數據) |
+| UDP Telemetry Forwarding (Passthrough) | UDP | `5300` (可轉發 raw 封包至 SimHub / 外部儀表) |
+| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` (前端與 HUD 數據推播) |
 
-在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。
+在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。如需將 raw 遙測數據轉發至 SimHub 或第三方軟體，可於「系統設定 (Settings)」開啟「Telemetry 遙測封包轉發」並設定目標 Host 與 Port（預設 `127.0.0.1:5300`，亦支援 `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT` 環境變數）。
 
 Release Build 會優先使用 `8001` 作為 FastAPI HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。
 前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。

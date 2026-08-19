@@ -15,6 +15,26 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-19 / UDP 遙測封包非同步轉發 (Passthrough)、自轉風暴防護與熱更新機制
+
+### 零阻塞 raw Datagram 轉發、防迴圈碰撞與執行期零中斷 set_forwarding
+
+- **來源**：`local`，針對第三方軟體（如 SimHub、MoTeC Live 插件、外接儀表板）需同時監聽 Forza 遙測封包之需求，於 `telemetry_listener.py` 與 `main.py` 實作非同步 UDP 封包轉發與動態配置。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **零阻塞非同步 UDP Passthrough**：透過 `TelemetryProtocol` 持有的 `asyncio.DatagramTransport.sendto` 直接發送 raw binary 封包，耗時微秒級且不產生額外 OS socket 資源競爭，完美保護 60Hz+ 遙測接收循環。
+  2. **防自轉風暴 (Loopback Storm Prevention)**：若轉發目標 host:port 與接收端監聽的本地地址相同（如皆為 `127.0.0.1:8000`），自轉自身收到的封包會引發死循環風暴。在 `set_forwarding` 加入本地監聽碰撞偵測與主動阻斷防護。
+  3. **高頻回調零同步 DNS 解析**：嚴禁在 60Hz 的 `datagram_received` 中執行 `gethostbyname`；所有 Host 字串在初始化與 `set_forwarding` 設定變更時完成預先解析與快取。
+  4. **零重啟動態熱更新 (Zero-Downtime Hot-Reload)**：當使用者在前端 Settings 畫面修改轉發目標時，後端 `/api/settings` 直接更新 `protocol.set_forwarding`，無須中斷或重啟 UDP 監聽 socket。
+- **Action**：
+  1. 重構 `backend/telemetry_listener.py` 之 `forward_udp_packet`、`TelemetryProtocol` 與 `start_udp_listener`。
+  2. 在 `backend/main.py` 整合 `forward_telemetry_*` 設定持久化、環境變數覆寫與動態熱更新。
+  3. 擴充前端 `SettingsContext.tsx`、`SettingsView.tsx` 與 `lang/` 多語系支援（預設轉發連接埠 `5300`）。
+  4. 新增 `tests/test_telemetry_listener.py` 與 `tests/test_main.py` 轉發與自轉風暴測試。
+- **Evidence**：後端單元測試 (187 passed)；`ruff check` & `ruff format --check` 通過；前端 Vitest (69 files / 440 passed)；前端 `pnpm build` 驗證通過。
+
+---
+
 ## 2026-08-18 / PR 技能分化 (pr-author-maintainer)、禁止自我斷言 Mergeable 與跨 Agent 身分標記
 
 ### PR Author/Maintainer 職責邊界、Pre-Commit 測試門檻、Living PR Body 迭代與 {代號} as {Agent} 標記規範
