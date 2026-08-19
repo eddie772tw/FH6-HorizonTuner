@@ -132,7 +132,7 @@ window.HUD_ANIM_CONFIG = {
                         var finalScale = userScale * baseline * multiplier * globalScale;
                         window._currentHudScale = finalScale;
 
-                        var container = cachedContainer; // Use cached reference instead of document.getElementById
+                        var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
                         if (container) {
                             container.style.zoom = finalScale;
                         }
@@ -165,7 +165,7 @@ window.HUD_ANIM_CONFIG = {
                     }
 
                     // Standard Gauge Container Visibility
-                    var container = cachedContainer; // Use cached reference instead of document.getElementById
+                    var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
                     if (container) {
                         container.style.display = currentElements.showGauge === false ? 'none' : 'block';
                     }
@@ -234,7 +234,7 @@ window.HUD_ANIM_CONFIG = {
 
                 case 'hud:scale': {
                     if (window._currentHudScale) {
-                        var container = cachedContainer; // Use cached reference instead of document.getElementById
+                        var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
                         if (container) {
                             container.style.zoom = window._currentHudScale;
                         }
