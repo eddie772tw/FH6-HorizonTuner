@@ -16,6 +16,7 @@ window.HUD_ANIM_CONFIG = {
 
     var registry = {};
     var activeStyle = null;
+    var cachedContainer = null;
     var currentFullConfig = {};
     var currentElements = {};
     var DEFAULT_GLOBAL_SCALE_FACTOR = 0.75;
@@ -63,6 +64,9 @@ window.HUD_ANIM_CONFIG = {
             }
 
             activeStyle = Object.assign({}, def, options);
+            // Optimization: Cache the container element during init to avoid expensive DOM lookups
+            // in high-frequency message handlers (e.g., config, scale, or elements updates).
+            cachedContainer = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;
 
             // Bind Window Message Listener for Iframe Host Communication
             window.addEventListener('message', function (e) {
@@ -128,7 +132,7 @@ window.HUD_ANIM_CONFIG = {
                         var finalScale = userScale * baseline * multiplier * globalScale;
                         window._currentHudScale = finalScale;
 
-                        var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;
+                        var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
                         if (container) {
                             container.style.zoom = finalScale;
                         }
@@ -161,7 +165,7 @@ window.HUD_ANIM_CONFIG = {
                     }
 
                     // Standard Gauge Container Visibility
-                    var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;
+                    var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
                     if (container) {
                         container.style.display = currentElements.showGauge === false ? 'none' : 'block';
                     }
@@ -230,7 +234,7 @@ window.HUD_ANIM_CONFIG = {
 
                 case 'hud:scale': {
                     if (window._currentHudScale) {
-                        var container = activeStyle.containerId ? document.getElementById(activeStyle.containerId) : null;
+                        var container = cachedContainer || (activeStyle.containerId ? (cachedContainer = document.getElementById(activeStyle.containerId)) : null);
                         if (container) {
                             container.style.zoom = window._currentHudScale;
                         }
