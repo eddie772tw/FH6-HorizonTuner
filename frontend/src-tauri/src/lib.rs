@@ -415,6 +415,7 @@ pub fn run() {
             .always_on_top(true)
             .shadow(false)
             .visible(false)
+            .additional_browser_args("--disable-gpu --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection")
             .build()
             .expect("failed to build overlay window");
             #[cfg(target_os = "windows")]
