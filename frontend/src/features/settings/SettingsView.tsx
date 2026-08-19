@@ -216,6 +216,58 @@ const SettingsView: React.FC = () => {
                   style={{ width: '170px' }}
                 />
               </div>
+
+              <label
+                htmlFor="chk-forward-telemetry"
+                className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3 mb-0"
+                style={{ cursor: 'pointer' }}
+              >
+                <div>
+                  <div className="form-check-label fw-bold fs-6">{t("Telemetry UDP Forwarding")}</div>
+                  <div className="form-text fs-7">{t("Forward raw binary telemetry datagrams to third-party tools (e.g. SimHub or external dashboard).")}</div>
+                </div>
+                <input
+                  type="checkbox"
+                  className="form-check-input ms-auto fs-5"
+                  id="chk-forward-telemetry"
+                  checked={!!settings.forward_telemetry_enabled}
+                  onChange={(e) => updateSettings({ forward_telemetry_enabled: e.target.checked })}
+                />
+              </label>
+
+              {settings.forward_telemetry_enabled && (
+                <>
+                  <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
+                    <div>
+                      <label htmlFor="settings-forward-host" className="form-label fw-bold mb-0 fs-6">{t("Forward Target Host")}</label>
+                      <div className="form-text fs-7">{t("Target IPv4 address to forward raw UDP packets to.")}</div>
+                    </div>
+                    <input 
+                      id="settings-forward-host"
+                      type="text" 
+                      value={settings.forward_telemetry_host || '127.0.0.1'}
+                      onChange={(e) => updateSettings({ forward_telemetry_host: e.target.value })}
+                      className="form-control form-control-sm"
+                      style={{ width: '170px' }}
+                    />
+                  </div>
+
+                  <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
+                    <div>
+                      <label htmlFor="settings-forward-port" className="form-label fw-bold mb-0 fs-6">{t("Forward Target Port")}</label>
+                      <div className="form-text fs-7">{t("Target UDP port to forward raw UDP packets to (Default: 5300).")}</div>
+                    </div>
+                    <input 
+                      id="settings-forward-port"
+                      type="number" 
+                      value={settings.forward_telemetry_port ?? 5300}
+                      onChange={(e) => updateSettings({ forward_telemetry_port: parseInt(e.target.value) || 5300 })}
+                      className="form-control form-control-sm"
+                      style={{ width: '170px' }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Basic Units */}

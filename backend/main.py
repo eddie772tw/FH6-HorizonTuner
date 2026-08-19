@@ -408,6 +408,9 @@ DEFAULT_SETTINGS = {
         "power": "hp",
         "torque": "nm",
     },
+    "forward_telemetry_enabled": False,
+    "forward_telemetry_host": "127.0.0.1",
+    "forward_telemetry_port": 5300,
     "theme": {
         "mode": "dark",
         "halfmoonCore": "default",
@@ -431,6 +434,9 @@ app_settings = {
     "dyno_filter_transients": True,
     "telemetry_ip": "0.0.0.0",
     "telemetry_port": 8000,
+    "forward_telemetry_enabled": False,
+    "forward_telemetry_host": "127.0.0.1",
+    "forward_telemetry_port": 5300,
     "units": dict(DEFAULT_SETTINGS["units"]),
     "theme": dict(DEFAULT_SETTINGS["theme"]),
 }
@@ -1046,10 +1052,33 @@ async def lifespan(app: FastAPI):
     ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
 
+    forward_enabled = (
+        os.getenv("TELEMETRY_FORWARD_ENABLED", "").lower() in ("1", "true", "yes")
+        if "TELEMETRY_FORWARD_ENABLED" in os.environ
+        else bool(app_settings.get("forward_telemetry_enabled", False))
+    )
+    forward_host = os.getenv(
+        "TELEMETRY_FORWARD_HOST",
+        str(app_settings.get("forward_telemetry_host", "127.0.0.1")),
+    )
+    forward_port = int(
+        os.getenv(
+            "TELEMETRY_FORWARD_PORT",
+            str(app_settings.get("forward_telemetry_port", 5300)),
+        )
+    )
+
     # Bind the UDP listener before exposing the HTTP server. Previously this
     # ran as an unobserved task, allowing uvicorn to start even when a stale
     # sidecar still owned the telemetry port.
-    current_udp_transport = await start_udp_listener(ip, port, telemetry_queue)
+    current_udp_transport = await start_udp_listener(
+        ip,
+        port,
+        telemetry_queue,
+        forward_enabled=forward_enabled,
+        forward_host=forward_host,
+        forward_port=forward_port,
+    )
     current_udp_ip_port = (ip, port)
     race_persistence.start()
     background_tasks = [
@@ -1556,6 +1585,17 @@ async def update_settings(data: dict):
     if "mcp_max_downsample" in data:
         app_settings["mcp_max_downsample"] = int(data["mcp_max_downsample"])
 
+    if "forward_telemetry_enabled" in data:
+        app_settings["forward_telemetry_enabled"] = bool(
+            data["forward_telemetry_enabled"]
+        )
+    if "forward_telemetry_host" in data:
+        app_settings["forward_telemetry_host"] = str(
+            data["forward_telemetry_host"]
+        ).strip()
+    if "forward_telemetry_port" in data:
+        app_settings["forward_telemetry_port"] = int(data["forward_telemetry_port"])
+
     # 處理 telemetry_ip 與 telemetry_port
     new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
     new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
@@ -1616,13 +1656,30 @@ async def update_settings(data: dict):
             current_udp_transport = None
         try:
             current_udp_transport = await start_udp_listener(
-                new_ip, new_port, telemetry_queue
+                new_ip,
+                new_port,
+                telemetry_queue,
+                forward_enabled=app_settings.get("forward_telemetry_enabled", False),
+                forward_host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
+                forward_port=int(app_settings.get("forward_telemetry_port", 5300)),
             )
             current_udp_ip_port = (new_ip, new_port)
         except Exception as e:
             logger.error(
                 f"Failed to restart UDP Telemetry listener on {new_ip}:{new_port}: {e}"
             )
+    elif current_udp_transport:
+        # 動態更新轉發設定，無須重啟監聽 socket
+        try:
+            protocol = current_udp_transport.get_protocol()
+            if hasattr(protocol, "set_forwarding"):
+                protocol.set_forwarding(
+                    enabled=app_settings.get("forward_telemetry_enabled", False),
+                    host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
+                    port=int(app_settings.get("forward_telemetry_port", 5300)),
+                )
+        except Exception as e:
+            logger.warning(f"Failed to dynamically update UDP forwarding setting: {e}")
 
     return app_settings
 

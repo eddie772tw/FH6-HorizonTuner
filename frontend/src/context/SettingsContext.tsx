@@ -28,6 +28,9 @@ export interface AppSettings {
   units: UnitSettings;
   telemetry_ip?: string;
   telemetry_port?: number;
+  forward_telemetry_enabled?: boolean;
+  forward_telemetry_host?: string;
+  forward_telemetry_port?: number;
   auto_check_updates?: boolean;
 }
 
@@ -96,7 +99,10 @@ const defaultSettings: AppSettings = {
   dyno_filter_transients: true,
   units: defaultUnits,
   telemetry_ip: '0.0.0.0',
-  telemetry_port: 8000
+  telemetry_port: 8000,
+  forward_telemetry_enabled: false,
+  forward_telemetry_host: '127.0.0.1',
+  forward_telemetry_port: 5300
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

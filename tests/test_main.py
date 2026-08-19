@@ -106,3 +106,31 @@ def test_api_languages_discovery_and_fallback(tmp_path, monkeypatch):
     res_invalid = client.get("/api/languages/nonexistent-lang-code")
     assert res_invalid.status_code == 200
     assert res_invalid.json() == {"error": "Language not found"}
+
+
+def test_api_settings_forwarding_configuration():
+    from fastapi.testclient import TestClient
+    from main import app
+
+    client = TestClient(app)
+
+    # 1. Get initial settings
+    res = client.get("/api/settings")
+    assert res.status_code == 200
+    data = res.json()
+    assert "forward_telemetry_enabled" in data
+    assert "forward_telemetry_host" in data
+    assert "forward_telemetry_port" in data
+
+    # 2. Update forwarding settings
+    update_payload = {
+        "forward_telemetry_enabled": True,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+    }
+    post_res = client.post("/api/settings", json=update_payload)
+    assert post_res.status_code == 200
+    updated_data = post_res.json()
+    assert updated_data["forward_telemetry_enabled"] is True
+    assert updated_data["forward_telemetry_host"] == "127.0.0.1"
+    assert updated_data["forward_telemetry_port"] == 5300

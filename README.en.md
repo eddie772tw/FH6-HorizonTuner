@@ -336,12 +336,13 @@ with an AppData fallback for protected locations.
 
 This project uses two separate localhost ports; do not configure them interchangeably:
 
-| Purpose | Protocol | Default port |
-| --- | --- | ---: |
-| Forza Horizon Data Out telemetry | UDP | `8000` |
-| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` |
+| Service / Purpose | Protocol | Default Port / Notes |
+| :--- | :--- | :--- |
+| Forza Horizon Data Out telemetry | UDP | `8000` (Receives game telemetry) |
+| UDP Telemetry Forwarding (Passthrough) | UDP | `5300` (Forwards raw bytes to SimHub / dashboards) |
+| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` (Broadcasts parsed data to UI/HUD) |
 
-In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Development uses `8001` as its fixed HTTP port. `TELEMETRY_PORT` remains available for changing the UDP port; `BACKEND_PORT` is retained for explicit test and external-backend workflows.
+In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Development uses `8001` as its fixed HTTP port. `TELEMETRY_PORT` remains available for changing the UDP port; `BACKEND_PORT` is retained for explicit test and external-backend workflows. To forward raw datagrams to SimHub or other tools, enable "Telemetry UDP Forwarding" in Settings and configure the destination host and port (defaults to `127.0.0.1:5300`, customizable via `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT`).
 
 In a Release Build, the FastAPI HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before configuring an Agent.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
