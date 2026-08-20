@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -53,15 +53,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "22"
         cache: 'pnpm'
@@ -74,7 +74,7 @@ jobs:
       run: pnpm --prefix frontend run build
 
     - name: Publish verified frontend distribution
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: frontend-dist-${{ github.sha }}
         path: frontend/dist
@@ -100,10 +100,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -125,15 +125,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
     - name: Set up Node.js 22
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "22"
         cache: 'pnpm'
@@ -157,10 +157,10 @@ jobs:
     timeout-minutes: 10
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -193,7 +193,7 @@ jobs:
 
     - name: Publish sidecar build metrics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ci-metrics-sidecar-${{ github.sha }}
         path: metrics/sidecar-build.json
@@ -201,7 +201,7 @@ jobs:
         retention-days: 14
 
     - name: Publish sidecar executable
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: portable-sidecar-${{ github.sha }}
         path: dist/server-sidecar-x86_64-pc-windows-msvc.exe
@@ -215,10 +215,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Download release build metrics
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         pattern: ci-metrics-*
         path: metrics
@@ -229,7 +229,7 @@ jobs:
 
     - name: Publish performance dashboard data
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ci-performance-dashboard-${{ github.sha }}
         path: metrics/dashboard.json
@@ -243,7 +243,7 @@ jobs:
     timeout-minutes: 20
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Restore Tauri Rust build cache
       id: tauri-rust-cache
@@ -264,7 +264,7 @@ jobs:
         echo "Tauri Rust cache: **$cache_state**" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -274,12 +274,12 @@ jobs:
         cache-dependency-glob: requirements.txt
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "22"
         cache: 'pnpm'
@@ -291,13 +291,13 @@ jobs:
         pnpm --prefix frontend install --frozen-lockfile
 
     - name: Download verified sidecar executable
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: portable-sidecar-${{ github.sha }}
         path: dist
 
     - name: Download verified frontend distribution
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: frontend-dist-${{ github.sha }}
         path: frontend/dist
@@ -323,7 +323,7 @@ jobs:
 
     - name: Publish Tauri build metrics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ci-metrics-tauri-${{ github.sha }}
         path: metrics/tauri-build.json
