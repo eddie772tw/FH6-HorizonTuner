@@ -15,6 +15,29 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-20 / Dependabot 版本自動更新配置 (Dependabot Version Updates) 與生態系統合約驗證
+
+### 全生態系覆蓋 (GitHub Actions, pip, npm, cargo)、分組更新策略與路徑合約測試
+
+- **來源**：`local`，參照 GitHub 官方文件標準，為儲存庫建置完整的 `.github/dependabot.yml` 版本自動更新配置。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **全生態系統精確路徑對齊 (Ecosystem Directory Alignment)**：
+     - `github-actions`：指定 `directory: "/"`，自動掃描 `.github/workflows` 下的所有 Action 依賴。
+     - `pip`：指定 `directory: "/"`，監控根目錄 `requirements.txt` 與 `pyproject.toml`。
+     - `npm`：指定 `directory: "/frontend"`，與根目錄 `pnpm-workspace.yaml` / `pnpm-lock.yaml` 一併對齊 pnpm 依賴結構。
+     - `cargo`：指定 `directory: "/frontend/src-tauri"`，監控 Tauri Rust 核心之 `Cargo.toml` 與 `Cargo.lock`。
+  2. **分組更新防 PR 氾濫 (Grouped Updates)**：為各生態系統配置 `groups`（`github-actions`、`python-dependencies`、`frontend-dependencies`、`rust-dependencies`）與萬用字元 `patterns: ["*"]`，將每週的版本更新聚合成單一 PR，降低審查雜訊。
+  3. **語意化 Commit 訊息與標籤**：配置 `commit-message` 的 `prefix`（`ci`、`deps(python)`、`deps(frontend)`、`deps(rust)`）與 `include: "scope"`，完美契合 Conventional Commits 規範。
+  4. **靜態合約防護測試 (Contract Testing Gate)**：建立 `tests/test_dependabot_contract.py`，自動驗證 `version == 2`、必要 ecosystem、目錄路徑存在性、排程與分組設定，防止未來手動誤改引發 CI 或 Dependabot 解析中斷。
+- **Action**：
+  1. 建立 `.github/dependabot.yml`。
+  2. 建立 `tests/test_dependabot_contract.py`（3 passed）。
+  3. 驗證全套單元測試與靜態檢查通過。
+- **Evidence**：`test_dependabot_contract.py` (3 passed)；`pytest` (190 passed)；`ruff check .` & `ruff format --check .` 通過；前端 Vitest (69 files / 440 tests passed)；前端 `pnpm build` 成功。
+
+---
+
 ## 2026-08-19 / UDP 遙測封包非同步轉發 (Passthrough)、自轉風暴防護與熱更新機制
 
 ### 零阻塞 raw Datagram 轉發、防迴圈碰撞與執行期零中斷 set_forwarding
