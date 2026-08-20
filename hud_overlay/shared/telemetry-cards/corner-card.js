@@ -17,6 +17,9 @@ import {
     TEMP_NORMAL_MAX_F,
 } from './utils.js';
 
+// Performance optimization: Pre-allocate a shared array to eliminate
+// per-frame and per-wheel garbage collection (GC) heap allocations inside the 60Hz render loop.
+var _sharedBins = [];
 
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
@@ -140,7 +143,14 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
                     var tempRange  = TEMP_HIST_MAX_F - TEMP_HIST_MIN_F;
                     var tempPerBin = tempRange / numBins;
-                    var bins       = new Array(numBins).fill(0);
+
+                    if (_sharedBins.length !== numBins) {
+                        _sharedBins.length = numBins;
+                    }
+                    for (var _b = 0; _b < numBins; _b++) {
+                        _sharedBins[_b] = 0;
+                    }
+                    var bins = _sharedBins;
 
                     for (var hi = 0; hi < tHist.length; hi++) {
                         var p = tHist[hi];
