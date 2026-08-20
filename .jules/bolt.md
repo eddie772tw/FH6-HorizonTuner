@@ -84,3 +84,6 @@
 ## 2026-08-19 - HUDCore DOM Lookup Optimization
 **Learning:** High-frequency event handlers in vanilla JS overlays (like HUDCore message events for `hud:elements`, `hud:scale`, and `config`) can cause slight performance degradation if they repeatedly query the DOM (e.g., `document.getElementById`) to find their container elements.
 **Action:** When initializing HUD modules, query DOM elements once and cache their references (e.g., `cachedContainer = document.getElementById(...)`), and use those cached references inside hot paths to minimize Garbage Collection and CPU overhead.
+## 2026-08-20 - Pre-Allocate Arrays in 60Hz Render Loops
+**Learning:** Instantiating new arrays dynamically via `new Array().fill()` inside high-frequency 60Hz render loops (like the `renderCorners` loop spanning 4 wheels) causes massive object creation per second. This spikes garbage collection (GC) pressure, which leads to visual stutters in the HUD rendering.
+**Action:** Always extract array instantiations intended as temporary computation buffers into module-level static variables (e.g., `var _sharedBins = [];`) and reuse/overwrite their indices during rendering to entirely eliminate GC heap allocations in the hot path.

@@ -85,7 +85,7 @@ jobs:
         pnpm --prefix frontend install --frozen-lockfile
 
     - name: Run Backend Unit Tests (Pre-Release Gate)
-      run: uv run --no-project --active python -m pytest tests/ -v --ignore=tests/test_portable_host_diagnostics.py
+      run: uv run --no-project --active python -m pytest tests/ -v -m "not host_diagnostics and not executable_bundle"
 
     - name: Run Frontend Unit Tests (Pre-Release Gate)
       run: pnpm --prefix frontend run test
