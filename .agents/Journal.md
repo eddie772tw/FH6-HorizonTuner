@@ -59,7 +59,6 @@
   2. 建立 `tests/test_dependabot_contract.py`（3 passed）。
   3. 驗證全套單元測試與靜態檢查通過。
 - **Evidence**：`test_dependabot_contract.py` (3 passed)；`pytest` (190 passed)；`ruff check .` & `ruff format --check .` 通過；前端 Vitest (69 files / 440 tests passed)；前端 `pnpm build` 成功。
->>>>>>> origin/main
 
 ---
 
