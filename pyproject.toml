@@ -71,6 +71,12 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore:.*starlette.testclient.*"
 ]
+markers = [
+    "windows_contract: Tests requiring a Windows host for live process lifecycle contracts",
+    "host_diagnostics: Tests verifying executable host diagnostics probe",
+    "executable_bundle: Tests verifying compiled executable metadata and existence"
+]
+
 
 [tool.pyright]
 extraPaths = ["backend"]

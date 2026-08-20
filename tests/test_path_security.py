@@ -101,3 +101,35 @@ class TestEndpointPathTraversalDefense:
     def test_load_car_params_traversal_safe(self):
         result = load_car_params("../../windows/system32/cmd")
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_save_tuning_path_traversal(self, tmp_path):
+        import main
+
+        orig_dir = main.TUNINGS_DIR
+        main.TUNINGS_DIR = str(tmp_path)
+
+        try:
+            await main.save_tuning("malicious", "../../etc/passwd", {"some": "data"})
+            expected_path = os.path.join(str(tmp_path), "malicious-passwd.json")
+            assert os.path.exists(expected_path)
+        finally:
+            main.TUNINGS_DIR = orig_dir
+
+    def test_save_car_params_path_traversal(self, tmp_path):
+        import main
+
+        orig_dir = main.CAR_PARAMS_DIR
+        main.CAR_PARAMS_DIR = str(tmp_path)
+
+        try:
+            save_car_params("../../etc/passwd", {"some": "data"})
+            expected_path = os.path.join(str(tmp_path), "passwd.json")
+            assert os.path.exists(expected_path)
+            with open(expected_path, "r", encoding="utf-8") as f:
+                import json
+
+                data = json.load(f)
+                assert data == {"some": "data"}
+        finally:
+            main.CAR_PARAMS_DIR = orig_dir

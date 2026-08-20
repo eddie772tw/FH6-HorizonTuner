@@ -236,7 +236,7 @@ cd frontend && pnpm run test
 cd frontend && pnpm run test
 ```
 
-目前的前端測試套件涵蓋 66 個測試檔案，共 418 個單元測試案例：
+目前的前端測試套件涵蓋 69 個測試檔案，共 440 個單元測試案例：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |

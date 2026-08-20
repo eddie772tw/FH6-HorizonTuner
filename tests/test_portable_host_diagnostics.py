@@ -225,6 +225,7 @@ def get_repeat_count():
         return 1
 
 
+@pytest.mark.host_diagnostics
 @pytest.mark.skipif(
     sys.platform != "win32", reason="Portable lifecycle is Windows-specific"
 )
@@ -371,6 +372,7 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
                 proc.wait(timeout=5.0)
 
 
+@pytest.mark.host_diagnostics
 @pytest.mark.skipif(
     sys.platform != "win32", reason="Portable lifecycle is Windows-specific"
 )

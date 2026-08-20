@@ -15,6 +15,30 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-20 / CI 測試腳本整理、過時打包淘汰與 Pytest 標籤化效能重構
+
+### 淘汰單體打包 Spec、解耦 CI 階段依賴、消除雙重 Matrix 浪費與網路/路徑安全測試收斂
+
+- **來源**：`local`，針對 CI Pipeline 效能瓶頸、過時打包腳本殘留與分散測試進行全盤整理與整併。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **單元測試跨平台 Matrix 冗餘 (Double Matrix Elimination)**：純 Python 邏輯（FastAPI、封包計算、業務邏輯）與純 TypeScript 運算（Vitest 物理與 UI 合約）在跨 OS 上行為 100% 一致。在 `ci.yml` 中同時啟動 `windows-latest` 與 `ubuntu-latest` 執行純單元測試會浪費高達 2 個 Windows VM runner 的排隊與啟動時間（約 2~3 分鐘）。將純單元測試收斂至 `ubuntu-latest`，並將 Windows 專屬合約驗證（WinRT、Sidecar 生命週期、Tauri Host 診斷）集中於專屬 Windows 階段，能在零品質折損下節省約 40%~60% 的 CI 耗時。
+  2. **CI 階段依賴解耦 (Cross-Stage Dependency Decoupling)**：後端單元測試與前端 Build 測試互不相干，解除 `backend-unit-test` 對 `frontend-build-test` 的過度依賴，可實現前後端檢查真正的最大化並行處理。
+  3. **Pytest Markers 取代命令列長字串過濾**：在 `pyproject.toml` 規範 `@pytest.mark.windows_contract`、`@pytest.mark.host_diagnostics` 與 `@pytest.mark.executable_bundle`，取代在 CI 命令列中硬編碼多個脆弱的 `--ignore=...` 參數，使本地與遠端 CI 測試入口乾淨且一致。
+  4. **過時單體打包腳本清理**：專案已全面採用 Tauri 宿主呼叫 Python Sidecar（`server-sidecar.spec`），歷史遺留的 `FH6-HorizonTuner.spec` 依賴已淘汰的 `winsdk` 與 `collect_all`，予以徹底刪除並更新 `test_spec_bundling.py`。
+  5. **分散安全性測試收斂**：將舊有 `test_security.py` 中的 CORS Preflight 測試與 `test_websocket_origin_security.py` 整合為 `test_network_security.py`，路徑安全防護則統一收斂至 `test_path_security.py`。
+  6. **前端過時 E2E 清理**：移除依賴寫死連接埠且未納入 CI 的 `frontend/e2e/` 遺留腳本與 `@playwright/test` 依賴，以完備的 Vitest 69 檔 / 440 項單元測試作為單一品質真理。
+- **Action**：
+  1. 刪除 `FH6-HorizonTuner.spec`，更新 `tests/test_spec_bundling.py`。
+  2. 在 `pyproject.toml` 定義 pytest markers，標記 `test_sidecar_process_contract.py`、`test_portable_host_diagnostics.py` 與 `test_executable_bundle.py`。
+  3. 重構 `.github/workflows/ci.yml` 與 `release.yml`，消除 Unit Test 的 Windows matrix 浪費並解耦 stage 依賴。
+  4. 整合 `test_security.py` 至 `tests/test_network_security.py` 與 `tests/test_path_security.py`。
+  5. 刪除 `frontend/e2e/` 與 `frontend/playwright.config.ts`，自 `frontend/package.json` 移除 `@playwright/test` 並更新 `pnpm-lock.yaml`。
+  6. 更新 `README.md`、`README.en.md` 與 `Journal.md`。
+- **Evidence**：後端單元測試 (183 passed, 5 deselected in 3.81s)；後端 Windows 合約測試 (2 passed)；前端 Vitest (69 files / 440 tests passed in 10s)；前端 build 通過；`ruff check .` 與 `ruff format --check .` (118 files) 100% 通過。
+
+---
+
 ## 2026-08-19 / UDP 遙測封包非同步轉發 (Passthrough)、自轉風暴防護與熱更新機制
 
 ### 零阻塞 raw Datagram 轉發、防迴圈碰撞與執行期零中斷 set_forwarding
