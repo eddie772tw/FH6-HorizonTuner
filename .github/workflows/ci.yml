@@ -91,27 +91,21 @@ jobs:
 
   # ============================================================================
   # 階段 2：前後端單元測試 (Unit Testing Stage)
-  # 僅在階段 1 (Lint、靜態檢查與 Build Test) 全數通過後才平行啟動。
+  # 前後端單元測試各自在靜態檢查通過後立即平行啟動，並統一於 Ubuntu 環境高效執行。
   # ============================================================================
 
   backend-unit-test:
     name: Backend Pytest Unit Tests
-    needs: [backend-static-check, frontend-build-test]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        python-version: ["3.13"]
-
+    needs: [backend-static-check]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up uv and managed Python ${{ matrix.python-version }}
+    - name: Set up uv and managed Python 3.13
       uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.13"
         activate-environment: true
         no-project: true
         cache-python: true
@@ -122,20 +116,13 @@ jobs:
       run: uv pip install --requirement requirements.txt
 
     - name: Execute Pytest Test Suite
-      # The Windows-only portable process contract runs in build-portable-sidecar
-      # before any executable compilation, so do not run it twice here.
-      run: uv run --no-project --active python -m pytest tests/ -v --ignore=tests/test_sidecar_process_contract.py --ignore=tests/test_portable_host_diagnostics.py
+      # Windows 專屬之行程合約測試與宿主診斷由專屬發行階段執行
+      run: uv run --no-project --active python -m pytest tests/ -v -m "not windows_contract and not host_diagnostics and not executable_bundle"
 
   frontend-unit-test:
     name: Frontend Vitest Unit Tests
-    needs: [backend-static-check, frontend-build-test]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        node-version: ["22"]
-
+    needs: [frontend-build-test]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -145,10 +132,10 @@ jobs:
       with:
         version: 9
 
-    - name: Set up Node.js ${{ matrix.node-version }}
+    - name: Set up Node.js 22
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: "22"
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
 

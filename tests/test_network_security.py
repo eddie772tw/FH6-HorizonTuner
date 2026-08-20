@@ -1,4 +1,4 @@
-"""Tests for WebSocket Origin Verification and CSWSH Protection."""
+"""Tests for Network Security: WebSocket Origin Verification, CSWSH Protection, and CORS Preflight."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -65,3 +65,46 @@ def test_websocket_overlay_rejected_origin():
         ):
             pass
     assert exc_info.value.code == 1008
+
+
+def test_cors_preflight_valid_origins():
+    """Verify CORS preflight succeeds for allowed origins."""
+    client = TestClient(app)
+    valid_origins = [
+        "tauri://localhost",
+        "https://tauri.localhost",
+        "http://tauri.localhost",
+        "http://localhost:1420",
+        "http://127.0.0.1:52234",
+    ]
+    for origin in valid_origins:
+        res = client.options(
+            "/api/overlay/config",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        assert res.status_code == 200, f"Failed for origin: {origin}"
+        assert res.headers.get("access-control-allow-origin") == origin
+
+
+def test_cors_preflight_blocked_origins():
+    """Verify CORS preflight blocks unauthorized external origins."""
+    client = TestClient(app)
+    blocked_origins = [
+        "https://evil-attacker.com",
+        "http://malicious-website.org",
+        "http://localhost.evil.com",
+    ]
+    for origin in blocked_origins:
+        res = client.options(
+            "/api/overlay/config",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        assert res.headers.get("access-control-allow-origin") != origin

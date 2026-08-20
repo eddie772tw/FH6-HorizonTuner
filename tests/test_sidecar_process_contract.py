@@ -51,6 +51,7 @@ def stop_process(proc: subprocess.Popen[bytes]) -> None:
         pytest.fail("source sidecar did not exit after stdin was closed")
 
 
+@pytest.mark.windows_contract
 def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
     """The Release Build sidecar contract works before packaging it into an EXE."""
     data_dir = tmp_path / "portable-data"
@@ -93,6 +94,7 @@ def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
         probe.bind(("127.0.0.1", udp_port))
 
 
+@pytest.mark.windows_contract
 def test_source_sidecar_falls_back_when_preferred_http_port_is_occupied(tmp_path):
     """Fallback publishes the actual dynamic port, never the preferred port."""
     data_dir = tmp_path / "release-data"

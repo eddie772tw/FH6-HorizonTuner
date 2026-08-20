@@ -68,6 +68,7 @@ def find_executable_paths():
     return sidecar_path, standalone_exe
 
 
+@pytest.mark.executable_bundle
 def test_sidecar_executable_existence_and_metadata():
     sidecar_path, standalone_exe = find_executable_paths()
 
