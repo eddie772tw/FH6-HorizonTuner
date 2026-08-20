@@ -1,8 +1,8 @@
 # FH6-HorizonTuner 核心執行依賴套件
-fastapi>=0.111.0,<1.0.0
-uvicorn>=0.30.1,<1.0.0
-websockets>=12.0,<14.0
-pydantic>=2.10.0,<3.0.0
+fastapi>=0.141.1,<1.0.0
+uvicorn>=0.52.3,<1.0.0
+websockets>=17.0.1,<18.0
+pydantic>=2.13.4,<3.0.0
 httpx>=0.28.1,<1.0.0
 python-multipart
 soundcard==0.4.6
@@ -17,4 +17,4 @@ winrt-Windows.Media.Control==3.2.1; sys_platform == 'win32'
 ruff
 pytest
 pytest-asyncio
-numpy>=1.24.0
+numpy>=2.5.2
