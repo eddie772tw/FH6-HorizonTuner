@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -53,15 +53,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "22"
         cache: 'pnpm'
@@ -74,7 +74,7 @@ jobs:
       run: pnpm --prefix frontend run build
 
     - name: Publish verified frontend distribution
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: frontend-dist-${{ github.sha }}
         path: frontend/dist
@@ -91,27 +91,21 @@ jobs:
 
   # ============================================================================
   # 階段 2：前後端單元測試 (Unit Testing Stage)
-  # 僅在階段 1 (Lint、靜態檢查與 Build Test) 全數通過後才平行啟動。
+  # 前後端單元測試各自在靜態檢查通過後立即平行啟動，並統一於 Ubuntu 環境高效執行。
   # ============================================================================
 
   backend-unit-test:
     name: Backend Pytest Unit Tests
-    needs: [backend-static-check, frontend-build-test]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        python-version: ["3.13"]
-
+    needs: [backend-static-check]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
-    - name: Set up uv and managed Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+    - name: Set up uv and managed Python 3.13
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.13"
         activate-environment: true
         no-project: true
         cache-python: true
@@ -122,33 +116,26 @@ jobs:
       run: uv pip install --requirement requirements.txt
 
     - name: Execute Pytest Test Suite
-      # The Windows-only portable process contract runs in build-portable-sidecar
-      # before any executable compilation, so do not run it twice here.
-      run: uv run --no-project --active python -m pytest tests/ -v --ignore=tests/test_sidecar_process_contract.py --ignore=tests/test_portable_host_diagnostics.py
+      # Windows 專屬之行程合約測試與宿主診斷由專屬發行階段執行
+      run: uv run --no-project --active python -m pytest tests/ -v -m "not windows_contract and not host_diagnostics and not executable_bundle"
 
   frontend-unit-test:
     name: Frontend Vitest Unit Tests
-    needs: [backend-static-check, frontend-build-test]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        node-version: ["22"]
-
+    needs: [frontend-build-test]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
-    - name: Set up Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+    - name: Set up Node.js 22
+      uses: actions/setup-node@v7
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: "22"
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
 
@@ -170,10 +157,10 @@ jobs:
     timeout-minutes: 10
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -206,7 +193,7 @@ jobs:
 
     - name: Publish sidecar build metrics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ci-metrics-sidecar-${{ github.sha }}
         path: metrics/sidecar-build.json
@@ -214,7 +201,7 @@ jobs:
         retention-days: 14
 
     - name: Publish sidecar executable
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: portable-sidecar-${{ github.sha }}
         path: dist/server-sidecar-x86_64-pc-windows-msvc.exe
@@ -228,10 +215,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Download release build metrics
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         pattern: ci-metrics-*
         path: metrics
@@ -242,7 +229,7 @@ jobs:
 
     - name: Publish performance dashboard data
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ci-performance-dashboard-${{ github.sha }}
         path: metrics/dashboard.json
@@ -256,7 +243,7 @@ jobs:
     timeout-minutes: 20
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Restore Tauri Rust build cache
       id: tauri-rust-cache
@@ -277,7 +264,7 @@ jobs:
         echo "Tauri Rust cache: **$cache_state**" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -287,12 +274,12 @@ jobs:
         cache-dependency-glob: requirements.txt
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "22"
         cache: 'pnpm'
@@ -304,13 +291,13 @@ jobs:
         pnpm --prefix frontend install --frozen-lockfile
 
     - name: Download verified sidecar executable
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: portable-sidecar-${{ github.sha }}
         path: dist
 
     - name: Download verified frontend distribution
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: frontend-dist-${{ github.sha }}
         path: frontend/dist
@@ -336,7 +323,7 @@ jobs:
 
     - name: Publish Tauri build metrics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ci-metrics-tauri-${{ github.sha }}
         path: metrics/tauri-build.json

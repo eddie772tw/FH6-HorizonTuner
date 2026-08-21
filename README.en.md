@@ -222,7 +222,7 @@ Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
 cd frontend && pnpm run test
 ```
 
-Current frontend test suite covers 66 test files with 418 unit tests:
+Current frontend test suite covers 69 test files with 440 unit tests:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |

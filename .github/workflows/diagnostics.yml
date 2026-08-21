@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 30
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Restore Tauri Rust build cache
       id: tauri-rust-cache
@@ -61,7 +61,7 @@ jobs:
         echo "DIAGNOSTICS_TIMEOUT=$timeout" >> "$GITHUB_ENV"
 
     - name: Set up uv and managed Python 3.13
-      uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         python-version: "3.13"
         activate-environment: true
@@ -71,12 +71,12 @@ jobs:
         cache-dependency-glob: requirements.txt
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: 9
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "22"
         cache: 'pnpm'
@@ -117,7 +117,7 @@ jobs:
 
     - name: Upload Diagnostic Output on Failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: portable-host-diagnostics-${{ github.sha }}
         path: diagnostics_output/
