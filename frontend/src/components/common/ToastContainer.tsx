@@ -56,7 +56,7 @@ export const ToastContainer: React.FC = () => {
             <button
               type="button"
               className="btn-close ms-2"
-              aria-label="Close"
+              aria-label={t("Close")}
               onClick={() => removeToast(toast.id)}
             ></button>
           </div>
