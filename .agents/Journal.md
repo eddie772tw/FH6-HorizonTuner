@@ -15,6 +15,29 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-23 / 6 個 Jules PR 批量審查、優先級架構排序與循序合併
+
+### 遙測 CSV 展開最佳化 (PR #235)、i18n 多語系補全 (PR #236 & #239)、按鈕無障礙 Tooltips (PR #238)、輪胎雷達 GC 消除 (PR #237) 與即時地圖 60Hz 運算減半 (PR #240)
+
+- **來源**：`local`，針對 Jules 提交之 6 項 PR 執行完整的 `pr-review-evaluation` 標準化審查、跨 Agent 建議協作、目錄大小寫修復與底層到呈現層的架構依賴循序合併。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **自底向上的安全合併排序 (Bottom-up Dependency Order)**：在多個並行 PR 變更時，依照「純領域數據層 (Domain) → 語系字典 (i18n) → 通用無障礙組件 (Common UI) → 業務功能視圖 (Feature View) → 60Hz 遙測渲染引擎 (Overlay Engine)」的順序進行合併，能最大程度降低架構交叉污染與重構衝突風險。
+  2. **日誌檔案 (.jules/bolt.md) 衝突預防與快速解決**：當多個 PR 同時向 `.jules/bolt.md` 追加學習條目時，Git 會產生行尾衝突。在本地 merge `main` 時保留各 PR 的學習條目並按時間序排列，可確保日誌完整性並順利完成 Squash & Merge。
+  3. **目錄大小寫嚴格性防護 (PR #236)**：Jules 初次提交時建立了 `.Jules/narrator.md`（大寫 J），在 Review 中及時攔截並修正為 `.jules/narrator.md`，徹底避免 Windows 環境下 Git index 大小寫不敏感導致的追蹤路徑歧義。
+  4. **全端效能與可訪問性成果**：
+     - `captureToCsv`（PR #235）：消除展開運算子與巢狀 `.map()`，記憶體大幅降低且 CSV 匯出速度提升 ~19%。
+     - `TireRadar`（PR #237）：以模組級 `Uint32Array` 取代每幀動態陣列配置，徹底消除 60Hz 輪胎溫度直方圖 GC 壓力。
+     - `LiveMap`（PR #240）：透過 `pPrev = pCurr` 迭代傳遞，將即時地圖 60Hz 軌跡歷史座標投影運算與 `{x, y}` 物件配置精確減半 (50%)。
+     - a11y & i18n（PR #236, #238, #239）：補全 13 組調校精靈翻譯、Close aria-labels 國際化，並解決 disabled button 吞噬 hover 事件的 Tooltip 封裝問題。
+- **Action**：
+  1. 完成 6 個 PR 的標準審查與 Review 提交（Review IDs: 5002389628, 5002389862, 5002390083, 5002390357, 5002390685/5002504516, 5002390937）。
+  2. 依序將 PR #235, #239, #236, #238, #237, #240 循序 Squash & Merge 至 `main`。
+  3. 驗證本地 Vitest（69 檔 / 440 項全數通過）、Pytest（188 項全數通過）、Ruff 檢查通過與前端 Vite 生產打包成功。
+- **Evidence**：PRs #235, #236, #237, #238, #239, #240 均為 MERGED 狀態；GitHub Actions CI 全綠；本地 `pnpm run test` (440 passed)、`pytest` (188 passed)、`ruff check .` (pass)、`tsc && vite build` (pass)。
+
+---
+
 ## 2026-08-20 / CI 測試腳本整理、過時打包淘汰與 Pytest 標籤化效能重構
 
 ### 淘汰單體打包 Spec、解耦 CI 階段依賴、消除雙重 Matrix 浪費與網路/路徑安全測試收斂
