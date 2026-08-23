@@ -90,3 +90,6 @@
 ## 2026-08-22 - Eliminate nested array methods and spread operators in CSV exports
 **Learning:** Exporting large telemetry datasets to CSV using nested `.map()` loops and array rest spread operators (`...sample.tireSlipRatio`) caused massive Garbage Collection spikes, temporary array allocations, and even Maximum Call Stack Exceeded errors in V8 when the dataset was extremely large.
 **Action:** When transforming large arrays of objects to strings (like CSV export), replace `.map()` and spread operators with a single native `for` loop, pre-allocate the output array using `new Array(len + 1)`, and use template literals to construct the line directly from explicit numeric object properties.
+## 2026-08-23 - Shared Array Resizing in Render Loops
+**Learning:** When using shared static buffers (e.g. `Uint32Array`) to prevent per-frame garbage collection, the array size must be dynamic enough to handle edge cases (like ultra-wide screens resizing a canvas). Fixed constants are unsafe.
+**Action:** Use `let` to allow array reassignment, and implement exponential resizing (`Math.max(len * 2, needed)`) to safely scale buffers during render loops without continuous reallocation.
