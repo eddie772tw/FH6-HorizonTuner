@@ -43,6 +43,25 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Check if launched with -hudonly and handover lifecycle to hud_frontend
+  React.useEffect(() => {
+    async function checkHudOnly() {
+      try {
+        const tauri = (window as unknown as { __TAURI__?: { core?: { invoke: (c: string) => Promise<unknown> } } }).__TAURI__;
+        if (tauri?.core?.invoke) {
+          const isHudOnly = await tauri.core.invoke('is_hud_only_cli');
+          if (isHudOnly) {
+            console.log('[App] -hudonly argument detected. Delegating to hud_frontend...');
+            await tauri.core.invoke('launch_hud_frontend');
+          }
+        }
+      } catch (e) {
+        console.warn('[App] Failed to check hud_only status:', e);
+      }
+    }
+    checkHudOnly();
+  }, []);
+
   // Auto-synchronize back to telemetry car when returning to telemetry tab
   React.useEffect(() => {
     if (activeTab === 'telemetry' && telemetryCarId && telemetryCarId !== '0' && carId !== telemetryCarId) {

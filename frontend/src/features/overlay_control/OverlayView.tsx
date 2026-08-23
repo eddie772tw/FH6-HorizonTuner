@@ -658,22 +658,40 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
           </p>
         </div>
 
-        <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
+        <div className="d-flex align-items-center gap-2">
           <button
-            onClick={() => toggleHudWindow(!config.enabled)}
-            disabled={loading}
-            className={`btn fw-bold px-4 py-2 ${config.enabled ? 'btn-outline-danger' : 'btn-primary'}`}
+            type="button"
+            className="btn btn-outline-info fw-bold px-3 py-2"
             style={{
-              fontSize: '1rem',
+              fontSize: '0.9rem',
               borderRadius: '6px',
-              cursor: loading ? 'wait' : 'pointer',
-              boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px var(--primary-glow)',
-              pointerEvents: loading ? 'none' : 'auto'
             }}
+            onClick={async () => {
+              if ((window as any).__TAURI__?.core?.invoke) {
+                await (window as any).__TAURI__.core.invoke('launch_hud_frontend');
+              }
+            }}
+            title={t("Switch to standalone compact HUD controller and close main interface")}
           >
-            {loading ? '...' : config.enabled ? (t("Close HUD Overlay")) : (t("Launch HUD Overlay"))}
+            {t("Compact HUD Mode")}
           </button>
-        </span>
+          <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
+            <button
+              onClick={() => toggleHudWindow(!config.enabled)}
+              disabled={loading}
+              className={`btn fw-bold px-4 py-2 ${config.enabled ? 'btn-outline-danger' : 'btn-primary'}`}
+              style={{
+                fontSize: '1rem',
+                borderRadius: '6px',
+                cursor: loading ? 'wait' : 'pointer',
+                boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px var(--primary-glow)',
+                pointerEvents: loading ? 'none' : 'auto'
+              }}
+            >
+              {loading ? '...' : config.enabled ? (t("Close HUD Overlay")) : (t("Launch HUD Overlay"))}
+            </button>
+          </span>
+        </div>
       </div>
 
       {/* Main Settings Grid: 3 columns x 2 rows fixed grid layout */}

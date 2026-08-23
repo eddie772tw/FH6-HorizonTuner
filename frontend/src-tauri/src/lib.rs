@@ -32,6 +32,20 @@ impl Default for BackendProcess {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum PrimaryWindowMode {
+    Main,
+    HudOnly,
+}
+
+struct AppLifecycleState(Mutex<PrimaryWindowMode>);
+
+impl AppLifecycleState {
+    fn new() -> Self {
+        Self(Mutex::new(PrimaryWindowMode::Main))
+    }
+}
+
 impl BackendState {
     fn new() -> Self {
         Self(Mutex::new(BackendStatus {
@@ -384,6 +398,54 @@ fn prepare_update_and_restart(app_handle: tauri::AppHandle) -> Result<(), String
     app_handle.restart();
 }
 
+fn is_hud_only_requested() -> bool {
+    let args: Vec<String> = std::env::args().collect();
+    args.iter().any(|arg| {
+        let lower = arg.to_lowercase();
+        lower == "-hudonly" || lower == "--hudonly" || lower == "--hud-only" || lower == "-hud-only"
+    })
+}
+
+#[tauri::command]
+fn is_hud_only_cli() -> bool {
+    is_hud_only_requested()
+}
+
+#[tauri::command]
+fn launch_hud_frontend(app_handle: tauri::AppHandle) -> Result<(), String> {
+    if let Ok(mut mode) = app_handle.state::<AppLifecycleState>().0.lock() {
+        *mode = PrimaryWindowMode::HudOnly;
+    }
+
+    if let Some(hud_win) = app_handle.get_webview_window("hud_main") {
+        let _ = hud_win.show();
+        let _ = hud_win.set_focus();
+    } else {
+        let _hud_win = tauri::WebviewWindowBuilder::new(
+            &app_handle,
+            "hud_main",
+            tauri::WebviewUrl::App("hud_frontend/index.html".into()),
+        )
+        .title("FH6 HorizonHUD Controller")
+        .inner_size(460.0, 680.0)
+        .resizable(true)
+        .decorations(true)
+        .always_on_top(false)
+        .build()
+        .map_err(|e| format!("Failed to create hud_main window: {e}"))?;
+    }
+
+    // Ensure overlay window is visible and loaded
+    let _ = toggle_hud_window(app_handle.clone(), true);
+
+    // Close main GUI window to release React DOM & memory
+    if let Some(main_win) = app_handle.get_webview_window("main") {
+        let _ = main_win.close();
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -391,12 +453,25 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(BackendState::new())
         .manage(BackendProcess::default())
+        .manage(AppLifecycleState::new())
         .on_window_event(|window, event| {
-            if window.label() == "main" {
-                if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
-                    println!("Main window closed/destroyed — terminating all windows and backend sidecar.");
-                    stop_backend_process(&window.app_handle());
-                    window.app_handle().exit(0);
+            if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
+                let label = window.label();
+                let app_handle = window.app_handle();
+                let mode = app_handle
+                    .try_state::<AppLifecycleState>()
+                    .and_then(|s| s.0.lock().ok().map(|m| *m))
+                    .unwrap_or(PrimaryWindowMode::Main);
+
+                let should_exit = match mode {
+                    PrimaryWindowMode::Main => label == "main",
+                    PrimaryWindowMode::HudOnly => label == "hud_main",
+                };
+
+                if should_exit {
+                    println!("Primary window [{label}] closed (mode={mode:?}) — terminating all windows and backend sidecar.");
+                    stop_backend_process(&app_handle);
+                    app_handle.exit(0);
                 }
             }
         })
@@ -533,6 +608,12 @@ pub fn run() {
                     });
                 }
             }
+
+            if is_hud_only_requested() {
+                println!("-hudonly argument detected at startup: launching hud_frontend.");
+                let _ = launch_hud_frontend(app.handle().clone());
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -544,7 +625,9 @@ pub fn run() {
             reload_hud_window,
             get_available_monitors,
             move_hud_to_monitor,
-            prepare_update_and_restart
+            prepare_update_and_restart,
+            is_hud_only_cli,
+            launch_hud_frontend
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

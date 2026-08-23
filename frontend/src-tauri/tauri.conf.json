@@ -24,7 +24,7 @@
       "capabilities": [
         {
           "identifier": "main-capability",
-          "windows": ["main", "overlay"],
+          "windows": ["main", "overlay", "hud_main"],
           "remote": {
             "urls": ["http://127.0.0.1:*", "http://localhost:*"]
           },
