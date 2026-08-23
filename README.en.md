@@ -34,8 +34,9 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
   - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
   - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
-* **Racing HUD Overlay & WYSIWYG Designer**:
-  - HTML5 Canvas hardware-accelerated standalone overlays featuring GT7, Retro VFD, and 093 Drift professional HUD styles.
+* **Racing HUD Overlay & Compact Client**:
+  - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
+  - **Compact Standalone Client (`hud_frontend`)**: Supports `-hudonly` startup argument. Automatically delegates primary lifecycle to the lightweight HUD controller and closes the main GUI window, reducing memory usage (from ~180MB to ~25MB).
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
 * **Drag Launch Test & Acceleration Analyzer**:
@@ -80,6 +81,7 @@ FH6-HorizonTuner/
 │   ├── motec_exporter.py    # MoTeC i2 professional telemetry exporter
 │   └── car_database.json    # Built-in car database
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
+│   ├── hud_frontend/        # Compact standalone HUD controller (supports -hudonly mode)
 │   ├── src/features/        # Business Domain Modules (Features Domain)
 │   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 4 dynamic cards
 │   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~5 tabs)

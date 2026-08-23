@@ -35,8 +35,9 @@
   - **Step 3 底盤懸吊 (Chassis Tuner)**：防傾桿 (ARB 1/65 Meta 策略)、彈簧剛性、前傾姿態 (Forward Rake) 車高、黃金比例阻尼 (60% Bump Ratio) 與差速器鎖定率。
   - **Step 4 胎壓與對齊 (Alignment & Tires)**：季節偏置靜態冷胎壓算牌、Camber / Toe / Caster 幾何計算。
   - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
-* **客製化賽車儀表覆蓋層與視覺編輯器 (Racing HUD Overlay & WYSIWYG Designer)**:
-  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
+* **客製化賽車儀表覆蓋層與精簡獨立客戶端 (Racing HUD Overlay & Compact Client)**:
+  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
+  - **精簡獨立客戶端 (`hud_frontend`)**：支援 `-hudonly` 啟動引數。啟動時自動轉移生命週期至獨立的輕量化 HUD 控制器並關閉主 GUI，釋放記憶體開銷（自 ~180MB 降至 ~25MB），讓玩家能以極低資源佔用獨立享受 HUD 功能。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
@@ -81,6 +82,7 @@ FH6-HorizonTuner/
 │   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器
 │   └── car_database.json    # 內建車輛資料庫
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
+│   ├── hud_frontend/        # 精簡獨立 HUD 控制器 (支援 -hudonly 輕量啟動)
 │   ├── src/features/        # 業務領域模組 (Features Domain)
 │   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 4 大動態卡片
 │   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~5 分頁)
