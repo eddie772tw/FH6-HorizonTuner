@@ -87,6 +87,6 @@
 ## 2026-08-20 - Pre-Allocate Arrays in 60Hz Render Loops
 **Learning:** Instantiating new arrays dynamically via `new Array().fill()` inside high-frequency 60Hz render loops (like the `renderCorners` loop spanning 4 wheels) causes massive object creation per second. This spikes garbage collection (GC) pressure, which leads to visual stutters in the HUD rendering.
 **Action:** Always extract array instantiations intended as temporary computation buffers into module-level static variables (e.g., `var _sharedBins = [];`) and reuse/overwrite their indices during rendering to entirely eliminate GC heap allocations in the hot path.
-## 2025-03-08 - Shared Array Resizing in Render Loops
+## 2026-08-23 - Shared Array Resizing in Render Loops
 **Learning:** When using shared static buffers (e.g. `Uint32Array`) to prevent per-frame garbage collection, the array size must be dynamic enough to handle edge cases (like ultra-wide screens resizing a canvas). Fixed constants are unsafe.
 **Action:** Use `let` to allow array reassignment, and implement exponential resizing (`Math.max(len * 2, needed)`) to safely scale buffers during render loops without continuous reallocation.
