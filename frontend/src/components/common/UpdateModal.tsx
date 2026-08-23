@@ -77,7 +77,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
               <button 
                 type="button" 
                 className="btn-close" 
-                aria-label="Close" 
+                aria-label={t("Close")}
                 onClick={onClose}
               />
             )}

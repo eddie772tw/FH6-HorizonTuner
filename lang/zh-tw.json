@@ -1076,5 +1076,18 @@
   "OTA": "OTA",
   "MCP": "MCP",
   "DYNAMIC PORT": "DYNAMIC PORT",
-  "OFFLINE": "OFFLINE"
+  "OFFLINE": "OFFLINE",
+  "Vehicle Parameters Required": "需要車輛參數",
+  "Basic physics parameters (Vehicle Weight / Distribution) are missing.": "缺少基本物理參數（車重 / 前後配重）。",
+  "Complete them in Step 1 or Car Parameters tab to perform calculations.": "請在步驟1或「車輛參數」分頁中填寫以執行計算。",
+  "Go to Car Parameters": "前往車輛參數",
+  "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard": "基於物理學的懸吊、彈簧、防傾桿、避震器與 AEGO 齒輪比調校精靈",
+  "PARAMS INCOMPLETE": "參數未完成",
+  "Developer Tuning View": "開發者調校檢視",
+  "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.": "實驗性 tuningMath_dev.ts 計算層的顯式型別輸入/輸出。",
+  "Open Telemetry Capture": "開啟遙測擷取",
+  "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "此檢視用於演算法驗證。輪胎係數與遊戲滑桿對應為預先校準值，並非官方 FH6 數值。",
+  "Select or load a car with parameters before calculating a developer tune.": "在計算開發者調校前，請選擇或載入包含參數的車輛。",
+  "Warnings and Boundaries": "警告與邊界",
+  "Raw typed input/output JSON": "原始型別輸入/輸出 JSON"
 }

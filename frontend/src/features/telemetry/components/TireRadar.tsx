@@ -2,6 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
 
+// [PERF] Pre-allocate a shared typed array to eliminate per-frame GC allocations for the histogram calculation
+let _sharedBins = new Uint32Array(500);
+
 const getTempColor = (temp: number) => {
   if (temp < 167) return '#0088ff';
   if (temp > 221) return '#ff0000';
@@ -316,7 +319,13 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
             const targetBarW = 2.5;
             const numBins = Math.max(10, Math.floor(tw / targetBarW));
             const tempPerBin = tempRange / numBins;
-            const bins = new Array(numBins).fill(0);
+
+            // Resize shared buffer if needed for very wide screens to prevent out-of-bounds access
+            if (numBins > _sharedBins.length) {
+              _sharedBins = new Uint32Array(Math.max(_sharedBins.length * 2, numBins));
+            }
+            const bins = _sharedBins;
+            bins.fill(0, 0, numBins);
             let maxBinCount = 1;
 
             const hLen = hist.current.length;
