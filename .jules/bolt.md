@@ -87,3 +87,6 @@
 ## 2026-08-20 - Pre-Allocate Arrays in 60Hz Render Loops
 **Learning:** Instantiating new arrays dynamically via `new Array().fill()` inside high-frequency 60Hz render loops (like the `renderCorners` loop spanning 4 wheels) causes massive object creation per second. This spikes garbage collection (GC) pressure, which leads to visual stutters in the HUD rendering.
 **Action:** Always extract array instantiations intended as temporary computation buffers into module-level static variables (e.g., `var _sharedBins = [];`) and reuse/overwrite their indices during rendering to entirely eliminate GC heap allocations in the hot path.
+## 2026-08-22 - Eliminate nested array methods and spread operators in CSV exports
+**Learning:** Exporting large telemetry datasets to CSV using nested `.map()` loops and array rest spread operators (`...sample.tireSlipRatio`) caused massive Garbage Collection spikes, temporary array allocations, and even Maximum Call Stack Exceeded errors in V8 when the dataset was extremely large.
+**Action:** When transforming large arrays of objects to strings (like CSV export), replace `.map()` and spread operators with a single native `for` loop, pre-allocate the output array using `new Array(len + 1)`, and use template literals to construct the line directly from explicit numeric object properties.

@@ -185,7 +185,19 @@ export function summarizeCapture(samples: TuningCaptureSample[]): TuningCaptureS
 }
 
 export function captureToCsv(capture: TuningCaptureFile): string {
-  const headers = ['timestampMS', 'isRaceOn', 'carOrdinal', 'speedMps', 'rpm', 'gear', 'accelInput', 'brakeInput', 'clutchInput', 'handBrakeInput', 'steerInput', 'accelerationX', 'accelerationY', 'accelerationZ', 'velocityX', 'velocityY', 'velocityZ', 'suspensionFL', 'suspensionFR', 'suspensionRL', 'suspensionRR', 'slipRatioFL', 'slipRatioFR', 'slipRatioRL', 'slipRatioRR', 'slipAngleFL', 'slipAngleFR', 'slipAngleRL', 'slipAngleRR', 'tireTempFL', 'tireTempFR', 'tireTempRL', 'tireTempRR', 'combinedSlipFL', 'combinedSlipFR', 'combinedSlipRL', 'combinedSlipRR', 'positionX', 'positionY', 'positionZ', 'lapNumber', 'currentRaceTime'];
-  const rows = capture.samples.map((sample) => [sample.timestampMS, sample.isRaceOn, sample.carOrdinal, sample.speedMps, sample.rpm, sample.gear, sample.accelInput, sample.brakeInput, sample.clutchInput, sample.handBrakeInput, sample.steerInput, sample.accelerationX, sample.accelerationY, sample.accelerationZ, sample.velocityX, sample.velocityY, sample.velocityZ, ...sample.normalizedSuspensionTravel, ...sample.tireSlipRatio, ...sample.tireSlipAngle, ...sample.tireTemp, ...sample.tireCombinedSlip, sample.positionX, sample.positionY, sample.positionZ, sample.lapNumber, sample.currentRaceTime]);
-  return [headers, ...rows].map((row) => row.map((value) => typeof value === 'string' && value.includes(',') ? JSON.stringify(value) : String(value)).join(',')).join('\n');
+  const headers = 'timestampMS,isRaceOn,carOrdinal,speedMps,rpm,gear,accelInput,brakeInput,clutchInput,handBrakeInput,steerInput,accelerationX,accelerationY,accelerationZ,velocityX,velocityY,velocityZ,suspensionFL,suspensionFR,suspensionRL,suspensionRR,slipRatioFL,slipRatioFR,slipRatioRL,slipRatioRR,slipAngleFL,slipAngleFR,slipAngleRL,slipAngleRR,tireTempFL,tireTempFR,tireTempRL,tireTempRR,combinedSlipFL,combinedSlipFR,combinedSlipRL,combinedSlipRR,positionX,positionY,positionZ,lapNumber,currentRaceTime';
+
+  // [PERF] Optimized for large datasets by pre-allocating an array and using template
+  // literals instead of nested .map() calls and rest operators. This eliminates massive
+  // intermediate array allocations, prevents V8 garbage collection spikes during export,
+  // and avoids Maximum Call Stack Exceeded errors when processing tens of thousands of rows.
+  const len = capture.samples.length;
+  const lines = new Array(len + 1);
+  lines[0] = headers;
+
+  for (let i = 0; i < len; i++) {
+    const s = capture.samples[i];
+    lines[i + 1] = `${s.timestampMS},${s.isRaceOn},${s.carOrdinal},${s.speedMps},${s.rpm},${s.gear},${s.accelInput},${s.brakeInput},${s.clutchInput},${s.handBrakeInput},${s.steerInput},${s.accelerationX},${s.accelerationY},${s.accelerationZ},${s.velocityX},${s.velocityY},${s.velocityZ},${s.normalizedSuspensionTravel[0]},${s.normalizedSuspensionTravel[1]},${s.normalizedSuspensionTravel[2]},${s.normalizedSuspensionTravel[3]},${s.tireSlipRatio[0]},${s.tireSlipRatio[1]},${s.tireSlipRatio[2]},${s.tireSlipRatio[3]},${s.tireSlipAngle[0]},${s.tireSlipAngle[1]},${s.tireSlipAngle[2]},${s.tireSlipAngle[3]},${s.tireTemp[0]},${s.tireTemp[1]},${s.tireTemp[2]},${s.tireTemp[3]},${s.tireCombinedSlip[0]},${s.tireCombinedSlip[1]},${s.tireCombinedSlip[2]},${s.tireCombinedSlip[3]},${s.positionX},${s.positionY},${s.positionZ},${s.lapNumber},${s.currentRaceTime}`;
+  }
+  return lines.join('\n');
 }
