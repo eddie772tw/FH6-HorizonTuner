@@ -354,8 +354,9 @@ export function renderLiveMap(canvas, data, config) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
+        var pPrev = mapToCanvas(posHistory[0].x, posHistory[0].z);
+
         for (var j = 1; j < posHistory.length; j++) {
-            var pPrev = mapToCanvas(posHistory[j - 1].x, posHistory[j - 1].z);
             var pCurr = mapToCanvas(posHistory[j].x, posHistory[j].z);
 
             ctx.beginPath();
@@ -368,6 +369,8 @@ export function renderLiveMap(canvas, data, config) {
                 ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
             }
             ctx.stroke();
+
+            pPrev = pCurr;
         }
         ctx.restore();
     }
