@@ -349,7 +349,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                     <button
                       type="button"
                       className="btn-close btn-sm"
-                      aria-label="Close"
+                      aria-label={t("Close")}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowMcpPortPopover(false);
@@ -442,7 +442,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                   <button
                     type="button"
                     className="btn-close btn-sm"
-                    aria-label="Close"
+                    aria-label={t("Close")}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowUdpPopover(false);

@@ -991,5 +991,18 @@
   "OTA": "OTA",
   "MCP": "MCP",
   "DYNAMIC PORT": "DYNAMIC PORT",
-  "OFFLINE": "OFFLINE"
+  "OFFLINE": "OFFLINE",
+  "Vehicle Parameters Required": "車両パラメータが必要です",
+  "Basic physics parameters (Vehicle Weight / Distribution) are missing.": "基本的な物理パラメータ（車重 / 前後重量配分）が不足しています。",
+  "Complete them in Step 1 or Car Parameters tab to perform calculations.": "計算を実行するには、ステップ1または「車両パラメータ」タブで入力してください。",
+  "Go to Car Parameters": "車両パラメータへ",
+  "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard": "物理学に基づいたサスペンション、スプリング、ARB、ダンパー、AEGOギア比チューニングウィザード",
+  "PARAMS INCOMPLETE": "パラメータ未完了",
+  "Developer Tuning View": "開発者チューニングビュー",
+  "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.": "実験的な tuningMath_dev.ts 計算レイヤーのための明示的な型付き入出力。",
+  "Open Telemetry Capture": "テレメトリキャプチャを開く",
+  "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "このビューはアルゴリズムの検証用です。タイヤ係数やゲーム内スライダーのマッピングは事前キャリブレーション値であり、公式のFH6の値ではありません。",
+  "Select or load a car with parameters before calculating a developer tune.": "開発者チューニングを計算する前に、パラメータを含む車両を選択またはロードしてください。",
+  "Warnings and Boundaries": "警告と境界",
+  "Raw typed input/output JSON": "生の型付き入出力JSON"
 }

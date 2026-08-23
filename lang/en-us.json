@@ -986,5 +986,18 @@
   "OTA": "OTA",
   "MCP": "MCP",
   "DYNAMIC PORT": "DYNAMIC PORT",
-  "OFFLINE": "OFFLINE"
+  "OFFLINE": "OFFLINE",
+  "Vehicle Parameters Required": "Vehicle Parameters Required",
+  "Basic physics parameters (Vehicle Weight / Distribution) are missing.": "Basic physics parameters (Vehicle Weight / Distribution) are missing.",
+  "Complete them in Step 1 or Car Parameters tab to perform calculations.": "Complete them in Step 1 or Car Parameters tab to perform calculations.",
+  "Go to Car Parameters": "Go to Car Parameters",
+  "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard": "Scientific physics-based suspension, spring, ARB, damper & AEGO gearing tuning wizard",
+  "PARAMS INCOMPLETE": "PARAMS INCOMPLETE",
+  "Developer Tuning View": "Developer Tuning View",
+  "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.": "Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.",
+  "Open Telemetry Capture": "Open Telemetry Capture",
+  "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.",
+  "Select or load a car with parameters before calculating a developer tune.": "Select or load a car with parameters before calculating a developer tune.",
+  "Warnings and Boundaries": "Warnings and Boundaries",
+  "Raw typed input/output JSON": "Raw typed input/output JSON"
 }
