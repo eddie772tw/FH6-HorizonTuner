@@ -139,7 +139,9 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <textarea id="capture-notes" className="form-control form-control-sm" rows={3} value={metadata.notes} onChange={(event) => setMetadata(updateMetadata(metadata, 'notes', event.target.value))} />
               <div className="d-flex gap-2 flex-wrap mt-2">
                 {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={startCapture}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={stopCapture}>{t('Stop Capture')}</button>}
-                <button className="btn btn-outline-secondary btn-sm" onClick={clearCapture} disabled={isCapturing}>{t('Clear')}</button>
+                <span title={isCapturing ? t("Cannot clear while capturing") : undefined} style={isCapturing ? { cursor: 'not-allowed', display: 'inline-block' } : {}}>
+                  <button className="btn btn-outline-secondary btn-sm" onClick={clearCapture} disabled={isCapturing} style={{ pointerEvents: isCapturing ? 'none' : 'auto' }}>{t('Clear')}</button>
+                </span>
                 <span className="badge bg-secondary-subtle text-secondary-emphasis align-self-center">{isCapturing ? t('Capturing') : t('Idle')} · {liveCount} {t('samples')}</span>
               </div>
               <div className="form-text fs-7">{t('Maximum capture size is 30,000 frames. Telemetry is collected only while this page is capturing.')}</div>
@@ -162,8 +164,12 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <SummaryRow label={t('Maximum Combined Slip FL/FR/RL/RR')} value={summary.maxCombinedSlip.join(' / ')} />
               <SummaryRow label={t('Non-monotonic timestamps')} value={summary.droppedTimestampCount} />
               <div className="d-flex gap-2 flex-wrap mt-3">
-                <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} onClick={() => activeCapture && download(JSON.stringify({ ...activeCapture, summary: summarizeCapture(activeCapture.samples) }, null, 2), `${filenameBase}.json`, 'application/json')}>{t('Download JSON')}</button>
-                <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} onClick={() => activeCapture && download(captureToCsv(activeCapture), `${filenameBase}.csv`, 'text/csv')}>{t('Download CSV')}</button>
+                <span title={(!activeCapture || activeCapture.samples.length === 0) ? t("No capture data available to download") : undefined} style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}>
+                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={() => activeCapture && download(JSON.stringify({ ...activeCapture, summary: summarizeCapture(activeCapture.samples) }, null, 2), `${filenameBase}.json`, 'application/json')}>{t('Download JSON')}</button>
+                </span>
+                <span title={(!activeCapture || activeCapture.samples.length === 0) ? t("No capture data available to download") : undefined} style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}>
+                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={() => activeCapture && download(captureToCsv(activeCapture), `${filenameBase}.csv`, 'text/csv')}>{t('Download CSV')}</button>
+                </span>
               </div>
               <div className="form-text fs-7 mt-2">{t('Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.')}</div>
             </div>

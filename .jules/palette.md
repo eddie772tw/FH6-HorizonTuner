@@ -23,3 +23,6 @@
 ## 2024-08-03 - Tooltips on Disabled Button Wrappers
 **Learning:** Native disabled buttons can swallow pointer events, preventing a tooltip attached directly to the button from appearing.
 **Action:** Put the disabled button in an inline-block wrapper, attach the tooltip to the wrapper, and disable pointer events on the button when necessary.
+## 2024-08-04 - Tooltips on Disabled Buttons with inline-block wrappers
+**Learning:** Adding `title` attributes directly to a `<button>` element is ineffective when the button is disabled, because native disabled buttons swallow pointer events. Furthermore, if a `<span>` wrapper is used but left as `display: inline`, the wrapper's hit area may not correctly cover the disabled button, causing the tooltip to only trigger around the edges or fail completely in flexbox layouts.
+**Action:** When adding tooltips to disabled buttons, wrap the button in a `<span title="...">` that explicitly includes `display: 'inline-block'` and `cursor: 'not-allowed'`. The `<button>` itself must have `pointerEvents: 'none'` applied conditionally when disabled so hover events propagate to the wrapper.
