@@ -93,3 +93,6 @@
 ## 2026-08-23 - Shared Array Resizing in Render Loops
 **Learning:** When using shared static buffers (e.g. `Uint32Array`) to prevent per-frame garbage collection, the array size must be dynamic enough to handle edge cases (like ultra-wide screens resizing a canvas). Fixed constants are unsafe.
 **Action:** Use `let` to allow array reassignment, and implement exponential resizing (`Math.max(len * 2, needed)`) to safely scale buffers during render loops without continuous reallocation.
+## 2026-08-23 - Optimize Live Map Point History Rendering
+**Learning:** In the Live Map telemetry card (`hud_overlay/shared/telemetry-cards/live-map.js`), drawing the track history iterated through all historical points and repeatedly invoked `mapToCanvas` for `posHistory[j-1]` and `posHistory[j]`. Because `mapToCanvas` allocates and returns a new `{x, y}` object per call, this resulted in thousands of redundant math calculations and massive Garbage Collection (GC) object allocations per second at 60Hz.
+**Action:** Extract the initial coordinate calculation (`pPrev = mapToCanvas(posHistory[0].x, posHistory[0].z)`) before the loop, and inside the loop compute `pCurr`, draw the line, and reassign `pPrev = pCurr`. This cuts object instantiation and redundant calculations exactly in half without violating DRY principles.
