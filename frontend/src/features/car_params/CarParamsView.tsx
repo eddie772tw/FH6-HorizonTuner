@@ -511,11 +511,13 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
           <span
             title={Object.keys(carParams.dyno_curve).length === 0 ? t("No dyno data available to import. Please run the dyno test first.") : undefined}
             className="w-100 d-inline-block mt-2"
+            style={Object.keys(carParams.dyno_curve).length === 0 ? { cursor: 'not-allowed' } : undefined}
           >
             <button
               onClick={importDynoValues}
               disabled={Object.keys(carParams.dyno_curve).length === 0}
               className="btn btn-outline-primary w-100 py-2 fw-bold"
+              style={Object.keys(carParams.dyno_curve).length === 0 ? { pointerEvents: 'none' } : undefined}
             >
               {t("📥 Import Max HP / Torque from Dyno (includes RPM)")}
             </button>
