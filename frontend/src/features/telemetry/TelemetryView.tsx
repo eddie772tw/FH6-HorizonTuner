@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useSettings } from '../../context/SettingsContext';
 import { useCarParams } from '../../context/CarParamsContext';
@@ -13,6 +13,8 @@ import VehicleDynamicsDisplay from './components/VehicleDynamicsDisplay';
 import PowerTorqueCanvas from './components/PowerTorqueCanvas';
 import ArcSteerGauge from './components/ArcSteerGauge';
 import RenderSwitch from './components/RenderSwitch';
+import TelemetryCardShell, { type TelemetryCardId } from './components/TelemetryCardShell';
+import TelemetryDetailView from './components/TelemetryDetailView';
 import { backendFetch } from '../../services/backend';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
@@ -69,6 +71,14 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
   const { t } = useSettings();
   const { carName } = useCarParams();
   const { isRecording, loadSavedSession } = useTelemetryRecorder();
+  const [expandedCard, setExpandedCard] = useState<TelemetryCardId | null>(null);
+
+  const closeExpandedCard = useCallback(() => setExpandedCard(null), []);
+  const expandCard = useCallback((cardId: TelemetryCardId) => setExpandedCard(cardId), []);
+
+  useEffect(() => {
+    if (subTab !== 'live') setExpandedCard(null);
+  }, [subTab]);
 
   const [renderConfig, setRenderConfig] = useState<BlockRenderConfig>(() => {
     try {
@@ -262,11 +272,20 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
           <DragTestView />
         </React.Suspense>
       ) : (
-        <div className="d-grid gap-3 flex-grow-1" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
+        <div className="d-grid gap-3 flex-grow-1 telemetry-live-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
 
           {/* BLOCK 1: Row 1 Left (Span 2 / 6 = 33.3%) - Driver Cockpit Cluster */}
-          <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 2' }}>
-            <h3 className="fs-6 text-primary fw-bold border-bottom pb-1 m-0">{t("Driver Inputs & Engine")}</h3>
+          <TelemetryCardShell
+            id="driver"
+            title={t("Driver Inputs & Engine")}
+            gridColumn="span 2"
+            expanded={expandedCard === 'driver'}
+            onExpand={() => expandCard('driver')}
+            onClose={closeExpandedCard}
+            expandLabel={t("Expand card")}
+            closeLabel={t("Close")}
+            detail={<TelemetryDetailView cardId="driver" current={telemetryData} />}
+          >
             <div className="d-flex flex-column justify-content-between gap-2 flex-grow-1 overflow-hidden">
               <div className="w-100 flex-shrink-0">
                 <EngineRpmDisplay />
@@ -284,14 +303,21 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
                 </div>
               </div>
             </div>
-          </div>
+          </TelemetryCardShell>
 
           {/* BLOCK 2: Row 1 Center (Span 2 / 6 = 33.3%) - Dual Trace Center */}
-          <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 2' }}>
-            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
-              <h3 className="fs-6 text-primary fw-bold m-0">{t("Live Telemetry Traces")}</h3>
-              <RenderSwitch checked={renderConfig.traces} onChange={() => toggleBlockRender('traces')} />
-            </div>
+          <TelemetryCardShell
+            id="traces"
+            title={t("Live Telemetry Traces")}
+            gridColumn="span 2"
+            expanded={expandedCard === 'traces'}
+            onExpand={() => expandCard('traces')}
+            onClose={closeExpandedCard}
+            expandLabel={t("Expand card")}
+            closeLabel={t("Close")}
+            renderSwitch={<RenderSwitch checked={renderConfig.traces} onChange={() => toggleBlockRender('traces')} />}
+            detail={<TelemetryDetailView cardId="traces" current={telemetryData} />}
+          >
             <div className="d-flex flex-column gap-2 flex-grow-1 overflow-hidden" style={{ minHeight: 0 }}>
               <div className="flex-grow-1 overflow-hidden" style={{ flex: '1 1 0%', minHeight: 0 }}>
                 <PedalTraceCanvas height="100%" enabled={renderConfig.traces} />
@@ -300,14 +326,21 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
                 <PowerTorqueCanvas height="100%" enabled={renderConfig.traces} />
               </div>
             </div>
-          </div>
+          </TelemetryCardShell>
 
           {/* BLOCK 3: Row 1 Right (Span 2 / 6 = 33.3%) - Dynamics Summary & G-Radar */}
-          <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 2' }}>
-            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
-              <h3 className="fs-6 text-primary fw-bold m-0">{t("Vehicle Dynamics Overview")}</h3>
-              <RenderSwitch checked={renderConfig.dynamicsRadar} onChange={() => toggleBlockRender('dynamicsRadar')} />
-            </div>
+          <TelemetryCardShell
+            id="dynamics"
+            title={t("Vehicle Dynamics Overview")}
+            gridColumn="span 2"
+            expanded={expandedCard === 'dynamics'}
+            onExpand={() => expandCard('dynamics')}
+            onClose={closeExpandedCard}
+            expandLabel={t("Expand card")}
+            closeLabel={t("Close")}
+            renderSwitch={<RenderSwitch checked={renderConfig.dynamicsRadar} onChange={() => toggleBlockRender('dynamicsRadar')} />}
+            detail={<TelemetryDetailView cardId="dynamics" current={telemetryData} />}
+          >
             <div className="d-flex gap-3 align-items-stretch flex-grow-1 overflow-hidden">
               <div className="flex-grow-1 overflow-hidden h-100">
                 <VehicleDynamicsDisplay />
@@ -316,35 +349,49 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
                 <GForceRadar renderRadar={renderConfig.dynamicsRadar} />
               </div>
             </div>
-          </div>
+          </TelemetryCardShell>
 
           {/* BLOCK 4: Row 2 Left (Span 3 / 6 = 50%) - Tire Grip & Status */}
-          <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 3' }}>
-            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
-              <h3 className="fs-6 text-primary fw-bold m-0">{t("Tire Grip & Status")}</h3>
-              <RenderSwitch checked={renderConfig.tireRadar} onChange={() => toggleBlockRender('tireRadar')} />
-            </div>
+          <TelemetryCardShell
+            id="tires"
+            title={t("Tire Grip & Status")}
+            gridColumn="span 3"
+            expanded={expandedCard === 'tires'}
+            onExpand={() => expandCard('tires')}
+            onClose={closeExpandedCard}
+            expandLabel={t("Expand card")}
+            closeLabel={t("Close")}
+            renderSwitch={<RenderSwitch checked={renderConfig.tireRadar} onChange={() => toggleBlockRender('tireRadar')} />}
+            detail={<TelemetryDetailView cardId="tires" current={telemetryData} />}
+          >
             <div className="d-grid gap-2 flex-grow-1 h-100 overflow-hidden" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
               <TireRadar title={t("Front Left")} isLeft={true} tireIdx={0} renderCharts={renderConfig.tireRadar} />
               <TireRadar title={t("Front Right")} isLeft={false} tireIdx={1} renderCharts={renderConfig.tireRadar} />
               <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} renderCharts={renderConfig.tireRadar} />
               <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} renderCharts={renderConfig.tireRadar} />
             </div>
-          </div>
+          </TelemetryCardShell>
 
           {/* BLOCK 5: Row 2 Right (Span 3 / 6 = 50%) - Suspension Travel */}
-          <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 3' }}>
-            <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
-              <h3 className="fs-6 text-primary fw-bold m-0">{t("Suspension Travel")}</h3>
-              <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />
-            </div>
+          <TelemetryCardShell
+            id="suspension"
+            title={t("Suspension Travel")}
+            gridColumn="span 3"
+            expanded={expandedCard === 'suspension'}
+            onExpand={() => expandCard('suspension')}
+            onClose={closeExpandedCard}
+            expandLabel={t("Expand card")}
+            closeLabel={t("Close")}
+            renderSwitch={<RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />}
+            detail={<TelemetryDetailView cardId="suspension" current={telemetryData} />}
+          >
             <div className="d-grid gap-2 flex-grow-1 h-100 overflow-hidden" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
               <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} renderHistoryTrace={renderConfig.suspensionTrace} />
               <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} renderHistoryTrace={renderConfig.suspensionTrace} />
               <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} />
               <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} />
             </div>
-          </div>
+          </TelemetryCardShell>
 
         </div>
 

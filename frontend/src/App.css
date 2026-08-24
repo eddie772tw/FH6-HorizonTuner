@@ -262,6 +262,105 @@ main .container-fluid {
   text-align: center;
 }
 
+/* TelemetryView V1.5 card expansion and detail surface. */
+.telemetry-live-grid {
+  position: relative;
+}
+
+.telemetry-card-shell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.telemetry-card-shell--expanded {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  padding: 1rem;
+  overflow: hidden;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--glass-shadow);
+}
+
+.telemetry-card-shell__body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-card-shell--expanded .telemetry-card-shell__body {
+  overflow: auto;
+}
+
+.telemetry-card-shell__expand {
+  line-height: 1;
+  min-width: 2rem;
+}
+
+.telemetry-detail-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 100%;
+  padding-right: 0.25rem;
+}
+
+.telemetry-detail-view__metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.telemetry-detail-view__metric,
+.telemetry-detail-view__corner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.75rem;
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--input-radius);
+}
+
+.telemetry-detail-view__corner {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.telemetry-detail-view__corner h4 {
+  grid-column: 1 / -1;
+}
+
+.telemetry-detail-view__chart {
+  min-height: 260px;
+  overflow: hidden;
+}
+
+.telemetry-detail-view__chart-canvas {
+  width: 100%;
+  height: 220px;
+}
+
+.telemetry-detail-view__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--input-radius);
+}
+
+@media (max-width: 900px) {
+  .telemetry-detail-view__corner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .row {
   max-width: 100% !important;
   margin-left: 0 !important;
