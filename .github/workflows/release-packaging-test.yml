@@ -97,7 +97,7 @@ jobs:
           $exePath = Join-Path $fixtureRoot 'FH6-HorizonTuner.exe'
           [IO.File]::WriteAllBytes($exePath, [Text.Encoding]::ASCII.GetBytes('TEST_PORTABLE_EXE'))
 
-          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.14_x64-setup.exe'
+          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.15_x64-setup.exe'
           [IO.File]::WriteAllBytes($bundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
 
           $signaturePath = $bundlePath + '.sig'
@@ -116,7 +116,7 @@ jobs:
           SIGNATURE_PATH: ${{ steps.fixtures.outputs.signature }}
           OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
         run: |
-          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.14" --repo "eddie772tw/FH6-HorizonTuner"
+          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.15" --repo "eddie772tw/FH6-HorizonTuner"
 
       - name: Validate generated manifest and asset set
         shell: pwsh
@@ -130,7 +130,7 @@ jobs:
 
           output = Path(os.environ["OUTPUT_DIR"])
           files = {path.name for path in output.iterdir() if path.is_file()}
-          bundle = "FH6-HorizonTuner_11.45.14_x64-setup.exe"
+          bundle = "FH6-HorizonTuner_11.45.15_x64-setup.exe"
           expected = {
               "FH6-HorizonTuner.exe",
               bundle,
@@ -141,7 +141,7 @@ jobs:
 
           manifest = json.loads((output / "latest.json").read_text(encoding="utf-8"))
           platform = manifest["platforms"]["windows-x86_64"]
-          assert manifest["version"] == "11.45.14"
+          assert manifest["version"] == "11.45.15"
           assert platform["signature"] == "TEST_ED25519_SIGNATURE"
           assert platform["url"].endswith(f"/test-v0.0.0/{bundle}")
           '@

@@ -40,6 +40,9 @@ jobs:
     - name: Install Ruff through uv
       run: uv pip install ruff
 
+    - name: Check tracked path case contract
+      run: uv run --no-project --active python scripts/check_repo_path_case.py
+
     - name: Run Ruff Check
       id: ruff_check
       run: uv run --no-project --active ruff check .
@@ -47,6 +50,9 @@ jobs:
     - name: Run Ruff Format Verification
       id: ruff_format
       run: uv run --no-project --active ruff format --check .
+
+    - name: Run Rust Format Verification
+      run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
 
   frontend-build-test:
     name: Frontend Build Test & Audit

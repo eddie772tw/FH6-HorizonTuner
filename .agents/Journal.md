@@ -1401,3 +1401,13 @@
   - 後端單元測試：`pytest` 150 passed。
   - 前端單元測試：Vitest 66 個檔案 / 418 個測試全數通過。
   - 格式與代碼檢查：`git diff --check` 完全乾淨。
+
+---
+
+## 2026-08-24 / v1.4.4 OTA Release Readiness
+
+- **Scope**: `main` branch release preparation, `tauri-plugin-updater` 2.10.1 behavior, Rust format gate, and v1.4.4 packaging.
+- **Decision**: `tauri-plugin-updater` uses the manifest `version` for the built-in update decision (`remote > current`; `allowDowngrades` changes this to `remote != current`); the GitHub release tag is not a first-class comparator input. Because an existing v1.4.3 client cannot be bootstrapped by an equal `11.45.14` manifest, v1.4.4 uses runtime version `11.45.15` while retaining the `v1.4.4` release tag.
+- **Action**: Add `cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` to CI and release gates, and add cargo format auto-fix plus verification to `start_all.bat`.
+- **Evidence**: Commit `fa0c3f9`; CI run `32681482344` passed including Windows executable bundle verification; CodeQL run `32681481832` passed; local frontend tests (69 files / 440 tests), frontend build, Ruff, Rust format, and release contract tests passed.
+- **Status**: adopted.
