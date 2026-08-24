@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSettings, UnitSettings } from '../../context/SettingsContext';
 import { McpSettingsCard } from './components/McpSettingsCard';
+import { DiscordPresenceStatusCard } from './components/DiscordPresenceStatusCard';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 
 const SettingsView: React.FC = () => {
@@ -474,6 +475,7 @@ const SettingsView: React.FC = () => {
 
         {/* Full-width integrations: these sections contain long URLs and actions. */}
         <div className="d-flex flex-column gap-4 mt-4">
+          <DiscordPresenceStatusCard />
           <McpSettingsCard />
           <UpdateSettingsCard />
         </div>

@@ -1,0 +1,154 @@
+import json
+import struct
+from pathlib import Path
+
+from discord_presence import (
+    DiscordIpcClient,
+    build_activity,
+    format_lap_time,
+    load_discord_application_id,
+    snapshot_from_telemetry,
+)
+
+
+def _car_db():
+    return {
+        "1041": {
+            "year": 2022,
+            "make": "Toyota",
+            "model": "GR86",
+        }
+    }
+
+
+def _race_data(**overrides):
+    data = {
+        "IsRaceOn": 1,
+        "CarOrdinal": 1041,
+        "CurrentRaceTime": 125.0,
+        "CurrentLap": 22.1,
+        "LastLap": 66.8,
+        "BestLap": 65.2,
+        "LapNumber": 3,
+        "RacePosition": 2,
+    }
+    data.update(overrides)
+    return data
+
+
+def test_snapshot_uses_race_recorder_rule_not_is_race_on_alone():
+    race = snapshot_from_telemetry(_race_data(), _car_db())
+    roam = snapshot_from_telemetry(
+        _race_data(CurrentRaceTime=0, CurrentLap=0), _car_db()
+    )
+    invalid = snapshot_from_telemetry(_race_data(IsRaceOn=0), _car_db())
+
+    assert race.mode == "race"
+    assert race.car_name == "2022 Toyota GR86"
+    assert roam.mode == "roam"
+    assert invalid.mode == "roam"
+
+
+def test_activity_contains_car_best_lap_and_position():
+    snapshot = snapshot_from_telemetry(_race_data(), _car_db())
+
+    activity = build_activity(snapshot, 1_700_000_000)
+
+    assert activity["details"] == "2022 Toyota GR86 · Best 1:05.200"
+    assert activity["state"] == "Race · Lap 3 · P2"
+    assert activity["timestamps"] == {"start": 1_700_000_000}
+
+
+def test_activity_degrades_when_optional_race_values_are_missing():
+    snapshot = snapshot_from_telemetry(
+        _race_data(
+            BestLap=0, RacePosition=0, LapNumber=0, CurrentRaceTime=0, CurrentLap=0
+        ),
+        _car_db(),
+    )
+
+    activity = build_activity(snapshot, 1_700_000_000)
+
+    assert activity["details"] == "2022 Toyota GR86 · Best --"
+    assert activity["state"] == "Roaming"
+
+
+def test_lap_time_formatting_rejects_invalid_values():
+    assert format_lap_time(65.2) == "1:05.200"
+    assert format_lap_time(0) == "--"
+    assert format_lap_time(float("nan")) == "--"
+
+
+def test_application_id_precedence_and_validation(tmp_path, monkeypatch):
+    project_root = tmp_path / "project"
+    resource_root = project_root / "backend"
+    resource_root.mkdir(parents=True)
+    config_dir = project_root / "config"
+    config_dir.mkdir()
+    (config_dir / "discord.local.json").write_text(
+        json.dumps({"discord_application_id": "11111111111111111"}),
+        encoding="utf-8",
+    )
+    (resource_root / "discord_application_id.json").write_text(
+        json.dumps({"discord_application_id": "22222222222222222"}),
+        encoding="utf-8",
+    )
+
+    monkeypatch.delenv("DISCORD_APPLICATION_ID", raising=False)
+    assert (
+        load_discord_application_id(str(tmp_path), str(resource_root))
+        == "11111111111111111"
+    )
+
+    monkeypatch.setenv("DISCORD_APPLICATION_ID", "33333333333333333")
+    assert (
+        load_discord_application_id(str(tmp_path), str(resource_root))
+        == "33333333333333333"
+    )
+
+    monkeypatch.setenv("DISCORD_APPLICATION_ID", "not-an-id")
+    assert (
+        load_discord_application_id(str(tmp_path), str(resource_root))
+        == "11111111111111111"
+    )
+
+
+class _FakeStream:
+    def __init__(self):
+        self.writes = []
+        self.reads = [struct.pack("<II", 1, 2), b"{}"]
+
+    def write(self, payload):
+        self.writes.append(payload)
+
+    def read(self, size):
+        value = self.reads.pop(0)
+        assert len(value) == size
+        return value
+
+
+def test_ipc_command_consumes_discord_response_frame():
+    client = DiscordIpcClient("11111111111111111")
+    client.stream = _FakeStream()
+
+    client.set_activity({"type": 0, "details": "test"})
+
+    opcode, length = struct.unpack("<II", client.stream.writes[0][:8])
+    assert opcode == 1
+    assert length > 0
+
+
+def test_release_build_requires_secret_and_embeds_only_sidecar_resource():
+    repository_root = Path(__file__).resolve().parents[1]
+    workflow = (repository_root / ".github" / "workflows" / "release.yml").read_text(
+        encoding="utf-8"
+    )
+    spec = (repository_root / "server-sidecar.spec").read_text(encoding="utf-8")
+
+    assert "DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}" in workflow
+    assert "DISCORD_APPLICATION_ID is empty or unavailable." in workflow
+    assert "backend/discord_application_id.json" in workflow
+    assert "discord_application_id_file" in spec
+    sidecar_start = workflow.index("Build Python Backend Sidecar Executable")
+    stage_start = workflow.index("Stage Embedded Sidecar")
+    assert "frontend" not in workflow[sidecar_start:stage_start]
