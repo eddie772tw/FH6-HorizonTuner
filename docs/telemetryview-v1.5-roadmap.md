@@ -48,7 +48,7 @@ The five expansion units are:
 
 ### V1.5.0 — Usable expansion architecture
 
-Status: Verified locally; PR pending
+Status: Verified locally; PR #245 open; CI pass
 
 - Add a shared card shell with expand, close and keyboard handling.
 - Allow each of the five main cards to expand independently.
