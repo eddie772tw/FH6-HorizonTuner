@@ -26,3 +26,7 @@
 ## 2024-08-04 - Tooltips on Disabled Buttons with inline-block wrappers
 **Learning:** Adding `title` attributes directly to a `<button>` element is ineffective when the button is disabled, because native disabled buttons swallow pointer events. Furthermore, if a `<span>` wrapper is used but left as `display: inline`, the wrapper's hit area may not correctly cover the disabled button, causing the tooltip to only trigger around the edges or fail completely in flexbox layouts.
 **Action:** When adding tooltips to disabled buttons, wrap the button in a `<span title="...">` that explicitly includes `display: 'inline-block'` and `cursor: 'not-allowed'`. The `<button>` itself must have `pointerEvents: 'none'` applied conditionally when disabled so hover events propagate to the wrapper.
+
+## 2024-05-19 - Tooltips on Disabled Buttons in React
+**Learning:** In standard HTML/React, native `<button disabled>` elements swallow mouse events, preventing CSS `:hover` states and parent wrappers (like `<span>` with `title` attributes) from receiving the events needed to display tooltips.
+**Action:** Always wrap disabled buttons that need tooltips in a `<span>` with `title` and conditionally apply `display: inline-block` and `cursor: not-allowed` to the wrapper, and `pointerEvents: 'none'` to the button itself. This allows the wrapper to catch the event while still showing the disabled cursor.

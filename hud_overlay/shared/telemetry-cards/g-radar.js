@@ -24,8 +24,16 @@ export function renderGRadar(data, gHist, now, domCache) {
         dot.style.transform = 'translate(' + xPx + 'px, ' + yPx + 'px)';
     }
 
-    var latEl = domCache ? domCache.latEl : document.getElementById('tcLatG'); if (latEl) latEl.textContent = Math.abs(lat).toFixed(2);
-    var lonEl = domCache ? domCache.lonEl : document.getElementById('tcLonG'); if (lonEl) lonEl.textContent = Math.abs(lon).toFixed(2);
+    var latEl = domCache ? domCache.latEl : document.getElementById('tcLatG');
+    if (latEl) {
+        var newLatStr = Math.abs(lat).toFixed(2);
+        if (latEl.textContent !== newLatStr) latEl.textContent = newLatStr;
+    }
+    var lonEl = domCache ? domCache.lonEl : document.getElementById('tcLonG');
+    if (lonEl) {
+        var newLonStr = Math.abs(lon).toFixed(2);
+        if (lonEl.textContent !== newLonStr) lonEl.textContent = newLonStr;
+    }
 
     // Update 30s history & peak markers
     if (gHist.length < 900) {
@@ -63,18 +71,30 @@ export function renderGRadar(data, gHist, now, domCache) {
             }
 
             if (hasRecent) {
-                markersContainer.innerHTML = '';
+                if (!markersContainer._gMarkerPool) markersContainer._gMarkerPool = [];
+                var pool = markersContainer._gMarkerPool;
                 var points = [maxLatL, maxLatR, maxLonB, maxLonA, maxL_B, maxL_A, maxR_B, maxR_A];
+                var poolIdx = 0;
+
                 for (var j = 0; j < points.length; j++) {
                     var pt = points[j];
                     if (pt.lat === 0 && pt.lon === 0) continue;
 
-                    var mDot = document.createElement('div');
-                    mDot.style.position = 'absolute';
-                    mDot.style.width = '6px';
-                    mDot.style.height = '6px';
-                    mDot.style.borderRadius = '50%';
-                    mDot.style.background = 'rgba(255,255,255,0.5)';
+                    var mDot;
+                    if (poolIdx < pool.length) {
+                        mDot = pool[poolIdx];
+                        if (mDot.style.display !== 'block') mDot.style.display = 'block';
+                    } else {
+                        mDot = document.createElement('div');
+                        mDot.style.position = 'absolute';
+                        mDot.style.width = '6px';
+                        mDot.style.height = '6px';
+                        mDot.style.borderRadius = '50%';
+                        mDot.style.background = 'rgba(255,255,255,0.5)';
+                        markersContainer.appendChild(mDot);
+                        pool.push(mDot);
+                    }
+                    poolIdx++;
 
                     var mx = (pt.lat / 2) * radiusPx;
                     var my = (pt.lon / 2) * radiusPx;
@@ -83,9 +103,15 @@ export function renderGRadar(data, gHist, now, domCache) {
                         mx = (mx / mDist) * maxMRadius;
                         my = (my / mDist) * maxMRadius;
                     }
-                    mDot.style.left = (radiusPx + mx - 3) + 'px';
-                    mDot.style.top = (radiusPx + my - 3) + 'px';
-                    markersContainer.appendChild(mDot);
+                    var newLeft = (radiusPx + mx - 3) + 'px';
+                    var newTop = (radiusPx + my - 3) + 'px';
+
+                    if (mDot.style.left !== newLeft) mDot.style.left = newLeft;
+                    if (mDot.style.top !== newTop) mDot.style.top = newTop;
+                }
+
+                for (var k = poolIdx; k < pool.length; k++) {
+                    if (pool[k].style.display !== 'none') pool[k].style.display = 'none';
                 }
             }
         }

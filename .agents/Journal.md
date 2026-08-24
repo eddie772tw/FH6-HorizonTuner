@@ -33,6 +33,23 @@
   5. 驗證前端 Vitest（70 檔 / 442 項全數通過）、後端單元測試（189 項全數通過）、Ruff 格式檢查與 Vite 生產打包成功。
   6. 同步更新 `README.md`、`README.en.md` 與 `Journal.md`。
 - **Evidence**：`cargo check` 通過；前端 Vitest (70 files / 442 tests passed)；後端 Pytest (189 passed)；`pnpm run build` 成功輸出 `dist/index.html` 與 `dist/hud_frontend/index.html`；`ruff check .` 與 `ruff format --check .` 100% 通過。
+## 2026-08-24 / 5 個 PR 批量審查、衝突修正與循序合併
+
+### Dependabot 依賴更新 (PR #241 #242 #243)、Jules UI 修正 (PR #244) 與 G-Radar 60Hz 渲染最佳化 (PR #246)
+
+- **來源**：`local`，針對 5 個 PR 執行完整的 `pr-review-evaluation` 標準化審查（Review IDs: 5006767021, 5006767931, 5006768785, 5006853209, 5006769629）、PR #244 大小寫路徑衝突修正與底層到呈現層的架構依賴循序合併。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **大寫 Jules 路徑再犯的自動修正機制**：Jules 在建立 PR #244 時再度將學習記錄寫入 `.Jules/palette.md`（大寫 J），與 governance commit `4f9a875` 衝突。正確處置是：在 main 上建立新 branch → 手動套用 UI 修正 → 將學習記錄寫入 `.jules/palette.md`（小寫）→ force-push 取代原有 branch，而非嘗試 rebase（rebase 在跨版本 rename 情境下需要額外處理 deleted/tracked 狀態）。
+  2. **force-push 前必須確認 CI 重新執行完畢**：force-push 後 GitHub 會重新觸發所有 CI checks；必須等待新 commit 的 CI 全數通過（包含耗時最長的 Build & Verify Executable Bundle，約 5 分鐘）再合併，不得依賴舊 commit 的 CI 結果。
+  3. **自底向上 Dependabot 合併排序**：依「Python 依賴 → Rust/Cargo 依賴 → npm 前端工具鏈 → UI 業務邏輯 → 60Hz 渲染層」順序合併，確保低層依賴先到位、高層不受回退影響。
+  4. **G-Radar DOM 元素池 (PR #246)**：以 `markersContainer._gMarkerPool` 掛載池陣列，用 `display: block/none` 切換取代每幀 `innerHTML = ''` + `document.createElement`，textContent 與 style 屬性加入 dirty-check，符合 AGENTS.md 60Hz 效能守則。
+- **Action**：
+  1. 完成 5 個 PR 的標準審查與 Review 提交。
+  2. 修正 PR #244 大小寫路徑衝突（force-push `ebf9f45` → `aa38ee3`）。
+  3. 依序 Squash & Merge：#242 → #241 → #243 → #246 → #244。
+  4. 驗證本地 Vitest（69 檔 / 440 項全數通過）、Pytest（191 passed, 3 skipped）。
+- **Evidence**：PRs #241, #242, #243, #244, #246 均為 MERGED 狀態；本地 `pnpm run test` (69 files / 440 passed)、`pytest` (191 passed, 3 skipped)。
 
 ---
 

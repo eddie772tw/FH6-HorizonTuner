@@ -1,6 +1,6 @@
 # FH6-HorizonTuner 核心執行依賴套件
 fastapi>=0.141.1,<1.0.0
-uvicorn>=0.52.3,<1.0.0
+uvicorn>=0.52.4,<1.0.0
 websockets>=17.0.1,<18.0
 pydantic>=2.13.4,<3.0.0
 httpx>=0.28.1,<1.0.0
