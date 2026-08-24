@@ -17,7 +17,7 @@ def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path]:
     mock_exe = source_dir / "FH6-HorizonTuner.exe"
     mock_exe.write_bytes(b"MOCK_PE_BINARY_CONTENT")
 
-    updater_bundle = source_dir / "FH6-HorizonTuner_11.45.14_x64-setup.exe"
+    updater_bundle = source_dir / "FH6-HorizonTuner_11.45.15_x64-setup.exe"
     updater_bundle.write_bytes(b"MOCK_NSIS_INSTALLER")
 
     updater_signature = source_dir / f"{updater_bundle.name}.sig"
@@ -27,22 +27,22 @@ def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path]:
 
 def test_generate_latest_manifest_structure():
     manifest = generate_latest_manifest(
-        version="11.45.14",
+        version="11.45.15",
         repo="eddie772tw/FH6-HorizonTuner",
         tag="v1.5.0",
         signature="dGVzdHNpZ25hdHVyZQ==",
-        download_filename="FH6-HorizonTuner_11.45.14_x64-setup.exe",
+        download_filename="FH6-HorizonTuner_11.45.15_x64-setup.exe",
         notes="OTA upgrade release",
         pub_date="2026-08-17T12:00:00Z",
     )
 
-    assert manifest["version"] == "11.45.14"
+    assert manifest["version"] == "11.45.15"
     assert manifest["notes"] == "OTA upgrade release"
     assert manifest["pub_date"] == "2026-08-17T12:00:00Z"
     win_platform = manifest["platforms"]["windows-x86_64"]
     assert win_platform["signature"] == "dGVzdHNpZ25hdHVyZQ=="
     assert win_platform["url"].endswith(
-        "/v1.5.0/FH6-HorizonTuner_11.45.14_x64-setup.exe"
+        "/v1.5.0/FH6-HorizonTuner_11.45.15_x64-setup.exe"
     )
 
 
@@ -56,7 +56,7 @@ def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
         updater_signature_path=updater_signature,
         output_dir=out_dir,
         tag="v1.5.0",
-        version="11.45.14",
+        version="11.45.15",
         repo="eddie772tw/FH6-HorizonTuner",
         notes="Changelog for v1.5.0",
     )
@@ -72,7 +72,7 @@ def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
 
     manifest = json.loads((out_dir / "latest.json").read_text(encoding="utf-8"))
     platform = manifest["platforms"]["windows-x86_64"]
-    assert manifest["version"] == "11.45.14"
+    assert manifest["version"] == "11.45.15"
     assert platform["signature"] == "ED25519_SIGNATURE_BASE64_STRING"
     assert platform["url"].endswith(f"/{updater_bundle.name}")
 
@@ -87,7 +87,7 @@ def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
             updater_signature_path=updater_signature,
             output_dir=tmp_path / "out",
             tag="v1.5.0",
-            version="11.45.14",
+            version="11.45.15",
         )
 
     with pytest.raises(FileNotFoundError, match="Tauri updater signature"):
@@ -97,7 +97,7 @@ def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
             updater_signature_path=tmp_path / "missing.sig",
             output_dir=tmp_path / "out",
             tag="v1.5.0",
-            version="11.45.14",
+            version="11.45.15",
         )
 
 

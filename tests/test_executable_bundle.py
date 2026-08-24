@@ -96,6 +96,6 @@ def test_sidecar_executable_existence_and_metadata():
                 f"Expected CompanyName 'eddie772tw', got '{company}'"
             )
         if version:
-            assert version.startswith("11.45.14"), (
-                f"Expected FileVersion starting with '11.45.14', got '{version}'"
+            assert version.startswith("11.45.15"), (
+                f"Expected FileVersion starting with '11.45.15', got '{version}'"
             )

@@ -27,6 +27,27 @@ if exist "%VENV_PY%" (
     "%UV_EXE%" run --no-project --python "%VENV_PY%" ruff format .
 )
 
+:: Auto-format the Tauri host, then verify the Rust format contract.
+where.exe cargo >nul 2>nul
+if errorlevel 1 (
+    echo [WARNING] cargo was not found on PATH. Skipping Rust format checks.
+) else (
+    echo [INFO] Running cargo fmt auto-fix...
+    cargo fmt --manifest-path "%~dp0frontend\src-tauri\Cargo.toml"
+    if errorlevel 1 (
+        echo [ERROR] cargo fmt auto-fix failed.
+        pause
+        exit /b 1
+    )
+    echo [INFO] Verifying Rust formatting...
+    cargo fmt --manifest-path "%~dp0frontend\src-tauri\Cargo.toml" -- --check
+    if errorlevel 1 (
+        echo [ERROR] Rust formatting check failed after auto-fix.
+        pause
+        exit /b 1
+    )
+)
+
 :: Terminate old instances to prevent backend port conflicts.
 echo [INFO] Terminating old backend instances to prevent port conflicts...
 taskkill /F /FI "WINDOWTITLE eq FH6 Telemetry Backend*" /T >nul 2>nul

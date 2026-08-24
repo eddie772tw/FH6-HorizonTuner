@@ -1,16 +1,14 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use serde::Serialize;
 use std::fs;
 use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
-use serde::Serialize;
 
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
-const EMBEDDED_SIDECAR: &[u8] = include_bytes!(
-    "../bin/server-sidecar-x86_64-pc-windows-msvc.exe"
-);
+const EMBEDDED_SIDECAR: &[u8] = include_bytes!("../bin/server-sidecar-x86_64-pc-windows-msvc.exe");
 
 #[cfg(not(all(target_os = "windows", target_arch = "x86_64")))]
 const EMBEDDED_SIDECAR: &[u8] = &[];
@@ -90,19 +88,29 @@ fn extract_embedded_sidecar() -> Result<PathBuf, String> {
         return Err("No embedded Windows x64 sidecar is available for this build.".to_string());
     }
 
-    let sidecar_dir = std::env::temp_dir()
-        .join("FH6-HorizonTuner")
-        .join(format!("sidecar-{}-{}", env!("CARGO_PKG_VERSION"), EMBEDDED_SIDECAR.len()));
+    let sidecar_dir = std::env::temp_dir().join("FH6-HorizonTuner").join(format!(
+        "sidecar-{}-{}",
+        env!("CARGO_PKG_VERSION"),
+        EMBEDDED_SIDECAR.len()
+    ));
     let sidecar_path = sidecar_dir.join("server-sidecar.exe");
-    fs::create_dir_all(&sidecar_dir)
-        .map_err(|e| format!("Failed to create sidecar extraction directory {:?}: {}", sidecar_dir, e))?;
+    fs::create_dir_all(&sidecar_dir).map_err(|e| {
+        format!(
+            "Failed to create sidecar extraction directory {:?}: {}",
+            sidecar_dir, e
+        )
+    })?;
 
     let needs_write = fs::metadata(&sidecar_path)
         .map(|metadata| metadata.len() != EMBEDDED_SIDECAR.len() as u64)
         .unwrap_or(true);
     if needs_write {
-        fs::write(&sidecar_path, EMBEDDED_SIDECAR)
-            .map_err(|e| format!("Failed to extract embedded sidecar to {:?}: {}", sidecar_path, e))?;
+        fs::write(&sidecar_path, EMBEDDED_SIDECAR).map_err(|e| {
+            format!(
+                "Failed to extract embedded sidecar to {:?}: {}",
+                sidecar_path, e
+            )
+        })?;
     }
 
     Ok(sidecar_path)
@@ -145,11 +153,14 @@ where
         for line in BufReader::new(reader).lines().flatten() {
             if !is_stderr {
                 if let Some(port) = parse_backend_ready_port(line.as_bytes()) {
-                    set_backend_status(&app_handle, BackendStatus {
-                        state: "ready".to_string(),
-                        port: Some(port),
-                        error: None,
-                    });
+                    set_backend_status(
+                        &app_handle,
+                        BackendStatus {
+                            state: "ready".to_string(),
+                            port: Some(port),
+                            error: None,
+                        },
+                    );
                 }
             }
             if is_stderr {
@@ -205,22 +216,30 @@ fn watch_external_backend(app_handle: tauri::AppHandle) {
             if let Some(port_file) = find_external_backend_port_file() {
                 if let Ok(contents) = fs::read_to_string(port_file) {
                     if let Ok(port) = contents.trim().parse::<u16>() {
-                        set_backend_status(&app_handle, BackendStatus {
-                            state: "ready".to_string(),
-                            port: Some(port),
-                            error: None,
-                        });
+                        set_backend_status(
+                            &app_handle,
+                            BackendStatus {
+                                state: "ready".to_string(),
+                                port: Some(port),
+                                error: None,
+                            },
+                        );
                         return;
                     }
                 }
             }
             std::thread::sleep(std::time::Duration::from_millis(50));
         }
-        set_backend_status(&app_handle, BackendStatus {
-            state: "failed".to_string(),
-            port: None,
-            error: Some("Could not find the externally started development backend port.".to_string()),
-        });
+        set_backend_status(
+            &app_handle,
+            BackendStatus {
+                state: "failed".to_string(),
+                port: None,
+                error: Some(
+                    "Could not find the externally started development backend port.".to_string(),
+                ),
+            },
+        );
     });
 }
 
@@ -235,10 +254,16 @@ fn get_backend_port(state: tauri::State<'_, BackendState>) -> Result<u16, String
 }
 
 fn backend_port_from_state(state: &BackendState) -> Result<u16, String> {
-    let status = state.0.lock().map_err(|_| "Backend state lock poisoned".to_string())?;
-    status.port.ok_or_else(|| status.error.clone().unwrap_or_else(|| {
-        "Backend is still starting".to_string()
-    }))
+    let status = state
+        .0
+        .lock()
+        .map_err(|_| "Backend state lock poisoned".to_string())?;
+    status.port.ok_or_else(|| {
+        status
+            .error
+            .clone()
+            .unwrap_or_else(|| "Backend is still starting".to_string())
+    })
 }
 
 fn backend_port_from_app(app_handle: &tauri::AppHandle) -> Result<u16, String> {
@@ -247,7 +272,9 @@ fn backend_port_from_app(app_handle: &tauri::AppHandle) -> Result<u16, String> {
 
 #[tauri::command]
 fn get_backend_status(state: tauri::State<'_, BackendState>) -> Result<BackendStatus, String> {
-    state.0.lock()
+    state
+        .0
+        .lock()
         .map(|status| status.clone())
         .map_err(|_| "Backend state lock poisoned".to_string())
 }
@@ -289,7 +316,6 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
     }
 }
 
-
 #[tauri::command]
 fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
@@ -298,7 +324,10 @@ fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
 
         let _ = window.eval("window.location.href = 'about:blank';");
         std::thread::sleep(std::time::Duration::from_millis(50));
-        let _ = window.eval(&format!("window.location.href = '{}?t=' + Date.now();", url));
+        let _ = window.eval(&format!(
+            "window.location.href = '{}?t=' + Date.now();",
+            url
+        ));
         Ok(())
     } else {
         Err("Overlay window not found".to_string())

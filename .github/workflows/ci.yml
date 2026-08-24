@@ -48,6 +48,9 @@ jobs:
       id: ruff_format
       run: uv run --no-project --active ruff format --check .
 
+    - name: Run Rust Format Verification
+      run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+
   frontend-build-test:
     name: Frontend Build Test & Audit
     runs-on: ubuntu-latest
