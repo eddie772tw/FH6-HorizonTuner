@@ -20,6 +20,10 @@ import {
 // Performance optimization: Pre-allocate a shared array to eliminate
 // per-frame and per-wheel garbage collection (GC) heap allocations inside the 60Hz render loop.
 var _sharedBins = [];
+var _slipRatios = [0, 0, 0, 0];
+var _slipAngles = [0, 0, 0, 0];
+var _temps = [0, 0, 0, 0];
+var _travels = [0, 0, 0, 0];
 
 export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, suspHist, suspMinMax, now, domCache) {
     var rawSlipRatios = data.TireSlipRatio || [];
@@ -27,30 +31,29 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
     var rawTemps = data.TireTemp || [];
     var rawTravels = data.NormalizedSuspensionTravel || [];
 
-    var slipRatios = [
-        data.slip_fl !== undefined ? data.slip_fl : (rawSlipRatios[0] || 0),
-        data.slip_fr !== undefined ? data.slip_fr : (rawSlipRatios[1] || 0),
-        data.slip_rl !== undefined ? data.slip_rl : (rawSlipRatios[2] || 0),
-        data.slip_rr !== undefined ? data.slip_rr : (rawSlipRatios[3] || 0)
-    ];
-    var slipAngles = [
-        data.slip_angle_fl !== undefined ? data.slip_angle_fl : (rawSlipAngles[0] || 0),
-        data.slip_angle_fr !== undefined ? data.slip_angle_fr : (rawSlipAngles[1] || 0),
-        data.slip_angle_rl !== undefined ? data.slip_angle_rl : (rawSlipAngles[2] || 0),
-        data.slip_angle_rr !== undefined ? data.slip_angle_rr : (rawSlipAngles[3] || 0)
-    ];
-    var temps = [
-        data.temp_fl !== undefined ? data.temp_fl : (rawTemps[0] !== undefined ? rawTemps[0] : 0),
-        data.temp_fr !== undefined ? data.temp_fr : (rawTemps[1] !== undefined ? rawTemps[1] : 0),
-        data.temp_rl !== undefined ? data.temp_rl : (rawTemps[2] !== undefined ? rawTemps[2] : 0),
-        data.temp_rr !== undefined ? data.temp_rr : (rawTemps[3] !== undefined ? rawTemps[3] : 0)
-    ];
-    var travels = [
-        data.susp_fl !== undefined ? data.susp_fl : (rawTravels[0] || 0),
-        data.susp_fr !== undefined ? data.susp_fr : (rawTravels[1] || 0),
-        data.susp_rl !== undefined ? data.susp_rl : (rawTravels[2] || 0),
-        data.susp_rr !== undefined ? data.susp_rr : (rawTravels[3] || 0)
-    ];
+    _slipRatios[0] = data.slip_fl !== undefined ? data.slip_fl : (rawSlipRatios[0] || 0);
+    _slipRatios[1] = data.slip_fr !== undefined ? data.slip_fr : (rawSlipRatios[1] || 0);
+    _slipRatios[2] = data.slip_rl !== undefined ? data.slip_rl : (rawSlipRatios[2] || 0);
+    _slipRatios[3] = data.slip_rr !== undefined ? data.slip_rr : (rawSlipRatios[3] || 0);
+    var slipRatios = _slipRatios;
+
+    _slipAngles[0] = data.slip_angle_fl !== undefined ? data.slip_angle_fl : (rawSlipAngles[0] || 0);
+    _slipAngles[1] = data.slip_angle_fr !== undefined ? data.slip_angle_fr : (rawSlipAngles[1] || 0);
+    _slipAngles[2] = data.slip_angle_rl !== undefined ? data.slip_angle_rl : (rawSlipAngles[2] || 0);
+    _slipAngles[3] = data.slip_angle_rr !== undefined ? data.slip_angle_rr : (rawSlipAngles[3] || 0);
+    var slipAngles = _slipAngles;
+
+    _temps[0] = data.temp_fl !== undefined ? data.temp_fl : (rawTemps[0] !== undefined ? rawTemps[0] : 0);
+    _temps[1] = data.temp_fr !== undefined ? data.temp_fr : (rawTemps[1] !== undefined ? rawTemps[1] : 0);
+    _temps[2] = data.temp_rl !== undefined ? data.temp_rl : (rawTemps[2] !== undefined ? rawTemps[2] : 0);
+    _temps[3] = data.temp_rr !== undefined ? data.temp_rr : (rawTemps[3] !== undefined ? rawTemps[3] : 0);
+    var temps = _temps;
+
+    _travels[0] = data.susp_fl !== undefined ? data.susp_fl : (rawTravels[0] || 0);
+    _travels[1] = data.susp_fr !== undefined ? data.susp_fr : (rawTravels[1] || 0);
+    _travels[2] = data.susp_rl !== undefined ? data.susp_rl : (rawTravels[2] || 0);
+    _travels[3] = data.susp_rr !== undefined ? data.susp_rr : (rawTravels[3] || 0);
+    var travels = _travels;
 
     // Unit conversion preference (°C vs °F display)
     var isMetric = (data.isMetric !== undefined ? data.isMetric : (data.is_metric !== false));
