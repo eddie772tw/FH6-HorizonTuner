@@ -1,0 +1,3 @@
+## 2024-05-24 - Wrapped checkboxes in labels for larger hit areas
+**Learning:** Wrapping a full settings row (title, description, and checkbox input) inside a `<label>` element significantly increases the clickable hit area, making settings panels much easier to interact with, especially on touch screens or with a mouse. Using `cursor: pointer` provides immediate visual feedback.
+**Action:** When building dense settings panels with right-aligned toggle switches, wrap the entire row in a `<label>` linked to the input's `id`. Ensure that inner text elements (like titles or descriptions) are changed from `<label>` to `<div>` or `<span>` to prevent invalid nested HTML `<label>` tags.
