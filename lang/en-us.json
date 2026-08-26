@@ -1,5 +1,9 @@
 {
   "__language_name__": "English",
+  "READY": "READY",
+  "EXPERIMENTAL": "EXPERIMENTAL",
+  "REQUIRED": "REQUIRED",
+  "SYNCED": "SYNCED",
   "Software Updates (OTA)": "Software Updates (OTA)",
   "UPDATE AVAILABLE": "UPDATE AVAILABLE",
   "UP TO DATE": "UP TO DATE",

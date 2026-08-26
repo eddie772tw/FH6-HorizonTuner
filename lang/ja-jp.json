@@ -1,5 +1,9 @@
 {
   "__language_name__": "日本語",
+  "READY": "準備完了",
+  "EXPERIMENTAL": "実験的",
+  "REQUIRED": "必須",
+  "SYNCED": "同期済み",
   "Telemetry UDP Forwarding": "テレメトリ UDP 転送",
   "Forward raw binary telemetry datagrams to third-party tools (e.g. SimHub or external dashboard).": "生のバイナリテレメトリパケットをサードパーティ製ツール（SimHub、外部ダッシュボードなど）へ転送します。",
   "Forward Target Host": "転送先ホスト (Host)",
