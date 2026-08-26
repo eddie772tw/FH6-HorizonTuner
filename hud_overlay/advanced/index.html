@@ -628,7 +628,9 @@
             for (var i = 0; i < 4; i++) {
                 var threshold = (i + 1) * 25;  // 25 / 50 / 75 / 100
                 var active = pct >= threshold;
-                var el = document.getElementById('dot-' + prefix + '-' + i);
+                var id = 'dot-' + prefix + '-' + i;
+                if (_advDomCache[id] === undefined) _advDomCache[id] = document.getElementById(id);
+                var el = _advDomCache[id];
                 if (!el) continue;
                 el.className = 'adv-dot' + (active ? ' active' : '') + (active && isHigh ? ' danger' : '');
             }
@@ -950,7 +952,8 @@
         var _advLcFallbackArmed = false;
         var _advLcFallbackGoFrames = 0;
         var ADV_LC_FALLBACK_GO_FRAMES = 45;
-        window.advLCState = 'inactive';
+                window.advLCState = 'inactive';
+        var _advDomCache = {}; // Cache for DOM elements
 
         // Prefer an upstream LC state when one is available. Older telemetry
         // frames do not carry it, so mirror the proven HUD fallback: first
@@ -1001,7 +1004,8 @@
         function setAdvSpeedDisplay(value) {
             if (_advLastSpeedValue === value) return;
             _advLastSpeedValue = value;
-            var el = document.getElementById('adv-speed');
+            if (_advDomCache['adv-speed'] === undefined) _advDomCache['adv-speed'] = document.getElementById('adv-speed');
+            var el = _advDomCache['adv-speed'];
             if (!el) return;
             var valStr = value.toString();
             var out = "";
@@ -1016,7 +1020,8 @@
             if (_advLastRpmValue === value && _advLastRpmColorRed === isRed) return;
             _advLastRpmValue = value;
             _advLastRpmColorRed = isRed;
-            var el = document.getElementById('adv-rpm-value');
+            if (_advDomCache['adv-rpm-value'] === undefined) _advDomCache['adv-rpm-value'] = document.getElementById('adv-rpm-value');
+            var el = _advDomCache['adv-rpm-value'];
             if (!el) return;
             el.style.color = isRed ? C_PINK_DIM : 'var(--adv-primary-dim)';
             var valStr = value.toString();
@@ -1072,7 +1077,8 @@
                 window.advLCArmed = window.advLCState === 'armed';
                 window.advLCLaunched = window.advLCState === 'launched';
 
-                var container = document.getElementById('advContainer');
+                if (_advDomCache['advContainer'] === undefined) _advDomCache['advContainer'] = document.getElementById('advContainer');
+                var container = _advDomCache['advContainer'];
                 if (!container) return;
 
                 if (data.maxRpm) _advLastMaxRpm = data.maxRpm;
@@ -1097,7 +1103,8 @@
                     setAdvSpeedDisplay(speed);
                     setAdvRpmDisplay(Math.round(data.rpm), data.rpm >= redlineRpm);
 
-                    var gearEl = document.getElementById('adv-gear');
+                    if (_advDomCache['adv-gear'] === undefined) _advDomCache['adv-gear'] = document.getElementById('adv-gear');
+                    var gearEl = _advDomCache['adv-gear'];
                     if (data.gear <= 11) _advValidGear = data.gear;
                     if (gearEl) gearEl.textContent = _advValidGear === 0
                         ? 'R'
@@ -1140,11 +1147,13 @@
             window.advFadeAlpha = 0;
             window.sweepRevealRpm = 0;
 
-            var container = document.getElementById('advContainer');
+            if (_advDomCache['advContainer'] === undefined) _advDomCache['advContainer'] = document.getElementById('advContainer');
+            var container = _advDomCache['advContainer'];
             if (container) container.classList.remove('hidden');
 
             setAdvSpeedDisplay(0);
-            var gearEl = document.getElementById('adv-gear');
+            if (_advDomCache['adv-gear'] === undefined) _advDomCache['adv-gear'] = document.getElementById('adv-gear');
+            var gearEl = _advDomCache['adv-gear'];
             if (gearEl) gearEl.textContent = '-';
 
             var rawMax = (maxRpm && maxRpm > 0) ? maxRpm : (_advLastMaxRpm || 8000);
