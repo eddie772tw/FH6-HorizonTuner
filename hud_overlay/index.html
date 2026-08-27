@@ -216,7 +216,11 @@
         _HUD_FORWARD_EVENTS.forEach(type => {
             window.addEventListener(type, (e) => {
                 const detail = type === 'hud:frame'
-                    ? { ...e.detail ?? {}, isMetric: isMetric() }
+                    ? {
+                        ...e.detail ?? {},
+                        isMetric: isMetric(),
+                        displayUnits: window._currentHudConfig?.effectiveUnits || {}
+                    }
                     : e.detail ?? {};
 
                 if (type === 'hud:frame' && window.TelemetryCardsManager) {

@@ -2278,6 +2278,12 @@ DEFAULT_HUD_CONFIG = {
     "scale": 1.0,
     "unit": "kmh",
     "followAppUnits": True,
+    "units": {
+        "speed": "kmh",
+        "boostPressure": "bar",
+        "torque": "nm",
+        "power": "hp",
+    },
     "telemetryOpacity": 0.65,
     "telemetryGRadarScale": 1.0,
     "telemetryCornersScale": 1.0,
@@ -2338,6 +2344,7 @@ def normalize_hud_config(data: dict) -> dict:
     normalized.pop("actualScale", None)
     normalized.pop("s650GuiThemeMode", None)
     normalized.pop("effectiveUnit", None)
+    normalized.pop("effectiveUnits", None)
     hud_style = normalized.get("hudStyle")
     is_legacy_s650_style = (
         isinstance(hud_style, str)
@@ -2366,11 +2373,32 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     mode = theme.get("mode") if isinstance(theme, dict) else None
     normalized["s650GuiThemeMode"] = "light" if mode == "light" else "dark"
     normalized["vfdRenderMode"] = VFD_RENDER_MODE
-    configured_unit = normalized.get("unit", "kmh")
-    app_unit = app_settings.get("units", {}).get("speed", "kmh")
-    normalized["effectiveUnit"] = (
-        app_unit if normalized.get("followAppUnits", True) else configured_unit
+    app_units = app_settings.get("units", {})
+    configured_units = normalized.get("units", {})
+    if not isinstance(configured_units, dict):
+        configured_units = {}
+    configured_speed = configured_units.get("speed", normalized.get("unit", "kmh"))
+    configured_boost = configured_units.get("boostPressure", "bar")
+    configured_torque = configured_units.get("torque", "nm")
+    configured_power = configured_units.get("power", "hp")
+    configured_units = {
+        "speed": configured_speed if configured_speed in {"kmh", "mph"} else "kmh",
+        "boostPressure": configured_boost if configured_boost in {"bar", "psi", "kpa"} else "bar",
+        "torque": configured_torque if configured_torque in {"nm", "lbft"} else "nm",
+        "power": configured_power if configured_power in {"kw", "hp", "ps"} else "hp",
+    }
+    normalized["units"] = configured_units
+    normalized["effectiveUnits"] = (
+        {
+            "speed": app_units.get("speed", "kmh"),
+            "boostPressure": app_units.get("boostPressure", "bar"),
+            "torque": app_units.get("torque", "nm"),
+            "power": app_units.get("power", "hp"),
+        }
+        if normalized.get("followAppUnits", True)
+        else configured_units
     )
+    normalized["effectiveUnit"] = normalized["effectiveUnits"]["speed"]
     return normalized
 
 

@@ -82,10 +82,17 @@
         tire_temp_f: EMPTY_TIRE_TEMPERATURES,
         power_hp: 0,
         power_kw: 0,
+        power_ps: 0,
+        power: 0,
+        power_unit: 'HP',
         torque_nm: 0,
         torque_ftlbs: 0,
         boost_psi: 0,
         boost_bar: 0,
+        boost_kpa: 0,
+        boost: 0,
+        boost_unit: 'PSI',
+        displayUnits: {},
         fuel_ratio: null,
         lap: null,
         race_position: null
@@ -188,10 +195,21 @@
             tire_temp_f: normalizeTireTemperatures(source),
             power_hp: Math.max(0, finiteNumber(source.power_hp, DEFAULT_FRAME.power_hp)),
             power_kw: Math.max(0, finiteNumber(source.power_kw, DEFAULT_FRAME.power_kw)),
+            power_ps: Math.max(0, finiteNumber(source.power_ps, DEFAULT_FRAME.power_ps)),
+            power: source.power === undefined
+                ? Math.max(0, finiteNumber(source.power_hp, DEFAULT_FRAME.power))
+                : Math.max(0, finiteNumber(source.power, DEFAULT_FRAME.power)),
+            power_unit: typeof source.power_unit === 'string' ? source.power_unit : DEFAULT_FRAME.power_unit,
             torque_nm: finiteNumber(source.torque_nm, DEFAULT_FRAME.torque_nm),
             torque_ftlbs: finiteNumber(source.torque_ftlbs, DEFAULT_FRAME.torque_ftlbs),
             boost_psi: Math.max(0, finiteNumber(source.boost_psi, DEFAULT_FRAME.boost_psi)),
             boost_bar: Math.max(0, finiteNumber(source.boost_bar, DEFAULT_FRAME.boost_bar)),
+            boost_kpa: Math.max(0, finiteNumber(source.boost_kpa, DEFAULT_FRAME.boost_kpa)),
+            boost: source.boost === undefined
+                ? Math.max(0, finiteNumber(source.boost_psi, DEFAULT_FRAME.boost))
+                : Math.max(0, finiteNumber(source.boost, DEFAULT_FRAME.boost)),
+            boost_unit: typeof source.boost_unit === 'string' ? source.boost_unit : DEFAULT_FRAME.boost_unit,
+            displayUnits: isObject(source.displayUnits) ? source.displayUnits : DEFAULT_FRAME.displayUnits,
             fuel_ratio: fuelRatio === null ? null : clamp(fuelRatio, 0, 1),
             lap: nullableNumber(source.lap),
             race_position: nullableNumber(source.race_position)

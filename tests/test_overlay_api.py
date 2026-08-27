@@ -45,19 +45,36 @@ def test_get_hud_config_default(temp_hud_config_file):
 def test_hud_unit_can_follow_or_override_app_global_units():
     original_units = dict(main.app_settings["units"])
     try:
-        main.app_settings["units"]["speed"] = "kmh"
+        main.app_settings["units"].update({
+            "speed": "kmh", "boostPressure": "kpa", "torque": "nm", "power": "ps"
+        })
 
         following = main.hud_config_with_gui_theme(
-            {"unit": "mph", "followAppUnits": True}
+            {
+                "unit": "mph",
+                "units": {"speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"},
+                "followAppUnits": True,
+            }
         )
         independent = main.hud_config_with_gui_theme(
-            {"unit": "mph", "followAppUnits": False}
+            {
+                "unit": "mph",
+                "units": {"speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"},
+                "followAppUnits": False,
+            }
         )
 
         assert following["unit"] == "mph"
         assert following["effectiveUnit"] == "kmh"
+        assert following["effectiveUnits"] == {
+            "speed": "kmh", "boostPressure": "kpa", "torque": "nm", "power": "ps"
+        }
         assert independent["effectiveUnit"] == "mph"
+        assert independent["effectiveUnits"] == {
+            "speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"
+        }
         assert "effectiveUnit" not in main.normalize_hud_config(following)
+        assert "effectiveUnits" not in main.normalize_hud_config(following)
     finally:
         main.app_settings["units"] = original_units
 
@@ -70,10 +87,11 @@ def test_global_unit_update_rebroadcasts_following_hud_config(tmp_path, monkeypa
     monkeypatch.setattr(main.overlay_manager, "broadcast_json", broadcast)
 
     try:
-        asyncio.run(main.update_settings({"units": {"speed": "mph"}}))
+        asyncio.run(main.update_settings({"units": {"speed": "mph", "power": "kw"}}))
         payload = broadcast.await_args.args[0]
         assert payload["type"] == "hud:config"
         assert payload["data"]["effectiveUnit"] == "mph"
+        assert payload["data"]["effectiveUnits"]["power"] == "kw"
     finally:
         main.app_settings["units"] = original_units
 
