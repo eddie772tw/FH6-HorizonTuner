@@ -985,7 +985,6 @@
   "Unable to copy text to clipboard.": "クリップボードへのテキストコピーができませんでした。",
   "Recommendation vs Current": "推奨値 vs 現在値",
   "Parameter": "パラメータ",
-  "Recommended": "推奨",
   "Current": "現在",
   "Locked / Unknown": "ロック済み / 不明",
   "Coming Soon": "近日公開",
@@ -1032,5 +1031,17 @@
   "Downloading update payload...": "更新データをダウンロード中...",
   "is ready for download.": "がダウンロード可能です。",
   "UP TO DATE": "最新です",
-  "Current Version": "現在のバージョン"
+  "Current Version": "現在のバージョン",
+  "Typed Input": "型付き入力",
+  "Race Goal": "レース目標",
+  "Surface": "路面",
+  "Target Top Speed": "目標最高速度",
+  "Front Ride Frequency": "フロント固有振動数",
+  "Rear Ride Frequency": "リア固有振動数",
+  "Front Damping Ratio": "フロント減衰比",
+  "Rear Damping Ratio": "リア減衰比",
+  "Car parameter snapshot": "車両パラメータスナップショット",
+  "Front Weight Distribution": "フロント重量配分",
+  "Maximum Power": "最高出力",
+  "Available Gears": "使用可能ギア数"
 }
