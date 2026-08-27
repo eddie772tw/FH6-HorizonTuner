@@ -980,7 +980,6 @@
   "Ensure Data Out is turned ON in game HUD settings (Port 8000).": "Ensure Data Out is turned ON in game HUD settings (Port 8000).",
   "Recommendation vs Current": "Recommendation vs Current",
   "Parameter": "Parameter",
-  "Recommended": "Recommended",
   "Current": "Current",
   "Locked / Unknown": "Locked / Unknown",
   "Coming Soon": "Coming Soon",
@@ -1003,5 +1002,17 @@
   "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.": "This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.",
   "Select or load a car with parameters before calculating a developer tune.": "Select or load a car with parameters before calculating a developer tune.",
   "Warnings and Boundaries": "Warnings and Boundaries",
-  "Raw typed input/output JSON": "Raw typed input/output JSON"
+  "Raw typed input/output JSON": "Raw typed input/output JSON",
+  "Typed Input": "Typed Input",
+  "Race Goal": "Race Goal",
+  "Surface": "Surface",
+  "Target Top Speed": "Target Top Speed",
+  "Front Ride Frequency": "Front Ride Frequency",
+  "Rear Ride Frequency": "Rear Ride Frequency",
+  "Front Damping Ratio": "Front Damping Ratio",
+  "Rear Damping Ratio": "Rear Damping Ratio",
+  "Car parameter snapshot": "Car parameter snapshot",
+  "Front Weight Distribution": "Front Weight Distribution",
+  "Maximum Power": "Maximum Power",
+  "Available Gears": "Available Gears"
 }
