@@ -10,8 +10,7 @@ interface TuningSliderGridProps {
 }
 
 const TuningSliderGridComponent: React.FC<TuningSliderGridProps> = ({ tuning, carParams, updateSection }) => {
-  const { settings, 
-    convertTirePressure, 
+  const { convertTirePressure,
     convertTirePressureToBar, 
     convertSpringRate, 
     convertSpringRateToKgfmm, 
@@ -22,7 +21,7 @@ const TuningSliderGridComponent: React.FC<TuningSliderGridProps> = ({ tuning, ca
 
   const getUnitLabel = (type: string) => {
     switch(type) {
-      case 'pressure': return settings.units.tirePressure === 'bar' ? 'Bar' : 'PSI';
+      case 'pressure': return convertTirePressure(1).label;
       case 'force': return '';
       case 'spring': return convertSpringRate(1).label;
       case 'height': return convertHeight(1).label;

@@ -1043,5 +1043,22 @@
   "Car parameter snapshot": "車両パラメータスナップショット",
   "Front Weight Distribution": "フロント重量配分",
   "Maximum Power": "最高出力",
-  "Available Gears": "使用可能ギア数"
+  "Available Gears": "使用可能ギア数",
+  "Game Unit Settings": "ゲーム単位設定",
+  "General Units": "共通単位",
+  "Controls speed, weight, temperature, pressure, height, force, and torque across the app.": "アプリ全体の速度、重量、温度、圧力、高さ、力、トルクの単位を統一します。",
+  "Power Units": "出力単位",
+  "Matches the game's independent horsepower unit option.": "ゲーム内の独立した出力単位設定に合わせます。",
+  "Spring Units": "スプリング単位",
+  "Matches the game's independent spring-rate unit option.": "ゲーム内の独立したスプリングレート単位設定に合わせます。",
+  "Horsepower (hp)": "馬力 (hp)",
+  "Front Ride Height Range": "フロント車高範囲",
+  "Rear Ride Height Range": "リア車高範囲",
+  "Front Ride Height Min": "フロント車高最小",
+  "Front Ride Height Max": "フロント車高最大",
+  "Rear Ride Height Min": "リア車高最小",
+  "Rear Ride Height Max": "リア車高最大",
+  "Front Downforce": "フロントダウンフォース",
+  "Rear Downforce": "リアダウンフォース",
+  "Observed Hot Pressures (Phot)": "計測ホットタイヤ圧 (Phot)"
 }

@@ -45,12 +45,13 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
   alignment,
   targetPhot
 }) => {
-  const { convertTemp, t } = useSettings();
+  const { convertTemp, convertTirePressureFromPsi, convertTirePressureToPsi, t } = useSettings();
   const { data: telemetry, isConnected } = useTelemetry();
 
   const tempUnitObj = convertTemp(0);
   const tempUnitLabel = tempUnitObj.label;
   const tempUnit: 'C' | 'F' = tempUnitLabel.includes('F') ? 'F' : 'C';
+  const pressureUnitLabel = convertTirePressureFromPsi(1).label;
 
   // Telemetry Inputs state
   const [photF, setPhotF] = useState<number>(33.5);
@@ -124,6 +125,10 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     chassis: chassisTuning,
     telemetryGripMetrics
   });
+  const displayedPhotF = convertTirePressureFromPsi(photF);
+  const displayedPhotR = convertTirePressureFromPsi(photR);
+  const displayedBiasF = convertTirePressureFromPsi(diagResult.biasF);
+  const displayedBiasR = convertTirePressureFromPsi(diagResult.biasR);
 
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
@@ -170,19 +175,19 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
             </label>
           </h4>
 
-          {/* 1. Hot Pressure Inputs (PSI) */}
+          {/* 1. Hot pressure inputs (stored as PSI, displayed in the selected general unit) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              1. {t("Observed Hot Pressures (Phot) (PSI)")}
+              1. {t("Observed Hot Pressures (Phot)")} ({pressureUnitLabel})
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'gray' }}>{t("Front Hot")}</span>
                 <input 
                   type="number" 
-                  value={photF} 
+                  value={displayedPhotF.value.toFixed(2)}
                   step="0.1" 
-                  onChange={e => setPhotF(parseFloat(e.target.value) || 0)} 
+                  onChange={e => setPhotF(convertTirePressureToPsi(parseFloat(e.target.value) || 0))}
                   style={{ ...inputStyle, border: '1px solid #00b4d8' }} 
                 />
               </div>
@@ -191,9 +196,9 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 <span style={{ fontSize: '0.8rem', color: 'gray' }}>{t("Rear Hot")}</span>
                 <input 
                   type="number" 
-                  value={photR} 
+                  value={displayedPhotR.value.toFixed(2)}
                   step="0.1" 
-                  onChange={e => setPhotR(parseFloat(e.target.value) || 0)} 
+                  onChange={e => setPhotR(convertTirePressureToPsi(parseFloat(e.target.value) || 0))}
                   style={{ ...inputStyle, border: '1px solid #00b4d8' }} 
                 />
               </div>
@@ -273,7 +278,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
             <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
               <span style={{ fontSize: '0.7rem', color: 'gray', display: 'block' }}>{t("Front Hot Bias")}</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white', display: 'block', margin: '0.2rem 0' }}>
-                {diagResult.biasF >= 0 ? '+' : ''}{diagResult.biasF} PSI
+                {displayedBiasF.value >= 0 ? '+' : ''}{displayedBiasF.value.toFixed(2)} {displayedBiasF.label}
               </span>
               <span style={{ fontSize: '0.7rem', color: Math.abs(diagResult.biasF) <= 0.3 ? '#00e676' : '#ff2a5f' }}>
                 {Math.abs(diagResult.biasF) <= 0.3 ? t("On Target") : (diagResult.biasF > 0 ? t("High") : t("Low"))}
@@ -284,7 +289,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
             <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
               <span style={{ fontSize: '0.7rem', color: 'gray', display: 'block' }}>{t("Rear Hot Bias")}</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white', display: 'block', margin: '0.2rem 0' }}>
-                {diagResult.biasR >= 0 ? '+' : ''}{diagResult.biasR} PSI
+                {displayedBiasR.value >= 0 ? '+' : ''}{displayedBiasR.value.toFixed(2)} {displayedBiasR.label}
               </span>
               <span style={{ fontSize: '0.7rem', color: Math.abs(diagResult.biasR) <= 0.3 ? '#00e676' : '#ff2a5f' }}>
                 {Math.abs(diagResult.biasR) <= 0.3 ? t("On Target") : (diagResult.biasR > 0 ? t("High") : t("Low"))}

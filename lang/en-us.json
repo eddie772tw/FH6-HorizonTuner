@@ -1014,5 +1014,22 @@
   "Car parameter snapshot": "Car parameter snapshot",
   "Front Weight Distribution": "Front Weight Distribution",
   "Maximum Power": "Maximum Power",
-  "Available Gears": "Available Gears"
+  "Available Gears": "Available Gears",
+  "Game Unit Settings": "Game Unit Settings",
+  "General Units": "General Units",
+  "Controls speed, weight, temperature, pressure, height, force, and torque across the app.": "Controls speed, weight, temperature, pressure, height, force, and torque across the app.",
+  "Power Units": "Power Units",
+  "Matches the game's independent horsepower unit option.": "Matches the game's independent horsepower unit option.",
+  "Spring Units": "Spring Units",
+  "Matches the game's independent spring-rate unit option.": "Matches the game's independent spring-rate unit option.",
+  "Horsepower (hp)": "Horsepower (hp)",
+  "Front Ride Height Range": "Front Ride Height Range",
+  "Rear Ride Height Range": "Rear Ride Height Range",
+  "Front Ride Height Min": "Front Ride Height Min",
+  "Front Ride Height Max": "Front Ride Height Max",
+  "Rear Ride Height Min": "Rear Ride Height Min",
+  "Rear Ride Height Max": "Rear Ride Height Max",
+  "Front Downforce": "Front Downforce",
+  "Rear Downforce": "Rear Downforce",
+  "Observed Hot Pressures (Phot)": "Observed Hot Pressures (Phot)"
 }

@@ -1,51 +1,14 @@
 import React from 'react';
-import { useSettings, UnitSettings } from '../../context/SettingsContext';
+import { useSettings } from '../../context/SettingsContext';
+import { applyGeneralUnitSystem, inferGeneralUnitSystem, type GeneralUnitSystem } from '../../utils/gameUnitSettings';
 import { McpSettingsCard } from './components/McpSettingsCard';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 
 const SettingsView: React.FC = () => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
 
-  const handleUnitChange = (key: keyof UnitSettings, value: string) => {
-    updateSettings({
-      units: {
-        [key]: value
-      }
-    });
-  };
-
-  const applyPreset = (preset: 'metric' | 'imperial') => {
-    if (preset === 'metric') {
-      updateSettings({
-        units: {
-          speed: 'kmh',
-          weight: 'kg',
-          temperature: 'C',
-          tirePressure: 'bar',
-          boostPressure: 'bar',
-          springRate: 'kgfmm',
-          rideHeight: 'cm',
-          suspensionForce: 'kgf',
-          power: 'kw',
-          torque: 'nm'
-        }
-      });
-    } else {
-      updateSettings({
-        units: {
-          speed: 'mph',
-          weight: 'lbs',
-          temperature: 'F',
-          tirePressure: 'psi',
-          boostPressure: 'psi',
-          springRate: 'lbsin',
-          rideHeight: 'in',
-          suspensionForce: 'lbf',
-          power: 'hp',
-          torque: 'lbft'
-        }
-      });
-    }
+  const handleGeneralUnitChange = (system: GeneralUnitSystem) => {
+    updateSettings({ units: applyGeneralUnitSystem(settings.units, system) });
   };
 
   if (isLoading) {
@@ -71,21 +34,6 @@ const SettingsView: React.FC = () => {
             </p>
           </div>
           
-          {/* Preset Buttons */}
-          <div className="d-flex gap-2">
-            <button 
-              onClick={() => applyPreset('metric')}
-              className="btn btn-outline-primary fw-bold px-3 py-2"
-            >
-              {t("All Metric")}
-            </button>
-            <button 
-              onClick={() => applyPreset('imperial')}
-              className="btn btn-outline-danger fw-bold px-3 py-2"
-            >
-              {t("All Imperial")}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -270,200 +218,64 @@ const SettingsView: React.FC = () => {
               )}
             </div>
 
-            {/* Basic Units */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("General Vehicle Units")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-speed" className="form-label fw-bold mb-0 fs-6">{t("Speed")}</label>
-                  <div className="form-text fs-7">{t("Used for current speed, top speed, and gearing graphs.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-speed"
-                  value={settings.units.speed} 
-                  onChange={(e) => handleUnitChange('speed', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kmh">{t("Metric (km/h)")}</option>
-                  <option value="mph">{t("Imperial (mph)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-weight" className="form-label fw-bold mb-0 fs-6">{t("Weight")}</label>
-                  <div className="form-text fs-7">{t("Used for vehicle parameters and tuning calculator.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-weight"
-                  value={settings.units.weight} 
-                  onChange={(e) => handleUnitChange('weight', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kg">{t("Metric (kg)")}</option>
-                  <option value="lbs">{t("Imperial (lbs)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-temperature" className="form-label fw-bold mb-0 fs-6">{t("Temperature")}</label>
-                  <div className="form-text fs-7">{t("Used for tire temperature and all engine temperature settings.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-temperature"
-                  value={settings.units.temperature} 
-                  onChange={(e) => handleUnitChange('temperature', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="C">{t("Metric (Celsius °C)")}</option>
-                  <option value="F">{t("Imperial (Fahrenheit °F)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-rideHeight" className="form-label fw-bold mb-0 fs-6">{t("Ride Height")}</label>
-                  <div className="form-text fs-7">{t("Used for suspension ride height sliders.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-rideHeight"
-                  value={settings.units.rideHeight} 
-                  onChange={(e) => handleUnitChange('rideHeight', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="cm">{t("Metric (cm)")}</option>
-                  <option value="in">{t("Imperial (in)")}</option>
-                </select>
-              </div>
-            </div>
-
           </div>
 
           {/* Right Column: Pressures, Gearing & Engine Units */}
           <div className="col-12 col-md-6 d-flex flex-column gap-4">
             
-            {/* Pressure Settings */}
+            {/* Game-aligned unit settings */}
             <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Pressure Settings")}</h5>
+              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Game Unit Settings")}</h5>
 
               <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-tirePressure" className="form-label fw-bold mb-0 fs-6">{t("Tire Pressure")}</label>
-                  <div className="form-text fs-7">{t("Used for four-wheel tire pressure tuning and live telemetry.")}</div>
+                  <label htmlFor="settings-unit-general" className="form-label fw-bold mb-0 fs-6">{t("General Units")}</label>
+                  <div className="form-text fs-7">{t("Controls speed, weight, temperature, pressure, height, force, and torque across the app.")}</div>
                 </div>
                 <select 
-                  id="settings-unit-tirePressure"
-                  value={settings.units.tirePressure} 
-                  onChange={(e) => handleUnitChange('tirePressure', e.target.value)}
+                  id="settings-unit-general"
+                  value={inferGeneralUnitSystem(settings.units)}
+                  onChange={(e) => handleGeneralUnitChange(e.target.value as GeneralUnitSystem)}
                   className="form-select form-select-sm"
                   style={{ width: '170px' }}
                 >
-                  <option value="bar">{t("Metric (bar)")}</option>
-                  <option value="psi">{t("Imperial (psi)")}</option>
-                  <option value="kpa">{t("Metric (kPa)")}</option>
+                  <option value="metric">{t("Metric")}</option>
+                  <option value="imperial">{t("Imperial")}</option>
                 </select>
               </div>
 
               <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-boostPressure" className="form-label fw-bold mb-0 fs-6">{t("Boost Pressure")}</label>
-                  <div className="form-text fs-7">{t("Used for the boost gauge on the dashboard.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-boostPressure"
-                  value={settings.units.boostPressure} 
-                  onChange={(e) => handleUnitChange('boostPressure', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="psi">{t("Imperial (psi)")}</option>
-                  <option value="bar">{t("Metric (bar)")}</option>
-                  <option value="kpa">{t("Metric (kPa)")}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Chassis & Mechanical Units */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Chassis & Mechanical Units")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-springRate" className="form-label fw-bold mb-0 fs-6">{t("Spring Rate")}</label>
-                  <div className="form-text fs-7">{t("Used for spring stiffness sliders and calculators.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-springRate"
-                  value={settings.units.springRate} 
-                  onChange={(e) => handleUnitChange('springRate', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kgfmm">{t("Metric (kgf/mm)")}</option>
-                  <option value="lbsin">{t("Imperial (lbs/in)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-suspensionForce" className="form-label fw-bold mb-0 fs-6">{t("Suspension Force")}</label>
-                  <div className="form-text fs-7">{t("Used for anti-roll bars or suspension load analysis.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-suspensionForce"
-                  value={settings.units.suspensionForce} 
-                  onChange={(e) => handleUnitChange('suspensionForce', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kgf">{t("Metric (kgf)")}</option>
-                  <option value="lbf">{t("Imperial (lbf)")}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Power & Torque */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Engine Power Output")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-power" className="form-label fw-bold mb-0 fs-6">{t("Power")}</label>
-                  <div className="form-text fs-7">{t("Used for vehicle parameters and dashboard max horsepower.")}</div>
+                  <label htmlFor="settings-unit-power" className="form-label fw-bold mb-0 fs-6">{t("Power Units")}</label>
+                  <div className="form-text fs-7">{t("Matches the game's independent horsepower unit option.")}</div>
                 </div>
                 <select 
                   id="settings-unit-power"
-                  value={settings.units.power} 
-                  onChange={(e) => handleUnitChange('power', e.target.value)}
+                  value={settings.units.power}
+                  onChange={(e) => updateSettings({ units: { power: e.target.value as 'kw' | 'hp' | 'ps' } })}
                   className="form-select form-select-sm"
                   style={{ width: '170px' }}
                 >
+                  <option value="hp">{t("Horsepower (hp)")}</option>
                   <option value="kw">{t("Kilowatt (kW)")}</option>
-                  <option value="hp">{t("Imperial Horsepower (hp)")}</option>
                   <option value="ps">{t("Metric Horsepower (PS)")}</option>
                 </select>
               </div>
 
               <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <div>
-                  <label htmlFor="settings-unit-torque" className="form-label fw-bold mb-0 fs-6">{t("Torque")}</label>
-                  <div className="form-text fs-7">{t("Used for dyno torque curves and live torque readout.")}</div>
+                  <label htmlFor="settings-unit-spring" className="form-label fw-bold mb-0 fs-6">{t("Spring Units")}</label>
+                  <div className="form-text fs-7">{t("Matches the game's independent spring-rate unit option.")}</div>
                 </div>
                 <select 
-                  id="settings-unit-torque"
-                  value={settings.units.torque} 
-                  onChange={(e) => handleUnitChange('torque', e.target.value)}
+                  id="settings-unit-spring"
+                  value={settings.units.springRate}
+                  onChange={(e) => updateSettings({ units: { springRate: e.target.value as 'kgfmm' | 'lbsin' } })}
                   className="form-select form-select-sm"
                   style={{ width: '170px' }}
                 >
-                  <option value="nm">{t("Newton-Meter (N·m)")}</option>
-                  <option value="lbft">{t("Pound-Foot (lb-ft)")}</option>
+                  <option value="kgfmm">{t("Metric (kgf/mm)")}</option>
+                  <option value="lbsin">{t("Imperial (lbs/in)")}</option>
                 </select>
               </div>
             </div>

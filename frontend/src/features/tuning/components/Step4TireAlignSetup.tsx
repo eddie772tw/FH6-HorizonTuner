@@ -54,6 +54,7 @@ export const Step4TireAlignSetup: React.FC<Step4TireAlignSetupProps> = ({
   const pcFFormatted = convertTirePressureFromPsi(result.pcF);
   const pcRFormatted = convertTirePressureFromPsi(result.pcR);
   const targetHotFormatted = convertTirePressureFromPsi(result.targetPhot);
+  const seasonBiasFormatted = convertTirePressureFromPsi(result.seasonBias);
 
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
@@ -99,10 +100,7 @@ export const Step4TireAlignSetup: React.FC<Step4TireAlignSetupProps> = ({
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '6px', textAlign: 'center' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>{t("Front Cold Pressure")}</span>
               <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#00b4d8', display: 'block', margin: '0.2rem 0' }}>
-                {result.pcF} PSI
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'gray' }}>
-                ({pcFFormatted.value.toFixed(2)} {pcFFormatted.label})
+                {pcFFormatted.value.toFixed(2)} {pcFFormatted.label}
               </span>
             </div>
 
@@ -110,10 +108,7 @@ export const Step4TireAlignSetup: React.FC<Step4TireAlignSetupProps> = ({
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '6px', textAlign: 'center' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>{t("Rear Cold Pressure")}</span>
               <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#00b4d8', display: 'block', margin: '0.2rem 0' }}>
-                {result.pcR} PSI
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'gray' }}>
-                ({pcRFormatted.value.toFixed(2)} {pcRFormatted.label})
+                {pcRFormatted.value.toFixed(2)} {pcRFormatted.label}
               </span>
             </div>
           </div>
@@ -123,13 +118,13 @@ export const Step4TireAlignSetup: React.FC<Step4TireAlignSetupProps> = ({
             <div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>{t("Target Hot Pressure")}</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#00e676' }}>
-                {result.targetPhot} PSI ({targetHotFormatted.value.toFixed(1)} {targetHotFormatted.label})
+                {targetHotFormatted.value.toFixed(1)} {targetHotFormatted.label}
               </span>
             </div>
             <div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>{t("Season Pressure Bias")}</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffb703' }}>
-                {result.seasonBias >= 0 ? '+' : ''}{result.seasonBias} PSI
+                {seasonBiasFormatted.value >= 0 ? '+' : ''}{seasonBiasFormatted.value.toFixed(2)} {seasonBiasFormatted.label}
               </span>
             </div>
           </div>

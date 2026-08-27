@@ -1104,5 +1104,22 @@
   "Car parameter snapshot": "車輛參數快照",
   "Front Weight Distribution": "前輪重量分配",
   "Maximum Power": "最大馬力",
-  "Available Gears": "可用檔位數"
+  "Available Gears": "可用檔位數",
+  "Game Unit Settings": "遊戲單位設定",
+  "General Units": "通用單位",
+  "Controls speed, weight, temperature, pressure, height, force, and torque across the app.": "統一控制 APP 內的速度、重量、溫度、壓力、高度、力與扭力單位。",
+  "Power Units": "馬力單位",
+  "Matches the game's independent horsepower unit option.": "比照遊戲內獨立的馬力單位選項。",
+  "Spring Units": "彈簧單位",
+  "Matches the game's independent spring-rate unit option.": "比照遊戲內獨立的彈簧剛度單位選項。",
+  "Horsepower (hp)": "英制馬力 (hp)",
+  "Front Ride Height Range": "前車高範圍",
+  "Rear Ride Height Range": "後車高範圍",
+  "Front Ride Height Min": "前車高下限",
+  "Front Ride Height Max": "前車高上限",
+  "Rear Ride Height Min": "後車高下限",
+  "Rear Ride Height Max": "後車高上限",
+  "Front Downforce": "前下壓力",
+  "Rear Downforce": "後下壓力",
+  "Observed Hot Pressures (Phot)": "觀測熱胎壓 (Phot)"
 }
