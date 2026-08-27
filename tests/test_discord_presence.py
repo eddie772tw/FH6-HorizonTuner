@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from discord_presence import (
     DiscordIpcClient,
+    DiscordPresenceManager,
     build_activity,
     format_lap_time,
     load_discord_application_id,
@@ -113,6 +114,22 @@ def test_application_id_precedence_and_validation(tmp_path, monkeypatch):
         load_discord_application_id(str(tmp_path), str(resource_root))
         == "11111111111111111"
     )
+
+
+def test_presence_status_distinguishes_telemetry_wait_from_discord_wait():
+    manager = DiscordPresenceManager("11111111111111111", _car_db())
+
+    initial = manager.status()
+    assert initial["state"] == "waiting_for_telemetry"
+    assert initial["lastTelemetryAt"] is None
+    assert initial["connectionAttempts"] == 0
+
+    manager.submit(_race_data())
+
+    waiting_for_discord = manager.status()
+    assert waiting_for_discord["state"] == "waiting_for_discord"
+    assert waiting_for_discord["lastTelemetryAt"] is not None
+    assert waiting_for_discord["connectionAttempts"] == 0
 
 
 class _FakeStream:

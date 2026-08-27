@@ -168,6 +168,13 @@ def _valid_application_id(value: str | None) -> str | None:
     return None
 
 
+def _safe_error_detail(error: Exception) -> str:
+    """Return bounded IPC diagnostics without including application credentials."""
+    root_error = error.__cause__ or error
+    detail = str(root_error).strip() or "no additional detail"
+    return f"{type(root_error).__name__}: {detail}"[:240]
+
+
 def load_discord_application_id(data_root: str, resource_root: str) -> str | None:
     """Resolve the ID without ever logging or exposing its value.
 
@@ -324,9 +331,12 @@ class DiscordPresenceManager:
         self._client: DiscordIpcClient | None = None
         self._status_lock = threading.Lock()
         self._status = (
-            "missing_application_id" if not application_id else "disconnected"
+            "missing_application_id" if not application_id else "waiting_for_telemetry"
         )
         self._last_error: str | None = None
+        self._last_telemetry_at: float | None = None
+        self._last_attempt_at: float | None = None
+        self._connection_attempts = 0
         self._updates_sent = 0
         self._reconnects = 0
 
@@ -349,10 +359,15 @@ class DiscordPresenceManager:
     def submit(self, data: Mapping[str, Any]) -> None:
         if not self.application_id:
             return
+        received_at = time.time()
         with self._condition:
             self._latest_data = data
             self._latest_received_at = time.monotonic()
             self._condition.notify()
+        with self._status_lock:
+            self._last_telemetry_at = received_at
+            if self._status in {"waiting_for_telemetry", "error"}:
+                self._status = "waiting_for_discord"
 
     def status(self) -> dict[str, Any]:
         with self._status_lock:
@@ -360,6 +375,9 @@ class DiscordPresenceManager:
                 "configured": bool(self.application_id),
                 "state": self._status,
                 "lastError": self._last_error,
+                "lastTelemetryAt": self._last_telemetry_at,
+                "lastAttemptAt": self._last_attempt_at,
+                "connectionAttempts": self._connection_attempts,
                 "updatesSent": self._updates_sent,
                 "reconnects": self._reconnects,
             }
@@ -381,7 +399,11 @@ class DiscordPresenceManager:
                 received_at = self._latest_received_at
 
             now = time.monotonic()
-            if data is None or now - received_at > STALE_TELEMETRY_SECONDS:
+            if data is None:
+                if self._client is None and self.application_id:
+                    self._set_status("waiting_for_telemetry", None)
+                continue
+            if now - received_at > STALE_TELEMETRY_SECONDS:
                 if self._client is not None and last_key is not None:
                     try:
                         self._client.clear_activity()
@@ -406,6 +428,10 @@ class DiscordPresenceManager:
 
             try:
                 if self._client is None:
+                    self._set_status("connecting", None)
+                    with self._status_lock:
+                        self._connection_attempts += 1
+                        self._last_attempt_at = time.time()
                     self._client = DiscordIpcClient(self.application_id or "")
                     self._client.connect()
                     self._set_status("connected", None)
@@ -416,7 +442,7 @@ class DiscordPresenceManager:
                 with self._status_lock:
                     self._updates_sent += 1
             except (ConnectionError, OSError, ValueError) as error:
-                self._set_status("error", type(error).__name__)
+                self._set_status("error", _safe_error_detail(error))
                 self._close_client()
                 self._reconnects += 1
                 next_retry_at = now + min(30.0, 2.0 * max(1, self._reconnects))

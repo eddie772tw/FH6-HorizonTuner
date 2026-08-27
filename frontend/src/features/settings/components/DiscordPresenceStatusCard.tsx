@@ -6,6 +6,9 @@ interface DiscordPresenceStatus {
   configured: boolean;
   state: string;
   lastError: string | null;
+  lastTelemetryAt: number | null;
+  lastAttemptAt: number | null;
+  connectionAttempts: number;
   updatesSent: number;
   reconnects: number;
 }
@@ -42,9 +45,13 @@ export const DiscordPresenceStatusCard: React.FC = () => {
       ? t('Connected')
       : status.state === 'missing_application_id'
         ? t('Application ID not configured')
-        : status.state === 'error'
-          ? t('Discord unavailable')
-          : t('Waiting for Discord');
+        : status.state === 'waiting_for_telemetry'
+          ? t('Waiting for telemetry')
+          : status.state === 'connecting'
+            ? t('Connecting to Discord')
+            : status.state === 'error'
+              ? t('Discord unavailable')
+              : t('Waiting for Discord');
 
   return (
     <div className="settings-section d-flex flex-column gap-3">
@@ -63,7 +70,13 @@ export const DiscordPresenceStatusCard: React.FC = () => {
       {status && (
         <div className="d-flex justify-content-end gap-3 text-body-secondary fs-7">
           <span>{t('Updates')}: {status.updatesSent}</span>
+          <span>{t('Attempts')}: {status.connectionAttempts}</span>
           <span>{t('Reconnects')}: {status.reconnects}</span>
+        </div>
+      )}
+      {status?.lastError && (
+        <div className="form-text fs-7 text-warning">
+          {t('Last IPC error')}: <code>{status.lastError}</code>
         </div>
       )}
     </div>
