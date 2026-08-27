@@ -107,11 +107,20 @@ def prepare_release_assets(
     )
 
     portable_archive = out_dir / "FH6-HorizonTuner-portable.zip"
-    with zipfile.ZipFile(portable_archive, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(
+        portable_archive, "w", compression=zipfile.ZIP_DEFLATED
+    ) as archive:
         archive.write(dest_exe, dest_exe.name)
         archive.write(dest_lite_exe, dest_lite_exe.name)
 
-    return [dest_exe, dest_lite_exe, portable_archive, dest_bundle, dest_signature, manifest_dest]
+    return [
+        dest_exe,
+        dest_lite_exe,
+        portable_archive,
+        dest_bundle,
+        dest_signature,
+        manifest_dest,
+    ]
 
 
 def main() -> None:
