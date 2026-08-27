@@ -11,7 +11,14 @@ import {
 } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
 import { type TelemetryData } from '../../../hooks/useTelemetry';
-import { useTelemetryHistory, type TelemetryHistorySample } from '../telemetryHistory';
+import {
+  calculateSuspensionMetrics,
+  type SeriesSummary,
+  toChartPoints,
+  type TelemetryChartPoint,
+  TELEMETRY_CORNERS,
+} from '../telemetryDetailMath';
+import { useTelemetryHistory } from '../telemetryHistory';
 import { type TelemetryCardId } from './TelemetryCardShell';
 
 interface TelemetryDetailViewProps {
@@ -24,10 +31,6 @@ interface ChartLine {
   label: string;
   color: string;
 }
-
-type ChartPoint = Record<string, number | null> & { time: number };
-
-const cornerKeys = ['FL', 'FR', 'RL', 'RR'] as const;
 
 const numberOrNull = (value: number | undefined | null): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
@@ -45,17 +48,6 @@ const getFour = (values: number[] | undefined, index: number): number | null => 
   Array.isArray(values) ? numberOrNull(values[index]) : null
 );
 
-const toChartPoints = (
-  history: TelemetryHistorySample[],
-  selector: (sample: TelemetryHistorySample) => Record<string, number | null>,
-): ChartPoint[] => {
-  const first = history[0]?.timeSeconds ?? 0;
-  return history.map((sample) => ({
-    time: Number((sample.timeSeconds - first).toFixed(1)),
-    ...selector(sample),
-  }));
-};
-
 const Metric: React.FC<{ label: string; value: string; tone?: string }> = ({ label, value, tone = 'text-body' }) => (
   <div className="telemetry-detail-view__metric">
     <span className="text-body-secondary fs-8 text-uppercase">{label}</span>
@@ -63,7 +55,7 @@ const Metric: React.FC<{ label: string; value: string; tone?: string }> = ({ lab
   </div>
 );
 
-const TrendChart: React.FC<{ title: string; data: ChartPoint[]; lines: ChartLine[]; emptyLabel: string }> = ({ title, data, lines, emptyLabel }) => (
+const TrendChart: React.FC<{ title: string; data: TelemetryChartPoint[]; lines: ChartLine[]; emptyLabel: string }> = ({ title, data, lines, emptyLabel }) => (
   <div className="telemetry-detail-view__chart glass-panel p-2">
     <div className="d-flex justify-content-between align-items-center mb-2">
       <h4 className="fs-6 text-primary m-0">{title}</h4>
@@ -93,11 +85,33 @@ const TrendChart: React.FC<{ title: string; data: ChartPoint[]; lines: ChartLine
   </div>
 );
 
+const cornerKeys = TELEMETRY_CORNERS;
+
+const formatSummary = (summary: SeriesSummary, key: keyof SeriesSummary): string => formatValue(summary[key]);
+
+const SuspensionCornerSummary: React.FC<{
+  label: string;
+  current: number | null;
+  summary: SeriesSummary;
+  bottomOut: boolean | null;
+  t: (key: string) => string;
+}> = ({ label, current, summary, bottomOut, t }) => (
+  <div className="telemetry-detail-view__corner">
+    <h4 className="fs-6 text-primary mb-2">{label}</h4>
+    <Metric label={t('Current')} value={formatValue(current)} />
+    <Metric label={t('Minimum')} value={formatSummary(summary, 'minimum')} />
+    <Metric label={t('Maximum')} value={formatSummary(summary, 'maximum')} />
+    <Metric label={t('Average')} value={formatSummary(summary, 'average')} />
+    <Metric label={t('Bottom Out')} value={bottomOut === null ? '--' : bottomOut ? t('Yes') : t('No')} tone={bottomOut ? 'text-warning' : undefined} />
+  </div>
+);
+
 const TelemetryDetailView: React.FC<TelemetryDetailViewProps> = ({ cardId, current }) => {
   const { t, convertPower, convertTorque, convertSpeed } = useSettings();
   const history = useTelemetryHistory();
   const corners = [t('Front Left'), t('Front Right'), t('Rear Left'), t('Rear Right')];
   const emptyLabel = t('Waiting for live telemetry history');
+  const suspensionMetrics = useMemo(() => calculateSuspensionMetrics(current, history), [current, history]);
 
   const suspensionData = useMemo(() => toChartPoints(history, (sample) => ({
     FL: sample.suspension[0], FR: sample.suspension[1], RL: sample.suspension[2], RR: sample.suspension[3],
@@ -124,13 +138,26 @@ const TelemetryDetailView: React.FC<TelemetryDetailViewProps> = ({ cardId, curre
   })), [history, convertPower, convertTorque]);
 
   if (cardId === 'suspension') {
-    const values = cornerKeys.map((_, index) => getFour(current?.NormalizedSuspensionTravel, index));
     return (
       <div className="telemetry-detail-view">
         <div className="telemetry-detail-view__metric-grid">
-          {values.map((value, index) => <Metric key={cornerKeys[index]} label={corners[index]} value={formatValue(value)} />)}
-          <Metric label={t('Front Average')} value={formatValue(values[0] === null || values[1] === null ? null : (values[0] + values[1]) / 2)} />
-          <Metric label={t('Rear Average')} value={formatValue(values[2] === null || values[3] === null ? null : (values[2] + values[3]) / 2)} />
+          {TELEMETRY_CORNERS.map((corner, index) => (
+            <SuspensionCornerSummary
+              key={corner}
+              label={corners[index]}
+              current={suspensionMetrics.current[index]}
+              summary={suspensionMetrics.summaries[index]}
+              bottomOut={suspensionMetrics.bottomOut[index]}
+              t={t}
+            />
+          ))}
+          <Metric label={t('Front Average')} value={formatValue(suspensionMetrics.frontAverage)} />
+          <Metric label={t('Rear Average')} value={formatValue(suspensionMetrics.rearAverage)} />
+          <Metric label={t('Left Average')} value={formatValue(suspensionMetrics.leftAverage)} />
+          <Metric label={t('Right Average')} value={formatValue(suspensionMetrics.rightAverage)} />
+          <Metric label={t('Front/Rear Difference')} value={formatValue(suspensionMetrics.frontRearDifference)} />
+          <Metric label={t('Left/Right Difference')} value={formatValue(suspensionMetrics.leftRightDifference)} />
+          <Metric label={t('Travel Rate')} value={suspensionMetrics.travelRate === null ? '--' : `${formatValue(suspensionMetrics.travelRate)} /s`} />
           <Metric label={t('Pitch')} value={formatValue(current?.Pitch)} />
           <Metric label={t('Roll')} value={formatValue(current?.Roll)} />
         </div>

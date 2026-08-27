@@ -1118,5 +1118,16 @@
   "Speed": "速度",
   "Lateral G": "側向 G",
   "Longitudinal G": "縱向 G",
-  "Vertical G": "垂直 G"
+  "Vertical G": "垂直 G",
+  "Minimum": "最小值",
+  "Maximum": "最大值",
+  "Average": "平均值",
+  "Left Average": "左側平均",
+  "Right Average": "右側平均",
+  "Front/Rear Difference": "前後差值",
+  "Left/Right Difference": "左右差值",
+  "Travel Rate": "行程速率",
+  "Bottom Out": "觸底",
+  "Yes": "是",
+  "No": "否"
 }

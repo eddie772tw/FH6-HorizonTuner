@@ -1028,5 +1028,16 @@
   "Speed": "Speed",
   "Lateral G": "Lateral G",
   "Longitudinal G": "Longitudinal G",
-  "Vertical G": "Vertical G"
+  "Vertical G": "Vertical G",
+  "Minimum": "Minimum",
+  "Maximum": "Maximum",
+  "Average": "Average",
+  "Left Average": "Left Average",
+  "Right Average": "Right Average",
+  "Front/Rear Difference": "Front/Rear Difference",
+  "Left/Right Difference": "Left/Right Difference",
+  "Travel Rate": "Travel Rate",
+  "Bottom Out": "Bottom Out",
+  "Yes": "Yes",
+  "No": "No"
 }
