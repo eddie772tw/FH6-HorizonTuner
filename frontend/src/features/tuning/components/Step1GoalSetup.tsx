@@ -11,8 +11,9 @@ interface Step1GoalSetupProps {
   setSeason: (season: Season) => void;
   carParams: CarParams | null;
   updateParam: (field: keyof CarParams, value: any) => void;
-  saveCarParams: () => Promise<void>;
   hasCoreParams: boolean;
+  onOpenUnitSettings: () => void;
+  onProceed: () => Promise<void>;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -39,10 +40,30 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   setSeason,
   carParams,
   updateParam,
-  saveCarParams,
-  hasCoreParams
+  hasCoreParams,
+  onOpenUnitSettings,
+  onProceed
 }) => {
-  const { settings, convertSpringRate, convertSpringRateToKgfmm, convertHeight, convertHeightToCm, t } = useSettings();
+  const {
+    settings,
+    convertSpringRate,
+    convertSpringRateToKgfmm,
+    convertHeight,
+    convertHeightToCm,
+    convertForce,
+    convertForceToKgf,
+    convertPower,
+    convertTorque,
+    convertTirePressureFromPsi,
+    t
+  } = useSettings();
+
+  const displayPower = (hp: number) => convertPower(hp * 745.7);
+  const powerToHp = (value: number) => settings.units.power === 'kw'
+    ? value / 0.7457
+    : settings.units.power === 'ps' ? value / 1.01387 : value;
+  const torqueToNm = (value: number) => settings.units.torque === 'lbft' ? value / 0.73756 : value;
+  const seasonalPressure = convertTirePressureFromPsi(0.5);
 
   const applyDefaultLimits = () => {
     if (!carParams) return;
@@ -61,9 +82,21 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
-      <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>
-        Step 1: {t("Define tuning goals & check parameters")}
-      </h3>
+      <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>
+          Step 1: {t("Define tuning goals & check parameters")}
+        </h3>
+        <div className="d-flex gap-2">
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onOpenUnitSettings}>
+            {t("Workflow Units")}
+          </button>
+          <span title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}>
+            <button type="button" className="btn btn-primary btn-sm fw-bold" disabled={!hasCoreParams} onClick={() => void onProceed()}>
+              {t("Save & Proceed")} &gt;
+            </button>
+          </span>
+        </div>
+      </div>
 
       {/* Select Goal & Season Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -97,10 +130,10 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               onChange={e => setSeason(e.target.value as Season)} 
               style={{ ...inputStyle, width: '200px', border: '1px solid #ffb703', background: 'var(--input-bg)', color: 'var(--input-text)' }}
             >
-              <option value="Summer">{t("Summer (-0.5 PSI)")}</option>
-              <option value="Autumn">{t("Autumn (-0.5 PSI)")}</option>
-              <option value="Spring">{t("Spring (+0.5 PSI)")}</option>
-              <option value="Winter">{t("Winter (+0.5 PSI)")}</option>
+              <option value="Summer">{t("Summer")} (-{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
+              <option value="Autumn">{t("Autumn")} (-{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
+              <option value="Spring">{t("Spring")} (+{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
+              <option value="Winter">{t("Winter")} (+{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
             </select>
           </div>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
@@ -215,16 +248,16 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 2rem', marginBottom: '1.2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max HP")}</label>
-            <input type="number" value={carParams?.maxHp || 0} onChange={e => updateParam('maxHp', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="10" />
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Power")} ({displayPower(0).label})</label>
+            <input type="number" value={Number(displayPower(carParams?.maxHp || 0).value.toFixed(1))} onChange={e => updateParam('maxHp', powerToHp(parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '120px' }} step="10" />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max HP RPM (rpm)")}</label>
             <input type="number" value={carParams?.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque")}</label>
-            <input type="number" value={carParams?.maxTorque || 0} onChange={e => updateParam('maxTorque', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="10" />
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque")} ({convertTorque(0).label})</label>
+            <input type="number" value={Number(convertTorque(carParams?.maxTorque || 0).value.toFixed(1))} onChange={e => updateParam('maxTorque', torqueToNm(parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '120px' }} step="10" />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque RPM (rpm)")}</label>
@@ -338,18 +371,18 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
         {/* Section 4: Aerodynamic Downforce with Auto-Derivation Checkbox */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
-          {t("Aerodynamic Downforce (kgf)")}
+          {t("Aerodynamic Downforce")} ({convertForce(0).label})
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 2rem', marginBottom: '0.5rem' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Front Downforce (kgf)")}</label>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Front Downforce")} ({convertForce(0).label})</label>
             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
               <input 
                 type="number" 
                 disabled={isFrontAutoAero} 
-                value={isFrontAutoAero ? 0 : (carParams?.aero_downforce_front || 0)} 
-                onChange={e => updateParam('aero_downforce_front', Math.max(0, parseFloat(e.target.value) || 0))} 
+                value={isFrontAutoAero ? 0 : Number(convertForce(carParams?.aero_downforce_front || 0).value.toFixed(1))}
+                onChange={e => updateParam('aero_downforce_front', Math.max(0, convertForceToKgf(parseFloat(e.target.value) || 0)))}
                 style={{ ...inputStyle, width: '80px', opacity: isFrontAutoAero ? 0.5 : 1 }} 
               />
               <label style={{ fontSize: '0.78rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
@@ -364,13 +397,13 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Rear Downforce (kgf)")}</label>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Rear Downforce")} ({convertForce(0).label})</label>
             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
               <input 
                 type="number" 
                 disabled={isRearAutoAero} 
-                value={isRearAutoAero ? 0 : (carParams?.aero_downforce_rear || 0)} 
-                onChange={e => updateParam('aero_downforce_rear', Math.max(0, parseFloat(e.target.value) || 0))} 
+                value={isRearAutoAero ? 0 : Number(convertForce(carParams?.aero_downforce_rear || 0).value.toFixed(1))}
+                onChange={e => updateParam('aero_downforce_rear', Math.max(0, convertForceToKgf(parseFloat(e.target.value) || 0)))}
                 style={{ ...inputStyle, width: '80px', opacity: isRearAutoAero ? 0.5 : 1 }} 
               />
               <label style={{ fontSize: '0.78rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
@@ -415,17 +448,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <input type="number" value={carParams?.rearTireRim || 18} onChange={e => updateParam('rearTireRim', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '45px', padding: '0.25rem', textAlign: 'center' }} />
             </div>
           </div>
-        </div>
-
-        {/* Save Button */}
-        <div style={{ marginTop: '1.2rem', display: 'flex', justifyContent: 'flex-end' }}>
-          <button 
-            type="button"
-            onClick={saveCarParams} 
-            style={{ ...btnStyle, background: 'var(--primary)', color: 'black', padding: '0.5rem 1.4rem', fontSize: '0.9rem' }}
-          >
-            {t("Save Parameters")}
-          </button>
         </div>
 
       </div>
