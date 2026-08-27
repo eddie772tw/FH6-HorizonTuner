@@ -27,6 +27,7 @@ STALE_TELEMETRY_SECONDS = 5.0
 UPDATE_INTERVAL_SECONDS = 0.5
 HEARTBEAT_SECONDS = 15.0
 
+
 def _finite_positive(value: Any) -> float | None:
     try:
         number = float(value)

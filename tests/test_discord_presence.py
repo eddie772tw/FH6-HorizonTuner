@@ -15,6 +15,7 @@ from discord_presence import (
     load_discord_application_id,
     snapshot_from_telemetry,
 )
+
 from scripts.prepare_discord_application_id import stage_discord_application_id
 
 
