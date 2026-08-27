@@ -385,7 +385,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
                     <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-success fw-bold fs-7 d-flex align-items-center justify-content-between">
                       <div className="d-flex align-items-center gap-2">
                         <span>{t("Telemetry Auto-Calibration")}</span>
-                        <span className="badge text-bg-success">SYNCED</span>
+                        <span className="badge text-bg-success">{t("SYNCED")}</span>
                       </div>
                       <button
                         type="button"

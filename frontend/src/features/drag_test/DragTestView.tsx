@@ -397,7 +397,7 @@ const DragTestView: React.FC = () => {
                     <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-info fw-bold fs-7 d-flex align-items-center justify-content-between">
                       <div className="d-flex align-items-center gap-2">
                         <span>{t("Drag Launch Conditions")}</span>
-                        <span className="badge text-bg-info">READY</span>
+                        <span className="badge text-bg-info">{t("READY")}</span>
                       </div>
                       <button
                         type="button"
