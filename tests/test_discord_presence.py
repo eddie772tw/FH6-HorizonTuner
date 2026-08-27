@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 from discord_presence import (
+    RICH_PRESENCE_IMAGE_TEXT,
+    RICH_PRESENCE_IMAGE_URL,
     DiscordIpcClient,
     DiscordPresenceManager,
     build_activity,
@@ -13,6 +15,7 @@ from discord_presence import (
     load_discord_application_id,
     snapshot_from_telemetry,
 )
+from scripts.prepare_discord_application_id import stage_discord_application_id
 
 
 def _car_db():
@@ -58,9 +61,19 @@ def test_activity_contains_car_best_lap_and_position():
 
     activity = build_activity(snapshot, 1_700_000_000)
 
-    assert activity["details"] == "2022 Toyota GR86 · Best 1:05.200"
-    assert activity["state"] == "Race · Lap 3 · P2"
+    assert activity["details"] == "2022 Toyota GR86"
+    assert activity["state"] == "Race · Lap 3 · P2 · 1:05.200"
     assert activity["timestamps"] == {"start": 1_700_000_000}
+
+
+def test_activity_uses_project_owned_presence_image_and_text():
+    snapshot = snapshot_from_telemetry(_race_data(), _car_db())
+
+    activity = build_activity(snapshot, 1_700_000_000)
+
+    assert activity["assets"]["large_image"] == RICH_PRESENCE_IMAGE_URL
+    assert activity["assets"]["large_text"] == RICH_PRESENCE_IMAGE_TEXT
+    assert activity["assets"]["large_image"].startswith("https://")
 
 
 def test_activity_degrades_when_optional_race_values_are_missing():
@@ -73,7 +86,7 @@ def test_activity_degrades_when_optional_race_values_are_missing():
 
     activity = build_activity(snapshot, 1_700_000_000)
 
-    assert activity["details"] == "2022 Toyota GR86 · Best --"
+    assert activity["details"] == "2022 Toyota GR86"
     assert activity["state"] == "Roaming"
 
 
@@ -115,6 +128,25 @@ def test_application_id_precedence_and_validation(tmp_path, monkeypatch):
         load_discord_application_id(str(tmp_path), str(resource_root))
         == "11111111111111111"
     )
+
+
+def test_manual_build_stages_the_updated_local_application_id(tmp_path, monkeypatch):
+    (tmp_path / "backend").mkdir()
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "discord.local.json").write_text(
+        json.dumps({"discord_application_id": "1542462351251349575"}),
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("DISCORD_APPLICATION_ID", raising=False)
+
+    assert stage_discord_application_id(tmp_path) is True
+    staged = json.loads(
+        (tmp_path / "backend" / "discord_application_id.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert staged == {"discord_application_id": "1542462351251349575"}
 
 
 def test_presence_status_distinguishes_telemetry_wait_from_discord_wait():
@@ -168,9 +200,9 @@ def test_presence_status_records_activity_after_successful_send(monkeypatch):
     assert status["state"] == "connected"
     assert status["updatesSent"] == 1
     assert status["lastActivity"]["type"] == 0
-    assert status["lastActivity"]["details"] == "2022 Toyota GR86 · Best 1:05.200"
-    assert status["lastActivity"]["state"] == "Race · Lap 3 · P2"
-    assert status["lastActivity"]["assets"]["large_image"] == "fh6_horizon_tuner"
+    assert status["lastActivity"]["details"] == "2022 Toyota GR86"
+    assert status["lastActivity"]["state"] == "Race · Lap 3 · P2 · 1:05.200"
+    assert status["lastActivity"]["assets"]["large_image"] == RICH_PRESENCE_IMAGE_URL
     assert status["lastActivitySentAt"] is not None
 
 

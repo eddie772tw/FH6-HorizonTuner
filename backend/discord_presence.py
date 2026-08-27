@@ -27,6 +27,15 @@ STALE_TELEMETRY_SECONDS = 5.0
 UPDATE_INTERVAL_SECONDS = 0.5
 HEARTBEAT_SECONDS = 15.0
 
+# Discord falls back to the Application icon when an uploaded asset key is
+# missing or invalid. Use a stable, project-owned external asset URL so the
+# Rich Presence image is independent of the Application's configured icon.
+RICH_PRESENCE_IMAGE_URL = (
+    "https://raw.githubusercontent.com/eddie772tw/FH6-HorizonTuner/"
+    "main/frontend/src-tauri/icons/icon.png"
+)
+RICH_PRESENCE_IMAGE_TEXT = "FH6 HorizonTuner"
+
 
 def _finite_positive(value: Any) -> float | None:
     try:
@@ -131,11 +140,11 @@ def snapshot_from_telemetry(
 def build_activity(snapshot: PresenceSnapshot, start_timestamp: int) -> dict[str, Any]:
     """Build the compact Discord SET_ACTIVITY payload."""
     best = format_lap_time(snapshot.best_lap_seconds)
-    details = f"{snapshot.car_name} · Best {best}"
+    details = f"{snapshot.car_name}"
     if snapshot.mode == "race":
         lap = f"Lap {snapshot.lap_number}" if snapshot.lap_number else "Race"
         position = f"P{snapshot.race_position}" if snapshot.race_position else "P--"
-        state = f"Race · {lap} · {position}"
+        state = f"Race · {lap} · {position} · {best}"
     else:
         state = "Roaming"
 
@@ -145,8 +154,8 @@ def build_activity(snapshot: PresenceSnapshot, start_timestamp: int) -> dict[str
         "state": state[:128],
         "timestamps": {"start": int(start_timestamp)},
         "assets": {
-            "large_image": "fh6_horizon_tuner",
-            "large_text": "FH6 HorizonTuner",
+            "large_image": RICH_PRESENCE_IMAGE_URL,
+            "large_text": RICH_PRESENCE_IMAGE_TEXT,
             "small_text": snapshot.car_name,
         },
     }
