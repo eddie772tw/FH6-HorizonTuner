@@ -8,12 +8,14 @@ from telemetry_listener import (
     forward_udp_packet,
     parse_telemetry_packet,
 )
+from telemetry_runtime import TelemetryPipelineMetrics
 
 
 class TestTelemetryListener(unittest.TestCase):
     def setUp(self):
         self.queue = asyncio.Queue()
-        self.protocol = TelemetryProtocol(self.queue)
+        self.metrics = TelemetryPipelineMetrics()
+        self.protocol = TelemetryProtocol(self.queue, metrics=self.metrics)
 
     def test_parse_telemetry_packet_direct(self):
         # Short binary should return None
@@ -94,6 +96,12 @@ class TestTelemetryListener(unittest.TestCase):
         self.assertEqual(parsed["DrivetrainType"], 1)
         # V2-only fields should not be present
         self.assertNotIn("SpeedMetersPerSecond", parsed)
+        self.assertEqual(
+            self.metrics.snapshot(queue_depth=0, json_clients=0, binary_clients=0)[
+                "input"
+            ]["packetsParsed"],
+            1,
+        )
 
     def test_datagram_received_v2(self):
         # Build 324 byte packet (V2)
@@ -178,6 +186,11 @@ class TestTelemetryListener(unittest.TestCase):
 
         self.protocol.datagram_received(bytes(data), ("127.0.0.1", 20440))
         self.assertEqual(self.queue.qsize(), 0)
+        input_metrics = self.metrics.snapshot(
+            queue_depth=0, json_clients=0, binary_clients=0
+        )["input"]
+        self.assertEqual(input_metrics["datagramsReceived"], 1)
+        self.assertEqual(input_metrics["packetsRejected"], {"not_racing": 1})
 
     def test_datagram_received_invalid_length(self):
         # Packet length < 232 -> should be ignored
@@ -186,6 +199,10 @@ class TestTelemetryListener(unittest.TestCase):
 
         self.protocol.datagram_received(bytes(data), ("127.0.0.1", 20440))
         self.assertEqual(self.queue.qsize(), 0)
+        input_metrics = self.metrics.snapshot(
+            queue_depth=0, json_clients=0, binary_clients=0
+        )["input"]
+        self.assertEqual(input_metrics["packetsRejected"], {"too_short": 1})
 
     def test_forward_udp_packet_direct(self):
         raw_data = b"forza_telemetry_bytes" * 10

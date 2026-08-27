@@ -1087,6 +1087,7 @@ async def lifespan(app: FastAPI):
         forward_enabled=forward_enabled,
         forward_host=forward_host,
         forward_port=forward_port,
+        metrics=telemetry_pipeline_metrics,
     )
     current_udp_ip_port = (ip, port)
     race_persistence.start()
@@ -1680,6 +1681,7 @@ async def update_settings(data: dict):
                 forward_enabled=app_settings.get("forward_telemetry_enabled", False),
                 forward_host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
                 forward_port=int(app_settings.get("forward_telemetry_port", 5300)),
+                metrics=telemetry_pipeline_metrics,
             )
             current_udp_ip_port = (new_ip, new_port)
         except Exception as e:
