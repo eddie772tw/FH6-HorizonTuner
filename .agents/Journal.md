@@ -15,6 +15,28 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-27 / Telemetry expanded detail scope and corner layout
+
+### 展開卡片範圍與四角詳細遙測
+
+- **來源**：`local`，針對 `feat/V1.5-arch` 的 TelemetryView expanded detail。
+- **狀態**：`adopted`。
+- **Learning**：駕駛輸入與引擎區塊的即時控制項已足夠承擔主要用途，不需要再保留另一條展開詳細圖表路徑；Live Traces 的比較用途則集中在踏板、功率/扭力、轉速/扭力與轉速/馬力四組趨勢。輪胎與懸吊詳細資料需要以四角為視覺分組，而不是將角落數據攤平成單一指標列。
+- **Action**：TelemetryCardShell 支援不可展開卡片；Driver Inputs & Engine 移除 detail 與 expand action；Trace detail 固定四圖 2x2 並共用一次 history/chart-data 建立；Tire 與 Suspension detail 使用共用 2x2 corner grid，懸吊的聚合指標另列於四角資料下方；roadmap 同步反映四張可展開卡片。
+- **Evidence**：前端 Vitest `71 files / 451 tests` 通過；`pnpm -C frontend run build` 通過（683 modules）；`git diff --check` 通過。未宣稱實機 UDP 或瀏覽器 profiler 結果。
+- **Governance**：本筆追加依 `agent-governance-audit` 稽核；保留未追蹤 `config/`，未修改後端或生產設定。
+
+## 2026-08-27 / Telemetry card layout standardization
+
+### 即時遙測卡片高度分配與標題對齊
+
+- **來源**：`local`，針對 `feat/V1.5-arch` 的 TelemetryView 1080p 主 GUI 版型。
+- **狀態**：`adopted`。
+- **Learning**：`TelemetryCardShell` 的 body 若維持一般 block，子層的 `flex-grow-1` 不會形成有效的高度分配邊界，會造成 Live Traces 第二張圖、Dynamics 下方資料被 `overflow: hidden` 裁切，駕駛輸入條縮至極小高度。不同控制項數量也會使卡片標題列高度不一致。
+- **Action**：新增 `TelemetryCardLayout` 統一 `stack`、`split`、`grid` 三種內容版型；卡片 body 改為 `flex: 1 1 0%` 的垂直 Flex 容器；header 統一 `29px` 最小高度，保留原本 6 欄、`4.2fr 5.8fr` 列比例與各卡片內容元件。
+- **Evidence**：720p 瀏覽器驗證五張卡片內容均未超出 body，Live Traces 兩張 Canvas 均可見；1080p 驗證第一列三張標題 top 均為 `145.6px`、header 均為 `29px`、Live Traces 兩張 Canvas 各約 `156px`、駕駛輸入條約 `212px`，展開 detail body 約 `843px` 且可滾動。前端 Vitest `71 files / 451 tests` 通過，Vite build 通過，Ruff check/format 通過；後端 `191 passed / 1 skipped / 2 failed`，失敗為既有 portable sidecar 測試受本機 `127.0.0.1:8001` 佔用影響。
+- **Governance**：本筆追加依 `agent-governance-audit` 稽核；保留未追蹤 `config/`，未修改後端 port 或生產設定。
+
 ## 2026-08-27 / Telemetry expanded detail Canvas rendering optimization
 
 ### 詳細遙測統計資料的繪製效能與版面可讀性

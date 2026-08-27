@@ -239,6 +239,9 @@ main .container-fluid {
 .telemetry-driver-inputs {
   display: grid !important;
   grid-template-columns: minmax(0, 0.95fr) auto minmax(0, 1.05fr);
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
   min-width: 0;
 }
 
@@ -287,8 +290,16 @@ main .container-fluid {
 }
 
 .telemetry-card-shell__body {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.telemetry-card-shell__header {
+  min-height: 29px;
 }
 
 .telemetry-card-shell--expanded .telemetry-card-shell__body {
@@ -298,6 +309,61 @@ main .container-fluid {
 .telemetry-card-shell__expand {
   line-height: 1;
   min-width: 2rem;
+}
+
+.telemetry-card-layout {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-card-layout--stack {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.telemetry-card-layout--split {
+  display: flex;
+  flex: 1 1 0%;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.telemetry-card-layout--grid {
+  display: grid;
+  flex: 1 1 0%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.telemetry-card-layout__fixed,
+.telemetry-card-layout__fill,
+.telemetry-card-layout__radar {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.telemetry-card-layout__fixed {
+  flex: 0 0 auto;
+}
+
+.telemetry-card-layout__fill {
+  flex: 1 1 0%;
+}
+
+.telemetry-card-layout--equal > .telemetry-card-layout__fill {
+  min-height: 0;
+}
+
+.telemetry-card-layout__radar {
+  display: flex;
+  flex: 0 0 42%;
+  align-items: center;
+  justify-content: center;
 }
 
 .telemetry-detail-view {
@@ -313,6 +379,13 @@ main .container-fluid {
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 0.75rem;
   align-content: start;
+}
+
+.telemetry-detail-view__corner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .telemetry-detail-view__metric,
@@ -394,6 +467,10 @@ main .container-fluid {
 }
 
 @media (max-width: 560px) {
+  .telemetry-detail-view__corner-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .telemetry-detail-view__metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

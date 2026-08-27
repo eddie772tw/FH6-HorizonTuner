@@ -17,15 +17,16 @@ WebSocket topology.
 
 ## Product goal
 
-Users can select one of the five live dashboard cards and expand it to use the
-full TelemetryView content area. The expanded card shows larger live values and
-trend charts, and can be closed to return to the existing multi-card layout.
+Users can select one of the four expandable chart/detail cards and expand it to
+use the full TelemetryView content area. Driver Inputs & Engine remains a
+compact live-only dashboard block. An expanded card shows larger live values
+and trend charts, and can be closed to return to the existing multi-card layout.
 
 "Full screen" means the available TelemetryView content area. It does not use
 the browser or operating-system Fullscreen API, and it does not cover the
 application navigation outside TelemetryView.
 
-The five expansion units are:
+The five live dashboard cards are:
 
 1. Driver Inputs & Engine
 2. Live Telemetry Traces
@@ -50,18 +51,21 @@ The five expansion units are:
 
 Status: Verified locally; PR #245 remains open as Draft; CI pass
 
-- Add a shared card shell with expand, close and keyboard handling.
-- Allow each of the five main cards to expand independently.
+- Add a shared card shell with expand, close and keyboard handling for the
+  expandable cards.
+- Allow the four chart/detail cards to expand independently; the Driver Inputs
+  & Engine card remains a compact live-only dashboard block.
 - Add a bounded rolling history store for recent telemetry samples.
-- Provide basic expanded views with current values and a short trend chart for
-  each card.
+- Provide basic expanded views with current values and short trend charts for
+  each expandable card.
 - Preserve the existing multi-card layout, render switches and HUD pause state.
 - Add responsive behavior, focus return, ARIA labels and dark/light theme
   compatibility.
 
 Acceptance criteria:
 
-- Each card opens and closes without starting another telemetry connection.
+- Each expandable card opens and closes without starting another telemetry
+  connection; the Driver Inputs & Engine card remains live-only.
 - `Escape` closes the expanded card and returns focus to its expand button.
 - The existing dashboard remains usable after repeated open/close cycles.
 - History is bounded and does not grow for the duration of a session.
@@ -92,8 +96,8 @@ Status: Verified locally; automated validation complete; no live hardware valida
 
 Status: Planned
 
-- Expand Driver Inputs & Engine with larger input, RPM, gear and speed trends.
-- Expand Live Telemetry Traces with larger pedal and power/torque charts.
+- Refine Live Telemetry Traces with larger pedal, RPM/torque and RPM/power
+  charts.
 - Improve chart legends, time axes, units, empty states and state messaging.
 - Complete accessibility, localization, theme, responsive and long-running
   performance review.

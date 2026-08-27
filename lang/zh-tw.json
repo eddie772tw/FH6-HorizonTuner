@@ -1105,6 +1105,8 @@
   "Combined Slip Trend": "合成滑移趨勢",
   "Acceleration Trend": "加速度趨勢",
   "Power and Torque Trend": "功率與扭力趨勢",
+  "RPM / Torque Trend": "轉速 / 扭力趨勢",
+  "RPM / Power Trend": "轉速 / 馬力趨勢",
   "Driver Input Trend": "駕駛輸入趨勢",
   "Pedal Trace": "踏板軌跡",
   "Throttle": "油門",

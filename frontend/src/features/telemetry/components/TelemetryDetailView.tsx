@@ -13,7 +13,6 @@ import type { TelemetryChartPoint, TireTrendChartData } from '../telemetryDetail
 import { useTelemetryHistory } from '../telemetryHistory';
 import type { TelemetryCardId } from './TelemetryCardShell';
 import {
-  DriverDetailPanel,
   DynamicsDetailPanel,
   SuspensionDetailPanel,
   TireDetailPanel,
@@ -52,12 +51,17 @@ const TelemetryDetailView: React.FC<TelemetryDetailViewProps> = ({ cardId, curre
     Speed: sample.speedMetersPerSecond === null ? null : convertSpeed(sample.speedMetersPerSecond).value,
   })) : EMPTY_CHART_DATA), [cardId, history, convertSpeed]);
   const rpmData = useMemo(() => cardId === 'dynamics' ? toChartPoints(history, (sample) => ({ RPM: sample.rpm })) : EMPTY_CHART_DATA, [cardId, history]);
-  const driverData = useMemo(() => (cardId === 'driver' || cardId === 'traces' ? toChartPoints(history, (sample) => ({
+  const driverData = useMemo(() => (cardId === 'traces' ? toChartPoints(history, (sample) => ({
     Throttle: sample.accelInput === null ? null : sample.accelInput / 255,
     Brake: sample.brakeInput === null ? null : sample.brakeInput / 255,
     Steering: sample.steerInput === null ? null : sample.steerInput / 127,
   })) : EMPTY_CHART_DATA), [cardId, history]);
-  const powerData = useMemo(() => (cardId === 'dynamics' || cardId === 'traces' ? toChartPoints(history, (sample) => ({
+  const powerData = useMemo(() => (cardId === 'dynamics' ? toChartPoints(history, (sample) => ({
+    Power: sample.powerWatts === null ? null : convertPower(sample.powerWatts).value,
+    Torque: sample.torqueNewtons === null ? null : convertTorque(sample.torqueNewtons).value,
+  })) : EMPTY_CHART_DATA), [cardId, history, convertPower, convertTorque]);
+  const traceData = useMemo(() => (cardId === 'traces' ? toChartPoints(history, (sample) => ({
+    RPM: sample.rpm,
     Power: sample.powerWatts === null ? null : convertPower(sample.powerWatts).value,
     Torque: sample.torqueNewtons === null ? null : convertTorque(sample.torqueNewtons).value,
   })) : EMPTY_CHART_DATA), [cardId, history, convertPower, convertTorque]);
@@ -66,11 +70,11 @@ const TelemetryDetailView: React.FC<TelemetryDetailViewProps> = ({ cardId, curre
   })) : EMPTY_CHART_DATA), [cardId, history, convertBoost]);
 
   const shared = { t, corners, emptyLabel };
+  if (cardId === 'driver') return null;
   if (cardId === 'suspension') return <SuspensionDetailPanel {...shared} current={current} metrics={suspensionMetrics} data={suspensionData} />;
   if (cardId === 'tires') return <TireDetailPanel {...shared} metrics={tireMetrics} temperatureData={tireTrendData.temperature} slipRatioData={tireTrendData.slipRatio} slipAngleData={tireTrendData.slipAngle} combinedSlipData={tireTrendData.combinedSlip} surfaceRumbleData={tireTrendData.surfaceRumble} convertTemp={convertTemp} />;
   if (cardId === 'dynamics') return <DynamicsDetailPanel {...shared} current={current} accelerationData={dynamicsData} orientationData={orientationData} speedData={speedData} rpmData={rpmData} powerData={powerData} boostData={boostData} convertPower={convertPower} convertTorque={convertTorque} convertSpeed={convertSpeed} convertBoost={convertBoost} />;
-  if (cardId === 'driver') return <DriverDetailPanel {...shared} current={current} data={driverData} convertSpeed={convertSpeed} />;
-  return <TraceDetailPanel {...shared} driverData={driverData} powerData={powerData} />;
+  return <TraceDetailPanel {...shared} driverData={driverData} powerData={traceData} rpmData={traceData} />;
 };
 
 export default React.memo(TelemetryDetailView);

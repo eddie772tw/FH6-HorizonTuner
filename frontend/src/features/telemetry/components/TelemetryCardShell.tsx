@@ -9,10 +9,11 @@ interface TelemetryCardShellProps {
   gridColumn: string;
   renderSwitch?: ReactNode;
   children: ReactNode;
-  detail: ReactNode;
-  onExpand: () => void;
+  detail?: ReactNode;
+  expandable?: boolean;
+  onExpand?: () => void;
   onClose: () => void;
-  expandLabel: string;
+  expandLabel?: string;
   closeLabel: string;
 }
 
@@ -24,6 +25,7 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
   renderSwitch,
   children,
   detail,
+  expandable = true,
   onExpand,
   onClose,
   expandLabel,
@@ -33,9 +35,9 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
   const wasExpandedRef = useRef(false);
 
   useEffect(() => {
-    if (wasExpandedRef.current && !expanded) expandButtonRef.current?.focus();
+    if (expandable && wasExpandedRef.current && !expanded) expandButtonRef.current?.focus();
     wasExpandedRef.current = expanded;
-  }, [expanded]);
+  }, [expandable, expanded]);
 
   useEffect(() => {
     if (!expanded) return undefined;
@@ -65,7 +67,7 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
             <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose} aria-label={closeLabel}>
               {closeLabel}
             </button>
-          ) : (
+          ) : expandable && onExpand ? (
             <button
               ref={expandButtonRef}
               type="button"
@@ -79,10 +81,10 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
               <span aria-hidden="true">↗</span>
               <span className="visually-hidden">{expandLabel}</span>
             </button>
-          )}
+          ) : null}
         </div>
       </div>
-      <div id={`${id}-card-detail`} className="telemetry-card-shell__body flex-grow-1 min-height-0">
+      <div id={`${id}-card-detail`} className="telemetry-card-shell__body">
         {expanded ? detail : children}
       </div>
     </section>

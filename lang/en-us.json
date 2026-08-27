@@ -1015,6 +1015,8 @@
   "Combined Slip Trend": "Combined Slip Trend",
   "Acceleration Trend": "Acceleration Trend",
   "Power and Torque Trend": "Power and Torque Trend",
+  "RPM / Torque Trend": "RPM / Torque Trend",
+  "RPM / Power Trend": "RPM / Power Trend",
   "Driver Input Trend": "Driver Input Trend",
   "Pedal Trace": "Pedal Trace",
   "Throttle": "Throttle",
