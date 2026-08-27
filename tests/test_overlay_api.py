@@ -45,21 +45,31 @@ def test_get_hud_config_default(temp_hud_config_file):
 def test_hud_unit_can_follow_or_override_app_global_units():
     original_units = dict(main.app_settings["units"])
     try:
-        main.app_settings["units"].update({
-            "speed": "kmh", "boostPressure": "kpa", "torque": "nm", "power": "ps"
-        })
+        main.app_settings["units"].update(
+            {"speed": "kmh", "boostPressure": "kpa", "torque": "nm", "power": "ps"}
+        )
 
         following = main.hud_config_with_gui_theme(
             {
                 "unit": "mph",
-                "units": {"speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"},
+                "units": {
+                    "speed": "mph",
+                    "boostPressure": "psi",
+                    "torque": "lbft",
+                    "power": "hp",
+                },
                 "followAppUnits": True,
             }
         )
         independent = main.hud_config_with_gui_theme(
             {
                 "unit": "mph",
-                "units": {"speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"},
+                "units": {
+                    "speed": "mph",
+                    "boostPressure": "psi",
+                    "torque": "lbft",
+                    "power": "hp",
+                },
                 "followAppUnits": False,
             }
         )
@@ -67,11 +77,17 @@ def test_hud_unit_can_follow_or_override_app_global_units():
         assert following["unit"] == "mph"
         assert following["effectiveUnit"] == "kmh"
         assert following["effectiveUnits"] == {
-            "speed": "kmh", "boostPressure": "kpa", "torque": "nm", "power": "ps"
+            "speed": "kmh",
+            "boostPressure": "kpa",
+            "torque": "nm",
+            "power": "ps",
         }
         assert independent["effectiveUnit"] == "mph"
         assert independent["effectiveUnits"] == {
-            "speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"
+            "speed": "mph",
+            "boostPressure": "psi",
+            "torque": "lbft",
+            "power": "hp",
         }
         assert "effectiveUnit" not in main.normalize_hud_config(following)
         assert "effectiveUnits" not in main.normalize_hud_config(following)

@@ -2383,7 +2383,9 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     configured_power = configured_units.get("power", "hp")
     configured_units = {
         "speed": configured_speed if configured_speed in {"kmh", "mph"} else "kmh",
-        "boostPressure": configured_boost if configured_boost in {"bar", "psi", "kpa"} else "bar",
+        "boostPressure": configured_boost
+        if configured_boost in {"bar", "psi", "kpa"}
+        else "bar",
         "torque": configured_torque if configured_torque in {"nm", "lbft"} else "nm",
         "power": configured_power if configured_power in {"kw", "hp", "ps"} else "hp",
     }
