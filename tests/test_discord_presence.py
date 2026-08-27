@@ -1,6 +1,7 @@
 import json
 import os
 import struct
+import time
 from pathlib import Path
 
 import pytest
@@ -123,6 +124,8 @@ def test_presence_status_distinguishes_telemetry_wait_from_discord_wait():
     assert initial["state"] == "waiting_for_telemetry"
     assert initial["lastTelemetryAt"] is None
     assert initial["connectionAttempts"] == 0
+    assert initial["lastActivity"] is None
+    assert initial["lastActivitySentAt"] is None
 
     manager.submit(_race_data())
 
@@ -130,6 +133,45 @@ def test_presence_status_distinguishes_telemetry_wait_from_discord_wait():
     assert waiting_for_discord["state"] == "waiting_for_discord"
     assert waiting_for_discord["lastTelemetryAt"] is not None
     assert waiting_for_discord["connectionAttempts"] == 0
+
+
+def test_presence_status_records_activity_after_successful_send(monkeypatch):
+    class FakeClient:
+        def __init__(self, _application_id):
+            self.activity = None
+
+        def connect(self):
+            return None
+
+        def set_activity(self, activity):
+            self.activity = activity
+
+        def clear_activity(self):
+            return None
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr("discord_presence.DiscordIpcClient", FakeClient)
+    manager = DiscordPresenceManager("11111111111111111", _car_db())
+    manager.start()
+    try:
+        manager.submit(_race_data())
+        for _ in range(100):
+            if manager.status()["updatesSent"] == 1:
+                break
+            time.sleep(0.01)
+        status = manager.status()
+    finally:
+        manager.stop()
+
+    assert status["state"] == "connected"
+    assert status["updatesSent"] == 1
+    assert status["lastActivity"]["type"] == 0
+    assert status["lastActivity"]["details"] == "2022 Toyota GR86 · Best 1:05.200"
+    assert status["lastActivity"]["state"] == "Race · Lap 3 · P2"
+    assert status["lastActivity"]["assets"]["large_image"] == "fh6_horizon_tuner"
+    assert status["lastActivitySentAt"] is not None
 
 
 class _FakeStream:

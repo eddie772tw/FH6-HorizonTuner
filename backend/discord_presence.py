@@ -7,6 +7,7 @@ Discord client can never delay UDP ingestion or WebSocket broadcasts.
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
@@ -338,6 +339,8 @@ class DiscordPresenceManager:
         self._last_attempt_at: float | None = None
         self._connection_attempts = 0
         self._updates_sent = 0
+        self._last_activity: dict[str, Any] | None = None
+        self._last_activity_sent_at: float | None = None
         self._reconnects = 0
 
     def start(self) -> None:
@@ -379,6 +382,8 @@ class DiscordPresenceManager:
                 "lastAttemptAt": self._last_attempt_at,
                 "connectionAttempts": self._connection_attempts,
                 "updatesSent": self._updates_sent,
+                "lastActivity": copy.deepcopy(self._last_activity),
+                "lastActivitySentAt": self._last_activity_sent_at,
                 "reconnects": self._reconnects,
             }
 
@@ -441,6 +446,8 @@ class DiscordPresenceManager:
                 last_sent_at = now
                 with self._status_lock:
                     self._updates_sent += 1
+                    self._last_activity = copy.deepcopy(activity)
+                    self._last_activity_sent_at = time.time()
             except (ConnectionError, OSError, ValueError) as error:
                 self._set_status("error", _safe_error_detail(error))
                 self._close_client()
