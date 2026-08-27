@@ -17,7 +17,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 IPC_OPCODE_HANDSHAKE = 0
 IPC_OPCODE_FRAME = 1
@@ -229,15 +229,22 @@ class _DiscordIpcStream:
 class DiscordIpcClient:
     """Small synchronous Discord IPC client isolated behind a testable API."""
 
-    def __init__(self, application_id: str):
+    def __init__(
+        self,
+        application_id: str,
+        stream_factory: Callable[[int], _DiscordIpcStream] | None = None,
+    ):
         self.application_id = application_id
+        self._stream_factory = stream_factory
         self.stream: _DiscordIpcStream | None = None
 
     def connect(self) -> None:
         last_error: Exception | None = None
         for index in range(IPC_PIPE_COUNT):
             try:
-                if os.name == "nt":
+                if self._stream_factory is not None:
+                    self.stream = self._stream_factory(index)
+                elif os.name == "nt":
                     handle = open(rf"\\?\pipe\discord-ipc-{index}", "r+b", buffering=0)
                     self.stream = _DiscordIpcStream(handle, is_socket=False)
                 else:
@@ -245,9 +252,11 @@ class DiscordIpcClient:
                     handle.settimeout(2.0)
                     handle.connect(f"/tmp/discord-ipc-{index}")
                     self.stream = _DiscordIpcStream(handle, is_socket=True)
-                self._send(
+                response = self._send(
                     IPC_OPCODE_HANDSHAKE, {"v": 1, "client_id": self.application_id}
                 )
+                if response.get("evt") != "READY":
+                    raise ConnectionError("Discord IPC handshake was not ready")
                 return
             except (OSError, ConnectionError) as error:
                 last_error = error
@@ -255,36 +264,43 @@ class DiscordIpcClient:
         raise ConnectionError("Discord Desktop IPC pipe not available") from last_error
 
     def set_activity(self, activity: dict[str, Any]) -> None:
-        self._send(
-            IPC_OPCODE_FRAME,
-            {
-                "cmd": "SET_ACTIVITY",
-                "args": {"pid": os.getpid(), "activity": activity},
-                "nonce": str(uuid.uuid4()),
-            },
+        self._send_command(
+            {"pid": os.getpid(), "activity": activity},
         )
 
     def clear_activity(self) -> None:
-        self._send(
-            IPC_OPCODE_FRAME,
-            {
-                "cmd": "SET_ACTIVITY",
-                "args": {"pid": os.getpid(), "activity": None},
-                "nonce": str(uuid.uuid4()),
-            },
-        )
+        self._send_command({"pid": os.getpid(), "activity": None})
 
-    def _send(self, opcode: int, payload: dict[str, Any]) -> None:
+    def _send_command(self, args: dict[str, Any]) -> None:
+        nonce = str(uuid.uuid4())
+        response = self._send(
+            IPC_OPCODE_FRAME,
+            {"cmd": "SET_ACTIVITY", "args": args, "nonce": nonce},
+        )
+        if response.get("evt") == "ERROR":
+            raise ConnectionError("Discord IPC rejected SET_ACTIVITY")
+        if response.get("cmd") != "SET_ACTIVITY" or response.get("nonce") != nonce:
+            raise ConnectionError("Discord IPC response did not match SET_ACTIVITY")
+
+    def _send(self, opcode: int, payload: dict[str, Any]) -> dict[str, Any]:
         if self.stream is None:
             raise ConnectionError("Discord IPC is not connected")
         encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
         self.stream.write(struct.pack("<II", opcode, len(encoded)) + encoded)
         # Discord replies to commands; consume the frame to avoid pipe buildup.
         header = self.stream.read(8)
-        _, length = struct.unpack("<II", header)
+        response_opcode, length = struct.unpack("<II", header)
+        if response_opcode != IPC_OPCODE_FRAME:
+            raise ConnectionError("Discord IPC response used an unexpected opcode")
         if length > 4 * 1024 * 1024:
             raise ConnectionError("Discord IPC response is unexpectedly large")
-        self.stream.read(length)
+        try:
+            response = json.loads(self.stream.read(length).decode("utf-8"))
+        except (UnicodeDecodeError, ValueError, TypeError) as error:
+            raise ConnectionError("Discord IPC response was not valid JSON") from error
+        if not isinstance(response, dict):
+            raise ConnectionError("Discord IPC response was not an object")
+        return response
 
     def close(self) -> None:
         if self.stream is not None:

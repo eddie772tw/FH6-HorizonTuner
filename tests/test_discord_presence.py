@@ -1,7 +1,9 @@
 import json
+import os
 import struct
 from pathlib import Path
 
+import pytest
 from discord_presence import (
     DiscordIpcClient,
     build_activity,
@@ -114,28 +116,80 @@ def test_application_id_precedence_and_validation(tmp_path, monkeypatch):
 
 
 class _FakeStream:
-    def __init__(self):
-        self.writes = []
-        self.reads = [struct.pack("<II", 1, 2), b"{}"]
+    """A protocol-aware Discord IPC peer that never needs a Discord client."""
+
+    def __init__(self, ready_event="READY"):
+        self.requests = []
+        self.reads = []
+        self.ready_event = ready_event
+
+    def _queue_response(self, payload):
+        encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        self.reads.extend([struct.pack("<II", 1, len(encoded)), encoded])
 
     def write(self, payload):
-        self.writes.append(payload)
+        opcode, length = struct.unpack("<II", payload[:8])
+        encoded = payload[8:]
+        assert len(encoded) == length
+        request = json.loads(encoded.decode("utf-8"))
+        self.requests.append((opcode, request))
+
+        if opcode == 0:
+            assert request == {"v": 1, "client_id": "11111111111111111"}
+            self._queue_response(
+                {"cmd": "DISPATCH", "evt": self.ready_event, "data": {}}
+            )
+            return
+
+        assert opcode == 1
+        assert request["cmd"] == "SET_ACTIVITY"
+        assert isinstance(request["args"]["pid"], int)
+        assert isinstance(request["nonce"], str)
+        self._queue_response(
+            {
+                "cmd": request["cmd"],
+                "evt": None,
+                "data": None,
+                "nonce": request["nonce"],
+            }
+        )
 
     def read(self, size):
         value = self.reads.pop(0)
         assert len(value) == size
         return value
 
+    def close(self):
+        pass
 
-def test_ipc_command_consumes_discord_response_frame():
-    client = DiscordIpcClient("11111111111111111")
-    client.stream = _FakeStream()
 
+def test_ipc_protocol_asserts_handshake_activity_and_clear_without_discord():
+    stream = _FakeStream()
+    client = DiscordIpcClient("11111111111111111", stream_factory=lambda _index: stream)
+
+    client.connect()
     client.set_activity({"type": 0, "details": "test"})
+    client.clear_activity()
 
-    opcode, length = struct.unpack("<II", client.stream.writes[0][:8])
-    assert opcode == 1
-    assert length > 0
+    assert [opcode for opcode, _request in stream.requests] == [0, 1, 1]
+    set_request = stream.requests[1][1]
+    clear_request = stream.requests[2][1]
+    assert set_request["args"] == {
+        "pid": os.getpid(),
+        "activity": {"type": 0, "details": "test"},
+    }
+    assert clear_request["args"] == {"pid": os.getpid(), "activity": None}
+    assert set_request["nonce"] != clear_request["nonce"]
+
+
+def test_ipc_client_rejects_handshake_without_ready_event():
+    stream = _FakeStream(ready_event="ERROR")
+    client = DiscordIpcClient("11111111111111111", stream_factory=lambda _index: stream)
+
+    with pytest.raises(ConnectionError, match="pipe not available") as error:
+        client.connect()
+    assert isinstance(error.value.__cause__, ConnectionError)
+    assert str(error.value.__cause__) == "Discord IPC handshake was not ready"
 
 
 def test_release_build_requires_secret_and_embeds_only_sidecar_resource():
