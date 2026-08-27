@@ -280,6 +280,10 @@ main .container-fluid {
   width: 100%;
 }
 
+.settings-grid > [class*='col-'] {
+  min-width: 0;
+}
+
 .settings-section-header {
   margin: -0.25rem -0.25rem 0;
   padding: 0.25rem 0.25rem 0.75rem;
@@ -337,7 +341,7 @@ main .container-fluid {
   word-break: break-word;
 }
 
-@media (max-width: 575.98px) {
+@media (max-width: 1199.98px) {
   .settings-row {
     align-items: stretch !important;
     flex-direction: column;

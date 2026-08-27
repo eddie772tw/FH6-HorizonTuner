@@ -32,9 +32,9 @@ const SettingsView: React.FC = () => {
       </div>
 
       <div className="flex-grow-1 overflow-auto p-2">
-        <hr className="my-3" />
-        <div className="row g-4">
-          <div className="col-12 col-md-6 d-flex flex-column gap-4">
+        <div className="settings-grid row g-4">
+          {/* Display and game-facing preferences */}
+          <div className="col-12 col-lg-4 d-flex flex-column gap-4">
             <SettingsSection title={t('Language Settings')}>
               <SettingsItem label={t('Language')} description={t('Select application display language.')} htmlFor="settings-language">
                 <select id="settings-language" value={settings.language} onChange={(event) => updateSettings({ language: event.target.value })} className="form-select form-select-sm">
@@ -43,16 +43,27 @@ const SettingsView: React.FC = () => {
               </SettingsItem>
             </SettingsSection>
 
-            <SettingsSection title={t('General Recording Settings')}>
-              <SettingsSwitch id="chk-dyno-rec" label={t('Dyno Recording')} description={t('Automatically collect and update engine output curves during full throttle acceleration.')} checked={settings.dyno_recording} onChange={(event) => updateSettings({ dyno_recording: event.target.checked })} />
-              <SettingsSwitch id="chk-race-rec" label={t('Race Recording')} description={t('Record suspension and grip data during races or driving for post-race analysis.')} checked={settings.race_recording} onChange={(event) => updateSettings({ race_recording: event.target.checked })} />
+            <SettingsSection title={t('Game Unit Settings')}>
+              <SettingsItem label={t('General Units')} description={t('Controls speed, weight, temperature, pressure, height, force, and torque across the app.')} htmlFor="settings-unit-general">
+                <select id="settings-unit-general" value={inferGeneralUnitSystem(settings.units)} onChange={(event) => handleGeneralUnitChange(event.target.value as GeneralUnitSystem)} className="form-select form-select-sm">
+                  <option value="metric">{t('Metric')}</option><option value="imperial">{t('Imperial')}</option>
+                </select>
+              </SettingsItem>
+              <SettingsItem label={t('Power Units')} description={t("Matches the game's independent horsepower unit option.")} htmlFor="settings-unit-power">
+                <select id="settings-unit-power" value={settings.units.power} onChange={(event) => updateSettings({ units: { power: event.target.value as 'kw' | 'hp' | 'ps' } })} className="form-select form-select-sm">
+                  <option value="hp">{t('Horsepower (hp)')}</option><option value="kw">{t('Kilowatt (kW)')}</option><option value="ps">{t('Metric Horsepower (PS)')}</option>
+                </select>
+              </SettingsItem>
+              <SettingsItem label={t('Spring Units')} description={t("Matches the game's independent spring-rate unit option.")} htmlFor="settings-unit-spring">
+                <select id="settings-unit-spring" value={settings.units.springRate} onChange={(event) => updateSettings({ units: { springRate: event.target.value as 'kgfmm' | 'lbsin' } })} className="form-select form-select-sm">
+                  <option value="kgfmm">{t('Metric (kgf/mm)')}</option><option value="lbsin">{t('Imperial (lbs/in)')}</option>
+                </select>
+              </SettingsItem>
             </SettingsSection>
+          </div>
 
-            <SettingsSection title={t('Developer Options')}>
-              <SettingsSwitch id="chk-developer-tuning" label={t('Use Developer Tuning View')} description={t('Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.')} checked={settings.developer_tuning_enabled} onChange={(event) => updateSettings({ developer_tuning_enabled: event.target.checked })} />
-              {settings.developer_tuning_enabled && <div className="alert alert-warning mb-0 py-2" role="status">{t('Experimental mode active: verify all outputs in-game before saving a tune.')}</div>}
-            </SettingsSection>
-
+          {/* Telemetry transport and captured data */}
+          <div className="col-12 col-lg-4 d-flex flex-column gap-4">
             <SettingsSection title={t('Telemetry Receiver Settings')}>
               <SettingsItem label={t('Telemetry IP')} description={t('IP address to listen for Forza UDP telemetry packets.')} htmlFor="settings-telemetry-ip">
                 <input id="settings-telemetry-ip" type="text" value={settings.telemetry_ip || '0.0.0.0'} onChange={(event) => updateSettings({ telemetry_ip: event.target.value })} className="form-control form-control-sm" />
@@ -72,32 +83,22 @@ const SettingsView: React.FC = () => {
                 </>
               )}
             </SettingsSection>
-          </div>
 
-          <div className="col-12 col-md-6 d-flex flex-column gap-4">
-            <SettingsSection title={t('Game Unit Settings')}>
-              <SettingsItem label={t('General Units')} description={t('Controls speed, weight, temperature, pressure, height, force, and torque across the app.')} htmlFor="settings-unit-general">
-                <select id="settings-unit-general" value={inferGeneralUnitSystem(settings.units)} onChange={(event) => handleGeneralUnitChange(event.target.value as GeneralUnitSystem)} className="form-select form-select-sm">
-                  <option value="metric">{t('Metric')}</option><option value="imperial">{t('Imperial')}</option>
-                </select>
-              </SettingsItem>
-              <SettingsItem label={t('Power Units')} description={t("Matches the game's independent horsepower unit option.")} htmlFor="settings-unit-power">
-                <select id="settings-unit-power" value={settings.units.power} onChange={(event) => updateSettings({ units: { power: event.target.value as 'kw' | 'hp' | 'ps' } })} className="form-select form-select-sm">
-                  <option value="hp">{t('Horsepower (hp)')}</option><option value="kw">{t('Kilowatt (kW)')}</option><option value="ps">{t('Metric Horsepower (PS)')}</option>
-                </select>
-              </SettingsItem>
-              <SettingsItem label={t('Spring Units')} description={t("Matches the game's independent spring-rate unit option.")} htmlFor="settings-unit-spring">
-                <select id="settings-unit-spring" value={settings.units.springRate} onChange={(event) => updateSettings({ units: { springRate: event.target.value as 'kgfmm' | 'lbsin' } })} className="form-select form-select-sm">
-                  <option value="kgfmm">{t('Metric (kgf/mm)')}</option><option value="lbsin">{t('Imperial (lbs/in)')}</option>
-                </select>
-              </SettingsItem>
+            <SettingsSection title={t('General Recording Settings')}>
+              <SettingsSwitch id="chk-dyno-rec" label={t('Dyno Recording')} description={t('Automatically collect and update engine output curves during full throttle acceleration.')} checked={settings.dyno_recording} onChange={(event) => updateSettings({ dyno_recording: event.target.checked })} />
+              <SettingsSwitch id="chk-race-rec" label={t('Race Recording')} description={t('Record suspension and grip data during races or driving for post-race analysis.')} checked={settings.race_recording} onChange={(event) => updateSettings({ race_recording: event.target.checked })} />
             </SettingsSection>
           </div>
-        </div>
 
-        <div className="row g-4 mt-0">
-          <div className="col-12 col-md-6"><McpSettingsCard /></div>
-          <div className="col-12 col-md-6"><UpdateSettingsCard /></div>
+          {/* Application maintenance and integrations */}
+          <div className="col-12 col-lg-4 d-flex flex-column gap-4">
+            <SettingsSection title={t('Developer Options')}>
+              <SettingsSwitch id="chk-developer-tuning" label={t('Use Developer Tuning View')} description={t('Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.')} checked={settings.developer_tuning_enabled} onChange={(event) => updateSettings({ developer_tuning_enabled: event.target.checked })} />
+              {settings.developer_tuning_enabled && <div className="alert alert-warning mb-0 py-2" role="status">{t('Experimental mode active: verify all outputs in-game before saving a tune.')}</div>}
+            </SettingsSection>
+            <McpSettingsCard />
+            <UpdateSettingsCard />
+          </div>
         </div>
       </div>
     </div>
