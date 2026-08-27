@@ -1126,5 +1126,22 @@
   "HUD Speed Unit": "HUD 速度單位",
   "Suspension Travel Display Mode": "懸吊行程顯示模式",
   "Relative": "相對值",
-  "Absolute": "絕對值"
+  "Absolute": "絕對值",
+  "Use the same three unit categories as the game, or inherit the app-wide choices.": "使用與遊戲相同的三類單位，或繼承 APP 全域選擇。",
+  "Close Unit Settings": "關閉單位設定",
+  "Telemetry Units": "遙測單位",
+  "Telemetry Unit Settings": "遙測單位設定",
+  "HUD Unit Settings": "HUD 單位設定",
+  "Choose HUD display units independently or inherit every value from the app.": "獨立選擇 HUD 顯示單位，或從 APP 繼承所有單位。",
+  "Speed Unit": "速度單位",
+  "Boost Unit": "增壓單位",
+  "Torque Unit": "扭力單位",
+  "Power Unit": "馬力單位",
+  "Tuning Workflow Unit Settings": "調校工作流單位設定",
+  "Workflow Units": "工作流單位",
+  "Save & Proceed": "儲存並繼續",
+  "Summer": "夏季",
+  "Autumn": "秋季",
+  "Spring": "春季",
+  "Winter": "冬季"
 }

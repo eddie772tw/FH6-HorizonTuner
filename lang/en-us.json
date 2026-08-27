@@ -1036,5 +1036,22 @@
   "HUD Speed Unit": "HUD Speed Unit",
   "Suspension Travel Display Mode": "Suspension Travel Display Mode",
   "Relative": "Relative",
-  "Absolute": "Absolute"
+  "Absolute": "Absolute",
+  "Use the same three unit categories as the game, or inherit the app-wide choices.": "Use the same three unit categories as the game, or inherit the app-wide choices.",
+  "Close Unit Settings": "Close Unit Settings",
+  "Telemetry Units": "Telemetry Units",
+  "Telemetry Unit Settings": "Telemetry Unit Settings",
+  "HUD Unit Settings": "HUD Unit Settings",
+  "Choose HUD display units independently or inherit every value from the app.": "Choose HUD display units independently or inherit every value from the app.",
+  "Speed Unit": "Speed Unit",
+  "Boost Unit": "Boost Unit",
+  "Torque Unit": "Torque Unit",
+  "Power Unit": "Power Unit",
+  "Tuning Workflow Unit Settings": "Tuning Workflow Unit Settings",
+  "Workflow Units": "Workflow Units",
+  "Save & Proceed": "Save & Proceed",
+  "Summer": "Summer",
+  "Autumn": "Autumn",
+  "Spring": "Spring",
+  "Winter": "Winter"
 }
