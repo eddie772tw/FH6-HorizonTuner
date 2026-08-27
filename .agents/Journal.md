@@ -15,6 +15,17 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-27 / TelemetryView V1.5.1–V1.5.2 detail completion
+
+### Suspension、Tire 與 vehicle dynamics expanded detail
+
+- **來源**：`local`，延續 PR #245 `feat/V1.5-arch` 的 TelemetryView card expansion。
+- **狀態**：`adopted`。
+- **Learning**：expanded React detail 必須沿用既有 telemetry emitter 與 bounded history；滑移角／姿態遵循 parser 的弧度契約，胎溫遵循 SettingsContext 的華氏輸入契約；缺少 optional array 時顯示 unavailable，不以 0 代替。
+- **Action**：新增純函數 `telemetryDetailMath` 與 isolation tests；完成 suspension summaries、tire 五類趨勢、vehicle dynamics current／trend、單位轉換與 detail component 拆分。
+- **Evidence**：commits `9a8e7cc`、`fc044d4`；前端 Vitest `71 files / 449 tests`；`pnpm -C frontend run build` 通過；未執行實機 UDP／硬體驗證。
+- **Boundary**：未新增 UDP offset、listener、WebSocket、recorder 或 MCP contract；未校準或宣稱未解析的 wheel load、tire wear、damper force 與 ride height。
+
 ## 2026-08-24 / 5 個 PR 批量審查、衝突修正與循序合併
 
 ### Dependabot 依賴更新 (PR #241 #242 #243)、Jules UI 修正 (PR #244) 與 G-Radar 60Hz 渲染最佳化 (PR #246)

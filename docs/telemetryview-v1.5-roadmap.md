@@ -7,7 +7,7 @@
 | Base branch | `main` |
 | Development branch | `feat/V1.5-arch` |
 | Baseline | v1.4.4 |
-| Current status | In progress |
+| Current status | V1.5.2 locally verified |
 | Scope | TelemetryView live card expansion and detailed telemetry display |
 
 This branch introduces a usable TelemetryView architecture for V1.5.0. The
@@ -48,7 +48,7 @@ The five expansion units are:
 
 ### V1.5.0 — Usable expansion architecture
 
-Status: Verified locally; PR #245 open; CI pass
+Status: Verified locally; PR #245 remains open as Draft; CI pass
 
 - Add a shared card shell with expand, close and keyboard handling.
 - Allow each of the five main cards to expand independently.
@@ -69,24 +69,24 @@ Acceptance criteria:
 
 ### V1.5.1 — Suspension detail
 
-Status: Planned
+Status: Verified locally; automated validation complete; no live hardware validation
 
-- Add four-corner suspension trend and current-value presentation.
-- Add current/min/max/average travel summaries.
-- Add front/rear average and left/right difference summaries.
-- Add normalized travel rate, bottom-out threshold and Pitch/Roll context.
+- Added four-corner suspension trend and current-value presentation.
+- Added current/min/max/average travel summaries.
+- Added front/rear average and left/right difference summaries.
+- Added normalized travel rate, bottom-out threshold and Pitch/Roll context.
 - Do not claim suspension force, wheel load, damper force, ride height or
   motion-ratio data that is not present in the parsed telemetry contract.
 
 ### V1.5.2 — Tire and vehicle dynamics detail
 
-Status: Planned
+Status: Verified locally; automated validation complete; no live hardware validation
 
-- Add four-wheel temperature, slip ratio, slip angle, combined slip and surface
+- Added four-wheel temperature, slip ratio, slip angle, combined slip and surface
   rumble trends.
-- Add acceleration X/Y/Z, G values, Pitch/Roll/Yaw, speed, RPM, power, torque
+- Added acceleration X/Y/Z, G values, Pitch/Roll/Yaw, speed, RPM, power, torque
   and boost/regeneration detail.
-- Include the currently available lap, distance and race-position metrics.
+- Included the currently available lap, distance and race-position metrics.
 
 ### V1.5.3 and later V1.5.x — Enrichment and polish
 
@@ -116,6 +116,9 @@ behavior, validation commands, known limitations and deferred work.
 
 - `cmd /c "pnpm -C frontend run test"`
 - `cmd /c "pnpm -C frontend run build"`
+- `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`
+- `uv run --no-project --python .venv\Scripts\python.exe ruff check .`
+- `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
 - `git diff --check`
 - Manual checks at 1280x720, 1920x1080 and 2560x1440.
 - Manual checks for dark/light themes, HUD paused state, idle state, live race
