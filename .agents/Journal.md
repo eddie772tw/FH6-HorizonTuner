@@ -1423,3 +1423,15 @@
   4. The Forza Sled packet's normalized suspension travel at offset `68` and absolute suspension travel in meters at offset `196` are both exposed. The live UI uses normalized travel for bar/trace geometry and can display either the normalized value or absolute millimeters for text/min/max.
 - **Verification**: Ruff check/format passed; backend tests passed as `193` non-host-diagnostics plus `2` host-diagnostics tests; frontend Vitest passed `71 files / 449 tests`; production TypeScript/Vite build and `git diff --check` passed.
 - **Status**: adopted.
+
+## 2026-08-28 / Scoped Unit Workflows and Responsive Settings QoL
+
+- **Scope**: Settings responsive layout, TelemetryView/HUD/TuningView unit ownership, HUD display-unit delivery, and Step 1 navigation access.
+- **Decision**:
+  1. Settings cards remain inside a responsive two-column grid; full-row spanning is reserved for content that explicitly requires it.
+  2. Telemetry and the five-step tuning workflow persist local unit preferences as `followGlobal + General/Power/Spring`. A scoped settings provider changes display conversions only; canonical telemetry packets, vehicle parameters, and physics calculations retain their original units.
+  3. Unit editors use permanently mounted Halfmoon bottom offcanvas panels. Leaving global inheritance seeds custom values from the current global choices so switching modes does not produce a surprise unit jump.
+  4. HUD keeps a separate four-field display contract for speed, boost, torque, and power. The backend validates saved choices and derives `effectiveUnits`; both desktop and web HUD telemetry paths publish selected generic values plus canonical alternatives for renderers that need them.
+  5. Step 1 places unit access and `Save & Proceed` beside its heading. Power, torque, downforce, seasonal pressure, weight, spring, and height displays honor the workflow scope while stored values remain hp, N·m, kgf, kg, kgf/mm, and cm as applicable.
+- **Verification**: Ruff passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend/HUD Vitest passed `71 files / 451 tests`; production TypeScript/Vite build and `git diff --check` passed.
+- **Status**: adopted.
