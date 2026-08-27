@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FH6-HorizonTuner_lite",
+  "identifier": "com.eddie772tw.frontend.lite",
+  "build": {
+    "beforeDevCommand": "pnpm run dev",
+    "devUrl": "http://localhost:1420/lite/",
+    "beforeBuildCommand": "echo Using prebuilt lite frontend distribution",
+    "frontendDist": "../dist/lite"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "FH6 HorizonTuner Lite",
+        "width": 1280,
+        "height": 720,
+        "label": "main"
+      }
+    ]
+  }
+}

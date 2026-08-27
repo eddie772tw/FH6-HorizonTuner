@@ -35,9 +35,9 @@
   - **Step 3 底盤懸吊 (Chassis Tuner)**：防傾桿 (ARB 1/65 Meta 策略)、彈簧剛性、前傾姿態 (Forward Rake) 車高、黃金比例阻尼 (60% Bump Ratio) 與差速器鎖定率。
   - **Step 4 胎壓與對齊 (Alignment & Tires)**：季節偏置靜態冷胎壓算牌、Camber / Toe / Caster 幾何計算。
   - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
-* **客製化賽車儀表覆蓋層與精簡獨立客戶端 (Racing HUD Overlay & Compact Client)**:
+* **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
   - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
-  - **精簡獨立客戶端 (`hud_frontend`)**：支援 `-hudonly` 啟動引數。啟動時自動轉移生命週期至獨立的輕量化 HUD 控制器並關閉主 GUI，釋放記憶體開銷（自 ~180MB 降至 ~25MB），讓玩家能以極低資源佔用獨立享受 HUD 功能。
+  - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
@@ -53,7 +53,7 @@
   - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
   - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
   - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Python 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
-  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯、簽名並全自動附加 `FH6-HorizonTuner.exe`、`.sig`、Portable ZIP 與 `latest.json`。
+  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯、簽名並附加 Full/Lite portable executable、包含兩者的 Portable ZIP、`.sig` 與 `latest.json`。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
   - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
@@ -82,7 +82,7 @@ FH6-HorizonTuner/
 │   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器
 │   └── car_database.json    # 內建車輛資料庫
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
-│   ├── hud_frontend/        # 精簡獨立 HUD 控制器 (支援 -hudonly 輕量啟動)
+│   ├── lite/                # Lite 前端 HTML entrypoint
 │   ├── src/features/        # 業務領域模組 (Features Domain)
 │   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 4 大動態卡片
 │   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~5 分頁)
@@ -97,7 +97,7 @@ FH6-HorizonTuner/
 │   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
 │   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗
 │   ├── src/utils/           # 純函數計算庫 (tuningMath.ts, tuningDiagnosis.ts 等)
-│   └── src-tauri/           # Tauri 視窗與打包設定
+│   └── src-tauri/           # Tauri 視窗與 Full/Lite 打包設定
 ├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
 │   ├── index.html           # HUD 載入與 Viewport 渲染入口
 │   ├── gt7/                 # Gran Turismo 7 風格賽車儀表
@@ -110,6 +110,7 @@ FH6-HorizonTuner/
 ├── requirements.txt         # Python 依賴套件清單
 ├── .pkgdirignore            # 打包排除目錄定義
 ├── start_all.bat            # 一鍵開發啟動器 (同步開啟後端與前端)
+├── start_all_lite.bat       # 一鍵啟動 Lite 三分頁前端
 ├── start_backend.bat        # 獨立啟動 Python FastAPI 後端服務
 ├── start_frontend.bat       # 獨立啟動 Vite + Tauri 前端 UI 介面
 └── build_all.bat            # 一鍵打包發行腳本
@@ -139,6 +140,7 @@ FH6-HorizonTuner/
 * **分開啟動（模組化開發時使用）**：
   - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務。開發模式下 FastAPI / WebSocket 使用 `http://127.0.0.1:8001`，Forza UDP Telemetry 使用 `127.0.0.1:8000`。
   - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。
+  - **`start_all_lite.bat`**：啟動共用後端與 Lite 前端；Lite 僅提供 Dashboard、HUD Overlay、Settings。
 
 ---
 
@@ -152,7 +154,7 @@ FH6-HorizonTuner/
 
 * **兩階段自動化打包腳本 (`build_all.bat`)**：
     1. **Phase 1 (Python Sidecar)**：PyInstaller 將 Python 後端單獨編譯為專用 Sidecar 可執行檔 `server-sidecar-x86_64-pc-windows-msvc.exe`，放置於 `frontend/src-tauri/bin/`。
-    2. **Phase 2 (Tauri Bundle)**：Tauri 自動整合前端靜態資源與 Python Sidecar，產出最終的綠色免安裝 Executable。
+    2. **Phase 2 (Tauri Bundle)**：共用前端資源只建置一次，再分別打包 Full 與 Lite，產出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`；發行壓縮包包含兩者。
 
 ---
 

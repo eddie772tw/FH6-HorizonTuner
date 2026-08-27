@@ -96,8 +96,8 @@ if not exist "%TAURI_BIN_DIR%\server-sidecar-x86_64-pc-windows-msvc.exe" (
 echo [SUCCESS] Python Backend Sidecar created and placed in Tauri bin directory.
 echo.
 
-:: 3. Run Tauri Build
-echo [INFO] Running Tauri Build (Single Release Build executable, no installer)...
+:: 3. Build the shared frontend distribution once, then build both Tauri variants.
+echo [INFO] Building shared frontend distribution...
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 :: Release builds must use the committed lockfile. Do not mutate dependencies during packaging.
@@ -106,7 +106,16 @@ call pnpm audit
 if errorlevel 1 (
     echo [WARNING] pnpm audit could not complete or found vulnerabilities; continuing with the locked dependency set.
 )
-call pnpm run tauri build --no-bundle || exit /b 1
+call pnpm run build || exit /b 1
+
+echo [INFO] Building Full portable executable...
+call pnpm run tauri build --no-bundle --config src-tauri/tauri.full.conf.json || exit /b 1
+if not exist "%~dp0dist" mkdir "%~dp0dist"
+copy /Y "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" "%~dp0dist\FH6-HorizonTuner.exe" || exit /b 1
+
+echo [INFO] Building Lite portable executable...
+call pnpm run tauri build --no-bundle --config src-tauri/tauri.lite.conf.json || exit /b 1
+copy /Y "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" "%~dp0dist\FH6-HorizonTuner_lite.exe" || exit /b 1
 
 if errorlevel 1 (
     echo.
@@ -118,13 +127,14 @@ echo [SUCCESS] Tauri Frontend & Main Executable built successfully.
 echo.
 cd "%~dp0"
 
-:: 4. Copy final executable to root dist/ directory for 100% upgrade backward compatibility
-if not exist "%~dp0dist" mkdir "%~dp0dist"
-if exist "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" (
-    copy /Y "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" "%~dp0dist\FH6-HorizonTuner.exe"
-)
+:: 4. Validate both preserved variant executables in root dist/.
 if not exist "%~dp0dist\FH6-HorizonTuner.exe" (
     echo [ERROR] Release Build executable was not produced.
+    if not "%GITHUB_ACTIONS%" == "true" pause
+    exit /b 1
+)
+if not exist "%~dp0dist\FH6-HorizonTuner_lite.exe" (
+    echo [ERROR] Lite Release Build executable was not produced.
     if not "%GITHUB_ACTIONS%" == "true" pause
     exit /b 1
 )
@@ -140,6 +150,8 @@ echo      FH6 HorizonTuner standalone bundle created successfully
 echo ====================================================================
 echo  Distribution Executable Path:
 echo  %~dp0dist\FH6-HorizonTuner.exe
+echo  Lite Distribution Executable Path:
+echo  %~dp0dist\FH6-HorizonTuner_lite.exe
 echo.
 if not "%GITHUB_ACTIONS%" == "true" pause
 exit /b 0

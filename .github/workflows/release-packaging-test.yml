@@ -97,6 +97,9 @@ jobs:
           $exePath = Join-Path $fixtureRoot 'FH6-HorizonTuner.exe'
           [IO.File]::WriteAllBytes($exePath, [Text.Encoding]::ASCII.GetBytes('TEST_PORTABLE_EXE'))
 
+          $liteExePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite.exe'
+          [IO.File]::WriteAllBytes($liteExePath, [Text.Encoding]::ASCII.GetBytes('TEST_LITE_PORTABLE_EXE'))
+
           $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.15_x64-setup.exe'
           [IO.File]::WriteAllBytes($bundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
 
@@ -104,6 +107,7 @@ jobs:
           Set-Content -LiteralPath $signaturePath -Value 'TEST_ED25519_SIGNATURE' -NoNewline -Encoding utf8
 
           "exe=$exePath" >> $env:GITHUB_OUTPUT
+          "lite_exe=$liteExePath" >> $env:GITHUB_OUTPUT
           "bundle=$bundlePath" >> $env:GITHUB_OUTPUT
           "signature=$signaturePath" >> $env:GITHUB_OUTPUT
           "output=$outputRoot" >> $env:GITHUB_OUTPUT
@@ -112,11 +116,12 @@ jobs:
         shell: pwsh
         env:
           EXE_PATH: ${{ steps.fixtures.outputs.exe }}
+          LITE_EXE_PATH: ${{ steps.fixtures.outputs.lite_exe }}
           BUNDLE_PATH: ${{ steps.fixtures.outputs.bundle }}
           SIGNATURE_PATH: ${{ steps.fixtures.outputs.signature }}
           OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
         run: |
-          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.15" --repo "eddie772tw/FH6-HorizonTuner"
+          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.15" --repo "eddie772tw/FH6-HorizonTuner"
 
       - name: Validate generated manifest and asset set
         shell: pwsh
@@ -127,12 +132,15 @@ jobs:
           import json
           import os
           from pathlib import Path
+          import zipfile
 
           output = Path(os.environ["OUTPUT_DIR"])
           files = {path.name for path in output.iterdir() if path.is_file()}
           bundle = "FH6-HorizonTuner_11.45.15_x64-setup.exe"
           expected = {
               "FH6-HorizonTuner.exe",
+              "FH6-HorizonTuner_lite.exe",
+              "FH6-HorizonTuner-portable.zip",
               bundle,
               f"{bundle}.sig",
               "latest.json",
@@ -144,6 +152,8 @@ jobs:
           assert manifest["version"] == "11.45.15"
           assert platform["signature"] == "TEST_ED25519_SIGNATURE"
           assert platform["url"].endswith(f"/test-v0.0.0/{bundle}")
+          with zipfile.ZipFile(output / "FH6-HorizonTuner-portable.zip") as archive:
+              assert set(archive.namelist()) == {"FH6-HorizonTuner.exe", "FH6-HorizonTuner_lite.exe"}
           '@
           $validator | uv run --no-project --active python -
 

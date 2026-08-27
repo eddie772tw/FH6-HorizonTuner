@@ -75,6 +75,28 @@ def find_executable_paths():
     return sidecar_path, standalone_exe
 
 
+def find_lite_executable_path():
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [
+        os.path.join(root_dir, "dist", "FH6-HorizonTuner_lite.exe"),
+        os.path.join(
+            root_dir,
+            "frontend",
+            "src-tauri",
+            "target",
+            "release",
+            "FH6-HorizonTuner_lite.exe",
+        ),
+    ]
+    return next((path for path in candidates if os.path.exists(path)), candidates[0])
+
+
+def get_available_udp_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
 def get_file_sha256(filepath: str) -> str:
     sha256_hash = hashlib.sha256()
     with open(filepath, "rb") as f:
@@ -178,11 +200,16 @@ def wait_for_process_exit(proc, timeout=10.0):
             )
         else:
             proc.kill()
-        proc.wait(timeout=5.0)
-        pytest.fail("portable executable did not terminate within the timeout")
+        try:
+            proc.wait(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            pytest.fail("portable executable did not terminate within the timeout")
 
 
-def close_portable_process(proc):
+def close_portable_process(proc, expected_window_title=None):
+    if proc.poll() is not None:
+        return
+
     if sys.platform == "win32":
         import ctypes
 
@@ -196,6 +223,11 @@ def close_portable_process(proc):
             process_id = wintypes.DWORD()
             get_window_pid(hwnd, ctypes.byref(process_id))
             if process_id.value == proc.pid and user32.IsWindowVisible(hwnd):
+                if expected_window_title is not None:
+                    title_buffer = ctypes.create_unicode_buffer(512)
+                    user32.GetWindowTextW(hwnd, title_buffer, len(title_buffer))
+                    if expected_window_title not in title_buffer.value:
+                        return True
                 window_handle.value = hwnd
                 return False
             return True
@@ -209,12 +241,51 @@ def close_portable_process(proc):
     wait_for_process_exit(proc)
 
 
+def has_visible_window_title(process_id, expected_title):
+    if sys.platform != "win32":
+        return False
+
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    found = False
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def find_window(hwnd, _lparam):
+        nonlocal found
+        owner_pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner_pid))
+        if owner_pid.value != process_id or not user32.IsWindowVisible(hwnd):
+            return True
+
+        title_buffer = ctypes.create_unicode_buffer(512)
+        user32.GetWindowTextW(hwnd, title_buffer, len(title_buffer))
+        if expected_title in title_buffer.value:
+            found = True
+            return False
+        return True
+
+    user32.EnumWindows(find_window, 0)
+    return found
+
+
 def get_readiness_timeout():
     try:
         timeout = float(os.environ.get("DIAGNOSTICS_TIMEOUT", "120.0"))
         return max(15.0, min(120.0, timeout))
     except ValueError:
         return 120.0
+
+
+def wait_for_http_get(url, deadline, timeout=5.0):
+    last_error = None
+    while time.monotonic() < deadline:
+        try:
+            return urllib.request.urlopen(url, timeout=timeout)
+        except OSError as error:
+            last_error = error
+            time.sleep(0.25)
+    raise AssertionError(f"HTTP endpoint did not become ready: {url}; {last_error}")
 
 
 def get_repeat_count():
@@ -251,6 +322,9 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
 
         stdout_path = str(tmp_path / f"stdout_bootstrap_{i}.txt")
         stderr_path = str(tmp_path / f"stderr_bootstrap_{i}.txt")
+        environment = os.environ.copy()
+        environment["TELEMETRY_IP"] = "127.0.0.1"
+        environment["TELEMETRY_PORT"] = str(get_available_udp_port())
 
         cmd = [target_exe, "--data-dir", str(test_data_dir)]
 
@@ -264,6 +338,7 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
                 stderr=stderr_f,
                 stdin=subprocess.PIPE,
                 text=True,
+                env=environment,
             )
 
         settings_file = test_data_dir / "settings.json"
@@ -306,8 +381,8 @@ def test_executable_bootstrap_and_config_interaction(tmp_path):
             assert port_file.exists(), "sidecar did not publish its HTTP port"
             backend_port = port_file.read_text(encoding="utf-8").strip()
 
-            with urllib.request.urlopen(
-                f"http://127.0.0.1:{backend_port}/api/hud/styles", timeout=5
+            with wait_for_http_get(
+                f"http://127.0.0.1:{backend_port}/api/hud/styles", startup_deadline
             ) as response:
                 styles = json.loads(response.read().decode("utf-8"))["styles"]
             custom_style = next(
@@ -441,6 +516,136 @@ def test_portable_executable_releases_udp_port_for_restart(tmp_path):
 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.bind(("127.0.0.1", telemetry_port))
+
+
+@pytest.mark.host_diagnostics
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="Portable lifecycle is Windows-specific"
+)
+@pytest.mark.parametrize(
+    ("variant", "executable_name", "window_title"),
+    [
+        ("full", "FH6-HorizonTuner.exe", "FH6-Horizon Tuner"),
+        ("lite", "FH6-HorizonTuner_lite.exe", "FH6 HorizonTuner Lite"),
+    ],
+    ids=["full", "lite"],
+)
+@pytest.mark.parametrize(
+    ("block_preferred_port", "expected_port"),
+    [(False, 8001), (True, None)],
+    ids=["preferred-port", "dynamic-port"],
+)
+def test_portable_variants_use_expected_backend_port_and_release_resources(
+    tmp_path,
+    variant,
+    executable_name,
+    window_title,
+    block_preferred_port,
+    expected_port,
+):
+    _, full_exe = find_executable_paths()
+    lite_exe = find_lite_executable_path()
+    standalone_exe = full_exe if variant == "full" else lite_exe
+    if not os.path.exists(standalone_exe):
+        pytest.skip(
+            f"No {variant} portable Tauri executable found to run lifecycle test."
+        )
+
+    telemetry_port = 8000
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as availability_probe:
+        try:
+            availability_probe.bind(("127.0.0.1", telemetry_port))
+        except OSError as error:
+            pytest.fail(
+                f"UDP {telemetry_port} must be available for this test: {error}"
+            )
+
+    run_label = (
+        f"{variant}_dynamic_port"
+        if block_preferred_port
+        else f"{variant}_preferred_port"
+    )
+    data_dir = tmp_path / run_label
+    data_dir.mkdir(parents=True, exist_ok=True)
+    stdout_path = tmp_path / f"stdout_{variant}.txt"
+    stderr_path = tmp_path / f"stderr_{variant}.txt"
+    environment = os.environ.copy()
+    environment["TELEMETRY_IP"] = "127.0.0.1"
+    environment["TELEMETRY_PORT"] = str(telemetry_port)
+
+    http_blocker = None
+    if block_preferred_port:
+        # Occupy the preferred HTTP port so the sidecar must publish and the
+        # host must consume a dynamic port instead of silently falling back.
+        http_blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        http_blocker.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        http_blocker.bind(("127.0.0.1", 8001))
+        http_blocker.listen(1)
+
+    cmd = [standalone_exe, "--data-dir", str(data_dir)]
+    with (
+        stdout_path.open("w", encoding="utf-8") as stdout_f,
+        stderr_path.open("w", encoding="utf-8") as stderr_f,
+    ):
+        proc = subprocess.Popen(
+            cmd,
+            stdout=stdout_f,
+            stderr=stderr_f,
+            stdin=subprocess.PIPE,
+            env=environment,
+            text=True,
+        )
+
+    port_file = data_dir / "logs" / "web_port.txt"
+    deadline = time.monotonic() + get_readiness_timeout()
+    try:
+        while not port_file.exists() and time.monotonic() < deadline:
+            if proc.poll() is not None:
+                break
+            time.sleep(0.25)
+
+        assert port_file.exists(), f"{variant} sidecar did not publish its HTTP port"
+        backend_port = int(port_file.read_text(encoding="utf-8").strip())
+        if expected_port is None:
+            assert backend_port != 8001
+        else:
+            assert backend_port == expected_port
+
+        with wait_for_http_get(
+            f"http://127.0.0.1:{backend_port}/api/overlay/config", deadline
+        ) as response:
+            assert response.status == 200
+
+        window_deadline = time.monotonic() + get_readiness_timeout()
+        while (
+            not has_visible_window_title(proc.pid, window_title)
+            and time.monotonic() < window_deadline
+        ):
+            if proc.poll() is not None:
+                break
+            time.sleep(0.25)
+        assert has_visible_window_title(proc.pid, window_title)
+    except Exception:
+        collect_diagnostics(
+            standalone_exe,
+            proc,
+            data_dir,
+            cmd,
+            run_label,
+            str(stdout_path),
+            str(stderr_path),
+        )
+        raise
+    finally:
+        if http_blocker is not None:
+            http_blocker.close()
+        close_portable_process(proc, window_title)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as http_probe:
+        http_probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        http_probe.bind(("127.0.0.1", backend_port))
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_probe:
+        udp_probe.bind(("127.0.0.1", telemetry_port))
 
 
 def test_diagnostics_configuration_parsing(monkeypatch):

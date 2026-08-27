@@ -148,6 +148,20 @@ jobs:
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
       run: |
         pnpm.cmd --prefix frontend run tauri build --config src-tauri/tauri.ci.conf.json
+        Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner.exe -Force
+        pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.lite.conf.json
+        Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner_lite.exe -Force
+
+    - name: Verify Full and Lite Portable Executables
+      shell: pwsh
+      run: |
+        $full = 'dist/FH6-HorizonTuner.exe'
+        $lite = 'dist/FH6-HorizonTuner_lite.exe'
+        foreach ($path in @($full, $lite)) {
+          if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Expected portable executable was not produced: $path"
+          }
+        }
 
     - name: Locate signed Tauri updater artifacts
       id: updater_artifacts
@@ -174,7 +188,8 @@ jobs:
       shell: pwsh
       run: |
         uv run --no-project --active python scripts/prepare_release_assets.py `
-          --exe frontend/src-tauri/target/release/FH6-HorizonTuner.exe `
+          --exe dist/FH6-HorizonTuner.exe `
+          --lite-exe dist/FH6-HorizonTuner_lite.exe `
           --updater-bundle "${{ steps.updater_artifacts.outputs.bundle }}" `
           --updater-signature "${{ steps.updater_artifacts.outputs.signature }}" `
           --output-dir dist/release `
@@ -189,6 +204,8 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           dist/release/FH6-HorizonTuner.exe
+          dist/release/FH6-HorizonTuner_lite.exe
+          dist/release/FH6-HorizonTuner-portable.zip
           dist/release/*-setup.exe
           dist/release/*-setup.exe.sig
           dist/release/latest.json

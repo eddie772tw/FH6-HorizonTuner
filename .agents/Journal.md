@@ -1283,6 +1283,9 @@
 
 - **Scope**: local / HUD Overlay control panel & backend system media / WASAPI audio loopback.
 - **Status**: adopted.
+
+---
+
 - **Learning**:
   1. CPython `winrt-Windows.Media.Control` 套件在 Dev 環境下發起 WinRT 異步任務 (`request_async()`, `try_get_media_properties_async()`) 時，底層需要 `winrt-Windows.Foundation` 模組將 WinRT `IAsyncOperation` 轉譯為 Python awaitable。未宣告 `winrt-Windows.Foundation` 會導致 Dev 環境拋出 `ModuleNotFoundError`。
   2. 桌面視窗標題列枚舉 (`_extract_windows_desktop_media()`) 會掃描全系統 OpenInputDesktop 視窗，在高頻輪詢下可能引發潛在 CPU/IO 效能瓶頸。透過補齊 `winrt-Windows.Foundation` 依賴並強化 WinRT 異步 API 呼叫，完全不需依賴桌面視窗枚舉降級。
@@ -1428,3 +1431,15 @@
 - **Action**: Add `cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` to CI and release gates, and add cargo format auto-fix plus verification to `start_all.bat`.
 - **Evidence**: Commit `fa0c3f9`; CI run `32681482344` passed including Windows executable bundle verification; CodeQL run `32681481832` passed; local frontend tests (69 files / 440 tests), frontend build, Ruff, Rust format, and release contract tests passed.
 - **Status**: adopted.
+
+---
+
+## 2026-08-27 / PR #248 Full and Lite Frontend Packaging
+
+- **Scope**: `feat/hud-frontend-alternative-client`, shared Full/Lite React resources, Lite three-tab shell, dual portable executable build, startup scripts, release archive, and Windows lifecycle diagnostics.
+- **Decision**: Replace the deprecated `-hudonly` handover with two independent Tauri entry points. Full keeps the existing application; Lite exposes only Telemetry Dashboard, HUD Overlay, and Settings while reusing shared providers and feature views.
+- **Packaging contract**: Vite builds both `dist/index.html` and `dist/lite/index.html` once. Tauri builds each variant separately, preserving the first executable before the second build overwrites Cargo's common output name. `build_all.bat` and CI publish `FH6-HorizonTuner.exe` plus `FH6-HorizonTuner_lite.exe`; release packaging also creates `FH6-HorizonTuner-portable.zip` containing both.
+- **Lifecycle contract**: Rust owns sidecar startup and shutdown for both executable variants. The frontend waits for the reported listening port, and Windows diagnostics cover preferred/dynamic HTTP ports, UDP 8000 release, and Full/Lite window visibility.
+- **Verification**: Frontend Vitest 70 files / 443 tests, Vite build, Full and Lite Tauri no-bundle builds, Rust format, targeted backend/release/runtime tests (18 passed), and Windows portable diagnostics (7 passed). GitHub CI and reviewer assessment remain external gates.
+- **Limitations**: The Lite executable is currently a portable no-bundle artifact; the signed updater installer and `latest.json` continue to target the Full application. No production deployment or release publication was performed.
+- **Status**: implemented locally, pending pushed-branch CI and PR review.

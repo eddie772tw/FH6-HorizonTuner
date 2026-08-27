@@ -50,6 +50,7 @@ const selectHandbrake = (d: any) => d.HandBrakeInput || 0;
 interface TelemetryViewProps {
   subTab?: 'live' | 'analysis' | 'drag';
   setSubTab?: (tab: 'live' | 'analysis' | 'drag') => void;
+  dashboardOnly?: boolean;
 }
 
 interface BlockRenderConfig {
@@ -59,7 +60,7 @@ interface BlockRenderConfig {
   suspensionTrace: boolean;
 }
 
-const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab }) => {
+const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab, dashboardOnly = false }) => {
   const [internalSubTab, setInternalSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
   const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
   const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
@@ -233,7 +234,7 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
 
           <div className="vr opacity-25" style={{ height: '20px' }} />
 
-          <ul className="nav nav-pills gap-1" role="tablist">
+          {!dashboardOnly && <ul className="nav nav-pills gap-1" role="tablist">
             <li className="nav-item" role="presentation">
               <button className={`nav-link btn-sm ${subTab === 'live' ? 'active fw-bold' : ''}`} aria-current={subTab === 'live' ? 'page' : undefined} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
             </li>
@@ -243,7 +244,7 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
             <li className="nav-item" role="presentation">
               <button className={`nav-link btn-sm ${subTab === 'drag' ? 'active fw-bold' : ''}`} aria-current={subTab === 'drag' ? 'page' : undefined} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
             </li>
-          </ul>
+          </ul>}
         </div>
 
         <div className="d-flex align-items-center fw-bold text-secondary fs-6">

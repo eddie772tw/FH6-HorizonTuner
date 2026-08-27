@@ -68,6 +68,22 @@ def find_executable_paths():
     return sidecar_path, standalone_exe
 
 
+def find_lite_executable_path():
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [
+        os.path.join(root_dir, "dist", "FH6-HorizonTuner_lite.exe"),
+        os.path.join(
+            root_dir,
+            "frontend",
+            "src-tauri",
+            "target",
+            "release",
+            "FH6-HorizonTuner_lite.exe",
+        ),
+    ]
+    return next((path for path in candidates if os.path.exists(path)), candidates[0])
+
+
 @pytest.mark.executable_bundle
 def test_sidecar_executable_existence_and_metadata():
     sidecar_path, standalone_exe = find_executable_paths()
@@ -91,6 +107,30 @@ def test_sidecar_executable_existence_and_metadata():
     if sys.platform == "win32":
         company = get_pe_string_info(target_exe, "CompanyName")
         version = get_pe_string_info(target_exe, "FileVersion")
+        if company:
+            assert company == "eddie772tw", (
+                f"Expected CompanyName 'eddie772tw', got '{company}'"
+            )
+        if version:
+            assert version.startswith("11.45.15"), (
+                f"Expected FileVersion starting with '11.45.15', got '{version}'"
+            )
+
+
+@pytest.mark.executable_bundle
+def test_lite_executable_existence_and_metadata():
+    lite_exe = find_lite_executable_path()
+    if not os.path.exists(lite_exe):
+        pytest.skip(
+            "No compiled Lite executable found to verify metadata. Build executable first."
+        )
+
+    assert os.path.getsize(lite_exe) > 100000, (
+        f"Lite executable file {lite_exe} is surprisingly small"
+    )
+    if sys.platform == "win32":
+        company = get_pe_string_info(lite_exe, "CompanyName")
+        version = get_pe_string_info(lite_exe, "FileVersion")
         if company:
             assert company == "eddie772tw", (
                 f"Expected CompanyName 'eddie772tw', got '{company}'"

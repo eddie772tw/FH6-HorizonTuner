@@ -2,6 +2,7 @@
 use serde::Serialize;
 use std::fs;
 use std::io::{BufRead, BufReader, Read};
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
@@ -27,20 +28,6 @@ struct BackendProcess(Mutex<Option<Child>>);
 impl Default for BackendProcess {
     fn default() -> Self {
         Self(Mutex::new(None))
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum PrimaryWindowMode {
-    Main,
-    HudOnly,
-}
-
-struct AppLifecycleState(Mutex<PrimaryWindowMode>);
-
-impl AppLifecycleState {
-    fn new() -> Self {
-        Self(Mutex::new(PrimaryWindowMode::Main))
     }
 }
 
@@ -86,13 +73,18 @@ fn stop_backend_process(app_handle: &tauri::AppHandle) {
                 let _ = Command::new("taskkill")
                     .args(["/PID", pid.as_str(), "/T", "/F"])
                     .status();
+                // taskkill owns termination of the PyInstaller process tree.
+                // Do not call Child::wait here: the bootloader/worker handle
+                // can remain signalled asynchronously and block the Tauri
+                // close-request handler indefinitely.
+                let _ = child.try_wait();
             }
 
             #[cfg(not(target_os = "windows"))]
             {
                 let _ = child.kill();
+                let _ = child.wait();
             }
-            let _ = child.wait();
         }
     }
 }
@@ -167,6 +159,23 @@ where
         for line in BufReader::new(reader).lines().flatten() {
             if !is_stderr {
                 if let Some(port) = parse_backend_ready_port(line.as_bytes()) {
+                    let deadline = Instant::now() + Duration::from_secs(30);
+                    while !backend_is_listening(port) && Instant::now() < deadline {
+                        std::thread::sleep(Duration::from_millis(50));
+                    }
+                    if !backend_is_listening(port) {
+                        set_backend_status(
+                            &app_handle,
+                            BackendStatus {
+                                state: "failed".to_string(),
+                                port: None,
+                                error: Some(format!(
+                                    "Backend announced port {port}, but it did not accept TCP connections"
+                                )),
+                            },
+                        );
+                        continue;
+                    }
                     set_backend_status(
                         &app_handle,
                         BackendStatus {
@@ -230,15 +239,17 @@ fn watch_external_backend(app_handle: tauri::AppHandle) {
             if let Some(port_file) = find_external_backend_port_file() {
                 if let Ok(contents) = fs::read_to_string(port_file) {
                     if let Ok(port) = contents.trim().parse::<u16>() {
-                        set_backend_status(
-                            &app_handle,
-                            BackendStatus {
-                                state: "ready".to_string(),
-                                port: Some(port),
-                                error: None,
-                            },
-                        );
-                        return;
+                        if backend_is_listening(port) {
+                            set_backend_status(
+                                &app_handle,
+                                BackendStatus {
+                                    state: "ready".to_string(),
+                                    port: Some(port),
+                                    error: None,
+                                },
+                            );
+                            return;
+                        }
                     }
                 }
             }
@@ -284,6 +295,28 @@ fn backend_port_from_app(app_handle: &tauri::AppHandle) -> Result<u16, String> {
     backend_port_from_state(&app_handle.state::<BackendState>())
 }
 
+fn backend_is_listening(port: u16) -> bool {
+    let address = SocketAddr::from(([127, 0, 0, 1], port));
+    TcpStream::connect_timeout(&address, Duration::from_millis(250)).is_ok()
+}
+
+fn hud_url(port: u16) -> String {
+    format!("http://127.0.0.1:{port}/hud/index.html")
+}
+
+fn show_overlay_at_port(window: &tauri::WebviewWindow, port: u16) -> Result<(), String> {
+    let url = hud_url(port);
+    window
+        .eval(&format!(
+            "window.location.href = '{}?t=' + Date.now();",
+            url
+        ))
+        .map_err(|e| e.to_string())?;
+    window.show().map_err(|e| e.to_string())?;
+    window.set_focus().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 fn get_backend_status(state: tauri::State<'_, BackendState>) -> Result<BackendStatus, String> {
     state
@@ -310,16 +343,8 @@ fn set_hud_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(
 fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if visible {
-            let port = backend_port_from_app(&app_handle).unwrap_or(8001);
-            let url = format!("http://127.0.0.1:{}/hud/index.html", port);
-            let _ = window.eval(&format!(
-                // Reload on every show so Dev WebViews cannot retain an older
-                // launcher/HUD asset set after a source edit.
-                "window.location.href = '{}?t=' + Date.now();",
-                url
-            ));
-            window.show().map_err(|e| e.to_string())?;
-            window.set_focus().map_err(|e| e.to_string())?;
+            let port = backend_port_from_app(&app_handle)?;
+            show_overlay_at_port(&window, port)?;
         } else {
             window.hide().map_err(|e| e.to_string())?;
             let _ = window.eval("window.location.href = 'about:blank';");
@@ -333,8 +358,8 @@ fn toggle_hud_window(app_handle: tauri::AppHandle, visible: bool) -> Result<(), 
 #[tauri::command]
 fn reload_hud_window(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        let port = backend_port_from_app(&app_handle).unwrap_or(8001);
-        let url = format!("http://127.0.0.1:{}/hud/index.html", port);
+        let port = backend_port_from_app(&app_handle)?;
+        let url = hud_url(port);
 
         let _ = window.eval("window.location.href = 'about:blank';");
         std::thread::sleep(std::time::Duration::from_millis(50));
@@ -427,54 +452,6 @@ fn prepare_update_and_restart(app_handle: tauri::AppHandle) -> Result<(), String
     app_handle.restart();
 }
 
-fn is_hud_only_requested() -> bool {
-    let args: Vec<String> = std::env::args().collect();
-    args.iter().any(|arg| {
-        let lower = arg.to_lowercase();
-        lower == "-hudonly" || lower == "--hudonly" || lower == "--hud-only" || lower == "-hud-only"
-    })
-}
-
-#[tauri::command]
-fn is_hud_only_cli() -> bool {
-    is_hud_only_requested()
-}
-
-#[tauri::command]
-fn launch_hud_frontend(app_handle: tauri::AppHandle) -> Result<(), String> {
-    if let Ok(mut mode) = app_handle.state::<AppLifecycleState>().0.lock() {
-        *mode = PrimaryWindowMode::HudOnly;
-    }
-
-    if let Some(hud_win) = app_handle.get_webview_window("hud_main") {
-        let _ = hud_win.show();
-        let _ = hud_win.set_focus();
-    } else {
-        let _hud_win = tauri::WebviewWindowBuilder::new(
-            &app_handle,
-            "hud_main",
-            tauri::WebviewUrl::App("hud_frontend/index.html".into()),
-        )
-        .title("FH6 HorizonHUD Controller")
-        .inner_size(460.0, 680.0)
-        .resizable(true)
-        .decorations(true)
-        .always_on_top(false)
-        .build()
-        .map_err(|e| format!("Failed to create hud_main window: {e}"))?;
-    }
-
-    // Ensure overlay window is visible and loaded
-    let _ = toggle_hud_window(app_handle.clone(), true);
-
-    // Close main GUI window to release React DOM & memory
-    if let Some(main_win) = app_handle.get_webview_window("main") {
-        let _ = main_win.close();
-    }
-
-    Ok(())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -482,23 +459,12 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(BackendState::new())
         .manage(BackendProcess::default())
-        .manage(AppLifecycleState::new())
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed = event {
                 let label = window.label();
                 let app_handle = window.app_handle();
-                let mode = app_handle
-                    .try_state::<AppLifecycleState>()
-                    .and_then(|s| s.0.lock().ok().map(|m| *m))
-                    .unwrap_or(PrimaryWindowMode::Main);
-
-                let should_exit = match mode {
-                    PrimaryWindowMode::Main => label == "main",
-                    PrimaryWindowMode::HudOnly => label == "hud_main",
-                };
-
-                if should_exit {
-                    println!("Primary window [{label}] closed (mode={mode:?}) — terminating all windows and backend sidecar.");
+                if label == "main" {
+                    println!("Primary window [{label}] closed — terminating all windows and backend sidecar.");
                     stop_backend_process(&app_handle);
                     app_handle.exit(0);
                 }
@@ -638,11 +604,6 @@ pub fn run() {
                 }
             }
 
-            if is_hud_only_requested() {
-                println!("-hudonly argument detected at startup: launching hud_frontend.");
-                let _ = launch_hud_frontend(app.handle().clone());
-            }
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -654,10 +615,38 @@ pub fn run() {
             reload_hud_window,
             get_available_monitors,
             move_hud_to_monitor,
-            prepare_update_and_restart,
-            is_hud_only_cli,
-            launch_hud_frontend
+            prepare_update_and_restart
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{backend_is_listening, backend_port_from_state, hud_url, BackendState};
+    use std::net::TcpListener;
+
+    #[test]
+    fn overlay_url_uses_the_published_backend_port() {
+        assert_eq!(hud_url(8123), "http://127.0.0.1:8123/hud/index.html");
+    }
+
+    #[test]
+    fn backend_port_requires_ready_status() {
+        let state = BackendState::new();
+        assert_eq!(
+            backend_port_from_state(&state).unwrap_err(),
+            "Backend is still starting"
+        );
+    }
+
+    #[test]
+    fn readiness_requires_an_accepting_tcp_listener() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind test listener");
+        let port = listener
+            .local_addr()
+            .expect("read test listener address")
+            .port();
+        assert!(backend_is_listening(port));
+    }
 }

@@ -6,9 +6,14 @@ import pytest
 
 
 def get_free_udp_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
+    # Keep the backend lifecycle unit tests away from the fixed Forza
+    # telemetry port used by the portable executable contract tests.
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]
+        if port != 8000:
+            return port
 
 
 def bind_udp_port(port: int) -> socket.socket:

@@ -176,7 +176,7 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
-        hud_frontend: path.resolve(__dirname, "hud_frontend/index.html"),
+        lite: path.resolve(__dirname, "lite/index.html"),
       },
       output: {
         manualChunks(id) {

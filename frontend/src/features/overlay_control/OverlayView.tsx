@@ -14,45 +14,14 @@ import {
   type S650CenterWidget,
   type S650HmiTheme,
 } from './s650/config';
+import {
+  DEFAULT_HUD_CONFIG,
+  type HudConfig,
+  type HudElements,
+  type MonitorOption,
+} from './hudConfig';
 import '../../App.css';
 import { backendFetch, backendHttpUrl } from '../../services/backend';
-
-interface HudElements {
-  showTeleMaster?: boolean;
-  showGauge: boolean;
-  showCenterInfo: boolean;
-  showRPM: boolean;
-  showSpeed: boolean;
-  showGear: boolean;
-  showPowerTorque: boolean;
-  showBoost: boolean;
-  showWheelLockup: boolean;
-  showMotionEffect: boolean;
-  // Telemetry 4 Cards & Sub-elements
-  showTeleSuspension: boolean;
-  showTeleTires: boolean;
-  showTeleTiresSlip: boolean;
-  showTeleTiresTemp: boolean;
-  showTeleAttitude: boolean;
-  showTeleEngine: boolean;
-  showTelePedals: boolean;
-  showTeleCenterAnchor: boolean;
-  showTeleGridLines: boolean;
-  showLiveMap?: boolean;
-  showLiveMapPOIs?: boolean;
-  showLiveMapPRStunts?: boolean;
-  showLiveMapCollectibles?: boolean;
-  showLiveMapHeading?: boolean;
-}
-
-interface MonitorOption {
-  name: string;
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  is_primary: boolean;
-}
 
 interface AudioDeviceOption {
   id: string;
@@ -60,118 +29,6 @@ interface AudioDeviceOption {
   is_default: boolean;
 }
 
-interface HudConfig {
-  enabled: boolean;
-  hudStyle: string;
-  s650Theme?: S650HmiTheme;
-  s650CenterWidget?: S650CenterWidget;
-  /** S650-only outer container Y offset; positive values move down. */
-  s650HmiOffsetY?: number;
-  audioDeviceId?: string;
-  selectedMonitorIndex: number;
-  scale: number;
-  unit: 'kmh' | 'mph';
-  elements: HudElements;
-  soundEnabled: boolean;
-  telemetryOpacity?: number;
-  /** 4 Independent Component Scales */
-  telemetryGRadarScale?: number;
-  telemetryCornersScale?: number;
-  telemetryPedalScale?: number;
-  telemetryPowerTorqueScale?: number;
-  telemetryMergedChartsScale?: number;
-  telemetryLiveMapScale?: number;
-  telemetryLiveMapOpacity?: number;
-  /** Independent font scale for card text (0.5–2.0) */
-  telemetryCardFontScale?: number;
-  /** Option to merge power/torque & pedal charts side-by-side */
-  telemetrySideBySideCharts?: boolean;
-  /** Chart position: 'top' | 'bottom' */
-  telemetryPedalPosition?: 'top' | 'bottom';
-  telemetryPowerTorquePosition?: 'top' | 'bottom';
-  telemetryMergedChartsPosition?: 'top' | 'bottom';
-  /** Offsets for element positioning */
-  telemetryCornerOffsetY?: number;
-  telemetryCornerOffsetX?: number;
-  telemetryPedalOffsetX?: number;
-  telemetryPowerTorqueOffsetX?: number;
-  telemetryMergedChartsOffsetX?: number;
-  telemetryLiveMapOffsetX?: number;
-  telemetryLiveMapOffsetY?: number;
-  /** VFD Instrument Sensitivity Offsets */
-  vfdVuOffset?: number;
-  vfdAudioOffset?: number;
-  glowIntensity?: number;
-  customColor?: string;
-  useDefaultColors?: boolean;
-  pauseTelemetryViewWhenActive?: boolean;
-}
-
-const DEFAULT_HUD_CONFIG: HudConfig = {
-  enabled: false,
-  hudStyle: 'vfd',
-  s650Theme: 'heritage67',
-  s650CenterWidget: 'drive',
-  s650HmiOffsetY: 60,
-  audioDeviceId: 'default',
-  selectedMonitorIndex: 0,
-  scale: 1.0,
-  unit: 'kmh',
-  telemetryOpacity: 0.65,
-  telemetryGRadarScale: 1.0,
-  telemetryCornersScale: 1.0,
-  telemetryPedalScale: 1.0,
-  telemetryPowerTorqueScale: 1.0,
-  telemetryMergedChartsScale: 1.0,
-  telemetryLiveMapScale: 1.0,
-  telemetryLiveMapOpacity: 1.0,
-  telemetryCardFontScale: 1.0,
-  telemetrySideBySideCharts: true,
-  telemetryPedalPosition: 'bottom',
-  telemetryPowerTorquePosition: 'top',
-  telemetryMergedChartsPosition: 'bottom',
-  telemetryCornerOffsetY: 0,
-  telemetryCornerOffsetX: 0,
-  telemetryPedalOffsetX: 0,
-  telemetryPowerTorqueOffsetX: 0,
-  telemetryMergedChartsOffsetX: 0,
-  telemetryLiveMapOffsetX: 0,
-  telemetryLiveMapOffsetY: 0,
-  vfdVuOffset: 0,
-  vfdAudioOffset: 0,
-  glowIntensity: 1.0,
-  customColor: '#00f0ff',
-  useDefaultColors: true,
-  pauseTelemetryViewWhenActive: true,
-
-  elements: {
-    showTeleMaster: true,
-    showGauge: true,
-    showCenterInfo: true,
-    showRPM: true,
-    showSpeed: true,
-    showGear: true,
-    showPowerTorque: true,
-    showBoost: true,
-    showWheelLockup: true,
-    showMotionEffect: true,
-    showTeleSuspension: true,
-    showTeleTires: true,
-    showTeleTiresSlip: true,
-    showTeleTiresTemp: true,
-    showTeleAttitude: true,
-    showTeleEngine: true,
-    showTelePedals: true,
-    showTeleCenterAnchor: false,
-    showTeleGridLines: false,
-    showLiveMap: true,
-    showLiveMapPOIs: true,
-    showLiveMapPRStunts: true,
-    showLiveMapCollectibles: true,
-    showLiveMapHeading: true,
-  },
-  soundEnabled: false,
-};
 
 interface AuthorInfo {
   author: string;
@@ -659,22 +516,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          <button
-            type="button"
-            className="btn btn-outline-info fw-bold px-3 py-2"
-            style={{
-              fontSize: '0.9rem',
-              borderRadius: '6px',
-            }}
-            onClick={async () => {
-              if ((window as any).__TAURI__?.core?.invoke) {
-                await (window as any).__TAURI__.core.invoke('launch_hud_frontend');
-              }
-            }}
-            title={t("Switch to standalone compact HUD controller and close main interface")}
-          >
-            {t("Compact HUD Mode")}
-          </button>
           <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
             <button
               onClick={() => toggleHudWindow(!config.enabled)}

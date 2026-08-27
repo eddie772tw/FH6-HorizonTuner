@@ -1,6 +1,7 @@
 """Contract and unit tests for release packaging workflows."""
 
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -11,18 +12,20 @@ from scripts.prepare_release_assets import (
 )
 
 
-def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path]:
+def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     source_dir = tmp_path / "src"
     source_dir.mkdir()
     mock_exe = source_dir / "FH6-HorizonTuner.exe"
     mock_exe.write_bytes(b"MOCK_PE_BINARY_CONTENT")
+    mock_lite_exe = source_dir / "FH6-HorizonTuner_lite.exe"
+    mock_lite_exe.write_bytes(b"MOCK_LITE_PE_BINARY_CONTENT")
 
     updater_bundle = source_dir / "FH6-HorizonTuner_11.45.15_x64-setup.exe"
     updater_bundle.write_bytes(b"MOCK_NSIS_INSTALLER")
 
     updater_signature = source_dir / f"{updater_bundle.name}.sig"
     updater_signature.write_text("ED25519_SIGNATURE_BASE64_STRING\n", encoding="utf-8")
-    return mock_exe, updater_bundle, updater_signature
+    return mock_exe, mock_lite_exe, updater_bundle, updater_signature
 
 
 def test_generate_latest_manifest_structure():
@@ -46,12 +49,15 @@ def test_generate_latest_manifest_structure():
     )
 
 
-def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
-    mock_exe, updater_bundle, updater_signature = _create_packaging_fixtures(tmp_path)
+def test_prepare_release_assets_creates_six_release_artifacts(tmp_path: Path):
+    mock_exe, mock_lite_exe, updater_bundle, updater_signature = (
+        _create_packaging_fixtures(tmp_path)
+    )
     out_dir = tmp_path / "dist_release"
 
     artifacts = prepare_release_assets(
         exe_path=mock_exe,
+        lite_exe_path=mock_lite_exe,
         updater_bundle_path=updater_bundle,
         updater_signature_path=updater_signature,
         output_dir=out_dir,
@@ -64,11 +70,17 @@ def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
     artifact_names = [artifact.name for artifact in artifacts]
     assert artifact_names == [
         "FH6-HorizonTuner.exe",
+        "FH6-HorizonTuner_lite.exe",
+        "FH6-HorizonTuner-portable.zip",
         updater_bundle.name,
         updater_signature.name,
         "latest.json",
     ]
-    assert not list(out_dir.glob("*-Windows-Portable.zip"))
+    with zipfile.ZipFile(out_dir / "FH6-HorizonTuner-portable.zip") as archive:
+        assert set(archive.namelist()) == {
+            "FH6-HorizonTuner.exe",
+            "FH6-HorizonTuner_lite.exe",
+        }
 
     manifest = json.loads((out_dir / "latest.json").read_text(encoding="utf-8"))
     platform = manifest["platforms"]["windows-x86_64"]
@@ -78,11 +90,14 @@ def test_prepare_release_assets_creates_four_release_artifacts(tmp_path: Path):
 
 
 def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
-    mock_exe, updater_bundle, updater_signature = _create_packaging_fixtures(tmp_path)
+    mock_exe, mock_lite_exe, updater_bundle, updater_signature = (
+        _create_packaging_fixtures(tmp_path)
+    )
 
     with pytest.raises(FileNotFoundError, match="Target executable"):
         prepare_release_assets(
             exe_path=tmp_path / "non_existent.exe",
+            lite_exe_path=mock_lite_exe,
             updater_bundle_path=updater_bundle,
             updater_signature_path=updater_signature,
             output_dir=tmp_path / "out",
@@ -93,6 +108,7 @@ def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
     with pytest.raises(FileNotFoundError, match="Tauri updater signature"):
         prepare_release_assets(
             exe_path=mock_exe,
+            lite_exe_path=mock_lite_exe,
             updater_bundle_path=updater_bundle,
             updater_signature_path=tmp_path / "missing.sig",
             output_dir=tmp_path / "out",
@@ -116,7 +132,10 @@ def test_release_workflow_security_and_contract():
     assert '"createUpdaterArtifacts": true' in (
         repo_root / "frontend" / "src-tauri" / "tauri.conf.json"
     ).read_text(encoding="utf-8")
-    assert "--no-bundle" not in content
+    assert "--no-bundle --config src-tauri/tauri.lite.conf.json" in content
+    assert "--lite-exe" in content
+    assert "FH6-HorizonTuner_lite.exe" in content
+    assert "FH6-HorizonTuner-portable.zip" in content
     assert "--updater-bundle" in content
     assert "*-setup.exe" in content
     assert "*.nsis.zip" not in content

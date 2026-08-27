@@ -103,14 +103,31 @@ jobs:
         Copy-Item dist/server-sidecar-x86_64-pc-windows-msvc.exe `
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
-    - name: Build Portable Tauri Executable
+    - name: Build Full Portable Tauri Executable
       run: >
         python scripts/release_metrics.py
         --label "Tauri portable executable"
         --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
         --metrics-file metrics/tauri-build.json
         --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
-        -- pnpm.cmd --prefix frontend run tauri build --no-bundle
+        -- pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.ci.conf.json
+
+    - name: Preserve Full Portable Executable
+      shell: pwsh
+      run: Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner.exe -Force
+
+    - name: Build Lite Portable Tauri Executable
+      run: >
+        python scripts/release_metrics.py
+        --label "Tauri Lite portable executable"
+        --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
+        --metrics-file metrics/tauri-lite-build.json
+        --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
+        -- pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.lite.conf.json
+
+    - name: Preserve Lite Portable Executable
+      shell: pwsh
+      run: Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner_lite.exe -Force
 
     - name: Run Diagnostics Probes
       run: uv run --no-project --active python -m pytest tests/test_portable_host_diagnostics.py -v

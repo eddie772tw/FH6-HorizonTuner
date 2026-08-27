@@ -10,6 +10,11 @@ export interface HudDropdownOption {
   isCustom: boolean;
 }
 
+export interface HudStyleFetchOptions {
+  strict?: boolean;
+  timeoutMs?: number;
+}
+
 export const HUD_DISPLAY_NAMES: Record<string, string> = {
   vfd: 'Retro VFD',
   drift: 'Drift HUD',
@@ -32,17 +37,38 @@ const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {
 /**
  * Fetch dynamic HUD style list from backend API
  */
-export async function fetchHudStylesList(baseUrl: string, fetchFn: typeof fetch = fetch): Promise<HudStyleEntry[]> {
+export async function fetchHudStylesList(
+  baseUrl: string,
+  fetchFn: typeof fetch = fetch,
+  options: HudStyleFetchOptions = {},
+): Promise<HudStyleEntry[]> {
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs ?? 10_000;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetchFn(`${baseUrl.replace(/\/$/, '')}/api/hud/styles`);
+    const res = await fetchFn(
+      `${baseUrl.replace(/\/$/, '')}/api/hud/styles`,
+      { signal: controller.signal },
+    );
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.styles)) {
         return data.styles;
       }
     }
+    if (options.strict) {
+      throw new Error(`HUD styles request failed (HTTP ${res.status}).`);
+    }
   } catch (e) {
     console.warn('Failed to fetch dynamic HUD styles:', e);
+    if (options.strict) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        throw new Error(`HUD styles request timed out after ${timeoutMs}ms.`);
+      }
+      throw e;
+    }
+  } finally {
+    clearTimeout(timeout);
   }
   return [];
 }
