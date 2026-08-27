@@ -72,11 +72,40 @@ describe('calculateAEGOGearing', () => {
     }
   });
 
-  it('finalDrive should be clamped within [2.0, 6.5]', () => {
+  it('finalDrive should be clamped within the in-game [2.0, 6.1] range', () => {
     const highHpCar: TuningCarParams = { ...sampleCar, maxHp: 1000 };
     const result = calculateAEGOGearing('Road', 6, highHpCar, 9000);
     expect(result.finalDrive).toBeGreaterThanOrEqual(2.0);
-    expect(result.finalDrive).toBeLessThanOrEqual(6.5);
+    expect(result.finalDrive).toBeLessThanOrEqual(6.1);
+  });
+
+  it('rebalances weak-engine gearing away from high-final-drive and sub-1.0 first-gear extremes', () => {
+    const weakEngineCar: TuningCarParams = {
+      ...sampleCar,
+      weight: 2100,
+      maxHp: 85,
+      maxTorque: 120,
+      maxHpRpm: 4200,
+      maxTorqueRpm: 2400,
+      rearTireWidth: 205,
+      rearTireAspect: 65,
+      rearTireRim: 15
+    };
+
+    const result = calculateAEGOGearing('Road', 6, weakEngineCar, 5000);
+
+    expect(result.finalDrive).toBeLessThanOrEqual(6.1);
+    expect(result.gears[0]).toBeGreaterThanOrEqual(1.0);
+  });
+
+  it('preserves total drive ratios while moving the editable split toward a neutral final drive', () => {
+    const result = calculateAEGOGearing('Road', 6, sampleCar, 7500);
+    const tireCircumferenceM = (((245 * 0.40) * 2 + 18 * 25.4) * Math.PI) / 1000;
+    const expectedFirstTotalRatio = (6500 * tireCircumferenceM * 60) / (90 * 1.15 * 1000);
+
+    expect(result.finalDrive).toBeLessThanOrEqual(4.5);
+    expect(result.gears[0]).toBeGreaterThanOrEqual(1.0);
+    expect(result.gears[0] * result.finalDrive).toBeCloseTo(expectedFirstTotalRatio, 1);
   });
 
   it('Drift goal should produce different gearing than Road', () => {
@@ -120,9 +149,9 @@ describe('calculateAEGOGearing', () => {
     const res = calculateAEGOGearing('Road', 6, mustang3847, 8625);
     expect(res.gears).toHaveLength(6);
 
-    // 1. Verify FD is within valid physical range [2.0, 6.5]
+    // 1. Verify FD is within the in-game valid range [2.0, 6.1]
     expect(res.finalDrive).toBeGreaterThanOrEqual(2.0);
-    expect(res.finalDrive).toBeLessThanOrEqual(6.5);
+    expect(res.finalDrive).toBeLessThanOrEqual(6.1);
 
     // 2. Verify monotonic decrease (g1 > g2 > ... > g6)
     for (let i = 1; i < res.gears.length; i++) {

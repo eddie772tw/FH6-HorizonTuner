@@ -121,6 +121,41 @@ export interface GearingSecondaryCorrection {
   softMaxSpeed?: number;      // Transmission preview soft max speed limit cap (km/h)
 }
 
+const AEGO_FINAL_DRIVE_MIN = 2.0;
+const AEGO_FINAL_DRIVE_MAX = 6.1;
+const AEGO_FINAL_DRIVE_NEUTRAL = 3.7;
+
+/**
+ * Rebalances the editable final-drive/gear split without changing each gear's
+ * total drive ratio. Keeping the overall ratios stable preserves the AEGO
+ * speed and shift targets while avoiding a high final drive paired with tiny
+ * individual gear ratios that leaves little room for in-game fine tuning.
+ */
+function rebalanceEditableGearing(finalDrive: number, gears: number[]): { finalDrive: number; gears: number[] } {
+  if (!Number.isFinite(finalDrive) || finalDrive <= 0 || gears.length === 0) {
+    return { finalDrive: AEGO_FINAL_DRIVE_NEUTRAL, gears };
+  }
+
+  const firstTotalRatio = finalDrive * gears[0];
+  const softenedFinalDrive = AEGO_FINAL_DRIVE_NEUTRAL + (finalDrive - AEGO_FINAL_DRIVE_NEUTRAL) * 0.25;
+  const firstGearBound = Number.isFinite(firstTotalRatio)
+    ? Math.max(AEGO_FINAL_DRIVE_MIN, firstTotalRatio)
+    : AEGO_FINAL_DRIVE_MAX;
+  const balancedFinalDrive = Math.max(
+    AEGO_FINAL_DRIVE_MIN,
+    Math.min(AEGO_FINAL_DRIVE_MAX, firstGearBound, softenedFinalDrive)
+  );
+  const scale = finalDrive / balancedFinalDrive;
+  const balancedGears = gears.map((ratio) => ratio * scale);
+
+  // Pathological weak-engine inputs can produce a total first ratio below 2.0,
+  // where preserving it and keeping the minimum final drive are incompatible.
+  // Prefer the game's usable first-gear floor in that single edge case.
+  balancedGears[0] = Math.max(1.0, balancedGears[0]);
+
+  return { finalDrive: balancedFinalDrive, gears: balancedGears };
+}
+
 /**
  * AEGO (Adaptive Envelope & Gearing Optimization) Algorithm
  * Generates custom, physically-sound gearing setup for different race goals.
@@ -348,6 +383,16 @@ export function calculateAEGOGearing(
   if (isNaN(fd) || fd === Infinity || fd === -Infinity || fd === 0) fd = 3.50;
   for (let i = 0; i < gears.length; i++) {
      if (isNaN(gears[i]) || gears[i] === Infinity || gears[i] === -Infinity || gears[i] === 0) gears[i] = 1.0;
+  }
+
+  if (raceGoal === 'Drag') {
+    // The drag profile intentionally models a four-speed direct-drive meta;
+    // preserve its 1.00 fourth gear while still respecting the game limit.
+    fd = Math.min(AEGO_FINAL_DRIVE_MAX, Math.max(AEGO_FINAL_DRIVE_MIN, fd));
+  } else {
+    const balanced = rebalanceEditableGearing(fd, gears);
+    fd = balanced.finalDrive;
+    gears = balanced.gears;
   }
 
   const roundedFD = Math.round(fd * 100) / 100;
