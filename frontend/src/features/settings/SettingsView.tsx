@@ -284,10 +284,14 @@ const SettingsView: React.FC = () => {
 
         </div>
 
-        {/* Full-width integrations: these sections contain long URLs and actions. */}
-        <div className="d-flex flex-column gap-4 mt-4">
-          <McpSettingsCard />
-          <UpdateSettingsCard />
+        {/* Keep secondary settings aligned to the same responsive two-column grid. */}
+        <div className="row g-4 mt-0">
+          <div className="col-12 col-md-6">
+            <McpSettingsCard />
+          </div>
+          <div className="col-12 col-md-6">
+            <UpdateSettingsCard />
+          </div>
         </div>
 
       </div>
