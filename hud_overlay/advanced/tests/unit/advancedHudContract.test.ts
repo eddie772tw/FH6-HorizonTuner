@@ -50,6 +50,19 @@ describe('Advanced HUD contract', () => {
   it('drives the fallback from LC ARM to LC GO', () => {
     const window = {} as Record<string, unknown>;
     const document = { getElementById: () => null };
+    const domCache = {
+      advCanvas: null,
+      advCanvasStatic: null,
+      advContainer: null,
+      advSpeed: null,
+      advSpeedUnit: null,
+      advRpmValue: null,
+      advGear: null,
+      advGauges: null,
+      dotsLeft: null,
+      dotsRight: null,
+      dots: {}
+    };
     let registration: AdvancedHudRegistration | undefined;
     const HUDCore = {
       init: () => undefined,
@@ -58,10 +71,11 @@ describe('Advanced HUD contract', () => {
       },
     };
 
-    new Function('window', 'document', 'HUDCore', extractController(readAdvancedHud()))(
+    new Function('window', 'document', 'HUDCore', 'domCache', extractController(readAdvancedHud()))(
       window,
       document,
       HUDCore,
+      domCache
     );
 
     expect(registration).toBeDefined();

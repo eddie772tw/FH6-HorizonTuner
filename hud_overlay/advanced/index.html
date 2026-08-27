@@ -345,10 +345,26 @@
         // var advCanvas = document.getElementById('advCanvas');
         // var ctx       = advCanvas.getContext('2d');
 
+
         var canvas = document.getElementById('advCanvas');
         var ctx = canvas.getContext('2d');
         var canvasStatic = document.getElementById('advCanvasStatic');
         var ctxS = canvasStatic.getContext('2d');
+
+        var domCache = {
+            advCanvas: canvas,
+            advCanvasStatic: canvasStatic,
+            advContainer: document.getElementById('advContainer'),
+            advSpeed: document.getElementById('adv-speed'),
+            advSpeedUnit: document.getElementById('adv-speed-unit'),
+            advRpmValue: document.getElementById('adv-rpm-value'),
+            advGear: document.getElementById('adv-gear'),
+            advGauges: document.getElementById('advGauges'),
+            dotsLeft: document.getElementById('dots-left'),
+            dotsRight: document.getElementById('dots-right'),
+            dots: {} // Cache individual dots in updateDotGroup
+        };
+
 
         // Force ForzaFont to load before first canvas draw
         document.fonts.load('1em ForzaFont').then(() => {
@@ -628,7 +644,8 @@
             for (var i = 0; i < 4; i++) {
                 var threshold = (i + 1) * 25;  // 25 / 50 / 75 / 100
                 var active = pct >= threshold;
-                var el = document.getElementById('dot-' + prefix + '-' + i);
+                var dotId = 'dot-' + prefix + '-' + i;
+                var el = domCache.dots[dotId] || (domCache.dots[dotId] = document.getElementById(dotId));
                 if (!el) continue;
                 el.className = 'adv-dot' + (active ? ' active' : '') + (active && isHigh ? ' danger' : '');
             }
@@ -760,7 +777,7 @@
             // ── Motion Effect (G-Force Acceleration Shake & Motion Blur) ───────────────
             var currentElements = (window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {};
             var showMotion = currentElements.showMotionEffect !== false;
-            var advContainer = document.getElementById('advContainer');
+            var advContainer = domCache ? domCache.advContainer : document.getElementById('advContainer');
             if (advContainer) {
                 if (showMotion && data) {
                     var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);
@@ -1001,7 +1018,7 @@
         function setAdvSpeedDisplay(value) {
             if (_advLastSpeedValue === value) return;
             _advLastSpeedValue = value;
-            var el = document.getElementById('adv-speed');
+            var el = domCache.advSpeed;
             if (!el) return;
             var valStr = value.toString();
             var out = "";
@@ -1016,7 +1033,7 @@
             if (_advLastRpmValue === value && _advLastRpmColorRed === isRed) return;
             _advLastRpmValue = value;
             _advLastRpmColorRed = isRed;
-            var el = document.getElementById('adv-rpm-value');
+            var el = domCache.advRpmValue;
             if (!el) return;
             el.style.color = isRed ? C_PINK_DIM : 'var(--adv-primary-dim)';
             var valStr = value.toString();
@@ -1033,33 +1050,33 @@
             scaleMultiplier: 0.5,
 
             onInit: function (payload) {
-                var _advUnitEl = document.getElementById('adv-speed-unit');
+                var _advUnitEl = domCache.advSpeedUnit;
                 if (_advUnitEl) _advUnitEl.textContent = (payload && payload.isMetric !== false) ? 'KM/H' : 'MPH';
             },
 
             onElementsChange: function (elements) {
-                var rpmCanvas = document.getElementById('advCanvas');
-                var rpmStatic = document.getElementById('advCanvasStatic');
-                var rpmVal = document.getElementById('adv-rpm-value');
+                var rpmCanvas = domCache.advCanvas;
+                var rpmStatic = domCache.advCanvasStatic;
+                var rpmVal = domCache.advRpmValue;
                 if (rpmCanvas) rpmCanvas.style.display = elements.showRPM === false ? 'none' : 'block';
                 if (rpmStatic) rpmStatic.style.display = elements.showRPM === false ? 'none' : 'block';
                 if (rpmVal) rpmVal.style.display = elements.showRPM === false ? 'none' : 'block';
 
-                var speedEl = document.getElementById('adv-speed');
-                var unitEl = document.getElementById('adv-speed-unit');
+                var speedEl = domCache.advSpeed;
+                var unitEl = domCache.advSpeedUnit;
                 if (speedEl) speedEl.style.display = elements.showSpeed === false ? 'none' : 'block';
                 if (unitEl) unitEl.style.display = elements.showSpeed === false ? 'none' : 'block';
 
-                var gearEl = document.getElementById('adv-gear');
+                var gearEl = domCache.advGear;
                 if (gearEl) gearEl.style.display = elements.showGear === false ? 'none' : 'block';
 
-                var gaugeGroup = document.getElementById('advGauges');
+                var gaugeGroup = domCache.advGauges;
                 if (gaugeGroup) gaugeGroup.style.display = elements.showPowerTorque === false ? 'none' : 'block';
 
                 window.showBoostGauge = elements.showBoost !== false;
 
-                var dotsLeft = document.getElementById('dots-left');
-                var dotsRight = document.getElementById('dots-right');
+                var dotsLeft = domCache.dotsLeft;
+                var dotsRight = domCache.dotsRight;
                 if (dotsLeft) dotsLeft.style.display = elements.showWheelLockup === false ? 'none' : 'flex';
                 if (dotsRight) dotsRight.style.display = elements.showWheelLockup === false ? 'none' : 'flex';
             },
@@ -1072,7 +1089,7 @@
                 window.advLCArmed = window.advLCState === 'armed';
                 window.advLCLaunched = window.advLCState === 'launched';
 
-                var container = document.getElementById('advContainer');
+                var container = domCache.advContainer;
                 if (!container) return;
 
                 if (data.maxRpm) _advLastMaxRpm = data.maxRpm;
@@ -1097,7 +1114,7 @@
                     setAdvSpeedDisplay(speed);
                     setAdvRpmDisplay(Math.round(data.rpm), data.rpm >= redlineRpm);
 
-                    var gearEl = document.getElementById('adv-gear');
+                    var gearEl = domCache.advGear;
                     if (data.gear <= 11) _advValidGear = data.gear;
                     if (gearEl) gearEl.textContent = _advValidGear === 0
                         ? 'R'
@@ -1140,11 +1157,11 @@
             window.advFadeAlpha = 0;
             window.sweepRevealRpm = 0;
 
-            var container = document.getElementById('advContainer');
+            var container = domCache.advContainer;
             if (container) container.classList.remove('hidden');
 
             setAdvSpeedDisplay(0);
-            var gearEl = document.getElementById('adv-gear');
+            var gearEl = domCache.advGear;
             if (gearEl) gearEl.textContent = '-';
 
             var rawMax = (maxRpm && maxRpm > 0) ? maxRpm : (_advLastMaxRpm || 8000);
