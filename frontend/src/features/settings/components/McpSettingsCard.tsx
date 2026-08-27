@@ -103,11 +103,11 @@ export const McpSettingsCard: React.FC = () => {
         )}
       </div>
 
-      <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
+      <label htmlFor="chk-mcp-enabled" className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3" style={{ cursor: 'pointer' }}>
         <div className="min-width-0">
-          <label htmlFor="chk-mcp-enabled" className="form-label fw-bold mb-0 fs-6">
+          <div className="form-label fw-bold mb-0 fs-6">
             {t('Enable MCP Server')}
-          </label>
+          </div>
           <div className="form-text fs-7">
             {t('Allow AI assistants (Claude, Cursor, Cline) to read telemetry, session data, and car physics via MCP.')}
           </div>
@@ -119,15 +119,15 @@ export const McpSettingsCard: React.FC = () => {
           checked={mcpEnabled}
           onChange={(e) => updateSettings({ mcp_enabled: e.target.checked })}
         />
-      </div>
+      </label>
 
       {mcpEnabled && (
         <>
-          <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
+          <label htmlFor="chk-mcp-live" className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3" style={{ cursor: 'pointer' }}>
             <div className="min-width-0">
-              <label htmlFor="chk-mcp-live" className="form-label fw-bold mb-0 fs-6">
+              <div className="form-label fw-bold mb-0 fs-6">
                 {t('Expose Real-Time 60Hz Telemetry')}
-              </label>
+              </div>
               <div className="form-text fs-7">
                 {t('When enabled, AI agents can query live UDP telemetry snapshot frames. When disabled, only recorded files and SQLite database are accessible.')}
               </div>
@@ -139,7 +139,7 @@ export const McpSettingsCard: React.FC = () => {
               checked={allowLive}
               onChange={(e) => updateSettings({ mcp_allow_live: e.target.checked })}
             />
-          </div>
+          </label>
 
           <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
             <div className="min-width-0">

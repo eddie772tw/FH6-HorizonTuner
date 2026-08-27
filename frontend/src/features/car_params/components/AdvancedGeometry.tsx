@@ -48,20 +48,20 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
             {t("Spring Stiffness Slider Limits")}
           </h4>
           <div style={formRowStyle}>
-            <label>{t("Front Spring Min")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
-            <input type="number" value={displaySpringFrontMin} onChange={e => handleSpringFrontMinChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 10.0" />
+            <label htmlFor="spring_front_min">{t("Front Spring Min")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
+            <input id="spring_front_min" type="number" value={displaySpringFrontMin} onChange={e => handleSpringFrontMinChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 10.0" />
           </div>
           <div style={formRowStyle}>
-            <label>{t("Front Spring Max")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
-            <input type="number" value={displaySpringFrontMax} onChange={e => handleSpringFrontMaxChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 120.0" />
+            <label htmlFor="spring_front_max">{t("Front Spring Max")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
+            <input id="spring_front_max" type="number" value={displaySpringFrontMax} onChange={e => handleSpringFrontMaxChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 120.0" />
           </div>
           <div style={formRowStyle}>
-            <label>{t("Rear Spring Min")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
-            <input type="number" value={displaySpringRearMin} onChange={e => handleSpringRearMinChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 10.0" />
+            <label htmlFor="spring_rear_min">{t("Rear Spring Min")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
+            <input id="spring_rear_min" type="number" value={displaySpringRearMin} onChange={e => handleSpringRearMinChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 10.0" />
           </div>
           <div style={formRowStyle}>
-            <label>{t("Rear Spring Max")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
-            <input type="number" value={displaySpringRearMax} onChange={e => handleSpringRearMaxChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 120.0" />
+            <label htmlFor="spring_rear_max">{t("Rear Spring Max")} ({settings.units.springRate === 'lbsin' ? 'lbs/in' : 'kgf/mm'})</label>
+            <input id="spring_rear_max" type="number" value={displaySpringRearMax} onChange={e => handleSpringRearMaxChange(e.target.value)} style={inputStyle} step="0.1" placeholder="e.g. 120.0" />
           </div>
         </div>
 
@@ -74,36 +74,36 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
           <div style={formRowStyle}>
             <label>{t("Front Ride Height Range (cm)")}</label>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <input type="number" step="0.1" value={carParams.height_front_min ?? 10.0} onChange={e => updateParam('height_front_min', parseFloat(e.target.value) || 10.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
-              <input type="number" step="0.1" value={carParams.height_front_max ?? 25.0} onChange={e => updateParam('height_front_max', parseFloat(e.target.value) || 25.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
+              <input aria-label={t("Front Ride Height Min (cm)")} type="number" step="0.1" value={carParams.height_front_min ?? 10.0} onChange={e => updateParam('height_front_min', parseFloat(e.target.value) || 10.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
+              <input aria-label={t("Front Ride Height Max (cm)")} type="number" step="0.1" value={carParams.height_front_max ?? 25.0} onChange={e => updateParam('height_front_max', parseFloat(e.target.value) || 25.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
             </div>
           </div>
 
           <div style={formRowStyle}>
             <label>{t("Rear Ride Height Range (cm)")}</label>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <input type="number" step="0.1" value={carParams.height_rear_min ?? 10.0} onChange={e => updateParam('height_rear_min', parseFloat(e.target.value) || 10.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
-              <input type="number" step="0.1" value={carParams.height_rear_max ?? 25.0} onChange={e => updateParam('height_rear_max', parseFloat(e.target.value) || 25.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
+              <input aria-label={t("Rear Ride Height Min (cm)")} type="number" step="0.1" value={carParams.height_rear_min ?? 10.0} onChange={e => updateParam('height_rear_min', parseFloat(e.target.value) || 10.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
+              <input aria-label={t("Rear Ride Height Max (cm)")} type="number" step="0.1" value={carParams.height_rear_max ?? 25.0} onChange={e => updateParam('height_rear_max', parseFloat(e.target.value) || 25.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
             </div>
           </div>
 
           <div style={formRowStyle}>
-            <label>{t("Front Downforce (kgf)")}</label>
+            <label htmlFor="aero_downforce_front">{t("Front Downforce (kgf)")}</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input type="number" disabled={isFrontAutoAero} value={isFrontAutoAero ? 0 : (carParams.aero_downforce_front || 0)} onChange={e => updateParam('aero_downforce_front', Math.max(0, parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '88px', opacity: isFrontAutoAero ? 0.5 : 1 }} />
-              <label style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isFrontAutoAero} onChange={e => updateParam('aero_downforce_front', e.target.checked ? 0 : 50)} />
+              <input id="aero_downforce_front" type="number" disabled={isFrontAutoAero} value={isFrontAutoAero ? 0 : (carParams.aero_downforce_front || 0)} onChange={e => updateParam('aero_downforce_front', Math.max(0, parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '88px', opacity: isFrontAutoAero ? 0.5 : 1 }} />
+              <label htmlFor="chk_aero_downforce_front" style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
+                <input id="chk_aero_downforce_front" type="checkbox" checked={isFrontAutoAero} onChange={e => updateParam('aero_downforce_front', e.target.checked ? 0 : 50)} />
                 {t("Auto (0)")}
               </label>
             </div>
           </div>
 
           <div style={formRowStyle}>
-            <label>{t("Rear Downforce (kgf)")}</label>
+            <label htmlFor="aero_downforce_rear">{t("Rear Downforce (kgf)")}</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input type="number" disabled={isRearAutoAero} value={isRearAutoAero ? 0 : (carParams.aero_downforce_rear || 0)} onChange={e => updateParam('aero_downforce_rear', Math.max(0, parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '88px', opacity: isRearAutoAero ? 0.5 : 1 }} />
-              <label style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isRearAutoAero} onChange={e => updateParam('aero_downforce_rear', e.target.checked ? 0 : 50)} />
+              <input id="aero_downforce_rear" type="number" disabled={isRearAutoAero} value={isRearAutoAero ? 0 : (carParams.aero_downforce_rear || 0)} onChange={e => updateParam('aero_downforce_rear', Math.max(0, parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '88px', opacity: isRearAutoAero ? 0.5 : 1 }} />
+              <label htmlFor="chk_aero_downforce_rear" style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
+                <input id="chk_aero_downforce_rear" type="checkbox" checked={isRearAutoAero} onChange={e => updateParam('aero_downforce_rear', e.target.checked ? 0 : 50)} />
                 {t("Auto (0)")}
               </label>
             </div>

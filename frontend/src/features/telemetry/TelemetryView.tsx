@@ -208,7 +208,7 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
                 <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center gap-2">
                     <span>{t("HUD Overlay Active")}</span>
-                    <span className="badge text-bg-warning">PAUSED</span>
+                    <span className="badge text-bg-warning">{t("PAUSED")}</span>
                   </div>
                   <button
                     type="button"
