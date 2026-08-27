@@ -1039,5 +1039,14 @@
   "Travel Rate": "Travel Rate",
   "Bottom Out": "Bottom Out",
   "Yes": "Yes",
-  "No": "No"
+  "No": "No",
+  "Acceleration X": "Acceleration X",
+  "Acceleration Y": "Acceleration Y",
+  "Acceleration Z": "Acceleration Z",
+  "Orientation Trend": "Orientation Trend",
+  "Speed Trend": "Speed Trend",
+  "RPM Trend": "RPM Trend",
+  "Distance": "Distance",
+  "Race Position": "Race Position",
+  "Boost / Regeneration": "Boost / Regeneration"
 }

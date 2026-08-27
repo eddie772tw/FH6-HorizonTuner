@@ -1129,5 +1129,14 @@
   "Travel Rate": "行程速率",
   "Bottom Out": "觸底",
   "Yes": "是",
-  "No": "否"
+  "No": "否",
+  "Acceleration X": "X 軸加速度",
+  "Acceleration Y": "Y 軸加速度",
+  "Acceleration Z": "Z 軸加速度",
+  "Orientation Trend": "姿態趨勢",
+  "Speed Trend": "速度趨勢",
+  "RPM Trend": "RPM 趨勢",
+  "Distance": "距離",
+  "Race Position": "比賽名次",
+  "Boost / Regeneration": "增壓／動能回收"
 }

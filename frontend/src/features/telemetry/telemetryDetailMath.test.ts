@@ -3,6 +3,9 @@ import type { TelemetryData } from '../../hooks/useTelemetry';
 import type { TelemetryHistorySample } from './telemetryHistory';
 import {
   calculateSuspensionMetrics,
+  getDynamicsTrendValues,
+  getOrientationTrendValues,
+  getTireTrendValues,
   radiansToDegrees,
   readTireMetrics,
   summarizeSeries,
@@ -101,6 +104,29 @@ describe('telemetry detail math', () => {
     expect(metrics.surfaceRumble).toEqual([0.1, 0.2, null, null]);
     expect(radiansToDegrees(Math.PI / 2)).toBeCloseTo(90);
     expect(radiansToDegrees(null)).toBeNull();
+  });
+
+  it('maps tire and dynamics trend series to display units', () => {
+    const sample = createSample(4, [0.1, 0.2, 0.3, 0.4]);
+    const withValues: TelemetryHistorySample = {
+      ...sample,
+      tireTemp: [80, 81, 82, 83],
+      slipRatio: [0.1, 0.2, 0.3, 0.4],
+      slipAngle: [0, Math.PI / 2, Math.PI, -Math.PI / 2],
+      combinedSlip: [0.2, 0.3, 0.4, 0.5],
+      surfaceRumble: [1, 2, 3, 4],
+      acceleration: [9.81, -9.81, 19.62],
+      pitch: Math.PI / 4,
+      roll: -Math.PI / 2,
+      yaw: Math.PI,
+    };
+
+    expect(getTireTrendValues(withValues).slipAngle).toEqual({ FL: 0, FR: 90, RL: 180, RR: -90 });
+    expect(getTireTrendValues(withValues).surfaceRumble).toEqual({ FL: 1, FR: 2, RL: 3, RR: 4 });
+    expect(getDynamicsTrendValues(withValues)).toEqual({ X: 1, Y: -1, Z: 2 });
+    expect(getOrientationTrendValues(withValues).Pitch).toBeCloseTo(45);
+    expect(getOrientationTrendValues(withValues).Roll).toBeCloseTo(-90);
+    expect(getOrientationTrendValues(withValues).Yaw).toBeCloseTo(180);
   });
 
   it('creates relative chart time from nonuniform history timestamps', () => {

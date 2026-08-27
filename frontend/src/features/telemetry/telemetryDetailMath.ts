@@ -113,6 +113,48 @@ export const readTireMetrics = (current: TelemetryData | null): TireDetailMetric
   surfaceRumble: readFour(current?.SurfaceRumble),
 });
 
+export const getTireTrendValues = (sample: TelemetryHistorySample) => ({
+  temperature: {
+    FL: sample.tireTemp?.[0] ?? null,
+    FR: sample.tireTemp?.[1] ?? null,
+    RL: sample.tireTemp?.[2] ?? null,
+    RR: sample.tireTemp?.[3] ?? null,
+  },
+  slipRatio: {
+    FL: sample.slipRatio[0], FR: sample.slipRatio[1], RL: sample.slipRatio[2], RR: sample.slipRatio[3],
+  },
+  slipAngle: {
+    FL: radiansToDegrees(sample.slipAngle[0]),
+    FR: radiansToDegrees(sample.slipAngle[1]),
+    RL: radiansToDegrees(sample.slipAngle[2]),
+    RR: radiansToDegrees(sample.slipAngle[3]),
+  },
+  combinedSlip: {
+    FL: sample.combinedSlip?.[0] ?? null,
+    FR: sample.combinedSlip?.[1] ?? null,
+    RL: sample.combinedSlip?.[2] ?? null,
+    RR: sample.combinedSlip?.[3] ?? null,
+  },
+  surfaceRumble: {
+    FL: sample.surfaceRumble?.[0] ?? null,
+    FR: sample.surfaceRumble?.[1] ?? null,
+    RL: sample.surfaceRumble?.[2] ?? null,
+    RR: sample.surfaceRumble?.[3] ?? null,
+  },
+});
+
+export const getDynamicsTrendValues = (sample: TelemetryHistorySample) => ({
+  X: sample.acceleration[0] / 9.81,
+  Y: sample.acceleration[1] / 9.81,
+  Z: sample.acceleration[2] / 9.81,
+});
+
+export const getOrientationTrendValues = (sample: TelemetryHistorySample) => ({
+  Pitch: radiansToDegrees(sample.pitch),
+  Roll: radiansToDegrees(sample.roll),
+  Yaw: radiansToDegrees(sample.yaw),
+});
+
 export const radiansToDegrees = (radians: number | null): number | null => (
   radians === null ? null : radians * (180 / Math.PI)
 );
