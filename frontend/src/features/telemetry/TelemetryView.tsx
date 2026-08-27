@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
-import { useSettings } from '../../context/SettingsContext';
+import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useTelemetryRecorder } from '../../context/TelemetryRecorderContext';
 import GForceRadar from './components/GForceRadar';
@@ -15,6 +15,13 @@ import ArcSteerGauge from './components/ArcSteerGauge';
 import RenderSwitch from './components/RenderSwitch';
 import { backendFetch } from '../../services/backend';
 import type { SuspensionTravelMode } from '../../utils/suspensionTravel';
+import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
+import {
+  createUnitPreference,
+  loadUnitPreference,
+  resolveUnitPreference,
+  type UnitPreferenceOverride
+} from '../../utils/gameUnitSettings';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
@@ -60,12 +67,23 @@ interface BlockRenderConfig {
   suspensionTrace: boolean;
 }
 
-const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab }) => {
+interface TelemetryViewContentProps extends TelemetryViewProps {
+  unitPreference: UnitPreferenceOverride;
+  onUnitPreferenceChange: (preference: UnitPreferenceOverride) => void;
+}
+
+const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
+  subTab: propSubTab,
+  setSubTab: propSetSubTab,
+  unitPreference,
+  onUnitPreferenceChange
+}) => {
   const [internalSubTab, setInternalSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
   const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
   const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
 
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
+  const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [suspensionTravelMode, setSuspensionTravelMode] = useState<SuspensionTravelMode>(() =>
     localStorage.getItem('telemetry_suspension_travel_mode') === 'absolute' ? 'absolute' : 'relative'
   );
@@ -255,7 +273,10 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
           </ul>
         </div>
 
-        <div className="d-flex align-items-center fw-bold text-secondary fs-6">
+        <div className="d-flex align-items-center gap-2 fw-bold text-secondary fs-6">
+          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowUnitSettings(true)}>
+            {t("Telemetry Units")}
+          </button>
           {classDisplay && <span className="badge text-bg-info me-2">{classDisplay}</span>}
           {isEV && <span className="badge text-bg-success me-2">{t("EV")}</span>}
           <span className="text-truncate" style={{ maxWidth: '200px' }}>{displayCarName}</span>
@@ -364,7 +385,46 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
         </div>
 
       )}
+      <UnitSettingsSidebar
+        idPrefix="telemetry-units"
+        show={showUnitSettings}
+        title={t("Telemetry Unit Settings")}
+        preference={unitPreference}
+        onChange={onUnitPreferenceChange}
+        onClose={() => setShowUnitSettings(false)}
+      />
     </div>
+  );
+};
+
+const TELEMETRY_UNIT_STORAGE_KEY = 'telemetry_unit_preference';
+
+const TelemetryView: React.FC<TelemetryViewProps> = props => {
+  const { settings } = useSettings();
+  const [unitPreference, setUnitPreference] = useState<UnitPreferenceOverride>(() =>
+    loadUnitPreference(TELEMETRY_UNIT_STORAGE_KEY, settings.units)
+  );
+  const scopedUnits = React.useMemo(
+    () => resolveUnitPreference(settings.units, unitPreference),
+    [settings.units, unitPreference]
+  );
+
+  const updateUnitPreference = (preference: UnitPreferenceOverride) => {
+    const normalized = unitPreference.followGlobal && !preference.followGlobal
+      ? { ...createUnitPreference(settings.units), followGlobal: false }
+      : preference;
+    setUnitPreference(normalized);
+    localStorage.setItem(TELEMETRY_UNIT_STORAGE_KEY, JSON.stringify(normalized));
+  };
+
+  return (
+    <ScopedUnitSettingsProvider units={scopedUnits}>
+      <TelemetryViewContent
+        {...props}
+        unitPreference={unitPreference}
+        onUnitPreferenceChange={updateUnitPreference}
+      />
+    </ScopedUnitSettingsProvider>
   );
 };
 

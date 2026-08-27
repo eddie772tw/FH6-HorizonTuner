@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { UnitSettings } from '../context/SettingsContext';
-import { applyGeneralUnitSystem, inferGeneralUnitSystem } from './gameUnitSettings';
+import {
+  applyGeneralUnitSystem,
+  createUnitPreference,
+  inferGeneralUnitSystem,
+  resolveUnitPreference
+} from './gameUnitSettings';
 
 const units: UnitSettings = {
   speed: 'kmh', weight: 'kg', temperature: 'C', tirePressure: 'psi',
@@ -30,5 +35,22 @@ describe('game-style unit settings', () => {
   it('uses speed as the backward-compatible general-unit discriminator', () => {
     expect(inferGeneralUnitSystem(units)).toBe('metric');
     expect(inferGeneralUnitSystem({ ...units, speed: 'mph' })).toBe('imperial');
+  });
+
+  it('resolves a three-category override without mutating global units', () => {
+    const globalUnits = { ...units };
+    const result = resolveUnitPreference(globalUnits, {
+      followGlobal: false,
+      general: 'imperial',
+      power: 'ps',
+      spring: 'lbsin'
+    });
+
+    expect(result).toMatchObject({ speed: 'mph', torque: 'lbft', power: 'ps', springRate: 'lbsin' });
+    expect(globalUnits).toEqual(units);
+  });
+
+  it('returns global units unchanged while following the app', () => {
+    expect(resolveUnitPreference(units, createUnitPreference(units))).toBe(units);
   });
 });
