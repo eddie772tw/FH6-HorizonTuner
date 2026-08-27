@@ -482,3 +482,8 @@ function selectBand(maxRpm) {
    - 針對序列切片或 Sprite 圖像（如數字、檔位、轉速弧條），必須於頁面載入時建立 `Image` 物件陣列靜態預載，在 `onFrame` 內直接呼叫 `ctx.drawImage`，嚴禁每幀建立 DOM 物件。
 3. **適度使用 `requestAnimationFrame`**：
    - 定時 Sweep 掃描動畫必須透過 `requestAnimationFrame` 更新，並在動畫結束時及時解除標記 (`sweepActive = false`)。
+
+4. **高影格率 (High-FPS / Uncapped) 畫面平滑度與 GPU 硬體加速防護 (Frame Pacing & Hardware Acceleration)**：
+   - 當遊戲 (如 Forza Horizon 6) 運行於無限制 FPS 或高於 60FPS 時，Windows Desktop Window Manager (DWM) 桌面合成器與全螢幕無邊框視窗可能產生微小撕裂或抖動。
+   - **硬體加速維護**：為維持 60Hz 遙測與 Canvas 渲染流暢度，請勿在 WebView2 引數中傳遞 `--disable-gpu`。如需修正透明背景，請於 `hud-base.css` 的 `html, body` 明確宣告 `background: transparent !important;` 與 `background-color: transparent !important;`。
+   - **遊戲設定建議**：若使用者於無限制 FPS 時觀察到 HUD 或遊戲渲染不流暢，建議配合 NVIDIA Reflex / G-Sync / FreeSync 或實體顯示器刷新率設定硬體或遊戲內 FPS 上限，以減少 DWM 影格排隊與 GPU 資源爭奪。
