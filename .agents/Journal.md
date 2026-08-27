@@ -1410,3 +1410,16 @@
 - **Action**: Add `cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` to CI and release gates, and add cargo format auto-fix plus verification to `start_all.bat`.
 - **Evidence**: Commit `fa0c3f9`; CI run `32681482344` passed including Windows executable bundle verification; CodeQL run `32681481832` passed; local frontend tests (69 files / 440 tests), frontend build, Ruff, Rust format, and release contract tests passed.
 - **Status**: adopted.
+
+---
+
+## 2026-08-28 / AEGO Ratio Balance and Game-aligned Unit QoL
+
+- **Scope**: AEGO editable ratio representation, global unit preferences, HUD unit ownership, and live suspension travel display.
+- **Decision**:
+  1. AEGO preserves per-gear total drive ratios while moving the editable final-drive/gear split toward a neutral final drive. Final drive is bounded to `2.00..6.10`, first gear is protected from sub-`1.00` pathological outputs, and the Drag profile retains its explicit fourth-gear `1.00` contract.
+  2. User-facing APP units follow the game's three-choice model: general units atomically control speed, weight, temperature, pressure, height, force, and torque; power and spring-rate units remain independently selectable. Internal physics units and persisted legacy unit fields remain stable.
+  3. HUD settings persist both an independent speed unit and `followAppUnits`; the backend derives `effectiveUnit` for runtime delivery without overwriting the independent choice.
+  4. The Forza Sled packet's normalized suspension travel at offset `68` and absolute suspension travel in meters at offset `196` are both exposed. The live UI uses normalized travel for bar/trace geometry and can display either the normalized value or absolute millimeters for text/min/max.
+- **Verification**: Ruff check/format passed; backend tests passed as `193` non-host-diagnostics plus `2` host-diagnostics tests; frontend Vitest passed `71 files / 449 tests`; production TypeScript/Vite build and `git diff --check` passed.
+- **Status**: adopted.
