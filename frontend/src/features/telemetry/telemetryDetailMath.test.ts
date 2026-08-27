@@ -10,6 +10,7 @@ import {
   readTireMetrics,
   summarizeSeries,
   toChartPoints,
+  toTireTrendChartData,
 } from './telemetryDetailMath';
 
 const createTelemetry = (timestamp: number, overrides: Partial<TelemetryData> = {}): TelemetryData => ({
@@ -127,6 +128,25 @@ describe('telemetry detail math', () => {
     expect(getOrientationTrendValues(withValues).Pitch).toBeCloseTo(45);
     expect(getOrientationTrendValues(withValues).Roll).toBeCloseTo(-90);
     expect(getOrientationTrendValues(withValues).Yaw).toBeCloseTo(180);
+  });
+
+  it('builds all tire trend series in one history pass', () => {
+    const history = [
+      createSample(10, [0.1, 0.2, 0.3, 0.4]),
+      {
+        ...createSample(10.1, [0.2, 0.3, 0.4, 0.5]),
+        tireTemp: [80, 81, 82, 83],
+        combinedSlip: [0.1, 0.2, 0.3, 0.4],
+        surfaceRumble: [0.4, 0.3, 0.2, 0.1],
+      },
+    ];
+
+    const data = toTireTrendChartData(history);
+
+    expect(data.temperature).toHaveLength(2);
+    expect(data.temperature[1]).toMatchObject({ time: 0.1, FL: 80, RR: 83 });
+    expect(data.slipAngle[0]).toMatchObject({ time: 0, FL: 0, RR: 0 });
+    expect(data.combinedSlip[0]).toMatchObject({ time: 0, FL: null, RR: null });
   });
 
   it('creates relative chart time from nonuniform history timestamps', () => {

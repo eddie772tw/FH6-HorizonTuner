@@ -55,7 +55,9 @@ export const SuspensionDetailPanel: React.FC<SharedProps & { current: TelemetryD
       <Metric label={t('Pitch')} value={formatDegrees(current?.Pitch)} />
       <Metric label={t('Roll')} value={formatDegrees(current?.Roll)} />
     </div>
-    <TrendChart title={t('Suspension Travel Trend')} data={data} emptyLabel={emptyLabel} lines={cornerLines} />
+    <div className="telemetry-detail-view__chart-grid">
+      <TrendChart title={t('Suspension Travel Trend')} data={data} emptyLabel={emptyLabel} lines={cornerLines} />
+    </div>
   </div>
 );
 
@@ -70,21 +72,26 @@ export const TireDetailPanel: React.FC<SharedProps & {
 }> = ({ t, corners, emptyLabel, metrics, temperatureData, slipRatioData, slipAngleData, combinedSlipData, surfaceRumbleData, convertTemp }) => (
   <div className="telemetry-detail-view">
     <div className="telemetry-detail-view__metric-grid">
-      {metrics.temperature.map((temperature, index) => (
-        <div className="telemetry-detail-view__corner" key={cornerLines[index].dataKey}>
-          <h4 className="fs-6 text-primary mb-2">{corners[index]}</h4>
-          <Metric label={t('Temperature')} value={temperature === null ? '--' : `${formatValue(convertTemp(temperature).value, 1)} ${convertTemp(temperature).label}`} />
-          <Metric label={t('Slip Ratio')} value={formatValue(metrics.slipRatio[index])} />
-          <Metric label={t('Slip Angle')} value={formatDegrees(metrics.slipAngle[index])} />
-          <Metric label={t('Combined Slip')} value={formatValue(metrics.combinedSlip[index])} />
-        </div>
-      ))}
+      {metrics.temperature.map((temperature, index) => {
+        const convertedTemperature = temperature === null ? null : convertTemp(temperature);
+        return (
+          <div className="telemetry-detail-view__corner" key={cornerLines[index].dataKey}>
+            <h4 className="fs-6 text-primary mb-2">{corners[index]}</h4>
+            <Metric label={t('Temperature')} value={convertedTemperature === null ? '--' : `${formatValue(convertedTemperature.value, 1)} ${convertedTemperature.label}`} />
+            <Metric label={t('Slip Ratio')} value={formatValue(metrics.slipRatio[index])} />
+            <Metric label={t('Slip Angle')} value={formatDegrees(metrics.slipAngle[index])} />
+            <Metric label={t('Combined Slip')} value={formatValue(metrics.combinedSlip[index])} />
+          </div>
+        );
+      })}
     </div>
-    <TrendChart title={t('Tire Temperature Trend')} data={temperatureData} emptyLabel={emptyLabel} lines={cornerLines} />
-    <TrendChart title={t('Slip Ratio Trend')} data={slipRatioData} emptyLabel={emptyLabel} lines={cornerLines} />
-    <TrendChart title={t('Slip Angle Trend')} data={slipAngleData} emptyLabel={emptyLabel} lines={cornerLines} />
-    <TrendChart title={t('Combined Slip Trend')} data={combinedSlipData} emptyLabel={emptyLabel} lines={cornerLines} />
-    <TrendChart title={t('Surface Rumble Trend')} data={surfaceRumbleData} emptyLabel={emptyLabel} lines={cornerLines} />
+    <div className="telemetry-detail-view__chart-grid">
+      <TrendChart title={t('Tire Temperature Trend')} data={temperatureData} emptyLabel={emptyLabel} lines={cornerLines} />
+      <TrendChart title={t('Slip Ratio Trend')} data={slipRatioData} emptyLabel={emptyLabel} lines={cornerLines} />
+      <TrendChart title={t('Slip Angle Trend')} data={slipAngleData} emptyLabel={emptyLabel} lines={cornerLines} />
+      <TrendChart title={t('Combined Slip Trend')} data={combinedSlipData} emptyLabel={emptyLabel} lines={cornerLines} />
+      <TrendChart title={t('Surface Rumble Trend')} data={surfaceRumbleData} emptyLabel={emptyLabel} lines={cornerLines} />
+    </div>
   </div>
 );
 
@@ -132,20 +139,22 @@ export const DynamicsDetailPanel: React.FC<SharedProps & {
         <Metric label={t('Distance')} value={current?.DistanceTraveled === undefined ? '--' : `${formatValue(current.DistanceTraveled, 0)} m`} />
         <Metric label={t('Race Position')} value={formatRacePosition(current?.RacePosition)} />
       </div>
-      <TrendChart title={t('Acceleration Trend')} data={accelerationData} emptyLabel={emptyLabel} lines={[
-        { dataKey: 'X', label: t('Acceleration X'), color: 'var(--primary)' },
-        { dataKey: 'Y', label: t('Acceleration Y'), color: 'var(--secondary)' },
-        { dataKey: 'Z', label: t('Acceleration Z'), color: 'var(--accent)' },
-      ]} />
-      <TrendChart title={t('Orientation Trend')} data={orientationData} emptyLabel={emptyLabel} lines={[
-        { dataKey: 'Pitch', label: t('Pitch'), color: 'var(--primary)' },
-        { dataKey: 'Roll', label: t('Roll'), color: 'var(--secondary)' },
-        { dataKey: 'Yaw', label: t('Yaw'), color: 'var(--accent)' },
-      ]} />
-      <TrendChart title={t('Speed Trend')} data={speedData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Speed', label: t('Speed'), color: 'var(--primary)' }]} />
-      <TrendChart title={t('RPM Trend')} data={rpmData} emptyLabel={emptyLabel} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--secondary)' }]} />
-      <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
-      <TrendChart title={t('Boost / Regeneration')} data={boostData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Boost', label: t('Boost'), color: 'var(--accent)' }]} />
+      <div className="telemetry-detail-view__chart-grid">
+        <TrendChart title={t('Acceleration Trend')} data={accelerationData} emptyLabel={emptyLabel} lines={[
+          { dataKey: 'X', label: t('Acceleration X'), color: 'var(--primary)' },
+          { dataKey: 'Y', label: t('Acceleration Y'), color: 'var(--secondary)' },
+          { dataKey: 'Z', label: t('Acceleration Z'), color: 'var(--accent)' },
+        ]} />
+        <TrendChart title={t('Orientation Trend')} data={orientationData} emptyLabel={emptyLabel} lines={[
+          { dataKey: 'Pitch', label: t('Pitch'), color: 'var(--primary)' },
+          { dataKey: 'Roll', label: t('Roll'), color: 'var(--secondary)' },
+          { dataKey: 'Yaw', label: t('Yaw'), color: 'var(--accent)' },
+        ]} />
+        <TrendChart title={t('Speed Trend')} data={speedData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Speed', label: t('Speed'), color: 'var(--primary)' }]} />
+        <TrendChart title={t('RPM Trend')} data={rpmData} emptyLabel={emptyLabel} lines={[{ dataKey: 'RPM', label: t('RPM'), color: 'var(--secondary)' }]} />
+        <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
+        <TrendChart title={t('Boost / Regeneration')} data={boostData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Boost', label: t('Boost'), color: 'var(--accent)' }]} />
+      </div>
     </div>
   );
 };
@@ -162,7 +171,9 @@ export const DriverDetailPanel: React.FC<SharedProps & { current: TelemetryData 
       <Metric label={t('RPM')} value={formatValue(current?.CurrentEngineRpm, 0)} />
       <Metric label={t('Speed')} value={current?.SpeedMetersPerSecond === undefined ? '--' : `${formatValue(convertSpeed(current.SpeedMetersPerSecond).value, 1)} ${convertSpeed(current.SpeedMetersPerSecond).label}`} />
     </div>
-    <TrendChart title={t('Driver Input Trend')} data={data} emptyLabel={emptyLabel} lines={[{ dataKey: 'Throttle', label: t('Throttle'), color: 'var(--primary)' }, { dataKey: 'Brake', label: t('Brake'), color: 'var(--secondary)' }, { dataKey: 'Steering', label: t('Steering'), color: 'var(--accent)' }]} />
+    <div className="telemetry-detail-view__chart-grid">
+      <TrendChart title={t('Driver Input Trend')} data={data} emptyLabel={emptyLabel} lines={[{ dataKey: 'Throttle', label: t('Throttle'), color: 'var(--primary)' }, { dataKey: 'Brake', label: t('Brake'), color: 'var(--secondary)' }, { dataKey: 'Steering', label: t('Steering'), color: 'var(--accent)' }]} />
+    </div>
   </div>
 );
 
@@ -174,7 +185,9 @@ export const TraceDetailPanel: React.FC<SharedProps & { driverData: TelemetryCha
       <Metric label={t('Power')} value="--" />
       <Metric label={t('Torque')} value="--" />
     </div>
-    <TrendChart title={t('Pedal Trace')} data={driverData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Throttle', label: t('Throttle'), color: 'var(--primary)' }, { dataKey: 'Brake', label: t('Brake'), color: 'var(--secondary)' }]} />
-    <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
+    <div className="telemetry-detail-view__chart-grid">
+      <TrendChart title={t('Pedal Trace')} data={driverData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Throttle', label: t('Throttle'), color: 'var(--primary)' }, { dataKey: 'Brake', label: t('Brake'), color: 'var(--secondary)' }]} />
+      <TrendChart title={t('Power and Torque Trend')} data={powerData} emptyLabel={emptyLabel} lines={[{ dataKey: 'Power', label: t('Power'), color: 'var(--primary)' }, { dataKey: 'Torque', label: t('Torque'), color: 'var(--secondary)' }]} />
+    </div>
   </div>
 );

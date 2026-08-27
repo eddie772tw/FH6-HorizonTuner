@@ -33,6 +33,14 @@ export interface TireDetailMetrics {
 
 export type TelemetryChartPoint = Record<string, number | null> & { time: number };
 
+export interface TireTrendChartData {
+  temperature: TelemetryChartPoint[];
+  slipRatio: TelemetryChartPoint[];
+  slipAngle: TelemetryChartPoint[];
+  combinedSlip: TelemetryChartPoint[];
+  surfaceRumble: TelemetryChartPoint[];
+}
+
 export const finiteOrNull = (value: number | undefined | null): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
@@ -66,10 +74,15 @@ export const toChartPoints = (
   selector: (sample: TelemetryHistorySample) => Record<string, number | null>,
 ): TelemetryChartPoint[] => {
   const first = history[0]?.timeSeconds ?? 0;
-  return history.map((sample) => ({
-    time: Number((sample.timeSeconds - first).toFixed(1)),
-    ...selector(sample),
-  }));
+  const result: TelemetryChartPoint[] = new Array(history.length);
+  for (let index = 0; index < history.length; index += 1) {
+    const sample = history[index];
+    result[index] = {
+      time: Math.round((sample.timeSeconds - first) * 10) / 10,
+      ...selector(sample),
+    };
+  }
+  return result;
 };
 
 export const calculateSuspensionMetrics = (
@@ -142,6 +155,61 @@ export const getTireTrendValues = (sample: TelemetryHistorySample) => ({
     RR: sample.surfaceRumble?.[3] ?? null,
   },
 });
+
+export const toTireTrendChartData = (
+  history: readonly TelemetryHistorySample[],
+): TireTrendChartData => {
+  const first = history[0]?.timeSeconds ?? 0;
+  const result: TireTrendChartData = {
+    temperature: new Array(history.length),
+    slipRatio: new Array(history.length),
+    slipAngle: new Array(history.length),
+    combinedSlip: new Array(history.length),
+    surfaceRumble: new Array(history.length),
+  };
+
+  for (let index = 0; index < history.length; index += 1) {
+    const sample = history[index];
+    const time = Math.round((sample.timeSeconds - first) * 10) / 10;
+    result.temperature[index] = {
+      time,
+      FL: sample.tireTemp?.[0] ?? null,
+      FR: sample.tireTemp?.[1] ?? null,
+      RL: sample.tireTemp?.[2] ?? null,
+      RR: sample.tireTemp?.[3] ?? null,
+    };
+    result.slipRatio[index] = {
+      time,
+      FL: sample.slipRatio[0],
+      FR: sample.slipRatio[1],
+      RL: sample.slipRatio[2],
+      RR: sample.slipRatio[3],
+    };
+    result.slipAngle[index] = {
+      time,
+      FL: radiansToDegrees(sample.slipAngle[0]),
+      FR: radiansToDegrees(sample.slipAngle[1]),
+      RL: radiansToDegrees(sample.slipAngle[2]),
+      RR: radiansToDegrees(sample.slipAngle[3]),
+    };
+    result.combinedSlip[index] = {
+      time,
+      FL: sample.combinedSlip?.[0] ?? null,
+      FR: sample.combinedSlip?.[1] ?? null,
+      RL: sample.combinedSlip?.[2] ?? null,
+      RR: sample.combinedSlip?.[3] ?? null,
+    };
+    result.surfaceRumble[index] = {
+      time,
+      FL: sample.surfaceRumble?.[0] ?? null,
+      FR: sample.surfaceRumble?.[1] ?? null,
+      RL: sample.surfaceRumble?.[2] ?? null,
+      RR: sample.surfaceRumble?.[3] ?? null,
+    };
+  }
+
+  return result;
+};
 
 export const getDynamicsTrendValues = (sample: TelemetryHistorySample) => ({
   X: sample.acceleration[0] / 9.81,

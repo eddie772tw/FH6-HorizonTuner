@@ -15,6 +15,17 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-27 / Telemetry expanded detail Canvas rendering optimization
+
+### 詳細遙測統計資料的繪製效能與版面可讀性
+
+- **來源**：`local`，針對 `feat/V1.5-arch` 的 TelemetryView expanded detail。
+- **狀態**：`adopted`。
+- **Learning**：詳細趨勢圖原先以 Recharts/SVG 在每次 bounded history 更新時重算約 300 個 samples，且 `TelemetryDetailView` 即使只展開一張卡也會建立其他卡片的 chart data。這與既有 Canvas 圖表的高頻路徑設計不一致。
+- **Action**：採用 `huge-component-refactoring` 與 `halfmoon-design-system`：`TrendChart` 改用 DPR-aware Canvas，透過 ResizeObserver 與主題 CSS 變數快取繪製網格、座標、折線與 hover tooltip；資料建立改為依 `cardId` 延遲，輪胎五組趨勢在單一 history pass 產生；expanded detail 的趨勢圖改為 desktop 雙欄、窄視窗單欄。
+- **Evidence**：新增 `toTireTrendChartData` isolation test；前端 Vitest `71 files / 451 tests` 通過；`pnpm -C frontend run build` 通過（682 modules）；`git diff --check` 通過。未執行實機 UDP 或瀏覽器 profiler，因此未宣稱實際 FPS/p95 提升。
+- **Governance**：本筆追加依 `agent-governance-audit` 稽核；未修改 canonical skill ID、既有歷史結論或其他 agent 的 `config/` dirty worktree。
+
 ## 2026-08-27 / TelemetryView V1.5.1–V1.5.2 detail completion
 
 ### Suspension、Tire 與 vehicle dynamics expanded detail
