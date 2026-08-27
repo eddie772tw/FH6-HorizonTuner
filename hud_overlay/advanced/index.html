@@ -777,7 +777,7 @@
             // ── Motion Effect (G-Force Acceleration Shake & Motion Blur) ───────────────
             var currentElements = (window._currentHudElements || (window._currentFullConfig && window._currentFullConfig.elements)) || {};
             var showMotion = currentElements.showMotionEffect !== false;
-            var advContainer = domCache ? domCache.advContainer : document.getElementById('advContainer');
+            var advContainer = domCache.advContainer;
             if (advContainer) {
                 if (showMotion && data) {
                     var rawAccX = data.accel_x !== undefined ? data.accel_x : (data.AccelerationX || 0);

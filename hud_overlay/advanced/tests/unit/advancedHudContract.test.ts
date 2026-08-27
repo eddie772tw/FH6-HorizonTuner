@@ -16,6 +16,13 @@ function extractController(html: string): string {
   return controller;
 }
 
+function extractFunctionBody(source: string, functionName: string): string {
+  const start = source.indexOf(`function ${functionName}`);
+  if (start < 0) throw new Error(`${functionName} not found`);
+  const nextFunction = source.indexOf('\n        function ', start + 1);
+  return source.slice(start, nextFunction < 0 ? source.length : nextFunction);
+}
+
 type AdvancedHudRegistration = {
   onFrame: (data: Record<string, unknown>, payload: Record<string, unknown>) => void;
 };
@@ -44,6 +51,34 @@ describe('Advanced HUD contract', () => {
     expect(scripts.length).toBeGreaterThan(0);
     for (const script of scripts) {
       expect(() => new Function(script)).not.toThrow();
+    }
+  });
+
+  it('keeps the render path on cached DOM references', () => {
+    const html = readAdvancedHud();
+    const controller = extractController(html);
+    const frameStart = controller.indexOf('onFrame: function');
+    const animateStart = controller.indexOf('onAnimate: function', frameStart);
+    const frameBody = controller.slice(frameStart, animateStart);
+    const drawBody = extractFunctionBody(html, 'drawAdvancedHUD');
+
+    expect(frameStart).toBeGreaterThanOrEqual(0);
+    expect(animateStart).toBeGreaterThan(frameStart);
+    expect(frameBody).not.toContain('document.getElementById');
+    expect(drawBody).toContain('var advContainer = domCache.advContainer;');
+    expect(drawBody).not.toContain('document.getElementById');
+
+    for (const [key, id] of [
+      ['advContainer', 'advContainer'],
+      ['advSpeed', 'adv-speed'],
+      ['advSpeedUnit', 'adv-speed-unit'],
+      ['advRpmValue', 'adv-rpm-value'],
+      ['advGear', 'adv-gear'],
+      ['advGauges', 'advGauges'],
+      ['dotsLeft', 'dots-left'],
+      ['dotsRight', 'dots-right'],
+    ]) {
+      expect(html).toContain(`${key}: document.getElementById('${id}')`);
     }
   });
 
