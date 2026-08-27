@@ -1,5 +1,9 @@
 {
   "__language_name__": "繁體中文",
+  "READY": "準備就緒",
+  "EXPERIMENTAL": "實驗性",
+  "REQUIRED": "必填",
+  "SYNCED": "已同步",
   "Software Updates (OTA)": "軟體更新 (OTA 自動更新)",
   "UPDATE AVAILABLE": "發現新版本",
   "UP TO DATE": "已是最新版本",

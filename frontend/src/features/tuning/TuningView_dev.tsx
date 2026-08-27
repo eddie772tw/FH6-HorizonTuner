@@ -69,7 +69,7 @@ const TuningViewDev: React.FC<TuningViewDevProps> = ({ currentStep }) => {
           </div>
           <div className="d-flex align-items-center gap-2">
             <button className="btn btn-outline-primary btn-sm" onClick={() => setShowCapture(true)}>{t('Open Telemetry Capture')}</button>
-            <span className="badge bg-warning-subtle text-warning-emphasis">EXPERIMENTAL</span>
+            <span className="badge bg-warning-subtle text-warning-emphasis">{t('EXPERIMENTAL')}</span>
             <span className="badge bg-primary-subtle text-primary-emphasis">tuning-dev/v1</span>
           </div>
         </div>
