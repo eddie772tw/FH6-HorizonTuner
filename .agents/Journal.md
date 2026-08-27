@@ -1410,3 +1410,12 @@
 - **Action**: Add `cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` to CI and release gates, and add cargo format auto-fix plus verification to `start_all.bat`.
 - **Evidence**: Commit `fa0c3f9`; CI run `32681482344` passed including Windows executable bundle verification; CodeQL run `32681481832` passed; local frontend tests (69 files / 440 tests), frontend build, Ruff, Rust format, and release contract tests passed.
 - **Status**: adopted.
+
+---
+
+## 2026-08-27 / Manual Discord Application ID Packaging
+
+- **Scope**: local `build_all.bat` portable packaging and Discord Rich Presence sidecar configuration.
+- **Decision**: Stage the valid `DISCORD_APPLICATION_ID` environment value, or the ignored `config/discord.local.json` value, into the temporary PyInstaller resource before building; remove the generated resource on success and failure to prevent stale IDs.
+- **Verification**: `tests/test_discord_presence.py`, `tests/test_spec_bundling.py`, and `tests/test_release_workflow_contract.py` passed (20 tests); Python compilation and `git diff --check` passed.
+- **Status**: adopted.
