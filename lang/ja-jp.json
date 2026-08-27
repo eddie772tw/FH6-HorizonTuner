@@ -1060,5 +1060,7 @@
   "Rear Ride Height Max": "リア車高最大",
   "Front Downforce": "フロントダウンフォース",
   "Rear Downforce": "リアダウンフォース",
-  "Observed Hot Pressures (Phot)": "計測ホットタイヤ圧 (Phot)"
+  "Observed Hot Pressures (Phot)": "計測ホットタイヤ圧 (Phot)",
+  "Follow App Global Units": "アプリのグローバル単位に従う",
+  "HUD Speed Unit": "HUD 速度単位"
 }

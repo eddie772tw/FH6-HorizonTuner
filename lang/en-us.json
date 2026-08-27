@@ -1031,5 +1031,7 @@
   "Rear Ride Height Max": "Rear Ride Height Max",
   "Front Downforce": "Front Downforce",
   "Rear Downforce": "Rear Downforce",
-  "Observed Hot Pressures (Phot)": "Observed Hot Pressures (Phot)"
+  "Observed Hot Pressures (Phot)": "Observed Hot Pressures (Phot)",
+  "Follow App Global Units": "Follow App Global Units",
+  "HUD Speed Unit": "HUD Speed Unit"
 }

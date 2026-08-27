@@ -1561,6 +1561,7 @@ async def get_settings():
 async def update_settings(data: dict):
     global current_udp_transport, current_udp_ip_port
     theme_updated = "theme" in data and isinstance(data["theme"], dict)
+    units_updated = "units" in data and isinstance(data["units"], dict)
 
     if "dyno_recording" in data:
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
@@ -1631,14 +1632,14 @@ async def update_settings(data: dict):
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
 
-    if theme_updated:
+    if theme_updated or units_updated:
         hud_data = DEFAULT_HUD_CONFIG
         if os.path.exists(HUD_CONFIG_FILE):
             try:
                 with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
                     hud_data = json.load(f)
             except Exception as e:
-                logger.error(f"Failed to load HUD config after theme update: {e}")
+                logger.error(f"Failed to load HUD config after settings update: {e}")
         await overlay_manager.broadcast_json(
             {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
         )
@@ -2276,6 +2277,7 @@ DEFAULT_HUD_CONFIG = {
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
+    "followAppUnits": True,
     "telemetryOpacity": 0.65,
     "telemetryGRadarScale": 1.0,
     "telemetryCornersScale": 1.0,
@@ -2335,6 +2337,7 @@ def normalize_hud_config(data: dict) -> dict:
     # single owner (HUDCore), so discard stale values from older config files.
     normalized.pop("actualScale", None)
     normalized.pop("s650GuiThemeMode", None)
+    normalized.pop("effectiveUnit", None)
     hud_style = normalized.get("hudStyle")
     is_legacy_s650_style = (
         isinstance(hud_style, str)
@@ -2363,6 +2366,11 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     mode = theme.get("mode") if isinstance(theme, dict) else None
     normalized["s650GuiThemeMode"] = "light" if mode == "light" else "dark"
     normalized["vfdRenderMode"] = VFD_RENDER_MODE
+    configured_unit = normalized.get("unit", "kmh")
+    app_unit = app_settings.get("units", {}).get("speed", "kmh")
+    normalized["effectiveUnit"] = (
+        app_unit if normalized.get("followAppUnits", True) else configured_unit
+    )
     return normalized
 
 

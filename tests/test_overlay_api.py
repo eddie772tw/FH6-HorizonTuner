@@ -1,6 +1,8 @@
+import asyncio
 import json
 import os
 import tempfile
+from unittest.mock import AsyncMock
 
 import main
 import pytest
@@ -38,6 +40,42 @@ def test_get_hud_config_default(temp_hud_config_file):
     assert "elements" in data
     assert data["elements"]["showCenterInfo"] is True
     assert data["elements"]["showRPM"] is True
+
+
+def test_hud_unit_can_follow_or_override_app_global_units():
+    original_units = dict(main.app_settings["units"])
+    try:
+        main.app_settings["units"]["speed"] = "kmh"
+
+        following = main.hud_config_with_gui_theme(
+            {"unit": "mph", "followAppUnits": True}
+        )
+        independent = main.hud_config_with_gui_theme(
+            {"unit": "mph", "followAppUnits": False}
+        )
+
+        assert following["unit"] == "mph"
+        assert following["effectiveUnit"] == "kmh"
+        assert independent["effectiveUnit"] == "mph"
+        assert "effectiveUnit" not in main.normalize_hud_config(following)
+    finally:
+        main.app_settings["units"] = original_units
+
+
+def test_global_unit_update_rebroadcasts_following_hud_config(tmp_path, monkeypatch):
+    original_units = dict(main.app_settings["units"])
+    broadcast = AsyncMock()
+    monkeypatch.setattr(main, "SETTINGS_FILE", str(tmp_path / "settings.json"))
+    monkeypatch.setattr(main, "HUD_CONFIG_FILE", str(tmp_path / "hud_config.json"))
+    monkeypatch.setattr(main.overlay_manager, "broadcast_json", broadcast)
+
+    try:
+        asyncio.run(main.update_settings({"units": {"speed": "mph"}}))
+        payload = broadcast.await_args.args[0]
+        assert payload["type"] == "hud:config"
+        assert payload["data"]["effectiveUnit"] == "mph"
+    finally:
+        main.app_settings["units"] = original_units
 
 
 def test_save_and_get_hud_config(temp_hud_config_file):

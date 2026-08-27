@@ -1121,5 +1121,7 @@
   "Rear Ride Height Max": "後車高上限",
   "Front Downforce": "前下壓力",
   "Rear Downforce": "後下壓力",
-  "Observed Hot Pressures (Phot)": "觀測熱胎壓 (Phot)"
+  "Observed Hot Pressures (Phot)": "觀測熱胎壓 (Phot)",
+  "Follow App Global Units": "跟隨 APP 全域單位",
+  "HUD Speed Unit": "HUD 速度單位"
 }

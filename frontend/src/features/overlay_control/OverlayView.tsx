@@ -71,6 +71,7 @@ interface HudConfig {
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
+  followAppUnits?: boolean;
   elements: HudElements;
   soundEnabled: boolean;
   telemetryOpacity?: number;
@@ -117,6 +118,7 @@ const DEFAULT_HUD_CONFIG: HudConfig = {
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
+  followAppUnits: true,
   telemetryOpacity: 0.65,
   telemetryGRadarScale: 1.0,
   telemetryCornersScale: 1.0,
@@ -184,7 +186,7 @@ interface OverlayViewProps {
 }
 
 export const OverlayView: React.FC<OverlayViewProps> = () => {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
@@ -292,10 +294,11 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const broadcastConfig = (newConfig: HudConfig) => {
+    const effectiveUnit = newConfig.followAppUnits !== false ? settings.units.speed : newConfig.unit;
     if (channelRef.current) {
       channelRef.current.postMessage({
         type: 'config',
-        data: newConfig,
+        data: { ...newConfig, effectiveUnit },
       });
     }
   };
@@ -721,6 +724,35 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
               </div>
 
               {/* Merge Power/Torque & Pedal Position Chart Switch */}
+              <div className="form-check form-switch py-1">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="sw-follow-app-units"
+                  checked={config.followAppUnits !== false}
+                  onChange={(e) => saveConfig({ ...config, followAppUnits: e.target.checked })}
+                />
+                <label className="form-check-label fs-7" htmlFor="sw-follow-app-units">
+                  {t("Follow App Global Units")}
+                </label>
+              </div>
+
+              <div className="border-bottom pb-3">
+                <label className="form-label fs-7 text-body-secondary mb-1" htmlFor="hud-speed-unit">
+                  {t("HUD Speed Unit")}
+                </label>
+                <select
+                  id="hud-speed-unit"
+                  value={config.followAppUnits !== false ? settings.units.speed : config.unit}
+                  disabled={config.followAppUnits !== false}
+                  onChange={(e) => saveConfig({ ...config, unit: e.target.value as 'kmh' | 'mph' })}
+                  className="form-select form-select-sm"
+                >
+                  <option value="kmh">km/h</option>
+                  <option value="mph">mph</option>
+                </select>
+              </div>
+
               <div className="form-check form-switch py-1">
                 <input
                   type="checkbox"
