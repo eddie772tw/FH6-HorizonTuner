@@ -1033,5 +1033,8 @@
   "Rear Downforce": "Rear Downforce",
   "Observed Hot Pressures (Phot)": "Observed Hot Pressures (Phot)",
   "Follow App Global Units": "Follow App Global Units",
-  "HUD Speed Unit": "HUD Speed Unit"
+  "HUD Speed Unit": "HUD Speed Unit",
+  "Suspension Travel Display Mode": "Suspension Travel Display Mode",
+  "Relative": "Relative",
+  "Absolute": "Absolute"
 }

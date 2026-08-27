@@ -14,6 +14,7 @@ import PowerTorqueCanvas from './components/PowerTorqueCanvas';
 import ArcSteerGauge from './components/ArcSteerGauge';
 import RenderSwitch from './components/RenderSwitch';
 import { backendFetch } from '../../services/backend';
+import type { SuspensionTravelMode } from '../../utils/suspensionTravel';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
@@ -65,6 +66,9 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
   const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
 
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
+  const [suspensionTravelMode, setSuspensionTravelMode] = useState<SuspensionTravelMode>(() =>
+    localStorage.getItem('telemetry_suspension_travel_mode') === 'absolute' ? 'absolute' : 'relative'
+  );
   const { data: telemetryData } = useTelemetry();
   const { t } = useSettings();
   const { carName } = useCarParams();
@@ -88,6 +92,11 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
       } catch {}
       return next;
     });
+  };
+
+  const selectSuspensionTravelMode = (mode: SuspensionTravelMode) => {
+    setSuspensionTravelMode(mode);
+    localStorage.setItem('telemetry_suspension_travel_mode', mode);
   };
 
   const prevIsRacingRef = useRef<boolean>(false);
@@ -336,13 +345,19 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
           <div className="h-100 p-2 d-flex flex-column gap-2 overflow-hidden" style={{ gridColumn: 'span 3' }}>
             <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-0">
               <h3 className="fs-6 text-primary fw-bold m-0">{t("Suspension Travel")}</h3>
-              <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />
+              <div className="d-flex align-items-center gap-2">
+                <div className="btn-group btn-group-sm" role="group" aria-label={t("Suspension Travel Display Mode")}>
+                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'relative' ? 'active' : ''}`} onClick={() => selectSuspensionTravelMode('relative')}>{t("Relative")}</button>
+                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'absolute' ? 'active' : ''}`} onClick={() => selectSuspensionTravelMode('absolute')}>{t("Absolute")}</button>
+                </div>
+                <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />
+              </div>
             </div>
             <div className="d-grid gap-2 flex-grow-1 h-100 overflow-hidden" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', minHeight: 0 }}>
-              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} renderHistoryTrace={renderConfig.suspensionTrace} />
-              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} renderHistoryTrace={renderConfig.suspensionTrace} />
-              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} />
-              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} />
+              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
+              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
+              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
+              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
             </div>
           </div>
 

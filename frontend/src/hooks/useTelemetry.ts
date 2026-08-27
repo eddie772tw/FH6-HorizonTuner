@@ -18,6 +18,7 @@ export interface TelemetryData {
   VelocityZ: number;
   Yaw: number;
   NormalizedSuspensionTravel: number[];
+  SuspensionTravelMeters?: number[];
   TireSlipRatio: number[];
   TireSlipAngle: number[];
   PositionX?: number;

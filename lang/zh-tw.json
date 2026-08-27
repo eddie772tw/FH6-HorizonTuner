@@ -1123,5 +1123,8 @@
   "Rear Downforce": "後下壓力",
   "Observed Hot Pressures (Phot)": "觀測熱胎壓 (Phot)",
   "Follow App Global Units": "跟隨 APP 全域單位",
-  "HUD Speed Unit": "HUD 速度單位"
+  "HUD Speed Unit": "HUD 速度單位",
+  "Suspension Travel Display Mode": "懸吊行程顯示模式",
+  "Relative": "相對值",
+  "Absolute": "絕對值"
 }
