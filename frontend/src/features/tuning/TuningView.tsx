@@ -260,7 +260,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
                     <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-warning fw-bold fs-7 d-flex align-items-center justify-content-between">
                       <div className="d-flex align-items-center gap-2">
                         <span>{t("Vehicle Parameters Required")}</span>
-                        <span className="badge text-bg-warning">REQUIRED</span>
+                        <span className="badge text-bg-warning">{t("REQUIRED")}</span>
                       </div>
                       <button
                         type="button"
