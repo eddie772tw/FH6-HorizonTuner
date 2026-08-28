@@ -21,7 +21,10 @@ describe('hudStyleScanner frontend module tests', () => {
 
     const result = await fetchHudStylesList('http://127.0.0.1:8001', mockFetch as any);
 
-    expect(mockFetch).toHaveBeenCalledWith('http://127.0.0.1:8001/api/hud/styles');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:8001/api/hud/styles',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe('simple');
     expect(result[1].source).toBe('user');
@@ -33,6 +36,31 @@ describe('hudStyleScanner frontend module tests', () => {
     const result = await fetchHudStylesList('http://127.0.0.1:8001', mockFetch as any);
 
     expect(result).toEqual([]);
+  });
+
+  it('fetchHudStylesList should reject API failures in strict mode', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 503 });
+
+    await expect(
+      fetchHudStylesList('http://127.0.0.1:8001', mockFetch as any, { strict: true }),
+    ).rejects.toThrow('HUD styles request failed (HTTP 503).');
+  });
+
+  it('fetchHudStylesList should reject timeouts in strict mode', async () => {
+    const mockFetch = vi.fn().mockImplementation(
+      (_path: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        });
+      }),
+    );
+
+    await expect(
+      fetchHudStylesList('http://127.0.0.1:8001', mockFetch as any, {
+        strict: true,
+        timeoutMs: 1,
+      }),
+    ).rejects.toThrow('HUD styles request timed out after 1ms.');
   });
 
   it('getHudUrlPrefix should return /hud_user for custom HUD and /hud for builtin or unknown HUD', () => {

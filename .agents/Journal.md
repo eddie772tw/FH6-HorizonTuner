@@ -15,6 +15,24 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-23 / hud_frontend 精簡獨立客戶端、Vite 多入口與 Tauri 生命週期轉移架構
+
+### 多前端共用資源 (DRY)、-hudonly 啟動引數、主視窗關閉記憶體釋放與動態生命週期管理
+
+- **來源**：`local`，針對使用者希望在不啟動完整 HorizonTuner 主介面下僅運行 HUD 功能之需求，實作 `hud_frontend` 精簡獨立前端與 Tauri 動態生命週期轉移機制。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **同 Repo 多入口共用架構 (Anti-Duplication via Vite MPA)**：將精簡客戶端作為 `frontend/hud_frontend/` 獨立目錄建置，透過 Vite `rollupOptions.input` 多入口打包，既能直接 `import` 既有 `frontend/src/` 中的後端通訊服務 (`backend.ts`)、Halfmoon CSS 樣式與 HUD 掃描契約，徹底杜絕 60%~75% 代碼重複，又能在構建時將 JS Bundle 自 330KB (主介面) + 448KB (圖表) 大幅縮減至 10.2KB。
+  2. **Tauri 智慧生命週期轉移 (Primary Window Handover)**：在 Tauri Rust 宿主層引入 `PrimaryWindowMode`（`Main` / `HudOnly`）狀態管理。當以 `-hudonly` 啟動或使用者由主介面一鍵切換時，自動建立 `hud_main` 視窗並載入 `hud_frontend/index.html`，隨後關閉銷毀 `main` 視窗，使 Webview2 引擎立即釋放主 React SPA 的巨型 DOM 與圖表記憶體（記憶體自 ~180MB 驟降至 ~25MB），同時將應用的終止事件動態轉移至 `hud_main`。
+  3. **雙向生命週期與 Sidecar 守護**：在 `hud_main` 關閉時，Tauri 依舊精確觸發 `stop_backend_process`（關閉 stdin + `taskkill /T /F`），保證 60Hz UDP 8000 與 HTTP 8001 連接埠 100% 乾淨釋放。
+- **Action**：
+  1. 建立 `frontend/hud_frontend/` 目錄、`index.html`、`src/main.tsx`、`src/HudApp.tsx` 與單元測試 `hudFrontendContract.test.ts`。
+  2. 更新 `frontend/vite.config.ts` 配置 Rollup MPA 多入口，更新 `frontend/vitest.config.ts` 納入測試路徑。
+  3. 修改 `frontend/src-tauri/src/lib.rs` 與 `tauri.conf.json`，實作 `PrimaryWindowMode`、`-hudonly` 啟動偵測、`launch_hud_frontend` 與 `is_hud_only_cli` 指令。
+  4. 在 `frontend/src/App.tsx` 與 `OverlayView.tsx` 整合 `-hudonly` 自動轉移與手動一鍵切換按鈕。
+  5. 驗證前端 Vitest（70 檔 / 442 項全數通過）、後端單元測試（189 項全數通過）、Ruff 格式檢查與 Vite 生產打包成功。
+  6. 同步更新 `README.md`、`README.en.md` 與 `Journal.md`。
+- **Evidence**：`cargo check` 通過；前端 Vitest (70 files / 442 tests passed)；後端 Pytest (189 passed)；`pnpm run build` 成功輸出 `dist/index.html` 與 `dist/hud_frontend/index.html`；`ruff check .` 與 `ruff format --check .` 100% 通過。
 ## 2026-08-28 / Test Suite Lean Refactoring and Anti-Over-Testing Governance
 
 ### 測試集精簡分流與防範過度開發/過度測試治理規範
@@ -1347,6 +1365,9 @@
 
 - **Scope**: local / HUD Overlay control panel & backend system media / WASAPI audio loopback.
 - **Status**: adopted.
+
+---
+
 - **Learning**:
   1. CPython `winrt-Windows.Media.Control` 套件在 Dev 環境下發起 WinRT 異步任務 (`request_async()`, `try_get_media_properties_async()`) 時，底層需要 `winrt-Windows.Foundation` 模組將 WinRT `IAsyncOperation` 轉譯為 Python awaitable。未宣告 `winrt-Windows.Foundation` 會導致 Dev 環境拋出 `ModuleNotFoundError`。
   2. 桌面視窗標題列枚舉 (`_extract_windows_desktop_media()`) 會掃描全系統 OpenInputDesktop 視窗，在高頻輪詢下可能引發潛在 CPU/IO 效能瓶頸。透過補齊 `winrt-Windows.Foundation` 依賴並強化 WinRT 異步 API 呼叫，完全不需依賴桌面視窗枚舉降級。
@@ -1495,6 +1516,15 @@
 
 ---
 
+## 2026-08-27 / PR #248 Full and Lite Frontend Packaging
+
+- **Scope**: `feat/hud-frontend-alternative-client`, shared Full/Lite React resources, Lite three-tab shell, dual portable executable build, startup scripts, release archive, and Windows lifecycle diagnostics.
+- **Decision**: Replace the deprecated `-hudonly` handover with two independent Tauri entry points. Full keeps the existing application; Lite exposes only Telemetry Dashboard, HUD Overlay, and Settings while reusing shared providers and feature views.
+- **Packaging contract**: Vite builds both `dist/index.html` and `dist/lite/index.html` once. Tauri builds each variant separately, preserving the first executable before the second build overwrites Cargo's common output name. `build_all.bat` and CI publish `FH6-HorizonTuner.exe` plus `FH6-HorizonTuner_lite.exe`; release packaging also creates `FH6-HorizonTuner-portable.zip` containing both.
+- **Lifecycle contract**: Rust owns sidecar startup and shutdown for both executable variants. The frontend waits for the reported listening port, and Windows diagnostics cover preferred/dynamic HTTP ports, UDP 8000 release, and Full/Lite window visibility.
+- **Verification**: Frontend Vitest 70 files / 443 tests, Vite build, Full and Lite Tauri no-bundle builds, Rust format, targeted backend/release/runtime tests (18 passed), and Windows portable diagnostics (7 passed). GitHub CI and reviewer assessment remain external gates.
+- **Limitations**: The Lite executable is currently a portable no-bundle artifact; the signed updater installer and `latest.json` continue to target the Full application. No production deployment or release publication was performed.
+- **Status**: implemented locally, pending pushed-branch CI and PR review.
 ## 2026-08-27 / Manual Discord Application ID Packaging
 
 - **Scope**: local `build_all.bat` portable packaging and Discord Rich Presence sidecar configuration.

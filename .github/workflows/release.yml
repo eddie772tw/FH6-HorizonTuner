@@ -171,35 +171,76 @@ jobs:
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
       run: |
         pnpm.cmd --prefix frontend run tauri build --config src-tauri/tauri.ci.conf.json
+        Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner.exe -Force
+        $bundleRoot = Join-Path $PWD 'frontend/src-tauri/target/release/bundle/nsis'
+        $fullBundle = Get-ChildItem -LiteralPath $bundleRoot -File | Where-Object { $_.Name -match '^FH6-HorizonTuner_\d.*-setup\.exe$' }
+        if ($fullBundle.Count -ne 1) {
+          throw "Expected exactly one Full Tauri updater bundle, found $($fullBundle.Count)."
+        }
+        $fullUpdaterDir = Join-Path $PWD 'dist/updater/full'
+        New-Item -ItemType Directory -Force $fullUpdaterDir | Out-Null
+        Copy-Item $fullBundle.FullName $fullUpdaterDir -Force
+        Copy-Item "$($fullBundle.FullName).sig" $fullUpdaterDir -Force
 
-    - name: Locate signed Tauri updater artifacts
+        pnpm.cmd --prefix frontend run tauri build --config src-tauri/tauri.lite.conf.json
+        Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner_lite.exe -Force
+
+        $liteBundle = Get-ChildItem -LiteralPath $bundleRoot -File | Where-Object { $_.Name -match '^FH6-HorizonTuner_lite_\d.*-setup\.exe$' }
+        if ($liteBundle.Count -ne 1) {
+          throw "Expected exactly one Lite Tauri updater bundle, found $($liteBundle.Count)."
+        }
+        $liteUpdaterDir = Join-Path $PWD 'dist/updater/lite'
+        New-Item -ItemType Directory -Force $liteUpdaterDir | Out-Null
+        Copy-Item $liteBundle.FullName $liteUpdaterDir -Force
+        Copy-Item "$($liteBundle.FullName).sig" $liteUpdaterDir -Force
+
+    - name: Verify Full and Lite Portable Executables
+      shell: pwsh
+      run: |
+        $full = 'dist/FH6-HorizonTuner.exe'
+        $lite = 'dist/FH6-HorizonTuner_lite.exe'
+        foreach ($path in @($full, $lite)) {
+          if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Expected portable executable was not produced: $path"
+          }
+        }
+
+    - name: Locate signed Full and Lite Tauri updater artifacts
       id: updater_artifacts
       shell: pwsh
       run: |
-        $bundleRoot = Join-Path $PWD 'frontend/src-tauri/target/release/bundle/nsis'
-        $bundles = @(Get-ChildItem -LiteralPath $bundleRoot -Filter '*-setup.exe' -File)
-        if ($bundles.Count -ne 1) {
-          throw "Expected exactly one Tauri updater bundle in $bundleRoot, found $($bundles.Count)."
+        $bundle = @(Get-ChildItem -LiteralPath 'dist/updater/full' -Filter '*-setup.exe' -File)
+        $liteBundle = @(Get-ChildItem -LiteralPath 'dist/updater/lite' -Filter '*-setup.exe' -File)
+        if ($bundle.Count -ne 1 -or $liteBundle.Count -ne 1) {
+          throw "Expected one staged Full and Lite updater bundle; found Full=$($bundle.Count), Lite=$($liteBundle.Count)."
         }
-        $bundle = $bundles[0]
+        $bundle = $bundle[0]
+        $liteBundle = $liteBundle[0]
         $signature = Get-Item -LiteralPath ($bundle.FullName + '.sig') -ErrorAction Stop
+        $liteSignature = Get-Item -LiteralPath ($liteBundle.FullName + '.sig') -ErrorAction Stop
         $config = Get-Content -Raw 'frontend/src-tauri/tauri.conf.json' | ConvertFrom-Json
         if ([string]::IsNullOrWhiteSpace($config.version)) {
           throw 'Tauri runtime version is missing from tauri.conf.json.'
         }
         "bundle=$($bundle.FullName)" >> $env:GITHUB_OUTPUT
         "signature=$($signature.FullName)" >> $env:GITHUB_OUTPUT
+        "lite_bundle=$($liteBundle.FullName)" >> $env:GITHUB_OUTPUT
+        "lite_signature=$($liteSignature.FullName)" >> $env:GITHUB_OUTPUT
         "version=$($config.version)" >> $env:GITHUB_OUTPUT
-        "Resolved updater bundle: $($bundle.Name)" >> $env:GITHUB_STEP_SUMMARY
+        "Resolved Full updater bundle: $($bundle.Name)" >> $env:GITHUB_STEP_SUMMARY
+        "Resolved Lite updater bundle: $($liteBundle.Name)" >> $env:GITHUB_STEP_SUMMARY
         "Runtime version: $($config.version)" >> $env:GITHUB_STEP_SUMMARY
 
     - name: Prepare Release Package & Generate latest.json Manifest
       shell: pwsh
       run: |
         uv run --no-project --active python scripts/prepare_release_assets.py `
-          --exe frontend/src-tauri/target/release/FH6-HorizonTuner.exe `
+          --exe dist/FH6-HorizonTuner.exe `
+          --lite-exe dist/FH6-HorizonTuner_lite.exe `
           --updater-bundle "${{ steps.updater_artifacts.outputs.bundle }}" `
           --updater-signature "${{ steps.updater_artifacts.outputs.signature }}" `
+          --lite-updater-bundle "${{ steps.updater_artifacts.outputs.lite_bundle }}" `
+          --lite-updater-signature "${{ steps.updater_artifacts.outputs.lite_signature }}" `
           --output-dir dist/release `
           --tag "${{ env.TAG }}" `
           --version "${{ steps.updater_artifacts.outputs.version }}" `
@@ -211,9 +252,14 @@ jobs:
         tag_name: ${{ env.TAG }}
         fail_on_unmatched_files: true
         files: |
-          dist/release/FH6-HorizonTuner.exe
-          dist/release/*-setup.exe
-          dist/release/*-setup.exe.sig
+          dist/release/FH6-HorizonTuner-Full-Installer.exe
+          dist/release/FH6-HorizonTuner-Full-Portable.exe
+          dist/release/FH6-HorizonTuner-Lite-Installer.exe
+          dist/release/FH6-HorizonTuner-Lite-Portable.exe
+          dist/release/FH6-HorizonTuner-Full-Lite-Portable.zip
+          dist/release/FH6-HorizonTuner-Full-Installer.exe.sig
+          dist/release/FH6-HorizonTuner-Lite-Installer.exe.sig
           dist/release/latest.json
+          dist/release/latest-lite.json
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

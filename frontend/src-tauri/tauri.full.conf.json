@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FH6-HorizonTuner",
+  "identifier": "com.eddie772tw.frontend",
+  "build": {
+    "beforeBuildCommand": "echo Using prebuilt full frontend distribution",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "FH6-Horizon Tuner",
+        "width": 1280,
+        "height": 720,
+        "label": "main"
+      }
+    ]
+  }
+}
