@@ -9,9 +9,8 @@ import DiagnosticConsole from './components/DiagnosticConsole';
 import ThemeView from './features/theme/ThemeView';
 import { useTelemetry } from './hooks/useTelemetry';
 import { useOverlayWebSocket } from './hooks/useOverlayWebSocket';
-import { CarParamsProvider, useCarParams } from './context/CarParamsContext';
-import { SettingsProvider, useSettings } from './context/SettingsContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { useCarParams } from './context/CarParamsContext';
+import { useSettings } from './context/SettingsContext';
 import './App.css';
 
 import OverlayView from './features/overlay_control/OverlayView';
@@ -89,25 +88,15 @@ const AppContent: React.FC = () => {
 };
 
 
-import { TelemetryRecorderProvider } from './context/TelemetryRecorderContext';
-
-import { ToastProvider } from './context/ToastContext';
+import { AppProviders } from './AppProviders';
 import ToastContainer from './components/common/ToastContainer';
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider>
-      <SettingsProvider>
-        <ToastProvider>
-          <CarParamsProvider>
-            <TelemetryRecorderProvider>
-              <AppContent />
-              <ToastContainer />
-            </TelemetryRecorderProvider>
-          </CarParamsProvider>
-        </ToastProvider>
-      </SettingsProvider>
-    </ThemeProvider>
+    <AppProviders>
+      <AppContent />
+      <ToastContainer />
+    </AppProviders>
   );
 };
 

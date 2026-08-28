@@ -174,6 +174,10 @@ export default defineConfig(async () => ({
   build: {
     chunkSizeWarningLimit: 800,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        lite: path.resolve(__dirname, "lite/index.html"),
+      },
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {

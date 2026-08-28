@@ -35,8 +35,9 @@
   - **Step 3 底盤懸吊 (Chassis Tuner)**：防傾桿 (ARB 1/65 Meta 策略)、彈簧剛性、前傾姿態 (Forward Rake) 車高、黃金比例阻尼 (60% Bump Ratio) 與差速器鎖定率。
   - **Step 4 胎壓與對齊 (Alignment & Tires)**：季節偏置靜態冷胎壓算牌、Camber / Toe / Caster 幾何計算。
   - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
-* **客製化賽車儀表覆蓋層與視覺編輯器 (Racing HUD Overlay & WYSIWYG Designer)**:
-  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
+* **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
+  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
+  - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
@@ -52,7 +53,7 @@
   - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
   - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
   - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Python 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
-  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯、簽名並全自動附加 `FH6-HorizonTuner.exe`、`.sig`、Portable ZIP 與 `latest.json`。
+  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯與簽名。`FH6-HorizonTuner-Full-Installer.exe` 與 `FH6-HorizonTuner-Lite-Installer.exe` 是可直接安裝的正式 NSIS installer，也是 OTA updater 重用的同一個經簽署 payload；Full/Lite portable EXE 與 Portable ZIP 則清楚標示為可攜版。兩個 OTA 管道分別使用 `latest.json`（Full）與 `latest-lite.json`（Lite），可獨立下載與安裝，不依賴另一個版本。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
   - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
@@ -81,6 +82,7 @@ FH6-HorizonTuner/
 │   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器
 │   └── car_database.json    # 內建車輛資料庫
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
+│   ├── lite/                # Lite 前端 HTML entrypoint
 │   ├── src/features/        # 業務領域模組 (Features Domain)
 │   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 5 大可展開動態卡片
 │   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~5 分頁)
@@ -95,7 +97,7 @@ FH6-HorizonTuner/
 │   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
 │   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗
 │   ├── src/utils/           # 純函數計算庫 (tuningMath.ts, tuningDiagnosis.ts 等)
-│   └── src-tauri/           # Tauri 視窗與打包設定
+│   └── src-tauri/           # Tauri 視窗與 Full/Lite 打包設定
 ├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
 │   ├── index.html           # HUD 載入與 Viewport 渲染入口
 │   ├── gt7/                 # Gran Turismo 7 風格賽車儀表
@@ -108,6 +110,7 @@ FH6-HorizonTuner/
 ├── requirements.txt         # Python 依賴套件清單
 ├── .pkgdirignore            # 打包排除目錄定義
 ├── start_all.bat            # 一鍵開發啟動器 (同步開啟後端與前端)
+├── start_all_lite.bat       # 一鍵啟動 Lite 三分頁前端
 ├── start_backend.bat        # 獨立啟動 Python FastAPI 後端服務
 ├── start_frontend.bat       # 獨立啟動 Vite + Tauri 前端 UI 介面
 └── build_all.bat            # 一鍵打包發行腳本
@@ -137,12 +140,13 @@ FH6-HorizonTuner/
 * **分開啟動（模組化開發時使用）**：
   - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務。開發模式下 FastAPI / WebSocket 使用 `http://127.0.0.1:8001`，Forza UDP Telemetry 使用 `127.0.0.1:8000`。
   - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。
+  - **`start_all_lite.bat`**：啟動共用後端與 Lite 前端；Lite 僅提供 Dashboard、HUD Overlay、Settings。
 
 ---
 
-## 一鍵打包發行 / Build Standalone Release (.exe)
+## 一鍵打包可攜版 / Build Portable Executables (.exe)
 
-您可以將後端與前端打包成一個**單一免安裝可執行檔 (.exe)**，採用標準的 **Tauri (Rust Host) + Python Sidecar** 正向架構發布：
+`build_all.bat` 會將後端與前端打包成 Full 與 Lite 的**免安裝可攜版執行檔**，採用標準的 **Tauri (Rust Host) + Python Sidecar** 架構。正式 GitHub Release 另外提供可直接安裝的 Full/Lite NSIS installer；下載者可依需求選擇 installer 或 portable 版本。
 
 > [!NOTE]
 > **路徑設計說明**：
@@ -150,7 +154,7 @@ FH6-HorizonTuner/
 
 * **兩階段自動化打包腳本 (`build_all.bat`)**：
     1. **Phase 1 (Python Sidecar)**：PyInstaller 將 Python 後端單獨編譯為專用 Sidecar 可執行檔 `server-sidecar-x86_64-pc-windows-msvc.exe`，放置於 `frontend/src-tauri/bin/`。
-    2. **Phase 2 (Tauri Bundle)**：Tauri 自動整合前端靜態資源與 Python Sidecar，產出最終的綠色免安裝 Executable。
+    2. **Phase 2 (Tauri Bundle)**：共用前端資源只建置一次，再分別打包 Full 與 Lite，產出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`；Release workflow 會將它們命名為 `FH6-HorizonTuner-Full-Portable.exe` 與 `FH6-HorizonTuner-Lite-Portable.exe`，並另外建立包含兩者的 Portable ZIP。
 
 ---
 
@@ -361,11 +365,27 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ## Release Build Contract
 
-The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
-separate sidecar file are required. The PyInstaller backend is embedded into
-the Tauri host and extracted to a versioned temporary directory at startup.
-User data is stored beside the executable when that directory is writable,
-with an AppData fallback for protected locations.
+Each GitHub Release publishes the following Windows download choices:
+
+| Asset | Intended use |
+| --- | --- |
+| `FH6-HorizonTuner-Full-Installer.exe` | Standard Full NSIS installer. This is also the signed payload used by Full OTA updates. |
+| `FH6-HorizonTuner-Lite-Installer.exe` | Standard Lite NSIS installer. This is also the signed payload used by Lite OTA updates. |
+| `FH6-HorizonTuner-Full-Portable.exe` | Full portable executable; run it without an installation step. |
+| `FH6-HorizonTuner-Lite-Portable.exe` | Lite portable executable; run it without an installation step. |
+| `FH6-HorizonTuner-Full-Lite-Portable.zip` | Convenience archive containing both portable executables. |
+
+Full and Lite installers are self-contained alternatives, not prerequisites for
+each other. The Tauri updater consumes `latest.json` for Full and
+`latest-lite.json` for Lite; each manifest names its matching installer and
+embeds the corresponding signature. The detached `.sig` assets are for
+verification and are not needed when manually launching an installer.
+
+Both installer and portable builds embed the PyInstaller backend into the Tauri
+host; no separate sidecar download is required. At startup the backend is
+extracted to a versioned temporary directory. User data is stored beside a
+portable executable when that directory is writable, with an AppData fallback
+for protected locations.
 
 ## 開發環境連接埠
 

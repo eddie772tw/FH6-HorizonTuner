@@ -34,8 +34,9 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
   - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
   - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
-* **Racing HUD Overlay & WYSIWYG Designer**:
-  - HTML5 Canvas hardware-accelerated standalone overlays featuring GT7, Retro VFD, and 093 Drift professional HUD styles.
+* **Racing HUD Overlay & Full/Lite Clients**:
+  - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
+  - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides only the Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing the existing frontend features and backend lifecycle with the Full client.
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
 * **Drag Launch Test & Acceleration Analyzer**:
@@ -51,7 +52,7 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - Integrated with Tauri v2 official Updater plugin and Ed25519 asymmetric cryptographic verification.
   - Supports silent startup checks and manual checks via Settings with a Glassmorphism racing modal and dynamic download progress bar.
   - Sidecar lifecycle protection: ensures Python child process is gracefully killed and UDP 8000 / HTTP 8001 ports are cleanly released before restart.
-  - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions automatically builds, signs, and attaches `FH6-HorizonTuner.exe`, `.sig`, Portable ZIP, and `latest.json`.
+  - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions builds and signs the Full installer and attaches both Full/Lite portable executables, their Portable ZIP, `.sig`, and `latest.json`.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
   - **Design System & Theme**: Built on Halfmoon CSS v2 neon Glassmorphism skin, supporting "crosXover", "Retro VFD", and "Solar Flare" color presets.
@@ -80,6 +81,7 @@ FH6-HorizonTuner/
 │   ├── motec_exporter.py    # MoTeC i2 professional telemetry exporter
 │   └── car_database.json    # Built-in car database
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
+│   ├── lite/                # Lite frontend HTML entrypoint
 │   ├── src/features/        # Business Domain Modules (Features Domain)
 │   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 5 expandable cards
 │   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~5 tabs)
@@ -94,7 +96,7 @@ FH6-HorizonTuner/
 │   │   ├── chassis/          # Suspension and Phase 4B four-wheel load-transfer estimates
 │   │   └── tires/            # Friction ellipse, tire geometry, and vertical-stiffness priors
 │   ├── src/utils/           # Pure calculation utilities (tuningMath.ts, tuningDiagnosis.ts, etc.)
-│   └── src-tauri/           # Tauri window bundler configuration
+│   └── src-tauri/           # Tauri window & Full/Lite packaging configuration
 ├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
 │   ├── index.html           # HUD launcher & Viewport renderer entry
 │   ├── gt7/                 # Gran Turismo 7 style racing dashboard
@@ -107,6 +109,7 @@ FH6-HorizonTuner/
 ├── requirements.txt         # Python dependency list
 ├── .pkgdirignore            # Package exclusion directory definitions
 ├── start_all.bat            # One-click developer environment launcher (launches backend & frontend)
+├── start_all_lite.bat       # One-click Lite three-tab launcher
 ├── start_backend.bat        # Launches Python FastAPI backend service individually
 ├── start_frontend.bat       # Launches Vite + Tauri frontend UI individually
 └── build_all.bat            # One-click standalone release bundler
@@ -136,6 +139,7 @@ The project provides highly automated launcher scripts:
 * **Modular launch (For standalone development)**:
   - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener. In development, FastAPI/WebSocket uses `http://127.0.0.1:8001`, while Forza UDP telemetry uses `127.0.0.1:8000`.
   - **`start_frontend.bat`**: Launches only the Vite + React dev server and Tauri window.
+  - **`start_all_lite.bat`**: Launches the shared backend and Lite frontend; Lite exposes only Dashboard, HUD Overlay, and Settings.
 
 ---
 
@@ -145,7 +149,7 @@ You can package both the frontend and backend into a **single standalone executa
 
 1. Double-click **`build_all.bat`**:
    - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
-   - **Phase 2 (Release Build Host)**: Tauri embeds the Python Sidecar binary into the Rust host and produces the single Release Build executable `dist/FH6-HorizonTuner.exe` without an installer.
+   - **Phase 2 (Release Build Host)**: The shared frontend is built once, then Tauri builds Full and Lite separately, producing `dist/FH6-HorizonTuner.exe` and `dist/FH6-HorizonTuner_lite.exe` without installers. The release Portable ZIP contains both.
 
 > [!NOTE]
 > **Release Build Path Strategy**:

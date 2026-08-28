@@ -315,7 +315,7 @@ jobs:
         Copy-Item dist/server-sidecar-x86_64-pc-windows-msvc.exe `
           frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe -Force
 
-    - name: Build Portable Tauri Executable
+    - name: Build Full Portable Tauri Executable
       env:
         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
@@ -327,12 +327,38 @@ jobs:
         --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
         -- pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.ci.conf.json
 
+    - name: Preserve Full Portable Executable
+      shell: pwsh
+      run: Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner.exe -Force
+
+    - name: Build Lite Portable Tauri Executable
+      run: >
+        python scripts/release_metrics.py
+        --label "Tauri Lite portable executable"
+        --artifact frontend/src-tauri/target/release/FH6-HorizonTuner.exe
+        --metrics-file metrics/tauri-lite-build.json
+        --cache-status ${{ env.TAURI_RUST_CACHE_STATUS }}
+        -- pnpm.cmd --prefix frontend run tauri build --no-bundle --config src-tauri/tauri.lite.conf.json
+
+    - name: Preserve Lite Portable Executable
+      shell: pwsh
+      run: Copy-Item frontend/src-tauri/target/release/FH6-HorizonTuner.exe dist/FH6-HorizonTuner_lite.exe -Force
+
     - name: Publish Tauri build metrics
       if: always()
       uses: actions/upload-artifact@v7
       with:
         name: ci-metrics-tauri-${{ github.sha }}
         path: metrics/tauri-build.json
+        if-no-files-found: ignore
+        retention-days: 14
+
+    - name: Publish Lite Tauri build metrics
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-metrics-tauri-lite-${{ github.sha }}
+        path: metrics/tauri-lite-build.json
         if-no-files-found: ignore
         retention-days: 14
 
