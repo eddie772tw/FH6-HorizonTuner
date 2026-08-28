@@ -157,6 +157,10 @@ jobs:
           throw "Tauri updater signing preflight did not create $signaturePath."
         }
 
+        uv run --no-project --active python scripts/validate_tauri_updater_keypair.py `
+          --config frontend/src-tauri/tauri.conf.json `
+          --signature $signaturePath
+
         Remove-Item -LiteralPath $payloadPath, $signaturePath -Force -ErrorAction SilentlyContinue
 
     - name: Build and Sign Tauri Release Executable

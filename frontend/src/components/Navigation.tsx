@@ -62,7 +62,7 @@ const GitInfoBadge: React.FC = () => {
   }, [settings.auto_check_updates, buildInfo]);
 
   return (
-    <>
+    <span id="build-info-badge" className="position-relative d-inline-flex align-items-center">
       {availableUpdate ? (
         <button
           type="button"
@@ -105,7 +105,7 @@ const GitInfoBadge: React.FC = () => {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
       />
-    </>
+    </span>
   );
 };
 

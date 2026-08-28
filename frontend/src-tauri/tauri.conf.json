@@ -40,7 +40,9 @@
             "core:window:allow-close",
             "core:window:allow-set-focus",
             "core:window:allow-start-dragging",
-            "core:window:allow-set-ignore-cursor-events"
+            "core:window:allow-set-ignore-cursor-events",
+            "updater:default",
+            "process:default"
           ]
         }
       ]

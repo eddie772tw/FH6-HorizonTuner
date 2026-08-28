@@ -116,6 +116,22 @@ def test_release_workflow_security_and_contract():
     assert '"createUpdaterArtifacts": true' in (
         repo_root / "frontend" / "src-tauri" / "tauri.conf.json"
     ).read_text(encoding="utf-8")
+    tauri_config = json.loads(
+        (repo_root / "frontend" / "src-tauri" / "tauri.conf.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    main_capability = next(
+        capability
+        for capability in tauri_config["app"]["security"]["capabilities"]
+        if capability["identifier"] == "main-capability"
+    )
+    assert "updater:default" in main_capability["permissions"]
+    build_script = (repo_root / "frontend" / "src-tauri" / "build.rs").read_text(
+        encoding="utf-8"
+    )
+    assert "cargo:rerun-if-changed=tauri.conf.json" in build_script
+    assert "cargo:rerun-if-changed=capabilities/default.json" in build_script
     assert "--no-bundle" not in content
     assert "--updater-bundle" in content
     assert "*-setup.exe" in content

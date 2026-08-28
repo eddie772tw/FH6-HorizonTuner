@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UpdateInfo, downloadAndApplyUpdate, restartApplication } from '../../services/updaterService';
+import { formatUpdaterError, UpdateInfo, downloadAndApplyUpdate, restartApplication } from '../../services/updaterService';
 import { useSettings } from '../../context/SettingsContext';
 
 interface UpdateModalProps {
@@ -46,7 +46,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
       }, 1000);
     } catch (err: any) {
       console.error('[UpdateModal] Download failed:', err);
-      setErrorMessage(err?.message || t('Download or installation failed. Please check network connection.'));
+      setErrorMessage(t(formatUpdaterError(err, 'Download or installation failed. Please check network connection.')));
       setStatus('error');
     }
   };

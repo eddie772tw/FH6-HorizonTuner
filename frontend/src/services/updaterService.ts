@@ -11,6 +11,26 @@ export interface UpdateInfo {
 
 export type UpdateProgressCallback = (downloadedBytes: number, totalBytes: number, percentage: number) => void;
 
+/** Return the message Tauri serializes for updater failures, including strings. */
+export function formatUpdaterError(
+  error: unknown,
+  fallback = 'Failed to connect to the update server. Please check internet connection.'
+): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+  return fallback;
+}
+
 /**
  * Checks whether the app is currently running inside the Tauri native desktop shell.
  */
