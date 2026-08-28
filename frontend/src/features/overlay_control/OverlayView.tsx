@@ -22,13 +22,13 @@ import {
 } from './hudConfig';
 import '../../App.css';
 import { backendFetch, backendHttpUrl } from '../../services/backend';
+import { HudUnitSettingsSidebar, type HudDisplayUnits } from './HudUnitSettingsSidebar';
 
 interface AudioDeviceOption {
   id: string;
   name: string;
   is_default: boolean;
 }
-
 
 interface AuthorInfo {
   author: string;
@@ -41,9 +41,10 @@ interface OverlayViewProps {
 }
 
 export const OverlayView: React.FC<OverlayViewProps> = () => {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);
+  const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
   const [hudStyles, setHudStyles] = useState<HudStyleEntry[]>([]);
 
@@ -149,10 +150,19 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const broadcastConfig = (newConfig: HudConfig) => {
+    const configuredUnits = newConfig.units ?? DEFAULT_HUD_CONFIG.units!;
+    const effectiveUnits: HudDisplayUnits = newConfig.followAppUnits !== false
+      ? {
+          speed: settings.units.speed,
+          boostPressure: settings.units.boostPressure,
+          torque: settings.units.torque,
+          power: settings.units.power
+        }
+      : configuredUnits;
     if (channelRef.current) {
       channelRef.current.postMessage({
         type: 'config',
-        data: newConfig,
+        data: { ...newConfig, effectiveUnit: effectiveUnits.speed, effectiveUnits },
       });
     }
   };
@@ -171,6 +181,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
           ...DEFAULT_HUD_CONFIG,
           ...normalizedData,
           enabled: preserveEnabled,
+          units: { ...DEFAULT_HUD_CONFIG.units, ...(normalizedData.units || {}) },
           elements: { ...DEFAULT_HUD_CONFIG.elements, ...(normalizedData.elements || {}) }
         } as HudConfig;
         setConfig(merged);
@@ -579,7 +590,12 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 />
               </div>
 
-              {/* Merge Power/Torque & Pedal Position Chart Switch */}
+              <div className="border-bottom pb-3">
+                <button type="button" className="btn btn-outline-secondary btn-sm w-100" onClick={() => setShowUnitSettings(true)}>
+                  {t("HUD Unit Settings")}
+                </button>
+              </div>
+
               <div className="form-check form-switch py-1">
                 <input
                   type="checkbox"
@@ -1444,6 +1460,16 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         </div>
 
       </div>
+      <HudUnitSettingsSidebar
+        show={showUnitSettings}
+        followGlobal={config.followAppUnits !== false}
+        units={config.units ?? DEFAULT_HUD_CONFIG.units!}
+        globalUnits={settings.units}
+        t={t}
+        onFollowGlobalChange={followAppUnits => saveConfig({ ...config, followAppUnits })}
+        onUnitsChange={units => saveConfig({ ...config, unit: units.speed, units })}
+        onClose={() => setShowUnitSettings(false)}
+      />
     </div>
   );
 };

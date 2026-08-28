@@ -33,6 +33,13 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
 }) => {
   const isFrontAutoAero = (carParams.aero_downforce_front ?? 0) <= 0;
   const isRearAutoAero = (carParams.aero_downforce_rear ?? 0) <= 0;
+  const isImperial = settings.units.speed === 'mph';
+  const heightUnit = isImperial ? 'in' : 'cm';
+  const forceUnit = isImperial ? 'lbf' : 'kgf';
+  const displayHeight = (cm: number) => isImperial ? cm * 0.3937 : cm;
+  const heightToCm = (value: number) => isImperial ? value / 0.3937 : value;
+  const displayForce = (kgf: number) => isImperial ? kgf * 2.20462 : kgf;
+  const forceToKgf = (value: number) => isImperial ? value / 2.20462 : value;
 
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -72,25 +79,25 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
           </h4>
           
           <div style={formRowStyle}>
-            <label>{t("Front Ride Height Range (cm)")}</label>
+            <label>{t("Front Ride Height Range")} ({heightUnit})</label>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <input aria-label={t("Front Ride Height Min (cm)")} type="number" step="0.1" value={carParams.height_front_min ?? 10.0} onChange={e => updateParam('height_front_min', parseFloat(e.target.value) || 10.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
-              <input aria-label={t("Front Ride Height Max (cm)")} type="number" step="0.1" value={carParams.height_front_max ?? 25.0} onChange={e => updateParam('height_front_max', parseFloat(e.target.value) || 25.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
+              <input aria-label={`${t("Front Ride Height Min")} (${heightUnit})`} type="number" step="0.1" value={displayHeight(carParams.height_front_min ?? 10.0).toFixed(1)} onChange={e => updateParam('height_front_min', heightToCm(parseFloat(e.target.value) || displayHeight(10.0)))} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
+              <input aria-label={`${t("Front Ride Height Max")} (${heightUnit})`} type="number" step="0.1" value={displayHeight(carParams.height_front_max ?? 25.0).toFixed(1)} onChange={e => updateParam('height_front_max', heightToCm(parseFloat(e.target.value) || displayHeight(25.0)))} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
             </div>
           </div>
 
           <div style={formRowStyle}>
-            <label>{t("Rear Ride Height Range (cm)")}</label>
+            <label>{t("Rear Ride Height Range")} ({heightUnit})</label>
             <div style={{ display: 'flex', gap: '4px' }}>
-              <input aria-label={t("Rear Ride Height Min (cm)")} type="number" step="0.1" value={carParams.height_rear_min ?? 10.0} onChange={e => updateParam('height_rear_min', parseFloat(e.target.value) || 10.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
-              <input aria-label={t("Rear Ride Height Max (cm)")} type="number" step="0.1" value={carParams.height_rear_max ?? 25.0} onChange={e => updateParam('height_rear_max', parseFloat(e.target.value) || 25.0)} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
+              <input aria-label={`${t("Rear Ride Height Min")} (${heightUnit})`} type="number" step="0.1" value={displayHeight(carParams.height_rear_min ?? 10.0).toFixed(1)} onChange={e => updateParam('height_rear_min', heightToCm(parseFloat(e.target.value) || displayHeight(10.0)))} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Min" />
+              <input aria-label={`${t("Rear Ride Height Max")} (${heightUnit})`} type="number" step="0.1" value={displayHeight(carParams.height_rear_max ?? 25.0).toFixed(1)} onChange={e => updateParam('height_rear_max', heightToCm(parseFloat(e.target.value) || displayHeight(25.0)))} style={{ ...inputStyle, width: '88px', textAlign: 'center' }} placeholder="Max" />
             </div>
           </div>
 
           <div style={formRowStyle}>
-            <label htmlFor="aero_downforce_front">{t("Front Downforce (kgf)")}</label>
+            <label htmlFor="aero_downforce_front">{t("Front Downforce")} ({forceUnit})</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input id="aero_downforce_front" type="number" disabled={isFrontAutoAero} value={isFrontAutoAero ? 0 : (carParams.aero_downforce_front || 0)} onChange={e => updateParam('aero_downforce_front', Math.max(0, parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '88px', opacity: isFrontAutoAero ? 0.5 : 1 }} />
+              <input id="aero_downforce_front" type="number" disabled={isFrontAutoAero} value={isFrontAutoAero ? 0 : displayForce(carParams.aero_downforce_front || 0).toFixed(1)} onChange={e => updateParam('aero_downforce_front', Math.max(0, forceToKgf(parseFloat(e.target.value) || 0)))} style={{ ...inputStyle, width: '88px', opacity: isFrontAutoAero ? 0.5 : 1 }} />
               <label htmlFor="chk_aero_downforce_front" style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
                 <input id="chk_aero_downforce_front" type="checkbox" checked={isFrontAutoAero} onChange={e => updateParam('aero_downforce_front', e.target.checked ? 0 : 50)} />
                 {t("Auto (0)")}
@@ -99,9 +106,9 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
           </div>
 
           <div style={formRowStyle}>
-            <label htmlFor="aero_downforce_rear">{t("Rear Downforce (kgf)")}</label>
+            <label htmlFor="aero_downforce_rear">{t("Rear Downforce")} ({forceUnit})</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input id="aero_downforce_rear" type="number" disabled={isRearAutoAero} value={isRearAutoAero ? 0 : (carParams.aero_downforce_rear || 0)} onChange={e => updateParam('aero_downforce_rear', Math.max(0, parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '88px', opacity: isRearAutoAero ? 0.5 : 1 }} />
+              <input id="aero_downforce_rear" type="number" disabled={isRearAutoAero} value={isRearAutoAero ? 0 : displayForce(carParams.aero_downforce_rear || 0).toFixed(1)} onChange={e => updateParam('aero_downforce_rear', Math.max(0, forceToKgf(parseFloat(e.target.value) || 0)))} style={{ ...inputStyle, width: '88px', opacity: isRearAutoAero ? 0.5 : 1 }} />
               <label htmlFor="chk_aero_downforce_rear" style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
                 <input id="chk_aero_downforce_rear" type="checkbox" checked={isRearAutoAero} onChange={e => updateParam('aero_downforce_rear', e.target.checked ? 0 : 50)} />
                 {t("Auto (0)")}

@@ -400,7 +400,7 @@ DEFAULT_SETTINGS = {
         "speed": "kmh",
         "weight": "kg",
         "temperature": "C",
-        "tirePressure": "psi",
+        "tirePressure": "bar",
         "boostPressure": "bar",
         "springRate": "kgfmm",
         "rideHeight": "cm",
@@ -420,6 +420,40 @@ DEFAULT_SETTINGS = {
         "customCSS": "",
     },
 }
+
+GENERAL_UNIT_PROFILES = {
+    "metric": {
+        "speed": "kmh",
+        "weight": "kg",
+        "temperature": "C",
+        "tirePressure": "bar",
+        "boostPressure": "bar",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
+        "torque": "nm",
+    },
+    "imperial": {
+        "speed": "mph",
+        "weight": "lbs",
+        "temperature": "F",
+        "tirePressure": "psi",
+        "boostPressure": "psi",
+        "rideHeight": "in",
+        "suspensionForce": "lbf",
+        "torque": "lbft",
+    },
+}
+
+
+def normalize_general_unit_settings(units: dict | None) -> dict:
+    """Migrate legacy mixed display units to the current three-category model."""
+    normalized = dict(DEFAULT_SETTINGS["units"])
+    if isinstance(units, dict):
+        normalized.update(units)
+    general_system = "imperial" if normalized.get("speed") == "mph" else "metric"
+    normalized.update(GENERAL_UNIT_PROFILES[general_system])
+    return normalized
+
 
 app_settings = {
     "dyno_recording": False,
@@ -442,6 +476,7 @@ app_settings = {
 }
 
 # Load settings from settings.json
+settings_migrated = False
 if os.path.exists(SETTINGS_FILE):
     try:
         with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -453,6 +488,9 @@ if os.path.exists(SETTINGS_FILE):
                     app_settings["theme"].update(v)
                 else:
                     app_settings[k] = v
+        normalized_units = normalize_general_unit_settings(app_settings["units"])
+        settings_migrated = normalized_units != app_settings["units"]
+        app_settings["units"] = normalized_units
         logger.info(f"Loaded settings from {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to load settings from {SETTINGS_FILE}: {e}")
@@ -463,6 +501,14 @@ else:
         logger.info(f"Created default settings at {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save default settings to {SETTINGS_FILE}: {e}")
+
+if settings_migrated:
+    try:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(app_settings, f, indent=4)
+        logger.info("Migrated legacy mixed unit settings to the General Units model")
+    except Exception as e:
+        logger.error(f"Failed to persist migrated settings to {SETTINGS_FILE}: {e}")
 
 
 # --- Race Telemetry Recorder ---
@@ -1469,6 +1515,12 @@ async def websocket_overlay_endpoint(websocket: WebSocket):
 
     await overlay_manager.connect(websocket, is_binary=False)
     try:
+        # Every overlay client needs the effective unit contract before its
+        # first telemetry frame.  Relying on a later settings mutation leaves
+        # newly connected HUDs and the desktop telemetry bridge with defaults.
+        await websocket.send_json(
+            {"type": "hud:config", "data": await get_overlay_config()}
+        )
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
@@ -1561,6 +1613,7 @@ async def get_settings():
 async def update_settings(data: dict):
     global current_udp_transport, current_udp_ip_port
     theme_updated = "theme" in data and isinstance(data["theme"], dict)
+    units_updated = "units" in data and isinstance(data["units"], dict)
 
     if "dyno_recording" in data:
         app_settings["dyno_recording"] = bool(data["dyno_recording"])
@@ -1611,6 +1664,7 @@ async def update_settings(data: dict):
         if "units" not in app_settings:
             app_settings["units"] = {}
         app_settings["units"].update(data["units"])
+        app_settings["units"] = normalize_general_unit_settings(app_settings["units"])
 
     if "theme" in data and isinstance(data["theme"], dict):
         if "theme" not in app_settings:
@@ -1631,14 +1685,14 @@ async def update_settings(data: dict):
     except Exception as e:
         logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
 
-    if theme_updated:
+    if theme_updated or units_updated:
         hud_data = DEFAULT_HUD_CONFIG
         if os.path.exists(HUD_CONFIG_FILE):
             try:
                 with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
                     hud_data = json.load(f)
             except Exception as e:
-                logger.error(f"Failed to load HUD config after theme update: {e}")
+                logger.error(f"Failed to load HUD config after settings update: {e}")
         await overlay_manager.broadcast_json(
             {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
         )
@@ -2276,6 +2330,13 @@ DEFAULT_HUD_CONFIG = {
     "position": {"x": 100, "y": 100},
     "scale": 1.0,
     "unit": "kmh",
+    "followAppUnits": True,
+    "units": {
+        "speed": "kmh",
+        "boostPressure": "bar",
+        "torque": "nm",
+        "power": "hp",
+    },
     "telemetryOpacity": 0.65,
     "telemetryGRadarScale": 1.0,
     "telemetryCornersScale": 1.0,
@@ -2335,6 +2396,8 @@ def normalize_hud_config(data: dict) -> dict:
     # single owner (HUDCore), so discard stale values from older config files.
     normalized.pop("actualScale", None)
     normalized.pop("s650GuiThemeMode", None)
+    normalized.pop("effectiveUnit", None)
+    normalized.pop("effectiveUnits", None)
     hud_style = normalized.get("hudStyle")
     is_legacy_s650_style = (
         isinstance(hud_style, str)
@@ -2363,6 +2426,34 @@ def hud_config_with_gui_theme(data: dict) -> dict:
     mode = theme.get("mode") if isinstance(theme, dict) else None
     normalized["s650GuiThemeMode"] = "light" if mode == "light" else "dark"
     normalized["vfdRenderMode"] = VFD_RENDER_MODE
+    app_units = app_settings.get("units", {})
+    configured_units = normalized.get("units", {})
+    if not isinstance(configured_units, dict):
+        configured_units = {}
+    configured_speed = configured_units.get("speed", normalized.get("unit", "kmh"))
+    configured_boost = configured_units.get("boostPressure", "bar")
+    configured_torque = configured_units.get("torque", "nm")
+    configured_power = configured_units.get("power", "hp")
+    configured_units = {
+        "speed": configured_speed if configured_speed in {"kmh", "mph"} else "kmh",
+        "boostPressure": configured_boost
+        if configured_boost in {"bar", "psi", "kpa"}
+        else "bar",
+        "torque": configured_torque if configured_torque in {"nm", "lbft"} else "nm",
+        "power": configured_power if configured_power in {"kw", "hp", "ps"} else "hp",
+    }
+    normalized["units"] = configured_units
+    normalized["effectiveUnits"] = (
+        {
+            "speed": app_units.get("speed", "kmh"),
+            "boostPressure": app_units.get("boostPressure", "bar"),
+            "torque": app_units.get("torque", "nm"),
+            "power": app_units.get("power", "hp"),
+        }
+        if normalized.get("followAppUnits", True)
+        else configured_units
+    )
+    normalized["effectiveUnit"] = normalized["effectiveUnits"]["speed"]
     return normalized
 
 

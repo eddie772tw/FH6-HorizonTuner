@@ -33,7 +33,7 @@ export const Step3ChassisTuner: React.FC<Step3ChassisTunerProps> = ({
   carParams,
   saveCarParams
 }) => {
-  const { convertSpringRate, convertHeight, t } = useSettings();
+  const { settings, convertSpringRate, convertHeight, t } = useSettings();
 
   const [tuningResult, setTuningResult] = useState<ChassisTuningResult | null>(null);
 
@@ -66,7 +66,7 @@ export const Step3ChassisTuner: React.FC<Step3ChassisTunerProps> = ({
             Step 3: {t("Chassis & dynamic tuning recommendations")}
           </h3>
           <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-            {t("Calculated based on")} <strong>{selectedRaceGoal}</strong> {t("profile for")} <strong>{carParams.weight} kg ({carParams.weight_distribution}% F) {drivetrain}</strong>
+            {t("Calculated based on")} <strong>{selectedRaceGoal}</strong> {t("profile for")} <strong>{settings.units.weight === 'lbs' ? Math.round(carParams.weight * 2.20462) : Math.round(carParams.weight)} {settings.units.weight} ({carParams.weight_distribution}% F) {drivetrain}</strong>
           </p>
         </div>
         <button

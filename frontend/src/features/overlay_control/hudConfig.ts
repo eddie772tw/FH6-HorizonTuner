@@ -1,4 +1,5 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
+import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 
 export interface HudElements {
   showTeleMaster?: boolean;
@@ -47,6 +48,8 @@ export interface HudConfig {
   selectedMonitorIndex: number;
   scale: number;
   unit: 'kmh' | 'mph';
+  followAppUnits?: boolean;
+  units?: HudDisplayUnits;
   elements: HudElements;
   soundEnabled: boolean;
   telemetryOpacity?: number;
@@ -87,6 +90,8 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   selectedMonitorIndex: 0,
   scale: 1.0,
   unit: 'kmh',
+  followAppUnits: true,
+  units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp' },
   telemetryOpacity: 0.65,
   telemetryGRadarScale: 1.0,
   telemetryCornersScale: 1.0,

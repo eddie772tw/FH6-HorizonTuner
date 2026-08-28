@@ -222,13 +222,13 @@
             case 'speed':
                 return { value: String(Math.round(getSpeed(frame))), unit: state.isMetric ? 'KM/H' : 'MPH', ratio: null };
             case 'power':
-                horsepower = Math.max(0, contract.finiteNumber(frame.power_hp, 0));
+                horsepower = Math.max(0, contract.finiteNumber(frame.power, frame.power_hp));
                 if (horsepower > state.heritageGaugeMaximums.power) state.heritageGaugeMaximums.power = Math.ceil(horsepower / 50) * 50;
-                return { value: String(Math.round(horsepower)), unit: 'HP', ratio: contract.clamp(horsepower / state.heritageGaugeMaximums.power, 0, 1), min: '0', max: String(state.heritageGaugeMaximums.power) };
+                return { value: String(Math.round(horsepower)), unit: frame.power_unit || 'HP', ratio: contract.clamp(horsepower / state.heritageGaugeMaximums.power, 0, 1), min: '0', max: String(state.heritageGaugeMaximums.power) };
             case 'boost':
-                boost = Math.max(0, contract.finiteNumber(frame.boost_psi, 0));
+                boost = Math.max(0, contract.finiteNumber(frame.boost, frame.boost_psi));
                 if (boost > state.heritageGaugeMaximums.boost) state.heritageGaugeMaximums.boost = Math.ceil(boost);
-                return { value: boost.toFixed(1), unit: 'PSI', ratio: contract.clamp(boost / state.heritageGaugeMaximums.boost, 0, 1), min: '0', max: String(state.heritageGaugeMaximums.boost) };
+                return { value: boost.toFixed(frame.boost_unit === 'kPa' ? 0 : 1), unit: frame.boost_unit || 'PSI', ratio: contract.clamp(boost / state.heritageGaugeMaximums.boost, 0, 1), min: '0', max: String(state.heritageGaugeMaximums.boost) };
             default:
                 return { value: '--', unit: '', ratio: null };
             }

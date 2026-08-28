@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
 import { calculateAEGOGearing, calculateChassisTuning, calculateStaticTireAlignment, Season } from '../../utils/tuningMath';
-import { useSettings } from '../../context/SettingsContext';
+import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { Step1GoalSetup } from './components/Step1GoalSetup';
 import { Step2GearboxSetup } from './components/Step2GearboxSetup';
 import { Step3ChassisTuner } from './components/Step3ChassisTuner';
 import { Step4TireAlignSetup } from './components/Step4TireAlignSetup';
 import { Step5TelemetryCalibration } from './components/Step5TelemetryCalibration';
 import { backendFetch } from '../../services/backend';
+import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
+import { createUnitPreference, loadUnitPreference, resolveUnitPreference, type UnitPreferenceOverride } from '../../utils/gameUnitSettings';
 
 interface GearingTuning {
   finalDrive: number;
@@ -37,7 +39,18 @@ interface TuningViewProps {
   setActiveTab?: (tab: any) => void;
 }
 
-const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurrentStep: propSetStep, setActiveTab }) => {
+interface TuningViewContentProps extends TuningViewProps {
+  unitPreference: UnitPreferenceOverride;
+  onUnitPreferenceChange: (preference: UnitPreferenceOverride) => void;
+}
+
+const TuningViewContent: React.FC<TuningViewContentProps> = ({
+  currentStep: propStep,
+  setCurrentStep: propSetStep,
+  setActiveTab,
+  unitPreference,
+  onUnitPreferenceChange
+}) => {
   const { carId, carName, carParams, setCarParams, saveCarParams } = useCarParams();
   const { t } = useSettings();
 
@@ -48,6 +61,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
 
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
   const [season, setSeason] = useState<Season>('Summer');
+  const [showUnitSettings, setShowUnitSettings] = useState(false);
 
   const numGears = carParams?.adjustability?.gears || 6;
   const [tuning, setTuning] = useState<TuningState>(() => initialTuning(numGears));
@@ -310,7 +324,7 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
               </button>
             )}
 
-            {currentStep < 5 && (
+            {currentStep > 1 && currentStep < 5 && (
               <span
                 title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
                 tabIndex={!hasCoreParams ? 0 : undefined}
@@ -433,8 +447,13 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
             setSeason={setSeason}
             carParams={carParams}
             updateParam={updateParam}
-            saveCarParams={saveCarParams}
             hasCoreParams={hasCoreParams}
+            onOpenUnitSettings={() => setShowUnitSettings(true)}
+            onProceed={async () => {
+              await saveCarParams();
+              applyScientificGearing();
+              setCurrentStep(2);
+            }}
           />
         )}
 
@@ -476,8 +495,42 @@ const TuningView: React.FC<TuningViewProps> = ({ currentStep: propStep, setCurre
           />
         )}
       </div>
-
+      <UnitSettingsSidebar
+        idPrefix="tuning-units"
+        show={showUnitSettings}
+        title={t("Tuning Workflow Unit Settings")}
+        preference={unitPreference}
+        onChange={onUnitPreferenceChange}
+        onClose={() => setShowUnitSettings(false)}
+      />
     </div>
+  );
+};
+
+const TUNING_UNIT_STORAGE_KEY = 'tuning_unit_preference';
+
+const TuningView: React.FC<TuningViewProps> = props => {
+  const { settings } = useSettings();
+  const [unitPreference, setUnitPreference] = useState<UnitPreferenceOverride>(() =>
+    loadUnitPreference(TUNING_UNIT_STORAGE_KEY, settings.units)
+  );
+  const scopedUnits = useMemo(
+    () => resolveUnitPreference(settings.units, unitPreference),
+    [settings.units, unitPreference]
+  );
+
+  const updateUnitPreference = (preference: UnitPreferenceOverride) => {
+    const normalized = unitPreference.followGlobal && !preference.followGlobal
+      ? { ...createUnitPreference(settings.units), followGlobal: false }
+      : preference;
+    setUnitPreference(normalized);
+    localStorage.setItem(TUNING_UNIT_STORAGE_KEY, JSON.stringify(normalized));
+  };
+
+  return (
+    <ScopedUnitSettingsProvider units={scopedUnits}>
+      <TuningViewContent {...props} unitPreference={unitPreference} onUnitPreferenceChange={updateUnitPreference} />
+    </ScopedUnitSettingsProvider>
   );
 };
 

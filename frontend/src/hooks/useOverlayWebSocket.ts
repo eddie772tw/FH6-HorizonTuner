@@ -1,6 +1,18 @@
 import { useEffect } from 'react';
 import { backendWebSocketUrl } from "../services/backend";
 
+export interface HudConfigMessage {
+  type: 'config';
+  data: unknown;
+}
+
+export function relayHudConfig(
+  channel: Pick<BroadcastChannel, 'postMessage'>,
+  data: unknown,
+): void {
+  channel.postMessage({ type: 'config', data } satisfies HudConfigMessage);
+}
+
 // For the frontend UI, it doesn't currently consume the hud:audio and hud:media
 // events (they go directly to the external HUD window via hud_overlay/shared/ws.js).
 // But for completeness, we establish the hook pattern in case future overlay
@@ -9,6 +21,7 @@ export function useOverlayWebSocket(url?: string) {
   useEffect(() => {
     let ws: WebSocket | null = null;
     let reconnectTimeout: ReturnType<typeof setTimeout>;
+    const hudChannel = new BroadcastChannel('horizon_tuner_hud_channel');
 
     const connect = () => {
       ws = new WebSocket(url ?? backendWebSocketUrl("/ws/overlay"));
@@ -21,6 +34,7 @@ export function useOverlayWebSocket(url?: string) {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'hud:config') {
+            relayHudConfig(hudChannel, msg.data);
             window.dispatchEvent(new CustomEvent('hud:config:sync', { detail: msg.data }));
           }
         } catch (e) {
@@ -50,6 +64,7 @@ export function useOverlayWebSocket(url?: string) {
         ws.onerror = null;
         ws.close();
       }
+      hudChannel.close();
     };
   }, [url]);
 }

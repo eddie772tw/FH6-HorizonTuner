@@ -400,10 +400,10 @@
                 var idleRpm = data.EngineIdleRpm !== undefined ? data.EngineIdleRpm : (data.engine_idle_rpm !== undefined ? data.engine_idle_rpm : null);
                 var isEV = idleRpm === 0;
 
-                var curHp = Math.max(0, data.power_hp !== undefined ? data.power_hp : (data.PowerWatts ? data.PowerWatts / 745.7 : (data.power ? (data.power < 50 ? data.power * 1.341 : data.power) : 0)));
-                var rawTq = data.torque_ftlbs !== undefined ? data.torque_ftlbs : (data.TorqueNewtons ? data.TorqueNewtons * 0.737562 : (data.torque || 0));
+                var curHp = Math.max(0, data.power !== undefined ? data.power : (data.power_hp !== undefined ? data.power_hp : (data.PowerWatts ? data.PowerWatts / 745.7 : 0)));
+                var rawTq = data.torque !== undefined ? data.torque : (data.torque_ftlbs !== undefined ? data.torque_ftlbs : (data.TorqueNewtons ? data.TorqueNewtons * 0.737562 : 0));
                 var curTq = Math.max(0, rawTq);
-                var curBoostBar = Math.max(0, data.boost_bar !== undefined ? data.boost_bar : (data.boost_psi ? data.boost_psi / 14.5038 : (data.boost ? (data.boost > 5 ? data.boost / 14.5038 : data.boost) : 0)));
+                var curBoostBar = Math.max(0, data.boost !== undefined ? data.boost : (data.boost_bar !== undefined ? data.boost_bar : (data.boost_psi ? data.boost_psi / 14.5038 : 0)));
 
                 if (curHp > peakSessionHp) peakSessionHp = curHp;
                 if (curTq > peakSessionTq) peakSessionTq = curTq;
