@@ -18,6 +18,7 @@ export interface TelemetryData {
   VelocityZ: number;
   Yaw: number;
   NormalizedSuspensionTravel: number[];
+  SuspensionTravelMeters?: number[];
   TireSlipRatio: number[];
   TireSlipAngle: number[];
   PositionX?: number;
@@ -83,21 +84,41 @@ export function useTelemetry(url?: string) {
 
 const hudBroadcastChannel = typeof window !== 'undefined' ? new BroadcastChannel('horizon_tuner_hud_channel') : null;
 
+type HudDisplayUnits = {
+  speed: 'kmh' | 'mph';
+  power: 'kw' | 'hp' | 'ps';
+  torque: 'nm' | 'lbft';
+  boostPressure: 'bar' | 'psi' | 'kpa';
+};
+
+let hudDisplayUnits: HudDisplayUnits = { speed: 'kmh', power: 'kw', torque: 'nm', boostPressure: 'bar' };
+hudBroadcastChannel?.addEventListener('message', event => {
+  if (event.data?.type !== 'config') return;
+  const effective = event.data.data?.effectiveUnits;
+  if (effective) hudDisplayUnits = { ...hudDisplayUnits, ...effective };
+});
+
 let peakSessionPower = 100;
 let peakSessionTorque = 100;
 let peakSessionBoost = 1.5;
 let lastCarOrdinal: number | null = null;
 
 function formatHudTelemetry(raw: TelemetryData) {
-  const isMetric = true;
   const speedKmh = (raw.SpeedMetersPerSecond || 0) * 3.6;
   const speedMph = (raw.SpeedMetersPerSecond || 0) * 2.23694;
   const hp = ((raw.PowerWatts || 0) / 745.7);
   const ftlbs = ((raw.TorqueNewtons || 0) * 0.737562);
   const kw = (raw.PowerWatts || 0) / 1000;
+  const ps = kw * 1.35962;
   const nm = raw.TorqueNewtons || 0;
   const boostPsi = Math.max(0, raw.Boost || 0);
   const boostBar = Math.max(0, (raw.Boost || 0) / 14.5038);
+  const boostKpa = Math.max(0, (raw.Boost || 0) * 6.89476);
+  const displayPower = hudDisplayUnits.power === 'kw' ? kw : hudDisplayUnits.power === 'ps' ? ps : hp;
+  const displayTorque = hudDisplayUnits.torque === 'lbft' ? ftlbs : nm;
+  const displayBoost = hudDisplayUnits.boostPressure === 'psi'
+    ? boostPsi
+    : hudDisplayUnits.boostPressure === 'kpa' ? boostKpa : boostBar;
 
   const maxRpm = raw.EngineMaxRpm || 7000;
   const idleRpm = raw.EngineIdleRpm || 1000;
@@ -111,9 +132,9 @@ function formatHudTelemetry(raw: TelemetryData) {
   }
   lastCarOrdinal = raw.CarOrdinal || 1;
 
-  if (hp > peakSessionPower) peakSessionPower = hp;
-  if (ftlbs > peakSessionTorque) peakSessionTorque = ftlbs;
-  if (boostBar > peakSessionBoost) peakSessionBoost = boostBar;
+  if (displayPower > peakSessionPower) peakSessionPower = displayPower;
+  if (displayTorque > peakSessionTorque) peakSessionTorque = displayTorque;
+  if (displayBoost > peakSessionBoost) peakSessionBoost = displayBoost;
 
   const brakeRatio = (raw.BrakeInput || 0) / 255;
   const slipFL = raw.TireSlipRatio?.[0] || 0;
@@ -159,18 +180,24 @@ function formatHudTelemetry(raw: TelemetryData) {
     vel_x: raw.VelocityX || 0,
     vel_y: raw.VelocityY || 0,
     vel_z: raw.VelocityZ || 0,
-    speed: isMetric ? speedKmh : speedMph,
+    displayUnits: hudDisplayUnits,
+    speed: hudDisplayUnits.speed === 'mph' ? speedMph : speedKmh,
     speed_kmh: speedKmh,
     speed_mph: speedMph,
-    power: isMetric ? kw : hp,
+    power: displayPower,
+    power_unit: hudDisplayUnits.power === 'kw' ? 'kW' : hudDisplayUnits.power === 'ps' ? 'PS' : 'HP',
     power_hp: hp,
     power_kw: kw,
-    torque: isMetric ? nm : ftlbs,
+    power_ps: ps,
+    torque: displayTorque,
+    torque_unit: hudDisplayUnits.torque === 'lbft' ? 'LB·FT' : 'N·m',
     torque_nm: nm,
     torque_ftlbs: ftlbs,
-    boost: isMetric ? boostBar : boostPsi,
+    boost: displayBoost,
+    boost_unit: hudDisplayUnits.boostPressure === 'kpa' ? 'kPa' : hudDisplayUnits.boostPressure.toUpperCase(),
     boost_psi: boostPsi,
     boost_bar: boostBar,
+    boost_kpa: boostKpa,
     gear: raw.Gear || 0,
     throttle: (raw.AccelInput || 0) / 255,
     brake: brakeRatio,

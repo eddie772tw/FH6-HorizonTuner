@@ -499,8 +499,45 @@ main .container-fluid {
   width: 100%;
 }
 
+.settings-grid > [class*='col-'] {
+  min-width: 0;
+}
+
+.settings-section-header {
+  padding-bottom: 0.75rem;
+  border-color: var(--divider-md) !important;
+}
+
+.settings-section-title {
+  font-size: 0.95rem !important;
+  line-height: 1.3;
+  letter-spacing: 0.025em;
+}
+
 .settings-row {
   gap: 1rem;
+  border-color: var(--divider) !important;
+}
+
+.settings-section > .settings-row:last-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.settings-item-label {
+  color: var(--text-primary);
+  font-size: 0.825rem;
+  line-height: 1.35;
+}
+
+.settings-item-description {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.settings-switch {
+  cursor: pointer;
 }
 
 .settings-control {
@@ -522,7 +559,7 @@ main .container-fluid {
   word-break: break-word;
 }
 
-@media (max-width: 575.98px) {
+@media (max-width: 1199.98px) {
   .settings-row {
     align-items: stretch !important;
     flex-direction: column;

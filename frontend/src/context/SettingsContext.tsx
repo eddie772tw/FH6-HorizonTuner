@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { backendFetch } from '../services/backend';
+import { normalizeGeneralUnitSettings } from '../utils/gameUnitSettings';
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -77,7 +78,7 @@ const defaultUnits: UnitSettings = {
   speed: 'kmh',
   weight: 'kg',
   temperature: 'C',
-  tirePressure: 'psi',
+  tirePressure: 'bar',
   boostPressure: 'bar',
   springRate: 'kgfmm',
   rideHeight: 'cm',
@@ -106,6 +107,78 @@ const defaultSettings: AppSettings = {
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const ScopedUnitsContext = createContext<UnitSettings | undefined>(undefined);
+
+function createScopedConverters(units: UnitSettings): Pick<SettingsContextType,
+  'convertSpeed' | 'convertWeight' | 'convertWeightToLbs' | 'convertTemp' |
+  'convertTirePressure' | 'convertTirePressureToBar' | 'convertTirePressureFromPsi' |
+  'convertTirePressureToPsi' | 'convertBoost' | 'convertSpringRate' |
+  'convertSpringRateToKgfmm' | 'convertSpringRateLbsIn' |
+  'convertSpringRateLbsInToLbsIn' | 'convertHeight' | 'convertHeightToCm' |
+  'convertForce' | 'convertForceToKgf' | 'convertPower' | 'convertTorque'> {
+  return {
+    convertSpeed: ms => units.speed === 'mph'
+      ? { value: ms * 2.23694, label: 'mph' }
+      : { value: ms * 3.6, label: 'km/h' },
+    convertWeight: lbs => units.weight === 'kg'
+      ? { value: lbs / 2.20462, label: 'kg' }
+      : { value: lbs, label: 'lbs' },
+    convertWeightToLbs: value => units.weight === 'kg' ? value * 2.20462 : value,
+    convertTemp: fahrenheit => units.temperature === 'C'
+      ? { value: (fahrenheit - 32) * 5 / 9, label: '°C' }
+      : { value: fahrenheit, label: '°F' },
+    convertTirePressure: bar => units.tirePressure === 'psi'
+      ? { value: bar * 14.5038, label: 'psi' }
+      : units.tirePressure === 'kpa'
+        ? { value: bar * 100, label: 'kPa' }
+        : { value: bar, label: 'bar' },
+    convertTirePressureToBar: value => units.tirePressure === 'psi'
+      ? value / 14.5038
+      : units.tirePressure === 'kpa' ? value / 100 : value,
+    convertTirePressureFromPsi: psi => units.tirePressure === 'bar'
+      ? { value: psi * 0.0689476, label: 'bar' }
+      : units.tirePressure === 'kpa'
+        ? { value: psi * 6.89476, label: 'kPa' }
+        : { value: psi, label: 'PSI' },
+    convertTirePressureToPsi: value => units.tirePressure === 'bar'
+      ? value / 0.0689476
+      : units.tirePressure === 'kpa' ? value / 6.89476 : value,
+    convertBoost: psi => units.boostPressure === 'bar'
+      ? { value: psi / 14.5038, label: 'bar' }
+      : units.boostPressure === 'kpa'
+        ? { value: psi * 6.89476, label: 'kPa' }
+        : { value: psi, label: 'PSI' },
+    convertSpringRate: kgfmm => units.springRate === 'lbsin'
+      ? { value: kgfmm * 55.9974, label: 'lbs/in' }
+      : { value: kgfmm, label: 'kgf/mm' },
+    convertSpringRateToKgfmm: value => units.springRate === 'lbsin' ? value / 55.9974 : value,
+    convertSpringRateLbsIn: lbsin => units.springRate === 'kgfmm'
+      ? { value: lbsin / 55.9974, label: 'kgf/mm' }
+      : { value: lbsin, label: 'lbs/in' },
+    convertSpringRateLbsInToLbsIn: value => units.springRate === 'kgfmm' ? value * 55.9974 : value,
+    convertHeight: cm => units.rideHeight === 'in'
+      ? { value: cm * 0.3937, label: 'in' }
+      : { value: cm, label: 'cm' },
+    convertHeightToCm: value => units.rideHeight === 'in' ? value / 0.3937 : value,
+    convertForce: kgf => units.suspensionForce === 'lbf'
+      ? { value: kgf * 2.20462, label: 'lbf' }
+      : { value: kgf, label: 'kgf' },
+    convertForceToKgf: value => units.suspensionForce === 'lbf' ? value / 2.20462 : value,
+    convertPower: watts => {
+      const kw = watts / 1000;
+      if (units.power === 'hp') return { value: watts / 745.7, label: 'hp' };
+      if (units.power === 'ps') return { value: kw * 1.35962, label: 'PS' };
+      return { value: kw, label: 'kW' };
+    },
+    convertTorque: nm => units.torque === 'lbft'
+      ? { value: nm * 0.73756, label: 'lb-ft' }
+      : { value: nm, label: 'N·m' }
+  };
+}
+
+export const ScopedUnitSettingsProvider: React.FC<{ units: UnitSettings; children: React.ReactNode }> = ({ units, children }) => (
+  <ScopedUnitsContext.Provider value={units}>{children}</ScopedUnitsContext.Provider>
+);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
@@ -142,10 +215,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             dyno_test_gear: data.dyno_test_gear ?? defaultSettings.dyno_test_gear,
             dyno_filter_slip: data.dyno_filter_slip ?? defaultSettings.dyno_filter_slip,
             dyno_filter_transients: data.dyno_filter_transients ?? defaultSettings.dyno_filter_transients,
-            units: {
+            units: normalizeGeneralUnitSettings({
               ...defaultUnits,
               ...(data.units || {})
-            }
+            })
           };
           setSettings(merged);
         }
@@ -182,7 +255,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     let newSettings = { ...settings };
     
     if ('units' in updates) {
-      newSettings.units = { ...settings.units, ...updates.units };
+      newSettings.units = normalizeGeneralUnitSettings({ ...settings.units, ...updates.units });
     } else {
       newSettings = { ...settings, ...updates };
     }
@@ -399,8 +472,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const useSettings = () => {
   const context = useContext(SettingsContext);
+  const scopedUnits = useContext(ScopedUnitsContext);
   if (context === undefined) {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
-  return context;
+  const scopedContext = useMemo(() => scopedUnits ? {
+    ...context,
+    settings: { ...context.settings, units: scopedUnits },
+    ...createScopedConverters(scopedUnits)
+  } : context, [context, scopedUnits]);
+  return scopedContext;
 };

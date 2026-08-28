@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
-import { useSettings } from '../../context/SettingsContext';
+import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useTelemetryRecorder } from '../../context/TelemetryRecorderContext';
 import GForceRadar from './components/GForceRadar';
@@ -17,6 +17,14 @@ import TelemetryCardShell, { type TelemetryCardId } from './components/Telemetry
 import TelemetryCardLayout from './components/TelemetryCardLayout';
 import TelemetryDetailView from './components/TelemetryDetailView';
 import { backendFetch } from '../../services/backend';
+import type { SuspensionTravelMode } from '../../utils/suspensionTravel';
+import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
+import {
+  createGranularUnitPreference,
+  loadGranularUnitPreference,
+  resolveGranularUnitPreference,
+  type GranularUnitPreference
+} from '../../utils/gameUnitSettings';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
@@ -62,12 +70,26 @@ interface BlockRenderConfig {
   suspensionTrace: boolean;
 }
 
-const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab }) => {
+interface TelemetryViewContentProps extends TelemetryViewProps {
+  unitPreference: GranularUnitPreference;
+  onUnitPreferenceChange: (preference: GranularUnitPreference) => void;
+}
+
+const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
+  subTab: propSubTab,
+  setSubTab: propSetSubTab,
+  unitPreference,
+  onUnitPreferenceChange
+}) => {
   const [internalSubTab, setInternalSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
   const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
   const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
 
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
+  const [showUnitSettings, setShowUnitSettings] = useState(false);
+  const [suspensionTravelMode, setSuspensionTravelMode] = useState<SuspensionTravelMode>(() =>
+    localStorage.getItem('telemetry_suspension_travel_mode') === 'absolute' ? 'absolute' : 'relative'
+  );
   const { data: telemetryData } = useTelemetry();
   const { t } = useSettings();
   const { carName } = useCarParams();
@@ -99,6 +121,11 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
       } catch {}
       return next;
     });
+  };
+
+  const selectSuspensionTravelMode = (mode: SuspensionTravelMode) => {
+    setSuspensionTravelMode(mode);
+    localStorage.setItem('telemetry_suspension_travel_mode', mode);
   };
 
   const prevIsRacingRef = useRef<boolean>(false);
@@ -257,7 +284,10 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
           </ul>
         </div>
 
-        <div className="d-flex align-items-center fw-bold text-secondary fs-6">
+        <div className="d-flex align-items-center gap-2 fw-bold text-secondary fs-6">
+          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowUnitSettings(true)}>
+            {t("Telemetry Units")}
+          </button>
           {classDisplay && <span className="badge text-bg-info me-2">{classDisplay}</span>}
           {isEV && <span className="badge text-bg-success me-2">{t("EV")}</span>}
           <span className="text-truncate" style={{ maxWidth: '200px' }}>{displayCarName}</span>
@@ -381,21 +411,69 @@ const TelemetryView: React.FC<TelemetryViewProps> = ({ subTab: propSubTab, setSu
             onClose={closeExpandedCard}
             expandLabel={t("Expand card")}
             closeLabel={t("Close")}
-            renderSwitch={<RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />}
+            renderSwitch={
+              <div className="d-flex align-items-center gap-2">
+                <div className="btn-group btn-group-sm" role="group" aria-label={t("Suspension Travel Display Mode")}>
+                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'relative' ? 'active' : ''}`} onClick={() => selectSuspensionTravelMode('relative')}>{t("Relative")}</button>
+                  <button type="button" className={`btn btn-outline-secondary ${suspensionTravelMode === 'absolute' ? 'active' : ''}`} onClick={() => selectSuspensionTravelMode('absolute')}>{t("Absolute")}</button>
+                </div>
+                <RenderSwitch checked={renderConfig.suspensionTrace} onChange={() => toggleBlockRender('suspensionTrace')} />
+              </div>
+            }
             detail={<TelemetryDetailView cardId="suspension" current={telemetryData} />}
           >
             <TelemetryCardLayout variant="grid">
-              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} renderHistoryTrace={renderConfig.suspensionTrace} />
-              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} renderHistoryTrace={renderConfig.suspensionTrace} />
-              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} />
-              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} />
+              <SuspensionBar title={t("Front Left")} isLeft={true} tireIdx={0} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
+              <SuspensionBar title={t("Front Right")} isLeft={false} tireIdx={1} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
+              <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
+              <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
             </TelemetryCardLayout>
           </TelemetryCardShell>
 
         </div>
 
       )}
+      <UnitSettingsSidebar
+        idPrefix="telemetry-units"
+        show={showUnitSettings}
+        title={t("Telemetry Unit Settings")}
+        mode="granular"
+        preference={unitPreference}
+        onChange={onUnitPreferenceChange}
+        onClose={() => setShowUnitSettings(false)}
+      />
     </div>
+  );
+};
+
+const TELEMETRY_UNIT_STORAGE_KEY = 'telemetry_unit_preference';
+
+const TelemetryView: React.FC<TelemetryViewProps> = props => {
+  const { settings } = useSettings();
+  const [unitPreference, setUnitPreference] = useState<GranularUnitPreference>(() =>
+    loadGranularUnitPreference(TELEMETRY_UNIT_STORAGE_KEY, settings.units)
+  );
+  const scopedUnits = React.useMemo(
+    () => resolveGranularUnitPreference(settings.units, unitPreference),
+    [settings.units, unitPreference]
+  );
+
+  const updateUnitPreference = (preference: GranularUnitPreference) => {
+    const normalized = unitPreference.followGlobal && !preference.followGlobal
+      ? { ...createGranularUnitPreference(settings.units), followGlobal: false }
+      : preference;
+    setUnitPreference(normalized);
+    localStorage.setItem(TELEMETRY_UNIT_STORAGE_KEY, JSON.stringify(normalized));
+  };
+
+  return (
+    <ScopedUnitSettingsProvider units={scopedUnits}>
+      <TelemetryViewContent
+        {...props}
+        unitPreference={unitPreference}
+        onUnitPreferenceChange={updateUnitPreference}
+      />
+    </ScopedUnitSettingsProvider>
   );
 };
 
