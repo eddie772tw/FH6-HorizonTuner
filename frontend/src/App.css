@@ -285,8 +285,7 @@ main .container-fluid {
 }
 
 .settings-section-header {
-  margin: -0.25rem -0.25rem 0;
-  padding: 0.25rem 0.25rem 0.75rem;
+  padding-bottom: 0.75rem;
   border-color: var(--divider-md) !important;
 }
 

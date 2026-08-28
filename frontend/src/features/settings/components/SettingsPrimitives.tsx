@@ -30,7 +30,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
   children,
   className = '',
 }) => (
-  <section className={`settings-section glass-panel d-flex flex-column gap-3 ${className}`.trim()}>
+  <section className={`settings-section d-flex flex-column gap-3 ${className}`.trim()}>
     <header className="settings-section-header d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
       <h3 className="settings-section-title text-primary fs-6 fw-bold m-0">{title}</h3>
       {headerAside}
