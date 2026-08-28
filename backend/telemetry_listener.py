@@ -635,9 +635,9 @@ def create_resilient_udp_socket(
 
 
 async def start_udp_listener(
-    ip: str,
-    port: int,
-    message_queue: asyncio.Queue,
+    ip: str | None = None,
+    port: int = 8000,
+    message_queue: asyncio.Queue | None = None,
     forward_enabled: bool = False,
     forward_host: str = "127.0.0.1",
     forward_port: int = 5300,
@@ -645,11 +645,11 @@ async def start_udp_listener(
 ):
     loop = asyncio.get_running_loop()
 
-    # If ip is "auto", "0.0.0.0", "all", or empty: probe and bind all registered local IPs explicitly
-    if ip in ("0.0.0.0", "auto", "all", "", None):
-        target_ips = discover_local_ipv4_addresses()
-    else:
-        target_ips = [ip]
+    # Always discover all active registered local IPs + 127.0.0.1
+    target_ips = discover_local_ipv4_addresses()
+    if ip and ip not in ("0.0.0.0", "auto", "all", "", "127.0.0.1"):
+        if ip not in target_ips:
+            target_ips.append(ip)
 
     transports: list[asyncio.DatagramTransport] = []
     bound_ips: list[str] = []
@@ -696,7 +696,7 @@ async def start_udp_listener(
         bound_ips.append(fallback_ip)
 
     logger.info(
-        f"Listening for Forza Telemetry on UDP {', '.join(bound_ips)}:{port} (Resilient Sockets, Zero Wildcard 0.0.0.0)"
+        f"Listening for Forza Telemetry on UDP {', '.join(bound_ips)}:{port} (Resilient Sockets, Multi-Interface Safe Binding)"
     )
 
     if len(transports) == 1:
