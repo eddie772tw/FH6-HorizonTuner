@@ -1435,3 +1435,14 @@
   5. Step 1 places unit access and `Save & Proceed` beside its heading. Power, torque, downforce, seasonal pressure, weight, spring, and height displays honor the workflow scope while stored values remain hp, N·m, kgf, kg, kgf/mm, and cm as applicable.
 - **Verification**: Ruff passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend/HUD Vitest passed `71 files / 451 tests`; production TypeScript/Vite build and `git diff --check` passed.
 - **Status**: adopted.
+
+## 2026-08-28 / Three-column System Settings Information Architecture
+
+- **Scope**: `SettingsView`, MCP/update settings cards, shared settings presentation primitives, and responsive layout tests.
+- **Decision**:
+  1. Supersede the earlier two-column Settings layout with three desktop columns organized by concern: language/game units, telemetry/recording, and developer/integration/maintenance options.
+  2. All ordinary fields and switches use shared `SettingsSection`, `SettingsItem`, and `SettingsSwitch` primitives. This keeps labels, descriptions, controls, whole-row switch hit areas, and semantic heading levels consistent across built-in, MCP, and OTA settings.
+  3. Settings sections remain flat and transparent rather than using card backgrounds, borders, or shadows. Section headings, item labels, and explanatory copy use separate sizes, weights, dividers, and semantic color tokens to preserve hierarchy across themes.
+  4. The three-column breakpoint begins at `lg`; below `xl`, individual setting rows stack their label and control to retain usable widths. Narrower screens continue to stack columns vertically.
+- **Verification**: Ruff check/format passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend Vitest passed `73 files / 456 tests`; production TypeScript/Vite build and `git diff --check` passed. Browser QA confirmed three equal columns at 1440px and 1024px, with no Settings grid horizontal overflow at 1024px.
+- **Status**: adopted.
