@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { useToast } from '../../../context/ToastContext';
-import { checkForAppUpdates, UpdateInfo, isTauriEnvironment } from '../../../services/updaterService';
+import { checkForAppUpdates, formatUpdaterError, UpdateInfo, isTauriEnvironment } from '../../../services/updaterService';
 import { UpdateModal } from '../../../components/common/UpdateModal';
 import { SettingsSection, SettingsSwitch } from './SettingsPrimitives';
 
@@ -22,6 +22,7 @@ export const UpdateSettingsCard: React.FC = () => {
         title: t('Browser / Dev Mode'),
         message: t('OTA updates are only active in the compiled desktop application.'),
         duration: 4000,
+        anchor: 'build-info',
       });
       setLastChecked(new Date().toLocaleTimeString());
       return;
@@ -40,6 +41,7 @@ export const UpdateSettingsCard: React.FC = () => {
           title: t('Update Available'),
           message: `${t('New version')} ${update.version} ${t('is ready for download.')}`,
           duration: 5000,
+          anchor: 'build-info',
         });
       } else {
         setAvailableUpdate(null);
@@ -48,6 +50,7 @@ export const UpdateSettingsCard: React.FC = () => {
           title: t('Up to Date'),
           message: t('You are running the latest version of FH6-HorizonTuner.'),
           duration: 3500,
+          anchor: 'build-info',
         });
       }
     } catch (err: any) {
@@ -55,8 +58,9 @@ export const UpdateSettingsCard: React.FC = () => {
       addToast({
         type: 'danger',
         title: t('Check Failed'),
-        message: err?.message || t('Failed to connect to the update server. Please check internet connection.'),
+        message: t(formatUpdaterError(err)),
         duration: 5000,
+        anchor: 'build-info',
       });
     } finally {
       setIsChecking(false);

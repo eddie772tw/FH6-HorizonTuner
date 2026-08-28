@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 export type ToastType = 'info' | 'warning' | 'success' | 'danger';
+export type ToastAnchor = 'build-info';
 
 export interface ToastMessage {
   id: string;
@@ -9,6 +10,7 @@ export interface ToastMessage {
   message: string;
   detail?: string;
   duration?: number;
+  anchor?: ToastAnchor;
 }
 
 interface ToastContextType {
