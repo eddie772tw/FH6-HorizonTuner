@@ -6,7 +6,7 @@ import path from "path";
 
 // In dev mode, the Python backend sidecar may not be running.
 // Serve hud_overlay/ files directly for /hud/* requests instead of proxying.
-const HUD_OVERLAY_DIR = path.resolve(__dirname, "../hud_overlay");
+const HUD_OVERLAY_DIR = path.resolve(import.meta.dirname, "../hud_overlay");
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html",
@@ -77,7 +77,7 @@ function hudStaticPlugin(): Plugin {
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
-import pkg from "./package.json";
+import pkg from "./package.json" with { type: "json" };
 
 let rawCommit = process.env.VITE_GIT_COMMIT || process.env.RELEASE_TAG || "unknown";
 let gitBranch = process.env.VITE_GIT_BRANCH || "unknown";
@@ -175,8 +175,8 @@ export default defineConfig(async () => ({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, "index.html"),
-        lite: path.resolve(__dirname, "lite/index.html"),
+        main: path.resolve(import.meta.dirname, "index.html"),
+        lite: path.resolve(import.meta.dirname, "lite/index.html"),
       },
       output: {
         manualChunks(id) {

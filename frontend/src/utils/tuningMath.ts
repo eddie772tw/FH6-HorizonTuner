@@ -123,37 +123,20 @@ export interface GearingSecondaryCorrection {
 
 const AEGO_FINAL_DRIVE_MIN = 2.0;
 const AEGO_FINAL_DRIVE_MAX = 6.1;
-const AEGO_FINAL_DRIVE_NEUTRAL = 3.7;
 
 /**
- * Rebalances the editable final-drive/gear split without changing each gear's
- * total drive ratio. Keeping the overall ratios stable preserves the AEGO
- * speed and shift targets while avoiding a high final drive paired with tiny
- * individual gear ratios that leaves little room for in-game fine tuning.
+ * Returns the golden target top gear ratio anchor for a given gear count.
+ * Aligns baseline gearing toward lower/moderate final drives and higher individual gear ratios.
  */
-function rebalanceEditableGearing(finalDrive: number, gears: number[]): { finalDrive: number; gears: number[] } {
-  if (!Number.isFinite(finalDrive) || finalDrive <= 0 || gears.length === 0) {
-    return { finalDrive: AEGO_FINAL_DRIVE_NEUTRAL, gears };
-  }
-
-  const firstTotalRatio = finalDrive * gears[0];
-  const softenedFinalDrive = AEGO_FINAL_DRIVE_NEUTRAL + (finalDrive - AEGO_FINAL_DRIVE_NEUTRAL) * 0.25;
-  const firstGearBound = Number.isFinite(firstTotalRatio)
-    ? Math.max(AEGO_FINAL_DRIVE_MIN, firstTotalRatio)
-    : AEGO_FINAL_DRIVE_MAX;
-  const balancedFinalDrive = Math.max(
-    AEGO_FINAL_DRIVE_MIN,
-    Math.min(AEGO_FINAL_DRIVE_MAX, firstGearBound, softenedFinalDrive)
-  );
-  const scale = finalDrive / balancedFinalDrive;
-  const balancedGears = gears.map((ratio) => ratio * scale);
-
-  // Pathological weak-engine inputs can produce a total first ratio below 2.0,
-  // where preserving it and keeping the minimum final drive are incompatible.
-  // Prefer the game's usable first-gear floor in that single edge case.
-  balancedGears[0] = Math.max(1.0, balancedGears[0]);
-
-  return { finalDrive: balancedFinalDrive, gears: balancedGears };
+export function getTargetTopGearRatio(numGears: number): number {
+  if (numGears <= 3) return 1.00;
+  if (numGears === 4) return 0.88;
+  if (numGears === 5) return 0.78;
+  if (numGears === 6) return 0.72;
+  if (numGears === 7) return 0.67;
+  if (numGears === 8) return 0.63;
+  if (numGears === 9) return 0.60;
+  return 0.58;
 }
 
 /**
@@ -251,7 +234,7 @@ export function calculateAEGOGearing(
     gears[idxTop] = 1.0;
 
     const rawFd = (rpmHp * C * 60) / (gears[idxTop] * vDragTop * 1000);
-    fd = Math.max(2.0, Math.min(6.5, rawFd));
+    fd = Math.max(2.0, Math.min(6.1, rawFd));
 
     if (calcGears > 1) {
       const v1Target = drivetrain === 'AWD' ? 110.0 : (drivetrain === 'FWD' ? 100.0 : 125.0);
@@ -270,15 +253,18 @@ export function calculateAEGOGearing(
 
   } else {
     // Road / Circuit (Default) - Closed-loop Geometric Step Ratio Smooth Correction Model
-    const kTrack = 0.915;
-    const vTarget = Math.pow(maxHp, 1 / 3) * 32.5 * (1 + 0.15 * aeroEfficiency);
+    const kTrack = 0.95;
+    const vTarget = Math.pow(maxHp, 1 / 3) * 37.0 * (1 + 0.12 * aeroEfficiency);
     const vCircuit = vTarget * kTrack;
-    const gNgears = 0.85;
+    const targetTopGear = getTargetTopGearRatio(numGears);
 
-    // Final Drive calculation anchored to maxRpm target redline speed
-    const vCircuitPeakHp = (maxRpm && maxRpm > 0) ? vCircuit * (rpmHp / maxRpm) : vCircuit;
-    const rawFd = (rpmHp * C * 60) / (vCircuitPeakHp * gNgears * 1000);
-    fd = Math.max(2.0, Math.min(6.5, rawFd));
+    // Final Drive calculation anchored to peak HP RPM and target top gear
+    const topTotalRatio = (rpmHp * C * 60) / (vCircuit * 1000);
+    const rawFd = topTotalRatio / targetTopGear;
+    fd = Math.max(AEGO_FINAL_DRIVE_MIN, Math.min(AEGO_FINAL_DRIVE_MAX, rawFd));
+
+    // Calculate actual top gear based on clamped final drive
+    const gTop = topTotalRatio / fd;
 
     // 1st Gear target speed with drivetrain launch modifier kDrive
     const vBase = 90.0;
@@ -287,27 +273,34 @@ export function calculateAEGOGearing(
 
     const g1 = (rpmHp * C * 60) / (v1 * fd * 1000);
 
-    // Powerband progression range definition anchored to redline vs peak HP ratio
-    const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
-    const rRedlineHp = (maxRpm && maxRpm > 0) ? rpmHp / maxRpm : 0.85;
-    const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
-    const rMin = isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand));
-    const rMax = Math.min(0.92, rRedlineHp);
-
     gears = new Array(numGears).fill(0);
-    gears[0] = Math.max(0.48, Math.min(6.0, g1));
+    gears[0] = Math.max(1.0, Math.min(6.0, g1));
+    gears[numGears - 1] = gTop;
 
     if (numGears > 1) {
       const numSteps = numGears - 1;
-      for (let i = 1; i < numGears; i++) {
-        const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
-        const rVal = rMin + (rMax - rMin) * fraction;
-        gears[i] = gears[i - 1] * rVal;
+      const rMean = Math.pow(gTop / gears[0], 1 / numSteps);
+      const rSpread = Math.min(0.12, Math.max(0.04, (1.0 - rMean) * 0.6));
+
+      const rRaw: number[] = [];
+      let prodRaw = 1.0;
+      for (let i = 1; i <= numSteps; i++) {
+        const offsetFraction = numSteps > 1 ? (i - 1) / (numSteps - 1) - 0.5 : 0;
+        const rVal = Math.max(0.55, Math.min(0.92, rMean + rSpread * offsetFraction));
+        rRaw.push(rVal);
+        prodRaw *= rVal;
       }
+
+      const s = Math.pow(gTop / (gears[0] * prodRaw), 1 / numSteps);
+      for (let i = 1; i < numGears; i++) {
+        const rAdj = rRaw[i - 1] * s;
+        gears[i] = gears[i - 1] * rAdj;
+      }
+      gears[numGears - 1] = gTop;
     }
   }
 
-  // Secondary Correction Mechanism (Dual-Anchored Top-Gear & Closed-Loop Gear Ratio Re-distribution)
+  // Secondary Correction Mechanism (FD-First Macro Scaling with Top-Gear Usability Protection)
   if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
     const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
     const tireRadiusM = C / (2 * Math.PI);
@@ -319,7 +312,7 @@ export function calculateAEGOGearing(
 
     let targetTopSpeedAtPeakHpKmh = baselineTopSpeedKmh;
 
-    // 1. Soft Max Speed Cap Constraint at Redline RPM
+    // 1. Soft Max Speed Cap Constraint at Redline RPM (converted to Peak HP target)
     if (softMaxSpeed && softMaxSpeed > 0 && maxRpm > 0) {
       const maxSpeedAtPeakHpFromSoftCap = softMaxSpeed * (rpmHp / maxRpm);
       targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSoftCap);
@@ -333,43 +326,61 @@ export function calculateAEGOGearing(
       targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSimulated);
     }
 
-    // 3. Re-calculate top gear total drive ratio (i_top_total = FD * G_top)
+    // 3. FD-First Macro Scaling + Micro Fine-Tuning
     if (targetTopSpeedAtPeakHpKmh > 0 && Math.abs(targetTopSpeedAtPeakHpKmh - baselineTopSpeedKmh) > 0.1) {
-      const topTotalRatio = (rpmHp * C * 60) / (targetTopSpeedAtPeakHpKmh * 1000);
-      
-      // Determine new top gear ratio and balance with Final Drive
-      let newGtop = topTotalRatio / fd;
-      if (newGtop < 0.48 || newGtop > 1.25) {
-        const clampedGtop = Math.max(0.50, Math.min(1.10, newGtop));
-        fd = Math.max(2.0, Math.min(6.5, topTotalRatio / clampedGtop));
-        newGtop = topTotalRatio / fd;
-      }
-      gears[topGearIdx] = newGtop;
+      const targetTopTotalRatio = (rpmHp * C * 60) / (targetTopSpeedAtPeakHpKmh * 1000);
+      const baseTopGear = gears[topGearIdx];
 
-      // 4. Full Closed-Loop Gear Ratio Re-distribution for all intermediate gears
-      if (topGearIdx > 0 && gears[0] > 0) {
-        const numSteps = topGearIdx;
-        const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
-        const rRedlineHp = (maxRpm && maxRpm > 0) ? rpmHp / maxRpm : 0.85;
-        const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
-        const rMin = isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand));
-        const rMax = Math.min(0.92, rRedlineHp);
+      // Primary: scale Final Drive to absorb target top speed changes while preserving gear ratios
+      const targetFd = targetTopTotalRatio / baseTopGear;
 
-        const rRaw: number[] = [];
-        let prodRaw = 1.0;
-        for (let i = 1; i <= numSteps; i++) {
-          const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
-          const rVal = rMin + (rMax - rMin) * fraction;
-          rRaw.push(rVal);
-          prodRaw *= rVal;
+      if (targetFd >= AEGO_FINAL_DRIVE_MIN && targetFd <= AEGO_FINAL_DRIVE_MAX) {
+        // FD fully absorbs the change, keep all individual gears untouched (preserving powerband drops)
+        fd = targetFd;
+      } else {
+        // Clamp FD to game limits [2.0, 6.1] and adjust top gear
+        fd = Math.max(AEGO_FINAL_DRIVE_MIN, Math.min(AEGO_FINAL_DRIVE_MAX, targetFd));
+        let newGtop = targetTopTotalRatio / fd;
+
+        // Top Gear Usability Guard
+        if (topGearIdx > 0 && gears[topGearIdx - 1] > 0) {
+          const prevGear = gears[topGearIdx - 1];
+          const maxAllowedTopGear = prevGear * 0.90; // Prevent over-compression
+          const minAllowedTopGear = prevGear * 0.70; // Prevent cliff drops
+
+          if (newGtop > maxAllowedTopGear) {
+            newGtop = maxAllowedTopGear;
+          } else if (newGtop < minAllowedTopGear) {
+            newGtop = minAllowedTopGear;
+          }
+
+          gears[topGearIdx] = newGtop;
+
+          // Re-distribute intermediate gears gently only if top gear had to move
+          const numSteps = topGearIdx;
+          const rBand = rpmHp > 0 ? rpmT / rpmHp : 0.65;
+          const rRedlineHp = (maxRpm && maxRpm > 0) ? rpmHp / maxRpm : 0.85;
+          const isTurbo = engineType === 'Turbo' || engineType === 'TwinTurbo';
+          const rMin = isTurbo ? Math.max(0.68, rRedlineHp * Math.max(0.80, rBand)) : Math.max(0.62, rRedlineHp * Math.max(0.75, rBand));
+          const rMax = Math.min(0.92, rRedlineHp);
+
+          const rRaw: number[] = [];
+          let prodRaw = 1.0;
+          for (let i = 1; i <= numSteps; i++) {
+            const fraction = numSteps > 1 ? (i - 1) / (numSteps - 1) : 0;
+            const rVal = rMin + (rMax - rMin) * fraction;
+            rRaw.push(rVal);
+            prodRaw *= rVal;
+          }
+
+          const s = Math.pow(newGtop / (gears[0] * prodRaw), 1 / numSteps);
+          for (let i = 1; i < topGearIdx; i++) {
+            const rAdj = rRaw[i - 1] * s;
+            gears[i] = gears[i - 1] * rAdj;
+          }
+        } else {
+          gears[topGearIdx] = newGtop;
         }
-
-        const s = Math.pow(newGtop / (gears[0] * prodRaw), 1 / numSteps);
-        for (let i = 1; i < topGearIdx; i++) {
-          const rAdj = rRaw[i - 1] * s;
-          gears[i] = gears[i - 1] * rAdj;
-        }
-        gears[topGearIdx] = newGtop;
 
         // Fill remaining gears if Drift/Drag
         for (let i = topGearIdx + 1; i < numGears; i++) {
@@ -385,26 +396,26 @@ export function calculateAEGOGearing(
      if (isNaN(gears[i]) || gears[i] === Infinity || gears[i] === -Infinity || gears[i] === 0) gears[i] = 1.0;
   }
 
-  if (raceGoal === 'Drag') {
-    // The drag profile intentionally models a four-speed direct-drive meta;
-    // preserve its 1.00 fourth gear while still respecting the game limit.
-    fd = Math.min(AEGO_FINAL_DRIVE_MAX, Math.max(AEGO_FINAL_DRIVE_MIN, fd));
-  } else {
-    const balanced = rebalanceEditableGearing(fd, gears);
-    fd = balanced.finalDrive;
-    gears = balanced.gears;
-  }
+  fd = Math.min(AEGO_FINAL_DRIVE_MAX, Math.max(AEGO_FINAL_DRIVE_MIN, fd));
 
   const roundedFD = Math.round(fd * 100) / 100;
   const roundedGears = gears.map((ratio) => {
     return Math.round(ratio * 100) / 100;
   });
 
-  // Force monotonic decrease as tests require it (g1 > g2 > ... > gN)
+  // Force monotonic decrease and powerband shift RPM bound
   const monotonicLimit = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : roundedGears.length;
+  const maxStepRatioRounded = (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
+    ? (rpmHp + 50) / maxRpm
+    : 0.92;
+
   for (let i = 1; i < monotonicLimit; i++) {
-     if (roundedGears[i] >= roundedGears[i - 1]) {
-        roundedGears[i] = Math.max(0.48, Math.round((roundedGears[i - 1] - 0.01) * 100) / 100);
+     const maxAllowedRatio = Math.min(
+       Math.round((roundedGears[i - 1] - 0.01) * 100) / 100,
+       Math.floor(roundedGears[i - 1] * maxStepRatioRounded * 100) / 100
+     );
+     if (roundedGears[i] > maxAllowedRatio) {
+        roundedGears[i] = Math.max(0.40, maxAllowedRatio);
      }
   }
 
