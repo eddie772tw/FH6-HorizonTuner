@@ -1067,6 +1067,7 @@
   "Relative": "相対値",
   "Absolute": "絶対値",
   "Use the same three unit categories as the game, or inherit the app-wide choices.": "ゲームと同じ3種類の単位を使用するか、アプリ全体の設定を継承します。",
+  "Choose each telemetry display unit independently, or inherit the app-wide choices.": "各テレメトリ表示単位を個別に選択するか、アプリ全体の設定を継承します。",
   "Close Unit Settings": "単位設定を閉じる",
   "Telemetry Units": "テレメトリ単位",
   "Telemetry Unit Settings": "テレメトリ単位設定",

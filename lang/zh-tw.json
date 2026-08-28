@@ -1128,6 +1128,7 @@
   "Relative": "相對值",
   "Absolute": "絕對值",
   "Use the same three unit categories as the game, or inherit the app-wide choices.": "使用與遊戲相同的三類單位，或繼承 APP 全域選擇。",
+  "Choose each telemetry display unit independently, or inherit the app-wide choices.": "可個別選擇每項遙測顯示單位，或繼承 APP 全域選擇。",
   "Close Unit Settings": "關閉單位設定",
   "Telemetry Units": "遙測單位",
   "Telemetry Unit Settings": "遙測單位設定",

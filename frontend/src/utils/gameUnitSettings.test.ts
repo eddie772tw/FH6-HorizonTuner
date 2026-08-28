@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { UnitSettings } from '../context/SettingsContext';
 import {
   applyGeneralUnitSystem,
+  createGranularUnitPreference,
   createUnitPreference,
   inferGeneralUnitSystem,
+  normalizeGranularUnitPreference,
   normalizeGeneralUnitSettings,
+  resolveGranularUnitPreference,
   resolveUnitPreference
 } from './gameUnitSettings';
 
@@ -60,5 +63,47 @@ describe('game-style unit settings', () => {
 
   it('returns global units unchanged while following the app', () => {
     expect(resolveUnitPreference(units, createUnitPreference(units))).toBe(units);
+  });
+
+  it('migrates the legacy telemetry preference into a complete custom-unit snapshot', () => {
+    const preference = normalizeGranularUnitPreference({
+      followGlobal: false,
+      general: 'imperial',
+      power: 'ps',
+      spring: 'lbsin'
+    }, units);
+
+    expect(preference).toEqual({
+      followGlobal: false,
+      units: {
+        ...units,
+        speed: 'mph',
+        weight: 'lbs',
+        temperature: 'F',
+        tirePressure: 'psi',
+        boostPressure: 'psi',
+        springRate: 'lbsin',
+        rideHeight: 'in',
+        suspensionForce: 'lbf',
+        power: 'ps',
+        torque: 'lbft'
+      }
+    });
+  });
+
+  it('resolves an independently configurable telemetry unit snapshot', () => {
+    const preference = createGranularUnitPreference(units);
+    preference.followGlobal = false;
+    preference.units = {
+      ...preference.units,
+      speed: 'mph',
+      tirePressure: 'kpa',
+      boostPressure: 'bar',
+      power: 'ps',
+      torque: 'nm'
+    };
+
+    expect(resolveGranularUnitPreference(units, preference)).toEqual(preference.units);
+    expect(resolveGranularUnitPreference(units, { ...preference, followGlobal: true })).toBe(units);
   });
 });

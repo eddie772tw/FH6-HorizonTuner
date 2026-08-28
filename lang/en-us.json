@@ -1038,6 +1038,7 @@
   "Relative": "Relative",
   "Absolute": "Absolute",
   "Use the same three unit categories as the game, or inherit the app-wide choices.": "Use the same three unit categories as the game, or inherit the app-wide choices.",
+  "Choose each telemetry display unit independently, or inherit the app-wide choices.": "Choose each telemetry display unit independently, or inherit the app-wide choices.",
   "Close Unit Settings": "Close Unit Settings",
   "Telemetry Units": "Telemetry Units",
   "Telemetry Unit Settings": "Telemetry Unit Settings",

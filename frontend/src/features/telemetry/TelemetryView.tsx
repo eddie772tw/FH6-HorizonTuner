@@ -17,10 +17,10 @@ import { backendFetch } from '../../services/backend';
 import type { SuspensionTravelMode } from '../../utils/suspensionTravel';
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
 import {
-  createUnitPreference,
-  loadUnitPreference,
-  resolveUnitPreference,
-  type UnitPreferenceOverride
+  createGranularUnitPreference,
+  loadGranularUnitPreference,
+  resolveGranularUnitPreference,
+  type GranularUnitPreference
 } from '../../utils/gameUnitSettings';
 
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
@@ -68,8 +68,8 @@ interface BlockRenderConfig {
 }
 
 interface TelemetryViewContentProps extends TelemetryViewProps {
-  unitPreference: UnitPreferenceOverride;
-  onUnitPreferenceChange: (preference: UnitPreferenceOverride) => void;
+  unitPreference: GranularUnitPreference;
+  onUnitPreferenceChange: (preference: GranularUnitPreference) => void;
 }
 
 const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
@@ -389,6 +389,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
         idPrefix="telemetry-units"
         show={showUnitSettings}
         title={t("Telemetry Unit Settings")}
+        mode="granular"
         preference={unitPreference}
         onChange={onUnitPreferenceChange}
         onClose={() => setShowUnitSettings(false)}
@@ -401,17 +402,17 @@ const TELEMETRY_UNIT_STORAGE_KEY = 'telemetry_unit_preference';
 
 const TelemetryView: React.FC<TelemetryViewProps> = props => {
   const { settings } = useSettings();
-  const [unitPreference, setUnitPreference] = useState<UnitPreferenceOverride>(() =>
-    loadUnitPreference(TELEMETRY_UNIT_STORAGE_KEY, settings.units)
+  const [unitPreference, setUnitPreference] = useState<GranularUnitPreference>(() =>
+    loadGranularUnitPreference(TELEMETRY_UNIT_STORAGE_KEY, settings.units)
   );
   const scopedUnits = React.useMemo(
-    () => resolveUnitPreference(settings.units, unitPreference),
+    () => resolveGranularUnitPreference(settings.units, unitPreference),
     [settings.units, unitPreference]
   );
 
-  const updateUnitPreference = (preference: UnitPreferenceOverride) => {
+  const updateUnitPreference = (preference: GranularUnitPreference) => {
     const normalized = unitPreference.followGlobal && !preference.followGlobal
-      ? { ...createUnitPreference(settings.units), followGlobal: false }
+      ? { ...createGranularUnitPreference(settings.units), followGlobal: false }
       : preference;
     setUnitPreference(normalized);
     localStorage.setItem(TELEMETRY_UNIT_STORAGE_KEY, JSON.stringify(normalized));
