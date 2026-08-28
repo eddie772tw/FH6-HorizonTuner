@@ -15,6 +15,28 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-28 / Test Suite Lean Refactoring and Anti-Over-Testing Governance
+
+### 測試集精簡分流與防範過度開發/過度測試治理規範
+
+- **來源**：`local`，針對測試集中過度開發、Meta-testing 與脆弱斷言之全面檢討與治理。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Meta-Testing 反模式**：將 Agent PR 審查腳本、標籤檢查、CI 效能儀表板等開發工具測試混入產品核心 `tests/`，會稀釋產品核心測試焦點並增加 CI 負擔。
+  2. **靜態設定斷言反模式**：以 Python 正則表達式或字串包含去測試 `.github/dependabot.yml` 或 `ci.yml` 屬於無效且脆弱的測試（Brittle Tests），宣告式設定檔應交由平台原生 Schema 驗證。
+  3. **Canvas 2D 繪圖指令 Mocking 陷阱**：在 UI/Canvas 測試中斷言底層 API 呼叫次數（如 `arcs.length`）或微觀像素座標（如 `x: 320, y: 224`），會對 UI 樣式微調產生極大阻力，測試應回歸純運算與無異常邊界防護。
+  4. **Heavy E2E 阻塞問題**：啟動真實二進位進程（`.exe`）的宿主診斷測試容易因本機環境產生逾時或 Flakiness，必須標記為 `@pytest.mark.host_diagnostics` 並在日常單元測試中預設排除。
+- **Action**：
+  1. 測試套裝分流：將開發工具測試遷移至 `scripts/tests/`；移除靜態 YAML 比對測試；`pyproject.toml` 設定 `addopts = "-m 'not host_diagnostics'"`。
+  2. 重構 Canvas 2D 測試，移除微觀座標與指令計數斷言。
+  3. 於 `AGENTS.md`、`workspace.md` 與 `agent-governance-audit/SKILL.md` 中明定「反過度開發與反過度測試規範 (Anti-Over-Testing & Anti-Over-Engineering Mandate)」。
+- **Evidence**：
+  - 後端快速單元測試：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`（184 passed, 0 failed, 耗時由 ~39s 縮短至 3.90s）。
+  - 工具鏈測試：`pytest scripts/tests/`（19 passed, 0.06s）。
+  - 前端單元測試：`pnpm -C frontend run test`（76 files, 472 passed, 7.59s）。
+  - 前端建置：`pnpm build` 通過；Ruff check/format 通過。
+- **Governance**：本筆追加依 `agent-governance-audit` 規範登錄。
+
 ## 2026-08-27 / Telemetry expanded detail scope and corner layout
 
 ### 展開卡片範圍與四角詳細遙測

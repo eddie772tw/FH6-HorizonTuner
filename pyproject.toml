@@ -65,6 +65,7 @@ line-ending = "auto"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "backend"]
+addopts = "-m 'not host_diagnostics'"
 filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
     "ignore:.*locale.getdefaultlocale.*:DeprecationWarning",

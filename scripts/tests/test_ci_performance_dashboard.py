@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 SCRIPT_PATH = (
-    Path(__file__).resolve().parent.parent / "scripts" / "ci_performance_dashboard.py"
+    Path(__file__).resolve().parents[2] / "scripts" / "ci_performance_dashboard.py"
 )
 SPEC = importlib.util.spec_from_file_location("ci_performance_dashboard", SCRIPT_PATH)
 dashboard = importlib.util.module_from_spec(SPEC)
