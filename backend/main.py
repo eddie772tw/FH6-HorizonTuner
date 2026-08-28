@@ -104,6 +104,7 @@ from mcp import (
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
+from process_cleanup import cleanup_stale_port_listeners
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from system_media import get_system_media_info
 from telemetry_listener import (
@@ -403,7 +404,7 @@ DEFAULT_SETTINGS = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
-    "telemetry_ip": "0.0.0.0",
+    "telemetry_ip": "127.0.0.1",
     "telemetry_port": 8000,
     "units": {
         "speed": "kmh",
@@ -475,7 +476,7 @@ app_settings = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
-    "telemetry_ip": "0.0.0.0",
+    "telemetry_ip": "127.0.0.1",
     "telemetry_port": 8000,
     "forward_telemetry_enabled": False,
     "forward_telemetry_host": "127.0.0.1",
@@ -1103,8 +1104,8 @@ car_params_writer = AsyncCarParamsWriter(save_car_params)
 async def lifespan(app: FastAPI):
     global current_udp_transport, current_udp_ip_port
 
-    # Customizable IP and Port
-    ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
+    # Customizable IP and Port (default 127.0.0.1 with auto-probing of registered interfaces)
+    ip = os.getenv("TELEMETRY_IP", str(app_settings.get("telemetry_ip", "127.0.0.1")))
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
 
     forward_enabled = (
@@ -1123,9 +1124,13 @@ async def lifespan(app: FastAPI):
         )
     )
 
-    # Bind the UDP listener before exposing the HTTP server. Previously this
-    # ran as an unobserved task, allowing uvicorn to start even when a stale
-    # sidecar still owned the telemetry port.
+    # Bind the UDP listener before exposing the HTTP server. Pre-flight check and
+    # clean up any stale HorizonTuner sidecar/backend process holding the port.
+    try:
+        cleanup_stale_port_listeners(port, current_pid=os.getpid(), is_udp=True)
+    except Exception as e:
+        logger.debug(f"Pre-flight UDP port cleanup check failed: {e}")
+
     current_udp_transport = await start_udp_listener(
         ip,
         port,
@@ -1669,7 +1674,7 @@ async def update_settings(data: dict):
         app_settings["forward_telemetry_port"] = int(data["forward_telemetry_port"])
 
     # 處理 telemetry_ip 與 telemetry_port
-    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
+    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "127.0.0.1"))
     new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
 
     ip_port_changed = (new_ip != current_udp_ip_port[0]) or (
@@ -1728,6 +1733,13 @@ async def update_settings(data: dict):
                 pass
             current_udp_transport = None
         try:
+            try:
+                cleanup_stale_port_listeners(
+                    new_port, current_pid=os.getpid(), is_udp=True
+                )
+            except Exception as e:
+                logger.debug(f"Dynamic port change cleanup check failed: {e}")
+
             current_udp_transport = await start_udp_listener(
                 new_ip,
                 new_port,
@@ -2779,6 +2791,13 @@ if __name__ == "__main__":
         threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     import socket
+
+    try:
+        cleanup_stale_port_listeners(
+            backend_port, current_pid=os.getpid(), is_udp=False
+        )
+    except Exception as e:
+        logger.debug(f"Pre-flight HTTP TCP port cleanup check failed: {e}")
 
     max_retries = 3
     bound = False

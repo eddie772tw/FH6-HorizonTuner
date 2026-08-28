@@ -1,12 +1,17 @@
 import asyncio
+import socket
 import struct
 import unittest
 from unittest.mock import MagicMock
 
 from telemetry_listener import (
+    MultiEndpointDatagramTransport,
     TelemetryProtocol,
+    create_resilient_udp_socket,
+    discover_local_ipv4_addresses,
     forward_udp_packet,
     parse_telemetry_packet,
+    start_udp_listener,
 )
 from telemetry_runtime import TelemetryPipelineMetrics
 
@@ -272,31 +277,148 @@ class TestTelemetryListener(unittest.TestCase):
 
         self.assertTrue(proto._forward_enabled)
         self.assertEqual(proto._forward_addr, ("127.0.0.1", 5300))
+        self.assertIsNotNone(proto._forward_socket)
+
+        # Mock the dedicated forward socket to test isolated sending
+        mock_forward_socket = MagicMock()
+        proto._forward_socket = mock_forward_socket
 
         # Test forwarding during datagram_received
         raw_packet = bytearray(324)
         struct.pack_into("<i", raw_packet, 0, 1)  # IsRaceOn = 1
         proto.datagram_received(bytes(raw_packet), ("127.0.0.1", 20440))
 
-        mock_transport.sendto.assert_called_once_with(
+        # Forwarding must be sent via dedicated socket, NEVER via transport
+        mock_forward_socket.sendto.assert_called_once_with(
             bytes(raw_packet), ("127.0.0.1", 5300)
         )
+        mock_transport.sendto.assert_not_called()
         self.assertEqual(queue.qsize(), 1)
 
         # Test loopback protection: target equals local listener
         proto.set_forwarding(enabled=True, host="127.0.0.1", port=8000)
         self.assertFalse(proto._forward_enabled)
         self.assertIsNone(proto._forward_addr)
+        self.assertIsNone(proto._forward_socket)
 
         # Re-enable with safe port
         proto.set_forwarding(enabled=True, host="192.168.1.100", port=5300)
         self.assertTrue(proto._forward_enabled)
         self.assertEqual(proto._forward_addr, ("192.168.1.100", 5300))
+        self.assertIsNotNone(proto._forward_socket)
 
-        # Disable forwarding
+        # Disable forwarding cleans up socket
         proto.set_forwarding(enabled=False)
         self.assertFalse(proto._forward_enabled)
         self.assertIsNone(proto._forward_addr)
+        self.assertIsNone(proto._forward_socket)
+
+    def test_forwarding_socket_auto_healing(self):
+        queue = asyncio.Queue()
+        proto = TelemetryProtocol(
+            queue,
+            forward_enabled=True,
+            forward_host="127.0.0.1",
+            forward_port=5300,
+        )
+
+        mock_socket = MagicMock()
+        mock_socket.sendto.side_effect = OSError(
+            10038, "Socket operation on non-socket"
+        )
+        proto._forward_socket = mock_socket
+
+        raw_packet = bytearray(324)
+        struct.pack_into("<i", raw_packet, 0, 1)
+
+        # Datagram received triggers error -> should catch, close, and mark socket for self-healing
+        proto.datagram_received(bytes(raw_packet), ("127.0.0.1", 20440))
+
+        mock_socket.close.assert_called_once()
+        self.assertIsNone(proto._forward_socket)
+        # Main queue still receives parsed telemetry successfully
+        self.assertEqual(queue.qsize(), 1)
+
+    def test_forwarding_lifecycle_cleanup(self):
+        queue = asyncio.Queue()
+        proto = TelemetryProtocol(
+            queue,
+            forward_enabled=True,
+            forward_host="127.0.0.1",
+            forward_port=5300,
+        )
+        self.assertIsNotNone(proto._forward_socket)
+
+        # Clean teardown via connection_lost
+        proto.connection_lost(None)
+        self.assertIsNone(proto._forward_socket)
+
+    def test_error_received_resilience(self):
+        queue = asyncio.Queue()
+        metrics = TelemetryPipelineMetrics()
+        proto = TelemetryProtocol(queue, metrics=metrics)
+
+        # Simulate Windows WSAECONNRESET (10054)
+        conn_reset_err = ConnectionResetError(
+            10054, "An existing connection was forcibly closed by the remote host"
+        )
+        # Must not raise exception
+        proto.error_received(conn_reset_err)
+
+        snapshot = metrics.snapshot(queue_depth=0, json_clients=0, binary_clients=0)
+        self.assertEqual(snapshot["input"]["packetsRejected"].get("socket_error"), 1)
+
+    def test_connection_lost_callback(self):
+        queue = asyncio.Queue()
+        proto = TelemetryProtocol(queue)
+
+        # Clean closure
+        proto.connection_lost(None)
+
+        # Exceptional closure
+        proto.connection_lost(RuntimeError("Forced disconnect"))
+
+    def test_discover_local_ipv4_addresses(self):
+        ips = discover_local_ipv4_addresses()
+        self.assertIsInstance(ips, list)
+        self.assertIn("127.0.0.1", ips)
+        # Insecure 0.0.0.0 wildcard must NEVER be in discovered interface list
+        self.assertNotIn("0.0.0.0", ips)
+        for ip in ips:
+            self.assertFalse(ip.startswith("169.254."))
+
+    def test_multi_endpoint_datagram_transport(self):
+        mock_t1 = MagicMock()
+        mock_t1.is_closing.return_value = False
+        mock_t2 = MagicMock()
+        mock_t2.is_closing.return_value = False
+
+        composite = MultiEndpointDatagramTransport([mock_t1, mock_t2])
+        self.assertFalse(composite.is_closing())
+
+        # Test close
+        composite.close()
+        mock_t1.close.assert_called_once()
+        mock_t2.close.assert_called_once()
+
+        # Test abort
+        composite.abort()
+        mock_t1.abort.assert_called_once()
+        mock_t2.abort.assert_called_once()
+
+    def test_start_udp_listener_multi_interface(self):
+        async def run_test():
+            queue = asyncio.Queue()
+            # Start listener on ephemeral port with auto discovery (explicit interface binding)
+            transport = await start_udp_listener(
+                "auto",
+                0,
+                queue,
+            )
+            self.assertIsNotNone(transport)
+            transport.close()
+
+        asyncio.run(run_test())
 
 
 if __name__ == "__main__":

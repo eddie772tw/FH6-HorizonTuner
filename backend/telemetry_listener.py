@@ -1,6 +1,10 @@
 import asyncio
 import logging
+import socket
 import struct
+import sys
+import time
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -274,18 +278,18 @@ def forward_udp_packet(
     target_host: str = "127.0.0.1",
     target_port: int | None = None,
     enabled: bool = False,
-    transport: asyncio.DatagramTransport | None = None,
+    transport: asyncio.DatagramTransport | socket.socket | None = None,
 ) -> bool:
     """SimHub / Third-party UDP passthrough raw packet forwarding function.
 
-    When enabled=True, target_port is specified, and a valid datagram transport is provided,
+    When enabled=True, target_port is specified, and a valid datagram transport/socket is provided,
     forwards the raw binary telemetry datagram bytes directly to target_host:target_port.
 
     :param data: Raw binary telemetry datagram bytes received from Forza
     :param target_host: Target forwarding IPv4 address (default "127.0.0.1")
     :param target_port: Target forwarding UDP port (e.g. 5300)
     :param enabled: Whether forwarding is enabled (default False)
-    :param transport: Active asyncio.DatagramTransport instance to send through
+    :param transport: Active DatagramTransport or dedicated socket.socket instance to send through
     :return: True if successfully forwarded, False otherwise
     """
     if not enabled or target_port is None or transport is None:
@@ -319,7 +323,82 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
         self.transport: asyncio.DatagramTransport | None = None
         self._forward_enabled = False
         self._forward_addr: tuple[str, int] | None = None
+        self._forward_socket: socket.socket | None = None
+        self._last_forward_error_time: float = 0.0
         self.set_forwarding(forward_enabled, forward_host, forward_port)
+
+    def _create_dedicated_forward_socket(self) -> socket.socket | None:
+        """Create an isolated, dedicated non-blocking UDP sender socket for passthrough.
+
+        - Completely decouples forwarding from the 8000 listener transport.
+        - Sets SO_SNDBUF = 512KB to avoid buffer saturation.
+        - Applies WSAIoctl SIO_UDP_CONNRESET on Windows to prevent ICMP errors from corrupting the sender.
+        """
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            except Exception:
+                pass
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 512 * 1024)
+            except Exception:
+                pass
+
+            if sys.platform == "win32":
+                try:
+                    import ctypes
+
+                    b_false = ctypes.c_ulong(0)
+                    bytes_ret = ctypes.c_ulong(0)
+                    ctypes.windll.ws2_32.WSAIoctl(
+                        sock.fileno(),
+                        0x9800000C,
+                        ctypes.byref(b_false),
+                        ctypes.sizeof(b_false),
+                        None,
+                        0,
+                        ctypes.byref(bytes_ret),
+                        None,
+                        None,
+                    )
+                except Exception as e:
+                    logger.debug(f"Failed to apply WSAIoctl on forward socket: {e}")
+
+            sock.setblocking(False)
+            return sock
+        except Exception as e:
+            logger.warning(f"Failed to create dedicated UDP forward socket: {e}")
+            return None
+
+    def _forward_datagram(self, data: bytes) -> None:
+        """Forward raw datagram to third-party target with self-healing auto-recovery."""
+        if not self._forward_enabled or not self._forward_addr:
+            return
+
+        if self._forward_socket is None:
+            now = time.monotonic()
+            if now - self._last_forward_error_time >= 0.5:
+                self._forward_socket = self._create_dedicated_forward_socket()
+            if self._forward_socket is None:
+                return
+
+        try:
+            self._forward_socket.sendto(data, self._forward_addr)
+        except (BlockingIOError, InterruptedError):
+            # Transient non-blocking buffer condition; drop frame safely
+            pass
+        except Exception as e:
+            # Fatal or severe socket error: trigger self-healing recreation
+            self._last_forward_error_time = time.monotonic()
+            logger.debug(
+                f"UDP forward error on dedicated socket: {e}. Initiating self-healing..."
+            )
+            try:
+                self._forward_socket.close()
+            except Exception:
+                pass
+            self._forward_socket = None
 
     def set_forwarding(
         self,
@@ -327,13 +406,16 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
         host: str = "127.0.0.1",
         port: int | None = 5300,
     ) -> None:
-        """Dynamically update raw UDP packet forwarding target.
-
-        Guards against loopback packet storms by rejecting targets that match the local listener.
-        """
+        """Dynamically update raw UDP packet forwarding target."""
         if not enabled or port is None:
             self._forward_enabled = False
             self._forward_addr = None
+            if self._forward_socket is not None:
+                try:
+                    self._forward_socket.close()
+                except Exception:
+                    pass
+                self._forward_socket = None
             return
 
         normalized_host = host.strip() if host else "127.0.0.1"
@@ -351,12 +433,21 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
             )
             self._forward_enabled = False
             self._forward_addr = None
+            if self._forward_socket is not None:
+                try:
+                    self._forward_socket.close()
+                except Exception:
+                    pass
+                self._forward_socket = None
             return
 
         self._forward_enabled = True
         self._forward_addr = (normalized_host, port)
+        if self._forward_socket is None:
+            self._forward_socket = self._create_dedicated_forward_socket()
+
         logger.info(
-            f"UDP Telemetry Forwarding configured to {normalized_host}:{port} (enabled={enabled})"
+            f"UDP Telemetry Forwarding configured to {normalized_host}:{port} (enabled={enabled}, Dedicated Sender Socket)"
         )
 
     def connection_made(self, transport):
@@ -367,17 +458,9 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
         if self.metrics is not None:
             self.metrics.record_datagram(len(data))
 
-        # 1. Forward raw datagram if enabled (Full Passthrough)
-        if (
-            self._forward_enabled
-            and self.transport is not None
-            and self._forward_addr is not None
-        ):
-            try:
-                self.transport.sendto(data, self._forward_addr)
-            except Exception as e:
-                # Keep high-frequency loop non-blocking and prevent log spam
-                logger.debug(f"UDP forward error: {e}")
+        # 1. Forward raw datagram via dedicated isolated sender socket (Full Passthrough)
+        if self._forward_enabled:
+            self._forward_datagram(data)
 
         # 2. Parse telemetry packet for local processing
         try:
@@ -400,6 +483,156 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                 self.metrics.record_packet_rejected("parser_error")
             logger.error(f"Error parsing UDP packet: {e}")
 
+    def error_received(self, exc: Exception) -> None:
+        """Handle transport level socket errors without terminating the listener.
+
+        Specifically swallows transient Windows ConnectionResetError (WSAECONNRESET 10054).
+        """
+        if self.metrics is not None:
+            self.metrics.record_packet_rejected("socket_error")
+        logger.debug(f"UDP Telemetry listener received transient socket error: {exc}")
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        """Handle transport teardown and clean up dedicated sender socket."""
+        if self._forward_socket is not None:
+            try:
+                self._forward_socket.close()
+            except Exception:
+                pass
+            self._forward_socket = None
+
+        if exc is not None:
+            logger.warning(f"UDP Telemetry transport closed with error: {exc}")
+        else:
+            logger.info("UDP Telemetry transport closed.")
+
+
+def discover_local_ipv4_addresses() -> list[str]:
+    """Discover all active registered IPv4 interface addresses on the local host.
+
+    Always includes 127.0.0.1 (Loopback).
+    Excludes wildcard 0.0.0.0, APIPA auto-assigned link-local (169.254.x.x), and broadcast.
+    """
+    discovered: set[str] = {"127.0.0.1"}
+
+    # 1. Query hostname resolution
+    try:
+        hostname = socket.gethostname()
+        for host_ip in socket.gethostbyname_ex(hostname)[2]:
+            if (
+                host_ip
+                and not host_ip.startswith("169.254.")
+                and not host_ip.startswith("0.")
+            ):
+                discovered.add(host_ip)
+    except Exception:
+        pass
+
+    # 2. Query getaddrinfo for all AF_INET addresses on host
+    try:
+        addr_info = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
+        for item in addr_info:
+            info_ip = item[4][0]
+            if (
+                info_ip
+                and not info_ip.startswith("169.254.")
+                and not info_ip.startswith("0.")
+            ):
+                discovered.add(info_ip)
+    except Exception:
+        pass
+
+    return sorted(list(discovered))
+
+
+class MultiEndpointDatagramTransport(asyncio.DatagramTransport):
+    """Composite DatagramTransport that encapsulates multiple bound DatagramTransport instances.
+
+    Enables listening on all registered host interface IPs (e.g. 127.0.0.1 + local LAN IPs)
+    without binding to the insecure wildcard 0.0.0.0.
+    """
+
+    def __init__(self, transports: list[asyncio.DatagramTransport]):
+        self._transports = list(transports)
+
+    def close(self) -> None:
+        for t in self._transports:
+            try:
+                t.close()
+            except Exception:
+                pass
+
+    def is_closing(self) -> bool:
+        return (
+            all(t.is_closing() for t in self._transports) if self._transports else True
+        )
+
+    def get_extra_info(self, name: str, default: Any = None) -> Any:
+        if self._transports:
+            return self._transports[0].get_extra_info(name, default)
+        return default
+
+    def abort(self) -> None:
+        for t in self._transports:
+            try:
+                t.abort()
+            except Exception:
+                pass
+
+
+def create_resilient_udp_socket(
+    ip: str,
+    port: int,
+    rcvbuf_size: int = 2 * 1024 * 1024,
+) -> socket.socket:
+    """Create and configure a resilient UDP socket for Forza telemetry.
+
+    - Sets SO_REUSEADDR for rapid port re-binding upon service restarts.
+    - Expands SO_RCVBUF to 2MB to prevent packet drops during high burst 60Hz telemetry.
+    - Disables Winsock SIO_UDP_CONNRESET on Windows to prevent ICMP Port Unreachable (WSAECONNRESET 10054)
+      from breaking the Asyncio datagram reader loop.
+    - Binds to (ip, port) and marks non-blocking for asyncio event loop consumption.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # 1. Enable address reuse
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    except Exception as e:
+        logger.debug(f"Failed to set SO_REUSEADDR: {e}")
+
+    # 2. Expand receive buffer
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, rcvbuf_size)
+    except Exception as e:
+        logger.debug(f"Failed to set SO_RCVBUF to {rcvbuf_size}: {e}")
+
+    # 3. Disable Winsock SIO_UDP_CONNRESET on Windows
+    if sys.platform == "win32":
+        try:
+            import ctypes
+
+            # SIO_UDP_CONNRESET = 0x9800000C. Must use ws2_32.WSAIoctl to disable ICMP connection reset.
+            b_false = ctypes.c_ulong(0)
+            bytes_ret = ctypes.c_ulong(0)
+            ctypes.windll.ws2_32.WSAIoctl(
+                sock.fileno(),
+                0x9800000C,
+                ctypes.byref(b_false),
+                ctypes.sizeof(b_false),
+                None,
+                0,
+                ctypes.byref(bytes_ret),
+                None,
+                None,
+            )
+        except Exception as e:
+            logger.debug(f"Failed to disable SIO_UDP_CONNRESET on Windows: {e}")
+
+    sock.bind((ip, port))
+    sock.setblocking(False)
+    return sock
+
 
 async def start_udp_listener(
     ip: str,
@@ -411,17 +644,61 @@ async def start_udp_listener(
     metrics=None,
 ):
     loop = asyncio.get_running_loop()
-    transport, protocol = await loop.create_datagram_endpoint(
-        lambda: TelemetryProtocol(
-            message_queue,
-            forward_enabled=forward_enabled,
-            forward_host=forward_host,
-            forward_port=forward_port,
-            local_ip=ip,
-            local_port=port,
-            metrics=metrics,
-        ),
-        local_addr=(ip, port),
+
+    # If ip is "auto", "0.0.0.0", "all", or empty: probe and bind all registered local IPs explicitly
+    if ip in ("0.0.0.0", "auto", "all", "", None):
+        target_ips = discover_local_ipv4_addresses()
+    else:
+        target_ips = [ip]
+
+    transports: list[asyncio.DatagramTransport] = []
+    bound_ips: list[str] = []
+
+    for bind_ip in target_ips:
+        try:
+            sock = create_resilient_udp_socket(bind_ip, port)
+            transport, protocol = await loop.create_datagram_endpoint(
+                lambda b_ip=bind_ip: TelemetryProtocol(
+                    message_queue,
+                    forward_enabled=forward_enabled,
+                    forward_host=forward_host,
+                    forward_port=forward_port,
+                    local_ip=b_ip,
+                    local_port=port,
+                    metrics=metrics,
+                ),
+                sock=sock,
+            )
+            transports.append(transport)
+            bound_ips.append(bind_ip)
+        except Exception as e:
+            logger.warning(
+                f"Failed to bind telemetry listener to {bind_ip}:{port}: {e}"
+            )
+
+    if not transports:
+        # Fallback to loopback if all interface bindings failed
+        fallback_ip = "127.0.0.1"
+        sock = create_resilient_udp_socket(fallback_ip, port)
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: TelemetryProtocol(
+                message_queue,
+                forward_enabled=forward_enabled,
+                forward_host=forward_host,
+                forward_port=forward_port,
+                local_ip=fallback_ip,
+                local_port=port,
+                metrics=metrics,
+            ),
+            sock=sock,
+        )
+        transports.append(transport)
+        bound_ips.append(fallback_ip)
+
+    logger.info(
+        f"Listening for Forza Telemetry on UDP {', '.join(bound_ips)}:{port} (Resilient Sockets, Zero Wildcard 0.0.0.0)"
     )
-    logger.info(f"Listening for Forza Telemetry on UDP {ip}:{port}")
-    return transport
+
+    if len(transports) == 1:
+        return transports[0]
+    return MultiEndpointDatagramTransport(transports)

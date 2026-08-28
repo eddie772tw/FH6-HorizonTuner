@@ -15,6 +15,27 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-28 / UDP Socket Resilience & Stale Process Auto-Cleanup Architecture
+
+### UDP 監聽器 Winsock SIO_UDP_CONNRESET 防禦、error_received 自癒與啟動時殘留進程/端口自動清理
+
+- **來源**：`local`，解決遊戲重啟、HorizonTuner 重啟或非正常退出時導致的「UDP 遙測數據中斷無法恢復（需重開機/重新登入）」問題。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Winsock SIO_UDP_CONNRESET 核心陷阱**：在 Windows 平台上，若 UDP Socket 收到 ICMP 端口不可達（Type 3 Code 3）或 UDP 轉發目標未就緒，Winsock 預設會將 Socket 標記為 Reset 狀態並引發 `WSAECONNRESET (10054)`。Python Asyncio 在 Proactor 事件循環下若未關閉 `SIO_UDP_CONNRESET` IOCTL 且未實作 `error_received`，事件循環的 Datagram 讀取可能會永久終止。
+  2. **Python sock.ioctl 限制與 ws2_32.WSAIoctl 解決方案**：Python C-extension 的 `sock.ioctl` 僅支援 3 種標準 IOCTL，傳入 `0x9800000C` 會拋出 `ValueError: invalid ioctl command`。必須直接使用 `ctypes.windll.ws2_32.WSAIoctl(sock.fileno(), 0x9800000C, ...)` 才能在 Windows 核心正確禁用 `SIO_UDP_CONNRESET`。
+  3. **Socket 韌性建立規範**：建立 UDP 監聽器時應透過 `ws2_32.WSAIoctl` 明確禁用連線重設，覆寫 `TelemetryProtocol.error_received(self, exc)` 吞掉暫態 Socket 異常，並將 `SO_RCVBUF` 擴大至 2MB 以避免 60Hz 突發流量丟包。
+  4. **殭屍進程 (Zombie / Stale Process) 霸佔端口與自癒**：當先前的後端進程非正常終止殘留於背景時，會持續持有 UDP 8000 / HTTP 8001 端口，導致新實例無法獲取數據。透過 Windows 原生 `iphlpapi.dll` (`GetExtendedUdpTable`/`GetExtendedTcpTable`) 可進行零外部依賴的極速 PID 探測，並以安全白名單篩選（僅清理 HorizonTuner 殘留進程、絕不誤殺第三方或遊戲進程），在啟動時自動釋放端口，免除重開機或重新登入之需求。
+  5. **收發 Socket 實體隔離 (Physical Socket Decoupling)**：監聽端 8000 端口必須維持為純接收 (RX Only)，轉發操作 (SimHub 5300) 必須由專用發送 Socket (`_forward_socket`) 承擔，配合 `_forward_datagram` 自動自癒重建機制，使轉發端的任何網路崩潰完全與 8000 監聽器物理隔離。
+  6. **消弭 `0.0.0.0` 通配綁定之資安風險 (Multi-Interface Safe Binding)**：將監聽器全面由萬用通配 `0.0.0.0` 升級為「主動探測本機所有網路介面卡 IPv4 註冊地址 (`discover_local_ipv4_addresses`) + `127.0.0.1` 複合安全綁定 (`MultiEndpointDatagramTransport`)」，既滿足嚴格資安審計標準（禁止全介面通配監聽），又 100% 確保 Forza 遊戲無論設定 `127.0.0.1` 或是本機區域網路 IP 皆能零丟包無縫接收。
+- **Action**：
+  1. 建立 `backend/process_cleanup.py`，實作 `get_port_owning_pids`、`is_horizontuner_stale_process` 與 `cleanup_stale_port_listeners`。
+  2. 重構 `backend/telemetry_listener.py`，落實收發 Socket 實體隔離、`_create_dedicated_forward_socket`、發送自癒機制、`ws2_32.WSAIoctl` 免疫配置，並實作 `discover_local_ipv4_addresses` 與 `MultiEndpointDatagramTransport` 達成零 `0.0.0.0` 綁定。
+  3. 於 `backend/main.py` 的 `lifespan` 啟動、動態端口更新及 HTTP 綁定前整合自動清理探測，預設 IP 全面改為 `127.0.0.1`。
+  4. 新增 `tests/test_process_cleanup.py` 並擴充 `tests/test_telemetry_listener.py` 單元測試（後端測試增至 196 項）。
+- **Evidence**：後端 Pytest 196 項測試全數通過（含 18 項專門測試）；前端 Vitest 77 檔 / 475 項測試 100% 通過；`ruff check .` 與 `ruff format --check .` 100% 格式無誤。
+- **Governance**：本筆追加依 `telemetry-udp-protocol`、`portable-release-validation`、`github-security-audit` 與 `agent-governance-audit` 規範登錄。
+
 ## 2026-08-28 / AEGO Secondary Correction Overhaul & FD-First Gearing Architecture
 
 ### 齒比二次修正宏觀終傳縮放、末檔可用性保護與低終傳偏好重構
