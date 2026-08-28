@@ -4,6 +4,7 @@ import socket
 import struct
 import sys
 import time
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -506,6 +507,79 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
             logger.info("UDP Telemetry transport closed.")
 
 
+def discover_local_ipv4_addresses() -> list[str]:
+    """Discover all active registered IPv4 interface addresses on the local host.
+
+    Always includes 127.0.0.1 (Loopback).
+    Excludes wildcard 0.0.0.0, APIPA auto-assigned link-local (169.254.x.x), and broadcast.
+    """
+    discovered: set[str] = {"127.0.0.1"}
+
+    # 1. Query hostname resolution
+    try:
+        hostname = socket.gethostname()
+        for host_ip in socket.gethostbyname_ex(hostname)[2]:
+            if (
+                host_ip
+                and not host_ip.startswith("169.254.")
+                and not host_ip.startswith("0.")
+            ):
+                discovered.add(host_ip)
+    except Exception:
+        pass
+
+    # 2. Query getaddrinfo for all AF_INET addresses on host
+    try:
+        addr_info = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
+        for item in addr_info:
+            info_ip = item[4][0]
+            if (
+                info_ip
+                and not info_ip.startswith("169.254.")
+                and not info_ip.startswith("0.")
+            ):
+                discovered.add(info_ip)
+    except Exception:
+        pass
+
+    return sorted(list(discovered))
+
+
+class MultiEndpointDatagramTransport(asyncio.DatagramTransport):
+    """Composite DatagramTransport that encapsulates multiple bound DatagramTransport instances.
+
+    Enables listening on all registered host interface IPs (e.g. 127.0.0.1 + local LAN IPs)
+    without binding to the insecure wildcard 0.0.0.0.
+    """
+
+    def __init__(self, transports: list[asyncio.DatagramTransport]):
+        self._transports = list(transports)
+
+    def close(self) -> None:
+        for t in self._transports:
+            try:
+                t.close()
+            except Exception:
+                pass
+
+    def is_closing(self) -> bool:
+        return (
+            all(t.is_closing() for t in self._transports) if self._transports else True
+        )
+
+    def get_extra_info(self, name: str, default: Any = None) -> Any:
+        if self._transports:
+            return self._transports[0].get_extra_info(name, default)
+        return default
+
+    def abort(self) -> None:
+        for t in self._transports:
+            try:
+                t.abort()
+            except Exception:
+                pass
+
+
 def create_resilient_udp_socket(
     ip: str,
     port: int,
@@ -570,20 +644,61 @@ async def start_udp_listener(
     metrics=None,
 ):
     loop = asyncio.get_running_loop()
-    sock = create_resilient_udp_socket(ip, port)
-    transport, protocol = await loop.create_datagram_endpoint(
-        lambda: TelemetryProtocol(
-            message_queue,
-            forward_enabled=forward_enabled,
-            forward_host=forward_host,
-            forward_port=forward_port,
-            local_ip=ip,
-            local_port=port,
-            metrics=metrics,
-        ),
-        sock=sock,
-    )
+
+    # If ip is "auto", "0.0.0.0", "all", or empty: probe and bind all registered local IPs explicitly
+    if ip in ("0.0.0.0", "auto", "all", "", None):
+        target_ips = discover_local_ipv4_addresses()
+    else:
+        target_ips = [ip]
+
+    transports: list[asyncio.DatagramTransport] = []
+    bound_ips: list[str] = []
+
+    for bind_ip in target_ips:
+        try:
+            sock = create_resilient_udp_socket(bind_ip, port)
+            transport, protocol = await loop.create_datagram_endpoint(
+                lambda b_ip=bind_ip: TelemetryProtocol(
+                    message_queue,
+                    forward_enabled=forward_enabled,
+                    forward_host=forward_host,
+                    forward_port=forward_port,
+                    local_ip=b_ip,
+                    local_port=port,
+                    metrics=metrics,
+                ),
+                sock=sock,
+            )
+            transports.append(transport)
+            bound_ips.append(bind_ip)
+        except Exception as e:
+            logger.warning(
+                f"Failed to bind telemetry listener to {bind_ip}:{port}: {e}"
+            )
+
+    if not transports:
+        # Fallback to loopback if all interface bindings failed
+        fallback_ip = "127.0.0.1"
+        sock = create_resilient_udp_socket(fallback_ip, port)
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: TelemetryProtocol(
+                message_queue,
+                forward_enabled=forward_enabled,
+                forward_host=forward_host,
+                forward_port=forward_port,
+                local_ip=fallback_ip,
+                local_port=port,
+                metrics=metrics,
+            ),
+            sock=sock,
+        )
+        transports.append(transport)
+        bound_ips.append(fallback_ip)
+
     logger.info(
-        f"Listening for Forza Telemetry on UDP {ip}:{port} (Resilient Socket Configured)"
+        f"Listening for Forza Telemetry on UDP {', '.join(bound_ips)}:{port} (Resilient Sockets, Zero Wildcard 0.0.0.0)"
     )
-    return transport
+
+    if len(transports) == 1:
+        return transports[0]
+    return MultiEndpointDatagramTransport(transports)

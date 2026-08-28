@@ -27,13 +27,14 @@
   3. **Socket 韌性建立規範**：建立 UDP 監聽器時應透過 `ws2_32.WSAIoctl` 明確禁用連線重設，覆寫 `TelemetryProtocol.error_received(self, exc)` 吞掉暫態 Socket 異常，並將 `SO_RCVBUF` 擴大至 2MB 以避免 60Hz 突發流量丟包。
   4. **殭屍進程 (Zombie / Stale Process) 霸佔端口與自癒**：當先前的後端進程非正常終止殘留於背景時，會持續持有 UDP 8000 / HTTP 8001 端口，導致新實例無法獲取數據。透過 Windows 原生 `iphlpapi.dll` (`GetExtendedUdpTable`/`GetExtendedTcpTable`) 可進行零外部依賴的極速 PID 探測，並以安全白名單篩選（僅清理 HorizonTuner 殘留進程、絕不誤殺第三方或遊戲進程），在啟動時自動釋放端口，免除重開機或重新登入之需求。
   5. **收發 Socket 實體隔離 (Physical Socket Decoupling)**：監聽端 8000 端口必須維持為純接收 (RX Only)，轉發操作 (SimHub 5300) 必須由專用發送 Socket (`_forward_socket`) 承擔，配合 `_forward_datagram` 自動自癒重建機制，使轉發端的任何網路崩潰完全與 8000 監聽器物理隔離。
+  6. **消弭 `0.0.0.0` 通配綁定之資安風險 (Multi-Interface Safe Binding)**：將監聽器全面由萬用通配 `0.0.0.0` 升級為「主動探測本機所有網路介面卡 IPv4 註冊地址 (`discover_local_ipv4_addresses`) + `127.0.0.1` 複合安全綁定 (`MultiEndpointDatagramTransport`)」，既滿足嚴格資安審計標準（禁止全介面通配監聽），又 100% 確保 Forza 遊戲無論設定 `127.0.0.1` 或是本機區域網路 IP 皆能零丟包無縫接收。
 - **Action**：
   1. 建立 `backend/process_cleanup.py`，實作 `get_port_owning_pids`、`is_horizontuner_stale_process` 與 `cleanup_stale_port_listeners`。
-  2. 重構 `backend/telemetry_listener.py`，落實收發 Socket 實體隔離、`_create_dedicated_forward_socket`、發送自癒機制與 `ws2_32.WSAIoctl` 免疫配置。
-  3. 於 `backend/main.py` 的 `lifespan` 啟動、動態端口更新及 HTTP 綁定前整合自動清理探測。
-  4. 新增 `tests/test_process_cleanup.py` 並擴充 `tests/test_telemetry_listener.py` 單元測試（後端測試增至 194 項）。
-- **Evidence**：後端 Pytest 194 項測試全數通過（含 16 項專門測試）；前端 Vitest 77 檔 / 478 項測試 100% 通過；`ruff check .` 與 `ruff format --check .` 100% 格式無誤。
-- **Governance**：本筆追加依 `telemetry-udp-protocol`、`portable-release-validation` 與 `agent-governance-audit` 規範登錄。
+  2. 重構 `backend/telemetry_listener.py`，落實收發 Socket 實體隔離、`_create_dedicated_forward_socket`、發送自癒機制、`ws2_32.WSAIoctl` 免疫配置，並實作 `discover_local_ipv4_addresses` 與 `MultiEndpointDatagramTransport` 達成零 `0.0.0.0` 綁定。
+  3. 於 `backend/main.py` 的 `lifespan` 啟動、動態端口更新及 HTTP 綁定前整合自動清理探測，預設 IP 全面改為 `127.0.0.1`。
+  4. 新增 `tests/test_process_cleanup.py` 並擴充 `tests/test_telemetry_listener.py` 單元測試（後端測試增至 196 項）。
+- **Evidence**：後端 Pytest 196 項測試全數通過（含 18 項專門測試）；前端 Vitest 77 檔 / 475 項測試 100% 通過；`ruff check .` 與 `ruff format --check .` 100% 格式無誤。
+- **Governance**：本筆追加依 `telemetry-udp-protocol`、`portable-release-validation`、`github-security-audit` 與 `agent-governance-audit` 規範登錄。
 
 ## 2026-08-28 / AEGO Secondary Correction Overhaul & FD-First Gearing Architecture
 

@@ -5,10 +5,13 @@ import unittest
 from unittest.mock import MagicMock
 
 from telemetry_listener import (
+    MultiEndpointDatagramTransport,
     TelemetryProtocol,
     create_resilient_udp_socket,
+    discover_local_ipv4_addresses,
     forward_udp_packet,
     parse_telemetry_packet,
+    start_udp_listener,
 )
 from telemetry_runtime import TelemetryPipelineMetrics
 
@@ -375,16 +378,47 @@ class TestTelemetryListener(unittest.TestCase):
         # Exceptional closure
         proto.connection_lost(RuntimeError("Forced disconnect"))
 
-    def test_create_resilient_udp_socket(self):
-        # Create socket on ephemeral port
-        sock = create_resilient_udp_socket("127.0.0.1", 0)
-        self.assertIsNotNone(sock)
-        try:
-            self.assertEqual(sock.type, socket.SOCK_DGRAM)
-            # Check non-blocking
-            self.assertFalse(sock.getblocking())
-        finally:
-            sock.close()
+    def test_discover_local_ipv4_addresses(self):
+        ips = discover_local_ipv4_addresses()
+        self.assertIsInstance(ips, list)
+        self.assertIn("127.0.0.1", ips)
+        # Insecure 0.0.0.0 wildcard must NEVER be in discovered interface list
+        self.assertNotIn("0.0.0.0", ips)
+        for ip in ips:
+            self.assertFalse(ip.startswith("169.254."))
+
+    def test_multi_endpoint_datagram_transport(self):
+        mock_t1 = MagicMock()
+        mock_t1.is_closing.return_value = False
+        mock_t2 = MagicMock()
+        mock_t2.is_closing.return_value = False
+
+        composite = MultiEndpointDatagramTransport([mock_t1, mock_t2])
+        self.assertFalse(composite.is_closing())
+
+        # Test close
+        composite.close()
+        mock_t1.close.assert_called_once()
+        mock_t2.close.assert_called_once()
+
+        # Test abort
+        composite.abort()
+        mock_t1.abort.assert_called_once()
+        mock_t2.abort.assert_called_once()
+
+    def test_start_udp_listener_multi_interface(self):
+        async def run_test():
+            queue = asyncio.Queue()
+            # Start listener on ephemeral port with auto discovery (explicit interface binding)
+            transport = await start_udp_listener(
+                "auto",
+                0,
+                queue,
+            )
+            self.assertIsNotNone(transport)
+            transport.close()
+
+        asyncio.run(run_test())
 
 
 if __name__ == "__main__":

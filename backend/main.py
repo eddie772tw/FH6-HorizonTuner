@@ -404,7 +404,7 @@ DEFAULT_SETTINGS = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
-    "telemetry_ip": "0.0.0.0",
+    "telemetry_ip": "127.0.0.1",
     "telemetry_port": 8000,
     "units": {
         "speed": "kmh",
@@ -476,7 +476,7 @@ app_settings = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
-    "telemetry_ip": "0.0.0.0",
+    "telemetry_ip": "127.0.0.1",
     "telemetry_port": 8000,
     "forward_telemetry_enabled": False,
     "forward_telemetry_host": "127.0.0.1",
@@ -1104,8 +1104,8 @@ car_params_writer = AsyncCarParamsWriter(save_car_params)
 async def lifespan(app: FastAPI):
     global current_udp_transport, current_udp_ip_port
 
-    # Customizable IP and Port
-    ip = os.getenv("TELEMETRY_IP", "0.0.0.0")
+    # Customizable IP and Port (default 127.0.0.1 with auto-probing of registered interfaces)
+    ip = os.getenv("TELEMETRY_IP", str(app_settings.get("telemetry_ip", "127.0.0.1")))
     port = int(os.getenv("TELEMETRY_PORT", "8000"))
 
     forward_enabled = (
@@ -1674,7 +1674,7 @@ async def update_settings(data: dict):
         app_settings["forward_telemetry_port"] = int(data["forward_telemetry_port"])
 
     # 處理 telemetry_ip 與 telemetry_port
-    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "0.0.0.0"))
+    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "127.0.0.1"))
     new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
 
     ip_port_changed = (new_ip != current_udp_ip_port[0]) or (

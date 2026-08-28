@@ -67,7 +67,7 @@ const SettingsView: React.FC = () => {
           <div className="col-12 col-lg-4 d-flex flex-column gap-4">
             <SettingsSection title={t('Telemetry Receiver Settings')}>
               <SettingsItem label={t('Telemetry IP')} description={t('IP address to listen for Forza UDP telemetry packets.')} htmlFor="settings-telemetry-ip">
-                <input id="settings-telemetry-ip" type="text" value={settings.telemetry_ip || '0.0.0.0'} onChange={(event) => updateSettings({ telemetry_ip: event.target.value })} className="form-control form-control-sm" />
+                <input id="settings-telemetry-ip" type="text" value={settings.telemetry_ip || '127.0.0.1'} onChange={(event) => updateSettings({ telemetry_ip: event.target.value })} className="form-control form-control-sm" />
               </SettingsItem>
               <SettingsItem label={t('Telemetry Port')} description={t('Port to listen for Forza UDP telemetry packets (Default: 8000).')} htmlFor="settings-telemetry-port">
                 <input id="settings-telemetry-port" type="number" value={settings.telemetry_port || 8000} onChange={(event) => updateSettings({ telemetry_port: parseInt(event.target.value) || 8000 })} className="form-control form-control-sm" />
