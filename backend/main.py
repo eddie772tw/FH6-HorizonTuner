@@ -104,6 +104,7 @@ from mcp import (
 from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
 from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
+from process_cleanup import cleanup_stale_port_listeners
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from system_media import get_system_media_info
 from telemetry_listener import (
@@ -1123,9 +1124,13 @@ async def lifespan(app: FastAPI):
         )
     )
 
-    # Bind the UDP listener before exposing the HTTP server. Previously this
-    # ran as an unobserved task, allowing uvicorn to start even when a stale
-    # sidecar still owned the telemetry port.
+    # Bind the UDP listener before exposing the HTTP server. Pre-flight check and
+    # clean up any stale HorizonTuner sidecar/backend process holding the port.
+    try:
+        cleanup_stale_port_listeners(port, current_pid=os.getpid(), is_udp=True)
+    except Exception as e:
+        logger.debug(f"Pre-flight UDP port cleanup check failed: {e}")
+
     current_udp_transport = await start_udp_listener(
         ip,
         port,
@@ -1728,6 +1733,13 @@ async def update_settings(data: dict):
                 pass
             current_udp_transport = None
         try:
+            try:
+                cleanup_stale_port_listeners(
+                    new_port, current_pid=os.getpid(), is_udp=True
+                )
+            except Exception as e:
+                logger.debug(f"Dynamic port change cleanup check failed: {e}")
+
             current_udp_transport = await start_udp_listener(
                 new_ip,
                 new_port,
@@ -2779,6 +2791,13 @@ if __name__ == "__main__":
         threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
     import socket
+
+    try:
+        cleanup_stale_port_listeners(
+            backend_port, current_pid=os.getpid(), is_udp=False
+        )
+    except Exception as e:
+        logger.debug(f"Pre-flight HTTP TCP port cleanup check failed: {e}")
 
     max_retries = 3
     bound = False

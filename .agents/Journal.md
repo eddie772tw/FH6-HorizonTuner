@@ -15,6 +15,43 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-28 / UDP Socket Resilience & Stale Process Auto-Cleanup Architecture
+
+### UDP 監聽器 Winsock SIO_UDP_CONNRESET 防禦、error_received 自癒與啟動時殘留進程/端口自動清理
+
+- **來源**：`local`，解決遊戲重啟、HorizonTuner 重啟或非正常退出時導致的「UDP 遙測數據中斷無法恢復（需重開機/重新登入）」問題。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Winsock SIO_UDP_CONNRESET 核心陷阱**：在 Windows 平台上，若 UDP Socket 收到 ICMP 端口不可達（Type 3 Code 3）或 UDP 轉發目標未就緒，Winsock 預設會將 Socket 標記為 Reset 狀態並引發 `WSAECONNRESET (10054)`。Python Asyncio 在 Proactor 事件循環下若未關閉 `SIO_UDP_CONNRESET` IOCTL 且未實作 `error_received`，事件循環的 Datagram 讀取可能會永久終止。
+  2. **Python sock.ioctl 限制與 ws2_32.WSAIoctl 解決方案**：Python C-extension 的 `sock.ioctl` 僅支援 3 種標準 IOCTL，傳入 `0x9800000C` 會拋出 `ValueError: invalid ioctl command`。必須直接使用 `ctypes.windll.ws2_32.WSAIoctl(sock.fileno(), 0x9800000C, ...)` 才能在 Windows 核心正確禁用 `SIO_UDP_CONNRESET`。
+  3. **Socket 韌性建立規範**：建立 UDP 監聽器時應透過 `ws2_32.WSAIoctl` 明確禁用連線重設，覆寫 `TelemetryProtocol.error_received(self, exc)` 吞掉暫態 Socket 異常，並將 `SO_RCVBUF` 擴大至 2MB 以避免 60Hz 突發流量丟包。
+  4. **殭屍進程 (Zombie / Stale Process) 霸佔端口與自癒**：當先前的後端進程非正常終止殘留於背景時，會持續持有 UDP 8000 / HTTP 8001 端口，導致新實例無法獲取數據。透過 Windows 原生 `iphlpapi.dll` (`GetExtendedUdpTable`/`GetExtendedTcpTable`) 可進行零外部依賴的極速 PID 探測，並以安全白名單篩選（僅清理 HorizonTuner 殘留進程、絕不誤殺第三方或遊戲進程），在啟動時自動釋放端口，免除重開機或重新登入之需求。
+  5. **收發 Socket 實體隔離 (Physical Socket Decoupling)**：監聽端 8000 端口必須維持為純接收 (RX Only)，轉發操作 (SimHub 5300) 必須由專用發送 Socket (`_forward_socket`) 承擔，配合 `_forward_datagram` 自動自癒重建機制，使轉發端的任何網路崩潰完全與 8000 監聽器物理隔離。
+- **Action**：
+  1. 建立 `backend/process_cleanup.py`，實作 `get_port_owning_pids`、`is_horizontuner_stale_process` 與 `cleanup_stale_port_listeners`。
+  2. 重構 `backend/telemetry_listener.py`，落實收發 Socket 實體隔離、`_create_dedicated_forward_socket`、發送自癒機制與 `ws2_32.WSAIoctl` 免疫配置。
+  3. 於 `backend/main.py` 的 `lifespan` 啟動、動態端口更新及 HTTP 綁定前整合自動清理探測。
+  4. 新增 `tests/test_process_cleanup.py` 並擴充 `tests/test_telemetry_listener.py` 單元測試（後端測試增至 194 項）。
+- **Evidence**：後端 Pytest 194 項測試全數通過（含 16 項專門測試）；前端 Vitest 77 檔 / 478 項測試 100% 通過；`ruff check .` 與 `ruff format --check .` 100% 格式無誤。
+- **Governance**：本筆追加依 `telemetry-udp-protocol`、`portable-release-validation` 與 `agent-governance-audit` 規範登錄。
+
+## 2026-08-28 / AEGO Secondary Correction Overhaul & FD-First Gearing Architecture
+
+### 齒比二次修正宏觀終傳縮放、末檔可用性保護與低終傳偏好重構
+
+- **來源**：`local`，針對 AEGO 演算法在二次修正時末檔過度壓縮不可用、前段檔位過密及基準終傳比分配偏好進行全面重構。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **極速包絡線縮放首要真理 (Macro FD Scaling Primary)**：當使用者輸入實測極速或預覽軟上限時，縮放極速包絡線的最優先手段應為調整/提高終傳比（Final Drive）。舊有算法將速差全部丟給末檔齒比吸收並透過閉環重分佈強行牽引中間檔位，會造成末檔嚴重擠壓至倒數第二檔（步階比逼近 1.0 實質無效）且前段檔位過密。
+  2. **末檔可用性防線 (Top Gear Usability Guard)**：末檔與前一檔的步階比必須設置邊界約束（$0.72 \le G_N / G_{N-1} \le 0.90$），杜絕過密擠壓與跳檔斷崖。
+  3. **消除強行軟化抵消 (Eliminate Rebalance Softening Side-effects)**：舊有的 `rebalanceEditableGearing` 強拉 FD 往 3.7 會二次破壞二次修正設定的極速錨點；改為在基準階段就原生採用各檔位數之黃金末檔錨點（$G_{\text{target\_top}}(N)$）生成健康低終傳比與高各檔齒比，提供遊戲內最佳可調解析度。
+  4. **幾何平均步階比與量化餘裕 (Quantization Margin in Step Ratios)**：以幾何平均 $\bar{R} = (G_N / G_1)^{1/(N-1)}$ 為中心動態展開動力帶步階比，並在 2 位小數四捨五入後加入動力帶轉速上限約束，確保紅線換檔轉速 drop 100% 穩定落入最大馬力轉速（$\le \text{maxHpRpm} + 50$）。
+- **Action**：
+  1. 重構 `frontend/src/utils/tuningMath.ts` 中的 `getTargetTopGearRatio`、`calculateAEGOGearing`。
+  2. 實作「第一順位 FD 宏觀縮放、第二順位微觀微調與可用性保護」的二次修正機制。
+  3. 於 `frontend/src/utils/tuningMath.test.ts` 新增二次修正終傳優先、前段檔位間距保護、FD 6.1 極限保護與 4~10 檔位基準測試（擴充至 475 項測試）。
+- **Evidence**：前端 Vitest 76 檔 / 475 項測試 100% 通過；後端 Pytest 184 項測試全數通過；`ruff check` & `ruff format --check` 零警告；`pnpm -C frontend run build` 成功。
+- **Governance**：本筆追加依 `physics-tuning-math` 與 `agent-governance-audit` 規範登錄。
 ## 2026-08-23 / hud_frontend 精簡獨立客戶端、Vite 多入口與 Tauri 生命週期轉移架構
 
 ### 多前端共用資源 (DRY)、-hudonly 啟動引數、主視窗關閉記憶體釋放與動態生命週期管理
