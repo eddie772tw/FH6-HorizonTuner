@@ -400,7 +400,7 @@ DEFAULT_SETTINGS = {
         "speed": "kmh",
         "weight": "kg",
         "temperature": "C",
-        "tirePressure": "psi",
+        "tirePressure": "bar",
         "boostPressure": "bar",
         "springRate": "kgfmm",
         "rideHeight": "cm",
@@ -420,6 +420,40 @@ DEFAULT_SETTINGS = {
         "customCSS": "",
     },
 }
+
+GENERAL_UNIT_PROFILES = {
+    "metric": {
+        "speed": "kmh",
+        "weight": "kg",
+        "temperature": "C",
+        "tirePressure": "bar",
+        "boostPressure": "bar",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
+        "torque": "nm",
+    },
+    "imperial": {
+        "speed": "mph",
+        "weight": "lbs",
+        "temperature": "F",
+        "tirePressure": "psi",
+        "boostPressure": "psi",
+        "rideHeight": "in",
+        "suspensionForce": "lbf",
+        "torque": "lbft",
+    },
+}
+
+
+def normalize_general_unit_settings(units: dict | None) -> dict:
+    """Migrate legacy mixed display units to the current three-category model."""
+    normalized = dict(DEFAULT_SETTINGS["units"])
+    if isinstance(units, dict):
+        normalized.update(units)
+    general_system = "imperial" if normalized.get("speed") == "mph" else "metric"
+    normalized.update(GENERAL_UNIT_PROFILES[general_system])
+    return normalized
+
 
 app_settings = {
     "dyno_recording": False,
@@ -442,6 +476,7 @@ app_settings = {
 }
 
 # Load settings from settings.json
+settings_migrated = False
 if os.path.exists(SETTINGS_FILE):
     try:
         with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -453,6 +488,9 @@ if os.path.exists(SETTINGS_FILE):
                     app_settings["theme"].update(v)
                 else:
                     app_settings[k] = v
+        normalized_units = normalize_general_unit_settings(app_settings["units"])
+        settings_migrated = normalized_units != app_settings["units"]
+        app_settings["units"] = normalized_units
         logger.info(f"Loaded settings from {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to load settings from {SETTINGS_FILE}: {e}")
@@ -463,6 +501,14 @@ else:
         logger.info(f"Created default settings at {SETTINGS_FILE}")
     except Exception as e:
         logger.error(f"Failed to save default settings to {SETTINGS_FILE}: {e}")
+
+if settings_migrated:
+    try:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(app_settings, f, indent=4)
+        logger.info("Migrated legacy mixed unit settings to the General Units model")
+    except Exception as e:
+        logger.error(f"Failed to persist migrated settings to {SETTINGS_FILE}: {e}")
 
 
 # --- Race Telemetry Recorder ---
@@ -1618,6 +1664,7 @@ async def update_settings(data: dict):
         if "units" not in app_settings:
             app_settings["units"] = {}
         app_settings["units"].update(data["units"])
+        app_settings["units"] = normalize_general_unit_settings(app_settings["units"])
 
     if "theme" in data and isinstance(data["theme"], dict):
         if "theme" not in app_settings:

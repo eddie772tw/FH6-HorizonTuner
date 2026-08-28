@@ -4,6 +4,7 @@ import {
   applyGeneralUnitSystem,
   createUnitPreference,
   inferGeneralUnitSystem,
+  normalizeGeneralUnitSettings,
   resolveUnitPreference
 } from './gameUnitSettings';
 
@@ -35,6 +36,13 @@ describe('game-style unit settings', () => {
   it('uses speed as the backward-compatible general-unit discriminator', () => {
     expect(inferGeneralUnitSystem(units)).toBe('metric');
     expect(inferGeneralUnitSystem({ ...units, speed: 'mph' })).toBe('imperial');
+  });
+
+  it('migrates legacy mixed metric settings while preserving independent categories', () => {
+    expect(normalizeGeneralUnitSettings({ ...units, power: 'ps', springRate: 'lbsin' })).toMatchObject({
+      speed: 'kmh', tirePressure: 'bar', boostPressure: 'bar', torque: 'nm',
+      power: 'ps', springRate: 'lbsin'
+    });
   });
 
   it('resolves a three-category override without mutating global units', () => {

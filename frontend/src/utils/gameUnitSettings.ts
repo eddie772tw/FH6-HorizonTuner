@@ -42,6 +42,10 @@ export function applyGeneralUnitSystem(
       };
 }
 
+export function normalizeGeneralUnitSettings(units: UnitSettings): UnitSettings {
+  return applyGeneralUnitSystem(units, inferGeneralUnitSystem(units));
+}
+
 export function createUnitPreference(units: UnitSettings): UnitPreferenceOverride {
   return {
     followGlobal: true,

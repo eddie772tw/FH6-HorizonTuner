@@ -132,6 +132,43 @@ def test_global_unit_update_rebroadcasts_following_hud_config(tmp_path, monkeypa
         main.app_settings["units"] = original_units
 
 
+def test_global_unit_update_migrates_and_persists_legacy_mixed_units(
+    tmp_path, monkeypatch
+):
+    original_units = dict(main.app_settings["units"])
+    broadcast = AsyncMock()
+    settings_file = tmp_path / "settings.json"
+    monkeypatch.setattr(main, "SETTINGS_FILE", str(settings_file))
+    monkeypatch.setattr(main, "HUD_CONFIG_FILE", str(tmp_path / "hud_config.json"))
+    monkeypatch.setattr(main.overlay_manager, "broadcast_json", broadcast)
+
+    try:
+        main.app_settings["units"] = dict(main.DEFAULT_SETTINGS["units"])
+        updated = asyncio.run(
+            main.update_settings(
+                {
+                    "units": {
+                        "speed": "kmh",
+                        "tirePressure": "psi",
+                        "power": "ps",
+                        "springRate": "lbsin",
+                    }
+                }
+            )
+        )
+
+        assert updated["units"] == {
+            **main.GENERAL_UNIT_PROFILES["metric"],
+            "springRate": "lbsin",
+            "power": "ps",
+        }
+        with open(settings_file, encoding="utf-8") as f:
+            persisted = json.load(f)
+        assert persisted["units"] == updated["units"]
+    finally:
+        main.app_settings["units"] = original_units
+
+
 def test_save_and_get_hud_config(temp_hud_config_file):
     client = TestClient(app)
 

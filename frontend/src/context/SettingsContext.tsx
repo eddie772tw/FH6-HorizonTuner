@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { backendFetch } from '../services/backend';
+import { normalizeGeneralUnitSettings } from '../utils/gameUnitSettings';
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -77,7 +78,7 @@ const defaultUnits: UnitSettings = {
   speed: 'kmh',
   weight: 'kg',
   temperature: 'C',
-  tirePressure: 'psi',
+  tirePressure: 'bar',
   boostPressure: 'bar',
   springRate: 'kgfmm',
   rideHeight: 'cm',
@@ -214,10 +215,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             dyno_test_gear: data.dyno_test_gear ?? defaultSettings.dyno_test_gear,
             dyno_filter_slip: data.dyno_filter_slip ?? defaultSettings.dyno_filter_slip,
             dyno_filter_transients: data.dyno_filter_transients ?? defaultSettings.dyno_filter_transients,
-            units: {
+            units: normalizeGeneralUnitSettings({
               ...defaultUnits,
               ...(data.units || {})
-            }
+            })
           };
           setSettings(merged);
         }
@@ -254,7 +255,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     let newSettings = { ...settings };
     
     if ('units' in updates) {
-      newSettings.units = { ...settings.units, ...updates.units };
+      newSettings.units = normalizeGeneralUnitSettings({ ...settings.units, ...updates.units });
     } else {
       newSettings = { ...settings, ...updates };
     }
