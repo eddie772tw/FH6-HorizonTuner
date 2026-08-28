@@ -53,7 +53,7 @@
   - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
   - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
   - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Python 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
-  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯、簽名並附加 Full/Lite portable executable、包含兩者的 Portable ZIP、`.sig` 與 `latest.json`。
+  - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯與簽名。`FH6-HorizonTuner-Full-Installer.exe` 與 `FH6-HorizonTuner-Lite-Installer.exe` 是可直接安裝的正式 NSIS installer，也是 OTA updater 重用的同一個經簽署 payload；Full/Lite portable EXE 與 Portable ZIP 則清楚標示為可攜版。兩個 OTA 管道分別使用 `latest.json`（Full）與 `latest-lite.json`（Lite），可獨立下載與安裝，不依賴另一個版本。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
   - **設計系統與主題**：基於 Halfmoon CSS v2 霓虹 Glassmorphism 皮膚，支援 "crosXover", "Retro VFD", "Solar Flare" 等多款色彩範本與日夜模式。
@@ -144,9 +144,9 @@ FH6-HorizonTuner/
 
 ---
 
-## 一鍵打包發行 / Build Standalone Release (.exe)
+## 一鍵打包可攜版 / Build Portable Executables (.exe)
 
-您可以將後端與前端打包成一個**單一免安裝可執行檔 (.exe)**，採用標準的 **Tauri (Rust Host) + Python Sidecar** 正向架構發布：
+`build_all.bat` 會將後端與前端打包成 Full 與 Lite 的**免安裝可攜版執行檔**，採用標準的 **Tauri (Rust Host) + Python Sidecar** 架構。正式 GitHub Release 另外提供可直接安裝的 Full/Lite NSIS installer；下載者可依需求選擇 installer 或 portable 版本。
 
 > [!NOTE]
 > **路徑設計說明**：
@@ -154,7 +154,7 @@ FH6-HorizonTuner/
 
 * **兩階段自動化打包腳本 (`build_all.bat`)**：
     1. **Phase 1 (Python Sidecar)**：PyInstaller 將 Python 後端單獨編譯為專用 Sidecar 可執行檔 `server-sidecar-x86_64-pc-windows-msvc.exe`，放置於 `frontend/src-tauri/bin/`。
-    2. **Phase 2 (Tauri Bundle)**：共用前端資源只建置一次，再分別打包 Full 與 Lite，產出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`；發行壓縮包包含兩者。
+    2. **Phase 2 (Tauri Bundle)**：共用前端資源只建置一次，再分別打包 Full 與 Lite，產出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`；Release workflow 會將它們命名為 `FH6-HorizonTuner-Full-Portable.exe` 與 `FH6-HorizonTuner-Lite-Portable.exe`，並另外建立包含兩者的 Portable ZIP。
 
 ---
 
@@ -365,11 +365,27 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ## Release Build Contract
 
-The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
-separate sidecar file are required. The PyInstaller backend is embedded into
-the Tauri host and extracted to a versioned temporary directory at startup.
-User data is stored beside the executable when that directory is writable,
-with an AppData fallback for protected locations.
+Each GitHub Release publishes the following Windows download choices:
+
+| Asset | Intended use |
+| --- | --- |
+| `FH6-HorizonTuner-Full-Installer.exe` | Standard Full NSIS installer. This is also the signed payload used by Full OTA updates. |
+| `FH6-HorizonTuner-Lite-Installer.exe` | Standard Lite NSIS installer. This is also the signed payload used by Lite OTA updates. |
+| `FH6-HorizonTuner-Full-Portable.exe` | Full portable executable; run it without an installation step. |
+| `FH6-HorizonTuner-Lite-Portable.exe` | Lite portable executable; run it without an installation step. |
+| `FH6-HorizonTuner-Full-Lite-Portable.zip` | Convenience archive containing both portable executables. |
+
+Full and Lite installers are self-contained alternatives, not prerequisites for
+each other. The Tauri updater consumes `latest.json` for Full and
+`latest-lite.json` for Lite; each manifest names its matching installer and
+embeds the corresponding signature. The detached `.sig` assets are for
+verification and are not needed when manually launching an installer.
+
+Both installer and portable builds embed the PyInstaller backend into the Tauri
+host; no separate sidecar download is required. At startup the backend is
+extracted to a versioned temporary directory. User data is stored beside a
+portable executable when that directory is writable, with an AppData fallback
+for protected locations.
 
 ## 開發環境連接埠
 

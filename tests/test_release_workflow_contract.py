@@ -7,12 +7,21 @@ from pathlib import Path
 import pytest
 
 from scripts.prepare_release_assets import (
+    FULL_INSTALLER_NAME,
+    FULL_PORTABLE_NAME,
+    FULL_SIGNATURE_NAME,
+    LITE_INSTALLER_NAME,
+    LITE_PORTABLE_NAME,
+    LITE_SIGNATURE_NAME,
+    PORTABLE_ARCHIVE_NAME,
     generate_latest_manifest,
     prepare_release_assets,
 )
 
 
-def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+def _create_packaging_fixtures(
+    tmp_path: Path,
+) -> tuple[Path, Path, Path, Path, Path, Path]:
     source_dir = tmp_path / "src"
     source_dir.mkdir()
     mock_exe = source_dir / "FH6-HorizonTuner.exe"
@@ -25,7 +34,20 @@ def _create_packaging_fixtures(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
 
     updater_signature = source_dir / f"{updater_bundle.name}.sig"
     updater_signature.write_text("ED25519_SIGNATURE_BASE64_STRING\n", encoding="utf-8")
-    return mock_exe, mock_lite_exe, updater_bundle, updater_signature
+    lite_updater_bundle = source_dir / "FH6-HorizonTuner_lite_11.45.15_x64-setup.exe"
+    lite_updater_bundle.write_bytes(b"MOCK_LITE_NSIS_INSTALLER")
+    lite_updater_signature = source_dir / f"{lite_updater_bundle.name}.sig"
+    lite_updater_signature.write_text(
+        "LITE_ED25519_SIGNATURE_BASE64_STRING\n", encoding="utf-8"
+    )
+    return (
+        mock_exe,
+        mock_lite_exe,
+        updater_bundle,
+        updater_signature,
+        lite_updater_bundle,
+        lite_updater_signature,
+    )
 
 
 def test_generate_latest_manifest_structure():
@@ -49,10 +71,15 @@ def test_generate_latest_manifest_structure():
     )
 
 
-def test_prepare_release_assets_creates_six_release_artifacts(tmp_path: Path):
-    mock_exe, mock_lite_exe, updater_bundle, updater_signature = (
-        _create_packaging_fixtures(tmp_path)
-    )
+def test_prepare_release_assets_creates_full_and_lite_ota_artifacts(tmp_path: Path):
+    (
+        mock_exe,
+        mock_lite_exe,
+        updater_bundle,
+        updater_signature,
+        lite_updater_bundle,
+        lite_updater_signature,
+    ) = _create_packaging_fixtures(tmp_path)
     out_dir = tmp_path / "dist_release"
 
     artifacts = prepare_release_assets(
@@ -60,6 +87,8 @@ def test_prepare_release_assets_creates_six_release_artifacts(tmp_path: Path):
         lite_exe_path=mock_lite_exe,
         updater_bundle_path=updater_bundle,
         updater_signature_path=updater_signature,
+        lite_updater_bundle_path=lite_updater_bundle,
+        lite_updater_signature_path=lite_updater_signature,
         output_dir=out_dir,
         tag="v1.5.0",
         version="11.45.15",
@@ -69,30 +98,56 @@ def test_prepare_release_assets_creates_six_release_artifacts(tmp_path: Path):
 
     artifact_names = [artifact.name for artifact in artifacts]
     assert artifact_names == [
-        "FH6-HorizonTuner.exe",
-        "FH6-HorizonTuner_lite.exe",
-        "FH6-HorizonTuner-portable.zip",
-        updater_bundle.name,
-        updater_signature.name,
+        FULL_PORTABLE_NAME,
+        LITE_PORTABLE_NAME,
+        PORTABLE_ARCHIVE_NAME,
+        FULL_INSTALLER_NAME,
+        FULL_SIGNATURE_NAME,
+        LITE_INSTALLER_NAME,
+        LITE_SIGNATURE_NAME,
         "latest.json",
+        "latest-lite.json",
     ]
-    with zipfile.ZipFile(out_dir / "FH6-HorizonTuner-portable.zip") as archive:
+    with zipfile.ZipFile(out_dir / PORTABLE_ARCHIVE_NAME) as archive:
         assert set(archive.namelist()) == {
-            "FH6-HorizonTuner.exe",
-            "FH6-HorizonTuner_lite.exe",
+            FULL_PORTABLE_NAME,
+            LITE_PORTABLE_NAME,
         }
+    assert (out_dir / FULL_INSTALLER_NAME).read_bytes() == updater_bundle.read_bytes()
+    assert (
+        out_dir / LITE_INSTALLER_NAME
+    ).read_bytes() == lite_updater_bundle.read_bytes()
+    assert (out_dir / FULL_SIGNATURE_NAME).read_text(
+        encoding="utf-8"
+    ) == updater_signature.read_text(encoding="utf-8")
+    assert (out_dir / LITE_SIGNATURE_NAME).read_text(
+        encoding="utf-8"
+    ) == lite_updater_signature.read_text(encoding="utf-8")
 
     manifest = json.loads((out_dir / "latest.json").read_text(encoding="utf-8"))
     platform = manifest["platforms"]["windows-x86_64"]
     assert manifest["version"] == "11.45.15"
     assert platform["signature"] == "ED25519_SIGNATURE_BASE64_STRING"
-    assert platform["url"].endswith(f"/{updater_bundle.name}")
+    assert platform["url"].endswith(f"/{FULL_INSTALLER_NAME}")
+    lite_manifest = json.loads(
+        (out_dir / "latest-lite.json").read_text(encoding="utf-8")
+    )
+    lite_platform = lite_manifest["platforms"]["windows-x86_64"]
+    assert lite_platform["signature"] == "LITE_ED25519_SIGNATURE_BASE64_STRING"
+    assert lite_platform["url"].endswith(f"/{LITE_INSTALLER_NAME}")
+    assert lite_platform["url"] != platform["url"]
+    assert lite_platform["signature"] != platform["signature"]
 
 
 def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
-    mock_exe, mock_lite_exe, updater_bundle, updater_signature = (
-        _create_packaging_fixtures(tmp_path)
-    )
+    (
+        mock_exe,
+        mock_lite_exe,
+        updater_bundle,
+        updater_signature,
+        lite_updater_bundle,
+        lite_updater_signature,
+    ) = _create_packaging_fixtures(tmp_path)
 
     with pytest.raises(FileNotFoundError, match="Target executable"):
         prepare_release_assets(
@@ -100,6 +155,8 @@ def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
             lite_exe_path=mock_lite_exe,
             updater_bundle_path=updater_bundle,
             updater_signature_path=updater_signature,
+            lite_updater_bundle_path=lite_updater_bundle,
+            lite_updater_signature_path=lite_updater_signature,
             output_dir=tmp_path / "out",
             tag="v1.5.0",
             version="11.45.15",
@@ -111,6 +168,8 @@ def test_prepare_release_assets_requires_all_inputs(tmp_path: Path):
             lite_exe_path=mock_lite_exe,
             updater_bundle_path=updater_bundle,
             updater_signature_path=tmp_path / "missing.sig",
+            lite_updater_bundle_path=lite_updater_bundle,
+            lite_updater_signature_path=lite_updater_signature,
             output_dir=tmp_path / "out",
             tag="v1.5.0",
             version="11.45.15",
@@ -132,10 +191,20 @@ def test_release_workflow_security_and_contract():
     assert '"createUpdaterArtifacts": true' in (
         repo_root / "frontend" / "src-tauri" / "tauri.conf.json"
     ).read_text(encoding="utf-8")
-    assert "--no-bundle --config src-tauri/tauri.lite.conf.json" in content
+    assert (
+        "pnpm.cmd --prefix frontend run tauri build --config src-tauri/tauri.ci.conf.json"
+        in content
+    )
+    assert (
+        "pnpm.cmd --prefix frontend run tauri build --config src-tauri/tauri.lite.conf.json"
+        in content
+    )
     assert "--lite-exe" in content
-    assert "FH6-HorizonTuner_lite.exe" in content
-    assert "FH6-HorizonTuner-portable.zip" in content
+    assert FULL_INSTALLER_NAME in content
+    assert LITE_INSTALLER_NAME in content
+    assert FULL_PORTABLE_NAME in content
+    assert LITE_PORTABLE_NAME in content
+    assert PORTABLE_ARCHIVE_NAME in content
     tauri_config = json.loads(
         (repo_root / "frontend" / "src-tauri" / "tauri.conf.json").read_text(
             encoding="utf-8"
@@ -152,11 +221,29 @@ def test_release_workflow_security_and_contract():
     )
     assert "cargo:rerun-if-changed=tauri.conf.json" in build_script
     assert "cargo:rerun-if-changed=capabilities/default.json" in build_script
-    assert "--no-bundle" not in content
+    assert (
+        "tauri build --no-bundle --config src-tauri/tauri.ci.conf.json" not in content
+    )
     assert "--updater-bundle" in content
-    assert "*-setup.exe" in content
+    assert "--lite-updater-bundle" in content
     assert "*.nsis.zip" not in content
     assert "latest.json" in content
+    assert "latest-lite.json" in content
+    lite_config = json.loads(
+        (repo_root / "frontend" / "src-tauri" / "tauri.lite.conf.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert lite_config["plugins"]["updater"]["endpoints"] == [
+        "https://github.com/eddie772tw/FH6-HorizonTuner/releases/latest/download/latest-lite.json"
+    ]
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    assert FULL_INSTALLER_NAME in readme
+    assert LITE_INSTALLER_NAME in readme
+    assert FULL_PORTABLE_NAME in readme
+    assert LITE_PORTABLE_NAME in readme
+    assert "latest-lite.json" in readme
+    assert "The release artifact is a single" not in readme
 
     frontend_build_pos = content.find("Build Frontend Production Bundle")
     tauri_build_pos = content.find("Build and Sign Tauri Release Executable")

@@ -6,6 +6,7 @@ on:
       - ".github/workflows/release.yml"
       - ".github/workflows/release-packaging-test.yml"
       - "frontend/src-tauri/tauri.conf.json"
+      - "frontend/src-tauri/tauri.lite.conf.json"
       - "scripts/prepare_release_assets.py"
       - "tests/test_release_workflow_contract.py"
   workflow_dispatch:
@@ -106,10 +107,17 @@ jobs:
           $signaturePath = $bundlePath + '.sig'
           Set-Content -LiteralPath $signaturePath -Value 'TEST_ED25519_SIGNATURE' -NoNewline -Encoding utf8
 
+          $liteBundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite_11.45.15_x64-setup.exe'
+          [IO.File]::WriteAllBytes($liteBundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_LITE_NSIS_INSTALLER'))
+          $liteSignaturePath = $liteBundlePath + '.sig'
+          Set-Content -LiteralPath $liteSignaturePath -Value 'TEST_LITE_ED25519_SIGNATURE' -NoNewline -Encoding utf8
+
           "exe=$exePath" >> $env:GITHUB_OUTPUT
           "lite_exe=$liteExePath" >> $env:GITHUB_OUTPUT
           "bundle=$bundlePath" >> $env:GITHUB_OUTPUT
           "signature=$signaturePath" >> $env:GITHUB_OUTPUT
+          "lite_bundle=$liteBundlePath" >> $env:GITHUB_OUTPUT
+          "lite_signature=$liteSignaturePath" >> $env:GITHUB_OUTPUT
           "output=$outputRoot" >> $env:GITHUB_OUTPUT
 
       - name: Run release asset preparation locally
@@ -119,9 +127,11 @@ jobs:
           LITE_EXE_PATH: ${{ steps.fixtures.outputs.lite_exe }}
           BUNDLE_PATH: ${{ steps.fixtures.outputs.bundle }}
           SIGNATURE_PATH: ${{ steps.fixtures.outputs.signature }}
+          LITE_BUNDLE_PATH: ${{ steps.fixtures.outputs.lite_bundle }}
+          LITE_SIGNATURE_PATH: ${{ steps.fixtures.outputs.lite_signature }}
           OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
         run: |
-          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.15" --repo "eddie772tw/FH6-HorizonTuner"
+          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --lite-updater-bundle "$env:LITE_BUNDLE_PATH" --lite-updater-signature "$env:LITE_SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.15" --repo "eddie772tw/FH6-HorizonTuner"
 
       - name: Validate generated manifest and asset set
         shell: pwsh
@@ -136,14 +146,23 @@ jobs:
 
           output = Path(os.environ["OUTPUT_DIR"])
           files = {path.name for path in output.iterdir() if path.is_file()}
-          bundle = "FH6-HorizonTuner_11.45.15_x64-setup.exe"
+          full_installer = "FH6-HorizonTuner-Full-Installer.exe"
+          full_portable = "FH6-HorizonTuner-Full-Portable.exe"
+          lite_installer = "FH6-HorizonTuner-Lite-Installer.exe"
+          lite_portable = "FH6-HorizonTuner-Lite-Portable.exe"
+          portable_archive = "FH6-HorizonTuner-Full-Lite-Portable.zip"
+          full_signature = "FH6-HorizonTuner-Full-Installer.exe.sig"
+          lite_signature = "FH6-HorizonTuner-Lite-Installer.exe.sig"
           expected = {
-              "FH6-HorizonTuner.exe",
-              "FH6-HorizonTuner_lite.exe",
-              "FH6-HorizonTuner-portable.zip",
-              bundle,
-              f"{bundle}.sig",
+              full_installer,
+              full_portable,
+              lite_installer,
+              lite_portable,
+              portable_archive,
+              full_signature,
+              lite_signature,
               "latest.json",
+              "latest-lite.json",
           }
           assert files == expected, files
 
@@ -151,9 +170,15 @@ jobs:
           platform = manifest["platforms"]["windows-x86_64"]
           assert manifest["version"] == "11.45.15"
           assert platform["signature"] == "TEST_ED25519_SIGNATURE"
-          assert platform["url"].endswith(f"/test-v0.0.0/{bundle}")
-          with zipfile.ZipFile(output / "FH6-HorizonTuner-portable.zip") as archive:
-              assert set(archive.namelist()) == {"FH6-HorizonTuner.exe", "FH6-HorizonTuner_lite.exe"}
+          assert platform["url"].endswith(f"/test-v0.0.0/{full_installer}")
+          lite_manifest = json.loads((output / "latest-lite.json").read_text(encoding="utf-8"))
+          lite_platform = lite_manifest["platforms"]["windows-x86_64"]
+          assert lite_platform["signature"] == "TEST_LITE_ED25519_SIGNATURE"
+          assert lite_platform["url"].endswith(f"/test-v0.0.0/{lite_installer}")
+          assert lite_platform["url"] != platform["url"]
+          assert lite_platform["signature"] != platform["signature"]
+          with zipfile.ZipFile(output / portable_archive) as archive:
+              assert set(archive.namelist()) == {full_portable, lite_portable}
           '@
           $validator | uv run --no-project --active python -
 
