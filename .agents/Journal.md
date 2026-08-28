@@ -53,6 +53,7 @@
   3. 於 `frontend/src/utils/tuningMath.test.ts` 新增二次修正終傳優先、前段檔位間距保護、FD 6.1 極限保護與 4~10 檔位基準測試（擴充至 475 項測試）。
 - **Evidence**：前端 Vitest 76 檔 / 475 項測試 100% 通過；後端 Pytest 184 項測試全數通過；`ruff check` & `ruff format --check` 零警告；`pnpm -C frontend run build` 成功。
 - **Governance**：本筆追加依 `physics-tuning-math` 與 `agent-governance-audit` 規範登錄。
+
 ## 2026-08-23 / hud_frontend 精簡獨立客戶端、Vite 多入口與 Tauri 生命週期轉移架構
 
 ### 多前端共用資源 (DRY)、-hudonly 啟動引數、主視窗關閉記憶體釋放與動態生命週期管理

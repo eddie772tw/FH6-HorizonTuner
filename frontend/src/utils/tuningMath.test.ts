@@ -300,6 +300,65 @@ describe('calculateAEGOGearing', () => {
     // AWD 1st gear ratio should be larger than RWD for shorter 1st gear launch
     expect(awdRes.gears[0]).toBeGreaterThan(rwdRes.gears[0]);
   });
+
+  it('should prioritize raising Final Drive on secondary correction without over-compressing top gear or making earlier gears dense', () => {
+    const baseRes = calculateAEGOGearing('Road', 6, sampleCar, 7500);
+
+    // Baseline redline speed is around 280 km/h, test secondary correction with simulatedTopSpeed = 220 km/h
+    const correctedRes = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      simulatedTopSpeed: 220
+    });
+
+    // 1. Primary scaling: Final Drive must be increased significantly to absorb the speed reduction
+    expect(correctedRes.finalDrive).toBeGreaterThan(baseRes.finalDrive);
+
+    // 2. Usability: Top gear ratio (Gear 6) must remain near baseline target without being over-compressed
+    expect(correctedRes.gears[5]).toBeCloseTo(baseRes.gears[5], 1);
+
+    // 3. Spacing: Earlier gears (1st, 2nd, 3rd) retain their uncompressed spacing
+    expect(correctedRes.gears[0]).toBe(baseRes.gears[0]);
+    expect(correctedRes.gears[1]).toBe(baseRes.gears[1]);
+
+    // 4. Top Gear Usability Guard: Step ratio of the final gear must not exceed 0.90
+    const topStepRatio = correctedRes.gears[5] / correctedRes.gears[4];
+    expect(topStepRatio).toBeLessThanOrEqual(0.90);
+    expect(topStepRatio).toBeGreaterThanOrEqual(0.70);
+  });
+
+  it('should clamp FD to 6.1 and apply top gear usability guard on extreme low simulatedTopSpeed', () => {
+    const extremeLowRes = calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      simulatedTopSpeed: 130
+    });
+
+    // 1. FD is clamped to maximum in-game limit 6.1
+    expect(extremeLowRes.finalDrive).toBe(6.1);
+
+    // 2. All gears must remain strictly monotonic
+    for (let i = 1; i < extremeLowRes.gears.length; i++) {
+      expect(extremeLowRes.gears[i]).toBeLessThan(extremeLowRes.gears[i - 1]);
+    }
+
+    // 3. Top gear step ratio remains bounded by usability guard <= 0.90
+    const topStepRatio = extremeLowRes.gears[5] / extremeLowRes.gears[4];
+    expect(topStepRatio).toBeLessThanOrEqual(0.90);
+  });
+
+  it('should generate healthy baseline final drive and gear ratios across gear counts (4 to 10 gears)', () => {
+    for (let count = 4; count <= 10; count++) {
+      const res = calculateAEGOGearing('Road', count, sampleCar, 7500);
+
+      expect(res.gears).toHaveLength(count);
+      expect(res.finalDrive).toBeGreaterThanOrEqual(2.2);
+      expect(res.finalDrive).toBeLessThanOrEqual(6.1);
+      expect(res.gears[0]).toBeGreaterThanOrEqual(1.2);
+      expect(res.gears[count - 1]).toBeLessThanOrEqual(1.0);
+
+      // Monotonicity across all gears
+      for (let i = 1; i < count; i++) {
+        expect(res.gears[i]).toBeLessThan(res.gears[i - 1]);
+      }
+    }
+  });
 });
 
 // ============================================================
