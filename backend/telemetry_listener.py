@@ -675,6 +675,14 @@ async def start_udp_listener(
             logger.warning(
                 f"Failed to bind telemetry listener to {bind_ip}:{port}: {e}"
             )
+            # 127.0.0.1 is mandatory; if loopback fails (port occupied), abort and raise OSError
+            if bind_ip == "127.0.0.1" or (ip and bind_ip == ip):
+                for t in transports:
+                    try:
+                        t.close()
+                    except Exception:
+                        pass
+                raise
 
     if not transports:
         # Fallback to loopback if all interface bindings failed
