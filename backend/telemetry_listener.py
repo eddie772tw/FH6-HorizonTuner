@@ -310,10 +310,12 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
         forward_port: int = 5300,
         local_ip: str = "0.0.0.0",
         local_port: int = 8000,
+        metrics=None,
     ):
         self.message_queue = message_queue
         self.local_ip = local_ip
         self.local_port = local_port
+        self.metrics = metrics
         self.transport: asyncio.DatagramTransport | None = None
         self._forward_enabled = False
         self._forward_addr: tuple[str, int] | None = None
@@ -362,6 +364,9 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
         logger.info("UDP Telemetry Listener started.")
 
     def datagram_received(self, data, addr):
+        if self.metrics is not None:
+            self.metrics.record_datagram(len(data))
+
         # 1. Forward raw datagram if enabled (Full Passthrough)
         if (
             self._forward_enabled
@@ -378,11 +383,21 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
         try:
             telemetry_data = parse_telemetry_packet(data)
             if telemetry_data is not None:
+                if self.metrics is not None:
+                    self.metrics.record_packet_parsed()
                 try:
                     self.message_queue.put_nowait(telemetry_data)
                 except asyncio.QueueFull:
                     pass
+            elif self.metrics is not None:
+                if len(data) < 232:
+                    rejection_reason = "too_short"
+                else:
+                    rejection_reason = "not_racing"
+                self.metrics.record_packet_rejected(rejection_reason)
         except Exception as e:
+            if self.metrics is not None:
+                self.metrics.record_packet_rejected("parser_error")
             logger.error(f"Error parsing UDP packet: {e}")
 
 
@@ -393,6 +408,7 @@ async def start_udp_listener(
     forward_enabled: bool = False,
     forward_host: str = "127.0.0.1",
     forward_port: int = 5300,
+    metrics=None,
 ):
     loop = asyncio.get_running_loop()
     transport, protocol = await loop.create_datagram_endpoint(
@@ -403,6 +419,7 @@ async def start_udp_listener(
             forward_port=forward_port,
             local_ip=ip,
             local_port=port,
+            metrics=metrics,
         ),
         local_addr=(ip, port),
     )

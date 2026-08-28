@@ -33,6 +33,66 @@
   5. 驗證前端 Vitest（70 檔 / 442 項全數通過）、後端單元測試（189 項全數通過）、Ruff 格式檢查與 Vite 生產打包成功。
   6. 同步更新 `README.md`、`README.en.md` 與 `Journal.md`。
 - **Evidence**：`cargo check` 通過；前端 Vitest (70 files / 442 tests passed)；後端 Pytest (189 passed)；`pnpm run build` 成功輸出 `dist/index.html` 與 `dist/hud_frontend/index.html`；`ruff check .` 與 `ruff format --check .` 100% 通過。
+## 2026-08-27 / Telemetry expanded detail scope and corner layout
+
+### 展開卡片範圍與四角詳細遙測
+
+- **來源**：`local`，針對 `feat/V1.5-arch` 的 TelemetryView expanded detail。
+- **狀態**：`adopted`。
+- **Learning**：駕駛輸入與引擎區塊的即時控制項已足夠承擔主要用途，不需要再保留另一條展開詳細圖表路徑；Live Traces 的比較用途則集中在踏板、功率/扭力、轉速/扭力與轉速/馬力四組趨勢。輪胎與懸吊詳細資料需要以四角為視覺分組，而不是將角落數據攤平成單一指標列。
+- **Action**：TelemetryCardShell 支援不可展開卡片；Driver Inputs & Engine 移除 detail 與 expand action；Trace detail 固定四圖 2x2 並共用一次 history/chart-data 建立；Tire 與 Suspension detail 使用共用 2x2 corner grid，懸吊的聚合指標另列於四角資料下方；roadmap 同步反映四張可展開卡片。
+- **Evidence**：前端 Vitest `71 files / 451 tests` 通過；`pnpm -C frontend run build` 通過（683 modules）；`git diff --check` 通過。未宣稱實機 UDP 或瀏覽器 profiler 結果。
+- **Governance**：本筆追加依 `agent-governance-audit` 稽核；保留未追蹤 `config/`，未修改後端或生產設定。
+
+## 2026-08-27 / Telemetry card layout standardization
+
+### 即時遙測卡片高度分配與標題對齊
+
+- **來源**：`local`，針對 `feat/V1.5-arch` 的 TelemetryView 1080p 主 GUI 版型。
+- **狀態**：`adopted`。
+- **Learning**：`TelemetryCardShell` 的 body 若維持一般 block，子層的 `flex-grow-1` 不會形成有效的高度分配邊界，會造成 Live Traces 第二張圖、Dynamics 下方資料被 `overflow: hidden` 裁切，駕駛輸入條縮至極小高度。不同控制項數量也會使卡片標題列高度不一致。
+- **Action**：新增 `TelemetryCardLayout` 統一 `stack`、`split`、`grid` 三種內容版型；卡片 body 改為 `flex: 1 1 0%` 的垂直 Flex 容器；header 統一 `29px` 最小高度，保留原本 6 欄、`4.2fr 5.8fr` 列比例與各卡片內容元件。
+- **Evidence**：720p 瀏覽器驗證五張卡片內容均未超出 body，Live Traces 兩張 Canvas 均可見；1080p 驗證第一列三張標題 top 均為 `145.6px`、header 均為 `29px`、Live Traces 兩張 Canvas 各約 `156px`、駕駛輸入條約 `212px`，展開 detail body 約 `843px` 且可滾動。前端 Vitest `71 files / 451 tests` 通過，Vite build 通過，Ruff check/format 通過；後端 `191 passed / 1 skipped / 2 failed`，失敗為既有 portable sidecar 測試受本機 `127.0.0.1:8001` 佔用影響。
+- **Governance**：本筆追加依 `agent-governance-audit` 稽核；保留未追蹤 `config/`，未修改後端 port 或生產設定。
+
+## 2026-08-27 / Telemetry expanded detail Canvas rendering optimization
+
+### 詳細遙測統計資料的繪製效能與版面可讀性
+
+- **來源**：`local`，針對 `feat/V1.5-arch` 的 TelemetryView expanded detail。
+- **狀態**：`adopted`。
+- **Learning**：詳細趨勢圖原先以 Recharts/SVG 在每次 bounded history 更新時重算約 300 個 samples，且 `TelemetryDetailView` 即使只展開一張卡也會建立其他卡片的 chart data。這與既有 Canvas 圖表的高頻路徑設計不一致。
+- **Action**：採用 `huge-component-refactoring` 與 `halfmoon-design-system`：`TrendChart` 改用 DPR-aware Canvas，透過 ResizeObserver 與主題 CSS 變數快取繪製網格、座標、折線與 hover tooltip；資料建立改為依 `cardId` 延遲，輪胎五組趨勢在單一 history pass 產生；expanded detail 的趨勢圖改為 desktop 雙欄、窄視窗單欄。
+- **Evidence**：新增 `toTireTrendChartData` isolation test；前端 Vitest `71 files / 451 tests` 通過；`pnpm -C frontend run build` 通過（682 modules）；`git diff --check` 通過。未執行實機 UDP 或瀏覽器 profiler，因此未宣稱實際 FPS/p95 提升。
+- **Governance**：本筆追加依 `agent-governance-audit` 稽核；未修改 canonical skill ID、既有歷史結論或其他 agent 的 `config/` dirty worktree。
+
+## 2026-08-27 / TelemetryView V1.5.1–V1.5.2 detail completion
+
+### Suspension、Tire 與 vehicle dynamics expanded detail
+
+- **來源**：`local`，延續 PR #245 `feat/V1.5-arch` 的 TelemetryView card expansion。
+- **狀態**：`adopted`。
+- **Learning**：expanded React detail 必須沿用既有 telemetry emitter 與 bounded history；滑移角／姿態遵循 parser 的弧度契約，胎溫遵循 SettingsContext 的華氏輸入契約；缺少 optional array 時顯示 unavailable，不以 0 代替。
+- **Action**：新增純函數 `telemetryDetailMath` 與 isolation tests；完成 suspension summaries、tire 五類趨勢、vehicle dynamics current／trend、單位轉換與 detail component 拆分。
+- **Evidence**：commits `9a8e7cc`、`fc044d4`；前端 Vitest `71 files / 449 tests`；`pnpm -C frontend run build` 通過；未執行實機 UDP／硬體驗證。
+- **Boundary**：未新增 UDP offset、listener、WebSocket、recorder 或 MCP contract；未校準或宣稱未解析的 wheel load、tire wear、damper force 與 ride height。
+## 2026-08-28 / PR #247 Discord Rich Presence 測試斷言結構同步修復
+
+### Discord Application Key 輸出結構重構、常數淘汰與 Pytest 斷言對齊
+
+- **來源**：`local`，針對 PR #247 分支 (`codex/feat/discord-rich-presence`) 因後端輸出結構重構但測試未同步導致之 CI 失敗進行修復。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **常數淘汰未同步測試導致 Collection 階段崩潰**：在 `discord_presence.py` 中淘汰 `RICH_PRESENCE_IMAGE_URL` 與 `RICH_PRESENCE_IMAGE_TEXT` 改用固定 asset key (`"fh6_horizon_tuner"`) 時，測試檔案頂層若仍維持舊常數之 `from discord_presence import ...`，將在 Pytest 模組收集階段直接觸發 `ImportError`，導致整個測試套裝中斷。
+  2. **Pre-Commit 測試門檻與分支健康**：在重構輸出資料結構或淘汰內部常數時，必須立即執行本地全套單元測試，確保業務模組與測試合約 100% 同步。
+- **Action**：
+  1. 更新 `tests/test_discord_presence.py`：移除已廢棄之 `RICH_PRESENCE_IMAGE_URL` 與 `RICH_PRESENCE_IMAGE_TEXT` 匯入。
+  2. 更新 `test_activity_uses_project_owned_presence_image_and_text` 與 `test_presence_status_records_activity_after_successful_send` 之斷言，對齊最新 `large_image: "fh6_horizon_tuner"` 與 `large_text: "FH6 HorizonTuner"` 結構。
+  3. 驗證全套靜態檢查、後端 Pytest (203 passed, 3 skipped)、前端 Vitest (69 檔 / 441 passed) 與前端生產打包。
+- **Evidence**：`tests/test_discord_presence.py` 12 tests passed；後端 Pytest (203 passed)；前端 Vitest (441 passed)；`ruff check .` & `ruff format --check .` 100% 通過。
+
+---
+
 ## 2026-08-24 / 5 個 PR 批量審查、衝突修正與循序合併
 
 ### Dependabot 依賴更新 (PR #241 #242 #243)、Jules UI 修正 (PR #244) 與 G-Radar 60Hz 渲染最佳化 (PR #246)
@@ -1443,6 +1503,12 @@
 - **Verification**: Frontend Vitest 70 files / 443 tests, Vite build, Full and Lite Tauri no-bundle builds, Rust format, targeted backend/release/runtime tests (18 passed), and Windows portable diagnostics (7 passed). GitHub CI and reviewer assessment remain external gates.
 - **Limitations**: The Lite executable is currently a portable no-bundle artifact; the signed updater installer and `latest.json` continue to target the Full application. No production deployment or release publication was performed.
 - **Status**: implemented locally, pending pushed-branch CI and PR review.
+## 2026-08-27 / Manual Discord Application ID Packaging
+
+- **Scope**: local `build_all.bat` portable packaging and Discord Rich Presence sidecar configuration.
+- **Decision**: Stage the valid `DISCORD_APPLICATION_ID` environment value, or the ignored `config/discord.local.json` value, into the temporary PyInstaller resource before building; remove the generated resource on success and failure to prevent stale IDs.
+- **Verification**: `tests/test_discord_presence.py`, `tests/test_spec_bundling.py`, and `tests/test_release_workflow_contract.py` passed (20 tests); Python compilation and `git diff --check` passed.
+- **Status**: adopted.
 
 ---
 
@@ -1457,6 +1523,8 @@
 - **Verification**: Ruff check/format passed; backend tests passed as `193` non-host-diagnostics plus `2` host-diagnostics tests; frontend Vitest passed `71 files / 449 tests`; production TypeScript/Vite build and `git diff --check` passed.
 - **Status**: adopted.
 
+---
+
 ## 2026-08-28 / Scoped Unit Workflows and Responsive Settings QoL
 
 - **Scope**: Settings responsive layout, TelemetryView/HUD/TuningView unit ownership, HUD display-unit delivery, and Step 1 navigation access.
@@ -1468,6 +1536,8 @@
   5. Step 1 places unit access and `Save & Proceed` beside its heading. Power, torque, downforce, seasonal pressure, weight, spring, and height displays honor the workflow scope while stored values remain hp, N·m, kgf, kg, kgf/mm, and cm as applicable.
 - **Verification**: Ruff passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend/HUD Vitest passed `71 files / 451 tests`; production TypeScript/Vite build and `git diff --check` passed.
 - **Status**: adopted.
+
+---
 
 ## 2026-08-28 / Three-column System Settings Information Architecture
 

@@ -83,7 +83,7 @@ FH6-HorizonTuner/
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
 │   ├── lite/                # Lite frontend HTML entrypoint
 │   ├── src/features/        # Business Domain Modules (Features Domain)
-│   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 4 dynamic cards
+│   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 5 expandable cards
 │   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~5 tabs)
 │   │   ├── overlay_control/ # WYSIWYG dashboard layout editor (OverlayView)
 │   │   ├── drag_test/       # Drag launch test view (DragTestView)
@@ -226,7 +226,7 @@ Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
 cd frontend && pnpm run test
 ```
 
-Current frontend test suite covers 69 test files with 440 unit tests:
+Current frontend test suite covers 71 test files with 449 unit tests:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
@@ -234,6 +234,7 @@ Current frontend test suite covers 69 test files with 440 unit tests:
 | `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B four-wheel normal-load estimates, load transfer, and tire-geometry priors |
 | `driftMath.test.ts` | Drift scoring and dynamic slip angle math |
 | `telemetryCards.test.ts` | Telemetry cards formatting and status mapping |
+| `telemetryHistory.test.ts` / `telemetryDetailMath.test.ts` | Bounded history, tire/dynamics detail mapping, and suspension summary tests |
 | `tireModel.test.ts` | Friction ellipse boundary, zero-capacity fix & feasible guard (7 tests) |
 | `suspensionSolver.test.ts` | Critical damping, damping-ratio priors & FH6 slider mapping layers (3 tests) |
 | `timestampIntegration.test.ts` | Phase 6 timestamp integration - airtime, drift ratio, impact window & non-monotonic unknown |

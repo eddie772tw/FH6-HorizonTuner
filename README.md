@@ -84,7 +84,7 @@ FH6-HorizonTuner/
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
 │   ├── lite/                # Lite 前端 HTML entrypoint
 │   ├── src/features/        # 業務領域模組 (Features Domain)
-│   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 4 大動態卡片
+│   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 5 大可展開動態卡片
 │   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~5 分頁)
 │   │   ├── overlay_control/ # WYSIWYG 儀表佈局編輯器 (OverlayView)
 │   │   ├── drag_test/       # 彈射起步測試 (DragTestView)
@@ -240,7 +240,7 @@ cd frontend && pnpm run test
 cd frontend && pnpm run test
 ```
 
-目前的前端測試套件涵蓋 69 個測試檔案，共 440 個單元測試案例：
+目前的前端測試套件涵蓋 71 個測試檔案，共 449 個單元測試案例：
 | 測試檔案 | 覆蓋範圍 |
 | :--- | :--- |
 | `tuningMath.test.ts` | AEGO 齒輪比 / 彈簧 / ARB / 阻尼器 / 下壓力 / 車高與輪胎對齊等 29 個測試案例 |
@@ -248,6 +248,7 @@ cd frontend && pnpm run test
 | `loadTransfer.test.ts` / `tireGeometry.test.ts` | Phase 4B 四輪估計垂直載荷、載荷轉移與輪胎幾何先驗 |
 | `driftMath.test.ts` | 甩尾分數與甩尾角度計算邏輯測試 |
 | `telemetryCards.test.ts` | 遙測數據卡片格式化與狀態映射測試 |
+| `telemetryHistory.test.ts` / `telemetryDetailMath.test.ts` | 有界遙測歷史、輪胎／動力學 detail 映射與懸吊統計測試 |
 | `tireModel.test.ts` | 摩擦橢圓邊界、零容量正需求修復與 feasible 判斷（7 tests） |
 | `suspensionSolver.test.ts` | 臨界阻尼、阻尼比先驗與 FH6 滑桿映射分層（3 tests） |
 | `timestampIntegration.test.ts` | Phase 6 時間戳積分—滑空、漂移時間、衝擊窗口與非單調 unknown |

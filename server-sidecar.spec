@@ -22,6 +22,12 @@ added_files = [
     ('hud_overlay', 'hud_overlay'),
 ]
 
+# Release builds may provide the public Discord Application ID through a
+# runner-only generated file. Never require it for local/CI test builds.
+discord_application_id_file = 'backend/discord_application_id.json'
+if os.path.isfile(discord_application_id_file):
+    added_files.append((discord_application_id_file, '.'))
+
 datas.extend(added_files)
 
 # 3. 分析與打包 Sidecar 可執行檔

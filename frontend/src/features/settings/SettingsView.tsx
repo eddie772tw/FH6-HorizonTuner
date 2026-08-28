@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { applyGeneralUnitSystem, inferGeneralUnitSystem, type GeneralUnitSystem } from '../../utils/gameUnitSettings';
+import { DiscordPresenceStatusCard } from './components/DiscordPresenceStatusCard';
 import { McpSettingsCard } from './components/McpSettingsCard';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
@@ -92,6 +93,7 @@ const SettingsView: React.FC = () => {
 
           {/* Application maintenance and integrations */}
           <div className="col-12 col-lg-4 d-flex flex-column gap-4">
+            <DiscordPresenceStatusCard />
             <SettingsSection title={t('Developer Options')}>
               <SettingsSwitch id="chk-developer-tuning" label={t('Use Developer Tuning View')} description={t('Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.')} checked={settings.developer_tuning_enabled} onChange={(event) => updateSettings({ developer_tuning_enabled: event.target.checked })} />
               {settings.developer_tuning_enabled && <div className="alert alert-warning mb-0 py-2" role="status">{t('Experimental mode active: verify all outputs in-game before saving a tune.')}</div>}
