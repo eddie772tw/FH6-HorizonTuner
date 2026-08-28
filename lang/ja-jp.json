@@ -1083,5 +1083,9 @@
   "Summer": "夏",
   "Autumn": "秋",
   "Spring": "春",
-  "Winter": "冬"
+  "Winter": "冬",
+  "tarmac": "ターマック",
+  "gravel": "グラベル",
+  "snow": "雪",
+  "dragStrip": "ドラッグストリップ"
 }

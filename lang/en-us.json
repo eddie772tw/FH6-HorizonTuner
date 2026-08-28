@@ -1054,5 +1054,9 @@
   "Summer": "Summer",
   "Autumn": "Autumn",
   "Spring": "Spring",
-  "Winter": "Winter"
+  "Winter": "Winter",
+  "tarmac": "Tarmac",
+  "gravel": "Gravel",
+  "snow": "Snow",
+  "dragStrip": "Drag Strip"
 }

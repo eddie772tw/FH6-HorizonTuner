@@ -1144,5 +1144,9 @@
   "Summer": "夏季",
   "Autumn": "秋季",
   "Spring": "春季",
-  "Winter": "冬季"
+  "Winter": "冬季",
+  "tarmac": "柏油",
+  "gravel": "碎石",
+  "snow": "雪地",
+  "dragStrip": "直線加速賽道"
 }
