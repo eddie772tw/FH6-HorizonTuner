@@ -1469,6 +1469,12 @@ async def websocket_overlay_endpoint(websocket: WebSocket):
 
     await overlay_manager.connect(websocket, is_binary=False)
     try:
+        # Every overlay client needs the effective unit contract before its
+        # first telemetry frame.  Relying on a later settings mutation leaves
+        # newly connected HUDs and the desktop telemetry bridge with defaults.
+        await websocket.send_json(
+            {"type": "hud:config", "data": await get_overlay_config()}
+        )
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:

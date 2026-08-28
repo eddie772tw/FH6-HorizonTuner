@@ -95,6 +95,26 @@ def test_hud_unit_can_follow_or_override_app_global_units():
         main.app_settings["units"] = original_units
 
 
+def test_overlay_websocket_receives_effective_hud_units(temp_hud_config_file):
+    original_units = dict(main.app_settings["units"])
+    try:
+        main.app_settings["units"].update(
+            {"speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"}
+        )
+        with TestClient(app).websocket_connect("/ws/overlay") as websocket:
+            message = websocket.receive_json()
+
+        assert message["type"] == "hud:config"
+        assert message["data"]["effectiveUnits"] == {
+            "speed": "mph",
+            "boostPressure": "psi",
+            "torque": "lbft",
+            "power": "hp",
+        }
+    finally:
+        main.app_settings["units"] = original_units
+
+
 def test_global_unit_update_rebroadcasts_following_hud_config(tmp_path, monkeypatch):
     original_units = dict(main.app_settings["units"])
     broadcast = AsyncMock()
