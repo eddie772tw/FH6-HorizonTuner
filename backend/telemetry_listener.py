@@ -153,6 +153,11 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
         combined_slip_rr,
     ) = struct.unpack_from("<ffff", data, 180)
 
+    # Absolute Suspension Travel (Meters)
+    abs_susp_fl, abs_susp_fr, abs_susp_rl, abs_susp_rr = struct.unpack_from(
+        "<ffff", data, 196
+    )
+
     telemetry_data = {
         "IsRaceOn": is_race_on,
         "TimestampMS": timestamp_ms,
@@ -176,6 +181,12 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
             combined_slip_rr,
         ],
         "NormalizedSuspensionTravel": [susp_fl, susp_fr, susp_rl, susp_rr],
+        "SuspensionTravelMeters": [
+            abs_susp_fl,
+            abs_susp_fr,
+            abs_susp_rl,
+            abs_susp_rr,
+        ],
         "TireSlipRatio": [
             slip_ratio_fl,
             slip_ratio_fr,

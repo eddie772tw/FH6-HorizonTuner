@@ -30,7 +30,10 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
   numGears,
   carParams
 }) => {
-  const { t } = useSettings();
+  const { settings, convertSpeed, t } = useSettings();
+  const speedLabel = settings.units.speed === 'mph' ? 'mph' : 'km/h';
+  const displaySpeed = (kmh: number) => settings.units.speed === 'mph' ? kmh * 0.621371 : kmh;
+  const speedToKmh = (value: number) => settings.units.speed === 'mph' ? value / 0.621371 : value;
 
   // Compute speed-rpm chart data with shift-chained starting points (Gear N starts at Gear N-1 maxRPM speed)
   const { chartData, xMax, yMax } = useMemo(() => {
@@ -60,7 +63,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
       let endSpeed = 0;
       if (ratio > 0 && finalDrive > 0) {
         const maxSpeedMs = calcGearSpeed(yLimit, ratio, finalDrive, tireRadiusM);
-        endSpeed = Math.round(maxSpeedMs * 3.6 * 10) / 10;
+        endSpeed = Math.round(convertSpeed(maxSpeedMs).value * 10) / 10;
       }
       
       const startSpeed = g === 0 ? 0 : currentStartSpeed;
@@ -79,8 +82,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
 
     const overallTopSpeed = Math.max(
       gearRanges[gearRanges.length - 1]?.endSpeed || 300,
-      tuning?.gearing?.simulatedTopSpeed || 0,
-      tuning?.gearing?.softMaxSpeed || 0
+      displaySpeed(tuning?.gearing?.simulatedTopSpeed || 0),
+      displaySpeed(tuning?.gearing?.softMaxSpeed || 0)
     );
     const xLimit = Math.max(120, Math.ceil(overallTopSpeed / 20) * 20);
 
@@ -112,7 +115,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         
         // Include point if speed is between this gear's shift start and shift end
         if (speed >= startSpeed - 0.05 && speed <= endSpeed + 0.05 && ratio > 0 && finalDrive > 0) {
-          const speedMs = speed / 3.6;
+          const speedMs = settings.units.speed === 'mph' ? speed / 2.23694 : speed / 3.6;
           const rpm = (speedMs * ratio * finalDrive * 60) / (2 * Math.PI * tireRadiusM);
           if (rpm >= 0 && rpm <= yLimit + 200) {
             pt[`gear${gearIndex + 1}`] = Math.round(rpm);
@@ -124,7 +127,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
     });
 
     return { chartData: points, xMax: xLimit, yMax: yLimit };
-  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, tuning?.gearing?.simulatedTopSpeed, tuning?.gearing?.softMaxSpeed, numGears, carParams]);
+  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, tuning?.gearing?.simulatedTopSpeed, tuning?.gearing?.softMaxSpeed, numGears, carParams, settings.units.speed]);
 
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
@@ -170,26 +173,26 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  {t("Simulated Top Speed (km/h)")}
+                  {t("Simulated Top Speed")} ({speedLabel})
                 </label>
                 <input 
                   type="number" 
                   placeholder="e.g. 280"
-                  value={tuning?.gearing?.simulatedTopSpeed ?? ''} 
-                  onChange={e => updateSection && updateSection('gearing', 'simulatedTopSpeed', parseFloat(e.target.value) || undefined)}
+                  value={tuning?.gearing?.simulatedTopSpeed ? displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1) : ''}
+                  onChange={e => updateSection && updateSection('gearing', 'simulatedTopSpeed', e.target.value ? speedToKmh(parseFloat(e.target.value)) : undefined)}
                   style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
                   title={t("In-game simulated or actual top speed under baseline gearing to correct aero & grip drag")}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                  {t("Soft Max Speed Cap (km/h)")}
+                  {t("Soft Max Speed Cap")} ({speedLabel})
                 </label>
                 <input 
                   type="number" 
                   placeholder="e.g. 310"
-                  value={tuning?.gearing?.softMaxSpeed ?? ''} 
-                  onChange={e => updateSection && updateSection('gearing', 'softMaxSpeed', parseFloat(e.target.value) || undefined)}
+                  value={tuning?.gearing?.softMaxSpeed ? displaySpeed(tuning.gearing.softMaxSpeed).toFixed(1) : ''}
+                  onChange={e => updateSection && updateSection('gearing', 'softMaxSpeed', e.target.value ? speedToKmh(parseFloat(e.target.value)) : undefined)}
                   style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
                   title={t("Speed limits on the X-axis right end of the in-game transmission preview chart")}
                 />
@@ -203,7 +206,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         <div style={{ height: '440px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.8rem', border: '1px solid rgba(255,255,255,0.08)' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
-              <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="rgba(255,255,255,0.4)" fontSize={10} unit=" km/h" />
+              <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="rgba(255,255,255,0.4)" fontSize={10} unit={` ${speedLabel}`} />
               <YAxis type="number" domain={[0, yMax || 9000]} stroke="rgba(255,255,255,0.4)" fontSize={10} unit=" RPM" />
               {/* 3. Effective Powerband Highlight Range (Semi-transparent background area) */}
               {Boolean(carParams?.maxHpRpm && carParams?.maxTorqueRpm) && (
@@ -240,20 +243,20 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
               {/* 4. Simulated Top Speed Vertical Reference Line */}
               {Boolean(tuning?.gearing?.simulatedTopSpeed && tuning.gearing.simulatedTopSpeed > 0) && (
                 <ReferenceLine 
-                  x={tuning.gearing.simulatedTopSpeed} 
+                  x={displaySpeed(tuning.gearing.simulatedTopSpeed)}
                   stroke="#00e5ff" 
                   strokeDasharray="3 3" 
-                  label={{ value: `${t("Simulated Top Speed")}: ${tuning.gearing.simulatedTopSpeed} km/h`, fill: '#00e5ff', fontSize: 10, position: 'insideTopLeft' }} 
+                  label={{ value: `${t("Simulated Top Speed")}: ${displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1)} ${speedLabel}`, fill: '#00e5ff', fontSize: 10, position: 'insideTopLeft' }}
                 />
               )}
 
               {/* 5. Soft Max Speed Cap Vertical Reference Line */}
               {Boolean(tuning?.gearing?.softMaxSpeed && tuning.gearing.softMaxSpeed > 0) && (
                 <ReferenceLine 
-                  x={tuning.gearing.softMaxSpeed} 
+                  x={displaySpeed(tuning.gearing.softMaxSpeed)}
                   stroke="#d500f9" 
                   strokeDasharray="4 4" 
-                  label={{ value: `${t("Soft Cap")}: ${tuning.gearing.softMaxSpeed} km/h`, fill: '#d500f9', fontSize: 10, position: 'insideTopRight' }} 
+                  label={{ value: `${t("Soft Cap")}: ${displaySpeed(tuning.gearing.softMaxSpeed).toFixed(1)} ${speedLabel}`, fill: '#d500f9', fontSize: 10, position: 'insideTopRight' }}
                 />
               )}
 

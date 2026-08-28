@@ -1,6 +1,8 @@
+import asyncio
 import json
 import os
 import tempfile
+from unittest.mock import AsyncMock
 
 import main
 import pytest
@@ -38,6 +40,133 @@ def test_get_hud_config_default(temp_hud_config_file):
     assert "elements" in data
     assert data["elements"]["showCenterInfo"] is True
     assert data["elements"]["showRPM"] is True
+
+
+def test_hud_unit_can_follow_or_override_app_global_units():
+    original_units = dict(main.app_settings["units"])
+    try:
+        main.app_settings["units"].update(
+            {"speed": "kmh", "boostPressure": "kpa", "torque": "nm", "power": "ps"}
+        )
+
+        following = main.hud_config_with_gui_theme(
+            {
+                "unit": "mph",
+                "units": {
+                    "speed": "mph",
+                    "boostPressure": "psi",
+                    "torque": "lbft",
+                    "power": "hp",
+                },
+                "followAppUnits": True,
+            }
+        )
+        independent = main.hud_config_with_gui_theme(
+            {
+                "unit": "mph",
+                "units": {
+                    "speed": "mph",
+                    "boostPressure": "psi",
+                    "torque": "lbft",
+                    "power": "hp",
+                },
+                "followAppUnits": False,
+            }
+        )
+
+        assert following["unit"] == "mph"
+        assert following["effectiveUnit"] == "kmh"
+        assert following["effectiveUnits"] == {
+            "speed": "kmh",
+            "boostPressure": "kpa",
+            "torque": "nm",
+            "power": "ps",
+        }
+        assert independent["effectiveUnit"] == "mph"
+        assert independent["effectiveUnits"] == {
+            "speed": "mph",
+            "boostPressure": "psi",
+            "torque": "lbft",
+            "power": "hp",
+        }
+        assert "effectiveUnit" not in main.normalize_hud_config(following)
+        assert "effectiveUnits" not in main.normalize_hud_config(following)
+    finally:
+        main.app_settings["units"] = original_units
+
+
+def test_overlay_websocket_receives_effective_hud_units(temp_hud_config_file):
+    original_units = dict(main.app_settings["units"])
+    try:
+        main.app_settings["units"].update(
+            {"speed": "mph", "boostPressure": "psi", "torque": "lbft", "power": "hp"}
+        )
+        with TestClient(app).websocket_connect("/ws/overlay") as websocket:
+            message = websocket.receive_json()
+
+        assert message["type"] == "hud:config"
+        assert message["data"]["effectiveUnits"] == {
+            "speed": "mph",
+            "boostPressure": "psi",
+            "torque": "lbft",
+            "power": "hp",
+        }
+    finally:
+        main.app_settings["units"] = original_units
+
+
+def test_global_unit_update_rebroadcasts_following_hud_config(tmp_path, monkeypatch):
+    original_units = dict(main.app_settings["units"])
+    broadcast = AsyncMock()
+    monkeypatch.setattr(main, "SETTINGS_FILE", str(tmp_path / "settings.json"))
+    monkeypatch.setattr(main, "HUD_CONFIG_FILE", str(tmp_path / "hud_config.json"))
+    monkeypatch.setattr(main.overlay_manager, "broadcast_json", broadcast)
+
+    try:
+        asyncio.run(main.update_settings({"units": {"speed": "mph", "power": "kw"}}))
+        payload = broadcast.await_args.args[0]
+        assert payload["type"] == "hud:config"
+        assert payload["data"]["effectiveUnit"] == "mph"
+        assert payload["data"]["effectiveUnits"]["power"] == "kw"
+    finally:
+        main.app_settings["units"] = original_units
+
+
+def test_global_unit_update_migrates_and_persists_legacy_mixed_units(
+    tmp_path, monkeypatch
+):
+    original_units = dict(main.app_settings["units"])
+    broadcast = AsyncMock()
+    settings_file = tmp_path / "settings.json"
+    monkeypatch.setattr(main, "SETTINGS_FILE", str(settings_file))
+    monkeypatch.setattr(main, "HUD_CONFIG_FILE", str(tmp_path / "hud_config.json"))
+    monkeypatch.setattr(main.overlay_manager, "broadcast_json", broadcast)
+
+    try:
+        main.app_settings["units"] = dict(main.DEFAULT_SETTINGS["units"])
+        updated = asyncio.run(
+            main.update_settings(
+                {
+                    "units": {
+                        "speed": "kmh",
+                        "tirePressure": "psi",
+                        "power": "ps",
+                        "springRate": "lbsin",
+                    }
+                }
+            )
+        )
+
+        assert updated["units"] == {
+            **main.GENERAL_UNIT_PROFILES["metric"],
+            "springRate": "lbsin",
+            "power": "ps",
+        }
+        with open(settings_file, encoding="utf-8") as f:
+            persisted = json.load(f)
+        assert persisted["units"] == updated["units"]
+    finally:
+        main.app_settings["units"] = original_units
 
 
 def test_save_and_get_hud_config(temp_hud_config_file):
