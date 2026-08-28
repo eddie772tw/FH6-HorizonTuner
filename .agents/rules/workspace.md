@@ -11,10 +11,12 @@
 2. **前端 (Tauri / React)**：僅負責 UI 視覺化與互動展示。
 
 ## 任務完成驗證關卡 (Verification Gate)
-- 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試：
-  - 後端：`uv run --no-project --python .venv\\Scripts\\python.exe python -m pytest tests/` (與語法檢查 `uv run --no-project --python .venv\\Scripts\\python.exe ruff check .`)
-  - 前端：`cmd /c "pnpm -C frontend run test"`
-- 嚴禁為了使測試通過而隨意放寬測試條件或修改斷言閾值。
+- 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試（遵循反過度測試與分層原則）：
+  - 後端單元測試（Tier 1 Fast Unit）：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` (預設排除 `host_diagnostics`，目標 < 5 秒)
+  - 後端代碼檢查：`uv run --no-project --python .venv\Scripts\python.exe ruff check .` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
+  - 前端單元測試：`cmd /c "pnpm -C frontend run test"` (或 `pnpm run test`)
+  - 工具鏈腳本測試（若有修改工具）：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest scripts/tests/`
+- 嚴禁為了使測試通過而隨意放寬測試條件或修改斷言閾值；嚴禁在單元測試中斷言靜態 YAML 設定或 Canvas 2D 微觀繪圖呼叫次數。
 
 ## Python / uv toolchain standard
 
