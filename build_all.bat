@@ -69,14 +69,18 @@ echo [SUCCESS] No unregistered resource directories found.
 echo.
 
 :: 2. Build Python Backend Sidecar Executable with PyInstaller
+echo [INFO] Preparing Discord Application ID for the embedded sidecar...
+echo --------------------------------------------------------------------
+call "%PY_EXE%" "%~dp0scripts\prepare_discord_application_id.py"
+if errorlevel 1 goto :build_failure
+
 echo [INFO] Building Python Backend Sidecar with PyInstaller...
 echo --------------------------------------------------------------------
 "%UV_EXE%" run --no-project --python "%PY_EXE%" python -m PyInstaller "%~dp0server-sidecar.spec" --clean
 if errorlevel 1 (
     echo.
     echo [ERROR] PyInstaller Sidecar bundling encountered an error!
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+    goto :build_failure
 )
 
 set "TAURI_BIN_DIR=%~dp0frontend\src-tauri\bin"
@@ -85,13 +89,11 @@ if not exist "%TAURI_BIN_DIR%" mkdir "%TAURI_BIN_DIR%"
 copy /Y "%~dp0dist\server-sidecar-x86_64-pc-windows-msvc.exe" "%TAURI_BIN_DIR%\server-sidecar-x86_64-pc-windows-msvc.exe"
 if errorlevel 1 (
     echo [ERROR] Failed to copy Sidecar executable to Tauri bin directory.
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+    goto :build_failure
 )
 if not exist "%TAURI_BIN_DIR%\server-sidecar-x86_64-pc-windows-msvc.exe" (
     echo [ERROR] Embedded sidecar input is missing from the Tauri source directory.
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+    goto :build_failure
 )
 echo [SUCCESS] Python Backend Sidecar created and placed in Tauri bin directory.
 echo.
@@ -101,18 +103,17 @@ echo [INFO] Running Tauri Build (Single Release Build executable, no installer).
 echo --------------------------------------------------------------------
 cd "%~dp0frontend"
 :: Release builds must use the committed lockfile. Do not mutate dependencies during packaging.
-call pnpm install --frozen-lockfile || exit /b 1
+call pnpm install --frozen-lockfile || goto :build_failure
 call pnpm audit
 if errorlevel 1 (
     echo [WARNING] pnpm audit could not complete or found vulnerabilities; continuing with the locked dependency set.
 )
-call pnpm run tauri build --no-bundle || exit /b 1
+call pnpm run tauri build --no-bundle || goto :build_failure
 
 if errorlevel 1 (
     echo.
     echo [ERROR] Tauri Build encountered an error!
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+    goto :build_failure
 )
 echo [SUCCESS] Tauri Frontend & Main Executable built successfully.
 echo.
@@ -125,8 +126,7 @@ if exist "%~dp0frontend\src-tauri\target\release\FH6-HorizonTuner.exe" (
 )
 if not exist "%~dp0dist\FH6-HorizonTuner.exe" (
     echo [ERROR] Release Build executable was not produced.
-    if not "%GITHUB_ACTIONS%" == "true" pause
-    exit /b 1
+    goto :build_failure
 )
 
 :: 5. Success screen
@@ -134,6 +134,7 @@ if not exist "%~dp0dist\FH6-HorizonTuner.exe" (
 if exist "%~dp0dist\server-sidecar-x86_64-pc-windows-msvc.exe" (
     del /F /Q "%~dp0dist\server-sidecar-x86_64-pc-windows-msvc.exe" >nul 2>&1
 )
+call :cleanup_discord_application_id
 
 echo ====================================================================
 echo      FH6 HorizonTuner standalone bundle created successfully
@@ -142,4 +143,15 @@ echo  Distribution Executable Path:
 echo  %~dp0dist\FH6-HorizonTuner.exe
 echo.
 if not "%GITHUB_ACTIONS%" == "true" pause
+exit /b 0
+
+:build_failure
+call :cleanup_discord_application_id
+if not "%GITHUB_ACTIONS%" == "true" pause
+exit /b 1
+
+:cleanup_discord_application_id
+if exist "%~dp0backend\discord_application_id.json" (
+    del /F /Q "%~dp0backend\discord_application_id.json" >nul 2>&1
+)
 exit /b 0

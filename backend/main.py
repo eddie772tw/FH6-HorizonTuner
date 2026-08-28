@@ -81,6 +81,7 @@ from audio_spectrum import (
     set_audio_capture_device,
     stop_audio_spectrum_service,
 )
+from discord_presence import DiscordPresenceManager, load_discord_application_id
 from fastapi import (
     FastAPI,
     File,
@@ -250,6 +251,14 @@ if os.path.exists(CAR_DB_PATH):
             car_database = json.load(f)
     except Exception as e:
         logger.error(f"Failed to load car database: {e}")
+
+
+discord_application_id = load_discord_application_id(DATA_ROOT, RESOURCE_ROOT)
+discord_presence = DiscordPresenceManager(discord_application_id, car_database)
+logger.info(
+    "Discord Rich Presence configured=%s",
+    bool(discord_application_id),
+)
 
 
 class ConnectionManager:
@@ -1124,9 +1133,11 @@ async def lifespan(app: FastAPI):
         forward_enabled=forward_enabled,
         forward_host=forward_host,
         forward_port=forward_port,
+        metrics=telemetry_pipeline_metrics,
     )
     current_udp_ip_port = (ip, port)
     race_persistence.start()
+    discord_presence.start()
     background_tasks = [
         asyncio.create_task(broadcast_telemetry()),
         asyncio.create_task(broadcast_overlay_state()),
@@ -1142,6 +1153,7 @@ async def lifespan(app: FastAPI):
         await car_params_writer.flush()
         await car_params_cache.cancel_pending()
         await race_persistence.shutdown()
+        discord_presence.stop()
 
 
 app.router.lifespan_context = lifespan
@@ -1234,6 +1246,7 @@ async def broadcast_telemetry():
     while True:
         data = await telemetry_queue.get()
         latest_live_telemetry = data
+        discord_presence.submit(data)
         frame_started_at = time.perf_counter()
         telemetry_pipeline_metrics.observe_queue_depth(telemetry_queue.qsize())
 
@@ -1435,6 +1448,12 @@ async def get_telemetry_pipeline_metrics():
     }
     snapshot["raceRecorderPersistence"] = race_persistence.snapshot()
     return snapshot
+
+
+@app.get("/api/diagnostics/discord-presence")
+async def get_discord_presence_status():
+    """Expose Presence health without exposing the Application ID."""
+    return discord_presence.status()
 
 
 @app.get("/api/diagnostics/overlay")
@@ -1716,6 +1735,7 @@ async def update_settings(data: dict):
                 forward_enabled=app_settings.get("forward_telemetry_enabled", False),
                 forward_host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
                 forward_port=int(app_settings.get("forward_telemetry_port", 5300)),
+                metrics=telemetry_pipeline_metrics,
             )
             current_udp_ip_port = (new_ip, new_port)
         except Exception as e:
