@@ -51,7 +51,7 @@
 
         return {
             value: Math.round(torque),
-            unit: isMetric ? 'N·M' : 'LB·FT'
+            unit: typeof source.torque_unit === 'string' ? source.torque_unit.toUpperCase() : (isMetric ? 'N·M' : 'LB·FT')
         };
     }
 

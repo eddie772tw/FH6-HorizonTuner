@@ -1436,3 +1436,43 @@
 - **Decision**: Stage the valid `DISCORD_APPLICATION_ID` environment value, or the ignored `config/discord.local.json` value, into the temporary PyInstaller resource before building; remove the generated resource on success and failure to prevent stale IDs.
 - **Verification**: `tests/test_discord_presence.py`, `tests/test_spec_bundling.py`, and `tests/test_release_workflow_contract.py` passed (20 tests); Python compilation and `git diff --check` passed.
 - **Status**: adopted.
+
+---
+
+## 2026-08-28 / AEGO Ratio Balance and Game-aligned Unit QoL
+
+- **Scope**: AEGO editable ratio representation, global unit preferences, HUD unit ownership, and live suspension travel display.
+- **Decision**:
+  1. AEGO preserves per-gear total drive ratios while moving the editable final-drive/gear split toward a neutral final drive. Final drive is bounded to `2.00..6.10`, first gear is protected from sub-`1.00` pathological outputs, and the Drag profile retains its explicit fourth-gear `1.00` contract.
+  2. User-facing APP units follow the game's three-choice model: general units atomically control speed, weight, temperature, pressure, height, force, and torque; power and spring-rate units remain independently selectable. Internal physics units and persisted legacy unit fields remain stable.
+  3. HUD settings persist both an independent speed unit and `followAppUnits`; the backend derives `effectiveUnit` for runtime delivery without overwriting the independent choice.
+  4. The Forza Sled packet's normalized suspension travel at offset `68` and absolute suspension travel in meters at offset `196` are both exposed. The live UI uses normalized travel for bar/trace geometry and can display either the normalized value or absolute millimeters for text/min/max.
+- **Verification**: Ruff check/format passed; backend tests passed as `193` non-host-diagnostics plus `2` host-diagnostics tests; frontend Vitest passed `71 files / 449 tests`; production TypeScript/Vite build and `git diff --check` passed.
+- **Status**: adopted.
+
+---
+
+## 2026-08-28 / Scoped Unit Workflows and Responsive Settings QoL
+
+- **Scope**: Settings responsive layout, TelemetryView/HUD/TuningView unit ownership, HUD display-unit delivery, and Step 1 navigation access.
+- **Decision**:
+  1. Settings cards remain inside a responsive two-column grid; full-row spanning is reserved for content that explicitly requires it.
+  2. Telemetry and the five-step tuning workflow persist local unit preferences as `followGlobal + General/Power/Spring`. A scoped settings provider changes display conversions only; canonical telemetry packets, vehicle parameters, and physics calculations retain their original units.
+  3. Unit editors use permanently mounted Halfmoon bottom offcanvas panels. Leaving global inheritance seeds custom values from the current global choices so switching modes does not produce a surprise unit jump.
+  4. HUD keeps a separate four-field display contract for speed, boost, torque, and power. The backend validates saved choices and derives `effectiveUnits`; both desktop and web HUD telemetry paths publish selected generic values plus canonical alternatives for renderers that need them.
+  5. Step 1 places unit access and `Save & Proceed` beside its heading. Power, torque, downforce, seasonal pressure, weight, spring, and height displays honor the workflow scope while stored values remain hp, N·m, kgf, kg, kgf/mm, and cm as applicable.
+- **Verification**: Ruff passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend/HUD Vitest passed `71 files / 451 tests`; production TypeScript/Vite build and `git diff --check` passed.
+- **Status**: adopted.
+
+---
+
+## 2026-08-28 / Three-column System Settings Information Architecture
+
+- **Scope**: `SettingsView`, MCP/update settings cards, shared settings presentation primitives, and responsive layout tests.
+- **Decision**:
+  1. Supersede the earlier two-column Settings layout with three desktop columns organized by concern: language/game units, telemetry/recording, and developer/integration/maintenance options.
+  2. All ordinary fields and switches use shared `SettingsSection`, `SettingsItem`, and `SettingsSwitch` primitives. This keeps labels, descriptions, controls, whole-row switch hit areas, and semantic heading levels consistent across built-in, MCP, and OTA settings.
+  3. Settings sections remain flat and transparent rather than using card backgrounds, borders, or shadows. Section headings, item labels, and explanatory copy use separate sizes, weights, dividers, and semantic color tokens to preserve hierarchy across themes.
+  4. The three-column breakpoint begins at `lg`; below `xl`, individual setting rows stack their label and control to retain usable widths. Narrower screens continue to stack columns vertically.
+- **Verification**: Ruff check/format passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend Vitest passed `73 files / 456 tests`; production TypeScript/Vite build and `git diff --check` passed. Browser QA confirmed three equal columns at 1440px and 1024px, with no Settings grid horizontal overflow at 1024px.
+- **Status**: adopted.

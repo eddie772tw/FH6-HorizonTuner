@@ -727,8 +727,8 @@
             var hpLbPt = innerPt(rpmToT((HP_F_START + HP_F_END) * 0.5 * visualMax, visualMax), HP_TQ_OFFSET + 55);
             var tqLbPt = innerPt(rpmToT((TQ_F_START + TQ_F_END) * 0.5 * visualMax, visualMax), HP_TQ_OFFSET + 55);
             ctxS.font = 'bold 30px ForzaFont, Arial'; ctxS.textAlign = 'left'; ctxS.textBaseline = 'middle';
-            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText('HP', hpLbPt.x, hpLbPt.y - 5);
-            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText('TQ', tqLbPt.x, tqLbPt.y + 2);
+            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText(window._advPowerUnit || 'HP', hpLbPt.x, hpLbPt.y - 5);
+            ctxS.fillStyle = C_WHITE_DIM; ctxS.fillText(window._advTorqueUnit || 'TQ', tqLbPt.x, tqLbPt.y + 2);
 
             // ── Boost arc ────────────────────────────────────────────────────────────
             for (var i = 0; i < BOOST_SEGS; i++) {
@@ -1106,6 +1106,8 @@
                 _advLastRaceState = data.isRaceOn;
 
                 if (!window.advSweepActive) {
+                    window._advPowerUnit = data.power_unit || 'HP';
+                    window._advTorqueUnit = data.torque_unit || 'TQ';
                     drawAdvancedHUD(data, redlineRpm, sessionMaxima);
 
                     var speed = Math.round(payload.isMetric !== false

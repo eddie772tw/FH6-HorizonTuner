@@ -3,6 +3,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { useToast } from '../../../context/ToastContext';
 import { checkForAppUpdates, UpdateInfo, isTauriEnvironment } from '../../../services/updaterService';
 import { UpdateModal } from '../../../components/common/UpdateModal';
+import { SettingsSection, SettingsSwitch } from './SettingsPrimitives';
 
 export const UpdateSettingsCard: React.FC = () => {
   const { settings, updateSettings, t } = useSettings();
@@ -64,14 +65,10 @@ export const UpdateSettingsCard: React.FC = () => {
 
   return (
     <>
-      <div className="settings-section d-flex flex-column gap-3">
-        
-        {/* Header */}
-          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
-          <div className="d-flex align-items-center gap-2">
-            <h5 className="text-primary fs-6 fw-bold m-0">
-              {t('Software Updates (OTA)')}
-            </h5>
+      <SettingsSection
+        title={t('Software Updates (OTA)')}
+        headerAside={(
+          <div className="d-flex align-items-center flex-wrap gap-2">
             <span
               className={`badge ${
                 availableUpdate ? 'text-bg-warning' : 'text-bg-success'
@@ -79,32 +76,21 @@ export const UpdateSettingsCard: React.FC = () => {
             >
               {availableUpdate ? t('UPDATE AVAILABLE') : t('UP TO DATE')}
             </span>
+            {lastChecked && (
+              <span className="fs-7 text-secondary">
+                {t('Last Checked')}: <span className="text-body fw-bold">{lastChecked}</span>
+              </span>
+            )}
           </div>
-          {lastChecked && (
-            <div className="fs-7 text-secondary">
-              {t('Last Checked')}: <span className="text-body fw-bold">{lastChecked}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Auto Check Setting */}
-        <label htmlFor="chk-auto-check-update" className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3" style={{ cursor: 'pointer' }}>
-          <div className="min-width-0">
-            <div className="form-label fw-bold mb-0 fs-6">
-              {t('Automatically Check for Updates')}
-            </div>
-            <div className="form-text fs-7">
-              {t('Silently check for new releases when FH6-HorizonTuner launches and notify when a patch is ready.')}
-            </div>
-          </div>
-          <input
-            type="checkbox"
-            className="form-check-input ms-auto fs-5 flex-shrink-0"
-            id="chk-auto-check-update"
-            checked={autoCheck}
-            onChange={(e) => updateSettings({ auto_check_updates: e.target.checked })}
-          />
-        </label>
+        )}
+      >
+        <SettingsSwitch
+          id="chk-auto-check-update"
+          label={t('Automatically Check for Updates')}
+          description={t('Silently check for new releases when FH6-HorizonTuner launches and notify when a patch is ready.')}
+          checked={autoCheck}
+          onChange={(event) => updateSettings({ auto_check_updates: event.target.checked })}
+        />
 
         {/* Manual Action & Release Notes Trigger */}
         <div className="settings-row d-flex justify-content-between align-items-center pt-1">
@@ -140,7 +126,7 @@ export const UpdateSettingsCard: React.FC = () => {
           </div>
         </div>
 
-      </div>
+      </SettingsSection>
 
       {/* Glassmorphism Update Modal */}
       <UpdateModal

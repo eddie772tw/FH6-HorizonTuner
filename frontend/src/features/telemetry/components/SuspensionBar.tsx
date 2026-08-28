@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { telemetryEmitter } from '../../../hooks/useTelemetry';
 import { useSettings } from '../../../context/SettingsContext';
+import { getSuspensionDisplayValue, type SuspensionTravelMode } from '../../../utils/suspensionTravel';
 
 // --- COMPONENT: SuspensionBar ---
 interface SuspensionBarProps {
@@ -8,9 +9,10 @@ interface SuspensionBarProps {
   isLeft: boolean;
   tireIdx: number;
   renderHistoryTrace?: boolean;
+  displayMode?: SuspensionTravelMode;
 }
 
-const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft, tireIdx, renderHistoryTrace = true }) => {
+const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft, tireIdx, renderHistoryTrace = true, displayMode = 'relative' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -18,6 +20,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   const minRef = useRef<HTMLSpanElement>(null);
   const maxRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const unitRef = useRef<HTMLSpanElement>(null);
   const { t } = useSettings();
   
   const hist = useRef<{travel: number, time: number}[]>([]);
@@ -25,6 +28,11 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   const minMax = useRef<{ min: number | null, max: number | null }>({ min: null, max: null });
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
+
+  useEffect(() => {
+    hist.current = [];
+    minMax.current = { min: null, max: null };
+  }, [displayMode]);
 
   useEffect(() => {
     if (!renderHistoryTrace) {
@@ -106,7 +114,9 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       const dt = now - lastTimeRef.current;
       lastTimeRef.current = now;
 
-      const travel = (liveData.NormalizedSuspensionTravel && liveData.NormalizedSuspensionTravel[tireIdx]) || 0;
+      const normalizedTravel = (liveData.NormalizedSuspensionTravel && liveData.NormalizedSuspensionTravel[tireIdx]) || 0;
+      const absoluteMeters = (liveData.SuspensionTravelMeters && liveData.SuspensionTravelMeters[tireIdx]) || 0;
+      const travel = getSuspensionDisplayValue(normalizedTravel, absoluteMeters, displayMode);
       
       if (minMax.current.min === null || minMax.current.max === null) {
         minMax.current.min = travel;
@@ -124,11 +134,11 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
           for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
         } else {
           if (hist.current.length < 180) {
-            hist.current.push({ travel, time: now });
+            hist.current.push({ travel: normalizedTravel, time: now });
           } else {
             const old = hist.current.shift();
             if (old) {
-               old.travel = travel; old.time = now;
+               old.travel = normalizedTravel; old.time = now;
                hist.current.push(old);
             }
           }
@@ -137,11 +147,13 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         hist.current = [];
       }
 
-      const percent = Math.max(0, Math.min(100, travel * 100));
+      const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
       if (barRef.current) barRef.current.style.height = percent + '%';
-      if (textRef.current) textRef.current.innerText = travel.toFixed(2);
-      if (minRef.current) minRef.current.innerText = minMax.current.min !== null ? minMax.current.min.toFixed(2) : '-';
-      if (maxRef.current) maxRef.current.innerText = minMax.current.max !== null ? minMax.current.max.toFixed(2) : '-';
+      const precision = displayMode === 'absolute' ? 1 : 2;
+      if (textRef.current) textRef.current.innerText = travel.toFixed(precision);
+      if (unitRef.current) unitRef.current.innerText = displayMode === 'absolute' ? ' mm' : '';
+      if (minRef.current) minRef.current.innerText = minMax.current.min !== null ? minMax.current.min.toFixed(precision) : '-';
+      if (maxRef.current) maxRef.current.innerText = minMax.current.max !== null ? minMax.current.max.toFixed(precision) : '-';
 
       const canvas = canvasRef.current;
       if (canvas && canvas.width > 0 && canvas.height > 0) {
@@ -179,7 +191,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
     };
     telemetryEmitter.addEventListener('update', handleUpdate);
     return () => telemetryEmitter.removeEventListener('update', handleUpdate);
-  }, [tireIdx, renderHistoryTrace]);
+  }, [tireIdx, renderHistoryTrace, displayMode]);
 
   return (
     <div ref={containerRef} className="p-2 rounded-3 border d-flex flex-column justify-content-between h-100 overflow-hidden" style={{ background: 'var(--surface-1)', borderColor: 'var(--glass-border) !important' }}>
@@ -198,7 +210,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       </div>
       <div className="d-flex justify-content-between mt-1 px-1 text-body-secondary fs-8 flex-shrink-0">
         <span>{t("Min")}: <span className="fw-bold font-monospace text-body" ref={minRef}>0.00</span></span>
-        <span className="fw-bold font-monospace text-primary fs-7" ref={textRef}>0.00</span>
+        <span className="fw-bold font-monospace text-primary fs-7"><span ref={textRef}>0.00</span><span ref={unitRef}></span></span>
         <span>{t("Max")}: <span className="fw-bold font-monospace text-body" ref={maxRef}>0.00</span></span>
       </div>
     </div>

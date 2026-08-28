@@ -60,6 +60,8 @@ class TestTelemetryListener(unittest.TestCase):
         struct.pack_into("<ffff", data, 84, 0.01, 0.02, 0.03, 0.04)
         # 164: TireSlipAngle = (0.11, 0.12, 0.13, 0.14) (f32)
         struct.pack_into("<ffff", data, 164, 0.11, 0.12, 0.13, 0.14)
+        # 196: Absolute suspension travel in meters
+        struct.pack_into("<ffff", data, 196, 0.101, 0.102, 0.103, 0.104)
         # 212: car_ordinal = 1009 (s32)
         struct.pack_into("<i", data, 212, 1009)
         # 216: car_class = 4 (s32)
@@ -88,6 +90,9 @@ class TestTelemetryListener(unittest.TestCase):
             self.assertAlmostEqual(a, b, places=5)
 
         for a, b in zip(parsed["TireSlipAngle"], [0.11, 0.12, 0.13, 0.14]):
+            self.assertAlmostEqual(a, b, places=5)
+
+        for a, b in zip(parsed["SuspensionTravelMeters"], [0.101, 0.102, 0.103, 0.104]):
             self.assertAlmostEqual(a, b, places=5)
 
         self.assertEqual(parsed["CarOrdinal"], 1009)
@@ -130,6 +135,7 @@ class TestTelemetryListener(unittest.TestCase):
         struct.pack_into("<ffff", data, 68, 0.5, 0.5, 0.6, 0.6)
         struct.pack_into("<ffff", data, 84, 0.0, 0.0, 0.0, 0.0)
         struct.pack_into("<ffff", data, 164, 0.0, 0.0, 0.0, 0.0)
+        struct.pack_into("<ffff", data, 196, 0.12, 0.13, 0.14, 0.15)
         struct.pack_into("<iiii", data, 212, 1041, 5, 998, 2)
 
         # Fill V2 part
@@ -165,6 +171,9 @@ class TestTelemetryListener(unittest.TestCase):
         self.assertAlmostEqual(parsed["TorqueNewtons"], 600.0, places=2)
 
         for a, b in zip(parsed["TireTemp"], [200.0, 201.0, 198.0, 199.0]):
+            self.assertAlmostEqual(a, b, places=4)
+
+        for a, b in zip(parsed["SuspensionTravelMeters"], [0.12, 0.13, 0.14, 0.15]):
             self.assertAlmostEqual(a, b, places=4)
 
         self.assertAlmostEqual(parsed["Boost"], 15.2, places=4)

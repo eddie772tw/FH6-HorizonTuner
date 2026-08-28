@@ -100,24 +100,32 @@
     }
 
     function displayPower(view, data) {
-        if (view.isMetric) {
-            return { value: Math.round(number(data && data.power_kw, 0)), unit: 'kW' };
-        }
-        return { value: Math.round(number(data && data.power_hp, 0)), unit: 'HP' };
+        var unit = data && data.displayUnits && data.displayUnits.power;
+        if (unit === 'kw') return { value: Math.round(number(data && data.power_kw, 0)), unit: 'kW' };
+        if (unit === 'ps') return { value: Math.round(number(data && data.power_ps, 0)), unit: 'PS' };
+        if (unit === 'hp') return { value: Math.round(number(data && data.power_hp, 0)), unit: 'HP' };
+        return view.isMetric
+            ? { value: Math.round(number(data && data.power_kw, 0)), unit: 'kW' }
+            : { value: Math.round(number(data && data.power_hp, 0)), unit: 'HP' };
     }
 
     function displayTorque(view, data) {
-        if (view.isMetric) {
-            return { value: Math.round(number(data && data.torque_nm, 0)), unit: 'N·m' };
-        }
-        return { value: Math.round(number(data && data.torque_ftlbs, 0)), unit: 'FT·LB' };
+        var unit = data && data.displayUnits && data.displayUnits.torque;
+        if (unit === 'nm') return { value: Math.round(number(data && data.torque_nm, 0)), unit: 'N·m' };
+        if (unit === 'lbft') return { value: Math.round(number(data && data.torque_ftlbs, 0)), unit: 'FT·LB' };
+        return view.isMetric
+            ? { value: Math.round(number(data && data.torque_nm, 0)), unit: 'N·m' }
+            : { value: Math.round(number(data && data.torque_ftlbs, 0)), unit: 'FT·LB' };
     }
 
     function displayBoost(view, data) {
-        if (view.isMetric) {
-            return { value: number(data && data.boost_bar, 0).toFixed(1), unit: 'BAR' };
-        }
-        return { value: number(data && data.boost_psi, 0).toFixed(1), unit: 'PSI' };
+        var unit = data && data.displayUnits && data.displayUnits.boostPressure;
+        if (unit === 'bar') return { value: number(data && data.boost_bar, 0).toFixed(1), unit: 'BAR' };
+        if (unit === 'kpa') return { value: number(data && data.boost_kpa, 0).toFixed(0), unit: 'kPa' };
+        if (unit === 'psi') return { value: number(data && data.boost_psi, 0).toFixed(1), unit: 'PSI' };
+        return view.isMetric
+            ? { value: number(data && data.boost_bar, 0).toFixed(1), unit: 'BAR' }
+            : { value: number(data && data.boost_psi, 0).toFixed(1), unit: 'PSI' };
     }
 
     function displayFuel(data) {

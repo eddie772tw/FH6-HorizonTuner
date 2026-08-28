@@ -1,490 +1,110 @@
 import React from 'react';
-import { useSettings, UnitSettings } from '../../context/SettingsContext';
-import { McpSettingsCard } from './components/McpSettingsCard';
+import { useSettings } from '../../context/SettingsContext';
+import { applyGeneralUnitSystem, inferGeneralUnitSystem, type GeneralUnitSystem } from '../../utils/gameUnitSettings';
 import { DiscordPresenceStatusCard } from './components/DiscordPresenceStatusCard';
+import { McpSettingsCard } from './components/McpSettingsCard';
+import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 
 const SettingsView: React.FC = () => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
 
-  const handleUnitChange = (key: keyof UnitSettings, value: string) => {
-    updateSettings({
-      units: {
-        [key]: value
-      }
-    });
-  };
-
-  const applyPreset = (preset: 'metric' | 'imperial') => {
-    if (preset === 'metric') {
-      updateSettings({
-        units: {
-          speed: 'kmh',
-          weight: 'kg',
-          temperature: 'C',
-          tirePressure: 'bar',
-          boostPressure: 'bar',
-          springRate: 'kgfmm',
-          rideHeight: 'cm',
-          suspensionForce: 'kgf',
-          power: 'kw',
-          torque: 'nm'
-        }
-      });
-    } else {
-      updateSettings({
-        units: {
-          speed: 'mph',
-          weight: 'lbs',
-          temperature: 'F',
-          tirePressure: 'psi',
-          boostPressure: 'psi',
-          springRate: 'lbsin',
-          rideHeight: 'in',
-          suspensionForce: 'lbf',
-          power: 'hp',
-          torque: 'lbft'
-        }
-      });
-    }
+  const handleGeneralUnitChange = (system: GeneralUnitSystem) => {
+    updateSettings({ units: applyGeneralUnitSystem(settings.units, system) });
   };
 
   if (isLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center h-100 text-primary">
-        <h3>{t("Loading Settings...")}</h3>
+        <h3>{t('Loading Settings...')}</h3>
       </div>
     );
   }
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
-      
-      {/* Standardized Header Banner (Aligned with OverlayView) */}
       <div className="border-bottom pb-3 mb-2 flex-shrink-0">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div>
-            <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
-              {t("System Settings")}
-            </h2>
-            <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
-              {t("Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.")}
-            </p>
-          </div>
-          
-          {/* Preset Buttons */}
-          <div className="d-flex gap-2">
-            <button 
-              onClick={() => applyPreset('metric')}
-              className="btn btn-outline-primary fw-bold px-3 py-2"
-            >
-              {t("All Metric")}
-            </button>
-            <button 
-              onClick={() => applyPreset('imperial')}
-              className="btn btn-outline-danger fw-bold px-3 py-2"
-            >
-              {t("All Imperial")}
-            </button>
-          </div>
-        </div>
+        <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
+          {t('System Settings')}
+        </h2>
+        <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
+          {t('Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.')}
+        </p>
       </div>
 
-      {/* Main Settings Panel */}
       <div className="flex-grow-1 overflow-auto p-2">
-
-        <hr className="my-3" />
-
-        <div className="row g-4">
-          
-          {/* Left Column: General & Basic Units */}
-          <div className="col-12 col-md-6 d-flex flex-column gap-4">
-            
-            {/* Language Settings */}
-            <div className="d-flex flex-column gap-2">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Language Settings")}</h5>
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-language" className="form-label fw-bold mb-0 fs-6">{t("Language")}</label>
-                  <div className="form-text fs-7">{t("Select application display language.")}</div>
-                </div>
-                <select 
-                  id="settings-language"
-                  value={settings.language} 
-                  onChange={(e) => updateSettings({ language: e.target.value })}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  {availableLanguages.map(lang => (
-                    <option key={lang.code} value={lang.code}>{lang.name}</option>
-                  ))}
+        <div className="settings-grid row g-4">
+          {/* Display and game-facing preferences */}
+          <div className="col-12 col-lg-4 d-flex flex-column gap-4">
+            <SettingsSection title={t('Language Settings')}>
+              <SettingsItem label={t('Language')} description={t('Select application display language.')} htmlFor="settings-language">
+                <select id="settings-language" value={settings.language} onChange={(event) => updateSettings({ language: event.target.value })} className="form-select form-select-sm">
+                  {availableLanguages.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
                 </select>
-              </div>
-            </div>
+              </SettingsItem>
+            </SettingsSection>
 
-            {/* General Recording Settings */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("General Recording Settings")}</h5>
-              
-              <label htmlFor="chk-dyno-rec" className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3" style={{ cursor: 'pointer' }}>
-                <div>
-                  <div className="form-check-label fw-bold fs-6">{t("Dyno Recording")}</div>
-                  <div className="form-text fs-7">{t("Automatically collect and update engine output curves during full throttle acceleration.")}</div>
-                </div>
-                <input 
-                  type="checkbox" 
-                  className="form-check-input ms-auto fs-5"
-                  id="chk-dyno-rec"
-                  checked={settings.dyno_recording}
-                  onChange={(e) => updateSettings({ dyno_recording: e.target.checked })}
-                />
-              </label>
+            <SettingsSection title={t('Game Unit Settings')}>
+              <SettingsItem label={t('General Units')} description={t('Controls speed, weight, temperature, pressure, height, force, and torque across the app.')} htmlFor="settings-unit-general">
+                <select id="settings-unit-general" value={inferGeneralUnitSystem(settings.units)} onChange={(event) => handleGeneralUnitChange(event.target.value as GeneralUnitSystem)} className="form-select form-select-sm">
+                  <option value="metric">{t('Metric')}</option><option value="imperial">{t('Imperial')}</option>
+                </select>
+              </SettingsItem>
+              <SettingsItem label={t('Power Units')} description={t("Matches the game's independent horsepower unit option.")} htmlFor="settings-unit-power">
+                <select id="settings-unit-power" value={settings.units.power} onChange={(event) => updateSettings({ units: { power: event.target.value as 'kw' | 'hp' | 'ps' } })} className="form-select form-select-sm">
+                  <option value="hp">{t('Horsepower (hp)')}</option><option value="kw">{t('Kilowatt (kW)')}</option><option value="ps">{t('Metric Horsepower (PS)')}</option>
+                </select>
+              </SettingsItem>
+              <SettingsItem label={t('Spring Units')} description={t("Matches the game's independent spring-rate unit option.")} htmlFor="settings-unit-spring">
+                <select id="settings-unit-spring" value={settings.units.springRate} onChange={(event) => updateSettings({ units: { springRate: event.target.value as 'kgfmm' | 'lbsin' } })} className="form-select form-select-sm">
+                  <option value="kgfmm">{t('Metric (kgf/mm)')}</option><option value="lbsin">{t('Imperial (lbs/in)')}</option>
+                </select>
+              </SettingsItem>
+            </SettingsSection>
+          </div>
 
-              <label htmlFor="chk-race-rec" className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3" style={{ cursor: 'pointer' }}>
-                <div>
-                  <div className="form-check-label fw-bold fs-6">{t("Race Recording")}</div>
-                  <div className="form-text fs-7">{t("Record suspension and grip data during races or driving for post-race analysis.")}</div>
-                </div>
-                <input 
-                  type="checkbox" 
-                  className="form-check-input ms-auto fs-5"
-                  id="chk-race-rec"
-                  checked={settings.race_recording}
-                  onChange={(e) => updateSettings({ race_recording: e.target.checked })}
-                />
-              </label>
-            </div>
-
-            {/* Experimental Developer Settings */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Developer Options")}</h5>
-
-              <label htmlFor="chk-developer-tuning" className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3" style={{ cursor: 'pointer' }}>
-                <div>
-                  <div className="form-check-label fw-bold fs-6">
-                    {t("Use Developer Tuning View")}
-                  </div>
-                  <div className="form-text fs-7">
-                    {t("Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.")}
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  className="form-check-input ms-auto fs-5"
-                  id="chk-developer-tuning"
-                  checked={settings.developer_tuning_enabled}
-                  onChange={(e) => updateSettings({ developer_tuning_enabled: e.target.checked })}
-                />
-              </label>
-
-              {settings.developer_tuning_enabled && (
-                <div className="alert alert-warning mb-0 py-2" role="status">
-                  {t("Experimental mode active: verify all outputs in-game before saving a tune.")}
-                </div>
-              )}
-            </div>
-
-            {/* Telemetry UDP Receiver Settings */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Telemetry Receiver Settings")}</h5>
-              
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-telemetry-ip" className="form-label fw-bold mb-0 fs-6">{t("Telemetry IP")}</label>
-                  <div className="form-text fs-7">{t("IP address to listen for Forza UDP telemetry packets.")}</div>
-                </div>
-                <input 
-                  id="settings-telemetry-ip"
-                  type="text" 
-                  value={settings.telemetry_ip || '0.0.0.0'}
-                  onChange={(e) => updateSettings({ telemetry_ip: e.target.value })}
-                  className="form-control form-control-sm"
-                  style={{ width: '170px' }}
-                />
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-telemetry-port" className="form-label fw-bold mb-0 fs-6">{t("Telemetry Port")}</label>
-                  <div className="form-text fs-7">{t("Port to listen for Forza UDP telemetry packets (Default: 8000).")}</div>
-                </div>
-                <input 
-                  id="settings-telemetry-port"
-                  type="number" 
-                  value={settings.telemetry_port || 8000}
-                  onChange={(e) => updateSettings({ telemetry_port: parseInt(e.target.value) || 8000 })}
-                  className="form-control form-control-sm"
-                  style={{ width: '170px' }}
-                />
-              </div>
-
-              <label
-                htmlFor="chk-forward-telemetry"
-                className="form-check form-switch d-flex justify-content-between align-items-center ps-0 border-bottom pb-3 mb-0"
-                style={{ cursor: 'pointer' }}
-              >
-                <div>
-                  <div className="form-check-label fw-bold fs-6">{t("Telemetry UDP Forwarding")}</div>
-                  <div className="form-text fs-7">{t("Forward raw binary telemetry datagrams to third-party tools (e.g. SimHub or external dashboard).")}</div>
-                </div>
-                <input
-                  type="checkbox"
-                  className="form-check-input ms-auto fs-5"
-                  id="chk-forward-telemetry"
-                  checked={!!settings.forward_telemetry_enabled}
-                  onChange={(e) => updateSettings({ forward_telemetry_enabled: e.target.checked })}
-                />
-              </label>
-
+          {/* Telemetry transport and captured data */}
+          <div className="col-12 col-lg-4 d-flex flex-column gap-4">
+            <SettingsSection title={t('Telemetry Receiver Settings')}>
+              <SettingsItem label={t('Telemetry IP')} description={t('IP address to listen for Forza UDP telemetry packets.')} htmlFor="settings-telemetry-ip">
+                <input id="settings-telemetry-ip" type="text" value={settings.telemetry_ip || '0.0.0.0'} onChange={(event) => updateSettings({ telemetry_ip: event.target.value })} className="form-control form-control-sm" />
+              </SettingsItem>
+              <SettingsItem label={t('Telemetry Port')} description={t('Port to listen for Forza UDP telemetry packets (Default: 8000).')} htmlFor="settings-telemetry-port">
+                <input id="settings-telemetry-port" type="number" value={settings.telemetry_port || 8000} onChange={(event) => updateSettings({ telemetry_port: parseInt(event.target.value) || 8000 })} className="form-control form-control-sm" />
+              </SettingsItem>
+              <SettingsSwitch id="chk-forward-telemetry" label={t('Telemetry UDP Forwarding')} description={t('Forward raw binary telemetry datagrams to third-party tools (e.g. SimHub or external dashboard).')} checked={!!settings.forward_telemetry_enabled} onChange={(event) => updateSettings({ forward_telemetry_enabled: event.target.checked })} />
               {settings.forward_telemetry_enabled && (
                 <>
-                  <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                    <div>
-                      <label htmlFor="settings-forward-host" className="form-label fw-bold mb-0 fs-6">{t("Forward Target Host")}</label>
-                      <div className="form-text fs-7">{t("Target IPv4 address to forward raw UDP packets to.")}</div>
-                    </div>
-                    <input 
-                      id="settings-forward-host"
-                      type="text" 
-                      value={settings.forward_telemetry_host || '127.0.0.1'}
-                      onChange={(e) => updateSettings({ forward_telemetry_host: e.target.value })}
-                      className="form-control form-control-sm"
-                      style={{ width: '170px' }}
-                    />
-                  </div>
-
-                  <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                    <div>
-                      <label htmlFor="settings-forward-port" className="form-label fw-bold mb-0 fs-6">{t("Forward Target Port")}</label>
-                      <div className="form-text fs-7">{t("Target UDP port to forward raw UDP packets to (Default: 5300).")}</div>
-                    </div>
-                    <input 
-                      id="settings-forward-port"
-                      type="number" 
-                      value={settings.forward_telemetry_port ?? 5300}
-                      onChange={(e) => updateSettings({ forward_telemetry_port: parseInt(e.target.value) || 5300 })}
-                      className="form-control form-control-sm"
-                      style={{ width: '170px' }}
-                    />
-                  </div>
+                  <SettingsItem label={t('Forward Target Host')} description={t('Target IPv4 address to forward raw UDP packets to.')} htmlFor="settings-forward-host">
+                    <input id="settings-forward-host" type="text" value={settings.forward_telemetry_host || '127.0.0.1'} onChange={(event) => updateSettings({ forward_telemetry_host: event.target.value })} className="form-control form-control-sm" />
+                  </SettingsItem>
+                  <SettingsItem label={t('Forward Target Port')} description={t('Target UDP port to forward raw UDP packets to (Default: 5300).')} htmlFor="settings-forward-port">
+                    <input id="settings-forward-port" type="number" value={settings.forward_telemetry_port ?? 5300} onChange={(event) => updateSettings({ forward_telemetry_port: parseInt(event.target.value) || 5300 })} className="form-control form-control-sm" />
+                  </SettingsItem>
                 </>
               )}
-            </div>
+            </SettingsSection>
 
-            {/* Basic Units */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("General Vehicle Units")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-speed" className="form-label fw-bold mb-0 fs-6">{t("Speed")}</label>
-                  <div className="form-text fs-7">{t("Used for current speed, top speed, and gearing graphs.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-speed"
-                  value={settings.units.speed} 
-                  onChange={(e) => handleUnitChange('speed', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kmh">{t("Metric (km/h)")}</option>
-                  <option value="mph">{t("Imperial (mph)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-weight" className="form-label fw-bold mb-0 fs-6">{t("Weight")}</label>
-                  <div className="form-text fs-7">{t("Used for vehicle parameters and tuning calculator.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-weight"
-                  value={settings.units.weight} 
-                  onChange={(e) => handleUnitChange('weight', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kg">{t("Metric (kg)")}</option>
-                  <option value="lbs">{t("Imperial (lbs)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-temperature" className="form-label fw-bold mb-0 fs-6">{t("Temperature")}</label>
-                  <div className="form-text fs-7">{t("Used for tire temperature and all engine temperature settings.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-temperature"
-                  value={settings.units.temperature} 
-                  onChange={(e) => handleUnitChange('temperature', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="C">{t("Metric (Celsius °C)")}</option>
-                  <option value="F">{t("Imperial (Fahrenheit °F)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-rideHeight" className="form-label fw-bold mb-0 fs-6">{t("Ride Height")}</label>
-                  <div className="form-text fs-7">{t("Used for suspension ride height sliders.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-rideHeight"
-                  value={settings.units.rideHeight} 
-                  onChange={(e) => handleUnitChange('rideHeight', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="cm">{t("Metric (cm)")}</option>
-                  <option value="in">{t("Imperial (in)")}</option>
-                </select>
-              </div>
-            </div>
-
+            <SettingsSection title={t('General Recording Settings')}>
+              <SettingsSwitch id="chk-dyno-rec" label={t('Dyno Recording')} description={t('Automatically collect and update engine output curves during full throttle acceleration.')} checked={settings.dyno_recording} onChange={(event) => updateSettings({ dyno_recording: event.target.checked })} />
+              <SettingsSwitch id="chk-race-rec" label={t('Race Recording')} description={t('Record suspension and grip data during races or driving for post-race analysis.')} checked={settings.race_recording} onChange={(event) => updateSettings({ race_recording: event.target.checked })} />
+            </SettingsSection>
           </div>
 
-          {/* Right Column: Pressures, Gearing & Engine Units */}
-          <div className="col-12 col-md-6 d-flex flex-column gap-4">
-            
-            {/* Pressure Settings */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Pressure Settings")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-tirePressure" className="form-label fw-bold mb-0 fs-6">{t("Tire Pressure")}</label>
-                  <div className="form-text fs-7">{t("Used for four-wheel tire pressure tuning and live telemetry.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-tirePressure"
-                  value={settings.units.tirePressure} 
-                  onChange={(e) => handleUnitChange('tirePressure', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="bar">{t("Metric (bar)")}</option>
-                  <option value="psi">{t("Imperial (psi)")}</option>
-                  <option value="kpa">{t("Metric (kPa)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-boostPressure" className="form-label fw-bold mb-0 fs-6">{t("Boost Pressure")}</label>
-                  <div className="form-text fs-7">{t("Used for the boost gauge on the dashboard.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-boostPressure"
-                  value={settings.units.boostPressure} 
-                  onChange={(e) => handleUnitChange('boostPressure', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="psi">{t("Imperial (psi)")}</option>
-                  <option value="bar">{t("Metric (bar)")}</option>
-                  <option value="kpa">{t("Metric (kPa)")}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Chassis & Mechanical Units */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Chassis & Mechanical Units")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-springRate" className="form-label fw-bold mb-0 fs-6">{t("Spring Rate")}</label>
-                  <div className="form-text fs-7">{t("Used for spring stiffness sliders and calculators.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-springRate"
-                  value={settings.units.springRate} 
-                  onChange={(e) => handleUnitChange('springRate', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kgfmm">{t("Metric (kgf/mm)")}</option>
-                  <option value="lbsin">{t("Imperial (lbs/in)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-suspensionForce" className="form-label fw-bold mb-0 fs-6">{t("Suspension Force")}</label>
-                  <div className="form-text fs-7">{t("Used for anti-roll bars or suspension load analysis.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-suspensionForce"
-                  value={settings.units.suspensionForce} 
-                  onChange={(e) => handleUnitChange('suspensionForce', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kgf">{t("Metric (kgf)")}</option>
-                  <option value="lbf">{t("Imperial (lbf)")}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Power & Torque */}
-            <div className="d-flex flex-column gap-3">
-              <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">{t("Engine Power Output")}</h5>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-power" className="form-label fw-bold mb-0 fs-6">{t("Power")}</label>
-                  <div className="form-text fs-7">{t("Used for vehicle parameters and dashboard max horsepower.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-power"
-                  value={settings.units.power} 
-                  onChange={(e) => handleUnitChange('power', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="kw">{t("Kilowatt (kW)")}</option>
-                  <option value="hp">{t("Imperial Horsepower (hp)")}</option>
-                  <option value="ps">{t("Metric Horsepower (PS)")}</option>
-                </select>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <label htmlFor="settings-unit-torque" className="form-label fw-bold mb-0 fs-6">{t("Torque")}</label>
-                  <div className="form-text fs-7">{t("Used for dyno torque curves and live torque readout.")}</div>
-                </div>
-                <select 
-                  id="settings-unit-torque"
-                  value={settings.units.torque} 
-                  onChange={(e) => handleUnitChange('torque', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={{ width: '170px' }}
-                >
-                  <option value="nm">{t("Newton-Meter (N·m)")}</option>
-                  <option value="lbft">{t("Pound-Foot (lb-ft)")}</option>
-                </select>
-              </div>
-            </div>
-
+          {/* Application maintenance and integrations */}
+          <div className="col-12 col-lg-4 d-flex flex-column gap-4">
+            <DiscordPresenceStatusCard />
+            <SettingsSection title={t('Developer Options')}>
+              <SettingsSwitch id="chk-developer-tuning" label={t('Use Developer Tuning View')} description={t('Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.')} checked={settings.developer_tuning_enabled} onChange={(event) => updateSettings({ developer_tuning_enabled: event.target.checked })} />
+              {settings.developer_tuning_enabled && <div className="alert alert-warning mb-0 py-2" role="status">{t('Experimental mode active: verify all outputs in-game before saving a tune.')}</div>}
+            </SettingsSection>
+            <McpSettingsCard />
+            <UpdateSettingsCard />
           </div>
-
         </div>
-
-        {/* Full-width integrations: these sections contain long URLs and actions. */}
-        <div className="d-flex flex-column gap-4 mt-4">
-          <DiscordPresenceStatusCard />
-          <McpSettingsCard />
-          <UpdateSettingsCard />
-        </div>
-
       </div>
     </div>
   );
 };
 
 export default SettingsView;
-
-
