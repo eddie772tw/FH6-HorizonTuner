@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useToast, ToastType } from '../../context/ToastContext';
 import { useSettings } from '../../context/SettingsContext';
 
@@ -19,56 +19,89 @@ const getTypeBadge = (type: ToastType = 'info', t: (key: string) => string) => {
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useToast();
   const { t } = useSettings();
+  const [buildInfoAnchor, setBuildInfoAnchor] = useState<{ left: number; top: number } | null>(null);
+
+  const buildInfoToasts = toasts.filter(toast => toast.anchor === 'build-info');
+  const globalToasts = toasts.filter(toast => !toast.anchor);
+
+  useEffect(() => {
+    if (buildInfoToasts.length === 0) {
+      setBuildInfoAnchor(null);
+      return;
+    }
+
+    const anchor = document.getElementById('build-info-badge');
+    if (!anchor) return;
+
+    const updatePosition = () => {
+      const rect = anchor.getBoundingClientRect();
+      setBuildInfoAnchor({ left: rect.left, top: rect.bottom + 8 });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(anchor);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      observer.disconnect();
+    };
+  }, [buildInfoToasts.length]);
 
   if (toasts.length === 0) return null;
 
-  return (
-    <div 
-      className="toast-container position-fixed top-0 end-0 p-3" 
-      style={{ zIndex: 1060, maxWidth: '420px', width: '100%', pointerEvents: 'none' }}
+  const renderToast = (toast: typeof toasts[number]) => (
+    <div
+      key={toast.id}
+      className="toast show glass-panel mb-2 shadow-lg border"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      style={{
+        pointerEvents: 'auto',
+        backdropFilter: 'blur(16px)',
+        background: 'var(--glass-bg)',
+        borderColor: toast.type === 'warning'
+          ? 'var(--bs-warning)'
+          : toast.type === 'danger'
+          ? 'var(--bs-danger)'
+          : 'var(--glass-border)',
+        transition: 'all 0.25s ease-in-out'
+      }}
     >
-      {toasts.map(toast => (
-        <div
-          key={toast.id}
-          className="toast show glass-panel mb-2 shadow-lg border"
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
-          style={{ 
-            pointerEvents: 'auto',
-            backdropFilter: 'blur(16px)',
-            background: 'var(--glass-bg)',
-            borderColor: toast.type === 'warning' 
-              ? 'var(--bs-warning)' 
-              : toast.type === 'danger' 
-              ? 'var(--bs-danger)' 
-              : 'var(--glass-border)',
-            transition: 'all 0.25s ease-in-out'
-          }}
-        >
-          <div className="toast-header bg-transparent border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between py-2 px-3">
-            <div className="d-flex align-items-center">
-              {getTypeBadge(toast.type, t)}
-              <strong className="me-auto text-primary fs-7 fw-bold m-0">
-                {toast.title || (toast.type ? t(toast.type.toUpperCase()) : t('NOTIFICATION'))}
-              </strong>
-            </div>
-            <button
-              type="button"
-              className="btn-close ms-2"
-              aria-label={t("Close")}
-              onClick={() => removeToast(toast.id)}
-            ></button>
-          </div>
-          <div className="toast-body py-2 px-3 text-start">
-            <div className="fs-7 fw-medium text-body">{toast.message}</div>
-            {toast.detail && (
-              <div className="fs-8 text-secondary mt-1">{toast.detail}</div>
-            )}
-          </div>
+      <div className="toast-header bg-transparent border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between py-2 px-3">
+        <div className="d-flex align-items-center">
+          {getTypeBadge(toast.type, t)}
+          <strong className="me-auto text-primary fs-7 fw-bold m-0">
+            {toast.title || (toast.type ? t(toast.type.toUpperCase()) : t('NOTIFICATION'))}
+          </strong>
         </div>
-      ))}
+        <button type="button" className="btn-close ms-2" aria-label={t("Close")} onClick={() => removeToast(toast.id)}></button>
+      </div>
+      <div className="toast-body py-2 px-3 text-start">
+        <div className="fs-7 fw-medium text-body">{toast.message}</div>
+        {toast.detail && <div className="fs-8 text-secondary mt-1">{toast.detail}</div>}
+      </div>
     </div>
+  );
+
+  return (
+    <>
+      {globalToasts.length > 0 && (
+        <div className="toast-container position-fixed top-0 end-0 p-3" style={{ zIndex: 1060, maxWidth: '420px', width: '100%', pointerEvents: 'none' }}>
+          {globalToasts.map(renderToast)}
+        </div>
+      )}
+      {buildInfoToasts.length > 0 && buildInfoAnchor && (
+        <div
+          className="toast-container"
+          style={{ position: 'fixed', zIndex: 1060, left: buildInfoAnchor.left, top: buildInfoAnchor.top, maxWidth: '420px', width: 'min(420px, calc(100vw - 2rem))', pointerEvents: 'none' }}
+        >
+          {buildInfoToasts.map(renderToast)}
+        </div>
+      )}
+    </>
   );
 };
 

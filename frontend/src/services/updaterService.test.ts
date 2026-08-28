@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isTauriEnvironment, checkForAppUpdates, downloadAndApplyUpdate, restartApplication } from './updaterService';
+import { formatUpdaterError, isTauriEnvironment, checkForAppUpdates, downloadAndApplyUpdate, restartApplication } from './updaterService';
 
 vi.mock('@tauri-apps/plugin-updater', () => ({
   check: vi.fn(),
@@ -33,6 +33,18 @@ describe('updaterService', () => {
     it('returns true when __TAURI__ is present in global', () => {
       (globalThis as any).__TAURI__ = {};
       expect(isTauriEnvironment()).toBe(true);
+    });
+  });
+
+  describe('formatUpdaterError', () => {
+    it('preserves Tauri plugin string errors instead of replacing them with a generic message', () => {
+      expect(formatUpdaterError('error sending request for url (https://github.com/...)')).toBe(
+        'error sending request for url (https://github.com/...)'
+      );
+    });
+
+    it('uses a generic message only when no error detail is available', () => {
+      expect(formatUpdaterError(undefined)).toContain('Failed to connect to the update server');
     });
   });
 

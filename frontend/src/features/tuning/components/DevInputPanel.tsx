@@ -55,13 +55,13 @@ const DevInputPanel: React.FC<DevInputPanelProps> = (props) => {
           <div className="col-6">
             <label className="form-label fs-7" htmlFor="dev-race-goal">{t('Race Goal')}</label>
             <select id="dev-race-goal" className="form-select form-select-sm" value={raceGoal} onChange={(event) => props.onRaceGoalChange(event.target.value as DevRaceGoal)}>
-              <option value="Road">Road</option><option value="Rally">Rally</option><option value="Drag">Drag</option><option value="Drift">Drift</option>
+              <option value="Road">{t("Road")}</option><option value="Rally">{t("Rally")}</option><option value="Drag">{t("Drag")}</option><option value="Drift">{t("Drift")}</option>
             </select>
           </div>
           <div className="col-6">
             <label className="form-label fs-7" htmlFor="dev-surface">{t('Surface')}</label>
             <select id="dev-surface" className="form-select form-select-sm" value={surface} onChange={(event) => props.onSurfaceChange(event.target.value as DevSurface)}>
-              {goalSurfaces[raceGoal].map((option) => <option key={option} value={option}>{option}</option>)}
+              {goalSurfaces[raceGoal].map((option) => <option key={option} value={option}>{t(option)}</option>)}
             </select>
           </div>
           <div className="col-12">
