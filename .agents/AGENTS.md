@@ -82,6 +82,22 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
    - 對於精靈嚮導 (Wizard) 或多步驟介面（如 Tuning Workflow），**每一個 Step 必須各自獨立為一個 TSX 組件檔**（例如 `Step1GoalSetup.tsx`、`Step2GearboxSetup.tsx`、`Step3ChassisTuner.tsx`）。
    - 主 View（例如 `TuningView.tsx`）僅作為 View Container，專注於導覽進度條 (Stepper Header) 與 Step 之間狀態傳送，嚴禁將 Step 的 UI 表單細節混在主 View 中。
 
+### 測試健康度與反過度測試規範 (Anti-Over-Testing & Anti-Over-Engineering Mandate)
+為防止測試集膨脹、脆弱性（Flakiness）與過度開發，所有 Agent 開發與重構測試時，必須嚴格遵守以下四項準則：
+1. **測試行為與狀態，嚴禁測試微觀實作細節 (Test Behavior, Not Implementation Details)**：
+   - UI / Canvas 繪圖測試應驗證輸入數值到幾何比例、角度、Token 映射的純運算邏輯，或以無拋出異常/可觀察輸出為準。
+   - **嚴禁**在測試中 Mock 攔截底層 Canvas 2D API 呼叫次數（如 `arcs.length >= 5`）或硬編碼微觀像素座標（如 `x: 320, y: 224`），此類斷言具有極高脆弱性且嚴重阻礙 UI 重構。
+2. **嚴禁測試靜態宣告式設定檔 (No Testing Declarative Configurations)**：
+   - **嚴禁**編寫以 Python 正則表達式或字串包含去斷言 `.github/dependabot.yml`、`ci.yml`、`tauri.conf.json` 靜態文字內容的測試。
+   - 宣告式設定檔應交由平台（如 GitHub Actions、Dependabot、Cargo）的原生 Schema Validation 負責。
+3. **測試金字塔與分層隔離原則 (Test Pyramid & Isolation)**：
+   - **Tier 1: 產品核心單元測試 (`tests/`)**：僅存放 60Hz UDP 遙測解包、FastAPI 端點、路徑安全與調校核心等業務邏輯測試，要求毫秒級反饋（本機全套執行時間 < 5 秒）。
+   - **Tier 2: 內部治理與開發工具測試 (`scripts/tests/`)**：Agent 協作腳本、PR 管理工具、CI 儀表板等開發輔助工具之測試，統一收攏於 `scripts/tests/`，僅在修改該腳本時觸發，不干擾日常業務開發。
+   - **Tier 3: 發行與驗收整合測試 (E2E / Host Diagnostics)**：涉及啟動真實二進位產物 (`.exe`)、檢查 Windows 進程生命週期之重型測試，必須標記為 `@pytest.mark.host_diagnostics`，由專用 Release CI 執行，日常 `pytest` 預設排除（`-m 'not host_diagnostics'`）。
+4. **單一真理（SSOT）與消除多層重複測試**：
+   - 底層 Domain 模組（如 `domain/tuning/`）已覆蓋的物理計算，Façade / 轉發層僅需驗證型別契約與轉發無誤，嚴禁在多個層次重複斷言相同的物理數據邊界。
+   - 避免為無狀態、純靜態的 React 簡單包裝元件撰寫瑣碎的 HTML tag 存在性斷言（如僅斷言是否有 `<section>` 標籤）。
+
 ### 開發邊界限制
 * **必須做的事**：
   - 修改 `tuningMath.ts` 或 `tuningDiagnosis.ts` 的計算邏輯後，必須新增或更新 `frontend/src/utils/` 下對應的 `.test.ts` 單元測試，並確認前端測試全數通過（`cmd /c "pnpm -C frontend run test"`）。
@@ -97,6 +113,9 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
   - 在接收 UDP 封包的非同步主迴圈中加入同步檔案寫入或網路請求。
   - 為了方便而在 UI 組件內直接寫死物理調校計算公式。
   - 嚴禁在 UI 字串或 UI 組件內直接加入 Emoji 圖示（請保持極簡專業視覺）。
+  - **嚴禁編寫以正則/字串比對 YAML/JSON/Workflow 設定檔內容的單元測試**（交由平台原生 Schema 驗證）。
+  - **嚴禁在 UI/Canvas 測試中斷言底層 API 呼叫次數或硬編碼像素座標**。
+  - **嚴禁將啟動 Live Binary 的 Heavy E2E 測試混入日常 Unit Gate**。
   - **嚴禁使用命令列操作 (如 `echo` 或 `>>`) 來寫入或附加內容至檔案** (尤其是 Markdown 文件如 Journal.md)。由於 Windows 命令列的字元編碼 (Code Page) 差異，這將導致中文編碼毀損。必須使用 `apply_patch` 或其他能保留 UTF-8 的檔案編輯工具。
 
 ## 第三方套件引入與防幻覺查驗協議 (Anti-Hallucination Package Verification Protocol)

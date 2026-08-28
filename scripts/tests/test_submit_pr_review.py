@@ -11,7 +11,7 @@ from pathlib import Path
 
 # 將 .agents/skills/pr-review-evaluation/scripts 加入模組搜尋路徑
 scripts_dir = (
-    Path(__file__).resolve().parent.parent
+    Path(__file__).resolve().parents[2]
     / ".agents"
     / "skills"
     / "pr-review-evaluation"

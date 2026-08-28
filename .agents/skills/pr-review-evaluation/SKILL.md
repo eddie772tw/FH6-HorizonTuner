@@ -109,10 +109,10 @@ Reviewer: {代號} as {Agent}
 ```powershell
 # 1. 將審查內容編寫至 JSON 檔 (例如 scratch/review_payload.json)
 # 2. 執行提交
-.venv\Scripts\python.exe .agents\skills\pr-review-evaluation\scripts\submit_pr_review.py --pr <number> --input scratch/review_payload.json
+uv run --no-project --python .venv\Scripts\python.exe .agents\skills\pr-review-evaluation\scripts\submit_pr_review.py --pr <number> --input scratch/review_payload.json
 
 # 或以 Dry-Run 模式預檢
-.venv\Scripts\python.exe .agents\skills\pr-review-evaluation\scripts\submit_pr_review.py --pr <number> --input scratch/review_payload.json --dry-run
+uv run --no-project --python .venv\Scripts\python.exe .agents\skills\pr-review-evaluation\scripts\submit_pr_review.py --pr <number> --input scratch/review_payload.json --dry-run
 ```
 
 ### 方式 B：透過 `gh api` 原生端點提交
