@@ -100,8 +100,27 @@ jobs:
       run: pnpm --prefix frontend run build
 
     - name: Build Python Backend Sidecar Executable
-      run: >
-        uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
+      shell: pwsh
+      env:
+        DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+      run: |
+        if ([string]::IsNullOrWhiteSpace($env:DISCORD_APPLICATION_ID)) {
+          throw 'DISCORD_APPLICATION_ID is empty or unavailable.'
+        }
+        if ($env:DISCORD_APPLICATION_ID -notmatch '^[0-9]{17,20}$') {
+          throw 'DISCORD_APPLICATION_ID must be a 17-20 digit Discord Application ID.'
+        }
+
+        $generatedPath = Join-Path $PWD 'backend/discord_application_id.json'
+        try {
+          @{ discord_application_id = $env:DISCORD_APPLICATION_ID } |
+            ConvertTo-Json -Compress |
+            Set-Content -LiteralPath $generatedPath -Encoding UTF8
+          uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
+        }
+        finally {
+          Remove-Item -LiteralPath $generatedPath -Force -ErrorAction SilentlyContinue
+        }
 
     - name: Stage Embedded Sidecar for Tauri Host
       shell: pwsh

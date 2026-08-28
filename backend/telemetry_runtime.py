@@ -3,6 +3,7 @@
 import asyncio
 import copy
 import math
+import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -140,6 +141,11 @@ class TelemetryPipelineMetrics:
         self._frames_processed = 0
         self._frames_dropped = 0
         self._queue_peak = 0
+        self._datagrams_received = 0
+        self._packets_parsed = 0
+        self._packets_rejected: dict[str, int] = {}
+        self._last_datagram_at: float | None = None
+        self._last_packet_length = 0
 
     def measure_stage(self, stage: str):
         """Return a context manager that stores one stage duration in milliseconds."""
@@ -161,6 +167,20 @@ class TelemetryPipelineMetrics:
         """Record intentional queue drops caused by backpressure handling."""
         self._frames_dropped += max(0, count)
 
+    def record_datagram(self, packet_length: int) -> None:
+        """Record raw UDP input before parser validation."""
+        self._datagrams_received += 1
+        self._last_datagram_at = time.time()
+        self._last_packet_length = max(0, packet_length)
+
+    def record_packet_parsed(self) -> None:
+        """Record a datagram that produced a telemetry frame."""
+        self._packets_parsed += 1
+
+    def record_packet_rejected(self, reason: str) -> None:
+        """Record a bounded parser rejection reason."""
+        self._packets_rejected[reason] = self._packets_rejected.get(reason, 0) + 1
+
     def observe_queue_depth(self, queue_depth: int) -> None:
         """Track the highest observed queue depth since process start."""
         self._queue_peak = max(self._queue_peak, max(0, queue_depth))
@@ -173,6 +193,13 @@ class TelemetryPipelineMetrics:
             "contractVersion": self.contract_version,
             "framesProcessed": self._frames_processed,
             "framesDropped": self._frames_dropped,
+            "input": {
+                "datagramsReceived": self._datagrams_received,
+                "packetsParsed": self._packets_parsed,
+                "packetsRejected": dict(sorted(self._packets_rejected.items())),
+                "lastDatagramAt": self._last_datagram_at,
+                "lastPacketLength": self._last_packet_length,
+            },
             "queue": {
                 "current": max(0, queue_depth),
                 "peak": self._queue_peak,

@@ -15,12 +15,20 @@ def test_pipeline_metrics_expose_a_bounded_v1_contract():
     metrics.record_frame(0.006)
     metrics.record_dropped_frames(2)
     metrics.observe_queue_depth(7)
+    metrics.record_datagram(324)
+    metrics.record_packet_parsed()
+    metrics.record_packet_rejected("too_short")
 
     snapshot = metrics.snapshot(queue_depth=1, json_clients=2, binary_clients=1)
 
     assert snapshot["contractVersion"] == "telemetry-pipeline-metrics/v1"
     assert snapshot["framesProcessed"] == 1
     assert snapshot["framesDropped"] == 2
+    assert snapshot["input"]["datagramsReceived"] == 1
+    assert snapshot["input"]["packetsParsed"] == 1
+    assert snapshot["input"]["packetsRejected"] == {"too_short": 1}
+    assert snapshot["input"]["lastPacketLength"] == 324
+    assert snapshot["input"]["lastDatagramAt"] is not None
     assert snapshot["queue"] == {"current": 1, "peak": 7}
     assert snapshot["clients"] == {"json": 2, "binary": 1}
     assert snapshot["stagesMs"]["dyno"] == {

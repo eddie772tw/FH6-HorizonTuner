@@ -96,6 +96,8 @@ frontend/src-tauri/bin/server-sidecar-x86_64-pc-windows-msvc.exe
 # Secrets, Credentials, and Environment Configuration
 .env
 .env.*
+config/discord.local.json
+/backend/discord_application_id.json
 *.pem
 *.key
 *.cert
