@@ -1103,7 +1103,9 @@ async def lifespan(app: FastAPI):
     global current_udp_transport, current_udp_ip_port
 
     # Customizable Telemetry Port (auto-probing and binding all registered local interfaces + 127.0.0.1)
-    port = int(os.getenv("TELEMETRY_PORT", str(app_settings.get("telemetry_port", "8000"))))
+    port = int(
+        os.getenv("TELEMETRY_PORT", str(app_settings.get("telemetry_port", "8000")))
+    )
 
     forward_enabled = (
         os.getenv("TELEMETRY_FORWARD_ENABLED", "").lower() in ("1", "true", "yes")
