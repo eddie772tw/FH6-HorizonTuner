@@ -161,3 +161,19 @@ def test_diagnostics_workflow_security_and_contract():
     content = diag_yml_path.read_text(encoding="utf-8")
     assert "INPUT_REPEAT_COUNT: ${{ github.event.inputs.repeat_count }}" in content
     assert "INPUT_TIMEOUT: ${{ github.event.inputs.timeout }}" in content
+
+
+def test_release_workflow_embeds_discord_presence_sidecar_resource():
+    repo_root = Path(__file__).resolve().parent.parent
+    workflow = (repo_root / ".github" / "workflows" / "release.yml").read_text(
+        encoding="utf-8"
+    )
+    spec = (repo_root / "server-sidecar.spec").read_text(encoding="utf-8")
+
+    assert "DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}" in workflow
+    assert "DISCORD_APPLICATION_ID is empty or unavailable." in workflow
+    assert "backend/discord_application_id.json" in workflow
+    assert "discord_application_id_file" in spec
+    sidecar_start = workflow.index("Build Python Backend Sidecar Executable")
+    stage_start = workflow.index("Stage Embedded Sidecar")
+    assert "frontend" not in workflow[sidecar_start:stage_start]

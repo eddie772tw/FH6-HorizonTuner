@@ -6,8 +6,6 @@ from pathlib import Path
 
 import pytest
 from discord_presence import (
-    RICH_PRESENCE_IMAGE_TEXT,
-    RICH_PRESENCE_IMAGE_URL,
     DiscordIpcClient,
     DiscordPresenceManager,
     build_activity,
@@ -65,16 +63,11 @@ def test_activity_contains_car_best_lap_and_position():
     assert activity["details"] == "2022 Toyota GR86"
     assert activity["state"] == "Race · Lap 3 · P2 · 1:05.200"
     assert activity["timestamps"] == {"start": 1_700_000_000}
-
-
-def test_activity_uses_project_owned_presence_image_and_text():
-    snapshot = snapshot_from_telemetry(_race_data(), _car_db())
-
-    activity = build_activity(snapshot, 1_700_000_000)
-
-    assert activity["assets"]["large_image"] == RICH_PRESENCE_IMAGE_URL
-    assert activity["assets"]["large_text"] == RICH_PRESENCE_IMAGE_TEXT
-    assert activity["assets"]["large_image"].startswith("https://")
+    assert activity["assets"] == {
+        "large_image": "fh6_horizon_tuner",
+        "large_text": "FH6 HorizonTuner",
+        "small_text": "2022 Toyota GR86",
+    }
 
 
 def test_activity_degrades_when_optional_race_values_are_missing():
@@ -203,7 +196,7 @@ def test_presence_status_records_activity_after_successful_send(monkeypatch):
     assert status["lastActivity"]["type"] == 0
     assert status["lastActivity"]["details"] == "2022 Toyota GR86"
     assert status["lastActivity"]["state"] == "Race · Lap 3 · P2 · 1:05.200"
-    assert status["lastActivity"]["assets"]["large_image"] == RICH_PRESENCE_IMAGE_URL
+    assert status["lastActivity"]["assets"]["large_image"] == "fh6_horizon_tuner"
     assert status["lastActivitySentAt"] is not None
 
 
@@ -282,19 +275,3 @@ def test_ipc_client_rejects_handshake_without_ready_event():
         client.connect()
     assert isinstance(error.value.__cause__, ConnectionError)
     assert str(error.value.__cause__) == "Discord IPC handshake was not ready"
-
-
-def test_release_build_requires_secret_and_embeds_only_sidecar_resource():
-    repository_root = Path(__file__).resolve().parents[1]
-    workflow = (repository_root / ".github" / "workflows" / "release.yml").read_text(
-        encoding="utf-8"
-    )
-    spec = (repository_root / "server-sidecar.spec").read_text(encoding="utf-8")
-
-    assert "DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}" in workflow
-    assert "DISCORD_APPLICATION_ID is empty or unavailable." in workflow
-    assert "backend/discord_application_id.json" in workflow
-    assert "discord_application_id_file" in spec
-    sidecar_start = workflow.index("Build Python Backend Sidecar Executable")
-    stage_start = workflow.index("Stage Embedded Sidecar")
-    assert "frontend" not in workflow[sidecar_start:stage_start]

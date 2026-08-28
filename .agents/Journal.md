@@ -15,6 +15,23 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-28 / PR #247 Discord Rich Presence 測試斷言結構同步修復
+
+### Discord Application Key 輸出結構重構、常數淘汰與 Pytest 斷言對齊
+
+- **來源**：`local`，針對 PR #247 分支 (`codex/feat/discord-rich-presence`) 因後端輸出結構重構但測試未同步導致之 CI 失敗進行修復。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **常數淘汰未同步測試導致 Collection 階段崩潰**：在 `discord_presence.py` 中淘汰 `RICH_PRESENCE_IMAGE_URL` 與 `RICH_PRESENCE_IMAGE_TEXT` 改用固定 asset key (`"fh6_horizon_tuner"`) 時，測試檔案頂層若仍維持舊常數之 `from discord_presence import ...`，將在 Pytest 模組收集階段直接觸發 `ImportError`，導致整個測試套裝中斷。
+  2. **Pre-Commit 測試門檻與分支健康**：在重構輸出資料結構或淘汰內部常數時，必須立即執行本地全套單元測試，確保業務模組與測試合約 100% 同步。
+- **Action**：
+  1. 更新 `tests/test_discord_presence.py`：移除已廢棄之 `RICH_PRESENCE_IMAGE_URL` 與 `RICH_PRESENCE_IMAGE_TEXT` 匯入。
+  2. 更新 `test_activity_uses_project_owned_presence_image_and_text` 與 `test_presence_status_records_activity_after_successful_send` 之斷言，對齊最新 `large_image: "fh6_horizon_tuner"` 與 `large_text: "FH6 HorizonTuner"` 結構。
+  3. 驗證全套靜態檢查、後端 Pytest (203 passed, 3 skipped)、前端 Vitest (69 檔 / 441 passed) 與前端生產打包。
+- **Evidence**：`tests/test_discord_presence.py` 12 tests passed；後端 Pytest (203 passed)；前端 Vitest (441 passed)；`ruff check .` & `ruff format --check .` 100% 通過。
+
+---
+
 ## 2026-08-24 / 5 個 PR 批量審查、衝突修正與循序合併
 
 ### Dependabot 依賴更新 (PR #241 #242 #243)、Jules UI 修正 (PR #244) 與 G-Radar 60Hz 渲染最佳化 (PR #246)
