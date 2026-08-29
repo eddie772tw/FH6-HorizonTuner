@@ -7,3 +7,6 @@
 ## 2024-08-28 - Caching `new Function` Calls in High-Frequency Data Loops
 **Learning:** In frontend telemetry processing loops (e.g., custom math evaluations across massive data arrays), calling `new Function(...)` repeatedly is severely detrimental to CPU performance and creates excessive Garbage Collection (GC) overhead.
 **Action:** Use a memoization cache (like `new Map()`) to pre-compile and store dynamically generated functions at the module level. Ensure the cache key uniquely identifies the logic, allowing the render and data processing paths to immediately reuse compiled functions.
+## 2024-08-29 - DOM Node Recycling in HUD Text Displays
+**Learning:** In high-frequency 60Hz telemetry HUD rendering loops, updating numerical readouts (like speed or RPM) via `innerHTML` with string concatenation (`el.innerHTML = "<span>" + val + "</span>"`) forces the browser to parse HTML, destroy old DOM nodes, and create new ones up to 60 times a second, causing layout thrashing and severe GC pressure.
+**Action:** Replace `innerHTML` string generation with a DOM node pooling strategy. Ensure the container has the exact number of child nodes needed by appending or removing nodes dynamically, and then update their `textContent` only if the character differs (`if (el.children[i].textContent !== strVal[i]) el.children[i].textContent = strVal[i];`).

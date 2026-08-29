@@ -40,11 +40,19 @@ export function setSpeedDisplay(value) {
 
     _lastSpeedValue = value;
     const strVal = value.toString();
-    let html = '';
-    for (let i = 0; i < strVal.length; i++) {
-        html += `<span>${strVal[i]}</span>`;
+
+    while (el.children.length < strVal.length) {
+        el.appendChild(document.createElement('span'));
     }
-    el.innerHTML = html;
+    while (el.children.length > strVal.length) {
+        el.removeChild(el.lastChild);
+    }
+
+    for (let i = 0; i < strVal.length; i++) {
+        if (el.children[i].textContent !== strVal[i]) {
+            el.children[i].textContent = strVal[i];
+        }
+    }
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────

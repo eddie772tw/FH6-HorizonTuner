@@ -1021,11 +1021,19 @@
             var el = domCache.advSpeed;
             if (!el) return;
             var valStr = value.toString();
-            var out = "";
-            for (var i = 0; i < valStr.length; i++) {
-                out += '<span>' + valStr[i] + '</span>';
+
+            while (el.children.length < valStr.length) {
+                var span = document.createElement('span');
+                el.appendChild(span);
             }
-            el.innerHTML = out;
+            while (el.children.length > valStr.length) {
+                el.removeChild(el.lastChild);
+            }
+            for (var i = 0; i < valStr.length; i++) {
+                if (el.children[i].textContent !== valStr[i]) {
+                    el.children[i].textContent = valStr[i];
+                }
+            }
         }
 
         // Set RPM with digit spans for tabular spacing
@@ -1037,11 +1045,19 @@
             if (!el) return;
             el.style.color = isRed ? C_PINK_DIM : 'var(--adv-primary-dim)';
             var valStr = value.toString();
-            var out = "";
-            for (var i = 0; i < valStr.length; i++) {
-                out += '<span>' + valStr[i] + '</span>';
+
+            while (el.children.length < valStr.length) {
+                var span = document.createElement('span');
+                el.appendChild(span);
             }
-            el.innerHTML = out;
+            while (el.children.length > valStr.length) {
+                el.removeChild(el.lastChild);
+            }
+            for (var i = 0; i < valStr.length; i++) {
+                if (el.children[i].textContent !== valStr[i]) {
+                    el.children[i].textContent = valStr[i];
+                }
+            }
         }
 
         // Register Advanced HUD Style with HUDCore Engine
