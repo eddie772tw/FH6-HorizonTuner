@@ -166,22 +166,34 @@ const CustomCSSEditorPanel: React.FC = () => {
 
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
         <div className="d-flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-primary btn-sm fw-bold"
-            onClick={handleApply}
-            disabled={!isDirty || !cssValidation.isValid}
+          <span
+            title={!isDirty ? t('No changes to apply') : !cssValidation.isValid ? t('Cannot apply invalid CSS') : undefined}
+            style={{ display: 'inline-block', cursor: (!isDirty || !cssValidation.isValid) ? 'not-allowed' : 'default' }}
           >
-            {t('Apply')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm"
-            onClick={handleDiscard}
-            disabled={!isDirty}
+            <button
+              type="button"
+              className="btn btn-primary btn-sm fw-bold"
+              onClick={handleApply}
+              disabled={!isDirty || !cssValidation.isValid}
+              style={{ pointerEvents: (!isDirty || !cssValidation.isValid) ? 'none' : 'auto' }}
+            >
+              {t('Apply')}
+            </button>
+          </span>
+          <span
+            title={!isDirty ? t('No changes to cancel') : undefined}
+            style={{ display: 'inline-block', cursor: !isDirty ? 'not-allowed' : 'default' }}
           >
-            {t('Cancel')}
-          </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={handleDiscard}
+              disabled={!isDirty}
+              style={{ pointerEvents: !isDirty ? 'none' : 'auto' }}
+            >
+              {t('Cancel')}
+            </button>
+          </span>
           <button
             type="button"
             className="btn btn-outline-secondary btn-sm"
@@ -189,14 +201,20 @@ const CustomCSSEditorPanel: React.FC = () => {
           >
             {t('Insert Starter CSS')}
           </button>
-          <button
-            type="button"
-            className="btn btn-outline-danger btn-sm"
-            onClick={() => setDraftCSS('')}
-            disabled={!draftCSS}
+          <span
+            title={!draftCSS ? t('No CSS to clear') : undefined}
+            style={{ display: 'inline-block', cursor: !draftCSS ? 'not-allowed' : 'default' }}
           >
-            {t('Clear Current')}
-          </button>
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => setDraftCSS('')}
+              disabled={!draftCSS}
+              style={{ pointerEvents: !draftCSS ? 'none' : 'auto' }}
+            >
+              {t('Clear Current')}
+            </button>
+          </span>
         </div>
 
         <div className="d-flex flex-wrap gap-2">
