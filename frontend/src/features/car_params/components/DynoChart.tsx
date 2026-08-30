@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { CarParams } from '../../../context/CarParamsContext';
 import { ToggleSwitch } from './ToggleSwitch';
 import { btnStyle } from './CommonStyles';
+import { presentDynoQuality } from '../dynoQuality';
 
 interface DynoChartProps {
   t: (key: string) => string;
@@ -39,6 +40,7 @@ export const DynoChart: React.FC<DynoChartProps> = ({
   getPowerLabel,
   getTorqueLabel
 }) => {
+  const qualityPresentation = presentDynoQuality(carParams.dyno_quality);
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1, minHeight: 0 }}>
       {/* Title row with toggles */}
@@ -59,6 +61,10 @@ export const DynoChart: React.FC<DynoChartProps> = ({
             {t("Clear Data")}
           </button>
         </div>
+      </div>
+
+      <div className={`badge text-bg-${qualityPresentation.tone} align-self-start text-start`} title={qualityPresentation.detail}>
+        {t(qualityPresentation.label)}
       </div>
 
       {/* Toggle switches and Gearing controls row */}

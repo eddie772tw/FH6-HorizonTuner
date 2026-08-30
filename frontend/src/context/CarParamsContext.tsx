@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
 import { backendFetch } from '../services/backend';
+import type { DynoQuality } from '../features/car_params/dynoQuality';
 
 export interface CarParams {
   weight: number;
@@ -34,6 +35,7 @@ export interface CarParams {
     diff: 'Fixed' | 'Adjustable';
   };
   dyno_curve: Record<string, { hp: number; torque: number; hp_hist?: number[]; torque_hist?: number[] }>;
+  dyno_quality?: DynoQuality;
   
   // Suspension & Ride Height limits for tuning wizard
   spring_front_min?: number;
@@ -160,6 +162,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         diff: raw?.adjustability?.diff ?? 'Adjustable'
       },
       dyno_curve: raw?.dyno_curve ?? {},
+      dyno_quality: raw?.dyno_quality,
       spring_front_min: raw?.spring_front_min ?? 10.0,
       spring_front_max: raw?.spring_front_max ?? 120.0,
       spring_rear_min: raw?.spring_rear_min ?? 10.0,
