@@ -71,7 +71,11 @@ def test_replay_makes_timestamp_discontinuity_explicit_for_recorder():
     for frame in parsed_frames:
         recorder.record(frame)
 
-    assert [point["TimestampMS"] for point in recorder.in_memory_batch] == [1000, 1100, 850]
+    assert [point["TimestampMS"] for point in recorder.in_memory_batch] == [
+        1000,
+        1100,
+        850,
+    ]
     assert [point["time"] for point in recorder.in_memory_batch] == [0.0, 0.1, -0.15]
 
 

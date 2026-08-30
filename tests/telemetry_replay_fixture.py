@@ -7,10 +7,7 @@ from typing import Any
 
 FIXTURE_CONTRACT_VERSION = "fh6-telemetry-replay-fixture/v1"
 FIXTURE_PATH = (
-    Path(__file__).parent
-    / "fixtures"
-    / "telemetry_replay"
-    / "synthetic-v1.json"
+    Path(__file__).parent / "fixtures" / "telemetry_replay" / "synthetic-v1.json"
 )
 
 
