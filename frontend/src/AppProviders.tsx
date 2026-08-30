@@ -12,12 +12,12 @@ interface AppProvidersProps {
 /** Shared application state boundary used by both Full and Lite shells. */
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => (
   <ThemeProvider>
-    <SettingsProvider>
-      <ToastProvider>
+    <ToastProvider>
+      <SettingsProvider>
         <CarParamsProvider>
           <TelemetryRecorderProvider>{children}</TelemetryRecorderProvider>
         </CarParamsProvider>
-      </ToastProvider>
-    </SettingsProvider>
+      </SettingsProvider>
+    </ToastProvider>
   </ThemeProvider>
 );

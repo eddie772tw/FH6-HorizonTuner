@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { backendFetch } from '../services/backend';
 import { normalizeGeneralUnitSettings } from '../utils/gameUnitSettings';
+import { useToast } from './ToastContext';
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -106,6 +107,31 @@ const defaultSettings: AppSettings = {
   forward_telemetry_port: 5300
 };
 
+export function mergeSettingsUpdate(current: AppSettings, updates: Partial<AppSettings> | { units: Partial<UnitSettings> }): AppSettings {
+  if ('units' in updates) {
+    return {
+      ...current,
+      units: normalizeGeneralUnitSettings({ ...current.units, ...updates.units })
+    };
+  }
+  return { ...current, ...updates };
+}
+
+export async function persistSettingsUpdate(
+  previous: AppSettings,
+  updates: Partial<AppSettings> | { units: Partial<UnitSettings> },
+  persist: (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => Promise<Response>,
+): Promise<{ settings: AppSettings; rollback: AppSettings | null }> {
+  const settings = mergeSettingsUpdate(previous, updates);
+  try {
+    const response = await persist(updates);
+    if (!response.ok) throw new Error(`Settings request failed with ${response.status}`);
+    return { settings, rollback: null };
+  } catch {
+    return { settings, rollback: previous };
+  }
+}
+
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 const ScopedUnitsContext = createContext<UnitSettings | undefined>(undefined);
 
@@ -181,6 +207,7 @@ export const ScopedUnitSettingsProvider: React.FC<{ units: UnitSettings; childre
 );
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { addToast } = useToast();
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
@@ -251,25 +278,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchTranslation();
   }, [settings.language]);
 
-  const updateSettings = async (updates: any) => {
-    let newSettings = { ...settings };
-    
-    if ('units' in updates) {
-      newSettings.units = normalizeGeneralUnitSettings({ ...settings.units, ...updates.units });
-    } else {
-      newSettings = { ...settings, ...updates };
-    }
-    
-    setSettings(newSettings);
+  const updateSettings = async (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => {
+    const previousSettings = settings;
+    const optimisticSettings = mergeSettingsUpdate(previousSettings, updates);
+    setSettings(optimisticSettings);
 
-    try {
-      await backendFetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
+    const result = await persistSettingsUpdate(previousSettings, updates, (payload) => backendFetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }));
+    if (result.rollback) {
+      setSettings(result.rollback);
+      addToast({
+        type: 'danger',
+        title: 'Settings not saved',
+        message: 'The change was reverted because the application could not save it.',
+        detail: 'Check that the application data directory is writable, then try again.'
       });
-    } catch (e) {
-      console.error('Failed to update settings in backend', e);
     }
   };
 

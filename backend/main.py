@@ -1,4 +1,5 @@
 import argparse
+import copy
 import math
 import os
 import re
@@ -106,6 +107,8 @@ from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
 from process_cleanup import cleanup_stale_port_listeners
 from race_recorder import AsyncRacePersistence, RaceRecorder
+from settings_persistence import SettingsPersistence
+from settings_router import create_settings_router
 from system_media import get_system_media_info
 from telemetry_listener import (
     DEFAULT_TIRE_ARRAY,
@@ -394,6 +397,7 @@ last_dyno_save_time = time.time()
 # 使用最上方統一宣告的路徑與設定，免重複定義。
 
 DEFAULT_SETTINGS = {
+    "settings_schema_version": SettingsPersistence.CURRENT_SCHEMA_VERSION,
     "dyno_recording": False,
     "race_recording": False,
     "developer_tuning_enabled": False,
@@ -465,60 +469,24 @@ def normalize_general_unit_settings(units: dict | None) -> dict:
     return normalized
 
 
-app_settings = {
-    "dyno_recording": False,
-    "race_recording": False,
-    "developer_tuning_enabled": False,
-    "mcp_enabled": True,
-    "mcp_allow_live": True,
-    "mcp_max_downsample": 500,
-    "language": "zh-tw",
-    "dyno_test_gear": 4,
-    "dyno_filter_slip": True,
-    "dyno_filter_transients": True,
-    "telemetry_ip": "127.0.0.1",
-    "telemetry_port": 8000,
-    "forward_telemetry_enabled": False,
-    "forward_telemetry_host": "127.0.0.1",
-    "forward_telemetry_port": 5300,
-    "units": dict(DEFAULT_SETTINGS["units"]),
-    "theme": dict(DEFAULT_SETTINGS["theme"]),
-}
-
-# Load settings from settings.json
-settings_migrated = False
-if os.path.exists(SETTINGS_FILE):
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            loaded = json.load(f)
-            for k, v in loaded.items():
-                if k == "units" and isinstance(v, dict):
-                    app_settings["units"].update(v)
-                elif k == "theme" and isinstance(v, dict):
-                    app_settings["theme"].update(v)
-                else:
-                    app_settings[k] = v
-        normalized_units = normalize_general_unit_settings(app_settings["units"])
-        settings_migrated = normalized_units != app_settings["units"]
-        app_settings["units"] = normalized_units
-        logger.info(f"Loaded settings from {SETTINGS_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to load settings from {SETTINGS_FILE}: {e}")
-else:
-    try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
-        logger.info(f"Created default settings at {SETTINGS_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to save default settings to {SETTINGS_FILE}: {e}")
-
-if settings_migrated:
-    try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
-        logger.info("Migrated legacy mixed unit settings to the General Units model")
-    except Exception as e:
-        logger.error(f"Failed to persist migrated settings to {SETTINGS_FILE}: {e}")
+app_settings = copy.deepcopy(DEFAULT_SETTINGS)
+try:
+    loaded_settings, settings_migrated = SettingsPersistence(SETTINGS_FILE).load(
+        DEFAULT_SETTINGS
+    )
+    for key, value in loaded_settings.items():
+        if key in {"units", "theme"} and isinstance(value, dict):
+            app_settings[key].update(value)
+        else:
+            app_settings[key] = value
+    normalized_units = normalize_general_unit_settings(app_settings["units"])
+    settings_migrated = settings_migrated or normalized_units != app_settings["units"]
+    app_settings["units"] = normalized_units
+    if settings_migrated:
+        SettingsPersistence(SETTINGS_FILE).save(app_settings)
+    logger.info("Loaded settings from durable store")
+except Exception as e:
+    logger.error(f"Failed to load durable settings: {e}")
 
 
 # --- Race Telemetry Recorder ---
@@ -1628,14 +1596,9 @@ async def clear_dyno_curve(car_id: str):
 # --- Settings API ---
 
 
-@app.get("/api/settings")
-async def get_settings():
-    return app_settings
-
-
-@app.post("/api/settings")
 async def update_settings(data: dict):
     global current_udp_transport, current_udp_ip_port
+    previous_settings = copy.deepcopy(app_settings)
     theme_updated = "theme" in data and isinstance(data["theme"], dict)
     units_updated = "units" in data and isinstance(data["units"], dict)
 
@@ -1698,16 +1661,14 @@ async def update_settings(data: dict):
         app_settings["theme"].update(data["theme"])
         app_settings["theme"].pop("slots", None)
 
-    # Save to file asynchronously to avoid blocking the event loop
-    def _save_settings():
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
-
     try:
-        await asyncio.to_thread(_save_settings)
-        logger.info(f"Saved settings to {SETTINGS_FILE}")
+        await asyncio.to_thread(SettingsPersistence(SETTINGS_FILE).save, app_settings)
+        logger.info("Saved settings through durable store")
     except Exception as e:
-        logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
+        app_settings.clear()
+        app_settings.update(previous_settings)
+        logger.error(f"Failed to persist settings: {e}")
+        raise HTTPException(status_code=500, detail="Settings could not be saved") from e
 
     if theme_updated or units_updated:
         hud_data = DEFAULT_HUD_CONFIG
@@ -1768,6 +1729,17 @@ async def update_settings(data: dict):
             logger.warning(f"Failed to dynamically update UDP forwarding setting: {e}")
 
     return app_settings
+
+
+app.include_router(
+    create_settings_router(
+        get_settings=lambda: app_settings,
+        update_settings=update_settings,
+        get_storage_overview=lambda: SettingsPersistence(
+            SETTINGS_FILE
+        ).storage_overview(),
+    )
+)
 
 
 # --- Languages API ---

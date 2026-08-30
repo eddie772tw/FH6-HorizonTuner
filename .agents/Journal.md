@@ -1610,3 +1610,16 @@
   4. The three-column breakpoint begins at `lg`; below `xl`, individual setting rows stack their label and control to retain usable widths. Narrower screens continue to stack columns vertically.
 - **Verification**: Ruff check/format passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend Vitest passed `73 files / 456 tests`; production TypeScript/Vite build and `git diff --check` passed. Browser QA confirmed three equal columns at 1440px and 1024px, with no Settings grid horizontal overflow at 1024px.
 - **Status**: adopted.
+
+---
+
+## 2026-08-30 / Durable Settings Store and Non-sensitive Storage Overview
+
+- **Scope**: versioned `settings.json` persistence, settings API boundary, optimistic Settings UI writes, and the read-only Data & Storage overview. No telemetry listener, diagnostic bundle, onboarding flow, SQLite schema, or FH6 in-game behavior was changed.
+- **Decision**:
+  1. Settings use `settings_schema_version: 2`; missing legacy version markers upgrade during load while retaining unknown fields and existing nested settings.
+  2. A settings write first atomically replaces `settings.json.bak` with the current valid document, then atomically replaces `settings.json`. A corrupt primary document is recovered from that backup at the next load.
+  3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
+  4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
+- **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed. Full pytest began with `202 selected` but stalled in the existing audio-device suite at `tests/test_audio_spectrum.py`; the settings-specific tests passed independently. `ruff format --check .` reports only the pre-existing whole-file `backend/main.py` format baseline, which was not rewritten because settings ownership is limited to its settings blocks.
+- **Status**: implemented locally; pending branch CI and reviewer verification.
