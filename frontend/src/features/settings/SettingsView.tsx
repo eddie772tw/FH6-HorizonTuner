@@ -67,10 +67,7 @@ const SettingsView: React.FC = () => {
           {/* Telemetry transport and captured data */}
           <div className="col-12 col-lg-4 d-flex flex-column gap-4">
             <SettingsSection title={t('Telemetry Receiver Settings')}>
-              <SettingsItem label={t('Telemetry IP')} description={t('IP address to listen for Forza UDP telemetry packets.')} htmlFor="settings-telemetry-ip">
-                <input id="settings-telemetry-ip" type="text" value={settings.telemetry_ip || '127.0.0.1'} onChange={(event) => updateSettings({ telemetry_ip: event.target.value })} className="form-control form-control-sm" />
-              </SettingsItem>
-              <SettingsItem label={t('Telemetry Port')} description={t('Port to listen for Forza UDP telemetry packets (Default: 8000).')} htmlFor="settings-telemetry-port">
+              <SettingsItem label={t('Telemetry Port')} description={t('Port to listen for Forza UDP telemetry packets across all network adapters and loopback (Default: 8000).')} htmlFor="settings-telemetry-port">
                 <input id="settings-telemetry-port" type="number" value={settings.telemetry_port || 8000} onChange={(event) => updateSettings({ telemetry_port: parseInt(event.target.value) || 8000 })} className="form-control form-control-sm" />
               </SettingsItem>
               <SettingsSwitch id="chk-forward-telemetry" label={t('Telemetry UDP Forwarding')} description={t('Forward raw binary telemetry datagrams to third-party tools (e.g. SimHub or external dashboard).')} checked={!!settings.forward_telemetry_enabled} onChange={(event) => updateSettings({ forward_telemetry_enabled: event.target.checked })} />

@@ -408,7 +408,6 @@ DEFAULT_SETTINGS = {
     "dyno_test_gear": 4,
     "dyno_filter_slip": True,
     "dyno_filter_transients": True,
-    "telemetry_ip": "127.0.0.1",
     "telemetry_port": 8000,
     "units": {
         "speed": "kmh",
@@ -1072,9 +1071,10 @@ car_params_writer = AsyncCarParamsWriter(save_car_params)
 async def lifespan(app: FastAPI):
     global current_udp_transport, current_udp_ip_port
 
-    # Customizable IP and Port (default 127.0.0.1 with auto-probing of registered interfaces)
-    ip = os.getenv("TELEMETRY_IP", str(app_settings.get("telemetry_ip", "127.0.0.1")))
-    port = int(os.getenv("TELEMETRY_PORT", "8000"))
+    # Customizable Telemetry Port (auto-probing and binding all registered local interfaces + 127.0.0.1)
+    port = int(
+        os.getenv("TELEMETRY_PORT", str(app_settings.get("telemetry_port", "8000")))
+    )
 
     forward_enabled = (
         os.getenv("TELEMETRY_FORWARD_ENABLED", "").lower() in ("1", "true", "yes")
@@ -1100,15 +1100,14 @@ async def lifespan(app: FastAPI):
         logger.debug(f"Pre-flight UDP port cleanup check failed: {e}")
 
     current_udp_transport = await start_udp_listener(
-        ip,
-        port,
-        telemetry_queue,
+        port=port,
+        message_queue=telemetry_queue,
         forward_enabled=forward_enabled,
         forward_host=forward_host,
         forward_port=forward_port,
         metrics=telemetry_pipeline_metrics,
     )
-    current_udp_ip_port = (ip, port)
+    current_udp_ip_port = ("auto", port)
     race_persistence.start()
     discord_presence.start()
     background_tasks = [
@@ -1636,15 +1635,9 @@ async def update_settings(data: dict):
     if "forward_telemetry_port" in data:
         app_settings["forward_telemetry_port"] = int(data["forward_telemetry_port"])
 
-    # 處理 telemetry_ip 與 telemetry_port
-    new_ip = data.get("telemetry_ip", app_settings.get("telemetry_ip", "127.0.0.1"))
+    # 處理 telemetry_port
     new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
-
-    ip_port_changed = (new_ip != current_udp_ip_port[0]) or (
-        new_port != current_udp_ip_port[1]
-    )
-
-    app_settings["telemetry_ip"] = new_ip
+    port_changed = new_port != current_udp_ip_port[1]
     app_settings["telemetry_port"] = new_port
 
     if "units" in data and isinstance(data["units"], dict):
@@ -1682,10 +1675,10 @@ async def update_settings(data: dict):
             {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
         )
 
-    # 若 IP 或 Port 變更，在執行期動態重啟 UDP listener
-    if ip_port_changed:
+    # 若 Port 變更，在執行期動態重啟 UDP listener
+    if port_changed:
         logger.info(
-            f"Forza UDP Telemetry endpoint changed to {new_ip}:{new_port}. Restarting listener..."
+            f"Forza UDP Telemetry port changed to {new_port}. Restarting listener across all local interfaces..."
         )
         if current_udp_transport:
             try:
@@ -1702,18 +1695,17 @@ async def update_settings(data: dict):
                 logger.debug(f"Dynamic port change cleanup check failed: {e}")
 
             current_udp_transport = await start_udp_listener(
-                new_ip,
-                new_port,
-                telemetry_queue,
+                port=new_port,
+                message_queue=telemetry_queue,
                 forward_enabled=app_settings.get("forward_telemetry_enabled", False),
                 forward_host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
                 forward_port=int(app_settings.get("forward_telemetry_port", 5300)),
                 metrics=telemetry_pipeline_metrics,
             )
-            current_udp_ip_port = (new_ip, new_port)
+            current_udp_ip_port = ("auto", new_port)
         except Exception as e:
             logger.error(
-                f"Failed to restart UDP Telemetry listener on {new_ip}:{new_port}: {e}"
+                f"Failed to restart UDP Telemetry listener on port {new_port}: {e}"
             )
     elif current_udp_transport:
         # 動態更新轉發設定，無須重啟監聽 socket
