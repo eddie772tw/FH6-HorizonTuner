@@ -7,3 +7,6 @@
 ## 2024-08-28 - Caching `new Function` Calls in High-Frequency Data Loops
 **Learning:** In frontend telemetry processing loops (e.g., custom math evaluations across massive data arrays), calling `new Function(...)` repeatedly is severely detrimental to CPU performance and creates excessive Garbage Collection (GC) overhead.
 **Action:** Use a memoization cache (like `new Map()`) to pre-compile and store dynamically generated functions at the module level. Ensure the cache key uniquely identifies the logic, allowing the render and data processing paths to immediately reuse compiled functions.
+## 2024-05-24 - Avoiding Spread Operators on Large Arrays
+**Learning:** Using the spread operator (`Math.max(...arr)`) inside summary functions (like `summarizeSeries` for historical telemetry) causes `RangeError: Maximum call stack size exceeded` when arrays become too large. Combined with `.filter()` and `.reduce()`, it significantly degrades performance by triggering excessive array allocations and garbage collection.
+**Action:** Always replace chained array methods and spread operators with a single-pass `for` loop that calculates `min`, `max`, and `sum` manually to prevent stack overflows and optimize GC in large telemetry paths.

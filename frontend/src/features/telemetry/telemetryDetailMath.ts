@@ -60,12 +60,28 @@ const averageFour = (values: readonly (number | null)[]): number | null => (
 );
 
 export const summarizeSeries = (values: readonly (number | null)[]): SeriesSummary => {
-  const finiteValues = values.filter((value): value is number => value !== null && Number.isFinite(value));
-  if (finiteValues.length === 0) return { minimum: null, maximum: null, average: null };
+  // [PERFORMANCE] Optimized single-pass loop avoiding `.filter()`, `.reduce()`, and `Math.max(...arr)`.
+  // Prevents maximum call stack errors on large arrays and significantly reduces GC pressure for 60Hz telemetry tracking.
+  let minimum = Infinity;
+  let maximum = -Infinity;
+  let sum = 0;
+  let count = 0;
+
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i];
+    if (value !== null && Number.isFinite(value)) {
+      if (value < minimum) minimum = value;
+      if (value > maximum) maximum = value;
+      sum += value;
+      count++;
+    }
+  }
+
+  if (count === 0) return { minimum: null, maximum: null, average: null };
   return {
-    minimum: Math.min(...finiteValues),
-    maximum: Math.max(...finiteValues),
-    average: finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length,
+    minimum,
+    maximum,
+    average: sum / count,
   };
 };
 
