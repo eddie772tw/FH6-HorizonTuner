@@ -54,6 +54,7 @@ def test_replay_preserves_raw_domain_and_binary_wire_units():
     wire = pack_telemetry_binary(domain)
     unpacked = struct.unpack(TELEMETRY_STRUCT_FORMAT, wire)
     assert len(wire) == 128
+    assert struct.calcsize(TELEMETRY_STRUCT_FORMAT) == 128
     assert unpacked[4] == pytest.approx(81.0)  # m/s -> km/h
     assert unpacked[6] == pytest.approx(200.0)  # W -> hp
     assert unpacked[7] == pytest.approx(2.0)  # Pa -> PSI
