@@ -1610,3 +1610,17 @@
   4. The three-column breakpoint begins at `lg`; below `xl`, individual setting rows stack their label and control to retain usable widths. Narrower screens continue to stack columns vertically.
 - **Verification**: Ruff check/format passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend Vitest passed `73 files / 456 tests`; production TypeScript/Vite build and `git diff --check` passed. Browser QA confirmed three equal columns at 1440px and 1024px, with no Settings grid horizontal overflow at 1024px.
 - **Status**: adopted.
+
+---
+
+## 2026-08-30 / Versioned Synthetic Telemetry Replay Fixture Boundary
+
+- **Scope**: `tests/fixtures/telemetry_replay/`, test-only raw packet builder, parser/recorder/binary-wire replay contracts.
+- **Decision**:
+  1. Replay input is a small JSON fixture with the explicit `fh6-telemetry-replay-fixture/v1` contract and a mandatory synthetic provenance declaration. It contains no player or real-vehicle data and explicitly states that replay is not evidence of live Forza behavior.
+  2. Test-only helpers construct the documented 324-byte little-endian packet layout. Production `backend/telemetry_listener.py` remains unchanged, so fixture coverage can be rebased onto a later telemetry-quality contract without parser ownership overlap.
+  3. Boundary tests keep raw SI values distinct from the existing 128-byte binary wire conversions, and make timestamp discontinuities plus queue shedding/recent-frame selection observable rather than masking them as hardware evidence.
+- **Evidence**:
+  - Fixture loader rejects unknown fixture contract versions; tests assert raw-to-domain values and binary wire unit conversions, discontinuous timestamps, and queue pressure retention behavior.
+  - The fixture is synthetic. These assertions validate deterministic code paths only; they do not validate FH6 Data Out from a running game.
+- **Status**: adopted test-contract convention; full local gate results are recorded with the associated PR because this isolated worktree initially lacked its required `.venv`.
