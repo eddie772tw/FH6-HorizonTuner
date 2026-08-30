@@ -140,12 +140,20 @@ class TelemetryPipelineMetrics:
         self._stage_samples: dict[str, deque[float]] = {}
         self._frames_processed = 0
         self._frames_dropped = 0
+        self._drop_reasons: dict[str, int] = {}
         self._queue_peak = 0
         self._datagrams_received = 0
         self._packets_parsed = 0
         self._packets_rejected: dict[str, int] = {}
         self._last_datagram_at: float | None = None
         self._last_packet_length = 0
+        self._schemas_accepted: dict[str, int] = {}
+        self._last_packet_schema: str | None = None
+        self._last_timestamp_ms: int | None = None
+        self._timestamp_duplicates = 0
+        self._timestamp_out_of_order = 0
+        self._timestamp_wraps = 0
+        self._estimated_timestamp_drops = 0
 
     def measure_stage(self, stage: str):
         """Return a context manager that stores one stage duration in milliseconds."""
@@ -163,9 +171,14 @@ class TelemetryPipelineMetrics:
         self._frames_processed += 1
         self.record_stage("total", elapsed_seconds)
 
-    def record_dropped_frames(self, count: int) -> None:
-        """Record intentional queue drops caused by backpressure handling."""
-        self._frames_dropped += max(0, count)
+    def record_dropped_frames(self, count: int, reason: str = "consumer_lag") -> None:
+        """Record intentional frame drops with a bounded, caller-visible reason."""
+        accepted_count = max(0, count)
+        self._frames_dropped += accepted_count
+        if accepted_count:
+            self._drop_reasons[reason] = (
+                self._drop_reasons.get(reason, 0) + accepted_count
+            )
 
     def record_datagram(self, packet_length: int) -> None:
         """Record raw UDP input before parser validation."""
@@ -173,9 +186,16 @@ class TelemetryPipelineMetrics:
         self._last_datagram_at = time.time()
         self._last_packet_length = max(0, packet_length)
 
-    def record_packet_parsed(self) -> None:
+    def record_packet_parsed(
+        self, *, timestamp_ms: int | None = None, schema: str | None = None
+    ) -> None:
         """Record a datagram that produced a telemetry frame."""
         self._packets_parsed += 1
+        if schema is not None:
+            self._schemas_accepted[schema] = self._schemas_accepted.get(schema, 0) + 1
+            self._last_packet_schema = schema
+        if timestamp_ms is not None:
+            self._observe_timestamp(timestamp_ms)
 
     def record_packet_rejected(self, reason: str) -> None:
         """Record a bounded parser rejection reason."""
@@ -185,6 +205,27 @@ class TelemetryPipelineMetrics:
         """Track the highest observed queue depth since process start."""
         self._queue_peak = max(self._queue_peak, max(0, queue_depth))
 
+    def _observe_timestamp(self, timestamp_ms: int) -> None:
+        """Track timestamp continuity using unsigned-32-bit wrap semantics."""
+        timestamp_ms &= 0xFFFFFFFF
+        previous = self._last_timestamp_ms
+        if previous is None:
+            self._last_timestamp_ms = timestamp_ms
+            return
+        if timestamp_ms == previous:
+            self._timestamp_duplicates += 1
+            return
+        if timestamp_ms < previous:
+            if previous - timestamp_ms <= 0x7FFFFFFF:
+                self._timestamp_out_of_order += 1
+                return
+            self._timestamp_wraps += 1
+            elapsed_ms = (0x100000000 - previous) + timestamp_ms
+        else:
+            elapsed_ms = timestamp_ms - previous
+        self._last_timestamp_ms = timestamp_ms
+        self._estimated_timestamp_drops += max(0, elapsed_ms // 16 - 1)
+
     def snapshot(
         self, *, queue_depth: int, json_clients: int, binary_clients: int
     ) -> dict[str, Any]:
@@ -193,12 +234,21 @@ class TelemetryPipelineMetrics:
             "contractVersion": self.contract_version,
             "framesProcessed": self._frames_processed,
             "framesDropped": self._frames_dropped,
+            "dropReasons": dict(sorted(self._drop_reasons.items())),
             "input": {
                 "datagramsReceived": self._datagrams_received,
                 "packetsParsed": self._packets_parsed,
                 "packetsRejected": dict(sorted(self._packets_rejected.items())),
                 "lastDatagramAt": self._last_datagram_at,
                 "lastPacketLength": self._last_packet_length,
+                "schemasAccepted": dict(sorted(self._schemas_accepted.items())),
+                "lastPacketSchema": self._last_packet_schema,
+                "timestampDiagnostics": {
+                    "duplicates": self._timestamp_duplicates,
+                    "outOfOrder": self._timestamp_out_of_order,
+                    "wraps": self._timestamp_wraps,
+                    "estimatedDrops": self._estimated_timestamp_drops,
+                },
             },
             "queue": {
                 "current": max(0, queue_depth),

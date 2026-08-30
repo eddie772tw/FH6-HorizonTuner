@@ -38,6 +38,7 @@ class TestTelemetryListener(unittest.TestCase):
         self.assertIsNotNone(parsed)
         self.assertEqual(parsed["IsRaceOn"], 1)
         self.assertEqual(parsed["TimestampMS"], 12345)
+        self.assertEqual(parsed["TelemetrySchema"], "forza-data-out/legacy-common-v1")
 
     def test_datagram_received_v1(self):
         # Build 232 byte packet (V1)
@@ -192,6 +193,7 @@ class TestTelemetryListener(unittest.TestCase):
         self.assertEqual(parsed["HandBrakeInput"], 0)
         self.assertEqual(parsed["Gear"], 3)
         self.assertEqual(parsed["SteerInput"], -12)
+        self.assertEqual(parsed["TelemetrySchema"], "forza-data-out/fh6-324-v2")
 
     def test_datagram_received_not_racing(self):
         # IsRaceOn = 0 -> packet should be ignored
@@ -217,6 +219,52 @@ class TestTelemetryListener(unittest.TestCase):
             queue_depth=0, json_clients=0, binary_clients=0
         )["input"]
         self.assertEqual(input_metrics["packetsRejected"], {"too_short": 1})
+
+    def test_packet_quality_rejections_are_observable_and_never_enqueue(self):
+        partial = bytearray(300)
+        struct.pack_into("<i", partial, 0, 1)
+        oversized = bytearray(325)
+        struct.pack_into("<i", oversized, 0, 1)
+        implausible = bytearray(324)
+        struct.pack_into("<i", implausible, 0, 1)
+        struct.pack_into("<f", implausible, 256, float("nan"))
+
+        self.protocol.datagram_received(bytes(partial), ("127.0.0.1", 20440))
+        self.protocol.datagram_received(bytes(oversized), ("127.0.0.1", 20440))
+        self.protocol.datagram_received(bytes(implausible), ("127.0.0.1", 20440))
+
+        self.assertEqual(self.queue.qsize(), 0)
+        rejected = self.metrics.snapshot(
+            queue_depth=0, json_clients=0, binary_clients=0
+        )["input"]["packetsRejected"]
+        self.assertEqual(
+            rejected,
+            {
+                "partial_schema": 1,
+                "plausibility_failed": 1,
+                "unsupported_length": 1,
+            },
+        )
+
+    def test_input_queue_full_drop_reason_keeps_the_existing_bounded_frame(self):
+        queue = asyncio.Queue(maxsize=1)
+        metrics = TelemetryPipelineMetrics()
+        protocol = TelemetryProtocol(queue, metrics=metrics)
+        first = bytearray(324)
+        second = bytearray(324)
+        for packet, timestamp in ((first, 100), (second, 116)):
+            struct.pack_into("<i", packet, 0, 1)
+            struct.pack_into("<I", packet, 4, timestamp)
+            protocol.datagram_received(bytes(packet), ("127.0.0.1", 20440))
+
+        self.assertEqual(queue.qsize(), 1)
+        self.assertEqual(queue.get_nowait()["TimestampMS"], 100)
+        snapshot = metrics.snapshot(queue_depth=0, json_clients=0, binary_clients=0)
+        self.assertEqual(snapshot["framesDropped"], 1)
+        self.assertEqual(snapshot["dropReasons"], {"input_queue_full": 1})
+        self.assertEqual(
+            snapshot["input"]["schemasAccepted"], {"forza-data-out/fh6-324-v2": 2}
+        )
 
     def test_forward_udp_packet_direct(self):
         raw_data = b"forza_telemetry_bytes" * 10
