@@ -1661,7 +1661,9 @@ async def update_settings(data: dict):
         app_settings.clear()
         app_settings.update(previous_settings)
         logger.error(f"Failed to persist settings: {e}")
-        raise HTTPException(status_code=500, detail="Settings could not be saved") from e
+        raise HTTPException(
+            status_code=500, detail="Settings could not be saved"
+        ) from e
 
     if theme_updated or units_updated:
         hud_data = DEFAULT_HUD_CONFIG
