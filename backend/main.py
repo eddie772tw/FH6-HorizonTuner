@@ -73,6 +73,7 @@ import logging
 import subprocess
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path as FilePath
 from typing import List
 
 from audio_spectrum import (
@@ -81,6 +82,7 @@ from audio_spectrum import (
     set_audio_capture_device,
     stop_audio_spectrum_service,
 )
+from diagnostic_support_bundle import ALLOWED_FIELDS, create_support_bundle
 from discord_presence import DiscordPresenceManager, load_discord_application_id
 from fastapi import (
     FastAPI,
@@ -105,6 +107,7 @@ from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telem
 from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
 from process_cleanup import cleanup_stale_port_listeners
+from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from system_media import get_system_media_info
 from telemetry_listener import (
@@ -153,6 +156,9 @@ if not getattr(sys, "frozen", False):
     root_logger.addHandler(console_handler)
 
 logger = logging.getLogger(__name__)
+
+APP_VERSION = "11.45.15"
+BACKEND_VERSION = "11.45.15.0"
 
 # 統一配置唯讀資源目錄與可寫入資料目錄
 
@@ -1467,6 +1473,41 @@ async def get_overlay_performance_metrics():
     return overlay_performance_metrics.snapshot(
         active_clients=len(overlay_manager.active_connections),
         render_mode=VFD_RENDER_MODE,
+    )
+
+
+class SupportBundleRequest(BaseModel):
+    window_minutes: int = Field(default=10, alias="windowMinutes", ge=1, le=60)
+    fields: list[str] = Field(default_factory=lambda: sorted(ALLOWED_FIELDS))
+
+
+@app.post("/api/diagnostics/support-bundle")
+async def export_diagnostic_support_bundle(request: SupportBundleRequest):
+    """Create a manually requested, redacted local diagnostics ZIP response."""
+    diagnostics = {
+        "telemetryPipeline": await get_telemetry_pipeline_metrics(),
+        "overlay": await get_overlay_performance_metrics(),
+        "discordPresence": await get_discord_presence_status(),
+    }
+    try:
+        bundle = create_support_bundle(
+            log_path=FilePath(backend_log_path),
+            diagnostics=diagnostics,
+            app_version=APP_VERSION,
+            backend_version=BACKEND_VERSION,
+            window_minutes=request.window_minutes,
+            requested_fields=request.fields,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    return Response(
+        content=bundle,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": 'attachment; filename="fh6-diagnostic-support.zip"',
+            "Cache-Control": "no-store",
+        },
     )
 
 

@@ -15,6 +15,15 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-30 / Privacy-preserving diagnostic support bundle
+
+- **來源**：`local`，手動產生的本機支援包功能。
+- **狀態**：`adopted`。
+- **Learning**：診斷匯出不得把「可供本機診斷」誤解為可完整打包；只允許彙總 telemetry/overlay/Discord health 與時間窗內日誌，並在 ZIP 形成前遞迴移除 raw UDP/packet、絕對路徑、玩家識別與 credentials。以記憶體回應 ZIP 加上 `Cache-Control: no-store` 可避免後端產生持久副本；前端仍須清楚說明手動下載不等於自動上傳。
+- **Action**：維持 `fh6-diagnostic-support-bundle/v1` manifest 中的 app/backend 版本、settings schema identifier、redaction 說明與 bounded `windowMinutes`；新增收集欄位時必須先加入 allowlist、redaction 與容量上限測試，拒絕未知欄位。
+- **Evidence**：`tests/test_diagnostic_support_bundle.py` 驗證 redaction、10 分鐘時間窗、manifest、unsafe field rejection、section size cap 與 `no-store` download response；前端 `diagnosticSupportBundle.test.ts` 驗證 allowlisted request 與 local-only copy。
+- **Governance**：本筆依 `github-security-audit`、`cross-agent-collaboration`、`modular-refactoring`、`halfmoon-design-system` 與 `agent-governance-audit` 規範登錄；`backend/main.py` 限於診斷 endpoint/import 整合 hunks，未修改 telemetry listener、SettingsContext、onboarding、ref 或 LazyForza。
+
 ## 2026-08-28 / UDP Socket Resilience & Stale Process Auto-Cleanup Architecture
 
 ### UDP 監聽器 Winsock SIO_UDP_CONNRESET 防禦、error_received 自癒與啟動時殘留進程/端口自動清理
