@@ -1610,3 +1610,13 @@
   4. The three-column breakpoint begins at `lg`; below `xl`, individual setting rows stack their label and control to retain usable widths. Narrower screens continue to stack columns vertically.
 - **Verification**: Ruff check/format passed; backend tests passed as `194` non-host-diagnostics plus `2` isolated host-diagnostics tests; frontend Vitest passed `73 files / 456 tests`; production TypeScript/Vite build and `git diff --check` passed. Browser QA confirmed three equal columns at 1440px and 1024px, with no Settings grid horizontal overflow at 1024px.
 - **Status**: adopted.
+
+---
+
+## 2026-08-30 / Data Out onboarding and bounded health presentation
+
+- **Scope**: `frontend/src/features/onboarding/` and `frontend/src/components/Navigation.tsx`.
+- **Decision**: The frontend consumes the existing read-only `/api/diagnostics/telemetry-pipeline` contract through a typed presentation boundary. It distinguishes no packets, packets that produced no valid frames, usable frames, and unavailable diagnostics; parser rejection reasons remain visible without changing the UDP parser.
+- **Accessibility and layout**: The first-run, dismissible modal has a labelled dialog role, focused close control, Escape support, and explicit skip/review actions. The everyday navigation exposes only a compact Data Out status action; the detailed metrics remain progressively disclosed in the modal and do not occupy the telemetry layout.
+- **Evidence**: Vitest covers usable, no-data, parser-error, diagnostics-error, skip, and complete state derivation. The guide states that diagnostic evidence is local packet observation only and does not claim a verified in-game connection.
+- **Status**: adopted.
