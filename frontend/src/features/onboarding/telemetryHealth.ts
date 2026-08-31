@@ -50,6 +50,13 @@ export function deriveTelemetryHealth(
   const isCurrent = lastDatagramAt !== null
     && nowSeconds - lastDatagramAt <= DATA_OUT_FRESHNESS_WINDOW_SECONDS;
 
+  if (errors.length > 0) {
+    return {
+      state: 'invalid', label: 'Data received, but not usable',
+      detail: 'Check the reported packet format issue.',
+      datagramsReceived, validFrames: 0, hasObservedPacket, lastPacketAt: lastDatagramAt, errors,
+    };
+  }
   if (packetsParsed > 0 && isCurrent) {
     return {
       state: 'active', label: 'Data Out receiving',
@@ -67,7 +74,7 @@ export function deriveTelemetryHealth(
   if (hasObservedPacket) {
     return {
       state: 'invalid', label: 'Data received, but not usable',
-      detail: errors.length ? 'Check the reported packet format issue.' : 'No valid telemetry frame has been parsed yet.',
+      detail: 'No valid telemetry frame has been parsed yet.',
       datagramsReceived, validFrames: 0, hasObservedPacket, lastPacketAt: lastDatagramAt, errors,
     };
   }
