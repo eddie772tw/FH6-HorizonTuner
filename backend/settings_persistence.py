@@ -175,13 +175,16 @@ class SerializedSettingsUpdate:
         self._lock = asyncio.Lock()
 
     async def merge_save_commit(
-        self, merge: Callable[[dict[str, Any]], None]
+        self,
+        merge: Callable[[dict[str, Any]], None],
+        persistence: SettingsSaver | None = None,
     ) -> dict[str, Any]:
         """Serialize merge/save/commit so a failed older write cannot roll back a newer one."""
         async with self._lock:
             candidate = copy.deepcopy(self._settings)
             merge(candidate)
-            await asyncio.to_thread(self._persistence.save, candidate)
+            target_persistence = persistence or self._persistence
+            await asyncio.to_thread(target_persistence.save, candidate)
             self._settings.clear()
             self._settings.update(candidate)
             return copy.deepcopy(candidate)

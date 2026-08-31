@@ -1657,7 +1657,8 @@ async def update_settings(data: dict):
 
         try:
             updated_settings = await settings_update.merge_save_commit(
-                lambda candidate: merge_settings_patch(candidate, data)
+                lambda candidate: merge_settings_patch(candidate, data),
+                persistence=SettingsPersistence(SETTINGS_FILE),
             )
             logger.info("Saved settings through durable store")
         except Exception as e:
