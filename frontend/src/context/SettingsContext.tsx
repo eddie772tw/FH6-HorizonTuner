@@ -27,7 +27,6 @@ export interface AppSettings {
   dyno_filter_slip: boolean;
   dyno_filter_transients: boolean;
   units: UnitSettings;
-  telemetry_ip?: string;
   telemetry_port?: number;
   forward_telemetry_enabled?: boolean;
   forward_telemetry_host?: string;
@@ -99,7 +98,6 @@ const defaultSettings: AppSettings = {
   dyno_filter_slip: true,
   dyno_filter_transients: true,
   units: defaultUnits,
-  telemetry_ip: '0.0.0.0',
   telemetry_port: 8000,
   forward_telemetry_enabled: false,
   forward_telemetry_host: '127.0.0.1',
