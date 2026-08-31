@@ -7,7 +7,11 @@ export interface TelemetryPipelineSnapshot {
   };
 }
 
-export type TelemetryHealthState = 'active' | 'waiting' | 'invalid' | 'unavailable';
+export type TelemetryHealthState = 'active' | 'stale' | 'waiting' | 'invalid' | 'unavailable';
+
+// The diagnostics hook refreshes every 10 seconds; leave a small tolerance so
+// a current stream does not briefly appear stale between polls.
+export const DATA_OUT_FRESHNESS_WINDOW_SECONDS = 15;
 
 export interface TelemetryHealth {
   state: TelemetryHealthState;
@@ -23,6 +27,7 @@ export interface TelemetryHealth {
 export function deriveTelemetryHealth(
   snapshot: TelemetryPipelineSnapshot | null,
   requestError?: string | null,
+  nowSeconds = Date.now() / 1000,
 ): TelemetryHealth {
   if (!snapshot) {
     return {
@@ -41,19 +46,29 @@ export function deriveTelemetryHealth(
   const errors = Object.entries(packetsRejected)
     .filter(([, count]) => count > 0)
     .map(([reason, count]) => `${reason} (${count})`);
+  const hasObservedPacket = datagramsReceived > 0 || packetsParsed > 0 || lastDatagramAt !== null;
+  const isCurrent = lastDatagramAt !== null
+    && nowSeconds - lastDatagramAt <= DATA_OUT_FRESHNESS_WINDOW_SECONDS;
 
-  if (packetsParsed > 0) {
+  if (packetsParsed > 0 && isCurrent) {
     return {
       state: 'active', label: 'Data Out receiving',
       detail: `${packetsParsed} valid frame${packetsParsed === 1 ? '' : 's'} received.`,
-      datagramsReceived, validFrames: packetsParsed, hasObservedPacket: true, lastPacketAt: lastDatagramAt, errors,
+      datagramsReceived, validFrames: packetsParsed, hasObservedPacket, lastPacketAt: lastDatagramAt, errors,
     };
   }
-  if (datagramsReceived > 0) {
+  if (hasObservedPacket && !isCurrent) {
+    return {
+      state: 'stale', label: 'Data Out not currently receiving',
+      detail: 'Packets were observed previously, but no packet has arrived recently.',
+      datagramsReceived, validFrames: packetsParsed, hasObservedPacket, lastPacketAt: lastDatagramAt, errors,
+    };
+  }
+  if (hasObservedPacket) {
     return {
       state: 'invalid', label: 'Data received, but not usable',
       detail: errors.length ? 'Check the reported packet format issue.' : 'No valid telemetry frame has been parsed yet.',
-      datagramsReceived, validFrames: 0, hasObservedPacket: true, lastPacketAt: lastDatagramAt, errors,
+      datagramsReceived, validFrames: 0, hasObservedPacket, lastPacketAt: lastDatagramAt, errors,
     };
   }
   return {

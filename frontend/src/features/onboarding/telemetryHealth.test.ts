@@ -3,8 +3,25 @@ import { deriveTelemetryHealth, hasCompletedDataOutGuide, hasDismissedDataOutGui
 
 describe('deriveTelemetryHealth', () => {
   it('reports a usable Data Out frame without claiming an in-game connection', () => {
-    const health = deriveTelemetryHealth({ input: { datagramsReceived: 3, packetsParsed: 2, packetsRejected: {}, lastDatagramAt: 123 } });
+    const health = deriveTelemetryHealth({ input: { datagramsReceived: 3, packetsParsed: 2, packetsRejected: {}, lastDatagramAt: 123 } }, null, 130);
     expect(health).toMatchObject({ state: 'active', datagramsReceived: 3, validFrames: 2, hasObservedPacket: true, lastPacketAt: 123 });
+  });
+
+  it('does not report current reception from stale lifetime counters', () => {
+    const health = deriveTelemetryHealth(
+      { input: { datagramsReceived: 120, packetsParsed: 119, packetsRejected: {}, lastDatagramAt: 900 } },
+      null,
+      1_000,
+    );
+
+    expect(health).toMatchObject({
+      state: 'stale',
+      label: 'Data Out not currently receiving',
+      datagramsReceived: 120,
+      validFrames: 119,
+      hasObservedPacket: true,
+      lastPacketAt: 900,
+    });
   });
 
   it('reports the no-data state', () => {
