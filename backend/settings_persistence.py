@@ -7,13 +7,46 @@ contracts.
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import json
 import os
 import tempfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
+
+# Every application-managed directory that can be written beneath DATA_ROOT.
+# `backend.main` uses this manifest to create the directories, while the storage
+# overview uses it to calculate capacity. Keep new durable data locations here.
+DATA_ROOT_WRITABLE_DIRECTORIES = (
+    "logs",
+    "lang",
+    "tunings",
+    "car_params",
+    "hud_overlay",
+    "sessions",
+    "drag_sessions",
+    "user_configs",
+    "captures",
+)
+
+DATA_ROOT_STORAGE_ENTRIES = (
+    "settings.json",
+    "settings.json.bak",
+    "layout.json",
+    "hud_config.json",
+    "car_learning.json",
+    *DATA_ROOT_WRITABLE_DIRECTORIES,
+)
+
+
+class SettingsSaver(Protocol):
+    """Minimal persistence contract used by serialized settings updates."""
+
+    def save(self, value: dict[str, Any]) -> None:
+        """Persist a complete settings document."""
 
 
 class SettingsPersistence:
@@ -96,16 +129,9 @@ class SettingsPersistence:
     def storage_overview(self) -> dict[str, Any]:
         """Return a non-sensitive overview: all paths are relative to the data root."""
         data_root = self.settings_file.parent
-        tracked = (
-            "settings.json",
-            "settings.json.bak",
-            "sessions",
-            "tunings",
-            "car_params",
-        )
         entries: list[dict[str, Any]] = []
         total_bytes = 0
-        for relative_path in tracked:
+        for relative_path in DATA_ROOT_STORAGE_ENTRIES:
             target = data_root / relative_path
             if target.is_file():
                 size = target.stat().st_size
@@ -138,3 +164,24 @@ class SettingsPersistence:
                 "sqlite_migration": "not_planned",
             },
         }
+
+
+class SerializedSettingsUpdate:
+    """Serialize candidate settings writes and commit only after a successful save."""
+
+    def __init__(self, settings: dict[str, Any], persistence: SettingsSaver) -> None:
+        self._settings = settings
+        self._persistence = persistence
+        self._lock = asyncio.Lock()
+
+    async def merge_save_commit(
+        self, merge: Callable[[dict[str, Any]], None]
+    ) -> dict[str, Any]:
+        """Serialize merge/save/commit so a failed older write cannot roll back a newer one."""
+        async with self._lock:
+            candidate = copy.deepcopy(self._settings)
+            merge(candidate)
+            await asyncio.to_thread(self._persistence.save, candidate)
+            self._settings.clear()
+            self._settings.update(candidate)
+            return copy.deepcopy(candidate)

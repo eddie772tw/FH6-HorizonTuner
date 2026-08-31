@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeSettingsUpdate, persistSettingsUpdate, type AppSettings } from './SettingsContext';
+import { createOptimisticSettingsQueue, mergeSettingsUpdate, type AppSettings } from './SettingsContext';
 
 const settings: AppSettings = {
   dyno_recording: false,
@@ -20,10 +20,22 @@ describe('settings persistence updates', () => {
     expect(mergeSettingsUpdate(settings, { units: { power: 'kw' } }).units.power).toBe('kw');
   });
 
-  it('returns the exact previous settings for rollback when a write fails', async () => {
-    const result = await persistSettingsUpdate(settings, { language: 'zh-tw' }, async () => new Response(null, { status: 500 }));
+  it('removes only an older failed patch while retaining a newer optimistic update', () => {
+    const queue = createOptimisticSettingsQueue(settings);
 
-    expect(result.settings.language).toBe('zh-tw');
-    expect(result.rollback).toEqual(settings);
+    queue.enqueue(1, { language: 'zh-tw' });
+    expect(queue.enqueue(2, { dyno_recording: true })).toMatchObject({
+      language: 'zh-tw',
+      dyno_recording: true,
+    });
+
+    expect(queue.settle(1, false)).toMatchObject({
+      language: 'en-us',
+      dyno_recording: true,
+    });
+    expect(queue.settle(2, true)).toMatchObject({
+      language: 'en-us',
+      dyno_recording: true,
+    });
   });
 });

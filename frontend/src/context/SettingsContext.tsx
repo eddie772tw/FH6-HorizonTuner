@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { backendFetch } from '../services/backend';
 import { normalizeGeneralUnitSettings } from '../utils/gameUnitSettings';
 import { useToast } from './ToastContext';
@@ -115,18 +115,45 @@ export function mergeSettingsUpdate(current: AppSettings, updates: Partial<AppSe
   return { ...current, ...updates };
 }
 
-export async function persistSettingsUpdate(
-  previous: AppSettings,
-  updates: Partial<AppSettings> | { units: Partial<UnitSettings> },
-  persist: (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => Promise<Response>,
-): Promise<{ settings: AppSettings; rollback: AppSettings | null }> {
-  const settings = mergeSettingsUpdate(previous, updates);
-  try {
-    const response = await persist(updates);
-    if (!response.ok) throw new Error(`Settings request failed with ${response.status}`);
-    return { settings, rollback: null };
-  } catch {
-    return { settings, rollback: previous };
+type SettingsUpdate = Partial<AppSettings> | { units: Partial<UnitSettings> };
+
+interface PendingSettingsUpdate {
+  revision: number;
+  updates: SettingsUpdate;
+}
+
+export interface OptimisticSettingsQueue {
+  enqueue: (revision: number, updates: SettingsUpdate) => AppSettings;
+  settle: (revision: number, succeeded: boolean) => AppSettings;
+  replaceConfirmed: (settings: AppSettings) => AppSettings;
+}
+
+export function createOptimisticSettingsQueue(initial: AppSettings): OptimisticSettingsQueue {
+  let confirmed = initial;
+  let pending: PendingSettingsUpdate[] = [];
+
+  const snapshot = () => pending.reduce(
+    (current, operation) => mergeSettingsUpdate(current, operation.updates),
+    confirmed,
+  );
+
+  return {
+    enqueue(revision, updates) {
+      pending = [...pending, { revision, updates }];
+      return snapshot();
+    },
+    settle(revision, succeeded) {
+      const operation = pending.find(item => item.revision === revision);
+      if (!operation) return snapshot();
+
+      pending = pending.filter(item => item.revision !== revision);
+      if (succeeded) confirmed = mergeSettingsUpdate(confirmed, operation.updates);
+      return snapshot();
+    },
+    replaceConfirmed(settings) {
+      confirmed = settings;
+      return snapshot();
+    },
   }
 }
 
@@ -207,6 +234,9 @@ export const ScopedUnitSettingsProvider: React.FC<{ units: UnitSettings; childre
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const settingsQueueRef = useRef(createOptimisticSettingsQueue(defaultSettings));
+  const nextSettingsRevisionRef = useRef(0);
+  const settingsPersistTailRef = useRef<Promise<void>>(Promise.resolve());
   const [isLoading, setIsLoading] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [availableLanguages, setAvailableLanguages] = useState<Array<{ code: string; name: string }>>([
@@ -245,7 +275,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               ...(data.units || {})
             })
           };
-          setSettings(merged);
+          setSettings(settingsQueueRef.current.replaceConfirmed(merged));
         }
       } catch (e) {
         console.error('Failed to fetch settings from backend', e);
@@ -276,25 +306,37 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchTranslation();
   }, [settings.language]);
 
-  const updateSettings = async (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => {
-    const previousSettings = settings;
-    const optimisticSettings = mergeSettingsUpdate(previousSettings, updates);
-    setSettings(optimisticSettings);
+  const updateSettings = async (updates: SettingsUpdate) => {
+    const revision = ++nextSettingsRevisionRef.current;
+    setSettings(settingsQueueRef.current.enqueue(revision, updates));
 
-    const result = await persistSettingsUpdate(previousSettings, updates, (payload) => backendFetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }));
-    if (result.rollback) {
-      setSettings(result.rollback);
-      addToast({
-        type: 'danger',
-        title: 'Settings not saved',
-        message: 'The change was reverted because the application could not save it.',
-        detail: 'Check that the application data directory is writable, then try again.'
-      });
-    }
+    const persist = async () => {
+      let succeeded = false;
+      try {
+        const response = await backendFetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        succeeded = response.ok;
+      } catch {
+        succeeded = false;
+      }
+
+      setSettings(settingsQueueRef.current.settle(revision, succeeded));
+      if (!succeeded) {
+        addToast({
+          type: 'danger',
+          title: 'Settings not saved',
+          message: 'The change was reverted because the application could not save it.',
+          detail: 'Check that the application data directory is writable, then try again.'
+        });
+      }
+    };
+
+    const request = settingsPersistTailRef.current.then(persist, persist);
+    settingsPersistTailRef.current = request;
+    await request;
   };
 
   // Speed (m/s input)
