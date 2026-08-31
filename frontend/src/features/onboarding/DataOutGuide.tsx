@@ -9,7 +9,11 @@ interface DataOutGuideProps {
 }
 
 const badgeClass: Record<TelemetryHealth['state'], string> = {
-  active: 'text-bg-success', waiting: 'text-bg-warning', invalid: 'text-bg-danger', unavailable: 'text-bg-secondary',
+  active: 'text-bg-success',
+  stale: 'text-bg-warning',
+  waiting: 'text-bg-warning',
+  invalid: 'text-bg-danger',
+  unavailable: 'text-bg-secondary',
 };
 
 export default function DataOutGuide({ health, open, onClose }: DataOutGuideProps) {
