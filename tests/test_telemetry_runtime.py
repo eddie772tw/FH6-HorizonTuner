@@ -36,6 +36,7 @@ def test_pipeline_metrics_expose_a_bounded_v1_contract():
         "outOfOrder": 0,
         "wraps": 0,
         "estimatedDrops": 0,
+        "resets": 0,
     }
     assert snapshot["input"]["lastDatagramAt"] is not None
     assert snapshot["queue"] == {"current": 1, "peak": 7}
@@ -63,6 +64,7 @@ def test_packet_timestamp_diagnostics_distinguish_duplicate_order_wrap_and_gaps(
         "outOfOrder": 1,
         "wraps": 0,
         "estimatedDrops": 0,
+        "resets": 0,
     }
 
     wrap_metrics = TelemetryPipelineMetrics()
@@ -76,7 +78,37 @@ def test_packet_timestamp_diagnostics_distinguish_duplicate_order_wrap_and_gaps(
         "outOfOrder": 0,
         "wraps": 1,
         "estimatedDrops": 4,
+        "resets": 0,
     }
+
+
+def test_timestamp_diagnostics_rebase_epoch_resets_but_keep_short_reordering():
+    metrics = TelemetryPipelineMetrics()
+    for timestamp in (1_000, 984, 1_016, 12, 28):
+        metrics.record_packet_parsed(timestamp_ms=timestamp)
+
+    snapshot = metrics.snapshot(queue_depth=0, json_clients=0, binary_clients=0)
+    assert snapshot["input"]["timestampDiagnostics"] == {
+        "duplicates": 0,
+        "outOfOrder": 1,
+        "wraps": 0,
+        "estimatedDrops": 0,
+        "resets": 1,
+    }
+
+
+def test_timestamp_diagnostics_rebase_when_the_udp_source_changes():
+    metrics = TelemetryPipelineMetrics()
+    metrics.record_packet_parsed(timestamp_ms=9_000, source=("127.0.0.1", 20440))
+    metrics.record_packet_parsed(timestamp_ms=16, source=("127.0.0.1", 20441))
+    metrics.record_packet_parsed(timestamp_ms=32, source=("127.0.0.1", 20441))
+
+    diagnostics = metrics.snapshot(queue_depth=0, json_clients=0, binary_clients=0)[
+        "input"
+    ]["timestampDiagnostics"]
+    assert diagnostics["outOfOrder"] == 0
+    assert diagnostics["estimatedDrops"] == 0
+    assert diagnostics["resets"] == 1
 
 
 def test_profile_load_is_deferred_from_the_event_loop():

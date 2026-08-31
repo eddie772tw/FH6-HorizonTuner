@@ -551,6 +551,7 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                     self.metrics.record_packet_parsed(
                         timestamp_ms=telemetry_data["TimestampMS"],
                         schema=telemetry_data["TelemetrySchema"],
+                        source=addr,
                     )
                 try:
                     self.message_queue.put_nowait(telemetry_data)
@@ -562,6 +563,8 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
                 if rejection_reason is None:
                     rejection_reason = "plausibility_failed"
                 self.metrics.record_packet_rejected(rejection_reason)
+                if rejection_reason == "not_racing":
+                    self.metrics.record_timestamp_boundary()
         except Exception as e:
             if self.metrics is not None:
                 self.metrics.record_packet_rejected("parser_error")

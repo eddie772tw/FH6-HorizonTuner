@@ -208,6 +208,27 @@ class TestTelemetryListener(unittest.TestCase):
         self.assertEqual(input_metrics["datagramsReceived"], 1)
         self.assertEqual(input_metrics["packetsRejected"], {"not_racing": 1})
 
+    def test_not_racing_session_boundary_rebases_timestamp_diagnostics(self):
+        racing = bytearray(232)
+        struct.pack_into("<i", racing, 0, 1)
+        struct.pack_into("<I", racing, 4, 10_000)
+        not_racing = bytearray(232)
+        struct.pack_into("<i", not_racing, 0, 0)
+        resumed = bytearray(232)
+        struct.pack_into("<i", resumed, 0, 1)
+        struct.pack_into("<I", resumed, 4, 16)
+
+        self.protocol.datagram_received(bytes(racing), ("127.0.0.1", 20440))
+        self.protocol.datagram_received(bytes(not_racing), ("127.0.0.1", 20440))
+        self.protocol.datagram_received(bytes(resumed), ("127.0.0.1", 20440))
+
+        diagnostics = self.metrics.snapshot(
+            queue_depth=0, json_clients=0, binary_clients=0
+        )["input"]["timestampDiagnostics"]
+        self.assertEqual(diagnostics["outOfOrder"], 0)
+        self.assertEqual(diagnostics["estimatedDrops"], 0)
+        self.assertEqual(diagnostics["resets"], 1)
+
     def test_datagram_received_invalid_length(self):
         # Packet length < 232 -> should be ignored
         data = bytearray(200)

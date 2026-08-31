@@ -134,6 +134,8 @@ class TelemetryPipelineMetrics:
     """Keep a bounded, low-overhead view of telemetry pipeline health."""
 
     contract_version = "telemetry-pipeline-metrics/v1"
+    _MAX_OUT_OF_ORDER_MS = 250
+    _MAX_WRAP_ELAPSED_MS = 60_000
 
     def __init__(self, sample_window: int = 240):
         self._sample_window = sample_window
@@ -150,10 +152,12 @@ class TelemetryPipelineMetrics:
         self._schemas_accepted: dict[str, int] = {}
         self._last_packet_schema: str | None = None
         self._last_timestamp_ms: int | None = None
+        self._last_timestamp_source: tuple[str, int] | None = None
         self._timestamp_duplicates = 0
         self._timestamp_out_of_order = 0
         self._timestamp_wraps = 0
         self._estimated_timestamp_drops = 0
+        self._timestamp_resets = 0
 
     def measure_stage(self, stage: str):
         """Return a context manager that stores one stage duration in milliseconds."""
@@ -187,7 +191,11 @@ class TelemetryPipelineMetrics:
         self._last_packet_length = max(0, packet_length)
 
     def record_packet_parsed(
-        self, *, timestamp_ms: int | None = None, schema: str | None = None
+        self,
+        *,
+        timestamp_ms: int | None = None,
+        schema: str | None = None,
+        source: tuple[str, int] | None = None,
     ) -> None:
         """Record a datagram that produced a telemetry frame."""
         self._packets_parsed += 1
@@ -195,11 +203,23 @@ class TelemetryPipelineMetrics:
             self._schemas_accepted[schema] = self._schemas_accepted.get(schema, 0) + 1
             self._last_packet_schema = schema
         if timestamp_ms is not None:
+            if (
+                source is not None
+                and self._last_timestamp_source is not None
+                and source != self._last_timestamp_source
+            ):
+                self._rebase_timestamp()
+            if source is not None:
+                self._last_timestamp_source = source
             self._observe_timestamp(timestamp_ms)
 
     def record_packet_rejected(self, reason: str) -> None:
         """Record a bounded parser rejection reason."""
         self._packets_rejected[reason] = self._packets_rejected.get(reason, 0) + 1
+
+    def record_timestamp_boundary(self) -> None:
+        """Stop continuity estimation at a known telemetry session boundary."""
+        self._rebase_timestamp()
 
     def observe_queue_depth(self, queue_depth: int) -> None:
         """Track the highest observed queue depth since process start."""
@@ -216,15 +236,29 @@ class TelemetryPipelineMetrics:
             self._timestamp_duplicates += 1
             return
         if timestamp_ms < previous:
-            if previous - timestamp_ms <= 0x7FFFFFFF:
+            backwards_ms = previous - timestamp_ms
+            wrap_elapsed_ms = (0x100000000 - previous) + timestamp_ms
+            if wrap_elapsed_ms <= self._MAX_WRAP_ELAPSED_MS:
+                self._timestamp_wraps += 1
+                elapsed_ms = wrap_elapsed_ms
+            elif backwards_ms <= self._MAX_OUT_OF_ORDER_MS:
                 self._timestamp_out_of_order += 1
                 return
-            self._timestamp_wraps += 1
-            elapsed_ms = (0x100000000 - previous) + timestamp_ms
+            else:
+                self._rebase_timestamp()
+                self._last_timestamp_ms = timestamp_ms
+                return
         else:
             elapsed_ms = timestamp_ms - previous
         self._last_timestamp_ms = timestamp_ms
         self._estimated_timestamp_drops += max(0, elapsed_ms // 16 - 1)
+
+    def _rebase_timestamp(self) -> None:
+        """Discard continuity state so distinct telemetry epochs never bridge a gap."""
+        if self._last_timestamp_ms is not None:
+            self._timestamp_resets += 1
+        self._last_timestamp_ms = None
+        self._last_timestamp_source = None
 
     def snapshot(
         self, *, queue_depth: int, json_clients: int, binary_clients: int
@@ -248,6 +282,7 @@ class TelemetryPipelineMetrics:
                     "outOfOrder": self._timestamp_out_of_order,
                     "wraps": self._timestamp_wraps,
                     "estimatedDrops": self._estimated_timestamp_drops,
+                    "resets": self._timestamp_resets,
                 },
             },
             "queue": {
