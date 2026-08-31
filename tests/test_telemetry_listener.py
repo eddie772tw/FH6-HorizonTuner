@@ -457,14 +457,22 @@ class TestTelemetryListener(unittest.TestCase):
     def test_start_udp_listener_multi_interface(self):
         async def run_test():
             queue = asyncio.Queue()
-            # Start listener on ephemeral port with auto discovery (explicit interface binding)
+            # Start listener on ephemeral port with auto discovery (explicit multi-interface binding)
             transport = await start_udp_listener(
-                "auto",
-                0,
-                queue,
+                port=0,
+                message_queue=queue,
             )
             self.assertIsNotNone(transport)
             transport.close()
+
+            # Also verify passing ip explicitly still binds loopback + interfaces
+            transport2 = await start_udp_listener(
+                ip="127.0.0.1",
+                port=0,
+                message_queue=queue,
+            )
+            self.assertIsNotNone(transport2)
+            transport2.close()
 
         asyncio.run(run_test())
 

@@ -28,12 +28,13 @@
   4. **殭屍進程 (Zombie / Stale Process) 霸佔端口與自癒**：當先前的後端進程非正常終止殘留於背景時，會持續持有 UDP 8000 / HTTP 8001 端口，導致新實例無法獲取數據。透過 Windows 原生 `iphlpapi.dll` (`GetExtendedUdpTable`/`GetExtendedTcpTable`) 可進行零外部依賴的極速 PID 探測，並以安全白名單篩選（僅清理 HorizonTuner 殘留進程、絕不誤殺第三方或遊戲進程），在啟動時自動釋放端口，免除重開機或重新登入之需求。
   5. **收發 Socket 實體隔離 (Physical Socket Decoupling)**：監聽端 8000 端口必須維持為純接收 (RX Only)，轉發操作 (SimHub 5300) 必須由專用發送 Socket (`_forward_socket`) 承擔，配合 `_forward_datagram` 自動自癒重建機制，使轉發端的任何網路崩潰完全與 8000 監聽器物理隔離。
   6. **消弭 `0.0.0.0` 通配綁定之資安風險 (Multi-Interface Safe Binding)**：將監聽器全面由萬用通配 `0.0.0.0` 升級為「主動探測本機所有網路介面卡 IPv4 註冊地址 (`discover_local_ipv4_addresses`) + `127.0.0.1` 複合安全綁定 (`MultiEndpointDatagramTransport`)」，既滿足嚴格資安審計標準（禁止全介面通配監聽），又 100% 確保 Forza 遊戲無論設定 `127.0.0.1` 或是本機區域網路 IP 皆能零丟包無縫接收。
+  7. **無條件多介面同步監聽與介面簡化 (Unconditional Multi-Interface Listening)**：為徹底杜絕使用者設定單一 IP（如誤填 `127.0.0.1` 導致無法收取 LAN 封包，或反之）引發的接收失效，移除使用者介面中的「監聽 IP」設定欄位，系統一律無條件自動枚舉自機所有網卡 IP 與 `127.0.0.1` 同步安全監聽，使用者僅需配置「監聽端口」（預設 8000）。
 - **Action**：
   1. 建立 `backend/process_cleanup.py`，實作 `get_port_owning_pids`、`is_horizontuner_stale_process` 與 `cleanup_stale_port_listeners`。
   2. 重構 `backend/telemetry_listener.py`，落實收發 Socket 實體隔離、`_create_dedicated_forward_socket`、發送自癒機制、`ws2_32.WSAIoctl` 免疫配置，並實作 `discover_local_ipv4_addresses` 與 `MultiEndpointDatagramTransport` 達成零 `0.0.0.0` 綁定。
-  3. 於 `backend/main.py` 的 `lifespan` 啟動、動態端口更新及 HTTP 綁定前整合自動清理探測，預設 IP 全面改為 `127.0.0.1`。
+  3. 於 `backend/main.py` 的 `lifespan` 啟動、動態端口更新及 HTTP 綁定前整合自動清理探測，監聽行為全面無條件自動綁定全網卡自機 IP + `127.0.0.1`，並自 UI 及設定檔中移除 `telemetry_ip` 欄位。
   4. 新增 `tests/test_process_cleanup.py` 並擴充 `tests/test_telemetry_listener.py` 單元測試（後端測試增至 196 項）。
-- **Evidence**：後端 Pytest 196 項測試全數通過（含 18 項專門測試）；前端 Vitest 77 檔 / 475 項測試 100% 通過；`ruff check .` 與 `ruff format --check .` 100% 格式無誤。
+- **Evidence**：後端 Pytest 196 項測試全數通過（含 18 項專門測試）；前端 Vitest 77 檔 / 478 項測試 100% 通過；`ruff check .` 與 `ruff format --check .` 100% 格式無誤。
 - **Governance**：本筆追加依 `telemetry-udp-protocol`、`portable-release-validation`、`github-security-audit` 與 `agent-governance-audit` 規範登錄。
 
 ## 2026-08-28 / AEGO Secondary Correction Overhaul & FD-First Gearing Architecture
@@ -1623,3 +1624,19 @@
   3. Pipeline diagnostics remain backward compatible by retaining `telemetry-pipeline-metrics/v1` and adding bounded counters: accepted schemas, rejection reasons, `input_queue_full`/`consumer_lag` drop reasons, and unsigned-32-bit timestamp duplicate, out-of-order, wrap, and estimated-gap diagnostics.
   4. Timestamp gap estimates are observational only. They use `TimestampMS` continuity and are not evidence of a real FH6 packet loss without a live capture.
 - **Evidence**: Full local gates passed using this worktree's Python 3.13 `.venv`: `ruff check .`, `ruff format --check .`, `python -m pytest tests/` (`198 passed, 2 skipped, 6 deselected`), frontend Vitest (`77 files / 478 tests`), TypeScript/Vite build, and `git diff --check`. Unit fixtures cover both accepted packet lengths, each new parser rejection family, bounded consumer latest-wins, queue-full drops, and timestamp diagnostics.
+
+---
+
+## 2026-08-31 / Jules manual Session and scheduled-output provenance
+
+- **Scope**: `.agents/skills/jules_coding/` manual delegation gates, scheduled Jules Session/PR intake, persona provenance, and offline adoption validation.
+- **Source**: `local`，根據 PR #244、#253、#255、#257、#258、#260、#262、#269、#271、#273、#274、#283 與 Jules API 公開文件檢討。
+- **Decision**:
+  1. `jules_coding` 保留為 canonical skill，分流處理 `manual` invocation 與 `scheduled-output intake`；排程工作不是手動授權的結果。
+  2. `Bolt`、`Palette`、`Narrator`、`Sentinel` 只可透過 Session 開頭 prompt 與 task/PR evidence 推論為 `scheduled_likely`，不得當成正式 schedule flag。
+  3. 手動 Session 必須使用 `FH6-JULES-INTENT v2`、`Source: manual` handoff marker，並要求 `requirePlanApproval: true`；API 預設自動批准 plan。
+  4. 公開 API 能力僅升格為 Session 操作；`schedule_read`／`schedule_manage` 維持 `unavailable`，不得把刪除 Session 當成排程控制。
+  5. `.jules/**` 預設不屬於功能 PR scope；case collision、duplicate task、empty diff、未解決 PR、越界修改、缺少測試 evidence 與 stale CI 均為阻擋原因。
+- **Action**: 更新 `.agents/skills/jules_coding/SKILL.md`、`.agents/skills/README.md`；新增 `references/session_provenance.md`、離線 `scripts/validate_jules_intake.py` 與 `tests/test_jules_intake_contract.py`。
+- **Evidence**: validator tests `19 passed`；後端全體 Pytest `230 passed`；前端 Vitest `76 files / 472 tests passed`；`tsc && vite build` 通過；全 repo `ruff check` 通過、`ruff format --check` 顯示 `132 files already formatted`、`git diff --check` 通過；skill folder/frontmatter、tracked `.jules` case audit 通過。Jules connector、`JULES_API_KEY` 與 schedule API 未在本環境驗證，未執行任何遠端排程操作。
+- **Status**: adopted。
