@@ -238,3 +238,48 @@ class DynoQualityGate:
             expected_distance * POSITION_SPEED_TOLERANCE_MULTIPLIER,
         )
         return dist(self._previous_position, position) > permitted_distance
+
+
+class DynoQualityGateRegistry:
+    """Keep timestamp and fingerprint state isolated by persisted car profile."""
+
+    def __init__(self) -> None:
+        self._gates: dict[str, DynoQualityGate] = {}
+
+    def observe(self, car_id: str, frame: dict[str, Any]) -> DynoQualityAssessment:
+        return self._gates.setdefault(car_id, DynoQualityGate()).observe(frame)
+
+    def milliseconds_since_gear_change(
+        self, car_id: str, timestamp_ms: Any
+    ) -> float | None:
+        gate = self._gates.get(car_id)
+        return gate.milliseconds_since_gear_change(timestamp_ms) if gate else None
+
+    def discard(self, car_id: str) -> None:
+        self._gates.pop(car_id, None)
+
+
+def reconcile_dyno_profile_segment(
+    profile: dict[str, Any], quality: DynoQualityAssessment
+) -> bool:
+    """Apply a same-profile reset and retain the bounded prior curve.
+
+    This remains a segmentation boundary even while dyno collection is paused.
+    """
+    profile["dyno_quality"] = quality.as_dict()
+    if not quality.segment_reset:
+        return False
+
+    previous_curve = profile.get("dyno_curve", {})
+    if previous_curve:
+        segments = profile.setdefault("dyno_curve_segments", [])
+        segments.append(
+            {
+                "fingerprint": list(quality.previous_fingerprint or ()),
+                "curve": previous_curve,
+                "ended_reason": "vehicle-profile-changed",
+            }
+        )
+        del segments[:-5]
+    profile["dyno_curve"] = {}
+    return True

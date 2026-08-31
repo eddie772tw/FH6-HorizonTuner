@@ -1,4 +1,9 @@
-from backend.dyno_quality import DynoQualityGate, vehicle_profile_fingerprint
+from backend.dyno_quality import (
+    DynoQualityGate,
+    DynoQualityGateRegistry,
+    reconcile_dyno_profile_segment,
+    vehicle_profile_fingerprint,
+)
 
 
 def frame(
@@ -82,3 +87,34 @@ def test_shift_elapsed_is_derived_from_telemetry_timestamp_not_wall_clock():
     gate.observe(frame(1016, gear=5, position=(0.0, 0.0, 0.32)))
 
     assert gate.milliseconds_since_gear_change(1516) == 500
+
+
+def test_car_ordinal_transition_does_not_reset_the_destination_profile_curve():
+    gates = DynoQualityGateRegistry()
+    destination = {"dyno_curve": {"6000": {"hp": 500, "torque": 400}}}
+
+    gates.observe("10", frame(1000, ordinal=10))
+    destination_quality = gates.observe("11", frame(1016, ordinal=11))
+
+    assert not destination_quality.segment_reset
+    assert not reconcile_dyno_profile_segment(destination, destination_quality)
+    assert destination["dyno_curve"] == {"6000": {"hp": 500, "torque": 400}}
+
+
+def test_same_car_fingerprint_change_segments_its_profile_while_recording_is_paused():
+    gates = DynoQualityGateRegistry()
+    profile = {"dyno_curve": {"6000": {"hp": 500, "torque": 400}}}
+
+    gates.observe("10", frame(1000, ordinal=10, pi=800))
+    quality = gates.observe("10", frame(1016, ordinal=10, pi=801))
+
+    assert quality.segment_reset
+    assert reconcile_dyno_profile_segment(profile, quality)
+    assert profile["dyno_curve"] == {}
+    assert profile["dyno_curve_segments"] == [
+        {
+            "fingerprint": [10, 3, 800],
+            "curve": {"6000": {"hp": 500, "torque": 400}},
+            "ended_reason": "vehicle-profile-changed",
+        }
+    ]

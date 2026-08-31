@@ -82,7 +82,7 @@ from audio_spectrum import (
     stop_audio_spectrum_service,
 )
 from discord_presence import DiscordPresenceManager, load_discord_application_id
-from dyno_quality import DynoQualityGate
+from dyno_quality import DynoQualityGateRegistry, reconcile_dyno_profile_segment
 from fastapi import (
     FastAPI,
     File,
@@ -1099,7 +1099,9 @@ def create_default_car_params() -> dict:
 
 car_params_cache = AsyncCarParamsCache(load_car_params)
 car_params_writer = AsyncCarParamsWriter(save_car_params)
-dyno_quality_gate = DynoQualityGate()
+# Quality state is scoped to a car profile. A CarOrdinal transition selects a
+# different gate; it must not reset the destination profile's existing curve.
+dyno_quality_gates = DynoQualityGateRegistry()
 
 
 @asynccontextmanager
@@ -1264,7 +1266,7 @@ async def broadcast_telemetry():
         dyno_stage_started_at = time.perf_counter()
         car_id = str(data.get("CarOrdinal", 0))
         if car_id and car_id != "0":
-            quality = dyno_quality_gate.observe(data)
+            quality = dyno_quality_gates.observe(car_id, data)
             # The first disk read is deliberately deferred. The current frame
             # continues without dyno collection until the profile is ready.
             profile_lookup = car_params_cache.resolve(dyno_cache, car_id)
@@ -1275,23 +1277,10 @@ async def broadcast_telemetry():
                 dyno_cache[car_id] = params
                 car_params_writer.schedule(car_id, params)
 
-            # Only collect dyno data if recording is enabled AND car is in cache
-            if app_settings.get("dyno_recording", True) and car_id in dyno_cache:
+            if car_id in dyno_cache:
                 profile = dyno_cache[car_id]
-                profile["dyno_quality"] = quality.as_dict()
-                if quality.segment_reset:
-                    previous_curve = profile.get("dyno_curve", {})
-                    if previous_curve:
-                        segments = profile.setdefault("dyno_curve_segments", [])
-                        segments.append(
-                            {
-                                "fingerprint": list(quality.previous_fingerprint or ()),
-                                "curve": previous_curve,
-                                "ended_reason": "vehicle-profile-changed",
-                            }
-                        )
-                        del segments[:-5]
-                    profile["dyno_curve"] = {}
+                if reconcile_dyno_profile_segment(profile, quality):
+                    car_params_writer.schedule(car_id, profile)
 
                 # --- WOT (Wide Open Throttle) Filter ---
                 accel_input = data.get("AccelInput", 0)
@@ -1314,8 +1303,10 @@ async def broadcast_telemetry():
                 # the telemetry timestamp, never wall-clock scheduling time.
                 no_transient = True
                 if app_settings.get("dyno_filter_transients", True):
-                    shift_elapsed_ms = dyno_quality_gate.milliseconds_since_gear_change(
-                        data.get("TimestampMS")
+                    shift_elapsed_ms = (
+                        dyno_quality_gates.milliseconds_since_gear_change(
+                            car_id, data.get("TimestampMS")
+                        )
                     )
                     if shift_elapsed_ms is not None and shift_elapsed_ms < 500:
                         no_transient = False
@@ -1345,6 +1336,7 @@ async def broadcast_telemetry():
 
                 if (
                     rpm > 0
+                    and app_settings.get("dyno_recording", True)
                     and accel_input == 255
                     and gear > 0
                     and clutch_input == 0
@@ -1411,6 +1403,7 @@ async def broadcast_telemetry():
             # Pop the oldest inserted key
             oldest_key = next(iter(dyno_cache))
             dyno_cache.pop(oldest_key, None)
+            dyno_quality_gates.discard(oldest_key)
         telemetry_pipeline_metrics.record_stage(
             "dyno", time.perf_counter() - dyno_stage_started_at
         )

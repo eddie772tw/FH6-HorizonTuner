@@ -82,6 +82,15 @@ interface CarParamsContextType {
   telemetryCarId: string;
 }
 
+export const mergeDynoPollResult = (
+  previous: CarParams,
+  result: Pick<CarParams, 'dyno_curve' | 'dyno_quality'>,
+): CarParams => ({
+  ...previous,
+  dyno_curve: result.dyno_curve,
+  dyno_quality: result.dyno_quality,
+});
+
 const CarParamsContext = createContext<CarParamsContextType | undefined>(undefined);
 
 export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -204,7 +213,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     return () => { active = false; };
   }, [carId]);
 
-  // Poll dyno curve ONLY (no longer overwrites maxHpRpm/maxTorqueRpm)
+  // Poll live dyno fields only, without overwriting user-edited car params.
   useEffect(() => {
     if (telemetryCarId === carId && telemetryCarId !== '0') {
       const interval = setInterval(async () => {
@@ -214,8 +223,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
           if (!result.error) {
             setCarParams(prev => {
               if (!prev) return result;
-              // Only update dyno_curve — preserve all user-edited car params
-              return { ...prev, dyno_curve: result.dyno_curve };
+              return mergeDynoPollResult(prev, result);
             });
           }
         } catch (e) { }
