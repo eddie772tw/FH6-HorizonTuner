@@ -1,11 +1,16 @@
 import io
 import json
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 
 import main
 import pytest
-from diagnostic_support_bundle import MAX_SECTION_BYTES, create_support_bundle
+from diagnostic_support_bundle import (
+    MAX_SECTION_BYTES,
+    collect_recent_logs,
+    create_support_bundle,
+    redact_value,
+)
 from fastapi.testclient import TestClient
 
 
@@ -57,6 +62,60 @@ def test_support_bundle_redacts_sensitive_data_and_bounds_log_window(tmp_path):
     assert "playerName" not in diagnostic_text
     assert "rawUdpPayload" not in diagnostic_text
     assert "credential" not in files["diagnostics/discordPresence.json"]
+
+
+@pytest.mark.parametrize(
+    "sensitive_value",
+    [
+        "Authorization: Bearer first credential segment",
+        'Proxy-Authorization=Basic "dXNlcjpwYXNz with more data"',
+        "Bearer first second third",
+        "C:\\Program Files\\FH6 Horizon Tuner\\backend.log",
+        '"C:\\Users\\Eddie\\My Documents\\backend.log"',
+        "/home/eddie/FH6 Horizon Tuner/backend.log",
+        '"/var/lib/FH6 Horizon Tuner/backend.log"',
+        r"\\support-host\FH6 Logs\backend.log",
+    ],
+)
+def test_support_bundle_redaction_fails_closed_for_credentials_and_paths(
+    sensitive_value,
+):
+    redacted = redact_value(sensitive_value)
+
+    assert redacted.startswith("[redacted:")
+    assert sensitive_value not in redacted
+
+
+def test_recent_logs_interprets_local_timestamps_and_excludes_future_entries(tmp_path):
+    utc = UTC
+    local_timezone = timezone(timedelta(hours=8))
+    generated_at = datetime(2026, 8, 30, 12, 0, tzinfo=utc)
+    cutoff = generated_at - timedelta(minutes=10)
+    log_file = tmp_path / "backend.log"
+    log_file.write_text(
+        "2026-08-30 19:49:59,999 [INFO] main: before cutoff\n"
+        "2026-08-30 19:50:00,000 [INFO] main: included cutoff\n"
+        "cutoff continuation\n"
+        "2026-08-30 20:00:00,000 [INFO] main: included generated at\n"
+        "2026-08-30 20:00:00,001 [INFO] main: future entry\n"
+        "future continuation\n",
+        encoding="utf-8",
+    )
+
+    logs = collect_recent_logs(
+        log_file,
+        cutoff,
+        generated_at,
+        log_timezone=local_timezone,
+    )
+
+    exported = "\n".join(logs)
+    assert "before cutoff" not in exported
+    assert "future entry" not in exported
+    assert "future continuation" not in exported
+    assert "included cutoff" in exported
+    assert "cutoff continuation" in exported
+    assert "included generated at" in exported
 
 
 def test_support_bundle_rejects_unsafe_fields_and_oversized_sections(tmp_path):

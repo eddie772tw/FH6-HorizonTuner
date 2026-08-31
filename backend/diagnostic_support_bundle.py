@@ -12,7 +12,7 @@ import json
 import re
 import zipfile
 from collections.abc import Mapping
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -26,11 +26,14 @@ ALLOWED_FIELDS = frozenset(
 )
 
 _LOG_TIMESTAMP = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})")
-_ABSOLUTE_PATH = re.compile(r"(?:[A-Za-z]:[\\/][^\s\"']+|/(?:[^\s\"']+))")
 _EMAIL = re.compile(r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
-_SECRET_VALUE = re.compile(
-    r"(?i)\b(password|passphrase|token|secret|credential|authorization|api[_-]?key)\b"
-    r"\s*[:=]\s*[^\s,;]+"
+_CREDENTIAL_FIELD = re.compile(
+    r"(?i)\b(?:password|passphrase|token|secret|credential|authorization|"
+    r"proxy-authorization|api[_-]?key)\b\s*[:=]"
+)
+_AUTH_SCHEME_CREDENTIAL = re.compile(r"(?i)\b(?:bearer|basic)\s+\S")
+_ABSOLUTE_PATH = re.compile(
+    r"(?x)(?:[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/][^\\/\s]+|(?<![:/\w])/\S)"
 )
 _SENSITIVE_MESSAGE = re.compile(r"(?i)\b(raw[_ ]?udp|packet payload|raw payload)\b")
 _SENSITIVE_KEY_PARTS = (
@@ -74,23 +77,51 @@ def redact_value(value: Any) -> Any:
     if isinstance(value, str):
         if _SENSITIVE_MESSAGE.search(value):
             return "[redacted: unsafe diagnostic content]"
-        value = _SECRET_VALUE.sub(r"\1=[redacted]", value)
-        value = _ABSOLUTE_PATH.sub("[redacted-path]", value)
+        # A credential or absolute path can contain spaces, quotes, and multiple
+        # segments. Redact the complete string instead of guessing where its value
+        # ends; leaving a suffix behind would defeat the support bundle's privacy
+        # boundary.
+        if _CREDENTIAL_FIELD.search(value) or _AUTH_SCHEME_CREDENTIAL.search(value):
+            return "[redacted: credential]"
+        if _ABSOLUTE_PATH.search(value):
+            return "[redacted: absolute path]"
         return _EMAIL.sub("[redacted-email]", value)
     return value
 
 
-def _parse_timestamp(line: str) -> datetime | None:
+def _as_utc(timestamp: datetime, *, name: str) -> datetime:
+    if timestamp.tzinfo is None:
+        raise ValueError(f"{name} must include timezone information")
+    return timestamp.astimezone(UTC)
+
+
+def _parse_timestamp(line: str, *, log_timezone: tzinfo) -> datetime | None:
     match = _LOG_TIMESTAMP.match(line)
     if not match:
         return None
-    return datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S,%f").replace(tzinfo=UTC)
+    return (
+        datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S,%f")
+        .replace(tzinfo=log_timezone)
+        .astimezone(UTC)
+    )
 
 
-def collect_recent_logs(log_path: Path, cutoff: datetime) -> list[str]:
-    """Read a bounded, timestamped log window without retaining orphan lines."""
+def collect_recent_logs(
+    log_path: Path,
+    cutoff: datetime,
+    generated_at: datetime,
+    *,
+    log_timezone: tzinfo | None = None,
+) -> list[str]:
+    """Read log entries whose local timestamps fall within the UTC export window."""
     if not log_path.is_file():
         return []
+
+    cutoff_utc = _as_utc(cutoff, name="cutoff")
+    generated_at_utc = _as_utc(generated_at, name="generated_at")
+    if cutoff_utc > generated_at_utc:
+        return []
+    source_timezone = log_timezone or datetime.now().astimezone().tzinfo or UTC
 
     entries: list[tuple[datetime, list[str]]] = []
     current_timestamp: datetime | None = None
@@ -98,14 +129,20 @@ def collect_recent_logs(log_path: Path, cutoff: datetime) -> list[str]:
     with log_path.open("r", encoding="utf-8", errors="ignore") as log_file:
         for raw_line in log_file:
             line = raw_line.rstrip("\r\n")
-            timestamp = _parse_timestamp(line)
+            timestamp = _parse_timestamp(line, log_timezone=source_timezone)
             if timestamp is not None:
-                if current_timestamp is not None and current_timestamp >= cutoff:
+                if (
+                    current_timestamp is not None
+                    and cutoff_utc <= current_timestamp <= generated_at_utc
+                ):
                     entries.append((current_timestamp, current_lines))
                 current_timestamp, current_lines = timestamp, [line]
             elif current_timestamp is not None:
                 current_lines.append(line)
-        if current_timestamp is not None and current_timestamp >= cutoff:
+        if (
+            current_timestamp is not None
+            and cutoff_utc <= current_timestamp <= generated_at_utc
+        ):
             entries.append((current_timestamp, current_lines))
 
     result: list[str] = []
@@ -148,13 +185,13 @@ def create_support_bundle(
     if unsafe_fields:
         raise ValueError("Requested diagnostic fields are not allowed")
 
-    generated_at = now or datetime.now(UTC)
+    generated_at = _as_utc(now, name="now") if now is not None else datetime.now(UTC)
     cutoff = generated_at - timedelta(minutes=window_minutes)
     files: dict[str, bytes] = {}
     for field in requested:
         if field == "recentLogs":
             files["recent-logs.txt"] = "\n".join(
-                collect_recent_logs(log_path, cutoff)
+                collect_recent_logs(log_path, cutoff, generated_at)
             ).encode("utf-8")
         else:
             files[f"diagnostics/{field}.json"] = _encode_json(
