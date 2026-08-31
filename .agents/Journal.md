@@ -1624,3 +1624,19 @@
   4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
 - **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed. Full pytest began with `202 selected` but stalled in the existing audio-device suite at `tests/test_audio_spectrum.py`; the settings-specific tests passed independently. `ruff format --check .` reports only the pre-existing whole-file `backend/main.py` format baseline, which was not rewritten because settings ownership is limited to its settings blocks.
 - **Status**: implemented locally; pending branch CI and reviewer verification.
+
+---
+
+## 2026-08-31 / Jules manual Session and scheduled-output provenance
+
+- **Scope**: `.agents/skills/jules_coding/` manual delegation gates, scheduled Jules Session/PR intake, persona provenance, and offline adoption validation.
+- **Source**: `local`，根據 PR #244、#253、#255、#257、#258、#260、#262、#269、#271、#273、#274、#283 與 Jules API 公開文件檢討。
+- **Decision**:
+  1. `jules_coding` 保留為 canonical skill，分流處理 `manual` invocation 與 `scheduled-output intake`；排程工作不是手動授權的結果。
+  2. `Bolt`、`Palette`、`Narrator`、`Sentinel` 只可透過 Session 開頭 prompt 與 task/PR evidence 推論為 `scheduled_likely`，不得當成正式 schedule flag。
+  3. 手動 Session 必須使用 `FH6-JULES-INTENT v2`、`Source: manual` handoff marker，並要求 `requirePlanApproval: true`；API 預設自動批准 plan。
+  4. 公開 API 能力僅升格為 Session 操作；`schedule_read`／`schedule_manage` 維持 `unavailable`，不得把刪除 Session 當成排程控制。
+  5. `.jules/**` 預設不屬於功能 PR scope；case collision、duplicate task、empty diff、未解決 PR、越界修改、缺少測試 evidence 與 stale CI 均為阻擋原因。
+- **Action**: 更新 `.agents/skills/jules_coding/SKILL.md`、`.agents/skills/README.md`；新增 `references/session_provenance.md`、離線 `scripts/validate_jules_intake.py` 與 `tests/test_jules_intake_contract.py`。
+- **Evidence**: validator tests `19 passed`；後端全體 Pytest `230 passed`；前端 Vitest `76 files / 472 tests passed`；`tsc && vite build` 通過；全 repo `ruff check` 通過、`ruff format --check` 顯示 `132 files already formatted`、`git diff --check` 通過；skill folder/frontmatter、tracked `.jules` case audit 通過。Jules connector、`JULES_API_KEY` 與 schedule API 未在本環境驗證，未執行任何遠端排程操作。
+- **Status**: adopted。
