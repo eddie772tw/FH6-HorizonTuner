@@ -540,7 +540,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 pointerEvents: loading ? 'none' : 'auto'
               }}
             >
-              {loading ? '...' : config.enabled ? (t("Close HUD Overlay")) : (t("Launch HUD Overlay"))}
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" /> {t("Processing...")}
+                </>
+              ) : config.enabled ? (
+                t("Close HUD Overlay")
+              ) : (
+                t("Launch HUD Overlay")
+              )}
             </button>
           </span>
         </div>
@@ -1381,7 +1389,13 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     disabled={loadingAudioDevices}
                     className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8"
                   >
-                    {loadingAudioDevices ? '...' : t("Refresh Audio Devices")}
+                    {loadingAudioDevices ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" /> {t("Refreshing...")}
+                      </>
+                    ) : (
+                      t("Refresh Audio Devices")
+                    )}
                   </button>
                 </div>
                 <select
