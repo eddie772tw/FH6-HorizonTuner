@@ -1638,6 +1638,19 @@
 
 ---
 
+## 2026-08-30 / P0 Telemetry Quality Contract
+
+- **Scope**: `backend/telemetry_listener.py`, `backend/telemetry_runtime.py`, and telemetry pipeline unit tests; no frontend, settings, replay, `ref/`, or `LazyForza/` changes.
+- **Status**: adopted.
+- **Learning**:
+  1. FH Data Out ingestion has two explicit accepted layers: a legacy common `232-byte` schema and the complete `324-byte` FH6 schema. A `233..323-byte` datagram is neither compatible and must be rejected rather than partially decoded as a full payload.
+  2. Parser validation must happen before queue insertion. Rejecting non-racing, unsupported-length, partial-schema, and non-finite/out-of-range payloads at that boundary prevents menu/invalid frames from reaching race or dyno recorders.
+  3. Pipeline diagnostics remain backward compatible by retaining `telemetry-pipeline-metrics/v1` and adding bounded counters: accepted schemas, rejection reasons, `input_queue_full`/`consumer_lag` drop reasons, and unsigned-32-bit timestamp duplicate, out-of-order, wrap, and estimated-gap diagnostics.
+  4. Timestamp gap estimates are observational only. They use `TimestampMS` continuity and are not evidence of a real FH6 packet loss without a live capture.
+- **Evidence**: Full local gates passed using this worktree's Python 3.13 `.venv`: `ruff check .`, `ruff format --check .`, `python -m pytest tests/` (`198 passed, 2 skipped, 6 deselected`), frontend Vitest (`77 files / 478 tests`), TypeScript/Vite build, and `git diff --check`. Unit fixtures cover both accepted packet lengths, each new parser rejection family, bounded consumer latest-wins, queue-full drops, and timestamp diagnostics.
+
+---
+
 ## 2026-08-31 / Jules manual Session and scheduled-output provenance
 
 - **Scope**: `.agents/skills/jules_coding/` manual delegation gates, scheduled Jules Session/PR intake, persona provenance, and offline adoption validation.
