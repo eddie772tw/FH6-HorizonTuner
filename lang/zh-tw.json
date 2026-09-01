@@ -1195,5 +1195,7 @@
   "tarmac": "柏油",
   "gravel": "碎石",
   "snow": "雪地",
-  "dragStrip": "直線加速賽道"
+  "dragStrip": "直線加速賽道",
+  "Processing...": "處理中...",
+  "Refreshing...": "重新整理中..."
 }
