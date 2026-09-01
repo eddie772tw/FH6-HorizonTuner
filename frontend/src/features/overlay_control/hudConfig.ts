@@ -78,6 +78,7 @@ export interface HudConfig {
   customColor?: string;
   useDefaultColors?: boolean;
   pauseTelemetryViewWhenActive?: boolean;
+  enableSmoothing?: boolean;
 }
 
 export const DEFAULT_HUD_CONFIG: HudConfig = {
@@ -91,6 +92,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   scale: 1.0,
   unit: 'kmh',
   followAppUnits: true,
+  enableSmoothing: true,
   units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp' },
   telemetryOpacity: 0.65,
   telemetryGRadarScale: 1.0,

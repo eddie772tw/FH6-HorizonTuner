@@ -1419,6 +1419,22 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 <input
                   type="checkbox"
                   className="form-check-input"
+                  id="sw-enable-smoothing"
+                  checked={config.enableSmoothing !== false}
+                  onChange={(e) => {
+                    const updated = { ...config, enableSmoothing: e.target.checked };
+                    saveConfig(updated);
+                  }}
+                />
+                <label className="form-check-label fs-7" htmlFor="sw-enable-smoothing">
+                  {t("High-Refresh Frame Smoothing (120Hz/144Hz/240Hz/VRR)")}
+                </label>
+              </div>
+
+              <div className="form-check form-switch py-1">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
                   id="sw-pause-telemetry"
                   checked={!!config.pauseTelemetryViewWhenActive}
                   onChange={(e) => {
