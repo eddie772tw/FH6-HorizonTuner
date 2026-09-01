@@ -496,6 +496,8 @@ pub fn run() {
                 use windows::Win32::Graphics::Dwm::DwmExtendFrameIntoClientArea;
                 use windows::Win32::UI::Controls::MARGINS;
 
+                // Configure Windows DWM transparent client margins and layered click-through styles.
+                // Preserves hardware acceleration and DWM compositing for high-refresh overlays.
                 if let Ok(hwnd_val) = overlay_window.hwnd() {
                     let hwnd = HWND(hwnd_val.0 as _);
                     unsafe {
