@@ -1,8 +1,11 @@
 import argparse
+import copy
 import math
 import os
 import re
 import sys
+
+from settings_persistence import DATA_ROOT_WRITABLE_DIRECTORIES
 
 # Keep the original process streams available for the Tauri sidecar protocol.
 # Frozen builds redirect normal output to backend.log below, so using sys.stdout
@@ -50,7 +53,12 @@ else:
     else:
         DATA_ROOT = RESOURCE_ROOT
 
-log_dir = os.path.join(DATA_ROOT, "logs")
+DATA_ROOT_DIRECTORIES = {
+    relative_path: os.path.join(DATA_ROOT, relative_path)
+    for relative_path in DATA_ROOT_WRITABLE_DIRECTORIES
+}
+
+log_dir = DATA_ROOT_DIRECTORIES["logs"]
 os.makedirs(log_dir, exist_ok=True)
 backend_log_path = os.path.join(log_dir, "backend.log")
 
@@ -107,6 +115,8 @@ from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
 from process_cleanup import cleanup_stale_port_listeners
 from race_recorder import AsyncRacePersistence, RaceRecorder
+from settings_persistence import SerializedSettingsUpdate, SettingsPersistence
+from settings_router import create_settings_router
 from system_media import get_system_media_info
 from telemetry_listener import (
     DEFAULT_TIRE_ARRAY,
@@ -170,7 +180,7 @@ RESOURCE_HUD_DIR = (
     else os.path.join(os.path.dirname(RESOURCE_ROOT), "hud_overlay")
 )
 
-LANG_DIR = os.path.join(DATA_ROOT, "lang")
+LANG_DIR = DATA_ROOT_DIRECTORIES["lang"]
 
 
 def get_language_search_dirs() -> List[str]:
@@ -196,25 +206,20 @@ def get_language_search_dirs() -> List[str]:
     return dirs
 
 
-TUNINGS_DIR = os.path.join(DATA_ROOT, "tunings")
-CAR_PARAMS_DIR = os.path.join(DATA_ROOT, "car_params")
-HUD_OVERLAY_DIR = os.path.join(DATA_ROOT, "hud_overlay")
-SESSIONS_DIR = os.path.join(DATA_ROOT, "sessions")
-DRAG_SESSIONS_DIR = os.path.join(DATA_ROOT, "drag_sessions")
-USER_CONFIGS_DIR = os.path.join(DATA_ROOT, "user_configs")
+TUNINGS_DIR = DATA_ROOT_DIRECTORIES["tunings"]
+CAR_PARAMS_DIR = DATA_ROOT_DIRECTORIES["car_params"]
+HUD_OVERLAY_DIR = DATA_ROOT_DIRECTORIES["hud_overlay"]
+SESSIONS_DIR = DATA_ROOT_DIRECTORIES["sessions"]
+DRAG_SESSIONS_DIR = DATA_ROOT_DIRECTORIES["drag_sessions"]
+USER_CONFIGS_DIR = DATA_ROOT_DIRECTORIES["user_configs"]
 SETTINGS_FILE = os.path.join(DATA_ROOT, "settings.json")
 
 SESSIONS_DB_PATH = os.path.join(SESSIONS_DIR, "telemetry_sessions.db")
 ANALYSIS_LAYOUT_FILE = os.path.join(USER_CONFIGS_DIR, "analysis_layout.json")
 
-# Ensure directories exist
-os.makedirs(TUNINGS_DIR, exist_ok=True)
-os.makedirs(CAR_PARAMS_DIR, exist_ok=True)
-os.makedirs(LANG_DIR, exist_ok=True)
-os.makedirs(HUD_OVERLAY_DIR, exist_ok=True)
-os.makedirs(SESSIONS_DIR, exist_ok=True)
-os.makedirs(DRAG_SESSIONS_DIR, exist_ok=True)
-os.makedirs(USER_CONFIGS_DIR, exist_ok=True)
+# Ensure every manifest-declared data directory exists.
+for data_root_directory in DATA_ROOT_DIRECTORIES.values():
+    os.makedirs(data_root_directory, exist_ok=True)
 
 # 複製與同步內建語系檔至 DATA_ROOT/lang/ 供使用者自行維護或更新
 import shutil
@@ -411,6 +416,7 @@ last_dyno_save_time = time.time()
 # 使用最上方統一宣告的路徑與設定，免重複定義。
 
 DEFAULT_SETTINGS = {
+    "settings_schema_version": SettingsPersistence.CURRENT_SCHEMA_VERSION,
     "dyno_recording": False,
     "race_recording": False,
     "developer_tuning_enabled": False,
@@ -481,59 +487,26 @@ def normalize_general_unit_settings(units: dict | None) -> dict:
     return normalized
 
 
-app_settings = {
-    "dyno_recording": False,
-    "race_recording": False,
-    "developer_tuning_enabled": False,
-    "mcp_enabled": True,
-    "mcp_allow_live": True,
-    "mcp_max_downsample": 500,
-    "language": "zh-tw",
-    "dyno_test_gear": 4,
-    "dyno_filter_slip": True,
-    "dyno_filter_transients": True,
-    "telemetry_port": 8000,
-    "forward_telemetry_enabled": False,
-    "forward_telemetry_host": "127.0.0.1",
-    "forward_telemetry_port": 5300,
-    "units": dict(DEFAULT_SETTINGS["units"]),
-    "theme": dict(DEFAULT_SETTINGS["theme"]),
-}
+app_settings = copy.deepcopy(DEFAULT_SETTINGS)
+settings_persistence = SettingsPersistence(SETTINGS_FILE)
+try:
+    loaded_settings, settings_migrated = settings_persistence.load(DEFAULT_SETTINGS)
+    for key, value in loaded_settings.items():
+        if key in {"units", "theme"} and isinstance(value, dict):
+            app_settings[key].update(value)
+        else:
+            app_settings[key] = value
+    normalized_units = normalize_general_unit_settings(app_settings["units"])
+    settings_migrated = settings_migrated or normalized_units != app_settings["units"]
+    app_settings["units"] = normalized_units
+    if settings_migrated:
+        settings_persistence.save(app_settings)
+    logger.info("Loaded settings from durable store")
+except Exception as e:
+    logger.error(f"Failed to load durable settings: {e}")
 
-# Load settings from settings.json
-settings_migrated = False
-if os.path.exists(SETTINGS_FILE):
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            loaded = json.load(f)
-            for k, v in loaded.items():
-                if k == "units" and isinstance(v, dict):
-                    app_settings["units"].update(v)
-                elif k == "theme" and isinstance(v, dict):
-                    app_settings["theme"].update(v)
-                else:
-                    app_settings[k] = v
-        normalized_units = normalize_general_unit_settings(app_settings["units"])
-        settings_migrated = normalized_units != app_settings["units"]
-        app_settings["units"] = normalized_units
-        logger.info(f"Loaded settings from {SETTINGS_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to load settings from {SETTINGS_FILE}: {e}")
-else:
-    try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
-        logger.info(f"Created default settings at {SETTINGS_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to save default settings to {SETTINGS_FILE}: {e}")
-
-if settings_migrated:
-    try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
-        logger.info("Migrated legacy mixed unit settings to the General Units model")
-    except Exception as e:
-        logger.error(f"Failed to persist migrated settings to {SETTINGS_FILE}: {e}")
+settings_update = SerializedSettingsUpdate(app_settings, settings_persistence)
+settings_update_lock = asyncio.Lock()
 
 
 # --- Race Telemetry Recorder ---
@@ -1649,139 +1622,152 @@ async def clear_dyno_curve(car_id: str):
 # --- Settings API ---
 
 
-@app.get("/api/settings")
-async def get_settings():
-    return app_settings
-
-
-@app.post("/api/settings")
-async def update_settings(data: dict):
-    global current_udp_transport, current_udp_ip_port
-    theme_updated = "theme" in data and isinstance(data["theme"], dict)
-    units_updated = "units" in data and isinstance(data["units"], dict)
-
+def merge_settings_patch(settings: dict, data: dict) -> None:
+    """Apply a validated API patch to a private settings candidate."""
     if "dyno_recording" in data:
-        app_settings["dyno_recording"] = bool(data["dyno_recording"])
+        settings["dyno_recording"] = bool(data["dyno_recording"])
     if "race_recording" in data:
-        app_settings["race_recording"] = bool(data["race_recording"])
+        settings["race_recording"] = bool(data["race_recording"])
     if "developer_tuning_enabled" in data:
-        app_settings["developer_tuning_enabled"] = bool(
-            data["developer_tuning_enabled"]
-        )
+        settings["developer_tuning_enabled"] = bool(data["developer_tuning_enabled"])
     if "language" in data:
-        app_settings["language"] = str(data["language"])
+        settings["language"] = str(data["language"])
     if "dyno_test_gear" in data:
-        app_settings["dyno_test_gear"] = int(data["dyno_test_gear"])
+        settings["dyno_test_gear"] = int(data["dyno_test_gear"])
     if "dyno_filter_slip" in data:
-        app_settings["dyno_filter_slip"] = bool(data["dyno_filter_slip"])
+        settings["dyno_filter_slip"] = bool(data["dyno_filter_slip"])
     if "dyno_filter_transients" in data:
-        app_settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
+        settings["dyno_filter_transients"] = bool(data["dyno_filter_transients"])
     if "mcp_enabled" in data:
-        app_settings["mcp_enabled"] = bool(data["mcp_enabled"])
+        settings["mcp_enabled"] = bool(data["mcp_enabled"])
     if "mcp_allow_live" in data:
-        app_settings["mcp_allow_live"] = bool(data["mcp_allow_live"])
+        settings["mcp_allow_live"] = bool(data["mcp_allow_live"])
     if "mcp_max_downsample" in data:
-        app_settings["mcp_max_downsample"] = int(data["mcp_max_downsample"])
+        settings["mcp_max_downsample"] = int(data["mcp_max_downsample"])
 
     if "forward_telemetry_enabled" in data:
-        app_settings["forward_telemetry_enabled"] = bool(
-            data["forward_telemetry_enabled"]
-        )
+        settings["forward_telemetry_enabled"] = bool(data["forward_telemetry_enabled"])
     if "forward_telemetry_host" in data:
-        app_settings["forward_telemetry_host"] = str(
-            data["forward_telemetry_host"]
-        ).strip()
+        settings["forward_telemetry_host"] = str(data["forward_telemetry_host"]).strip()
     if "forward_telemetry_port" in data:
-        app_settings["forward_telemetry_port"] = int(data["forward_telemetry_port"])
+        settings["forward_telemetry_port"] = int(data["forward_telemetry_port"])
 
-    # 處理 telemetry_port
-    new_port = int(data.get("telemetry_port", app_settings.get("telemetry_port", 8000)))
-    port_changed = new_port != current_udp_ip_port[1]
-    app_settings["telemetry_port"] = new_port
+    settings["telemetry_port"] = int(
+        data.get("telemetry_port", settings.get("telemetry_port", 8000))
+    )
 
     if "units" in data and isinstance(data["units"], dict):
-        if "units" not in app_settings:
-            app_settings["units"] = {}
-        app_settings["units"].update(data["units"])
-        app_settings["units"] = normalize_general_unit_settings(app_settings["units"])
+        if "units" not in settings:
+            settings["units"] = {}
+        settings["units"].update(data["units"])
+        settings["units"] = normalize_general_unit_settings(settings["units"])
 
     if "theme" in data and isinstance(data["theme"], dict):
-        if "theme" not in app_settings:
-            app_settings["theme"] = {}
+        if "theme" not in settings:
+            settings["theme"] = {}
         # Theme storage slots were removed from the UI and are no longer persisted.
-        app_settings["theme"].pop("slots", None)
-        app_settings["theme"].update(data["theme"])
-        app_settings["theme"].pop("slots", None)
+        settings["theme"].pop("slots", None)
+        settings["theme"].update(data["theme"])
+        settings["theme"].pop("slots", None)
 
-    # Save to file asynchronously to avoid blocking the event loop
-    def _save_settings():
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(app_settings, f, indent=4)
 
-    try:
-        await asyncio.to_thread(_save_settings)
-        logger.info(f"Saved settings to {SETTINGS_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to save settings to {SETTINGS_FILE}: {e}")
+async def update_settings(data: dict):
+    global current_udp_transport, current_udp_ip_port
 
-    if theme_updated or units_updated:
-        hud_data = DEFAULT_HUD_CONFIG
-        if os.path.exists(HUD_CONFIG_FILE):
-            try:
-                with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                    hud_data = json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to load HUD config after settings update: {e}")
-        await overlay_manager.broadcast_json(
-            {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
-        )
+    async with settings_update_lock:
+        theme_updated = "theme" in data and isinstance(data["theme"], dict)
+        units_updated = "units" in data and isinstance(data["units"], dict)
 
-    # 若 Port 變更，在執行期動態重啟 UDP listener
-    if port_changed:
-        logger.info(
-            f"Forza UDP Telemetry port changed to {new_port}. Restarting listener across all local interfaces..."
-        )
-        if current_udp_transport:
-            try:
-                current_udp_transport.close()
-            except Exception:
-                pass
-            current_udp_transport = None
         try:
+            updated_settings = await settings_update.merge_save_commit(
+                lambda candidate: merge_settings_patch(candidate, data),
+                persistence=SettingsPersistence(SETTINGS_FILE),
+            )
+            logger.info("Saved settings through durable store")
+        except Exception as e:
+            logger.error(f"Failed to persist settings: {e}")
+            raise HTTPException(
+                status_code=500, detail="Settings could not be saved"
+            ) from e
+
+        new_port = int(updated_settings["telemetry_port"])
+        port_changed = new_port != current_udp_ip_port[1]
+
+        if theme_updated or units_updated:
+            hud_data = DEFAULT_HUD_CONFIG
+            if os.path.exists(HUD_CONFIG_FILE):
+                try:
+                    with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
+                        hud_data = json.load(f)
+                except Exception as e:
+                    logger.error(
+                        f"Failed to load HUD config after settings update: {e}"
+                    )
+            await overlay_manager.broadcast_json(
+                {"type": "hud:config", "data": hud_config_with_gui_theme(hud_data)}
+            )
+
+        # 若 Port 變更，在執行期動態重啟 UDP listener
+        if port_changed:
+            logger.info(
+                f"Forza UDP Telemetry port changed to {new_port}. Restarting listener across all local interfaces..."
+            )
+            if current_udp_transport:
+                try:
+                    current_udp_transport.close()
+                except Exception:
+                    pass
+                current_udp_transport = None
             try:
-                cleanup_stale_port_listeners(
-                    new_port, current_pid=os.getpid(), is_udp=True
+                try:
+                    cleanup_stale_port_listeners(
+                        new_port, current_pid=os.getpid(), is_udp=True
+                    )
+                except Exception as e:
+                    logger.debug(f"Dynamic port change cleanup check failed: {e}")
+
+                current_udp_transport = await start_udp_listener(
+                    port=new_port,
+                    message_queue=telemetry_queue,
+                    forward_enabled=app_settings.get(
+                        "forward_telemetry_enabled", False
+                    ),
+                    forward_host=app_settings.get(
+                        "forward_telemetry_host", "127.0.0.1"
+                    ),
+                    forward_port=int(app_settings.get("forward_telemetry_port", 5300)),
+                    metrics=telemetry_pipeline_metrics,
                 )
+                current_udp_ip_port = ("auto", new_port)
             except Exception as e:
-                logger.debug(f"Dynamic port change cleanup check failed: {e}")
-
-            current_udp_transport = await start_udp_listener(
-                port=new_port,
-                message_queue=telemetry_queue,
-                forward_enabled=app_settings.get("forward_telemetry_enabled", False),
-                forward_host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
-                forward_port=int(app_settings.get("forward_telemetry_port", 5300)),
-                metrics=telemetry_pipeline_metrics,
-            )
-            current_udp_ip_port = ("auto", new_port)
-        except Exception as e:
-            logger.error(
-                f"Failed to restart UDP Telemetry listener on port {new_port}: {e}"
-            )
-    elif current_udp_transport:
-        # 動態更新轉發設定，無須重啟監聽 socket
-        try:
-            protocol = current_udp_transport.get_protocol()
-            if hasattr(protocol, "set_forwarding"):
-                protocol.set_forwarding(
-                    enabled=app_settings.get("forward_telemetry_enabled", False),
-                    host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
-                    port=int(app_settings.get("forward_telemetry_port", 5300)),
+                logger.error(
+                    f"Failed to restart UDP Telemetry listener on port {new_port}: {e}"
                 )
-        except Exception as e:
-            logger.warning(f"Failed to dynamically update UDP forwarding setting: {e}")
+        elif current_udp_transport:
+            # 動態更新轉發設定，無須重啟監聽 socket
+            try:
+                protocol = current_udp_transport.get_protocol()
+                if hasattr(protocol, "set_forwarding"):
+                    protocol.set_forwarding(
+                        enabled=app_settings.get("forward_telemetry_enabled", False),
+                        host=app_settings.get("forward_telemetry_host", "127.0.0.1"),
+                        port=int(app_settings.get("forward_telemetry_port", 5300)),
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to dynamically update UDP forwarding setting: {e}"
+                )
 
-    return app_settings
+        return app_settings
+
+
+app.include_router(
+    create_settings_router(
+        get_settings=lambda: app_settings,
+        update_settings=update_settings,
+        get_storage_overview=settings_persistence.storage_overview,
+    )
+)
 
 
 # --- Languages API ---

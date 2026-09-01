@@ -1229,105 +1229,53 @@
   surrounding dials.
 - **Primary correction**: the side-wing fit is now treated as the compact
   base frame. The visible primary is doubled, with that base frame's previous
-  left edge promoted to the new center, and its lower edge is still calculated
-  to clear the Drift Zone score band on each resize.
-- **Secondary correction**: replaced the generic circular progress arcs with
-  Advanced-derived Canvas superellipse traces: outer boundary, inset track,
-  glow-underlaid active segments, solid segments, and an endpoint marker. The
-  cut-corner panel and Drift cyan/pink palette remain unchanged.
-- **Verification**: targeted Drift layout and overlay-contract tests passed
-  (2 files / 10 tests); full frontend Vitest passed (35 files / 220 tests).
+  left edge promoted to the new center, and its lower edge is still calcula## 2026-08-30 / Versioned Synthetic Telemetry Replay Fixture Boundary
+
+- **Scope**: `tests/fixtures/telemetry_replay/`, test-only raw packet builder, parser/recorder/binary-wire replay contracts.
+- **Decision**:
+  1. Replay input is a small JSON fixture with the explicit `fh6-telemetry-replay-fixture/v1` contract and a mandatory synthetic provenance declaration. It contains no player or real-vehicle data and explicitly states that replay is not evidence of live Forza behavior.
+  2. Test-only helpers construct the documented 324-byte little-endian packet layout. Production `backend/telemetry_listener.py` remains unchanged, so fixture coverage can be rebased onto a later telemetry-quality contract without parser ownership overlap.
+  3. Boundary tests keep raw SI values distinct from the existing 128-byte binary wire conversions, and make timestamp discontinuities plus queue shedding/recent-frame selection observable rather than masking them as hardware evidence.
+- **Evidence**:
+  - Fixture loader rejects unknown fixture contract versions; tests assert raw-to-domain values and binary wire unit conversions, discontinuous timestamps, and queue pressure retention behavior.
+  - The fixture is synthetic. These assertions validate deterministic code paths only; they do not validate FH6 Data Out from a running game.
+- **Status**: adopted test-contract convention; full local gate results are recorded with the associated PR because this isolated worktree initially lacked its required `.venv`.
 
 ---
 
-## 2026-08-12 / Drift Secondary Instrument User-Needs Iteration
+## 2026-08-30 / Binary Telemetry Wire Contract Repair
 
-- **Feedback applied**: lowered the screenshot-calibrated primary by about
-  three quarters of its own height after preserving the doubled size and
-  left-edge-as-center geometry. The left-side horizontal lane remains the
-  Drift Zone clearance rule.
-- **Research conclusion**: the secondary should stop duplicating the primary
-  and should not repeat Style Meter's `FLOW / RISK` score language. General
-  drift driving needs a compact control surface for tire response, vehicle
-  rotation state, and throttle/brake/handbrake/clutch input.
-- **Boundary**: detailed tire temperatures, suspension, replay, score and
-  line analysis remain TelemetryView / HUD-card / native-UI responsibilities.
-  Yaw rate is a P1 input because the packet field exists but the current
-  backend does not yet expose a canonical HUD alias.
-- **Artifact**: `docs/drift-secondary-instrument-user-needs-iteration-report.md`
-  records the evidence, priority matrix, proposed Canvas vocabulary, and
-  staged implementation plan. No secondary renderer rewrite is included yet.
-- **Verification**: frontend Vitest passed (35 files / 220 tests).
+- **Scope**: `backend/telemetry_listener.py` binary serializer and synthetic replay wire-contract assertion.
+- **Decision**: Keep the UDP packet parser and all FH Data Out offsets unchanged. The 128-byte binary client serializer must instead use a format with two integer fields (`IsRaceOn`, `Gear`), 28 float fields, and 8 reserved bytes; this exactly matches its 31 emitted values and the established 128-byte consumer contract.
+- **Evidence**: GitHub Actions replay test exposed the former mismatch directly: `struct.pack` expected 30 items but received 31, so the exception handler returned an all-zero 128-byte packet. Commit `70a11dd` adds `struct.calcsize(...) == 128` coverage and the replacement CI passed Backend Lint & Static Check plus Backend Pytest Unit Tests.
+- **Limit**: This repairs deterministic serializer behavior only. The synthetic fixture remains explicitly non-evidence of live FH6 Data Out behavior.
+- **Status**: adopted.
 
 ---
 
-## 2026-08-12 / Drift Secondary Implementation Plan Revision
+## 2026-08-30 / P0 Telemetry Quality Contract
 
-- **Source of truth**: revised `docs/telemetry-hud-implementation-plan.md` to
-  follow the edited user-needs report. The secondary is now planned as a
-  Drift Dynamics / Control Surface with Traction, Motion State and Driver
-  Inputs columns; the old angle/counter/flow/risk/hold split is no longer the
-  target architecture.
-- **Sequencing**: contract and fixture work now precede any Canvas rewrite;
-  Advanced primitives are migrated as reusable drawing capability, followed
-  by P0 slip/input state, P1 yaw-rate contract, and real-device calibration.
-- **Boundary**: TelemetryView, HUD cards, native score/style layers, recorder,
-  replay, map and telemetry topology remain outside this work package.
-- **Verification**: plan document passed `git diff --check`; no secondary
-  renderer implementation was started in this revision.
+- **Scope**: `backend/telemetry_listener.py`, `backend/telemetry_runtime.py`, and telemetry pipeline unit tests; no frontend, settings, replay, `ref/`, or `LazyForza/` changes.
+- **Status**: adopted.
+- **Learning**:
+  1. FH Data Out ingestion has two explicit accepted layers: a legacy common `232-byte` schema and the complete `324-byte` FH6 schema. A `233..323-byte` datagram is neither compatible and must be rejected rather than partially decoded as a full payload.
+  2. Parser validation must happen before queue insertion. Rejecting non-racing, unsupported-length, partial-schema, and non-finite/out-of-range payloads at that boundary prevents menu/invalid frames from reaching race or dyno recorders.
+  3. Pipeline diagnostics remain backward compatible by retaining `telemetry-pipeline-metrics/v1` and adding bounded counters: accepted schemas, rejection reasons, `input_queue_full`/`consumer_lag` drop reasons, and unsigned-32-bit timestamp duplicate, out-of-order, wrap, and estimated-gap diagnostics.
+  4. Timestamp gap estimates are observational only. They use `TimestampMS` continuity and are not evidence of a real FH6 packet loss without a live capture.
+- **Evidence**: Full local gates passed using this worktree's Python 3.13 `.venv`: `ruff check .`, `ruff format --check .`, `python -m pytest tests/` (`198 passed, 2 skipped, 6 deselected`), frontend Vitest (`77 files / 478 tests`), TypeScript/Vite build, and `git diff --check`. Unit fixtures cover both accepted packet lengths, each new parser rejection family, bounded consumer latest-wins, queue-full drops, and timestamp diagnostics.
 
 ---
 
-## 2026-08-12 / Drift Secondary Single-Panel Correction
+## 2026-08-30 / Durable Settings Store and Non-sensitive Storage Overview
 
-- **Layout recheck**: confirmed `getFh6PrimaryAnchor()` applies the requested
-  `boxHeight * 0.75` downward shift and `renderPrimaryInstrument()` consumes the
-  same anchor. Node geometry checks stayed inside the viewport at 1920x1080,
-  2048x1152, 2560x1440, 3440x1440 and 1024x576; targeted tests passed 10/10.
-- **Design correction**: the edited needs report explicitly replaces the
-  former semantic three-column secondary with one integrated single-panel
-  control display. The visual structure is three vertical pillars: full-height
-  throttle, full-height brake, and half-height handbrake/clutch sharing the
-  third pillar.
-- **Scope**: traction, motion state, slip and yaw-rate data remain contract or
-  future-event candidates, but this secondary version renders only T/B/H/C and
-  input events. Advanced Canvas primitives remain reusable drawing technology,
-  not a reason to restore separate traction or motion panels.
-
----
-
-## 2026-08-12 / Drift Secondary Advanced Remap Increment
-
-- **Implementation**: the active Drift secondary renderer now uses an
-  Advanced-derived superellipse/inner-band Canvas grammar. The outer arc is
-  throttle; the three inner bands are brake, clutch and handbrake.
-- **Supporting state**: speed, unit, gear and the shared `lcState` badge remain
-  in the panel. Four wheel grip-light groups use the existing slip-ratio and
-  lockup data.
-- **Attitude replacement**: the old angle/Flow/Risk text block is replaced by
-  cyan heading, amber travel and four tire slip-angle arrows. Arrow length is
-  normalized from absolute slip ratio.
-- **Boundary**: this remains one HUDCore frame / one Canvas render loop. The
-  new `Yaw` use is presentation-only and does not introduce a new telemetry
-  contract or polling path.
-- **Review items**: real FH6 capture is still required for yaw sign, slip-ratio
-  saturation and compact-scale readability; details are in
-  `docs/drift-secondary-advanced-remap-implementation.md`.
-
----
-
-## 2026-08-11 / Telemetry Hot Path
-
-- **來源**：`local`，V1.4.1 `codex/v1.4.1-contract-hotpath`。
-- **狀態**：`adopted`。
-- **Learning**：在 `broadcast_telemetry()` 首次同步載入車輛 profile，或直接寫入自動建立的 profile，會把磁碟 I/O 放進 60Hz consumer。僅把單次寫入包成背景 task 不足以保證正確性：舊快照可能在使用者 API 更新後覆寫最新設定。
-- **Action**：profile 首次載入必須只啟動背景工作並略過尚未就緒的 dyno 收集；所有 dyno profile 的自動與 API 寫入都透過同一個 coalescing writer，以最後一份 snapshot 為準。後端以 `telemetry-pipeline-metrics/v1` 暴露 bounded queue、drop、client 與 stage timing 診斷資料。
-- **Evidence**：`backend/telemetry_runtime.py`、`tests/test_telemetry_runtime.py`、`tests/test_telemetry_metrics_api.py`、`tests/test_car_params.py`；前端 Vitest `31 files / 194 tests` 通過。首次完整 pytest 使用舊 `dist/FH6-HorizonTuner.exe` 時，portable diagnostics 無法代表目前原始碼；執行 `build_all.bat` 後，新的 metadata test、portable host diagnostics（3 項）與完整 pytest（96 項）皆通過。
-- **Pending**：`RaceRecorder` 的 SQLite flush 仍位於 telemetry consumer；下一輪以新 metrics 的 `recorders` stage 為基準後，再拆為背景持久化工作。
-
----
-
-## 2026-08-12 / Drift HUD Runtime and Visual Token Convergence
+- **Scope**: versioned `settings.json` persistence, settings API boundary, optimistic Settings UI writes, and the read-only Data & Storage overview. No telemetry listener, diagnostic bundle, onboarding flow, SQLite schema, or FH6 in-game behavior was changed.
+- **Decision**:
+  1. Settings use `settings_schema_version: 2`; missing legacy version markers upgrade during load while retaining unknown fields and existing nested settings.
+  2. A settings write first atomically replaces `settings.json.bak` with the current valid document, then atomically replaces `settings.json`. A corrupt primary document is recovered from that backup at the next load.
+  3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
+  4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
+- **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed. Full pytest began with `202 selected` but stalled in the existing audio-device suite at `tests/test_audio_spectrum.py`; the settings-specific tests passed independently. `ruff format --check .` reports only the pre-existing whole-file `backend/main.py` format baseline, which was not rewritten because settings ownership is limited to its settings blocks.
+- **Status**: adopted.rift HUD Runtime and Visual Token Convergence
 
 - **來源**：`local`，`codex/drift-hud-modernize-remove-presets`。
 - **狀態**：`adopted`。
@@ -1623,6 +1571,18 @@
 
 ---
 
+<<<<<<< HEAD
+## 2026-08-30 / Durable Settings Store and Non-sensitive Storage Overview
+
+- **Scope**: versioned `settings.json` persistence, settings API boundary, optimistic Settings UI writes, and the read-only Data & Storage overview. No telemetry listener, diagnostic bundle, onboarding flow, SQLite schema, or FH6 in-game behavior was changed.
+- **Decision**:
+  1. Settings use `settings_schema_version: 2`; missing legacy version markers upgrade during load while retaining unknown fields and existing nested settings.
+  2. A settings write first atomically replaces `settings.json.bak` with the current valid document, then atomically replaces `settings.json`. A corrupt primary document is recovered from that backup at the next load.
+  3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
+  4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
+- **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed. Full pytest began with `202 selected` but stalled in the existing audio-device suite at `tests/test_audio_spectrum.py`; the settings-specific tests passed independently. `ruff format --check .` reports only the pre-existing whole-file `backend/main.py` format baseline, which was not rewritten because settings ownership is limited to its settings blocks.
+- **Status**: implemented locally; pending branch CI and reviewer verification.
+=======
 ## 2026-08-30 / Versioned Synthetic Telemetry Replay Fixture Boundary
 
 - **Scope**: `tests/fixtures/telemetry_replay/`, test-only raw packet builder, parser/recorder/binary-wire replay contracts.
@@ -1657,6 +1617,18 @@
   3. Pipeline diagnostics remain backward compatible by retaining `telemetry-pipeline-metrics/v1` and adding bounded counters: accepted schemas, rejection reasons, `input_queue_full`/`consumer_lag` drop reasons, and unsigned-32-bit timestamp duplicate, out-of-order, wrap, and estimated-gap diagnostics.
   4. Timestamp gap estimates are observational only. They use `TimestampMS` continuity and are not evidence of a real FH6 packet loss without a live capture.
 - **Evidence**: Full local gates passed using this worktree's Python 3.13 `.venv`: `ruff check .`, `ruff format --check .`, `python -m pytest tests/` (`198 passed, 2 skipped, 6 deselected`), frontend Vitest (`77 files / 478 tests`), TypeScript/Vite build, and `git diff --check`. Unit fixtures cover both accepted packet lengths, each new parser rejection family, bounded consumer latest-wins, queue-full drops, and timestamp diagnostics.
+---
+
+## 2026-08-30 / Durable Settings Store and Non-sensitive Storage Overview
+
+- **Scope**: versioned `settings.json` persistence, settings API boundary, optimistic Settings UI writes, and the read-only Data & Storage overview. No telemetry listener, diagnostic bundle, onboarding flow, SQLite schema, or FH6 in-game behavior was changed.
+- **Decision**:
+  1. Settings use `settings_schema_version: 2`; missing legacy version markers upgrade during load while retaining unknown fields and existing nested settings.
+  2. A settings write first atomically replaces `settings.json.bak` with the current valid document, then atomically replaces `settings.json`. A corrupt primary document is recovered from that backup at the next load.
+  3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
+  4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
+- **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed.
+- **Status**: adopted.
 
 ---
 
