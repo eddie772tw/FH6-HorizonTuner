@@ -15,6 +15,25 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-01 / High-Refresh Telemetry Frame Pacing and Interpolation Engine
+
+- **來源**：`local`，針對 Issue #256 與 Issue #272 在遊戲 uncapped 或高刷螢幕 (>60 FPS / 120Hz / 144Hz / 240Hz / VRR) 下的 HUD 拍頻卡頓 (Judder) 與渲染排程問題。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **60Hz 採樣 vs 高刷顯示器的拍頻效應 (Judder)**：Forza UDP 封包固定 60Hz 輸出，在 144Hz 顯示器（6.94ms 幀時間）上，每秒 60 次的階梯狀離散更新必然產生視覺微頓挫。必須在前端渲染層將物理數據流與渲染時鐘解耦，透過 `requestAnimationFrame` 與時間戳插值器（`FrameInterpolator`）將 60Hz 離散訊號平滑內插至原生顯示器刷新率。
+  2. **連續物理量 vs 離散狀態量插值分流**：連續量（RPM、時速、功率、扭力、渦輪壓力、懸吊行程、G 值、滑移）進行線性平滑或環狀最短角度插值（`lerpAngleDeg`）；而離散狀態（檔位 `Gear`、`IsRaceOn`、`CarOrdinal`、`Lockup` 抱死）必須即時響應，嚴禁進行浮點插值，防止跳檔時出現浮點檔位或延遲。
+  3. **外推邊界與斷訊回退防護**：外推上限設為 $1.25\times$，超過 150ms 無新數據時自動回退至最新封包，防止網絡卡頓或遊戲暫停時物理量漂移過衝。
+  4. **微任務防抖與排程**：高 GPU 負載下 WebSocket 封包可能在瀏覽器同一微任務中連續抵達，需加入隊列防抖保護，避免短時間內無效連續觸發昂貴的 DOM 重繪。
+- **Action**：
+  1. 建立 `frontend/src/utils/frameInterpolator.ts` 與純函數單元測試 `frontend/src/utils/frameInterpolator.test.ts`。
+  2. 建立 `hud_overlay/shared/frame-interpolator.js` 並整合至 `hud_overlay/shared/coordinator.js`（`requestAnimationFrame` 驅動循環）。
+  3. 於 `OverlayView` 新增 `High-Refresh Frame Smoothing (120Hz/144Hz/240Hz/VRR)` 設定開關與多語系支援。
+  4. 實作自動化幀排程測量工具 `scripts/measure_frame_pacing.py` 與測試 `scripts/tests/test_measure_frame_pacing.py`。
+- **Evidence**：後端 Pytest 254 passed, 1 skipped, 6 deselected；腳本測試 22 passed；前端 Vitest 83 files / 498 tests 100% passed；`pnpm build` 成功（701 modules）；Ruff 靜態檢查無誤。
+- **Governance**：本筆追加依 `telemetry-udp-protocol`、`huge-component-refactoring`、`pr-author-maintainer` 與 `agent-governance-audit` 登錄。
+
+---
+
 ## 2026-08-30 / Dyno Timestamp Quality and Vehicle Segment Boundary
 
 - **來源**：`local`，`codex/feat/dyno-shift-quality-gates`。
