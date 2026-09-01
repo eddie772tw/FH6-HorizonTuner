@@ -20,7 +20,7 @@
 | `huge-component-refactoring` | `huge-component-refactoring/SKILL.md` | 拆分超過 250 行的 UI 組件，或優化 60Hz rendering | 為抽出的行為保留測試 |
 | `cross-agent-collaboration` | `cross-agent-collaboration/SKILL.md` | Codex、Google Antigravity 或 Jules 的非同步交接、ownership、handoff 與衝突避免 | `.agents/AGENTS.md`、`.agents/Journal.md` 與 `.jules/` 原始日誌 |
 | `codex-antigravity-bridge` | `codex-antigravity-bridge/SKILL.md` | Codex 透過 `agy` CLI 與 Antigravity 進行固定 token handshake、headless prompt、回覆輪詢與共享 worktree 驗證 | `scripts/Invoke-AgyCrossAgentSmoke.ps1`、`scripts/Set-AgyBridgeSettings.ps1`、`cross-agent-collaboration` |
-| `jules_coding` | `jules_coding/SKILL.md` | 使用者明確授權 Jules 執行高風險重構、大型相依套件升級或本機資源不足的工作 | `JULES_API_KEY`、已綁定 Jules 的 GitHub repository，以及可用的 Jules 整合 |
+| `jules_coding` | `jules_coding/SKILL.md` | 手動 Jules Session 委派，以及遠端排程 Jules Session／PR 的來源判斷與收件驗收 | `JULES_API_KEY`、已綁定 Jules 的 GitHub repository、Session provenance contract 與可用的 Jules 整合 |
 | `modular-refactoring` | `modular-refactoring/SKILL.md` | Domain 重構、新模組，或將邏輯與 UI 分離 | Isolation tests 與 typed contracts |
 | `physics-tuning-math` | `physics-tuning-math/SKILL.md` | 車輛物理、調校公式、校準常數或診斷數學 | 對應的 Vitest/Pytest 覆蓋 |
 | `telemetry-udp-protocol` | `telemetry-udp-protocol/SKILL.md` | Forza UDP 封包解析、324-byte layout、單位換算或高頻遙測 | 涉及 offset 時讀取 `telemetry-udp-protocol/references/packet_format_reference.md` |
@@ -32,7 +32,7 @@
 
 ## Jules 邊界
 
-`jules_coding` 是委派流程，不是預設的實作方式。不能只因為任務很大就呼叫 Jules；必須先確認任務符合觸發條件、使用者已授權，並且 API key、repository binding 與可呼叫的整合都可用。不得假造 endpoint、API response、PR 或 Jules status。若無法使用 Jules，應在安全範圍內繼續本地處理，並記錄限制原因。
+`jules_coding` 同時涵蓋手動 Session 委派與排程產出收件，但兩者來源與權限必須分開記錄。不能只因為任務很大就呼叫 Jules；手動流程必須先確認使用者授權、API key、repository binding 與可呼叫整合。排程流程只能讀取 Session／PR 並進行 provenance 分類與本地驗收。沒有正式 schedule endpoint 或 connector 時，`schedule_read`／`schedule_manage` 均視為 unavailable，不得假造 endpoint、API response、PR、排程狀態或控制結果。
 
 ## Google Antigravity/Jules 相容性
 
@@ -58,5 +58,6 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 - 發行 portable/exe、sidecar 或動態 HTTP port 時使用 `portable-release-validation`。
 - 評估 PR 狀態、CI 與提出 Review / Inline Comments 時使用 `pr-review-evaluation`。
 - 撰寫 PR、持續同步 PR Body、Pre-Commit 測試、標題穩定性與回覆 Reviewer 時使用 `pr-author-maintainer`。
+- 手動 Jules 委派與排程 Jules 產出收件均使用 `jules_coding`；排程來源先依 Session 開頭 prompt、persona signature、task/PR 證據分類，不得把推論當成正式 schedule flag。
 - 所有 PR 審查與作者留言均須標註 `{代號} as {Agent}` 身分標記以利共用 GitHub 帳號時之識別。
 - 收集、審查或修復 GitHub 自主檢測的安全警報與弱點時使用 `github-security-audit`。

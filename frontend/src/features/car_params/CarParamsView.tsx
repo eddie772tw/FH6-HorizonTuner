@@ -37,7 +37,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
   
   // Guided Dyno wizard states
   const [testState, setTestState] = React.useState<'ready' | 'waiting' | 'recording' | 'completed'>('ready');
-  const [runStartTime, setRunStartTime] = React.useState<number | null>(null);
+  const [runStartTimestampMs, setRunStartTimestampMs] = React.useState<number | null>(null);
   const [runDuration, setRunDuration] = React.useState<number | null>(null);
   const [gearingData, setGearingData] = React.useState<{ gears: number[]; finalDrive: number } | null>(null);
 
@@ -108,7 +108,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
       // Pause or reset state machine during launch control
       if (testState === 'recording') {
         setTestState('ready');
-        setRunStartTime(null);
+        setRunStartTimestampMs(null);
       }
       return;
     }
@@ -122,16 +122,18 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
         setTestState('ready');
       } else if (accel >= 250 && currentRpm >= 2000 && brake === 0 && handbrake === 0 && clutch === 0) {
         setTestState('recording');
-        setRunStartTime(Date.now());
+        const timestampMs = Number(telemetryData.TimestampMS);
+        setRunStartTimestampMs(Number.isFinite(timestampMs) ? timestampMs : null);
       }
     } else if (testState === 'recording') {
       const shouldStop = !isGearCorrect || accel < 200 || brake > 0 || handbrake > 0 || clutch > 50;
       const isRedline = currentRpm >= maxRpm - 250;
       
       if (shouldStop || isRedline) {
-        if (runStartTime) {
-          const duration = (Date.now() - runStartTime) / 1000;
-          if (currentRpm >= maxRpm * 0.82 || isRedline) {
+        if (runStartTimestampMs !== null) {
+          const timestampMs = Number(telemetryData.TimestampMS);
+          const duration = (timestampMs - runStartTimestampMs) / 1000;
+          if (duration >= 0 && (currentRpm >= maxRpm * 0.82 || isRedline)) {
             setTestState('completed');
             setRunDuration(duration);
           } else {
@@ -140,14 +142,14 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
         } else {
           setTestState('ready');
         }
-        setRunStartTime(null);
+        setRunStartTimestampMs(null);
       }
     } else if (testState === 'completed') {
       if (isGearCorrect && currentRpm > 0 && currentRpm < 2500 && accel < 50 && brake === 0 && handbrake === 0) {
         setTestState('waiting');
       }
     }
-  }, [telemetryData, testState, runStartTime, settings.dyno_test_gear, settings.dyno_recording, carParams]);
+  }, [telemetryData, testState, runStartTimestampMs, settings.dyno_test_gear, settings.dyno_recording, carParams]);
 
   // Auto-save states
   const [saveState, setSaveState] = React.useState<'saved' | 'saving' | 'unsaved'>('saved');

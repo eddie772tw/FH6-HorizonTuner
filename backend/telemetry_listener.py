@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import socket
 import struct
 import sys
@@ -24,12 +25,90 @@ logger = logging.getLogger(__name__)
 # - f[4]: SuspTravel FL, FR, RL, RR (16 bytes)
 # - f[4]: SlipRatio FL, FR, RL, RR (16 bytes)
 # - f[4]: SlipAngle FL, FR, RL, RR (16 bytes)
-# - 16 bytes: Reserved padding (對齊 128 位元組)
-TELEMETRY_STRUCT_FORMAT = (
-    "<iffffffffffff" + "f" * 4 + "f" * 4 + "f" * 4 + "f" * 4 + "16s"
-)
+# - 8 bytes: Reserved padding (對齊 128 位元組)
+TELEMETRY_STRUCT_FORMAT = "<iffffi" + "f" * 24 + "8s"
 
 DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)
+LEGACY_TELEMETRY_PACKET_LENGTH = 232
+FULL_TELEMETRY_PACKET_LENGTH = 324
+LEGACY_TELEMETRY_SCHEMA = "forza-data-out/legacy-common-v1"
+FULL_TELEMETRY_SCHEMA = "forza-data-out/fh6-324-v2"
+
+
+def _packet_rejection_reason(data: bytes) -> str | None:
+    """Classify packet-length and race-state rejections without parsing fields."""
+    data_len = len(data)
+    if data_len < LEGACY_TELEMETRY_PACKET_LENGTH:
+        return "too_short"
+    if LEGACY_TELEMETRY_PACKET_LENGTH < data_len < FULL_TELEMETRY_PACKET_LENGTH:
+        return "partial_schema"
+    if data_len > FULL_TELEMETRY_PACKET_LENGTH:
+        return "unsupported_length"
+    if struct.unpack_from("<i", data, 0)[0] != 1:
+        return "not_racing"
+    return None
+
+
+def _packet_schema(data_len: int) -> str | None:
+    if data_len == LEGACY_TELEMETRY_PACKET_LENGTH:
+        return LEGACY_TELEMETRY_SCHEMA
+    if data_len == FULL_TELEMETRY_PACKET_LENGTH:
+        return FULL_TELEMETRY_SCHEMA
+    return None
+
+
+def _plausibility_rejection_reason(telemetry_data: dict) -> str | None:
+    """Reject non-finite or impossible values before they reach recorders."""
+    numeric_values = (
+        "EngineMaxRpm",
+        "EngineIdleRpm",
+        "CurrentEngineRpm",
+        "AccelerationX",
+        "AccelerationY",
+        "AccelerationZ",
+        "VelocityX",
+        "VelocityY",
+        "VelocityZ",
+        "Yaw",
+        "Pitch",
+        "Roll",
+    )
+    if not all(math.isfinite(telemetry_data[field]) for field in numeric_values):
+        return "non_finite"
+    for field in (
+        "SurfaceRumble",
+        "TireCombinedSlip",
+        "NormalizedSuspensionTravel",
+        "SuspensionTravelMeters",
+        "TireSlipRatio",
+        "TireSlipAngle",
+    ):
+        if not all(math.isfinite(value) for value in telemetry_data[field]):
+            return "non_finite"
+
+    if telemetry_data["TelemetrySchema"] == FULL_TELEMETRY_SCHEMA:
+        numeric_v2_fields = (
+            "PositionX",
+            "PositionY",
+            "PositionZ",
+            "SpeedMetersPerSecond",
+            "PowerWatts",
+            "TorqueNewtons",
+            "Boost",
+            "Fuel",
+            "BestLap",
+            "LastLap",
+            "CurrentLap",
+            "DistanceTraveled",
+            "CurrentRaceTime",
+        )
+        if not all(math.isfinite(telemetry_data[field]) for field in numeric_v2_fields):
+            return "non_finite"
+        if not 0.0 <= telemetry_data["Fuel"] <= 1.0:
+            return "out_of_range"
+        if telemetry_data["SpeedMetersPerSecond"] < 0.0:
+            return "out_of_range"
+    return None
 
 
 def pack_telemetry_binary(data: dict) -> bytes:
@@ -70,7 +149,7 @@ def pack_telemetry_binary(data: dict) -> bytes:
         # 轉換弧度為度
         slip_angles_deg = [sa * 57.29578 for sa in slip_angles]
 
-        reserved = b"\x00" * 16
+        reserved = b"\x00" * 8
 
         return struct.pack(
             TELEMETRY_STRUCT_FORMAT,
@@ -102,15 +181,11 @@ def pack_telemetry_binary(data: dict) -> bytes:
 
 def parse_telemetry_packet(data: bytes) -> dict | None:
     data_len = len(data)
-    if data_len < 232:
+    if _packet_rejection_reason(data) is not None:
         return None
 
-    # 0: IsRaceOn (s32)
+    # The validated length guarantees this unpack is safe and IsRaceOn is 1.
     is_race_on = struct.unpack_from("<i", data, 0)[0]
-
-    # Only process if actually racing
-    if is_race_on != 1:
-        return None
 
     # Common telemetry block
     timestamp_ms = struct.unpack_from("<I", data, 4)[0]
@@ -164,6 +239,7 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
 
     telemetry_data = {
         "IsRaceOn": is_race_on,
+        "TelemetrySchema": _packet_schema(data_len),
         "TimestampMS": timestamp_ms,
         "EngineMaxRpm": engine_max_rpm,
         "EngineIdleRpm": engine_idle_rpm,
@@ -210,8 +286,8 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
         "Cylinders": cylinders,
     }
 
-    # V2 Dash Data
-    if data_len >= 324:
+    # Full 324-byte Data Out contract. The 233..323 partial range is rejected.
+    if data_len == FULL_TELEMETRY_PACKET_LENGTH:
         pos_x, pos_y, pos_z = struct.unpack_from("<fff", data, 244)
         speed = struct.unpack_from("<f", data, 256)[0]
         power = struct.unpack_from("<f", data, 260)[0]
@@ -269,6 +345,9 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
                 "SteerInput": steer_input,
             }
         )
+
+    if _plausibility_rejection_reason(telemetry_data) is not None:
+        return None
 
     return telemetry_data
 
@@ -467,17 +546,23 @@ class TelemetryProtocol(asyncio.DatagramProtocol):
             telemetry_data = parse_telemetry_packet(data)
             if telemetry_data is not None:
                 if self.metrics is not None:
-                    self.metrics.record_packet_parsed()
+                    self.metrics.record_packet_parsed(
+                        timestamp_ms=telemetry_data["TimestampMS"],
+                        schema=telemetry_data["TelemetrySchema"],
+                        source=addr,
+                    )
                 try:
                     self.message_queue.put_nowait(telemetry_data)
                 except asyncio.QueueFull:
-                    pass
+                    if self.metrics is not None:
+                        self.metrics.record_dropped_frames(1, "input_queue_full")
             elif self.metrics is not None:
-                if len(data) < 232:
-                    rejection_reason = "too_short"
-                else:
-                    rejection_reason = "not_racing"
+                rejection_reason = _packet_rejection_reason(data)
+                if rejection_reason is None:
+                    rejection_reason = "plausibility_failed"
                 self.metrics.record_packet_rejected(rejection_reason)
+                if rejection_reason == "not_racing":
+                    self.metrics.record_timestamp_boundary()
         except Exception as e:
             if self.metrics is not None:
                 self.metrics.record_packet_rejected("parser_error")
@@ -635,9 +720,9 @@ def create_resilient_udp_socket(
 
 
 async def start_udp_listener(
-    ip: str,
-    port: int,
-    message_queue: asyncio.Queue,
+    ip: str | None = None,
+    port: int = 8000,
+    message_queue: asyncio.Queue | None = None,
     forward_enabled: bool = False,
     forward_host: str = "127.0.0.1",
     forward_port: int = 5300,
@@ -645,11 +730,11 @@ async def start_udp_listener(
 ):
     loop = asyncio.get_running_loop()
 
-    # If ip is "auto", "0.0.0.0", "all", or empty: probe and bind all registered local IPs explicitly
-    if ip in ("0.0.0.0", "auto", "all", "", None):
-        target_ips = discover_local_ipv4_addresses()
-    else:
-        target_ips = [ip]
+    # Always discover all active registered local IPs + 127.0.0.1
+    target_ips = discover_local_ipv4_addresses()
+    if ip and ip not in ("0.0.0.0", "auto", "all", "", "127.0.0.1"):
+        if ip not in target_ips:
+            target_ips.append(ip)
 
     transports: list[asyncio.DatagramTransport] = []
     bound_ips: list[str] = []
@@ -675,6 +760,14 @@ async def start_udp_listener(
             logger.warning(
                 f"Failed to bind telemetry listener to {bind_ip}:{port}: {e}"
             )
+            # 127.0.0.1 is mandatory; if loopback fails (port occupied), abort and raise OSError
+            if bind_ip == "127.0.0.1" or (ip and bind_ip == ip):
+                for t in transports:
+                    try:
+                        t.close()
+                    except Exception:
+                        pass
+                raise
 
     if not transports:
         # Fallback to loopback if all interface bindings failed
@@ -696,7 +789,7 @@ async def start_udp_listener(
         bound_ips.append(fallback_ip)
 
     logger.info(
-        f"Listening for Forza Telemetry on UDP {', '.join(bound_ips)}:{port} (Resilient Sockets, Zero Wildcard 0.0.0.0)"
+        f"Listening for Forza Telemetry on UDP {', '.join(bound_ips)}:{port} (Resilient Sockets, Multi-Interface Safe Binding)"
     )
 
     if len(transports) == 1:

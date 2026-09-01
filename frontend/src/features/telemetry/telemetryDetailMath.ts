@@ -60,12 +60,29 @@ const averageFour = (values: readonly (number | null)[]): number | null => (
 );
 
 export const summarizeSeries = (values: readonly (number | null)[]): SeriesSummary => {
-  const finiteValues = values.filter((value): value is number => value !== null && Number.isFinite(value));
-  if (finiteValues.length === 0) return { minimum: null, maximum: null, average: null };
+  // [PERF] Optimized O(N) loop to avoid .filter() array creation and dangerous Math.min/max(...values) spread operator
+  // which can cause "RangeError: Maximum call stack size exceeded" on large telemetry datasets.
+  let minimum = Infinity;
+  let maximum = -Infinity;
+  let sum = 0;
+  let count = 0;
+
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i];
+    if (value !== null && Number.isFinite(value)) {
+      if (value < minimum) minimum = value;
+      if (value > maximum) maximum = value;
+      sum += value;
+      count++;
+    }
+  }
+
+  if (count === 0) return { minimum: null, maximum: null, average: null };
+
   return {
-    minimum: Math.min(...finiteValues),
-    maximum: Math.max(...finiteValues),
-    average: finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length,
+    minimum,
+    maximum,
+    average: sum / count,
   };
 };
 
@@ -90,7 +107,6 @@ export const calculateSuspensionMetrics = (
   history: readonly TelemetryHistorySample[],
 ): SuspensionDetailMetrics => {
   const currentValues = readFour(current?.NormalizedSuspensionTravel);
-  const cornerHistory = TELEMETRY_CORNERS.map((_, index) => history.map((sample) => sample.suspension[index]));
   const firstAverage = averageFour(history[0]?.suspension ?? []);
   const lastSample = history.length > 0 ? history[history.length - 1] : undefined;
   const lastAverage = averageFour(lastSample?.suspension ?? []);
@@ -98,9 +114,33 @@ export const calculateSuspensionMetrics = (
   const lastTime = lastSample?.timeSeconds;
   const elapsed = firstTime === undefined || lastTime === undefined ? null : lastTime - firstTime;
 
+  // Single-pass optimization for suspension summaries to reduce GC pressure
+  const mins = [Infinity, Infinity, Infinity, Infinity];
+  const maxs = [-Infinity, -Infinity, -Infinity, -Infinity];
+  const sums = [0, 0, 0, 0];
+  const counts = [0, 0, 0, 0];
+
+  for (let i = 0; i < history.length; i++) {
+    const susp = history[i].suspension;
+    for (let c = 0; c < 4; c++) {
+      const val = susp[c];
+      if (val !== null && Number.isFinite(val)) {
+        if (val < mins[c]) mins[c] = val;
+        if (val > maxs[c]) maxs[c] = val;
+        sums[c] += val;
+        counts[c]++;
+      }
+    }
+  }
+
+  const summaries: SeriesSummary[] = [0, 1, 2, 3].map(c => counts[c] === 0
+    ? { minimum: null, maximum: null, average: null }
+    : { minimum: mins[c], maximum: maxs[c], average: sums[c] / counts[c] }
+  );
+
   return {
     current: currentValues,
-    summaries: cornerHistory.map(summarizeSeries),
+    summaries,
     frontAverage: averagePair(currentValues[0], currentValues[1]),
     rearAverage: averagePair(currentValues[2], currentValues[3]),
     leftAverage: averagePair(currentValues[0], currentValues[2]),
