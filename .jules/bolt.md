@@ -10,3 +10,6 @@
 ## 2024-05-25 - Single-Pass Array Accumulation in Telemetry Math
 **Learning:** Chaining `.map()` over 2D array coordinates inside `calculateSuspensionMetrics` (e.g., mapping corner axes against the entire 30s history frame) allocates heavily at 10-60Hz, increasing GC pauses and hurting telemetry smoothness.
 **Action:** Unroll intermediate `.map()` extractions directly into a single pass `for` loop that iterates the history array exactly once, calculating minimums, maximums, and sums inline to return summary objects directly.
+## 2024-05-30 - DOM Pooling for Text Rendering in 60Hz Render Loops
+**Learning:** Overwriting `innerHTML` in a 60Hz render loop (e.g. for dynamic HUD speed values) causes unnecessary DOM destruction/recreation, layout thrashing, and immense Garbage Collection overhead.
+**Action:** Replace `innerHTML` concatenation loops with DOM pooling: match existing children's length, update `textContent` only when characters differ, and dynamically add/remove `<span>` elements only when string length changes.

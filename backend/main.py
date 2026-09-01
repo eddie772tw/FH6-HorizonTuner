@@ -386,6 +386,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def enforce_origin_security(request: Request, call_next):
+    if request.method not in {"GET", "OPTIONS", "HEAD"}:
+        origin = request.headers.get("origin")
+        # In modern browsers, Origin is always sent with POST/PUT/DELETE for cross-origin requests.
+        # If Origin is present but untrusted, block it (CSRF prevention).
+        if origin and not is_allowed_origin(origin):
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "CSRF protection blocked request: Invalid Origin."},
+            )
+
+    return await call_next(request)
+
+
 # Memory cache for dyno data to avoid disk I/O every frame
 dyno_cache = {}
 last_dyno_save_time = time.time()
