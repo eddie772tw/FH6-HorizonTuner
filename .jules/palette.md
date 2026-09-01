@@ -30,3 +30,7 @@
 ## 2024-05-19 - Tooltips on Disabled Buttons in React
 **Learning:** In standard HTML/React, native `<button disabled>` elements swallow mouse events, preventing CSS `:hover` states and parent wrappers (like `<span>` with `title` attributes) from receiving the events needed to display tooltips.
 **Action:** Always wrap disabled buttons that need tooltips in a `<span>` with `title` and conditionally apply `display: inline-block` and `cursor: not-allowed` to the wrapper, and `pointerEvents: 'none'` to the button itself. This allows the wrapper to catch the event while still showing the disabled cursor.
+
+## 2026-09-01 - Accessible Async Button Spinners
+**Learning:** Text-based loading states like `...` in buttons are often skipped or misinterpreted by screen readers, creating an inaccessible async experience. Replacing them with proper spinner components (e.g., `spinner-border`) combined with `aria-hidden="true"` on the spinner and explicit descriptive text provides both a clear visual cue and a semantic cue for assistive technologies.
+**Action:** When creating async/loading buttons, use explicit spinner elements and descriptive text instead of relying on ellipsis strings.

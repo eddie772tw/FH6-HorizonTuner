@@ -1124,5 +1124,7 @@
   "Travel Rate": "ストローク速度",
   "Vertical G": "垂直 G",
   "Waiting for live telemetry history": "ライブテレメトリ履歴を待機中",
-  "Yes": "はい"
+  "Yes": "はい",
+  "Processing...": "処理中...",
+  "Refreshing...": "更新中..."
 }
