@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { backendWebSocketUrl } from "../services/backend";
+import { FrameInterpolator } from "../utils/frameInterpolator";
 
 export interface TelemetryData {
   IsRaceOn: number;
@@ -56,12 +57,37 @@ let connectionState = false;
 let subscribers = 0;
 let reconnectTimeout: ReturnType<typeof setTimeout>;
 
-// 60Hz Event Emitter for high-performance Canvas rendering (Bypasses React)
+// High-refresh timestamp-based frame pacing interpolator
+const sharedInterpolator = new FrameInterpolator();
+let sharedRafId: number | null = null;
+
+function startSharedRenderLoop() {
+  if (sharedRafId !== null || typeof window === "undefined") return;
+  function renderLoop() {
+    if (subscribers <= 0) {
+      sharedRafId = null;
+      return;
+    }
+    const interpolated = sharedInterpolator.interpolate(performance.now()) as TelemetryData;
+    if (interpolated && typeof interpolated === "object" && Object.keys(interpolated).length > 0) {
+      telemetryEmitter.dispatchEvent(new CustomEvent("update", { detail: interpolated }));
+      window.dispatchEvent(new CustomEvent("hud:frame", { detail: interpolated }));
+    }
+    sharedRafId = requestAnimationFrame(renderLoop);
+  }
+  sharedRafId = requestAnimationFrame(renderLoop);
+}
+
+function stopSharedRenderLoop() {
+  if (sharedRafId !== null && typeof window !== "undefined") {
+    cancelAnimationFrame(sharedRafId);
+    sharedRafId = null;
+  }
+  sharedInterpolator.reset();
+}
+
+// High-Refresh Event Emitter for high-performance Canvas rendering (Bypasses React)
 export const telemetryEmitter = new EventTarget();
-
-
-
-// Standby Idle Telemetry broadcast removed to ensure HUD only updates on live UDP telemetry data.
 
 export function useTelemetry(url?: string) {
   const [data, setData] = useState<TelemetryData | null>(latestData);
@@ -226,17 +252,19 @@ function formatHudTelemetry(raw: TelemetryData) {
 
       sharedWs.onmessage = (event) => {
         try {
-          latestData = JSON.parse(event.data);
-          // Dispatch high-frequency 60Hz event directly to Canvas components
-          telemetryEmitter.dispatchEvent(new CustomEvent('update', { detail: latestData }));
-          window.dispatchEvent(new CustomEvent('hud:frame', { detail: latestData }));
-          
-          // Forward telemetry to Horizon Tuner HUD window via BroadcastChannel
-          if (latestData && hudBroadcastChannel) {
-            hudBroadcastChannel.postMessage({
-              type: 'telemetry',
-              data: formatHudTelemetry(latestData)
-            });
+          const parsed = JSON.parse(event.data);
+          if (parsed && typeof parsed === 'object') {
+            latestData = parsed;
+            sharedInterpolator.pushSample(parsed, performance.now());
+            startSharedRenderLoop();
+            
+            // Forward telemetry to Horizon Tuner HUD window via BroadcastChannel
+            if (hudBroadcastChannel) {
+              hudBroadcastChannel.postMessage({
+                type: 'telemetry',
+                data: formatHudTelemetry(parsed)
+              });
+            }
           }
         } catch (e) {
           console.error("Error parsing telemetry data:", e);
@@ -246,6 +274,7 @@ function formatHudTelemetry(raw: TelemetryData) {
       sharedWs.onclose = () => {
         connectionState = false;
         sharedWs = null;
+        stopSharedRenderLoop();
         if (subscribers > 0) {
           console.log("Telemetry WebSocket closed. Reconnecting...");
           clearTimeout(reconnectTimeout);
@@ -267,7 +296,7 @@ function formatHudTelemetry(raw: TelemetryData) {
     }
 
     // [MEMORY OPTIMIZATION] Throttle React State updates to 5Hz to prevent massive Fiber garbage collection
-    // This provides readable text for the UI while the Canvas uses the 60Hz emitter above
+    // This provides readable text for the UI while the Canvas uses the High-Refresh emitter above
     const interval = setInterval(() => {
       setData(latestData);
       setIsConnected(connectionState);
@@ -278,6 +307,7 @@ function formatHudTelemetry(raw: TelemetryData) {
       subscribers--;
       if (subscribers === 0) {
         clearTimeout(reconnectTimeout);
+        stopSharedRenderLoop();
         if (sharedWs) {
           sharedWs.onclose = null;
           sharedWs.onerror = null;

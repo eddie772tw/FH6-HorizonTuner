@@ -507,6 +507,7 @@
   "Path Deviation": "最大軌道偏差",
   "Path Validity Warning": "軌道の有効性に関する警告",
   "Pause": "Pause",
+  "High-Refresh Frame Smoothing (120Hz/144Hz/240Hz/VRR)": "高リフレッシュレートフレーム補間スムージング (120Hz/144Hz/240Hz/VRR)",
   "Pause Telemetry View when HUD is active": "Pause Telemetry View when HUD is active",
   "PAUSED": "一時停止中",
   "Performance & System Options": "Performance & System Options",

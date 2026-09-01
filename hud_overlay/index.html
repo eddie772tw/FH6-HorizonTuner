@@ -56,7 +56,7 @@
     <!-- ── HUD Launcher & Event Dispatcher ───────────────────────────────── -->
     <script type="module">
         import { TelemetryCardsManager }                                                        from './shared/telemetry-cards.js';
-        import { initCoordinator }                                                              from './shared/coordinator.js';
+        import { initCoordinator, setFrameSmoothing }                                          from './shared/coordinator.js';
         import { initWebSocket }                                                                from './shared/ws.js';
         import { createOverlayEventForwarder }                                                  from './shared/overlay-forwarding.js';
         import { initPhysics }                                                                  from './shared/physics.js';
@@ -94,6 +94,12 @@
         function applyHudUnit(config) {
             const unit = config?.effectiveUnit || config?.unit || 'kmh';
             setSpeedUnit(unit !== 'mph');
+        }
+
+        function applyHudSmoothing(config) {
+            if (config && typeof config.enableSmoothing === 'boolean') {
+                setFrameSmoothing(config.enableSmoothing);
+            }
         }
 
         function normalizeHudStyle(name) {
@@ -191,6 +197,7 @@
             const res = await fetch(`http://${host}/api/overlay/config`);
             const config = normalizeHudConfig(await res.json());
             applyHudUnit(config);
+            applyHudSmoothing(config);
             window._currentHudConfig = config;
             if (config.elements) window._currentHudElements = config.elements;
             if (config.hudStyle) activeHud = normalizeHudStyle(config.hudStyle);
@@ -250,6 +257,7 @@
         window.addEventListener('hud:config', (e) => {
             const config = normalizeHudConfig(e.detail || {});
             applyHudUnit(config);
+            applyHudSmoothing(config);
             window._currentHudConfig = config;
             if (window.TelemetryCardsManager) {
                 window.TelemetryCardsManager.update(null, config);
@@ -281,6 +289,7 @@
             } else if (ev.data && ev.data.type === 'config') {
                 const config = normalizeHudConfig(ev.data.data || {});
                 applyHudUnit(config);
+                applyHudSmoothing(config);
                 window._currentHudConfig = config;
                 if (window.TelemetryCardsManager) {
                     window.TelemetryCardsManager.update(null, config);

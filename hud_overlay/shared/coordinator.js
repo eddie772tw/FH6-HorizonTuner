@@ -16,6 +16,55 @@
 // =============================================================================
 
 import { updatePhysicsTargets }  from './physics.js';
+import { FrameInterpolator }    from './frame-interpolator.js';
+
+// ── Frame pacing & interpolation ──────────────────────────────────────────────
+const _interpolator = new FrameInterpolator();
+let _enableSmoothing = true;
+let _rafId = null;
+let _hasActiveTelemetry = false;
+
+export function setFrameSmoothing(enabled) {
+    _enableSmoothing = Boolean(enabled);
+    if (!_enableSmoothing && _rafId !== null) {
+        cancelAnimationFrame(_rafId);
+        _rafId = null;
+    }
+}
+
+export function isFrameSmoothingEnabled() {
+    return _enableSmoothing;
+}
+
+function _startRenderLoopIfNeeded() {
+    if (!_enableSmoothing || _rafId !== null) return;
+
+    function _renderLoop() {
+        if (!_enableSmoothing) {
+            _rafId = null;
+            return;
+        }
+
+        const interpolated = _interpolator.interpolate(performance.now());
+        if (interpolated) {
+            updatePhysicsTargets(interpolated);
+            window.dispatchEvent(new CustomEvent('hud:frame', {
+                detail: {
+                    data:          interpolated,
+                    redlineRpm:    interpolated.redlineRpm,
+                    lcState:       interpolated.lcState,
+                    sessionMaxima: interpolated.sessionMaxima,
+                    lockup:        interpolated.lockup,
+                }
+            }));
+            window._diag?.countFrame?.();
+        }
+
+        _rafId = requestAnimationFrame(_renderLoop);
+    }
+
+    _rafId = requestAnimationFrame(_renderLoop);
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 export function initCoordinator() {
@@ -28,7 +77,7 @@ export function initCoordinator() {
         performance.clearMeasures();
     }, 30_000);
 
-    console.log('[Coordinator] Initialized');
+    console.log('[Coordinator] Initialized with High-Refresh Frame Interpolation');
 }
 
 // ── Core pipeline ─────────────────────────────────────────────────────────────
@@ -219,14 +268,11 @@ function _onTelemetry(e) {
     const data = formatHudTelemetry(e.detail);
     window._diag?.countWsMessage?.();
 
-    updatePhysicsTargets(data);
-
-    // Notification from Rust
+    // Discrete state events are always dispatched immediately for zero latency
     if (data.notification) {
         window.showNotification?.(data.notification);
     }
 
-    // Car changed event
     if (data.carChanged) {
         window.dispatchEvent(new CustomEvent('car:changed', {
             detail: {
@@ -240,7 +286,6 @@ function _onTelemetry(e) {
         }));
     }
 
-    // Car learned event
     if (data.carLearned) {
         window.dispatchEvent(new CustomEvent('car:learned', {
             detail: {
@@ -251,7 +296,6 @@ function _onTelemetry(e) {
         }));
     }
 
-    // LC state change
     if (data.lcState !== _lastLcState) {
         _lastLcState = data.lcState;
         window.dispatchEvent(new CustomEvent('lc:state', {
@@ -262,15 +306,20 @@ function _onTelemetry(e) {
         }));
     }
 
-    window.dispatchEvent(new CustomEvent('hud:frame', {
-        detail: {
-            data,
-            redlineRpm:    data.redlineRpm,
-            lcState:       data.lcState,
-            sessionMaxima: data.sessionMaxima,
-            lockup:        data.lockup,
-        }
-    }));
-
-    window._diag?.countFrame?.();
+    if (_enableSmoothing) {
+        _interpolator.pushSample(data, performance.now());
+        _startRenderLoopIfNeeded();
+    } else {
+        updatePhysicsTargets(data);
+        window.dispatchEvent(new CustomEvent('hud:frame', {
+            detail: {
+                data,
+                redlineRpm:    data.redlineRpm,
+                lcState:       data.lcState,
+                sessionMaxima: data.sessionMaxima,
+                lockup:        data.lockup,
+            }
+        }));
+        window._diag?.countFrame?.();
+    }
 }
