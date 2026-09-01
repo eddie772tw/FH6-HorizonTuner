@@ -1584,6 +1584,15 @@
 
 ---
 
+## 2026-08-30 / Data Out onboarding and bounded health presentation
+
+- **Scope**: `frontend/src/features/onboarding/` and `frontend/src/components/Navigation.tsx`.
+- **Decision**: The frontend consumes the existing read-only `/api/diagnostics/telemetry-pipeline` contract through a typed presentation boundary. It distinguishes no packets, packets that produced no valid frames, usable frames, and unavailable diagnostics; parser rejection reasons remain visible without changing the UDP parser.
+- **Accessibility and layout**: The first-run, dismissible modal has a labelled dialog role, focused close control, Escape support, and explicit skip/review actions. The everyday navigation exposes only a compact Data Out status action; the detailed metrics remain progressively disclosed in the modal and do not occupy the telemetry layout.
+- **Evidence**: Vitest covers usable, no-data, parser-error, diagnostics-error, skip, and complete state derivation. The guide states that diagnostic evidence is local packet observation only and does not claim a verified in-game connection.
+
+---
+
 ## 2026-08-30 / Versioned Synthetic Telemetry Replay Fixture Boundary
 
 - **Scope**: `tests/fixtures/telemetry_replay/`, test-only raw packet builder, parser/recorder/binary-wire replay contracts.
@@ -1629,6 +1638,7 @@
   3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
   4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
 - **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed.
+>>>>>>> origin/main
 - **Status**: adopted.
 
 ---
