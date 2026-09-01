@@ -1638,7 +1638,6 @@
   3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
   4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
 - **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed.
->>>>>>> origin/main
 - **Status**: adopted.
 
 ---
@@ -1656,3 +1655,27 @@
 - **Action**: 更新 `.agents/skills/jules_coding/SKILL.md`、`.agents/skills/README.md`；新增 `references/session_provenance.md`、離線 `scripts/validate_jules_intake.py` 與 `tests/test_jules_intake_contract.py`。
 - **Evidence**: validator tests `19 passed`；後端全體 Pytest `230 passed`；前端 Vitest `76 files / 472 tests passed`；`tsc && vite build` 通過；全 repo `ruff check` 通過、`ruff format --check` 顯示 `132 files already formatted`、`git diff --check` 通過；skill folder/frontmatter、tracked `.jules` case audit 通過。Jules connector、`JULES_API_KEY` 與 schedule API 未在本環境驗證，未執行任何遠端排程操作。
 - **Status**: adopted。
+
+---
+
+## 2026-09-01 / LazyForza main branch progress tracking sync
+
+- **Scope**: 依 LazyForza 研究報告同步 `docs/tuning-math-implementation-roadmap.md` 的 Phase 0–8 現況與後續驗收邊界。
+- **Status**: proposed/active tracking update。
+- **Baseline**: LazyForza assessment 以 `main` `7669917` 為基準；後續本機 follow-up commits 為 `37aef7d` 與 `b3c1b5d`，均尚未 push。
+- **Decision**: Phase 0–3 記為已完成；Phase 4、Phase 5A–5D 記為 foundation implemented；Phase 6–8 記為 foundation implemented/scaffolded；calibration、replay product、live FH6 與 release validation 維持未完成。
+- **Evidence**: `docs/calibration/in_game_captures/` 目前只有 `.gitkeep`；assessment baseline 的 main technical gates 為 green，但 automated/local gates 不等於 live FH6 behavior proof。
+- **Changed**: 本 documentation task 修改 roadmap 與本 Journal；product code 的 follow-up 另由 `37aef7d` 與 `b3c1b5d` 記錄，未在本文件 task 中重複修改。
+- **Next**: 先取得帶完整 metadata 的 FH6 實機 captures，再選一個 profile 做 A/B、quality 與 confidence validation；平行 code task 另行驗收後再由 PR 包裝。
+
+---
+
+## 2026-09-01 / LazyForza follow-up implementation commits
+
+- **Scope**: 收斂 LazyForza 報告指出的兩個可獨立驗收缺口：Data Out health 累積 rejection 不應遮蔽新鮮有效串流，以及 tuning preset 缺少 runtime validation。
+- **Changed**: `frontend/src/features/onboarding/telemetryHealth.ts`、其測試；`frontend/src/domain/tuning/persistence/presetSerializer.ts`、其測試。
+- **Decision**: 保留累積 parser issue 供診斷顯示，但 fresh valid frame 維持 `active`；preset deserialize 改為 immutable normalized return，驗證 required fields、nested record shape 與 finite parameter values。
+- **Evidence**: `telemetryHealth.test.ts` 6 passed；`presetSerializer.test.ts` 17 passed；preset focused `tsc --noEmit` passed；兩個 commit 均通過 `git diff --check`。
+- **Commits**: `37aef7d fix(onboarding): keep active Data Out streams visible`；`b3c1b5d fix(tuning): validate preset payloads at runtime`。
+- **Limit**: 這些修正只強化本機 deterministic/frontend contract；沒有新增 FH6 實機 capture，也不代表 profile calibration、live behavior 或 release validation 完成。
+- **Status**: local committed, not pushed；後續由單一 PR 包裝並等待 CI/review。

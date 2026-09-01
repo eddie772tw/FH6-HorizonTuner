@@ -1,8 +1,22 @@
 # TuningMath 多階段實作計畫
 
-日期：2026-08-13 (更新：2026-08-14)
+日期：2026-08-13 (更新：2026-09-01)
 基準文件：[調校數學與 FH6 Meta 評估報告](./tuning-math-fh6-meta-evaluation-report.md)
-目前進度：**Phase 0、Phase 1、Phase 2（領域腳手架）與 Phase 3（擷取工具與 MCP Server 工具鏈）已由 Gemini/Antigravity 完成**。
+目前進度：**Phase 0–3 已完成；Phase 4、Phase 5A–5D 的 shared physics／solver foundation 已在 main 實作；Phase 6–8 的 diagnosis、capability、preset 與整合基礎已實作或建立腳手架，但 calibration、replay product、實機與 release validation 尚未完成。**
+
+## As-of 2026-09-01 — `main` 進度快照
+
+本節取代文件中較早的 pending 標籤，但保留各階段原先的工作內容與歷史意圖。
+
+- **基準**：LazyForza assessment 的 `main` 基準為 `7669917`；其後本機新增兩個可獨立回溯的 follow-up commits：`37aef7d`（Data Out health）與 `b3c1b5d`（preset runtime validation）。本次變更尚未 push，預計由單一 PR 包裝。
+- **Phase 0–3**：已完成，包含基線／安全修正、capability/control contract、domain scaffold，以及 calibration capture／MCP toolchain foundation。
+- **Phase 4**：shared tire／physics foundation 已在 main；tire、load-transfer、geometry、spring／damping 等值仍須以版本化 FH6 實機資料校準。
+- **Phase 5A–5D**：Road、Rally、Drift、Drag solver foundation 已在 main；目前輸出仍屬 empirical prior／estimated，尚未升格為經實機驗證的 production profile。
+- **Phase 6–8**：diagnosis、capability integration、preset／persistence 與 regression／release scaffolding 已實作或部分整合；完整 closed-loop calibration、replay product、profile promotion 與 release evidence 仍未完成。
+- **Main evidence anchors**：Phase 4 可追溯至 `9a273b5`、`7e04fc8`；Phase 5A–5D 可追溯至 `031c91b`、`46c5d55`、`6549d9a`、`c90f334`；後續 telemetry／diagnosis／storage／onboarding 基礎可追溯至 `7918672`、`1fb3072`、`2bce971`、`cd0c276`、`e7772e9`、`7018967`；本次 follow-up 則為 `37aef7d` 與 `b3c1b5d`。這些 commit 證明程式 foundation 與 deterministic contract validation 存在，不證明 live FH6 behavior。
+- **實機資料**：`docs/calibration/in_game_captures/` 目前沒有 FH6 實機 capture，只有 `.gitkeep`。Synthetic replay fixture 只驗證 deterministic contract，不是 live FH6 證據。
+- **技術關卡**：本次 main 評估所記錄的本地與 CI 技術關卡為 green；這只證明自動化／靜態／建置路徑在該基準可通過，不證明已連上 FH6、已取得真實遙測，或 solver 已符合遊戲物理。
+- **下一個可驗收階段**：先完成第一批帶有 game build、車輛／PI、改裝件、路面／輔助設定與 slider snapshot 的實機 captures，再選一種賽事 profile 做品質、A/B 與 confidence 驗證。
 
 ## 1. 實作策略
 
@@ -10,7 +24,7 @@
 
 1. **契約正確**：輸出的數值必須符合車輛改裝件、遊戲版本、UI step、min/max 與可調能力（已於 Phase 1 完成）。
 2. **模型可校準**：所有未驗證常數都要集中、版本化，能用同一車輛/路面/改裝條件做 A/B 校準（已於 Phase 3 完成擷取工具與 MCP 唯讀服務）。
-3. **賽事 solver 可驗證**：Road、Rally、Drift、Drag 分別以對應 telemetry 指標驗證，而不是以單一圈速或單一分享碼宣稱 meta（Phase 4/5 進行中）。
+3. **賽事 solver 可驗證**：Road、Rally、Drift、Drag 分別以對應 telemetry 指標驗證，而不是以單一圈速或單一分享碼宣稱 meta（Phase 4/5 foundation 已實作，實機校準與 validation 仍進行中）。
 
 目前的 `tuningMath.ts` 保留為相容 facade；新 domain modules 通過測試後才逐步取代內部實作。任何階段都不得直接把社群分享碼或未版本化文章轉成 production 常數。
 
@@ -25,20 +39,22 @@ flowchart TD
   P0[Phase 0 基線與安全修正]:::done --> P1[Phase 1 Capability/Control Contract]:::done
   P1 --> P2[Phase 2 Domain Refactor Scaffold]:::done
   P1 --> P3[Phase 3 Calibration Pipeline & MCP Server]:::done
-  P2 --> P4[Phase 4 Shared Tire/Physics Model]:::active
+  P2 --> P4[Phase 4 Shared Tire/Physics foundation (calibration pending)]:::active
   P3 --> P4
-  P4 --> R[Phase 5A Road/Circuit Solver]:::pending
-  P4 --> Y[Phase 5B Rally/Off-road Solver]:::pending
-  P4 --> D[Phase 5C Drift Solver]:::pending
-  P4 --> G[Phase 5D Drag Solver]:::pending
-  R --> P6[Phase 6 Closed-loop Diagnosis]:::pending
+  P4 --> R[Phase 5A Road foundation (validation pending)]:::active
+  P4 --> Y[Phase 5B Rally foundation (validation pending)]:::active
+  P4 --> D[Phase 5C Drift foundation (validation pending)]:::active
+  P4 --> G[Phase 5D Drag foundation (validation pending)]:::active
+  R --> P6[Phase 6 Diagnosis foundation (integration pending)]:::active
   Y --> P6
   D --> P6
   G --> P6
-  P1 --> P7[Phase 7 UI/Capability Integration]:::pending
+  P1 --> P7[Phase 7 Capability/preset foundation (validation pending)]:::active
   P6 --> P7
-  P7 --> P8[Phase 8 Regression/Calibration Release]:::pending
+  P7 --> P8[Phase 8 Regression/calibration release (not complete)]:::active
 ```
+
+圖中的 `active` 表示目前已有可檢視的 implementation foundation 或 scaffold；不表示已完成 calibration、live FH6 validation 或 release promotion。原先的 `pending` 標籤已由本節與各階段的 current status supersede。
 
 ### 依賴規則
 
@@ -52,6 +68,8 @@ flowchart TD
 ## 3. 分階段計畫
 
 ### Phase 0 — 基線、命名與安全修正
+
+**目前狀態（2026-09-01）：** **已完成。** 以下工作內容與完成門檻保留作為歷史計畫與驗收脈絡。
 
 **順序：** 第一階段，無前置依賴。
 **可並行性：** 主 agent 建立基線；QA agent 可並行檢查既有測試與邊界。
@@ -74,6 +92,8 @@ flowchart TD
 **完成門檻：** 所有既有測試通過；新增測試先描述目前 bug/風險；沒有未記錄的輸出變更。
 
 ### Phase 1 — FH6 Capability 與 Control Contract
+
+**目前狀態（2026-09-01）：** **已完成。** 以下工作內容與完成門檻保留作為歷史計畫與驗收脈絡。
 
 **順序：** P0 後。
 **可並行性：** Contract agent 與資料審查 agent 可並行，但只能由 contract owner 合併。
@@ -120,6 +140,8 @@ type UpgradeUnlockSpec = {
 
 ### Phase 2 — Domain Refactor Scaffold
 
+**目前狀態（2026-09-01）：** **已完成。** 以下工作內容與完成門檻保留作為歷史計畫與驗收脈絡。
+
 **順序：** P1 後。
 **可並行性：** 可與 P3 並行。
 **目標：** 把目前 God module 拆為純函式 domain modules，先保持輸出相容。
@@ -160,7 +182,7 @@ frontend/src/domain/tuning/
 ### Phase 3 — Calibration Data Pipeline, Capture Toolchain & MCP Server
 
 **順序：** P1 後；可與 P2 並行。
-**狀態：** **已由 Gemini/Antigravity 於 2026-08-14 完成**。
+**目前狀態（2026-09-01）：** **已完成 foundation。** Capture／MCP toolchain 的 deterministic contract 已存在；這不等於已有實機 calibration dataset。
 **達成成果：**
 - 建立 `tuning-capture/v1` JSON/CSV 規格與 [`TuningTelemetryCaptureView`](../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx) 即時錄製工具。
 - 實作完整 Localhost 唯讀 MCP Server（[`backend/mcp/`](../backend/mcp/)），提供 26 個專屬唯讀工具（完全對齊 `TelemetryView` 數據結構）與 5 類 Resource URI。
@@ -189,6 +211,8 @@ telemetry_session, lap_time, launch_time, notes, confidence
 **完成門檻：** 沒有 `game_build` 或改裝清單的資料不能進入 production calibration profile，只能放在 `unverified/`。
 
 ### Phase 4 — Shared Tire/Physics Model
+
+**目前狀態（2026-09-01）：** **shared physics foundation 已在 main 實作；calibration 與實機 validation 未完成。** 原先以「進行中」描述的工作，現在拆分為 implementation 已有、evidence 尚缺。
 
 **順序：** P2、P3 後。
 **可並行性：** Tire agent 與 chassis/critical damping agent 可並行；兩者共用 contracts，不共用同一 implementation file。
@@ -224,6 +248,8 @@ peakSlipAngle
 
 ### Phase 5A — Road/Circuit Solver
 
+**目前狀態（2026-09-01）：** **Road solver foundation 已在 main；profile calibration、A/B telemetry 與 production validation 未完成。**
+
 **順序：** P4 後。
 **可並行性：** 可與 P5B/P5C/P5D 完全並行。
 **目標：** 將 Road/Circuit 從單一分支拆成 `technical`、`balanced`、`high_speed`。
@@ -242,6 +268,8 @@ peakSlipAngle
 - `test(tuning): add road profile and powerband fixtures`
 
 ### Phase 5B — Rally/Off-road Solver
+
+**目前狀態（2026-09-01）：** **Rally solver foundation 已在 main；surface／landing 實機資料與 profile validation 未完成。**
 
 **順序：** P4 後。
 **可並行性：** 可與 P5A/P5C/P5D 完全並行。
@@ -262,6 +290,8 @@ peakSlipAngle
 
 ### Phase 5C — Drift Solver
 
+**目前狀態（2026-09-01）：** **Drift solver foundation 已在 main；slip-window、stability 與實機 calibration validation 未完成。**
+
 **順序：** P4 後。
 **可並行性：** 可與 P5A/P5B/P5D 完全並行。
 **目標：** 將漂移調校從固定值改為可控滑移窗口。
@@ -280,6 +310,8 @@ peakSlipAngle
 - `test(drift): cover angle, stability and timestamp boundaries`
 
 ### Phase 5D — Drag Solver
+
+**目前狀態（2026-09-01）：** **Drag solver foundation 已在 main；launch／distance acceptance metrics 尚無實機 capture 證據。**
 
 **順序：** P4 後。
 **可並行性：** 可與 P5A/P5B/P5C 完全並行。
@@ -301,6 +333,8 @@ peakSlipAngle
 
 ### Phase 6 — Closed-loop Diagnosis
 
+**目前狀態（2026-09-01）：** **diagnosis foundation 已實作或建立 scaffold；完整 solver feedback loop 與實機 confidence validation 未完成。**
+
 **順序：** P5A–P5D 完成後。
 **可並行性：** diagnosis core 與 report/UI adapter 可並行，但 schema owner 必須一致。
 **目標：** 把 telemetry 從事後提示升級為 solver 的可控回饋。
@@ -320,6 +354,8 @@ peakSlipAngle
 
 ### Phase 7 — UI、改裝能力與保存格式整合
 
+**目前狀態（2026-09-01）：** **capability、preset／persistence 與 UI integration foundation 已實作或建立 scaffold；完整 runtime contract validation 與實機值對照未完成。**
+
 **順序：** P1 可先做 capability gate；完整整合依賴 P6。
 **可並行性：** UI agent 與 persistence/API agent 可並行；不得直接修改 domain solver。
 
@@ -338,6 +374,8 @@ peakSlipAngle
 - `test(ui): cover locked controls units and step quantization`
 
 ### Phase 8 — 整合驗證與受控發布
+
+**目前狀態（2026-09-01）：** **技術關卡在 main 評估基準為 green，但 Phase 8 尚未完成。** 缺少實機 captures、版本化 A/B fixture、profile promotion evidence 與 release-level live validation；自動化測試通過不得替代這些證據。
 
 **順序：** 所有前置階段完成。
 **可並行性：** QA、資料完整性審查與文件審查可並行；最後由 main integrator 合併。
