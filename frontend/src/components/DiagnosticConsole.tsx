@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { backendFetch } from '../services/backend';
+import {
+  SUPPORT_BUNDLE_PRIVACY_NOTICE,
+  supportBundleRequestBody,
+} from './diagnosticSupportBundle';
 
 interface LogEntry {
   timestamp: string;
@@ -21,6 +25,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isExportingBundle, setIsExportingBundle] = useState<boolean>(false);
   
   const consoleRef = useRef<HTMLPreElement>(null);
 
@@ -62,6 +67,33 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
       setLogs([]);
     } catch (err) {
       alert("Failed to clear logs on server.");
+    }
+  };
+
+  const handleExportSupportBundle = async () => {
+    setIsExportingBundle(true);
+    try {
+      const response = await backendFetch('/api/diagnostics/support-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: supportBundleRequestBody(),
+      });
+      if (!response.ok) {
+        throw new Error(`Support bundle export failed (${response.status})`);
+      }
+      const downloadUrl = URL.createObjectURL(await response.blob());
+      const download = document.createElement('a');
+      download.href = downloadUrl;
+      download.download = 'fh6-diagnostic-support.zip';
+      document.body.appendChild(download);
+      download.click();
+      download.remove();
+      URL.revokeObjectURL(downloadUrl);
+      setErrorMsg(null);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : 'Support bundle export failed.');
+    } finally {
+      setIsExportingBundle(false);
     }
   };
 
@@ -176,13 +208,28 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
             </div>
           </div>
 
-          <button
-            onClick={handleClearLogs}
-            className="btn btn-outline-danger btn-sm fw-bold"
-          >
-            {t("Clear Logs")}
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportSupportBundle}
+              className="btn btn-outline-primary btn-sm fw-bold"
+              disabled={isExportingBundle}
+              title={SUPPORT_BUNDLE_PRIVACY_NOTICE}
+            >
+              {isExportingBundle ? 'Preparing Support Bundle...' : 'Download Support Bundle'}
+            </button>
+            <button
+              onClick={handleClearLogs}
+              className="btn btn-outline-danger btn-sm fw-bold"
+            >
+              {t("Clear Logs")}
+            </button>
+          </div>
         </div>
+
+        <p className="px-4 py-2 mb-0 border-bottom text-body-secondary fs-8">
+          {SUPPORT_BUNDLE_PRIVACY_NOTICE}
+        </p>
 
         {/* Offcanvas Body */}
         <div className="offcanvas-body p-0 d-flex flex-column flex-grow-1 overflow-hidden" style={{ background: '#050508' }}>

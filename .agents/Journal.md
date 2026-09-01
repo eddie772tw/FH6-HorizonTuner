@@ -24,6 +24,19 @@
 - **Evidence**：`tests/test_dyno_quality.py` 覆蓋 timestamp/position/profile/reset/telemetry-shift；聚焦後端為 19 passed。完整非主機音訊測試為 197 passed、2 skipped、6 deselected；`tests/test_audio_spectrum.py` 的既有 Windows audio-device enumeration 在本機逾時，未將其視為本次功能失敗。`ruff check .`、`ruff format --check .`、frontend Vitest 78 files / 481 tests、frontend build 與 `git diff --check` 均通過。未執行 FH6 實機驗證。
 - **Governance**：依 `telemetry-udp-protocol`、`modular-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration` 與 `agent-governance-audit` 登錄；`backend/main.py` 僅整合 dyno quality gate 的最小 hunks，未變更 listener、settings 或 diagnostic/support-bundle 範圍。
 
+---
+
+## 2026-08-30 / Privacy-preserving diagnostic support bundle
+
+- **來源**：`local`，手動產生的本機支援包功能。
+- **狀態**：`adopted`。
+- **Learning**：診斷匯出不得把「可供本機診斷」誤解為可完整打包；只允許彙總 telemetry/overlay/Discord health 與時間窗內日誌，並在 ZIP 形成前遞迴移除 raw UDP/packet、絕對路徑、玩家識別與 credentials。以記憶體回應 ZIP 加上 `Cache-Control: no-store` 可避免後端產生持久副本；前端仍須清楚說明手動下載不等於自動上傳。
+- **Action**：維持 `fh6-diagnostic-support-bundle/v1` manifest 中的 app/backend 版本、settings schema identifier、redaction 說明與 bounded `windowMinutes`；新增收集欄位時必須先加入 allowlist、redaction 與容量上限測試，拒絕未知欄位。
+- **Evidence**：`tests/test_diagnostic_support_bundle.py` 驗證 redaction、10 分鐘時間窗、manifest、unsafe field rejection、section size cap 與 `no-store` download response；前端 `diagnosticSupportBundle.test.ts` 驗證 allowlisted request 與 local-only copy。
+- **Governance**：本筆依 `github-security-audit`、`cross-agent-collaboration`、`modular-refactoring`、`halfmoon-design-system` 與 `agent-governance-audit` 規範登錄；`backend/main.py` 限於診斷 endpoint/import 整合 hunks，未修改 telemetry listener、SettingsContext、onboarding、ref 或 LazyForza。
+
+---
+
 ## 2026-08-28 / UDP Socket Resilience & Stale Process Auto-Cleanup Architecture
 
 ### UDP 監聽器 Winsock SIO_UDP_CONNRESET 防禦、error_received 自癒與啟動時殘留進程/端口自動清理
@@ -1571,18 +1584,6 @@
 
 ---
 
-<<<<<<< HEAD
-## 2026-08-30 / Durable Settings Store and Non-sensitive Storage Overview
-
-- **Scope**: versioned `settings.json` persistence, settings API boundary, optimistic Settings UI writes, and the read-only Data & Storage overview. No telemetry listener, diagnostic bundle, onboarding flow, SQLite schema, or FH6 in-game behavior was changed.
-- **Decision**:
-  1. Settings use `settings_schema_version: 2`; missing legacy version markers upgrade during load while retaining unknown fields and existing nested settings.
-  2. A settings write first atomically replaces `settings.json.bak` with the current valid document, then atomically replaces `settings.json`. A corrupt primary document is recovered from that backup at the next load.
-  3. The frontend treats a non-2xx settings response as a failed optimistic write, restores the prior state, and sends a global danger toast. `ToastProvider` therefore wraps `SettingsProvider`.
-  4. Data & Storage reports only relative entry names, aggregate capacity, format/version, backup time, and export/restore/SQLite capability states. It never returns the application data root and does not claim an unreviewed SQLite migration.
-- **Evidence**: targeted persistence/router and portable source-sidecar tests passed (`8 passed`); frontend Vitest passed (`78 files / 480 tests`) and production TypeScript/Vite build passed; `ruff check .` and `git diff --check` passed. Full pytest began with `202 selected` but stalled in the existing audio-device suite at `tests/test_audio_spectrum.py`; the settings-specific tests passed independently. `ruff format --check .` reports only the pre-existing whole-file `backend/main.py` format baseline, which was not rewritten because settings ownership is limited to its settings blocks.
-- **Status**: implemented locally; pending branch CI and reviewer verification.
-=======
 ## 2026-08-30 / Versioned Synthetic Telemetry Replay Fixture Boundary
 
 - **Scope**: `tests/fixtures/telemetry_replay/`, test-only raw packet builder, parser/recorder/binary-wire replay contracts.
