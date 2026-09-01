@@ -4,6 +4,7 @@ import { CustomChannelItem } from './CustomChannelEditor';
 import { evaluateCustomMath } from '../../utils/customMathEngine';
 import { useSettings } from '../../context/SettingsContext';
 import { AnalysisDataPoint } from '../../context/TelemetryRecorderContext';
+import { ModalPortal } from '../../components/common/ModalPortal';
 import {
   LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -289,11 +290,12 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
   const xUnit = domain === 'distance' ? 'm' : domain === 'lap' ? 'Lap' : 's';
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(6px)',
-      zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem'
-    }}>
+    <ModalPortal>
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(6px)',
+        zIndex: 1060, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem'
+      }}>
       <div className="glass-panel" style={{
         width: '100%', maxWidth: '1100px', height: '85vh',
         display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '1rem',
@@ -467,10 +469,10 @@ const ChartEditModal: React.FC<ChartEditModalProps> = ({
           <button onClick={onClose} style={{ ...btnStyle, background: 'rgba(255,255,255,0.1)', color: '#fff' }}>{t("Cancel")}</button>
           <button onClick={handleSave} style={{ ...btnStyle, background: 'var(--primary)', color: '#000' }}>{t("Save Configuration")}</button>
         </div>
-
       </div>
     </div>
-  );
+  </ModalPortal>
+);
 };
 
 const inputStyle: React.CSSProperties = {

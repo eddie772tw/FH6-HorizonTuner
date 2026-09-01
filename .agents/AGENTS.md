@@ -77,6 +77,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
    - **防閃爍 (Anti-FOUC)**：確保頁面首幀依據 `data-bs-theme` / `data-bs-core` 正確無縫渲染。
    - **禁用硬編碼與 Emoji**：嚴禁在組件內硬編碼背景色或字體色，統一使用 CSS 語意變數；嚴禁在 UI 字串或組件內加入裝飾性 Emoji 圖示。
    - **版型零擠壓與狀態 Popover 規範**：嚴禁在 View 內部動態插入會推擠 DOM 高度的 `alert` 區塊；狀態詳細提醒一律採用 Header Badge 配合 `position: absolute` 向下展開的 `.popover.bs-popover-bottom.glass-panel`，或全域 Toast 懸浮視窗。
+   - **全域 Modal / Offcanvas Portal 護欄**：所有全螢幕覆蓋物（包括 Modal 彈窗、Offcanvas 側邊抽屜與 Backdrops）**必須統一使用 `ModalPortal` (React Portal) 掛載至 `document.body`**，嚴禁直接內嵌於具有 `backdrop-filter`、`transform` 或局部 `overflow` 的容器內，防止 CSS Containing Block 破版。
 
 4. **Step 導向介面獨立規範**：
    - 對於精靈嚮導 (Wizard) 或多步驟介面（如 Tuning Workflow），**每一個 Step 必須各自獨立為一個 TSX 組件檔**（例如 `Step1GoalSetup.tsx`、`Step2GearboxSetup.tsx`、`Step3ChassisTuner.tsx`）。

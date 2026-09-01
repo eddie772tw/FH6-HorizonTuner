@@ -5,6 +5,7 @@ import {
   SUPPORT_BUNDLE_PRIVACY_NOTICE,
   supportBundleRequestBody,
 } from './diagnosticSupportBundle';
+import { ModalPortal } from './common/ModalPortal';
 
 interface LogEntry {
   timestamp: string;
@@ -127,7 +128,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
   };
 
   return (
-    <>
+    <ModalPortal>
       {/* Backdrop */}
       <div
         className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
@@ -268,7 +269,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
           </pre>
         </div>
       </div>
-    </>
+    </ModalPortal>
   );
 };
 

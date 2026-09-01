@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSettings, type UnitSettings } from '../context/SettingsContext';
+import { ModalPortal } from './common/ModalPortal';
 import type { GeneralUnitSystem, GranularUnitPreference, UnitPreferenceOverride } from '../utils/gameUnitSettings';
 
 interface UnitSettingsSidebarBaseProps {
@@ -48,7 +49,7 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
 }) => {
   const { t } = useSettings();
   return (
-    <>
+    <ModalPortal>
       <div
         className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
         style={{ display: show ? 'block' : 'none', zIndex: 1040 }}
@@ -89,7 +90,7 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
           {children}
         </div>
       </div>
-    </>
+    </ModalPortal>
   );
 };
 
