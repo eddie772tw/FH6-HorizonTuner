@@ -1614,6 +1614,30 @@
 
 ---
 
+## 2026-08-30 / Versioned Synthetic Telemetry Replay Fixture Boundary
+
+- **Scope**: `tests/fixtures/telemetry_replay/`, test-only raw packet builder, parser/recorder/binary-wire replay contracts.
+- **Decision**:
+  1. Replay input is a small JSON fixture with the explicit `fh6-telemetry-replay-fixture/v1` contract and a mandatory synthetic provenance declaration. It contains no player or real-vehicle data and explicitly states that replay is not evidence of live Forza behavior.
+  2. Test-only helpers construct the documented 324-byte little-endian packet layout. Production `backend/telemetry_listener.py` remains unchanged, so fixture coverage can be rebased onto a later telemetry-quality contract without parser ownership overlap.
+  3. Boundary tests keep raw SI values distinct from the existing 128-byte binary wire conversions, and make timestamp discontinuities plus queue shedding/recent-frame selection observable rather than masking them as hardware evidence.
+- **Evidence**:
+  - Fixture loader rejects unknown fixture contract versions; tests assert raw-to-domain values and binary wire unit conversions, discontinuous timestamps, and queue pressure retention behavior.
+  - The fixture is synthetic. These assertions validate deterministic code paths only; they do not validate FH6 Data Out from a running game.
+- **Status**: adopted test-contract convention; full local gate results are recorded with the associated PR because this isolated worktree initially lacked its required `.venv`.
+
+---
+
+## 2026-08-30 / Binary Telemetry Wire Contract Repair
+
+- **Scope**: `backend/telemetry_listener.py` binary serializer and synthetic replay wire-contract assertion.
+- **Decision**: Keep the UDP packet parser and all FH Data Out offsets unchanged. The 128-byte binary client serializer must instead use a format with two integer fields (`IsRaceOn`, `Gear`), 28 float fields, and 8 reserved bytes; this exactly matches its 31 emitted values and the established 128-byte consumer contract.
+- **Evidence**: GitHub Actions replay test exposed the former mismatch directly: `struct.pack` expected 30 items but received 31, so the exception handler returned an all-zero 128-byte packet. Commit `70a11dd` adds `struct.calcsize(...) == 128` coverage and the replacement CI passed Backend Lint & Static Check plus Backend Pytest Unit Tests.
+- **Limit**: This repairs deterministic serializer behavior only. The synthetic fixture remains explicitly non-evidence of live FH6 Data Out behavior.
+- **Status**: adopted.
+
+---
+
 ## 2026-08-31 / Jules manual Session and scheduled-output provenance
 
 - **Scope**: `.agents/skills/jules_coding/` manual delegation gates, scheduled Jules Session/PR intake, persona provenance, and offline adoption validation.
