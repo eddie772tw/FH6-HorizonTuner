@@ -2,6 +2,7 @@ import React from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { applyGeneralUnitSystem, inferGeneralUnitSystem, type GeneralUnitSystem } from '../../utils/gameUnitSettings';
 import { DiscordPresenceStatusCard } from './components/DiscordPresenceStatusCard';
+import { DataStorageOverview } from './components/DataStorageOverview';
 import { McpSettingsCard } from './components/McpSettingsCard';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
@@ -97,6 +98,7 @@ const SettingsView: React.FC = () => {
             </SettingsSection>
             <McpSettingsCard />
             <UpdateSettingsCard />
+            <DataStorageOverview />
           </div>
         </div>
       </div>

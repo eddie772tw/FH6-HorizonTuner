@@ -108,3 +108,34 @@ def test_cors_preflight_blocked_origins():
             },
         )
         assert res.headers.get("access-control-allow-origin") != origin
+
+
+def test_csrf_protection_blocked():
+    """Verify CSRF protection blocks cross-origin state-changing requests."""
+    client = TestClient(app)
+    # POST with malicious origin
+    res = client.post("/api/analysis/clear", headers={"Origin": "https://evil.com"})
+    assert res.status_code == 403
+    assert "CSRF protection blocked request" in res.json().get("detail", "")
+
+    # PUT with malicious origin
+    res = client.put("/api/settings", headers={"Origin": "https://evil.com"}, json={})
+    assert res.status_code == 403
+
+
+def test_csrf_protection_allowed():
+    """Verify CSRF protection allows legitimate requests."""
+    client = TestClient(app)
+    # Valid origin
+    res = client.post(
+        "/api/analysis/clear", headers={"Origin": "http://localhost:8000"}
+    )
+    assert res.status_code == 200
+
+    # GET with malicious origin (allowed as GET does not change state)
+    res = client.get("/api/settings", headers={"Origin": "https://evil.com"})
+    assert res.status_code == 200
+
+    # No origin (local clients)
+    res = client.post("/api/analysis/clear")
+    assert res.status_code == 200

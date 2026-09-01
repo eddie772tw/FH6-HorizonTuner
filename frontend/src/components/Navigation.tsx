@@ -9,6 +9,9 @@ import {
   getRemoteReleaseComparison 
 } from '../services/buildInfoService';
 import { UpdateModal } from './common/UpdateModal';
+import DataOutGuide from '../features/onboarding/DataOutGuide';
+import { hasDismissedDataOutGuide } from '../features/onboarding/telemetryHealth';
+import { useTelemetryHealth } from '../features/onboarding/useTelemetryHealth';
 
 interface NavigationProps {
   activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings';
@@ -111,7 +114,9 @@ const GitInfoBadge: React.FC = () => {
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs, onShowTheme, backendPort }) => {
   const { t } = useSettings();
+  const telemetryHealth = useTelemetryHealth();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [showDataOutGuide, setShowDataOutGuide] = useState(false);
   const [showUdpPopover, setShowUdpPopover] = useState<boolean>(!isConnected);
   const [showMcpPortPopover, setShowMcpPortPopover] = useState<boolean>(backendPort !== PREFERRED_BACKEND_PORT);
   const hasDynamicMcpPort = backendPort !== PREFERRED_BACKEND_PORT;
@@ -127,6 +132,14 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
       setShowMcpPortPopover(true);
     }
   }, [hasDynamicMcpPort]);
+
+  React.useEffect(() => {
+    try {
+      if (!hasDismissedDataOutGuide(window.localStorage)) setShowDataOutGuide(true);
+    } catch {
+      // Storage can be unavailable in restricted browser contexts; the guide stays on-demand.
+    }
+  }, []);
 
   const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
     onSubTabJump(tab, subTarget);
@@ -394,6 +407,15 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
           >
             {t("Show Logs")}
           </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${telemetryHealth.state === 'active' ? 'btn-outline-success' : 'btn-outline-secondary'}`}
+            onClick={() => setShowDataOutGuide(true)}
+            aria-label={`Open Data Out guide. ${telemetryHealth.label}`}
+            title="Open Data Out guide and health details"
+          >
+            <span className="d-none d-xl-inline">Data Out: </span>{telemetryHealth.state === 'active' ? 'Ready' : 'Check'}
+          </button>
           <div 
             className="position-relative d-inline-block"
             onClick={() => { if (!isConnected) setShowUdpPopover(prev => !prev); }}
@@ -462,6 +484,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
           </div>
         </div>
       </div>
+      <DataOutGuide health={telemetryHealth} open={showDataOutGuide} onClose={() => setShowDataOutGuide(false)} />
     </nav>
   );
 };
