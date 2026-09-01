@@ -1021,11 +1021,28 @@
             var el = domCache.advSpeed;
             if (!el) return;
             var valStr = value.toString();
-            var out = "";
-            for (var i = 0; i < valStr.length; i++) {
-                out += '<span>' + valStr[i] + '</span>';
+            var children = el.children;
+            var targetLen = valStr.length;
+            var currentLen = children.length;
+
+            // Optimization: Pool and recycle DOM elements instead of using innerHTML
+            // This prevents massive GC pressure and layout thrashing in the 60Hz loop.
+            for (var i = 0; i < targetLen; i++) {
+                var char = valStr[i];
+                if (i < currentLen) {
+                    if (children[i].textContent !== char) {
+                        children[i].textContent = char;
+                    }
+                } else {
+                    var span = document.createElement('span');
+                    span.textContent = char;
+                    el.appendChild(span);
+                }
             }
-            el.innerHTML = out;
+
+            while (el.children.length > targetLen) {
+                el.removeChild(el.lastChild);
+            }
         }
 
         // Set RPM with digit spans for tabular spacing
@@ -1037,11 +1054,28 @@
             if (!el) return;
             el.style.color = isRed ? C_PINK_DIM : 'var(--adv-primary-dim)';
             var valStr = value.toString();
-            var out = "";
-            for (var i = 0; i < valStr.length; i++) {
-                out += '<span>' + valStr[i] + '</span>';
+            var children = el.children;
+            var targetLen = valStr.length;
+            var currentLen = children.length;
+
+            // Optimization: Pool and recycle DOM elements instead of using innerHTML
+            // This prevents massive GC pressure and layout thrashing in the 60Hz loop.
+            for (var i = 0; i < targetLen; i++) {
+                var char = valStr[i];
+                if (i < currentLen) {
+                    if (children[i].textContent !== char) {
+                        children[i].textContent = char;
+                    }
+                } else {
+                    var span = document.createElement('span');
+                    span.textContent = char;
+                    el.appendChild(span);
+                }
             }
-            el.innerHTML = out;
+
+            while (el.children.length > targetLen) {
+                el.removeChild(el.lastChild);
+            }
         }
 
         // Register Advanced HUD Style with HUDCore Engine

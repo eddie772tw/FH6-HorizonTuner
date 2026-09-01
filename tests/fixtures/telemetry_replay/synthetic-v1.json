@@ -1,0 +1,67 @@
+{
+  "fixtureContractVersion": "fh6-telemetry-replay-fixture/v1",
+  "provenance": {
+    "source": "synthetic",
+    "containsRealVehicleOrPlayerData": false,
+    "purpose": "deterministic parser, recorder, and wire-contract regression coverage",
+    "notEvidenceOfLiveForzaBehavior": true
+  },
+  "frames": [
+    {
+      "label": "baseline",
+      "IsRaceOn": 1,
+      "TimestampMS": 1000,
+      "EngineMaxRpm": 8000.0,
+      "EngineIdleRpm": 900.0,
+      "CurrentEngineRpm": 3200.0,
+      "Acceleration": [9.81, 0.0, -4.905],
+      "Velocity": [1.5, 0.0, 22.5],
+      "YawPitchRoll": [0.25, 0.1, -0.1],
+      "NormalizedSuspensionTravel": [0.1, 0.2, 0.3, 0.4],
+      "TireSlipRatio": [0.01, 0.02, 0.03, 0.04],
+      "TireSlipAngle": [0.1, 0.2, 0.3, 0.4],
+      "SurfaceRumble": [0.0, 0.1, 0.0, 0.1],
+      "TireCombinedSlip": [0.2, 0.3, 0.4, 0.5],
+      "SuspensionTravelMeters": [0.01, 0.02, 0.03, 0.04],
+      "CarOrdinal": 0,
+      "CarClass": 4,
+      "CarPerformanceIndex": 800,
+      "DrivetrainType": 2,
+      "Cylinders": 6,
+      "Position": [12.5, 0.0, -8.25],
+      "SpeedMetersPerSecond": 22.5,
+      "PowerWatts": 149140.0,
+      "TorqueNewtons": 450.0,
+      "TireTemp": [180.0, 181.0, 182.0, 183.0],
+      "Boost": 13789.51458,
+      "Fuel": 0.75,
+      "DistanceTraveled": 25.0,
+      "BestLap": 0.0,
+      "LastLap": 0.0,
+      "CurrentLap": 1.0,
+      "CurrentRaceTime": 1.0,
+      "LapNumber": 1,
+      "RacePosition": 2,
+      "AccelInput": 255,
+      "BrakeInput": 0,
+      "ClutchInput": 0,
+      "HandBrakeInput": 0,
+      "Gear": 3,
+      "SteerInput": -12
+    },
+    {
+      "label": "forward-progress",
+      "TimestampMS": 1100,
+      "CurrentRaceTime": 1.1,
+      "CurrentLap": 1.1,
+      "SpeedMetersPerSecond": 24.0
+    },
+    {
+      "label": "synthetic-timestamp-discontinuity",
+      "TimestampMS": 850,
+      "CurrentRaceTime": 1.2,
+      "CurrentLap": 1.2,
+      "SpeedMetersPerSecond": 20.0
+    }
+  ]
+}
