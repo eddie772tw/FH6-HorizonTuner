@@ -28,6 +28,54 @@ describe('presetSerializer', () => {
     expect(deserialized).toEqual(serialized);
   });
 
+  it.each([
+    ['missing createdAt', { createdAt: undefined }],
+    ['wrong createdAt', { createdAt: 'not-a-date' }],
+    ['vehicleClass', { vehicleClass: 999 }],
+    ['profileUsed', { profileUsed: null }],
+    ['installedParts', { installedParts: [] }],
+    ['parameters', { parameters: { spring_front: 'invalid' } }],
+    ['calibrationStatus', { calibrationStatus: 'complete' }],
+  ])('should reject invalid %s', (_field, override) => {
+    const invalid = { ...serializePreset(mockInput), ...override };
+    expect(() => deserializePreset(invalid)).toThrow('Invalid preset format');
+  });
+
+  it('should not mutate the raw preset while normalizing it', () => {
+    const raw = {
+      ...serializePreset(mockInput),
+      gameBuild: undefined,
+      installedParts: { ...mockInput.installedParts },
+      parameters: { ...mockInput.parameters },
+    };
+    const before = structuredClone(raw);
+
+    const deserialized = deserializePreset(raw);
+
+    expect(raw).toEqual(before);
+    expect(deserialized.gameBuild).toBe('unknown');
+    expect(deserialized.installedParts).not.toBe(raw.installedParts);
+    expect(deserialized.parameters).not.toBe(raw.parameters);
+  });
+
+  it('should preserve unknown parameter values', () => {
+    const raw = {
+      ...serializePreset(mockInput),
+      parameters: { spring_front: 'unknown' },
+    };
+
+    expect(deserializePreset(raw).parameters).toEqual({ spring_front: 'unknown' });
+  });
+
+  it.each([NaN, Infinity, -Infinity])('should reject non-finite parameter values: %s', (value) => {
+    const invalid = {
+      ...serializePreset(mockInput),
+      parameters: { spring_front: value },
+    };
+
+    expect(() => deserializePreset(invalid)).toThrow('Invalid preset format');
+  });
+
   it('should throw an error if schemaVersion is not tuning-preset/v1', () => {
     const invalid = {
       ...serializePreset(mockInput),
