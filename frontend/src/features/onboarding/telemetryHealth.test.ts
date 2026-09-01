@@ -7,6 +7,21 @@ describe('deriveTelemetryHealth', () => {
     expect(health).toMatchObject({ state: 'active', datagramsReceived: 3, validFrames: 2, hasObservedPacket: true, lastPacketAt: 123 });
   });
 
+  it('keeps a fresh valid stream active while exposing historical parser rejections', () => {
+    const health = deriveTelemetryHealth(
+      { input: { datagramsReceived: 4, packetsParsed: 3, packetsRejected: { wrong_length: 1 }, lastDatagramAt: 123 } },
+      null,
+      130,
+    );
+
+    expect(health).toMatchObject({
+      state: 'active',
+      validFrames: 3,
+      errors: ['wrong_length (1)'],
+      detail: '3 valid frames received. Reported parser issues remain recorded: wrong_length (1).',
+    });
+  });
+
   it('does not report current reception from stale lifetime counters', () => {
     const health = deriveTelemetryHealth(
       { input: { datagramsReceived: 120, packetsParsed: 119, packetsRejected: {}, lastDatagramAt: 900 } },
