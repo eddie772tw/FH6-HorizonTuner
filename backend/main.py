@@ -2422,6 +2422,7 @@ DEFAULT_HUD_CONFIG = {
     "telemetryLiveMapOffsetY": 0,
     "telemetrySideBySideCharts": True,
     "pauseTelemetryViewWhenActive": True,
+    "enableSmoothing": True,
     "elements": {
         "showTeleMaster": True,
         "showGauge": True,

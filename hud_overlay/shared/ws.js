@@ -41,17 +41,25 @@ function initTelemetryWebSocket(host) {
             .catch(err => console.error('[HUD Receiver] Failed to fetch initial config', err));
     };
 
+    let _pendingDispatch = false;
+    let _latestTelemetry = null;
+
     telemetryWs.onmessage = async (event) => {
         if (event.data instanceof Blob) {
             // Binary telemetry data (128 bytes)
-            const arrayBuffer = await event.data.arrayBuffer();
-            const dataView = new DataView(arrayBuffer);
-            window.dispatchEvent(new CustomEvent('telemetry_binary', { detail: dataView }));
+            try {
+                const arrayBuffer = await event.data.arrayBuffer();
+                const dataView = new DataView(arrayBuffer);
+                window.dispatchEvent(new CustomEvent('telemetry_binary', { detail: dataView }));
+            } catch (e) {
+                // Ignore transient decode errors
+            }
         } else {
             try {
                 const msg = JSON.parse(event.data);
-                // Raw telemetry dict
-                window.dispatchEvent(new CustomEvent('telemetry', { detail: msg }));
+                _latestTelemetry = msg;
+                // Fast dispatch immediately for lowest latency, without blocking GC
+                window.dispatchEvent(new CustomEvent('telemetry', { detail: _latestTelemetry }));
             } catch (e) {
                 // Ignore parsing errors
             }
@@ -61,6 +69,7 @@ function initTelemetryWebSocket(host) {
     telemetryWs.onclose = () => {
         console.log('[HUD Receiver] Telemetry WebSocket disconnected');
         isConnected = false;
+        _latestTelemetry = null;
         window.dispatchEvent(new CustomEvent('ws:disconnected'));
         setTimeout(() => initTelemetryWebSocket(host), 2000); // Auto-reconnect
     };

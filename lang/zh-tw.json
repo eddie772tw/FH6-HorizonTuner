@@ -531,6 +531,7 @@
   "Path Deviation": "最大軌跡偏離",
   "Path Validity Warning": "軌跡有效性警告",
   "Pause": "暫停",
+  "High-Refresh Frame Smoothing (120Hz/144Hz/240Hz/VRR)": "高更新率幀平滑插值 (120Hz/144Hz/240Hz/VRR 平滑化)",
   "Pause Telemetry View when HUD is active": "HUD 啟用期間暫停 Telemetry 頁面渲染 (節省 CPU/GPU 資源)",
   "PAUSED": "已暫停",
   "Performance & System Options": "效能與系統選項",
