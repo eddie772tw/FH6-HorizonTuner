@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
 import { backendFetch } from '../services/backend';
+import type { DynoQuality } from '../features/car_params/dynoQuality';
 
 export interface CarParams {
   weight: number;
@@ -34,6 +35,7 @@ export interface CarParams {
     diff: 'Fixed' | 'Adjustable';
   };
   dyno_curve: Record<string, { hp: number; torque: number; hp_hist?: number[]; torque_hist?: number[] }>;
+  dyno_quality?: DynoQuality;
   
   // Suspension & Ride Height limits for tuning wizard
   spring_front_min?: number;
@@ -79,6 +81,15 @@ interface CarParamsContextType {
   carsWithParams: { id: string; name: string }[];
   telemetryCarId: string;
 }
+
+export const mergeDynoPollResult = (
+  previous: CarParams,
+  result: Pick<CarParams, 'dyno_curve' | 'dyno_quality'>,
+): CarParams => ({
+  ...previous,
+  dyno_curve: result.dyno_curve,
+  dyno_quality: result.dyno_quality,
+});
 
 const CarParamsContext = createContext<CarParamsContextType | undefined>(undefined);
 
@@ -160,6 +171,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         diff: raw?.adjustability?.diff ?? 'Adjustable'
       },
       dyno_curve: raw?.dyno_curve ?? {},
+      dyno_quality: raw?.dyno_quality,
       spring_front_min: raw?.spring_front_min ?? 10.0,
       spring_front_max: raw?.spring_front_max ?? 120.0,
       spring_rear_min: raw?.spring_rear_min ?? 10.0,
@@ -201,7 +213,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     return () => { active = false; };
   }, [carId]);
 
-  // Poll dyno curve ONLY (no longer overwrites maxHpRpm/maxTorqueRpm)
+  // Poll live dyno fields only, without overwriting user-edited car params.
   useEffect(() => {
     if (telemetryCarId === carId && telemetryCarId !== '0') {
       const interval = setInterval(async () => {
@@ -211,8 +223,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
           if (!result.error) {
             setCarParams(prev => {
               if (!prev) return result;
-              // Only update dyno_curve — preserve all user-edited car params
-              return { ...prev, dyno_curve: result.dyno_curve };
+              return mergeDynoPollResult(prev, result);
             });
           }
         } catch (e) { }

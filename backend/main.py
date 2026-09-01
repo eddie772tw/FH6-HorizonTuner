@@ -82,6 +82,7 @@ from audio_spectrum import (
     stop_audio_spectrum_service,
 )
 from discord_presence import DiscordPresenceManager, load_discord_application_id
+from dyno_quality import DynoQualityGateRegistry, reconcile_dyno_profile_segment
 from fastapi import (
     FastAPI,
     File,
@@ -1112,6 +1113,9 @@ def create_default_car_params() -> dict:
 
 car_params_cache = AsyncCarParamsCache(load_car_params)
 car_params_writer = AsyncCarParamsWriter(save_car_params)
+# Quality state is scoped to a car profile. A CarOrdinal transition selects a
+# different gate; it must not reset the destination profile's existing curve.
+dyno_quality_gates = DynoQualityGateRegistry()
 
 
 @asynccontextmanager
@@ -1258,10 +1262,6 @@ async def broadcast_telemetry():
     global last_dyno_save_time, latest_live_telemetry
     logger.info("Broadcasting loop started.")
 
-    # Track gear changes for transient filtering
-    prev_gear = 0
-    last_gear_change_time = 0.0
-
     while True:
         data = await telemetry_queue.get()
         latest_live_telemetry = data
@@ -1280,6 +1280,7 @@ async def broadcast_telemetry():
         dyno_stage_started_at = time.perf_counter()
         car_id = str(data.get("CarOrdinal", 0))
         if car_id and car_id != "0":
+            quality = dyno_quality_gates.observe(car_id, data)
             # The first disk read is deliberately deferred. The current frame
             # continues without dyno collection until the profile is ready.
             profile_lookup = car_params_cache.resolve(dyno_cache, car_id)
@@ -1290,8 +1291,11 @@ async def broadcast_telemetry():
                 dyno_cache[car_id] = params
                 car_params_writer.schedule(car_id, params)
 
-            # Only collect dyno data if recording is enabled AND car is in cache
-            if app_settings.get("dyno_recording", True) and car_id in dyno_cache:
+            if car_id in dyno_cache:
+                profile = dyno_cache[car_id]
+                if reconcile_dyno_profile_segment(profile, quality):
+                    car_params_writer.schedule(car_id, profile)
+
                 # --- WOT (Wide Open Throttle) Filter ---
                 accel_input = data.get("AccelInput", 0)
                 gear = data.get("Gear", 0)
@@ -1299,12 +1303,6 @@ async def broadcast_telemetry():
                 brake_input = data.get("BrakeInput", 0)
                 handbrake_input = data.get("HandBrakeInput", 0)
                 rpm = data.get("CurrentEngineRpm", 0)
-
-                # Track gear changes
-                current_time = time.time()
-                if gear != prev_gear:
-                    prev_gear = gear
-                    last_gear_change_time = current_time
 
                 # 1. Target gear check
                 target_gear = app_settings.get("dyno_test_gear", 4)
@@ -1315,10 +1313,16 @@ async def broadcast_telemetry():
                 # 2. Exclude braking and Launch Control (handbrake + throttle)
                 no_braking = brake_input == 0 and handbrake_input == 0
 
-                # 3. Transient spike filter (ignore data within 0.5s of shifting)
+                # 3. Transient spike filter. The existing 500 ms gate now uses
+                # the telemetry timestamp, never wall-clock scheduling time.
                 no_transient = True
                 if app_settings.get("dyno_filter_transients", True):
-                    if current_time - last_gear_change_time < 0.5:
+                    shift_elapsed_ms = (
+                        dyno_quality_gates.milliseconds_since_gear_change(
+                            car_id, data.get("TimestampMS")
+                        )
+                    )
+                    if shift_elapsed_ms is not None and shift_elapsed_ms < 500:
                         no_transient = False
 
                 # 4. Tire slip filter
@@ -1346,6 +1350,7 @@ async def broadcast_telemetry():
 
                 if (
                     rpm > 0
+                    and app_settings.get("dyno_recording", True)
                     and accel_input == 255
                     and gear > 0
                     and clutch_input == 0
@@ -1353,6 +1358,7 @@ async def broadcast_telemetry():
                     and no_braking
                     and no_transient
                     and no_slip
+                    and quality.can_collect
                 ):
                     power_hp = data.get("PowerWatts", 0) / 745.7
                     torque_lbft = data.get("TorqueNewtons", 0) * 0.73756
@@ -1398,7 +1404,7 @@ async def broadcast_telemetry():
 
                     if updated:
                         curve[bucket] = existing
-                        dyno_cache[car_id]["dyno_curve"] = curve
+                        profile["dyno_curve"] = curve
 
                         # Periodic save to disk (every 5 seconds max)
                         current_time = time.time()
@@ -1411,6 +1417,7 @@ async def broadcast_telemetry():
             # Pop the oldest inserted key
             oldest_key = next(iter(dyno_cache))
             dyno_cache.pop(oldest_key, None)
+            dyno_quality_gates.discard(oldest_key)
         telemetry_pipeline_metrics.record_stage(
             "dyno", time.perf_counter() - dyno_stage_started_at
         )

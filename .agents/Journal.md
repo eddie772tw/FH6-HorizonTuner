@@ -15,6 +15,15 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-08-30 / Dyno Timestamp Quality and Vehicle Segment Boundary
+
+- **來源**：`local`，`codex/feat/dyno-shift-quality-gates`。
+- **狀態**：`adopted`。
+- **Learning**：dyno 的 sample acceptance 與 shift transient 判定不能使用 wall clock；只可使用 Data Out 的 `TimestampMS`。缺少 timestamp、非單調 timestamp、相對於已觀察 cadence 的中斷，或 position 與既有 SI speed 不一致時，必須標示為 unavailable／suspect 並暫停收集，不能把中斷資料提升為馬力或調校真值。
+- **Action**：以獨立 `backend/dyno_quality.py` 保存 timestamp、position、gear 與可觀測 `(CarOrdinal, CarClass, CarPerformanceIndex)` fingerprint。fingerprint 改變時，現行 dyno curve 先封存為 bounded 舊 segment，再開始新的 curve；主分支既有 profile 沒有 `dyno_quality` 時，前端以 unavailable 呈現。前端只顯示測量品質、confidence 與 suspected reason，不作自動調校宣告。
+- **Evidence**：`tests/test_dyno_quality.py` 覆蓋 timestamp/position/profile/reset/telemetry-shift；聚焦後端為 19 passed。完整非主機音訊測試為 197 passed、2 skipped、6 deselected；`tests/test_audio_spectrum.py` 的既有 Windows audio-device enumeration 在本機逾時，未將其視為本次功能失敗。`ruff check .`、`ruff format --check .`、frontend Vitest 78 files / 481 tests、frontend build 與 `git diff --check` 均通過。未執行 FH6 實機驗證。
+- **Governance**：依 `telemetry-udp-protocol`、`modular-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration` 與 `agent-governance-audit` 登錄；`backend/main.py` 僅整合 dyno quality gate 的最小 hunks，未變更 listener、settings 或 diagnostic/support-bundle 範圍。
+
 ## 2026-08-28 / UDP Socket Resilience & Stale Process Auto-Cleanup Architecture
 
 ### UDP 監聽器 Winsock SIO_UDP_CONNRESET 防禦、error_received 自癒與啟動時殘留進程/端口自動清理
