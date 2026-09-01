@@ -21,7 +21,7 @@
 
 ### 2.1 數據源採樣與顯示刷新率拍頻錯位（數學與渲染層）
 - Forza UDP Data Out 輸出頻率固定為 **60Hz**（每 ~16.6ms 一包）。
-- 當顯示器運行於 144Hz（每 6.94ms 一幀）時，HUD 目前以事件驅動或未插值的狀態直接渲染，導致每 2~3 幀才更新一次數值（$144 / 60 = 2.4$），形成嚴重的階梯狀更新（Judder / Beat frequency）。
+- 當顯示器運行於 144Hz（每 6.94ms 一幀）時，HUD 若以純事件驅動渲染，每 2~3 幀才更新一次數值（$144 / 60 = 2.4$），形成嚴重的階梯狀更新（Judder / Beat frequency）。
 
 ### 2.2 Windows DWM 桌面合成與 MPO（多平面重疊）破壞（系統合成層）
 - 全螢幕遊戲原本能利用硬體 MPO（Multi-Plane Overlay）或 DirectFlip 直通顯示輸出。
@@ -33,15 +33,35 @@
 
 ---
 
-## 3. 開發改善路線圖 (Roadmap)
+## 3. 已完成之改善架構 (Implemented Architecture)
 
-1. **階段一：前端渲染高刷平滑插值引擎（Client-side Frame Pacing & Interpolation）**
-   - 於 `hud_overlay/shared/` 引入基於 `requestAnimationFrame` 的時間戳物理插值器（Timestamp-based Linear / Hermite Interpolator）。
-   - 將 60Hz 離散遙測訊號平滑插值推導至 120Hz/144Hz/240Hz，消弭視覺拍頻頓挫。
+### 3.1 前端時間戳平滑插值引擎 (`FrameInterpolator`)
+- 實作於 `frontend/src/utils/frameInterpolator.ts` 與 `hud_overlay/shared/frame-interpolator.js`。
+- **連續數值平滑**：對 RPM、時速、功率、扭力、渦輪壓力、懸吊行程、G 值等採用高精度線性插值（Linear Interpolation），支援環狀最短角度插值（`lerpAngleDeg`）。
+- **離散狀態保護**：檔位（`Gear`）、車輛序號（`CarOrdinal`）、煞車抱死（`Lockup`）等狀態嚴格即時響應，不作中間浮點插值，防止跳檔延遲或小數檔位。
+- **過推與超時防護**：外推上限設為 $1.25\times$，超過 150ms 無新數據自動 fallback 至最新封包，防止網絡卡頓時物理量漂移。
+- **渲染循環解耦**：在 `coordinator.js` 中採用 `requestAnimationFrame` 自適應原生顯示器更新率（120Hz/144Hz/240Hz），將 60Hz 離散輸入轉化為極致滑順的連續動態。
 
-2. **階段二：視窗樣式與 WebView2 GPU 交換鏈最佳化**
-   - 評估 WebView2 視窗標誌與 DWM 屬性，降低透明通道合成開銷。
-   - 優化 WebSocket 封包解包與微任務隊列排程，防止事件擠壓（Batching spike）。
+### 3.2 視窗屬性與排程最佳化
+- 優化 `ws.js` 遙測封包微任務排程，避免主線程繁忙時封包累積引發瞬間突波。
+- 於 `OverlayView` 新增 `High-Refresh Frame Smoothing (120Hz/144Hz/240Hz/VRR)` 切換開關，支援動態熱更新並持久化。
 
-3. **階段三：高刷與 A/B 測試驗證**
-   - 依據 Issue #272 定義之驗收準則，在 60 FPS vs >60 FPS / VRR 環境下記錄幀生成穩定度與視覺流暢度。
+---
+
+## 4. 自動化測量診斷工具與 A/B 測試指引
+
+專案提供了自動化幀排程測量工具 `scripts/measure_frame_pacing.py`，用於量化收集與比對幀間隔統計。
+
+### 4.1 執行測量指令
+```powershell
+# 收集 10 秒遙測數據並產出統計報告
+uv run --no-project --python .venv\Scripts\python.exe scripts/measure_frame_pacing.py --duration 10 --target-fps 60 --label "Test_60Hz_Baseline" --output scratch/pacing_report.json
+```
+
+### 4.2 A/B 驗收標準
+| 指標 | 60Hz 直通模式 (基準) | 啟用平滑插值 (改善後) | 預期效果 |
+|---|---|---|---|
+| **視覺更新頻率** | 固定 60 次/秒（高刷上有階梯跳躍） | 與螢幕刷新率同步（120/144/240 次/秒） | 指針與數值完全無頓挫 |
+| **幀間隔標準差 (Jitter StdDev)** | 較高（依賴 UDP 網路抖動） | 極低（由 rAF 與插值器穩定平滑） | 降低 >60% 抖動 |
+| **離散檔位響應時間** | 即時（0 延遲） | 即時（0 延遲） | 換檔完全無小數或遲滯 |
+| **斷訊/超時恢復** | 立即停止 | 150ms 內安全 fallback 最新值 | 零過衝漂移 |
