@@ -15,6 +15,21 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-01 / Modal & Onboarding Containing Block Isolation via React Portal
+
+- **來源**：`local`，分支 `ui/fix-modal-container-portal-standard`。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **CSS Containing Block 破版陷阱**：在含有 Glassmorphism 樣式（`backdrop-filter: blur(...)`、`transform` 或 `filter`）的父容器（如 `<nav.navbar.sticky-top>`）內部直接渲染浮層或對話框（如 `DataOutGuide`、`UpdateModal`）時，依據 W3C CSS 規範，瀏覽器會強制為所有子代元素生成局部 Containing Block，導致 `position: fixed` 的座標系被侷限在僅約 50px 高的導覽列容器內，引起全螢幕背景遮罩（`.modal-backdrop`）撕裂與對話框嚴重截斷變形。
+  2. **React Portal 隔離防禦**：全螢幕 Modal 彈窗與 Offcanvas 側邊抽屜必須統一透過 `createPortal(children, document.body)` 傳送至 `document.body`，從 DOM 樹上與所有父級容器（`<nav>`, `<main>`, `overflow: hidden`, `backdrop-filter`）徹底解耦。
+  3. **設計規範與測試合約升級**：於 `halfmoon-design-system`、`HALFMOON_SPECIFICATION.md` 與 `AGENTS.md` 中明載 `ModalPortal` 規範；新增 `ModalPortal.test.ts` 與 `DataOutGuide.test.ts` 確保 Portal 於 DOM / SSR 生命週期中安全運作。
+- **Action**：
+  1. 建立 `frontend/src/components/common/ModalPortal.tsx` 與單元測試 `ModalPortal.test.ts`。
+  2. 重構 `DataOutGuide.tsx`，分離 backdrop 與 dialog 結構並接入 `ModalPortal`，新增 `DataOutGuide.test.ts`。
+  3. 重構 `UpdateModal.tsx`、`ChartEditModal.tsx`、`UnitSettingsSidebar.tsx`、`HudUnitSettingsSidebar.tsx`、`DiagnosticConsole.tsx`、`ThemeView.tsx` 全面接入 `ModalPortal`。
+  4. 同步更新 `HALFMOON_SPECIFICATION.md`、`halfmoon-design-system/SKILL.md` 與 `AGENTS.md` 設計系統規範。
+- **Evidence**：前端 Vitest 84 檔 / 510 項測試全數通過（新增 5 項專用測試）；`pnpm -C frontend run build` 構建成功；後端 Pytest 254 passed (0 failed)；Ruff check/format 100% 通過。
+- **Governance**：本筆依 `halfmoon-design-system`、`modular-refactoring` 與 `agent-governance-audit` 規範登錄。
 ## 2026-09-01 / High-Refresh Telemetry Frame Pacing and Interpolation Engine
 
 - **來源**：`local`，針對 Issue #256 與 Issue #272 在遊戲 uncapped 或高刷螢幕 (>60 FPS / 120Hz / 144Hz / 240Hz / VRR) 下的 HUD 拍頻卡頓 (Judder) 與渲染排程問題。

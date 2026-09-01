@@ -193,10 +193,15 @@ FH6-HorizonTuner 前端採用 **雙層視覺設計架構 (Two-Layer Visual Archi
 * **官方組件**：`.modal`, `.modal-dialog`, `.modal-content`, `.modal-header`, `.modal-title`, `.modal-body`, `.modal-footer`, `.btn-close`, `.modal-backdrop`, `.show`
 * **特定規格參數與選用原則**：
 
+> [!IMPORTANT]
+> **全域 React Portal 掛載規範 (ModalPortal Mandate)**：
+> 所有全螢幕覆蓋物（包括所有 `.modal`、`.offcanvas`、`.modal-backdrop` 與全螢幕引導視窗如 `DataOutGuide`、`UpdateModal`、`ChartEditModal`、`UnitSettingsSidebar` 等）**必須透過 `ModalPortal` (`createPortal(..., document.body)`) 掛載至 `document.body`**。
+> **嚴禁**將 Modal / Offcanvas 直接作為一般子元素內嵌在具有 `backdrop-filter`、`transform`、`filter` 或 `overflow: hidden` 的父容器（例如 `<nav.navbar>`、`<span id="build-info-badge">`、Card 面板等）內，以防止瀏覽器依據 W3C 規範強制生成局部 Containing Block 導致 fixed 定位座標系縮減與全螢幕遮罩撕裂破版。
+
 | 類別組合 | 規格與 Z-Index | 適用時機與業務場景 |
 | :--- | :--- | :--- |
-| `.modal` + `.modal-dialog` | `z-index: 1055`, `background: var(--glass-bg)`, `border-radius: 16px`, `box-shadow: var(--glass-shadow)` | **自訂通道編輯彈窗 (`ChartEditModal`)**、齒輪比進階設定彈窗、刪除確認框。 |
-| `.modal-backdrop` | `z-index: 1050`, `background: rgba(0,0,0,0.6)` | 鎖定背景焦點，點擊空白處取消編輯。 |
+| `.modal` + `.modal-dialog` | `z-index: 1055`, `background: var(--glass-bg)`, `border-radius: 16px`, `box-shadow: var(--glass-shadow)` | **Onboarding 連線引導 (`DataOutGuide`)**、**OTA 更新彈窗 (`UpdateModal`)**、**自訂通道編輯彈窗 (`ChartEditModal`)**、齒輪比進階設定彈窗、刪除確認框。 |
+| `.modal-backdrop` | `z-index: 1050`, `background: rgba(0,0,0,0.7)`, `backdrop-filter: blur(4px)` | 鎖定背景焦點，點擊空白處關閉或取消編輯。 |
 
 ---
 

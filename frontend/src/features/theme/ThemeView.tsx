@@ -5,6 +5,7 @@ import AppearanceModePanel from './components/AppearanceModePanel';
 import ColorPickerPanel from './components/ColorPickerPanel';
 import PresetPanel from './components/PresetPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
+import { ModalPortal } from '../../components/common/ModalPortal';
 
 interface ThemeViewProps {
   show: boolean;
@@ -16,7 +17,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
   const { t } = useSettings();
 
   return (
-    <>
+    <ModalPortal>
       {/* Backdrop */}
       <div
         className={`offcanvas-backdrop fade${show ? ' show' : ''}`}
@@ -72,7 +73,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
           </div>
         </div>
       </div>
-    </>
+    </ModalPortal>
   );
 };
 

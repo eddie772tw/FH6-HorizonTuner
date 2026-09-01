@@ -58,8 +58,9 @@ description: 當開發或重構前端 UI 組件、調整 Halfmoon CSS v2 主題�
 * 精靈步驟：`<span className="badge bg-primary-subtle text-primary">1</span>`
 
 ### 5. 側邊抽屜與對話框 (Offcanvas & Modals)
-* 抽屜面板 (`ThemeView` / `DiagnosticConsole`)：採用常態 DOM 掛載 + `show` prop 切換。
-* Modal 彈窗 (`ChartEditModal`)：帶 `.modal-backdrop` 與 `z-index: 1055` 鎖定焦點。
+* **全域 Portal 掛載護欄**：所有抽屜面板 (`ThemeView` / `DiagnosticConsole` / `UnitSettingsSidebar`) 與 Modal 彈窗 (`DataOutGuide` / `UpdateModal` / `ChartEditModal`) **必須統一使用 `ModalPortal` (React Portal) 掛載至 `document.body`**，嚴禁內嵌於帶有 `backdrop-filter`、`transform` 或局部 `overflow` 的父容器內。
+* 抽屜面板：採用常態 DOM 掛載 + `show` prop 切換。
+* Modal 彈窗：帶獨立 `.modal-backdrop` 與 `z-index: 1055` (modal) / `1050` (backdrop) 鎖定焦點。
 
 ### 6. 導覽列與容器滾動邊界護欄
 * Navbar 下拉選單保護：`.navbar` 與 `.navbar .container-fluid` 必須包含 `overflow: visible !important`。

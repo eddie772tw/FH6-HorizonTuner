@@ -1,5 +1,6 @@
 import React from 'react';
 import type { UnitSettings } from '../../context/SettingsContext';
+import { ModalPortal } from '../../components/common/ModalPortal';
 
 export interface HudDisplayUnits {
   speed: UnitSettings['speed'];
@@ -34,7 +35,7 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
     onUnitsChange({ ...units, [key]: value });
 
   return (
-    <>
+    <ModalPortal>
       <div className={`offcanvas-backdrop fade${show ? ' show' : ''}`} style={{ display: show ? 'block' : 'none', zIndex: 1040 }} onClick={onClose} />
       <div
         className={`offcanvas offcanvas-bottom glass-panel shadow-lg${show ? ' show' : ''}`}
@@ -59,37 +60,75 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
         </div>
         <div className="offcanvas-body px-4 py-3 overflow-y-auto">
           <div className="form-check form-switch mb-3">
-            <input id="hud-follow-global-units" className="form-check-input" type="checkbox" checked={followGlobal} onChange={event => onFollowGlobalChange(event.target.checked)} />
-            <label className="form-check-label fw-semibold" htmlFor="hud-follow-global-units">{t("Follow App Global Units")}</label>
+            <input
+              id="hud-follow-global-units"
+              className="form-check-input"
+              type="checkbox"
+              checked={followGlobal}
+              onChange={event => onFollowGlobalChange(event.target.checked)}
+            />
+            <label className="form-check-label fw-semibold" htmlFor="hud-follow-global-units">
+              {t("Follow App Global Units")}
+            </label>
           </div>
           <div className="row g-3">
             <div className="col-6 col-lg-3">
               <label className="form-label fs-7" htmlFor="hud-speed-unit">{t("Speed Unit")}</label>
-              <select id="hud-speed-unit" className="form-select form-select-sm" disabled={followGlobal} value={displayed.speed} onChange={event => update('speed', event.target.value as HudDisplayUnits['speed'])}>
-                <option value="kmh">km/h</option><option value="mph">mph</option>
+              <select
+                id="hud-speed-unit"
+                className="form-select form-select-sm"
+                disabled={followGlobal}
+                value={displayed.speed}
+                onChange={event => update('speed', event.target.value as HudDisplayUnits['speed'])}
+              >
+                <option value="kmh">km/h</option>
+                <option value="mph">mph</option>
               </select>
             </div>
             <div className="col-6 col-lg-3">
               <label className="form-label fs-7" htmlFor="hud-boost-unit">{t("Boost Unit")}</label>
-              <select id="hud-boost-unit" className="form-select form-select-sm" disabled={followGlobal} value={displayed.boostPressure} onChange={event => update('boostPressure', event.target.value as HudDisplayUnits['boostPressure'])}>
-                <option value="bar">bar</option><option value="psi">psi</option><option value="kpa">kPa</option>
+              <select
+                id="hud-boost-unit"
+                className="form-select form-select-sm"
+                disabled={followGlobal}
+                value={displayed.boostPressure}
+                onChange={event => update('boostPressure', event.target.value as HudDisplayUnits['boostPressure'])}
+              >
+                <option value="bar">bar</option>
+                <option value="psi">psi</option>
+                <option value="kpa">kPa</option>
               </select>
             </div>
             <div className="col-6 col-lg-3">
               <label className="form-label fs-7" htmlFor="hud-torque-unit">{t("Torque Unit")}</label>
-              <select id="hud-torque-unit" className="form-select form-select-sm" disabled={followGlobal} value={displayed.torque} onChange={event => update('torque', event.target.value as HudDisplayUnits['torque'])}>
-                <option value="nm">N·m</option><option value="lbft">lb-ft</option>
+              <select
+                id="hud-torque-unit"
+                className="form-select form-select-sm"
+                disabled={followGlobal}
+                value={displayed.torque}
+                onChange={event => update('torque', event.target.value as HudDisplayUnits['torque'])}
+              >
+                <option value="nm">N·m</option>
+                <option value="lbft">lb-ft</option>
               </select>
             </div>
             <div className="col-6 col-lg-3">
               <label className="form-label fs-7" htmlFor="hud-power-unit">{t("Power Unit")}</label>
-              <select id="hud-power-unit" className="form-select form-select-sm" disabled={followGlobal} value={displayed.power} onChange={event => update('power', event.target.value as HudDisplayUnits['power'])}>
-                <option value="hp">hp</option><option value="kw">kW</option><option value="ps">PS</option>
+              <select
+                id="hud-power-unit"
+                className="form-select form-select-sm"
+                disabled={followGlobal}
+                value={displayed.power}
+                onChange={event => update('power', event.target.value as HudDisplayUnits['power'])}
+              >
+                <option value="hp">hp</option>
+                <option value="kw">kW</option>
+                <option value="ps">PS</option>
               </select>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </ModalPortal>
   );
 };
