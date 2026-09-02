@@ -4,6 +4,8 @@ from ctypes import wintypes
 
 import pytest
 
+from scripts.validate_version_consistency import read_runtime_version
+
 
 def get_pe_string_info(filepath: str, key: str) -> str:
     """Read Windows PE Version String Resource using win32 API if available."""
@@ -84,6 +86,13 @@ def find_lite_executable_path():
     return next((path for path in candidates if os.path.exists(path)), candidates[0])
 
 
+def assert_runtime_version(version: str, runtime_version: str) -> None:
+    """Accept the three-part Tauri version and the four-part PE sidecar form."""
+    assert version == runtime_version or version.startswith(f"{runtime_version}."), (
+        f"Expected FileVersion based on runtime {runtime_version}, got '{version}'"
+    )
+
+
 @pytest.mark.executable_bundle
 def test_sidecar_executable_existence_and_metadata():
     sidecar_path, standalone_exe = find_executable_paths()
@@ -107,14 +116,13 @@ def test_sidecar_executable_existence_and_metadata():
     if sys.platform == "win32":
         company = get_pe_string_info(target_exe, "CompanyName")
         version = get_pe_string_info(target_exe, "FileVersion")
+        runtime_version = read_runtime_version()
         if company:
             assert company == "eddie772tw", (
                 f"Expected CompanyName 'eddie772tw', got '{company}'"
             )
         if version:
-            assert version.startswith("11.45.15"), (
-                f"Expected FileVersion starting with '11.45.15', got '{version}'"
-            )
+            assert_runtime_version(version, runtime_version)
 
 
 @pytest.mark.executable_bundle
@@ -131,11 +139,10 @@ def test_lite_executable_existence_and_metadata():
     if sys.platform == "win32":
         company = get_pe_string_info(lite_exe, "CompanyName")
         version = get_pe_string_info(lite_exe, "FileVersion")
+        runtime_version = read_runtime_version()
         if company:
             assert company == "eddie772tw", (
                 f"Expected CompanyName 'eddie772tw', got '{company}'"
             )
         if version:
-            assert version.startswith("11.45.15"), (
-                f"Expected FileVersion starting with '11.45.15', got '{version}'"
-            )
+            assert_runtime_version(version, runtime_version)
