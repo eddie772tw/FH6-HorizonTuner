@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "./SettingsContext";
 import { backendFetch, backendHttpUrl } from "../services/backend";
+import { SessionDebriefData, calculateFrontendDebrief } from "../features/analysis/sessionDebriefMath";
 
 export interface AnalysisDataPoint {
   time: number; // Seconds since recording started
@@ -41,25 +42,6 @@ export interface LapSummary {
   avg_speed_kmh: number;
 }
 
-export interface AnalysisLayoutConfig {
-  activeMetric: string;
-  customMathChannels: Array<{ name: string; formula: string }>;
-  slots?: Array<{
-    id: string;
-    title: string;
-    domain: "time" | "distance" | "lap";
-    channels: Array<{
-      id: string;
-      name: string;
-      formula: string;
-      color: string;
-      strokeWidth: number;
-      isDashed: boolean;
-    }>;
-  }>;
-  enabledCharts: string[];
-}
-
 interface TelemetryRecorderContextType {
   isRecording: boolean;
   recordingCount: number;
@@ -79,8 +61,9 @@ interface TelemetryRecorderContextType {
   deleteSavedSession: (filename: string) => Promise<boolean>;
   exportMoTecCsv: (filename: string) => void;
   uploadMoTecCsv: (file: File) => Promise<AnalysisDataPoint[] | null>;
-  loadAnalysisConfig: () => Promise<AnalysisLayoutConfig | null>;
-  saveAnalysisConfig: (config: AnalysisLayoutConfig) => Promise<boolean>;
+  openInMoTec: (sessionId: string) => Promise<{ success: boolean; launched: boolean; message: string }>;
+  downloadMoTecTemplate: () => void;
+  fetchSessionDebrief: (sessionId: string) => Promise<SessionDebriefData | null>;
 }
 
 const TelemetryRecorderContext = createContext<
@@ -281,34 +264,47 @@ export const TelemetryRecorderProvider: React.FC<{
     }
   };
 
-  const loadAnalysisConfig = async (): Promise<AnalysisLayoutConfig | null> => {
+  const openInMoTec = async (
+    sessionId: string,
+  ): Promise<{ success: boolean; launched: boolean; message: string }> => {
     try {
-      const res = await backendFetch("/api/analysis/config");
+      const res = await backendFetch(
+        `/api/analysis/motec/open/${encodeURIComponent(sessionId)}`,
+        { method: "POST" },
+      );
       const data = await res.json();
-      if (data && !data.error) {
-        return data;
-      }
-    } catch (e) {
-      console.error("Failed to load analysis layout config:", e);
+      return data;
+    } catch (e: any) {
+      console.error(`Failed to open session ${sessionId} in MoTeC:`, e);
+      return { success: false, launched: false, message: e?.message || "Failed to open in MoTeC" };
     }
-    return null;
   };
 
-  const saveAnalysisConfig = async (
-    config: AnalysisLayoutConfig,
-  ): Promise<boolean> => {
+  const downloadMoTecTemplate = () => {
+    const url = backendHttpUrl("/api/analysis/motec/template");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "FH6_HorizonTuner_MoTeC_Workspace.xml";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const fetchSessionDebrief = async (
+    sessionId: string,
+  ): Promise<SessionDebriefData | null> => {
     try {
-      const res = await backendFetch("/api/analysis/config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
+      const res = await backendFetch(
+        `/api/analysis/sessions/${encodeURIComponent(sessionId)}/debrief`,
+      );
       const data = await res.json();
-      return !!(data && !data.error);
+      if (data && !data.error) {
+        return data as SessionDebriefData;
+      }
     } catch (e) {
-      console.error("Failed to save analysis layout config:", e);
+      console.error(`Failed to fetch debrief for session ${sessionId}:`, e);
     }
-    return false;
+    return null;
   };
 
   return (
@@ -329,8 +325,9 @@ export const TelemetryRecorderProvider: React.FC<{
         deleteSavedSession,
         exportMoTecCsv,
         uploadMoTecCsv,
-        loadAnalysisConfig,
-        saveAnalysisConfig,
+        openInMoTec,
+        downloadMoTecTemplate,
+        fetchSessionDebrief,
       }}
     >
       {children}
