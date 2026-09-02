@@ -15,6 +15,43 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-02 / Step 5 Closed-Loop Telemetry Calibration Overhaul & Full Packet Analysis Engine
+
+- **來源**：`local`，針對調校工作流 Step 5 回歸監控無法依據覆蓋設定即時重新評估、缺乏一鍵採納建議，以及遙測封包多維度客觀數據全面評估與解讀。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **手動熱胎壓不是可靠的單一依據 (Tire Pressure Fallacy)**：Forza 原生 324-byte UDP 封包中並無即時熱胎壓（Tire Pressure）欄位，過去系統過度依賴玩家手動填寫 $P_{hot}$，導致回歸流程繁瑣且不可靠。調校回歸的根本真理應以客觀 60Hz 遙測原生數據為核心（4輪即時胎溫、4輪側向滑移角、4輪縱向滑移率、4輪懸吊行程、3軸加速度 G 力、引擎轉速/檔位/馬力與控制項輸入）。
+  2. **可編輯設定值表格（Applied Setup Table）與閉環收斂**：Step 5 必須自動帶入 Step 2~4 的初始計算值，並提供分類輸入框表格允許玩家自由覆蓋新的設定值。每次數值變更或點擊建議中的「採納 (Adopt)」按鈕時，即時更新內部 `appliedSetup` 狀態，使右側微調建議與偏差即時重新計算並收斂。
+  3. **全封包多維度遙測分析與調校修正對應矩陣**：
+     - **側向滑移角差 ($\Delta \alpha = \bar{\alpha}_F - \bar{\alpha}_R$)**：$\Delta \alpha > 2.5^\circ$ 指示推頭飽和 $\rightarrow$ 調軟前 ARB、增加前輪外展束角 (Toe-out)；$\Delta \alpha < -2.5^\circ$ 指示過度擺尾 $\rightarrow$ 調軟後 ARB、增加後輪內收束角 (Toe-in)。
+     - **懸吊極限壓縮率與側傾差**：行程 $\ge 0.95$ 觸底撞底 $\rightarrow$ 調高壓縮阻尼 (Bump)；前後側傾行程差過大 $\rightarrow$ 調硬側傾較大軸之防傾桿 (ARB)。
+     - **縱向滑移率 (Slip Ratio)**：重煞前輪鎖死 ($<-0.15$) $\rightarrow$ 減少前負外傾角以擴大煞車接地；出彎加速打滑 ($>+0.15$) $\rightarrow$ 調高後差速器加速鎖定率 (Diff Accel)。
+     - **四輪熱力學與熱平衡**：前後溫差 $\Delta T_{\text{axle}}$ 與左右溫差指示軸荷分配與熱偏載。
+     - **動力帶與換檔銜接**：換檔後轉速掉出最佳馬力帶 ($<60\%$) $\rightarrow$ 調大終傳比 (Final Drive)。
+  4. **賽車工程時序分期與單一參數精確收斂演算法 (Corner Phase Decoupling & Single Key Root-Cause)**：
+     - 賽車動力學將過彎動態嚴格正交解耦為：`Straight-Line Braking`（直行重煞）、`Turn-in / Trail-braking`（入彎瞬態）、`Mid-Corner Apex`（彎頂穩態）與 `Corner Exit / Power-on`（出彎開油）。
+     - 穩態彎頂阻尼速度為 0，嚴禁在彎中推頭時調阻尼，必須精準收斂至 ARB 或 Camber；入彎瞬態主要由阻尼與束角主導；出彎開油主要由差速器加速鎖定與後彈簧主導。
+     - 透過嚴重度與信心度權重矩陣，在 UI 頂部高亮呈現「**第一優先關鍵調整項 (Primary Key Parameter Recommendation)**」，並附帶交叉遙測證據 (Cross-Telemetry Diagnostics Evidence)，解決過去同時給予多項建議使玩家難以決策的痛點。
+  5. **測試圈動態事件堆疊通知匣與即時關聯失效機制 (Telemetry Issue Feed & Dynamic Invalidation)**：
+     - 為避免要求駕駛邊開車邊看即時浮動建議的非現實操作，建立「測試圈動態事件累積通知匣 (Telemetry Issue Feed)」。
+     - 系統於背景監控 60Hz UDP 遙測流，在測試圈各彎道自動捕捉動態問題，具備 2 秒防抖與頻率次數計數（如 `x3` 次）。
+     - 實作 `revalidateTuningEventsOnSetupChange`：當玩家採納某項微調或手動變更設定時，系統即時比對所有累積事件，將已滿足的項目切換為 `applied`，並自動淘汰矛盾或已過時的建議。
+  6. **同參數相反方向衝突仲裁與互斥淘汰演算法 (Conflicting & Mutually Exclusive Invalidation)**：
+     - 若同一個參數在不同彎道給出相反方向微調（如調軟 ARB vs 調硬 ARB），系統依據「物理安全等級 + 發生頻率權重 + 信心度」進行即時衝突仲裁。
+     - **勝負明確分明 ($\Delta Score \ge 35$)**：系統自動**靜默移除/捨棄落敗建議**，保持通知匣極簡清爽，不給予多餘的已淘汰視覺雜訊。
+     - **勢均力敵難以判定 ($\Delta Score < 35$)**：系統**保留兩項建議並標註「⚡ 人工決策 (Manual Decision)」**與提示說明，供駕駛根據賽道特徵人工權衡。
+     - 一旦駕駛在表格中套用或採納了其中一項，相反方向的衝突建議立即被系統自動靜默清除。
+- **Action**：
+  1. 擴充 `frontend/src/utils/tuningDiagnosis.ts`：定義 `AppliedTuningSetup`、`SpecificAdjustmentItem`、`TelemetryGripMetrics`、`TuningTelemetryEvent`、`buildBaselineSetup`，升級 `evaluateTireTelemetryDiagnosis` 支援客觀遙測為真理之 5 大分析模組，實作 `collectTuningTelemetryEvents` 與 `revalidateTuningEventsOnSetupChange`（支援分級衝突仲裁、靜默移除與人工決策提示）。
+  2. 建立獨立組件 `frontend/src/features/tuning/components/AppliedSetupTable.tsx` 與合約測試 `AppliedSetupTable.test.ts`。
+  3. 重構 `frontend/src/features/tuning/components/Step5TelemetryCalibration.tsx`，整合 4 輪即時動態儀表、可編輯設定表格、測試圈動態事件通知匣（支援篩選、累積堆疊、去重計數、人工決策高亮提示與即時過時淘汰）。
+  4. 擴充單元測試 `tuningDiagnosis.test.ts`，驗證全封包指標、自訂 setup 覆蓋、單一核心推薦、事件累積、分級衝突仲裁與靜默淘汰。
+  5. 驗證前端 Vitest (87 檔 / 547 項測試 100% 通過)、前端 build（705 modules）與後端 Pytest (254 項通過)。
+- **Evidence**：前端 Vitest 87 files / 547 tests 100% passed；`pnpm -C frontend run build` 成功（dist/assets 生產檔案生成）；後端 Pytest 254 passed (0 failed)；Ruff 檢查無誤。
+- **Governance**：本筆追加依 `physics-tuning-math`、`telemetry-udp-protocol`、`modular-refactoring`、`halfmoon-design-system` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-02 / Release V1.5.1 Preparation, Version Bumping & Portable Bundle Renaming
 
 - **來源**：`local`，針對 V1.5.1 正式發布準備、版本號同步推進與發布包體命名優化。
