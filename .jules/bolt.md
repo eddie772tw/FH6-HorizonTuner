@@ -13,6 +13,3 @@
 ## 2024-05-30 - DOM Pooling for Text Rendering in 60Hz Render Loops
 **Learning:** Overwriting `innerHTML` in a 60Hz render loop (e.g. for dynamic HUD speed values) causes unnecessary DOM destruction/recreation, layout thrashing, and immense Garbage Collection overhead.
 **Action:** Replace `innerHTML` concatenation loops with DOM pooling: match existing children's length, update `textContent` only when characters differ, and dynamically add/remove `<span>` elements only when string length changes.
-## 2024-05-30 - DOM Pooling for Text Rendering in 60Hz Render Loops
-**Learning:** Overwriting `innerHTML` in a 60Hz render loop (e.g. for dynamic HUD speed values) causes unnecessary DOM destruction/recreation, layout thrashing, and immense Garbage Collection overhead.
-**Action:** Replace `innerHTML` concatenation loops with DOM pooling: match existing children's length, update `textContent` only when characters differ, and dynamically add/remove `<span>` elements only when string length changes.

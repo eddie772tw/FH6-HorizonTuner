@@ -38,7 +38,7 @@ export function setSpeedDisplay(value) {
     if (_lastSpeedValue === value) return;
 
     let el = _speedEl;
-    if (!el) {
+    if (!el || !el.isConnected) {
         el = document.getElementById('speedText');
         if (!el) return;
         _speedEl = el;
