@@ -78,7 +78,8 @@ FH6-HorizonTuner/
 │   ├── routers/             # API routers (telemetry, tuning, overlay, drag, log, etc.)
 │   ├── services/            # System services & background state managers
 │   ├── telemetry_sqlite.py   # Historical telemetry SQLite storage engine
-│   ├── motec_exporter.py    # MoTeC i2 professional telemetry exporter
+│   ├── motec_exporter.py    # MoTeC i2 professional telemetry exporter (41 full channels + GPS projection)
+│   ├── motec_template.py    # MoTeC i2 Pro 5-worksheet XML workspace generator
 │   └── car_database.json    # Built-in car database
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
 │   ├── lite/                # Lite frontend HTML entrypoint
@@ -87,7 +88,7 @@ FH6-HorizonTuner/
 │   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~5 tabs)
 │   │   ├── overlay_control/ # WYSIWYG dashboard layout editor (OverlayView)
 │   │   ├── drag_test/       # Drag launch test view (DragTestView)
-│   │   ├── analysis/        # Data analysis view (AnalysisView)
+│   │   ├── analysis/        # Post-Race Debrief & MoTeC Ecosystem Bridge (AnalysisView, Debrief & LapDelta)
 │   │   ├── car_params/      # Vehicle parameters configuration (CarParamsView)
 │   │   ├── settings/        # Global system settings (SettingsView)
 │   │   └── theme/           # Theme color & skin view (ThemeView)

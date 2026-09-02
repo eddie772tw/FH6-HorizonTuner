@@ -15,6 +15,21 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-02 / Post-Race Debrief & MoTeC Ecosystem Bridge Overhaul
+
+- **來源**：`local`，針對 `AnalysisView` 重新定位與 MoTeC 生態系深度整合。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **定位解耦與生態系賦能**：避免在前端重複造輪子開發複雜自訂圖表與公式解析器（如淘汰 700+ 行之 `CustomChannelEditor` 與 `ChartEditModal`），轉而將 HorizonTuner 定位為「即時輕量復盤 + MoTeC 生態系橋接器」，把專業多通道分析導流給頂級業界工具（MoTeC i2），大幅降低專案長期維護包袱。
+  2. **41 全通道與 GPS 經緯度閉環投影**：Forza UDP 封包的原生 `PositionX, PositionY, PositionZ` 為世界公尺座標。藉由基準點（墨西哥城）WGS84 投影轉為 `GPS Latitude` / `GPS Longitude`，可直接觸發 MoTeC i2 的 Track Map 賽道輪廓繪製；胎溫由華氏轉換為攝氏、滑移角轉為度數，提供真正開箱即用的 MoTeC 分析體驗。
+  3. **Canvas 2D 輕量 Delta 圖表取代 Heavy Chart 庫**：自製雙層 `LapDeltaCanvas`（上層車速 vs 基準圈 Delta，下層油門/煞車踏板），配合滑鼠 Hover 距離百分比同步比對，提供極致流暢的單圈攻角與踩踏檢視，免除 Recharts 造成的 DOM 負擔。
+- **Action**：
+  1. 新增 `backend/motec_template.py` 生成 5 大專業分頁之 MoTeC i2 Workspace XML 範本。
+  2. 升級 `backend/motec_exporter.py` 提供 41 通道匯出、GPS 經緯度轉換與賽後底盤健康度計算。
+  3. 新增後端 API：`GET /api/analysis/motec/template`、`POST /api/analysis/motec/open/{session_id}` 與 `GET /api/analysis/sessions/{session_id}/debrief`。
+  4. 建立前端 `sessionDebriefMath.ts`（純函數）、`SessionHealthDebrief.tsx` 與 `LapDeltaCanvas.tsx`。
+  5. 重構 `AnalysisView.tsx` 為賽後復盤與 MoTeC 快速導出/一鍵開啟主介面。
+
 ## 2026-09-02 / Release V1.5.1 Preparation, Version Bumping & Portable Bundle Renaming
 
 - **來源**：`local`，針對 V1.5.1 正式發布準備、版本號同步推進與發布包體命名優化。
