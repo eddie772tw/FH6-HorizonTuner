@@ -42,7 +42,7 @@ def test_support_bundle_redacts_sensitive_data_and_bounds_log_window(tmp_path):
             "discordPresence": {"state": "available", "credential": "never-export"},
         },
         app_version="0.1.0",
-        backend_version="11.45.15.0",
+        backend_version="11.45.16.0",
         window_minutes=10,
         now=now,
     )
@@ -51,7 +51,7 @@ def test_support_bundle_redacts_sensitive_data_and_bounds_log_window(tmp_path):
     manifest = json.loads(files["manifest.json"])
     diagnostic_text = "\n".join(files.values())
     assert manifest["appVersion"] == "0.1.0"
-    assert manifest["backendVersion"] == "11.45.15.0"
+    assert manifest["backendVersion"] == "11.45.16.0"
     assert manifest["settingsSchema"].startswith("settings/v1")
     assert manifest["windowMinutes"] == 10
     assert "old entry" not in files["recent-logs.txt"]

@@ -13,7 +13,7 @@ FULL_INSTALLER_NAME = "FH6-HorizonTuner-Full-Installer.exe"
 FULL_PORTABLE_NAME = "FH6-HorizonTuner-Full-Portable.exe"
 LITE_INSTALLER_NAME = "FH6-HorizonTuner-Lite-Installer.exe"
 LITE_PORTABLE_NAME = "FH6-HorizonTuner-Lite-Portable.exe"
-PORTABLE_ARCHIVE_NAME = "FH6-HorizonTuner-Full-Lite-Portable.zip"
+PORTABLE_ARCHIVE_NAME = "FH6-HorizonTuner-Portable-Bundle.zip"
 FULL_SIGNATURE_NAME = "FH6-HorizonTuner-Full-Installer.exe.sig"
 LITE_SIGNATURE_NAME = "FH6-HorizonTuner-Lite-Installer.exe.sig"
 

@@ -4,8 +4,8 @@
 #
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(11, 45, 14, 0),
-    prodvers=(11, 45, 14, 0),
+    filevers=(11, 45, 16, 0),
+    prodvers=(11, 45, 16, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -21,12 +21,12 @@ VSVersionInfo(
           [
             StringStruct(u'CompanyName', u'eddie772tw'),
             StringStruct(u'FileDescription', u'FH6 HorizonTuner Telemetry Tuning Backend Sidecar'),
-            StringStruct(u'FileVersion', u'11.45.15.0'),
+            StringStruct(u'FileVersion', u'11.45.16.0'),
             StringStruct(u'InternalName', u'server-sidecar'),
             StringStruct(u'LegalCopyright', u'Copyright (C) 2026 eddie772tw. All rights reserved.'),
             StringStruct(u'OriginalFilename', u'server-sidecar-x86_64-pc-windows-msvc.exe'),
             StringStruct(u'ProductName', u'FH6 HorizonTuner'),
-            StringStruct(u'ProductVersion', u'11.45.15.0'),
+            StringStruct(u'ProductVersion', u'11.45.16.0'),
           ]
         )
       ]

@@ -256,7 +256,7 @@ jobs:
           dist/release/FH6-HorizonTuner-Full-Portable.exe
           dist/release/FH6-HorizonTuner-Lite-Installer.exe
           dist/release/FH6-HorizonTuner-Lite-Portable.exe
-          dist/release/FH6-HorizonTuner-Full-Lite-Portable.zip
+          dist/release/FH6-HorizonTuner-Portable-Bundle.zip
           dist/release/FH6-HorizonTuner-Full-Installer.exe.sig
           dist/release/FH6-HorizonTuner-Lite-Installer.exe.sig
           dist/release/latest.json

@@ -101,13 +101,13 @@ jobs:
           $liteExePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite.exe'
           [IO.File]::WriteAllBytes($liteExePath, [Text.Encoding]::ASCII.GetBytes('TEST_LITE_PORTABLE_EXE'))
 
-          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.15_x64-setup.exe'
+          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.16_x64-setup.exe'
           [IO.File]::WriteAllBytes($bundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
 
           $signaturePath = $bundlePath + '.sig'
           Set-Content -LiteralPath $signaturePath -Value 'TEST_ED25519_SIGNATURE' -NoNewline -Encoding utf8
 
-          $liteBundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite_11.45.15_x64-setup.exe'
+          $liteBundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite_11.45.16_x64-setup.exe'
           [IO.File]::WriteAllBytes($liteBundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_LITE_NSIS_INSTALLER'))
           $liteSignaturePath = $liteBundlePath + '.sig'
           Set-Content -LiteralPath $liteSignaturePath -Value 'TEST_LITE_ED25519_SIGNATURE' -NoNewline -Encoding utf8
@@ -131,7 +131,7 @@ jobs:
           LITE_SIGNATURE_PATH: ${{ steps.fixtures.outputs.lite_signature }}
           OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
         run: |
-          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --lite-updater-bundle "$env:LITE_BUNDLE_PATH" --lite-updater-signature "$env:LITE_SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.15" --repo "eddie772tw/FH6-HorizonTuner"
+          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --lite-updater-bundle "$env:LITE_BUNDLE_PATH" --lite-updater-signature "$env:LITE_SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.16" --repo "eddie772tw/FH6-HorizonTuner"
 
       - name: Validate generated manifest and asset set
         shell: pwsh
@@ -150,7 +150,7 @@ jobs:
           full_portable = "FH6-HorizonTuner-Full-Portable.exe"
           lite_installer = "FH6-HorizonTuner-Lite-Installer.exe"
           lite_portable = "FH6-HorizonTuner-Lite-Portable.exe"
-          portable_archive = "FH6-HorizonTuner-Full-Lite-Portable.zip"
+          portable_archive = "FH6-HorizonTuner-Portable-Bundle.zip"
           full_signature = "FH6-HorizonTuner-Full-Installer.exe.sig"
           lite_signature = "FH6-HorizonTuner-Lite-Installer.exe.sig"
           expected = {
@@ -168,7 +168,7 @@ jobs:
 
           manifest = json.loads((output / "latest.json").read_text(encoding="utf-8"))
           platform = manifest["platforms"]["windows-x86_64"]
-          assert manifest["version"] == "11.45.15"
+          assert manifest["version"] == "11.45.16"
           assert platform["signature"] == "TEST_ED25519_SIGNATURE"
           assert platform["url"].endswith(f"/test-v0.0.0/{full_installer}")
           lite_manifest = json.loads((output / "latest-lite.json").read_text(encoding="utf-8"))

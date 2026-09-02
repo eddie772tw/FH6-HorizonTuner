@@ -13,11 +13,11 @@ We actively provide security patches and updates for the following versions of *
 
 | Version         | Supported          | Status / Recommendation |
 | --------------- | ------------------ | ----------------------- |
-| `1.4.x`         | :white_check_mark: | Currently supported with active security fixes |
-| `1.0.x - 1.3.x` | :warning:          | End of active support; upgrade to `1.4.x` or higher recommended |
-| `< 1.0`         | :x:                | Unsupported |
+| `1.5.x`         | :white_check_mark: | Currently supported with active security fixes |
+| `1.4.x`         | :warning:          | Maintenance phase; upgrade to `1.5.x` or higher recommended |
+| `< 1.4`         | :x:                | Unsupported |
 
-If you are using an older build or development branch, please upgrade to the latest stable release (`1.4.x` or later) before reporting a vulnerability.
+If you are using an older build or development branch, please upgrade to the latest stable release (`1.5.x` or later) before reporting a vulnerability.
 
 ---
 
@@ -82,11 +82,11 @@ FH6-HorizonTuner is designed as a local desktop companion app and overlay tool f
 
 | 版本            | 支援狀態           | 說明與建議 |
 | --------------- | ------------------ | ---------- |
-| `1.4.x`         | :white_check_mark: | 當前主要維護版本，持續接收主動安全性修復 |
-| `1.0.x - 1.3.x` | :warning:          | 已停止主動修補，建議升級至 `1.4` 以上版本 |
-| `< 1.0`         | :x:                | 早期預覽版本，已停止安全性支援 |
+| `1.5.x`         | :white_check_mark: | 當前主要維護版本，持續接收主動安全性修復 |
+| `1.4.x`         | :warning:          | 維護過渡階段，建議升級至 `1.5.x` 以上版本 |
+| `< 1.4`         | :x:                | 早期版本，已停止安全性支援 |
 
-若您目前使用的是舊版本或未標籤的開發分支，請在回報前先升級至最新的正式釋出版本（`1.4.x` 或以上）。
+若您目前使用的是舊版本或未標籤的開發分支，請在回報前先升級至最新的正式釋出版本（`1.5.x` 或以上）。
 
 ---
 

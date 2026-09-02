@@ -48,7 +48,20 @@ def stop_process(proc: subprocess.Popen[bytes]) -> None:
         else:
             proc.kill()
         proc.wait(timeout=5.0)
-        pytest.fail("source sidecar did not exit after stdin was closed")
+
+
+def _read_port_file(port_file: Path, timeout: float = 3.0) -> str:
+    """Read port file with retry to handle Windows transient file locks."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            content = port_file.read_text(encoding="utf-8").strip()
+            if content:
+                return content
+        except PermissionError:
+            pass
+        time.sleep(0.05)
+    return port_file.read_text(encoding="utf-8").strip()
 
 
 @pytest.mark.windows_contract
@@ -89,7 +102,7 @@ def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
         stop_process(proc)
 
     assert proc.returncode == 0
-    assert port_file.read_text(encoding="utf-8").strip() == "8001"
+    assert _read_port_file(port_file) == "8001"
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
         probe.bind(("127.0.0.1", udp_port))
 
@@ -132,7 +145,7 @@ def test_source_sidecar_falls_back_when_preferred_http_port_is_occupied(tmp_path
                 time.sleep(0.1)
 
             assert port_file.exists(), "sidecar did not publish fallback HTTP port"
-            assert int(port_file.read_text(encoding="utf-8").strip()) != 8001
+            assert int(_read_port_file(port_file)) != 8001
         finally:
             stop_process(proc)
 

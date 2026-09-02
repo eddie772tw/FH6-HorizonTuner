@@ -168,8 +168,8 @@ if not getattr(sys, "frozen", False):
 
 logger = logging.getLogger(__name__)
 
-APP_VERSION = "11.45.15"
-BACKEND_VERSION = "11.45.15.0"
+APP_VERSION = "11.45.16"
+BACKEND_VERSION = "11.45.16.0"
 
 # 統一配置唯讀資源目錄與可寫入資料目錄
 

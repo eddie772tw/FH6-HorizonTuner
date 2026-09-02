@@ -1,6 +1,6 @@
 [package]
 name = "FH6-HorizonTuner"
-version = "11.45.15"
+version = "11.45.16"
 description = "FH6 HorizonTuner Telemetry Tuning App"
 authors = ["eddie772tw"]
 edition = "2021"
