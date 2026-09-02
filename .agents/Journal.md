@@ -15,6 +15,23 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-02 / FH6 Car Class & Performance Index (PI) Mapping Overhaul
+
+- **來源**：`local`，針對車輛等級始終被低估一個等級之 Bug 修復與地平線6 (FH6) PI 等級區間 (含 R 級) 重新定義。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Forza UDP CarClass 0-indexed 枚舉誤植 'E' 導致全局偏移**：Forza 原生 UDP 協議中的 `CarClass` 欄位為 `0=D, 1=C, 2=B, 3=A, 4=S1, 5=S2, 6=R, 7=X`。在 `TelemetryView.tsx` 中私有定義的陣列開頭誤植了 `'E'`（`['E', 'D', 'C', 'B', 'A', 'S1', 'S2', 'X']`），導致所有 0-indexed 的 enum 解析時全部向後平移 1 位（如 S1 誤顯為 A 級），引發等級始終被低估一個等級的現象。
+  2. **地平線6 (FH6) PI 等級區間重構標準**：FH6 官方引進了 R 級（賽道專用原型車 / 工廠賽車，PI 901~998），並將所有等級區間重構為：`D: 100~400, C: 401~500, B: 501~600, A: 601~700, S1: 701~800, S2: 801~900, R: 901~998, X: 999`。若以舊版思維換算 PI，會造成判定結果與 FH6 實際等級相差一級。
+  3. **模組化與智慧雙向判定 (SSOT & Smart Resolution)**：將車輛等級邏輯自 UI 組件中完全解耦，統一收攏至無狀態純函數模組 `frontend/src/utils/carClass.ts`。當遙測具備 `CarPerformanceIndex` (PI > 0) 時優先依據 FH6 精確 PI 區間判定，無 PI 時自動回退至 UDP `CarClass` 枚舉，並提供 `getCarClassBadgeText` 同時格式化等級與分數（如 `S1 750`、`R 950`）。
+- **Action**：
+  1. 建立 `frontend/src/utils/carClass.ts` 與純函數單元測試 `frontend/src/utils/carClass.test.ts`。
+  2. 重構 `frontend/src/features/telemetry/TelemetryView.tsx`，移除私有錯誤實作，改用 `getCarClassBadgeText`。
+  3. 驗證全套前端 Vitest (86 檔 / 537 項測試全數通過)、前端 build 成功、後端 Pytest (254 項全數通過) 與 Ruff 檢查。
+- **Evidence**：`frontend/src/utils/carClass.test.ts` 21 tests passed；前端 Vitest 86 files / 537 tests 100% passed；`pnpm -C frontend run build` 通過（704 modules）；後端 Pytest 254 passed (0 failed)；Ruff 檢查無誤。
+- **Governance**：本筆追加依 `physics-tuning-math`、`modular-refactoring`、`pr-author-maintainer` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-01 / Modal & Onboarding Containing Block Isolation via React Portal
 
 - **來源**：`local`，分支 `ui/fix-modal-container-portal-standard`。

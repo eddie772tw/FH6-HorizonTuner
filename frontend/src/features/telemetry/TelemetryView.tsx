@@ -26,17 +26,11 @@ import {
   type GranularUnitPreference
 } from '../../utils/gameUnitSettings';
 
+import { getCarClassBadgeText } from '../../utils/carClass';
+
 const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
 const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
 
-
-
-const getCarClassString = (cls?: number) => {
-  if (cls === undefined) return '';
-  const classes = ['E', 'D', 'C', 'B', 'A', 'S1', 'S2', 'X'];
-  if (cls >= 0 && cls < classes.length) return classes[cls];
-  return `Class ${cls}`;
-};
 
 
 
@@ -188,7 +182,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   }, [telemetryData?.IsRaceOn, isRecording, loadSavedSession, setSubTab]);
 
   const isRacing = telemetryData?.IsRaceOn === 1;
-  const classDisplay = getCarClassString(telemetryData?.CarClass);
+  const classDisplay = getCarClassBadgeText(telemetryData?.CarClass, telemetryData?.CarPerformanceIndex);
   const displayCarName = carName || t("Unknown Car");
   const isEV = telemetryData?.EngineIdleRpm === 0;
 
