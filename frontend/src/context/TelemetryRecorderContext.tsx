@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useSettings } from "./SettingsContext";
 import { backendFetch, backendHttpUrl } from "../services/backend";
-import { SessionDebriefData, calculateFrontendDebrief } from "../features/analysis/sessionDebriefMath";
+import { SessionDebriefData } from "../features/analysis/sessionDebriefMath";
 
 export interface AnalysisDataPoint {
   time: number; // Seconds since recording started

@@ -223,4 +223,4 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
   );
 };
 
-export default SessionHealthDebrief;\n
+export default SessionHealthDebrief;

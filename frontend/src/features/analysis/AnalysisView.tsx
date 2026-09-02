@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   useTelemetryRecorder,
   AnalysisDataPoint,
@@ -6,12 +6,9 @@ import {
 } from "../../context/TelemetryRecorderContext";
 import { useSettings } from "../../context/SettingsContext";
 import TrackMapCanvas from "./TrackMapCanvas";
-import { CustomChannelItem } from "./CustomChannelEditor";
-import DynamicChartGrid, {
-  ChartSlotConfig,
-  DEFAULT_CHART_SLOTS,
-} from "./DynamicChartGrid";
-import ChartEditModal from "./ChartEditModal";
+import SessionHealthDebrief from "./SessionHealthDebrief";
+import LapDeltaCanvas from "./LapDeltaCanvas";
+import { calculateFrontendDebrief, SessionDebriefData } from "./sessionDebriefMath";
 import { backendFetch } from "../../services/backend";
 
 type MetricType = "speed" | "throttle" | "brake" | "grip" | "suspension";
@@ -29,94 +26,46 @@ const AnalysisView: React.FC = () => {
     loadSessionLaps,
     deleteSavedSession,
     exportMoTecCsv,
-    uploadMoTecCsv,
-    loadAnalysisConfig,
-    saveAnalysisConfig,
+    openInMoTec,
+    downloadMoTecTemplate,
+    fetchSessionDebrief,
   } = useTelemetryRecorder();
 
   const { t } = useSettings();
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("speed");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilename, setSelectedFilename] = useState<string>("current");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const data = await uploadMoTecCsv(file);
-      if (data && data.length > 0) {
-        setLoadedSession(data);
-        setSelectedFilename('local_upload'); // temporary identifier
-      }
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  const [motecActionMsg, setMotecActionMsg] = useState<string | null>(null);
 
   // Laps & Lap Comparison state
   const [lapsList, setLapsList] = useState<LapSummary[]>([]);
   const [primaryLap, setPrimaryLap] = useState<number>(0);
   const [compareLap, setCompareLap] = useState<number>(-1);
-  const [compareSessionData, setCompareSessionData] = useState<
-    AnalysisDataPoint[]
-  >([]);
-  const [fullSessionTrackData, setFullSessionTrackData] = useState<
-    AnalysisDataPoint[]
-  >([]);
+  const [compareSessionData, setCompareSessionData] = useState<AnalysisDataPoint[]>([]);
+  const [fullSessionTrackData, setFullSessionTrackData] = useState<AnalysisDataPoint[]>([]);
 
-  // Custom Math Channels & 4 Chart Slots state
-  const [customChannels, setCustomChannels] = useState<CustomChannelItem[]>([]);
-  const [chartSlots, setChartSlots] =
-    useState<ChartSlotConfig[]>(DEFAULT_CHART_SLOTS);
-  const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
+  // Debrief Data State
+  const [debriefData, setDebriefData] = useState<SessionDebriefData | null>(null);
 
-  // Initialized flag for auto-save prevention on first load
-  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
-
-  // Playback Timeline state
-  const [playbackIndex] = useState<number>(-1);
-
-  // Fetch initial telemetry session & layout config on mount
+  // Initial Fetch on mount
   useEffect(() => {
     const initData = async () => {
       setIsLoading(true);
       const data = await fetchCurrentSessionData(primaryLap);
       setFullSessionTrackData(data);
 
-      const savedConfig = await loadAnalysisConfig();
-      if (savedConfig) {
-        if (savedConfig.activeMetric)
-          setSelectedMetric(savedConfig.activeMetric as MetricType);
-        if (savedConfig.customMathChannels)
-          setCustomChannels(savedConfig.customMathChannels);
-        if (savedConfig.slots && savedConfig.slots.length === 4) {
-          setChartSlots(savedConfig.slots as ChartSlotConfig[]);
-        }
+      const debrief = await fetchSessionDebrief("current");
+      if (debrief) {
+        setDebriefData(debrief);
+      } else if (data && data.length > 0) {
+        setDebriefData(calculateFrontendDebrief(data));
       }
-      setIsConfigLoaded(true);
       setIsLoading(false);
     };
     initData();
   }, []);
 
-  // Silent Debounced Auto-Save Layout Config when state changes
-  useEffect(() => {
-    if (!isConfigLoaded) return;
-    const timer = setTimeout(async () => {
-      const config = {
-        activeMetric: selectedMetric,
-        customMathChannels: customChannels,
-        slots: chartSlots,
-        enabledCharts: ["track_map", "chart_grid"],
-      };
-      await saveAnalysisConfig(config);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [selectedMetric, customChannels, chartSlots, isConfigLoaded]);
-
-  // During Live Recording, periodically (every 5s) fetch full session data to refresh track map base path
+  // During Live Recording, periodically refresh full session data and debrief
   useEffect(() => {
     let intervalId: any = null;
     if (isRecording) {
@@ -124,8 +73,9 @@ const AnalysisView: React.FC = () => {
         const fullPoints = await fetchCurrentSessionData(0);
         if (fullPoints && fullPoints.length > 0) {
           setFullSessionTrackData(fullPoints);
+          setDebriefData(calculateFrontendDebrief(fullPoints));
         }
-      }, 5000);
+      }, 4000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -133,6 +83,13 @@ const AnalysisView: React.FC = () => {
   }, [isRecording]);
 
   const activeSession = loadedSession || currentSession;
+
+  // Recalculate local debrief when activeSession changes if backend debrief not present
+  useEffect(() => {
+    if (activeSession.length > 0) {
+      setDebriefData(calculateFrontendDebrief(activeSession));
+    }
+  }, [activeSession]);
 
   // Load Lap Summaries & Full Track Base Data when selected Session changes
   useEffect(() => {
@@ -146,6 +103,9 @@ const AnalysisView: React.FC = () => {
         );
         const data = await res.json();
         if (Array.isArray(data)) setFullSessionTrackData(data);
+
+        const debrief = await fetchSessionDebrief(selectedFilename);
+        if (debrief) setDebriefData(debrief);
       } else {
         setLapsList([]);
       }
@@ -209,6 +169,13 @@ const AnalysisView: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleOpenInMoTec = async () => {
+    const sid = selectedFilename === "current" && savedSessions.length > 0 ? savedSessions[0].session_id : selectedFilename;
+    const result = await openInMoTec(sid);
+    setMotecActionMsg(result.message);
+    setTimeout(() => setMotecActionMsg(null), 4000);
+  };
+
   const handleDeleteSession = async () => {
     if (selectedFilename === "current" || selectedFilename === "local") return;
     if (
@@ -233,22 +200,21 @@ const AnalysisView: React.FC = () => {
     const len = points.length;
     if (len === 0) return [];
 
-    // [PERF] Cache computed metrics in a typed array to prevent double iteration math calculations
-    // and avoid creating throwaway objects/arrays inside .map() across large datasets.
     const cachedValues = new Float64Array(len);
     let metricMax = 0.1;
 
     for (let i = 0; i < len; i++) {
       const p = points[i];
       let v = p.SpeedMetersPerSecond;
-      if (selectedMetric === "throttle") v = p.AccelInput / 255;
-      else if (selectedMetric === "brake") v = p.BrakeInput / 255;
+      if (selectedMetric === "throttle") v = (p.AccelInput || 0) / 255;
+      else if (selectedMetric === "brake") v = (p.BrakeInput || 0) / 255;
       else if (selectedMetric === "grip") {
-        const slip = p.TireSlipRatio;
-        // O(1) direct access and Math.max to prevent array spread operator crash on large stacks
+        const slip = p.TireSlipRatio || [0, 0, 0, 0];
         v = Math.max(Math.abs(slip[0]), Math.abs(slip[1]), Math.abs(slip[2]), Math.abs(slip[3]));
+      } else if (selectedMetric === "suspension") {
+        const susp = p.SuspTravel || [0, 0, 0, 0];
+        v = susp[0];
       }
-      else if (selectedMetric === "suspension") v = p.SuspTravel[0];
 
       cachedValues[i] = v;
       if (v > metricMax) metricMax = v;
@@ -257,8 +223,8 @@ const AnalysisView: React.FC = () => {
     const result = new Array(len);
     for (let i = 0; i < len; i++) {
       result[i] = {
-        x: points[i].PositionX,
-        z: points[i].PositionZ,
+        x: points[i].PositionX || 0,
+        z: points[i].PositionZ || 0,
         val: metricMax > 0 ? cachedValues[i] / metricMax : 0,
         raw: points[i],
       };
@@ -268,15 +234,14 @@ const AnalysisView: React.FC = () => {
 
   const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
   const baseCanvasData = useMemo(() => formatTrackCanvasData(fullSessionTrackData), [fullSessionTrackData, formatTrackCanvasData]);
-  const isSavedSession =
-    selectedFilename !== "current" && selectedFilename !== "local";
+  const isSavedSession = selectedFilename !== "current" && selectedFilename !== "local";
 
-  const handleSaveSlotFromModal = (updatedSlot: ChartSlotConfig) => {
-    if (editingSlotIndex !== null) {
-      const nextSlots = [...chartSlots];
-      nextSlots[editingSlotIndex] = updatedSlot;
-      setChartSlots(nextSlots);
-    }
+  const fallbackDebrief: SessionDebriefData = debriefData || {
+    total_samples: activeSession.length,
+    valid_laps: lapsList.length,
+    tire_thermals: { fl_avg: 0, fr_avg: 0, rl_avg: 0, rr_avg: 0, status: "no_data" },
+    suspension: { peak_travel_pct: 0, bottom_out_count: 0, status: "no_data" },
+    handling_balance: { understeer_pct: 50, oversteer_pct: 50, tendency: "Neutral / Balanced" },
   };
 
   return (
@@ -290,7 +255,7 @@ const AnalysisView: React.FC = () => {
         paddingRight: "0.5rem",
       }}
     >
-      {/* Toolbar - Pure Title Without MoTeC Aligned */}
+      {/* Top Toolbar */}
       <div
         className="glass-panel"
         style={{
@@ -299,13 +264,15 @@ const AnalysisView: React.FC = () => {
           alignItems: "center",
           padding: "1rem",
           flexShrink: 0,
+          flexWrap: "wrap",
+          gap: "0.75rem",
         }}
       >
         <div>
-          <h2 style={{ color: "var(--primary)", marginBottom: "0.3rem" }}>
-            {t("Post-Race Analysis")}
+          <h2 style={{ color: "var(--primary)", marginBottom: "0.2rem" }}>
+            {t("Post-Race Debrief & MoTeC Bridge")}
           </h2>
-          <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
             {t("Status")}:{" "}
             {isRecording ? (
               <span style={{ color: "#ff003c", fontWeight: "bold" }}>
@@ -320,14 +287,10 @@ const AnalysisView: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
           {/* Saved Sessions Dropdown */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}
-          >
-            <span
-              style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}
-            >
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
               {t("Select Session")}:
             </span>
             <select
@@ -347,16 +310,8 @@ const AnalysisView: React.FC = () => {
 
           {/* Lap Selector */}
           {lapsList.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.2rem",
-              }}
-            >
-              <span
-                style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}
-              >
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
                 {t("Primary Lap")}:
               </span>
               <select
@@ -367,8 +322,7 @@ const AnalysisView: React.FC = () => {
                 <option value={0}>{t("All Laps")}</option>
                 {lapsList.map((l) => (
                   <option key={l.lap_number} value={l.lap_number}>
-                    Lap {l.lap_number} ({l.lap_time.toFixed(2)}s | Max:{" "}
-                    {l.max_speed_kmh.toFixed(0)}km/h)
+                    Lap {l.lap_number} ({l.lap_time.toFixed(2)}s | Max: {l.max_speed_kmh.toFixed(0)}km/h)
                   </option>
                 ))}
               </select>
@@ -377,16 +331,8 @@ const AnalysisView: React.FC = () => {
 
           {/* Compare Lap Selector */}
           {lapsList.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.2rem",
-              }}
-            >
-              <span
-                style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}
-              >
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
                 {t("Compare Lap")}:
               </span>
               <select
@@ -404,30 +350,35 @@ const AnalysisView: React.FC = () => {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-            {/* MoTeC CSV Export Button */}
+          {/* Action Buttons */}
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.8rem" }}>
+            {/* Open In MoTeC */}
+            <button
+              onClick={handleOpenInMoTec}
+              style={{ ...btnStyle, background: "#00ffaa", color: "#000" }}
+              title={t("Launch session in local MoTeC i2 viewer")}
+            >
+              🚀 {t("Open in MoTeC")}
+            </button>
+
+            {/* Export MoTeC CSV */}
             <button
               onClick={() => exportMoTecCsv(selectedFilename)}
               style={{ ...btnStyle, background: "#7000ff", color: "#fff" }}
             >
-              MoTeC CSV {t("Export")}
-            </button>
-            {/* MoTeC CSV Upload Button */}
-            <input
-              type="file"
-              accept=".csv"
-              style={{ display: "none" }}
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              style={{ ...btnStyle, background: "#00bfa5", color: "#fff" }}
-            >
-              {t("Upload MoTeC ld file")}
+              📥 MoTeC CSV {t("Export")}
             </button>
 
-            {/* Delete Session Button */}
+            {/* Download MoTeC Template */}
+            <button
+              onClick={downloadMoTecTemplate}
+              style={{ ...btnStyle, background: "#00bfa5", color: "#fff" }}
+              title={t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}
+            >
+              📦 {t("Workspace Template")}
+            </button>
+
+            {/* Delete Session */}
             {selectedFilename !== "current" && selectedFilename !== "local" && (
               <button
                 onClick={handleDeleteSession}
@@ -439,6 +390,30 @@ const AnalysisView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Action Notification Message */}
+      {motecActionMsg && (
+        <div
+          className="glass-panel"
+          style={{
+            padding: "0.6rem 1rem",
+            color: "#00ffaa",
+            border: "1px solid rgba(0,255,170,0.3)",
+            fontSize: "0.85rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>✓ {motecActionMsg}</span>
+          <button
+            onClick={() => setMotecActionMsg(null)}
+            style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer" }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div
@@ -470,87 +445,73 @@ const AnalysisView: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Track Map Canvas Section */}
-          <div
-            className="glass-panel"
-            style={{
-              minHeight: "420px",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+          {/* Section 1: Session Health & Vehicle Dynamics Debrief */}
+          <SessionHealthDebrief debrief={fallbackDebrief} />
+
+          {/* Section 2: Dual Visualization (Track Map & Lap Delta) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(48%, 1fr))", gap: "1rem" }}>
+            
+            {/* Left Box: GPS Track Map */}
             <div
+              className="glass-panel"
               style={{
+                height: "360px",
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "0.5rem",
-                padding: "0.5rem 1rem",
+                flexDirection: "column",
+                padding: "1rem",
               }}
             >
-              <h4 style={{ color: "var(--text-primary)", margin: 0 }}>
-                {t("Track Map")}
-              </h4>
               <div
-                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "0.4rem",
+                }}
               >
-                <span
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {t("Metric")}:
+                <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+                  🗺️ {t("GPS Track Heatmap")}
                 </span>
-                <select
-                  value={selectedMetric}
-                  onChange={(e) =>
-                    setSelectedMetric(e.target.value as MetricType)
-                  }
-                  style={selectStyle}
-                >
-                  <option value="speed">{t("Speed")}</option>
-                  <option value="throttle">{t("Throttle")}</option>
-                  <option value="brake">{t("Brake")}</option>
-                  <option value="grip">{t("Grip Slip")}</option>
-                  <option value="suspension">{t("Suspension")}</option>
-                </select>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                    {t("Metric")}:
+                  </span>
+                  <select
+                    value={selectedMetric}
+                    onChange={(e) => setSelectedMetric(e.target.value as MetricType)}
+                    style={{ ...selectStyle, minWidth: "100px", padding: "0.2rem 0.4rem", fontSize: "0.75rem" }}
+                  >
+                    <option value="speed">{t("Speed")}</option>
+                    <option value="throttle">{t("Throttle")}</option>
+                    <option value="brake">{t("Brake")}</option>
+                    <option value="grip">{t("Grip Slip")}</option>
+                    <option value="suspension">{t("Suspension")}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
+                <TrackMapCanvas
+                  data={activeCanvasData}
+                  fullTrackData={baseCanvasData}
+                  currentPlaybackIndex={-1}
+                  selectedMetricLabel={selectedMetric}
+                  isRecording={isRecording}
+                  isSavedSession={isSavedSession}
+                />
               </div>
             </div>
-            <div style={{ flex: 1, position: "relative", minHeight: "350px" }}>
-              <TrackMapCanvas
-                data={activeCanvasData}
-                fullTrackData={baseCanvasData}
-                currentPlaybackIndex={playbackIndex}
-                selectedMetricLabel={selectedMetric}
-                isRecording={isRecording}
-                isSavedSession={isSavedSession}
-              />
-            </div>
+
+            {/* Right Box: Lap Speed & Input Delta Canvas */}
+            <LapDeltaCanvas
+              primaryLapData={activeSession}
+              compareLapData={compareSessionData}
+              primaryLapNumber={primaryLap}
+              compareLapNumber={compareLap}
+            />
+
           </div>
-
-          {/* 4 Customizable Multi-Dimensional Chart Slots Grid */}
-          <DynamicChartGrid
-            slots={chartSlots}
-            onOpenEditModal={(idx) => setEditingSlotIndex(idx)}
-            activeSession={activeSession}
-            compareSessionData={compareSessionData}
-            customChannels={customChannels}
-            isRecording={isRecording}
-          />
         </>
-      )}
-
-      {/* Chart Edit Modal with Multi-Chart Type Preview */}
-      {editingSlotIndex !== null && chartSlots[editingSlotIndex] && (
-        <ChartEditModal
-          slot={chartSlots[editingSlotIndex]}
-          isOpen={editingSlotIndex !== null}
-          onClose={() => setEditingSlotIndex(null)}
-          onSaveSlot={handleSaveSlotFromModal}
-          customChannels={customChannels}
-          sampleData={activeSession}
-        />
       )}
     </div>
   );
@@ -569,6 +530,7 @@ const btnStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
+  gap: "4px",
 };
 
 const selectStyle: React.CSSProperties = {
