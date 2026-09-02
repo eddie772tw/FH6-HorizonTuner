@@ -1767,3 +1767,14 @@
 - **Commits**: `37aef7d fix(onboarding): keep active Data Out streams visible`；`b3c1b5d fix(tuning): validate preset payloads at runtime`。
 - **Limit**: 這些修正只強化本機 deterministic/frontend contract；沒有新增 FH6 實機 capture，也不代表 profile calibration、live behavior 或 release validation 完成。
 - **Status**: local committed, not pushed；後續由單一 PR 包裝並等待 CI/review。
+
+---
+
+## 2026-09-02 / Release runtime version contract automation
+
+- **Scope**: Windows executable metadata verification、Tauri/Cargo/Cargo.lock/backend/PyInstaller runtime version consistency，以及 release packaging test 的版號來源。
+- **Root cause**: `CI Pipeline` run `33593135961` 的 Full/Lite executable build 均成功，但 `tests/test_executable_bundle.py` 將上一版 `11.45.15` 寫死，導致實際 `11.45.16`/`11.45.16.0` 產物被錯誤判定為失敗。
+- **Decision**: Tauri `frontend/src-tauri/tauri.conf.json` 維持 updater runtime version source；executable test 與 synthetic release packaging test 從該來源讀取版號，不再複製目前版本常數。新增 `scripts/validate_version_consistency.py`，在一般 CI、Release CI 與 release packaging test 建置前檢查 Tauri、Cargo、Cargo.lock、backend runtime 與 PyInstaller metadata 漂移。
+- **Limit**: `v1.x` release tag 與 `11.45.x` runtime version 是不同且具 OTA 相容性意義的序列，不自動由 tag 推導 runtime version；未來升版仍需更新既有 runtime source 與其同步產物，validator 會在建置前 fail closed。
+- **Evidence**: validator 通過；backend `253 passed, 8 deselected`；frontend Vitest `86 files / 537 tests` 通過；Ruff `146 files already formatted`；targeted release/executable tests `7 passed, 2 deselected`。
+- **Status**: adopted。
