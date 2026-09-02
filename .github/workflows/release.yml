@@ -84,6 +84,9 @@ jobs:
         uv pip install "pyinstaller>=6.10,<7.0"
         pnpm --prefix frontend install --frozen-lockfile
 
+    - name: Verify application version consistency
+      run: uv run --no-project --active python scripts/validate_version_consistency.py
+
     - name: Run Rust Format Verification (Pre-Release Gate)
       run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
 

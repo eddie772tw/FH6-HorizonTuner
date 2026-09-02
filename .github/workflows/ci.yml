@@ -37,6 +37,9 @@ jobs:
         enable-cache: true
         cache-dependency-glob: requirements.txt
 
+    - name: Verify application version consistency
+      run: uv run --no-project --active python scripts/validate_version_consistency.py
+
     - name: Install Ruff through uv
       run: uv pip install ruff
 

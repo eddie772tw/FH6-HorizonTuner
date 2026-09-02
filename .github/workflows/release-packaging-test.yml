@@ -8,6 +8,7 @@ on:
       - "frontend/src-tauri/tauri.conf.json"
       - "frontend/src-tauri/tauri.lite.conf.json"
       - "scripts/prepare_release_assets.py"
+      - "scripts/validate_version_consistency.py"
       - "tests/test_release_workflow_contract.py"
   workflow_dispatch:
 
@@ -52,6 +53,9 @@ jobs:
       - name: Install test dependencies
         run: uv pip install --requirement requirements.txt
 
+      - name: Verify application version consistency
+        run: uv run --no-project --active python scripts/validate_version_consistency.py
+
       - name: Run release contract tests
         run: uv run --no-project --active python -m pytest tests/test_release_workflow_contract.py -q
 
@@ -95,19 +99,25 @@ jobs:
           $outputRoot = Join-Path $env:RUNNER_TEMP 'fh6-release-packaging-output'
           New-Item -ItemType Directory -Force $fixtureRoot, $outputRoot | Out-Null
 
+          $config = Get-Content -Raw 'frontend/src-tauri/tauri.conf.json' | ConvertFrom-Json
+          $version = [string]$config.version
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw 'Tauri runtime version is missing from tauri.conf.json.'
+          }
+
           $exePath = Join-Path $fixtureRoot 'FH6-HorizonTuner.exe'
           [IO.File]::WriteAllBytes($exePath, [Text.Encoding]::ASCII.GetBytes('TEST_PORTABLE_EXE'))
 
           $liteExePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite.exe'
           [IO.File]::WriteAllBytes($liteExePath, [Text.Encoding]::ASCII.GetBytes('TEST_LITE_PORTABLE_EXE'))
 
-          $bundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_11.45.16_x64-setup.exe'
+          $bundlePath = Join-Path $fixtureRoot "FH6-HorizonTuner_${version}_x64-setup.exe"
           [IO.File]::WriteAllBytes($bundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_NSIS_INSTALLER'))
 
           $signaturePath = $bundlePath + '.sig'
           Set-Content -LiteralPath $signaturePath -Value 'TEST_ED25519_SIGNATURE' -NoNewline -Encoding utf8
 
-          $liteBundlePath = Join-Path $fixtureRoot 'FH6-HorizonTuner_lite_11.45.16_x64-setup.exe'
+          $liteBundlePath = Join-Path $fixtureRoot "FH6-HorizonTuner_lite_${version}_x64-setup.exe"
           [IO.File]::WriteAllBytes($liteBundlePath, [Text.Encoding]::ASCII.GetBytes('TEST_LITE_NSIS_INSTALLER'))
           $liteSignaturePath = $liteBundlePath + '.sig'
           Set-Content -LiteralPath $liteSignaturePath -Value 'TEST_LITE_ED25519_SIGNATURE' -NoNewline -Encoding utf8
@@ -119,6 +129,7 @@ jobs:
           "lite_bundle=$liteBundlePath" >> $env:GITHUB_OUTPUT
           "lite_signature=$liteSignaturePath" >> $env:GITHUB_OUTPUT
           "output=$outputRoot" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Run release asset preparation locally
         shell: pwsh
@@ -130,13 +141,15 @@ jobs:
           LITE_BUNDLE_PATH: ${{ steps.fixtures.outputs.lite_bundle }}
           LITE_SIGNATURE_PATH: ${{ steps.fixtures.outputs.lite_signature }}
           OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
+          VERSION: ${{ steps.fixtures.outputs.version }}
         run: |
-          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --lite-updater-bundle "$env:LITE_BUNDLE_PATH" --lite-updater-signature "$env:LITE_SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "11.45.16" --repo "eddie772tw/FH6-HorizonTuner"
+          uv run --no-project --active python scripts/prepare_release_assets.py --exe "$env:EXE_PATH" --lite-exe "$env:LITE_EXE_PATH" --updater-bundle "$env:BUNDLE_PATH" --updater-signature "$env:SIGNATURE_PATH" --lite-updater-bundle "$env:LITE_BUNDLE_PATH" --lite-updater-signature "$env:LITE_SIGNATURE_PATH" --output-dir "$env:OUTPUT_DIR" --tag "test-v0.0.0" --version "$env:VERSION" --repo "eddie772tw/FH6-HorizonTuner"
 
       - name: Validate generated manifest and asset set
         shell: pwsh
         env:
           OUTPUT_DIR: ${{ steps.fixtures.outputs.output }}
+          EXPECTED_VERSION: ${{ steps.fixtures.outputs.version }}
         run: |
           $validator = @'
           import json
@@ -145,6 +158,7 @@ jobs:
           import zipfile
 
           output = Path(os.environ["OUTPUT_DIR"])
+          expected_version = os.environ["EXPECTED_VERSION"]
           files = {path.name for path in output.iterdir() if path.is_file()}
           full_installer = "FH6-HorizonTuner-Full-Installer.exe"
           full_portable = "FH6-HorizonTuner-Full-Portable.exe"
@@ -168,11 +182,12 @@ jobs:
 
           manifest = json.loads((output / "latest.json").read_text(encoding="utf-8"))
           platform = manifest["platforms"]["windows-x86_64"]
-          assert manifest["version"] == "11.45.16"
+          assert manifest["version"] == expected_version
           assert platform["signature"] == "TEST_ED25519_SIGNATURE"
           assert platform["url"].endswith(f"/test-v0.0.0/{full_installer}")
           lite_manifest = json.loads((output / "latest-lite.json").read_text(encoding="utf-8"))
           lite_platform = lite_manifest["platforms"]["windows-x86_64"]
+          assert lite_manifest["version"] == expected_version
           assert lite_platform["signature"] == "TEST_LITE_ED25519_SIGNATURE"
           assert lite_platform["url"].endswith(f"/test-v0.0.0/{lite_installer}")
           assert lite_platform["url"] != platform["url"]
