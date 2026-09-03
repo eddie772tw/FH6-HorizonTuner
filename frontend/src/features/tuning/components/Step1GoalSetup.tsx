@@ -90,8 +90,14 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onOpenUnitSettings}>
             {t("Workflow Units")}
           </button>
-          <span title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}>
-            <button type="button" className="btn btn-primary btn-sm fw-bold" disabled={!hasCoreParams} onClick={() => void onProceed()}>
+          <span
+            title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+            tabIndex={!hasCoreParams ? 0 : undefined}
+            role={!hasCoreParams ? "group" : undefined}
+            aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
+            style={{ display: 'inline-block', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
+          >
+            <button type="button" className="btn btn-primary btn-sm fw-bold" disabled={!hasCoreParams} style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }} onClick={() => void onProceed()}>
               {t("Save & Proceed")} &gt;
             </button>
           </span>

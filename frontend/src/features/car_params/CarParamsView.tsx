@@ -512,6 +512,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
           <span
             title={Object.keys(carParams.dyno_curve).length === 0 ? t("No dyno data available to import. Please run the dyno test first.") : undefined}
+            tabIndex={Object.keys(carParams.dyno_curve).length === 0 ? 0 : undefined}
+            role={Object.keys(carParams.dyno_curve).length === 0 ? "group" : undefined}
+            aria-label={Object.keys(carParams.dyno_curve).length === 0 ? t("No dyno data available to import. Please run the dyno test first.") : undefined}
             className="w-100 d-inline-block mt-2"
             style={Object.keys(carParams.dyno_curve).length === 0 ? { cursor: 'not-allowed' } : undefined}
           >

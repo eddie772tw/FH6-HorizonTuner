@@ -454,7 +454,13 @@ const DragTestView: React.FC = () => {
           
           {status === 'finished' && (
             <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <span title={isSaving ? t("Saving data in progress...") : undefined} style={isSaving ? { cursor: 'not-allowed', display: 'inline-block' } : {}}>
+              <span
+                title={isSaving ? t("Saving data in progress...") : undefined}
+                tabIndex={isSaving ? 0 : undefined}
+                role={isSaving ? "group" : undefined}
+                aria-label={isSaving ? t("Saving data in progress...") : undefined}
+                style={isSaving ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
+              >
                 <button
                   className="btn-primary"
                   onClick={handleSaveSession}
