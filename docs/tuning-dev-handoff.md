@@ -9,7 +9,7 @@ This branch is intended to be continued on a second device for FH6 real-world da
 - Enable `Settings → Developer Options → Use Developer Tuning View` to open `TuningView_dev`.
 - `TuningView_dev` uses only `frontend/src/utils/tuningMath_dev.ts` and the domain modules under `frontend/src/domain/tuning/`.
 - The developer solver is advisory. Its tire values and game-slider mappings are calibration priors, not validated FH6 constants.
-- **Localhost Read-Only MCP Server** is provided by the running FastAPI backend under `backend/mcp/`, exposing 26 tools and 5 resource URIs through `/mcp` Streamable HTTP. Setup guide: [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
+- **Localhost Read-Only MCP Server** is provided by the running FastAPI backend under `backend/mcp/`, exposing 26 tools and 5 resource URIs through `/mcp` Streamable HTTP. Its standard initialization response supplies Agent-facing configuration guidance after the endpoint is registered. Setup guide: [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
 
 ## Second-device setup
 
@@ -19,7 +19,7 @@ This branch is intended to be continued on a second device for FH6 real-world da
 4. Enable Forza telemetry output to the configured UDP address/port; confirm the app's telemetry status is connected.
 5. Open Developer Tuning and then `Open Telemetry Capture`.
 6. Before driving, enter complete metadata. Do not leave `gameBuild`, installed parts, tire type, surface, event/track or assists as `unknown` for a measured run.
-7. Start Horizon Tuner, keep MCP enabled in Settings, and configure the client with the running backend's `/mcp` Streamable HTTP URL for AI-assisted analysis. Dev mode uses `8001`; a Release Build prefers `8001` and falls back to a dynamic port when it is occupied. Use the Settings MCP card (and its fallback Popover) to confirm the actual endpoint.
+7. Start Horizon Tuner, keep MCP enabled in Settings, and register the running backend's `/mcp` Streamable HTTP URL once if the client requires an endpoint. Dev mode uses `8001`; a Release Build prefers `8001` and falls back to a dynamic port when it is occupied. After connection, a compatible Agent receives the server's standard initialization guidance automatically. Use the Settings MCP card (and its fallback Popover) to confirm the actual endpoint.
 
 ## Test-user operating procedure
 
@@ -63,6 +63,7 @@ For tire calibration, provide separate matrices for compound × surface × weath
   - 26 tools covering live cockpit inputs, vehicle dynamics, 4-wheel tires, suspension travel, race SQLite sessions, `tuning-capture/v1` A/B comparisons, car database, tuning solvers, and diagnostics.
   - 5 Resource URI templates (`fh6://telemetry/...`, `fh6://capture/...`, `fh6://car/...`, `fh6://tuning/...`, `fh6://settings/...`).
   - 21 unit tests in `tests/test_mcp_*.py` with full pass rate.
+  - Standard MCP initialization instructions describing endpoint use, safety boundaries, live-data settings, and bounded query behavior.
   - Documentation: [docs/mcp-setup-guide.md](./mcp-setup-guide.md) and [docs/tuning-mcp-integration-evaluation.md](./tuning-mcp-integration-evaluation.md).
 
 ### Safe next tasks for upcoming agents

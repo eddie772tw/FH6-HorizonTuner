@@ -32,9 +32,27 @@ The server exposes only this Streamable HTTP endpoint. Legacy HTTP+SSE routes
 are intentionally not included because MCP has not been deployed to external
 clients yet.
 
+## Standard initialization and automatic guidance
+
+After an Agent connects to `/mcp`, the MCP initialization handshake returns the
+standard `InitializeResult.instructions` field. The returned instructions tell
+the Agent how to use this server, including its localhost scope, read-only
+boundary, live-telemetry setting, bounded time-series behavior, and the fact
+that a Release Build may use a dynamic port. This is the canonical source for
+Agent-facing configuration and usage guidance; clients should not require a
+second JSON or CLI copy step after the connection is established.
+
+MCP initialization cannot bootstrap a URL that the client does not know yet.
+The first connection still needs a client-specific endpoint registration, a
+local integration, or another discovery mechanism provided by that client.
+There is no cross-client MCP API that lets this application inject a URL into
+every Agent's configuration. For clients that support standard MCP
+initialization, the one-time endpoint registration is the only setup required;
+the server then supplies its capabilities and operating guidance automatically.
+
 ## Codex
 
-Add the running backend endpoint to Codex's global MCP configuration:
+Register the running backend endpoint once in Codex's global MCP configuration:
 
 ```powershell
 codex mcp add fh6-horizon-tuner --url http://127.0.0.1:8001/mcp
@@ -47,14 +65,16 @@ codex mcp list
 codex mcp get fh6-horizon-tuner
 ```
 
-The server will report unavailable until Horizon Tuner is running. If a Release
-Build falls back to a dynamic port, update the URL after startup using the
-endpoint shown in Settings.
+The server will report unavailable until Horizon Tuner is running. Once Codex
+connects, it receives the standard initialization instructions automatically.
+If a Release Build falls back to a dynamic port, update the one-time URL after
+startup using the endpoint shown in Settings.
 
 ## Claude Desktop, Cursor, and other HTTP MCP clients
 
 Use the Streamable HTTP URL rather than a local Python command. For clients
-that accept an MCP JSON configuration, the shape is:
+that do not offer a local endpoint picker, the one-time JSON configuration
+shape is:
 
 ```json
 {
@@ -65,6 +85,11 @@ that accept an MCP JSON configuration, the shape is:
   }
 }
 ```
+
+After this initial registration, a client that implements MCP initialization
+receives the server instructions from the handshake. The JSON block is a
+bootstrap fallback for clients that cannot discover or register a local HTTP
+endpoint themselves; it is not a second per-session configuration step.
 
 ## Safety and scope
 

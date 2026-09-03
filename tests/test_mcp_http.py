@@ -36,6 +36,9 @@ def test_mcp_streamable_http_initialize_and_tools():
     assert init_response.json()["result"]["serverInfo"]["name"] == (
         "fh6-horizon-tuner-mcp"
     )
+    init_result = init_response.json()["result"]
+    assert init_result["instructions"]
+    assert "dynamic local port" in init_result["instructions"]
 
     tools_response = client.post(
         "/mcp",

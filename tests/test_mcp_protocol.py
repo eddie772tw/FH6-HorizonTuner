@@ -35,7 +35,12 @@ async def test_mcp_initialize(mcp_protocol):
     assert resp["id"] == 1
     assert "result" in resp
     assert resp["result"]["serverInfo"]["name"] == "fh6-horizon-tuner-mcp"
+    assert resp["result"]["serverInfo"]["version"] == "1.1.0"
     assert "tools" in resp["result"]["capabilities"]
+    assert "instructions" in resp["result"]
+    assert "/mcp" in resp["result"]["instructions"]
+    assert "read-only" in resp["result"]["instructions"]
+    assert "mcp_allow_live" in resp["result"]["instructions"]
 
 
 @pytest.mark.asyncio

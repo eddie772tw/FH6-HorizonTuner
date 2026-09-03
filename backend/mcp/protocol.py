@@ -10,7 +10,20 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_PROTOCOL_VERSIONS = ("2024-11-05", "2024-10-07", "2025-06-18")
 SERVER_NAME = "fh6-horizon-tuner-mcp"
-SERVER_VERSION = "1.0.0"
+SERVER_VERSION = "1.1.0"
+SERVER_INSTRUCTIONS = (
+    "FH6-HorizonTuner is a localhost, read-only MCP server exposed by the "
+    "running FastAPI backend. Use the MCP endpoint URL that the client used "
+    "for this connection; its path is /mcp and Release Builds may use a "
+    "dynamic local port. No stdio command or second telemetry listener is "
+    "required. The server is available only while Horizon Tuner is running "
+    "and MCP is enabled in Settings. Live access is controlled by the "
+    "mcp_allow_live setting; when it is disabled, use recorded sessions and "
+    "captures instead. Prefer small summary tools/resources before requesting "
+    "time-series data, and treat all tuning results as advisory. MCP tools "
+    "cannot write tuning values, control the game, or access arbitrary SQL or "
+    "files."
+)
 
 
 class McpError(Exception):
@@ -93,6 +106,7 @@ class McpProtocolHandler:
                     "name": SERVER_NAME,
                     "version": SERVER_VERSION,
                 },
+                "instructions": SERVER_INSTRUCTIONS,
             }
 
         if method == "ping":

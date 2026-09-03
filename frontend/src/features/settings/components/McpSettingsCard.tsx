@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
-import { useToast } from '../../../context/ToastContext';
 import { backendFetch, backendHttpUrl } from '../../../services/backend';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './SettingsPrimitives';
 
@@ -15,9 +14,7 @@ interface McpStatus {
 
 export const McpSettingsCard: React.FC = () => {
   const { settings, updateSettings, t } = useSettings();
-  const { addToast } = useToast();
   const [status, setStatus] = useState<McpStatus | null>(null);
-  const [isCopied, setIsCopied] = useState<string | null>(null);
 
   const mcpEnabled = settings.mcp_enabled !== false;
   const allowLive = settings.mcp_allow_live !== false;
@@ -46,41 +43,7 @@ export const McpSettingsCard: React.FC = () => {
     };
   }, []);
 
-  const copyToClipboard = async (text: string, labelKey: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setIsCopied(labelKey);
-      addToast({
-        type: 'success',
-        title: t('Copied to Clipboard'),
-        message: t('Configuration copied successfully.'),
-        duration: 3000,
-      });
-      setTimeout(() => setIsCopied(null), 2000);
-    } catch {
-      addToast({
-        type: 'danger',
-        title: t('Copy Failed'),
-        message: t('Unable to copy text to clipboard.'),
-        duration: 4000,
-      });
-    }
-  };
-
   const mcpUrl = backendHttpUrl('/mcp');
-  const claudeConfigSnippet = JSON.stringify(
-    {
-      mcpServers: {
-        'fh6-horizon-tuner': {
-          url: mcpUrl,
-        },
-      },
-    },
-    null,
-    2
-  );
-
-  const codexCommandSnippet = `codex mcp add fh6-horizon-tuner --url ${mcpUrl}`;
 
   return (
     <SettingsSection
@@ -138,38 +101,26 @@ export const McpSettingsCard: React.FC = () => {
             </select>
           </SettingsItem>
 
-          {/* Quick Copy Section */}
+          {/* Connection details and standard initialization guidance */}
           <div className="d-flex flex-column gap-2 pt-1">
             <div className="settings-endpoint p-3">
               <div className="fs-7 fw-bold text-primary">{t('Current MCP Endpoint')}</div>
               <code className="d-block fs-7 text-body mt-1 user-select-all">{mcpUrl}</code>
               <div className="fs-8 text-secondary mt-1">
-                {t('Use this URL when configuring an Agent. The port is selected by the running backend.')}
+                {t('This is the endpoint used for the current backend connection. Release Builds may select a dynamic local port.')}
               </div>
             </div>
-            <span className="fs-7 fw-bold text-primary">{t('Quick Client Configuration')}</span>
-            <div className="d-flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                onClick={() => copyToClipboard(claudeConfigSnippet, 'claude')}
-              >
-                <span>{isCopied === 'claude' ? t('Copied!') : t('Copy Claude Desktop JSON')}</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-info d-flex align-items-center gap-1"
-                onClick={() => copyToClipboard(codexCommandSnippet, 'codex')}
-              >
-                <span>{isCopied === 'codex' ? t('Copied!') : t('Copy Codex CLI Command')}</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-                onClick={() => copyToClipboard(mcpUrl, 'mcp')}
-              >
-                <span>{isCopied === 'mcp' ? t('Copied!') : t('Copy MCP Endpoint URL')}</span>
-              </button>
+            <div className="settings-endpoint p-3">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <span className="fs-7 fw-bold text-primary">{t('Standard MCP Initialization')}</span>
+                <span className="badge text-bg-info fs-8">{t('INITIALIZATION')}</span>
+              </div>
+              <p className="fs-8 text-body-secondary mt-2 mb-0">
+                {t('Compatible Agents receive server capabilities and configuration guidance automatically during the MCP initialize handshake.')}
+              </p>
+              <p className="fs-8 text-body-secondary mt-2 mb-0">
+                {t('No client-side JSON or CLI copy step is required after the Agent has connected to this endpoint. Clients without standard MCP initialization still need a one-time endpoint entry.')}
+              </p>
             </div>
           </div>
         </>

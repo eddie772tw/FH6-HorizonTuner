@@ -30,24 +30,11 @@ describe('McpSettingsCard logic and configuration contract', () => {
     expect(maxDownsample).toBe(200);
   });
 
-  it('formats client snippets correctly with dynamic port settings', () => {
+  it('uses the standard MCP endpoint path with dynamic port settings', () => {
     const port = 8001;
     const mcpUrl = `http://127.0.0.1:${port}/mcp`;
 
-    const claudeSnippet = JSON.stringify(
-      {
-        mcpServers: {
-          'fh6-horizon-tuner': {
-            url: mcpUrl,
-          },
-        },
-      },
-      null,
-      2
-    );
-
     expect(mcpUrl).toBe('http://127.0.0.1:8001/mcp');
-    expect(claudeSnippet).toContain('fh6-horizon-tuner');
-    expect(claudeSnippet).toContain('http://127.0.0.1:8001/mcp');
+    expect(new URL(mcpUrl).pathname).toBe('/mcp');
   });
 });

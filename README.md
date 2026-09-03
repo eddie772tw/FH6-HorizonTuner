@@ -49,6 +49,7 @@
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
   - 由執行中的 FastAPI backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
+  - MCP 標準 `initialize` 回應會自動提供 Agent-facing 配置與使用說明；Settings 僅顯示目前 endpoint 與連線狀態，不再要求複製 JSON/CLI 設定。首次連線仍須由客戶端完成一次性 endpoint bootstrap。
 * **OTA 自動更新與版本管理 (Over-The-Air Update & Release Management)**:
   - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
   - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
@@ -400,7 +401,7 @@ for protected locations.
 
 在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。如需將 raw 遙測數據轉發至 SimHub 或第三方軟體，可於「系統設定 (Settings)」開啟「Telemetry 遙測封包轉發」並設定目標 Host 與 Port（預設 `127.0.0.1:5300`，亦支援 `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT` 環境變數）。
 
-Release Build 會優先使用 `8001` 作為 FastAPI HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。
+Release Build 會優先使用 `8001` 作為 FastAPI HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。Agent 完成初次 endpoint 連線後，會透過 MCP 標準 `initialize` 回應自動取得配置說明，不需再次複製 JSON 或 CLI 設定；但 MCP 本身沒有跨客戶端注入首次 URL 的通用 API。
 前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。
 
 

@@ -1817,6 +1817,32 @@
 
 ---
 
+## 2026-09-03 / MCP standard initialization guidance and Settings simplification
+
+- **Scope**: `backend/mcp/protocol.py`, MCP protocol tests, `McpSettingsCard`,
+  language dictionaries, README/MCP setup/evaluation/handoff documentation。
+- **Decision**: Use the standard MCP `InitializeResult.instructions` field as
+  the canonical Agent-facing source for server usage and configuration
+  guidance. The instructions describe the localhost `/mcp` endpoint, dynamic
+  Release port behavior, MCP enable/live-data settings, bounded query policy,
+  read-only safety boundary, and advisory tuning results。
+- **UI boundary**: Remove copy-based Claude JSON, Codex CLI, and endpoint
+  actions from Settings. Keep the current endpoint visible for the initial
+  client bootstrap, then let compatible MCP clients obtain server guidance from
+  the initialization handshake. MCP has no cross-client API for injecting an
+  unknown first URL, so documentation distinguishes one-time bootstrap from
+  per-session configuration。
+- **Evidence**: MCP protocol/HTTP focused tests `9 passed`; full backend
+  Pytest `262 passed, 1 skipped, 6 deselected`; frontend Vitest `88 files / 553
+  tests passed`; frontend build completed with 705 modules; Ruff check and
+  format check passed; language JSON parsing and `git diff --check` passed。
+- **Governance**: Adopted under `halfmoon-design-system`,
+  `pr-author-maintainer`, and `agent-governance-audit`；no new dependency or
+  external MCP transport was introduced。
+- **Status**: adopted。
+
+---
+
 ## 2026-09-03 / AnalysisView MoTeC debrief and roundtrip contract hardening (PR #290)
 
 - **Scope**: `backend/motec_exporter.py`, `backend/telemetry_sqlite.py`, `backend/main.py`, `frontend/src/features/analysis/`, `frontend/src/context/TelemetryRecorderContext.tsx`, `tests/test_motec_exporter.py`.
