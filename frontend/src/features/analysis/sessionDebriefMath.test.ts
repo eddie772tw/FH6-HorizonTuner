@@ -47,4 +47,16 @@ describe("sessionDebriefMath pure calculations", () => {
     expect(debrief.handling_balance.understeer_pct).toBeGreaterThan(70);
     expect(debrief.handling_balance.tendency).toBe("Understeer Biased");
   });
+
+  it("converts midrange Fahrenheit correctly and reports Cold status", () => {
+    const mockPoints: RawTelemetryPoint[] = [
+      {
+        TireTemp: [140.0, 140.0, 140.0, 140.0],
+        SuspTravel: [0.0, 0.0, 0.0, 0.0],
+      },
+    ];
+    const debrief = calculateFrontendDebrief(mockPoints);
+    expect(debrief.tire_thermals.fl_avg).toBeCloseTo(60.0, 1);
+    expect(debrief.tire_thermals.status).toBe("Cold");
+  });
 });

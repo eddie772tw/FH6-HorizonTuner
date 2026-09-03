@@ -83,12 +83,12 @@ def calculate_session_debrief(telemetry_points: List[Dict[str, Any]]) -> Dict[st
         if lap > 0:
             laps_seen.add(lap)
 
-        # 1. Tire Temperatures (convert from Fahrenheit if needed)
+        # 1. Tire Temperatures (canonical unit is Fahrenheit, convert to Celsius)
         temps = p.get("TireTemp", DEFAULT_TIRE_ARRAY)
-        fl_c = (temps[0] - 32) * 5 / 9 if temps[0] > 150 else temps[0]
-        fr_c = (temps[1] - 32) * 5 / 9 if temps[1] > 150 else temps[1]
-        rl_c = (temps[2] - 32) * 5 / 9 if temps[2] > 150 else temps[2]
-        rr_c = (temps[3] - 32) * 5 / 9 if temps[3] > 150 else temps[3]
+        fl_c = (temps[0] - 32) * 5 / 9
+        fr_c = (temps[1] - 32) * 5 / 9
+        rl_c = (temps[2] - 32) * 5 / 9
+        rr_c = (temps[3] - 32) * 5 / 9
 
         fl_temps.append(fl_c)
         fr_temps.append(fr_c)
@@ -324,10 +324,30 @@ def export_session_to_motec_csv(
                 pos_z = p.get("PositionZ", 0.0)
                 lat, lon, alt = position_to_gps(pos_x, pos_y, pos_z)
 
-                power_hp = p.get("Power", 0.0) / 745.7
-                torque_nm = p.get("Torque", 0.0)
-                boost_psi = p.get("Boost", 0.0)
+                power_raw = p.get("PowerWatts")
+                if power_raw is None:
+                    power_raw = p.get("Power", 0.0)
+                power_hp = power_raw / 745.7
+
+                torque_raw = p.get("TorqueNewtons")
+                if torque_raw is None:
+                    torque_raw = p.get("Torque", 0.0)
+                torque_nm = torque_raw
+
+                boost_raw = p.get("Boost", 0.0)
+                boost_psi = boost_raw / 6894.75729
                 fuel_pct = p.get("Fuel", 1.0) * 100.0
+
+                clutch_val = (
+                    p.get("clutch_pct")
+                    if p.get("clutch_pct") is not None
+                    else (p.get("ClutchInput", 0) / 2.55)
+                )
+                handbrake_val = (
+                    p.get("handbrake_pct")
+                    if p.get("handbrake_pct") is not None
+                    else (p.get("HandBrakeInput", 0) / 2.55)
+                )
 
                 row = [
                     f"{p.get('time', 0.0):.3f}",
@@ -338,8 +358,8 @@ def export_session_to_motec_csv(
                     p.get("Gear", 0),
                     f"{(p.get('AccelInput', 0) / 2.55):.1f}",
                     f"{(p.get('BrakeInput', 0) / 2.55):.1f}",
-                    f"{(p.get('ClutchInput', 0) / 2.55):.1f}",
-                    f"{(p.get('HandBrakeInput', 0) / 2.55):.1f}",
+                    f"{clutch_val:.1f}",
+                    f"{handbrake_val:.1f}",
                     f"{p.get('steer_pct', 0.0):.1f}",
                     f"{accel_x_g:.3f}",
                     f"{accel_z_g:.3f}",
@@ -465,6 +485,25 @@ def parse_motec_csv_to_telemetry(
                         get_float(36 if len(row) > 30 else 25) * 9 / 5 + 32,
                         get_float(37 if len(row) > 30 else 26) * 9 / 5 + 32,
                     ],
+                    "ClutchInput": int(get_float(8) * 2.55) if len(row) > 30 else 0,
+                    "HandBrakeInput": int(get_float(9) * 2.55) if len(row) > 30 else 0,
+                    "clutch_pct": get_float(8) if len(row) > 30 else 0.0,
+                    "handbrake_pct": get_float(9) if len(row) > 30 else 0.0,
+                    "AccelerationY": get_float(13) * 9.81 if len(row) > 30 else 0.0,
+                    "Boost": get_float(14) * 6894.75729 if len(row) > 30 else 0.0,
+                    "Fuel": get_float(15) / 100.0 if len(row) > 30 else 1.0,
+                    "PowerWatts": get_float(16) * 745.7 if len(row) > 30 else 0.0,
+                    "Power": get_float(16) * 745.7 if len(row) > 30 else 0.0,
+                    "TorqueNewtons": get_float(17) if len(row) > 30 else 0.0,
+                    "Torque": get_float(17) if len(row) > 30 else 0.0,
+                    "SuspensionTravelMeters": [
+                        get_float(22),
+                        get_float(23),
+                        get_float(24),
+                        get_float(25),
+                    ]
+                    if len(row) > 30
+                    else [0.0, 0.0, 0.0, 0.0],
                 }
                 telemetry_points.append(point)
 

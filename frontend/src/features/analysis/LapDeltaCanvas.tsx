@@ -17,6 +17,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
 }) => {
   const { t } = useSettings();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [hoverInfo, setHoverInfo] = useState<{
     pct: number;
     primarySpeed: number;
@@ -26,22 +27,25 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
   } | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const draw = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    // Handle high DPR displays
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+      // Handle high DPR displays
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
 
-    const width = rect.width;
-    const height = rect.height;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.clearRect(0, 0, width, height);
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.clearRect(0, 0, width, height);
 
     if (primaryLapData.length === 0) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
@@ -54,6 +58,9 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     const padding = { top: 25, bottom: 25, left: 45, right: 20 };
     const chartW = width - padding.left - padding.right;
     const chartH = (height - padding.top - padding.bottom) / 2;
+
+    const primaryDenom = Math.max(1, primaryLapData.length - 1);
+    const compareDenom = Math.max(1, compareLapData.length - 1);
 
     // Speed Chart (Top)
     const speedTop = padding.top;
@@ -87,13 +94,13 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.fillText(`${t("Speed")} (km/h)`, padding.left, speedTop - 8);
 
     // Draw Compare Speed (Dashed Cyan)
-    if (compareLapData.length > 1) {
+    if (compareLapData.length > 0) {
       ctx.strokeStyle = "#00f0ff";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       for (let i = 0; i < compareLapData.length; i++) {
-        const x = padding.left + (i / (compareLapData.length - 1)) * chartW;
+        const x = padding.left + (i / compareDenom) * chartW;
         const spd = compareLapData[i].SpeedMetersPerSecond * 3.6;
         const y = speedTop + chartH - (spd / maxSpeed) * chartH;
         if (i === 0) ctx.moveTo(x, y);
@@ -101,6 +108,14 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
       }
       ctx.stroke();
       ctx.setLineDash([]);
+      if (compareLapData.length === 1) {
+        const spd = compareLapData[0].SpeedMetersPerSecond * 3.6;
+        const y = speedTop + chartH - (spd / maxSpeed) * chartH;
+        ctx.fillStyle = "#00f0ff";
+        ctx.beginPath();
+        ctx.arc(padding.left, y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
 
     // Draw Primary Speed (Solid Neon Green)
@@ -108,13 +123,21 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let i = 0; i < primaryLapData.length; i++) {
-      const x = padding.left + (i / (primaryLapData.length - 1)) * chartW;
+      const x = padding.left + (i / primaryDenom) * chartW;
       const spd = primaryLapData[i].SpeedMetersPerSecond * 3.6;
       const y = speedTop + chartH - (spd / maxSpeed) * chartH;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
+    if (primaryLapData.length === 1) {
+      const spd = primaryLapData[0].SpeedMetersPerSecond * 3.6;
+      const y = speedTop + chartH - (spd / maxSpeed) * chartH;
+      ctx.fillStyle = "#00ffaa";
+      ctx.beginPath();
+      ctx.arc(padding.left, y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
 
     // Pedal Inputs Chart (Bottom)
     const pedalTop = speedTop + chartH + 25;
@@ -150,12 +173,12 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.beginPath();
     ctx.moveTo(padding.left, pedalTop + pedalH);
     for (let i = 0; i < primaryLapData.length; i++) {
-      const x = padding.left + (i / (primaryLapData.length - 1)) * chartW;
+      const x = padding.left + (i / primaryDenom) * chartW;
       const thr = (primaryLapData[i].AccelInput || 0) / 255;
       const y = pedalTop + pedalH - thr * pedalH;
       ctx.lineTo(x, y);
     }
-    ctx.lineTo(padding.left + chartW, pedalTop + pedalH);
+    ctx.lineTo(padding.left + (primaryLapData.length === 1 ? 0 : chartW), pedalTop + pedalH);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -167,12 +190,12 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.beginPath();
     ctx.moveTo(padding.left, pedalTop + pedalH);
     for (let i = 0; i < primaryLapData.length; i++) {
-      const x = padding.left + (i / (primaryLapData.length - 1)) * chartW;
+      const x = padding.left + (i / primaryDenom) * chartW;
       const brk = (primaryLapData[i].BrakeInput || 0) / 255;
       const y = pedalTop + pedalH - brk * pedalH;
       ctx.lineTo(x, y);
     }
-    ctx.lineTo(padding.left + chartW, pedalTop + pedalH);
+    ctx.lineTo(padding.left + (primaryLapData.length === 1 ? 0 : chartW), pedalTop + pedalH);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -184,7 +207,24 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.fillText("0% " + t("Lap Distance"), padding.left + 20, height - 6);
     ctx.fillText("50%", padding.left + chartW / 2, height - 6);
     ctx.fillText("100%", padding.left + chartW - 20, height - 6);
+    };
 
+    draw();
+
+    const container = containerRef.current;
+    let observer: ResizeObserver | null = null;
+    if (container && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        draw();
+      });
+      observer.observe(container);
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
   }, [primaryLapData, compareLapData, primaryLapNumber, compareLapNumber, t]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -221,12 +261,22 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: "1rem", display: "flex", flexDirection: "column", height: "360px", position: "relative" }}>
+    <div
+      ref={containerRef}
+      className="glass-panel"
+      style={{
+        padding: "1rem",
+        display: "flex",
+        flexDirection: "column",
+        height: "360px",
+        position: "relative",
+      }}
+    >
       {/* Header with Legend & Hover Info */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
           <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-            📈 {t("Speed & Input Delta")}
+            {t("Speed & Input Delta")}
           </span>
           <span style={{ fontSize: "0.75rem", color: "#00ffaa", display: "flex", alignItems: "center", gap: "4px" }}>
             <span style={{ width: "10px", height: "3px", background: "#00ffaa", display: "inline-block" }} />

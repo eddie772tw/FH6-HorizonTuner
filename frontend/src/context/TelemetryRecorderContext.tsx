@@ -45,6 +45,7 @@ export interface LapSummary {
 interface TelemetryRecorderContextType {
   isRecording: boolean;
   recordingCount: number;
+  currentSessionId: string | null;
   currentSession: AnalysisDataPoint[];
   loadedSession: AnalysisDataPoint[] | null;
   savedSessions: SavedSessionHeader[];
@@ -76,6 +77,7 @@ export const TelemetryRecorderProvider: React.FC<{
   const { settings } = useSettings();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingCount, setRecordingCount] = useState(0);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [loadedSession, setLoadedSession] = useState<
     AnalysisDataPoint[] | null
   >(null);
@@ -98,6 +100,7 @@ export const TelemetryRecorderProvider: React.FC<{
         if (active && data) {
           setIsRecording(data.isRecording);
           setRecordingCount(data.recordingCount);
+          setCurrentSessionId(data.currentSessionId || null);
         }
       } catch (e) {
         console.error(
@@ -312,6 +315,7 @@ export const TelemetryRecorderProvider: React.FC<{
       value={{
         isRecording,
         recordingCount,
+        currentSessionId,
         currentSession,
         loadedSession,
         savedSessions,

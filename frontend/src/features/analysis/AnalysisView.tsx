@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   useTelemetryRecorder,
   AnalysisDataPoint,
@@ -17,6 +17,7 @@ const AnalysisView: React.FC = () => {
   const {
     isRecording,
     recordingCount,
+    currentSessionId,
     currentSession,
     loadedSession,
     savedSessions,
@@ -26,6 +27,7 @@ const AnalysisView: React.FC = () => {
     loadSessionLaps,
     deleteSavedSession,
     exportMoTecCsv,
+    uploadMoTecCsv,
     openInMoTec,
     downloadMoTecTemplate,
     fetchSessionDebrief,
@@ -36,6 +38,7 @@ const AnalysisView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilename, setSelectedFilename] = useState<string>("current");
   const [motecActionMsg, setMotecActionMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Laps & Lap Comparison state
   const [lapsList, setLapsList] = useState<LapSummary[]>([]);
@@ -169,8 +172,29 @@ const AnalysisView: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setIsLoading(true);
+      const data = await uploadMoTecCsv(file);
+      if (data && data.length > 0) {
+        setLoadedSession(data);
+        setSelectedFilename("local");
+        setFullSessionTrackData(data);
+        setDebriefData(calculateFrontendDebrief(data));
+      }
+      setIsLoading(false);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleOpenInMoTec = async () => {
-    const sid = selectedFilename === "current" && savedSessions.length > 0 ? savedSessions[0].session_id : selectedFilename;
+    const sid =
+      selectedFilename === "current"
+        ? (currentSessionId || (savedSessions.length > 0 ? savedSessions[0].session_id : "current"))
+        : selectedFilename;
     const result = await openInMoTec(sid);
     setMotecActionMsg(result.message);
     setTimeout(() => setMotecActionMsg(null), 4000);
@@ -351,38 +375,54 @@ const AnalysisView: React.FC = () => {
           )}
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.8rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.8rem", flexWrap: "wrap" }}>
             {/* Open In MoTeC */}
             <button
               onClick={handleOpenInMoTec}
-              style={{ ...btnStyle, background: "#00ffaa", color: "#000" }}
+              className="btn btn-sm btn-success"
               title={t("Launch session in local MoTeC i2 viewer")}
             >
-              🚀 {t("Open in MoTeC")}
+              {t("Open in MoTeC")}
             </button>
 
             {/* Export MoTeC CSV */}
             <button
               onClick={() => exportMoTecCsv(selectedFilename)}
-              style={{ ...btnStyle, background: "#7000ff", color: "#fff" }}
+              className="btn btn-sm btn-secondary"
             >
-              📥 MoTeC CSV {t("Export")}
+              MoTeC CSV {t("Export")}
+            </button>
+
+            {/* Import MoTeC CSV */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn btn-sm btn-primary"
+              title={t("Import MoTeC CSV for analysis")}
+            >
+              MoTeC CSV {t("Import")}
             </button>
 
             {/* Download MoTeC Template */}
             <button
               onClick={downloadMoTecTemplate}
-              style={{ ...btnStyle, background: "#00bfa5", color: "#fff" }}
+              className="btn btn-sm btn-info"
               title={t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}
             >
-              📦 {t("Workspace Template")}
+              {t("Workspace Template")}
             </button>
 
             {/* Delete Session */}
             {selectedFilename !== "current" && selectedFilename !== "local" && (
               <button
                 onClick={handleDeleteSession}
-                style={{ ...btnStyle, background: "#ff003c", color: "#fff" }}
+                className="btn btn-sm btn-danger"
               >
                 {t("Delete")}
               </button>
@@ -394,11 +434,9 @@ const AnalysisView: React.FC = () => {
       {/* Action Notification Message */}
       {motecActionMsg && (
         <div
-          className="glass-panel"
+          className="glass-panel text-success border-success"
           style={{
             padding: "0.6rem 1rem",
-            color: "#00ffaa",
-            border: "1px solid rgba(0,255,170,0.3)",
             fontSize: "0.85rem",
             display: "flex",
             justifyContent: "space-between",
@@ -408,10 +446,9 @@ const AnalysisView: React.FC = () => {
           <span>✓ {motecActionMsg}</span>
           <button
             onClick={() => setMotecActionMsg(null)}
-            style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer" }}
-          >
-            ✕
-          </button>
+            className="btn-close"
+            aria-label="Close"
+          />
         </div>
       )}
 
@@ -450,7 +487,6 @@ const AnalysisView: React.FC = () => {
 
           {/* Section 2: Dual Visualization (Track Map & Lap Delta) */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(48%, 1fr))", gap: "1rem" }}>
-            
             {/* Left Box: GPS Track Map */}
             <div
               className="glass-panel"
@@ -470,7 +506,7 @@ const AnalysisView: React.FC = () => {
                 }}
               >
                 <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                  🗺️ {t("GPS Track Heatmap")}
+                  {t("GPS Track Heatmap")}
                 </span>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
@@ -515,22 +551,6 @@ const AnalysisView: React.FC = () => {
       )}
     </div>
   );
-};
-
-const btnStyle: React.CSSProperties = {
-  background: "var(--primary)",
-  color: "#000",
-  border: "none",
-  padding: "0.4rem 0.8rem",
-  borderRadius: "4px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  fontSize: "0.85rem",
-  transition: "all 0.2s",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "4px",
 };
 
 const selectStyle: React.CSSProperties = {

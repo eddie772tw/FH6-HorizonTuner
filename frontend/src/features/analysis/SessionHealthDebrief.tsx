@@ -30,52 +30,41 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
 
   const { tire_thermals, suspension, handling_balance, total_samples, valid_laps } = debrief;
 
-  // Thermal Badge Color
-  const thermalBadgeColor =
+  // Thermal Badge Class
+  const thermalBadgeClass =
     tire_thermals.status === "Optimal"
-      ? "#00ffaa"
+      ? "badge text-bg-success"
       : tire_thermals.status === "Overheating"
-      ? "#ff003c"
-      : "#00f0ff";
+      ? "badge text-bg-danger"
+      : "badge text-bg-info";
 
-  // Suspension Badge Color
-  const suspBadgeColor =
+  // Suspension Badge Class
+  const suspBadgeClass =
     suspension.status === "Optimal"
-      ? "#00ffaa"
+      ? "badge text-bg-success"
       : suspension.status === "Severe Bottoming"
-      ? "#ff003c"
-      : "#ffaa00";
+      ? "badge text-bg-danger"
+      : "badge text-bg-warning";
 
-  // Handling Badge Color
-  const handlingBadgeColor =
+  // Handling Badge Class
+  const handlingBadgeClass =
     handling_balance.tendency === "Neutral / Balanced"
-      ? "#00ffaa"
+      ? "badge text-bg-success"
       : handling_balance.tendency === "Understeer Biased"
-      ? "#00f0ff"
-      : "#ffaa00";
+      ? "badge text-bg-info"
+      : "badge text-bg-warning";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
       {/* Cards 2x2 Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-        
         {/* Card 1: Tire Thermal Balance */}
         <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-              🌡️ {t("Tire Thermal Balance")}
+              {t("Tire Thermal Balance")}
             </span>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                padding: "0.2rem 0.6rem",
-                borderRadius: "12px",
-                background: `${thermalBadgeColor}22`,
-                color: thermalBadgeColor,
-                border: `1px solid ${thermalBadgeColor}66`,
-                fontWeight: "bold",
-              }}
-            >
+            <span className={thermalBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
               {t(tire_thermals.status)}
             </span>
           </div>
@@ -112,19 +101,9 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
         <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-              🛞 {t("Suspension Utilization")}
+              {t("Suspension Utilization")}
             </span>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                padding: "0.2rem 0.6rem",
-                borderRadius: "12px",
-                background: `${suspBadgeColor}22`,
-                color: suspBadgeColor,
-                border: `1px solid ${suspBadgeColor}66`,
-                fontWeight: "bold",
-              }}
-            >
+            <span className={suspBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
               {t(suspension.status)}
             </span>
           </div>
@@ -139,7 +118,10 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             <div style={{ width: "1px", height: "30px", background: "rgba(255,255,255,0.1)" }} />
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Bottom-out Count")}</div>
-              <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: suspension.bottom_out_count > 0 ? "#ff003c" : "#00ffaa" }}>
+              <div
+                className={suspension.bottom_out_count > 0 ? "text-danger" : "text-success"}
+                style={{ fontSize: "1.25rem", fontWeight: "bold" }}
+              >
                 {suspension.bottom_out_count}
               </div>
             </div>
@@ -150,19 +132,9 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
         <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-              ⚖️ {t("Cornering Balance")}
+              {t("Cornering Balance")}
             </span>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                padding: "0.2rem 0.6rem",
-                borderRadius: "12px",
-                background: `${handlingBadgeColor}22`,
-                color: handlingBadgeColor,
-                border: `1px solid ${handlingBadgeColor}66`,
-                fontWeight: "bold",
-              }}
-            >
+            <span className={handlingBadgeClass} style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
               {t(handling_balance.tendency)}
             </span>
           </div>
@@ -174,8 +146,8 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             </div>
             {/* Dual Color Progress Bar */}
             <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
-              <div style={{ width: `${handling_balance.understeer_pct}%`, background: "#00f0ff", transition: "width 0.3s" }} />
-              <div style={{ width: `${handling_balance.oversteer_pct}%`, background: "#ffaa00", transition: "width 0.3s" }} />
+              <div style={{ width: `${handling_balance.understeer_pct}%`, background: "var(--bs-info)", transition: "width 0.3s" }} />
+              <div style={{ width: `${handling_balance.oversteer_pct}%`, background: "var(--bs-warning)", transition: "width 0.3s" }} />
             </div>
           </div>
         </div>
@@ -184,19 +156,9 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
         <div className="glass-panel" style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: "bold", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-              📡 {t("Signal Integrity")}
+              {t("Signal Integrity")}
             </span>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                padding: "0.2rem 0.6rem",
-                borderRadius: "12px",
-                background: "#00ffaa22",
-                color: "#00ffaa",
-                border: "1px solid #00ffaa66",
-                fontWeight: "bold",
-              }}
-            >
+            <span className="badge text-bg-success" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}>
               60 Hz {t("Active")}
             </span>
           </div>

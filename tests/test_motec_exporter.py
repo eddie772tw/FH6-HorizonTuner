@@ -1,5 +1,6 @@
 """Unit tests for MoTeC Exporter, GPS Projection, and Session Debrief Engine."""
 
+import csv
 import os
 import sys
 import tempfile
@@ -109,9 +110,11 @@ def test_full_41_channel_export_and_parse_roundtrip():
             "AccelerationX": 4.2,
             "AccelerationY": 0.5,
             "AccelerationZ": 6.8,
-            "Boost": 18.5,
+            "Boost": 18.5 * 6894.75729,
             "Fuel": 0.85,
+            "PowerWatts": 500000.0,
             "Power": 500000.0,
+            "TorqueNewtons": 650.0,
             "Torque": 650.0,
             "SuspTravel": [0.55, 0.52, 0.48, 0.46],
             "SuspensionTravelMeters": [0.08, 0.075, 0.07, 0.068],
@@ -151,6 +154,57 @@ def test_full_41_channel_export_and_parse_roundtrip():
         assert len(parsed_points) == 1
         assert parsed_points[0]["CurrentEngineRpm"] == 7200
         assert parsed_points[0]["Gear"] == 4
+        assert parsed_points[0]["PowerWatts"] == pytest.approx(500000.0, rel=1e-3)
+        assert parsed_points[0]["TorqueNewtons"] == pytest.approx(650.0, rel=1e-3)
+        assert parsed_points[0]["Boost"] == pytest.approx(18.5 * 6894.75729, rel=1e-2)
     finally:
         if os.path.exists(csv_path):
             os.remove(csv_path)
+
+
+def test_export_uses_canonical_power_and_boost_fields(tmp_path):
+    point = {
+        "PowerWatts": 745700.0,
+        "TorqueNewtons": 500.0,
+        "Boost": 6894.75729,
+        "Fuel": 0.42,
+        "TireTemp": [180] * 4,
+        "SuspTravel": [0] * 4,
+    }
+    export_session_to_motec_csv({"session_id": "s"}, [point], str(tmp_path / "s.csv"))
+    row = list(csv.reader((tmp_path / "s.csv").open()))[9]
+    assert row[16] == "1000.0"
+    assert row[17] == "500.0"
+    assert row[14] == "1.00"
+
+
+def test_debrief_converts_midrange_fahrenheit():
+    result = calculate_session_debrief(
+        [{"TireTemp": [140.0] * 4, "SuspTravel": [0.0] * 4}]
+    )
+    assert result["tire_thermals"]["fl_avg"] == pytest.approx(60.0)
+    assert result["tire_thermals"]["status"] == "Cold"
+
+
+def test_saved_points_retain_full_export_channels(tmp_path):
+    from telemetry_sqlite import TelemetrySQLite
+
+    db = TelemetrySQLite(str(tmp_path / "telemetry.sqlite"))
+    db.create_session("s", start_time=1)
+    db.insert_points_batch(
+        "s",
+        [
+            {
+                "PowerWatts": 745700,
+                "TorqueNewtons": 500.0,
+                "Boost": 6894.75729,
+                "SuspensionTravelMeters": [0.1] * 4,
+                "TireTemp": [180] * 4,
+            }
+        ],
+    )
+    point = db.get_telemetry_points("s")[0]
+    assert point["PowerWatts"] == 745700
+    assert point["SuspensionTravelMeters"] == [0.1] * 4
+    assert point["TorqueNewtons"] == 500.0
+    assert point["Boost"] == pytest.approx(6894.75729)

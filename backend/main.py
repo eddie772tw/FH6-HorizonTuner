@@ -2122,10 +2122,30 @@ async def delete_saved_session(session_id: str):
 
 @app.get("/api/analysis/export/motec/{session_id}")
 async def export_motec_session(session_id: str):
+    if session_id == "current":
+        if race_recorder.current_session_id:
+            session_id = race_recorder.current_session_id
+        else:
+            sessions = telemetry_db.list_all_sessions()
+            if sessions:
+                session_id = sessions[0]["session_id"]
+            else:
+                return {"error": "Session not found"}
+
     sessions = telemetry_db.list_all_sessions()
     session_meta = next((s for s in sessions if s["session_id"] == session_id), None)
     if not session_meta:
-        return {"error": "Session not found"}
+        if race_recorder.current_session_id == session_id:
+            session_meta = {
+                "session_id": session_id,
+                "car_name": "Current Session",
+                "car_ordinal": 0,
+                "car_class": 0,
+                "car_pi": 0,
+                "start_time": race_recorder.start_time or 0.0,
+            }
+        else:
+            return {"error": "Session not found"}
 
     points = telemetry_db.get_telemetry_points(session_id)
     if not points:
@@ -2172,10 +2192,30 @@ async def download_motec_workspace_template():
 @app.post("/api/analysis/motec/open/{session_id}")
 async def open_session_in_motec(session_id: str):
     """Exports session to MoTeC CSV and attempts to launch it with the system MoTeC i2 installation."""
+    if session_id == "current":
+        if race_recorder.current_session_id:
+            session_id = race_recorder.current_session_id
+        else:
+            sessions = telemetry_db.list_all_sessions()
+            if sessions:
+                session_id = sessions[0]["session_id"]
+            else:
+                return {"error": "Session not found", "success": False}
+
     sessions = telemetry_db.list_all_sessions()
     session_meta = next((s for s in sessions if s["session_id"] == session_id), None)
     if not session_meta:
-        return {"error": "Session not found", "success": False}
+        if race_recorder.current_session_id == session_id:
+            session_meta = {
+                "session_id": session_id,
+                "car_name": "Current Session",
+                "car_ordinal": 0,
+                "car_class": 0,
+                "car_pi": 0,
+                "start_time": race_recorder.start_time or 0.0,
+            }
+        else:
+            return {"error": "Session not found", "success": False}
 
     points = telemetry_db.get_telemetry_points(session_id)
     if not points:

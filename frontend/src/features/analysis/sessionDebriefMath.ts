@@ -70,12 +70,12 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
       lapsSet.add(p.LapNumber);
     }
 
-    // 1. Thermals (convert °F to °C if input > 130)
+    // 1. Thermals (canonical unit is °F, convert to °C)
     const temps = p.TireTemp || [180, 180, 180, 180];
-    const flC = temps[0] > 130 ? (temps[0] - 32) * 5 / 9 : temps[0];
-    const frC = temps[1] > 130 ? (temps[1] - 32) * 5 / 9 : temps[1];
-    const rlC = temps[2] > 130 ? (temps[2] - 32) * 5 / 9 : temps[2];
-    const rrC = temps[3] > 130 ? (temps[3] - 32) * 5 / 9 : temps[3];
+    const flC = ((temps[0] - 32) * 5) / 9;
+    const frC = ((temps[1] - 32) * 5) / 9;
+    const rlC = ((temps[2] - 32) * 5) / 9;
+    const rrC = ((temps[3] - 32) * 5) / 9;
 
     sumFl += flC;
     sumFr += frC;
