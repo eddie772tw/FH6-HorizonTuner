@@ -69,45 +69,49 @@ export function transformTelemetryData(
 
   let lastValidGear = 0;
 
-  // Helper context generator
-  const getContext = (p: AnalysisDataPoint) => {
+  // [PERF] Pre-allocate a single context object to eliminate millions of object allocations
+  // during large telemetry dataset evaluations, significantly reducing GC pressure.
+  const sharedMathCtx: Record<string, number> = {};
+
+  // Helper context updater (mutates sharedMathCtx)
+  const updateContext = (p: AnalysisDataPoint) => {
     if (p.Gear !== 11) {
       lastValidGear = p.Gear;
     }
     const currentGear = p.Gear === 11 ? lastValidGear : p.Gear;
 
     const primarySpeedKmh = p.SpeedMetersPerSecond * 3.6;
-    const mathCtx: Record<string, number> = {
-      Speed: primarySpeedKmh,
-      SpeedMetersPerSecond: p.SpeedMetersPerSecond,
-      CompareSpeed: primarySpeedKmh * 0.95,
-      SpeedDelta: primarySpeedKmh * 0.05,
-      RPM: p.CurrentEngineRpm,
-      CurrentEngineRpm: p.CurrentEngineRpm,
-      Gear: currentGear,
-      Throttle: (p.AccelInput / 255) * 100,
-      Brake: (p.BrakeInput / 255) * 100,
-      AccelInput: p.AccelInput,
-      BrakeInput: p.BrakeInput,
-      Steer: (((p as any).SteerInput ?? 0) / 127) * 100,
-      LatG: p.AccelerationX / 9.81,
-      LonG: p.AccelerationZ / 9.81,
-      AccelerationX: p.AccelerationX,
-      AccelerationZ: p.AccelerationZ,
-      Susp_FL: p.SuspTravel[0] * 100,
-      Susp_FR: p.SuspTravel[1] * 100,
-      Temp_FL: ((p.TireTemp[0] - 32) * 5) / 9,
-      Temp_FR: ((p.TireTemp[1] - 32) * 5) / 9,
-    };
+
+    // Mutate the shared object instead of re-allocating
+    sharedMathCtx.Speed = primarySpeedKmh;
+    sharedMathCtx.SpeedMetersPerSecond = p.SpeedMetersPerSecond;
+    sharedMathCtx.CompareSpeed = primarySpeedKmh * 0.95;
+    sharedMathCtx.SpeedDelta = primarySpeedKmh * 0.05;
+    sharedMathCtx.RPM = p.CurrentEngineRpm;
+    sharedMathCtx.CurrentEngineRpm = p.CurrentEngineRpm;
+    sharedMathCtx.Gear = currentGear;
+    sharedMathCtx.Throttle = (p.AccelInput / 255) * 100;
+    sharedMathCtx.Brake = (p.BrakeInput / 255) * 100;
+    sharedMathCtx.AccelInput = p.AccelInput;
+    sharedMathCtx.BrakeInput = p.BrakeInput;
+    sharedMathCtx.Steer = (((p as any).SteerInput ?? 0) / 127) * 100;
+    sharedMathCtx.LatG = p.AccelerationX / 9.81;
+    sharedMathCtx.LonG = p.AccelerationZ / 9.81;
+    sharedMathCtx.AccelerationX = p.AccelerationX;
+    sharedMathCtx.AccelerationZ = p.AccelerationZ;
+    sharedMathCtx.Susp_FL = p.SuspTravel[0] * 100;
+    sharedMathCtx.Susp_FR = p.SuspTravel[1] * 100;
+    sharedMathCtx.Temp_FL = ((p.TireTemp[0] - 32) * 5) / 9;
+    sharedMathCtx.Temp_FR = ((p.TireTemp[1] - 32) * 5) / 9;
+
     if (customChannels.length > 0) {
       // [PERF] Optimized O(N) loop to avoid .forEach() closure allocation on every data point
       // in high-frequency rendering paths when processing large telemetry datasets.
       for (let i = 0; i < customChannels.length; i++) {
         const ch = customChannels[i];
-        mathCtx[ch.name] = evaluateCustomMath(ch.formula, mathCtx);
+        sharedMathCtx[ch.name] = evaluateCustomMath(ch.formula, sharedMathCtx);
       }
     }
-    return mathCtx;
   };
 
   // MODE 1: PIE CHART (Gear Usage Ratio or Throttle Ratio)
@@ -147,7 +151,8 @@ export function transformTelemetryData(
     // [PERF] Optimized O(N) loop to avoid .map() array creation and dangerous Math.max(...values) spread operator
     // which can exceed the maximum call stack size on large telemetry history datasets.
     for (let i = 0; i < sampleData.length; i++) {
-      const v = evaluateCustomMath(primaryCh.formula, getContext(sampleData[i]));
+      updateContext(sampleData[i]);
+      const v = evaluateCustomMath(primaryCh.formula, sharedMathCtx);
       values[i] = v;
       if (v < minVal) minVal = v;
       if (v > maxVal) maxVal = v;
@@ -182,10 +187,10 @@ export function transformTelemetryData(
     }
 
     for (let i = 0; i < sampleData.length; i++) {
-      const ctx = getContext(sampleData[i]);
+      updateContext(sampleData[i]);
       for (let j = 0; j < channels.length; j++) {
         const ch = channels[j];
-        averages[ch.name] += evaluateCustomMath(ch.formula, ctx);
+        averages[ch.name] += evaluateCustomMath(ch.formula, sharedMathCtx);
       }
     }
 
@@ -214,11 +219,11 @@ export function transformTelemetryData(
       xVal = Number(p.time.toFixed(1));
     }
 
-    const ctx = getContext(p);
+    updateContext(p);
     const row: Record<string, any> = { xDomain: xVal };
     for (let j = 0; j < channels.length; j++) {
       const ch = channels[j];
-      row[ch.name] = Number(evaluateCustomMath(ch.formula, ctx).toFixed(2));
+      row[ch.name] = Number(evaluateCustomMath(ch.formula, sharedMathCtx).toFixed(2));
     }
     result.push(row);
   }
