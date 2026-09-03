@@ -9,7 +9,8 @@ import {
   SpecificAdjustmentItem,
   TuningTelemetryEvent,
   collectTuningTelemetryEvents,
-  revalidateTuningEventsOnSetupChange
+  revalidateTuningEventsOnSetupChange,
+  isTireOverheated
 } from '../../../utils/tuningDiagnosis';
 import { ChassisTuningResult } from '../../../utils/tuningMath';
 import { AppliedSetupTable } from './AppliedSetupTable';
@@ -117,7 +118,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     const accelZG = (telemetry.AccelerationZ || 0) / 9.81;
     const speedKmh = (telemetry.SpeedMetersPerSecond || 0) * 3.6;
     const powerHp = (telemetry.PowerWatts || 0) / 745.7;
-    const boostPsi = (telemetry.Boost || 0) / 6894.75729;
+    const boostPsi = Math.max(0, telemetry.Boost || 0);
 
     return {
       avgSlipRatioF: (slipRatio[0] + slipRatio[1]) / 2,
@@ -249,10 +250,10 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
 
       {/* Main Grid: Left (4-Wheel Telemetry Dashboard + Applied Setup Table) vs Right (Diagnosis & Actionable Advice) */}
       <div style={{ display: 'grid', gridTemplateColumns: '6fr 6fr', gap: '1.2rem' }}>
-        
+
         {/* Left Column: Live Telemetry HUD + Applied Setup Table */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          
+
           {/* Card 1: 4-Wheel Objective Telemetry Live Monitor */}
           <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
@@ -266,7 +267,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
 
             {/* 4-Wheel Dynamic Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-              
+
               {/* Front Axle Box */}
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(0, 180, 255, 0.15)', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -278,13 +279,13 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.75rem', textAlign: 'center' }}>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
                     <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>FL Temp</span>
-                    <strong style={{ color: (telemetryGripMetrics?.tireTempFL ?? 0) > 105 ? '#ff2a5f' : '#00b4d8' }}>
+                    <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempFL ?? 0, tempUnit) ? '#ff2a5f' : '#00b4d8' }}>
                       {telemetryGripMetrics?.tireTempFL ?? '-'}{tempUnitLabel}
                     </strong>
                   </div>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
                     <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>FR Temp</span>
-                    <strong style={{ color: (telemetryGripMetrics?.tireTempFR ?? 0) > 105 ? '#ff2a5f' : '#00b4d8' }}>
+                    <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempFR ?? 0, tempUnit) ? '#ff2a5f' : '#00b4d8' }}>
                       {telemetryGripMetrics?.tireTempFR ?? '-'}{tempUnitLabel}
                     </strong>
                   </div>
@@ -308,13 +309,13 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.75rem', textAlign: 'center' }}>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
                     <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>RL Temp</span>
-                    <strong style={{ color: (telemetryGripMetrics?.tireTempRL ?? 0) > 105 ? '#ff2a5f' : '#ffb703' }}>
+                    <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempRL ?? 0, tempUnit) ? '#ff2a5f' : '#ffb703' }}>
                       {telemetryGripMetrics?.tireTempRL ?? '-'}{tempUnitLabel}
                     </strong>
                   </div>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
                     <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>RR Temp</span>
-                    <strong style={{ color: (telemetryGripMetrics?.tireTempRR ?? 0) > 105 ? '#ff2a5f' : '#ffb703' }}>
+                    <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempRR ?? 0, tempUnit) ? '#ff2a5f' : '#ffb703' }}>
                       {telemetryGripMetrics?.tireTempRR ?? '-'}{tempUnitLabel}
                     </strong>
                   </div>

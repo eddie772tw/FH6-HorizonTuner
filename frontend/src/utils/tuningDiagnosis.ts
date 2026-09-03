@@ -1324,6 +1324,16 @@ export function revalidateTuningEventsOnSetupChange(
   return result;
 }
 
+export const TIRE_OVERHEAT_THRESHOLD_C = 105;
 
-
-
+/**
+ * 依據顯示單位判斷輪胎是否過熱（基準為 105°C，對應華氏約 221°F）。
+ *
+ * @param tempInDisplayUnit 使用者顯示單位的溫度數值
+ * @param unit 溫度顯示單位 ('C' 或 'F')
+ * @returns 是否超過過熱門檻
+ */
+export function isTireOverheated(tempInDisplayUnit: number, unit: 'C' | 'F' = 'C'): boolean {
+  const tempC = unit === 'F' ? (tempInDisplayUnit - 32) * 5 / 9 : tempInDisplayUnit;
+  return tempC > TIRE_OVERHEAT_THRESHOLD_C;
+}

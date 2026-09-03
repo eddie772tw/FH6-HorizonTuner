@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeTelemetrySession, evaluateTireTelemetryDiagnosis } from './tuningDiagnosis';
+import {
+  analyzeTelemetrySession,
+  evaluateTireTelemetryDiagnosis,
+  isTireOverheated
+} from './tuningDiagnosis';
 
 import { CarParams } from '../context/CarParamsContext';
 
@@ -631,7 +635,22 @@ describe('collectTuningTelemetryEvents & revalidateTuningEventsOnSetupChange', (
     expect(softenEvt?.status).toBe('applied');
     expect(stiffenEvt).toBeUndefined();
   });
+
+  describe('Tire Overheat Warning Threshold Contract', () => {
+    it('uses a unit-independent tire temperature warning threshold', () => {
+      const warningThresholdC = 105;
+      const toC = (fahrenheit: number) => (fahrenheit - 32) * 5 / 9;
+      expect(toC(180) > warningThresholdC).toBe(false);
+
+      // Celsius mode: 105°C is safe, >105°C is overheated
+      expect(isTireOverheated(90, 'C')).toBe(false);
+      expect(isTireOverheated(105, 'C')).toBe(false);
+      expect(isTireOverheated(106, 'C')).toBe(true);
+
+      // Fahrenheit mode: 180°F is normal (~82.2°C), 221°F is 105°C, 225°F is overheated (~107.2°C)
+      expect(isTireOverheated(180, 'F')).toBe(false);
+      expect(isTireOverheated(220, 'F')).toBe(false);
+      expect(isTireOverheated(225, 'F')).toBe(true);
+    });
+  });
 });
-
-
-

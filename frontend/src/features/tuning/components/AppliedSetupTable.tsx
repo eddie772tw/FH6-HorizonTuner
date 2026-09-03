@@ -20,13 +20,37 @@ const inputStyle: React.CSSProperties = {
   textAlign: 'right'
 };
 
+export function convertDisplayedSpringToCanonical(
+  displayedVal: number,
+  convertSpringRateToKgfmm: (val: number) => number
+): number {
+  const kgfmm = convertSpringRateToKgfmm(displayedVal);
+  return Number(kgfmm.toFixed(2));
+}
+
+export function convertDisplayedHeightToCanonical(
+  displayedVal: number,
+  convertHeightToCm: (val: number) => number
+): number {
+  const cm = convertHeightToCm(displayedVal);
+  return Number(cm.toFixed(2));
+}
+
 export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
   setup,
   onChange,
   onReset,
   isAwd = false
 }) => {
-  const { convertTirePressureFromPsi, convertTirePressureToPsi, convertSpringRate, convertHeight, t } = useSettings();
+  const {
+    convertTirePressureFromPsi,
+    convertTirePressureToPsi,
+    convertSpringRate,
+    convertSpringRateToKgfmm,
+    convertHeight,
+    convertHeightToCm,
+    t
+  } = useSettings();
 
   const displayedPressF = convertTirePressureFromPsi(setup.tirePressureFront);
   const displayedPressR = convertTirePressureFromPsi(setup.tirePressureRear);
@@ -38,6 +62,16 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
   const handlePressureChange = (field: 'tirePressureFront' | 'tirePressureRear', displayedVal: number) => {
     const psi = convertTirePressureToPsi(displayedVal);
     onChange(field, Number(psi.toFixed(2)));
+  };
+
+  const handleSpringChange = (field: 'springsFront' | 'springsRear', displayedVal: number) => {
+    const canonical = convertDisplayedSpringToCanonical(displayedVal, convertSpringRateToKgfmm);
+    onChange(field, canonical);
+  };
+
+  const handleHeightChange = (field: 'rideHeightFront' | 'rideHeightRear', displayedVal: number) => {
+    const canonical = convertDisplayedHeightToCanonical(displayedVal, convertHeightToCm);
+    onChange(field, canonical);
   };
 
   return (
@@ -76,13 +110,13 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
 
       {/* Grid: 4 Parameter Categories */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
-        
+
         {/* Category 1: Tires & Alignment */}
         <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#00b4d8' }}>
             1. {t("Tires & Alignment")}
           </span>
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{t("Front Cold Pressure")}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -232,7 +266,7 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
                 type="number"
                 step="0.5"
                 value={displayedSpringF.value.toFixed(1)}
-                onChange={e => onChange('springsFront', parseFloat(e.target.value) || 0)}
+                onChange={e => handleSpringChange('springsFront', parseFloat(e.target.value) || 0)}
                 style={inputStyle}
                 aria-label={t("Front Springs")}
               />
@@ -247,7 +281,7 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
                 type="number"
                 step="0.5"
                 value={displayedSpringR.value.toFixed(1)}
-                onChange={e => onChange('springsRear', parseFloat(e.target.value) || 0)}
+                onChange={e => handleSpringChange('springsRear', parseFloat(e.target.value) || 0)}
                 style={inputStyle}
                 aria-label={t("Rear Springs")}
               />
@@ -262,7 +296,7 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
                 type="number"
                 step="0.1"
                 value={displayedHeightF.value.toFixed(1)}
-                onChange={e => onChange('rideHeightFront', parseFloat(e.target.value) || 0)}
+                onChange={e => handleHeightChange('rideHeightFront', parseFloat(e.target.value) || 0)}
                 style={inputStyle}
                 aria-label={t("Front Ride Height")}
               />
@@ -277,7 +311,7 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
                 type="number"
                 step="0.1"
                 value={displayedHeightR.value.toFixed(1)}
-                onChange={e => onChange('rideHeightRear', parseFloat(e.target.value) || 0)}
+                onChange={e => handleHeightChange('rideHeightRear', parseFloat(e.target.value) || 0)}
                 style={inputStyle}
                 aria-label={t("Rear Ride Height")}
               />
