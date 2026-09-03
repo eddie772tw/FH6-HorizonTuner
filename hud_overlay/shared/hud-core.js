@@ -38,6 +38,7 @@ window.HUD_ANIM_CONFIG = {
          *   - onInit: function(payload)
          *   - onFrame: function(data, payload)
          *   - onElementsChange: function(elements)
+         *   - onMedia: function(mediaSnapshot)
          *   - onAnimate: function()
          *   - onScale: function(scale)
          */

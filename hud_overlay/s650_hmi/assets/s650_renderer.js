@@ -89,6 +89,7 @@
         onInit: frame.onInit,
         onElementsChange: frame.onElementsChange,
         onFrame: frame.onFrame,
+        onMedia: frame.onMedia,
         onAnimate: frame.onAnimate
     });
 

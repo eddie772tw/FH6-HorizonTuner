@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-type Widget = 'disable' | 'drive' | 'tire_temp' | 'performance';
+type Widget = 'disable' | 'drive' | 'tire_temp' | 'performance' | 'music';
 type Region = {
   x: number;
   y: number;
@@ -58,6 +58,7 @@ function loadCenterInfoModule(): CenterInfoModule {
     's650_center_info_drive.js',
     's650_center_info_tire_temp.js',
     's650_center_info_performance.js',
+    's650_center_info_music.js',
   ];
   const source = sourceFiles
     .map((fileName) => readFileSync(resolve(process.cwd(), `../hud_overlay/s650_hmi/assets/${fileName}`), 'utf8'))
@@ -79,7 +80,7 @@ describe('S650 center-information registry contract', () => {
     };
     const centerInfo = loadCenterInfoModule().create({
       primitives,
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'disable' }, {}, {}, 425, 126, 430, 230);
@@ -95,7 +96,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -116,7 +117,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -133,6 +134,61 @@ describe('S650 center-information registry contract', () => {
     expect((ctx.text as string[])).not.toContain('4');
   });
 
+  it('renders the available GSMTC song metadata without requiring telemetry aliases', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Night Drive',
+        artist: 'The Horizon Set',
+        album_title: 'Road Lines',
+        track_number: 3,
+        album_track_count: 12,
+        genres: ['Electronic'],
+        playback_type: 'music',
+        status: 'playing',
+        position_seconds: 75,
+        start_seconds: 0,
+        duration_seconds: 210,
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+    expect((ctx.text as string[])).toContain('MUSIC PLAYER');
+    expect((ctx.text as string[])).toContain('Night Drive');
+    expect((ctx.text as string[])).toContain('The Horizon Set');
+    expect((ctx.text as string[])).toContain('3 / 12');
+    expect((ctx.text as string[])).toContain('1:15 / 3:30');
+  });
+
+  it('keeps absent media metadata visibly unavailable', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({ centerWidget: 'music', getMediaInfo: () => ({ has_media: false }) }, {}, {
+      text: '#fff', secondary: '#aaa', primary: '#0ff',
+    }, 100, 50, 200, 220);
+
+    expect((ctx.text as string[])).toContain('NO ACTIVE MEDIA');
+    expect((ctx.text as string[])).toContain('--:-- / --:--');
+  });
+
   it('uses the compact page renderer for a Track recipe region', () => {
     const ctx = createCanvasSpy();
     const centerInfo = loadCenterInfoModule().create({
@@ -141,7 +197,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -171,7 +227,7 @@ describe('S650 center-information registry contract', () => {
         getFontSize: (_view, _role, fallback) => fallback,
         drawPedalBars: (...args) => pedalCalls.push(args),
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'disable' }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
@@ -192,7 +248,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -218,10 +274,10 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: () => undefined,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
-    expect(centerInfo.widgets).toEqual(['disable', 'drive', 'tire_temp', 'performance']);
+    expect(centerInfo.widgets).toEqual(['disable', 'drive', 'tire_temp', 'performance', 'music']);
     expect(centerInfo.normalizeWidget({ centerWidget: 'unknown' })).toBe('drive');
   });
 
@@ -231,7 +287,7 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 100, 50, 200, 100);
@@ -245,7 +301,7 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, {

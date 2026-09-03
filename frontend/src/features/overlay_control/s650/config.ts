@@ -23,6 +23,7 @@ export const S650_CENTER_WIDGETS = [
   { value: 'drive', label: 'Driving overview' },
   { value: 'tire_temp', label: 'Tire temperature' },
   { value: 'performance', label: 'Powertrain telemetry' },
+  { value: 'music', label: 'Music player' },
 ] as const;
 
 export type S650CenterWidget = (typeof S650_CENTER_WIDGETS)[number]['value'];

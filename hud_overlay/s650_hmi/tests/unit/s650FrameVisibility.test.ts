@@ -6,7 +6,8 @@ type FrameModule = {
   create: (options: Record<string, unknown>) => {
     update: (payload: unknown) => void;
     onInit: (payload: unknown) => void;
-    view: { showCenterInfo: boolean };
+    onMedia: (payload: unknown) => void;
+    view: { showCenterInfo: boolean; getMediaInfo: () => Record<string, unknown> };
   };
 };
 
@@ -32,6 +33,7 @@ function createFrame(container: { style: { transform?: string } } | null = null)
     contract: {
       canvas: { width: 1280, height: 480 },
       defaultFrame: {},
+      defaultMedia: { has_media: false },
       finiteNumber: (value: unknown, fallback: number) => (
         typeof value === 'number' && Number.isFinite(value) ? value : fallback
       ),
@@ -39,6 +41,7 @@ function createFrame(container: { style: { transform?: string } } | null = null)
         elements: payload.elements && typeof payload.elements === 'object' ? payload.elements : {},
       }),
       normalizeFrame: () => ({}),
+      normalizeMedia: (payload: unknown) => payload as Record<string, unknown>,
       clamp: (value: number, min: number, max: number) => Math.max(min, Math.min(max, value)),
     },
     tokens: { grid: { overlay: {} } },
@@ -71,5 +74,14 @@ describe('S650 center-information visibility contract', () => {
 
     frame.onInit({ s650HmiOffsetY: -999 });
     expect(container.style.transform).toBe('translateY(-300px)');
+  });
+
+  it('keeps the latest media snapshot at the frame boundary for the center page', () => {
+    const frame = createFrame();
+    expect(frame.view.getMediaInfo()).toEqual({ has_media: false });
+
+    frame.onMedia({ title: 'Track', has_media: true });
+
+    expect(frame.view.getMediaInfo()).toEqual({ title: 'Track', has_media: true });
   });
 });
