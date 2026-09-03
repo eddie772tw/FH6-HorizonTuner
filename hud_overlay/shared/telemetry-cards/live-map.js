@@ -354,14 +354,21 @@ export function renderLiveMap(canvas, data, config) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        var pPrev = mapToCanvas(posHistory[0].x, posHistory[0].z);
+        // Optimization: Inlined mapToCanvas logic and cached static width/height
+        // factors to prevent up to 10k object allocations per frame in the render loop.
+        var innerW = w - padding * 2;
+        var innerH = h - padding * 2;
+
+        var pPrevX = padding + ((posHistory[0].x - minX) / rangeX) * innerW;
+        var pPrevY = padding + (1.0 - (posHistory[0].z - minZ) / rangeZ) * innerH;
 
         for (var j = 1; j < posHistory.length; j++) {
-            var pCurr = mapToCanvas(posHistory[j].x, posHistory[j].z);
+            var pCurrX = padding + ((posHistory[j].x - minX) / rangeX) * innerW;
+            var pCurrY = padding + (1.0 - (posHistory[j].z - minZ) / rangeZ) * innerH;
 
             ctx.beginPath();
-            ctx.moveTo(pPrev.x, pPrev.y);
-            ctx.lineTo(pCurr.x, pCurr.y);
+            ctx.moveTo(pPrevX, pPrevY);
+            ctx.lineTo(pCurrX, pCurrY);
 
             if (posHistory[j].drift) {
                 ctx.strokeStyle = 'rgba(255, 120, 0, 0.9)';
@@ -370,7 +377,8 @@ export function renderLiveMap(canvas, data, config) {
             }
             ctx.stroke();
 
-            pPrev = pCurr;
+            pPrevX = pCurrX;
+            pPrevY = pCurrY;
         }
         ctx.restore();
     }
