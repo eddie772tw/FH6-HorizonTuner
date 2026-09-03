@@ -163,11 +163,17 @@ describe('S650 center-information registry contract', () => {
       }),
     }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
 
-    expect((ctx.text as string[])).toContain('MUSIC PLAYER');
+    expect((ctx.text as string[])).toContain('ND');
     expect((ctx.text as string[])).toContain('Night Drive');
     expect((ctx.text as string[])).toContain('The Horizon Set');
-    expect((ctx.text as string[])).toContain('3 / 12');
+    expect((ctx.text as string[])).toContain('Road Lines');
+    expect((ctx.text as string[])).toContain('▶');
     expect((ctx.text as string[])).toContain('1:15 / 3:30');
+    expect((ctx.text as string[])).not.toContain('MUSIC PLAYER');
+    expect((ctx.text as string[])).not.toContain('3 / 12');
+    expect((ctx.text as string[])).not.toContain('Electronic');
+    expect((ctx.text as string[])).not.toContain('playing');
+    expect((ctx.text as string[])).not.toContain('music');
   });
 
   it('keeps absent media metadata visibly unavailable', () => {
@@ -186,6 +192,9 @@ describe('S650 center-information registry contract', () => {
     }, 100, 50, 200, 220);
 
     expect((ctx.text as string[])).toContain('NO ACTIVE MEDIA');
+    expect((ctx.text as string[])).toContain('SYSTEM MEDIA SESSION NOT FOUND');
+    expect((ctx.text as string[])).toContain('Metadata unavailable');
+    expect((ctx.text as string[])).toContain('·');
     expect((ctx.text as string[])).toContain('--:-- / --:--');
   });
 

@@ -14,10 +14,10 @@ media-properties 欄位：`title`、`artist`、`album_title`、`album_artist`、
 | `Artist` | `artist` | 使用中 | 演出藝人 |
 | `AlbumTitle` | `album_title` | 使用中 | 專輯名稱 |
 | `AlbumArtist` | `album_artist` | 契約已宣告 | 專輯藝人，預留更細緻署名顯示 |
-| `AlbumTrackCount` | `album_track_count` | 使用中 | 專輯總曲數 |
-| `TrackNumber` | `track_number` | 使用中 | 當前曲序 |
-| `Genres` | `genres` | 使用中 | 最多保留 8 個非空曲風字串 |
-| `PlaybackType` | `playback_type` | 使用中 | `music` / `video` / `image` / `unknown` |
+| `AlbumTrackCount` | `album_track_count` | 契約已宣告 | 專輯總曲數，現階段不佔用畫面 |
+| `TrackNumber` | `track_number` | 契約已宣告 | 當前曲序，現階段不佔用畫面 |
+| `Genres` | `genres` | 契約已宣告 | 最多保留 8 個非空曲風字串，現階段不佔用畫面 |
+| `PlaybackType` | `playback_type` | 契約已宣告 | `music` / `video` / `image` / `unknown`，現階段不佔用畫面 |
 | `Subtitle` | `subtitle` | 契約已宣告 | 副標題／版本資訊，現階段不佔畫面 |
 | `Thumbnail` | `thumbnail` + `thumbnail_available` | 僅可用性 | WinRT 回傳 `RandomAccessStream`；尚未轉為受限大小的 bytes/data URI |
 
@@ -42,9 +42,11 @@ subtitle、thumbnail 必須在該播放器播放歌曲時逐一驗證。
 - `playback_controls`：所有目前 `PlaybackControls` capability flags
 - `source_app_user_model_id`：已納入診斷／路由預留欄位，但不顯示在 HMI
 
-S650 的 `music` center widget 現在顯示歌曲、藝人、專輯、曲序／專輯曲數、曲風、
-播放狀態與時間軸。它是唯讀頁面，沿用既有 `hud:media` 事件，不會在 60 Hz UDP
-接收路徑加入 I/O，也不會自行呼叫播放控制命令。
+S650 的 `music` center widget 現在聚焦顯示封面、曲目、藝人、專輯、進度條與時間；
+播放狀態只用 `▶`、`Ⅱ`、`■` 等符號文字提示，不顯示狀態／播放類型文字。
+當 artwork 尚未能以可繪製來源傳入時，封面區塊使用曲目縮寫作為 fallback。它是唯讀
+頁面，沿用既有 `hud:media` 事件，不會在 60 Hz UDP 接收路徑加入 I/O，也不會自行
+呼叫播放控制命令。
 
 ## 未使用欄位與深度整合預留
 

@@ -18,14 +18,6 @@
         return safe.length > maxLength ? safe.slice(0, maxLength - 1) + '…' : safe;
     }
 
-    function formatTrack(media) {
-        var track = number(media && media.track_number, -1);
-        var total = number(media && media.album_track_count, -1);
-        if (track < 0 && total < 0) return '--';
-        return (track < 0 ? '--' : String(Math.round(track))) + ' / ' +
-            (total < 0 ? '--' : String(Math.round(total)));
-    }
-
     function formatTime(seconds) {
         var value = number(seconds, -1);
         if (value < 0) return '--:--';
@@ -42,13 +34,20 @@
         return common.clamp((position - start) / duration, 0, 1);
     }
 
-    function statusLabel(media) {
-        var status = text(media && media.status, 'none').toUpperCase();
-        var type = text(media && media.playback_type, 'media').toUpperCase();
-        return status + ' · ' + type;
+    function statusSymbol(media) {
+        var status = text(media && media.status, 'none').toLowerCase();
+        var symbols = {
+            playing: '▶',
+            paused: 'Ⅱ',
+            stopped: '■',
+            opened: '·',
+            changing: '…',
+            none: '·'
+        };
+        return symbols[status] || '·';
     }
 
-    function setCenteredText(context, value, y, role, color, size) {
+    function setText(context, value, x, y, role, color, size, align) {
         var ctx = context.ctx;
         var primitives = context.primitives || {};
         if (typeof primitives.setFont === 'function') {
@@ -58,11 +57,99 @@
             primitives.setFont(fontSize, '700', 'Arial Narrow');
         }
         ctx.save();
-        ctx.textAlign = 'center';
+        ctx.textAlign = align || 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = color;
-        ctx.fillText(value, context.region.x + context.region.width / 2, y);
+        ctx.fillText(value, x, y);
         ctx.restore();
+    }
+
+    function coverInitials(media) {
+        var title = text(media && media.title, '--');
+        if (title === '--') return '--';
+        return title.split(/\s+/).slice(0, 2).map(function (word) {
+            return word.charAt(0);
+        }).join('').toUpperCase().slice(0, 2);
+    }
+
+    function drawCover(context, media, x, y, size) {
+        var ctx = context.ctx;
+        var palette = context.palette;
+        var image = media && media.thumbnail;
+        var drawnImage = false;
+
+        ctx.save();
+        ctx.fillStyle = palette.surface || palette.background;
+        ctx.fillRect(x, y, size, size);
+        if (image && typeof image !== 'string' && typeof ctx.drawImage === 'function') {
+            try {
+                ctx.drawImage(image, x, y, size, size);
+                drawnImage = true;
+            } catch (_error) {
+                drawnImage = false;
+            }
+        }
+        if (!drawnImage) {
+            ctx.globalAlpha = 0.35;
+            ctx.fillStyle = palette.primary;
+            ctx.fillRect(x + size * 0.18, y + size * 0.18, size * 0.64, size * 0.64);
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = palette.primary;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, size, size);
+            setText(context, coverInitials(media), x + size / 2, y + size / 2, 'dualRingCenterValue', palette.text, Math.max(14, size * 0.22), 'center');
+        }
+        ctx.restore();
+    }
+
+    function drawProgressBar(context, x, y, width, ratio) {
+        var ctx = context.ctx;
+        var palette = context.palette;
+        var safeWidth = Math.max(0, width);
+        var safeRatio = common.clamp(number(ratio, 0), 0, 1);
+
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = palette.secondary;
+        ctx.fillRect(x, y, safeWidth, 6);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = palette.primary;
+        ctx.fillRect(x, y, safeWidth * safeRatio, 6);
+        ctx.restore();
+    }
+
+    function renderMusic(context, compact) {
+        var media = typeof context.view.getMediaInfo === 'function'
+            ? context.view.getMediaInfo()
+            : {};
+        var palette = context.palette;
+        var region = context.region;
+        var hasMedia = media && media.has_media === true;
+        var pad = compact ? 8 : 20;
+        var coverSize = compact ? 50 : 118;
+        var coverX = region.x + pad;
+        var coverY = region.y + (compact ? 10 : 24);
+        var textX = coverX + coverSize + (compact ? 10 : 20);
+        var textRight = region.x + region.width - pad;
+        var title = hasMedia ? truncate(media.title, compact ? 22 : 26) : 'NO ACTIVE MEDIA';
+        var artist = hasMedia ? truncate(media.artist, compact ? 22 : 26) : 'SYSTEM MEDIA SESSION NOT FOUND';
+        var album = hasMedia ? truncate(media.album_title, compact ? 22 : 26) : 'Metadata unavailable';
+        var position = formatTime(media && media.position_seconds);
+        var duration = formatTime(number(media && media.start_seconds, 0) + number(media && media.duration_seconds, -1));
+        var progressY = region.y + region.height - (compact ? 18 : 38);
+        var timeY = progressY + (compact ? 12 : 18);
+
+        if (!context.ctx || !common) return;
+
+        drawCover(context, hasMedia ? media : {}, coverX, coverY, coverSize);
+        setText(context, title, textX, coverY + (compact ? 12 : 28), 'dualRingCenterValue', hasMedia ? palette.text : palette.secondary, compact ? 13 : 19, 'left');
+        setText(context, artist, textX, coverY + (compact ? 29 : 56), 'dualRingCenterSubtitle', palette.secondary, compact ? 10 : 13, 'left');
+        setText(context, album, textX, coverY + (compact ? 44 : 82), 'dualRingCenterSubtitle', palette.secondary, compact ? 9 : 11, 'left');
+        // The status is intentionally a symbol-only hint; verbose status and
+        // playback type remain available in the contract but are not rendered.
+        setText(context, statusSymbol(media), textRight, region.y + (compact ? 10 : 14), 'dualRingCenterSubtitle', palette.primary, compact ? 13 : 17, 'right');
+        drawProgressBar(context, coverX, progressY, region.width - pad * 2, progressRatio(media));
+        setText(context, position + ' / ' + duration, region.x + region.width / 2, timeY, 'captionLegal', palette.secondary, compact ? 9 : 10, 'center');
     }
 
     window.S650HmiCenterInfo.register({
@@ -70,41 +157,10 @@
         label: 'Music player',
         status: 'production',
         render: function (context) {
-            var ctx = context.ctx;
-            var media = typeof context.view.getMediaInfo === 'function'
-                ? context.view.getMediaInfo()
-                : {};
-            var palette = context.palette;
-            var region = context.region;
-            if (!ctx || !common) return;
-
-            var hasMedia = media && media.has_media === true;
-            var title = hasMedia ? truncate(media.title, 34) : 'NO ACTIVE MEDIA';
-            var artist = hasMedia ? truncate(media.artist, 34) : 'SYSTEM MEDIA SESSION NOT FOUND';
-            var album = hasMedia ? truncate(media.album_title, 30) : 'Metadata unavailable';
-            var genres = hasMedia && Array.isArray(media.genres) && media.genres.length
-                ? truncate(media.genres.join(' / '), 22)
-                : '--';
-            var position = formatTime(media && media.position_seconds);
-            var duration = formatTime(number(media && media.start_seconds, 0) + number(media && media.duration_seconds, -1));
-
-            common.drawTitle(context, 'MUSIC PLAYER', statusLabel(media));
-            setCenteredText(context, title, region.y + 58, 'dualRingCenterValue', hasMedia ? palette.text : palette.secondary, 20);
-            setCenteredText(context, artist, region.y + 84, 'dualRingCenterSubtitle', palette.secondary, 13);
-            setCenteredText(context, album, region.y + 108, 'dualRingCenterSubtitle', palette.secondary, 11);
-            common.drawMetric(context, region.x + 106, region.y + 145, 'TRACK', formatTrack(media), '', 'center');
-            common.drawMetric(context, region.x + region.width - 106, region.y + 145, 'GENRE', genres, '', 'center');
-            common.drawBar(context, region.x + 38, region.y + 191, region.width - 76, progressRatio(media), palette.primary, 'PLAY');
-            setCenteredText(context, position + ' / ' + duration, region.y + 217, 'captionLegal', palette.secondary, 10);
+            renderMusic(context, false);
         },
         renderCompact: function (context) {
-            var media = typeof context.view.getMediaInfo === 'function'
-                ? context.view.getMediaInfo()
-                : {};
-            var hasMedia = media && media.has_media === true;
-            common.drawTitle(context, 'MUSIC', statusLabel(media));
-            setCenteredText(context, hasMedia ? truncate(media.title, 27) : 'NO MEDIA', context.region.y + 53, 'dualRingCenterValue', hasMedia ? context.palette.text : context.palette.secondary, 16);
-            setCenteredText(context, hasMedia ? truncate(media.artist, 27) : 'SESSION UNAVAILABLE', context.region.y + 73, 'dualRingCenterSubtitle', context.palette.secondary, 10);
+            renderMusic(context, true);
         }
     });
 })(window);
