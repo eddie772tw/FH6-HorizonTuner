@@ -1837,3 +1837,16 @@
   - 前端建置：`pnpm -C frontend run build` 成功。
   - 代碼與空白規範：`git diff origin/main --check` 完全乾淨（0 error）。
 - **Status**: adopted。
+
+## 2026-09-03 / S650 GSMTC music widget and extensible media contract
+
+- **Scope**：S650 HMI central music widget、Windows GSMTC media-properties projection、`hud:media` rich snapshot contract，以及未使用事件／方法的擴充評估。
+- **Decision**：
+  1. 以 `winrt-Windows.Media.Control==3.2.1` 可取得的 10 個 `MediaProperties` 欄位建立 bounded JSON contract；`Thumbnail` 保留欄位與可用性旗標，但不把 `RandomAccessStream` 直接放入 JSON。
+  2. S650 先提供唯讀 Music player，顯示 title、artist、album、track number／album track count、genres、playback status/type 與 timeline；沿用既有 `hud:media` transport，不把 GSMTC I/O 放入 60 Hz telemetry path。
+  3. `PlaybackInfo`、`PlaybackControls`、`TimelineProperties`、`source_app_user_model_id` 及 manager/session events、`Try*Async` commands 均先納入契約或註解預留，但不宣稱已完成 event-driven service、artwork endpoint、OS capability 或 playback control E2E。
+  4. 後續深度整合優先順序為長駐 event-driven service／coalescing、timeline 本地插值、bounded artwork cache、`globalMediaControl` package capability 驗證，最後才是預設關閉且明確 opt-in 的播放控制。
+- **Research**：獨立 task `S650 media deep integration research`（`01a066b6-f597-7f03-a5b4-80115898ecda`）完成唯讀研究；確認目前 `/ws/overlay` 是 server-to-client broadcast，未提供 command protocol，因此未直接把控制命令混入 WebSocket。
+- **Evidence**：新增 `backend/system_media_contract.py`、S650 `music` widget 與契約測試；本機唯讀 GSMTC probe 可呼叫但當時沒有活動 media session，故 album／genres／subtitle／thumbnail 的實際 provider 完整度仍待播放器實機驗證。
+- **Limit**：未修改 package manifest、未啟用 `globalMediaControl`、未新增播放控制 endpoint、未讀取或傳送縮圖 bytes、未執行真實跨應用播放命令；local tests 不等於 Windows packaged E2E readiness。
+- **Status**：adopted；完整驗證結果於本次工作回報，未 commit／push。
