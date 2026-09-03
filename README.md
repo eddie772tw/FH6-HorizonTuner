@@ -79,7 +79,8 @@ FH6-HorizonTuner/
 │   ├── routers/             # API 路由 (telemetry, tuning, overlay, drag, log, etc.)
 │   ├── services/            # 後端系統服務與狀態管理
 │   ├── telemetry_sqlite.py   # 遙測歷史紀錄 SQLite 資料庫持久化
-│   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器
+│   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器 (41 全通道 + GPS 投影)
+│   ├── motec_template.py    # MoTeC i2 Pro 5 大工作區 XML 範本產生器
 │   └── car_database.json    # 內建車輛資料庫
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
 │   ├── lite/                # Lite 前端 HTML entrypoint
@@ -88,7 +89,7 @@ FH6-HorizonTuner/
 │   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~5 分頁)
 │   │   ├── overlay_control/ # WYSIWYG 儀表佈局編輯器 (OverlayView)
 │   │   ├── drag_test/       # 彈射起步測試 (DragTestView)
-│   │   ├── analysis/        # 數據分析檢視 (AnalysisView)
+│   │   ├── analysis/        # 賽後復盤與 MoTeC 生態系橋接器 (AnalysisView, Debrief & LapDelta)
 │   │   ├── car_params/      # 車輛參數設定 (CarParamsView)
 │   │   ├── settings/        # 系統全域設定 (SettingsView)
 │   │   └── theme/           # 主題色調與皮膚視圖 (ThemeView)

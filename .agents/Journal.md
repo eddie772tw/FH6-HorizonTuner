@@ -15,6 +15,20 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-02 / Post-Race Debrief & MoTeC Ecosystem Bridge Overhaul
+
+- **來源**：`local`，針對 `AnalysisView` 重新定位與 MoTeC 生態系深度整合。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **定位解耦與生態系賦能**：避免在前端重複造輪子開發複雜自訂圖表與公式解析器（如淘汰 700+ 行之 `CustomChannelEditor` 與 `ChartEditModal`），轉而將 HorizonTuner 定位為「即時輕量復盤 + MoTeC 生態系橋接器」，把專業多通道分析導流給頂級業界工具（MoTeC i2），大幅降低專案長期維護包袱。
+  2. **41 全通道與 GPS 經緯度閉環投影**：Forza UDP 封包的原生 `PositionX, PositionY, PositionZ` 為世界公尺座標。藉由基準點（墨西哥城）WGS84 投影轉為 `GPS Latitude` / `GPS Longitude`，可直接觸發 MoTeC i2 的 Track Map 賽道輪廓繪製；胎溫由華氏轉換為攝氏、滑移角轉為度數，提供真正開箱即用的 MoTeC 分析體驗。
+  3. **Canvas 2D 輕量 Delta 圖表取代 Heavy Chart 庫**：自製雙層 `LapDeltaCanvas`（上層車速 vs 基準圈 Delta，下層油門/煞車踏板），配合滑鼠 Hover 距離百分比同步比對，提供極致流暢的單圈攻角與踩踏檢視，免除 Recharts 造成的 DOM 負擔。
+- **Action**：
+  1. 新增 `backend/motec_template.py` 生成 5 大專業分頁之 MoTeC i2 Workspace XML 範本。
+  2. 升級 `backend/motec_exporter.py` 提供 41 通道匯出、GPS 經緯度轉換與賽後底盤健康度計算。
+  3. 新增後端 API：`GET /api/analysis/motec/template`、`POST /api/analysis/motec/open/{session_id}` 與 `GET /api/analysis/sessions/{session_id}/debrief`。
+  4. 建立前端 `sessionDebriefMath.ts`（純函數）、`SessionHealthDebrief.tsx` 與 `LapDeltaCanvas.tsx`。
+  5. 重構 `AnalysisView.tsx` 為賽後復盤與 MoTeC 快速導出/一鍵開啟主介面。
 ## 2026-09-02 / Step 5 Closed-Loop Telemetry Calibration Overhaul & Full Packet Analysis Engine
 
 - **來源**：`local`，針對調校工作流 Step 5 回歸監控無法依據覆蓋設定即時重新評估、缺乏一鍵採納建議，以及遙測封包多維度客觀數據全面評估與解讀。
@@ -1799,4 +1813,27 @@
 - **Decision**: Tauri `frontend/src-tauri/tauri.conf.json` 維持 updater runtime version source；executable test 與 synthetic release packaging test 從該來源讀取版號，不再複製目前版本常數。新增 `scripts/validate_version_consistency.py`，在一般 CI、Release CI 與 release packaging test 建置前檢查 Tauri、Cargo、Cargo.lock、backend runtime 與 PyInstaller metadata 漂移。
 - **Limit**: `v1.x` release tag 與 `11.45.x` runtime version 是不同且具 OTA 相容性意義的序列，不自動由 tag 推導 runtime version；未來升版仍需更新既有 runtime source 與其同步產物，validator 會在建置前 fail closed。
 - **Evidence**: validator 通過；backend `253 passed, 8 deselected`；frontend Vitest `86 files / 537 tests` 通過；Ruff `146 files already formatted`；targeted release/executable tests `7 passed, 2 deselected`。
+- **Status**: adopted。
+
+---
+
+## 2026-09-03 / AnalysisView MoTeC debrief and roundtrip contract hardening (PR #290)
+
+- **Scope**: `backend/motec_exporter.py`, `backend/telemetry_sqlite.py`, `backend/main.py`, `frontend/src/features/analysis/`, `frontend/src/context/TelemetryRecorderContext.tsx`, `tests/test_motec_exporter.py`.
+- **Reviewer**: Luna as Codex (PR #290 review findings addressed).
+- **Decision & Fixes**:
+  1. **Tire Temperature Deterministic Conversion**: 移除 `temps[0] > 150` / `> 130` 等啟發式條件判斷。Forza 遙測原生封包之 `TireTemp` 固定為華氏 (°F)，在賽後 Debrief 與 MoTeC 導出時，統一採用嚴格的 `(T - 32) * 5 / 9` 確定性攝氏轉換公式，避免 131°F~150°F (約 55°C~65°C) 冷胎被誤判為 Overheating 異常。
+  2. **Canonical Telemetry Contract & 41-Channel Roundtrip**: 對齊正規遙測資料契約，正確讀取與導出 `PowerWatts` (以 745.7 換算為 hp)、`TorqueNewtons` (Nm)、`Boost` (以帕斯卡 Pa 除以 6894.75729 換算為 psi)、`Fuel`、`SuspensionTravelMeters`、`clutch_pct` / `ClutchInput` 與 `handbrake_pct` / `HandBrakeInput`。
+  3. **SQLite Schema Migration & Persistence**: 在 `telemetry_channels` 資料表擴充 `susp_meters_fl..rr`, `power_watts`, `torque_newtons`, `boost`, `fuel`，並在 `_init_db()` 加入動態 `PRAGMA table_info` + `ALTER TABLE ADD COLUMN` migration 機制，確保現有資料庫平滑升級，且在 `get_telemetry_points()` 完整出庫回傳。
+  4. **Active Session Resolution**: 後端 `/api/analysis/export/motec/{session_id}` 與 `/open/{session_id}` 支援 `session_id == "current"` 解析為進行中的 `race_recorder.current_session_id`；前端 `useTelemetryRecorder` 暴露 `currentSessionId` 並於 `handleOpenInMoTec` 正確解析，避免未錄製或新錄製時查無 session 導致 404 或誤開舊 session。
+  5. **Visualization Robustness**: `LapDeltaCanvas` 在單一樣本 (`length === 1`) 時引入 `Math.max(1, length - 1)` 防護，避免分母為 0 造成繪圖除數 NaN；並透過 `ResizeObserver` 動態監聽容器寬高自適應調度重繪。
+  6. **MoTeC CSV Import Restoration**: 在 `AnalysisView` 補上隱藏檔案輸入框與觸發按鈕，恢復調用 `uploadMoTecCsv` 匯入功能。
+  7. **Halfmoon CSS Design System Compliance**: 全面移除 UI 裝飾性 Emoji (`📈`, `🌡️`, `🛞`, `⚖️`, `📡`, `🚀`, `📥`, `📦`, `🗺️`)，並將按鈕與狀態指示器由硬編碼十六進位色彩替換為 Halfmoon 語意 class (`btn btn-sm btn-success/secondary/primary/info/danger`, `badge text-bg-success/danger/info/warning`)，清除行尾 trailing whitespace。
+- **Evidence**:
+  - Reviewer 提供的 3 項回歸測試與全套測試通過：`test_export_uses_canonical_power_and_boost_fields`, `test_debrief_converts_midrange_fahrenheit`, `test_saved_points_retain_full_export_channels`。
+  - 後端測試：`pytest tests/ -m "not host_diagnostics and not executable_bundle"` (261 passed, 8 deselected)。
+  - 前端測試：Vitest 88 files / 553 tests 100% 通過。
+  - 靜態檢查：`ruff check .` 與 `ruff format --check .` (148 files already formatted) 通過。
+  - 前端建置：`pnpm -C frontend run build` 成功。
+  - 代碼與空白規範：`git diff origin/main --check` 完全乾淨（0 error）。
 - **Status**: adopted。

@@ -101,9 +101,36 @@ class TelemetrySQLite:
                     temp_fr REAL DEFAULT 0.0,
                     temp_rl REAL DEFAULT 0.0,
                     temp_rr REAL DEFAULT 0.0,
+                    susp_meters_fl REAL DEFAULT 0.0,
+                    susp_meters_fr REAL DEFAULT 0.0,
+                    susp_meters_rl REAL DEFAULT 0.0,
+                    susp_meters_rr REAL DEFAULT 0.0,
+                    power_watts REAL DEFAULT 0.0,
+                    torque_newtons REAL DEFAULT 0.0,
+                    boost REAL DEFAULT 0.0,
+                    fuel REAL DEFAULT 1.0,
                     FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
                 );
             """)
+
+            # Column migration for existing tables
+            cursor.execute("PRAGMA table_info(telemetry_channels);")
+            existing_cols = {col[1] for col in cursor.fetchall()}
+            new_columns = [
+                ("susp_meters_fl", "REAL DEFAULT 0.0"),
+                ("susp_meters_fr", "REAL DEFAULT 0.0"),
+                ("susp_meters_rl", "REAL DEFAULT 0.0"),
+                ("susp_meters_rr", "REAL DEFAULT 0.0"),
+                ("power_watts", "REAL DEFAULT 0.0"),
+                ("torque_newtons", "REAL DEFAULT 0.0"),
+                ("boost", "REAL DEFAULT 0.0"),
+                ("fuel", "REAL DEFAULT 1.0"),
+            ]
+            for col_name, col_def in new_columns:
+                if col_name not in existing_cols:
+                    cursor.execute(
+                        f"ALTER TABLE telemetry_channels ADD COLUMN {col_name} {col_def};"
+                    )
 
             # Create Indexes for fast Lap & Distance querying
             cursor.execute(
@@ -185,9 +212,14 @@ class TelemetrySQLite:
         records = []
         for p in points:
             susp = p.get("SuspTravel", DEFAULT_ARRAY)
+            susp_m = p.get("SuspensionTravelMeters", DEFAULT_ARRAY)
             s_angle = p.get("TireSlipAngle", DEFAULT_ARRAY)
             s_ratio = p.get("TireSlipRatio", DEFAULT_ARRAY)
             temp = p.get("TireTemp", DEFAULT_ARRAY)
+            power_w = p.get("PowerWatts", p.get("Power", 0.0))
+            torque_n = p.get("TorqueNewtons", p.get("Torque", 0.0))
+            boost_val = p.get("Boost", 0.0)
+            fuel_val = p.get("Fuel", 1.0)
 
             records.append(
                 (
@@ -254,6 +286,14 @@ class TelemetrySQLite:
                     temp[1] if len(temp) > 1 else 0.0,
                     temp[2] if len(temp) > 2 else 0.0,
                     temp[3] if len(temp) > 3 else 0.0,
+                    susp_m[0] if len(susp_m) > 0 else 0.0,
+                    susp_m[1] if len(susp_m) > 1 else 0.0,
+                    susp_m[2] if len(susp_m) > 2 else 0.0,
+                    susp_m[3] if len(susp_m) > 3 else 0.0,
+                    float(power_w or 0.0),
+                    float(torque_n or 0.0),
+                    float(boost_val or 0.0),
+                    float(fuel_val if fuel_val is not None else 1.0),
                 )
             )
 
@@ -267,11 +307,15 @@ class TelemetrySQLite:
                     susp_fl, susp_fr, susp_rl, susp_rr,
                     slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr,
                     slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr,
-                    temp_fl, temp_fr, temp_rl, temp_rr
+                    temp_fl, temp_fr, temp_rl, temp_rr,
+                    susp_meters_fl, susp_meters_fr, susp_meters_rl, susp_meters_rr,
+                    power_watts, torque_newtons, boost, fuel
                 ) VALUES (
                     ?, ?, ?, ?,
                     ?, ?, ?, ?, ?, ?, ?, ?,
                     ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?,
                     ?, ?, ?, ?,
                     ?, ?, ?, ?,
                     ?, ?, ?, ?,
@@ -376,12 +420,15 @@ class TelemetrySQLite:
                     relative_time, lap_number, lap_distance,
                     speed / 3.6, rpm, gear,
                     accel_pct, brake_pct, steer_pct,
-                    accel_x * 9.81, accel_z * 9.81,
+                    accel_x * 9.81, accel_y * 9.81, accel_z * 9.81,
                     pos_x, pos_y, pos_z,
                     susp_fl, susp_fr, susp_rl, susp_rr,
                     slip_angle_fl / 57.29578, slip_angle_fr / 57.29578, slip_angle_rl / 57.29578, slip_angle_rr / 57.29578,
                     slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr,
-                    temp_fl, temp_fr, temp_rl, temp_rr
+                    temp_fl, temp_fr, temp_rl, temp_rr,
+                    clutch_pct, handbrake_pct,
+                    susp_meters_fl, susp_meters_fr, susp_meters_rl, susp_meters_rr,
+                    power_watts, torque_newtons, boost, fuel
                 FROM telemetry_channels
                 WHERE session_id = ?
             """
@@ -408,16 +455,33 @@ class TelemetrySQLite:
                     "brake_pct": r[7],
                     "steer_pct": r[8],
                     "AccelerationX": r[9],
-                    "AccelerationZ": r[10],
-                    "PositionX": r[11],
-                    "PositionY": r[12],
-                    "PositionZ": r[13],
-                    "SuspTravel": [r[14], r[15], r[16], r[17]],
-                    "TireSlipAngle": [r[18], r[19], r[20], r[21]],
-                    "TireSlipRatio": [r[22], r[23], r[24], r[25]],
-                    "TireTemp": [r[26], r[27], r[28], r[29]],
+                    "AccelerationY": r[10],
+                    "AccelerationZ": r[11],
+                    "PositionX": r[12],
+                    "PositionY": r[13],
+                    "PositionZ": r[14],
+                    "SuspTravel": [r[15], r[16], r[17], r[18]],
+                    "TireSlipAngle": [r[19], r[20], r[21], r[22]],
+                    "TireSlipRatio": [r[23], r[24], r[25], r[26]],
+                    "TireTemp": [r[27], r[28], r[29], r[30]],
                     "AccelInput": int(((r[6] or 0) / 100.0) * 255),
                     "BrakeInput": int(((r[7] or 0) / 100.0) * 255),
+                    "clutch_pct": r[31] or 0.0,
+                    "handbrake_pct": r[32] or 0.0,
+                    "ClutchInput": int(((r[31] or 0) / 100.0) * 255),
+                    "HandBrakeInput": int(((r[32] or 0) / 100.0) * 255),
+                    "SuspensionTravelMeters": [
+                        r[33] or 0.0,
+                        r[34] or 0.0,
+                        r[35] or 0.0,
+                        r[36] or 0.0,
+                    ],
+                    "PowerWatts": r[37] or 0.0,
+                    "Power": r[37] or 0.0,
+                    "TorqueNewtons": r[38] or 0.0,
+                    "Torque": r[38] or 0.0,
+                    "Boost": r[39] or 0.0,
+                    "Fuel": r[40] if r[40] is not None else 1.0,
                 }
                 for i in range(0, len(rows), max(1, downsample))
                 if (r := rows[i]) or True

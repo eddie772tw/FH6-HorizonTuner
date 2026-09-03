@@ -112,7 +112,12 @@ from mcp import (
     McpResourceManager,
     McpToolManager,
 )
-from motec_exporter import export_session_to_motec_csv, parse_motec_csv_to_telemetry
+from motec_exporter import (
+    calculate_session_debrief,
+    export_session_to_motec_csv,
+    parse_motec_csv_to_telemetry,
+)
+from motec_template import generate_motec_workspace_xml
 from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
 from process_cleanup import cleanup_stale_port_listeners
@@ -2117,10 +2122,30 @@ async def delete_saved_session(session_id: str):
 
 @app.get("/api/analysis/export/motec/{session_id}")
 async def export_motec_session(session_id: str):
+    if session_id == "current":
+        if race_recorder.current_session_id:
+            session_id = race_recorder.current_session_id
+        else:
+            sessions = telemetry_db.list_all_sessions()
+            if sessions:
+                session_id = sessions[0]["session_id"]
+            else:
+                return {"error": "Session not found"}
+
     sessions = telemetry_db.list_all_sessions()
     session_meta = next((s for s in sessions if s["session_id"] == session_id), None)
     if not session_meta:
-        return {"error": "Session not found"}
+        if race_recorder.current_session_id == session_id:
+            session_meta = {
+                "session_id": session_id,
+                "car_name": "Current Session",
+                "car_ordinal": 0,
+                "car_class": 0,
+                "car_pi": 0,
+                "start_time": race_recorder.start_time or 0.0,
+            }
+        else:
+            return {"error": "Session not found"}
 
     points = telemetry_db.get_telemetry_points(session_id)
     if not points:
@@ -2139,6 +2164,108 @@ async def export_motec_session(session_id: str):
             export_filepath, filename=export_filename, media_type="text/csv"
         )
     return {"error": "Failed to generate MoTeC CSV export"}
+
+
+@app.get("/api/analysis/motec/template")
+async def download_motec_workspace_template():
+    """Generates and downloads the pre-configured HorizonTuner MoTeC i2 workspace template."""
+    xml_data = generate_motec_workspace_xml()
+    template_filename = "FH6_HorizonTuner_MoTeC_Workspace.xml"
+    template_filepath = safe_resolve_path(
+        SESSIONS_DIR, template_filename, allow_create=True
+    )
+    if template_filepath:
+        with open(template_filepath, "w", encoding="utf-8") as f:
+            f.write(xml_data)
+        return FileResponse(
+            template_filepath,
+            filename=template_filename,
+            media_type="application/xml",
+        )
+    return Response(
+        content=xml_data,
+        media_type="application/xml",
+        headers={"Content-Disposition": f"attachment; filename={template_filename}"},
+    )
+
+
+@app.post("/api/analysis/motec/open/{session_id}")
+async def open_session_in_motec(session_id: str):
+    """Exports session to MoTeC CSV and attempts to launch it with the system MoTeC i2 installation."""
+    if session_id == "current":
+        if race_recorder.current_session_id:
+            session_id = race_recorder.current_session_id
+        else:
+            sessions = telemetry_db.list_all_sessions()
+            if sessions:
+                session_id = sessions[0]["session_id"]
+            else:
+                return {"error": "Session not found", "success": False}
+
+    sessions = telemetry_db.list_all_sessions()
+    session_meta = next((s for s in sessions if s["session_id"] == session_id), None)
+    if not session_meta:
+        if race_recorder.current_session_id == session_id:
+            session_meta = {
+                "session_id": session_id,
+                "car_name": "Current Session",
+                "car_ordinal": 0,
+                "car_class": 0,
+                "car_pi": 0,
+                "start_time": race_recorder.start_time or 0.0,
+            }
+        else:
+            return {"error": "Session not found", "success": False}
+
+    points = telemetry_db.get_telemetry_points(session_id)
+    if not points:
+        return {"error": "No telemetry data points found in session", "success": False}
+
+    export_filename = os.path.basename(f"{session_id}_motec.csv")
+    export_filepath = safe_resolve_path(
+        SESSIONS_DIR, export_filename, allow_create=True
+    )
+    if not export_filepath:
+        return {"error": "Invalid session export path", "success": False}
+
+    success = export_session_to_motec_csv(session_meta, points, export_filepath)
+    if not success or not os.path.exists(export_filepath):
+        return {"error": "Failed to generate MoTeC export file", "success": False}
+
+    launched = False
+    try:
+        if hasattr(os, "startfile"):
+            os.startfile(export_filepath)
+            launched = True
+    except Exception as e:
+        logger.warning(f"Failed to auto-launch MoTeC via startfile: {e}")
+
+    return {
+        "success": True,
+        "launched": launched,
+        "filepath": export_filepath,
+        "filename": export_filename,
+        "message": "File exported successfully"
+        + (" and launched in viewer" if launched else ""),
+    }
+
+
+@app.get("/api/analysis/sessions/{session_id}/debrief")
+async def get_session_debrief(session_id: str):
+    """Calculates a post-race chassis health and vehicle dynamics debrief report."""
+    if session_id == "current":
+        if race_recorder.current_session_id:
+            points = telemetry_db.get_telemetry_points(race_recorder.current_session_id)
+        else:
+            sessions = telemetry_db.list_all_sessions()
+            if sessions:
+                points = telemetry_db.get_telemetry_points(sessions[0]["session_id"])
+            else:
+                points = []
+    else:
+        points = telemetry_db.get_telemetry_points(session_id)
+
+    return calculate_session_debrief(points)
 
 
 @app.post("/api/analysis/import/motec")
