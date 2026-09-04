@@ -8,10 +8,10 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-#[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+#[cfg(all(target_os = "windows", target_arch = "x86_64", not(debug_assertions)))]
 const EMBEDDED_SIDECAR: &[u8] = include_bytes!("../bin/server-sidecar-x86_64-pc-windows-msvc.exe");
 
-#[cfg(not(all(target_os = "windows", target_arch = "x86_64")))]
+#[cfg(not(all(target_os = "windows", target_arch = "x86_64", not(debug_assertions))))]
 const EMBEDDED_SIDECAR: &[u8] = &[];
 
 #[derive(Clone, Serialize)]

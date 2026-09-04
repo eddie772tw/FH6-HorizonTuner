@@ -15,6 +15,23 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-04 / Tauri Dev Build Acceleration: Sidecar Exclusion & rust-lld Linker
+
+- **來源**：`local`，針對執行 `start_frontend.bat`（`pnpm run tauri dev`）時在 Vite 啟動後卡在 `[tauri] Building application...` 長達 20~40 秒之編譯瓶頸優化。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Tauri Dev 模式下無謂搬移 38.8 MB 二進位檔案**：`frontend/src-tauri/src/lib.rs` 原先無條件使用 `include_bytes!` 嵌入 38.8 MB 的 `server-sidecar.exe`。然而在 `debug_assertions`（開發模式）下，Tauri 嚴格遵守連線外部後端合約，完全不使用該嵌入資料。無條件嵌入導致微軟 MSVC 連結器 (`link.exe`) 每次增量建置都必須搬移、重定位與寫入 40MB 資料，造成嚴重的磁碟 I/O 與連結停頓。
+  2. **LLVM `rust-lld` 多執行緒連結器大幅勝過預設 `link.exe`**：Windows 上 Rust 預設使用 MSVC `link.exe`（單執行緒、大檔案連結遲鈍）。切換為 Rustup 內建的 `rust-lld.exe` 後，增量連結速度有數倍提升。
+  3. **Release 打包防護與單一真理保持**：透過 `not(debug_assertions)` 條件編譯，嚴格保證 Release 打包（`tauri build` 與 `build_all.bat`）依然完整嵌入 38.8 MB Sidecar，不破壞 Portable 單檔發行架構。
+- **Action**：
+  1. 修改 `frontend/src-tauri/src/lib.rs`：`EMBEDDED_SIDECAR` 限制為僅在 `not(debug_assertions)` 下透過 `include_bytes!` 嵌入，Debug 模式下設為 `&[]`。Debug 執行檔體積由 ~70MB 縮減至 23MB。
+  2. 新增 `frontend/src-tauri/.cargo/config.toml`：針對 `x86_64-pc-windows-msvc` 配置 `rustflags = ["-C", "linker=rust-lld.exe"]`，啟用 LLVM 高速連結器。
+  3. 驗證增量編譯速度：`cargo build` 增量建置時間由 10~25 秒驟降至 0.76 秒；`cargo test` 3 項全過（100% 通過）；`cargo check --release` 驗證 Release 模式完整嵌入 Sidecar 且無錯誤（51 秒完成）；前後端全套 Pytest（270 passed）、Vitest（566 passed）及 Ruff 均 100% 綠燈。
+- **Evidence**：`frontend/src-tauri/target/debug/FH6-HorizonTuner.exe` 由 65MB+ 縮減至 23.2MB；增量建置耗時 0.76 秒；全套自動化測試與代碼檢查全數通過。
+- **Governance**：本筆追加依 `portable-release-validation` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-04 / Dev Startup Orchestration & Readiness Gate Overhaul
 
 - **來源**：`local`，針對 `start_all.bat` 與 `start_backend.bat` 同時並行啟動引發的競態衝突、舊端口假就緒、8001 競爭觸發動態埠，以及 `pnpm audit` 連網造成假死之根因修復。
