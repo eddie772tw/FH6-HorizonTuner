@@ -2857,6 +2857,11 @@ async def get_overlay_media_thumbnail(request: Request, v: str | None = None):
     if not thumb_bytes:
         raise HTTPException(status_code=404, detail="No media thumbnail available")
 
+    # A versioned URL is immutable only when it still identifies the bytes in
+    # the single-slot cache. Never serve a newer cover under an older hash.
+    if v and (not thumb_hash or v != thumb_hash):
+        raise HTTPException(status_code=404, detail="Media thumbnail version expired")
+
     if_none_match = request.headers.get("if-none-match")
     if if_none_match and thumb_hash and if_none_match.strip('"') == thumb_hash:
         return Response(status_code=304)

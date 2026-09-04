@@ -268,6 +268,11 @@
             get isMetric() { return state.isMetric; },
             get centerWidget() { return state.centerWidget; },
             getMediaInfo: function () { return state.media; },
+            requestRender: function () {
+                if (isReady && state.showGauge && !state.sweepActive) {
+                    render(state.lastFrame, 0);
+                }
+            },
             get foxbodyNightMode() { return state.guiThemeMode === 'dark'; },
             get showCenterInfo() { return state.showCenterInfo; },
             get showSpeed() { return state.showSpeed; },

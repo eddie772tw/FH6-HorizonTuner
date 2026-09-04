@@ -19,17 +19,18 @@ media-properties 欄位：`title`、`artist`、`album_title`、`album_artist`、
 | `Genres` | `genres` | 契約已宣告 | 最多保留 8 個非空曲風字串，現階段不佔用畫面 |
 | `PlaybackType` | `playback_type` | 契約已宣告 | `music` / `video` / `image` / `unknown`，現階段不佔用畫面 |
 | `Subtitle` | `subtitle` | 契約已宣告 | 副標題／版本資訊，現階段不佔畫面 |
-| `Thumbnail` | `thumbnail` + `thumbnail_available` | 僅可用性 | WinRT 回傳 `RandomAccessStream`；尚未轉為受限大小的 bytes/data URI |
+| `Thumbnail` | `thumbnail_url` + `thumbnail_available` | 使用中 | WinRT `RandomAccessStream` 以 10 MiB 上限讀入單槽快取；HUD 只接收內容 hash URL，不在 WebSocket 傳送圖片 bytes |
 
 `backend/system_media_contract.py` 將 WinRT 物件轉成 bounded JSON；
 `hud_overlay/s650_hmi/assets/s650_contract.js` 再做 HUD 邊界的型別與數值正規化。
 因此沒有 metadata 時，欄位仍存在並以 `null`、空陣列或明確的 capability default
 表示，不會讓 renderer 猜測播放器行為。
 
-目前這台開發機的唯讀 GSMTC probe 沒有活動 media session，因此只取得：
-`has_media=false`、`state=none`、`source=winrt`。這證明 API 路徑可呼叫，但不是
-實際播放器欄位完整度的 live evidence；不同播放器是否填入 album、genres、
-subtitle、thumbnail 必須在該播放器播放歌曲時逐一驗證。
+後續 Windows 實機驗證已確認背景 Spotify session 可提供曲目、藝人、專輯、時間軸
+與 PNG thumbnail。後端將圖片保存在單槽記憶體快取，並透過
+`GET /api/overlay/media/thumbnail?v={hash}` 提供 ETag 與 immutable cache；若 URL hash
+已不是目前單槽內容，端點回傳 404，避免把新封面快取到舊內容位址。不同播放器是否
+完整填入 album、genres、subtitle 與 thumbnail 仍取決於來源 app 的 GSMTC 實作。
 
 ## 目前已加入的播放狀態契約
 
@@ -53,9 +54,9 @@ S650 的 `music` center widget 現在聚焦顯示封面、曲目、藝人、專�
 Microsoft API 也提供下列未在本次 HMI 啟用的入口，完整能力與限制另見獨立研究
 task：
 
-- `Thumbnail` 的 `RandomAccessStream`：未來可設計圖片大小上限、快取、格式驗證
-  與 HUD transport，再接到 Canvas `ImageBitmap`；在此之前只傳
-  `thumbnail_available`。
+- `Thumbnail` 格式驗證與多項 LRU：目前已實作 10 MiB 大小上限、單槽快取與
+  Canvas `Image` 解碼；未來若要保留歷史封面或接受更多來源格式，仍需增加明確的
+  MIME／magic-byte 驗證與 bounded multi-entry eviction policy。
 - `PlaybackControls`：可判斷 `TryPlayAsync`、`TryPauseAsync`、
   `TryTogglePlayPauseAsync`、上一首／下一首、seek、repeat、shuffle、rate 等命令
   是否被來源 app 支援；目前只序列化 capability，不執行命令。

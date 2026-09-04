@@ -358,6 +358,71 @@ def test_try_get_winrt_gsm_media_prioritizes_playing_session(monkeypatch):
     assert result["status"] == "playing"
 
 
+def test_try_get_winrt_gsm_media_tolerates_thumbnail_import_error(monkeypatch):
+    import sys
+    import types
+
+    monkeypatch.setattr(system_media.sys, "platform", "win32")
+
+    class ExplosiveInfo:
+        title = "Available Track"
+        artist = "Available Artist"
+        album_title = "Available Album"
+
+        @property
+        def thumbnail(self):
+            raise ModuleNotFoundError("No module named 'winrt.windows.storage'")
+
+    class FakeSession:
+        source_app_user_model_id = "music.app"
+
+        async def try_get_media_properties_async(self):
+            return ExplosiveInfo()
+
+        def get_playback_info(self):
+            return SimpleNamespace(playback_status=4, controls=SimpleNamespace())
+
+        def get_timeline_properties(self):
+            return None
+
+    session = FakeSession()
+
+    class FakeManager:
+        def get_current_session(self):
+            return session
+
+        def get_sessions(self):
+            return [session]
+
+    class FakeWMC:
+        class GlobalSystemMediaTransportControlsSessionManager:
+            @classmethod
+            async def request_async(cls):
+                return FakeManager()
+
+    fake_winrt = types.ModuleType("winrt")
+    fake_windows = types.ModuleType("winrt.windows")
+    fake_foundation = types.ModuleType("winrt.windows.foundation")
+    fake_media = types.ModuleType("winrt.windows.media")
+    fake_media.control = FakeWMC
+    fake_windows.foundation = fake_foundation
+    fake_windows.media = fake_media
+    fake_winrt.windows = fake_windows
+
+    monkeypatch.setitem(sys.modules, "winrt", fake_winrt)
+    monkeypatch.setitem(sys.modules, "winrt.windows", fake_windows)
+    monkeypatch.setitem(sys.modules, "winrt.windows.foundation", fake_foundation)
+    monkeypatch.setitem(sys.modules, "winrt.windows.media", fake_media)
+    monkeypatch.setitem(sys.modules, "winrt.windows.media.control", FakeWMC)
+
+    result = asyncio.run(system_media._try_get_winrt_gsm_media())
+
+    assert result is not None
+    assert result["has_media"] is True
+    assert result["title"] == "Available Track"
+    assert result["thumbnail_url"] is None
+
+
 def test_extract_thumbnail_bytes_handles_none_or_error():
     assert asyncio.run(system_media.extract_thumbnail_bytes(None)) == (None, None)
 
@@ -404,6 +469,10 @@ def test_get_media_thumbnail_endpoint(monkeypatch):
     assert res.headers["content-type"] == "image/png"
     assert res.headers["etag"] == '"aabbcc1122334455"'
     assert "max-age=3600" in res.headers["cache-control"]
+
+    # A stale content-addressed URL must not receive newer single-slot bytes.
+    expired = client.get("/api/overlay/media/thumbnail?v=expired-hash")
+    assert expired.status_code == 404
 
     # 3. Conditional request with matching If-None-Match returns 304
     res304 = client.get(

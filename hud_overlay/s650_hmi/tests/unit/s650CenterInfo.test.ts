@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 type Widget = 'disable' | 'drive' | 'tire_temp' | 'performance' | 'music';
 type Region = {
@@ -489,5 +489,62 @@ describe('S650 center-information registry contract', () => {
 
     expect((ctx.text as string[])).toContain('NT');
     expect((ctx.text as string[])).toContain('Network Track');
+  });
+
+  it('clears stale artwork while a replacement loads and requests a repaint on load', () => {
+    const instances: MockImage[] = [];
+    class MockImage {
+      complete = true;
+      naturalWidth = 300;
+      naturalHeight = 300;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      src = '';
+
+      constructor() {
+        instances.push(this);
+      }
+    }
+    vi.stubGlobal('Image', MockImage);
+
+    try {
+      const ctx = createCanvasSpy();
+      const centerInfo = loadCenterInfoModule().create({
+        ctx,
+        primitives: {
+          setFont: () => undefined,
+          getFontSize: (_view, _role, fallback) => fallback,
+        },
+        contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+      });
+      const requestRender = vi.fn();
+      let media = {
+        has_media: true,
+        title: 'Track A',
+        artist: 'Artist',
+        thumbnail_url: '/api/overlay/media/thumbnail?v=hash-a',
+      };
+      const view = {
+        centerWidget: 'music',
+        getMediaInfo: () => media,
+        requestRender,
+      };
+
+      centerInfo.draw(view, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+      const firstImage = instances[0];
+      firstImage.onload?.();
+      (ctx.images as unknown[]).length = 0;
+
+      media = { ...media, title: 'Track B', thumbnail_url: '/api/overlay/media/thumbnail?v=hash-b' };
+      centerInfo.draw(view, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+      expect(ctx.images as unknown[]).not.toContain(firstImage);
+      expect(requestRender).toHaveBeenCalledTimes(1);
+
+      instances[1].onload?.();
+      expect(requestRender).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

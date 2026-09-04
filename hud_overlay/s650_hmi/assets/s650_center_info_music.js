@@ -64,12 +64,29 @@
         ctx.restore();
     }
 
+    var cachedInitialsTitle = null;
+    var cachedInitials = '--';
+
     function coverInitials(media) {
         var title = text(media && media.title, '--');
         if (title === '--') return '--';
-        return title.split(/\s+/).slice(0, 2).map(function (word) {
-            return word.charAt(0);
-        }).join('').toUpperCase().slice(0, 2);
+        if (title === cachedInitialsTitle) return cachedInitials;
+
+        var initials = '';
+        var atWordStart = true;
+        for (var i = 0; i < title.length && initials.length < 2; i++) {
+            var character = title.charAt(i);
+            var isWhitespace = /\s/.test(character);
+            if (isWhitespace) {
+                atWordStart = true;
+            } else if (atWordStart) {
+                initials += character.toUpperCase();
+                atWordStart = false;
+            }
+        }
+        cachedInitialsTitle = title;
+        cachedInitials = initials || '--';
+        return cachedInitials;
     }
 
     var currentThumbUrl = null;
@@ -88,12 +105,16 @@
         if (!directImage && typeof Image !== 'undefined') {
             if (thumbUrl && thumbUrl !== currentThumbUrl) {
                 currentThumbUrl = thumbUrl;
+                loadedThumbnailImage = null;
                 isThumbLoading = true;
                 var img = new Image();
                 img.onload = function () {
                     if (currentThumbUrl === thumbUrl) {
                         loadedThumbnailImage = img;
                         isThumbLoading = false;
+                        if (context.view && typeof context.view.requestRender === 'function') {
+                            context.view.requestRender();
+                        }
                     }
                 };
                 img.onerror = function () {

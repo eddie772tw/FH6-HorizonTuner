@@ -9,6 +9,8 @@ from system_media_contract import (
     DEFAULT_PLAYBACK_CONTROLS,
     DEFAULT_TITLE,
     MEDIA_TEXT_FIELDS,
+    _enum_value,
+    _safe_get,
 )
 from system_media_contract import (
     build_media_result as _build_media_result,
@@ -144,22 +146,15 @@ async def _try_get_winrt_gsm_media() -> dict | None:
                 info = await s.try_get_media_properties_async()
                 if not info:
                     continue
-                title = (getattr(info, "title", None) or "").strip()
-                artist = (getattr(info, "artist", None) or "").strip()
+                title = (_safe_get(info, "title") or "").strip()
+                artist = (_safe_get(info, "artist") or "").strip()
                 if not (title or artist):
                     continue
 
                 pb = s.get_playback_info()
                 tl = s.get_timeline_properties()
-                status_val = getattr(pb, "playback_status", None)
-                is_playing = False
-                try:
-                    if hasattr(status_val, "value"):
-                        is_playing = int(status_val.value) == 4
-                    elif status_val is not None:
-                        is_playing = int(status_val) == 4
-                except Exception:
-                    is_playing = False
+                status_val = _safe_get(pb, "playback_status")
+                is_playing = _enum_value(status_val) == 4
 
                 candidate = (s, info, pb, tl)
                 if is_playing:
@@ -172,12 +167,12 @@ async def _try_get_winrt_gsm_media() -> dict | None:
 
         if best_candidate is not None:
             s, info, pb, tl = best_candidate
-            title = (getattr(info, "title", None) or "").strip()
-            artist = (getattr(info, "artist", None) or "").strip()
-            album_title = (getattr(info, "album_title", None) or "").strip()
+            title = (_safe_get(info, "title") or "").strip()
+            artist = (_safe_get(info, "artist") or "").strip()
+            album_title = (_safe_get(info, "album_title") or "").strip()
             current_track_key = (title, artist, album_title)
 
-            thumb_ref = getattr(info, "thumbnail", None)
+            thumb_ref = _safe_get(info, "thumbnail")
             thumb_url = None
 
             if thumb_ref:
