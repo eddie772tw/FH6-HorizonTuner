@@ -16,6 +16,3 @@
 ## 2024-10-25 - Eliminating Object Allocation in Large Render Loops
 **Learning:** Returning objects like `{ x, y }` from helper functions inside a large data iteration loop (e.g., iterating a 10,000-element tracking history at 60Hz) causes massive object allocation and GC pauses.
 **Action:** In high-frequency rendering loops, compute parameters inline using isolated primitive values (e.g., `pPrevX`, `pPrevY`, `pCurrX`, `pCurrY`), replacing the helper function call entirely and eliminating all object creation in the hot path.
-## 2024-12-11 - Math.max with Spread Operator or Apply in Render Loops
-**Learning:** Using `Math.max.apply(null, arr)` or `Math.max(...arr)` dynamically in 60Hz high-frequency render loops allocating contexts per frame degrades performance overhead.
-**Action:** Replace array spread max functions with manually unrolled primitive variables comparisons such as `Math.max(arr[0], arr[1], arr[2], arr[3])` when the length is known, like in Live Map telemetry.
