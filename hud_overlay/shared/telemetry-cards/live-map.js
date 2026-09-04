@@ -166,7 +166,18 @@ export function renderLiveMap(canvas, data, config) {
         }
 
         if (shouldPush) {
-            var isDrift = data && (data.TireSlipRatio ? Math.max.apply(null, data.TireSlipRatio) > 0.4 : speed > 20);
+            // GC Optimization: Replaced Math.max.apply(null, array) with manual unrolling
+            // to eliminate spread/apply function call overhead in 60Hz loop.
+            var isDrift = false;
+            if (data) {
+                if (data.TireSlipRatio) {
+                    var sr = data.TireSlipRatio;
+                    var maxSlip = Math.max(sr[0] || 0, sr[1] || 0, sr[2] || 0, sr[3] || 0);
+                    isDrift = maxSlip > 0.4;
+                } else {
+                    isDrift = speed > 20;
+                }
+            }
             posHistory.push({ x: rawX, z: rawZ, drift: isDrift, time: Date.now() });
             if (posHistory.length > MAX_MAP_HISTORY) {
                 posHistory.shift();
