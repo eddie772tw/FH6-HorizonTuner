@@ -1,0 +1,3 @@
+## 2024-05-27 - Context Provider Mocking in Tests
+**Learning:** Adding the `useSettings` hook (which is strictly required for the `t()` translation function) to UI components will cause `Vitest` rendering tests to crash if the test suite simply passes the un-wrapped component to `renderToStaticMarkup` or similar methods, because `SettingsContext` expects to run inside a valid React node tree bounded by `SettingsProvider`.
+**Action:** Always inspect the `.test.ts` or `.test.tsx` file for a component after adding `useSettings`. If it's tested, update the rendering call to wrap the component in `<ToastProvider><SettingsProvider>...<.../></SettingsProvider></ToastProvider>`.
