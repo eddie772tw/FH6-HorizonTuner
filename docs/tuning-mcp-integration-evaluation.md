@@ -10,6 +10,12 @@ There is a strong opportunity to expose the tuning evidence workflow through MCP
 
 Detailed setup instructions for various AI tools (Claude Desktop, Cursor, VS Code/Cline) are documented in [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
 
+The initialization contract now uses the standard MCP `InitializeResult.instructions`
+field to provide Agent-facing configuration and usage guidance after the
+endpoint has been registered. This removes the need for a client-side JSON or
+CLI copy step after connection, while retaining a one-time endpoint bootstrap
+for clients that cannot discover a local HTTP endpoint on their own.
+
 ## Why this project is a good fit
 
 The project already has the main boundaries required for an MCP adapter:
@@ -97,5 +103,6 @@ confirm the current endpoint before configuring an Agent.
 | MCP-1 | MCP-0 | **Completed** | Implemented `backend/mcp/service.py` with TelemetryView aligned models |
 | MCP-2 | MCP-1 | **Completed** | Implemented `backend/mcp/protocol.py`, `resources.py`, and `tools.py` |
 | MCP-3 | MCP-2 | **Completed** | Integrated FastAPI `POST /mcp`, added HTTP/service tests, and documented the Streamable HTTP setup |
+| MCP-3.1 | MCP-3 | **Implemented** | Added standard `InitializeResult.instructions` guidance, removed copy-based client setup actions from Settings, and documented the one-time bootstrap boundary |
 | MCP-4 | MCP-3 plus human approval | Deferred | Optional confirmed write workflow (deliberately out of scope for v1) |
 
