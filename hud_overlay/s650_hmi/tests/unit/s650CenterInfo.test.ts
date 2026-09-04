@@ -50,7 +50,39 @@ function createCanvasSpy() {
   return ctx;
 }
 
-function loadCenterInfoModule(): CenterInfoModule {
+type MusicLayoutSpec = {
+  id: string;
+  padX: number;
+  padY: number;
+  coverSize: number;
+  coverOffsetY: number;
+  textOffsetX: number;
+  titleOffsetY: number;
+  artistOffsetY: number;
+  albumOffsetY: number;
+  titleSize: number;
+  artistSize: number;
+  albumSize: number;
+  symbolSize: number;
+  symbolOffsetY: number;
+  maxTitleLength: number;
+  maxArtistLength: number;
+  maxAlbumLength: number;
+  progressOffsetY: number;
+  progressHeight: number;
+  timeOffsetY: number;
+  timeSize: number;
+};
+
+type MusicContracts = {
+  dualRing: MusicLayoutSpec;
+  trackSidebar: MusicLayoutSpec;
+};
+
+function loadCenterInfoEnvironment(): {
+  centerInfo: CenterInfoModule;
+  musicContracts: MusicContracts;
+} {
   const sourceFiles = [
     's650_center_info.js',
     's650_center_info_common.js',
@@ -63,13 +95,23 @@ function loadCenterInfoModule(): CenterInfoModule {
   const source = sourceFiles
     .map((fileName) => readFileSync(resolve(process.cwd(), `../hud_overlay/s650_hmi/assets/${fileName}`), 'utf8'))
     .join('\n');
-  const window = {} as { S650HmiCenterInfo?: CenterInfoModule };
+  const window = {} as {
+    S650HmiCenterInfo?: CenterInfoModule;
+    S650HmiCenterInfoMusicContracts?: MusicContracts;
+  };
   new Function('window', source)(window);
 
-  if (!window.S650HmiCenterInfo) {
-    throw new Error('S650 center-info module did not register itself');
+  if (!window.S650HmiCenterInfo || !window.S650HmiCenterInfoMusicContracts) {
+    throw new Error('S650 center-info module or music contracts did not register itself');
   }
-  return window.S650HmiCenterInfo;
+  return {
+    centerInfo: window.S650HmiCenterInfo,
+    musicContracts: window.S650HmiCenterInfoMusicContracts,
+  };
+}
+
+function loadCenterInfoModule(): CenterInfoModule {
+  return loadCenterInfoEnvironment().centerInfo;
 }
 
 describe('S650 center-information registry contract', () => {
@@ -332,5 +374,65 @@ describe('S650 center-information registry contract', () => {
     const module = loadCenterInfoModule();
 
     expect(() => module.register({ id: 'drive', render: () => undefined })).toThrow('Duplicate page id: drive');
+  });
+
+  it('exposes dual size contracts for music player with safe clearance for dual-ring layout', () => {
+    const { musicContracts } = loadCenterInfoEnvironment();
+
+    expect(musicContracts.dualRing).toBeDefined();
+    expect(musicContracts.trackSidebar).toBeDefined();
+
+    // Dual-ring geometric clearance against gauge circle tangency (X=460 left, X=820 right)
+    const dualRingRegion = { x: 425, width: 430 };
+    const contentLeft = dualRingRegion.x + musicContracts.dualRing.padX;
+    const contentRight = dualRingRegion.x + dualRingRegion.width - musicContracts.dualRing.padX;
+
+    expect(contentLeft - 460).toBeGreaterThanOrEqual(15);
+    expect(820 - contentRight).toBeGreaterThanOrEqual(15);
+    expect(musicContracts.dualRing.coverSize).toBeLessThanOrEqual(96);
+    expect(musicContracts.dualRing.progressHeight).toBe(6);
+
+    // Track sidebar compactness constraints
+    expect(musicContracts.trackSidebar.coverSize).toBeLessThanOrEqual(48);
+    expect(musicContracts.trackSidebar.progressHeight).toBe(4);
+    expect(musicContracts.trackSidebar.maxTitleLength).toBeLessThan(musicContracts.dualRing.maxTitleLength);
+  });
+
+  it('renders music player in trackSidebar compact mode with appropriate truncation and progress', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Extremely Long Song Title Beyond Bounds',
+        artist: 'Producer With Very Long Name',
+        album_title: 'Unreleased Track Collection',
+        status: 'playing',
+        position_seconds: 45,
+        start_seconds: 0,
+        duration_seconds: 180,
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+      x: 840,
+      y: 184,
+      width: 220,
+      height: 88,
+      layoutStyle: 'trackSidebar',
+    });
+
+    // In trackSidebar, maxTitleLength is 16, so 15 chars + '…'
+    expect((ctx.text as string[])).toContain('Extremely Long …');
+    expect((ctx.text as string[])).toContain('Producer With Ver…');
+    expect((ctx.text as string[])).toContain('▶');
+    expect((ctx.text as string[])).toContain('0:45 / 3:00');
   });
 });

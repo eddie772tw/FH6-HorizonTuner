@@ -11,6 +11,8 @@ datas = []
 binaries = collect_dynamic_libs("numpy") + collect_dynamic_libs("soundcard")
 hiddenimports = [
     "winrt.windows.media.control",
+    "winrt.windows.media",
+    "winrt.windows.foundation.collections",
     "soundcard",
 ]
 

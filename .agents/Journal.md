@@ -15,6 +15,45 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-04 / WinRT GSMTC System Media Exception Escape & Multi-Session Resilience Overhaul
+
+- **來源**：`local`，針對 S650 HMI 音樂播放器與 VFD 無法獲取系統媒體歌曲資訊（誤顯為 NO ACTIVE MEDIA / MEDIA: OFF）之根因修復與防禦性架構升級。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **WinRT C-Extension 動態 Import 觸發 `ModuleNotFoundError` 逃逸 `getattr`**：Python 內建之 `getattr(obj, attr, default)` 僅捕捉 `AttributeError`。當 WinRT C-extension 屬性訪問器（如讀取 `info.genres` 或 `info.thumbnail`）在底層觸發動態 `import winrt.windows.foundation.collections` 或 `winrt.windows.storage` 時，若該模組未安裝，會拋出 `ModuleNotFoundError`（繼承自 `ImportError`）。此例外會穿透 `getattr`，導致 `_try_get_winrt_gsm_media()` 崩潰並被全域捕捉為 failure，使全域媒體狀態被標記為 `has_media: False`、`source: unavailable`。
+  2. **防禦性安全存取（Defensive Extraction）優於硬性假定**：跨語言 C/WinRT 擴充套件的屬性讀取不可使用裸 `getattr`，必須封裝 `_safe_get(obj, attr, default=None)` 捕捉 `(AttributeError, ImportError, Exception)`。即使缺少選用模組，系統仍能確保核心 `title`、`artist`、`album_title`、`playback_status` 與 `playback_controls` 正常運作。
+  3. **多 Session 遍歷優先度（Active Session Prioritization）**：Windows GSMTC 之 `manager.get_current_session()` 在特定背景播放或非焦點視窗（如背景執行 Spotify）時可能為空或指向非播放中之 session。透過遍歷 `manager.get_sessions()` 並優先挑選 `playback_status == 4`（Playing）之 session，大幅提升媒體資訊辨識成功率。
+  4. **相依套件查驗協議（Anti-Hallucination Protocol）落實**：完成 `winrt-Windows.Foundation.Collections==3.2.1` 與 `winrt-Windows.Media==3.2.1` 官方 PyPI 註冊、CPython 3.13 Windows amd64 wheel 與 MIT 授權查驗，並經使用者核准後納入 `requirements.txt`、`setup_venv.bat` 與 PyInstaller `hiddenimports`。
+- **Action**：
+  1. 強化 `backend/system_media_contract.py`：實作 `_safe_get`、防禦性 `_enum_value` 與 `_safe_genres`，確保所有 WinRT 屬性讀取無未捕捉例外。
+  2. 強化 `backend/system_media.py`：在 `_try_get_winrt_gsm_media()` 中加入 `get_sessions()` 遍歷與優先挑選 `playing` session 機制。
+  3. 更新 `requirements.txt`、`setup_venv.bat` 與 `server-sidecar.spec`，納入必要 WinRT 套件與打包設定。
+  4. 擴充 `tests/test_system_media.py`：新增防禦性 C-extension 屬性例外測試與 multi-session 優先級測試。
+  5. 驗證全套後端 Pytest（267 passed）、前端 Vitest（558 passed）與 Ruff 靜態檢查無誤。
+- **Evidence**：後端 Pytest 267 passed (0 failed)；前端 Vitest 88 files / 558 tests 100% passed；Ruff 檢查無誤；背景播放 Spotify 實時端對端驗證回傳 `has_media: True`、`status: playing`、曲目與時間軸均精確即時解析。
+- **Governance**：本筆追加依 `modular-refactoring` 與 `agent-governance-audit` 規範登錄。
+
+---
+
+## 2026-09-04 / S650 HMI Center Info Dual-Contract Geometry & Clearance Overhaul
+
+- **來源**：`local`，針對 S650 HMI 雙環佈局下音樂播放器小工具邊緣與儀表重疊/留白不足問題之雙尺寸契約重構與全域中央小工具邊界調校（方案 A）。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **固定尺寸假定在雙環圓弧幾何下引發視覺破版**：S650 雙環儀表（Normal / Heritage 67 / Foxbody）在 1280x480 解析度下，左環內緣凸出至 $X=460$，右環內緣凸出至 $X=820$。原先中央小工具預設區域為 $\{ x: 425, y: 126, w: 430, h: 230 \}$，若以單一靜態 padding (如 $pad=20$) 渲染，內容起迄點為 $X = 445 \sim 835$，雙側各侵入儀表環 15px，且 118px 封面圖過大導致資訊嚴重擁擠。
+  2. **顯式雙尺寸契約（Dual Size Contracts）解耦**：中央小工具在 S650 架構中承載兩種截然不同的顯示形態——「雙環中央（`dualRing`）」與「賽用側欄（`trackSidebar`）」。透過在 `s650_center_info_music.js` 建立並凍結 `MUSIC_LAYOUT_SPECS` 契約常數，明確定義 `dualRing`（padX 52px, coverSize 88px, progressHeight 6px）與 `trackSidebar`（padX 8px, coverSize 46px, progressHeight 4px），使渲染邏輯以規格契約驅動，達成雙環模式左右各 17px+ 充裕留白、賽用側欄 88px 高度完全自適應。
+  3. **中央小工具視覺呼吸感一致性（方案 A）**：排查其他小工具時發現 `drive` 小工具底部踏板條（THR / BRK）原先 `pedalPadX=22`, `pedalWidth=180`，邊界延展至 $X=447 \sim 833$，與圓弧切線僅有 3px 緊繃邊距。同步調整為 `pedalPadX=38`, `pedalWidth=150`，使踏板條起迄收斂至 $X=463 \sim 817$，與 `performance` 小工具的 RPM 條完全齊平，兩側安全邊距提升至 17px+。
+  4. **純運算契約測試與反過度測試防護**：測試不攔截底層 Canvas 2D API 呼叫次數或硬編碼微觀像素座標，而是直接驗證導出之 `MUSIC_LAYOUT_SPECS` 幾何極限邊界（與雙環切點之留白距離 $\ge 15\text{px}$）以及截斷/可觀察輸出行為，維護高信賴度且具重構彈性。
+- **Action**：
+  1. 重構 `hud_overlay/s650_hmi/assets/s650_center_info_music.js`：建立 `MUSIC_LAYOUT_SPECS`（`dualRing` 與 `trackSidebar` 雙尺寸契約），導出至 `window.S650HmiCenterInfoMusicContracts`；改寫 `renderMusic(context, spec)` 支援契約驅動佈局；更新 `render` 與 `renderCompact` 註冊。
+  2. 微調 `hud_overlay/s650_hmi/assets/s650_center_info_drive.js`：將油門煞車踏板條 `pedalPadX` 改為 38px、`pedalWidth` 設為 150px，邊界收縮至 $X = 463 \sim 817$。
+  3. 擴充 `hud_overlay/s650_hmi/tests/unit/s650CenterInfo.test.ts`：新增契約存在性、幾何留白限界（$\ge 15\text{px}$）、賽用側欄截斷與進度渲染單元測試。
+  4. 執行全面驗證：Vitest 前端 88 檔 560 測試全數 Passed；Pytest 後端 267 測試全數 Passed；Ruff 檢查無誤。
+- **Evidence**：Vitest 560 passed (0 failed)；Pytest 267 passed (0 failed)；Ruff check/format clean；在雙環模式下音樂播放器封面縮小為 88px、留白擴大，踏板條與轉速條安全邊距一致，視覺重疊徹底根除。
+- **Governance**：本筆追加依 `halfmoon-design-system`、`huge-component-refactoring` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-02 / Post-Race Debrief & MoTeC Ecosystem Bridge Overhaul
 
 - **來源**：`local`，針對 `AnalysisView` 重新定位與 MoTeC 生態系深度整合。

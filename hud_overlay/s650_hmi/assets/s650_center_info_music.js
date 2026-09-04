@@ -102,65 +102,132 @@
         ctx.restore();
     }
 
-    function drawProgressBar(context, x, y, width, ratio) {
+    var MUSIC_LAYOUT_SPECS = Object.freeze({
+        dualRing: Object.freeze({
+            id: 'dualRing',
+            padX: 52,
+            padY: 20,
+            coverSize: 88,
+            coverOffsetY: 20,
+            textOffsetX: 16,
+            titleOffsetY: 22,
+            artistOffsetY: 48,
+            albumOffsetY: 72,
+            titleSize: 18,
+            artistSize: 13,
+            albumSize: 11,
+            symbolSize: 16,
+            symbolOffsetY: 14,
+            maxTitleLength: 22,
+            maxArtistLength: 26,
+            maxAlbumLength: 26,
+            progressOffsetY: 38,
+            progressHeight: 6,
+            timeOffsetY: 18,
+            timeSize: 10
+        }),
+        trackSidebar: Object.freeze({
+            id: 'trackSidebar',
+            padX: 8,
+            padY: 6,
+            coverSize: 46,
+            coverOffsetY: 6,
+            textOffsetX: 8,
+            titleOffsetY: 10,
+            artistOffsetY: 24,
+            albumOffsetY: 37,
+            titleSize: 12,
+            artistSize: 10,
+            albumSize: 9,
+            symbolSize: 12,
+            symbolOffsetY: 8,
+            maxTitleLength: 16,
+            maxArtistLength: 18,
+            maxAlbumLength: 18,
+            progressOffsetY: 18,
+            progressHeight: 4,
+            timeOffsetY: 11,
+            timeSize: 8
+        })
+    });
+
+    function resolveLayoutSpec(context, spec) {
+        if (spec && typeof spec === 'object') {
+            return spec;
+        }
+        if (spec === true) {
+            return MUSIC_LAYOUT_SPECS.trackSidebar;
+        }
+        if (context && context.region && context.region.layout && context.region.layout.isCompact) {
+            return MUSIC_LAYOUT_SPECS.trackSidebar;
+        }
+        return MUSIC_LAYOUT_SPECS.dualRing;
+    }
+
+    function drawProgressBar(context, x, y, width, height, ratio) {
         var ctx = context.ctx;
         var palette = context.palette;
         var safeWidth = Math.max(0, width);
+        var barHeight = Math.max(2, height || 6);
         var safeRatio = common.clamp(number(ratio, 0), 0, 1);
 
         ctx.save();
         ctx.globalAlpha = 0.55;
         ctx.fillStyle = palette.secondary;
-        ctx.fillRect(x, y, safeWidth, 6);
+        ctx.fillRect(x, y, safeWidth, barHeight);
         ctx.globalAlpha = 1;
         ctx.fillStyle = palette.primary;
-        ctx.fillRect(x, y, safeWidth * safeRatio, 6);
+        ctx.fillRect(x, y, safeWidth * safeRatio, barHeight);
         ctx.restore();
     }
 
-    function renderMusic(context, compact) {
+    function renderMusic(context, spec) {
+        var activeSpec = resolveLayoutSpec(context, spec);
         var media = typeof context.view.getMediaInfo === 'function'
             ? context.view.getMediaInfo()
             : {};
         var palette = context.palette;
         var region = context.region;
         var hasMedia = media && media.has_media === true;
-        var pad = compact ? 8 : 20;
-        var coverSize = compact ? 50 : 118;
-        var coverX = region.x + pad;
-        var coverY = region.y + (compact ? 10 : 24);
-        var textX = coverX + coverSize + (compact ? 10 : 20);
-        var textRight = region.x + region.width - pad;
-        var title = hasMedia ? truncate(media.title, compact ? 22 : 26) : 'NO ACTIVE MEDIA';
-        var artist = hasMedia ? truncate(media.artist, compact ? 22 : 26) : 'SYSTEM MEDIA SESSION NOT FOUND';
-        var album = hasMedia ? truncate(media.album_title, compact ? 22 : 26) : 'Metadata unavailable';
+        var padX = activeSpec.padX;
+        var coverSize = activeSpec.coverSize;
+        var coverX = region.x + padX;
+        var coverY = region.y + activeSpec.coverOffsetY;
+        var textX = coverX + coverSize + activeSpec.textOffsetX;
+        var textRight = region.x + region.width - padX;
+        var title = hasMedia ? truncate(media.title, activeSpec.maxTitleLength) : 'NO ACTIVE MEDIA';
+        var artist = hasMedia ? truncate(media.artist, activeSpec.maxArtistLength) : 'SYSTEM MEDIA SESSION NOT FOUND';
+        var album = hasMedia ? truncate(media.album_title, activeSpec.maxAlbumLength) : 'Metadata unavailable';
         var position = formatTime(media && media.position_seconds);
         var duration = formatTime(number(media && media.start_seconds, 0) + number(media && media.duration_seconds, -1));
-        var progressY = region.y + region.height - (compact ? 18 : 38);
-        var timeY = progressY + (compact ? 12 : 18);
+        var progressY = region.y + region.height - activeSpec.progressOffsetY;
+        var progressWidth = region.width - padX * 2;
+        var timeY = progressY + activeSpec.timeOffsetY;
 
         if (!context.ctx || !common) return;
 
         drawCover(context, hasMedia ? media : {}, coverX, coverY, coverSize);
-        setText(context, title, textX, coverY + (compact ? 12 : 28), 'dualRingCenterValue', hasMedia ? palette.text : palette.secondary, compact ? 13 : 19, 'left');
-        setText(context, artist, textX, coverY + (compact ? 29 : 56), 'dualRingCenterSubtitle', palette.secondary, compact ? 10 : 13, 'left');
-        setText(context, album, textX, coverY + (compact ? 44 : 82), 'dualRingCenterSubtitle', palette.secondary, compact ? 9 : 11, 'left');
+        setText(context, title, textX, coverY + activeSpec.titleOffsetY, 'dualRingCenterValue', hasMedia ? palette.text : palette.secondary, activeSpec.titleSize, 'left');
+        setText(context, artist, textX, coverY + activeSpec.artistOffsetY, 'dualRingCenterSubtitle', palette.secondary, activeSpec.artistSize, 'left');
+        setText(context, album, textX, coverY + activeSpec.albumOffsetY, 'dualRingCenterSubtitle', palette.secondary, activeSpec.albumSize, 'left');
         // The status is intentionally a symbol-only hint; verbose status and
         // playback type remain available in the contract but are not rendered.
-        setText(context, statusSymbol(media), textRight, region.y + (compact ? 10 : 14), 'dualRingCenterSubtitle', palette.primary, compact ? 13 : 17, 'right');
-        drawProgressBar(context, coverX, progressY, region.width - pad * 2, progressRatio(media));
-        setText(context, position + ' / ' + duration, region.x + region.width / 2, timeY, 'captionLegal', palette.secondary, compact ? 9 : 10, 'center');
+        setText(context, statusSymbol(media), textRight, region.y + activeSpec.symbolOffsetY, 'dualRingCenterSubtitle', palette.primary, activeSpec.symbolSize, 'right');
+        drawProgressBar(context, coverX, progressY, progressWidth, activeSpec.progressHeight, progressRatio(media));
+        setText(context, position + ' / ' + duration, region.x + region.width / 2, timeY, 'captionLegal', palette.secondary, activeSpec.timeSize, 'center');
     }
+
+    window.S650HmiCenterInfoMusicContracts = MUSIC_LAYOUT_SPECS;
 
     window.S650HmiCenterInfo.register({
         id: 'music',
         label: 'Music player',
         status: 'production',
         render: function (context) {
-            renderMusic(context, false);
+            renderMusic(context, MUSIC_LAYOUT_SPECS.dualRing);
         },
         renderCompact: function (context) {
-            renderMusic(context, true);
+            renderMusic(context, MUSIC_LAYOUT_SPECS.trackSidebar);
         }
     });
 })(window);

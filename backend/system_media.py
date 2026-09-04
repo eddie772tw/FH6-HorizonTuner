@@ -73,30 +73,47 @@ async def _try_get_winrt_gsm_media() -> dict | None:
         if not manager:
             return {"available": True, "has_media": False}
 
-        session = manager.get_current_session()
-        if session:
-            # Reserved GSMTC integration hooks for a later event-driven layer:
-            # add_media_properties_changed, add_playback_info_changed,
-            # add_timeline_properties_changed and manager's
-            # current_session_changed can invalidate this snapshot. The
-            # session also exposes try_play_async, try_pause_async,
-            # try_toggle_play_pause_async, try_skip_next_async,
-            # try_skip_previous_async, try_change_playback_position_async,
-            # try_change_shuffle_active_async and
-            # try_change_auto_repeat_mode_async. Keep this pass read-only
-            # until command authorization, lifecycle cleanup and UI affordances
-            # are designed together.
-            info = await session.try_get_media_properties_async()
-            if info:
-                title = (info.title or "").strip()
-                artist = (info.artist or "").strip()
-                if title or artist:
-                    return _build_media_result(
-                        info,
-                        session.get_playback_info(),
-                        session.get_timeline_properties(),
-                        session,
-                    )
+        sessions_to_check = []
+        current = manager.get_current_session()
+        if current:
+            sessions_to_check.append(current)
+
+        try:
+            all_sessions = manager.get_sessions()
+            if all_sessions:
+                for s in all_sessions:
+                    if s and (not current or s != current):
+                        sessions_to_check.append(s)
+        except Exception as se:
+            logger.debug(f"WinRT GSMTC get_sessions notice: {se}")
+
+        best_result = None
+        for s in sessions_to_check:
+            try:
+                info = await s.try_get_media_properties_async()
+                if not info:
+                    continue
+                title = (getattr(info, "title", None) or "").strip()
+                artist = (getattr(info, "artist", None) or "").strip()
+                if not (title or artist):
+                    continue
+
+                pb = s.get_playback_info()
+                tl = s.get_timeline_properties()
+                res = _build_media_result(info, pb, tl, s)
+
+                # Prioritize an actively playing session
+                if res.get("status") == "playing":
+                    return res
+
+                if best_result is None:
+                    best_result = res
+            except Exception as item_err:
+                logger.debug(f"WinRT GSMTC session inspection notice: {item_err}")
+
+        if best_result is not None:
+            return best_result
+
         return {"available": True, "has_media": False}
     except Exception as e:
         logger.debug(f"WinRT GSMTC media query notice: {e}")
