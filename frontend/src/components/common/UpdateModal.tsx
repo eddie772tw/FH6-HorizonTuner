@@ -185,12 +185,14 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
 
               {status === 'downloading' && (
                 <button type="button" className="btn btn-primary px-4 fw-bold" disabled>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                   {t('Downloading...')}
                 </button>
               )}
 
               {status === 'downloaded' && (
                 <button type="button" className="btn btn-success px-4 fw-bold" disabled>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                   {t('Relaunching...')}
                 </button>
               )}
