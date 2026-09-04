@@ -37,6 +37,7 @@
   - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
 * **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
   - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
+  - S650 中央 widget 支援唯讀音樂播放器，透過 Windows GSMTC 顯示封面、曲目、藝人、專輯、進度條與時間，並以符號文字提示播放狀態；完整欄位與未啟用整合入口見 [S650 media contract](docs/s650-media-properties-contract.md)。
   - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
@@ -76,6 +77,8 @@ FH6-HorizonTuner/
 │   │   └── resources.py     # 5 類 Resource URI 路由
 │   ├── telemetry_listener.py # UDP 60Hz 遙測數據流監聽與解析
 │   ├── telemetry_runtime.py  # Pipeline metrics 與非阻塞 dyno profile 快取/寫入
+│   ├── system_media.py       # Windows GSMTC snapshot query/cache 與 overlay broadcast source
+│   ├── system_media_contract.py # GSMTC media/playback/timeline 到 bounded JSON 的純映射
 │   ├── core/                # 遙測數據處理、算牌與系統核心
 │   ├── routers/             # API 路由 (telemetry, tuning, overlay, drag, log, etc.)
 │   ├── services/            # 後端系統服務與狀態管理

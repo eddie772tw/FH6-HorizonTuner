@@ -403,7 +403,9 @@ def test_removed_s650_legacy_style_defaults_to_heritage(
     assert loaded_data["s650CenterWidget"] == "drive"
 
 
-@pytest.mark.parametrize("widget", ["disable", "drive", "tire_temp", "performance"])
+@pytest.mark.parametrize(
+    "widget", ["disable", "drive", "tire_temp", "performance", "music"]
+)
 def test_valid_s650_center_widget_round_trips(temp_hud_config_file, widget):
     client = TestClient(app)
 
@@ -501,6 +503,12 @@ def test_get_system_media_endpoint():
     data = res.json()
     assert "title" in data
     assert "artist" in data
+    assert "album_title" in data
+    assert "album_artist" in data
+    assert "genres" in data
+    assert "position_seconds" in data
+    assert "playback_controls" in data
+    assert len(data["playback_controls"]) == 15
     assert "status" in data
     assert data["success"] is True
 

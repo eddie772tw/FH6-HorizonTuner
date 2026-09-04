@@ -76,7 +76,7 @@
         var contract = options.contract;
         var supportedWidgets = contract && Array.isArray(contract.centerWidgets)
             ? contract.centerWidgets
-            : ['drive', 'tire_temp', 'performance'];
+            : ['drive', 'tire_temp', 'performance', 'music'];
 
         function normalizeWidget(view) {
             var candidate = view && view.centerWidget;

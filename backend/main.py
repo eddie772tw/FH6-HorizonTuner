@@ -125,7 +125,8 @@ from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from settings_persistence import SerializedSettingsUpdate, SettingsPersistence
 from settings_router import create_settings_router
-from system_media import get_system_media_info
+from system_media import get_current_thumbnail_data, get_system_media_info
+from system_media_contract import DEFAULT_PLAYBACK_CONTROLS
 from telemetry_listener import (
     DEFAULT_TIRE_ARRAY,
     pack_telemetry_binary,
@@ -1211,12 +1212,15 @@ async def broadcast_overlay_state():
                     with overlay_performance_metrics.measure("mediaSnapshot"):
                         media_data = await get_system_media_info()
                     if media_data:
-                        media_fingerprint = (
-                            media_data.get("title"),
-                            media_data.get("artist"),
-                            media_data.get("status"),
-                            media_data.get("state"),
-                            media_data.get("has_media"),
+                        # Rich GSMTC metadata includes timeline position and
+                        # capability flags. Fingerprinting the full bounded
+                        # JSON snapshot keeps the HUD in sync with progress
+                        # and future contract fields without polling faster.
+                        media_fingerprint = json.dumps(
+                            media_data,
+                            sort_keys=True,
+                            ensure_ascii=False,
+                            default=str,
                         )
                         if media_fingerprint != last_media_fingerprint:
                             last_media_fingerprint = media_fingerprint
@@ -2586,7 +2590,7 @@ LEGACY_S650_STYLE_MAP = {
     "s650_foxbody": "foxbody",
 }
 S650_HMI_THEMES = set(LEGACY_S650_STYLE_MAP.values()) | {"track"}
-S650_HMI_CENTER_WIDGETS = {"disable", "drive", "tire_temp", "performance"}
+S650_HMI_CENTER_WIDGETS = {"disable", "drive", "tire_temp", "performance", "music"}
 
 
 def normalize_hud_config(data: dict) -> dict:
@@ -2817,12 +2821,64 @@ async def get_system_media():
         return {
             "title": "FORZA HORIZON 6 SOUNDTRACK",
             "artist": "RADIO ETIENNE",
+            "album_title": None,
+            "album_artist": None,
+            "subtitle": None,
+            "genres": [],
+            "track_number": None,
+            "album_track_count": None,
+            "playback_type": None,
+            "thumbnail": None,
+            "thumbnail_url": None,
+            "thumbnail_available": False,
             "status": "idle",
+            "position_seconds": None,
+            "start_seconds": None,
+            "duration_seconds": None,
+            "min_seek_seconds": None,
+            "max_seek_seconds": None,
+            "timeline_last_updated_ms": None,
+            "can_seek": False,
+            "is_shuffle_active": False,
+            "repeat_mode": "none",
+            "playback_rate": 1.0,
+            "playback_controls": dict(DEFAULT_PLAYBACK_CONTROLS),
+            "source_app_user_model_id": None,
             "state": "unavailable",
             "source": "unavailable",
             "has_media": False,
             "success": False,
         }
+
+
+@app.get("/api/overlay/media/thumbnail")
+async def get_overlay_media_thumbnail(request: Request, v: str | None = None):
+    thumb_bytes, content_type, thumb_hash = get_current_thumbnail_data()
+    if not thumb_bytes:
+        raise HTTPException(status_code=404, detail="No media thumbnail available")
+
+    # A versioned URL is immutable only when it still identifies the bytes in
+    # the single-slot cache. Never serve a newer cover under an older hash.
+    if v and (not thumb_hash or v != thumb_hash):
+        raise HTTPException(status_code=404, detail="Media thumbnail version expired")
+
+    if_none_match = request.headers.get("if-none-match")
+    if if_none_match and thumb_hash and if_none_match.strip('"') == thumb_hash:
+        return Response(status_code=304)
+
+    headers = {
+        "Cache-Control": (
+            "public, max-age=3600, immutable" if v else "public, max-age=30"
+        ),
+    }
+    if thumb_hash:
+        headers["ETag"] = f'"{thumb_hash}"'
+
+    return Response(
+        content=thumb_bytes,
+        media_type=content_type or "image/jpeg",
+        headers=headers,
+    )
 
 
 @app.get("/api/overlay/audio_spectrum")

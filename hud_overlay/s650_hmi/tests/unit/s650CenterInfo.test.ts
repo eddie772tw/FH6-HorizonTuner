@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-type Widget = 'disable' | 'drive' | 'tire_temp' | 'performance';
+type Widget = 'disable' | 'drive' | 'tire_temp' | 'performance' | 'music';
 type Region = {
   x: number;
   y: number;
@@ -33,8 +33,10 @@ type CenterInfoModule = {
 
 function createCanvasSpy() {
   const text: string[] = [];
+  const images: unknown[] = [];
   const ctx = {
     text,
+    images,
     save: () => undefined,
     restore: () => undefined,
     beginPath: () => undefined,
@@ -46,11 +48,44 @@ function createCanvasSpy() {
     strokeRect: () => undefined,
     fillRect: () => undefined,
     fillText: (value: string) => text.push(value),
+    drawImage: (...args: unknown[]) => images.push(args[0]),
   } as unknown as Record<string, unknown>;
   return ctx;
 }
 
-function loadCenterInfoModule(): CenterInfoModule {
+type MusicLayoutSpec = {
+  id: string;
+  padX: number;
+  padY: number;
+  coverSize: number;
+  coverOffsetY: number;
+  textOffsetX: number;
+  titleOffsetY: number;
+  artistOffsetY: number;
+  albumOffsetY: number;
+  titleSize: number;
+  artistSize: number;
+  albumSize: number;
+  symbolSize: number;
+  symbolOffsetY: number;
+  maxTitleLength: number;
+  maxArtistLength: number;
+  maxAlbumLength: number;
+  progressOffsetY: number;
+  progressHeight: number;
+  timeOffsetY: number;
+  timeSize: number;
+};
+
+type MusicContracts = {
+  dualRing: MusicLayoutSpec;
+  trackSidebar: MusicLayoutSpec;
+};
+
+function loadCenterInfoEnvironment(): {
+  centerInfo: CenterInfoModule;
+  musicContracts: MusicContracts;
+} {
   const sourceFiles = [
     's650_center_info.js',
     's650_center_info_common.js',
@@ -58,17 +93,28 @@ function loadCenterInfoModule(): CenterInfoModule {
     's650_center_info_drive.js',
     's650_center_info_tire_temp.js',
     's650_center_info_performance.js',
+    's650_center_info_music.js',
   ];
   const source = sourceFiles
     .map((fileName) => readFileSync(resolve(process.cwd(), `../hud_overlay/s650_hmi/assets/${fileName}`), 'utf8'))
     .join('\n');
-  const window = {} as { S650HmiCenterInfo?: CenterInfoModule };
+  const window = {} as {
+    S650HmiCenterInfo?: CenterInfoModule;
+    S650HmiCenterInfoMusicContracts?: MusicContracts;
+  };
   new Function('window', source)(window);
 
-  if (!window.S650HmiCenterInfo) {
-    throw new Error('S650 center-info module did not register itself');
+  if (!window.S650HmiCenterInfo || !window.S650HmiCenterInfoMusicContracts) {
+    throw new Error('S650 center-info module or music contracts did not register itself');
   }
-  return window.S650HmiCenterInfo;
+  return {
+    centerInfo: window.S650HmiCenterInfo,
+    musicContracts: window.S650HmiCenterInfoMusicContracts,
+  };
+}
+
+function loadCenterInfoModule(): CenterInfoModule {
+  return loadCenterInfoEnvironment().centerInfo;
 }
 
 describe('S650 center-information registry contract', () => {
@@ -79,7 +125,7 @@ describe('S650 center-information registry contract', () => {
     };
     const centerInfo = loadCenterInfoModule().create({
       primitives,
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'disable' }, {}, {}, 425, 126, 430, 230);
@@ -95,7 +141,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -116,7 +162,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -133,6 +179,70 @@ describe('S650 center-information registry contract', () => {
     expect((ctx.text as string[])).not.toContain('4');
   });
 
+  it('renders the available GSMTC song metadata without requiring telemetry aliases', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Night Drive',
+        artist: 'The Horizon Set',
+        album_title: 'Road Lines',
+        track_number: 3,
+        album_track_count: 12,
+        genres: ['Electronic'],
+        playback_type: 'music',
+        status: 'playing',
+        position_seconds: 75,
+        start_seconds: 0,
+        duration_seconds: 210,
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+    expect((ctx.text as string[])).toContain('ND');
+    expect((ctx.text as string[])).toContain('Night Drive');
+    expect((ctx.text as string[])).toContain('The Horizon Set');
+    expect((ctx.text as string[])).toContain('Road Lines');
+    expect((ctx.text as string[])).toContain('▶');
+    expect((ctx.text as string[])).toContain('1:15 / 3:30');
+    expect((ctx.text as string[])).not.toContain('MUSIC PLAYER');
+    expect((ctx.text as string[])).not.toContain('3 / 12');
+    expect((ctx.text as string[])).not.toContain('Electronic');
+    expect((ctx.text as string[])).not.toContain('playing');
+    expect((ctx.text as string[])).not.toContain('music');
+  });
+
+  it('keeps absent media metadata visibly unavailable', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({ centerWidget: 'music', getMediaInfo: () => ({ has_media: false }) }, {}, {
+      text: '#fff', secondary: '#aaa', primary: '#0ff',
+    }, 100, 50, 200, 220);
+
+    expect((ctx.text as string[])).toContain('NO ACTIVE MEDIA');
+    expect((ctx.text as string[])).toContain('SYSTEM MEDIA SESSION NOT FOUND');
+    expect((ctx.text as string[])).toContain('Metadata unavailable');
+    expect((ctx.text as string[])).toContain('·');
+    expect((ctx.text as string[])).toContain('--:-- / --:--');
+  });
+
   it('uses the compact page renderer for a Track recipe region', () => {
     const ctx = createCanvasSpy();
     const centerInfo = loadCenterInfoModule().create({
@@ -141,7 +251,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -171,7 +281,7 @@ describe('S650 center-information registry contract', () => {
         getFontSize: (_view, _role, fallback) => fallback,
         drawPedalBars: (...args) => pedalCalls.push(args),
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'disable' }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
@@ -192,7 +302,7 @@ describe('S650 center-information registry contract', () => {
         setFont: () => undefined,
         getFontSize: (_view, _role, fallback) => fallback,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({
@@ -218,10 +328,10 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: () => undefined,
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
-    expect(centerInfo.widgets).toEqual(['disable', 'drive', 'tire_temp', 'performance']);
+    expect(centerInfo.widgets).toEqual(['disable', 'drive', 'tire_temp', 'performance', 'music']);
     expect(centerInfo.normalizeWidget({ centerWidget: 'unknown' })).toBe('drive');
   });
 
@@ -231,7 +341,7 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, 100, 50, 200, 100);
@@ -245,7 +355,7 @@ describe('S650 center-information registry contract', () => {
       primitives: {
         drawGearAndSpeed: (...args) => { driveArgs = args; },
       },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance'] },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
     });
 
     centerInfo.draw({ centerWidget: 'drive' }, {}, {}, {
@@ -267,5 +377,174 @@ describe('S650 center-information registry contract', () => {
     const module = loadCenterInfoModule();
 
     expect(() => module.register({ id: 'drive', render: () => undefined })).toThrow('Duplicate page id: drive');
+  });
+
+  it('exposes dual size contracts for music player with safe clearance for dual-ring layout', () => {
+    const { musicContracts } = loadCenterInfoEnvironment();
+
+    expect(musicContracts.dualRing).toBeDefined();
+    expect(musicContracts.trackSidebar).toBeDefined();
+
+    // Dual-ring geometric clearance against gauge circle tangency (X=460 left, X=820 right)
+    const dualRingRegion = { x: 425, width: 430 };
+    const contentLeft = dualRingRegion.x + musicContracts.dualRing.padX;
+    const contentRight = dualRingRegion.x + dualRingRegion.width - musicContracts.dualRing.padX;
+
+    expect(contentLeft - 460).toBeGreaterThanOrEqual(15);
+    expect(820 - contentRight).toBeGreaterThanOrEqual(15);
+    expect(musicContracts.dualRing.coverSize).toBeLessThanOrEqual(96);
+    expect(musicContracts.dualRing.progressHeight).toBe(6);
+
+    // Track sidebar compactness constraints
+    expect(musicContracts.trackSidebar.coverSize).toBeLessThanOrEqual(48);
+    expect(musicContracts.trackSidebar.progressHeight).toBe(4);
+    expect(musicContracts.trackSidebar.maxTitleLength).toBeLessThan(musicContracts.dualRing.maxTitleLength);
+  });
+
+  it('renders music player in trackSidebar compact mode with appropriate truncation and progress', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Extremely Long Song Title Beyond Bounds',
+        artist: 'Producer With Very Long Name',
+        album_title: 'Unreleased Track Collection',
+        status: 'playing',
+        position_seconds: 45,
+        start_seconds: 0,
+        duration_seconds: 180,
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+      x: 840,
+      y: 184,
+      width: 220,
+      height: 88,
+      layoutStyle: 'trackSidebar',
+    });
+
+    // In trackSidebar, maxTitleLength is 16, so 15 chars + '…'
+    expect((ctx.text as string[])).toContain('Extremely Long …');
+    expect((ctx.text as string[])).toContain('Producer With Ver…');
+    expect((ctx.text as string[])).toContain('▶');
+    expect((ctx.text as string[])).toContain('0:45 / 3:00');
+  });
+
+  it('renders pre-loaded thumbnail image when provided directly without monogram text fallback', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    const mockImage = { complete: true, naturalWidth: 300, naturalHeight: 300 };
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Cover Track',
+        artist: 'Cover Artist',
+        thumbnail: mockImage,
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+    expect((ctx.images as unknown[])).toContain(mockImage);
+    expect((ctx.text as string[])).not.toContain('CT');
+  });
+
+  it('handles thumbnail_url and displays fallback monogram initials while image is not loaded', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Network Track',
+        artist: 'Network Artist',
+        thumbnail_url: '/api/overlay/media/thumbnail?v=12345678',
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+    expect((ctx.text as string[])).toContain('NT');
+    expect((ctx.text as string[])).toContain('Network Track');
+  });
+
+  it('clears stale artwork while a replacement loads and requests a repaint on load', () => {
+    const instances: MockImage[] = [];
+    class MockImage {
+      complete = true;
+      naturalWidth = 300;
+      naturalHeight = 300;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      src = '';
+
+      constructor() {
+        instances.push(this);
+      }
+    }
+    vi.stubGlobal('Image', MockImage);
+
+    try {
+      const ctx = createCanvasSpy();
+      const centerInfo = loadCenterInfoModule().create({
+        ctx,
+        primitives: {
+          setFont: () => undefined,
+          getFontSize: (_view, _role, fallback) => fallback,
+        },
+        contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+      });
+      const requestRender = vi.fn();
+      let media = {
+        has_media: true,
+        title: 'Track A',
+        artist: 'Artist',
+        thumbnail_url: '/api/overlay/media/thumbnail?v=hash-a',
+      };
+      const view = {
+        centerWidget: 'music',
+        getMediaInfo: () => media,
+        requestRender,
+      };
+
+      centerInfo.draw(view, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+      const firstImage = instances[0];
+      firstImage.onload?.();
+      (ctx.images as unknown[]).length = 0;
+
+      media = { ...media, title: 'Track B', thumbnail_url: '/api/overlay/media/thumbnail?v=hash-b' };
+      centerInfo.draw(view, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+      expect(ctx.images as unknown[]).not.toContain(firstImage);
+      expect(requestRender).toHaveBeenCalledTimes(1);
+
+      instances[1].onload?.();
+      expect(requestRender).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

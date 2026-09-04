@@ -29,6 +29,9 @@ type S650Contract = {
   version: string;
   defaultFrame: CanonicalFrame;
   normalizeFrame: (data: unknown) => CanonicalFrame;
+  defaultMedia: Record<string, unknown>;
+  normalizeMedia: (data: unknown) => Record<string, unknown>;
+  reservedGsmTcIntegration: { events: string[]; methods: string[] };
   normalizeConfig: (payload: unknown) => Record<string, unknown>;
 };
 
@@ -149,5 +152,64 @@ describe('S650 frame defaults', () => {
     expect(config.theme).toBe('foxbody');
     expect(config).not.toHaveProperty('driveMode');
     expect(config).not.toHaveProperty('matchDriveMode');
+  });
+
+  it('declares the complete media-properties projection and normalizes rich metadata', () => {
+    const contract = loadContract();
+    const media = contract.normalizeMedia({
+      title: 'Night Drive',
+      artist: 'The Horizon Set',
+      album_title: 'Road Lines',
+      album_artist: 'The Horizon Set',
+      album_track_count: '12',
+      track_number: '3',
+      genres: ['Electronic', 42, 'Synthwave'],
+      playback_type: 'music',
+      subtitle: 'Radio edit',
+      thumbnail_available: true,
+      status: 'playing',
+      position_seconds: '75',
+      duration_seconds: '210',
+      can_seek: true,
+      is_shuffle_active: true,
+      repeat_mode: 'list',
+      playback_rate: '1.25',
+      playback_controls: { is_next_enabled: true },
+      has_media: true,
+    });
+
+    expect(Object.keys(contract.defaultMedia)).toEqual([
+      'title', 'artist', 'album_title', 'album_artist', 'album_track_count',
+      'track_number', 'genres', 'playback_type', 'subtitle', 'thumbnail',
+      'thumbnail_url', 'thumbnail_available', 'status', 'position_seconds', 'start_seconds',
+      'duration_seconds', 'min_seek_seconds', 'max_seek_seconds',
+      'timeline_last_updated_ms', 'can_seek', 'is_shuffle_active', 'repeat_mode',
+      'playback_rate', 'playback_controls', 'source_app_user_model_id',
+      'has_media', 'state', 'source', 'success',
+    ]);
+    expect(media).toMatchObject({
+      title: 'Night Drive',
+      album_title: 'Road Lines',
+      album_track_count: 12,
+      track_number: 3,
+      genres: ['Electronic', 'Synthwave'],
+      position_seconds: 75,
+      duration_seconds: 210,
+      has_media: true,
+      thumbnail_available: true,
+    });
+    expect(contract.reservedGsmTcIntegration).toEqual({
+      events: [
+        'CurrentSessionChanged',
+        'MediaPropertiesChanged',
+        'PlaybackInfoChanged',
+        'TimelinePropertiesChanged',
+      ],
+      methods: expect.arrayContaining([
+        'TryTogglePlayPauseAsync',
+        'TryChangePlaybackPositionAsync',
+        'TrySkipNextAsync',
+      ]),
+    });
   });
 });

@@ -23,6 +23,9 @@
             showSpeed: true,
             showGear: true,
             showRPM: true,
+            media: contract.defaultMedia && typeof contract.normalizeMedia === 'function'
+                ? contract.normalizeMedia(contract.defaultMedia)
+                : {},
             customColor: '#00f0ff',
             useDefaultColors: true,
             sweepActive: false,
@@ -104,6 +107,11 @@
                 paletteChanged = true;
             }
             if (paletteChanged) refreshPalette();
+        }
+
+        function updateMediaFromPayload(payload) {
+            if (!contract || typeof contract.normalizeMedia !== 'function') return;
+            state.media = contract.normalizeMedia(payload);
         }
 
         function getSpeed(data) {
@@ -259,6 +267,12 @@
             get theme() { return state.theme; },
             get isMetric() { return state.isMetric; },
             get centerWidget() { return state.centerWidget; },
+            getMediaInfo: function () { return state.media; },
+            requestRender: function () {
+                if (isReady && state.showGauge && !state.sweepActive) {
+                    render(state.lastFrame, 0);
+                }
+            },
             get foxbodyNightMode() { return state.guiThemeMode === 'dark'; },
             get showCenterInfo() { return state.showCenterInfo; },
             get showSpeed() { return state.showSpeed; },
@@ -344,6 +358,10 @@
             },
             onElementsChange: function (elements) {
                 updateElementVisibility(elements);
+                if (state.showGauge && !state.sweepActive) render(state.lastFrame, 0);
+            },
+            onMedia: function (media) {
+                updateMediaFromPayload(media);
                 if (state.showGauge && !state.sweepActive) render(state.lastFrame, 0);
             },
             onFrame: function (data, payload) {

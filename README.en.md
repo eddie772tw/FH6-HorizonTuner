@@ -36,6 +36,7 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
 * **Racing HUD Overlay & Full/Lite Clients**:
   - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
+  - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/s650-media-properties-contract.md) for the complete field projection and reserved integration points.
   - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides only the Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing the existing frontend features and backend lifecycle with the Full client.
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
@@ -75,6 +76,8 @@ FH6-HorizonTuner/
 │   │   └── resources.py     # 5 Resource URI router
 │   ├── telemetry_listener.py # UDP 60Hz telemetry socket listener and parser
 │   ├── telemetry_runtime.py  # Pipeline metrics and non-blocking dyno profile cache/persistence
+│   ├── system_media.py       # Windows GSMTC snapshot query/cache and overlay broadcast source
+│   ├── system_media_contract.py # Pure GSMTC media/playback/timeline to bounded JSON mapping
 │   ├── core/                # Core telemetry processing & calculation modules
 │   ├── routers/             # API routers (telemetry, tuning, overlay, drag, log, etc.)
 │   ├── services/            # System services & background state managers

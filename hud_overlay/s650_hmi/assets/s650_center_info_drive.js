@@ -4,10 +4,10 @@
 
     var common = window.S650HmiCenterInfoCommon;
 
-    function drawInput(context, x, y, label, value, color) {
+    function drawInput(context, x, y, width, label, value, color) {
         var view = context.view;
         var ratio = typeof view.getPedalValue === 'function' ? view.getPedalValue(context.data, value) : 0;
-        common.drawBar(context, x, y, 170, ratio, color, label);
+        common.drawBar(context, x, y, width || 150, ratio, color, label);
     }
 
     window.S650HmiCenterInfo.register({
@@ -39,10 +39,13 @@
             common.drawMetric(context, leftX, region.y + 156, 'LAP', lap < 0 ? '--' : String(lap), '', 'center');
             common.drawMetric(context, rightX, region.y + 156, 'RACE POS', position < 0 ? '--' : String(position), '', 'center');
 
-            // Inputs are intentionally page-owned. No center registry or
-            // container-level renderer adds these bars to other pages.
-            drawInput(context, region.x + 22, region.y + region.height - 27, 'THR', 'throttle', palette.primary);
-            drawInput(context, region.x + region.width - 192, region.y + region.height - 27, 'BRK', 'brake', palette.warning);
+            // Inputs are intentionally page-owned. Safe horizontal padding of 38px
+            // and bar width of 150px keeps both pedals within X = 463 ~ 817, matching
+            // the dual-ring safe clearance of the powertrain bar and music player.
+            var pedalPadX = 38;
+            var pedalWidth = 150;
+            drawInput(context, region.x + pedalPadX, region.y + region.height - 27, pedalWidth, 'THR', 'throttle', palette.primary);
+            drawInput(context, region.x + region.width - pedalPadX - pedalWidth, region.y + region.height - 27, pedalWidth, 'BRK', 'brake', palette.warning);
         },
         renderCompact: function (context) {
             var view = context.view;
