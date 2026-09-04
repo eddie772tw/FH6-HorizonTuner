@@ -125,7 +125,7 @@ from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from settings_persistence import SerializedSettingsUpdate, SettingsPersistence
 from settings_router import create_settings_router
-from system_media import get_system_media_info
+from system_media import get_current_thumbnail_data, get_system_media_info
 from system_media_contract import DEFAULT_PLAYBACK_CONTROLS
 from telemetry_listener import (
     DEFAULT_TIRE_ARRAY,
@@ -2829,6 +2829,7 @@ async def get_system_media():
             "album_track_count": None,
             "playback_type": None,
             "thumbnail": None,
+            "thumbnail_url": None,
             "thumbnail_available": False,
             "status": "idle",
             "position_seconds": None,
@@ -2848,6 +2849,31 @@ async def get_system_media():
             "has_media": False,
             "success": False,
         }
+
+
+@app.get("/api/overlay/media/thumbnail")
+async def get_overlay_media_thumbnail(request: Request, v: str | None = None):
+    thumb_bytes, content_type, thumb_hash = get_current_thumbnail_data()
+    if not thumb_bytes:
+        raise HTTPException(status_code=404, detail="No media thumbnail available")
+
+    if_none_match = request.headers.get("if-none-match")
+    if if_none_match and thumb_hash and if_none_match.strip('"') == thumb_hash:
+        return Response(status_code=304)
+
+    headers = {
+        "Cache-Control": (
+            "public, max-age=3600, immutable" if v else "public, max-age=30"
+        ),
+    }
+    if thumb_hash:
+        headers["ETag"] = f'"{thumb_hash}"'
+
+    return Response(
+        content=thumb_bytes,
+        media_type=content_type or "image/jpeg",
+        headers=headers,
+    )
 
 
 @app.get("/api/overlay/audio_spectrum")

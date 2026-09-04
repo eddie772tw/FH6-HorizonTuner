@@ -20,6 +20,8 @@ def _reset_media_cache(monkeypatch):
             "track_number": None,
             "album_track_count": None,
             "playback_type": None,
+            "thumbnail": None,
+            "thumbnail_url": None,
             "thumbnail_available": False,
             "status": "none",
             "position_seconds": None,
@@ -56,7 +58,9 @@ def test_winrt_media_uses_modular_namespace():
     assert "import winrt.windows.foundation;" in setup_source
     assert "import winrt.windows.foundation.collections;" in setup_source
     assert "import winrt.windows.media;" in setup_source
-    assert "import winrt.windows.media.control" in setup_source
+    assert "import winrt.windows.media.control;" in setup_source
+    assert "import winrt.windows.storage;" in setup_source
+    assert "import winrt.windows.storage.streams" in setup_source
     assert "winsdk.windows.media.control" not in setup_source
     assert "_query_powershell_gsmtc" not in source
     assert "_extract_windows_desktop_media" not in source
@@ -131,6 +135,7 @@ def test_gsmtc_media_properties_are_mapped_to_bounded_contract():
         "album_track_count": 12,
         "playback_type": "music",
         "thumbnail": None,
+        "thumbnail_url": None,
         "thumbnail_available": True,
         "status": "playing",
         "position_seconds": 1.25,
@@ -351,3 +356,58 @@ def test_try_get_winrt_gsm_media_prioritizes_playing_session(monkeypatch):
     assert result["title"] == "Active Banger"
     assert result["artist"] == "Live Band"
     assert result["status"] == "playing"
+
+
+def test_extract_thumbnail_bytes_handles_none_or_error():
+    assert asyncio.run(system_media.extract_thumbnail_bytes(None)) == (None, None)
+
+    class BrokenRef:
+        async def open_read_async(self):
+            raise RuntimeError("Corrupted stream")
+
+    assert asyncio.run(system_media.extract_thumbnail_bytes(BrokenRef())) == (
+        None,
+        None,
+    )
+
+
+def test_get_media_thumbnail_endpoint(monkeypatch):
+    from fastapi.testclient import TestClient
+    from main import app
+
+    client = TestClient(app)
+
+    # 1. When no thumbnail is cached, returns 404
+    monkeypatch.setattr(
+        system_media,
+        "_thumbnail_cache",
+        {"bytes": None, "content_type": None, "hash": None, "track_key": None},
+    )
+    res = client.get("/api/overlay/media/thumbnail")
+    assert res.status_code == 404
+
+    # 2. When thumbnail is cached, returns image bytes and headers
+    fake_png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    monkeypatch.setattr(
+        system_media,
+        "_thumbnail_cache",
+        {
+            "bytes": fake_png,
+            "content_type": "image/png",
+            "hash": "aabbcc1122334455",
+            "track_key": ("Song", "Artist", "Album"),
+        },
+    )
+    res = client.get("/api/overlay/media/thumbnail?v=aabbcc1122334455")
+    assert res.status_code == 200
+    assert res.content == fake_png
+    assert res.headers["content-type"] == "image/png"
+    assert res.headers["etag"] == '"aabbcc1122334455"'
+    assert "max-age=3600" in res.headers["cache-control"]
+
+    # 3. Conditional request with matching If-None-Match returns 304
+    res304 = client.get(
+        "/api/overlay/media/thumbnail",
+        headers={"if-none-match": '"aabbcc1122334455"'},
+    )
+    assert res304.status_code == 304

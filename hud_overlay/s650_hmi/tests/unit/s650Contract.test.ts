@@ -181,7 +181,7 @@ describe('S650 frame defaults', () => {
     expect(Object.keys(contract.defaultMedia)).toEqual([
       'title', 'artist', 'album_title', 'album_artist', 'album_track_count',
       'track_number', 'genres', 'playback_type', 'subtitle', 'thumbnail',
-      'thumbnail_available', 'status', 'position_seconds', 'start_seconds',
+      'thumbnail_url', 'thumbnail_available', 'status', 'position_seconds', 'start_seconds',
       'duration_seconds', 'min_seek_seconds', 'max_seek_seconds',
       'timeline_last_updated_ms', 'can_seek', 'is_shuffle_active', 'repeat_mode',
       'playback_rate', 'playback_controls', 'source_app_user_model_id',

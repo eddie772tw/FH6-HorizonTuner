@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 import time
+from typing import Any
 
 from system_media_contract import (
     DEFAULT_ARTIST,
@@ -26,6 +27,7 @@ _media_cache = {
     "album_track_count": None,
     "playback_type": None,
     "thumbnail": None,
+    "thumbnail_url": None,
     "thumbnail_available": False,
     "status": "none",
     "position_seconds": None,
@@ -49,10 +51,59 @@ _media_cache = {
     "next_retry_at": 0.0,
 }
 
+_thumbnail_cache = {
+    "bytes": None,
+    "content_type": None,
+    "hash": None,
+    "track_key": None,
+}
+
 CACHE_TTL_SECONDS = 1.0
 MEDIA_STALE_GRACE_SECONDS = 3.0
 MEDIA_FAILURE_BACKOFF_SECONDS = (1.0, 2.0, 5.0, 10.0)
 _media_query_lock = asyncio.Lock()
+
+
+def get_current_thumbnail_data() -> tuple[bytes | None, str | None, str | None]:
+    """Return (bytes, content_type, hash) of current media thumbnail for HTTP endpoint."""
+    return (
+        _thumbnail_cache["bytes"],
+        _thumbnail_cache["content_type"],
+        _thumbnail_cache["hash"],
+    )
+
+
+async def extract_thumbnail_bytes(thumb_ref: Any) -> tuple[bytes | None, str | None]:
+    """Asynchronously extract binary image bytes and content-type from a WinRT thumbnail stream reference."""
+    if thumb_ref is None:
+        return None, None
+    try:
+        import winrt.windows.storage.streams as streams
+
+        stream = await thumb_ref.open_read_async()
+        if not stream:
+            return None, None
+
+        size = getattr(stream, "size", 0)
+        if not size or size <= 0:
+            return None, None
+
+        # Guard against oversized streams (cap at 10MB)
+        if size > 10 * 1024 * 1024:
+            return None, None
+
+        content_type = getattr(stream, "content_type", None) or "image/jpeg"
+        read_buffer = streams.Buffer(size)
+        await stream.read_async(
+            read_buffer, size, streams.InputStreamOptions.READ_AHEAD
+        )
+        reader = streams.DataReader.from_buffer(read_buffer)
+        data = bytearray(read_buffer.length)
+        reader.read_bytes(data)
+        return bytes(data), content_type
+    except Exception as e:
+        logger.debug(f"WinRT thumbnail stream extraction notice: {e}")
+        return None, None
 
 
 async def _try_get_winrt_gsm_media() -> dict | None:
@@ -87,7 +138,7 @@ async def _try_get_winrt_gsm_media() -> dict | None:
         except Exception as se:
             logger.debug(f"WinRT GSMTC get_sessions notice: {se}")
 
-        best_result = None
+        best_candidate = None
         for s in sessions_to_check:
             try:
                 info = await s.try_get_media_properties_async()
@@ -100,19 +151,67 @@ async def _try_get_winrt_gsm_media() -> dict | None:
 
                 pb = s.get_playback_info()
                 tl = s.get_timeline_properties()
-                res = _build_media_result(info, pb, tl, s)
+                status_val = getattr(pb, "playback_status", None)
+                is_playing = False
+                try:
+                    if hasattr(status_val, "value"):
+                        is_playing = int(status_val.value) == 4
+                    elif status_val is not None:
+                        is_playing = int(status_val) == 4
+                except Exception:
+                    is_playing = False
 
-                # Prioritize an actively playing session
-                if res.get("status") == "playing":
-                    return res
-
-                if best_result is None:
-                    best_result = res
+                candidate = (s, info, pb, tl)
+                if is_playing:
+                    best_candidate = candidate
+                    break
+                if best_candidate is None:
+                    best_candidate = candidate
             except Exception as item_err:
                 logger.debug(f"WinRT GSMTC session inspection notice: {item_err}")
 
-        if best_result is not None:
-            return best_result
+        if best_candidate is not None:
+            s, info, pb, tl = best_candidate
+            title = (getattr(info, "title", None) or "").strip()
+            artist = (getattr(info, "artist", None) or "").strip()
+            album_title = (getattr(info, "album_title", None) or "").strip()
+            current_track_key = (title, artist, album_title)
+
+            thumb_ref = getattr(info, "thumbnail", None)
+            thumb_url = None
+
+            if thumb_ref:
+                if (
+                    _thumbnail_cache["track_key"] == current_track_key
+                    and _thumbnail_cache["hash"]
+                ):
+                    thumb_url = (
+                        f"/api/overlay/media/thumbnail?v={_thumbnail_cache['hash']}"
+                    )
+                else:
+                    img_bytes, content_type = await extract_thumbnail_bytes(thumb_ref)
+                    if img_bytes:
+                        import hashlib
+
+                        h = hashlib.sha256(img_bytes).hexdigest()[:16]
+                        _thumbnail_cache["bytes"] = img_bytes
+                        _thumbnail_cache["content_type"] = content_type or "image/jpeg"
+                        _thumbnail_cache["hash"] = h
+                        _thumbnail_cache["track_key"] = current_track_key
+                        thumb_url = f"/api/overlay/media/thumbnail?v={h}"
+                    else:
+                        _thumbnail_cache["bytes"] = None
+                        _thumbnail_cache["content_type"] = None
+                        _thumbnail_cache["hash"] = None
+                        _thumbnail_cache["track_key"] = None
+            else:
+                if _thumbnail_cache["track_key"] != current_track_key:
+                    _thumbnail_cache["bytes"] = None
+                    _thumbnail_cache["content_type"] = None
+                    _thumbnail_cache["hash"] = None
+                    _thumbnail_cache["track_key"] = None
+
+            return _build_media_result(info, pb, tl, s, thumbnail_url=thumb_url)
 
         return {"available": True, "has_media": False}
     except Exception as e:
@@ -160,6 +259,7 @@ def _media_snapshot() -> dict:
         "album_track_count": _media_cache["album_track_count"],
         "playback_type": _media_cache["playback_type"],
         "thumbnail": _media_cache["thumbnail"],
+        "thumbnail_url": _media_cache["thumbnail_url"],
         "thumbnail_available": _media_cache["thumbnail_available"],
         "status": _media_cache["status"],
         "position_seconds": _media_cache["position_seconds"],
@@ -192,6 +292,7 @@ def _apply_media_result(result: dict, *, source: str, now: float) -> None:
     _media_cache["album_track_count"] = result.get("album_track_count")
     _media_cache["thumbnail_available"] = bool(result.get("thumbnail_available"))
     _media_cache["thumbnail"] = result.get("thumbnail")
+    _media_cache["thumbnail_url"] = result.get("thumbnail_url")
     _media_cache["status"] = result.get("status") or "playing"
     _media_cache["position_seconds"] = result.get("position_seconds")
     _media_cache["start_seconds"] = result.get("start_seconds")
@@ -226,6 +327,7 @@ def _apply_no_media(*, source: str, now: float) -> None:
     _media_cache["playback_type"] = None
     _media_cache["thumbnail_available"] = False
     _media_cache["thumbnail"] = None
+    _media_cache["thumbnail_url"] = None
     _media_cache["status"] = "none"
     _media_cache["position_seconds"] = None
     _media_cache["start_seconds"] = None
@@ -245,6 +347,10 @@ def _apply_no_media(*, source: str, now: float) -> None:
     _media_cache["last_valid"] = now
     _media_cache["failure_count"] = 0
     _media_cache["next_retry_at"] = 0.0
+    _thumbnail_cache["bytes"] = None
+    _thumbnail_cache["content_type"] = None
+    _thumbnail_cache["hash"] = None
+    _thumbnail_cache["track_key"] = None
 
 
 def _apply_media_failure(now: float) -> None:
@@ -273,6 +379,7 @@ def _apply_media_failure(now: float) -> None:
     _media_cache["playback_type"] = None
     _media_cache["thumbnail_available"] = False
     _media_cache["thumbnail"] = None
+    _media_cache["thumbnail_url"] = None
     _media_cache["status"] = "none"
     _media_cache["position_seconds"] = None
     _media_cache["start_seconds"] = None
@@ -289,3 +396,7 @@ def _apply_media_failure(now: float) -> None:
     _media_cache["has_media"] = False
     _media_cache["source"] = "unavailable"
     _media_cache["state"] = "unavailable"
+    _thumbnail_cache["bytes"] = None
+    _thumbnail_cache["content_type"] = None
+    _thumbnail_cache["hash"] = None
+    _thumbnail_cache["track_key"] = None

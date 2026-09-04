@@ -13,6 +13,8 @@ hiddenimports = [
     "winrt.windows.media.control",
     "winrt.windows.media",
     "winrt.windows.foundation.collections",
+    "winrt.windows.storage",
+    "winrt.windows.storage.streams",
     "soundcard",
 ]
 

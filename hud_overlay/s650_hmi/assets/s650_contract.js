@@ -81,6 +81,7 @@
         playback_type: null,
         subtitle: null, // Reserved: player-dependent version/subtitle metadata.
         thumbnail: null, // Reserved: WinRT RandomAccessStream is not serialized.
+        thumbnail_url: null, // HTTP endpoint path for bounded image bytes.
         thumbnail_available: false, // Reserved: image transport/cache is not defined.
         status: 'none',
         position_seconds: null,
@@ -238,7 +239,8 @@
             if (typeof source[key] === 'string') normalized[key] = source[key];
         });
         normalized.thumbnail = source.thumbnail === null || source.thumbnail === undefined ? null : source.thumbnail;
-        normalized.thumbnail_available = source.thumbnail_available === true;
+        normalized.thumbnail_url = typeof source.thumbnail_url === 'string' && source.thumbnail_url.trim() ? source.thumbnail_url.trim() : null;
+        normalized.thumbnail_available = source.thumbnail_available === true || Boolean(normalized.thumbnail_url);
         numericFields.forEach(function (key) {
             if (source[key] === null || source[key] === undefined || source[key] === '') {
                 normalized[key] = null;

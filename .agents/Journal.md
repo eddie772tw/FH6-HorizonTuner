@@ -54,6 +54,26 @@
 
 ---
 
+## 2026-09-04 / WinRT GSMTC Album Artwork Native Extraction & Bounded HTTP Cache Transport
+
+- **來源**：`local`，針對 S650 HMI 音樂播放器之專輯封面（Thumbnail / Artwork）原生讀取、零頻寬負擔傳輸與 60Hz Canvas 快取渲染實作。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **WinRT IRandomAccessStreamReference 二進位提取模式**：WinRT GSMTC 之 `info.thumbnail` 暴露的是 `IRandomAccessStreamReference` 物件。需透過 `winrt.windows.storage.streams` 之 `open_read_async()` 開啟串流，並使用 `Buffer` 與 `DataReader.read_bytes(bytearray)` 提取原生 JPEG/PNG 二進位資料。經實機驗證（如 Spotify 歌曲 `[X]` / `Judas`），可無損讀取 160KB+ 原生串流。
+  2. **WebSocket 頻寬保護與 REST 端點快取解耦**：嚴禁將大容量圖片轉為 Base64 Data URI 直接塞入高頻 60Hz 遙測共用的 `/ws/overlay` WebSocket，此舉會引發瞬時頻寬抖動並干擾遙測即時性。最佳模式是後端維持單一記憶體槽快取（In-memory LRU），並開設專屬 REST 端點 `GET /api/overlay/media/thumbnail?v={hash}`，WebSocket `hud:media` 僅傳送 40 位元組之輕量 URL，配合 HTTP `Cache-Control: immutable` 與 `ETag` 304 快取，達成 0 頻寬浪費。
+  3. **前端 60Hz Canvas 渲染迴圈防護與單槽狀態機**：Canvas 60Hz 渲染迴圈內嚴禁重複建構 `new Image()`（避免引發每秒 60 次物件建立之 GC 停頓與閃爍）。在 `s650_center_info_music.js` 實作單槽加載狀態機：URL 變更時非同步啟動一次加載；加載完成前無縫保持霓虹字母縮寫 fallback（零白屏、無破版）；加載完成後直接複用已解碼點陣圖進行硬體加速 `ctx.drawImage()`。
+- **Action**：
+  1. 引入 `winrt-Windows.Storage==3.2.1` 與 `winrt-Windows.Storage.Streams==3.2.1` 至 `requirements.txt`、`setup_venv.bat` 與 `server-sidecar.spec`。
+  2. 升級 `backend/system_media_contract.py`：新增 `thumbnail_url` 欄位映射。
+  3. 升級 `backend/system_media.py`：實作 `extract_thumbnail_bytes` 異步解包、SHA256 雜湊與 `_thumbnail_cache` 單槽記憶體快取。
+  4. 新增 `backend/main.py` REST 端點 `GET /api/overlay/media/thumbnail`，支援 304 Not Modified 與長效不可變快取。
+  5. 升級前端 `s650_contract.js`、`overlay-dedupe.js` 與 `s650_center_info_music.js`，實作點陣圖非同步加載狀態機與 60Hz 繪製。
+  6. 擴充前後端單元測試（後端 8 項全通，前端 18 項全通，全套後端 269 通過，前端 562 通過）。
+- **Evidence**：實機背景 Spotify（`[X]` by Blacklolita）即時提取出 165,900-byte PNG 串流，hash 為 `11f374cc7d376a9a`，HTTP 端點回傳 200 OK，S650 Canvas 成功繪製真實封面；全套 CI/CD 測試與編譯 100% 綠燈。
+- **Governance**：本筆追加依 `halfmoon-design-system`、`huge-component-refactoring` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-02 / Post-Race Debrief & MoTeC Ecosystem Bridge Overhaul
 
 - **來源**：`local`，針對 `AnalysisView` 重新定位與 MoTeC 生態系深度整合。

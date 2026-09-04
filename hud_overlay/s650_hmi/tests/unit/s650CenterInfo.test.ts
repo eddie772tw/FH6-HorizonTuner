@@ -33,8 +33,10 @@ type CenterInfoModule = {
 
 function createCanvasSpy() {
   const text: string[] = [];
+  const images: unknown[] = [];
   const ctx = {
     text,
+    images,
     save: () => undefined,
     restore: () => undefined,
     beginPath: () => undefined,
@@ -46,6 +48,7 @@ function createCanvasSpy() {
     strokeRect: () => undefined,
     fillRect: () => undefined,
     fillText: (value: string) => text.push(value),
+    drawImage: (...args: unknown[]) => images.push(args[0]),
   } as unknown as Record<string, unknown>;
   return ctx;
 }
@@ -434,5 +437,57 @@ describe('S650 center-information registry contract', () => {
     expect((ctx.text as string[])).toContain('Producer With Ver…');
     expect((ctx.text as string[])).toContain('▶');
     expect((ctx.text as string[])).toContain('0:45 / 3:00');
+  });
+
+  it('renders pre-loaded thumbnail image when provided directly without monogram text fallback', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    const mockImage = { complete: true, naturalWidth: 300, naturalHeight: 300 };
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Cover Track',
+        artist: 'Cover Artist',
+        thumbnail: mockImage,
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+    expect((ctx.images as unknown[])).toContain(mockImage);
+    expect((ctx.text as string[])).not.toContain('CT');
+  });
+
+  it('handles thumbnail_url and displays fallback monogram initials while image is not loaded', () => {
+    const ctx = createCanvasSpy();
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'music',
+      getMediaInfo: () => ({
+        has_media: true,
+        title: 'Network Track',
+        artist: 'Network Artist',
+        thumbnail_url: '/api/overlay/media/thumbnail?v=12345678',
+      }),
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 100, 50, 200, 220);
+
+    expect((ctx.text as string[])).toContain('NT');
+    expect((ctx.text as string[])).toContain('Network Track');
   });
 });

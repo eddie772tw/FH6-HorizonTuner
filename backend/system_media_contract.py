@@ -152,6 +152,7 @@ def build_media_result(
     playback_info: Any = None,
     timeline: Any = None,
     session: Any = None,
+    thumbnail_url: str | None = None,
 ) -> dict[str, Any]:
     """Map WinRT GSMTC objects into the bounded JSON media contract."""
     status_value = _enum_value(_safe_get(playback_info, "playback_status"))
@@ -183,11 +184,11 @@ def build_media_result(
         "playback_type": MEDIA_PLAYBACK_TYPE_BY_VALUE.get(
             playback_type_value, "unknown"
         ),
-        # WinRT exposes Thumbnail as a RandomAccessStream. Keep the complete
-        # media-properties field in the contract, but do not serialize the
-        # stream object until a bounded image/data-URI transport is designed.
-        "thumbnail": None,
-        "thumbnail_available": thumbnail_obj is not None,
+        # WinRT exposes Thumbnail as a RandomAccessStream. When extracted,
+        # thumbnail_url points to the bounded /api/overlay/media/thumbnail endpoint.
+        "thumbnail": thumbnail_url,
+        "thumbnail_url": thumbnail_url,
+        "thumbnail_available": thumbnail_obj is not None or thumbnail_url is not None,
         "status": MEDIA_STATUS_BY_VALUE.get(status_value, "playing"),
         "position_seconds": position_seconds,
         "start_seconds": start_seconds,

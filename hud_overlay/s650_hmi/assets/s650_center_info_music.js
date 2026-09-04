@@ -72,19 +72,58 @@
         }).join('').toUpperCase().slice(0, 2);
     }
 
+    var currentThumbUrl = null;
+    var loadedThumbnailImage = null;
+    var isThumbLoading = false;
+
     function drawCover(context, media, x, y, size) {
         var ctx = context.ctx;
         var palette = context.palette;
-        var image = media && media.thumbnail;
         var drawnImage = false;
+
+        // If media provides a pre-instantiated Image/Canvas object (e.g. in tests), use it directly
+        var directImage = media && media.thumbnail && typeof media.thumbnail !== 'string' ? media.thumbnail : null;
+        var thumbUrl = media && (media.thumbnail_url || (typeof media.thumbnail === 'string' ? media.thumbnail : null));
+
+        if (!directImage && typeof Image !== 'undefined') {
+            if (thumbUrl && thumbUrl !== currentThumbUrl) {
+                currentThumbUrl = thumbUrl;
+                isThumbLoading = true;
+                var img = new Image();
+                img.onload = function () {
+                    if (currentThumbUrl === thumbUrl) {
+                        loadedThumbnailImage = img;
+                        isThumbLoading = false;
+                    }
+                };
+                img.onerror = function () {
+                    if (currentThumbUrl === thumbUrl) {
+                        loadedThumbnailImage = null;
+                        isThumbLoading = false;
+                    }
+                };
+                img.src = thumbUrl;
+            } else if (!thumbUrl && currentThumbUrl !== null) {
+                currentThumbUrl = null;
+                loadedThumbnailImage = null;
+                isThumbLoading = false;
+            }
+        }
+
+        var imageToDraw = directImage || loadedThumbnailImage;
 
         ctx.save();
         ctx.fillStyle = palette.surface || palette.background;
         ctx.fillRect(x, y, size, size);
-        if (image && typeof image !== 'string' && typeof ctx.drawImage === 'function') {
+        if (imageToDraw && typeof ctx.drawImage === 'function') {
             try {
-                ctx.drawImage(image, x, y, size, size);
-                drawnImage = true;
+                var isComplete = typeof imageToDraw.complete === 'boolean'
+                    ? imageToDraw.complete && imageToDraw.naturalWidth > 0
+                    : true;
+                if (isComplete) {
+                    ctx.drawImage(imageToDraw, x, y, size, size);
+                    drawnImage = true;
+                }
             } catch (_error) {
                 drawnImage = false;
             }

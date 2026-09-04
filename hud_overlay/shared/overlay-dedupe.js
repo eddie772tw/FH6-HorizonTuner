@@ -22,6 +22,7 @@ function mediaFingerprint(value) {
         value?.album_track_count ?? null,
         value?.playback_type ?? '',
         Boolean(value?.thumbnail_available),
+        value?.thumbnail_url ?? '',
         value?.status ?? '',
         value?.position_seconds ?? null,
         value?.start_seconds ?? null,
