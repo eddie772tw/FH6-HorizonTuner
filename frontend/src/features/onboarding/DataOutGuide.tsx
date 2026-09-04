@@ -18,8 +18,50 @@ const badgeClass: Record<TelemetryHealth['state'], string> = {
   unavailable: 'text-bg-secondary',
 };
 
+type Translate = (text: string) => string;
+
+export function localizeTelemetryHealth(
+  health: TelemetryHealth,
+  t: Translate,
+): { label: string; detail: string } {
+  const labelKeys: Record<TelemetryHealth['state'], string> = {
+    active: 'Data Out receiving',
+    invalid: 'Data received, but not usable',
+    stale: 'Data Out not currently receiving',
+    waiting: 'Waiting for Data Out',
+    unavailable: 'Health unavailable',
+  };
+
+  let detail: string;
+  switch (health.state) {
+    case 'active':
+      detail = t('valid_frames_received').replace('{count}', String(health.validFrames));
+      if (health.errors.length > 0) {
+        detail += ` ${t('Reported parser issues remain recorded')}`;
+      }
+      break;
+    case 'invalid':
+      detail = health.errors.length > 0
+        ? t('Check the reported packet format issue.')
+        : t('No valid telemetry frame has been parsed yet.');
+      break;
+    case 'stale':
+      detail = t('Packets were observed previously, but no packet has arrived recently.');
+      break;
+    case 'waiting':
+      detail = t('No Data Out packet has reached this app yet.');
+      break;
+    case 'unavailable':
+    default:
+      detail = t('The local diagnostics endpoint did not return a response.');
+      break;
+  }
+
+  return { label: t(labelKeys[health.state]), detail };
+}
+
 export default function DataOutGuide({ health, open, onClose }: DataOutGuideProps) {
-  const { t } = useSettings();
+  const { settings, t } = useSettings();
   const closeButton = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (open) closeButton.current?.focus(); }, [open]);
   useEffect(() => {
@@ -33,26 +75,10 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
     saveDataOutGuideChoice(window.localStorage, choice);
     onClose();
   };
-  const lastPacket = health.lastPacketAt ? new Date(health.lastPacketAt * 1000).toLocaleString() : t("Not received");
-
-  const renderHealthDetail = () => {
-    switch (health.state) {
-      case 'active':
-        return t("valid_frames_received").replace("{count}", health.validFrames.toString()) +
-               (health.errors.length > 0 ? " " + t("Reported parser issues remain recorded") : "");
-      case 'invalid':
-        return health.hasObservedPacket
-          ? t("No valid telemetry frame has been parsed yet.")
-          : t("Check the reported packet format issue.");
-      case 'stale':
-        return t("Packets were observed previously, but no packet has arrived recently.");
-      case 'waiting':
-        return t("No Data Out packet has reached this app yet.");
-      case 'unavailable':
-      default:
-        return t("The local diagnostics endpoint did not return a response.");
-    }
-  };
+  const lastPacket = health.lastPacketAt
+    ? new Date(health.lastPacketAt * 1000).toLocaleString(settings.language)
+    : t('Not received');
+  const localizedHealth = localizeTelemetryHealth(health, t);
 
   return (
     <ModalPortal>
@@ -107,8 +133,8 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
               </ol>
               <section aria-labelledby="data-out-health-title" className="border rounded p-3" style={{ borderColor: 'var(--divider)', background: 'var(--surface-1)' }}>
                 <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                  <div><h3 id="data-out-health-title" className="fs-6 mb-1 fw-bold">{t("Data Out health")}</h3><p className="mb-0 small text-secondary">{renderHealthDetail()}</p></div>
-                  <span className={`badge ${badgeClass[health.state]} px-2 py-1`}>{t(health.label)}</span>
+                  <div><h3 id="data-out-health-title" className="fs-6 mb-1 fw-bold">{t("Data Out health")}</h3><p className="mb-0 small text-secondary">{localizedHealth.detail}</p></div>
+                  <span className={`badge ${badgeClass[health.state]} px-2 py-1`}>{localizedHealth.label}</span>
                 </div>
                 <dl className="row small mb-0 mt-3">
                   <dt className="col-sm-4 text-secondary">{t("Destination")}</dt><dd className="col-sm-8"><code>127.0.0.1:8000</code> {t("(same-PC setup)")}</dd>
