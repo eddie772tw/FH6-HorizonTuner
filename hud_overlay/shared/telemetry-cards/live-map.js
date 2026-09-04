@@ -104,25 +104,6 @@ export function setCustomPOIs(poisList) {
 }
 
 /**
- * Classify a recorded map point as drifting.
- *
- * TireSlipRatio is a fixed four-wheel telemetry tuple. Passing its values
- * directly preserves the legacy fail-closed behavior for malformed values:
- * Math.max returns NaN, which does not cross the drift threshold.
- *
- * @param {Object|null} data - Raw UDP telemetry packet
- * @param {number} speed - Current speed in km/h
- * @returns {boolean}
- */
-export function classifyLiveMapDrift(data, speed) {
-    if (!data) return false;
-    if (!data.TireSlipRatio) return speed > 20;
-
-    var sr = data.TireSlipRatio;
-    return Math.max(sr[0], sr[1], sr[2], sr[3]) > 0.4;
-}
-
-/**
  * Render Live Map Telemetry Card
  *
  * @param {HTMLCanvasElement} canvas
@@ -185,8 +166,18 @@ export function renderLiveMap(canvas, data, config) {
         }
 
         if (shouldPush) {
-            // Avoid apply-call overhead for the fixed four-wheel telemetry tuple.
-            var isDrift = classifyLiveMapDrift(data, speed);
+            // GC Optimization: Replaced Math.max.apply(null, array) with manual unrolling
+            // to eliminate spread/apply function call overhead in 60Hz loop.
+            var isDrift = false;
+            if (data) {
+                if (data.TireSlipRatio) {
+                    var sr = data.TireSlipRatio;
+                    var maxSlip = Math.max(sr[0] || 0, sr[1] || 0, sr[2] || 0, sr[3] || 0);
+                    isDrift = maxSlip > 0.4;
+                } else {
+                    isDrift = speed > 20;
+                }
+            }
             posHistory.push({ x: rawX, z: rawZ, drift: isDrift, time: Date.now() });
             if (posHistory.length > MAX_MAP_HISTORY) {
                 posHistory.shift();
