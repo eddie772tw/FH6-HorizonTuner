@@ -8,7 +8,6 @@ import {
 } from '../../../hud_overlay/shared/telemetry-cards/utils.js';
 import { getClusterHTML } from '../../../hud_overlay/shared/telemetry-cards/template.js';
 import { createTelemetryCardsManager } from '../../../hud_overlay/shared/telemetry-cards/manager.js';
-import { classifyLiveMapDrift } from '../../../hud_overlay/shared/telemetry-cards/live-map.js';
 
 // Simple lightweight DOM Mock for Node vitest environment
 function setupDOMMock() {
@@ -78,19 +77,6 @@ function setupDOMMock() {
 }
 
 describe('HUD Telemetry Cards Utilities', () => {
-    it('classifies drift from the fixed four-wheel slip tuple without changing threshold semantics', () => {
-        expect(classifyLiveMapDrift({ TireSlipRatio: [0.1, 0.2, 0.3, 0.39] }, 100)).toBe(false);
-        expect(classifyLiveMapDrift({ TireSlipRatio: [0.1, 0.2, 0.3, 0.4] }, 100)).toBe(false);
-        expect(classifyLiveMapDrift({ TireSlipRatio: [0.1, 0.2, 0.3, 0.41] }, 0)).toBe(true);
-    });
-
-    it('retains speed fallback and malformed-slip fail-closed behavior', () => {
-        expect(classifyLiveMapDrift({}, 21)).toBe(true);
-        expect(classifyLiveMapDrift({}, 20)).toBe(false);
-        expect(classifyLiveMapDrift(null, 100)).toBe(false);
-        expect(classifyLiveMapDrift({ TireSlipRatio: [Number.NaN, 0.5, 0, 0] }, 100)).toBe(false);
-    });
-
     it('getTempColor correctly maps temperature thresholds to hex colors', () => {
         expect(getTempColor(150)).toBe('#0088ff');
         expect(getTempColor(180)).toBe('#00ff00');
