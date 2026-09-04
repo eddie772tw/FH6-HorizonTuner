@@ -1235,5 +1235,17 @@
   "Datagrams / valid frames": "數據包 / 有效影格",
   "Reported error:": "回報錯誤：",
   "Skip for now": "暫時跳過",
-  "I've reviewed this": "我已看過"
+  "I've reviewed this": "我已看過",
+  "valid_frames_received": "已收到 {count} 個有效影格。",
+  "Reported parser issues remain recorded": "回報的解析器問題仍然記錄在案。",
+  "No valid telemetry frame has been parsed yet.": "尚未解析出有效的遙測影格。",
+  "Check the reported packet format issue.": "請檢查回報的封包格式問題。",
+  "Packets were observed previously, but no packet has arrived recently.": "先前曾觀察到封包，但最近沒有收到封包。",
+  "No Data Out packet has reached this app yet.": "目前尚無資料輸出封包到達此應用程式。",
+  "The local diagnostics endpoint did not return a response.": "本地端診斷端點未回傳回應。",
+  "Health unavailable": "健康狀態無法取得",
+  "Data Out receiving": "資料輸出接收中",
+  "Data received, but not usable": "資料已接收，但無法使用",
+  "Data Out not currently receiving": "資料輸出目前未接收",
+  "Waiting for Data Out": "等待資料輸出"
 }

@@ -1147,5 +1147,17 @@
   "Datagrams / valid frames": "Datagrams / valid frames",
   "Reported error:": "Reported error:",
   "Skip for now": "Skip for now",
-  "I've reviewed this": "I've reviewed this"
+  "I've reviewed this": "I've reviewed this",
+  "valid_frames_received": "{count} valid frame(s) received.",
+  "Reported parser issues remain recorded": "Reported parser issues remain recorded",
+  "No valid telemetry frame has been parsed yet.": "No valid telemetry frame has been parsed yet.",
+  "Check the reported packet format issue.": "Check the reported packet format issue.",
+  "Packets were observed previously, but no packet has arrived recently.": "Packets were observed previously, but no packet has arrived recently.",
+  "No Data Out packet has reached this app yet.": "No Data Out packet has reached this app yet.",
+  "The local diagnostics endpoint did not return a response.": "The local diagnostics endpoint did not return a response.",
+  "Health unavailable": "Health unavailable",
+  "Data Out receiving": "Data Out receiving",
+  "Data received, but not usable": "Data received, but not usable",
+  "Data Out not currently receiving": "Data Out not currently receiving",
+  "Waiting for Data Out": "Waiting for Data Out"
 }

@@ -35,6 +35,25 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
   };
   const lastPacket = health.lastPacketAt ? new Date(health.lastPacketAt * 1000).toLocaleString() : t("Not received");
 
+  const renderHealthDetail = () => {
+    switch (health.state) {
+      case 'active':
+        return t("valid_frames_received").replace("{count}", health.validFrames.toString()) +
+               (health.errors.length > 0 ? " " + t("Reported parser issues remain recorded") : "");
+      case 'invalid':
+        return health.hasObservedPacket
+          ? t("No valid telemetry frame has been parsed yet.")
+          : t("Check the reported packet format issue.");
+      case 'stale':
+        return t("Packets were observed previously, but no packet has arrived recently.");
+      case 'waiting':
+        return t("No Data Out packet has reached this app yet.");
+      case 'unavailable':
+      default:
+        return t("The local diagnostics endpoint did not return a response.");
+    }
+  };
+
   return (
     <ModalPortal>
       <div
@@ -88,8 +107,8 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
               </ol>
               <section aria-labelledby="data-out-health-title" className="border rounded p-3" style={{ borderColor: 'var(--divider)', background: 'var(--surface-1)' }}>
                 <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                  <div><h3 id="data-out-health-title" className="fs-6 mb-1 fw-bold">{t("Data Out health")}</h3><p className="mb-0 small text-secondary">{health.detail}</p></div>
-                  <span className={`badge ${badgeClass[health.state]} px-2 py-1`}>{health.label}</span>
+                  <div><h3 id="data-out-health-title" className="fs-6 mb-1 fw-bold">{t("Data Out health")}</h3><p className="mb-0 small text-secondary">{renderHealthDetail()}</p></div>
+                  <span className={`badge ${badgeClass[health.state]} px-2 py-1`}>{t(health.label)}</span>
                 </div>
                 <dl className="row small mb-0 mt-3">
                   <dt className="col-sm-4 text-secondary">{t("Destination")}</dt><dd className="col-sm-8"><code>127.0.0.1:8000</code> {t("(same-PC setup)")}</dd>

@@ -1174,5 +1174,17 @@
   "Datagrams / valid frames": "データグラム / 有効フレーム",
   "Reported error:": "報告されたエラー：",
   "Skip for now": "スキップ",
-  "I've reviewed this": "確認しました"
+  "I've reviewed this": "確認しました",
+  "valid_frames_received": "{count} 個の有効なフレームを受信しました。",
+  "Reported parser issues remain recorded": "報告されたパーサーの問題は引き続き記録されています。",
+  "No valid telemetry frame has been parsed yet.": "有効なテレメトリフレームはまだ解析されていません。",
+  "Check the reported packet format issue.": "報告されたパケットフォーマットの問題を確認してください。",
+  "Packets were observed previously, but no packet has arrived recently.": "以前パケットが確認されましたが、最近はパケットが到着していません。",
+  "No Data Out packet has reached this app yet.": "データ出力パケットはまだこのアプリに到達していません。",
+  "The local diagnostics endpoint did not return a response.": "ローカル診断エンドポイントが応答を返しませんでした。",
+  "Health unavailable": "ステータス取得不可",
+  "Data Out receiving": "データ出力受信中",
+  "Data received, but not usable": "データを受信しましたが、使用できません",
+  "Data Out not currently receiving": "現在データ出力を受信していません",
+  "Waiting for Data Out": "データ出力待機中"
 }
