@@ -55,7 +55,14 @@ for /f "tokens=5" %%a in ('netstat -aon ^| find ":8001" ^| find "LISTENING"') do
     taskkill /F /PID %%a >nul 2>nul
 )
 
-:: Use the committed lockfile. Auditing must not mutate frontend dependencies.
+:: Clean up stale port files to prevent the frontend from latching onto a previous session.
+if exist "%~dp0logs\web_port.txt" del /f /q "%~dp0logs\web_port.txt" >nul 2>nul
+if exist "%~dp0backend\logs\web_port.txt" del /f /q "%~dp0backend\logs\web_port.txt" >nul 2>nul
+
+:: Brief pause to ensure the Windows TCP stack completes socket teardown.
+timeout /t 1 /nobreak >nul
+
+:: Use the committed lockfile. Auditing is handled by CI and release builds.
 echo [INFO] Checking frontend dependencies...
 cd frontend
 call pnpm install --frozen-lockfile
@@ -64,12 +71,34 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-echo [INFO] Auditing the locked frontend dependency set...
-call pnpm audit >nul 2>nul
-if errorlevel 1 echo [WARNING] pnpm audit found unresolved vulnerabilities. Please check manually.
 cd ..
 
-echo [INFO] Starting Backend and Frontend...
+echo [INFO] Launching Backend...
+set "FH6_SKIP_VENV=1"
 start "FH6 Telemetry Backend" cmd /c "start_backend.bat"
+
+echo [INFO] Waiting for Backend to be ready on port 8001...
+set "BACKEND_READY=0"
+for /l %%i in (1, 1, 30) do (
+    if "!BACKEND_READY!"=="0" (
+        timeout /t 1 /nobreak >nul
+        if exist "%~dp0backend\logs\web_port.txt" (
+            set "BACKEND_READY=1"
+        ) else if exist "%~dp0logs\web_port.txt" (
+            set "BACKEND_READY=1"
+        )
+    )
+)
+
+if "!BACKEND_READY!"=="1" (
+    set "ACTUAL_PORT=8001"
+    if exist "%~dp0backend\logs\web_port.txt" set /p ACTUAL_PORT=<"%~dp0backend\logs\web_port.txt"
+    if exist "%~dp0logs\web_port.txt" set /p ACTUAL_PORT=<"%~dp0logs\web_port.txt"
+    echo [SUCCESS] Backend is listening and ready on port !ACTUAL_PORT!.
+) else (
+    echo [WARNING] Backend readiness timed out after 30s; proceeding with Frontend anyway.
+)
+
+echo [INFO] Launching Frontend...
 start "FH6 Telemetry Frontend" cmd /c "start_frontend.bat"
 echo All services started! You can close this window.

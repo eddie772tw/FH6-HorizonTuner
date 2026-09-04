@@ -12,11 +12,20 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if "%FH6_SKIP_VENV%"=="1" (
+    if exist "%VENV_PY%" (
+        echo [INFO] Python environment verified by parent launcher; skipping redundant setup_venv.
+        goto :venv_ready
+    )
+)
+
 call "%~dp0setup_venv.bat"
 if errorlevel 1 (
     pause
     exit /b 1
 )
+
+:venv_ready
 
 cd /D "%~dp0backend"
 "%UV_EXE%" run --no-project --python "%VENV_PY%" python update_car_db.py

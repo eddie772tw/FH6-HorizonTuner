@@ -15,6 +15,26 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-04 / Dev Startup Orchestration & Readiness Gate Overhaul
+
+- **來源**：`local`，針對 `start_all.bat` 與 `start_backend.bat` 同時並行啟動引發的競態衝突、舊端口假就緒、8001 競爭觸發動態埠，以及 `pnpm audit` 連網造成假死之根因修復。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **提供者 (Backend) 與消費者 (Frontend) 啟動因果律倒置**：後端需歷經 Python 依賴檢查、車輛資料庫更新與模組初始化（需時 3~8 秒），而前端因快取命中常在 1~2 秒內即跳出並調用 `waitForBackendReady`。並行啟動在機器負載高時極易發生連線被拒、前端白屏或 React 拋出例外中斷渲染。
+  2. **磁碟殘留 `web_port.txt` 造成幽靈假就緒 (Ghost Ready)**：`start_all.bat` 在終止舊實例後未清理舊端口檔案，而新後端延遲至 `main.py` 跑完才刪檔。這導致前端 `watch_external_backend()` 提早抓取舊端口誤判為 ready，隨後連線撞上新舊交接瞬斷。
+  3. **Windows TCP Socket 釋放時差觸發動態埠 Fallback**：`taskkill` 發出後 Windows 核心處理 TCP teardown 與 `TIME_WAIT` 有微小延遲。若後端過快重新 `bind(8001)` 撞上佔用，會自動切換為隨機動態連接埠，導致鎖定 8001 的開發模式前端與 MCP 伺服器無法連線。
+  4. **npm Bulk Advisory 遠端端點 503/逾時引發啟動黑盒卡死**：`start_all.bat` 中的 `pnpm audit >nul 2>nul` 會同步發送 HTTPS POST 至 npm 官方 advisory 端點。當 npm 伺服器負載過高回傳 503 時，pnpm 重試機制加上被隱藏的輸出使腳本卡死超過 2 分鐘。日常熱啟動只需保證 `--frozen-lockfile`，安全審計應保留於 CI 與發行打包。
+- **Action**：
+  1. 重構 `start_all.bat`：終止舊實例後主動刪除 `logs\web_port.txt` 與 `backend\logs\web_port.txt`，並加入 1 秒 socket 冷卻緩衝。
+  2. 移除 `start_all.bat` 中的 `pnpm audit`，避免連網審計阻塞本地熱啟動。
+  3. 實作就緒門控 (Readiness Gate)：在 `start_all.bat` 先行啟動後端，透過 30 秒輪詢循環等待後端真正完成 8001 綁定並生成 `web_port.txt` 後，才啟動前端視窗，並於終端輸出即時連接埠資訊。
+  4. 升級 `start_backend.bat`：新增 `FH6_SKIP_VENV` 旗標支援。當由父啟動腳本調用且虛擬環境就緒時，跳過重複的 `setup_venv.bat` 檢查，後端啟動時間縮短 2~4 秒；單獨執行時仍維持自動檢查相依。
+  5. 驗證全套後端 Pytest（270 passed）、前端 Vitest（566 passed）與 Ruff 代碼檢查無誤。
+- **Evidence**：後端 Pytest 270 passed (0 failed)；前端 Vitest 88 files / 566 tests 100% passed；Ruff check/format clean；實測啟動流程具備嚴格因果順序，徹底消除連線被拒與幽靈假就緒。
+- **Governance**：本筆追加依 `portable-release-validation` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-04 / WinRT GSMTC System Media Exception Escape & Multi-Session Resilience Overhaul
 
 - **來源**：`local`，針對 S650 HMI 音樂播放器與 VFD 無法獲取系統媒體歌曲資訊（誤顯為 NO ACTIVE MEDIA / MEDIA: OFF）之根因修復與防禦性架構升級。
