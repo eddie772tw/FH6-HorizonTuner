@@ -1159,5 +1159,10 @@
   "Data Out receiving": "Data Out receiving",
   "Data received, but not usable": "Data received, but not usable",
   "Data Out not currently receiving": "Data Out not currently receiving",
-  "Waiting for Data Out": "Waiting for Data Out"
+  "Waiting for Data Out": "Waiting for Data Out",
+  "Failed to connect to backend log API.": "Failed to connect to backend log API.",
+  "Preparing Support Bundle...": "Preparing Support Bundle...",
+  "Download Support Bundle": "Download Support Bundle",
+  "Support bundle export failed.": "Support bundle export failed.",
+  "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically."
 }

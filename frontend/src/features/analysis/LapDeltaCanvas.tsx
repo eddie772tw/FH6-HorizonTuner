@@ -64,11 +64,20 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
 
     // Speed Chart (Top)
     const speedTop = padding.top;
-    const maxSpeed = Math.max(
-      ...primaryLapData.map((p) => p.SpeedMetersPerSecond * 3.6),
-      ...compareLapData.map((p) => p.SpeedMetersPerSecond * 3.6),
-      120
-    );
+
+    let maxSpeed = 120;
+    for (let i = 0; i < primaryLapData.length; i++) {
+      const speed = primaryLapData[i].SpeedMetersPerSecond * 3.6;
+      if (speed > maxSpeed) {
+        maxSpeed = speed;
+      }
+    }
+    for (let i = 0; i < compareLapData.length; i++) {
+      const speed = compareLapData[i].SpeedMetersPerSecond * 3.6;
+      if (speed > maxSpeed) {
+        maxSpeed = speed;
+      }
+    }
 
     // Grid lines for speed
     ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";

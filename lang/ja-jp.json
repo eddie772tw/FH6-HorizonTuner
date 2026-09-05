@@ -264,7 +264,7 @@
   "Export": "エクスポート",
   "Export JSON": "JSONのエクスポート",
   "Export Theme JSON": "Export Theme JSON",
-  "Failed to clear logs on server.": "Failed to clear logs on server.",
+  "Failed to clear logs on server.": "サーバー上のログの消去に失敗しました。",
   "Failed to delete session.": "Failed to delete session.",
   "Failed to load telemetry or file is empty.": "Failed to load telemetry or file is empty.",
   "Failed to parse JSON file.": "JSON ファイルを解析できません。",
@@ -1186,5 +1186,10 @@
   "Data Out receiving": "データ出力受信中",
   "Data received, but not usable": "データを受信しましたが、使用できません",
   "Data Out not currently receiving": "現在データ出力を受信していません",
-  "Waiting for Data Out": "データ出力待機中"
+  "Waiting for Data Out": "データ出力待機中",
+  "Failed to connect to backend log API.": "バックエンドログAPIへの接続に失敗しました。",
+  "Preparing Support Bundle...": "サポートバンドルを準備中...",
+  "Download Support Bundle": "サポートバンドルをダウンロード",
+  "Support bundle export failed.": "サポートバンドルのエクスポートに失敗しました。",
+  "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "診断の集計データと最近のログを含むローカルZIPを作成します。生のUDPペイロード、絶対パス、プレイヤー識別子、認証情報は除外されます。データが自動的にアップロードされることはありません。"
 }
