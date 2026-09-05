@@ -43,7 +43,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         setErrorMsg(data.error);
       }
     } catch (err) {
-      setErrorMsg("Failed to connect to backend log API.");
+      setErrorMsg(t("Failed to connect to backend log API."));
     }
   };
 
@@ -67,7 +67,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
       await backendFetch('/api/logs', { method: 'DELETE' });
       setLogs([]);
     } catch (err) {
-      alert("Failed to clear logs on server.");
+      alert(t("Failed to clear logs on server."));
     }
   };
 
@@ -80,7 +80,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         body: supportBundleRequestBody(),
       });
       if (!response.ok) {
-        throw new Error(`Support bundle export failed (${response.status})`);
+        throw new Error(`${t('Support bundle export failed.')} (${response.status})`);
       }
       const downloadUrl = URL.createObjectURL(await response.blob());
       const download = document.createElement('a');
@@ -92,7 +92,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
       URL.revokeObjectURL(downloadUrl);
       setErrorMsg(null);
     } catch (error) {
-      setErrorMsg(error instanceof Error ? error.message : 'Support bundle export failed.');
+      setErrorMsg(error instanceof Error ? error.message : t('Support bundle export failed.'));
     } finally {
       setIsExportingBundle(false);
     }
@@ -215,9 +215,9 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
               onClick={handleExportSupportBundle}
               className="btn btn-outline-primary btn-sm fw-bold"
               disabled={isExportingBundle}
-              title={SUPPORT_BUNDLE_PRIVACY_NOTICE}
+              title={t(SUPPORT_BUNDLE_PRIVACY_NOTICE)}
             >
-              {isExportingBundle ? 'Preparing Support Bundle...' : 'Download Support Bundle'}
+              {isExportingBundle ? t('Preparing Support Bundle...') : t('Download Support Bundle')}
             </button>
             <button
               onClick={handleClearLogs}
@@ -229,7 +229,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         </div>
 
         <p className="px-4 py-2 mb-0 border-bottom text-body-secondary fs-8">
-          {SUPPORT_BUNDLE_PRIVACY_NOTICE}
+          {t(SUPPORT_BUNDLE_PRIVACY_NOTICE)}
         </p>
 
         {/* Offcanvas Body */}
