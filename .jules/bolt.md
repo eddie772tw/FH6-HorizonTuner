@@ -15,6 +15,8 @@
 **Action:** Replace `innerHTML` concatenation loops with DOM pooling: match existing children's length, update `textContent` only when characters differ, and dynamically add/remove `<span>` elements only when string length changes.
 ## 2024-10-25 - Eliminating Object Allocation in Large Render Loops
 **Learning:** Returning objects like `{ x, y }` from helper functions inside a large data iteration loop (e.g., iterating a 10,000-element tracking history at 60Hz) causes massive object allocation and GC pauses.
-**Action:** In high-frequency rendering loops, compute parameters inline using isolated primitive values (e.g., `pPrevX`, `pPrevY`, `pCurrX`, `pCurrY`), replacing the helper function call entirely and eliminating all object creation in the hot path.## 2024-11-25 - Eliminating Spread Operator Call Stack Overflows
+**Action:** In high-frequency rendering loops, compute parameters inline using isolated primitive values (e.g., `pPrevX`, `pPrevY`, `pCurrX`, `pCurrY`), replacing the helper function call entirely and eliminating all object creation in the hot path.
+
+## 2024-11-25 - Eliminating Spread Operator Call Stack Overflows
 **Learning:** Using `Math.max(...array.map(...))` on large dynamic arrays (e.g., telemetry history points mapped to speed values) causes `RangeError: Maximum call stack size exceeded` because V8 has a strict limit on the number of arguments a function can accept via the spread operator. It also increases GC pressure by creating temporary mapped arrays.
 **Action:** Replace `...array.map()` and `Math.max()` combinations with standard single-pass `for` loops that iterate the array by index, extracting values and comparing them directly against an inline maximum variable to ensure safe execution on large datasets and eliminate allocations.
