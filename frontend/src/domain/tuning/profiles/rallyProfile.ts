@@ -434,7 +434,7 @@ export function analyzeRallyTelemetry(
     }
 
     const meanTravel = (travels[0] + travels[1] + travels[2] + travels[3]) / 4;
-    const maxTravel = Math.max(...travels);
+    const maxTravel = Math.max(travels[0], travels[1], travels[2], travels[3]);
     const accY = finiteOr(s.accelerationY, 0);
     const velY = finiteOr(s.velocityY, 0);
     const currentG = Math.abs(accY) / 9.80665;
@@ -658,7 +658,12 @@ function solveRallyGearing(
   const drivetrainEfficiency = 0.90; // slightly higher drag loss in off-road differentials
 
   if (input.powerCurve && input.powerCurve.length >= 2) {
-    const maxRpmInCurve = Math.max(...input.powerCurve.map((p) => p.rpm));
+    let maxRpmInCurve = 0;
+    for (let i = 0; i < input.powerCurve.length; i++) {
+      if (input.powerCurve[i].rpm > maxRpmInCurve) {
+        maxRpmInCurve = input.powerCurve[i].rpm;
+      }
+    }
     const redlineRpm = Math.min(maxRpmInCurve, rpmAtPower + 750);
 
     for (let gIdx = 0; gIdx < gearCount - 1; gIdx++) {
