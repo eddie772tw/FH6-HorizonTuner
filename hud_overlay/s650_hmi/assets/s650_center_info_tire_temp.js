@@ -90,7 +90,7 @@
         var palette = context.palette;
         var region = context.region;
         var cx = region.x + region.width / 2;
-        var bodyY = region.y + 27;
+        var bodyY = region.y + 28;
         var bodyHeight = 50;
         var wheelX = 31;
         var positions = [

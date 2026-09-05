@@ -41,18 +41,33 @@
         var region = context.region;
         var palette = context.palette;
         var centerX = region.x + region.width / 2;
+        var isCompact = Boolean(region.layout && region.layout.isCompact);
+        var titleY = region.y + (isCompact ? 14 : 10);
 
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        setFont(context, 'dualRingCenterTitle', 18, '700');
+        setFont(context, isCompact ? 'dualRingCenterSubtitle' : 'dualRingCenterTitle', isCompact ? 13 : 18, '700');
         ctx.fillStyle = palette.text;
-        ctx.fillText(title, centerX, region.y + 10);
+        ctx.fillText(title, centerX, titleY);
         if (subtitle) {
             setFont(context, 'dualRingCenterSubtitle', 11, '700');
             ctx.fillStyle = palette.secondary;
             ctx.fillText(subtitle, centerX, region.y + 27);
         }
+        ctx.restore();
+    }
+
+    function drawDivider(context, x, y1, y2, color) {
+        var ctx = context.ctx;
+        if (!ctx || typeof ctx.moveTo !== 'function' || typeof ctx.lineTo !== 'function') return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, y1);
+        ctx.lineTo(x, y2);
+        ctx.strokeStyle = color || 'rgba(194, 226, 234, 0.24)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
         ctx.restore();
     }
 
@@ -134,7 +149,73 @@
         return { value: Math.round(clamp(fuel, 0, 1) * 100), unit: '%' };
     }
 
+    var BACKGROUND_SPEC = Object.freeze({
+        alpha: 0.15,
+        fill: 'rgba(0, 0, 0, 0.15)',
+        dualRing: Object.freeze({
+            width: 360,
+            padX: 35,
+            radius: 12
+        }),
+        trackSidebar: Object.freeze({
+            radius: 6
+        })
+    });
+
+    function drawBackground(context) {
+        if (!context) return;
+        var ctx = context.ctx;
+        if (!ctx) return;
+
+        var region = context.region || {};
+        var isCompact = Boolean(region.layout && region.layout.isCompact);
+        var width = region.width || 0;
+        var padX = 0;
+        if (!isCompact && width >= 400) {
+            padX = BACKGROUND_SPEC.dualRing.padX;
+        }
+
+        var x = (region.x || 0) + padX;
+        var y = region.y || 0;
+        var bgWidth = Math.max(0, width - padX * 2);
+        var bgHeight = Math.max(0, region.height || 0);
+        var radius = isCompact ? BACKGROUND_SPEC.trackSidebar.radius : BACKGROUND_SPEC.dualRing.radius;
+        var palette = context.palette || {};
+        var fill = palette.centerWidgetBackground || BACKGROUND_SPEC.fill;
+
+        ctx.save();
+        if (context.primitives && typeof context.primitives.drawRoundedPanel === 'function') {
+            context.primitives.drawRoundedPanel(x, y, bgWidth, bgHeight, radius, fill);
+        } else {
+            ctx.fillStyle = fill;
+            if (typeof ctx.roundRect === 'function') {
+                ctx.beginPath();
+                ctx.roundRect(x, y, bgWidth, bgHeight, radius);
+                ctx.fill();
+            } else if (typeof ctx.quadraticCurveTo === 'function') {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + bgWidth - radius, y);
+                ctx.quadraticCurveTo(x + bgWidth, y, x + bgWidth, y + radius);
+                ctx.lineTo(x + bgWidth, y + bgHeight - radius);
+                ctx.quadraticCurveTo(x + bgWidth, y + bgHeight, x + bgWidth - radius, y + bgHeight);
+                ctx.lineTo(x + radius, y + bgHeight);
+                ctx.quadraticCurveTo(x, y + bgHeight, x, y + bgHeight - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+                ctx.fill();
+            } else if (typeof ctx.fillRect === 'function') {
+                ctx.fillRect(x, y, bgWidth, bgHeight);
+            }
+        }
+        ctx.restore();
+    }
+
     window.S650HmiCenterInfoCommon = {
+        BACKGROUND_SPEC: BACKGROUND_SPEC,
+        drawBackground: drawBackground,
+        drawDivider: drawDivider,
         clamp: clamp,
         number: number,
         read: read,
