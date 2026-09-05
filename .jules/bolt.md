@@ -20,3 +20,7 @@
 ## 2024-11-25 - Eliminating Spread Operator Call Stack Overflows
 **Learning:** Using `Math.max(...array.map(...))` on large dynamic arrays (e.g., telemetry history points mapped to speed values) causes `RangeError: Maximum call stack size exceeded` because V8 has a strict limit on the number of arguments a function can accept via the spread operator. It also increases GC pressure by creating temporary mapped arrays.
 **Action:** Replace `...array.map()` and `Math.max()` combinations with standard single-pass `for` loops that iterate the array by index, extracting values and comparing them directly against an inline maximum variable to ensure safe execution on large datasets and eliminate allocations.
+
+## 2026-09-05 - Pre-computing HUD layout anchors on resize instead of render
+**Learning:** Computing layout variables by querying anchor points and applying viewport transforms inside a 60Hz render loop (e.g. `driftLayout.getBottomRightAnchor()`) allocates unnecessary objects and performs redundant math 60 times a second.
+**Action:** Move anchor layout computations to the window resize event handler (e.g. `resizeDriftCanvas()`), cache the transformed `logicalCenterX`, `logicalCenterY`, and scaling parameters in module-scoped variables (`primaryAnchorCache`), and reference them in the render loop to eliminate object allocation and mathematical overhead.
