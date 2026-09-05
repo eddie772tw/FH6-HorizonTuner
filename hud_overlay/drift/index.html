@@ -260,6 +260,8 @@
             var PRIMARY_SLOT_PREFERRED_WIDTH = 260;
             var primaryRenderScale = 0.30;
             var primaryAnchor = null;
+            var primaryAnchorCache = null;
+            var secondaryAnchorCache = null;
             // Advanced effective width is ~544px and VFD is ~630px at their
             // shared default scale. Use the midpoint as Drift's conventional
             // bottom-right secondary box.
@@ -429,6 +431,26 @@
                     PRIMARY_SOURCE_ASPECT
                 );
                 primaryRenderScale = primaryAnchor.width / (PRIMARY_SOURCE_WIDTH * viewportTransform.scale);
+
+                primaryAnchorCache = {
+                    logicalCenterX: (primaryAnchor.centerX - viewportTransform.offsetX) / viewportTransform.scale,
+                    logicalCenterY: (primaryAnchor.centerY - viewportTransform.offsetY) / viewportTransform.scale
+                };
+
+                var anchor = driftLayout.getBottomRightAnchor(
+                    width,
+                    height,
+                    SECONDARY_BOX_WIDTH,
+                    SECONDARY_BOX_HEIGHT,
+                    SECONDARY_BOX_PADDING
+                );
+                secondaryAnchorCache = {
+                    logicalCenterX: (anchor.centerX - viewportTransform.offsetX) / viewportTransform.scale,
+                    logicalCenterY: (anchor.centerY - viewportTransform.offsetY) / viewportTransform.scale,
+                    scaleX: anchor.width / (SECONDARY_SOURCE_WIDTH * viewportTransform.scale),
+                    scaleY: anchor.height / (SECONDARY_SOURCE_HEIGHT * viewportTransform.scale)
+                };
+
                 canvas.width = Math.round(width * canvasDpr);
                 canvas.height = Math.round(height * canvasDpr);
                 canvas.style.width = width + 'px';
@@ -1463,38 +1485,23 @@
             }
 
             function renderSecondaryInstrumentAtConventionalAnchor() {
-                if (!ctx || !driftLayout) return;
-
-                var anchor = driftLayout.getBottomRightAnchor(
-                    window.innerWidth,
-                    window.innerHeight,
-                    SECONDARY_BOX_WIDTH,
-                    SECONDARY_BOX_HEIGHT,
-                    SECONDARY_BOX_PADDING
-                );
-                var logicalCenterX = (anchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
-                var logicalCenterY = (anchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
-                var scaleX = anchor.width / (SECONDARY_SOURCE_WIDTH * viewportTransform.scale);
-                var scaleY = anchor.height / (SECONDARY_SOURCE_HEIGHT * viewportTransform.scale);
+                if (!ctx || !secondaryAnchorCache) return;
 
                 ctx.save();
-                ctx.translate(logicalCenterX, logicalCenterY);
-                ctx.scale(scaleX, scaleY);
+                ctx.translate(secondaryAnchorCache.logicalCenterX, secondaryAnchorCache.logicalCenterY);
+                ctx.scale(secondaryAnchorCache.scaleX, secondaryAnchorCache.scaleY);
                 ctx.translate(-SECONDARY_CX, -SECONDARY_CY);
                 renderSecondaryInstrument();
                 ctx.restore();
             }
 
             function renderPrimaryInstrument() {
-                if (!ctx || !primaryAnchor) return;
-
-                var logicalCenterX = (primaryAnchor.centerX - viewportTransform.offsetX) / viewportTransform.scale;
-                var logicalCenterY = (primaryAnchor.centerY - viewportTransform.offsetY) / viewportTransform.scale;
+                if (!ctx || !primaryAnchorCache) return;
 
                 // The canvas is viewport-sized so this layer can use screen
                 // space while retaining the existing Drift visual scale.
                 ctx.save();
-                ctx.translate(logicalCenterX, logicalCenterY);
+                ctx.translate(primaryAnchorCache.logicalCenterX, primaryAnchorCache.logicalCenterY);
                 ctx.scale(primaryRenderScale, primaryRenderScale);
                 ctx.translate(-CANVAS_CX, -CANVAS_CY);
                 drawModernFrame();
