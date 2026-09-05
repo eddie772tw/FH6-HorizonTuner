@@ -404,7 +404,12 @@ function solveRoadGearing(input: RoadProfileInput, tireCircumferenceM: number): 
   const drivetrainEfficiency = 0.92;
 
   if (input.powerCurve && input.powerCurve.length >= 2) {
-    const maxRpmInCurve = Math.max(...input.powerCurve.map((p) => p.rpm));
+    let maxRpmInCurve = 0;
+    for (let i = 0; i < input.powerCurve.length; i++) {
+      if (input.powerCurve[i].rpm > maxRpmInCurve) {
+        maxRpmInCurve = input.powerCurve[i].rpm;
+      }
+    }
     const redlineRpm = Math.min(maxRpmInCurve, rpmAtPower + 800);
 
     for (let gIdx = 0; gIdx < gearCount - 1; gIdx++) {
