@@ -99,4 +99,12 @@ describe('S650 HMI palette', () => {
       danger: '#E33B3B',
     });
   });
+
+  it('defines a 15% semi-transparent centerWidgetBackground across all cluster themes', () => {
+    const tokens = loadTokensModule();
+    (['normal', 'heritage67', 'foxbody', 'sport', 'svt_cobra', 'track'] as const).forEach((theme) => {
+      const palette = tokens.paletteFor(theme);
+      expect((palette as Record<string, unknown>).centerWidgetBackground).toBe('rgba(0, 0, 0, 0.15)');
+    });
+  });
 });

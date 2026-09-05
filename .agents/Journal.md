@@ -15,6 +15,46 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-05 / 開啟中 PR 批次審查 (PR #301, #302, #303) 與大寫路徑阻擋防護
+
+- **來源**：`local`，針對目前開啟中的 3 個 Draft PR（#301、#302、#303）執行標準化 `pr-review-evaluation` 審查與 GitHub 原生 Review 提交。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **展開運算子引數上限與 GC 壓力改善 (PR #301)**：`LapDeltaCanvas.tsx`、`rallyProfile.ts` 與 `roadProfile.ts` 原先在大量資料集（如多圈萬點遙測陣列）上採用 `Math.max(...array.map(...))`，容易觸發 V8 引數數量限制導致 `RangeError: Maximum call stack size exceeded`，且 `.map()` 會分配短暫中介陣列增加 GC 壓力。改為單趟 $O(N)$ 線性迴圈配合 $O(1)$ 常數空間，兼顧防禦性與極致效能。
+  2. **Jules 大寫目錄路徑碰撞再犯 (PR #302)**：Jules 在建立 PR #302 時將學習記錄新增為 `.Jules/narrator.md`（首字母大寫），與根目錄既有的 `.jules/narrator.md` 發生大小寫碰撞，觸發 Linux CI 中的 `scripts/check_repo_path_case.py` 檢查失敗（`case-insensitive path collision`）。此為 Blocking 阻擋項，必須將內容合併至小寫路徑並刪除大寫檔案後方能轉綠。
+  3. **60Hz 渲染迴圈佈局幾何快取 (PR #303)**：Drift HUD（`hud_overlay/drift/index.html`）將主儀表與副儀表的視窗變換與錨點計算（`getBottomRightAnchor` 等）移入 `resizeDriftCanvas`，消除了每秒 120 次以上的暫態物件配置（`{ centerX, centerY, width, height }`）與數學運算，實踐了 60Hz rendering 零 GC 停頓防護。
+  4. **同檔並行修改衝突防護**：PR #301 與 PR #303 皆更動了 `.jules/bolt.md` 檔尾，若任一 PR 先行合併，另一 PR 在 Rebase 時需處理 markdown 標題衝突。
+  5. **跨 Agent 原生 Inline Comments 提交機制**：透過 `submit_pr_review.py` 與 `Gemini as Antigravity` 身分標記，自動驗證 Diff Hunk 邊界並提交 GitHub 原生審查（Review IDs: `5121582257`, `5121582487`, `5121582725`）。
+- **Action**：
+  1. 於 GitHub 成功提交 PR #301、PR #302 與 PR #303 的標準 Review 與 Inline Comments。
+  2. 針對 PR #302 留下 Blocking 意見、提供具體修復指引與本地 `scripts/check_repo_path_case.py` 驗證命令。
+  3. 針對 PR #301 提出 `.jules/bolt.md` 缺少換行之排版建議。
+  4. 評估 PR #303 具備隨時 Merge 之品質。
+- **Evidence**：Review IDs `5121582257` (PR #301)、`5121582487` (PR #302)、`5121582725` (PR #303) 均已成功提交至 GitHub。
+- **Governance**：本筆追加依 `pr-review-evaluation`、`cross-agent-collaboration` 與 `agent-governance-audit` 規範登錄。
+
+---
+
+## 2026-09-04 / S650 HMI Center Info Readability & Semi-Transparent Background Contract
+
+- **來源**：`local`，針對 S650 HMI 中央小工具（Drive、Tire Temp、Powertrain、Music）在遊戲動態與強光背景下對比度不足之可讀性優化。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **無底層遮罩導致遊戲強光場景對比度流失**：S650 HMI 原先於雙環中央與側邊欄區域直接在全透明 Canvas 上繪製白色與淺色文字／數據（如車速、檔位、胎溫、音樂曲目）。當 Forza 遊戲畫面處於強烈日光、高亮地面或複雜背景時，文字與圖表極易受背景干擾而喪失可讀性。
+  2. **15% 半透明深色遮罩（`rgba(0, 0, 0, 0.15)`）的視覺平衡**：引入 15% 半透明背景可在有效壓制背景雜訊、凸顯前景高頻遙測數值的同時，徹底避免完全不透明面板所造成的視野阻斷，保留 S650 HUD 輕量透明的賽車儀表沉浸感。
+  3. **小工具幾何佈局自適應（Dual-Ring vs Track-Sidebar）**：在雙環模式下，背景邊界自動對齊 $X = 460 \sim 820$（寬度 360px，圓角 12px），既完整覆蓋中央小工具內容，又與兩側儀表圓弧保持充裕安全留白；在賽道側欄模式（`trackSidebar`）下，自動適應為 220x88 緊湊規格（圓角 6px）。
+  4. **Disable 狀態嚴格留白**：當 `centerWidget === 'disable'` 時，不繪製任何背景，維護 Disable 頁面完全不繪圖的規格合約。
+- **Action**：
+  1. 更新 `hud_overlay/s650_hmi/assets/s650_tokens.js`：於所有主題 Palette（normal、heritage67、foxbody、sport、svt_cobra、track）新增 `centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'` 設計權杖。
+  2. 擴充 `hud_overlay/s650_hmi/assets/s650_center_info_common.js`：定義 `BACKGROUND_SPEC`（包含 15% alpha、填色與幾何圓角契約），並實作防禦性 `drawBackground(context)`（支援 `primitives.drawRoundedPanel`、`ctx.roundRect`、`quadraticCurveTo` 與 `fillRect` 跨環境降級）。
+  3. 整合 `hud_overlay/s650_hmi/assets/s650_center_info.js`：在 `render()` 派發前，針對非 disable 狀態調用 `drawBackground(context)` 先行鋪設背景。
+  4. 擴充單元測試：於 `s650CenterInfo.test.ts` 與 `s650Tokens.test.ts` 補齊契約、雙環與側欄尺寸、自訂色彩覆蓋與 disable 零副作用斷言。
+  5. 驗證全套測試：前後端 Vitest（571 passed）、Pytest（270 passed）與 Ruff 檢查全數 100% 綠燈。
+- **Evidence**：Vitest 571 passed (0 failed)；Pytest 270 passed (0 failed)；Ruff check/format clean。
+- **Governance**：本筆追加依 `halfmoon-design-system` 與 `agent-governance-audit` 規範登錄。
+
+---
+
 ## 2026-09-04 / Tauri Dev Build Acceleration: Sidecar Exclusion & rust-lld Linker
 
 - **來源**：`local`，針對執行 `start_frontend.bat`（`pnpm run tauri dev`）時在 Vite 啟動後卡在 `[tauri] Building application...` 長達 20~40 秒之編譯瓶頸優化。
@@ -1983,3 +2023,27 @@
 - **Evidence**：S650 center-info targeted test `12 passed`、Music widget `node --check` 通過、PR body validator 通過；更新 README、media contract 文件與 PR #296 body。
 - **Limit**：目前仍是唯讀 widget，未新增 artwork endpoint 或 playback command；實際 provider artwork 仍待 Windows 播放器實機驗證。
 - **Status**：adopted；保留既有未相關的 `frontend/src-tauri/Cargo.toml` working-tree 修改，不納入本次 commit。
+
+---
+
+## 2026-09-04 / S650 HMI central widget translucent backdrop & Track mode layout symmetry overhaul
+
+- **Scope**: `hud_overlay/s650_hmi/assets/s650_tokens.js`, `hud_overlay/s650_hmi/assets/s650_center_info_common.js`, `hud_overlay/s650_hmi/assets/s650_center_info.js`, `hud_overlay/s650_hmi/assets/s650_center_info_drive.js`, `hud_overlay/s650_hmi/assets/s650_center_info_performance.js`, `hud_overlay/s650_hmi/assets/s650_center_info_tire_temp.js`, `hud_overlay/s650_hmi/assets/s650_performance_clusters.js`, `hud_overlay/s650_hmi/tests/unit/s650CenterInfo.test.ts`, `hud_overlay/s650_hmi/tests/unit/s650PerformanceClusters.test.ts`, `hud_overlay/s650_hmi/tests/unit/s650Tokens.test.ts`.
+- **Decision & Architecture**:
+  1. **中央小工具 15% 半透明背景規範 (Readability Backdrop Contract)**：在 S650 所有主題色彩 tokens 中新增語意屬性 `centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'`，並於 `s650_center_info_common.js` 建立 `BACKGROUND_SPEC`（dualRing 模式 padX 35、radius 12；trackSidebar 模式 radius 6）。在 `centerInfo.render` 執行時，若非 `disable` 狀態，優先於下層繪製 15% 半透明圓角面板，大幅提升賽道環境與高對比背景下的讀數辨識度。
+  2. **Track 模式幾何嚴格鏡像對稱 (Canvas Center Mirror Symmetry)**：
+     - 左側 `speedGear` 規格為 `x: 200, y: 198, width: 220, height: 88`（右邊界 420，離中軸 X=640 為 220px；離左側 Power rail x=172 為 28px）。
+     - 將 `TRACK_RECIPE.centerInfo` 自錯誤座標 `{ x: 840, y: 184, width: 220, height: 88 }` 全面修正重構為 `{ x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' }`。
+     - 幾何驗證：小工具左邊界 `860` 離中軸 X=640 精確為 220px；小工具右邊界 `1080` 離右側 Boost rail (`x: 1108`) 留出嚴格對稱的 28px 安全間隔，徹底消除擠壓與遮擋，達成左右雙艙完全對稱協調。
+  3. **消除 Compact 佈局下方留白過多 (Vertical Balance & Column Spacing)**：
+     - 重構 `drawTitle`：compact 模式下標題 Y 座標由貼頂的 `region.y + 10` 調整為 `region.y + 14`（字級 13px），使頂部邊距均衡展開。
+     - 重構 `drive` 與 `performance` compact 佈局：將兩組指標欄位由原先局促擠在中央（82px / 138px）重新均勻展開至左/右半區中心（`region.x + 57` 與 `region.x + 163`），並於中軸 `region.x + 110` 引入垂直分割線（`drawDivider`），完全對齊左側 `speedGear` 的視覺骨幹。
+     - 指標基準 Y 調整為 `region.y + 36`（Label: 36, Value: 53, Unit: 67），使內容於 88px 卡片高度內完美垂直居中，頂部與底部均勻留出約 8~14px 呼吸空間。
+- **Evidence**:
+  - 前端 Vitest 單元測試：88 files / 573 tests 100% 通過（新增 Track 左右對稱性合約、15% 背景合約與 compact 分割線測試）。
+  - 後端單元測試：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`（270 passed, 6 deselected, 4.07s）。
+  - 代碼檢查：Ruff check 與 format check 全數 passed（150 files formatted）。
+  - 前端建置：`pnpm -C frontend run build` 成功輸出（705 modules transformed）。
+  - 空白與格式規範：`git diff --check` 完全乾淨（0 error）。
+- **Governance**: 本次重構依據 `huge-component-refactoring`、`halfmoon-design-system` 與 `agent-governance-audit` 規範登錄。
+- **Status**: adopted。

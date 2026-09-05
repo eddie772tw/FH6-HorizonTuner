@@ -38,10 +38,17 @@
             var region = context.region;
             var power = common.displayPower(view, context.data);
             var boost = common.displayBoost(view, context.data);
+            var colLeft = region.x + Math.round(region.width * 0.26);
+            var colRight = region.x + region.width - Math.round(region.width * 0.26);
+            var metricY = region.y + 36;
+            var midX = region.x + Math.round(region.width / 2);
 
             common.drawTitle(context, 'POWERTRAIN', '');
-            common.drawMetric(context, region.x + 82, region.y + 35, 'POWER', power.value, power.unit, 'center');
-            common.drawMetric(context, region.x + region.width - 82, region.y + 35, 'BOOST', boost.value, boost.unit, 'center');
+            if (typeof common.drawDivider === 'function') {
+                common.drawDivider(context, midX, region.y + 24, region.y + region.height - 12);
+            }
+            common.drawMetric(context, colLeft, metricY, 'POWER', power.value, power.unit, 'center');
+            common.drawMetric(context, colRight, metricY, 'BOOST', boost.value, boost.unit, 'center');
         }
     });
 })(window);

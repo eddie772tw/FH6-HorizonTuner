@@ -77,6 +77,25 @@ type MusicLayoutSpec = {
   timeSize: number;
 };
 
+type BackgroundSpec = {
+  alpha: number;
+  fill: string;
+  dualRing: {
+    width: number;
+    padX: number;
+    radius: number;
+  };
+  trackSidebar: {
+    radius: number;
+  };
+};
+
+type CenterInfoCommonModule = {
+  BACKGROUND_SPEC: BackgroundSpec;
+  drawBackground: (context: unknown) => void;
+  [key: string]: unknown;
+};
+
 type MusicContracts = {
   dualRing: MusicLayoutSpec;
   trackSidebar: MusicLayoutSpec;
@@ -84,6 +103,7 @@ type MusicContracts = {
 
 function loadCenterInfoEnvironment(): {
   centerInfo: CenterInfoModule;
+  common: CenterInfoCommonModule;
   musicContracts: MusicContracts;
 } {
   const sourceFiles = [
@@ -100,15 +120,17 @@ function loadCenterInfoEnvironment(): {
     .join('\n');
   const window = {} as {
     S650HmiCenterInfo?: CenterInfoModule;
+    S650HmiCenterInfoCommon?: CenterInfoCommonModule;
     S650HmiCenterInfoMusicContracts?: MusicContracts;
   };
   new Function('window', source)(window);
 
-  if (!window.S650HmiCenterInfo || !window.S650HmiCenterInfoMusicContracts) {
-    throw new Error('S650 center-info module or music contracts did not register itself');
+  if (!window.S650HmiCenterInfo || !window.S650HmiCenterInfoCommon || !window.S650HmiCenterInfoMusicContracts) {
+    throw new Error('S650 center-info module, common helpers, or music contracts did not register itself');
   }
   return {
     centerInfo: window.S650HmiCenterInfo,
+    common: window.S650HmiCenterInfoCommon,
     musicContracts: window.S650HmiCenterInfoMusicContracts,
   };
 }
@@ -425,8 +447,8 @@ describe('S650 center-information registry contract', () => {
         duration_seconds: 180,
       }),
     }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
-      x: 840,
-      y: 184,
+      x: 860,
+      y: 198,
       width: 220,
       height: 88,
       layoutStyle: 'trackSidebar',
@@ -546,5 +568,236 @@ describe('S650 center-information registry contract', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('exposes a 15% semi-transparent background contract for center widgets', () => {
+    const { common } = loadCenterInfoEnvironment();
+    expect(common.BACKGROUND_SPEC).toBeDefined();
+    expect(common.BACKGROUND_SPEC.alpha).toBe(0.15);
+    expect(common.BACKGROUND_SPEC.fill).toBe('rgba(0, 0, 0, 0.15)');
+    expect(common.BACKGROUND_SPEC.dualRing).toEqual({
+      width: 360,
+      padX: 35,
+      radius: 12,
+    });
+    expect(common.BACKGROUND_SPEC.trackSidebar).toEqual({
+      radius: 6,
+    });
+  });
+
+  it('draws a 15% semi-transparent background behind active center widgets but keeps disable blank', () => {
+    const fills: { fillStyle: string; x: number; y: number; width: number; height: number; radius?: number }[] = [];
+    const ctx = {
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      closePath: () => undefined,
+      roundRect: (x: number, y: number, width: number, height: number, radius: number) => {
+        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height, radius });
+      },
+      fill: () => undefined,
+      stroke: () => undefined,
+      strokeRect: () => undefined,
+      fillRect: (x: number, y: number, width: number, height: number) => {
+        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height });
+      },
+      fillText: () => undefined,
+      fillStyle: '',
+    } as unknown as Record<string, unknown>;
+
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    // 1. When widget is 'disable', no background or fill should be drawn
+    centerInfo.draw({ centerWidget: 'disable' }, {}, {}, 425, 126, 430, 230);
+    expect(fills).toHaveLength(0);
+
+    // 2. When widget is 'drive', the 15% semi-transparent background is drawn
+    centerInfo.draw({
+      centerWidget: 'drive',
+      roundedSpeed: () => '120',
+      unitLabel: () => 'KM/H',
+      getGearLabel: () => '4',
+      getPedalValue: () => 0.5,
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 425, 126, 430, 230);
+
+    expect(fills.length).toBeGreaterThanOrEqual(1);
+    const bgFill = fills[0];
+    expect(bgFill.fillStyle).toBe('rgba(0, 0, 0, 0.15)');
+    expect(bgFill.x).toBe(460); // 425 + padX 35
+    expect(bgFill.y).toBe(126);
+    expect(bgFill.width).toBe(360);
+    expect(bgFill.height).toBe(230);
+    expect(bgFill.radius).toBe(12);
+  });
+
+  it('allows custom palette centerWidgetBackground to customize widget backdrop fill', () => {
+    const fills: { fillStyle: string }[] = [];
+    const ctx = {
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      closePath: () => undefined,
+      roundRect: () => {
+        fills.push({ fillStyle: String(ctx.fillStyle) });
+      },
+      fill: () => undefined,
+      stroke: () => undefined,
+      strokeRect: () => undefined,
+      fillRect: () => {
+        fills.push({ fillStyle: String(ctx.fillStyle) });
+      },
+      fillText: () => undefined,
+      fillStyle: '',
+    } as unknown as Record<string, unknown>;
+
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'performance',
+      getRpm: () => 3000,
+      getMaxRpm: () => 7000,
+    }, {}, {
+      text: '#fff',
+      secondary: '#aaa',
+      primary: '#0ff',
+      centerWidgetBackground: 'rgba(255, 255, 255, 0.15)',
+    }, 425, 126, 430, 230);
+
+    expect(fills.length).toBeGreaterThanOrEqual(1);
+    expect(fills[0].fillStyle).toBe('rgba(255, 255, 255, 0.15)');
+  });
+
+  it('uses compact background geometry when rendering in trackSidebar mode', () => {
+    const fills: { fillStyle: string; x: number; y: number; width: number; height: number; radius?: number }[] = [];
+    const ctx = {
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      closePath: () => undefined,
+      roundRect: (x: number, y: number, width: number, height: number, radius: number) => {
+        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height, radius });
+      },
+      fill: () => undefined,
+      stroke: () => undefined,
+      strokeRect: () => undefined,
+      fillRect: (x: number, y: number, width: number, height: number) => {
+        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height });
+      },
+      fillText: () => undefined,
+      fillStyle: '',
+    } as unknown as Record<string, unknown>;
+
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'drive',
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+      x: 860,
+      y: 198,
+      width: 220,
+      height: 88,
+      layoutStyle: 'trackSidebar',
+    });
+
+    expect(fills.length).toBeGreaterThanOrEqual(1);
+    const bgFill = fills[0];
+    expect(bgFill.fillStyle).toBe('rgba(0, 0, 0, 0.15)');
+    expect(bgFill.x).toBe(860);
+    expect(bgFill.y).toBe(198);
+    expect(bgFill.width).toBe(220);
+    expect(bgFill.height).toBe(88);
+    expect(bgFill.radius).toBe(6);
+  });
+
+  it('draws balanced compact two-column layout with vertical divider for drive and performance widgets', () => {
+    const lines: { x1: number; y1: number; x2: number; y2: number; strokeStyle: string }[] = [];
+    const textPositions: { text: string; x: number; y: number }[] = [];
+    let curX = 0;
+    let curY = 0;
+    const ctx = {
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      closePath: () => undefined,
+      moveTo: (x: number, y: number) => { curX = x; curY = y; },
+      lineTo: (x: number, y: number) => {
+        lines.push({ x1: curX, y1: curY, x2: x, y2: y, strokeStyle: String(ctx.strokeStyle) });
+      },
+      stroke: () => undefined,
+      fill: () => undefined,
+      fillText: (text: string, x: number, y: number) => {
+        textPositions.push({ text, x, y });
+      },
+      roundRect: () => undefined,
+      fillRect: () => undefined,
+      fillStyle: '',
+      strokeStyle: '',
+    } as unknown as Record<string, unknown>;
+
+    const centerInfo = loadCenterInfoModule().create({
+      ctx,
+      primitives: {
+        setFont: () => undefined,
+        getFontSize: (_view, _role, fallback) => fallback,
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+
+    centerInfo.draw({
+      centerWidget: 'drive',
+      getTelemetryReadout: (slot: string) => slot === 'heading'
+        ? { value: 'NW', unit: '' }
+        : { value: '42.0', unit: 'km' },
+    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
+      x: 860,
+      y: 198,
+      width: 220,
+      height: 88,
+      layoutStyle: 'trackSidebar',
+    });
+
+    // 1. Divider line drawn in the center (860 + 110 = 970)
+    expect(lines).toContainEqual(expect.objectContaining({
+      x1: 970,
+      y1: 222, // 198 + 24
+      x2: 970,
+      y2: 274, // 198 + 88 - 12
+    }));
+
+    // 2. Title Y is at 212 (198 + 14), leaving 14px top breathing room
+    const titleEntry = textPositions.find((entry) => entry.text === 'DRIVE');
+    expect(titleEntry).toBeDefined();
+    expect(titleEntry?.y).toBe(212);
+
+    // 3. Metric columns centered in left/right halves (860 + 57 = 917, 860 + 163 = 1023)
+    const headingEntry = textPositions.find((entry) => entry.text === 'HEADING');
+    const distanceEntry = textPositions.find((entry) => entry.text === 'DISTANCE');
+    expect(headingEntry).toBeDefined();
+    expect(distanceEntry).toBeDefined();
+    expect(headingEntry?.x).toBe(917);
+    expect(distanceEntry?.x).toBe(1023);
+    // Vertical placement around Y=234 (198 + 36), avoiding bottom whitespace
+    expect(headingEntry?.y).toBe(234);
   });
 });
