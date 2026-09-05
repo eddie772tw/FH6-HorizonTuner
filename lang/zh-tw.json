@@ -288,7 +288,7 @@
   "Export": "匯出",
   "Export JSON": "匯出 JSON",
   "Export Theme JSON": "匯出主題 JSON",
-  "Failed to clear logs on server.": "Failed to clear logs on server.",
+  "Failed to clear logs on server.": "無法清除伺服器上的日誌。",
   "Failed to delete session.": "Failed to delete session.",
   "Failed to load telemetry or file is empty.": "Failed to load telemetry or file is empty.",
   "Failed to parse JSON file.": "無法解析 JSON 檔案。",
@@ -1247,5 +1247,10 @@
   "Data Out receiving": "資料輸出接收中",
   "Data received, but not usable": "資料已接收，但無法使用",
   "Data Out not currently receiving": "資料輸出目前未接收",
-  "Waiting for Data Out": "等待資料輸出"
+  "Waiting for Data Out": "等待資料輸出",
+  "Failed to connect to backend log API.": "無法連接到後端日誌 API。",
+  "Preparing Support Bundle...": "正在準備支援套件...",
+  "Download Support Bundle": "下載支援套件",
+  "Support bundle export failed.": "支援套件匯出失敗。",
+  "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "建立一個僅包含匯總診斷資料與最近日誌的本地 ZIP 檔案。這不包含原始 UDP 封包、絕對路徑、玩家識別碼與憑證。不會自動上傳任何資料。"
 }
