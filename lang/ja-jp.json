@@ -1191,5 +1191,13 @@
   "Preparing Support Bundle...": "サポートバンドルを準備中...",
   "Download Support Bundle": "サポートバンドルをダウンロード",
   "Support bundle export failed.": "サポートバンドルのエクスポートに失敗しました。",
-  "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "診断の集計データと最近のログを含むローカルZIPを作成します。生のUDPペイロード、絶対パス、プレイヤー識別子、認証情報は除外されます。データが自動的にアップロードされることはありません。"
+  "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "診断の集計データと最近のログを含むローカルZIPを作成します。生のUDPペイロード、絶対パス、プレイヤー識別子、認証情報は除外されます。データが自動的にアップロードされることはありません。",
+  "Storage information is unavailable while the local service is offline.": "Storage information is unavailable while the local service is offline.",
+  "Loading local storage information...": "Loading local storage information...",
+  "Last settings backup:": "Last settings backup:",
+  "No backup created yet": "No backup created yet",
+  "Export:": "Export:",
+  "Restore:": "Restore:",
+  "SQLite migration:": "SQLite migration:",
+  "Tracked local storage": "Tracked local storage"
 }
