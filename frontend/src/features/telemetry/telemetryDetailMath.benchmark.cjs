@@ -30,33 +30,57 @@ function averageFourManual(values) {
 
 const val = [1.1, 2.2, 3.3, 4.4];
 const runs = 1000000;
+const warmupRuns = 100000;
+const repetitions = 5;
 
-console.log(`Running ${runs} iterations...\n`);
-
-let start = performance.now();
-for (let i = 0; i < runs; i++) {
+console.log(`Warming up V8...`);
+for (let i = 0; i < warmupRuns; i++) {
   readFourArrayFrom(val);
-}
-let end = performance.now();
-console.log(`readFourArrayFrom (baseline): ${(end - start).toFixed(2)}ms`);
-
-start = performance.now();
-for (let i = 0; i < runs; i++) {
   readFourManual(val);
-}
-end = performance.now();
-console.log(`readFourManual (optimized): ${(end - start).toFixed(2)}ms`);
-
-start = performance.now();
-for (let i = 0; i < runs; i++) {
   averageFourSome(val);
-}
-end = performance.now();
-console.log(`\naverageFourSome (baseline): ${(end - start).toFixed(2)}ms`);
-
-start = performance.now();
-for (let i = 0; i < runs; i++) {
   averageFourManual(val);
 }
-end = performance.now();
-console.log(`averageFourManual (optimized): ${(end - start).toFixed(2)}ms`);
+console.log(`Running ${repetitions} repetitions of ${runs} iterations...\n`);
+
+let readFourArrayFromTimes = [];
+let readFourManualTimes = [];
+let averageFourSomeTimes = [];
+let averageFourManualTimes = [];
+
+for (let rep = 0; rep < repetitions; rep++) {
+  let start = performance.now();
+  for (let i = 0; i < runs; i++) {
+    readFourArrayFrom(val);
+  }
+  readFourArrayFromTimes.push(performance.now() - start);
+
+  start = performance.now();
+  for (let i = 0; i < runs; i++) {
+    readFourManual(val);
+  }
+  readFourManualTimes.push(performance.now() - start);
+
+  start = performance.now();
+  for (let i = 0; i < runs; i++) {
+    averageFourSome(val);
+  }
+  averageFourSomeTimes.push(performance.now() - start);
+
+  start = performance.now();
+  for (let i = 0; i < runs; i++) {
+    averageFourManual(val);
+  }
+  averageFourManualTimes.push(performance.now() - start);
+}
+
+const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+const min = arr => Math.min(...arr);
+const max = arr => Math.max(...arr);
+
+console.log(`readFourArrayFrom (baseline): avg ${avg(readFourArrayFromTimes).toFixed(2)}ms (min: ${min(readFourArrayFromTimes).toFixed(2)}ms, max: ${max(readFourArrayFromTimes).toFixed(2)}ms)`);
+console.log(`readFourManual (optimized): avg ${avg(readFourManualTimes).toFixed(2)}ms (min: ${min(readFourManualTimes).toFixed(2)}ms, max: ${max(readFourManualTimes).toFixed(2)}ms)`);
+console.log(`Speedup (readFour): ${(avg(readFourArrayFromTimes) / avg(readFourManualTimes)).toFixed(1)}x\n`);
+
+console.log(`averageFourSome (baseline): avg ${avg(averageFourSomeTimes).toFixed(2)}ms (min: ${min(averageFourSomeTimes).toFixed(2)}ms, max: ${max(averageFourSomeTimes).toFixed(2)}ms)`);
+console.log(`averageFourManual (optimized): avg ${avg(averageFourManualTimes).toFixed(2)}ms (min: ${min(averageFourManualTimes).toFixed(2)}ms, max: ${max(averageFourManualTimes).toFixed(2)}ms)`);
+console.log(`Speedup (averageFour): ${(avg(averageFourSomeTimes) / avg(averageFourManualTimes)).toFixed(1)}x\n`);
