@@ -139,9 +139,35 @@ describe('S650 transparent performance layouts', () => {
     ]));
     expect(spy.moves).toEqual(expect.arrayContaining([{ x: 310, y: 208 }]));
     expect(centerCalls).toHaveLength(1);
-    expect(centerCalls[0][3]).toEqual({ x: 840, y: 184, width: 220, height: 88, layoutStyle: 'trackSidebar' });
+    expect(centerCalls[0][3]).toEqual({ x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' });
     expect(gearCalls).toHaveLength(1);
     expect(gearCalls[0].slice(3)).toEqual([640, 407]);
+  });
+
+  it('aligns centerInfo in Track mode symmetrically with speedGear across screen center X=640', () => {
+    const spy = createCanvasSpy();
+    const centerCalls: unknown[][] = [];
+    loadPerformanceModule().drawTrack(view, {}, palette, 0.875, spy.ctx, {
+      centerInfo: { draw: (...args: unknown[]) => centerCalls.push(args) },
+      primitives: { drawGearCarousel: () => undefined },
+    });
+
+    const region = centerCalls[0][3] as { x: number; y: number; width: number; height: number };
+    // Canvas is 1280x480, screen center X=640.
+    // speedGear is at x=200, y=198, width=220, height=88. Right edge of speedGear is 420.
+    // Distance from speedGear to center: 640 - 420 = 220px.
+    // Mirrored centerInfo must start at 640 + 220 = 860, with same width=220 and height=88, y=198.
+    expect(region.x).toBe(860);
+    expect(region.y).toBe(198);
+    expect(region.width).toBe(220);
+    expect(region.height).toBe(88);
+
+    // Margin from centerInfo right edge (860 + 220 = 1080) to boost rail (x=1108) is exactly 28px,
+    // matching the 28px gap between leftRail (x=172) and speedGear (x=200).
+    const rightMarginToBoostRail = 1108 - (region.x + region.width);
+    const leftMarginToPowerRail = 200 - 172;
+    expect(rightMarginToBoostRail).toBe(leftMarginToPowerRail);
+    expect(rightMarginToBoostRail).toBe(28);
   });
 
   it('keeps the live Track fill readable after it enters the redline zone', () => {

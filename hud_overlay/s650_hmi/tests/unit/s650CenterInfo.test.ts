@@ -77,6 +77,25 @@ type MusicLayoutSpec = {
   timeSize: number;
 };
 
+type BackgroundSpec = {
+  alpha: number;
+  fill: string;
+  dualRing: {
+    width: number;
+    padX: number;
+    radius: number;
+  };
+  trackSidebar: {
+    radius: number;
+  };
+};
+
+type CenterInfoCommonModule = {
+  BACKGROUND_SPEC: BackgroundSpec;
+  drawBackground: (context: unknown) => void;
+  [key: string]: unknown;
+};
+
 type MusicContracts = {
   dualRing: MusicLayoutSpec;
   trackSidebar: MusicLayoutSpec;
@@ -84,6 +103,7 @@ type MusicContracts = {
 
 function loadCenterInfoEnvironment(): {
   centerInfo: CenterInfoModule;
+  common: CenterInfoCommonModule;
   musicContracts: MusicContracts;
 } {
   const sourceFiles = [
@@ -100,15 +120,17 @@ function loadCenterInfoEnvironment(): {
     .join('\n');
   const window = {} as {
     S650HmiCenterInfo?: CenterInfoModule;
+    S650HmiCenterInfoCommon?: CenterInfoCommonModule;
     S650HmiCenterInfoMusicContracts?: MusicContracts;
   };
   new Function('window', source)(window);
 
-  if (!window.S650HmiCenterInfo || !window.S650HmiCenterInfoMusicContracts) {
-    throw new Error('S650 center-info module or music contracts did not register itself');
+  if (!window.S650HmiCenterInfo || !window.S650HmiCenterInfoCommon || !window.S650HmiCenterInfoMusicContracts) {
+    throw new Error('S650 center-info module, common helpers, or music contracts did not register itself');
   }
   return {
     centerInfo: window.S650HmiCenterInfo,
+    common: window.S650HmiCenterInfoCommon,
     musicContracts: window.S650HmiCenterInfoMusicContracts,
   };
 }
@@ -425,8 +447,8 @@ describe('S650 center-information registry contract', () => {
         duration_seconds: 180,
       }),
     }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
-      x: 840,
-      y: 184,
+      x: 860,
+      y: 198,
       width: 220,
       height: 88,
       layoutStyle: 'trackSidebar',
@@ -545,6 +567,116 @@ describe('S650 center-information registry contract', () => {
       expect(requestRender).toHaveBeenCalledTimes(2);
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it.each([
+    { x: 425, y: 126, width: 430, height: 230, layoutStyle: 'dualRing' },
+    { x: 71, y: 49, width: 510, height: 250, layoutStyle: 'dualRing' },
+    { x: 23, y: 41, width: 300, height: 180, layoutStyle: 'dualRing' },
+    { x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' },
+    { x: 37, y: 61, width: 280, height: 108, layoutStyle: 'trackSidebar' },
+  ])('keeps the widget backdrop centered and contained in $layoutStyle at width $width', (region) => {
+    const { centerInfo } = loadCenterInfoEnvironment();
+    // Observe the semantic panel boundary, independent of Canvas path construction.
+    const panels: { x: number; y: number; width: number; height: number; fill: unknown }[] = [];
+    const renderer = centerInfo.create({
+      ctx: createCanvasSpy(),
+      primitives: {
+        drawRoundedPanel: (...args: unknown[]) => {
+          const [x, y, width, height, , fill] = args;
+          panels.push({ x: Number(x), y: Number(y), width: Number(width), height: Number(height), fill });
+        },
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+    renderer.draw({ centerWidget: 'disable' }, {}, {}, region);
+    expect(panels).toEqual([]);
+
+    for (const widget of ['drive', 'tire_temp', 'performance', 'music']) {
+      panels.length = 0;
+      renderer.draw(Object.assign({
+        centerWidget: widget,
+      }, {
+        getRpm: () => 3000,
+        getMaxRpm: () => 7000,
+        getTireTemperatures: () => [80, 81, 82, 83],
+        tireTemperatureUnit: () => '°C',
+        formatTireTemperature: (value: number) => `${value}°`,
+      }), {}, {}, region);
+      const panel = panels[0];
+      expect(panel).toBeDefined();
+      expect(panel.fill).toBe('rgba(0, 0, 0, 0.15)');
+      expect(panel.width).toBeGreaterThan(0);
+      expect(panel.x - region.x).toBeCloseTo(region.x + region.width - panel.x - panel.width);
+      expect(panel.x).toBeGreaterThanOrEqual(region.x);
+      expect(panel.width).toBeLessThanOrEqual(region.width);
+      expect(panel.y).toBe(region.y);
+      expect(panel.height).toBe(region.height);
+      if (region.layoutStyle === 'trackSidebar') {
+        expect(panel.width).toBe(region.width);
+      } else if (region.width >= 400) {
+        expect(panel.width).toBeLessThan(region.width);
+      }
+    }
+  });
+
+  it('passes a custom backdrop palette token to the panel renderer', () => {
+    const { common } = loadCenterInfoEnvironment();
+    let panelFill: unknown;
+    const fill = 'rgba(255, 255, 255, 0.15)';
+    common.drawBackground({
+      ctx: createCanvasSpy(),
+      region: { x: 37, y: 61, width: 280, height: 108 },
+      palette: { centerWidgetBackground: fill },
+      primitives: {
+        drawRoundedPanel: (...args: unknown[]) => { panelFill = args[5]; },
+      },
+    });
+    expect(panelFill).toBe(fill);
+  });
+
+  it.each([
+    { widget: 'drive', labels: ['HEADING', 'DISTANCE'] },
+    { widget: 'performance', labels: ['POWER', 'BOOST'] },
+  ])('keeps compact $widget metrics mirrored around an interior divider', ({ widget, labels }) => {
+    for (const region of [
+      { x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' },
+      { x: 37, y: 61, width: 280, height: 108, layoutStyle: 'trackSidebar' },
+    ]) {
+      const { centerInfo, common } = loadCenterInfoEnvironment();
+      const metrics = new Map<string, { x: number; y: number }>();
+      let divider: { x: number; top: number; bottom: number } | undefined;
+      // Capture widget-level layout output, never Canvas commands or pixel constants.
+      common.drawMetric = (_context: unknown, x: number, y: number, label: string) => {
+        metrics.set(label, { x, y });
+      };
+      common.drawDivider = (_context: unknown, x: number, top: number, bottom: number) => {
+        divider = { x, top, bottom };
+      };
+      const renderer = centerInfo.create({
+        ctx: createCanvasSpy(),
+        primitives: {},
+        contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+      });
+      renderer.draw({ centerWidget: widget }, {}, {}, region);
+      const left = metrics.get(labels[0])!;
+      const right = metrics.get(labels[1])!;
+      expect(left).toBeDefined();
+      expect(right).toBeDefined();
+      expect(divider).toBeDefined();
+      const center = region.x + region.width / 2;
+      expect(divider!.x).toBeCloseTo(center);
+      expect(left.x).toBeGreaterThan(region.x);
+      expect(left.x).toBeLessThan(center);
+      expect(right.x).toBeGreaterThan(center);
+      expect(right.x).toBeLessThan(region.x + region.width);
+      expect(center - left.x).toBeCloseTo(right.x - center);
+      expect(left.y).toBe(right.y);
+      expect(divider!.top).toBeGreaterThan(region.y);
+      expect(left.y).toBeGreaterThan(divider!.top);
+      expect(left.y).toBeLessThan(divider!.bottom);
+      expect(divider!.bottom).toBeLessThan(region.y + region.height);
     }
   });
 });

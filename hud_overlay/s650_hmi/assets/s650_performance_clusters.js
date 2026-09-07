@@ -32,7 +32,8 @@
         }),
         // Keep the game's central race presentation clear. Track owns the
         // sidebar safe bounds while the center-info component owns rendering.
-        centerInfo: Object.freeze({ x: 840, y: 184, width: 220, height: 88, layoutStyle: 'trackSidebar' }),
+        // centerInfo is mirrored symmetrically across X=640 with speedGear (x=200, y=198, w=220, h=88).
+        centerInfo: Object.freeze({ x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' }),
         speedGear: Object.freeze({
             x: 200, y: 198, width: 220, height: 88,
             dividerX: 110, gearX: 55, speedX: 208,
