@@ -15,6 +15,25 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
+## 2026-09-08 / Release V1.5.2 Preparation, Version Bumping & Local Compilation Verification
+
+- **來源**：`local`，針對 V1.5.2 正式發布前準備、版本號同步推進、安全審計與本機全套編譯驗證。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Tauri OTA 與 Sidecar Runtime Version 推進**：Tauri v2 的 updater 採用 `11.45.xx` 序列比對 SemVer。由上一版 V1.5.1（`11.45.16` / Sidecar `11.45.16.0`）平滑升級至 `11.45.17`（Sidecar `11.45.17.0`），確保既有 `v1.4.x`、`v1.5.0` 與 `v1.5.1` 用戶端能無縫檢測並順利完成 OTA 更新。
+  2. **Release Notes 既有分區風格傳承**：嚴格依循專案既有 Release Notes 結構，拆分為 `What's New`（新功能亮點，包含賽後分析簡報、S650 系統媒體與半透明遮罩、Step 5 調校閉環通知與仲裁、MCP 初始化指引）、`What's Fixed`（Bug 與 60Hz GC 壓力消除修復）與 `What's Changed`（GitHub 官方自動生成風格之 PR 條目）以及 Full Changelog 比較連結，保存至 `docs/releases/v1.5.2.md`。
+  3. **安全審核與依賴純淨性確認**：經 `pnpm audit` 驗證前端 0 弱點；查驗 GitHub Dependabot 歷史警報（`nanoid` 已修復、`glib` 為 Linux-only 依賴已標記 `tolerable_risk`）；維持 `--frozen-lockfile` 鎖定相依，防止非預期破壞性升級。
+  4. **全套本地編譯與二進位 PE 測試合約驗證**：本地完成 PyInstaller Sidecar 二進位封裝（`server-sidecar-x86_64-pc-windows-msvc.exe`）與 Tauri 雙版本（Full / Lite）二進位建置；透過 `test_executable_bundle.py` 驗證 PE FileVersion（`11.45.17` / `11.45.17.0`）與 CompanyName 屬性契約全數通過。
+- **Action**：
+  1. 同步推進 `backend/main.py`、`backend/version_info.txt`、`frontend/src-tauri/Cargo.toml`、`Cargo.lock` 與 `tauri.conf.json` 至 `11.45.17` / `11.45.17.0`。
+  2. 更新 `tests/test_diagnostic_support_bundle.py` 診斷支援包測試之版本號斷言至 `11.45.17.0`。
+  3. 建立 `docs/releases/v1.5.2.md` Release Notes。
+  4. 驗證全套自動化測試：Pytest 270 項全數通過（含 `test_executable_bundle.py`）、Vitest 88 檔 / 566 項測試全數通過、Ruff check 與 format 100% 通過、`cargo fmt` check 通過、`scripts/validate_version_consistency.py` 契約完全一致。
+- **Evidence**：`validate_version_consistency.py` 輸出 `Application version contract OK: 11.45.17`；後端 Pytest 270 passed (0 failed)；前端 Vitest 88 files / 566 tests 100% passed；`test_executable_bundle.py` 2 passed；Ruff 與 cargo fmt clean；本地產物 `dist/FH6-HorizonTuner.exe` (53.8MB)、`dist/FH6-HorizonTuner_lite.exe` (53.5MB) 與 `server-sidecar-x86_64-pc-windows-msvc.exe` (39.5MB) 均成功建置產出。
+- **Governance**：本筆追加依 `portable-release-validation`、`agent-governance-audit` 與 `github-security-audit` 規範登錄。
+
+---
+
 ## 2026-09-05 / 開啟中 PR 批次審查 (PR #301, #302, #303) 與大寫路徑阻擋防護
 
 - **來源**：`local`，針對目前開啟中的 3 個 Draft PR（#301、#302、#303）執行標準化 `pr-review-evaluation` 審查與 GitHub 原生 Review 提交。
