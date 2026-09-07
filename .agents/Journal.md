@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-07 / PR #304 相對幾何測試修正
+
+- **來源**：`local`，Luna as Codex 的 PR #304 Review 與 Inline Comment #3947231903；修正者為 Astra as Codex。
+- **狀態**：`adopted`。
+- **Learning**：Canvas 路徑、圓角數值與固定像素座標不適合作為中央小工具的回歸契約；應在既有面板與小工具 helper 邊界驗證相對位置及 palette token。
+- **Action**：以多組區域驗證背景置中、包含性、側欄填滿區域、Disable 空白與自訂背景色；Drive／Powertrain 驗證左右欄鏡射及分隔線位於區域內。共用 view fixture 補足胎溫 renderer 必要方法。
+- **Evidence**：`pnpm -C frontend exec vitest run ../hud_overlay/s650_hmi/tests/unit/s650CenterInfo.test.ts`：25 passed；暫時將 Drive 右欄改為左欄位置時，對應測試正確失敗，之後完整還原 renderer。
+- **Skills**：`pr-author-maintainer`、`agent-governance-audit`。本次只修改測試與日誌，不變更 renderer 或依賴。
+
 ## 日誌定位與同步規則
 
 本檔是專案的「已採納、已驗證知識庫」，不是 Jules 原始工作紀錄的鏡像。Jules 的原始紀錄保留於 `.jules/*.md`；只有在本地完成驗證、確認適用範圍後，才同步到本檔。

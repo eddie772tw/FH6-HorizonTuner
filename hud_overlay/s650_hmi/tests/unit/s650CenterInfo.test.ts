@@ -570,234 +570,113 @@ describe('S650 center-information registry contract', () => {
     }
   });
 
-  it('exposes a 15% semi-transparent background contract for center widgets', () => {
+  it.each([
+    { x: 425, y: 126, width: 430, height: 230, layoutStyle: 'dualRing' },
+    { x: 71, y: 49, width: 510, height: 250, layoutStyle: 'dualRing' },
+    { x: 23, y: 41, width: 300, height: 180, layoutStyle: 'dualRing' },
+    { x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' },
+    { x: 37, y: 61, width: 280, height: 108, layoutStyle: 'trackSidebar' },
+  ])('keeps the widget backdrop centered and contained in $layoutStyle at width $width', (region) => {
+    const { centerInfo } = loadCenterInfoEnvironment();
+    // Observe the semantic panel boundary, independent of Canvas path construction.
+    const panels: { x: number; y: number; width: number; height: number; fill: unknown }[] = [];
+    const renderer = centerInfo.create({
+      ctx: createCanvasSpy(),
+      primitives: {
+        drawRoundedPanel: (...args: unknown[]) => {
+          const [x, y, width, height, , fill] = args;
+          panels.push({ x: Number(x), y: Number(y), width: Number(width), height: Number(height), fill });
+        },
+      },
+      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+    });
+    renderer.draw({ centerWidget: 'disable' }, {}, {}, region);
+    expect(panels).toEqual([]);
+
+    for (const widget of ['drive', 'tire_temp', 'performance', 'music']) {
+      panels.length = 0;
+      renderer.draw(Object.assign({
+        centerWidget: widget,
+      }, {
+        getRpm: () => 3000,
+        getMaxRpm: () => 7000,
+        getTireTemperatures: () => [80, 81, 82, 83],
+        tireTemperatureUnit: () => '°C',
+        formatTireTemperature: (value: number) => `${value}°`,
+      }), {}, {}, region);
+      const panel = panels[0];
+      expect(panel).toBeDefined();
+      expect(panel.fill).toBe('rgba(0, 0, 0, 0.15)');
+      expect(panel.width).toBeGreaterThan(0);
+      expect(panel.x - region.x).toBeCloseTo(region.x + region.width - panel.x - panel.width);
+      expect(panel.x).toBeGreaterThanOrEqual(region.x);
+      expect(panel.width).toBeLessThanOrEqual(region.width);
+      expect(panel.y).toBe(region.y);
+      expect(panel.height).toBe(region.height);
+      if (region.layoutStyle === 'trackSidebar') {
+        expect(panel.width).toBe(region.width);
+      } else if (region.width >= 400) {
+        expect(panel.width).toBeLessThan(region.width);
+      }
+    }
+  });
+
+  it('passes a custom backdrop palette token to the panel renderer', () => {
     const { common } = loadCenterInfoEnvironment();
-    expect(common.BACKGROUND_SPEC).toBeDefined();
-    expect(common.BACKGROUND_SPEC.alpha).toBe(0.15);
-    expect(common.BACKGROUND_SPEC.fill).toBe('rgba(0, 0, 0, 0.15)');
-    expect(common.BACKGROUND_SPEC.dualRing).toEqual({
-      width: 360,
-      padX: 35,
-      radius: 12,
+    let panelFill: unknown;
+    const fill = 'rgba(255, 255, 255, 0.15)';
+    common.drawBackground({
+      ctx: createCanvasSpy(),
+      region: { x: 37, y: 61, width: 280, height: 108 },
+      palette: { centerWidgetBackground: fill },
+      primitives: {
+        drawRoundedPanel: (...args: unknown[]) => { panelFill = args[5]; },
+      },
     });
-    expect(common.BACKGROUND_SPEC.trackSidebar).toEqual({
-      radius: 6,
-    });
+    expect(panelFill).toBe(fill);
   });
 
-  it('draws a 15% semi-transparent background behind active center widgets but keeps disable blank', () => {
-    const fills: { fillStyle: string; x: number; y: number; width: number; height: number; radius?: number }[] = [];
-    const ctx = {
-      save: () => undefined,
-      restore: () => undefined,
-      beginPath: () => undefined,
-      closePath: () => undefined,
-      roundRect: (x: number, y: number, width: number, height: number, radius: number) => {
-        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height, radius });
-      },
-      fill: () => undefined,
-      stroke: () => undefined,
-      strokeRect: () => undefined,
-      fillRect: (x: number, y: number, width: number, height: number) => {
-        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height });
-      },
-      fillText: () => undefined,
-      fillStyle: '',
-    } as unknown as Record<string, unknown>;
-
-    const centerInfo = loadCenterInfoModule().create({
-      ctx,
-      primitives: {
-        setFont: () => undefined,
-        getFontSize: (_view, _role, fallback) => fallback,
-      },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
-    });
-
-    // 1. When widget is 'disable', no background or fill should be drawn
-    centerInfo.draw({ centerWidget: 'disable' }, {}, {}, 425, 126, 430, 230);
-    expect(fills).toHaveLength(0);
-
-    // 2. When widget is 'drive', the 15% semi-transparent background is drawn
-    centerInfo.draw({
-      centerWidget: 'drive',
-      roundedSpeed: () => '120',
-      unitLabel: () => 'KM/H',
-      getGearLabel: () => '4',
-      getPedalValue: () => 0.5,
-    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, 425, 126, 430, 230);
-
-    expect(fills.length).toBeGreaterThanOrEqual(1);
-    const bgFill = fills[0];
-    expect(bgFill.fillStyle).toBe('rgba(0, 0, 0, 0.15)');
-    expect(bgFill.x).toBe(460); // 425 + padX 35
-    expect(bgFill.y).toBe(126);
-    expect(bgFill.width).toBe(360);
-    expect(bgFill.height).toBe(230);
-    expect(bgFill.radius).toBe(12);
-  });
-
-  it('allows custom palette centerWidgetBackground to customize widget backdrop fill', () => {
-    const fills: { fillStyle: string }[] = [];
-    const ctx = {
-      save: () => undefined,
-      restore: () => undefined,
-      beginPath: () => undefined,
-      closePath: () => undefined,
-      roundRect: () => {
-        fills.push({ fillStyle: String(ctx.fillStyle) });
-      },
-      fill: () => undefined,
-      stroke: () => undefined,
-      strokeRect: () => undefined,
-      fillRect: () => {
-        fills.push({ fillStyle: String(ctx.fillStyle) });
-      },
-      fillText: () => undefined,
-      fillStyle: '',
-    } as unknown as Record<string, unknown>;
-
-    const centerInfo = loadCenterInfoModule().create({
-      ctx,
-      primitives: {
-        setFont: () => undefined,
-        getFontSize: (_view, _role, fallback) => fallback,
-      },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
-    });
-
-    centerInfo.draw({
-      centerWidget: 'performance',
-      getRpm: () => 3000,
-      getMaxRpm: () => 7000,
-    }, {}, {
-      text: '#fff',
-      secondary: '#aaa',
-      primary: '#0ff',
-      centerWidgetBackground: 'rgba(255, 255, 255, 0.15)',
-    }, 425, 126, 430, 230);
-
-    expect(fills.length).toBeGreaterThanOrEqual(1);
-    expect(fills[0].fillStyle).toBe('rgba(255, 255, 255, 0.15)');
-  });
-
-  it('uses compact background geometry when rendering in trackSidebar mode', () => {
-    const fills: { fillStyle: string; x: number; y: number; width: number; height: number; radius?: number }[] = [];
-    const ctx = {
-      save: () => undefined,
-      restore: () => undefined,
-      beginPath: () => undefined,
-      closePath: () => undefined,
-      roundRect: (x: number, y: number, width: number, height: number, radius: number) => {
-        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height, radius });
-      },
-      fill: () => undefined,
-      stroke: () => undefined,
-      strokeRect: () => undefined,
-      fillRect: (x: number, y: number, width: number, height: number) => {
-        fills.push({ fillStyle: String(ctx.fillStyle), x, y, width, height });
-      },
-      fillText: () => undefined,
-      fillStyle: '',
-    } as unknown as Record<string, unknown>;
-
-    const centerInfo = loadCenterInfoModule().create({
-      ctx,
-      primitives: {
-        setFont: () => undefined,
-        getFontSize: (_view, _role, fallback) => fallback,
-      },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
-    });
-
-    centerInfo.draw({
-      centerWidget: 'drive',
-    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
-      x: 860,
-      y: 198,
-      width: 220,
-      height: 88,
-      layoutStyle: 'trackSidebar',
-    });
-
-    expect(fills.length).toBeGreaterThanOrEqual(1);
-    const bgFill = fills[0];
-    expect(bgFill.fillStyle).toBe('rgba(0, 0, 0, 0.15)');
-    expect(bgFill.x).toBe(860);
-    expect(bgFill.y).toBe(198);
-    expect(bgFill.width).toBe(220);
-    expect(bgFill.height).toBe(88);
-    expect(bgFill.radius).toBe(6);
-  });
-
-  it('draws balanced compact two-column layout with vertical divider for drive and performance widgets', () => {
-    const lines: { x1: number; y1: number; x2: number; y2: number; strokeStyle: string }[] = [];
-    const textPositions: { text: string; x: number; y: number }[] = [];
-    let curX = 0;
-    let curY = 0;
-    const ctx = {
-      save: () => undefined,
-      restore: () => undefined,
-      beginPath: () => undefined,
-      closePath: () => undefined,
-      moveTo: (x: number, y: number) => { curX = x; curY = y; },
-      lineTo: (x: number, y: number) => {
-        lines.push({ x1: curX, y1: curY, x2: x, y2: y, strokeStyle: String(ctx.strokeStyle) });
-      },
-      stroke: () => undefined,
-      fill: () => undefined,
-      fillText: (text: string, x: number, y: number) => {
-        textPositions.push({ text, x, y });
-      },
-      roundRect: () => undefined,
-      fillRect: () => undefined,
-      fillStyle: '',
-      strokeStyle: '',
-    } as unknown as Record<string, unknown>;
-
-    const centerInfo = loadCenterInfoModule().create({
-      ctx,
-      primitives: {
-        setFont: () => undefined,
-        getFontSize: (_view, _role, fallback) => fallback,
-      },
-      contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
-    });
-
-    centerInfo.draw({
-      centerWidget: 'drive',
-      getTelemetryReadout: (slot: string) => slot === 'heading'
-        ? { value: 'NW', unit: '' }
-        : { value: '42.0', unit: 'km' },
-    }, {}, { text: '#fff', secondary: '#aaa', primary: '#0ff' }, {
-      x: 860,
-      y: 198,
-      width: 220,
-      height: 88,
-      layoutStyle: 'trackSidebar',
-    });
-
-    // 1. Divider line drawn in the center (860 + 110 = 970)
-    expect(lines).toContainEqual(expect.objectContaining({
-      x1: 970,
-      y1: 222, // 198 + 24
-      x2: 970,
-      y2: 274, // 198 + 88 - 12
-    }));
-
-    // 2. Title Y is at 212 (198 + 14), leaving 14px top breathing room
-    const titleEntry = textPositions.find((entry) => entry.text === 'DRIVE');
-    expect(titleEntry).toBeDefined();
-    expect(titleEntry?.y).toBe(212);
-
-    // 3. Metric columns centered in left/right halves (860 + 57 = 917, 860 + 163 = 1023)
-    const headingEntry = textPositions.find((entry) => entry.text === 'HEADING');
-    const distanceEntry = textPositions.find((entry) => entry.text === 'DISTANCE');
-    expect(headingEntry).toBeDefined();
-    expect(distanceEntry).toBeDefined();
-    expect(headingEntry?.x).toBe(917);
-    expect(distanceEntry?.x).toBe(1023);
-    // Vertical placement around Y=234 (198 + 36), avoiding bottom whitespace
-    expect(headingEntry?.y).toBe(234);
+  it.each([
+    { widget: 'drive', labels: ['HEADING', 'DISTANCE'] },
+    { widget: 'performance', labels: ['POWER', 'BOOST'] },
+  ])('keeps compact $widget metrics mirrored around an interior divider', ({ widget, labels }) => {
+    for (const region of [
+      { x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' },
+      { x: 37, y: 61, width: 280, height: 108, layoutStyle: 'trackSidebar' },
+    ]) {
+      const { centerInfo, common } = loadCenterInfoEnvironment();
+      const metrics = new Map<string, { x: number; y: number }>();
+      let divider: { x: number; top: number; bottom: number } | undefined;
+      // Capture widget-level layout output, never Canvas commands or pixel constants.
+      common.drawMetric = (_context: unknown, x: number, y: number, label: string) => {
+        metrics.set(label, { x, y });
+      };
+      common.drawDivider = (_context: unknown, x: number, top: number, bottom: number) => {
+        divider = { x, top, bottom };
+      };
+      const renderer = centerInfo.create({
+        ctx: createCanvasSpy(),
+        primitives: {},
+        contract: { centerWidgets: ['disable', 'drive', 'tire_temp', 'performance', 'music'] },
+      });
+      renderer.draw({ centerWidget: widget }, {}, {}, region);
+      const left = metrics.get(labels[0])!;
+      const right = metrics.get(labels[1])!;
+      expect(left).toBeDefined();
+      expect(right).toBeDefined();
+      expect(divider).toBeDefined();
+      const center = region.x + region.width / 2;
+      expect(divider!.x).toBeCloseTo(center);
+      expect(left.x).toBeGreaterThan(region.x);
+      expect(left.x).toBeLessThan(center);
+      expect(right.x).toBeGreaterThan(center);
+      expect(right.x).toBeLessThan(region.x + region.width);
+      expect(center - left.x).toBeCloseTo(right.x - center);
+      expect(left.y).toBe(right.y);
+      expect(divider!.top).toBeGreaterThan(region.y);
+      expect(left.y).toBeGreaterThan(divider!.top);
+      expect(left.y).toBeLessThan(divider!.bottom);
+      expect(divider!.bottom).toBeLessThan(region.y + region.height);
+    }
   });
 });
