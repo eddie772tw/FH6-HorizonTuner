@@ -45,16 +45,25 @@ export const finiteOrNull = (value: number | undefined | null): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+// [PERF] Inlined `Array.from()` to avoid temporary closures, array-like object allocations, and iteration overhead.
+// At 60Hz across multiple telemetry properties (like slip, temp), this avoids hundreds of allocations per second, reducing GC stutters.
 export const readFour = (values: readonly number[] | undefined): readonly (number | null)[] => (
-  Array.from({ length: 4 }, (_, index) => finiteOrNull(values?.[index]))
+  [
+    finiteOrNull(values?.[0]),
+    finiteOrNull(values?.[1]),
+    finiteOrNull(values?.[2]),
+    finiteOrNull(values?.[3]),
+  ]
 );
 
 const averagePair = (first: number | null, second: number | null): number | null => (
   first === null || second === null ? null : (first + second) / 2
 );
 
+// [PERF] Inlined `Array.prototype.some` to eliminate closure allocation and callback execution overhead.
+// Manual index checking directly targets the four elements needed without iterating, vastly speeding up this high-frequency math helper.
 const averageFour = (values: readonly (number | null)[]): number | null => (
-  values.length < 4 || values.some((value) => value === null)
+  values.length < 4 || values[0] === null || values[1] === null || values[2] === null || values[3] === null
     ? null
     : (values[0]! + values[1]! + values[2]! + values[3]!) / 4
 );
