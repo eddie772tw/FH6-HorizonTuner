@@ -52,10 +52,17 @@
             var region = context.region;
             var heading = view.getTelemetryReadout ? view.getTelemetryReadout('heading', context.data).value : '--';
             var distance = view.getTelemetryReadout ? view.getTelemetryReadout('odometer', context.data) : { value: '--', unit: '' };
+            var colLeft = region.x + Math.round(region.width * 0.26);
+            var colRight = region.x + region.width - Math.round(region.width * 0.26);
+            var metricY = region.y + 36;
+            var midX = region.x + Math.round(region.width / 2);
 
             common.drawTitle(context, 'DRIVE', '');
-            common.drawMetric(context, region.x + 82, region.y + 35, 'HEADING', heading, '', 'center');
-            common.drawMetric(context, region.x + region.width - 82, region.y + 35, 'DISTANCE', distance.value, distance.unit, 'center');
+            if (typeof common.drawDivider === 'function') {
+                common.drawDivider(context, midX, region.y + 24, region.y + region.height - 12);
+            }
+            common.drawMetric(context, colLeft, metricY, 'HEADING', heading, '', 'center');
+            common.drawMetric(context, colRight, metricY, 'DISTANCE', distance.value, distance.unit, 'center');
         }
     });
 })(window);

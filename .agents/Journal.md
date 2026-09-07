@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-07 / PR #304 相對幾何測試修正
+
+- **來源**：`local`，Luna as Codex 的 PR #304 Review 與 Inline Comment #3947231903；修正者為 Astra as Codex。
+- **狀態**：`adopted`。
+- **Learning**：Canvas 路徑、圓角數值與固定像素座標不適合作為中央小工具的回歸契約；應在既有面板與小工具 helper 邊界驗證相對位置及 palette token。
+- **Action**：以多組區域驗證背景置中、包含性、側欄填滿區域、Disable 空白與自訂背景色；Drive／Powertrain 驗證左右欄鏡射及分隔線位於區域內。共用 view fixture 補足胎溫 renderer 必要方法。
+- **Evidence**：`pnpm -C frontend exec vitest run ../hud_overlay/s650_hmi/tests/unit/s650CenterInfo.test.ts`：25 passed；暫時將 Drive 右欄改為左欄位置時，對應測試正確失敗，之後完整還原 renderer。
+- **Skills**：`pr-author-maintainer`、`agent-governance-audit`。本次只修改測試與日誌，不變更 renderer 或依賴。
+
 ## 日誌定位與同步規則
 
 本檔是專案的「已採納、已驗證知識庫」，不是 Jules 原始工作紀錄的鏡像。Jules 的原始紀錄保留於 `.jules/*.md`；只有在本地完成驗證、確認適用範圍後，才同步到本檔。
@@ -2042,3 +2051,27 @@
 - **Evidence**：S650 center-info targeted test `12 passed`、Music widget `node --check` 通過、PR body validator 通過；更新 README、media contract 文件與 PR #296 body。
 - **Limit**：目前仍是唯讀 widget，未新增 artwork endpoint 或 playback command；實際 provider artwork 仍待 Windows 播放器實機驗證。
 - **Status**：adopted；保留既有未相關的 `frontend/src-tauri/Cargo.toml` working-tree 修改，不納入本次 commit。
+
+---
+
+## 2026-09-04 / S650 HMI central widget translucent backdrop & Track mode layout symmetry overhaul
+
+- **Scope**: `hud_overlay/s650_hmi/assets/s650_tokens.js`, `hud_overlay/s650_hmi/assets/s650_center_info_common.js`, `hud_overlay/s650_hmi/assets/s650_center_info.js`, `hud_overlay/s650_hmi/assets/s650_center_info_drive.js`, `hud_overlay/s650_hmi/assets/s650_center_info_performance.js`, `hud_overlay/s650_hmi/assets/s650_center_info_tire_temp.js`, `hud_overlay/s650_hmi/assets/s650_performance_clusters.js`, `hud_overlay/s650_hmi/tests/unit/s650CenterInfo.test.ts`, `hud_overlay/s650_hmi/tests/unit/s650PerformanceClusters.test.ts`, `hud_overlay/s650_hmi/tests/unit/s650Tokens.test.ts`.
+- **Decision & Architecture**:
+  1. **中央小工具 15% 半透明背景規範 (Readability Backdrop Contract)**：在 S650 所有主題色彩 tokens 中新增語意屬性 `centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'`，並於 `s650_center_info_common.js` 建立 `BACKGROUND_SPEC`（dualRing 模式 padX 35、radius 12；trackSidebar 模式 radius 6）。在 `centerInfo.render` 執行時，若非 `disable` 狀態，優先於下層繪製 15% 半透明圓角面板，大幅提升賽道環境與高對比背景下的讀數辨識度。
+  2. **Track 模式幾何嚴格鏡像對稱 (Canvas Center Mirror Symmetry)**：
+     - 左側 `speedGear` 規格為 `x: 200, y: 198, width: 220, height: 88`（右邊界 420，離中軸 X=640 為 220px；離左側 Power rail x=172 為 28px）。
+     - 將 `TRACK_RECIPE.centerInfo` 自錯誤座標 `{ x: 840, y: 184, width: 220, height: 88 }` 全面修正重構為 `{ x: 860, y: 198, width: 220, height: 88, layoutStyle: 'trackSidebar' }`。
+     - 幾何驗證：小工具左邊界 `860` 離中軸 X=640 精確為 220px；小工具右邊界 `1080` 離右側 Boost rail (`x: 1108`) 留出嚴格對稱的 28px 安全間隔，徹底消除擠壓與遮擋，達成左右雙艙完全對稱協調。
+  3. **消除 Compact 佈局下方留白過多 (Vertical Balance & Column Spacing)**：
+     - 重構 `drawTitle`：compact 模式下標題 Y 座標由貼頂的 `region.y + 10` 調整為 `region.y + 14`（字級 13px），使頂部邊距均衡展開。
+     - 重構 `drive` 與 `performance` compact 佈局：將兩組指標欄位由原先局促擠在中央（82px / 138px）重新均勻展開至左/右半區中心（`region.x + 57` 與 `region.x + 163`），並於中軸 `region.x + 110` 引入垂直分割線（`drawDivider`），完全對齊左側 `speedGear` 的視覺骨幹。
+     - 指標基準 Y 調整為 `region.y + 36`（Label: 36, Value: 53, Unit: 67），使內容於 88px 卡片高度內完美垂直居中，頂部與底部均勻留出約 8~14px 呼吸空間。
+- **Evidence**:
+  - 前端 Vitest 單元測試：88 files / 573 tests 100% 通過（新增 Track 左右對稱性合約、15% 背景合約與 compact 分割線測試）。
+  - 後端單元測試：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`（270 passed, 6 deselected, 4.07s）。
+  - 代碼檢查：Ruff check 與 format check 全數 passed（150 files formatted）。
+  - 前端建置：`pnpm -C frontend run build` 成功輸出（705 modules transformed）。
+  - 空白與格式規範：`git diff --check` 完全乾淨（0 error）。
+- **Governance**: 本次重構依據 `huge-component-refactoring`、`halfmoon-design-system` 與 `agent-governance-audit` 規範登錄。
+- **Status**: adopted。

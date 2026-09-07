@@ -101,6 +101,9 @@
                 primitives: primitives,
                 ctx: ctx
             };
+            if (pageId !== 'disable' && window.S650HmiCenterInfoCommon && typeof window.S650HmiCenterInfoCommon.drawBackground === 'function') {
+                window.S650HmiCenterInfoCommon.drawBackground(context);
+            }
             (normalizedRegion.layout.isCompact && typeof page.renderCompact === 'function' ? page.renderCompact : page.render)(context);
 
         }

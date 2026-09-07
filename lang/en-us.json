@@ -1165,4 +1165,13 @@
   "Download Support Bundle": "Download Support Bundle",
   "Support bundle export failed.": "Support bundle export failed.",
   "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically."
+,
+  "Storage information is unavailable while the local service is offline.": "Storage information is unavailable while the local service is offline.",
+  "Loading local storage information...": "Loading local storage information...",
+  "Last settings backup:": "Last settings backup:",
+  "No backup created yet": "No backup created yet",
+  "Export:": "Export:",
+  "Restore:": "Restore:",
+  "SQLite migration:": "SQLite migration:",
+  "Tracked local storage": "Tracked local storage"
 }

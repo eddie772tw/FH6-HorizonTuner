@@ -441,6 +441,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const handleResetHudConfig = () => {
+    if (!window.confirm(t("Are you sure you want to reset all HUD settings?"))) return;
     const resetConfig: HudConfig = {
       ...DEFAULT_HUD_CONFIG,
       enabled: config.enabled,

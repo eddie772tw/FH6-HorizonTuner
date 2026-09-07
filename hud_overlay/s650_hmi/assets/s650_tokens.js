@@ -97,7 +97,8 @@
             secondary: '#98A0A8',
             text: colors.textPrimary,
             warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
+            danger: colors.telltaleRed,
+            centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'
         },
         heritage67: {
             background: '#12100E',
@@ -106,7 +107,8 @@
             secondary: '#B7A98D',
             text: '#FFF8E7',
             warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
+            danger: colors.telltaleRed,
+            centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'
         },
         foxbody: {
             background: '#050605',
@@ -115,7 +117,8 @@
             secondary: '#B9C0B8',
             text: '#FFFFFF',
             warning: colors.telltaleYellow,
-            danger: '#F04646'
+            danger: '#F04646',
+            centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'
         },
         // TODO(s650-sport): Retained for the unregistered visual prototype.
         sport: {
@@ -125,7 +128,8 @@
             secondary: '#B8AAA0',
             text: '#FFF8F1',
             warning: colors.telltaleYellow,
-            danger: colors.telltaleRed
+            danger: colors.telltaleRed,
+            centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'
         },
         // TODO(s650-svt-cobra): Retained for the unregistered visual prototype.
         svt_cobra: {
@@ -135,7 +139,8 @@
             secondary: '#A7AFA7',
             text: '#FFFFFF',
             warning: colors.telltaleYellow,
-            danger: '#E33B3B'
+            danger: '#E33B3B',
+            centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'
         },
         track: {
             background: '#050608',
@@ -144,7 +149,8 @@
             secondary: '#9AA3AD',
             text: '#F7F8FA',
             warning: colors.telltaleYellow,
-            danger: '#FF3B30'
+            danger: '#FF3B30',
+            centerWidgetBackground: 'rgba(0, 0, 0, 0.15)'
         }
     };
 
