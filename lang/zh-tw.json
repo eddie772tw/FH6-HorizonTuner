@@ -1253,12 +1253,12 @@
   "Download Support Bundle": "下載支援套件",
   "Support bundle export failed.": "支援套件匯出失敗。",
   "Creates a local ZIP containing only bounded aggregate diagnostics and recent redacted logs. It excludes raw UDP payloads, absolute paths, player identifiers, and credentials. Nothing is uploaded automatically.": "建立一個僅包含匯總診斷資料與最近日誌的本地 ZIP 檔案。這不包含原始 UDP 封包、絕對路徑、玩家識別碼與憑證。不會自動上傳任何資料。",
-  "Storage information is unavailable while the local service is offline.": "Storage information is unavailable while the local service is offline.",
-  "Loading local storage information...": "Loading local storage information...",
-  "Last settings backup:": "Last settings backup:",
-  "No backup created yet": "No backup created yet",
-  "Export:": "Export:",
-  "Restore:": "Restore:",
-  "SQLite migration:": "SQLite migration:",
-  "Tracked local storage": "Tracked local storage"
+  "Storage information is unavailable while the local service is offline.": "本地服務離線時無法使用儲存空間資訊。",
+  "Loading local storage information...": "正在載入本地儲存空間資訊...",
+  "Last settings backup:": "上次設定備份：",
+  "No backup created yet": "尚未建立備份",
+  "Export:": "匯出：",
+  "Restore:": "還原：",
+  "SQLite migration:": "SQLite 遷移：",
+  "Tracked local storage": "追蹤的本地儲存空間"
 }
