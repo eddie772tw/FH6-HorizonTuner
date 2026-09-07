@@ -45,8 +45,9 @@ export const finiteOrNull = (value: number | undefined | null): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
-// [PERF] Inlined `Array.from()` to avoid temporary closures, array-like object allocations, and iteration overhead.
-// At 60Hz across multiple telemetry properties (like slip, temp), this avoids hundreds of allocations per second, reducing GC stutters.
+// [PERF] Inlined `Array.from()` to avoid temporary closures, iterator allocation, and mapping overhead.
+// Note: This still allocates a new 4-element array on each call, but avoids the much heavier iteration internals.
+// Can be benchmarked locally via Vitest or Chrome DevTools Memory Timeline.
 export const readFour = (values: readonly number[] | undefined): readonly (number | null)[] => (
   [
     finiteOrNull(values?.[0]),
