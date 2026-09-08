@@ -217,7 +217,14 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
               disabled={isExportingBundle}
               title={t(SUPPORT_BUNDLE_PRIVACY_NOTICE)}
             >
-              {isExportingBundle ? t('Preparing Support Bundle...') : t('Download Support Bundle')}
+              {isExportingBundle ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />
+                  {t('Preparing Support Bundle...')}
+                </>
+              ) : (
+                t('Download Support Bundle')
+              )}
             </button>
             <button
               onClick={handleClearLogs}

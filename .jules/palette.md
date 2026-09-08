@@ -34,3 +34,7 @@
 ## 2026-09-01 - Accessible Async Button Spinners
 **Learning:** Text-based loading states like `...` in buttons are often skipped or misinterpreted by screen readers, creating an inaccessible async experience. Replacing them with proper spinner components (e.g., `spinner-border`) combined with `aria-hidden="true"` on the spinner and explicit descriptive text provides both a clear visual cue and a semantic cue for assistive technologies.
 **Action:** When creating async/loading buttons, use explicit spinner elements and descriptive text instead of relying on ellipsis strings.
+
+## 2024-05-17 - Added loading state to Support Bundle download button
+**Learning:** When using Playwright to verify transient UI loading states (like async spinners), use route interception to artificially delay the corresponding API responses to reliably capture the visual state for screenshots and videos.
+**Action:** When creating tests or taking screenshots of loading states, add a page.route() handler to delay the API response to avoid the test finishing or state clearing too quickly before verification finishes.
