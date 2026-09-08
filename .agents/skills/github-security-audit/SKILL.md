@@ -22,13 +22,13 @@ description: 當需要收集、審查或修復 GitHub 自主檢測的安全問�
 
 ```powershell
 # 執行全維度收集並印出摘要
-.venv\Scripts\python.exe .agents/skills/github-security-audit/scripts/collect_security_alerts.py
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/github-security-audit/scripts/collect_security_alerts.py
 
 # 輸出 Markdown 報告至指定檔案
-.venv\Scripts\python.exe .agents/skills/github-security-audit/scripts/collect_security_alerts.py --md-out security_report.md
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/github-security-audit/scripts/collect_security_alerts.py --md-out security_report.md
 
 # 輸出完整 JSON 數據供自動化分析
-.venv\Scripts\python.exe .agents/skills/github-security-audit/scripts/collect_security_alerts.py --json-out security_data.json
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/github-security-audit/scripts/collect_security_alerts.py --json-out security_data.json
 ```
 
 ### 2. 手動 GitHub CLI 常用查詢指令

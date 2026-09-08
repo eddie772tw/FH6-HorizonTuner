@@ -10,8 +10,8 @@
 - 專案虛擬環境固定為根目錄的 `.venv`。
 - Python 版本解析必須經過 `uv`，不可依賴 PATH 上任意的 `python`、`py` 或既有全域 venv。
 - Python 相依套件來源是 `requirements.txt`；安裝與檢查必須使用 `uv pip`。
-- Python 工具與測試必須使用 `uv run --no-project --python .venv\Scripts\python.exe` 執行。
-- 不需要啟用 venv；命令直接指定 `.venv\Scripts\python.exe`，可避免 shell session 遺留錯誤 interpreter。
+- Python 工具與測試必須使用 `uv run --no-project --python .venv\Scripts\python.exe` 執行（專案由 `requirements.txt` 宣告相依而非 `pyproject.toml`；若遺漏 `--no-project` 旗標，uv 會向上遞迴尋找專案根目錄宣告並報錯）。
+- 不需要啟用 venv；嚴禁呼叫 `activate.ps1` 或裸 `python`/`pip`/`pytest`。命令直接指定 `.venv\Scripts\python.exe`，可徹底杜絕 subshell 無狀態遺留與 PowerShell `PSSecurityException` 策略阻擋。
 
 ## Windows 標準命令
 

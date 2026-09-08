@@ -1,5 +1,48 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-08 / .agents 目錄重構：架構規則抽離至 rules/ 模組化體系與 AGENTS.md 極簡化
+
+- **來源**：`local`，落實 `agent-governance-audit`「AGENTS 放共通不可違反規則、rules 放專案架構與環境契約」之治理邊界。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **AGENTS.md 入口過度膨脹之注意力代價**：原本 `AGENTS.md` 達 160 行（16.8KB），混雜了 Vitest 邊界原則、測試金字塔分層、Halfmoon CSS UI 雙層架構、ModalPortal 護欄與第三方套件查驗協議。Agent 每次執行任務初始載入時被強迫消耗大量上下文，且易發生特定領域規則與通用守則混淆。
+  2. **環境契約錯置與孤立文檔消除**：`network-ports.md` 長期孤立於 `.agents/docs/`，脫離 rules 體系。將其遷移至 `rules/network-ports.md` 確立了 UDP 8000 vs HTTP 8001 的單一傳輸契約真理。
+  3. **高內聚模組化 Rules 體系成形**：拆分為 6 大領域契約（`workspace.md`, `python-uv.md`, `network-ports.md`, `testing-strategy.md`, `ui-architecture.md`, `dependencies.md`），使各領域規則按需載入（On-Demand Load），`AGENTS.md` 體積驟降 62%（縮至 78 行、6.4KB），維持極簡專業。
+- **Action**：
+  1. 建立 `rules/network-ports.md` 並移除 `.agents/docs/network-ports.md`。
+  2. 自 `AGENTS.md` 抽離具體架構規範，分別建立 `rules/testing-strategy.md`、`rules/ui-architecture.md` 與 `rules/dependencies.md`。
+  3. 精煉 `AGENTS.md`：僅保留任務入口 Gate、專案四大不變量、開發邊界限制（Must Do/Ask First/Do Not Do）與完成檢核表，並以 Rules Navigation Index 導引至各模組。
+  4. 清理 `.agents/` 根目錄下的暫存檔案 `security_data.json` 與 `security_report.md`。
+- **Evidence**：`AGENTS.md` 由 160 行瘦身至 78 行（6.4KB）；後端 Pytest 268 passed, 8 deselected；前端 Vitest 89 files / 578 tests 100% passed；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`agent-governance-audit`。
+
+---
+
+## 2026-09-08 / Agent Skills 現代化重構、過時假設移除與工具鏈指令防試錯標準化
+
+- **來源**：`local`，針對前沿模型（Gemini 2.0/3.8, Claude 3.5/3.7, GPT-4o）能力演進檢討既有 13 項 Canonical Skills、修復失效命令並建立高頻試錯防護。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **前沿模型架構心智演進**：現代前沿模型已原生具備強大 Structured Outputs、純函式設計與生命週期清理直覺。早期 Skill 中保姆式微觀程式碼叮嚀（如禁止 `.map()`、反覆提醒清理 timer）會造成指令疲勞，應聚焦於專案核心「60Hz 零暫態配置 (Zero-Allocation)」與「純邏輯收攏 `src/utils/`」高階合約。
+  2. **工具鏈 7 大重複試錯痛點收斂 (G1-G7)**：
+     - G1: `uv run` 漏加 `--no-project` 導致向上遞迴尋找 `pyproject.toml` 報錯。
+     - G2: Windows PowerShell 阻擋 `pnpm.ps1` 拋出 `PSSecurityException`，必須一律封裝 `cmd /c`。
+     - G3: 根目錄呼叫 pnpm 缺少 `-C frontend` 導致缺少 package.json。
+     - G4/G5: 嚴禁 subshell `activate` 與裸 `python`，統一由 `uv run --no-project --python .venv\Scripts\python.exe` 顯式調度。
+     - G6: 單檔 Vitest 測試語法標準化為 `cmd /c "pnpm -C frontend exec vitest run <path>"`。
+     - G7: UDP 探針腳本與安全收集腳本失效路徑修正為真實存在的 references 相對路徑。
+  3. **測試金字塔分層落實**：`test_executable_bundle.py` 涉及已編譯之二進位 PE 檔案，若本機殘留舊版二進位產物會干擾日常業務測試。於 `pyproject.toml` 的 pytest `addopts` 加入 `not executable_bundle`，將其收攏至 Tier 3 發行產物驗收階段，恢復日常業務單元測試毫秒級綠燈反饋（268 passed in 6.58s）。
+- **Action**：
+  1. 修正 `telemetry-udp-protocol`（及其 `packet_format_reference.md`）與 `github-security-audit` 中的探針路徑與工具執行指令。
+  2. 現代化 `codex-antigravity-bridge`：移除對舊 Gemini 格式偏見、泛化 `agy` 參數、將 Section 7 桌面對話注意事項完整翻譯為繁體中文。
+  3. 精簡 `huge-component-refactoring` 與 `modular-refactoring`：消除低階程式常識說理，提煉 60Hz 零暫態配置與模組邊界真理。
+  4. 精簡 `pr-review-evaluation` 與 `pr-author-maintainer`：身分宣告引用 `AGENTS.md`，突出 `submit_pr_review.py` 與 `manage_pr_author.py` 自動化工具防護。
+  5. 增補 `rules/python-uv.md` 之 `--no-project` 與禁止激活之防呆說明；於 `pyproject.toml` 排除 `executable_bundle`。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（6.58s 零報錯）；前端 Vitest 89 檔 / 578 項全數 100% 通過；前端 Vite build 通過（705 modules, 3.98s）；Ruff check 與 format 100% 通過；`check_repo_path_case.py` 檢查通過；`git diff --check` clean。
+- **Skills**：`agent-governance-audit`、`modular-refactoring`、`huge-component-refactoring`、`telemetry-udp-protocol`、`pr-author-maintainer`、`pr-review-evaluation`。
+
+---
+
 ## 2026-09-07 / PR #304 相對幾何測試修正
 
 - **來源**：`local`，Luna as Codex 的 PR #304 Review 與 Inline Comment #3947231903；修正者為 Astra as Codex。

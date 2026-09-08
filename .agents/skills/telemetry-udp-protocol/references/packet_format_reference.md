@@ -79,7 +79,7 @@
 ## 探測驗證工具指示
 
 若需對未使用的 7 項參數進行驗證或開發新功能，請使用獨立探測腳本：
-```bash
+```powershell
 # 開啟實時 UDP 多封包探測探針
-python tools/verify_telemetry_v2_v3.py --scan --port 8000
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/telemetry-udp-protocol/references/verify_telemetry_v2_v3.py --scan --port 8000
 ```

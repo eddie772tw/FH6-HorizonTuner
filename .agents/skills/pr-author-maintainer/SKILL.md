@@ -37,8 +37,12 @@ description: 當作為 PR 建立者、作者或維護者 (Author/Maintainer) 撰
   ```
 - **前端建置與型別驗證**：
   ```powershell
-  cmd /c "pnpm --prefix frontend run build"
+  cmd /c "pnpm -C frontend run build"
   ```
+> **工具鏈防試錯提醒**：
+> - Python 指令一律加上 `--no-project`（專案使用 `requirements.txt` 而非 `pyproject.toml`）。
+> - 前端與 pnpm 指令一律加上 `cmd /c` 與 `-C frontend`（避免 Windows `PSSecurityException` 與根目錄缺少 manifest 報錯）。
+
 **嚴禁將已知測試失敗、Lint 報錯或格式未對齊的代碼推送至 PR 分支**。
 
 ### 3. PR Body 持續同步與活文件原則 (Living PR Body / Continuous Sync)

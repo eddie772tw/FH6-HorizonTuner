@@ -47,7 +47,7 @@
    ```
 4. **前端靜態產物與型別打包建置**：
    ```powershell
-   cmd /c "pnpm --prefix frontend run build"
+   cmd /c "pnpm -C frontend run build"
    ```
 
 **零容忍原則**：若有任何一項檢查未過，必須在本地修正完成後方能 commit。絕不得帶著已知的紅燈推送至遠端。

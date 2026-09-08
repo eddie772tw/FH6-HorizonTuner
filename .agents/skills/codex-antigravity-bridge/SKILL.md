@@ -64,7 +64,7 @@ powershell -ExecutionPolicy Bypass -File `
 Headless 調用時，**必須明確將工作目錄與工作區綁定在專案根目錄**，以防止 Antigravity 的檔案工具因找不到工作區邊界或預設路徑錯誤而拋出 `Permission denied`：
 
 1. **Process 啟動資訊**：設定 `$startInfo.WorkingDirectory = $workspacePath`。
-2. **CLI 啟動參數**：對 `agy 1.1.13` 明確傳遞 `--add-dir "$workspacePath"` 參數；`-w` 不存在於此版本，禁止照抄其他 CLI 版本的旗標。
+2. **CLI 啟動參數**：對 `agy` CLI 明確傳遞 `--add-dir "$workspacePath"` 參數；避免依賴其他 CLI 版本的隱性預設目錄。
 
 標準 Headless 調用命令範例：
 
@@ -80,7 +80,7 @@ Antigravity 內建硬性安全防護（Hardcoded System Protection Boundary）�
 
 ## 3. 使用固定 token 驗證握手與工具讀檔
 
-Gemini 可能無法穩定遵守「精確 JSON 欄位」要求。可靠 handshake 與工具測試只要求模型回傳單一固定 token：
+在前沿模型（如 Gemini 2.0 / 3.8）中，模型已具備強大的 Structured Outputs 遵循力。但在 Headless CLI 串流通訊（stdin/stdout pipe）中，使用明確的固定 token（Fixed Token Marker）與本地封裝器，是避免終端控制字元干擾、緩衝區分塊截斷與對話樣板雜訊的最穩健握手協定：
 
 1. **純文字握手（No-tools Handshake）**：
    ```text
@@ -165,10 +165,10 @@ Then summarize changed paths, tests, failures, and next input required.
 - Antigravity 修改超出 scope：停止後續寫入，保留 diff，要求明確 handoff，再由 Codex review。
 - 同一檔案有兩個 owner：停止寫入並回到 `cross-agent-collaboration` 的 ownership 協調流程。
 
-## 7. Desktop conversation resume caveat
+## 7. 桌面 Conversation 續接注意事項 (Desktop Session Resume Caveat)
 
-Treat a desktop conversation UUID and a CLI trajectory UUID as different identifiers. A desktop ID can be present in `%USERPROFILE%\\.gemini\\antigravity-cli\\cache\\last_conversations.json` and have a transcript under `%USERPROFILE%\\.gemini\\antigravity\\brain\\<id>`, yet `agy --conversation <id> --print ...` and `agy --continue --print ...` may still return `trajectory not found`.
+應將桌面端的 Conversation UUID 與 CLI 的 Trajectory UUID 視為不同的識別碼。桌面端的對話 ID 可能存在於 `%USERPROFILE%\.gemini\antigravity-cli\cache\last_conversations.json` 且在 `%USERPROFILE%\.gemini\antigravity\brain\<id>` 下有 transcript，但直接執行 `agy --conversation <id> --print ...` 或 `agy --continue --print ...` 仍可能回傳 `trajectory not found`。
 
-Classify that result as `desktop_session_requires_cli_import`, not as a Phase or code failure. The supported recovery is an interactive `/resume`, switch to the `Antigravity` tab, select/import the desktop conversation, and then use the newly created CLI conversation ID. A redirected stdin pipe is not evidence that `/resume` completed: the picker requires a real interactive terminal and can exit without output.
+請將此結果歸類為 `desktop_session_requires_cli_import`，而非程式碼或階段失敗。支援的復原方式為執行互動式 `/resume`，切換至 `Antigravity` 分頁，選擇並匯入該桌面對話，隨後使用新生成的 CLI Conversation ID。重新導向的 stdin pipe 並不能保證 `/resume` 成功完成，因該選擇器需要真實的互動式終端。
 
-For machine-readable checks, do not ask Gemini to format a JSON object. Use a local wrapper plus an exact fixed token (for example `AGY_PHASE4A_REVIEW_OK:<marker>`), and retain the raw stdout/stderr and failure class alongside the token result.
+進行機器可讀的自動化檢查時，建議採用本地包裝腳本配合精確的固定 token（例如 `AGY_PHASE4A_REVIEW_OK:<marker>`），並在保存 token 結果的同時保留原始 stdout/stderr 與失敗分類。

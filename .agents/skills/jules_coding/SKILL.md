@@ -91,7 +91,7 @@ stop_reason: <optional>
 3. 重新執行必要測試，記錄精確 command、結果與 head SHA；Jules 自述不算本地證據。
 4. 效能改善必須提供可重現 benchmark command／artifact；不得只採信「60x faster」或「0 allocation」等敘述。
 5. 檢查依賴、安全性、回歸風險、CI 是否確實針對目前 head SHA 執行，以及 `git diff --check`。
-6. 檢查大小寫不敏感檔案系統下的 duplicate path；`.Jules` 與 `.jules` collision 直接阻擋。
+6. 檢查大小寫不敏感檔案系統下的 duplicate path；可執行 `uv run --no-project --python .venv\Scripts\python.exe python scripts/check_repo_path_case.py`，若發現 `.Jules` 與 `.jules` collision 直接阻擋。
 7. `.jules/**` 預設不屬於功能 PR scope。若排程產出自動追加 raw log，先視為額外變更處理；只能保留 canonical lowercase path、append-only 內容，並避免多個 PR 同時寫入同一 log。
 8. 未經本地驗證，不得合併、推送、覆蓋 dirty worktree 或把結論升格到 Journal／AGENTS／其他 Skill。
 

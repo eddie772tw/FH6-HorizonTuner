@@ -28,9 +28,7 @@ description: 當需要評估一個 PR、或完成一個分支的開發並提交 
 ## 2. Review 結構與標準格式
 
 ### 2.1 跨 Agent 身分標記規範 (`{代號} as {Agent}`)
-- **背景**：所有 Agent（Google Antigravity, OpenAI Codex, Google Jules）共用同一個開發者 GitHub 帳號發言。
-- **格式規範**：Review 報告的開頭標題與結尾簽名必須統一使用 `{代號} as {Agent}` 格式：
-  - 範例：`Gemini as Antigravity`、`Luna as Codex`、`Gemini as Jules`、`Claude as Codex` 等。
+遵循 [`.agents/AGENTS.md`](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/AGENTS.md) 規範，所有 Agent 共用 GitHub 帳號時，Review 開頭標題與結尾簽名一律標記 `{代號} as {Agent}`（例如 `Gemini as Antigravity`、`Luna as Codex`）。
 
 ### 2.2 頂層 Review (Top-level Review Body)
 頂層 Review 內文必須包含以下標準結構，語氣客觀嚴謹：
@@ -39,90 +37,44 @@ description: 當需要評估一個 PR、或完成一個分支的開發並提交 
 {代號} as {Agent} review — {結論摘要, e.g., blocking findings recorded / ready to merge}.
 
 **CI Status & Local Verification:**
-簡述目前的 Actions 狀態及本地驗證的結果 (例如 14/14 checks pass, 171 backend pytest passed, 440 vitest passed 等)。
+簡述目前的 Actions 狀態及本地驗證的結果。
 
 **Findings & Assessment:**
-- 條列式指出需要修正的具體問題 (型別錯誤、邏輯缺失、缺乏邊界驗證等)。
-- 提出修改建議與處理方案。
-- **CI 未涵蓋 Blocking 意見之測試代碼提供義務 (Mandatory Test Snippet)**：若 Reviewer 提出的 Blocking 意見涉及現有 CI 測試尚未涵蓋的情境（例如極端邊界值、競態條件或未測試之路徑），**Reviewer 必須一併提供可重現該問題的具體測試代碼（Pytest 或 Vitest 程式碼片段）**，供 Author/Maintainer 於本地快速重現、驗證修正並納入測試套裝中。
-- 參考其他 Agent 的意見時，明確表態同意、補充，或提出不同的獨立見解。
+- 條列式指出具體問題 (型別錯誤、邏輯缺失、缺乏邊界驗證等)。
+- **CI 未涵蓋 Blocking 意見之測試代碼提供義務 (Mandatory Test Snippet)**：若提出之 Blocking 意見涉及現有 CI 尚未覆蓋的情境，**Reviewer 必須一併提供可重現該問題的測試代碼片段（Pytest 或 Vitest）**，供 Author 本地重現驗證。
+- 提出具體修改建議與處理方案。
 
 **Next Steps:**
-- 說明通過條件 (例如：請修正上述錯誤、納入附帶之單元測試並確保 CI 全數轉綠)。
-- 說明何時可以再次請求 Review 或進行 Merge。
+- 說明通過條件與後續 Merge / Re-review 時程。
 
 Reviewer: {代號} as {Agent}
 ```
 
 ### 2.3 原生 GitHub Inline Review Comments (行內評論與代碼建議)
-當需要針對具體程式碼行提出意見或重構建議時，**必須提交原生的 GitHub Inline Review Comments**（而非僅於 Review Body 提及文字）。
-
-#### JSON Payload 結構規格
-```json
-{
-  "commit_id": "<HEAD_COMMIT_SHA>",
-  "body": "{頂層 Review 總結報告 Markdown}",
-  "event": "COMMENT",
-  "comments": [
-    {
-      "path": "frontend/src/utils/tuningMath.ts",
-      "line": 45,
-      "side": "RIGHT",
-      "body": "此處除數可能為 0，建議加入安全防護：\n```suggestion\nconst result = divisor > 0 ? value / divisor : 0;\n```"
-    },
-    {
-      "path": "backend/main.py",
-      "start_line": 20,
-      "start_side": "RIGHT",
-      "line": 25,
-      "side": "RIGHT",
-      "body": "這段邏輯建議抽離成共用函式。"
-    }
-  ]
-}
-```
-
-#### GitHub Code Suggestions 語法規範
-在 Inline Comment 的 `body` 中，可使用 ````suggestion` 標籤提供可一鍵套用的程式碼建議：
-````markdown
-```suggestion
-替換後的程式碼
-```
-````
+當需要針對具體程式碼行提出意見或重構建議時，**必須提交原生的 GitHub Inline Review Comments**（在 `body` 中使用 ````suggestion` 提供一鍵套用代碼建議）。
 
 ---
 
-## 3. Diff Hunk 邊界與 422 錯誤防護 (Critical)
+## 3. 自動化提交與 Diff Hunk 422 錯誤防護
 
-- **Diff Hunk 限制**：GitHub REST API 規定，Inline Comments 的目標行號必須位在該 PR 的 **Diff Hunk**（變更行及其周邊約 3 行上下文）之內。若行號超出 Diff 範圍，GitHub API 會回傳 `422 Unprocessable Entity: pull_request_review_thread.line must be part of the diff`，導致整筆 Review 失敗。
-- **降級機制 (Graceful Fallback)**：
-  1. 針對 Diff 內的變更行：正常發布為原生 Inline Comments。
-  2. 針對 Diff 外的既有代碼行：自動降級收攏至頂層 Review Body 的 `Findings & Assessment` 區段（例如標註 `[既有代碼提醒] src/file.ts:L120 - ...`），確保 Review 100% 成功提交。
+GitHub REST API 規定行內評論必須位在 PR 的 **Diff Hunk** 內，否則會拋出 `422 Unprocessable Entity` 導致整個 Review 提交失敗。
 
----
+專案提供自動化腳本 `.agents/skills/pr-review-evaluation/scripts/submit_pr_review.py`，**已全自動內建以下防護**：
+1. 自動擷取最新 HEAD SHA。
+2. 自動比對 Diff Hunk 範圍。
+3. 若指定行號超出 Diff 範圍，**自動降級收攏至頂層 Review Body 的 `Findings & Assessment`**，確保 100% 成功提交。
 
-## 4. 提交方式
-
-### 方式 A：使用專案輔助腳本 (推薦，自動 Diff 驗證與降級)
-專案提供 `.agents/skills/pr-review-evaluation/scripts/submit_pr_review.py` 工具，可自動完成 HEAD SHA 提取、Diff Hunk 檢查與 Review 提交：
+### 提交指令：
 
 ```powershell
-# 1. 將審查內容編寫至 JSON 檔 (例如 scratch/review_payload.json)
-# 2. 執行提交
-uv run --no-project --python .venv\Scripts\python.exe .agents\skills\pr-review-evaluation\scripts\submit_pr_review.py --pr <number> --input scratch/review_payload.json
+# 1. 預檢模式 (Dry-run 驗證 Diff Hunk 與 JSON 格式)
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-review-evaluation/scripts/submit_pr_review.py --pr <number> --input scratch/review_payload.json --dry-run
 
-# 或以 Dry-Run 模式預檢
-uv run --no-project --python .venv\Scripts\python.exe .agents\skills\pr-review-evaluation\scripts\submit_pr_review.py --pr <number> --input scratch/review_payload.json --dry-run
+# 2. 正式發布 Review
+uv run --no-project --python .venv\Scripts\python.exe .agents/skills/pr-review-evaluation/scripts/submit_pr_review.py --pr <number> --input scratch/review_payload.json
 ```
 
-### 方式 B：透過 `gh api` 原生端點提交
-```powershell
-# 準備包含 commit_id, body, event, comments 的 payload.json
-gh api --method POST /repos/{owner}/{repo}/pulls/<number>/reviews --input payload.json
-```
-
-### 方式 C：簡易模式 (無 Inline Comments)
-若審查僅涉及整體架構、無需針對特定程式碼行評論：
+若審查僅涉及整體架構而無須行內評論，可使用簡易指令：
 ```powershell
 gh pr review <number> --comment --body-file <path_to_review_body.md>
 ```
