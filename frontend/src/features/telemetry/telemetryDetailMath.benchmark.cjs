@@ -1,17 +1,4 @@
-/**
- * Controlled Micro-Benchmark for telemetryDetailMath helpers (readFour / averageFour)
- *
- * Scope & Intent:
- * - Measures isolated CPU execution time and GC allocation impact of eliminating
- *   Array.from iterator/closure overhead and Array.prototype.some closure instantiation.
- * - This is a controlled reimplementation micro-benchmark, not an end-to-end telemetry FPS metric.
- * - Note on variability: Depending on the host V8/Node.js environment and GC timings,
- *   readFour speedup typically measures between ~2.0x and ~16.8x,
- *   while averageFour measures between ~1.0x and ~1.5x.
- */
-
 const { performance } = require('perf_hooks');
-
 
 function finiteOrNull(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;

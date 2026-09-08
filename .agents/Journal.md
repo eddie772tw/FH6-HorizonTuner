@@ -15,26 +15,6 @@
 
 `.agents/skills/README.md` 是技能名稱的唯一索引；日誌不得創造新的技能別名。Jules 日誌中的重複或只適用於單一任務的內容，應保留在 `.jules/`，不要直接升級成全域規則。
 
-## 2026-09-08 / PR #311 遙測陣列展開基準測試對齊與 PR Body 實質同步
-
-- **來源**：`local`，接手 PR #311（`perf-optimize-telemetry-array-unrolling-3942813673109981855`）回應 Reviewer Luna as Codex 關於基準測試數據與 PR Body 不一致之 P1 Blocker，以 `Gemini as Antigravity` 名義進行補強與維護。
-- **狀態**：`adopted`。
-- **Learning**：
-  1. **跨 Agent 工具脫節導致 PR Body 漂移 (Documentation Drift)**：遠端排程 Jules 雖然在多個 commit 留言宣稱已更新 PR description，但因 API 權限或工具限制，GitHub 頂層 PR Body 未實質套用，導致 Reviewer 一直看到原始未修訂的 24x/2.4x 舊數據。維護者接手時必須使用 `manage_pr_author.py --validate-body` 與 `--update-body` 實質同步 GitHub PR 頂層描述，防止資訊脫節。
-  2. **受控微基準測試環境差異性與預期區間**：`telemetryDetailMath.benchmark.cjs` 的測量受 host 環境之 V8 JIT 編譯行為與 GC 觸發頻率影響。在不同環境下，`readFour` 的加速比落在 2.0x ~ 16.8x（消除 `Array.from` 迭代器與 inline closure 開銷）；而 `averageFour` 在 4 元素陣列下手動索引比對相較於 V8 內建 `.some` 加速比落在 1.0x ~ 1.5x。應於腳本中註明環境變異性，並於 PR Body 客觀呈現測量區間，且明確定位為隔離重現之「受控微基準測試」，避免過度宣稱端到端整機 FPS。
-  3. **記憶體配置開銷消除的精確性定義**：`readFour` 手動展開消除了 `Array.from` 的 iterator 物件與 inline closure 實例化，但回傳值仍為長度為 4 的新陣列。說明文字應收攏為「消除迭代器與閉包之中介開銷」，不可宣稱消除所有分配。
-  4. **重複 PR 處置確認**：確認 PR #310 已關閉，PR #311 為唯一保留之生效候選。
-- **Action**：
-  1. 切換至 PR #311 分支 `perf-optimize-telemetry-array-unrolling-3942813673109981855`。
-  2. 於 `telemetryDetailMath.benchmark.cjs` 檔頭加入受控微基準測試定位與預期區間說明，提交 commit `09f0f01` 並推送至遠端。
-  3. 透過 `manage_pr_author.py` 驗證並實質更新 GitHub PR #311 頂層 Body，對齊實測數據（2.0x~16.8x / 1.0x~1.5x）、前置驗證結果與 Living Changelog。
-  4. 透過 `manage_pr_author.py` 回覆 Inline Comment Thread #3948572882，並發表頂層 Review 回覆 Comment，均使用 `Gemini as Antigravity` 身分標記。
-  5. 驗證全套本地測試：後端 Ruff (pass)、Pytest (269 passed, 0 failed)、前端 Vitest (88 files / 566 passed, 0 failed)、Frontend Build (pass)。
-- **Evidence**：Commit `09f0f01`；PR #311 頂層 Body 實質更新；Inline Comment #3948572882 回覆成功；頂層 Comment #5578494899 發布成功；CI checks 綠燈中。
-- **Skills**：`pr-author-maintainer`、`cross-agent-collaboration`、`agent-governance-audit`。
-
----
-
 ## 2026-09-05 / 開啟中 PR 批次審查 (PR #301, #302, #303) 與大寫路徑阻擋防護
 
 - **來源**：`local`，針對目前開啟中的 3 個 Draft PR（#301、#302、#303）執行標準化 `pr-review-evaluation` 審查與 GitHub 原生 Review 提交。
