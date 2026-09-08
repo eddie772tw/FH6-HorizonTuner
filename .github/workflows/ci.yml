@@ -366,5 +366,4 @@ jobs:
         retention-days: 14
 
     - name: Verify Executable Metadata and Existence
-      run: uv run --no-project --active python -m pytest tests/test_executable_bundle.py -v
-
+      run: uv run --no-project --active python -m pytest tests/test_executable_bundle.py -v -m executable_bundle

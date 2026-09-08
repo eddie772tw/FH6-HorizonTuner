@@ -2118,3 +2118,26 @@
   - 空白與格式規範：`git diff --check` 完全乾淨（0 error）。
 - **Governance**: 本次重構依據 `huge-component-refactoring`、`halfmoon-design-system` 與 `agent-governance-audit` 規範登錄。
 - **Status**: adopted。
+
+---
+
+## 2026-09-08 / CI Tier 3 Pytest Marker Selection Alignment
+
+- **Scope**: `.github/workflows/ci.yml`, `.github/workflows/diagnostics.yml`.
+- **Finding**:
+  1. 在 commit `f2dcb21` 中，`pyproject.toml` 設定了 `addopts = "-m 'not host_diagnostics and not executable_bundle'"`，藉此將 Tier 3 重型測試與二進位產物驗證自日常單元測試 (`tests/`) 預設排除。
+  2. 但在 `.github/workflows/ci.yml` 的 `Verify Executable Metadata and Existence` 步驟中，執行指令為 `uv run --no-project --active python -m pytest tests/test_executable_bundle.py -v`，未明確指定 marker；由於 pytest 會直接繼承 `pyproject.toml` 中的 `addopts`，導致該檔案內所有標記為 `@pytest.mark.executable_bundle` 的測試被 deselected（2 collected / 2 deselected / 0 selected），pytest 因無選中測試而退出代碼 1，造成 CI 流程中斷。
+  3. 同樣地，在 `.github/workflows/diagnostics.yml` 的 `Run Diagnostics Probes` 步驟中，`test_portable_host_diagnostics.py` 未指定 `-m host_diagnostics`，導致其包含的診斷探針測試被預設排除。
+- **Decision & Fix**:
+  1. **Pytest Marker 優先權**: 命令列中的 `-m <marker>` 旗標能明確覆寫 `pyproject.toml` 宣告之預設排除條件。
+  2. 修正 `.github/workflows/ci.yml` 中的驗證步驟，顯式附加 `-m executable_bundle`。
+  3. 修正 `.github/workflows/diagnostics.yml` 中的探針步驟，顯式附加 `-m host_diagnostics`。
+  4. 嚴格遵循測試治理規範（`.agents/rules/testing-strategy.md`），不以正則或字串比對方式撰寫針對 YAML 設定檔的單元測試，交由平台工作流自身驗證。
+- **Evidence**:
+  - 本地執行 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/test_executable_bundle.py -v -m executable_bundle`：2 passed。
+  - 後端單元測試：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`（268 passed, 8 deselected in 4.05s，確認日常測試持續隔離 Tier 3 項目）。
+  - 前端 Vitest 單元測試：89 files / 578 tests 100% 通過。
+  - 靜態檢查：Ruff check 與 format check 全數 passed。
+  - Rust 格式檢查：`cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` 通過。
+  - 代碼與空白規範：`git diff --check` 完全乾淨（0 error）。
+- **Status**: adopted。
