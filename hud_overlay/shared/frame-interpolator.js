@@ -52,9 +52,9 @@ export class FrameInterpolator {
     constructor(options = {}) {
         this.maxExtrapolationAlpha = options.maxExtrapolationAlpha ?? 1.25;
         this.staleTimeoutMs = options.staleTimeoutMs ?? 150;
-        this.continuousKeys = new Set(options.continuousKeys ?? DEFAULT_CONTINUOUS_KEYS);
-        this.angleKeys = new Set(options.angleKeys ?? DEFAULT_ANGLE_KEYS);
-        this.arrayKeys = new Set(DEFAULT_ARRAY_KEYS);
+        this.continuousKeys = Array.isArray(options.continuousKeys) ? options.continuousKeys : DEFAULT_CONTINUOUS_KEYS;
+        this.angleKeys = Array.isArray(options.angleKeys) ? options.angleKeys : DEFAULT_ANGLE_KEYS;
+        this.arrayKeys = DEFAULT_ARRAY_KEYS;
 
         this.prevSample = null;
         this.currSample = null;
@@ -112,7 +112,8 @@ export class FrameInterpolator {
         const curr = this.currSample.data;
         const out = { ...curr };
 
-        for (const key of this.continuousKeys) {
+        for (let i = 0; i < this.continuousKeys.length; i++) {
+            const key = this.continuousKeys[i];
             const v0 = prev[key];
             const v1 = curr[key];
             if (typeof v0 === 'number' && typeof v1 === 'number') {
@@ -120,7 +121,8 @@ export class FrameInterpolator {
             }
         }
 
-        for (const key of this.angleKeys) {
+        for (let i = 0; i < this.angleKeys.length; i++) {
+            const key = this.angleKeys[i];
             const a0 = prev[key];
             const a1 = curr[key];
             if (typeof a0 === 'number' && typeof a1 === 'number') {
@@ -128,18 +130,19 @@ export class FrameInterpolator {
             }
         }
 
-        for (const key of this.arrayKeys) {
+        for (let i = 0; i < this.arrayKeys.length; i++) {
+            const key = this.arrayKeys[i];
             const arr0 = prev[key];
             const arr1 = curr[key];
             if (Array.isArray(arr0) && Array.isArray(arr1) && arr0.length === arr1.length) {
                 const interpolatedArr = new Array(arr1.length);
-                for (let i = 0; i < arr1.length; i++) {
-                    const val0 = arr0[i];
-                    const val1 = arr1[i];
+                for (let j = 0; j < arr1.length; j++) {
+                    const val0 = arr0[j];
+                    const val1 = arr1[j];
                     if (typeof val0 === 'number' && typeof val1 === 'number') {
-                        interpolatedArr[i] = lerp(val0, val1, alpha);
+                        interpolatedArr[j] = lerp(val0, val1, alpha);
                     } else {
-                        interpolatedArr[i] = val1;
+                        interpolatedArr[j] = val1;
                     }
                 }
                 out[key] = interpolatedArr;

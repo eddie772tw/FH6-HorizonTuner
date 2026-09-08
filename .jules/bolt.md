@@ -30,3 +30,8 @@
 ## 2024-11-26 - Eliminating Array Iteration Methods in High-Frequency React Loops
 **Learning:** Using array iteration methods like `Array.prototype.some()` inside high-frequency 60Hz React component render loops (e.g., parsing telemetry slip ratios in `DynoChart.tsx`) creates intermediate closures and function invocation overhead on every frame, which contributes to GC stutter.
 **Action:** Unroll fixed-length array iteration methods into explicit index checks combined with logical operators (e.g., `values[0] > 0 || values[1] > 0`) to eliminate closure allocations and significantly reduce execution overhead in the critical render path.
+
+## 2024-11-26 - Eliminating Set Iterators in High-Frequency Loops
+**Learning:** In high-frequency JavaScript rendering and data loops (like the 60+ Hz `FrameInterpolator`), using `Set` collections and `for...of` loops causes new Iterator objects to be allocated and discarded every frame. This generates significant Garbage Collection (GC) pressure and causes CPU overhead compared to standard array loops.
+**Action:** Use standard JavaScript Arrays (`[]`) instead of Sets and iterate over them using traditional indexed `for` loops (`for (let i = 0; i < arr.length; i++)`) to completely eliminate Iterator allocation overhead on the hot path.
+
