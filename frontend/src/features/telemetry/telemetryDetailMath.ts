@@ -45,16 +45,23 @@ export const finiteOrNull = (value: number | undefined | null): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+// [PERF] Manual unrolling to avoid Array.from intermediate objects and closure overhead in high-frequency path
 export const readFour = (values: readonly number[] | undefined): readonly (number | null)[] => (
-  Array.from({ length: 4 }, (_, index) => finiteOrNull(values?.[index]))
+  [
+    finiteOrNull(values?.[0]),
+    finiteOrNull(values?.[1]),
+    finiteOrNull(values?.[2]),
+    finiteOrNull(values?.[3]),
+  ]
 );
 
 const averagePair = (first: number | null, second: number | null): number | null => (
   first === null || second === null ? null : (first + second) / 2
 );
 
+// [PERF] Manual unrolling to avoid Array.some closure overhead in high-frequency path
 const averageFour = (values: readonly (number | null)[]): number | null => (
-  values.length < 4 || values.some((value) => value === null)
+  values.length < 4 || values[0] === null || values[1] === null || values[2] === null || values[3] === null
     ? null
     : (values[0]! + values[1]! + values[2]! + values[3]!) / 4
 );

@@ -24,3 +24,6 @@
 ## 2026-09-05 - Pre-computing HUD layout anchors on resize instead of render
 **Learning:** Computing layout variables by querying anchor points and applying viewport transforms inside a 60Hz render loop (e.g. `driftLayout.getBottomRightAnchor()`) allocates unnecessary objects and performs redundant math 60 times a second.
 **Action:** Move anchor layout computations to the window resize event handler (e.g. `resizeDriftCanvas()`), cache the transformed `logicalCenterX`, `logicalCenterY`, and scaling parameters in module-scoped variables (`primaryAnchorCache`), and reference them in the render loop to eliminate object allocation and mathematical overhead.
+## 2026-09-07 - Explicit Array Unrolling vs TypeScript Flow Analysis
+**Learning:** In TypeScript, when manually unrolling array iteration methods to eliminate closures (e.g., replacing `values.some((v) => v === null)` with `values[0] === null || values[1] === null`), TypeScript's control flow analysis does not narrow the type of the elements in a generic `readonly (number | null)[]`. Subsequent mathematical operations on the elements will fail with 'Object is possibly null'.
+**Action:** When manually unrolling generic arrays for performance in TypeScript, always retain the non-null assertions (e.g., `values[0]!`) when accessing elements after the explicit null checks to satisfy the compiler.
