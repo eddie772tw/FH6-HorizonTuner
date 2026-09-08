@@ -27,3 +27,6 @@
 ## 2026-09-07 - Explicit Array Unrolling vs TypeScript Flow Analysis
 **Learning:** In TypeScript, when manually unrolling array iteration methods to eliminate closures (e.g., replacing `values.some((v) => v === null)` with `values[0] === null || values[1] === null`), TypeScript's control flow analysis does not narrow the type of the elements in a generic `readonly (number | null)[]`. Subsequent mathematical operations on the elements will fail with 'Object is possibly null'.
 **Action:** When manually unrolling generic arrays for performance in TypeScript, always retain the non-null assertions (e.g., `values[0]!`) when accessing elements after the explicit null checks to satisfy the compiler.
+## 2024-11-26 - Eliminating Array Iteration Methods in High-Frequency React Loops
+**Learning:** Using array iteration methods like `Array.prototype.some()` inside high-frequency 60Hz React component render loops (e.g., parsing telemetry slip ratios in `DynoChart.tsx`) creates intermediate closures and function invocation overhead on every frame, which contributes to GC stutter.
+**Action:** Unroll fixed-length array iteration methods into explicit index checks combined with logical operators (e.g., `values[0] > 0 || values[1] > 0`) to eliminate closure allocations and significantly reduce execution overhead in the critical render path.
