@@ -9,6 +9,14 @@
    - 開發模式下 Forza Data Out 預設使用 UDP `127.0.0.1:8000`，FastAPI REST/WebSocket 預設使用 HTTP/TCP `127.0.0.1:8001`；兩者不可混用。
    - `TELEMETRY_PORT` 控制 UDP 遙測端口；Dev mode 固定使用 HTTP `8001`。Release Build 優先使用 `8001`，fallback 時改用動態端口，實際 HTTP 端口以 `logs/web_port.txt` 或 sidecar readiness event 為準。
 2. **前端 (Tauri / React)**：僅負責 UI 視覺化與互動展示。
+3. **Agent CLI 工具鏈 (`fh6-agent`)**：專門面向 AI Agent 提供高速物理算牌、遙測監控、閉環診斷與 MCP 設定導出。
+   - Agent 進行車型檢索、底盤算牌、齒比計算、Preset 讀寫與遙測診斷時，強烈推薦調用 `fh6-agent.bat <subcommand> --json`。
+   - 啟動腳本合約：
+     - `start_all.bat`：啟動後端與前端視窗。
+     - `start_backend.bat`：僅啟動後端服務。
+     - `start_frontend.bat`：僅啟動前端開發介面。
+     - `start_backend_with_cli.bat`：啟動後端並開啟 `fh6-agent` 即時互動終端。
+     - `start_cli.bat`：單純開啟 `fh6-agent` 互動終端（支援離線純算牌模式）。
 
 ## 任務完成驗證關卡 (Verification Gate)
 - 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試（遵循反過度測試與分層原則）：

@@ -38,5 +38,6 @@ description: 處理 Forza Horizon UDP 遙測封包解析、324-byte 二進位 st
 ## 驗證命令
 
 - UDP 探針：`uv run --no-project --python .venv\Scripts\python.exe .agents/skills/telemetry-udp-protocol/references/verify_telemetry_v2_v3.py --scan --port 8000`
+- Agent 遙測快照與閉環診斷：`fh6-agent.bat telemetry snapshot --json` 與 `fh6-agent.bat telemetry diagnose --json`
 - 後端測試：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`
 - 前端測試：`cmd /c "pnpm -C frontend run test"`
