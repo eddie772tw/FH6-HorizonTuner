@@ -26,6 +26,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   nfs15: "Need for Speed 2015",
   shift_tacho: 'Need for Speed Shift',
   simple: 'Simple Gauge',
+  motec_gt3: 'MoTeC C125 GT3',
 };
 
 const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {

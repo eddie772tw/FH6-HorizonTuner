@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>MoTeC C125 GT3 DDU</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .motec-container {
+            width: 800px;
+            height: 480px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #motecCanvas {
+            display: block;
+            width: 800px;
+            height: 480px;
+            background: #08090C;
+            border: 2px solid #273142;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container motec-container" id="motecContainer">
+            <canvas id="motecCanvas" width="800" height="480"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('motecContainer'),
+                canvas: document.getElementById('motecCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var isMetric = true;
+            var sweepActive = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1200;
+            var lastValidGear = 1;
+            var lastKnownMaxRpm = 8500;
+            var lastKnownRedline = 8000;
+
+            function getTireColor(temp) {
+                if (temp < 75) return '#38BDF8';
+                if (temp < 100) return '#10B981';
+                if (temp < 112) return '#F59E0B';
+                return '#EF4444';
+            }
+
+            function drawMotecDashboard(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, now) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                ctx.clearRect(0, 0, 800, 480);
+
+                // Background
+                ctx.fillStyle = '#08090C';
+                ctx.fillRect(0, 0, 800, 480);
+
+                // 1. Shift Lights (15 LEDs)
+                var shiftStart = redlineRpm * 0.72;
+                var shiftPoint = redlineRpm * 0.96;
+                var activeLeds = 0;
+                var isFlashing = false;
+
+                if (rpm >= shiftPoint) {
+                    activeLeds = 15;
+                    isFlashing = Math.floor(now / 55) % 2 === 0;
+                } else if (rpm > shiftStart) {
+                    var ratio = (rpm - shiftStart) / (shiftPoint - shiftStart);
+                    activeLeds = Math.min(15, Math.floor(ratio * 15));
+                }
+
+                var ledStartX = 65;
+                var ledY = 32;
+                var ledSpacing = 48;
+                var ledRadius = 12;
+
+                for (var i = 0; i < 15; i++) {
+                    var cx = ledStartX + i * ledSpacing;
+                    ctx.beginPath();
+                    ctx.arc(cx, ledY, ledRadius, 0, Math.PI * 2);
+
+                    if (isFlashing) {
+                        ctx.fillStyle = '#00E5FF';
+                        ctx.shadowColor = '#00E5FF';
+                        ctx.shadowBlur = 14;
+                    } else if (i < activeLeds) {
+                        if (i < 5) {
+                            ctx.fillStyle = '#00E676';
+                            ctx.shadowColor = '#00E676';
+                        } else if (i < 10) {
+                            ctx.fillStyle = '#FFD600';
+                            ctx.shadowColor = '#FFD600';
+                        } else {
+                            ctx.fillStyle = '#FF1744';
+                            ctx.shadowColor = '#FF1744';
+                        }
+                        ctx.shadowBlur = 10;
+                    } else {
+                        ctx.fillStyle = '#1B202B';
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+
+                // 2. Left Box: Speed & Pedals
+                ctx.fillStyle = '#131722';
+                ctx.fillRect(30, 70, 220, 270);
+                ctx.strokeStyle = '#273142';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(30, 70, 220, 270);
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 15px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('SPEED (' + (isMetric ? 'KM/H' : 'MPH') + ')', 48, 102);
+
+                ctx.fillStyle = '#F8FAFC';
+                ctx.font = 'bold 80px monospace';
+                ctx.fillText(String(Math.round(speed)), 48, 185);
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 13px monospace';
+                ctx.fillText('ENGINE RPM', 48, 235);
+                ctx.fillStyle = '#38BDF8';
+                ctx.font = 'bold 32px monospace';
+                ctx.fillText(String(Math.round(rpm)), 48, 272);
+
+                // Pedal Bars (Brake left, Throttle right)
+                var pedalY = 305;
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                ctx.fillRect(48, pedalY, 80, 16);
+                if (brake > 0) {
+                    ctx.fillStyle = '#EF4444';
+                    ctx.fillRect(48, pedalY, 80 * Math.min(1, brake), 16);
+                }
+
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+                ctx.fillRect(148, pedalY, 80, 16);
+                if (throttle > 0) {
+                    ctx.fillStyle = '#22C55E';
+                    ctx.fillRect(148, pedalY, 80 * Math.min(1, throttle), 16);
+                }
+
+                // 3. Center Box: Gear
+                ctx.fillStyle = '#131722';
+                ctx.fillRect(270, 70, 260, 270);
+                ctx.strokeStyle = '#273142';
+                ctx.strokeRect(270, 70, 260, 270);
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 16px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('GEAR', 400, 105);
+
+                var gearDisplay = gear === 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
+                ctx.fillStyle = (rpm >= shiftPoint && isFlashing) ? '#FF1744' : '#FFFFFF';
+                ctx.font = 'bold 150px monospace';
+                ctx.fillText(gearDisplay, 400, 245);
+
+                // 4. Right Box: Tire Thermals & Engine Temp
+                ctx.fillStyle = '#131722';
+                ctx.fillRect(550, 70, 220, 270);
+                ctx.strokeStyle = '#273142';
+                ctx.strokeRect(550, 70, 220, 270);
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 15px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('TIRES TEMP (°C)', 568, 102);
+
+                var tires = [
+                    { name: 'FL', t: Math.round(tireTemps[0]), x: 568, y: 125 },
+                    { name: 'FR', t: Math.round(tireTemps[1]), x: 662, y: 125 },
+                    { name: 'RL', t: Math.round(tireTemps[2]), x: 568, y: 195 },
+                    { name: 'RR', t: Math.round(tireTemps[3]), x: 662, y: 195 }
+                ];
+
+                for (var tIdx = 0; tIdx < 4; tIdx++) {
+                    var item = tires[tIdx];
+                    ctx.fillStyle = '#1E293B';
+                    ctx.fillRect(item.x, item.y, 82, 54);
+                    ctx.fillStyle = getTireColor(item.t);
+                    ctx.font = 'bold 13px monospace';
+                    ctx.fillText(item.name, item.x + 8, item.y + 22);
+                    ctx.font = 'bold 20px monospace';
+                    ctx.fillText(String(item.t), item.x + 8, item.y + 45);
+                }
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 13px monospace';
+                ctx.fillText('WATER: ' + Math.round(engineTemp) + '°C', 568, 315);
+
+                // 5. Stepped RPM Bar
+                ctx.fillStyle = '#131722';
+                ctx.fillRect(30, 360, 740, 48);
+                ctx.strokeStyle = '#273142';
+                ctx.strokeRect(30, 360, 740, 48);
+
+                var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+                var barW = Math.round(736 * rpmRatio);
+                if (barW > 0) {
+                    var grad = ctx.createLinearGradient(32, 0, 768, 0);
+                    grad.addColorStop(0, '#10B981');
+                    grad.addColorStop(0.7, '#FBBF24');
+                    grad.addColorStop(0.92, '#EF4444');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(32, 362, barW, 44);
+                }
+
+                // Ticks & Numbers
+                ctx.fillStyle = '#94A3B8';
+                ctx.font = '12px monospace';
+                ctx.textAlign = 'center';
+                for (var r = 1000; r <= maxRpm; r += 1000) {
+                    var tx = 30 + (r / maxRpm) * 740;
+                    ctx.fillRect(tx, 360, 2, 8);
+                    ctx.fillText(String(r / 1000) + 'k', tx, 424);
+                }
+
+                // 6. Bottom Status Footer
+                ctx.textAlign = 'left';
+                var flags = [
+                    { label: 'TC', active: isTcsActive, color: '#10B981', x: 30 },
+                    { label: 'ABS', active: isAbsActive, color: '#38BDF8', x: 170 },
+                    { label: 'DIFF 50%', active: true, color: '#64748B', x: 310 },
+                    { label: 'MAP 1', active: true, color: '#A855F7', x: 470 },
+                    { label: 'ENG OK', active: true, color: '#10B981', x: 620 }
+                ];
+                for (var fIdx = 0; fIdx < flags.length; fIdx++) {
+                    var f = flags[fIdx];
+                    ctx.fillStyle = f.active ? f.color : '#334155';
+                    ctx.font = 'bold 15px monospace';
+                    ctx.fillText(f.label, f.x, 460);
+                }
+            }
+
+            function runSweep(timestamp) {
+                if (!sweepActive) return;
+                var elapsed = timestamp - sweepStartTime;
+                var progress = elapsed / sweepDuration;
+
+                if (progress >= 1.0) {
+                    sweepActive = false;
+                    drawMotecDashboard(0, lastKnownMaxRpm, lastKnownRedline, 0, 1, 0, 0, [85, 85, 85, 85], 90, false, false, timestamp);
+                    return;
+                }
+
+                var sweepRpm;
+                if (progress < 0.5) {
+                    sweepRpm = (progress / 0.5) * lastKnownMaxRpm;
+                } else {
+                    sweepRpm = (1 - (progress - 0.5) / 0.5) * lastKnownMaxRpm;
+                }
+
+                var mockSpeed = (sweepRpm / lastKnownMaxRpm) * 220;
+                drawMotecDashboard(sweepRpm, lastKnownMaxRpm, lastKnownRedline, mockSpeed, 1, 1.0, 0, [88, 88, 92, 92], 92, false, false, timestamp);
+                requestAnimationFrame(runSweep);
+            }
+
+            HUDCore.registerStyle('motec_gt3', {
+                containerId: 'motecContainer',
+                scaleMultiplier: 0.55,
+
+                onInit: function (payload) {
+                    if (payload && typeof payload.isMetric === 'boolean') {
+                        isMetric = payload.isMetric;
+                    }
+                },
+
+                onElementsChange: function (elements) {
+                    if (domCache.container) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (sweepActive) return;
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 8500;
+                    var redlineRpm = (payload && payload.redlineRpm) || (data.redlineRpm) || (maxRpm * 0.92);
+                    lastKnownMaxRpm = maxRpm;
+                    lastKnownRedline = redlineRpm;
+
+                    if (payload && typeof payload.isMetric === 'boolean') {
+                        isMetric = payload.isMetric;
+                    }
+
+                    var rpm = data.rpm || 0;
+                    var rawSpeed = isMetric !== false
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed || 0) * 0.621371));
+
+                    if (data.gear !== undefined && data.gear <= 11) {
+                        lastValidGear = data.gear;
+                    }
+
+                    var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
+                    var brake = (data.brake !== undefined ? data.brake : 0) / (data.brake > 1 ? 255 : 1);
+
+                    var tireTemps = [
+                        data.TireTempFL || data.tire_temp_fl || 85,
+                        data.TireTempFR || data.tire_temp_fr || 85,
+                        data.TireTempRL || data.tire_temp_rl || 88,
+                        data.TireTempRR || data.tire_temp_rr || 88
+                    ];
+
+                    var engineTemp = data.EngineTemp || data.engine_temp || 90;
+
+                    var isAbsActive = !!(data.abs_active || (payload && payload.lockup && (payload.lockup.fl || payload.lockup.fr || payload.lockup.rl || payload.lockup.rr)));
+                    var isTcsActive = !!(data.tcs_active || (data.tcs_engaged));
+
+                    drawMotecDashboard(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, performance.now());
+                },
+
+                onAnimate: function () {
+                    sweepActive = true;
+                    sweepStartTime = performance.now();
+                    requestAnimationFrame(runSweep);
+                }
+            });
+
+            HUDCore.init('motec_gt3');
+
+            setTimeout(function () {
+                drawMotecDashboard(0, 8500, 7800, 0, 1, 0, 0, [80, 80, 80, 80], 85, false, false, performance.now());
+            }, 60);
+        })();
+    </script>
+</body>
+</html>
