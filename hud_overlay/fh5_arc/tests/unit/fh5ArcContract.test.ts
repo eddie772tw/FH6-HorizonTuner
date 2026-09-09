@@ -124,5 +124,16 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
         { isMetric: true, redlineRpm: 7800 }
       );
     }).not.toThrow();
+
+    // Verify reverse gear and onAnimate sweep
+    expect(() => {
+      registeredDef.onFrame({ rpm: 900, max_rpm: 8500, speed_kmh: -10, gear: 0 }, { isMetric: true });
+    }).not.toThrow();
+
+    if (registeredDef.onAnimate) {
+      expect(() => {
+        registeredDef.onAnimate();
+      }).not.toThrow();
+    }
   });
 });

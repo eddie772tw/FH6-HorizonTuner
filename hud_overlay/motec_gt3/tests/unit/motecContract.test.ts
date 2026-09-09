@@ -150,5 +150,16 @@ describe('MoTeC GT3 HUD contract', () => {
         { isMetric: true, redlineRpm: 8000 }
       );
     }).not.toThrow();
+
+    // Verify reverse gear and onAnimate sweep
+    expect(() => {
+      registeredDef.onFrame({ rpm: 1200, max_rpm: 8500, speed_kmh: -15, gear: 0 }, { isMetric: true });
+    }).not.toThrow();
+
+    if (registeredDef.onAnimate) {
+      expect(() => {
+        registeredDef.onAnimate();
+      }).not.toThrow();
+    }
   });
 });

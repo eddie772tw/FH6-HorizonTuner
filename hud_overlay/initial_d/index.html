@@ -244,6 +244,8 @@
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
+                ctx.textBaseline = 'alphabetic';
+
                 if (!offscreenDial) buildOffscreenDial();
                 ctx.drawImage(offscreenDial, 0, 0);
 
@@ -283,7 +285,7 @@
                 ctx.font = 'bold 11px sans-serif';
                 ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 78);
 
-                var gearStr = gear === 0 ? 'R' : (gear === 11 ? 'N' : 'G' + gear);
+                var gearStr = (gear <= 0) ? 'R' : (gear === 11 ? 'N' : 'G' + gear);
                 ctx.fillStyle = '#38BDF8';
                 ctx.font = 'bold 18px monospace';
                 ctx.fillText(gearStr, cx, cy + 104);

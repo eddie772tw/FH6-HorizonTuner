@@ -79,6 +79,7 @@
                 if (!ctx) return;
 
                 ctx.clearRect(0, 0, 800, 480);
+                ctx.textBaseline = 'alphabetic';
 
                 // Background
                 ctx.fillStyle = '#08090C';
@@ -233,7 +234,7 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('GEAR', 400, 96);
 
-                var gearDisplay = gear === 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
+                var gearDisplay = gear <= 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
                 ctx.fillStyle = (rpm >= shiftPoint && isFlashing) ? '#FF1744' : '#FFFFFF';
                 ctx.font = 'bold 145px monospace';
                 ctx.fillText(gearDisplay, 400, 240);
@@ -429,6 +430,12 @@
             setTimeout(function () {
                 drawMotecDashboard(0, 8500, 7800, 0, 1, 0, 0, [80, 80, 80, 80], 85, false, false, performance.now());
             }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    drawMotecDashboard(0, 8500, 7800, 0, 1, 0, 0, [80, 80, 80, 80], 85, false, false, performance.now());
+                });
+            }
         })();
     </script>
 </body>

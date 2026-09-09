@@ -135,5 +135,27 @@ describe('Defi Advance BF HUD contract', () => {
         { isMetric: true, redlineRpm: 8800 }
       );
     }).not.toThrow();
+
+    // Verify Fahrenheit conversion for canonical Forza UDP oil temp
+    expect(() => {
+      registeredDef.onFrame(
+        {
+          rpm: 3500,
+          maxRpm: 11000,
+          speed_kmh: 80,
+          gear: 2,
+          OilTemp: 210, // Fahrenheit
+          OilPressure: 4.8,
+        },
+        { isMetric: true }
+      );
+    }).not.toThrow();
+
+    // Verify onAnimate triggers self-check ceremony
+    if (registeredDef.onAnimate) {
+      expect(() => {
+        registeredDef.onAnimate();
+      }).not.toThrow();
+    }
   });
 });

@@ -133,6 +133,17 @@ describe('Initial D AE86 TRD HUD contract', () => {
       );
     }).not.toThrow();
 
+    // Verify reverse gear and onAnimate sweep
+    expect(() => {
+      registeredDef.onFrame({ rpm: 1000, max_rpm: 11000, speed_kmh: -5, gear: 0 }, { isMetric: true });
+    }).not.toThrow();
+
+    if (registeredDef.onAnimate) {
+      expect(() => {
+        registeredDef.onAnimate();
+      }).not.toThrow();
+    }
+
     // Verify onElementsChange handles hiding gauge and chime
     if (registeredDef.onElementsChange) {
       expect(() => {

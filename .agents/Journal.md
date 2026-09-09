@@ -1,5 +1,26 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-09 / 5 款新 HUD 樣式深入視覺比對、遙測單位修復與自檢物理阻尼落地 (PR #319)
+
+- **來源**：`local`，以審查者身分針對 PR #319 進行對抗式驗證，修復 Defi 華氏油溫滿格爆表、自檢指針撞針、副表刻度排版擠壓、Canvas textBaseline 漂移與字型非同步載入緩存瑕疵。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Defi Advance BF 油溫華氏 (°F) 轉攝氏 (°C) 自動探測**：Forza UDP 遙測標準原生油溫以華氏傳送（約 180°F~230°F），先前未做 >140°F 轉換致使 50~150°C 表盤指針永遠滿格爆表（150°C）；加入閾值轉換使真實遊戲油溫對齊至 90~95°C 正常工作區間。
+  2. **Defi 開機自檢餘弦諧波阻尼歸位 (Harmonic Damping)**：將開機自檢 Phase 3 指針歸位插值由二次方加速曲線改為餘弦諧波阻尼 `0.5 * (1 + Math.cos(tBack * Math.PI))`，達成初速度為 0 且末速度為 0 的平滑降落，徹底消除機械式撞針與跳變感。
+  3. **表盤微觀排版避讓與字型載入護欄 (Font Readiness Guard)**：副表（TURBO / OIL TEMP / OIL PRESS）標題字型自 12px 調整為 11px 並微調錨點，消除 OIL PRESS 標題與頂部 4/6 bar 刻度數字之緊貼擠壓；全面在 5 款 HUD 補齊 `document.fonts.ready` 鉤子，防止自訂字型未加載完成即緩存離線表盤。
+  4. **倒車檔與空檔 (R/N) 邊界數值魯棒性與 Canvas textBaseline 隔離**：各 HUD 檔位解析全數防禦收攏為 `gear <= 0 ? 'R' : (gear === 11 ? 'N' : ...)`，並強化 Canvas `textBaseline = 'alphabetic'` 環境防護，杜絕全域狀態漂移導致大字號檔位垂直錯位。
+- **Action**：
+  1. 修正 `hud_overlay/defi_triple/index.html` 之油溫華氏轉換、餘弦自檢插值、副表標題字型/錨點與 `document.fonts.ready`。
+  2. 修正 `hud_overlay/motec_gt3/index.html` 之倒車檔判定、`textBaseline = 'alphabetic'` 與 `document.fonts.ready`。
+  3. 修正 `hud_overlay/fh5_arc/index.html` 之倒車檔判定與 `textBaseline = 'alphabetic'`。
+  4. 修正 `hud_overlay/initial_d/index.html` 之倒車檔判定與 `textBaseline = 'alphabetic'`。
+  5. 修正 `hud_overlay/cyberpunk_hud/index.html` 之倒車檔判定、`textBaseline = 'alphabetic'` 與 `document.fonts.ready`。
+  6. 於 5 款 HUD 之單元測試（`*Contract.test.ts`）追加倒車檔、`onAnimate` 掃表與華氏油溫邊界驗證。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（4.69s）；前端 Vitest 94 files / 598 tests 100% passed（4.45s）；前端正式打包 build 成功（577ms）；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
 ## 2026-09-09 / 5 款新 HUD 儀表樣式視覺比對審查與交付水準深度驗證 (PR #319)
 
 - **來源**：`local`，針對 PR #319 的 5 款新開發 HUD 樣式進行 Headless Chrome 真實渲染截圖、幾何排版、色彩 Token、微觀刻度與動態狀態機之視覺審查與規格比對驗收。

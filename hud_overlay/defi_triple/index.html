@@ -114,9 +114,9 @@
 
                     // Title & Unit
                     oCtx.fillStyle = textColor;
-                    oCtx.font = (idx === 0 ? 'bold 16px' : 'bold 12px') + ' sans-serif';
+                    oCtx.font = (idx === 0 ? 'bold 16px' : 'bold 11px') + ' sans-serif';
                     oCtx.textAlign = 'center';
-                    oCtx.fillText(d.title, d.cx, d.cy - d.r * 0.35);
+                    oCtx.fillText(d.title, d.cx, d.cy - d.r * (idx === 0 ? 0.35 : 0.30));
 
                     oCtx.fillStyle = dimColor;
                     oCtx.font = (idx === 0 ? '11px' : '9px') + ' sans-serif';
@@ -379,7 +379,7 @@
                     isShiftLightOn = Math.floor(elapsed / 80) % 2 === 0;
                 } else if (elapsed < 1500) {
                     var tBack = (elapsed - 1000) / 500;
-                    var returnFactor = 1.0 - Math.pow(tBack, 2);
+                    var returnFactor = 0.5 * (1 + Math.cos(tBack * Math.PI));
                     rpmRatio = returnFactor;
                     boostRatio = boostResting + (1.0 - boostResting) * returnFactor;
                     oilTempRatio = oilTempResting + (1.0 - oilTempResting) * returnFactor;
@@ -441,12 +441,15 @@
 
                     var boostRatio = boostToRatio(boostBar);
 
-                    // Oil Temp (50 ~ 150 °C)
-                    var oilTemp = data.OilTemp || data.oil_temp || 95;
+                    // Oil Temp (50 ~ 150 °C, converts Fahrenheit ~180-230°F if needed)
+                    var oilTemp = data.OilTemp !== undefined ? data.OilTemp : (data.oil_temp !== undefined ? data.oil_temp : 95);
+                    if (oilTemp > 140) {
+                        oilTemp = (oilTemp - 32) * 5 / 9;
+                    }
                     var oilTempRatio = (oilTemp - 50) / 100;
 
                     // Oil Pressure (0 ~ 10 bar)
-                    var oilPress = data.OilPressure || data.oil_pressure || 4.5;
+                    var oilPress = data.OilPressure !== undefined ? data.OilPressure : (data.oil_pressure !== undefined ? data.oil_pressure : 4.5);
                     var oilPressRatio = oilPress / 10;
 
                     var isShiftLightOn = rpm >= redlineRpm;
@@ -466,6 +469,13 @@
             setTimeout(function () {
                 renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
             }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    buildOffscreenDial();
+                    renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
+                });
+            }
         })();
     </script>
 </body>

@@ -108,6 +108,7 @@
                 if (!ctx) return;
 
                 ctx.clearRect(0, 0, 640, 320);
+                ctx.textBaseline = 'alphabetic';
 
                 // Background
                 ctx.fillStyle = '#0B0C10';
@@ -149,7 +150,7 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('GEAR // RATIO', 80, 80);
 
-                var gearDisplay = gear === 0 ? 'R' : (gear === 11 ? 'N' : (gear < 10 ? '0' + gear : String(gear)));
+                var gearDisplay = gear <= 0 ? 'R' : (gear === 11 ? 'N' : (gear < 10 ? '0' + gear : String(gear)));
                 ctx.fillStyle = isRedline ? '#FF003C' : cyanColor;
                 ctx.font = 'bold 64px monospace';
                 ctx.fillText(gearDisplay, 80, 160);
@@ -349,6 +350,12 @@
             setTimeout(function () {
                 drawCyberpunkHUD(0, 8500, 7800, 0, 1, 0, 0, 0, performance.now());
             }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    drawCyberpunkHUD(0, 8500, 7800, 0, 1, 0, 0, 0, performance.now());
+                });
+            }
         })();
     </script>
 </body>

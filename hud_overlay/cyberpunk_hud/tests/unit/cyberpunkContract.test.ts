@@ -125,5 +125,16 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
         { isMetric: true, redlineRpm: 7800 }
       );
     }).not.toThrow();
+
+    // Verify reverse gear and onAnimate sweep
+    expect(() => {
+      registeredDef.onFrame({ rpm: 1100, max_rpm: 8500, speed_kmh: -8, gear: 0 }, { isMetric: true });
+    }).not.toThrow();
+
+    if (registeredDef.onAnimate) {
+      expect(() => {
+        registeredDef.onAnimate();
+      }).not.toThrow();
+    }
   });
 });

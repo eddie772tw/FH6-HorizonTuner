@@ -66,6 +66,7 @@
                 if (!ctx) return;
 
                 ctx.clearRect(0, 0, 380, 380);
+                ctx.textBaseline = 'alphabetic';
 
                 var rpmRatio = maxRpm > 0 ? Math.max(0, Math.min(1, rpm / maxRpm)) : 0;
                 var isRedline = rpm >= redlineRpm;
@@ -146,7 +147,7 @@
                 ctx.lineWidth = 1;
                 ctx.stroke();
 
-                var gearText = gear === 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
+                var gearText = (gear <= 0) ? 'R' : (gear === 11 ? 'N' : String(gear));
                 ctx.fillStyle = isRedline ? '#EF4444' : '#38BDF8';
                 ctx.font = 'bold 36px "ForzaGear", monospace';
                 ctx.textAlign = 'center';
