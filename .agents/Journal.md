@@ -1,5 +1,25 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-09 / PR #312~#315 審查、60Hz GC 優化驗收與 .jules/bolt.md 衝突循序解決
+
+- **來源**：`local`，針對開啟中的 PR #312~#315 進行標準化評估、合併安全檢驗與依賴衝突調解。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **同檔同位置變更之合併順序相依 (Merge Sequencing)**：PR #313 與 PR #315 均在 `.jules/bolt.md` 檔尾追加效能優化筆記，若並行直接 Squash Merge 必致後者產生 Git 內容衝突（`mergeStateStatus: DIRTY`）。透過循序調度策略（先合併 #312, #314, #313），再於本地 checkout PR #315 執行 `git rebase main`，乾淨整合兩筆學習筆記並透過 `--force-with-lease` 更新遠端分支，使自動合併順利落地。
+  2. **60Hz 零暫態配置 (Zero-Allocation) 的高頻渲染路徑落地**：
+     - PR #313：將 `DynoChart.tsx` 遙測更新中的 AWD 打滑判定自 `slipRatios.some(...)` 展開為固定 4 輪索引訪問，消除了 60Hz 每一幀的臨時閉包建立與函式呼叫。
+     - PR #315：將 `hud_overlay/shared/frame-interpolator.js` 的 continuousKeys/angleKeys 由 `Set` 集合改為原生 `Array` 與標準索引迴圈，消除了 60Hz~144Hz+ `requestAnimationFrame` 每一幀的 Iterator 物件配置與 V8 GC 壓力。
+  3. **多國語言鍵值收斂與死鍵審查 (PR #314)**：`LiteNavigation.tsx` 改用 `t('UDP SIGNAL ACTIVE')` 成功收斂至與全功能導航欄相同之真理鍵值，使既有繁中等各國翻譯直接生效；同時捕捉到 PR 在 `lang/en-us.json` 誤加之未引用死鍵 `"UDP ACTIVE"`。
+  4. **無障礙 A11y 樣式健全性 (PR #312)**：非同步匯出按鈕加入 `<span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />`，兼顧 Halfmoon CSS 視覺反饋與螢幕閱讀器朗讀一致性。
+- **Action**：
+  1. 循序完成 PR #312、PR #314、PR #313 之 Squash Merge 與分支刪除。
+  2. 解決 PR #315 與 `main` 在 `.jules/bolt.md` 之 Rebase 衝突並保留完整學習筆記，成功完成 Squash Merge。
+  3. 本地 `main` 分支全套驗證通過。
+- **Evidence**：PR #312、#313、#314、#315 全數成功 MERGED；後端 Pytest 268 passed, 8 deselected（5.92s）；前端 Vitest 89 files / 578 tests 100% passed（5.76s）；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`pr-review-evaluation`、`huge-component-refactoring`、`halfmoon-design-system`、`agent-governance-audit`。
+
+---
+
 ## 2026-09-08 / .agents 目錄重構：架構規則抽離至 rules/ 模組化體系與 AGENTS.md 極簡化
 
 - **來源**：`local`，落實 `agent-governance-audit`「AGENTS 放共通不可違反規則、rules 放專案架構與環境契約」之治理邊界。
