@@ -200,9 +200,10 @@ export const DynoChart: React.FC<DynoChartProps> = ({
             const slipRatios = telemetryData.TireSlipRatio || [0,0,0,0];
             let isSlipped = false;
             if (settings.dyno_filter_slip ?? true) {
-              if (drivetrain === "RWD" && (Math.abs(slipRatios[2]) > 0.10 || Math.abs(slipRatios[3]) > 0.10)) isSlipped = true;
-              else if (drivetrain === "FWD" && (Math.abs(slipRatios[0]) > 0.10 || Math.abs(slipRatios[1]) > 0.10)) isSlipped = true;
-              else if (drivetrain === "AWD" && slipRatios.some((s: number) => Math.abs(s) > 0.10)) isSlipped = true;
+              if (drivetrain === "RWD" && (Math.abs(slipRatios[2]!) > 0.10 || Math.abs(slipRatios[3]!) > 0.10)) isSlipped = true;
+              else if (drivetrain === "FWD" && (Math.abs(slipRatios[0]!) > 0.10 || Math.abs(slipRatios[1]!) > 0.10)) isSlipped = true;
+              // Performance Optimization: Unrolled AWD slip check to eliminate .some() iteration and closure allocations on every telemetry frame
+              else if (drivetrain === "AWD" && (Math.abs(slipRatios[0]!) > 0.10 || Math.abs(slipRatios[1]!) > 0.10 || Math.abs(slipRatios[2]!) > 0.10 || Math.abs(slipRatios[3]!) > 0.10)) isSlipped = true;
             }
 
             if (isSlipped && testState === 'recording') {
