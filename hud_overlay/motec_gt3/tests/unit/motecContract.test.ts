@@ -59,6 +59,7 @@ describe('MoTeC GT3 HUD contract', () => {
       strokeRect: () => {},
       beginPath: () => {},
       arc: () => {},
+      moveTo: () => {},
       fill: () => {},
       stroke: () => {},
       fillText: () => {},

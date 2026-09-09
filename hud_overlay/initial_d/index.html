@@ -240,7 +240,7 @@
                 ctx.restore();
             }
 
-            function renderHUD(rpm, speed, gear, now, isShiftLightOn) {
+            function renderHUD(rpm, speed, gear, now, isShiftWarning, isOverRev) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
@@ -253,10 +253,15 @@
                 // 1. External Shift Light LED
                 ctx.beginPath();
                 ctx.arc(podX, podY, 15, 0, Math.PI * 2);
-                if (isShiftLightOn) {
-                    ctx.fillStyle = '#FF0033';
+                if (isOverRev) {
+                    var strobe = Math.floor(now / 66) % 2 === 0;
+                    ctx.fillStyle = strobe ? '#FF0033' : '#770014';
                     ctx.shadowColor = '#FF0033';
-                    ctx.shadowBlur = 22;
+                    ctx.shadowBlur = strobe ? 24 : 8;
+                } else if (isShiftWarning) {
+                    ctx.fillStyle = '#FF1744';
+                    ctx.shadowColor = '#FF1744';
+                    ctx.shadowBlur = 16;
                 } else {
                     ctx.fillStyle = '#2A080C';
                     ctx.shadowBlur = 0;
@@ -291,7 +296,7 @@
 
                 if (progress >= 1.0) {
                     sweepActive = false;
-                    renderHUD(0, 0, 1, now, false);
+                    renderHUD(0, 0, 1, now, false, false);
                     return;
                 }
 
@@ -300,8 +305,9 @@
                     : (1 - (progress - 0.5) / 0.5) * 11000;
 
                 var mockSpeed = (currentRpm / 11000) * 230;
-                var mockShiftLight = currentRpm >= 9800;
-                renderHUD(currentRpm, mockSpeed, 1, now, mockShiftLight);
+                var mockWarning = currentRpm >= 9800;
+                var mockOverRev = currentRpm >= 10500;
+                renderHUD(currentRpm, mockSpeed, 1, now, mockWarning, mockOverRev);
                 requestAnimationFrame(runSweep);
             }
 
@@ -364,8 +370,8 @@
 
                     var now = performance.now();
 
-                    // 80km/h Speed Chime (Ding-Ding) - only when gauge is visible and chime enabled
-                    if (isGaugeVisible && showAudioChime && speedKmh >= 85 && (now - lastChimeTime > chimeInterval)) {
+                    // 80km/h Speed Chime (Ding-Ding) - triggers at Japanese standard 80km/h
+                    if (isGaugeVisible && showAudioChime && speedKmh >= 80 && (now - lastChimeTime > 1000)) {
                         lastChimeTime = now;
                         playSpeedChime();
                     }
@@ -376,9 +382,8 @@
 
                     var isShiftWarning = rpm >= shiftWarningRpm;
                     var isOverRev = rpm >= shiftOverRevRpm;
-                    var isShiftLightOn = isOverRev ? (Math.floor(now / 66) % 2 === 0) : isShiftWarning;
 
-                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftLightOn);
+                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftWarning, isOverRev);
                 },
 
                 onAnimate: function () {

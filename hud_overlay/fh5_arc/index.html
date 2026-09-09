@@ -71,12 +71,18 @@
                 var isRedline = rpm >= redlineRpm;
                 var isLimiter = maxRpm > 0 && rpm >= maxRpm * 0.98;
 
-                // 1. Base Track Arc
+                // 1. Base Track Arc (With subtle dark contrast underlay for anti-washout readability)
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, startAngle + totalAngle);
+                ctx.lineWidth = 14;
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
                 ctx.beginPath();
                 ctx.arc(cx, cy, radius, startAngle, startAngle + totalAngle);
                 ctx.lineWidth = 10;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-                ctx.lineCap = 'round';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
                 ctx.stroke();
 
                 // 2. Dynamic RPM Arc
@@ -88,11 +94,11 @@
                     ctx.lineCap = 'round';
 
                     if (isLimiter) {
-                        // High-rev shift limit pulse (20Hz aggressive flash)
-                        var flash = Math.sin(now * 0.04) > 0;
+                        // High-rev shift limit pulse (True 20Hz aggressive flash)
+                        var flash = Math.sin(now * 0.12) > 0;
                         ctx.strokeStyle = flash ? '#EF4444' : '#FFFFFF';
                         ctx.shadowColor = '#EF4444';
-                        ctx.shadowBlur = 16;
+                        ctx.shadowBlur = 18;
                     } else if (isRedline) {
                         // Solid red warning zone without premature flashing
                         ctx.strokeStyle = '#EF4444';
@@ -119,15 +125,15 @@
                     ctx.shadowBlur = 0;
                 }
 
-                // 3. Center Speed Hero
+                // 3. Center Speed Hero (Authentic 72px bold Forza typography)
                 ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 64px "ForzaFont", -apple-system, sans-serif';
+                ctx.font = 'bold 72px "ForzaFont", -apple-system, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(String(Math.round(speed)), cx, cy + 12);
+                ctx.fillText(String(Math.round(speed)), cx, cy + 14);
 
                 ctx.fillStyle = '#94A3B8';
                 ctx.font = 'bold 15px "ForzaFont", sans-serif';
-                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 44);
+                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 46);
 
                 // 4. Vertical Gear Indicator (Right side)
                 var gearX = cx + 80;
@@ -146,23 +152,23 @@
                 ctx.textAlign = 'center';
                 ctx.fillText(gearText, gearX + 22, gearY + 50);
 
-                // 5. Pedal Input Meters (Bottom)
-                var pedalY = cy + 125;
+                // 5. Pedal Input Meters (Bottom: Brake Left 110, Throttle Right 210)
+                var pedalY = 315;
                 // Brake (Left, Red)
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
-                ctx.fillRect(cx - 75, pedalY, 60, 6);
+                ctx.fillRect(110, pedalY, 60, 6);
                 if (brake > 0) {
                     var bWidth = 60 * Math.min(1, brake);
                     ctx.fillStyle = '#EF4444';
-                    ctx.fillRect(cx - 75 + (60 - bWidth), pedalY, bWidth, 6);
+                    ctx.fillRect(110 + (60 - bWidth), pedalY, bWidth, 6);
                 }
 
                 // Throttle (Right, Green)
                 ctx.fillStyle = 'rgba(34, 197, 94, 0.25)';
-                ctx.fillRect(cx + 15, pedalY, 60, 6);
+                ctx.fillRect(210, pedalY, 60, 6);
                 if (throttle > 0) {
                     ctx.fillStyle = '#22C55E';
-                    ctx.fillRect(cx + 15, pedalY, 60 * Math.min(1, throttle), 6);
+                    ctx.fillRect(210, pedalY, 60 * Math.min(1, throttle), 6);
                 }
             }
 

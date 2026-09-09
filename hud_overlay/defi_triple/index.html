@@ -183,7 +183,8 @@
                                 oCtx.font = 'bold 10px sans-serif';
                                 oCtx.textAlign = 'center';
                                 if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
-                                oCtx.fillText(String(Math.round(bVal)), bNumX, bNumY + 1);
+                                var bStr = bVal > 0 ? '+' + Math.round(bVal) : String(Math.round(bVal));
+                                oCtx.fillText(bStr, bNumX, bNumY + 1);
                             }
                         }
                     } else if (idx === 2) {
@@ -237,7 +238,7 @@
                             oCtx.strokeStyle = pMajor ? tickColor : dimColor;
                             oCtx.stroke();
 
-                            if (pMajor && (pVal === 0 || pVal === 4 || pVal === 8 || pVal === 10)) {
+                            if (pMajor) {
                                 var pNumX = d.cx + Math.cos(pAngle) * (d.r - 20);
                                 var pNumY = d.cy + Math.sin(pAngle) * (d.r - 20);
                                 oCtx.fillStyle = textColor;
@@ -292,8 +293,9 @@
                 ctx.fill();
 
                 ctx.shadowBlur = 0;
+                var capR = Math.max(5, Math.round(radius * 0.08));
                 ctx.beginPath();
-                ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                ctx.arc(0, 0, capR, 0, Math.PI * 2);
                 ctx.fillStyle = '#0F172A';
                 ctx.fill();
                 ctx.lineWidth = 2;
@@ -354,24 +356,41 @@
                 if (!isSelfChecking) return;
                 var elapsed = now - selfCheckStartTime;
                 var rpmRatio = 0;
+                var boostRatio = 0;
+                var oilTempRatio = 0;
+                var oilPressRatio = 0;
                 var isShiftLightOn = false;
+
+                var boostResting = boostToRatio(0);
+                var oilTempResting = 0.45;
+                var oilPressResting = 0.4;
 
                 if (elapsed < 700) {
                     var t = elapsed / 700;
                     rpmRatio = 1 - Math.pow(1 - t, 3);
+                    boostRatio = rpmRatio;
+                    oilTempRatio = rpmRatio;
+                    oilPressRatio = rpmRatio;
                 } else if (elapsed < 1000) {
                     rpmRatio = 1.0;
+                    boostRatio = 1.0;
+                    oilTempRatio = 1.0;
+                    oilPressRatio = 1.0;
                     isShiftLightOn = Math.floor(elapsed / 80) % 2 === 0;
                 } else if (elapsed < 1500) {
                     var tBack = (elapsed - 1000) / 500;
-                    rpmRatio = 1.0 - Math.pow(tBack, 2);
+                    var returnFactor = 1.0 - Math.pow(tBack, 2);
+                    rpmRatio = returnFactor;
+                    boostRatio = boostResting + (1.0 - boostResting) * returnFactor;
+                    oilTempRatio = oilTempResting + (1.0 - oilTempResting) * returnFactor;
+                    oilPressRatio = oilPressResting + (1.0 - oilPressResting) * returnFactor;
                 } else {
                     isSelfChecking = false;
-                    renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
+                    renderCluster(0, boostResting, oilTempResting, oilPressResting, false);
                     return;
                 }
 
-                renderCluster(rpmRatio, rpmRatio, rpmRatio, rpmRatio, isShiftLightOn);
+                renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn);
                 requestAnimationFrame(runSelfCheck);
             }
 

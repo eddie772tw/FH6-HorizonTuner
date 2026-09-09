@@ -84,7 +84,11 @@
                 ctx.fillStyle = '#08090C';
                 ctx.fillRect(0, 0, 800, 480);
 
-                // 1. Shift Lights (15 LEDs)
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+                var accentColor = (!useDefault && customColor) ? customColor : '#38BDF8';
+
+                // 1. Shift Lights (15 LEDs across 800px width with compound batch path drawing)
                 var shiftStart = redlineRpm * 0.72;
                 var shiftPoint = redlineRpm * 0.96;
                 var activeLeds = 0;
@@ -93,128 +97,169 @@
                 if (rpm >= shiftPoint) {
                     activeLeds = 15;
                     isFlashing = Math.floor(now / 55) % 2 === 0;
-                } else if (rpm > shiftStart && shiftPoint > shiftStart) {
+                } else if (rpm >= shiftStart && shiftPoint > shiftStart) {
                     var ratio = (rpm - shiftStart) / (shiftPoint - shiftStart);
-                    activeLeds = Math.min(15, Math.floor(ratio * 15));
+                    activeLeds = Math.min(15, Math.floor(ratio * 15) + 1);
                 }
 
-                var ledStartX = 65;
+                var ledStartX = 50;
                 var ledY = 32;
-                var ledSpacing = 48;
-                var ledRadius = 12;
+                var ledSpacing = 50;
+                var ledRadius = 11;
 
-                for (var i = 0; i < 15; i++) {
-                    var cx = ledStartX + i * ledSpacing;
+                if (rpm >= shiftPoint) {
+                    // Strobe flash mode: all 15 LEDs in 1 single path call
                     ctx.beginPath();
-                    ctx.arc(cx, ledY, ledRadius, 0, Math.PI * 2);
-
-                    if (rpm >= shiftPoint) {
-                        // High-frequency 18Hz strobe flash when at or above shift point
-                        if (isFlashing) {
-                            ctx.fillStyle = '#00E5FF';
-                            ctx.shadowColor = '#00E5FF';
-                            ctx.shadowBlur = 14;
-                        } else {
-                            ctx.fillStyle = '#1B202B';
-                            ctx.shadowBlur = 0;
-                        }
-                    } else if (i < activeLeds) {
-                        if (i < 5) {
-                            ctx.fillStyle = '#00E676';
-                            ctx.shadowColor = '#00E676';
-                        } else if (i < 10) {
-                            ctx.fillStyle = '#FFD600';
-                            ctx.shadowColor = '#FFD600';
-                        } else {
-                            ctx.fillStyle = '#FF1744';
-                            ctx.shadowColor = '#FF1744';
-                        }
-                        ctx.shadowBlur = 10;
+                    for (var fi = 0; fi < 15; fi++) {
+                        var fcx = ledStartX + fi * ledSpacing;
+                        if (ctx.moveTo) ctx.moveTo(fcx + ledRadius, ledY);
+                        ctx.arc(fcx, ledY, ledRadius, 0, Math.PI * 2);
+                    }
+                    if (isFlashing) {
+                        ctx.fillStyle = '#00E5FF';
+                        ctx.shadowColor = '#00E5FF';
+                        ctx.shadowBlur = 14;
                     } else {
                         ctx.fillStyle = '#1B202B';
                         ctx.shadowBlur = 0;
                     }
                     ctx.fill();
-                }
-                ctx.shadowBlur = 0;
+                    ctx.shadowBlur = 0;
+                } else {
+                    // Batch 1: Inactive background for all 15 LEDs in single path
+                    ctx.beginPath();
+                    for (var bi = 0; bi < 15; bi++) {
+                        var bcx = ledStartX + bi * ledSpacing;
+                        if (ctx.moveTo) ctx.moveTo(bcx + ledRadius, ledY);
+                        ctx.arc(bcx, ledY, ledRadius, 0, Math.PI * 2);
+                    }
+                    ctx.fillStyle = '#1B202B';
+                    ctx.fill();
 
-                // 2. Left Box: Speed & Pedals
+                    // Batch 2: Active Green LEDs (1~5)
+                    if (activeLeds > 0) {
+                        var greenEnd = Math.min(activeLeds, 5);
+                        ctx.beginPath();
+                        for (var g = 0; g < greenEnd; g++) {
+                            var gcx = ledStartX + g * ledSpacing;
+                            if (ctx.moveTo) ctx.moveTo(gcx + ledRadius, ledY);
+                            ctx.arc(gcx, ledY, ledRadius, 0, Math.PI * 2);
+                        }
+                        ctx.fillStyle = '#00E676';
+                        ctx.shadowColor = '#00E676';
+                        ctx.shadowBlur = 10;
+                        ctx.fill();
+                    }
+
+                    // Batch 3: Active Yellow LEDs (6~10)
+                    if (activeLeds > 5) {
+                        var yellowEnd = Math.min(activeLeds, 10);
+                        ctx.beginPath();
+                        for (var y = 5; y < yellowEnd; y++) {
+                            var ycx = ledStartX + y * ledSpacing;
+                            if (ctx.moveTo) ctx.moveTo(ycx + ledRadius, ledY);
+                            ctx.arc(ycx, ledY, ledRadius, 0, Math.PI * 2);
+                        }
+                        ctx.fillStyle = '#FFD600';
+                        ctx.shadowColor = '#FFD600';
+                        ctx.shadowBlur = 10;
+                        ctx.fill();
+                    }
+
+                    // Batch 4: Active Red LEDs (11~15)
+                    if (activeLeds > 10) {
+                        var redEnd = Math.min(activeLeds, 15);
+                        ctx.beginPath();
+                        for (var r = 10; r < redEnd; r++) {
+                            var rcx = ledStartX + r * ledSpacing;
+                            if (ctx.moveTo) ctx.moveTo(rcx + ledRadius, ledY);
+                            ctx.arc(rcx, ledY, ledRadius, 0, Math.PI * 2);
+                        }
+                        ctx.fillStyle = '#FF1744';
+                        ctx.shadowColor = '#FF1744';
+                        ctx.shadowBlur = 10;
+                        ctx.fill();
+                    }
+                    ctx.shadowBlur = 0;
+                }
+
+                // 2. Left Box: Speed & Pedals (Symmetrical Grid: x: 24, w: 236, h: 290)
                 ctx.fillStyle = '#131722';
-                ctx.fillRect(30, 70, 220, 270);
+                ctx.fillRect(24, 64, 236, 290);
                 ctx.strokeStyle = '#273142';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(30, 70, 220, 270);
+                ctx.strokeRect(24, 64, 236, 290);
 
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 15px monospace';
                 ctx.textAlign = 'left';
-                ctx.fillText('SPEED (' + (isMetric ? 'KM/H' : 'MPH') + ')', 48, 102);
+                ctx.fillText('SPEED (' + (isMetric ? 'KM/H' : 'MPH') + ')', 44, 96);
 
                 ctx.fillStyle = '#F8FAFC';
                 ctx.font = 'bold 80px monospace';
-                ctx.fillText(String(Math.round(speed)), 48, 185);
+                ctx.fillText(String(Math.round(speed)), 44, 175);
 
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 13px monospace';
-                ctx.fillText('ENGINE RPM', 48, 235);
-                ctx.fillStyle = '#38BDF8';
+                ctx.fillText('ENGINE RPM', 44, 222);
+                ctx.fillStyle = accentColor;
                 ctx.font = 'bold 32px monospace';
-                ctx.fillText(String(Math.round(rpm)), 48, 272);
+                ctx.fillText(String(Math.round(rpm)), 44, 258);
 
                 // Pedal Bars (Brake left, Throttle right)
-                var pedalY = 305;
+                var pedalY = 296;
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-                ctx.fillRect(48, pedalY, 80, 16);
+                ctx.fillRect(44, pedalY, 88, 18);
                 if (brake > 0) {
                     ctx.fillStyle = '#EF4444';
-                    ctx.fillRect(48, pedalY, 80 * Math.min(1, brake), 16);
+                    ctx.fillRect(44, pedalY, 88 * Math.min(1, brake), 18);
                 }
 
                 ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
-                ctx.fillRect(148, pedalY, 80, 16);
+                ctx.fillRect(146, pedalY, 88, 18);
                 if (throttle > 0) {
                     ctx.fillStyle = '#22C55E';
-                    ctx.fillRect(148, pedalY, 80 * Math.min(1, throttle), 16);
+                    ctx.fillRect(146, pedalY, 88 * Math.min(1, throttle), 18);
                 }
 
-                // 3. Center Box: Gear
+                // 3. Center Box: Gear (Symmetrical Grid: x: 272, w: 256, h: 290)
                 ctx.fillStyle = '#131722';
-                ctx.fillRect(270, 70, 260, 270);
+                ctx.fillRect(272, 64, 256, 290);
                 ctx.strokeStyle = '#273142';
-                ctx.strokeRect(270, 70, 260, 270);
+                ctx.strokeRect(272, 64, 256, 290);
 
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 16px monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText('GEAR', 400, 105);
+                ctx.fillText('GEAR', 400, 96);
 
                 var gearDisplay = gear === 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
                 ctx.fillStyle = (rpm >= shiftPoint && isFlashing) ? '#FF1744' : '#FFFFFF';
-                ctx.font = 'bold 150px monospace';
-                ctx.fillText(gearDisplay, 400, 245);
+                ctx.font = 'bold 145px monospace';
+                ctx.fillText(gearDisplay, 400, 240);
 
-                // 4. Right Box: Tire Thermals & Engine Temp
+                // 4. Right Box: Tire Thermals & Engine Status (Symmetrical Grid: x: 540, w: 236, h: 290)
                 ctx.fillStyle = '#131722';
-                ctx.fillRect(550, 70, 220, 270);
+                ctx.fillRect(540, 64, 236, 290);
                 ctx.strokeStyle = '#273142';
-                ctx.strokeRect(550, 70, 220, 270);
+                ctx.strokeRect(540, 64, 236, 290);
 
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 15px monospace';
                 ctx.textAlign = 'left';
-                ctx.fillText('TIRES TEMP (°C)', 568, 102);
+                ctx.fillText('TIRES TEMP (°C)', 556, 96);
 
                 var tires = [
-                    { name: 'FL', t: Math.round(tireTemps[0]), x: 568, y: 125 },
-                    { name: 'FR', t: Math.round(tireTemps[1]), x: 662, y: 125 },
-                    { name: 'RL', t: Math.round(tireTemps[2]), x: 568, y: 195 },
-                    { name: 'RR', t: Math.round(tireTemps[3]), x: 662, y: 195 }
+                    { name: 'FL', t: Math.round(tireTemps[0]), x: 556, y: 116 },
+                    { name: 'FR', t: Math.round(tireTemps[1]), x: 660, y: 116 },
+                    { name: 'RL', t: Math.round(tireTemps[2]), x: 556, y: 182 },
+                    { name: 'RR', t: Math.round(tireTemps[3]), x: 660, y: 182 }
                 ];
 
                 for (var tIdx = 0; tIdx < 4; tIdx++) {
                     var item = tires[tIdx];
                     ctx.fillStyle = '#1E293B';
-                    ctx.fillRect(item.x, item.y, 82, 54);
+                    ctx.fillRect(item.x, item.y, 88, 54);
                     ctx.fillStyle = getTireColor(item.t);
                     ctx.font = 'bold 13px monospace';
                     ctx.fillText(item.name, item.x + 8, item.y + 22);
@@ -224,23 +269,24 @@
 
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 13px monospace';
-                ctx.fillText('WATER: ' + Math.round(engineTemp) + '°C', 568, 315);
+                ctx.fillText('WATER: ' + Math.round(engineTemp) + '°C', 556, 270);
+                ctx.fillText('BRAKE BIAS: 54:46', 556, 305);
 
-                // 5. Stepped RPM Bar
+                // 5. Stepped RPM Bar (Symmetrical Grid: x: 24, y: 366, w: 752, h: 48)
                 ctx.fillStyle = '#131722';
-                ctx.fillRect(30, 360, 740, 48);
+                ctx.fillRect(24, 366, 752, 48);
                 ctx.strokeStyle = '#273142';
-                ctx.strokeRect(30, 360, 740, 48);
+                ctx.strokeRect(24, 366, 752, 48);
 
                 var rpmRatio = maxRpm > 0 ? Math.max(0, Math.min(1, rpm / maxRpm)) : 0;
-                var barW = Math.round(736 * rpmRatio);
+                var barW = Math.round(748 * rpmRatio);
                 if (barW > 0) {
-                    var grad = ctx.createLinearGradient(32, 0, 768, 0);
+                    var grad = ctx.createLinearGradient(26, 0, 772, 0);
                     grad.addColorStop(0, '#10B981');
                     grad.addColorStop(0.7, '#FBBF24');
                     grad.addColorStop(0.92, '#EF4444');
                     ctx.fillStyle = grad;
-                    ctx.fillRect(32, 362, barW, 44);
+                    ctx.fillRect(26, 368, barW, 44);
                 }
 
                 // Ticks & Numbers
@@ -249,26 +295,31 @@
                 ctx.textAlign = 'center';
                 if (maxRpm > 0) {
                     for (var r = 1000; r <= maxRpm; r += 1000) {
-                        var tx = 30 + (r / maxRpm) * 740;
-                        ctx.fillRect(tx, 360, 2, 8);
-                        ctx.fillText(String(Math.round(r / 1000)) + 'k', tx, 424);
+                        var tx = 24 + (r / maxRpm) * 752;
+                        ctx.fillRect(tx, 366, 2, 8);
+                        ctx.fillText(String(Math.round(r / 1000)) + 'k', tx, 422);
                     }
                 }
 
-                // 6. Bottom Status Footer
+                // 6. Bottom Status Footer (Symmetrical Grid: x: 24, y: 430, w: 752, h: 36)
+                ctx.fillStyle = '#0F131C';
+                ctx.fillRect(24, 430, 752, 36);
+                ctx.strokeStyle = '#202736';
+                ctx.strokeRect(24, 430, 752, 36);
+
                 ctx.textAlign = 'left';
                 var flags = [
-                    { label: 'TC', active: isTcsActive, color: '#10B981', x: 30 },
-                    { label: 'ABS', active: isAbsActive, color: '#38BDF8', x: 170 },
-                    { label: 'DIFF 50%', active: true, color: '#64748B', x: 310 },
-                    { label: 'MAP 1', active: true, color: '#A855F7', x: 470 },
-                    { label: 'ENG OK', active: true, color: '#10B981', x: 620 }
+                    { label: 'TC', active: isTcsActive, color: '#10B981', x: 44 },
+                    { label: 'ABS', active: isAbsActive, color: accentColor, x: 184 },
+                    { label: 'DIFF 50%', active: true, color: '#64748B', x: 324 },
+                    { label: 'MAP 1', active: true, color: '#A855F7', x: 484 },
+                    { label: 'ENG OK', active: true, color: '#10B981', x: 634 }
                 ];
                 for (var fIdx = 0; fIdx < flags.length; fIdx++) {
                     var f = flags[fIdx];
                     ctx.fillStyle = f.active ? f.color : '#334155';
-                    ctx.font = 'bold 15px monospace';
-                    ctx.fillText(f.label, f.x, 460);
+                    ctx.font = 'bold 14px monospace';
+                    ctx.fillText(f.label, f.x, 453);
                 }
             }
 

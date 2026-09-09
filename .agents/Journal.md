@@ -1,5 +1,25 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-09 / 5 款新 HUD 儀表樣式視覺比對審查與交付水準深度驗證 (PR #319)
+
+- **來源**：`local`，針對 PR #319 的 5 款新開發 HUD 樣式進行 Headless Chrome 真實渲染截圖、幾何排版、色彩 Token、微觀刻度與動態狀態機之視覺審查與規格比對驗收。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **MoTeC C125 幾何對稱與複合批次渲染落地**：左中右資訊卡對齊為標準 24px 外邊距與 12px 內間隔，補足右側水溫與煞車分配平衡；將頂部 15 顆 LED 自 15 次獨立 Draw Call 收斂至以顏色分組的複合路徑（Compound Path），嚴格落實規格 Section 5 的 1~4 次批量渲染。換檔提示起始門檻修正為 >=72% 即點亮首顆綠燈。
+  2. **Defi Advance BF 刻度完整性與開機掃表平滑歸位**：修復油壓表遺漏的 2 與 6 bar 刻度標籤，恢復 0~10 偶數完整分度；增壓表數字格式化為 JDM 正負標記；開機檢測第三階段（Phase 3）落實指針自極值至靜止基準值（Boost 0 bar, Oil Temp 45%, Oil Press 40%）之連續非線性插值，消除歸位跳變。
+  3. **Forza Horizon 5 原生字號與高動態對比防洗白**：時速主數值升級至官方 72px 大字型並微調垂直基線；外圈弧形軌道追加深色防洗白底襯（rgba(0,0,0,0.45)），確保在淺色或雪地賽道上維持高辨識度；斷油區呼吸頻率精確校準為真 20Hz。
+  4. **頭文字D AE86 經典昭和 80km/h 蜂鳴器真值與閃頻發光底色**：超速警報門檻由 85km/h 對齊至真實 JDM 80km/h 法規標準，警報節奏設為 1000ms 穩定循環；超轉燈筒在 15Hz 頻閃暗週期維持底色微光（#770014），避免靜態截圖或肉眼視覺丟失指示燈體積感。
+- **Action**：
+  1. 修正 `hud_overlay/motec_gt3/index.html` 之 LED 批次路徑與對稱佈局，同步補足 `motecContract.test.ts` Canvas mock。
+  2. 修正 `hud_overlay/defi_triple/index.html` 之刻度標記、指針軸心縮放與自檢動畫插值。
+  3. 修正 `hud_overlay/fh5_arc/index.html` 之 72px 時速字型、防洗白底襯與 20Hz 呼吸燈。
+  4. 修正 `hud_overlay/initial_d/index.html` 之 80km/h 警報真值與雙態頻閃燈筒。
+  5. 撰寫 Headless Chrome 視覺測試腳本，捕捉各儀表在 Default、Driving 與 Redline 狀態之真實渲染截圖並比對審查。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（4.34s）；前端 Vitest 94 files / 598 tests 100% passed（5.18s）；前端 build 成功；Ruff check/format 100% 通過；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
 ## 2026-09-09 / 5 款社群熱門 HUD 儀表樣式實作與契約測試落地 (MoTeC GT3, Defi, FH5, Initial D, Cyberpunk)
 
 - **來源**：`local`，依據 `ref/` 研究規格與 `hud_overlay/HUD_DEVELOPMENT_GUIDE.md` 開發 5 款新儀表樣式，並註冊至 HUD 控制面板。
