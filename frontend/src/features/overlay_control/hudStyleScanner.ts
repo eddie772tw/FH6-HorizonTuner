@@ -27,6 +27,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   shift_tacho: 'Need for Speed Shift',
   simple: 'Simple Gauge',
   motec_gt3: 'MoTeC C125 GT3',
+  defi_triple: 'Defi Advance BF',
 };
 
 const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {

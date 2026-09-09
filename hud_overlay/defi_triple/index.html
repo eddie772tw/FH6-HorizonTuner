@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Defi Advance BF JDM Cluster</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .defi-container {
+            width: 760px;
+            height: 280px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #defiCanvas {
+            display: block;
+            width: 760px;
+            height: 280px;
+            background: #050608;
+            border: 2px solid #2d3748;
+            border-radius: 8px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container defi-container" id="defiContainer">
+            <canvas id="defiCanvas" width="760" height="280"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('defiContainer'),
+                canvas: document.getElementById('defiCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var isAmberTheme = true;
+            var isSelfChecking = false;
+            var selfCheckStartTime = 0;
+            var offscreenDial = null;
+
+            function buildOffscreenDial() {
+                offscreenDial = document.createElement('canvas');
+                offscreenDial.width = 760;
+                offscreenDial.height = 280;
+                var oCtx = offscreenDial.getContext('2d');
+                if (!oCtx) return;
+
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+
+                var textColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF9100' : '#E2E8F0');
+                var tickColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF6D00' : '#94A3B8');
+                var dimColor = '#4A5568';
+
+                var dials = [
+                    { cx: 135, cy: 155, r: 100, title: 'TACHO', unit: 'x1000r/min', maxVal: 11, step: 1 },
+                    { cx: 345, cy: 155, r: 64, title: 'TURBO', unit: 'x100kPa', maxVal: 2, minVal: -1, step: 1 },
+                    { cx: 505, cy: 155, r: 64, title: 'OIL TEMP', unit: '°C', maxVal: 150, minVal: 50, step: 25 },
+                    { cx: 665, cy: 155, r: 64, title: 'OIL PRESS', unit: 'x100kPa', maxVal: 10, minVal: 0, step: 2 }
+                ];
+
+                for (var idx = 0; idx < dials.length; idx++) {
+                    var d = dials[idx];
+
+                    // Outer bezel
+                    oCtx.beginPath();
+                    oCtx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+                    oCtx.fillStyle = '#07080B';
+                    oCtx.fill();
+                    oCtx.lineWidth = idx === 0 ? 5 : 3;
+                    oCtx.strokeStyle = '#2D3748';
+                    oCtx.stroke();
+
+                    // Inner decorative line
+                    oCtx.beginPath();
+                    oCtx.arc(d.cx, d.cy, d.r - 8, 0, Math.PI * 2);
+                    oCtx.lineWidth = 1;
+                    oCtx.strokeStyle = '#1A202C';
+                    oCtx.stroke();
+
+                    // Labels
+                    oCtx.fillStyle = textColor;
+                    oCtx.font = (idx === 0 ? 'bold 16px' : 'bold 12px') + ' sans-serif';
+                    oCtx.textAlign = 'center';
+                    oCtx.fillText(d.title, d.cx, d.cy - d.r * 0.35);
+
+                    oCtx.fillStyle = dimColor;
+                    oCtx.font = (idx === 0 ? '11px' : '9px') + ' sans-serif';
+                    oCtx.fillText(d.unit, d.cx, d.cy + d.r * 0.4);
+
+                    // Ticks
+                    var startA = 0.75 * Math.PI;
+                    var totalA = 1.5 * Math.PI;
+                    var totalTicks = idx === 0 ? 22 : 20;
+
+                    for (var i = 0; i <= totalTicks; i++) {
+                        var angle = startA + (i / totalTicks) * totalA;
+                        var isMajor = idx === 0 ? (i % 2 === 0) : (i % 5 === 0);
+                        var len = isMajor ? (idx === 0 ? 14 : 9) : (idx === 0 ? 7 : 5);
+
+                        var x1 = d.cx + Math.cos(angle) * (d.r - 10);
+                        var y1 = d.cy + Math.sin(angle) * (d.r - 10);
+                        var x2 = d.cx + Math.cos(angle) * (d.r - 10 - len);
+                        var y2 = d.cy + Math.sin(angle) * (d.r - 10 - len);
+
+                        oCtx.beginPath();
+                        oCtx.moveTo(x1, y1);
+                        oCtx.lineTo(x2, y2);
+                        oCtx.lineWidth = isMajor ? 2 : 1;
+                        oCtx.strokeStyle = isMajor ? tickColor : dimColor;
+                        oCtx.stroke();
+                    }
+                }
+
+                // External Shift Light Pod Bezel
+                oCtx.beginPath();
+                oCtx.arc(60, 65, 18, 0, Math.PI * 2);
+                oCtx.fillStyle = '#1A202C';
+                oCtx.fill();
+                oCtx.lineWidth = 2;
+                oCtx.strokeStyle = '#4A5568';
+                oCtx.stroke();
+            }
+
+            buildOffscreenDial();
+
+            function drawNeedle(ctx, cx, cy, radius, angle, color) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.moveTo(-radius * 0.15, -2);
+                ctx.lineTo(radius * 0.85, -1);
+                ctx.lineTo(radius * 0.85, 1);
+                ctx.lineTo(-radius * 0.15, 2);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#0F172A';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#475569';
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function boostToRatio(bar) {
+                var b = Math.max(-1.0, Math.min(2.0, bar));
+                if (b <= 0) {
+                    return ((b + 1.0) / 1.0) * 0.35;
+                }
+                return 0.35 + (b / 2.0) * 0.65;
+            }
+
+            function renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                if (!offscreenDial) buildOffscreenDial();
+                ctx.drawImage(offscreenDial, 0, 0);
+
+                var startA = 0.75 * Math.PI;
+                var totalA = 1.5 * Math.PI;
+                var needleColor = isAmberTheme ? '#FF1744' : '#00E5FF';
+
+                // 1. Tacho Needle
+                drawNeedle(ctx, 135, 155, 95, startA + Math.max(0, Math.min(1, rpmRatio)) * totalA, needleColor);
+
+                // 2. Turbo Boost Needle
+                drawNeedle(ctx, 345, 155, 60, startA + Math.max(0, Math.min(1, boostRatio)) * totalA, needleColor);
+
+                // 3. Oil Temp Needle
+                drawNeedle(ctx, 505, 155, 60, startA + Math.max(0, Math.min(1, oilTempRatio)) * totalA, needleColor);
+
+                // 4. Oil Press Needle
+                drawNeedle(ctx, 665, 155, 60, startA + Math.max(0, Math.min(1, oilPressRatio)) * totalA, needleColor);
+
+                // 5. External Shift Light LED
+                ctx.beginPath();
+                ctx.arc(60, 65, 11, 0, Math.PI * 2);
+                if (isShiftLightOn) {
+                    ctx.fillStyle = '#FF0033';
+                    ctx.shadowColor = '#FF0033';
+                    ctx.shadowBlur = 18;
+                } else {
+                    ctx.fillStyle = '#2A0D12';
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function runSelfCheck(now) {
+                if (!isSelfChecking) return;
+                var elapsed = now - selfCheckStartTime;
+                var rpmRatio = 0;
+                var isShiftLightOn = false;
+
+                if (elapsed < 700) {
+                    var t = elapsed / 700;
+                    rpmRatio = 1 - Math.pow(1 - t, 3);
+                } else if (elapsed < 1000) {
+                    rpmRatio = 1.0;
+                    isShiftLightOn = Math.floor(elapsed / 80) % 2 === 0;
+                } else if (elapsed < 1500) {
+                    var tBack = (elapsed - 1000) / 500;
+                    rpmRatio = 1.0 - Math.pow(tBack, 2);
+                } else {
+                    isSelfChecking = false;
+                    renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
+                    return;
+                }
+
+                renderCluster(rpmRatio, rpmRatio, rpmRatio, rpmRatio, isShiftLightOn);
+                requestAnimationFrame(runSelfCheck);
+            }
+
+            HUDCore.registerStyle('defi_triple', {
+                containerId: 'defiContainer',
+                scaleMultiplier: 0.6,
+
+                onInit: function (payload) {
+                    buildOffscreenDial();
+                },
+
+                onElementsChange: function (elements) {
+                    if (domCache.container) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (isSelfChecking) return;
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 11000;
+                    var redlineRpm = (payload && payload.redlineRpm) || (data.redlineRpm) || (maxRpm * 0.88);
+                    var rpm = data.rpm || 0;
+                    var rpmRatio = rpm / 11000;
+
+                    // Boost calculation (in bar)
+                    var boostBar = 0;
+                    if (data.boost_bar !== undefined) {
+                        boostBar = data.boost_bar;
+                    } else if (data.Boost !== undefined) {
+                        // Forza UDP Boost is in PSI or bar
+                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038 - 1.0) : data.Boost;
+                    } else {
+                        var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
+                        boostBar = throttle * 1.6 - 0.3;
+                    }
+                    var boostRatio = boostToRatio(boostBar);
+
+                    // Oil Temp (50 ~ 150 °C)
+                    var oilTemp = data.OilTemp || 95;
+                    var oilTempRatio = (oilTemp - 50) / 100;
+
+                    // Oil Pressure (0 ~ 10 bar)
+                    var oilPress = data.OilPressure || 4.5;
+                    var oilPressRatio = oilPress / 10;
+
+                    var isShiftLightOn = rpm >= redlineRpm;
+
+                    renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn);
+                },
+
+                onAnimate: function () {
+                    isSelfChecking = true;
+                    selfCheckStartTime = performance.now();
+                    requestAnimationFrame(runSelfCheck);
+                }
+            });
+
+            HUDCore.init('defi_triple');
+
+            setTimeout(function () {
+                renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
+            }, 60);
+        })();
+    </script>
+</body>
+</html>
