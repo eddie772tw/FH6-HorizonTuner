@@ -1,5 +1,23 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-09 / 5 款社群熱門 HUD 儀表樣式實作與契約測試落地 (MoTeC GT3, Defi, FH5, Initial D, Cyberpunk)
+
+- **來源**：`local`，依據 `ref/` 研究規格與 `hud_overlay/HUD_DEVELOPMENT_GUIDE.md` 開發 5 款新儀表樣式，並註冊至 HUD 控制面板。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **60Hz 純 Canvas 渲染與零暫態記憶體配置 (Zero-Allocation)**：5 款儀表（MoTeC C125 15-LED、Defi 四連表、FH5 弧形轉速表、Initial D TRD 萬轉表、Cyberpunk 2077 Quadra 32 段轉速條）均在 `onFrame` 渲染迴圈中落實零中間物件與閉包建立。LED 圓珠、平行四邊形轉速塊均以批次複合路徑 (`beginPath` + 迴圈 `moveTo/lineTo` + 單次 `fill`) 繪製，避免每幀多次 Draw Call。
+  2. **表盤靜態緩存 (Offscreen Canvas Blitting)**：Defi Advance BF 與 Initial D 萬轉表採用離線 Canvas 在 `onInit` / 主題變更時一次性繪製刻度、外框、裝飾線與字型標籤；每幀只需一次 `drawImage` 背景貼圖，大幅降低 60Hz~144Hz 畫面下的 CPU 負擔。
+  3. **非線性刻度查找表 (Non-Linear LUT) 與開機檢測 (Opening Ceremony)**：Initial D 依據真實 TRD 賽車儀表劃分三段非線性角度（低轉速密集、高轉速競技展開），Defi 實作 Ease-Out-Cubic 掃表自檢與超轉燈雙閃邏輯。
+  4. **合約測試與架構分層落實**：依據 `.agents/rules/workspace.md`，每個 HUD 各自在 `hud_overlay/<theme>/tests/unit/*Contract.test.ts` 建立獨立合約測試，驗證作者署名（"eddie772tw ft. crosXover"）、`HUDCore` 註冊與 `onFrame` 遙測解析；同時後端 `test_overlay_api.py` 之嚴格目錄一致性測試通過。
+- **Action**：
+  1. 實作 `hud_overlay/motec_gt3`、`defi_triple`、`fh5_arc`、`initial_d`、`cyberpunk_hud` 及其 `author.json` 與合約單元測試。
+  2. 於 `frontend/src/features/overlay_control/hudStyleScanner.ts` 的 `HUD_DISPLAY_NAMES` 註冊 5 款樣式之友善名稱。
+  3. 依序為每款樣式建立獨立 commit，並驗證全套測試綠燈。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（4.44s）；前端 Vitest 94 files / 598 tests 100% passed（7.36s）；前端 build 成功；Ruff check/format 通過；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
 ## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
 
 - **來源**：`local`，建立專屬分支 `feature/agent-tuning-cli`，開發面向 AI Agent、配合 MCP 與前端 UI 的命令列調校與遙測監控工具。
@@ -26,6 +44,7 @@
   8. 通過全套驗證：後端 Pytest 285 passed、前端 Vitest 89 files / 578 tests 100% passed、Ruff check 與 format 100% 通過、Tracked path case 通過、`git diff --check` clean。
 - **Evidence**：`fh6-agent.bat --version` 輸出 `fh6-agent 1.0.0 (Core: 11.45.17)`；後端 Pytest 285 passed, 8 deselected；前端 Vitest 578 passed；前端 build 705 modules 通過；Ruff 檢查 158 files 全數 formatted & clean；PR #318 已建立並開啟等待審查。
 - **Skills**：`modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、`cross-agent-collaboration`、`portable-release-validation`。
+
 
 ---
 
