@@ -28,6 +28,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   simple: 'Simple Gauge',
   motec_gt3: 'MoTeC C125 GT3',
   defi_triple: 'Defi Advance BF',
+  fh5_arc: 'Forza Horizon 5',
 };
 
 const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {

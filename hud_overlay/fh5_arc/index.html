@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Forza Horizon 5 Arc HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .fh5-arc-container {
+            width: 380px;
+            height: 380px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #fh5ArcCanvas {
+            display: block;
+            width: 380px;
+            height: 380px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container fh5-arc-container" id="fh5ArcContainer">
+            <canvas id="fh5ArcCanvas" width="380" height="380"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('fh5ArcContainer'),
+                canvas: document.getElementById('fh5ArcCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var cx = 190;
+            var cy = 190;
+            var radius = 140;
+            var startAngle = 0.72 * Math.PI;
+            var totalAngle = 1.56 * Math.PI;
+
+            var isMetric = true;
+            var sweepActive = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1100;
+            var lastValidGear = 1;
+            var lastMaxRpm = 8500;
+            var lastRedline = 7800;
+
+            function drawFh5ArcHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, now) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                ctx.clearRect(0, 0, 380, 380);
+
+                var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+                var isRedline = rpm >= redlineRpm;
+
+                // 1. Base Track Arc
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, startAngle + totalAngle);
+                ctx.lineWidth = 10;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // 2. Dynamic RPM Arc
+                if (rpmRatio > 0.01) {
+                    var currentAngle = startAngle + rpmRatio * totalAngle;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius, startAngle, currentAngle);
+                    ctx.lineWidth = 10;
+                    ctx.lineCap = 'round';
+
+                    if (isRedline) {
+                        var flash = Math.sin(now * 0.035) > 0;
+                        ctx.strokeStyle = flash ? '#EF4444' : '#FF7878';
+                        ctx.shadowColor = '#EF4444';
+                        ctx.shadowBlur = 14;
+                    } else {
+                        var customColor = window._currentCustomColor;
+                        var useDefault = window._currentUseDefaultColors !== false;
+
+                        if (!useDefault && customColor) {
+                            ctx.strokeStyle = customColor;
+                            ctx.shadowColor = customColor;
+                        } else {
+                            var grad = ctx.createLinearGradient(cx - radius, cy, cx + radius, cy);
+                            grad.addColorStop(0, '#FFFFFF');
+                            grad.addColorStop(0.7, '#38BDF8');
+                            grad.addColorStop(1, '#FACC15');
+                            ctx.strokeStyle = grad;
+                            ctx.shadowColor = '#38BDF8';
+                        }
+                        ctx.shadowBlur = 8;
+                    }
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+
+                // 3. Center Speed Hero
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 64px "ForzaFont", -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(Math.round(speed)), cx, cy + 12);
+
+                ctx.fillStyle = '#94A3B8';
+                ctx.font = 'bold 15px "ForzaFont", sans-serif';
+                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 44);
+
+                // 4. Vertical Gear Indicator (Right side)
+                var gearX = cx + 80;
+                var gearY = cy - 35;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(gearX, gearY, 44, 70, 6) : ctx.rect(gearX, gearY, 44, 70);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                var gearText = gear === 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
+                ctx.fillStyle = isRedline ? '#EF4444' : '#38BDF8';
+                ctx.font = 'bold 36px "ForzaGear", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(gearText, gearX + 22, gearY + 50);
+
+                // 5. Pedal Input Meters (Bottom)
+                var pedalY = cy + 125;
+                // Brake (Left, Red)
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+                ctx.fillRect(cx - 75, pedalY, 60, 6);
+                if (brake > 0) {
+                    var bWidth = 60 * Math.min(1, brake);
+                    ctx.fillStyle = '#EF4444';
+                    ctx.fillRect(cx - 75 + (60 - bWidth), pedalY, bWidth, 6);
+                }
+
+                // Throttle (Right, Green)
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.25)';
+                ctx.fillRect(cx + 15, pedalY, 60, 6);
+                if (throttle > 0) {
+                    ctx.fillStyle = '#22C55E';
+                    ctx.fillRect(cx + 15, pedalY, 60 * Math.min(1, throttle), 6);
+                }
+            }
+
+            function runSweep(now) {
+                if (!sweepActive) return;
+                var elapsed = now - sweepStartTime;
+                var progress = elapsed / sweepDuration;
+
+                if (progress >= 1.0) {
+                    sweepActive = false;
+                    drawFh5ArcHUD(0, lastMaxRpm, lastRedline, 0, 1, 0, 0, now);
+                    return;
+                }
+
+                var currentRpm = progress < 0.5
+                    ? (progress / 0.5) * lastMaxRpm
+                    : (1 - (progress - 0.5) / 0.5) * lastMaxRpm;
+
+                var mockSpeed = (currentRpm / lastMaxRpm) * 260;
+                drawFh5ArcHUD(currentRpm, lastMaxRpm, lastRedline, mockSpeed, 1, 1.0, 0, now);
+                requestAnimationFrame(runSweep);
+            }
+
+            HUDCore.registerStyle('fh5_arc', {
+                containerId: 'fh5ArcContainer',
+                scaleMultiplier: 1.0,
+
+                onInit: function (payload) {
+                    if (payload && typeof payload.isMetric === 'boolean') {
+                        isMetric = payload.isMetric;
+                    }
+                },
+
+                onElementsChange: function (elements) {
+                    if (domCache.container) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (sweepActive) return;
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 8500;
+                    var redlineRpm = (payload && payload.redlineRpm) || data.redlineRpm || (maxRpm * 0.92);
+                    lastMaxRpm = maxRpm;
+                    lastRedline = redlineRpm;
+
+                    if (payload && typeof payload.isMetric === 'boolean') {
+                        isMetric = payload.isMetric;
+                    }
+
+                    var rpm = data.rpm || 0;
+                    var rawSpeed = isMetric !== false
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed || 0) * 0.621371));
+
+                    if (data.gear !== undefined && data.gear <= 11) {
+                        lastValidGear = data.gear;
+                    }
+
+                    var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
+                    var brake = (data.brake !== undefined ? data.brake : 0) / (data.brake > 1 ? 255 : 1);
+
+                    drawFh5ArcHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, performance.now());
+                },
+
+                onAnimate: function () {
+                    sweepActive = true;
+                    sweepStartTime = performance.now();
+                    requestAnimationFrame(runSweep);
+                }
+            });
+
+            HUDCore.init('fh5_arc');
+
+            setTimeout(function () {
+                drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, performance.now());
+            }, 60);
+        })();
+    </script>
+</body>
+</html>
