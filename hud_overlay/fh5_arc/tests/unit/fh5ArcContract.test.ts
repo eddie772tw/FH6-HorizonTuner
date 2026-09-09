@@ -125,10 +125,17 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
       );
     }).not.toThrow();
 
-    // Verify reverse gear and onAnimate sweep
+    // Verify reverse gear, handbrake and onMedia
     expect(() => {
-      registeredDef.onFrame({ rpm: 900, max_rpm: 8500, speed_kmh: -10, gear: 0 }, { isMetric: true });
+      registeredDef.onFrame({ rpm: 900, max_rpm: 8500, speed_kmh: -10, gear: 0, handbrake: 1 }, { isMetric: true });
     }).not.toThrow();
+
+    if (registeredDef.onMedia) {
+      expect(() => {
+        registeredDef.onMedia({ success: true, has_media: true, title: 'Horizon Pulse', artist: 'CHVRCHES' });
+        registeredDef.onMedia({ success: false });
+      }).not.toThrow();
+    }
 
     if (registeredDef.onAnimate) {
       expect(() => {

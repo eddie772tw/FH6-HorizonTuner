@@ -240,7 +240,7 @@
                 ctx.restore();
             }
 
-            function renderHUD(rpm, speed, gear, now, isShiftWarning, isOverRev) {
+            function renderHUD(rpm, speed, gear, now, isShiftWarning, isOverRev, isDrifting) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
@@ -275,6 +275,17 @@
                 var needleAngle = getInitialDAngle(rpm);
                 drawNeedle(ctx, needleAngle);
 
+                // Arcade DRIFT Mode Indicator
+                if (isDrifting) {
+                    ctx.fillStyle = '#FBBF24';
+                    ctx.font = 'bold 15px "ForzaFont", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.shadowColor = '#F59E0B';
+                    ctx.shadowBlur = 12;
+                    ctx.fillText('⚡ DRIFT ⚡', cx, cy - 42);
+                    ctx.shadowBlur = 0;
+                }
+
                 // 3. Digital Speed & Gear Display (Lower Center)
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = 'bold 36px monospace';
@@ -298,7 +309,7 @@
 
                 if (progress >= 1.0) {
                     sweepActive = false;
-                    renderHUD(0, 0, 1, now, false, false);
+                    renderHUD(0, 0, 1, now, false, false, false);
                     return;
                 }
 
@@ -309,7 +320,7 @@
                 var mockSpeed = (currentRpm / 11000) * 230;
                 var mockWarning = currentRpm >= 9800;
                 var mockOverRev = currentRpm >= 10500;
-                renderHUD(currentRpm, mockSpeed, 1, now, mockWarning, mockOverRev);
+                renderHUD(currentRpm, mockSpeed, 1, now, mockWarning, mockOverRev, false);
                 requestAnimationFrame(runSweep);
             }
 
@@ -385,7 +396,13 @@
                     var isShiftWarning = rpm >= shiftWarningRpm;
                     var isOverRev = rpm >= shiftOverRevRpm;
 
-                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftWarning, isOverRev);
+                    // Drift Detection: Yaw rate, lateral G or rear wheel slip difference
+                    var yawRate = Math.abs(data.YawRate !== undefined ? data.YawRate : (data.yaw_rate || 0));
+                    var rearSlip = ((data.slip_rl || 0) + (data.slip_rr || 0)) / 2;
+                    var frontSlip = ((data.slip_fl || 0) + (data.slip_fr || 0)) / 2;
+                    var isDrifting = speedKmh > 25 && (yawRate > 0.28 || (rearSlip - frontSlip > 0.22));
+
+                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftWarning, isOverRev, isDrifting);
                 },
 
                 onAnimate: function () {

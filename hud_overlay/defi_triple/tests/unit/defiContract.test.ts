@@ -151,6 +151,36 @@ describe('Defi Advance BF HUD contract', () => {
       );
     }).not.toThrow();
 
+    // Verify onInit and onFrame unit switching (imperial/metric)
+    expect(() => {
+      registeredDef.onInit({ isMetric: false });
+      registeredDef.onFrame(
+        {
+          rpm: 9500, // triggers high peak
+          maxRpm: 11000,
+          speed_kmh: 210,
+          gear: 5,
+          boost_bar: 1.5,
+          OilTemp: 215,
+          OilPressure: 5.5,
+        },
+        { isMetric: false }
+      );
+      // Next frame with lower RPM to verify Peak Hold tracking
+      registeredDef.onFrame(
+        {
+          rpm: 4000,
+          maxRpm: 11000,
+          speed_kmh: 120,
+          gear: 3,
+          boost_bar: 0.2,
+          OilTemp: 200,
+          OilPressure: 3.5,
+        },
+        { isMetric: false }
+      );
+    }).not.toThrow();
+
     // Verify onAnimate triggers self-check ceremony
     if (registeredDef.onAnimate) {
       expect(() => {

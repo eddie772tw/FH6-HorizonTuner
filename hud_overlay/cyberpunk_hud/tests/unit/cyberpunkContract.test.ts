@@ -136,5 +136,20 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
         registeredDef.onAnimate();
       }).not.toThrow();
     }
+
+    if (registeredDef.onAudio) {
+      expect(() => {
+        registeredDef.onAudio({ spectrum: [0.8, 0.6, 0.5, 0.3, 0.2, 0.1, 0, 0, 0, 0] });
+        registeredDef.onAudio({ volume: 0.75 });
+        registeredDef.onAudio(null);
+      }).not.toThrow();
+    }
+
+    if (registeredDef.onMedia) {
+      expect(() => {
+        registeredDef.onMedia({ has_media: true, title: 'I Really Want to Stay At Your House', artist: 'Rosa Walton' });
+        registeredDef.onMedia(null);
+      }).not.toThrow();
+    }
   });
 });

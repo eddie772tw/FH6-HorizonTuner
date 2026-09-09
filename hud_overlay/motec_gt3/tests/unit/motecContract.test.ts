@@ -151,10 +151,17 @@ describe('MoTeC GT3 HUD contract', () => {
       );
     }).not.toThrow();
 
-    // Verify reverse gear and onAnimate sweep
+    // Verify reverse gear, G-Force and onMedia
     expect(() => {
-      registeredDef.onFrame({ rpm: 1200, max_rpm: 8500, speed_kmh: -15, gear: 0 }, { isMetric: true });
+      registeredDef.onFrame({ rpm: 1200, max_rpm: 8500, speed_kmh: -15, gear: 0, AccelerationX: 4.5, AccelerationZ: -2.1 }, { isMetric: true });
     }).not.toThrow();
+
+    if (registeredDef.onMedia) {
+      expect(() => {
+        registeredDef.onMedia({ success: true, has_media: true, title: 'Speed Demon', artist: 'Track Star' });
+        registeredDef.onMedia({ success: false });
+      }).not.toThrow();
+    }
 
     if (registeredDef.onAnimate) {
       expect(() => {

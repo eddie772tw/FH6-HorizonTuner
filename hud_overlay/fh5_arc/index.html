@@ -53,6 +53,7 @@
             var lastValidGear = 1;
             var lastMaxRpm = 8500;
             var lastRedline = 7800;
+            var mediaState = { has_media: false, title: '', artist: '' };
 
             function normPedal(val) {
                 if (val === undefined || val === null) return 0;
@@ -61,7 +62,7 @@
                 return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
             }
 
-            function drawFh5ArcHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, now) {
+            function drawFh5ArcHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, isHandbrake, now) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
@@ -171,6 +172,29 @@
                     ctx.fillStyle = '#22C55E';
                     ctx.fillRect(210, pedalY, 60 * Math.min(1, throttle), 6);
                 }
+
+                // 6. Horizon Radio Media Capsule or Handbrake Indicator
+                if (isHandbrake) {
+                    ctx.fillStyle = '#EF4444';
+                    ctx.font = 'bold 12px "ForzaFont", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('(P) HANDBRAKE', cx, cy + 68);
+                } else if (mediaState.has_media && mediaState.title) {
+                    var mText = '♫ ' + (mediaState.artist ? (mediaState.artist + ' - ') : '') + mediaState.title;
+                    if (mText.length > 26) mText = mText.substring(0, 24) + '...';
+                    ctx.font = 'bold 11px "ForzaFont", sans-serif';
+                    var mw = ctx.measureText(mText).width;
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(cx - (mw + 20) / 2, cy + 54, mw + 20, 20, 10) : ctx.fillRect(cx - (mw + 20) / 2, cy + 54, mw + 20, 20);
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.fillStyle = '#38BDF8';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(mText, cx, cy + 68);
+                }
             }
 
             function runSweep(now) {
@@ -180,7 +204,7 @@
 
                 if (progress >= 1.0) {
                     sweepActive = false;
-                    drawFh5ArcHUD(0, lastMaxRpm, lastRedline, 0, 1, 0, 0, now);
+                    drawFh5ArcHUD(0, lastMaxRpm, lastRedline, 0, 1, 0, 0, false, now);
                     return;
                 }
 
@@ -189,7 +213,7 @@
                     : (1 - (progress - 0.5) / 0.5) * lastMaxRpm;
 
                 var mockSpeed = (currentRpm / lastMaxRpm) * 260;
-                drawFh5ArcHUD(currentRpm, lastMaxRpm, lastRedline, mockSpeed, 1, 1.0, 0, now);
+                drawFh5ArcHUD(currentRpm, lastMaxRpm, lastRedline, mockSpeed, 1, 1.0, 0, false, now);
                 requestAnimationFrame(runSweep);
             }
 
@@ -243,8 +267,21 @@
 
                     var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
                     var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
+                    var isHandbrake = !!(data.handbrake || data.hand_brake);
 
-                    drawFh5ArcHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, performance.now());
+                    drawFh5ArcHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, isHandbrake, performance.now());
+                },
+
+                onMedia: function (data) {
+                    if (data && data.success && data.has_media && data.title) {
+                        mediaState.has_media = true;
+                        mediaState.title = data.title;
+                        mediaState.artist = data.artist || '';
+                    } else {
+                        mediaState.has_media = false;
+                        mediaState.title = '';
+                        mediaState.artist = '';
+                    }
                 },
 
                 onAnimate: function () {

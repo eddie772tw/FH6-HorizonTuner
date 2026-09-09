@@ -1,5 +1,27 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-09 / 5 款新 HUD 樣式注入專屬特色功能與高頻渲染效能無損落地 (PR #319)
+
+- **來源**：`local`，針對 PR #319 進行功能深度審計，為 5 款新 HUD 儀表樣式注入既有經典樣式之特色功能（車載電台、動態甩尾偵測、Peak Hold 峰值記憶、雙單位即時重繪、G-Force 遙測與頻譜等化器），且完全契合個別樣式之視覺主題與 60Hz 零暫態配置規範。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **MoTeC C125 整合 Team Radio 車隊通訊與 G-Force 遙測**：在底部原本單一的空位中納入 `onMedia` 車隊無線電提示（`RADIO: [Artist] - [Title]`）以及車輛縱向與橫向 G-Force 讀數（`G-FORCE: +0.45 / -0.22G`），大幅提升硬派專業賽車 DDU 的賽事沉浸感。
+  2. **Defi Advance BF JDM 招牌 Peak Hold 與雙制式單位（Metric/Imperial）動態重繪**：實作 JDM 經典的 Peak Hold 峰值記憶指針，在大油門全增壓或拉轉後於指針頂峰保持 1.8 秒後平滑衰減；支援 `isMetric` 動態切換，依據遙測即時切換 `bar` / `x10PSI` 與 `°C` / `°F`，並重繪離線底盤刻度。
+  3. **Forza Horizon 5 原生 Horizon Radio 膠囊與動態手煞車警示**：整合 FH5 經典的 Horizon Radio 音樂電台膠囊卡片（`♫ [Artist] - [Title]`），並將原生遙測之 `Handbrake` 狀態轉換為 `(P) HANDBRAKE` 醒目動態警示燈。
+  4. **頭文字D AE86 萬轉表動態甩尾判定徽章**：基於遊戲 UDP 之 `YawRate` 與輪胎滑移差值進行高頻甩尾姿態偵測，並在轉速針軸上方點亮熱血街機風格的 `⚡ DRIFT ⚡` 警報徽章。
+  5. **Cyberpunk 2077 Quadra HUD 車載電台、姿態角與 10 段音訊頻譜**：頂部整合夜城電台資訊（`♪ NC.FM // [Artist] - [Title]`），速度區整合即時車身姿態角（`PITCH: +X.X° ROLL: +Y.Y°`），並在右側儀表板加入 `onAudio` 驅動的 10 段點陣音訊頻譜等化器（`AUDIO // CH-10`）。
+  6. **60Hz 零暫態配置（Zero-Allocation）護欄**：所有新增之動態特徵（電台、峰值衰減、甩尾判定、音訊頻譜）皆採用基本型別 (Primitives) 與常駐記憶體陣列索引更新，無任何每幀暫態物件建立或垃圾回收 (GC) 壓力。
+- **Action**：
+  1. 擴充 `hud_overlay/motec_gt3/index.html` 與其測試 `motecContract.test.ts`。
+  2. 擴充 `hud_overlay/defi_triple/index.html` 與其測試 `defiContract.test.ts`。
+  3. 擴充 `hud_overlay/fh5_arc/index.html` 與其測試 `fh5ArcContract.test.ts`。
+  4. 擴充 `hud_overlay/initial_d/index.html` 與其測試 `initialDContract.test.ts`。
+  5. 擴充 `hud_overlay/cyberpunk_hud/index.html` 與其測試 `cyberpunkContract.test.ts`。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（5.46s）；前端 Vitest 94 files / 598 tests 100% passed（4.79s）；前端打包 build 成功（490ms）；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
 ## 2026-09-09 / 5 款新 HUD 樣式深入視覺比對、遙測單位修復與自檢物理阻尼落地 (PR #319)
 
 - **來源**：`local`，以審查者身分針對 PR #319 進行對抗式驗證，修復 Defi 華氏油溫滿格爆表、自檢指針撞針、副表刻度排版擠壓、Canvas textBaseline 漂移與字型非同步載入緩存瑕疵。

@@ -133,9 +133,23 @@ describe('Initial D AE86 TRD HUD contract', () => {
       );
     }).not.toThrow();
 
-    // Verify reverse gear and onAnimate sweep
+    // Verify reverse gear, drift telemetry, and onAnimate sweep
     expect(() => {
       registeredDef.onFrame({ rpm: 1000, max_rpm: 11000, speed_kmh: -5, gear: 0 }, { isMetric: true });
+      registeredDef.onFrame(
+        {
+          rpm: 8500,
+          max_rpm: 11000,
+          speed_kmh: 88,
+          gear: 3,
+          YawRate: 0.45,
+          slip_rl: 0.55,
+          slip_rr: 0.52,
+          slip_fl: 0.12,
+          slip_fr: 0.14,
+        },
+        { isMetric: true }
+      );
     }).not.toThrow();
 
     if (registeredDef.onAnimate) {

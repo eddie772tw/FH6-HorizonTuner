@@ -50,6 +50,7 @@
             var lastValidGear = 1;
             var lastKnownMaxRpm = 8500;
             var lastKnownRedline = 8000;
+            var mediaState = { has_media: false, title: '', artist: '' };
 
             function getTireColor(temp) {
                 if (temp < 75) return '#38BDF8';
@@ -74,7 +75,7 @@
                 return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
             }
 
-            function drawMotecDashboard(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, now) {
+            function drawMotecDashboard(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, latG, lonG, now) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
@@ -270,8 +271,11 @@
 
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 13px monospace';
-                ctx.fillText('WATER: ' + Math.round(engineTemp) + '°C', 556, 270);
-                ctx.fillText('BRAKE BIAS: 54:46', 556, 305);
+                ctx.fillText('WATER: ' + Math.round(engineTemp) + '°C', 556, 266);
+                var latStr = (latG >= 0 ? '+' : '') + (latG || 0).toFixed(2) + 'G';
+                var lonStr = (lonG >= 0 ? '+' : '') + (lonG || 0).toFixed(2) + 'G';
+                ctx.fillText('G-FORCE: ' + latStr + ' / ' + lonStr, 556, 290);
+                ctx.fillText('BRAKE BIAS: 54:46', 556, 314);
 
                 // 5. Stepped RPM Bar (Symmetrical Grid: x: 24, y: 366, w: 752, h: 48)
                 ctx.fillStyle = '#131722';
@@ -311,16 +315,34 @@
                 ctx.textAlign = 'left';
                 var flags = [
                     { label: 'TC', active: isTcsActive, color: '#10B981', x: 44 },
-                    { label: 'ABS', active: isAbsActive, color: accentColor, x: 184 },
-                    { label: 'DIFF 50%', active: true, color: '#64748B', x: 324 },
-                    { label: 'MAP 1', active: true, color: '#A855F7', x: 484 },
-                    { label: 'ENG OK', active: true, color: '#10B981', x: 634 }
+                    { label: 'ABS', active: isAbsActive, color: accentColor, x: 184 }
                 ];
                 for (var fIdx = 0; fIdx < flags.length; fIdx++) {
                     var f = flags[fIdx];
                     ctx.fillStyle = f.active ? f.color : '#334155';
                     ctx.font = 'bold 14px monospace';
                     ctx.fillText(f.label, f.x, 453);
+                }
+
+                // Radio Team Comms / Media or standard race flags
+                if (mediaState.has_media && mediaState.title) {
+                    ctx.fillStyle = '#38BDF8';
+                    ctx.font = 'bold 13px monospace';
+                    var mediaStr = 'RADIO: ' + (mediaState.artist ? (mediaState.artist + ' - ') : '') + mediaState.title;
+                    if (mediaStr.length > 44) mediaStr = mediaStr.substring(0, 41) + '...';
+                    ctx.fillText(mediaStr, 324, 453);
+                } else {
+                    var extraFlags = [
+                        { label: 'DIFF 50%', active: true, color: '#64748B', x: 324 },
+                        { label: 'MAP 1', active: true, color: '#A855F7', x: 484 },
+                        { label: 'ENG OK', active: true, color: '#10B981', x: 634 }
+                    ];
+                    for (var efIdx = 0; efIdx < extraFlags.length; efIdx++) {
+                        var ef = extraFlags[efIdx];
+                        ctx.fillStyle = ef.active ? ef.color : '#334155';
+                        ctx.font = 'bold 14px monospace';
+                        ctx.fillText(ef.label, ef.x, 453);
+                    }
                 }
             }
 
@@ -331,7 +353,7 @@
 
                 if (progress >= 1.0) {
                     sweepActive = false;
-                    drawMotecDashboard(0, lastKnownMaxRpm, lastKnownRedline, 0, 1, 0, 0, [85, 85, 85, 85], 90, false, false, timestamp);
+                    drawMotecDashboard(0, lastKnownMaxRpm, lastKnownRedline, 0, 1, 0, 0, [85, 85, 85, 85], 90, false, false, 0, 0, timestamp);
                     return;
                 }
 
@@ -343,7 +365,7 @@
                 }
 
                 var mockSpeed = (sweepRpm / lastKnownMaxRpm) * 220;
-                drawMotecDashboard(sweepRpm, lastKnownMaxRpm, lastKnownRedline, mockSpeed, 1, 1.0, 0, [88, 88, 92, 92], 92, false, false, timestamp);
+                drawMotecDashboard(sweepRpm, lastKnownMaxRpm, lastKnownRedline, mockSpeed, 1, 1.0, 0, [88, 88, 92, 92], 92, false, false, 0.45, -0.22, timestamp);
                 requestAnimationFrame(runSweep);
             }
 
@@ -415,7 +437,33 @@
                     var isAbsActive = !!(data.abs_active || (payload && payload.lockup && (payload.lockup.fl || payload.lockup.fr || payload.lockup.rl || payload.lockup.rr)));
                     var isTcsActive = !!(data.tcs_active || data.tcs_engaged);
 
-                    drawMotecDashboard(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, performance.now());
+                    // Real-time G-Force extraction
+                    var latG = 0;
+                    var lonG = 0;
+                    if (data.AccelerationX !== undefined && data.AccelerationZ !== undefined) {
+                        latG = data.AccelerationX / 9.81;
+                        lonG = data.AccelerationZ / 9.81;
+                    } else if (data.accel_x !== undefined && data.accel_z !== undefined) {
+                        latG = data.accel_x / 9.81;
+                        lonG = data.accel_z / 9.81;
+                    } else if (payload && payload.g_force) {
+                        latG = payload.g_force.lat || 0;
+                        lonG = payload.g_force.lon || 0;
+                    }
+
+                    drawMotecDashboard(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, latG, lonG, performance.now());
+                },
+
+                onMedia: function (data) {
+                    if (data && data.success && data.has_media && data.title) {
+                        mediaState.has_media = true;
+                        mediaState.title = data.title;
+                        mediaState.artist = data.artist || '';
+                    } else {
+                        mediaState.has_media = false;
+                        mediaState.title = '';
+                        mediaState.artist = '';
+                    }
                 },
 
                 onAnimate: function () {

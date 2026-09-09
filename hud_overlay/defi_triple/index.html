@@ -51,8 +51,30 @@
 
             var isSelfChecking = false;
             var selfCheckStartTime = 0;
+            var isMetric = true;
             var offscreenDial = null;
             var lastState = { rpmRatio: 0, boostRatio: 0.35, oilTempRatio: 0.45, oilPressRatio: 0.4, isShiftLightOn: false };
+
+            // Defi Peak Hold Memory (holds highest value for 1.8s then smooth decay)
+            var peakState = {
+                rpmRatio: 0,
+                rpmTime: 0,
+                boostRatio: 0.35,
+                boostTime: 0
+            };
+
+            function updatePeak(current, peakVal, peakTime, now) {
+                if (current >= peakVal) {
+                    return { val: current, time: now };
+                }
+                var age = now - peakTime;
+                if (age < 1800) {
+                    return { val: peakVal, time: peakTime };
+                }
+                // Smooth decay after 1.8s hold
+                var decay = Math.max(current, peakVal - 0.005);
+                return { val: decay, time: peakTime };
+            }
 
             function normPedal(val) {
                 if (val === undefined || val === null) return 0;
@@ -85,9 +107,9 @@
 
                 var dials = [
                     { cx: 135, cy: 155, r: 100, title: 'TACHO', unit: 'x1000r/min' },
-                    { cx: 345, cy: 155, r: 64, title: 'TURBO', unit: 'x100kPa' },
-                    { cx: 505, cy: 155, r: 64, title: 'OIL TEMP', unit: '°C' },
-                    { cx: 665, cy: 155, r: 64, title: 'OIL PRESS', unit: 'x100kPa' }
+                    { cx: 345, cy: 155, r: 64, title: 'TURBO', unit: isMetric ? 'x100kPa' : 'x10PSI' },
+                    { cx: 505, cy: 155, r: 64, title: 'OIL TEMP', unit: isMetric ? '°C' : '°F' },
+                    { cx: 665, cy: 155, r: 64, title: 'OIL PRESS', unit: isMetric ? 'x100kPa' : 'x10PSI' }
                 ];
 
                 var startA = 0.75 * Math.PI;
@@ -305,6 +327,21 @@
                 ctx.restore();
             }
 
+            function drawPeakIndicator(ctx, cx, cy, radius, angle, color) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.moveTo(radius * 0.72, 0);
+                ctx.lineTo(radius * 0.88, -2.5);
+                ctx.lineTo(radius * 0.88, 2.5);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.65;
+                ctx.fill();
+                ctx.restore();
+            }
+
             function renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
@@ -324,6 +361,17 @@
                 var customColor = window._currentCustomColor;
                 var useDefault = window._currentUseDefaultColors !== false;
                 var needleColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF1744' : '#00E5FF');
+                var peakColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FFB74D' : '#E0F2FE');
+
+                // Peak Hold Indicators (JDM feature: marks highest recorded RPM and Boost)
+                if (!isSelfChecking) {
+                    if (peakState.rpmRatio > rpmRatio + 0.015) {
+                        drawPeakIndicator(ctx, 135, 155, 95, startA + Math.min(1, peakState.rpmRatio) * totalA, peakColor);
+                    }
+                    if (peakState.boostRatio > boostRatio + 0.015) {
+                        drawPeakIndicator(ctx, 345, 155, 60, startA + Math.min(1, peakState.boostRatio) * totalA, peakColor);
+                    }
+                }
 
                 // 1. Tacho Needle
                 drawNeedle(ctx, 135, 155, 95, startA + Math.max(0, Math.min(1, rpmRatio)) * totalA, needleColor);
@@ -399,8 +447,15 @@
                 scaleMultiplier: 0.6,
 
                 onInit: function (payload) {
-                    if (payload && payload.defiTheme) {
-                        isAmberTheme = payload.defiTheme === 'amber';
+                    if (payload) {
+                        if (payload.defiTheme) {
+                            isAmberTheme = payload.defiTheme === 'amber';
+                        }
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
                     }
                     buildOffscreenDial();
                 },
@@ -413,6 +468,21 @@
 
                 onFrame: function (data, payload) {
                     if (isSelfChecking) return;
+
+                    var prevMetric = isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+                    if (prevMetric !== isMetric) {
+                        buildOffscreenDial();
+                    }
 
                     var maxRpm = data.max_rpm || data.maxRpm || 11000;
                     var redlineRpm = (payload && payload.redlineRpm) || (data.redlineRpm) || (maxRpm * 0.88);
@@ -440,6 +510,16 @@
                     }
 
                     var boostRatio = boostToRatio(boostBar);
+
+                    // Update Peak Hold State
+                    var now = performance.now();
+                    var pRpm = updatePeak(rpmRatio, peakState.rpmRatio, peakState.rpmTime, now);
+                    peakState.rpmRatio = pRpm.val;
+                    peakState.rpmTime = pRpm.time;
+
+                    var pBoost = updatePeak(boostRatio, peakState.boostRatio, peakState.boostTime, now);
+                    peakState.boostRatio = pBoost.val;
+                    peakState.boostTime = pBoost.time;
 
                     // Oil Temp (50 ~ 150 °C, converts Fahrenheit ~180-230°F if needed)
                     var oilTemp = data.OilTemp !== undefined ? data.OilTemp : (data.oil_temp !== undefined ? data.oil_temp : 95);
