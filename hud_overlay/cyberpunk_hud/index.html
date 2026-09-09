@@ -219,21 +219,28 @@
                 drawSegmentedRpmBar(ctx, activeSegments, totalSegments, isRedline);
 
                 // Ticks & Labels below RPM bar
+                function formatK(val) {
+                    var k = val / 1000;
+                    return (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + 'K';
+                }
+
                 ctx.fillStyle = '#64748B';
                 ctx.font = 'bold 11px monospace';
                 ctx.textAlign = 'left';
                 ctx.fillText('0', 44, 292);
                 ctx.textAlign = 'center';
-                ctx.fillText('MID ' + Math.round(maxRpm * 0.5 / 1000) + 'K', 320, 292);
+                ctx.fillText('MID ' + formatK(maxRpm * 0.5), 320, 292);
                 ctx.textAlign = 'right';
-                ctx.fillText('MAX ' + Math.round(maxRpm / 1000) + 'K', 600, 292);
+                ctx.fillText('MAX ' + formatK(maxRpm), 600, 292);
 
                 // Micro Glitch FX on Redline (Zero allocation lightweight slice)
                 if (isRedline && Math.random() < 0.22) {
-                    var sliceY = Math.floor(Math.random() * 260);
-                    var sliceH = 4 + Math.floor(Math.random() * 10);
-                    var sliceOffset = (Math.random() - 0.5) * 16;
-                    ctx.drawImage(domCache.canvas, 20, sliceY, 600, sliceH, 20 + sliceOffset, sliceY, 600, sliceH);
+                    var sliceY = Math.floor(Math.random() * 240);
+                    var sliceH = 4 + Math.floor(Math.random() * 8);
+                    var sliceOffset = (Math.random() - 0.5) * 14;
+                    try {
+                        ctx.drawImage(domCache.canvas, 20, sliceY, 600, sliceH, 20 + sliceOffset, sliceY, 600, sliceH);
+                    } catch (e) {}
                 }
             }
 
@@ -258,13 +265,24 @@
                 requestAnimationFrame(runSweep);
             }
 
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
             HUDCore.registerStyle('cyberpunk_hud', {
                 containerId: 'cyberpunkContainer',
                 scaleMultiplier: 0.70,
 
                 onInit: function (payload) {
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
                     }
                 },
 
@@ -282,27 +300,36 @@
                     lastMaxRpm = maxRpm;
                     lastRedline = redlineRpm;
 
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
                     }
 
                     var rpm = data.rpm || 0;
                     var rawSpeed = isMetric !== false
                         ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed || 0) * 0.621371));
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
 
                     if (data.gear !== undefined && data.gear <= 11) {
                         lastValidGear = data.gear;
                     }
 
-                    var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
-                    var brake = (data.brake !== undefined ? data.brake : 0) / (data.brake > 1 ? 255 : 1);
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+                    var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
 
                     var boostBar = 0;
                     if (data.boost_bar !== undefined) {
                         boostBar = data.boost_bar;
+                    } else if (data.boost !== undefined) {
+                        boostBar = data.boost;
                     } else if (data.Boost !== undefined) {
-                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038 - 1.0) : data.Boost;
+                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038) : data.Boost;
                     } else {
                         boostBar = throttle * 1.6 - 0.2;
                     }

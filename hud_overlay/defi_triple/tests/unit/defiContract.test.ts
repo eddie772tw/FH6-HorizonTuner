@@ -83,6 +83,8 @@ describe('Defi Advance BF HUD contract', () => {
       getContext: () => mockCtx,
       width: 760,
       height: 280,
+      style: {},
+      addEventListener: () => {},
     };
 
     const mockDocument = {

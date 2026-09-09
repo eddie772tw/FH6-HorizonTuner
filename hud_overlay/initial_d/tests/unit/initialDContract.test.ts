@@ -100,6 +100,7 @@ describe('Initial D AE86 TRD HUD contract', () => {
 
     const mockWindow = {
       requestAnimationFrame: () => {},
+      addEventListener: () => {},
     };
 
     const mockPerformance = {
@@ -131,5 +132,13 @@ describe('Initial D AE86 TRD HUD contract', () => {
         { isMetric: true }
       );
     }).not.toThrow();
+
+    // Verify onElementsChange handles hiding gauge and chime
+    if (registeredDef.onElementsChange) {
+      expect(() => {
+        registeredDef.onElementsChange({ showGauge: false, showAudioChime: false });
+        registeredDef.onElementsChange({ showGauge: true, showAudioChime: true });
+      }).not.toThrow();
+    }
   });
 });

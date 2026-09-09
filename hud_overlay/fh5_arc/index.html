@@ -54,14 +54,22 @@
             var lastMaxRpm = 8500;
             var lastRedline = 7800;
 
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
             function drawFh5ArcHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, now) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
                 ctx.clearRect(0, 0, 380, 380);
 
-                var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+                var rpmRatio = maxRpm > 0 ? Math.max(0, Math.min(1, rpm / maxRpm)) : 0;
                 var isRedline = rpm >= redlineRpm;
+                var isLimiter = maxRpm > 0 && rpm >= maxRpm * 0.98;
 
                 // 1. Base Track Arc
                 ctx.beginPath();
@@ -79,11 +87,17 @@
                     ctx.lineWidth = 10;
                     ctx.lineCap = 'round';
 
-                    if (isRedline) {
-                        var flash = Math.sin(now * 0.035) > 0;
-                        ctx.strokeStyle = flash ? '#EF4444' : '#FF7878';
+                    if (isLimiter) {
+                        // High-rev shift limit pulse (20Hz aggressive flash)
+                        var flash = Math.sin(now * 0.04) > 0;
+                        ctx.strokeStyle = flash ? '#EF4444' : '#FFFFFF';
                         ctx.shadowColor = '#EF4444';
-                        ctx.shadowBlur = 14;
+                        ctx.shadowBlur = 16;
+                    } else if (isRedline) {
+                        // Solid red warning zone without premature flashing
+                        ctx.strokeStyle = '#EF4444';
+                        ctx.shadowColor = '#EF4444';
+                        ctx.shadowBlur = 12;
                     } else {
                         var customColor = window._currentCustomColor;
                         var useDefault = window._currentUseDefaultColors !== false;
@@ -177,8 +191,12 @@
                 scaleMultiplier: 1.0,
 
                 onInit: function (payload) {
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
                     }
                 },
 
@@ -196,21 +214,28 @@
                     lastMaxRpm = maxRpm;
                     lastRedline = redlineRpm;
 
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
                     }
 
                     var rpm = data.rpm || 0;
                     var rawSpeed = isMetric !== false
                         ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed || 0) * 0.621371));
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
 
                     if (data.gear !== undefined && data.gear <= 11) {
                         lastValidGear = data.gear;
                     }
 
-                    var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
-                    var brake = (data.brake !== undefined ? data.brake : 0) / (data.brake > 1 ? 255 : 1);
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+                    var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
 
                     drawFh5ArcHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, performance.now());
                 },
@@ -227,6 +252,12 @@
             setTimeout(function () {
                 drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, performance.now());
             }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, performance.now());
+                });
+            }
         })();
     </script>
 </body>

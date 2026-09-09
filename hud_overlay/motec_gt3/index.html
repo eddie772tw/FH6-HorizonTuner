@@ -58,6 +58,22 @@
                 return '#EF4444';
             }
 
+            function toCelsius(temp) {
+                if (temp === undefined || temp === null || isNaN(temp)) return 85;
+                // If temp > 120, it is in Fahrenheit (Forza UDP canonical unit ~180-230°F)
+                if (temp > 120) {
+                    return Math.round((temp - 32) * 5 / 9);
+                }
+                return Math.round(temp);
+            }
+
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
             function drawMotecDashboard(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, now) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
@@ -77,7 +93,7 @@
                 if (rpm >= shiftPoint) {
                     activeLeds = 15;
                     isFlashing = Math.floor(now / 55) % 2 === 0;
-                } else if (rpm > shiftStart) {
+                } else if (rpm > shiftStart && shiftPoint > shiftStart) {
                     var ratio = (rpm - shiftStart) / (shiftPoint - shiftStart);
                     activeLeds = Math.min(15, Math.floor(ratio * 15));
                 }
@@ -92,10 +108,16 @@
                     ctx.beginPath();
                     ctx.arc(cx, ledY, ledRadius, 0, Math.PI * 2);
 
-                    if (isFlashing) {
-                        ctx.fillStyle = '#00E5FF';
-                        ctx.shadowColor = '#00E5FF';
-                        ctx.shadowBlur = 14;
+                    if (rpm >= shiftPoint) {
+                        // High-frequency 18Hz strobe flash when at or above shift point
+                        if (isFlashing) {
+                            ctx.fillStyle = '#00E5FF';
+                            ctx.shadowColor = '#00E5FF';
+                            ctx.shadowBlur = 14;
+                        } else {
+                            ctx.fillStyle = '#1B202B';
+                            ctx.shadowBlur = 0;
+                        }
                     } else if (i < activeLeds) {
                         if (i < 5) {
                             ctx.fillStyle = '#00E676';
@@ -210,7 +232,7 @@
                 ctx.strokeStyle = '#273142';
                 ctx.strokeRect(30, 360, 740, 48);
 
-                var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+                var rpmRatio = maxRpm > 0 ? Math.max(0, Math.min(1, rpm / maxRpm)) : 0;
                 var barW = Math.round(736 * rpmRatio);
                 if (barW > 0) {
                     var grad = ctx.createLinearGradient(32, 0, 768, 0);
@@ -225,10 +247,12 @@
                 ctx.fillStyle = '#94A3B8';
                 ctx.font = '12px monospace';
                 ctx.textAlign = 'center';
-                for (var r = 1000; r <= maxRpm; r += 1000) {
-                    var tx = 30 + (r / maxRpm) * 740;
-                    ctx.fillRect(tx, 360, 2, 8);
-                    ctx.fillText(String(r / 1000) + 'k', tx, 424);
+                if (maxRpm > 0) {
+                    for (var r = 1000; r <= maxRpm; r += 1000) {
+                        var tx = 30 + (r / maxRpm) * 740;
+                        ctx.fillRect(tx, 360, 2, 8);
+                        ctx.fillText(String(Math.round(r / 1000)) + 'k', tx, 424);
+                    }
                 }
 
                 // 6. Bottom Status Footer
@@ -276,8 +300,12 @@
                 scaleMultiplier: 0.55,
 
                 onInit: function (payload) {
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
                     }
                 },
 
@@ -295,33 +323,45 @@
                     lastKnownMaxRpm = maxRpm;
                     lastKnownRedline = redlineRpm;
 
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
                     }
 
                     var rpm = data.rpm || 0;
                     var rawSpeed = isMetric !== false
                         ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed || 0) * 0.621371));
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
 
                     if (data.gear !== undefined && data.gear <= 11) {
                         lastValidGear = data.gear;
                     }
 
-                    var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
-                    var brake = (data.brake !== undefined ? data.brake : 0) / (data.brake > 1 ? 255 : 1);
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+                    var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
+
+                    var rawFL = data.temp_fl !== undefined ? data.temp_fl : (Array.isArray(data.TireTemp) ? data.TireTemp[0] : (data.TireTempFL || data.tire_temp_fl));
+                    var rawFR = data.temp_fr !== undefined ? data.temp_fr : (Array.isArray(data.TireTemp) ? data.TireTemp[1] : (data.TireTempFR || data.tire_temp_fr));
+                    var rawRL = data.temp_rl !== undefined ? data.temp_rl : (Array.isArray(data.TireTemp) ? data.TireTemp[2] : (data.TireTempRL || data.tire_temp_rl));
+                    var rawRR = data.temp_rr !== undefined ? data.temp_rr : (Array.isArray(data.TireTemp) ? data.TireTemp[3] : (data.TireTempRR || data.tire_temp_rr));
 
                     var tireTemps = [
-                        data.TireTempFL || data.tire_temp_fl || 85,
-                        data.TireTempFR || data.tire_temp_fr || 85,
-                        data.TireTempRL || data.tire_temp_rl || 88,
-                        data.TireTempRR || data.tire_temp_rr || 88
+                        toCelsius(rawFL),
+                        toCelsius(rawFR),
+                        toCelsius(rawRL),
+                        toCelsius(rawRR)
                     ];
 
                     var engineTemp = data.EngineTemp || data.engine_temp || 90;
 
                     var isAbsActive = !!(data.abs_active || (payload && payload.lockup && (payload.lockup.fl || payload.lockup.fr || payload.lockup.rl || payload.lockup.rr)));
-                    var isTcsActive = !!(data.tcs_active || (data.tcs_engaged));
+                    var isTcsActive = !!(data.tcs_active || data.tcs_engaged);
 
                     drawMotecDashboard(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, tireTemps, engineTemp, isAbsActive, isTcsActive, performance.now());
                 },

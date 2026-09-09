@@ -44,9 +44,30 @@
             }
 
             var isAmberTheme = true;
+            try {
+                var savedTheme = localStorage.getItem('defi_theme');
+                if (savedTheme === 'white' || savedTheme === 'blue') isAmberTheme = false;
+            } catch (e) {}
+
             var isSelfChecking = false;
             var selfCheckStartTime = 0;
             var offscreenDial = null;
+            var lastState = { rpmRatio: 0, boostRatio: 0.35, oilTempRatio: 0.45, oilPressRatio: 0.4, isShiftLightOn: false };
+
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
+            function boostToRatio(bar) {
+                var b = Math.max(-1.0, Math.min(2.0, bar));
+                if (b <= 0) {
+                    return ((b + 1.0) / 1.0) * 0.35;
+                }
+                return 0.35 + (b / 2.0) * 0.65;
+            }
 
             function buildOffscreenDial() {
                 offscreenDial = document.createElement('canvas');
@@ -63,11 +84,14 @@
                 var dimColor = '#4A5568';
 
                 var dials = [
-                    { cx: 135, cy: 155, r: 100, title: 'TACHO', unit: 'x1000r/min', maxVal: 11, step: 1 },
-                    { cx: 345, cy: 155, r: 64, title: 'TURBO', unit: 'x100kPa', maxVal: 2, minVal: -1, step: 1 },
-                    { cx: 505, cy: 155, r: 64, title: 'OIL TEMP', unit: '°C', maxVal: 150, minVal: 50, step: 25 },
-                    { cx: 665, cy: 155, r: 64, title: 'OIL PRESS', unit: 'x100kPa', maxVal: 10, minVal: 0, step: 2 }
+                    { cx: 135, cy: 155, r: 100, title: 'TACHO', unit: 'x1000r/min' },
+                    { cx: 345, cy: 155, r: 64, title: 'TURBO', unit: 'x100kPa' },
+                    { cx: 505, cy: 155, r: 64, title: 'OIL TEMP', unit: '°C' },
+                    { cx: 665, cy: 155, r: 64, title: 'OIL PRESS', unit: 'x100kPa' }
                 ];
+
+                var startA = 0.75 * Math.PI;
+                var totalA = 1.5 * Math.PI;
 
                 for (var idx = 0; idx < dials.length; idx++) {
                     var d = dials[idx];
@@ -81,14 +105,14 @@
                     oCtx.strokeStyle = '#2D3748';
                     oCtx.stroke();
 
-                    // Inner decorative line
+                    // Inner decorative ring
                     oCtx.beginPath();
                     oCtx.arc(d.cx, d.cy, d.r - 8, 0, Math.PI * 2);
                     oCtx.lineWidth = 1;
                     oCtx.strokeStyle = '#1A202C';
                     oCtx.stroke();
 
-                    // Labels
+                    // Title & Unit
                     oCtx.fillStyle = textColor;
                     oCtx.font = (idx === 0 ? 'bold 16px' : 'bold 12px') + ' sans-serif';
                     oCtx.textAlign = 'center';
@@ -96,29 +120,133 @@
 
                     oCtx.fillStyle = dimColor;
                     oCtx.font = (idx === 0 ? '11px' : '9px') + ' sans-serif';
-                    oCtx.fillText(d.unit, d.cx, d.cy + d.r * 0.4);
+                    oCtx.fillText(d.unit, d.cx, d.cy + d.r * 0.42);
 
-                    // Ticks
-                    var startA = 0.75 * Math.PI;
-                    var totalA = 1.5 * Math.PI;
-                    var totalTicks = idx === 0 ? 22 : 20;
+                    // Dial-specific ticks and numbers
+                    if (idx === 0) {
+                        // TACHOMETER (0 to 11 x1000 RPM, major every 1, minor every 0.5)
+                        for (var rpmVal = 0; rpmVal <= 11; rpmVal += 0.5) {
+                            var ratio = rpmVal / 11;
+                            var angle = startA + ratio * totalA;
+                            var isMajor = (rpmVal % 1 === 0);
+                            var isRed = (rpmVal >= 9);
+                            var len = isMajor ? 14 : 7;
 
-                    for (var i = 0; i <= totalTicks; i++) {
-                        var angle = startA + (i / totalTicks) * totalA;
-                        var isMajor = idx === 0 ? (i % 2 === 0) : (i % 5 === 0);
-                        var len = isMajor ? (idx === 0 ? 14 : 9) : (idx === 0 ? 7 : 5);
+                            var x1 = d.cx + Math.cos(angle) * (d.r - 10);
+                            var y1 = d.cy + Math.sin(angle) * (d.r - 10);
+                            var x2 = d.cx + Math.cos(angle) * (d.r - 10 - len);
+                            var y2 = d.cy + Math.sin(angle) * (d.r - 10 - len);
 
-                        var x1 = d.cx + Math.cos(angle) * (d.r - 10);
-                        var y1 = d.cy + Math.sin(angle) * (d.r - 10);
-                        var x2 = d.cx + Math.cos(angle) * (d.r - 10 - len);
-                        var y2 = d.cy + Math.sin(angle) * (d.r - 10 - len);
+                            oCtx.beginPath();
+                            oCtx.moveTo(x1, y1);
+                            oCtx.lineTo(x2, y2);
+                            oCtx.lineWidth = isMajor ? 2.5 : 1.2;
+                            oCtx.strokeStyle = isRed ? '#EF4444' : (isMajor ? tickColor : dimColor);
+                            oCtx.stroke();
 
-                        oCtx.beginPath();
-                        oCtx.moveTo(x1, y1);
-                        oCtx.lineTo(x2, y2);
-                        oCtx.lineWidth = isMajor ? 2 : 1;
-                        oCtx.strokeStyle = isMajor ? tickColor : dimColor;
-                        oCtx.stroke();
+                            if (isMajor) {
+                                var numX = d.cx + Math.cos(angle) * (d.r - 24);
+                                var numY = d.cy + Math.sin(angle) * (d.r - 24);
+                                oCtx.fillStyle = isRed ? '#EF4444' : textColor;
+                                oCtx.font = 'bold 12px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(rpmVal), numX, numY + 1);
+                            }
+                        }
+                    } else if (idx === 1) {
+                        // TURBO BOOST (-1.0 to +2.0 bar, non-linear angle mapping)
+                        var boostTicks = [-1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
+                        for (var bIdx = 0; bIdx < boostTicks.length; bIdx++) {
+                            var bVal = boostTicks[bIdx];
+                            var bRatio = boostToRatio(bVal);
+                            var bAngle = startA + bRatio * totalA;
+                            var bMajor = (bVal === -1.0 || bVal === 0 || bVal === 1.0 || bVal === 2.0);
+                            var bLen = bMajor ? 10 : 5;
+
+                            var bx1 = d.cx + Math.cos(bAngle) * (d.r - 10);
+                            var by1 = d.cy + Math.sin(bAngle) * (d.r - 10);
+                            var bx2 = d.cx + Math.cos(bAngle) * (d.r - 10 - bLen);
+                            var by2 = d.cy + Math.sin(bAngle) * (d.r - 10 - bLen);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(bx1, by1);
+                            oCtx.lineTo(bx2, by2);
+                            oCtx.lineWidth = bMajor ? 2 : 1;
+                            oCtx.strokeStyle = bMajor ? tickColor : dimColor;
+                            oCtx.stroke();
+
+                            if (bMajor) {
+                                var bNumX = d.cx + Math.cos(bAngle) * (d.r - 20);
+                                var bNumY = d.cy + Math.sin(bAngle) * (d.r - 20);
+                                oCtx.fillStyle = textColor;
+                                oCtx.font = 'bold 10px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(Math.round(bVal)), bNumX, bNumY + 1);
+                            }
+                        }
+                    } else if (idx === 2) {
+                        // OIL TEMP (50 to 150 °C)
+                        var tempMajor = [50, 75, 100, 125, 150];
+                        for (var tVal = 50; tVal <= 150; tVal += 5) {
+                            var tRatio = (tVal - 50) / 100;
+                            var tAngle = startA + tRatio * totalA;
+                            var tMajor = tempMajor.indexOf(tVal) !== -1;
+                            var tLen = tMajor ? 9 : 4;
+
+                            var tx1 = d.cx + Math.cos(tAngle) * (d.r - 10);
+                            var ty1 = d.cy + Math.sin(tAngle) * (d.r - 10);
+                            var tx2 = d.cx + Math.cos(tAngle) * (d.r - 10 - tLen);
+                            var ty2 = d.cy + Math.sin(tAngle) * (d.r - 10 - tLen);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(tx1, ty1);
+                            oCtx.lineTo(tx2, ty2);
+                            oCtx.lineWidth = tMajor ? 2 : 1;
+                            oCtx.strokeStyle = tMajor ? tickColor : dimColor;
+                            oCtx.stroke();
+
+                            if (tMajor && (tVal === 50 || tVal === 100 || tVal === 150)) {
+                                var tNumX = d.cx + Math.cos(tAngle) * (d.r - 20);
+                                var tNumY = d.cy + Math.sin(tAngle) * (d.r - 20);
+                                oCtx.fillStyle = textColor;
+                                oCtx.font = 'bold 9px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(tVal), tNumX, tNumY + 1);
+                            }
+                        }
+                    } else {
+                        // OIL PRESS (0 to 10 x100kPa / bar)
+                        for (var pVal = 0; pVal <= 10; pVal += 0.5) {
+                            var pRatio = pVal / 10;
+                            var pAngle = startA + pRatio * totalA;
+                            var pMajor = (pVal % 2 === 0);
+                            var pLen = pMajor ? 9 : 4;
+
+                            var px1 = d.cx + Math.cos(pAngle) * (d.r - 10);
+                            var py1 = d.cy + Math.sin(pAngle) * (d.r - 10);
+                            var px2 = d.cx + Math.cos(pAngle) * (d.r - 10 - pLen);
+                            var py2 = d.cy + Math.sin(pAngle) * (d.r - 10 - pLen);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(px1, py1);
+                            oCtx.lineTo(px2, py2);
+                            oCtx.lineWidth = pMajor ? 2 : 1;
+                            oCtx.strokeStyle = pMajor ? tickColor : dimColor;
+                            oCtx.stroke();
+
+                            if (pMajor && (pVal === 0 || pVal === 4 || pVal === 8 || pVal === 10)) {
+                                var pNumX = d.cx + Math.cos(pAngle) * (d.r - 20);
+                                var pNumY = d.cy + Math.sin(pAngle) * (d.r - 20);
+                                oCtx.fillStyle = textColor;
+                                oCtx.font = 'bold 9px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(pVal), pNumX, pNumY + 1);
+                            }
+                        }
                     }
                 }
 
@@ -133,6 +261,19 @@
             }
 
             buildOffscreenDial();
+
+            // Support interactive physical Defi Control Unit button switch
+            if (domCache.canvas) {
+                domCache.canvas.style.cursor = 'pointer';
+                domCache.canvas.addEventListener('click', function () {
+                    isAmberTheme = !isAmberTheme;
+                    try {
+                        localStorage.setItem('defi_theme', isAmberTheme ? 'amber' : 'white');
+                    } catch (e) {}
+                    buildOffscreenDial();
+                    renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+                });
+            }
 
             function drawNeedle(ctx, cx, cy, radius, angle, color) {
                 ctx.save();
@@ -162,24 +303,25 @@
                 ctx.restore();
             }
 
-            function boostToRatio(bar) {
-                var b = Math.max(-1.0, Math.min(2.0, bar));
-                if (b <= 0) {
-                    return ((b + 1.0) / 1.0) * 0.35;
-                }
-                return 0.35 + (b / 2.0) * 0.65;
-            }
-
             function renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
+
+                lastState.rpmRatio = rpmRatio;
+                lastState.boostRatio = boostRatio;
+                lastState.oilTempRatio = oilTempRatio;
+                lastState.oilPressRatio = oilPressRatio;
+                lastState.isShiftLightOn = isShiftLightOn;
 
                 if (!offscreenDial) buildOffscreenDial();
                 ctx.drawImage(offscreenDial, 0, 0);
 
                 var startA = 0.75 * Math.PI;
                 var totalA = 1.5 * Math.PI;
-                var needleColor = isAmberTheme ? '#FF1744' : '#00E5FF';
+
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+                var needleColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF1744' : '#00E5FF');
 
                 // 1. Tacho Needle
                 drawNeedle(ctx, 135, 155, 95, startA + Math.max(0, Math.min(1, rpmRatio)) * totalA, needleColor);
@@ -238,6 +380,9 @@
                 scaleMultiplier: 0.6,
 
                 onInit: function (payload) {
+                    if (payload && payload.defiTheme) {
+                        isAmberTheme = payload.defiTheme === 'amber';
+                    }
                     buildOffscreenDial();
                 },
 
@@ -255,25 +400,34 @@
                     var rpm = data.rpm || 0;
                     var rpmRatio = rpm / 11000;
 
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+
                     // Boost calculation (in bar)
                     var boostBar = 0;
                     if (data.boost_bar !== undefined) {
                         boostBar = data.boost_bar;
+                    } else if (data.boost !== undefined) {
+                        boostBar = data.boost;
                     } else if (data.Boost !== undefined) {
                         // Forza UDP Boost is in PSI or bar
-                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038 - 1.0) : data.Boost;
+                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038) : data.Boost;
                     } else {
-                        var throttle = (data.accel !== undefined ? data.accel : (data.throttle || 0)) / (data.accel > 1 ? 255 : 1);
                         boostBar = throttle * 1.6 - 0.3;
                     }
+
+                    // Naturally aspirated / idle intake vacuum
+                    if (boostBar <= 0.05 && throttle < 0.25) {
+                        boostBar = -0.7 * (1.0 - throttle / 0.25);
+                    }
+
                     var boostRatio = boostToRatio(boostBar);
 
                     // Oil Temp (50 ~ 150 °C)
-                    var oilTemp = data.OilTemp || 95;
+                    var oilTemp = data.OilTemp || data.oil_temp || 95;
                     var oilTempRatio = (oilTemp - 50) / 100;
 
                     // Oil Pressure (0 ~ 10 bar)
-                    var oilPress = data.OilPressure || 4.5;
+                    var oilPress = data.OilPressure || data.oil_pressure || 4.5;
                     var oilPressRatio = oilPress / 10;
 
                     var isShiftLightOn = rpm >= redlineRpm;

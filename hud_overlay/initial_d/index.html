@@ -55,27 +55,50 @@
             var audioCtx = null;
             var lastChimeTime = 0;
             var chimeInterval = 1200;
+            var isGaugeVisible = true;
+            var showAudioChime = true;
 
-            function playSpeedChime() {
+            function initAudioContext() {
                 try {
                     if (!audioCtx) {
                         var AudioContextClass = window.AudioContext || window.webkitAudioContext;
                         if (AudioContextClass) audioCtx = new AudioContextClass();
                     }
+                    if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume().catch(function () {});
+                    }
+                } catch (e) {}
+            }
+
+            if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+                window.addEventListener('pointerdown', initAudioContext, { once: true });
+                window.addEventListener('keydown', initAudioContext, { once: true });
+            }
+
+            function playSingleDing(startTime, freqStart, freqEnd) {
+                if (!audioCtx || audioCtx.state === 'suspended') return;
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freqStart, startTime);
+                osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + 0.32);
+                gain.gain.setValueAtTime(0.18, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.32);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.32);
+            }
+
+            function playSpeedChime() {
+                try {
+                    initAudioContext();
                     if (!audioCtx || audioCtx.state === 'suspended') return;
 
                     var now = audioCtx.currentTime;
-                    var osc = audioCtx.createOscillator();
-                    var gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(980, now);
-                    osc.frequency.exponentialRampToValueAtTime(820, now + 0.3);
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
+                    // Dual-bell Ding-Ding (High 1020Hz -> 820Hz, followed by echo Ding at +0.35s)
+                    playSingleDing(now, 1020, 820);
+                    playSingleDing(now + 0.35, 980, 820);
                 } catch (e) {
                     // Audio context safety fallback
                 }
@@ -217,7 +240,7 @@
                 ctx.restore();
             }
 
-            function renderHUD(rpm, speed, gear, now) {
+            function renderHUD(rpm, speed, gear, now, isShiftLightOn) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
@@ -226,9 +249,6 @@
 
                 var podX = 350;
                 var podY = 85;
-                var isShiftWarning = rpm >= 9800;
-                var isOverRev = rpm >= 10500;
-                var isShiftLightOn = isOverRev ? (Math.floor(now / 66) % 2 === 0) : isShiftWarning;
 
                 // 1. External Shift Light LED
                 ctx.beginPath();
@@ -271,7 +291,7 @@
 
                 if (progress >= 1.0) {
                     sweepActive = false;
-                    renderHUD(0, 0, 1, now);
+                    renderHUD(0, 0, 1, now, false);
                     return;
                 }
 
@@ -280,7 +300,8 @@
                     : (1 - (progress - 0.5) / 0.5) * 11000;
 
                 var mockSpeed = (currentRpm / 11000) * 230;
-                renderHUD(currentRpm, mockSpeed, 1, now);
+                var mockShiftLight = currentRpm >= 9800;
+                renderHUD(currentRpm, mockSpeed, 1, now, mockShiftLight);
                 requestAnimationFrame(runSweep);
             }
 
@@ -289,29 +310,53 @@
                 scaleMultiplier: 0.95,
 
                 onInit: function (payload) {
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
                     }
                     buildOffscreenDial();
                 },
 
                 onElementsChange: function (elements) {
-                    if (domCache.container) {
-                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    if (elements) {
+                        if (elements.showGauge !== undefined) {
+                            isGaugeVisible = elements.showGauge !== false;
+                            if (domCache.container) {
+                                domCache.container.style.display = isGaugeVisible ? 'block' : 'none';
+                            }
+                        }
+                        if (elements.showAudioChime !== undefined) {
+                            showAudioChime = elements.showAudioChime !== false;
+                        }
                     }
                 },
 
                 onFrame: function (data, payload) {
                     if (sweepActive) return;
 
-                    if (payload && typeof payload.isMetric === 'boolean') {
-                        isMetric = payload.isMetric;
+                    var maxRpm = data.max_rpm || data.maxRpm || 11000;
+                    var redline = (payload && payload.redlineRpm) || data.redlineRpm || 10000;
+
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
                     }
 
                     var rpm = data.rpm || 0;
                     var rawSpeed = isMetric !== false
                         ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed || 0) * 0.621371));
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+
+                    var speedKmh = data.speed_kmh !== undefined ? data.speed_kmh : (isMetric ? rawSpeed : rawSpeed * 1.60934);
 
                     if (data.gear !== undefined && data.gear <= 11) {
                         lastValidGear = data.gear;
@@ -319,13 +364,21 @@
 
                     var now = performance.now();
 
-                    // Optional 80km/h Speed Chime
-                    if (rawSpeed >= 85 && (now - lastChimeTime > chimeInterval)) {
+                    // 80km/h Speed Chime (Ding-Ding) - only when gauge is visible and chime enabled
+                    if (isGaugeVisible && showAudioChime && speedKmh >= 85 && (now - lastChimeTime > chimeInterval)) {
                         lastChimeTime = now;
                         playSpeedChime();
                     }
 
-                    renderHUD(rpm, rawSpeed, lastValidGear, now);
+                    // Shift light pod: adapts to vehicle redline or TRD万轉 threshold
+                    var shiftWarningRpm = Math.min(9800, redline * 0.96);
+                    var shiftOverRevRpm = Math.min(10500, redline * 0.99);
+
+                    var isShiftWarning = rpm >= shiftWarningRpm;
+                    var isOverRev = rpm >= shiftOverRevRpm;
+                    var isShiftLightOn = isOverRev ? (Math.floor(now / 66) % 2 === 0) : isShiftWarning;
+
+                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftLightOn);
                 },
 
                 onAnimate: function () {
@@ -338,8 +391,15 @@
             HUDCore.init('initial_d');
 
             setTimeout(function () {
-                renderHUD(0, 0, 1, performance.now());
+                renderHUD(0, 0, 1, performance.now(), false);
             }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    buildOffscreenDial();
+                    renderHUD(0, 0, 1, performance.now(), false);
+                });
+            }
         })();
     </script>
 </body>

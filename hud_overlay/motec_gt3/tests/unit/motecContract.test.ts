@@ -105,7 +105,7 @@ describe('MoTeC GT3 HUD contract', () => {
     expect(registeredDef).toBeDefined();
     expect(typeof registeredDef.onFrame).toBe('function');
 
-    // Run onFrame with full sample data
+    // Run onFrame with full sample data (legacy mock format)
     expect(() => {
       registeredDef.onFrame(
         {
@@ -121,6 +121,29 @@ describe('MoTeC GT3 HUD contract', () => {
           TireTempRR: 95,
           EngineTemp: 98,
           abs_active: false,
+          tcs_active: false,
+        },
+        { isMetric: true, redlineRpm: 8000 }
+      );
+    }).not.toThrow();
+
+    // Run onFrame with canonical coordinator.js telemetry data (Fahrenheit TireTemp array + temp_fl/fr/rl/rr)
+    expect(() => {
+      registeredDef.onFrame(
+        {
+          rpm: 8300, // over shift point to exercise shift strobe
+          max_rpm: 8500,
+          speed_kmh: 220,
+          gear: 5,
+          throttle: 1.0,
+          brake: 0.5,
+          temp_fl: 195.4,
+          temp_fr: 196.2,
+          temp_rl: 198.8,
+          temp_rr: 199.1,
+          TireTemp: [195.4, 196.2, 198.8, 199.1],
+          EngineTemp: 92,
+          abs_active: true,
           tcs_active: false,
         },
         { isMetric: true, redlineRpm: 8000 }
