@@ -29,6 +29,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   motec_gt3: 'MoTeC C125 GT3',
   defi_triple: 'Defi Advance BF',
   fh5_arc: 'Forza Horizon 5',
+  initial_d: 'Initial D AE86 TRD',
 };
 
 const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {
