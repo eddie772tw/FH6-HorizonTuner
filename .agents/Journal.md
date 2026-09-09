@@ -24,7 +24,7 @@
   6. 建立 AI 治理與調校協作契約：同步更新 `.agents/AGENTS.md`、`.agents/rules/workspace.md`、`physics-tuning-math/SKILL.md` 與 `telemetry-udp-protocol/SKILL.md`，指引 Agent 優先調用 `fh6-agent.bat <subcommand> --json` 大幅增進決策效率。
   7. 撰寫單元測試套件 `tests/test_agent_cli.py`（17 項測試全部 Passed）。
   8. 通過全套驗證：後端 Pytest 285 passed、前端 Vitest 89 files / 578 tests 100% passed、Ruff check 與 format 100% 通過、Tracked path case 通過、`git diff --check` clean。
-- **Evidence**：`fh6-agent.bat --version` 輸出 `fh6-agent 1.0.0 (Core: 11.45.17)`；後端 Pytest 285 passed, 8 deselected；前端 Vitest 578 passed；Ruff 檢查 158 files 全數 formatted & clean。
+- **Evidence**：`fh6-agent.bat --version` 輸出 `fh6-agent 1.0.0 (Core: 11.45.17)`；後端 Pytest 285 passed, 8 deselected；前端 Vitest 578 passed；前端 build 705 modules 通過；Ruff 檢查 158 files 全數 formatted & clean；PR #318 已建立並開啟等待審查。
 - **Skills**：`modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、`cross-agent-collaboration`、`portable-release-validation`。
 
 ---
