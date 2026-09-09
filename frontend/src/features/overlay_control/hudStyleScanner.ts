@@ -30,6 +30,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   defi_triple: 'Defi Advance BF',
   fh5_arc: 'Forza Horizon 5',
   initial_d: 'Initial D AE86 TRD',
+  cyberpunk_hud: 'Cyberpunk 2077 Quadra',
 };
 
 const HUD_DISPLAY_PRIORITY: Readonly<Record<string, number>> = {
