@@ -1,12 +1,40 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { runInNewContext } from 'node:vm';
 
 const hudDir = resolve(process.cwd(), '../hud_overlay/initial_d');
 const indexPath = resolve(hudDir, 'index.html');
 const authorPath = resolve(hudDir, 'author.json');
+const modelScope: any = {};
+runInNewContext(readFileSync(resolve(hudDir, 'initial-d-model.js'), 'utf8'), modelScope);
+const model = modelScope.InitialDTachModel;
 
 describe('Initial D AE86 TRD HUD contract', () => {
+  it('retains the fictional compressed 0–3k scale and the 11k limit', () => {
+    const zero = model.getAngle(0);
+    const three = model.getAngle(3000);
+    const seven = model.getAngle(7000);
+    const maximum = model.getAngle(11000);
+    expect(zero).toBeCloseTo(140 * Math.PI / 180);
+    expect(maximum - zero).toBeCloseTo(260 * Math.PI / 180);
+    expect((three - zero) / (maximum - zero)).toBeCloseTo(0.18);
+    expect((seven - three) / (maximum - zero)).toBeCloseTo(0.38);
+    expect((maximum - seven) / (maximum - zero)).toBeCloseTo(0.44);
+    expect(model.getAngle(2000) - model.getAngle(1000)).toBeLessThan(model.getAngle(6000) - model.getAngle(5000));
+    expect(model.getAngle(6000) - model.getAngle(5000)).toBeLessThan(model.getAngle(10000) - model.getAngle(9000));
+    expect(model.getAngle(-1000)).toBe(zero);
+    expect(model.getAngle(15000)).toBe(maximum);
+    expect(model.getAngle(NaN)).toBe(zero);
+  });
+  it('uses independent staged yellow/red warnings below the engine limit', () => {
+    expect(model.getWarningLevel(9000, 10000)).toBe(0);
+    expect(model.getWarningLevel(9600, 10000)).toBe(1);
+    expect(model.getWarningLevel(9900, 10000)).toBe(2);
+    expect(model.getWarningLevel(7600, 8000)).toBe(0);
+    expect(model.getWarningLevel(7700, 8000)).toBe(1);
+    expect(model.getWarningLevel(7950, 8000)).toBe(2);
+  });
   it('has a valid author.json signed by "eddie772tw ft. crosXover"', () => {
     expect(existsSync(authorPath)).toBe(true);
     const authorData = JSON.parse(readFileSync(authorPath, 'utf8'));
@@ -106,8 +134,10 @@ describe('Initial D AE86 TRD HUD contract', () => {
     };
 
     const mockWindow = {
+      InitialDTachModel: model,
       devicePixelRatio: 1,
       requestAnimationFrame: () => {},
+      cancelAnimationFrame: () => {},
       addEventListener: () => {},
     };
 
@@ -128,52 +158,16 @@ describe('Initial D AE86 TRD HUD contract', () => {
     expect(registeredDef).toBeDefined();
     expect(typeof registeredDef.onFrame).toBe('function');
 
-    // Run onFrame with full sample data
+    expect(visibleText).toEqual(expect.arrayContaining(['TRD', '×1000 RPM']));
+    // Extra incoming speed/gear/drift data must not add convenience displays to this tach.
     expect(() => {
-      registeredDef.onFrame(
-        {
-          rpm: 9600,
-          maxRpm: 11000,
-          speed_kmh: 125,
-          gear: 4,
-        },
-        { isMetric: true }
-      );
+      registeredDef.onFrame({ rpm: 9600, redlineRpm: 10000, speed_kmh: 125, gear: 4, YawRate: 0.6 });
+      registeredDef.onFrame({ rpm: 11000, redlineRpm: 10000 });
+      registeredDef.onFrame({ rpm: 0 });
     }).not.toThrow();
-    expect(visibleText).toContain('125');
-    expect(visibleText).toContain('KM/H');
-    expect(visibleText).toContain('G4');
-
-    visibleText.length = 0;
-    registeredDef.onFrame({ rpm: 3000, speed_kmh: 100, speed_mph: 62, gear: 11 }, { isMetric: false });
-    expect(visibleText).toEqual(expect.arrayContaining(['62', 'MPH', 'N']));
-
-    // Verify reverse gear, drift telemetry, and onAnimate sweep
-    expect(() => {
-      registeredDef.onFrame({ rpm: 1000, max_rpm: 11000, speed_kmh: -5, gear: 0 }, { isMetric: true });
-      registeredDef.onFrame(
-        {
-          rpm: 8500,
-          max_rpm: 11000,
-          speed_kmh: 88,
-          gear: 3,
-          YawRate: 0.45,
-          slip_rl: 0.55,
-          slip_rr: 0.52,
-          slip_fl: 0.12,
-          slip_fr: 0.14,
-        },
-        { isMetric: true }
-      );
-    }).not.toThrow();
-    expect(visibleText).toContain('R');
-    expect(visibleText).toContain('DRIFT');
-
-    visibleText.length = 0;
-    registeredDef.onFrame({ rpm: 0, speed_kmh: 0, gear: 11 }, { isMetric: true });
-    expect(visibleText).toEqual(expect.arrayContaining(['0', 'KM/H', 'N']));
-    expect(visibleText).not.toContain('DRIFT');
-
+    for (const excludedText of ['125', 'KM/H', 'MPH', 'G4', 'DRIFT', 'NIPPONDENSO']) {
+      expect(visibleText).not.toContain(excludedText);
+    }
     const logicalWidth = mockCanvas.width;
     for (const [deviceRatio, expectedRatio] of [[2, 2], [4, 3], [0.75, 1]]) {
       mockWindow.devicePixelRatio = deviceRatio;
@@ -188,11 +182,11 @@ describe('Initial D AE86 TRD HUD contract', () => {
       }).not.toThrow();
     }
 
-    // Verify onElementsChange handles hiding gauge and chime
+    // Verify the visibility hook remains available.
     if (registeredDef.onElementsChange) {
       expect(() => {
-        registeredDef.onElementsChange({ showGauge: false, showAudioChime: false });
-        registeredDef.onElementsChange({ showGauge: true, showAudioChime: true });
+        registeredDef.onElementsChange({ showGauge: false });
+        registeredDef.onElementsChange({ showGauge: true });
       }).not.toThrow();
     }
   });

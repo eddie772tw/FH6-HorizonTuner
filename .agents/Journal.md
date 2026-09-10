@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / AE86 原作虛構盤面追加重製（Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者指定 ULTRA Clubman 物理原型，並明確補充原作為低轉壓縮／11k 虛構盤面，禁止檔顯、數字時速與非原型顯示要素。
+- **Learning**：物理原型不等於虛構盤面的校準與功能規格；不得以市售 No.1932 線性刻度蓋過原作約束。TRD 識別保留，NIPPONDENSO 不再混入。
+- **Action**：黑圈白針與盤內雙 LED，移除時速／檔位／DRIFT／合成鈴聲；非線性映射抽為 `initial-d-model.js`，維持 140° 起點、260° 掃幅與三段 18%／38%／44%，加入純映射驗證及動畫取消清理。
+- **Evidence**：本款 6 tests；最終全套後端 285 passed／8 deselected、前端 601 passed，Ruff、format、build、path-case 通過；最終 45 組右下布局均不越界，本款 20 組深淺／DPR／狀態無 pageerror。未作 Tauri／遊戲／像素等價認證。
+- **Sources**：Nengun 1932-01 套裝照片已目視；官方型錄僅搜尋索引可讀，本體與舊頁連線失敗。最終虛構刻度依使用者指示。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
 ## 2026-09-10 / Cyberpunk Turbo-R 工業面板交付（Codex）
 
 - **來源／狀態**：`local`／`verified`；Quadra Turbo-R 設計概念啟發的原創 HUD，非最終遊戲儀表複製。

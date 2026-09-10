@@ -1,0 +1,61 @@
+{
+  "tag": "defi",
+  "checkedAt": "2026-09-10T09:25:30.470Z",
+  "results": [
+    {
+      "name": "ruff",
+      "command": "uv run --no-project --python .venv/Scripts/python.exe ruff check .",
+      "code": 0,
+      "summary": [
+        "All checks passed!"
+      ]
+    },
+    {
+      "name": "format",
+      "command": "uv run --no-project --python .venv/Scripts/python.exe ruff format --check .",
+      "code": 0,
+      "summary": [
+        "161 files already formatted"
+      ]
+    },
+    {
+      "name": "pytest",
+      "command": "uv run --no-project --python .venv/Scripts/python.exe python -m pytest tests/",
+      "code": 0,
+      "summary": [
+        "285 passed, 8 deselected in 14.30s ======================"
+      ]
+    },
+    {
+      "name": "vitest",
+      "command": "cmd.exe /d /s /c pnpm -C frontend run test",
+      "code": 0,
+      "summary": [
+        "Test Files  94 passed (94)",
+        "Tests  599 passed (599)"
+      ]
+    },
+    {
+      "name": "build",
+      "command": "cmd.exe /d /s /c pnpm -C frontend run build",
+      "code": 0,
+      "summary": [
+        "built in 1.10s"
+      ]
+    },
+    {
+      "name": "path-case",
+      "command": "uv run --no-project --python .venv/Scripts/python.exe python scripts/check_repo_path_case.py",
+      "code": 0,
+      "summary": [
+        "Tracked path case contract passed."
+      ]
+    },
+    {
+      "name": "diff",
+      "command": "git diff --check",
+      "code": 0,
+      "summary": []
+    }
+  ]
+}

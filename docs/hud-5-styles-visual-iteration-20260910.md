@@ -2,6 +2,8 @@
 
 日期：2026-09-10。分支：`feat/add-5-new-hud-styles`。依使用者核准的方案逐款修改、驗證及提交；Defi 選用 A 方案。修改前的截圖、定位量測與原型來源保留於[視覺複審報告](hud-5-styles-visual-review-20260910.md)。本紀錄取代舊報告未有可重現依據的還原百分比。
 
+**AE86 最終方向**：依追加指示採 ULTRA Clubman 的物理風格與原作虛構 TRD 盤面，保留低轉壓縮／11k、移除數字時速與檔顯；見下方「AE86 追加重製」。前面的 AE86 第一輪文字及圖片為歷史紀錄。
+
 ## 驗收方法與範圍
 
 - 使用本分支實際 HTML Canvas renderer、共用 HUDCore 與全視窗 iframe，在 Edge Chromium headless 注入明確標示的合成 frame。
@@ -26,7 +28,7 @@
 
 ## AE86 TRD：保留版型，修正材質與字樣
 
-**後續基準更新**：使用者於此版推送後明確指定改以 Nagai Electronics ULTRA Clubman Series stepping tachometer 重製。以下 TRD／NIPPONDENSO 內容保留為第一輪歷史，不再作下一輪目標；ULTRA 重製將另行提交。
+**後續基準更新**：使用者於此版推送後指定以 ULTRA Clubman 物理風格及原作虛構刻度重製。以下含 NIPPONDENSO／數位讀值的內容保留為第一輪歷史，已由下方「AE86 追加重製」取代。
 
 ![AE86 更新盤面](assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png)
 
@@ -83,6 +85,42 @@
 - 來源為設計者的 Quadra TURBO-R 概念圖；author.json 明確描述 Cyberpunk-inspired 原創延伸，**未聲稱最終遊戲儀表還原**。裝飾性標題仍是次要文字，視線優先順序為速度、檔位、轉速。
 
 驗證：聚焦 4 tests，包含公英制、R／N、缺 boost 與 DPR；完整 gate 後端 285 passed／8 deselected、前端 599 passed，其餘檢查通過。20 組瀏覽器狀態無 pageerror。
+
+## AE86 追加重製：ULTRA 物理風格、原作虛構盤面
+
+![最終 AE86，純轉速表](assets/hud-visual-iteration-20260910/initial_d_ultra-cruise-light.png)
+
+[前一輪 TRD](assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/initial_d_ultra-full-dpr1.png) · [低轉](assets/hud-visual-iteration-20260910/initial_d_ultra-idle-dark.png) · [警示燈](assets/hud-visual-iteration-20260910/initial_d_ultra-redline-dark.png) · [DPR 2](assets/hud-visual-iteration-20260910/initial_d_ultra-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/initial_d_ultra-states.json)
+
+採用使用者最後指定的邊界：ULTRA 是實物設計來源，原作為虛構盤面，**不能將市售線性校準套入**。TRD 識別與 ×1000 RPM 保留，NIPPONDENSO 移除；使用黑表圈、黑盤、白針與盤內右下紅／黃雙警示燈，取消外掛燈筒及原先假定的固定紅色區段。
+
+數位時速、速度單位、檔位、DRIFT 與 80 km/h 合成鈴聲均移除；不外置附加卡片補回。畫布、主表中心與表徑、預設約 299.25×299.25 CSS px、右下定位保留。已查核設定頁沒有對應的 chime 選項，既有「Initial D AE86 TRD」名稱仍符合虛構 TRD 識別，未另改共用設定。
+
+`initial-d-model.js` 將既有轉速到角度的純映射獨立，盤面刻度與指針共用；這是相容性保留，並非改成另一組校準：
+
+| RPM 範圍 | 占整體 260° 掃幅 | 每千轉角度 |
+|---|---:|---:|
+| 0–3000 | 18% | 15.6° |
+| 3000–7000 | 38% | 24.7° |
+| 7000–11000 | 44% | 28.6° |
+
+因此 1k～3k 繼續壓縮，上限固定 11k，起點 140°。黃／紅警示採現有車輛紅線的分階閾值；不宣稱模擬實物外接控制器的全部功能。DPR 快取與動畫取消／pagehide 清理一併確認。
+
+來源：已目視 [Nengun No.1932-01 實物套裝照](https://image.nengun.com/catalogue/1024x768/nengun-4488-59341-00-ultra-series_clubman_stepping_tachometer-1a06226e.jpg) 的白針、黑圈與右下雙 LED；[官方 2011 型錄](https://www.nagaidenshi.co.jp/PDF/catalog2011new.pdf) 的搜尋索引文字支持此系列物理規格，但 PDF 本體／舊產品頁連線失敗，沒有聲稱已目視官方 PDF。市售照片只提供物理風格，**最終非線性虛構盘面與顯示要素取捨以使用者指示為準**。
+
+驗證：本款 6 tests，包含非線性分段、低轉壓縮、11k clamp、黃紅警示與禁止附加顯示的可觀察輸出；完整 gate 後端 285 passed／8 deselected、前端 94 files／601 passed，Ruff、format、build、path-case 通過。20 組瀏覽器狀態無 pageerror，`initial-d-model.js` 實際經 HTTP 載入。
+
+## 最終定位與逐次完整驗證
+
+| 最終樣式 | 預設 CSS 尺寸 | 容器右／底間距 |
+|---|---:|---:|
+| Defi A | 342×324 | 30 / 30 px |
+| AE86 TRD／ULTRA-inspired | 約 299.25×299.25 | 30 / 30 px |
+| FH5 Arc | 285×285 | 30 / 30 px |
+| MoTeC | 420×252 | 30 / 30 px |
+| Cyberpunk | 390×165 | 30 / 30 px |
+
+[最終 45 組定位量測](assets/hud-visual-iteration-20260910/layout-results-final.json)：3 種 viewport × 3 種 scale × 5 款，全部右下對齊且容器不越界，無 pageerror。原五款各一次推送，加上 AE86 追加重製，合計六次獨立提交／推送。各次完整 gate 的命令、退出碼與摘要保存於 [Defi](assets/hud-visual-iteration-20260910/gate-defi.json)、[AE86 第一輪](assets/hud-visual-iteration-20260910/gate-ae86.json)、[FH5](assets/hud-visual-iteration-20260910/gate-fh5.json)、[MoTeC](assets/hud-visual-iteration-20260910/gate-motec.json)、[Cyberpunk](assets/hud-visual-iteration-20260910/gate-cyberpunk.json)、[AE86 最終版](assets/hud-visual-iteration-20260910/gate-ae86-ultra.json)。
 
 ## 執行環境註記
 
