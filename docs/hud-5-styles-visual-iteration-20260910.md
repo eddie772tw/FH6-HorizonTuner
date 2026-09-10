@@ -24,6 +24,19 @@
 
 驗證：Defi 聚焦 4 tests；完整 gate 的後端 285 passed／8 deselected、前端 94 files／599 passed；Ruff、format、build、path-case 通過。20 組狀態無 pageerror，外部畫布角落 alpha=0。
 
+## AE86 TRD：保留版型，修正材質與字樣
+
+![AE86 更新盤面](assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png)
+
+[修改前](assets/hud-visual-review-20260910/initial_d-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/initial_d-full-dpr1.png) · [紅線／漂移](assets/hud-visual-iteration-20260910/initial_d-redline-dark.png) · [英制倒檔](assets/hud-visual-iteration-20260910/initial_d-reverse-light.png) · [DPR 2](assets/hud-visual-iteration-20260910/initial_d-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/initial_d-states.json)
+
+- 主表中心／半徑、非線性轉速映射、速度／檔位／外掛燈座標、420×420 與倍率 0.95 均保留；預設仍約 299.25×299.25 CSS px。
+- 以方向性明暗重建黑色烤漆金屬表圈，盤面加入低對比固定紋理與玻璃反射。直立工業数字取代原來傾斜字形，TRD／NIPPONDENSO／×1000 RPM 使用原創字樣處理。
+- 細橘紅針與固定照明的金屬中心帽分開繪製；所有材質與中心帽使用靜態快取並適配 DPR。每幀清空透明區，避免超轉燈殘影。
+- DRIFT 改為簡短文字置於中心帽下方空隙，不遮住廠名字樣、轉速單位或數位速度。速度單位、R／N／檔位與既有音效行為保留。
+
+驗證：聚焦 4 tests，包含公英制、R／N／G4、漂移出現與解除、DPR backing store；完整 gate 後端 285 passed／8 deselected、前端 94 files／599 passed，其餘檢查通過。20 組瀏覽器狀態無 pageerror。盤面材質為原創 Canvas，並非特定實物的像素複製。
+
 ## 執行環境註記
 
 第一次後端全套測試因另一工作區占用 8001 而失敗：sidecar 正確退到動態埠，但既有測試要求 8001。經使用者允許停用該實例後，完整測試通過。沒有修改測試以迴避此環境衝突；依使用者後續指示，不恢復該後端。

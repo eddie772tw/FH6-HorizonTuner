@@ -53,7 +53,14 @@ describe('Initial D AE86 TRD HUD contract', () => {
       init: () => {},
     };
 
+    const visibleText: string[] = [];
+    const mockGradient = { addColorStop: () => {} };
     const mockCtx = {
+      setTransform: () => {},
+      createLinearGradient: () => mockGradient,
+      createRadialGradient: () => mockGradient,
+      clip: () => {},
+      scale: () => {},
       clearRect: () => {},
       fillRect: () => {},
       strokeRect: () => {},
@@ -61,7 +68,7 @@ describe('Initial D AE86 TRD HUD contract', () => {
       arc: () => {},
       fill: () => {},
       stroke: () => {},
-      fillText: () => {},
+      fillText: (text: string) => { visibleText.push(text); },
       drawImage: () => {},
       save: () => {},
       restore: () => {},
@@ -93,12 +100,13 @@ describe('Initial D AE86 TRD HUD contract', () => {
         return null;
       },
       createElement: (tag: string) => {
-        if (tag === 'canvas') return mockCanvas;
+        if (tag === 'canvas') return { ...mockCanvas };
         return null;
       },
     };
 
     const mockWindow = {
+      devicePixelRatio: 1,
       requestAnimationFrame: () => {},
       addEventListener: () => {},
     };
@@ -132,6 +140,13 @@ describe('Initial D AE86 TRD HUD contract', () => {
         { isMetric: true }
       );
     }).not.toThrow();
+    expect(visibleText).toContain('125');
+    expect(visibleText).toContain('KM/H');
+    expect(visibleText).toContain('G4');
+
+    visibleText.length = 0;
+    registeredDef.onFrame({ rpm: 3000, speed_kmh: 100, speed_mph: 62, gear: 11 }, { isMetric: false });
+    expect(visibleText).toEqual(expect.arrayContaining(['62', 'MPH', 'N']));
 
     // Verify reverse gear, drift telemetry, and onAnimate sweep
     expect(() => {
@@ -151,6 +166,21 @@ describe('Initial D AE86 TRD HUD contract', () => {
         { isMetric: true }
       );
     }).not.toThrow();
+    expect(visibleText).toContain('R');
+    expect(visibleText).toContain('DRIFT');
+
+    visibleText.length = 0;
+    registeredDef.onFrame({ rpm: 0, speed_kmh: 0, gear: 11 }, { isMetric: true });
+    expect(visibleText).toEqual(expect.arrayContaining(['0', 'KM/H', 'N']));
+    expect(visibleText).not.toContain('DRIFT');
+
+    const logicalWidth = mockCanvas.width;
+    for (const [deviceRatio, expectedRatio] of [[2, 2], [4, 3], [0.75, 1]]) {
+      mockWindow.devicePixelRatio = deviceRatio;
+      registeredDef.onFrame({ rpm: 0, speed_kmh: 0, gear: 11 }, { isMetric: true });
+      expect(mockCanvas.width).toBe(logicalWidth * expectedRatio);
+      expect(mockCanvas.height).toBe(mockCanvas.width);
+    }
 
     if (registeredDef.onAnimate) {
       expect(() => {

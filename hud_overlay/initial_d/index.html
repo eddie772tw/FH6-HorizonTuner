@@ -50,6 +50,25 @@
             var sweepDuration = 1200;
             var lastValidGear = 1;
             var offscreenDial = null;
+            var offscreenCap = null;
+            var backingRatio = 0;
+
+            function syncBackingStore() {
+                var ratio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (ratio === backingRatio || !domCache.ctx) return;
+                backingRatio = ratio;
+                domCache.canvas.width = Math.round(420 * ratio);
+                domCache.canvas.height = Math.round(420 * ratio);
+                domCache.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                offscreenDial = null;
+                offscreenCap = null;
+            }
+            // Instrument artwork has a fixed material palette, independent of GUI themes.
+            var ink = {
+                face: '#10100f', rimDark: '#080808', rimLight: '#777772',
+                marking: '#eee9dc', redline: '#d63b2c', needle: '#f25123',
+                needleHighlight: '#ffb46a', secondary: '#b8b4a9'
+            };
 
             // Audio Chime State
             var audioCtx = null;
@@ -122,26 +141,64 @@
             }
 
             function buildOffscreenDial() {
+                syncBackingStore();
                 offscreenDial = document.createElement('canvas');
-                offscreenDial.width = 420;
-                offscreenDial.height = 420;
+                offscreenDial.width = Math.round(420 * backingRatio);
+                offscreenDial.height = Math.round(420 * backingRatio);
                 var oCtx = offscreenDial.getContext('2d');
                 if (!oCtx) return;
+                oCtx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
 
-                // 1. Dial Bezel & Carbon Background
+                // Painted metal, a rolled lip and recessed matte face. All gradients and
+                // deterministic surface grain are built only when this static cache changes.
+                var bezel = oCtx.createLinearGradient(cx - dialR, cy - dialR, cx + dialR, cy + dialR);
+                bezel.addColorStop(0, ink.rimLight);
+                bezel.addColorStop(0.16, '#292927');
+                bezel.addColorStop(0.48, ink.rimDark);
+                bezel.addColorStop(0.78, '#242422');
+                bezel.addColorStop(1, '#555550');
                 oCtx.beginPath();
                 oCtx.arc(cx, cy, dialR, 0, Math.PI * 2);
-                oCtx.fillStyle = '#08090D';
+                oCtx.fillStyle = bezel;
                 oCtx.fill();
-                oCtx.lineWidth = 6;
-                oCtx.strokeStyle = '#222733';
+                oCtx.lineWidth = 2;
+                oCtx.strokeStyle = ink.rimDark;
                 oCtx.stroke();
-
                 oCtx.beginPath();
                 oCtx.arc(cx, cy, dialR - 6, 0, Math.PI * 2);
-                oCtx.lineWidth = 1.5;
-                oCtx.strokeStyle = '#3A4256';
+                oCtx.fillStyle = ink.rimDark;
+                oCtx.fill();
+                oCtx.lineWidth = 1;
+                oCtx.strokeStyle = '#8b8981';
                 oCtx.stroke();
+                var face = oCtx.createRadialGradient(cx - 35, cy - 50, 10, cx, cy, dialR - 8);
+                face.addColorStop(0, '#242420');
+                face.addColorStop(0.72, ink.face);
+                face.addColorStop(0.96, '#0a0a09');
+                face.addColorStop(1, '#020202');
+                oCtx.beginPath();
+                oCtx.arc(cx, cy, dialR - 8, 0, Math.PI * 2);
+                oCtx.fillStyle = face;
+                oCtx.fill();
+                oCtx.save();
+                oCtx.beginPath();
+                oCtx.arc(cx, cy, dialR - 11, 0, Math.PI * 2);
+                oCtx.clip();
+                oCtx.fillStyle = 'rgba(238,233,220,0.035)';
+                for (var grainY = cy - dialR; grainY < cy + dialR; grainY += 3) {
+                    for (var grainX = cx - dialR; grainX < cx + dialR; grainX += 4) {
+                        if ((grainX * 13 + grainY * 7) % 11 < 4) {
+                            oCtx.fillRect(grainX, grainY, 0.7, 0.7);
+                        }
+                    }
+                }
+                // Fixed, faint upper glass reflection beneath the printed markings.
+                var glass = oCtx.createLinearGradient(0, cy - dialR, 0, cy + 15);
+                glass.addColorStop(0, 'rgba(255,250,235,0.065)');
+                glass.addColorStop(1, 'rgba(255,250,235,0)');
+                oCtx.fillStyle = glass;
+                oCtx.fillRect(cx - dialR, cy - dialR, dialR * 2, dialR + 15);
+                oCtx.restore();
 
                 // 2. Redline Zone Arc (9,500 ~ 11,000 RPM)
                 var redlineStartA = getInitialDAngle(9500);
@@ -149,7 +206,7 @@
                 oCtx.beginPath();
                 oCtx.arc(cx, cy, dialR - 14, redlineStartA, redlineEndA);
                 oCtx.lineWidth = 10;
-                oCtx.strokeStyle = '#EF4444';
+                oCtx.strokeStyle = ink.redline;
                 oCtx.stroke();
 
                 // 3. Ticks & Numbers (0 to 11)
@@ -168,7 +225,7 @@
                     oCtx.moveTo(x1, y1);
                     oCtx.lineTo(x2, y2);
                     oCtx.lineWidth = isMajor ? 2.5 : 1.2;
-                    oCtx.strokeStyle = isRed ? '#EF4444' : '#F1F5F9';
+                    oCtx.strokeStyle = isRed ? ink.redline : ink.marking;
                     oCtx.stroke();
 
                     // Numbers for major ticks
@@ -178,34 +235,66 @@
                         var tx = cx + Math.cos(angle) * textR;
                         var ty = cy + Math.sin(angle) * textR;
 
-                        oCtx.fillStyle = isRed ? '#EF4444' : '#FFFFFF';
-                        oCtx.font = 'bold 18px "ForzaGear", sans-serif';
+                        oCtx.fillStyle = isRed ? ink.redline : ink.marking;
+                        oCtx.font = '700 19px Arial, sans-serif';
                         oCtx.textAlign = 'center';
                         oCtx.textBaseline = 'middle';
-                        oCtx.fillText(numStr, tx, ty);
+                        // Upright condensed print; keep each original tick's center intact.
+                        oCtx.save();
+                        oCtx.translate(tx, ty);
+                        oCtx.scale(0.86, 1);
+                        oCtx.fillText(numStr, 0, 0);
+                        oCtx.restore();
                     }
                 }
 
-                // 4. Center Badges
-                oCtx.fillStyle = '#EF4444';
-                oCtx.font = 'bold 16px sans-serif';
+                // TRD / Nippondenso reference lettering; an original typographic treatment,
+                // not a claim of an exact licensed logo or a different calibrated dial.
+                oCtx.fillStyle = ink.marking;
+                oCtx.font = 'italic 900 26px Arial, sans-serif';
                 oCtx.textAlign = 'center';
-                oCtx.fillText('TRD RACING', cx, cy - 65);
-
-                oCtx.fillStyle = '#94A3B8';
-                oCtx.font = 'bold 10px sans-serif';
-                oCtx.fillText('x1000 r/min', cx, cy - 45);
+                oCtx.fillText('TRD', cx, cy - 69);
+                oCtx.font = '700 8px Arial, sans-serif';
+                oCtx.fillText('NIPPONDENSO', cx, cy - 50);
+                oCtx.fillStyle = ink.secondary;
+                oCtx.font = '600 11px Arial, sans-serif';
+                oCtx.fillText('×1000 RPM', cx, cy - 32);
 
                 // 5. External Shift Light Pod Base (at top-right ~1 o'clock)
                 var podX = 350;
                 var podY = 85;
                 oCtx.beginPath();
                 oCtx.arc(podX, podY, 24, 0, Math.PI * 2);
-                oCtx.fillStyle = '#141822';
+                oCtx.fillStyle = bezel;
                 oCtx.fill();
                 oCtx.lineWidth = 3;
-                oCtx.strokeStyle = '#374151';
+                oCtx.strokeStyle = ink.rimDark;
                 oCtx.stroke();
+
+                // The cap has a fixed light source and never rotates with the needle.
+                offscreenCap = document.createElement('canvas');
+                offscreenCap.width = Math.round(36 * backingRatio);
+                offscreenCap.height = Math.round(36 * backingRatio);
+                var capCtx = offscreenCap.getContext('2d');
+                if (!capCtx) return;
+                capCtx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
+                var cap = capCtx.createLinearGradient(4, 3, 28, 32);
+                cap.addColorStop(0, '#73736b');
+                cap.addColorStop(0.25, '#353530');
+                cap.addColorStop(0.65, '#11110f');
+                cap.addColorStop(1, '#030303');
+                capCtx.beginPath();
+                capCtx.arc(18, 18, 14, 0, Math.PI * 2);
+                capCtx.fillStyle = cap;
+                capCtx.fill();
+                capCtx.strokeStyle = '#050505';
+                capCtx.lineWidth = 1.5;
+                capCtx.stroke();
+                capCtx.beginPath();
+                capCtx.arc(18, 18, 10.5, 0, Math.PI * 2);
+                capCtx.strokeStyle = '#44443e';
+                capCtx.lineWidth = 0.6;
+                capCtx.stroke();
             }
 
             buildOffscreenDial();
@@ -216,38 +305,38 @@
                 ctx.rotate(angle);
 
                 // Needle Blade
-                ctx.shadowColor = '#FF1744';
-                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(0,0,0,0.75)';
+                ctx.shadowBlur = 3;
                 ctx.beginPath();
                 ctx.moveTo(-20, -2.5);
                 ctx.lineTo(dialR - 25, -1);
                 ctx.lineTo(dialR - 25, 1);
                 ctx.lineTo(-20, 2.5);
                 ctx.closePath();
-                ctx.fillStyle = '#FF1744';
+                ctx.fillStyle = ink.needle;
                 ctx.fill();
-
-                // Cap
                 ctx.shadowBlur = 0;
                 ctx.beginPath();
-                ctx.arc(0, 0, 14, 0, Math.PI * 2);
-                ctx.fillStyle = '#0B0D13';
-                ctx.fill();
-                ctx.lineWidth = 2.5;
-                ctx.strokeStyle = '#4B5563';
+                ctx.moveTo(-18, -1.3);
+                ctx.lineTo(dialR - 26, -0.5);
+                ctx.lineWidth = 0.8;
+                ctx.strokeStyle = ink.needleHighlight;
                 ctx.stroke();
-
                 ctx.restore();
+                if (offscreenCap) ctx.drawImage(offscreenCap, cx - 18, cy - 18, 36, 36);
             }
 
             function renderHUD(rpm, speed, gear, now, isShiftWarning, isOverRev, isDrifting) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
+                syncBackingStore();
                 ctx.textBaseline = 'alphabetic';
 
                 if (!offscreenDial) buildOffscreenDial();
-                ctx.drawImage(offscreenDial, 0, 0);
+                // Transparent pixels must erase the previous lamp glow and moving needle.
+                ctx.clearRect(0, 0, 420, 420);
+                ctx.drawImage(offscreenDial, 0, 0, 420, 420);
 
                 var podX = 350;
                 var podY = 85;
@@ -278,32 +367,32 @@
                 // Arcade DRIFT Mode Indicator
                 if (isDrifting) {
                     ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-                    ctx.fillRect(cx - 54, cy - 54, 108, 18);
+                    ctx.fillRect(cx - 30, cy + 24, 60, 17);
                     ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
                     ctx.lineWidth = 1;
-                    ctx.strokeRect(cx - 54, cy - 54, 108, 18);
+                    ctx.strokeRect(cx - 30, cy + 24, 60, 17);
 
                     ctx.fillStyle = '#FBBF24';
-                    ctx.font = 'bold 13px "ForzaFont", sans-serif';
+                    ctx.font = 'bold 11px Arial, sans-serif';
                     ctx.textAlign = 'center';
                     ctx.shadowColor = '#F59E0B';
-                    ctx.shadowBlur = 10;
-                    ctx.fillText('⚡ DRIFT ⚡', cx, cy - 40);
+                    ctx.shadowBlur = 0;
+                    ctx.fillText('DRIFT', cx, cy + 36);
                     ctx.shadowBlur = 0;
                 }
 
                 // 3. Digital Speed & Gear Display (Lower Center)
-                ctx.fillStyle = '#FFFFFF';
+                ctx.fillStyle = ink.marking;
                 ctx.font = 'bold 36px monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText(String(Math.round(speed)), cx, cy + 62);
 
-                ctx.fillStyle = '#64748B';
+                ctx.fillStyle = ink.secondary;
                 ctx.font = 'bold 11px sans-serif';
                 ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 78);
 
                 var gearStr = (gear <= 0) ? 'R' : (gear === 11 ? 'N' : 'G' + gear);
-                ctx.fillStyle = '#38BDF8';
+                ctx.fillStyle = ink.marking;
                 ctx.font = 'bold 18px monospace';
                 ctx.fillText(gearStr, cx, cy + 104);
             }

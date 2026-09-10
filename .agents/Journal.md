@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / AE86 TRD 材質與盤面字樣交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；依使用者要求凍結版型，只修材質、字形與字樣。
+- **Learning**：固定光源的中心帽必須獨立於旋轉指針；材質／盤面／中心帽的 backing store 必須採同一 DPR，避免高 DPI 混用快取尺寸。
+- **Action**：黑色烤漆表圈、靜態細紋與微弱玻璃反射、直立數字、TRD／NIPPONDENSO 字樣、橘紅細針；保持原座標與映射，DRIFT 避開速度及單位。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。未作遊戲或原型像素等價認證。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
 ## 2026-09-10 / Defi A 方案逐款交付（Codex）
 
 - **來源**：`local`；使用者核准開始實作、Defi 採 A、每款完成後獨立 commit／push，允許子代理分工。
