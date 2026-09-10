@@ -6,6 +6,7 @@
 
 |範圍|目前行為|主要入口|
 |---|---|---|
+|六階段工作流|目標與資料 → 輪胎基準 → 底盤平台 → 定位 → 動力／傳動 → 實際驗證；機械頁不需引擎量測，按資料開放直接跳轉。輪胎名義半徑作上游結果傳入 AEGO。|`tuningWorkflow.ts`、`calculateWorkflowTuning`；[工程依據與依賴圖](tuning-workflow-dependencies-20260910.md)|
 |車輛資料與單位|檔案維持 kg、hp、lb-ft；頁面輸入與顯示依有效單位轉換，進 solver 時才將扭力轉成 N·m。保留前／後空力可調能力及舊檔相容行為。|`CarParamsContext.tsx`、`profileUnitConversions.ts`、`aeroAdjustability.ts`|
 |量測導向工作流|接收未插值的解碼 WebSocket 封包，按身分、時間進展、油門與换檔穩定條件收集引擎輸出；支援追加收集，完成後凍結摘要供算牌。|`useTelemetry.ts`、`tuningMeasurement.ts`、`TuningMeasurementStep.tsx`、`TuningView.tsx`|
 |AEGO|自動模式不沿用進階目標；事件目標獨立提供速度／RPM 幾何擬合與 matched/limited/invalid 狀態，保留 legacy 模式。修正捨入後檔位間距，避免以峰值功率 RPM 強制破壞最高檔解。|`tuningMath.ts`、`GearingTargetInputs.tsx`、`GearingTuner.tsx`|

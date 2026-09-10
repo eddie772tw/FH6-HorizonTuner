@@ -29,13 +29,14 @@
   - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
   - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
   - 後端提供有界的 pipeline metrics，並將 dyno profile 的首次讀取與持久化移出即時遙測迴圈。
-* **5 步驟公式化車輛調校工作台 (5-Step Physics Tuning Workbench)**:
-  - **Step 1 賽事目標 (Goal Setup)**：支援公路環道 (Road)、甩尾 (Drift)、越野拉力 (Rally) 與直線加速 (Drag) 四大賽事取向。一般算牌暫不採用空力套件、下壓力與空力效率；由公式產生設定，再以遙測驗證。
-  - **Step 2 駕駛資料準備與 AEGO 齒比**：先填遊戲可查的靜態車輛數值，再依提示收集低至高轉的有效加速遙測。資料完整後點擊「下一步算牌」，以固定摘要補齊引擎轉速輸入；一般流程不要求猜測目標速度或 RPM。自訂目標與舊版校正保留為進階選項。詳見 [指引式量測工作流](docs/tuning-guided-measurement-workflow.md) 與 [FH6 meta 研究](docs/fh6-tuning-meta-aego-research.md)。
-  - **Step 3 底盤懸吊 (Chassis Tuner)**：防傾桿 (ARB 1/65 Meta 策略)、彈簧剛性、前傾姿態 (Forward Rake) 車高、黃金比例阻尼 (60% Bump Ratio) 與差速器鎖定率。
-  - **Step 4 胎壓與對齊 (Alignment & Tires)**：季節偏置靜態冷胎壓算牌、Camber / Toe / Caster 幾何計算。
-  - **Step 5 遙測校準 (Telemetry Calibration)**：先核對遊戲中的實際底盤與齒比，再以確認後的新駕駛資料分析胎溫及正規化滑移、行程警訊；不由單筆訊號直接判定觸底或推導底盤調整。採納建議只更新表格，仍須在遊戲套用並重新確認。
-  - 實作範圍、七圈實測與研究限制見 [調校實作與證據索引](docs/tuning-implementation-and-evidence-20260910.md)。
+* **六階段公式化車輛調校工作台**：建議操作順序與公式資料依賴分離，資料足夠的項目可直接開啟。
+  - **1 目標與資料**：用途、目前改裝車重／配重、驅動方式、輪胎與可調範圍；一般公式暫不採用空力輸入。
+  - **2 輪胎基準**：季節偏置冷胎壓、熱胎壓目標、輪胎尺寸與齒比用名義半徑。
+  - **3 底盤平台**：先查看彈簧與車高，再看防傾桿及阻尼；不需要先量測引擎。
+  - **4 輪胎定位**：Camber／Toe／Caster 初值，並在選定車高下核對；目前不模擬車高引起的定位幾何變化。
+  - **5 動力與傳動**：差速器與扭力分配獨立可用；完整引擎量測後產生 AEGO 齒比，自訂目標與 legacy 校正保留為進階模式。
+  - **6 實際設定確認與驗證**：核對遊戲實際底盤與齒比，再分析確認後的新駕駛資料。採納建議只更新表格，仍須在遊戲套用並重新確認。
+  - 工程排序、單向依賴與限制見[工作流規劃](docs/tuning-workflow-dependencies-20260910.md)；量測操作見[指引式量測工作流](docs/tuning-guided-measurement-workflow.md)，實測結果見[證據索引](docs/tuning-implementation-and-evidence-20260910.md)。
 * **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
   - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
   - S650 中央 widget 支援唯讀音樂播放器，透過 Windows GSMTC 顯示封面、曲目、藝人、專輯、進度條與時間，並以符號文字提示播放狀態；完整欄位與未啟用整合入口見 [S650 media contract](docs/s650-media-properties-contract.md)。

@@ -1,3 +1,4 @@
+import { TUNING_WORKFLOW_STEPS } from '../features/tuning/tuningWorkflow';
 import React, { useState, useEffect } from 'react';
 import '../App.css';
 import { useSettings } from '../context/SettingsContext';
@@ -210,31 +211,13 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               </button>
               {activeDropdown === 'tuning' && (
                 <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '220px', zIndex: 1000, background: 'var(--surface-1)' }}>
-                  <li>
-                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 1)}>
-                      <span className="badge bg-primary-subtle text-primary">1</span> {t("Goal & Setup")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 2)}>
-                      <span className="badge bg-primary-subtle text-primary">2</span> {t("Driving data and gearing")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 3)}>
-                      <span className="badge bg-primary-subtle text-primary">3</span> {t("Chassis")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 4)}>
-                      <span className="badge bg-primary-subtle text-primary">4</span> {t("Tire & Alignment")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 5)}>
-                      <span className="badge bg-primary-subtle text-primary">5</span> {t("Telemetry Calibration")}
-                    </button>
-                  </li>
+                    {TUNING_WORKFLOW_STEPS.map(step => (
+                      <li key={step.id}>
+                        <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', step.number)}>
+                          <span className="badge bg-primary-subtle text-primary">{step.number}</span> {t(step.label)}
+                        </button>
+                      </li>
+                    ))}
                 </ul>
               )}
             </li>

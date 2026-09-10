@@ -186,6 +186,19 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  return calculateGearingFromRadius(raceGoal, numGears, carParams, maxRpm,
+    getGearingTireRadius(carParams), secondaryCorrection);
+}
+
+/** Forward-only dependency: nominal tire geometry is resolved before gearing. */
+function calculateGearingFromRadius(
+  raceGoal: string,
+  numGears: number,
+  carParams: TuningCarParams | null,
+  maxRpm: number,
+  tireRadiusM: number,
+  secondaryCorrection?: GearingSecondaryCorrection
+): GearingResult {
   numGears = Number.isFinite(numGears) ? Math.max(1, Math.min(10, Math.trunc(numGears))) : 6;
   maxRpm = Number.isFinite(maxRpm) && maxRpm > 0 ? maxRpm : 8000;
   // 1. Fallback & Default Parameters Setup
@@ -208,7 +221,7 @@ export function calculateAEGOGearing(
 
   // Determine active tire size based on drivetrain
   // Tire Circumference (m)
-  const C = 2 * Math.PI * getGearingTireRadius(carParams);
+  const C = 2 * Math.PI * tireRadiusM;
   const hasEventTarget = secondaryCorrection?.targetSpeedKmh !== undefined || secondaryCorrection?.targetRpm !== undefined;
 
   const fDrive = drivetrain === 'AWD' ? 1.0 : (drivetrain === 'RWD' ? 0.6 : 0.4);
@@ -775,6 +788,37 @@ export function calculateChassisTuning(
 }
 
 export type Season = 'Summer' | 'Autumn' | 'Spring' | 'Winter';
+
+export interface WorkflowEngineInput {
+  maxRpm: number;
+  maxHpRpm: number;
+  maxTorqueRpm: number;
+}
+
+export interface WorkflowTuningResult {
+  tires: Pick<StaticTireAlignResult, 'pcF' | 'pcR' | 'targetPhot' | 'seasonBias' | 'hwF' | 'hwR'> & { gearingRadiusM: number };
+  chassis: ChassisTuningResult;
+  alignment: StaticTireAlignResult;
+  gearing: GearingResult | null;
+}
+
+/** One-way evaluation of a profile snapshot; page visits never become solver inputs. */
+export function calculateWorkflowTuning(
+  goal: string, season: Season, params: TuningCarParams, numGears: number,
+  engine: WorkflowEngineInput | null, correction?: GearingSecondaryCorrection
+): WorkflowTuningResult {
+  const alignment = calculateStaticTireAlignment(goal, season, params);
+  const { pcF, pcR, targetPhot, seasonBias, hwF, hwR } = alignment;
+  const tires = { pcF, pcR, targetPhot, seasonBias, hwF, hwR, gearingRadiusM: getGearingTireRadius(params) };
+  const chassis = calculateChassisTuning(goal, params);
+  const engineReady = engine && Number.isFinite(params.maxHp) && params.maxHp > 0 &&
+    [engine.maxRpm, engine.maxHpRpm, engine.maxTorqueRpm].every(value => Number.isFinite(value) && value > 0) &&
+    engine.maxHpRpm <= engine.maxRpm && engine.maxTorqueRpm <= engine.maxRpm;
+  const gearing = engineReady ? calculateGearingFromRadius(goal, numGears,
+    { ...params, maxHpRpm: engine.maxHpRpm, maxTorqueRpm: engine.maxTorqueRpm },
+    engine.maxRpm, tires.gearingRadiusM, correction) : null;
+  return { tires, chassis, alignment, gearing };
+}
 
 export interface StaticTireAlignResult {
   pcF: number; // PSI

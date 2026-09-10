@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useCarParams, CarParams } from '../../context/CarParamsContext';
-import { calculateAEGOGearing, calculateChassisTuning, calculateStaticTireAlignment, resolveWorkflowGearingCorrection, toTuningCarParams, Season, type GearingResult, type GearingCorrectionMode } from '../../utils/tuningMath';
+import { calculateWorkflowTuning, resolveWorkflowGearingCorrection, toTuningCarParams, Season, type GearingResult, type GearingCorrectionMode } from '../../utils/tuningMath';
 import { TuningMeasurementStep } from './components/TuningMeasurementStep';
 import { TuningPreparedStatus } from './components/TuningPreparedStatus';
 import type { TuningMeasurementState } from './tuningMeasurement';
@@ -8,7 +8,11 @@ import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsC
 import { Step1GoalSetup } from './components/Step1GoalSetup';
 import { Step2GearboxSetup } from './components/Step2GearboxSetup';
 import { Step3ChassisTuner } from './components/Step3ChassisTuner';
-import { Step4TireAlignSetup } from './components/Step4TireAlignSetup';
+import { TireBaselineStep } from './components/TireBaselineStep';
+import { WheelAlignmentStep } from './components/WheelAlignmentStep';
+import { TuningWorkflowNavigation } from './components/TuningWorkflowNavigation';
+import { getWorkflowReadiness, resolveTuningStep, serializeWorkflowProfile } from './tuningWorkflow';
+import { DifferentialSetup } from './components/DifferentialSetup';
 import { Step5TelemetryCalibration } from './components/Step5TelemetryCalibration';
 import { backendFetch } from '../../services/backend';
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
@@ -75,11 +79,8 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
   const [measurement, setMeasurement] = useState<{ key: string; data: TuningMeasurementState; profile: CarParams } | null>(null);
   const profileReady = loadedCarId === carId && !isLoading;
-  const preparationKey = useMemo(() => {
-    if (!carParams) return carId;
-    const { dyno_curve, dyno_quality, ...staticInputs } = carParams;
-    return JSON.stringify([carId, staticInputs]);
-  }, [carId, carParams]);
+  const staticProfileJson = useMemo(() => serializeWorkflowProfile(carParams), [carParams]);
+  const preparationKey = useMemo(() => JSON.stringify([carId, staticProfileJson]), [carId, staticProfileJson]);
   const prepared = profileReady && measurement?.key === preparationKey ? measurement.data : null;
   useEffect(() => {
     if (measurement && measurement.key !== preparationKey) setMeasurement(null);
@@ -110,16 +111,20 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
     }));
   }, [carId, numGears, engineMaxRpm, tuning.gearing.maxRpm]);
 
-  // Inherited calculations across steps
-  const chassisResult = useMemo(() => {
-    if (!solverCarParams) return null;
-    return calculateChassisTuning(selectedRaceGoal, solverCarParams);
-  }, [selectedRaceGoal, solverCarParams]);
-
-  const tireAlignResult = useMemo(() => {
-    if (!solverCarParams) return null;
-    return calculateStaticTireAlignment(selectedRaceGoal, season, solverCarParams);
-  }, [selectedRaceGoal, season, solverCarParams]);
+  const staticCarParams = useMemo(() => {
+    const profile = JSON.parse(staticProfileJson) as CarParams | null;
+    return profileReady && profile ? toTuningCarParams(profile) : null;
+  }, [profileReady, staticProfileJson]);
+  const workflow = useMemo(() => staticCarParams ? calculateWorkflowTuning(
+    selectedRaceGoal, season, staticCarParams, numGears,
+    prepared ? { maxRpm: prepared.engineMaxRpm!, maxHpRpm: prepared.observedPeakPower!.rpm,
+      maxTorqueRpm: prepared.observedPeakTorque!.rpm } : null,
+    resolveWorkflowGearingCorrection(tuning.gearing)
+  ) : null, [staticCarParams, selectedRaceGoal, season, numGears, prepared,
+    tuning.gearing.correctionMode, tuning.gearing.simulatedTopSpeed, tuning.gearing.softMaxSpeed,
+    tuning.gearing.targetSpeedKmh, tuning.gearing.targetRpm]);
+  const chassisResult = workflow?.chassis ?? null;
+  const tireAlignResult = workflow?.alignment ?? null;
 
   const fetchTunings = async () => {
     if (!carId) return;
@@ -173,14 +178,8 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
   };
 
   useEffect(() => {
-    if (!solverCarParams) return;
-    const result = calculateAEGOGearing(
-      selectedRaceGoal,
-      numGears,
-      solverCarParams,
-      engineMaxRpm,
-      resolveWorkflowGearingCorrection(tuning.gearing)
-    );
+    const result = workflow?.gearing;
+    if (!result) return;
 
     setTuning(prev => {
       if (
@@ -200,15 +199,16 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
         }
       };
     });
-  }, [selectedRaceGoal, numGears, solverCarParams, engineMaxRpm, tuning.gearing.correctionMode, tuning.gearing.simulatedTopSpeed, tuning.gearing.softMaxSpeed, tuning.gearing.targetSpeedKmh, tuning.gearing.targetRpm]);
+  }, [workflow?.gearing]);
 
-  const hasCoreParams = Boolean(profileReady && carParams && Number.isFinite(carParams.weight) && carParams.weight > 0 &&
-    Number.isFinite(carParams.weight_distribution) && carParams.weight_distribution > 0 && carParams.weight_distribution < 100 &&
-    Number.isFinite(carParams.maxHp) && carParams.maxHp > 0);
-  const hasPreparedInputs = hasCoreParams && Boolean(prepared);
+  const readiness = getWorkflowReadiness(profileReady, carParams, Boolean(prepared && workflow?.gearing));
+  const { mechanical: hasCoreParams, engineInputs: hasEngineInputs, measuredEngine: hasPreparedInputs } = readiness;
   useEffect(() => {
-    if (!hasPreparedInputs && currentStep > 2) setCurrentStep(2);
-  }, [hasPreparedInputs, currentStep, setCurrentStep]);
+    const resolved = resolveTuningStep(currentStep, {
+      mechanical: hasCoreParams, engineInputs: hasEngineInputs, measuredEngine: hasPreparedInputs
+    });
+    if (resolved !== currentStep) setCurrentStep(resolved);
+  }, [hasCoreParams, hasEngineInputs, hasPreparedInputs, currentStep, setCurrentStep]);
   const [showParamsPopover, setShowParamsPopover] = useState<boolean>(!hasCoreParams);
 
   useEffect(() => {
@@ -286,7 +286,7 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
                     </div>
                     <div className="popover-body px-3 py-2 text-start">
                       <div className="fs-7 text-body fw-medium">
-                        {t("Weight, front weight percentage or power is missing or invalid.")}
+                        {t("Weight or front weight percentage is missing or invalid.")}
                       </div>
                       <div className="fs-8 text-secondary mt-1 mb-2">
                         {t("Complete them in Step 1 or Car Parameters tab to perform calculations.")}
@@ -311,128 +311,8 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
             </p>
           </div>
           
-          <div className="d-flex gap-2">
-            {currentStep > 1 && (
-              <button 
-                type="button"
-                className="btn btn-outline-secondary fw-bold px-3 py-2"
-                onClick={() => setCurrentStep(prev => prev - 1)} 
-              >
-                &lt; {t("Previous")}
-              </button>
-            )}
-
-            {currentStep > 1 && currentStep < 5 && hasPreparedInputs && (
-              <span
-                title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
-                tabIndex={!hasCoreParams ? 0 : undefined}
-                role={!hasCoreParams ? "group" : undefined}
-                aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
-              >
-                <button
-                  type="button"
-                  className="btn btn-primary fw-bold px-4 py-2"
-                  onClick={() => {
-
-                    setCurrentStep(prev => prev + 1);
-                  }}
-                  disabled={!hasCoreParams}
-                >
-                  {t("Next")} &gt;
-                </button>
-              </span>
-            )}
-          </div>
         </div>
-
-        {/* Wizard Stepper Nav Pills */}
-        <ul className="nav nav-pills nav-justified gap-2 bg-body-tertiary p-1.5 rounded border">
-          <li className="nav-item">
-            <button 
-              className={`nav-link btn-sm d-flex align-items-center justify-content-center gap-2 ${currentStep === 1 ? 'active fw-bold' : ''}`}
-              aria-current={currentStep === 1 ? 'step' : undefined}
-              onClick={() => setCurrentStep(1)}
-            >
-              <span className="badge text-bg-secondary">1</span> {t("Goal & Setup")}
-            </button>
-          </li>
-          <li className="nav-item">
-            <span
-              title={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
-              tabIndex={!hasCoreParams ? 0 : undefined}
-              role={!hasCoreParams ? "group" : undefined}
-              aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
-              style={{ display: 'inline-block', width: '100%', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
-            >
-              <button
-                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 2 ? 'active fw-bold' : ''}`}
-                aria-current={currentStep === 2 ? 'step' : undefined}
-                disabled={!hasCoreParams}
-                style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }}
-                onClick={() => hasCoreParams && setCurrentStep(2)}
-              >
-                <span className="badge text-bg-secondary">2</span> {t("Driving data and gearing")}
-              </button>
-            </span>
-          </li>
-          <li className="nav-item">
-            <span
-              title={!hasPreparedInputs ? t("Complete driving-data preparation in Step 2 first.") : undefined}
-              tabIndex={!hasPreparedInputs ? 0 : undefined}
-              role={!hasPreparedInputs ? "group" : undefined}
-              aria-label={!hasPreparedInputs ? t("Complete driving-data preparation in Step 2 first.") : undefined}
-              style={{ display: 'inline-block', width: '100%', cursor: !hasPreparedInputs ? 'not-allowed' : 'auto' }}
-            >
-              <button
-                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 3 ? 'active fw-bold' : ''}`}
-                aria-current={currentStep === 3 ? 'step' : undefined}
-                disabled={!hasPreparedInputs}
-                style={{ pointerEvents: !hasPreparedInputs ? 'none' : 'auto' }}
-                onClick={() => hasPreparedInputs && setCurrentStep(3)}
-              >
-                <span className="badge text-bg-secondary">3</span> {t("Chassis")}
-              </button>
-            </span>
-          </li>
-          <li className="nav-item">
-            <span
-              title={!hasPreparedInputs ? t("Complete driving-data preparation in Step 2 first.") : undefined}
-              tabIndex={!hasPreparedInputs ? 0 : undefined}
-              role={!hasPreparedInputs ? "group" : undefined}
-              aria-label={!hasPreparedInputs ? t("Complete driving-data preparation in Step 2 first.") : undefined}
-              style={{ display: 'inline-block', width: '100%', cursor: !hasPreparedInputs ? 'not-allowed' : 'auto' }}
-            >
-              <button
-                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 4 ? 'active fw-bold' : ''}`}
-                aria-current={currentStep === 4 ? 'step' : undefined}
-                disabled={!hasPreparedInputs}
-                style={{ pointerEvents: !hasPreparedInputs ? 'none' : 'auto' }}
-                onClick={() => hasPreparedInputs && setCurrentStep(4)}
-              >
-                <span className="badge text-bg-secondary">4</span> {t("Tire & Alignment")}
-              </button>
-            </span>
-          </li>
-          <li className="nav-item">
-            <span
-              title={!hasPreparedInputs ? t("Complete driving-data preparation in Step 2 first.") : undefined}
-              tabIndex={!hasPreparedInputs ? 0 : undefined}
-              role={!hasPreparedInputs ? "group" : undefined}
-              aria-label={!hasPreparedInputs ? t("Complete driving-data preparation in Step 2 first.") : undefined}
-              style={{ display: 'inline-block', width: '100%', cursor: !hasPreparedInputs ? 'not-allowed' : 'auto' }}
-            >
-              <button
-                className={`nav-link btn-sm w-100 d-flex align-items-center justify-content-center gap-2 ${currentStep === 5 ? 'active fw-bold' : ''}`}
-                aria-current={currentStep === 5 ? 'step' : undefined}
-                disabled={!hasPreparedInputs}
-                style={{ pointerEvents: !hasPreparedInputs ? 'none' : 'auto' }}
-                onClick={() => hasPreparedInputs && setCurrentStep(5)}
-              >
-                <span className="badge text-bg-secondary">5</span> {t("Telemetry Calibration")}
-              </button>
-            </span>
-          </li>
-        </ul>
+        <TuningWorkflowNavigation currentStep={currentStep} readiness={readiness} onSelect={setCurrentStep} />
       </div>
 
       {/* Step Content Area Container */}
@@ -450,17 +330,19 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
             onOpenUnitSettings={() => setShowUnitSettings(true)}
             onProceed={async () => {
               await saveCarParams();
-              setMeasurement(null);
               setCurrentStep(2);
             }}
           />
         )}
 
-        {currentStep === 2 && !hasPreparedInputs && (
-          <TuningMeasurementStep key={preparationKey} carId={carId} enabled={hasCoreParams}
+        {currentStep === 5 && hasCoreParams && workflow && staticCarParams && (
+          <div className="mb-3"><DifferentialSetup diff={workflow.chassis.diff} drivetrain={staticCarParams.drivetrain} /></div>
+        )}
+        {currentStep === 5 && !hasPreparedInputs && (
+          <TuningMeasurementStep key={preparationKey} carId={carId} enabled={hasEngineInputs}
             onComplete={data => { if (carParams) setMeasurement({ key: preparationKey, data, profile: carParams }); }} />
         )}
-        {currentStep === 2 && hasPreparedInputs && (
+        {currentStep === 5 && hasPreparedInputs && (
           <>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMeasurement(null)}>{t('Collect driving data again')}</button>
@@ -476,24 +358,21 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
           </>
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 2 && hasCoreParams && workflow && <TireBaselineStep tires={workflow.tires} />}
+
+        {currentStep === 3 && hasCoreParams && (
           <Step3ChassisTuner
             selectedRaceGoal={selectedRaceGoal}
-            carParams={solverCarParams}
+            tuningResult={chassisResult}
             saveCarParams={saveCarParams}
           />
         )}
 
-        {currentStep === 4 && (
-          <Step4TireAlignSetup
-            selectedRaceGoal={selectedRaceGoal}
-            season={season}
-            carParams={solverCarParams}
-            onNextStep={() => setCurrentStep(5)}
-          />
+        {currentStep === 4 && hasCoreParams && workflow && (
+          <WheelAlignmentStep alignment={workflow.alignment} springs={workflow.chassis.springs} />
         )}
 
-        {currentStep === 5 && (
+        {currentStep === 6 && hasPreparedInputs && (
           <Step5TelemetryCalibration
             gearing={tuning.gearing}
             carId={carId}

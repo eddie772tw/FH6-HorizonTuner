@@ -2391,3 +2391,11 @@
 - 新增`docs/tuning-implementation-and-evidence-20260910.md`統一索引，修正雙語README的Step5行為說明；歷史checkpoint保留當日狀態並連到最新索引。研究候選沒有取代產品Road公式，raw capture與探索腳本仍留ignored scratch，不冒稱僅Git checkout即可重算全部實測。
 - 追加需求整理為`docs/tuning-post-race-feedback-proposal.md`：原始SHA與完整性、窗口敏感度、共同路徑、時間加權逐輪指標、控制活動、事件／胎溫／G-G、漂移／交互作用及模型簡約性映射到工作流。讀碼發現現有10Hz錄製、SQLite單位／小值轉換、末圈與圈時計、索引距離和舊觸底摘要語意缺口，列為P0，再做P1跨場／設定回饋、P2動態對比、P3研究模型。提案未實作，沒有重啟遊戲測試。
 - 本地提交前檢查：pytest tests/與scripts/tests/共300 passed、9 deselected；前端96 files/673 passed；TypeScript/Vite build、Rust cargo check、Ruff check/format（192 files）、版本11.45.17一致性均通過。host_diagnostics按既有契約排除，不當硬體驗收；scratch/pr_body.md通過作者格式validator。採用`pr-author-maintainer`、`agent-governance-audit`及`modular-refactoring`，技能registry核對一致。PR待外部審查，不自我宣告可合併。
+
+## 2026-09-10 / 六階段工程工作流與單向依賴
+
+- 依使用者要求先整理 PR #323 與實測上下文，再參考 Hoosier、Öhlins、Penske 的原始工程資料，把一般流程改為目標／資料→輪胎基準→底盤平台→定位→動力／傳動→實際設定驗證。這是建議操作順序，資料門檻與拜訪順序分離；沒有引擎量測或有效馬力仍可查看機械基準，完整齒比與驗證才需要引擎輸入。
+- `calculateWorkflowTuning` 統一單向計算，輪胎名義半徑先算再傳入 AEGO；底盤頁使用共同結果，顯示彈簧／車高、ARB、阻尼，差速器移到動力頁。拆分胎壓與定位頁、共用導覽與數值卡片，保留公開公式介面與原數值。定位引用車高作核對，不杜撰懸吊幾何補償；自然頻率→彈簧→阻尼係數的後續 DAG 仍是擴充契約，不等於遊戲滑桿校準。
+- 補上靜態 profile 序列化快照，排除背景 dyno 欄位，避免 polling 重建 baseline 並撤銷確認；實際 profile 改動保留失效機制。新增資料門檻、背景快照、無副作用／參數隔離、四用途三驅動四季節算牌相容及 SSR 渲染測試。雙語 README、量測操作文件、證據索引與回饋提案同步，新規劃在`docs/tuning-workflow-dependencies-20260910.md`。
+- 基準前端673通過，最後前端99 files/704 passed、TypeScript/Vite、Python300 passed/9 deselected、Ruff check/format195 files及11.45.17版本契約通過。第一次 Python sidecar 埠測試受自己的8001 UI fixture占用，關閉後整套重跑通過；沒有放寬測試。完整前端以記憶體fixture核對0hp／無遙測仍可直接開定位、底盤、輪胎、差速器，整套驗證關閉；檢查Default／Modern／Elegant與深淺色代表畫面，服務及分頁已關閉。沒有重啟遊戲或宣稱新版量測實機驗收。
+- 採用`huge-component-refactoring`、`modular-refactoring`、`halfmoon-design-system`、`physics-tuning-math`、`pr-author-maintainer`與`agent-governance-audit`；技能索引維持一致。PR頂層／行內評論讀回均為空。工作期間另發現`setup_venv.bat`第一行被外部移除，已告知並保留、排除本次提交；來源worktree未改寫。

@@ -269,7 +269,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>
-            Step 5: {t("Dynamic Telemetry Closed-Loop Calibration")} ({selectedRaceGoal})
+            {t("Dynamic Telemetry Closed-Loop Calibration")} ({selectedRaceGoal})
           </h3>
           <p style={{ margin: '0.2rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
             {t("Objective telemetry-driven closed-loop tuning with 4-wheel dynamics diagnosis, setup override and one-click recommendation adoption")}

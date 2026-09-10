@@ -25,7 +25,7 @@ export const Step2GearboxSetup: React.FC<Step2GearboxSetupProps> = ({
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.1rem' }}>
-          Step 2: {t("Gearbox setup & AEGO ratio optimization")}
+          {t("Gearbox setup & AEGO ratio optimization")}
         </h3>
 
         {savedTunings.length > 0 && (

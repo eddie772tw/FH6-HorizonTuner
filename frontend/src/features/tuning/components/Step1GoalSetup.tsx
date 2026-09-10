@@ -111,7 +111,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             style={{ display: 'inline-block', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
           >
             <button type="button" className="btn btn-primary btn-sm fw-bold" disabled={!hasCoreParams || saveState === 'saving'} style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }} onClick={() => void handleProceed()}>
-              {t(saveState === 'saving' ? "Saving..." : "Save & prepare driving data")} &gt;
+              {t(saveState === 'saving' ? "Saving..." : "Save & review tire baseline")} &gt;
             </button>
           </span>
         </div>
@@ -157,7 +157,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </select>
           </div>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
-            {t("Game season directly affects ambient temperatures and tire pressure fermentation offsets, fitting into Step 4 static setup recommendations.")}
+            {t("Season adjusts the initial tire pressure estimates. Verify the resulting temperatures and pressures on track.")}
           </p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
       {/* Vehicle Parameters Form */}
       <div style={{ background: 'var(--surface-1)', padding: '1.2rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
         <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Copy the weight, front weight percentage, power and torque shown for your current build. Confirm the installed tires and gearbox. Existing profile values may be defaults; they are not automatically read from the game.')}</p>
-        <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('You do not need to know peak RPM, target speed or aero efficiency. The next step guides you through collecting engine data before calculating a tune.')}</p>
+        <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Start with the tire and chassis baseline. You can open any section with sufficient data; engine measurement is only required for gearing and complete setup verification.')}</p>
         
         {/* Section 1: Core Physics & Drivetrain */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>

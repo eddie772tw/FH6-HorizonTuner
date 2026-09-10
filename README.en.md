@@ -28,13 +28,14 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
   - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
   - Bounded backend pipeline metrics, with initial dyno-profile reads and persistence kept off the realtime telemetry loop.
-* **5-Step Physics Tuning Workbench**:
-  - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag). Standard tuning currently excludes aero package, downforce, and aero efficiency inputs; formulas generate settings for telemetry validation.
-  - **Step 2 Guided Measurement & AEGO Gearing**: Enter known static vehicle values, then follow prompts to collect clean acceleration telemetry across the rev range. Once data is complete, click Next to calculate from a frozen summary. The normal workflow requires no guessed target speed or RPM; custom targets and legacy correction are optional advanced modes. See the [guided measurement workflow](docs/tuning-guided-measurement-workflow.md) and [FH6 meta research](docs/fh6-tuning-meta-aego-research.md).
-  - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
-  - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
-  - **Step 5 Telemetry Calibration**: Verify the actual in-game chassis and gearing first, then analyze new driving data for tire temperatures and normalized slip/travel warnings. A single sample does not establish bottoming or a chassis adjustment. Adopting a suggestion updates the table; apply it in the game and confirm again.
-  - See the [implementation and evidence index](docs/tuning-implementation-and-evidence-20260910.md) for the delivered scope, seven-lap results, and research limitations.
+* **Six-stage Physics Tuning Workbench**: Recommended navigation is separate from calculation dependencies; sections open whenever their data is available.
+  - **1 Goal & Setup**: Discipline, current build weight/distribution, drivetrain, tires and adjustment ranges. Standard formulas currently exclude aero inputs.
+  - **2 Tire baseline**: Seasonal starting pressures, hot-pressure target, tire dimensions and nominal gearing radius.
+  - **3 Chassis platform**: Springs and ride height, then roll bars and damping; no engine measurement prerequisite.
+  - **4 Wheel alignment**: Camber/toe/caster estimates with a ride-height check; the current formula does not model geometry changes caused by ride height.
+  - **5 Powertrain & gearing**: Differential and torque split are independently available. AEGO requires a completed engine measurement; event targets and legacy correction remain advanced modes.
+  - **6 Setup verification**: Verify actual in-game chassis and gearing, then analyze new driving data. Adopting a suggestion updates the table; apply it in the game and confirm again.
+  - See the [workflow dependencies](docs/tuning-workflow-dependencies-20260910.md), [guided measurement workflow](docs/tuning-guided-measurement-workflow.md), and [implementation/evidence index](docs/tuning-implementation-and-evidence-20260910.md) for engineering rationale, operation and limitations.
 * **Racing HUD Overlay & Full/Lite Clients**:
   - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
   - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/s650-media-properties-contract.md) for the complete field projection and reserved integration points.

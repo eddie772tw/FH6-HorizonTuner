@@ -90,7 +90,7 @@ export function TuningMeasurementStep({ carId, enabled, onComplete }: {
   };
   return (
     <section className="glass-panel p-4" style={{ color: 'var(--text-primary)' }}>
-      <h3 className="fs-5">{t('Prepare driving data before calculating')}</h3>
+      <h3 className="fs-5">{t('Prepare engine data for gearing')}</h3>
       <p>{t('Drive one or more smooth full-throttle runs on a clear straight, starting low in the rev range and holding the gear toward the engine limit. The app reads the numbers for you; no target speed or RPM entry is needed.')}</p>
       <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Collection uses the existing telemetry connection and keeps a small summary in this workflow. It does not enable global recording or save a recording file.')}</p>
       <div role="status" aria-live="polite" className="mb-3" style={{ minHeight: '3rem' }}>
