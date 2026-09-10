@@ -1,8 +1,24 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
-## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
+## 2026-09-10 / 全庫開啟中 PR 深度架構審查、多代理協作治理與 Merge 藍圖發布 (Neo as Antigravity)
 
-- **來源**：`local`，建立專屬分支 `feature/agent-tuning-cli`，開發面向 AI Agent、配合 MCP 與前端 UI 的命令列調校與遙測監控工具。
+- **來源**：`local`，響應使用者需求，以 `Neo as Antigravity` 身分對 `eddie772tw/FH6-HorizonTuner` 當前開啟中的 9 個 Pull Request（#316、#317、#318、#319、#320、#321、#322、#323、#324）進行完整的架構規範、物理公式、CI 綠燈率、安全性與程式碼衝突深度審查，並正式於 GitHub 發表 Review 意見與產出階段性 Merge 建議報告。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Jules 自動化機器人常見重複 PR 模式**：Jules 在處理相同效能需求（例如在 `FrameInterpolator` 中消除 `Set` Iterator 隱式配置）時，因任務重試或排程差異容易生成目標相同的平行 PR（如 #321 與 #324）。審查時需詳加比對建構子邊界（防禦性淺拷貝 vs 直接引用）與附帶日誌，擇優保留並明確標記另一個為 Duplicate 予以關閉，防止主線產生無效衝突。
+  2. **Windows 檔案系統大小寫敏感度契約與 CI 阻擋點**：PR #320 因新增大寫目錄檔案 `.Jules/palette.md`，直接踩中專案 `scripts/check_repo_path_case.py` 檢查而導致 `Backend Lint & Static Check` 失敗。多代理協作時必須嚴格遵循規範路徑（全小寫 `.jules/`），避免跨平台檔案檢出衝突。
+  3. **UI 無障礙 i18n 翻譯字典一致性檢查**：PR #320 將 `aria-label="Close"` 包裝為 `t("Close")`，但若未同步在 `lang/zh-tw.json`（與其他字典）中宣告 `"Close"` 鍵值，實際執行時將全數回退至原始英文字串，無法真正達成多語系無障礙目標。因此無障礙審查必須納入語系檔鍵值存在性之雙向核驗。
+  4. **巨型架構重構 (PR #323) 之邊界隔離與非同步無阻塞護欄**：Codex 主導的 100 檔案巨型 PR (#323) 展現了極高的工程水準：不僅將調校物理公式純函數化收攏於 `tuningMath.ts`，並在 `backend/main.py` 引入具備 30s TTL、1s 逾時截斷與退避機制的 `AudioDeviceDiscovery`，徹底杜絕同步 WASAPI 列舉凍結 FastAPI 事件迴圈的隱患。
+- **Action**：
+  1. 針對全部 9 個 PR 進行完整中繼資料、CI 檢查、Diff 結構與衝突面分析。
+  2. 以 `Neo as Antigravity` 身分於 GitHub 提交 PR #320（Blocking findings）、#324（Duplicate）、#322（Security verification）、#323（Architecture & physics verification）、#318（CLI & governance）、#319（HUD contract）之正式 Review 意見。
+  3. 產出完備的 Artifact 報告 `pr_merge_recommendation_report.md`，規劃三階段安全合併排程。
+- **Evidence**：GitHub PR Reviews 成功發布；產出完整審查報告 Artifact；無任何本地代碼回歸。
+- **Skills**：`pr-review-evaluation`、`cross-agent-collaboration`、`agent-governance-audit`。
+
+---
+
+## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
 - **狀態**：`adopted`。
 - **Learning**：
   1. **AI Agent 終端調用之零相依與協議解耦 (Zero-Dependency & Protocol-Driven)**：
