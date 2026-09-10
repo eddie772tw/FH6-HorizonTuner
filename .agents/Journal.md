@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / FH5 Arc 資訊層級與亮底辨識交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；依据視覺複審的遊戲截圖與資訊層級，非像素等價主張。
+- **Learning**：透明白色 HUD 在淺背景需要窄暗描邊，而非全幅底板；RPM 固定紅線標記不應被動態進度漸層取代。啟動繪圖也需遵循完整函式參數順序。
+- **Action**：細白環／數字刻度、中央 gear、下方 speed、固定紅線、短針；媒體／踏板改為明確選配 hook，保留手煞車；DPR 與靜態快取。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
 ## 2026-09-10 / AE86 TRD 材質與盤面字樣交付（Codex）
 
 - **來源／狀態**：`local`／`verified`；依使用者要求凍結版型，只修材質、字形與字樣。
