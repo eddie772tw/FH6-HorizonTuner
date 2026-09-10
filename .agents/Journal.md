@@ -1,5 +1,49 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / 全庫 Agent 規範體系與技能架構精煉重構 (AGENTS.md & Skills Lean Governance)
+
+- **來源**：`local`，響應使用者需求，依據五大 Agent 技能架構原則對專案 `AGENTS.md`、13 個專案技能及使用者層級外掛技能進行全面盤點與模組化重構。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **路由器 + 附件模式 (Router & References Pattern)**：巨型 `SKILL.md`（如超過 100 行的 `codex-antigravity-bridge`、`github-security-audit`、`jules_coding`、`pr-author-maintainer`）若直接塞入完整實作細節、正則與範本，會導致 Agent 只要觸發該技能就將大量上下文填滿，造成 Context Pollution。抽離出專用 `references/` 附件、主檔僅負責流程路由判定，能兼顧輕量調用與深度指針查閱。
+  2. **消除「每次動作前通讀某些檔案」之 Context Stuffing 反模式**：舊版 `AGENTS.md` 要求每次動作前通讀 `workspace.md`、`Journal.md` 等檔案，極易引發大量 token 浪費與記憶雜訊。重構為「文件與規範權責分工表 (Documentation SSOT Architecture)」，實踐按需載入 (On-Demand Loading)。
+  3. **消極禁令轉化為有條件明確授權 (Pre-authorized Bounded Rules)**：將「先問再做」的消極限制（如修改 UDP Offset、引入第三方相依）轉化為「具備客觀證據、測試覆蓋、輕量及寬鬆授權等明確邊界條件時獲得授權」，顯著減少不必要的互動中斷與等待死鎖。
+  4. **範圍分流驗證 (Scoped Verification)**：將「每次任務結束必須跑全套測試」改為依變更範圍分流（純文檔跑 diff check，前端跑 vitest，後端跑 pytest），大幅提升日常開發迴圈效能。
+  5. **消除技能間身分與職責衝突**：修正 `pr-review-evaluation` 與 `pr-author-maintainer` 在 PR 提交上的語意衝突，嚴格劃分 Reviewer 審查身分與 Author 提交身分；明確劃分 `huge-component-refactoring`（UI 組件與 60Hz Canvas）與 `modular-refactoring`（底層架構、Domain 邏輯與 API 契約）之邊界；並精簡修復外掛技能（如 `modern-web-guidance`）之大寫強迫字眼與過寬觸發。
+- **Action**：
+  1. 重構 `AGENTS.md`：建立權責分工表、範圍分流驗證與有條件明確授權條款。
+  2. 重構 `skills/README.md`：同步更新 Gate 與清單說明。
+  3. 模組化重構並抽離 references：
+     - `codex-antigravity-bridge`: 建立 `headless_configuration.md`, `smoke_troubleshooting.md`, `desktop_session_resume.md`。
+     - `github-security-audit`: 建立 `vulnerability_remediation_patterns.md`。
+     - `jules_coding`: 建立 `manual_invocation_guide.md`, `scheduled_intake_guide.md`。
+     - `pr-author-maintainer`: 建立 `pr_templates_and_replies.md`。
+     - `halfmoon-design-system`: 將元件 class 列表完全收斂至 `HALFMOON_SPECIFICATION.md`。
+  4. 修正 `agent-governance-audit`、`cross-agent-collaboration`、`pr-review-evaluation` 等 frontmatter descriptions。
+  5. 修訂使用者層級外掛技能（`modern-web-guidance`、`accidental-data-loss-prevention`、`chrome-extensions`、`ml-best-practices`、`building-data-apps`）。
+- **Evidence**：`git diff --check` 通過無空白異常；專案 13 個 skills 與 canonical registry 100% 對齊。
+- **Skills**：`agent-governance-audit`、`modular-refactoring`、`cross-agent-collaboration`。
+
+---
+
+## 2026-09-10 / 全庫開啟中 PR 深度架構審查、多代理協作治理與 Merge 藍圖發布 (Neo as Antigravity)
+
+- **來源**：`local`，響應使用者需求，以 `Neo as Antigravity` 身分對 `eddie772tw/FH6-HorizonTuner` 當前開啟中的 9 個 Pull Request（#316、#317、#318、#319、#320、#321、#322、#323、#324）進行完整的架構規範、物理公式、CI 綠燈率、安全性與程式碼衝突深度審查，並正式於 GitHub 發表 Review 意見與產出階段性 Merge 建議報告。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Jules 自動化機器人常見重複 PR 模式**：Jules 在處理相同效能需求（例如在 `FrameInterpolator` 中消除 `Set` Iterator 隱式配置）時，因任務重試或排程差異容易生成目標相同的平行 PR（如 #321 與 #324）。審查時需詳加比對建構子邊界（防禦性淺拷貝 vs 直接引用）與附帶日誌，擇優保留並明確標記另一個為 Duplicate 予以關閉，防止主線產生無效衝突。
+  2. **Windows 檔案系統大小寫敏感度契約與 CI 阻擋點**：PR #320 因新增大寫目錄檔案 `.Jules/palette.md`，直接踩中專案 `scripts/check_repo_path_case.py` 檢查而導致 `Backend Lint & Static Check` 失敗。多代理協作時必須嚴格遵循規範路徑（全小寫 `.jules/`），避免跨平台檔案檢出衝突。
+  3. **UI 無障礙 i18n 翻譯字典一致性檢查**：PR #320 將 `aria-label="Close"` 包裝為 `t("Close")`，但若未同步在 `lang/zh-tw.json`（與其他字典）中宣告 `"Close"` 鍵值，實際執行時將全數回退至原始英文字串，無法真正達成多語系無障礙目標。因此無障礙審查必須納入語系檔鍵值存在性之雙向核驗。
+  4. **巨型架構重構 (PR #323) 之邊界隔離與非同步無阻塞護欄**：Codex 主導的 100 檔案巨型 PR (#323) 展現了極高的工程水準：不僅將調校物理公式純函數化收攏於 `tuningMath.ts`，並在 `backend/main.py` 引入具備 30s TTL、1s 逾時截斷與退避機制的 `AudioDeviceDiscovery`，徹底杜絕同步 WASAPI 列舉凍結 FastAPI 事件迴圈的隱患。
+- **Action**：
+  1. 針對全部 9 個 PR 進行完整中繼資料、CI 檢查、Diff 結構與衝突面分析。
+  2. 以 `Neo as Antigravity` 身分於 GitHub 提交 PR #320（Blocking findings）、#324（Duplicate）、#322（Security verification）、#323（Architecture & physics verification）、#318（CLI & governance）、#319（HUD contract）之正式 Review 意見。
+  3. 產出完備的 Artifact 報告 `pr_merge_recommendation_report.md`，規劃三階段安全合併排程。
+- **Evidence**：GitHub PR Reviews 成功發布；產出完整審查報告 Artifact；無任何本地代碼回歸。
+- **Skills**：`pr-review-evaluation`、`cross-agent-collaboration`、`agent-governance-audit`。
+
+---
+
 ## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
 
 - **來源**：`local`，建立專屬分支 `feature/agent-tuning-cli`，開發面向 AI Agent、配合 MCP 與前端 UI 的命令列調校與遙測監控工具。

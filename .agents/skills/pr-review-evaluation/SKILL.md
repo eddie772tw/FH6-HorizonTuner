@@ -1,12 +1,12 @@
 ---
 name: pr-review-evaluation
-description: 當需要評估一個 PR、或完成一個分支的開發並提交 PR 後，針對該 PR 的狀態進行 Merge 評估或標準化發表 Review 意見 (包含頂層 Review 及原生 GitHub Inline Comments) 時觸發。
+description: 以審查者 (Reviewer) 身分評估 Pull Request (PR) 狀態、CI 結果並以標準格式發表審查意見與行內建議。適用於收到 PR 審查請求或評估合併條件時。
 ---
 
 # PR Review 評估與意見標準化 (PR Review Evaluation & Inline Comments)
 
 ## 觸發條件
-當完成一個分支的開發並提交 Pull Request (PR)，或收到評估特定 PR 的請求時，觸發此技能來檢查 PR 狀態、執行本地驗證，並以標準化格式（含頂層 Review 與原生 GitHub Inline Review Comments）發表審查意見。
+當收到評估特定 Pull Request (PR) 的請求、需要審查他人分支或評估合併條件時，觸發此技能來檢查 PR 狀態、執行本地驗證，並以標準化格式（含頂層 Review 與原生 GitHub Inline Review Comments）發表審查意見。若為建立 PR 或更新自己的 PR，請使用 `pr-author-maintainer`。
 
 ## 評估與審查流程
 
