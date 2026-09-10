@@ -19,6 +19,8 @@
 ---
 
 ## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
+
+- **來源**：`local`，建立專屬分支 `feature/agent-tuning-cli`，開發面向 AI Agent、配合 MCP 與前端 UI 的命令列調校與遙測監控工具。
 - **狀態**：`adopted`。
 - **Learning**：
   1. **AI Agent 終端調用之零相依與協議解耦 (Zero-Dependency & Protocol-Driven)**：
