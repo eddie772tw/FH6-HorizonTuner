@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sqlite3
 from typing import Any, Dict, List, Optional
 
@@ -128,6 +129,12 @@ class TelemetrySQLite:
             ]
             for col_name, col_def in new_columns:
                 if col_name not in existing_cols:
+                    # Validate column name and definition to prevent SQL injection in DDL statement
+                    if not re.match(r"^[a-zA-Z0-9_]+$", col_name):
+                        raise ValueError(f"Invalid column name: {col_name}")
+                    if not re.match(r"^[a-zA-Z0-9_\. ]+$", col_def):
+                        raise ValueError(f"Invalid column definition: {col_def}")
+
                     cursor.execute(
                         f"ALTER TABLE telemetry_channels ADD COLUMN {col_name} {col_def};"
                     )
