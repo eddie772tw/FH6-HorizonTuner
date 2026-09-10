@@ -26,6 +26,8 @@
 
 ## AE86 TRD：保留版型，修正材質與字樣
 
+**後續基準更新**：使用者於此版推送後明確指定改以 Nagai Electronics ULTRA Clubman Series stepping tachometer 重製。以下 TRD／NIPPONDENSO 內容保留為第一輪歷史，不再作下一輪目標；ULTRA 重製將另行提交。
+
 ![AE86 更新盤面](assets/hud-visual-iteration-20260910/initial_d-cruise-dark.png)
 
 [修改前](assets/hud-visual-review-20260910/initial_d-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/initial_d-full-dpr1.png) · [紅線／漂移](assets/hud-visual-iteration-20260910/initial_d-redline-dark.png) · [英制倒檔](assets/hud-visual-iteration-20260910/initial_d-reverse-light.png) · [DPR 2](assets/hud-visual-iteration-20260910/initial_d-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/initial_d-states.json)
@@ -68,6 +70,19 @@
 - 明確標記 C125／FH ADAPTED，author.json 同步說明；不主張此布局代表所有 GT3 車隊。無效／空資料會清除舊讀值；動畫與 DPR backing store 具生命週期處理。
 
 驗證：聚焦 5 tests，驗證六欄缺資料、真實圈時、RPM、速度公英制、R／N 與無效值；完整 gate 後端 285 passed／8 deselected、前端 599 passed，其餘檢查通過。20 組瀏覽器狀態無 pageerror。六個空欄是資料不可用的明確呈現，不是感測器實測為零。
+
+## Cyberpunk：Turbo-R 概念啟發的窄幅模組
+
+![Cyberpunk 工業面板](assets/hud-visual-iteration-20260910/cyberpunk_hud-cruise-dark.png)
+
+[修改前](assets/hud-visual-review-20260910/cyberpunk_hud-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/cyberpunk_hud-full-dpr1.png) · [紅線](assets/hud-visual-iteration-20260910/cyberpunk_hud-redline-dark.png) · [缺 boost](assets/hud-visual-iteration-20260910/cyberpunk_hud-missing-light.png) · [狀態量測](assets/hud-visual-iteration-20260910/cyberpunk_hud-states.json)
+
+- 統一 Turbo-R V-Tech 身份，移除 Type-66 混稱；以琥珀磷光字、深橄欖金屬外框及窄幅分段面板重新編排。上方 RPM、主速度／檔位、右方增壓／踏板形成明確層級。
+- 移除假的 SYS.LINK／60HZ 狀態、姿態角、可見 EQ 與隨機 Glitch。媒體僅以實際收到的歌名置於底部次要文字；保留既有 hooks。缺 boost 顯示 `—`，取消油門製造的增壓數值。
+- 520×220 邏輯畫布、倍率 1.0、預設 390×165；DPR 1–3 與靜態快取同步，按單位／色彩／最高轉速改變重建。
+- 來源為設計者的 Quadra TURBO-R 概念圖；author.json 明確描述 Cyberpunk-inspired 原創延伸，**未聲稱最終遊戲儀表還原**。裝飾性標題仍是次要文字，視線優先順序為速度、檔位、轉速。
+
+驗證：聚焦 4 tests，包含公英制、R／N、缺 boost 與 DPR；完整 gate 後端 285 passed／8 deselected、前端 599 passed，其餘檢查通過。20 組瀏覽器狀態無 pageerror。
 
 ## 執行環境註記
 

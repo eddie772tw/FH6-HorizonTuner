@@ -1,5 +1,14 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / Cyberpunk Turbo-R 工業面板交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；Quadra Turbo-R 設計概念啟發的原創 HUD，非最終遊戲儀表複製。
+- **Learning**：車型名稱與來源性質必須一致；裝飾性狀態不能被誤認為實測鏈路狀態。主速度／檔位優先於姿態、頻譜與效果。
+- **Action**：琥珀工業窄幅模組、統一 Turbo-R V-Tech、移除假 SYS.LINK／EQ／姿態／Glitch 干擾，缺 boost 顯示不可用，DPR 與靜態快取。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Next**：使用者更新 AE86 基準為 ULTRA Clubman，將在獨立下一次修正提交中重製；已推送 TRD 階段保留歷史標記。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
 ## 2026-09-10 / MoTeC C125 左右欄重建交付（Codex）
 
 - **來源／狀態**：`local`／`verified`；以官方 C125 展示頁內容順序重建三列欄位，中央明確採 FH 適配。
