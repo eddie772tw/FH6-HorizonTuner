@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / MoTeC C125 左右欄重建交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；以官方 C125 展示頁內容順序重建三列欄位，中央明確採 FH 適配。
+- **Learning**：C125 官方 PAGE 5 不是檔位，其 10 LED 亦不等於舊 15 顆模擬燈；Forza 沒有六個溫度／壓力通道，不可用胎溫或固定值填版。CurrentLap 減 BestLap 不能代表同距離圈速差。
+- **Action**：六列溫度／壓力顯示不可用，中央 RPM／檔位／速度、下方真實圈時；移除固定煞車比例與歌曲誤稱 Team Radio，提高文字及預設尺寸並標明 FH ADAPTED。
+- **Evidence**：本款 5 tests，20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
 ## 2026-09-10 / FH5 Arc 資訊層級與亮底辨識交付（Codex）
 
 - **來源／狀態**：`local`／`verified`；依据視覺複審的遊戲截圖與資訊層級，非像素等價主張。

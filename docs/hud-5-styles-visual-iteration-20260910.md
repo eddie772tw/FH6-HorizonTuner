@@ -50,6 +50,25 @@
 
 驗證：聚焦 4 tests，含公英制、R／N、手煞車、媒體預設／選配與 DPR；完整 gate 後端 285 passed／8 deselected、前端 599 passed，其餘檢查通過。20 組瀏覽器狀態無 pageerror。這是參照已目視遊戲截圖的原創 Canvas 改作，非逐像素復刻。
 
+## MoTeC：重建 C125 左右欄內容
+
+![MoTeC C125 適配頁](assets/hud-visual-iteration-20260910/motec_gt3-cruise-dark.png)
+
+[修改前](assets/hud-visual-review-20260910/motec_gt3-detail.png) · [完整右下畫面](assets/hud-visual-iteration-20260910/motec_gt3-full-dpr1.png) · [缺資料](assets/hud-visual-iteration-20260910/motec_gt3-missing-light.png) · [DPR 2](assets/hud-visual-iteration-20260910/motec_gt3-detail-dpr2.png) · [狀態量測](assets/hud-visual-iteration-20260910/motec_gt3-states.json)
+
+| 區域 | 迭代後内容 | 資料邊界 |
+|---|---|---|
+| 左欄 | ENGINE OIL TMP／GBOX OIL TMP／DIFF OIL TMP | Forza parser 未提供，三列顯示 `—` |
+| 右欄 | WATER TMP／OIL PRESS／FUEL PRESS | Forza parser 未提供，三列顯示 `—` |
+| 中央 | RPM、檔位、速度及公英制單位 | 使用 canonical 遙測；這是 FH 適配，並非把官方 PAGE 5 當作檔位 |
+| 下方 | REFERENCE LAP／GAIN LOSS／RUNNING LAP | BestLap、CurrentLap 以秒格式化；沒有同距離 delta，GAIN LOSS 顯示 `—` |
+
+- 三個大區保留，取消胎溫卡片與踏板混排，改用暖色小標籤／白色大讀值及連續螢幕；10 顆 RGB LED 與 C125 硬體數量一致。移除固定 BRAKE BIAS 和把歌曲稱為 Team Radio 的處理。
+- 800×480 邏輯尺寸，倍率由 0.55 調為 0.70，預設 420×252；主要側欄標籤約 11.55 CSS px。中央補回 RPM 行，主檔位與速度保持清楚分隔。
+- 明確標記 C125／FH ADAPTED，author.json 同步說明；不主張此布局代表所有 GT3 車隊。無效／空資料會清除舊讀值；動畫與 DPR backing store 具生命週期處理。
+
+驗證：聚焦 5 tests，驗證六欄缺資料、真實圈時、RPM、速度公英制、R／N 與無效值；完整 gate 後端 285 passed／8 deselected、前端 599 passed，其餘檢查通過。20 組瀏覽器狀態無 pageerror。六個空欄是資料不可用的明確呈現，不是感測器實測為零。
+
 ## 執行環境註記
 
 第一次後端全套測試因另一工作區占用 8001 而失敗：sidecar 正確退到動態埠，但既有測試要求 8001。經使用者允許停用該實例後，完整測試通過。沒有修改測試以迴避此環境衝突；依使用者後續指示，不恢復該後端。
