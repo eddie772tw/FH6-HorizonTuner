@@ -267,13 +267,13 @@
 
                     var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
                     var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
-                    var isHandbrake = !!(data.handbrake || data.hand_brake);
+                    var isHandbrake = !!(data.handbrake || data.hand_brake || data.Handbrake || data.HandBrake);
 
                     drawFh5ArcHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, isHandbrake, performance.now());
                 },
 
                 onMedia: function (data) {
-                    if (data && data.success && data.has_media && data.title) {
+                    if (data && (data.success || data.has_media) && data.title) {
                         mediaState.has_media = true;
                         mediaState.title = data.title;
                         mediaState.artist = data.artist || '';

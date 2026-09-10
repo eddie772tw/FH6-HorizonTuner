@@ -440,12 +440,11 @@
                     // Real-time G-Force extraction
                     var latG = 0;
                     var lonG = 0;
-                    if (data.AccelerationX !== undefined && data.AccelerationZ !== undefined) {
-                        latG = data.AccelerationX / 9.81;
-                        lonG = data.AccelerationZ / 9.81;
-                    } else if (data.accel_x !== undefined && data.accel_z !== undefined) {
-                        latG = data.accel_x / 9.81;
-                        lonG = data.accel_z / 9.81;
+                    var rawLat = data.AccelerationX !== undefined ? data.AccelerationX : (data.accel_x !== undefined ? data.accel_x : data.AccelX);
+                    var rawLon = data.AccelerationZ !== undefined ? data.AccelerationZ : (data.accel_z !== undefined ? data.accel_z : (data.AccelerationY !== undefined ? data.AccelerationY : data.AccelY));
+                    if (rawLat !== undefined && rawLon !== undefined) {
+                        latG = Math.abs(rawLat) > 4 ? (rawLat / 9.81) : rawLat;
+                        lonG = Math.abs(rawLon) > 4 ? (rawLon / 9.81) : rawLon;
                     } else if (payload && payload.g_force) {
                         latG = payload.g_force.lat || 0;
                         lonG = payload.g_force.lon || 0;
@@ -455,7 +454,7 @@
                 },
 
                 onMedia: function (data) {
-                    if (data && data.success && data.has_media && data.title) {
+                    if (data && (data.success || data.has_media) && data.title) {
                         mediaState.has_media = true;
                         mediaState.title = data.title;
                         mediaState.artist = data.artist || '';

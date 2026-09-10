@@ -277,12 +277,18 @@
 
                 // Arcade DRIFT Mode Indicator
                 if (isDrifting) {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                    ctx.fillRect(cx - 54, cy - 54, 108, 18);
+                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(cx - 54, cy - 54, 108, 18);
+
                     ctx.fillStyle = '#FBBF24';
-                    ctx.font = 'bold 15px "ForzaFont", sans-serif';
+                    ctx.font = 'bold 13px "ForzaFont", sans-serif';
                     ctx.textAlign = 'center';
                     ctx.shadowColor = '#F59E0B';
-                    ctx.shadowBlur = 12;
-                    ctx.fillText('⚡ DRIFT ⚡', cx, cy - 42);
+                    ctx.shadowBlur = 10;
+                    ctx.fillText('⚡ DRIFT ⚡', cx, cy - 40);
                     ctx.shadowBlur = 0;
                 }
 
