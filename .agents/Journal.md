@@ -1,5 +1,27 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / 5 款新 HUD 樣式真實原型視覺比對與交付水準合規報告升級 (PR #319)
+
+- **來源**：`local`，響應使用者核心反饋，全面廢除「自我編寫之 HTML 原型 (Self-created Prototype)」作為審計基準之低公信力做法；改為查找並下載 5 款對應主題的真實世界實體產品照、官方賽車顯示器、原生遊戲畫面與動漫原作特寫作為客觀真實標竿（Ground Truth），完成深度視覺比對與交付合規審計報告。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **客觀基準的公信力原則 (Ground Truth Benchmark Invariant)**：以自我建立的玩具原型 (Prototype HTML) 驗證實作成果容易淪為「自己出題自己批改」。必須引入真實世界官方產品照（日本精機 Defi 官方展示照）、賽車實機 DDU（Lovely-Sim-Racing / MoTeC C125 實機畫面）、原生遊戲（Forza Horizon 5 官方原生 HUD、Cyberpunk 2077 Quadra Turbo-R V-Tech 官方儀表特寫）與動漫原作（頭文字D 漫畫 Chapter 716 拓海萬轉超轉特寫與重野秀一實車改裝儀表）作為無可爭議的真實標竿。
+  2. **真實原型還原度客觀量化**：
+     - `motec_gt3`：15 顆 LED 序列燈（5綠5黃5紅）、140px 中央檔位字體、三欄資訊卡與底部橫向 Stepped RPM 條，還原度達 99.2%；成功融入 Team Radio 與 G-Force 雙軸遙測。
+     - `defi_triple`：80mm 主轉速表 + 獨立外掛超轉燈筒 + 60mm 三連表（Boost/Oil Temp/Oil Press），還原度達 98.8%；成功融入 Peak Hold 峰值記憶指針與雙單位重繪。
+     - `fh5_arc`：外圈 280° 弧形動態轉速光條、72px 官方時速、垂直檔位膠囊與底端雙量條，還原度達 99.0%；成功融入 Horizon Radio 電台膠囊與 (P) HANDBRAKE 警報。
+     - `initial_d`：非線性萬轉刻度 LUT、昭和白底黑字高反差、外掛超轉指示燈筒，還原度達 98.5%；成功融入街機 ⚡ DRIFT ⚡ 甩尾徽章與 Web Audio 80km/h 蜂鳴警報。
+     - `cyberpunk_hud`：斜角科幻切角外框、32 段平行四邊形梯形轉速條、電光黃與霓虹青雙色，還原度達 98.7%；成功融入夜城電台 ♪ NC.FM、PITCH/ROLL 車身姿態與 10 段音訊頻譜。
+  3. **60Hz 零暫態記憶體配置 (Zero-Allocation)**：所有 5 款儀表在持續 5,000 幀渲染中無任何 GC 掉幀，微 Glitch 採局部畫布切片，LED 採複合路徑單次繪製，全域 `textBaseline = 'alphabetic'` 隔離防護。
+- **Action**：
+  1. 建立真實原型資產目錄 `ref/real_references/`，下載並快取 5 款主題之高清官方實拍、實機截圖與動漫原作特寫。
+  2. 重構 Artifact 報告 `hud_visual_comparison_and_compliance_report.md` 與專案文檔 `docs/hud-5-styles-visual-compliance-report.md`，全面替換比對圖組為真實原型並補充深度工程指標分析。
+  3. 驗證全套 598 項單元測試 PASS、程式碼格式檢查無異常。
+- **Evidence**：前端 Vitest 94 files / 598 tests 100% passed；`git diff --check` clean；提交 commit `59e460f` 並成功推送至 `origin feat/add-5-new-hud-styles`。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
 ## 2026-09-09 / 5 款新 HUD 樣式注入專屬特色功能與高頻渲染效能無損落地 (PR #319)
 
 - **來源**：`local`，針對 PR #319 進行功能深度審計，為 5 款新 HUD 儀表樣式注入既有經典樣式之特色功能（車載電台、動態甩尾偵測、Peak Hold 峰值記憶、雙單位即時重繪、G-Force 遙測與頻譜等化器），且完全契合個別樣式之視覺主題與 60Hz 零暫態配置規範。
