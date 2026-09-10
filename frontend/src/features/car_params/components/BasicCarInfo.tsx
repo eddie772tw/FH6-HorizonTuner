@@ -36,7 +36,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
       
       <div className="d-flex justify-content-between align-items-center">
         <label htmlFor="weight" className="form-label mb-0 fs-7">{t("Weight")} ({settings.units.weight})</label>
-        <input id="weight" type="number" value={Math.round(displayCarWeight)} onChange={e => handleWeightChange(e.target.value)} className="form-control form-control-sm" style={{ width: '170px' }} />
+        <input id="weight" type="number" value={displayCarWeight} onChange={e => handleWeightChange(e.target.value)} className="form-control form-control-sm" style={{ width: '170px' }} step="any" />
       </div>
       
       <div className="d-flex justify-content-between align-items-center">
@@ -65,7 +65,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
 
       <div className="d-flex justify-content-between align-items-center">
         <label htmlFor="max_hp" className="form-label mb-0 fs-7">{t("Max HP")} ({getPowerLabel()})</label>
-        <input id="max_hp" type="number" value={Math.round(displayMaxHp)} onChange={e => handleMaxHpChange(e.target.value)} className="form-control form-control-sm" style={{ width: '170px' }} step="10" />
+        <input id="max_hp" type="number" value={displayMaxHp} onChange={e => handleMaxHpChange(e.target.value)} className="form-control form-control-sm" style={{ width: '170px' }} step="any" />
       </div>
 
       <div className="d-flex justify-content-between align-items-center">
@@ -75,7 +75,7 @@ export const BasicCarInfo: React.FC<BasicCarInfoProps> = ({
 
       <div className="d-flex justify-content-between align-items-center">
         <label htmlFor="max_torque" className="form-label mb-0 fs-7">{t("Max Torque")} ({getTorqueLabel()})</label>
-        <input id="max_torque" type="number" value={Math.round(displayMaxTorque)} onChange={e => handleMaxTorqueChange(e.target.value)} className="form-control form-control-sm" style={{ width: '170px' }} step="10" />
+        <input id="max_torque" type="number" value={displayMaxTorque} onChange={e => handleMaxTorqueChange(e.target.value)} className="form-control form-control-sm" style={{ width: '170px' }} step="any" />
       </div>
 
       <div className="d-flex justify-content-between align-items-center">

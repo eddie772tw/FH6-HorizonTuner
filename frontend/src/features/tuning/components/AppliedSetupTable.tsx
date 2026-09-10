@@ -7,6 +7,7 @@ export interface AppliedSetupTableProps {
   onChange: (field: keyof AppliedTuningSetup, value: number) => void;
   onReset: () => void;
   isAwd?: boolean;
+  isFwd?: boolean;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -24,8 +25,9 @@ export function convertDisplayedSpringToCanonical(
   displayedVal: number,
   convertSpringRateToKgfmm: (val: number) => number
 ): number {
-  const kgfmm = convertSpringRateToKgfmm(displayedVal);
-  return Number(kgfmm.toFixed(2));
+  // Rounding canonical kgf/mm to 0.01 loses roughly 0.56 lb/in,
+  // preventing the user from recording the game's actual spring click.
+  return convertSpringRateToKgfmm(displayedVal);
 }
 
 export function convertDisplayedHeightToCanonical(
@@ -40,7 +42,8 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
   setup,
   onChange,
   onReset,
-  isAwd = false
+  isAwd = false,
+  isFwd = false
 }) => {
   const {
     convertTirePressureFromPsi,
@@ -91,7 +94,7 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
         <div>
           <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.9rem' }}>
-            {t("Current Applied Setup")}
+            {t("Setup to verify against the game")}
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
             ({t("Editable baseline for regression")})
@@ -393,36 +396,23 @@ export const AppliedSetupTable: React.FC<AppliedSetupTableProps> = ({
             4. {t("Differential")}
           </span>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{t("Rear Accel")}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <input
-                type="number"
-                step="1"
-                value={setup.diffAccelRear}
-                onChange={e => onChange('diffAccelRear', parseFloat(e.target.value) || 0)}
-                style={inputStyle}
-                aria-label={t("Rear Accel")}
-              />
-              <span style={{ fontSize: '0.7rem', color: 'gray', minWidth: '24px' }}>%</span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{t("Rear Decel")}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <input
-                type="number"
-                step="1"
-                value={setup.diffDecelRear}
-                onChange={e => onChange('diffDecelRear', parseFloat(e.target.value) || 0)}
-                style={inputStyle}
-                aria-label={t("Rear Decel")}
-              />
-              <span style={{ fontSize: '0.7rem', color: 'gray', minWidth: '24px' }}>%</span>
-            </div>
-          </div>
-
+          {(isFwd || isAwd ? ['front', ...(isAwd ? ['rear'] : [])] : ['rear']).map(axle => (
+            <React.Fragment key={axle}>
+              {(['accel', 'decel'] as const).map(mode => {
+                const field = `diff${mode === 'accel' ? 'Accel' : 'Decel'}${axle === 'front' ? 'Front' : 'Rear'}` as keyof AppliedTuningSetup;
+                const label = `${axle === 'front' ? 'Front' : 'Rear'} ${mode === 'accel' ? 'Accel' : 'Decel'}`;
+                return <label key={field} className="d-flex justify-content-between align-items-center" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  <span>{t(label)}</span>
+                  <span className="d-flex align-items-center gap-1">
+                    <input type="number" min={0} max={100} step={1}
+                      value={setup[field] ?? ''} aria-label={t(label)} style={inputStyle}
+                      onChange={e => { const value = Number(e.target.value); if (e.target.value !== '' && Number.isFinite(value)) onChange(field, Math.min(100, Math.max(0, value))); }} />
+                    <span>%</span>
+                  </span>
+                </label>;
+              })}
+            </React.Fragment>
+          ))}
           {isAwd && setup.diffCenterRear !== undefined && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{t("Center Balance (Rear %)")}</span>

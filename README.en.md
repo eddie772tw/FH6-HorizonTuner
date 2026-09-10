@@ -29,11 +29,12 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
   - Bounded backend pipeline metrics, with initial dyno-profile reads and persistence kept off the realtime telemetry loop.
 * **5-Step Physics Tuning Workbench**:
-  - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag) and aerodynamic efficiency parameters.
-  - **Step 2 AEGO Gearing**: Proprietary AEGO gear ratio calculation algorithm & Powerband envelope analysis, supporting 4-Speed Drag Meta, Soft Max Speed caps, and closed-loop top-speed re-distribution.
+  - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag). Standard tuning currently excludes aero package, downforce, and aero efficiency inputs; formulas generate settings for telemetry validation.
+  - **Step 2 Guided Measurement & AEGO Gearing**: Enter known static vehicle values, then follow prompts to collect clean acceleration telemetry across the rev range. Once data is complete, click Next to calculate from a frozen summary. The normal workflow requires no guessed target speed or RPM; custom targets and legacy correction are optional advanced modes. See the [guided measurement workflow](docs/tuning-guided-measurement-workflow.md) and [FH6 meta research](docs/fh6-tuning-meta-aego-research.md).
   - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
   - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
-  - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
+  - **Step 5 Telemetry Calibration**: Verify the actual in-game chassis and gearing first, then analyze new driving data for tire temperatures and normalized slip/travel warnings. A single sample does not establish bottoming or a chassis adjustment. Adopting a suggestion updates the table; apply it in the game and confirm again.
+  - See the [implementation and evidence index](docs/tuning-implementation-and-evidence-20260910.md) for the delivered scope, seven-lap results, and research limitations.
 * **Racing HUD Overlay & Full/Lite Clients**:
   - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
   - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/s650-media-properties-contract.md) for the complete field projection and reserved integration points.

@@ -14,8 +14,14 @@ import {
 } from '../../../utils/tuningDiagnosis';
 import { ChassisTuningResult } from '../../../utils/tuningMath';
 import { AppliedSetupTable } from './AppliedSetupTable';
+import { AppliedGearingTable, isAppliedGearingValid, type AppliedGearing } from './AppliedGearingTable';
+import { useCalibrationReadiness } from '../useCalibrationReadiness';
+import { canCalibrate, canConfirmSetup } from '../calibrationReadiness';
+import { summarizeNormalizedSlip } from '../../../utils/telemetrySlipMetrics';
 
 interface Step5TelemetryCalibrationProps {
+  gearing: AppliedGearing;
+  carId: string;
   selectedRaceGoal: string;
   carParams: CarParams | null;
   chassisTuning: ChassisTuningResult | null;
@@ -51,6 +57,8 @@ const selectStyle: React.CSSProperties = {
 };
 
 export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps> = ({
+  gearing,
+  carId,
   selectedRaceGoal,
   carParams,
   chassisTuning,
@@ -59,6 +67,11 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
 }) => {
   const { convertTemp, convertTirePressureFromPsi, convertTirePressureToPsi, t } = useSettings();
   const { data: telemetry, isConnected } = useTelemetry();
+  const fresh = useCalibrationReadiness(telemetry, isConnected);
+  const [confirmation, setConfirmation] = useState<{ key: string; timestamp: number } | null>(null);
+  useEffect(() => {
+    setConfirmation(null);
+  }, [carId, telemetry?.CarOrdinal, telemetry?.CarPerformanceIndex, isConnected]);
 
   const tempUnitObj = convertTemp(0);
   const tempUnitLabel = tempUnitObj.label;
@@ -71,25 +84,39 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
   }, [carParams, chassisTuning, alignment, targetPhot]);
 
   const [appliedSetup, setAppliedSetup] = useState<AppliedTuningSetup>(initialBaseline);
+  const [appliedGearing, setAppliedGearing] = useState<AppliedGearing>(() => ({ ...gearing, gears: [...gearing.gears] }));
+  useEffect(() => {
+    setAppliedGearing({ ...gearing, gears: [...gearing.gears] });
+    setConfirmation(null);
+  }, [gearing]);
   const [tuningEvents, setTuningEvents] = useState<TuningTelemetryEvent[]>([]);
   const [eventFilter, setEventFilter] = useState<'active' | 'applied' | 'all'>('active');
+  const setupKey = JSON.stringify([carId, initialBaseline, appliedSetup, appliedGearing, telemetry?.CarOrdinal, telemetry?.CarPerformanceIndex]);
+  const confirmed = confirmation?.key === setupKey;
+  const canConfirm = isAppliedGearingValid(appliedGearing) && canConfirmSetup(Number(carId) === telemetry?.CarOrdinal, telemetry?.TimestampMS);
+  const calibrationReady = canCalibrate(fresh, confirmed ? confirmation.timestamp : null,
+    telemetry?.TimestampMS, Number(carId) === telemetry?.CarOrdinal,
+    telemetry?.IsRaceOn, telemetry?.SpeedMetersPerSecond);
 
   // Sync baseline when switching car
   useEffect(() => {
     setAppliedSetup(initialBaseline);
+    setConfirmation(null);
+    setTuningEvents([]);
   }, [initialBaseline]);
 
   const handleSetupChange = (field: keyof AppliedTuningSetup, value: number) => {
+    setConfirmation(null);
     setAppliedSetup(prev => {
       const updated = { ...prev, [field]: value };
-      setTuningEvents(events => revalidateTuningEventsOnSetupChange(events, updated));
       return updated;
     });
   };
 
   const handleResetSetup = () => {
+    setConfirmation(null);
     setAppliedSetup(initialBaseline);
-    setTuningEvents(events => revalidateTuningEventsOnSetupChange(events, initialBaseline));
+    setAppliedGearing({ ...gearing, gears: [...gearing.gears] });
   };
 
   // 2. Optional Manual Inputs
@@ -100,13 +127,10 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
 
   // 3. Extract live telemetry signals (Objective 60Hz UDP data)
   const telemetryGripMetrics = useMemo(() => {
-    if (!telemetry) return null;
-    const slipRatio = Array.isArray(telemetry.TireSlipRatio) ? telemetry.TireSlipRatio : [0, 0, 0, 0];
-    const slipAngle = Array.isArray(telemetry.TireSlipAngle) ? telemetry.TireSlipAngle : [0, 0, 0, 0];
+    if (!telemetry || !fresh) return null;
     const suspTravel = Array.isArray(telemetry.NormalizedSuspensionTravel) ? telemetry.NormalizedSuspensionTravel : [0, 0, 0, 0];
     const tireTemps = Array.isArray(telemetry.TireTemp) ? telemetry.TireTemp : [0, 0, 0, 0];
-
-    const slipAngleDeg = slipAngle.map(a => Math.abs(a) * (180 / Math.PI));
+    const normalizedSlip = summarizeNormalizedSlip(telemetry.TireSlipRatio, telemetry.TireSlipAngle);
 
     const toUserTemp = (fVal: number) => {
       if (tempUnit === 'C') return Math.round((fVal - 32) * 5 / 9);
@@ -121,24 +145,13 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     const boostPsi = Math.max(0, telemetry.Boost || 0);
 
     return {
-      avgSlipRatioF: (slipRatio[0] + slipRatio[1]) / 2,
-      avgSlipRatioR: (slipRatio[2] + slipRatio[3]) / 2,
-      maxSlipAngleF: Math.max(slipAngleDeg[0], slipAngleDeg[1]),
-      maxSlipAngleR: Math.max(slipAngleDeg[2], slipAngleDeg[3]),
+      ...normalizedSlip,
       maxSuspTravelF: Math.max(suspTravel[0], suspTravel[1]),
       maxSuspTravelR: Math.max(suspTravel[2], suspTravel[3]),
       suspTravelFL: suspTravel[0],
       suspTravelFR: suspTravel[1],
       suspTravelRL: suspTravel[2],
       suspTravelRR: suspTravel[3],
-      slipAngleFL: slipAngleDeg[0],
-      slipAngleFR: slipAngleDeg[1],
-      slipAngleRL: slipAngleDeg[2],
-      slipAngleRR: slipAngleDeg[3],
-      slipRatioFL: slipRatio[0],
-      slipRatioFR: slipRatio[1],
-      slipRatioRL: slipRatio[2],
-      slipRatioRR: slipRatio[3],
       tireTempFL: toUserTemp(tireTemps[0] || 0),
       tireTempFR: toUserTemp(tireTemps[1] || 0),
       tireTempRL: toUserTemp(tireTemps[2] || 0),
@@ -162,7 +175,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
       clutchInput: telemetry.ClutchInput,
       handbrakeInput: telemetry.HandBrakeInput
     };
-  }, [telemetry, tempUnit]);
+  }, [telemetry, tempUnit, fresh]);
 
   // Calculate closed-loop diagnosis driven primarily by objective telemetry
   const diagResult = useMemo(() => {
@@ -175,37 +188,40 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
       currentSetup: appliedSetup,
       alignment,
       chassis: chassisTuning,
+      drivetrain: carParams?.drivetrain,
       telemetryGripMetrics
     });
-  }, [photF, photR, targetPhot, handlingIssue, tempUnit, appliedSetup, alignment, chassisTuning, telemetryGripMetrics]);
+  }, [photF, photR, targetPhot, handlingIssue, tempUnit, appliedSetup, alignment, chassisTuning, carParams?.drivetrain, telemetryGripMetrics]);
 
   // Automatically accumulate test drive events into the session feed
   useEffect(() => {
-    if (diagResult.specificAdjustments.length > 0) {
+    if (calibrationReady && diagResult.specificAdjustments.length > 0) {
       setTuningEvents(prev => collectTuningTelemetryEvents(prev, diagResult, telemetry?.LapNumber));
     }
-  }, [diagResult, telemetry?.LapNumber]);
+  }, [calibrationReady, diagResult, telemetry?.LapNumber]);
 
   // Handle single adjustment adoption
   const handleApplyAdjustment = (item: SpecificAdjustmentItem) => {
+    if (!calibrationReady) return;
+    setConfirmation(null);
     setAppliedSetup(prev => {
       const updated = {
         ...prev,
         [item.parameterKey]: item.target
       };
-      setTuningEvents(events => revalidateTuningEventsOnSetupChange(events, updated));
       return updated;
     });
   };
 
   // Handle batch adjustments adoption
   const handleApplyAllAdjustments = (items: SpecificAdjustmentItem[]) => {
+    if (!calibrationReady) return;
+    setConfirmation(null);
     setAppliedSetup(prev => {
       const updated = { ...prev };
       items.forEach(item => {
         (updated as any)[item.parameterKey] = item.target;
       });
-      setTuningEvents(events => revalidateTuningEventsOnSetupChange(events, updated));
       return updated;
     });
   };
@@ -261,9 +277,8 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', background: 'rgba(0,0,0,0.4)', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <span style={{ height: '8px', width: '8px', borderRadius: '50%', background: isConnected ? '#00e676' : 'gray' }} />
-          <span style={{ color: isConnected ? '#00e676' : 'gray', fontWeight: 600 }}>
-            {isConnected ? t("UDP Telemetry Active (60Hz)") : t("UDP Offline / Static Mode")}
+          <span className={`badge ${fresh ? 'text-bg-success' : 'text-bg-secondary'}`}>
+            {t(fresh ? "Telemetry measurements updating" : "Waiting for advancing telemetry measurements")}
           </span>
         </div>
       </div>
@@ -280,8 +295,8 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
               <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
                 {t("Objective 4-Wheel Telemetry Signals")}
               </span>
-              <span style={{ fontSize: '0.72rem', color: isConnected ? '#00e676' : 'gray' }}>
-                {isConnected ? t("Live Stream Synchronized") : t("Waiting for UDP Stream")}
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                {t(fresh ? "Telemetry measurements updating" : "Waiting for advancing telemetry measurements")}
               </span>
             </div>
 
@@ -293,7 +308,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#00b4d8' }}>{t("Front Axle (FL / FR)")}</span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {t("Slip Angle")}: <strong>{telemetryGripMetrics?.maxSlipAngleF.toFixed(1) ?? '0.0'}°</strong>
+                    {t("Normalized ANG")}: <strong>{telemetryGripMetrics?.hasCompleteNormalizedSlipAngle ? telemetryGripMetrics.maxNormalizedSlipAngleF.toFixed(2) : '—'}</strong>
                   </span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.75rem', textAlign: 'center' }}>
@@ -312,8 +327,8 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'gray' }}>
                   <span>{t("Susp Travel")}: {((telemetryGripMetrics?.maxSuspTravelF ?? 0) * 100).toFixed(0)}%</span>
-                  <span style={{ color: (telemetryGripMetrics?.avgSlipRatioF ?? 0) < -0.12 ? '#ff2a5f' : 'inherit' }}>
-                    {t("Slip Ratio")}: {((telemetryGripMetrics?.avgSlipRatioF ?? 0) * 100).toFixed(1)}%
+                  <span style={{ color: (telemetryGripMetrics?.maxAbsNormalizedSlipRatioF ?? 0) > 1 ? 'var(--bs-danger)' : 'inherit' }}>
+                    {t("Normalized RAT average")}: {telemetryGripMetrics?.hasCompleteNormalizedSlipRatio ? telemetryGripMetrics.avgNormalizedSlipRatioF.toFixed(2) : '—'}
                   </span>
                 </div>
               </div>
@@ -323,7 +338,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#ffb703' }}>{t("Rear Axle (RL / RR)")}</span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {t("Slip Angle")}: <strong>{telemetryGripMetrics?.maxSlipAngleR.toFixed(1) ?? '0.0'}°</strong>
+                    {t("Normalized ANG")}: <strong>{telemetryGripMetrics?.hasCompleteNormalizedSlipAngle ? telemetryGripMetrics.maxNormalizedSlipAngleR.toFixed(2) : '—'}</strong>
                   </span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.75rem', textAlign: 'center' }}>
@@ -342,8 +357,8 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'gray' }}>
                   <span>{t("Susp Travel")}: {((telemetryGripMetrics?.maxSuspTravelR ?? 0) * 100).toFixed(0)}%</span>
-                  <span style={{ color: (telemetryGripMetrics?.avgSlipRatioR ?? 0) > 0.12 ? '#ff2a5f' : 'inherit' }}>
-                    {t("Slip Ratio")}: {((telemetryGripMetrics?.avgSlipRatioR ?? 0) * 100).toFixed(1)}%
+                  <span style={{ color: (telemetryGripMetrics?.maxAbsNormalizedSlipRatioR ?? 0) > 1 ? 'var(--bs-danger)' : 'inherit' }}>
+                    {t("Normalized RAT average")}: {telemetryGripMetrics?.hasCompleteNormalizedSlipRatio ? telemetryGripMetrics.avgNormalizedSlipRatioR.toFixed(2) : '—'}
                   </span>
                 </div>
               </div>
@@ -407,17 +422,37 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
           </div>
 
           {/* Card 2: Applied Setup Override Table */}
+          <div className="card p-3">
+            <p>{t("Review this setup against the game. Editing or adopting suggestions only changes this table.")}</p>
+            <button type="button" className="btn btn-primary" disabled={!canConfirm || confirmed}
+              onClick={() => {
+                if (!telemetry || !canConfirm) return;
+                setConfirmation({ key: setupKey, timestamp: telemetry.TimestampMS });
+                setTuningEvents(events => revalidateTuningEventsOnSetupChange(events, appliedSetup));
+              }}>
+              {t(confirmed ? "In-game setup confirmed" : "I have applied and checked this setup in the game")}
+            </button>
+          </div>
           <AppliedSetupTable
             setup={appliedSetup}
             onChange={handleSetupChange}
             onReset={handleResetSetup}
             isAwd={isAwd}
+            isFwd={carParams.drivetrain === 'FWD'}
           />
+          <AppliedGearingTable value={appliedGearing} onChange={value => {
+            setConfirmation(null);
+            setAppliedGearing(value);
+          }} />
+          {!isAppliedGearingValid(appliedGearing) && <p role="status">{t('Enter positive final drive and gear ratios before confirming the setup.')}</p>}
 
         </div>
 
         {/* Right Column: Closed-Loop Micro-adjustments Report */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {!calibrationReady ? <div className="card p-3" role="status">
+            {t(!confirmed ? "Confirm the actual in-game setup before calibration." : "Waiting for fresh driving data from the selected car after setup confirmation.")}
+          </div> : <>
           
           {/* Health Status Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8rem' }}>
@@ -435,16 +470,18 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
               </span>
             </div>
 
-            {/* Slip Angle Balance */}
+            {/* Normalized ANG balance. This is evidence, not a physical-angle diagnosis. */}
             <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <span style={{ fontSize: '0.7rem', color: 'gray', display: 'block' }}>{t("Steering Balance")}</span>
+              <span style={{ fontSize: '0.7rem', color: 'gray', display: 'block' }}>{t("Normalized ANG balance")}</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white', display: 'block', margin: '0.2rem 0' }}>
-                {telemetryGripMetrics ? `${((telemetryGripMetrics.maxSlipAngleF) - (telemetryGripMetrics.maxSlipAngleR)).toFixed(1)}°` : '0.0°'}
+                {telemetryGripMetrics?.hasCompleteNormalizedSlipAngle ? `${(telemetryGripMetrics.maxNormalizedSlipAngleF - telemetryGripMetrics.maxNormalizedSlipAngleR).toFixed(2)}` : '—'}
               </span>
-              <span style={{ fontSize: '0.7rem', color: !telemetryGripMetrics || Math.abs(telemetryGripMetrics.maxSlipAngleF - telemetryGripMetrics.maxSlipAngleR) <= 2.5 ? '#00e676' : '#ffb703' }}>
-                {!telemetryGripMetrics || Math.abs(telemetryGripMetrics.maxSlipAngleF - telemetryGripMetrics.maxSlipAngleR) <= 2.5
-                  ? t("Neutral Grip")
-                  : (telemetryGripMetrics.maxSlipAngleF > telemetryGripMetrics.maxSlipAngleR ? t("Understeer") : t("Oversteer"))}
+              <span style={{ fontSize: '0.7rem', color: !telemetryGripMetrics?.hasCompleteNormalizedSlipAngle ? 'var(--bs-warning)' : (telemetryGripMetrics.maxNormalizedSlipAngleF <= 1 && telemetryGripMetrics.maxNormalizedSlipAngleR <= 1) ? 'var(--bs-success)' : 'var(--bs-warning)' }}>
+                {!telemetryGripMetrics?.hasCompleteNormalizedSlipAngle
+                  ? t("Normalized slip telemetry incomplete")
+                  : (telemetryGripMetrics.maxNormalizedSlipAngleF <= 1 && telemetryGripMetrics.maxNormalizedSlipAngleR <= 1)
+                    ? t("No normalized ANG warning")
+                    : t("Repeat this corner under matching inputs before tuning")}
               </span>
             </div>
 
@@ -746,10 +783,11 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
 
             {/* Iterative Regression Note */}
             <div style={{ fontSize: '0.75rem', color: 'gray', marginTop: 'auto', paddingTop: '0.4rem' }}>
-              {t("Iterative loop: Apply adjustments to your vehicle in-game or via 'Adopt', test drive for 2 laps, and monitor telemetry convergence.")}
+              {t("Adopt updates this table only. Apply the values in the game, confirm them here, then test drive again.")}
             </div>
           </div>
 
+          </>}
         </div>
 
       </div>

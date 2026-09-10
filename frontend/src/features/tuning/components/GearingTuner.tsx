@@ -1,7 +1,8 @@
 import React, { memo, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea, ResponsiveContainer } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
-import { calcGearSpeed } from '../../../utils/tuningMath';
+import { calcGearSpeed, calcGearRpm, getGearingTireRadius } from '../../../utils/tuningMath';
+import { GearingTargetInputs } from './GearingTargetInputs';
 
 interface GearingTunerProps {
   tuning: any;
@@ -37,18 +38,11 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
 
   // Compute speed-rpm chart data with shift-chained starting points (Gear N starts at Gear N-1 maxRPM speed)
   const { chartData, xMax, yMax } = useMemo(() => {
-    // 1. Calculate Rear Tire Radius in meters
-    let tireRadiusM = 0.32;
-    if (carParams?.rearTireWidth && carParams?.rearTireAspect && carParams?.rearTireRim) {
-      const wallMm = (carParams.rearTireWidth * carParams.rearTireAspect) / 100;
-      const rimMm = carParams.rearTireRim * 25.4;
-      const diameterM = (wallMm * 2 + rimMm) / 1000;
-      tireRadiusM = diameterM / 2;
-    }
+    const tireRadiusM = getGearingTireRadius(carParams ?? null);
 
     // 2. Engine max RPM limit
-    const maxHpRpm = carParams?.maxHpRpm || 7000;
-    const yLimit = Math.round(maxHpRpm * 1.15);
+    const rpm = tuning?.gearing?.maxRpm;
+    const yLimit = Number.isFinite(rpm) && rpm > 0 ? rpm : 8000;
     const finalDrive = tuning?.gearing?.finalDrive || 3.40;
     const gears: number[] = tuning?.gearing?.gears || [];
 
@@ -83,7 +77,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
     const overallTopSpeed = Math.max(
       gearRanges[gearRanges.length - 1]?.endSpeed || 300,
       displaySpeed(tuning?.gearing?.simulatedTopSpeed || 0),
-      displaySpeed(tuning?.gearing?.softMaxSpeed || 0)
+      displaySpeed(tuning?.gearing?.softMaxSpeed || 0),
+      displaySpeed(tuning?.gearing?.targetSpeedKmh || 0)
     );
     const xLimit = Math.max(120, Math.ceil(overallTopSpeed / 20) * 20);
 
@@ -116,7 +111,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         // Include point if speed is between this gear's shift start and shift end
         if (speed >= startSpeed - 0.05 && speed <= endSpeed + 0.05 && ratio > 0 && finalDrive > 0) {
           const speedMs = settings.units.speed === 'mph' ? speed / 2.23694 : speed / 3.6;
-          const rpm = (speedMs * ratio * finalDrive * 60) / (2 * Math.PI * tireRadiusM);
+          const rpm = calcGearRpm(speedMs, ratio, finalDrive, tireRadiusM);
           if (rpm >= 0 && rpm <= yLimit + 200) {
             pt[`gear${gearIndex + 1}`] = Math.round(rpm);
           }
@@ -127,7 +122,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
     });
 
     return { chartData: points, xMax: xLimit, yMax: yLimit };
-  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, tuning?.gearing?.simulatedTopSpeed, tuning?.gearing?.softMaxSpeed, numGears, carParams, settings.units.speed]);
+  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, tuning?.gearing?.maxRpm, tuning?.gearing?.simulatedTopSpeed, tuning?.gearing?.softMaxSpeed, tuning?.gearing?.targetSpeedKmh, numGears, carParams, settings.units.speed]);
 
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
@@ -165,8 +160,12 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
             </div>
           </div>
 
-          {/* Secondary Correction Mechanism Input Card */}
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.9rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <GearingTargetInputs gearing={tuning.gearing} updateSection={updateSection} />
+          {/* Retained for older saved tunes; explicit event targets take precedence. */}
+          <details style={{ background: 'var(--surface-1)', padding: '0.9rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            <summary>{t("Legacy speed correction")}</summary>
+            <fieldset disabled={tuning.gearing.correctionMode !== 'legacy'}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{t("Legacy correction is used only when selected in Advanced gearing options. It assumes redline speed and only shortens gearing; a graph axis is not measured vehicle capability.")}</p>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.6rem' }}>
               {t("Secondary Correction Mechanism")}
             </div>
@@ -181,7 +180,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                   value={tuning?.gearing?.simulatedTopSpeed ? displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1) : ''}
                   onChange={e => updateSection && updateSection('gearing', 'simulatedTopSpeed', e.target.value ? speedToKmh(parseFloat(e.target.value)) : undefined)}
                   style={{ ...inputStyle, width: '100%', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
-                  title={t("In-game simulated or actual top speed under baseline gearing to correct aero & grip drag")}
+                  title={t("In-game simulated or measured top speed under baseline gearing for empirical speed correction")}
                 />
               </div>
               <div>
@@ -198,7 +197,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                 />
               </div>
             </div>
-          </div>
+            </fieldset>
+          </details>
 
         </div>
 
@@ -226,7 +226,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                   y={carParams.maxHpRpm} 
                   stroke="#ff3d00" 
                   strokeDasharray="3 3" 
-                  label={{ value: `${t("Max HP")}: ${carParams.maxHpRpm} RPM`, fill: '#ff3d00', fontSize: 10, position: 'top' }} 
+                  label={{ value: `${t("Observed power peak")}: ${Math.round(carParams.maxHpRpm)} RPM`, fill: '#ff3d00', fontSize: 10, position: 'top' }}
                 />
               )}
 
@@ -236,7 +236,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                   y={carParams.maxTorqueRpm} 
                   stroke="#ffaa00" 
                   strokeDasharray="3 3" 
-                  label={{ value: `${t("Max Torque")}: ${carParams.maxTorqueRpm} RPM`, fill: '#ffaa00', fontSize: 10, position: 'bottom' }} 
+                  label={{ value: `${t("Observed torque peak")}: ${Math.round(carParams.maxTorqueRpm)} RPM`, fill: '#ffaa00', fontSize: 10, position: 'bottom' }}
                 />
               )}
 

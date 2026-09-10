@@ -521,6 +521,107 @@ settings_update = SerializedSettingsUpdate(app_settings, settings_persistence)
 settings_update_lock = asyncio.Lock()
 
 
+AUDIO_DEVICE_CACHE_TTL_SECONDS = 30.0
+AUDIO_DEVICE_QUERY_TIMEOUT_SECONDS = 1.0
+AUDIO_DEVICE_FAILURE_BACKOFF_SECONDS = 5.0
+
+
+def _default_audio_devices() -> list[dict]:
+    """Return the device choice that remains usable before discovery completes."""
+    return [
+        {
+            "id": "default",
+            "name": "System Default Speaker / 系統預設輸出裝置",
+            "is_default": True,
+        }
+    ]
+
+
+class AudioDeviceDiscovery:
+    """Bounded async facade for blocking WASAPI speaker enumeration.
+
+    The underlying WMI/Media Foundation call can hang during a driver query.
+    Keep exactly one worker in flight and let HTTP callers use a cached,
+    compatible result when it outlives the request budget.
+    """
+
+    def __init__(
+        self,
+        discover=get_available_audio_devices,
+        *,
+        cache_ttl_seconds: float = AUDIO_DEVICE_CACHE_TTL_SECONDS,
+        failure_backoff_seconds: float = AUDIO_DEVICE_FAILURE_BACKOFF_SECONDS,
+    ) -> None:
+        self._discover = discover
+        self._cache = _default_audio_devices()
+        self._cached_at = 0.0
+        self._retry_after = 0.0
+        self._task: asyncio.Task | None = None
+        self._cache_ttl_seconds = cache_ttl_seconds
+        self._failure_backoff_seconds = failure_backoff_seconds
+
+    @staticmethod
+    def _snapshot(devices: list[dict]) -> list[dict]:
+        return [dict(device) for device in devices]
+
+    def _complete(self, task: asyncio.Task) -> None:
+        if self._task is task:
+            self._task = None
+        try:
+            devices = task.result()
+        except asyncio.CancelledError:
+            logger.debug("Audio device discovery was cancelled")
+            self._retry_after = time.monotonic() + self._failure_backoff_seconds
+            return
+        except Exception as exc:
+            logger.debug("Audio device discovery failed: %s", exc)
+            self._retry_after = time.monotonic() + self._failure_backoff_seconds
+            return
+        if isinstance(devices, list) and devices:
+            self._cache = self._snapshot(devices)
+            self._cached_at = time.monotonic()
+            self._retry_after = 0.0
+        else:
+            self._retry_after = time.monotonic() + self._failure_backoff_seconds
+
+    async def get_devices(
+        self, timeout_seconds: float = AUDIO_DEVICE_QUERY_TIMEOUT_SECONDS
+    ) -> list[dict]:
+        now = time.monotonic()
+        if now - self._cached_at < self._cache_ttl_seconds:
+            return self._snapshot(self._cache)
+
+        if self._task is None and now >= self._retry_after:
+            self._task = asyncio.create_task(asyncio.to_thread(self._discover))
+            self._task.add_done_callback(self._complete)
+
+        if self._task is None:
+            return self._snapshot(self._cache)
+
+        task = self._task
+        try:
+            devices = await asyncio.wait_for(
+                asyncio.shield(task), timeout=max(0.0, timeout_seconds)
+            )
+            return (
+                self._snapshot(devices)
+                if isinstance(devices, list) and devices
+                else self._snapshot(self._cache)
+            )
+        except TimeoutError:
+            return self._snapshot(self._cache)
+        except asyncio.CancelledError:
+            if task.cancelled():
+                return self._snapshot(self._cache)
+            raise
+        except Exception as exc:
+            logger.debug("Audio device discovery request failed: %s", exc)
+            return self._snapshot(self._cache)
+
+
+audio_device_discovery = AudioDeviceDiscovery()
+
+
 # --- Race Telemetry Recorder ---
 race_persistence = AsyncRacePersistence(telemetry_db)
 race_recorder = RaceRecorder(race_persistence, app_settings, car_database)
@@ -2665,7 +2766,7 @@ def hud_config_with_gui_theme(data: dict) -> dict:
 @app.get("/api/audio/devices")
 async def get_audio_devices():
     """List available WASAPI audio playback output devices for loopback spectrum capture."""
-    return get_available_audio_devices()
+    return await audio_device_discovery.get_devices()
 
 
 @app.post("/api/audio/device")

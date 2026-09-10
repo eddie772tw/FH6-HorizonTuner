@@ -10,7 +10,7 @@ export interface CarParams {
   drivetrain: 'FWD' | 'RWD' | 'AWD';
   induction: 'NA' | 'Supercharger' | 'Turbo' | 'TwinTurbo';
   maxHp: number;
-  maxTorque: number;
+  maxTorque: number; // lb-ft, matching persisted profiles and dyno_curve torque
   maxHpRpm: number;
   maxTorqueRpm: number;
   aeroBalance?: number;
@@ -72,14 +72,44 @@ interface CarParamsContextType {
   carName: string;
   carParams: CarParams | null;
   setCarParams: (params: CarParams) => void;
-  saveCarParams: () => Promise<void>;
+  saveCarParams: (snapshot?: CarParamsSaveSnapshot) => Promise<void>;
   clearDynoCurve: () => Promise<void>;
   importDynoValues: () => void;
   settings: any;
   updateSettings: (updates: any) => Promise<void>;
   isLoading: boolean;
+  loadedCarId: string;
   carsWithParams: { id: string; name: string }[];
   telemetryCarId: string;
+}
+
+export interface CarParamsSaveSnapshot {
+  carId: string;
+  params: CarParams;
+}
+
+export const createCarParamsSaveSnapshot = (carId: string, params: CarParams): CarParamsSaveSnapshot => ({
+  carId,
+  params,
+});
+
+export const isCurrentCarParamsSnapshot = (activeCarId: string, snapshot: CarParamsSaveSnapshot): boolean =>
+  activeCarId === snapshot.carId;
+
+export async function persistCarParams(
+  snapshot: CarParamsSaveSnapshot,
+  request: typeof backendFetch = backendFetch,
+): Promise<boolean> {
+  try {
+    const response = await request(`/api/car_params/${snapshot.carId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snapshot.params),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export const mergeDynoPollResult = (
@@ -101,8 +131,13 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [carId, setCarId] = useState<string>('default_car');
   const [carParams, setCarParams] = useState<CarParams | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadedCarId, setLoadedCarId] = useState('');
   const [carDb, setCarDb] = useState<Record<string, any>>({});
   const [carsWithParams, setCarsWithParams] = useState<{ id: string; name: string }[]>([]);
+  const currentCarIdRef = useRef(carId);
+  const currentCarParamsRef = useRef(carParams);
+  currentCarIdRef.current = carId;
+  currentCarParamsRef.current = carParams;
 
   const fetchCarsWithParams = async () => {
     try {
@@ -200,8 +235,10 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         const result = await res.json();
         if (active && !result.error) {
           setCarParams(normalizeCarParams(result));
+          setLoadedCarId(carId);
         } else if (active && result.error) {
           setCarParams(normalizeCarParams({}));
+          setLoadedCarId(carId);
         }
       } catch (e) {
         console.error("Failed to load car params", e);
@@ -215,12 +252,13 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Poll live dyno fields only, without overwriting user-edited car params.
   useEffect(() => {
+    let active = true;
     if (telemetryCarId === carId && telemetryCarId !== '0') {
       const interval = setInterval(async () => {
         try {
           const res = await backendFetch(`/api/car_params/${carId}`);
           const result = await res.json();
-          if (!result.error) {
+          if (active && !result.error) {
             setCarParams(prev => {
               if (!prev) return result;
               return mergeDynoPollResult(prev, result);
@@ -228,22 +266,19 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
           }
         } catch (e) { }
       }, 5000);
-      return () => clearInterval(interval);
+      return () => { active = false; clearInterval(interval); };
     }
   }, [telemetryCarId, carId]);
 
-  const saveCarParams = async () => {
-    if (!carParams) return;
-    try {
-      await backendFetch(`/api/car_params/${carId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(carParams)
-      });
-      await fetchCarsWithParams();
-    } catch (e) {
-      console.error("Failed to save car params", e);
-    }
+  const saveCarParams = async (snapshot?: CarParamsSaveSnapshot): Promise<void> => {
+    const target = snapshot ?? (currentCarParamsRef.current
+      ? createCarParamsSaveSnapshot(currentCarIdRef.current, currentCarParamsRef.current)
+      : undefined);
+    if (!target) throw new Error('No car profile is available to save.');
+
+    const saved = await persistCarParams(target);
+    if (!saved) throw new Error(`Failed to save car profile ${target.carId}.`);
+    await fetchCarsWithParams();
   };
 
   const clearDynoCurve = async () => {
@@ -279,7 +314,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     <CarParamsContext.Provider value={{
       carId, setCarId, carName, carParams, setCarParams,
       saveCarParams, clearDynoCurve, importDynoValues,
-      settings, updateSettings, isLoading,
+      settings, updateSettings, isLoading, loadedCarId,
       carsWithParams, telemetryCarId
     }}>
       {children}

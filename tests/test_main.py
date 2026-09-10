@@ -1,11 +1,15 @@
+import asyncio
 import os
 import sys
+import threading
+
+import pytest
 
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend"))
 )
 
-from main import dyno_is_reasonable
+from main import AudioDeviceDiscovery, dyno_is_reasonable
 
 
 def test_dyno_is_reasonable_no_neighbors():
@@ -55,6 +59,108 @@ def test_get_language_search_dirs():
     assert isinstance(dirs, list)
     assert len(dirs) >= 1
     assert os.path.normpath(LANG_DIR) in dirs
+
+
+@pytest.mark.asyncio
+async def test_audio_device_discovery_keeps_the_event_loop_responsive_and_single_flight():
+    started = threading.Event()
+    release = threading.Event()
+    calls = 0
+
+    def blocking_discovery():
+        nonlocal calls
+        calls += 1
+        started.set()
+        release.wait(timeout=1)
+        return [{"id": "speaker-1", "name": "Speaker", "is_default": True}]
+
+    discovery = AudioDeviceDiscovery(
+        blocking_discovery, cache_ttl_seconds=0, failure_backoff_seconds=1
+    )
+    first = asyncio.create_task(discovery.get_devices(timeout_seconds=0.01))
+    await asyncio.to_thread(started.wait, 0.2)
+
+    yielded = asyncio.Event()
+
+    async def confirm_event_loop_progress() -> None:
+        await asyncio.sleep(0)
+        yielded.set()
+
+    asyncio.create_task(confirm_event_loop_progress())
+    await asyncio.wait_for(yielded.wait(), timeout=0.05)
+    second = await discovery.get_devices(timeout_seconds=0.01)
+    first_result = await first
+
+    assert calls == 1
+    assert first_result == second
+    assert first_result[0]["id"] == "default"
+
+    release.set()
+    for _ in range(20):
+        resolved = await discovery.get_devices(timeout_seconds=0.05)
+        if resolved[0]["id"] == "speaker-1":
+            break
+        await asyncio.sleep(0.01)
+    assert resolved == [{"id": "speaker-1", "name": "Speaker", "is_default": True}]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("outcome", ["error", "empty"])
+async def test_audio_device_discovery_returns_cached_fallback_for_failed_results(
+    outcome,
+):
+    calls = 0
+
+    def unavailable_discovery():
+        nonlocal calls
+        calls += 1
+        if outcome == "empty":
+            return []
+        raise RuntimeError("WASAPI unavailable")
+
+    discovery = AudioDeviceDiscovery(
+        unavailable_discovery, cache_ttl_seconds=0, failure_backoff_seconds=10
+    )
+    expected = [
+        {
+            "id": "default",
+            "name": "System Default Speaker / 系統預設輸出裝置",
+            "is_default": True,
+        }
+    ]
+
+    assert await discovery.get_devices(timeout_seconds=0.1) == expected
+    await asyncio.sleep(0)
+    assert await discovery.get_devices(timeout_seconds=0.1) == expected
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_audio_device_discovery_returns_cached_fallback_when_worker_is_cancelled():
+    started = threading.Event()
+    release = threading.Event()
+
+    def blocking_discovery():
+        started.set()
+        release.wait(timeout=1)
+        return [{"id": "speaker-1", "name": "Speaker", "is_default": True}]
+
+    discovery = AudioDeviceDiscovery(
+        blocking_discovery, cache_ttl_seconds=0, failure_backoff_seconds=10
+    )
+    request = asyncio.create_task(discovery.get_devices(timeout_seconds=1))
+    await asyncio.to_thread(started.wait, 0.2)
+    assert discovery._task is not None
+    discovery._task.cancel()
+
+    assert await request == [
+        {
+            "id": "default",
+            "name": "System Default Speaker / 系統預設輸出裝置",
+            "is_default": True,
+        }
+    ]
+    release.set()
 
 
 def test_api_languages_discovery_and_fallback(tmp_path, monkeypatch):

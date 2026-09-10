@@ -36,6 +36,16 @@ export const Step3ChassisTuner: React.FC<Step3ChassisTunerProps> = ({
   const { settings, convertSpringRate, convertHeight, t } = useSettings();
 
   const [tuningResult, setTuningResult] = useState<ChassisTuningResult | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  const handleSave = async () => {
+    setSaveState('saving');
+    try {
+      await saveCarParams();
+      setSaveState('saved');
+    } catch {
+      setSaveState('failed');
+    }
+  };
 
   // Recalculate tuning whenever selectedRaceGoal or carParams changes
   useEffect(() => {
@@ -71,13 +81,16 @@ export const Step3ChassisTuner: React.FC<Step3ChassisTunerProps> = ({
         </div>
         <button
           type="button"
-          onClick={saveCarParams}
+          onClick={() => void handleSave()}
+          disabled={saveState === 'saving'}
           style={{ ...btnStyle, background: 'var(--primary)', color: 'black', padding: '0.4rem 1.2rem', fontSize: '0.85rem' }}
         >
-          {t("Save Setup")}
+          {t(saveState === 'saving' ? "Saving..." : "Save Setup")}
         </button>
       </div>
 
+      {saveState === 'failed' && <div role="alert" className="text-danger">{t("Save failed.")}</div>}
+      {saveState === 'saved' && <div role="status">{t("Changes saved")}</div>}
       {/* Grid of Tuning Recommendations Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
         

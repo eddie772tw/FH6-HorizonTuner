@@ -10,8 +10,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateAEGOGearing,
+  profileTorqueToNm,
+  torqueNmToProfile,
+  toTuningCarParams,
   calcGearSpeed,
   calcGearRpm,
+  getGearingTireRadius,
+  resolveWorkflowGearingCorrection,
   resolveAeroDownforce,
   calculateChassisTuning,
   calculateStaticTireAlignment,
@@ -27,6 +32,16 @@ const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
 // calcGearSpeed & calcGearRpm
 // ============================================================
 describe('Speed & RPM Physics Helpers', () => {
+  it('converts a persisted lb-ft profile once at the solver boundary', () => {
+    const profile: TuningCarParams = { weight: 1413.4, weight_distribution: 56,
+      drivetrain: 'RWD', maxHp: 406, maxTorque: 347, maxHpRpm: 7000, maxTorqueRpm: 4500 };
+    const solver = toTuningCarParams(profile);
+    expect(solver.maxTorque).toBeCloseTo(470.46954, 5);
+    expect(profile.maxTorque).toBe(347);
+    expect(torqueNmToProfile(profileTorqueToNm(347))).toBeCloseTo(347, 10);
+    expect(solver.weight).toBe(profile.weight);
+    expect(solver.maxHp).toBe(profile.maxHp);
+  });
   it('calcGearSpeed should calculate correct speed in m/s', () => {
     // 6000 RPM, gear ratio 1.0, FD 3.5, tire radius 0.32m
     // speed = (6000 * 2 * PI * 0.32) / (1.0 * 3.5 * 60) = 12063.7 / 210 = ~57.44 m/s
@@ -60,9 +75,93 @@ describe('calculateAEGOGearing', () => {
     maxTorqueRpm: 4500
   };
 
+  it('keeps automatic workflow independent of saved advanced values until explicitly selected', () => {
+    const stored = { targetSpeedKmh: 180, targetRpm: 6500, simulatedTopSpeed: 120, softMaxSpeed: 130 };
+    expect(resolveWorkflowGearingCorrection(stored)).toBeUndefined();
+    expect(resolveWorkflowGearingCorrection({ ...stored, correctionMode: 'automatic' })).toBeUndefined();
+    expect(resolveWorkflowGearingCorrection({ ...stored, correctionMode: 'event' })).toEqual({ targetSpeedKmh: 180, targetRpm: 6500 });
+    expect(resolveWorkflowGearingCorrection({ ...stored, correctionMode: 'legacy' })).toEqual({ simulatedTopSpeed: 120, softMaxSpeed: 130 });
+  });
+
   it('should return correct number of gears', () => {
     const result = calculateAEGOGearing('Road', 6, sampleCar, 7500);
     expect(result.gears).toHaveLength(6);
+  });
+
+  it.each([6500, 7500, 8500])('preserves the Road speed anchor with a %i RPM power peak below redline', maxHpRpm => {
+    // Sensitivity fixture, not measured Dark Horse peak RPM or a meta target.
+    const car: TuningCarParams = { ...sampleCar, maxHp: 832, maxHpRpm,
+      drivetrain: 'AWD', aeroEfficiency: 0.738,
+      rearTireWidth: 335, rearTireAspect: 25, rearTireRim: 20 };
+    const result = calculateAEGOGearing('Road', 7, car, 9500);
+    const speed = calcGearSpeed(maxHpRpm, result.gears[6], result.finalDrive, getGearingTireRadius(car)) * 3.6;
+    const priorSpeed = Math.cbrt(832) * 37 * 0.95;
+    // Only rounding error is acceptable; this does not validate the speed prior.
+    expect(Math.abs(speed / priorSpeed - 1)).toBeLessThan(0.01);
+    for (let i = 1; i < result.gears.length; i++) expect(result.gears[i]).toBeLessThan(result.gears[i - 1]);
+  });
+
+  it.each([180, 320])('fits an explicit %i km/h event target in either direction', (targetSpeedKmh) => {
+    const result = calculateAEGOGearing('Road', 6, sampleCar, 7500, { targetSpeedKmh, targetRpm: 7000 });
+    const actual = calcGearSpeed(7000, result.gears[5], result.finalDrive, getGearingTireRadius(sampleCar)) * 3.6;
+    expect(result.targetFit?.status).toBe('matched');
+    expect(Math.abs(actual / targetSpeedKmh - 1)).toBeLessThanOrEqual(0.01);
+    expect(result.targetFit?.achievedSpeedKmh).toBe(actual);
+  });
+
+  it('uses the requested RPM and ignores legacy preview limits for explicit targets', () => {
+    const request = { targetSpeedKmh: 260, targetRpm: 6000 };
+    const result = calculateAEGOGearing('Road', 6, sampleCar, 7500, request);
+    expect(calculateAEGOGearing('Road', 6, sampleCar, 7500, {
+      ...request, simulatedTopSpeed: 130, softMaxSpeed: 140
+    })).toEqual(result);
+    const atRedline = calculateAEGOGearing('Road', 6, sampleCar, 7500, { ...request, targetRpm: 7500 });
+    expect(atRedline.gears[5] * atRedline.finalDrive).toBeGreaterThan(result.gears[5] * result.finalDrive);
+  });
+
+  it.each(['Road', 'Rally', 'Drag', 'Drift'])('preserves active gear spacing when fitting %s targets', goal => {
+    const baseline = calculateAEGOGearing(goal, 6, sampleCar, 7500);
+    const result = calculateAEGOGearing(goal, 6, sampleCar, 7500, { targetSpeedKmh: 200, targetRpm: 7000 });
+    expect(result.targetFit?.status).toBe('matched');
+    const active = goal === 'Drag' || goal === 'Drift' ? 4 : 6;
+    for (let i = 1; i < active; i++) {
+      expect(result.gears[i]).toBeLessThan(result.gears[i - 1]);
+      expect(Math.abs(result.gears[i] / result.gears[i - 1] - baseline.gears[i] / baseline.gears[i - 1])).toBeLessThan(0.02);
+    }
+    if (active === 4) expect(result.gears.slice(4)).toEqual([result.gears[3], result.gears[3]]);
+  });
+
+  it.each([
+    { targetSpeedKmh: 250 }, { targetRpm: 6500 },
+    { targetSpeedKmh: NaN, targetRpm: 6500 }, { targetSpeedKmh: Infinity, targetRpm: 6500 },
+    { targetSpeedKmh: -1, targetRpm: 6500 }, { targetSpeedKmh: 250, targetRpm: 8000 },
+    { targetSpeedKmh: 250, targetRpm: 0 }
+  ])('reports invalid event requests without silently applying legacy caps: %j', request => {
+    const baseline = calculateAEGOGearing('Road', 6, sampleCar, 7500);
+    const result = calculateAEGOGearing('Road', 6, sampleCar, 7500, { ...request, softMaxSpeed: 100 });
+    expect(result).toEqual({ ...baseline, targetFit: { status: 'invalid' } });
+  });
+
+  it('reports infeasible targets instead of claiming that a clamp met the target', () => {
+    const baseline = calculateAEGOGearing('Road', 6, sampleCar, 7500);
+    const result = calculateAEGOGearing('Road', 6, sampleCar, 7500, { targetSpeedKmh: 10, targetRpm: 7500 });
+    expect(result.targetFit?.status).toBe('limited');
+    expect(result.gears).toEqual(baseline.gears);
+    expect(result.finalDrive).toBe(baseline.finalDrive);
+    expect(result.targetFit!.achievedSpeedKmh).toBeGreaterThan(10);
+  });
+
+  it('uses front tire geometry for FWD and recovers from invalid tire dimensions', () => {
+    const car = { ...sampleCar, drivetrain: 'FWD' as const, frontTireWidth: 205, frontTireAspect: 55, frontTireRim: 16, rearTireWidth: 335 };
+    expect(getGearingTireRadius(car)).toBeCloseTo((2 * 205 * 0.55 + 16 * 25.4) / 2000, 10);
+    expect(getGearingTireRadius({ ...car, frontTireWidth: NaN, frontTireAspect: 0, frontTireRim: Infinity })).toBe(getGearingTireRadius(null));
+  });
+
+  it.each([[0, 1], [6.8, 6], [100, 10], [NaN, 6]])('normalizes malformed gear count %s to %i without allocating an invalid array', (count, expected) => {
+    const result = calculateAEGOGearing('Road', count, null, NaN);
+    expect(result.gears).toHaveLength(expected);
+    expect(result.gears.every(ratio => Number.isFinite(ratio) && ratio > 0)).toBe(true);
+    expect(Number.isFinite(result.finalDrive)).toBe(true);
   });
 
   it('gear ratios should be monotonically decreasing (g1 > g2 > ... > gN)', () => {
@@ -98,12 +197,14 @@ describe('calculateAEGOGearing', () => {
     expect(result.gears[0]).toBeGreaterThanOrEqual(1.0);
   });
 
-  it('preserves total drive ratios while moving the editable split toward a neutral final drive', () => {
+  it('preserves first-gear speed and the nominal top gear within the supported final-drive range', () => {
     const result = calculateAEGOGearing('Road', 6, sampleCar, 7500);
     const tireCircumferenceM = (((245 * 0.40) * 2 + 18 * 25.4) * Math.PI) / 1000;
     const expectedFirstTotalRatio = (6500 * tireCircumferenceM * 60) / (90 * 1.15 * 1000);
 
-    expect(result.finalDrive).toBeLessThanOrEqual(4.5);
+    expect(result.finalDrive).toBeGreaterThanOrEqual(2.0);
+    expect(result.finalDrive).toBeLessThanOrEqual(6.1);
+    expect(result.gears[5]).toBe(0.72);
     expect(result.gears[0]).toBeGreaterThanOrEqual(1.0);
     expect(result.gears[0] * result.finalDrive).toBeCloseTo(expectedFirstTotalRatio, 1);
   });
@@ -120,14 +221,14 @@ describe('calculateAEGOGearing', () => {
     expect(result.finalDrive).toBeGreaterThanOrEqual(2.0);
   });
 
-  it('should reflect aeroEfficiency on Road gearing calculations', () => {
+  it('does not use aeroEfficiency in Road gearing calculations', () => {
     const lowEfficiencyCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.20 };
     const highEfficiencyCar: TuningCarParams = { ...sampleCar, aeroEfficiency: 0.80 };
     
     const lowRes = calculateAEGOGearing('Road', 6, lowEfficiencyCar, 7500);
     const highRes = calculateAEGOGearing('Road', 6, highEfficiencyCar, 7500);
 
-    expect(highRes.finalDrive).not.toBe(lowRes.finalDrive);
+    expect(highRes).toEqual(lowRes);
   });
 
   it('Vehicle 3847 (Mustang Dark Horse) Road gearing should maintain physical reasonableness and closed-loop smooth progression', () => {
@@ -270,10 +371,11 @@ describe('calculateAEGOGearing', () => {
       expect(baseRes.gears[i]).toBeLessThan(baseRes.gears[i - 1]);
     }
 
-    // 3. Verify ALL shift RPMs (from 1->2 up to highest gear) drop into effective powerband <= maxHpRpm
+    // 3. Upshifts reduce RPM; peak HP alone does not define a powerband bound.
     for (let i = 1; i < baseRes.gears.length; i++) {
       const shiftRpm = maxRpm * (baseRes.gears[i] / baseRes.gears[i - 1]);
-      expect(shiftRpm).toBeLessThanOrEqual(car3594.maxHpRpm + 50);
+      expect(shiftRpm).toBeGreaterThan(0);
+      expect(shiftRpm).toBeLessThan(maxRpm);
     }
 
     // 4. Secondary Correction with simulatedTopSpeed = 290 km/h
@@ -404,6 +506,56 @@ describe('resolveAeroDownforce', () => {
     // RWD has 0.82 modifier, so rear should have higher proportion
     expect(aero.rear).toBeGreaterThan(aero.front);
   });
+
+  it('does not derive an unknown locked rear axle from a front-only car', () => {
+    const car: TuningCarParams = {
+      ...baseCar,
+      adjustability: { aero: 'Front Only' },
+      aero_downforce_front: 100,
+      aero_downforce_rear: 0,
+    };
+    expect(resolveAeroDownforce(car)).toEqual({ front: 100, rear: 0 });
+  });
+
+  it('retains a captured fixed rear load without turning it into a control', () => {
+    const car: TuningCarParams = {
+      ...baseCar,
+      adjustability: { aero: 'Front Only' },
+      aero_downforce_front: 100,
+      aero_downforce_rear: 75,
+    };
+    expect(resolveAeroDownforce(car)).toEqual({ front: 100, rear: 75 });
+  });
+
+  it('does not derive an unknown locked front axle from a rear-only car', () => {
+    const car: TuningCarParams = {
+      ...baseCar,
+      adjustability: { aero: 'Rear Only' },
+      aero_downforce_front: 0,
+      aero_downforce_rear: 100,
+    };
+    expect(resolveAeroDownforce(car)).toEqual({ front: 0, rear: 100 });
+  });
+
+  it('keeps captured fixed loads available to chassis calculations', () => {
+    const car: TuningCarParams = {
+      ...baseCar,
+      adjustability: { aero: 'Fixed' },
+      aero_downforce_front: 95,
+      aero_downforce_rear: 207,
+    };
+    expect(resolveAeroDownforce(car)).toEqual({ front: 95, rear: 207 });
+  });
+
+  it('does not derive either unknown axle when aero is fixed', () => {
+    const car: TuningCarParams = {
+      ...baseCar,
+      adjustability: { aero: 'Fixed' },
+      aero_downforce_front: 0,
+      aero_downforce_rear: 0,
+    };
+    expect(resolveAeroDownforce(car)).toEqual({ front: 0, rear: 0 });
+  });
 });
 
 // ============================================================
@@ -436,6 +588,26 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.springs.rear).toBeGreaterThanOrEqual(15.0);
     expect(res.damping.bumpF).toBe(Math.round(res.damping.reboundF * 0.60 * 10) / 10);
     expect(res.diff.accelR).toBeGreaterThan(0);
+  });
+
+  it.each(['Road', 'Circuit', 'Rally', 'Drag', 'Drift'])('%s excludes aero inputs from mechanical and gearing outputs', (goal) => {
+    const mechanical = { ...roadCar, drivetrain: 'FWD' as const };
+    const changedAero = {
+      ...mechanical,
+      aeroBalance: 0.95,
+      aeroEfficiency: 1,
+      aero_downforce_front: 1000,
+      aero_downforce_rear: 800,
+      adjustability: { aero: 'Full' },
+    };
+    expect(calculateChassisTuning(goal, changedAero)).toEqual(calculateChassisTuning(goal, mechanical));
+    expect(calculateAEGOGearing(goal, 6, changedAero, 8000)).toEqual(calculateAEGOGearing(goal, 6, mechanical, 8000));
+  });
+
+  it('uses only range and axle weight for the current Road spring prior', () => {
+    const result = calculateChassisTuning('Road', roadCar);
+    expect(result.springs.front).toBe(87.9);
+    expect(result.springs.rear).toBe(77.1);
   });
 
   it('AWD Road car should apply Meta ARB Strategy and Center Torque Split', () => {

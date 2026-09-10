@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { mergeDynoPollResult, type CarParams } from './CarParamsContext';
+import {
+  createCarParamsSaveSnapshot,
+  isCurrentCarParamsSnapshot,
+  mergeDynoPollResult,
+  persistCarParams,
+  type CarParams,
+} from './CarParamsContext';
 
 const params = (): CarParams => ({
   weight: 1200,
@@ -44,5 +50,23 @@ describe('mergeDynoPollResult', () => {
     });
 
     expect(refreshed.dyno_quality).toBeUndefined();
+  });
+});
+
+describe('car parameter persistence', () => {
+  it('requires an OK response before reporting a profile saved', async () => {
+    const request = async (path: string, options?: RequestInit) => {
+      expect(path).toBe('/api/car_params/3726');
+      expect(options).toMatchObject({ method: 'POST', body: JSON.stringify(params()) });
+      return new Response('', { status: 500 });
+    };
+
+    await expect(persistCarParams(createCarParamsSaveSnapshot('3726', params()), request as typeof fetch)).resolves.toBe(false);
+  });
+
+  it('binds a pending autosave to the edited car instead of the later active car', () => {
+    const snapshot = createCarParamsSaveSnapshot('3726', params());
+    expect(isCurrentCarParamsSnapshot('3726', snapshot)).toBe(true);
+    expect(isCurrentCarParamsSnapshot('2659', snapshot)).toBe(false);
   });
 });

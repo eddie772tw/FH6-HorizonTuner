@@ -57,6 +57,19 @@ let connectionState = false;
 let subscribers = 0;
 let reconnectTimeout: ReturnType<typeof setTimeout>;
 
+/**
+ * Decoded packets as they arrive from the telemetry WebSocket. Consumers that
+ * need observations rather than display updates can subscribe here; React
+ * state below intentionally remains throttled to protect the normal UI.
+ */
+export const decodedTelemetryEmitter = new EventTarget();
+
+export function subscribeToDecodedTelemetry(listener: (packet: TelemetryData) => void): () => void {
+  const handlePacket = (event: Event) => listener((event as CustomEvent<TelemetryData>).detail);
+  decodedTelemetryEmitter.addEventListener('packet', handlePacket);
+  return () => decodedTelemetryEmitter.removeEventListener('packet', handlePacket);
+}
+
 // High-refresh timestamp-based frame pacing interpolator
 const sharedInterpolator = new FrameInterpolator();
 let sharedRafId: number | null = null;
@@ -255,6 +268,9 @@ function formatHudTelemetry(raw: TelemetryData) {
           const parsed = JSON.parse(event.data);
           if (parsed && typeof parsed === 'object') {
             latestData = parsed;
+            // This is the decoded WebSocket packet, before interpolation and
+            // before the deliberately throttled React state publication.
+            decodedTelemetryEmitter.dispatchEvent(new CustomEvent<TelemetryData>('packet', { detail: parsed }));
             sharedInterpolator.pushSample(parsed, performance.now());
             startSharedRenderLoop();
             

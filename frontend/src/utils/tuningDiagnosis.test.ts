@@ -106,6 +106,19 @@ describe('tuningDiagnosis - analyzeTelemetrySession', () => {
 });
 
 describe('evaluateTireTelemetryDiagnosis', () => {
+  it.each(['FWD', 'RWD', 'AWD'] as const)('does not infer a chassis adjustment from axle temperature alone for %s', (drivetrain) => {
+    for (const [tempF, tempR] of [[98, 88], [88, 98]]) {
+      const res = evaluateTireTelemetryDiagnosis({
+        tempF, tempR, drivetrain, tempUnit: 'C',
+        targetPhot: 32.5, handlingIssue: 'none'
+      });
+      expect(res.specificAdjustments).toEqual([]);
+      expect(res.primaryRecommendedAdjustment).toBeUndefined();
+      expect(res.isConverged).toBe(false);
+      expect(res.secondarySuspensionAdvice).toContain('單靠軸溫差無法判定');
+    }
+  });
+
   it('應精確判斷熱胎壓收斂狀態與軸溫差', () => {
     const res = evaluateTireTelemetryDiagnosis({
       photF: 32.5,
@@ -119,7 +132,7 @@ describe('evaluateTireTelemetryDiagnosis', () => {
     expect(res.isConverged).toBe(true);
     expect(res.deltaTaxle).toBe(0);
     expect(res.axleBalanceStatus).toBe('balanced');
-    expect(res.primaryTelemetryDirective).toContain('完全收斂');
+    expect(res.primaryTelemetryDirective).toContain('不等同完成車輛物理校準');
   });
 
   it('應能發出正確的氣壓微調與極限推頭幾何聯動微調指令', () => {
@@ -170,7 +183,7 @@ describe('evaluateTireTelemetryDiagnosis', () => {
     expect(res.secondarySuspensionAdvice).toContain('°F');
   });
 
-  it('應能結合遙測動態抓地力數據 (telemetryGripMetrics) 拋出警訊與具體微調建議', () => {
+  it('keeps normalized slip contextual and does not turn it into an automatic setup change', () => {
     const res = evaluateTireTelemetryDiagnosis({
       photF: 32.5,
       photR: 32.5,
@@ -178,13 +191,22 @@ describe('evaluateTireTelemetryDiagnosis', () => {
       tempR: 90,
       targetPhot: 32.5,
       handlingIssue: 'none',
+      drivetrain: 'RWD',
       telemetryGripMetrics: {
-        avgSlipRatioF: -0.18,
-        avgSlipRatioR: 0.18,
-        maxSlipAngleF: 8.5,
-        maxSlipAngleR: 4.0,
+        hasCompleteNormalizedSlipRatio: true,
+        hasCompleteNormalizedSlipAngle: true,
+        avgNormalizedSlipRatioF: -0.6,
+        avgNormalizedSlipRatioR: 0.6,
+        maxAbsNormalizedSlipRatioF: 1.2,
+        maxAbsNormalizedSlipRatioR: 1.2,
+        maxNormalizedSlipAngleF: 1.1,
+        maxNormalizedSlipAngleR: 0.4,
         maxSuspTravelF: 0.96,
         maxSuspTravelR: 0.60,
+        accelXG: 0.8,
+        accelZG: 0.3,
+        accelInput: 255,
+        brakeInput: 80,
         tireTempFL: 98,
         tireTempFR: 88,
         tireTempRL: 96,
@@ -193,20 +215,114 @@ describe('evaluateTireTelemetryDiagnosis', () => {
     });
 
     expect(res.gripAnalysisAdvice.length).toBeGreaterThan(0);
-    expect(res.gripAnalysisAdvice.some(a => a.includes('觸底警訊'))).toBe(true);
-    expect(res.gripAnalysisAdvice.some(a => a.includes('煞車'))).toBe(true);
-    expect(res.gripAnalysisAdvice.some(a => a.includes('轉向'))).toBe(true);
-    expect(res.gripAnalysisAdvice.some(a => a.includes('驅動打滑'))).toBe(true);
-    expect(res.gripAnalysisAdvice.some(a => a.includes('左右熱負載不均'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('懸吊近壓縮端警訊'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('煞車正規化滑移警訊'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('彎中正規化滑移警訊'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('出彎驅動軸正規化滑移警訊'))).toBe(true);
+    expect(res.isConverged).toBe(false);
 
-    // 應產生具體可一鍵採納的調整項
-    const bumpAdj = res.specificAdjustments.find(a => a.parameterKey === 'bumpFront');
-    expect(bumpAdj).toBeDefined();
-    expect(bumpAdj?.delta).toBe(1.0);
+    // A near-endpoint sample cannot prescribe a damping increment.
+    expect(res.specificAdjustments.some(a => a.category === 'damping')).toBe(false);
 
-    const diffAdj = res.specificAdjustments.find(a => a.parameterKey === 'diffAccelRear');
-    expect(diffAdj).toBeDefined();
-    expect(diffAdj?.delta).toBe(5);
+    expect(res.specificAdjustments.some(a => a.parameterKey === 'diffAccelRear')).toBe(false);
+    expect(res.specificAdjustments.some(a => a.parameterKey === 'camberFront')).toBe(false);
+  });
+
+  it.each([
+    ['FWD', 1.2, 0.2, '前軸 FL 1.20'],
+    ['RWD', 0.2, 1.2, '後軸 RL 1.20'],
+    ['AWD', 1.2, 1.2, '前軸 FL 1.20 / FR 0.00、後軸 RL 1.20'],
+  ] as const)('uses only the relevant driven axle evidence for %s', (drivetrain, front, rear, evidence) => {
+    const res = evaluateTireTelemetryDiagnosis({
+      drivetrain,
+      telemetryGripMetrics: {
+        hasCompleteNormalizedSlipRatio: true,
+        hasCompleteNormalizedSlipAngle: true,
+        avgNormalizedSlipRatioF: front,
+        avgNormalizedSlipRatioR: rear,
+        maxAbsNormalizedSlipRatioF: front,
+        maxAbsNormalizedSlipRatioR: rear,
+        normalizedSlipRatioFL: front,
+        normalizedSlipRatioFR: 0,
+        normalizedSlipRatioRL: rear,
+        normalizedSlipRatioRR: 0,
+        accelInput: 255,
+        accelZG: 0.3,
+      },
+    });
+
+    expect(res.gripAnalysisAdvice.some((advice) => advice.includes(`【出彎驅動軸正規化滑移警訊】${evidence}`))).toBe(true);
+    expect(res.specificAdjustments.some((adjustment) => adjustment.category === 'differential')).toBe(false);
+    expect(res.isConverged).toBe(false);
+  });
+
+  it('does not treat a non-driven FWD rear axle warning as a power-on diagnosis', () => {
+    const res = evaluateTireTelemetryDiagnosis({
+      drivetrain: 'FWD',
+      telemetryGripMetrics: {
+        hasCompleteNormalizedSlipRatio: true,
+        hasCompleteNormalizedSlipAngle: true,
+        avgNormalizedSlipRatioF: 0.2,
+        avgNormalizedSlipRatioR: 1.2,
+        maxAbsNormalizedSlipRatioF: 0.2,
+        maxAbsNormalizedSlipRatioR: 1.2,
+        normalizedSlipRatioFL: 0.2,
+        normalizedSlipRatioFR: 0,
+        normalizedSlipRatioRL: 1.2,
+        normalizedSlipRatioRR: 0,
+        accelInput: 255,
+        accelZG: 0.3,
+      },
+    });
+
+    expect(res.gripAnalysisAdvice.some((advice) => advice.includes('出彎驅動軸正規化滑移警訊'))).toBe(false);
+    expect(res.specificAdjustments.some((adjustment) => adjustment.category === 'differential')).toBe(false);
+  });
+
+  it('uses per-wheel absolute RAT so opposite signs and a single-wheel spike cannot cancel', () => {
+    const res = evaluateTireTelemetryDiagnosis({
+      drivetrain: 'FWD',
+      telemetryGripMetrics: {
+        hasCompleteNormalizedSlipRatio: true,
+        hasCompleteNormalizedSlipAngle: true,
+        avgNormalizedSlipRatioF: 0,
+        avgNormalizedSlipRatioR: 0,
+        maxAbsNormalizedSlipRatioF: 1.4,
+        maxAbsNormalizedSlipRatioR: 0,
+        normalizedSlipRatioFL: -1.4,
+        normalizedSlipRatioFR: 1.4,
+        normalizedSlipRatioRL: 0,
+        normalizedSlipRatioRR: 0,
+        accelInput: 255,
+        accelZG: 0.3,
+      },
+    });
+
+    expect(res.gripAnalysisAdvice.some((advice) => advice.includes('FL -1.40 / FR 1.40'))).toBe(true);
+    expect(res.specificAdjustments.some((adjustment) => adjustment.category === 'differential')).toBe(false);
+  });
+
+  it('does not treat missing normalized fields or drivetrain as a converged power-on result', () => {
+    const missingFields = evaluateTireTelemetryDiagnosis({
+      telemetryGripMetrics: { accelInput: 255, accelZG: 0.3 },
+    });
+    const missingDrivetrain = evaluateTireTelemetryDiagnosis({
+      telemetryGripMetrics: {
+        hasCompleteNormalizedSlipRatio: true,
+        hasCompleteNormalizedSlipAngle: true,
+        avgNormalizedSlipRatioF: 0,
+        avgNormalizedSlipRatioR: 0,
+        maxAbsNormalizedSlipRatioF: 0,
+        maxAbsNormalizedSlipRatioR: 0,
+        accelInput: 255,
+        accelZG: 0.3,
+      },
+    });
+
+    expect(missingFields.isConverged).toBe(false);
+    expect(missingFields.gripAnalysisAdvice.some((advice) => advice.includes('資料未就緒'))).toBe(true);
+    expect(missingDrivetrain.isConverged).toBe(false);
+    expect(missingDrivetrain.gripAnalysisAdvice.some((advice) => advice.includes('缺少驅動型式'))).toBe(true);
   });
 
   it('應能正確支援自訂 AppliedTuningSetup 覆蓋並以此為基準計算調整建議', () => {
@@ -242,8 +358,8 @@ describe('evaluateTireTelemetryDiagnosis', () => {
       handlingIssue: 'understeer_mid',
       currentSetup: customSetup,
       telemetryGripMetrics: {
-        maxSlipAngleF: 8.5,
-        maxSlipAngleR: 4.0
+        maxNormalizedSlipAngleF: 1.2,
+        maxNormalizedSlipAngleR: 0.4
       }
     });
 
@@ -254,12 +370,7 @@ describe('evaluateTireTelemetryDiagnosis', () => {
     expect(pressureAdj?.target).toBe(27.5);
     expect(pressureAdj?.delta).toBe(-1.5);
 
-    // 驗證防傾桿調整：應基於 customSetup.arbFront (20.0) 調軟 2.5 = 17.5
-    const arbAdj = res.specificAdjustments.find(a => a.parameterKey === 'arbFront');
-    expect(arbAdj).toBeDefined();
-    expect(arbAdj?.current).toBe(20.0);
-    expect(arbAdj?.target).toBe(17.5);
-    expect(arbAdj?.delta).toBe(-2.5);
+    expect(res.specificAdjustments.some(a => a.parameterKey === 'arbFront')).toBe(false);
 
     // 驗證前外傾角調整：應基於 customSetup.camberFront (-1.8) 調負 0.3 = -2.1
     const camberAdj = res.specificAdjustments.find(a => a.parameterKey === 'camberFront');
@@ -268,7 +379,36 @@ describe('evaluateTireTelemetryDiagnosis', () => {
     expect(camberAdj?.target).toBe(-2.1);
   });
 
-  it('應能依據側傾行程差與動力帶換檔落差提出 ARB 與終傳比微調', () => {
+  it.each(['FWD', 'RWD', 'AWD'] as const)('%s retains suspension warnings without prescribing stiffness or damping from one frame', drivetrain => {
+    const res = evaluateTireTelemetryDiagnosis({
+      drivetrain, handlingIssue: 'none', photF: 32.5, photR: 32.5,
+      tempF: 90, tempR: 90, targetPhot: 32.5,
+      telemetryGripMetrics: {
+        hasCompleteNormalizedSlipRatio: true, hasCompleteNormalizedSlipAngle: true,
+        maxSuspTravelF: 0.96, maxSuspTravelR: 0.98,
+        suspTravelFL: 0.96, suspTravelFR: 0.40,
+        suspTravelRL: 0.98, suspTravelRR: 0.95, accelXG: 1.0,
+      },
+    });
+    expect(res.isConverged).toBe(false);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('前後軸正規化行程'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('前後軸行程差待比對'))).toBe(true);
+    expect(res.specificAdjustments.some(a => ['arb', 'springs', 'damping'].includes(a.category))).toBe(false);
+  });
+
+  it.each([0, -1, NaN, Infinity])('invalid RPM %s cannot trigger a low-RPM gearing observation', invalid => {
+    const base = {
+      currentRpm: 3000, engineMaxRpm: 8000, currentGear: 3,
+      accelInput: 255, speedKmh: 100,
+    };
+    for (const field of ['currentRpm', 'engineMaxRpm'] as const) {
+      const res = evaluateTireTelemetryDiagnosis({ telemetryGripMetrics: { ...base, [field]: invalid } });
+      expect(res.gripAnalysisAdvice.some(a => a.includes('加速低轉速待比對'))).toBe(false);
+      expect(res.specificAdjustments.some(a => a.category === 'gearing')).toBe(false);
+    }
+  });
+
+  it('行程差只要求交叉比對，不直接增加前 ARB', () => {
     const res = evaluateTireTelemetryDiagnosis({
       currentSetup: {
         tirePressureFront: 28.5,
@@ -306,18 +446,15 @@ describe('evaluateTireTelemetryDiagnosis', () => {
       }
     });
 
-    expect(res.gripAnalysisAdvice.some(a => a.includes('前軸側傾過大'))).toBe(true);
-    expect(res.gripAnalysisAdvice.some(a => a.includes('換檔轉速斷層'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('前後軸行程差待比對'))).toBe(true);
+    expect(res.gripAnalysisAdvice.some(a => a.includes('加速低轉速待比對'))).toBe(true);
 
     const arbAdj = res.specificAdjustments.find(a => a.parameterKey === 'arbFront');
-    expect(arbAdj).toBeDefined();
-    expect(arbAdj?.current).toBe(15.0);
-    expect(arbAdj?.target).toBe(17.0);
+    expect(arbAdj).toBeUndefined();
 
     const fdAdj = res.specificAdjustments.find(a => a.parameterKey === 'finalDrive');
-    expect(fdAdj).toBeDefined();
-    expect(fdAdj?.current).toBe(3.80);
-    expect(fdAdj?.target).toBe(3.95);
+    expect(fdAdj).toBeUndefined();
+    expect(res.isConverged).toBe(false);
   });
 });
 
@@ -362,13 +499,14 @@ describe('collectTuningTelemetryEvents & revalidateTuningEventsOnSetupChange', (
   it('應能在多圈測試行駛中累積事件並進行防抖去重計數', async () => {
     const { evaluateTireTelemetryDiagnosis, collectTuningTelemetryEvents } = await import('./tuningDiagnosis');
 
-    // 模擬第 1 圈彎中推頭
-    const diag1 = evaluateTireTelemetryDiagnosis({
-      telemetryGripMetrics: {
-        maxSlipAngleF: 8.0,
-        maxSlipAngleR: 4.0
-      }
-    });
+    // 模擬一筆有可套用建議的獨立事件；normalized slip 警訊本身不會製造一鍵建議。
+    const diag1 = {
+      specificAdjustments: [{
+        name: '前壓縮阻尼 (Front Bump)', category: 'damping' as const, parameterKey: 'bumpFront' as const,
+        current: 6, target: 7, delta: 1, unit: '', phase: 'bump' as const,
+      }],
+      detectedCornerPhase: '路面衝擊',
+    } as any;
 
     const now = 1000000;
     const events1 = collectTuningTelemetryEvents([], diag1, 1, now);
@@ -380,10 +518,10 @@ describe('collectTuningTelemetryEvents & revalidateTuningEventsOnSetupChange', (
     // 模擬第 2 圈再度發生推頭 (相隔 5 秒)
     const events2 = collectTuningTelemetryEvents(events1, diag1, 2, now + 5000);
     expect(events2.length).toBe(events1.length);
-    const understeerEvt = events2.find(e => e.issueKey.includes('arbFront'));
-    expect(understeerEvt).toBeDefined();
-    expect(understeerEvt?.occurrences).toBe(2);
-    expect(understeerEvt?.lapNumber).toBe(2);
+    const bumpEvt = events2.find(e => e.issueKey.includes('bumpFront'));
+    expect(bumpEvt).toBeDefined();
+    expect(bumpEvt?.occurrences).toBe(2);
+    expect(bumpEvt?.lapNumber).toBe(2);
   });
 
   it('應在採納或手動套用設定後即時將對應事件更新為 applied 狀態', async () => {

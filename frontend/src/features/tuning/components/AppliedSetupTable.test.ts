@@ -7,6 +7,12 @@ import {
 import { AppliedTuningSetup } from '../../../utils/tuningDiagnosis';
 
 describe('AppliedSetupTable Component Contract', () => {
+  it('preserves actual imperial spring clicks through canonical storage', () => {
+    for (const displayed of [991.4, 823.1, 660.9, 1254.4]) {
+      const canonical = convertDisplayedSpringToCanonical(displayed, value => value / 55.9974);
+      expect((canonical * 55.9974).toFixed(1)).toBe(displayed.toFixed(1));
+    }
+  });
   it('應正確導出 AppliedSetupTable 組件並符合 TypeScript 契約', () => {
     expect(AppliedSetupTable).toBeDefined();
     expect(typeof AppliedSetupTable).toBe('function');

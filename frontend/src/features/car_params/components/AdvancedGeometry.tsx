@@ -1,6 +1,7 @@
 import React from 'react';
 import { CarParams } from '../../../context/CarParamsContext';
 import { formRowStyle, inputStyle } from './CommonStyles';
+import { isAeroAxleAdjustable } from '../../../utils/aeroAdjustability';
 
 interface AdvancedGeometryProps {
   t: (key: string) => string;
@@ -31,8 +32,10 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
   handleSpringRearMinChange,
   handleSpringRearMaxChange
 }) => {
-  const isFrontAutoAero = (carParams.aero_downforce_front ?? 0) <= 0;
-  const isRearAutoAero = (carParams.aero_downforce_rear ?? 0) <= 0;
+  const frontAeroAdjustable = isAeroAxleAdjustable(carParams.adjustability?.aero, 'front');
+  const rearAeroAdjustable = isAeroAxleAdjustable(carParams.adjustability?.aero, 'rear');
+  const isFrontAutoAero = frontAeroAdjustable && (carParams.aero_downforce_front ?? 0) <= 0;
+  const isRearAutoAero = rearAeroAdjustable && (carParams.aero_downforce_rear ?? 0) <= 0;
   const isImperial = settings.units.speed === 'mph';
   const heightUnit = isImperial ? 'in' : 'cm';
   const forceUnit = isImperial ? 'lbf' : 'kgf';
@@ -95,26 +98,29 @@ export const AdvancedGeometry: React.FC<AdvancedGeometryProps> = ({
           </div>
 
           <div style={formRowStyle}>
-            <label htmlFor="aero_downforce_front">{t("Front Downforce")} ({forceUnit})</label>
+            <label htmlFor="aero_downforce_front">{t("Front Downforce")} ({forceUnit}) {!frontAeroAdjustable && `(${t('Locked in game')})`}</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input id="aero_downforce_front" type="number" disabled={isFrontAutoAero} value={isFrontAutoAero ? 0 : displayForce(carParams.aero_downforce_front || 0).toFixed(1)} onChange={e => updateParam('aero_downforce_front', Math.max(0, forceToKgf(parseFloat(e.target.value) || 0)))} style={{ ...inputStyle, width: '88px', opacity: isFrontAutoAero ? 0.5 : 1 }} />
-              <label htmlFor="chk_aero_downforce_front" style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
+              <input id="aero_downforce_front" type="number" disabled={!frontAeroAdjustable || isFrontAutoAero} value={isFrontAutoAero ? 0 : displayForce(carParams.aero_downforce_front || 0).toFixed(1)} onChange={e => updateParam('aero_downforce_front', Math.max(0, forceToKgf(parseFloat(e.target.value) || 0)))} style={{ ...inputStyle, width: '88px', opacity: !frontAeroAdjustable || isFrontAutoAero ? 0.5 : 1 }} />
+              {frontAeroAdjustable && <label htmlFor="chk_aero_downforce_front" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
                 <input id="chk_aero_downforce_front" type="checkbox" checked={isFrontAutoAero} onChange={e => updateParam('aero_downforce_front', e.target.checked ? 0 : 50)} />
                 {t("Auto (0)")}
-              </label>
+              </label>}
             </div>
           </div>
 
           <div style={formRowStyle}>
-            <label htmlFor="aero_downforce_rear">{t("Rear Downforce")} ({forceUnit})</label>
+            <label htmlFor="aero_downforce_rear">{t("Rear Downforce")} ({forceUnit}) {!rearAeroAdjustable && `(${t('Locked in game')})`}</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input id="aero_downforce_rear" type="number" disabled={isRearAutoAero} value={isRearAutoAero ? 0 : displayForce(carParams.aero_downforce_rear || 0).toFixed(1)} onChange={e => updateParam('aero_downforce_rear', Math.max(0, forceToKgf(parseFloat(e.target.value) || 0)))} style={{ ...inputStyle, width: '88px', opacity: isRearAutoAero ? 0.5 : 1 }} />
-              <label htmlFor="chk_aero_downforce_rear" style={{ fontSize: '0.8rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
+              <input id="aero_downforce_rear" type="number" disabled={!rearAeroAdjustable || isRearAutoAero} value={isRearAutoAero ? 0 : displayForce(carParams.aero_downforce_rear || 0).toFixed(1)} onChange={e => updateParam('aero_downforce_rear', Math.max(0, forceToKgf(parseFloat(e.target.value) || 0)))} style={{ ...inputStyle, width: '88px', opacity: !rearAeroAdjustable || isRearAutoAero ? 0.5 : 1 }} />
+              {rearAeroAdjustable && <label htmlFor="chk_aero_downforce_rear" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
                 <input id="chk_aero_downforce_rear" type="checkbox" checked={isRearAutoAero} onChange={e => updateParam('aero_downforce_rear', e.target.checked ? 0 : 50)} />
                 {t("Auto (0)")}
-              </label>
+              </label>}
             </div>
           </div>
+          <p style={{ margin: '-0.5rem 0 0', color: 'var(--text-secondary)', fontSize: '0.78rem', lineHeight: '1.3' }}>
+            {t("Locked axes cannot be edited. Aero values are retained as vehicle records and do not affect the standard tuning formulas.")}
+          </p>
 
         </div>
 

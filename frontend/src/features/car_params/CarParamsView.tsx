@@ -1,12 +1,27 @@
 import React from 'react';
-import { useCarParams, CarParams } from '../../context/CarParamsContext';
-import { useSettings } from '../../context/SettingsContext';
+import { createCarParamsSaveSnapshot, isCurrentCarParamsSnapshot, useCarParams, CarParams } from '../../context/CarParamsContext';
+import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { BasicCarInfo } from './components/BasicCarInfo';
 import { AdjustabilityLimits } from './components/AdjustabilityLimits';
 import { AdvancedGeometry } from './components/AdvancedGeometry';
 import { DynoChart } from './components/DynoChart';
 import { backendFetch } from '../../services/backend';
+import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
+import {
+  createGranularUnitPreference,
+  loadGranularUnitPreference,
+  resolveGranularUnitPreference,
+  type GranularUnitPreference,
+} from '../../utils/gameUnitSettings';
+import {
+  displayPowerToProfile,
+  displayTorqueToProfile,
+  displayWeightToProfile,
+  profilePowerToDisplay,
+  profileTorqueToDisplay,
+  profileWeightToDisplay,
+} from '../../utils/profileUnitConversions';
 
 interface CarParamsViewProps {
   subTab?: 'config' | 'dyno';
@@ -14,7 +29,12 @@ interface CarParamsViewProps {
   setActiveTab?: (tab: any) => void;
 }
 
-const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab, setActiveTab }) => {
+interface CarParamsViewContentProps extends CarParamsViewProps {
+  unitPreference: GranularUnitPreference;
+  onUnitPreferenceChange: (preference: GranularUnitPreference) => void;
+}
+
+const CarParamsViewContent: React.FC<CarParamsViewContentProps> = ({ subTab: propSubTab, setSubTab: propSetSubTab, setActiveTab, unitPreference, onUnitPreferenceChange }) => {
   const {
     carId, setCarId, carName, carParams, setCarParams, saveCarParams,
     clearDynoCurve, importDynoValues, updateSettings, isLoading,
@@ -29,7 +49,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
   const { data: telemetryData } = useTelemetry();
   
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
-  const [showCalibPopover, setShowCalibPopover] = React.useState<boolean>(false);
+  const [showUnitSettings, setShowUnitSettings] = React.useState(false);
   const [internalSubTab, setInternalSubTab] = React.useState<'config' | 'dyno'>('config');
   const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
   const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
@@ -155,6 +175,8 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
   const [saveState, setSaveState] = React.useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [lastSavedTime, setLastSavedTime] = React.useState<string | null>(null);
   const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeCarIdRef = React.useRef(carId);
+  activeCarIdRef.current = carId;
 
   React.useEffect(() => {
     return () => {
@@ -162,19 +184,28 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
     };
   }, []);
 
-  const triggerAutoSave = () => {
+  React.useEffect(() => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    setSaveState('saved');
+    setLastSavedTime(null);
+  }, [carId]);
+
+  const triggerAutoSave = (snapshot: ReturnType<typeof createCarParamsSaveSnapshot>) => {
     setSaveState('unsaved');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     
     saveTimeoutRef.current = setTimeout(async () => {
+      if (!isCurrentCarParamsSnapshot(activeCarIdRef.current, snapshot)) return;
       setSaveState('saving');
       try {
-        await saveCarParams();
+        await saveCarParams(snapshot);
+        if (!isCurrentCarParamsSnapshot(activeCarIdRef.current, snapshot)) return;
         setSaveState('saved');
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         setLastSavedTime(timeStr);
-      } catch (e) {
+      } catch {
+        if (!isCurrentCarParamsSnapshot(activeCarIdRef.current, snapshot)) return;
         setSaveState('unsaved');
       }
     }, 1500);
@@ -211,9 +242,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   // Power conversion for dyno (input in hp)
   const getPowerVal = (hp: number) => {
-    if (settings.units.power === 'kw') return hp * 0.7457;
-    if (settings.units.power === 'ps') return hp * 1.01387;
-    return hp;
+    return profilePowerToDisplay(hp, settings.units);
   };
   const getPowerLabel = () => {
     if (settings.units.power === 'kw') return 'kW';
@@ -223,8 +252,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   // Torque conversion for dyno (input in lb-ft)
   const getTorqueVal = (lbft: number) => {
-    if (settings.units.torque === 'nm') return lbft * 1.35582;
-    return lbft;
+    return profileTorqueToDisplay(lbft, settings.units);
   };
   const getTorqueLabel = () => {
     if (settings.units.torque === 'nm') return 'N·m';
@@ -241,8 +269,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   const updateParam = (field: keyof CarParams, value: any) => {
     if (!carParams) return;
-    setCarParams({ ...carParams, [field]: value });
-    triggerAutoSave();
+    const next = { ...carParams, [field]: value };
+    setCarParams(next);
+    triggerAutoSave(createCarParamsSaveSnapshot(carId, next));
   };
 
   // Conversions for Spring limits inputs
@@ -278,8 +307,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   const updateAdjust = (field: keyof CarParams['adjustability'], value: any) => {
     if (!carParams) return;
-    setCarParams({ ...carParams, adjustability: { ...carParams.adjustability, [field]: value } });
-    triggerAutoSave();
+    const next = { ...carParams, adjustability: { ...carParams.adjustability, [field]: value } };
+    setCarParams(next);
+    triggerAutoSave(createCarParamsSaveSnapshot(carId, next));
   };
 
   // Convert dyno_curve dict to sorted array for Recharts
@@ -296,40 +326,27 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
     .sort((a, b) => a.rpm - b.rpm);
 
   // Weight unit handling (internal is kg)
-  const displayCarWeight = settings.units.weight === 'lbs' 
-    ? carParams.weight * 2.20462 
-    : carParams.weight;
+  const displayCarWeight = profileWeightToDisplay(carParams.weight, settings.units);
 
   const handleWeightChange = (valStr: string) => {
     const val = parseFloat(valStr) || 0;
-    const internalWeight = settings.units.weight === 'lbs'
-      ? val / 2.20462
-      : val;
-    updateParam('weight', internalWeight);
+    updateParam('weight', displayWeightToProfile(val, settings.units));
   };
 
   // Power unit handling (internal is hp)
-  const displayMaxHp = settings.units.power === 'kw' ? carParams.maxHp * 0.7457
-    : settings.units.power === 'ps' ? carParams.maxHp * 1.01387
-    : carParams.maxHp;
+  const displayMaxHp = profilePowerToDisplay(carParams.maxHp, settings.units);
 
   const handleMaxHpChange = (valStr: string) => {
     const val = parseFloat(valStr) || 0;
-    const internalHp = settings.units.power === 'kw' ? val / 0.7457
-      : settings.units.power === 'ps' ? val / 1.01387
-      : val;
-    updateParam('maxHp', Math.round(internalHp));
+    updateParam('maxHp', displayPowerToProfile(val, settings.units));
   };
 
   // Torque unit handling (internal is lb-ft)
-  const displayMaxTorque = settings.units.torque === 'nm' ? carParams.maxTorque * 1.35582
-    : carParams.maxTorque;
+  const displayMaxTorque = profileTorqueToDisplay(carParams.maxTorque, settings.units);
 
   const handleMaxTorqueChange = (valStr: string) => {
     const val = parseFloat(valStr) || 0;
-    const internalTorque = settings.units.torque === 'nm' ? val / 1.35582
-      : val;
-    updateParam('maxTorque', Math.round(internalTorque));
+    updateParam('maxTorque', displayTorqueToProfile(val, settings.units));
   };
 
   return (
@@ -344,72 +361,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
                 {t("Car Parameters & Dyno")}
               </h2>
               {renderSaveStatus()}
-              <div 
-                className="position-relative d-inline-block"
-                onClick={() => setShowCalibPopover(prev => !prev)}
-                onMouseEnter={() => setShowCalibPopover(true)}
-                onMouseLeave={() => setShowCalibPopover(false)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span className="badge text-bg-success fs-8 px-2 py-1 fw-bold">
-                  {t("TELEMETRY AUTO-CALIBRATED")}
-                </span>
-
-                {showCalibPopover && (
-                  <div 
-                    className="popover bs-popover-bottom show glass-panel shadow-lg border"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      left: 0,
-                      zIndex: 1050,
-                      minWidth: '320px',
-                      backdropFilter: 'blur(16px)',
-                      background: 'var(--glass-bg)',
-                      borderColor: 'var(--bs-success)',
-                      cursor: 'default'
-                    }}
-                    role="tooltip"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div 
-                      style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        left: '20px',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '6px solid transparent',
-                        borderRight: '6px solid transparent',
-                        borderBottom: '6px solid var(--bs-success)'
-                      }} 
-                    />
-                    <div className="popover-header bg-transparent border-bottom border-secondary border-opacity-25 px-3 py-2 text-success fw-bold fs-7 d-flex align-items-center justify-content-between">
-                      <div className="d-flex align-items-center gap-2">
-                        <span>{t("Telemetry Auto-Calibration")}</span>
-                        <span className="badge text-bg-success">{t("SYNCED")}</span>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn-close btn-sm"
-                        aria-label="Close"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowCalibPopover(false);
-                        }}
-                      ></button>
-                    </div>
-                    <div className="popover-body px-3 py-2 text-start">
-                      <div className="fs-7 text-body fw-medium">
-                        {t("Engine peak torque, redline RPM and idle specs are auto-synchronized from live 60Hz UDP data.")}
-                      </div>
-                      <div className="fs-8 text-secondary mt-1">
-                        {t("Confidence Rating: 98% (High Speed Sensor Alignment)")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <span className="badge text-bg-secondary fs-8 px-2 py-1 fw-bold">
+                {t('Vehicle Profile')}
+              </span>
             </div>
             <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
               {t("Configure vehicle specifications, weight distribution, spring limits, and real-time dyno curves")}
@@ -417,6 +371,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
           </div>
 
           <div className="d-flex align-items-center gap-3">
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowUnitSettings(true)}>
+              {t('Profile Units')}
+            </button>
             <ul className="nav nav-pills gap-1">
               <li className="nav-item">
                 <button 
@@ -547,7 +504,42 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
           getTorqueLabel={getTorqueLabel}
         />
       )}
+      <UnitSettingsSidebar
+        idPrefix="car-params-units"
+        show={showUnitSettings}
+        title={t('Car Profile Unit Settings')}
+        preference={unitPreference}
+        onChange={onUnitPreferenceChange}
+        mode="granular"
+        onClose={() => setShowUnitSettings(false)}
+      />
     </div>
+  );
+};
+
+const CAR_PARAMS_UNIT_STORAGE_KEY = 'car_params_unit_preference';
+
+const CarParamsView: React.FC<CarParamsViewProps> = props => {
+  const { settings } = useSettings();
+  const [unitPreference, setUnitPreference] = React.useState<GranularUnitPreference>(() =>
+    loadGranularUnitPreference(CAR_PARAMS_UNIT_STORAGE_KEY, settings.units)
+  );
+  const scopedUnits = React.useMemo(
+    () => resolveGranularUnitPreference(settings.units, unitPreference),
+    [settings.units, unitPreference]
+  );
+  const updateUnitPreference = (preference: GranularUnitPreference) => {
+    const normalized = unitPreference.followGlobal && !preference.followGlobal
+      ? { ...createGranularUnitPreference(settings.units), followGlobal: false }
+      : preference;
+    setUnitPreference(normalized);
+    localStorage.setItem(CAR_PARAMS_UNIT_STORAGE_KEY, JSON.stringify(normalized));
+  };
+
+  return (
+    <ScopedUnitSettingsProvider units={scopedUnits}>
+      <CarParamsViewContent {...props} unitPreference={unitPreference} onUnitPreferenceChange={updateUnitPreference} />
+    </ScopedUnitSettingsProvider>
   );
 };
 

@@ -44,15 +44,18 @@ export const AdjustabilityLimits: React.FC<AdjustabilityLimitsProps> = ({
           <option value="Adjustable">{t("Adjustable")}</option>
         </select>
       </div>
-      <div style={{...formRowStyle, opacity: 0.5}}>
-        <label htmlFor="adj-aero">{t("Aero")} <span style={{color: 'orange', fontSize: '0.7rem'}}>({t("Coming Soon")})</span></label>
-        <select id="adj-aero" value={carParams.adjustability.aero || 'Fixed'} disabled style={inputStyle}>
+      <div style={formRowStyle}>
+        <label htmlFor="adj-aero">{t("Aero")}</label>
+        <select id="adj-aero" value={carParams.adjustability.aero || 'Fixed'} onChange={e => updateAdjust('aero', e.target.value)} style={inputStyle}>
           <option value="Fixed">{t("Fixed")}</option>
           <option value="Front Only">{t("Front Only")}</option>
           <option value="Rear Only">{t("Rear Only")}</option>
           <option value="Adjustable">{t("Adjustable")}</option>
         </select>
       </div>
+      <p style={{ margin: '-0.5rem 0 0', color: 'var(--text-secondary)', fontSize: '0.78rem', lineHeight: '1.3' }}>
+        {t("Match this to the in-game aero screen. Aero configuration is retained as a vehicle record and does not affect the standard tuning formulas.")}
+      </p>
       <div style={{...formRowStyle, opacity: 0.5}}>
         <label htmlFor="adj-brakes">{t("Brakes")} <span style={{color: 'orange', fontSize: '0.7rem'}}>({t("Coming Soon")})</span></label>
         <select id="adj-brakes" value={carParams.adjustability.brakes || 'Fixed'} disabled style={inputStyle}>

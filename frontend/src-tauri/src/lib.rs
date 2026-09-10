@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use serde::Serialize;
+mod main_window;
 use std::fs;
 use std::io::{BufRead, BufReader, Read};
 use std::net::{SocketAddr, TcpStream};
@@ -471,6 +472,9 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            if let Err(error) = main_window::fit_to_work_area(app) {
+                eprintln!("Could not fit main window to monitor work area: {error}");
+            }
             #[allow(unused_variables)]
             let overlay_window = tauri::WebviewWindowBuilder::new(
                 app,

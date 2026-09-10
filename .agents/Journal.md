@@ -1,3 +1,23 @@
+## 2026-09-09 Codex — 開發收斂與驗證摘要
+
+- 依使用者要求停止新增遊戲測試及公式研究，成果與接續點統一於docs/tuning-development-checkpoint-20260909.md；整體目標未宣稱完成，未commit/push。
+- Step5實機確認／齒比編輯撤銷確認通過；兩場七圈完整引擎輸入重播導出FD4.25，同六檔，新候選未套用。實車保留FD3.85與991.4／823.1彈簧，停於賽前。
+- 收尾前端96 files／673 tests、build、後端272 passed／9 deselected、cargo check、Ruff及diff空白檢查通過。真實音訊列舉測試卡住後中止，依現行測試分層移至host_diagnostics並保留；新增受控裝置映射單元案例，不把單元綠燈當成硬體驗收。
+- 採用agent-governance-audit整理紀錄，沿用physics-tuning-math與computer-use已驗證範圍；沒有把暫時模型或社群推測升格為跨車公式規則。
+
+## 2026-09-09 23:05 Codex — 七圈空間配對與重現
+
+- 完成224058 Lap3參考路徑的1m/2m節距敏感度比較，定位920–1220m主要差異；新增scratch/a700-seven-lap-spatial.py，含末圈補充標记且不改主要有效圈。
+- 225514同設定七圈重現完成426.066秒；writer53146正常exit0，SHA256記於docs/integra-a700-seven-lap-validation.md。兩場Lap4/7重現局部快圈操作，不解釋為彈簧因果、不刪圈、不新增公式常數。
+- 兩場已回答延長圈數的流程問題；接續設定對照與Step5實際值確認。不再為相同設定持續追最快圈。未commit或push。
+
+## 2026-09-09 22:51 Codex — 七圈場與傳動核對
+
+- 實際重建無Drivatar／交通、春季晴朗固定早晨七圈北部環道；224058完成425.885秒，Lap3–6中位60.229、全距0.566秒。完整證據與限制见docs/integra-a700-seven-lap-validation.md；不據此改FWD常數。
+- 新增分析腳本及雙側圈界品質檢查，Terra只讀審核，合成邊界回歸通過。writer93153已正常exit0，最終SHA256已記於七圈驗證文件，未重啟。
+- Step5新增實際終傳／各檔核對欄位，齒比編輯取消确认，非正／非有限值禁止確認。原生可訪問樹已看到所有欄位；整套實際值核對與編輯後取消確認仍待實機驗收，沒有把公式預填值假認為遊戲值。
+- 前端95files／663tests與build通過；新增AppliedGearingTable的10項有效值邊界測試另行通過。未commit或push。
+
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
 ## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
@@ -29,6 +49,31 @@
 
 ---
 
+## 2026-09-09 / 即時低轉速齒比推論修正
+
+- 沿用physics-tuning-math與agent-governance-audit。Step 5移除未觀測換檔就依紅線60%產生FD+0.15／94%建議，改低轉速補採提示並檢查有效RPM，AEGO公式不變。
+- 完整95 files／663 tests與build通過；型別import改為type以直接匯入純函數，兩場Integra各11158筆齒比輸入重播成功，均未觸發提示或調整。這是資料重播證據，不是提示UI驗收，也不是舊規則曾影響這兩場的證據。未改遊戲、未commit/push，整體目標仍未完成。
+
+---
+
+## 2026-09-09 / Integra 行程證據回饋即時診斷
+
+- 沿用physics-tuning-math、cross-agent-collaboration、agent-governance-audit。Terra唯讀審核與根代理12組性能曲率敏感度均不支持新未測剛度；未採用外插516.494，也未恢复865.7探索。
+- 修正Step 5單筆近壓縮端自動bump+1／96%與行程差自動front ARB+2／85%建議，改保留觀察和補採；不將normalized travel當成真實觸底或軸側傾剛度。新增三驅動型式回歸，95 files／659 tests通過；build在移除未使用chassis解構後通過。未改遊戲設定或通用公式常數，未commit/push。
+- 仍需審核離線報告與即時低轉速終傳規則，不宣稱完整診斷或調校目標已完成。兩個991.4純前彈簧writer已exit0、最終hash與reset邊界見checklist。
+
+---
+
+## 2026-09-09 / 一般算牌移除空力輸入
+
+- 使用者追加要求保留悲觀條件補償空間。核對現有AEGO最高檔錨點、FD優先二次修正及既有測試，Integra新基準4.28到程式上限6.10有42.52%數值餘裕，因此不再改低終傳。直接產品函數重播220–280 km/h情境保持所有檔位、只提高終傳；200情境達上限後才改齒比。詳見aego-final-drive-headroom-audit.md，區分滑桿餘裕、功率限制與legacy紅線極速假設，未宣稱實測速度收益。
+
+- 沿用 physics-tuning-math、halfmoon-design-system、agent-governance-audit。依使用者收斂研究範圍，一般底盤移除下壓力彈簧補償，AEGO 移除空力效率速度倍率；保留資料欄位，清除精靈輸入與仍宣稱參與算牌的說明。實驗 domain solver 未同步改寫。
+- 實際匯入產品公式重算 Integra，前／後彈簧約991.2／823.2 lb/in、終傳4.28，完整候選見 fwd-suspension-formula-proposal.md。尚未套用或驗證這套設定，FWD 公式校準未完成。
+- 第三場 soft 記錄202440已正常封存，最終hash核對一致，畫面185.842秒／最佳60.052秒；文件移除待封存狀態。暫停865.7探索點，以公式引導設定為主流程。
+- 最終介面文字修正後重新驗證：完整前端95 files／651 tests通過、TypeScript與Vite build通過、git diff --check通過（只有既有CRLF提示）。未commit/push；此次未新增遊戲操作，原生介面視覺驗收仍待完成。
+
+
 ## 2026-09-09 / PR #312~#315 審查、60Hz GC 優化驗收與 .jules/bolt.md 衝突循序解決
 
 - **來源**：`local`，針對開啟中的 PR #312~#315 進行標準化評估、合併安全檢驗與依賴衝突調解。
@@ -46,6 +91,35 @@
   3. 本地 `main` 分支全套驗證通過。
 - **Evidence**：PR #312、#313、#314、#315 全數成功 MERGED；後端 Pytest 268 passed, 8 deselected（5.92s）；前端 Vitest 89 files / 578 tests 100% passed（5.76s）；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
 - **Skills**：`pr-review-evaluation`、`huge-component-refactoring`、`halfmoon-design-system`、`agent-governance-audit`。
+
+---
+
+## 2026-09-09 / 以指引式量測取代使用者猜測調校目標
+
+- **Scope**：同一分支 `codex/fh6-tuning-meta-aego` 延續使用者 UX 指示；基本流程改為靜態資料 → 駕駛資料準備 → 完成後點擊算牌，自訂速度/RPM 只在進階模式選用。
+- **Ownership**：Terra 子代理實作量測狀態機及初始測試並覆核整合；Codex 負責工作流、UI、快照生命週期、翻譯與最後換檔過渡品質修正。此輪沒有改 backend、UDP 格式或全域錄製狀態。
+- **Implementation**：既有 useTelemetry 約 5 Hz 原始資料進入最多 16 個 RPM bins；有限/同車/同 class/PI、全油門、零 brake/clutch/handbrake、低 slip 等檢查後累積有效時間。6 秒有效時間、低高轉覆蓋、8 個 bins 都滿足才完成；換檔 500 ms 過渡不納入峰值或時間。
+- **Lifecycle**：完成後停止摘要更新，使用者可退出駕駛再點算牌。所有 solver 使用同份 frozen static profile + observed peak RPM + EngineMaxRpm；背景 dyno polling 不重設算牌。切車、static profile 修改或已觀測 identity/紅線變更使快照失效；loadedCarId 與舊 poll active guard 避免跨車資料混用。
+- **UX**：Step 1 保留可查靜態數值，移除峰值 RPM 輸入、空力效率移至進階；Step 2 顯示低轉/高轉/覆蓋/打滑/換檔/中斷等缺口，提供暫停/繼續/重收/下一步。未完成前不能用導覽略過。預設 automatic 即使舊 preset 存有自訂目標也不採用，須明選 event/legacy 才套用。
+- **Evidence**：前端 90 files / 610 passed，TypeScript + Vite build 通過；後端 268 passed / 8 deselected，Ruff check 與 format check 通過；git diff --check 無空白錯誤。環境改為 restricted 後，uv interpreter 執行需工具自動審核核准，未安裝相依或改安全設定。
+- **Limits**：這是頁面內的低頻有界摘要，沒有完整 60 Hz capture 或實機使用者驗收；observed peaks 不等於完整引擎峰值、品質門檻不是 FH6 meta。相同 PI 的零件變更仍需使用者重新收集；離開工作流/重新載入不持久化摘要。完整來源與操作見 docs/tuning-guided-measurement-workflow.md。
+- **Skills**：physics-tuning-math、cross-agent-collaboration、halfmoon-design-system、huge-component-refactoring、modular-refactoring、agent-governance-audit。
+- **Status**：本地實作與自動驗證完成，未 commit/push/PR；本節取代前一輪把自訂速度/RPM 作為基本操作的 UX。
+
+---
+
+## 2026-09-09 / AEGO 賽事速度與 RPM 顯式目標
+
+- **Scope / Ownership**：`codex/fh6-tuning-meta-aego`，Codex 負責 legacy AEGO、Step 2 表單/圖表、測試與文件；Terra 子代理負責 `docs/fh6-tuning-meta-aego-research.md` 的外部研究，其他程式唯讀。
+- **Finding**：legacy `softMaxSpeed` 的 UI 語意是圖表 X 軸端點，求解卻把它當紅線速度 cap；原 `Math.min` 路徑僅能縮短齒比。圖表另固定後輪尺寸及 peak-HP RPM × 1.15，與 FWD/已設定紅線不一致。
+- **Decision**：新增成對的 `targetSpeedKmh + targetRpm`，以 `G_top × FD = RPM × circumference × 60 / (1000 × speed_kmh)` 對齊指定速度。先調 FD，必要時同比例調整檔位；量化後再檢查有效檔位順序與算牌範圍，回傳 `matched/limited/invalid` 及計算速度。1% 誤差只代表幾何擬合，不代表性能提升。
+- **Compatibility**：兩個新欄位皆空時保留原校正；顯式目標路徑忽略舊速度欄位。舊版校正收在可展開區塊且說明其假設；未全面遷移 preset。Drag/Drift 前四檔、developer/domain 與 MCP 公式保留，研究建議不視為已實作。
+- **Workflow**：Step 2 可確認紅線、輸入賽事速度/RPM 並檢視達標狀態。圖表與求解共用驅動輪名義半徑及 `maxRpm`。紅線手動值不再因不相關的車輛參數修改而被覆寫。
+- **Review**：Terra 唯讀覆核指出兩車 peak-HP RPM 相同時紅線同步可能漏掉 reset；同步依賴已納入 `carId` 與 `numGears`，避免換車或檔數 reset 後殘留初始 8000 RPM。
+- **Evidence**：`cmd /c "pnpm -C frontend run test"`：89 files / 598 passed（AEGO 等 math 測試 54 項）；`cmd /c "pnpm -C frontend run build"` 通過；`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`：268 passed / 8 deselected；相同 uv interpreter 的 `ruff check .`、`ruff format --check .` 通過；`scripts/check_repo_path_case.py` 通過；`git diff --check` 無空白錯誤。
+- **Limit**：`docs/calibration/in_game_captures/` 現查仍只有 `.gitkeep`。沒有實機跑圈、UI 人工/主題巡檢或 FH6 校準證據；FD 與個別齒比範圍是既有算牌假設，未確認每車 capability。實機 A/B 方法與後續 P1–P3 見研究文件。
+- **Skills**：`physics-tuning-math`、`cross-agent-collaboration`、`halfmoon-design-system`、`agent-governance-audit`。
+- **Status**：本地實作與自動驗證完成，未 commit/push；研究與程式證據不提升為遊戲 meta 規則。
 
 ---
 
@@ -2190,3 +2264,130 @@
   - Rust 格式檢查：`cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` 通過。
   - 代碼與空白規範：`git diff --check` 完全乾淨（0 error）。
 - **Status**: adopted。
+
+## 2026-09-09 / FH6 live tuning continuation: Dark Horse baseline and DEV responsiveness
+
+- **Scope**: telemetry-first tuning workflow, profile unit overrides, native window sizing, profile persistence, audio device discovery, live validation documentation.
+- **Implementation**: default window 1600x900 with monitor work-area clamp; independent granular units for Car Parameters and tuning workflow; canonical kg/hp/lb-ft persistence with a single Nm conversion at solver boundary. Guided engine sampling no longer treats normalized slip 0.1 as physical slip ratio, and observes lift-off/neutral shifts before output acceptance.
+- **Persistence review**: HTTP failure now rejects; autosave retains car/parameter snapshot and cancels pending work on car switch. Step 1 only advances on successful save, displays failure, and disables its button while saving. Step 3 wraps the save call so React events cannot become profile snapshots and reports save status.
+- **Runtime finding**: DEV HTTP and MCP hung after frontend connected. py-spy located MainThread in soundcard import / platform._wmi_query from /api/audio/devices. Terra isolated discovery in a single background worker with request timeout, cache and failure backoff. After restarting our backend (PID 49208, HTTP 8001), audio endpoint and health returned HTTP 200 and MCP tools/call returned idle while parked in the garage; 324-byte UDP packets were received and correctly rejected as not_racing.
+- **Live evidence**: selected user's 2024 Ford Mustang Dark Horse, S1 800 AWD; read installed tires, supercharger and all nine tuning pages without changing parts or tuning. Values and game-simulated performance are recorded in docs/dark-horse-reference-20260909.md. No Dark Horse ANNA capture, candidate application or same-car A/B completed yet. Cross-venue sampling remains planned to resolve low-RPM coverage.
+- **Validation**: frontend full suite before final save-status review: 91 files / 617 tests passed (Terra); after review, build passed and targeted Context/measurement/units/math suite 75 passed. Rust cargo check passed. Audio focused pytest 12 passed; Ruff passed. The latest full backend suite attempt stalled and was interrupted, so it is not claimed as passed; previous pre-audio-change run was 268 passed / 8 deselected.
+- **Delivery**: branch codex/fh6-tuning-meta-aego already rebased onto origin/main 82ead76; changes remain uncommitted. No production calibration promotion or formula-meta correctness claim from these observations.
+
+## 2026-09-09 / Integra A700 測試前整理
+
+- 使用者正在升級 Integra；本輪僅整理專案，不操作遊戲、不採集新駕駛資料。新增 docs/integra-a700-test-checklist.md，隔離 A671 歷史資料與 A700 待採集批次。
+- 補上已 ready 的量測遇到同車 PI 改變仍須重採、返回原 PI 不能解除鎖定的回歸測試；未更動品質門檻。相同 PI 改裝與已離開量測頁的配置變更仍須操作流程主動重採，不能宣稱全程可自動辨識。
+- 更新 live validation plan 的最新交接狀態，保留歷史觀測；模擬數字可能逐次波動，不能用單次差異辨識 tune 或證明改善。
+- 前輪研究採用 physics-tuning-math：移除 Road/Rally 無功率曲線支持的 peak-RPM 換檔上界，修復其破壞頂檔速度目標問題；保留 legacy 間距防護。中央差速器公式未改，Dark Horse 90% 保留為原車基線。
+- 驗證：前端完整 91 files / 621 tests passed；前輪公式變更後 build 通過；本輪相關 diff check 通過。無 commit/push、無新遊戲 tune 套用。
+
+## 2026-09-09 / DEV 恢復與單軸空力能力
+
+- 採用 computer-use、cross-agent-collaboration、physics-tuning-math、halfmoon-design-system、agent-governance-audit；Terra 獨立處理單軸能力修正與網路空力資料研究，根代理處理 API、實車讀回及文件。
+- 重啟 DEV 前後端，HTTP 車輛參數及 MCP live snapshot 可用；原生視窗顯示 A700 Integra、UDP 活躍。調校選單也能送出 IsRaceOn=1 的靜止封包，不能把 live 等同有效駕駛。
+- API 確認 373 hp、338 lb-ft、2913 lb、57% 前重、FWD、255/35R18 與 265/35R18；新增 Front Only 與前 207 lb 對應的 kgf。後軸零代表未知，不是實測零下壓力。
+- resolveAeroDownforce 不再為鎖定軸合成負載；正值固定負載仍保留。DEV 車輛參數頁確認前 207.0 lbf 可編輯、後 0.0 停用且無 Auto。未知固定空力仍是模型限制。
+- 在最右「我的調校」找到私人 ht a700 base 0909，載入完成後胎壓、終傳及六速讀回一致。未套候選調校；完整 A700 動態工作流及 Dark Horse 動態驗證仍未完成。
+- Terra 驗證：完整前端 92 files / 631 tests passed、build passed、diff check passed。根代理補中文提示與現場紀錄；未 commit/push。研究結論僅為候選策略，見 docs/fh6-aero-meta-evidence.md。
+
+## 2026-09-09 / 正式賽事圈速與校正前置核對
+
+- 採用 halfmoon-design-system、computer-use；沿用本任務已讀取的 physics-tuning-math 與 agent-governance-audit 邊界。遊戲讀回車高前 6.4–7.7 in、後 6.6–7.9 in，API 寫入並讀回；一般工作流候選彈簧 1254.3 / 823.2 lb/in、車高 7.0 / 7.2 in，尚未套用。
+- 正式北部環道確認 ANNA 開賽自行接管。首場無對手於首圈出錯；重啟後使用者準備的 12 車賽事取得 LastLap / BestLap 非零且 LapNumber 前進。兩種對手條件分組，不可混作同條件成績比較。
+- Step 5 原以 WebSocket 連線宣稱 60Hz 活躍，且把候選當作已套用；修正為 TimestampMS 必須前進、2 秒時效、車輛一致、人工核對實際設定後的新行駛資料才提供建議。採用／編輯只更改表格，重新套用確認前不得將事件標記已套用。
+- 前端 93 files / 633 tests 及 build 通過；原生 UI 確認資料持續更新時仍阻擋未核對候選的校正。繁中新增提示已寫入語系，既有 DEV 語系快取仍需重新載入。完整候選實車比較及 Dark Horse 動態驗證未完成，未 commit/push。
+
+## 2026-09-09 / 無對手基準與候選實際刻度
+
+- 沿用 computer-use、physics-tuning-math、agent-governance-audit。北部環道固定條件三場基準完整完賽，總時間 186.224 / 186.259 / 186.227 秒、最佳圈 60.202 / 60.237 / 60.203 秒。不可混入先前 12 車賽事；ANNA 重複性不能外推成一般駕駛或物理模型已驗證。
+- 使用者提醒方向鍵可精準微調；候選逐項以實際顯示值核對後另存私人 Forzab。胎壓實際 30.5 / 27.5 PSI、彈簧 1254.4 / 823.1 lb/in，與公式目標略有刻度差。完整設定及解析串流位置見 docs/integra-a700-test-checklist.md；候選第一場已啟動，結論待重複比較。
+- 量測改從 WebSocket 解碼封包直接更新 ref，React 5 Hz 僅發布摘要；既有驗證 94 files / 634 tests 與 build 通過。此修正不代表 ready 時峰值已收斂。FWD 實際設定表新增前差速器顯示，原生 UI 候選確認仍待驗收。
+- 本段只補充測試證據，未修改公式常數，未 commit/push；後續仍需處理正規化滑移數值的診斷單位及 Dark Horse 動態對照。
+- 後續完成候選三場：186.010 / 186.041 / 186.040 秒，最佳圈 60.120 / 60.119 / 60.102 秒；總時間中位數比基準快 0.187 秒。此為整套設定的受控 ANNA 比較，不證明單一公式因果。已找到 FH6 官方 Data Out 文件，確認 ANG／RAT／CombinedSlip 為正規化值；先前專案 ANG=rad 的參考敘述存在衝突，不能繼續作為物理角度轉換依據。研究與優先欄位寫入 docs/tuning-telemetry-input-assessment.md。
+
+## 2026-09-09 / Step 5 正規化滑移與情境判讀
+
+- 採用 physics-tuning-math、halfmoon-design-system、computer-use、agent-governance-audit；Terra 擁有診斷、Step 5 與 helper/tests，根代理審查邊界、補繁中與分析文件。新增 telemetrySlipMetrics 純函數，保留 ANG／RAT 原值並區分資料完整性。未改 UDP offset。
+- 移除 Step 5 的 ANG 度數與 RAT 物理百分比，依制動／側向加速度／開油情境提出補採提示，停止由單幀滑移直接生成 ARB／外傾／差速器調整。驅動軸依 FWD/RWD/AWD 決定，未知型式不預設 RWD；逐輪 max absolute 防止平均值抵消及單輪超限被稀釋。
+- 缺四輪有限值時顯示未就緒；警訊無 adjustment 時不宣稱已收斂。完整前端 95 files / 643 tests、TypeScript/Vite build、diff check 通過；根代理驗證繁中 JSON 可解析。歷史 drift session、MCP、binary、詳細遙測、匯出等角度路徑仍待統一，Step 5 實機驗收未完成。
+- 根代理分場切分六份真實記錄：候選起跑至首次100 km/h中位慢約0.084秒，第二圈高油門低側向片段功率較高，但制動前輪 normalized slip超1的幀比例亦較高。使用者要求另派獨立代理做完整動力／車身動態綜合比較，已派遣且結果待完成，不以圈速直接定義全項較佳。
+- 獨立代理完成 docs/integra-a700-comprehensive-comparison.md，根代理核對分析腳本、六場摘要及主要結論。完整第二／第三圈分場統計與十二個位置路段支持小幅速度及功率使用收益，但前軸尾端滑移、伸展端附近時間與起步存在取捨；不宣稱底盤全面改善。phase 子集不計換檔，位置段時間差接近單幀者不作確定歸因。候選第二／三場完整檔案均為 11161 幀，取代早期未 flush 完的摘要。後續可用只回復前彈簧的交替試驗隔離条件效果；本次分析未更動遊戲設定。
+- 後續根代理實際執行前彈簧單變量：Forzab前1254.4→660.9 lb/in，其餘保持，確認套用後完成相同ANNA賽事。画面03:05.857／最佳01:00.085；兩個行駛圈初步前輪滑移尾端與近伸展比例降低，功率保持。只有一場且錄製尚待最終flush，詳見checklist，不足以修改公式常數；下一步交替原Forzab再重複。未commit/push。
+
+## 2026-09-09 / 無空力公式候選實際套用
+
+- 21:46：214139第三場完成185.906/60.052秒，候選三場中位185.906、全距0.045秒。writer66709尚在600秒有界階段；新遙測、畫面與摘要已核對。兩場同位置比較新增integra-a700-no-aero-spatial-comparison.md，第三圈差主要集中於320–520m，橫向RMS約1cm，導航線不作評分。
+- Terra唯讀延續FWD研究，根代理核對篩選及倒數剛度變數推導；下一項維持無空力公式991.4、恢復Forzab齒比做純彈簧第三水準，不執行已暫停865.7探索點。整套新齒比場不可混入純彈簧曲率。採用cross-agent-collaboration，根代理擁有文件與scratch；本輪未改產品碼，沿用前輪656測試/build證據，主要目標未完成。
+
+- 21:38追加：第二場212758完成185.924／60.069秒，11154有效幀。第三圈4→3相較第一場延後約4.51秒且座標不同，導致四檔占比增加、功率P50下降；詳見checklist，不能以單圈平均功率宣稱全項改進。Step 5的新資料校正已實機驗收。賽後移除僅依軸溫差產生ARB−2和75%信心的診斷及無依據剛性良好敘述，保留觀察與補採；FWD/RWD/AWD回歸新增3例。95 files／656 tests通過，清除不再使用的currentArbR後build通過，diff check通過。未修改本場遊戲設定，未commit/push，目標仍未完成。
+
+- 後續實機驗證補充：Step 5選單確認不再要求正在行駛，但仍要求已識別相符車輛及有效時間戳；確認後必須是新的新鮮行駛資料才分析。實際設定表移除canonical彈簧過早四捨五入，可保留遊戲991.4／823.1 lb/in。先前驗證95 files／653 tests及build通過；本次原生UI讀回並確認第二場開賽後正常分析，未將舊資料當新資料。
+- 211420檔案最終SHA256已重新核對為34be8119ee16dd28e6d8518a702ad818441055925f00a35fdf313fcb2cc61bc9。212758 writer在21:33開賽後持續寫入；選單前舊幀須依race time reset切除，待視覺完賽時間封定。
+- 新發現：Step 5依前後溫差直接給ARB−2及75%信心，實機看見且原碼定位於tuningDiagnosis.ts thermal分支。未採用此建議；FWD熱負荷不能單獨證明ARB方向與幅度，需修正。沿用computer-use、physics-tuning-math與agent-governance-audit，未commit/push。
+
+- 沿用 physics-tuning-math、computer-use、agent-governance-audit。重啟DEV後完整操作Step 1–4，205531量測UX場185.840／60.052秒，writer已正常退出，最終hash及場次邊界記於integra-a700-test-checklist.md。
+- 原始碼核對AEGO既有最高檔錨點與終傳優先二次修正，故未另加通用餘裕常數。既有legacy極速修正不是空阻辨識，不能直接輸入賽道觀測最高速度。詳見aego-final-drive-headroom-audit.md。
+- 遊戲已套用此次實際UI候選FD4.22、六檔1.93/1.48/1.18/0.97/0.82/0.72、前彈簧991.4／後823.1 lb/in，其餘維持工作流輸出最近遊戲刻度。211420場開始記錄，尚待完賽分析；不能把齒比與彈簧同時改動解釋為單項因果。
+- 211420已完賽185.879／60.052秒。完整第二／三圈功率P50提高但每圈多一次升檔，前輪滑移及近伸展時間介於原硬／軟設定之間；未使用第六檔，不作最高檔空阻驗證。已產生逐輪、情境、檔位及功率分布分析，writer最終封存仍待確認。
+- Step 5賽後fresh guard禁用已套用按鈕，原生UIA set_value回報CacheRequest錯誤，實際設定表核對未完成；不可宣稱全工作流已驗收。
+- 本段未改產品公式或測試，沒有commit/push；主要目標仍未完成。
+
+## 2026-09-09 / 座標配對與保留資料追加收集
+
+- 20:16續測：第二次soft（195148）與第二次hard restore（200555）均已正常封存，分別185.873／186.110秒。hard新場超出原三場範圍，保留變異；同位置配對soft第二／第三圈共同區段快0.050／0.097秒，路線差不作優劣評分。完整hash、行程與滑移證據見integra-a700-test-checklist.md；S3與後續hard仍待測。遊戲停在成績頁，套用前1254.4／後823.1 lb/in。
+- 三份FWD／AWD／RWD研究完成；RWD審閱修正Road／Drift係數混淆並移除方向盤FFB來源的底盤歸因。沿用physics-tuning-math、cross-agent-collaboration與computer-use；本輪只更新研究／測試文件及ignored分析腳本，未改產品公式。diff check通過；fetch後HEAD與origin/main均82ead76，無需rebase，未commit/push。主要目標未完成。
+
+- 後續九場直接匯入產品量測狀態機重播，確認候選齒比的約3088 RPM扭力峰值在首次ready已存在，六場一致於起步約0.93–1.07秒出現；不是追加才引入，沒有以低速門檻刪除。新增docs/integra-a700-engine-peak-audit.md，區分全場重播125.330秒與UI人工暫停後96.3秒。齒比圖改為觀測峰值及整數RPM顯示，計算精度保留，build通過。
+
+- 後續實機追加收集完成：193200場維持Forzab，成績186.015秒；UI有效採樣6.0→52.8→96.3秒，賽後結束追加並成功算牌。新終傳3.89尚未套用。驗收後修正追加狀態提示及點擊時最新guidance檢查，16 tests與build通過；錄製session58913仍有600秒上限，待最終退出確認。使用者FWD假說已核對來源，新增docs/integra-a700-fwd-chassis-hypothesis.md；前空力項約263 lb/in是高前剛度的重要來源，尚未因此調公式。
+
+- 獨立分析代理完成 docs/integra-a700-route-comparison.md，根代理核對報告及圖。每幀世界座標密集投影至實際參考路徑，再按共同沿程位置比較；不使用導航線評分。原六場同圈組間橫向RMS約1–2公分、P95約4公分，沒有明顯取短線收益；曲率差對平滑方式不穩健，不宣稱路線品質提升。原始資料與圖表在ignored scratch，完整重現需另帶這些素材。
+- 原Forzab交替恢復場完成186.039秒／最佳60.135秒，錄製正常退出且最終hash已核對。軟前彈簧與恢復各一場，仍需重複；沒有因此調整公式常數。
+- 量測頁新增保留資料追加收集與手動結束，首次ready仍自動停止；追加期間更新最近可用結果，選單／斷線不刪已完成觀測，身分改變或時間重置則失效。補繁中提示與狀態機回歸測試。
+- 驗證：目標量測16 tests、完整前端95 files / 645 tests、TypeScript/Vite build及diff check通過。追加收集完整實機操作尚待驗收；未commit/push，主要調校目標與Dark Horse動態驗證仍未完成。
+
+## 2026-09-10 / 七圈底盤 A → B → A 交替驗證
+
+- 工作於隔離工作樹 `D:/FH6-HorizonTuner-chassis-sevenlap`、`codex/chassis-sevenlap`，保留繼承的71個dirty/untracked檔案，來源工作區未改動。使用者恢復遊戲操作後，限定ARB、彈簧、車高與阻尼；胎壓、定位、齒比、差速、煞車、空力保持預設A。沿用 `physics-tuning-math`、`computer-use`，紀錄採 `agent-governance-audit`；未委派代理。
+- B直接由現行Road公式推導，實際37.5/28.5 ARB、991.4/823.1 lb/in、7.0/7.2 in、回彈11.8/9.1、壓縮7.1/5.5。後回彈公式9.2與實際9.1偏差已公開記錄，不宣稱精確套用。A1/B1/A2七圈總時間426.709/427.223/426.709秒；B未展示本條件下改善，沒有倒填已測參數修改通用公式。
+- 三場保留所有圈與逐輪情境、時間加權分布、同位置區段及連續近伸展事件。第一圈存在LapNumber不變而CurrentLap歸零，分析器保留旗標；延後完賽LastLap/BestLap只作metadata，不加入行駛曝光。Lap3–6及2–6、2–7窗口全部報告；同場各圈不是獨立實驗。
+- 回復A後全頁核對一致。近伸展曝光FL/FR/RL/RR由B的1.2001/0.8834/1.1331/0.9332秒回到A2的0/0.2167/0.0500/0秒，不解讀為輪胎離地。完整SHA、讀回值、限制與重現入口見 `docs/chassis-seven-lap-iteration-20260910.md`；原始與探索報告保留於ignored scratch。
+- 擷取均正常退出，完成後停止本任務backend、釋放8000/8001再補跑後端272 passed、9 deselected；原sidecar連接埠失敗消除，1音訊warning。沿用此序列前端96 files/673 tests、工具28 tests證據；分析器Ruff check/format通過。技能資料夾/frontmatter/registry逐項一致。未commit/push/release，通用FWD公式充分信心目標仍未完成。
+
+- 行程座標追加校驗：三份capture重新驗SHA，四輪各場 `m=a+b*u` 最大殘差<2.6e-9m；A/B映射不同、A2回復A1。公尺通道為帶正負號的原始float，與normalized通道不是獨立證據；跨設定近伸展比例不得全歸因動態擺幅。前左公尺p95−p05 A1/B1/A2約42.165/30.376/42.225mm。`-a*k`近似不變、`a+b`變化5.08mm與車高+0.2in相符，但端點多屬線性外推、尚非止擋或輪荷證明。採 `telemetry-udp-protocol` 核對parser直接解包offset68/196，未改offset；reference的公尺欄位未解析標記已過時，未當現況依據。
+- 由目前公式前彈簧輸出預先封存C單項候選991.4lb/in，其餘保持A2；僅以A1校準預測前軸a=-0.021306374m、b=0.074606367m，後軸不變。`scratch/spring-only-C-preregistered.json`保留公式與原始hash、顯示誤差帶及判定限制，建立時C尚未套用。這是可否證的通道模型預測，不是已驗證的最佳剛度；未修改產品公式。
+- C1單項已完成七圈：427.291秒／最佳59.934，前彈簧991.4、後609.6、車高6.8/7.0賽後讀回一致。25,640筆正常封存，SHA f6a16669656c18cb222ae66204e3196b34a30994eb4ffea9e2863f3d4ed99f17。前軸偏移預測誤差約0.157微米、在原顯示誤差帶內，後軸與固定車高端點映射維持；映射驗證支持分項機制，但總時間較A慢0.582秒、全部指定窗口前輪滑移較高，沒有性能改善。保留所有圈、相同路段、近伸展事件與原預測，未倒填公式。詳見七圈迭代文件新增C1節；賽前保留C、擷取與本任務backend已停止，未commit/push/release。
+- C2同設定重複427.292秒／最佳59.934，25,640筆正常封存，SHA 2be335271d8bdb810c9ca82ffa8de1a81aa305ef3260efa4feaf8bc1c34109a3。三個圈段窗口與同路段六圈皆重現相對A較高前滑移／較慢方向；通道映射原預測再次吻合。另在C2分析前封存等激振公尺行程反比模型：C2配對約80.48%，48個前輪相位單元均優於不縮放，但中位誤差0.607–2.221mm、p95 2.464–7.577mm，不能當精確動態模型。以NIST循序搜尋思路推導有條件D約566.4776 lb/in，步長為既有倒數剛度間距一半，明確是未測搜尋點而非最優或通用倍率；須先完成A3回復，D尚未套用。新推導／預測／分析存ignored scratch，七圈文件記錄來源與限制；產品公式未改，賽前保留C、backend已停止，未commit/push/release。
+- A3僅恢復前彈簧660.9 lb/in並重新讀回，七圈426.742秒／最佳59.884；25,607筆正常封存，SHA efb045ce232e4deabedcf74064fcbe4804d867c802aa029714475e5490300911。總時間較A1/A2+0.033秒、較C1/C2−0.549/−0.550秒；三窗口前滑移與近伸展曝光回到A附近。原A1通道最大殘差<2.56e-9m，動態配對85.05%、前輪相位誤差中位0.056–0.460mm。全部同位置區段保留，第2圈局部慢於C的例外已重評，未宣稱每區改善或把84區段當獨立實驗。D條件評估已封存，支持一場既定566.4776 lb/in探索、未套用、未重調候選步長；須先按實際UI刻度封存預測。七圈文件追加完整證據；遊戲賽前保留A，本任務backend停止且8000/8001空閒。產品公式未改，未commit/push/release，整體目標未完成。
+- D1僅前彈簧套用566.4 lb/in（推導566.4776），賽前依實際值封存預測；七圈426.558秒／最佳59.851，比A快0.151–0.184秒。25,590筆正常封存，SHA 6ba23841e5310277084823bce9b17002a05021ae406809fca6e569ea39691412；因主writer先結束，另存6筆延遲完賽metadata補末圈59.850914，來源分開、不改主檔。三窗口前滑移低於A3，但局部區段仍有反向例外。前輪近伸展代理曝光為0、左後約0.100秒；原通道offset預測誤差−0.144微米，動態配對82.681%、中位誤差0.517–1.632mm，48/48中位改善但僅31/48尾端p95改善。可選protocol參數以C2回歸核對舊數值相同，D全部分析正常；下一步同D重複及A回復，不宣稱單車單場足以通用校準。遊戲賽前保留D、backend PID32912已停止、無監聽；產品公式未改，未commit/push/release。
+- D2相同566.4/609.6前後彈簧及A其他設定重複，七圈426.641秒／最佳59.851；較D1慢0.083秒、較A快0.068–0.101秒。25,601筆正常封存，SHA b80f083cb9cb65341b41965728e6990dfd5250b4d20660bcc6b8f34a394c019a，末圈59.867668同檔收到。三窗口前滑移低於A3、前輪近伸展代理0；同路段四圈慢於A3的例外保留。原通道offset誤差約−0.144微米；動態配對83.23%，48/48中位誤差改善，34/48尾端p95改善，中位0.442–1.551mm。全部分析正常，下一步A4回復排查漂移；產品程式未改、backend PID32824停止、遊戲賽前保留D，未commit/push/release。
+- A4回復前660.9 lb/in並完成讀回，七圈426.757秒／最佳59.851，25,608筆正常封存，SHA 8a67601bb383f6b941ca89b0458a4dbe56ac6bfa8ab3a0519a49a2114570f896。比D1/D2慢0.199/0.116秒，三窗口前滑移均較高；A1通道关系最大殘差2.562e-9m，動態同設定控制配對86.51%、中位誤差0.045–0.409mm。九場全路段比較仍保留A4在920–1220m兩圈快於D1、四圈快於D2的例外；有限非隨機場次不作通用FWD校準。沿用physics-tuning-math、computer-use、telemetry-udp-protocol、agent-governance-audit；五項分析exit 0，backend PID17012停止、遊戲賽前保留A。產品公式未改，未commit/push/release。
+- E1以事前縮小q步長推導528.608、UI讀回前528.4 lb/in，其他A固定；七圈426.457秒／最佳59.818，25,590筆正常封存SHA fe607a822294986302e26ae2b454be872a076b5c94a6c31982e349d18bf05a64。較D1/D2快0.101/0.184秒，但敏感度窗口前滑移較高；動態配對81.80%、47/48中位及34/48 p95改善，中位誤差0.617–2.446mm、p95上達8.215mm。十場空間比較保留慢區段，二次曲線頂點敏感度過大不宣稱最優。全部五項分析exit 0，收據SHA重驗；backend PID51388已停，賽前保留E。下一步依事前順序E2重複再D回復；產品公式未改，未commit/push/release。
+- E2相同前528.4/後609.6及A其他設定重複，七圈426.508秒／最佳59.851，25,593筆正常封存SHA b2d7893719ffa8ef037428c12fcdf36cadedd6cf3913c1735915826606065369。較E1慢0.051秒、較D1/D2快0.050/0.133秒；三窗口左前滑移高於D、右前低於D。原座標offset誤差約−0.206微米，動態配對83.51%、48/48中位與34/48 p95改善，中位0.650–2.239mm、p95上達7.936mm。十一場空間比較保留慢區段；五項分析exit 0、SHA重驗。backend PID10468停止，賽前保留E，下一步D回復尚未執行。沿用既有技能與protocol，產品公式未改，未commit/push/release。
+- D3在E2後恢復前566.4 lb/in並套用重新讀回，七圈426.558秒／最佳59.834，25,596筆正常封存SHA 3246488bba1b4e5304294dbdadbb3d266f6d152b7aec32e7ff65cd94e6cdef53；與D1顯示時間相同，比E1/E2慢0.101/0.050秒。動態配對83.10%、48/48中位及35/48 p95改善，中位0.459–1.478mm、p95上達5.473mm。E2三窗口前滑移均低於D3，但D3於920–1220m對兩場E均四圈較快，保留局部相反結果。十二場空間比較與全部五項分析exit 0、SHA重驗；backend PID46940停止，賽前保留D。E重複及D回復完成，下一輪先在已觀測範圍評估曲線及動態失配，不直接外推更軟或宣稱通用FWD校準。沿用既有技能與protocol，產品公式未改，未commit/push/release。
+- D3後重新核對11場單因素raw/report SHA，留整個檔位的回顧檢查顯示線性k、線性1/k、二次1/k圈速MAE為0.025698/0.103384/0.174581秒；C/E是外推，沒有冒充前瞻精度。撤回用二次1/k頂點推最優剛度的依據，保留行程映射與圈速模型的區別。E–D中點模型差僅0.020209秒，改事前登錄最大未測區間中點F=826.15 lb/in作未見檔位验证，主要線性k預測427.010709秒，需讀回實際UI再凍結且F1/F2重複。分析、設計腳本exit 0，沿用physics-tuning-math與agent-governance-audit；尚未操作或實測F，產品公式未改，未commit/push/release。
+- F1依UI前825.9／後609.6及其他A固定，賽前另凍結實際值預測，七圈426.941秒／最佳59.884。主檔25,613筆SHA 9870de6f8b5a51ba6f7355383e84a0667c8252a71609e4d84277c95eb566b00e；另6筆延遲metadata補末圈59.884243，原檔不改。主要線性k預測高估0.069282秒，未重擬合；動態配對85.81%、48/48中位及41/48 p95改善，誤差中位0.457–1.363mm、p95上達5.256mm。六项分析exit 0、收據SHA核對；十三場空間比較保留局部相反結果。沿用physics-tuning-math、computer-use及agent-governance-audit，backend PID6340已停，賽前保留F；F2尚待同設定重複，產品公式未改，未commit/push/release。
+- F2同設定重複426.991秒／最佳59.918，25,622筆正常封存SHA 0c04b34863897f70234ea45d55475c6dd45aaa469f7c3733c8c550d19434537c，末圈59.917606同檔收到。較F1慢0.050秒，三窗口前滑移略高；動態配對83.79%、48/48中位及40/48 p95改善，中位0.458–1.370mm、p95上達5.865mm。十四場空間比較保留局部相反結果。F兩場平均426.966秒，主要線性k高估0.044282秒，未重擬合；重複彙整登錄下一步A5回復檢查漂移，尚未操作。全場及五項分析、彙整與收據exit 0，SHA核對通過；沿用physics-tuning-math、computer-use及agent-governance-audit。backend PID51344停止，賽前保留F，產品公式未改，未commit/push/release。
+- A5僅恢復前彈簧660.9，重新讀回660.9／609.6、車高6.8／7.0、胎壓32／29；七圈426.807秒／最佳59.884。25,611筆封存SHA dd2ae37ef60fdea08736177f4f868f9bd5dbb9feaff54fb6708a22e8602abcc5，末圈59.884254同檔收到。比A4慢0.050秒，五次A範圍增至0.098秒，後續需控制時間順序；仍比F1／F2快0.134／0.184秒且三窗口前滑移較低。原A1座標及同設定動態控制回復，配對84.82%、中位誤差0.112–0.433mm。十五場空間比較與全部分析exit 0，收據SHA核對；詳見 docs/chassis-A5-baseline-20260910.md。沿用physics-tuning-math、computer-use及agent-governance-audit。backend PID31228停止，賽前保留A，產品公式未改，未commit/push/release，通用FWD目標仍未完成。
+- 十五場漂移稽核重新驗證capture與報告SHA，前後A插值及共同線性時間項兩種事後敏感度分析皆保留C/F較慢、D/E較快方向，不改原F預測。因固定阻尼的單因子歷史無法識別交互作用，以平方根剛度比例推導11.0／6.9前阻尼候選，封存A/E/G/H四格、八场對稱順序；明列滑桿比例及固定質量假設未驗證，回彈/壓縮合為一因子，不能視通用物理校準。新腳本執行、設計正交斷言及py_compile通過，設計SHA f60a6f8788953cc3deefcc57bf7d439837135575bf2da36736973311508fa5c6。詳見 docs/chassis-spring-damping-block-20260910.md；沿用physics-tuning-math與agent-governance-audit。未進行新遊戲輸入或擷取，A保留，產品公式未改，未commit/push/release。
+- G1已套用並重讀前阻尼11.0／6.9，彈簧與其他A固定；七圈426.757秒／最佳59.868，比A5快0.050秒仍在歷次A範圍內。25,608筆封存SHA c6e26a6c3add0754915c366457ef175c15fb3f705fbfb6418d136b074f308728，同檔收到末圈59.867619。A1座標關係仍吻合；跨阻尼動態壓力測試配對84.31%，中位誤差0.493–1.017mm，倍率1的兩個預測相等不能當重複控制。三窗口前滑移和胎溫均略高A5，FR全伸展代理事件累計0.467秒增加；十六場空間比較保留局部退步。全部分析exit 0、SHA重驗，詳見 docs/chassis-spring-damping-block-20260910.md。沿用physics-tuning-math、computer-use及agent-governance-audit。backend PID16288已停、賽前保留G，下一場H1尚未操作；四格八場僅完成1場，產品公式未改，未commit/push/release。
+- H1前彈簧528.4、前阻尼11.0／6.9已儲存重讀，其餘A固定；七圈426.592秒／最佳59.851，25,598筆正常封存SHA 4ca4d3ab8af018f648975f8258c2c6adedd269fc24c232794fe7477341026296，同檔收到末圈59.867611。較G1快0.165秒但比E1／E2慢0.135／0.084秒，不能視未完成四格交互作用結果。E座標映射保持；跨阻尼動態配對82.27%，43／48中位、24／48 p95改善，誤差中位0.564–2.276mm、p95達8.064mm。三窗口前滑移及胎溫低於G1／A5，FR代理事件0、RL累計0.200秒；十七場空間比較保留局部退步。全場與五項分析、SHA收據及git diff檢查通過。詳見 docs/chassis-spring-damping-block-20260910.md；沿用physics-tuning-math、computer-use及agent-governance-audit。backend PID50552已停止、賽前保留H，八場完成2／8，下一場E3尚未操作。產品公式未改，未commit/push/release，通用FWD目標未完成。
+- E3僅恢復前阻尼12.3／7.7並重開讀回，其他E設定固定；七圈426.504秒／最佳59.818，比H1快0.088秒且落在歷史E1／E2範圍。25,593筆封存SHA 49bb43e218951a0f235546eaf3a39f35d6fc712f4f8f49f8ad5a6ba5a8c9ba11，同檔末圈59.850952收到。E座標映射保持，動態配對83.09%，48／48中位及31／48 p95改善，中位誤差0.591–2.381mm、p95達8.079mm。三窗口前滑移均高於H1，較快不等於較低滑移；十八場空間比較相對H1有52／84區段較快、慢彎四圈較快兩圈較慢。全場與五項分析、SHA收據通過，詳見 docs/chassis-spring-damping-block-20260910.md；沿用physics-tuning-math、computer-use及agent-governance-audit。backend PID36264已停、賽前保留E，八場完成3／8，下一場A6尚未操作。產品公式未改，未commit/push/release，通用FWD目標未完成。
+- A6僅恢復前彈簧660.9並儲存重讀，其他A固定；七圈426.773秒／最佳59.868，比A5快0.034秒。25,609筆正常封存SHA 3dd8fd38381a9f529230c40b04038c1b534d16f2f0dd9f4ea24502e0e984fe05，同檔末圈59.884174收到。前輪A1座標offset差約+0.0149微米保留，同設定動態配對85.16%、主要中位誤差0.099–0.453mm。三窗口前滑移及胎溫較A5高；十九場空間比較相對E3僅13／84區段較快。第一半段四格封存總時間交互作用+0.104秒，G全場略快但飛行圈平均較慢，H在三飛行圈窗口均慢於E；尚不能選優。全場及各分析、第一半段斷言、SHA收據通過，詳見 docs/chassis-spring-damping-block-20260910.md；沿用physics-tuning-math、computer-use及agent-governance-audit。backend PID6268已停、賽前保留A，八場完成4／8，下一場A7尚未起跑。產品公式未改，未commit/push/release，通用FWD目標未完成。
+- A7維持A同設定重複，七圈426.708秒／最佳59.834，比A6快0.065秒；25,605筆正常封存SHA b7cd0940b321b9d81bc17a0396363b007f76518238e0710feab58e44ec071ecd，同檔末圈59.834179收到。A1座標微小offset差保留，動態配對85.88%、主要中位誤差0.060–0.427mm。相對A6僅40／84區段較快，2–6圈平均反而慢0.003794秒，前右滑移亦有敏感度窗口退步。全場、座標、動態、事件、二十場空間與彙整exit 0，SHA收據通過；詳見 docs/chassis-spring-damping-block-20260910.md。沿用physics-tuning-math、computer-use與agent-governance-audit；backend PID18944已停、8000／8001無監聽，賽前保留A。八場完成5／8，E4→H2→G2待完成；產品公式未改，未commit/push/release，通用FWD目標未完成。
+- 2026-09-10 MX-5 RF 2022 RWD A700：依使用者恢復畫面測試，讀回完整原設定、固定七圈北部環道與 ANNA。排除初次未啟用代駕的 shakedown 並保留原檔；完成 A1→A2→F−1→A3 四場，總時間 426.292／426.289／426.375／426.323 s。僅 F−1 前彈簧 606.0→575.5（−5.033%），其餘固定，A3 已恢復606.0。三飛行圈窗口候選均慢於兩個相鄰基準，主窗口較夾心均值 +0.017036 s/圈，沒有達到事先0.05 s/圈改善門檻，保留基準並停止本輪前軸微調，未宣稱等效或通用RWD係數。四場完整七圈、末圈回報、原始SHA及動態／空間對照封存；沿用 analyzer 測試6 passed、scratch ruff及diff檢查通過。空力讀回132/235與UI平衡0.36支持前/(前+後)，不是前/後，條件反推詳見MX-5基準文件。詳見 docs/mx5-rwd-baseline-20260910.md、docs/mx5-rwd-local-probe-20260910.md；沿用physics-tuning-math、computer-use及agent-governance-audit。本任務擷取器與backend PID47160已停止，8000/8001無監聽；正式產品公式未修改，未commit/push/release，後軸辨識及跨車通用驗證未完成。
+- 2026-09-10 MX-5後續可辨識性核算：重驗四場原始SHA，實际[1,eF,eR]及[1,eF,eF²]均秩2；線性相對剛度／倒數／相對頻率三種兩參數OLS在兩個取值上的預測差≤3.55e-14 s，屬有限設計代數等價，不能排名曲線或證明收斂。保留原夾心比較為主要結果，未用全資料OLS取代。新增 docs/mx5-rwd-identifiability-20260910.md，預先指定A4→R−1→A5、後軸目標612.845 lb/in須依實際合法刻度讀回，前606.0及其餘固定，0.05 s/圈門檻沿用。新scratch核算腳本斷言與ruff通過；尚未執行新場次或改後彈簧，產品公式未改。下一步獨立後軸補秩與重複驗證，跨車目標仍未完成。
+- 2026-09-10 MX-5後軸區塊：完成A4基準七圈426.291 s、最佳59.834 s、2～7圈均值60.192795 s，25,580筆及末圈回報完整封存，SHA94c753a7a91165f94d0c28417548fc6d53f535f52167e9801e82a18fb213c4d9。新增完整69個解碼欄位覆蓋盤點與五場空間分析，A4時計重設背景保留。R−1準備期間，後彈簧由645.1調至未套用611.1，前606.0及車高不變；向目標微調時連續出現failed to activate captured window，重新取得視窗後恢復仍失敗，依computer-use規則停止输入。R−1及A5未開跑，未宣稱已套用或已恢復。backend PID47740已停止，8000/8001無監聽；git diff --check通過（既有CRLF警告）。詳見docs/mx5-rwd-rear-block-20260910.md；產品公式未改、未commit/push/release，跨軸與跨車目標未完成。
+- 2026-09-10 MX-5 收斂驗證：恢復操作後完成後彈簧 R−1；A5 缺末圈回報，保留不完整收據並排除七圈比較。依使用者新頻率彈簧與分驅動阻尼材料，完成 A6→S1→SD1→A7 四場，總時間 426.274／425.724／425.741／426.292 s；第2～7圈均值 60.184427／60.101051／60.109450／60.190122 s。S1 彈簧570.0/287.1 lb/in；SD1另用回彈14.0/11.9、壓縮8.4/6.7。A7完整恢復基準，遊戲停在賽前。A6保留先前中止場前綴，以選取區間分析，未刪原始資料。
+- 依最新「近似可用、方向正確且沒有明顯退步」目標，優先採納使用者整套模型作初始解，停止此車微調；S1／SD1較前後基準均值快0.086223／0.077825 s/圈，兩候選差0.008399 s/圈不足決定優劣。四場原始SHA與69個已解碼欄位覆蓋完整，24個行進圈空間投影有效；不把同場各圈視為獨立重複。MR為真車代理、阻尼滑桿未校準為阻尼比，FWD/AWD泛用性仍待跨車驗證。
+- 納入胎溫、5 Hz駕駛輸入活動、功率轉彎滑移、G-G與SurfaceRumble分析。圈速標準差未下降、輸入活動有增有減，不能稱ANNA信心全面提升；路面震動與行程不是直接輪荷或離地證據。兩張圖已目視確認，三個scratch分析腳本Ruff通過。完整證據見docs/mx5-frequency-damping-validation-20260910.md。本任務writer及backend PID49020已停止，8000/8001無監聽；只更新研究文件與scratch，保留繼承修改，未替換產品公式、未commit/push/release。
+- 2026-09-10 MX-5定位重測：依使用者明確恢復授權，套現版Road定位−2.1/−1.3°、束角+0.1/−0.1°、後傾6.0°並保存重讀，完成AL-A→AL-S→AL-SD各一場七圈。總時間426.240/425.680/425.724秒，2～7圈均值60.184334/60.096376/60.106614秒。三場完整末圈回報、69欄位與SHA封存；新S/SD前彈簧實際570.1，較舊570.0多0.1lb/in，已披露而未冒稱完全一致。新定位S/SD較A快0.087959/0.077720秒／圈，跨新舊定位各自差不到5ms；舊夾心A敏感度下交互差接近零，未支持原定位使先前結論失真的明顯證據，也不證明等效。SD近伸展代理改善但場內圈速標準差未改善，輸入與胎溫保留混合結果。42圈共同路徑分析保留反向區段，所有分析exit0、scratch Ruff與圖形目視確認完成。詳見docs/mx5-alignment-retest-20260910.md；採用physics-tuning-math、computer-use、agent-governance-audit。遊戲賽前保存SD及公式定位，writer/backend PID20820停止，netstat確認8000/8001無監聽。只追加研究文件、Journal與ignored scratch；繼承修改保留，產品公式未改，未commit/push/release。
+
+## 2026-09-10 / 累積實作提交與賽後回饋提案
+
+- 使用者授權整理實作、提交分支與建立PR；在`codex/chassis-sevenlap`整理繼承的量測導向AEGO、profile單位、實際設定確認、診斷修正、非阻塞音訊API、主視窗及七圈工具／文件。fetch後origin/main與分支起點同為82ead76，沒有重寫來源工作區或合併main。
+- 新增`docs/tuning-implementation-and-evidence-20260910.md`統一索引，修正雙語README的Step5行為說明；歷史checkpoint保留當日狀態並連到最新索引。研究候選沒有取代產品Road公式，raw capture與探索腳本仍留ignored scratch，不冒稱僅Git checkout即可重算全部實測。
+- 追加需求整理為`docs/tuning-post-race-feedback-proposal.md`：原始SHA與完整性、窗口敏感度、共同路徑、時間加權逐輪指標、控制活動、事件／胎溫／G-G、漂移／交互作用及模型簡約性映射到工作流。讀碼發現現有10Hz錄製、SQLite單位／小值轉換、末圈與圈時計、索引距離和舊觸底摘要語意缺口，列為P0，再做P1跨場／設定回饋、P2動態對比、P3研究模型。提案未實作，沒有重啟遊戲測試。
+- 本地提交前檢查：pytest tests/與scripts/tests/共300 passed、9 deselected；前端96 files/673 passed；TypeScript/Vite build、Rust cargo check、Ruff check/format（192 files）、版本11.45.17一致性均通過。host_diagnostics按既有契約排除，不當硬體驗收；scratch/pr_body.md通過作者格式validator。採用`pr-author-maintainer`、`agent-governance-audit`及`modular-refactoring`，技能registry核對一致。PR待外部審查，不自我宣告可合併。

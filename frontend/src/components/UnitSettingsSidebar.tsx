@@ -140,7 +140,7 @@ const GranularUnitSettingsSidebar: React.FC<GranularUnitSettingsSidebarProps> = 
   return (
     <UnitSettingsSidebarFrame
       {...props}
-      description={t("Choose each telemetry display unit independently, or inherit the app-wide choices.")}
+      description={t("Choose each page unit independently to match the game's displayed units, or inherit the app-wide choices. Changing units does not change saved vehicle values.")}
       followGlobal={preference.followGlobal}
       onFollowGlobalChange={followGlobal => onChange({ ...preference, followGlobal })}
     >

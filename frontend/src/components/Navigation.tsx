@@ -217,7 +217,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                   </li>
                   <li>
                     <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', 2)}>
-                      <span className="badge bg-primary-subtle text-primary">2</span> {t("Gearbox")}
+                      <span className="badge bg-primary-subtle text-primary">2</span> {t("Driving data and gearing")}
                     </button>
                   </li>
                   <li>

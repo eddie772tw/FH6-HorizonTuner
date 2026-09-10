@@ -1,4 +1,14 @@
 import { getTireCoefficient } from './tireCoefficients';
+import { isAeroAxleAdjustable } from './aeroAdjustability';
+
+/** Existing car profiles and dyno imports persist torque in lb-ft. */
+export const profileTorqueToNm = (lbft: number): number => lbft * 1.35582;
+export const torqueNmToProfile = (nm: number): number => nm / 1.35582;
+
+/** Convert at the profile/solver boundary without mutating persisted data. */
+export function toTuningCarParams<T extends TuningCarParams>(profile: T): T {
+  return { ...profile, maxTorque: profileTorqueToNm(profile.maxTorque) };
+}
 
 /**
  * Interface representing vehicle parameters used for tuning calculation.
@@ -9,7 +19,7 @@ export interface TuningCarParams {
   drivetrain: 'FWD' | 'RWD' | 'AWD';
   induction?: 'NA' | 'Supercharger' | 'Turbo' | 'TwinTurbo';
   maxHp: number;
-  maxTorque: number;
+  maxTorque: number; // N·m in solver inputs; persisted car profiles use lb-ft
   maxHpRpm: number;
   maxTorqueRpm: number;
   aeroBalance?: number;
@@ -50,6 +60,10 @@ export type RaceType = 'Road' | 'Rally' | 'Drag' | 'Drift';
 export interface GearingResult {
   finalDrive: number;
   gears: number[];
+  targetFit?: {
+    status: 'matched' | 'limited' | 'invalid';
+    achievedSpeedKmh?: number;
+  };
 }
 
 export interface ChassisTuningResult {
@@ -119,6 +133,26 @@ export function calcGearRpm(
 export interface GearingSecondaryCorrection {
   simulatedTopSpeed?: number; // Simulated/Theoretical top speed from initial gearing (km/h)
   softMaxSpeed?: number;      // Transmission preview soft max speed limit cap (km/h)
+  targetSpeedKmh?: number; // Explicit event target, not the graph axis or a capability estimate.
+  targetRpm?: number; // Engine RPM at the requested speed in the highest active gear.
+}
+
+
+export type GearingCorrectionMode = 'automatic' | 'event' | 'legacy';
+export function resolveWorkflowGearingCorrection(input: GearingSecondaryCorrection & { correctionMode?: GearingCorrectionMode }): GearingSecondaryCorrection | undefined {
+  if (input.correctionMode === 'event') return { targetSpeedKmh: input.targetSpeedKmh, targetRpm: input.targetRpm };
+  if (input.correctionMode === 'legacy') return { simulatedTopSpeed: input.simulatedTopSpeed, softMaxSpeed: input.softMaxSpeed };
+  return undefined;
+}
+/** Nominal driven-tire geometry; AWD uses rear geometry as the existing AEGO convention. */
+export function getGearingTireRadius(carParams: TuningCarParams | null): number {
+  const front = carParams?.drivetrain === 'FWD';
+  const positive = (value: number | undefined, fallback: number) =>
+    Number.isFinite(value) && value! > 0 ? value! : fallback;
+  const width = positive(front ? carParams?.frontTireWidth : carParams?.rearTireWidth, 245);
+  const aspect = positive(front ? carParams?.frontTireAspect : carParams?.rearTireAspect, 40);
+  const rim = positive(front ? carParams?.frontTireRim : carParams?.rearTireRim, 18);
+  return (2 * width * aspect / 100 + rim * 25.4) / 2000;
 }
 
 const AEGO_FINAL_DRIVE_MIN = 2.0;
@@ -141,7 +175,8 @@ export function getTargetTopGearRatio(numGears: number): number {
 
 /**
  * AEGO (Adaptive Envelope & Gearing Optimization) Algorithm
- * Generates custom, physically-sound gearing setup for different race goals.
+ * Generates gearing priors for different race goals; empirical speed and grip
+ * constants are not a calibrated FH6 power/traction model.
  * Supports secondary correction based on in-game simulated top speed & soft cap.
  */
 export function calculateAEGOGearing(
@@ -151,6 +186,8 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  numGears = Number.isFinite(numGears) ? Math.max(1, Math.min(10, Math.trunc(numGears))) : 6;
+  maxRpm = Number.isFinite(maxRpm) && maxRpm > 0 ? maxRpm : 8000;
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
@@ -166,17 +203,13 @@ export function calculateAEGOGearing(
   }
 
   // Advanced variables
-  const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
   const tireType = carParams?.tireType;
 
   // Determine active tire size based on drivetrain
-  const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
-  const ar = (drivetrain === 'FWD' ? carParams?.frontTireAspect : carParams?.rearTireAspect) ?? 40;
-  const sRim = (drivetrain === 'FWD' ? carParams?.frontTireRim : carParams?.rearTireRim) ?? 18;
-
   // Tire Circumference (m)
-  const C = ((((wTire * ar) / 100) * 2 + sRim * 25.4) * Math.PI) / 1000;
+  const C = 2 * Math.PI * getGearingTireRadius(carParams);
+  const hasEventTarget = secondaryCorrection?.targetSpeedKmh !== undefined || secondaryCorrection?.targetRpm !== undefined;
 
   const fDrive = drivetrain === 'AWD' ? 1.0 : (drivetrain === 'RWD' ? 0.6 : 0.4);
   const fTire = getTireCoefficient(tireType);
@@ -225,7 +258,8 @@ export function calculateAEGOGearing(
   } else if (raceGoal === 'Drag') {
     // Drag Profile - 4-Speed Hard Constraint Meta with Power-Calibrated Top Speed
     const hpPerKg = weight > 0 ? maxHp / weight : 0.5;
-    const vDragTop = 410.0 * Math.pow(hpPerKg, 0.30) * (1 + 0.12 * aeroEfficiency);
+    // Aero inputs are excluded from the current mechanical tuning study.
+    const vDragTop = 410.0 * Math.pow(hpPerKg, 0.30);
 
     const calcGears = Math.min(4, numGears);
     gears = new Array(numGears).fill(0);
@@ -254,7 +288,7 @@ export function calculateAEGOGearing(
   } else {
     // Road / Circuit (Default) - Closed-loop Geometric Step Ratio Smooth Correction Model
     const kTrack = 0.95;
-    const vTarget = Math.pow(maxHp, 1 / 3) * 37.0 * (1 + 0.12 * aeroEfficiency);
+    const vTarget = Math.pow(maxHp, 1 / 3) * 37.0;
     const vCircuit = vTarget * kTrack;
     const targetTopGear = getTargetTopGearRatio(numGears);
 
@@ -301,7 +335,7 @@ export function calculateAEGOGearing(
   }
 
   // Secondary Correction Mechanism (FD-First Macro Scaling with Top-Gear Usability Protection)
-  if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
+  if (!hasEventTarget && secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
     const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
     const tireRadiusM = C / (2 * Math.PI);
     const topGearIdx = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) - 1 : numGears - 1;
@@ -403,16 +437,23 @@ export function calculateAEGOGearing(
     return Math.round(ratio * 100) / 100;
   });
 
-  // Force monotonic decrease and powerband shift RPM bound
+  // Preserve ordering after rounding. Peak-power RPM alone cannot bound shift
+  // recovery: optimal shifts depend on wheel force across the full power curve.
+  // Capping every step at peak RPM / redline also destroys the solved top ratio.
   const monotonicLimit = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : roundedGears.length;
   const maxStepRatioRounded = (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
-    ? (rpmHp + 50) / maxRpm
+    ? 1
     : 0.92;
 
   for (let i = 1; i < monotonicLimit; i++) {
+     // Keep the explicit legacy top-gear spacing guard after redistribution;
+     // it is a compatibility heuristic, not a peak-power RPM constraint.
+     const legacyTopGuard = !hasEventTarget && i === monotonicLimit - 1
+       && !!(secondaryCorrection?.simulatedTopSpeed || secondaryCorrection?.softMaxSpeed);
+     const stepLimit = legacyTopGuard ? Math.min(0.90, maxStepRatioRounded) : maxStepRatioRounded;
      const maxAllowedRatio = Math.min(
        Math.round((roundedGears[i - 1] - 0.01) * 100) / 100,
-       Math.floor(roundedGears[i - 1] * maxStepRatioRounded * 100) / 100
+       Math.floor(roundedGears[i - 1] * stepLimit * 100) / 100
      );
      if (roundedGears[i] > maxAllowedRatio) {
         roundedGears[i] = Math.max(0.40, maxAllowedRatio);
@@ -428,16 +469,43 @@ export function calculateAEGOGearing(
      }
   }
 
-  return {
+  const baseline: GearingResult = {
     finalDrive: roundedFD,
     gears: roundedGears
   };
+  if (!hasEventTarget) return baseline;
+
+  const speed = secondaryCorrection?.targetSpeedKmh;
+  const rpm = secondaryCorrection?.targetRpm;
+  if (!Number.isFinite(speed) || !Number.isFinite(rpm) || speed! <= 0 || rpm! <= 0 || rpm! > maxRpm) {
+    return { ...baseline, targetFit: { status: 'invalid' } };
+  }
+
+  // Kinematic fit only: g * FD = RPM * circumference * 60 / (speed_kmh * 1000).
+  // Scale FD first, then all gears equally when FD saturates, preserving RPM drops.
+  // These are legacy solver bounds, not measured per-transmission FH6 limits.
+  const topIndex = monotonicLimit - 1;
+  const totalRatio = rpm! * C * 60 / (speed! * 1000);
+  const fittedFd = Math.round(Math.max(AEGO_FINAL_DRIVE_MIN,
+    Math.min(AEGO_FINAL_DRIVE_MAX, totalRatio / roundedGears[topIndex])) * 100) / 100;
+  const scale = totalRatio / (fittedFd * roundedGears[topIndex]);
+  const fittedGears = roundedGears.map(ratio => Math.round(ratio * scale * 100) / 100);
+  const usable = fittedGears.every((ratio, index) => Number.isFinite(ratio) && ratio >= 0.4 && ratio <= 6 &&
+    (index === 0 || index > topIndex || ratio < fittedGears[index - 1]));
+  const result = usable ? { finalDrive: fittedFd, gears: fittedGears } : baseline;
+  const achievedSpeedKmh = calcGearSpeed(rpm!, result.gears[topIndex], result.finalDrive, C / (2 * Math.PI)) * 3.6;
+  return { ...result, targetFit: {
+    status: usable && Math.abs(achievedSpeedKmh / speed! - 1) <= 0.01 ? 'matched' : 'limited',
+    achievedSpeedKmh
+  } };
 }
 
 /**
  * Resolves aerodynamic downforce for front and rear axles (in kgf).
- * If values are <= 0, triggers automatic derivation based on weight distribution
- * and drivetrain modifier.
+ * Positive values are captured loads and are retained even when their axle is
+ * locked. A zero or missing value is auto-derived only for an adjustable axle;
+ * on a locked axle it remains an unknown/no-load value instead of becoming a
+ * synthetic suspension load.
  */
 export function resolveAeroDownforce(params: TuningCarParams): { front: number; rear: number } {
   const weightKg = params.weight > 0 ? params.weight : 1400;
@@ -447,6 +515,8 @@ export function resolveAeroDownforce(params: TuningCarParams): { front: number; 
 
   const fVal = params.aero_downforce_front ?? 0;
   const rVal = params.aero_downforce_rear ?? 0;
+  const frontAdjustable = isAeroAxleAdjustable(params.adjustability?.aero, 'front');
+  const rearAdjustable = isAeroAxleAdjustable(params.adjustability?.aero, 'rear');
 
   // Drivetrain aero modifier from reference document:
   // RWD: 0.82 (more rear downforce)
@@ -460,19 +530,21 @@ export function resolveAeroDownforce(params: TuningCarParams): { front: number; 
 
   const ratio = (wf / wr) * drivetrainModifier;
 
-  // 2. Only front > 0, rear <= 0 -> Derive rear
+  // 2. Only front > 0, rear <= 0 -> Derive rear when that control exists.
   if (fVal > 0 && rVal <= 0) {
+    if (!rearAdjustable) return { front: Math.round(fVal * 10) / 10, rear: 0 };
     const derivedRear = fVal / ratio;
     return { front: Math.round(fVal * 10) / 10, rear: Math.round(derivedRear * 10) / 10 };
   }
 
-  // 3. Only rear > 0, front <= 0 -> Derive front
+  // 3. Only rear > 0, front <= 0 -> Derive front when that control exists.
   if (rVal > 0 && fVal <= 0) {
+    if (!frontAdjustable) return { front: 0, rear: Math.round(rVal * 10) / 10 };
     const derivedFront = rVal * ratio;
     return { front: Math.round(derivedFront * 10) / 10, rear: Math.round(rVal * 10) / 10 };
   }
 
-  // 4. Both <= 0 -> Derive both from estimated total target downforce
+  // 4. Both <= 0 -> Derive only adjustable axes from estimated total downforce.
   // Target total downforce = 20% of vehicle weight in lbs (converted to kgf)
   const weightLbs = weightKg * 2.20462;
   const totalTargetLbs = weightLbs * 0.20;
@@ -483,8 +555,8 @@ export function resolveAeroDownforce(params: TuningCarParams): { front: number; 
   const derivedFront = totalTargetKgf - derivedRear;
 
   return {
-    front: Math.round(derivedFront * 10) / 10,
-    rear: Math.round(derivedRear * 10) / 10
+    front: frontAdjustable ? Math.round(derivedFront * 10) / 10 : 0,
+    rear: rearAdjustable ? Math.round(derivedRear * 10) / 10 : 0
   };
 }
 
@@ -511,9 +583,6 @@ export function calculateChassisTuning(
   const hMaxF = carParams?.height_front_max ?? 25.0;
   const hMinR = carParams?.height_rear_min ?? 10.0;
   const hMaxR = carParams?.height_rear_max ?? 25.0;
-
-  // Aero resolution
-  const aero = carParams ? resolveAeroDownforce(carParams) : { front: 50, rear: 50 };
 
   let arbF = 1.0;
   let arbR = 1.0;
@@ -641,13 +710,12 @@ export function calculateChassisTuning(
       arbR = 64.0 * (wr / 100) + 1.0;
     }
 
-    // 2. Springs with Aero Compensation
+    // 2. Mechanical starting point. Aero package/downforce inputs intentionally
+    // do not affect this study; range/weight allocation remains an uncalibrated prior.
     const baseSpringF = (kMaxF - kMinF) * (wf / 100) + kMinF;
     const baseSpringR = (kMaxR - kMinR) * (wr / 100) + kMinR;
-    const deltaKf = (aero.front / 10) * 0.5;
-    const deltaKr = (aero.rear / 25) * 0.5;
-    springF = baseSpringF + deltaKf;
-    springR = baseSpringR + deltaKr;
+    springF = baseSpringF;
+    springR = baseSpringR;
 
     // 3. Ride Height (+3 clicks above min)
     heightF = hMinF + 3 * click;

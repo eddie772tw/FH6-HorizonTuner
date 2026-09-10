@@ -3,6 +3,14 @@ import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 
 import { Season } from '../../../utils/tuningMath';
+import {
+  displayPowerToProfile,
+  displayTorqueToProfile,
+  displayWeightToProfile,
+  profilePowerToDisplay,
+  profileTorqueToDisplay,
+  profileWeightToDisplay,
+} from '../../../utils/profileUnitConversions';
 
 interface Step1GoalSetupProps {
   selectedRaceGoal: string;
@@ -44,25 +52,32 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   onOpenUnitSettings,
   onProceed
 }) => {
+  const [saveState, setSaveState] = React.useState<'idle' | 'saving' | 'failed'>('idle');
+  const handleProceed = async () => {
+    setSaveState('saving');
+    try {
+      await onProceed();
+      setSaveState('idle');
+    } catch {
+      setSaveState('failed');
+    }
+  };
   const {
     settings,
     convertSpringRate,
     convertSpringRateToKgfmm,
     convertHeight,
     convertHeightToCm,
-    convertForce,
-    convertForceToKgf,
     convertPower,
     convertTorque,
     convertTirePressureFromPsi,
     t
   } = useSettings();
 
-  const displayPower = (hp: number) => convertPower(hp * 745.7);
-  const powerToHp = (value: number) => settings.units.power === 'kw'
-    ? value / 0.7457
-    : settings.units.power === 'ps' ? value / 1.01387 : value;
-  const torqueToNm = (value: number) => settings.units.torque === 'lbft' ? value / 0.73756 : value;
+  const displayPower = (hp: number) => ({
+    value: profilePowerToDisplay(hp, settings.units),
+    label: convertPower(0).label,
+  });
   const seasonalPressure = convertTirePressureFromPsi(0.5);
 
   const applyDefaultLimits = () => {
@@ -77,8 +92,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
     updateParam('height_rear_max', 25.0);
   };
 
-  const isFrontAutoAero = (carParams?.aero_downforce_front ?? 0) <= 0;
-  const isRearAutoAero = (carParams?.aero_downforce_rear ?? 0) <= 0;
 
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}>
@@ -97,13 +110,14 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             aria-label={!hasCoreParams ? t("Please set basic vehicle parameters in Step 1 to proceed.") : undefined}
             style={{ display: 'inline-block', cursor: !hasCoreParams ? 'not-allowed' : 'auto' }}
           >
-            <button type="button" className="btn btn-primary btn-sm fw-bold" disabled={!hasCoreParams} style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }} onClick={() => void onProceed()}>
-              {t("Save & Proceed")} &gt;
+            <button type="button" className="btn btn-primary btn-sm fw-bold" disabled={!hasCoreParams || saveState === 'saving'} style={{ pointerEvents: !hasCoreParams ? 'none' : 'auto' }} onClick={() => void handleProceed()}>
+              {t(saveState === 'saving' ? "Saving..." : "Save & prepare driving data")} &gt;
             </button>
           </span>
         </div>
       </div>
 
+      {saveState === 'failed' && <div role="alert" className="text-danger">{t("Save failed.")}</div>}
       {/* Select Goal & Season Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', background: 'rgba(0, 180, 255, 0.05)', border: '1px solid rgba(0, 180, 255, 0.15)', padding: '1.2rem', borderRadius: '8px' }}>
@@ -121,7 +135,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </select>
           </div>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
-            {selectedRaceGoal === 'Road' && t("Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.")}
+            {selectedRaceGoal === 'Road' && t("Road / Circuit settings use mechanical chassis and gearing formulas. Aero inputs are excluded from this workflow.")}
             {selectedRaceGoal === 'Drift' && t("Drift mode configures extreme front-soft rear-stiff anti-roll bars, softened springs, and wheelspin-focused differential.")}
             {selectedRaceGoal === 'Rally' && t("Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.")}
             {selectedRaceGoal === 'Drag' && t("Drag setting sets rake angle ride height, diagonal extreme damping, and 100% differential lock for maximum launch traction.")}
@@ -151,6 +165,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
       {/* Vehicle Parameters Form */}
       <div style={{ background: 'var(--surface-1)', padding: '1.2rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+        <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Copy the weight, front weight percentage, power and torque shown for your current build. Confirm the installed tires and gearbox. Existing profile values may be defaults; they are not automatically read from the game.')}</p>
+        <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('You do not need to know peak RPM, target speed or aero efficiency. The next step guides you through collecting engine data before calculating a tune.')}</p>
         
         {/* Section 1: Core Physics & Drivetrain */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
@@ -162,10 +178,10 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Weight")} ({settings.units.weight})</label>
             <input 
               type="number" 
-              value={carParams?.weight ? Math.round(settings.units.weight === 'lbs' ? carParams.weight * 2.2046 : carParams.weight) : ''} 
+              value={carParams?.weight ? profileWeightToDisplay(carParams.weight, settings.units) : ''}
               onChange={e => {
                 const val = parseFloat(e.target.value) || 0;
-                updateParam('weight', settings.units.weight === 'lbs' ? val / 2.2046 : val);
+                updateParam('weight', displayWeightToProfile(val, settings.units));
               }} 
               style={{ ...inputStyle, width: '120px' }} 
             />
@@ -232,22 +248,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
 
         </div>
 
-        {/* Dynamic Section: Aero Efficiency (Road / Circuit Goal) */}
-        {selectedRaceGoal === 'Road' && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
-            <div>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{t("Aero Efficiency (E)")}</span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '0.6rem' }}>{t("(Used for circuit top speed aero drag scaling)")}</span>
-            </div>
-            <input 
-              type="number" step="0.05" min="0.10" max="1.00" 
-              value={carParams?.aeroEfficiency ?? 0.50} 
-              onChange={e => updateParam('aeroEfficiency', parseFloat(e.target.value) || 0.50)} 
-              style={{ ...inputStyle, width: '80px', textAlign: 'center' }} 
-            />
-          </div>
-        )}
-
         {/* Section 2: Engine Power & Gearbox */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
           {t("Power Specs & Transmission")}
@@ -255,20 +255,14 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 2rem', marginBottom: '1.2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Power")} ({displayPower(0).label})</label>
-            <input type="number" value={Number(displayPower(carParams?.maxHp || 0).value.toFixed(1))} onChange={e => updateParam('maxHp', powerToHp(parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '120px' }} step="10" />
+            <input type="number" value={profilePowerToDisplay(carParams?.maxHp || 0, settings.units)} onChange={e => updateParam('maxHp', displayPowerToProfile(parseFloat(e.target.value) || 0, settings.units))} style={{ ...inputStyle, width: '120px' }} step="any" />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max HP RPM (rpm)")}</label>
-            <input type="number" value={carParams?.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
-          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque")} ({convertTorque(0).label})</label>
-            <input type="number" value={Number(convertTorque(carParams?.maxTorque || 0).value.toFixed(1))} onChange={e => updateParam('maxTorque', torqueToNm(parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '120px' }} step="10" />
+            <input type="number" value={profileTorqueToDisplay(carParams?.maxTorque || 0, settings.units)} onChange={e => updateParam('maxTorque', displayTorqueToProfile(parseFloat(e.target.value) || 0, settings.units))} style={{ ...inputStyle, width: '120px' }} step="any" />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque RPM (rpm)")}</label>
-            <input type="number" value={carParams?.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
-          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gears Count")}</label>
             <input 
@@ -374,59 +368,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Section 4: Aerodynamic Downforce with Auto-Derivation Checkbox */}
-        <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
-          {t("Aerodynamic Downforce")} ({convertForce(0).label})
-        </h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 2rem', marginBottom: '0.5rem' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Front Downforce")} ({convertForce(0).label})</label>
-            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              <input 
-                type="number" 
-                disabled={isFrontAutoAero} 
-                value={isFrontAutoAero ? 0 : Number(convertForce(carParams?.aero_downforce_front || 0).value.toFixed(1))}
-                onChange={e => updateParam('aero_downforce_front', Math.max(0, convertForceToKgf(parseFloat(e.target.value) || 0)))}
-                style={{ ...inputStyle, width: '80px', opacity: isFrontAutoAero ? 0.5 : 1 }} 
-              />
-              <label style={{ fontSize: '0.78rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={isFrontAutoAero} 
-                  onChange={e => updateParam('aero_downforce_front', e.target.checked ? 0 : 50)} 
-                />
-                {t("Auto-Derive (0)")}
-              </label>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Rear Downforce")} ({convertForce(0).label})</label>
-            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              <input 
-                type="number" 
-                disabled={isRearAutoAero} 
-                value={isRearAutoAero ? 0 : Number(convertForce(carParams?.aero_downforce_rear || 0).value.toFixed(1))}
-                onChange={e => updateParam('aero_downforce_rear', Math.max(0, convertForceToKgf(parseFloat(e.target.value) || 0)))}
-                style={{ ...inputStyle, width: '80px', opacity: isRearAutoAero ? 0.5 : 1 }} 
-              />
-              <label style={{ fontSize: '0.78rem', color: 'gray', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={isRearAutoAero} 
-                  onChange={e => updateParam('aero_downforce_rear', e.target.checked ? 0 : 50)} 
-                />
-                {t("Auto-Derive (0)")}
-              </label>
-            </div>
-          </div>
-
-        </div>
-        <p style={{ margin: '0 0 1.2rem 0', color: 'gray', fontSize: '0.78rem', lineHeight: '1.3' }}>
-          * {t("Checking 'Auto-Derive (0)' locks the value to 0. Step3 will automatically compute optimal downforce balance from vehicle weight distribution and drivetrain modifier.")}
-        </p>
 
         {/* Section 5: Tire Dimensions */}
         <h4 style={{ margin: '0 0 0.8rem 0', color: 'var(--text-secondary)', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
