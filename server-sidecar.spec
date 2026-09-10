@@ -26,6 +26,12 @@ added_files = [
     ('hud_overlay', 'hud_overlay'),
 ]
 
+# MCP solvers execute the same generated TypeScript artifact as the CLI.
+solver_bundle = os.path.join('frontend', 'dist-solver', 'tuning-solver.mjs')
+if not os.path.isfile(solver_bundle):
+    raise RuntimeError('Run pnpm -C frontend run build:solver before packaging the sidecar.')
+added_files.append((solver_bundle, 'tuning-solver'))
+
 # Release builds may provide the public Discord Application ID through a
 # runner-only generated file. Never require it for local/CI test builds.
 discord_application_id_file = 'backend/discord_application_id.json'

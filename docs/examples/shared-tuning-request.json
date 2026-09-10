@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "tuning-solver/v1",
+  "action": "workflow",
+  "goal": "Road",
+  "season": "Summer",
+  "torqueUnit": "Nm",
+  "params": {
+    "weight": 1200,
+    "weight_distribution": 50,
+    "drivetrain": "RWD",
+    "maxHp": 250,
+    "maxTorque": 300,
+    "maxHpRpm": 7000,
+    "maxTorqueRpm": 5000,
+    "frontTireWidth": 225,
+    "frontTireAspect": 45,
+    "frontTireRim": 17,
+    "rearTireWidth": 245,
+    "rearTireAspect": 40,
+    "rearTireRim": 17,
+    "tireType": "Semi-Slick",
+    "spring_front_min": 4,
+    "spring_front_max": 18,
+    "spring_rear_min": 4,
+    "spring_rear_max": 18,
+    "height_front_min": 9,
+    "height_front_max": 16,
+    "height_rear_min": 9,
+    "height_rear_max": 16
+  },
+  "numGears": 6,
+  "engine": { "maxRpm": 8000, "maxHpRpm": 7000, "maxTorqueRpm": 5000 }
+}

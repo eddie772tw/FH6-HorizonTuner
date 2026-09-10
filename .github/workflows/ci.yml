@@ -90,6 +90,14 @@ jobs:
         if-no-files-found: error
         retention-days: 1
 
+    - name: Publish shared tuning solver
+      uses: actions/upload-artifact@v7
+      with:
+        name: tuning-solver-${{ github.sha }}
+        path: frontend/dist-solver
+        if-no-files-found: error
+        retention-days: 1
+
     - name: Check Frontend Security Audit
       shell: bash
       run: |
@@ -161,7 +169,7 @@ jobs:
 
   build-portable-sidecar:
     name: Verify & Build Portable Sidecar
-    needs: [backend-static-check]
+    needs: [backend-static-check, frontend-build-test]
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
@@ -191,6 +199,12 @@ jobs:
 
     - name: Install PyInstaller through uv
       run: uv pip install "pyinstaller>=6.10,<7.0"
+
+    - name: Download shared tuning solver from this commit
+      uses: actions/download-artifact@v8
+      with:
+        name: tuning-solver-${{ github.sha }}
+        path: frontend/dist-solver
 
     - name: Build Python sidecar executable
       run: >

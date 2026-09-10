@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -423,7 +424,10 @@ class McpToolManager:
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Dispatch tool call by name."""
         try:
-            result = self._dispatch_sync(name, arguments)
+            if name in {"run_dev_tuning_solver", "run_gearing_solver"}:
+                result = await asyncio.to_thread(self._dispatch_sync, name, arguments)
+            else:
+                result = self._dispatch_sync(name, arguments)
             return {
                 "content": [
                     {

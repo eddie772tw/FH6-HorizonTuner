@@ -131,33 +131,42 @@ def test_search_cars(mcp_service):
     assert awd_cars[0]["name"] == "2023 Subaru WRX"
 
 
-def test_tuning_solver_deterministic_output(mcp_service):
+def test_tuning_solver_delegates_to_shared_client(mcp_service, monkeypatch):
+    expected = {"anti_roll_bars": {"front": 12.3, "rear": 8.7}}
+
+    def solve(**kwargs):
+        assert kwargs["weight_kg"] == 1500
+        assert kwargs["front_weight_bias"] == 0.54
+        assert kwargs["params"]["spring_front_max"] == 18
+        return expected
+
+    monkeypatch.setattr("backend.mcp.service.TuningMathClient.calculate_chassis", solve)
     car_params = {
         "weight_kg": 1500,
         "front_weight_bias": 0.54,
         "drivetrain": "RWD",
         "max_rpm": 7500,
+        "spring_front_max": 18,
     }
     res = mcp_service.run_dev_tuning_solver(car_params, purpose="road")
-    setup = res["calculated_setup"]
-    assert "anti_roll_bars" in setup
-    assert (
-        setup["anti_roll_bars"]["front"] > setup["anti_roll_bars"]["rear"]
-    )  # 54% front bias
-    assert setup["dampers"]["rebound_front"] > setup["dampers"]["bump_front"]
+    assert res["calculated_setup"] is expected
 
 
-def test_gearing_solver(mcp_service):
+def test_gearing_solver(mcp_service, monkeypatch):
+    expected = {"final_drive": 4.21}
+
+    def solve(*args):
+        assert args == (7500, 6800, 300, 6, 65.0)
+        return expected
+
+    monkeypatch.setattr("backend.mcp.service.TuningMathClient.calculate_gearing", solve)
     res = mcp_service.run_gearing_solver(
         max_rpm=7500,
         peak_hp_rpm=6800,
         top_speed_kmh=300,
         gears_count=6,
     )
-    assert res["gears_count"] == 6
-    assert len(res["gears"]) == 6
-    assert res["final_drive"] > 0
-    assert res["gears"][0]["ratio"] > res["gears"][1]["ratio"]
+    assert res is expected
 
 
 def test_diagnose_telemetry_handling(mcp_service):

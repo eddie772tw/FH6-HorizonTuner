@@ -14,7 +14,7 @@ from backend.agent_cli import (
     BackendClient,
     CarDatabase,
     RuntimeContext,
-    TuningMathSolver,
+    TuningMathClient,
     main,
 )
 
@@ -44,90 +44,111 @@ def test_runtime_context_discovers_web_port(tmp_path):
 
 
 # =============================================================================
-# 2. Pure Math Solver Invariant Tests
+# 2. CLI delegation and serialization (physics parity is tested in Vitest)
 # =============================================================================
 
 
-def test_chassis_solver_road_awd():
-    res = TuningMathSolver.calculate_chassis(
-        weight_kg=1500.0,
-        front_weight_bias=54.0,
-        drivetrain="AWD",
-        purpose="road",
+@pytest.fixture
+def solver_response(monkeypatch):
+    # Deliberately arbitrary values: CLI must pass these through, not recalculate.
+    applied = {
+        "tirePressureFront": 27.3,
+        "tirePressureRear": 28.7,
+        "camberFront": -1.7,
+        "camberRear": -0.9,
+        "toeFront": 0.2,
+        "toeRear": -0.1,
+        "caster": 6.3,
+        "arbFront": 3.1,
+        "arbRear": 55.7,
+        "springsFront": 11.7,
+        "springsRear": 13.2,
+        "rideHeightFront": 9.5,
+        "rideHeightRear": 10.5,
+        "reboundFront": 10.2,
+        "reboundRear": 9.3,
+        "bumpFront": 6.1,
+        "bumpRear": 5.6,
+        "diffAccelRear": 63,
+        "diffDecelRear": 22,
+        "diffAccelFront": 14,
+        "diffDecelFront": 0,
+        "diffCenterRear": 68,
+    }
+    chassis = {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "AWD",
+        "anti_roll_bars": {"front": 3.1, "rear": 55.7},
+        "appliedSetup": applied,
+        "solverInput": {"params": {"weight": 1450, "drivetrain": "AWD"}},
+    }
+    gearing = {
+        "final_drive": 4.21,
+        "gears_count": 6,
+        "gears": [{"gear": i, "ratio": 1.0} for i in range(1, 7)],
+    }
+    response = {
+        "schemaVersion": "tuning-solver/v1",
+        "chassis": chassis,
+        "gearing": gearing,
+        "appliedSetup": applied,
+    }
+    calls = []
+
+    def fake_solve(request):
+        calls.append(request)
+        return response
+
+    monkeypatch.setattr("backend.tuning_solver_client.solve_tuning", fake_solve)
+    return response, calls
+
+
+def test_chassis_delegates_inputs_without_own_formula(solver_response):
+    response, calls = solver_response
+    result = TuningMathClient.calculate_chassis(1300, 0.5, "RWD", "drift", 100, 200)
+    assert result is response["chassis"]
+    assert calls[0]["goal"] == "Drift"
+    assert calls[0]["params"]["weight"] == 1300
+    assert calls[0]["params"]["weight_distribution"] == 50
+    assert calls[0]["ignoredLegacyAeroLbf"]["front"] == 100
+    assert calls[0]["params"]["aero_downforce_front"] == 0
+
+
+def test_gearing_delegates_explicit_target_and_goal(solver_response):
+    response, calls = solver_response
+    result = TuningMathClient.calculate_gearing(8000, 7200, 280, 6, purpose="rally")
+    assert result is response["gearing"]
+    assert calls[0]["goal"] == "Rally"
+    assert calls[0]["correction"] == {"targetSpeedKmh": 280, "targetRpm": 7200}
+    assert calls[0]["tireDiameterCm"] == 65
+
+
+def test_export_applied_setup_preserves_shared_units_and_height(solver_response):
+    response, _ = solver_response
+    applied = TuningMathClient.export_applied_setup(
+        response["chassis"], response["gearing"]
     )
-    assert res["schemaVersion"] == "tuning-dev/v1"
-    assert res["goal"] == "road"
-    assert res["drivetrain"] == "AWD"
-    assert res["anti_roll_bars"]["front"] <= 5.0
-    assert res["anti_roll_bars"]["rear"] >= 50.0
-    assert res["springs"]["front_lbs_in"] > 0
-    assert res["springs"]["rear_lbs_in"] > 0
-    assert res["dampers"]["bump_front"] == round(
-        res["dampers"]["rebound_front"] * 0.60, 1
+    assert applied == {**response["appliedSetup"], "finalDrive": 4.21}
+    assert "finalDrive" not in response["appliedSetup"]
+
+
+def test_export_preset_format(solver_response):
+    response, _ = solver_response
+    preset = TuningMathClient.export_preset_format(
+        "302", "S1", response["chassis"], response["gearing"]
     )
-    assert res["differential"]["center_balance"] == 65
-
-
-def test_chassis_solver_drift_rwd():
-    res = TuningMathSolver.calculate_chassis(
-        weight_kg=1300.0,
-        front_weight_bias=50.0,
-        drivetrain="RWD",
-        purpose="drift",
-    )
-    assert res["goal"] == "drift"
-    assert res["anti_roll_bars"]["front"] == 10.0
-    assert res["anti_roll_bars"]["rear"] == 50.0
-    assert res["dampers"]["rebound_front"] == 6.0
-    assert res["dampers"]["rebound_rear"] == 6.0
-    assert res["differential"]["rear_accel"] == 100
-    assert res["differential"]["rear_decel"] == 100
-    assert res["alignment"]["camber_front_deg"] == -3.5
-
-
-def test_gearing_solver():
-    res = TuningMathSolver.calculate_gearing(
-        max_rpm=8000.0,
-        peak_hp_rpm=7200.0,
-        top_speed_kmh=280.0,
-        gears_count=6,
-    )
-    assert "error" not in res
-    assert res["gears_count"] == 6
-    assert res["final_drive"] > 0
-    assert len(res["gears"]) == 6
-    assert res["gears"][0]["ratio"] > res["gears"][-1]["ratio"]
-    assert (
-        res["gears"][0]["speed_at_redline_kmh"]
-        < res["gears"][-1]["speed_at_redline_kmh"]
-    )
-
-
-def test_export_applied_setup():
-    chassis = TuningMathSolver.calculate_chassis(1400.0, 52.0, "AWD", "road")
-    gearing = TuningMathSolver.calculate_gearing(8000.0, 7200.0, 300.0, 6)
-    applied = TuningMathSolver.export_applied_setup(chassis, gearing)
-
-    assert "tirePressureFront" in applied
-    assert "camberFront" in applied
-    assert "arbFront" in applied
-    assert "springsFront" in applied
-    assert "diffAccelRear" in applied
-    assert "diffCenterRear" in applied
-    assert applied["finalDrive"] == gearing["final_drive"]
-
-
-def test_export_preset_format():
-    chassis = TuningMathSolver.calculate_chassis(1400.0, 52.0, "RWD", "road")
-    gearing = TuningMathSolver.calculate_gearing(8000.0, 7200.0, 300.0, 6)
-    preset = TuningMathSolver.export_preset_format("302", "S1", chassis, gearing)
-
     assert preset["schemaVersion"] == "tuning-preset/v1"
+    assert preset["gameBuild"] == "unknown"
     assert preset["vehicleClass"] == "S1"
-    assert preset["profileUsed"] == "road"
-    assert "arb_front" in preset["parameters"]
-    assert "final_drive" in preset["parameters"]
-    assert "chassis" in preset["solverOutputSnapshot"]
+    assert (
+        preset["parameters"]["spring_front"] == response["appliedSetup"]["springsFront"]
+    )
+    assert (
+        preset["parameters"]["ride_height_f"]
+        == response["appliedSetup"]["rideHeightFront"]
+    )
+    assert preset["parameters"]["final_drive"] == response["gearing"]["final_drive"]
 
 
 # =============================================================================
@@ -152,7 +173,7 @@ def test_car_database_search(tmp_path):
 # =============================================================================
 
 
-def test_cli_solve_chassis_json(capsys):
+def test_cli_solve_chassis_json(capsys, solver_response):
     cmd = [
         "solve",
         "chassis",
@@ -175,7 +196,7 @@ def test_cli_solve_chassis_json(capsys):
     assert data["anti_roll_bars"]["front"] == 3.1
 
 
-def test_cli_solve_chassis_export_applied_setup(capsys):
+def test_cli_solve_chassis_export_applied_setup(capsys, solver_response):
     cmd = [
         "solve",
         "chassis",
@@ -197,7 +218,7 @@ def test_cli_solve_chassis_export_applied_setup(capsys):
     assert "springsFront" in data
 
 
-def test_cli_solve_gearing_json(capsys):
+def test_cli_solve_gearing_json(capsys, solver_response):
     cmd = [
         "solve",
         "gearing",
@@ -220,7 +241,7 @@ def test_cli_solve_gearing_json(capsys):
     assert len(data["gears"]) == 6
 
 
-def test_cli_solve_full_and_save(tmp_path, capsys):
+def test_cli_solve_full_and_save(tmp_path, capsys, solver_response):
     cmd = [
         "solve",
         "full",

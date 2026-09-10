@@ -136,6 +136,8 @@ To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
 
 ### 2. Launching the Tool
 
+For agent development, use `fh6-agent.bat solve workflow --input docs/examples/shared-tuning-request.json --json` to call the same TypeScript functions as the UI. Source checkouts require Node.js 22.12+ and installed frontend dependencies. There is no approximate Python solver fallback. See the [shared solver contract](docs/shared-tuning-solver.md).
+
 The project provides highly automated launcher scripts:
 * **Double-click `start_all.bat`** (Recommended full launch):
   - Requires `uv`, which selects managed CPython 3.13 and creates the project `.venv`.

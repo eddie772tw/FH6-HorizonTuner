@@ -2408,3 +2408,12 @@
 - Python／工具測試 304 passed、9 deselected；前端 99 files／704 passed。新增真實子程序匯入逾時、缺少模組、HTTP 503／200、無效埠檔測試；既有 WinRT 模組契約轉接至新的檢查清單，未刪除所需模組。
 - 修正後實際執行 `start_all.bat` exit 0，HTTP 8001 API 與 Vite 1420 均回應 200，隔離工作樹 Tauri 視窗已啟動並保留供使用者操作。原始工作樹仍為乾淨 main。採用 `portable-release-validation` 與 `agent-governance-audit`，沒有遊戲測試或發行打包驗收。
 - 提交前遠端分支已重整至 9e45a95；僅將本次修正接到最新遠端，保留協作者內容。整合後重跑 Python／工具測試 321 passed、9 deselected，前端 704 passed、TypeScript／Vite 建置與 Ruff 201 files 通過。
+
+### 2026-09-10：CLI／MCP 算牌委派前端共用來源
+
+- 比對 rebase 新增 CLI 與 MCP 算牌，確認兩份 Python 公式均與一般前端底盤／AEGO 不同：彈簧基準與空力補償、差速器、胎壓、定位與齒比有差異；舊 AppliedTuningSetup 又把 lb/in 彈簧寫進 kgf/mm 欄位，車高固定填 12 cm。
+- 移除 Python 算牌副本。CLI／MCP 透過 `tuning_solver_client.py` 呼叫 `solverService.ts`，後者只組合 `calculateWorkflowTuning`／共用 AEGO 核心、`buildBaselineSetup` 及既有單位轉換。`tuningMath.ts` 僅公開既有半徑入口，沒有改公式或升格研究模型。新增 `solve workflow --input` 支援完整 UI 參數、季節、扭力來源單位、引擎門檻與事件目標；簡易 CLI 仍明示沿用通用 fallback。
+- Source runner 讀取當前 TS，打包 runner 從相同來源產生；CLI／sidecar spec 與 CI artifact 傳遞納入產物。執行算牌需 Node.js 22.12+，缺 runtime／bundle、錯誤協定與 30 秒逾時均明確失敗，不退回 Python 公式。MCP 以 worker thread 等待算牌；批次入口優先 source，保留返回碼，CLI JSON 改為 UTF-8，避免 CP950 的角度符號破壞傳輸。
+- 驗證四用途×三驅動×四季及單位、幾何、引擎門檻／目標、空力排除、真實 headless runner，共 53 項新增前端契約測試；總前端 757 passed，Python／工具 326 passed、9 deselected。Ruff 204 files、TypeScript／Vite／solver build、path-case 與 11.45.17 版本驗證通過。首次整套 Python 檢查抓出 source sidecar 的 import 路徑差異，修正雙入口後完整重跑通過。
+- 實際 CLI JSON、source runner 與生成 bundle 逐欄相等；真實 HTTP MCP 底盤／齒比與共用 CLI client 相等。示意 1200 kg、50:50、4–18 kgf/mm 上下限的兩軸彈簧均為 11 kgf/mm。測試未寫入真實 Preset 或操作遊戲，不代表實車性能、完整 UI 匯入或乾淨 Windows exe 發行驗收。既有溫差／症狀診斷提示不在這次一般算牌一致性範圍。
+- 採用 `modular-refactoring`、`physics-tuning-math`、`portable-release-validation`、`agent-governance-audit` 與 `pr-author-maintainer`；同步共用契約、範例、CLI 指南及雙語 README。

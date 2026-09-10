@@ -51,6 +51,8 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 - 當 UI 下壓力數值未指定 ($\le 0$) 時，以車重 20% (lbs) 結合驅動偏置 (RWD 0.82, FWD/AWD 1.05) 自動導出前後軸下壓力。
 
 ### 4. Agent CLI 調校算牌工具 (`fh6-agent`)
+- CLI 與 MCP 算牌只委派至 `backend/tuning_solver_client.py` → TypeScript `solverService.ts` → 本檔指定的前端公式；不得在 Python 新增近似公式。完整輸入優先使用 `fh6-agent.bat solve workflow --input <request.json> --json`，契約與單位見 [共用算牌契約](../../../docs/shared-tuning-solver.md)。
+- 執行需要 Node.js 22.12+；原始碼模式需要現有 frontend dependencies，打包模式需 `build:solver` 產物。缺 runtime 時明確失敗，不能恢復舊 Python 算牌。
 - Agent 可直接使用 `fh6-agent.bat solve chassis --weight <kg> --bias <%> --drive <AWD|RWD|FWD> --goal <road|drift|rally|drag> --json` 進行離線極速算牌。
 - 支援 `--export-applied-setup` 產出前端 Step 5 `AppliedSetupTable` 規格物件。
 - 支援 `fh6-agent.bat solve gearing --max-rpm <rpm> --peak-hp-rpm <rpm> --top-speed <kmh> --gears <count> --json` 進行 AEGO 齒比計算。

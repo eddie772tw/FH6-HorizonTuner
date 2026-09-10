@@ -88,6 +88,9 @@ jobs:
         uv pip install "pyinstaller>=6.10,<7.0"
         pnpm --prefix frontend install --frozen-lockfile
 
+    - name: Build shared tuning solver
+      run: pnpm --prefix frontend run build:solver
+
     - name: Build Python sidecar executable
       run: >
         python scripts/release_metrics.py

@@ -1,5 +1,7 @@
 """Tests for MCP Tools Dispatching and Validation."""
 
+import threading
+
 import pytest
 
 from backend.mcp.protocol import McpError
@@ -24,7 +26,14 @@ async def test_tool_call_get_system_settings(tool_manager):
 
 
 @pytest.mark.asyncio
-async def test_tool_call_tuning_solver(tool_manager):
+async def test_tool_call_tuning_solver(tool_manager, monkeypatch):
+    event_loop_thread = threading.get_ident()
+
+    def solve(*args, **kwargs):
+        assert threading.get_ident() != event_loop_thread
+        return {"calculated_setup": {"differential": {"rear_accel": 63}}}
+
+    monkeypatch.setattr(tool_manager.service, "run_dev_tuning_solver", solve)
     args = {
         "car_params": {
             "weight_kg": 1600,
@@ -42,7 +51,11 @@ async def test_tool_call_tuning_solver(tool_manager):
 
 
 @pytest.mark.asyncio
-async def test_tool_call_gearing_solver_missing_args(tool_manager):
+async def test_tool_call_gearing_solver_missing_args(tool_manager, monkeypatch):
+    def solve(**kwargs):
+        raise ValueError("Invalid engine input")
+
+    monkeypatch.setattr(tool_manager.service, "run_gearing_solver", solve)
     resp = await tool_manager.call_tool("run_gearing_solver", {})
     assert "error" in resp["content"][0]["text"].lower() or resp.get("isError")
 

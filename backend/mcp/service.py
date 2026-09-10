@@ -11,7 +11,13 @@ import re
 import sys
 from typing import Any
 
-from telemetry_sqlite import TelemetrySQLite
+if __package__ == "backend.mcp":
+    from backend.telemetry_sqlite import TelemetrySQLite
+    from backend.tuning_solver_client import TuningMathClient
+else:
+    # main.py also runs directly from backend/ in source sidecar mode.
+    from telemetry_sqlite import TelemetrySQLite
+    from tuning_solver_client import TuningMathClient
 
 logger = logging.getLogger(__name__)
 
@@ -880,102 +886,23 @@ class HorizonTunerMcpService:
         purpose: str = "road",
     ) -> dict[str, Any]:
         """Execute deterministic tuning calculation aligned with tuningMath.ts and contracts.ts."""
-        weight_kg = float(car_params.get("weight_kg") or 1400.0)
-        weight_lbs = weight_kg * 2.20462
-        f_bias = float(car_params.get("front_weight_bias") or 0.52)
-        if f_bias > 1.0:
-            f_bias /= 100.0
-        r_bias = 1.0 - f_bias
-        drivetrain = str(car_params.get("drivetrain") or "RWD").upper()
-
-        # ARB calculation
-        if purpose == "drag":
-            arb_f = 1.0
-            arb_r = 65.0
-        elif purpose == "drift":
-            arb_f = round((f_bias * 45.0) + 1.0, 1)
-            arb_r = round((r_bias * 45.0) + 1.0, 1)
-        else:
-            arb_f = round((f_bias * 64.0) + 1.0, 1)
-            arb_r = round((r_bias * 64.0) + 1.0, 1)
-
-        # Springs (lbs/in)
-        spring_base_f = weight_lbs * f_bias * 0.7
-        spring_base_r = weight_lbs * r_bias * 0.7
-
-        # Dampers
-        rebound_f = round((f_bias * 12.0) + 3.0, 1)
-        rebound_r = round((r_bias * 12.0) + 3.0, 1)
-        bump_f = round(rebound_f * 0.6, 1)
-        bump_r = round(rebound_r * 0.6, 1)
-
-        # Differential
-        if drivetrain == "FWD":
-            diff = {
-                "front_accel": 45,
-                "front_decel": 0,
-                "rear_accel": 0,
-                "rear_decel": 0,
-                "center_balance": 0,
-            }
-        elif drivetrain == "AWD":
-            diff = {
-                "front_accel": 30,
-                "front_decel": 0,
-                "rear_accel": 65,
-                "rear_decel": 15,
-                "center_balance": 65,
-            }
-        else:  # RWD
-            if purpose == "drift":
-                diff = {
-                    "front_accel": 0,
-                    "front_decel": 0,
-                    "rear_accel": 100,
-                    "rear_decel": 100,
-                    "center_balance": 0,
-                }
-            else:
-                diff = {
-                    "front_accel": 0,
-                    "front_decel": 0,
-                    "rear_accel": 60,
-                    "rear_decel": 20,
-                    "center_balance": 0,
-                }
-
+        setup = TuningMathClient.calculate_chassis(
+            weight_kg=float(
+                car_params.get("weight_kg", car_params.get("weight", 1400))
+            ),
+            front_weight_bias=float(
+                car_params.get(
+                    "front_weight_bias", car_params.get("weight_distribution", 52)
+                )
+            ),
+            drivetrain=str(car_params.get("drivetrain", "RWD")),
+            purpose=purpose,
+            params=car_params,
+        )
         return {
             "schemaVersion": "tuning-dev/v1",
             "purpose": purpose,
-            "calculated_setup": {
-                "tires": {
-                    "front_cold_psi": 28.5,
-                    "rear_cold_psi": 28.5,
-                    "target_hot_psi": 32.0,
-                },
-                "alignment": {
-                    "camber_front_deg": -1.8 if purpose != "drag" else -0.5,
-                    "camber_rear_deg": -1.2 if purpose != "drag" else 0.0,
-                    "toe_front_deg": 0.0 if purpose != "drift" else 0.5,
-                    "toe_rear_deg": 0.0 if purpose != "drift" else -0.2,
-                    "caster_deg": 6.5 if purpose != "drift" else 7.0,
-                },
-                "anti_roll_bars": {
-                    "front": arb_f,
-                    "rear": arb_r,
-                },
-                "springs": {
-                    "front_lbs_in": round(spring_base_f, 1),
-                    "rear_lbs_in": round(spring_base_r, 1),
-                },
-                "dampers": {
-                    "rebound_front": rebound_f,
-                    "rebound_rear": rebound_r,
-                    "bump_front": bump_f,
-                    "bump_rear": bump_r,
-                },
-                "differential": diff,
-            },
+            "calculated_setup": setup,
             "capabilities": self.get_car_tuning_capabilities(
                 car_params.get("ordinal", 0), installed_parts
             ),
@@ -989,51 +916,10 @@ class HorizonTunerMcpService:
         gears_count: int = 6,
         tire_diameter_cm: float = 65.0,
     ) -> dict[str, Any]:
-        """Execute AEGO geometric powerband gearing solver."""
-        if max_rpm <= 0 or peak_hp_rpm <= 0 or gears_count < 1:
-            return {"error": "Invalid engine or gear parameters"}
-
-        # Peak HP to top speed calculation
-        tire_circumference_m = (tire_diameter_cm / 100.0) * math.pi
-        wheel_rpm_at_top_speed = (top_speed_kmh / 3.6 / tire_circumference_m) * 60.0
-        final_drive = (
-            round(peak_hp_rpm / (wheel_rpm_at_top_speed * 0.85), 2)
-            if wheel_rpm_at_top_speed > 0
-            else 3.73
+        """Delegate to the same AEGO function used by the UI and CLI."""
+        return TuningMathClient.calculate_gearing(
+            max_rpm, peak_hp_rpm, top_speed_kmh, gears_count, tire_diameter_cm
         )
-
-        # Step ratios
-        step_ratio = min(0.85, peak_hp_rpm / max_rpm)
-        gears = []
-        curr_ratio = 3.20  # 1st gear baseline
-        for g in range(1, gears_count + 1):
-            gears.append(
-                {
-                    "gear": g,
-                    "ratio": round(curr_ratio, 2),
-                    "speed_at_redline_kmh": round(
-                        (
-                            max_rpm
-                            / (curr_ratio * final_drive)
-                            * tire_circumference_m
-                            / 60.0
-                        )
-                        * 3.6,
-                        1,
-                    ),
-                    "upshift_drop_rpm": round(max_rpm * step_ratio, 0)
-                    if g < gears_count
-                    else None,
-                }
-            )
-            curr_ratio *= step_ratio
-
-        return {
-            "final_drive": final_drive,
-            "gears_count": gears_count,
-            "gears": gears,
-            "powerband_retention_ratio": round(step_ratio, 3),
-        }
 
     def diagnose_telemetry_handling(
         self,

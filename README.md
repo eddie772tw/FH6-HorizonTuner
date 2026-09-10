@@ -137,6 +137,8 @@ FH6-HorizonTuner/
 
 ### 2. 啟動本工具
 
+Agent 開發可使用 `fh6-agent.bat`。完整算牌請用 `solve workflow --input docs/examples/shared-tuning-request.json --json`，直接呼叫與 UI 相同的 TypeScript 函式。需要 Node.js 22.12+ 與已安裝的前端依賴；缺少 runtime 時不提供 Python 近似解。詳見[共用算牌契約](docs/shared-tuning-solver.md)。
+
 專案提供了高度自動化的一鍵啟動腳本，免去繁瑣的環境設定步驟：
 * **雙擊執行 `start_all.bat`** (推薦全套啟動)：
   - 透過 `uv` 選用 Python 3.13，於專案根目錄建立或檢查 `.venv`。

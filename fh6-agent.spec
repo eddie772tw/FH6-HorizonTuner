@@ -4,16 +4,22 @@
 Produces a self-contained, standalone Windows executable suitable for:
 - Direct release assets distribution on GitHub Release.
 - Packaging as a Tauri sidecar or agent companion.
-- Offline and online operation without requiring Python or external packages.
+- No Python installation is required. Solve commands require Node.js 22.12+ on PATH
+  and the bundled solver built from the canonical frontend source.
 """
 
 import os
+
+solver_bundle = os.path.join('frontend', 'dist-solver', 'tuning-solver.mjs')
+if not os.path.isfile(solver_bundle):
+    raise RuntimeError('Run pnpm -C frontend run build:solver before packaging fh6-agent.')
 
 block_cipher = None
 
 # Embedded static assets
 added_files = [
     ('backend/car_database.json', '.'),
+    (solver_bundle, 'tuning-solver'),
 ]
 
 # Exclude heavy unnecessary GUI / web frameworks to keep binary lean & startup instant

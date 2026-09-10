@@ -7,14 +7,14 @@
 ## 核心設計理念與架構特性
 
 1. **極度穩定性 (Long-Term Invariant)**：
-   - 採用 Python 3.13 標準庫核心實作，**零額外 pip 第三方依賴**。
+   - CLI 傳輸使用 Python 3.13 標準庫；算牌直接委派至前端 TypeScript 共用入口，需 Node.js 22.12+。
    - 與後端透過標準 HTTP REST 與 MCP JSON-RPC 2.0 協議解耦，內部重構不會影響 CLI 契約。原則上非新增重大功能，日常無需修改維護。
 2. **離線與線上雙模式 (Offline & Online Dual Mode)**：
    - **離線純算牌模式**：當後端未啟動時，CLI 依然能直接載入車輛資料庫進行車型查詢、底盤物理算牌、AEGO 齒比計算與 Preset 讀寫。
    - **線上即時模式**：當後端啟動時，自動感知 `logs/web_port.txt`（相容動態埠），可即時擷取 60Hz 遙測快照、調用閉環操控診斷，並與後端 REST/MCP 狀態即時雙向同步。
 3. **單一自包含二進位發行支援 (Standalone Binary & Sidecar Ready)**：
    - 內建完整 `sys.frozen` 相容層與 `fh6-agent.spec` 打包規格。
-   - 可一鍵編譯為單一執行檔 `fh6-agent.exe`，作為 GitHub Release Asset 直接下載使用，或作為 Tauri Sidecar 隨附分發，於無 Python 環境的電腦上獨立運作。
+   - 可一鍵編譯為單一執行檔 `fh6-agent.exe`，作為 GitHub Release Asset 直接下載使用，或作為 Tauri Sidecar 隨附分發，於無 Python 環境的電腦上執行；算牌另需 Node.js 22.12+。
 4. **AI Agent 第一優先 (Agent-First)**：
    - 所有子命令均支援 `--json` 輸出純淨、可預測的 JSON 結構（無 ANSI 顏色字元干擾）。
    - 標準 Exit Code（`0` 成功，`1` 業務/連線失敗，`2` 引數解析錯誤）。
@@ -109,6 +109,8 @@ uv run --no-project --python .venv\Scripts\python.exe -m backend.agent_cli <subc
 
 ---
 
+完整算牌輸入、單位、相容差異與 runtime 契約見 [共用算牌說明](shared-tuning-solver.md)。推薦使用 `fh6-agent solve workflow --input docs/examples/shared-tuning-request.json --json` 傳入與 UI 相同的完整參數。
+
 ### 4. 調校算牌核心 (`solve`)
 
 完全對齊前端 `tuningMath.ts` 與後端 MCP 服務之純物理純函數算牌演算法。
@@ -134,20 +136,20 @@ uv run --no-project --python .venv\Scripts\python.exe -m backend.agent_cli <subc
 - `drag`：直線加速賽事（前低後高 Forward Rake、後硬 ARB 抑制起步歪斜）
 
 #### (2) AEGO 幾何齒比算牌 (`solve gearing`)
-依據引擎紅線轉速、最大馬力轉速與目標極速，求解幾何等比遞增之最佳動力帶齒比與終傳比 (Final Drive)。
+將明確的速度／RPM 目標與輪胎幾何傳給前端相同 AEGO 核心；實際步距未必等比，輸出包含目標匹配狀態。
 
 ```powershell
 .\fh6-agent.bat solve gearing --max-rpm 8500 --peak-hp-rpm 7800 --top-speed 320 --gears 6 --json
 ```
 
 #### (3) 整車一鍵算牌與 Preset 儲存 (`solve full`)
-一鍵完成全套底盤與齒比算牌，並支援直接儲存為 Preset。儲存之檔案與前端 UI 完全互通！
+一鍵完成全套底盤與齒比算牌，並支援直接儲存為 Preset。使用 tuning-preset/v1 結構，保留算牌輸出快照與 unverified 狀態。
 
 ```powershell
 # 算牌並儲存為 'base_road' 預設
 .\fh6-agent.bat solve full --car-id 302 --vehicle-class S1 --weight 1380 --bias 58 --drive FWD --goal road --save base_road --json
 ```
-儲存後，啟動前端 UI 進入 `TuningView`，下拉選單即會出現該項 Preset，點擊即可一鍵載入！
+儲存成功僅代表檔案／API 寫入完成；完整 UI 載入流程需另行驗證。
 
 ---
 
@@ -212,11 +214,14 @@ uv run --no-project --python .venv\Scripts\python.exe -m backend.agent_cli <subc
 若要將 `fh6-agent` 打包為單一自包含執行檔以供 Release 發行或作為 Sidecar：
 
 ```powershell
+# 先從前端原始碼產生共用 solver，再打包（執行算牌需 Node.js 22.12+）
+pnpm -C frontend run build:solver
+
 # 透過 uv 執行 PyInstaller 打包
 uv run --no-project --python .venv\Scripts\python.exe pyinstaller fh6-agent.spec
 ```
 
-產物將生成於 `dist/fh6-agent.exe`，體積輕巧且內嵌車輛資料庫，可在任何乾淨的 Windows 機器上獨立運作。
+產物將生成於 `dist/fh6-agent.exe`，體積輕巧且內嵌車輛資料庫，查詢功能不需要 Python；算牌仍需要 Node.js 22.12+。共用 bundle 已由 spec 收錄。
 
 ---
 

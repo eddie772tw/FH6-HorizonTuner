@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && pnpm run build:solver",
+    "build:solver": "node scripts/build-tuning-solver.mjs",
     "build:web-hud": "pnpm run build && node scripts/copy-hud.mjs",
     "preview": "vite preview",
     "tauri": "tauri",

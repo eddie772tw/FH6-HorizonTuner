@@ -191,7 +191,7 @@ export function calculateAEGOGearing(
 }
 
 /** Forward-only dependency: nominal tire geometry is resolved before gearing. */
-function calculateGearingFromRadius(
+export function calculateGearingFromRadius(
   raceGoal: string,
   numGears: number,
   carParams: TuningCarParams | null,

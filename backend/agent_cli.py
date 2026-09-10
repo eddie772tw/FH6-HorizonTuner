@@ -7,21 +7,22 @@ telemetry monitoring, closed-loop handling diagnosis, and MCP configurations.
 
 Designed for long-term stability:
 - Zero external third-party pip dependencies (standard library only).
-- Offline & Online dual mode (deterministic math offline, live UDP telemetry online).
-- Fully compatible with PyInstaller packaging as standalone binary or Tauri sidecar.
+- Offline calculations delegate to the frontend TypeScript runtime; no Python formulas.
+- Frozen builds require the shared solver artifact and Node.js for solve commands.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import sys
 import time
 import urllib.error
 import urllib.request
 from typing import Any
+
+from backend.tuning_solver_client import TuningMathClient, solve_tuning
 
 CLI_VERSION = "1.0.0"
 APP_VERSION = "11.45.17"
@@ -208,370 +209,8 @@ class BackendClient:
 
 
 # =============================================================================
-# 3. Deterministic Physics & Tuning Solvers (Pure Math Invariant)
+# 3. Shared TypeScript Solver Client (No Python Formula Copies)
 # =============================================================================
-
-
-class TuningMathSolver:
-    """Deterministic tuning algorithms aligned with frontend/src/utils/tuningMath.ts and MCP service."""
-
-    @staticmethod
-    def calculate_chassis(
-        weight_kg: float,
-        front_weight_bias: float,
-        drivetrain: str = "RWD",
-        purpose: str = "road",
-        aero_f: float = 0.0,
-        aero_r: float = 0.0,
-    ) -> dict[str, Any]:
-        """Calculates pure suspension, ARBs, springs, dampers, and differential setup."""
-        weight_kg = max(500.0, min(3500.0, weight_kg))
-        weight_lbs = weight_kg * 2.20462
-
-        f_bias = front_weight_bias
-        if f_bias > 1.0:
-            f_bias /= 100.0
-        f_bias = max(0.2, min(0.8, f_bias))
-        r_bias = 1.0 - f_bias
-
-        dt = drivetrain.upper()
-        if dt not in {"AWD", "RWD", "FWD"}:
-            dt = "RWD"
-
-        goal = purpose.lower()
-        if goal not in {"road", "drift", "rally", "drag"}:
-            goal = "road"
-
-        # 1. Anti-Roll Bars (ARB)
-        if goal == "drag":
-            arb_f = 1.0
-            arb_r = 65.0
-        elif goal == "drift":
-            arb_f = 10.0
-            arb_r = 50.0
-        elif goal == "rally":
-            arb_f = round(((64.0 * f_bias) + 1.0) * 0.35, 1)
-            arb_r = round(((64.0 * r_bias) + 1.0) * 0.35, 1)
-        else:  # road
-            if dt == "AWD":
-                arb_f = round(min(5.0, 1.0 + 4.0 * f_bias), 1)
-                arb_r = round(max(50.0, 65.0 - 0.3 * (100.0 - (r_bias * 100.0))), 1)
-            else:
-                arb_f = round((64.0 * f_bias) + 1.0, 1)
-                arb_r = round((64.0 * r_bias) + 1.0, 1)
-
-        # 2. Springs (lbs/in and kgf/mm)
-        spring_base_f_lbs = weight_lbs * f_bias * 0.70
-        spring_base_r_lbs = weight_lbs * r_bias * 0.70
-
-        if goal == "drift":
-            spring_f_lbs = weight_lbs * f_bias * 0.035 * 10.0
-            spring_r_lbs = weight_lbs * r_bias * 0.035 * 10.0
-        elif goal == "rally":
-            spring_f_lbs = spring_base_f_lbs * 0.65
-            spring_r_lbs = spring_base_r_lbs * 0.65
-        elif goal == "drag":
-            spring_f_lbs = spring_base_f_lbs * 0.50
-            spring_r_lbs = spring_base_r_lbs * 1.30
-        else:  # road
-            aero_add_f = (aero_f / 10.0) * 0.5 if aero_f > 0 else 0.0
-            aero_add_r = (aero_r / 25.0) * 0.5 if aero_r > 0 else 0.0
-            spring_f_lbs = spring_base_f_lbs + aero_add_f
-            spring_r_lbs = spring_base_r_lbs + aero_add_r
-
-        spring_f_kgf = spring_f_lbs * 0.017858
-        spring_r_kgf = spring_r_lbs * 0.017858
-
-        # 3. Ride Height Recommendation (Clicks / Stance)
-        if goal == "drift":
-            ride_height = {"front": "Lowest + 1 click", "rear": "Lowest"}
-        elif goal == "rally":
-            ride_height = {"front": "Maximum (Highest)", "rear": "Maximum (Highest)"}
-        elif goal == "drag":
-            ride_height = {
-                "front": "Lowest (Front Rake)",
-                "rear": "Highest (Weight Transfer)",
-            }
-        else:
-            ride_height = {
-                "front": "Stock/Min + 3 clicks",
-                "rear": "Stock/Min + 3 clicks",
-            }
-
-        # 4. Dampers (Rebound and Bump)
-        if goal == "drift":
-            rebound_f = 6.0
-            rebound_r = 6.0
-            bump_f = round(rebound_f * 0.50, 1)
-            bump_r = round(rebound_r * 0.50, 1)
-        elif goal == "rally":
-            rebound_f = round((14.0 * f_bias) + 1.0, 1)
-            rebound_r = round((14.0 * r_bias) + 1.0, 1)
-            bump_f = round(rebound_f * 0.40, 1)
-            bump_r = round(rebound_r * 0.40, 1)
-        elif goal == "drag":
-            rebound_f = 3.0
-            rebound_r = 12.0
-            bump_f = 4.0
-            bump_r = 10.0
-        else:  # road
-            rebound_f = round((19.0 * f_bias) + 1.0, 1)
-            rebound_r = round((19.0 * r_bias) + 1.0, 1)
-            bump_f = round(rebound_f * 0.60, 1)
-            bump_r = round(rebound_r * 0.60, 1)
-
-        # 5. Differential Settings
-        if dt == "FWD":
-            diff = {
-                "front_accel": 45,
-                "front_decel": 0,
-                "rear_accel": 0,
-                "rear_decel": 0,
-                "center_balance": 0,
-            }
-        elif dt == "AWD":
-            if goal == "drift":
-                diff = {
-                    "front_accel": 25,
-                    "front_decel": 0,
-                    "rear_accel": 100,
-                    "rear_decel": 100,
-                    "center_balance": 85,
-                }
-            elif goal == "rally":
-                diff = {
-                    "front_accel": 40,
-                    "front_decel": 0,
-                    "rear_accel": 70,
-                    "rear_decel": 20,
-                    "center_balance": 60,
-                }
-            else:
-                diff = {
-                    "front_accel": 30,
-                    "front_decel": 0,
-                    "rear_accel": 65,
-                    "rear_decel": 15,
-                    "center_balance": 65,
-                }
-        else:  # RWD
-            if goal == "drift":
-                diff = {
-                    "front_accel": 0,
-                    "front_decel": 0,
-                    "rear_accel": 100,
-                    "rear_decel": 100,
-                    "center_balance": 0,
-                }
-            elif goal == "drag":
-                diff = {
-                    "front_accel": 0,
-                    "front_decel": 0,
-                    "rear_accel": 100,
-                    "rear_decel": 100,
-                    "center_balance": 0,
-                }
-            else:
-                diff = {
-                    "front_accel": 0,
-                    "front_decel": 0,
-                    "rear_accel": 60,
-                    "rear_decel": 20,
-                    "center_balance": 0,
-                }
-
-        # 6. Alignment & Tire Pressures
-        if goal == "drift":
-            camber_f, camber_r = -3.5, -1.0
-            toe_f, toe_r = 0.5, -0.2
-            caster = 7.0
-            cold_psi_f, cold_psi_r = 32.0, 26.0
-        elif goal == "rally":
-            camber_f, camber_r = -1.5, -1.0
-            toe_f, toe_r = 0.1, 0.0
-            caster = 6.0
-            cold_psi_f, cold_psi_r = 25.0, 25.0
-        elif goal == "drag":
-            camber_f, camber_r = -0.5, 0.0
-            toe_f, toe_r = 0.0, 0.0
-            caster = 5.0
-            cold_psi_f, cold_psi_r = 35.0, 20.0
-        else:  # road
-            camber_f, camber_r = -1.8, -1.2
-            toe_f, toe_r = 0.0, 0.0
-            caster = 6.5
-            cold_psi_f, cold_psi_r = 28.5, 28.5
-
-        return {
-            "schemaVersion": "tuning-dev/v1",
-            "goal": goal,
-            "drivetrain": dt,
-            "weight_kg": round(weight_kg, 1),
-            "front_weight_bias_pct": round(f_bias * 100.0, 1),
-            "anti_roll_bars": {
-                "front": arb_f,
-                "rear": arb_r,
-            },
-            "springs": {
-                "front_lbs_in": round(spring_f_lbs, 1),
-                "rear_lbs_in": round(spring_r_lbs, 1),
-                "front_kgf_mm": round(spring_f_kgf, 2),
-                "rear_kgf_mm": round(spring_r_kgf, 2),
-            },
-            "ride_height": ride_height,
-            "dampers": {
-                "rebound_front": rebound_f,
-                "rebound_rear": rebound_r,
-                "bump_front": bump_f,
-                "bump_rear": bump_r,
-            },
-            "alignment": {
-                "camber_front_deg": camber_f,
-                "camber_rear_deg": camber_r,
-                "toe_front_deg": toe_f,
-                "toe_rear_deg": toe_r,
-                "caster_deg": caster,
-            },
-            "tires": {
-                "front_cold_psi": cold_psi_f,
-                "rear_cold_psi": cold_psi_r,
-                "target_hot_psi": 32.0,
-            },
-            "differential": diff,
-        }
-
-    @staticmethod
-    def calculate_gearing(
-        max_rpm: float,
-        peak_hp_rpm: float,
-        top_speed_kmh: float,
-        gears_count: int = 6,
-        tire_diameter_cm: float = 65.0,
-    ) -> dict[str, Any]:
-        """AEGO geometric powerband gearing solver."""
-        if max_rpm <= 0 or peak_hp_rpm <= 0 or gears_count < 1:
-            return {"error": "Invalid engine or gear parameters"}
-
-        tire_circumference_m = (tire_diameter_cm / 100.0) * math.pi
-        wheel_rpm_at_top = (top_speed_kmh / 3.6 / tire_circumference_m) * 60.0
-        final_drive = (
-            round(peak_hp_rpm / (wheel_rpm_at_top * 0.85), 2)
-            if wheel_rpm_at_top > 0
-            else 3.73
-        )
-
-        step_ratio = min(0.85, peak_hp_rpm / max_rpm)
-        gears = []
-        curr_ratio = 3.20
-        for g in range(1, gears_count + 1):
-            speed_redline = (
-                (max_rpm / (curr_ratio * final_drive) * tire_circumference_m / 60.0)
-                * 3.6
-                if final_drive > 0 and curr_ratio > 0
-                else 0.0
-            )
-            upshift_drop = round(max_rpm * step_ratio, 0) if g < gears_count else None
-
-            gears.append(
-                {
-                    "gear": g,
-                    "ratio": round(curr_ratio, 2),
-                    "speed_at_redline_kmh": round(speed_redline, 1),
-                    "upshift_drop_rpm": upshift_drop,
-                }
-            )
-            curr_ratio *= step_ratio
-
-        return {
-            "final_drive": final_drive,
-            "gears_count": gears_count,
-            "gears": gears,
-            "powerband_retention_ratio": round(step_ratio, 3),
-        }
-
-    @classmethod
-    def export_applied_setup(
-        cls, chassis: dict[str, Any], gearing: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
-        """Converts solver output into AppliedTuningSetup dictionary matching frontend Step 5."""
-        diff = chassis.get("differential", {})
-        setup = {
-            "tirePressureFront": chassis["tires"]["front_cold_psi"],
-            "tirePressureRear": chassis["tires"]["rear_cold_psi"],
-            "camberFront": chassis["alignment"]["camber_front_deg"],
-            "camberRear": chassis["alignment"]["camber_rear_deg"],
-            "toeFront": chassis["alignment"]["toe_front_deg"],
-            "toeRear": chassis["alignment"]["toe_rear_deg"],
-            "caster": chassis["alignment"]["caster_deg"],
-            "arbFront": chassis["anti_roll_bars"]["front"],
-            "arbRear": chassis["anti_roll_bars"]["rear"],
-            "springsFront": chassis["springs"]["front_lbs_in"],
-            "springsRear": chassis["springs"]["rear_lbs_in"],
-            "rideHeightFront": 12.0,
-            "rideHeightRear": 12.0,
-            "reboundFront": chassis["dampers"]["rebound_front"],
-            "reboundRear": chassis["dampers"]["rebound_rear"],
-            "bumpFront": chassis["dampers"]["bump_front"],
-            "bumpRear": chassis["dampers"]["bump_rear"],
-            "diffAccelRear": diff.get("rear_accel", 60),
-            "diffDecelRear": diff.get("rear_decel", 20),
-        }
-
-        if "front_accel" in diff:
-            setup["diffAccelFront"] = diff["front_accel"]
-        if "front_decel" in diff:
-            setup["diffDecelFront"] = diff["front_decel"]
-        if "center_balance" in diff:
-            setup["diffCenterRear"] = diff["center_balance"]
-
-        if gearing and "final_drive" in gearing:
-            setup["finalDrive"] = gearing["final_drive"]
-
-        return setup
-
-    @classmethod
-    def export_preset_format(
-        cls,
-        car_id: int | str,
-        vehicle_class: str,
-        chassis: dict[str, Any],
-        gearing: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Generates a TuningPresetV1 compatible dictionary for frontend and API persistence."""
-        applied = cls.export_applied_setup(chassis, gearing)
-        return {
-            "schemaVersion": "tuning-preset/v1",
-            "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "gameBuild": "FH6_B1.0",
-            "vehicleClass": vehicle_class.upper(),
-            "profileUsed": chassis.get("goal", "road"),
-            "installedParts": {},
-            "parameters": {
-                "tire_pressure_f": applied["tirePressureFront"],
-                "tire_pressure_r": applied["tirePressureRear"],
-                "camber_front": applied["camberFront"],
-                "camber_rear": applied["camberRear"],
-                "toe_front": applied["toeFront"],
-                "toe_rear": applied["toeRear"],
-                "caster": applied["caster"],
-                "arb_front": applied["arbFront"],
-                "arb_rear": applied["arbRear"],
-                "spring_front": applied["springsFront"],
-                "spring_rear": applied["springsRear"],
-                "rebound_front": applied["reboundFront"],
-                "rebound_rear": applied["reboundRear"],
-                "bump_front": applied["bumpFront"],
-                "bump_rear": applied["bumpRear"],
-                "diff_accel_rear": applied["diffAccelRear"],
-                "diff_decel_rear": applied["diffDecelRear"],
-                "final_drive": applied.get("finalDrive", 3.73),
-            },
-            "solverOutputSnapshot": {
-                "chassis": chassis,
-                "gearing": gearing,
-            },
-            "calibrationStatus": "unverified",
-        }
 
 
 # =============================================================================
@@ -797,6 +436,17 @@ def handle_cars_get(args: argparse.Namespace, ctx: RuntimeContext) -> int:
     return 0
 
 
+def handle_solve_workflow(args: argparse.Namespace) -> int:
+    if args.input == "-":
+        request = json.load(sys.stdin)
+    else:
+        with open(args.input, encoding="utf-8-sig") as stream:
+            request = json.load(stream)
+    # No mutation of the supplied UI input, including goal, season and engine gates.
+    print(json.dumps(solve_tuning(request), indent=2, ensure_ascii=False))
+    return 0
+
+
 def handle_solve_chassis(args: argparse.Namespace, ctx: RuntimeContext) -> int:
     weight = args.weight
     bias = args.bias
@@ -819,7 +469,7 @@ def handle_solve_chassis(args: argparse.Namespace, ctx: RuntimeContext) -> int:
     drive = drive or "RWD"
     goal = args.goal or "road"
 
-    solution = TuningMathSolver.calculate_chassis(
+    solution = TuningMathClient.calculate_chassis(
         weight_kg=weight,
         front_weight_bias=bias,
         drivetrain=drive,
@@ -829,7 +479,7 @@ def handle_solve_chassis(args: argparse.Namespace, ctx: RuntimeContext) -> int:
     )
 
     if getattr(args, "export_applied_setup", False):
-        output = TuningMathSolver.export_applied_setup(solution)
+        output = TuningMathClient.export_applied_setup(solution)
     else:
         output = solution
 
@@ -871,12 +521,13 @@ def handle_solve_chassis(args: argparse.Namespace, ctx: RuntimeContext) -> int:
 
 
 def handle_solve_gearing(args: argparse.Namespace) -> int:
-    result = TuningMathSolver.calculate_gearing(
+    result = TuningMathClient.calculate_gearing(
         max_rpm=args.max_rpm,
         peak_hp_rpm=args.peak_hp_rpm,
         top_speed_kmh=args.top_speed,
         gears_count=args.gears,
-        tire_diameter_cm=args.tire_diameter or 65.0,
+        tire_diameter_cm=args.tire_diameter,
+        purpose=args.goal,
     )
 
     if args.json:
@@ -889,7 +540,7 @@ def handle_solve_gearing(args: argparse.Namespace) -> int:
         print("  FH6 AEGO Powerband Gearing Solution")
         print("=" * 60)
         print(f"  Final Drive       : {result['final_drive']}")
-        print(f"  Retention Ratio   : {result['powerband_retention_ratio'] * 100:.1f}%")
+        print(f"  Retention Ratios  : {result['powerband_retention_ratios']}")
         print(f"  Gear Count        : {result['gears_count']}")
         print("  ------------------------------------------------------------")
         print("  Gear  |  Ratio  |  Redline Speed  |  Upshift Drop RPM")
@@ -919,20 +570,23 @@ def handle_solve_full(
     car_id = args.car_id or "custom"
     vehicle_class = args.vehicle_class or "S1"
 
-    chassis = TuningMathSolver.calculate_chassis(
+    chassis = TuningMathClient.calculate_chassis(
         weight_kg=weight,
         front_weight_bias=bias,
         drivetrain=drive,
         purpose=goal,
     )
-    gearing = TuningMathSolver.calculate_gearing(
+    gearing = TuningMathClient.calculate_gearing(
         max_rpm=max_rpm,
         peak_hp_rpm=peak_hp_rpm,
         top_speed_kmh=top_speed,
         gears_count=gears,
+        tire_diameter_cm=None,
+        purpose=goal,
+        params=chassis["solverInput"]["params"],
     )
 
-    preset_data = TuningMathSolver.export_preset_format(
+    preset_data = TuningMathClient.export_preset_format(
         car_id=car_id,
         vehicle_class=vehicle_class,
         chassis=chassis,
@@ -961,7 +615,7 @@ def handle_solve_full(
         preset_data["saved_path"] = dest_file
 
     if getattr(args, "export_applied_setup", False):
-        output = TuningMathSolver.export_applied_setup(chassis, gearing)
+        output = TuningMathClient.export_applied_setup(chassis, gearing)
     else:
         output = preset_data
 
@@ -1305,6 +959,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     solve_sub = solve_p.add_subparsers(dest="solve_action")
 
+    workflow_p = solve_sub.add_parser(
+        "workflow",
+        help="Run the exact UI workflow from a tuning-solver/v1 JSON request.",
+        parents=[common_parent],
+    )
+    workflow_p.add_argument(
+        "--input", required=True, help="JSON request file, or - for stdin."
+    )
+    workflow_p.set_defaults(func="solve_workflow")
+
     # solve chassis
     sc_p = solve_sub.add_parser(
         "chassis",
@@ -1370,6 +1034,9 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=65.0,
         help="Tire outer diameter in cm.",
+    )
+    sg_p.add_argument(
+        "--goal", choices=["road", "drift", "rally", "drag"], default="road"
     )
     sg_p.set_defaults(func="solve_gearing")
 
@@ -1504,6 +1171,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # JSON transport must not inherit Windows console code pages (e.g. CP950).
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -1520,6 +1191,7 @@ def main(argv: list[str] | None = None) -> int:
         "mcp-config": lambda: handle_mcp_config(args, ctx),
         "cars_search": lambda: handle_cars_search(args, ctx),
         "cars_get": lambda: handle_cars_get(args, ctx),
+        "solve_workflow": lambda: handle_solve_workflow(args),
         "solve_chassis": lambda: handle_solve_chassis(args, ctx),
         "solve_gearing": lambda: handle_solve_gearing(args),
         "solve_full": lambda: handle_solve_full(args, ctx, client),
