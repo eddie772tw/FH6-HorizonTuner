@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Initial D AE86 TRD 11,000 RPM Tachometer</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .initial-d-container {
+            width: 420px;
+            height: 420px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #initialDCanvas {
+            display: block;
+            width: 420px;
+            height: 420px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container initial-d-container" id="initialDContainer">
+            <canvas id="initialDCanvas" width="420" height="420"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('initialDContainer'),
+                canvas: document.getElementById('initialDCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var cx = 205;
+            var cy = 220;
+            var dialR = 160;
+
+            var isMetric = true;
+            var sweepActive = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1200;
+            var lastValidGear = 1;
+            var offscreenDial = null;
+
+            // Audio Chime State
+            var audioCtx = null;
+            var lastChimeTime = 0;
+            var chimeInterval = 1200;
+            var isGaugeVisible = true;
+            var showAudioChime = true;
+
+            function initAudioContext() {
+                try {
+                    if (!audioCtx) {
+                        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContextClass) audioCtx = new AudioContextClass();
+                    }
+                    if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume().catch(function () {});
+                    }
+                } catch (e) {}
+            }
+
+            if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+                window.addEventListener('pointerdown', initAudioContext, { once: true });
+                window.addEventListener('keydown', initAudioContext, { once: true });
+            }
+
+            function playSingleDing(startTime, freqStart, freqEnd) {
+                if (!audioCtx || audioCtx.state === 'suspended') return;
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freqStart, startTime);
+                osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + 0.32);
+                gain.gain.setValueAtTime(0.18, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.32);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.32);
+            }
+
+            function playSpeedChime() {
+                try {
+                    initAudioContext();
+                    if (!audioCtx || audioCtx.state === 'suspended') return;
+
+                    var now = audioCtx.currentTime;
+                    // Dual-bell Ding-Ding (High 1020Hz -> 820Hz, followed by echo Ding at +0.35s)
+                    playSingleDing(now, 1020, 820);
+                    playSingleDing(now + 0.35, 980, 820);
+                } catch (e) {
+                    // Audio context safety fallback
+                }
+            }
+
+            // Non-linear angle calculation ($0 \sim 11,000$ RPM)
+            function getInitialDAngle(rpm) {
+                var r = Math.max(0, Math.min(11000, rpm));
+                var startAngle = 140 * (Math.PI / 180);
+                var totalSpan = 260 * (Math.PI / 180);
+
+                var ratio;
+                if (r <= 3000) {
+                    ratio = (r / 3000) * 0.18;
+                } else if (r <= 7000) {
+                    ratio = 0.18 + ((r - 3000) / 4000) * 0.38;
+                } else {
+                    ratio = 0.56 + ((r - 7000) / 4000) * 0.44;
+                }
+                return startAngle + ratio * totalSpan;
+            }
+
+            function buildOffscreenDial() {
+                offscreenDial = document.createElement('canvas');
+                offscreenDial.width = 420;
+                offscreenDial.height = 420;
+                var oCtx = offscreenDial.getContext('2d');
+                if (!oCtx) return;
+
+                // 1. Dial Bezel & Carbon Background
+                oCtx.beginPath();
+                oCtx.arc(cx, cy, dialR, 0, Math.PI * 2);
+                oCtx.fillStyle = '#08090D';
+                oCtx.fill();
+                oCtx.lineWidth = 6;
+                oCtx.strokeStyle = '#222733';
+                oCtx.stroke();
+
+                oCtx.beginPath();
+                oCtx.arc(cx, cy, dialR - 6, 0, Math.PI * 2);
+                oCtx.lineWidth = 1.5;
+                oCtx.strokeStyle = '#3A4256';
+                oCtx.stroke();
+
+                // 2. Redline Zone Arc (9,500 ~ 11,000 RPM)
+                var redlineStartA = getInitialDAngle(9500);
+                var redlineEndA = getInitialDAngle(11000);
+                oCtx.beginPath();
+                oCtx.arc(cx, cy, dialR - 14, redlineStartA, redlineEndA);
+                oCtx.lineWidth = 10;
+                oCtx.strokeStyle = '#EF4444';
+                oCtx.stroke();
+
+                // 3. Ticks & Numbers (0 to 11)
+                for (var rpmVal = 0; rpmVal <= 11000; rpmVal += 500) {
+                    var angle = getInitialDAngle(rpmVal);
+                    var isMajor = (rpmVal % 1000 === 0);
+                    var isRed = (rpmVal >= 9500);
+                    var tickLen = isMajor ? 14 : 7;
+
+                    var x1 = cx + Math.cos(angle) * (dialR - 14);
+                    var y1 = cy + Math.sin(angle) * (dialR - 14);
+                    var x2 = cx + Math.cos(angle) * (dialR - 14 - tickLen);
+                    var y2 = cy + Math.sin(angle) * (dialR - 14 - tickLen);
+
+                    oCtx.beginPath();
+                    oCtx.moveTo(x1, y1);
+                    oCtx.lineTo(x2, y2);
+                    oCtx.lineWidth = isMajor ? 2.5 : 1.2;
+                    oCtx.strokeStyle = isRed ? '#EF4444' : '#F1F5F9';
+                    oCtx.stroke();
+
+                    // Numbers for major ticks
+                    if (isMajor) {
+                        var numStr = String(rpmVal / 1000);
+                        var textR = dialR - 34;
+                        var tx = cx + Math.cos(angle) * textR;
+                        var ty = cy + Math.sin(angle) * textR;
+
+                        oCtx.fillStyle = isRed ? '#EF4444' : '#FFFFFF';
+                        oCtx.font = 'bold 18px "ForzaGear", sans-serif';
+                        oCtx.textAlign = 'center';
+                        oCtx.textBaseline = 'middle';
+                        oCtx.fillText(numStr, tx, ty);
+                    }
+                }
+
+                // 4. Center Badges
+                oCtx.fillStyle = '#EF4444';
+                oCtx.font = 'bold 16px sans-serif';
+                oCtx.textAlign = 'center';
+                oCtx.fillText('TRD RACING', cx, cy - 65);
+
+                oCtx.fillStyle = '#94A3B8';
+                oCtx.font = 'bold 10px sans-serif';
+                oCtx.fillText('x1000 r/min', cx, cy - 45);
+
+                // 5. External Shift Light Pod Base (at top-right ~1 o'clock)
+                var podX = 350;
+                var podY = 85;
+                oCtx.beginPath();
+                oCtx.arc(podX, podY, 24, 0, Math.PI * 2);
+                oCtx.fillStyle = '#141822';
+                oCtx.fill();
+                oCtx.lineWidth = 3;
+                oCtx.strokeStyle = '#374151';
+                oCtx.stroke();
+            }
+
+            buildOffscreenDial();
+
+            function drawNeedle(ctx, angle) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                // Needle Blade
+                ctx.shadowColor = '#FF1744';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.moveTo(-20, -2.5);
+                ctx.lineTo(dialR - 25, -1);
+                ctx.lineTo(dialR - 25, 1);
+                ctx.lineTo(-20, 2.5);
+                ctx.closePath();
+                ctx.fillStyle = '#FF1744';
+                ctx.fill();
+
+                // Cap
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                ctx.fillStyle = '#0B0D13';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#4B5563';
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function renderHUD(rpm, speed, gear, now, isShiftWarning, isOverRev, isDrifting) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                ctx.textBaseline = 'alphabetic';
+
+                if (!offscreenDial) buildOffscreenDial();
+                ctx.drawImage(offscreenDial, 0, 0);
+
+                var podX = 350;
+                var podY = 85;
+
+                // 1. External Shift Light LED
+                ctx.beginPath();
+                ctx.arc(podX, podY, 15, 0, Math.PI * 2);
+                if (isOverRev) {
+                    var strobe = Math.floor(now / 66) % 2 === 0;
+                    ctx.fillStyle = strobe ? '#FF0033' : '#770014';
+                    ctx.shadowColor = '#FF0033';
+                    ctx.shadowBlur = strobe ? 24 : 8;
+                } else if (isShiftWarning) {
+                    ctx.fillStyle = '#FF1744';
+                    ctx.shadowColor = '#FF1744';
+                    ctx.shadowBlur = 16;
+                } else {
+                    ctx.fillStyle = '#2A080C';
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // 2. Needle
+                var needleAngle = getInitialDAngle(rpm);
+                drawNeedle(ctx, needleAngle);
+
+                // Arcade DRIFT Mode Indicator
+                if (isDrifting) {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                    ctx.fillRect(cx - 54, cy - 54, 108, 18);
+                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(cx - 54, cy - 54, 108, 18);
+
+                    ctx.fillStyle = '#FBBF24';
+                    ctx.font = 'bold 13px "ForzaFont", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.shadowColor = '#F59E0B';
+                    ctx.shadowBlur = 10;
+                    ctx.fillText('⚡ DRIFT ⚡', cx, cy - 40);
+                    ctx.shadowBlur = 0;
+                }
+
+                // 3. Digital Speed & Gear Display (Lower Center)
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 36px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(Math.round(speed)), cx, cy + 62);
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 78);
+
+                var gearStr = (gear <= 0) ? 'R' : (gear === 11 ? 'N' : 'G' + gear);
+                ctx.fillStyle = '#38BDF8';
+                ctx.font = 'bold 18px monospace';
+                ctx.fillText(gearStr, cx, cy + 104);
+            }
+
+            function runSweep(now) {
+                if (!sweepActive) return;
+                var elapsed = now - sweepStartTime;
+                var progress = elapsed / sweepDuration;
+
+                if (progress >= 1.0) {
+                    sweepActive = false;
+                    renderHUD(0, 0, 1, now, false, false, false);
+                    return;
+                }
+
+                var currentRpm = progress < 0.5
+                    ? (progress / 0.5) * 11000
+                    : (1 - (progress - 0.5) / 0.5) * 11000;
+
+                var mockSpeed = (currentRpm / 11000) * 230;
+                var mockWarning = currentRpm >= 9800;
+                var mockOverRev = currentRpm >= 10500;
+                renderHUD(currentRpm, mockSpeed, 1, now, mockWarning, mockOverRev, false);
+                requestAnimationFrame(runSweep);
+            }
+
+            HUDCore.registerStyle('initial_d', {
+                containerId: 'initialDContainer',
+                scaleMultiplier: 0.95,
+
+                onInit: function (payload) {
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    buildOffscreenDial();
+                },
+
+                onElementsChange: function (elements) {
+                    if (elements) {
+                        if (elements.showGauge !== undefined) {
+                            isGaugeVisible = elements.showGauge !== false;
+                            if (domCache.container) {
+                                domCache.container.style.display = isGaugeVisible ? 'block' : 'none';
+                            }
+                        }
+                        if (elements.showAudioChime !== undefined) {
+                            showAudioChime = elements.showAudioChime !== false;
+                        }
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (sweepActive) return;
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 11000;
+                    var redline = (payload && payload.redlineRpm) || data.redlineRpm || 10000;
+
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    var rpm = data.rpm || 0;
+                    var rawSpeed = isMetric !== false
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+
+                    var speedKmh = data.speed_kmh !== undefined ? data.speed_kmh : (isMetric ? rawSpeed : rawSpeed * 1.60934);
+
+                    if (data.gear !== undefined && data.gear <= 11) {
+                        lastValidGear = data.gear;
+                    }
+
+                    var now = performance.now();
+
+                    // 80km/h Speed Chime (Ding-Ding) - triggers at Japanese standard 80km/h
+                    if (isGaugeVisible && showAudioChime && speedKmh >= 80 && (now - lastChimeTime > 1000)) {
+                        lastChimeTime = now;
+                        playSpeedChime();
+                    }
+
+                    // Shift light pod: adapts to vehicle redline or TRD万轉 threshold
+                    var shiftWarningRpm = Math.min(9800, redline * 0.96);
+                    var shiftOverRevRpm = Math.min(10500, redline * 0.99);
+
+                    var isShiftWarning = rpm >= shiftWarningRpm;
+                    var isOverRev = rpm >= shiftOverRevRpm;
+
+                    // Drift Detection: Yaw rate, lateral G or rear wheel slip difference
+                    var yawRate = Math.abs(data.YawRate !== undefined ? data.YawRate : (data.yaw_rate || 0));
+                    var rearSlip = ((data.slip_rl || 0) + (data.slip_rr || 0)) / 2;
+                    var frontSlip = ((data.slip_fl || 0) + (data.slip_fr || 0)) / 2;
+                    var isDrifting = speedKmh > 25 && (yawRate > 0.28 || (rearSlip - frontSlip > 0.22));
+
+                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftWarning, isOverRev, isDrifting);
+                },
+
+                onAnimate: function () {
+                    sweepActive = true;
+                    sweepStartTime = performance.now();
+                    requestAnimationFrame(runSweep);
+                }
+            });
+
+            HUDCore.init('initial_d');
+
+            setTimeout(function () {
+                renderHUD(0, 0, 1, performance.now(), false);
+            }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    buildOffscreenDial();
+                    renderHUD(0, 0, 1, performance.now(), false);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

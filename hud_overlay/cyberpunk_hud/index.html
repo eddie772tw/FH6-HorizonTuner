@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Cyberpunk 2077 Quadra HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .cyberpunk-container {
+            width: 640px;
+            height: 320px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #cyberpunkCanvas {
+            display: block;
+            width: 640px;
+            height: 320px;
+            background: #0B0C10;
+            border: 1px solid rgba(0, 240, 255, 0.35);
+            border-radius: 4px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container cyberpunk-container" id="cyberpunkContainer">
+            <canvas id="cyberpunkCanvas" width="640" height="320"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('cyberpunkContainer'),
+                canvas: document.getElementById('cyberpunkCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var isMetric = true;
+            var sweepActive = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1200;
+            var lastValidGear = 1;
+            var lastMaxRpm = 8500;
+            var lastRedline = 7800;
+            var mediaState = { has_media: false, title: '', artist: '' };
+            var audioSpectrum = new Array(12).fill(0);
+            var hasAudio = false;
+
+            function drawChamferedRect(ctx, x, y, w, h, chamfer) {
+                ctx.beginPath();
+                ctx.moveTo(x + chamfer, y);
+                ctx.lineTo(x + w, y);
+                ctx.lineTo(x + w, y + h - chamfer);
+                ctx.lineTo(x + w - chamfer, y + h);
+                ctx.lineTo(x, y + h);
+                ctx.lineTo(x, y + chamfer);
+                ctx.closePath();
+            }
+
+            function drawSegmentedRpmBar(ctx, activeSegments, totalSegments, isRedline) {
+                var startX = 44;
+                var startY = 245;
+                var segW = 13;
+                var segH = 26;
+                var gap = 4;
+                var skew = 7;
+
+                // 1. Inactive background segments batch
+                ctx.beginPath();
+                for (var i = 0; i < totalSegments; i++) {
+                    var x = startX + i * (segW + gap);
+                    ctx.moveTo(x + skew, startY);
+                    ctx.lineTo(x + segW + skew, startY);
+                    ctx.lineTo(x + segW, startY + segH);
+                    ctx.lineTo(x, startY + segH);
+                    ctx.closePath();
+                }
+                ctx.fillStyle = 'rgba(252, 238, 10, 0.12)';
+                ctx.fill();
+
+                // 2. Active segments batch
+                if (activeSegments > 0) {
+                    var barColor = isRedline || activeSegments > 27 ? '#FF003C' : '#FCEE0A';
+                    ctx.beginPath();
+                    for (var j = 0; j < activeSegments; j++) {
+                        var ax = startX + j * (segW + gap);
+                        ctx.moveTo(ax + skew, startY);
+                        ctx.lineTo(ax + segW + skew, startY);
+                        ctx.lineTo(ax + segW, startY + segH);
+                        ctx.lineTo(ax, startY + segH);
+                        ctx.closePath();
+                    }
+                    ctx.fillStyle = barColor;
+                    ctx.shadowColor = barColor;
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            function drawCyberpunkHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, boostBar, pitch, roll, now) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                ctx.clearRect(0, 0, 640, 320);
+                ctx.textBaseline = 'alphabetic';
+
+                // Background
+                ctx.fillStyle = '#0B0C10';
+                ctx.fillRect(0, 0, 640, 320);
+
+                var isRedline = rpm >= redlineRpm;
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+                var primaryColor = (!useDefault && customColor) ? customColor : '#FCEE0A';
+                var cyanColor = '#00F0FF';
+
+                // Top Header Line & Decals
+                ctx.fillStyle = cyanColor;
+                ctx.font = 'bold 12px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('QUADRA V-TECH // TYPE-66', 25, 30);
+
+                ctx.fillStyle = primaryColor;
+                ctx.textAlign = 'right';
+                if (mediaState.has_media && mediaState.title) {
+                    var radTitle = '♪ NC.FM // ' + (mediaState.artist ? (mediaState.artist + ' - ') : '') + mediaState.title;
+                    if (radTitle.length > 34) radTitle = radTitle.substring(0, 31) + '...';
+                    ctx.fillText(radTitle, 615, 30);
+                } else {
+                    ctx.fillText('SYS.LINK // 60HZ OK', 615, 30);
+                }
+
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(25, 38);
+                ctx.lineTo(615, 38);
+                ctx.stroke();
+
+                // Left: Gear Panel
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+                drawChamferedRect(ctx, 25, 55, 110, 160, 12);
+                ctx.fill();
+                ctx.strokeStyle = isRedline ? '#FF003C' : 'rgba(0, 240, 255, 0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('GEAR // RATIO', 80, 80);
+
+                var gearDisplay = gear <= 0 ? 'R' : (gear === 11 ? 'N' : (gear < 10 ? '0' + gear : String(gear)));
+                ctx.fillStyle = isRedline ? '#FF003C' : cyanColor;
+                ctx.font = 'bold 64px monospace';
+                ctx.fillText(gearDisplay, 80, 160);
+
+                // Center: Speed & RPM Panel
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+                drawChamferedRect(ctx, 150, 55, 320, 160, 12);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(252, 238, 10, 0.4)';
+                ctx.stroke();
+
+                ctx.fillStyle = '#94A3B8';
+                ctx.font = 'bold 12px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('VELOCITY // ' + (isMetric ? 'KM/H' : 'MPH'), 175, 82);
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 76px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(String(Math.round(speed)), 175, 162);
+
+                // Attitude Pitch & Roll readout
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'left';
+                var pDeg = ((pitch || 0) * 180 / Math.PI).toFixed(1);
+                var rDeg = ((roll || 0) * 180 / Math.PI).toFixed(1);
+                ctx.fillText('PITCH: ' + (pDeg >= 0 ? '+' : '') + pDeg + '° ROLL: ' + (rDeg >= 0 ? '+' : '') + rDeg + '°', 175, 195);
+
+                ctx.fillStyle = primaryColor;
+                ctx.font = 'bold 14px monospace';
+                ctx.textAlign = 'right';
+                ctx.fillText('RPM: ' + Math.round(rpm), 450, 195);
+
+                // Right: Boost, Pedals & Audio Spectrum EQ Panel
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+                drawChamferedRect(ctx, 485, 55, 130, 160, 12);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+                ctx.stroke();
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('BOOST / BAR', 500, 76);
+
+                ctx.fillStyle = cyanColor;
+                ctx.font = 'bold 22px monospace';
+                ctx.fillText((boostBar >= 0 ? '+' : '') + boostBar.toFixed(2), 500, 102);
+
+                // Pedal Bars
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 10px monospace';
+                ctx.fillText('BRK', 500, 124);
+                ctx.fillText('THR', 560, 124);
+
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                ctx.fillRect(500, 132, 45, 6);
+                if (brake > 0) {
+                    ctx.fillStyle = '#FF003C';
+                    ctx.fillRect(500, 132, 45 * Math.min(1, brake), 6);
+                }
+
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+                ctx.fillRect(560, 132, 45, 6);
+                if (throttle > 0) {
+                    ctx.fillStyle = '#22C55E';
+                    ctx.fillRect(560, 132, 45 * Math.min(1, throttle), 6);
+                }
+
+                // Audio Spectrum Equalizer (CH-10)
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 9px monospace';
+                ctx.fillText('AUDIO // CH-10', 500, 162);
+                for (var si = 0; si < 10; si++) {
+                    var sVal = audioSpectrum[si] || 0;
+                    var barH = Math.max(2, Math.min(30, Math.round(sVal * 30)));
+                    ctx.fillStyle = hasAudio ? cyanColor : 'rgba(0, 240, 255, 0.25)';
+                    ctx.fillRect(500 + si * 11, 204 - barH, 7, barH);
+                }
+
+                // Bottom: 32 Parallelogram RPM Bar
+                var totalSegments = 32;
+                var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
+                var activeSegments = Math.round(rpmRatio * totalSegments);
+                drawSegmentedRpmBar(ctx, activeSegments, totalSegments, isRedline);
+
+                // Ticks & Labels below RPM bar
+                function formatK(val) {
+                    var k = val / 1000;
+                    return (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + 'K';
+                }
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('0', 44, 292);
+                ctx.textAlign = 'center';
+                ctx.fillText('MID ' + formatK(maxRpm * 0.5), 320, 292);
+                ctx.textAlign = 'right';
+                ctx.fillText('MAX ' + formatK(maxRpm), 600, 292);
+
+                // Micro Glitch FX on Redline (Zero allocation lightweight slice)
+                if (isRedline && Math.random() < 0.22) {
+                    var sliceY = Math.floor(Math.random() * 240);
+                    var sliceH = 4 + Math.floor(Math.random() * 8);
+                    var sliceOffset = (Math.random() - 0.5) * 14;
+                    try {
+                        ctx.drawImage(domCache.canvas, 20, sliceY, 600, sliceH, 20 + sliceOffset, sliceY, 600, sliceH);
+                    } catch (e) {}
+                }
+            }
+
+            function runSweep(now) {
+                if (!sweepActive) return;
+                var elapsed = now - sweepStartTime;
+                var progress = elapsed / sweepDuration;
+
+                if (progress >= 1.0) {
+                    sweepActive = false;
+                    drawCyberpunkHUD(0, lastMaxRpm, lastRedline, 0, 1, 0, 0, 0, 0, 0, now);
+                    return;
+                }
+
+                var currentRpm = progress < 0.5
+                    ? (progress / 0.5) * lastMaxRpm
+                    : (1 - (progress - 0.5) / 0.5) * lastMaxRpm;
+
+                var mockSpeed = (currentRpm / lastMaxRpm) * 280;
+                var mockBoost = (currentRpm / lastMaxRpm) * 1.8 - 0.2;
+                drawCyberpunkHUD(currentRpm, lastMaxRpm, lastRedline, mockSpeed, 1, 1.0, 0, mockBoost, 0, 0, now);
+                requestAnimationFrame(runSweep);
+            }
+
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
+            HUDCore.registerStyle('cyberpunk_hud', {
+                containerId: 'cyberpunkContainer',
+                scaleMultiplier: 0.70,
+
+                onInit: function (payload) {
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                },
+
+                onElementsChange: function (elements) {
+                    if (domCache.container) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onAudio: function (data) {
+                    if (data && Array.isArray(data.spectrum)) {
+                        hasAudio = true;
+                        for (var i = 0; i < 10; i++) {
+                            var target = data.spectrum[i] || 0;
+                            audioSpectrum[i] = audioSpectrum[i] * 0.4 + target * 0.6;
+                        }
+                    } else if (data && typeof data.volume === 'number') {
+                        hasAudio = data.volume > 0.05;
+                        for (var j = 0; j < 10; j++) {
+                            var mockBar = Math.max(0, data.volume * (1 - j * 0.08));
+                            audioSpectrum[j] = audioSpectrum[j] * 0.4 + mockBar * 0.6;
+                        }
+                    } else {
+                        hasAudio = false;
+                    }
+                },
+
+                onMedia: function (data) {
+                    if (!data) {
+                        mediaState = { has_media: false, title: '', artist: '' };
+                        return;
+                    }
+                    mediaState = {
+                        has_media: Boolean(data.has_media || data.title),
+                        title: data.title || '',
+                        artist: data.artist || ''
+                    };
+                },
+
+                onFrame: function (data, payload) {
+                    if (sweepActive) return;
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 8500;
+                    var redlineRpm = (payload && payload.redlineRpm) || data.redlineRpm || (maxRpm * 0.92);
+                    lastMaxRpm = maxRpm;
+                    lastRedline = redlineRpm;
+
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    var rpm = data.rpm || 0;
+                    var rawSpeed = isMetric !== false
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+
+                    if (data.gear !== undefined && data.gear <= 11) {
+                        lastValidGear = data.gear;
+                    }
+
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+                    var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
+
+                    var boostBar = 0;
+                    if (data.boost_bar !== undefined) {
+                        boostBar = data.boost_bar;
+                    } else if (data.boost !== undefined) {
+                        boostBar = data.boost;
+                    } else if (data.Boost !== undefined) {
+                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038) : data.Boost;
+                    } else {
+                        boostBar = throttle * 1.6 - 0.2;
+                    }
+
+                    var pitch = data.pitch !== undefined ? data.pitch : (data.Pitch !== undefined ? data.Pitch : 0);
+                    var roll = data.roll !== undefined ? data.roll : (data.Roll !== undefined ? data.Roll : 0);
+
+                    drawCyberpunkHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, boostBar, pitch, roll, performance.now());
+                },
+
+                onAnimate: function () {
+                    sweepActive = true;
+                    sweepStartTime = performance.now();
+                    requestAnimationFrame(runSweep);
+                }
+            });
+
+            HUDCore.init('cyberpunk_hud');
+
+            setTimeout(function () {
+                drawCyberpunkHUD(0, 8500, 7800, 0, 1, 0, 0, 0, 0, 0, performance.now());
+            }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    drawCyberpunkHUD(0, 8500, 7800, 0, 1, 0, 0, 0, 0, 0, performance.now());
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
