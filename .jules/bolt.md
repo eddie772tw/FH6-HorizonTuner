@@ -34,3 +34,8 @@
 ## 2024-11-26 - Eliminating Set Iterators in High-Frequency Loops
 **Learning:** In high-frequency JavaScript rendering and data loops (like the 60+ Hz `FrameInterpolator`), using `Set` collections and `for...of` loops causes new Iterator objects to be allocated and discarded every frame. This generates significant Garbage Collection (GC) pressure and causes CPU overhead compared to standard array loops.
 **Action:** Use standard JavaScript Arrays (`[]`) instead of Sets and iterate over them using traditional indexed `for` loops (`for (let i = 0; i < arr.length; i++)`) to completely eliminate Iterator allocation overhead on the hot path.
+
+## 2024-11-26 - Eliminating Redundant Array Filtering in React Renders
+**Learning:** Calling `.filter()` multiple times on the same array during a React component's render cycle (e.g., to compute separate counts for 'active', 'applied', and the filtered list itself) iterates the array redundantly and allocates multiple intermediate arrays, increasing CPU and GC overhead.
+**Action:** Replace multiple `.filter()` calls with a single `useMemo` block containing a single-pass `for` loop that accumulates all necessary counts and filtered items simultaneously, completely eliminating redundant iterations and intermediate allocations.
+

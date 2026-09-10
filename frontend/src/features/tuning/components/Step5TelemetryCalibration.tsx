@@ -214,6 +214,26 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     setTuningEvents([]);
   };
 
+  // [PERF] Single-pass O(N) accumulation of event counts and filtered results
+  // Replaces 4 separate O(N) .filter() array allocations during render
+  const { activeCount, appliedCount, filteredEvents } = useMemo(() => {
+    let active = 0;
+    let applied = 0;
+    const filtered: TuningTelemetryEvent[] = [];
+
+    for (let i = 0; i < tuningEvents.length; i++) {
+      const evt = tuningEvents[i]!;
+      if (evt.status === 'active') active++;
+      else if (evt.status === 'applied') applied++;
+
+      if (eventFilter === 'all' || evt.status === eventFilter) {
+        filtered.push(evt);
+      }
+    }
+
+    return { activeCount: active, appliedCount: applied, filteredEvents: filtered };
+  }, [tuningEvents, eventFilter]);
+
   if (!carParams) {
     return (
       <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', color: 'gray' }}>
@@ -562,7 +582,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                     style={{ fontSize: '0.68rem', padding: '0.1rem 0.4rem' }}
                     onClick={() => setEventFilter('active')}
                   >
-                    {t("Active")} ({tuningEvents.filter(e => e.status === 'active').length})
+                    {t("Active")} ({activeCount})
                   </button>
                   <button
                     type="button"
@@ -570,7 +590,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                     style={{ fontSize: '0.68rem', padding: '0.1rem 0.4rem' }}
                     onClick={() => setEventFilter('applied')}
                   >
-                    {t("Applied")} ({tuningEvents.filter(e => e.status === 'applied').length})
+                    {t("Applied")} ({appliedCount})
                   </button>
                   <button
                     type="button"
@@ -594,7 +614,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
               </div>
 
               {/* Events List */}
-              {tuningEvents.filter(e => eventFilter === 'all' || e.status === eventFilter).length === 0 ? (
+              {filteredEvents.length === 0 ? (
                 <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '6px', padding: '1rem', textAlign: 'center', color: 'gray', fontSize: '0.78rem' }}>
                   {eventFilter === 'active'
                     ? t("No pending active issues. Test drive on track; events will be logged and accumulated automatically in background.")
@@ -602,9 +622,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '380px', overflowY: 'auto', paddingRight: '0.2rem' }}>
-                  {tuningEvents
-                    .filter(e => eventFilter === 'all' || e.status === eventFilter)
-                    .map(evt => {
+                  {filteredEvents.map(evt => {
                       const isApplied = evt.status === 'applied';
                       const isObsolete = evt.status === 'obsolete';
 
