@@ -1,6 +1,6 @@
 ---
 name: agent-governance-audit
-description: 當調整 Google-style .agents、Jules 日誌、Journal 或 skill 索引，或發現 skill 名稱、路徑、語言與多代理治理規則漂移時觸發此技能。
+description: 稽核與修復 .agents、Journal、Jules 原始日誌、skill 索引及多代理治理規則漂移。適用於調整治理文件、變更技能 ID/路徑或發現規則不一致時。
 ---
 
 # Agent 治理稽核
