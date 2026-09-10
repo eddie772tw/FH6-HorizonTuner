@@ -134,16 +134,16 @@ export class FrameInterpolator {
   private currSample: TelemetrySample | null = null;
   private maxExtrapolationAlpha: number;
   private staleTimeoutMs: number;
-  private continuousKeys: Set<string>;
-  private angleKeys: Set<string>;
-  private arrayKeys: Set<string>;
+  private continuousKeys: string[];
+  private angleKeys: string[];
+  private arrayKeys: string[];
 
   constructor(options: FrameInterpolatorOptions = {}) {
     this.maxExtrapolationAlpha = options.maxExtrapolationAlpha ?? 1.25;
     this.staleTimeoutMs = options.staleTimeoutMs ?? 150;
-    this.continuousKeys = new Set(options.continuousKeys ?? DEFAULT_CONTINUOUS_KEYS);
-    this.angleKeys = new Set(options.angleKeys ?? DEFAULT_ANGLE_KEYS);
-    this.arrayKeys = new Set(DEFAULT_ARRAY_KEYS);
+    this.continuousKeys = options.continuousKeys ?? DEFAULT_CONTINUOUS_KEYS;
+    this.angleKeys = options.angleKeys ?? DEFAULT_ANGLE_KEYS;
+    this.arrayKeys = DEFAULT_ARRAY_KEYS;
   }
 
   /**
@@ -221,7 +221,8 @@ export class FrameInterpolator {
     const out: Record<string, any> = { ...curr };
 
     // 1. Interpolate continuous numeric primitives
-    for (const key of this.continuousKeys) {
+    for (let i = 0; i < this.continuousKeys.length; i++) {
+      const key = this.continuousKeys[i];
       const v0 = prev[key];
       const v1 = curr[key];
       if (typeof v0 === 'number' && typeof v1 === 'number') {
@@ -230,7 +231,8 @@ export class FrameInterpolator {
     }
 
     // 2. Interpolate angle keys (shortest arc)
-    for (const key of this.angleKeys) {
+    for (let i = 0; i < this.angleKeys.length; i++) {
+      const key = this.angleKeys[i];
       const a0 = prev[key];
       const a1 = curr[key];
       if (typeof a0 === 'number' && typeof a1 === 'number') {
@@ -239,7 +241,8 @@ export class FrameInterpolator {
     }
 
     // 3. Interpolate 4-element arrays (e.g. TireTemp, Suspension)
-    for (const key of this.arrayKeys) {
+    for (let i = 0; i < this.arrayKeys.length; i++) {
+      const key = this.arrayKeys[i];
       const arr0 = prev[key];
       const arr1 = curr[key];
       if (Array.isArray(arr0) && Array.isArray(arr1) && arr0.length === arr1.length) {
