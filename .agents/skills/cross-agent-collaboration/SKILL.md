@@ -1,6 +1,6 @@
 ---
 name: cross-agent-collaboration
-description: 當 Codex、Google Antigravity 或 Jules 需要在同一 repository 進行非同步協作、交接任務、共享分支或避免同檔案衝突時使用。規範 ownership、handoff、狀態、驗證、Journal 與 Git 同步流程。
+description: 協調 Codex、Antigravity 與 Jules 的非同步跨代理協作。適用於交接任務、確認寫入 ownership、共享分支或避免工作樹衝突時。
 ---
 
 # 跨 Agent 非同步協作

@@ -59,6 +59,31 @@
 - **Action**：新增 `docs/hud-5-styles-visual-review-20260910.md`、10 張目前 renderer 截圖及 45 組布局量測；舊報告加歷史註記。Defi 提出獨立表體、右下主表與錯落副表方案；AE86 固定版型，只修材質、字形與字樣；MoTeC 保留三分區，依官方 C125 真實硬體頁面重做左右欄的溫度／壓力讀值。官方展示圖的中央 PAGE 5 不是檔位，亦不能宣称此頁代表所有 GT3 車隊。本輪未改 HUD 產品程式。
 - **Evidence**：Edge Chromium headless、DPR=1，3 種 viewport × 3 種 scale × 5 樣式，共 45/45 主容器右／底距離 30 CSS px 且不越界，無 pageerror。合成 telemetry、全視窗 iframe；未作 Tauri／真實遊戲／OS DPI／效能驗收。
 - **Skills**：`agent-governance-audit`；對話布局草圖使用 `visualize:visualize`。
+## 2026-09-10 / 全庫 Agent 規範體系與技能架構精煉重構 (AGENTS.md & Skills Lean Governance)
+
+- **來源**：`local`，響應使用者需求，依據五大 Agent 技能架構原則對專案 `AGENTS.md`、13 個專案技能及使用者層級外掛技能進行全面盤點與模組化重構。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **路由器 + 附件模式 (Router & References Pattern)**：巨型 `SKILL.md`（如超過 100 行的 `codex-antigravity-bridge`、`github-security-audit`、`jules_coding`、`pr-author-maintainer`）若直接塞入完整實作細節、正則與範本，會導致 Agent 只要觸發該技能就將大量上下文填滿，造成 Context Pollution。抽離出專用 `references/` 附件、主檔僅負責流程路由判定，能兼顧輕量調用與深度指針查閱。
+  2. **消除「每次動作前通讀某些檔案」之 Context Stuffing 反模式**：舊版 `AGENTS.md` 要求每次動作前通讀 `workspace.md`、`Journal.md` 等檔案，極易引發大量 token 浪費與記憶雜訊。重構為「文件與規範權責分工表 (Documentation SSOT Architecture)」，實踐按需載入 (On-Demand Loading)。
+  3. **消極禁令轉化為有條件明確授權 (Pre-authorized Bounded Rules)**：將「先問再做」的消極限制（如修改 UDP Offset、引入第三方相依）轉化為「具備客觀證據、測試覆蓋、輕量及寬鬆授權等明確邊界條件時獲得授權」，顯著減少不必要的互動中斷與等待死鎖。
+  4. **範圍分流驗證 (Scoped Verification)**：將「每次任務結束必須跑全套測試」改為依變更範圍分流（純文檔跑 diff check，前端跑 vitest，後端跑 pytest），大幅提升日常開發迴圈效能。
+  5. **消除技能間身分與職責衝突**：修正 `pr-review-evaluation` 與 `pr-author-maintainer` 在 PR 提交上的語意衝突，嚴格劃分 Reviewer 審查身分與 Author 提交身分；明確劃分 `huge-component-refactoring`（UI 組件與 60Hz Canvas）與 `modular-refactoring`（底層架構、Domain 邏輯與 API 契約）之邊界；並精簡修復外掛技能（如 `modern-web-guidance`）之大寫強迫字眼與過寬觸發。
+- **Action**：
+  1. 重構 `AGENTS.md`：建立權責分工表、範圍分流驗證與有條件明確授權條款。
+  2. 重構 `skills/README.md`：同步更新 Gate 與清單說明。
+  3. 模組化重構並抽離 references：
+     - `codex-antigravity-bridge`: 建立 `headless_configuration.md`, `smoke_troubleshooting.md`, `desktop_session_resume.md`。
+     - `github-security-audit`: 建立 `vulnerability_remediation_patterns.md`。
+     - `jules_coding`: 建立 `manual_invocation_guide.md`, `scheduled_intake_guide.md`。
+     - `pr-author-maintainer`: 建立 `pr_templates_and_replies.md`。
+     - `halfmoon-design-system`: 將元件 class 列表完全收斂至 `HALFMOON_SPECIFICATION.md`。
+  4. 修正 `agent-governance-audit`、`cross-agent-collaboration`、`pr-review-evaluation` 等 frontmatter descriptions。
+  5. 修訂使用者層級外掛技能（`modern-web-guidance`、`accidental-data-loss-prevention`、`chrome-extensions`、`ml-best-practices`、`building-data-apps`）。
+- **Evidence**：`git diff --check` 通過無空白異常；專案 13 個 skills 與 canonical registry 100% 對齊。
+- **Skills**：`agent-governance-audit`、`modular-refactoring`、`cross-agent-collaboration`。
+
+---
 
 ## 2026-09-10 / 全庫開啟中 PR 深度架構審查、多代理協作治理與 Merge 藍圖發布 (Neo as Antigravity)
 
