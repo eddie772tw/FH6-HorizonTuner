@@ -57,27 +57,33 @@ def test_replay_preserves_raw_domain_and_binary_wire_units():
     assert struct.calcsize(TELEMETRY_STRUCT_FORMAT) == 128
     assert unpacked[4] == pytest.approx(81.0)  # m/s -> km/h
     assert unpacked[6] == pytest.approx(200.0)  # W -> hp
-    assert unpacked[7] == pytest.approx(2.0)  # Pa -> PSI
+    assert domain["Boost"] == pytest.approx(2.0)
+    assert unpacked[7] == pytest.approx(2.0)  # FH6 PSI passes through unchanged.
     assert unpacked[8] == pytest.approx(1.0)  # m/s² -> G
     assert unpacked[14:18] == pytest.approx((180.0, 181.0, 182.0, 183.0))
 
 
-def test_replay_makes_timestamp_discontinuity_explicit_for_recorder():
+@pytest.mark.asyncio
+async def test_replay_saves_discontinuity_and_starts_a_separate_recording():
     parsed_frames = [parse_telemetry_packet(packet) for packet in replay_raw_packets()]
     assert all(frame is not None for frame in parsed_frames)
-
-    persistence = AsyncRacePersistence(Mock())
+    store = Mock()
+    persistence = AsyncRacePersistence(store)
+    persistence.start()
     recorder = RaceRecorder(persistence, {"race_recording": True}, {})
     recorder.downsample_interval = 0
     for frame in parsed_frames:
         recorder.record(frame)
-
-    assert [point["TimestampMS"] for point in recorder.in_memory_batch] == [
-        1000,
-        1100,
-        850,
-    ]
-    assert [point["time"] for point in recorder.in_memory_batch] == [0.0, 0.1, -0.15]
+    assert [p["TimestampMS"] for p in recorder.in_memory_batch] == [850]
+    assert recorder.in_memory_batch[0]["time"] == 0
+    await persistence.flush()
+    saved_points = store.insert_points_batch.call_args.args[1]
+    assert [p["TimestampMS"] for p in saved_points] == [1000, 1100]
+    assert (
+        store.finalize_session.call_args.args[1]["endReason"] == "timestamp-regressed"
+    )
+    recorder.save_latest_and_clear()
+    await persistence.shutdown()
 
 
 @pytest.mark.asyncio

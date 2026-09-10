@@ -10,6 +10,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateAEGOGearing,
+  calculateRoadBaselineGroup,
+  roadExplorationStep,
+  fitRoadGameGrid,
   profileTorqueToNm,
   torqueNmToProfile,
   toTuningCarParams,
@@ -774,3 +777,40 @@ describe('calculateStaticTireAlignment', () => {
 });
 
 
+
+
+describe('Road guided baseline and exploration', () => {
+  const params: TuningCarParams = { weight: 1350, weight_distribution: 54, drivetrain: 'AWD', maxHp: 400, maxTorque: 500, maxHpRpm: 6500, maxTorqueRpm: 4000, frontTireWidth: 245, rearTireWidth: 275 };
+  it('keeps neutral correction explicit and preserves named seasonal behavior', () => {
+    const neutral = calculateStaticTireAlignment('Road', 'Neutral', params);
+    const summer = calculateStaticTireAlignment('Road', 'Summer', params);
+    const winter = calculateStaticTireAlignment('Road', 'Winter', params);
+    expect(neutral.seasonBias).toBe(0);
+    expect(neutral.pcF - summer.pcF).toBeCloseTo(.5);
+    expect(winter.pcR - neutral.pcR).toBeCloseTo(.5);
+    expect(calculateRoadBaselineGroup('pressure', params)?.['pressure.front'].value).toBe(neutral.pcF);
+  });
+  it('does not use a tire compound label in Road outputs', () => {
+    for (const tireType of ['Stock', 'Slick', 'Snow', 'unknown']) {
+      expect(calculateStaticTireAlignment('Road', 'Neutral', { ...params, tireType })).toEqual(calculateStaticTireAlignment('Road', 'Neutral', params));
+      expect(calculateAEGOGearing('Road', 6, { ...params, tireType }, 8000)).toEqual(calculateAEGOGearing('Road', 6, params, 8000));
+    }
+  });
+  it('asks only for consumed fields and never substitutes an unknown required input', () => {
+    expect(calculateRoadBaselineGroup('arb', { drivetrain: 'FWD', weight_distribution: 60 })?.['arb.front'].value).toBe(calculateChassisTuning('Road', { ...params, drivetrain: 'FWD', weight_distribution: 60 }).arb.front);
+    expect(calculateRoadBaselineGroup('pressure', { drivetrain: 'FWD', weight_distribution: 60 })).toBeNull();
+    expect(calculateRoadBaselineGroup('springs', { drivetrain: 'FWD', weight_distribution: 60, spring_front_min: 80, spring_front_max: 40, spring_rear_min: 20, spring_rear_max: 80 })).toBeNull();
+    expect(calculateRoadBaselineGroup('gearing', { ...params, numGears: 6 })).toBeNull();
+  });
+  it('limits exploration to one confirmed game step and always references frozen A', () => {
+    const frozen = { value: 28, minimum: 15, maximum: 55, step: .5 };
+    expect(roadExplorationStep(frozen, 1)).toBe(28.5);
+    expect(roadExplorationStep(frozen, -1)).toBe(27.5);
+    expect(frozen.value).toBe(28);
+    expect(roadExplorationStep({ ...frozen, value: 55 }, 1)).toBeNull();
+    expect(roadExplorationStep({ ...frozen, step: 0 }, 1)).toBeNull();
+    expect(roadExplorationStep({ ...frozen, value: 28.1 }, 1)).toBeNull();
+    expect(fitRoadGameGrid(99, 15, 30, .5)).toBe(30);
+    expect(fitRoadGameGrid(28, Number.NaN, 30, .5)).toBeNull();
+  });
+});

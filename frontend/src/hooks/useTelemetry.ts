@@ -29,7 +29,8 @@ export interface TelemetryData {
   PowerWatts?: number;
   TorqueNewtons?: number;
   TireTemp?: number[];
-  Boost?: number;
+  Boost?: number; // PSI above atmospheric
+  DrivetrainType?: number; // 0 FWD, 1 RWD, 2 AWD
   Fuel?: number;
   BestLap?: number;
   LastLap?: number;

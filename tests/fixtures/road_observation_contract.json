@@ -1,0 +1,191 @@
+{
+  "points": [
+    {
+      "TimestampMS": 0,
+      "IsRaceOn": 1,
+      "LapNumber": 0,
+      "CurrentLap": 0,
+      "LastLap": 0,
+      "SpeedMetersPerSecond": 20,
+      "AccelerationX": 4.5,
+      "TireTemp": [
+        185,
+        null,
+        140,
+        240
+      ],
+      "SuspTravel": [
+        0.96,
+        0.3,
+        0.2,
+        0.3
+      ],
+      "TireSlipAngle": [
+        0.2,
+        0.2,
+        0.05,
+        0.05
+      ]
+    },
+    {
+      "TimestampMS": 100,
+      "IsRaceOn": 1,
+      "LapNumber": 0,
+      "CurrentLap": 0.1,
+      "LastLap": 0,
+      "SpeedMetersPerSecond": 20,
+      "AccelerationX": 4.5,
+      "TireTemp": [
+        185,
+        null,
+        140,
+        240
+      ],
+      "SuspTravel": [
+        0.96,
+        0.3,
+        0.2,
+        0.3
+      ],
+      "TireSlipAngle": [
+        0.2,
+        0.2,
+        0.05,
+        0.05
+      ]
+    },
+    {
+      "TimestampMS": 200,
+      "IsRaceOn": 1,
+      "LapNumber": 0,
+      "CurrentLap": 0.2,
+      "LastLap": 0,
+      "SpeedMetersPerSecond": 20,
+      "AccelerationX": 4.5,
+      "TireTemp": [
+        185,
+        null,
+        140,
+        240
+      ],
+      "SuspTravel": [
+        0.96,
+        0.3,
+        0.2,
+        0.3
+      ],
+      "TireSlipAngle": [
+        0.2,
+        0.2,
+        0.05,
+        0.05
+      ]
+    },
+    {
+      "TimestampMS": 1000,
+      "IsRaceOn": 1,
+      "LapNumber": 0,
+      "CurrentLap": 1,
+      "LastLap": 0,
+      "SpeedMetersPerSecond": 20,
+      "AccelerationX": 4.5,
+      "TireTemp": [
+        185,
+        null,
+        140,
+        240
+      ],
+      "SuspTravel": [
+        0.96,
+        0.3,
+        0.2,
+        0.3
+      ],
+      "TireSlipAngle": [
+        0.05,
+        0.05,
+        0.2,
+        0.2
+      ]
+    },
+    {
+      "TimestampMS": 1100,
+      "IsRaceOn": 1,
+      "LapNumber": 0,
+      "CurrentLap": 1.1,
+      "LastLap": 0,
+      "SpeedMetersPerSecond": 20,
+      "AccelerationX": 4.5,
+      "TireTemp": [
+        185,
+        null,
+        140,
+        240
+      ],
+      "SuspTravel": [
+        0.96,
+        0.3,
+        0.2,
+        0.3
+      ],
+      "TireSlipAngle": [
+        0.05,
+        0.05,
+        0.2,
+        0.2
+      ]
+    },
+    {
+      "TimestampMS": 1200,
+      "IsRaceOn": 1,
+      "LapNumber": 0,
+      "CurrentLap": 1.2,
+      "LastLap": 0,
+      "SpeedMetersPerSecond": 20,
+      "AccelerationX": 4.5,
+      "TireTemp": [
+        185,
+        null,
+        140,
+        240
+      ],
+      "SuspTravel": [
+        0.96,
+        0.3,
+        0.2,
+        0.3
+      ],
+      "TireSlipAngle": [
+        0.05,
+        0.05,
+        0.2,
+        0.2
+      ]
+    }
+  ],
+  "expected": {
+    "methodVersion": "session-observations/v2",
+    "total_samples": 6,
+    "valid_laps": 0,
+    "observed_laps": 1,
+    "observed_seconds": 0.4,
+    "tire_thermals": {
+      "fl_avg": 85,
+      "fr_avg": null,
+      "rl_avg": 60,
+      "rr_avg": 115.55555555555556,
+      "status": "Partial data"
+    },
+    "suspension": {
+      "peak_travel_pct": 96,
+      "bottom_out_count": 2,
+      "status": "Observed"
+    },
+    "handling_balance": {
+      "understeer_pct": 50,
+      "oversteer_pct": 50,
+      "observed_seconds": 0.4,
+      "tendency": "Observed normalized slip"
+    }
+  }
+}

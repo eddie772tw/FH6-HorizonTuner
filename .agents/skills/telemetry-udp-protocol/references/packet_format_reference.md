@@ -34,7 +34,7 @@
 | `116 ~ 131` | s32[4] | `WheelOnRumbleStrip` | 四輪是否壓在路沿石/減速帶上（1 = 是，0 = 否） | ⚪ 未解析 / 未使用 | *預留未來路沿石吃線 (Kerb Strike) 統計* |
 | `132 ~ 147` | f32[4] | `WheelInPuddleDepth` | 四輪壓過賽道水坑積水深度（範圍 0.0 ~ 1.0） | ⚪ 未解析 / 未使用 | *預留未來雨天水漂效應 (Hydroplaning) 預警* |
 | `148 ~ 163` | f32[4] | `SurfaceRumbleTouchdownMagnitude` | 四輪路面震動觸地力道 | 🟢 已解析並使用 | `telemetryCards.ts` 路面震動卡片 |
-| `164 ~ 179` | f32[4] | `WheelSlipAngle` | 四輪輪胎橫向滑移角（FL, FR, RL, RR，單位：弧度 rad） | 🟢 已解析並使用 | `tuningDiagnosis.ts`, `TireSlipCards` |
+| `164 ~ 179` | f32[4] | `WheelSlipAngle` | 四輪輪胎正規化橫向滑移訊號（FL, FR, RL, RR，無角度單位） | 🟢 已解析並使用 | `tuningDiagnosis.ts`, `TireSlipCards` |
 | `180 ~ 195` | f32[4] | `WheelCombinedSlip` | 四輪複合打滑係數（結合縱向滑移與橫向滑移） | 🟢 已解析並使用 | `tuningDiagnosis.ts`, 前端抓地力極限面板 |
 | `196 ~ 211` | f32[4] | `SuspensionTravelMeters` | 四輪懸吊實際壓縮行程絕對長度（單位：公尺 $m$） | ⚪ 未解析 / 未使用 | *預留未來避震器極限衝擊行程實體診斷* |
 | `212 ~ 215` | s32 (Int32) | `CarOrdinal` | 當前駕駛車輛內部編號 ID | 🟢 已解析並使用 | `useTelemetry.ts`, 車輛調校資料庫關聯 |
@@ -62,7 +62,7 @@
 | `292 ~ 295` | f32 (Float) | `DistanceTraveled` | 本次行駛總里程（單位：公尺 $m$） | 🟢 已解析並使用 | `TelemetryRecorderContext.tsx`, 單圈里程 |
 | `296 ~ 307` | f32[3] | `BestLap, LastLap, CurrentLap` | 最快單圈 / 上圈 / 本圈用時（單位：秒 $s$） | 🟢 已解析並使用 | `LapTimeDisplay.tsx`, `hud_overlay` |
 | `308 ~ 311` | f32 (Float) | `CurrentRaceTime` | 整場比賽/賽事總計時間（單位：秒 $s$） | 🟢 已解析並使用 | `AnalysisView.tsx` 時間軸, MoTeC 總時長 |
-| `312 ~ 313` | u16 (UInt16) | `LapNumber` | 當前圈數 | 🟢 已解析並使用 | `LapTimeDisplay.tsx`, 單圈紀錄切換器 |
+| `312 ~ 313` | u16 (UInt16) | `LapNumber` | 已完成圈數；目前顯示圈號為此值 + 1 | 🟢 已解析並使用 | `LapTimeDisplay.tsx`, 單圈紀錄切換器 |
 | `314` | u8 (UInt8) | `RacePosition` | 當前比賽名次 (P1, P2...) | 🟢 已解析並使用 | `hud_overlay`, 名次 Badge |
 | `315` | u8 (UInt8) | `AccelInput` | 油門踩踏深度（0 ~ 255） | 🟢 已解析並使用 | `PedalTraceCanvas.tsx`, 控制器踏板儀表 |
 | `316` | u8 (UInt8) | `BrakeInput` | 煞車踩踏深度（0 ~ 255） | 🟢 已解析並使用 | `PedalTraceCanvas.tsx`, 控制器踏板儀表 |
@@ -83,3 +83,5 @@
 # 開啟實時 UDP 多封包探測探針
 uv run --no-project --python .venv\Scripts\python.exe .agents/skills/telemetry-udp-protocol/references/verify_telemetry_v2_v3.py --scan --port 8000
 ```
+
+2026-09-10 單位核對：[FH6 官方 Data Out 文件](https://support.forza.net/hc/en-us/articles/51744149102611-Forza-Horizon-6-Data-Out-Documentation) 明定 Boost 為大氣壓以上 PSI、TireSlipAngle 為正規化訊號、LapNumber 為已完成圈數。本次未修改封包 offset；匯出與 binary HUD 保留原生 Boost PSI。溫度官方未在文字列單位，應用程式仍維持既有原始華氏契約。

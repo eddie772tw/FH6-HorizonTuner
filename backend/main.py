@@ -123,6 +123,9 @@ from path_security import safe_join_under_dir, safe_resolve_path
 from process_cleanup import cleanup_stale_port_listeners
 from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
+from road_router import create_road_router
+from road_service import RoadService
+from road_store import RoadStore
 from settings_persistence import SerializedSettingsUpdate, SettingsPersistence
 from settings_router import create_settings_router
 from system_media import get_current_thumbnail_data, get_system_media_info
@@ -625,6 +628,16 @@ audio_device_discovery = AudioDeviceDiscovery()
 # --- Race Telemetry Recorder ---
 race_persistence = AsyncRacePersistence(telemetry_db)
 race_recorder = RaceRecorder(race_persistence, app_settings, car_database)
+road_service = RoadService(telemetry_db, RoadStore(SESSIONS_DB_PATH))
+app.include_router(create_road_router(road_service))
+
+
+async def maintain_race_recording():
+    """Silence/finish timeout handling also runs when no UDP packet arrives."""
+    while True:
+        await asyncio.sleep(0.5)
+        race_recorder.tick()
+        await road_service.maintain()
 
 
 # --- Drag Telemetry Recorder Class ---
@@ -1246,10 +1259,12 @@ async def lifespan(app: FastAPI):
     )
     current_udp_ip_port = ("auto", port)
     race_persistence.start()
+    await road_service.recover()
     discord_presence.start()
     background_tasks = [
         asyncio.create_task(broadcast_telemetry()),
         asyncio.create_task(broadcast_overlay_state()),
+        asyncio.create_task(maintain_race_recording()),
     ]
     try:
         yield
@@ -1261,7 +1276,9 @@ async def lifespan(app: FastAPI):
         await asyncio.gather(*background_tasks, return_exceptions=True)
         await car_params_writer.flush()
         await car_params_cache.cancel_pending()
+        race_recorder.save_latest_and_clear("application-shutdown")
         await race_persistence.shutdown()
+        await road_service.shutdown()
         discord_presence.stop()
 
 
@@ -1361,6 +1378,7 @@ async def broadcast_telemetry():
         # --- Record Race Telemetry ---
         with telemetry_pipeline_metrics.measure_stage("recorders"):
             race_recorder.record(data)
+            road_service.observe(data)
 
             # --- Record Drag Test Telemetry ---
             drag_recorder.record(data)
@@ -2127,24 +2145,25 @@ async def get_analysis_status():
 
 
 @app.get("/api/analysis/data")
-async def get_current_analysis_data(lap: int = 0):
+async def get_current_analysis_data(lap: int = -1):
     if race_recorder.current_session_id:
         return telemetry_db.get_telemetry_points(
-            race_recorder.current_session_id, lap_number=lap if lap > 0 else None
+            race_recorder.current_session_id, lap_number=lap if lap >= 0 else None
         )
     # Return latest recorded session if any
     sessions = telemetry_db.list_all_sessions()
     if sessions:
         latest_id = sessions[0]["session_id"]
         return telemetry_db.get_telemetry_points(
-            latest_id, lap_number=lap if lap > 0 else None
+            latest_id, lap_number=lap if lap >= 0 else None
         )
     return []
 
 
 @app.post("/api/analysis/clear")
 async def clear_analysis_data():
-    race_recorder.clear()
+    race_recorder.save_latest_and_clear("cancelled")
+    await race_persistence.flush()
     return {"message": "Current recording session cleared."}
 
 
@@ -2200,10 +2219,10 @@ async def get_session_laps(session_id: str):
 
 
 @app.get("/api/analysis/sessions/{session_id}")
-async def load_saved_session(session_id: str, lap: int = 0):
+async def load_saved_session(session_id: str, lap: int = -1):
     try:
         data = telemetry_db.get_telemetry_points(
-            session_id, lap_number=lap if lap > 0 else None
+            session_id, lap_number=lap if lap >= 0 else None
         )
         if data:
             return data

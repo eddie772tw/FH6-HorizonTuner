@@ -23,6 +23,11 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ## Core Features
 
+* **Road Comparison Assistant (first version on this branch)**: Confirm the car and event, drive, then review the result. Observing the current setup requires no engine specifications, season or tire compound. Initial estimates request inputs by section and use zero seasonal pressure bias.
+  - Immutable A/B settings, runs, game-confirmed finish times and reports remain available offline and after restart. Return to A or keep B as a new baseline; another run requires fresh telemetry and confirmation of in-game values. The app does not apply settings to the game.
+  - Compare full-event time, starting thermal state and matched local slip/temperature observations. Missing data limits conclusions. Evidence is descriptive, with no universal optimal pressure or causal confidence score.
+  - Local tests and synthetic telemetry cover the workflow; real Road performance, cross-car thresholds and novice completion rates remain unverified. See the [implementation and evidence record](docs/road-workflow-implementation-20260910.md). The detailed six-section workbench remains available.
+
 * **Real-time Telemetry & Dynamics (60Hz Live Data)**:
   - High-frequency 60Hz UDP telemetry packet ingestion and high-performance visual rendering.
   - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.

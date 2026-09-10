@@ -1,3 +1,4 @@
+import { trackPoints } from './analysisChannels';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   useTelemetryRecorder,
@@ -42,7 +43,7 @@ const AnalysisView: React.FC = () => {
 
   // Laps & Lap Comparison state
   const [lapsList, setLapsList] = useState<LapSummary[]>([]);
-  const [primaryLap, setPrimaryLap] = useState<number>(0);
+  const [primaryLap, setPrimaryLap] = useState<number>(-1);
   const [compareLap, setCompareLap] = useState<number>(-1);
   const [compareSessionData, setCompareSessionData] = useState<AnalysisDataPoint[]>([]);
   const [fullSessionTrackData, setFullSessionTrackData] = useState<AnalysisDataPoint[]>([]);
@@ -73,7 +74,7 @@ const AnalysisView: React.FC = () => {
     let intervalId: any = null;
     if (isRecording) {
       intervalId = setInterval(async () => {
-        const fullPoints = await fetchCurrentSessionData(0);
+        const fullPoints = await fetchCurrentSessionData(-1);
         if (fullPoints && fullPoints.length > 0) {
           setFullSessionTrackData(fullPoints);
           setDebriefData(calculateFrontendDebrief(fullPoints));
@@ -102,7 +103,7 @@ const AnalysisView: React.FC = () => {
         setLapsList(laps);
 
         const res = await backendFetch(
-          `/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=0`,
+          `/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=-1`,
         );
         const data = await res.json();
         if (Array.isArray(data)) setFullSessionTrackData(data);
@@ -133,7 +134,7 @@ const AnalysisView: React.FC = () => {
   // Load Compare Lap Data when compareLap dropdown changes
   useEffect(() => {
     const fetchCompareData = async () => {
-      if (compareLap > 0 && selectedFilename !== "local") {
+      if (compareLap >= 0 && selectedFilename !== "local") {
         if (selectedFilename === "current") {
           const res = await backendFetch(
             `/api/analysis/data?lap=${compareLap}`,
@@ -159,13 +160,13 @@ const AnalysisView: React.FC = () => {
   ) => {
     const val = e.target.value;
     setSelectedFilename(val);
-    setPrimaryLap(0);
+    setPrimaryLap(-1);
     setCompareLap(-1);
 
     setIsLoading(true);
     if (val === "current") {
       setLoadedSession(null);
-      await fetchCurrentSessionData(0);
+      await fetchCurrentSessionData(-1);
     } else if (val !== "local") {
       await loadSavedSession(val, 0);
     }
@@ -220,53 +221,13 @@ const AnalysisView: React.FC = () => {
     }
   };
 
-  const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => {
-    const len = points.length;
-    if (len === 0) return [];
-
-    const cachedValues = new Float64Array(len);
-    let metricMax = 0.1;
-
-    for (let i = 0; i < len; i++) {
-      const p = points[i];
-      let v = p.SpeedMetersPerSecond;
-      if (selectedMetric === "throttle") v = (p.AccelInput || 0) / 255;
-      else if (selectedMetric === "brake") v = (p.BrakeInput || 0) / 255;
-      else if (selectedMetric === "grip") {
-        const slip = p.TireSlipRatio || [0, 0, 0, 0];
-        v = Math.max(Math.abs(slip[0]), Math.abs(slip[1]), Math.abs(slip[2]), Math.abs(slip[3]));
-      } else if (selectedMetric === "suspension") {
-        const susp = p.SuspTravel || [0, 0, 0, 0];
-        v = susp[0];
-      }
-
-      cachedValues[i] = v;
-      if (v > metricMax) metricMax = v;
-    }
-
-    const result = new Array(len);
-    for (let i = 0; i < len; i++) {
-      result[i] = {
-        x: points[i].PositionX || 0,
-        z: points[i].PositionZ || 0,
-        val: metricMax > 0 ? cachedValues[i] / metricMax : 0,
-        raw: points[i],
-      };
-    }
-    return result;
-  }, [selectedMetric]);
+  const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => trackPoints(points, selectedMetric), [selectedMetric]);
 
   const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
   const baseCanvasData = useMemo(() => formatTrackCanvasData(fullSessionTrackData), [fullSessionTrackData, formatTrackCanvasData]);
   const isSavedSession = selectedFilename !== "current" && selectedFilename !== "local";
 
-  const fallbackDebrief: SessionDebriefData = debriefData || {
-    total_samples: activeSession.length,
-    valid_laps: lapsList.length,
-    tire_thermals: { fl_avg: 0, fr_avg: 0, rl_avg: 0, rr_avg: 0, status: "no_data" },
-    suspension: { peak_travel_pct: 0, bottom_out_count: 0, status: "no_data" },
-    handling_balance: { understeer_pct: 50, oversteer_pct: 50, tendency: "Neutral / Balanced" },
-  };
+  const fallbackDebrief = debriefData || calculateFrontendDebrief([]);
 
   return (
     <div
@@ -343,10 +304,10 @@ const AnalysisView: React.FC = () => {
                 onChange={(e) => setPrimaryLap(parseInt(e.target.value))}
                 style={selectStyle}
               >
-                <option value={0}>{t("All Laps")}</option>
+                <option value={-1}>{t("All Laps")}</option>
                 {lapsList.map((l) => (
                   <option key={l.lap_number} value={l.lap_number}>
-                    Lap {l.lap_number} ({l.lap_time.toFixed(2)}s | Max: {l.max_speed_kmh.toFixed(0)}km/h)
+                    Lap {l.lap_number + 1} ({l.lap_time?.toFixed(2) ?? '—'}s | Max: {l.max_speed_kmh?.toFixed(0) ?? '—'}km/h)
                   </option>
                 ))}
               </select>
@@ -367,7 +328,7 @@ const AnalysisView: React.FC = () => {
                 <option value={-1}>{t("None")}</option>
                 {lapsList.map((l) => (
                   <option key={l.lap_number} value={l.lap_number}>
-                    vs Lap {l.lap_number} ({l.lap_time.toFixed(2)}s)
+                    vs Lap {l.lap_number + 1} ({l.lap_time?.toFixed(2) ?? '—'}s)
                   </option>
                 ))}
               </select>

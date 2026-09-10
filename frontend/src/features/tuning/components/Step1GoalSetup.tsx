@@ -150,6 +150,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               onChange={e => setSeason(e.target.value as Season)} 
               style={{ ...inputStyle, width: '200px', border: '1px solid #ffb703', background: 'var(--input-bg)', color: 'var(--input-text)' }}
             >
+              {selectedRaceGoal === 'Road' && <option value="Neutral">{t("No seasonal correction (initial estimate)")}</option>}
               <option value="Summer">{t("Summer")} (-{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
               <option value="Autumn">{t("Autumn")} (-{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
               <option value="Spring">{t("Spring")} (+{seasonalPressure.value.toFixed(2)} {seasonalPressure.label})</option>
@@ -211,6 +212,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </select>
           </div>
 
+          {selectedRaceGoal !== 'Road' && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Tire Compound")}</label>
             <select 
@@ -230,6 +232,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <option value="Drift">{t("Drift")}</option>
             </select>
           </div>
+          )}
 
           {/* Induction Type parameter (affects powerband and turbo lag in Road/Drift) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -4,22 +4,27 @@ import { backendFetch, backendHttpUrl } from "../services/backend";
 import { SessionDebriefData } from "../features/analysis/sessionDebriefMath";
 
 export interface AnalysisDataPoint {
-  time: number; // Seconds since recording started
-  LapNumber?: number;
-  lap_distance?: number;
-  SpeedMetersPerSecond: number;
-  CurrentEngineRpm: number;
-  Gear: number;
-  AccelInput: number;
-  BrakeInput: number;
-  AccelerationX: number; // Lat G (m/s^2)
-  AccelerationZ: number; // Lon G (m/s^2)
-  SuspTravel: number[]; // [FL, FR, RL, RR] (0.0 - 1.0)
-  TireSlipAngle: number[]; // [FL, FR, RL, RR] (radians)
-  TireSlipRatio: number[]; // [FL, FR, RL, RR]
-  TireTemp: number[]; // [FL, FR, RL, RR] (°F)
-  PositionX: number;
-  PositionZ: number;
+  sourceSchema?: string;
+  time: number | null;
+  TimestampMS?: number | null;
+  IsRaceOn?: number | null;
+  LapNumber?: number | null;
+  CurrentLap?: number | null;
+  LastLap?: number | null;
+  lap_distance?: number | null;
+  SpeedMetersPerSecond: number | null;
+  CurrentEngineRpm: number | null;
+  Gear: number | null;
+  AccelInput: number | null;
+  BrakeInput: number | null;
+  AccelerationX: number | null; // m/s^2
+  AccelerationZ: number | null;
+  SuspTravel: (number | null)[]; // normalized
+  TireSlipAngle: (number | null)[]; // normalized, not degrees
+  TireSlipRatio: (number | null)[];
+  TireTemp: (number | null)[]; // Fahrenheit
+  PositionX: number | null;
+  PositionZ: number | null;
 }
 
 export interface SavedSessionHeader {
@@ -35,10 +40,13 @@ export interface SavedSessionHeader {
 
 export interface LapSummary {
   lap_number: number;
-  lap_time: number;
+  lap_time: number | null;
+  complete?: number;
+  lap_time_source?: string;
+  observed_span?: number | null;
   start_distance: number;
   end_distance: number;
-  max_speed_kmh: number;
+  max_speed_kmh: number | null;
   avg_speed_kmh: number;
 }
 
@@ -136,7 +144,7 @@ export const TelemetryRecorderProvider: React.FC<{
   };
 
   const fetchCurrentSessionData = async (
-    lap: number = 0,
+    lap: number = -1,
   ): Promise<AnalysisDataPoint[]> => {
     try {
       const res = await backendFetch(
@@ -184,7 +192,7 @@ export const TelemetryRecorderProvider: React.FC<{
 
   const loadSavedSession = async (
     filename: string,
-    lap: number = 0,
+    lap: number = -1,
   ): Promise<AnalysisDataPoint[] | null> => {
     try {
       const res = await backendFetch(

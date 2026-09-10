@@ -1,3 +1,13 @@
+## 2026-09-10 Codex — Road 比較工作流與資料邊界
+
+- Road 預設流程改為確認、記錄、結果；觀察不要求引擎，局部初值只讀取其公式依賴。來源與未知可見；Neutral 為 0 PSI 季節偏移，不是遙測自動辨識。
+- 關聯 A／B／提案與領域輸入／草稿使用 SQLite 單一交易保存；報告及選擇追加保存。保留 B 另建新 A，回復不覆寫歷史基準；新場需新影格及遊戲確認，離線仍可讀報告及建草稿。
+- 單位必須從通道契約判定：Boost 原生 PSI，ANG 正規化；缺輪不能補零，小 raw 控制不能用幅度猜成百分比。CSV 原始來源與舊 SQLite 缺失分層保留。
+- 起始胎溫取第一個有效行駛影格，不能平均掉候選造成的後續升溫。空間點、圈數不等於獨立場數；逐場與同圈序檢查可比性，門檻是待實測校準的工程規則。
+- 本地涵蓋不可變 A/B、回滾、重啟、CSV 缺值、小控制值、路線／高度／操控／熱狀態不相容；合成 UDP 18000 實際走過比較與回復。詳細證據及限制見 `docs/road-workflow-implementation-20260910.md`。沒有新增實際 FH6 Road 場次或發布。
+- 採用：`physics-tuning-math`、`halfmoon-design-system`、`modular-refactoring`、`huge-component-refactoring`、`telemetry-udp-protocol`。
+- 最終驗證：前端 103 files／767 tests；後端 322 passed／9 deselected；TypeScript／Vite／solver build、Ruff 225 files 與 diff 空白檢查通過。完整 sidecar 檢查需先釋放 QA 占用的 HTTP 8001。
+
 ## 2026-09-09 Codex — 開發收斂與驗證摘要
 
 - 依使用者要求停止新增遊戲測試及公式研究，成果與接續點統一於docs/tuning-development-checkpoint-20260909.md；整體目標未宣稱完成，未commit/push。

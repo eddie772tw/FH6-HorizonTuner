@@ -77,7 +77,7 @@ def test_vehicle_dynamics_telemetry_formatting(mcp_service):
         "AccelerationZ": -9.81 * 0.8,  # -0.8 G longitudinal
         "PowerWatts": 350000.0,
         "TorqueNewtons": 500.0,
-        "Boost": 101325.0 * 1.5,  # Boost in Pa
+        "Boost": 22.05,  # FH6 Boost in PSI
         "Yaw": 0.05,
         "Pitch": -0.02,
         "Roll": 0.03,

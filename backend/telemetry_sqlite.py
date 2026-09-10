@@ -1,8 +1,12 @@
+import json
 import logging
 import os
 import re
 import sqlite3
 from typing import Any, Dict, List, Optional
+
+from road_analysis import summarize_laps
+from telemetry_contract import LEGACY_POINT_SCHEMA, decoded_point
 
 logger = logging.getLogger(__name__)
 
@@ -114,10 +118,31 @@ class TelemetrySQLite:
                 );
             """)
 
+            for table, additions in (
+                ("sessions", (("metadata_json", "TEXT"),)),
+                (
+                    "laps",
+                    (
+                        ("lap_time_source", "TEXT DEFAULT 'sample-span-estimate'"),
+                        ("complete", "INTEGER DEFAULT 0"),
+                        ("observed_span", "REAL"),
+                    ),
+                ),
+            ):
+                existing = {
+                    row[1] for row in conn.execute(f"PRAGMA table_info({table})")
+                }
+                for name, definition in additions:
+                    if name not in existing:
+                        conn.execute(
+                            f"ALTER TABLE {table} ADD COLUMN {name} {definition}"
+                        )
+
             # Column migration for existing tables
             cursor.execute("PRAGMA table_info(telemetry_channels);")
             existing_cols = {col[1] for col in cursor.fetchall()}
             new_columns = [
+                ("raw_json", "TEXT"),
                 ("susp_meters_fl", "REAL DEFAULT 0.0"),
                 ("susp_meters_fr", "REAL DEFAULT 0.0"),
                 ("susp_meters_rl", "REAL DEFAULT 0.0"),
@@ -194,8 +219,8 @@ class TelemetrySQLite:
             conn.executemany(
                 """
                 INSERT OR REPLACE INTO laps
-                (session_id, lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh)
-                VALUES (?, ?, ?, ?, ?, ?, ?);
+                (session_id, lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh, lap_time_source, complete, observed_span)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
                 [
                     (
@@ -206,6 +231,9 @@ class TelemetrySQLite:
                         lap.get("end_distance", 0.0),
                         lap.get("max_speed_kmh", 0.0),
                         lap.get("avg_speed_kmh", 0.0),
+                        lap.get("lap_time_source", "sample-span-estimate"),
+                        int(lap.get("complete", False)),
+                        lap.get("observed_span"),
                     )
                     for lap in laps_data
                 ],
@@ -216,182 +244,128 @@ class TelemetrySQLite:
         if not points:
             return
 
+        # New rows retain the explicit decoded contract in addition to the
+        # compatibility columns. Old rows remain identifiable as lossy legacy
+        # data; no migration invents measurements that were never saved.
         records = []
-        for p in points:
-            susp = p.get("SuspTravel", DEFAULT_ARRAY)
-            susp_m = p.get("SuspensionTravelMeters", DEFAULT_ARRAY)
-            s_angle = p.get("TireSlipAngle", DEFAULT_ARRAY)
-            s_ratio = p.get("TireSlipRatio", DEFAULT_ARRAY)
-            temp = p.get("TireTemp", DEFAULT_ARRAY)
-            power_w = p.get("PowerWatts", p.get("Power", 0.0))
-            torque_n = p.get("TorqueNewtons", p.get("Torque", 0.0))
-            boost_val = p.get("Boost", 0.0)
-            fuel_val = p.get("Fuel", 1.0)
-
+        for source in points:
+            p = decoded_point(source)
+            acceleration = [
+                p[key] / 9.81 if p[key] is not None else None
+                for key in ("AccelerationX", "AccelerationY", "AccelerationZ")
+            ]
             records.append(
                 (
                     session_id,
-                    p.get("LapNumber", p.get("CurrentLap", 1)),
-                    p.get("time", p.get("relative_time", 0.0)),
-                    p.get("lap_distance", p.get("DistanceTraveled", 0.0)),
-                    p.get("SpeedMetersPerSecond", p.get("speed", 0.0))
-                    * 3.6,  # Store in km/h standard
-                    p.get("CurrentEngineRpm", p.get("rpm", 0.0)),
-                    p.get("Gear", p.get("gear", 0)),
-                    (p.get("AccelInput", p.get("accel_pct", 0)) / 255.0) * 100.0
-                    if p.get("AccelInput") is not None and p.get("AccelInput") > 1
-                    else p.get("accel_pct", 0.0),
-                    (p.get("BrakeInput", p.get("brake_pct", 0)) / 255.0) * 100.0
-                    if p.get("BrakeInput") is not None and p.get("BrakeInput") > 1
-                    else p.get("brake_pct", 0.0),
-                    (p.get("SteerInput", p.get("steer_pct", 0)) / 127.0) * 100.0
-                    if p.get("SteerInput") is not None and abs(p.get("SteerInput")) > 1
-                    else p.get("steer_pct", 0.0),
-                    (p.get("ClutchInput", p.get("clutch_pct", 0)) / 255.0) * 100.0
-                    if p.get("ClutchInput") is not None and p.get("ClutchInput") > 1
-                    else p.get("clutch_pct", 0.0),
-                    (p.get("HandBrakeInput", p.get("handbrake_pct", 0)) / 255.0) * 100.0
-                    if p.get("HandBrakeInput") is not None
-                    and p.get("HandBrakeInput") > 1
-                    else p.get("handbrake_pct", 0.0),
-                    p.get("AccelerationX", p.get("accel_x", 0.0)) / 9.81
-                    if abs(p.get("AccelerationX", 0)) > 5
-                    else p.get("accel_x", 0.0),
-                    p.get("AccelerationY", p.get("accel_y", 0.0)) / 9.81
-                    if abs(p.get("AccelerationY", 0)) > 5
-                    else p.get("accel_y", 0.0),
-                    p.get("AccelerationZ", p.get("accel_z", 0.0)) / 9.81
-                    if abs(p.get("AccelerationZ", 0)) > 5
-                    else p.get("accel_z", 0.0),
-                    p.get("Yaw", p.get("yaw", 0.0)),
-                    p.get("Pitch", p.get("pitch", 0.0)),
-                    p.get("Roll", p.get("roll", 0.0)),
-                    p.get("PositionX", p.get("pos_x", 0.0)),
-                    p.get("PositionY", p.get("pos_y", 0.0)),
-                    p.get("PositionZ", p.get("pos_z", 0.0)),
-                    susp[0] if len(susp) > 0 else 0.0,
-                    susp[1] if len(susp) > 1 else 0.0,
-                    susp[2] if len(susp) > 2 else 0.0,
-                    susp[3] if len(susp) > 3 else 0.0,
-                    s_angle[0] * 57.29578
-                    if len(s_angle) > 0 and abs(s_angle[0]) < 10
-                    else (s_angle[0] if len(s_angle) > 0 else 0.0),
-                    s_angle[1] * 57.29578
-                    if len(s_angle) > 1 and abs(s_angle[1]) < 10
-                    else (s_angle[1] if len(s_angle) > 1 else 0.0),
-                    s_angle[2] * 57.29578
-                    if len(s_angle) > 2 and abs(s_angle[2]) < 10
-                    else (s_angle[2] if len(s_angle) > 2 else 0.0),
-                    s_angle[3] * 57.29578
-                    if len(s_angle) > 3 and abs(s_angle[3]) < 10
-                    else (s_angle[3] if len(s_angle) > 3 else 0.0),
-                    s_ratio[0] if len(s_ratio) > 0 else 0.0,
-                    s_ratio[1] if len(s_ratio) > 1 else 0.0,
-                    s_ratio[2] if len(s_ratio) > 2 else 0.0,
-                    s_ratio[3] if len(s_ratio) > 3 else 0.0,
-                    temp[0] if len(temp) > 0 else 0.0,
-                    temp[1] if len(temp) > 1 else 0.0,
-                    temp[2] if len(temp) > 2 else 0.0,
-                    temp[3] if len(temp) > 3 else 0.0,
-                    susp_m[0] if len(susp_m) > 0 else 0.0,
-                    susp_m[1] if len(susp_m) > 1 else 0.0,
-                    susp_m[2] if len(susp_m) > 2 else 0.0,
-                    susp_m[3] if len(susp_m) > 3 else 0.0,
-                    float(power_w or 0.0),
-                    float(torque_n or 0.0),
-                    float(boost_val or 0.0),
-                    float(fuel_val if fuel_val is not None else 1.0),
+                    p["LapNumber"] if p["LapNumber"] is not None else 0,
+                    p["time"] if p["time"] is not None else 0,
+                    p["DistanceTraveled"],
+                    p["SpeedMetersPerSecond"] * 3.6
+                    if p["SpeedMetersPerSecond"] is not None
+                    else None,
+                    p["CurrentEngineRpm"],
+                    p["Gear"],
+                    p["accel_pct"],
+                    p["brake_pct"],
+                    p["steer_pct"],
+                    p["clutch_pct"],
+                    p["handbrake_pct"],
+                    *acceleration,
+                    p["Yaw"],
+                    p["Pitch"],
+                    p["Roll"],
+                    p["PositionX"],
+                    p["PositionY"],
+                    p["PositionZ"],
+                    *p["NormalizedSuspensionTravel"],
+                    *p["TireSlipAngle"],
+                    *p["TireSlipRatio"],
+                    *p["TireTemp"],
+                    *p["SuspensionTravelMeters"],
+                    p["PowerWatts"],
+                    p["TorqueNewtons"],
+                    p["Boost"],
+                    p["Fuel"],
+                    json.dumps(p, allow_nan=False, separators=(",", ":")),
                 )
             )
-
+        columns = """
+            session_id, lap_number, relative_time, lap_distance, speed, rpm, gear,
+            accel_pct, brake_pct, steer_pct, clutch_pct, handbrake_pct,
+            accel_x, accel_y, accel_z, yaw, pitch, roll, pos_x, pos_y, pos_z,
+            susp_fl, susp_fr, susp_rl, susp_rr, slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr,
+            slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr, temp_fl, temp_fr, temp_rl, temp_rr,
+            susp_meters_fl, susp_meters_fr, susp_meters_rl, susp_meters_rr,
+            power_watts, torque_newtons, boost, fuel, raw_json
+        """
+        # All identifiers above are static source, never user-provided SQL.
         with self._get_connection() as conn:
             conn.executemany(
-                """
-                INSERT INTO telemetry_channels (
-                    session_id, lap_number, relative_time, lap_distance,
-                    speed, rpm, gear, accel_pct, brake_pct, steer_pct, clutch_pct, handbrake_pct,
-                    accel_x, accel_y, accel_z, yaw, pitch, roll, pos_x, pos_y, pos_z,
-                    susp_fl, susp_fr, susp_rl, susp_rr,
-                    slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr,
-                    slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr,
-                    temp_fl, temp_fr, temp_rl, temp_rr,
-                    susp_meters_fl, susp_meters_fr, susp_meters_rl, susp_meters_rr,
-                    power_watts, torque_newtons, boost, fuel
-                ) VALUES (
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?, ?, ?
-                );
-            """,
+                f"INSERT INTO telemetry_channels ({columns}) VALUES ({','.join('?' for _ in records[0])})",
                 records,
             )
             conn.commit()
 
-    def finalize_session(self, session_id: str) -> Dict[str, Any]:
-        """Calculate and persist a session summary after all point batches finish."""
-        points = self.get_telemetry_points(session_id)
-        if not points:
-            return {
-                "session_id": session_id,
-                "total_laps": 0,
-                "best_lap_time": 0.0,
-                "total_distance": 0.0,
-            }
+    def get_session_metadata(self, session_id: str) -> dict:
+        with self._get_connection() as conn:
+            row = conn.execute(
+                "SELECT metadata_json FROM sessions WHERE session_id = ?", (session_id,)
+            ).fetchone()
+            return json.loads(row[0]) if row and row[0] else {}
 
-        laps_map: Dict[int, List[Dict[str, Any]]] = {}
-        for point in points:
-            lap_number = point.get("LapNumber", 1)
-            laps_map.setdefault(lap_number, []).append(point)
-
-        laps_summary = []
-        best_lap_time = float("inf")
-        total_distance = 0.0
-        for lap_number, lap_points in laps_map.items():
-            if not lap_points:
-                continue
-            lap_time = lap_points[-1]["time"] - lap_points[0]["time"]
-            start_distance = lap_points[0].get("lap_distance", 0.0)
-            end_distance = lap_points[-1].get("lap_distance", 0.0)
-            speeds = [point["SpeedMetersPerSecond"] * 3.6 for point in lap_points]
-            max_speed = max(speeds) if speeds else 0.0
-            average_speed = sum(speeds) / len(speeds) if speeds else 0.0
-
-            if 1.0 < lap_time < best_lap_time:
-                best_lap_time = lap_time
-
-            laps_summary.append(
-                {
-                    "lap_number": lap_number,
-                    "lap_time": round(lap_time, 3),
-                    "start_distance": round(start_distance, 1),
-                    "end_distance": round(end_distance, 1),
-                    "max_speed_kmh": round(max_speed, 1),
-                    "avg_speed_kmh": round(average_speed, 1),
-                }
+    def set_session_metadata(self, session_id: str, metadata: dict) -> None:
+        with self._get_connection() as conn:
+            conn.execute(
+                "UPDATE sessions SET metadata_json = ? WHERE session_id = ?",
+                (json.dumps(metadata, allow_nan=False), session_id),
             )
-            total_distance = max(total_distance, end_distance)
 
-        if best_lap_time == float("inf"):
-            best_lap_time = 0.0
-        self.save_laps_summary(session_id, laps_summary)
-        self.update_session_summary(
-            session_id,
-            total_laps=len(laps_summary),
-            best_lap_time=round(best_lap_time, 3),
-            total_distance=round(total_distance, 1),
-        )
-        return {
+    def finalize_session(
+        self, session_id: str, metadata: dict | None = None
+    ) -> Dict[str, Any]:
+        """Persist attributed game times separately from partial sample spans."""
+        points = self.get_telemetry_points(session_id)
+        laps = summarize_laps(points)
+        summary = [
+            {
+                "lap_number": lap["lapIndex"],
+                "lap_time": lap["lapTimeSeconds"],
+                "lap_time_source": lap["lapTimeSource"],
+                "complete": lap["complete"],
+                "observed_span": lap["observedSpanSeconds"],
+                "start_distance": None,
+                "end_distance": None,
+                "max_speed_kmh": lap["maxSpeedKmh"],
+                "avg_speed_kmh": lap["meanSpeedKmh"],
+            }
+            for lap in laps
+        ]
+        complete_times = [lap["lapTimeSeconds"] for lap in laps if lap["complete"]]
+        distances = [
+            p["lap_distance"]
+            for p in points
+            if isinstance(p.get("lap_distance"), (int, float))
+        ]
+        result = {
             "session_id": session_id,
-            "total_laps": len(laps_summary),
-            "best_lap_time": round(best_lap_time, 3),
-            "total_distance": round(total_distance, 1),
+            "total_laps": len(complete_times),
+            "best_lap_time": min(complete_times) if complete_times else 0.0,
+            "total_distance": max(distances) - min(distances) if distances else 0.0,
         }
+        self.save_laps_summary(session_id, summary)
+        self.update_session_summary(**result)
+        record = self.get_session_metadata(session_id)
+        record.update(metadata or {})
+        record.update(
+            {
+                "state": "finalized",
+                "lapTimingVersion": "road-observations/v1",
+                "completeLaps": len(complete_times),
+                "observedLaps": len(laps),
+            }
+        )
+        self.set_session_metadata(session_id, record)
+        return result
 
     def list_all_sessions(self) -> List[Dict[str, Any]]:
         with self._get_connection() as conn:
@@ -408,7 +382,7 @@ class TelemetrySQLite:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh
+                SELECT lap_number, lap_time, start_distance, end_distance, max_speed_kmh, avg_speed_kmh, lap_time_source, complete, observed_span
                 FROM laps
                 WHERE session_id = ?
                 ORDER BY lap_number ASC;
@@ -435,23 +409,27 @@ class TelemetrySQLite:
                     temp_fl, temp_fr, temp_rl, temp_rr,
                     clutch_pct, handbrake_pct,
                     susp_meters_fl, susp_meters_fr, susp_meters_rl, susp_meters_rr,
-                    power_watts, torque_newtons, boost, fuel
+                    power_watts, torque_newtons, boost, fuel, raw_json
                 FROM telemetry_channels
                 WHERE session_id = ?
             """
             params: list[Any] = [session_id]
-            if lap_number is not None and lap_number > 0:
+            if lap_number is not None:
                 query += " AND lap_number = ?"
                 params.append(lap_number)
 
-            query += " ORDER BY relative_time ASC"
+            # Arrival order preserves clock regressions and missing timestamps.
+            query += " ORDER BY id ASC"
 
             cursor.row_factory = None  # type: ignore # Bypass sqlite3.Row for raw tuple performance
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
             return [
-                {
+                json.loads(r[41])
+                if r[41]
+                else {
+                    "sourceSchema": LEGACY_POINT_SCHEMA,
                     "time": r[0],
                     "LapNumber": r[1],
                     "lap_distance": r[2],

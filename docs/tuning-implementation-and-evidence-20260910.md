@@ -35,6 +35,8 @@
 
 後續產品化方案見[調校工作流與賽後分析回饋提案](tuning-post-race-feedback-proposal.md)：盤點本次全部主要方法、现有錄製與單位缺口、版本化資料契約、P0～P3交付及驗收。此為設計提案，尚未實作。
 
+使用者回饋後新增[流程簡化與遙測輔助可行性](tuning-workflow-simplification-proposal-20260910.md)，範圍限定 Road。後續依啟用的實作目標完成按需輸入、無季節補正的初值、不可變 A/B 與記錄、離線報告及比較助手；操作與本地／合成遙測證據見 [Road 實作紀錄](road-workflow-implementation-20260910.md)。取消季節輸入不代表已量測胎壓；沒有新增真實遊戲實測或把描述性比較升格為因果證明。
+
 本地使用 `D:/FH6-HorizonTuner/.venv/Scripts/python.exe`，下列 Python 命令均透過 `uv run --no-project --python <該路徑>`。
 
 |檢查|結果|

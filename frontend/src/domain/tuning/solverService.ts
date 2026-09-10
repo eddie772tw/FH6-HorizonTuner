@@ -53,7 +53,7 @@ function validateRequest(request: SolverRequest): void {
   if (request.correction && Object.values(request.correction).some(value => !Number.isFinite(value))) {
     throw new Error('Correction values must be finite');
   }
-  if (request.season && !['Summer', 'Autumn', 'Spring', 'Winter'].includes(request.season)) {
+  if (request.season && !['Summer', 'Autumn', 'Spring', 'Winter', 'Neutral'].includes(request.season)) {
     throw new Error('Invalid season');
   }
   if (request.torqueUnit && !['Nm', 'lb-ft'].includes(request.torqueUnit)) throw new Error('Invalid torqueUnit');

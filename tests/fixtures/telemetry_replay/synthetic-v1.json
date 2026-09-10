@@ -33,7 +33,7 @@
       "PowerWatts": 149140.0,
       "TorqueNewtons": 450.0,
       "TireTemp": [180.0, 181.0, 182.0, 183.0],
-      "Boost": 13789.51458,
+      "Boost": 2.0,
       "Fuel": 0.75,
       "DistanceTraveled": 25.0,
       "BestLap": 0.0,

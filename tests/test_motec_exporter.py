@@ -43,31 +43,33 @@ def test_motec_workspace_template_xml():
     assert "Track Map &amp; GPS" in xml
 
 
-def test_calculate_session_debrief_optimal():
+def test_calculate_session_debrief_observations():
     points = [
         {
             "LapNumber": 1,
+            "TimestampMS": i * 100,
             "TireTemp": [185.0, 185.0, 185.0, 185.0],
             "SuspTravel": [0.4, 0.4, 0.45, 0.45],
             "AccelerationX": 0.0,
             "SpeedMetersPerSecond": 25.0,
             "TireSlipAngle": [0.05, 0.05, 0.05, 0.05],
         }
-        for _ in range(20)
+        for i in range(20)
     ]
     debrief = calculate_session_debrief(points)
     assert debrief["total_samples"] == 20
-    assert debrief["valid_laps"] == 1
-    assert debrief["tire_thermals"]["status"] == "Optimal"
+    assert debrief["valid_laps"] == 0
+    assert debrief["tire_thermals"]["status"] == "Observed"
     assert debrief["suspension"]["bottom_out_count"] == 0
-    assert debrief["suspension"]["status"] == "Optimal"
-    assert "Neutral" in debrief["handling_balance"]["tendency"]
+    assert debrief["suspension"]["status"] == "Observed"
+    assert debrief["handling_balance"]["tendency"] == "no_data"
 
 
-def test_calculate_session_debrief_bottom_out_and_understeer():
+def test_calculate_session_debrief_continuous_travel_and_relative_slip():
     points = [
         {
             "LapNumber": 1,
+            "TimestampMS": i * 100,
             "TireTemp": [240.0, 240.0, 240.0, 240.0],  # Overheating
             "SuspTravel": [0.96, 0.96, 0.5, 0.5],  # Bottoming out
             "AccelerationX": 4.5,  # ~0.46G Lat
@@ -79,14 +81,14 @@ def test_calculate_session_debrief_bottom_out_and_understeer():
                 0.05,
             ],  # Front slip >> Rear slip (Understeer)
         }
-        for _ in range(15)
+        for i in range(15)
     ]
     debrief = calculate_session_debrief(points)
-    assert debrief["tire_thermals"]["status"] == "Overheating"
-    assert debrief["suspension"]["bottom_out_count"] > 10
-    assert debrief["suspension"]["status"] == "Severe Bottoming"
+    assert debrief["tire_thermals"]["status"] == "Observed"
+    assert debrief["suspension"]["bottom_out_count"] == 2
+    assert debrief["suspension"]["status"] == "Observed"
     assert debrief["handling_balance"]["understeer_pct"] > 70.0
-    assert debrief["handling_balance"]["tendency"] == "Understeer Biased"
+    assert debrief["handling_balance"]["tendency"] == "Observed normalized slip"
 
 
 def test_full_41_channel_export_and_parse_roundtrip():
@@ -110,7 +112,7 @@ def test_full_41_channel_export_and_parse_roundtrip():
             "AccelerationX": 4.2,
             "AccelerationY": 0.5,
             "AccelerationZ": 6.8,
-            "Boost": 18.5 * 6894.75729,
+            "Boost": 18.5,
             "Fuel": 0.85,
             "PowerWatts": 500000.0,
             "Power": 500000.0,
@@ -156,7 +158,7 @@ def test_full_41_channel_export_and_parse_roundtrip():
         assert parsed_points[0]["Gear"] == 4
         assert parsed_points[0]["PowerWatts"] == pytest.approx(500000.0, rel=1e-3)
         assert parsed_points[0]["TorqueNewtons"] == pytest.approx(650.0, rel=1e-3)
-        assert parsed_points[0]["Boost"] == pytest.approx(18.5 * 6894.75729, rel=1e-2)
+        assert parsed_points[0]["Boost"] == pytest.approx(18.5, rel=1e-2)
     finally:
         if os.path.exists(csv_path):
             os.remove(csv_path)
@@ -166,7 +168,7 @@ def test_export_uses_canonical_power_and_boost_fields(tmp_path):
     point = {
         "PowerWatts": 745700.0,
         "TorqueNewtons": 500.0,
-        "Boost": 6894.75729,
+        "Boost": 1.0,
         "Fuel": 0.42,
         "TireTemp": [180] * 4,
         "SuspTravel": [0] * 4,
@@ -175,15 +177,23 @@ def test_export_uses_canonical_power_and_boost_fields(tmp_path):
     row = list(csv.reader((tmp_path / "s.csv").open()))[9]
     assert row[16] == "1000.0"
     assert row[17] == "500.0"
-    assert row[14] == "1.00"
+    assert row[14] == "1.000"
 
 
 def test_debrief_converts_midrange_fahrenheit():
     result = calculate_session_debrief(
-        [{"TireTemp": [140.0] * 4, "SuspTravel": [0.0] * 4}]
+        [
+            {
+                "time": t,
+                "SpeedMetersPerSecond": 20,
+                "TireTemp": [140.0] * 4,
+                "SuspTravel": [0.0] * 4,
+            }
+            for t in (0, 0.1)
+        ]
     )
     assert result["tire_thermals"]["fl_avg"] == pytest.approx(60.0)
-    assert result["tire_thermals"]["status"] == "Cold"
+    assert result["tire_thermals"]["status"] == "Observed"
 
 
 def test_saved_points_retain_full_export_channels(tmp_path):
@@ -197,7 +207,7 @@ def test_saved_points_retain_full_export_channels(tmp_path):
             {
                 "PowerWatts": 745700,
                 "TorqueNewtons": 500.0,
-                "Boost": 6894.75729,
+                "Boost": 1.0,
                 "SuspensionTravelMeters": [0.1] * 4,
                 "TireTemp": [180] * 4,
             }
@@ -207,4 +217,44 @@ def test_saved_points_retain_full_export_channels(tmp_path):
     assert point["PowerWatts"] == 745700
     assert point["SuspensionTravelMeters"] == [0.1] * 4
     assert point["TorqueNewtons"] == 500.0
-    assert point["Boost"] == pytest.approx(6894.75729)
+    assert point["Boost"] == pytest.approx(1.0)
+
+
+def test_csv_roundtrip_preserves_missing_wheels_small_raw_controls_and_normalized_slip(
+    tmp_path,
+):
+    path = tmp_path / "nullable.csv"
+    point = {
+        "time": 0,
+        "LapNumber": 0,
+        "AccelInput": 1,
+        "SteerInput": -1,
+        "TireTemp": [185, None, 140, 240],
+        "TireSlipAngle": [-0.2, 0.3, None, 1.2],
+        "Boost": 2,
+        "SpeedMetersPerSecond": 20,
+    }
+    assert export_session_to_motec_csv({"session_id": "nullable"}, [point], str(path))
+    _, points = parse_motec_csv_to_telemetry(str(path))
+    restored = points[0]
+    assert restored["LapNumber"] == 0
+    assert restored["AccelInput"] == 1
+    assert restored["SteerInput"] == -1
+    assert restored["TireTemp"][1] is None
+    assert restored["TireTemp"][0] == pytest.approx(185)
+    assert restored["TireSlipAngle"] == [-0.2, 0.3, None, 1.2]
+    assert restored["PositionX"] is None
+    assert restored["Boost"] == 2
+    assert restored["sourceSchema"] == "motec-channels/v2"
+
+
+def test_only_known_fh6_legacy_exports_undo_the_old_slip_angle_scale():
+    from motec_channels import import_row
+
+    headers, units, row = ["Slip Angle FL"], ["deg"], [str(-0.25 * 57.29578)]
+    assert import_row(headers, units, row, known_legacy=True)["TireSlipAngle"][
+        0
+    ] == pytest.approx(-0.25)
+    assert (
+        import_row(headers, units, row, known_legacy=False)["TireSlipAngle"][0] is None
+    )

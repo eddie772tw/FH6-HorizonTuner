@@ -120,7 +120,9 @@ def pack_telemetry_binary(data: dict) -> bytes:
         speed = float(data.get("SpeedMetersPerSecond", 0.0)) * 3.6  # 轉為 km/h
         gear = int(data.get("Gear", 0))
         power = float(data.get("PowerWatts", 0.0)) / 745.7
-        boost = float(data.get("Boost", 0.0)) / 6894.75729
+        boost = float(
+            data.get("Boost", 0.0)
+        )  # FH6 already sends PSI above atmospheric.
 
         accel_x = float(data.get("AccelerationX", 0.0)) / 9.81
         accel_y = float(data.get("AccelerationY", 0.0)) / 9.81
@@ -209,7 +211,7 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
         "<ffff", data, 84
     )
 
-    # Tire Slip Angle (Radians)
+    # Tire Slip Angle (normalized; this is not an angle in radians)
     slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr = struct.unpack_from(
         "<ffff", data, 164
     )

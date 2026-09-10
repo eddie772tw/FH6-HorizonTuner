@@ -215,7 +215,7 @@ class HorizonTunerMcpService:
         # Power and Torque
         power_w = float(p.get("PowerWatts") or p.get("power_watts") or 0.0)
         torque_nm = float(p.get("TorqueNewtons") or p.get("torque_nm") or 0.0)
-        boost_pa = float(p.get("Boost") or p.get("boost") or 0.0)
+        boost_psi = float(p.get("Boost") or p.get("boost") or 0.0)
 
         # Orientation
         yaw = float(p.get("Yaw") or p.get("yaw") or 0.0)
@@ -248,12 +248,8 @@ class HorizonTunerMcpService:
                 "power_hp": round(power_w / 745.699872, 1),
                 "torque_nm": round(torque_nm, 1),
                 "torque_ftlb": round(torque_nm * 0.737562, 1),
-                "boost_psi": round(boost_pa * 0.000145038, 2)
-                if boost_pa > 1000
-                else round(boost_pa, 2),
-                "boost_bar": round(boost_pa / 100000.0, 3)
-                if boost_pa > 1000
-                else round(boost_pa / 14.5038, 3),
+                "boost_psi": round(boost_psi, 2),
+                "boost_bar": round(boost_psi / 14.5038, 3),
                 "is_ev": is_ev,
                 "is_regen_active": is_regen,
             },

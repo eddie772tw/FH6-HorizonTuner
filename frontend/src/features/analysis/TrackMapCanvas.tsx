@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { simplifyPathRDP, Point2D } from '../../utils/rdpSimplifier';
 
 export interface TrackPoint extends Point2D {
+  breakBefore?: boolean;
   val: number;        // Normalized metric value (0.0 to 1.0)
   raw: any;           // Original raw telemetry data point
 }
@@ -51,14 +52,14 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   // RDP Simplification for active path
   const simplifiedActiveData = useMemo(() => {
     if (filteredData.length <= 100) return filteredData;
-    return simplifyPathRDP(filteredData, 0.3);
+    return filteredData.some((p, i) => i > 0 && p.breakBefore) ? filteredData : simplifyPathRDP(filteredData, 0.3);
   }, [filteredData]);
 
   // RDP Simplification for full circuit base path
   const simplifiedBaseData = useMemo(() => {
     const baseSource = (fullTrackData && fullTrackData.length > 0) ? fullTrackData : filteredData;
     if (baseSource.length <= 100) return baseSource;
-    return simplifyPathRDP(baseSource, 0.3);
+    return baseSource.some((p, i) => i > 0 && p.breakBefore) ? baseSource : simplifyPathRDP(baseSource, 0.3);
   }, [fullTrackData, filteredData]);
 
   // Compute Bounding Box from Base Circuit Data to keep canvas scale stable
@@ -97,7 +98,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
   // Render Canvas with Dual-Layer Architecture & Heading Arrow
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || (simplifiedActiveData.length === 0 && simplifiedBaseData.length === 0)) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -109,6 +110,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
 
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
+    if (simplifiedActiveData.length === 0 && simplifiedBaseData.length === 0) return;
 
     // Grid Background
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
@@ -133,7 +135,8 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
       ctx.moveTo(firstC.cx, firstC.cy);
       for (let i = 1; i < simplifiedBaseData.length; i++) {
         const c = worldToCanvas(simplifiedBaseData[i].x, simplifiedBaseData[i].z, rect.width, rect.height);
-        ctx.lineTo(c.cx, c.cy);
+        if (simplifiedBaseData[i].breakBefore) ctx.moveTo(c.cx, c.cy);
+        else ctx.lineTo(c.cx, c.cy);
       }
       ctx.stroke();
     }
@@ -144,6 +147,7 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
       for (let i = 0; i < simplifiedActiveData.length - 1; i++) {
         const p1 = simplifiedActiveData[i];
         const p2 = simplifiedActiveData[i + 1];
+        if (p2.breakBefore) continue;
 
         const c1 = worldToCanvas(p1.x, p1.z, rect.width, rect.height);
         const c2 = worldToCanvas(p2.x, p2.z, rect.width, rect.height);
@@ -253,8 +257,8 @@ const TrackMapCanvas: React.FC<TrackMapCanvasProps> = ({
           zIndex: 10
         }}>
           <div><strong>{selectedMetricLabel}:</strong> {(hoveredPoint.val * 100).toFixed(0)}%</div>
-          <div>{t("Time:")} {hoveredPoint.raw?.time?.toFixed(1) ?? 0}{t("s")}</div>
-          <div>{t("Speed:")} {((hoveredPoint.raw?.SpeedMetersPerSecond ?? 0) * 3.6).toFixed(1)} {t("km/h")}</div>
+          <div>{t("Time:")} {hoveredPoint.raw?.time?.toFixed(1) ?? t("Unknown")}{t("s")}</div>
+          <div>{t("Speed:")} {(typeof hoveredPoint.raw?.SpeedMetersPerSecond === "number" ? (hoveredPoint.raw.SpeedMetersPerSecond * 3.6).toFixed(1) : t("Unknown"))} {t("km/h")}</div>
         </div>
       )}
     </div>

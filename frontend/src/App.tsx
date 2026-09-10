@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Navigation from './components/Navigation';
 import TelemetryView from './features/telemetry/TelemetryView';
-import TuningView from './features/tuning/TuningView';
+import TuningWorkspace from './features/tuning/TuningWorkspace';
 import TuningViewDev from './features/tuning/TuningView_dev';
 import CarParamsView from './features/car_params/CarParamsView';
 import SettingsView from './features/settings/SettingsView';
@@ -68,7 +68,7 @@ const AppContent: React.FC = () => {
           {settings.developer_tuning_enabled ? (
             <TuningViewDev currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
           ) : (
-            <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+            <TuningWorkspace currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
           )}
         </div>
         <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>

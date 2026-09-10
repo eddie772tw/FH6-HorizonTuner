@@ -3,7 +3,8 @@ import { useCarParams, CarParams } from '../../context/CarParamsContext';
 import { calculateWorkflowTuning, resolveWorkflowGearingCorrection, toTuningCarParams, Season, type GearingResult, type GearingCorrectionMode } from '../../utils/tuningMath';
 import { TuningMeasurementStep } from './components/TuningMeasurementStep';
 import { TuningPreparedStatus } from './components/TuningPreparedStatus';
-import type { TuningMeasurementState } from './tuningMeasurement';
+import { useEngineMeasurementArchive } from './useEngineMeasurementArchive';
+import { EngineObservationHistory } from './components/EngineObservationHistory';
 import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { Step1GoalSetup } from './components/Step1GoalSetup';
 import { Step2GearboxSetup } from './components/Step2GearboxSetup';
@@ -71,23 +72,21 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
   const setCurrentStep = propSetStep !== undefined ? propSetStep : setInternalStep;
 
   const [selectedRaceGoal, setSelectedRaceGoal] = useState<string>('Road');
-  const [season, setSeason] = useState<Season>('Summer');
+  const [season, setSeason] = useState<Season>('Neutral');
+  const effectiveSeason = selectedRaceGoal !== 'Road' && season === 'Neutral' ? 'Summer' : season;
   const [showUnitSettings, setShowUnitSettings] = useState(false);
 
   const numGears = carParams?.adjustability?.gears || 6;
   const [tuning, setTuning] = useState<TuningState>(() => initialTuning(numGears));
   const [savedTunings, setSavedTunings] = useState<string[]>([]);
-  const [measurement, setMeasurement] = useState<{ key: string; data: TuningMeasurementState; profile: CarParams } | null>(null);
+  const engineArchive = useEngineMeasurementArchive(carId, carParams);
   const profileReady = loadedCarId === carId && !isLoading;
   const staticProfileJson = useMemo(() => serializeWorkflowProfile(carParams), [carParams]);
-  const preparationKey = useMemo(() => JSON.stringify([carId, staticProfileJson]), [carId, staticProfileJson]);
-  const prepared = profileReady && measurement?.key === preparationKey ? measurement.data : null;
-  useEffect(() => {
-    if (measurement && measurement.key !== preparationKey) setMeasurement(null);
-  }, [measurement, preparationKey]);
-  const solverCarParams = useMemo(() => measurement && prepared ? {
-    ...toTuningCarParams(measurement.profile), maxHpRpm: prepared.observedPeakPower!.rpm, maxTorqueRpm: prepared.observedPeakTorque!.rpm
-  } : null, [measurement, prepared]);
+  const preparationKey = engineArchive.key;
+  const prepared = profileReady ? engineArchive.current : null;
+  const solverCarParams = useMemo(() => carParams && prepared ? {
+    ...toTuningCarParams(carParams), maxHpRpm: prepared.observedPeakPower!.rpm, maxTorqueRpm: prepared.observedPeakTorque!.rpm
+  } : null, [carParams, prepared]);
   const engineMaxRpm = prepared?.engineMaxRpm ?? 8000;
 
   const latestCarIdRef = useRef(carId);
@@ -116,11 +115,11 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
     return profileReady && profile ? toTuningCarParams(profile) : null;
   }, [profileReady, staticProfileJson]);
   const workflow = useMemo(() => staticCarParams ? calculateWorkflowTuning(
-    selectedRaceGoal, season, staticCarParams, numGears,
+    selectedRaceGoal, effectiveSeason, staticCarParams, numGears,
     prepared ? { maxRpm: prepared.engineMaxRpm!, maxHpRpm: prepared.observedPeakPower!.rpm,
       maxTorqueRpm: prepared.observedPeakTorque!.rpm } : null,
     resolveWorkflowGearingCorrection(tuning.gearing)
-  ) : null, [staticCarParams, selectedRaceGoal, season, numGears, prepared,
+  ) : null, [staticCarParams, selectedRaceGoal, effectiveSeason, numGears, prepared,
     tuning.gearing.correctionMode, tuning.gearing.simulatedTopSpeed, tuning.gearing.softMaxSpeed,
     tuning.gearing.targetSpeedKmh, tuning.gearing.targetRpm]);
   const chassisResult = workflow?.chassis ?? null;
@@ -315,14 +314,15 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
         <TuningWorkflowNavigation currentStep={currentStep} readiness={readiness} onSelect={setCurrentStep} />
       </div>
 
+      <EngineObservationHistory entries={engineArchive.archive} compatibleIds={engineArchive.compatible.map(e => e.id)} reuse={engineArchive.reuse} storageError={engineArchive.storageError} />
       {/* Step Content Area Container */}
       <div className="flex-grow-1 overflow-auto p-2">
-        {prepared && <TuningPreparedStatus measurement={prepared} onInvalidate={() => setMeasurement(null)} />}
+        {prepared && <TuningPreparedStatus measurement={prepared} onInvalidate={() => engineArchive.invalidate()} />}
         {currentStep === 1 && (
           <Step1GoalSetup
             selectedRaceGoal={selectedRaceGoal}
             setSelectedRaceGoal={setSelectedRaceGoal}
-            season={season}
+            season={effectiveSeason}
             setSeason={setSeason}
             carParams={carParams}
             updateParam={updateParam}
@@ -340,12 +340,12 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
         )}
         {currentStep === 5 && !hasPreparedInputs && (
           <TuningMeasurementStep key={preparationKey} carId={carId} enabled={hasEngineInputs}
-            onComplete={data => { if (carParams) setMeasurement({ key: preparationKey, data, profile: carParams }); }} />
+            onComplete={engineArchive.complete} />
         )}
         {currentStep === 5 && hasPreparedInputs && (
           <>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMeasurement(null)}>{t('Collect driving data again')}</button>
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => engineArchive.invalidate()}>{t('Collect driving data again')}</button>
           </div>
           <Step2GearboxSetup
             tuning={tuning}
