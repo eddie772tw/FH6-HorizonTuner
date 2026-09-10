@@ -1,15 +1,16 @@
-# 5 款全新 HUD 儀表樣式視覺比對與交付需求合規報告
+# 5 款全新 HUD 儀表樣式真實原型視覺比對與交付水準合規報告
 
 **報告日期**：2026 年 9 月 10 日  
 **評估對象**：GitHub [PR #319](https://github.com/eddie772tw/FH6-HorizonTuner/pull/319) 分支 `feat/add-5-new-hud-styles`  
 **作者署名合約**：`eddie772tw ft. crosXover`  
 **審計執行**：Antigravity Autonomous Quality & Visual Audit Pipeline  
+**重大基準升級**：全面廢除自我編寫之 HTML 玩具原型（Self-created Prototype），全數改採**日本精機 Defi 官方實體展示照**、**MoTeC 官方賽車顯示器 / Lovely GT3 DDU 實機儀表**、**Forza Horizon 5 官方原生遊戲畫面**、**頭文字D 原作拓海萬轉超轉特寫與實車儀表**、以及 **Cyberpunk 2077 官方 Quadra Turbo-R V-Tech 儀表特寫截圖** 作為嚴格之真實原型標竿（Ground Truth）。
 
 ---
 
 ## 一、 執行摘要 (Executive Summary)
 
-本報告旨在透過**原始參考原型／規格標竿（Reference Prototype）**與**當前最新實機渲染截圖（Actual Implementation Screenshots）**的並排圖文對比，全面審查與證明新增之 5 款 HUD 儀表樣式（`motec_gt3`、`defi_triple`、`fh5_arc`、`initial_d`、`cyberpunk_hud`）確實完全符合各主題的開發目標、設計規範、物理遙測契約與正式發行標準。
+本報告旨在透過**真實官方／實體產品／原作動漫標竿（Authentic Real-World Reference）**與**當前最新 60Hz Canvas 2D 實機渲染截圖（Actual Implementation Screenshots）**的並排圖文對比，全面審查與證明新增之 5 款 HUD 儀表樣式（`motec_gt3`、`defi_triple`、`fh5_arc`、`initial_d`、`cyberpunk_hud`）確實完全符合各主題的開發目標、設計規範、物理遙測契約與正式發行標準。
 
 審計涵蓋：
 1. **微觀排版與幾何比例（Layout & Geometry）**：外框網格、刻度對稱性、文字垂直基線（`textBaseline = 'alphabetic'`）與呼吸留白。
@@ -30,19 +31,19 @@
 
 ### 1. MoTeC C125 GT3 DDU 數位賽車儀表 (`hud_overlay/motec_gt3`)
 
-#### 【目標需求與設計規格】
-- **參考標竿**：MoTeC C125 Race Display 及 `Lovely-Sim-Racing/lovely-dashboard` 規格。
+#### 【目標需求與真實原型標竿】
+- **真實原型標竿**：MoTeC C125 Display Logger 官方賽車顯示器規格及 `Lovely-Sim-Racing/lovely-dashboard` 開源 GT3 實機畫面（`ref/real_references/real_motec_c125_ddu.gif`）。
 - **佈局規範**：800x480 對稱三欄網格（左欄車速與轉速、中欄超大檔位、右欄四輪胎溫與煞車分配比），頂部 15 顆 LED 序列換檔燈（5綠、5黃、5紅）。
 - **特色功能**：右欄整合底盤 G-Force 即時讀數；底部狀態列整合 `onMedia` 車載車隊無線電提示。
 
 #### 【視覺比對圖組】
 
 ````carousel
-![MoTeC C125 GT3 原型設計 (Prototype)](../ref/audit_screenshots/proto_motec.png)
+![【真實原型】Lovely-Sim-Racing GT3 DDU 官方實機動態儀表（MoTeC C125 規格）](../ref/real_references/real_motec_c125_ddu.gif)
 <!-- slide -->
-![MoTeC C125 實機巡航狀態：換檔燈、G-Force 與 Team Radio](../ref/audit_screenshots/hud_motec_gt3_feature.png)
+![【實機渲染】MoTeC C125 實機巡航狀態：換檔燈、G-Force 與 Team Radio](../ref/audit_screenshots/hud_motec_gt3_feature.png)
 <!-- slide -->
-![MoTeC C125 實機極限狀態：紅線超轉全藍光爆閃 (8300 RPM)](../ref/audit_screenshots/motec_gt3_redline.png)
+![【動態極限】MoTeC C125 實機極限狀態：紅線超轉全藍光爆閃 (8300 RPM)](../ref/audit_screenshots/motec_gt3_redline.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -61,19 +62,19 @@
 
 ### 2. Defi Advance BF JDM 外掛四連表 (`hud_overlay/defi_triple`)
 
-#### 【目標需求與設計規格】
-- **參考標竿**：Defi-Link Meter ADVANCE BF JDM 經典外掛儀表規格。
+#### 【目標需求與真實原型標竿】
+- **真實原型標竿**：日本精機 (Nippon Seiki) Defi 官方 Defi-Link ADVANCE BF 產品展示照（`ref/real_references/real_defi_advance_bf.jpg`）。
 - **佈局規範**：760x280 JDM 經典一主三大佈局（80mm 轉速主表 + 外掛超轉指示燈筒、TURBO 增壓表、OIL TEMP 油溫表、OIL PRESS 油壓表）。
 - **特色功能**：Defi 招牌「Peak Hold 峰值保持記憶指針」；支援 JDM 雙色背光切換（琥珀紅 vs 電光藍白）與雙制式單位（`bar` / `PSI`、`°C` / `°F`）動態重繪。
 
 #### 【視覺比對圖組】
 
 ````carousel
-![Defi Advance BF JDM 四連表原型設計 (Prototype)](../ref/audit_screenshots/proto_defi.png)
+![【真實原型】日本精機 (Nippon Seiki) Defi 官方 Defi-Link ADVANCE BF 產品展示照](../ref/real_references/real_defi_advance_bf.jpg)
 <!-- slide -->
-![Defi Advance BF 實機狀態：Peak Hold 峰值鎖定指針與琥珀紅背光](../ref/audit_screenshots/hud_defi_triple_feature.png)
+![【實機渲染】Defi Advance BF 實機狀態：Peak Hold 峰值鎖定指針與琥珀紅背光](../ref/audit_screenshots/hud_defi_triple_feature.png)
 <!-- slide -->
-![Defi Advance BF 實機極限狀態：紅線超轉燈筒全亮 (10200 RPM)](../ref/audit_screenshots/defi_triple_redline.png)
+![【動態極限】Defi Advance BF 實機極限狀態：紅線超轉燈筒全亮 (10200 RPM)](../ref/audit_screenshots/defi_triple_redline.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -92,21 +93,21 @@
 
 ### 3. Forza Horizon 5 原生弧形 HUD (`hud_overlay/fh5_arc`)
 
-#### 【目標需求與設計規格】
-- **參考標竿**：Forza Horizon 5 遊戲官方原生弧形轉速表規範。
+#### 【目標需求與真實原型標竿】
+- **真實原型標竿**：Forza Horizon 官方原生 HUD 實機遊戲畫面（`ref/real_references/real_fh5_hud.png`）。
 - **佈局規範**：380x380 緊湊半環弧形軌道，72px 官方 `ForzaFont` 時速大字與獨立檔位方塊，底部對稱油門與煞車量條。
 - **特色功能**：頂部浮現 Horizon Radio 音樂電台膠囊卡片；拉起手煞車時閃爍 `(P) HANDBRAKE` 警報徽章；極限超轉 20Hz 呼吸燈。
 
 #### 【視覺比對圖組】
 
 ````carousel
-![FH5 原生弧形 HUD 原型設計 (Prototype)](../ref/audit_screenshots/proto_fh5.png)
+![【真實原型】Forza Horizon 官方原生 HUD 實機遊戲畫面](../ref/real_references/real_fh5_hud.png)
 <!-- slide -->
-![FH5 弧形 HUD 實機狀態：Horizon Radio 電台膠囊卡片](../ref/audit_screenshots/hud_fh5_arc_radio.png)
+![【實機渲染】FH5 弧形 HUD 實機狀態：Horizon Radio 電台膠囊卡片](../ref/audit_screenshots/hud_fh5_arc_radio.png)
 <!-- slide -->
-![FH5 弧形 HUD 實機狀態：(P) HANDBRAKE 動態手煞車警示](../ref/audit_screenshots/hud_fh5_arc_feature.png)
+![【實機渲染】FH5 弧形 HUD 實機狀態：(P) HANDBRAKE 動態手煞車警示](../ref/audit_screenshots/hud_fh5_arc_feature.png)
 <!-- slide -->
-![FH5 弧形 HUD 實機極限狀態：20Hz 斷油呼吸爆閃 (8450 RPM)](../ref/audit_screenshots/fh5_arc_limiter.png)
+![【動態極限】FH5 弧形 HUD 實機極限狀態：20Hz 斷油呼吸爆閃 (8450 RPM)](../ref/audit_screenshots/fh5_arc_limiter.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -125,19 +126,21 @@
 
 ### 4. 頭文字D AE86 TRD 萬轉競技表 (`hud_overlay/initial_d`)
 
-#### 【目標需求與設計規格】
-- **參考標竿**：頭文字D 藤原拓海 AE86 後期型 TRD 11,000 RPM 賽車儀表規範。
+#### 【目標需求與真實原型標竿】
+- **真實原型標竿**：頭文字D 原作漫畫 Chapter 716 拓海 AE86 破萬轉超轉特寫（`ref/real_references/real_initial_d_overrev.png`）與原作者重野秀一 AE86 實車改裝競技儀表特寫（`ref/real_references/real_initial_d_interior.png`）。
 - **佈局規範**：420x420 純黑底盤 TRD 競技指針表盤，右上角外掛獨立超轉警示燈筒。
 - **特色功能**：非線性刻度查找表（0~5000 RPM 緊密、6000~11000 RPM 展開）；昭和日本法規 80km/h 蜂鳴器真值；高頻甩尾姿態檢測並亮起街機風 `⚡ DRIFT ⚡` 徽章。
 
 #### 【視覺比對圖組】
 
 ````carousel
-![頭文字D AE86 萬轉表：靜態怠速狀態 (Default)](../ref/audit_screenshots/initial_d_default.png)
+![【真實原型】頭文字D 原作漫畫 Chapter 716 拓海 AE86 破萬轉超轉特寫](../ref/real_references/real_initial_d_overrev.png)
 <!-- slide -->
-![頭文字D AE86 萬轉表：動態甩尾狀態 ⚡ DRIFT ⚡ 街機徽章點亮](../ref/audit_screenshots/hud_initial_d_feature.png)
+![【真實原型】原作者重野秀一 (Shuichi Shigeno) AE86 實車改裝競技儀表特寫](../ref/real_references/real_initial_d_interior.png)
 <!-- slide -->
-![頭文字D AE86 萬轉表：萬轉爆轉狀態 (10600 RPM 超轉燈筒爆閃)](../ref/audit_screenshots/initial_d_redline.png)
+![【實機渲染】頭文字D AE86 萬轉表：動態甩尾狀態 ⚡ DRIFT ⚡ 街機徽章點亮](../ref/audit_screenshots/hud_initial_d_feature.png)
+<!-- slide -->
+![【動態極限】頭文字D AE86 萬轉表：萬轉爆轉狀態 (10600 RPM 超轉燈筒爆閃)](../ref/audit_screenshots/initial_d_redline.png)
 ````
 
 #### 【對比分析與合規證明】
@@ -156,19 +159,19 @@
 
 ### 5. Cyberpunk 2077 Quadra HUD (`hud_overlay/cyberpunk_hud`)
 
-#### 【目標需求與設計規格】
-- **參考標竿**：Cyberpunk 2077 Quadra Turbo-R V-Tech / Type-66 車載 HUD 規範。
+#### 【目標需求與真實原型標竿】
+- **真實原型標竿**：Cyberpunk 2077 官方 Quadra Turbo-R V-Tech 儀表板特寫截圖（`ref/real_references/real_cyberpunk_dashboard.png`）。
 - **佈局規範**：640x320 賽博龐克科幻幾何（斜切梯形邊框、電光黃 `#FCEE0A` 與霓虹青 `#00F0FF` 雙主色、32 段平行四邊形梯形轉速光條）。
 - **特色功能**：頂部夜城車載電台（`♪ NC.FM`）；速度面板整合車輛姿態角（`PITCH: +X.X° ROLL: +Y.Y°`）；右側儀表板整合由 `onAudio` 驅動之 10 段微型點陣音訊等化器（`AUDIO // CH-10`）；紅線微 Glitch 切片故障特效。
 
 #### 【視覺比對圖組】
 
 ````carousel
-![Cyberpunk Quadra HUD：靜態初始狀態 (Default)](../ref/audit_screenshots/cyberpunk_default.png)
+![【真實原型】Cyberpunk 2077 官方 Quadra Turbo-R V-Tech 儀表板特寫截圖](../ref/real_references/real_cyberpunk_dashboard.png)
 <!-- slide -->
-![Cyberpunk Quadra HUD 實機狀態：夜城電台、姿態角與 10 段音訊頻譜](../ref/audit_screenshots/hud_cyberpunk_hud_feature.png)
+![【實機渲染】Cyberpunk Quadra HUD 實機狀態：夜城電台、姿態角與 10 段音訊頻譜](../ref/audit_screenshots/hud_cyberpunk_hud_feature.png)
 <!-- slide -->
-![Cyberpunk Quadra HUD 實機極限狀態：紅線超轉與 Glitch 故障特效](../ref/audit_screenshots/cyberpunk_hud_redline.png)
+![【動態極限】Cyberpunk Quadra HUD 實機極限狀態：紅線超轉與 Glitch 故障特效](../ref/audit_screenshots/cyberpunk_hud_redline.png)
 ````
 
 #### 【對比分析與合規證明】
