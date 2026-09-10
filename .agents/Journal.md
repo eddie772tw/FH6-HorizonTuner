@@ -1,5 +1,23 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / Defi A 方案逐款交付（Codex）
+
+- **來源**：`local`；使用者核准開始實作、Defi 採 A、每款完成後獨立 commit／push，允許子代理分工。
+- **狀態**：`verified`（本地瀏覽器與合成資料）；非真實遊戲或像素等價認證。
+- **Learning**：透明的靜態來源不會清除前一幀的光暈，合成前須 clearRect；數字與刻度需預留字形高度，多位英制讀值也要目視。DPR backing store 與 drawImage 目的邏輯尺寸必須成對處理。原有感測 fallback 不因美術改版而成為有效遙測。
+- **Action**：380×360 A 方案、獨立金屬黑盤、預設 342×324；PSI／°F 刻度換算、DPR 快取、Peak Hold 原地更新。保存審查基準與本款修改後證據於 `docs/hud-5-styles-visual-iteration-20260910.md`。
+- **Evidence**：本款 20 組深淺背景／DPR／狀態無 pageerror；後端 285 passed／8 deselected，前端 94 files／599 passed，Ruff、format、build、path-case 通過。8001 衝突經使用者授權停止另一實例後解除，後續明確指示不恢復。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / 五款 HUD 視覺複審與右下定位驗證（Codex）
+
+- **來源**：`local`，使用者要求核對五款 HUD 原型、編排與右下定位，並補充 Defi 必須去矩形黑底及重排、AE86 版型保留而改善材質與盤面字樣。
+- **狀態**：`verified`（定位與目前程式截圖）；美術修正仍為方案。
+- **Learning**：共用 wrapper 的右下錨定不等於可見盤面邊缘恰好 30px，還須考虑畫布內透明留白。800px 等寬幅設計經 HUDCore 0.75 與樣式倍率縮放後，小字可能降至約 5px；契約測試不代表美術還原與可讀性。舊合規報告引用的圖片未存在於本 checkout，不再採用其百分比與發行簽署作現行驗收。
+- **Action**：新增 `docs/hud-5-styles-visual-review-20260910.md`、10 張目前 renderer 截圖及 45 組布局量測；舊報告加歷史註記。Defi 提出獨立表體、右下主表與錯落副表方案；AE86 固定版型，只修材質、字形與字樣；MoTeC 保留三分區，依官方 C125 真實硬體頁面重做左右欄的溫度／壓力讀值。官方展示圖的中央 PAGE 5 不是檔位，亦不能宣称此頁代表所有 GT3 車隊。本輪未改 HUD 產品程式。
+- **Evidence**：Edge Chromium headless、DPR=1，3 種 viewport × 3 種 scale × 5 樣式，共 45/45 主容器右／底距離 30 CSS px 且不越界，無 pageerror。合成 telemetry、全視窗 iframe；未作 Tauri／真實遊戲／OS DPI／效能驗收。
+- **Skills**：`agent-governance-audit`；對話布局草圖使用 `visualize:visualize`。
+
 ## 2026-09-10 / 全庫開啟中 PR 深度架構審查、多代理協作治理與 Merge 藍圖發布 (Neo as Antigravity)
 
 - **來源**：`local`，響應使用者需求，以 `Neo as Antigravity` 身分對 `eddie772tw/FH6-HorizonTuner` 當前開啟中的 9 個 Pull Request（#316、#317、#318、#319、#320、#321、#322、#323、#324）進行完整的架構規範、物理公式、CI 綠燈率、安全性與程式碼衝突深度審查，並正式於 GitHub 發表 Review 意見與產出階段性 Merge 建議報告。

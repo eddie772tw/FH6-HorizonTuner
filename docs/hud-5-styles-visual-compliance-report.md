@@ -1,5 +1,7 @@
 # 5 款全新 HUD 儀表樣式真實原型視覺比對與交付水準合規報告
 
+> **2026-09-10 複審註記**：本檔保留為歷史報告。此次 checkout 缺少下文引用的原型與渲染圖，無法重現其還原百分比與正式發行簽署；這些結論不作目前視覺驗收依據。請改讀 [五款 HUD 視覺複審與修正方案](hud-5-styles-visual-review-20260910.md)，其中收錄重新量測的右下定位證據，以及 Defi 重排、AE86 保留版型後改善材質與字樣的最新方向。
+
 **報告日期**：2026 年 9 月 10 日  
 **評估對象**：GitHub [PR #319](https://github.com/eddie772tw/FH6-HorizonTuner/pull/319) 分支 `feat/add-5-new-hud-styles`  
 **作者署名合約**：`eddie772tw ft. crosXover`  
