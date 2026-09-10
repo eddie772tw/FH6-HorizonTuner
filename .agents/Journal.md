@@ -1,5 +1,34 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
+
+- **來源**：`local`，建立專屬分支 `feature/agent-tuning-cli`，開發面向 AI Agent、配合 MCP 與前端 UI 的命令列調校與遙測監控工具。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **AI Agent 終端調用之零相依與協議解耦 (Zero-Dependency & Protocol-Driven)**：
+     - AI Agent（如 Antigravity、Codex、Jules、本機自動化腳本）在終端運行時，若依賴第三方 pip 套件（如 requests、click），容易受限於 Python 虛擬環境啟動成本與環境污染。`fh6-agent` 嚴格採用 Python 3.13 標準庫（`argparse`、`json`、`urllib`、`math`）實作，啟動時間小於 0.1 秒。
+     - 與後端透過標準 HTTP REST 與 MCP JSON-RPC 2.0 協議通訊，確保後端內部重構時 CLI 介面契約保持長效穩定，原則上除新增功能外日常免維護。
+  2. **離線純算牌與線上即時雙模式架構 (Offline & Online Dual Mode)**：
+     - **離線純算牌**：當 HorizonTuner 後端未啟動時，CLI 依然能直接載入 `car_database.json` 進行車輛檢索、底盤物理算牌（ARB、彈簧磅數、車高、回彈/壓縮阻尼、差速器配置）與 AEGO 幾何齒比計算，不依賴網路或後端進程。
+     - **線上即時模式**：自動探測 `logs/web_port.txt`（相容動態埠 fallback 機制），即時擷取 60Hz UDP 遙測快照（駕駛艙輸入、G力動態、4輪胎溫、懸吊行程）與閉環操控診斷（前後溫差熱平衡、推頭/甩尾微調步驟），並支援將全車算牌結果直接同步至後端 API 與本地 `tunings/` 目錄，前端 `TuningView` 可無縫載入。
+  3. **PyInstaller 獨立二進位發行與 Sidecar 封裝支援 (`fh6-agent.spec`)**：
+     - 內建 `RuntimeContext` 自動識別 `sys.frozen`、`sys._MEIPASS` 與執行檔同級目錄，支援將 `car_database.json` 嵌入單一二進位產物 `dist/fh6-agent.exe`，可在無 Python 的 Windows 機器上獨立運行，可作為 GitHub Release Asset 直接發行或作為 Tauri Sidecar 隨附分發。
+  4. **全子命令共通參數繼承 (Common Parent Parser)**：
+     - 解決了傳統 `argparse` 中使用者或 Agent 在子命令尾端傳入 `--json` 拋出 `unrecognized arguments` 的痛點。透過 `parents=[common_parent]` 讓頂層與所有子命令均原生支援 `--json`、`--backend-url` 與 `--data-dir`。
+- **Action**：
+  1. 建立並切換至分支 `feature/agent-tuning-cli`。
+  2. 建立 `backend/agent_cli.py`（核心 CLI 引擎，支援 status, mcp-config, cars, solve, telemetry, preset, mcp-call）。
+  3. 建立 PyInstaller 打包規格 `fh6-agent.spec`（console 模式、嵌入車輛資料庫、排除大型 GUI 模組）。
+  4. 建立 Windows 便捷批次檔 `fh6-agent.bat`、`start_cli.bat`（獨立互動 CLI）、`start_backend_with_cli.bat`（後端+即時 CLI）與標準腳本入口 `scripts/fh6_agent_cli.py`。
+  5. 撰寫繁體中文使用說明指南 `docs/agent-cli-guide.md`。
+  6. 建立 AI 治理與調校協作契約：同步更新 `.agents/AGENTS.md`、`.agents/rules/workspace.md`、`physics-tuning-math/SKILL.md` 與 `telemetry-udp-protocol/SKILL.md`，指引 Agent 優先調用 `fh6-agent.bat <subcommand> --json` 大幅增進決策效率。
+  7. 撰寫單元測試套件 `tests/test_agent_cli.py`（17 項測試全部 Passed）。
+  8. 通過全套驗證：後端 Pytest 285 passed、前端 Vitest 89 files / 578 tests 100% passed、Ruff check 與 format 100% 通過、Tracked path case 通過、`git diff --check` clean。
+- **Evidence**：`fh6-agent.bat --version` 輸出 `fh6-agent 1.0.0 (Core: 11.45.17)`；後端 Pytest 285 passed, 8 deselected；前端 Vitest 578 passed；前端 build 705 modules 通過；Ruff 檢查 158 files 全數 formatted & clean；PR #318 已建立並開啟等待審查。
+- **Skills**：`modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、`cross-agent-collaboration`、`portable-release-validation`。
+
+---
+
 ## 2026-09-09 / PR #312~#315 審查、60Hz GC 優化驗收與 .jules/bolt.md 衝突循序解決
 
 - **來源**：`local`，針對開啟中的 PR #312~#315 進行標準化評估、合併安全檢驗與依賴衝突調解。

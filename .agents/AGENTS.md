@@ -27,6 +27,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 2. **車輛物理與調校邏輯單一真理 (SSOT)**：所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，且統一收攏於 `frontend/src/utils/tuningMath.ts`。
 3. **單位嚴格性**：處理遙測數據時，必須釐清遊戲原生單位、領域單位與顯示單位的分層轉換，不得在 UI 組件內任意硬編碼物理計算公式。
 4. **路徑安全與檔案存取規範 (Path Security)**：所有涉及外部輸入、檔案名稱、Preset 或 Session 存取的模組，必須使用 `backend/path_security.py` 的 `safe_resolve_path` / `safe_join_under_dir` 進行目錄包含性檢驗，嚴禁直接拼接外部輸入路徑。
+5. **Agent CLI 工具鏈效率導引 (Agent CLI Tooling)**：專案提供官方面向 AI Agent 的命令列工具 `fh6-agent.bat`（或 `python -m backend.agent_cli` / `fh6-agent.exe`）。Agent 在進行車輛規格檢索、底盤/齒比算牌、調校 Preset 讀寫、閉環遙測診斷或 MCP 連接埠探測時，**應優先調用 `fh6-agent.bat <subcommand> --json`** 獲取結構化輸出，大幅提升決策效率並維持算牌真理一致性。詳細指令參閱 [`docs/agent-cli-guide.md`](../docs/agent-cli-guide.md)。
 
 ---
 
