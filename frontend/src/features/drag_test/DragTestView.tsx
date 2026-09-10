@@ -402,7 +402,7 @@ const DragTestView: React.FC = () => {
                       <button
                         type="button"
                         className="btn-close btn-sm"
-                        aria-label="Close"
+                        aria-label={t("Close")}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowDragPopover(false);

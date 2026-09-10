@@ -38,6 +38,11 @@
 ## 2024-05-17 - Added loading state to Support Bundle download button
 **Learning:** When using Playwright to verify transient UI loading states (like async spinners), use route interception to artificially delay the corresponding API responses to reliably capture the visual state for screenshots and videos.
 **Action:** When creating tests or taking screenshots of loading states, add a page.route() handler to delay the API response to avoid the test finishing or state clearing too quickly before verification finishes.
+
 ## 2024-11-20 - Ensure accurate mapping for automated accessibility injection
 **Learning:** When automating the addition of `aria-label` tags, naive regex scanning can incorrectly map labels (e.g. assigning a previous label to the wrong input because of unexpected structural skips in JSX). Factually incorrect `aria-label`s actively degrade the UX for visually impaired users.
 **Action:** When creating text replacement scripts for accessibility features, explicitly define exact mappings or tightly couple the replacement bounds to avoid misassigning labels.
+
+## 2024-05-24 - [Internationalize ARIA Labels]
+**Learning:** Hardcoding English strings in ARIA labels (e.g., `aria-label="Close"`) breaks accessibility for non-English screen reader users.
+**Action:** Always wrap ARIA label strings in translation functions (e.g., `aria-label={t("Close")}`) when working within i18n-supported components to ensure universal accessibility.

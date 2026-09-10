@@ -392,7 +392,7 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
                       <button
                         type="button"
                         className="btn-close btn-sm"
-                        aria-label="Close"
+                        aria-label={t("Close")}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowCalibPopover(false);
