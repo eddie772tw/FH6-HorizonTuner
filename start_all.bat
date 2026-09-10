@@ -60,7 +60,7 @@ if exist "%~dp0logs\web_port.txt" del /f /q "%~dp0logs\web_port.txt" >nul 2>nul
 if exist "%~dp0backend\logs\web_port.txt" del /f /q "%~dp0backend\logs\web_port.txt" >nul 2>nul
 
 :: Brief pause to ensure the Windows TCP stack completes socket teardown.
-timeout /t 1 /nobreak >nul
+powershell -NoProfile -NonInteractive -Command "Start-Sleep -Seconds 1"
 
 :: Use the committed lockfile. Auditing is handled by CI and release builds.
 echo [INFO] Checking frontend dependencies...
@@ -77,28 +77,13 @@ echo [INFO] Launching Backend...
 set "FH6_SKIP_VENV=1"
 start "FH6 Telemetry Backend" cmd /c "start_backend.bat"
 
-echo [INFO] Waiting for Backend to be ready on port 8001...
-set "BACKEND_READY=0"
-for /l %%i in (1, 1, 30) do (
-    if "!BACKEND_READY!"=="0" (
-        timeout /t 1 /nobreak >nul
-        if exist "%~dp0backend\logs\web_port.txt" (
-            set "BACKEND_READY=1"
-        ) else if exist "%~dp0logs\web_port.txt" (
-            set "BACKEND_READY=1"
-        )
-    )
-)
-
-if "!BACKEND_READY!"=="1" (
-    set "ACTUAL_PORT=8001"
-    if exist "%~dp0backend\logs\web_port.txt" set /p ACTUAL_PORT=<"%~dp0backend\logs\web_port.txt"
-    if exist "%~dp0logs\web_port.txt" set /p ACTUAL_PORT=<"%~dp0logs\web_port.txt"
-    echo [SUCCESS] Backend is listening and ready on port !ACTUAL_PORT!.
-) else (
-    echo [WARNING] Backend readiness timed out after 30s; proceeding with Frontend anyway.
+echo [INFO] Waiting for Backend HTTP readiness...
+"%UV_EXE%" run --no-project --python "%VENV_PY%" python "%~dp0scripts\dev_startup.py" wait-backend
+if errorlevel 1 (
+    pause
+    exit /b 1
 )
 
 echo [INFO] Launching Frontend...
 start "FH6 Telemetry Frontend" cmd /c "start_frontend.bat"
-echo All services started! You can close this window.
+echo Backend is ready; frontend startup has been requested. Check the frontend window for compilation progress.

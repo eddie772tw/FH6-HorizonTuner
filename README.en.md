@@ -140,9 +140,10 @@ The project provides highly automated launcher scripts:
 * **Double-click `start_all.bat`** (Recommended full launch):
   - Requires `uv`, which selects managed CPython 3.13 and creates the project `.venv`.
   - Installs and verifies `requirements.txt` through `uv pip`; it never falls back to a PATH-level Python or pip.
+  - Package compatibility and import checks each have a 30-second timeout. Imports show progress; a timeout stops startup and preserves the environment. Check the last displayed module and error.
   - Runs Ruff and the backend through `uv run` with the same `.venv` interpreter.
   - Automatically lints and formats the codebase using `ruff`.
-  - Automatically runs the backend server in the background and opens the Tauri desktop GUI.
+  - Waits up to 30 seconds for the backend HTTP API before launching Tauri. The first Rust compilation may take several minutes; progress appears in the frontend window.
 * **Modular launch (For standalone development)**:
   - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener. In development, FastAPI/WebSocket uses `http://127.0.0.1:8001`, while Forza UDP telemetry uses `127.0.0.1:8000`.
   - **`start_frontend.bat`**: Launches only the Vite + React dev server and Tauri window.

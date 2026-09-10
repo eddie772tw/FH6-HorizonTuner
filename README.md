@@ -139,11 +139,11 @@ FH6-HorizonTuner/
 
 專案提供了高度自動化的一鍵啟動腳本，免去繁瑣的環境設定步驟：
 * **雙擊執行 `start_all.bat`** (推薦全套啟動)：
-  - 自動搜尋系統中的 Python 3.13 / 3.14 執行檔。
-  - 自動於專案根目錄下建立虛擬環境 `.venv`。
-  - 自動安裝並更新 `requirements.txt` 中的所有依賴（包含 FastAPI, Uvicorn, Websockets, Ruff, Pytest, Httpx 等）。
+  - 透過 `uv` 選用 Python 3.13，於專案根目錄建立或檢查 `.venv`。
+  - 健康環境直接使用；缺少或不相容的套件依 `requirements.txt` 修復。
+  - Python 套件相容性與匯入檢查各有 30 秒上限，逐項顯示匯入進度；逾時會停止啟動並保留環境，請查看最後顯示的模組與錯誤。
   - 自動使用 `ruff` 對整個專案代碼進行靜態檢查與格式化排版。
-  - 自動在背景執行後端服務，並開啟 Tauri 桌面端圖形介面。
+  - 啟動後端後最多等待 30 秒，確認 HTTP API 可用才啟動 Tauri。首次 Rust 編譯可能需要數分鐘，進度會顯示在前端視窗。
 * **分開啟動（模組化開發時使用）**：
   - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務。開發模式下 FastAPI / WebSocket 使用 `http://127.0.0.1:8001`，Forza UDP Telemetry 使用 `127.0.0.1:8000`。
   - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。

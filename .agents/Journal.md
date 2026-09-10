@@ -2399,3 +2399,12 @@
 - 補上靜態 profile 序列化快照，排除背景 dyno 欄位，避免 polling 重建 baseline 並撤銷確認；實際 profile 改動保留失效機制。新增資料門檻、背景快照、無副作用／參數隔離、四用途三驅動四季節算牌相容及 SSR 渲染測試。雙語 README、量測操作文件、證據索引與回饋提案同步，新規劃在`docs/tuning-workflow-dependencies-20260910.md`。
 - 基準前端673通過，最後前端99 files/704 passed、TypeScript/Vite、Python300 passed/9 deselected、Ruff check/format195 files及11.45.17版本契約通過。第一次 Python sidecar 埠測試受自己的8001 UI fixture占用，關閉後整套重跑通過；沒有放寬測試。完整前端以記憶體fixture核對0hp／無遙測仍可直接開定位、底盤、輪胎、差速器，整套驗證關閉；檢查Default／Modern／Elegant與深淺色代表畫面，服務及分頁已關閉。沒有重啟遊戲或宣稱新版量測實機驗收。
 - 採用`huge-component-refactoring`、`modular-refactoring`、`halfmoon-design-system`、`physics-tuning-math`、`pr-author-maintainer`與`agent-governance-audit`；技能索引維持一致。PR頂層／行內評論讀回均為空。工作期間另發現`setup_venv.bat`第一行被外部移除，已告知並保留、排除本次提交；來源worktree未改寫。
+
+### 2026-09-10：隔離工作樹 DEV 啟動診斷
+
+- 使用者回報 `start_all.bat` 停在 Python 依賴檢查。本機重跑 Python 3.13、37 個已安裝套件相容性及所有匯入成功，未重現原始卡死；不把特定套件列為已證實根因。初次 Tauri Rust 編譯耗時約 1 分 49 秒。
+- 新增 `scripts/dev_startup.py`，Python 相容性／匯入檢查分別限時 30 秒並顯示進度；逾時以不同狀態碼停止，不觸發自動重建環境。保留 `setup_venv.bat` 既存的第一行移除變更。
+- 已重現 `timeout` 在重新導向輸入時立即失敗，導致舊腳本假稱等待 30 秒後仍啟動前端；改為實際輪詢埠檔指定的 loopback HTTP API，逾時停止。前端入口改為依批次檔位置切換目錄，使用 `call pnpm` 保留失敗訊息與返回碼。
+- Python／工具測試 304 passed、9 deselected；前端 99 files／704 passed。新增真實子程序匯入逾時、缺少模組、HTTP 503／200、無效埠檔測試；既有 WinRT 模組契約轉接至新的檢查清單，未刪除所需模組。
+- 修正後實際執行 `start_all.bat` exit 0，HTTP 8001 API 與 Vite 1420 均回應 200，隔離工作樹 Tauri 視窗已啟動並保留供使用者操作。原始工作樹仍為乾淨 main。採用 `portable-release-validation` 與 `agent-governance-audit`，沒有遊戲測試或發行打包驗收。
+- 提交前遠端分支已重整至 9e45a95；僅將本次修正接到最新遠端，保留協作者內容。整合後重跑 Python／工具測試 321 passed、9 deselected，前端 704 passed、TypeScript／Vite 建置與 Ruff 201 files 通過。

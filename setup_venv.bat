@@ -30,6 +30,7 @@ if exist "%VENV_PY%" (
 
 :: Fast path: a healthy environment needs no reinstall.
 call :healthcheck
+if errorlevel 2 exit /b 2
 if not errorlevel 1 goto :success
 
 :: First repair in place. This fixes stale, missing, or mismatched packages
@@ -38,6 +39,7 @@ echo [WARNING] Existing .venv failed health checks; repairing dependencies ...
 call :install_dependencies force
 if not errorlevel 1 (
     call :healthcheck
+    if errorlevel 2 exit /b 2
     if not errorlevel 1 goto :success
 )
 
@@ -50,6 +52,7 @@ if errorlevel 1 goto :venv_error
 call :install_dependencies clean
 if errorlevel 1 goto :dependency_error
 call :healthcheck
+if errorlevel 2 exit /b 2
 if errorlevel 1 goto :dependency_error
 goto :success
 
@@ -64,12 +67,7 @@ exit /b %errorlevel%
 
 :healthcheck
 echo [INFO] Verifying all required Python dependencies ...
-"%UV_EXE%" pip check --python "%VENV_PY%" >nul
-if errorlevel 1 exit /b 1
-:: Keep this list in sync with every direct requirement in requirements.txt.
-:: winrt is intentionally imported through its real runtime module: uv may
-:: install the distribution successfully, but a successful download alone is not sufficient.
-"%UV_EXE%" run --no-project --python "%VENV_PY%" python -c "import fastapi, httpx, numpy, pydantic, pytest, pytest_asyncio, ruff, soundcard, uvicorn, websockets; import multipart; import winrt.windows.foundation; import winrt.windows.foundation.collections; import winrt.windows.media; import winrt.windows.media.control; import winrt.windows.storage; import winrt.windows.storage.streams" >nul 2>nul
+"%UV_EXE%" run --no-project --python "%VENV_PY%" python "%ROOT_DIR%scripts\dev_startup.py" check-python
 exit /b %errorlevel%
 
 :venv_error
