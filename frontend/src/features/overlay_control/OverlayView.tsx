@@ -579,6 +579,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={5}
                   value={config.telemetryCornerOffsetX ?? 0}
                   onChange={(e) => handleCornerOffsetXChange(Number(e.target.value))}
+                aria-label={t("Corner Cards X-Offset")}
                 />
               </div>
 
@@ -596,6 +597,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={5}
                   value={config.telemetryCornerOffsetY ?? 0}
                   onChange={(e) => handleCornerOffsetYChange(Number(e.target.value))}
+                aria-label={t("Corner Cards Y-Offset")}
                 />
               </div>
 
@@ -635,6 +637,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={10}
                       value={config.telemetryMergedChartsOffsetX ?? 0}
                       onChange={(e) => handleMergedChartsOffsetXChange(Number(e.target.value))}
+                    aria-label={t("Merged Charts X-Offset")}
                     />
                   </div>
 
@@ -668,6 +671,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={10}
                       value={config.telemetryPedalOffsetX ?? 0}
                       onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
+                    aria-label={t("Pedal Chart X-Offset")}
                     />
                   </div>
 
@@ -685,6 +689,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={10}
                       value={config.telemetryPowerTorqueOffsetX ?? 0}
                       onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
+                    aria-label={t("Power / Torque X-Offset")}
                     />
                   </div>
 
@@ -702,6 +707,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={10}
                       value={config.telemetryLiveMapOffsetX ?? 0}
                       onChange={(e) => handleLiveMapOffsetXChange(Number(e.target.value))}
+                    aria-label={t("Live Map X-Offset")}
                     />
                   </div>
 
@@ -719,6 +725,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={10}
                       value={config.telemetryLiveMapOffsetY ?? 0}
                       onChange={(e) => handleLiveMapOffsetYChange(Number(e.target.value))}
+                    aria-label={t("Live Map Y-Offset")}
                     />
                   </div>
 
@@ -777,6 +784,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.telemetryGRadarScale ?? 1.0}
                   onChange={(e) => handleGRadarScaleChange(Number(e.target.value))}
+                aria-label={t("G-Radar Scale")}
                 />
               </div>
 
@@ -794,6 +802,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.telemetryCornersScale ?? 1.0}
                   onChange={(e) => handleCornersScaleChange(Number(e.target.value))}
+                aria-label={t("Corner Speed / Temp Scale")}
                 />
               </div>
 
@@ -812,6 +821,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     step={0.05}
                     value={config.telemetryMergedChartsScale ?? 1.0}
                     onChange={(e) => handleMergedChartsScaleChange(Number(e.target.value))}
+                  aria-label={t("Merged Charts Scale")}
                   />
                 </div>
               ) : (
@@ -830,6 +840,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={0.05}
                       value={config.telemetryPedalScale ?? 1.0}
                       onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
+                    aria-label={t("Pedal Chart Scale")}
                     />
                   </div>
 
@@ -847,6 +858,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={0.05}
                       value={config.telemetryPowerTorqueScale ?? 1.0}
                       onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
+                    aria-label={t("Power / Torque Scale")}
                     />
                   </div>
                 </>
@@ -866,6 +878,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.telemetryCardFontScale ?? 1.0}
                   onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
+                aria-label={t("Card Font Scale")}
                 />
               </div>
 
@@ -883,6 +896,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.telemetryLiveMapScale ?? 1.0}
                   onChange={(e) => handleLiveMapScaleChange(Number(e.target.value))}
+                aria-label={t("Live Map Scale")}
                 />
               </div>
 
@@ -900,6 +914,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.telemetryLiveMapOpacity ?? 1.0}
                   onChange={(e) => handleLiveMapOpacityChange(Number(e.target.value))}
+                aria-label={t("Live Map Opacity")}
                 />
               </div>
             </div>
@@ -1179,6 +1194,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.scale}
                   onChange={(e) => handleScaleChange(Number(e.target.value))}
+                aria-label={t("Overall HUD Scale")}
                 />
               </div>
 
@@ -1198,6 +1214,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={1}
                       value={config.vfdVuOffset ?? 0}
                       onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
+                    aria-label={t("VU Offset")}
                     />
                   </div>
 
@@ -1214,6 +1231,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                       step={1}
                       value={config.vfdAudioOffset ?? 0}
                       onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
+                    aria-label={t("Audio Visualizer Offset")}
                     />
                   </div>
                 </>
@@ -1271,6 +1289,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.telemetryOpacity ?? 0.65}
                   onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
+                aria-label={t("HUD Window Opacity")}
                 />
               </div>
 
@@ -1299,6 +1318,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   step={0.05}
                   value={config.glowIntensity ?? 1.0}
                   onChange={(e) => handleGlowIntensityChange(Number(e.target.value))}
+                aria-label={t("Glow Intensity")}
                 />
               </div>
 
