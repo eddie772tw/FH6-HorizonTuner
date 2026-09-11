@@ -447,7 +447,7 @@ const AnalysisView: React.FC = () => {
           <button
             onClick={() => setMotecActionMsg(null)}
             className="btn-close"
-            aria-label="Close"
+            aria-label={t("Close")}
           />
         </div>
       )}

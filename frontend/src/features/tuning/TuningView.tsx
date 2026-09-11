@@ -279,7 +279,7 @@ const TuningViewContent: React.FC<TuningViewContentProps> = ({
                       <button
                         type="button"
                         className="btn-close btn-sm"
-                        aria-label="Close"
+                        aria-label={t("Close")}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowParamsPopover(false);

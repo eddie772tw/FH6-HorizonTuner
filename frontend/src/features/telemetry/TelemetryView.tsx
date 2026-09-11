@@ -246,7 +246,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
                   <button
                     type="button"
                     className="btn-close btn-sm"
-                    aria-label="Close"
+                    aria-label={t("Close")}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowPopover(false);
