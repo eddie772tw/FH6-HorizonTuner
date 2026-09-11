@@ -11,6 +11,8 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateAEGOGearing,
   calculateRoadBaselineGroup,
+  calculateDomainBaselineGroup,
+  DOMAIN_BASELINE_INPUTS,
   roadExplorationStep,
   fitRoadGameGrid,
   profileTorqueToNm,
@@ -812,5 +814,119 @@ describe('Road guided baseline and exploration', () => {
     expect(roadExplorationStep({ ...frozen, value: 28.1 }, 1)).toBeNull();
     expect(fitRoadGameGrid(99, 15, 30, .5)).toBe(30);
     expect(fitRoadGameGrid(28, Number.NaN, 30, .5)).toBeNull();
+  });
+});
+
+describe('calculateDomainBaselineGroup (Multi-Discipline SSOT)', () => {
+  const rallyParams: TuningCarParams = {
+    weight: 1400,
+    weight_distribution: 52,
+    drivetrain: 'AWD',
+    maxHp: 350,
+    maxTorque: 450,
+    maxHpRpm: 6000,
+    maxTorqueRpm: 3500,
+    frontTireWidth: 235,
+    frontTireAspect: 50,
+    rearTireWidth: 255,
+    rearTireAspect: 45,
+    spring_front_min: 50,
+    spring_front_max: 150,
+    spring_rear_min: 40,
+    spring_rear_max: 140,
+    height_front_min: 10,
+    height_front_max: 22,
+    height_rear_min: 10,
+    height_rear_max: 22,
+  };
+
+  it('calculates Rally pressure with sidewall aspect ratio compensation', () => {
+    const rallyAlignment = calculateStaticTireAlignment('Rally', 'Neutral', rallyParams);
+    const baseline = calculateDomainBaselineGroup('Rally', 'pressure', rallyParams);
+    expect(baseline).not.toBeNull();
+    expect(baseline!['pressure.front'].value).toBe(rallyAlignment.pcF);
+    expect(baseline!['pressure.rear'].value).toBe(rallyAlignment.pcR);
+    expect(baseline!['pressure.front'].unit).toBe('psi');
+
+    // Missing aspect ratio should return null for Rally pressure
+    const withoutAspect = { ...rallyParams };
+    delete (withoutAspect as any).frontTireAspect;
+    expect(calculateDomainBaselineGroup('Rally', 'pressure', withoutAspect)).toBeNull();
+  });
+
+  it('calculates softened Rally springs (65% of base) and max ride height', () => {
+    const rallyChassis = calculateChassisTuning('Rally', rallyParams);
+    const springs = calculateDomainBaselineGroup('Rally', 'springs', rallyParams);
+    expect(springs).not.toBeNull();
+    expect(springs!['spring.front'].value).toBe(rallyChassis.springs.front);
+    expect(springs!['spring.rear'].value).toBe(rallyChassis.springs.rear);
+
+    // Confirm it is indeed 65% of base
+    const wf = rallyParams.weight_distribution / 100;
+    const wr = 1 - wf;
+    const baseSpringF = (rallyParams.spring_front_max - rallyParams.spring_front_min) * wf + rallyParams.spring_front_min;
+    const baseSpringR = (rallyParams.spring_rear_max - rallyParams.spring_rear_min) * wr + rallyParams.spring_rear_min;
+    expect(springs!['spring.front'].value).toBeCloseTo(baseSpringF * 0.65, 1);
+    expect(springs!['spring.rear'].value).toBeCloseTo(baseSpringR * 0.65, 1);
+
+    const height = calculateDomainBaselineGroup('Rally', 'height', rallyParams);
+    expect(height).not.toBeNull();
+    expect(height!['height.front'].value).toBe(rallyParams.height_front_max);
+    expect(height!['height.rear'].value).toBe(rallyParams.height_rear_max);
+  });
+
+  it('calculates softened Rally ARB (35% of base) and 40% bump ratio landing damping', () => {
+    const arb = calculateDomainBaselineGroup('Rally', 'arb', rallyParams);
+    expect(arb).not.toBeNull();
+    const wf = rallyParams.weight_distribution / 100;
+    const wr = 1 - wf;
+    const expectedArbF = (64 * wf + 1) * 0.35;
+    const expectedArbR = (64 * wr + 1) * 0.35;
+    expect(arb!['arb.front'].value).toBeCloseTo(expectedArbF, 1);
+    expect(arb!['arb.rear'].value).toBeCloseTo(expectedArbR, 1);
+
+    const damping = calculateDomainBaselineGroup('Rally', 'damping', rallyParams);
+    expect(damping).not.toBeNull();
+    expect(damping!['bump.front'].value).toBeCloseTo(damping!['rebound.front'].value * 0.40, 1);
+    expect(damping!['bump.rear'].value).toBeCloseTo(damping!['rebound.rear'].value * 0.40, 1);
+  });
+
+  it('calculates Rally differential settings across AWD, FWD, and RWD', () => {
+    const awdDiff = calculateDomainBaselineGroup('Rally', 'differential', rallyParams);
+    expect(awdDiff!['diff.front.acceleration'].value).toBe(40);
+    expect(awdDiff!['diff.front.deceleration'].value).toBe(10);
+    expect(awdDiff!['diff.rear.acceleration'].value).toBe(80);
+    expect(awdDiff!['diff.rear.deceleration'].value).toBe(25);
+    expect(awdDiff!['diff.center'].value).toBe(65);
+
+    const fwdDiff = calculateDomainBaselineGroup('Rally', 'differential', { ...rallyParams, drivetrain: 'FWD' });
+    expect(fwdDiff!['diff.front.acceleration'].value).toBe(60);
+    expect(fwdDiff!['diff.front.deceleration'].value).toBe(15);
+    expect(fwdDiff!['diff.rear.acceleration']).toBeUndefined();
+
+    const rwdDiff = calculateDomainBaselineGroup('Rally', 'differential', { ...rallyParams, drivetrain: 'RWD' });
+    expect(rwdDiff!['diff.rear.acceleration'].value).toBe(75);
+    expect(rwdDiff!['diff.rear.deceleration'].value).toBe(25);
+    expect(rwdDiff!['diff.front.acceleration']).toBeUndefined();
+  });
+
+  it('maintains 100% backward compatibility between calculateRoadBaselineGroup and calculateDomainBaselineGroup("Road")', () => {
+    for (const group of ['pressure', 'springs', 'height', 'arb', 'damping', 'alignment', 'differential']) {
+      expect(calculateRoadBaselineGroup(group, rallyParams)).toEqual(calculateDomainBaselineGroup('Road', group, rallyParams));
+    }
+  });
+
+  it('validates Drag and Drift domain baseline inputs according to DOMAIN_BASELINE_INPUTS registry', () => {
+    // Drag requires minimal inputs for ARB/damping/diff (all empty arrays in registry)
+    const dragArb = calculateDomainBaselineGroup('Drag', 'arb', { drivetrain: 'RWD' });
+    expect(dragArb).not.toBeNull();
+    expect(dragArb!['arb.front'].value).toBe(1.0);
+    expect(dragArb!['arb.rear'].value).toBe(65.0);
+
+    // Drift ARB is also fixed (10/50)
+    const driftArb = calculateDomainBaselineGroup('Drift', 'arb', { drivetrain: 'RWD' });
+    expect(driftArb).not.toBeNull();
+    expect(driftArb!['arb.front'].value).toBe(10.0);
+    expect(driftArb!['arb.rear'].value).toBe(50.0);
   });
 });

@@ -799,54 +799,134 @@ export function roadExplorationStep(setting: { value: number; minimum: number; m
   return candidate >= minimum && candidate <= maximum ? candidate : null;
 }
 
+export type TuningDiscipline = 'Road' | 'Rally' | 'Drag' | 'Drift';
+
 export interface RoadFormulaValue { value: number; unit: string }
 export type RoadBaselineInputName = Exclude<keyof TuningCarParams, 'drivetrain' | 'adjustability' | 'induction' | 'tireType'> | 'numGears';
-export const ROAD_BASELINE_INPUTS: Record<string, RoadBaselineInputName[]> = {
-  pressure: ['weight', 'weight_distribution', 'frontTireWidth', 'rearTireWidth'],
-  springs: ['weight_distribution', 'spring_front_min', 'spring_front_max', 'spring_rear_min', 'spring_rear_max'],
-  height: ['height_front_min', 'height_front_max', 'height_rear_min', 'height_rear_max'],
-  arb: ['weight_distribution'], damping: ['weight_distribution'], alignment: ['weight_distribution'], differential: ['weight_distribution'],
-  gearing: ['maxHp', 'numGears', 'frontTireWidth', 'frontTireAspect', 'frontTireRim', 'rearTireWidth', 'rearTireAspect', 'rearTireRim'],
+
+export const DOMAIN_BASELINE_INPUTS: Record<TuningDiscipline, Record<string, RoadBaselineInputName[]>> = {
+  Road: {
+    pressure: ['weight', 'weight_distribution', 'frontTireWidth', 'rearTireWidth'],
+    springs: ['weight_distribution', 'spring_front_min', 'spring_front_max', 'spring_rear_min', 'spring_rear_max'],
+    height: ['height_front_min', 'height_front_max', 'height_rear_min', 'height_rear_max'],
+    arb: ['weight_distribution'], damping: ['weight_distribution'], alignment: ['weight_distribution'], differential: ['weight_distribution'],
+    gearing: ['maxHp', 'numGears', 'frontTireWidth', 'frontTireAspect', 'frontTireRim', 'rearTireWidth', 'rearTireAspect', 'rearTireRim'],
+  },
+  Rally: {
+    pressure: ['weight', 'weight_distribution', 'frontTireWidth', 'frontTireAspect', 'rearTireWidth', 'rearTireAspect'],
+    springs: ['weight_distribution', 'spring_front_min', 'spring_front_max', 'spring_rear_min', 'spring_rear_max'],
+    height: ['height_front_min', 'height_front_max', 'height_rear_min', 'height_rear_max'],
+    arb: ['weight_distribution'], damping: ['weight_distribution'], alignment: ['weight_distribution'], differential: ['weight_distribution'],
+    gearing: ['maxHp', 'numGears', 'frontTireWidth', 'frontTireAspect', 'frontTireRim', 'rearTireWidth', 'rearTireAspect', 'rearTireRim'],
+  },
+  Drag: {
+    pressure: ['weight', 'weight_distribution', 'frontTireWidth', 'rearTireWidth'],
+    springs: ['spring_front_min', 'spring_front_max', 'spring_rear_min', 'spring_rear_max'],
+    height: ['height_front_min', 'height_front_max', 'height_rear_min', 'height_rear_max'],
+    arb: [], damping: [], alignment: [], differential: [],
+    gearing: ['maxHp', 'weight', 'numGears', 'frontTireWidth', 'frontTireAspect', 'frontTireRim', 'rearTireWidth', 'rearTireAspect', 'rearTireRim'],
+  },
+  Drift: {
+    pressure: ['weight', 'weight_distribution', 'frontTireWidth', 'rearTireWidth'],
+    springs: ['weight', 'weight_distribution'],
+    height: ['height_front_min', 'height_front_max', 'height_rear_min', 'height_rear_max'],
+    arb: [], damping: [], alignment: [], differential: [],
+    gearing: ['maxHp', 'weight', 'numGears', 'frontTireWidth', 'frontTireAspect', 'frontTireRim', 'rearTireWidth', 'rearTireAspect', 'rearTireRim'],
+  },
 };
-/** Thin Road projection of the canonical formulas; no legacy defaults become confirmed inputs. */
-export function calculateRoadBaselineGroup(group: string, inputs: Partial<TuningCarParams> & { numGears?: number },
-  engine: WorkflowEngineInput | null = null): Record<string, RoadFormulaValue> | null {
-  const required = ROAD_BASELINE_INPUTS;
-  if (!required[group] || !inputs.drivetrain || !required[group].every(key => typeof inputs[key] === 'number' && Number.isFinite(inputs[key]) && (inputs[key] as number) > 0)) return null;
-  if (required[group].includes('weight_distribution') && inputs.weight_distribution! >= 100) return null;
-  for (const prefix of group === 'springs' ? ['spring_front', 'spring_rear'] : group === 'height' ? ['height_front', 'height_rear'] : []) {
-    if ((inputs[(prefix + '_min') as keyof TuningCarParams] as number) >= (inputs[(prefix + '_max') as keyof TuningCarParams] as number)) return null;
+
+export const ROAD_BASELINE_INPUTS: Record<string, RoadBaselineInputName[]> = DOMAIN_BASELINE_INPUTS.Road;
+
+/** Unified pure calculation of domain baseline groups across Road, Rally, Drag, and Drift. */
+export function calculateDomainBaselineGroup(
+  discipline: TuningDiscipline,
+  group: string,
+  inputs: Partial<TuningCarParams> & { numGears?: number },
+  engine: WorkflowEngineInput | null = null
+): Record<string, RoadFormulaValue> | null {
+  const disciplineInputs = DOMAIN_BASELINE_INPUTS[discipline];
+  if (!disciplineInputs || !disciplineInputs[group] || !inputs.drivetrain) return null;
+  const required = disciplineInputs[group];
+  if (!required.every(key => typeof inputs[key] === 'number' && Number.isFinite(inputs[key]) && (inputs[key] as number) > 0)) return null;
+  if (required.includes('weight_distribution') && inputs.weight_distribution! >= 100) return null;
+
+  if (group === 'springs') {
+    if (typeof inputs.spring_front_min === 'number' && typeof inputs.spring_front_max === 'number' && inputs.spring_front_min >= inputs.spring_front_max) return null;
+    if (typeof inputs.spring_rear_min === 'number' && typeof inputs.spring_rear_max === 'number' && inputs.spring_rear_min >= inputs.spring_rear_max) return null;
   }
-  // Placeholder fields only satisfy the legacy function signature. Each group's
-  // required fields cover every consumed Road dependency for its selected outputs.
-  const params: TuningCarParams = { weight: 0, weight_distribution: 0, maxHp: 0, maxTorque: 0, maxHpRpm: 0, maxTorqueRpm: 0, ...inputs, drivetrain: inputs.drivetrain };
-  const chassis = calculateChassisTuning('Road', params), alignment = calculateStaticTireAlignment('Road', 'Neutral', params);
+  if (group === 'height') {
+    if (typeof inputs.height_front_min === 'number' && typeof inputs.height_front_max === 'number' && inputs.height_front_min >= inputs.height_front_max) return null;
+    if (typeof inputs.height_rear_min === 'number' && typeof inputs.height_rear_max === 'number' && inputs.height_rear_min >= inputs.height_rear_max) return null;
+  }
+
+  // Placeholder fields satisfy signature. Each group's required fields cover dependencies.
+  const params: TuningCarParams = {
+    weight: 0, weight_distribution: 0, maxHp: 0, maxTorque: 0, maxHpRpm: 0, maxTorqueRpm: 0,
+    ...inputs,
+    drivetrain: inputs.drivetrain,
+  };
+  const chassis = calculateChassisTuning(discipline, params);
+  const alignment = calculateStaticTireAlignment(discipline, 'Neutral', params);
   const result: Record<string, RoadFormulaValue> = {};
   const add = (key: string, value: number, unit: string) => { result[key] = { value, unit }; };
-  if (group === 'pressure') { add('pressure.front', alignment.pcF, 'psi'); add('pressure.rear', alignment.pcR, 'psi'); }
-  if (group === 'springs') { add('spring.front', chassis.springs.front, 'kgf/mm'); add('spring.rear', chassis.springs.rear, 'kgf/mm'); }
-  if (group === 'height') { add('height.front', chassis.springs.heightF, 'cm'); add('height.rear', chassis.springs.heightR, 'cm'); }
-  if (group === 'arb') { add('arb.front', chassis.arb.front, 'slider'); add('arb.rear', chassis.arb.rear, 'slider'); }
+
+  if (group === 'pressure') {
+    add('pressure.front', alignment.pcF, 'psi');
+    add('pressure.rear', alignment.pcR, 'psi');
+  }
+  if (group === 'springs') {
+    add('spring.front', chassis.springs.front, 'kgf/mm');
+    add('spring.rear', chassis.springs.rear, 'kgf/mm');
+  }
+  if (group === 'height') {
+    add('height.front', chassis.springs.heightF, 'cm');
+    add('height.rear', chassis.springs.heightR, 'cm');
+  }
+  if (group === 'arb') {
+    add('arb.front', chassis.arb.front, 'slider');
+    add('arb.rear', chassis.arb.rear, 'slider');
+  }
   if (group === 'damping') {
-    add('rebound.front', chassis.damping.reboundF, 'slider'); add('rebound.rear', chassis.damping.reboundR, 'slider');
-    add('bump.front', chassis.damping.bumpF, 'slider'); add('bump.rear', chassis.damping.bumpR, 'slider');
+    add('rebound.front', chassis.damping.reboundF, 'slider');
+    add('rebound.rear', chassis.damping.reboundR, 'slider');
+    add('bump.front', chassis.damping.bumpF, 'slider');
+    add('bump.rear', chassis.damping.bumpR, 'slider');
   }
   if (group === 'alignment') {
-    add('camber.front', alignment.camber.front, 'deg'); add('camber.rear', alignment.camber.rear, 'deg');
-    add('toe.front', parseFloat(alignment.toe.front), 'deg'); add('toe.rear', parseFloat(alignment.toe.rear), 'deg'); add('caster', alignment.caster, 'deg');
+    add('camber.front', alignment.camber.front, 'deg');
+    add('camber.rear', alignment.camber.rear, 'deg');
+    add('toe.front', parseFloat(alignment.toe.front), 'deg');
+    add('toe.rear', parseFloat(alignment.toe.rear), 'deg');
+    add('caster', alignment.caster, 'deg');
   }
   if (group === 'differential') {
-    if (params.drivetrain !== 'RWD') { add('diff.front.acceleration', chassis.diff.accelF, '%'); add('diff.front.deceleration', chassis.diff.decelF, '%'); }
-    if (params.drivetrain !== 'FWD') { add('diff.rear.acceleration', chassis.diff.accelR, '%'); add('diff.rear.deceleration', chassis.diff.decelR, '%'); }
+    if (params.drivetrain !== 'RWD') {
+      add('diff.front.acceleration', chassis.diff.accelF, '%');
+      add('diff.front.deceleration', chassis.diff.decelF, '%');
+    }
+    if (params.drivetrain !== 'FWD') {
+      add('diff.rear.acceleration', chassis.diff.accelR, '%');
+      add('diff.rear.deceleration', chassis.diff.decelR, '%');
+    }
     if (params.drivetrain === 'AWD') add('diff.center', chassis.diff.centerRear, '%');
   }
   if (group === 'gearing') {
     if (!engine || !Number.isInteger(inputs.numGears) || inputs.numGears! < 2 || inputs.numGears! > 10) return null;
-    const gearing = calculateWorkflowTuning('Road', 'Neutral', params, inputs.numGears!, engine).gearing;
+    const gearing = calculateWorkflowTuning(discipline, 'Neutral', params, inputs.numGears!, engine).gearing;
     if (!gearing) return null;
-    add('gearing.finalDrive', gearing.finalDrive, 'ratio'); gearing.gears.forEach((value, i) => add('gearing.gear' + (i + 1), value, 'ratio'));
+    add('gearing.finalDrive', gearing.finalDrive, 'ratio');
+    gearing.gears.forEach((value, i) => add('gearing.gear' + (i + 1), value, 'ratio'));
   }
   return result;
+}
+
+/** 100% backward-compatible pure alias for Road. */
+export function calculateRoadBaselineGroup(
+  group: string,
+  inputs: Partial<TuningCarParams> & { numGears?: number },
+  engine: WorkflowEngineInput | null = null
+): Record<string, RoadFormulaValue> | null {
+  return calculateDomainBaselineGroup('Road', group, inputs, engine);
 }
 
 /** Fit an initial estimate to a game-confirmed range and grid; never fabricate that range. */

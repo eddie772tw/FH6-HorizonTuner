@@ -1,3 +1,19 @@
+## 2026-09-11 Antigravity — 越野、直線加速與甩尾賽事工作流擴展與全域整合
+
+- **領域工作流全面適配**：
+  - **越野/拉力 (Offroad / Rally)**：實作無季節/配方強制的進入門檻與中性初始基準；新增長行程懸吊極限壓縮 (travel >= 0.95/0.98)、地形顛簸度 SurfaceRumble RMS、落地下壓 G 值動態觀測；支援衝刺與圈賽 A/B 基準比較與賽後描述性報告。
+  - **直線加速 (Drag)**：實作彈射起步輪胎滑移率與持續打滑時長、分檔加速度曲線 (Accel > 78%)、換檔轉速驟降與動力銜接延遲分析，以及 0-100 km/h、0-200 km/h、0-400m 等速域衝刺里程碑；提供單項調整（如胎壓、終傳、齒比）A/B 迭代反饋。
+  - **甩尾 (Drift)**：對齊統一準備、基準記錄、A/B 候選與描述性摘要架構；以純運動學視角提取偏航角速度 (Yaw Rate) 與後軸相對前軸滑移代理指標；明示未量測變數（地面摩擦係數、駕駛踩踏風格、空力負載）與客觀限制，嚴格禁止捏造未經證實的綜合評分或物理因果。
+- **單一真理 (SSOT) 與架構規範遵循**：
+  - 物理計算統一收攏於純函數 `calculateDomainBaselineGroup`（支援 Road、Rally、Drag、Drift），不硬編碼公式於 UI；`calculateRoadBaselineGroup` 維持 100% 向後相容別名。
+  - 後端 `DragService`、`DriftService`、`OffroadService` 統一採用 `WorkflowStore` 附加式 SQLite 文件快照；60Hz UDP 接收迴圈僅執行記憶體比對與非同步排程，絕無同步阻塞 I/O。
+  - 前端 `TuningWorkspace.tsx` 實作二維切換矩陣（4 種賽事 x 工作流助手 vs 詳細設定頁面），以 `localStorage` 隔離狀態；全組件遵循 Halfmoon 設計系統與無 Emoji 規範。
+- **全量測試與驗證**：
+  - 前端 Vitest 單元測試：104 個測試檔案、776 項測試全數通過。
+  - 前端構建：TypeScript 型別檢查、Vite 生產打包、Solver bundle 全數通過。
+  - 後端 Pytest 測試：507 passed、9 deselected（包含 E2E Tiers 1-4 全部 167 項新測試與 340 項現有測試）。
+  - 代碼衛生：Ruff check、Ruff format、Git diff 空白檢查全數通過。
+
 ## 2026-09-10 Codex — Road 比較工作流與資料邊界
 
 - Road 預設流程改為確認、記錄、結果；觀察不要求引擎，局部初值只讀取其公式依賴。來源與未知可見；Neutral 為 0 PSI 季節偏移，不是遙測自動辨識。

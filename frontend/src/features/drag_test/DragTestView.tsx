@@ -497,7 +497,7 @@ const DragTestView: React.FC = () => {
       {/* SECTION 2: Guiding & Instructions (If Idle/Waiting) */}
       {(status === 'idle' || status === 'waiting') && (
         <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', flex: 1, justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '3.5rem' }}>🚦</div>
+          <div className="badge text-bg-warning fs-3 px-3 py-2">DRAG TEST</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '500px' }}>
             <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>{t("How to perform a Drag Test:")}</h4>
             <ol style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', paddingLeft: '1.2rem' }}>

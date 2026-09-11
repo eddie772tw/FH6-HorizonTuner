@@ -92,6 +92,10 @@ from audio_spectrum import (
 )
 from diagnostic_support_bundle import ALLOWED_FIELDS, create_support_bundle
 from discord_presence import DiscordPresenceManager, load_discord_application_id
+from drag_router import create_drag_router
+from drag_service import DragService
+from drift_router import create_drift_router
+from drift_service import DriftService
 from dyno_quality import DynoQualityGateRegistry, reconcile_dyno_profile_segment
 from fastapi import (
     FastAPI,
@@ -118,6 +122,8 @@ from motec_exporter import (
     parse_motec_csv_to_telemetry,
 )
 from motec_template import generate_motec_workspace_xml
+from offroad_router import create_offroad_router
+from offroad_service import OffroadService
 from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
 from process_cleanup import cleanup_stale_port_listeners
@@ -141,6 +147,7 @@ from telemetry_runtime import (
     TelemetryPipelineMetrics,
 )
 from telemetry_sqlite import TelemetrySQLite
+from workflow_store import WorkflowStore
 
 
 # 自訂 Formatter 以移除日誌中的 ANSI 顏色代碼，維持 backend.log 的純文字格式
@@ -630,6 +637,18 @@ race_persistence = AsyncRacePersistence(telemetry_db)
 race_recorder = RaceRecorder(race_persistence, app_settings, car_database)
 road_service = RoadService(telemetry_db, RoadStore(SESSIONS_DB_PATH))
 app.include_router(create_road_router(road_service))
+offroad_service = OffroadService(
+    telemetry_db, WorkflowStore(SESSIONS_DB_PATH, default_discipline="offroad")
+)
+app.include_router(create_offroad_router(offroad_service))
+drag_service = DragService(
+    telemetry_db, WorkflowStore(SESSIONS_DB_PATH, default_discipline="drag")
+)
+app.include_router(create_drag_router(drag_service))
+drift_service = DriftService(
+    telemetry_db, WorkflowStore(SESSIONS_DB_PATH, default_discipline="drift")
+)
+app.include_router(create_drift_router(drift_service))
 
 
 async def maintain_race_recording():
@@ -638,6 +657,9 @@ async def maintain_race_recording():
         await asyncio.sleep(0.5)
         race_recorder.tick()
         await road_service.maintain()
+        await offroad_service.maintain()
+        await drag_service.maintain()
+        await drift_service.maintain()
 
 
 # --- Drag Telemetry Recorder Class ---
@@ -1260,6 +1282,9 @@ async def lifespan(app: FastAPI):
     current_udp_ip_port = ("auto", port)
     race_persistence.start()
     await road_service.recover()
+    await offroad_service.recover()
+    await drag_service.recover()
+    await drift_service.recover()
     discord_presence.start()
     background_tasks = [
         asyncio.create_task(broadcast_telemetry()),
@@ -1279,6 +1304,9 @@ async def lifespan(app: FastAPI):
         race_recorder.save_latest_and_clear("application-shutdown")
         await race_persistence.shutdown()
         await road_service.shutdown()
+        await offroad_service.shutdown()
+        await drag_service.shutdown()
+        await drift_service.shutdown()
         discord_presence.stop()
 
 
@@ -1379,6 +1407,9 @@ async def broadcast_telemetry():
         with telemetry_pipeline_metrics.measure_stage("recorders"):
             race_recorder.record(data)
             road_service.observe(data)
+            offroad_service.observe(data)
+            drag_service.observe(data)
+            drift_service.observe(data)
 
             # --- Record Drag Test Telemetry ---
             drag_recorder.record(data)

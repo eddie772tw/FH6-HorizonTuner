@@ -109,3 +109,15 @@ id_rsa*
 /frontend/dist-solver/
 .agents/security_data.json
 .agents/security_report.md
+/.agents/auditor_m1_1
+/.agents/challenger_m1_1
+/.agents/challenger_m1_2
+/.agents/explorer_survey_1
+/.agents/explorer_survey_2
+/.agents/explorer_survey_3
+/.agents/orchestrator_1
+/.agents/reviewer_m1_1
+/.agents/reviewer_m1_2
+/.agents/test_writer_e2e
+/.agents/worker_m1
+/.agents/worker_m2
