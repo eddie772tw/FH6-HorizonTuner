@@ -1,5 +1,36 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-11 / AE86 轉速表動態刻度範圍與紅線自適應交付（Neo as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者要求轉速表根據車輛遙測回傳最大轉速（`telemetryMaxRpm`）自適應動態調整表盤刻度範圍（<7k 設為 9k 且 0~2k 壓縮、7~11k 維持 11k 盤面、>11k 延伸至整千 maxrpm）並將 `{maxRPM - 1500} ~ 盤面最大轉速` 的刻度線與數字標記塗紅。
+- **Learning**：
+  1. **低轉壓縮區間之自適應劃分**：當 `telemetryMaxRpm < 7000`（低轉引擎）時，壓縮段由原先的 0~3k 縮窄為 0~2000 RPM（佔 18% 角度），使 2000~9000 RPM 獲得寬廣的 82% 角度展開空間，完美兼顧低轉速車輛（美系大排量 V8、柴油車等）在常用工況（2000~6000 RPM）的指針解析度與辨識性。
+  2. **非整千最大轉速之向上取整對齊**：超高轉速車輛（>11k）回傳可能帶零星百位數（如 12,400 RPM），盤面末端標籤若印小數會破壞經典 JDM 賽車表盤質感。採 `Math.ceil(telemetryMaxRpm / 1000) * 1000` 向上取整至整千位，維持大數字簡潔排版。
+  3. **動態紅線塗紅與靜態離線緩存快照失效**：當車輛最大轉速或紅線起點變更時，透過 `cachedMaxRpm !== currentMaxRpm` 判定，僅在車型更換或調校載入時重構 `offscreenDial`，維持 60Hz UDP 正常渲染期間之零垃圾回收（Zero-GC）與極致幀率。
+- **Action**：
+  1. 擴充 `hud_overlay/initial_d/initial-d-model.js`，新增 `getDialMaxRpm` 與 `getTicks`，並支援 `<7k` (0~2k 壓縮)、`7~11k` (原版 18/38/44%)、`>11k` (整千展開) 之角度計算。
+  2. 修改 `hud_overlay/initial_d/index.html`，根據 `tTick.isRed` 自動切換刻度與文字顏色（`#ff3030` vs `#eee9dc`），並在 `onFrame` 傳入 `maxRpm` 自適應重繪。
+  3. 升級 `hud_overlay/initial_d/tests/unit/initialDContract.test.ts`，增補三種轉速工況與紅線起點之單元測試斷言。
+- **Evidence**：前端測試套件 94 passed（606 tests 全數通過），`git diff --check` 通過。
+- **Skills**：`huge-component-refactoring`、`modular-refactoring`、`physics-tuning-math`。
+
+## 2026-09-11 / AE86 雙環表追加速度表交付（Neo as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者明確需求於既有萬轉轉速表左側追加風格一致的速度環表，支援 0-200 km/h、270度象限跨度、超速機械擋針抖動阻尼、TRD 原生向量圖片繪製與 MPH 自適應佈局。
+- **Learning**：
+  1. **雙環表 Canvas 離線快取與 DPR 一致性**：當單一環表擴展為水平並排雙聯表（800×420）時，表盤中心需分別對稱定位（左表 `speedCx = 205`，右表 `tachCx = 595`），並由單一離線畫布 `offscreenDial` 同步管理兩盤之金屬滾邊、消光黑底板與微反光，避免多次重繪造成 GPU Draw Call 浪費。
+  2. **象限錨點角度映射與幾何閉環**：20 到 200 km/h 橫跨正左（180°）、正上（270°）、正右（360°）與正下（450°），剛好跨越三個象限（270°），斜率嚴格維持 1.5°/(km/h)，使 0 刻度自然對齊於 150°（8點鐘方向）。此幾何規則亦可完美映射至英制 0-140 MPH 象限佈局（每象限 40 MPH，跨 90°）。
+  3. **機械指針破表擋針銷（Peg Limit）與雙頻阻尼震顫**：在 60Hz 遙測更新下，車速超過 200 km/h 時將指針限制在機械銷釘處（+2.5°~5°），並疊加高頻正弦震動（約 ±1°），極具 JDM 儀表機械真實感；低於 200 km/h 時迅速自然平滑回歸。
+  4. **原生向量圖像 vs 假字體模擬**：真實賽車改裝儀表之品牌標識（TRD）具備特定切角與斜體賽車視覺，禁止以系統 Arial 粗體字串模擬。採用獨立 SVG 向量圖形（`assets/trd_logo.svg`）經 Canvas `drawImage` 渲染，不僅滿足品牌真實度，且在各 DPR 縮放下均無鋸齒。
+  5. **Node 單元測試環境下瀏覽器類別防護**：非瀏覽器測試環境下無全域 `Image` 類別，在元件端應使用防禦性型別檢查 `typeof Image !== 'undefined' ? new Image() : ...`，並於契約測試環境中模擬 `mockImage`，維持測試綠燈與執行環境安全。
+- **Action**：
+  1. 建立 `hud_overlay/initial_d/assets/trd_logo.svg` 象牙白專屬標記向量圖片。
+  2. 擴充 `hud_overlay/initial_d/initial-d-model.js`，新增 `InitialDSpeedModel` 純數學模型（`getAngle`, `getTicks`）。
+  3. 重構 `hud_overlay/initial_d/index.html` 為雙環表渲染架構（800×420 px），左表渲染速度針與刻度，右表渲染萬轉針與超轉指示燈筒，左表無多餘警示燈。
+  4. 升級 `hud_overlay/initial_d/tests/unit/initialDContract.test.ts`，增加速度刻度、270度跨度、超速抖動阻尼與 TRD 圖片資產測試。
+- **Evidence**：前端測試套件 94 passed（605 tests 全數通過），`git diff --check` 通過。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`physics-tuning-math`。
+
 ## 2026-09-10 / AE86 原作虛構盤面追加重製（Codex）
 
 - **來源／狀態**：`local`／`verified`；使用者指定 ULTRA Clubman 物理原型，並明確補充原作為低轉壓縮／11k 虛構盤面，禁止檔顯、數字時速與非原型顯示要素。
