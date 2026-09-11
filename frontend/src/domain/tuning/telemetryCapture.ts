@@ -103,7 +103,13 @@ export function telemetryToCaptureSample(data: TelemetryData): TuningCaptureSamp
     positionX: finite(data.PositionX),
     positionY: finite(data.PositionY),
     positionZ: finite(data.PositionZ),
-    surfaceRumble: Array.from(data.SurfaceRumble ?? []).map((value) => finite(value)),
+    // [PERF] Manual unrolling to avoid Array.from intermediate objects and closure overhead in high-frequency path
+    surfaceRumble: [
+      finite(data.SurfaceRumble?.[0]),
+      finite(data.SurfaceRumble?.[1]),
+      finite(data.SurfaceRumble?.[2]),
+      finite(data.SurfaceRumble?.[3])
+    ],
     lapNumber: finite(data.LapNumber),
     currentRaceTime: finite(data.CurrentRaceTime)
   };
