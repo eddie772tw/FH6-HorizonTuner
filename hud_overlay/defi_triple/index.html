@@ -96,18 +96,24 @@
             }
 
             function buildOffscreenDial() {
-                pixelRatio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-                domCache.canvas.width = Math.round(380 * pixelRatio);
-                domCache.canvas.height = Math.round(360 * pixelRatio);
-                domCache.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (domCache.canvas) {
+                    domCache.canvas.width = Math.round(380 * pixelRatio);
+                    domCache.canvas.height = Math.round(360 * pixelRatio);
+                    if (domCache.ctx && domCache.ctx.setTransform) {
+                        domCache.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                    }
+                }
                 dials[1].unit = dials[3].unit = isMetric ? 'x100kPa' : 'PSI';
                 dials[2].unit = isMetric ? '°C' : '°F';
                 offscreenDial = document.createElement('canvas');
-                offscreenDial.width = domCache.canvas.width;
-                offscreenDial.height = domCache.canvas.height;
+                offscreenDial.width = Math.round(380 * pixelRatio);
+                offscreenDial.height = Math.round(360 * pixelRatio);
                 var oCtx = offscreenDial.getContext('2d');
                 if (!oCtx) return;
-                oCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                if (oCtx.setTransform) {
+                    oCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                }
 
                 var customColor = window._currentCustomColor;
                 var useDefault = window._currentUseDefaultColors !== false;
@@ -482,6 +488,11 @@
                         }
                     }
                     buildOffscreenDial();
+                    renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+                },
+
+                onScale: function (scale) {
+                    renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
                 },
 
                 onElementsChange: function (elements) {
@@ -568,6 +579,14 @@
             setTimeout(function () {
                 renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
             }, 60);
+
+            window.addEventListener('resize', function () {
+                var nextRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (pixelRatio !== nextRatio) {
+                    buildOffscreenDial();
+                }
+                renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+            });
 
             if (document.fonts && document.fonts.ready) {
                 document.fonts.ready.then(function () {

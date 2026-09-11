@@ -53,6 +53,7 @@ describe('Defi Advance BF HUD contract', () => {
     };
 
     const dialLabels: string[] = [];
+    let drawImageCount = 0;
     const mockCtx = {
       setTransform: () => {},
       createLinearGradient: () => ({ addColorStop: () => {} }),
@@ -65,7 +66,7 @@ describe('Defi Advance BF HUD contract', () => {
       fill: () => {},
       stroke: () => {},
       fillText: (label: string) => { dialLabels.push(label); },
-      drawImage: () => {},
+      drawImage: () => { drawImageCount++; },
       save: () => {},
       restore: () => {},
       translate: () => {},
@@ -102,8 +103,14 @@ describe('Defi Advance BF HUD contract', () => {
       },
     };
 
+    const windowListeners: Record<string, Function[]> = {};
     const mockWindow = {
+      devicePixelRatio: 1,
       requestAnimationFrame: () => {},
+      addEventListener: (type: string, fn: Function) => {
+        if (!windowListeners[type]) windowListeners[type] = [];
+        windowListeners[type].push(fn);
+      },
     };
 
     const mockPerformance = {
@@ -122,9 +129,37 @@ describe('Defi Advance BF HUD contract', () => {
 
     expect(registeredDef).toBeDefined();
     expect(typeof registeredDef.onFrame).toBe('function');
+    expect(typeof registeredDef.onScale).toBe('function');
     expect(registeredDef.scaleMultiplier).toBe(1.2);
     expect(dialLabels).toContain('x100kPa');
     expect(dialLabels).toContain('°C');
+
+    // Verify onInit and onScale redraw cluster immediately to prevent disappearing when resized
+    drawImageCount = 0;
+    registeredDef.onInit({ scale: 1.5 });
+    expect(drawImageCount).toBeGreaterThan(0);
+
+    drawImageCount = 0;
+    registeredDef.onScale(1.5);
+    expect(drawImageCount).toBeGreaterThan(0);
+
+    // Verify dynamic devicePixelRatio update on resize or onInit
+    mockWindow.devicePixelRatio = 2;
+    registeredDef.onInit({ scale: 1.0 });
+    expect(mockCanvas.width).toBe(760);
+    expect(mockCanvas.height).toBe(720);
+
+    mockWindow.devicePixelRatio = 1;
+    registeredDef.onInit({ scale: 1.0 });
+    expect(mockCanvas.width).toBe(380);
+    expect(mockCanvas.height).toBe(360);
+
+    // Verify window resize listener triggers redraw
+    expect(windowListeners['resize']).toBeDefined();
+    expect(windowListeners['resize'].length).toBeGreaterThan(0);
+    drawImageCount = 0;
+    windowListeners['resize'][0]();
+    expect(drawImageCount).toBeGreaterThan(0);
 
     // Run onFrame with full sample data
     expect(() => {
