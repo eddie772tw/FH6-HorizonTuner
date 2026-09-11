@@ -1,5 +1,108 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-10 / AE86 原作虛構盤面追加重製（Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者指定 ULTRA Clubman 物理原型，並明確補充原作為低轉壓縮／11k 虛構盤面，禁止檔顯、數字時速與非原型顯示要素。
+- **Learning**：物理原型不等於虛構盤面的校準與功能規格；不得以市售 No.1932 線性刻度蓋過原作約束。TRD 識別保留，NIPPONDENSO 不再混入。
+- **Action**：黑圈白針與盤內雙 LED，移除時速／檔位／DRIFT／合成鈴聲；非線性映射抽為 `initial-d-model.js`，維持 140° 起點、260° 掃幅與三段 18%／38%／44%，加入純映射驗證及動畫取消清理。
+- **Evidence**：本款 6 tests；最終全套後端 285 passed／8 deselected、前端 601 passed，Ruff、format、build、path-case 通過；最終 45 組右下布局均不越界，本款 20 組深淺／DPR／狀態無 pageerror。未作 Tauri／遊戲／像素等價認證。
+- **Sources**：Nengun 1932-01 套裝照片已目視；官方型錄僅搜尋索引可讀，本體與舊頁連線失敗。最終虛構刻度依使用者指示。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / Cyberpunk Turbo-R 工業面板交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；Quadra Turbo-R 設計概念啟發的原創 HUD，非最終遊戲儀表複製。
+- **Learning**：車型名稱與來源性質必須一致；裝飾性狀態不能被誤認為實測鏈路狀態。主速度／檔位優先於姿態、頻譜與效果。
+- **Action**：琥珀工業窄幅模組、統一 Turbo-R V-Tech、移除假 SYS.LINK／EQ／姿態／Glitch 干擾，缺 boost 顯示不可用，DPR 與靜態快取。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Next**：使用者更新 AE86 基準為 ULTRA Clubman，將在獨立下一次修正提交中重製；已推送 TRD 階段保留歷史標記。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / MoTeC C125 左右欄重建交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；以官方 C125 展示頁內容順序重建三列欄位，中央明確採 FH 適配。
+- **Learning**：C125 官方 PAGE 5 不是檔位，其 10 LED 亦不等於舊 15 顆模擬燈；Forza 沒有六個溫度／壓力通道，不可用胎溫或固定值填版。CurrentLap 減 BestLap 不能代表同距離圈速差。
+- **Action**：六列溫度／壓力顯示不可用，中央 RPM／檔位／速度、下方真實圈時；移除固定煞車比例與歌曲誤稱 Team Radio，提高文字及預設尺寸並標明 FH ADAPTED。
+- **Evidence**：本款 5 tests，20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / FH5 Arc 資訊層級與亮底辨識交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；依据視覺複審的遊戲截圖與資訊層級，非像素等價主張。
+- **Learning**：透明白色 HUD 在淺背景需要窄暗描邊，而非全幅底板；RPM 固定紅線標記不應被動態進度漸層取代。啟動繪圖也需遵循完整函式參數順序。
+- **Action**：細白環／數字刻度、中央 gear、下方 speed、固定紅線、短針；媒體／踏板改為明確選配 hook，保留手煞車；DPR 與靜態快取。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / AE86 TRD 材質與盤面字樣交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；依使用者要求凍結版型，只修材質、字形與字樣。
+- **Learning**：固定光源的中心帽必須獨立於旋轉指針；材質／盤面／中心帽的 backing store 必須採同一 DPR，避免高 DPI 混用快取尺寸。
+- **Action**：黑色烤漆表圈、靜態細紋與微弱玻璃反射、直立數字、TRD／NIPPONDENSO 字樣、橘紅細針；保持原座標與映射，DRIFT 避開速度及單位。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。未作遊戲或原型像素等價認證。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / Defi A 方案逐款交付（Codex）
+
+- **來源**：`local`；使用者核准開始實作、Defi 採 A、每款完成後獨立 commit／push，允許子代理分工。
+- **狀態**：`verified`（本地瀏覽器與合成資料）；非真實遊戲或像素等價認證。
+- **Learning**：透明的靜態來源不會清除前一幀的光暈，合成前須 clearRect；數字與刻度需預留字形高度，多位英制讀值也要目視。DPR backing store 與 drawImage 目的邏輯尺寸必須成對處理。原有感測 fallback 不因美術改版而成為有效遙測。
+- **Action**：380×360 A 方案、獨立金屬黑盤、預設 342×324；PSI／°F 刻度換算、DPR 快取、Peak Hold 原地更新。保存審查基準與本款修改後證據於 `docs/hud-5-styles-visual-iteration-20260910.md`。
+- **Evidence**：本款 20 組深淺背景／DPR／狀態無 pageerror；後端 285 passed／8 deselected，前端 94 files／599 passed，Ruff、format、build、path-case 通過。8001 衝突經使用者授權停止另一實例後解除，後續明確指示不恢復。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / 五款 HUD 視覺複審與右下定位驗證（Codex）
+
+- **來源**：`local`，使用者要求核對五款 HUD 原型、編排與右下定位，並補充 Defi 必須去矩形黑底及重排、AE86 版型保留而改善材質與盤面字樣。
+- **狀態**：`verified`（定位與目前程式截圖）；美術修正仍為方案。
+- **Learning**：共用 wrapper 的右下錨定不等於可見盤面邊缘恰好 30px，還須考虑畫布內透明留白。800px 等寬幅設計經 HUDCore 0.75 與樣式倍率縮放後，小字可能降至約 5px；契約測試不代表美術還原與可讀性。舊合規報告引用的圖片未存在於本 checkout，不再採用其百分比與發行簽署作現行驗收。
+- **Action**：新增 `docs/hud-5-styles-visual-review-20260910.md`、10 張目前 renderer 截圖及 45 組布局量測；舊報告加歷史註記。Defi 提出獨立表體、右下主表與錯落副表方案；AE86 固定版型，只修材質、字形與字樣；MoTeC 保留三分區，依官方 C125 真實硬體頁面重做左右欄的溫度／壓力讀值。官方展示圖的中央 PAGE 5 不是檔位，亦不能宣称此頁代表所有 GT3 車隊。本輪未改 HUD 產品程式。
+- **Evidence**：Edge Chromium headless、DPR=1，3 種 viewport × 3 種 scale × 5 樣式，共 45/45 主容器右／底距離 30 CSS px 且不越界，無 pageerror。合成 telemetry、全視窗 iframe；未作 Tauri／真實遊戲／OS DPI／效能驗收。
+- **Skills**：`agent-governance-audit`；對話布局草圖使用 `visualize:visualize`。
+## 2026-09-10 / 全庫 Agent 規範體系與技能架構精煉重構 (AGENTS.md & Skills Lean Governance)
+
+- **來源**：`local`，響應使用者需求，依據五大 Agent 技能架構原則對專案 `AGENTS.md`、13 個專案技能及使用者層級外掛技能進行全面盤點與模組化重構。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **路由器 + 附件模式 (Router & References Pattern)**：巨型 `SKILL.md`（如超過 100 行的 `codex-antigravity-bridge`、`github-security-audit`、`jules_coding`、`pr-author-maintainer`）若直接塞入完整實作細節、正則與範本，會導致 Agent 只要觸發該技能就將大量上下文填滿，造成 Context Pollution。抽離出專用 `references/` 附件、主檔僅負責流程路由判定，能兼顧輕量調用與深度指針查閱。
+  2. **消除「每次動作前通讀某些檔案」之 Context Stuffing 反模式**：舊版 `AGENTS.md` 要求每次動作前通讀 `workspace.md`、`Journal.md` 等檔案，極易引發大量 token 浪費與記憶雜訊。重構為「文件與規範權責分工表 (Documentation SSOT Architecture)」，實踐按需載入 (On-Demand Loading)。
+  3. **消極禁令轉化為有條件明確授權 (Pre-authorized Bounded Rules)**：將「先問再做」的消極限制（如修改 UDP Offset、引入第三方相依）轉化為「具備客觀證據、測試覆蓋、輕量及寬鬆授權等明確邊界條件時獲得授權」，顯著減少不必要的互動中斷與等待死鎖。
+  4. **範圍分流驗證 (Scoped Verification)**：將「每次任務結束必須跑全套測試」改為依變更範圍分流（純文檔跑 diff check，前端跑 vitest，後端跑 pytest），大幅提升日常開發迴圈效能。
+  5. **消除技能間身分與職責衝突**：修正 `pr-review-evaluation` 與 `pr-author-maintainer` 在 PR 提交上的語意衝突，嚴格劃分 Reviewer 審查身分與 Author 提交身分；明確劃分 `huge-component-refactoring`（UI 組件與 60Hz Canvas）與 `modular-refactoring`（底層架構、Domain 邏輯與 API 契約）之邊界；並精簡修復外掛技能（如 `modern-web-guidance`）之大寫強迫字眼與過寬觸發。
+- **Action**：
+  1. 重構 `AGENTS.md`：建立權責分工表、範圍分流驗證與有條件明確授權條款。
+  2. 重構 `skills/README.md`：同步更新 Gate 與清單說明。
+  3. 模組化重構並抽離 references：
+     - `codex-antigravity-bridge`: 建立 `headless_configuration.md`, `smoke_troubleshooting.md`, `desktop_session_resume.md`。
+     - `github-security-audit`: 建立 `vulnerability_remediation_patterns.md`。
+     - `jules_coding`: 建立 `manual_invocation_guide.md`, `scheduled_intake_guide.md`。
+     - `pr-author-maintainer`: 建立 `pr_templates_and_replies.md`。
+     - `halfmoon-design-system`: 將元件 class 列表完全收斂至 `HALFMOON_SPECIFICATION.md`。
+  4. 修正 `agent-governance-audit`、`cross-agent-collaboration`、`pr-review-evaluation` 等 frontmatter descriptions。
+  5. 修訂使用者層級外掛技能（`modern-web-guidance`、`accidental-data-loss-prevention`、`chrome-extensions`、`ml-best-practices`、`building-data-apps`）。
+- **Evidence**：`git diff --check` 通過無空白異常；專案 13 個 skills 與 canonical registry 100% 對齊。
+- **Skills**：`agent-governance-audit`、`modular-refactoring`、`cross-agent-collaboration`。
+
+---
+
+## 2026-09-10 / 全庫開啟中 PR 深度架構審查、多代理協作治理與 Merge 藍圖發布 (Neo as Antigravity)
+
+- **來源**：`local`，響應使用者需求，以 `Neo as Antigravity` 身分對 `eddie772tw/FH6-HorizonTuner` 當前開啟中的 9 個 Pull Request（#316、#317、#318、#319、#320、#321、#322、#323、#324）進行完整的架構規範、物理公式、CI 綠燈率、安全性與程式碼衝突深度審查，並正式於 GitHub 發表 Review 意見與產出階段性 Merge 建議報告。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Jules 自動化機器人常見重複 PR 模式**：Jules 在處理相同效能需求（例如在 `FrameInterpolator` 中消除 `Set` Iterator 隱式配置）時，因任務重試或排程差異容易生成目標相同的平行 PR（如 #321 與 #324）。審查時需詳加比對建構子邊界（防禦性淺拷貝 vs 直接引用）與附帶日誌，擇優保留並明確標記另一個為 Duplicate 予以關閉，防止主線產生無效衝突。
+  2. **Windows 檔案系統大小寫敏感度契約與 CI 阻擋點**：PR #320 因新增大寫目錄檔案 `.Jules/palette.md`，直接踩中專案 `scripts/check_repo_path_case.py` 檢查而導致 `Backend Lint & Static Check` 失敗。多代理協作時必須嚴格遵循規範路徑（全小寫 `.jules/`），避免跨平台檔案檢出衝突。
+  3. **UI 無障礙 i18n 翻譯字典一致性檢查**：PR #320 將 `aria-label="Close"` 包裝為 `t("Close")`，但若未同步在 `lang/zh-tw.json`（與其他字典）中宣告 `"Close"` 鍵值，實際執行時將全數回退至原始英文字串，無法真正達成多語系無障礙目標。因此無障礙審查必須納入語系檔鍵值存在性之雙向核驗。
+  4. **巨型架構重構 (PR #323) 之邊界隔離與非同步無阻塞護欄**：Codex 主導的 100 檔案巨型 PR (#323) 展現了極高的工程水準：不僅將調校物理公式純函數化收攏於 `tuningMath.ts`，並在 `backend/main.py` 引入具備 30s TTL、1s 逾時截斷與退避機制的 `AudioDeviceDiscovery`，徹底杜絕同步 WASAPI 列舉凍結 FastAPI 事件迴圈的隱患。
+- **Action**：
+  1. 針對全部 9 個 PR 進行完整中繼資料、CI 檢查、Diff 結構與衝突面分析。
+  2. 以 `Neo as Antigravity` 身分於 GitHub 提交 PR #320（Blocking findings）、#324（Duplicate）、#322（Security verification）、#323（Architecture & physics verification）、#318（CLI & governance）、#319（HUD contract）之正式 Review 意見。
+  3. 產出完備的 Artifact 報告 `pr_merge_recommendation_report.md`，規劃三階段安全合併排程。
+- **Evidence**：GitHub PR Reviews 成功發布；產出完整審查報告 Artifact；無任何本地代碼回歸。
+- **Skills**：`pr-review-evaluation`、`cross-agent-collaboration`、`agent-governance-audit`。
+
+---
+
 ## 2026-09-10 / 5 款新 HUD 樣式真實原型視覺比對與交付水準合規報告升級 (PR #319)
 
 - **來源**：`local`，響應使用者核心反饋，全面廢除「自我編寫之 HTML 原型 (Self-created Prototype)」作為審計基準之低公信力做法；改為查找並下載 5 款對應主題的真實世界實體產品照、官方賽車顯示器、原生遊戲畫面與動漫原作特寫作為客觀真實標竿（Ground Truth），完成深度視覺比對與交付合規審計報告。

@@ -22,7 +22,6 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
     expect(html).toContain('id="cyberpunkCanvas"');
     expect(html).toContain("HUDCore.registerStyle('cyberpunk_hud'");
     expect(html).toContain("HUDCore.init('cyberpunk_hud')");
-    expect(html).toContain('scaleMultiplier: 0.7');
   });
 
   it('keeps inline JavaScript syntactically valid', () => {
@@ -53,7 +52,10 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
       init: () => {},
     };
 
+    const labels: string[] = [];
     const mockCtx = {
+      setTransform: () => {},
+      createLinearGradient: () => ({ addColorStop: () => {} }),
       clearRect: () => {},
       fillRect: () => {},
       strokeRect: () => {},
@@ -64,7 +66,7 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
       closePath: () => {},
       fill: () => {},
       stroke: () => {},
-      fillText: () => {},
+      fillText: (label: string) => { labels.push(label); },
       drawImage: () => {},
       shadowBlur: 0,
       shadowColor: '',
@@ -77,11 +79,12 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
 
     const mockCanvas = {
       getContext: () => mockCtx,
-      width: 640,
-      height: 320,
+      width: 520,
+      height: 220,
     };
 
     const mockDocument = {
+      createElement: () => mockCanvas,
       getElementById: (id: string) => {
         if (id === 'cyberpunkCanvas') return mockCanvas;
         if (id === 'cyberpunkContainer') return { style: {} };
@@ -90,6 +93,7 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
     };
 
     const mockWindow = {
+      devicePixelRatio: 1,
       requestAnimationFrame: () => {},
     };
 
@@ -109,6 +113,7 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
 
     expect(registeredDef).toBeDefined();
     expect(typeof registeredDef.onFrame).toBe('function');
+    expect(registeredDef.scaleMultiplier).toBe(1);
 
     // Run onFrame with full sample data
     expect(() => {
@@ -125,11 +130,34 @@ describe('Cyberpunk 2077 Quadra HUD contract', () => {
         { isMetric: true, redlineRpm: 7800 }
       );
     }).not.toThrow();
+    expect(labels).toContain('TURBO-R  V-TECH');
+    expect(labels).toContain('215');
+    expect(labels).toContain('5');
+    expect(labels).toContain('+1.45');
+    expect(labels.some(label => label.includes('TYPE-66') || label.includes('SYS.LINK'))).toBe(false);
 
     // Verify reverse gear and onAnimate sweep
     expect(() => {
       registeredDef.onFrame({ rpm: 1100, max_rpm: 8500, speed_kmh: -8, gear: 0 }, { isMetric: true });
     }).not.toThrow();
+    expect(labels).toContain('R');
+    expect(labels).toContain('—');
+    registeredDef.onFrame({ rpm: 0, speed_mph: 62, gear: 11 }, { isMetric: false });
+    expect(labels).toContain('MPH');
+    expect(labels).toContain('62');
+    expect(labels).toContain('N');
+    const initialWidth = mockCanvas.width;
+    const initialHeight = mockCanvas.height;
+    mockWindow.devicePixelRatio = 2;
+    registeredDef.onFrame({ rpm: 1000, speed_mph: 20, gear: 1 }, { isMetric: false });
+    expect(mockCanvas.width).toBe(initialWidth * 2);
+    expect(mockCanvas.height).toBe(initialHeight * 2);
+    mockWindow.devicePixelRatio = 9;
+    registeredDef.onFrame({ rpm: 1000, speed_mph: 20, gear: 1 }, { isMetric: false });
+    expect(mockCanvas.width).toBe(initialWidth * 3);
+    mockWindow.devicePixelRatio = 0.5;
+    registeredDef.onFrame({ rpm: 1000, speed_mph: 20, gear: 1 }, { isMetric: false });
+    expect(mockCanvas.width).toBe(initialWidth);
 
     if (registeredDef.onAnimate) {
       expect(() => {

@@ -6,27 +6,25 @@
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         .cyberpunk-container {
-            width: 640px;
-            height: 320px;
+            width: 520px;
+            height: 220px;
             pointer-events: none;
             position: relative;
             box-sizing: border-box;
         }
         #cyberpunkCanvas {
             display: block;
-            width: 640px;
-            height: 320px;
-            background: #0B0C10;
-            border: 1px solid rgba(0, 240, 255, 0.35);
-            border-radius: 4px;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.15);
+            width: 520px;
+            height: 220px;
+            background: transparent;
+            transition: none !important;
         }
     </style>
 </head>
 <body>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container cyberpunk-container" id="cyberpunkContainer">
-            <canvas id="cyberpunkCanvas" width="640" height="320"></canvas>
+            <canvas id="cyberpunkCanvas" width="520" height="220"></canvas>
         </div>
     </div>
 
@@ -65,214 +63,143 @@
                 ctx.closePath();
             }
 
-            function drawSegmentedRpmBar(ctx, activeSegments, totalSegments, isRedline) {
-                var startX = 44;
-                var startY = 245;
-                var segW = 13;
-                var segH = 26;
-                var gap = 4;
-                var skew = 7;
+            var staticPanel = null;
+            var panelColor = '';
+            var panelMetric = null;
+            var panelMaxRpm = 0;
+            var displayDpr = 0;
+            var primaryDefault = '#f3bf4f';
 
-                // 1. Inactive background segments batch
-                ctx.beginPath();
-                for (var i = 0; i < totalSegments; i++) {
-                    var x = startX + i * (segW + gap);
-                    ctx.moveTo(x + skew, startY);
-                    ctx.lineTo(x + segW + skew, startY);
-                    ctx.lineTo(x + segW, startY + segH);
-                    ctx.lineTo(x, startY + segH);
-                    ctx.closePath();
-                }
-                ctx.fillStyle = 'rgba(252, 238, 10, 0.12)';
+            function buildStaticPanel(primary, maxRpm) {
+                staticPanel = document.createElement('canvas');
+                staticPanel.width = Math.round(520 * displayDpr);
+                staticPanel.height = Math.round(220 * displayDpr);
+                var ctx = staticPanel.getContext('2d');
+                if (!ctx) return;
+                ctx.setTransform(displayDpr, 0, 0, displayDpr, 0, 0);
+                panelColor = primary;
+                panelMetric = isMetric;
+                panelMaxRpm = maxRpm;
+                ctx.textBaseline = 'alphabetic';
+                // Original Turbo-R concept-inspired industrial housing, not a game replica.
+                var shell = ctx.createLinearGradient(0, 0, 0, 220);
+                shell.addColorStop(0, '#41413a');
+                shell.addColorStop(0.08, '#20211d');
+                shell.addColorStop(1, '#10120f');
+                drawChamferedRect(ctx, 1, 1, 518, 218, 9);
+                ctx.fillStyle = shell;
                 ctx.fill();
+                ctx.strokeStyle = '#65665a';
+                ctx.lineWidth = 1;
+                ctx.stroke();
 
-                // 2. Active segments batch
-                if (activeSegments > 0) {
-                    var barColor = isRedline || activeSegments > 27 ? '#FF003C' : '#FCEE0A';
-                    ctx.beginPath();
-                    for (var j = 0; j < activeSegments; j++) {
-                        var ax = startX + j * (segW + gap);
-                        ctx.moveTo(ax + skew, startY);
-                        ctx.lineTo(ax + segW + skew, startY);
-                        ctx.lineTo(ax + segW, startY + segH);
-                        ctx.lineTo(ax, startY + segH);
-                        ctx.closePath();
-                    }
-                    ctx.fillStyle = barColor;
-                    ctx.shadowColor = barColor;
-                    ctx.shadowBlur = 10;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
+                ctx.fillStyle = '#090d09';
+                ctx.fillRect(12, 12, 496, 51);
+                ctx.fillRect(12, 71, 265, 114);
+                ctx.fillRect(284, 71, 91, 114);
+                ctx.fillRect(382, 71, 126, 114);
+                ctx.strokeStyle = '#555748';
+                ctx.strokeRect(12, 71, 265, 114);
+                ctx.strokeRect(284, 71, 91, 114);
+                ctx.strokeRect(382, 71, 126, 114);
+
+                ctx.fillStyle = primary;
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('QUADRA', 22, 28);
+                ctx.textAlign = 'right';
+                ctx.fillText('TURBO-R  V-TECH', 498, 28);
+                // Inactive phosphor segments and scale live in this cached plate.
+                ctx.fillStyle = '#38341d';
+                for (var i = 0; i < 40; i++) {
+                    ctx.fillRect(22 + i * 12, 37, 8, 10);
                 }
+                ctx.fillStyle = '#b7b18b';
+                ctx.font = '10px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('0', 22, 59);
+                ctx.textAlign = 'center';
+                ctx.fillText('RPM ×1000', 260, 59);
+                ctx.textAlign = 'right';
+                ctx.fillText((maxRpm / 1000).toFixed(1), 498, 59);
+
+                ctx.fillStyle = primary;
+                ctx.font = 'bold 12px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(isMetric ? 'KM/H' : 'MPH', 24, 91);
+                ctx.fillText('GEAR', 299, 91);
+                ctx.fillText('BOOST · BAR', 393, 91);
+                ctx.fillStyle = '#b7b18b';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('THR', 393, 145);
+                ctx.fillText('BRK', 393, 174);
+                ctx.fillStyle = '#373821';
+                ctx.fillRect(423, 137, 72, 8);
+                ctx.fillRect(423, 166, 72, 8);
+                // Subtle hardware fasteners, kept away from the display hierarchy.
+                ctx.strokeStyle = '#828275';
+                ctx.beginPath();
+                ctx.moveTo(7, 5); ctx.lineTo(7, 10);
+                ctx.moveTo(513, 210); ctx.lineTo(513, 215);
+                ctx.stroke();
             }
 
             function drawCyberpunkHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, boostBar, pitch, roll, now) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
-
-                ctx.clearRect(0, 0, 640, 320);
+                var nextDpr = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (displayDpr !== nextDpr) {
+                    displayDpr = nextDpr;
+                    domCache.canvas.width = Math.round(520 * displayDpr);
+                    domCache.canvas.height = Math.round(220 * displayDpr);
+                    ctx.setTransform(displayDpr, 0, 0, displayDpr, 0, 0);
+                    staticPanel = null;
+                }
+                var primary = window._currentUseDefaultColors !== false || !window._currentCustomColor
+                    ? primaryDefault : window._currentCustomColor;
+                if (!staticPanel || primary !== panelColor || panelMetric !== isMetric || panelMaxRpm !== maxRpm) {
+                    buildStaticPanel(primary, maxRpm);
+                }
+                ctx.clearRect(0, 0, 520, 220);
+                ctx.drawImage(staticPanel, 0, 0, 520, 220);
                 ctx.textBaseline = 'alphabetic';
-
-                // Background
-                ctx.fillStyle = '#0B0C10';
-                ctx.fillRect(0, 0, 640, 320);
-
                 var isRedline = rpm >= redlineRpm;
-                var customColor = window._currentCustomColor;
-                var useDefault = window._currentUseDefaultColors !== false;
-                var primaryColor = (!useDefault && customColor) ? customColor : '#FCEE0A';
-                var cyanColor = '#00F0FF';
+                var warning = '#f96c45';
+                ctx.fillStyle = isRedline ? warning : primary;
+                var active = Math.round(Math.max(0, Math.min(1, rpm / maxRpm)) * 40);
+                for (var i = 0; i < active; i++) {
+                    ctx.fillRect(22 + i * 12, 37, 8, 10);
+                }
 
-                // Top Header Line & Decals
-                ctx.fillStyle = cyanColor;
-                ctx.font = 'bold 12px monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText('QUADRA V-TECH // TYPE-66', 25, 30);
-
-                ctx.fillStyle = primaryColor;
                 ctx.textAlign = 'right';
+                ctx.font = 'bold 80px Consolas, monospace';
+                ctx.fillStyle = primary;
+                ctx.fillText(String(Math.round(Math.abs(speed))), 263, 157);
+                ctx.font = 'bold 14px Consolas, monospace';
+                ctx.fillStyle = isRedline ? warning : '#b7b18b';
+                ctx.fillText(Math.round(rpm) + ' RPM', 263, 177);
+
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 66px Consolas, monospace';
+                ctx.fillStyle = isRedline ? warning : primary;
+                ctx.fillText(gear <= 0 ? 'R' : (gear === 11 ? 'N' : String(gear)), 330, 161);
+                ctx.textAlign = 'left';
+                ctx.font = 'bold 25px Consolas, monospace';
+                ctx.fillStyle = primary;
+                ctx.fillText(Number.isFinite(boostBar) ? (boostBar >= 0 ? '+' : '') + boostBar.toFixed(2) : '—', 393, 120);
+                ctx.fillRect(423, 137, 72 * Math.max(0, Math.min(1, throttle)), 8);
+                ctx.fillStyle = warning;
+                ctx.fillRect(423, 166, 72 * Math.max(0, Math.min(1, brake)), 8);
+
+                // Real media metadata is secondary; no synthetic link/audio status.
                 if (mediaState.has_media && mediaState.title) {
-                    var radTitle = '♪ NC.FM // ' + (mediaState.artist ? (mediaState.artist + ' - ') : '') + mediaState.title;
-                    if (radTitle.length > 34) radTitle = radTitle.substring(0, 31) + '...';
-                    ctx.fillText(radTitle, 615, 30);
-                } else {
-                    ctx.fillText('SYS.LINK // 60HZ OK', 615, 30);
-                }
-
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(25, 38);
-                ctx.lineTo(615, 38);
-                ctx.stroke();
-
-                // Left: Gear Panel
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
-                drawChamferedRect(ctx, 25, 55, 110, 160, 12);
-                ctx.fill();
-                ctx.strokeStyle = isRedline ? '#FF003C' : 'rgba(0, 240, 255, 0.4)';
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 11px monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText('GEAR // RATIO', 80, 80);
-
-                var gearDisplay = gear <= 0 ? 'R' : (gear === 11 ? 'N' : (gear < 10 ? '0' + gear : String(gear)));
-                ctx.fillStyle = isRedline ? '#FF003C' : cyanColor;
-                ctx.font = 'bold 64px monospace';
-                ctx.fillText(gearDisplay, 80, 160);
-
-                // Center: Speed & RPM Panel
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
-                drawChamferedRect(ctx, 150, 55, 320, 160, 12);
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(252, 238, 10, 0.4)';
-                ctx.stroke();
-
-                ctx.fillStyle = '#94A3B8';
-                ctx.font = 'bold 12px monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText('VELOCITY // ' + (isMetric ? 'KM/H' : 'MPH'), 175, 82);
-
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 76px monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText(String(Math.round(speed)), 175, 162);
-
-                // Attitude Pitch & Roll readout
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 11px monospace';
-                ctx.textAlign = 'left';
-                var pDeg = ((pitch || 0) * 180 / Math.PI).toFixed(1);
-                var rDeg = ((roll || 0) * 180 / Math.PI).toFixed(1);
-                ctx.fillText('PITCH: ' + (pDeg >= 0 ? '+' : '') + pDeg + '° ROLL: ' + (rDeg >= 0 ? '+' : '') + rDeg + '°', 175, 195);
-
-                ctx.fillStyle = primaryColor;
-                ctx.font = 'bold 14px monospace';
-                ctx.textAlign = 'right';
-                ctx.fillText('RPM: ' + Math.round(rpm), 450, 195);
-
-                // Right: Boost, Pedals & Audio Spectrum EQ Panel
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
-                drawChamferedRect(ctx, 485, 55, 130, 160, 12);
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-                ctx.stroke();
-
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 11px monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText('BOOST / BAR', 500, 76);
-
-                ctx.fillStyle = cyanColor;
-                ctx.font = 'bold 22px monospace';
-                ctx.fillText((boostBar >= 0 ? '+' : '') + boostBar.toFixed(2), 500, 102);
-
-                // Pedal Bars
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 10px monospace';
-                ctx.fillText('BRK', 500, 124);
-                ctx.fillText('THR', 560, 124);
-
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-                ctx.fillRect(500, 132, 45, 6);
-                if (brake > 0) {
-                    ctx.fillStyle = '#FF003C';
-                    ctx.fillRect(500, 132, 45 * Math.min(1, brake), 6);
-                }
-
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
-                ctx.fillRect(560, 132, 45, 6);
-                if (throttle > 0) {
-                    ctx.fillStyle = '#22C55E';
-                    ctx.fillRect(560, 132, 45 * Math.min(1, throttle), 6);
-                }
-
-                // Audio Spectrum Equalizer (CH-10)
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 9px monospace';
-                ctx.fillText('AUDIO // CH-10', 500, 162);
-                for (var si = 0; si < 10; si++) {
-                    var sVal = audioSpectrum[si] || 0;
-                    var barH = Math.max(2, Math.min(30, Math.round(sVal * 30)));
-                    ctx.fillStyle = hasAudio ? cyanColor : 'rgba(0, 240, 255, 0.25)';
-                    ctx.fillRect(500 + si * 11, 204 - barH, 7, barH);
-                }
-
-                // Bottom: 32 Parallelogram RPM Bar
-                var totalSegments = 32;
-                var rpmRatio = Math.max(0, Math.min(1, rpm / maxRpm));
-                var activeSegments = Math.round(rpmRatio * totalSegments);
-                drawSegmentedRpmBar(ctx, activeSegments, totalSegments, isRedline);
-
-                // Ticks & Labels below RPM bar
-                function formatK(val) {
-                    var k = val / 1000;
-                    return (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + 'K';
-                }
-
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 11px monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText('0', 44, 292);
-                ctx.textAlign = 'center';
-                ctx.fillText('MID ' + formatK(maxRpm * 0.5), 320, 292);
-                ctx.textAlign = 'right';
-                ctx.fillText('MAX ' + formatK(maxRpm), 600, 292);
-
-                // Micro Glitch FX on Redline (Zero allocation lightweight slice)
-                if (isRedline && Math.random() < 0.22) {
-                    var sliceY = Math.floor(Math.random() * 240);
-                    var sliceH = 4 + Math.floor(Math.random() * 8);
-                    var sliceOffset = (Math.random() - 0.5) * 14;
-                    try {
-                        ctx.drawImage(domCache.canvas, 20, sliceY, 600, sliceH, 20 + sliceOffset, sliceY, 600, sliceH);
-                    } catch (e) {}
+                    var label = (mediaState.artist ? mediaState.artist + ' / ' : '') + mediaState.title;
+                    if (label.length > 58) label = label.substring(0, 55) + '...';
+                    ctx.fillStyle = '#b7b18b';
+                    ctx.font = '11px Consolas, monospace';
+                    ctx.fillText(label, 20, 206);
                 }
             }
-
             function runSweep(now) {
                 if (!sweepActive) return;
                 var elapsed = now - sweepStartTime;
@@ -303,7 +230,7 @@
 
             HUDCore.registerStyle('cyberpunk_hud', {
                 containerId: 'cyberpunkContainer',
-                scaleMultiplier: 0.70,
+                scaleMultiplier: 1.0,
 
                 onInit: function (payload) {
                     if (payload) {
@@ -382,7 +309,7 @@
                     var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
                     var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
 
-                    var boostBar = 0;
+                    var boostBar = NaN;
                     if (data.boost_bar !== undefined) {
                         boostBar = data.boost_bar;
                     } else if (data.boost !== undefined) {
@@ -390,7 +317,7 @@
                     } else if (data.Boost !== undefined) {
                         boostBar = data.Boost > 4 ? (data.Boost / 14.5038) : data.Boost;
                     } else {
-                        boostBar = throttle * 1.6 - 0.2;
+                        boostBar = NaN;
                     }
 
                     var pitch = data.pitch !== undefined ? data.pitch : (data.Pitch !== undefined ? data.Pitch : 0);

@@ -6,27 +6,25 @@
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         .defi-container {
-            width: 760px;
-            height: 280px;
+            width: 380px;
+            height: 360px;
             pointer-events: none;
             position: relative;
             box-sizing: border-box;
         }
         #defiCanvas {
             display: block;
-            width: 760px;
-            height: 280px;
-            background: #050608;
-            border: 2px solid #2d3748;
-            border-radius: 8px;
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+            width: 380px;
+            height: 360px;
+            background: transparent;
+            transition: none !important;
         }
     </style>
 </head>
 <body>
     <div class="hud-root-wrapper">
         <div class="hud-gauge-container defi-container" id="defiContainer">
-            <canvas id="defiCanvas" width="760" height="280"></canvas>
+            <canvas id="defiCanvas" width="380" height="360"></canvas>
         </div>
     </div>
 
@@ -53,6 +51,16 @@
             var selfCheckStartTime = 0;
             var isMetric = true;
             var offscreenDial = null;
+            var pixelRatio = 1;
+            // Layout A: independent instruments wrap around the lower-right tachometer.
+            // Shared by static artwork and moving needles to keep their centers aligned.
+            var dials = [
+                { cx: 272, cy: 250, r: 100, title: 'TACHO', unit: 'x1000r/min' },
+                { cx: 275, cy: 68, r: 64, title: 'TURBO', unit: 'x100kPa' },
+                { cx: 110, cy: 112, r: 64, title: 'OIL TEMP', unit: '°C' },
+                { cx: 101, cy: 278, r: 64, title: 'OIL PRESS', unit: 'x100kPa' }
+            ];
+            var shiftPod = { cx: 190, cy: 164 };
             var lastState = { rpmRatio: 0, boostRatio: 0.35, oilTempRatio: 0.45, oilPressRatio: 0.4, isShiftLightOn: false };
 
             // Defi Peak Hold Memory (holds highest value for 1.8s then smooth decay)
@@ -63,17 +71,13 @@
                 boostTime: 0
             };
 
-            function updatePeak(current, peakVal, peakTime, now) {
-                if (current >= peakVal) {
-                    return { val: current, time: now };
+            function updatePeak(current, valueKey, timeKey, now) {
+                if (current >= peakState[valueKey]) {
+                    peakState[valueKey] = current;
+                    peakState[timeKey] = now;
+                } else if (now - peakState[timeKey] >= 1800) {
+                    peakState[valueKey] = Math.max(current, peakState[valueKey] - 0.005);
                 }
-                var age = now - peakTime;
-                if (age < 1800) {
-                    return { val: peakVal, time: peakTime };
-                }
-                // Smooth decay after 1.8s hold
-                var decay = Math.max(current, peakVal - 0.005);
-                return { val: decay, time: peakTime };
             }
 
             function normPedal(val) {
@@ -92,25 +96,25 @@
             }
 
             function buildOffscreenDial() {
+                pixelRatio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                domCache.canvas.width = Math.round(380 * pixelRatio);
+                domCache.canvas.height = Math.round(360 * pixelRatio);
+                domCache.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                dials[1].unit = dials[3].unit = isMetric ? 'x100kPa' : 'PSI';
+                dials[2].unit = isMetric ? '°C' : '°F';
                 offscreenDial = document.createElement('canvas');
-                offscreenDial.width = 760;
-                offscreenDial.height = 280;
+                offscreenDial.width = domCache.canvas.width;
+                offscreenDial.height = domCache.canvas.height;
                 var oCtx = offscreenDial.getContext('2d');
                 if (!oCtx) return;
+                oCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
                 var customColor = window._currentCustomColor;
                 var useDefault = window._currentUseDefaultColors !== false;
 
-                var textColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF9100' : '#E2E8F0');
-                var tickColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF6D00' : '#94A3B8');
-                var dimColor = '#4A5568';
-
-                var dials = [
-                    { cx: 135, cy: 155, r: 100, title: 'TACHO', unit: 'x1000r/min' },
-                    { cx: 345, cy: 155, r: 64, title: 'TURBO', unit: isMetric ? 'x100kPa' : 'x10PSI' },
-                    { cx: 505, cy: 155, r: 64, title: 'OIL TEMP', unit: isMetric ? '°C' : '°F' },
-                    { cx: 665, cy: 155, r: 64, title: 'OIL PRESS', unit: isMetric ? 'x100kPa' : 'x10PSI' }
-                ];
+                var textColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#ffa34e' : '#f0eee8');
+                var tickColor = textColor;
+                var dimColor = isAmberTheme ? '#bd713f' : '#9c9e99';
 
                 var startA = 0.75 * Math.PI;
                 var totalA = 1.5 * Math.PI;
@@ -118,31 +122,48 @@
                 for (var idx = 0; idx < dials.length; idx++) {
                     var d = dials[idx];
 
-                    // Outer bezel
+                    // Brushed metal bezel: highlights belong to each round instrument,
+                    // never to a rectangular panel behind the cluster.
+                    var bezel = oCtx.createLinearGradient(d.cx, d.cy - d.r, d.cx, d.cy + d.r);
+                    bezel.addColorStop(0, '#d2d1ca');
+                    bezel.addColorStop(0.16, '#4e504e');
+                    bezel.addColorStop(0.48, '#171918');
+                    bezel.addColorStop(0.86, '#777974');
+                    bezel.addColorStop(1, '#292b29');
                     oCtx.beginPath();
                     oCtx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
-                    oCtx.fillStyle = '#07080B';
+                    oCtx.fillStyle = bezel;
                     oCtx.fill();
-                    oCtx.lineWidth = idx === 0 ? 5 : 3;
-                    oCtx.strokeStyle = '#2D3748';
+                    oCtx.lineWidth = 1;
+                    oCtx.strokeStyle = '#101210';
                     oCtx.stroke();
 
-                    // Inner decorative ring
+                    var face = oCtx.createRadialGradient(d.cx, d.cy - d.r * 0.35, 0, d.cx, d.cy, d.r);
+                    face.addColorStop(0, '#181a19');
+                    face.addColorStop(0.65, '#080a09');
+                    face.addColorStop(1, '#020302');
                     oCtx.beginPath();
-                    oCtx.arc(d.cx, d.cy, d.r - 8, 0, Math.PI * 2);
+                    oCtx.arc(d.cx, d.cy, d.r - 5, 0, Math.PI * 2);
+                    oCtx.fillStyle = face;
+                    oCtx.fill();
                     oCtx.lineWidth = 1;
-                    oCtx.strokeStyle = '#1A202C';
+                    oCtx.strokeStyle = '#72736c';
                     oCtx.stroke();
 
                     // Title & Unit
                     oCtx.fillStyle = textColor;
-                    oCtx.font = (idx === 0 ? 'bold 16px' : 'bold 11px') + ' sans-serif';
+                    oCtx.font = (idx === 0 ? 'bold 12px' : 'bold 9px') + ' Arial, sans-serif';
                     oCtx.textAlign = 'center';
-                    oCtx.fillText(d.title, d.cx, d.cy - d.r * (idx === 0 ? 0.35 : 0.30));
+                    oCtx.textBaseline = 'middle';
+                    oCtx.fillText(d.title, d.cx, d.cy - d.r * (idx === 0 ? 0.35 : 0.16));
 
+                    oCtx.font = (idx === 0 ? '10px' : '8px') + ' Arial, sans-serif';
+                    oCtx.fillText(d.unit, d.cx, d.cy + d.r * 0.32);
+                    oCtx.font = (idx === 0 ? 'italic bold 23px' : 'italic bold 17px') + ' Arial, sans-serif';
+                    oCtx.fillText('Defi', d.cx, d.cy + d.r * 0.55);
                     oCtx.fillStyle = dimColor;
-                    oCtx.font = (idx === 0 ? '11px' : '9px') + ' sans-serif';
-                    oCtx.fillText(d.unit, d.cx, d.cy + d.r * 0.42);
+                    oCtx.font = (idx === 0 ? '7px' : '5px') + ' Arial, sans-serif';
+                    oCtx.fillText('ADVANCE BF', d.cx, d.cy + d.r * 0.72);
 
                     // Dial-specific ticks and numbers
                     if (idx === 0) {
@@ -167,8 +188,8 @@
                             oCtx.stroke();
 
                             if (isMajor) {
-                                var numX = d.cx + Math.cos(angle) * (d.r - 24);
-                                var numY = d.cy + Math.sin(angle) * (d.r - 24);
+                                var numX = d.cx + Math.cos(angle) * (d.r - 33);
+                                var numY = d.cy + Math.sin(angle) * (d.r - 33);
                                 oCtx.fillStyle = isRed ? '#EF4444' : textColor;
                                 oCtx.font = 'bold 12px sans-serif';
                                 oCtx.textAlign = 'center';
@@ -199,13 +220,14 @@
                             oCtx.stroke();
 
                             if (bMajor) {
-                                var bNumX = d.cx + Math.cos(bAngle) * (d.r - 20);
-                                var bNumY = d.cy + Math.sin(bAngle) * (d.r - 20);
+                                var bNumX = d.cx + Math.cos(bAngle) * (d.r - 29);
+                                var bNumY = d.cy + Math.sin(bAngle) * (d.r - 29);
                                 oCtx.fillStyle = textColor;
                                 oCtx.font = 'bold 10px sans-serif';
                                 oCtx.textAlign = 'center';
                                 if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
-                                var bStr = bVal > 0 ? '+' + Math.round(bVal) : String(Math.round(bVal));
+                                var boostLabel = Math.round(isMetric ? bVal : bVal * 14.5038);
+                                var bStr = boostLabel > 0 ? '+' + boostLabel : String(boostLabel);
                                 oCtx.fillText(bStr, bNumX, bNumY + 1);
                             }
                         }
@@ -231,13 +253,13 @@
                             oCtx.stroke();
 
                             if (tMajor && (tVal === 50 || tVal === 100 || tVal === 150)) {
-                                var tNumX = d.cx + Math.cos(tAngle) * (d.r - 20);
-                                var tNumY = d.cy + Math.sin(tAngle) * (d.r - 20);
+                                var tNumX = d.cx + Math.cos(tAngle) * (d.r - 29);
+                                var tNumY = d.cy + Math.sin(tAngle) * (d.r - 29);
                                 oCtx.fillStyle = textColor;
                                 oCtx.font = 'bold 9px sans-serif';
                                 oCtx.textAlign = 'center';
                                 if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
-                                oCtx.fillText(String(tVal), tNumX, tNumY + 1);
+                                oCtx.fillText(String(isMetric ? tVal : Math.round(tVal * 9 / 5 + 32)), tNumX, tNumY + 1);
                             }
                         }
                     } else {
@@ -261,13 +283,13 @@
                             oCtx.stroke();
 
                             if (pMajor) {
-                                var pNumX = d.cx + Math.cos(pAngle) * (d.r - 20);
-                                var pNumY = d.cy + Math.sin(pAngle) * (d.r - 20);
+                                var pNumX = d.cx + Math.cos(pAngle) * (d.r - 29);
+                                var pNumY = d.cy + Math.sin(pAngle) * (d.r - 29);
                                 oCtx.fillStyle = textColor;
                                 oCtx.font = 'bold 9px sans-serif';
                                 oCtx.textAlign = 'center';
                                 if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
-                                oCtx.fillText(String(pVal), pNumX, pNumY + 1);
+                                oCtx.fillText(String(isMetric ? pVal : Math.round(pVal * 14.5038)), pNumX, pNumY + 1);
                             }
                         }
                     }
@@ -275,11 +297,11 @@
 
                 // External Shift Light Pod Bezel
                 oCtx.beginPath();
-                oCtx.arc(60, 65, 18, 0, Math.PI * 2);
-                oCtx.fillStyle = '#1A202C';
+                oCtx.arc(shiftPod.cx, shiftPod.cy, 15, 0, Math.PI * 2);
+                oCtx.fillStyle = '#151714';
                 oCtx.fill();
                 oCtx.lineWidth = 2;
-                oCtx.strokeStyle = '#4A5568';
+                oCtx.strokeStyle = '#92938c';
                 oCtx.stroke();
             }
 
@@ -304,7 +326,7 @@
                 ctx.rotate(angle);
 
                 ctx.shadowColor = color;
-                ctx.shadowBlur = 8;
+                ctx.shadowBlur = 3;
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.15, -2);
                 ctx.lineTo(radius * 0.85, -1);
@@ -318,10 +340,10 @@
                 var capR = Math.max(5, Math.round(radius * 0.08));
                 ctx.beginPath();
                 ctx.arc(0, 0, capR, 0, Math.PI * 2);
-                ctx.fillStyle = '#0F172A';
+                ctx.fillStyle = '#181a17';
                 ctx.fill();
                 ctx.lineWidth = 2;
-                ctx.strokeStyle = '#475569';
+                ctx.strokeStyle = '#666963';
                 ctx.stroke();
 
                 ctx.restore();
@@ -352,42 +374,44 @@
                 lastState.oilPressRatio = oilPressRatio;
                 lastState.isShiftLightOn = isShiftLightOn;
 
-                if (!offscreenDial) buildOffscreenDial();
-                ctx.drawImage(offscreenDial, 0, 0);
+                if (!offscreenDial || pixelRatio !== Math.max(1, Math.min(3, window.devicePixelRatio || 1))) buildOffscreenDial();
+                // Transparent source pixels do not erase the preceding frame.
+                ctx.clearRect(0, 0, 380, 360);
+                ctx.drawImage(offscreenDial, 0, 0, 380, 360);
 
                 var startA = 0.75 * Math.PI;
                 var totalA = 1.5 * Math.PI;
 
                 var customColor = window._currentCustomColor;
                 var useDefault = window._currentUseDefaultColors !== false;
-                var needleColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FF1744' : '#00E5FF');
+                var needleColor = (!useDefault && customColor) ? customColor : '#ff352e';
                 var peakColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FFB74D' : '#E0F2FE');
 
                 // Peak Hold Indicators (JDM feature: marks highest recorded RPM and Boost)
                 if (!isSelfChecking) {
                     if (peakState.rpmRatio > rpmRatio + 0.015) {
-                        drawPeakIndicator(ctx, 135, 155, 95, startA + Math.min(1, peakState.rpmRatio) * totalA, peakColor);
+                        drawPeakIndicator(ctx, dials[0].cx, dials[0].cy, dials[0].r - 5, startA + Math.min(1, peakState.rpmRatio) * totalA, peakColor);
                     }
                     if (peakState.boostRatio > boostRatio + 0.015) {
-                        drawPeakIndicator(ctx, 345, 155, 60, startA + Math.min(1, peakState.boostRatio) * totalA, peakColor);
+                        drawPeakIndicator(ctx, dials[1].cx, dials[1].cy, dials[1].r - 5, startA + Math.min(1, peakState.boostRatio) * totalA, peakColor);
                     }
                 }
 
                 // 1. Tacho Needle
-                drawNeedle(ctx, 135, 155, 95, startA + Math.max(0, Math.min(1, rpmRatio)) * totalA, needleColor);
+                drawNeedle(ctx, dials[0].cx, dials[0].cy, dials[0].r - 5, startA + Math.max(0, Math.min(1, rpmRatio)) * totalA, needleColor);
 
                 // 2. Turbo Boost Needle
-                drawNeedle(ctx, 345, 155, 60, startA + Math.max(0, Math.min(1, boostRatio)) * totalA, needleColor);
+                drawNeedle(ctx, dials[1].cx, dials[1].cy, dials[1].r - 5, startA + Math.max(0, Math.min(1, boostRatio)) * totalA, needleColor);
 
                 // 3. Oil Temp Needle
-                drawNeedle(ctx, 505, 155, 60, startA + Math.max(0, Math.min(1, oilTempRatio)) * totalA, needleColor);
+                drawNeedle(ctx, dials[2].cx, dials[2].cy, dials[2].r - 5, startA + Math.max(0, Math.min(1, oilTempRatio)) * totalA, needleColor);
 
                 // 4. Oil Press Needle
-                drawNeedle(ctx, 665, 155, 60, startA + Math.max(0, Math.min(1, oilPressRatio)) * totalA, needleColor);
+                drawNeedle(ctx, dials[3].cx, dials[3].cy, dials[3].r - 5, startA + Math.max(0, Math.min(1, oilPressRatio)) * totalA, needleColor);
 
                 // 5. External Shift Light LED
                 ctx.beginPath();
-                ctx.arc(60, 65, 11, 0, Math.PI * 2);
+                ctx.arc(shiftPod.cx, shiftPod.cy, 9, 0, Math.PI * 2);
                 if (isShiftLightOn) {
                     ctx.fillStyle = '#FF0033';
                     ctx.shadowColor = '#FF0033';
@@ -444,7 +468,7 @@
 
             HUDCore.registerStyle('defi_triple', {
                 containerId: 'defiContainer',
-                scaleMultiplier: 0.6,
+                scaleMultiplier: 1.2,
 
                 onInit: function (payload) {
                     if (payload) {
@@ -513,13 +537,8 @@
 
                     // Update Peak Hold State
                     var now = performance.now();
-                    var pRpm = updatePeak(rpmRatio, peakState.rpmRatio, peakState.rpmTime, now);
-                    peakState.rpmRatio = pRpm.val;
-                    peakState.rpmTime = pRpm.time;
-
-                    var pBoost = updatePeak(boostRatio, peakState.boostRatio, peakState.boostTime, now);
-                    peakState.boostRatio = pBoost.val;
-                    peakState.boostTime = pBoost.time;
+                    updatePeak(rpmRatio, 'rpmRatio', 'rpmTime', now);
+                    updatePeak(boostRatio, 'boostRatio', 'boostTime', now);
 
                     // Oil Temp (50 ~ 150 °C, converts Fahrenheit ~180-230°F if needed)
                     var oilTemp = data.OilTemp !== undefined ? data.OilTemp : (data.oil_temp !== undefined ? data.oil_temp : 95);

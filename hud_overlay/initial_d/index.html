@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Initial D AE86 TRD 11,000 RPM Tachometer</title>
+    <title>AE86 Fictional TRD 11,000 RPM Tachometer — ULTRA Inspired</title>
     <link rel="stylesheet" href="../shared/hud-base.css">
     <style>
         .initial-d-container {
@@ -28,6 +28,7 @@
     </div>
 
     <script src="../shared/hud-core.js"></script>
+    <script src="initial-d-model.js"></script>
     <script>
         (function () {
             var domCache = {
@@ -44,120 +45,104 @@
             var cy = 220;
             var dialR = 160;
 
-            var isMetric = true;
+
             var sweepActive = false;
             var sweepStartTime = 0;
             var sweepDuration = 1200;
-            var lastValidGear = 1;
+            var sweepFrame = null;
+
             var offscreenDial = null;
+            var offscreenCap = null;
+            var backingRatio = 0;
 
-            // Audio Chime State
-            var audioCtx = null;
-            var lastChimeTime = 0;
-            var chimeInterval = 1200;
-            var isGaugeVisible = true;
-            var showAudioChime = true;
-
-            function initAudioContext() {
-                try {
-                    if (!audioCtx) {
-                        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                        if (AudioContextClass) audioCtx = new AudioContextClass();
-                    }
-                    if (audioCtx && audioCtx.state === 'suspended') {
-                        audioCtx.resume().catch(function () {});
-                    }
-                } catch (e) {}
+            function syncBackingStore() {
+                var ratio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (ratio === backingRatio || !domCache.ctx) return;
+                backingRatio = ratio;
+                domCache.canvas.width = Math.round(420 * ratio);
+                domCache.canvas.height = Math.round(420 * ratio);
+                domCache.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                offscreenDial = null;
+                offscreenCap = null;
             }
+            // Instrument artwork has a fixed material palette, independent of GUI themes.
+            var ink = {
+                face: '#10100f', rimDark: '#080808', rimLight: '#555550',
+                marking: '#eee9dc', needle: '#f4f2e8',
+                needleHighlight: '#ffffff', secondary: '#b8b4a9'
+            };
 
-            if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-                window.addEventListener('pointerdown', initAudioContext, { once: true });
-                window.addEventListener('keydown', initAudioContext, { once: true });
-            }
-
-            function playSingleDing(startTime, freqStart, freqEnd) {
-                if (!audioCtx || audioCtx.state === 'suspended') return;
-                var osc = audioCtx.createOscillator();
-                var gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freqStart, startTime);
-                osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + 0.32);
-                gain.gain.setValueAtTime(0.18, startTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.32);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(startTime);
-                osc.stop(startTime + 0.32);
-            }
-
-            function playSpeedChime() {
-                try {
-                    initAudioContext();
-                    if (!audioCtx || audioCtx.state === 'suspended') return;
-
-                    var now = audioCtx.currentTime;
-                    // Dual-bell Ding-Ding (High 1020Hz -> 820Hz, followed by echo Ding at +0.35s)
-                    playSingleDing(now, 1020, 820);
-                    playSingleDing(now + 0.35, 980, 820);
-                } catch (e) {
-                    // Audio context safety fallback
-                }
-            }
-
-            // Non-linear angle calculation ($0 \sim 11,000$ RPM)
+            // Printed ticks and live needle share the fictional compressed TRD calibration.
             function getInitialDAngle(rpm) {
-                var r = Math.max(0, Math.min(11000, rpm));
-                var startAngle = 140 * (Math.PI / 180);
-                var totalSpan = 260 * (Math.PI / 180);
-
-                var ratio;
-                if (r <= 3000) {
-                    ratio = (r / 3000) * 0.18;
-                } else if (r <= 7000) {
-                    ratio = 0.18 + ((r - 3000) / 4000) * 0.38;
-                } else {
-                    ratio = 0.56 + ((r - 7000) / 4000) * 0.44;
-                }
-                return startAngle + ratio * totalSpan;
+                return window.InitialDTachModel.getAngle(rpm);
             }
 
             function buildOffscreenDial() {
+                syncBackingStore();
                 offscreenDial = document.createElement('canvas');
-                offscreenDial.width = 420;
-                offscreenDial.height = 420;
+                offscreenDial.width = Math.round(420 * backingRatio);
+                offscreenDial.height = Math.round(420 * backingRatio);
                 var oCtx = offscreenDial.getContext('2d');
                 if (!oCtx) return;
+                oCtx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
 
-                // 1. Dial Bezel & Carbon Background
+                // Painted metal, a rolled lip and recessed matte face. All gradients and
+                // deterministic surface grain are built only when this static cache changes.
+                var bezel = oCtx.createLinearGradient(cx - dialR, cy - dialR, cx + dialR, cy + dialR);
+                bezel.addColorStop(0, ink.rimLight);
+                bezel.addColorStop(0.16, '#292927');
+                bezel.addColorStop(0.48, ink.rimDark);
+                bezel.addColorStop(0.78, '#242422');
+                bezel.addColorStop(1, '#555550');
                 oCtx.beginPath();
                 oCtx.arc(cx, cy, dialR, 0, Math.PI * 2);
-                oCtx.fillStyle = '#08090D';
+                oCtx.fillStyle = bezel;
                 oCtx.fill();
-                oCtx.lineWidth = 6;
-                oCtx.strokeStyle = '#222733';
+                oCtx.lineWidth = 2;
+                oCtx.strokeStyle = ink.rimDark;
                 oCtx.stroke();
-
                 oCtx.beginPath();
                 oCtx.arc(cx, cy, dialR - 6, 0, Math.PI * 2);
-                oCtx.lineWidth = 1.5;
-                oCtx.strokeStyle = '#3A4256';
+                oCtx.fillStyle = ink.rimDark;
+                oCtx.fill();
+                oCtx.lineWidth = 1;
+                oCtx.strokeStyle = '#494942';
                 oCtx.stroke();
-
-                // 2. Redline Zone Arc (9,500 ~ 11,000 RPM)
-                var redlineStartA = getInitialDAngle(9500);
-                var redlineEndA = getInitialDAngle(11000);
+                var face = oCtx.createRadialGradient(cx - 35, cy - 50, 10, cx, cy, dialR - 8);
+                face.addColorStop(0, '#242420');
+                face.addColorStop(0.72, ink.face);
+                face.addColorStop(0.96, '#0a0a09');
+                face.addColorStop(1, '#020202');
                 oCtx.beginPath();
-                oCtx.arc(cx, cy, dialR - 14, redlineStartA, redlineEndA);
-                oCtx.lineWidth = 10;
-                oCtx.strokeStyle = '#EF4444';
-                oCtx.stroke();
+                oCtx.arc(cx, cy, dialR - 8, 0, Math.PI * 2);
+                oCtx.fillStyle = face;
+                oCtx.fill();
+                oCtx.save();
+                oCtx.beginPath();
+                oCtx.arc(cx, cy, dialR - 11, 0, Math.PI * 2);
+                oCtx.clip();
+                oCtx.fillStyle = 'rgba(238,233,220,0.035)';
+                for (var grainY = cy - dialR; grainY < cy + dialR; grainY += 3) {
+                    for (var grainX = cx - dialR; grainX < cx + dialR; grainX += 4) {
+                        if ((grainX * 13 + grainY * 7) % 11 < 4) {
+                            oCtx.fillRect(grainX, grainY, 0.7, 0.7);
+                        }
+                    }
+                }
+                // Fixed, faint upper glass reflection beneath the printed markings.
+                var glass = oCtx.createLinearGradient(0, cy - dialR, 0, cy + 15);
+                glass.addColorStop(0, 'rgba(255,250,235,0.065)');
+                glass.addColorStop(1, 'rgba(255,250,235,0)');
+                oCtx.fillStyle = glass;
+                oCtx.fillRect(cx - dialR, cy - dialR, dialR * 2, dialR + 15);
+                oCtx.restore();
 
-                // 3. Ticks & Numbers (0 to 11)
+                // No painted red sector: the real dial uses separate yellow/red LEDs.
+                // Keep the fictional compressed scale readable; do not apply No.1932 spacing.
                 for (var rpmVal = 0; rpmVal <= 11000; rpmVal += 500) {
                     var angle = getInitialDAngle(rpmVal);
                     var isMajor = (rpmVal % 1000 === 0);
-                    var isRed = (rpmVal >= 9500);
-                    var tickLen = isMajor ? 14 : 7;
+                    var tickLen = isMajor ? 15 : 10;
 
                     var x1 = cx + Math.cos(angle) * (dialR - 14);
                     var y1 = cy + Math.sin(angle) * (dialR - 14);
@@ -167,45 +152,63 @@
                     oCtx.beginPath();
                     oCtx.moveTo(x1, y1);
                     oCtx.lineTo(x2, y2);
-                    oCtx.lineWidth = isMajor ? 2.5 : 1.2;
-                    oCtx.strokeStyle = isRed ? '#EF4444' : '#F1F5F9';
+                    oCtx.lineWidth = isMajor ? 2.2 : 1;
+                    oCtx.strokeStyle = ink.marking;
                     oCtx.stroke();
 
                     // Numbers for major ticks
                     if (isMajor) {
                         var numStr = String(rpmVal / 1000);
-                        var textR = dialR - 34;
+                        var textR = dialR - 43;
                         var tx = cx + Math.cos(angle) * textR;
                         var ty = cy + Math.sin(angle) * textR;
 
-                        oCtx.fillStyle = isRed ? '#EF4444' : '#FFFFFF';
-                        oCtx.font = 'bold 18px "ForzaGear", sans-serif';
+                        oCtx.fillStyle = ink.marking;
+                        oCtx.font = '500 23px Arial, sans-serif';
                         oCtx.textAlign = 'center';
                         oCtx.textBaseline = 'middle';
-                        oCtx.fillText(numStr, tx, ty);
+                        // Narrow, upright product-style numerals, not Forza italic digits.
+                        oCtx.save();
+                        oCtx.translate(tx, ty);
+                        oCtx.scale(0.78, 1);
+                        oCtx.fillText(numStr, 0, 0);
+                        oCtx.restore();
                     }
                 }
 
-                // 4. Center Badges
-                oCtx.fillStyle = '#EF4444';
-                oCtx.font = 'bold 16px sans-serif';
+                // Fictional TRD face, with only the housing/needle language from ULTRA.
+                oCtx.fillStyle = ink.marking;
+                oCtx.font = 'italic 900 26px Arial, sans-serif';
                 oCtx.textAlign = 'center';
-                oCtx.fillText('TRD RACING', cx, cy - 65);
+                oCtx.fillText('TRD', cx, cy - 57);
+                oCtx.fillStyle = ink.secondary;
+                oCtx.font = '500 10px Arial, sans-serif';
+                oCtx.fillText('×1000 RPM', cx, cy - 34);
 
-                oCtx.fillStyle = '#94A3B8';
-                oCtx.font = 'bold 10px sans-serif';
-                oCtx.fillText('x1000 r/min', cx, cy - 45);
-
-                // 5. External Shift Light Pod Base (at top-right ~1 o'clock)
-                var podX = 350;
-                var podY = 85;
-                oCtx.beginPath();
-                oCtx.arc(podX, podY, 24, 0, Math.PI * 2);
-                oCtx.fillStyle = '#141822';
-                oCtx.fill();
-                oCtx.lineWidth = 3;
-                oCtx.strokeStyle = '#374151';
-                oCtx.stroke();
+                // The cap has a fixed light source and never rotates with the needle.
+                offscreenCap = document.createElement('canvas');
+                offscreenCap.width = Math.round(36 * backingRatio);
+                offscreenCap.height = Math.round(36 * backingRatio);
+                var capCtx = offscreenCap.getContext('2d');
+                if (!capCtx) return;
+                capCtx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
+                var cap = capCtx.createLinearGradient(4, 3, 28, 32);
+                cap.addColorStop(0, '#73736b');
+                cap.addColorStop(0.25, '#353530');
+                cap.addColorStop(0.65, '#11110f');
+                cap.addColorStop(1, '#030303');
+                capCtx.beginPath();
+                capCtx.arc(18, 18, 14, 0, Math.PI * 2);
+                capCtx.fillStyle = cap;
+                capCtx.fill();
+                capCtx.strokeStyle = '#050505';
+                capCtx.lineWidth = 1.5;
+                capCtx.stroke();
+                capCtx.beginPath();
+                capCtx.arc(18, 18, 10.5, 0, Math.PI * 2);
+                capCtx.strokeStyle = '#44443e';
+                capCtx.lineWidth = 0.6;
+                capCtx.stroke();
             }
 
             buildOffscreenDial();
@@ -216,96 +219,58 @@
                 ctx.rotate(angle);
 
                 // Needle Blade
-                ctx.shadowColor = '#FF1744';
-                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(0,0,0,0.75)';
+                ctx.shadowBlur = 3;
                 ctx.beginPath();
                 ctx.moveTo(-20, -2.5);
                 ctx.lineTo(dialR - 25, -1);
                 ctx.lineTo(dialR - 25, 1);
                 ctx.lineTo(-20, 2.5);
                 ctx.closePath();
-                ctx.fillStyle = '#FF1744';
+                ctx.fillStyle = ink.needle;
                 ctx.fill();
-
-                // Cap
                 ctx.shadowBlur = 0;
                 ctx.beginPath();
-                ctx.arc(0, 0, 14, 0, Math.PI * 2);
-                ctx.fillStyle = '#0B0D13';
-                ctx.fill();
-                ctx.lineWidth = 2.5;
-                ctx.strokeStyle = '#4B5563';
+                ctx.moveTo(-18, -1.3);
+                ctx.lineTo(dialR - 26, -0.5);
+                ctx.lineWidth = 0.8;
+                ctx.strokeStyle = ink.needleHighlight;
                 ctx.stroke();
-
                 ctx.restore();
+                if (offscreenCap) ctx.drawImage(offscreenCap, cx - 18, cy - 18, 36, 36);
             }
 
-            function renderHUD(rpm, speed, gear, now, isShiftWarning, isOverRev, isDrifting) {
+            function renderHUD(rpm, isShiftWarning, isOverRev) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
 
+                syncBackingStore();
                 ctx.textBaseline = 'alphabetic';
 
                 if (!offscreenDial) buildOffscreenDial();
-                ctx.drawImage(offscreenDial, 0, 0);
+                // Transparent pixels must erase the previous lamp glow and moving needle.
+                ctx.clearRect(0, 0, 420, 420);
+                ctx.drawImage(offscreenDial, 0, 0, 420, 420);
 
-                var podX = 350;
-                var podY = 85;
-
-                // 1. External Shift Light LED
+                // Two separate warning lenses reflect ULTRA's physical design; their
+                // thresholds are FH telemetry adaptation, not a simulated controller.
                 ctx.beginPath();
-                ctx.arc(podX, podY, 15, 0, Math.PI * 2);
-                if (isOverRev) {
-                    var strobe = Math.floor(now / 66) % 2 === 0;
-                    ctx.fillStyle = strobe ? '#FF0033' : '#770014';
-                    ctx.shadowColor = '#FF0033';
-                    ctx.shadowBlur = strobe ? 24 : 8;
-                } else if (isShiftWarning) {
-                    ctx.fillStyle = '#FF1744';
-                    ctx.shadowColor = '#FF1744';
-                    ctx.shadowBlur = 16;
-                } else {
-                    ctx.fillStyle = '#2A080C';
-                    ctx.shadowBlur = 0;
-                }
+                ctx.arc(cx + 52, cy + 105, 6, 0, Math.PI * 2);
+                ctx.fillStyle = isOverRev ? '#ff3030' : '#3e1010';
+                ctx.shadowColor = '#f42b22';
+                ctx.shadowBlur = isOverRev ? 6 : 0;
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(cx + 76, cy + 89, 6, 0, Math.PI * 2);
+                ctx.fillStyle = isShiftWarning ? '#ffd748' : '#473916';
+                ctx.shadowColor = '#f2bd36';
+                ctx.shadowBlur = isShiftWarning ? 5 : 0;
                 ctx.fill();
                 ctx.shadowBlur = 0;
-
                 // 2. Needle
                 var needleAngle = getInitialDAngle(rpm);
                 drawNeedle(ctx, needleAngle);
 
-                // Arcade DRIFT Mode Indicator
-                if (isDrifting) {
-                    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-                    ctx.fillRect(cx - 54, cy - 54, 108, 18);
-                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(cx - 54, cy - 54, 108, 18);
-
-                    ctx.fillStyle = '#FBBF24';
-                    ctx.font = 'bold 13px "ForzaFont", sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.shadowColor = '#F59E0B';
-                    ctx.shadowBlur = 10;
-                    ctx.fillText('⚡ DRIFT ⚡', cx, cy - 40);
-                    ctx.shadowBlur = 0;
-                }
-
-                // 3. Digital Speed & Gear Display (Lower Center)
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 36px monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText(String(Math.round(speed)), cx, cy + 62);
-
-                ctx.fillStyle = '#64748B';
-                ctx.font = 'bold 11px sans-serif';
-                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 78);
-
-                var gearStr = (gear <= 0) ? 'R' : (gear === 11 ? 'N' : 'G' + gear);
-                ctx.fillStyle = '#38BDF8';
-                ctx.font = 'bold 18px monospace';
-                ctx.fillText(gearStr, cx, cy + 104);
             }
 
             function runSweep(now) {
@@ -315,7 +280,8 @@
 
                 if (progress >= 1.0) {
                     sweepActive = false;
-                    renderHUD(0, 0, 1, now, false, false, false);
+                    sweepFrame = null;
+                    renderHUD(0, false, false);
                     return;
                 }
 
@@ -323,111 +289,58 @@
                     ? (progress / 0.5) * 11000
                     : (1 - (progress - 0.5) / 0.5) * 11000;
 
-                var mockSpeed = (currentRpm / 11000) * 230;
+
                 var mockWarning = currentRpm >= 9800;
                 var mockOverRev = currentRpm >= 10500;
-                renderHUD(currentRpm, mockSpeed, 1, now, mockWarning, mockOverRev, false);
-                requestAnimationFrame(runSweep);
+                renderHUD(currentRpm, mockWarning, mockOverRev);
+                sweepFrame = requestAnimationFrame(runSweep);
             }
 
             HUDCore.registerStyle('initial_d', {
                 containerId: 'initialDContainer',
                 scaleMultiplier: 0.95,
 
-                onInit: function (payload) {
-                    if (payload) {
-                        if (typeof payload.isMetric === 'boolean') {
-                            isMetric = payload.isMetric;
-                        } else if (payload.unit) {
-                            isMetric = payload.unit !== 'mph';
-                        }
-                    }
+                onInit: function () {
                     buildOffscreenDial();
                 },
 
                 onElementsChange: function (elements) {
-                    if (elements) {
-                        if (elements.showGauge !== undefined) {
-                            isGaugeVisible = elements.showGauge !== false;
-                            if (domCache.container) {
-                                domCache.container.style.display = isGaugeVisible ? 'block' : 'none';
-                            }
-                        }
-                        if (elements.showAudioChime !== undefined) {
-                            showAudioChime = elements.showAudioChime !== false;
-                        }
+                    if (elements && domCache.container && elements.showGauge !== undefined) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
                 },
 
                 onFrame: function (data, payload) {
                     if (sweepActive) return;
-
-                    var maxRpm = data.max_rpm || data.maxRpm || 11000;
-                    var redline = (payload && payload.redlineRpm) || data.redlineRpm || 10000;
-
-                    if (payload) {
-                        if (typeof payload.isMetric === 'boolean') {
-                            isMetric = payload.isMetric;
-                        } else if (payload.unit) {
-                            isMetric = payload.unit !== 'mph';
-                        }
-                    }
-                    if (data && data.displayUnits && data.displayUnits.speed) {
-                        isMetric = data.displayUnits.speed !== 'mph';
-                    }
-
                     var rpm = data.rpm || 0;
-                    var rawSpeed = isMetric !== false
-                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
-                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
-
-                    var speedKmh = data.speed_kmh !== undefined ? data.speed_kmh : (isMetric ? rawSpeed : rawSpeed * 1.60934);
-
-                    if (data.gear !== undefined && data.gear <= 11) {
-                        lastValidGear = data.gear;
-                    }
-
-                    var now = performance.now();
-
-                    // 80km/h Speed Chime (Ding-Ding) - triggers at Japanese standard 80km/h
-                    if (isGaugeVisible && showAudioChime && speedKmh >= 80 && (now - lastChimeTime > 1000)) {
-                        lastChimeTime = now;
-                        playSpeedChime();
-                    }
-
-                    // Shift light pod: adapts to vehicle redline or TRD万轉 threshold
-                    var shiftWarningRpm = Math.min(9800, redline * 0.96);
-                    var shiftOverRevRpm = Math.min(10500, redline * 0.99);
-
-                    var isShiftWarning = rpm >= shiftWarningRpm;
-                    var isOverRev = rpm >= shiftOverRevRpm;
-
-                    // Drift Detection: Yaw rate, lateral G or rear wheel slip difference
-                    var yawRate = Math.abs(data.YawRate !== undefined ? data.YawRate : (data.yaw_rate || 0));
-                    var rearSlip = ((data.slip_rl || 0) + (data.slip_rr || 0)) / 2;
-                    var frontSlip = ((data.slip_fl || 0) + (data.slip_fr || 0)) / 2;
-                    var isDrifting = speedKmh > 25 && (yawRate > 0.28 || (rearSlip - frontSlip > 0.22));
-
-                    renderHUD(rpm, rawSpeed, lastValidGear, now, isShiftWarning, isOverRev, isDrifting);
+                    var redline = (payload && payload.redlineRpm) || data.redlineRpm || 10000;
+                    var warningLevel = window.InitialDTachModel.getWarningLevel(rpm, redline);
+                    renderHUD(rpm, warningLevel >= 1, warningLevel >= 2);
                 },
-
                 onAnimate: function () {
+                    if (sweepFrame !== null) window.cancelAnimationFrame(sweepFrame);
                     sweepActive = true;
                     sweepStartTime = performance.now();
-                    requestAnimationFrame(runSweep);
+                    sweepFrame = requestAnimationFrame(runSweep);
                 }
+            });
+
+            window.addEventListener('pagehide', function () {
+                sweepActive = false;
+                if (sweepFrame !== null) window.cancelAnimationFrame(sweepFrame);
+                sweepFrame = null;
             });
 
             HUDCore.init('initial_d');
 
             setTimeout(function () {
-                renderHUD(0, 0, 1, performance.now(), false);
+                renderHUD(0, false, false);
             }, 60);
 
             if (document.fonts && document.fonts.ready) {
                 document.fonts.ready.then(function () {
                     buildOffscreenDial();
-                    renderHUD(0, 0, 1, performance.now(), false);
+                    renderHUD(0, false, false);
                 });
             }
         })();

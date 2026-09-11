@@ -62,141 +62,164 @@
                 return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
             }
 
+            var offscreenDial = null;
+            var backingRatio = 0;
+
+            function syncBackingStore() {
+                var ratio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (ratio === backingRatio || !domCache.ctx) return;
+                backingRatio = ratio;
+                domCache.canvas.width = Math.round(380 * ratio);
+                domCache.canvas.height = Math.round(380 * ratio);
+                domCache.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                offscreenDial = null;
+            }
+            var cachedMaxRpm = 0;
+            var cachedRedline = 0;
+            var showPedals = false;
+            var showMedia = false;
+            var palette = {
+                white: '#ffffff', red: '#f52d36', muted: 'rgba(255,255,255,0.6)',
+                outline: 'rgba(0,0,0,0.58)', track: 'rgba(255,255,255,0.32)'
+            };
+
+            function buildDial(maxRpm, redlineRpm) {
+                offscreenDial = document.createElement('canvas');
+                offscreenDial.width = Math.round(380 * backingRatio);
+                offscreenDial.height = Math.round(380 * backingRatio);
+                var ctx = offscreenDial.getContext('2d');
+                if (!ctx) return;
+                ctx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
+                cachedMaxRpm = maxRpm;
+                cachedRedline = redlineRpm;
+                var redRatio = Math.max(0, Math.min(1, redlineRpm / maxRpm));
+                ctx.lineCap = 'butt';
+                ctx.shadowColor = palette.outline;
+                ctx.shadowBlur = 2;
+
+                // Thin ring and a permanently marked red sector, not a filled progress bar.
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, startAngle + totalAngle);
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = palette.outline;
+                ctx.stroke();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = palette.white;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle + redRatio * totalAngle, startAngle + totalAngle);
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = palette.red;
+                ctx.stroke();
+
+                // Scale follows the actual engine range; 8500 rpm retains labels 0 through 8.
+                var majorStep = maxRpm > 14000 ? 2000 : 1000;
+                for (var tickRpm = 0; tickRpm <= maxRpm; tickRpm += majorStep / 2) {
+                    var major = tickRpm % majorStep === 0;
+                    var angle = startAngle + tickRpm / maxRpm * totalAngle;
+                    var cos = Math.cos(angle);
+                    var sin = Math.sin(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(cx + cos * (radius - 3), cy + sin * (radius - 3));
+                    ctx.lineTo(cx + cos * (radius - (major ? 13 : 8)), cy + sin * (radius - (major ? 13 : 8)));
+                    ctx.lineWidth = major ? 4 : 3;
+                    ctx.strokeStyle = palette.outline;
+                    ctx.stroke();
+                    ctx.lineWidth = major ? 2 : 1;
+                    ctx.strokeStyle = tickRpm >= redlineRpm ? palette.red : palette.white;
+                    ctx.stroke();
+                    if (major) {
+                        ctx.font = '20px "ForzaFont", Arial, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = tickRpm >= redlineRpm ? palette.red : palette.white;
+                        ctx.lineWidth = 2.5;
+                        ctx.lineJoin = 'round';
+                        ctx.strokeStyle = palette.outline;
+                        ctx.strokeText(String(tickRpm / 1000), cx + cos * (radius - 31), cy + sin * (radius - 31));
+                        ctx.fillText(String(tickRpm / 1000), cx + cos * (radius - 31), cy + sin * (radius - 31));
+                    }
+                }
+                ctx.shadowBlur = 0;
+            }
+
             function drawFh5ArcHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, isHandbrake, now) {
                 var ctx = domCache.ctx;
                 if (!ctx) return;
-
+                syncBackingStore();
+                if (!offscreenDial || cachedMaxRpm !== maxRpm || cachedRedline !== redlineRpm) {
+                    buildDial(maxRpm, redlineRpm);
+                }
                 ctx.clearRect(0, 0, 380, 380);
+                ctx.drawImage(offscreenDial, 0, 0, 380, 380);
                 ctx.textBaseline = 'alphabetic';
-
+                ctx.lineCap = 'butt';
                 var rpmRatio = maxRpm > 0 ? Math.max(0, Math.min(1, rpm / maxRpm)) : 0;
                 var isRedline = rpm >= redlineRpm;
                 var isLimiter = maxRpm > 0 && rpm >= maxRpm * 0.98;
+                var accent = window._currentUseDefaultColors === false && window._currentCustomColor
+                    ? window._currentCustomColor : palette.white;
+                var needleColor = isRedline ? palette.red : accent;
+                if (isLimiter && Math.floor(now / 100) % 2 === 0) needleColor = palette.white;
 
-                // 1. Base Track Arc (With subtle dark contrast underlay for anti-washout readability)
+                // A short radial pointer leaves the interior clear for the gear readout.
+                var needleAngle = startAngle + rpmRatio * totalAngle;
+                var needleCos = Math.cos(needleAngle);
+                var needleSin = Math.sin(needleAngle);
                 ctx.beginPath();
-                ctx.arc(cx, cy, radius, startAngle, startAngle + totalAngle);
-                ctx.lineWidth = 14;
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
-                ctx.lineCap = 'round';
+                ctx.moveTo(cx + needleCos * (radius - 22), cy + needleSin * (radius - 22));
+                ctx.lineTo(cx + needleCos * (radius + 8), cy + needleSin * (radius + 8));
+                ctx.strokeStyle = needleColor;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = palette.outline;
+                ctx.shadowBlur = 3;
                 ctx.stroke();
 
-                ctx.beginPath();
-                ctx.arc(cx, cy, radius, startAngle, startAngle + totalAngle);
-                ctx.lineWidth = 10;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-                ctx.stroke();
-
-                // 2. Dynamic RPM Arc
-                if (rpmRatio > 0.01) {
-                    var currentAngle = startAngle + rpmRatio * totalAngle;
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, radius, startAngle, currentAngle);
-                    ctx.lineWidth = 10;
-                    ctx.lineCap = 'round';
-
-                    if (isLimiter) {
-                        // High-rev shift limit pulse (True 20Hz aggressive flash)
-                        var flash = Math.sin(now * 0.12) > 0;
-                        ctx.strokeStyle = flash ? '#EF4444' : '#FFFFFF';
-                        ctx.shadowColor = '#EF4444';
-                        ctx.shadowBlur = 18;
-                    } else if (isRedline) {
-                        // Solid red warning zone without premature flashing
-                        ctx.strokeStyle = '#EF4444';
-                        ctx.shadowColor = '#EF4444';
-                        ctx.shadowBlur = 12;
-                    } else {
-                        var customColor = window._currentCustomColor;
-                        var useDefault = window._currentUseDefaultColors !== false;
-
-                        if (!useDefault && customColor) {
-                            ctx.strokeStyle = customColor;
-                            ctx.shadowColor = customColor;
-                        } else {
-                            var grad = ctx.createLinearGradient(cx - radius, cy, cx + radius, cy);
-                            grad.addColorStop(0, '#FFFFFF');
-                            grad.addColorStop(0.7, '#38BDF8');
-                            grad.addColorStop(1, '#FACC15');
-                            ctx.strokeStyle = grad;
-                            ctx.shadowColor = '#38BDF8';
-                        }
-                        ctx.shadowBlur = 8;
-                    }
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-                }
-
-                // 3. Center Speed Hero (Authentic 72px bold Forza typography)
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 72px "ForzaFont", -apple-system, sans-serif';
+                // Game-inspired hierarchy: open central gear, speed in the lower opening.
+                var gearText = gear <= 0 ? 'R' : (gear === 11 ? 'N' : String(gear));
+                ctx.fillStyle = isRedline ? palette.red : palette.white;
+                ctx.font = '72px "ForzaGear", Arial, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(String(Math.round(speed)), cx, cy + 14);
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = palette.outline;
+                ctx.strokeText(gearText, cx, cy + 15);
+                ctx.fillText(gearText, cx, cy + 15);
+                ctx.fillStyle = palette.white;
+                ctx.font = 'bold 70px "ForzaFont", Arial, sans-serif';
+                ctx.strokeText(String(Math.round(speed)), cx, cy + 116);
+                ctx.fillText(String(Math.round(speed)), cx, cy + 116);
+                ctx.font = '16px "ForzaFont", Arial, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.lineWidth = 2.5;
+                ctx.strokeText(isMetric ? 'KM/H' : 'MPH', cx + 46, cy + 51);
+                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx + 46, cy + 51);
+                ctx.shadowBlur = 0;
 
-                ctx.fillStyle = '#94A3B8';
-                ctx.font = 'bold 15px "ForzaFont", sans-serif';
-                ctx.fillText(isMetric ? 'KM/H' : 'MPH', cx, cy + 46);
-
-                // 4. Vertical Gear Indicator (Right side)
-                var gearX = cx + 80;
-                var gearY = cy - 35;
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-                ctx.beginPath();
-                ctx.roundRect ? ctx.roundRect(gearX, gearY, 44, 70, 6) : ctx.rect(gearX, gearY, 44, 70);
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                var gearText = (gear <= 0) ? 'R' : (gear === 11 ? 'N' : String(gear));
-                ctx.fillStyle = isRedline ? '#EF4444' : '#38BDF8';
-                ctx.font = 'bold 36px "ForzaGear", monospace';
+                // These are optional FH telemetry additions, separate from the reference dial.
+                if (showPedals) {
+                    ctx.fillStyle = palette.track;
+                    ctx.fillRect(115, 327, 65, 3);
+                    ctx.fillRect(200, 327, 65, 3);
+                    ctx.fillStyle = palette.red;
+                    ctx.fillRect(180 - brake * 65, 327, brake * 65, 3);
+                    ctx.fillStyle = palette.white;
+                    ctx.fillRect(200, 327, throttle * 65, 3);
+                }
                 ctx.textAlign = 'center';
-                ctx.fillText(gearText, gearX + 22, gearY + 50);
-
-                // 5. Pedal Input Meters (Bottom: Brake Left 110, Throttle Right 210)
-                var pedalY = 315;
-                // Brake (Left, Red)
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
-                ctx.fillRect(110, pedalY, 60, 6);
-                if (brake > 0) {
-                    var bWidth = 60 * Math.min(1, brake);
-                    ctx.fillStyle = '#EF4444';
-                    ctx.fillRect(110 + (60 - bWidth), pedalY, bWidth, 6);
-                }
-
-                // Throttle (Right, Green)
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.25)';
-                ctx.fillRect(210, pedalY, 60, 6);
-                if (throttle > 0) {
-                    ctx.fillStyle = '#22C55E';
-                    ctx.fillRect(210, pedalY, 60 * Math.min(1, throttle), 6);
-                }
-
-                // 6. Horizon Radio Media Capsule or Handbrake Indicator
+                ctx.font = '12px "ForzaFont", Arial, sans-serif';
                 if (isHandbrake) {
-                    ctx.fillStyle = '#EF4444';
-                    ctx.font = 'bold 12px "ForzaFont", sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('(P) HANDBRAKE', cx, cy + 68);
-                } else if (mediaState.has_media && mediaState.title) {
-                    var mText = '♫ ' + (mediaState.artist ? (mediaState.artist + ' - ') : '') + mediaState.title;
-                    if (mText.length > 26) mText = mText.substring(0, 24) + '...';
-                    ctx.font = 'bold 11px "ForzaFont", sans-serif';
-                    var mw = ctx.measureText(mText).width;
-                    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-                    ctx.beginPath();
-                    ctx.roundRect ? ctx.roundRect(cx - (mw + 20) / 2, cy + 54, mw + 20, 20, 10) : ctx.fillRect(cx - (mw + 20) / 2, cy + 54, mw + 20, 20);
-                    ctx.fill();
-                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                    ctx.fillStyle = '#38BDF8';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(mText, cx, cy + 68);
+                    ctx.fillStyle = palette.red;
+                    ctx.strokeText('(P) HANDBRAKE', cx, 351);
+                    ctx.fillText('(P) HANDBRAKE', cx, 351);
+                } else if (showMedia && mediaState.has_media && mediaState.title) {
+                    var title = mediaState.title;
+                    if (title.length > 30) title = title.substring(0, 28) + '…';
+                    ctx.fillStyle = palette.muted;
+                    ctx.strokeText(title, cx, 351);
+                    ctx.fillText(title, cx, 351);
                 }
             }
-
             function runSweep(now) {
                 if (!sweepActive) return;
                 var elapsed = now - sweepStartTime;
@@ -232,6 +255,9 @@
                 },
 
                 onElementsChange: function (elements) {
+                    if (!elements) return;
+                    if (elements.showPedals !== undefined) showPedals = elements.showPedals === true;
+                    if (elements.showMedia !== undefined) showMedia = elements.showMedia === true;
                     if (domCache.container) {
                         domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
                     }
@@ -294,12 +320,13 @@
             HUDCore.init('fh5_arc');
 
             setTimeout(function () {
-                drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, performance.now());
+                drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, false, performance.now());
             }, 60);
 
             if (document.fonts && document.fonts.ready) {
                 document.fonts.ready.then(function () {
-                    drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, performance.now());
+                    offscreenDial = null;
+                    drawFh5ArcHUD(0, 8500, 7800, 0, 1, 0, 0, false, performance.now());
                 });
             }
         })();

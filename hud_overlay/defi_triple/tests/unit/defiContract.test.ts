@@ -22,7 +22,6 @@ describe('Defi Advance BF HUD contract', () => {
     expect(html).toContain('id="defiCanvas"');
     expect(html).toContain("HUDCore.registerStyle('defi_triple'");
     expect(html).toContain("HUDCore.init('defi_triple')");
-    expect(html).toContain('scaleMultiplier: 0.6');
   });
 
   it('keeps inline JavaScript syntactically valid', () => {
@@ -53,7 +52,11 @@ describe('Defi Advance BF HUD contract', () => {
       init: () => {},
     };
 
+    const dialLabels: string[] = [];
     const mockCtx = {
+      setTransform: () => {},
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      createRadialGradient: () => ({ addColorStop: () => {} }),
       clearRect: () => {},
       fillRect: () => {},
       strokeRect: () => {},
@@ -61,7 +64,7 @@ describe('Defi Advance BF HUD contract', () => {
       arc: () => {},
       fill: () => {},
       stroke: () => {},
-      fillText: () => {},
+      fillText: (label: string) => { dialLabels.push(label); },
       drawImage: () => {},
       save: () => {},
       restore: () => {},
@@ -81,8 +84,8 @@ describe('Defi Advance BF HUD contract', () => {
 
     const mockCanvas = {
       getContext: () => mockCtx,
-      width: 760,
-      height: 280,
+      width: 380,
+      height: 360,
       style: {},
       addEventListener: () => {},
     };
@@ -119,6 +122,9 @@ describe('Defi Advance BF HUD contract', () => {
 
     expect(registeredDef).toBeDefined();
     expect(typeof registeredDef.onFrame).toBe('function');
+    expect(registeredDef.scaleMultiplier).toBe(1.2);
+    expect(dialLabels).toContain('x100kPa');
+    expect(dialLabels).toContain('°C');
 
     // Run onFrame with full sample data
     expect(() => {
@@ -154,6 +160,12 @@ describe('Defi Advance BF HUD contract', () => {
     // Verify onInit and onFrame unit switching (imperial/metric)
     expect(() => {
       registeredDef.onInit({ isMetric: false });
+      expect(dialLabels).toContain('PSI');
+      expect(dialLabels).toContain('°F');
+      // Physical needle scales keep their geometry; printed imperial values convert.
+      expect(dialLabels).toContain('212');
+      expect(dialLabels).toContain('+29');
+      expect(dialLabels).toContain('145');
       registeredDef.onFrame(
         {
           rpm: 9500, // triggers high peak

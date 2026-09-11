@@ -1,0 +1,305 @@
+{
+  "results": [
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "cruise",
+      "background": "dark",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "cruise",
+      "background": "light",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "idle",
+      "background": "dark",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "idle",
+      "background": "light",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "redline",
+      "background": "dark",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "redline",
+      "background": "light",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "reverse",
+      "background": "dark",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "reverse",
+      "background": "light",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "missing",
+      "background": "dark",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 1,
+      "name": "missing",
+      "background": "light",
+      "canvas": [
+        380,
+        360
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "cruise",
+      "background": "dark",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "cruise",
+      "background": "light",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "idle",
+      "background": "dark",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "idle",
+      "background": "light",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "redline",
+      "background": "dark",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "redline",
+      "background": "light",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "reverse",
+      "background": "dark",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "reverse",
+      "background": "light",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "missing",
+      "background": "dark",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    },
+    {
+      "id": "defi_triple",
+      "dpr": 2,
+      "name": "missing",
+      "background": "light",
+      "canvas": [
+        760,
+        720
+      ],
+      "display": [
+        342,
+        324
+      ],
+      "cornerAlpha": 0
+    }
+  ],
+  "errors": []
+}

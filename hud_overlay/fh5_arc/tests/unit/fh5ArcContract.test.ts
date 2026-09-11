@@ -53,7 +53,9 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
       init: () => {},
     };
 
+    const visibleText: string[] = [];
     const mockCtx = {
+      setTransform: () => {},
       clearRect: () => {},
       fillRect: () => {},
       strokeRect: () => {},
@@ -63,7 +65,11 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
       roundRect: () => {},
       fill: () => {},
       stroke: () => {},
-      fillText: () => {},
+      fillText: (text: string) => { visibleText.push(text); },
+      strokeText: () => {},
+      drawImage: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
       createLinearGradient: () => ({ addColorStop: () => {} }),
       shadowBlur: 0,
       shadowColor: '',
@@ -82,6 +88,7 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
     };
 
     const mockDocument = {
+      createElement: () => ({ ...mockCanvas }),
       getElementById: (id: string) => {
         if (id === 'fh5ArcCanvas') return mockCanvas;
         if (id === 'fh5ArcContainer') return { style: {} };
@@ -90,6 +97,7 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
     };
 
     const mockWindow = {
+      devicePixelRatio: 1,
       requestAnimationFrame: () => {},
     };
 
@@ -124,17 +132,37 @@ describe('Forza Horizon 5 Arc HUD contract', () => {
         { isMetric: true, redlineRpm: 7800 }
       );
     }).not.toThrow();
+    expect(visibleText).toEqual(expect.arrayContaining(['195', 'KM/H', '4']));
+
+    visibleText.length = 0;
+    registeredDef.onFrame({ rpm: 2500, max_rpm: 8500, speed_kmh: 100, speed_mph: 62, gear: 11 }, { isMetric: false });
+    expect(visibleText).toEqual(expect.arrayContaining(['62', 'MPH', 'N']));
 
     // Verify reverse gear, handbrake and onMedia
     expect(() => {
       registeredDef.onFrame({ rpm: 900, max_rpm: 8500, speed_kmh: -10, gear: 0, handbrake: 1 }, { isMetric: true });
     }).not.toThrow();
+    expect(visibleText).toEqual(expect.arrayContaining(['R', '(P) HANDBRAKE']));
 
     if (registeredDef.onMedia) {
       expect(() => {
         registeredDef.onMedia({ success: true, has_media: true, title: 'Horizon Pulse', artist: 'CHVRCHES' });
+        visibleText.length = 0;
+        registeredDef.onFrame({ rpm: 2500, max_rpm: 8500, speed_kmh: 100, gear: 4 });
+        expect(visibleText).not.toContain('Horizon Pulse');
+        registeredDef.onElementsChange({ showMedia: true, showPedals: true });
+        registeredDef.onFrame({ rpm: 2500, max_rpm: 8500, speed_kmh: 100, gear: 4, accel: 255 });
+        expect(visibleText).toContain('Horizon Pulse');
         registeredDef.onMedia({ success: false });
       }).not.toThrow();
+    }
+
+    const logicalWidth = mockCanvas.width;
+    for (const [deviceRatio, expectedRatio] of [[2, 2], [4, 3], [0.75, 1]]) {
+      mockWindow.devicePixelRatio = deviceRatio;
+      registeredDef.onFrame({ rpm: 0, speed_kmh: 0, gear: 11 }, { isMetric: true });
+      expect(mockCanvas.width).toBe(logicalWidth * expectedRatio);
+      expect(mockCanvas.height).toBe(mockCanvas.width);
     }
 
     if (registeredDef.onAnimate) {
