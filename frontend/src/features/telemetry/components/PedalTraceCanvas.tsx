@@ -12,6 +12,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ throttle: number; brake: number; time: number }[]>([]);
+  const offsetRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
@@ -24,6 +25,7 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
       const ctx = canvas.getContext('2d');
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       hist.current = [];
+      offsetRef.current = 0;
     }
   }, [enabled]);
 
@@ -63,12 +65,14 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         hist.current = [];
+        offsetRef.current = 0;
         return;
       }
 
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
         hist.current = [];
+        offsetRef.current = 0;
       }
       prevCar.current = liveData.CarOrdinal;
       prevRace.current = liveData.IsRaceOn;
@@ -81,11 +85,14 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
       const throttle = Math.max(0, Math.min(1, (liveData.AccelInput || 0) / 255));
       const brake = Math.max(0, Math.min(1, (liveData.BrakeInput || 0) / 255));
 
+      // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
       if (hist.current.length < 300) {
         hist.current.push({ throttle, brake, time: now });
       } else {
-        const oldP = hist.current.shift();
-        if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; hist.current.push(oldP); }
+        const idx = offsetRef.current;
+        const oldP = hist.current[idx];
+        if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; }
+        offsetRef.current = (idx + 1) % 300;
       }
 
       if (canvas && hist.current.length > 0 && canvas.width > 0 && canvas.height > 0) {
@@ -122,8 +129,9 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           // Throttle Trace (Green #00ff66) - Anchored to right edge, scrolling left smoothly
           ctx.beginPath();
           for (let k = 0; k < len; k++) {
+            const idx = (offsetRef.current + k) % len;
             const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - padBottom - (hist.current[k].throttle * plotH);
+            const py = h - padBottom - (hist.current[idx].throttle * plotH);
             if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
@@ -137,8 +145,9 @@ const PedalTraceCanvas: React.FC<PedalTraceCanvasProps> = React.memo(({ height =
           // Brake Trace (Red #ff0055) - Anchored to right edge, scrolling left smoothly
           ctx.beginPath();
           for (let k = 0; k < len; k++) {
+            const idx = (offsetRef.current + k) % len;
             const px = rightEdgeX - (len - 1 - k) * stepX;
-            const py = h - padBottom - (hist.current[k].brake * plotH);
+            const py = h - padBottom - (hist.current[idx].brake * plotH);
             if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }

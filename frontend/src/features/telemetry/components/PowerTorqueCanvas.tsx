@@ -11,6 +11,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ rpm: number; power: number; torque: number; time: number }[]>([]);
+  const offsetRef = useRef(0);
   const prevCar = useRef<number | null>(null);
   const prevRace = useRef<number | null>(null);
   const themeVars = useRef({ primary: '#00f0ff', secondary: '#ffaa00', isLight: false });
@@ -26,6 +27,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       const ctx = canvas.getContext('2d');
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       hist.current = [];
+      offsetRef.current = 0;
     }
   }, [enabled]);
 
@@ -71,6 +73,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
           if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         hist.current = [];
+        offsetRef.current = 0;
         return;
       }
 
@@ -79,6 +82,7 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
         (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)
       ) {
         hist.current = [];
+        offsetRef.current = 0;
         maxPowerObservedRef.current = 100;
         maxTorqueObservedRef.current = 100;
       }
@@ -97,17 +101,19 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
         if (rawPower > maxPowerObservedRef.current) maxPowerObservedRef.current = rawPower;
         if (rawTorque > maxTorqueObservedRef.current) maxTorqueObservedRef.current = rawTorque;
 
+        // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
         if (hist.current.length < 350) {
           hist.current.push({ rpm: rawRpm, power: Math.max(0, rawPower), torque: Math.max(0, rawTorque), time: now });
         } else {
-          const old = hist.current.shift();
+          const idx = offsetRef.current;
+          const old = hist.current[idx];
           if (old) {
             old.rpm = rawRpm;
             old.power = Math.max(0, rawPower);
             old.torque = Math.max(0, rawTorque);
             old.time = now;
-            hist.current.push(old);
           }
+          offsetRef.current = (idx + 1) % 350;
         }
       }
 
@@ -155,7 +161,8 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       // 1. Draw Torque Scatter Points (Secondary Theme Color)
       ctx.fillStyle = secondaryHex;
       for (let k = 0; k < len; k++) {
-        const pt = hist.current[k];
+        const idx = (offsetRef.current + k) % len;
+        const pt = hist.current[idx];
         const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
         const py = h - padBottom - (pt.torque / combinedMax) * plotH;
 
@@ -167,7 +174,8 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
       // 2. Draw Power Scatter Points (Primary Theme Color)
       ctx.fillStyle = primaryHex;
       for (let k = 0; k < len; k++) {
-        const pt = hist.current[k];
+        const idx = (offsetRef.current + k) % len;
+        const pt = hist.current[idx];
         const px = (pt.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
         const py = h - padBottom - (pt.power / combinedMax) * plotH;
 
@@ -178,7 +186,8 @@ const PowerTorqueCanvas: React.FC<PowerTorqueCanvasProps> = React.memo(({ height
 
       // 3. Highlight Current Active Telemetry Point (Glowing Ring & Dot)
       if (len > 0) {
-        const latest = hist.current[len - 1];
+        const latestIdx = hist.current.length < 350 ? len - 1 : (offsetRef.current - 1 + len) % len;
+        const latest = hist.current[latestIdx];
         const pxRpm = (latest.rpm / maxRpm) * (w - 24 * dpr) + 12 * dpr;
         const pyPower = h - padBottom - (latest.power / combinedMax) * plotH;
         const pyTorque = h - padBottom - (latest.torque / combinedMax) * plotH;
