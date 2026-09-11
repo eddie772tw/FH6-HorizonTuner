@@ -39,3 +39,6 @@
 **Learning:** Calling `.filter()` multiple times on the same array during a React component's render cycle (e.g., to compute separate counts for 'active', 'applied', and the filtered list itself) iterates the array redundantly and allocates multiple intermediate arrays, increasing CPU and GC overhead.
 **Action:** Replace multiple `.filter()` calls with a single `useMemo` block containing a single-pass `for` loop that accumulates all necessary counts and filtered items simultaneously, completely eliminating redundant iterations and intermediate allocations.
 
+## 2024-05-24 - O(1) Circular Buffers in Canvas Render Loops
+**Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
+**Action:** Replace `Array.shift()` with a fixed-size array and an `offsetRef` to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offsetRef.current + index) % capacity` to traverse elements sequentially.

@@ -24,6 +24,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
   const radarCanvasRef = useRef<HTMLCanvasElement>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
   const hist = useRef<{ temp: number, ratio: number, angle: number, time: number, speed: number }[]>([]);
+  const offsetRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const tempLabelRef = useRef<HTMLSpanElement>(null);
 
@@ -46,6 +47,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         if (ctx) ctx.clearRect(0, 0, rCanvas.width, rCanvas.height);
       }
       hist.current = [];
+      offsetRef.current = 0;
     }
   }, [renderCharts]);
 
@@ -163,6 +165,7 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
         (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
         hist.current = [];
+        offsetRef.current = 0;
       }
       prevCar.current = liveData.CarOrdinal;
       prevRace.current = liveData.IsRaceOn;
@@ -186,18 +189,21 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
         if (!isMoving) {
           for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
         } else {
+          // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
           if (hist.current.length < 900) {
             hist.current.push({ temp: cTemp, ratio: cRatio, angle: cAngle, time: now, speed });
           } else {
-            const old = hist.current.shift();
+            const idx = offsetRef.current;
+            const old = hist.current[idx];
             if (old) {
               old.temp = cTemp; old.ratio = cRatio; old.angle = cAngle; old.time = now; old.speed = speed;
-              hist.current.push(old);
             }
+            offsetRef.current = (idx + 1) % 900;
           }
         }
       } else {
         hist.current = [];
+        offsetRef.current = 0;
       }
 
       if (angRef.current) {
@@ -226,12 +232,14 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
           }
 
           if (renderCharts) {
-            let startIdx = hist.current.length - 1;
-            while (startIdx >= 0 && now - hist.current[startIdx].time <= 3000) {
+            const histLen = hist.current.length;
+            let startIdx = histLen - 1;
+            while (startIdx >= 0) {
+              const checkIdx = histLen < 900 ? startIdx : (offsetRef.current + startIdx) % histLen;
+              if (now - hist.current[checkIdx].time > 3000) break;
               startIdx--;
             }
             const firstValidIdx = startIdx + 1;
-            const histLen = hist.current.length;
 
             if (firstValidIdx < histLen) {
               ctx.beginPath();
@@ -240,7 +248,8 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
               ctx.lineWidth = 2 * dpr;
               ctx.lineJoin = 'round';
               for (let i = firstValidIdx; i < histLen; i++) {
-                const p = hist.current[i];
+                const idx = histLen < 900 ? i : (offsetRef.current + i) % histLen;
+                const p = hist.current[idx];
                 let dx = (p.angle / displayLimit) * radius * dpr;
                 let dy = (p.ratio / displayLimit) * radius * dpr;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -330,7 +339,8 @@ const TireRadar: React.FC<TireRadarProps> = React.memo(({ title, isLeft, tireIdx
 
             const hLen = hist.current.length;
             for (let i = 0; i < hLen; i++) {
-              const p = hist.current[i];
+              const idx = hLen < 900 ? i : (offsetRef.current + i) % hLen;
+              const p = hist.current[idx];
               if (Math.abs(p.speed) < 0.5) continue;
               let normT = Math.max(0, Math.min(1, (p.temp - tempMinScale) / tempRange));
               let binIdx = Math.min(numBins - 1, Math.floor(normT * numBins));
