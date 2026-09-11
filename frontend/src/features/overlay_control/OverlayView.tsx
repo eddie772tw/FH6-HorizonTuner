@@ -4,6 +4,8 @@ import {
   fetchHudStylesList,
   formatHudDropdownOptions,
   getHudUrlPrefix,
+  isWipHudQueryEnabled,
+  HUD_DISPLAY_NAMES,
   HudStyleEntry,
 } from './hudStyleScanner';
 import {
@@ -59,6 +61,29 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
   const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
+
+  const [showWipHuds, setShowWipHuds] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('fh6_show_wip_huds') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const isWipActive = Boolean(
+    showWipHuds ||
+    settings.developer_tuning_enabled ||
+    isWipHudQueryEnabled()
+  );
+
+  const handleToggleShowWipHuds = (checked: boolean) => {
+    setShowWipHuds(checked);
+    try {
+      localStorage.setItem('fh6_show_wip_huds', checked ? 'true' : 'false');
+    } catch {
+      // ignore storage error
+    }
+  };
 
   useEffect(() => {
     channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
@@ -1127,12 +1152,32 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 disabled={config.elements.showGauge === false}
                 className="form-select form-select-sm fw-bold"
               >
-                {formatHudDropdownOptions(hudStyles).map((opt) => (
+                {formatHudDropdownOptions(hudStyles, HUD_DISPLAY_NAMES, {
+                  includeWip: isWipActive,
+                  currentStyle: config.hudStyle,
+                }).map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
               </select>
+
+              <div className="form-check form-switch py-1">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="sw-show-wip-huds"
+                  checked={isWipActive}
+                  disabled={settings.developer_tuning_enabled || isWipHudQueryEnabled()}
+                  onChange={(e) => handleToggleShowWipHuds(e.target.checked)}
+                />
+                <label className="form-check-label fs-7 text-body-secondary" htmlFor="sw-show-wip-huds">
+                  {t("Show WIP Gauges")}
+                  {(settings.developer_tuning_enabled || isWipHudQueryEnabled()) && (
+                    <span className="badge bg-secondary ms-1 fs-8">{t("Dev Mode")}</span>
+                  )}
+                </label>
+              </div>
 
               {config.hudStyle === S650_HMI_STYLE_ID && (
                 <div className="border-top pt-2">
