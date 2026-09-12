@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Defi Advance BF JDM Cluster</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .defi-container {
+            width: 380px;
+            height: 360px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #defiCanvas {
+            display: block;
+            width: 380px;
+            height: 360px;
+            background: transparent;
+            transition: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container defi-container" id="defiContainer">
+            <canvas id="defiCanvas" width="380" height="360"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('defiContainer'),
+                canvas: document.getElementById('defiCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var isAmberTheme = true;
+            try {
+                var savedTheme = localStorage.getItem('defi_theme');
+                if (savedTheme === 'white' || savedTheme === 'blue') isAmberTheme = false;
+            } catch (e) {}
+
+            var isSelfChecking = false;
+            var selfCheckStartTime = 0;
+            var isMetric = true;
+            var offscreenDial = null;
+            var pixelRatio = 1;
+            // Layout A: independent instruments wrap around the lower-right tachometer.
+            // Shared by static artwork and moving needles to keep their centers aligned.
+            var dials = [
+                { cx: 272, cy: 250, r: 100, title: 'TACHO', unit: 'x1000r/min' },
+                { cx: 275, cy: 68, r: 64, title: 'TURBO', unit: 'x100kPa' },
+                { cx: 110, cy: 112, r: 64, title: 'OIL TEMP', unit: '°C' },
+                { cx: 101, cy: 278, r: 64, title: 'OIL PRESS', unit: 'x100kPa' }
+            ];
+            var shiftPod = { cx: 190, cy: 164 };
+            var lastState = { rpmRatio: 0, boostRatio: 0.35, oilTempRatio: 0.45, oilPressRatio: 0.4, isShiftLightOn: false };
+
+            // Defi Peak Hold Memory (holds highest value for 1.8s then smooth decay)
+            var peakState = {
+                rpmRatio: 0,
+                rpmTime: 0,
+                boostRatio: 0.35,
+                boostTime: 0
+            };
+
+            function updatePeak(current, valueKey, timeKey, now) {
+                if (current >= peakState[valueKey]) {
+                    peakState[valueKey] = current;
+                    peakState[timeKey] = now;
+                } else if (now - peakState[timeKey] >= 1800) {
+                    peakState[valueKey] = Math.max(current, peakState[valueKey] - 0.005);
+                }
+            }
+
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
+            function boostToRatio(bar) {
+                var b = Math.max(-1.0, Math.min(2.0, bar));
+                if (b <= 0) {
+                    return ((b + 1.0) / 1.0) * 0.35;
+                }
+                return 0.35 + (b / 2.0) * 0.65;
+            }
+
+            function buildOffscreenDial() {
+                pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (domCache.canvas) {
+                    domCache.canvas.width = Math.round(380 * pixelRatio);
+                    domCache.canvas.height = Math.round(360 * pixelRatio);
+                    if (domCache.ctx && domCache.ctx.setTransform) {
+                        domCache.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                    }
+                }
+                dials[1].unit = dials[3].unit = isMetric ? 'x100kPa' : 'PSI';
+                dials[2].unit = isMetric ? '°C' : '°F';
+                offscreenDial = document.createElement('canvas');
+                offscreenDial.width = Math.round(380 * pixelRatio);
+                offscreenDial.height = Math.round(360 * pixelRatio);
+                var oCtx = offscreenDial.getContext('2d');
+                if (!oCtx) return;
+                if (oCtx.setTransform) {
+                    oCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                }
+
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+
+                var textColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#ffa34e' : '#f0eee8');
+                var tickColor = textColor;
+                var dimColor = isAmberTheme ? '#bd713f' : '#9c9e99';
+
+                var startA = 0.75 * Math.PI;
+                var totalA = 1.5 * Math.PI;
+
+                for (var idx = 0; idx < dials.length; idx++) {
+                    var d = dials[idx];
+
+                    // Brushed metal bezel: highlights belong to each round instrument,
+                    // never to a rectangular panel behind the cluster.
+                    var bezel = oCtx.createLinearGradient(d.cx, d.cy - d.r, d.cx, d.cy + d.r);
+                    bezel.addColorStop(0, '#d2d1ca');
+                    bezel.addColorStop(0.16, '#4e504e');
+                    bezel.addColorStop(0.48, '#171918');
+                    bezel.addColorStop(0.86, '#777974');
+                    bezel.addColorStop(1, '#292b29');
+                    oCtx.beginPath();
+                    oCtx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+                    oCtx.fillStyle = bezel;
+                    oCtx.fill();
+                    oCtx.lineWidth = 1;
+                    oCtx.strokeStyle = '#101210';
+                    oCtx.stroke();
+
+                    var face = oCtx.createRadialGradient(d.cx, d.cy - d.r * 0.35, 0, d.cx, d.cy, d.r);
+                    face.addColorStop(0, '#181a19');
+                    face.addColorStop(0.65, '#080a09');
+                    face.addColorStop(1, '#020302');
+                    oCtx.beginPath();
+                    oCtx.arc(d.cx, d.cy, d.r - 5, 0, Math.PI * 2);
+                    oCtx.fillStyle = face;
+                    oCtx.fill();
+                    oCtx.lineWidth = 1;
+                    oCtx.strokeStyle = '#72736c';
+                    oCtx.stroke();
+
+                    // Title & Unit
+                    oCtx.fillStyle = textColor;
+                    oCtx.font = (idx === 0 ? 'bold 12px' : 'bold 9px') + ' Arial, sans-serif';
+                    oCtx.textAlign = 'center';
+                    oCtx.textBaseline = 'middle';
+                    oCtx.fillText(d.title, d.cx, d.cy - d.r * (idx === 0 ? 0.35 : 0.16));
+
+                    oCtx.font = (idx === 0 ? '10px' : '8px') + ' Arial, sans-serif';
+                    oCtx.fillText(d.unit, d.cx, d.cy + d.r * 0.32);
+                    oCtx.font = (idx === 0 ? 'italic bold 23px' : 'italic bold 17px') + ' Arial, sans-serif';
+                    oCtx.fillText('Defi', d.cx, d.cy + d.r * 0.55);
+                    oCtx.fillStyle = dimColor;
+                    oCtx.font = (idx === 0 ? '7px' : '5px') + ' Arial, sans-serif';
+                    oCtx.fillText('ADVANCE BF', d.cx, d.cy + d.r * 0.72);
+
+                    // Dial-specific ticks and numbers
+                    if (idx === 0) {
+                        // TACHOMETER (0 to 11 x1000 RPM, major every 1, minor every 0.5)
+                        for (var rpmVal = 0; rpmVal <= 11; rpmVal += 0.5) {
+                            var ratio = rpmVal / 11;
+                            var angle = startA + ratio * totalA;
+                            var isMajor = (rpmVal % 1 === 0);
+                            var isRed = (rpmVal >= 9);
+                            var len = isMajor ? 14 : 7;
+
+                            var x1 = d.cx + Math.cos(angle) * (d.r - 10);
+                            var y1 = d.cy + Math.sin(angle) * (d.r - 10);
+                            var x2 = d.cx + Math.cos(angle) * (d.r - 10 - len);
+                            var y2 = d.cy + Math.sin(angle) * (d.r - 10 - len);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(x1, y1);
+                            oCtx.lineTo(x2, y2);
+                            oCtx.lineWidth = isMajor ? 2.5 : 1.2;
+                            oCtx.strokeStyle = isRed ? '#EF4444' : (isMajor ? tickColor : dimColor);
+                            oCtx.stroke();
+
+                            if (isMajor) {
+                                var numX = d.cx + Math.cos(angle) * (d.r - 33);
+                                var numY = d.cy + Math.sin(angle) * (d.r - 33);
+                                oCtx.fillStyle = isRed ? '#EF4444' : textColor;
+                                oCtx.font = 'bold 12px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(rpmVal), numX, numY + 1);
+                            }
+                        }
+                    } else if (idx === 1) {
+                        // TURBO BOOST (-1.0 to +2.0 bar, non-linear angle mapping)
+                        var boostTicks = [-1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
+                        for (var bIdx = 0; bIdx < boostTicks.length; bIdx++) {
+                            var bVal = boostTicks[bIdx];
+                            var bRatio = boostToRatio(bVal);
+                            var bAngle = startA + bRatio * totalA;
+                            var bMajor = (bVal === -1.0 || bVal === 0 || bVal === 1.0 || bVal === 2.0);
+                            var bLen = bMajor ? 10 : 5;
+
+                            var bx1 = d.cx + Math.cos(bAngle) * (d.r - 10);
+                            var by1 = d.cy + Math.sin(bAngle) * (d.r - 10);
+                            var bx2 = d.cx + Math.cos(bAngle) * (d.r - 10 - bLen);
+                            var by2 = d.cy + Math.sin(bAngle) * (d.r - 10 - bLen);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(bx1, by1);
+                            oCtx.lineTo(bx2, by2);
+                            oCtx.lineWidth = bMajor ? 2 : 1;
+                            oCtx.strokeStyle = bMajor ? tickColor : dimColor;
+                            oCtx.stroke();
+
+                            if (bMajor) {
+                                var bNumX = d.cx + Math.cos(bAngle) * (d.r - 29);
+                                var bNumY = d.cy + Math.sin(bAngle) * (d.r - 29);
+                                oCtx.fillStyle = textColor;
+                                oCtx.font = 'bold 10px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                var boostLabel = Math.round(isMetric ? bVal : bVal * 14.5038);
+                                var bStr = boostLabel > 0 ? '+' + boostLabel : String(boostLabel);
+                                oCtx.fillText(bStr, bNumX, bNumY + 1);
+                            }
+                        }
+                    } else if (idx === 2) {
+                        // OIL TEMP (50 to 150 °C)
+                        var tempMajor = [50, 75, 100, 125, 150];
+                        for (var tVal = 50; tVal <= 150; tVal += 5) {
+                            var tRatio = (tVal - 50) / 100;
+                            var tAngle = startA + tRatio * totalA;
+                            var tMajor = tempMajor.indexOf(tVal) !== -1;
+                            var tLen = tMajor ? 9 : 4;
+
+                            var tx1 = d.cx + Math.cos(tAngle) * (d.r - 10);
+                            var ty1 = d.cy + Math.sin(tAngle) * (d.r - 10);
+                            var tx2 = d.cx + Math.cos(tAngle) * (d.r - 10 - tLen);
+                            var ty2 = d.cy + Math.sin(tAngle) * (d.r - 10 - tLen);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(tx1, ty1);
+                            oCtx.lineTo(tx2, ty2);
+                            oCtx.lineWidth = tMajor ? 2 : 1;
+                            oCtx.strokeStyle = tMajor ? tickColor : dimColor;
+                            oCtx.stroke();
+
+                            if (tMajor && (tVal === 50 || tVal === 100 || tVal === 150)) {
+                                var tNumX = d.cx + Math.cos(tAngle) * (d.r - 29);
+                                var tNumY = d.cy + Math.sin(tAngle) * (d.r - 29);
+                                oCtx.fillStyle = textColor;
+                                oCtx.font = 'bold 9px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(isMetric ? tVal : Math.round(tVal * 9 / 5 + 32)), tNumX, tNumY + 1);
+                            }
+                        }
+                    } else {
+                        // OIL PRESS (0 to 10 x100kPa / bar)
+                        for (var pVal = 0; pVal <= 10; pVal += 0.5) {
+                            var pRatio = pVal / 10;
+                            var pAngle = startA + pRatio * totalA;
+                            var pMajor = (pVal % 2 === 0);
+                            var pLen = pMajor ? 9 : 4;
+
+                            var px1 = d.cx + Math.cos(pAngle) * (d.r - 10);
+                            var py1 = d.cy + Math.sin(pAngle) * (d.r - 10);
+                            var px2 = d.cx + Math.cos(pAngle) * (d.r - 10 - pLen);
+                            var py2 = d.cy + Math.sin(pAngle) * (d.r - 10 - pLen);
+
+                            oCtx.beginPath();
+                            oCtx.moveTo(px1, py1);
+                            oCtx.lineTo(px2, py2);
+                            oCtx.lineWidth = pMajor ? 2 : 1;
+                            oCtx.strokeStyle = pMajor ? tickColor : dimColor;
+                            oCtx.stroke();
+
+                            if (pMajor) {
+                                var pNumX = d.cx + Math.cos(pAngle) * (d.r - 29);
+                                var pNumY = d.cy + Math.sin(pAngle) * (d.r - 29);
+                                oCtx.fillStyle = textColor;
+                                oCtx.font = 'bold 9px sans-serif';
+                                oCtx.textAlign = 'center';
+                                if (oCtx.textBaseline) oCtx.textBaseline = 'middle';
+                                oCtx.fillText(String(isMetric ? pVal : Math.round(pVal * 14.5038)), pNumX, pNumY + 1);
+                            }
+                        }
+                    }
+                }
+
+                // External Shift Light Pod Bezel
+                oCtx.beginPath();
+                oCtx.arc(shiftPod.cx, shiftPod.cy, 15, 0, Math.PI * 2);
+                oCtx.fillStyle = '#151714';
+                oCtx.fill();
+                oCtx.lineWidth = 2;
+                oCtx.strokeStyle = '#92938c';
+                oCtx.stroke();
+            }
+
+            buildOffscreenDial();
+
+            // Support interactive physical Defi Control Unit button switch
+            if (domCache.canvas) {
+                domCache.canvas.style.cursor = 'pointer';
+                domCache.canvas.addEventListener('click', function () {
+                    isAmberTheme = !isAmberTheme;
+                    try {
+                        localStorage.setItem('defi_theme', isAmberTheme ? 'amber' : 'white');
+                    } catch (e) {}
+                    buildOffscreenDial();
+                    renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+                });
+            }
+
+            function drawNeedle(ctx, cx, cy, radius, angle, color) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 3;
+                ctx.beginPath();
+                ctx.moveTo(-radius * 0.15, -2);
+                ctx.lineTo(radius * 0.85, -1);
+                ctx.lineTo(radius * 0.85, 1);
+                ctx.lineTo(-radius * 0.15, 2);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                var capR = Math.max(5, Math.round(radius * 0.08));
+                ctx.beginPath();
+                ctx.arc(0, 0, capR, 0, Math.PI * 2);
+                ctx.fillStyle = '#181a17';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#666963';
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function drawPeakIndicator(ctx, cx, cy, radius, angle, color) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.moveTo(radius * 0.72, 0);
+                ctx.lineTo(radius * 0.88, -2.5);
+                ctx.lineTo(radius * 0.88, 2.5);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.65;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                lastState.rpmRatio = rpmRatio;
+                lastState.boostRatio = boostRatio;
+                lastState.oilTempRatio = oilTempRatio;
+                lastState.oilPressRatio = oilPressRatio;
+                lastState.isShiftLightOn = isShiftLightOn;
+
+                if (!offscreenDial || pixelRatio !== Math.max(1, Math.min(3, window.devicePixelRatio || 1))) buildOffscreenDial();
+                // Transparent source pixels do not erase the preceding frame.
+                ctx.clearRect(0, 0, 380, 360);
+                ctx.drawImage(offscreenDial, 0, 0, 380, 360);
+
+                var startA = 0.75 * Math.PI;
+                var totalA = 1.5 * Math.PI;
+
+                var customColor = window._currentCustomColor;
+                var useDefault = window._currentUseDefaultColors !== false;
+                var needleColor = (!useDefault && customColor) ? customColor : '#ff352e';
+                var peakColor = (!useDefault && customColor) ? customColor : (isAmberTheme ? '#FFB74D' : '#E0F2FE');
+
+                // Peak Hold Indicators (JDM feature: marks highest recorded RPM and Boost)
+                if (!isSelfChecking) {
+                    if (peakState.rpmRatio > rpmRatio + 0.015) {
+                        drawPeakIndicator(ctx, dials[0].cx, dials[0].cy, dials[0].r - 5, startA + Math.min(1, peakState.rpmRatio) * totalA, peakColor);
+                    }
+                    if (peakState.boostRatio > boostRatio + 0.015) {
+                        drawPeakIndicator(ctx, dials[1].cx, dials[1].cy, dials[1].r - 5, startA + Math.min(1, peakState.boostRatio) * totalA, peakColor);
+                    }
+                }
+
+                // 1. Tacho Needle
+                drawNeedle(ctx, dials[0].cx, dials[0].cy, dials[0].r - 5, startA + Math.max(0, Math.min(1, rpmRatio)) * totalA, needleColor);
+
+                // 2. Turbo Boost Needle
+                drawNeedle(ctx, dials[1].cx, dials[1].cy, dials[1].r - 5, startA + Math.max(0, Math.min(1, boostRatio)) * totalA, needleColor);
+
+                // 3. Oil Temp Needle
+                drawNeedle(ctx, dials[2].cx, dials[2].cy, dials[2].r - 5, startA + Math.max(0, Math.min(1, oilTempRatio)) * totalA, needleColor);
+
+                // 4. Oil Press Needle
+                drawNeedle(ctx, dials[3].cx, dials[3].cy, dials[3].r - 5, startA + Math.max(0, Math.min(1, oilPressRatio)) * totalA, needleColor);
+
+                // 5. External Shift Light LED
+                ctx.beginPath();
+                ctx.arc(shiftPod.cx, shiftPod.cy, 9, 0, Math.PI * 2);
+                if (isShiftLightOn) {
+                    ctx.fillStyle = '#FF0033';
+                    ctx.shadowColor = '#FF0033';
+                    ctx.shadowBlur = 18;
+                } else {
+                    ctx.fillStyle = '#2A0D12';
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function runSelfCheck(now) {
+                if (!isSelfChecking) return;
+                var elapsed = now - selfCheckStartTime;
+                var rpmRatio = 0;
+                var boostRatio = 0;
+                var oilTempRatio = 0;
+                var oilPressRatio = 0;
+                var isShiftLightOn = false;
+
+                var boostResting = boostToRatio(0);
+                var oilTempResting = 0.45;
+                var oilPressResting = 0.4;
+
+                if (elapsed < 700) {
+                    var t = elapsed / 700;
+                    rpmRatio = 1 - Math.pow(1 - t, 3);
+                    boostRatio = rpmRatio;
+                    oilTempRatio = rpmRatio;
+                    oilPressRatio = rpmRatio;
+                } else if (elapsed < 1000) {
+                    rpmRatio = 1.0;
+                    boostRatio = 1.0;
+                    oilTempRatio = 1.0;
+                    oilPressRatio = 1.0;
+                    isShiftLightOn = Math.floor(elapsed / 80) % 2 === 0;
+                } else if (elapsed < 1500) {
+                    var tBack = (elapsed - 1000) / 500;
+                    var returnFactor = 0.5 * (1 + Math.cos(tBack * Math.PI));
+                    rpmRatio = returnFactor;
+                    boostRatio = boostResting + (1.0 - boostResting) * returnFactor;
+                    oilTempRatio = oilTempResting + (1.0 - oilTempResting) * returnFactor;
+                    oilPressRatio = oilPressResting + (1.0 - oilPressResting) * returnFactor;
+                } else {
+                    isSelfChecking = false;
+                    renderCluster(0, boostResting, oilTempResting, oilPressResting, false);
+                    return;
+                }
+
+                renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn);
+                requestAnimationFrame(runSelfCheck);
+            }
+
+            HUDCore.registerStyle('defi_triple', {
+                containerId: 'defiContainer',
+                scaleMultiplier: 1.2,
+
+                onInit: function (payload) {
+                    if (payload) {
+                        if (payload.defiTheme) {
+                            isAmberTheme = payload.defiTheme === 'amber';
+                        }
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    buildOffscreenDial();
+                    renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+                },
+
+                onScale: function (scale) {
+                    renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+                },
+
+                onElementsChange: function (elements) {
+                    if (domCache.container) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (isSelfChecking) return;
+
+                    var prevMetric = isMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+                    if (prevMetric !== isMetric) {
+                        buildOffscreenDial();
+                    }
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 11000;
+                    var redlineRpm = (payload && payload.redlineRpm) || (data.redlineRpm) || (maxRpm * 0.88);
+                    var rpm = data.rpm || 0;
+                    var rpmRatio = rpm / 11000;
+
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+
+                    // Boost calculation (in bar)
+                    var boostBar = 0;
+                    if (data.boost_bar !== undefined) {
+                        boostBar = data.boost_bar;
+                    } else if (data.boost !== undefined) {
+                        boostBar = data.boost;
+                    } else if (data.Boost !== undefined) {
+                        // Forza UDP Boost is in PSI or bar
+                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038) : data.Boost;
+                    } else {
+                        boostBar = throttle * 1.6 - 0.3;
+                    }
+
+                    // Naturally aspirated / idle intake vacuum
+                    if (boostBar <= 0.05 && throttle < 0.25) {
+                        boostBar = -0.7 * (1.0 - throttle / 0.25);
+                    }
+
+                    var boostRatio = boostToRatio(boostBar);
+
+                    // Update Peak Hold State
+                    var now = performance.now();
+                    updatePeak(rpmRatio, 'rpmRatio', 'rpmTime', now);
+                    updatePeak(boostRatio, 'boostRatio', 'boostTime', now);
+
+                    // Oil Temp (50 ~ 150 °C, converts Fahrenheit ~180-230°F if needed)
+                    var oilTemp = data.OilTemp !== undefined ? data.OilTemp : (data.oil_temp !== undefined ? data.oil_temp : 95);
+                    if (oilTemp > 140) {
+                        oilTemp = (oilTemp - 32) * 5 / 9;
+                    }
+                    var oilTempRatio = (oilTemp - 50) / 100;
+
+                    // Oil Pressure (0 ~ 10 bar)
+                    var oilPress = data.OilPressure !== undefined ? data.OilPressure : (data.oil_pressure !== undefined ? data.oil_pressure : 4.5);
+                    var oilPressRatio = oilPress / 10;
+
+                    var isShiftLightOn = rpm >= redlineRpm;
+
+                    renderCluster(rpmRatio, boostRatio, oilTempRatio, oilPressRatio, isShiftLightOn);
+                },
+
+                onAnimate: function () {
+                    isSelfChecking = true;
+                    selfCheckStartTime = performance.now();
+                    requestAnimationFrame(runSelfCheck);
+                }
+            });
+
+            HUDCore.init('defi_triple');
+
+            setTimeout(function () {
+                renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
+            }, 60);
+
+            window.addEventListener('resize', function () {
+                var nextRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (pixelRatio !== nextRatio) {
+                    buildOffscreenDial();
+                }
+                renderCluster(lastState.rpmRatio, lastState.boostRatio, lastState.oilTempRatio, lastState.oilPressRatio, lastState.isShiftLightOn);
+            });
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    buildOffscreenDial();
+                    renderCluster(0, boostToRatio(0), 0.45, 0.4, false);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

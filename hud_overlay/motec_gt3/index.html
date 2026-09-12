@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>MoTeC C125 inspired — FH racing display</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        :root {
+            --motec-housing: #151616;
+            --motec-border: #373939;
+            --motec-shadow: rgba(0, 0, 0, 0.65);
+        }
+        .motec-container {
+            width: 800px;
+            height: 480px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #motecCanvas {
+            display: block;
+            width: 800px;
+            height: 480px;
+            background: var(--motec-housing);
+            border-radius: 16px;
+            box-shadow: 0 8px 20px var(--motec-shadow);
+            transition: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container motec-container" id="motecContainer">
+            <canvas id="motecCanvas" width="800" height="480" aria-label="MoTeC inspired racing display"></canvas>
+        </div>
+    </div>
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            'use strict';
+            var container = document.getElementById('motecContainer');
+            var canvas = document.getElementById('motecCanvas');
+            var ctx = canvas && canvas.getContext('2d');
+            // C125 official product display reference: https://www.motec.com.au/products/C125
+            // The six side channels follow its example page. Center gear/speed is an FH
+            // adaptation, not the reference photo's PAGE 5. Forza does not supply these
+            // temperature/pressure channels; never populate them from tires or guesses.
+            var colors = {
+                housing: '#151616', rim: '#454848', screen: '#090d0b', divider: '#46504a',
+                label: '#e7c982', value: '#f3f5eb', muted: '#a9b2a7', ledOff: '#2a302d',
+                green: '#62e565', yellow: '#ffe249', red: '#ff493a', blue: '#6dcaff'
+            };
+            var leftLabels = ['ENGINE OIL TMP', 'GBOX OIL TMP', 'DIFF OIL TMP'];
+            var rightLabels = ['WATER TMP', 'OIL PRESS', 'FUEL PRESS'];
+            var state = { rpm: null, maxRpm: null, redline: null, gear: null, speed: null,
+                bestLap: null, currentLap: null, metric: true };
+            var sweepStart = null;
+            var sweepFrame = null;
+            var backingScale = 0;
+
+            function finite(value) {
+                return typeof value === 'number' && Number.isFinite(value) ? value : null;
+            }
+            function positive(value) {
+                var n = finite(value);
+                return n !== null && n > 0 ? n : null;
+            }
+            function lapText(seconds) {
+                if (seconds === null) return '—';
+                var ms = Math.round(seconds * 1000);
+                var minutes = Math.floor(ms / 60000);
+                return minutes + ':' + String(Math.floor(ms / 1000) % 60).padStart(2, '0') +
+                    '.' + String(ms % 1000).padStart(3, '0');
+            }
+            function text(value, x, y, font, color, align) {
+                ctx.font = font;
+                ctx.fillStyle = color;
+                ctx.textAlign = align || 'left';
+                ctx.fillText(value, x, y);
+            }
+            function resizeCanvas() {
+                if (!ctx) return;
+                var ratio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                if (ratio === backingScale) return;
+                backingScale = ratio;
+                canvas.width = Math.round(800 * ratio);
+                canvas.height = Math.round(480 * ratio);
+                ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            }
+            function draw(now, testRpm) {
+                if (!ctx) return;
+                resizeCanvas();
+                ctx.clearRect(0, 0, 800, 480);
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = colors.housing;
+                ctx.fillRect(0, 0, 800, 480);
+                ctx.strokeStyle = colors.rim;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(16, 62, 768, 388);
+                ctx.fillStyle = colors.screen;
+                ctx.fillRect(20, 66, 760, 380);
+
+                var rpm = testRpm === undefined ? state.rpm : testRpm;
+                var redline = state.redline || state.maxRpm || (testRpm === undefined ? null : 8000);
+                var ratio = rpm !== null && redline ? rpm / redline : 0;
+                var flashing = ratio >= 0.96 && Math.floor(now / 90) % 2 === 0;
+                for (var led = 0; led < 10; led++) {
+                    var active = ratio >= 0.70 + led * 0.026;
+                    ctx.fillStyle = flashing ? colors.blue : active ?
+                        (led < 4 ? colors.green : led < 7 ? colors.yellow : colors.red) : colors.ledOff;
+                    ctx.beginPath();
+                    ctx.arc(67 + led * 74, 32, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.strokeStyle = colors.divider;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(273, 80); ctx.lineTo(273, 344);
+                ctx.moveTo(527, 80); ctx.lineTo(527, 344);
+                ctx.moveTo(35, 352); ctx.lineTo(765, 352);
+                ctx.stroke();
+                for (var row = 0; row < 3; row++) {
+                    var y = 102 + row * 84;
+                    text(leftLabels[row], 40, y, 'bold 22px Arial, sans-serif', colors.label);
+                    text(rightLabels[row], 548, y, 'bold 22px Arial, sans-serif', colors.label);
+                    text('—', 244, y + 51, 'italic bold 52px Arial, sans-serif', colors.value, 'right');
+                    text('—', 754, y + 51, 'italic bold 52px Arial, sans-serif', colors.value, 'right');
+                }
+                text('GEAR', 400, 102, 'bold 22px Arial, sans-serif', colors.label, 'center');
+                var rpmDisplay = state.rpm === null ? '— RPM' : String(Math.round(state.rpm)) + ' RPM';
+                text(rpmDisplay, 400, 132, 'bold 24px Arial, sans-serif', colors.value, 'center');
+                var gear = state.gear === null ? '—' : state.gear === 0 ? 'R' : state.gear === 11 ? 'N' : String(state.gear);
+                text(gear, 395, 256, 'italic bold 150px Arial, sans-serif', flashing ? colors.red : colors.value, 'center');
+                var speed = state.speed === null ? '—' : String(Math.round(Math.abs(state.speed)));
+                text(speed, 400, 314, 'italic bold 46px Arial, sans-serif', colors.value, 'center');
+                text(state.metric ? 'KM/H' : 'MPH', 400, 340, 'bold 22px Arial, sans-serif', colors.label, 'center');
+
+                text('REFERENCE LAP', 40, 383, 'bold 22px Arial, sans-serif', colors.label);
+                text('GAIN / LOSS', 400, 383, 'bold 22px Arial, sans-serif', colors.label, 'center');
+                text('RUNNING LAP', 760, 383, 'bold 22px Arial, sans-serif', colors.label, 'right');
+                text(lapText(state.bestLap), 40, 426, 'italic bold 35px Arial, sans-serif', colors.value);
+                // CurrentLap - BestLap is NOT a same-distance gain/loss delta.
+                text('—', 400, 426, 'italic bold 35px Arial, sans-serif', colors.value, 'center');
+                text(lapText(state.currentLap), 760, 426, 'italic bold 35px Arial, sans-serif', colors.value, 'right');
+                text('MoTeC', 30, 473, 'italic bold 23px Arial, sans-serif', colors.value);
+                text(sweepStart === null ? 'C125  /  FH ADAPTED' : 'SHIFT LIGHT TEST', 770, 473,
+                    'bold 20px Arial, sans-serif', colors.muted, 'right');
+            }
+            function updateUnits(data, payload) {
+                if (payload && typeof payload.isMetric === 'boolean') state.metric = payload.isMetric;
+                else if (payload && payload.unit) state.metric = payload.unit !== 'mph';
+                if (data && data.displayUnits && data.displayUnits.speed) state.metric = data.displayUnits.speed !== 'mph';
+            }
+            function animate(now) {
+                if (sweepStart === null) return;
+                var progress = (now - sweepStart) / 1200;
+                if (progress >= 1) {
+                    sweepStart = null;
+                    sweepFrame = null;
+                    draw(now);
+                    return;
+                }
+                draw(now, (1 - Math.abs(progress * 2 - 1)) * (state.redline || state.maxRpm || 8000));
+                sweepFrame = requestAnimationFrame(animate);
+            }
+            HUDCore.registerStyle('motec_gt3', {
+                containerId: 'motecContainer',
+                scaleMultiplier: 0.70,
+                onInit: function (payload) { updateUnits(null, payload); draw(performance.now()); },
+                onElementsChange: function (elements) {
+                    if (container) container.style.display = elements.showGauge === false ? 'none' : 'block';
+                },
+                onFrame: function (data, payload) {
+                    data = data || {};
+                    updateUnits(data, payload);
+                    state.rpm = finite(data.rpm);
+                    if (state.rpm !== null && state.rpm < 0) state.rpm = null;
+                    state.maxRpm = positive(data.max_rpm) || positive(data.maxRpm);
+                    state.redline = positive(payload && payload.redlineRpm) || positive(data.redlineRpm) || state.maxRpm;
+                    var gear = finite(data.gear);
+                    state.gear = gear !== null && Number.isInteger(gear) && gear >= 0 && gear <= 11 ? gear : null;
+                    // Canonical coordinator provides explicit speed units and preserves raw lap seconds.
+                    state.speed = finite(state.metric ? data.speed_kmh : data.speed_mph);
+                    state.bestLap = positive(data.BestLap);
+                    var currentLap = finite(data.CurrentLap);
+                    state.currentLap = currentLap !== null && currentLap >= 0 ? currentLap : null;
+                    if (sweepStart === null) draw(performance.now());
+                },
+                onAnimate: function () {
+                    if (sweepFrame !== null) cancelAnimationFrame(sweepFrame);
+                    sweepStart = performance.now();
+                    sweepFrame = requestAnimationFrame(animate);
+                }
+            });
+            window.addEventListener('pagehide', function () {
+                if (sweepFrame !== null) cancelAnimationFrame(sweepFrame);
+                sweepStart = null;
+            });
+            HUDCore.init('motec_gt3');
+            draw(performance.now());
+        })();
+    </script>
+</body>
+</html>

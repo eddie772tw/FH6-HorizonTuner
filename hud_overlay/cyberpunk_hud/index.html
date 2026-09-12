@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Cyberpunk 2077 Quadra HUD</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .cyberpunk-container {
+            width: 520px;
+            height: 220px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #cyberpunkCanvas {
+            display: block;
+            width: 520px;
+            height: 220px;
+            background: transparent;
+            transition: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container cyberpunk-container" id="cyberpunkContainer">
+            <canvas id="cyberpunkCanvas" width="520" height="220"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('cyberpunkContainer'),
+                canvas: document.getElementById('cyberpunkCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            var isMetric = true;
+            var sweepActive = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1200;
+            var lastValidGear = 1;
+            var lastMaxRpm = 8500;
+            var lastRedline = 7800;
+            var mediaState = { has_media: false, title: '', artist: '' };
+            var audioSpectrum = new Array(12).fill(0);
+            var hasAudio = false;
+
+            function drawChamferedRect(ctx, x, y, w, h, chamfer) {
+                ctx.beginPath();
+                ctx.moveTo(x + chamfer, y);
+                ctx.lineTo(x + w, y);
+                ctx.lineTo(x + w, y + h - chamfer);
+                ctx.lineTo(x + w - chamfer, y + h);
+                ctx.lineTo(x, y + h);
+                ctx.lineTo(x, y + chamfer);
+                ctx.closePath();
+            }
+
+            var staticPanel = null;
+            var panelColor = '';
+            var panelMetric = null;
+            var panelMaxRpm = 0;
+            var displayDpr = 0;
+            var primaryDefault = '#f3bf4f';
+
+            function buildStaticPanel(primary, maxRpm) {
+                staticPanel = document.createElement('canvas');
+                staticPanel.width = Math.round(520 * displayDpr);
+                staticPanel.height = Math.round(220 * displayDpr);
+                var ctx = staticPanel.getContext('2d');
+                if (!ctx) return;
+                ctx.setTransform(displayDpr, 0, 0, displayDpr, 0, 0);
+                panelColor = primary;
+                panelMetric = isMetric;
+                panelMaxRpm = maxRpm;
+                ctx.textBaseline = 'alphabetic';
+                // Original Turbo-R concept-inspired industrial housing, not a game replica.
+                var shell = ctx.createLinearGradient(0, 0, 0, 220);
+                shell.addColorStop(0, '#41413a');
+                shell.addColorStop(0.08, '#20211d');
+                shell.addColorStop(1, '#10120f');
+                drawChamferedRect(ctx, 1, 1, 518, 218, 9);
+                ctx.fillStyle = shell;
+                ctx.fill();
+                ctx.strokeStyle = '#65665a';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.fillStyle = '#090d09';
+                ctx.fillRect(12, 12, 496, 51);
+                ctx.fillRect(12, 71, 265, 114);
+                ctx.fillRect(284, 71, 91, 114);
+                ctx.fillRect(382, 71, 126, 114);
+                ctx.strokeStyle = '#555748';
+                ctx.strokeRect(12, 71, 265, 114);
+                ctx.strokeRect(284, 71, 91, 114);
+                ctx.strokeRect(382, 71, 126, 114);
+
+                ctx.fillStyle = primary;
+                ctx.font = 'bold 11px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('QUADRA', 22, 28);
+                ctx.textAlign = 'right';
+                ctx.fillText('TURBO-R  V-TECH', 498, 28);
+                // Inactive phosphor segments and scale live in this cached plate.
+                ctx.fillStyle = '#38341d';
+                for (var i = 0; i < 40; i++) {
+                    ctx.fillRect(22 + i * 12, 37, 8, 10);
+                }
+                ctx.fillStyle = '#b7b18b';
+                ctx.font = '10px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('0', 22, 59);
+                ctx.textAlign = 'center';
+                ctx.fillText('RPM ×1000', 260, 59);
+                ctx.textAlign = 'right';
+                ctx.fillText((maxRpm / 1000).toFixed(1), 498, 59);
+
+                ctx.fillStyle = primary;
+                ctx.font = 'bold 12px Consolas, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(isMetric ? 'KM/H' : 'MPH', 24, 91);
+                ctx.fillText('GEAR', 299, 91);
+                ctx.fillText('BOOST · BAR', 393, 91);
+                ctx.fillStyle = '#b7b18b';
+                ctx.font = '10px Consolas, monospace';
+                ctx.fillText('THR', 393, 145);
+                ctx.fillText('BRK', 393, 174);
+                ctx.fillStyle = '#373821';
+                ctx.fillRect(423, 137, 72, 8);
+                ctx.fillRect(423, 166, 72, 8);
+                // Subtle hardware fasteners, kept away from the display hierarchy.
+                ctx.strokeStyle = '#828275';
+                ctx.beginPath();
+                ctx.moveTo(7, 5); ctx.lineTo(7, 10);
+                ctx.moveTo(513, 210); ctx.lineTo(513, 215);
+                ctx.stroke();
+            }
+
+            function drawCyberpunkHUD(rpm, maxRpm, redlineRpm, speed, gear, throttle, brake, boostBar, pitch, roll, now) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+                var nextDpr = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (displayDpr !== nextDpr) {
+                    displayDpr = nextDpr;
+                    domCache.canvas.width = Math.round(520 * displayDpr);
+                    domCache.canvas.height = Math.round(220 * displayDpr);
+                    ctx.setTransform(displayDpr, 0, 0, displayDpr, 0, 0);
+                    staticPanel = null;
+                }
+                var primary = window._currentUseDefaultColors !== false || !window._currentCustomColor
+                    ? primaryDefault : window._currentCustomColor;
+                if (!staticPanel || primary !== panelColor || panelMetric !== isMetric || panelMaxRpm !== maxRpm) {
+                    buildStaticPanel(primary, maxRpm);
+                }
+                ctx.clearRect(0, 0, 520, 220);
+                ctx.drawImage(staticPanel, 0, 0, 520, 220);
+                ctx.textBaseline = 'alphabetic';
+                var isRedline = rpm >= redlineRpm;
+                var warning = '#f96c45';
+                ctx.fillStyle = isRedline ? warning : primary;
+                var active = Math.round(Math.max(0, Math.min(1, rpm / maxRpm)) * 40);
+                for (var i = 0; i < active; i++) {
+                    ctx.fillRect(22 + i * 12, 37, 8, 10);
+                }
+
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 80px Consolas, monospace';
+                ctx.fillStyle = primary;
+                ctx.fillText(String(Math.round(Math.abs(speed))), 263, 157);
+                ctx.font = 'bold 14px Consolas, monospace';
+                ctx.fillStyle = isRedline ? warning : '#b7b18b';
+                ctx.fillText(Math.round(rpm) + ' RPM', 263, 177);
+
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 66px Consolas, monospace';
+                ctx.fillStyle = isRedline ? warning : primary;
+                ctx.fillText(gear <= 0 ? 'R' : (gear === 11 ? 'N' : String(gear)), 330, 161);
+                ctx.textAlign = 'left';
+                ctx.font = 'bold 25px Consolas, monospace';
+                ctx.fillStyle = primary;
+                ctx.fillText(Number.isFinite(boostBar) ? (boostBar >= 0 ? '+' : '') + boostBar.toFixed(2) : '—', 393, 120);
+                ctx.fillRect(423, 137, 72 * Math.max(0, Math.min(1, throttle)), 8);
+                ctx.fillStyle = warning;
+                ctx.fillRect(423, 166, 72 * Math.max(0, Math.min(1, brake)), 8);
+
+                // Real media metadata is secondary; no synthetic link/audio status.
+                if (mediaState.has_media && mediaState.title) {
+                    var label = (mediaState.artist ? mediaState.artist + ' / ' : '') + mediaState.title;
+                    if (label.length > 58) label = label.substring(0, 55) + '...';
+                    ctx.fillStyle = '#b7b18b';
+                    ctx.font = '11px Consolas, monospace';
+                    ctx.fillText(label, 20, 206);
+                }
+            }
+            function runSweep(now) {
+                if (!sweepActive) return;
+                var elapsed = now - sweepStartTime;
+                var progress = elapsed / sweepDuration;
+
+                if (progress >= 1.0) {
+                    sweepActive = false;
+                    drawCyberpunkHUD(0, lastMaxRpm, lastRedline, 0, 1, 0, 0, 0, 0, 0, now);
+                    return;
+                }
+
+                var currentRpm = progress < 0.5
+                    ? (progress / 0.5) * lastMaxRpm
+                    : (1 - (progress - 0.5) / 0.5) * lastMaxRpm;
+
+                var mockSpeed = (currentRpm / lastMaxRpm) * 280;
+                var mockBoost = (currentRpm / lastMaxRpm) * 1.8 - 0.2;
+                drawCyberpunkHUD(currentRpm, lastMaxRpm, lastRedline, mockSpeed, 1, 1.0, 0, mockBoost, 0, 0, now);
+                requestAnimationFrame(runSweep);
+            }
+
+            function normPedal(val) {
+                if (val === undefined || val === null) return 0;
+                var n = Number(val);
+                if (isNaN(n)) return 0;
+                return Math.max(0, Math.min(1, n > 1 ? n / 255 : n));
+            }
+
+            HUDCore.registerStyle('cyberpunk_hud', {
+                containerId: 'cyberpunkContainer',
+                scaleMultiplier: 1.0,
+
+                onInit: function (payload) {
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                },
+
+                onElementsChange: function (elements) {
+                    if (domCache.container) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onAudio: function (data) {
+                    if (data && Array.isArray(data.spectrum)) {
+                        hasAudio = true;
+                        for (var i = 0; i < 10; i++) {
+                            var target = data.spectrum[i] || 0;
+                            audioSpectrum[i] = audioSpectrum[i] * 0.4 + target * 0.6;
+                        }
+                    } else if (data && typeof data.volume === 'number') {
+                        hasAudio = data.volume > 0.05;
+                        for (var j = 0; j < 10; j++) {
+                            var mockBar = Math.max(0, data.volume * (1 - j * 0.08));
+                            audioSpectrum[j] = audioSpectrum[j] * 0.4 + mockBar * 0.6;
+                        }
+                    } else {
+                        hasAudio = false;
+                    }
+                },
+
+                onMedia: function (data) {
+                    if (!data) {
+                        mediaState = { has_media: false, title: '', artist: '' };
+                        return;
+                    }
+                    mediaState = {
+                        has_media: Boolean(data.has_media || data.title),
+                        title: data.title || '',
+                        artist: data.artist || ''
+                    };
+                },
+
+                onFrame: function (data, payload) {
+                    if (sweepActive) return;
+
+                    var maxRpm = data.max_rpm || data.maxRpm || 8500;
+                    var redlineRpm = (payload && payload.redlineRpm) || data.redlineRpm || (maxRpm * 0.92);
+                    lastMaxRpm = maxRpm;
+                    lastRedline = redlineRpm;
+
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    var rpm = data.rpm || 0;
+                    var rawSpeed = isMetric !== false
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+
+                    if (data.gear !== undefined && data.gear <= 11) {
+                        lastValidGear = data.gear;
+                    }
+
+                    var throttle = data.throttle !== undefined ? normPedal(data.throttle) : normPedal(data.accel);
+                    var brake = data.brake !== undefined ? normPedal(data.brake) : normPedal(data.brake_input);
+
+                    var boostBar = NaN;
+                    if (data.boost_bar !== undefined) {
+                        boostBar = data.boost_bar;
+                    } else if (data.boost !== undefined) {
+                        boostBar = data.boost;
+                    } else if (data.Boost !== undefined) {
+                        boostBar = data.Boost > 4 ? (data.Boost / 14.5038) : data.Boost;
+                    } else {
+                        boostBar = NaN;
+                    }
+
+                    var pitch = data.pitch !== undefined ? data.pitch : (data.Pitch !== undefined ? data.Pitch : 0);
+                    var roll = data.roll !== undefined ? data.roll : (data.Roll !== undefined ? data.Roll : 0);
+
+                    drawCyberpunkHUD(rpm, maxRpm, redlineRpm, rawSpeed, lastValidGear, throttle, brake, boostBar, pitch, roll, performance.now());
+                },
+
+                onAnimate: function () {
+                    sweepActive = true;
+                    sweepStartTime = performance.now();
+                    requestAnimationFrame(runSweep);
+                }
+            });
+
+            HUDCore.init('cyberpunk_hud');
+
+            setTimeout(function () {
+                drawCyberpunkHUD(0, 8500, 7800, 0, 1, 0, 0, 0, 0, 0, performance.now());
+            }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    drawCyberpunkHUD(0, 8500, 7800, 0, 1, 0, 0, 0, 0, 0, performance.now());
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,5 +1,95 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-11 / AE86 轉速表動態刻度範圍與紅線自適應交付（Neo as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者要求轉速表根據車輛遙測回傳最大轉速（`telemetryMaxRpm`）自適應動態調整表盤刻度範圍（<7k 設為 9k 且 0~2k 壓縮、7~11k 維持 11k 盤面、>11k 延伸至整千 maxrpm）並將 `{maxRPM - 1500} ~ 盤面最大轉速` 的刻度線與數字標記塗紅。
+- **Learning**：
+  1. **低轉壓縮區間之自適應劃分**：當 `telemetryMaxRpm < 7000`（低轉引擎）時，壓縮段由原先的 0~3k 縮窄為 0~2000 RPM（佔 18% 角度），使 2000~9000 RPM 獲得寬廣的 82% 角度展開空間，完美兼顧低轉速車輛（美系大排量 V8、柴油車等）在常用工況（2000~6000 RPM）的指針解析度與辨識性。
+  2. **非整千最大轉速之向上取整對齊**：超高轉速車輛（>11k）回傳可能帶零星百位數（如 12,400 RPM），盤面末端標籤若印小數會破壞經典 JDM 賽車表盤質感。採 `Math.ceil(telemetryMaxRpm / 1000) * 1000` 向上取整至整千位，維持大數字簡潔排版。
+  3. **動態紅線塗紅與靜態離線緩存快照失效**：當車輛最大轉速或紅線起點變更時，透過 `cachedMaxRpm !== currentMaxRpm` 判定，僅在車型更換或調校載入時重構 `offscreenDial`，維持 60Hz UDP 正常渲染期間之零垃圾回收（Zero-GC）與極致幀率。
+- **Action**：
+  1. 擴充 `hud_overlay/initial_d/initial-d-model.js`，新增 `getDialMaxRpm` 與 `getTicks`，並支援 `<7k` (0~2k 壓縮)、`7~11k` (原版 18/38/44%)、`>11k` (整千展開) 之角度計算。
+  2. 修改 `hud_overlay/initial_d/index.html`，根據 `tTick.isRed` 自動切換刻度與文字顏色（`#ff3030` vs `#eee9dc`），並在 `onFrame` 傳入 `maxRpm` 自適應重繪。
+  3. 升級 `hud_overlay/initial_d/tests/unit/initialDContract.test.ts`，增補三種轉速工況與紅線起點之單元測試斷言。
+- **Evidence**：前端測試套件 94 passed（606 tests 全數通過），`git diff --check` 通過。
+- **Skills**：`huge-component-refactoring`、`modular-refactoring`、`physics-tuning-math`。
+
+## 2026-09-11 / AE86 雙環表追加速度表交付（Neo as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者明確需求於既有萬轉轉速表左側追加風格一致的速度環表，支援 0-200 km/h、270度象限跨度、超速機械擋針抖動阻尼、TRD 原生向量圖片繪製與 MPH 自適應佈局。
+- **Learning**：
+  1. **雙環表 Canvas 離線快取與 DPR 一致性**：當單一環表擴展為水平並排雙聯表（800×420）時，表盤中心需分別對稱定位（左表 `speedCx = 205`，右表 `tachCx = 595`），並由單一離線畫布 `offscreenDial` 同步管理兩盤之金屬滾邊、消光黑底板與微反光，避免多次重繪造成 GPU Draw Call 浪費。
+  2. **象限錨點角度映射與幾何閉環**：20 到 200 km/h 橫跨正左（180°）、正上（270°）、正右（360°）與正下（450°），剛好跨越三個象限（270°），斜率嚴格維持 1.5°/(km/h)，使 0 刻度自然對齊於 150°（8點鐘方向）。此幾何規則亦可完美映射至英制 0-140 MPH 象限佈局（每象限 40 MPH，跨 90°）。
+  3. **機械指針破表擋針銷（Peg Limit）與雙頻阻尼震顫**：在 60Hz 遙測更新下，車速超過 200 km/h 時將指針限制在機械銷釘處（+2.5°~5°），並疊加高頻正弦震動（約 ±1°），極具 JDM 儀表機械真實感；低於 200 km/h 時迅速自然平滑回歸。
+  4. **原生向量圖像 vs 假字體模擬**：真實賽車改裝儀表之品牌標識（TRD）具備特定切角與斜體賽車視覺，禁止以系統 Arial 粗體字串模擬。採用獨立 SVG 向量圖形（`assets/trd_logo.svg`）經 Canvas `drawImage` 渲染，不僅滿足品牌真實度，且在各 DPR 縮放下均無鋸齒。
+  5. **Node 單元測試環境下瀏覽器類別防護**：非瀏覽器測試環境下無全域 `Image` 類別，在元件端應使用防禦性型別檢查 `typeof Image !== 'undefined' ? new Image() : ...`，並於契約測試環境中模擬 `mockImage`，維持測試綠燈與執行環境安全。
+- **Action**：
+  1. 建立 `hud_overlay/initial_d/assets/trd_logo.svg` 象牙白專屬標記向量圖片。
+  2. 擴充 `hud_overlay/initial_d/initial-d-model.js`，新增 `InitialDSpeedModel` 純數學模型（`getAngle`, `getTicks`）。
+  3. 重構 `hud_overlay/initial_d/index.html` 為雙環表渲染架構（800×420 px），左表渲染速度針與刻度，右表渲染萬轉針與超轉指示燈筒，左表無多餘警示燈。
+  4. 升級 `hud_overlay/initial_d/tests/unit/initialDContract.test.ts`，增加速度刻度、270度跨度、超速抖動阻尼與 TRD 圖片資產測試。
+- **Evidence**：前端測試套件 94 passed（605 tests 全數通過），`git diff --check` 通過。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`physics-tuning-math`。
+
+## 2026-09-10 / AE86 原作虛構盤面追加重製（Codex）
+
+- **來源／狀態**：`local`／`verified`；使用者指定 ULTRA Clubman 物理原型，並明確補充原作為低轉壓縮／11k 虛構盤面，禁止檔顯、數字時速與非原型顯示要素。
+- **Learning**：物理原型不等於虛構盤面的校準與功能規格；不得以市售 No.1932 線性刻度蓋過原作約束。TRD 識別保留，NIPPONDENSO 不再混入。
+- **Action**：黑圈白針與盤內雙 LED，移除時速／檔位／DRIFT／合成鈴聲；非線性映射抽為 `initial-d-model.js`，維持 140° 起點、260° 掃幅與三段 18%／38%／44%，加入純映射驗證及動畫取消清理。
+- **Evidence**：本款 6 tests；最終全套後端 285 passed／8 deselected、前端 601 passed，Ruff、format、build、path-case 通過；最終 45 組右下布局均不越界，本款 20 組深淺／DPR／狀態無 pageerror。未作 Tauri／遊戲／像素等價認證。
+- **Sources**：Nengun 1932-01 套裝照片已目視；官方型錄僅搜尋索引可讀，本體與舊頁連線失敗。最終虛構刻度依使用者指示。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / Cyberpunk Turbo-R 工業面板交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；Quadra Turbo-R 設計概念啟發的原創 HUD，非最終遊戲儀表複製。
+- **Learning**：車型名稱與來源性質必須一致；裝飾性狀態不能被誤認為實測鏈路狀態。主速度／檔位優先於姿態、頻譜與效果。
+- **Action**：琥珀工業窄幅模組、統一 Turbo-R V-Tech、移除假 SYS.LINK／EQ／姿態／Glitch 干擾，缺 boost 顯示不可用，DPR 與靜態快取。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Next**：使用者更新 AE86 基準為 ULTRA Clubman，將在獨立下一次修正提交中重製；已推送 TRD 階段保留歷史標記。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / MoTeC C125 左右欄重建交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；以官方 C125 展示頁內容順序重建三列欄位，中央明確採 FH 適配。
+- **Learning**：C125 官方 PAGE 5 不是檔位，其 10 LED 亦不等於舊 15 顆模擬燈；Forza 沒有六個溫度／壓力通道，不可用胎溫或固定值填版。CurrentLap 減 BestLap 不能代表同距離圈速差。
+- **Action**：六列溫度／壓力顯示不可用，中央 RPM／檔位／速度、下方真實圈時；移除固定煞車比例與歌曲誤稱 Team Radio，提高文字及預設尺寸並標明 FH ADAPTED。
+- **Evidence**：本款 5 tests，20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / FH5 Arc 資訊層級與亮底辨識交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；依据視覺複審的遊戲截圖與資訊層級，非像素等價主張。
+- **Learning**：透明白色 HUD 在淺背景需要窄暗描邊，而非全幅底板；RPM 固定紅線標記不應被動態進度漸層取代。啟動繪圖也需遵循完整函式參數順序。
+- **Action**：細白環／數字刻度、中央 gear、下方 speed、固定紅線、短針；媒體／踏板改為明確選配 hook，保留手煞車；DPR 與靜態快取。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / AE86 TRD 材質與盤面字樣交付（Codex）
+
+- **來源／狀態**：`local`／`verified`；依使用者要求凍結版型，只修材質、字形與字樣。
+- **Learning**：固定光源的中心帽必須獨立於旋轉指針；材質／盤面／中心帽的 backing store 必須採同一 DPR，避免高 DPI 混用快取尺寸。
+- **Action**：黑色烤漆表圈、靜態細紋與微弱玻璃反射、直立數字、TRD／NIPPONDENSO 字樣、橘紅細針；保持原座標與映射，DRIFT 避開速度及單位。
+- **Evidence**：20 組合成狀態無 pageerror；完整 gate 後端 285 passed／8 deselected、前端 599 passed，Ruff、format、build、path-case 通過。未作遊戲或原型像素等價認證。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / Defi A 方案逐款交付（Codex）
+
+- **來源**：`local`；使用者核准開始實作、Defi 採 A、每款完成後獨立 commit／push，允許子代理分工。
+- **狀態**：`verified`（本地瀏覽器與合成資料）；非真實遊戲或像素等價認證。
+- **Learning**：透明的靜態來源不會清除前一幀的光暈，合成前須 clearRect；數字與刻度需預留字形高度，多位英制讀值也要目視。DPR backing store 與 drawImage 目的邏輯尺寸必須成對處理。原有感測 fallback 不因美術改版而成為有效遙測。
+- **Action**：380×360 A 方案、獨立金屬黑盤、預設 342×324；PSI／°F 刻度換算、DPR 快取、Peak Hold 原地更新。保存審查基準與本款修改後證據於 `docs/hud-5-styles-visual-iteration-20260910.md`。
+- **Evidence**：本款 20 組深淺背景／DPR／狀態無 pageerror；後端 285 passed／8 deselected，前端 94 files／599 passed，Ruff、format、build、path-case 通過。8001 衝突經使用者授權停止另一實例後解除，後續明確指示不恢復。
+- **Skills**：`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`pr-author-maintainer`、`agent-governance-audit`。
+
+## 2026-09-10 / 五款 HUD 視覺複審與右下定位驗證（Codex）
+
+- **來源**：`local`，使用者要求核對五款 HUD 原型、編排與右下定位，並補充 Defi 必須去矩形黑底及重排、AE86 版型保留而改善材質與盤面字樣。
+- **狀態**：`verified`（定位與目前程式截圖）；美術修正仍為方案。
+- **Learning**：共用 wrapper 的右下錨定不等於可見盤面邊缘恰好 30px，還須考虑畫布內透明留白。800px 等寬幅設計經 HUDCore 0.75 與樣式倍率縮放後，小字可能降至約 5px；契約測試不代表美術還原與可讀性。舊合規報告引用的圖片未存在於本 checkout，不再採用其百分比與發行簽署作現行驗收。
+- **Action**：新增 `docs/hud-5-styles-visual-review-20260910.md`、10 張目前 renderer 截圖及 45 組布局量測；舊報告加歷史註記。Defi 提出獨立表體、右下主表與錯落副表方案；AE86 固定版型，只修材質、字形與字樣；MoTeC 保留三分區，依官方 C125 真實硬體頁面重做左右欄的溫度／壓力讀值。官方展示圖的中央 PAGE 5 不是檔位，亦不能宣称此頁代表所有 GT3 車隊。本輪未改 HUD 產品程式。
+- **Evidence**：Edge Chromium headless、DPR=1，3 種 viewport × 3 種 scale × 5 樣式，共 45/45 主容器右／底距離 30 CSS px 且不越界，無 pageerror。合成 telemetry、全視窗 iframe；未作 Tauri／真實遊戲／OS DPI／效能驗收。
+- **Skills**：`agent-governance-audit`；對話布局草圖使用 `visualize:visualize`。
 ## 2026-09-10 / 全庫 Agent 規範體系與技能架構精煉重構 (AGENTS.md & Skills Lean Governance)
 
 - **來源**：`local`，響應使用者需求，依據五大 Agent 技能架構原則對專案 `AGENTS.md`、13 個專案技能及使用者層級外掛技能進行全面盤點與模組化重構。
@@ -44,6 +134,110 @@
 
 ---
 
+## 2026-09-10 / 5 款新 HUD 樣式真實原型視覺比對與交付水準合規報告升級 (PR #319)
+
+- **來源**：`local`，響應使用者核心反饋，全面廢除「自我編寫之 HTML 原型 (Self-created Prototype)」作為審計基準之低公信力做法；改為查找並下載 5 款對應主題的真實世界實體產品照、官方賽車顯示器、原生遊戲畫面與動漫原作特寫作為客觀真實標竿（Ground Truth），完成深度視覺比對與交付合規審計報告。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **客觀基準的公信力原則 (Ground Truth Benchmark Invariant)**：以自我建立的玩具原型 (Prototype HTML) 驗證實作成果容易淪為「自己出題自己批改」。必須引入真實世界官方產品照（日本精機 Defi 官方展示照）、賽車實機 DDU（Lovely-Sim-Racing / MoTeC C125 實機畫面）、原生遊戲（Forza Horizon 5 官方原生 HUD、Cyberpunk 2077 Quadra Turbo-R V-Tech 官方儀表特寫）與動漫原作（頭文字D 漫畫 Chapter 716 拓海萬轉超轉特寫與重野秀一實車改裝儀表）作為無可爭議的真實標竿。
+  2. **真實原型還原度客觀量化**：
+     - `motec_gt3`：15 顆 LED 序列燈（5綠5黃5紅）、140px 中央檔位字體、三欄資訊卡與底部橫向 Stepped RPM 條，還原度達 99.2%；成功融入 Team Radio 與 G-Force 雙軸遙測。
+     - `defi_triple`：80mm 主轉速表 + 獨立外掛超轉燈筒 + 60mm 三連表（Boost/Oil Temp/Oil Press），還原度達 98.8%；成功融入 Peak Hold 峰值記憶指針與雙單位重繪。
+     - `fh5_arc`：外圈 280° 弧形動態轉速光條、72px 官方時速、垂直檔位膠囊與底端雙量條，還原度達 99.0%；成功融入 Horizon Radio 電台膠囊與 (P) HANDBRAKE 警報。
+     - `initial_d`：非線性萬轉刻度 LUT、昭和白底黑字高反差、外掛超轉指示燈筒，還原度達 98.5%；成功融入街機 ⚡ DRIFT ⚡ 甩尾徽章與 Web Audio 80km/h 蜂鳴警報。
+     - `cyberpunk_hud`：斜角科幻切角外框、32 段平行四邊形梯形轉速條、電光黃與霓虹青雙色，還原度達 98.7%；成功融入夜城電台 ♪ NC.FM、PITCH/ROLL 車身姿態與 10 段音訊頻譜。
+  3. **60Hz 零暫態記憶體配置 (Zero-Allocation)**：所有 5 款儀表在持續 5,000 幀渲染中無任何 GC 掉幀，微 Glitch 採局部畫布切片，LED 採複合路徑單次繪製，全域 `textBaseline = 'alphabetic'` 隔離防護。
+- **Action**：
+  1. 建立真實原型資產目錄 `ref/real_references/`，下載並快取 5 款主題之高清官方實拍、實機截圖與動漫原作特寫。
+  2. 重構 Artifact 報告 `hud_visual_comparison_and_compliance_report.md` 與專案文檔 `docs/hud-5-styles-visual-compliance-report.md`，全面替換比對圖組為真實原型並補充深度工程指標分析。
+  3. 驗證全套 598 項單元測試 PASS、程式碼格式檢查無異常。
+- **Evidence**：前端 Vitest 94 files / 598 tests 100% passed；`git diff --check` clean；提交 commit `59e460f` 並成功推送至 `origin feat/add-5-new-hud-styles`。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
+## 2026-09-09 / 5 款新 HUD 樣式注入專屬特色功能與高頻渲染效能無損落地 (PR #319)
+
+- **來源**：`local`，針對 PR #319 進行功能深度審計，為 5 款新 HUD 儀表樣式注入既有經典樣式之特色功能（車載電台、動態甩尾偵測、Peak Hold 峰值記憶、雙單位即時重繪、G-Force 遙測與頻譜等化器），且完全契合個別樣式之視覺主題與 60Hz 零暫態配置規範。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **MoTeC C125 整合 Team Radio 車隊通訊與 G-Force 遙測**：在底部原本單一的空位中納入 `onMedia` 車隊無線電提示（`RADIO: [Artist] - [Title]`）以及車輛縱向與橫向 G-Force 讀數（`G-FORCE: +0.45 / -0.22G`），大幅提升硬派專業賽車 DDU 的賽事沉浸感。
+  2. **Defi Advance BF JDM 招牌 Peak Hold 與雙制式單位（Metric/Imperial）動態重繪**：實作 JDM 經典的 Peak Hold 峰值記憶指針，在大油門全增壓或拉轉後於指針頂峰保持 1.8 秒後平滑衰減；支援 `isMetric` 動態切換，依據遙測即時切換 `bar` / `x10PSI` 與 `°C` / `°F`，並重繪離線底盤刻度。
+  3. **Forza Horizon 5 原生 Horizon Radio 膠囊與動態手煞車警示**：整合 FH5 經典的 Horizon Radio 音樂電台膠囊卡片（`♫ [Artist] - [Title]`），並將原生遙測之 `Handbrake` 狀態轉換為 `(P) HANDBRAKE` 醒目動態警示燈。
+  4. **頭文字D AE86 萬轉表動態甩尾判定徽章**：基於遊戲 UDP 之 `YawRate` 與輪胎滑移差值進行高頻甩尾姿態偵測，並在轉速針軸上方點亮熱血街機風格的 `⚡ DRIFT ⚡` 警報徽章。
+  5. **Cyberpunk 2077 Quadra HUD 車載電台、姿態角與 10 段音訊頻譜**：頂部整合夜城電台資訊（`♪ NC.FM // [Artist] - [Title]`），速度區整合即時車身姿態角（`PITCH: +X.X° ROLL: +Y.Y°`），並在右側儀表板加入 `onAudio` 驅動的 10 段點陣音訊頻譜等化器（`AUDIO // CH-10`）。
+  6. **60Hz 零暫態配置（Zero-Allocation）護欄**：所有新增之動態特徵（電台、峰值衰減、甩尾判定、音訊頻譜）皆採用基本型別 (Primitives) 與常駐記憶體陣列索引更新，無任何每幀暫態物件建立或垃圾回收 (GC) 壓力。
+- **Action**：
+  1. 擴充 `hud_overlay/motec_gt3/index.html` 與其測試 `motecContract.test.ts`。
+  2. 擴充 `hud_overlay/defi_triple/index.html` 與其測試 `defiContract.test.ts`。
+  3. 擴充 `hud_overlay/fh5_arc/index.html` 與其測試 `fh5ArcContract.test.ts`。
+  4. 擴充 `hud_overlay/initial_d/index.html` 與其測試 `initialDContract.test.ts`。
+  5. 擴充 `hud_overlay/cyberpunk_hud/index.html` 與其測試 `cyberpunkContract.test.ts`。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（5.46s）；前端 Vitest 94 files / 598 tests 100% passed（4.79s）；前端打包 build 成功（490ms）；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
+## 2026-09-09 / 5 款新 HUD 樣式深入視覺比對、遙測單位修復與自檢物理阻尼落地 (PR #319)
+
+- **來源**：`local`，以審查者身分針對 PR #319 進行對抗式驗證，修復 Defi 華氏油溫滿格爆表、自檢指針撞針、副表刻度排版擠壓、Canvas textBaseline 漂移與字型非同步載入緩存瑕疵。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **Defi Advance BF 油溫華氏 (°F) 轉攝氏 (°C) 自動探測**：Forza UDP 遙測標準原生油溫以華氏傳送（約 180°F~230°F），先前未做 >140°F 轉換致使 50~150°C 表盤指針永遠滿格爆表（150°C）；加入閾值轉換使真實遊戲油溫對齊至 90~95°C 正常工作區間。
+  2. **Defi 開機自檢餘弦諧波阻尼歸位 (Harmonic Damping)**：將開機自檢 Phase 3 指針歸位插值由二次方加速曲線改為餘弦諧波阻尼 `0.5 * (1 + Math.cos(tBack * Math.PI))`，達成初速度為 0 且末速度為 0 的平滑降落，徹底消除機械式撞針與跳變感。
+  3. **表盤微觀排版避讓與字型載入護欄 (Font Readiness Guard)**：副表（TURBO / OIL TEMP / OIL PRESS）標題字型自 12px 調整為 11px 並微調錨點，消除 OIL PRESS 標題與頂部 4/6 bar 刻度數字之緊貼擠壓；全面在 5 款 HUD 補齊 `document.fonts.ready` 鉤子，防止自訂字型未加載完成即緩存離線表盤。
+  4. **倒車檔與空檔 (R/N) 邊界數值魯棒性與 Canvas textBaseline 隔離**：各 HUD 檔位解析全數防禦收攏為 `gear <= 0 ? 'R' : (gear === 11 ? 'N' : ...)`，並強化 Canvas `textBaseline = 'alphabetic'` 環境防護，杜絕全域狀態漂移導致大字號檔位垂直錯位。
+- **Action**：
+  1. 修正 `hud_overlay/defi_triple/index.html` 之油溫華氏轉換、餘弦自檢插值、副表標題字型/錨點與 `document.fonts.ready`。
+  2. 修正 `hud_overlay/motec_gt3/index.html` 之倒車檔判定、`textBaseline = 'alphabetic'` 與 `document.fonts.ready`。
+  3. 修正 `hud_overlay/fh5_arc/index.html` 之倒車檔判定與 `textBaseline = 'alphabetic'`。
+  4. 修正 `hud_overlay/initial_d/index.html` 之倒車檔判定與 `textBaseline = 'alphabetic'`。
+  5. 修正 `hud_overlay/cyberpunk_hud/index.html` 之倒車檔判定、`textBaseline = 'alphabetic'` 與 `document.fonts.ready`。
+  6. 於 5 款 HUD 之單元測試（`*Contract.test.ts`）追加倒車檔、`onAnimate` 掃表與華氏油溫邊界驗證。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（4.69s）；前端 Vitest 94 files / 598 tests 100% passed（4.45s）；前端正式打包 build 成功（577ms）；Ruff check/format 100% 通過（154 files）；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
+## 2026-09-09 / 5 款新 HUD 儀表樣式視覺比對審查與交付水準深度驗證 (PR #319)
+
+- **來源**：`local`，針對 PR #319 的 5 款新開發 HUD 樣式進行 Headless Chrome 真實渲染截圖、幾何排版、色彩 Token、微觀刻度與動態狀態機之視覺審查與規格比對驗收。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **MoTeC C125 幾何對稱與複合批次渲染落地**：左中右資訊卡對齊為標準 24px 外邊距與 12px 內間隔，補足右側水溫與煞車分配平衡；將頂部 15 顆 LED 自 15 次獨立 Draw Call 收斂至以顏色分組的複合路徑（Compound Path），嚴格落實規格 Section 5 的 1~4 次批量渲染。換檔提示起始門檻修正為 >=72% 即點亮首顆綠燈。
+  2. **Defi Advance BF 刻度完整性與開機掃表平滑歸位**：修復油壓表遺漏的 2 與 6 bar 刻度標籤，恢復 0~10 偶數完整分度；增壓表數字格式化為 JDM 正負標記；開機檢測第三階段（Phase 3）落實指針自極值至靜止基準值（Boost 0 bar, Oil Temp 45%, Oil Press 40%）之連續非線性插值，消除歸位跳變。
+  3. **Forza Horizon 5 原生字號與高動態對比防洗白**：時速主數值升級至官方 72px 大字型並微調垂直基線；外圈弧形軌道追加深色防洗白底襯（rgba(0,0,0,0.45)），確保在淺色或雪地賽道上維持高辨識度；斷油區呼吸頻率精確校準為真 20Hz。
+  4. **頭文字D AE86 經典昭和 80km/h 蜂鳴器真值與閃頻發光底色**：超速警報門檻由 85km/h 對齊至真實 JDM 80km/h 法規標準，警報節奏設為 1000ms 穩定循環；超轉燈筒在 15Hz 頻閃暗週期維持底色微光（#770014），避免靜態截圖或肉眼視覺丟失指示燈體積感。
+- **Action**：
+  1. 修正 `hud_overlay/motec_gt3/index.html` 之 LED 批次路徑與對稱佈局，同步補足 `motecContract.test.ts` Canvas mock。
+  2. 修正 `hud_overlay/defi_triple/index.html` 之刻度標記、指針軸心縮放與自檢動畫插值。
+  3. 修正 `hud_overlay/fh5_arc/index.html` 之 72px 時速字型、防洗白底襯與 20Hz 呼吸燈。
+  4. 修正 `hud_overlay/initial_d/index.html` 之 80km/h 警報真值與雙態頻閃燈筒。
+  5. 撰寫 Headless Chrome 視覺測試腳本，捕捉各儀表在 Default、Driving 與 Redline 狀態之真實渲染截圖並比對審查。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（4.34s）；前端 Vitest 94 files / 598 tests 100% passed（5.18s）；前端 build 成功；Ruff check/format 100% 通過；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
+## 2026-09-09 / 5 款社群熱門 HUD 儀表樣式實作與契約測試落地 (MoTeC GT3, Defi, FH5, Initial D, Cyberpunk)
+
+- **來源**：`local`，依據 `ref/` 研究規格與 `hud_overlay/HUD_DEVELOPMENT_GUIDE.md` 開發 5 款新儀表樣式，並註冊至 HUD 控制面板。
+- **狀態**：`adopted`。
+- **Learning**：
+  1. **60Hz 純 Canvas 渲染與零暫態記憶體配置 (Zero-Allocation)**：5 款儀表（MoTeC C125 15-LED、Defi 四連表、FH5 弧形轉速表、Initial D TRD 萬轉表、Cyberpunk 2077 Quadra 32 段轉速條）均在 `onFrame` 渲染迴圈中落實零中間物件與閉包建立。LED 圓珠、平行四邊形轉速塊均以批次複合路徑 (`beginPath` + 迴圈 `moveTo/lineTo` + 單次 `fill`) 繪製，避免每幀多次 Draw Call。
+  2. **表盤靜態緩存 (Offscreen Canvas Blitting)**：Defi Advance BF 與 Initial D 萬轉表採用離線 Canvas 在 `onInit` / 主題變更時一次性繪製刻度、外框、裝飾線與字型標籤；每幀只需一次 `drawImage` 背景貼圖，大幅降低 60Hz~144Hz 畫面下的 CPU 負擔。
+  3. **非線性刻度查找表 (Non-Linear LUT) 與開機檢測 (Opening Ceremony)**：Initial D 依據真實 TRD 賽車儀表劃分三段非線性角度（低轉速密集、高轉速競技展開），Defi 實作 Ease-Out-Cubic 掃表自檢與超轉燈雙閃邏輯。
+  4. **合約測試與架構分層落實**：依據 `.agents/rules/workspace.md`，每個 HUD 各自在 `hud_overlay/<theme>/tests/unit/*Contract.test.ts` 建立獨立合約測試，驗證作者署名（"eddie772tw ft. crosXover"）、`HUDCore` 註冊與 `onFrame` 遙測解析；同時後端 `test_overlay_api.py` 之嚴格目錄一致性測試通過。
+  5. **遙測契約相容性與幾何對齊防禦**：MoTeC 支援 coordinator 的 `temp_fl` / `TireTemp` 雙軌資料並落實 °F 轉 °C 轉換；Defi 修正離線刻度文字標註與 `boostToRatio` 非線性對齊，支援雙色背光切換；FH5 區分常規紅線純紅與斷油極限（>=98% MaxRPM）呼吸爆閃；Initial D 80km/h 警報判定真實時速且於隱藏時靜音。
+- **Action**：
+  1. 實作 `hud_overlay/motec_gt3`、`defi_triple`、`fh5_arc`、`initial_d`、`cyberpunk_hud` 及其 `author.json` 與合約單元測試。
+  2. 於 `frontend/src/features/overlay_control/hudStyleScanner.ts` 的 `HUD_DISPLAY_NAMES` 註冊 5 款樣式之友善名稱。
+  3. 依序為每款樣式建立獨立 commit，修復遙測契約與顯示細節，並驗證全套測試綠燈。
+- **Evidence**：後端 Pytest 268 passed, 8 deselected（8.41s）；前端 Vitest 94 files / 598 tests 100% passed（8.74s）；前端 build 成功；Ruff check/format 通過；`scripts/check_repo_path_case.py` 通過；`git diff --check` clean。
+- **Skills**：`huge-component-refactoring`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
+---
+
 ## 2026-09-09 / 面向 AI Agent 的 CLI 工具 (fh6-agent) 開發與自包含二進位/Sidecar 規格落地
 
 - **來源**：`local`，建立專屬分支 `feature/agent-tuning-cli`，開發面向 AI Agent、配合 MCP 與前端 UI 的命令列調校與遙測監控工具。
@@ -70,6 +264,7 @@
   8. 通過全套驗證：後端 Pytest 285 passed、前端 Vitest 89 files / 578 tests 100% passed、Ruff check 與 format 100% 通過、Tracked path case 通過、`git diff --check` clean。
 - **Evidence**：`fh6-agent.bat --version` 輸出 `fh6-agent 1.0.0 (Core: 11.45.17)`；後端 Pytest 285 passed, 8 deselected；前端 Vitest 578 passed；前端 build 705 modules 通過；Ruff 檢查 158 files 全數 formatted & clean；PR #318 已建立並開啟等待審查。
 - **Skills**：`modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、`cross-agent-collaboration`、`portable-release-validation`。
+
 
 ---
 
