@@ -4,14 +4,15 @@
   "identifier": "com.eddie772tw.frontend.lite",
   "build": {
     "beforeDevCommand": "pnpm run dev",
-    "devUrl": "http://localhost:1420/lite/",
+    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "echo Using prebuilt lite frontend distribution",
-    "frontendDist": "../dist/lite"
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
         "title": "FH6 HorizonTuner Lite",
+        "url": "lite/index.html",
         "width": 1280,
         "height": 720,
         "label": "main"

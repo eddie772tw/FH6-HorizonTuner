@@ -113,11 +113,10 @@ FH6-HorizonTuner/
 ├── tests/                   # Pytest 單元測試套件
 ├── pyproject.toml           # Ruff 格式化規則與 Pytest 設定
 ├── requirements.txt         # Python 依賴套件清單
-├── .pkgdirignore            # 打包排除目錄定義
-├── start_all.bat            # 一鍵開發啟動器 (同步開啟後端與前端)
-├── start_all_lite.bat       # 一鍵啟動 Lite 三分頁前端
-├── start_backend.bat        # 獨立啟動 Python FastAPI 後端服務
-├── start_frontend.bat       # 獨立啟動 Vite + Tauri 前端 UI 介面
+├── setup_dev.bat           # 安裝 Python 與前端開發依賴
+├── dev_full.bat            # Full 開發入口，直接執行 Python 原始碼
+├── dev_lite.bat            # Lite 開發入口，直接執行 Python 原始碼
+├── setup_build.bat         # 安裝打包依賴
 └── build_all.bat            # 一鍵打包發行腳本
 ```
 
@@ -135,17 +134,14 @@ FH6-HorizonTuner/
 
 ### 2. 啟動本工具
 
-專案提供了高度自動化的一鍵啟動腳本，免去繁瑣的環境設定步驟：
-* **雙擊執行 `start_all.bat`** (推薦全套啟動)：
-  - 自動搜尋系統中的 Python 3.13 / 3.14 執行檔。
-  - 自動於專案根目錄下建立虛擬環境 `.venv`。
-  - 自動安裝並更新 `requirements.txt` 中的所有依賴（包含 FastAPI, Uvicorn, Websockets, Ruff, Pytest, Httpx 等）。
-  - 自動使用 `ruff` 對整個專案代碼進行靜態檢查與格式化排版。
-  - 自動在背景執行後端服務，並開啟 Tauri 桌面端圖形介面。
-* **分開啟動（模組化開發時使用）**：
-  - **`start_backend.bat`**：僅啟動 Python FastAPI 後端與 UDP 遙測監聽服務。開發模式下 FastAPI / WebSocket 使用 `http://127.0.0.1:8001`，Forza UDP Telemetry 使用 `127.0.0.1:8000`。
-  - **`start_frontend.bat`**：僅啟動 Vite + React 前端開發伺服器與 Tauri 視窗。
-  - **`start_all_lite.bat`**：啟動共用後端與 Lite 前端；Lite 僅提供 Dashboard、HUD Overlay、Settings。
+先安裝 uv、Node.js／pnpm 與 Rust／Tauri 的 Windows 開發工具，再執行一次 `setup_dev.bat`。相依宣告有變更時，重新執行 setup。
+
+- **Full**：執行 `dev_full.bat`。
+- **Lite**：執行 `dev_lite.bat`；僅提供 Dashboard、HUD Overlay、Settings。
+
+兩個入口都由 Tauri 啟動並管理 `.venv` 的 Python `backend/main.py`，關閉應用程式時一併結束後端。Dev 不編譯或啟動 sidecar EXE；PyInstaller 僅用於正式打包。前端保留 Vite HMR，修改 Python 後重新啟動應用程式。Full／Lite 共用開發 port，請一次啟動一個。
+
+日常啟動不安裝套件、不格式化程式、不更新車輛資料、不清除其他程序。HTTP `8001` 或 UDP `8000` 被占用時會回報失敗，請關閉原有執行個體後重試。單獨執行後端、外接前端與故障排查請見[開發啟動指南](docs/guides/development.md)。
 
 ---
 
@@ -157,9 +153,15 @@ FH6-HorizonTuner/
 > **路徑設計說明**：
 > 發行版的獨立執行檔在運行時，所有的預設靜態資源由 Sidecar 內建釋放；而由使用者操作產生的個人設定檔（`settings.json`）、遙測紀錄（`sessions/`）、車輛調校資料（`tunings/`）、自訂車輛參數（`car_params/`）、i18n 語系檔（`lang/`）與自訂 HUD 樣式（`hud_overlay/`）皆會**自動儲存與維護於該 `.exe` 執行檔的同級目錄下**，實現 100% 可攜與自訂擴充自由。
 
+先執行一次 `setup_build.bat` 安裝打包工具，再執行 `build_all.bat`。建置只使用準備好的環境，不呼叫開發啟動或環境修復流程；資源以 `server-sidecar.spec` 的明確清單為準。
+
+音訊初始化與 Python 打包採用非 WMI 的 Windows 平台資訊路徑，避免版本查詢掛起；裝置列舉仍保留等待上限。實作與本機驗證結果見 [Windows 音訊診斷](docs/guides/windows-audio-diagnostics.md)。
+
 * **兩階段自動化打包腳本 (`build_all.bat`)**：
     1. **Phase 1 (Python Sidecar)**：PyInstaller 將 Python 後端單獨編譯為專用 Sidecar 可執行檔 `server-sidecar-x86_64-pc-windows-msvc.exe`，放置於 `frontend/src-tauri/bin/`。
     2. **Phase 2 (Tauri Bundle)**：共用前端資源只建置一次，再分別打包 Full 與 Lite，產出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`；Release workflow 會將它們命名為 `FH6-HorizonTuner-Full-Portable.exe` 與 `FH6-HorizonTuner-Lite-Portable.exe`，並另外建立包含兩者的 Portable ZIP。
+
+> `build_all.bat` 預設不執行需要連線 npm advisory service 的 `pnpm audit`，避免發行打包因遠端服務逾時而停滯；需要本機執行時，先設定 `FH6_RUN_PNPM_AUDIT=1` 再啟動腳本。
 
 ---
 
@@ -211,7 +213,7 @@ uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
     ```
 
 > [!TIP]
-> `start_all.bat` 啟動腳本已整合自動格式化步驟。在日常開發中，每次執行 `start_all.bat` 時都會自動執行 `ruff format` 與 `ruff check`，確保代碼始終符合格式規範。
+> 格式化與檢查由開發者明確執行；開發啟動不會修改原始碼。
 
 ### 後端單元測試 (Pytest)
 

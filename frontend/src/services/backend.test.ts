@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  backendFetch,
   backendHttpUrl,
   backendWebSocketUrl,
   configureBackendTransport,
@@ -7,7 +8,10 @@ import {
 } from "./backend";
 
 describe("backend URL helpers", () => {
-  afterEach(() => configureBackendTransport(8001));
+  afterEach(() => {
+    configureBackendTransport(8001);
+    vi.unstubAllGlobals();
+  });
 
   it("creates HTTP URLs with a normalized path", () => {
     const transport = createBackendTransport(53124);
@@ -37,5 +41,27 @@ describe("backend URL helpers", () => {
 
   it("rejects invalid sidecar ports", () => {
     expect(() => createBackendTransport(0)).toThrow("Invalid backend port: 0");
+  });
+
+  it("aborts a backend request that exceeds its timeout", async () => {
+    const fetchImplementation = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => (
+      new Promise<Response>((_, reject) => {
+        init?.signal?.addEventListener(
+          "abort",
+          () => reject(new DOMException("Aborted", "AbortError")),
+          { once: true },
+        );
+      })
+    ));
+    vi.stubGlobal("fetch", fetchImplementation);
+    configureBackendTransport(53124);
+
+    await expect(backendFetch("/api/overlay/config", undefined, 10)).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      "http://127.0.0.1:53124/api/overlay/config",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 });

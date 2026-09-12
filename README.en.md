@@ -112,11 +112,10 @@ FH6-HorizonTuner/
 ├── tests/                   # Pytest unit testing suite
 ├── pyproject.toml           # Ruff formatting rules & Pytest configuration
 ├── requirements.txt         # Python dependency list
-├── .pkgdirignore            # Package exclusion directory definitions
-├── start_all.bat            # One-click developer environment launcher (launches backend & frontend)
-├── start_all_lite.bat       # One-click Lite three-tab launcher
-├── start_backend.bat        # Launches Python FastAPI backend service individually
-├── start_frontend.bat       # Launches Vite + Tauri frontend UI individually
+├── setup_dev.bat           # Install Python and frontend dependencies
+├── dev_full.bat            # Full dev entry; runs Python source directly
+├── dev_lite.bat            # Lite dev entry; runs Python source directly
+├── setup_build.bat         # Install packaging dependencies
 └── build_all.bat            # One-click standalone release bundler
 ```
 
@@ -134,17 +133,14 @@ To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
 
 ### 2. Launching the Tool
 
-The project provides highly automated launcher scripts:
-* **Double-click `start_all.bat`** (Recommended full launch):
-  - Requires `uv`, which selects managed CPython 3.13 and creates the project `.venv`.
-  - Installs and verifies `requirements.txt` through `uv pip`; it never falls back to a PATH-level Python or pip.
-  - Runs Ruff and the backend through `uv run` with the same `.venv` interpreter.
-  - Automatically lints and formats the codebase using `ruff`.
-  - Automatically runs the backend server in the background and opens the Tauri desktop GUI.
-* **Modular launch (For standalone development)**:
-  - **`start_backend.bat`**: Launches only the FastAPI backend and UDP telemetry listener. In development, FastAPI/WebSocket uses `http://127.0.0.1:8001`, while Forza UDP telemetry uses `127.0.0.1:8000`.
-  - **`start_frontend.bat`**: Launches only the Vite + React dev server and Tauri window.
-  - **`start_all_lite.bat`**: Launches the shared backend and Lite frontend; Lite exposes only Dashboard, HUD Overlay, and Settings.
+Install uv, Node.js/pnpm, and the Windows Rust/Tauri prerequisites, then run `setup_dev.bat` once. Run setup again when dependency declarations change.
+
+- **Full**: run `dev_full.bat`.
+- **Lite**: run `dev_lite.bat` for Dashboard, HUD Overlay, and Settings.
+
+Tauri owns the `.venv` Python process running `backend/main.py` and stops it when the app closes. Dev never builds or launches a sidecar EXE; PyInstaller belongs only to release packaging. Vite HMR remains available; restart the app after changing Python. Full and Lite share development ports, so run one at a time.
+
+Launching does not install packages, format source, update the vehicle database, or terminate other processes. Occupied HTTP `8001` or UDP `8000` ports cause an error. Close the existing instance before retrying. See the [development guide](docs/guides/development.md) for standalone backend, external frontend, and troubleshooting commands.
 
 ---
 
@@ -152,9 +148,15 @@ The project provides highly automated launcher scripts:
 
 You can package both the frontend and backend into a **single standalone executable (.exe)** using the standard **Tauri (Rust Host) + Python Sidecar** architecture:
 
-1. Double-click **`build_all.bat`**:
+Run `setup_build.bat` once to install packaging tools. Builds consume the prepared environment without invoking development launchers or repairing dependencies. Resources come from the explicit `server-sidecar.spec` list.
+
+Audio initialization and Python packaging use Windows platform information without WMI to avoid stalled version queries. Device discovery retains a bounded wait. See the [Windows audio diagnostics](docs/guides/windows-audio-diagnostics.md) for implementation details and local validation.
+
+1. Run **`build_all.bat`**:
    - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
    - **Phase 2 (Release Build Host)**: The shared frontend is built once, then Tauri builds Full and Lite separately, producing `dist/FH6-HorizonTuner.exe` and `dist/FH6-HorizonTuner_lite.exe` without installers. The release Portable ZIP contains both.
+
+> `build_all.bat` skips the network-backed `pnpm audit` by default so a slow npm advisory service cannot stall packaging. Set `FH6_RUN_PNPM_AUDIT=1` before launching the script when a local audit is required.
 
 > [!NOTE]
 > **Release Build Path Strategy**:
@@ -162,11 +164,6 @@ You can package both the frontend and backend into a **single standalone executa
 
 > **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the Release Build `.exe`; it is detected automatically and can be selected in the HUD menu. See [Release Build custom HUD packages](docs/guides/portable-custom-hud.md).
 
-* **Excluding Non-release Directories (.pkgdirignore)**:
-    * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
-    * If a folder is unregistered during build, the script will prompt you:
-        * **Press Y**: Automatically append the folder to `.pkgdirignore`.
-        * **Press N** (default after 10s timeout): Cancel the build and warn you to manually configure packaging settings.
 
 ---
 
@@ -202,7 +199,7 @@ The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard P
     ```
 
 > [!TIP]
-> The `start_all.bat` launcher script integrates automatic formatting. Every time you run `start_all.bat`, it automatically executes `ruff format` and `ruff check` to ensure your code always meets formatting standards.
+> Run formatting and checks explicitly. Development launchers do not modify source files.
 
 ### Unit Testing (Pytest)
 
