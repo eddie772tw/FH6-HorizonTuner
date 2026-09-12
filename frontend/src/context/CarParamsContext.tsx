@@ -8,6 +8,7 @@ export interface CarParams {
   weight: number;
   weight_distribution: number; // % front
   drivetrain: 'FWD' | 'RWD' | 'AWD';
+  roadAwdRearPercent?: number;
   induction: 'NA' | 'Supercharger' | 'Turbo' | 'TwinTurbo';
   maxHp: number;
   maxTorque: number;

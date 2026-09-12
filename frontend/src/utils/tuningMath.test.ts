@@ -445,6 +445,7 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.arb.front).toBeLessThanOrEqual(5.0);
     expect(res.arb.rear).toBeGreaterThanOrEqual(50.0);
     expect(res.diff.centerRear).toBeGreaterThanOrEqual(60);
+    expect(calculateChassisTuning('Road', { ...awdCar, roadAwdRearPercent: 40 }).diff.centerRear).toBe(40);
   });
 
   it('Drift goal should set extreme front-soft rear-stiff ARB and symmetric damping', () => {
