@@ -39,7 +39,7 @@ uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
 uv run --no-project --python .venv\Scripts\python.exe python -m py_compile backend\main.py
 ```
 
-日常開發優先使用 `setup_venv.bat`、`start_all.bat` 或 `start_backend.bat`；這些批次檔已將上述流程自動化。
+環境準備使用 `setup_dev.bat`（內部呼叫 `setup_venv.bat`）；日常開發使用 `dev_full.bat` 或 `dev_lite.bat`，直接執行 Python 原始碼，不建立後端 EXE、不重新安裝依賴。打包前明確執行 `setup_build.bat`，再執行 `build_all.bat`。
 
 ## 禁止與例外
 

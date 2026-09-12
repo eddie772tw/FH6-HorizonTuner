@@ -6,6 +6,7 @@ import time
 import warnings
 
 import numpy as np
+from audio_devices import AudioDeviceDiscovery, default_audio_devices, soundcard_session
 
 # Suppress expected runtime warnings from the soundcard module (e.g. "data discontinuity in recording")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="soundcard")
@@ -33,42 +34,14 @@ RESTART_BACKOFF_SECONDS = 5.0
 AUDIO_STALE_AFTER_SECONDS = 0.15
 AUDIO_SILENT_AFTER_SECONDS = 0.25
 AUDIO_BAND_COUNT = 32
+_device_discovery = AudioDeviceDiscovery()
 
 
 def get_available_audio_devices() -> list[dict]:
-    """List all available WASAPI playback speakers for loopback audio capture."""
-    devices = [
-        {
-            "id": "default",
-            "name": "System Default Speaker / 系統預設輸出裝置",
-            "is_default": True,
-        }
-    ]
+    """Return cached WASAPI speakers with a bounded wait for native discovery."""
     if sys.platform != "win32":
-        return devices
-
-    try:
-        import soundcard as sc
-
-        default_spk = sc.default_speaker()
-        default_id = default_spk.id if default_spk else None
-
-        speakers = sc.all_speakers()
-        for spk in speakers:
-            is_def = spk.id == default_id
-            name_str = spk.name
-            if is_def:
-                name_str += " [Default]"
-            devices.append(
-                {
-                    "id": str(spk.id),
-                    "name": name_str,
-                    "is_default": is_def,
-                }
-            )
-    except Exception as e:
-        logger.debug(f"Failed to enumerate soundcard speakers: {e}")
-    return devices
+        return default_audio_devices()
+    return _device_discovery.get_devices()
 
 
 def set_audio_capture_device(device_id: str) -> None:
@@ -127,104 +100,104 @@ def _compute_fft_bands(
 
 def _wasapi_loopback_worker():
     """Worker thread that continuously captures live system audio via WASAPI Loopback."""
-    global _listener_running, _selected_device_id
-
-    if sys.platform != "win32":
-        return
+    global _listener_running
 
     try:
-        import numpy as np
-        import soundcard as sc
-
-        spk = None
-        if _selected_device_id != "default":
-            try:
-                all_spks = sc.all_speakers()
-                for s in all_spks:
-                    if str(s.id) == _selected_device_id:
-                        spk = s
-                        break
-            except Exception as e:
-                logger.debug(
-                    f"Failed to resolve selected speaker ID '{_selected_device_id}': {e}"
-                )
-
-        if not spk:
-            spk = sc.default_speaker()
-
-        if not spk:
-            logger.debug("No WASAPI speaker found for loopback capture")
+        if sys.platform != "win32":
             return
-
-        loopback_mic = sc.get_microphone(id=spk.id, include_loopback=True)
-        if not loopback_mic:
-            logger.debug("No WASAPI loopback mic found")
-            return
-
-        samplerate = 44100
-        numframes = 1470  # ~30FPS buffer size
-
-        with loopback_mic.recorder(samplerate=samplerate) as recorder:
-            while _listener_running:
-                try:
-                    data = recorder.record(numframes=numframes)
-                    if data is None or len(data) == 0:
-                        time.sleep(0.033)
-                        continue
-
-                    num_channels = data.shape[1] if len(data.shape) > 1 else 1
-                    left = data[:, 0] if num_channels >= 1 else data
-                    right = data[:, 1] if num_channels > 1 else left
-
-                    # Calculate L/R channel RMS VU levels
-                    rms_l = float(np.sqrt(np.mean(left**2))) if len(left) > 0 else 0.0
-                    rms_r = float(np.sqrt(np.mean(right**2))) if len(right) > 0 else 0.0
-
-                    vu_l = max(0.0, float(math.pow(rms_l * 30.0, 0.65)))
-                    vu_r = max(0.0, float(math.pow(rms_r * 30.0, 0.65)))
-
-                    # Mono FFT analysis
-                    mono = (left + right) * 0.5
-                    m_len = len(mono)
-
-                    has_audio = vu_l > 0.005 or vu_r > 0.005
-                    spectrum = [0.0] * AUDIO_BAND_COUNT
-
-                    if has_audio and m_len > 32:
-                        windowed = mono * np.hanning(m_len)
-                        fft_mags = np.abs(np.fft.rfft(windowed))
-                        data_len = len(fft_mags)
-
-                        bands = 32
-                        for b in range(bands):
-                            start_idx = int(math.pow(b / bands, 2.0) * data_len)
-                            end_idx = max(
-                                start_idx + 1,
-                                int(math.pow((b + 1) / bands, 2.0) * data_len),
-                            )
-                            avg_mag = float(np.mean(fft_mags[start_idx:end_idx]))
-                            val = max(0.0, math.pow(avg_mag * 4.5, 0.75))
-                            spectrum[b] = val
-
-                    with _lock:
-                        _audio_cache["spectrum"] = spectrum
-                        _audio_cache["vu_left"] = vu_l
-                        _audio_cache["vu_right"] = vu_r
-                        _audio_cache["has_audio"] = has_audio
-                        _audio_cache["last_update"] = time.monotonic()
-                        _audio_cache["captured_at_ms"] = int(time.time() * 1000)
-                        _audio_cache["sequence"] += 1
-                        _audio_cache["source"] = "wasapi"
-
-                except Exception as e:
-                    logger.debug(f"WASAPI loopback frame record notice: {e}")
-                    time.sleep(0.05)
-
+        with soundcard_session() as sc:
+            _capture_loopback(sc)
     except Exception as e:
         logger.debug(f"WASAPI loopback service error: {e}")
-        _listener_running = False
     finally:
         _listener_running = False
+
+
+def _capture_loopback(sc):
+    """Capture on the caller's initialized COM thread."""
+    spk = None
+    if _selected_device_id != "default":
+        try:
+            all_spks = sc.all_speakers()
+            for s in all_spks:
+                if str(s.id) == _selected_device_id:
+                    spk = s
+                    break
+        except Exception as e:
+            logger.debug(
+                f"Failed to resolve selected speaker ID '{_selected_device_id}': {e}"
+            )
+
+    if not spk:
+        spk = sc.default_speaker()
+
+    if not spk:
+        logger.debug("No WASAPI speaker found for loopback capture")
+        return
+
+    loopback_mic = sc.get_microphone(id=spk.id, include_loopback=True)
+    if not loopback_mic:
+        logger.debug("No WASAPI loopback mic found")
+        return
+
+    samplerate = 44100
+    numframes = 1470  # ~30FPS buffer size
+
+    with loopback_mic.recorder(samplerate=samplerate) as recorder:
+        while _listener_running:
+            try:
+                data = recorder.record(numframes=numframes)
+                if data is None or len(data) == 0:
+                    time.sleep(0.033)
+                    continue
+
+                num_channels = data.shape[1] if len(data.shape) > 1 else 1
+                left = data[:, 0] if num_channels >= 1 else data
+                right = data[:, 1] if num_channels > 1 else left
+
+                # Calculate L/R channel RMS VU levels
+                rms_l = float(np.sqrt(np.mean(left**2))) if len(left) > 0 else 0.0
+                rms_r = float(np.sqrt(np.mean(right**2))) if len(right) > 0 else 0.0
+
+                vu_l = max(0.0, float(math.pow(rms_l * 30.0, 0.65)))
+                vu_r = max(0.0, float(math.pow(rms_r * 30.0, 0.65)))
+
+                # Mono FFT analysis
+                mono = (left + right) * 0.5
+                m_len = len(mono)
+
+                has_audio = vu_l > 0.005 or vu_r > 0.005
+                spectrum = [0.0] * AUDIO_BAND_COUNT
+
+                if has_audio and m_len > 32:
+                    windowed = mono * np.hanning(m_len)
+                    fft_mags = np.abs(np.fft.rfft(windowed))
+                    data_len = len(fft_mags)
+
+                    bands = 32
+                    for b in range(bands):
+                        start_idx = int(math.pow(b / bands, 2.0) * data_len)
+                        end_idx = max(
+                            start_idx + 1,
+                            int(math.pow((b + 1) / bands, 2.0) * data_len),
+                        )
+                        avg_mag = float(np.mean(fft_mags[start_idx:end_idx]))
+                        val = max(0.0, math.pow(avg_mag * 4.5, 0.75))
+                        spectrum[b] = val
+
+                with _lock:
+                    _audio_cache["spectrum"] = spectrum
+                    _audio_cache["vu_left"] = vu_l
+                    _audio_cache["vu_right"] = vu_r
+                    _audio_cache["has_audio"] = has_audio
+                    _audio_cache["last_update"] = time.monotonic()
+                    _audio_cache["captured_at_ms"] = int(time.time() * 1000)
+                    _audio_cache["sequence"] += 1
+                    _audio_cache["source"] = "wasapi"
+
+            except Exception as e:
+                logger.debug(f"WASAPI loopback frame record notice: {e}")
+                time.sleep(0.05)
 
 
 def start_audio_spectrum_service():
