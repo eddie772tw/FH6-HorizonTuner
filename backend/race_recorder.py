@@ -7,6 +7,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Protocol
+from uuid import uuid4
+
+from telemetry_contract import finite
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,9 @@ class TelemetrySessionStore(Protocol):
         self, session_id: str, points: list[dict[str, Any]]
     ) -> None: ...
 
-    def finalize_session(self, session_id: str) -> dict[str, Any]: ...
+    def finalize_session(
+        self, session_id: str, metadata: dict | None = None
+    ) -> dict[str, Any]: ...
 
 
 @dataclass(frozen=True)
@@ -50,6 +55,7 @@ class _WritePoints:
 @dataclass(frozen=True)
 class _FinalizeSession:
     session_id: str
+    metadata: dict | None = None
 
 
 PersistenceWork = _CreateSession | _WritePoints | _FinalizeSession
@@ -74,6 +80,7 @@ class AsyncRacePersistence:
         self._failed_writes = 0
         self._rejected_control_work = 0
         self._last_write_duration_ms = 0.0
+        self._session_failures: dict[str, int] = {}
 
     def start(self) -> None:
         """Start the single writer task for the current application event loop."""
@@ -91,6 +98,9 @@ class AsyncRacePersistence:
         start_time: float,
     ) -> bool:
         """Queue creation of a session before its point batches are submitted."""
+        if self._deferred_submissions:
+            self._rejected_control_work += 1
+            return False
         return self._enqueue(
             _CreateSession(
                 session_id=session_id,
@@ -111,9 +121,9 @@ class AsyncRacePersistence:
             _WritePoints(session_id=session_id, points=points), sample_count=len(points)
         )
 
-    def enqueue_finalize(self, session_id: str) -> None:
+    def enqueue_finalize(self, session_id: str, metadata: dict | None = None) -> None:
         """Queue finalization after every earlier batch, even during temporary saturation."""
-        work = _FinalizeSession(session_id=session_id)
+        work = _FinalizeSession(session_id=session_id, metadata=metadata)
         if self._enqueue(work, sample_count=0):
             return
 
@@ -184,10 +194,15 @@ class AsyncRacePersistence:
                     self._completed_batches += 1
             except Exception:
                 self._failed_writes += 1
+                self._session_failures[work.session_id] = (
+                    self._session_failures.get(work.session_id, 0) + 1
+                )
                 logger.exception(
                     "Failed to persist race recorder work: %s", type(work).__name__
                 )
             finally:
+                if isinstance(work, _FinalizeSession):
+                    self._session_failures.pop(work.session_id, None)
                 self._last_write_duration_ms = (perf_counter() - started_at) * 1000.0
                 self._is_writing = False
                 self._queue.task_done()
@@ -205,7 +220,17 @@ class AsyncRacePersistence:
         elif isinstance(work, _WritePoints):
             self._store.insert_points_batch(work.session_id, work.points)
         else:
-            self._store.finalize_session(work.session_id)
+            if work.metadata is None:
+                self._store.finalize_session(work.session_id)
+            else:
+                self._store.finalize_session(
+                    work.session_id,
+                    {
+                        **work.metadata,
+                        "failedWrites": self._session_failures.get(work.session_id, 0),
+                    },
+                )
+            self._session_failures.pop(work.session_id, None)
 
 
 class RaceRecorder:
@@ -216,10 +241,13 @@ class RaceRecorder:
         persistence: AsyncRacePersistence,
         app_settings: Mapping[str, Any],
         car_database: Mapping[str, Mapping[str, Any]],
+        *,
+        automatic: bool = True,
     ):
         self._persistence = persistence
         self._app_settings = app_settings
         self._car_database = car_database
+        self.automatic = automatic
         self.is_recording = False
         self.manual_mode = False
         self.current_session_id: str | None = None
@@ -230,6 +258,19 @@ class RaceRecorder:
         self.downsample_interval = 0.1
         self.lap_start_times: dict[int, float] = {}
         self.total_count = 0
+        self._last_timestamp: float | None = None
+        self._last_race_time: float | None = None
+        self._identity: tuple | None = None
+        self._last_progress_at: float | None = None
+        self._awaiting_since: float | None = None
+        self._sample_timestamp: float | None = None
+        self._dropped_samples = 0
+        self._limit_identity: tuple | None = None
+        self._limit_lap: int | None = None
+        self._limit_progress_at = 0.0
+        self._last_lap: int | None = None
+        self._last_reported_lap: float | None = None
+        self._race_clock_regressions = 0
 
     def clear(self) -> None:
         """Discard only in-memory recorder state; queued database work is retained."""
@@ -241,28 +282,51 @@ class RaceRecorder:
         self.last_sample_time = 0.0
         self.lap_start_times = {}
         self.total_count = 0
+        self._last_timestamp = None
+        self._last_race_time = None
+        self._identity = None
+        self._last_progress_at = None
+        self._awaiting_since = None
+        self._sample_timestamp = None
+        self._dropped_samples = 0
+        self._last_lap = None
+        self._last_reported_lap = None
+        self._race_clock_regressions = 0
 
-    def start_manual(self) -> str:
+    def start_manual(
+        self,
+        *,
+        car_ordinal: int = 0,
+        car_name: str = "Manual Session",
+        car_class: int = 0,
+        car_pi: int = 0,
+    ) -> str:
         """Start a manual recording session and submit its session metadata."""
+        if self.current_session_id:
+            self.save_latest_and_clear("superseded")
         self.clear()
+        self._limit_identity = None
         self.manual_mode = True
         self.is_recording = True
-        self.current_session_id = f"session_{int(time.time())}"
-        self._persistence.enqueue_session_start(
+        self.current_session_id = f"session_{uuid4().hex}"
+        accepted = self._persistence.enqueue_session_start(
             session_id=self.current_session_id,
-            car_ordinal=0,
-            car_name="Manual Session",
-            car_class=0,
-            car_pi=0,
+            car_ordinal=car_ordinal,
+            car_name=car_name,
+            car_class=car_class,
+            car_pi=car_pi,
             start_time=time.time(),
         )
+        if not accepted:
+            self.clear()
+            raise RuntimeError("Recording queue is full; session was not started")
         return self.current_session_id
 
     def record(self, data: dict[str, Any]) -> None:
         """Capture a downsampled point without synchronously touching SQLite."""
-        if not self._app_settings.get("race_recording", True):
+        if not self.manual_mode and not self._app_settings.get("race_recording", True):
             if self.is_recording:
-                self.clear()
+                self.save_latest_and_clear("recording-disabled")
             return
 
         is_race_on = data.get("IsRaceOn", 0) == 1
@@ -272,63 +336,174 @@ class RaceRecorder:
         except (ValueError, TypeError):
             current_race_time = 0.0
 
-        raw_lap = data.get("CurrentLap")
-        if raw_lap is None:
-            raw_lap = data.get("LapNumber", 0)
+        raw_lap = data.get("LapNumber", 0)
         try:
             current_lap = int(raw_lap or 0)
         except (ValueError, TypeError):
             current_lap = 0
 
-        is_race_active = self.manual_mode or (
-            is_race_on and current_race_time > 0.0 and current_lap > 0
+        is_race_active = is_race_on and (
+            self.manual_mode or (current_race_time > 0.0 and current_lap >= 0)
         )
+
+        timestamp_ms = data.get("TimestampMS")
+        identity = tuple(
+            data.get(key)
+            for key in ("CarOrdinal", "CarPerformanceIndex", "DrivetrainType")
+        )
+        if self._limit_identity is not None:
+            if (
+                is_race_on
+                and identity == self._limit_identity
+                and (self._limit_lap is None or current_lap >= self._limit_lap)
+                and time.monotonic() - self._limit_progress_at < 3
+            ):
+                self._limit_progress_at = time.monotonic()
+                return
+            self._limit_identity = None
+            self._limit_lap = None
+        if (
+            self._identity is not None
+            and identity[0] is not None
+            and identity != self._identity
+        ):
+            self.save_latest_and_clear("identity-changed")
+        elif (
+            self._last_timestamp is not None
+            and finite(timestamp_ms)
+            and timestamp_ms < self._last_timestamp
+        ):
+            self.save_latest_and_clear("timestamp-regressed")
+        elif (
+            self._last_race_time is not None
+            and is_race_on
+            and current_race_time < self._last_race_time
+            and self._last_lap is not None
+            and current_lap < self._last_lap
+        ):
+            self.save_latest_and_clear("race-restarted")
+
+        # A lap transition may update its clocks before or after LapNumber.
+        # Clock regression alone is not a race identifier. Keep the evidence
+        # together unless lap regression, identity, timestamp or stop state
+        # also establishes a session boundary.
+        if (
+            self._last_race_time is not None
+            and is_race_on
+            and current_race_time < self._last_race_time
+        ):
+            self._race_clock_regressions += 1
+            self._last_race_time = current_race_time
 
         if not is_race_active:
             if self.is_recording:
-                self.save_latest_and_clear()
+                if self.total_count >= self.max_samples:
+                    self.save_latest_and_clear("sample-limit")
+                    return
+                if self._awaiting_since is None:
+                    self._awaiting_since = time.monotonic()
+                # A stopped packet can carry delayed LastLap metadata. It is
+                # stored but never contributes driving exposure in analysis.
+                if identity == self._identity and finite(timestamp_ms):
+                    if (
+                        self._sample_timestamp is None
+                        or timestamp_ms > self._sample_timestamp
+                    ):
+                        self._append_point(data, timestamp_ms)
+                self.tick()
+            return
+
+        if not finite(timestamp_ms):
+            return
+        if self._last_timestamp is not None and timestamp_ms <= self._last_timestamp:
             return
 
         if not self.is_recording:
+            if not self.automatic:
+                return
             self._start_automatic_session(data)
+            if not self.is_recording:
+                return
 
-        now = time.time()
-        if now - self.last_sample_time < self.downsample_interval:
-            return
+        now = time.monotonic()
+        self._last_timestamp = timestamp_ms
+        self._last_race_time = current_race_time
+        self._last_progress_at = now
+        self._identity = identity
+        self._awaiting_since = None
         if self.total_count >= self.max_samples:
-            self.is_recording = False
+            self._limit_identity = identity
+            self._limit_lap = current_lap
+            self._limit_progress_at = now
+            self.save_latest_and_clear("sample-limit")
             return
 
-        timestamp_ms = data.get("TimestampMS", 0)
+        # Preserve lap transitions and delayed LastLap before downsampling.
+        boundary = (
+            current_lap != self._last_lap
+            or data.get("LastLap") != self._last_reported_lap
+        )
+        self._last_lap = current_lap
+        self._last_reported_lap = data.get("LastLap")
+        if (
+            not boundary
+            and self._sample_timestamp is not None
+            and timestamp_ms - self._sample_timestamp < self.downsample_interval * 1000
+        ):
+            return
+        self._append_point(data, timestamp_ms)
+
+    def _append_point(self, data: dict, timestamp_ms: float) -> None:
         if self.first_timestamp is None:
             self.first_timestamp = timestamp_ms
         relative_time = (timestamp_ms - self.first_timestamp) / 1000.0
-        current_lap = data.get("CurrentLap", 1)
+        current_lap = data.get("LapNumber", 0)
         self.lap_start_times.setdefault(current_lap, relative_time)
 
-        point = dict(data)
+        point = {
+            key: list(value) if isinstance(value, list) else value
+            for key, value in data.items()
+        }
         point["time"] = round(relative_time, 2)
         self.in_memory_batch.append(point)
         self.total_count += 1
-        self.last_sample_time = now
+        self._sample_timestamp = timestamp_ms
 
         if len(self.in_memory_batch) >= 50:
             self._flush_batch()
 
-    def save_latest_and_clear(self) -> None:
+    def tick(self, now: float | None = None) -> None:
+        """Called outside the packet path so silence can finalize a bounded capture."""
+        now = time.monotonic() if now is None else now
+        if self._awaiting_since is not None and now - self._awaiting_since >= 3:
+            self.save_latest_and_clear("race-stopped")
+        elif self._last_progress_at is not None and now - self._last_progress_at >= 3:
+            self.save_latest_and_clear("telemetry-stopped")
+
+    def save_latest_and_clear(self, reason: str = "manual-stop") -> None:
         """Queue the final batch and SQLite summary work, then clear local state."""
         session_id = self.current_session_id
         if not session_id:
             self.clear()
             return
         self._flush_batch()
-        self._persistence.enqueue_finalize(session_id)
+        self._persistence.enqueue_finalize(
+            session_id,
+            {
+                "recordingSchema": "decoded-fh6/v1",
+                "endReason": reason,
+                "capturedSamples": self.total_count,
+                "droppedSamples": self._dropped_samples,
+                "sampleIntervalSeconds": self.downsample_interval,
+                "raceClockRegressions": self._race_clock_regressions,
+            },
+        )
         self.clear()
 
     def _start_automatic_session(self, data: Mapping[str, Any]) -> None:
         self.clear()
         self.is_recording = True
-        self.current_session_id = f"session_{int(time.time())}"
+        self.current_session_id = f"session_{uuid4().hex}"
         car_ordinal = data.get("CarOrdinal", 0)
         car_info = self._car_database.get(str(car_ordinal), {})
         car_name = " ".join(
@@ -336,7 +511,7 @@ class RaceRecorder:
         ).strip()
         if not car_name:
             car_name = f"Car #{car_ordinal}" if car_ordinal > 0 else "Unknown Car"
-        self._persistence.enqueue_session_start(
+        accepted = self._persistence.enqueue_session_start(
             session_id=self.current_session_id,
             car_ordinal=car_ordinal,
             car_name=car_name,
@@ -344,6 +519,9 @@ class RaceRecorder:
             car_pi=data.get("CarPerformanceIndex", 0),
             start_time=time.time(),
         )
+        if not accepted:
+            self.clear()
+            return
         logger.info(
             "Started new telemetry recording session: %s", self.current_session_id
         )
@@ -353,4 +531,7 @@ class RaceRecorder:
             return
         batch_to_write = self.in_memory_batch
         self.in_memory_batch = []
-        self._persistence.enqueue_points(self.current_session_id, batch_to_write)
+        if not self._persistence.enqueue_points(
+            self.current_session_id, batch_to_write
+        ):
+            self._dropped_samples += len(batch_to_write)

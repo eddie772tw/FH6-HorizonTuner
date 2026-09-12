@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { restoreWorkflowStep } from './features/tuning/tuningWorkflow';
+import React, { useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import TelemetryView from './features/telemetry/TelemetryView';
 import TuningView from './features/tuning/TuningView';
@@ -27,7 +28,13 @@ const AppContent: React.FC = () => {
 
   // SubTab States for Quick Jumps
   const [telemetrySubTab, setTelemetrySubTab] = useState<'live' | 'analysis' | 'drag'>('live');
-  const [tuningStep, setTuningStep] = useState<number>(1);
+  const [tuningStep, setTuningStep] = useState<number>(() => {
+    try { return restoreWorkflowStep(JSON.parse(localStorage.getItem('tuning-workflow-state') || 'null')); } catch { return 1; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('tuning-workflow-state', JSON.stringify({ schema: 'tuning-workflow/v2', step: tuningStep })); } catch { /* Navigation still works without storage. */ }
+  }, [tuningStep]);
+  const [developerTuningStep, setDeveloperTuningStep] = useState<number>(1);
   const [carParamsSubTab, setCarParamsSubTab] = useState<'config' | 'dyno'>('config');
   const [overlayCategory, setOverlayCategory] = useState<'general' | 'displays' | 'gauges' | 'performance'>('general');
 
@@ -36,7 +43,7 @@ const AppContent: React.FC = () => {
     setActiveTab(tab);
     if (subTarget) {
       if (tab === 'telemetry') setTelemetrySubTab(subTarget);
-      else if (tab === 'tuning') setTuningStep(typeof subTarget === 'number' ? subTarget : 1);
+      else if (tab === 'tuning') (settings.developer_tuning_enabled ? setDeveloperTuningStep : setTuningStep)(typeof subTarget === 'number' ? subTarget : 1);
       else if (tab === 'car_params') setCarParamsSubTab(subTarget);
       else if (tab === 'overlay') setOverlayCategory(subTarget);
     }
@@ -66,7 +73,7 @@ const AppContent: React.FC = () => {
         </div>
         <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           {settings.developer_tuning_enabled ? (
-            <TuningViewDev currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+            <TuningViewDev currentStep={developerTuningStep} setCurrentStep={setDeveloperTuningStep} setActiveTab={setActiveTab} />
           ) : (
             <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
           )}

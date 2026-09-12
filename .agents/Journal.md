@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-12 / 六階段實測工作流、多圈賽事與外部證據整合（Codex）
+
+- **來源**：`local`；本分支 `codex/plan/tuning-workflow-iteration-20260912`，實作起點 `b73732c`；使用者授權 Luna 分工審查與研究。
+- **狀態**：`adopted`（程式與本機資料流）；FH6 實機、跨車校準與性能改善仍待真實 capture。
+- **Learning**：
+  1. `CurrentLap` 是目前圈經過秒數；舊 recorder 將其取整並以大於零判定錄製，會在每圈首秒錯誤 finalize。改用 `LapNumber`（包括第 0 圈）識別圈，以 `TimestampMS` 取樣。單獨 race clock 倒退不切場；只有明確 identity／timestamp／圈號及時鐘重置等邊界才另建 session。
+  2. 圈的觀測片段與完整圈時間不同。必須看見起點及可歸屬的 `LastLap` 更新，延遲更新也要保留；未變的前圈時間不能複製給下一圈。七圈及不完整尾段都應保留在同一場紀錄。歷史已拆開紀錄缺少 event ID 時不能自動合併。
+  3. HUD 插值 frame 不適合量測；新的訂閱直接取得解碼 WebSocket frame。引擎摘要與原始 capture 必須綁定 observation ID／dependency key，後端保存成功後才可重用。同 PI 改裝無法全自動辨識，需要使用者確認。
+  4. 保留 `raw_json` 與來源／缺值可避免 legacy SQLite、CSV 把未知變成實測零。前端圖表、圈選單與分析型別也必須支援 null；不能只修 recorder。Boost 維持原生 PSI，輪胎 slip angle 為 normalized 無量綱。
+  5. 專業真車教程提供「底盤／車高先於定位」與冷胎壓／工作狀態的依賴線索，不能直接變成 FH6 強制手填項目或新係數。社群症狀筆記與下一步提示可改善操作，但不能由推頭／甩尾文字自動判定調整方向。
+  6. `test_source_sidecar_bootstraps_and_releases_udp_port` 的預設 HTTP port 驗證需要 8001 空閒。瀏覽器 fixture 佔用該 port 時會觸發正確 fallback，須先停止自有 fixture 再跑全量後端；不可因該環境衝突改產品行為或放寬斷言。
+- **Action**：新增六階段入口、實測引擎 archive、Road baseline／run／A-B／決策及相容性快照；延續既有 `tuningMath.ts` 公式。新增來源／順序研究文件與完整變更索引，同步 README 與 UDP reference。
+- **Evidence**：後端 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ -q`：315 passed、8 deselected；前端 `cmd /c "pnpm -C frontend run test"`：94 files／621 tests；`pnpm -C frontend run build`、Ruff check／format check、diff check 通過。隔離 SQLite + synthetic WebSocket 瀏覽器操作涵蓋量測保存／重用、基準建立、跨圈錄製／保存、重新開頁讀取、中文引導與症狀筆記；default／modern／elegant 的深／淺主題已檢查。這些不等於 FH6 實機驗收。
+- **Skills**：`physics-tuning-math`、`telemetry-udp-protocol`、`modular-refactoring`、`huge-component-refactoring`、`halfmoon-design-system`、`cross-agent-collaboration`。
+
 ## 2026-09-12 / PR #328 純淨整併、Jules 遠端覆蓋排查與 Revert 快速復原（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；使用者警示 PR #328 包含誤刪 180 個檔案之污染，指示緊急 Revert 並以方案 A 僅整併純淨 2 個 UDP 檔案，再將 PR #330 rebase 到新進度。
@@ -118,6 +133,7 @@
 - **Action**：新增 `docs/hud-5-styles-visual-review-20260910.md`、10 張目前 renderer 截圖及 45 組布局量測；舊報告加歷史註記。Defi 提出獨立表體、右下主表與錯落副表方案；AE86 固定版型，只修材質、字形與字樣；MoTeC 保留三分區，依官方 C125 真實硬體頁面重做左右欄的溫度／壓力讀值。官方展示圖的中央 PAGE 5 不是檔位，亦不能宣称此頁代表所有 GT3 車隊。本輪未改 HUD 產品程式。
 - **Evidence**：Edge Chromium headless、DPR=1，3 種 viewport × 3 種 scale × 5 樣式，共 45/45 主容器右／底距離 30 CSS px 且不越界，無 pageerror。合成 telemetry、全視窗 iframe；未作 Tauri／真實遊戲／OS DPI／效能驗收。
 - **Skills**：`agent-governance-audit`；對話布局草圖使用 `visualize:visualize`。
+
 ## 2026-09-10 / 全庫 Agent 規範體系與技能架構精煉重構 (AGENTS.md & Skills Lean Governance)
 
 - **來源**：`local`，響應使用者需求，依據五大 Agent 技能架構原則對專案 `AGENTS.md`、13 個專案技能及使用者層級外掛技能進行全面盤點與模組化重構。

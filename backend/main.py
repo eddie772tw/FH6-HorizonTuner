@@ -125,6 +125,9 @@ from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
 from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
+from road_router import create_road_router
+from road_service import RoadService
+from road_store import RoadStore
 from settings_persistence import SerializedSettingsUpdate, SettingsPersistence
 from settings_router import create_settings_router
 from system_media import get_current_thumbnail_data, get_system_media_info
@@ -556,6 +559,8 @@ settings_update_lock = asyncio.Lock()
 # --- Race Telemetry Recorder ---
 race_persistence = AsyncRacePersistence(telemetry_db)
 race_recorder = RaceRecorder(race_persistence, app_settings, car_database)
+road_service = RoadService(telemetry_db, RoadStore(SESSIONS_DB_PATH))
+app.include_router(create_road_router(lambda: road_service))
 
 
 # --- Drag Telemetry Recorder Class ---
@@ -1171,10 +1176,12 @@ async def lifespan(app: FastAPI):
     )
     current_udp_ip_port = ("auto", port)
     race_persistence.start()
+    await road_service.recover()
     discord_presence.start()
     background_tasks = [
         asyncio.create_task(broadcast_telemetry()),
         asyncio.create_task(broadcast_overlay_state()),
+        asyncio.create_task(maintain_recordings()),
     ]
     try:
         yield
@@ -1186,11 +1193,21 @@ async def lifespan(app: FastAPI):
         await asyncio.gather(*background_tasks, return_exceptions=True)
         await car_params_writer.flush()
         await car_params_cache.cancel_pending()
+        race_recorder.save_latest_and_clear("application-shutdown")
+        await road_service.shutdown()
         await race_persistence.shutdown()
         discord_presence.stop()
 
 
 app.router.lifespan_context = lifespan
+
+
+async def maintain_recordings():
+    """Silence/stop handling must run even when UDP packets stop arriving."""
+    while True:
+        race_recorder.tick()
+        await road_service.maintain()
+        await asyncio.sleep(0.25)
 
 
 async def broadcast_overlay_state():
@@ -1285,6 +1302,7 @@ async def broadcast_telemetry():
 
         # --- Record Race Telemetry ---
         with telemetry_pipeline_metrics.measure_stage("recorders"):
+            road_service.observe(data)
             race_recorder.record(data)
 
             # --- Record Drag Test Telemetry ---

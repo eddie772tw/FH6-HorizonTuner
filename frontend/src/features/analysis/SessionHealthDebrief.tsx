@@ -3,12 +3,35 @@ import { SessionDebriefData } from "./sessionDebriefMath";
 import { useSettings } from "../../context/SettingsContext";
 
 interface SessionHealthDebriefProps {
-  debrief: SessionDebriefData;
+  debrief: DisplaySessionDebriefData;
   isLoading?: boolean;
 }
 
+type DisplaySessionDebriefData = Omit<SessionDebriefData, "tire_thermals" | "suspension" | "handling_balance"> & {
+  tire_thermals: Omit<SessionDebriefData["tire_thermals"], "fl_avg" | "fr_avg" | "rl_avg" | "rr_avg"> & {
+    fl_avg: number | null;
+    fr_avg: number | null;
+    rl_avg: number | null;
+    rr_avg: number | null;
+  };
+  suspension: Omit<SessionDebriefData["suspension"], "peak_travel_pct" | "bottom_out_count"> & {
+    peak_travel_pct: number | null;
+    bottom_out_count: number | null;
+  };
+  handling_balance: Omit<SessionDebriefData["handling_balance"], "understeer_pct" | "oversteer_pct" | "tendency"> & {
+    understeer_pct: number | null;
+    oversteer_pct: number | null;
+    tendency: SessionDebriefData["handling_balance"]["tendency"] | "no_data";
+  };
+};
+
 const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, isLoading = false }) => {
   const { t } = useSettings();
+
+  const formatMetric = (value: number | null | undefined, suffix = "") =>
+    value == null ? t("Unknown") : `${value.toFixed(1)}${suffix}`;
+  const formatCount = (value: number | null | undefined) =>
+    value == null ? t("Unknown") : value.toLocaleString();
 
   if (isLoading) {
     return (
@@ -52,7 +75,12 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
       ? "badge text-bg-success"
       : handling_balance.tendency === "Understeer Biased"
       ? "badge text-bg-info"
+      : handling_balance.tendency === "no_data"
+      ? "badge text-bg-secondary"
       : "badge text-bg-warning";
+
+  const understeerWidth = handling_balance.understeer_pct ?? 0;
+  const oversteerWidth = handling_balance.oversteer_pct ?? 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
@@ -73,25 +101,25 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>FL</div>
               <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {tire_thermals.fl_avg.toFixed(1)}°C
+                {formatMetric(tire_thermals.fl_avg, "°C")}
               </div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>FR</div>
               <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {tire_thermals.fr_avg.toFixed(1)}°C
+                {formatMetric(tire_thermals.fr_avg, "°C")}
               </div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>RL</div>
               <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {tire_thermals.rl_avg.toFixed(1)}°C
+                {formatMetric(tire_thermals.rl_avg, "°C")}
               </div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>RR</div>
               <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {tire_thermals.rr_avg.toFixed(1)}°C
+                {formatMetric(tire_thermals.rr_avg, "°C")}
               </div>
             </div>
           </div>
@@ -112,17 +140,23 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Peak Travel")}</div>
               <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "var(--primary)" }}>
-                {suspension.peak_travel_pct.toFixed(1)}%
+                {formatMetric(suspension.peak_travel_pct, "%")}
               </div>
             </div>
             <div style={{ width: "1px", height: "30px", background: "rgba(255,255,255,0.1)" }} />
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Bottom-out Count")}</div>
               <div
-                className={suspension.bottom_out_count > 0 ? "text-danger" : "text-success"}
+                className={
+                  suspension.bottom_out_count == null
+                    ? "text-secondary"
+                    : suspension.bottom_out_count > 0
+                    ? "text-danger"
+                    : "text-success"
+                }
                 style={{ fontSize: "1.25rem", fontWeight: "bold" }}
               >
-                {suspension.bottom_out_count}
+                {formatCount(suspension.bottom_out_count)}
               </div>
             </div>
           </div>
@@ -141,13 +175,13 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
 
           <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", background: "rgba(0,0,0,0.25)", padding: "0.75rem", borderRadius: "6px", flex: 1, justifyContent: "center" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-              <span>{t("Understeer")}: {handling_balance.understeer_pct.toFixed(1)}%</span>
-              <span>{t("Oversteer")}: {handling_balance.oversteer_pct.toFixed(1)}%</span>
+              <span>{t("Understeer")}: {formatMetric(handling_balance.understeer_pct, "%")}</span>
+              <span>{t("Oversteer")}: {formatMetric(handling_balance.oversteer_pct, "%")}</span>
             </div>
             {/* Dual Color Progress Bar */}
             <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
-              <div style={{ width: `${handling_balance.understeer_pct}%`, background: "var(--bs-info)", transition: "width 0.3s" }} />
-              <div style={{ width: `${handling_balance.oversteer_pct}%`, background: "var(--bs-warning)", transition: "width 0.3s" }} />
+              <div style={{ width: `${understeerWidth}%`, background: "var(--bs-info)", transition: "width 0.3s" }} />
+              <div style={{ width: `${oversteerWidth}%`, background: "var(--bs-warning)", transition: "width 0.3s" }} />
             </div>
           </div>
         </div>
@@ -167,14 +201,14 @@ const SessionHealthDebrief: React.FC<SessionHealthDebriefProps> = ({ debrief, is
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Valid Laps")}</div>
               <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "var(--primary)" }}>
-                {valid_laps}
+                {formatCount(valid_laps)}
               </div>
             </div>
             <div style={{ width: "1px", height: "30px", background: "rgba(255,255,255,0.1)" }} />
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{t("Total Samples")}</div>
               <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "var(--text-primary)" }}>
-                {total_samples.toLocaleString()}
+                {formatCount(total_samples)}
               </div>
             </div>
           </div>

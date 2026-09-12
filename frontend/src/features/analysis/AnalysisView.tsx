@@ -221,39 +221,47 @@ const AnalysisView: React.FC = () => {
   };
 
   const formatTrackCanvasData = useCallback((points: AnalysisDataPoint[]) => {
-    const len = points.length;
-    if (len === 0) return [];
-
-    const cachedValues = new Float64Array(len);
-    let metricMax = 0.1;
-
-    for (let i = 0; i < len; i++) {
-      const p = points[i];
-      let v = p.SpeedMetersPerSecond;
-      if (selectedMetric === "throttle") v = (p.AccelInput || 0) / 255;
-      else if (selectedMetric === "brake") v = (p.BrakeInput || 0) / 255;
-      else if (selectedMetric === "grip") {
-        const slip = p.TireSlipRatio || [0, 0, 0, 0];
-        v = Math.max(Math.abs(slip[0]), Math.abs(slip[1]), Math.abs(slip[2]), Math.abs(slip[3]));
-      } else if (selectedMetric === "suspension") {
-        const susp = p.SuspTravel || [0, 0, 0, 0];
-        v = susp[0];
+    const finite = (value: number | null | undefined): value is number =>
+      typeof value === "number" && Number.isFinite(value);
+    const candidates = points.flatMap((p) => {
+      // A track point needs a real timestamp, position, and speed. Missing
+      // values are excluded instead of being rendered at the origin or zero.
+      if (
+        !finite(p.time) ||
+        !finite(p.PositionX) ||
+        !finite(p.PositionZ) ||
+        !finite(p.SpeedMetersPerSecond)
+      ) {
+        return [];
       }
 
-      cachedValues[i] = v;
-      if (v > metricMax) metricMax = v;
-    }
+      const speed = p.SpeedMetersPerSecond;
+      const x = p.PositionX;
+      const z = p.PositionZ;
+      let value: number | null = speed;
+      if (selectedMetric === "throttle") value = finite(p.AccelInput) ? p.AccelInput / 255 : null;
+      else if (selectedMetric === "brake") value = finite(p.BrakeInput) ? p.BrakeInput / 255 : null;
+      else if (selectedMetric === "grip") {
+        const slip = (p.TireSlipRatio || []).filter(finite);
+        value = slip.length > 0 ? Math.max(...slip.map(Math.abs)) : null;
+      } else if (selectedMetric === "suspension") {
+        value = finite(p.SuspTravel?.[0]) ? p.SuspTravel[0] : null;
+      }
 
-    const result = new Array(len);
-    for (let i = 0; i < len; i++) {
-      result[i] = {
-        x: points[i].PositionX || 0,
-        z: points[i].PositionZ || 0,
-        val: metricMax > 0 ? cachedValues[i] / metricMax : 0,
-        raw: points[i],
-      };
+      return finite(value) ? [{ point: p, x, z, value }] : [];
+    });
+    if (candidates.length === 0) return [];
+
+    let metricMax = 0.1;
+    for (const candidate of candidates) {
+      if (candidate.value > metricMax) metricMax = candidate.value;
     }
-    return result;
+    return candidates.map(({ point, x, z, value }) => ({
+      x,
+      z,
+      val: value / metricMax,
+      raw: point,
+    }));
   }, [selectedMetric]);
 
   const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
@@ -262,10 +270,10 @@ const AnalysisView: React.FC = () => {
 
   const fallbackDebrief: SessionDebriefData = debriefData || {
     total_samples: activeSession.length,
-    valid_laps: lapsList.length,
-    tire_thermals: { fl_avg: 0, fr_avg: 0, rl_avg: 0, rr_avg: 0, status: "no_data" },
-    suspension: { peak_travel_pct: 0, bottom_out_count: 0, status: "no_data" },
-    handling_balance: { understeer_pct: 50, oversteer_pct: 50, tendency: "Neutral / Balanced" },
+    valid_laps: null,
+    tire_thermals: { fl_avg: null, fr_avg: null, rl_avg: null, rr_avg: null, status: "no_data" },
+    suspension: { peak_travel_pct: null, bottom_out_count: null, status: "no_data" },
+    handling_balance: { understeer_pct: null, oversteer_pct: null, tendency: "no_data" },
   };
 
   return (
@@ -326,7 +334,7 @@ const AnalysisView: React.FC = () => {
               {savedSessions.map((s) => (
                 <option key={s.filename} value={s.filename}>
                   {s.car_name || s.filename} ({s.total_laps ?? 0} Laps | Best:{" "}
-                  {s.best_lap_time?.toFixed(2) ?? 0}s)
+                  {s.best_lap_time && s.best_lap_time > 0 ? s.best_lap_time.toFixed(2) : t("Unknown")}s)
                 </option>
               ))}
             </select>
@@ -346,7 +354,7 @@ const AnalysisView: React.FC = () => {
                 <option value={0}>{t("All Laps")}</option>
                 {lapsList.map((l) => (
                   <option key={l.lap_number} value={l.lap_number}>
-                    Lap {l.lap_number} ({l.lap_time.toFixed(2)}s | Max: {l.max_speed_kmh.toFixed(0)}km/h)
+                    Lap {l.lap_number} ({l.lap_time?.toFixed(2) ?? t("Unknown")}s | Max: {l.max_speed_kmh?.toFixed(0) ?? t("Unknown")}km/h)
                   </option>
                 ))}
               </select>
@@ -367,7 +375,7 @@ const AnalysisView: React.FC = () => {
                 <option value={-1}>{t("None")}</option>
                 {lapsList.map((l) => (
                   <option key={l.lap_number} value={l.lap_number}>
-                    vs Lap {l.lap_number} ({l.lap_time.toFixed(2)}s)
+                    vs Lap {l.lap_number} ({l.lap_time?.toFixed(2) ?? t("Unknown")}s)
                   </option>
                 ))}
               </select>

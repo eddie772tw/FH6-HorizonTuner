@@ -47,6 +47,8 @@ def test_calculate_session_debrief_optimal():
     points = [
         {
             "LapNumber": 1,
+            "CurrentLap": 0.0,
+            "LastLap": 60.0,
             "TireTemp": [185.0, 185.0, 185.0, 185.0],
             "SuspTravel": [0.4, 0.4, 0.45, 0.45],
             "AccelerationX": 0.0,
@@ -57,11 +59,11 @@ def test_calculate_session_debrief_optimal():
     ]
     debrief = calculate_session_debrief(points)
     assert debrief["total_samples"] == 20
-    assert debrief["valid_laps"] == 1
+    assert debrief["valid_laps"] == 0
     assert debrief["tire_thermals"]["status"] == "Optimal"
     assert debrief["suspension"]["bottom_out_count"] == 0
     assert debrief["suspension"]["status"] == "Optimal"
-    assert "Neutral" in debrief["handling_balance"]["tendency"]
+    assert debrief["handling_balance"]["tendency"] == "no_data"
 
 
 def test_calculate_session_debrief_bottom_out_and_understeer():
@@ -87,6 +89,79 @@ def test_calculate_session_debrief_bottom_out_and_understeer():
     assert debrief["suspension"]["status"] == "Severe Bottoming"
     assert debrief["handling_balance"]["understeer_pct"] > 70.0
     assert debrief["handling_balance"]["tendency"] == "Understeer Biased"
+
+
+def test_calculate_session_debrief_preserves_missing_channels_as_unknown():
+    result = calculate_session_debrief(
+        [
+            {
+                "LapNumber": 0,
+                "TireTemp": [185.0, None, None, 195.0],
+                "SuspTravel": [0.4, None, None, 0.97],
+                "AccelerationX": None,
+                "SpeedMetersPerSecond": 25.0,
+                "TireSlipAngle": [None, None, None, None],
+            }
+        ]
+    )
+
+    assert result["valid_laps"] == 0
+    assert result["tire_thermals"]["fl_avg"] == pytest.approx(85.0)
+    assert result["tire_thermals"]["fr_avg"] is None
+    assert result["tire_thermals"]["rl_avg"] is None
+    assert result["tire_thermals"]["rr_avg"] == pytest.approx(90.6, abs=0.1)
+    assert result["suspension"]["peak_travel_pct"] == pytest.approx(97.0)
+    assert result["suspension"]["bottom_out_count"] == 1
+    assert result["handling_balance"]["understeer_pct"] is None
+    assert result["handling_balance"]["oversteer_pct"] is None
+    assert result["handling_balance"]["tendency"] == "no_data"
+
+
+def test_calculate_session_debrief_does_not_claim_lap_without_boundary_evidence():
+    result = calculate_session_debrief(
+        [
+            {
+                "LapNumber": 1,
+                "TireTemp": [185.0] * 4,
+                "SuspTravel": [0.4] * 4,
+            }
+        ]
+    )
+    assert result["valid_laps"] == 0
+
+
+def test_calculate_session_debrief_attributes_last_lap_to_previous_lap():
+    points = [
+        {"LapNumber": 0, "CurrentLap": 0.0, "LastLap": 0.0},
+        {"LapNumber": 1, "CurrentLap": 0.2, "LastLap": 0.0},
+        {"LapNumber": 1, "CurrentLap": 1.2, "LastLap": 60.0},
+    ]
+
+    result = calculate_session_debrief(points)
+
+    assert result["valid_laps"] == 1
+
+
+def test_empty_session_debrief_uses_unknown_metrics():
+    result = calculate_session_debrief([])
+
+    assert result["tire_thermals"] == {
+        "fl_avg": None,
+        "fr_avg": None,
+        "rl_avg": None,
+        "rr_avg": None,
+        "status": "no_data",
+    }
+    assert result["suspension"] == {
+        "peak_travel_pct": None,
+        "bottom_out_count": None,
+        "status": "no_data",
+    }
+    assert result["handling_balance"] == {
+        "understeer_pct": None,
+        "oversteer_pct": None,
+        "tendency": "no_data",
+    }
 
 
 def test_full_41_channel_export_and_parse_roundtrip():
@@ -166,16 +241,24 @@ def test_export_uses_canonical_power_and_boost_fields(tmp_path):
     point = {
         "PowerWatts": 745700.0,
         "TorqueNewtons": 500.0,
-        "Boost": 6894.75729,
+        "Boost": 1.0,
         "Fuel": 0.42,
         "TireTemp": [180] * 4,
         "SuspTravel": [0] * 4,
+        "TireSlipAngle": [0.08, None, 0.04, None],
     }
     export_session_to_motec_csv({"session_id": "s"}, [point], str(tmp_path / "s.csv"))
     row = list(csv.reader((tmp_path / "s.csv").open()))[9]
-    assert row[16] == "1000.0"
-    assert row[17] == "500.0"
-    assert row[14] == "1.00"
+    assert float(row[16]) == 1000.0
+    assert float(row[17]) == 500.0
+    assert float(row[14]) == 1.0  # FH6 Data Out already reports PSI.
+    assert row[11] == ""  # An absent acceleration channel is not a measured zero.
+    assert float(row[26]) == pytest.approx(0.08)
+    assert row[27] == ""
+    _, imported = parse_motec_csv_to_telemetry(str(tmp_path / "s.csv"))
+    assert imported[0]["AccelerationX"] is None
+    assert imported[0]["TireSlipAngle"] == [0.08, None, 0.04, None]
+    assert imported[0]["Boost"] == 1
 
 
 def test_debrief_converts_midrange_fahrenheit():

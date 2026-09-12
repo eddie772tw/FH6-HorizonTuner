@@ -5,6 +5,7 @@ import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
 
 interface Step1GoalSetupProps {
+  measuredEngineInputs?: boolean;
   selectedRaceGoal: string;
   setSelectedRaceGoal: (goal: string) => void;
   season: Season;
@@ -34,6 +35,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
+  measuredEngineInputs = false,
   selectedRaceGoal,
   setSelectedRaceGoal,
   season,
@@ -143,7 +145,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             </select>
           </div>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4' }}>
-            {t("Game season directly affects ambient temperatures and tire pressure fermentation offsets, fitting into Step 4 static setup recommendations.")}
+            {t(measuredEngineInputs ? "Seasonal pressure adjustments are estimates for the tire baseline. Confirm actual cold and hot pressures in game." : "Game season directly affects ambient temperatures and tire pressure fermentation offsets, fitting into Step 4 static setup recommendations.")}
           </p>
         </div>
       </div>
@@ -257,18 +259,18 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Power")} ({displayPower(0).label})</label>
             <input type="number" value={Number(displayPower(carParams?.maxHp || 0).value.toFixed(1))} onChange={e => updateParam('maxHp', powerToHp(parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '120px' }} step="10" />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {!measuredEngineInputs && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max HP RPM (rpm)")}</label>
             <input type="number" value={carParams?.maxHpRpm || 0} onChange={e => updateParam('maxHpRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
-          </div>
+          </div>}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque")} ({convertTorque(0).label})</label>
             <input type="number" value={Number(convertTorque(carParams?.maxTorque || 0).value.toFixed(1))} onChange={e => updateParam('maxTorque', torqueToNm(parseFloat(e.target.value) || 0))} style={{ ...inputStyle, width: '120px' }} step="10" />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {!measuredEngineInputs && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Max Torque RPM (rpm)")}</label>
             <input type="number" value={carParams?.maxTorqueRpm || 0} onChange={e => updateParam('maxTorqueRpm', parseInt(e.target.value) || 0)} style={{ ...inputStyle, width: '120px' }} step="100" />
-          </div>
+          </div>}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gears Count")}</label>
             <input 
@@ -280,6 +282,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             />
           </div>
         </div>
+
+        {measuredEngineInputs && <p className="small text-body-secondary">{t('Engine limit and peak output RPM will be collected in Step 5. Enter only the power and torque shown in game here.')}</p>}
 
         {/* Section 3: Suspension & Ride Height Slider Range Limits */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem', marginBottom: '0.8rem' }}>

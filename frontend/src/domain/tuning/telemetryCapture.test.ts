@@ -36,6 +36,16 @@ const frame = (timestamp: number, speed: number) => telemetryToCaptureSample({
 });
 
 describe('tuning telemetry capture', () => {
+  it('marks missing added channels while preserving measured zero values', () => {
+    const sample = frame(0, 0);
+    expect(sample.powerWatts).toBeNull();
+    expect(sample.angularVelocity).toEqual([null, null, null]);
+    expect(sample.wheelRotationSpeed).toEqual([null, null, null, null]);
+    expect(sample.missingChannels).toEqual(expect.arrayContaining(['PowerWatts', 'AngularVelocityX', 'WheelRotationSpeed.0', 'SuspensionTravelMeters.3']));
+    expect(sample.missingChannels).not.toContain('TimestampMS');
+    expect(sample.missingChannels).not.toContain('SpeedMetersPerSecond');
+  });
+
   it('summarizes cadence, dynamics, and wheel signals without losing sign-safe peaks', () => {
     const summary = summarizeCapture([frame(0, 10), frame(16.667, 20), frame(33.334, 30)]);
     expect(summary.sampleCount).toBe(3);
@@ -44,7 +54,7 @@ describe('tuning telemetry capture', () => {
     expect(summary.maxLongitudinalG).toBe(2);
     expect(summary.maxLateralG).toBe(1);
     expect(summary.peakSlipRatio).toEqual([0.1, 0.2, 0.3, 0.4]);
-    expect(summary.peakSlipAngleDeg[0]).toBeCloseTo(5.73, 2);
+    expect(summary.peakNormalizedSlipAngle[0]).toBeCloseTo(0.1, 4);
   });
 
   it('exports a stable CSV header and catches non-monotonic timestamps', () => {

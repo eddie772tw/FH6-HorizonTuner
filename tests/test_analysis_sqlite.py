@@ -2,7 +2,7 @@ import os
 import tempfile
 
 import pytest
-from motec_exporter import export_session_to_motec_csv
+from motec_exporter import calculate_session_debrief, export_session_to_motec_csv
 from telemetry_sqlite import TelemetrySQLite
 
 
@@ -134,3 +134,38 @@ def test_motec_csv_export(temp_sqlite_db):
     finally:
         if os.path.exists(csv_path):
             os.remove(csv_path)
+
+
+def test_sqlite_decoded_null_channels_reach_debrief_without_invented_values(
+    temp_sqlite_db,
+):
+    db = temp_sqlite_db
+    session_id = "test_partial_decoded_session"
+    db.create_session(session_id=session_id, start_time=3000.0)
+    db.insert_points_batch(
+        session_id,
+        [
+            {
+                "time": 0.1,
+                "LapNumber": None,
+                "SpeedMetersPerSecond": 20.0,
+                "TireTemp": [185.0, None, None, 195.0],
+                "NormalizedSuspensionTravel": [0.4, None, None, 0.97],
+                "TireSlipAngle": [None, None, None, None],
+                "TireSlipRatio": [None, None, None, None],
+                "AccelerationX": None,
+            }
+        ],
+    )
+
+    point = db.get_telemetry_points(session_id)[0]
+    result = calculate_session_debrief([point])
+
+    assert point["LapNumber"] is None
+    assert point["SuspTravel"] == [0.4, None, None, 0.97]
+    assert point["TireTemp"] == [185.0, None, None, 195.0]
+    assert result["valid_laps"] == 0
+    assert result["tire_thermals"]["fr_avg"] is None
+    assert result["tire_thermals"]["rl_avg"] is None
+    assert result["suspension"]["bottom_out_count"] == 1
+    assert result["handling_balance"]["tendency"] == "no_data"

@@ -52,6 +52,32 @@ export interface GearingResult {
   gears: number[];
 }
 
+export interface MeasuredEngineInputs {
+  engineMaxRpm: number;
+  peakPowerRpm: number;
+  peakTorqueRpm: number;
+}
+
+/** One confirmed game step; this is an experiment, not an inferred optimum. */
+export function roadExplorationStep(setting: { value: number; minimum: number; maximum: number; step: number }, direction: -1 | 1): number | null {
+  const { value, minimum, maximum, step } = setting;
+  if ((direction !== -1 && direction !== 1) || ![value, minimum, maximum, step].every(Number.isFinite) || minimum >= maximum || step <= 0 || value < minimum || value > maximum) return null;
+  const grid = (value - minimum) / step;
+  if (Math.abs(grid - Math.round(grid)) > 1e-5) return null;
+  const candidate = Number((minimum + (Math.round(grid) + direction) * step).toFixed(8));
+  return candidate >= minimum && candidate <= maximum ? candidate : null;
+}
+
+/** Measured workflow adapter. Existing public formulas retain their contract. */
+export function calculateMeasuredGearing(goal: string, gears: number, params: TuningCarParams | null,
+  engine: MeasuredEngineInputs | null): GearingResult | null {
+  if (!params || !engine || !Number.isInteger(gears) || gears < 4 || gears > 10 || !Number.isFinite(params.maxHp) || params.maxHp <= 0 ||
+    ![engine.engineMaxRpm, engine.peakPowerRpm, engine.peakTorqueRpm].every(value => Number.isFinite(value) && value > 0) ||
+    engine.peakPowerRpm > engine.engineMaxRpm || engine.peakTorqueRpm > engine.engineMaxRpm) return null;
+  return calculateAEGOGearing(goal, gears, { ...params, maxHpRpm: engine.peakPowerRpm,
+    maxTorqueRpm: engine.peakTorqueRpm }, engine.engineMaxRpm);
+}
+
 export interface ChassisTuningResult {
   arb: {
     front: number;
