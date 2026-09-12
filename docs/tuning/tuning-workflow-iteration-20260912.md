@@ -6,11 +6,19 @@
 - 基準：`main` @ `c473099`
 - 規畫日期：2026-09-12
 - 本文件用途：把 `ref/fh6-tuning-restart-20260912` 的可回收內容轉成現行工作區可執行的分階段計畫。
+- 第一階段邊界：以最小六階段可驗證工作流取代目前五階段工作流；Road 原生接入，Rally／Drag／Drift 只做最小相容性調整。
 - 目前狀態：只建立規畫，尚未把參考包原始碼整批移植，也尚未宣稱實機或產品驗收完成。
 
 ## 1. 迭代目標
 
-把調校產品由「產生一組計算值」逐步收斂為可追溯、可回復的證據工作流：
+第一階段先把調校產品由目前五階段流程收斂為六階段可驗證工作流；六個使用者可見階段沿用參考包已核對的順序：
+
+```text
+1 Goal & Setup → 2 Tire baseline → 3 Chassis platform →
+4 Wheel alignment → 5 Engine data & gearing → 6 Setup verification
+```
+
+第 6 階段承載可追溯、可回復的最小驗證閉環：
 
 ```text
 準備 → 建立基準 → 行駛／錄製 → 描述性報告 → 單一變量 A/B → 保留或回復
@@ -23,7 +31,7 @@
 3. 哪些資料是原始 capture、哪些是分析結果、哪些是使用者確認已套用的設定。
 4. A/B 只改一個明確變量時，結果是否改善、無變化或反向；如何保留原始結果並回復設定。
 
-本輪不追求通用最佳調校器，也不以單一車輛、單一最快圈或幾何匹配結果宣稱跨車性能保證。
+第一階段不追求通用最佳調校器，也不以單一車輛、單一最快圈或幾何匹配結果宣稱跨車性能保證。Road 會先擁有完整的原生工作流行為；其他三種賽事只需要能在共用六階段契約下正常進入、顯示既有結果、保存相容資料並通過回歸測試，不在本階段大幅改動公式。
 
 ## 2. 已知基準與參考資料分層
 
@@ -43,7 +51,8 @@
 - 工作流：`source/frontend/src/features/tuning/tuningWorkflow.ts`、`tuningMeasurement.ts`、`calibrationReadiness.ts`、`TuningWorkspace.tsx`。
 - 同源 solver transport：`source/frontend/src/domain/tuning/solverService.ts`、`source/backend/tuning_solver_client.py`、`source/frontend/scripts/tuning-solver.mjs`。
 - 遙測與保存：`source/backend/telemetry_contract.py`、`race_recorder.py`、`telemetry_sqlite.py`、`motec_*`。
-- 第一條完整領域流程：`source/backend/road_*.py`、`source/frontend/src/features/road/` 及 `tests/test_road_workflow.py`。
+- 六階段導航與 readiness：`source/frontend/src/features/tuning/tuningWorkflow.ts`；其階段定義是本階段 UI／狀態遷移的參考，不代表整包檔案可直接覆蓋。
+- 第一條原生領域流程：`source/backend/road_*.py`、`source/frontend/src/features/road/` 及 `tests/test_road_workflow.py`。
 - 分析方法：`source/scripts/analyze_chassis_race.py`、`source/docs/` 中的工作流與底盤研究文件。
 
 參考包的 `guides/REFERENCE-MAP.md`、`guides/HANDOFF.md`、`guides/LIMITATIONS.md` 是本輪的導覽與證據邊界；封存原始碼中的舊完成標記、任務指示與歷史日期不視為目前狀態。
@@ -61,55 +70,59 @@
 
 交付：差異表、檔案 ownership、最小 production fixture 的驗收命令與失敗分類。
 
-### M1：工作流與證據契約
+### M1：第一階段 — 六階段工作流最小基礎
 
-先固定資料語意，再接 UI 與 service。
+先固定六階段順序與可進入條件，再接 Road 行為；不先做完整四賽事架構。
 
+- 將目前五階段入口映射成六階段，不破壞既有設定資料：目前 Goal／Setup 保留為第 1 階段；現有輪胎／定位拆為第 2、4 階段；底盤保留為第 3 階段；現有變速箱移到第 5 階段並與引擎資料並列；現有 telemetry calibration 收斂為第 6 階段 Setup verification。
+- 回收 `TUNING_WORKFLOW_STEPS`、readiness、step guard 與 resolver 的純函數概念，先以現行資料模型提供最小狀態機，不一次移植所有領域畫面。
 - 保留既有 `tuning-capture/v1`、`tuning-calibration/v1` 與 capability contract；新增的工作流紀錄必須引用它們，不重複定義車輛／單位欄位。
-- 定義工作流狀態：`prepared`、`baseline-recorded`、`run-recorded`、`reported`、`ab-compared`、`decided`。
+- 定義最小工作流狀態：`prepared`、`baseline-recorded`、`run-recorded`、`reported`、`ab-compared`、`decided`；第 6 階段可在資料不足時呈現 blocked／需要補測，而不是假裝完成。
 - 每次建議、套用確認、capture、分析與 A/B 決策都保存 immutable snapshot 或明確的 parent reference。
 - 缺少遊戲版本、改裝、路線、環境或輸入時使用 `unknown`／不適用狀態，不以歷史報告補值。
 - 將「建議值」「使用者確認已套用」「實際 capture 觀察」分成三種語意，避免 `AppliedSetupTable` 被誤當成遊戲狀態。
 
-交付：TypeScript／Python schema、序列化與反序列化測試、錯誤狀態測試、舊資料回讀策略。
+交付：六階段 TypeScript contract、step guard／resolver 測試、五階段舊狀態的回讀／降級策略，以及最小 production app fixture。
 
-### M2：量測與記錄閉環
+### M2：第一階段 — Road 原生最小工作流
 
-回收參考包中的量測流程，但以現行 UI 與 backend API 為邊界逐段整合。
+Road 是第一個真正實作六階段行為的賽事類型；先完成可驗證閉環，再擴展其他賽事。
 
-- 移植或重寫 `tuningMeasurement.ts` 的純函數部分，將按需輸入、profile 快照與失效條件接到現行 `TuningView`。
-- 將 `TuningTelemetryCaptureView` 的 capture metadata、60 Hz 語意、匯出與錄製狀態接到工作流，而不是另建第二種 capture 格式。
-- 以 `race_recorder.py`／`telemetry_sqlite.py` 為保存基礎；若回收 `telemetry_contract.py`，先做欄位／單位／缺值對照與 round-trip 測試。
-- 使用者未確認已套用的設定不可進入「實際結果」欄位；背景 profile 變更應使相關測量狀態失效並要求重新確認。
+- 以 `source/frontend/src/features/road/`、`source/backend/road_*.py` 與 Road 專屬測試為 selective recovery 候選，逐段對照現行 FastAPI／frontend 入口。
+- Road 的最小流程必須能完成：建立設定／基準、記錄一次 run、產生描述性報告、建立單一變量 A/B、保留或回復；不要求本階段完成所有局部路段模型。
+- 優先沿用現行 `TuningTelemetryCaptureView`、`tuning-capture/v1`、`race_recorder.py`／`telemetry_sqlite.py`；只有遇到 contract 缺口才補最小 adapter，不另建第二種 capture 格式。
+- 使用者未確認已套用的設定不可進入「實際結果」欄位；背景 profile 變更應使相關驗證狀態失效並要求重新確認。
+- Road 分析結果保持描述性；時間、滑移、懸吊、輪胎與控制輸入要分別呈現，不合成未驗證的總分或因果結論。
 
-交付：啟動工作流、建立基準、錄製一次 run、結束與重新載入的 production app integration fixture；同時保留原始資料與失敗原因。
+交付：Road 原生六階段 UI／service／storage 最小閉環、保存／重載 fixture、單一變量 A/B 測試與失敗原因保存。
 
-### M3：一般數學與 solver 同源性
+### M3：第一階段 — 其他賽事最小相容性
 
-這是計算正確性與產品信任邊界，不在 UI 中增加公式。
+Rally／Drag／Drift 在第一階段只接六階段契約與共用入口，不進行公式重寫或領域流程大改。
 
-- `frontend/src/utils/tuningMath.ts` 與 `tuningDiagnosis.ts` 維持物理公式 SSOT；React、Python backend、CLI／MCP 不新增平行公式。
-- 開發者路徑 `domain/tuning/` 的自然頻率、阻尼比、輪胎與領域 profile 仍標為 calibration prior；沒有實機資料與審查不得自動提升到一般產品路徑。
-- 統一單位、`Neutral`／未知季節、缺值 fallback、slider range 與可調整性邊界；所有極端輸入加上測試。
-- 若採用參考包的 solver bridge，先確認 Node／Vite runtime、bundle 版本、CLI／MCP transport 與前端 solver 結果一致，再接入產品入口。
-- `softMaxSpeed` 只可作 preview／圖表 bound；除非有明確測量輸入，不得把它默默當成車輛性能限制。
+- 讓三種賽事能使用相同的六階段導航、資料 contract、snapshot／回讀與 readiness 顯示；如個別賽事尚無原生第 6 階段，顯示明確的 compatibility／未支援細節狀態。
+- 保留現有 Rally／Drag／Drift 公開公式與輸出形狀；本階段只補 adapter、型別、入口接線與回歸測試。
+- `frontend/src/utils/tuningMath.ts` 與既有 domain profile 維持公式 SSOT；不因六階段遷移而調整 ARB、彈簧、阻尼、胎壓、齒比或 Drift／Drag 特定係數。
+- 未經實機資料與審查，開發者路徑 `domain/tuning/` 的自然頻率、阻尼比、輪胎與領域 profile 仍標為 calibration prior。
+- 若 solver bridge 或 `softMaxSpeed` 不是六階段最小閉環的必要依賴，延後到後續階段；不得為了接線把 preview bound 升格為車輛性能限制。
 
-交付：公式單元測試、transport parity 測試、bundle build、CLI／MCP contract 測試，以及一份「先驗／實機資料／結果」對照表。
+交付：三種賽事的 compatibility adapter、既有公式 regression tests、六階段入口 smoke tests，以及「本階段未改公式」的 diff／測試證據。
 
-### M4：Road 第一條端到端工作流
+### M4：第一階段驗收與後續切分
 
-以 Road 作為共用契約的第一個驗收樣本，先不要四個領域一起改。
+完成 M1–M3 後才進行本階段的產品與證據驗收；solver bridge、完整量測模型與其他賽事原生流程留待後續迭代。
 
-- 依參考包的 `road_models`、`road_analysis`、`road_comparison`、`road_router`、`road_service` 選擇性移植，逐個對照現行 FastAPI／frontend 入口。
-- 分析結果保持描述性：速度、制動、轉向、滑移、懸吊、輪胎與路段上下文；不直接輸出未證實的因果或通用最佳化結論。
+- production app fixture 能完成六階段 guard、Road run 與保存／重載。
 - A/B 設計只允許一個主要調整變量；保留全部 run、暖胎／起步／緩衝圈與非可比原因。
-- RoadStore 與 WorkflowStore 不在本階段強行合併；先明確哪個 schema 是新工作流的 owner，再補 migration／回讀測試。
+- 其他三種賽事的既有公式輸出與既有測試維持通過；若只因相容性接線而變更行為，必須有明確回歸測試與理由。
+- RoadStore 與 WorkflowStore 不在本階段強行合併；先明確新六階段工作流紀錄的 owner，再補 migration／回讀測試。
+- 驗收後才決定是否另開完整 telemetry／solver bridge、Offroad／Rally、Drag、Drift 原生分支。
 
-交付：Road 的 prepare → baseline → run → report → A/B → keep/revert production path、router／service／storage／frontend 測試與限制說明。
+交付：第一階段驗收報告、未完成項目清單、後續分支切分與限制說明。
 
-### M5：實機校準 gate 與後續領域擴展
+### 後續階段：實機校準與其他賽事原生擴展
 
-只有 M1–M4 的資料契約與 Road fixture 穩定後才開始。
+只有第一階段資料契約與 Road fixture 穩定後才開始；這些不是目前第一階段的必要交付。
 
 - 依 `docs/calibration/in-game-telemetry-collection-guide.md`、`in-game-test-schedule-and-matrix.md` 與 `human-review-and-telemetry-test-plan.md` 重新收集可比較資料。
 - 每個車輛／改裝／遊戲版本／路線／環境組合保留 capture manifest；至少做單一變量、重複採樣與反向結果記錄。
@@ -124,13 +137,12 @@
 
 | 後續分支 | Ownership | 主要輸出 |
 |---|---|---|
-| `codex/feat/tuning-verification-base` | 測試環境與 production fixture | 依賴、測試分層、真實 app fixture |
-| `codex/feat/tuning-telemetry-recording` | telemetry contract、recorder、SQLite、capture round-trip | 時間、單位、缺值與保存契約 |
-| `codex/feat/tuning-workflow-foundation` | workflow schema、store、migration／回讀 | M1 工作流狀態與 immutable records |
-| `codex/feat/tuning-measurement` | `features/tuning` 量測／確認流程 | M2 UI 閉環 |
-| `codex/feat/tuning-math-contract` | `tuningMath`、units、diagnosis 與純函數測試 | M3 數學契約與 priors 邊界 |
-| `codex/feat/tuning-solver-bridge` | solver bundle、CLI／MCP transport | 同源 parity 與 build contract |
-| `codex/feat/road-tuning-workflow` | Road service、router、analysis、前端與專屬測試 | M4 第一條完整領域流程 |
+| `codex/feat/tuning-six-stage-foundation` | 六階段 contract、step guard、舊五階段回讀 | M1 最小工作流基礎 |
+| `codex/feat/road-six-stage-workflow` | Road service、router、analysis、前端與專屬測試 | M2 Road 原生最小閉環 |
+| `codex/feat/tuning-compatibility-regression` | Rally／Drag／Drift adapter 與既有公式回歸 | M3 最小相容性 |
+| `codex/feat/tuning-verification-base` | production fixture、測試分層與整合驗收 | M4 第一階段驗收 |
+| `codex/feat/tuning-telemetry-recording` | telemetry contract、recorder、SQLite、capture round-trip | 後續量測／保存深化 |
+| `codex/feat/tuning-solver-bridge` | solver bundle、CLI／MCP transport | 後續同源 parity 與 build contract |
 
 `backend/main.py`、`frontend/src/App.tsx`、`Navigation.tsx`、`TuningWorkspace` 與共用 matching／storage 若被多個分支需要，應由單一 integration owner 集中接線；其他分支只提供可獨立驗證的模組與測試。
 
@@ -142,25 +154,32 @@
 - 依賴、Node／Python／Rust 工具版本與測試入口可重現。
 - 已區分 simulator、局部 router、production app、真實 FH6 與 release 證據。
 
-### G1：契約與純函數
+### G1：六階段契約與純函數
 
 - schema validation、unknown／缺值、單位與 immutable snapshot 測試通過。
+- 六階段順序、readiness guard、五階段舊狀態回讀與第 6 階段 blocked／補測狀態測試通過。
 - `tuningMath.test.ts`、相關 domain tests、backend contract tests 通過。
 - 不存在未標示來源的重複物理公式。
 
-### G2：產品工作流
+### G2：Road 原生產品工作流
 
-- 真實 app fixture 能完成 M1–M4 的狀態轉移與保存／重載。
+- 真實 app fixture 能完成六階段狀態轉移，並以 Road 完成 baseline、run、report、A/B、keep/revert 與保存／重載。
 - API、frontend hook、storage 的欄位與錯誤狀態一致。
 - A/B 報告保留全部資料，且只改一個主要變量。
 
-### G3：實機證據
+### G3：其他賽事相容性
+
+- Rally／Drag／Drift 可進入六階段共用入口並保存相容資料。
+- 既有三種賽事的公式輸出與回歸測試維持一致；沒有未被說明的公式漂移。
+- 任何新增的差異都限於 adapter／入口／契約，不以「支援六階段」暗示已完成該賽事原生工作流。
+
+### G4：實機證據
 
 - capture 含車輛、改裝、遊戲版本、路線、環境、輔助與設定快照。
 - 有可比較的重複採樣及未改善／反向結果記錄。
 - 只有通過人工審核的資料才可產生 fixture；其餘維持 `unverified` 或 `in-calibration`。
 
-### G4：發行前邊界
+### G5：發行前邊界
 
 - solver bundle、sidecar、installer 與乾淨 Windows runtime 另外驗收。
 - 未完成跨車實機或 release 驗收前，不更新「已完成」「通用最佳」或「實機驗證」字樣。
@@ -179,9 +198,10 @@
 下一個工作批次建議只做以下範圍：
 
 1. 執行參考包完整性檢查並保存結果。
-2. 完成現行工作區與參考包的 M0 差異表，確認真正需要回收的檔案與未解 ownership。
-3. 建立 M1 最小 `TuningWorkflow` contract 與 round-trip tests，不接四領域 UI。
-4. 建立一個 production app fixture，證明它不是 simulator-only 流程。
-5. 完成後再決定是否開 `tuning-telemetry-recording` 或 `tuning-workflow-foundation` 實作分支。
+2. 完成現行五階段與參考六階段的 M0 差異表，確認資料遷移與未解 ownership。
+3. 建立六階段 `TuningWorkflow` contract、step guard、舊狀態回讀與 round-trip tests。
+4. 建立 Road 原生最小閉環的 production app fixture；不接三種賽事的原生新公式。
+5. 為 Rally／Drag／Drift 建立只涵蓋入口／契約／既有公式回歸的 compatibility tests。
+6. 第一階段完成後，再決定是否開完整 telemetry recording、solver bridge 或其他賽事原生實作分支。
 
-第一批的完成條件是「契約與驗收邊界可重現」，不是「所有調校公式已完成」。
+第一階段的完成條件是「六階段工作流可驗證、Road 原生閉環可用、其他三種賽事相容且公式未大幅漂移」，不是「四種賽事都完成原生工作流」或「所有調校公式已完成」。
