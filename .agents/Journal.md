@@ -2251,3 +2251,16 @@
   - `ref/fh6-tuning-restart-20260912.zip` 的 SHA-256 仍為 `cb45af3e379924814d2aced99f534aefb959d9bcadb50fbab8fc4c1b6e612f78`。
 - **Validation boundary**：僅驗證文件與忽略規則，未重新執行產品單元／實機測試，亦未重新核驗外部研究內容。
 - **Status**：adopted。
+
+---
+
+## 2026-09-12 / 取消追蹤本地參考檔與 S650 文件退役評估
+
+- **Scope**：依使用者授權，僅從 `main` 的版本追蹤移除 `.codex/environments/environment.toml`、`ref/S650 HMI/S650-HMI-Next-Phase-Implementation-Plan.md`、`ref/S650 HMI/S650-HMI-Visual-Research.md`、`ref/vfd-media-audio-performance-implementation-plan.md`；採用 `agent-governance-audit`，本地副本保留，不改寫 Git 歷史或其他分支。
+- **Evidence**：四個檔案以 `git rm --cached` 取消追蹤後仍存在，SHA-256 與操作前一致；`git ls-files -ci --exclude-standard` 已無輸出。35 份入口／主題 Markdown 的 147 個本地連結均可在 Git index 解析，不依賴上述本地副本；13 個技能名稱與正式索引一致，tracked path case validator 通過。
+- **S650 assessment**：以使用者確認開發階段結束為整理前提，不等同本次重新驗證 HUD 的功能或視覺完成度。
+  - `hud_overlay/s650_hmi/FOXBODY_IMPLEMENTATION_REPORT.md` 是已完成階段的實作報告與後續建議；未找到其他受追蹤檔案引用其檔名，列為可移除候選，尚未執行額外刪除。
+  - `docs/hud/s650-media-properties-contract.md` 仍由中英文 README 與文件索引引用，且對應現行 backend/HUD media 欄位，應保留作維護契約；不把預留能力章節視為待完成承諾。
+  - `hud_overlay/s650_hmi/tests/README.md` 的 unit/integration 目錄、前端設定目錄及共用 Vitest 入口均存在，應保留作回歸測試導引。共用 HUD 指南、版本紀錄及既有 Journal 不因單一 HUD 開發結束而刪除。
+- **Validation boundary**：不修改 renderer、設定、資產或測試；純追蹤／文件變更不重跑產品測試，推送結果與遠端檢查另於本次任務回報。
+- **Status**：四檔取消追蹤已採用；其他 S650 文件僅完成評估。
