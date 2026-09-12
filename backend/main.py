@@ -25,9 +25,6 @@ parser = argparse.ArgumentParser(description="FH6 HorizonTuner Backend Sidecar")
 parser.add_argument(
     "--data-dir", type=str, default=None, help="Directory for user persistent data"
 )
-parser.add_argument(
-    "--dev", action="store_true", help="Require HTTP port 8001 without fallback"
-)
 parsed_args, _ = parser.parse_known_args()
 
 
@@ -123,6 +120,7 @@ from motec_exporter import (
 from motec_template import generate_motec_workspace_xml
 from overlay_metrics import OverlayPerformanceMetrics
 from path_security import safe_join_under_dir, safe_resolve_path
+from process_cleanup import cleanup_stale_port_listeners
 from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from settings_persistence import SerializedSettingsUpdate, SettingsPersistence
@@ -283,8 +281,6 @@ logger.info(
 
 
 class ConnectionManager:
-    WEBSOCKET_SEND_TIMEOUT_SECONDS = 0.75
-
     def __init__(self):
         self.active_connections: List[WebSocket] = []
         self.active_binary_connections: List[WebSocket] = []
@@ -317,48 +313,20 @@ class ConnectionManager:
             )
 
     async def broadcast_json(self, data: dict):
-        connections = list(self.active_connections)
-        if not connections:
-            return
-
-        async def send(connection: WebSocket):
+        for connection in self.active_connections:
             try:
-                await asyncio.wait_for(
-                    connection.send_json(data),
-                    timeout=self.WEBSOCKET_SEND_TIMEOUT_SECONDS,
-                )
-            except asyncio.TimeoutError:
-                logger.warning(
-                    "Timed out sending JSON WebSocket frame; dropping client."
-                )
-                self.disconnect(connection, is_binary=False)
+                await connection.send_json(data)
             except Exception as e:
-                logger.warning(f"Error sending JSON WebSocket frame: {e}")
+                logger.error(f"Error sending data to client: {e}")
                 self.disconnect(connection, is_binary=False)
-
-        await asyncio.gather(*(send(connection) for connection in connections))
 
     async def broadcast_binary(self, data: bytes):
-        connections = list(self.active_binary_connections)
-        if not connections:
-            return
-
-        async def send(connection: WebSocket):
+        for connection in self.active_binary_connections:
             try:
-                await asyncio.wait_for(
-                    connection.send_bytes(data),
-                    timeout=self.WEBSOCKET_SEND_TIMEOUT_SECONDS,
-                )
-            except asyncio.TimeoutError:
-                logger.warning(
-                    "Timed out sending binary WebSocket frame; dropping client."
-                )
-                self.disconnect(connection, is_binary=True)
+                await connection.send_bytes(data)
             except Exception as e:
-                logger.warning(f"Error sending binary WebSocket frame: {e}")
+                logger.error(f"Error sending binary data to client: {e}")
                 self.disconnect(connection, is_binary=True)
-
-        await asyncio.gather(*(send(connection) for connection in connections))
 
 
 telemetry_manager = ConnectionManager()
@@ -1160,7 +1128,13 @@ async def lifespan(app: FastAPI):
         )
     )
 
-    # Port ownership belongs to the running process; never kill another listener.
+    # Bind the UDP listener before exposing the HTTP server. Pre-flight check and
+    # clean up any stale HorizonTuner sidecar/backend process holding the port.
+    try:
+        cleanup_stale_port_listeners(port, current_pid=os.getpid(), is_udp=True)
+    except Exception as e:
+        logger.debug(f"Pre-flight UDP port cleanup check failed: {e}")
+
     current_udp_transport = await start_udp_listener(
         port=port,
         message_queue=telemetry_queue,
@@ -1612,23 +1586,11 @@ async def websocket_overlay_endpoint(websocket: WebSocket):
         # Every overlay client needs the effective unit contract before its
         # first telemetry frame.  Relying on a later settings mutation leaves
         # newly connected HUDs and the desktop telemetry bridge with defaults.
-        await asyncio.wait_for(
-            websocket.send_json(
-                {"type": "hud:config", "data": await get_overlay_config()}
-            ),
-            timeout=ConnectionManager.WEBSOCKET_SEND_TIMEOUT_SECONDS,
+        await websocket.send_json(
+            {"type": "hud:config", "data": await get_overlay_config()}
         )
         while True:
             await websocket.receive_text()
-    except asyncio.TimeoutError:
-        logger.warning(
-            "Timed out sending initial overlay configuration; dropping client."
-        )
-        overlay_manager.disconnect(websocket, is_binary=False)
-        try:
-            await websocket.close(code=1013)
-        except Exception:
-            pass
     except WebSocketDisconnect:
         overlay_manager.disconnect(websocket, is_binary=False)
     except Exception as e:
@@ -1807,6 +1769,13 @@ async def update_settings(data: dict):
                     pass
                 current_udp_transport = None
             try:
+                try:
+                    cleanup_stale_port_listeners(
+                        new_port, current_pid=os.getpid(), is_udp=True
+                    )
+                except Exception as e:
+                    logger.debug(f"Dynamic port change cleanup check failed: {e}")
+
                 current_udp_transport = await start_udp_listener(
                     port=new_port,
                     message_queue=telemetry_queue,
@@ -2694,8 +2663,8 @@ def hud_config_with_gui_theme(data: dict) -> dict:
 
 
 @app.get("/api/audio/devices")
-def get_audio_devices():
-    """Enumerate WASAPI devices in FastAPI's worker pool, off the HTTP loop."""
+async def get_audio_devices():
+    """List available WASAPI audio playback output devices for loopback spectrum capture."""
     return get_available_audio_devices()
 
 
@@ -2931,65 +2900,169 @@ async def get_audio_spectrum():
         }
 
 
+def check_frontend_alive(proc):
+    import time
+
+    time.sleep(2)
+    while True:
+        poll_code = proc.poll()
+        if poll_code is not None:
+            logger.error(f"Frontend process terminated with exit code: {poll_code}")
+            log_obj = _cleanup_state.get("log")
+            if log_obj:
+                try:
+                    log_obj.flush()
+                except Exception:
+                    pass
+            try:
+                sys.stdout.flush()
+                sys.stderr.flush()
+            except Exception:
+                pass
+            os._exit(poll_code if poll_code is not None else 0)
+        time.sleep(1)
+
+
 if __name__ == "__main__":
     import multiprocessing
-    import threading
-
-    import uvicorn
-    from server_runtime import ReadyServer, bind_http_socket
 
     multiprocessing.freeze_support()
 
-    # Closing the pipe also works when the host is killed or Tauri recompiles.
-    # A standalone console backend has no ownership pipe.
+    import sys
+    import threading
+
+    import uvicorn
+
+    preferred_backend_port = 8001
+
+    def get_free_port():
+        import socket
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        return port
+
+    # A standalone Vite dev server cannot call Tauri's get_backend_port command,
+    # so development must use the same deterministic port the frontend targets.
+    # Development keeps the historical 8001 contract. A Release Build prefers
+    # the same port so external MCP clients can keep a stable endpoint, then
+    # falls back to a dynamic port when another process owns it.
+    if getattr(sys, "frozen", False):
+        backend_port = preferred_backend_port
+    else:
+        # Dev mode intentionally keeps a stable endpoint for the Vite frontend
+        # and local MCP clients. BACKEND_PORT remains a Tauri external-backend
+        # discovery hint, not a runtime override for this entrypoint.
+        backend_port = preferred_backend_port
+    port_fallback = False
+
+    def write_web_port(port):
+        try:
+            log_dir = os.path.join(DATA_ROOT, "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            port_file_path = os.path.join(log_dir, "web_port.txt")
+            temp_path = f"{port_file_path}.tmp"
+            with open(temp_path, "w", encoding="utf-8") as f:
+                f.write(str(port))
+            os.replace(temp_path, port_file_path)
+        except Exception as e:
+            print(f"Failed to write web_port.txt: {e}")
+
+    def clear_web_port_file():
+        try:
+            os.remove(os.path.join(DATA_ROOT, "logs", "web_port.txt"))
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print(f"Failed to clear web_port.txt: {e}")
+
+    # Never let a previous Release Build advertise a port before this process
+    # has completed its own bind attempt.
+    clear_web_port_file()
+
+    _cleanup_state = {"log": None}
+
+    def cleanup_resources():
+        log = _cleanup_state.get("log")
+        if log:
+            try:
+                log.close()
+            except Exception:
+                pass
+            _cleanup_state["log"] = None
+
+    import atexit
+
+    atexit.register(cleanup_resources)
+
+    # 在 Sidecar 模式下，監聽 stdin EOF 以在父程序 (Tauri Host) 關閉時連帶退出。
     def monitor_stdin_eof():
         try:
             if sys.stdin is not None:
                 sys.stdin.read()
-        finally:
-            os._exit(0)
+        except Exception:
+            pass
+        # EOF 是 Tauri host 的明確 shutdown 合約；不能依賴啟動後經過的時間，
+        # 否則 ready 後快速關閉時可能留下仍持有 UDP socket 的 sidecar。
+        cleanup_resources()
+        os._exit(0)
 
+    # Tauri always passes --data-dir when it owns the sidecar. A manually
+    # launched executable may have an inherited console stdin whose EOF must
+    # not terminate the server.
     if parsed_args.data_dir:
         threading.Thread(target=monitor_stdin_eof, daemon=True).start()
 
+    import socket
+
     try:
-        listener = bind_http_socket(8001, allow_fallback=not parsed_args.dev)
-    except OSError as exc:
-        logger.error(
-            "HTTP 8001 is unavailable. Close the existing backend first: %s", exc
+        cleanup_stale_port_listeners(
+            backend_port, current_pid=os.getpid(), is_udp=False
         )
-        sys.exit(1)
+    except Exception as e:
+        logger.debug(f"Pre-flight HTTP TCP port cleanup check failed: {e}")
 
-    backend_port = listener.getsockname()[1]
+    max_retries = 3
+    bound = False
 
-    def publish_ready():
-        port_file_path = os.path.join(log_dir, "web_port.txt")
-        temp_path = f"{port_file_path}.tmp"
+    for attempt in range(max_retries):
         try:
-            with open(temp_path, "w", encoding="utf-8") as port_file:
-                port_file.write(str(backend_port))
-            os.replace(temp_path, port_file_path)
-        except OSError as exc:
-            logger.warning("Could not publish diagnostic port file: %s", exc)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", backend_port))
+                bound = True
+                break
+        except OSError as e:
+            print(f"Port {backend_port} is unavailable: {e}")
+            if attempt < max_retries - 1:
+                try:
+                    backend_port = get_free_port()
+                except Exception:
+                    backend_port += 1
+                port_fallback = True
+                print(f"Retrying with port {backend_port}...")
+            else:
+                print("Max retries reached. Backend failed to start.")
+                sys.exit(1)
+
+    if bound:
+        # This file is the source of truth for Tauri and external diagnostics;
+        # it must always contain the actual bound HTTP port, including fallback.
+        write_web_port(backend_port)
         emit_sidecar_event(
-            "BACKEND_READY", port=backend_port, port_fallback=backend_port != 8001
+            "BACKEND_READY",
+            port=backend_port,
+            port_fallback=port_fallback,
         )
 
-    class EndpointFilter(logging.Filter):
-        def filter(self, record: logging.LogRecord) -> bool:
-            if isinstance(record.args, (tuple, list)) and len(record.args) >= 3:
-                req_path = str(record.args[2])
-                if "/api/logs" in req_path or "/api/car_params" in req_path:
-                    return False
-            return True
+        class EndpointFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord) -> bool:
+                if isinstance(record.args, (tuple, list)) and len(record.args) >= 3:
+                    req_path = str(record.args[2])
+                    if "/api/logs" in req_path or "/api/car_params" in req_path:
+                        return False
+                return True
 
-    logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
-    server = ReadyServer(
-        uvicorn.Config(app, host="127.0.0.1", port=backend_port), publish_ready
-    )
-    try:
-        server.run(sockets=[listener])
-    finally:
-        listener.close()
-    if not server.started:
-        sys.exit(1)
+        logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
+        uvicorn.run(app, host="127.0.0.1", port=backend_port)

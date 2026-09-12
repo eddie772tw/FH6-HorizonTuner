@@ -1,2 +1,0 @@
-# Packaging tools are installed explicitly by setup_build.bat.
-pyinstaller>=6.10,<7.0

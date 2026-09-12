@@ -198,7 +198,7 @@ jobs:
         --label "PyInstaller sidecar"
         --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
         --metrics-file metrics/sidecar-build.json
-        -- uv run --no-project --active python scripts/build_sidecar.py server-sidecar.spec --clean
+        -- uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
 
     - name: Publish sidecar build metrics
       if: always()

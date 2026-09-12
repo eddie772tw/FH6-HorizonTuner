@@ -13,8 +13,6 @@ from pathlib import Path
 
 import pytest
 
-from scripts.windows_process_snapshot import rooted_process_tree, snapshot_processes
-
 
 def get_pe_string_info(filepath: str, key: str) -> str:
     if sys.platform != "win32":
@@ -125,11 +123,40 @@ def collect_diagnostics(
         json.dump(diag_info, f, indent=4)
 
     try:
-        processes = snapshot_processes()
+        ps_cmd = (
+            "Get-CimInstance Win32_Process | "
+            "Select-Object ProcessId, ParentProcessId, Name, CommandLine | "
+            "ConvertTo-Json -Depth 2"
+        )
+        ps_proc = subprocess.run(
+            ["powershell", "-Command", ps_cmd], capture_output=True, text=True
+        )
         with open(diag_dir / "process_tree.json", "w", encoding="utf-8") as f:
-            json.dump(processes, f, indent=4)
+            f.write(ps_proc.stdout)
+
+        tree_script = f"""
+$all = Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, Name, CommandLine
+$root_pid = {proc.pid}
+$visited = New-Object System.Collections.Generic.HashSet[int]
+function Get-Tree($pid) {{
+    if ($visited.Contains($pid)) {{ return }}
+    $visited.Add($pid) | Out-Null
+    $proc = $all | Where-Object ProcessId -eq $pid
+    if ($proc) {{
+        $proc
+    }}
+    $children = $all | Where-Object ParentProcessId -eq $pid
+    foreach ($child in $children) {{
+        Get-Tree $child.ProcessId
+    }}
+}}
+Get-Tree $root_pid | ConvertTo-Json -Depth 2
+"""
+        ps_tree_proc = subprocess.run(
+            ["powershell", "-Command", tree_script], capture_output=True, text=True
+        )
         with open(diag_dir / "process_tree_rooted.json", "w", encoding="utf-8") as f:
-            json.dump(rooted_process_tree(processes, proc.pid), f, indent=4)
+            f.write(ps_tree_proc.stdout)
     except Exception as e:
         with open(diag_dir / "process_tree_error.txt", "w", encoding="utf-8") as f:
             f.write(str(e))

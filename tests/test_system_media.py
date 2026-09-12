@@ -7,10 +7,6 @@ import system_media_contract
 
 
 def _reset_media_cache(monkeypatch):
-    query_future = getattr(system_media, "_media_query_future", None)
-    if query_future is not None and not query_future.done():
-        query_future.cancel()
-    monkeypatch.setattr(system_media, "_media_query_future", None)
     monkeypatch.setattr(
         system_media,
         "_media_cache",
@@ -55,33 +51,17 @@ def test_winrt_media_uses_modular_namespace():
     source = Path(system_media.__file__).read_text(encoding="utf-8")
     setup_script = Path(__file__).parents[1] / "setup_venv.bat"
     setup_source = setup_script.read_text(encoding="utf-8")
-    probe_script = setup_script.parent / "scripts" / "verify_python_environment.py"
-    probe_source = probe_script.read_text(encoding="utf-8")
-    requirements_source = (setup_script.parent / "requirements.txt").read_text(
-        encoding="utf-8"
-    )
 
     assert "import winrt.windows.foundation" in source
     assert "import winrt.windows.media.control as wmc" in source
     assert "import winsdk.windows.media.control as wmc" not in source
-    for namespace in (
-        "winrt.windows.foundation",
-        "winrt.windows.foundation.collections",
-        "winrt.windows.media",
-        "winrt.windows.media.control",
-        "winrt.windows.storage",
-        "winrt.windows.storage.streams",
-    ):
-        assert f'"{namespace}"' in probe_source
-    assert "winrt-Windows.Foundation.Collections" in requirements_source
-    assert "winrt-Windows.Media" in requirements_source
-    assert "winrt-Windows.Storage" in requirements_source
+    assert "import winrt.windows.foundation;" in setup_source
+    assert "import winrt.windows.foundation.collections;" in setup_source
+    assert "import winrt.windows.media;" in setup_source
+    assert "import winrt.windows.media.control;" in setup_source
+    assert "import winrt.windows.storage;" in setup_source
+    assert "import winrt.windows.storage.streams" in setup_source
     assert "winsdk.windows.media.control" not in setup_source
-    assert "verify_python_environment.py" in setup_source
-    assert "--version-only" in setup_source
-    assert "import soundcard" not in probe_source
-    assert 'find_spec("soundcard")' in probe_source
-    assert 'metadata.version("soundcard")' in probe_source
     assert "_query_powershell_gsmtc" not in source
     assert "_extract_windows_desktop_media" not in source
     assert "subprocess.run" not in source
@@ -105,22 +85,6 @@ def test_winrt_media_is_returned_directly(monkeypatch):
     assert result["source"] == "winrt"
     assert result["state"] == "live"
     assert result["has_media"] is True
-
-
-def test_winrt_media_timeout_does_not_block_backend_loop(monkeypatch):
-    _reset_media_cache(monkeypatch)
-    monkeypatch.setattr(system_media, "MEDIA_QUERY_TIMEOUT_SECONDS", 0.02)
-
-    async def stalled_winrt():
-        await asyncio.sleep(0.1)
-        return {"has_media": False}
-
-    monkeypatch.setattr(system_media, "_try_get_winrt_gsm_media", stalled_winrt)
-
-    result = asyncio.run(system_media.get_system_media_info())
-
-    assert result["state"] == "unavailable"
-    assert result["source"] == "unavailable"
 
 
 def test_gsmtc_media_properties_are_mapped_to_bounded_contract():

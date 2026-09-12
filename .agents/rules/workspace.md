@@ -12,10 +12,11 @@
 3. **Agent CLI 工具鏈 (`fh6-agent`)**：專門面向 AI Agent 提供高速物理算牌、遙測監控、閉環診斷與 MCP 設定導出。
    - Agent 進行車型檢索、底盤算牌、齒比計算、Preset 讀寫與遙測診斷時，強烈推薦調用 `fh6-agent.bat <subcommand> --json`。
    - 啟動腳本合約：
-     - `setup_dev.bat`：明確安裝 Python 與前端依賴。
-     - `dev_full.bat` / `dev_lite.bat`：Full／Lite 開發入口；Tauri 管理 Python 原始碼程序的啟停，不編譯後端 sidecar。
-     - `fh6-agent.bat`：直接執行 CLI 指令；獨立後端命令見 `docs/guides/development.md`。
-     - `setup_build.bat` / `build_all.bat`：分開準備打包工具與建立發行產物。
+     - `start_all.bat`：啟動後端與前端視窗。
+     - `start_backend.bat`：僅啟動後端服務。
+     - `start_frontend.bat`：僅啟動前端開發介面。
+     - `start_backend_with_cli.bat`：啟動後端並開啟 `fh6-agent` 即時互動終端。
+     - `start_cli.bat`：單純開啟 `fh6-agent` 互動終端（支援離線純算牌模式）。
 
 ## 任務完成驗證關卡 (Verification Gate)
 - 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試（遵循反過度測試與分層原則）：

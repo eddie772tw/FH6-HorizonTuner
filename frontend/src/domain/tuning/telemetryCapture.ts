@@ -70,6 +70,7 @@ export interface TuningCaptureSummary {
 }
 
 const finite = (value: number | undefined, fallback = 0): number => Number.isFinite(value) ? (value as number) : fallback;
+const array4 = (value: number[] | undefined): number[] => Array.from({ length: 4 }, (_, index) => finite(value?.[index]));
 const round = (value: number, digits = 2): number => {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
@@ -94,37 +95,11 @@ export function telemetryToCaptureSample(data: TelemetryData): TuningCaptureSamp
     velocityX: finite(data.VelocityX),
     velocityY: finite(data.VelocityY),
     velocityZ: finite(data.VelocityZ),
-    // [PERF] Manual unrolling to avoid Array.from intermediate objects and closure overhead in high-frequency path
-    normalizedSuspensionTravel: [
-      finite(data.NormalizedSuspensionTravel?.[0]),
-      finite(data.NormalizedSuspensionTravel?.[1]),
-      finite(data.NormalizedSuspensionTravel?.[2]),
-      finite(data.NormalizedSuspensionTravel?.[3])
-    ],
-    tireSlipRatio: [
-      finite(data.TireSlipRatio?.[0]),
-      finite(data.TireSlipRatio?.[1]),
-      finite(data.TireSlipRatio?.[2]),
-      finite(data.TireSlipRatio?.[3])
-    ],
-    tireSlipAngle: [
-      finite(data.TireSlipAngle?.[0]),
-      finite(data.TireSlipAngle?.[1]),
-      finite(data.TireSlipAngle?.[2]),
-      finite(data.TireSlipAngle?.[3])
-    ],
-    tireTemp: [
-      finite(data.TireTemp?.[0]),
-      finite(data.TireTemp?.[1]),
-      finite(data.TireTemp?.[2]),
-      finite(data.TireTemp?.[3])
-    ],
-    tireCombinedSlip: [
-      finite(data.TireCombinedSlip?.[0]),
-      finite(data.TireCombinedSlip?.[1]),
-      finite(data.TireCombinedSlip?.[2]),
-      finite(data.TireCombinedSlip?.[3])
-    ],
+    normalizedSuspensionTravel: array4(data.NormalizedSuspensionTravel),
+    tireSlipRatio: array4(data.TireSlipRatio),
+    tireSlipAngle: array4(data.TireSlipAngle),
+    tireTemp: array4(data.TireTemp),
+    tireCombinedSlip: array4(data.TireCombinedSlip),
     positionX: finite(data.PositionX),
     positionY: finite(data.PositionY),
     positionZ: finite(data.PositionZ),

@@ -1,8 +1,6 @@
 import asyncio
-import concurrent.futures
 import logging
 import sys
-import threading
 import time
 from typing import Any
 
@@ -65,9 +63,7 @@ _thumbnail_cache = {
 CACHE_TTL_SECONDS = 1.0
 MEDIA_STALE_GRACE_SECONDS = 3.0
 MEDIA_FAILURE_BACKOFF_SECONDS = (1.0, 2.0, 5.0, 10.0)
-MEDIA_QUERY_TIMEOUT_SECONDS = 1.5
 _media_query_lock = asyncio.Lock()
-_media_query_future: concurrent.futures.Future | None = None
 
 
 def get_current_thumbnail_data() -> tuple[bytes | None, str | None, str | None]:
@@ -233,7 +229,7 @@ async def get_system_media_info() -> dict:
 
         _media_cache["last_check"] = now
 
-        winrt_res = await _get_winrt_media_without_blocking_loop()
+        winrt_res = await _try_get_winrt_gsm_media()
         if winrt_res is not None:
             if winrt_res.get("has_media"):
                 _apply_media_result(winrt_res, source="winrt", now=now)
@@ -243,57 +239,6 @@ async def get_system_media_info() -> dict:
 
         _apply_media_failure(now)
         return _media_snapshot()
-
-
-def _run_winrt_media_query_in_worker() -> dict | None:
-    """Run the WinRT coroutine on a worker-owned event loop.
-
-    Some WinRT projections can block while waiting for GSMTC, even though the
-    Python API is awaitable. Keeping this work off uvicorn's event loop ensures
-    a stalled media provider cannot prevent the HUD HTML/API from responding.
-    """
-    return asyncio.run(_try_get_winrt_gsm_media())
-
-
-def _start_winrt_media_query() -> concurrent.futures.Future:
-    """Start one daemon query so a stuck native call cannot block shutdown."""
-    future: concurrent.futures.Future = concurrent.futures.Future()
-
-    def run_query() -> None:
-        try:
-            future.set_result(_run_winrt_media_query_in_worker())
-        except Exception as error:
-            future.set_exception(error)
-
-    threading.Thread(
-        target=run_query,
-        name="fh6-gsmtc",
-        daemon=True,
-    ).start()
-    return future
-
-
-async def _get_winrt_media_without_blocking_loop() -> dict | None:
-    """Query GSMTC without allowing native media APIs to freeze the backend."""
-    global _media_query_future
-
-    if _media_query_future is None or _media_query_future.done():
-        _media_query_future = _start_winrt_media_query()
-
-    future = asyncio.wrap_future(_media_query_future)
-    try:
-        return await asyncio.wait_for(
-            asyncio.shield(future), timeout=MEDIA_QUERY_TIMEOUT_SECONDS
-        )
-    except asyncio.TimeoutError:
-        logger.warning(
-            "Windows GSMTC media query exceeded %.1fs; using cached fallback.",
-            MEDIA_QUERY_TIMEOUT_SECONDS,
-        )
-        return None
-    except Exception as error:
-        logger.debug("Windows GSMTC media query notice: %s", error)
-        return None
 
 
 def _media_snapshot() -> dict:

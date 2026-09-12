@@ -119,7 +119,7 @@ jobs:
           @{ discord_application_id = $env:DISCORD_APPLICATION_ID } |
             ConvertTo-Json -Compress |
             Set-Content -LiteralPath $generatedPath -Encoding UTF8
-          uv run --no-project --active python scripts/build_sidecar.py server-sidecar.spec --clean
+          uv run --no-project --active python -m PyInstaller server-sidecar.spec --clean
         }
         finally {
           Remove-Item -LiteralPath $generatedPath -Force -ErrorAction SilentlyContinue
