@@ -21,7 +21,7 @@
    - **ABS 防鎖死**：依測試目的固定（建議一般開啟，直線煞車極限測試時記錄設定）。
 
 ### B. 軟體端設定
-1. 啟動 `start_all.bat` 或後端服務。
+1. 啟動 `dev_full.bat` 或後端服務。
 2. 進入前端 **Settings → Developer Options**，開啟 **Use Developer Tuning View**。
 3. 進入 **Tuning** 頁面，點擊右上角 **Open Telemetry Capture** 開啟錄製工具。
 4. 若使用 AI 輔助分析，確認 MCP 狀態為已連接（`http://127.0.0.1:8001/mcp`）。

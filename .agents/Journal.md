@@ -2264,3 +2264,43 @@
   - `hud_overlay/s650_hmi/tests/README.md` 的 unit/integration 目錄、前端設定目錄及共用 Vitest 入口均存在，應保留作回歸測試導引。共用 HUD 指南、版本紀錄及既有 Journal 不因單一 HUD 開發結束而刪除。
 - **Validation boundary**：不修改 renderer、設定、資產或測試；純追蹤／文件變更不重跑產品測試，推送結果與遠端檢查另於本次任務回報。
 - **Status**：四檔取消追蹤已採用；其他 S650 文件僅完成評估。
+
+---
+
+## 2026-09-12 / Full、Lite 開發啟動收斂與 WMI／WASAPI 阻塞分離
+
+- **Scope**：`fix-dev-env-startup`；採用 `modular-refactoring`、`portable-release-validation`、`agent-governance-audit`、`cross-agent-collaboration`。保留本輪前既存的 WebSocket、system_media、OverlayView 與 frontend transport 修改；依使用者明確要求委派一個子代理處理音訊模組。
+- **Decision**：
+  - 開發入口只保留 `dev_full.bat`、`dev_lite.bat`，由 Tauri 經 uv 執行 `.venv` 的 Python source，沒有 PyInstaller／後端 sidecar EXE。Tauri 擁有該程序與 stdin 管道；ready 使用 stdout，port 檔案只供診斷／CLI。
+  - 環境準備使用 `setup_dev.bat`／`setup_build.bat`，建置使用 `build_all.bat`。日常啟動不安裝、格式化或更新資料；打包不呼叫環境自動修復。移除七支舊 start 入口、stop／wait 輔助、無生產呼叫者的 process_cleanup 模組與舊目錄掃描規則。
+  - HTTP socket 只綁定一次；Dev `--dev` 固定 8001，衝突時失敗，Release 保留動態 fallback。UDP 初始化與 HTTP listening 完成後才發布 ready。
+- **Reproduced findings**：
+  - 同步音訊列舉原本在 async HTTP handler 中卡住整個 event loop；改為 FastAPI worker 路由。子代理加入單一探索 daemon、1 秒等待、30 秒成功快取與 5 秒錯誤退避，避免 native 卡住後持續增加 worker。
+  - 本機 SoundCard／PyInstaller 的 `platform.win32_ver()` 均進入 CPython 3.13.12 `_wmi_query` 掛起；PowerShell WMI 查詢也逾時。服務 Running 不代表查詢可用，沒有已驗證的主機層修復。
+  - SoundCard 跨探索／錄音執行緒缺少 COM 初始化，重現 `0x800401f0`。每個 WASAPI 執行緒現在各自初始化並平衡釋放 COM。
+- **Evidence**：
+  - Full／Lite 真實開發入口啟動、HTTP 200、WebSocket accepted、關閉釋放 backend port；第二個 Dev Python 程序 exit 1，原 Lite 繼續 HTTP 200。
+  - 未停用 WMI 的實際音訊 HTTP 呼叫：1.070／1.015／1.010 秒返回 fallback，其他 API 均 HTTP 200，後端結束後 UDP 釋放。
+  - 完整後端 299 passed／8 deselected（僅原有 marker）；前端 89 files／579 tests 及 build；Rust lib 3 tests；工具 25 tests；setup_build 實跑 exit 0；版本合約 11.45.17、Ruff、Rust format、path case、48 個文件連結及 diff whitespace 驗證通過。
+- **Validation boundary**：3 個 speaker 與修復後收到 loopback frame 的實機證據，僅存在於隔離探針暫時停用 platform WMI 的條件下；沒有永久 monkey patch。PyInstaller 正常匯入仍被本機 WMI 阻塞，本輪未完成新 EXE 打包，亦不宣稱音訊硬體／乾淨 Windows／遊戲端驗收完成。
+- **Reference**：[開發指南](../docs/guides/development.md)、[音訊診斷](../docs/guides/windows-audio-diagnostics.md)。
+- **Status**：專案內啟動與音訊修正已驗證；WMI 主機層問題與新發行產物驗收仍未完成，未 commit／push。
+
+---
+
+## 2026-09-12 / 以等價 Windows API 路徑避開 WMI 掛起
+
+- **Scope**：延續 `fix-dev-env-startup`；使用者明確允許以等價實現避開 WMI，續派原音訊子代理。沿用 `portable-release-validation`、`cross-agent-collaboration`、`agent-governance-audit`；保留本輪之前的未提交修改。
+- **Decision**：SoundCard 匯入期間以有鎖、`finally` 恢復的局部 `platform._wmi` fallback 使用 CPython 既有 `getwindowsversion`／`ver`／registry 版本解析；保留原有版本對照與每執行緒 COM ownership。開發後端仍直接執行 Python source。
+- **Packaging**：新增 `scripts/build_sidecar.py`，暫存 `_wmi.py` 僅透過該次 builder／hook 子程序的 `PYTHONPATH` 使可選 WMI 模組不可用；原 `.venv`、第三方、系統不變。spec 排除 `_wmi`；本地 build 與三個打包 workflow 共用 wrapper。PyInstaller 6.22.2 完整打包成功，archive 1726 entries 無 WMI DLL／shim，含 SoundCard 與音訊 helper。
+- **Diagnostics**：移除主機測試失敗收集中的兩段無期限 `Get-CimInstance`，改用 Toolhelp32Snapshot 一次快照取得 PID／父 PID／exe 名稱並篩選受測程序樹，不讀取全機 command lines。原生受控子程序測試驗證關係，handle 由 `finally` 釋放。
+- **Additional packaging finding**：Lite 原設定只封裝 `dist/lite`，遺漏頁面引用的共用 `dist/assets`。改封裝 `dist`，主視窗 url 指向 `lite/index.html`，devUrl 使用 Vite 根目錄。Lite 已重新建置並透過其實際 WebView 驗證。
+- **Evidence**：
+  - 正常 source：裝置入口 0.117 秒列出 3 個真實 speaker；HTTP 0.170 秒回應 3 個裝置，頻譜 `source=wasapi`／`state=live`／sequence 有效；COM worker 停止，WMI provider 恢復原物件，stdin EOF exit 0。
+  - `cmd /c build_all.bat` exit 0；修正 Lite 資源根後單獨重新執行 Tauri Lite release build 成功。Full／Lite 新 EXE 各 54,139,904 bytes，PE FileVersion／ProductVersion 均 11.45.17。
+  - 兩個新 EXE 複製到各自獨立目錄，實際 WebView 有 React 內容、入口 JS／CSS 全部 200。音訊 HTTP 0.271／0.162 秒各列出 3 裝置，均收到 WASAPI frame（當時 silence），正常關窗 exit 0，HTTP／UDP 釋放。
+  - 完整後端 302 passed／8 deselected；前端 89 files／579 tests；工具 31 tests。產物／主機 gate 額外 8 passed／1 deselected，包含 Full／Lite 預設及動態 HTTP port、重啟、資源釋放與 metadata。
+  - 修正後 `dev_lite.bat` 實跑：確認 Python source 啟動訊息，WebView `/lite/index.html` 有 React root，音訊 HTTP 200／3 個 speaker。關閉本輪啟動程序後，以 socket 確認 HTTP 8001／Vite 1420 無 listener、UDP 8000 可綁定；Ruff check／format（180 files）與 diff whitespace 通過。
+- **Validation boundary**：本機 WMI 服務本身未修復；產品需求已有等價路徑，不要求主機修復才能啟動／打包。沒有系統服務、WMI repository 或驅動變更，亦未驗證其他主機、音訊品質或遊戲同步。Python／SoundCard 升級時須重新檢查局部 stdlib fallback。
+- **Reference**：[音訊診斷](../docs/guides/windows-audio-diagnostics.md)、[開發指南](../docs/guides/development.md)。
+- **Status**：替代路徑、本機 source 與新 Full／Lite 產物已驗證；未 commit／push。

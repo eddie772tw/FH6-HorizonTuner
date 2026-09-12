@@ -7,6 +7,7 @@ export interface BackendStatus {
 }
 
 export const PREFERRED_BACKEND_PORT = 8001;
+export const DEFAULT_BACKEND_REQUEST_TIMEOUT_MS = 10_000;
 
 type FetchImplementation = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -67,8 +68,30 @@ export function backendWebSocketUrl(path: string): string {
   return backendTransport.webSocketUrl(path);
 }
 
-export function backendFetch(path: string, init?: RequestInit): Promise<Response> {
-  return backendTransport.fetch(path, init);
+export function backendFetch(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = DEFAULT_BACKEND_REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : undefined;
+  const externalSignal = init?.signal;
+  const forwardAbort = () => controller.abort();
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener("abort", forwardAbort, { once: true });
+    }
+  }
+
+  return backendTransport
+    .fetch(path, { ...init, signal: controller.signal })
+    .finally(() => {
+      if (timeout !== undefined) clearTimeout(timeout);
+      externalSignal?.removeEventListener("abort", forwardAbort);
+    });
 }
 
 export async function waitForBackendReady(timeoutMs = 30_000): Promise<BackendStatus> {

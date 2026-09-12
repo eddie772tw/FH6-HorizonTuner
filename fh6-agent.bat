@@ -7,26 +7,22 @@ set "SCRIPT_DIR=%~dp0"
 set "BINARY_DIST=%SCRIPT_DIR%dist\fh6-agent.exe"
 set "BINARY_ROOT=%SCRIPT_DIR%fh6-agent.exe"
 set "VENV_PY=%SCRIPT_DIR%.venv\Scripts\python.exe"
+set "UV_EXE=uv"
 
-REM 1. If standalone binary exists, invoke it directly
-if exist "%BINARY_ROOT%" (
-    "%BINARY_ROOT%" %*
-    exit /b %errorlevel%
-)
-if exist "%BINARY_DIST%" (
-    "%BINARY_DIST%" %*
-    exit /b %errorlevel%
-)
-
-REM 2. Fall back to project uv / Python virtualenv
+cd /D "%SCRIPT_DIR%"
+if exist "%BINARY_ROOT%" goto :binary_root
+if exist "%BINARY_DIST%" goto :binary_dist
 where.exe uv >nul 2>nul
-if not errorlevel 1 (
-    if exist "%VENV_PY%" (
-        uv run --no-project --python "%VENV_PY%" -m backend.agent_cli %*
-        exit /b %errorlevel%
-    )
-)
-
-REM 3. Fall back to standard python on PATH
-python -m backend.agent_cli %*
+if errorlevel 1 goto :missing
+if not exist "%VENV_PY%" goto :missing
+"%UV_EXE%" run --offline --no-project --python "%VENV_PY%" python -m backend.agent_cli %*
 exit /b %errorlevel%
+:binary_root
+"%BINARY_ROOT%" %*
+exit /b %errorlevel%
+:binary_dist
+"%BINARY_DIST%" %*
+exit /b %errorlevel%
+:missing
+echo [ERROR] No supported FH6 agent runtime was found. Run setup_dev.bat first.
+exit /b 1
