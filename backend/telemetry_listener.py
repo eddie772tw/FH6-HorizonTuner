@@ -36,9 +36,18 @@ LEGACY_TELEMETRY_SCHEMA = "forza-data-out/legacy-common-v1"
 FULL_TELEMETRY_SCHEMA = "forza-data-out/fh6-324-v2"
 
 # Pre-compiled structs for high-performance parsing
-_LEGACY_STRUCT = struct.Struct("<iI" + "f" * 51 + "i" * 5)
+_LEGACY_STRUCT = struct.Struct("<iI" + "f" * 27 + "iiii" + "f" * 20 + "i" * 5)
 _FULL_STRUCT = struct.Struct(
-    "<iI" + "f" * 51 + "i" * 5 + "iii" + "f" * 17 + "HB" + "BBBBBb" + "3s"
+    "<iI"
+    + "f" * 27
+    + "iiii"
+    + "f" * 20
+    + "i" * 5
+    + "iii"
+    + "f" * 17
+    + "HB"
+    + "BBBBBb"
+    + "3s"
 )
 
 
@@ -81,6 +90,15 @@ def _plausibility_rejection_reason(telemetry_data: dict) -> str | None:
         "Roll",
     )
     if not all(math.isfinite(telemetry_data[field]) for field in numeric_values):
+        return "non_finite"
+    if not all(
+        math.isfinite(telemetry_data.get(field, 0))
+        for field in ("AngularVelocityX", "AngularVelocityY", "AngularVelocityZ")
+    ):
+        return "non_finite"
+    if not all(
+        math.isfinite(value) for value in telemetry_data.get("WheelRotationSpeed", ())
+    ):
         return "non_finite"
     for field in (
         "SurfaceRumble",
@@ -207,6 +225,9 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
             "VelocityX": unpacked[8],
             "VelocityY": unpacked[9],
             "VelocityZ": unpacked[10],
+            "AngularVelocityX": unpacked[11],
+            "AngularVelocityY": unpacked[12],
+            "AngularVelocityZ": unpacked[13],
             "Yaw": unpacked[14],
             "Pitch": unpacked[15],
             "Roll": unpacked[16],
@@ -230,6 +251,18 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
                 unpacked[52],
             ],
             "TireSlipRatio": [unpacked[21], unpacked[22], unpacked[23], unpacked[24]],
+            "WheelRotationSpeed": [
+                unpacked[25],
+                unpacked[26],
+                unpacked[27],
+                unpacked[28],
+            ],
+            "WheelOnRumbleStrip": [
+                unpacked[29],
+                unpacked[30],
+                unpacked[31],
+                unpacked[32],
+            ],
             "TireSlipAngle": [unpacked[41], unpacked[42], unpacked[43], unpacked[44]],
             "CarOrdinal": unpacked[53],
             "CarClass": unpacked[54],
@@ -275,6 +308,9 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
             "VelocityX": unpacked[8],
             "VelocityY": unpacked[9],
             "VelocityZ": unpacked[10],
+            "AngularVelocityX": unpacked[11],
+            "AngularVelocityY": unpacked[12],
+            "AngularVelocityZ": unpacked[13],
             "Yaw": unpacked[14],
             "Pitch": unpacked[15],
             "Roll": unpacked[16],
@@ -298,6 +334,18 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
                 unpacked[52],
             ],
             "TireSlipRatio": [unpacked[21], unpacked[22], unpacked[23], unpacked[24]],
+            "WheelRotationSpeed": [
+                unpacked[25],
+                unpacked[26],
+                unpacked[27],
+                unpacked[28],
+            ],
+            "WheelOnRumbleStrip": [
+                unpacked[29],
+                unpacked[30],
+                unpacked[31],
+                unpacked[32],
+            ],
             "TireSlipAngle": [unpacked[41], unpacked[42], unpacked[43], unpacked[44]],
             "CarOrdinal": unpacked[53],
             "CarClass": unpacked[54],
