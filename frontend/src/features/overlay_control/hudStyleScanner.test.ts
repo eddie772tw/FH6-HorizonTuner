@@ -3,7 +3,10 @@ import {
   fetchHudStylesList,
   formatHudDropdownOptions,
   getHudUrlPrefix,
+  isWipHudQueryEnabled,
   HUD_DISPLAY_NAMES,
+  WIP_HUD_DISPLAY_NAMES,
+  WIP_HUD_IDS,
   HudStyleEntry,
 } from './hudStyleScanner';
 
@@ -72,5 +75,94 @@ describe('hudStyleScanner frontend module tests', () => {
     expect(getHudUrlPrefix(styles, 'my_hud')).toBe('/hud_user');
     expect(getHudUrlPrefix(styles, 'simple')).toBe('/hud');
     expect(getHudUrlPrefix(styles, 'non_existent')).toBe('/hud');
+  });
+
+  describe('HUD menu registration and WIP handling', () => {
+    it('HUD_DISPLAY_NAMES should exclude WIP styles and retain production styles', () => {
+      // WIP styles must be unregistered from official HUD_DISPLAY_NAMES
+      expect(HUD_DISPLAY_NAMES['motec_gt3']).toBeUndefined();
+      expect(HUD_DISPLAY_NAMES['fh5_arc']).toBeUndefined();
+      expect(HUD_DISPLAY_NAMES['cyberpunk_hud']).toBeUndefined();
+
+      // Production styles should be retained
+      expect(HUD_DISPLAY_NAMES['defi_triple']).toBe('Defi Advance BF');
+      expect(HUD_DISPLAY_NAMES['initial_d']).toBe('Initial D AE86 TRD');
+      expect(HUD_DISPLAY_NAMES['vfd']).toBe('Retro VFD');
+    });
+
+    it('WIP_HUD_DISPLAY_NAMES and WIP_HUD_IDS should correctly track WIP styles', () => {
+      expect(WIP_HUD_IDS.has('motec_gt3')).toBe(true);
+      expect(WIP_HUD_IDS.has('fh5_arc')).toBe(true);
+      expect(WIP_HUD_IDS.has('cyberpunk_hud')).toBe(true);
+      expect(WIP_HUD_IDS.has('defi_triple')).toBe(false);
+
+      expect(WIP_HUD_DISPLAY_NAMES['fh5_arc']).toContain('(WIP)');
+      expect(WIP_HUD_DISPLAY_NAMES['cyberpunk_hud']).toContain('(WIP)');
+      expect(WIP_HUD_DISPLAY_NAMES['motec_gt3']).toContain('(WIP)');
+    });
+
+    it('formatHudDropdownOptions should exclude WIP styles by default', () => {
+      const mockStyles: HudStyleEntry[] = [
+        { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'cyberpunk_hud', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'motec_gt3', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'defi_triple', source: 'builtin', urlPrefix: '/hud' },
+      ];
+
+      const options = formatHudDropdownOptions(mockStyles);
+      const optionValues = options.map((o) => o.value);
+
+      expect(optionValues).toContain('vfd');
+      expect(optionValues).toContain('defi_triple');
+      expect(optionValues).not.toContain('fh5_arc');
+      expect(optionValues).not.toContain('cyberpunk_hud');
+      expect(optionValues).not.toContain('motec_gt3');
+    });
+
+    it('formatHudDropdownOptions should include WIP styles when includeWip is true', () => {
+      const mockStyles: HudStyleEntry[] = [
+        { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'defi_triple', source: 'builtin', urlPrefix: '/hud' },
+      ];
+
+      const options = formatHudDropdownOptions(mockStyles, HUD_DISPLAY_NAMES, { includeWip: true });
+      const fh5Option = options.find((o) => o.value === 'fh5_arc');
+
+      expect(fh5Option).toBeDefined();
+      expect(fh5Option?.label).toBe('Forza Horizon 5 (WIP)');
+    });
+
+    it('formatHudDropdownOptions should preserve WIP style if it matches currentStyle', () => {
+      const mockStyles: HudStyleEntry[] = [
+        { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'cyberpunk_hud', source: 'builtin', urlPrefix: '/hud' },
+      ];
+
+      const options = formatHudDropdownOptions(mockStyles, HUD_DISPLAY_NAMES, {
+        includeWip: false,
+        currentStyle: 'cyberpunk_hud',
+      });
+      const values = options.map((o) => o.value);
+
+      expect(values).toContain('cyberpunk_hud');
+      expect(values).not.toContain('fh5_arc');
+
+      const cyberpunkOption = options.find((o) => o.value === 'cyberpunk_hud');
+      expect(cyberpunkOption?.label).toBe('Cyberpunk 2077 Quadra (WIP)');
+    });
+
+    it('isWipHudQueryEnabled should correctly detect URL search parameters', () => {
+      expect(isWipHudQueryEnabled('?wip=1')).toBe(true);
+      expect(isWipHudQueryEnabled('?wip=true')).toBe(true);
+      expect(isWipHudQueryEnabled('?dev=1')).toBe(true);
+      expect(isWipHudQueryEnabled('?dev=true')).toBe(true);
+      expect(isWipHudQueryEnabled('?foo=bar&wip=1')).toBe(true);
+      expect(isWipHudQueryEnabled('?wip=0')).toBe(false);
+      expect(isWipHudQueryEnabled('?dev=false')).toBe(false);
+      expect(isWipHudQueryEnabled('')).toBe(false);
+    });
   });
 });

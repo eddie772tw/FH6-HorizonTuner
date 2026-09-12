@@ -9,12 +9,7 @@
 3. 若修改 UI、巨型元件、物理公式、UDP 協定、模組架構或執行 Jules 委派，必須在任務紀錄中列出實際採用的 skill ID。
 4. 任務結束時檢查技能名稱、文件路徑與驗證命令是否仍然有效；發現命名不一致時先修正索引與 frontmatter。
 
-Canonical skill registry 位於 [`.agents/skills/README.md`](skills/README.md)。目前專案技能 ID 包含：
-`halfmoon-design-system`、`huge-component-refactoring`、`jules_coding`、
-`modular-refactoring`、`physics-tuning-math`、`telemetry-udp-protocol`、
-`cross-agent-collaboration`、`agent-governance-audit`、
-`portable-release-validation`、`pr-review-evaluation`、
-`pr-author-maintainer`、`github-security-audit`。
+完整技能清單、canonical ID 與觸發條件統一維護於 [`.agents/skills/README.md`](skills/README.md)，本文件不另列副本。
 
 Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主。只有技能 ID、檔名、API、CI、React、TypeScript 等技術專有名詞，以及可能造成歧義的術語保留英文。所有 PR 審查與作者留言均須以 `{代號} as {Agent}` 身分標記以區分共用 GitHub 帳號時之發言主體。
 
@@ -28,6 +23,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 | **`.agents/rules/`** | 穩定的環境合約、架構標準與分流規範（workspace, python-uv, network-ports, testing-strategy, ui-architecture, dependencies）。 | 涉及該技術領域開發時按需查閱。 |
 | **`.agents/skills/`** | 具體任務的可執行 SOP、專用工具鏈與驗證指引。 | 依任務觸發條件選取單一 skill 載入，不預先通讀。 |
 | **`.agents/Journal.md`** | 經本地驗證的歷史踩坑知識庫、架構決策與暫存經驗。 | 僅於排查疑難雜症或任務結束登錄新學習點時查閱。 |
+| **[`docs/README.md`](../docs/README.md)** | 操作指南、技術參考、校準流程與歷史文件的統一入口；`docs/archive/` 不代表目前進度。 | 查找開發文件與舊路徑搬移位置。 |
 | **`tests/` vs `scripts/tests/`** | 核心業務測試 vs 開發治理腳本測試。 | 遵循 testing-strategy.md 進行分流驗證。 |
 
 ---
@@ -38,7 +34,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 2. **車輛物理與調校邏輯單一真理 (SSOT)**：所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，且統一收攏於 `frontend/src/utils/tuningMath.ts`。
 3. **單位嚴格性**：處理遙測數據時，必須釐清遊戲原生單位、領域單位與顯示單位的分層轉換，不得在 UI 組件內任意硬編碼物理計算公式。
 4. **路徑安全與檔案存取規範 (Path Security)**：所有涉及外部輸入、檔案名稱、Preset 或 Session 存取的模組，必須使用 `backend/path_security.py` 的 `safe_resolve_path` / `safe_join_under_dir` 進行目錄包含性檢驗，嚴禁直接拼接外部輸入路徑。
-5. **Agent CLI 工具鏈效率導引 (Agent CLI Tooling)**：專案提供官方面向 AI Agent 的命令列工具 `fh6-agent.bat`（或 `python -m backend.agent_cli` / `fh6-agent.exe`）。Agent 在進行車輛規格檢索、底盤/齒比算牌、調校 Preset 讀寫、閉環遙測診斷或 MCP 連接埠探測時，**應優先調用 `fh6-agent.bat <subcommand> --json`** 獲取結構化輸出，大幅提升決策效率並維持算牌真理一致性。詳細指令參閱 [`docs/agent-cli-guide.md`](../docs/agent-cli-guide.md)。
+5. **Agent CLI 工具鏈效率導引 (Agent CLI Tooling)**：專案提供官方面向 AI Agent 的命令列工具 `fh6-agent.bat`（或 `python -m backend.agent_cli` / `fh6-agent.exe`）。Agent 在進行車輛規格檢索、底盤/齒比算牌、調校 Preset 讀寫、閉環遙測診斷或 MCP 連接埠探測時，**應優先調用 `fh6-agent.bat <subcommand> --json`** 獲取結構化輸出，大幅提升決策效率並維持算牌真理一致性。詳細指令參閱 [`docs/guides/agent-cli-guide.md`](../docs/guides/agent-cli-guide.md)。
 
 ---
 

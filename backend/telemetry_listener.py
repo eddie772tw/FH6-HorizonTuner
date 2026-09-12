@@ -32,14 +32,7 @@ DEFAULT_TIRE_ARRAY = (0.0, 0.0, 0.0, 0.0)
 LEGACY_TELEMETRY_PACKET_LENGTH = 232
 FULL_TELEMETRY_PACKET_LENGTH = 324
 LEGACY_TELEMETRY_SCHEMA = "forza-data-out/legacy-common-v1"
-
 FULL_TELEMETRY_SCHEMA = "forza-data-out/fh6-324-v2"
-
-# Pre-compiled structs for high-performance parsing
-_LEGACY_STRUCT = struct.Struct("<iI" + "f" * 51 + "i" * 5)
-_FULL_STRUCT = struct.Struct(
-    "<iI" + "f" * 51 + "i" * 5 + "iii" + "f" * 17 + "HB" + "BBBBBb" + "3s"
-)
 
 
 def _packet_rejection_reason(data: bytes) -> str | None:
@@ -191,122 +184,167 @@ def parse_telemetry_packet(data: bytes) -> dict | None:
     if _packet_rejection_reason(data) is not None:
         return None
 
+    # The validated length guarantees this unpack is safe and IsRaceOn is 1.
+    is_race_on = struct.unpack_from("<i", data, 0)[0]
+
+    # Common telemetry block
+    timestamp_ms = struct.unpack_from("<I", data, 4)[0]
+    engine_max_rpm = struct.unpack_from("<f", data, 8)[0]
+    engine_idle_rpm = struct.unpack_from("<f", data, 12)[0]
+    current_engine_rpm = struct.unpack_from("<f", data, 16)[0]
+
+    accel_x, accel_y, accel_z = struct.unpack_from("<fff", data, 20)
+    vel_x, vel_y, vel_z = struct.unpack_from("<fff", data, 32)
+
+    # Heading
+    yaw = struct.unpack_from("<f", data, 56)[0]
+    pitch = struct.unpack_from("<f", data, 60)[0]
+    roll = struct.unpack_from("<f", data, 64)[0]
+
+    # Suspension Travel (Normalized 0.0 to 1.0)
+    susp_fl, susp_fr, susp_rl, susp_rr = struct.unpack_from("<ffff", data, 68)
+
+    # Tire Slip Ratio
+    slip_ratio_fl, slip_ratio_fr, slip_ratio_rl, slip_ratio_rr = struct.unpack_from(
+        "<ffff", data, 84
+    )
+
+    # Tire Slip Angle (Radians)
+    slip_angle_fl, slip_angle_fr, slip_angle_rl, slip_angle_rr = struct.unpack_from(
+        "<ffff", data, 164
+    )
+
+    # Surface Rumble
+    rumble_fl, rumble_fr, rumble_rl, rumble_rr = struct.unpack_from("<ffff", data, 148)
+
+    # Car Identification
+    car_ordinal = struct.unpack_from("<i", data, 212)[0]
+    car_class = struct.unpack_from("<i", data, 216)[0]
+    car_pi = struct.unpack_from("<i", data, 220)[0]
+    drivetrain_type = struct.unpack_from("<i", data, 224)[0]
+    cylinders = struct.unpack_from("<i", data, 228)[0]
+
+    # Combined Slip
+    (
+        combined_slip_fl,
+        combined_slip_fr,
+        combined_slip_rl,
+        combined_slip_rr,
+    ) = struct.unpack_from("<ffff", data, 180)
+
+    # Absolute Suspension Travel (Meters)
+    abs_susp_fl, abs_susp_fr, abs_susp_rl, abs_susp_rr = struct.unpack_from(
+        "<ffff", data, 196
+    )
+
+    telemetry_data = {
+        "IsRaceOn": is_race_on,
+        "TelemetrySchema": _packet_schema(data_len),
+        "TimestampMS": timestamp_ms,
+        "EngineMaxRpm": engine_max_rpm,
+        "EngineIdleRpm": engine_idle_rpm,
+        "CurrentEngineRpm": current_engine_rpm,
+        "AccelerationX": accel_x,
+        "AccelerationY": accel_y,
+        "AccelerationZ": accel_z,
+        "VelocityX": vel_x,
+        "VelocityY": vel_y,
+        "VelocityZ": vel_z,
+        "Yaw": yaw,
+        "Pitch": pitch,
+        "Roll": roll,
+        "SurfaceRumble": [rumble_fl, rumble_fr, rumble_rl, rumble_rr],
+        "TireCombinedSlip": [
+            combined_slip_fl,
+            combined_slip_fr,
+            combined_slip_rl,
+            combined_slip_rr,
+        ],
+        "NormalizedSuspensionTravel": [susp_fl, susp_fr, susp_rl, susp_rr],
+        "SuspensionTravelMeters": [
+            abs_susp_fl,
+            abs_susp_fr,
+            abs_susp_rl,
+            abs_susp_rr,
+        ],
+        "TireSlipRatio": [
+            slip_ratio_fl,
+            slip_ratio_fr,
+            slip_ratio_rl,
+            slip_ratio_rr,
+        ],
+        "TireSlipAngle": [
+            slip_angle_fl,
+            slip_angle_fr,
+            slip_angle_rl,
+            slip_angle_rr,
+        ],
+        "CarOrdinal": car_ordinal,
+        "CarClass": car_class,
+        "CarPerformanceIndex": car_pi,
+        "DrivetrainType": drivetrain_type,
+        "Cylinders": cylinders,
+    }
+
+    # Full 324-byte Data Out contract. The 233..323 partial range is rejected.
     if data_len == FULL_TELEMETRY_PACKET_LENGTH:
-        unpacked = _FULL_STRUCT.unpack_from(data, 0)
+        pos_x, pos_y, pos_z = struct.unpack_from("<fff", data, 244)
+        speed = struct.unpack_from("<f", data, 256)[0]
+        power = struct.unpack_from("<f", data, 260)[0]
+        torque = struct.unpack_from("<f", data, 264)[0]
 
-        telemetry_data = {
-            "IsRaceOn": unpacked[0],
-            "TelemetrySchema": FULL_TELEMETRY_SCHEMA,
-            "TimestampMS": unpacked[1],
-            "EngineMaxRpm": unpacked[2],
-            "EngineIdleRpm": unpacked[3],
-            "CurrentEngineRpm": unpacked[4],
-            "AccelerationX": unpacked[5],
-            "AccelerationY": unpacked[6],
-            "AccelerationZ": unpacked[7],
-            "VelocityX": unpacked[8],
-            "VelocityY": unpacked[9],
-            "VelocityZ": unpacked[10],
-            "Yaw": unpacked[14],
-            "Pitch": unpacked[15],
-            "Roll": unpacked[16],
-            "SurfaceRumble": [unpacked[37], unpacked[38], unpacked[39], unpacked[40]],
-            "TireCombinedSlip": [
-                unpacked[45],
-                unpacked[46],
-                unpacked[47],
-                unpacked[48],
-            ],
-            "NormalizedSuspensionTravel": [
-                unpacked[17],
-                unpacked[18],
-                unpacked[19],
-                unpacked[20],
-            ],
-            "SuspensionTravelMeters": [
-                unpacked[49],
-                unpacked[50],
-                unpacked[51],
-                unpacked[52],
-            ],
-            "TireSlipRatio": [unpacked[21], unpacked[22], unpacked[23], unpacked[24]],
-            "TireSlipAngle": [unpacked[41], unpacked[42], unpacked[43], unpacked[44]],
-            "CarOrdinal": unpacked[53],
-            "CarClass": unpacked[54],
-            "CarPerformanceIndex": unpacked[55],
-            "DrivetrainType": unpacked[56],
-            "Cylinders": unpacked[57],
-            "PositionX": unpacked[61],
-            "PositionY": unpacked[62],
-            "PositionZ": unpacked[63],
-            "SpeedMetersPerSecond": unpacked[64],
-            "PowerWatts": unpacked[65],
-            "TorqueNewtons": unpacked[66],
-            "TireTemp": [unpacked[67], unpacked[68], unpacked[69], unpacked[70]],
-            "Boost": unpacked[71],
-            "Fuel": unpacked[72],
-            "DistanceTraveled": unpacked[73],
-            "BestLap": unpacked[74],
-            "LastLap": unpacked[75],
-            "CurrentLap": unpacked[76],
-            "CurrentRaceTime": unpacked[77],
-            "LapNumber": unpacked[78],
-            "RacePosition": unpacked[79],
-            "AccelInput": unpacked[80],
-            "BrakeInput": unpacked[81],
-            "ClutchInput": unpacked[82],
-            "HandBrakeInput": unpacked[83],
-            "Gear": unpacked[84],
-            "SteerInput": unpacked[85],
-        }
-    elif data_len == LEGACY_TELEMETRY_PACKET_LENGTH:
-        unpacked = _LEGACY_STRUCT.unpack_from(data, 0)
+        tire_temp_fl, tire_temp_fr, tire_temp_rl, tire_temp_rr = struct.unpack_from(
+            "<ffff", data, 268
+        )
+        boost = struct.unpack_from("<f", data, 284)[0]
+        fuel = struct.unpack_from("<f", data, 288)[0]
 
-        telemetry_data = {
-            "IsRaceOn": unpacked[0],
-            "TelemetrySchema": LEGACY_TELEMETRY_SCHEMA,
-            "TimestampMS": unpacked[1],
-            "EngineMaxRpm": unpacked[2],
-            "EngineIdleRpm": unpacked[3],
-            "CurrentEngineRpm": unpacked[4],
-            "AccelerationX": unpacked[5],
-            "AccelerationY": unpacked[6],
-            "AccelerationZ": unpacked[7],
-            "VelocityX": unpacked[8],
-            "VelocityY": unpacked[9],
-            "VelocityZ": unpacked[10],
-            "Yaw": unpacked[14],
-            "Pitch": unpacked[15],
-            "Roll": unpacked[16],
-            "SurfaceRumble": [unpacked[37], unpacked[38], unpacked[39], unpacked[40]],
-            "TireCombinedSlip": [
-                unpacked[45],
-                unpacked[46],
-                unpacked[47],
-                unpacked[48],
-            ],
-            "NormalizedSuspensionTravel": [
-                unpacked[17],
-                unpacked[18],
-                unpacked[19],
-                unpacked[20],
-            ],
-            "SuspensionTravelMeters": [
-                unpacked[49],
-                unpacked[50],
-                unpacked[51],
-                unpacked[52],
-            ],
-            "TireSlipRatio": [unpacked[21], unpacked[22], unpacked[23], unpacked[24]],
-            "TireSlipAngle": [unpacked[41], unpacked[42], unpacked[43], unpacked[44]],
-            "CarOrdinal": unpacked[53],
-            "CarClass": unpacked[54],
-            "CarPerformanceIndex": unpacked[55],
-            "DrivetrainType": unpacked[56],
-            "Cylinders": unpacked[57],
-        }
-    else:
-        return None
+        best_lap, last_lap, current_lap = struct.unpack_from("<fff", data, 296)
+
+        distance_traveled = struct.unpack_from("<f", data, 292)[0]
+        current_race_time = struct.unpack_from("<f", data, 308)[0]
+        lap_number = struct.unpack_from("<H", data, 312)[0]
+        race_position = struct.unpack_from("<B", data, 314)[0]
+
+        # Controller Inputs
+        accel_input = struct.unpack_from("<B", data, 315)[0]
+        brake_input = struct.unpack_from("<B", data, 316)[0]
+        clutch_input = struct.unpack_from("<B", data, 317)[0]
+        handbrake_input = struct.unpack_from("<B", data, 318)[0]
+        gear = struct.unpack_from("<B", data, 319)[0]
+        steer_input = struct.unpack_from("<b", data, 320)[0]
+
+        telemetry_data.update(
+            {
+                "PositionX": pos_x,
+                "PositionY": pos_y,
+                "PositionZ": pos_z,
+                "SpeedMetersPerSecond": speed,
+                "PowerWatts": power,
+                "TorqueNewtons": torque,
+                "TireTemp": [
+                    tire_temp_fl,
+                    tire_temp_fr,
+                    tire_temp_rl,
+                    tire_temp_rr,
+                ],
+                "Boost": boost,
+                "Fuel": fuel,
+                "BestLap": best_lap,
+                "LastLap": last_lap,
+                "CurrentLap": current_lap,
+                "DistanceTraveled": distance_traveled,
+                "CurrentRaceTime": current_race_time,
+                "LapNumber": lap_number,
+                "RacePosition": race_position,
+                "AccelInput": accel_input,
+                "BrakeInput": brake_input,
+                "ClutchInput": clutch_input,
+                "HandBrakeInput": handbrake_input,
+                "Gear": gear,
+                "SteerInput": steer_input,
+            }
+        )
 
     if _plausibility_rejection_reason(telemetry_data) is not None:
         return None

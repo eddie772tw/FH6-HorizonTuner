@@ -1,0 +1,305 @@
+{
+  "results": [
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "cruise",
+      "background": "dark",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "cruise",
+      "background": "light",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "idle",
+      "background": "dark",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "idle",
+      "background": "light",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "redline",
+      "background": "dark",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "redline",
+      "background": "light",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "reverse",
+      "background": "dark",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "reverse",
+      "background": "light",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "missing",
+      "background": "dark",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 1,
+      "name": "missing",
+      "background": "light",
+      "canvas": [
+        800,
+        480
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "cruise",
+      "background": "dark",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "cruise",
+      "background": "light",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "idle",
+      "background": "dark",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "idle",
+      "background": "light",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "redline",
+      "background": "dark",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "redline",
+      "background": "light",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "reverse",
+      "background": "dark",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "reverse",
+      "background": "light",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "missing",
+      "background": "dark",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    },
+    {
+      "id": "motec_gt3",
+      "dpr": 2,
+      "name": "missing",
+      "background": "light",
+      "canvas": [
+        1600,
+        960
+      ],
+      "display": [
+        419.984375,
+        251.984375
+      ],
+      "cornerAlpha": 255
+    }
+  ],
+  "errors": []
+}

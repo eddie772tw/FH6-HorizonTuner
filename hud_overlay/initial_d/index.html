@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AE86 TRD Dual Cluster — Speedometer & 11,000 RPM Tachometer</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <style>
+        .initial-d-container {
+            width: 800px;
+            height: 420px;
+            pointer-events: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #initialDCanvas {
+            display: block;
+            width: 800px;
+            height: 420px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container initial-d-container" id="initialDContainer">
+            <canvas id="initialDCanvas" width="800" height="420"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="initial-d-model.js"></script>
+    <script>
+        (function () {
+            var domCache = {
+                container: document.getElementById('initialDContainer'),
+                canvas: document.getElementById('initialDCanvas'),
+                ctx: null
+            };
+
+            if (domCache.canvas) {
+                domCache.ctx = domCache.canvas.getContext('2d');
+            }
+
+            // Dual cluster geometry
+            var speedCx = 205;
+            var tachCx = 595;
+            var cy = 220;
+            var dialR = 160;
+
+            var currentSpeed = 0;
+            var currentRpm = 0;
+            var currentMaxRpm = 10000;
+            var currentIsMetric = true;
+            var currentShiftWarn = false;
+            var currentOverRev = false;
+
+            var sweepActive = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1200;
+            var sweepFrame = null;
+
+            var offscreenDial = null;
+            var offscreenCap = null;
+            var backingRatio = 0;
+            var cachedIsMetric = true;
+            var cachedMaxRpm = 10000;
+
+            // TRD Vector Logo Asset (Image instance, not font simulation)
+            var trdLogoImg = typeof Image !== 'undefined' ? new Image() : { complete: false, naturalWidth: 0 };
+            trdLogoImg.src = 'assets/trd_logo.svg';
+            trdLogoImg.onload = function () {
+                offscreenDial = null;
+                renderHUD(currentSpeed, currentRpm, currentShiftWarn, currentOverRev, currentIsMetric, currentMaxRpm);
+            };
+
+            function syncBackingStore() {
+                var ratio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                if (ratio === backingRatio && offscreenDial && cachedIsMetric === currentIsMetric && cachedMaxRpm === currentMaxRpm) return;
+                backingRatio = ratio;
+                if (domCache.canvas && domCache.ctx) {
+                    domCache.canvas.width = Math.round(800 * ratio);
+                    domCache.canvas.height = Math.round(420 * ratio);
+                    domCache.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                }
+                offscreenDial = null;
+                offscreenCap = null;
+            }
+
+            var ink = {
+                face: '#10100f', rimDark: '#080808', rimLight: '#555550',
+                marking: '#eee9dc', needle: '#f4f2e8',
+                needleHighlight: '#ffffff', secondary: '#b8b4a9'
+            };
+
+            function drawBezelAndFace(oCtx, centerCx) {
+                // Bezel outer gradient
+                var bezel = oCtx.createLinearGradient(centerCx - dialR, cy - dialR, centerCx + dialR, cy + dialR);
+                bezel.addColorStop(0, ink.rimLight);
+                bezel.addColorStop(0.16, '#292927');
+                bezel.addColorStop(0.48, ink.rimDark);
+                bezel.addColorStop(0.78, '#242422');
+                bezel.addColorStop(1, '#555550');
+
+                oCtx.beginPath();
+                oCtx.arc(centerCx, cy, dialR, 0, Math.PI * 2);
+                oCtx.fillStyle = bezel;
+                oCtx.fill();
+                oCtx.lineWidth = 2;
+                oCtx.strokeStyle = ink.rimDark;
+                oCtx.stroke();
+
+                oCtx.beginPath();
+                oCtx.arc(centerCx, cy, dialR - 6, 0, Math.PI * 2);
+                oCtx.fillStyle = ink.rimDark;
+                oCtx.fill();
+                oCtx.lineWidth = 1;
+                oCtx.strokeStyle = '#494942';
+                oCtx.stroke();
+
+                var face = oCtx.createRadialGradient(centerCx - 35, cy - 50, 10, centerCx, cy, dialR - 8);
+                face.addColorStop(0, '#242420');
+                face.addColorStop(0.72, ink.face);
+                face.addColorStop(0.96, '#0a0a09');
+                face.addColorStop(1, '#020202');
+
+                oCtx.beginPath();
+                oCtx.arc(centerCx, cy, dialR - 8, 0, Math.PI * 2);
+                oCtx.fillStyle = face;
+                oCtx.fill();
+
+                // Surface texture grain & glass reflection
+                oCtx.save();
+                oCtx.beginPath();
+                oCtx.arc(centerCx, cy, dialR - 11, 0, Math.PI * 2);
+                oCtx.clip();
+
+                oCtx.fillStyle = 'rgba(238,233,220,0.035)';
+                for (var grainY = cy - dialR; grainY < cy + dialR; grainY += 3) {
+                    for (var grainX = centerCx - dialR; grainX < centerCx + dialR; grainX += 4) {
+                        if ((grainX * 13 + grainY * 7) % 11 < 4) {
+                            oCtx.fillRect(grainX, grainY, 0.7, 0.7);
+                        }
+                    }
+                }
+
+                var glass = oCtx.createLinearGradient(0, cy - dialR, 0, cy + 15);
+                glass.addColorStop(0, 'rgba(255,250,235,0.065)');
+                glass.addColorStop(1, 'rgba(255,250,235,0)');
+                oCtx.fillStyle = glass;
+                oCtx.fillRect(centerCx - dialR, cy - dialR, dialR * 2, dialR + 15);
+                oCtx.restore();
+            }
+
+            function drawTrdBrandImage(oCtx, centerCx, brandY) {
+                var w = 58;
+                var h = 13;
+                if (trdLogoImg.complete && trdLogoImg.naturalWidth > 0) {
+                    oCtx.drawImage(trdLogoImg, centerCx - w / 2, brandY, w, h);
+                } else {
+                    // Crisp vector path fallback matching the SVG logo
+                    oCtx.save();
+                    oCtx.translate(centerCx, brandY + h / 2);
+                    oCtx.scale(0.33, 0.33);
+                    oCtx.fillStyle = ink.marking;
+                    oCtx.beginPath();
+                    // T
+                    oCtx.rect(-75, -18, 48, 9);
+                    oCtx.rect(-55, -9, 9, 27);
+                    // R
+                    oCtx.rect(-18, -18, 9, 36);
+                    oCtx.rect(-9, -18, 22, 17);
+                    oCtx.rect(-9, 1, 24, 17);
+                    // D
+                    oCtx.rect(24, -18, 9, 36);
+                    oCtx.arc(33, 0, 18, -Math.PI / 2, Math.PI / 2);
+                    oCtx.fill();
+                    oCtx.restore();
+                }
+            }
+
+            function buildOffscreenDial() {
+                syncBackingStore();
+                cachedIsMetric = currentIsMetric;
+                cachedMaxRpm = currentMaxRpm;
+                offscreenDial = document.createElement('canvas');
+                offscreenDial.width = Math.round(800 * backingRatio);
+                offscreenDial.height = Math.round(420 * backingRatio);
+                var oCtx = offscreenDial.getContext('2d');
+                if (!oCtx) return;
+                oCtx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
+
+                // ----------------------------------------
+                // Left: Speedometer Face Artwork
+                // ----------------------------------------
+                drawBezelAndFace(oCtx, speedCx);
+
+                var speedTicks = window.InitialDSpeedModel.getTicks(currentIsMetric);
+                for (var i = 0; i < speedTicks.length; i++) {
+                    var tick = speedTicks[i];
+                    var tickLen = tick.isMajor ? 15 : 10;
+                    var angle = tick.angle;
+
+                    var x1 = speedCx + Math.cos(angle) * (dialR - 14);
+                    var y1 = cy + Math.sin(angle) * (dialR - 14);
+                    var x2 = speedCx + Math.cos(angle) * (dialR - 14 - tickLen);
+                    var y2 = cy + Math.sin(angle) * (dialR - 14 - tickLen);
+
+                    oCtx.beginPath();
+                    oCtx.moveTo(x1, y1);
+                    oCtx.lineTo(x2, y2);
+                    oCtx.lineWidth = tick.isMajor ? 2.2 : 1;
+                    oCtx.strokeStyle = ink.marking;
+                    oCtx.stroke();
+
+                    if (tick.label !== null) {
+                        var textR = dialR - 43;
+                        var tx = speedCx + Math.cos(angle) * textR;
+                        var ty = cy + Math.sin(angle) * textR;
+
+                        oCtx.fillStyle = ink.marking;
+                        oCtx.font = '500 22px Arial, sans-serif';
+                        oCtx.textAlign = 'center';
+                        oCtx.textBaseline = 'middle';
+                        oCtx.save();
+                        oCtx.translate(tx, ty);
+                        oCtx.scale(0.78, 1);
+                        oCtx.fillText(tick.label, 0, 0);
+                        oCtx.restore();
+                    }
+                }
+
+                // TRD Logo on Speedometer (Image Asset)
+                drawTrdBrandImage(oCtx, speedCx, cy - 60);
+
+                // Speedometer Unit Label (Under needle spindle)
+                oCtx.fillStyle = ink.secondary;
+                oCtx.font = '600 12px Arial, sans-serif';
+                oCtx.textAlign = 'center';
+                oCtx.textBaseline = 'middle';
+                oCtx.fillText(currentIsMetric ? 'km/h' : 'MPH', speedCx, cy + 45);
+
+                // ----------------------------------------
+                // Right: Tachometer Face Artwork (Dynamic Max RPM & Redline)
+                // ----------------------------------------
+                drawBezelAndFace(oCtx, tachCx);
+
+                var tachTicks = window.InitialDTachModel.getTicks(currentMaxRpm);
+                for (var tIdx = 0; tIdx < tachTicks.length; tIdx++) {
+                    var tTick = tachTicks[tIdx];
+                    var tAngle = tTick.angle;
+                    var isMajorTach = tTick.isMajor;
+                    var tTickLen = isMajorTach ? 15 : 10;
+                    var tickColor = tTick.isRed ? '#ff3030' : ink.marking;
+
+                    var tx1 = tachCx + Math.cos(tAngle) * (dialR - 14);
+                    var ty1 = cy + Math.sin(tAngle) * (dialR - 14);
+                    var tx2 = tachCx + Math.cos(tAngle) * (dialR - 14 - tTickLen);
+                    var ty2 = cy + Math.sin(tAngle) * (dialR - 14 - tTickLen);
+
+                    oCtx.beginPath();
+                    oCtx.moveTo(tx1, ty1);
+                    oCtx.lineTo(tx2, ty2);
+                    oCtx.lineWidth = isMajorTach ? 2.2 : 1;
+                    oCtx.strokeStyle = tickColor;
+                    oCtx.stroke();
+
+                    if (isMajorTach && tTick.label !== null) {
+                        var tTextR = dialR - 43;
+                        var ntx = tachCx + Math.cos(tAngle) * tTextR;
+                        var nty = cy + Math.sin(tAngle) * tTextR;
+
+                        oCtx.fillStyle = tickColor;
+                        oCtx.font = '500 23px Arial, sans-serif';
+                        oCtx.textAlign = 'center';
+                        oCtx.textBaseline = 'middle';
+                        oCtx.save();
+                        oCtx.translate(ntx, nty);
+                        oCtx.scale(0.78, 1);
+                        oCtx.fillText(tTick.label, 0, 0);
+                        oCtx.restore();
+                    }
+                }
+
+                // TRD Logo on Tachometer (Image Asset)
+                drawTrdBrandImage(oCtx, tachCx, cy - 60);
+
+                // RPM Multiplier Label
+                oCtx.fillStyle = ink.secondary;
+                oCtx.font = '500 10px Arial, sans-serif';
+                oCtx.textAlign = 'center';
+                oCtx.textBaseline = 'middle';
+                oCtx.fillText('×1000 RPM', tachCx, cy - 34);
+
+                // ----------------------------------------
+                // Needle Spindle Cap (Shared)
+                // ----------------------------------------
+                offscreenCap = document.createElement('canvas');
+                offscreenCap.width = Math.round(36 * backingRatio);
+                offscreenCap.height = Math.round(36 * backingRatio);
+                var capCtx = offscreenCap.getContext('2d');
+                if (capCtx) {
+                    capCtx.setTransform(backingRatio, 0, 0, backingRatio, 0, 0);
+                    var cap = capCtx.createLinearGradient(4, 3, 28, 32);
+                    cap.addColorStop(0, '#73736b');
+                    cap.addColorStop(0.25, '#353530');
+                    cap.addColorStop(0.65, '#11110f');
+                    cap.addColorStop(1, '#030303');
+                    capCtx.beginPath();
+                    capCtx.arc(18, 18, 14, 0, Math.PI * 2);
+                    capCtx.fillStyle = cap;
+                    capCtx.fill();
+                    capCtx.strokeStyle = '#050505';
+                    capCtx.lineWidth = 1.5;
+                    capCtx.stroke();
+                    capCtx.beginPath();
+                    capCtx.arc(18, 18, 10.5, 0, Math.PI * 2);
+                    capCtx.strokeStyle = '#44443e';
+                    capCtx.lineWidth = 0.6;
+                    capCtx.stroke();
+                }
+            }
+
+            buildOffscreenDial();
+
+            function drawNeedleAt(ctx, centerCx, centerCy, angle) {
+                ctx.save();
+                ctx.translate(centerCx, centerCy);
+                ctx.rotate(angle);
+
+                ctx.shadowColor = 'rgba(0,0,0,0.75)';
+                ctx.shadowBlur = 3;
+                ctx.beginPath();
+                ctx.moveTo(-20, -2.5);
+                ctx.lineTo(dialR - 25, -1);
+                ctx.lineTo(dialR - 25, 1);
+                ctx.lineTo(-20, 2.5);
+                ctx.closePath();
+                ctx.fillStyle = ink.needle;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.beginPath();
+                ctx.moveTo(-18, -1.3);
+                ctx.lineTo(dialR - 26, -0.5);
+                ctx.lineWidth = 0.8;
+                ctx.strokeStyle = ink.needleHighlight;
+                ctx.stroke();
+                ctx.restore();
+
+                if (offscreenCap) {
+                    ctx.drawImage(offscreenCap, centerCx - 18, centerCy - 18, 36, 36);
+                }
+            }
+
+            function renderHUD(speed, rpm, isShiftWarning, isOverRev, isMetric, maxRpm) {
+                var ctx = domCache.ctx;
+                if (!ctx) return;
+
+                currentSpeed = speed;
+                currentRpm = rpm;
+                currentShiftWarn = isShiftWarning;
+                currentOverRev = isOverRev;
+                currentIsMetric = isMetric !== false;
+
+                if (Number.isFinite(maxRpm) && maxRpm > 0) {
+                    currentMaxRpm = maxRpm;
+                }
+
+                syncBackingStore();
+                ctx.textBaseline = 'alphabetic';
+
+                if (!offscreenDial || cachedIsMetric !== currentIsMetric || cachedMaxRpm !== currentMaxRpm) {
+                    buildOffscreenDial();
+                }
+
+                ctx.clearRect(0, 0, 800, 420);
+                ctx.drawImage(offscreenDial, 0, 0, 800, 420);
+
+                // Right Dial (Tachometer): Warning lamps (OverRev & Shift)
+                // Left Dial (Speedometer) deliberately has NO warning lamps.
+                ctx.beginPath();
+                ctx.arc(tachCx + 52, cy + 105, 6, 0, Math.PI * 2);
+                ctx.fillStyle = isOverRev ? '#ff3030' : '#3e1010';
+                ctx.shadowColor = '#f42b22';
+                ctx.shadowBlur = isOverRev ? 6 : 0;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(tachCx + 76, cy + 89, 6, 0, Math.PI * 2);
+                ctx.fillStyle = isShiftWarning ? '#ffd748' : '#473916';
+                ctx.shadowColor = '#f2bd36';
+                ctx.shadowBlur = isShiftWarning ? 5 : 0;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // 1. Speedometer Needle (with peg limit & damped jitter)
+                var speedAngle = window.InitialDSpeedModel.getAngle(
+                    speed,
+                    currentIsMetric,
+                    performance.now(),
+                    true
+                );
+                drawNeedleAt(ctx, speedCx, cy, speedAngle);
+
+                // 2. Tachometer Needle (with dynamic max RPM)
+                var tachAngle = window.InitialDTachModel.getAngle(rpm, currentMaxRpm);
+                drawNeedleAt(ctx, tachCx, cy, tachAngle);
+            }
+
+            function runSweep(now) {
+                if (!sweepActive) return;
+                var elapsed = now - sweepStartTime;
+                var progress = elapsed / sweepDuration;
+
+                var maxSpeedVal = currentIsMetric
+                    ? window.InitialDSpeedModel.metricMaxSpeed
+                    : window.InitialDSpeedModel.imperialMaxSpeed;
+                var maxRpmVal = window.InitialDTachModel.getDialMaxRpm(currentMaxRpm);
+
+                if (progress >= 1.0) {
+                    sweepActive = false;
+                    sweepFrame = null;
+                    renderHUD(0, 0, false, false, currentIsMetric, currentMaxRpm);
+                    return;
+                }
+
+                var currentRpmSweep = progress < 0.5
+                    ? (progress / 0.5) * maxRpmVal
+                    : (1 - (progress - 0.5) / 0.5) * maxRpmVal;
+
+                var currentSpeedSweep = progress < 0.5
+                    ? (progress / 0.5) * maxSpeedVal
+                    : (1 - (progress - 0.5) / 0.5) * maxSpeedVal;
+
+                var mockWarning = currentRpmSweep >= currentMaxRpm * 0.96;
+                var mockOverRev = currentRpmSweep >= currentMaxRpm * 0.99;
+
+                renderHUD(currentSpeedSweep, currentRpmSweep, mockWarning, mockOverRev, currentIsMetric, currentMaxRpm);
+                sweepFrame = requestAnimationFrame(runSweep);
+            }
+
+            HUDCore.registerStyle('initial_d', {
+                containerId: 'initialDContainer',
+                scaleMultiplier: 0.95,
+
+                onInit: function (payload) {
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            currentIsMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            currentIsMetric = payload.unit !== 'mph';
+                        } else if (payload.data && payload.data.unit) {
+                            currentIsMetric = payload.data.unit !== 'mph';
+                        }
+                    }
+                    buildOffscreenDial();
+                    renderHUD(currentSpeed, currentRpm, currentShiftWarn, currentOverRev, currentIsMetric, currentMaxRpm);
+                },
+
+                onElementsChange: function (elements) {
+                    if (elements && domCache.container && elements.showGauge !== undefined) {
+                        domCache.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (sweepActive) return;
+
+                    var isMetric = currentIsMetric;
+                    if (payload) {
+                        if (typeof payload.isMetric === 'boolean') {
+                            isMetric = payload.isMetric;
+                        } else if (payload.unit) {
+                            isMetric = payload.unit !== 'mph';
+                        } else if (payload.data && payload.data.unit) {
+                            isMetric = payload.data.unit !== 'mph';
+                        }
+                    }
+                    if (data && data.displayUnits && data.displayUnits.speed) {
+                        isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    var rawSpeed = isMetric
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+
+                    var rpm = data.rpm || 0;
+                    var redline = (payload && payload.redlineRpm) || data.redlineRpm || data.max_rpm || data.maxRpm || currentMaxRpm;
+                    var warningLevel = window.InitialDTachModel.getWarningLevel(rpm, redline);
+
+                    renderHUD(rawSpeed, rpm, warningLevel >= 1, warningLevel >= 2, isMetric, redline);
+                },
+
+                onAnimate: function () {
+                    if (sweepFrame !== null) window.cancelAnimationFrame(sweepFrame);
+                    sweepActive = true;
+                    sweepStartTime = performance.now();
+                    sweepFrame = requestAnimationFrame(runSweep);
+                }
+            });
+
+            window.addEventListener('pagehide', function () {
+                sweepActive = false;
+                if (sweepFrame !== null) window.cancelAnimationFrame(sweepFrame);
+                sweepFrame = null;
+            });
+
+            HUDCore.init('initial_d');
+
+            setTimeout(function () {
+                renderHUD(0, 0, false, false, currentIsMetric);
+            }, 60);
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    buildOffscreenDial();
+                    renderHUD(0, 0, false, false, currentIsMetric);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

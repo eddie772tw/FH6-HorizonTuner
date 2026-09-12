@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.request import urlopen
 
 import pytest
 
@@ -98,6 +99,8 @@ def test_source_sidecar_bootstraps_and_releases_udp_port(tmp_path):
             "source sidecar did not publish logs/web_port.txt; "
             f"backend log: {data_dir / 'logs' / 'backend.log'}"
         )
+        with urlopen("http://127.0.0.1:8001/api/overlay/config", timeout=2) as response:
+            assert response.status == 200
     finally:
         stop_process(proc)
 
@@ -145,10 +148,39 @@ def test_source_sidecar_falls_back_when_preferred_http_port_is_occupied(tmp_path
                 time.sleep(0.1)
 
             assert port_file.exists(), "sidecar did not publish fallback HTTP port"
-            assert int(_read_port_file(port_file)) != 8001
+            actual_port = int(_read_port_file(port_file))
+            assert actual_port != 8001
+            with urlopen(
+                f"http://127.0.0.1:{actual_port}/api/overlay/config", timeout=2
+            ) as response:
+                assert response.status == 200
         finally:
             stop_process(proc)
 
         assert proc.returncode == 0
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
         probe.bind(("127.0.0.1", udp_port))
+
+
+@pytest.mark.windows_contract
+def test_source_dev_rejects_an_occupied_port_without_touching_its_owner(tmp_path):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+        try:
+            occupied.bind(("127.0.0.1", 8001))
+            occupied.listen()
+        except OSError:
+            pytest.skip("HTTP 8001 is already occupied")
+        proc = subprocess.Popen(
+            [sys.executable, "-u", "main.py", "--dev", "--data-dir", str(tmp_path)],
+            cwd=BACKEND_DIR,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            assert proc.wait(timeout=10) == 1
+            assert not (tmp_path / "logs/web_port.txt").exists()
+            with socket.create_connection(("127.0.0.1", 8001), timeout=1):
+                pass
+        finally:
+            stop_process(proc)
