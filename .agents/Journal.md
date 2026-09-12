@@ -1,5 +1,18 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-12 / PR #328 純淨整併、Jules 遠端覆蓋排查與 Revert 快速復原（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者警示 PR #328 包含誤刪 180 個檔案之污染，指示緊急 Revert 並以方案 A 僅整併純淨 2 個 UDP 檔案，再將 PR #330 rebase 到新進度。
+- **Learning**：
+  1. **多代理異步提交競態與環境快照污染**：當外部代理（Jules）在舊 base 分支上執行背景任務時，若其遠端工作區未即時拉取 `main` 最新檔案，其自動生成的 commit 快照可能包含對新合入檔案的非預期全數刪除。執行 GitHub Squash Merge 時，必須格外審慎檢查 PR 的 full tree diff，防止 stale branch 快照覆蓋 main。
+  2. **Forza 324-byte UDP Data Out 二進位結構精度保護**：Data Out 封包在 Offset 100..115 為 4 個單精度浮點數（`WheelRotationSpeed`，`ffff`），而在 Offset 116..131 則為 4 個有符號 32 位元整數（`WheelOnRumbleStrip`，`iiii`）。以 `<iI + f*27 + iiii + f*20 + i*5` 與 `<iI + f*27 + iiii + f*20 + i*5 + iii + f*17 + HB + BBBBBb + 3s` 嚴格還原型別，在維持 60Hz 單次解包零額外開銷的前提下，完備支援 PR #330 所需的 5 個擴充欄位（`AngularVelocityX/Y/Z`、`WheelRotationSpeed`、`WheelOnRumbleStrip`）。
+- **Action**：
+  1. 於 `main` 分支執行 `git revert 1917111`（Commit `15a2578`）並推送，180 個誤刪檔案 100% 完全還原，`git diff 9e3ca94 HEAD` 歸零。
+  2. 依方案 A 僅提取 `backend/telemetry_listener.py` 與 `tests/test_telemetry_listener.py` 提交為純淨 Commit 併入 `main`。
+  3. 驗證前後端全套測試集，確認 304 項後端測試與 94 檔/613 項前端測試全數通過。
+- **Evidence**：`git diff --check` 通過，後端測試 304 passed / 8 deselected，前端測試 613 passed。
+- **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
 ## 2026-09-12 / PR #319、#328、#329、#330 併入評估與多代理治理協調（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；使用者指示審查四個 PR 並合併 #329 與 #319，補充 #319 缺失語系至 main，並分別對 #328 與 #330 提出協調與補齊語系 Review 意見。

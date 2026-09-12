@@ -495,7 +495,57 @@ class TestTelemetryListener(unittest.TestCase):
             self.assertIsNotNone(transport2)
             transport2.close()
 
-        asyncio.run(run_test())
+    def test_datagram_received_expanded_fields(self):
+        # 324 byte packet (V2) with expanded fields
+        data = bytearray(324)
+        struct.pack_into("<i", data, 0, 1)
+        struct.pack_into("<I", data, 4, 1000)
+        # AngularVelocityX/Y/Z at offset 44
+        struct.pack_into("<fff", data, 44, 0.15, -0.25, 0.35)
+        # WheelRotationSpeed at offset 100 (4 floats)
+        struct.pack_into("<ffff", data, 100, 45.1, 45.2, 46.1, 46.2)
+        # WheelOnRumbleStrip at offset 116 (4 ints)
+        struct.pack_into("<iiii", data, 116, 0, 1, 0, 1)
+
+        parsed = parse_telemetry_packet(bytes(data))
+        self.assertIsNotNone(parsed)
+        self.assertAlmostEqual(parsed["AngularVelocityX"], 0.15, places=5)
+        self.assertAlmostEqual(parsed["AngularVelocityY"], -0.25, places=5)
+        self.assertAlmostEqual(parsed["AngularVelocityZ"], 0.35, places=5)
+
+        for a, b in zip(parsed["WheelRotationSpeed"], [45.1, 45.2, 46.1, 46.2]):
+            self.assertAlmostEqual(a, b, places=5)
+
+        self.assertEqual(parsed["WheelOnRumbleStrip"], [0, 1, 0, 1])
+
+        # Also test 232 byte packet (V1)
+        v1_data = bytearray(232)
+        struct.pack_into("<i", v1_data, 0, 1)
+        struct.pack_into("<I", v1_data, 4, 2000)
+        struct.pack_into("<fff", v1_data, 44, 1.0, 2.0, 3.0)
+        struct.pack_into("<ffff", v1_data, 100, 10.0, 11.0, 12.0, 13.0)
+        struct.pack_into("<iiii", v1_data, 116, 1, 0, 1, 0)
+
+        parsed_v1 = parse_telemetry_packet(bytes(v1_data))
+        self.assertIsNotNone(parsed_v1)
+        self.assertAlmostEqual(parsed_v1["AngularVelocityX"], 1.0, places=5)
+        self.assertAlmostEqual(parsed_v1["AngularVelocityY"], 2.0, places=5)
+        self.assertAlmostEqual(parsed_v1["AngularVelocityZ"], 3.0, places=5)
+        self.assertEqual(parsed_v1["WheelOnRumbleStrip"], [1, 0, 1, 0])
+
+    def test_plausibility_rejection_expanded_fields(self):
+        data = bytearray(324)
+        struct.pack_into("<i", data, 0, 1)
+        struct.pack_into("<I", data, 4, 1000)
+
+        # Pack NaN into AngularVelocityX
+        struct.pack_into("<f", data, 44, float("nan"))
+        self.assertIsNone(parse_telemetry_packet(bytes(data)))
+
+        # Reset AngularVelocityX and pack Inf into WheelRotationSpeed
+        struct.pack_into("<f", data, 44, 0.0)
+        struct.pack_into("<f", data, 100, float("inf"))
+        self.assertIsNone(parse_telemetry_packet(bytes(data)))
 
 
 if __name__ == "__main__":
