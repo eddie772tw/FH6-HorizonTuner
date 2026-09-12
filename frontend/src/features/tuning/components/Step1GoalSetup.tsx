@@ -521,30 +521,6 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               </div>
             </div>
 
-            {/* Tire Compound */}
-            <div className="d-flex justify-content-between align-items-center">
-              <label className="text-body-secondary fs-8 mb-0">{t('Tire Compound')}</label>
-              <div style={{ width: '130px' }}>
-                <select
-                  value={carParams?.tireType || 'Stock'}
-                  onChange={(e) => updateParam('tireType', e.target.value)}
-                  className="form-select form-select-sm"
-                  style={selectStyle}
-                >
-                  <option value="Stock">{t('Stock')}</option>
-                  <option value="Street">{t('Street')}</option>
-                  <option value="Sport">{t('Sport')}</option>
-                  <option value="Semi-Slick">{t('Semi-Slick')}</option>
-                  <option value="Slick">{t('Slick')}</option>
-                  <option value="Rally">{t('Rally')}</option>
-                  <option value="Off-Road">{t('Off-Road')}</option>
-                  <option value="Snow">{t('Snow')}</option>
-                  <option value="Drag">{t('Drag')}</option>
-                  <option value="Drift">{t('Drift')}</option>
-                </select>
-              </div>
-            </div>
-
             {/* Front Tire Specs */}
             <div>
               <label className="text-body-secondary fs-8 mb-1 d-block">{t('Front Tire (Width mm / % R in)')}</label>

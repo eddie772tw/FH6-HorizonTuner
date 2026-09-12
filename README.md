@@ -29,11 +29,11 @@
   - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
   - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
   - 後端提供有界的 pipeline metrics，並將 dyno profile 的首次讀取與持久化移出即時遙測迴圈。
-* **6 階段可驗證車輛調校工作流 (Six-Stage Tuning Workflow)**：
+* **4 階段可驗證車輛調校工作流 (Four-Stage Tuning Workflow)**：
   - **Step 1 Goal & Setup**：選擇 Road、Drift、Rally 或 Drag，保存車輛、改裝、賽事與未知欄位的輸入快照。
-  - **Step 2 Tire baseline**、**Step 3 Chassis platform**、**Step 4 Wheel alignment**：沿用現有 `tuningMath` 純函數輸出，分開保存輪胎、底盤與定位基線。
-  - **Step 5 Engine data & gearing**：以遊戲解碼的 `EngineMaxRpm`、功率與扭力進行 WOT 實測觀察；完整性門檻與限制見[六階段調校工作流現行實作](docs/tuning/tuning-workflow-implementation-20260912.md)。
-  - **Step 6 Setup verification**：Road 支援 baseline、run、描述性報告、單一變量 A/B 與保留／回測決策；Rally、Drag、Drift 在本輪維持相容性快照，不代表已完成同等實機驗收。
+  - **Step 2 Chassis & Tires**：整合 `tuningMath` 純函數的輪胎、底盤與定位基線。
+  - **Step 3 Engine data & gearing**：以遊戲解碼的 `EngineMaxRpm`、功率與扭力進行 WOT 實測觀察；完整性 gate 不等於抓地力識別。
+  - **Step 4 Setup verification**：Road 支援 baseline、run、描述性報告、單一變量 A/B 與保留／回測決策；其他賽事的公式基線與相容快照不代表同等實機驗收。公式研究、來源與限制見[調校開發入口](docs/tuning/README.md)。
 * **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
   - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
   - S650 中央 widget 支援唯讀音樂播放器，透過 Windows GSMTC 顯示封面、曲目、藝人、專輯、進度條與時間，並以符號文字提示播放狀態；完整欄位與未啟用整合入口見 [S650 media contract](docs/hud/s650-media-properties-contract.md)。
@@ -89,7 +89,7 @@ FH6-HorizonTuner/
 │   ├── lite/                # Lite 前端 HTML entrypoint
 │   ├── src/features/        # 業務領域模組 (Features Domain)
 │   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 5 大可展開動態卡片
-│   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~6 分頁)
+│   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~4 分頁)
 │   │   ├── overlay_control/ # WYSIWYG 儀表佈局編輯器 (OverlayView)
 │   │   ├── drag_test/       # 彈射起步測試 (DragTestView)
 │   │   ├── analysis/        # 賽後復盤與 MoTeC 生態系橋接器 (AnalysisView, Debrief & LapDelta)

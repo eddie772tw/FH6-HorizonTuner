@@ -6,6 +6,9 @@ import { TuningMeasurementStep } from './TuningMeasurementStep';
 import { EngineObservationHistory } from './EngineObservationHistory';
 import { GearingTuner } from './GearingTuner';
 import { LegacyTuningHistory } from './LegacyTuningHistory';
+import { observeTireEvidence } from '../tireEvidence';
+import { TireEvidencePanel } from './TireEvidencePanel';
+import { useMemo } from 'react';
 
 export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   carId: string; profile: CarParams | null; engine: ReturnType<typeof useEngineMeasurementArchive>;
@@ -13,6 +16,9 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
 }) {
   const { t } = useSettings();
   const measured = engine.current;
+  const tireEvidence = useMemo(() => measured && engine.observation?.capture ? observeTireEvidence(engine.observation.capture.samples, {
+    carOrdinal: measured.identity!.ordinal, performanceIndex: measured.identity!.performanceIndex, carClass: measured.identity!.carClass,
+  }) : null, [measured, engine.observation?.id, engine.observation?.capture]);
   return <section className="d-flex flex-column gap-3">
     <div className="glass-panel p-3"><h3 className="h5">{t('Engine data & gearing')}</h3>
       <p className="mb-0">{t('Engine limit and peak output RPM come from measured acceleration. Missing measurements do not use an estimated redline.')}</p>
@@ -21,6 +27,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     <LegacyTuningHistory carId={carId} />
     {engine.storageError && <p role="status">{t('The observation could not be saved. Keep this page open and retry Continue; collected frames are retained.')}</p>}
     {measured ? <div className="glass-panel p-3"><p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
+      <TireEvidencePanel evidence={tireEvidence} />
       <button className="btn btn-outline-secondary" onClick={engine.invalidate}>{t('Collect driving data again')}</button></div>
       : <TuningMeasurementStep carId={carId} enabled={enabled} onComplete={engine.complete} />}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}

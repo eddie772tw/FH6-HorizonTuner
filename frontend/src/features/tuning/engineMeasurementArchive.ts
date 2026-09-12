@@ -1,9 +1,11 @@
 import type { TuningCarParams } from '../../utils/tuningMath';
 import type { TuningMeasurementState } from './tuningMeasurement';
+import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 
 export interface EngineObservation {
   schema: 'engine-observation/v1'; id: string; carId: string; capturedAt: number;
   dependencyKey: string; source: 'measured'; data: TuningMeasurementState;
+  capture?: TuningCaptureFile;
 }
 /** Tire geometry and suspension values affect their outputs, not the captured engine scan. */
 export function engineDependencyKey(carId: string, profile: TuningCarParams | null): string {
@@ -25,6 +27,6 @@ export function parseEngineArchive(text: string | null): EngineObservation[] {
         Array.isArray(d.bins) && d.bins.length >= 8 && d.bins.length <= 16 && new Set(d.bins.map((b: { index: number }) => b?.index)).size === d.bins.length &&
         d.bins.every((b: Record<string, number>) => b && Number.isInteger(b.index) && b.index >= 0 && b.index < 16 && Number.isInteger(b.sampleCount) && b.sampleCount > 0 &&
           ['averagePowerWatts', 'averageTorqueNewtons', 'averageRpm', 'powerWattsSum', 'torqueNewtonsSum', 'rpmSum'].every(k => Number.isFinite(b[k]) && b[k] > 0));
-    });
+    }).map(({ capture: _capture, ...item }) => item);
   } catch { return []; }
 }
