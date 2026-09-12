@@ -28,12 +28,11 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
   - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
   - Bounded backend pipeline metrics, with initial dyno-profile reads and persistence kept off the realtime telemetry loop.
-* **5-Step Physics Tuning Workbench**:
-  - **Step 1 Goal Setup**: Discipline selection (Road, Drift, Rally, Drag) and aerodynamic efficiency parameters.
-  - **Step 2 AEGO Gearing**: Proprietary AEGO gear ratio calculation algorithm & Powerband envelope analysis, supporting 4-Speed Drag Meta, Soft Max Speed caps, and closed-loop top-speed re-distribution.
-  - **Step 3 Chassis Tuner**: Anti-Roll Bars (AWD 1/65 Meta strategy), spring stiffness, Forward Rake ride height, 60% Golden Bump Damping ratio, and differential lock percentages.
-  - **Step 4 Alignment & Tires**: Seasonal bias static cold tire pressure calculation, Camber / Toe / Caster geometry math.
-  - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
+* **Six-Stage Verifiable Tuning Workflow**:
+  - **Step 1 Goal & Setup**: Select Road, Drift, Rally, or Drag and save vehicle, parts, event, and unknown metadata in an input snapshot.
+  - **Step 2 Tire baseline**, **Step 3 Chassis platform**, and **Step 4 Wheel alignment**: Keep the existing `tuningMath` pure-function outputs while recording tire, chassis, and alignment baselines separately.
+  - **Step 5 Engine data & gearing**: Use decoded game `EngineMaxRpm`, power, and torque observations from a WOT sweep. See the [current six-stage implementation](docs/tuning/tuning-workflow-implementation-20260912.md) for completeness gates and limits.
+  - **Step 6 Setup verification**: Road supports baseline, run, descriptive report, single-variable A/B comparison, and keep/retest decisions. Rally, Drag, and Drift retain compatibility snapshots in this iteration; this does not claim equivalent real-device validation.
 * **Racing HUD Overlay & Full/Lite Clients**:
   - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
   - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/hud/s650-media-properties-contract.md) for the complete field projection and reserved integration points.
@@ -89,7 +88,7 @@ FH6-HorizonTuner/
 │   ├── lite/                # Lite frontend HTML entrypoint
 │   ├── src/features/        # Business Domain Modules (Features Domain)
 │   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 5 expandable cards
-│   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~5 tabs)
+│   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~6 tabs)
 │   │   ├── overlay_control/ # WYSIWYG dashboard layout editor (OverlayView)
 │   │   ├── drag_test/       # Drag launch test view (DragTestView)
 │   │   ├── analysis/        # Post-Race Debrief & MoTeC Ecosystem Bridge (AnalysisView, Debrief & LapDelta)

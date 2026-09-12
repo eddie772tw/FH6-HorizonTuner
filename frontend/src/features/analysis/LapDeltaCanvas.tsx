@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import { AnalysisDataPoint } from "../../context/TelemetryRecorderContext";
 import { useSettings } from "../../context/SettingsContext";
 
@@ -16,6 +16,24 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
   compareLapNumber = -1,
 }) => {
   const { t } = useSettings();
+  const usablePoint = (point: AnalysisDataPoint): point is AnalysisDataPoint & {
+    time: number;
+    SpeedMetersPerSecond: number;
+    AccelInput: number;
+    BrakeInput: number;
+  } =>
+    typeof point.time === "number" && Number.isFinite(point.time) &&
+    typeof point.SpeedMetersPerSecond === "number" && Number.isFinite(point.SpeedMetersPerSecond) &&
+    typeof point.AccelInput === "number" && Number.isFinite(point.AccelInput) &&
+    typeof point.BrakeInput === "number" && Number.isFinite(point.BrakeInput);
+  const primaryPoints = useMemo(
+    () => primaryLapData.filter(usablePoint),
+    [primaryLapData],
+  );
+  const comparePoints = useMemo(
+    () => compareLapData.filter(usablePoint),
+    [compareLapData],
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoverInfo, setHoverInfo] = useState<{
@@ -47,7 +65,7 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
 
       ctx.clearRect(0, 0, width, height);
 
-    if (primaryLapData.length === 0) {
+    if (primaryPoints.length === 0) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
       ctx.font = "12px sans-serif";
       ctx.textAlign = "center";
@@ -59,21 +77,21 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     const chartW = width - padding.left - padding.right;
     const chartH = (height - padding.top - padding.bottom) / 2;
 
-    const primaryDenom = Math.max(1, primaryLapData.length - 1);
-    const compareDenom = Math.max(1, compareLapData.length - 1);
+    const primaryDenom = Math.max(1, primaryPoints.length - 1);
+    const compareDenom = Math.max(1, comparePoints.length - 1);
 
     // Speed Chart (Top)
     const speedTop = padding.top;
 
     let maxSpeed = 120;
-    for (let i = 0; i < primaryLapData.length; i++) {
-      const speed = primaryLapData[i].SpeedMetersPerSecond * 3.6;
+    for (let i = 0; i < primaryPoints.length; i++) {
+      const speed = primaryPoints[i].SpeedMetersPerSecond * 3.6;
       if (speed > maxSpeed) {
         maxSpeed = speed;
       }
     }
-    for (let i = 0; i < compareLapData.length; i++) {
-      const speed = compareLapData[i].SpeedMetersPerSecond * 3.6;
+    for (let i = 0; i < comparePoints.length; i++) {
+      const speed = comparePoints[i].SpeedMetersPerSecond * 3.6;
       if (speed > maxSpeed) {
         maxSpeed = speed;
       }
@@ -103,22 +121,22 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.fillText(`${t("Speed")} (km/h)`, padding.left, speedTop - 8);
 
     // Draw Compare Speed (Dashed Cyan)
-    if (compareLapData.length > 0) {
+    if (comparePoints.length > 0) {
       ctx.strokeStyle = "#00f0ff";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      for (let i = 0; i < compareLapData.length; i++) {
+      for (let i = 0; i < comparePoints.length; i++) {
         const x = padding.left + (i / compareDenom) * chartW;
-        const spd = compareLapData[i].SpeedMetersPerSecond * 3.6;
+        const spd = comparePoints[i].SpeedMetersPerSecond * 3.6;
         const y = speedTop + chartH - (spd / maxSpeed) * chartH;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
       ctx.setLineDash([]);
-      if (compareLapData.length === 1) {
-        const spd = compareLapData[0].SpeedMetersPerSecond * 3.6;
+      if (comparePoints.length === 1) {
+        const spd = comparePoints[0].SpeedMetersPerSecond * 3.6;
         const y = speedTop + chartH - (spd / maxSpeed) * chartH;
         ctx.fillStyle = "#00f0ff";
         ctx.beginPath();
@@ -131,16 +149,16 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.strokeStyle = "#00ffaa";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    for (let i = 0; i < primaryLapData.length; i++) {
+    for (let i = 0; i < primaryPoints.length; i++) {
       const x = padding.left + (i / primaryDenom) * chartW;
-      const spd = primaryLapData[i].SpeedMetersPerSecond * 3.6;
+      const spd = primaryPoints[i].SpeedMetersPerSecond * 3.6;
       const y = speedTop + chartH - (spd / maxSpeed) * chartH;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
-    if (primaryLapData.length === 1) {
-      const spd = primaryLapData[0].SpeedMetersPerSecond * 3.6;
+    if (primaryPoints.length === 1) {
+      const spd = primaryPoints[0].SpeedMetersPerSecond * 3.6;
       const y = speedTop + chartH - (spd / maxSpeed) * chartH;
       ctx.fillStyle = "#00ffaa";
       ctx.beginPath();
@@ -181,13 +199,13 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(padding.left, pedalTop + pedalH);
-    for (let i = 0; i < primaryLapData.length; i++) {
+    for (let i = 0; i < primaryPoints.length; i++) {
       const x = padding.left + (i / primaryDenom) * chartW;
-      const thr = (primaryLapData[i].AccelInput || 0) / 255;
+      const thr = primaryPoints[i].AccelInput / 255;
       const y = pedalTop + pedalH - thr * pedalH;
       ctx.lineTo(x, y);
     }
-    ctx.lineTo(padding.left + (primaryLapData.length === 1 ? 0 : chartW), pedalTop + pedalH);
+    ctx.lineTo(padding.left + (primaryPoints.length === 1 ? 0 : chartW), pedalTop + pedalH);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -198,13 +216,13 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(padding.left, pedalTop + pedalH);
-    for (let i = 0; i < primaryLapData.length; i++) {
+    for (let i = 0; i < primaryPoints.length; i++) {
       const x = padding.left + (i / primaryDenom) * chartW;
-      const brk = (primaryLapData[i].BrakeInput || 0) / 255;
+      const brk = primaryPoints[i].BrakeInput / 255;
       const y = pedalTop + pedalH - brk * pedalH;
       ctx.lineTo(x, y);
     }
-    ctx.lineTo(padding.left + (primaryLapData.length === 1 ? 0 : chartW), pedalTop + pedalH);
+    ctx.lineTo(padding.left + (primaryPoints.length === 1 ? 0 : chartW), pedalTop + pedalH);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -234,11 +252,11 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
         observer.disconnect();
       }
     };
-  }, [primaryLapData, compareLapData, primaryLapNumber, compareLapNumber, t]);
+  }, [primaryPoints, comparePoints, primaryLapNumber, compareLapNumber, t]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || primaryLapData.length === 0) return;
+    if (!canvas || primaryPoints.length === 0) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const paddingLeft = 45;
@@ -247,21 +265,21 @@ const LapDeltaCanvas: React.FC<LapDeltaCanvasProps> = ({
 
     const relX = Math.max(0, Math.min(chartW, x - paddingLeft));
     const ratio = relX / chartW;
-    const primaryIdx = Math.min(primaryLapData.length - 1, Math.floor(ratio * primaryLapData.length));
-    const pPoint = primaryLapData[primaryIdx];
+    const primaryIdx = Math.min(primaryPoints.length - 1, Math.floor(ratio * primaryPoints.length));
+    const pPoint = primaryPoints[primaryIdx];
 
     let cSpeed: number | undefined = undefined;
-    if (compareLapData.length > 0) {
-      const compIdx = Math.min(compareLapData.length - 1, Math.floor(ratio * compareLapData.length));
-      cSpeed = compareLapData[compIdx].SpeedMetersPerSecond * 3.6;
+    if (comparePoints.length > 0) {
+      const compIdx = Math.min(comparePoints.length - 1, Math.floor(ratio * comparePoints.length));
+      cSpeed = comparePoints[compIdx].SpeedMetersPerSecond * 3.6;
     }
 
     setHoverInfo({
       pct: Math.round(ratio * 100),
       primarySpeed: Math.round(pPoint.SpeedMetersPerSecond * 3.6),
       compareSpeed: cSpeed !== undefined ? Math.round(cSpeed) : undefined,
-      throttle: Math.round(((pPoint.AccelInput || 0) / 255) * 100),
-      brake: Math.round(((pPoint.BrakeInput || 0) / 255) * 100),
+      throttle: Math.round((pPoint.AccelInput / 255) * 100),
+      brake: Math.round((pPoint.BrakeInput / 255) * 100),
     });
   };
 

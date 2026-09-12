@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { telemetryEmitter, TelemetryData } from '../../../hooks/useTelemetry';
+import { subscribeToDecodedTelemetry } from '../../../hooks/useTelemetry';
 import {
   captureToCsv,
   summarizeCapture,
@@ -22,11 +22,11 @@ const defaultMetadata = (carId: string): TuningCaptureMetadata => ({
   purpose: 'tire-and-chassis-validation',
   carId,
   gameBuild: 'unknown',
-  installedParts: '',
+  installedParts: 'unknown',
   tireType: 'unknown',
-  surface: 'tarmac',
-  weather: 'dry',
-  eventType: 'free-roam',
+  surface: 'unknown',
+  weather: 'unknown',
+  eventType: 'unknown',
   track: 'unknown',
   shareCode: 'unknown',
   driverAssists: 'unknown',
@@ -57,22 +57,22 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
   const [capture, setCapture] = useState<TuningCaptureFile | null>(null);
   const [liveCount, setLiveCount] = useState(0);
   const samplesRef = useRef<TuningCaptureSample[]>([]);
+  const captureMetadataRef = useRef(metadata);
+  const capturingRef = useRef(false);
   const lastUiUpdateRef = useRef(0);
 
   useEffect(() => {
-    const handleTelemetry = (event: Event) => {
-      if (!isCapturing) return;
-      const data = (event as CustomEvent<TelemetryData>).detail;
-      if (!data || samplesRef.current.length >= MAX_SAMPLES) return;
+    return subscribeToDecodedTelemetry(data => {
+      if (!capturingRef.current) return;
+      if (String(data.CarOrdinal) !== captureMetadataRef.current.carId) { stopCapture('identity-changed'); return; }
       samplesRef.current.push(telemetryToCaptureSample(data));
+      if (samplesRef.current.length >= MAX_SAMPLES) { stopCapture('sample-limit'); return; }
       const now = performance.now();
       if (now - lastUiUpdateRef.current > 250) {
         lastUiUpdateRef.current = now;
         setLiveCount(samplesRef.current.length);
       }
-    };
-    telemetryEmitter.addEventListener('update', handleTelemetry);
-    return () => telemetryEmitter.removeEventListener('update', handleTelemetry);
+    });
   }, [isCapturing]);
 
   const summary = useMemo(() => summarizeCapture(capture?.samples ?? samplesRef.current), [capture, liveCount]);
@@ -81,15 +81,19 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
     samplesRef.current = [];
     setCapture(null);
     setLiveCount(0);
+    captureMetadataRef.current = { ...metadata, carId };
+    capturingRef.current = true;
     setIsCapturing(true);
   };
 
-  const stopCapture = () => {
+  const stopCapture = (reason = 'manual-stop') => {
+    capturingRef.current = false;
     setIsCapturing(false);
     const nextCapture: TuningCaptureFile = {
       schemaVersion: 'tuning-capture/v1',
       capturedAt: new Date().toISOString(),
-      metadata,
+      metadata: { ...captureMetadataRef.current },
+      recording: { source: 'decoded-websocket', endReason: reason },
       samples: [...samplesRef.current]
     };
     setCapture(nextCapture);
@@ -97,6 +101,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
   };
 
   const clearCapture = () => {
+    capturingRef.current = false;
     setIsCapturing(false);
     samplesRef.current = [];
     setCapture(null);
@@ -104,7 +109,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
   };
 
   const filenameBase = metadata.label.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'tuning-capture';
-  const activeCapture = capture ?? (samplesRef.current.length > 0 ? { schemaVersion: 'tuning-capture/v1' as const, capturedAt: new Date().toISOString(), metadata, samples: samplesRef.current } : null);
+  const activeCapture = capture ?? (samplesRef.current.length > 0 ? { schemaVersion: 'tuning-capture/v1' as const, capturedAt: new Date().toISOString(), metadata: captureMetadataRef.current, recording: { source: 'decoded-websocket' }, samples: samplesRef.current } : null);
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -138,7 +143,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <label className="form-label fs-7" htmlFor="capture-notes">{t('Notes')}</label>
               <textarea id="capture-notes" className="form-control form-control-sm" rows={3} value={metadata.notes} onChange={(event) => setMetadata(updateMetadata(metadata, 'notes', event.target.value))} />
               <div className="d-flex gap-2 flex-wrap mt-2">
-                {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={startCapture}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={stopCapture}>{t('Stop Capture')}</button>}
+                {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={startCapture}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={() => stopCapture()}>{t('Stop Capture')}</button>}
                 <span
                   title={isCapturing ? t("Cannot clear while capturing") : undefined}
                   tabIndex={isCapturing ? 0 : undefined}
@@ -165,7 +170,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <SummaryRow label={t('Maximum Longitudinal G')} value={summary.maxLongitudinalG} />
               <SummaryRow label={t('Maximum Lateral G')} value={summary.maxLateralG} />
               <SummaryRow label={t('Peak Slip Ratio FL/FR/RL/RR')} value={summary.peakSlipRatio.join(' / ')} />
-              <SummaryRow label={t('Peak Slip Angle FL/FR/RL/RR')} value={summary.peakSlipAngleDeg.join(' / ')} />
+              <SummaryRow label={t('Peak normalized lateral slip FL/FR/RL/RR')} value={summary.peakNormalizedSlipAngle.join(' / ')} />
               <SummaryRow label={t('Maximum Tire Temp FL/FR/RL/RR')} value={summary.maxTireTemp.join(' / ')} />
               <SummaryRow label={t('Maximum Combined Slip FL/FR/RL/RR')} value={summary.maxCombinedSlip.join(' / ')} />
               <SummaryRow label={t('Non-monotonic timestamps')} value={summary.droppedTimestampCount} />

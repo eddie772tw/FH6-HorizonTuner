@@ -66,18 +66,21 @@ def test_replay_makes_timestamp_discontinuity_explicit_for_recorder():
     parsed_frames = [parse_telemetry_packet(packet) for packet in replay_raw_packets()]
     assert all(frame is not None for frame in parsed_frames)
 
-    persistence = AsyncRacePersistence(Mock())
+    persistence = Mock()
     recorder = RaceRecorder(persistence, {"race_recording": True}, {})
     recorder.downsample_interval = 0
     for frame in parsed_frames:
         recorder.record(frame)
 
-    assert [point["TimestampMS"] for point in recorder.in_memory_batch] == [
-        1000,
-        1100,
-        850,
-    ]
-    assert [point["time"] for point in recorder.in_memory_batch] == [0.0, 0.1, -0.15]
+    old_id, old_points = persistence.enqueue_points.call_args.args
+    assert [point["TimestampMS"] for point in old_points] == [1000, 1100]
+    assert (
+        persistence.enqueue_finalize.call_args.args[1]["endReason"]
+        == "timestamp-regressed"
+    )
+    assert recorder.current_session_id != old_id
+    assert [point["TimestampMS"] for point in recorder.in_memory_batch] == [850]
+    assert recorder.in_memory_batch[0]["time"] == 0
 
 
 @pytest.mark.asyncio

@@ -15,7 +15,7 @@ class RecordingStore:
     def insert_points_batch(self, session_id, points):
         self.calls.append(("points", session_id, len(points)))
 
-    def finalize_session(self, session_id):
+    def finalize_session(self, session_id, metadata=None):
         self.calls.append(("finalize", session_id))
         return {"session_id": session_id}
 
@@ -101,6 +101,7 @@ async def test_recorder_queues_sqlite_work_without_calling_store_inline():
 
     session_id = recorder.current_session_id
     recorder.record({"IsRaceOn": 0})
+    recorder.tick(float("inf"))
     await persistence.flush()
 
     assert store.calls[0] == ("create", session_id)
@@ -125,7 +126,10 @@ def test_sqlite_finalization_persists_lap_summary(tmp_path):
     sessions = store.list_all_sessions()
     laps = store.get_session_laps("session-1")
 
-    assert summary["total_laps"] == 1
-    assert summary["best_lap_time"] == 2.5
-    assert sessions[0]["total_laps"] == 1
+    # A sample span without a lap boundary is not a complete game lap.
+    assert summary["total_laps"] == 0
+    assert summary["best_lap_time"] == 0
+    assert sessions[0]["total_laps"] == 0
+    assert laps[0]["complete"] == 0
+    assert laps[0]["lap_time"] is None
     assert laps[0]["max_speed_kmh"] == 108.0

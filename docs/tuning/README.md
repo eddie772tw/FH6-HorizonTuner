@@ -2,6 +2,10 @@
 
 本頁是程式導航與驗證順序，不是功能完成清單。以下結構於 2026-09-12 依工作區程式核對；修改前仍需確認實際呼叫路徑與對應測試。
 
+本次下一迭代的落地藍圖見[調校工作流下一迭代落地規畫](tuning-workflow-iteration-20260912.md)；目前工作區的實作與證據邊界見[六階段調校工作流現行實作](tuning-workflow-implementation-20260912.md)。藍圖以 `ref/fh6-tuning-restart-20260912` 為參考輸入，不代表參考包內容已全部移植或驗收。
+
+現行工作流是六階段 `Goal & Setup → Tire baseline → Chassis platform → Wheel alignment → Engine data & gearing → Setup verification`。引擎資料來自遊戲解碼 frame 的 `EngineMaxRpm`、功率與扭力；至少 6 秒、8/16 RPM bins、低端不高於 40%、高端至少 90%、全油門與控制輸入門檻只是觀察完整性 gate，不是實體校準。Road session 以 `LapNumber` 與 `TimestampMS` 保存全部圈，0.1 秒 downsample、最多 50,000 點；引擎 capture 最多 30,000 frame。需要 offset、單位或欄位狀態時，參考 [324-byte packet reference](../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)。
+
 ## 先確認影響哪一條路徑
 
 | 範圍 | 程式入口 | 閱讀重點 |
@@ -26,3 +30,8 @@
 工具使用另見 [CLI 指南](../guides/agent-cli-guide.md) 與 [MCP 指南](../guides/mcp-setup-guide.md)；校準資料的位置與置信度規則見 [calibration](../calibration/README.md)。
 
 舊交接、Phase 路線圖、外部證據與 MCP 評估集中在 [歷史索引](../archive/README.md)。它們用於理解過去的選擇，不提供目前進度或新工作的自動授權。
+
+### 2026-09-12 外部證據與操作體驗
+
+- [社群需求、痛點與 meta 偏好](community-tuning-needs-20260912.md)：FH6 與 FH5 來源分開，記錄來源可用性與反例。
+- [專業工程與教程順序證據](workflow-order-evidence-20260912.md)：維持主順序，補上初始基準與回訪語意；真車程序不直接變成 FH6 強制輸入。

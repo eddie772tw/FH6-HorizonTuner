@@ -78,6 +78,7 @@ interface CarParamsContextType {
   settings: any;
   updateSettings: (updates: any) => Promise<void>;
   isLoading: boolean;
+  loadedCarId: string | null;
   carsWithParams: { id: string; name: string }[];
   telemetryCarId: string;
 }
@@ -101,6 +102,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [carId, setCarId] = useState<string>('default_car');
   const [carParams, setCarParams] = useState<CarParams | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadedCarId, setLoadedCarId] = useState<string | null>(null);
   const [carDb, setCarDb] = useState<Record<string, any>>({});
   const [carsWithParams, setCarsWithParams] = useState<{ id: string; name: string }[]>([]);
 
@@ -200,8 +202,10 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
         const result = await res.json();
         if (active && !result.error) {
           setCarParams(normalizeCarParams(result));
+          setLoadedCarId(carId);
         } else if (active && result.error) {
           setCarParams(normalizeCarParams({}));
+          setLoadedCarId(carId);
         }
       } catch (e) {
         console.error("Failed to load car params", e);
@@ -279,7 +283,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     <CarParamsContext.Provider value={{
       carId, setCarId, carName, carParams, setCarParams,
       saveCarParams, clearDynoCurve, importDynoValues,
-      settings, updateSettings, isLoading,
+      settings, updateSettings, isLoading, loadedCarId,
       carsWithParams, telemetryCarId
     }}>
       {children}

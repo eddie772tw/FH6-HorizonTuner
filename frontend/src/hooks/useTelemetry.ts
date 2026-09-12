@@ -3,6 +3,13 @@ import { backendWebSocketUrl } from "../services/backend";
 import { FrameInterpolator } from "../utils/frameInterpolator";
 
 export interface TelemetryData {
+  TelemetrySchema?: string;
+  DrivetrainType?: number;
+  AngularVelocityX?: number;
+  AngularVelocityY?: number;
+  AngularVelocityZ?: number;
+  WheelRotationSpeed?: number[];
+  WheelOnRumbleStrip?: number[];
   IsRaceOn: number;
   TimestampMS: number;
   CarOrdinal?: number;
@@ -88,6 +95,14 @@ function stopSharedRenderLoop() {
 
 // High-Refresh Event Emitter for high-performance Canvas rendering (Bypasses React)
 export const telemetryEmitter = new EventTarget();
+
+// Measurement subscribers receive each decoded WebSocket packet once, before
+// display interpolation. HUD frame events are deliberately a separate stream.
+const decodedSubscribers = new Set<(frame: TelemetryData) => void>();
+export function subscribeToDecodedTelemetry(listener: (frame: TelemetryData) => void) {
+  decodedSubscribers.add(listener);
+  return () => { decodedSubscribers.delete(listener); };
+}
 
 export function useTelemetry(url?: string) {
   const [data, setData] = useState<TelemetryData | null>(latestData);
@@ -255,6 +270,10 @@ function formatHudTelemetry(raw: TelemetryData) {
           const parsed = JSON.parse(event.data);
           if (parsed && typeof parsed === 'object') {
             latestData = parsed;
+            for (const listener of decodedSubscribers) {
+              try { listener(parsed); }
+              catch (error) { console.error('Decoded telemetry subscriber failed:', error); }
+            }
             sharedInterpolator.pushSample(parsed, performance.now());
             startSharedRenderLoop();
             

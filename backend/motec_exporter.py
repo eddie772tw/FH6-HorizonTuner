@@ -10,7 +10,7 @@ import math
 import os
 from typing import Any, Dict, List, Tuple
 
-from telemetry_listener import DEFAULT_TIRE_ARRAY
+from road_analysis import summarize_laps
 
 logger = logging.getLogger(__name__)
 
@@ -49,67 +49,82 @@ def calculate_session_debrief(telemetry_points: List[Dict[str, Any]]) -> Dict[st
             "total_samples": 0,
             "valid_laps": 0,
             "tire_thermals": {
-                "fl_avg": 0.0,
-                "fr_avg": 0.0,
-                "rl_avg": 0.0,
-                "rr_avg": 0.0,
+                "fl_avg": None,
+                "fr_avg": None,
+                "rl_avg": None,
+                "rr_avg": None,
                 "status": "no_data",
             },
             "suspension": {
-                "peak_travel_pct": 0.0,
-                "bottom_out_count": 0,
+                "peak_travel_pct": None,
+                "bottom_out_count": None,
                 "status": "no_data",
             },
             "handling_balance": {
-                "understeer_pct": 50.0,
-                "oversteer_pct": 50.0,
-                "tendency": "Neutral",
+                "understeer_pct": None,
+                "oversteer_pct": None,
+                "tendency": "no_data",
             },
         }
 
     total_pts = len(telemetry_points)
-    fl_temps, fr_temps, rl_temps, rr_temps = [], [], [], []
+    tire_temps = [[], [], [], []]
+    suspension_values = []
     bottom_outs = 0
-    max_susp_travel = 0.0
 
     cornering_understeer_count = 0
     cornering_oversteer_count = 0
     cornering_total_count = 0
 
-    laps_seen = set()
+    def finite_number(value: Any) -> bool:
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+        )
+
+    def wheel_values(point: Dict[str, Any], key: str) -> List[Any]:
+        values = point.get(key)
+        if not isinstance(values, (list, tuple)):
+            return [None] * 4
+        return [
+            values[index]
+            if index < len(values) and finite_number(values[index])
+            else None
+            for index in range(4)
+        ]
 
     for p in telemetry_points:
-        lap = p.get("LapNumber", 0)
-        if lap > 0:
-            laps_seen.add(lap)
-
         # 1. Tire Temperatures (canonical unit is Fahrenheit, convert to Celsius)
-        temps = p.get("TireTemp", DEFAULT_TIRE_ARRAY)
-        fl_c = (temps[0] - 32) * 5 / 9
-        fr_c = (temps[1] - 32) * 5 / 9
-        rl_c = (temps[2] - 32) * 5 / 9
-        rr_c = (temps[3] - 32) * 5 / 9
-
-        fl_temps.append(fl_c)
-        fr_temps.append(fr_c)
-        rl_temps.append(rl_c)
-        rr_temps.append(rr_c)
+        temps = wheel_values(p, "TireTemp")
+        for index, temp in enumerate(temps):
+            if temp is not None:
+                tire_temps[index].append((temp - 32) * 5 / 9)
 
         # 2. Suspension bottom out
-        susp = p.get("SuspTravel", DEFAULT_TIRE_ARRAY)
+        susp = wheel_values(p, "SuspTravel")
         for s in susp:
-            if s > max_susp_travel:
-                max_susp_travel = s
-            if s >= 0.95:
+            if s is not None:
+                suspension_values.append(s)
+            if s is not None and s >= 0.95:
                 bottom_outs += 1
 
         # 3. Handling Dynamics (Cornering when LatG >= 0.3G and speed > 10 m/s)
-        accel_x = abs(p.get("AccelerationX", 0.0))
-        speed = p.get("SpeedMetersPerSecond", 0.0)
-        if accel_x >= 2.94 and speed >= 10.0:  # ~0.3G
-            slip_angles = p.get("TireSlipAngle", DEFAULT_TIRE_ARRAY)
-            front_slip = (abs(slip_angles[0]) + abs(slip_angles[1])) / 2.0
-            rear_slip = (abs(slip_angles[2]) + abs(slip_angles[3])) / 2.0
+        accel_x = p.get("AccelerationX")
+        speed = p.get("SpeedMetersPerSecond")
+        if (
+            finite_number(accel_x)
+            and finite_number(speed)
+            and abs(accel_x) >= 2.94
+            and speed >= 10.0
+        ):  # ~0.3G
+            slip_angles = wheel_values(p, "TireSlipAngle")
+            front = [abs(value) for value in slip_angles[:2] if value is not None]
+            rear = [abs(value) for value in slip_angles[2:] if value is not None]
+            if not front or not rear:
+                continue
+            front_slip = sum(front) / len(front)
+            rear_slip = sum(rear) / len(rear)
 
             cornering_total_count += 1
             if front_slip > rear_slip * 1.15:
@@ -117,61 +132,77 @@ def calculate_session_debrief(telemetry_points: List[Dict[str, Any]]) -> Dict[st
             elif rear_slip > front_slip * 1.15:
                 cornering_oversteer_count += 1
 
-    avg_fl = sum(fl_temps) / total_pts if total_pts else 0.0
-    avg_fr = sum(fr_temps) / total_pts if total_pts else 0.0
-    avg_rl = sum(rl_temps) / total_pts if total_pts else 0.0
-    avg_rr = sum(rr_temps) / total_pts if total_pts else 0.0
+    valid_laps = sum(
+        1 for lap in summarize_laps(telemetry_points) if lap.get("complete") is True
+    )
+    averages = [
+        round(sum(values) / len(values), 1) if values else None for values in tire_temps
+    ]
+    avg_fl, avg_fr, avg_rl, avg_rr = averages
 
     # Thermal status
-    max_temp = max(avg_fl, avg_fr, avg_rl, avg_rr)
-    if max_temp > 105.0:
-        thermal_status = "Overheating"
-    elif max_temp < 65.0:
-        thermal_status = "Cold"
+    known_temps = [value for value in averages if value is not None]
+    if not known_temps:
+        thermal_status = "no_data"
     else:
-        thermal_status = "Optimal"
+        max_temp = max(known_temps)
+        if max_temp > 105.0:
+            thermal_status = "Overheating"
+        elif max_temp < 65.0:
+            thermal_status = "Cold"
+        else:
+            thermal_status = "Optimal"
 
     # Suspension status
-    if bottom_outs > 10:
-        susp_status = "Severe Bottoming"
-    elif bottom_outs > 0:
-        susp_status = "Occasional Bottoming"
+    if not suspension_values:
+        susp_status = "no_data"
+        peak_travel_pct = None
     else:
-        susp_status = "Optimal"
+        peak_travel_pct = round(max(suspension_values) * 100.0, 1)
+        if bottom_outs > 10:
+            susp_status = "Severe Bottoming"
+        elif bottom_outs > 0:
+            susp_status = "Occasional Bottoming"
+        else:
+            susp_status = "Optimal"
 
     # Handling tendency
     if cornering_total_count > 0:
         understeer_pct = (cornering_understeer_count / cornering_total_count) * 100.0
         oversteer_pct = (cornering_oversteer_count / cornering_total_count) * 100.0
+        if understeer_pct >= 58.0:
+            tendency = "Understeer Biased"
+        elif oversteer_pct >= 58.0:
+            tendency = "Oversteer Biased"
+        else:
+            tendency = "Neutral / Balanced"
     else:
-        understeer_pct = 50.0
-        oversteer_pct = 50.0
-
-    if understeer_pct >= 58.0:
-        tendency = "Understeer Biased"
-    elif oversteer_pct >= 58.0:
-        tendency = "Oversteer Biased"
-    else:
-        tendency = "Neutral / Balanced"
+        understeer_pct = None
+        oversteer_pct = None
+        tendency = "no_data"
 
     return {
         "total_samples": total_pts,
-        "valid_laps": len(laps_seen),
+        "valid_laps": valid_laps,
         "tire_thermals": {
-            "fl_avg": round(avg_fl, 1),
-            "fr_avg": round(avg_fr, 1),
-            "rl_avg": round(avg_rl, 1),
-            "rr_avg": round(avg_rr, 1),
+            "fl_avg": avg_fl,
+            "fr_avg": avg_fr,
+            "rl_avg": avg_rl,
+            "rr_avg": avg_rr,
             "status": thermal_status,
         },
         "suspension": {
-            "peak_travel_pct": round(max_susp_travel * 100.0, 1),
-            "bottom_out_count": bottom_outs,
+            "peak_travel_pct": peak_travel_pct,
+            "bottom_out_count": bottom_outs if suspension_values else None,
             "status": susp_status,
         },
         "handling_balance": {
-            "understeer_pct": round(understeer_pct, 1),
-            "oversteer_pct": round(oversteer_pct, 1),
+            "understeer_pct": round(understeer_pct, 1)
+            if understeer_pct is not None
+            else None,
+            "oversteer_pct": round(oversteer_pct, 1)
+            if oversteer_pct is not None
+            else None,
             "tendency": tendency,
         },
     }
@@ -211,7 +242,20 @@ def export_session_to_motec_csv(
                     f"Exported Telemetry Session {session_id} - Full 41 Channels",
                 ]
             )
-            writer.writerow(["Sample Rate", "60.0"])
+            times = [p.get("time") for p in telemetry_points]
+            intervals = [
+                b - a
+                for a, b in zip(times, times[1:])
+                if isinstance(a, (int, float)) and isinstance(b, (int, float)) and b > a
+            ]
+            from statistics import median
+
+            writer.writerow(
+                [
+                    "Sample Rate",
+                    f"{1 / median(intervals):.3f}" if intervals else "unknown",
+                ]
+            )
             writer.writerow([])
 
             # Channel Names Row
@@ -242,10 +286,10 @@ def export_session_to_motec_csv(
                 "Susp Travel FR",
                 "Susp Travel RL",
                 "Susp Travel RR",
-                "Slip Angle FL",
-                "Slip Angle FR",
-                "Slip Angle RL",
-                "Slip Angle RR",
+                "Normalized Slip Angle FL",
+                "Normalized Slip Angle FR",
+                "Normalized Slip Angle RL",
+                "Normalized Slip Angle RR",
                 "Slip Ratio FL",
                 "Slip Ratio FR",
                 "Slip Ratio RL",
@@ -288,10 +332,10 @@ def export_session_to_motec_csv(
                 "m",
                 "m",
                 "m",
-                "deg",
-                "deg",
-                "deg",
-                "deg",
+                "normalized",
+                "normalized",
+                "normalized",
+                "normalized",
                 "",
                 "",
                 "",
@@ -306,91 +350,53 @@ def export_session_to_motec_csv(
             ]
             writer.writerow(units)
 
-            # Data Rows
+            # Missing recorded channels remain blank; absence is not a zero reading.
+            def fmt(value, scale=1.0, offset=0.0, digits=3):
+                if not isinstance(value, (int, float)) or not math.isfinite(value):
+                    return ""
+                return f"{value * scale + offset:.{digits}f}"
+
             for p in telemetry_points:
-                susp = p.get("SuspTravel", DEFAULT_TIRE_ARRAY)
-                susp_meters = p.get("SuspensionTravelMeters", DEFAULT_TIRE_ARRAY)
-                s_angle = p.get("TireSlipAngle", DEFAULT_TIRE_ARRAY)
-                s_ratio = p.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
-                temp = p.get("TireTemp", DEFAULT_TIRE_ARRAY)
 
-                speed_kmh = p.get("SpeedMetersPerSecond", 0.0) * 3.6
-                accel_x_g = p.get("AccelerationX", 0.0) / 9.81
-                accel_y_g = p.get("AccelerationY", 0.0) / 9.81
-                accel_z_g = p.get("AccelerationZ", 0.0) / 9.81
+                def channel(key, scale=1.0, digits=3):
+                    return fmt(p.get(key), scale, digits=digits)
 
-                pos_x = p.get("PositionX", 0.0)
-                pos_y = p.get("PositionY", 0.0)
-                pos_z = p.get("PositionZ", 0.0)
-                lat, lon, alt = position_to_gps(pos_x, pos_y, pos_z)
-
-                power_raw = p.get("PowerWatts")
-                if power_raw is None:
-                    power_raw = p.get("Power", 0.0)
-                power_hp = power_raw / 745.7
-
-                torque_raw = p.get("TorqueNewtons")
-                if torque_raw is None:
-                    torque_raw = p.get("Torque", 0.0)
-                torque_nm = torque_raw
-
-                boost_raw = p.get("Boost", 0.0)
-                boost_psi = boost_raw / 6894.75729
-                fuel_pct = p.get("Fuel", 1.0) * 100.0
-
-                clutch_val = (
-                    p.get("clutch_pct")
-                    if p.get("clutch_pct") is not None
-                    else (p.get("ClutchInput", 0) / 2.55)
-                )
-                handbrake_val = (
-                    p.get("handbrake_pct")
-                    if p.get("handbrake_pct") is not None
-                    else (p.get("HandBrakeInput", 0) / 2.55)
-                )
+                def wheel(key, scale=1.0, offset=0.0):
+                    values = p.get(key) or []
+                    return [
+                        fmt(values[i] if i < len(values) else None, scale, offset)
+                        for i in range(4)
+                    ]
 
                 row = [
-                    f"{p.get('time', 0.0):.3f}",
-                    f"{p.get('lap_distance', 0.0):.1f}",
-                    p.get("LapNumber", 1),
-                    f"{speed_kmh:.1f}",
-                    f"{p.get('CurrentEngineRpm', 0):.0f}",
-                    p.get("Gear", 0),
-                    f"{(p.get('AccelInput', 0) / 2.55):.1f}",
-                    f"{(p.get('BrakeInput', 0) / 2.55):.1f}",
-                    f"{clutch_val:.1f}",
-                    f"{handbrake_val:.1f}",
-                    f"{p.get('steer_pct', 0.0):.1f}",
-                    f"{accel_x_g:.3f}",
-                    f"{accel_z_g:.3f}",
-                    f"{accel_y_g:.3f}",
-                    f"{boost_psi:.2f}",
-                    f"{fuel_pct:.1f}",
-                    f"{power_hp:.1f}",
-                    f"{torque_nm:.1f}",
-                    f"{(susp[0] * 100):.1f}",
-                    f"{(susp[1] * 100):.1f}",
-                    f"{(susp[2] * 100):.1f}",
-                    f"{(susp[3] * 100):.1f}",
-                    f"{susp_meters[0]:.3f}",
-                    f"{susp_meters[1]:.3f}",
-                    f"{susp_meters[2]:.3f}",
-                    f"{susp_meters[3]:.3f}",
-                    f"{(s_angle[0] * 57.29578):.2f}",
-                    f"{(s_angle[1] * 57.29578):.2f}",
-                    f"{(s_angle[2] * 57.29578):.2f}",
-                    f"{(s_angle[3] * 57.29578):.2f}",
-                    f"{s_ratio[0]:.3f}",
-                    f"{s_ratio[1]:.3f}",
-                    f"{s_ratio[2]:.3f}",
-                    f"{s_ratio[3]:.3f}",
-                    f"{((temp[0] - 32) * 5 / 9):.1f}",
-                    f"{((temp[1] - 32) * 5 / 9):.1f}",
-                    f"{((temp[2] - 32) * 5 / 9):.1f}",
-                    f"{((temp[3] - 32) * 5 / 9):.1f}",
-                    f"{lat:.7f}",
-                    f"{lon:.7f}",
-                    f"{alt:.1f}",
+                    channel("time"),
+                    channel("lap_distance"),
+                    channel("LapNumber", digits=0),
+                    channel("SpeedMetersPerSecond", 3.6),
+                    channel("CurrentEngineRpm", digits=0),
+                    channel("Gear", digits=0),
+                    channel("AccelInput", 100 / 255),
+                    channel("BrakeInput", 100 / 255),
+                    channel("ClutchInput", 100 / 255),
+                    channel("HandBrakeInput", 100 / 255),
+                    fmt(p.get("steer_pct"))
+                    if p.get("steer_pct") is not None
+                    else channel("SteerInput", 100 / 127),
+                    channel("AccelerationX", 1 / 9.81),
+                    channel("AccelerationZ", 1 / 9.81),
+                    channel("AccelerationY", 1 / 9.81),
+                    channel("Boost"),
+                    channel("Fuel", 100),
+                    fmt(p.get("PowerWatts", p.get("Power")), 1 / 745.7),
+                    fmt(p.get("TorqueNewtons", p.get("Torque"))),
+                    *wheel("SuspTravel", 100),
+                    *wheel("SuspensionTravelMeters"),
+                    *wheel("TireSlipAngle"),
+                    *wheel("TireSlipRatio"),
+                    *wheel("TireTemp", 5 / 9, -32 * 5 / 9),
+                    fmt(p.get("PositionZ"), 1 / LAT_METERS_PER_DEG, BASE_GPS_LAT, 7),
+                    fmt(p.get("PositionX"), 1 / LON_METERS_PER_DEG, BASE_GPS_LON, 7),
+                    channel("PositionY"),
                 ]
                 writer.writerow(row)
 
@@ -430,11 +436,75 @@ def parse_motec_csv_to_telemetry(
             if not parse_data:
                 return session_meta, []
 
+            headers = next(reader, [])
             next(reader, [])
-            next(reader, [])
+            normalized_slip = "Normalized Slip Angle FL" in headers
 
             for row in reader:
                 if not row or len(row) < 27:
+                    continue
+
+                if normalized_slip:
+
+                    def value(index, scale=1.0, offset=0.0):
+                        try:
+                            raw = float(row[index])
+                            return raw * scale + offset if math.isfinite(raw) else None
+                        except (ValueError, IndexError):
+                            return None
+
+                    point = {
+                        key: value(index, scale)
+                        for key, index, scale in (
+                            ("time", 0, 1),
+                            ("lap_distance", 1, 1),
+                            ("LapNumber", 2, 1),
+                            ("SpeedMetersPerSecond", 3, 1 / 3.6),
+                            ("CurrentEngineRpm", 4, 1),
+                            ("Gear", 5, 1),
+                            ("AccelInput", 6, 2.55),
+                            ("BrakeInput", 7, 2.55),
+                            ("ClutchInput", 8, 2.55),
+                            ("HandBrakeInput", 9, 2.55),
+                            ("steer_pct", 10, 1),
+                            ("AccelerationX", 11, 9.81),
+                            ("AccelerationZ", 12, 9.81),
+                            ("AccelerationY", 13, 9.81),
+                            ("Boost", 14, 1),
+                            ("Fuel", 15, 0.01),
+                            ("PowerWatts", 16, 745.7),
+                            ("TorqueNewtons", 17, 1),
+                        )
+                    }
+                    for key, start, scale, offset in (
+                        ("SuspTravel", 18, 0.01, 0),
+                        ("SuspensionTravelMeters", 22, 1, 0),
+                        ("TireSlipAngle", 26, 1, 0),
+                        ("TireSlipRatio", 30, 1, 0),
+                        ("TireTemp", 34, 1.8, 32),
+                    ):
+                        point[key] = [
+                            value(i, scale, offset) for i in range(start, start + 4)
+                        ]
+                    point.update(
+                        {
+                            "sourceSchema": "motec-csv/normalized-v1",
+                            "Power": point["PowerWatts"],
+                            "Torque": point["TorqueNewtons"],
+                            "PositionY": value(40),
+                            "PositionX": value(
+                                39,
+                                LON_METERS_PER_DEG,
+                                -BASE_GPS_LON * LON_METERS_PER_DEG,
+                            ),
+                            "PositionZ": value(
+                                38,
+                                LAT_METERS_PER_DEG,
+                                -BASE_GPS_LAT * LAT_METERS_PER_DEG,
+                            ),
+                        }
+                    )
+                    telemetry_points.append(point)
                     continue
 
                 def get_float(idx, default=0.0):
@@ -468,10 +538,14 @@ def parse_motec_csv_to_telemetry(
                         get_float(21 if len(row) > 30 else 14) / 100.0,
                     ],
                     "TireSlipAngle": [
-                        get_float(26 if len(row) > 30 else 15) / 57.29578,
-                        get_float(27 if len(row) > 30 else 16) / 57.29578,
-                        get_float(28 if len(row) > 30 else 17) / 57.29578,
-                        get_float(29 if len(row) > 30 else 18) / 57.29578,
+                        get_float(26 if len(row) > 30 else 15)
+                        / (1 if normalized_slip else 57.29578),
+                        get_float(27 if len(row) > 30 else 16)
+                        / (1 if normalized_slip else 57.29578),
+                        get_float(28 if len(row) > 30 else 17)
+                        / (1 if normalized_slip else 57.29578),
+                        get_float(29 if len(row) > 30 else 18)
+                        / (1 if normalized_slip else 57.29578),
                     ],
                     "TireSlipRatio": [
                         get_float(30 if len(row) > 30 else 19),
@@ -490,7 +564,9 @@ def parse_motec_csv_to_telemetry(
                     "clutch_pct": get_float(8) if len(row) > 30 else 0.0,
                     "handbrake_pct": get_float(9) if len(row) > 30 else 0.0,
                     "AccelerationY": get_float(13) * 9.81 if len(row) > 30 else 0.0,
-                    "Boost": get_float(14) * 6894.75729 if len(row) > 30 else 0.0,
+                    "Boost": get_float(14) * (1 if normalized_slip else 6894.75729)
+                    if len(row) > 30
+                    else 0.0,
                     "Fuel": get_float(15) / 100.0 if len(row) > 30 else 1.0,
                     "PowerWatts": get_float(16) * 745.7 if len(row) > 30 else 0.0,
                     "Power": get_float(16) * 745.7 if len(row) > 30 else 0.0,

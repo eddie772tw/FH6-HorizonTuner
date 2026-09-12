@@ -4,22 +4,24 @@ import { backendFetch, backendHttpUrl } from "../services/backend";
 import { SessionDebriefData } from "../features/analysis/sessionDebriefMath";
 
 export interface AnalysisDataPoint {
-  time: number; // Seconds since recording started
-  LapNumber?: number;
-  lap_distance?: number;
-  SpeedMetersPerSecond: number;
-  CurrentEngineRpm: number;
-  Gear: number;
-  AccelInput: number;
-  BrakeInput: number;
-  AccelerationX: number; // Lat G (m/s^2)
-  AccelerationZ: number; // Lon G (m/s^2)
-  SuspTravel: number[]; // [FL, FR, RL, RR] (0.0 - 1.0)
-  TireSlipAngle: number[]; // [FL, FR, RL, RR] (radians)
-  TireSlipRatio: number[]; // [FL, FR, RL, RR]
-  TireTemp: number[]; // [FL, FR, RL, RR] (°F)
-  PositionX: number;
-  PositionZ: number;
+  time: number | null; // Seconds since recording started
+  LapNumber?: number | null;
+  CurrentLap?: number | null;
+  LastLap?: number | null;
+  lap_distance?: number | null;
+  SpeedMetersPerSecond: number | null;
+  CurrentEngineRpm: number | null;
+  Gear: number | null;
+  AccelInput: number | null;
+  BrakeInput: number | null;
+  AccelerationX: number | null; // Lat G (m/s^2)
+  AccelerationZ: number | null; // Lon G (m/s^2)
+  SuspTravel: (number | null)[]; // [FL, FR, RL, RR] (0.0 - 1.0)
+  TireSlipAngle: (number | null)[]; // [FL, FR, RL, RR] (normalized, unitless)
+  TireSlipRatio: (number | null)[]; // [FL, FR, RL, RR]
+  TireTemp: (number | null)[]; // [FL, FR, RL, RR] (°F)
+  PositionX: number | null;
+  PositionZ: number | null;
 }
 
 export interface SavedSessionHeader {
@@ -35,11 +37,13 @@ export interface SavedSessionHeader {
 
 export interface LapSummary {
   lap_number: number;
-  lap_time: number;
-  start_distance: number;
-  end_distance: number;
-  max_speed_kmh: number;
-  avg_speed_kmh: number;
+  lap_time: number | null;
+  start_distance: number | null;
+  end_distance: number | null;
+  max_speed_kmh: number | null;
+  avg_speed_kmh: number | null;
+  complete?: boolean;
+  lap_time_source?: string;
 }
 
 interface TelemetryRecorderContextType {
