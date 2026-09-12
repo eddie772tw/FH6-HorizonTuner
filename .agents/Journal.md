@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-12 / PR #319、#328、#329、#330 併入評估與多代理治理協調（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者指示審查四個 PR 並合併 #329 與 #319，補充 #319 缺失語系至 main，並分別對 #328 與 #330 提出協調與補齊語系 Review 意見。
+- **Learning**：
+  1. **多代理高頻遙測封包解構協調**：當優化 Agent（Jules #328）採用預編譯 `struct.Struct` 壓降 CPU 開銷，而功能 Agent（Codex #330）擴充原生 324-byte UDP 欄位（`AngularVelocity`、`WheelRotationSpeed`、`WheelOnRumbleStrip`）時，兩者在 `telemetry_listener.py` 產生架構衝突。Reviewer 需主動擬定整合後的 compiled struct 格式（包含正確的 `s32[4]` 整數陣列與向量偏移），避免後續合併回退效能或破壞遙測契約。
+  2. **非完整協定 HUD 樣式的 WIP 隔離模式**：社群熱門儀表（如 MoTeC GT3）需特定 CAN-bus 頻道，但 Forza Data Out 並未廣播。遵循「不造假資料」核心紅線時，欄位顯示 `—`；透過 `OverlayView.tsx` 之 `sw-show-wip-huds` 與 `isWipHudQueryEnabled` 隔離，既可保留社群開發資產，又可確保主選單僅呈現完整生產級樣式（Defi 與 AE86）。
+  3. **合併前前端 UI 語系掃描標準**：在合併功能 PR 前，應靜態掃描 TSX 中所有 `t(...)` 字串是否已於 `lang/zh-tw.json` 註冊，防止漏譯字串在繁中環境回退英文。
+- **Action**：
+  1. 依序 Squash-merge PR #329 與 PR #319 至 `main`。
+  2. 獨立提交修復 Commit `5d41bdd`，為 PR #319 補齊 `"Show WIP Gauges"` 與 `"Dev Mode"` 之繁中翻譯並推送 `main`。
+  3. 對 PR #328 發布 Review，提供包含 5 個擴充欄位的 `struct.Struct` 範本與驗證測試片段。
+  4. 對 PR #330 發布 Review，列出 19 處缺漏之 UI 語系鍵值與建議翻譯，並提醒對齊 #328 之預編譯解構。
+- **Evidence**：本地 94 個測試檔案共 612 tests 全數通過，`git diff --check` 通過，GitHub PR #329 與 #319 狀態為 MERGED，`main` 分支最新 Commit `5d41bdd` 構建良好。
+- **Skills**：`pr-review-evaluation`、`cross-agent-collaboration`、`telemetry-udp-protocol`。
+
 ## 2026-09-11 / AE86 轉速表動態刻度範圍與紅線自適應交付（Neo as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；使用者要求轉速表根據車輛遙測回傳最大轉速（`telemetryMaxRpm`）自適應動態調整表盤刻度範圍（<7k 設為 9k 且 0~2k 壓縮、7~11k 維持 11k 盤面、>11k 延伸至整千 maxrpm）並將 `{maxRPM - 1500} ~ 盤面最大轉速` 的刻度線與數字標記塗紅。
