@@ -200,12 +200,12 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  // 1. Fallback & Default Parameters Setup
   if (raceGoal === 'Rally') {
     if (carParams) carParams = rallyCalculationInputs(carParams);
     if (!Number.isInteger(numGears) || numGears < 1 || numGears > 10) numGears = 6;
     if (!Number.isFinite(maxRpm) || maxRpm <= 0) maxRpm = 7500;
   }
-  // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
   const maxHp = (carParams && carParams.maxHp > 0) ? carParams.maxHp : 300; // HP
@@ -551,8 +551,8 @@ export function calculateChassisTuning(
   raceGoal: string,
   carParams: TuningCarParams | null
 ): ChassisTuningResult {
-  if (raceGoal === 'Rally' && carParams) carParams = rallyCalculationInputs(carParams);
   // Safe Fallback defaults
+  if (raceGoal === 'Rally' && carParams) carParams = rallyCalculationInputs(carParams);
   const weight = carParams && carParams.weight > 0 ? carParams.weight : 1400;
   const wf = carParams && carParams.weight_distribution > 0 ? carParams.weight_distribution : 50;
   const wr = 100 - wf;
