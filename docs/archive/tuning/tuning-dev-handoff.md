@@ -1,5 +1,7 @@
 # Tuning developer workflow handoff
 
+> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
+
 This branch is intended to be continued on a second device for FH6 real-world data collection, solver tuning, and MCP-assisted workflows.
 
 ## Current branch state
@@ -9,7 +11,7 @@ This branch is intended to be continued on a second device for FH6 real-world da
 - Enable `Settings → Developer Options → Use Developer Tuning View` to open `TuningView_dev`.
 - `TuningView_dev` uses only `frontend/src/utils/tuningMath_dev.ts` and the domain modules under `frontend/src/domain/tuning/`.
 - The developer solver is advisory. Its tire values and game-slider mappings are calibration priors, not validated FH6 constants.
-- **Localhost Read-Only MCP Server** is provided by the running FastAPI backend under `backend/mcp/`, exposing 26 tools and 5 resource URIs through `/mcp` Streamable HTTP. Its standard initialization response supplies Agent-facing configuration guidance after the endpoint is registered. Setup guide: [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
+- **Localhost Read-Only MCP Server** is provided by the running FastAPI backend under `backend/mcp/`, exposing 26 tools and 5 resource URIs through `/mcp` Streamable HTTP. Its standard initialization response supplies Agent-facing configuration guidance after the endpoint is registered. Setup guide: [docs/guides/mcp-setup-guide.md](../../guides/mcp-setup-guide.md).
 
 ## Second-device setup
 
@@ -64,7 +66,7 @@ For tire calibration, provide separate matrices for compound × surface × weath
   - 5 Resource URI templates (`fh6://telemetry/...`, `fh6://capture/...`, `fh6://car/...`, `fh6://tuning/...`, `fh6://settings/...`).
   - 21 unit tests in `tests/test_mcp_*.py` with full pass rate.
   - Standard MCP initialization instructions describing endpoint use, safety boundaries, live-data settings, and bounded query behavior.
-  - Documentation: [docs/mcp-setup-guide.md](./mcp-setup-guide.md) and [docs/tuning-mcp-integration-evaluation.md](./tuning-mcp-integration-evaluation.md).
+  - Documentation: [docs/guides/mcp-setup-guide.md](../../guides/mcp-setup-guide.md) and [docs/archive/tuning/tuning-mcp-integration-evaluation.md](tuning-mcp-integration-evaluation.md).
 
 ### Safe next tasks for upcoming agents
 
@@ -94,4 +96,3 @@ For tire calibration, provide separate matrices for compound × surface × weath
 ## MCP operational status
 
 The localhost read-only MCP server is available only while the FastAPI backend is running with MCP enabled. It reads bounded summaries and session windows, returns structured provenance, and does not participate in the UDP/60 Hz hot path. Endpoint: `/mcp`. The current endpoint is shown in Settings; `logs/web_port.txt` always contains the actual bound HTTP port for the running Release Build.
-

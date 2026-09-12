@@ -2234,3 +2234,20 @@
   - Rust 格式檢查：`cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check` 通過。
   - 代碼與空白規範：`git diff --check` 完全乾淨（0 error）。
 - **Status**: adopted。
+
+---
+
+## 2026-09-12 / 代理暫存目錄忽略與文件分類
+
+- **Scope**：`.gitignore`、`docs/`、中英文 README 與 `.agents/AGENTS.md`；採用 `agent-governance-audit`。不修改產品程式、校準資料／模板、既有 Journal 內容或本地 `ref` 參考包。
+- **Decision**：
+  - 以 repo-root anchored、directory-only 的七組角色規則忽略 `.agents/<role>_<task>/`，不忽略整個 `.agents/`；另排除 `frontend/dist-solver/` 建置產物。
+  - `docs/README.md` 作統一入口，將原根目錄 17 份文件分流至 guides、hud、calibration 與 archive；11 份歷史文件保留正文並標示時效，舊路徑對照集中於 `docs/archive/README.md`。
+  - 新增 `docs/tuning/README.md` 作程式導航；精簡外部研究索引的舊 PR 指令，並移除 AGENTS 中會漂移的重複技能清單，改由正式 skills registry 維護。
+- **Evidence**：
+  - `git check-ignore` 驗證 12 個現有代理工作目錄、七組角色規則及 solver 產物被忽略；五組共用治理檔案／新路徑樣本不被忽略。
+  - 34 份 Markdown 的 147 個本地連結目標存在；17 份搬移文件與預期的連結重定位／歷史標示轉換一致，未刪除原正文。
+  - 13 個技能的目錄、frontmatter name 與正式索引一致；`scripts/check_repo_path_case.py` 通過。另以暫時 Git index 驗證含新路徑的 1,026 個候選檔案無大小寫衝突，rename-aware diff whitespace check 通過；未變更正式 staging area。
+  - `ref/fh6-tuning-restart-20260912.zip` 的 SHA-256 仍為 `cb45af3e379924814d2aced99f534aefb959d9bcadb50fbab8fc4c1b6e612f78`。
+- **Validation boundary**：僅驗證文件與忽略規則，未重新執行產品單元／實機測試，亦未重新核驗外部研究內容。
+- **Status**：adopted。

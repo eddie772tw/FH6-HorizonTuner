@@ -11,6 +11,7 @@ docs/calibration/
 ├── README.md                                # 本說明文件
 ├── in-game-telemetry-collection-guide.md    # 實機遙測測試與資料收集作業手冊 (SOP)
 ├── in-game-test-schedule-and-matrix.md      # 測試車輛梯隊矩陣與排程表
+├── human-review-and-telemetry-test-plan.md  # 人工審核、實機驗收與 gate 條件
 ├── templates/                               # 資料與 Manifest 模板
 │   └── capture_manifest_template.json       # A/B 測試 Manifest JSON Schema 範本
 ├── in_game_captures/                        # 實機產出的原始 tuning-capture/v1 JSON/CSV 檔案
@@ -37,6 +38,8 @@ docs/calibration/
 ---
 
 ## 3. 實機測試與收集流程導引
+
+測試前先閱讀 [人工審核與實機測試計畫](human-review-and-telemetry-test-plan.md) 的驗收條件；調校程式入口見 [調校開發導引](../tuning/README.md)。
 
 1. **閱讀操作手冊**：參考 [in-game-telemetry-collection-guide.md](./in-game-telemetry-collection-guide.md) 設定遊戲 UDP 輸出與駕駛輔助。
 2. **依排程選擇車型與項目**：參考 [in-game-test-schedule-and-matrix.md](./in-game-test-schedule-and-matrix.md) 挑選測試梯隊。

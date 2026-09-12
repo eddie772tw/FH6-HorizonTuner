@@ -37,7 +37,7 @@
   - **Step 5 遙測閉環校準 (Telemetry Calibration)**：讀取 UDP 遙測自動對齊溫差、前輪鎖死/後輪打滑/推頭與懸吊觸底動態診斷。
 * **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
   - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
-  - S650 中央 widget 支援唯讀音樂播放器，透過 Windows GSMTC 顯示封面、曲目、藝人、專輯、進度條與時間，並以符號文字提示播放狀態；完整欄位與未啟用整合入口見 [S650 media contract](docs/s650-media-properties-contract.md)。
+  - S650 中央 widget 支援唯讀音樂播放器，透過 Windows GSMTC 顯示封面、曲目、藝人、專輯、進度條與時間，並以符號文字提示播放狀態；完整欄位與未啟用整合入口見 [S650 media contract](docs/hud/s650-media-properties-contract.md)。
   - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
@@ -184,6 +184,8 @@ uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
 ---
 
 ## 開發者規範與程式碼格式化 / Developer Guide & Formatting
+
+操作指南、HUD 契約、調校開發及校準流程統一由 [文件索引](docs/README.md) 查找；舊計畫與研究已分流至 [歷史索引](docs/archive/README.md)，不代表目前開發進度。
 
 協作代理規範位於 [`.agents/AGENTS.md`](.agents/AGENTS.md)，變更前請先閱讀；專案決策與經驗紀錄維護於 [`.agents/Journal.md`](.agents/Journal.md)。
 

@@ -1,5 +1,7 @@
 # Tuning telemetry and MCP integration evaluation
 
+> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
+
 Date: 2026-08-13 (Updated: 2026-08-14)
 Branch: `codex/tuning-dev-mode`
 Status: **Implemented / Operational** (Completed by Gemini/Antigravity on 2026-08-14)
@@ -8,7 +10,7 @@ Status: **Implemented / Operational** (Completed by Gemini/Antigravity on 2026-0
 
 There is a strong opportunity to expose the tuning evidence workflow through MCP, and the initial release has been implemented as a localhost read-only MCP server integrated into the FastAPI backend (`/mcp`). It lets an AI inspect live/recorded telemetry, versioned telemetry captures, calibration records, capability contracts, and deterministic solver results. It does not write car parameters, change the game, or promote calibration constants without explicit human review.
 
-Detailed setup instructions for various AI tools (Claude Desktop, Cursor, VS Code/Cline) are documented in [docs/mcp-setup-guide.md](./mcp-setup-guide.md).
+Detailed setup instructions for various AI tools (Claude Desktop, Cursor, VS Code/Cline) are documented in [docs/guides/mcp-setup-guide.md](../../guides/mcp-setup-guide.md).
 
 The initialization contract now uses the standard MCP `InitializeResult.instructions`
 field to provide Agent-facing configuration and usage guidance after the
@@ -99,10 +101,9 @@ confirm the current endpoint before configuring an Agent.
 
 | Phase | Dependency | Status | Notes / Evidence |
 |---|---|---|---|
-| MCP-0 | Capture/schema work | **Completed** | Evaluated boundaries in `docs/tuning-mcp-integration-evaluation.md` |
+| MCP-0 | Capture/schema work | **Completed** | Evaluated boundaries in `docs/archive/tuning/tuning-mcp-integration-evaluation.md` |
 | MCP-1 | MCP-0 | **Completed** | Implemented `backend/mcp/service.py` with TelemetryView aligned models |
 | MCP-2 | MCP-1 | **Completed** | Implemented `backend/mcp/protocol.py`, `resources.py`, and `tools.py` |
 | MCP-3 | MCP-2 | **Completed** | Integrated FastAPI `POST /mcp`, added HTTP/service tests, and documented the Streamable HTTP setup |
 | MCP-3.1 | MCP-3 | **Implemented** | Added standard `InitializeResult.instructions` guidance, removed copy-based client setup actions from Settings, and documented the one-time bootstrap boundary |
 | MCP-4 | MCP-3 plus human approval | Deferred | Optional confirmed write workflow (deliberately out of scope for v1) |
-

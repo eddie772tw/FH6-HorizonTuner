@@ -1,5 +1,7 @@
 # FH6 HorizonTuner 調校數學與 FH6 Meta 評估報告
 
+> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
+
 日期：2026-08-13
 範圍：`frontend/src/utils/tuningMath.ts`、`tuningDiagnosis.ts`、`tireCoefficients.ts`、Tuning UI 與測試
 判定原則：FH6 meta 是「可競爭的遊戲內經驗規則」，現實理論是「方向與量綱檢查」；兩者都不能直接證明某個常數是官方真值。

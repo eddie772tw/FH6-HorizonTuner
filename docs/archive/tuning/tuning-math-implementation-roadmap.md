@@ -1,7 +1,9 @@
 # TuningMath 多階段實作計畫
 
+> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
+
 日期：2026-08-13 (更新：2026-09-01)
-基準文件：[調校數學與 FH6 Meta 評估報告](./tuning-math-fh6-meta-evaluation-report.md)
+基準文件：[調校數學與 FH6 Meta 評估報告](tuning-math-fh6-meta-evaluation-report.md)
 目前進度：**Phase 0–3 已完成；Phase 4、Phase 5A–5D 的 shared physics／solver foundation 已在 main 實作；Phase 6–8 的 diagnosis、capability、preset 與整合基礎已實作或建立腳手架，但 calibration、replay product、實機與 release validation 尚未完成。**
 
 ## As-of 2026-09-01 — `main` 進度快照
@@ -184,10 +186,10 @@ frontend/src/domain/tuning/
 **順序：** P1 後；可與 P2 並行。
 **目前狀態（2026-09-01）：** **已完成 foundation。** Capture／MCP toolchain 的 deterministic contract 已存在；這不等於已有實機 calibration dataset。
 **達成成果：**
-- 建立 `tuning-capture/v1` JSON/CSV 規格與 [`TuningTelemetryCaptureView`](../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx) 即時錄製工具。
-- 實作完整 Localhost 唯讀 MCP Server（[`backend/mcp/`](../backend/mcp/)），提供 26 個專屬唯讀工具（完全對齊 `TelemetryView` 數據結構）與 5 類 Resource URI。
+- 建立 `tuning-capture/v1` JSON/CSV 規格與 [`TuningTelemetryCaptureView`](../../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx) 即時錄製工具。
+- 實作完整 Localhost 唯讀 MCP Server（[`backend/mcp/`](../../../backend/mcp/)），提供 26 個專屬唯讀工具（完全對齊 `TelemetryView` 數據結構）與 5 類 Resource URI。
 - 提供 A/B 跑圈差異對比（`compare_captures`）、局部高精度時間窗口查詢（`query_capture_window`）與資料品質健全度診斷（`get_capture_summary`）。
-- 21 個單元測試全數通過（`tests/test_mcp_*.py`），並提供詳細設定指引 [`docs/mcp-setup-guide.md`](./mcp-setup-guide.md)。
+- 21 個單元測試全數通過（`tests/test_mcp_*.py`），並提供詳細設定指引 [`docs/guides/mcp-setup-guide.md`](../../guides/mcp-setup-guide.md)。
 
 資料欄位包含：
 

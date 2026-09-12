@@ -36,7 +36,7 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - **Step 5 Telemetry Calibration**: Closed-loop telemetry data ingestion with dynamic temperature delta, wheel lockup/spin, understeer, and suspension bottoming diagnostics.
 * **Racing HUD Overlay & Full/Lite Clients**:
   - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
-  - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/s650-media-properties-contract.md) for the complete field projection and reserved integration points.
+  - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/hud/s650-media-properties-contract.md) for the complete field projection and reserved integration points.
   - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides only the Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing the existing frontend features and backend lifecycle with the Full client.
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
@@ -160,7 +160,7 @@ You can package both the frontend and backend into a **single standalone executa
 > **Release Build Path Strategy**:
 > When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
 
-> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the Release Build `.exe`; it is detected automatically and can be selected in the HUD menu. See [Release Build custom HUD packages](docs/portable-custom-hud.md).
+> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the Release Build `.exe`; it is detected automatically and can be selected in the HUD menu. See [Release Build custom HUD packages](docs/guides/portable-custom-hud.md).
 
 * **Excluding Non-release Directories (.pkgdirignore)**:
     * The **`.pkgdirignore`** file manages folders excluded from the standalone bundle (e.g., `.venv`, `build`, `tests`).
@@ -179,6 +179,8 @@ You can package both the frontend and backend into a **single standalone executa
 ---
 
 ## Developer Guide & Formatting
+
+Start with the [documentation index](docs/README.md) for CLI/MCP guides, HUD contracts, tuning development, and calibration procedures. Previous plans and research are kept in the [archive index](docs/archive/README.md), separate from current development guidance.
 
 Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
 
@@ -356,4 +358,3 @@ In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to
 
 In a Release Build, the FastAPI HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before a client's one-time endpoint bootstrap. After the first connection, a compatible Agent receives configuration guidance through the standard MCP `initialize` response; MCP does not define a cross-client API for injecting the initial URL.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.
-

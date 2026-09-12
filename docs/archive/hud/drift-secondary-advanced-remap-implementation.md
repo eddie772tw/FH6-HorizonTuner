@@ -1,5 +1,7 @@
 # Drift secondary：G3 可讀性重製現況
 
+> 歷史文件：保留原撰寫日期、方案與驗證紀錄，不代表目前功能或進度。後續工作請先查閱[文件索引](../../README.md)；本區的分類與閱讀原則見[歷史索引](../README.md)。
+
 日期：2026-08-12
 
 Active renderer 為 `hud_overlay/drift/index.html`。主儀表保留已驗證的 FH6 arc grammar；副儀表則改採 G3 的低曲率、連續、單調 rail grammar，沿用既有 Drift Canvas 與 HUDCore frame path；未建立第二 telemetry source、polling loop 或 DOM overlay lifecycle。
