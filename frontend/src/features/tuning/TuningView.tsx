@@ -6,9 +6,7 @@ import { calculateChassisTuning, calculateMeasuredGearing, calculateStaticTireAl
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
 import { createUnitPreference, loadUnitPreference, resolveUnitPreference, type UnitPreferenceOverride } from '../../utils/gameUnitSettings';
 import { Step1GoalSetup } from './components/Step1GoalSetup';
-import { Step3ChassisTuner } from './components/Step3ChassisTuner';
-import { TireBaselineStep } from './components/TireBaselineStep';
-import { WheelAlignmentStep } from './components/WheelAlignmentStep';
+import { Step2ChassisTuner } from './components/Step2ChassisTuner';
 import { EngineDataStep } from './components/EngineDataStep';
 import { WorkflowGuide } from './components/WorkflowGuide';
 import { SetupVerificationStep } from './components/SetupVerificationStep';
@@ -67,13 +65,13 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
         <div className="d-flex gap-2">
           <button className="btn btn-outline-secondary" onClick={() => setReviewHistory(value => !value)}>{t(reviewHistory ? 'Return to current setup' : 'Review saved runs')}</button>
           {currentStep > 1 && <button className="btn btn-outline-secondary" onClick={() => setCurrentStep(currentStep - 1)}>{t('Previous')}</button>}
-          {currentStep < 6 && <button className="btn btn-primary" disabled={!canOpenTuningStep(currentStep + 1, readiness)} onClick={() => setCurrentStep(currentStep + 1)}>{t('Next')}</button>}
+          {currentStep < 4 && <button className="btn btn-primary" disabled={!canOpenTuningStep(currentStep + 1, readiness)} onClick={() => setCurrentStep(currentStep + 1)}>{t('Next')}</button>}
         </div>
       </div>
       <nav className="nav nav-pills gap-2" aria-label={t('Tuning workflow steps')}>
         {TUNING_WORKFLOW_STEPS.map(step => <button key={step.id} className={'nav-link ' + (currentStep === step.number ? 'active' : '')}
           aria-current={currentStep === step.number ? 'step' : undefined} disabled={!canOpenTuningStep(step.number, readiness)}
-          title={step.number === 6 && !readiness.measuredEngine ? t('Complete engine measurement before verifying the full setup.') : undefined}
+          title={step.number === 4 && !readiness.measuredEngine ? t('Complete engine measurement before verifying the full setup.') : undefined}
           onClick={() => { setReviewHistory(false); setCurrentStep(step.number); }}>{step.number}. {t(step.label)}</button>)}
       </nav>
       <div className="small text-body-secondary mt-2" role="status">{t(!readiness.mechanical ? 'Complete the vehicle weight and distribution first.' : !readiness.measuredEngine ? 'Mechanical estimates are available. Engine data and gearing still require measurement.' : 'Engine measurement is ready. Confirm game settings before recording a validation run.')}</div>
@@ -83,11 +81,10 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
       carParams={profile} updateParam={(key, value) => profile && setCarParams({ ...profile, [key]: value })}
       hasCoreParams={readiness.mechanical} onOpenUnitSettings={() => setShowUnits(true)}
       onProceed={async () => { await saveCarParams(); setCurrentStep(2); }} />}
-    {!reviewHistory && currentStep === 2 && <TireBaselineStep result={alignment} />}
-    {!reviewHistory && currentStep === 3 && <Step3ChassisTuner selectedRaceGoal={goal} carParams={profile} saveCarParams={saveCarParams} />}
-    {!reviewHistory && currentStep === 4 && <WheelAlignmentStep result={alignment} chassis={chassis} />}
-    {!reviewHistory && currentStep === 5 && <EngineDataStep key={carId + engine.key} carId={carId} profile={profile} engine={engine} gearing={gearing} enabled={readiness.engineInputs} />}
-    {!reviewHistory && currentStep === 6 && <SetupVerificationStep goal={goal} carId={carId} profile={profile} chassis={chassis}
+    {!reviewHistory && currentStep === 2 && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
+      chassis={chassis} alignment={alignment} saveCarParams={saveCarParams} />}
+    {!reviewHistory && currentStep === 3 && <EngineDataStep key={carId + engine.key} carId={carId} profile={profile} engine={engine} gearing={gearing} enabled={readiness.engineInputs} />}
+    {!reviewHistory && currentStep === 4 && <SetupVerificationStep goal={goal} carId={carId} profile={profile} chassis={chassis}
       alignment={alignment} gearing={gearing} inputSnapshot={inputSnapshot} />}
     {reviewHistory && <RoadWorkflowView recommendation={null} carId={carId} />}
     <UnitSettingsSidebar idPrefix="tuning-units" show={showUnits} title={t('Tuning Workflow Unit Settings')}

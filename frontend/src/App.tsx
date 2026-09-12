@@ -4,7 +4,6 @@ import Navigation from './components/Navigation';
 import TelemetryView from './features/telemetry/TelemetryView';
 import TuningView from './features/tuning/TuningView';
 import TuningViewDev from './features/tuning/TuningView_dev';
-import CarParamsView from './features/car_params/CarParamsView';
 import SettingsView from './features/settings/SettingsView';
 import DiagnosticConsole from './components/DiagnosticConsole';
 import ThemeView from './features/theme/ThemeView';
@@ -21,7 +20,7 @@ const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
   const { settings } = useSettings();
   useOverlayWebSocket();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'overlay' | 'settings'>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
   const [showTheme, setShowTheme] = useState(false);
@@ -32,19 +31,17 @@ const AppContent: React.FC = () => {
     try { return restoreWorkflowStep(JSON.parse(localStorage.getItem('tuning-workflow-state') || 'null')); } catch { return 1; }
   });
   useEffect(() => {
-    try { localStorage.setItem('tuning-workflow-state', JSON.stringify({ schema: 'tuning-workflow/v2', step: tuningStep })); } catch { /* Navigation still works without storage. */ }
+    try { localStorage.setItem('tuning-workflow-state', JSON.stringify({ schema: 'tuning-workflow/v3', step: tuningStep })); } catch { /* Navigation still works without storage. */ }
   }, [tuningStep]);
   const [developerTuningStep, setDeveloperTuningStep] = useState<number>(1);
-  const [carParamsSubTab, setCarParamsSubTab] = useState<'config' | 'dyno'>('config');
   const [overlayCategory, setOverlayCategory] = useState<'general' | 'displays' | 'gauges' | 'performance'>('general');
 
   // Quick jump handler triggered by Navbar Dropdown
-  const handleSubTabJump = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
+  const handleSubTabJump = (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings', subTarget?: any) => {
     setActiveTab(tab);
     if (subTarget) {
       if (tab === 'telemetry') setTelemetrySubTab(subTarget);
       else if (tab === 'tuning') (settings.developer_tuning_enabled ? setDeveloperTuningStep : setTuningStep)(typeof subTarget === 'number' ? subTarget : 1);
-      else if (tab === 'car_params') setCarParamsSubTab(subTarget);
       else if (tab === 'overlay') setOverlayCategory(subTarget);
     }
   };
@@ -78,9 +75,6 @@ const AppContent: React.FC = () => {
             <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
           )}
         </div>
-        <div style={{ display: activeTab === 'car_params' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <CarParamsView subTab={carParamsSubTab} setSubTab={setCarParamsSubTab} setActiveTab={setActiveTab} />
-        </div>
         <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <OverlayView category={overlayCategory} setCategory={setOverlayCategory} />
         </div>
@@ -93,7 +87,6 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
 
 import { AppProviders } from './AppProviders';
 import ToastContainer from './components/common/ToastContainer';

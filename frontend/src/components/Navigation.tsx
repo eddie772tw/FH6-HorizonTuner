@@ -15,9 +15,9 @@ import { hasDismissedDataOutGuide } from '../features/onboarding/telemetryHealth
 import { useTelemetryHealth } from '../features/onboarding/useTelemetryHealth';
 
 interface NavigationProps {
-  activeTab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings';
-  setActiveTab: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings') => void;
-  onSubTabJump: (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => void;
+  activeTab: 'telemetry' | 'tuning' | 'overlay' | 'settings';
+  setActiveTab: (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings') => void;
+  onSubTabJump: (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings', subTarget?: any) => void;
   isConnected: boolean;
   onShowLogs: () => void;
   onShowTheme: () => void;
@@ -142,7 +142,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
     }
   }, []);
 
-  const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'car_params' | 'overlay' | 'settings', subTarget?: any) => {
+  const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings', subTarget?: any) => {
     onSubTabJump(tab, subTarget);
     setActiveDropdown(null);
   };
@@ -212,45 +212,13 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               {activeDropdown === 'tuning' && (
                 <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '220px', zIndex: 1000, background: 'var(--surface-1)' }}>
                   {(settings.developer_tuning_enabled ? [
-                    { number: 1, label: 'Goal & Setup' }, { number: 2, label: 'Gearbox' },
-                    { number: 3, label: 'Chassis' }, { number: 4, label: 'Tires & Alignment' },
-                    { number: 5, label: 'Summary' },
+                    { number: 1, label: 'Goal & Setup' }, { number: 2, label: 'Chassis & Tires' },
+                    { number: 3, label: 'Powertrain & Gearing' }, { number: 4, label: 'Verification & Summary' },
                   ] : TUNING_WORKFLOW_STEPS).map(step => <li key={step.number}>
                     <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', step.number)}>
                       <span className="badge bg-primary-subtle text-primary">{step.number}</span> {t(step.label)}
                     </button>
                   </li>)}
-                </ul>
-              )}
-            </li>
-
-            {/* Car Parameters Dropdown */}
-            <li 
-              className="nav-item dropdown position-relative"
-              onMouseEnter={() => setActiveDropdown('car_params')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <button 
-                onClick={() => handleDropdownItemClick('car_params', 'config')}
-                className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'car_params' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
-                aria-current={activeTab === 'car_params' ? 'page' : undefined}
-                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
-              >
-                {t("Car Parameters")}
-                <span className="fs-8 opacity-50 ms-1">▾</span>
-              </button>
-              {activeDropdown === 'car_params' && (
-                <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '210px', zIndex: 1000, background: 'var(--surface-1)' }}>
-                  <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('car_params', 'config')}>
-                      {t("Profile Configuration")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('car_params', 'dyno')}>
-                      {t("Live Dyno Curve")}
-                    </button>
-                  </li>
                 </ul>
               )}
             </li>
