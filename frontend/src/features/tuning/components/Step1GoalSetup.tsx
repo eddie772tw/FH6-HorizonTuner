@@ -3,6 +3,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
+import { DragGearingSetup } from './DragGearingSetup';
 
 interface Step1GoalSetupProps {
   measuredEngineInputs?: boolean;
@@ -156,8 +157,9 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               {selectedRaceGoal === 'Rally' &&
                 t('Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.')}
               {selectedRaceGoal === 'Drag' &&
-                t('Drag setting sets rake angle ride height, diagonal extreme damping, and 100% differential lock for maximum launch traction.')}
+                t('Drag baseline uses drivetrain-specific launch suspension and differential starting points; refine gearing and tire pressure with strip tests.')}
             </div>
+            {selectedRaceGoal === 'Drag' && <DragGearingSetup carParams={carParams} updateParam={updateParam} />}
           </div>
 
           <div className="d-flex flex-column gap-2">

@@ -12,6 +12,9 @@ export interface TuningCarParams {
   maxTorque: number;
   maxHpRpm: number;
   maxTorqueRpm: number;
+  /** Optional measured Drag finish speed, never inferred from softMaxSpeed. */
+  dragFinishSpeedKmh?: number;
+  dragFinishSpeedProvenance?: 'telemetry' | 'manual';
   aeroBalance?: number;
   aeroEfficiency?: number;
   mechBalance?: number;
@@ -50,6 +53,8 @@ export type RaceType = 'Road' | 'Rally' | 'Drag' | 'Drift';
 export interface GearingResult {
   finalDrive: number;
   gears: number[];
+  unsupported?: boolean;
+  unsupportedReason?: string;
 }
 
 export interface MeasuredEngineInputs {
@@ -74,8 +79,9 @@ export function calculateMeasuredGearing(goal: string, gears: number, params: Tu
   if (!params || !engine || !Number.isInteger(gears) || gears < 4 || gears > 10 || !Number.isFinite(params.maxHp) || params.maxHp <= 0 ||
     ![engine.engineMaxRpm, engine.peakPowerRpm, engine.peakTorqueRpm].every(value => Number.isFinite(value) && value > 0) ||
     engine.peakPowerRpm > engine.engineMaxRpm || engine.peakTorqueRpm > engine.engineMaxRpm) return null;
-  return calculateAEGOGearing(goal, gears, { ...params, maxHpRpm: engine.peakPowerRpm,
+  const result = calculateAEGOGearing(goal, gears, { ...params, maxHpRpm: engine.peakPowerRpm,
     maxTorqueRpm: engine.peakTorqueRpm }, engine.engineMaxRpm);
+  return result.unsupported ? null : result;
 }
 
 export interface ChassisTuningResult {
@@ -145,6 +151,9 @@ export function calcGearRpm(
 export interface GearingSecondaryCorrection {
   simulatedTopSpeed?: number; // Simulated/Theoretical top speed from initial gearing (km/h)
   softMaxSpeed?: number;      // Transmission preview soft max speed limit cap (km/h)
+  /** Finish speed measured on the Drag strip, with explicit provenance. */
+  dragFinishSpeedKmh?: number;
+  dragFinishSpeedProvenance?: 'telemetry' | 'manual';
 }
 
 const AEGO_FINAL_DRIVE_MIN = 2.0;
@@ -177,6 +186,11 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  if (raceGoal === 'Drag' && (!Number.isInteger(numGears) || numGears < 4 || numGears > 10 || !Number.isFinite(maxRpm) || maxRpm <= 0 || !carParams ||
+    ![carParams.weight, carParams.maxHp, carParams.maxTorque, carParams.maxHpRpm, carParams.maxTorqueRpm].every(Number.isFinite) ||
+    carParams.weight <= 0 || carParams.maxHp <= 0 || carParams.maxTorque < 0 || carParams.maxHpRpm <= 0 || carParams.maxTorqueRpm <= 0)) {
+    return { finalDrive: 3.5, gears: [], unsupported: true, unsupportedReason: 'Drag gearing requires finite vehicle, RPM, torque, and 4-10 gear inputs.' };
+  }
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
@@ -195,6 +209,13 @@ export function calculateAEGOGearing(
   const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
   const tireType = carParams?.tireType;
+  const finishSpeedCandidate = secondaryCorrection?.dragFinishSpeedKmh ?? carParams?.dragFinishSpeedKmh;
+  const finishSpeedProvenance = secondaryCorrection?.dragFinishSpeedProvenance ?? carParams?.dragFinishSpeedProvenance;
+  const dragFinishSpeedKmh = finishSpeedCandidate && finishSpeedProvenance &&
+    (finishSpeedProvenance === 'telemetry' || finishSpeedProvenance === 'manual') &&
+    Number.isFinite(finishSpeedCandidate) && finishSpeedCandidate > 0
+    ? finishSpeedCandidate
+    : undefined;
 
   // Determine active tire size based on drivetrain
   const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
@@ -249,17 +270,31 @@ export function calculateAEGOGearing(
     fd = Math.max(2.0, Math.min(6.5, fd));
 
   } else if (raceGoal === 'Drag') {
-    // Drag Profile - 4-Speed Hard Constraint Meta with Power-Calibrated Top Speed
+    // Drag profile: optimise the requested transmission over the strip length.
+    // A four-speed setup is a common community baseline, but it is not a game
+    // constraint: the active gear count is the gearbox count supplied by the
+    // user. `softMaxSpeed` is a UI preview bound and must not become a
+    // vehicle-speed estimate.
     const hpPerKg = weight > 0 ? maxHp / weight : 0.5;
-    const vDragTop = 410.0 * Math.pow(hpPerKg, 0.30) * (1 + 0.12 * aeroEfficiency);
+    const priorTopSpeedKmh = 410.0 * Math.pow(hpPerKg, 0.30) * (1 + 0.12 * aeroEfficiency);
+    // `simulatedTopSpeed` retains its existing simulated/theoretical meaning.
+    // A finish speed can influence Drag gearing only when provenance is explicit.
+    const vDragTop = dragFinishSpeedKmh && dragFinishSpeedKmh > 0
+      ? dragFinishSpeedKmh
+      : priorTopSpeedKmh;
 
-    const calcGears = Math.min(4, numGears);
+    const calcGears = numGears;
     gears = new Array(numGears).fill(0);
 
     const idxTop = calcGears - 1;
-    gears[idxTop] = 1.0;
+    // Keep a usable top gear anchor while deriving final drive from the
+    // measured/prior terminal speed.  The anchor is not a fixed "fourth gear"
+    // value and therefore works for 4-, 5-, 6- and 7-speed drag transmissions.
+    const topAnchor = numGears >= 7 ? 0.82 : numGears >= 5 ? 0.90 : 1.0;
+    gears[idxTop] = topAnchor;
 
-    const rawFd = (rpmHp * C * 60) / (gears[idxTop] * vDragTop * 1000);
+    const targetTotalRatio = (rpmHp * C * 60) / (vDragTop * 1000);
+    const rawFd = targetTotalRatio / topAnchor;
     fd = Math.max(2.0, Math.min(6.1, rawFd));
 
     if (calcGears > 1) {
@@ -267,14 +302,19 @@ export function calculateAEGOGearing(
       const rawG1 = (rpmHp * C * 60) / (v1Target * fd * 1000);
       gears[0] = Math.max(2.2, Math.min(5.0, rawG1));
 
+      // Recompute the active top gear after final-drive clamping. If the
+      // requested terminal speed is outside the game's FD/ratio envelope,
+      // the monotonic guard below is an explicit feasible fallback.
+      gears[idxTop] = targetTotalRatio / fd;
+      if (!Number.isFinite(gears[idxTop]) || gears[idxTop] <= 0) {
+        return { finalDrive: fd, gears: [], unsupported: true, unsupportedReason: 'Requested Drag finish speed is outside the available ratio range.' };
+      }
+      gears[idxTop] = Math.min(gears[idxTop], gears[0] * Math.pow(0.92, idxTop));
+
       const rDrag = Math.pow(gears[idxTop] / gears[0], 1 / idxTop);
       for (let i = 1; i < idxTop; i++) {
         gears[i] = gears[i - 1] * rDrag;
       }
-    }
-
-    for (let i = calcGears; i < numGears; i++) {
-      gears[i] = gears[idxTop];
     }
 
   } else {
@@ -327,10 +367,10 @@ export function calculateAEGOGearing(
   }
 
   // Secondary Correction Mechanism (FD-First Macro Scaling with Top-Gear Usability Protection)
-  if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
+  if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed || secondaryCorrection.dragFinishSpeedKmh || dragFinishSpeedKmh)) {
     const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
     const tireRadiusM = C / (2 * Math.PI);
-    const topGearIdx = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) - 1 : numGears - 1;
+    const topGearIdx = raceGoal === 'Drift' ? Math.min(4, numGears) - 1 : numGears - 1;
     
     // Baseline top speed for highest active gear at Peak HP RPM
     const baselineTopSpeedMs = calcGearSpeed(rpmHp, gears[topGearIdx], fd, tireRadiusM);
@@ -339,17 +379,21 @@ export function calculateAEGOGearing(
     let targetTopSpeedAtPeakHpKmh = baselineTopSpeedKmh;
 
     // 1. Soft Max Speed Cap Constraint at Redline RPM (converted to Peak HP target)
-    if (softMaxSpeed && softMaxSpeed > 0 && maxRpm > 0) {
+    if (raceGoal !== 'Drag' && softMaxSpeed && softMaxSpeed > 0 && maxRpm > 0) {
       const maxSpeedAtPeakHpFromSoftCap = softMaxSpeed * (rpmHp / maxRpm);
       targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSoftCap);
     }
 
     // 2. Simulated Top Speed Correction at Peak HP RPM
     if (simulatedTopSpeed && simulatedTopSpeed > 0) {
-      const maxSpeedAtPeakHpFromSimulated = (maxRpm && maxRpm > 0) 
+      const maxSpeedAtPeakHpFromSimulated = (maxRpm && maxRpm > 0)
         ? simulatedTopSpeed * (rpmHp / maxRpm) 
         : simulatedTopSpeed;
       targetTopSpeedAtPeakHpKmh = Math.min(targetTopSpeedAtPeakHpKmh, maxSpeedAtPeakHpFromSimulated);
+    }
+
+    if (raceGoal === 'Drag' && dragFinishSpeedKmh && dragFinishSpeedKmh > 0) {
+      targetTopSpeedAtPeakHpKmh = dragFinishSpeedKmh;
     }
 
     // 3. FD-First Macro Scaling + Micro Fine-Tuning
@@ -408,9 +452,10 @@ export function calculateAEGOGearing(
           gears[topGearIdx] = newGtop;
         }
 
-        // Fill remaining gears if Drift/Drag
-        for (let i = topGearIdx + 1; i < numGears; i++) {
-          gears[i] = gears[topGearIdx];
+        // Drift intentionally reuses the active fourth gear. Drag uses every
+        // requested gear, so there is no post-correction duplicate range.
+        if (raceGoal === 'Drift') {
+          for (let i = topGearIdx + 1; i < numGears; i++) gears[i] = gears[topGearIdx];
         }
       }
     }
@@ -430,7 +475,7 @@ export function calculateAEGOGearing(
   });
 
   // Force monotonic decrease and powerband shift RPM bound
-  const monotonicLimit = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : roundedGears.length;
+  const monotonicLimit = raceGoal === 'Drift' ? Math.min(4, numGears) : roundedGears.length;
   const maxStepRatioRounded = (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
     ? (rpmHp + 50) / maxRpm
     : 0.92;
@@ -445,13 +490,22 @@ export function calculateAEGOGearing(
      }
   }
 
-  // Ensure gears > 4 exactly match gear 4 for Drift/Drag
-  if (raceGoal === 'Drift' || raceGoal === 'Drag') {
+  // Drift's extra gears reuse the active fourth gear; Drag keeps its full
+  // requested progression.
+  if (raceGoal === 'Drift') {
      if (numGears > 4) {
         for (let i = 4; i < numGears; i++) {
             roundedGears[i] = roundedGears[3];
         }
      }
+  }
+
+  if (raceGoal === 'Drag' && dragFinishSpeedKmh !== undefined && roundedGears.length > 0) {
+    const terminalSpeedKmh = calcGearSpeed(rpmHp, roundedGears[roundedGears.length - 1], roundedFD, C / (2 * Math.PI)) * 3.6;
+    const toleranceKmh = Math.max(1, dragFinishSpeedKmh * 0.02);
+    if (!Number.isFinite(terminalSpeedKmh) || Math.abs(terminalSpeedKmh - dragFinishSpeedKmh) > toleranceKmh) {
+      return { finalDrive: roundedFD, gears: roundedGears, unsupported: true, unsupportedReason: 'Requested Drag finish speed cannot be reached within gearbox limits.' };
+    }
   }
 
   return {
@@ -630,30 +684,54 @@ export function calculateChassisTuning(
     }
 
   } else if (raceGoal === 'Drag') {
-    // 1. Anti-Roll Bars (Soft Front for compliance, Stiff Rear to suppress torque twist)
-    arbF = 1.0;
-    arbR = 65.0;
-
-    // 2. Springs (Soft Front for weight transfer launch, Stiff Rear 90% to suppress heavy launch torque squat)
-    springF = kMinF + 0.20 * (kMaxF - kMinF);
-    springR = kMinR + 0.90 * (kMaxR - kMinR);
-
-    // 3. Forward Rake Ride Height (Front Lowest for low aero drag/lift, Rear Highest for downforce/grip)
-    heightF = hMinF;
-    heightR = hMaxR;
-
-    // 4. Balanced Damping (Soft Front to extend, Stiff Rear to damp heavy launch torque compression)
-    rebF = 3.0;
-    bumpF = 4.0;
-    rebR = 12.0;
-    bumpR = 10.0;
-
-    // 5. Differential
-    accelF = drivetrain === 'FWD' || drivetrain === 'AWD' ? 100 : 0;
-    decelF = 0;
-    accelR = drivetrain === 'RWD' || drivetrain === 'AWD' ? 100 : 0;
-    decelR = 0;
-    centerRear = 80;
+    // Forza Guide's FH6 drag baseline uses stiff bars, soft springs, maximum
+    // ride height, and opposite-corner launch damping.  Drivetrain-specific
+    // diff targets reflect which axle can accept power after load transfer.
+    if (drivetrain === 'FWD') {
+      // FWD loses front normal load under acceleration. Keep the front low,
+      // use a softer driven axle spring, and resist front extension/rear squat.
+      arbF = 55.0;
+      arbR = 65.0;
+      springF = kMinF + 0.15 * (kMaxF - kMinF);
+      springR = kMinR + 0.25 * (kMaxR - kMinR);
+      heightF = hMinF;
+      heightR = hMaxR;
+      rebF = 8.0;
+      bumpF = 12.0;
+      rebR = 8.0;
+      bumpR = 10.0;
+      accelF = 85;
+      decelF = 0;
+    } else if (drivetrain === 'RWD') {
+      arbF = 65.0;
+      arbR = 65.0;
+      springF = kMinF + 0.20 * (kMaxF - kMinF);
+      springR = kMinR + 0.20 * (kMaxR - kMinR);
+      heightF = hMaxF;
+      heightR = hMaxR;
+      rebF = 3.0;
+      bumpF = 12.0;
+      rebR = 12.0;
+      bumpR = 4.0;
+      accelR = 85;
+      decelR = 0;
+    } else {
+      arbF = 65.0;
+      arbR = 65.0;
+      springF = kMinF + 0.20 * (kMaxF - kMinF);
+      springR = kMinR + 0.20 * (kMaxR - kMinR);
+      heightF = hMaxF;
+      heightR = hMaxR;
+      rebF = 3.0;
+      bumpF = 12.0;
+      rebR = 12.0;
+      bumpR = 4.0;
+      accelF = 85;
+      decelF = 0;
+      accelR = 65;
+      decelR = 10;
+      centerRear = 75;
+    }
 
   } else {
     // Road / Circuit (Default)
@@ -828,12 +906,15 @@ export function calculateStaticTireAlignment(
     caster = 6.0;
   } else if (normalizedDisc === 'drag') {
     targetPhot = 23.5;
-    if (drivetrain === 'RWD') {
-      pcF = 38.0;
-      pcR = 15.0 + 1.5 * ((M * Wr) / 1000) + deltaPSeason;
+    // RWD/AWD guidance starts high front and low driven-rear pressure. FWD
+    // reverses that allocation to protect its driven front axle. These are
+    // engineering priors; telemetry owns compound and temperature fit.
+    if (drivetrain === 'FWD') {
+      pcF = 15.0 + 1.5 * ((M * Wf) / 1000) + deltaPSeason;
+      pcR = 38.0 + deltaPSeason;
     } else {
-      pcF = 23.0 + deltaPSeason;
-      pcR = 23.0 + deltaPSeason;
+      pcF = 38.0 + deltaPSeason;
+      pcR = 15.0 + 1.5 * ((M * Wr) / 1000) + deltaPSeason;
     }
 
     camberF = 0.0;
