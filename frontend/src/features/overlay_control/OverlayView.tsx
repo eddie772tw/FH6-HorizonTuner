@@ -4,8 +4,6 @@ import {
   fetchHudStylesList,
   formatHudDropdownOptions,
   getHudUrlPrefix,
-  isWipHudQueryEnabled,
-  HUD_DISPLAY_NAMES,
   HudStyleEntry,
 } from './hudStyleScanner';
 import {
@@ -42,22 +40,6 @@ interface OverlayViewProps {
   setCategory?: (cat: 'general' | 'displays' | 'gauges' | 'performance') => void;
 }
 
-const HUD_CONFIG_REQUEST_TIMEOUT_MS = 2_500;
-const HUD_COMMAND_TIMEOUT_MS = 4_000;
-
-async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms.`)), timeoutMs);
-  });
-
-  try {
-    return await Promise.race([operation, timeout]);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
-}
-
 export const OverlayView: React.FC<OverlayViewProps> = () => {
   const { settings, t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
@@ -65,7 +47,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
   const [hudStyles, setHudStyles] = useState<HudStyleEntry[]>([]);
-  const [hudActionError, setHudActionError] = useState<string | null>(null);
 
   // Cache author metadata loaded dynamically per HUD style
   const [authorCache, setAuthorCache] = useState<Record<string, AuthorInfo>>({});
@@ -78,29 +59,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
   const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
-
-  const [showWipHuds, setShowWipHuds] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('fh6_show_wip_huds') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const isWipActive = Boolean(
-    showWipHuds ||
-    settings.developer_tuning_enabled ||
-    isWipHudQueryEnabled()
-  );
-
-  const handleToggleShowWipHuds = (checked: boolean) => {
-    setShowWipHuds(checked);
-    try {
-      localStorage.setItem('fh6_show_wip_huds', checked ? 'true' : 'false');
-    } catch {
-      // ignore storage error
-    }
-  };
 
   useEffect(() => {
     channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
@@ -238,10 +196,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     }
   };
 
-  const saveConfig = async (
-    newConfig: HudConfig,
-    timeoutMs = HUD_CONFIG_REQUEST_TIMEOUT_MS,
-  ): Promise<boolean> => {
+  const saveConfig = async (newConfig: HudConfig) => {
     const normalizedConfig = normalizeS650HmiConfig(newConfig);
     setConfig(normalizedConfig);
     broadcastConfig(normalizedConfig);
@@ -250,11 +205,9 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(normalizedConfig),
-      }, timeoutMs);
-      return true;
+      });
     } catch (e) {
       console.error('Failed to save HUD config:', e);
-      return false;
     }
   };
 
@@ -263,16 +216,12 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       const m = monitors[monIdx];
       try {
         if ((window as any).__TAURI__?.core?.invoke) {
-          await withTimeout(
-            (window as any).__TAURI__.core.invoke('move_hud_to_monitor', {
-              monitorX: m.x,
-              monitorY: m.y,
-              width: m.width,
-              height: m.height
-            }),
-            HUD_COMMAND_TIMEOUT_MS,
-            'Moving HUD to the selected monitor',
-          );
+          await (window as any).__TAURI__.core.invoke('move_hud_to_monitor', {
+            monitorX: m.x,
+            monitorY: m.y,
+            width: m.width,
+            height: m.height
+          });
         }
       } catch (err) {
         console.warn('Failed to move HUD to selected monitor:', err);
@@ -281,52 +230,29 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const toggleHudWindow = async (enable: boolean) => {
-    const previousConfig = config;
     setLoading(true);
-    setHudActionError(null);
     const updated = { ...config, enabled: enable };
-    const persistence = saveConfig(updated);
+    await saveConfig(updated);
 
     try {
       if (enable) {
+        await applyMonitorSelection(updated.selectedMonitorIndex);
         channelRef.current?.postMessage({ type: 'hud:animate' });
       } else {
         channelRef.current?.postMessage({ type: 'hud:destroy' });
       }
 
       if ((window as any).__TAURI__?.core?.invoke) {
-        await withTimeout(
-          (window as any).__TAURI__.core.invoke('toggle_hud_window', { visible: enable, destroy: !enable }),
-          HUD_COMMAND_TIMEOUT_MS,
-          enable ? 'Launching HUD overlay' : 'Closing HUD overlay',
-        );
+        await (window as any).__TAURI__.core.invoke('toggle_hud_window', { visible: enable, destroy: !enable });
         if (enable) {
-          await withTimeout(
-            (window as any).__TAURI__.core.invoke('set_hud_click_through', { ignore: true }),
-            HUD_COMMAND_TIMEOUT_MS,
-            'Configuring HUD click-through',
-          );
+          await (window as any).__TAURI__.core.invoke('set_hud_click_through', { ignore: true });
         }
       }
-      if (enable) {
-        void applyMonitorSelection(updated.selectedMonitorIndex);
-      }
-
-      void persistence.then((persisted) => {
-        if (!persisted) {
-          console.warn('HUD config persistence timed out or failed after the window action.');
-          setHudActionError(t('HUD opened, but its settings could not be saved.'));
-        }
-      });
     } catch (err) {
-      console.error('HUD overlay action failed:', err);
-      setConfig(previousConfig);
-      broadcastConfig(previousConfig);
-      setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
-      void saveConfig(previousConfig, HUD_CONFIG_REQUEST_TIMEOUT_MS);
-    } finally {
-      setLoading(false);
+      console.warn('Tauri window manipulation notice:', err);
     }
+
+    setLoading(false);
   };
 
   const handleMonitorChange = (monIdx: number) => {
@@ -602,11 +528,6 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {hudActionError && (
-            <span role="alert" className="text-danger small" style={{ maxWidth: '22rem' }}>
-              {hudActionError}
-            </span>
-          )}
           <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
             <button
               onClick={() => toggleHudWindow(!config.enabled)}
@@ -1206,32 +1127,12 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                 disabled={config.elements.showGauge === false}
                 className="form-select form-select-sm fw-bold"
               >
-                {formatHudDropdownOptions(hudStyles, HUD_DISPLAY_NAMES, {
-                  includeWip: isWipActive,
-                  currentStyle: config.hudStyle,
-                }).map((opt) => (
+                {formatHudDropdownOptions(hudStyles).map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
               </select>
-
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-show-wip-huds"
-                  checked={isWipActive}
-                  disabled={settings.developer_tuning_enabled || isWipHudQueryEnabled()}
-                  onChange={(e) => handleToggleShowWipHuds(e.target.checked)}
-                />
-                <label className="form-check-label fs-7 text-body-secondary" htmlFor="sw-show-wip-huds">
-                  {t("Show WIP Gauges")}
-                  {(settings.developer_tuning_enabled || isWipHudQueryEnabled()) && (
-                    <span className="badge bg-secondary ms-1 fs-8">{t("Dev Mode")}</span>
-                  )}
-                </label>
-              </div>
 
               {config.hudStyle === S650_HMI_STYLE_ID && (
                 <div className="border-top pt-2">

@@ -1,22 +1,47 @@
-# 外部 HUD 專案參考索引
+# PR#185 Drift HUD 參考研究總覽
 
-本區保留源自 Drift HUD／PR#185 研究的五份外部專案快照，供後續設計比較。這些是歷史研究，不是目前的開發範圍、功能移植計畫或上游最新狀態；原 PR 的實作範圍另見 [歷史計畫](../archive/hud/telemetry-hud-implementation-plan.md)。
+本研究只服務目前分支 `codex/drift-hud-modernize-remove-presets` 與 PR#185：
 
-## 研究快照
+> `feat(drift-hud): add style meter and split instruments`
 
-| 專案 | 記錄的 Snapshot | 當時記錄的授權 | 可查找的主題 |
-| --- | --- | --- | --- |
-| [Horizon HUD](horizon-hud.md) | `bd01ad0d644252824f82560f0ecbef50d6d6951d` | Proprietary personal/non-commercial | primary／secondary 資訊階層；README 層級概念 |
-| [ONYX Drive HUD](onyx-drive-hud.md) | `3677d149d877a3872b38f2ec1f910efe3beb6fe4` | MIT | 儀表卡、單位切換與 grip warning 分級 |
-| [FH6 Telemetry Dashboard](fh6-tel.md) | `7ffeb0812f9f240653620ed3ecb0d2266b8d94ab` | MIT | 小尺寸輪胎／懸吊狀態的資訊密度 |
-| [Forza Data Tools](forza-data-tools.md) | `73f8f7058479bf1c17fd9460e2cf379207d1cd2d` | GPL-3.0 | latest-frame 與 backpressure 概念 |
-| [Forza Telemetry](forza-telemetry.md) | `88aa7d59ac2684e16ef57862555c93f2af1a7ce3` | MIT | torque／steer／speed 型別及即時、錄製更新頻率的差別 |
+研究問題不是「FH6-HorizonTuner 下一年要做什麼」，而是：哪些外部 HUD 的儀表階層、狀態顯示與單位處理，可以幫助驗證這個 Drift HUD 視覺切片，同時不突破既有架構與 PR 邊界。
 
-## 使用方式與邊界
+## PR#185 的固定範圍
 
-- 各專案頁保留上游來源及具體觀察；先閱讀本地摘要，不以仍有原分支或本地 clone 為前提。
-- 上表是研究時的授權紀錄，未在本次文件整理中重新核驗。考慮採用程式或資產前，須重新確認對應版本的授權及本專案相依規範。
-- 本區只作概念研究；本次整理不引入外部 code、CSS、圖片、字型、地圖或車輛資料。
-- 歷史建議中的 HUDCore／onFrame、單位投影及資料流邊界，需對照目前程式重新確認；不沿用舊 PR 的「下一步」作為新任務指令。
+PR 描述目前只涵蓋：
 
-其他技術與操作文件見 [文件索引](../README.md)。
+1. Drift-specific Style Meter engine 與透明 combo display container。
+2. Drift HUD 的中央 oval instrument 與右下 secondary instrument 拆分。
+3. 將 normalized counter-steer input 投影到 drift arc pointer。
+4. torque 顯示依既有 metric／imperial 單位處理。
+5. 移除 obsolete Drift resolution preset。
+
+## 不在本次研究／實作範圍
+
+- 重構 `TelemetryView` 的更新機制或把 React state 改成 60Hz。
+- 建立新的 telemetry store、WebSocket、UDP parser 或資料廣播通道。
+- 改造 HUD telemetry cards 的 registry、recorder、session、replay、map 或 analysis。
+- 把 Drift HUD 做成可切換的多解析度 profile 系統。
+- 將外部專案的 code、CSS、圖片、字型、map tiles、車輛資料庫或文案帶入產品。
+
+`TelemetryView`、既有 HUD cards 與 60Hz frame path 在這次只被視為整合邊界：Drift HUD 必須沿用現有 `HUDCore`／`onFrame` pipeline，不能因為新增 Style Meter 而另開資料來源或改變第二螢幕行為。
+
+## 參考快照與 PR 關聯
+
+| 專案 | Snapshot | 授權 | 對 PR#185 的有限參考價值 |
+|---|---|---|---|
+| [Horizon HUD](./horizon-hud.md) | `bd01ad0d644252824f82560f0ecbef50d6d6951d` | Proprietary personal/non-commercial | primary／secondary HUD 資訊階層；只作 README 層級概念研究 |
+| [ONYX Drive HUD](./onyx-drive-hud.md) | `3677d149d877a3872b38f2ec1f910efe3beb6fe4` | MIT | 儀表卡、單位切換、grip warning 的狀態分級；不擴張成 ONYX 功能移植 |
+| [FH6 Telemetry Dashboard](./fh6-tel.md) | `7ffeb0812f9f240653620ed3ecb0d2266b8d94ab` | MIT | 小尺寸 tire／suspension 狀態如何壓縮成可讀元素；不改 TelemetryView |
+| [Forza Data Tools](./forza-data-tools.md) | `73f8f7058479bf1c17fd9460e2cf379207d1cd2d` | GPL-3.0 | latest-frame 與 backpressure 是既有 pipeline 的驗證背景；不新增 transport |
+| [Forza Telemetry](./forza-telemetry.md) | `88aa7d59ac2684e16ef57862555c93f2af1a7ce3` | MIT | typed torque／steer／speed 欄位與 live／recording cadence 的區分；不改 parser |
+
+上游網址與本地 clone 記錄位於 [`ref/forza-hud-references/README.md`](../../ref/forza-hud-references/README.md)。
+
+## 授權邊界
+
+- Horizon HUD 禁止修改、反向工程、衍生與重新散布；只取 README 層級的產品概念。
+- Forza Data Tools 是 GPL-3.0；只作概念背景，不複製 Go、HTML 或 packet-format source。
+- MIT 專案可作為行為與資料模型參考；本次仍以在本專案中重新實作為原則，不直接搬移視覺資產或大型單體架構。
+
+下一步只應依照 [`drift-hud-implementation-plan.md`](../drift-hud-implementation-plan.md) 驗證與收斂 PR#185。

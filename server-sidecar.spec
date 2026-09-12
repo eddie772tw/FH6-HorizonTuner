@@ -45,9 +45,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Optional stdlib WMI provider: Windows platform metadata has a native
-        # fallback. Never collect the build-only shim or the blocking DLL.
-        '_wmi',
         'PIL._imagingcms',
         'PIL.ImageCms',
         'PIL._webp',

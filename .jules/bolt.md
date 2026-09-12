@@ -48,7 +48,3 @@
 ## 2024-05-18 - Single struct.Struct unpack for parsing packets
 **Learning:** `struct.unpack_from` has a fixed C-level invocation overhead that makes multiple unpacks inside a hot loop (like a 60Hz UDP telemetry listener) extremely expensive.
 **Action:** Always pre-compile `struct.Struct` with the entire binary format block and run `.unpack_from()` once for the full data block to avoid constant overhead and improve performance by ~30%.
-
-## 2024-11-26 - Eliminating Array.from() and closure overhead in high-frequency data mapping
-**Learning:** In high-frequency telemetry data mapping functions (e.g. mapping 60Hz UDP structs to application formats), using `Array.from({ length: 4 }, (_, i) => fn(data[i]))` allocates an intermediate array and creates closure functions for every field on every frame. This generates immense GC pressure and executes ~10x slower than manual unrolling.
-**Action:** Unroll fixed-length array mappings manually (e.g., `[fn(data[0]), fn(data[1]), fn(data[2]), fn(data[3])]`) to eliminate all closure and `Array.from` allocations on the hot path.
