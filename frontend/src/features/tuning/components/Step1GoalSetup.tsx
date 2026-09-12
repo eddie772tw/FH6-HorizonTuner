@@ -1,9 +1,9 @@
 import React from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
+import { DragGearingSetup } from './DragGearingSetup';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
-import { DragGearingSetup } from './DragGearingSetup';
 
 interface Step1GoalSetupProps {
   measuredEngineInputs?: boolean;

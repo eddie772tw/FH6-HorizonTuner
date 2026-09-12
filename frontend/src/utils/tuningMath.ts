@@ -186,16 +186,16 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
-  if (raceGoal === 'Drag' && (!Number.isInteger(numGears) || numGears < 4 || numGears > 10 || !Number.isFinite(maxRpm) || maxRpm <= 0 || !carParams ||
-    ![carParams.weight, carParams.maxHp, carParams.maxTorque, carParams.maxHpRpm, carParams.maxTorqueRpm].every(Number.isFinite) ||
-    carParams.weight <= 0 || carParams.maxHp <= 0 || carParams.maxTorque < 0 || carParams.maxHpRpm <= 0 || carParams.maxTorqueRpm <= 0)) {
-    return { finalDrive: 3.5, gears: [], unsupported: true, unsupportedReason: 'Drag gearing requires finite vehicle, RPM, torque, and 4-10 gear inputs.' };
-  }
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
   const maxHp = (carParams && carParams.maxHp > 0) ? carParams.maxHp : 300; // HP
   
+  if (raceGoal === 'Drag' && (!Number.isInteger(numGears) || numGears < 4 || numGears > 10 || !Number.isFinite(maxRpm) || maxRpm <= 0 || !carParams ||
+    ![carParams.weight, carParams.maxHp, carParams.maxTorque, carParams.maxHpRpm, carParams.maxTorqueRpm].every(Number.isFinite) ||
+    carParams.weight <= 0 || carParams.maxHp <= 0 || carParams.maxTorque < 0 || carParams.maxHpRpm <= 0 || carParams.maxTorqueRpm <= 0)) {
+    return { finalDrive: 3.5, gears: [], unsupported: true, unsupportedReason: 'Drag gearing requires finite vehicle, RPM, torque, and 4-10 gear inputs.' };
+  }
   // Estimate maxTorque if not present
   let maxTorque = (carParams && carParams.maxTorque > 0) ? carParams.maxTorque : 0; // N-m
   const rpmHp = (carParams && carParams.maxHpRpm > 0) ? carParams.maxHpRpm : maxRpm * 0.85;
