@@ -26,6 +26,7 @@ export interface CarParams {
   rearTireAspect?: number;
   rearTireRim?: number;
   tireType?: string;
+  rallyProfile?: 'mixed-surface' | 'cross-country';
   adjustability: {
     gearbox: 'Fixed' | 'FinalDrive' | 'Full';
     gears: number; // 4 to 10

@@ -1,6 +1,7 @@
 import React from 'react';
 import { RoadDrivetrainSetup } from './RoadDrivetrainSetup';
 import { useSettings } from '../../../context/SettingsContext';
+import { RallyProfileSetup } from './RallyProfileSetup';
 import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
@@ -182,6 +183,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               )}
             </div>
           </div>
+
+          {selectedRaceGoal === 'Rally' && <RallyProfileSetup value={carParams?.rallyProfile} onChange={value => updateParam('rallyProfile', value)} />}
 
           {selectedRaceGoal === 'Road' && (
             <div className="p-2 rounded border bg-body-tertiary d-flex justify-content-between align-items-center">
