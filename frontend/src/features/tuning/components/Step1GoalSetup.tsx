@@ -1,4 +1,5 @@
 import React from 'react';
+import { RoadDrivetrainSetup } from './RoadDrivetrainSetup';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
@@ -253,6 +254,9 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                 </select>
               </div>
             </div>
+
+            {selectedRaceGoal === 'Road' && carParams && <RoadDrivetrainSetup profile={carParams}
+              onChange={value => updateParam('roadAwdRearPercent', value)} />}
 
             <div className="d-flex justify-content-between align-items-center">
               <label className="text-body-secondary fs-7 mb-0">{t('Gears Count')}</label>

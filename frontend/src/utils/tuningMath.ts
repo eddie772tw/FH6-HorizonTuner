@@ -7,6 +7,8 @@ export interface TuningCarParams {
   weight: number; // in kg
   weight_distribution: number; // front weight percentage (0-100)
   drivetrain: 'FWD' | 'RWD' | 'AWD';
+  /** Optional Road centre differential setting, percent of torque sent rearward. */
+  roadAwdRearPercent?: number;
   induction?: 'NA' | 'Supercharger' | 'Turbo' | 'TwinTurbo';
   maxHp: number;
   maxTorque: number;
@@ -165,6 +167,62 @@ export function getTargetTopGearRatio(numGears: number): number {
   return 0.58;
 }
 
+/** Road only: absent/invalid overrides preserve the existing rear-biased baseline. */
+export function getRoadAwdRearPercent(params: TuningCarParams | null): number {
+  const front = Number.isFinite(params?.weight_distribution)
+    ? Math.max(1, Math.min(99, params!.weight_distribution)) : 50;
+  return Number.isFinite(params?.roadAwdRearPercent)
+    ? Math.max(0, Math.min(100, params!.roadAwdRearPercent!))
+    : Math.min(85, Math.max(60, 100 - front + 20));
+}
+
+/**
+ * Initial Road launch envelope, not an identified tyre coefficient or measured limit.
+ * F = m*a; longitudinal load transfer reduces front axle load by m*a*h/L.
+ * With nominal mu=1, h/L=0.20 and driveline efficiency=0.90, bound wheel torque
+ * by the first axle to saturate. These explicit engineering priors are deliberately
+ * independent of hidden tyre-compound labels; see road-meta-iteration-20260913.md.
+ */
+function roadLaunchTotalRatio(params: TuningCarParams, torqueNm: number, radiusM: number): number {
+  const front = Number.isFinite(params.weight_distribution)
+    ? Math.max(1, Math.min(99, params.weight_distribution)) / 100 : 0.5;
+  const rearShare = params.drivetrain === 'FWD' ? 0 : getRoadAwdRearPercent(params) / 100;
+  const frontLimitG = rearShare < 1 ? front / (1 - rearShare + 0.20) : Infinity;
+  const rearLimitG = rearShare > 0.20 ? (1 - front) / (rearShare - 0.20) : Infinity;
+  const accelerationG = Math.min(1, frontLimitG, rearLimitG);
+  const mass = Number.isFinite(params.weight) && params.weight > 0 ? params.weight : 1400;
+  return mass * 9.81 * accelerationG * radiusM / (torqueNm * 0.90);
+}
+
+/** Sanitize only Road inputs; copied values never mutate saved profiles. */
+function normalizeRoadInputs(params: TuningCarParams): TuningCarParams {
+  const finite = (value: number | undefined, fallback: number) => Number.isFinite(value) ? value! : fallback;
+  const positive = (value: number | undefined, fallback: number) => {
+    const result = finite(value, fallback);
+    return result > 0 ? result : fallback;
+  };
+  const range = (minimum: number | undefined, maximum: number | undefined, low: number, high: number) => {
+    const min = positive(minimum, low);
+    return [min, Math.max(min, positive(maximum, high))];
+  };
+  const [spring_front_min, spring_front_max] = range(params.spring_front_min, params.spring_front_max, 10, 120);
+  const [spring_rear_min, spring_rear_max] = range(params.spring_rear_min, params.spring_rear_max, 10, 120);
+  const [height_front_min, height_front_max] = range(params.height_front_min, params.height_front_max, 10, 25);
+  const [height_rear_min, height_rear_max] = range(params.height_rear_min, params.height_rear_max, 10, 25);
+  return { ...params, weight: positive(params.weight, 1400),
+    weight_distribution: Math.max(1, Math.min(99, finite(params.weight_distribution, 50))),
+    maxHp: positive(params.maxHp, 300), maxTorque: positive(params.maxTorque, 0),
+    maxHpRpm: positive(params.maxHpRpm, 0), maxTorqueRpm: positive(params.maxTorqueRpm, 0),
+    aeroEfficiency: Math.max(0, Math.min(1, finite(params.aeroEfficiency, 0.5))),
+    aero_downforce_front: Math.max(0, finite(params.aero_downforce_front, 0)),
+    aero_downforce_rear: Math.max(0, finite(params.aero_downforce_rear, 0)),
+    frontTireWidth: positive(params.frontTireWidth, 245), frontTireAspect: positive(params.frontTireAspect, 40),
+    frontTireRim: positive(params.frontTireRim, 18), rearTireWidth: positive(params.rearTireWidth, 245),
+    rearTireAspect: positive(params.rearTireAspect, 40), rearTireRim: positive(params.rearTireRim, 18),
+    spring_front_min, spring_front_max, spring_rear_min, spring_rear_max,
+    height_front_min, height_front_max, height_rear_min, height_rear_max };
+}
+
 /**
  * AEGO (Adaptive Envelope & Gearing Optimization) Algorithm
  * Generates custom, physically-sound gearing setup for different race goals.
@@ -177,6 +235,11 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  if (raceGoal === 'Road') {
+    if (carParams) carParams = normalizeRoadInputs(carParams);
+    if (!Number.isFinite(maxRpm) || maxRpm <= 0) maxRpm = 7500;
+    if (!Number.isInteger(numGears) || numGears < 1 || numGears > 10) numGears = 6;
+  }
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
@@ -297,10 +360,17 @@ export function calculateAEGOGearing(
     const kDrive = drivetrain === 'AWD' ? 0.85 : (drivetrain === 'FWD' ? 1.05 : 1.15);
     const v1 = vBase * kDrive;
 
-    const g1 = (rpmHp * C * 60) / (v1 * fd * 1000);
+    let g1 = (rpmHp * C * 60) / (v1 * fd * 1000);
+    if (carParams && (drivetrain === 'FWD' ||
+      (drivetrain === 'AWD' && Number.isFinite(carParams.roadAwdRearPercent)))) {
+      // Lengthen launch gearing when available driven-axle load cannot support
+      // the old fixed-speed first gear. The remaining ratio/powerband guards apply.
+      const launchTotal = roadLaunchTotalRatio(carParams, maxTorque, C / (2 * Math.PI));
+      if (Number.isFinite(launchTotal) && launchTotal > 0) g1 = Math.min(g1, launchTotal / fd);
+    }
 
     gears = new Array(numGears).fill(0);
-    gears[0] = Math.max(1.0, Math.min(6.0, g1));
+    gears[0] = Math.max(1.0, Math.min(6.0, g1), gTop + 0.01 * (numGears - 1));
     gears[numGears - 1] = gTop;
 
     if (numGears > 1) {
@@ -435,10 +505,13 @@ export function calculateAEGOGearing(
     ? (rpmHp + 50) / maxRpm
     : 0.92;
 
+  const roadLaunchLimited = raceGoal === 'Road' && (drivetrain === 'FWD' ||
+    (drivetrain === 'AWD' && Number.isFinite(carParams?.roadAwdRearPercent)));
+  const effectiveStepRatio = roadLaunchLimited ? 1 : maxStepRatioRounded;
   for (let i = 1; i < monotonicLimit; i++) {
      const maxAllowedRatio = Math.min(
        Math.round((roundedGears[i - 1] - 0.01) * 100) / 100,
-       Math.floor(roundedGears[i - 1] * maxStepRatioRounded * 100) / 100
+       Math.floor(roundedGears[i - 1] * effectiveStepRatio * 100) / 100
      );
      if (roundedGears[i] > maxAllowedRatio) {
         roundedGears[i] = Math.max(0.40, maxAllowedRatio);
@@ -522,6 +595,7 @@ export function calculateChassisTuning(
   raceGoal: string,
   carParams: TuningCarParams | null
 ): ChassisTuningResult {
+  if (raceGoal === 'Road' && carParams) carParams = normalizeRoadInputs(carParams);
   // Safe Fallback defaults
   const weight = carParams && carParams.weight > 0 ? carParams.weight : 1400;
   const wf = carParams && carParams.weight_distribution > 0 ? carParams.weight_distribution : 50;
@@ -657,11 +731,18 @@ export function calculateChassisTuning(
 
   } else {
     // Road / Circuit (Default)
+    const roadFront = Number.isFinite(wf) ? Math.max(1, Math.min(99, wf)) / 100 : 0.5;
+    const roadRear = 1 - roadFront;
     // 1. Anti-Roll Bars
     if (drivetrain === 'AWD') {
       // 1/65 Meta Strategy for AWD
       arbF = Math.min(5.0, 1.0 + (wf / 100) * 4.0);
       arbR = Math.max(50.0, 65.0 - (100 - wr) * 0.3);
+    } else if (drivetrain === 'FWD') {
+      // Keep the driven/steered front axle compliant; a bounded rear roll bias
+      // helps rotation without copying the AWD 1/65 extreme (engineering prior).
+      arbF = 1 + 32 * roadFront;
+      arbR = 1 + 64 * Math.min(0.80, roadRear + 0.25);
     } else {
       arbF = 64.0 * (wf / 100) + 1.0;
       arbR = 64.0 * (wr / 100) + 1.0;
@@ -674,6 +755,12 @@ export function calculateChassisTuning(
     const deltaKr = (aero.rear / 25) * 0.5;
     springF = baseSpringF + deltaKf;
     springR = baseSpringR + deltaKr;
+    if (drivetrain === 'FWD') {
+      // Shift 10 percentage points of each slider span toward front compliance
+      // and rear support. Slider fraction is not physical roll stiffness.
+      springF = kMinF + (kMaxF - kMinF) * Math.max(0.10, roadFront - 0.10) + deltaKf;
+      springR = kMinR + (kMaxR - kMinR) * Math.min(0.90, roadRear + 0.10) + deltaKr;
+    }
 
     // 3. Ride Height (+3 clicks above min)
     heightF = hMinF + 3 * click;
@@ -684,11 +771,21 @@ export function calculateChassisTuning(
     rebR = 19.0 * (wr / 100) + 1.0;
     bumpF = rebF * 0.60;
     bumpR = rebR * 0.60;
+    if (drivetrain === 'FWD') {
+      // c_critical is proportional to sqrt(k*m). This is a relative slider
+      // correction only; game damper sliders are not SI damping coefficients.
+      rebF = (19 * roadFront + 1) * Math.sqrt(springF / Math.max(1, baseSpringF + deltaKf));
+      rebR = (19 * roadRear + 1) * Math.sqrt(springR / Math.max(1, baseSpringR + deltaKr));
+      bumpF = rebF * 0.60;
+      bumpR = rebR * 0.60;
+    }
 
     // 5. Differential
     if (drivetrain === 'FWD') {
-      accelF = 40;
-      decelF = 10;
+      // ForzaTune's FH6 starting range is 20-30 acceleration, 0-10 deceleration.
+      // Prefer its controllable midpoint over conflicting high-lock meta claims.
+      accelF = 25;
+      decelF = 5;
     } else if (drivetrain === 'RWD') {
       accelR = Math.min(65, Math.max(40, 40 + (wr - 50) * 0.5));
       decelR = 20;
@@ -697,7 +794,7 @@ export function calculateChassisTuning(
       decelF = 0;
       accelR = 75;
       decelR = 15;
-      centerRear = Math.min(85, Math.max(60, wr + 20));
+      centerRear = getRoadAwdRearPercent(carParams);
     }
   }
 
@@ -727,7 +824,8 @@ export function calculateChassisTuning(
       decelF: r1(clamp(decelF, 0, 100)),
       accelR: r1(clamp(accelR, 0, 100)),
       decelR: r1(clamp(decelR, 0, 100)),
-      centerRear: r1(clamp(centerRear, 10, 90))
+      centerRear: r1(clamp(centerRear, raceGoal === 'Road' && drivetrain === 'AWD' ? 0 : 10,
+        raceGoal === 'Road' && drivetrain === 'AWD' ? 100 : 90))
     }
   };
 }
