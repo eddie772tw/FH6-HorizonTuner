@@ -15,7 +15,7 @@ describe('engine observation dependencies', () => {
           averagePowerWatts: 200000, averageTorqueNewtons: 400, rpmSum: (3000 + i * 500) * 10,
           powerWattsSum: 2000000, torqueNewtonsSum: 4000 })) },
     };
-    expect(parseEngineArchive(JSON.stringify([item]))).toEqual([item]);
+    expect(parseEngineArchive(JSON.stringify([{ ...item, capture: { samples: Array.from({ length: 30000 }, () => ({})) } }]))).toEqual([{ ...item }]);
     for (const data of [{ ...item.data, acceptedMs: 500 }, { ...item.data, highestRpm: 6000 },
       { ...item.data, identity: { ...item.data.identity, ordinal: 43 } },
       { ...item.data, bins: item.data.bins.map(() => item.data.bins[0]) }]) {

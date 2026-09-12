@@ -2,7 +2,8 @@ import { RoadWorkflowView } from '../road/RoadWorkflowView';
 import { useEffect, useMemo, useState } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
-import { calculateChassisTuning, calculateMeasuredGearing, calculateStaticTireAlignment, type Season } from '../../utils/tuningMath';
+import { calculateChassisTuning, calculateStaticTireAlignment, type Season } from '../../utils/tuningMath';
+import { calculateWizardMeasuredGearing } from './measurementTuningProfile';
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
 import { createUnitPreference, loadUnitPreference, resolveUnitPreference, type UnitPreferenceOverride } from '../../utils/gameUnitSettings';
 import { Step1GoalSetup } from './components/Step1GoalSetup';
@@ -46,7 +47,7 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
   const gears = profile?.adjustability.gears || 6;
   const chassis = useMemo(() => profile ? calculateChassisTuning(goal, profile) : null, [goal, profile]);
   const alignment = useMemo(() => profile ? calculateStaticTireAlignment(goal, season, profile) : null, [goal, season, profile]);
-  const gearing = useMemo(() => calculateMeasuredGearing(goal, gears, profile, prepared ? {
+  const gearing = useMemo(() => calculateWizardMeasuredGearing(goal, gears, profile, prepared ? {
     engineMaxRpm: prepared.engineMaxRpm!, peakPowerRpm: prepared.observedPeakPower!.rpm,
     peakTorqueRpm: prepared.observedPeakTorque!.rpm,
   } : null), [goal, gears, profile, prepared]);
