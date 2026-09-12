@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mergeDynoPollResult, type CarParams } from './CarParamsContext';
+import { serializeWorkflowProfile } from '../features/tuning/tuningWorkflow';
 
 const params = (): CarParams => ({
   weight: 1200,
@@ -44,5 +45,18 @@ describe('mergeDynoPollResult', () => {
     });
 
     expect(refreshed.dyno_quality).toBeUndefined();
+  });
+
+  it('preserves the optional Rally profile across profile refreshes', () => {
+    const refreshed = mergeDynoPollResult({ ...params(), rallyProfile: 'cross-country' }, {
+      dyno_curve: { '6000': { hp: 410, torque: 360 } },
+    });
+    expect(refreshed.rallyProfile).toBe('cross-country');
+  });
+
+  it('round-trips the Rally profile through the workflow snapshot serializer', () => {
+    const profile = { ...params(), rallyProfile: 'cross-country' as const };
+    const roundTrip = JSON.parse(serializeWorkflowProfile(profile)) as CarParams;
+    expect(roundTrip.rallyProfile).toBe('cross-country');
   });
 });
