@@ -159,6 +159,17 @@ export interface GearingSecondaryCorrection {
 const AEGO_FINAL_DRIVE_MIN = 2.0;
 const AEGO_FINAL_DRIVE_MAX = 6.1;
 
+/** Report an unattainable explicit Drag endpoint after final slider rounding. */
+function dragFinishAvailability(goal: string, targetKmh: number | undefined, rpm: number,
+  gears: number[], finalDrive: number, radiusM: number): Pick<GearingResult, 'unsupported' | 'unsupportedReason'> {
+  if (goal !== 'Drag' || targetKmh === undefined || gears.length === 0) return {};
+  const terminalKmh = calcGearSpeed(rpm, gears[gears.length - 1], finalDrive, radiusM) * 3.6;
+  if (!Number.isFinite(terminalKmh) || Math.abs(terminalKmh - targetKmh) > Math.max(1, targetKmh * 0.02)) {
+    return { unsupported: true, unsupportedReason: 'Requested Drag finish speed cannot be reached within gearbox limits.' };
+  }
+  return {};
+}
+
 /**
  * Returns the golden target top gear ratio anchor for a given gear count.
  * Aligns baseline gearing toward lower/moderate final drives and higher individual gear ratios.
@@ -495,17 +506,10 @@ export function calculateAEGOGearing(
   // Preserve inactive gears only for a legacy profile that still requests them.
   for (let i = activeGearCount; i < roundedGears.length; i++) roundedGears[i] = roundedGears[activeGearCount - 1];
 
-  if (raceGoal === 'Drag' && dragFinishSpeedKmh !== undefined && roundedGears.length > 0) {
-    const terminalSpeedKmh = calcGearSpeed(rpmHp, roundedGears[roundedGears.length - 1], roundedFD, C / (2 * Math.PI)) * 3.6;
-    const toleranceKmh = Math.max(1, dragFinishSpeedKmh * 0.02);
-    if (!Number.isFinite(terminalSpeedKmh) || Math.abs(terminalSpeedKmh - dragFinishSpeedKmh) > toleranceKmh) {
-      return { finalDrive: roundedFD, gears: roundedGears, unsupported: true, unsupportedReason: 'Requested Drag finish speed cannot be reached within gearbox limits.' };
-    }
-  }
-
   return {
     finalDrive: roundedFD,
-    gears: roundedGears
+    gears: roundedGears,
+    ...dragFinishAvailability(raceGoal, dragFinishSpeedKmh, rpmHp, roundedGears, roundedFD, C / (2 * Math.PI)),
   };
 }
 
