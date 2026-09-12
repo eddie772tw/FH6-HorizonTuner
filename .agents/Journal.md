@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-12 / PR #328 高頻 UDP 預編譯解包修復與 Worktree 執行隔離排除（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者指示切換至 PR #328 分支解決 blocker 並 push commit，排查後端測試卡死問題。
+- **Learning**：
+  1. **Forza 324-byte UDP Data Out 二進位結構精度保護**：Data Out 封包在 Offset 100..115 為 4 個單精度浮點數（`WheelRotationSpeed`，`ffff`），而在 Offset 116..131 則為 4 個有符號 32 位元整數（`WheelOnRumbleStrip`，`iiii`）。若將此區間籠統打包為 `f * 51`，會導致路沿石壓觸狀態解碼為非正常小數；應以 `<iI + f*27 + iiii + f*20 + i*5` 與 `<iI + f*27 + iiii + f*20 + i*5 + iii + f*17 + HB + BBBBBb + 3s` 嚴格還原型別，在維持 60Hz 單次解包零額外開銷的前提下，完備支援 PR #330 所需的 5 個擴充欄位（`AngularVelocityX/Y/Z`、`WheelRotationSpeed`、`WheelOnRumbleStrip`）。
+  2. **Git Worktree 與 Python/uv Interpreter 尋徑防呆**：在 Antigravity 建立的隔離工作樹（`assess_pr_merge_readiness`）中，若 worktree 未安裝獨立虛擬環境，直接執行 `uv run --no-project --python .venv\Scripts\python.exe` 可能因 uv 遍歷父層巨大暫存目錄或未安裝依賴而造成無輸出卡死；指向主專案根目錄之正規虛擬環境（`D:\FH6-HorizonTuner\.venv\Scripts\python.exe`）或建立絕對路徑 Junction 可瞬間完成執行。
+- **Action**：
+  1. 在 PR #328 分支重構 `_LEGACY_STRUCT` 與 `_FULL_STRUCT`，納入 `AngularVelocity`、`WheelRotationSpeed` 與 `WheelOnRumbleStrip` 之精準欄位解包。
+  2. 強化 `_plausibility_rejection_reason`，加入角速度與輪胎轉速之 `math.isfinite` 數值護欄。
+  3. 於 `tests/test_telemetry_listener.py` 補齊 V1/V2 擴充解包與異常值拒絕單元測試（304 項後端測試全數通過）。
+  4. 經 `ruff check` 與 `ruff format` 格式化後提交 `6eb24d0` 並推送至遠端分支 `jules-perf-udp-parsing-13643087469934403237`。
+  5. 於 PR #328 討論串發布更新留言，標註以 `Gemini as Antigravity` 身分完成 blocker 修復。
+- **Evidence**：後端測試套件 304 passed / 8 deselected in 14.69s，`ruff check` 與 `ruff format --check` 全數通過，`git diff --check` 通過，PR #328 最新 commit 成功觸發 CI。
+- **Skills**：`telemetry-udp-protocol`、`pr-author-maintainer`、`cross-agent-collaboration`。
+
 ## 2026-09-12 / PR #319、#328、#329、#330 併入評估與多代理治理協調（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；使用者指示審查四個 PR 並合併 #329 與 #319，補充 #319 缺失語系至 main，並分別對 #328 與 #330 提出協調與補齊語系 Review 意見。
