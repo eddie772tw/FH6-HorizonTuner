@@ -501,16 +501,17 @@ export function calculateAEGOGearing(
 
   // Force monotonic decrease and powerband shift RPM bound
   const monotonicLimit = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : roundedGears.length;
-  const roadLaunchLimited = raceGoal === 'Road' && (drivetrain === 'FWD' ||
-    (drivetrain === 'AWD' && Number.isFinite(carParams?.roadAwdRearPercent)));
-  const maxStepRatioRounded = roadLaunchLimited ? 1 : (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
+  const maxStepRatioRounded = (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
     ? (rpmHp + 50) / maxRpm
     : 0.92;
 
+  const roadLaunchLimited = raceGoal === 'Road' && (drivetrain === 'FWD' ||
+    (drivetrain === 'AWD' && Number.isFinite(carParams?.roadAwdRearPercent)));
+  const effectiveStepRatio = roadLaunchLimited ? 1 : maxStepRatioRounded;
   for (let i = 1; i < monotonicLimit; i++) {
      const maxAllowedRatio = Math.min(
        Math.round((roundedGears[i - 1] - 0.01) * 100) / 100,
-       Math.floor(roundedGears[i - 1] * maxStepRatioRounded * 100) / 100
+       Math.floor(roundedGears[i - 1] * effectiveStepRatio * 100) / 100
      );
      if (roundedGears[i] > maxAllowedRatio) {
         roundedGears[i] = Math.max(0.40, maxAllowedRatio);

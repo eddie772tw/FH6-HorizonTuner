@@ -1,9 +1,9 @@
 import React from 'react';
+import { RoadDrivetrainSetup } from './RoadDrivetrainSetup';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
-import { RoadDrivetrainSetup } from './RoadDrivetrainSetup';
 
 interface Step1GoalSetupProps {
   measuredEngineInputs?: boolean;
