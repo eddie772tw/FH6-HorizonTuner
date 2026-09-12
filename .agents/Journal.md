@@ -1,5 +1,19 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-13 / 關聯 PR 協同審查、交換律合流驗證與五階段順序整併（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者指示針對 5 個互相關聯之調校分支（PR #332, #334, #333, #335, #336）進行可合併性驗證、提出優化順序並自主留言與合併。
+- **Learning**：
+  1. **多 PR 正交解耦與交換律可合併性 (Commutative Mergeability)**：當多個 PR 共同修改核心業務邏輯（如 `tuningMath.ts` 與 `Step1GoalSetup.tsx`）時，若作者在各分支上採用一致的解耦架構（例如 UI 插入點互不重疊、共用多檔位 `activeGearCount` 結構預先對齊），則各 PR 間的 Git 3-way merge 能達到數學上的交換律（正向與反向合併之 Tree Hash 完全一致為 `0761df17dc5c1ead2bcbcfb2a50a2c1423abbdb0`），允許任意順序之無損整併。
+  2. **架構分層之優化合併順序 (Layered Merge Sequencing)**：在交換律成立的前提下，最佳合併路徑應遵循「核心預設模式（#332 Road）→ 次要路況分流（#334 Rally）→ 專業動力帶動態齒比（#333 Drift）→ 全檔位與多語系（#335 Drag）→ 實測遙測數據流典範轉移（#336 Tire Evidence）」，使 Git 提交歷史呈現由底層物理算牌逐步走向實測驅動的清晰架構演進。
+  3. **自動化審查與 Squash Merge 連鎖推進**：依照審查規範，每步提交標準化 `{代號} as {Agent}` Top-level Review 後執行 Squash Merge；每次合入後 GitHub 自動重新計算剩餘 PR 之 mergeable 狀態，全程 100% 保持綠燈。
+- **Action**：
+  1. 本地交叉模擬正向與反向合併，驗證 Git Tree 一致性與全套測試套件（108 files / 719 tests 前端、334 tests 後端、Vite 425ms build）。
+  2. 依序對 PR #332、#334、#333、#335、#336 發布標準化審查評論（涵蓋 CI 狀態、本地驗證、各領域貢獻與下一步）。
+  3. 依序執行 Squash and merge 將五個 PR 全數併入 `main`，並同步拉取至本地。
+- **Evidence**：`main` 分支拉取後，108 個前端測試檔案（719 tests）全數通過，後端 334 tests（8 deselected）全數通過，Vite build、Ruff check/format 及 git diff --check 全數通過。
+- **Skills**：`pr-review-evaluation`、`cross-agent-collaboration`、`physics-tuning-math`、`modular-refactoring`。
+
 ## 2026-09-12 / 六階段實測工作流、多圈賽事與外部證據整合（Codex）
 
 - **來源**：`local`；本分支 `codex/plan/tuning-workflow-iteration-20260912`，實作起點 `b73732c`；使用者授權 Luna 分工審查與研究。
