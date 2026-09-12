@@ -495,6 +495,8 @@ class TestTelemetryListener(unittest.TestCase):
             self.assertIsNotNone(transport2)
             transport2.close()
 
+        asyncio.run(run_test())
+
     def test_datagram_received_expanded_fields(self):
         # 324 byte packet (V2) with expanded fields
         data = bytearray(324)
