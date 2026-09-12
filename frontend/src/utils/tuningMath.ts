@@ -1,5 +1,3 @@
-import { getTireCoefficient } from './tireCoefficients';
-
 /**
  * Interface representing vehicle parameters used for tuning calculation.
  */
@@ -191,10 +189,13 @@ export function calculateAEGOGearing(
     maxTorque = (maxHp * 7021.5) / rpmT; // Approximation in Nm
   }
 
+  // Legacy profiles can leave higher gears inactive; each revised profile
+  // explicitly expands this count without changing another discipline.
+  let activeGearCount = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : numGears;
+
   // Advanced variables
   const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
-  const tireType = carParams?.tireType;
 
   // Determine active tire size based on drivetrain
   const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
@@ -205,33 +206,38 @@ export function calculateAEGOGearing(
   const C = ((((wTire * ar) / 100) * 2 + sRim * 25.4) * Math.PI) / 1000;
 
   const fDrive = drivetrain === 'AWD' ? 1.0 : (drivetrain === 'RWD' ? 0.6 : 0.4);
-  const fTire = getTireCoefficient(tireType);
-  const fGrip = fTire;
-
   let fd = 0;
   let gears: number[] = [];
 
   if (raceGoal === 'Drift') {
-    // Drift Profile
-    const rRpm = rpmT / rpmHp;
-    let dDrift = 0;
-    if (engineType === 'Turbo') dDrift = Math.max(rRpm, 0.75);
-    else if (engineType === 'TwinTurbo') dDrift = Math.max(rRpm, 0.65);
-    else if (engineType === 'Supercharger') dDrift = Math.max(rRpm, 0.55);
-    else dDrift = Math.max(rRpm, 0.82); // NA
-
-    const calcGears = Math.min(4, numGears);
-    gears = new Array(numGears).fill(0.5); // Fallback defaults
-    gears[calcGears - 1] = 1.0;
-    for (let i = calcGears - 2; i >= 0; i--) {
-      gears[i] = gears[i + 1] / dDrift;
+    // Drift Profile.  FH6 guidance recommends a race 6-speed and tuning the
+    // final drive/active gear by observed limiter and power-band behaviour.
+    // Use the published 4-speed ladder only as a shape prior, then adapt its
+    // intermediate ratios to the measured torque-to-power RPM relationship.
+    const driftWeight = Number.isFinite(weight) && weight > 0 ? weight : 1400;
+    const driftTorque = Number.isFinite(maxTorque) && maxTorque > 0 ? maxTorque : 400;
+    const driftRpmHp = Number.isFinite(rpmHp) && rpmHp > 0 ? rpmHp : maxRpm > 0 && Number.isFinite(maxRpm) ? maxRpm * 0.85 : 6000;
+    const driftRpmT = Number.isFinite(rpmT) && rpmT > 0 ? rpmT : driftRpmHp * 0.6;
+    const baseDriftGearRatios = [2.89, 1.99, 1.34, 1.0];
+    const rpmBand = driftRpmT / driftRpmHp;
+    const bandExponent = Math.max(0.75, Math.min(1.25, 0.82 / Math.max(0.55, Math.min(0.95, rpmBand))));
+    const calcGears = Math.max(4, Math.min(10, Number.isInteger(numGears) ? numGears : 6));
+    gears = new Array(calcGears).fill(0);
+    for (let i = 0; i < calcGears; i++) {
+      const position = (i / (calcGears - 1)) * 3;
+      const lower = Math.min(2, Math.floor(position));
+      const fraction = position - lower;
+      const logRatio = Math.log(baseDriftGearRatios[lower]) * (1 - fraction) + Math.log(baseDriftGearRatios[lower + 1]) * fraction;
+      gears[i] = Math.pow(Math.exp(logRatio), bandExponent);
     }
-    for (let i = calcGears; i < numGears; i++) {
-      gears[i] = gears[calcGears - 1];
-    }
 
-    fd = (weight * fDrive * fGrip * 2 * C) / (maxTorque * gears[0]) * 3.5;
-    fd = Math.max(2.2, Math.min(6.1, fd));
+    // Drift gearing does not infer hidden compound grip. Use observable
+    // drivetrain/size/RPM inputs; final-drive A/B on measured speed is the
+    // correction path for the actual tyre compound.
+    const circumference = Number.isFinite(C) && C > 0 ? C : 2.0;
+    const rawDriftFd = (driftWeight * fDrive * 2 * circumference) / (driftTorque * gears[0]) * 3.5;
+    fd = Number.isFinite(rawDriftFd) ? Math.max(2.2, Math.min(6.1, rawDriftFd)) : 3.5;
+    activeGearCount = calcGears;
 
   } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {
     // Rally Profile
@@ -330,7 +336,7 @@ export function calculateAEGOGearing(
   if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed)) {
     const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
     const tireRadiusM = C / (2 * Math.PI);
-    const topGearIdx = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) - 1 : numGears - 1;
+    const topGearIdx = activeGearCount - 1;
     
     // Baseline top speed for highest active gear at Peak HP RPM
     const baselineTopSpeedMs = calcGearSpeed(rpmHp, gears[topGearIdx], fd, tireRadiusM);
@@ -408,10 +414,7 @@ export function calculateAEGOGearing(
           gears[topGearIdx] = newGtop;
         }
 
-        // Fill remaining gears if Drift/Drag
-        for (let i = topGearIdx + 1; i < numGears; i++) {
-          gears[i] = gears[topGearIdx];
-        }
+        for (let i = activeGearCount; i < numGears; i++) gears[i] = gears[topGearIdx];
       }
     }
   }
@@ -430,7 +433,7 @@ export function calculateAEGOGearing(
   });
 
   // Force monotonic decrease and powerband shift RPM bound
-  const monotonicLimit = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : roundedGears.length;
+  const monotonicLimit = activeGearCount;
   const maxStepRatioRounded = (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
     ? (rpmHp + 50) / maxRpm
     : 0.92;
@@ -445,14 +448,8 @@ export function calculateAEGOGearing(
      }
   }
 
-  // Ensure gears > 4 exactly match gear 4 for Drift/Drag
-  if (raceGoal === 'Drift' || raceGoal === 'Drag') {
-     if (numGears > 4) {
-        for (let i = 4; i < numGears; i++) {
-            roundedGears[i] = roundedGears[3];
-        }
-     }
-  }
+  // Preserve inactive gears only for a legacy profile that still requests them.
+  for (let i = activeGearCount; i < roundedGears.length; i++) roundedGears[i] = roundedGears[activeGearCount - 1];
 
   return {
     finalDrive: roundedFD,
@@ -561,9 +558,11 @@ export function calculateChassisTuning(
   const click = 0.5; // Ride height click increment in cm
 
   if (raceGoal === 'Drift') {
-    // 1. Anti-Roll Bars (Extreme Front-Soft / Rear-Stiff)
-    arbF = 10.0;
-    arbR = 50.0;
+    // 1. Anti-Roll Bars: FH6 RWD guide recommends a soft, close pair rather
+    // than an extreme 10/50 split. These are starting points on the game
+    // slider, with the front kept slightly softer for counter-steering grip.
+    arbF = 1.0 + 64.0 / 3.0;
+    arbR = arbF * 1.2;
 
     // 2. Softened Drift Springs
     springF = weight * (wf / 100) * 0.035;
@@ -571,24 +570,36 @@ export function calculateChassisTuning(
 
     // 3. Ride Height
     heightF = hMinF + 1 * click;
-    heightR = hMinR;
+    heightR = hMinR + 2 * click;
 
-    // 4. Damping (Symmetric Low-Stiffness)
-    rebF = 6.0;
-    rebR = 6.0;
-    bumpF = 3.0;
-    bumpR = 3.0;
+    // 4. Match the spring's relative slider position, then start bump at 60%.
+    const boundedF = Math.min(kMaxF, Math.max(kMinF, springF));
+    const boundedR = Math.min(kMaxR, Math.max(kMinR, springR));
+    const springFractionF = (boundedF - kMinF) / Math.max(kMaxF - kMinF, 1e-6);
+    const springFractionR = (boundedR - kMinR) / Math.max(kMaxR - kMinR, 1e-6);
+    rebF = 1 + 19 * springFractionF;
+    rebR = 1 + 19 * springFractionR;
+    bumpF = rebF * 0.60;
+    bumpR = rebR * 0.60;
 
     // 5. Differential
     if (drivetrain === 'AWD') {
-      accelF = 40;
-      decelF = 0;
-      accelR = 100;
-      decelR = 0;
-      centerRear = 88;
+      accelF = 85;
+      decelF = 5;
+      accelR = 60;
+      decelR = 15;
+      // FH6 guide's AWD starting range is 70–80% rear bias. Use midpoint.
+      centerRear = 75;
+    } else if (drivetrain === 'FWD') {
+      // FWD cannot use the RWD power-oversteer baseline.  Keep the drift
+      // profile usable for handbrake/weight-transfer experiments, but route
+      // the locking torque to the driven front axle only.
+      accelF = 85;
+      decelF = 5;
     } else {
-      accelR = 100;
-      decelR = 25;
+      // FH6 RWD guide gives 75–95% accel and 0–40% decel ranges.
+      accelR = 90;
+      decelR = 15;
     }
 
   } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {

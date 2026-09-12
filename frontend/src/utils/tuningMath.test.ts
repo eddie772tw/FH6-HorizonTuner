@@ -447,15 +447,29 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.diff.centerRear).toBeGreaterThanOrEqual(60);
   });
 
-  it('Drift goal should set extreme front-soft rear-stiff ARB and symmetric damping', () => {
+  it('Drift goal should use the sourced ARB shape and spring-derived damping', () => {
     const res = calculateChassisTuning('Drift', roadCar);
-    expect(res.arb.front).toBe(10.0);
-    expect(res.arb.rear).toBe(50.0);
-    expect(res.damping.reboundF).toBe(6.0);
-    expect(res.damping.reboundR).toBe(6.0);
-    expect(res.damping.bumpF).toBe(3.0);
-    expect(res.damping.bumpR).toBe(3.0);
-    expect(res.diff.accelR).toBe(100);
+    expect(res.arb.front).toBe(22.3);
+    expect(res.arb.rear).toBe(26.8);
+    expect(res.damping.reboundF).toBeGreaterThanOrEqual(1);
+    expect(res.damping.reboundF).toBeLessThanOrEqual(20);
+    expect(res.damping.reboundR).toBeGreaterThanOrEqual(1);
+    expect(res.damping.reboundR).toBeLessThanOrEqual(20);
+    expect(Math.abs(res.damping.bumpF - res.damping.reboundF * 0.60)).toBeLessThanOrEqual(0.1);
+    expect(Math.abs(res.damping.bumpR - res.damping.reboundR * 0.60)).toBeLessThanOrEqual(0.1);
+    expect(res.springs.heightF).toBe(roadCar.height_front_min + 0.5);
+    expect(res.springs.heightR).toBe(roadCar.height_rear_min + 1.0);
+    expect(res.diff.accelR).toBe(90);
+  });
+
+  it('Drift gearing regression adapts the documented ladder to measured RPM band', () => {
+    const res = calculateAEGOGearing('Drift', 6, roadCar, 7500);
+    expect(res.gears[0]).toBeGreaterThan(res.gears[1]);
+    expect(res.gears[1]).toBeGreaterThan(res.gears[2]);
+    expect(res.gears[2]).toBeGreaterThan(res.gears[3]);
+    expect(res.gears[3]).toBeGreaterThan(0);
+    expect(res.gears[4]).toBeLessThan(res.gears[3]);
+    expect(res.gears[5]).toBeLessThan(res.gears[4]);
   });
 
   it('Rally goal should soften ARBs and springs, and set max ride height', () => {

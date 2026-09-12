@@ -3,6 +3,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
+import { DriftModeGuidance } from './DriftModeGuidance';
 
 interface Step1GoalSetupProps {
   measuredEngineInputs?: boolean;
@@ -148,11 +149,12 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               <option value="Rally">{t('Rally / Off-Road')}</option>
               <option value="Drag">{t('Drag')}</option>
             </select>
+            {selectedRaceGoal === 'Drift' && <DriftModeGuidance carParams={carParams} />}
             <div className="p-2 rounded bg-body-tertiary border fs-8 text-body-secondary" style={{ lineHeight: '1.4' }}>
               {selectedRaceGoal === 'Road' &&
                 t('Road / Circuit setting optimizes chassis roll stability, aerodynamic downforce compensation, and gear ratio continuity.')}
               {selectedRaceGoal === 'Drift' &&
-                t('Drift mode configures extreme front-soft rear-stiff anti-roll bars, softened springs, and wheelspin-focused differential.')}
+                t('Drift baseline adapts gearing to the measured RPM band and differential settings to the driven axles.')}
               {selectedRaceGoal === 'Rally' &&
                 t('Rally mode softens anti-roll bars and springs for max suspension travel, and increases ride height for off-road landings.')}
               {selectedRaceGoal === 'Drag' &&
