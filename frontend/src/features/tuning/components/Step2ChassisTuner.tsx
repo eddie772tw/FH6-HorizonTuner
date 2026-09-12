@@ -132,7 +132,6 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
         <div className="glass-panel p-3 d-flex flex-column gap-3">
           <div className="border-bottom pb-2 d-flex justify-content-between align-items-center">
             <span className="text-primary fw-bold fs-6">{t('Tires & Wheel Alignment')}</span>
-            <span className="badge text-bg-info">{carParams.tireType || 'Stock'}</span>
           </div>
 
           {/* Tire Pressures */}
