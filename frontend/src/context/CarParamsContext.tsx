@@ -13,6 +13,9 @@ export interface CarParams {
   maxTorque: number;
   maxHpRpm: number;
   maxTorqueRpm: number;
+  /** Optional Drag finish speed; used only with explicit provenance. */
+  dragFinishSpeedKmh?: number;
+  dragFinishSpeedProvenance?: 'telemetry' | 'manual';
   aeroBalance?: number;
   aeroEfficiency: number;
   mechBalance?: number;

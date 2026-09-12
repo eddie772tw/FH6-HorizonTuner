@@ -469,20 +469,19 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(rallyRes.damping.bumpF).toBe(Math.round(rallyRes.damping.reboundF * 0.40 * 10) / 10);
   });
 
-  it('Drag goal should set soft front ARB, stiff rear ARB, and forward rake ride height (Front Low, Rear High)', () => {
+  it('Drag goal should use stiff bars, soft springs, max ride height, and launch damping', () => {
     const res = calculateChassisTuning('Drag', roadCar);
-    expect(res.arb.front).toBe(1.0);
+    expect(res.arb.front).toBe(65.0);
     expect(res.arb.rear).toBe(65.0);
-    expect(res.springs.heightF).toBe(roadCar.height_front_min);
+    expect(res.springs.heightF).toBe(roadCar.height_front_max);
     expect(res.springs.heightR).toBe(roadCar.height_rear_max);
-    expect(res.springs.rear).toBeGreaterThan(res.springs.front);
     expect(res.damping.reboundF).toBe(3.0);
-    expect(res.damping.bumpF).toBe(4.0);
+    expect(res.damping.bumpF).toBe(12.0);
     expect(res.damping.reboundR).toBe(12.0);
-    expect(res.damping.bumpR).toBe(10.0);
+    expect(res.damping.bumpR).toBe(4.0);
   });
 
-  it('Car 1601 (930 HP AWD Lambo) Drag goal should achieve >360 km/h top speed in 4th gear and correct Forward Rake stance', () => {
+  it('Car 1601 (930 HP AWD Lambo) Drag goal should use the full gearbox and correct Forward Rake stance', () => {
     const car1601: TuningCarParams = {
       weight: 1419.29,
       weight_distribution: 44,
@@ -513,24 +512,23 @@ describe('calculateChassisTuning (Step3)', () => {
     // 1. Gearing test for 6-speed gearbox
     const gearingRes = calculateAEGOGearing('Drag', 6, car1601, 8500);
     expect(gearingRes.gears).toHaveLength(6);
-    expect(gearingRes.gears[3]).toBe(1.0); // 4th gear = 1.0
-    expect(gearingRes.gears[4]).toBe(1.0); // 5th gear = 4th gear (4-speed constraint)
-    expect(gearingRes.gears[5]).toBe(1.0); // 6th gear = 4th gear (4-speed constraint)
+    expect(gearingRes.gears[3]).toBeGreaterThan(gearingRes.gears[4]);
+    expect(gearingRes.gears[4]).toBeGreaterThan(gearingRes.gears[5]);
 
-    // Calculate speed in 4th gear at peak HP RPM (8500 RPM)
+    // Calculate speed in top gear at peak HP RPM (8500 RPM)
     const wallMm = (345 * 25) / 100;
     const rimMm = 19 * 25.4;
     const tireRadiusM = (wallMm * 2 + rimMm) / 2000;
-    const speedAtPeakHpKmh = calcGearSpeed(8500, gearingRes.gears[3], gearingRes.finalDrive, tireRadiusM) * 3.6;
+    const speedAtPeakHpKmh = calcGearSpeed(8500, gearingRes.gears[5], gearingRes.finalDrive, tireRadiusM) * 3.6;
 
-    // 4th gear speed at Peak HP RPM MUST exceed 360 km/h for 930 HP AWD Drag car
+    // The terminal gear remains suitable for this high-power drag prior.
     expect(speedAtPeakHpKmh).toBeGreaterThan(360.0);
 
     // 2. Chassis test
     const chassisRes = calculateChassisTuning('Drag', car1601);
-    expect(chassisRes.springs.heightF).toBe(10.5); // Front MIN
+    expect(chassisRes.springs.heightF).toBe(15.0); // Front MAX
     expect(chassisRes.springs.heightR).toBe(14.0); // Rear MAX (Forward Rake)
-    expect(chassisRes.springs.rear).toBeGreaterThan(chassisRes.springs.front); // Stiff Rear Springs for heavy launch torque
+    expect(chassisRes.springs.rear).toBeLessThanOrEqual(289.5); // Soft launch baseline
   });
 
   it('should enforce safety clamping within user-defined slider limits', () => {

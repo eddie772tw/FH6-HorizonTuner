@@ -4,7 +4,9 @@
 
 本次下一迭代的落地藍圖見[調校工作流下一迭代落地規畫](tuning-workflow-iteration-20260912.md)；目前工作區的實作與證據邊界見[六階段調校工作流現行實作](tuning-workflow-implementation-20260912.md)。藍圖以 `ref/fh6-tuning-restart-20260912` 為參考輸入，不代表參考包內容已全部移植或驗收。
 
-現行工作流是六階段 `Goal & Setup → Tire baseline → Chassis platform → Wheel alignment → Engine data & gearing → Setup verification`。引擎資料來自遊戲解碼 frame 的 `EngineMaxRpm`、功率與扭力；至少 6 秒、8/16 RPM bins、低端不高於 40%、高端至少 90%、全油門與控制輸入門檻只是觀察完整性 gate，不是實體校準。Road session 以 `LapNumber` 與 `TimestampMS` 保存全部圈，0.1 秒 downsample、最多 50,000 點；引擎 capture 最多 30,000 frame。需要 offset、單位或欄位狀態時，參考 [324-byte packet reference](../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)。
+PR #330 已將現行工作流整合為四階段 `Goal & Setup → Chassis & Tires → Engine data & gearing → Setup verification`；上方六階段文件保留為演進背景。引擎資料來自遊戲解碼 frame 的 `EngineMaxRpm`、功率與扭力；至少 6 秒、8/16 RPM bins、低端不高於 40%、高端至少 90%、全油門與控制輸入門檻只是觀察完整性 gate，不是實體校準。Road session 以 `LapNumber` 與 `TimestampMS` 保存全部圈，0.1 秒 downsample、最多 50,000 點；引擎 capture 最多 30,000 frame。需要 offset、單位或欄位狀態時，參考 [324-byte packet reference](../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)。
+
+2026-09-13 的各賽事公式研究位於[本目錄](.)的 `*-meta-iteration-20260913.md`；輪胎量測可行性記錄使用 `tire-measurement-assessment-20260913.md`。各分支只包含自身實作與研究，獨立以 `main` 為 PR base。來源按 FH6 直接資料、可繼承的 FH5 方法與工程先驗區分；沒有實車證據的常數不能稱作已校準最佳值。
 
 ## 先確認影響哪一條路徑
 
