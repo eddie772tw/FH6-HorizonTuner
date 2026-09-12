@@ -205,10 +205,20 @@ export function calculateAEGOGearing(
     maxTorque = (maxHp * 7021.5) / rpmT; // Approximation in Nm
   }
 
+  // Legacy profiles can leave higher gears inactive; each revised profile
+  // explicitly expands this count without changing another discipline.
+  let activeGearCount = (raceGoal === 'Drift' || raceGoal === 'Drag') ? Math.min(4, numGears) : numGears;
+
   // Advanced variables
   const aeroEfficiency = carParams?.aeroEfficiency ?? 0.5;
   const engineType = carParams?.induction ?? 'NA';
   const tireType = carParams?.tireType;
+
+  // Determine active tire size based on drivetrain
+  const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
+  const ar = (drivetrain === 'FWD' ? carParams?.frontTireAspect : carParams?.rearTireAspect) ?? 40;
+  const sRim = (drivetrain === 'FWD' ? carParams?.frontTireRim : carParams?.rearTireRim) ?? 18;
+
   const finishSpeedCandidate = secondaryCorrection?.dragFinishSpeedKmh ?? carParams?.dragFinishSpeedKmh;
   const finishSpeedProvenance = secondaryCorrection?.dragFinishSpeedProvenance ?? carParams?.dragFinishSpeedProvenance;
   const dragFinishSpeedKmh = finishSpeedCandidate && finishSpeedProvenance &&
@@ -216,11 +226,6 @@ export function calculateAEGOGearing(
     Number.isFinite(finishSpeedCandidate) && finishSpeedCandidate > 0
     ? finishSpeedCandidate
     : undefined;
-
-  // Determine active tire size based on drivetrain
-  const wTire = (drivetrain === 'FWD' ? carParams?.frontTireWidth : carParams?.rearTireWidth) ?? 245;
-  const ar = (drivetrain === 'FWD' ? carParams?.frontTireAspect : carParams?.rearTireAspect) ?? 40;
-  const sRim = (drivetrain === 'FWD' ? carParams?.frontTireRim : carParams?.rearTireRim) ?? 18;
 
   // Tire Circumference (m)
   const C = ((((wTire * ar) / 100) * 2 + sRim * 25.4) * Math.PI) / 1000;
@@ -284,6 +289,7 @@ export function calculateAEGOGearing(
       : priorTopSpeedKmh;
 
     const calcGears = numGears;
+    activeGearCount = calcGears;
     gears = new Array(numGears).fill(0);
 
     const idxTop = calcGears - 1;
@@ -370,7 +376,7 @@ export function calculateAEGOGearing(
   if (secondaryCorrection && (secondaryCorrection.simulatedTopSpeed || secondaryCorrection.softMaxSpeed || secondaryCorrection.dragFinishSpeedKmh || dragFinishSpeedKmh)) {
     const { simulatedTopSpeed, softMaxSpeed } = secondaryCorrection;
     const tireRadiusM = C / (2 * Math.PI);
-    const topGearIdx = raceGoal === 'Drift' ? Math.min(4, numGears) - 1 : numGears - 1;
+    const topGearIdx = activeGearCount - 1;
     
     // Baseline top speed for highest active gear at Peak HP RPM
     const baselineTopSpeedMs = calcGearSpeed(rpmHp, gears[topGearIdx], fd, tireRadiusM);
@@ -452,11 +458,7 @@ export function calculateAEGOGearing(
           gears[topGearIdx] = newGtop;
         }
 
-        // Drift intentionally reuses the active fourth gear. Drag uses every
-        // requested gear, so there is no post-correction duplicate range.
-        if (raceGoal === 'Drift') {
-          for (let i = topGearIdx + 1; i < numGears; i++) gears[i] = gears[topGearIdx];
-        }
+        for (let i = activeGearCount; i < numGears; i++) gears[i] = gears[topGearIdx];
       }
     }
   }
@@ -475,7 +477,7 @@ export function calculateAEGOGearing(
   });
 
   // Force monotonic decrease and powerband shift RPM bound
-  const monotonicLimit = raceGoal === 'Drift' ? Math.min(4, numGears) : roundedGears.length;
+  const monotonicLimit = activeGearCount;
   const maxStepRatioRounded = (maxRpm && maxRpm > 0 && raceGoal !== 'Drift' && raceGoal !== 'Drag')
     ? (rpmHp + 50) / maxRpm
     : 0.92;
@@ -490,15 +492,8 @@ export function calculateAEGOGearing(
      }
   }
 
-  // Drift's extra gears reuse the active fourth gear; Drag keeps its full
-  // requested progression.
-  if (raceGoal === 'Drift') {
-     if (numGears > 4) {
-        for (let i = 4; i < numGears; i++) {
-            roundedGears[i] = roundedGears[3];
-        }
-     }
-  }
+  // Preserve inactive gears only for a legacy profile that still requests them.
+  for (let i = activeGearCount; i < roundedGears.length; i++) roundedGears[i] = roundedGears[activeGearCount - 1];
 
   if (raceGoal === 'Drag' && dragFinishSpeedKmh !== undefined && roundedGears.length > 0) {
     const terminalSpeedKmh = calcGearSpeed(rpmHp, roundedGears[roundedGears.length - 1], roundedFD, C / (2 * Math.PI)) * 3.6;
