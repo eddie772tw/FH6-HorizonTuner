@@ -3,6 +3,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
+import { RallyProfileSetup } from './RallyProfileSetup';
 
 interface Step1GoalSetupProps {
   measuredEngineInputs?: boolean;
@@ -158,6 +159,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
               {selectedRaceGoal === 'Drag' &&
                 t('Drag setting sets rake angle ride height, diagonal extreme damping, and 100% differential lock for maximum launch traction.')}
             </div>
+            {selectedRaceGoal === 'Rally' && <RallyProfileSetup value={carParams?.rallyProfile} onChange={value => updateParam('rallyProfile', value)} />}
           </div>
 
           <div className="d-flex flex-column gap-2">

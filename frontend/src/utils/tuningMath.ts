@@ -24,6 +24,8 @@ export interface TuningCarParams {
   rearTireAspect?: number;
   rearTireRim?: number;
   tireType?: string;
+  /** Optional persisted split consumed only by the Rally goal. */
+  rallyProfile?: RallyProfile;
   adjustability?: {
     gearbox?: 'Fixed' | 'FinalDrive' | 'Full';
     gears?: number;
@@ -46,6 +48,27 @@ export interface TuningCarParams {
 
 export type Drivetrain = 'RWD' | 'AWD' | 'FWD';
 export type RaceType = 'Road' | 'Rally' | 'Drag' | 'Drift';
+export type RallyProfile = 'mixed-surface' | 'cross-country';
+
+/** Normalize the Rally boundary without changing other disciplines or saved input. */
+function rallyCalculationInputs(params: TuningCarParams): TuningCarParams {
+  const positive = (value: number | undefined, fallback: number) => Number.isFinite(value) && value! > 0 ? value! : fallback;
+  const result = { ...params,
+    weight: positive(params.weight, 1400),
+    weight_distribution: Number.isFinite(params.weight_distribution) ? Math.max(1, Math.min(99, params.weight_distribution)) : 50,
+    maxHp: positive(params.maxHp, 300), maxTorque: positive(params.maxTorque, 0),
+    maxHpRpm: positive(params.maxHpRpm, 0), maxTorqueRpm: positive(params.maxTorqueRpm, 0),
+    aero_downforce_front: positive(params.aero_downforce_front, 0), aero_downforce_rear: positive(params.aero_downforce_rear, 0) };
+  for (const axle of ['front', 'rear'] as const) {
+    const springMin = positive(params[`spring_${axle}_min`], 10);
+    result[`spring_${axle}_min`] = springMin;
+    result[`spring_${axle}_max`] = Math.max(springMin, positive(params[`spring_${axle}_max`], 120));
+    const heightMin = positive(params[`height_${axle}_min`], 10);
+    result[`height_${axle}_min`] = heightMin;
+    result[`height_${axle}_max`] = Math.max(heightMin, positive(params[`height_${axle}_max`], 25));
+  }
+  return result;
+}
 
 export interface GearingResult {
   finalDrive: number;
@@ -177,6 +200,11 @@ export function calculateAEGOGearing(
   maxRpm: number,
   secondaryCorrection?: GearingSecondaryCorrection
 ): GearingResult {
+  if (raceGoal === 'Rally') {
+    if (carParams) carParams = rallyCalculationInputs(carParams);
+    if (!Number.isInteger(numGears) || numGears < 1 || numGears > 10) numGears = 6;
+    if (!Number.isFinite(maxRpm) || maxRpm <= 0) maxRpm = 7500;
+  }
   // 1. Fallback & Default Parameters Setup
   const weight = (carParams && carParams.weight > 0) ? carParams.weight : 1400; // kg
   const drivetrain: Drivetrain = (carParams && carParams.drivetrain) ? carParams.drivetrain : 'RWD';
@@ -235,7 +263,8 @@ export function calculateAEGOGearing(
 
   } else if (raceGoal === 'Rally' || raceGoal === 'DangerSign') {
     // Rally Profile
-    const vTheo = 28 * Math.pow(maxHp, 1 / 3);
+    // Cross-country trades peak speed for lower-gear drive on loose surfaces.
+    const vTheo = 28 * Math.pow(maxHp, 1 / 3) * (raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country' ? 0.90 : 1.0);
     const r = Math.max(0.75, Math.min(0.85, 0.82 - 0.05 * ((maxTorque / maxHp) - 1.1)));
 
     gears = new Array(numGears).fill(0);
@@ -522,6 +551,7 @@ export function calculateChassisTuning(
   raceGoal: string,
   carParams: TuningCarParams | null
 ): ChassisTuningResult {
+  if (raceGoal === 'Rally' && carParams) carParams = rallyCalculationInputs(carParams);
   // Safe Fallback defaults
   const weight = carParams && carParams.weight > 0 ? carParams.weight : 1400;
   const wf = carParams && carParams.weight_distribution > 0 ? carParams.weight_distribution : 50;
@@ -595,38 +625,43 @@ export function calculateChassisTuning(
     // 1. Anti-Roll Bars (Softened 35%)
     const baseArbF = 64.0 * (wf / 100) + 1.0;
     const baseArbR = 64.0 * (wr / 100) + 1.0;
-    arbF = baseArbF * 0.35;
-    arbR = baseArbR * 0.35;
+    const isCrossCountry = raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country';
+    arbF = baseArbF * (isCrossCountry ? 0.38 : raceGoal === 'Rally' ? 0.32 : 0.35);
+    arbR = baseArbR * (isCrossCountry ? 0.46 : raceGoal === 'Rally' ? 0.32 : 0.35);
 
     // 2. Springs (Softened 65% of base)
     const baseSpringF = (kMaxF - kMinF) * (wf / 100) + kMinF;
     const baseSpringR = (kMaxR - kMinR) * (wr / 100) + kMinR;
-    springF = baseSpringF * 0.65;
-    springR = baseSpringR * 0.65;
+    const springScale = isCrossCountry ? 0.85 : 0.65;
+    springF = baseSpringF * springScale;
+    springR = baseSpringR * springScale;
 
-    // 3. Maximum Ride Height
-    heightF = hMaxF;
-    heightR = hMaxR;
+    // Dirt benefits from travel; Cross Country trades a little CG for landing support.
+    heightF = hMinF + (isCrossCountry || raceGoal === 'DangerSign' ? 1.0 : 0.85) * (hMaxF - hMinF);
+    heightR = hMinR + (isCrossCountry || raceGoal === 'DangerSign' ? 1.0 : 0.85) * (hMaxR - hMinR);
 
     // 4. Damping (40% Bump Ratio for Landing Absorptions)
-    rebF = 14.0 * (wf / 100) + 1.0;
-    rebR = 14.0 * (wr / 100) + 1.0;
-    bumpF = rebF * 0.40;
-    bumpR = rebR * 0.40;
+    const reboundScale = isCrossCountry ? 1.10 : 1.0;
+    rebF = (14.0 * (wf / 100) + 1.0) * reboundScale;
+    rebR = (14.0 * (wr / 100) + 1.0) * reboundScale;
+    const bumpRatio = isCrossCountry ? 0.50 : 0.40;
+    bumpF = rebF * bumpRatio;
+    bumpR = rebR * bumpRatio;
 
     // 5. Differential
     if (drivetrain === 'AWD') {
-      accelF = 40;
-      decelF = 10;
-      accelR = 80;
-      decelR = 25;
-      centerRear = 65;
+      const lockBoost = raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country' ? 10 : 0;
+      accelF = 40 + lockBoost;
+      decelF = 10 + lockBoost;
+      accelR = 80 + lockBoost;
+      decelR = 25 + lockBoost;
+      centerRear = isCrossCountry ? 55 : 65;
     } else if (drivetrain === 'FWD') {
-      accelF = 60;
-      decelF = 15;
+      accelF = 60 + (raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country' ? 10 : 0);
+      decelF = 15 + (raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country' ? 5 : 0);
     } else {
-      accelR = 75;
-      decelR = 25;
+      accelR = 75 + (raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country' ? 10 : 0);
+      decelR = 25 + (raceGoal === 'Rally' && carParams?.rallyProfile === 'cross-country' ? 5 : 0);
     }
 
   } else if (raceGoal === 'Drag') {
@@ -817,13 +852,13 @@ export function calculateStaticTireAlignment(
     toeR = '-0.3°';
     caster = 7.0;
   } else if (normalizedDisc === 'rally' || normalizedDisc === 'dangersign') {
-    targetPhot = 27.5;
+    targetPhot = normalizedDisc === 'rally' && params?.rallyProfile === 'cross-country' ? 28.5 : 27.5;
     pcF = 22.0 + 2.0 * ((M * Wf) / 1000) + 0.02 * hwF + deltaPSeason;
     pcR = 21.5 + 2.0 * ((M * Wr) / 1000) + 0.02 * hwR + deltaPSeason;
 
-    camberF = -1.3;
-    camberR = -0.8;
-    toeF = '+0.2°';
+    camberF = normalizedDisc === 'rally' && params?.rallyProfile === 'cross-country' ? -0.8 : -1.3;
+    camberR = normalizedDisc === 'rally' && params?.rallyProfile === 'cross-country' ? -0.5 : -0.8;
+    toeF = normalizedDisc === 'rally' && params?.rallyProfile === 'cross-country' ? '0.0°' : '+0.2°';
     toeR = '0.0°';
     caster = 6.0;
   } else if (normalizedDisc === 'drag') {

@@ -458,14 +458,16 @@ describe('calculateChassisTuning (Step3)', () => {
     expect(res.diff.accelR).toBe(100);
   });
 
-  it('Rally goal should soften ARBs and springs, and set max ride height', () => {
+  it('Rally goal should soften ARBs and springs, with a high mixed-surface ride height', () => {
     const roadRes = calculateChassisTuning('Road', roadCar);
     const rallyRes = calculateChassisTuning('Rally', roadCar);
 
     expect(rallyRes.arb.front).toBeLessThan(roadRes.arb.front);
     expect(rallyRes.arb.rear).toBeLessThan(roadRes.arb.rear);
-    expect(rallyRes.springs.heightF).toBe(roadCar.height_front_max);
-    expect(rallyRes.springs.heightR).toBe(roadCar.height_rear_max);
+    expect(rallyRes.springs.heightF).toBeGreaterThan(roadCar.height_front_min!);
+    expect(rallyRes.springs.heightF).toBeLessThan(roadCar.height_front_max!);
+    expect(rallyRes.springs.heightR).toBeGreaterThan(roadCar.height_rear_min!);
+    expect(rallyRes.springs.heightR).toBeLessThan(roadCar.height_rear_max!);
     expect(rallyRes.damping.bumpF).toBe(Math.round(rallyRes.damping.reboundF * 0.40 * 10) / 10);
   });
 
@@ -592,7 +594,7 @@ describe('calculateStaticTireAlignment', () => {
   });
 
   it('should calculate specific discipline values for Rally mode', () => {
-    const resRally = calculateStaticTireAlignment('Rally', 'Summer', sampleCar);
+    const resRally = calculateStaticTireAlignment('Rally', 'Summer', { ...sampleCar, rallyProfile: 'mixed-surface' });
     expect(resRally.targetPhot).toBe(27.5);
     expect(resRally.camber.front).toBe(-1.3);
     expect(resRally.camber.rear).toBe(-0.8);

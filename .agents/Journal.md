@@ -2543,3 +2543,12 @@
 - **Validation boundary**：本機 WMI 服務本身未修復；產品需求已有等價路徑，不要求主機修復才能啟動／打包。沒有系統服務、WMI repository 或驅動變更，亦未驗證其他主機、音訊品質或遊戲同步。Python／SoundCard 升級時須重新檢查局部 stdlib fallback。
 - **Reference**：[音訊診斷](../docs/guides/windows-audio-diagnostics.md)、[開發指南](../docs/guides/development.md)。
 - **Status**：替代路徑、本機 source 與新 Full／Lite 產物已驗證；未 commit／push。
+
+---
+
+## 2026-09-13 / 調校公式隔離迭代的驗收邊界
+
+- **Scope**：依使用者要求，以 PR #330 合併的 `ddadc38` 四階段工作流為共同基底，Road、Drift、Rally、Drag 與追加輪胎證據各用獨立 worktree。採用 `physics-tuning-math`、`cross-agent-collaboration`、`modular-refactoring`、`halfmoon-design-system`、`pr-author-maintainer`，由 Luna 子代理研究／實作，root 驗收。
+- **Verified learning**：現行 UI 是四階段，六階段文件屬演進背景。工作流引擎掃描的 slip 只作上下文，不能據完整性 gate 宣稱識別輪胎摩擦係數；capture 的 TireTemp 原始契約是 °F，SteerInput 是 -127..127 counts，欄位缺失須同時檢查 `missingChannels`，不能把 mapper fallback 0 當量測。
+- **Formula review**：FWD 不能無條件繼承 RWD 的負載轉移／驅動胎策略；Dirt 接地柔順與 Cross Country 落地支撐是不同取捨。FH5 方法可在控制語意或 FH6 證據支持下部分沿用，具體常數仍需標示工程先驗。真車公式的量綱与遊戲滑桿比例分開記錄。
+- **Validation boundary**：本輪單元／build 與來源比對不等同 FH6 實車、跨車校準或排行榜驗收。完整候選 profile 切換可能改多個欄位，不能稱為單一 slider 因果實驗。每個 PR 的精確檔案、測試及限制以其頂層內文與研究文件為準。
