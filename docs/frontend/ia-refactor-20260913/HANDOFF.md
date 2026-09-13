@@ -1,88 +1,66 @@
 # Coordinator 交接
 
-以下保留 2026-09-13 規劃階段的歷史交接。2026-09-14 使用者已授權實作；當前 ownership、PR 與 gate 狀態以 [執行紀錄](execution.md) 為準，G0 新證據見 [基準執行結果](evidence/g0-baseline.md)。不要將下列「未執行」當成最新狀態。
+目前使用者已恢復 G5 真實證據驗收前的實作目標；即時範圍、寫入 ownership 與驗證狀態以 [execution.md](execution.md) 為準。下列 2026-09-14 規劃交付與停筆結果是歷史快照，不能用來取消後續已恢復的開發授權。
 
-## 本輪狀態
+更新：2026-09-14（Asia/Taipei）。本文件記錄現在的交接狀態；2026-09-13 的純規劃歷史可從同一分支的 Git 紀錄查看。
 
-```text
-Task: 前端資訊架構重構的開發規劃
-Status: handoff
-Owner: 本對話 Coordinator
-Task ID: 01a09aae-8ab0-7f71-8291-9716f27e41bc
-Branch: codex/plan/frontend-ia-20260913
-Worktree: D:/FH6-frontend-ia-20260913/plan
-Base SHA: 5891d21bca35161836d84c51d1b6e9c279ec4709
-Scope: 開發計畫、現況盤點、ownership、工作單、驗收與交接文件
-Code implementation: 尚未開始
-Implementation tasks/PRs: 尚未建立
-Last updated: 2026-09-13 +08:00
-```
-
-使用者明確選擇本輪先完成計畫與交接；不啟動程式實作。本文件保留未來執行所需的 gate，並非要求目前立即執行的指令。
-
-## 交付檔案
-
-| 檔案 | 用途 |
+| 交接欄位 | 內容 |
 | --- | --- |
-| [README.md](README.md) | 單一開發執行計畫、修訂決策、依賴與里程碑 |
-| [baseline.md](baseline.md) | 當前程式證據、來源 checksum、已知缺口與未測範圍 |
-| [work-orders.md](work-orders.md) | Luna/Terra 分工、路徑 ownership、可派發工作單、子對話啟動條件 |
-| [acceptance.md](acceptance.md) | 各 lane 行為驗收、native/遊戲證據邊界、效能量測方法 |
-| [reference/source-proposal.md](reference/source-proposal.md) | 原附件全文參考，僅正規化空白與換行 |
-| 本 HANDOFF.md | 任務當前狀態與下一步 |
-| [docs/README.md](../../README.md) | 新增本主題的文件索引入口 |
+| Task | 前端資訊架構的開發計畫、分工與交接 |
+| Status / Owner | handoff / 本對話 Coordinator |
+| Task ID | 01a09aae-8ab0-7f71-8291-9716f27e41bc |
+| Worktree | D:/FH6-frontend-ia-20260913/plan |
+| Branch | codex/plan/frontend-ia-20260913 |
+| Product baseline SHA | 5891d21bca35161836d84c51d1b6e9c279ec4709 |
+| Planning branch committed head | 22899fb6d45e8a8d56ecf080de37ab9f557aab9f |
+| Current delivery | 本地文件修訂，尚未 commit/push |
+| Product work | 已停筆；既有 commits/WIP 保留，未整合 |
+| Whole implementation | 尚未完成；G0/G1 partial，G2–G5 尚未通過 |
 
-## 本輪已完成
+使用者最新回覆為「先完成開發計畫、分工與交接文件（建議）」。本次收尾只完成該範圍；沒有把附件中的實作/PR/merge 指令當作新的執行授權。未因技能或工具拒絕留下未完成文件，也沒有刪除先前成果。
 
-- 讀取附件、專案協作/測試/UI 規範與相關現況。
-- 重新 fetch origin/main，確認本機/遠端基準相同，原 main 工作樹乾淨。
-- 建立獨立規劃 branch/worktree；未寫入既有 main 或其他調校 worktree。
-- 使用 Terra/ Terra/ Luna 三個唯讀子代理，分別盤點 Sessions/Tune、HUD、variant/Settings/test/build。
-- Coordinator 交叉核對結果並修正兩項錯誤推論：race timer 原本已有 effect cleanup；telemetry channel 並非 module-level 宣告。
-- 補足卸載前 state/capture gate、latest selection race、Road editor/review、HUD write ordering、shared locale/context ownership 與依賴回退。
-- Terra 完成最終唯讀計畫審核；依其唯一具體建議補上 TuneSessionController/RoadValidationController 的 owner、掛載位置、最低欄位、backend resume/stop 與草稿保留驗收。
-- 實作子對話僅準備工作單；沒有建立或啟動實作任務。
+## 交付文件與閱讀順序
 
-## 尚未執行
-
-- 前端/後端程式修改、dependency install。
-- frontend test/build、Full/Lite native smoke、HUD/MoTeC/遊戲驗收、效能 baseline。
-- 實作 commit/push/PR/merge/release。
-- Journal 更新：本輪是規劃與源碼盤點，沒有新增已重現的 runtime invariant，因此不升級為長期規則。
-
-## Gate 與任務登記
-
-| 項目 | 狀態 | 下一步 |
+| 順序 | 文件 | 用途 |
 | --- | --- | --- |
-| 規劃交付 | 文件完成，收尾驗證見下節 | 使用者可直接閱讀計畫與工作單 |
-| G0 靜態 inventory | 完成於記錄的 BASE_SHA | 實作開始時刷新 main/ownership |
-| G0 執行 baseline | not-run | 測試/build、Full/Lite baseline、3 次效能測量 |
-| G1/C1–C5 | proposed，未 freeze | Coordinator 將設計轉為實際 typed contract |
-| G2 Shell / mount | proposed | 狀態存活驗收後才能開 W2 |
-| A/B/C 子對話 | 未建立；無實際 Task ID 或 lane SHA | 同一 WAVE2_BASE_SHA 派發 |
-| D 子對話 | 未建立 | A foundation 已整合後派發 |
-| G5 最終驗收 | not-run | 全部接線後執行矩陣 |
+| 1 | [開發計畫](README.md) | 目標、相對附件修訂、Wave 依賴、模型與整合策略 |
+| 2 | [工作單](work-orders.md) | Coordinator/A/B/C/D ownership、Luna/Terra 派發內容及 handoff 模板 |
+| 3 | [介面與 gate](contracts-and-gates.md) | state-lifetime 表、A-D freeze、adapter 移除、逐波出口與 PR-ready 判定 |
+| 4 | [驗收矩陣](acceptance.md) | Full/Lite、Tune、Sessions、HUD、Settings、效能/真實證據要求 |
+| 5 | [執行紀錄](execution.md) | 當前 gate、owner 與既有 PR 的精確 head 狀態 |
+| 6 | [實作交接快照](handoffs/implementation-snapshot-20260914.md) | 分支、dirty files、現存 API、測試限制與接手最小動作 |
+| 參考 | [靜態基準](baseline.md)、[G0 執行結果](evidence/g0-baseline.md) | 分開記錄原始程式事實與已執行測試 |
+| 來源 | [附件副本](reference/source-proposal.md) | 原始需求追溯，不作當前授權或產品已完成證據 |
 
-## 下一次恢復工作的第一步
+總文件入口 [docs/README.md](../../README.md) 已同步連結。
 
-當使用者啟動實作時，先讀 [README](README.md) 與本文件；查當前 main、origin/main、各工作樹和仍 active 的 task ownership，不直接沿用歷史 SHA。
+## 本次完成的工作
 
-1. 若計畫仍未提交/合併，明確提供本工作區絕對文件路徑給所有子任務，或先安排文件交付；不要假設 feature worktree 已包含本資料夾。
-2. 在獨立實作分支補齊 G0。記錄既有 Settings persistence、telemetry reconnect channel 與 HUD defaults 問題的重現結果；只處理會阻礙本次 gate 的必要前置。
-3. Coordinator 完成 P1/P2，保留複雜架構取捨，待 G2 與實際 main integration 完成才建立 A/B/C。
-4. 使用 [work-orders](work-orders.md) 的共同前綴與 lane prompt，填入實際 BASE_SHA、CONTRACT_SHA、worktree/branch/Task ID。
-5. 每個 lane handoff 後先 review 再接線；逐次更新總登記與 acceptance evidence。
+- 重新核對附件、規劃文件、主分支、隔離工作樹與現有兩個 PR；沒有假設原 main 已含新 Shell。
+- 協調 Terra 的 HUD/Sessions owner 停寫並提供交接；保留 Tune/Road/Sessions/HUD 已提交成果與 Shell 草稿。
+- 由 Terra 獨立審閱依賴，補上 HUD B0、G1-core 與後期 A-D freeze 分界、G2 前置 owner、G0-code/observability、PR 出口及 adapter 清理表。
+- 將原文件「全部 proposed、未建 feature branch」等歷史描述改為帶日期的實際狀態，保留已執行測試與未測證據的差別。
+- 正式 handoff 路徑統一到 docs；彙整 Road 1 項與 Sessions 4 項獨立 review blocker、HUD 靜態風險及最新精確 heads。planning branch 與原 main、其他 tuning worktree 分離。
+- 停止本任務啟動的基準程序，保存 logs、隔離資料與原生編譯結果；沒有繼續產品測試或 native 操作。
 
-未來的常規 reversible 修復與內部分工可由 Coordinator 依已授權範圍自主推進；本輪結束只是遵循使用者選擇的交付範圍，不是技能或工具拒絕。
+## 下一次恢復開發的第一步
 
-## 文件驗證紀錄
+1. 先核對使用者當時要求、main/remote SHA、所有 worktree dirty paths 與 ownership；不要重建或覆蓋本快照中的草稿。
+2. 讀實作快照，將未合併 commits、未測 WIP 與缺少的 G0 native/performance 分開處理；先核對 G0-code，另列 G0-observability 缺項。
+3. 沿已對齊 P1 的 road-reviewed 接續修正，保留原分支；完成 Tune 複查、Road/Sessions blocker 修正與 HUD B0 修查，root 才完成 G1-core 和 Shell/Full/Lite 接線。
+4. 通過 G2 後公布共同 WAVE2_BASE_SHA，派 A/B/C；在 A-D slot freeze 後才派 D。短期子工作用 Luna/Terra 子代理，獨立使用者任務須有明確建立要求。
+5. 逐次 review、接線及隔離組合驗證；更新精確 head 的 PR/check/evidence；G5 缺必要真實證據的相關 PR 保持 draft。
 
-2026-09-13 收尾結果：
+根據本次交付範圍，下一輪不直接宣告任一程式 lane done，也不把兩個既有 PR 的 CI 視為未提交 WIP 的驗證。
 
-- `git diff --check`：exit 0。
-- 對 6 份新增文件逐檔執行 `git diff --no-index --check -- NUL <file>`：無 whitespace 問題（no-index 的差異 exit 1 是新檔與空檔不同，不是驗證失敗）。
-- 6 份新增文件 UTF-8 解碼正常；18 個文件內部連結、25 個基準程式路徑存在。
-- 原附件與 repository 參考副本在正規化換行/行尾空白後全文相符。
-- Terra 最終計畫審核完成；controller 補充複查通過，無待處理審核事項。
-- 原 main 與 origin/main 仍為所列 BASE_SHA，原 main 無本輪修改；新變更僅在規劃 worktree 的文件範圍。
-- 文件未 commit、未 push；產品 test/build/native/performance 維持 not-run。
+## 本次文件驗證
+
+文件驗證結果在收尾時記錄於此；只檢查文件、來源、連結與差異範圍，不新增產品 test/build。
+
+- 計畫目錄 10 份 Markdown 的 UTF-8 正常，55 個本地連結均存在；docs/README.md 的計畫入口已同步。
+- 附件副本在正規化換行/行尾空白後全文相符；原檔 SHA-256 仍為 49f9c0a425222c4f7aa630b2a82a7a12c79f30becec0703b6afde743bfa6553a。
+- 已追蹤差異的 git diff --check 通過；兩份新增文件的 no-index whitespace check 無錯誤（exit 1 表示與空檔有差異）。
+- 規劃工作樹只有 8 份修改文件與 2 份新文件；main 工作樹乾淨，HEAD、origin/main 與本次遠端查詢均為所列基準。
+- Terra 獨立複查提出 G1/A-D 循環、G2 前置 owner 及 G0/G5 證據分界；修訂後再次複查為 pass。G1-core、W1 行為與後期完整驗收已分開，最低證據層表涵蓋全部 acceptance ID；這是文件審查結論，不是產品 gate 通過。
+- 原有局部 test/build、native 啟動與 PR checks 結果均標示原 SHA/來源；不作本次未推送文件的 CI 證據。
+- 本次只交付本地文件，未 commit、push、新建 PR 或合併 main。
