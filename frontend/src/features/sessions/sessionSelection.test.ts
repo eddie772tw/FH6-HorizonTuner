@@ -45,6 +45,28 @@ describe("session selection adapter", () => {
     expect(older.signal.aborted).toBe(true);
   });
 
+  it("resumes loads after effect replay without reviving pre-cleanup work", async () => {
+    const gate = new SessionLoadGate();
+    const oldRequest = gate.begin();
+    gate.dispose();
+    // Child effects can start a request before the provider's setup runs.
+    const replayRequest = gate.begin();
+    gate.activate();
+    expect(oldRequest.isCurrent()).toBe(false);
+    expect(oldRequest.signal.aborted).toBe(true);
+    await expect(readSelectionData({ read: async () => [{ time: 2 }] },
+      { kind: "saved", filename: "replayed" }, 0, replayRequest)).resolves.toEqual([{ time: 2 }]);
+  });
+
+  it("resumes selection operations while keeping a pre-cleanup import stale", () => {
+    const gate = new SessionOperationGate();
+    const oldImport = gate.begin();
+    gate.dispose();
+    gate.activate();
+    expect(oldImport.isCurrent()).toBe(false);
+    expect(gate.begin().isCurrent()).toBe(true);
+  });
+
   it("consumes a request sequence once and never lets an older intent win", () => {
     expect(shouldConsumeSessionRequest(null, 3)).toBe(true);
     expect(shouldConsumeSessionRequest(3, 3)).toBe(false);
