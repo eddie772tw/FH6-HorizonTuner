@@ -1,4 +1,4 @@
-import type { RoadIdentity, RoadLive, RoadSetup } from './roadTypes';
+import type { RoadFinish, RoadIdentity, RoadLive, RoadSetup, RoadSummary } from './roadTypes';
 
 export const ROAD_SELECTED_WORKFLOW_KEY = 'road-selected-workflow';
 
@@ -44,6 +44,14 @@ export interface RoadResultSelection {
   comparison: RoadComparisonSelection;
 }
 
+export interface RoadFinishDraft {
+  summaryId: string;
+  finishId: string | null;
+  runId: string;
+  time: string;
+  clean: boolean;
+}
+
 export interface RoadRunConfirmationIdentity {
   workflowId: string;
   setupId: string;
@@ -64,6 +72,11 @@ export interface RoadOperationState {
   status: 'pending' | 'succeeded' | 'failed';
 }
 
+export interface RoadOperationLease {
+  id: number;
+  selectionRevision: number;
+}
+
 export interface RoadValidationSessionState {
   selectedWorkflowId: string;
   step: RoadValidationStep;
@@ -71,6 +84,7 @@ export interface RoadValidationSessionState {
   choiceSaved: boolean;
   prepareDraft: RoadPrepareDraft;
   candidateDraft: RoadCandidateDraft | null;
+  finishDraft: RoadFinishDraft | null;
   resultSelection: RoadResultSelection;
   runConfirmation: RoadRunConfirmation | null;
   activeRun: RoadLive['activeRun'];
@@ -105,6 +119,7 @@ export function createRoadValidationSession(selectedWorkflowId = ''): RoadValida
     choiceSaved: false,
     prepareDraft: emptyRoadPrepareDraft(),
     candidateDraft: null,
+    finishDraft: null,
     resultSelection: emptyRoadResultSelection(),
     runConfirmation: null,
     activeRun: null,
@@ -120,9 +135,10 @@ export function selectRoadWorkflow(state: RoadValidationSessionState, selectedWo
     setupId: '',
     choiceSaved: false,
     candidateDraft: null,
+    finishDraft: null,
     resultSelection: emptyRoadResultSelection(),
     runConfirmation: null,
-    operation: null,
+    operation: state.operation,
   };
 }
 
@@ -174,6 +190,27 @@ export function setRoadCandidateDraft(state: RoadValidationSessionState, candida
   return { ...state, candidateDraft };
 }
 
+export function createRoadFinishDraft(summary: RoadSummary, finish?: RoadFinish): RoadFinishDraft {
+  return {
+    summaryId: summary.id,
+    finishId: finish?.id || null,
+    runId: summary.runId,
+    time: finish?.timeSeconds.toString() || '',
+    clean: finish?.clean === 'confirmed',
+  };
+}
+
+export function roadFinishDraftFor(state: RoadValidationSessionState, summary: RoadSummary, finish?: RoadFinish): RoadFinishDraft {
+  const finishId = finish?.id || null;
+  return state.finishDraft?.summaryId === summary.id && state.finishDraft.finishId === finishId
+    ? state.finishDraft
+    : createRoadFinishDraft(summary, finish);
+}
+
+export function setRoadFinishDraft(state: RoadValidationSessionState, finishDraft: RoadFinishDraft | null): RoadValidationSessionState {
+  return { ...state, finishDraft };
+}
+
 export function setRoadResultSelection(state: RoadValidationSessionState, resultSelection: RoadResultSelection): RoadValidationSessionState {
   return { ...state, resultSelection };
 }
@@ -214,16 +251,23 @@ export function setRoadRunConfirmation(
 export function reconcileRoadLive(state: RoadValidationSessionState, live: RoadLive | null): RoadValidationSessionState {
   const activeRun = live?.activeRun ?? null;
   const activeRunChanged = state.activeRun?.id !== activeRun?.id;
+  const activeRunStartedForSelectedWorkflow = activeRun !== null && activeRun.workflowId === state.selectedWorkflowId
+    && state.activeRun?.id !== activeRun.id;
+  const activeRunFinishedForSelectedWorkflow = state.activeRun?.workflowId === state.selectedWorkflowId && activeRun === null;
   return {
     ...state,
     activeRun,
     runConfirmation: activeRunChanged ? null : state.runConfirmation,
-    step: activeRun?.workflowId === state.selectedWorkflowId ? 'drive' : state.step,
+    step: activeRunStartedForSelectedWorkflow ? 'drive' : activeRunFinishedForSelectedWorkflow ? 'results' : state.step,
   };
 }
 
 export function startRoadOperation(state: RoadValidationSessionState, id: number, kind: string): RoadValidationSessionState {
   return { ...state, operation: { id, kind, status: 'pending' } };
+}
+
+export function roadOperationResultApplies(lease: RoadOperationLease, selectionRevision: number): boolean {
+  return lease.selectionRevision === selectionRevision;
 }
 
 export function settleRoadOperation(
