@@ -1,6 +1,6 @@
 # 驗收矩陣與證據格式
 
-本表定義後續驗收；目前所有產品執行項均為 `not-run`。計畫完成不代表產品通過，靜態程式盤點見 [baseline](baseline.md)。
+本表定義驗收要求；2026-09-13 規劃交付時所有產品執行項均為 `not-run`。2026-09-14 起的結果見 [執行紀錄](execution.md) 與 [G0 基準](evidence/g0-baseline.md)。計畫完成不代表產品通過，靜態程式盤點見 [baseline](baseline.md)。
 
 ## 1. 驗證層級與命令
 
