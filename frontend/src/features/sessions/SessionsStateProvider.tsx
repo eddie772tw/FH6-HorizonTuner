@@ -71,9 +71,15 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
   const consumedIntentSequenceRef = useRef<number | null>(null);
   stateRef.current = state;
 
-  useEffect(() => () => {
-    primaryGateRef.current.dispose();
-    selectionOperationGateRef.current.dispose();
+  useEffect(() => {
+    const primary = primaryGateRef.current;
+    const operations = selectionOperationGateRef.current;
+    primary.activate();
+    operations.activate();
+    return () => {
+      primary.dispose();
+      operations.dispose();
+    };
   }, []);
 
   const invalidateSelectionRequest = useCallback(() => {
