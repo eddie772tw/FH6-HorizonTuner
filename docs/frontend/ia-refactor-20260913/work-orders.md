@@ -2,6 +2,8 @@
 
 本文件搭配 [執行計畫](README.md) 與 [介面/開工條件](contracts-and-gates.md)。使用者已恢復實作；既有 W1 分支與草稿的現況見 [執行紀錄](execution.md) 及 [實作交接快照](handoffs/implementation-snapshot-20260914.md)。W2–W4 仍為 `proposed`；沒有建立使用者擁有的實作子任務。未來派發時須填入當時已通過 gate 的 SHA，不能用本文的預定分支名稱推論已有授權或成果。
 
+G2 等待期間完成的 [W2-A 拆分設計](handoffs/w2-a-design-preflight-20260914.md) 只提供實際 owner、檔案分界與 A-D slot 提議；沒有移交 write lease 或建立 WAVE2_BASE_SHA。
+
 ## 1. Ownership 表
 
 | Owner | 可寫範圍 | 移交時機 |

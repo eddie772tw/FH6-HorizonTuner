@@ -23,15 +23,17 @@
 
 ## 2026-09-14 恢復後實作現況
 
-前置 P1 與四個 state foundations 已整合；aggregate `373c0b81add4b80786617c1b1358ce22ca78944d` 與 Shell `c5e7fdfb82c4b1f792fd76be4cb796059337bcfc` 均已推送。Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 以 state-base 為基底，保留 draft。
+前置 P1 與四個 state foundations 已整合；aggregate `373c0b81add4b80786617c1b1358ce22ca78944d` 與 Shell `54165303f12c9598872905571f7162cc5f80effa` 均已推送。Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 以 state-base 為基底，保留 draft。
 
 | Gate | 目前結果與下一步 |
 | --- | --- |
 | G0 | code baseline 已有，整體 partial；native baseline 與三次效能比較尚缺。 |
-| G1-core | 已在 Shell `c5e7fdf` 凍結 code contract；詳見 [producer/consumer 凍結紀錄](evidence/g1-shell-freeze-20260914.md)。A-D slot 不包含在此 freeze。 |
-| G2 | partial；118 files／788 tests、Full/Lite build、獨立整合 review 與受控跨頁/量測/保存/archive/Road/race/page-request 清理已有證據。完整 state/identity/race/channel 與 C5/H5 native 尚缺。 |
+| G1-core | 已在 Shell `5416530` 更新並凍結 code contract；詳見 [producer/consumer 凍結紀錄](evidence/g1-shell-freeze-20260914.md)。A-D slot 不包含在此 freeze。 |
+| G2 | partial；119 files／794 tests、Full/Lite build、獨立整合 review 與受控跨頁/量測/保存/archive/Road/race/page-request 清理已有證據。完整 state/identity/race/channel 與 C5/H5 native 尚缺。 |
 | G3/G4 | W2 A/B/C 與 W3 D 尚未開工；G2 未過，不公布 WAVE2_BASE_SHA。 |
 | G5 | not-run；最後真實 FH6/native/performance matrix 與完整組合驗收仍待取得，相關 PR 必須保持 draft。 |
+
+c5e7fdf 的 race completion 在交給 Shell 後仍有第二段等待，已確認新 race 未取消舊操作的 P1。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已推入 #345，guard 保留到 selection/navigation 與 Retry；Terra 獨立 review 與新版純整合回歸通過，mounted A/B competition 尚待驗證。原 `shell` 工作樹固定 c5 供已交付的 native 操作，新版在 `shell-race-fix`，兩者證據分開記錄。
 
 各 PR 的精確 head、依賴、checks 與 owner 只在 [execution.md](execution.md) 更新。Ready to Merge 必須逐 PR 滿足條件，不能由 non-draft 或個別測試綠燈推定；#339 本次更新前 head 是歷史快照，不冒充更新後 head。原始碼、受控 UI、原生視窗及真實遊戲證據保持分開。
 
@@ -53,7 +55,7 @@ Full 頂層為 **Live / Tune / Sessions / HUD**；Lite 為 **Live / HUD**。Sett
 | Phase 2 立即 active-only mount | 先完成 G1 的 state/lifetime 契約，在候選分支接入 active-only mount 並驗證 G2，通過後才交付與放行 W2；Phase 7 做最終清除與量測，不能到最後才發現草稿會丟失。 |
 | Phase 5 才處理 HUD controller | 新增 W1/B0：HUD 權威設定讀取、寫入排序與離頁存活是 G2 前置；完整 metadata/native adapter 與 panel 拆分仍在 W2/B1–B2。避免 G2 等 B、B 又等 G2 的循環。 |
 | Phase 3 只包 `<AnalysisView />` | Analysis mount 會抓 current，可能覆蓋先載入的 latest。先定義 selection 初始化與過期回應處理；wrapper 只是遷移方法。 |
-| Phase 3 比賽完成導頁 | 02:00 歷史快照的現況是 500ms 後抓 `latest.json`，不是後端完成事件。恢復後候選改以 bounded completion/identity 規則處理，且只在 Live active 自動開啟；authoritative race 修正與 terminal measurement force-publish 已完成，Terra 獨立 review PASS，G1-core 已在 c5e7fdf 凍結，完整 G2 仍待驗證。載入成功與識別檢查後才自動導向；不能從 `IsRaceOn` 下降單獨推論檔案已完成。 |
+| Phase 3 比賽完成導頁 | 02:00 歷史快照的現況是 500ms 後抓 `latest.json`，不是後端完成事件。恢復後候選改以 bounded completion/identity 規則處理，且只在 Live active 自動開啟；authoritative race 修正與 terminal measurement force-publish 已完成，Terra 獨立 review PASS，G1-core 已更新為 5416530 凍結，完整 G2 仍待驗證。載入成功與識別檢查後才自動導向；不能從 `IsRaceOn` 下降單獨推論檔案已完成。 |
 | Phase 4 Road compatibility panel | `RoadWorkflowView recommendation={null}` 仍含 prepare/drive 與寫入動作。Sessions 預設提供歷史 review；prepare/start/record 保留 Tune 的驗證流程，不能直接把完整編輯器當唯讀結果面板。 |
 | Lane D 修改 Sessions | 原 ownership 只給 tuning/road，卻要求修改 sessions。改由 D export review component，A 完成並交接後，Coordinator 統一接線到 Sessions。 |
 | §7 共享檔案 | 補列 `context/**`、`hooks/useTelemetry.ts`、`hooks/useOverlayWebSocket.ts`、locale、共用元件、entry HTML、build/test config 與 lockfile；lane 不得自行寫入。 |
@@ -188,7 +190,7 @@ Feature PR 只寫 allowed paths。要接 shared shell、locale 或跨 lane UI �
 ## 8. 里程碑與 Definition of Done
 
 - **G0**：G0-code 的 SHA、dirty ownership、inventory、baseline test/build 是 P1/W1 開工前置；G0-observability 的 Full/Lite native 與三次效能基準是 X3/G5 比較前置。後者未完成不阻擋純契約/狀態前置，但 G0 整體仍為 partial，不作效能或 G5 通過證據。
-- **G1**：G1-core 實際介面與狀態存活表 freeze；pure contract tests 通過；無 any navigation bus。C4 此時只確認資料語意；Road review slot 在 Shell + A foundation 接線後、D 開工前獨立 freeze，不阻擋 P2。目前 code contract 已在 `c5e7fdfb82c4b1f792fd76be4cb796059337bcfc` 凍結，詳見 producer/consumer 紀錄。
+- **G1**：G1-core 實際介面與狀態存活表 freeze；pure contract tests 通過；無 any navigation bus。C4 此時只確認資料語意；Road review slot 在 Shell + A foundation 接線後、D 開工前獨立 freeze，不阻擋 P2。目前 code contract 已在 `54165303f12c9598872905571f7162cc5f80effa` 凍結，詳見 producer/consumer 紀錄。
 - **G2**：共用 Shell 可用、provider 沒重建、草稿/capture/recorder/HUD bridge 跨頁正確；有效 Live/Sessions adapters；允許 W2。目前只有局部受控 UI/整合 evidence，維持 `partial`，尚未允許 W2。
 - **G3**：A/B/C 個別實作、Coordinator 接線與 lane gates 完成；A→D 的 review slot/return-to-Tune 介面已 freeze 並記錄 SHA。D 的開工只依 A 接點與 Shell 的實際整合，不必空等無關 B/C 面板。
 - **G4**：Road review 可由 Sessions 開啟，Tune 不再切成 history viewer；Road 原生與其他目的 compatibility 邊界保留。

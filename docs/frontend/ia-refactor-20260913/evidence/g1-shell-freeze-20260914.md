@@ -3,8 +3,14 @@
 日期：2026-09-14。Coordinator：IA Coordinator as Codex。狀態：**code contract frozen**；G2 仍為 partial。
 
 - `BASE_SHA`：`373c0b81add4b80786617c1b1358ce22ca78944d`（state-base，已推送）。
-- `CONTRACT_SHA`／Shell source candidate：`c5e7fdfb82c4b1f792fd76be4cb796059337bcfc`（已推送，工作樹乾淨）。
+- `CONTRACT_SHA`／Shell source candidate：`54165303f12c9598872905571f7162cc5f80effa`（已推送，工作樹乾淨）。
 - [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 為 draft，基底 `codex/frontend-ia-state-base-20260914`；凍結公開介面不等於此 PR 已可合併或 G2 通過。
+
+## 04:00 交接契約修訂
+
+c5e7fdf 是上一版 freeze，之後發現 race A 已交給 Shell、第二段 preflight 尚在途時，B 未使 A 失效。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已重現並修正；新版 `WorkspaceRuntimeProps.onOpenSessions` / `SessionsRuntimeProps.onOpenSessions` 增加可選 `isRequestCurrent?: () => boolean`，`RaceCompletionLifecycle.onCompleted` 提供綁定 race/token/generation 的 guard。Runtime 的 Live/pending、Shell prepare/selection/navigation/Retry 全部傳遞與核對；一般 WorkspaceProps 與 SessionIntent 格式不變。
+
+新版完整 119 files／794 tests、Full/Lite build、staged whitespace 與三份修改 docs 的 8 個 relative links 通過。Terra 獨立 review 無 P1/P2；另一 Terra 回歸涵蓋 list/samples/refresh 交接競爭及 dispose，root 補相異/相同 identity retry。此驗證完成後才登記新 CONTRACT_SHA，不使用舊 review 代替新版 review。原 shell 工作樹仍固定 c5 給 pending native 程序。
 
 ## Producer / consumer 核對
 
@@ -20,7 +26,7 @@
 
 ## 驗證及 owner transfer
 
-最終產品修改後 118 files／788 tests、Full/Lite build、staged whitespace check 通過。Luna 先行 consumer review、Terra race/measurement/Road snapshot reviews 與最後 bounded integration review 均無阻塞 finding。最後 review 後只提交原有已審查產品內容及文件，未再改產品。
+上一版 c5 產品修改後 118 files／788 tests、Full/Lite build、staged whitespace check 通過。Luna 先行 consumer review、Terra race/measurement/Road snapshot reviews 與最後 bounded integration review 均無阻塞 finding。這是 c5 歷史驗證；新增 race handoff 產品修改與新版證據以上方 04:00 修訂為準。
 
 此表的 `pass` 指 producer/consumer/code contract 核對，不能用來填掉 acceptance matrix 的 native、完整 mounted race/identity/channel 或 G5 證據。來源與實際操作見固定候選的 [Shell 交接](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md) 與 [browser evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/evidence/g2-shell-browser-20260914.md)。
 
