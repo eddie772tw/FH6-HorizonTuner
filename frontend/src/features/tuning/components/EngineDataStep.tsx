@@ -29,7 +29,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     {measured ? <div className="glass-panel p-3"><p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
       <TireEvidencePanel evidence={tireEvidence} />
       <button className="btn btn-outline-secondary" onClick={engine.invalidate}>{t('Collect driving data again')}</button></div>
-      : <TuningMeasurementStep carId={carId} enabled={enabled} onComplete={engine.complete} />}
+      : <TuningMeasurementStep carId={carId} enabled={enabled} />}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}
     {gearing && measured && <div className="glass-panel p-3"><GearingTuner showCorrections={false} numGears={gearing.gears.length}
       tuning={{ gearing: { ...gearing, maxRpm: measured.engineMaxRpm } }}
