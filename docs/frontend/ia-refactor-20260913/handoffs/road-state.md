@@ -2,9 +2,9 @@
 
 Task: W1 Road validation session-draft prerequisite
 Status: handoff
-Owner: Road state lane
-Worktree / Branch: `D:/FH6-frontend-ia-20260913/road-state` / `codex/frontend-ia-road-state-20260914`
-Base SHA: `5891d21bca35161836d84c51d1b6e9c279ec4709`
+Owner: Coordinator（原 Road lane 已交接）
+Worktree / Branch: `D:/FH6-frontend-ia-20260913/road-reviewed` / `codex/frontend-ia-road-review-20260914`
+Base SHA: `fc7960829ebecbf5039d03a39a3fcdcae9d8b6c9`
 Write ownership: `frontend/src/features/road/**` and this handoff only
 
 ## Changed
@@ -63,3 +63,17 @@ Native Full/Lite navigation, a live `/api/road` backend, and FH6 game evidence a
 Next action: Coordinator wires `RoadValidationProvider` at the Full app boundary, then verifies Tune → another workspace → Tune with an unsubmitted Prepare form, a Candidate form draft, and an active backend run.
 
 Last updated: 2026-09-14
+
+## Coordinator 複查與 P1 基底整合
+
+原 Road 分支保留。將 `f3cbdb7`、`2c6cc0c` 依序移入上述 P1 parent；range-diff 顯示兩提交內容一致，得到 `6c22a38`、`854c455`。以下是其後的必要修正：
+
+- 切頁不再吞掉已確認的 create/save 結果：後續動作只更新長駐 controller，並以使用者選擇/編輯 revision 避免晚結果覆蓋新操作。
+- setup A→B→A、已觀察到的輸入/車輛 identity 變動後再回原值，不會復用舊 confirmed/unchanged。
+- 目前頁會顯示跨頁 pending/failed 結果；失败不回到看似已保存的預設提示。
+- poll 與 mutation 後 live read 共用 `createRoadLiveReader` 排序，舊成功/失敗不回退新 active run；卸載與 StrictMode 新 lifetime 都阻止舊回應。
+- mutation 後的 page refresh/error 在 await 後重新核對 mount、mutation 與 selection；backend 寫入仍可獨立完成。
+
+此候選驗證：111 files / 738 tests、Full/Lite build、diff check 全部通過；新增兩項 identity 往返情境與三項實際 async reader 情境。真正 provider mount、active run 跨頁、native/game 證據仍未執行，不以 pure tests 代替。
+
+Locale requests（由 root shared owner 處理）：`Saving changes…`、`The last change could not be saved. Review the current values and retry.`。
