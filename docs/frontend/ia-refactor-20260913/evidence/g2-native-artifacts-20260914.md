@@ -45,6 +45,8 @@ uv run --offline --no-project --python D:/FH6-HorizonTuner/.venv/Scripts/python.
 4. 截圖未呈現應用程式內容；`activate_window` 回報 `failed to activate captured window`。依 skill recovery 重新取得單一 target 並重試一次，仍為相同錯誤；沒有繼續使用舊 screenshot/index 點擊。
 5. 已請使用者將上述 Full 視窗帶到前景並回覆；目前保留 Full 與其 sidecar，等待外部視窗狀態改變。下一位接手先重新列出當前 windows/process/ports，不依本文件 PID 假設程序仍存在。不要另啟第二個同資料目錄的 Full，也不要終止使用者其他程序。
 
+後續另以 fresh list/get_window/get_window_state 取得 native accessibility 的 HUD 按鈕，使用工具支援的 `sky.click(element_index)` 嘗試一次，也回報相同 activation error；read-only 重看仍為 Live 的「駕駛輸入與引擎」，HUD 未開啟。合計兩次 `activate_window`、一次受支援的 AX click；沒有採用座標、外部 UI Automation 或替代 helper。現在停止所有 native input，直到使用者回覆或可驗證的視窗狀態改變，不再重試相同阻擋。
+
 這裡的成功僅是 launch、backend port 與 native accessibility 可讀；不能推論使用者看得到正確首幀、HUD 已啟動或離頁仍存在。若後續仍不能操作，保留精確錯誤與未完成子項，不更換 G2 定義。
 
 ## 下一步與缺项
