@@ -20,14 +20,16 @@ import {
   captureIdentityMatches,
   defaultTuneCaptureMetadata,
   nextTuneAsyncToken,
+  selectedEngineObservationMatchesLiveTelemetry,
+  shouldInvalidateMeasurementAttempt,
   type CaptureFrameIdentity,
+  type EngineMeasurementPhase,
   type TuneAsyncToken,
   type TuneSessionIdentity,
 } from './tuneSessionController';
 
 const MAX_CAPTURE_SAMPLES = 30000;
 
-type EngineMeasurementPhase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
 type TuneCaptureStatus = 'idle' | 'capturing' | 'complete' | 'invalidated';
 
 interface EngineMeasurementRuntime {
@@ -280,6 +282,15 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     publishMeasurement(true);
   }, [publishMeasurement]);
 
+  const resetUnstartedMeasurement = useCallback(() => {
+    measurementStateRef.current = createTuningMeasurement(carIdRef.current);
+    measurementSamplesRef.current = [];
+    measurementReadySnapshotRef.current = undefined;
+    measurementAutoFinishRef.current = true;
+    measurementPhaseRef.current = 'idle';
+    publishMeasurement(true);
+  }, [publishMeasurement]);
+
   const invalidateRawCapture = useCallback(() => {
     if (captureStatusRef.current === 'capturing') {
       stopCapture('identity-changed');
@@ -308,18 +319,17 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
     identityTokenRef.current = nextToken;
     setIdentityGeneration(nextToken.generation);
     engineRef.current.invalidate();
-    invalidateMeasurement();
+    if (shouldInvalidateMeasurementAttempt(measurementPhaseRef.current)) invalidateMeasurement();
+    else resetUnstartedMeasurement();
     invalidateRawCapture();
-  }, [identity, invalidateMeasurement, invalidateRawCapture]);
+  }, [identity, invalidateMeasurement, invalidateRawCapture, resetUnstartedMeasurement]);
 
   useEffect(() => {
-    const selectedIdentity = engine.observation?.data.identity;
-    if (!selectedIdentity || identity.performanceIndex === null || identity.carClass === null) return;
-    if (selectedIdentity.performanceIndex === identity.performanceIndex && selectedIdentity.carClass === identity.carClass) return;
+    if (selectedEngineObservationMatchesLiveTelemetry(carId, engine.observation?.data, data)) return;
     engineRef.current.invalidate();
     invalidateMeasurement();
     invalidateRawCapture();
-  }, [engine.observation?.id, identity.carClass, identity.performanceIndex, invalidateMeasurement, invalidateRawCapture]);
+  }, [carId, data, engine.observation?.id, engine.observation?.data, invalidateMeasurement, invalidateRawCapture]);
 
   useEffect(() => subscribeToDecodedTelemetry(frame => {
     if (captureStatusRef.current === 'capturing') {
@@ -375,6 +385,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const restartMeasurement = useCallback((enabled: boolean) => {
     if (!enabled) return;
+    engineRef.current.invalidate();
     measurementStateRef.current = createTuningMeasurement(carIdRef.current);
     measurementSamplesRef.current = [];
     measurementReadySnapshotRef.current = undefined;

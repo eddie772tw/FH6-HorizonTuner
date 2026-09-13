@@ -1,5 +1,6 @@
 import type { TuningCaptureMetadata } from '../../domain/tuning/telemetryCapture';
 import type { TelemetryData } from '../../hooks/useTelemetry';
+import type { TuningMeasurementState } from './tuningMeasurement';
 
 /**
  * Identity fields that make a Tune measurement unsafe to reuse. `profileKey`
@@ -22,6 +23,14 @@ export interface CaptureFrameIdentity {
   carId: string;
   performanceIndex: number | null;
   carClass: number | null;
+}
+
+export type EngineMeasurementPhase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
+
+export interface EngineObservationSaveToken {
+  archiveGeneration: number;
+  identityGeneration: number;
+  dependencyKey: string;
 }
 
 export const sameTuneSessionIdentity = (left: TuneSessionIdentity, right: TuneSessionIdentity): boolean =>
@@ -51,6 +60,32 @@ export const captureIdentityMatches = (expected: CaptureFrameIdentity, frame: Te
     && (expected.performanceIndex === null || actual.performanceIndex === expected.performanceIndex)
     && (expected.carClass === null || actual.carClass === expected.carClass);
 };
+
+/** An untouched measurement has no frames or state to invalidate during profile hydration. */
+export const shouldInvalidateMeasurementAttempt = (phase: EngineMeasurementPhase): boolean => phase !== 'idle';
+
+/**
+ * Keep the original selected-observation gate: a live build is reusable only
+ * while its car, PI, class, and reported engine limit still agree.
+ */
+export const selectedEngineObservationMatchesLiveTelemetry = (
+  carId: string,
+  measurement: TuningMeasurementState | null | undefined,
+  data: TelemetryData | null,
+): boolean => !data || data.IsRaceOn !== 1 || !measurement || (
+  String(data.CarOrdinal) === carId
+  && data.CarPerformanceIndex === measurement.identity?.performanceIndex
+  && data.CarClass === measurement.identity?.carClass
+  && data.EngineMaxRpm === measurement.engineMaxRpm
+);
+
+/** A durable save may finish after a retry or identity change, but must not retake UI selection. */
+export const isCurrentEngineObservationSaveToken = (
+  request: EngineObservationSaveToken,
+  current: EngineObservationSaveToken,
+): boolean => request.archiveGeneration === current.archiveGeneration
+  && request.identityGeneration === current.identityGeneration
+  && request.dependencyKey === current.dependencyKey;
 
 export const defaultTuneCaptureMetadata = (carId: string): TuningCaptureMetadata => ({
   label: `tuning-capture-${new Date().toISOString().replace(/[:.]/g, '-')}`,

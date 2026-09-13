@@ -63,7 +63,7 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
     <section className="glass-panel p-4" style={{ color: 'var(--text-primary)' }}>
       <h3 className="fs-5">{t('Prepare engine data for gearing')}</h3>
       <p>{t('Drive one or more smooth full-throttle runs on a clear straight, starting low in the rev range and holding the gear toward the engine limit. The app reads the numbers for you; no target speed or RPM entry is needed.')}</p>
-      <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Export collected frames before restarting or leaving this step.')}</p>
+      <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.')}</p>
       <div role="status" aria-live="polite" className="mb-3" style={{ minHeight: '3rem' }}>
         {!enabled ? t('Enter valid weight, front weight percentage and power in Step 1 first.') :
           measurement.phase === 'paused' ? t('Collection paused. Resume when you are ready to drive.') :
