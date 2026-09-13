@@ -48,6 +48,8 @@
 
 ## 證據限制與下一步
 
+後續純整合稽核在 c5e7fdf 發現 `onCompleted` 後第二段 preflight 的 race A/B 競爭，已修正並新增獨立回歸與審查；見 [交接取消修正](g2-race-handoff-fix-20260914.md)。本頁單一賽事的受控觀察不涵蓋該競爭場景，不能沿用為新版 mounted A/B pass。
+
 G2 保持 partial。尚需完整 state/identity、race 競爭矩陣及 channel/listener 往返觀察，以及 **C5/H5 真實 Windows Tauri**。本環境沒有可用 native CUA surface，瀏覽器控制不可替代原生視窗操作或觀察。見 [native 交接](../handoffs/g2-native-20260914.md)，未完成前不開 W2。
 
 此階段最新完整 frontend 為 **118 files／788 tests**，03:33 的 Full/Lite build 通過（包含 Road snapshot 修正）。`cargo build --manifest-path frontend/src-tauri/Cargo.toml --locked` 通過，僅證明 Debug Rust 編譯，不是 native 行為驗收。提交候選與驗證對照見 [Shell 交接](../handoffs/shell-20260914.md)；獨立 review、純測試、受控 UI、native、真實遊戲、三次效能量測保持分開記錄。

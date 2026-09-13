@@ -20,7 +20,12 @@ export interface WorkspaceProps {
 export type WorkspaceRegistry = Readonly<Partial<Record<WorkspaceId, ComponentType<WorkspaceProps>>>>;
 export interface WorkspaceRuntimeProps {
   activeWorkspace: WorkspaceId;
-  onOpenSessions: (intent?: SessionIntent) => void;
+  onOpenSessions: (intent?: SessionIntent, isRequestCurrent?: () => boolean) => void;
+}
+
+interface SessionOpenRequest {
+  intent: SessionIntent;
+  isRequestCurrent: () => boolean;
 }
 
 /** Transport and car synchronization outlive the active page and its canvases. */
@@ -41,31 +46,32 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
   const { t } = useSettings();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>('live');
   const [surface, setSurface] = useState<AppSurface | null>(null);
-  const [failedSessionIntent, setFailedSessionIntent] = useState<SessionIntent | null>(null);
+  const [failedSessionRequest, setFailedSessionRequest] = useState<SessionOpenRequest | null>(null);
   const navigationGeneration = useRef(0);
   useEffect(() => () => { navigationGeneration.current += 1; }, []);
   const selectWorkspace = useCallback((requested: WorkspaceId) => {
     navigationGeneration.current += 1;
-    setFailedSessionIntent(null);
+    setFailedSessionRequest(null);
     setActiveWorkspace(resolveWorkspace(variant, requested));
   }, [variant]);
-  const openSessions = useCallback((intent?: SessionIntent) => {
+  const openSessions = useCallback((intent?: SessionIntent, isRequestCurrent: () => boolean = () => true) => {
     if (!permitsIntent(variant, { kind: 'workspace', workspace: 'sessions' })) return;
     const generation = ++navigationGeneration.current;
-    setFailedSessionIntent(null);
+    setFailedSessionRequest(null);
+    if (!isRequestCurrent()) return;
     if (!intent) { setActiveWorkspace('sessions'); return; }
-    const isCurrent = () => generation === navigationGeneration.current;
+    const isCurrent = () => generation === navigationGeneration.current && isRequestCurrent();
     void (async () => {
       let ready = false;
       try { ready = await prepareSession?.(intent, isCurrent) ?? false; } catch { /* The original workspace remains usable. */ }
       if (!isCurrent()) return;
       if (ready) setActiveWorkspace('sessions');
-      else setFailedSessionIntent(intent);
+      else setFailedSessionRequest({ intent, isRequestCurrent });
     })();
   }, [variant, prepareSession]);
   const openSurface = useCallback((requested: AppSurface) => {
     navigationGeneration.current += 1;
-    setFailedSessionIntent(null);
+    setFailedSessionRequest(null);
     setSurface(requested);
   }, []);
   const closeSurface = useCallback(() => setSurface(null), []);
@@ -79,12 +85,12 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
         {Workspace && <Workspace variant={variant} onOpenSessions={openSessions} onOpenTune={() => selectWorkspace('tune')} />}
       </Suspense>
     </main>
-    {failedSessionIntent && <div role="alert" className="position-fixed bottom-0 end-0 m-3 p-3 glass-panel shadow"
+    {failedSessionRequest && failedSessionRequest.isRequestCurrent() && <div role="alert" className="position-fixed bottom-0 end-0 m-3 p-3 glass-panel shadow"
       style={{ zIndex: 1050, maxWidth: '22rem' }}>
       <p>{t('Unable to open the requested session. Check the connection and try again.')}</p>
       <div className="d-flex gap-2">
-        <button type="button" className="btn btn-sm btn-primary" onClick={() => openSessions(failedSessionIntent)}>{t('Retry')}</button>
-        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionIntent(null)}>{t('Close')}</button>
+        <button type="button" className="btn btn-sm btn-primary" onClick={() => openSessions(failedSessionRequest.intent, failedSessionRequest.isRequestCurrent)}>{t('Retry')}</button>
+        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionRequest(null)}>{t('Close')}</button>
       </div>
     </div>}
     {surface === 'settings' && <AppDialog title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} /></AppDialog>}

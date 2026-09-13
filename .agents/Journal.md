@@ -2575,3 +2575,10 @@
 - **Immutable evidence**：archive UI 物件附掛的 capture 不能直接作為 canonical saved observation 傳回 Road。既有 backend exact equality 會拒絕多出欄位。純 snapshot mapping 去除該 UI 欄位後，隔離 baseline/start/stop 可完成，backend guard 保持。
 - **Race lifecycle**：backend 不接受 `IsRaceOn=0` 影格，不可僅依 frontend telemetry falling edge 開分析。既有 recorder status 的 identity/completion 可用；unknown response 不代表結束。Live 自動開新紀錄，HUD 保留明確入口的行為已受控驗證。
 - **Validation boundary**：118 files／788 tests、Full/Lite build、合成 UDP + 真實本機 backend/browser 都不等同原生 HUD、真實遊戲或三次效能比較。原生 CUA 不可用，C5/H5 維持 not-run；詳見 [Shell 交接](../docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
+
+## 2026-09-14 / 賽事完成後非同步 consumer 的 ownership
+
+- **Scope**：P2 race completion 交接修正，沿用 `cross-agent-collaboration`、`modular-refactoring`、`pr-author-maintainer`。Coordinator 寫產品接線，Terra 分別獨立重現／review 與撰寫純整合回歸。
+- **Verified learning**：lifecycle 檢查成功並呼叫 `onCompleted` 不等於 consumer 已提交資料。Shell 的第二段 list/samples/refresh 等待期间若開始新 race，舊 race 仍可能改 selection/navigation。將 race/token/generation guard 一路交給 consumer 並保留至 Retry，可使新 race、dispose 或新 completion generation 取消舊交接。
+- **Evidence**：119 files／794 tests 與 Full/Lite build 通過；真實純模組組合在三個第二段等待邊界檢查 A 不提交、B 可提交。Terra 獨立 review 無 P1/P2。
+- **Boundary**：本次未啟服務或觀察 native；mounted A/B competition、G2 原生與 G5 真實證據仍待補，詳見 [交接取消修正](../docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md)。

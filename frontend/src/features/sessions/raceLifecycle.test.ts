@@ -25,7 +25,7 @@ describe("race completion lifecycle", () => {
     resolveStart?.({ isRecording: true, currentSessionId: "race-new" });
     await flushAsyncWork();
 
-    expect(onCompleted).toHaveBeenCalledWith(completed);
+    expect(onCompleted).toHaveBeenCalledWith(completed, expect.any(Function));
   });
 
   it("does not validate a prior session ID without current-race status confirmation", async () => {
@@ -61,7 +61,7 @@ describe("race completion lifecycle", () => {
     await flushAsyncWork();
 
     expect(onStarted).toHaveBeenCalledWith("race-new");
-    expect(onCompleted).toHaveBeenCalledWith(completed);
+    expect(onCompleted).toHaveBeenCalledWith(completed, expect.any(Function));
   });
 
   it("cancels an older completion when a newer recorder identity starts", async () => {
@@ -81,5 +81,47 @@ describe("race completion lifecycle", () => {
     await flushAsyncWork();
 
     expect(onCompleted).not.toHaveBeenCalled();
+  });
+
+  it("ignores a stale retry for another race without invalidating the current completion", async () => {
+    const onCompleted = vi.fn();
+    const lifecycle = new RaceCompletionLifecycle({
+      readStatus: vi.fn().mockResolvedValue({ isRecording: false, currentSessionId: null }),
+      readSessions: vi.fn().mockResolvedValue([completed]),
+      readSessionData: vi.fn().mockResolvedValue([{ time: 0 }]),
+    }, { onPending: vi.fn(), onCompleted });
+
+    lifecycle.observeStatus({ isRecording: true, currentSessionId: completed.session_id });
+    lifecycle.observeStatus({ isRecording: false, currentSessionId: null });
+    await flushAsyncWork();
+    const isCurrent = onCompleted.mock.calls[0][1] as () => boolean;
+
+    lifecycle.retry("race-prior");
+    await flushAsyncWork();
+
+    expect(isCurrent()).toBe(true);
+    expect(onCompleted).toHaveBeenCalledTimes(1);
+    lifecycle.dispose();
+  });
+
+  it("replaces completion ownership when the same race is explicitly retried", async () => {
+    const onCompleted = vi.fn();
+    const lifecycle = new RaceCompletionLifecycle({
+      readStatus: vi.fn().mockResolvedValue({ isRecording: false, currentSessionId: null }),
+      readSessions: vi.fn().mockResolvedValue([completed]),
+      readSessionData: vi.fn().mockResolvedValue([{ time: 0 }]),
+    }, { onPending: vi.fn(), onCompleted });
+
+    lifecycle.observeStatus({ isRecording: true, currentSessionId: completed.session_id });
+    lifecycle.observeStatus({ isRecording: false, currentSessionId: null });
+    await flushAsyncWork();
+    const firstIsCurrent = onCompleted.mock.calls[0][1] as () => boolean;
+    lifecycle.retry(completed.session_id);
+    await flushAsyncWork();
+
+    expect(firstIsCurrent()).toBe(false);
+    expect(onCompleted).toHaveBeenCalledTimes(2);
+    expect((onCompleted.mock.calls[1][1] as () => boolean)()).toBe(true);
+    lifecycle.dispose();
   });
 });
