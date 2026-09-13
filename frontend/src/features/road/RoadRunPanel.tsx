@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import type { RoadLive, RoadSetup, RoadWorkflow } from './roadTypes';
 import { useRoadValidation } from './RoadValidationController';
@@ -9,13 +10,18 @@ export function RoadRunPanel({ readOnly, workflow, setups, selectedSetupId, sele
   const selected = setups.find(s => s.id === selectedSetupId);
   const active = live?.activeRun;
   const snapshotKey = JSON.stringify(currentInputSnapshot);
-  const confirmationIdentity = {
+  const confirmationIdentity = useMemo(() => ({
     workflowId: workflow.id,
     setupId: selectedSetupId,
     activeRunId: active?.id || null,
     inputSnapshot: currentInputSnapshot,
     liveIdentity: live?.identity || null,
-  };
+  }), [workflow.id, selectedSetupId, active?.id, currentInputSnapshot, live?.identity]);
+  const observeConfirmation = validation.observeRunConfirmation;
+  useEffect(() => {
+    // A page's initial loading state is not evidence that the car has changed.
+    if (live?.identity) observeConfirmation(confirmationIdentity);
+  }, [confirmationIdentity, live?.identity, observeConfirmation]);
   const confirmation = validation.runConfirmationFor(confirmationIdentity);
   const inputsMatch = !workflow.recommendation || JSON.stringify(workflow.recommendation.inputSnapshot) === snapshotKey;
   const match = inputsMatch && live?.fresh && live.identity?.ordinal === workflow.identity.ordinal && live.identity?.performanceIndex === workflow.identity.performanceIndex && live.identity?.drivetrain === workflow.identity.drivetrain;

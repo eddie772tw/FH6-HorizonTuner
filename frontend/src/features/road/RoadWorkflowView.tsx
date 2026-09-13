@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { useRoadWorkflow } from './useRoadWorkflow';
 import { documentsOf, type RoadWorkflow } from './roadTypes';
@@ -30,15 +30,9 @@ function RoadWorkflowContent({ recommendation, carId }: Props) {
   const setups = documentsOf(state.documents, 'setup');
   const selectedSetupId = setups.find(setup => setup.id === validation.setupId)?.id || setups[0]?.id || '';
   const prefix = '/workflows/' + encodeURIComponent(validation.selectedWorkflowId);
-  const pageActive = useRef(true);
   const operationStatus = validation.operation?.status;
   const operationId = validation.operation?.id;
   const busy = state.busy || operationStatus === 'pending';
-
-  useEffect(() => {
-    pageActive.current = true;
-    return () => { pageActive.current = false; };
-  }, []);
 
   useEffect(() => {
     if (operationStatus === 'succeeded') void state.refresh().catch(() => {});
@@ -49,7 +43,9 @@ function RoadWorkflowContent({ recommendation, carId }: Props) {
     if (operationId === null) return null;
     const result = await state.perform<T>(path, body);
     const operationApplies = validation.finishOperation(operationId, result !== null);
-    return pageActive.current && operationApplies ? result : null;
+    // All mutation callbacks update the session controller. A page unmount must
+    // not discard a confirmed create/save; newer selections or edits still win.
+    return operationApplies ? result : null;
   };
 
   return <div className="d-flex flex-column gap-3 overflow-auto p-2" style={{ minHeight: 0 }}>
@@ -62,7 +58,7 @@ function RoadWorkflowContent({ recommendation, carId }: Props) {
       <nav className="d-flex flex-wrap gap-2 mt-3" aria-label={t('Road workflow steps')}>
         {(['prepare', 'drive', 'results'] as const).map((key, index) => <button className={'btn btn-sm ' + (validation.step === key ? 'btn-primary' : 'btn-outline-secondary')} key={key} onClick={() => validation.setStep(key)} disabled={key !== 'prepare' && !work}>{index + 1}. {t(['Confirm car and event', 'Drive', 'Result and next step'][index])}</button>)}
       </nav>
-      <div className="small mt-2" role="status" style={{ minHeight: '1.5em' }}>{t(verificationState(state.documents.map(document => document.kind)))} · {state.error ? t(state.error) : state.live?.error ? t(state.live.error) : validation.choiceSaved ? t('Choice saved. Game values must be confirmed again before another run.') : t('Saved observations and drafts are available after disconnecting.')}</div>
+      <div className="small mt-2" role="status" style={{ minHeight: '1.5em' }}>{t(verificationState(state.documents.map(document => document.kind)))} · {state.error ? t(state.error) : operationStatus === 'pending' ? t('Saving changes…') : operationStatus === 'failed' ? t('The last change could not be saved. Review the current values and retry.') : state.live?.error ? t(state.live.error) : validation.choiceSaved ? t('Choice saved. Game values must be confirmed again before another run.') : t('Saved observations and drafts are available after disconnecting.')}</div>
     </header>
     {!recommendation && <p>{t('Saved reports are available for review. Complete the current engine measurement to prepare a new validation run.')}</p>}
     {validation.step === 'prepare' && <RoadPrepare live={state.live} busy={!recommendation || busy || state.live?.identity?.ordinal !== Number(carId)}
