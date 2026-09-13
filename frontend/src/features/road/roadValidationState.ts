@@ -201,8 +201,9 @@ export function createRoadFinishDraft(summary: RoadSummary, finish?: RoadFinish)
 }
 
 export function roadFinishDraftFor(state: RoadValidationSessionState, summary: RoadSummary, finish?: RoadFinish): RoadFinishDraft {
-  const finishId = finish?.id || null;
-  return state.finishDraft?.summaryId === summary.id && state.finishDraft.finishId === finishId
+  // A saved finish may arrive after the user has already edited the form again.
+  // Keep their local inputs for this run; a new server document is not a reset.
+  return state.finishDraft?.summaryId === summary.id && state.finishDraft.runId === summary.runId
     ? state.finishDraft
     : createRoadFinishDraft(summary, finish);
 }
