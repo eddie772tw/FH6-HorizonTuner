@@ -6,6 +6,10 @@ import './App.css';
 import LiteApp from './LiteApp';
 import { configureBackendTransport, waitForBackendReady } from './services/backend';
 
+import { applyThemeEarly } from './app/applyThemeEarly';
+
+applyThemeEarly();
+
 async function initLiteApp() {
   try {
     const backend = await waitForBackendReady();

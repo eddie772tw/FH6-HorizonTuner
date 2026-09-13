@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { formatUpdaterError, UpdateInfo, downloadAndApplyUpdate, restartApplication } from '../../services/updaterService';
 import { useSettings } from '../../context/SettingsContext';
 import { ModalPortal } from './ModalPortal';
+import { useModalFocus } from '../../hooks/useModalFocus';
 
 interface UpdateModalProps {
   updateInfo: UpdateInfo | null;
@@ -15,6 +16,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
   const [progress, setProgress] = useState<number>(0);
   const [downloadStats, setDownloadStats] = useState<{ downloaded: number; total: number }>({ downloaded: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const panelRef = useModalFocus<HTMLDivElement>(isOpen && Boolean(updateInfo), () => {
+    if (status !== 'downloading') onClose();
+  });
 
   if (!isOpen || !updateInfo) return null;
 
@@ -60,7 +64,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
   return (
     <ModalPortal>
       <div 
-        className="modal show d-block" 
+        className="modal show d-block"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('Software Update Available')}
         tabIndex={-1} 
         style={{ 
           position: 'fixed',

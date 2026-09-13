@@ -2566,3 +2566,26 @@
 - **Verified learning**：現行 UI 是四階段，六階段文件屬演進背景。工作流引擎掃描的 slip 只作上下文，不能據完整性 gate 宣稱識別輪胎摩擦係數；capture 的 TireTemp 原始契約是 °F，SteerInput 是 -127..127 counts，欄位缺失須同時檢查 `missingChannels`，不能把 mapper fallback 0 當量測。
 - **Formula review**：FWD 不能無條件繼承 RWD 的負載轉移／驅動胎策略；Dirt 接地柔順與 Cross Country 落地支撐是不同取捨。FH5 方法可在控制語意或 FH6 證據支持下部分沿用，具體常數仍需標示工程先驗。真車公式的量綱与遊戲滑桿比例分開記錄。
 - **Validation boundary**：本輪單元／build 與來源比對不等同 FH6 實車、跨車校準或排行榜驗收。完整候選 profile 切換可能改多個欄位，不能稱為單一 slider 因果實驗。每個 PR 的精確檔案、測試及限制以其頂層內文與研究文件為準。
+
+## 2026-09-14 / IA 跨頁狀態的整合缺口
+
+- **Scope**：P2 共用 Shell 整合，採用 `cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`；原生交接參照 `portable-release-validation`。各 foundation 獨立 worktree，shared Shell 由 Coordinator 單一持有。
+- **Verified learning**：最新分析必須先確認 exact saved header 與非空 samples，再提交 selection/data/navigation；先切頁的失敗路徑會留下舊檔。受控 backend 停止／恢復已驗證留頁、Retry 與正確載入。
+- **Terminal state**：18 秒合成量測在切頁後完成，最後一次 200ms UI 節流可能略過 complete；未強制 publish 會顯示尚缺高 RPM 且 Next disabled。只對 terminal/blocked/invalidated 強制發布後，以同資料重驗可繼續並跨頁保存。
+- **Immutable evidence**：archive UI 物件附掛的 capture 不能直接作為 canonical saved observation 傳回 Road。既有 backend exact equality 會拒絕多出欄位。純 snapshot mapping 去除該 UI 欄位後，隔離 baseline/start/stop 可完成，backend guard 保持。
+- **Race lifecycle**：backend 不接受 `IsRaceOn=0` 影格，不可僅依 frontend telemetry falling edge 開分析。既有 recorder status 的 identity/completion 可用；unknown response 不代表結束。Live 自動開新紀錄，HUD 保留明確入口的行為已受控驗證。
+- **Validation boundary**：118 files／788 tests、Full/Lite build、合成 UDP + 真實本機 backend/browser 都不等同原生 HUD、真實遊戲或三次效能比較。原生 CUA 不可用，C5/H5 維持 not-run；詳見 [Shell 交接](../docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
+
+## 2026-09-14 / 賽事完成後非同步 consumer 的 ownership
+
+- **Scope**：P2 race completion 交接修正，沿用 `cross-agent-collaboration`、`modular-refactoring`、`pr-author-maintainer`。Coordinator 寫產品接線，Terra 分別獨立重現／review 與撰寫純整合回歸。
+- **Verified learning**：lifecycle 檢查成功並呼叫 `onCompleted` 不等於 consumer 已提交資料。Shell 的第二段 list/samples/refresh 等待期间若開始新 race，舊 race 仍可能改 selection/navigation。將 race/token/generation guard 一路交給 consumer 並保留至 Retry，可使新 race、dispose 或新 completion generation 取消舊交接。
+- **Evidence**：119 files／794 tests 與 Full/Lite build 通過；真實純模組組合在三個第二段等待邊界檢查 A 不提交、B 可提交。Terra 獨立 review 無 P1/P2。
+- **Boundary**：本次未啟服務或觀察 native；mounted A/B competition、G2 原生與 G5 真實證據仍待補，詳見 [交接取消修正](../docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md)。
+
+## 2026-09-14 / 錄製中 Context 更新與頁面重入輪詢
+
+- **Scope**：P2 G2 重入驗證，沿用 `cross-agent-collaboration`、`modular-refactoring`、`pr-author-maintainer`。Coordinator 持有 recorder context，Terra 唯讀核對 diff 與既有 current/latest 語意。
+- **Verified learning**：status effect 依賴自己更新的 recordingCount 並立即讀取，會隨錄製樣本數變更重啟；provider 每次 render 產生的新 laps/debrief callbacks 又觸發 consumer effect。實際 6 秒重入視窗從 data/debrief 7/6 放大到 31/30，純函數測試與離頁歸零不足以發現。
+- **Fix/evidence**：只以 recording enable flag 驅動 effect，維持既有頻率、禁止重疊並在 cleanup abort，將無 closure state 的讀取 callbacks 固定。修正後兩輪重入為 2/1、2/1、3/2；離頁皆 0/0，無事件截斷。完整 119 files／794 tests 與 Full/Lite build 通過；同一 mounted provider 完成 A/B 第二段交錯，A 未導頁、B 開啟 exact 100 samples。
+- **Boundary**：當 request metadata 可能被高頻 WS 事件擠出時，須分段讀取並按 request 時間篩選；截斷或超過 timeout 的 interception 不列證據。HTTP 次數不是全部 channel/native/效能結論。C5/H5 與真實 FH6 仍待驗收，見 [受控證據](../docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)。

@@ -23,6 +23,7 @@ import {
   MAX_TUNING_CAPTURE_SAMPLES,
   nextTuneAsyncToken,
   selectedEngineObservationMatchesLiveTelemetry,
+  shouldForceMeasurementPublish,
   shouldInvalidateMeasurementAttempt,
   shouldPreserveIdleIdentityHydration,
   type CaptureFrameIdentity,
@@ -357,6 +358,7 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       return;
     }
     measurementSamplesRef.current.push(telemetryToCaptureSample(frame));
+    const previousPhase = measurementPhaseRef.current;
     const now = performance.now();
     const next = advanceTuningMeasurement(measurementStateRef.current, frame, true, now);
     measurementStateRef.current = next;
@@ -369,7 +371,11 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
         measurementPhaseRef.current = 'complete';
       }
     }
-    publishMeasurement();
+    publishMeasurement(shouldForceMeasurementPublish(
+      previousPhase,
+      measurementPhaseRef.current,
+      next.status,
+    ));
   }), [publishCapture, publishMeasurement, stopCapture]);
 
   useEffect(() => {

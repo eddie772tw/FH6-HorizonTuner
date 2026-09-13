@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SessionOperationGate } from "./sessionSelection";
-import { resolveLatestSavedSession, resolveSavedSession } from "./sessionsIo";
+import { createSessionsIo, resolveLatestSavedSession, resolveSavedSession } from "./sessionsIo";
 
 const older = { filename: "older", session_id: "older", size: 1, mtime: 1 };
 const newest = { filename: "newest", session_id: "newest", size: 1, mtime: 2 };
@@ -36,5 +36,27 @@ describe("sessions I/O adapter", () => {
     resolveList?.([older]);
 
     await expect(latest).resolves.toBeNull();
+  });
+
+  it("treats a failed, malformed, or empty saved-data response as unreadable", async () => {
+    const failed = createSessionsIo(async () => ({ ok: false, json: async () => [{ time: 0 }] }) as Response);
+    await expect(failed.readSavedSession("newest")).resolves.toBeNull();
+
+    const empty = createSessionsIo(async () => ({ ok: true, json: async () => [] }) as Response);
+    await expect(empty.readSavedSession("newest")).resolves.toBeNull();
+
+    const malformed = createSessionsIo(async () => ({ ok: true, json: async () => ({ error: "paused" }) }) as Response);
+    await expect(malformed.readSavedSession("newest")).resolves.toBeNull();
+  });
+
+  it("reads nonempty saved samples without mutating a shared recorder", async () => {
+    const requests: string[] = [];
+    const io = createSessionsIo(async (path) => {
+      requests.push(path);
+      return { ok: true, json: async () => [{ time: 0 }] } as Response;
+    });
+
+    await expect(io.readSavedSession("folder/session A")).resolves.toEqual([{ time: 0 }]);
+    expect(requests).toEqual(["/api/analysis/sessions/folder%2Fsession%20A?lap=0"]);
   });
 });
