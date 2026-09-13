@@ -27,6 +27,33 @@ export interface CaptureFrameIdentity {
 
 export type EngineMeasurementPhase = 'idle' | 'collecting' | 'paused' | 'complete' | 'invalidated';
 
+export const MAX_TUNING_CAPTURE_SAMPLES = 30000;
+
+/** An extra run may finish from the cap pause while retaining its last ready result. */
+export const canFinishAdditionalMeasurement = (
+  phase: EngineMeasurementPhase,
+  autoFinish: boolean,
+  sampleCount: number,
+  hasReadySnapshot: boolean,
+  status: TuningMeasurementState['status'],
+): boolean => !autoFinish
+  && (phase === 'collecting' || (phase === 'paused' && sampleCount >= MAX_TUNING_CAPTURE_SAMPLES))
+  && hasReadySnapshot
+  && status !== 'blocked';
+
+/** Keep an idle archive selection while its first complete live identity hydrates. */
+export const shouldPreserveIdleIdentityHydration = (
+  previous: TuneSessionIdentity,
+  next: TuneSessionIdentity,
+  phase: EngineMeasurementPhase,
+): boolean => phase === 'idle'
+  && previous.carId === next.carId
+  && previous.profileKey === next.profileKey
+  && previous.performanceIndex === null
+  && previous.carClass === null
+  && next.performanceIndex !== null
+  && next.carClass !== null;
+
 export interface EngineObservationSaveToken {
   archiveGeneration: number;
   identityGeneration: number;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canOpenTuningStep, getWorkflowReadiness, nextTuningStep, resolveTuningStep, restoreWorkflowStep, serializeWorkflowProfile, TUNING_WORKFLOW_STEPS } from './tuningWorkflow';
+import { canOpenTuningStep, getWorkflowReadiness, nextTuningStep, resolveTuningStep, restoreWorkflowStep, serializeWorkflowProfile, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
 
 const profile = { weight: 1200, weight_distribution: 50, maxHp: 200 };
 describe('recommended workflow and independent data gates', () => {
@@ -20,6 +20,15 @@ describe('recommended workflow and independent data gates', () => {
     expect(serializeWorkflowProfile({ ...params, weight: 1300 })).not.toBe(key);
     expect(JSON.parse(key)).toEqual(params);
     expect(serializeWorkflowProfile(null)).toBe('null');
+  });
+  it('keeps dyno evidence when an interactive edit updates the full profile', () => {
+    const dynoCurve = { '7000': { hp: 320, torque: 410 } };
+    const dynoQuality = { sampleCount: 120 };
+    const fullProfile = { ...profile, dyno_curve: dynoCurve, dyno_quality: dynoQuality };
+    const updated = updateWorkflowProfile(fullProfile, 'weight', 1300);
+
+    expect(updated).toMatchObject({ weight: 1300, dyno_curve: dynoCurve, dyno_quality: dynoQuality });
+    expect(JSON.parse(serializeWorkflowProfile(updated))).toMatchObject({ weight: 1300 });
   });
   it('offers chassis platform & tires before powertrain, without visited-page dependencies', () => {
     expect(TUNING_WORKFLOW_STEPS.map(step => step.id)).toEqual(['setup', 'chassis', 'powertrain', 'validation']);

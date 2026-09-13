@@ -11,7 +11,7 @@ import { Step2ChassisTuner } from './components/Step2ChassisTuner';
 import { EngineDataStep } from './components/EngineDataStep';
 import { WorkflowGuide } from './components/WorkflowGuide';
 import { SetupVerificationStep } from './components/SetupVerificationStep';
-import { canOpenTuningStep, getWorkflowReadiness, resolveTuningStep, TUNING_WORKFLOW_STEPS } from './tuningWorkflow';
+import { canOpenTuningStep, getWorkflowReadiness, resolveTuningStep, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
 import { TuneSessionBoundary, useTuneSession } from './TuneSessionProvider';
 import { selectedEngineObservationMatchesLiveTelemetry } from './tuneSessionController';
 import { useTelemetry } from '../../hooks/useTelemetry';
@@ -25,7 +25,7 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
   unitPreference, onUnitPreferenceChange }: Props & {
     unitPreference: UnitPreferenceOverride; onUnitPreferenceChange: (value: UnitPreferenceOverride) => void;
   }) {
-  const { carId, carName, setCarParams, saveCarParams, isLoading, loadedCarId } = useCarParams();
+  const { carId, carName, carParams: liveCarParams, setCarParams, saveCarParams, isLoading, loadedCarId } = useCarParams();
   const { t } = useSettings();
   const { data } = useTelemetry();
   const session = useTuneSession();
@@ -82,7 +82,10 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
       {!reviewHistory && <WorkflowGuide readiness={readiness} currentStep={currentStep} openStep={step => setCurrentStep(step)} />}
     </header>
     {!reviewHistory && currentStep === 1 && <Step1GoalSetup measuredEngineInputs selectedRaceGoal={goal} setSelectedRaceGoal={session.workflow.setGoal} season={season} setSeason={session.workflow.setSeason}
-      carParams={profile} updateParam={(key, value) => profile && setCarParams({ ...profile, [key]: value })}
+      carParams={profile} updateParam={(key, value) => {
+        const updated = profile && updateWorkflowProfile(liveCarParams, key, value);
+        if (updated) setCarParams(updated);
+      }}
       hasCoreParams={readiness.mechanical} onOpenUnitSettings={() => setShowUnits(true)}
       onProceed={async () => { await saveCarParams(); setCurrentStep(2); }} />}
     {!reviewHistory && currentStep === 2 && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
