@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { AnalysisDataPoint, SavedSessionHeader } from "../../context/TelemetryRecorderContext";
+import type { AnalysisDataPoint } from "../../context/TelemetryRecorderContext";
 import { useTelemetryRecorder } from "../../context/TelemetryRecorderContext";
 import { backendFetch } from "../../services/backend";
 import type { SessionIntent } from "../../app/workspaceManifest";
@@ -10,7 +10,10 @@ import {
   type AnalysisSelection,
   readSelectionData,
   SessionLoadGate,
+  SessionOperationGate,
+  type SessionOperationGuard,
 } from "./sessionSelection";
+import { createSessionsIo, resolveLatestSavedSession, resolveSavedSession } from "./sessionsIo";
 
 export type AnalysisMetric = "speed" | "throttle" | "brake" | "grip" | "suspension";
 
@@ -33,7 +36,8 @@ interface SessionsStateContextValue {
   setPrimaryLap(lap: number): void;
   setCompareLap(lap: number): void;
   setMetric(metric: AnalysisMetric): void;
-  setImportedSession(data: AnalysisDataPoint[]): void;
+  beginSelectionOperation(): SessionOperationGuard;
+  setImportedSession(data: AnalysisDataPoint[], operation: SessionOperationGuard): boolean;
   applySessionIntent(intent: SessionIntent, sequence?: number): Promise<void>;
   loadPrimaryLap(): Promise<AnalysisDataPoint[] | null>;
   cancelPrimaryLoad(): void;
@@ -55,32 +59,27 @@ function normalizeLap(value: number, fallback: number): number {
   return Number.isInteger(value) && value >= -1 ? value : fallback;
 }
 
-async function readSavedSessionHeaders(): Promise<SavedSessionHeader[]> {
-  try {
-    const response = await backendFetch("/api/analysis/sessions");
-    const data = await response.json();
-    return Array.isArray(data) ? data as SavedSessionHeader[] : [];
-  } catch {
-    return [];
-  }
-}
-
 export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { savedSessions, setLoadedSession } = useTelemetryRecorder();
+  const { fetchSavedSessionsList, setLoadedSession } = useTelemetryRecorder();
   const [state, setState] = useState<SessionsViewState>(initialState);
   const stateRef = useRef(state);
   const primaryGateRef = useRef(new SessionLoadGate());
+  const selectionOperationGateRef = useRef(new SessionOperationGate());
   const primaryInFlightRef = useRef(0);
   const refreshInFlightRef = useRef(false);
   const intentGenerationRef = useRef(0);
   const consumedIntentSequenceRef = useRef<number | null>(null);
   stateRef.current = state;
 
-  useEffect(() => () => primaryGateRef.current.dispose(), []);
+  useEffect(() => () => {
+    primaryGateRef.current.dispose();
+    selectionOperationGateRef.current.dispose();
+  }, []);
 
   const invalidateSelectionRequest = useCallback(() => {
     intentGenerationRef.current += 1;
     primaryGateRef.current.invalidate();
+    selectionOperationGateRef.current.invalidate();
   }, []);
 
   const chooseSelection = useCallback((selection: AnalysisSelection) => {
@@ -119,7 +118,10 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(previous => previous.metric === metric ? previous : { ...previous, metric });
   }, []);
 
-  const setImportedSession = useCallback((data: AnalysisDataPoint[]) => {
+  const beginSelectionOperation = useCallback(() => selectionOperationGateRef.current.begin(), []);
+
+  const setImportedSession = useCallback((data: AnalysisDataPoint[], operation: SessionOperationGuard): boolean => {
+    if (!operation.isCurrent()) return false;
     invalidateSelectionRequest();
     setLoadedSession(data);
     setState(previous => ({
@@ -129,6 +131,7 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
       compareLap: -1,
       isLoading: false,
     }));
+    return true;
   }, [invalidateSelectionRequest, setLoadedSession]);
 
   const loadPrimaryLap = useCallback(async (): Promise<AnalysisDataPoint[] | null> => {
@@ -195,15 +198,24 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
     if (intent.kind === "analysis") {
-      chooseSelection({ kind: "saved", filename: intent.filename });
+      const operation = beginSelectionOperation();
+      const saved = await resolveSavedSession(createSessionsIo(), intent.filename, operation);
+      if (!saved || !operation.isCurrent()) return;
+      // The shared recorder owns library state. This refresh does not touch
+      // loadedSession, and selection remains guarded around its async result.
+      await fetchSavedSessionsList();
+      if (!operation.isCurrent()) return;
+      chooseSelection({ kind: "saved", filename: saved.filename });
       return;
     }
 
-    const generation = ++intentGenerationRef.current;
-    const latest = savedSessions[0] ?? (await readSavedSessionHeaders())[0];
-    if (!latest || generation !== intentGenerationRef.current) return;
+    const operation = beginSelectionOperation();
+    const latest = await resolveLatestSavedSession(createSessionsIo(), operation);
+    if (!latest || !operation.isCurrent()) return;
+    await fetchSavedSessionsList();
+    if (!operation.isCurrent()) return;
     chooseSelection({ kind: "latest", filename: latest.filename });
-  }, [chooseSelection, savedSessions]);
+  }, [beginSelectionOperation, chooseSelection, fetchSavedSessionsList]);
 
   const value = useMemo<SessionsStateContextValue>(() => {
     const selectedSessionId = analysisSessionId(state.selection);
@@ -217,13 +229,14 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
       setPrimaryLap,
       setCompareLap,
       setMetric,
+      beginSelectionOperation,
       setImportedSession,
       applySessionIntent,
       loadPrimaryLap,
       cancelPrimaryLoad,
       refreshCurrent,
     };
-  }, [applySessionIntent, cancelPrimaryLoad, loadPrimaryLap, refreshCurrent, selectCurrent, selectSaved, setCompareLap, setImportedSession, setMetric, setPrimaryLap, state]);
+  }, [applySessionIntent, beginSelectionOperation, cancelPrimaryLoad, loadPrimaryLap, refreshCurrent, selectCurrent, selectSaved, setCompareLap, setImportedSession, setMetric, setPrimaryLap, state]);
 
   return <SessionsStateContext.Provider value={value}>{children}</SessionsStateContext.Provider>;
 };

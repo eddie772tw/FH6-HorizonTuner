@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   analysisDataPath,
+  applyIfOperationCurrent,
   SessionLoadGate,
+  SessionOperationGate,
   readSelectionData,
   shouldConsumeSessionRequest,
 } from "./sessionSelection";
@@ -48,5 +50,45 @@ describe("session selection adapter", () => {
     expect(shouldConsumeSessionRequest(3, 3)).toBe(false);
     expect(shouldConsumeSessionRequest(3, 2)).toBe(false);
     expect(shouldConsumeSessionRequest(3, 4)).toBe(true);
+  });
+
+  it("does not apply a late import result after a newer source selection", async () => {
+    let resolveImport: ((value: readonly string[]) => void) | undefined;
+    const operations = new SessionOperationGate();
+    const importOperation = operations.begin();
+    const applied: string[][] = [];
+    const importResult = applyIfOperationCurrent(
+      importOperation,
+      () => new Promise<readonly string[]>(resolve => { resolveImport = resolve; }),
+      data => { applied.push(data); },
+    );
+
+    // Selecting a saved session is newer user intent than the pending import.
+    operations.invalidate();
+    resolveImport?.(["imported"]);
+
+    await expect(importResult).resolves.toBe(false);
+    expect(applied).toEqual([]);
+  });
+
+  it("does not let a late delete reset a newer saved selection", async () => {
+    let resolveDeletion: ((value: boolean) => void) | undefined;
+    const operations = new SessionOperationGate();
+    const deletion = operations.begin();
+    let selection = "saved-A";
+    const deleteResult = applyIfOperationCurrent(
+      deletion,
+      () => new Promise<boolean>(resolve => { resolveDeletion = resolve; }),
+      success => {
+        if (success) selection = "current";
+      },
+    );
+
+    selection = "saved-B";
+    operations.invalidate();
+    resolveDeletion?.(true);
+
+    await expect(deleteResult).resolves.toBe(false);
+    expect(selection).toBe("saved-B");
   });
 });

@@ -12,6 +12,7 @@ import { calculateFrontendDebrief, SessionDebriefData } from "./sessionDebriefMa
 import { backendFetch } from "../../services/backend";
 import { type AnalysisMetric, useSessionsState } from "../sessions/SessionsStateProvider";
 import { analysisDataPath, analysisSelectionKey } from "../sessions/sessionSelection";
+import { createSessionsIo } from "../sessions/sessionsIo";
 
 const AnalysisView: React.FC = () => {
   const {
@@ -21,11 +22,9 @@ const AnalysisView: React.FC = () => {
     currentSession,
     loadedSession,
     savedSessions,
-    setLoadedSession,
+    fetchSavedSessionsList,
     loadSessionLaps,
-    deleteSavedSession,
     exportMoTecCsv,
-    uploadMoTecCsv,
     openInMoTec,
     downloadMoTecTemplate,
     fetchSessionDebrief,
@@ -40,6 +39,7 @@ const AnalysisView: React.FC = () => {
     setPrimaryLap,
     setCompareLap,
     setMetric,
+    beginSelectionOperation,
     setImportedSession,
     loadPrimaryLap,
     cancelPrimaryLoad,
@@ -160,9 +160,9 @@ const AnalysisView: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const data = await uploadMoTecCsv(file);
-      if (data && data.length > 0) {
-        setImportedSession(data);
+      const operation = beginSelectionOperation();
+      const data = await createSessionsIo().importMoTeCCsv(file);
+      if (data && data.length > 0 && setImportedSession(data, operation)) {
         setFullSessionTrackData(data);
         setDebriefData(calculateFrontendDebrief(data));
       }
@@ -189,11 +189,14 @@ const AnalysisView: React.FC = () => {
         `${t("Are you sure you want to delete this session?")} (${selectedSessionId})`,
       )
     ) {
-      const success = await deleteSavedSession(selectedSessionId);
+      const operation = beginSelectionOperation();
+      const success = await createSessionsIo().deleteSavedSession(selectedSessionId);
       if (success) {
-        setLoadedSession(null);
-        selectCurrent();
-      } else {
+        // Library reconciliation does not alter the selected source. The
+        // guarded transition is skipped if the user selected something newer.
+        await fetchSavedSessionsList();
+        if (operation.isCurrent()) selectCurrent();
+      } else if (operation.isCurrent()) {
         alert(t("Failed to delete session."));
       }
     }
