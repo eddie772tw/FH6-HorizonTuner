@@ -4,6 +4,8 @@
 
 G2 等待期間完成的 [W2-A 拆分設計](handoffs/w2-a-design-preflight-20260914.md) 只提供實際 owner、檔案分界與 A-D slot 提議；沒有移交 write lease 或建立 WAVE2_BASE_SHA。
 
+另見 [W2-B HUD 設計交接](handoffs/w2-b-design-preflight-20260914.md) 與 [W2-C Settings 設計交接](handoffs/w2-c-design-preflight-20260914.md)。它們補齊第一個工作包與 Coordinator 的 Settings/Updates 接線方向，均為 proposed；模型配置與派發順序見 [規劃交付入口](planning-delivery-20260914.md)。
+
 ## 1. Ownership 表
 
 | Owner | 可寫範圍 | 移交時機 |
@@ -14,8 +16,9 @@ G2 等待期間完成的 [W2-A 拆分設計](handoffs/w2-a-design-preflight-2026
 | W1：Tune / Road state 子代理 | 分別獨占 `frontend/src/features/tuning/**`、`frontend/src/features/road/**` | G0-code + P1 精確 SHA 後；核對已對齊的 road-reviewed 與其他候選，交 root 接入 P2，尚非 W3/D |
 | W1/A0：Sessions / Live 最小前置 | `frontend/src/features/live/**`、`sessions/**`、`analysis/**`、`telemetry/**`、`drag_test/**` | G0-code + P1 精確 SHA 後；selection/lifetime 與最小 adapter 完成交 root 接入 P2 |
 | W1/B0：HUD runtime 前置 | `frontend/src/features/overlay_control/**`，排除 hudConfig.ts public contract | G0-code + P1 精確 SHA 後可開始；權威讀取/寫入存活完成後交 root 接入 P2，是 G2 前置 |
-| W2/A：Sessions / Live 完整重構 | 同 W1/A0 路徑 | G2 + WAVE2_BASE_SHA 後，Coordinator 釋放 adapters；D/最終接線前 A 停寫並 handoff |
+| W2/A：Sessions / Live 完整重構 | Live/analysis/telemetry/drag_test；Sessions 僅限下方 A 精確檔案表，排除 root 的 runtime/race/preflight | G2 + WAVE2_BASE_SHA 後，Coordinator 登記 transfer SHA；D/最終接線前 A 停寫並 handoff |
 | W2/B1–B2：HUD controller / panels | 同 W1/B0 路徑 | 僅 G2 + WAVE2_BASE_SHA 後；B 接手完整 metadata/native adapter 與 OverlayView composition，root 只接 Shell |
+| B2-panel（選用 Luna） | 僅 B handoff 列明的三個新 panel 檔案；其餘測試/CSS/controller 仍由 B 持有 | B1 props freeze，具名檔案由 B 移交且停止寫入；B2 handoff 後才交回 B |
 | C：Settings | `frontend/src/features/settings/**` | G2 完成後 |
 | D：Tune / Road | `frontend/src/features/tuning/**`、`frontend/src/features/road/**` | A foundation 已整合，且 Coordinator 釋放 W1 的 Tune state adapter 後 |
 | Reviewer | 唯讀上述程式、diff、handoff、測試結果 | 不自行修復作者檔案 |
@@ -72,10 +75,19 @@ UI 使用 Halfmoon semantic tokens；覆蓋面板使用 ModalPortal；不加裝�
 
 **交付目標**：Full 從頂層開啟 Sessions；Live 僅 Dashboard/Launch Test；Analysis 的 current/latest/saved、lap compare、MoTeC、debrief、track map 全部可達。Lite 沿用 Dashboard-only 能力。
 
+W2 寫入邊界以以下表格覆蓋 W1/A0 的寬路徑；prefix 均為 `frontend/src/features/`。派發前 Coordinator 記錄 transfer SHA、實際檔案與 handoff，沒有登記就不發 lease。
+
+| Owner | 精確範圍 |
+| --- | --- |
+| A | `live/LiveWorkspace.tsx`、`analysis/**`、`telemetry/**`、`drag_test/**`；`sessions/SessionsWorkspace.tsx`、`sessions/SessionsStateProvider.tsx`、`sessions/sessionsIo.ts`/`.test.ts`、`sessions/sessionSelection.ts`/`.test.ts`。新增 Sessions presentation 檔案先在派發紀錄具名。 |
+| Coordinator | `sessions/SessionsRuntime.tsx`、`sessions/raceCompletion.ts`/`.test.ts`、`sessions/raceLifecycle.ts`/`.test.ts`、`sessions/raceStatusPoller.ts`/`.test.ts`、`sessions/raceNavigationHandoff.test.ts`、`sessions/sessionIntentPreparation.ts`/`.test.ts`，以及全部 App/Shell 接線。 |
+
+A 可讀上述 root 檔案並消費凍結的 guard/intent，不更改 background observer 或 navigation lifetime。selection/provider 的 public export 若須改動，先由 Coordinator 審核 contract/consumer；依記錄逐檔移交，不讓兩者同時寫入。
+
 1. 接手 P2 的最小 Live/Sessions adapters，核對 immutable shared contract。
 2. 改善 Sessions 選擇初始化：明確 intent 優先，普通往返保留同一 session/lap，晚回應不能重置新選擇。需要 recorder context 修改時交給 Coordinator。
 3. 將 Analysis 拆成可讀的 library/header/actions/summary/comparison/track sections；沿用現有 math，不新增調校公式。只有實際抽出純運算才加 selector/math tests。
-4. 縮窄 race completion callback，輸出 success/failure 意圖；root 背景 observer 與導航接線由 Coordinator。
+4. 消費已凍結的 race completion/intent；background observer、guard 與導航接線由 Coordinator 保管。有新需求提出具體 contract request，不重做已完成的 callback 縮窄。
 5. 清理 page interval/channel/observers，保留原 Canvas 語意、granular units、HUD pause 與 Drag behavior。
 6. 列出插入 Validation review 的 typed slot/adapter 需求；只建立可用的接點，不假造 Road domain 對應。
 

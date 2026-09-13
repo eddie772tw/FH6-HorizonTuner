@@ -8,6 +8,8 @@
 
 G1-core 是 P2 前置：包含 workspace/capability/intent、四個狀態前置、資料來源與生命週期契約。C4 在此只凍結 analysis filename 與 Road workflowId 的分界；ValidationReviewSlot、A_FOUNDATION_SHA、AD_INTERFACE_SHA 屬於後續 A→D 接點確認，不是 P2/G2 前置。後期 review export 尚未存在，不阻擋共用 Shell 開工。
 
+下表的 owner/consumer 是功能責任，不是共享寫入 lease。W2/A 的精確檔案分界以 [工作單 A](work-orders.md) 為準：SessionsRuntime、race lifecycle/status/completion、Shell intent preflight 及其測試由 Coordinator 保留；selection/provider/workspace 由 A 具名接手。B 的 Luna 面板協作僅依 [B2-panel 移交紀錄](handoffs/w2-b-design-preflight-20260914.md) 放行，不繼承 B 全目錄 lease。
+
 下表的名稱區分「已有分支實作」與「提議」。只有 Coordinator 與 reviewer 核對 producer、consumer、生命週期及測試後，才能填入精確 `CONTRACT_SHA` 並標為 frozen；不得把表中提議名稱當成已存在 API。
 
 | 介面 | 擁有者 / 消費者 | 現況 | freeze 前必須核對 |
