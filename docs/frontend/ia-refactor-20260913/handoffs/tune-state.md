@@ -114,3 +114,30 @@ Verification:
 Limits: no real game, Tauri Full/Lite smoke, backend save-race, CPU/RSS, or cross-page Shell runtime evidence. Provider root mounting remains the Coordinator's separate follow-up.
 Next action: Coordinator may consume commit `b0aeac9`; no push or PR was created.
 Last updated: 2026-09-14
+
+## Follow-up: IA base CI merge (2026-09-14)
+
+Task: Merge P1 IA CI trigger into Tune delivery lane
+Status: done
+Owner: `tune_final_review`
+Branch: `codex/frontend-ia-tune-state-20260914`
+Scope: `.github/workflows/ci.yml` merge plus this handoff and ignored PR body scratch
+Changed: `.github/workflows/ci.yml`
+Merged commit: `b54add4e7e06089360e9514af96f83cdbfc652fe`
+Merged source: `16aa79aed0eeaa6653f86a72e21a0301f0517619`
+Exact head: `b54add4e7e06089360e9514af96f83cdbfc652fe`
+Pending: None within this lane
+Blocked by: None
+
+The merge was performed with `git merge --no-commit` and contained only the P1 CI trigger update: pull requests targeting `codex/frontend-ia-*` are now included. The pure contract content remains based on `fc7960829ebecbf5039d03a39a3fcdcae9d8b6c9`. The Tune foundation remains unmounted from Shell; G2 native remains unrun.
+
+Verification after merge:
+
+- `cmd /c "pnpm -C frontend run test"` — 110 files / 734 tests passed.
+- `cmd /c "pnpm -C frontend run build"` — passed; Full and Lite entries built.
+- `git diff --check` and `git diff --cached --check` — passed before merge commit.
+- `uv run --no-project --python D:\FH6-HorizonTuner\.venv\Scripts\python.exe python .agents\skills\pr-author-maintainer\scripts\manage_pr_author.py --validate-body scratch\ia-tune-pr.md` — passed.
+
+PR body: `scratch/ia-tune-pr.md`. It records the `16aa79a` base contract/CI reference, `156a5b` latest Tune review fix pass, 110 files / 734 tests, unmounted Shell foundation, and unrun G2 native evidence.
+Next action: Coordinator may consume exact head `b54add4e7e06089360e9514af96f83cdbfc652fe`; no push or PR was created.
+Last updated: 2026-09-14
