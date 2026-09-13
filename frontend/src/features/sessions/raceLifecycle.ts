@@ -8,7 +8,7 @@ import {
 export interface RaceCompletionLifecycleHooks {
   onStarted?(sessionId: string): void;
   onPending(sessionId: string): void;
-  onCompleted(session: SavedSessionHeader): void;
+  onCompleted(session: SavedSessionHeader, isCurrent: () => boolean): void;
 }
 
 interface ActiveRace {
@@ -73,6 +73,7 @@ export class RaceCompletionLifecycle {
   retry(sessionId: string): void {
     const race = this.activeRace;
     if (!race || !race.ended || !this.isCurrentRace(race)) return;
+    if (race.capturedSessionId !== null && race.capturedSessionId !== sessionId) return;
     this.startCompletionValidation(race, sessionId);
   }
 
@@ -116,7 +117,9 @@ export class RaceCompletionLifecycle {
       isCurrent: () => this.isCurrentRace(race) && race.completionGeneration === generation,
     });
     if (completed && this.isCurrentRace(race) && race.completionGeneration === generation) {
-      this.hooks.onCompleted(completed);
+      // The consumer may still need asynchronous reads before committing its
+      // selection. Keep this race's ownership valid through that handoff.
+      this.hooks.onCompleted(completed, () => this.isCurrentRace(race) && race.completionGeneration === generation);
     }
   }
 }

@@ -12,12 +12,13 @@ import { RaceStatusPoller } from "./raceStatusPoller";
 
 export interface SessionsRuntimeProps {
   readonly activeWorkspace: WorkspaceId;
-  readonly onOpenSessions: (intent?: SessionIntent) => void;
+  readonly onOpenSessions: (intent?: SessionIntent, isRequestCurrent?: () => boolean) => void;
 }
 
 interface PendingCompletion {
   readonly sessionId: string;
   readonly intent: SessionIntent | null;
+  readonly isCurrent?: () => boolean;
 }
 
 interface RuntimeRaceCompletionReader extends RaceCompletionReader {
@@ -80,14 +81,14 @@ export const SessionsRuntime: React.FC<SessionsRuntimeProps> = ({ activeWorkspac
     const lifecycle = new RaceCompletionLifecycle(reader, {
       onStarted: () => setPending(null),
       onPending: sessionId => setPending({ sessionId, intent: null }),
-      onCompleted: completed => {
+      onCompleted: (completed, isCurrent) => {
         const intent: SessionIntent = { kind: "analysis", filename: completed.filename };
         if (activeWorkspaceRef.current === "live") {
           setPending(null);
-          onOpenSessionsRef.current(intent);
+          onOpenSessionsRef.current(intent, isCurrent);
           return;
         }
-        setPending({ sessionId: completed.session_id, intent });
+        setPending({ sessionId: completed.session_id, intent, isCurrent });
       },
     });
     const statusPoller = new RaceStatusPoller(
@@ -106,7 +107,7 @@ export const SessionsRuntime: React.FC<SessionsRuntimeProps> = ({ activeWorkspac
   if (!pending) return null;
   const openOrRetry = () => {
     if (pending.intent) {
-      onOpenSessions(pending.intent);
+      onOpenSessions(pending.intent, pending.isCurrent);
       // Shell now owns this explicit request, including its failure/retry UI.
       setPending(null);
     }
