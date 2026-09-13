@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   captureFrameIdentity,
   captureIdentityMatches,
+  canFinishAdditionalMeasurement,
   isCurrentEngineObservationSaveToken,
   isCurrentTuneAsyncToken,
+  MAX_TUNING_CAPTURE_SAMPLES,
   nextTuneAsyncToken,
   selectedEngineObservationMatchesLiveTelemetry,
   shouldInvalidateMeasurementAttempt,
+  shouldPreserveIdleIdentityHydration,
   type TuneAsyncToken,
 } from './tuneSessionController';
 import { createTuningMeasurement } from './tuningMeasurement';
@@ -68,6 +71,24 @@ describe('Tune session controller', () => {
     expect(shouldInvalidateMeasurementAttempt('idle')).toBe(false);
     expect(shouldInvalidateMeasurementAttempt('collecting')).toBe(true);
     expect(shouldInvalidateMeasurementAttempt('complete')).toBe(true);
+  });
+
+  it('allows an additional collection to finish after the frame cap pauses it', () => {
+    expect(canFinishAdditionalMeasurement('paused', false, MAX_TUNING_CAPTURE_SAMPLES, true, 'collecting')).toBe(true);
+    expect(canFinishAdditionalMeasurement('paused', false, MAX_TUNING_CAPTURE_SAMPLES - 1, true, 'collecting')).toBe(false);
+    expect(canFinishAdditionalMeasurement('paused', false, MAX_TUNING_CAPTURE_SAMPLES, false, 'collecting')).toBe(false);
+    expect(canFinishAdditionalMeasurement('collecting', false, 10, true, 'collecting')).toBe(true);
+    expect(canFinishAdditionalMeasurement('paused', true, MAX_TUNING_CAPTURE_SAMPLES, true, 'collecting')).toBe(false);
+  });
+
+  it('preserves idle reuse while the first complete live identity hydrates', () => {
+    const unknownIdentity = { carId: '42', performanceIndex: null, carClass: null, profileKey: 'engine-key-a' };
+    const confirmedIdentity = { ...unknownIdentity, performanceIndex: 700, carClass: 3 };
+
+    expect(shouldPreserveIdleIdentityHydration(unknownIdentity, confirmedIdentity, 'idle')).toBe(true);
+    expect(shouldPreserveIdleIdentityHydration(unknownIdentity, confirmedIdentity, 'collecting')).toBe(false);
+    expect(shouldPreserveIdleIdentityHydration(unknownIdentity, { ...confirmedIdentity, carId: '43' }, 'idle')).toBe(false);
+    expect(shouldPreserveIdleIdentityHydration(unknownIdentity, { ...confirmedIdentity, profileKey: 'engine-key-b' }, 'idle')).toBe(false);
   });
 
   it('rejects a selected observation when the live engine limit changes on the same build', () => {

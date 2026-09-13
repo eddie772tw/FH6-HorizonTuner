@@ -18,17 +18,18 @@ import { useEngineMeasurementArchive } from './useEngineMeasurementArchive';
 import {
   captureFrameIdentity,
   captureIdentityMatches,
+  canFinishAdditionalMeasurement,
   defaultTuneCaptureMetadata,
+  MAX_TUNING_CAPTURE_SAMPLES,
   nextTuneAsyncToken,
   selectedEngineObservationMatchesLiveTelemetry,
   shouldInvalidateMeasurementAttempt,
+  shouldPreserveIdleIdentityHydration,
   type CaptureFrameIdentity,
   type EngineMeasurementPhase,
   type TuneAsyncToken,
   type TuneSessionIdentity,
 } from './tuneSessionController';
-
-const MAX_CAPTURE_SAMPLES = 30000;
 
 type TuneCaptureStatus = 'idle' | 'capturing' | 'complete' | 'invalidated';
 
@@ -316,6 +317,10 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const nextToken = nextTuneAsyncToken(identityTokenRef.current, identity);
     if (nextToken.generation === identityTokenRef.current.generation) return;
+    if (shouldPreserveIdleIdentityHydration(identityTokenRef.current.identity, identity, measurementPhaseRef.current)) {
+      identityTokenRef.current = { generation: identityTokenRef.current.generation, identity };
+      return;
+    }
     identityTokenRef.current = nextToken;
     setIdentityGeneration(nextToken.generation);
     engineRef.current.invalidate();
@@ -340,13 +345,13 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
       } else {
         captureIdentityRef.current = expected ?? actual;
         captureSamplesRef.current.push(telemetryToCaptureSample(frame));
-        if (captureSamplesRef.current.length >= MAX_CAPTURE_SAMPLES) stopCapture('sample-limit');
+        if (captureSamplesRef.current.length >= MAX_TUNING_CAPTURE_SAMPLES) stopCapture('sample-limit');
         else publishCapture();
       }
     }
 
     if (measurementPhaseRef.current !== 'collecting') return;
-    if (measurementSamplesRef.current.length >= MAX_CAPTURE_SAMPLES) {
+    if (measurementSamplesRef.current.length >= MAX_TUNING_CAPTURE_SAMPLES) {
       measurementPhaseRef.current = 'paused';
       publishMeasurement(true);
       return;
@@ -416,7 +421,9 @@ export function TuneSessionProvider({ children }: { children: ReactNode }) {
 
   const finishAdditionalMeasurement = useCallback(() => {
     const snapshot = measurementReadySnapshotRef.current;
-    if (measurementPhaseRef.current !== 'collecting' || !snapshot || measurementStateRef.current.status === 'blocked') return;
+    if (!snapshot) return;
+    if (!canFinishAdditionalMeasurement(measurementPhaseRef.current, measurementAutoFinishRef.current,
+      measurementSamplesRef.current.length, true, measurementStateRef.current.status)) return;
     if (!isMeasurementIdentityCurrent(snapshot, identityTokenRef.current.identity)) return;
     measurementStateRef.current = snapshot;
     measurementPhaseRef.current = 'complete';

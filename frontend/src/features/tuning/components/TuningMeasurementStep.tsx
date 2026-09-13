@@ -7,6 +7,7 @@ import {
   TUNING_MEASUREMENT_MIN_BINS,
   type TuningMeasurementGuidance,
 } from '../tuningMeasurement';
+import { canFinishAdditionalMeasurement } from '../tuneSessionController';
 import { useTuneSession } from '../TuneSessionProvider';
 
 const guidanceText: Record<TuningMeasurementGuidance, string> = {
@@ -51,9 +52,10 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
   const state = measurement.state;
   const readiness = getTuningMeasurementReadiness(state, now);
   const complete = enabled && measurement.phase === 'complete' && state.status !== 'blocked' && state.carId === carId;
-  const canFinishExtra = enabled && !measurement.autoFinish && measurement.phase === 'collecting'
-    && state.status !== 'blocked' && !['car-mismatch', 'identity-incomplete'].includes(state.guidance)
-    && measurement.hasReadySnapshot;
+  const canFinishExtra = enabled
+    && canFinishAdditionalMeasurement(measurement.phase, measurement.autoFinish, measurement.sampleCount,
+      measurement.hasReadySnapshot, state.status)
+    && !['car-mismatch', 'identity-incomplete'].includes(state.guidance);
   const guidance = measurement.phase === 'invalidated' ? 'identity-changed'
     : measurement.phase === 'complete' ? 'ready'
       : ['timestamp-stalled', 'rpm-coverage-low', 'rpm-coverage-high', 'bins-insufficient'].includes(readiness.guidance)
@@ -66,8 +68,9 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
       <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.')}</p>
       <div role="status" aria-live="polite" className="mb-3" style={{ minHeight: '3rem' }}>
         {!enabled ? t('Enter valid weight, front weight percentage and power in Step 1 first.') :
-          measurement.phase === 'paused' ? t('Collection paused. Resume when you are ready to drive.') :
-            canFinishExtra && (guidance === 'ready' || guidance === 'timestamp-stalled' || guidance === 'telemetry-disconnected')
+          canFinishExtra ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.') :
+            measurement.phase === 'paused' ? t('Collection paused. Resume when you are ready to drive.') :
+              (guidance === 'ready' || guidance === 'timestamp-stalled' || guidance === 'telemetry-disconnected')
               ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.')
               : t(guidanceText[guidance])}
       </div>
