@@ -19,6 +19,6 @@
 | 4. C5 native | Full/Lite 各自真實 Tauri startup、backend-ready、entry、guide/menu、設定的 dark/light/core 首幀；另驗正常 dynamic-port path。 | 使用者觀察＋Coordinator 記錄；not-run。8001 外部 backend 程序不能單獨證明 dynamic-port。 |
 | 5. H5 native | Full/Lite 分別觀察獨立 HUD：啟動 → 離開 HUD → 重入 → 明確關閉；pending config write 結束後回讀一致，外部視窗不能跟 page 一起關閉。 | 使用者觀察＋Coordinator 記錄；not-run。按鈕變字不等於原生視窗證據。 |
 
-原 `shell` 工作樹刻意保持 c5、clean；新版在 `shell-race-fix`。c5 不能當作 2cb native 驗收。所有自有 Vite/backend/sender 測試服務已停止；先前只能請使用者觀察 c5 是歷史限制，Windows native 介面現在已初始化。root 正在準備固定 2cb 的 Full release（session `39383`，sidecar 已完成），尚未執行或通過 C5/H5；完成後必須記錄實際 artifact SHA、variant、dynamic port 與操作結果。
+原 `shell` 工作樹刻意保持 c5、clean；新版在 `shell-race-fix`。c5 不能當作 2cb native 驗收。舊 browser Vite/backend/sender 測試服務已停止；先前只能請使用者觀察 c5 是歷史限制，Windows native 介面現在已初始化。固定 2cb 的 Full/Lite/sidecar 已建置，Full 已啟動並有 backend／四入口的 AX 局部證據，但前景啟用兩次失敗；root 保留 Full 與 owned backend 等待使用者回覆。詳見[原生產物與視窗紀錄](g2-native-artifacts-20260914.md)，尚未執行或通過 C5/H5；完成後必須記錄實際 artifact SHA、variant、dynamic port 與操作結果。
 
 兩項 native 結果記錄完整 SHA、variant、Tauri、dynamic port、步驟、錯誤及 pass/fail/not-run。完成 C5/H5 並複核後才可宣告 G2；目前不公布 WAVE2_BASE_SHA。之後依序進 W2 A/B/C、W3 D、W4 組合清理，G5 真實 FH6/效能/native 最終證據另記。
