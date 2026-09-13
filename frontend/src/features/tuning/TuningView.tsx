@@ -16,13 +16,7 @@ import { TuneSessionBoundary, useTuneSession } from './TuneSessionProvider';
 import { selectedEngineObservationMatchesLiveTelemetry } from './tuneSessionController';
 import { useTelemetry } from '../../hooks/useTelemetry';
 
-interface Props {
-  currentStep?: number;
-  setCurrentStep?: (step: number | ((previous: number) => number)) => void;
-}
-
-function TuningViewContent({ currentStep: externalStep, setCurrentStep: externalSetStep,
-  unitPreference, onUnitPreferenceChange }: Props & {
+function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     unitPreference: UnitPreferenceOverride; onUnitPreferenceChange: (value: UnitPreferenceOverride) => void;
   }) {
   const { carId, carName, carParams: liveCarParams, setCarParams, saveCarParams, isLoading, loadedCarId } = useCarParams();
@@ -40,12 +34,7 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
   const setCurrentStep = (next: number | ((previous: number) => number)) => {
     const resolved = typeof next === 'function' ? next(currentStep) : next;
     session.workflow.setStep(resolved);
-    externalSetStep?.(resolved);
   };
-
-  useEffect(() => {
-    if (externalStep !== undefined && externalStep !== currentStep) session.workflow.setStep(externalStep);
-  }, [currentStep, externalStep, session.workflow]);
 
   const gears = profile?.adjustability.gears || 6;
   const chassis = useMemo(() => profile ? calculateChassisTuning(goal, profile) : null, [goal, profile]);
@@ -99,7 +88,7 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
   </div>;
 }
 
-export default function TuningView(props: Props) {
+export default function TuningView() {
   const { settings } = useSettings();
   const [preference, setPreference] = useState(() => loadUnitPreference('tuning_unit_preference', settings.units));
   const units = useMemo(() => resolveUnitPreference(settings.units, preference), [settings.units, preference]);
@@ -109,6 +98,6 @@ export default function TuningView(props: Props) {
     localStorage.setItem('tuning_unit_preference', JSON.stringify(normalized));
   };
   return <TuneSessionBoundary><ScopedUnitSettingsProvider units={units}>
-    <TuningViewContent {...props} unitPreference={preference} onUnitPreferenceChange={update} />
+    <TuningViewContent unitPreference={preference} onUnitPreferenceChange={update} />
   </ScopedUnitSettingsProvider></TuneSessionBoundary>;
 }

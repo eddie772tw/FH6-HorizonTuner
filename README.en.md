@@ -63,6 +63,8 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 
 ## Project Architecture
 
+The shared `AppShell` owns workspace navigation and the application menu. Full provides Live, Tune, Sessions, and HUD; Lite provides Live and HUD. Only the active workspace mounts. Feature providers own the longer-lived Tune, Road, Sessions, and HUD state so navigation can preserve measurements and unsaved drafts. The application menu contains Settings, Appearance, Diagnostics, Updates, and About. This branch is undergoing a staged IA migration; panel decomposition and native acceptance status are recorded in the [Shell handoff](docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md).
+
 ```text
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD workflows (ci.yml gatekeeping + release.yml automated packaging)
@@ -86,7 +88,11 @@ FH6-HorizonTuner/
 │   └── car_database.json    # Built-in car database
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
 │   ├── lite/                # Lite frontend HTML entrypoint
+│   ├── src/app/             # Shared shell, capability contract, workspace and application-surface navigation
 │   ├── src/features/        # Business Domain Modules (Features Domain)
+│   │   ├── live/            # Live workspace entry and Full/Lite capability projection
+│   │   ├── sessions/        # Session selection state, IO, and race-completion navigation
+│   │   ├── road/            # Road workflow controller and prepare/run/review state
 │   │   ├── telemetry/       # Live telemetry view (TelemetryView) & 5 expandable cards
 │   │   ├── tuning/          # Vehicle tuning wizard (TuningView & Step 1~4 tabs)
 │   │   ├── overlay_control/ # WYSIWYG dashboard layout editor (OverlayView)
@@ -95,7 +101,7 @@ FH6-HorizonTuner/
 │   │   ├── car_params/      # Vehicle parameters configuration (CarParamsView)
 │   │   ├── settings/        # Global system settings (SettingsView)
 │   │   └── theme/           # Theme color & skin view (ThemeView)
-│   ├── src/components/      # Shared UI components (Navigation, DiagnosticConsole, etc.)
+│   ├── src/components/      # Shared UI components (ModalPortal, DiagnosticConsole, etc.)
 │   ├── src/domain/tuning/    # Pure tuning domain (tires, load transfer, chassis, gearing, differential)
 │   │   ├── chassis/          # Suspension and Phase 4B four-wheel load-transfer estimates
 │   │   └── tires/            # Friction ellipse, tire geometry, and vertical-stiffness priors

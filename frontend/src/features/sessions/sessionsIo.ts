@@ -2,6 +2,8 @@ import type { AnalysisDataPoint, SavedSessionHeader } from "../../context/Teleme
 import { backendFetch } from "../../services/backend";
 import type { SessionOperationGuard } from "./sessionSelection";
 
+type SessionsFetch = (path: string, init?: RequestInit) => Promise<Response>;
+
 /**
  * The feature owns these side-effect-free requests.  In particular, the
  * shared recorder's load/delete helpers write loadedSession before a caller
@@ -9,27 +11,53 @@ import type { SessionOperationGuard } from "./sessionSelection";
  */
 export interface SessionsIo {
   listSavedSessions(signal?: AbortSignal): Promise<readonly SavedSessionHeader[]>;
+  readSavedSession(filename: string, signal?: AbortSignal): Promise<AnalysisDataPoint[] | null>;
   deleteSavedSession(filename: string, signal?: AbortSignal): Promise<boolean>;
   importMoTeCCsv(file: File, signal?: AbortSignal): Promise<AnalysisDataPoint[] | null>;
 }
 
-export function createSessionsIo(): SessionsIo {
+function isSavedSessionHeader(value: unknown): value is SavedSessionHeader {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<SavedSessionHeader>;
+  return typeof candidate.filename === "string" && candidate.filename.trim().length > 0
+    && typeof candidate.session_id === "string" && candidate.session_id.trim().length > 0;
+}
+
+export function createSessionsIo(fetcher: SessionsFetch = backendFetch): SessionsIo {
   return {
     async listSavedSessions(signal?: AbortSignal): Promise<readonly SavedSessionHeader[]> {
       try {
-        const response = await backendFetch("/api/analysis/sessions", { signal });
+        const response = await fetcher("/api/analysis/sessions", { signal });
+        if (!response.ok) return [];
         const data = await response.json();
-        return Array.isArray(data) ? data as SavedSessionHeader[] : [];
+        return Array.isArray(data) ? data.filter(isSavedSessionHeader) : [];
       } catch {
         return [];
       }
     },
+    async readSavedSession(filename: string, signal?: AbortSignal): Promise<AnalysisDataPoint[] | null> {
+      if (!filename) return null;
+      try {
+        const response = await fetcher(
+          `/api/analysis/sessions/${encodeURIComponent(filename)}?lap=0`,
+          { signal },
+        );
+        if (!response.ok) return null;
+        const data = await response.json();
+        return Array.isArray(data) && data.length > 0
+          ? data as AnalysisDataPoint[]
+          : null;
+      } catch {
+        return null;
+      }
+    },
     async deleteSavedSession(filename: string, signal?: AbortSignal): Promise<boolean> {
       try {
-        const response = await backendFetch(
+        const response = await fetcher(
           `/api/analysis/sessions/${encodeURIComponent(filename)}`,
           { method: "DELETE", signal },
         );
+        if (!response.ok) return false;
         const data = await response.json() as { error?: unknown } | null;
         return Boolean(data && !data.error);
       } catch {
@@ -40,7 +68,7 @@ export function createSessionsIo(): SessionsIo {
       try {
         const formData = new FormData();
         formData.append("file", file);
-        const response = await backendFetch("/api/analysis/import/motec", {
+        const response = await fetcher("/api/analysis/import/motec", {
           method: "POST",
           body: formData,
           signal,
