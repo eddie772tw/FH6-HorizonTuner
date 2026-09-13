@@ -1,6 +1,8 @@
 # 驗收矩陣與證據格式
 
-本表定義驗收要求；2026-09-13 規劃交付時所有產品執行項均為 `not-run`。2026-09-14 起的結果見 [執行紀錄](execution.md) 與 [G0 基準](evidence/g0-baseline.md)。計畫完成不代表產品通過，靜態程式盤點見 [baseline](baseline.md)。
+本表定義驗收要求，不是全項通過紀錄。2026-09-13 規劃時所有產品執行項均為 `not-run`；後續已執行的局部結果見 [執行紀錄](execution.md) 與 [G0 基準](evidence/g0-baseline.md)。使用者已恢復實作，依本矩陣逐項取得證據。保留已做過的測試事實；沒有對應行為/環境證據的項目仍為 `not-run`，計畫完成不代表產品通過。
+
+G1 欄位確認、A→D 介面 freeze、每波出口與 PR-ready 定義見 [contracts-and-gates.md](contracts-and-gates.md)。某 pure test 覆蓋了 C2 的拒絕 intent 邏輯，不代表 C2 的 Lite 實際 mount 行為也通過；每項證據必須細分。
 
 ## 1. 驗證層級與命令
 
@@ -71,6 +73,38 @@ Vite 已配置 Full/Lite multi-entry；檢查 `frontend/dist/index.html`、`fron
 | X2 | appearance/diagnostics/menu | 不推擠 60Hz grid、popover/modal layering、深淺/全部 core modes、鍵盤可操作 | Coordinator + C / UI |
 | X3 | 性能 | 3 次成對 baseline/candidate；CPU/RSS/切頁/幀表現無未解釋的可重現 >10% regression | Coordinator + reviewer / 下節方法 |
 | X4 | 最終組合 | 各 lane + wiring 同時存在，tests/build、Full/Lite smoke、README/README.en/架構文件一致 | Coordinator + reviewer |
+
+### 開工階段、責任與最低證據層
+
+同一 acceptance ID 可分為前置與遷移後完整範圍。P2/G2 只驗證既有 UI 加 W1 foundation；T1–T4 由 Coordinator + W1 Tune/Road owner，L3/L4/S1 由 Coordinator + A0，H4/H5 由 Coordinator + B0，U1/U2 由 Coordinator 薄入口負責。上表 A/B/C/D 是後續完整 lane 的責任；不能反過來要求它們先完成才允許 G2。
+
+下表覆蓋上表所有 ID，列出最早驗證位置與最低證據。所有列都是 G5 最終完整性要求；not-run 阻止該列及整體 G5 通過，但不等於每列都需要真實遊戲。受控 UI 指實際掛載前端並操作，資料可用隔離 fixtures；它不是純函式測試。後期未變的結果可由 reviewer 核對來源、candidate 與依賴後沿用，不能無條件沿用舊 SHA。
+
+| ID | 最早 gate / 最終重驗 | 最低證據層與環境 |
+| --- | --- | --- |
+| C1/C2 | P2-G2；P8-G5 全組合 | Full/Lite 實際 UI；C2 加 pure 禁用 intent。最終兩個 Tauri entry 實際導覽 |
+| C3 | P2-G2；任何 provider/root 改動後 | 實際 mount/往返與 state comparison；純 reducer 不足 |
+| C4 | P2-G2；P8-G5 | Full/Lite UI，受控 backend/UDP health 狀態；動態 port 與 update 啟動由 C5/native 補證 |
+| C5 | P2-G2 啟動前置；P8-G5 | browser 與 Windows Tauri；backend-ready、port、StrictMode、theme；不要求本次改 updater |
+| L1/L2 | W2-A；P8-G5 | Full/Lite UI、既有 domain tests；L1 最終需真實 FH6 UDP 顯示，L2 真實遊戲的既有測試流程 |
+| L3/L4 | P2-G2 A0；W2-A 重驗；P8-G5 | 受控成功/慢回應/失敗/新舊 race 競爭；最終 L3 加一筆真實 FH6 race completion，資料與選擇 identity 一致 |
+| T1/T2/T4 | P2-G2 W1；W3-D 後重驗 | 實際 UI/跨頁/restore，既有 v1/v2/v3 測試與隔離 archive；不要求證明 solver 校準 |
+| T3 | P2-G2 W1；P8-G5 | 受控 capture/save/identity 非同步情境 + UI；最終真實 FH6 capture 期間跨頁一次 |
+| S1/S2/S4 | S1 在 P2-G2；其餘 W2-A；P8-G5 | 受控 UI + backend 讀回，真實或已保存 capture；刪除僅用隔離 fixture |
+| S3 | W2-A；P8-G5 | 實際 CSV import/export/template、跨頁 UI；MoTeC 外部程式 launch 另需 Windows native |
+| R1/R3/R4/R5 | W3-D；P8-G5 | 現有/隔離 workflow documents、實際 UI 及 action 後讀回；非 Road 保留 compatibility，不要求不存在的原生 run |
+| R2 | P2 狀態前置；W3-D；P8-G5 | 受控 backend run + UI；最終加真實 FH6 Road run 的 start/record/finish 與跨頁，非多車校準 |
+| H1/H2/H6 | W2-B；P8-G5 | Full/Lite UI + capability/patch tests；H6 實際 browser degraded 狀態 |
+| H3 | W2-B；P8-G5 | Windows Tauri 真實 monitor/window/audio 裝置結果，不能以 mock 或 config saved 替代 |
+| H4 | P2-G2 B0；W2-B 後重驗 | non-React IO ordering + 隔離 backend readback；含 initial GET fail/retry、pending GET、快速 patch |
+| H5 | P2-G2 B0；W2-B/P8 後重驗 | 實際 native HUD 開啟並離頁/重入；pending write、page resource 清理，外部 HUD 不關閉 |
+| U1/U2 | P2 薄入口；W2-C；P8-G5 | Full/Lite UI、keyboard/focus/capability；最終 Tauri surfaces 可達 |
+| U3 | W2-C；P8-G5 | 隔離設定與程序重啟讀回，基準既有問題明列，不順帶改 schema |
+| X1/X2 | P2 前置；W4/P8 全組合 | 實際 resource lifecycle、往返/reconnect、主題/鍵盤 UI；不能只用 code search |
+| X3 | G0-observability 保存 baseline；W4/G5 比較 | 固定環境三次成對量測；主 app/backend/HUD 分列，依第 4 節；單次 JS heap 不等於 RSS |
+| X4 | W4/P8-G5 | 同一整合 head test/build、Full/Lite/native smoke、文件核對 |
+
+外部 native/遊戲條件缺少時，明列缺項、owner、取得方法與受影響 PR。只欠最終 G5 證據的相關 PR 保持 draft；G2 等較早關卡缺必要證據也保持未通過，不以 G5 名義提早放行。已完成的純契約 PR 可按自身範圍審查，不能宣告尚未接線的產品功能完成。
 
 ## 3. Pure tests 的範圍
 

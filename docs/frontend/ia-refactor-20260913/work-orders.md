@@ -1,6 +1,6 @@
 # 分工與可派發工作單
 
-本文件搭配 [執行計畫](README.md)。全部程式工作目前為 `proposed`，沒有實作 owner lease、實作子對話或已建立的 feature branch。以下是啟動後可直接採用的分工；未來 SHA 必須在派發時填入當時已通過 gate 的值。
+本文件搭配 [執行計畫](README.md) 與 [介面/開工條件](contracts-and-gates.md)。使用者已恢復實作；既有 W1 分支與草稿的現況見 [執行紀錄](execution.md) 及 [實作交接快照](handoffs/implementation-snapshot-20260914.md)。W2–W4 仍為 `proposed`；沒有建立使用者擁有的實作子任務。未來派發時須填入當時已通過 gate 的 SHA，不能用本文的預定分支名稱推論已有授權或成果。
 
 ## 1. Ownership 表
 
@@ -9,15 +9,18 @@
 | Coordinator | `frontend/src/app/**`、App.tsx、LiteApp.tsx、AppProviders.tsx、main.tsx、lite-main.tsx、Navigation.tsx、LiteNavigation.tsx、App.css | 整個迭代 |
 | Coordinator 共享範圍 | `frontend/src/context/**`、`frontend/src/hooks/**`、`frontend/src/components/**`、`frontend/src/services/**`、`lang/**`、`frontend/index.html`、`frontend/lite/index.html`、package/build/test config、root lockfile/workspace、README/README.en、docs、Journal | 必要變更由 Coordinator 寫入；預設不修改 backend/Tauri/renderer |
 | Coordinator HUD public contract | `frontend/src/features/overlay_control/hudConfig.ts` 及其既有 public schema/normalization 契約 | B 可提 typed patch 需求，不自行改跨端 config 格式 |
-| A：Sessions / Live | `frontend/src/features/live/**`、`sessions/**`、`analysis/**`、`telemetry/**`、`drag_test/**` | G2 完成後，Coordinator 釋放最小 adapters；D/最終接線前 A 停寫並 handoff |
-| B：HUD | `frontend/src/features/overlay_control/**`，排除上述 hudConfig.ts public contract | G2 完成後；B 負責 OverlayView composition，root 只接 Shell |
+| W1：Tune / Road state 子代理 | 分別獨占 `frontend/src/features/tuning/**`、`frontend/src/features/road/**` | G0-code + P1 精確 SHA 後；核對已對齊的 road-reviewed 與其他候選，交 root 接入 P2，尚非 W3/D |
+| W1/A0：Sessions / Live 最小前置 | `frontend/src/features/live/**`、`sessions/**`、`analysis/**`、`telemetry/**`、`drag_test/**` | G0-code + P1 精確 SHA 後；selection/lifetime 與最小 adapter 完成交 root 接入 P2 |
+| W1/B0：HUD runtime 前置 | `frontend/src/features/overlay_control/**`，排除 hudConfig.ts public contract | G0-code + P1 精確 SHA 後可開始；權威讀取/寫入存活完成後交 root 接入 P2，是 G2 前置 |
+| W2/A：Sessions / Live 完整重構 | 同 W1/A0 路徑 | G2 + WAVE2_BASE_SHA 後，Coordinator 釋放 adapters；D/最終接線前 A 停寫並 handoff |
+| W2/B1–B2：HUD controller / panels | 同 W1/B0 路徑 | 僅 G2 + WAVE2_BASE_SHA 後；B 接手完整 metadata/native adapter 與 OverlayView composition，root 只接 Shell |
 | C：Settings | `frontend/src/features/settings/**` | G2 完成後 |
 | D：Tune / Road | `frontend/src/features/tuning/**`、`frontend/src/features/road/**` | A foundation 已整合，且 Coordinator 釋放 W1 的 Tune state adapter 後 |
 | Reviewer | 唯讀上述程式、diff、handoff、測試結果 | 不自行修復作者檔案 |
 
 沒有列出的檔案不是自由寫入範圍。每個任務可讀其依賴；需要越界變更時先提出受影響 consumer、最小 API 差異與理由，Coordinator 處理。這是內部 ownership 協調，不預設要再向使用者申請常規修復。
 
-W1 尚無 A/B/C/D 寫入者，Coordinator 可先建立所需的最小 feature adapters、Tune state owner 或移除 dead Overlay props；移交時列精確檔案和 commit，之後不得同時繼續修改。
+W1 曾把 Tune state、Road state、Sessions/Live A0、HUD B0 最小前置分給 Terra 子代理，並未啟動 W2 面板拆分或 W3 遷移。目前寫入 lease 由 execution.md 登記；Coordinator 依交接快照逐一重新指派，不覆蓋現存草稿。共享 Shell、公開契約與最終接線始終由 Coordinator 持有；C 尚未接手前的 SettingsSurface 薄 adapter 也由 Coordinator 管理。
 
 Locales 統一由 Coordinator 寫。各 lane 在自己的 handoff 提供 key、英文原文、繁中/日文建議與用途，沿用既有 key 優先。`lang/zh-tw.json` 包含大小寫相異的鍵；驗證使用大小寫敏感的 JSON parser，不能用會合併鍵的處理方式。
 
@@ -25,22 +28,23 @@ Locales 統一由 Coordinator 寫。各 lane 在自己的 handoff 提供 key、�
 
 | 任務名稱（預定） | 模型/思考起點 | 形式 | Branch（預定） | 啟動條件 |
 | --- | --- | --- | --- | --- |
-| 前端 IA：共用 Shell 與契約 | 本對話 Coordinator | 保留本任務 | `codex/frontend-ia-shell-20260913` | 使用者啟動實作後 G0 |
-| 前端 IA：Sessions 與 Live | `gpt-5.6-terra` / high | 獨立子對話 A | `codex/frontend-ia-sessions-20260913` | G2、WAVE2_BASE_SHA |
-| 前端 IA：HUD 控制與面板拆分 | `gpt-5.6-terra` / xhigh | 獨立子對話 B | `codex/frontend-ia-hud-20260913` | 同上 |
-| 前端 IA：Settings 能力與設定面板 | `gpt-5.6-luna` / high | 獨立子對話 C | `codex/frontend-ia-settings-20260913` | 同上 |
-| 前端 IA：Tune 與 Road 結果整合 | `gpt-5.6-terra` / xhigh | 獨立子對話 D | `codex/frontend-ia-validation-20260913` | A foundation 已接線、指定 BASE_SHA |
+| 前端 IA：共用 Shell 與契約 | 本對話 Coordinator | 保留本任務 | 現存 `codex/frontend-ia-contracts-20260914`、`codex/frontend-ia-shell-20260914` | 恢復實作後先核對 G0-code、既有 W1 差異 |
+| W1：Tune / Road / Sessions / HUD 狀態前置 | `gpt-5.6-terra` / xhigh | 獨立 worktree 子代理 | 現存分支見 execution.md | 核對 G0-code，指定各自 BASE_SHA；一次最多三條子代理寫入 lane |
+| 前端 IA：Sessions 與 Live | `gpt-5.6-terra` / high | 子代理 A；可依使用者要求建立獨立任務 | `codex/frontend-ia-sessions-20260913`（預定） | G2、WAVE2_BASE_SHA |
+| 前端 IA：HUD 控制與面板拆分 | `gpt-5.6-terra` / xhigh | 子代理 B；可依使用者要求建立獨立任務 | `codex/frontend-ia-hud-20260913`（預定） | 同上 |
+| 前端 IA：Settings 能力與設定面板 | `gpt-5.6-luna` / high | 子代理 C；可依使用者要求建立獨立任務 | `codex/frontend-ia-settings-20260913`（預定） | 同上 |
+| 前端 IA：Tune 與 Road 結果整合 | `gpt-5.6-terra` / xhigh | 子代理 D；可依使用者要求建立獨立任務 | `codex/frontend-ia-validation-20260913`（預定） | Shell + A foundation 已接線、A-D 介面 freeze、指定 BASE_SHA |
 | 前端 IA：整合驗收 | Coordinator + Terra reviewer | 本對話 + 短期唯讀子代理 | `codex/frontend-ia-acceptance-20260913` | A/B/C/D 接線完成 |
 
 思考起點不是上限。Luna/ Terra 可依問題提升至當時工具列出的支援等級；複雜 shared 架構與產品取捨由 Coordinator 直接處理。子任務不要再建立新的使用者任務；若需要短期子代理，先劃分它獨占的新檔案範圍。
 
 規劃 worktree 已存在於 `D:/FH6-frontend-ia-20260913/plan`。後續子對話使用獨立 worktree，記錄工具實際回傳的路徑；不假設新任務會自動使用此 plan 路徑。Git 專案預設以 worktree 建任務，先確認 branch/head，將 lane branch 對齊指定 BASE_SHA 才寫碼，不共用 main checkout。
 
-派發前資料必須具體：Task/Thread ID、Owner、Model、Thinking、Worktree、Branch、BASE_SHA、CONTRACT_SHA、AllowedPaths、Gate、HandoffPath。若計畫文件還未合併到 main，Coordinator 提供可讀的文件絕對路徑或 planning commit；不可叫新任務讀不存在的相對路徑。
+派發前資料必須具體：Task/Agent ID、Owner、Model、Thinking、Worktree、Branch、BASE_SHA、CONTRACT_SHA、AllowedPaths、Gate、HandoffPath。不存在的使用者任務 ID 填「未建立」，不可拿子代理名稱冒充 Task ID。若計畫文件還未合併到 main，Coordinator 提供可讀的文件絕對路徑或 planning commit；不可叫新任務讀不存在的相對路徑。
 
 ## 3. 共用派發前綴
 
-建立子對話時將本段與該 lane 工作單合併為一則自足的任務描述，並填入登記資料。不要僅傳「按照附件執行」。
+派發子代理或經要求建立獨立任務時，將本段與該 lane 工作單合併為一則自足描述，填入登記資料。不要僅傳「按照附件執行」。
 
 ```text
 你負責 FH6-HorizonTuner 前端資訊架構重構的指定 lane。
@@ -81,7 +85,7 @@ UI 使用 Halfmoon semantic tokens；覆蓋面板使用 ModalPortal；不加裝�
 
 **交付目標**：HudWorkspace + controller + Setup/Layout/Advanced；所有既有樣式與 S650/WIP 能力保留。外部 HUD 在設定頁卸載後持續運作。
 
-1. B1 先抽 pure patch、capability map、typed native adapter 與 controller；對 persisted config、GET 衍生欄位與 UI view-model 分界，不改跨端 schema。
+1. W1/B0 先處理 authoritative config、serialized patch queue、pending write 跨頁存活與 remount 不禁用 HUD；這是 G2 前置。W2/B1 接手後才完善 capability map、metadata、typed native adapter 與 controller 分層；對 persisted config、GET 衍生欄位與 UI view-model 分界，不改跨端 schema。
 2. 定義設定寫入序列、合併/正規化、失敗回復與重新抓權威值。保存成功需要真實回應，不能僅以 fetch 未 throw 判定。
 3. page fetch 加取消或 generation guard；page channel cleanup；保存中的更新與 launch/close 命令具可 await 語意，離頁不能丟棄使用者已提交的更新。
 4. B2 拆 Setup/Layout/Advanced、composition 與 scoped CSS。Luna 可另接新 panels 檔案，B 持有 controller/OverlayView；禁止兩者同時編輯 OverlayView 或共用契約。
@@ -107,10 +111,10 @@ UI 使用 Halfmoon semantic tokens；覆蓋面板使用 ModalPortal；不加裝�
 
 **交付目標**：Tune 保留四步與驗證流程，歷史資料從 Sessions 檢視；analysis session 與 Road workflow 維持不同 ID/資料源。
 
-1. 確認 A foundation 和跨 Workspace intent 已整合，沿用 P2 的 Tune/Developer state 保留方案。
+1. 確認 Shell + A foundation 已整合，核對 `A_FOUNDATION_SHA`、`AD_INTERFACE_SHA`、review slot 型別、workflowId 語意與返回 Tune callback；這是 D 開工前的 parent，不要求尚未產生的 D export。沿用 P2 的 Tune/Developer state 保留方案。只有 W1 狀態前置可早於此 gate，不能把它當成 D 已開工。
 2. 將 Road history review 需要的 library/detail/actions 抽出為 export；不得直接修改 A 的 sessions 檔案。
 3. start/record/prepare 保留 Tune；歷史中的 comparison、accept/revert/draft 等既有結果操作逐一列 ownership 與入口，不能以唯讀化名義刪除。
-4. 輸出 onOpenSessions 或 typed workflow ref callback；Coordinator 接線並驗證舊資料可達後，才移除 reviewHistory fallback。
+4. 輸出 onOpenSessions 或 typed workflow ref callback；Coordinator 把 D export 接入 Sessions，記錄後續 `AD_INTEGRATION_SHA` 並驗證舊資料可達後，才移除 reviewHistory fallback。
 5. 保留 `road-selected-workflow`、已存 documents、input snapshot、四步 restore/readiness、非 Road compatibility；不改 physics math 或允許它繞過既有 validation gating。
 6. 只掛載一個 active Road 編輯/controller；Sessions review 不啟動第二條錄製。離開 Tune 的未完成 run、回到 Tune 的 setup/engine 選擇要明確恢復。
 
@@ -124,7 +128,7 @@ UI 使用 Halfmoon semantic tokens；覆蓋面板使用 ModalPortal；不加裝�
 
 ## 9. Handoff 與狀態更新
 
-lane handoff 優先寫本 worktree 的 `scratch/frontend-ia/<lane>-handoff.md` 並在任務交付中連結；Coordinator 讀取後把可靠結果彙整至總 handoff。獨立檔避免所有人同時改 plan/Journal。
+正式 lane handoff 統一寫本 worktree 的 `docs/frontend/ia-refactor-20260913/handoffs/<lane>.md`，與該 lane 提交；scratch 只放 log 和暫存。Coordinator 讀取後把可靠結果彙整至 execution.md；各 lane 不改總計畫或 Journal。現存 Tune/Road/Sessions/HUD handoff 保留原位置；最新提交、獨立審查與下一步由統一快照承接，不能沿用作者 handoff 中審查前的接線建議。
 
 ```text
 Task:
@@ -143,4 +147,4 @@ Next action:
 Last updated:
 ```
 
-`handoff` 表示作者已停寫；不表示已 merge。`done` 必須同時滿足 lane 實作、Coordinator 接線、指定驗收與必要文件；本輪只把「規劃交付」標為完成，不把程式 lanes 標 done。
+`handoff` 表示作者已停寫；不表示已 merge。`done` 必須同時滿足 lane 實作、Coordinator 接線、指定驗收與必要文件；規劃交付已完成；程式 lanes 依實際驗證逐一登記，不提前標 done。
