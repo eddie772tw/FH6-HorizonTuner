@@ -1,14 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
-import type { RoadLive } from './roadTypes';
+import type { RoadFinish, RoadLive, RoadSummary } from './roadTypes';
 import {
   ROAD_SELECTED_WORKFLOW_KEY,
   createRoadValidationSession,
   markRoadWorkflowCreated,
   reconcileRoadLive,
+  roadFinishDraftFor,
+  roadOperationResultApplies,
   roadRunConfirmationFor,
   selectRoadWorkflow,
   setRoadCandidateDraft,
   setRoadChoiceSaved,
+  setRoadFinishDraft,
   setRoadPrepareDraft,
   setRoadResultSelection,
   setRoadRunConfirmation,
@@ -17,6 +20,7 @@ import {
   settleRoadOperation,
   startRoadOperation,
   type RoadCandidateDraft,
+  type RoadFinishDraft,
   type RoadOperationState,
   type RoadPrepareDraft,
   type RoadResultSelection,
@@ -29,6 +33,7 @@ export type {
   RoadCandidateDraft,
   RoadCandidateValues,
   RoadComparisonSelection,
+  RoadFinishDraft,
   RoadOperationState,
   RoadPrepareDraft,
   RoadResultSelection,
@@ -44,6 +49,7 @@ export interface RoadValidationController {
   choiceSaved: boolean;
   prepareDraft: RoadPrepareDraft;
   candidateDraft: RoadCandidateDraft | null;
+  finishDraft: RoadFinishDraft | null;
   resultSelection: RoadResultSelection;
   activeRun: RoadLive['activeRun'];
   operation: RoadOperationState | null;
@@ -54,6 +60,8 @@ export interface RoadValidationController {
   setChoiceSaved: (choiceSaved: boolean) => void;
   setPrepareDraft: (draft: RoadPrepareDraft) => void;
   setCandidateDraft: (draft: RoadCandidateDraft | null) => void;
+  setFinishDraft: (draft: RoadFinishDraft | null) => void;
+  finishDraftFor: (summary: RoadSummary, finish?: RoadFinish) => RoadFinishDraft;
   setResultSelection: (selection: RoadResultSelection) => void;
   runConfirmationFor: (identity: RoadRunConfirmationIdentity) => RoadRunConfirmation;
   setRunConfirmation: (identity: RoadRunConfirmationIdentity, confirmation: Pick<RoadRunConfirmation, 'confirmed' | 'unchanged'>) => void;
@@ -76,6 +84,8 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState(() => createRoadValidationSession(initialSelectedWorkflowId()));
   const nextOperationId = useRef(0);
   const activeOperationId = useRef<number | null>(null);
+  const activeOperationRevision = useRef<number | null>(null);
+  const selectionRevision = useRef(0);
 
   useEffect(() => {
     try {
@@ -85,28 +95,25 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     }
   }, [session.selectedWorkflowId]);
 
-  const invalidatePendingOperation = useCallback(() => {
-    activeOperationId.current = null;
+  const selectWorkflow = useCallback((workflowId: string) => {
+    selectionRevision.current += 1;
+    setSession(previous => selectRoadWorkflow(previous, workflowId));
   }, []);
 
-  const selectWorkflow = useCallback((workflowId: string) => {
-    invalidatePendingOperation();
-    setSession(previous => selectRoadWorkflow(previous, workflowId));
-  }, [invalidatePendingOperation]);
-
   const markWorkflowCreated = useCallback((workflowId: string) => {
-    invalidatePendingOperation();
     setSession(previous => markRoadWorkflowCreated(previous, workflowId));
-  }, [invalidatePendingOperation]);
+  }, []);
 
   const setStep = useCallback((step: RoadValidationStep) => setSession(previous => setRoadStep(previous, step)), []);
   const setSetupId = useCallback((setupId: string) => setSession(previous => setRoadSetupId(previous, setupId)), []);
   const setChoiceSaved = useCallback((choiceSaved: boolean) => setSession(previous => setRoadChoiceSaved(previous, choiceSaved)), []);
   const setPrepareDraft = useCallback((draft: RoadPrepareDraft) => setSession(previous => setRoadPrepareDraft(previous, draft)), []);
   const setCandidateDraft = useCallback((draft: RoadCandidateDraft | null) => setSession(previous => setRoadCandidateDraft(previous, draft)), []);
+  const setFinishDraft = useCallback((draft: RoadFinishDraft | null) => setSession(previous => setRoadFinishDraft(previous, draft)), []);
   const setResultSelection = useCallback((selection: RoadResultSelection) => setSession(previous => setRoadResultSelection(previous, selection)), []);
   const reconcileLive = useCallback((live: RoadLive | null) => setSession(previous => reconcileRoadLive(previous, live)), []);
   const runConfirmationFor = useCallback((identity: RoadRunConfirmationIdentity) => roadRunConfirmationFor(session, identity), [session]);
+  const finishDraftFor = useCallback((summary: RoadSummary, finish?: RoadFinish) => roadFinishDraftFor(session, summary, finish), [session]);
   const setRunConfirmation = useCallback((identity: RoadRunConfirmationIdentity, confirmation: Pick<RoadRunConfirmation, 'confirmed' | 'unchanged'>) => {
     setSession(previous => setRoadRunConfirmation(previous, identity, confirmation));
   }, []);
@@ -115,15 +122,21 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     if (activeOperationId.current !== null) return null;
     const id = ++nextOperationId.current;
     activeOperationId.current = id;
+    activeOperationRevision.current = selectionRevision.current;
     setSession(previous => startRoadOperation(previous, id, kind));
     return id;
   }, []);
 
   const finishOperation = useCallback((operationId: number, succeeded: boolean) => {
     if (activeOperationId.current !== operationId) return false;
+    const resultAppliesToCurrentSelection = roadOperationResultApplies({
+      id: operationId,
+      selectionRevision: activeOperationRevision.current ?? -1,
+    }, selectionRevision.current);
     activeOperationId.current = null;
+    activeOperationRevision.current = null;
     setSession(previous => settleRoadOperation(previous, operationId, succeeded ? 'succeeded' : 'failed'));
-    return true;
+    return resultAppliesToCurrentSelection;
   }, []);
 
   const controller = useMemo<RoadValidationController>(() => ({
@@ -133,6 +146,7 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     choiceSaved: session.choiceSaved,
     prepareDraft: session.prepareDraft,
     candidateDraft: session.candidateDraft,
+    finishDraft: session.finishDraft,
     resultSelection: session.resultSelection,
     activeRun: session.activeRun,
     operation: session.operation,
@@ -143,6 +157,8 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     setChoiceSaved,
     setPrepareDraft,
     setCandidateDraft,
+    setFinishDraft,
+    finishDraftFor,
     setResultSelection,
     runConfirmationFor,
     setRunConfirmation,
@@ -150,8 +166,8 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     beginOperation,
     finishOperation,
   }), [
-    beginOperation, finishOperation, markWorkflowCreated, reconcileLive, runConfirmationFor, selectWorkflow, session,
-    setCandidateDraft, setChoiceSaved, setPrepareDraft, setResultSelection, setRunConfirmation, setSetupId, setStep,
+    beginOperation, finishDraftFor, finishOperation, markWorkflowCreated, reconcileLive, runConfirmationFor, selectWorkflow, session,
+    setCandidateDraft, setChoiceSaved, setFinishDraft, setPrepareDraft, setResultSelection, setRunConfirmation, setSetupId, setStep,
   ]);
 
   return <RoadValidationContext.Provider value={controller}>{children}</RoadValidationContext.Provider>;
