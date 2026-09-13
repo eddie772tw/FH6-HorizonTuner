@@ -1,8 +1,53 @@
 # Coordinator 交接
 
-目前使用者已恢復 G5 真實證據驗收前的實作目標；即時範圍、寫入 ownership 與驗證狀態以 [execution.md](execution.md) 為準。下列 2026-09-14 規劃交付與停筆結果是歷史快照，不能用來取消後續已恢復的開發授權。
+目前使用者已恢復 G5 真實證據驗收前的實作目標；即時範圍、寫入 ownership 與驗證狀態以 [execution.md](execution.md) 為準。下列 02:00 規劃交付與停筆結果是歷史快照，不能用來取消後續已恢復的開發授權。
 
-更新：2026-09-14（Asia/Taipei）。本文件記錄現在的交接狀態；2026-09-13 的純規劃歷史可從同一分支的 Git 紀錄查看。
+更新：2026-09-14（Asia/Taipei）。本文件先記錄恢復後交接，再保留 02:00 snapshot；不要把歷史的 planning-only 欄位當成目前狀態。
+
+## 恢復後交接（live）
+
+接手先讀 [G1-core 凍結紀錄](evidence/g1-shell-freeze-20260914.md) 與 [G2 五組剩餘操作](evidence/g2-remaining-20260914.md)。三組由 Coordinator 操作 mounted UI，兩組需要實際 Windows 原生視窗觀察；目前共用連接埠已交回原生驗收使用。
+
+本次文件驗證：12 份計畫文件共 97 個連結（排除原始附件副本及 code-fence 範例）無失效本地目標；fixed-SHA GitHub blob 連結已由 Git object 核对來源檔存在。原始附件副本未修改。新增與既有改動一併 stage 後執行 whitespace check；不將產品分支測試當成本文件內容已實作的證據。
+
+| 交接欄位 | 內容 |
+| --- | --- |
+| Active goal | 恢復實作至 G5 真實證據驗收前；只有已完成 foundation candidate 且逐 PR 的精確 base/head、required checks、獨立 review、ownership 與依賴條件全部成立時才記為 `Ready to Merge`，不把所有非 G5 PR 一律標為 Ready。欠 G5 真實證據的相關 PR 必須保持 draft。 |
+| aggregate state-base | [`373c0b81add4b80786617c1b1358ce22ca78944d`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/373c0b81add4b80786617c1b1358ce22ca78944d)；已 push；root 回報 `117/774` 全測與 build 通過。 |
+| Shell consumer | [commit `c5e7fdfb82c4b1f792fd76be4cb796059337bcfc`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc)，base `codex/frontend-ia-state-base-20260914`，保留原 ancestry，含已提交的 `App`/`LiteApp` active-only wiring；root 回報 118 files / 788 tests、build/staged diff PASS，native cargo debug compile PASS。Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 為 draft，5 項 CI SUCCESS、bundle running；consumer review `PASS`。 |
+| G1-core | public contract 已 freeze @ [`c5e7fdfb82c4b1f792fd76be4cb796059337bcfc`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc)；authoritative race 修正與 terminal measurement force-publish 已完成，Terra 最後整合 review PASS、無 P1/P2 blocker。此 freeze 不包含 A-D，也不等於 G2 pass。 |
+| G2 | `partial`。已觀察 T3、L3、L4、Road snapshot/T4 與 X1 的受控 UI/整合 evidence；完整 state/identity/race/channel matrix 與 C5/H5 native 尚缺，不宣告 G2 pass、不啟動 W2。 |
+| G5 | 尚未通過；Full/Lite/native/game/performance 矩陣與必要真實 evidence 待完成，相關候選保持 draft。 |
+
+### 候選 PR 與檢查快照
+
+| PR | 精確 head | 目前觀察 |
+| --- | --- | --- |
+| #339 | `c1080684b39fd291a3c972a38e498bf1022819fc` | 本次文件更新前已查證的 non-draft / 12 checks SUCCESS snapshot；更新後不視為 current head |
+| #340 | `16aa79aed0eeaa6653f86a72e21a0301f0517619` | non-draft；12 checks SUCCESS |
+| #341 | `065d462ea4f29e1c36ed79924714f6848ec034ae` | non-draft；7 checks SUCCESS/CLEAN |
+| #342 | `deef1eec61ec0a7fa13028117aa17fe7c98df6c7` | non-draft；7 checks SUCCESS/CLEAN |
+| #343 | `550ad69b86986f3430a0bbbef5761e9193b5431d` | non-draft；7 checks SUCCESS/CLEAN |
+| #344 | `99527597fecc29aab7f419cbfe89bd7f9072a6e0` | non-draft；7 checks SUCCESS/CLEAN |
+| #345 | `c5e7fdfb82c4b1f792fd76be4cb796059337bcfc` | draft；base `codex/frontend-ia-state-base-20260914`；CI pending root 查 |
+
+只有 #341–#344 位於 contract-base；#339/#340 不歸入 contract base。各候選的 Ready to Merge 仍須逐 PR 條件成立；獨立 local reviews 為 PASS，沒有正式 GitHub approval 記錄，也不把 checks 或 non-draft 單獨當成 merged/G5 證據。G0 的 root-owned [g0-lite-browser-20260914.md](evidence/g0-lite-browser-20260914.md) 已納入 evidence input，本次未修改。
+
+### 目前 evidence 連結與 owner
+
+Shell commit 內的三份新文件使用 exact-SHA GitHub 連結：[g2-shell-browser-20260914.md](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/evidence/g2-shell-browser-20260914.md)、[shell-20260914.md](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)、[g2-native-20260914.md](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/handoffs/g2-native-20260914.md)。三份新 docs links 已通過檢查。
+
+目前 CUA evidence 包含 T3 1080 frames / 18 seconds sweep、高低 RPM HUD 往返、POST pending 切 HUD 後保存成功且 archive 1 筆、timeout 保留量測可 retry；L3 自動開新 80-sample session；L4 HUD completion 不搶頁、pending 入口返 Live 並開 exact new session；Road snapshot fix 已完成，Terra 獨立 review 的 9 tests/tsc PASS 且 UI baseline 建立成功；Road 第一趟 backend 完成 140 samples / 14 seconds、另一趟 recording 7 samples 後 explicit stop 保存 48 samples / 4.7 seconds；T4 reload archive 1 筆與 profile 1500 kg / 215 hp 回讀，未提交 Road finish `1:23.456` 往返 Sessions 並選第 2 run / 48；X1 的 Road poll 8 → 0、Sessions data/debrief 7/6 → HUD 0/0、Diagnostics logs 5 → 關閉 0，無 event truncation。
+
+Vite session `43401`、backend `57351` 已由 root 停止；TCP `1420/8001` 與 UDP `8000` listeners 均為 0，沒有產品寫入者。GitHub main protection 查詢為 404，現有 rules 僅 deletion/non-fast-forward；#339–#345 reviewThreads 均空、reviewDecision 均空，沒有正式 GitHub approval。native C5/H5 Full/Lite 觀察已透過 async input 交由使用者依 [native handoff](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/handoffs/g2-native-20260914.md) 執行，回覆 pending。
+
+### 目前 owner 與下一步
+
+- root：持有 Shell/docs 與 shared wiring；aggregate state-base 已 push，Shell PR #345 仍 draft，5 項 CI SUCCESS、bundle running。
+- Terra：narrow Road fix 與最後整合 review 已完成，獨立 review PASS、無 P1/P2 blocker；其餘 review 已完成並停筆。
+- Coordinator/root：完成完整 state/identity/race/channel matrix、C5/H5 native 與最終 G5 matrix；不以 local staged/build 或受控 UI evidence 宣告 G2/G5 pass。
+
+## 02:00 歷史快照（保留）
 
 | 交接欄位 | 內容 |
 | --- | --- |
@@ -34,7 +79,7 @@
 
 總文件入口 [docs/README.md](../../README.md) 已同步連結。
 
-## 本次完成的工作
+## 本次完成的工作（02:00 歷史快照）
 
 - 重新核對附件、規劃文件、主分支、隔離工作樹與現有兩個 PR；沒有假設原 main 已含新 Shell。
 - 協調 Terra 的 HUD/Sessions owner 停寫並提供交接；保留 Tune/Road/Sessions/HUD 已提交成果與 Shell 草稿。
@@ -43,7 +88,7 @@
 - 正式 handoff 路徑統一到 docs；彙整 Road 1 項與 Sessions 4 項獨立 review blocker、HUD 靜態風險及最新精確 heads。planning branch 與原 main、其他 tuning worktree 分離。
 - 停止本任務啟動的基準程序，保存 logs、隔離資料與原生編譯結果；沒有繼續產品測試或 native 操作。
 
-## 下一次恢復開發的第一步
+## 下一次恢復開發的第一步（02:00 歷史快照）
 
 1. 先核對使用者當時要求、main/remote SHA、所有 worktree dirty paths 與 ownership；不要重建或覆蓋本快照中的草稿。
 2. 讀實作快照，將未合併 commits、未測 WIP 與缺少的 G0 native/performance 分開處理；先核對 G0-code，另列 G0-observability 缺項。
@@ -53,7 +98,7 @@
 
 根據本次交付範圍，下一輪不直接宣告任一程式 lane done，也不把兩個既有 PR 的 CI 視為未提交 WIP 的驗證。
 
-## 本次文件驗證
+## 本次文件驗證（02:00 歷史快照）
 
 文件驗證結果在收尾時記錄於此；只檢查文件、來源、連結與差異範圍，不新增產品 test/build。
 
@@ -64,3 +109,7 @@
 - Terra 獨立複查提出 G1/A-D 循環、G2 前置 owner 及 G0/G5 證據分界；修訂後再次複查為 pass。G1-core、W1 行為與後期完整驗收已分開，最低證據層表涵蓋全部 acceptance ID；這是文件審查結論，不是產品 gate 通過。
 - 原有局部 test/build、native 啟動與 PR checks 結果均標示原 SHA/來源；不作本次未推送文件的 CI 證據。
 - 本次只交付本地文件，未 commit、push、新建 PR 或合併 main。
+
+## 本輪文件驗證
+
+本輪只更新本計畫目錄的 `execution.md`、`HANDOFF.md`、`contracts-and-gates.md`、`README.md`；未修改產品、依賴、locale、shared code 或 root-owned evidence，未 commit/push。完成後以 `git diff --check` 與 dirty path 檢查確認範圍。
