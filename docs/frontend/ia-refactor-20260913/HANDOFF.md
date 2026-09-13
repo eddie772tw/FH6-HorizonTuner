@@ -1,5 +1,7 @@
 # Coordinator 交接
 
+以下保留 2026-09-13 規劃階段的歷史交接。2026-09-14 使用者已授權實作；當前 ownership、PR 與 gate 狀態以 [執行紀錄](execution.md) 為準，G0 新證據見 [基準執行結果](evidence/g0-baseline.md)。不要將下列「未執行」當成最新狀態。
+
 ## 本輪狀態
 
 ```text
