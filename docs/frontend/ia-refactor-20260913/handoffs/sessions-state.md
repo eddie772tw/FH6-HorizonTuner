@@ -132,3 +132,9 @@ The pure/async Vitest coverage now includes source separation, fresh latest reso
 These results do not pass G2 or G5. Coordinator still needs actual Full/Lite mount evidence for provider lifetime and capability gating. L1--L4 and S1--S4 require controlled UI scenarios; MoTeC native launch, live FH6 telemetry, resource/CPU/RSS measurements, and all final G5 matrix items remain `not-run`. Road review is explicitly reserved for W3.
 
 Next action: Coordinator reviews this lane, resolves the two locale keys, wires the Full root provider/runtime and workspace registry, then runs the controlled L3/L4/S1 lifecycle scenarios before opening W2/A2 or claiming G2.
+
+## Coordinator follow-up: effect replay (2026-09-14)
+
+Ownership transferred to Coordinator after the c22f7ae independent review. Root found that the provider's effect cleanup permanently disposed both selection gates, and the runtime reused a disposed race observer under StrictMode effect replay. Selection gates now explicitly reactivate while retaining the generation invalidation of older requests; each runtime effect setup constructs its own race observer and resets the race-edge reference. The Retry label now uses the existing translation callback.
+
+Two focused regressions cover post-cleanup load/operation recovery and rejection of pre-cleanup work. Final local validation: 113 files / 742 tests; Full/Lite build; git diff --check all passed. This supersedes the earlier 740-test count. Independent re-review of this follow-up and actual Shell StrictMode UI validation remain pending. No backend, shared context/hooks, schema, or formula was changed.

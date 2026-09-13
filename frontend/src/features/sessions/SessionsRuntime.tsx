@@ -69,8 +69,10 @@ export const SessionsRuntime: React.FC<SessionsRuntimeProps> = ({ activeWorkspac
   }, [activeWorkspace, onOpenSessions]);
 
   const isRacing = telemetryData?.IsRaceOn === 1;
-  if (!lifecycleRef.current) {
-    lifecycleRef.current = new RaceCompletionLifecycle(createRaceCompletionReader(), {
+  useEffect(() => {
+    // The effect owns the observer. StrictMode cleanup must be followed by a
+    // new observer, including a fresh edge when mounting during a race.
+    const lifecycle = new RaceCompletionLifecycle(createRaceCompletionReader(), {
       onPending: sessionId => setPending({ sessionId, intent: null }),
       onCompleted: completed => {
         const intent: SessionIntent = { kind: "analysis", filename: completed.filename };
@@ -82,7 +84,13 @@ export const SessionsRuntime: React.FC<SessionsRuntimeProps> = ({ activeWorkspac
         setPending({ sessionId: completed.session_id, intent });
       },
     });
-  }
+    lifecycleRef.current = lifecycle;
+    wasRacingRef.current = false;
+    return () => {
+      lifecycle.dispose();
+      lifecycleRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (!wasRacingRef.current && isRacing) {
@@ -95,10 +103,6 @@ export const SessionsRuntime: React.FC<SessionsRuntimeProps> = ({ activeWorkspac
     wasRacingRef.current = isRacing;
   }, [isRacing]);
 
-  useEffect(() => () => {
-    lifecycleRef.current?.dispose();
-  }, []);
-
   if (!pending || (activeWorkspace === "live" && pending.intent)) return null;
   const openOrRetry = () => {
     if (pending.intent) onOpenSessions(pending.intent);
@@ -108,7 +112,7 @@ export const SessionsRuntime: React.FC<SessionsRuntimeProps> = ({ activeWorkspac
     <div className="position-fixed bottom-0 end-0 m-3 p-3 glass-panel shadow" style={{ zIndex: 1050, maxWidth: "22rem" }} role="status">
       <div className="fw-semibold">{pending.intent ? t("Post-Race Analysis") : t("Loading Telemetry Data...")}</div>
       <button type="button" className="btn btn-sm btn-primary mt-2" onClick={openOrRetry}>
-        {pending.intent ? t("Post-Race Analysis") : "Retry"}
+        {pending.intent ? t("Post-Race Analysis") : t("Retry")}
       </button>
     </div>
   );

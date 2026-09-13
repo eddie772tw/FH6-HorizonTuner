@@ -72,6 +72,11 @@ export class SessionOperationGate {
   private generation = 0;
   private disposed = false;
 
+  /** React effect replay can resume this owner without reviving older work. */
+  activate(): void {
+    this.disposed = false;
+  }
+
   begin(): SessionOperationGuard {
     const generation = ++this.generation;
     return {
@@ -109,6 +114,10 @@ export class SessionLoadGate {
   private generation = 0;
   private disposed = false;
   private activeController: AbortController | null = null;
+
+  activate(): void {
+    this.disposed = false;
+  }
 
   begin(): SessionLoadGuard {
     this.activeController?.abort();
