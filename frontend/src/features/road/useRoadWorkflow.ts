@@ -11,61 +11,117 @@ export async function roadRequest<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 
-export function useRoadWorkflow() {
+interface RoadWorkflowOptions {
+  selectedId?: string;
+  onSelect?: (workflowId: string) => void;
+  onLive?: (live: RoadLive) => void;
+}
+
+export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
   const [workflows, setWorkflows] = useState<RoadWorkflow[]>([]);
-  const [selectedId, setSelectedId] = useState(() => localStorage.getItem('road-selected-workflow') || '');
+  const [storedSelectedId, setStoredSelectedId] = useState(() => localStorage.getItem('road-selected-workflow') || '');
+  const selectedId = options.selectedId ?? storedSelectedId;
+  const select = options.onSelect ?? setStoredSelectedId;
   const [documents, setDocuments] = useState<RoadDocument[]>([]);
   const [live, setLive] = useState<RoadLive | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
   const generation = useRef(0);
-  const selectedRef = useRef(selectedId); selectedRef.current = selectedId;
+  const mutationGeneration = useRef(0);
+  const mounted = useRef(false);
+  const selectedRef = useRef(selectedId);
+  const selectRef = useRef(select);
+  const liveListener = useRef(options.onLive);
+  selectedRef.current = selectedId;
+  selectRef.current = select;
+  liveListener.current = options.onLive;
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
   const refresh = useCallback(async () => {
-    const id = selectedRef.current, sequence = ++generation.current;
+    const id = selectedRef.current;
+    const sequence = ++generation.current;
     const list = await roadRequest<RoadWorkflow[]>('/workflows');
-    if (sequence !== generation.current || id !== selectedRef.current) return;
-    setWorkflows(list); setError('');
+    if (!mounted.current || sequence !== generation.current || id !== selectedRef.current) return;
+    setWorkflows(list);
+    setError('');
     if (id && !list.some(work => work.id === id)) {
-      setDocuments([]); setSelectedId(''); return;
+      setDocuments([]);
+      selectRef.current('');
+      return;
     }
     const docs = id ? await roadRequest<RoadDocument[]>('/workflows/' + encodeURIComponent(id)) : [];
-    if (sequence !== generation.current || id !== selectedRef.current) return;
+    if (!mounted.current || sequence !== generation.current || id !== selectedRef.current) return;
     setDocuments(docs);
   }, []);
+
   useEffect(() => {
-    localStorage.setItem('road-selected-workflow', selectedId);
+    if (options.selectedId === undefined) localStorage.setItem('road-selected-workflow', selectedId);
     setDocuments([]);
-    void refresh().catch(e => setError(String(e.message)));
-  }, [selectedId, refresh]);
+    void refresh().catch(errorValue => {
+      if (mounted.current) setError(String((errorValue as Error).message));
+    });
+  }, [options.selectedId, refresh, selectedId]);
+
   useEffect(() => {
-    let disposed = false, previousRun: string | null | undefined;
+    let disposed = false;
+    let previousRun: string | null | undefined;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
         const state = await roadRequest<RoadLive>('/live');
         if (disposed) return;
         setLive(state);
+        liveListener.current?.(state);
         if (previousRun !== state.activeRun?.id) await refresh();
         previousRun = state.activeRun?.id;
-      } catch (e) { if (!disposed) { setLive(null); setError(String((e as Error).message)); } }
+      } catch (errorValue) {
+        if (!disposed) {
+          setLive(null);
+          setError(String((errorValue as Error).message));
+        }
+      }
       if (!disposed) timer = setTimeout(poll, 1000);
     };
     void poll();
     return () => { disposed = true; clearTimeout(timer); };
   }, [refresh]);
+
   const perform = async <T,>(path: string, body: unknown): Promise<T | null> => {
     if (inFlight.current) return null;
     inFlight.current = true;
-    setBusy(true); setError('');
+    const mutation = ++mutationGeneration.current;
+    if (mounted.current) {
+      setBusy(true);
+      setError('');
+    }
     try {
       const value = await roadRequest<T>(path, body);
-      try { const state = await roadRequest<RoadLive>('/live'); setLive(state); await refresh(); }
-      catch { setError('The change was saved, but the view could not refresh. Reopen the saved workflow.'); }
+      try {
+        const state = await roadRequest<RoadLive>('/live');
+        if (mounted.current && mutation === mutationGeneration.current) {
+          setLive(state);
+          liveListener.current?.(state);
+          await refresh();
+        }
+      } catch {
+        if (mounted.current && mutation === mutationGeneration.current) {
+          setError('The change was saved, but the view could not refresh. Reopen the saved workflow.');
+        }
+      }
       return value;
+    } catch (errorValue) {
+      if (mounted.current && mutation === mutationGeneration.current) setError(String((errorValue as Error).message));
+      return null;
+    } finally {
+      inFlight.current = false;
+      if (mounted.current && mutation === mutationGeneration.current) setBusy(false);
     }
-    catch (e) { setError(String((e as Error).message)); return null; }
-    finally { inFlight.current = false; setBusy(false); }
   };
-  return { workflows, selectedId, select: setSelectedId, documents, live, error, busy, perform, refresh };
+
+  return { workflows, selectedId, select, documents, live, error, busy, perform, refresh };
 }
