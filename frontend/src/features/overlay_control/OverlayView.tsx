@@ -65,7 +65,7 @@ async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: s
 
 const OverlayViewContent: React.FC = () => {
   const { settings, t } = useSettings();
-  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand } = useOverlayControlRuntime();
+  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand, updateConfig } = useOverlayControlRuntime();
   const [loading, setLoading] = useState(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
@@ -137,8 +137,7 @@ const OverlayViewContent: React.FC = () => {
   };
 
   const handleAudioDeviceChange = async (deviceId: string) => {
-    const updated = { ...config, audioDeviceId: deviceId };
-    void saveConfig(updated);
+    void updateConfig({ audioDeviceId: deviceId });
     try {
       await backendFetch('/api/audio/device', {
         method: 'POST',
@@ -199,7 +198,6 @@ const OverlayViewContent: React.FC = () => {
   };
 
   const fetchConfig = async () => refresh();
-  const saveConfig = async (newConfig: HudConfig): Promise<boolean> => replaceConfig(newConfig);
 
   useEffect(() => {
     void loadAuthorInfo(config.hudStyle);
@@ -228,11 +226,9 @@ const OverlayViewContent: React.FC = () => {
   };
 
   const toggleHudWindow = async (enable: boolean) => {
-    const previousConfig = config;
     setLoading(true);
     setHudActionError(null);
-    const updated = { ...config, enabled: enable };
-    const persistence = saveConfig(updated);
+    const persistence = updateConfig({ enabled: enable });
 
     try {
       if (enable) {
@@ -256,7 +252,7 @@ const OverlayViewContent: React.FC = () => {
         }
       }
       if (enable) {
-        void applyMonitorSelection(updated.selectedMonitorIndex);
+        void applyMonitorSelection(config.selectedMonitorIndex);
       }
 
       void persistence.then((persisted) => {
@@ -267,7 +263,6 @@ const OverlayViewContent: React.FC = () => {
       });
     } catch (err) {
       console.error('HUD overlay action failed:', err);
-      void replaceConfig(previousConfig);
       if (mountedRef.current) setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -275,8 +270,7 @@ const OverlayViewContent: React.FC = () => {
   };
 
   const handleMonitorChange = (monIdx: number) => {
-    const updated = { ...config, selectedMonitorIndex: monIdx };
-    saveConfig(updated);
+    void updateConfig({ selectedMonitorIndex: monIdx });
     if (config.enabled) {
       applyMonitorSelection(monIdx);
     }
@@ -284,161 +278,133 @@ const OverlayViewContent: React.FC = () => {
 
   const handleScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    const updated = { ...config, scale: clamped };
-    saveConfig(updated);
+    void updateConfig({ scale: clamped });
   };
 
   const handleTelemetryOpacityChange = (newOpacity: number) => {
     const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    const updated = { ...config, telemetryOpacity: clamped };
-    saveConfig(updated);
+    void updateConfig({ telemetryOpacity: clamped });
   };
 
   const handleGRadarScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryGRadarScale: clamped });
+    void updateConfig({ telemetryGRadarScale: clamped });
   };
 
   const handleCornersScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryCornersScale: clamped });
+    void updateConfig({ telemetryCornersScale: clamped });
   };
 
   const handlePedalScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryPedalScale: clamped });
+    void updateConfig({ telemetryPedalScale: clamped });
   };
 
   const handlePowerTorqueScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
+    void updateConfig({ telemetryPowerTorqueScale: clamped });
   };
 
   const handleMergedChartsScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryMergedChartsScale: clamped });
+    void updateConfig({ telemetryMergedChartsScale: clamped });
   };
 
   const handleLiveMapScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryLiveMapScale: clamped });
+    void updateConfig({ telemetryLiveMapScale: clamped });
   };
 
   const handleLiveMapOpacityChange = (newOpacity: number) => {
     const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    saveConfig({ ...config, telemetryLiveMapOpacity: clamped });
+    void updateConfig({ telemetryLiveMapOpacity: clamped });
   };
 
   const handleCornerOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryCornerOffsetX: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryCornerOffsetX: val });
   };
 
   const handleCornerOffsetYChange = (val: number) => {
-    const updated = { ...config, telemetryCornerOffsetY: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryCornerOffsetY: val });
   };
 
   const handleLiveMapOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryLiveMapOffsetX: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryLiveMapOffsetX: val });
   };
 
   const handleLiveMapOffsetYChange = (val: number) => {
-    const updated = { ...config, telemetryLiveMapOffsetY: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryLiveMapOffsetY: val });
   };
 
   const handlePedalOffsetXChange = (val: number) => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPedalOffsetX: val,
       ...(config.telemetrySideBySideCharts ? { telemetryPowerTorqueOffsetX: val } : {})
-    };
-    saveConfig(updated);
+    });
   };
 
   const handlePowerTorqueOffsetXChange = (val: number) => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPowerTorqueOffsetX: val,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleMergedChartsOffsetXChange = (val: number) => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryMergedChartsOffsetX: val,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleTelemetryCardFontScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    const updated = { ...config, telemetryCardFontScale: clamped };
-    saveConfig(updated);
+    void updateConfig({ telemetryCardFontScale: clamped });
   };
 
   const handlePedalPositionChange = (pos: 'top' | 'bottom') => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPedalPosition: pos,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handlePowerTorquePositionChange = (pos: 'top' | 'bottom') => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPowerTorquePosition: pos,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleMergedChartsPositionChange = (pos: 'top' | 'bottom') => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryMergedChartsPosition: pos,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleSideBySideChartsToggle = () => {
     const nextVal = !config.telemetrySideBySideCharts;
-    const updated = {
-      ...config,
-      telemetrySideBySideCharts: nextVal,
-    };
-    saveConfig(updated);
+    void updateConfig({ telemetrySideBySideCharts: nextVal });
   };
 
   const handleVfdVuOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
-    const updated = { ...config, vfdVuOffset: clamped };
-    saveConfig(updated);
+    void updateConfig({ vfdVuOffset: clamped });
   };
 
   const handleVfdAudioOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
-    const updated = { ...config, vfdAudioOffset: clamped };
-    saveConfig(updated);
+    void updateConfig({ vfdAudioOffset: clamped });
   };
 
   const handleGlowIntensityChange = (val: number) => {
     const clamped = Math.max(0.0, Math.min(2.0, val));
-    const updated = { ...config, glowIntensity: clamped };
-    saveConfig(updated);
+    void updateConfig({ glowIntensity: clamped });
   };
 
   const handleCustomColorChange = (color: string) => {
-    const updated = { ...config, customColor: color };
-    saveConfig(updated);
+    void updateConfig({ customColor: color });
   };
 
   const handleUseDefaultColorsToggle = () => {
-    const updated = { ...config, useDefaultColors: !(config.useDefaultColors !== false) };
-    saveConfig(updated);
+    void updateConfig({ useDefaultColors: !(config.useDefaultColors !== false) });
   };
 
   const handleReloadHud = async () => {
@@ -465,65 +431,52 @@ const OverlayViewContent: React.FC = () => {
       ...DEFAULT_HUD_CONFIG,
       enabled: config.enabled,
     };
-    saveConfig(resetConfig);
+    void replaceConfig(resetConfig);
     sendHudCommand({ type: 'hud:reload' });
     void fetchConfig();
   };
 
   const handleElementToggle = (key: keyof HudElements) => {
     const nextVal = !config.elements[key];
-    const newElements = {
-      ...config.elements,
+    const elements: Partial<HudElements> = {
       [key]: nextVal,
     };
 
     if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && nextVal) {
-      newElements.showTeleTires = true;
+      elements.showTeleTires = true;
     }
 
-    const updated = {
-      ...config,
-      elements: newElements,
-    };
-    saveConfig(updated);
+    void updateConfig({ elements });
   };
 
   const handleStyleChange = (style: string) => {
-    const updated = normalizeClassicJdmConfig(normalizeS650HmiConfig({ ...config, hudStyle: style }));
-    saveConfig(updated);
-    loadAuthorInfo(updated.hudStyle);
+    const normalizedStyle = normalizeClassicJdmConfig(normalizeS650HmiConfig({ hudStyle: style })).hudStyle;
+    void updateConfig({ hudStyle: style });
+    loadAuthorInfo(normalizedStyle);
   };
 
   const handleClassicJdmConfigChange = (updates: Partial<HudConfig>) => {
-    saveConfig({ ...config, ...updates });
+    void updateConfig(updates);
   };
 
   const handleS650ThemeChange = (theme: S650HmiTheme) => {
-    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
+    void updateConfig({ hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
   };
 
   const handleS650CenterWidgetChange = (widget: S650CenterWidget) => {
-    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
+    void updateConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
   };
 
   const handleS650CenterInfoToggle = () => {
     if (config.s650CenterWidget === 'disable') {
-      saveConfig({
-        ...config,
+      void updateConfig({
         s650CenterWidget: 'drive',
-        elements: {
-          ...config.elements,
-          showCenterInfo: true,
-        },
+        elements: { showCenterInfo: true },
       });
       return;
     }
-    saveConfig({
-      ...config,
-      elements: {
-        ...config.elements,
-        showCenterInfo: config.elements.showCenterInfo === false,
-      },
+    void updateConfig({
+      elements: { showCenterInfo: config.elements.showCenterInfo === false },
     });
   };
 
@@ -1508,8 +1461,7 @@ const OverlayViewContent: React.FC = () => {
                   id="sw-pause-telemetry"
                   checked={!!config.pauseTelemetryViewWhenActive}
                   onChange={(e) => {
-                    const updated = { ...config, pauseTelemetryViewWhenActive: e.target.checked };
-                    saveConfig(updated);
+                    void updateConfig({ pauseTelemetryViewWhenActive: e.target.checked });
                   }}
                 />
                 <label className="form-check-label fs-7" htmlFor="sw-pause-telemetry">
@@ -1566,8 +1518,8 @@ const OverlayViewContent: React.FC = () => {
         units={config.units ?? DEFAULT_HUD_CONFIG.units!}
         globalUnits={settings.units}
         t={t}
-        onFollowGlobalChange={followAppUnits => saveConfig({ ...config, followAppUnits })}
-        onUnitsChange={units => saveConfig({ ...config, unit: units.speed, units })}
+        onFollowGlobalChange={followAppUnits => void updateConfig({ followAppUnits })}
+        onUnitsChange={units => void updateConfig({ unit: units.speed, units })}
         onClose={() => setShowUnitSettings(false)}
       />
     </div>
