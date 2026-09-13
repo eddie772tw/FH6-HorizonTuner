@@ -25,17 +25,17 @@
 
 ## 2026-09-14 恢復後實作現況
 
-前置 P1 與四個 state foundations 已整合；aggregate `373c0b81add4b80786617c1b1358ce22ca78944d` 與 Shell `54165303f12c9598872905571f7162cc5f80effa` 均已推送。Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 以 state-base 為基底，保留 draft。
+前置 P1 與四個 state foundations 已整合；aggregate 為 `373c0b81add4b80786617c1b1358ce22ca78944d`，G1-core 公開 `CONTRACT_SHA` 仍是 `54165303f12c9598872905571f7162cc5f80effa`。Shell 最新內部 implementation source 為 `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`，只變更 TelemetryRecorder Context 的重入輪詢，不改公開 API。Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 以 state-base 為基底，保留 draft。
 
 | Gate | 目前結果與下一步 |
 | --- | --- |
 | G0 | code baseline 已有，整體 partial；native baseline 與三次效能比較尚缺。 |
-| G1-core | 已在 Shell `5416530` 更新並凍結 code contract；詳見 [producer/consumer 凍結紀錄](evidence/g1-shell-freeze-20260914.md)。A-D slot 不包含在此 freeze。 |
-| G2 | partial；119 files／794 tests、Full/Lite build、獨立整合 review 與受控跨頁/量測/保存/archive/Road/race/page-request 清理已有證據。完整 state/identity/race/channel 與 C5/H5 native 尚缺。 |
+| G1-core | 公開 contract 已凍結在 `5416530`；`2cb2983` 僅為 Context 內部 implementation source。詳見 [producer/consumer 凍結紀錄](evidence/g1-shell-freeze-20260914.md)；A-D slot 不包含在此 freeze。 |
+| G2 | partial；`2cb2983` 的受控 mounted 操作已完成 archive/Road identity、race A/B 第二段交接與重入 cadence（[證據](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)）。119 files／794 tests、Full/Lite build 與獨立 review 已通過；最小剩餘只有 Full/Lite C5/H5 native。 |
 | G3/G4 | W2 A/B/C 與 W3 D 尚未開工；G2 未過，不公布 WAVE2_BASE_SHA。 |
 | G5 | not-run；最後真實 FH6/native/performance matrix 與完整組合驗收仍待取得，相關 PR 必須保持 draft。 |
 
-c5e7fdf 的 race completion 在交給 Shell 後仍有第二段等待，已確認新 race 未取消舊操作的 P1。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已推入 #345，guard 保留到 selection/navigation 與 Retry；Terra 獨立 review 與新版純整合回歸通過，mounted A/B competition 尚待驗證。原 `shell` 工作樹固定 c5 供已交付的 native 操作，新版在 `shell-race-fix`，兩者證據分開記錄。
+c5e7fdf 的 race completion 曾在交給 Shell 後仍有第二段等待，B 不能取消 A。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已在公開 contract 候選修正 guard 的 lifecycle、selection/navigation 與 Retry 傳遞；`2cb2983` 的實際 mounted A/B 競爭已驗證 A 不覆蓋 B。原 `shell` 工作樹仍固定 c5 供既有 native 程序；新版 `shell-race-fix` 的 native 產物仍在準備，尚非 C5/H5 驗收。
 
 各 PR 的精確 head、依賴、checks 與 owner 只在 [execution.md](execution.md) 更新。Ready to Merge 必須逐 PR 滿足條件，不能由 non-draft 或個別測試綠燈推定；#339 本次更新前 head 是歷史快照，不冒充更新後 head。原始碼、受控 UI、原生視窗及真實遊戲證據保持分開。
 

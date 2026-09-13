@@ -6,16 +6,16 @@
 
 ## 恢復後交接（live）
 
-接手先讀 [execution.md](execution.md)、[G1-core 凍結紀錄](evidence/g1-shell-freeze-20260914.md) 與 [G2 五組操作](evidence/g2-remaining-20260914.md)。精確 PR 狀態只在 execution 登記，避免多份 current table 漂移。
+接手先讀 [execution.md](execution.md)、[G1-core 凍結紀錄](evidence/g1-shell-freeze-20260914.md) 與 [G2 最小剩餘操作](evidence/g2-remaining-20260914.md)。精確 PR 狀態只在 execution 登記，避免多份 current table 漂移。
 
 - Active goal：實作至 G5 真實證據驗收前；逐 PR 滿足實作、必要檢查、獨立審查及依賴，才記 Ready to Merge。欠 G5 真實證據的相關 PR 保持 draft，不自動合 main。
-- 當前 Shell / CONTRACT_SHA：`54165303f12c9598872905571f7162cc5f80effa`，PR #345 draft，base aggregate `373c0b81add4b80786617c1b1358ce22ca78944d`。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已解決 onCompleted 後 A/B 取消缺口，119 files／794 tests、Full/Lite build、Terra 獨立 review PASS；新版 CI 狀態見 execution/PR，不引用 c5 CI 冒充。
-- G2 partial：剩 mounted race competition、archive/Road identity、重入 request cadence、C5/H5 native。G0 native/performance baseline 與最終 G5 仍未完成；W2/W3/W4 沒有開始實作。
+- 當前 Shell public `CONTRACT_SHA`：`54165303f12c9598872905571f7162cc5f80effa`；最新 implementation source 為 `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`，僅調整 TelemetryRecorder Context blob `4b53495569904fb95a19d6195037834f3f8f14ca` 的重入輪詢，沒有 public API 變動。PR #345 draft，base aggregate `373c0b81add4b80786617c1b1358ce22ca78944d`；119 files／794 frontend tests、Full/Lite build、334 backend tests／8 modules、Ruff 214 files、version `11.45.17`、Terra reconciliation 與 Luna exact-head doc review 均 PASS。精確 CI 狀態見 execution/PR，不引用 c5 CI。
+- G2 partial：`2cb2983` 的 [受控 mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 已完成 archive/Road identity、race A/B 第二段交接與重入 cadence；最小剩餘只有 Full/Lite C5/H5 native。G0 native/performance baseline 與最終 G5 仍未完成；W2/W3/W4 沒有開始實作。
 - Root 持有 Shell/shared wiring/locales/docs。Terra 的 race fix reviews 與回歸測試已結束；另派 Terra 只做 W2-A read-only 設計準備，沒有產品 write lease。
-- 新版源碼在 `D:/FH6-frontend-ia-20260913/shell-race-fix`，local branch `codex/frontend-ia-shell-race-fix-20260914`。它已推到遠端 `codex/frontend-ia-shell-20260914`，新 head 相同。原 `shell` 工作樹刻意保持 c5、clean，給使用者先前已收到的 native 程序；不可在觀察中 pull/切換它。
-- 共享 1420/8001/8000 在前次停止服務時已釋放，本次沒有重啟；等使用者 native 結果與程序結束回報。Native 觀察缺項源於目前 CUA 不支援 native app，不是技能新增的批准要求。
+- 新版源碼在 `D:/FH6-frontend-ia-20260913/shell-race-fix`，local branch `codex/frontend-ia-shell-race-fix-20260914`，HEAD `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`；已推到遠端 `codex/frontend-ia-shell-20260914`。原 `shell` 工作樹刻意保持 c5、clean；不可在觀察中 pull/切換它。
+- 自有 1420/8001/8000 測試服務已停止。先前 CUA 僅 browser 是歷史限制；Windows native 介面現在已初始化。root 正在 build 固定 2cb 的 Full release（session `39383`，sidecar 已完成），但尚未取得 C5/H5 操作或驗收結果，不能寫 pass。
 
-本次文件只更新來源、ownership 與 gate，不將純整合 tests 當 mounted/native pass。新版 13 docs／94 links、5 個 exact-SHA Git blob 路徑均通過；Terra 文件複查找出的 README 舊 current SHA 已修正；staged whitespace 由 Coordinator 提交前檢查。原附件副本不變。先前 5f86a7e 的 12 docs／97 links 是歷史文件驗證，不能冒充新版結果。
+本次文件交接區分 `5416530` public contract、`2cb2983` internal source 與 native 未測邊界；不將純整合 tests 或 mounted browser evidence 當 native pass。原附件與 02:00 歷史驗證保留，不能冒充此候選的驗收結果。
 
 ## 02:00 歷史快照（保留）
 

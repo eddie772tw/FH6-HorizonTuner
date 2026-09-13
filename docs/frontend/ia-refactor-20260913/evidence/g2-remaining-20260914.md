@@ -1,19 +1,24 @@
-# G2 剩餘操作清單
+# G2 最小剩餘操作
 
-候選：`54165303f12c9598872905571f7162cc5f80effa`，PR #345 draft。c5 純整合稽核確認第二段 preflight race A/B P1；[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已推送並通過新版回歸與獨立 review。下列是修正後仍缺的行為證據。
+公開 `CONTRACT_SHA`：`54165303f12c9598872905571f7162cc5f80effa`；最新 implementation candidate：`2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`，PR #345 draft。`2cb2983` 只改 TelemetryRecorder Context 的重入輪詢，沒有改公開 contract。c5 的第二段 preflight race A/B P1 已由 [race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 修正並通過純回歸與獨立 review。
 
-目前已有的純邏輯邊界證據：Full/Lite capability、Sessions exact selection/late response/navigation cancellation、race identity/unknown/bounded retry、Tune ordinal/PI/class/RPM/late-save、Road canonical snapshot、HUD initial GET/serialized writes/unknown fields。既有受控 browser 已覆蓋一般往返、量測保存、archive、Road start/stop、Live completion、HUD pending、故障 retry 與離頁停止 page requests。
+## 已完成的受控 mounted 操作 1–3
 
-只保留以下五組 G2 操作；不提前要求 W2/W3 重構或 G5 全矩陣。
+[2cb mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 使用實際 App/providers/backend 與隔離合成資料，並由 Terra G2 reconciliation 複核：
+
+1. **Archive/Road identity**：車 A archive/8000 RPM 與 Road A active run 在 HUD 期間切至車 B 後，A 歷史可讀但 B 不繼承確認；新 run 不可提交。
+2. **Race A/B 第二段交接**：A 的第二個 saved-data GET 在 lifecycle 已交給 Shell 後暫停，B 開始後釋放 A；A 不導頁或覆蓋，B 完成後 Sessions 精確選取 B 的非空資料。
+3. **重入 cadence**：Sessions → HUD → Sessions、Road 與 Diagnostics 反覆重入沒有累積 page reads；HUD 離頁仍為零次。request metadata 只證明列出的 page reads，不等同所有 channel/listener 或效能量測。
+
+這三項完成不宣稱 Windows 原生視窗、真實 FH6、資源清理或三次效能比較已完成；那些分屬後期 W2–W4/G5，不回填為新的 G2 blocker。
+
+## 尚缺的兩項 G2 native 操作
 
 | 操作 | 最小步驟與觀察 | Owner / 狀態 |
 | --- | --- | --- |
-| 1. Archive/Road identity | Full 沿用合成車 A 的 archive；HUD 期間送車 B 或變更 PI/class/RPM，返回後 A 不能仍是 B 已確認的量測。另在 Road A active run 期間換 identity，確認舊 run/setup/input confirmation 或晚回應不能啟用 B 的提交。 | Coordinator；mounted UI not-run。純 identity/operation tests 已通過，不重開公式設計。 |
-| 2. Race A/B 競爭 | Live 的 race A completion read 延遲，開始 B 後才釋放 A；只可開已驗證非空的 B，A 不能覆蓋。再檢查 HUD 完成不搶頁、保留一個 exact pending entry。 | Coordinator；mounted A/B competition not-run。單一 Live/HUD completion 是 c5 局部證據；新版 pure cancellation 已含 callback 後 list/samples/refresh。mounted 操作必须涵蓋第二段 preflight，不能只延遲 lifecycle callback 之前。 |
-| 3. 重入更新頻率 | Road → HUD → Road，用 8 秒視窗核對 mounted 約一秒一次、HUD 零次；recording Sessions → HUD → Sessions，用 6 秒視窗核對正常更新/零次/正常更新；Diagnostics 開／關／重開／關，核對 logs 只在開啟時出現。重複兩輪，沒有隨重入增長。 | Coordinator；離頁停止已觀察，重入 cadence 尚待完整記錄。Network request 不宣稱等於所有 channel/listener 計數。 |
 | 4. C5 native | Full/Lite 各自真實 Tauri startup、backend-ready、entry、guide/menu、設定的 dark/light/core 首幀；另驗正常 dynamic-port path。 | 使用者觀察＋Coordinator 記錄；not-run。8001 外部 backend 程序不能單獨證明 dynamic-port。 |
 | 5. H5 native | Full/Lite 分別觀察獨立 HUD：啟動 → 離開 HUD → 重入 → 明確關閉；pending config write 結束後回讀一致，外部視窗不能跟 page 一起關閉。 | 使用者觀察＋Coordinator 記錄；not-run。按鈕變字不等於原生視窗證據。 |
 
-原 `shell` 工作樹刻意保持 c5、clean；新版在 `shell-race-fix`。使用者原生回報須寫明實際 SHA，c5 不能當作新版完整驗收。原生程序見 [固定候選交接](https://github.com/eddie772tw/FH6-HorizonTuner/blob/c5e7fdfb82c4b1f792fd76be4cb796059337bcfc/docs/frontend/ia-refactor-20260913/handoffs/g2-native-20260914.md)。Coordinator 已停止自有 Vite/backend，釋放 1420/8001/8000 供原生程序使用，並請使用者回報；在確認原生程序已結束前，不搶用這些共用連接埠繼續 browser 測試。
+原 `shell` 工作樹刻意保持 c5、clean；新版在 `shell-race-fix`。c5 不能當作 2cb native 驗收。所有自有 Vite/backend/sender 測試服務已停止；先前只能請使用者觀察 c5 是歷史限制，Windows native 介面現在已初始化。root 正在準備固定 2cb 的 Full release（session `39383`，sidecar 已完成），尚未執行或通過 C5/H5；完成後必須記錄實際 artifact SHA、variant、dynamic port 與操作結果。
 
-每組結果記錄完整 SHA、variant、browser/Tauri、synthetic source、實際 selection/identity、步驟、時間窗、錯誤及 pass/fail/not-run。完成以上缺項並複核後才可宣告 G2；目前不公布 WAVE2_BASE_SHA。之後依序進 W2 A/B/C、W3 D、W4 組合清理，G5 真實 FH6/效能/native 最終證據另記。
+兩項 native 結果記錄完整 SHA、variant、Tauri、dynamic port、步驟、錯誤及 pass/fail/not-run。完成 C5/H5 並複核後才可宣告 G2；目前不公布 WAVE2_BASE_SHA。之後依序進 W2 A/B/C、W3 D、W4 組合清理，G5 真實 FH6/效能/native 最終證據另記。
