@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import {
   fetchHudStylesList,
@@ -24,7 +24,12 @@ import {
 } from './hudConfig';
 import '../../App.css';
 import { backendFetch, backendHttpUrl } from '../../services/backend';
-import { HudUnitSettingsSidebar, type HudDisplayUnits } from './HudUnitSettingsSidebar';
+import { HudUnitSettingsSidebar } from './HudUnitSettingsSidebar';
+import {
+  OverlayControlRuntimeProvider,
+  useOptionalOverlayControlRuntime,
+  useOverlayControlRuntime,
+} from './OverlayControlRuntimeProvider';
 
 interface AudioDeviceOption {
   id: string;
@@ -37,7 +42,6 @@ interface AuthorInfo {
   description: string;
 }
 
-const HUD_CONFIG_REQUEST_TIMEOUT_MS = 2_500;
 const HUD_COMMAND_TIMEOUT_MS = 4_000;
 
 async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -53,9 +57,9 @@ async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: s
   }
 }
 
-export const OverlayView: React.FC = () => {
+const OverlayViewContent: React.FC = () => {
   const { settings, t } = useSettings();
-  const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
+  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand } = useOverlayControlRuntime();
   const [loading, setLoading] = useState(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
@@ -69,7 +73,8 @@ export const OverlayView: React.FC = () => {
     description: 'Loading author metadata...'
   });
 
-  const channelRef = React.useRef<BroadcastChannel | null>(null);
+  const mountedRef = useRef(true);
+  const authorRequestRef = useRef(0);
 
   const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
   const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
@@ -98,14 +103,13 @@ export const OverlayView: React.FC = () => {
   };
 
   useEffect(() => {
-    channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
+    mountedRef.current = true;
     fetchMonitors();
     loadStyles();
-    fetchConfig(false, false);
     fetchAudioDevices();
 
     return () => {
-      channelRef.current?.close();
+      mountedRef.current = false;
     };
   }, []);
 
@@ -116,19 +120,19 @@ export const OverlayView: React.FC = () => {
       if (res.ok) {
         const list = await res.json();
         if (Array.isArray(list)) {
-          setAudioDevices(list);
+          if (mountedRef.current) setAudioDevices(list);
         }
       }
     } catch (e) {
       console.warn('Failed to fetch available audio capture devices:', e);
     } finally {
-      setLoadingAudioDevices(false);
+      if (mountedRef.current) setLoadingAudioDevices(false);
     }
   };
 
   const handleAudioDeviceChange = async (deviceId: string) => {
     const updated = { ...config, audioDeviceId: deviceId };
-    saveConfig(updated);
+    void saveConfig(updated);
     try {
       await backendFetch('/api/audio/device', {
         method: 'POST',
@@ -143,13 +147,14 @@ export const OverlayView: React.FC = () => {
   const loadStyles = async () => {
     const styles = await fetchHudStylesList(backendHttpUrl(''));
     if (styles.length > 0) {
-      setHudStyles(styles);
+      if (mountedRef.current) setHudStyles(styles);
     }
   };
 
   const loadAuthorInfo = async (styleName: string, force: boolean = false, overridePrefix?: string) => {
+    const request = ++authorRequestRef.current;
     if (!force && authorCache[styleName]) {
-      setCurrentAuthorInfo(authorCache[styleName]);
+      if (mountedRef.current && request === authorRequestRef.current) setCurrentAuthorInfo(authorCache[styleName]);
       return;
     }
     try {
@@ -162,15 +167,17 @@ export const OverlayView: React.FC = () => {
           author: data.author || t('Author'),
           description: data.description || t('No description provided.')
         };
-        setAuthorCache(prev => ({ ...prev, [styleName]: info }));
-        setCurrentAuthorInfo(info);
+        if (mountedRef.current && request === authorRequestRef.current) {
+          setAuthorCache(prev => ({ ...prev, [styleName]: info }));
+          setCurrentAuthorInfo(info);
+        }
         return;
       }
     } catch (e) {
       console.warn(`Failed to dynamically load author.json for HUD style '${styleName}':`, e);
     }
     const fallback: AuthorInfo = { author: 'Author', description: t('Author metadata unavailable.') };
-    setCurrentAuthorInfo(fallback);
+    if (mountedRef.current && request === authorRequestRef.current) setCurrentAuthorInfo(fallback);
   };
 
   const fetchMonitors = async () => {
@@ -178,7 +185,7 @@ export const OverlayView: React.FC = () => {
       if ((window as any).__TAURI__?.core?.invoke) {
         const list = await (window as any).__TAURI__.core.invoke('get_available_monitors');
         if (list && Array.isArray(list) && list.length > 0) {
-          setMonitors(list);
+          if (mountedRef.current) setMonitors(list);
         }
       }
     } catch (e) {
@@ -186,72 +193,12 @@ export const OverlayView: React.FC = () => {
     }
   };
 
-  const broadcastConfig = (newConfig: HudConfig) => {
-    const configuredUnits = newConfig.units ?? DEFAULT_HUD_CONFIG.units!;
-    const effectiveUnits: HudDisplayUnits = newConfig.followAppUnits !== false
-      ? {
-          speed: settings.units.speed,
-          boostPressure: settings.units.boostPressure,
-          torque: settings.units.torque,
-          power: settings.units.power
-        }
-      : configuredUnits;
-    if (channelRef.current) {
-      channelRef.current.postMessage({
-        type: 'config',
-        data: { ...newConfig, effectiveUnit: effectiveUnits.speed, effectiveUnits },
-      });
-    }
-  };
+  const fetchConfig = async () => refresh();
+  const saveConfig = async (newConfig: HudConfig): Promise<boolean> => replaceConfig(newConfig);
 
-  const fetchConfig = async (preserveEnabled: boolean = false, forceAuthorUpdate: boolean = false) => {
-    try {
-      const res = await backendFetch('/api/overlay/config');
-      if (res.ok) {
-        const data = await res.json();
-        const normalizedData = normalizeS650HmiConfig(data as {
-          hudStyle?: string;
-          s650Theme?: unknown;
-          [key: string]: unknown;
-        });
-        const merged = {
-          ...DEFAULT_HUD_CONFIG,
-          ...normalizedData,
-          enabled: preserveEnabled,
-          units: { ...DEFAULT_HUD_CONFIG.units, ...(normalizedData.units || {}) },
-          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(normalizedData.elements || {}) }
-        } as HudConfig;
-        setConfig(merged);
-        broadcastConfig(merged);
-        loadAuthorInfo(merged.hudStyle, forceAuthorUpdate);
-      } else {
-        loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
-      }
-    } catch (e) {
-      console.warn('Failed to fetch HUD config:', e);
-      loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
-    }
-  };
-
-  const saveConfig = async (
-    newConfig: HudConfig,
-    timeoutMs = HUD_CONFIG_REQUEST_TIMEOUT_MS,
-  ): Promise<boolean> => {
-    const normalizedConfig = normalizeS650HmiConfig(newConfig);
-    setConfig(normalizedConfig);
-    broadcastConfig(normalizedConfig);
-    try {
-      await backendFetch('/api/overlay/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(normalizedConfig),
-      }, timeoutMs);
-      return true;
-    } catch (e) {
-      console.error('Failed to save HUD config:', e);
-      return false;
-    }
-  };
+  useEffect(() => {
+    void loadAuthorInfo(config.hudStyle);
+  }, [config.hudStyle]);
 
   const applyMonitorSelection = async (monIdx: number) => {
     if (monitors.length > 0 && monitors[monIdx]) {
@@ -284,9 +231,9 @@ export const OverlayView: React.FC = () => {
 
     try {
       if (enable) {
-        channelRef.current?.postMessage({ type: 'hud:animate' });
+        sendHudCommand({ type: 'hud:animate' });
       } else {
-        channelRef.current?.postMessage({ type: 'hud:destroy' });
+        sendHudCommand({ type: 'hud:destroy' });
       }
 
       if ((window as any).__TAURI__?.core?.invoke) {
@@ -310,17 +257,15 @@ export const OverlayView: React.FC = () => {
       void persistence.then((persisted) => {
         if (!persisted) {
           console.warn('HUD config persistence timed out or failed after the window action.');
-          setHudActionError(t('HUD opened, but its settings could not be saved.'));
+          if (mountedRef.current) setHudActionError(t('HUD opened, but its settings could not be saved.'));
         }
       });
     } catch (err) {
       console.error('HUD overlay action failed:', err);
-      setConfig(previousConfig);
-      broadcastConfig(previousConfig);
-      setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
-      void saveConfig(previousConfig, HUD_CONFIG_REQUEST_TIMEOUT_MS);
+      void replaceConfig(previousConfig);
+      if (mountedRef.current) setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
@@ -492,8 +437,8 @@ export const OverlayView: React.FC = () => {
   };
 
   const handleReloadHud = async () => {
-    broadcastConfig(config);
-    channelRef.current?.postMessage({ type: 'hud:reload', hudStyle: config.hudStyle });
+    publishConfig();
+    sendHudCommand({ type: 'hud:reload', hudStyle: config.hudStyle });
 
     if ((window as any).__TAURI__?.core?.invoke) {
       try {
@@ -503,7 +448,7 @@ export const OverlayView: React.FC = () => {
       }
     }
 
-    fetchConfig(config.enabled, true);
+    void fetchConfig();
     if (config.hudStyle) {
       loadAuthorInfo(config.hudStyle, true);
     }
@@ -516,8 +461,8 @@ export const OverlayView: React.FC = () => {
       enabled: config.enabled,
     };
     saveConfig(resetConfig);
-    channelRef.current?.postMessage({ type: 'hud:reload' });
-    fetchConfig(config.enabled, true);
+    sendHudCommand({ type: 'hud:reload' });
+    void fetchConfig();
   };
 
   const handleElementToggle = (key: keyof HudElements) => {
@@ -575,6 +520,7 @@ export const OverlayView: React.FC = () => {
 
   const s650CenterInfoEnabled =
     config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
+  const displayedHudError = hudActionError ?? runtimeError;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -597,11 +543,19 @@ export const OverlayView: React.FC = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {hudActionError && (
-            <span role="alert" className="text-danger small" style={{ maxWidth: '22rem' }}>
-              {hudActionError}
-            </span>
+          {displayedHudError && (
+            <div className="d-flex align-items-center gap-2">
+              <span role="alert" className="text-danger small" style={{ maxWidth: '22rem' }}>
+                {displayedHudError}
+              </span>
+              {runtimeError && (
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => void retry()}>
+                  {t('Retry Update')}
+                </button>
+              )}
+            </div>
           )}
+          {pendingWrites > 0 && <span className="badge text-bg-secondary">{t('Processing...')}</span>}
           <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
             <button
               onClick={() => toggleHudWindow(!config.enabled)}
@@ -1601,6 +1555,15 @@ export const OverlayView: React.FC = () => {
       />
     </div>
   );
+};
+
+export const OverlayView: React.FC = () => {
+  const runtime = useOptionalOverlayControlRuntime();
+  if (runtime) return <OverlayViewContent />;
+  // Compatibility wrapper until the Coordinator mounts the provider beside the
+  // workspace switch. The runtime itself is module-scoped, so queued writes
+  // still survive this page's unmount/remount cycle.
+  return <OverlayControlRuntimeProvider><OverlayViewContent /></OverlayControlRuntimeProvider>;
 };
 
 export default OverlayView;
