@@ -2582,3 +2582,10 @@
 - **Verified learning**：lifecycle 檢查成功並呼叫 `onCompleted` 不等於 consumer 已提交資料。Shell 的第二段 list/samples/refresh 等待期间若開始新 race，舊 race 仍可能改 selection/navigation。將 race/token/generation guard 一路交給 consumer 並保留至 Retry，可使新 race、dispose 或新 completion generation 取消舊交接。
 - **Evidence**：119 files／794 tests 與 Full/Lite build 通過；真實純模組組合在三個第二段等待邊界檢查 A 不提交、B 可提交。Terra 獨立 review 無 P1/P2。
 - **Boundary**：本次未啟服務或觀察 native；mounted A/B competition、G2 原生與 G5 真實證據仍待補，詳見 [交接取消修正](../docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md)。
+
+## 2026-09-14 / 錄製中 Context 更新與頁面重入輪詢
+
+- **Scope**：P2 G2 重入驗證，沿用 `cross-agent-collaboration`、`modular-refactoring`、`pr-author-maintainer`。Coordinator 持有 recorder context，Terra 唯讀核對 diff 與既有 current/latest 語意。
+- **Verified learning**：status effect 依賴自己更新的 recordingCount 並立即讀取，會隨錄製樣本數變更重啟；provider 每次 render 產生的新 laps/debrief callbacks 又觸發 consumer effect。實際 6 秒重入視窗從 data/debrief 7/6 放大到 31/30，純函數測試與離頁歸零不足以發現。
+- **Fix/evidence**：只以 recording enable flag 驅動 effect，維持既有頻率、禁止重疊並在 cleanup abort，將無 closure state 的讀取 callbacks 固定。修正後兩輪重入為 2/1、2/1、3/2；離頁皆 0/0，無事件截斷。完整 119 files／794 tests 與 Full/Lite build 通過；同一 mounted provider 完成 A/B 第二段交錯，A 未導頁、B 開啟 exact 100 samples。
+- **Boundary**：當 request metadata 可能被高頻 WS 事件擠出時，須分段讀取並按 request 時間篩選；截斷或超過 timeout 的 interception 不列證據。HTTP 次數不是全部 channel/native/效能結論。C5/H5 與真實 FH6 仍待驗收，見 [受控證據](../docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)。
