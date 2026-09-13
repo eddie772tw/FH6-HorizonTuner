@@ -9,6 +9,7 @@ Write ownership / Transferred paths: `frontend/src/features/overlay_control/**` 
 
 ## Changed
 
+- Delivery preparation merges `16aa79aed0eeaa6653f86a72e21a0301f0517619` with `--no-commit`. Three-way scope inspection confirms that only `.github/workflows/ci.yml` changes: PR triggers now include `codex/frontend-ia-*`. No pure contract file from `fc79608` changed.
 - `overlayControlRuntime.ts` keeps the config persistence boundary in one non-React controller.
   - A GET must succeed before any user patch or replacement can POST. A failed first GET and its Retry path issue another GET; they never submit `DEFAULT_HUD_CONFIG` or discard unknown persisted fields.
   - Normal UI updates use `HudConfigPatch`. `elements` and `units` merge with the latest authoritative snapshot, preserving unknown root and nested fields. `replaceConfig` remains only for the explicit reset action.
@@ -37,9 +38,9 @@ The provider does not own `useOverlayWebSocket`, `useTelemetry`, native invokes,
 ## Verification
 
 - `cmd /c "pnpm -C frontend exec vitest run src/features/overlay_control/overlayControlRuntime.test.ts"` — exit 0; 7 tests passed.
-- `cmd /c "pnpm -C frontend run test"` — exit 0; 110 files, 731 tests passed.
-- `cmd /c "pnpm -C frontend run build"` — exit 0; TypeScript and Vite build passed.
-- `git diff --check` — exit 0 before handoff update; repeat after committing this handoff.
+- `cmd /c "pnpm -C frontend run test"` — exit 0; 110 files, 731 tests passed on the merge index.
+- `cmd /c "pnpm -C frontend run build"` — TypeScript and Vite build passed on the merge index.
+- `git diff --check` — exit 0 on the merge index before commit.
 
 ## Native / game evidence
 
