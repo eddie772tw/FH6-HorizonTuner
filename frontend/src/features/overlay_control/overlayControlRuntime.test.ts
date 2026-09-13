@@ -182,6 +182,59 @@ describe('overlay control runtime', () => {
     expect(reads).toBe(3);
   });
 
+  it('invalidates an in-flight GET when an external authoritative config is accepted', async () => {
+    const staleRead = deferred<ResponseLike>();
+    const configA = {
+      enabled: false,
+      hudStyle: 'vfd',
+      scale: 1,
+      pluginField: { source: 'A' },
+      elements: { showSpeed: true, pluginElement: { source: 'A' } },
+    };
+    const configB = {
+      enabled: true,
+      hudStyle: 'vfd',
+      scale: 1,
+      pluginField: { source: 'B' },
+      elements: { showSpeed: false, pluginElement: { source: 'B' } },
+    };
+    let reads = 0;
+    let authoritative: Record<string, unknown> = configA;
+    const saved: Array<Record<string, unknown>> = [];
+    const runtime = createOverlayControlRuntime(createTransport({
+      readConfig: async () => {
+        reads += 1;
+        return reads === 2 ? staleRead.promise : response(authoritative);
+      },
+      saveConfig: async config => {
+        saved.push(config);
+        authoritative = config;
+        return response({ success: true });
+      },
+    }));
+    await expect(runtime.refresh()).resolves.toBe(true);
+
+    const pendingRefresh = runtime.refresh();
+    runtime.acceptBroadcast(configB);
+    expect(runtime.getSnapshot().config).toMatchObject({
+      enabled: true,
+      pluginField: { source: 'B' },
+      elements: expect.objectContaining({ showSpeed: false, pluginElement: { source: 'B' } }),
+    });
+
+    staleRead.resolve(response(configA));
+    await expect(pendingRefresh).resolves.toBe(false);
+    expect(runtime.getSnapshot().config).toMatchObject({ pluginField: { source: 'B' } });
+
+    await expect(runtime.updateConfig({ scale: 1.25 })).resolves.toBe(true);
+    expect(saved).toEqual([expect.objectContaining({
+      enabled: true,
+      scale: 1.25,
+      pluginField: { source: 'B' },
+      elements: expect.objectContaining({ showSpeed: false, pluginElement: { source: 'B' } }),
+    })]);
+  });
+
   it('treats rejected save responses as unsaved, then retries the current authoritative snapshot', async () => {
     let attempts = 0;
     const runtime = createOverlayControlRuntime(createTransport({
