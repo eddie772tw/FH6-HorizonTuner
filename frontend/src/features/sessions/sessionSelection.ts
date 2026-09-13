@@ -59,6 +59,49 @@ export interface SessionLoadGuard {
 }
 
 /**
+ * Guards a user operation which may later change the selected source.  It is
+ * deliberately separate from SessionLoadGate: beginning an import or delete
+ * must not abort the data currently being rendered, while a newer explicit
+ * selection must still make the older operation ineligible to write.
+ */
+export interface SessionOperationGuard {
+  isCurrent(): boolean;
+}
+
+export class SessionOperationGate {
+  private generation = 0;
+  private disposed = false;
+
+  begin(): SessionOperationGuard {
+    const generation = ++this.generation;
+    return {
+      isCurrent: () => !this.disposed && generation === this.generation,
+    };
+  }
+
+  invalidate(): void {
+    this.generation += 1;
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    this.invalidate();
+  }
+}
+
+/** Applies an async result only while the user operation still owns selection. */
+export async function applyIfOperationCurrent<T>(
+  operation: SessionOperationGuard,
+  read: () => Promise<T>,
+  apply: (value: T) => void,
+): Promise<boolean> {
+  const value = await read();
+  if (!operation.isCurrent()) return false;
+  apply(value);
+  return true;
+}
+
+/**
  * One channel owns one gate.  A new selection invalidates the older request
  * before its response is allowed to write the shared recorder selection.
  */
