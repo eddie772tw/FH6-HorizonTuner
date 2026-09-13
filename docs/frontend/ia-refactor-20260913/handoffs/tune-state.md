@@ -2,9 +2,9 @@
 
 Task: W1 Tune session/capture lifetime
 
-Status: handoff
+Status: done
 
-Owner: `tune_state`
+Owner: `tune_final_review`
 
 Branch: `codex/frontend-ia-tune-state-20260914`
 
@@ -89,3 +89,28 @@ Verification for this follow-up (before commit):
 - `cmd /c "pnpm -C frontend run test"` — 110 files / 731 tests passed.
 - `cmd /c "pnpm -C frontend run build"` — passed; Full and Lite entries built.
 - `git diff --check` — passed after final handoff edit.
+
+## Follow-up: Tune P2 fixes (2026-09-14)
+
+Task: Tune P2 follow-up fixes
+Status: done
+Owner: `tune_final_review`
+Branch: `codex/frontend-ia-tune-state-20260914`
+Scope: `frontend/src/features/tuning/**` and this handoff only
+Changed: `TuneSessionProvider.tsx`, `TuningView.tsx`, `components/TuningMeasurementStep.tsx`, `tuneSessionController.ts`, `tuneSessionController.test.ts`, `tuningWorkflow.ts`, `tuningWorkflow.test.ts`
+Commit: `b0aeac9` (`fix(tuning): preserve session evidence across follow-up collection`)
+Pending: None within this Tune ownership
+Blocked by: None
+
+The Step 1 edit path now applies changes to the full `CarParamsContext` profile, while the provider's calculation snapshot continues to exclude background dyno fields. Additional measurement can finish from the 30,000-frame cap pause when a ready snapshot is retained, so the cap no longer traps a valid optional collection. The first complete live PI/class hydration preserves an idle reused observation generation; the existing live gate still rejects mismatched car, PI, class, or `EngineMaxRpm`.
+
+Verification:
+
+- `cmd /c "pnpm -C frontend exec vitest run src/features/tuning/tuneSessionController.test.ts src/features/tuning/tuningWorkflow.test.ts"` — 2 files / 20 tests passed.
+- `cmd /c "pnpm -C frontend run test"` — 110 files / 734 tests passed.
+- `cmd /c "pnpm -C frontend run build"` — passed; Full and Lite entries built.
+- `git diff --check` — passed.
+
+Limits: no real game, Tauri Full/Lite smoke, backend save-race, CPU/RSS, or cross-page Shell runtime evidence. Provider root mounting remains the Coordinator's separate follow-up.
+Next action: Coordinator may consume commit `b0aeac9`; no push or PR was created.
+Last updated: 2026-09-14
