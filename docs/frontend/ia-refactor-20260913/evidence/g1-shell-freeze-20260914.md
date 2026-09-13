@@ -29,8 +29,8 @@ c5e7fdf 是上一版 freeze，之後發現 race A 已交給 Shell、第二段 pr
 
 上一版 c5 產品修改後 118 files／788 tests、Full/Lite build、staged whitespace check 通過。Luna 先行 consumer review、Terra race/measurement/Road snapshot reviews 與最後 bounded integration review 均無阻塞 finding。這是 c5 歷史驗證；新增 race handoff 產品修改與新版證據以上方 04:00 修訂為準。
 
-此表的 `pass` 指 producer/consumer/code contract 核對，不能用來填掉 acceptance matrix 的 native 或 G5 證據。來源與實際操作見 `2cb2983` 的 [mounted reentry evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)；c5 Shell 交接與 browser evidence 僅保留歷史場景。
+此表的 `pass` 指 producer/consumer/code contract 核對，不能用來填掉 acceptance matrix 的 native 或 G5 證據。來源與實際操作見 `2cb2983` 的 [mounted reentry evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)；Full/Lite/sidecar 產物與目前的 Full AX 局部操作見[原生產物與視窗紀錄](g2-native-artifacts-20260914.md)，c5 Shell 交接與 browser evidence 僅保留歷史場景。
 
 各產品作者已停寫，Coordinator 仍持有 shared wiring/locale/document 權限。尚不發出 WAVE2_BASE_SHA；G2 通過後才移交 A/B/C。A_FOUNDATION_SHA、AD_INTERFACE_SHA、AD_INTEGRATION_SHA 均屬未來 A-D review 接點，不用不存在的 export 阻塞或冒充本次 G1-core。
 
-所有自有 Vite/backend/sender 測試服務已停止，原 1420/8001/8000 listener 保持釋放。先前 c5 原生觀察是歷史限制；Windows native 介面已初始化，root 正在 build 固定 `2cb2983` 的 Full release（session `39383`，sidecar 已完成）。C5/H5 尚未實際操作或取得結果，不能以 build 或本表的 contract pass 取代 native 驗收。
+舊 browser Vite/backend/sender 測試服務已停止；固定 `2cb2983` 的 Full/Lite/sidecar 已建置。先前 c5 原生觀察是歷史限制；Windows native 介面已初始化，root 保留已啟動的 Full 與 owned backend 等待使用者帶到前景。依[原生產物與視窗紀錄](g2-native-artifacts-20260914.md)，AX 可讀 backend 與四個入口，但前景啟用兩次失敗。C5/H5 尚未取得操作結果，不能以 build、AX 局部成功或本表的 contract pass 取代 native 驗收。

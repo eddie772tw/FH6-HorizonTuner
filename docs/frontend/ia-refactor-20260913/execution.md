@@ -15,7 +15,7 @@
 | aggregate state-base | `373c0b81add4b80786617c1b1358ce22ca78944d`；已 push；117 files／774 tests、Full/Lite build 通過。 |
 | Shell consumer / G1-core | 公開 `CONTRACT_SHA` 為 [54165303f12c9598872905571f7162cc5f80effa](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa)；最新 implementation source 為 [2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe](https://github.com/eddie772tw/FH6-HorizonTuner/commit/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe)，只改 TelemetryRecorder Context blob `4b53495569904fb95a19d6195037834f3f8f14ca` 的重入輪詢，public API 不變。119 files／794 frontend tests、Full/Lite build、334 backend tests／8 modules、Ruff 214 files、version `11.45.17`；Terra code/G2 reconciliation PASS，Luna exact-head doc review PASS。A-D 不包含在 G1-core。 |
 | G0 | partial；code baseline 已有，完整 native baseline/三次效能 evidence 未齊。 |
-| G2 | partial；[2cb mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 已完成 archive/Road identity、A/B 第二段交接及重入 cadence（操作 1–3）。最小剩餘只有固定 2cb 產物的 Full/Lite C5/H5 native；完整資源/真實 FH6/三次效能仍是 W2–W4/G5，不重列為 G2 blocker。 |
+| G2 | partial；[2cb mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 已完成 archive/Road identity、A/B 第二段交接及重入 cadence（操作 1–3）。[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md) 已固定 Full/Lite/sidecar 指紋，Full 有啟動／AX 局部成功但兩次前景啟用失敗；最小剩餘仍只有固定 2cb 產物的 Full/Lite C5/H5 native。完整資源/真實 FH6/三次效能仍是 W2–W4/G5，不重列為 G2 blocker。 |
 | G3/G4 | W2 A/B/C、W3 D 未開工；只有 read-only 設計準備，不公布 WAVE2_BASE_SHA。 |
 | G5 | not-run；Full/Lite/native/game/performance 最终完整矩陣待取得，欠必要 G5 證據的相關 PR 保持 draft。 |
 
@@ -29,7 +29,7 @@
 | #342 | `deef1eec61ec0a7fa13028117aa17fe7c98df6c7` | Sessions state，base #340 `16aa79a…`；non-draft、7 checks SUCCESS/CLEAN，獨立 local review PASS。 |
 | #343 | `550ad69b86986f3430a0bbbef5761e9193b5431d` | Tune state，base #340 `16aa79a…`；non-draft、7 checks SUCCESS/CLEAN，獨立 local review PASS。 |
 | #344 | `99527597fecc29aab7f419cbfe89bd7f9072a6e0` | HUD state，base #340 `16aa79a…`；non-draft、7 checks SUCCESS/CLEAN，獨立 local review PASS。 |
-| #345 | `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe` | draft，base state-base `373c0b8…`；run `34784367755` 的 7 checks 全部 SUCCESS、merge state CLEAN。reviewDecision 空白；這是 2cb 的精確快照，不能沿用 541/c5 CI 或把 native 未測改寫為 pass。 |
+| #345 | `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe` | draft，base state-base `373c0b8…`；run `34784367755` 的 7 checks 全部 SUCCESS、merge state CLEAN。reviewDecision 空白；[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md) 的 Full AX 局部成功與兩次前景啟用失敗均不填為 C5/H5 pass。這是 2cb 的精確快照，不能沿用 541/c5 CI。 |
 
 #340 是唯一直接以 main 為 base 的 P1；#341–#344 是正確指向 #340 `16aa79a…` 的 contract-base candidates，僅為 stack-ready，不能略過 #340 直接合 main。Ready to Merge 仍要求逐 PR 的 exact base/head、checks、獨立 review、ownership 和依賴条件都成立；不等於已 merged。#340–#344 的 reviewDecision 均空、各有 COMMENTED top-level review、無未解決 inline thread；既有 local review 不是 GitHub formal approval。main protection 為 404、rules 僅 deletion/non-fast-forward；不把此狀態當正式審查。
 
@@ -37,14 +37,14 @@
 
 [race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md)：c5 的 race A 已 onCompleted、Shell 第二段 list/samples/refresh 尚在途時，B 開始沒有取消 A，Terra 純整合 harness 重現 P1。修正使 race guard 跨 lifecycle → Runtime → Shell → Retry，包含不同 identity stale retry；三個交接等待邊界和 dispose 的回歸通過。這是新的產品修正，舊 c5 G1 freeze 是歷史版本，不以舊 review 掩蓋新缺口。
 
-[G1-core 核對](evidence/g1-shell-freeze-20260914.md) 登記公開 contract；[G2 剩餘操作](evidence/g2-remaining-20260914.md) 現只保留 native C5/H5。[2cb mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 完成操作 1–3，原 c5 browser evidence 只保留歷史場景。Debug Rust compile 是 c5 的可編譯證據；root 正在準備新的 2cb native 產物，尚未完成或形成 native 驗收。
+[G1-core 核對](evidence/g1-shell-freeze-20260914.md) 登記公開 contract；[G2 剩餘操作](evidence/g2-remaining-20260914.md) 現只保留 native C5/H5。[2cb mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 完成操作 1–3，原 c5 browser evidence 只保留歷史場景。[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md) 已記錄新的 2cb Full/Lite/sidecar 建置與 Full AX 局部成功；兩次前景啟用失敗，尚未形成 native 驗收。
 
 ### Ownership 與操作隔離
 
 - 新版工作樹：`D:/FH6-frontend-ia-20260913/shell-race-fix`，local branch `codex/frontend-ia-shell-race-fix-20260914`，HEAD `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`。已 fast-forward 推入遠端 Shell PR branch；local/remote 新 SHA 一致。
 - 原生交接工作樹：`D:/FH6-frontend-ia-20260913/shell` 的 local branch 刻意保留 `c5e7fdfb82c4b1f792fd76be4cb796059337bcfc`、clean。不能直接 pull 或切換候選干擾使用者；native 回報記錄實際 SHA，不當作新版完整驗收。
-- 自有 Vite/backend/sender 測試服務皆已停止；原 1420/8001/8000 listeners 保持釋放。Windows native 介面已初始化，root 正在 build 固定 2cb 的 Full release（session `39383`；sidecar 已完成）；尚未啟動 C5/H5 操作或取得 pass。
-- 原先只請使用者觀察 c5 是歷史限制；現在待 2cb native 產物完成後以實際 SHA 記錄 Full/Lite C5/H5。原 c5 handoff 不得當作新版 native 驗收。
+- 舊 browser Vite/backend/sender 測試服務皆已停止；固定 2cb 的 Full/Lite/sidecar 已建置。root 現正保留已啟動的 Full 與其 owned backend，詳見[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md)；不能把過去 1420/8001/8000 listener 狀態延伸為目前 native 程序已停止。
+- 原先只請使用者觀察 c5 是歷史限制；Windows native 介面現在可讀，但 Full 前景啟用已兩次失敗，等待使用者回覆後才以實際 SHA 記錄 Full/Lite C5/H5。原 c5 handoff 不得當作新版 native 驗收。
 - main 與既有調校 worktrees 未修改；不自動合併 main。G2 通過後才移交 W2；局部 tests、build、CI、synthetic browser 均不能替代 native、真實 FH6 或三次效能結果。
 
 ## 2026-09-14 02:00 歷史快照：Gate 狀態（保留）

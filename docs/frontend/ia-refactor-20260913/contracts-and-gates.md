@@ -113,7 +113,7 @@ G2 只驗證既有 UI 加上 W1 狀態前置的跨頁行為：T1–T4 由 Coordi
 
 G2 前置的實際 native HUD 離頁行為若尚未驗證，G2 就保持未通過；缺項的相關 Shell/HUD PR 保留 draft，不影響已獨立完成的純契約 PR。不能將前置缺項改名成 G5 來放行 W2。G5 最終完整驗收則要求 acceptance 指定的最低環境與全組合證據；不要求每一個 pure contract 都另外用真實遊戲證明。
 
-目前 gate record：G0 為 `partial`（含 root-owned [g0-lite-browser-20260914.md](evidence/g0-lite-browser-20260914.md) 與 Shell exact-SHA native handoff/X1 局部量測；完整 native baseline/三次效能仍缺）；G1-core public contract 已 freeze @ [`54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa)，不包含 A-D；G2 為 `partial`，`2cb2983` 已取得操作 1–3 的受控 mounted evidence，最小 remaining 僅 Full/Lite C5/H5 native，仍不啟動 W2。完整資源生命週期、真實 FH6 與三次效能比較屬 W2–W4/G5，不能把它們回填為新的 G2 blocker 或把 C5/H5 缺項升格為 G5 pass。
+目前 gate record：G0 為 `partial`（含 root-owned [g0-lite-browser-20260914.md](evidence/g0-lite-browser-20260914.md) 與 Shell exact-SHA native handoff/X1 局部量測；完整 native baseline/三次效能仍缺）；G1-core public contract 已 freeze @ [`54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa)，不包含 A-D；G2 為 `partial`，`2cb2983` 已取得操作 1–3 的受控 mounted evidence，[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md) 的 Full AX 局部成功與兩次前景啟用失敗不構成 C5/H5 結果，最小 remaining 仍僅 Full/Lite C5/H5 native，仍不啟動 W2。完整資源生命週期、真實 FH6 與三次效能比較屬 W2–W4/G5，不能把它們回填為新的 G2 blocker 或把 C5/H5 缺項升格為 G5 pass。
 
 ## 6. PR-ready 判定
 
