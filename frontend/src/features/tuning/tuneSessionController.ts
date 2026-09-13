@@ -1,0 +1,69 @@
+import type { TuningCaptureMetadata } from '../../domain/tuning/telemetryCapture';
+import type { TelemetryData } from '../../hooks/useTelemetry';
+
+/**
+ * Identity fields that make a Tune measurement unsafe to reuse. `profileKey`
+ * deliberately follows the existing engine dependency contract rather than
+ * treating suspension or tyre edits as an engine change.
+ */
+export interface TuneSessionIdentity {
+  carId: string;
+  performanceIndex: number | null;
+  carClass: number | null;
+  profileKey: string;
+}
+
+export interface TuneAsyncToken {
+  generation: number;
+  identity: TuneSessionIdentity;
+}
+
+export interface CaptureFrameIdentity {
+  carId: string;
+  performanceIndex: number | null;
+  carClass: number | null;
+}
+
+export const sameTuneSessionIdentity = (left: TuneSessionIdentity, right: TuneSessionIdentity): boolean =>
+  left.carId === right.carId
+  && left.performanceIndex === right.performanceIndex
+  && left.carClass === right.carClass
+  && left.profileKey === right.profileKey;
+
+/** A token captured before I/O may apply only while the same Tune identity remains active. */
+export const isCurrentTuneAsyncToken = (token: TuneAsyncToken, current: TuneAsyncToken): boolean =>
+  token.generation === current.generation && sameTuneSessionIdentity(token.identity, current.identity);
+
+export const nextTuneAsyncToken = (previous: TuneAsyncToken, identity: TuneSessionIdentity): TuneAsyncToken => ({
+  generation: sameTuneSessionIdentity(previous.identity, identity) ? previous.generation : previous.generation + 1,
+  identity,
+});
+
+export const captureFrameIdentity = (frame: TelemetryData): CaptureFrameIdentity => ({
+  carId: Number.isInteger(frame.CarOrdinal) && (frame.CarOrdinal ?? 0) > 0 ? String(frame.CarOrdinal) : '',
+  performanceIndex: Number.isInteger(frame.CarPerformanceIndex) ? frame.CarPerformanceIndex! : null,
+  carClass: Number.isInteger(frame.CarClass) ? frame.CarClass! : null,
+});
+
+export const captureIdentityMatches = (expected: CaptureFrameIdentity, frame: TelemetryData): boolean => {
+  const actual = captureFrameIdentity(frame);
+  return actual.carId === expected.carId
+    && (expected.performanceIndex === null || actual.performanceIndex === expected.performanceIndex)
+    && (expected.carClass === null || actual.carClass === expected.carClass);
+};
+
+export const defaultTuneCaptureMetadata = (carId: string): TuningCaptureMetadata => ({
+  label: `tuning-capture-${new Date().toISOString().replace(/[:.]/g, '-')}`,
+  purpose: 'tire-and-chassis-validation',
+  carId,
+  gameBuild: 'unknown',
+  installedParts: 'unknown',
+  tireType: 'unknown',
+  surface: 'unknown',
+  weather: 'unknown',
+  eventType: 'unknown',
+  track: 'unknown',
+  shareCode: 'unknown',
+  driverAssists: 'unknown',
+  notes: '',
+});
