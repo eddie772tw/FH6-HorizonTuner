@@ -5,6 +5,7 @@ import { engineDependencyKey, parseEngineArchive, type EngineObservation } from 
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 import { backendFetch } from '../../services/backend';
 import { validateEngineCapture } from './engineCaptureReadback';
+import { isCurrentEngineObservationSaveToken, type EngineObservationSaveToken } from './tuneSessionController';
 
 const STORAGE_KEY = 'tuning-engine-observations/v1';
 const readArchive = () => { try { return parseEngineArchive(localStorage.getItem(STORAGE_KEY)); } catch { return []; } };
@@ -22,6 +23,11 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
   const generation = useRef(0);
   const identityGenerationRef = useRef(identityGeneration);
   identityGenerationRef.current = identityGeneration;
+  const currentSaveToken = (): EngineObservationSaveToken => ({
+    archiveGeneration: generation.current,
+    identityGeneration: identityGenerationRef.current,
+    dependencyKey: keyRef.current,
+  });
   useEffect(() => {
     keyRef.current = key;
     generation.current += 1;
@@ -50,8 +56,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     const requestId = ++saveSequence.current;
     saving.current = requestId;
     setPendingSave(true);
-    const saveGeneration = generation.current;
-    const saveIdentityGeneration = identityGenerationRef.current;
+    const saveToken = currentSaveToken();
     const signature = JSON.stringify([key, data, capture.samples.length, capture.samples[capture.samples.length - 1]?.timestampMS]);
     if (pending.current?.signature !== signature) {
       const item: EngineObservation = { schema: 'engine-observation/v1', id: crypto.randomUUID(), carId,
@@ -69,7 +74,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
         saving.current = null;
         setPendingSave(false);
       }
-      if (saveGeneration === generation.current && keyRef.current === key && saveIdentityGeneration === identityGenerationRef.current) {
+      if (isCurrentEngineObservationSaveToken(saveToken, currentSaveToken())) {
         setStorageError(true);
       }
       return;
@@ -80,7 +85,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     }
     // The backend save may complete after invalidate/reuse on the same key.
     // It is already durable server-side, but must not overwrite the newer UI selection.
-    if (saveGeneration !== generation.current || keyRef.current !== key || saveIdentityGeneration !== identityGenerationRef.current) return;
+    if (!isCurrentEngineObservationSaveToken(saveToken, currentSaveToken())) return;
     const next = [...new Map([...readArchive(), ...archive, item].map(entry => [entry.id, entry])).values()];
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* SQLite remains authoritative. */ }
     setStorageError(false);

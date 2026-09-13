@@ -47,6 +47,8 @@ Coordinator 在既有 `AppProviders` 下方、Full workspace switch 上方單次
 
 車輛、PI/class 或 profileKey 改變會遞增 generation、失效 selected engine observation、阻止舊 measurement 完成，並使 raw capture 標示 `identity-changed`。Engine archive 的 POST/save 與 reuse readback 在回應後再次檢查 generation，所以晚回應不能寫入新 identity 的 UI。已送往 backend 的舊 POST 可能仍是 durable server-side 寫入，但不會成為新 identity 的 selected observation。
 
+沿用原 `TuningView` 的額外 live gate：已選 observation 在遊戲中仍須匹配 car、PI、class 與 `EngineMaxRpm`；同車同 PI/class 但 redline 變更時立即失效，不能拿舊的 peak RPM 計算 gearing。這不變更 engine dependency key、archive schema 或 persistence key。
+
 ## Changed
 
 - `frontend/src/features/tuning/TuneSessionProvider.tsx`
@@ -71,3 +73,19 @@ Coordinator 在既有 `AppProviders` 下方、Full workspace switch 上方單次
 ## Not tested / next action
 
 No real game, Tauri Full/Lite smoke, backend save race, or CPU/RSS measurement was run. The Provider must first be mounted by the Coordinator in the Full path before Tune → Sessions/HUD → Tune mount/unmount evidence can be collected. New English UI strings used for capture invalidation/continuation and `Saving engine data…` remain feature keys; locale ownership stays with Coordinator.
+
+## Follow-up: measurement attempt lifecycle (2026-09-14)
+
+- `Collect driving data again` 現在呼叫 session restart，而不是只清除 archive selection：新 attempt 會重建 measurement state、frame buffer、ready snapshot 與 auto-finish，並讓任何 pending engine save 的 archive generation 過期。
+- identity/profile 首次 hydration 在 measurement 尚為 `idle` 時保留為 idle；已開始、暫停、完成或已失效的 attempt 仍會依 identity change 失效，避免混用資料。
+- save completion 以 archive generation、Tune identity generation 與 dependency key 三者核對。重測或換車後才抵達的成功 response 可留在 server，但不會重新選取舊 observation。
+- 更新兩段過時文案：切換 Tune step 時資料在 app session 內保留；只有重啟 collection 或關閉 app 前才需要 export。locale 仍由 Coordinator 寫入，請補下列英文 key 的翻譯：
+  - `The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.`
+  - `Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.`
+
+Verification for this follow-up (before commit):
+
+- `cmd /c "pnpm -C frontend exec vitest run src/features/tuning/tuneSessionController.test.ts"` — 1 file / 7 tests passed.
+- `cmd /c "pnpm -C frontend run test"` — 110 files / 731 tests passed.
+- `cmd /c "pnpm -C frontend run build"` — passed; Full and Lite entries built.
+- `git diff --check` — passed after final handoff edit.
