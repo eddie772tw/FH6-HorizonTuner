@@ -123,7 +123,10 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     selectionRevision.current += 1;
     setSession(previous => setRoadCandidateDraft(previous, draft));
   }, []);
-  const setFinishDraft = useCallback((draft: RoadFinishDraft | null) => setSession(previous => setRoadFinishDraft(previous, draft)), []);
+  const setFinishDraft = useCallback((draft: RoadFinishDraft | null) => {
+    selectionRevision.current += 1;
+    setSession(previous => setRoadFinishDraft(previous, draft));
+  }, []);
   const setResultSelection = useCallback((selection: RoadResultSelection) => {
     selectionRevision.current += 1;
     setSession(previous => setRoadResultSelection(previous, selection));

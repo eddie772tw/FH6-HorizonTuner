@@ -114,13 +114,33 @@ describe('Road validation session state', () => {
     expect(reconcileRoadLive(started, live(null)).step).toBe('results');
   });
 
-  it('keeps an unsubmitted finish form only for the same summary and saved-finish identity', () => {
+  it('keeps local finish inputs for the same summary and run when a saved finish is refreshed', () => {
     const initial = createRoadValidationSession('workflow-a');
     const drafted = setRoadFinishDraft(initial, { ...createRoadFinishDraft(summary, finish), time: '1:24.000', clean: false });
 
     expect(roadFinishDraftFor(drafted, summary, finish)).toMatchObject({ time: '1:24.000', clean: false });
     expect(roadFinishDraftFor(drafted, { ...summary, id: 'summary-b', runId: 'run-b' })).toMatchObject({ time: '', clean: false });
-    expect(roadFinishDraftFor(drafted, summary, { ...finish, id: 'finish-b', timeSeconds: 82.5 })).toMatchObject({ time: '82.5', clean: true });
+    expect(roadFinishDraftFor(drafted, summary, { ...finish, id: 'finish-b', timeSeconds: 82.5 })).toMatchObject({ time: '1:24.000', clean: false });
+    expect(roadFinishDraftFor(initial, summary, finish)).toMatchObject({ time: '83.456', clean: true });
+  });
+
+  it('preserves newer finish input through a delayed save and document readback', async () => {
+    let completeSave!: (value: RoadFinish) => void;
+    const save = new Promise<RoadFinish>(resolve => { completeSave = resolve; });
+    let session = setRoadFinishDraft(createRoadValidationSession('workflow-a'), createRoadFinishDraft(summary, finish));
+    session = startRoadOperation(session, 9, '/workflows/workflow-a/runs/run-a/finish');
+    const settled = save.then(saved => {
+      session = settleRoadOperation(session, 9, 'succeeded');
+      return roadFinishDraftFor(session, summary, saved);
+    });
+
+    session = setRoadFinishDraft(session, { ...session.finishDraft!, time: '1:25.000', clean: false });
+    completeSave({ ...finish, id: 'finish-b' });
+
+    expect(await settled).toMatchObject({ time: '1:25.000', clean: false });
+    expect(session.operation?.status).toBe('succeeded');
+    expect(roadFinishDraftFor(selectRoadWorkflow(session, 'workflow-b'), { ...summary, id: 'summary-b', runId: 'run-b' }))
+      .toMatchObject({ time: '', clean: false });
   });
 
   it('ignores a late operation completion after a newer operation has started', () => {

@@ -64,6 +64,14 @@ Next action: Coordinator wires `RoadValidationProvider` at the Full app boundary
 
 Last updated: 2026-09-14
 
+## Finish draft review correction
+
+The independent review of 2ba427c found that a finish POST/readback could replace time/clean edited while saving. The controller now advances the user-operation revision for finish edits. A local finish form belongs to its summary/run, so a new saved finish document does not reset those inputs. The backend finish remains authoritative for saved comparisons; switching workflows clears the local form and another summary reads its own finish values.
+
+The regression scenario edits time/clean while a save promise is pending, completes that save with a new finish document, and verifies the newer local inputs survive settlement/readback. A separate source-selection assertion retains server defaults when there is no local draft and prevents cross-run reuse.
+
+Validation after this change: frontend 111 files / 739 tests passed; Full/Lite TypeScript and Vite build passed; git diff --check passed. Logs: scratch-ia-finish-test.log and scratch-ia-finish-build.log. Root provider integration, controlled UI, native and live-game evidence remain pending. This correction awaits independent re-review before Shell integration.
+
 ## Coordinator 複查與 P1 基底整合
 
 原 Road 分支保留。將 `f3cbdb7`、`2c6cc0c` 依序移入上述 P1 parent；range-diff 顯示兩提交內容一致，得到 `6c22a38`、`854c455`。以下是其後的必要修正：
