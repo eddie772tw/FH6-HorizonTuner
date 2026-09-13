@@ -42,4 +42,44 @@ describe("race completion lifecycle", () => {
 
     expect(onCompleted).not.toHaveBeenCalled();
   });
+
+  it("uses a recording identity transition, while an unknown status never ends a race", async () => {
+    const onStarted = vi.fn();
+    const onCompleted = vi.fn();
+    const lifecycle = new RaceCompletionLifecycle({
+      readStatus: vi.fn().mockResolvedValue({ isRecording: false, currentSessionId: null }),
+      readSessions: vi.fn().mockResolvedValue([completed]),
+      readSessionData: vi.fn().mockResolvedValue([{ time: 0 }]),
+    }, { onStarted, onPending: vi.fn(), onCompleted });
+
+    lifecycle.observeStatus({ isRecording: true, currentSessionId: "race-new" });
+    lifecycle.observeStatus(null);
+    await flushAsyncWork();
+    expect(onCompleted).not.toHaveBeenCalled();
+
+    lifecycle.observeStatus({ isRecording: false, currentSessionId: null });
+    await flushAsyncWork();
+
+    expect(onStarted).toHaveBeenCalledWith("race-new");
+    expect(onCompleted).toHaveBeenCalledWith(completed);
+  });
+
+  it("cancels an older completion when a newer recorder identity starts", async () => {
+    let resolveCompletionStatus: ((value: { isRecording: boolean; currentSessionId: string | null }) => void) | undefined;
+    const onCompleted = vi.fn();
+    const lifecycle = new RaceCompletionLifecycle({
+      readStatus: vi.fn().mockImplementationOnce(() => new Promise(resolve => { resolveCompletionStatus = resolve; })),
+      readSessions: vi.fn().mockResolvedValue([completed]),
+      readSessionData: vi.fn().mockResolvedValue([{ time: 0 }]),
+    }, { onPending: vi.fn(), onCompleted });
+
+    lifecycle.observeStatus({ isRecording: true, currentSessionId: "race-old" });
+    lifecycle.observeStatus({ isRecording: false, currentSessionId: null });
+    await Promise.resolve();
+    lifecycle.observeStatus({ isRecording: true, currentSessionId: "race-new" });
+    resolveCompletionStatus?.({ isRecording: false, currentSessionId: null });
+    await flushAsyncWork();
+
+    expect(onCompleted).not.toHaveBeenCalled();
+  });
 });

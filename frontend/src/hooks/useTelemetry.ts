@@ -63,6 +63,15 @@ let latestData: TelemetryData | null = null;
 let connectionState = false;
 let subscribers = 0;
 let reconnectTimeout: ReturnType<typeof setTimeout>;
+// One channel belongs to the shared telemetry runtime, including reconnects.
+let hudBroadcastChannel: BroadcastChannel | null = null;
+type HudDisplayUnits = {
+  speed: 'kmh' | 'mph';
+  power: 'kw' | 'hp' | 'ps';
+  torque: 'nm' | 'lbft';
+  boostPressure: 'bar' | 'psi' | 'kpa';
+};
+let hudDisplayUnits: HudDisplayUnits = { speed: 'kmh', power: 'kw', torque: 'nm', boostPressure: 'bar' };
 
 // High-refresh timestamp-based frame pacing interpolator
 const sharedInterpolator = new FrameInterpolator();
@@ -123,21 +132,14 @@ export function useTelemetry(url?: string) {
         console.log("Telemetry WebSocket connected.");
       };
 
-const hudBroadcastChannel = typeof window !== 'undefined' ? new BroadcastChannel('horizon_tuner_hud_channel') : null;
-
-type HudDisplayUnits = {
-  speed: 'kmh' | 'mph';
-  power: 'kw' | 'hp' | 'ps';
-  torque: 'nm' | 'lbft';
-  boostPressure: 'bar' | 'psi' | 'kpa';
-};
-
-let hudDisplayUnits: HudDisplayUnits = { speed: 'kmh', power: 'kw', torque: 'nm', boostPressure: 'bar' };
-hudBroadcastChannel?.addEventListener('message', event => {
-  if (event.data?.type !== 'config') return;
-  const effective = event.data.data?.effectiveUnits;
-  if (effective) hudDisplayUnits = { ...hudDisplayUnits, ...effective };
-});
+      if (!hudBroadcastChannel && typeof window !== 'undefined') {
+        hudBroadcastChannel = new BroadcastChannel('horizon_tuner_hud_channel');
+        hudBroadcastChannel.addEventListener('message', event => {
+          if (event.data?.type !== 'config') return;
+          const effective = event.data.data?.effectiveUnits;
+          if (effective) hudDisplayUnits = { ...hudDisplayUnits, ...effective };
+        });
+      }
 
 let peakSessionPower = 100;
 let peakSessionTorque = 100;
@@ -327,6 +329,8 @@ function formatHudTelemetry(raw: TelemetryData) {
       if (subscribers === 0) {
         clearTimeout(reconnectTimeout);
         stopSharedRenderLoop();
+        hudBroadcastChannel?.close();
+        hudBroadcastChannel = null;
         if (sharedWs) {
           sharedWs.onclose = null;
           sharedWs.onerror = null;

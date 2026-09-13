@@ -26,8 +26,25 @@ describe('measured workflow adapters', () => {
     const inputs = { carId: '42', profile: fixed, engineObservation: { id: 'measured-id', data: engine } };
     const rec = workflowRecommendation(fixed, calculateChassisTuning('Road', fixed), calculateStaticTireAlignment('Road', 'Summer', fixed), calculateMeasuredGearing('Road', 6, fixed, engine)!, inputs);
     expect(Object.keys(rec.fields).sort()).toEqual(['gearing.finalDrive', 'pressure.front', 'pressure.rear']);
+    expect(rec.inputSnapshot.engineObservation).toEqual(inputs.engineObservation);
     inputs.profile.weight = 1800;
     expect((rec.inputSnapshot.profile as CarParams).weight).toBe(1200);
+  });
+  it('uses the capture-free saved engine observation in a workflow snapshot', () => {
+    const savedObservation = {
+      schema: 'engine-observation/v1', id: 'measured-id', carId: '42', capturedAt: 123,
+      dependencyKey: '["42","RWD","NA",300,400]', source: 'measured', data: { ...engine, carId: '42' },
+    };
+    const capture = { schemaVersion: 'tuning-capture/v1', samples: [{ timestampMS: 1234 }], references: { engineObservationId: 'measured-id' } };
+    const inputs = { carId: '42', engineObservation: { ...savedObservation, capture } };
+    const before = JSON.stringify(inputs);
+    const rec = workflowRecommendation(profile, calculateChassisTuning('Road', profile), calculateStaticTireAlignment('Road', 'Summer', profile),
+      calculateMeasuredGearing('Road', 6, profile, engine)!, inputs);
+
+    expect(rec.inputSnapshot.engineObservation).toEqual(savedObservation);
+    expect(rec.inputSnapshot.engineObservation).not.toHaveProperty('capture');
+    expect(JSON.stringify(inputs)).toBe(before);
+    expect(inputs.engineObservation.capture).toBe(capture);
   });
   it('changes exactly one confirmed game step and never exceeds the range', () => {
     const setting = { value: 28, minimum: 15, maximum: 55, step: 0.5 };

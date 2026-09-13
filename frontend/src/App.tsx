@@ -1,99 +1,37 @@
-import { restoreWorkflowStep } from './features/tuning/tuningWorkflow';
-import React, { useEffect, useState } from 'react';
-import Navigation from './components/Navigation';
-import TelemetryView from './features/telemetry/TelemetryView';
-import TuningView from './features/tuning/TuningView';
-import TuningViewDev from './features/tuning/TuningView_dev';
-import SettingsView from './features/settings/SettingsView';
-import DiagnosticConsole from './components/DiagnosticConsole';
-import ThemeView from './features/theme/ThemeView';
-import { useTelemetry } from './hooks/useTelemetry';
-import { useOverlayWebSocket } from './hooks/useOverlayWebSocket';
-import { useCarParams } from './context/CarParamsContext';
-import { useSettings } from './context/SettingsContext';
+import { lazy } from 'react';
+import { AppProviders } from './AppProviders';
+import { AppShell, type WorkspaceRegistry } from './app/AppShell';
+import { commonWorkspaces } from './app/commonWorkspaces';
+import ToastContainer from './components/common/ToastContainer';
+import { TuneSessionProvider } from './features/tuning/TuneSessionProvider';
+import { RoadValidationProvider } from './features/road/RoadValidationController';
+import { SessionsStateProvider, useSessionsState } from './features/sessions/SessionsStateProvider';
+import { SessionsRuntime } from './features/sessions/SessionsRuntime';
+import { OverlayControlRuntimeProvider } from './features/overlay_control/OverlayControlRuntimeProvider';
 import './App.css';
 
-import OverlayView from './features/overlay_control/OverlayView';
-import { getBackendPort } from './services/backend';
-import type { LegacyNavigationTarget, LegacyTab } from './app/legacyNavigation';
-
-const AppContent: React.FC = () => {
-  const { isConnected } = useTelemetry();
-  const { settings } = useSettings();
-  useOverlayWebSocket();
-  const [activeTab, setActiveTab] = useState<LegacyTab>('telemetry');
-  const { carId, setCarId, telemetryCarId } = useCarParams();
-  const [showLogs, setShowLogs] = useState(false);
-  const [showTheme, setShowTheme] = useState(false);
-
-  // SubTab States for Quick Jumps
-  const [telemetrySubTab, setTelemetrySubTab] = useState<'live' | 'analysis' | 'drag'>('live');
-  const [tuningStep, setTuningStep] = useState<number>(() => {
-    try { return restoreWorkflowStep(JSON.parse(localStorage.getItem('tuning-workflow-state') || 'null')); } catch { return 1; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem('tuning-workflow-state', JSON.stringify({ schema: 'tuning-workflow/v3', step: tuningStep })); } catch { /* Navigation still works without storage. */ }
-  }, [tuningStep]);
-  const [developerTuningStep, setDeveloperTuningStep] = useState<number>(1);
-  const handleNavigation = (target: LegacyNavigationTarget) => {
-    setActiveTab(target.tab);
-    if (target.tab === 'telemetry') setTelemetrySubTab(target.view);
-    if (target.tab === 'tuning') {
-      (settings.developer_tuning_enabled ? setDeveloperTuningStep : setTuningStep)(target.step);
-    }
-  };
-
-  // Auto-synchronize back to telemetry car when returning to telemetry tab
-  React.useEffect(() => {
-    if (activeTab === 'telemetry' && telemetryCarId && telemetryCarId !== '0' && carId !== telemetryCarId) {
-      setCarId(telemetryCarId);
-    }
-  }, [activeTab, telemetryCarId, carId, setCarId]);
-
-  return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>
-      <Navigation 
-        activeTab={activeTab} 
-        onNavigate={handleNavigation}
-        isConnected={isConnected}
-        onShowLogs={() => setShowLogs(true)}
-        onShowTheme={() => setShowTheme(true)}
-        backendPort={getBackendPort()}
-      />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
-        <div style={{ display: activeTab === 'telemetry' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <TelemetryView subTab={telemetrySubTab} setSubTab={setTelemetrySubTab} />
-        </div>
-        <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          {settings.developer_tuning_enabled ? (
-            <TuningViewDev currentStep={developerTuningStep} setCurrentStep={setDeveloperTuningStep} />
-          ) : (
-            <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} />
-          )}
-        </div>
-        <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <OverlayView />
-        </div>
-        <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <SettingsView />
-        </div>
-      </main>
-      <DiagnosticConsole show={showLogs} onClose={() => setShowLogs(false)} />
-      <ThemeView show={showTheme} onClose={() => setShowTheme(false)} />
-    </div>
-  );
+const workspaces: WorkspaceRegistry = {
+  ...commonWorkspaces,
+  tune: lazy(() => import('./features/tuning/TuningWorkspace')),
+  sessions: lazy(() => import('./features/sessions/SessionsWorkspace').then(module => ({ default: module.SessionsWorkspace }))),
 };
 
-import { AppProviders } from './AppProviders';
-import ToastContainer from './components/common/ToastContainer';
+function FullWorkspaceShell() {
+  const { applySessionIntent } = useSessionsState();
+  return <AppShell variant="full" workspaces={workspaces} Runtime={SessionsRuntime} prepareSession={applySessionIntent} />;
+}
 
-const App: React.FC = () => {
-  return (
-    <AppProviders>
-      <AppContent />
-      <ToastContainer />
-    </AppProviders>
-  );
-};
-
-export default App;
+export default function App() {
+  return <AppProviders>
+    <OverlayControlRuntimeProvider>
+      <TuneSessionProvider>
+        <RoadValidationProvider>
+          <SessionsStateProvider>
+            <FullWorkspaceShell />
+          </SessionsStateProvider>
+        </RoadValidationProvider>
+      </TuneSessionProvider>
+    </OverlayControlRuntimeProvider>
+    <ToastContainer />
+  </AppProviders>;
+}

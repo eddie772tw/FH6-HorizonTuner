@@ -2623,3 +2623,12 @@
 - **Verified learning**：現行 UI 是四階段，六階段文件屬演進背景。工作流引擎掃描的 slip 只作上下文，不能據完整性 gate 宣稱識別輪胎摩擦係數；capture 的 TireTemp 原始契約是 °F，SteerInput 是 -127..127 counts，欄位缺失須同時檢查 `missingChannels`，不能把 mapper fallback 0 當量測。
 - **Formula review**：FWD 不能無條件繼承 RWD 的負載轉移／驅動胎策略；Dirt 接地柔順與 Cross Country 落地支撐是不同取捨。FH5 方法可在控制語意或 FH6 證據支持下部分沿用，具體常數仍需標示工程先驗。真車公式的量綱与遊戲滑桿比例分開記錄。
 - **Validation boundary**：本輪單元／build 與來源比對不等同 FH6 實車、跨車校準或排行榜驗收。完整候選 profile 切換可能改多個欄位，不能稱為單一 slider 因果實驗。每個 PR 的精確檔案、測試及限制以其頂層內文與研究文件為準。
+
+## 2026-09-14 / IA 跨頁狀態的整合缺口
+
+- **Scope**：P2 共用 Shell 整合，採用 `cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`pr-author-maintainer`；原生交接參照 `portable-release-validation`。各 foundation 獨立 worktree，shared Shell 由 Coordinator 單一持有。
+- **Verified learning**：最新分析必須先確認 exact saved header 與非空 samples，再提交 selection/data/navigation；先切頁的失敗路徑會留下舊檔。受控 backend 停止／恢復已驗證留頁、Retry 與正確載入。
+- **Terminal state**：18 秒合成量測在切頁後完成，最後一次 200ms UI 節流可能略過 complete；未強制 publish 會顯示尚缺高 RPM 且 Next disabled。只對 terminal/blocked/invalidated 強制發布後，以同資料重驗可繼續並跨頁保存。
+- **Immutable evidence**：archive UI 物件附掛的 capture 不能直接作為 canonical saved observation 傳回 Road。既有 backend exact equality 會拒絕多出欄位。純 snapshot mapping 去除該 UI 欄位後，隔離 baseline/start/stop 可完成，backend guard 保持。
+- **Race lifecycle**：backend 不接受 `IsRaceOn=0` 影格，不可僅依 frontend telemetry falling edge 開分析。既有 recorder status 的 identity/completion 可用；unknown response 不代表結束。Live 自動開新紀錄，HUD 保留明確入口的行為已受控驗證。
+- **Validation boundary**：118 files／788 tests、Full/Lite build、合成 UDP + 真實本機 backend/browser 都不等同原生 HUD、真實遊戲或三次效能比較。原生 CUA 不可用，C5/H5 維持 not-run；詳見 [Shell 交接](../docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
