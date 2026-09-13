@@ -13,6 +13,8 @@ import { WorkflowGuide } from './components/WorkflowGuide';
 import { SetupVerificationStep } from './components/SetupVerificationStep';
 import { canOpenTuningStep, getWorkflowReadiness, resolveTuningStep, TUNING_WORKFLOW_STEPS } from './tuningWorkflow';
 import { TuneSessionBoundary, useTuneSession } from './TuneSessionProvider';
+import { selectedEngineObservationMatchesLiveTelemetry } from './tuneSessionController';
+import { useTelemetry } from '../../hooks/useTelemetry';
 
 interface Props {
   currentStep?: number;
@@ -25,6 +27,7 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
   }) {
   const { carId, carName, setCarParams, saveCarParams, isLoading, loadedCarId } = useCarParams();
   const { t } = useSettings();
+  const { data } = useTelemetry();
   const session = useTuneSession();
   const [showUnits, setShowUnits] = useState(false);
   const currentStep = session.workflow.step;
@@ -32,7 +35,7 @@ function TuningViewContent({ currentStep: externalStep, setCurrentStep: external
   const season = session.workflow.season as Season;
   const profile = session.profile;
   const engine = session.engine;
-  const prepared = engine.current;
+  const prepared = selectedEngineObservationMatchesLiveTelemetry(carId, engine.current, data) ? engine.current : null;
   const reviewHistory = session.workflow.reviewHistory;
   const setCurrentStep = (next: number | ((previous: number) => number)) => {
     const resolved = typeof next === 'function' ? next(currentStep) : next;
