@@ -4,6 +4,7 @@ import {
   ROAD_SELECTED_WORKFLOW_KEY,
   createRoadValidationSession,
   markRoadWorkflowCreated,
+  observeRoadRunConfirmation,
   reconcileRoadLive,
   roadFinishDraftFor,
   roadOperationResultApplies,
@@ -64,6 +65,7 @@ export interface RoadValidationController {
   finishDraftFor: (summary: RoadSummary, finish?: RoadFinish) => RoadFinishDraft;
   setResultSelection: (selection: RoadResultSelection) => void;
   runConfirmationFor: (identity: RoadRunConfirmationIdentity) => RoadRunConfirmation;
+  observeRunConfirmation: (identity: RoadRunConfirmationIdentity) => void;
   setRunConfirmation: (identity: RoadRunConfirmationIdentity, confirmation: Pick<RoadRunConfirmation, 'confirmed' | 'unchanged'>) => void;
   reconcileLive: (live: RoadLive | null) => void;
   beginOperation: (kind: string) => number | null;
@@ -104,15 +106,33 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     setSession(previous => markRoadWorkflowCreated(previous, workflowId));
   }, []);
 
-  const setStep = useCallback((step: RoadValidationStep) => setSession(previous => setRoadStep(previous, step)), []);
-  const setSetupId = useCallback((setupId: string) => setSession(previous => setRoadSetupId(previous, setupId)), []);
+  const setStep = useCallback((step: RoadValidationStep) => {
+    selectionRevision.current += 1;
+    setSession(previous => setRoadStep(previous, step));
+  }, []);
+  const setSetupId = useCallback((setupId: string) => {
+    selectionRevision.current += 1;
+    setSession(previous => setRoadSetupId(previous, setupId));
+  }, []);
   const setChoiceSaved = useCallback((choiceSaved: boolean) => setSession(previous => setRoadChoiceSaved(previous, choiceSaved)), []);
-  const setPrepareDraft = useCallback((draft: RoadPrepareDraft) => setSession(previous => setRoadPrepareDraft(previous, draft)), []);
-  const setCandidateDraft = useCallback((draft: RoadCandidateDraft | null) => setSession(previous => setRoadCandidateDraft(previous, draft)), []);
+  const setPrepareDraft = useCallback((draft: RoadPrepareDraft) => {
+    selectionRevision.current += 1;
+    setSession(previous => setRoadPrepareDraft(previous, draft));
+  }, []);
+  const setCandidateDraft = useCallback((draft: RoadCandidateDraft | null) => {
+    selectionRevision.current += 1;
+    setSession(previous => setRoadCandidateDraft(previous, draft));
+  }, []);
   const setFinishDraft = useCallback((draft: RoadFinishDraft | null) => setSession(previous => setRoadFinishDraft(previous, draft)), []);
-  const setResultSelection = useCallback((selection: RoadResultSelection) => setSession(previous => setRoadResultSelection(previous, selection)), []);
+  const setResultSelection = useCallback((selection: RoadResultSelection) => {
+    selectionRevision.current += 1;
+    setSession(previous => setRoadResultSelection(previous, selection));
+  }, []);
   const reconcileLive = useCallback((live: RoadLive | null) => setSession(previous => reconcileRoadLive(previous, live)), []);
   const runConfirmationFor = useCallback((identity: RoadRunConfirmationIdentity) => roadRunConfirmationFor(session, identity), [session]);
+  const observeRunConfirmation = useCallback((identity: RoadRunConfirmationIdentity) => {
+    setSession(previous => observeRoadRunConfirmation(previous, identity));
+  }, []);
   const finishDraftFor = useCallback((summary: RoadSummary, finish?: RoadFinish) => roadFinishDraftFor(session, summary, finish), [session]);
   const setRunConfirmation = useCallback((identity: RoadRunConfirmationIdentity, confirmation: Pick<RoadRunConfirmation, 'confirmed' | 'unchanged'>) => {
     setSession(previous => setRoadRunConfirmation(previous, identity, confirmation));
@@ -161,12 +181,13 @@ export function RoadValidationProvider({ children }: PropsWithChildren) {
     finishDraftFor,
     setResultSelection,
     runConfirmationFor,
+    observeRunConfirmation,
     setRunConfirmation,
     reconcileLive,
     beginOperation,
     finishOperation,
   }), [
-    beginOperation, finishDraftFor, finishOperation, markWorkflowCreated, reconcileLive, runConfirmationFor, selectWorkflow, session,
+    beginOperation, finishDraftFor, finishOperation, markWorkflowCreated, observeRunConfirmation, reconcileLive, runConfirmationFor, selectWorkflow, session,
     setCandidateDraft, setChoiceSaved, setFinishDraft, setPrepareDraft, setResultSelection, setRunConfirmation, setSetupId, setStep,
   ]);
 

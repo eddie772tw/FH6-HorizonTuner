@@ -159,7 +159,7 @@ export function setRoadPrepareDraft(state: RoadValidationSessionState, prepareDr
 }
 
 export function setRoadSetupId(state: RoadValidationSessionState, setupId: string): RoadValidationSessionState {
-  return { ...state, setupId };
+  return { ...state, setupId, runConfirmation: setupId === state.setupId ? state.runConfirmation : null };
 }
 
 export function setRoadChoiceSaved(state: RoadValidationSessionState, choiceSaved: boolean): RoadValidationSessionState {
@@ -230,6 +230,12 @@ export function roadRunConfirmationFor(state: RoadValidationSessionState, identi
   return state.runConfirmation?.identityKey === identityKey
     ? state.runConfirmation
     : { identityKey, confirmed: false, unchanged: false };
+}
+
+/** Remember a changed identity, so returning to an earlier value cannot revive its confirmation. */
+export function observeRoadRunConfirmation(state: RoadValidationSessionState, identity: RoadRunConfirmationIdentity): RoadValidationSessionState {
+  const confirmation = roadRunConfirmationFor(state, identity);
+  return confirmation === state.runConfirmation ? state : { ...state, runConfirmation: confirmation };
 }
 
 export function setRoadRunConfirmation(

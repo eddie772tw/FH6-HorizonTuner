@@ -5,6 +5,7 @@ import {
   createRoadFinishDraft,
   createRoadValidationSession,
   markRoadWorkflowCreated,
+  observeRoadRunConfirmation,
   reconcileRoadLive,
   roadFinishDraftFor,
   roadOperationResultApplies,
@@ -12,6 +13,7 @@ import {
   selectRoadWorkflow,
   setRoadFinishDraft,
   setRoadRunConfirmation,
+  setRoadSetupId,
   settleRoadOperation,
   startRoadOperation,
 } from './roadValidationState';
@@ -81,6 +83,26 @@ describe('Road validation session state', () => {
     expect(reconciled.step).toBe('drive');
     expect(reconciled.activeRun).toEqual({ id: 'run-b', workflowId: 'workflow-a' });
     expect(reconciled.runConfirmation).toBeNull();
+  });
+
+  it('does not revive confirmation after selecting another setup and returning to the original', () => {
+    const initial = setRoadSetupId(createRoadValidationSession('workflow-a'), 'setup-a');
+    const original = { workflowId: 'workflow-a', setupId: 'setup-a', activeRunId: null, inputSnapshot: {}, liveIdentity: identity };
+    const confirmed = setRoadRunConfirmation(initial, original, { confirmed: true, unchanged: true });
+    const returned = setRoadSetupId(setRoadSetupId(confirmed, 'setup-b'), 'setup-a');
+    expect(roadRunConfirmationFor(returned, original)).toMatchObject({ confirmed: false, unchanged: false });
+  });
+
+  it('requires confirmation again after input or car identity changes back to an earlier value', () => {
+    const original = { workflowId: 'workflow-a', setupId: 'setup-a', activeRunId: null, inputSnapshot: { season: 'Summer' }, liveIdentity: identity };
+    const confirmed = setRoadRunConfirmation(createRoadValidationSession('workflow-a'), original, { confirmed: true, unchanged: true });
+    for (const changed of [
+      { ...original, inputSnapshot: { season: 'Winter' } },
+      { ...original, liveIdentity: { ...identity, performanceIndex: 800 } },
+    ]) {
+      const returned = observeRoadRunConfirmation(observeRoadRunConfirmation(confirmed, changed), original);
+      expect(roadRunConfirmationFor(returned, original)).toMatchObject({ confirmed: false, unchanged: false });
+    }
   });
 
   it('preserves a manually selected step until a backend active-run transition requires reconciliation', () => {

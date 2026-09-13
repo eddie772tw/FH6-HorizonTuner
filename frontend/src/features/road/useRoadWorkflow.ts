@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { backendFetch } from '../../services/backend';
 import type { RoadDocument, RoadLive, RoadWorkflow } from './roadTypes';
+import { createRoadLiveReader } from './roadLiveReader';
 
 export async function roadRequest<T>(path: string, body?: unknown): Promise<T> {
   const response = await backendFetch('/api/road' + path, body === undefined ? undefined : {
@@ -45,10 +46,17 @@ export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
   selectRef.current = select;
   liveListener.current = options.onLive;
 
+  const liveReader = useMemo(() => createRoadLiveReader(
+    () => roadRequest<RoadLive>('/live'),
+    next => { setLive(next); liveListener.current?.(next); },
+    failure => { setLive(null); setError(failure instanceof Error ? failure.message : String(failure)); },
+    () => mounted.current,
+  ), []);
+
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
-  }, []);
+    return () => { mounted.current = false; generation.current += 1; liveReader.invalidate(); };
+  }, [liveReader]);
 
   const refresh = useCallback(async () => {
     const id = selectedRef.current;
@@ -91,52 +99,47 @@ export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
     let previousRun: string | null | undefined;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
-      try {
-        const state = await roadRequest<RoadLive>('/live');
-        if (disposed) return;
-        setLive(state);
-        liveListener.current?.(state);
+      const result = await liveReader.refresh();
+      if (disposed) return;
+      if (result.status === 'applied') {
+        const state = result.live;
         if (previousRun !== state.activeRun?.id) await refresh().catch(() => {});
         previousRun = state.activeRun?.id;
-      } catch (errorValue) {
-        if (!disposed) {
-          setLive(null);
-          setError(String((errorValue as Error).message));
-        }
       }
       if (!disposed) timer = setTimeout(poll, 1000);
     };
     void poll();
     return () => { disposed = true; clearTimeout(timer); };
-  }, [refresh]);
+  }, [liveReader, refresh]);
 
   const perform = async <T,>(path: string, body: unknown): Promise<T | null> => {
     if (inFlight.current) return null;
     inFlight.current = true;
     const mutation = ++mutationGeneration.current;
+    const selectedAtStart = selectedRef.current;
+    const canUpdateView = () => mounted.current && mutation === mutationGeneration.current && selectedAtStart === selectedRef.current;
     if (mounted.current) {
       setBusy(true);
       setError('');
     }
     try {
       const value = await roadRequest<T>(path, body);
-      if (mounted.current) {
+      if (canUpdateView()) {
         try {
-          const state = await roadRequest<RoadLive>('/live');
-          if (mutation === mutationGeneration.current) {
-            setLive(state);
-            liveListener.current?.(state);
+          const result = await liveReader.refresh();
+          if (canUpdateView() && result.status !== 'discarded') {
+            if (result.status === 'failed') throw new Error('Live refresh failed');
             await refresh();
           }
         } catch {
-          if (mutation === mutationGeneration.current) {
+          if (canUpdateView()) {
             setError('The change was saved, but the view could not refresh. Reopen the saved workflow.');
           }
         }
       }
       return value;
     } catch (errorValue) {
-      if (mounted.current && mutation === mutationGeneration.current) setError(String((errorValue as Error).message));
+      if (canUpdateView()) setError(String((errorValue as Error).message));
       return null;
     } finally {
       inFlight.current = false;
