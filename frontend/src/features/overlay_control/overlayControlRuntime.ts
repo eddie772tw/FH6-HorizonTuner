@@ -307,6 +307,10 @@ export function createOverlayControlRuntime(
         return;
       }
       const config = normalizeHudRuntimeConfig(data);
+      // The accepted external config is newer authority than any in-flight
+      // GET that started before this BroadcastChannel event. Advancing the
+      // read generation prevents that delayed response from restoring it.
+      refreshGeneration += 1;
       setSnapshot({ config, status: 'ready', error: null, pendingWrites: 0 });
     },
     setEffectiveUnits(units) {
