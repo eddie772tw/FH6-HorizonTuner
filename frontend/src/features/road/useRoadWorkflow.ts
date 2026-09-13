@@ -17,9 +17,17 @@ interface RoadWorkflowOptions {
   onLive?: (live: RoadLive) => void;
 }
 
+function restoreSelectedWorkflowId(): string {
+  try {
+    return localStorage.getItem('road-selected-workflow') || '';
+  } catch {
+    return '';
+  }
+}
+
 export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
   const [workflows, setWorkflows] = useState<RoadWorkflow[]>([]);
-  const [storedSelectedId, setStoredSelectedId] = useState(() => localStorage.getItem('road-selected-workflow') || '');
+  const [storedSelectedId, setStoredSelectedId] = useState(restoreSelectedWorkflowId);
   const selectedId = options.selectedId ?? storedSelectedId;
   const select = options.onSelect ?? setStoredSelectedId;
   const [documents, setDocuments] = useState<RoadDocument[]>([]);
@@ -45,26 +53,37 @@ export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
   const refresh = useCallback(async () => {
     const id = selectedRef.current;
     const sequence = ++generation.current;
-    const list = await roadRequest<RoadWorkflow[]>('/workflows');
-    if (!mounted.current || sequence !== generation.current || id !== selectedRef.current) return;
-    setWorkflows(list);
-    setError('');
-    if (id && !list.some(work => work.id === id)) {
-      setDocuments([]);
-      selectRef.current('');
-      return;
+    try {
+      const list = await roadRequest<RoadWorkflow[]>('/workflows');
+      if (!mounted.current || sequence !== generation.current || id !== selectedRef.current) return;
+      setWorkflows(list);
+      setError('');
+      if (id && !list.some(work => work.id === id)) {
+        setDocuments([]);
+        selectRef.current('');
+        return;
+      }
+      const docs = id ? await roadRequest<RoadDocument[]>('/workflows/' + encodeURIComponent(id)) : [];
+      if (!mounted.current || sequence !== generation.current || id !== selectedRef.current) return;
+      setDocuments(docs);
+    } catch (errorValue) {
+      if (mounted.current && sequence === generation.current && id === selectedRef.current) {
+        setError(String((errorValue as Error).message));
+      }
+      throw errorValue;
     }
-    const docs = id ? await roadRequest<RoadDocument[]>('/workflows/' + encodeURIComponent(id)) : [];
-    if (!mounted.current || sequence !== generation.current || id !== selectedRef.current) return;
-    setDocuments(docs);
   }, []);
 
   useEffect(() => {
-    if (options.selectedId === undefined) localStorage.setItem('road-selected-workflow', selectedId);
+    if (options.selectedId === undefined) {
+      try {
+        localStorage.setItem('road-selected-workflow', selectedId);
+      } catch {
+        // Direct-hook compatibility does not require browser storage.
+      }
+    }
     setDocuments([]);
-    void refresh().catch(errorValue => {
-      if (mounted.current) setError(String((errorValue as Error).message));
-    });
+    void refresh().catch(() => {});
   }, [options.selectedId, refresh, selectedId]);
 
   useEffect(() => {
@@ -77,7 +96,7 @@ export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
         if (disposed) return;
         setLive(state);
         liveListener.current?.(state);
-        if (previousRun !== state.activeRun?.id) await refresh();
+        if (previousRun !== state.activeRun?.id) await refresh().catch(() => {});
         previousRun = state.activeRun?.id;
       } catch (errorValue) {
         if (!disposed) {
@@ -101,16 +120,18 @@ export function useRoadWorkflow(options: RoadWorkflowOptions = {}) {
     }
     try {
       const value = await roadRequest<T>(path, body);
-      try {
-        const state = await roadRequest<RoadLive>('/live');
-        if (mounted.current && mutation === mutationGeneration.current) {
-          setLive(state);
-          liveListener.current?.(state);
-          await refresh();
-        }
-      } catch {
-        if (mounted.current && mutation === mutationGeneration.current) {
-          setError('The change was saved, but the view could not refresh. Reopen the saved workflow.');
+      if (mounted.current) {
+        try {
+          const state = await roadRequest<RoadLive>('/live');
+          if (mutation === mutationGeneration.current) {
+            setLive(state);
+            liveListener.current?.(state);
+            await refresh();
+          }
+        } catch {
+          if (mutation === mutationGeneration.current) {
+            setError('The change was saved, but the view could not refresh. Reopen the saved workflow.');
+          }
         }
       }
       return value;

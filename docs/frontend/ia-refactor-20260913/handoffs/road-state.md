@@ -11,10 +11,12 @@ Write ownership: `frontend/src/features/road/**` and this handoff only
 
 - Added `RoadValidationProvider`, `RoadValidationBoundary`, and `useRoadValidation` in `frontend/src/features/road/RoadValidationController.tsx`.
 - Added the pure session-state and late-operation guard module plus its Vitest coverage in `roadValidationState.ts` and `roadValidationState.test.ts`.
-- Moved Road Prepare’s unsubmitted event fields, Road Candidate’s actual form values, workflow step/setup/choice state, and result/comparison selection from page-local state into the controller.
+- Moved Road Prepare’s unsubmitted event fields, Road Candidate’s actual form values, Road Observation’s finish time/clean confirmation, workflow step/setup/choice state, and result/comparison selection from page-local state into the controller.
 - Changed the Road page adapter to use controller-owned workflow selection while keeping the existing `road-selected-workflow` key.
 - Kept Road polling page-owned. Its cleanup stops the one-second `/api/road/live` timer when the page unmounts; re-entering fetches live state again and reconciles an active backend run.
-- Added mounted and generation checks around page reads and mutation follow-up reads. The controller rejects stale operation completions after a new selection invalidates them.
+- Added mounted and generation checks around page reads and mutation follow-up reads. A pending mutation remains visible across a workflow/page change, settles for the new page to refresh its documents, and cannot apply its old callback after the selection revision changes.
+- Reconciliation now changes Drive/Results only on a backend active-run transition. Loading an old summary on a new page mount no longer overwrites a controller-held Prepare or Drive step.
+- Audited remaining Road inputs: RoadCompare’s baseline/candidate/repeat selections are controller-owned; RoadReportCard decisions are immediate mutations and have no draft input; the export error is a transient status, not user input.
 
 ## Public contract for Coordinator
 
@@ -24,7 +26,7 @@ import { RoadValidationProvider } from './features/road/RoadValidationController
 
 For Full only, put the provider below the existing `AppProviders` and above the workspace switch. It takes no props. `RoadWorkflowView` includes `RoadValidationBoundary`, so the current application remains usable until that wrapper is wired; once the Full provider exists, the boundary reuses it and does not create a second controller.
 
-The public hook is `useRoadValidation()`. Its stable actions are `selectWorkflow`, `markWorkflowCreated`, `setStep`, `setSetupId`, `setChoiceSaved`, `setPrepareDraft`, `setCandidateDraft`, `setResultSelection`, `setRunConfirmation`, `reconcileLive`, `beginOperation`, and `finishOperation`.
+The public hook is `useRoadValidation()`. Its stable actions are `selectWorkflow`, `markWorkflowCreated`, `setStep`, `setSetupId`, `setChoiceSaved`, `setPrepareDraft`, `setCandidateDraft`, `setFinishDraft`, `setResultSelection`, `setRunConfirmation`, `reconcileLive`, `beginOperation`, and `finishOperation`.
 
 ## Field lifetime
 
@@ -34,9 +36,10 @@ The public hook is `useRoadValidation()`. Its stable actions are `selectWorkflow
 | `prepareDraft` | Controller app-session memory | Cleared after a workflow is created; not restored after restart. |
 | `step`, `setupId`, `choiceSaved` | Controller app-session memory | New workflow selection resets setup/choice; a returned active run makes its selected workflow enter Drive. |
 | Candidate draft and result/comparison selection | Controller app-session memory | Candidate draft clears after B is saved or workflow changes; not restored after restart. |
+| Finish-result time and clean confirmation | Controller app-session memory | Keyed by summary and persisted finish IDs, so a different run or a newly saved finish cannot reuse an old form value. |
 | Confirmed / unchanged checkboxes | Controller app-session memory, keyed by workflow, setup, backend active-run ID, current input snapshot, and live vehicle identity | Any key change reads as unconfirmed; active-run changes clear the stored confirmation. |
 | active run | Backend `/api/road/live` is authoritative | Page polling sends observations to the controller; navigation never sends start or stop. |
-| operation status | Controller app-session memory | Only the current operation can settle; an invalidated late response cannot perform page-level selection changes. |
+| operation status | Controller app-session memory | Pending status disables all Road mutations after a return; terminal success makes the mounted Road page refresh documents. A selection revision suppresses old page callbacks while still settling the backend operation. |
 
 ## Preserved behaviour and boundaries
 
@@ -50,8 +53,8 @@ The public hook is `useRoadValidation()`. Its stable actions are `selectWorkflow
 | --- | --- |
 | `cmd /c "pnpm install --frozen-lockfile"` | passed |
 | Baseline `cmd /c "pnpm -C frontend run test"` | 108 files, 719 tests passed |
-| `cmd /c "pnpm -C frontend exec vitest run src/features/road/roadValidationState.test.ts"` | 1 file, 5 tests passed |
-| `cmd /c "pnpm -C frontend run test"` | 109 files, 724 tests passed |
+| `cmd /c "pnpm -C frontend exec vitest run src/features/road/roadValidationState.test.ts"` | 1 file, 9 tests passed |
+| `cmd /c "pnpm -C frontend run test"` | 109 files, 728 tests passed |
 | `cmd /c "pnpm -C frontend run build"` | passed; Full and Lite Vite entries compiled |
 | `git diff --check` | passed |
 

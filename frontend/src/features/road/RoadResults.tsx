@@ -1,24 +1,26 @@
 import { useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
-import { documentsOf, type RoadDocument, type RoadSetup, type RoadReport, type RoadDecision } from './roadTypes';
+import { documentsOf, type RoadDocument, type RoadSetup, type RoadReport, type RoadDecision, type RoadFinish, type RoadSummary } from './roadTypes';
 import { RoadObservation } from './RoadObservation';
 import { RoadCandidate } from './RoadCandidate';
 import { RoadCompare } from './RoadCompare';
 import { downloadSavedCapture } from '../tuning/captureDownload';
-import type { RoadCandidateDraft, RoadResultSelection } from './RoadValidationController';
+import type { RoadCandidateDraft, RoadFinishDraft, RoadResultSelection } from './RoadValidationController';
 
 interface Props {
   documents: RoadDocument[];
   busy: boolean;
   selection: RoadResultSelection;
   candidateDraft: RoadCandidateDraft | null;
+  finishDraftFor: (summary: RoadSummary, finish?: RoadFinish) => RoadFinishDraft;
   onSelectionChange: (selection: RoadResultSelection) => void;
   onCandidateDraftChange: (draft: RoadCandidateDraft | null) => void;
+  onFinishDraftChange: (draft: RoadFinishDraft | null) => void;
   perform: <T>(path: string, body: unknown) => Promise<T | null>;
   prefix: string;
   onDraft: (id: string, revisit: boolean) => void;
 }
-export function RoadResults({ documents, busy, selection, candidateDraft, onSelectionChange, onCandidateDraftChange, perform, prefix, onDraft }: Props) {
+export function RoadResults({ documents, busy, selection, candidateDraft, finishDraftFor, onSelectionChange, onCandidateDraftChange, onFinishDraftChange, perform, prefix, onDraft }: Props) {
   const { t } = useSettings();
   const summaries = documentsOf(documents, 'summary');
   const [exportError, setExportError] = useState('');
@@ -34,7 +36,8 @@ export function RoadResults({ documents, busy, selection, candidateDraft, onSele
     <label className="form-label">{t('Saved event')}<select className="form-select" value={summary.runId} onChange={e => onSelectionChange({ ...selection, selectedRunId: e.target.value, showCandidate: false })}>
       {summaries.map((s, i) => <option key={s.id} value={s.runId}>{i + 1} · {new Date(s.createdAt * 1000).toLocaleString()}</option>)}
     </select></label>
-    <RoadObservation key={summary.id} summary={summary} finish={finish} busy={busy} saveFinish={body => perform(prefix + '/runs/' + summary.runId + '/finish', body)} />
+    <RoadObservation key={summary.id} summary={summary} busy={busy} draft={finishDraftFor(summary, finish)} onDraftChange={onFinishDraftChange}
+      saveFinish={body => perform(prefix + '/runs/' + summary.runId + '/finish', body)} />
     <button className="btn btn-outline-secondary align-self-start" onClick={() => void downloadSavedCapture(prefix + '/runs/' + summary.runId + '/capture', 'road-capture.json')
       .then(() => setExportError('')).catch(e => setExportError(e.message))}>{t('Export recorded frames')}</button>
     {exportError && <p role="status">{t(exportError)}</p>}

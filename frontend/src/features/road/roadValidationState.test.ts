@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { RoadLive, RoadSetup } from './roadTypes';
+import type { RoadFinish, RoadLive, RoadSetup, RoadSummary } from './roadTypes';
 import {
   createRoadCandidateDraft,
+  createRoadFinishDraft,
   createRoadValidationSession,
   markRoadWorkflowCreated,
   reconcileRoadLive,
+  roadFinishDraftFor,
+  roadOperationResultApplies,
   roadRunConfirmationFor,
   selectRoadWorkflow,
+  setRoadFinishDraft,
   setRoadRunConfirmation,
   settleRoadOperation,
   startRoadOperation,
@@ -22,6 +26,15 @@ const setup: RoadSetup = {
 const live = (activeRun: RoadLive['activeRun']): RoadLive => ({
   identity, fresh: true, source: 'telemetry', activeRun, sampleCount: 0, state: 'ready', error: null,
 });
+
+const summary: RoadSummary = {
+  id: 'summary-a', workflowId: 'workflow-a', createdAt: 1, schema: 'road-workflow/v1', kind: 'summary', runId: 'run-a', sessionId: 'session-a',
+  recording: { endReason: 'stopped' }, observations: { sampleCount: 1, quality: { observedSeconds: 1, gapSeconds: 0 }, wheels: {}, laps: [] },
+};
+
+const finish: RoadFinish = {
+  id: 'finish-a', workflowId: 'workflow-a', createdAt: 2, schema: 'road-workflow/v1', kind: 'finish', runId: 'run-a', timeSeconds: 83.456, clean: 'confirmed', source: 'game-confirmed',
+};
 
 describe('Road validation session state', () => {
   it('keeps the unsubmitted prepare draft in app memory while switching the saved workflow', () => {
@@ -70,11 +83,42 @@ describe('Road validation session state', () => {
     expect(reconciled.runConfirmation).toBeNull();
   });
 
+  it('preserves a manually selected step until a backend active-run transition requires reconciliation', () => {
+    const selected = { ...createRoadValidationSession('workflow-a'), step: 'prepare' as const };
+
+    expect(reconcileRoadLive(selected, live(null)).step).toBe('prepare');
+    const started = reconcileRoadLive(selected, live({ id: 'run-b', workflowId: 'workflow-a' }));
+    expect(started.step).toBe('drive');
+    expect(reconcileRoadLive(started, live(null)).step).toBe('results');
+  });
+
+  it('keeps an unsubmitted finish form only for the same summary and saved-finish identity', () => {
+    const initial = createRoadValidationSession('workflow-a');
+    const drafted = setRoadFinishDraft(initial, { ...createRoadFinishDraft(summary, finish), time: '1:24.000', clean: false });
+
+    expect(roadFinishDraftFor(drafted, summary, finish)).toMatchObject({ time: '1:24.000', clean: false });
+    expect(roadFinishDraftFor(drafted, { ...summary, id: 'summary-b', runId: 'run-b' })).toMatchObject({ time: '', clean: false });
+    expect(roadFinishDraftFor(drafted, summary, { ...finish, id: 'finish-b', timeSeconds: 82.5 })).toMatchObject({ time: '82.5', clean: true });
+  });
+
   it('ignores a late operation completion after a newer operation has started', () => {
     const pending = startRoadOperation(createRoadValidationSession(), 4, '/workflows');
     const newer = startRoadOperation(pending, 5, '/workflows/workflow-a/runs');
 
     expect(settleRoadOperation(newer, 4, 'succeeded')).toBe(newer);
     expect(settleRoadOperation(newer, 5, 'succeeded').operation).toMatchObject({ id: 5, status: 'succeeded' });
+  });
+
+  it('keeps a pending backend operation visible while the user views another workflow', () => {
+    const pending = startRoadOperation(createRoadValidationSession('workflow-a'), 7, '/workflows/workflow-a/runs');
+
+    expect(selectRoadWorkflow(pending, 'workflow-b').operation).toMatchObject({ id: 7, status: 'pending' });
+  });
+
+  it('settles a pending operation without applying its late result after selection changes', () => {
+    const pending = startRoadOperation(createRoadValidationSession('workflow-a'), 8, '/workflows/workflow-a/runs');
+
+    expect(settleRoadOperation(selectRoadWorkflow(pending, 'workflow-b'), 8, 'succeeded').operation).toMatchObject({ status: 'succeeded' });
+    expect(roadOperationResultApplies({ id: 8, selectionRevision: 0 }, 1)).toBe(false);
   });
 });
