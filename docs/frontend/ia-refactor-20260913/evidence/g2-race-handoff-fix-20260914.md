@@ -23,6 +23,8 @@
 
 ## 候選隔離與剩餘證據
 
+後續更新：已完成新版 mounted 第二段 A/B 交錯、archive/Road ordinal identity 與兩轮 request reentry；重入另外暴露 recorder status/callback 放大問題，最小 Context 修正後重驗通過。精確 source blob、有限输入、有效與排除操作及限制見 [重入與 mounted 證據](g2-mounted-reentry-20260914.md)。下列未啟服務／not-run 敘述保留為 04:00 初次交付快照；C5/H5 native 仍未完成，G2 仍 partial。
+
 修改在 `D:/FH6-frontend-ia-20260913/shell-race-fix`、`codex/frontend-ia-shell-race-fix-20260914`，從 c5e7fdf 分出。原 `shell` 工作樹仍固定 c5e7fdf，保留給先前已交付的原生操作；修正的提交與 PR #345 exact-head checks 由計畫與 PR 另記，不能用 c5 的 CI 當新版 CI。
 
 本次沒有啟動服務、占用 1420/8001/8000 或操作原生視窗。mounted A/B race competition 仍待新版實際 UI 驗證；C5/H5 native、archive/Road identity、重入 request cadence 也維持原來的待驗狀態。G2 partial，PR #345 draft，沒有公布 WAVE2_BASE_SHA，也沒有開始 W2 面板重構。
