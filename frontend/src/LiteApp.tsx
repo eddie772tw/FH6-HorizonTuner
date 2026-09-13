@@ -15,7 +15,6 @@ const LiteAppContent: React.FC = () => {
   useOverlayWebSocket();
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [activeTab, setActiveTab] = useState<LiteTab>('telemetry');
-  const [overlayCategory, setOverlayCategory] = useState<'general' | 'displays' | 'gauges' | 'performance'>('general');
 
   useEffect(() => {
     if (activeTab === 'telemetry' && telemetryCarId && telemetryCarId !== '0' && carId !== telemetryCarId) {
@@ -28,7 +27,7 @@ const LiteAppContent: React.FC = () => {
       <LiteNavigation activeTab={activeTab} onSelect={setActiveTab} isConnected={isConnected} />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '2rem', boxSizing: 'border-box' }}>
         {activeTab === 'telemetry' && <TelemetryView dashboardOnly />}
-        {activeTab === 'overlay' && <OverlayView category={overlayCategory} setCategory={setOverlayCategory} />}
+        {activeTab === 'overlay' && <OverlayView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>
       <ToastContainer />
