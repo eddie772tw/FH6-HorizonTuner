@@ -6,6 +6,8 @@
 
 ## 保留的資料與生命週期責任
 
+實際寫入範圍以 [工作單 A 的精確檔案表](../work-orders.md) 為準；A 不取得整個 sessions 目錄。SessionsRuntime、race lifecycle/status/completion、intent preflight 與對應測試仍由 Coordinator 單一持有，selection/provider 的 public contract 變更也須先協調。
+
 | 現有 owner | 已核對的符號／行為 | 拆分限制 |
 | --- | --- | --- |
 | Sessions selection | SessionsStateProvider、SessionLoadGate、SessionOperationGate、applySessionIntent、prepareAnalysisSessionIntent | current/latest/saved/local、lap/compare 與 recorder data 寫入維持同一 owner；presentation 不拿 recorder setter。 |
