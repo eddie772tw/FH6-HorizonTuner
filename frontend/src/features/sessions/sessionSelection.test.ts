@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import {
+  analysisDataPath,
+  SessionLoadGate,
+  readSelectionData,
+  shouldConsumeSessionRequest,
+} from "./sessionSelection";
+
+describe("session selection adapter", () => {
+  it("keeps current, saved, and local data sources separate", () => {
+    expect(analysisDataPath({ kind: "current" }, 2)).toBe("/api/analysis/data?lap=2");
+    expect(analysisDataPath({ kind: "saved", filename: "session/a" }, 0)).toBe("/api/analysis/sessions/session%2Fa?lap=0");
+    expect(analysisDataPath({ kind: "local" }, 0)).toBeNull();
+  });
+
+  it("rejects a stale async response before it can become the loaded selection", async () => {
+    let resolveFirst: ((value: unknown) => void) | undefined;
+    const reader = {
+      read: () => new Promise<unknown>(resolve => { resolveFirst = resolve; }),
+    };
+    const gate = new SessionLoadGate();
+    const staleGuard = gate.begin();
+    const stale = readSelectionData(reader, { kind: "saved", filename: "older" }, 0, staleGuard);
+    const currentGuard = gate.begin();
+    const current = readSelectionData({ read: async () => [{ time: 2 }] }, { kind: "saved", filename: "newer" }, 0, currentGuard);
+
+    resolveFirst?.([{ time: 1 }]);
+    await expect(stale).resolves.toBeNull();
+    await expect(current).resolves.toEqual([{ time: 2 }]);
+  });
+
+  it("invalidates a request when its owner unmounts", () => {
+    const gate = new SessionLoadGate();
+    const request = gate.begin();
+    gate.dispose();
+    expect(request.isCurrent()).toBe(false);
+  });
+
+  it("aborts the active request before a newer selection starts", () => {
+    const gate = new SessionLoadGate();
+    const older = gate.begin();
+    gate.begin();
+    expect(older.signal.aborted).toBe(true);
+  });
+
+  it("consumes a request sequence once and never lets an older intent win", () => {
+    expect(shouldConsumeSessionRequest(null, 3)).toBe(true);
+    expect(shouldConsumeSessionRequest(3, 3)).toBe(false);
+    expect(shouldConsumeSessionRequest(3, 2)).toBe(false);
+    expect(shouldConsumeSessionRequest(3, 4)).toBe(true);
+  });
+});

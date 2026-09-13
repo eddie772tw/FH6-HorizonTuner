@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { ScopedUnitSettingsProvider, useSettings } from '../../context/SettingsContext';
 import { useCarParams } from '../../context/CarParamsContext';
-import { useTelemetryRecorder } from '../../context/TelemetryRecorderContext';
 import GForceRadar from './components/GForceRadar';
 import VerticalInputBar from './components/VerticalInputBar';
 import PedalTraceCanvas from './components/PedalTraceCanvas';
@@ -28,15 +27,6 @@ import {
 
 import { getCarClassBadgeText } from '../../utils/carClass';
 
-const AnalysisView = React.lazy(() => import('../analysis/AnalysisView'));
-const DragTestView = React.lazy(() => import('../drag_test/DragTestView'));
-
-
-
-
-
-
-
 // Button classes will be applied directly instead of these objects
 
 // --- Extracted selectors for memoized components ---
@@ -53,6 +43,7 @@ const selectHandbrake = (d: any) => d.HandBrakeInput || 0;
 
 // --- COMPONENT: TelemetryView MAIN ---
 interface TelemetryViewProps {
+  /** Temporary typing bridge while AppShell takes ownership of route selection. */
   subTab?: 'live' | 'analysis' | 'drag';
   setSubTab?: (tab: 'live' | 'analysis' | 'drag') => void;
   dashboardOnly?: boolean;
@@ -71,16 +62,9 @@ interface TelemetryViewContentProps extends TelemetryViewProps {
 }
 
 const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
-  subTab: propSubTab,
-  setSubTab: propSetSubTab,
-  dashboardOnly = false,
   unitPreference,
   onUnitPreferenceChange
 }) => {
-  const [internalSubTab, setInternalSubTab] = useState<'live' | 'analysis' | 'drag'>('live');
-  const subTab = propSubTab !== undefined ? propSubTab : internalSubTab;
-  const setSubTab = propSetSubTab !== undefined ? propSetSubTab : setInternalSubTab;
-
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [suspensionTravelMode, setSuspensionTravelMode] = useState<SuspensionTravelMode>(() =>
@@ -89,15 +73,10 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   const { data: telemetryData } = useTelemetry();
   const { t } = useSettings();
   const { carName } = useCarParams();
-  const { isRecording, loadSavedSession } = useTelemetryRecorder();
   const [expandedCard, setExpandedCard] = useState<TelemetryCardId | null>(null);
 
   const closeExpandedCard = useCallback(() => setExpandedCard(null), []);
   const expandCard = useCallback((cardId: TelemetryCardId) => setExpandedCard(cardId), []);
-
-  useEffect(() => {
-    if (subTab !== 'live') setExpandedCard(null);
-  }, [subTab]);
 
   const [renderConfig, setRenderConfig] = useState<BlockRenderConfig>(() => {
     try {
@@ -123,8 +102,6 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
     setSuspensionTravelMode(mode);
     localStorage.setItem('telemetry_suspension_travel_mode', mode);
   };
-
-  const prevIsRacingRef = useRef<boolean>(false);
 
   useEffect(() => {
     const channel = new BroadcastChannel('horizon_tuner_hud_channel');
@@ -162,24 +139,6 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
       setShowPopover(true);
     }
   }, [isHudPaused]);
-
-  // Monitor IsRaceOn to auto-redirect and load the latest session on race completion
-  useEffect(() => {
-    if (!telemetryData) return;
-    const isRacingNow = telemetryData.IsRaceOn === 1;
-
-    // Transition from racing (true) to not racing (false)
-    if (prevIsRacingRef.current && !isRacingNow) {
-      if (isRecording) {
-        const timer = setTimeout(async () => {
-          await loadSavedSession('latest.json');
-          setSubTab('analysis');
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    }
-    prevIsRacingRef.current = isRacingNow;
-  }, [telemetryData?.IsRaceOn, isRecording, loadSavedSession, setSubTab]);
 
   const isRacing = telemetryData?.IsRaceOn === 1;
   const classDisplay = getCarClassBadgeText(telemetryData?.CarClass, telemetryData?.CarPerformanceIndex);
@@ -265,19 +224,6 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             )}
           </div>
 
-          <div className="vr opacity-25" style={{ height: '20px' }} />
-
-          {!dashboardOnly && <ul className="nav nav-pills gap-1" role="tablist">
-            <li className="nav-item" role="presentation">
-              <button className={`nav-link btn-sm ${subTab === 'live' ? 'active fw-bold' : ''}`} aria-current={subTab === 'live' ? 'page' : undefined} onClick={() => setSubTab('live')}>{t("Dashboard")}</button>
-            </li>
-            <li className="nav-item" role="presentation">
-              <button className={`nav-link btn-sm ${subTab === 'analysis' ? 'active fw-bold' : ''}`} aria-current={subTab === 'analysis' ? 'page' : undefined} onClick={() => setSubTab('analysis')}>{t("Post-Race Analysis")}</button>
-            </li>
-            <li className="nav-item" role="presentation">
-              <button className={`nav-link btn-sm ${subTab === 'drag' ? 'active fw-bold' : ''}`} aria-current={subTab === 'drag' ? 'page' : undefined} onClick={() => setSubTab('drag')}>{t("Drag Test")}</button>
-            </li>
-          </ul>}
         </div>
 
         <div className="d-flex align-items-center gap-2 fw-bold text-secondary fs-6">
@@ -290,16 +236,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
         </div>
       </div>
 
-      {subTab === 'analysis' ? (
-        <React.Suspense fallback={<div className="p-5 text-center text-secondary">{t("Loading Analysis...")}</div>}>
-          <AnalysisView />
-        </React.Suspense>
-      ) : subTab === 'drag' ? (
-        <React.Suspense fallback={<div className="p-5 text-center text-secondary">{t("Loading Drag Test...")}</div>}>
-          <DragTestView />
-        </React.Suspense>
-      ) : (
-        <div className="d-grid gap-3 flex-grow-1 telemetry-live-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
+      <div className="d-grid gap-3 flex-grow-1 telemetry-live-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
 
           {/* BLOCK 1: Row 1 Left (Span 2 / 6 = 33.3%) - Driver Cockpit Cluster */}
           <TelemetryCardShell
@@ -426,9 +363,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             </TelemetryCardLayout>
           </TelemetryCardShell>
 
-        </div>
-
-      )}
+      </div>
       <UnitSettingsSidebar
         idPrefix="telemetry-units"
         show={showUnitSettings}
