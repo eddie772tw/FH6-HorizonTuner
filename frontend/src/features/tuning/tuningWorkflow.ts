@@ -47,6 +47,11 @@ export function serializeWorkflowProfile(profile: (TuningCarParams & { dyno_curv
   return JSON.stringify(staticInputs);
 }
 
+/** Apply an interactive workflow edit to the full persisted profile. */
+export function updateWorkflowProfile<T extends object, K extends keyof T>(profile: T | null, field: K, value: T[K]): T | null {
+  return profile ? { ...profile, [field]: value } : null;
+}
+
 export function getWorkflowReadiness(profileReady: boolean,
   params: Pick<TuningCarParams, 'weight' | 'weight_distribution' | 'maxHp'> | null,
   measuredEngine: boolean): WorkflowReadiness {
