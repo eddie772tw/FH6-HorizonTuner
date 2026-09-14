@@ -44,12 +44,6 @@ export interface RawTelemetryPoint {
 const isFiniteNumber = (value: number | null | undefined): value is number =>
   typeof value === "number" && Number.isFinite(value);
 
-const wheelValues = (values: (number | null)[] | undefined): (number | null)[] =>
-  Array.from({ length: 4 }, (_, index) => {
-    const value = values?.[index];
-    return isFiniteNumber(value) ? value : null;
-  });
-
 /**
  * Computes post-race session debrief statistics from a collection of raw telemetry data points.
  */
@@ -106,34 +100,63 @@ export function calculateFrontendDebrief(points: RawTelemetryPoint[]): SessionDe
     }
 
     // 1. Thermals (canonical unit is °F, convert to °C)
-    wheelValues(p.TireTemp).forEach((temp, index) => {
-      if (temp !== null) tireTemps[index].push(((temp - 32) * 5) / 9);
-    });
+    // [PERF] Manual unrolling to avoid Array.from intermediate objects and closure overhead in high-frequency path
+    const temps = p.TireTemp;
+    if (temps) {
+      for (let j = 0; j < 4; j++) {
+        const temp = temps[j];
+        if (isFiniteNumber(temp)) {
+          tireTemps[j].push(((temp - 32) * 5) / 9);
+        }
+      }
+    }
 
     // 2. Suspension
-    wheelValues(p.SuspTravel).forEach((value) => {
-      if (value !== null) {
-        suspensionValues.push(value);
-        if (value >= 0.95) bottomOuts++;
+    const susp = p.SuspTravel;
+    if (susp) {
+      for (let j = 0; j < 4; j++) {
+        const value = susp[j];
+        if (isFiniteNumber(value)) {
+          suspensionValues.push(value);
+          if (value >= 0.95) bottomOuts++;
+        }
       }
-    });
+    }
 
     // 3. Handling Balance (Cornering if LatG >= 0.3G and Speed >= 10 m/s)
     const latG = p.AccelerationX;
     const speed = p.SpeedMetersPerSecond;
     if (isFiniteNumber(latG) && isFiniteNumber(speed) && Math.abs(latG) >= 2.94 && speed >= 10.0) {
-      const angles = wheelValues(p.TireSlipAngle);
-      const front = angles.slice(0, 2).filter(isFiniteNumber).map(Math.abs);
-      const rear = angles.slice(2).filter(isFiniteNumber).map(Math.abs);
-      if (front.length === 0 || rear.length === 0) continue;
-      const frontSlip = front.reduce((sum, value) => sum + value, 0) / front.length;
-      const rearSlip = rear.reduce((sum, value) => sum + value, 0) / rear.length;
+      // [PERF] Manual unrolling to eliminate chaining array methods (.slice, .filter, .map, .reduce)
+      // which allocate heavy intermediate arrays and generate GC pressure in large telemetry parsing blocks
+      const angles = p.TireSlipAngle;
+      if (angles) {
+        const fl = angles[0];
+        const fr = angles[1];
+        const rl = angles[2];
+        const rr = angles[3];
 
-      corneringTotal++;
-      if (frontSlip > rearSlip * 1.15) {
-        understeerCount++;
-      } else if (rearSlip > frontSlip * 1.15) {
-        oversteerCount++;
+        let frontSum = 0;
+        let frontCount = 0;
+        if (isFiniteNumber(fl)) { frontSum += Math.abs(fl); frontCount++; }
+        if (isFiniteNumber(fr)) { frontSum += Math.abs(fr); frontCount++; }
+
+        let rearSum = 0;
+        let rearCount = 0;
+        if (isFiniteNumber(rl)) { rearSum += Math.abs(rl); rearCount++; }
+        if (isFiniteNumber(rr)) { rearSum += Math.abs(rr); rearCount++; }
+
+        if (frontCount > 0 && rearCount > 0) {
+          const frontSlip = frontSum / frontCount;
+          const rearSlip = rearSum / rearCount;
+
+          corneringTotal++;
+          if (frontSlip > rearSlip * 1.15) {
+            understeerCount++;
+          } else if (rearSlip > frontSlip * 1.15) {
+            oversteerCount++;
+          }
+        }
       }
     }
   }
