@@ -140,10 +140,13 @@ export const calculateSuspensionMetrics = (
     }
   }
 
-  const summaries: SeriesSummary[] = [0, 1, 2, 3].map(c => counts[c] === 0
-    ? { minimum: null, maximum: null, average: null }
-    : { minimum: mins[c], maximum: maxs[c], average: sums[c] / counts[c] }
-  );
+  // [PERF] Manual unrolling to avoid .map() intermediate objects and closure overhead in high-frequency path
+  const summaries: SeriesSummary[] = [
+    counts[0] === 0 ? { minimum: null, maximum: null, average: null } : { minimum: mins[0], maximum: maxs[0], average: sums[0] / counts[0] },
+    counts[1] === 0 ? { minimum: null, maximum: null, average: null } : { minimum: mins[1], maximum: maxs[1], average: sums[1] / counts[1] },
+    counts[2] === 0 ? { minimum: null, maximum: null, average: null } : { minimum: mins[2], maximum: maxs[2], average: sums[2] / counts[2] },
+    counts[3] === 0 ? { minimum: null, maximum: null, average: null } : { minimum: mins[3], maximum: maxs[3], average: sums[3] / counts[3] },
+  ];
 
   return {
     current: currentValues,
@@ -161,7 +164,13 @@ export const calculateSuspensionMetrics = (
     travelRate: elapsed === null || elapsed <= 0 || firstAverage === null || lastAverage === null
       ? null
       : (lastAverage - firstAverage) / elapsed,
-    bottomOut: currentValues.map((value) => value === null ? null : value >= 0.95),
+    // [PERF] Manual unrolling to avoid .map() intermediate objects and closure overhead in high-frequency path
+    bottomOut: [
+      currentValues[0] === null ? null : currentValues[0] >= 0.95,
+      currentValues[1] === null ? null : currentValues[1] >= 0.95,
+      currentValues[2] === null ? null : currentValues[2] >= 0.95,
+      currentValues[3] === null ? null : currentValues[3] >= 0.95,
+    ],
   };
 };
 
