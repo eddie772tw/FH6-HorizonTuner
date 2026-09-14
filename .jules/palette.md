@@ -1,48 +1,11 @@
-<!-- Raw Jules work log. Promote only after local verification; see .jules/README.md. -->
+## 2024-05-24 - Confirm Destructive Actions
+**Learning:** Destructive actions like clearing the telemetry feed, logs, or sessions can cause frustration if clicked accidentally. The UX pattern in this application involves wrapping these operations in `window.confirm(t('Confirmation message'))` to ensure intentionality and prevent data loss.
+**Action:** When working on destructive UX elements in the application, verify that a confirmation dialog pattern exists and that the string is localized. If a destructive button lacks this, wrap the click handler in a `window.confirm` guard.
 
-## 2024-03-24 - Accessible Custom Toggles & Modals
-**Learning:** In the `Dashboard.tsx`, the custom toggle for metric/imperial units relied solely on a `<label>` with an `onClick` event, making it inaccessible to keyboard users and screen readers. In `DiagnosticConsole.tsx`, the close button used an icon without an aria-label.
-**Action:** Back custom toggles with a visually hidden (`.sr-only`) native `<input type="checkbox">`; bind `checked` and `onChange` to the input. Add `aria-label` to icon-only buttons and global `:focus-visible` styles.
+## 2024-05-24 - Confirm Destructive Actions
+**Learning:** Destructive actions like clearing the telemetry feed, logs, or sessions can cause frustration if clicked accidentally. The UX pattern in this application involves wrapping these operations in `window.confirm(t('Confirmation message'))` to ensure intentionality and prevent data loss.
+**Action:** When working on destructive UX elements in the application, verify that a confirmation dialog pattern exists and that the string is localized. If a destructive button lacks this, wrap the click handler in a `window.confirm` guard.
 
-## 2024-07-24 - Missing ARIA Labels on Dynamic Icon Buttons
-**Learning:** Dynamically generated UI lists with icon-only actions often lack screen-reader context when labels are not added during iteration.
-**Action:** Add an explicit, action-specific `aria-label` to every dynamically generated icon-only button.
-
-## 2026-07-24 - ARIA Current for Navigation Tabs
-**Learning:** Visually styled active navigation tabs do not automatically convey the current location to assistive technologies.
-**Action:** Add `aria-current="page"` or the appropriate equivalent to the active tab or navigation item.
-
-## 2024-08-01 - Expand Clickable Hit Areas for Settings Rows
-**Learning:** Wrapping settings rows that contain checkboxes in `<label>` elements improves keyboard and pointer usability.
-**Action:** Wrap checkbox settings rows in `<label>` elements and use `cursor: pointer` to make the complete row clickable.
-
-## 2026-08-03 - Tooltips on Disabled Buttons
-**Learning:** A disabled visual state alone may not explain why an action is unavailable or how to resolve it.
-**Action:** Add a `title` or tooltip explaining the disabled reason and recovery path.
-
-## 2024-08-03 - Tooltips on Disabled Button Wrappers
-**Learning:** Native disabled buttons can swallow pointer events, preventing a tooltip attached directly to the button from appearing.
-**Action:** Put the disabled button in an inline-block wrapper, attach the tooltip to the wrapper, and disable pointer events on the button when necessary.
-## 2024-08-04 - Tooltips on Disabled Buttons with inline-block wrappers
-**Learning:** Adding `title` attributes directly to a `<button>` element is ineffective when the button is disabled, because native disabled buttons swallow pointer events. Furthermore, if a `<span>` wrapper is used but left as `display: inline`, the wrapper's hit area may not correctly cover the disabled button, causing the tooltip to only trigger around the edges or fail completely in flexbox layouts.
-**Action:** When adding tooltips to disabled buttons, wrap the button in a `<span title="...">` that explicitly includes `display: 'inline-block'` and `cursor: 'not-allowed'`. The `<button>` itself must have `pointerEvents: 'none'` applied conditionally when disabled so hover events propagate to the wrapper.
-
-## 2024-05-19 - Tooltips on Disabled Buttons in React
-**Learning:** In standard HTML/React, native `<button disabled>` elements swallow mouse events, preventing CSS `:hover` states and parent wrappers (like `<span>` with `title` attributes) from receiving the events needed to display tooltips.
-**Action:** Always wrap disabled buttons that need tooltips in a `<span>` with `title` and conditionally apply `display: inline-block` and `cursor: not-allowed` to the wrapper, and `pointerEvents: 'none'` to the button itself. This allows the wrapper to catch the event while still showing the disabled cursor.
-
-## 2026-09-01 - Accessible Async Button Spinners
-**Learning:** Text-based loading states like `...` in buttons are often skipped or misinterpreted by screen readers, creating an inaccessible async experience. Replacing them with proper spinner components (e.g., `spinner-border`) combined with `aria-hidden="true"` on the spinner and explicit descriptive text provides both a clear visual cue and a semantic cue for assistive technologies.
-**Action:** When creating async/loading buttons, use explicit spinner elements and descriptive text instead of relying on ellipsis strings.
-
-## 2024-05-17 - Added loading state to Support Bundle download button
-**Learning:** When using Playwright to verify transient UI loading states (like async spinners), use route interception to artificially delay the corresponding API responses to reliably capture the visual state for screenshots and videos.
-**Action:** When creating tests or taking screenshots of loading states, add a page.route() handler to delay the API response to avoid the test finishing or state clearing too quickly before verification finishes.
-
-## 2024-11-20 - Ensure accurate mapping for automated accessibility injection
-**Learning:** When automating the addition of `aria-label` tags, naive regex scanning can incorrectly map labels (e.g. assigning a previous label to the wrong input because of unexpected structural skips in JSX). Factually incorrect `aria-label`s actively degrade the UX for visually impaired users.
-**Action:** When creating text replacement scripts for accessibility features, explicitly define exact mappings or tightly couple the replacement bounds to avoid misassigning labels.
-
-## 2024-05-24 - [Internationalize ARIA Labels]
-**Learning:** Hardcoding English strings in ARIA labels (e.g., `aria-label="Close"`) breaks accessibility for non-English screen reader users.
-**Action:** Always wrap ARIA label strings in translation functions (e.g., `aria-label={t("Close")}`) when working within i18n-supported components to ensure universal accessibility.
+## 2024-05-24 - Confirm Destructive Actions
+**Learning:** Destructive actions like clearing the telemetry feed, logs, or sessions can cause frustration if clicked accidentally. The UX pattern in this application involves wrapping these operations in `window.confirm(t('Confirmation message'))` to ensure intentionality and prevent data loss.
+**Action:** When working on destructive UX elements in the application, verify that a confirmation dialog pattern exists and that the string is localized. If a destructive button lacks this, wrap the click handler in a `window.confirm` guard.

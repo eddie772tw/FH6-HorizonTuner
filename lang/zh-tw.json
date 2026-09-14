@@ -760,7 +760,7 @@
   "Target Ride Freq (Hz)": "Target Ride Freq (Hz)",
   "Target Test Gear": "測試目標檔位",
   "Target UI Selectors:": "目標 UI 選擇器：",
-  "Telemetry": "即時遙測",
+  "Telemetry": "遙測",
   "Telemetry Diagnostic Report": "遙測分析與底盤診斷報告",
   "Telemetry IP": "Telemetry IP",
   "TELEMETRY LIVE": "遙測連線中",
@@ -885,7 +885,6 @@
   "Measured Drag finish speed (km/h)": "已量測終點速度（km/h）",
   "Drag finish speed source": "終點速度來源",
   "Source (unconfirmed)": "來源（未確認）",
-  "Telemetry": "遙測",
   "Manual record": "手動記錄",
   "Used for Drag gearing only with a confirmed source; softMaxSpeed is never used as a measurement.": "僅在有明確來源時用於 Drag 齒比；不會以 softMaxSpeed 代替量測。",
   "Use a recorded finish speed from a repeatable strip test when refining Drag gearing.": "微調 Drag 齒比時，請使用可重複直線測試記錄的終點速度。",
@@ -1654,5 +1653,7 @@
   "Soft Max Speed Cap": "軟性極速上限",
   "Speed limits on the X-axis right end of the in-game transmission preview chart": "遊戲內變速箱預覽圖表 X 軸右端的極速限制",
   "(Used for circuit top speed aero drag scaling)": "（用於賽道極速空氣阻力比例縮放）",
-  "Cannot clear while capturing": "取樣進行中無法清除"
+  "Cannot clear while capturing": "取樣進行中無法清除",
+  "Are you sure you want to clear the telemetry feed?": "確定要清除遙測即時動態嗎？",
+  "Clear Feed": "清除動態"
 }

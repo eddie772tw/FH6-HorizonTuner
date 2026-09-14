@@ -211,7 +211,9 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
   };
 
   const handleClearEvents = () => {
-    setTuningEvents([]);
+    if (tuningEvents.length > 0 && window.confirm(t("Are you sure you want to clear the telemetry feed?"))) {
+      setTuningEvents([]);
+    }
   };
 
   // [PERF] Single-pass O(N) accumulation of event counts and filtered results
