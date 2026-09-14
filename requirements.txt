@@ -21,4 +21,4 @@ winrt-Windows.Storage.Streams==3.2.1; sys_platform == 'win32'
 ruff
 pytest
 pytest-asyncio
-numpy>=2.5.2
+numpy>=2.5.3
