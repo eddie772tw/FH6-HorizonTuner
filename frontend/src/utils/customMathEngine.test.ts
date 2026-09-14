@@ -31,4 +31,16 @@ describe('evaluateCustomMath Channel Formula Engine', () => {
     expect(evaluateCustomMath('alert("hacked")', mockContext)).toBe(0);
     expect(evaluateCustomMath('Speed * unknown_var', mockContext)).toBe(0);
   });
+
+  it('should handle unary operators correctly', () => {
+    expect(evaluateCustomMath('+5 + 3', mockContext)).toBe(8);
+    expect(evaluateCustomMath('-5 + 3', mockContext)).toBe(-2);
+    expect(evaluateCustomMath('(-5) * 3', mockContext)).toBe(-15);
+  });
+
+  it('should safely return 0 for mismatched parentheses', () => {
+    expect(evaluateCustomMath('(5 + 3', mockContext)).toBe(0);
+    expect(evaluateCustomMath('5 + 3)', mockContext)).toBe(0);
+    expect(evaluateCustomMath('((5 + 3)', mockContext)).toBe(0);
+  });
 });
