@@ -65,6 +65,9 @@ export function evaluateCustomMath(expression: string, context: Record<string, n
                   if (token.value === '-') {
                       enhancedTokens.push({ type: 'num', value: '-1' });
                       enhancedTokens.push({ type: 'op', value: '*' });
+                  } else if (token.value === '+') {
+                      // Unary plus is a no-op, omit it
+                      continue;
                   }
               } else {
                   enhancedTokens.push(token);
@@ -75,6 +78,7 @@ export function evaluateCustomMath(expression: string, context: Record<string, n
           const precedence: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 };
           const output: Token[] = [];
           const opStack: Token[] = [];
+          let syntaxError = false;
 
           for (const t of enhancedTokens) {
               if (t.type === 'num' || t.type === 'var') {
@@ -82,10 +86,19 @@ export function evaluateCustomMath(expression: string, context: Record<string, n
               } else if (t.type === 'lparen') {
                   opStack.push(t);
               } else if (t.type === 'rparen') {
-                  while (opStack.length > 0 && opStack[opStack.length - 1].type !== 'lparen') {
-                      output.push(opStack.pop()!);
+                  let matched = false;
+                  while (opStack.length > 0) {
+                      const top = opStack.pop()!;
+                      if (top.type === 'lparen') {
+                          matched = true;
+                          break;
+                      }
+                      output.push(top);
                   }
-                  opStack.pop();
+                  if (!matched) {
+                      syntaxError = true;
+                      break;
+                  }
               } else if (t.type === 'op') {
                   while (opStack.length > 0 && opStack[opStack.length - 1].type === 'op' && precedence[opStack[opStack.length - 1].value] >= precedence[t.value]) {
                       output.push(opStack.pop()!);
@@ -94,27 +107,36 @@ export function evaluateCustomMath(expression: string, context: Record<string, n
               }
           }
           while (opStack.length > 0) {
-              output.push(opStack.pop()!);
+              const top = opStack.pop()!;
+              if (top.type === 'lparen') {
+                  syntaxError = true;
+                  break;
+              }
+              output.push(top);
           }
 
-          fn = (ctx: Record<string, number>) => {
-              const stack: number[] = [];
-              for (const t of output) {
-                  if (t.type === 'num') {
-                      stack.push(parseFloat(t.value));
-                  } else if (t.type === 'var') {
-                      stack.push(ctx[t.value] ?? 0);
-                  } else if (t.type === 'op') {
-                      const b = stack.pop() ?? 0;
-                      const a = stack.pop() ?? 0;
-                      if (t.value === '+') stack.push(a + b);
-                      else if (t.value === '-') stack.push(a - b);
-                      else if (t.value === '*') stack.push(a * b);
-                      else if (t.value === '/') stack.push(b !== 0 ? a / b : 0);
+          if (syntaxError) {
+              fn = () => 0;
+          } else {
+              fn = (ctx: Record<string, number>) => {
+                  const stack: number[] = [];
+                  for (const t of output) {
+                      if (t.type === 'num') {
+                          stack.push(parseFloat(t.value));
+                      } else if (t.type === 'var') {
+                          stack.push(ctx[t.value] ?? 0);
+                      } else if (t.type === 'op') {
+                          const b = stack.pop() ?? 0;
+                          const a = stack.pop() ?? 0;
+                          if (t.value === '+') stack.push(a + b);
+                          else if (t.value === '-') stack.push(a - b);
+                          else if (t.value === '*') stack.push(a * b);
+                          else if (t.value === '/') stack.push(b !== 0 ? a / b : 0);
+                      }
                   }
-              }
-              return stack.pop() ?? 0;
-          };
+                  return stack.pop() ?? 0;
+              };
+          }
       }
 
       compileCache.set(expr, fn);
