@@ -102,12 +102,12 @@
                     // 轉速錶放大 15% (110 * 1.15 = 126.5 -> 126)
                     var tach = { cx: 645, cy: 285, r: 126 };
                     // TURBO 錶位於轉速錶正左上角位置 (-135, -135)
-                    var turbo = { cx: 510, cy: 150, r: 50 };
+                    var turbo = { cx: 485, cy: 170, r: 50 };
                     // 速度錶縮小 15% (110 * 0.85 = 93.5 -> 94)
-                    var speed = { cx: 380, cy: 295, r: 94 };
+                    var speed = { cx: 395, cy: 317, r: 94 };
                     // AUX 1 與 AUX 2 移動到速度錶左側橫向排列
-                    var aux1 = { cx: 210, cy: 295, r: 50 };
-                    var aux2 = { cx: 95, cy: 295, r: 50 };
+                    var aux1 = { cx: 220, cy: 361, r: 50 };
+                    var aux2 = { cx: 95, cy: 361, r: 50 };
 
                     // Defi Shift Pod 位於轉速錶右上肩部
                     var shiftPod = { cx: 735, cy: 190, r: 14 };
@@ -311,7 +311,6 @@
                     }
                 }
 
-                // 單位 (已依審查意見移除 "SPEED" 字樣)
                 ctx.font = 'bold 10px Arial, sans-serif';
                 ctx.fillText(isMetric ? 'km/h' : 'MPH', cx, cy + r * 0.32);
 

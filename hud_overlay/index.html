@@ -145,13 +145,9 @@
             localStorage.setItem('forza_hud_active', name);
 
             const targetUrl = hudStyles[name] || `./${name}/index.html`;
-            // S650 HMI calibration lives in its static renderer modules. Always
-            // refresh that iframe URL so a Dev WebView cannot keep an older
-            // renderer after a source edit; other HUDs retain the old behavior.
-            const shouldBustCache = force || name === 's650_hmi';
-            const cacheBuster = shouldBustCache
-                ? `${targetUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
-                : '';
+            // Always refresh that iframe URL with a timestamp cache-buster so
+            // WebViews and browsers never keep an older HTML/renderer after edits.
+            const cacheBuster = `${targetUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
             hudIframe.src = targetUrl + cacheBuster;
 
             hudIframe.onload = async () => {

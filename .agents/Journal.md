@@ -1,5 +1,18 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-15 / HUD 及時重新載入失效修復、Launcher 全域快取穿透與靜態防快取標頭（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復開發模式下修改 `hud_overlay/<style>/` 靜態檔案後，及時重新載入（Reload HUD）無法載入最新 HTML/JS 的快取失效問題。
+- **Learning**：
+  1. **WebView2 / 瀏覽器多層快取陷阱**：`hud_overlay/index.html`（Launcher）在 `loadHud` 中過去僅為 `s650_hmi` 開放條件式快取穿透（`force || name === 's650_hmi'`），其他樣式在初次載入或透過 Tauri `reload_hud_window` 重新載入 Launcher 時，iframe URL 均不帶 `t=${Date.now()}` query param。
+  2. **Starlette StaticFiles 預設標頭缺失**：後端 FastAPI 預設掛載的 `StaticFiles` 僅回傳 ETag 與 Last-Modified，未發送 `Cache-Control: no-cache`，導致 WebView2 判定靜態 HTML/JS/CSS 仍有效而直接自記憶體或磁碟快取載入舊檔。
+  3. **雙重防快取穿透架構 (Dual Cache Busting)**：前端在 `loadHud` 統一所有 HUD 樣式均附帶 `?t=${Date.now()}`；後端以 `HudStaticFiles` 覆寫 `get_response`，對 `/hud` 與 `/hud_user` 回應強制注入 `Cache-Control: no-cache, no-store, must-revalidate`、`Pragma: no-cache` 及 `Expires: 0`，雙重保障動態開發時的熱重載體驗。
+- **Action**：
+  1. 修改 `hud_overlay/index.html`，使 `loadHud` 對所有 HUD 樣式一律加上時間戳快取穿透參數。
+  2. 擴充 `backend/main.py` 定義 `HudStaticFiles`，並套用於 `/hud` 與 `/hud_user` 掛載點。
+- **Evidence**：後端測試 335 passed (8 deselected)、前端測試 110 檔 762 passed、`ruff check backend/` 與 `ruff format --check backend/` 通過、`git diff --check` 通過。
+- **Skills**：`modular-refactoring`、`portable-release-validation`。
+
 ## 2026-09-15 / HUD 基準縮放標準化、Classic JDM 多模式整合與動態遙測多功能小錶（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；依使用者需求重構 FH6 HUD 顯示系統：統一 1080p 基準縮放、整合 AE86 (TRD) 與 Defi 為 `classic_jdm` 樣式、新增紅光 7-Segment LED 檔顯、三聯小錶 Arcade Arc 弧形街機佈局，以及多功能小錶 1 & 2 下拉自訂與動態盤面印字。

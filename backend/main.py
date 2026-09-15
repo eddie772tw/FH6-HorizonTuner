@@ -407,18 +407,28 @@ IGNORED_HUD_DIRS = {
     "__pycache__",
 }
 
+
+class HudStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
+
 if getattr(sys, "frozen", False):
     builtin_hud_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
     user_hud_path = os.path.join(DATA_ROOT, "hud_overlay")
 
     if os.path.exists(builtin_hud_path):
         app.mount(
-            "/hud", StaticFiles(directory=builtin_hud_path, html=True), name="hud"
+            "/hud", HudStaticFiles(directory=builtin_hud_path, html=True), name="hud"
         )
     if os.path.exists(user_hud_path):
         app.mount(
             "/hud_user",
-            StaticFiles(directory=user_hud_path, html=True),
+            HudStaticFiles(directory=user_hud_path, html=True),
             name="hud_user",
         )
 else:
@@ -427,7 +437,7 @@ else:
     )
     if os.path.exists(hud_overlay_path):
         app.mount(
-            "/hud", StaticFiles(directory=hud_overlay_path, html=True), name="hud"
+            "/hud", HudStaticFiles(directory=hud_overlay_path, html=True), name="hud"
         )
 
 
