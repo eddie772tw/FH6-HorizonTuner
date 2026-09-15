@@ -1203,4 +1203,7 @@
   "Tracked local storage": "Tracked local storage",
   "Are you sure you want to clear the telemetry feed?": "Are you sure you want to clear the telemetry feed?",
   "Clear Feed": "Clear Feed"
+  "Export setup": "Export setup",
+  "Export collected frames": "Export collected frames",
+  "Export recorded frames": "Export recorded frames"
 }
