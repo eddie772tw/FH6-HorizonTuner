@@ -36,11 +36,13 @@ export function renderGRadar(data, gHist, now, domCache) {
     }
 
     // Update 30s history & peak markers
+    gHist._offset = gHist._offset || 0;
     if (gHist.length < 900) {
         gHist.push({ lat: lat, lon: lon, time: now });
     } else {
-        var oldG = gHist.shift();
-        if (oldG) { oldG.lat = lat; oldG.lon = lon; oldG.time = now; gHist.push(oldG); }
+        var oldG = gHist[gHist._offset];
+        if (oldG) { oldG.lat = lat; oldG.lon = lon; oldG.time = now; }
+        gHist._offset = (gHist._offset + 1) % 900;
     }
 
     var markersContainer = domCache ? domCache.markersContainer : document.getElementById('tcGMarkers');
@@ -56,7 +58,7 @@ export function renderGRadar(data, gHist, now, domCache) {
 
             var hasRecent = false;
             for (var i = 0; i < gHist.length; i++) {
-                var p = gHist[i];
+                var p = gHist[(gHist._offset + i) % gHist.length];
                 if (now - p.time <= 30000) {
                     hasRecent = true;
                     if (p.lat < maxLatL.lat) maxLatL = p;
