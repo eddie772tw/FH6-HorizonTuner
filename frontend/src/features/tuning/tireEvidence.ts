@@ -16,7 +16,6 @@ export interface TireEvidenceResult {
 }
 
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
-const mean = (values: number[]) => values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
 const missing = (sample: TuningCaptureSample, channel: string) => sample.missingChannels !== undefined
   && (!Array.isArray(sample.missingChannels) || sample.missingChannels.some((item) => typeof item !== 'string' || item === channel || item.startsWith(channel + '.')));
 const completeWheels = (values: unknown): values is number[] => Array.isArray(values) && values.length === 4 && values.every(finite);
@@ -53,13 +52,46 @@ export function observeTireEvidence(samples: TuningCaptureSample[], identity: Ti
     accepted.push(sample);
   }
 
-  const acceleration = mean(accepted.map((sample) => sample.accelerationZ).filter(finite));
+  // [PERF] Optimized O(N) loop to avoid chaining .map() and .filter() which allocate heavily on large datasets.
+  let accSum = 0;
+  let accCount = 0;
+  let validTempCount = 0;
+
+  const tempSums = [0, 0, 0, 0];
+  const tempCounts = [0, 0, 0, 0];
+
+  for (let i = 0; i < accepted.length; i++) {
+    const sample = accepted[i];
+
+    if (finite(sample.accelerationZ)) {
+      accSum += sample.accelerationZ;
+      accCount++;
+    }
+
+    if (Array.isArray(sample.tireTemp)) {
+      for (let w = 0; w < 4; w++) {
+         const temp = sample.tireTemp[w];
+         if (finite(temp)) {
+            validTempCount++;
+            tempSums[w] += temp;
+            tempCounts[w]++;
+         }
+      }
+    }
+  }
+
+  const acceleration = accCount === 0 ? null : accSum / accCount;
   const slipComplete = accepted.length > 0 && accepted.every((sample) => !missing(sample, 'TireSlipRatio') && completeWheels(sample.tireSlipRatio));
   const maxSlip = slipComplete ? accepted.reduce((maximum, sample) => sample.tireSlipRatio.reduce((inner, value) => finite(value) ? Math.max(inner, Math.abs(value)) : inner, maximum), 0) : null;
-  const temperatureValues = accepted.flatMap((sample) => Array.isArray(sample.tireTemp) ? sample.tireTemp.slice(0, 4) : []).filter(finite);
+
   const temperatureComplete = accepted.length > 0 && accepted.every((sample) => !missing(sample, 'TireTemp') && completeWheels(sample.tireTemp));
-  const observedTemperature = temperatureComplete && temperatureValues.length === accepted.length * 4
-    ? [0, 1, 2, 3].map((wheel) => mean(accepted.map((sample) => sample.tireTemp[wheel]).filter(finite))!)
+  const observedTemperature = temperatureComplete && validTempCount === accepted.length * 4
+    ? [
+        tempCounts[0] === 0 ? null : tempSums[0] / tempCounts[0],
+        tempCounts[1] === 0 ? null : tempSums[1] / tempCounts[1],
+        tempCounts[2] === 0 ? null : tempSums[2] / tempCounts[2],
+        tempCounts[3] === 0 ? null : tempSums[3] / tempCounts[3]
+      ] as number[]
     : null;
   const result: TireEvidenceResult = {
     status: accepted.length > 0 && !discontinuity ? 'observed' : 'unavailable',
