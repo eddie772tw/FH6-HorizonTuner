@@ -1206,6 +1206,8 @@
   "Restore:": "復元:",
   "SQLite migration:": "SQLiteマイグレーション:",
   "Tracked local storage": "追跡されているローカルストレージ",
+  "Are you sure you want to clear the telemetry feed?": "テレメトリーフィードを消去してもよろしいですか？",
+  "Clear Feed": "フィードをクリア"
   "Export setup": "設定をエクスポート",
   "Export collected frames": "収集したフレームをエクスポート",
   "Export recorded frames": "記録されたフレームをエクスポート"
