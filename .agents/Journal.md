@@ -15,6 +15,19 @@
   4. 校正 `nfs15` 與 `simple` 儀表之 `scaleMultiplier`，擴充 `hudScale.test.ts` 與 `test_overlay_api.py`。
 - **Evidence**：前端 110 測試檔案（760 tests）100% 通過；後端 335 tests 全數通過；`ruff check .` 與 `ruff format --check .` 全數通過；`git diff --check` 通過。
 - **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`、`modular-refactoring`。
+## 2026-09-15 / 多 PR 協同分流審查、PR #351 歷史日誌與語法安全修復整併（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；使用者指示針對 PR #340～#345 以外的所有開放 PR 進行審查與 Merge 建議，並手動修正 PR #351 相關問題後予以合入。
+- **Learning**：
+  1. **外部 Agent 日誌覆蓋 (Log Truncation Regression) 防護**：部分自主 Agent（如 Jules）在舊 commit 上開工時，其遠端快照常會誤將工作區歷史日誌（如 `.jules/sentinel.md`、`.jules/palette.md`）視為未存檔內容而全面覆蓋，抹除過往多項重大安全與 UI 決策紀錄。Reviewer 必須將其列為 Blocking Finding，在合入前手動或要求作者恢復歷史紀錄。
+  2. **自訂公式 AST/RPN 剖析器安全性與強健度**：將 `new Function` 動態評估重構成 Shunting-Yard AST 剖析器能徹底解決 RCE/XSS 漏洞。然而基礎實作常忽略一元運算子（如 `+5`、`-5`）與括號失配（如 `(5 + 3` 或 `5 + 3)`），造成運算元堆疊殘留未清理的括號 Token。補齊一元運算子分流與 `syntaxError` 早期退出判定，可兼顧算術語意與安全防呆。
+  3. **重複 PR 識別與依賴衝突防範**：在多代理開發下，相近時段容易產生功能完全相同的重複 PR（如 #338 與 #349 同時展開 `sessionDebriefMath.ts`）。應優先採用提交時間較早、測試更完備的 PR，並及時關閉重複 PR 以免產生 Merge 衝突。
+- **Action**：
+  1. 檢視 PR #337、#338、#339、#346、#347、#348、#349、#350、#351、#352，產出分類決策矩陣與分階段整併順序。
+  2. 簽出 PR #351 分支，手動補回 `.jules/sentinel.md` 遺失之 6 筆歷史紀錄，並於 `customMathEngine.ts` 增強一元運算子處理與括號失配檢驗，追加對應單元測試（721 tests 全數通過）。
+  3. 發布標準審查評論後，透過 Squash and merge 成功將 PR #351 併入 `main`（Commit `6e3a6a5`）。
+- **Evidence**：本地 `main` 分支拉取後，前端 108 檔 721 tests、後端 334 tests（8 deselected）、Vite 生產建置、Ruff lint/format 及 `git diff --check` 全數通過。
+- **Skills**：`pr-review-evaluation`、`pr-author-maintainer`、`cross-agent-collaboration`、`modular-refactoring`。
 
 ## 2026-09-13 / 關聯 PR 協同審查、交換律合流驗證與五階段順序整併（Gemini as Antigravity）
 

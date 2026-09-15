@@ -21,3 +21,8 @@
 **Vulnerability:** Found a blocking issue identified by Semgrep where an f-string was used to construct an `ALTER TABLE` DDL query (`f"ALTER TABLE telemetry_channels ADD COLUMN {col_name} {col_def};"`), which presents a potential SQL injection vulnerability if inputs become dynamic.
 **Learning:** Because parameterized queries cannot be used for DDL statements (like ALTER TABLE or CREATE TABLE) in SQLite, string concatenation is often incorrectly used as a fallback, creating risk.
 **Prevention:** Always apply strict allowlist regex validation (e.g., `^[a-zA-Z0-9_]+$`) to column names and definitions before using string concatenation in DDL statements, even if the inputs are currently hardcoded, to implement defense-in-depth and future-proof the codebase.
+
+## 2025-02-27 - Custom Math Formula Remote Code Execution (RCE) via `new Function`
+**Vulnerability:** The math expression engine `evaluateCustomMath` in `frontend/src/utils/customMathEngine.ts` evaluated user-provided formulas using `new Function(...)` without rigorous sanitization, resulting in an arbitrary code execution vulnerability.
+**Learning:** Naive regex-based token substitution combined with string evaluation (`new Function`, `eval`) is fundamentally insecure when parsing untrusted user inputs (like custom telemetry channels).
+**Prevention:** Always implement a proper parser/evaluator algorithm (like the Shunting-Yard algorithm) to interpret mathematical expressions securely, completely avoiding native dynamic execution mechanisms when handling user-provided strings.
