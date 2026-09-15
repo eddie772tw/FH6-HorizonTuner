@@ -55,3 +55,6 @@
 ## 2024-11-26 - Eliminating Array.map() closures in High-Frequency Fixed-Length Loops
 **Learning:** In high-frequency data processing paths (e.g., telemetry calculation functions running at 60Hz), using `.map()` over small, fixed-length arrays creates new iterator objects and closures on every frame. This severely increases CPU overhead and Garbage Collection (GC) pressure compared to manual unrolling.
 **Action:** Unroll fixed-length array `.map()` iterations manually into explicit array literals (e.g., replacing `values.map(v => v >= 0.95)` with `[values[0] >= 0.95, values[1] >= 0.95, ...]`) to eliminate all closure and array allocation overhead on the hot path.
+## 2024-11-26 - Eliminating Chained Array Methods in Tire Evidence
+**Learning:** In high-frequency telemetry data processing functions (e.g., `observeTireEvidence`), chaining array methods like `.map()` and `.filter()` allocates temporary arrays and closures, generating GC pressure and drastically slowing down execution time.
+**Action:** Unroll these higher-order function chains into single-pass, inline `for` loops with manual index access and primitive accumulator variables. This drastically reduces memory allocation overhead and improved loop execution speed significantly in benchmarks.
