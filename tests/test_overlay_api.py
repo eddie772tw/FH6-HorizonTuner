@@ -534,15 +534,15 @@ def test_get_hud_styles_scan():
     style_ids = [s["id"] for s in data["styles"]]
 
     # Verify builtin HUDs are present
-    for expected_hud in ["simple", "advanced", "vfd", "gt7", "drift"]:
+    for expected_hud in ["simple", "advanced", "vfd", "gt7", "drift", "classic_jdm"]:
         assert expected_hud in style_ids
 
     s650_style = next(style for style in data["styles"] if style["id"] == "s650_hmi")
     assert s650_style["source"] == "builtin"
     assert s650_style["urlPrefix"] == "/hud"
 
-    # Verify non-HUD helper directories are excluded
-    for ignored in ["shared", "assets", "telemetry"]:
+    # Verify non-HUD helper directories and legacy entrypoints are excluded
+    for ignored in ["shared", "assets", "telemetry", "defi_triple", "initial_d"]:
         assert ignored not in style_ids
 
     # Verify response structure

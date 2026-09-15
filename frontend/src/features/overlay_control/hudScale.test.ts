@@ -120,7 +120,7 @@ describe('HUD scale baseline & multi-resolution defense', () => {
 
   describe('F01 1080p baseline calibration for all HUD styles', () => {
     const styleTestTable = [
-      { id: 'defi_triple', canvasW: 380, canvasH: 360, multiplier: 1.2, expectedZoom: 0.9, expectedW: 342, expectedH: 324 },
+      { id: 'classic_jdm', canvasW: 800, canvasH: 440, multiplier: 0.95, expectedZoom: 0.7125, expectedW: 570, expectedH: 313.5 },
       { id: 'simple', canvasW: 750, canvasH: 750, multiplier: 0.5, expectedZoom: 0.375, expectedW: 281.25, expectedH: 281.25 },
       { id: 'fh5_arc', canvasW: 380, canvasH: 380, multiplier: 1.0, expectedZoom: 0.75, expectedW: 285, expectedH: 285 },
       { id: 'mw2005', canvasW: 390, canvasH: 390, multiplier: 0.95, expectedZoom: 0.7125, expectedW: 277.875, expectedH: 277.875 },

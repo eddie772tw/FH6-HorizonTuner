@@ -405,6 +405,8 @@ IGNORED_HUD_DIRS = {
     "css",
     "js",
     "__pycache__",
+    "defi_triple",
+    "initial_d",
 }
 
 

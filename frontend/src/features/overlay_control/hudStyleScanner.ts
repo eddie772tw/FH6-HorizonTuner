@@ -27,8 +27,6 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   shift_tacho: 'Need for Speed Shift',
   simple: 'Simple Gauge',
   classic_jdm: 'Classic JDM Arcade',
-  defi_triple: 'Defi Advance BF',
-  initial_d: 'Initial D AE86 TRD',
 };
 
 /**
