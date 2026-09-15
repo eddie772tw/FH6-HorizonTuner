@@ -1203,5 +1203,6 @@
   "Tracked local storage": "Tracked local storage",
   "Export setup": "Export setup",
   "Export collected frames": "Export collected frames",
-  "Export recorded frames": "Export recorded frames"
+  "Export recorded frames": "Export recorded frames",
+  "Are you sure you want to reset all HUD settings?": "Are you sure you want to reset all HUD settings?"
 }
