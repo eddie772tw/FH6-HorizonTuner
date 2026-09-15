@@ -55,3 +55,6 @@
 ## 2024-11-26 - Eliminating Array.map() closures in High-Frequency Fixed-Length Loops
 **Learning:** In high-frequency data processing paths (e.g., telemetry calculation functions running at 60Hz), using `.map()` over small, fixed-length arrays creates new iterator objects and closures on every frame. This severely increases CPU overhead and Garbage Collection (GC) pressure compared to manual unrolling.
 **Action:** Unroll fixed-length array `.map()` iterations manually into explicit array literals (e.g., replacing `values.map(v => v >= 0.95)` with `[values[0] >= 0.95, values[1] >= 0.95, ...]`) to eliminate all closure and array allocation overhead on the hot path.
+## 2024-11-26 - O(1) Circular Buffers in Canvas Render Loops
+**Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
+**Action:** Replace `Array.shift()` with a fixed-size array and an `offset` index to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offset + index) % capacity` to traverse elements sequentially.

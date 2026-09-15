@@ -4,6 +4,7 @@
 // =============================================================================
 
 var posHistory = [];
+posHistory._offset = 0;
 var MAX_MAP_HISTORY = 10000; // Expanded to 10,000 persistent track points
 var mapImageAsset = null;
 var mapImageLoaded = false;
@@ -177,7 +178,8 @@ export function renderLiveMap(canvas, data, config) {
         if (posHistory.length === 0) {
             shouldPush = true;
         } else {
-            var lastP = posHistory[posHistory.length - 1];
+            var lastLogicalIdx = (posHistory._offset + posHistory.length - 1) % posHistory.length;
+            var lastP = posHistory[lastLogicalIdx];
             var distMoved = Math.hypot(rawX - lastP.x, rawZ - lastP.z);
             if (distMoved > 0.3) {
                 shouldPush = true;
@@ -187,16 +189,27 @@ export function renderLiveMap(canvas, data, config) {
         if (shouldPush) {
             // Avoid apply-call overhead for the fixed four-wheel telemetry tuple.
             var isDrift = classifyLiveMapDrift(data, speed);
-            posHistory.push({ x: rawX, z: rawZ, drift: isDrift, time: Date.now() });
-            if (posHistory.length > MAX_MAP_HISTORY) {
-                posHistory.shift();
+
+            if (posHistory.length < MAX_MAP_HISTORY) {
+                posHistory.push({ x: rawX, z: rawZ, drift: isDrift, time: Date.now() });
+            } else {
+                var oldP = posHistory[posHistory._offset];
+                if (oldP) {
+                    oldP.x = rawX;
+                    oldP.z = rawZ;
+                    oldP.drift = isDrift;
+                    oldP.time = Date.now();
+                }
+                posHistory._offset = (posHistory._offset + 1) % MAX_MAP_HISTORY;
             }
         }
 
         // Dynamically compute World Movement Angle from position history delta
         if (posHistory.length > 1) {
-            var lastP2 = posHistory[posHistory.length - 1];
-            var prevP2 = posHistory[posHistory.length - 2];
+            var lastLogicalIdx2 = (posHistory._offset + posHistory.length - 1) % posHistory.length;
+            var prevLogicalIdx2 = (posHistory._offset + posHistory.length - 2) % posHistory.length;
+            var lastP2 = posHistory[lastLogicalIdx2];
+            var prevP2 = posHistory[prevLogicalIdx2];
             var dxWorld = lastP2.x - prevP2.x;
             var dzWorld = lastP2.z - prevP2.z;
             if (Math.hypot(dxWorld, dzWorld) > 0.05) {
@@ -379,18 +392,20 @@ export function renderLiveMap(canvas, data, config) {
         var innerW = w - padding * 2;
         var innerH = h - padding * 2;
 
-        var pPrevX = padding + ((posHistory[0].x - minX) / rangeX) * innerW;
-        var pPrevY = padding + (1.0 - (posHistory[0].z - minZ) / rangeZ) * innerH;
+        var firstLogicalIdx = posHistory._offset % posHistory.length;
+        var pPrevX = padding + ((posHistory[firstLogicalIdx].x - minX) / rangeX) * innerW;
+        var pPrevY = padding + (1.0 - (posHistory[firstLogicalIdx].z - minZ) / rangeZ) * innerH;
 
         for (var j = 1; j < posHistory.length; j++) {
-            var pCurrX = padding + ((posHistory[j].x - minX) / rangeX) * innerW;
-            var pCurrY = padding + (1.0 - (posHistory[j].z - minZ) / rangeZ) * innerH;
+            var logicalIdx = (posHistory._offset + j) % posHistory.length;
+            var pCurrX = padding + ((posHistory[logicalIdx].x - minX) / rangeX) * innerW;
+            var pCurrY = padding + (1.0 - (posHistory[logicalIdx].z - minZ) / rangeZ) * innerH;
 
             ctx.beginPath();
             ctx.moveTo(pPrevX, pPrevY);
             ctx.lineTo(pCurrX, pCurrY);
 
-            if (posHistory[j].drift) {
+            if (posHistory[logicalIdx].drift) {
                 ctx.strokeStyle = 'rgba(255, 120, 0, 0.9)';
             } else {
                 ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
