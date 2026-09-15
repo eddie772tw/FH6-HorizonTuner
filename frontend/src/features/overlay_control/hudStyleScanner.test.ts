@@ -84,9 +84,12 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(HUD_DISPLAY_NAMES['fh5_arc']).toBeUndefined();
       expect(HUD_DISPLAY_NAMES['cyberpunk_hud']).toBeUndefined();
 
+      // Legacy compatibility entrypoints must be removed
+      expect(HUD_DISPLAY_NAMES['defi_triple']).toBeUndefined();
+      expect(HUD_DISPLAY_NAMES['initial_d']).toBeUndefined();
+
       // Production styles should be retained
-      expect(HUD_DISPLAY_NAMES['defi_triple']).toBe('Defi Advance BF');
-      expect(HUD_DISPLAY_NAMES['initial_d']).toBe('Initial D AE86 TRD');
+      expect(HUD_DISPLAY_NAMES['classic_jdm']).toBe('Classic JDM Arcade');
       expect(HUD_DISPLAY_NAMES['vfd']).toBe('Retro VFD');
     });
 
@@ -94,7 +97,6 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(WIP_HUD_IDS.has('motec_gt3')).toBe(true);
       expect(WIP_HUD_IDS.has('fh5_arc')).toBe(true);
       expect(WIP_HUD_IDS.has('cyberpunk_hud')).toBe(true);
-      expect(WIP_HUD_IDS.has('defi_triple')).toBe(false);
 
       expect(WIP_HUD_DISPLAY_NAMES['fh5_arc']).toContain('(WIP)');
       expect(WIP_HUD_DISPLAY_NAMES['cyberpunk_hud']).toContain('(WIP)');
@@ -107,14 +109,14 @@ describe('hudStyleScanner frontend module tests', () => {
         { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
         { id: 'cyberpunk_hud', source: 'builtin', urlPrefix: '/hud' },
         { id: 'motec_gt3', source: 'builtin', urlPrefix: '/hud' },
-        { id: 'defi_triple', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'classic_jdm', source: 'builtin', urlPrefix: '/hud' },
       ];
 
       const options = formatHudDropdownOptions(mockStyles);
       const optionValues = options.map((o) => o.value);
 
       expect(optionValues).toContain('vfd');
-      expect(optionValues).toContain('defi_triple');
+      expect(optionValues).toContain('classic_jdm');
       expect(optionValues).not.toContain('fh5_arc');
       expect(optionValues).not.toContain('cyberpunk_hud');
       expect(optionValues).not.toContain('motec_gt3');
@@ -124,7 +126,7 @@ describe('hudStyleScanner frontend module tests', () => {
       const mockStyles: HudStyleEntry[] = [
         { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
         { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
-        { id: 'defi_triple', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'classic_jdm', source: 'builtin', urlPrefix: '/hud' },
       ];
 
       const options = formatHudDropdownOptions(mockStyles, HUD_DISPLAY_NAMES, { includeWip: true });

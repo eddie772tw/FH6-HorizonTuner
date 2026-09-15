@@ -534,15 +534,15 @@ def test_get_hud_styles_scan():
     style_ids = [s["id"] for s in data["styles"]]
 
     # Verify builtin HUDs are present
-    for expected_hud in ["simple", "advanced", "vfd", "gt7", "drift"]:
+    for expected_hud in ["simple", "advanced", "vfd", "gt7", "drift", "classic_jdm"]:
         assert expected_hud in style_ids
 
     s650_style = next(style for style in data["styles"] if style["id"] == "s650_hmi")
     assert s650_style["source"] == "builtin"
     assert s650_style["urlPrefix"] == "/hud"
 
-    # Verify non-HUD helper directories are excluded
-    for ignored in ["shared", "assets", "telemetry"]:
+    # Verify non-HUD helper directories and legacy entrypoints are excluded
+    for ignored in ["shared", "assets", "telemetry", "defi_triple", "initial_d"]:
         assert ignored not in style_ids
 
     # Verify response structure
@@ -600,3 +600,19 @@ def test_hud_styles_custom_directory_override():
             for file in os.listdir(temp_hud_dir):
                 os.remove(os.path.join(temp_hud_dir, file))
             os.rmdir(temp_hud_dir)
+
+
+def test_normalize_hud_config_classic_jdm_migration():
+    initial_d_config = {"hudStyle": "initial_d", "scale": 1.0}
+    normalized_initial_d = main.normalize_hud_config(initial_d_config)
+    assert normalized_initial_d["hudStyle"] == "classic_jdm"
+    assert normalized_initial_d["classicJdmTachStyle"] == "trd"
+    assert normalized_initial_d["classicJdmShowTriple"] is True
+    assert normalized_initial_d["classicJdmAux1"] == "tire_temp_4w"
+    assert normalized_initial_d["classicJdmAux2"] == "tire_temp_rear"
+
+    defi_config = {"hudStyle": "defi_triple", "scale": 1.2}
+    normalized_defi = main.normalize_hud_config(defi_config)
+    assert normalized_defi["hudStyle"] == "classic_jdm"
+    assert normalized_defi["classicJdmTachStyle"] == "defi"
+    assert normalized_defi["classicJdmShowTriple"] is True

@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Classic JDM Arcade Cluster</title>
+    <link rel="stylesheet" href="../shared/hud-base.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="hud-root-wrapper">
+        <div class="hud-gauge-container classic-jdm-container" id="classicJdmContainer">
+            <canvas id="classicJdmCanvas" width="800" height="440"></canvas>
+        </div>
+    </div>
+
+    <script src="../shared/hud-core.js"></script>
+    <script src="classic-jdm-model.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            var Model = window.ClassicJdmModel;
+
+            var dom = {
+                container: document.getElementById('classicJdmContainer'),
+                canvas: document.getElementById('classicJdmCanvas'),
+                ctx: null
+            };
+
+            if (dom.canvas) {
+                dom.ctx = dom.canvas.getContext('2d');
+            }
+
+            // ── 儀表設定與狀態 ──────────────────────────────────────────
+            var config = {
+                tachStyle: 'trd',       // 'trd' | 'defi'
+                showTriple: true,       // true (600x440) | false (540x280)
+                aux1: 'tire_temp_4w',   // Aux 1 default 4W tire temp
+                aux2: 'tire_temp_rear', // Aux 2 default Rear tire temp
+                defiTheme: 'amber',     // 'amber' | 'white'
+                isMetric: true,
+                redlineRpm: 10000
+            };
+
+            try {
+                var savedTheme = localStorage.getItem('defi_theme');
+                if (savedTheme === 'white' || savedTheme === 'amber') {
+                    config.defiTheme = savedTheme;
+                }
+            } catch (e) {}
+
+            var currentSpeed = 0;
+            var currentRpm = 0;
+            var currentMaxRpm = 11000;
+            var currentGear = 0;
+            var currentShiftWarn = false;
+            var currentOverRev = false;
+            var currentData = {};
+
+            // 掃表動畫狀態
+            var isSweeping = false;
+            var sweepStartTime = 0;
+            var sweepDuration = 1200;
+            var sweepRafId = null;
+
+            // 離屏緩存
+            var offscreenDial = null;
+            var pixelRatio = 1;
+            var offscreenWidth = 600;
+            var offscreenHeight = 440;
+
+            // Peak Hold (Defi 模式 1.8 秒峰值記憶)
+            var peakRpm = 0;
+            var peakRpmTime = 0;
+            var peakBoost = 0;
+            var peakBoostTime = 0;
+
+            // Zero-Allocation 重用槽位
+            var aux1Out = { label: '', unit: '', value: 0, minVal: 0, maxVal: 0, ratio: 0, angle: 0 };
+            var aux2Out = { label: '', unit: '', value: 0, minVal: 0, maxVal: 0, ratio: 0, angle: 0 };
+            var turboOut = { label: '', unit: '', value: 0, minVal: 0, maxVal: 0, ratio: 0, angle: 0 };
+            var gearOut = { char: '-', rawGear: 0 };
+
+            // TRD Logo 載入
+            var trdLogoImg = typeof Image !== 'undefined' ? new Image() : null;
+            if (trdLogoImg) {
+                trdLogoImg.src = 'assets/trd_logo.svg';
+                trdLogoImg.onload = function () {
+                    buildOffscreenDial();
+                    renderHUD();
+                };
+            }
+
+            // ── 幾何座標計算 ───────────────────────────────────────────
+            function getGeometry() {
+                var isTriple = config.showTriple;
+                var geom = Model.getContainerGeometry(isTriple);
+                var w = geom.width;
+                var h = geom.height;
+
+                if (isTriple) {
+                    // 轉速錶放大 15% (110 * 1.15 = 126.5 -> 126)
+                    var tach = { cx: 645, cy: 285, r: 126 };
+                    // TURBO 錶位於轉速錶正左上角位置 (-135, -135)
+                    var turbo = { cx: 485, cy: 170, r: 50 };
+                    // 速度錶縮小 15% (110 * 0.85 = 93.5 -> 94)
+                    var speed = { cx: 395, cy: 317, r: 94 };
+                    // AUX 1 與 AUX 2 移動到速度錶左側橫向排列
+                    var aux1 = { cx: 220, cy: 361, r: 50 };
+                    var aux2 = { cx: 95, cy: 361, r: 50 };
+
+                    // Defi Shift Pod 位於轉速錶右上肩部
+                    var shiftPod = { cx: 735, cy: 190, r: 14 };
+
+                    return {
+                        width: w,
+                        height: h,
+                        speed: speed,
+                        tach: tach,
+                        aux2: aux2,
+                        aux1: aux1,
+                        turbo: turbo,
+                        shiftPod: shiftPod
+                    };
+                } else {
+                    // 雙大錶緊湊模式 (Compact dual mode)
+                    var tachDual = { cx: 390, cy: 160, r: 126 };
+                    var speedDual = { cx: 140, cy: 170, r: 94 };
+                    var shiftPodDual = { cx: 480, cy: 65, r: 14 };
+
+                    return {
+                        width: w,
+                        height: h,
+                        speed: speedDual,
+                        tach: tachDual,
+                        aux2: { cx: -200, cy: -200, r: 50 },
+                        aux1: { cx: -200, cy: -200, r: 50 },
+                        turbo: { cx: -200, cy: -200, r: 50 },
+                        shiftPod: shiftPodDual
+                    };
+                }
+            }
+
+            // ── 離屏盤面繪製 (Offscreen Buffer) ─────────────────────────
+            function buildOffscreenDial() {
+                var geom = getGeometry();
+                var w = geom.width;
+                var h = geom.height;
+
+                pixelRatio = Math.max(1, Math.min(3, Number(window.devicePixelRatio) || 1));
+                offscreenWidth = w;
+                offscreenHeight = h;
+
+                if (dom.canvas) {
+                    dom.canvas.width = Math.round(w * pixelRatio);
+                    dom.canvas.height = Math.round(h * pixelRatio);
+                    if (dom.ctx && dom.ctx.setTransform) {
+                        dom.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                    }
+                }
+
+                if (dom.container) {
+                    if (config.showTriple) {
+                        dom.container.classList.remove('compact-mode');
+                    } else {
+                        dom.container.classList.add('compact-mode');
+                    }
+                }
+
+                offscreenDial = document.createElement('canvas');
+                offscreenDial.width = Math.round(w * pixelRatio);
+                offscreenDial.height = Math.round(h * pixelRatio);
+                var oCtx = offscreenDial.getContext('2d');
+                if (!oCtx) return;
+                if (oCtx.setTransform) {
+                    oCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                }
+
+                var isTrd = config.tachStyle === 'trd';
+                var isAmber = config.defiTheme !== 'white';
+
+                var textColor = isTrd
+                    ? '#eee9dc'
+                    : (isAmber ? '#ffa34e' : '#f0eee8');
+                var dimColor = isTrd
+                    ? '#b8b4a9'
+                    : (isAmber ? '#bd713f' : '#9c9e99');
+                var redlineColor = '#EF4444';
+
+                // 1. 繪製雙大錶底盤
+                drawBezelAndFace(oCtx, geom.speed.cx, geom.speed.cy, geom.speed.r, isTrd);
+                drawBezelAndFace(oCtx, geom.tach.cx, geom.tach.cy, geom.tach.r, isTrd);
+
+                // 2. 時速錶刻度
+                drawSpeedTicks(oCtx, geom.speed.cx, geom.speed.cy, geom.speed.r, textColor, dimColor, isTrd);
+
+                // 3. 轉速錶刻度與品牌標誌
+                drawTachTicks(oCtx, geom.tach.cx, geom.tach.cy, geom.tach.r, textColor, dimColor, redlineColor, isTrd);
+
+                // 4. 三聯小錶（若開啟，固定為 Defi Advance BF 經典盤面）
+                if (config.showTriple) {
+                    var defiTextColor = isAmber ? '#f7931e' : '#f0f3f5';
+                    var defiDimColor = isAmber ? '#bd713f' : '#9c9e99';
+
+                    // Aux 2 (速度錶左側外小錶)
+                    Model.resolveAuxGauge(config.aux2, currentData, config.isMetric, aux2Out);
+                    drawSmallGaugeDial(oCtx, geom.aux2.cx, geom.aux2.cy, geom.aux2.r, aux2Out.label, aux2Out.unit, defiTextColor, defiDimColor);
+
+                    // Aux 1 (速度錶左側內小錶)
+                    Model.resolveAuxGauge(config.aux1, currentData, config.isMetric, aux1Out);
+                    drawSmallGaugeDial(oCtx, geom.aux1.cx, geom.aux1.cy, geom.aux1.r, aux1Out.label, aux1Out.unit, defiTextColor, defiDimColor);
+
+                    // Turbo (轉速錶正左上角小錶)
+                    var turboUnit = config.isMetric ? 'x100kPa' : 'PSI';
+                    drawSmallTurboDial(oCtx, geom.turbo.cx, geom.turbo.cy, geom.turbo.r, 'TURBO', turboUnit, defiTextColor, defiDimColor);
+                }
+
+                // 5. Defi Shift Pod 底座
+                if (!isTrd) {
+                    var sp = geom.shiftPod;
+                    oCtx.beginPath();
+                    oCtx.arc(sp.cx, sp.cy, sp.r + 2, 0, Math.PI * 2);
+                    oCtx.fillStyle = '#151714';
+                    oCtx.fill();
+                    oCtx.lineWidth = 2;
+                    oCtx.strokeStyle = '#92938c';
+                    oCtx.stroke();
+                }
+            }
+
+            // ── 外圈 Bezel 與錶面漸層 ──────────────────────────────────
+            function drawBezelAndFace(ctx, cx, cy, r, isTrd) {
+                // 金屬邊框外光影
+                var bezel = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+                if (isTrd) {
+                    bezel.addColorStop(0, '#555550');
+                    bezel.addColorStop(0.16, '#292927');
+                    bezel.addColorStop(0.48, '#080808');
+                    bezel.addColorStop(0.86, '#444440');
+                    bezel.addColorStop(1, '#1e1e1d');
+                } else {
+                    bezel.addColorStop(0, '#d2d1ca');
+                    bezel.addColorStop(0.16, '#4e504e');
+                    bezel.addColorStop(0.48, '#171918');
+                    bezel.addColorStop(0.86, '#777974');
+                    bezel.addColorStop(1, '#292b29');
+                }
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fillStyle = bezel;
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#101210';
+                ctx.stroke();
+
+                // 盤面背景
+                var face = ctx.createRadialGradient(cx, cy - r * 0.35, 0, cx, cy, r);
+                if (isTrd) {
+                    face.addColorStop(0, '#1a1a19');
+                    face.addColorStop(0.65, '#10100f');
+                    face.addColorStop(1, '#080807');
+                } else {
+                    face.addColorStop(0, '#181a19');
+                    face.addColorStop(0.65, '#080a09');
+                    face.addColorStop(1, '#020302');
+                }
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, r - 5, 0, Math.PI * 2);
+                ctx.fillStyle = face;
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = isTrd ? '#333330' : '#72736c';
+                ctx.stroke();
+            }
+
+            // ── 時速錶刻度 ──────────────────────────────────────────────
+            function drawSpeedTicks(ctx, cx, cy, r, textColor, dimColor, isTrd) {
+                var isMetric = config.isMetric;
+                var maxSpd = isMetric ? 200 : 140;
+                var step = 20;
+
+                ctx.save();
+                ctx.fillStyle = textColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                for (var spd = 0; spd <= maxSpd; spd += 10) {
+                    var angle = Model.calculateSpeedAngle(spd, isMetric, 0, false);
+                    var isMajor = (spd % step === 0);
+                    var len = isMajor ? 14 : 7;
+
+                    var x1 = cx + Math.cos(angle) * (r - 8);
+                    var y1 = cy + Math.sin(angle) * (r - 8);
+                    var x2 = cx + Math.cos(angle) * (r - 8 - len);
+                    var y2 = cy + Math.sin(angle) * (r - 8 - len);
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineWidth = isMajor ? 2.2 : 1.1;
+                    ctx.strokeStyle = isMajor ? textColor : dimColor;
+                    ctx.stroke();
+
+                    if (isMajor) {
+                        var nx = cx + Math.cos(angle) * (r - 28);
+                        var ny = cy + Math.sin(angle) * (r - 28);
+                        ctx.font = 'bold 12px Arial, sans-serif';
+                        ctx.fillText(String(spd), nx, ny);
+                    }
+                }
+
+                ctx.font = 'bold 10px Arial, sans-serif';
+                ctx.fillText(isMetric ? 'km/h' : 'MPH', cx, cy + r * 0.32);
+
+                if (!isTrd) {
+                    ctx.font = 'italic bold 20px Arial, sans-serif';
+                    ctx.fillText('Defi', cx, cy + r * 0.55);
+                    ctx.fillStyle = dimColor;
+                    ctx.font = '7px Arial, sans-serif';
+                    ctx.fillText('ADVANCE BF', cx, cy + r * 0.72);
+                }
+
+                ctx.restore();
+            }
+
+            // ── 轉速錶刻度與品牌標誌 ───────────────────────────────────
+            function drawTachTicks(ctx, cx, cy, r, textColor, dimColor, redlineColor, isTrd) {
+                var maxRpm = currentMaxRpm;
+                var redline = config.redlineRpm || (maxRpm - 1500);
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                if (isTrd) {
+                    var dialMax = Model.getTrdDialMaxRpm(maxRpm);
+                    var maxK = dialMax / 1000;
+
+                    for (var k = 0; k <= maxK; k += 0.5) {
+                        var rpmVal = k * 1000;
+                        var angle = Model.calculateTachAngle(rpmVal, maxRpm, 'trd');
+                        var isMajor = (k % 1 === 0);
+                        var isRed = rpmVal >= redline;
+                        var len = isMajor ? 14 : 7;
+
+                        var x1 = cx + Math.cos(angle) * (r - 8);
+                        var y1 = cy + Math.sin(angle) * (r - 8);
+                        var x2 = cx + Math.cos(angle) * (r - 8 - len);
+                        var y2 = cy + Math.sin(angle) * (r - 8 - len);
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.lineWidth = isMajor ? 2.5 : 1.2;
+                        ctx.strokeStyle = isRed ? redlineColor : (isMajor ? textColor : dimColor);
+                        ctx.stroke();
+
+                        if (isMajor) {
+                            var nx = cx + Math.cos(angle) * (r - 28);
+                            var ny = cy + Math.sin(angle) * (r - 28);
+                            ctx.fillStyle = isRed ? redlineColor : textColor;
+                            ctx.font = 'bold 13px Arial, sans-serif';
+                            ctx.fillText(String(k), nx, ny);
+                        }
+                    }
+
+                    // 1. TRD Logo 上移至轉速錶上方開闊區域 (cy - r * 0.44，避免被指針中心蓋遮擋)
+                    if (trdLogoImg && trdLogoImg.complete && trdLogoImg.naturalWidth > 0) {
+                        var lw = 70;
+                        var lh = (trdLogoImg.naturalHeight / trdLogoImg.naturalWidth) * lw;
+                        ctx.drawImage(trdLogoImg, cx - lw / 2, cy - r * 0.44, lw, lh);
+                    } else {
+                        ctx.fillStyle = textColor;
+                        ctx.font = 'italic bold 17px Arial, sans-serif';
+                        ctx.fillText('TRD', cx, cy - r * 0.40);
+                    }
+
+                    // 2. x1000 r/min 字樣下移至檔顯下方位置
+                    ctx.fillStyle = textColor;
+                    ctx.font = 'bold 10px Arial, sans-serif';
+                    ctx.fillText('x1000 r/min', cx, cy + r * 0.58);
+                } else {
+                    // Defi Advance BF 線性刻度
+                    for (var rVal = 0; rVal <= 11; rVal += 0.5) {
+                        var dAngle = Model.calculateTachAngle(rVal * 1000, 11000, 'defi');
+                        var dMajor = (rVal % 1 === 0);
+                        var dRed = (rVal >= 9);
+                        var dLen = dMajor ? 14 : 7;
+
+                        var dx1 = cx + Math.cos(dAngle) * (r - 8);
+                        var dy1 = cy + Math.sin(dAngle) * (r - 8);
+                        var dx2 = cx + Math.cos(dAngle) * (r - 8 - dLen);
+                        var dy2 = cy + Math.sin(dAngle) * (r - 8 - dLen);
+
+                        ctx.beginPath();
+                        ctx.moveTo(dx1, dy1);
+                        ctx.lineTo(dx2, dy2);
+                        ctx.lineWidth = dMajor ? 2.5 : 1.2;
+                        ctx.strokeStyle = dRed ? redlineColor : (dMajor ? textColor : dimColor);
+                        ctx.stroke();
+
+                        if (dMajor) {
+                            var dnx = cx + Math.cos(dAngle) * (r - 28);
+                            var dny = cy + Math.sin(dAngle) * (r - 28);
+                            ctx.fillStyle = dRed ? redlineColor : textColor;
+                            ctx.font = 'bold 13px Arial, sans-serif';
+                            ctx.fillText(String(rVal), dnx, dny);
+                        }
+                    }
+
+                    // 1. Defi 標誌與 TRD 標誌共用相同位置設定 (cy - r * 0.44，移除 TACHO 字樣)
+                    ctx.fillStyle = textColor;
+                    ctx.font = 'italic bold 22px Arial, sans-serif';
+                    ctx.fillText('Defi', cx, cy - r * 0.44);
+
+                    ctx.fillStyle = dimColor;
+                    ctx.font = 'bold 8px Arial, sans-serif';
+                    ctx.fillText('ADVANCE BF', cx, cy - r * 0.30);
+
+                    // 2. x1000 r/min 字樣下移至檔顯下方位置 (與 TRD 模式完全一致)
+                    ctx.fillStyle = textColor;
+                    ctx.font = 'bold 10px Arial, sans-serif';
+                    ctx.fillText('x1000 r/min', cx, cy + r * 0.58);
+                }
+
+                ctx.restore();
+            }
+
+            // ── 三聯小錶盤面繪製 (固定為 Defi Advance BF 經典盤面) ────────
+            function drawSmallGaugeDial(ctx, cx, cy, r, title, unit, textColor, dimColor) {
+                drawBezelAndFace(ctx, cx, cy, r, false); // 固定 Defi 金屬外圈與發光黑盤
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // 270 度小錶刻度
+                var startA = 0.75 * Math.PI;
+                var sweepA = 1.5 * Math.PI;
+                for (var i = 0; i <= 8; i++) {
+                    var ang = startA + (i / 8) * sweepA;
+                    var isMaj = (i % 2 === 0);
+                    var len = isMaj ? 8 : 4;
+
+                    var x1 = cx + Math.cos(ang) * (r - 6);
+                    var y1 = cy + Math.sin(ang) * (r - 6);
+                    var x2 = cx + Math.cos(ang) * (r - 6 - len);
+                    var y2 = cy + Math.sin(ang) * (r - 6 - len);
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineWidth = isMaj ? 1.8 : 1.0;
+                    ctx.strokeStyle = isMaj ? textColor : dimColor;
+                    ctx.stroke();
+                }
+
+                // Title & Unit (動態印字)
+                ctx.fillStyle = textColor;
+                ctx.font = 'bold 9px Arial, sans-serif';
+                ctx.fillText(title, cx, cy - r * 0.22);
+
+                ctx.font = '8px Arial, sans-serif';
+                ctx.fillText(unit, cx, cy + r * 0.35);
+
+                // 永遠顯示 Defi 品牌標誌
+                ctx.font = 'italic bold 13px Arial, sans-serif';
+                ctx.fillText('Defi', cx, cy + r * 0.58);
+
+                ctx.restore();
+            }
+
+            function drawSmallTurboDial(ctx, cx, cy, r, title, unit, textColor, dimColor) {
+                drawBezelAndFace(ctx, cx, cy, r, false); // 固定 Defi 金屬外圈與發光黑盤
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                var boostTicks = [-1.0, -0.6, -0.2, 0, 0.4, 0.8, 1.2, 1.6, 2.0];
+                for (var i = 0; i < boostTicks.length; i++) {
+                    var bVal = boostTicks[i];
+                    Model.resolveAuxGauge('turbo', { boost_bar: bVal }, config.isMetric, turboOut);
+                    var ang = turboOut.angle;
+                    var isMaj = (bVal === -1.0 || bVal === 0 || bVal === 1.0 || bVal === 2.0);
+                    var len = isMaj ? 8 : 4;
+
+                    var x1 = cx + Math.cos(ang) * (r - 6);
+                    var y1 = cy + Math.sin(ang) * (r - 6);
+                    var x2 = cx + Math.cos(ang) * (r - 6 - len);
+                    var y2 = cy + Math.sin(ang) * (r - 6 - len);
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineWidth = isMaj ? 1.8 : 1.0;
+                    ctx.strokeStyle = isMaj ? textColor : dimColor;
+                    ctx.stroke();
+
+                    if (isMaj) {
+                        var numX = cx + Math.cos(ang) * (r - 18);
+                        var numY = cy + Math.sin(ang) * (r - 18);
+                        ctx.fillStyle = textColor;
+                        ctx.font = 'bold 8px Arial, sans-serif';
+                        ctx.fillText(String(bVal > 0 ? '+' + bVal : bVal), numX, numY);
+                    }
+                }
+
+                ctx.fillStyle = textColor;
+                ctx.font = 'bold 9px Arial, sans-serif';
+                ctx.fillText(title, cx, cy - r * 0.22);
+                ctx.font = '8px Arial, sans-serif';
+                ctx.fillText(unit, cx, cy + r * 0.35);
+
+                // 永遠顯示 Defi 品牌標誌
+                ctx.font = 'italic bold 13px Arial, sans-serif';
+                ctx.fillText('Defi', cx, cy + r * 0.58);
+
+                ctx.restore();
+            }
+
+            // ── 純 Canvas 7-Segment LED 檔位提示器 ──────────────────────
+            var SEGMENT_PATTERNS = {
+                // A, B, C, D, E, F, G
+                '0': [1, 1, 1, 1, 1, 1, 0],
+                '1': [0, 1, 1, 0, 0, 0, 0],
+                '2': [1, 1, 0, 1, 1, 0, 1],
+                '3': [1, 1, 1, 1, 0, 0, 1],
+                '4': [0, 1, 1, 0, 0, 1, 1],
+                '5': [1, 0, 1, 1, 0, 1, 1],
+                '6': [1, 0, 1, 1, 1, 1, 1],
+                '7': [1, 1, 1, 0, 0, 0, 0],
+                '8': [1, 1, 1, 1, 1, 1, 1],
+                '9': [1, 1, 1, 1, 0, 1, 1],
+                'R': [1, 1, 0, 0, 1, 1, 1], // P/R 型
+                'N': [0, 0, 1, 0, 1, 0, 1], // 小寫 n 型
+                '-': [0, 0, 0, 0, 0, 0, 1]
+            };
+
+            function drawSingle7SegmentDigit(ctx, x, y, w, h, char) {
+                var pattern = SEGMENT_PATTERNS[char] || SEGMENT_PATTERNS['-'];
+                var t = 3.6;
+                var gap = 0.7;
+                var halfT = t * 0.5;
+
+                // 梯形/多邊形頂點
+                var segA = [
+                    [x + gap, y],
+                    [x + w - gap, y],
+                    [x + w - gap - t, y + t],
+                    [x + gap + t, y + t]
+                ];
+                var segB = [
+                    [x + w, y + gap],
+                    [x + w, y + h * 0.5 - gap * 0.5],
+                    [x + w - t, y + h * 0.5 - gap * 0.5 - halfT],
+                    [x + w - t, y + gap + t]
+                ];
+                var segC = [
+                    [x + w, y + h * 0.5 + gap * 0.5],
+                    [x + w, y + h - gap],
+                    [x + w - t, y + h - gap - t],
+                    [x + w - t, y + h * 0.5 + gap * 0.5 + halfT]
+                ];
+                var segD = [
+                    [x + gap + t, y + h - t],
+                    [x + w - gap - t, y + h - t],
+                    [x + w - gap, y + h],
+                    [x + gap, y + h]
+                ];
+                var segE = [
+                    [x, y + h * 0.5 + gap * 0.5],
+                    [x + t, y + h * 0.5 + gap * 0.5 + halfT],
+                    [x + t, y + h - gap - t],
+                    [x, y + h - gap]
+                ];
+                var segF = [
+                    [x, y + gap],
+                    [x + t, y + gap + t],
+                    [x + t, y + h * 0.5 - gap * 0.5 - halfT],
+                    [x, y + h * 0.5 - gap * 0.5]
+                ];
+                var segG = [
+                    [x + gap, y + h * 0.5],
+                    [x + gap + halfT, y + h * 0.5 - halfT],
+                    [x + w - gap - halfT, y + h * 0.5 - halfT],
+                    [x + w - gap, y + h * 0.5],
+                    [x + w - gap - halfT, y + h * 0.5 + halfT],
+                    [x + gap + halfT, y + h * 0.5 + halfT]
+                ];
+
+                var segments = [segA, segB, segC, segD, segE, segF, segG];
+
+                // 第一階段：暗態殘影 (Dark Silhouette)
+                ctx.fillStyle = 'rgba(55, 10, 10, 0.35)';
+                ctx.shadowBlur = 0;
+                for (var i = 0; i < segments.length; i++) {
+                    var poly = segments[i];
+                    ctx.beginPath();
+                    ctx.moveTo(poly[0][0], poly[0][1]);
+                    for (var p = 1; p < poly.length; p++) {
+                        ctx.lineTo(poly[p][0], poly[p][1]);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 第二階段：高對比紅光輝光 (Active Crimson Glow)
+                ctx.fillStyle = '#ff2828';
+                ctx.shadowColor = '#ff0000';
+                ctx.shadowBlur = 10;
+                for (var j = 0; j < segments.length; j++) {
+                    if (pattern[j]) {
+                        var activePoly = segments[j];
+                        ctx.beginPath();
+                        ctx.moveTo(activePoly[0][0], activePoly[0][1]);
+                        for (var ap = 1; ap < activePoly.length; ap++) {
+                            ctx.lineTo(activePoly[ap][0], activePoly[ap][1]);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // 第三階段：燈絲核心高光
+                ctx.fillStyle = '#ffa0a0';
+                ctx.shadowBlur = 0;
+                for (var k = 0; k < segments.length; k++) {
+                    if (pattern[k]) {
+                        var hotPoly = segments[k];
+                        ctx.beginPath();
+                        ctx.moveTo(hotPoly[0][0], hotPoly[0][1]);
+                        for (var hp = 1; hp < hotPoly.length; hp++) {
+                            ctx.lineTo(hotPoly[hp][0], hotPoly[hp][1]);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function draw7SegmentGearLED(ctx, cx, cy, gearChar) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                // 經典運動 6 度傾角
+                ctx.transform(1, 0, -0.105, 1, 0, 0);
+
+                var isDouble = gearChar === '10';
+                var totalW = isDouble ? 34 : 20;
+                var totalH = 30;
+                var startX = -totalW / 2;
+                var startY = -totalH / 2;
+
+                // 背景壓克力視窗暗槽
+                ctx.fillStyle = '#060404';
+                ctx.fillRect(startX - 4, startY - 4, totalW + 8, totalH + 8);
+                ctx.strokeStyle = '#221a1a';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(startX - 4, startY - 4, totalW + 8, totalH + 8);
+
+                if (isDouble) {
+                    drawSingle7SegmentDigit(ctx, startX, startY, 13, totalH, '1');
+                    drawSingle7SegmentDigit(ctx, startX + 16, startY, 18, totalH, '0');
+                } else {
+                    drawSingle7SegmentDigit(ctx, startX, startY, totalW, totalH, gearChar);
+                }
+
+                ctx.restore();
+            }
+
+            // ── 動態指針繪製 ───────────────────────────────────────────
+            function drawPointer(ctx, cx, cy, r, angle, isTrd, color) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                if (isTrd) {
+                    // TRD 經典紅白配重指針
+                    var needleLen = r - 12;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                    ctx.shadowBlur = 4;
+
+                    ctx.beginPath();
+                    ctx.moveTo(-18, -2.2);
+                    ctx.lineTo(needleLen, -0.8);
+                    ctx.lineTo(needleLen, 0.8);
+                    ctx.lineTo(-18, 2.2);
+                    ctx.closePath();
+                    ctx.fillStyle = '#f4f2e8';
+                    ctx.fill();
+
+                    // 紅色針尖
+                    ctx.beginPath();
+                    ctx.moveTo(needleLen - 30, -1.0);
+                    ctx.lineTo(needleLen, -0.8);
+                    ctx.lineTo(needleLen, 0.8);
+                    ctx.lineTo(needleLen - 30, 1.0);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ff2828';
+                    ctx.fill();
+
+                    // 同心金屬中心蓋
+                    ctx.shadowBlur = 0;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3a3a38';
+                    ctx.fill();
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = '#666660';
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#141413';
+                    ctx.fill();
+                } else {
+                    // Defi 高亮自發光紅針
+                    var defiLen = r - 10;
+                    var needleCol = color || '#ff352e';
+
+                    ctx.shadowColor = needleCol;
+                    ctx.shadowBlur = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(-r * 0.15, -2);
+                    ctx.lineTo(defiLen, -1);
+                    ctx.lineTo(defiLen, 1);
+                    ctx.lineTo(-r * 0.15, 2);
+                    ctx.closePath();
+                    ctx.fillStyle = needleCol;
+                    ctx.fill();
+
+                    // 平頭中心蓋
+                    ctx.shadowBlur = 0;
+                    var capR = Math.max(5, Math.round(r * 0.08));
+                    ctx.beginPath();
+                    ctx.arc(0, 0, capR, 0, Math.PI * 2);
+                    ctx.fillStyle = '#181a17';
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#666963';
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            function drawSmallPointer(ctx, cx, cy, r, angle, isTrd) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                var len = r - 8;
+                var color = isTrd ? '#ff352e' : '#ff352e';
+
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 2;
+                ctx.beginPath();
+                ctx.moveTo(-8, -1.5);
+                ctx.lineTo(len, -0.6);
+                ctx.lineTo(len, 0.6);
+                ctx.lineTo(-8, 1.5);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#181a17';
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#555550';
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // ── Defi Peak Hold 楔形標記 ─────────────────────────────────
+            function drawPeakIndicator(ctx, cx, cy, r, angle, color) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 3;
+                ctx.beginPath();
+                ctx.moveTo(r - 10, -3);
+                ctx.lineTo(r - 3, 0);
+                ctx.lineTo(r - 10, 3);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // ── 警示燈與 Shift Pod ──────────────────────────────────────
+            function drawLampsAndShiftPod(ctx, geom, isShiftWarn, isOverRev, isTrd) {
+                if (isTrd) {
+                    var tc = geom.tach;
+                    // 換檔黃燈
+                    ctx.beginPath();
+                    ctx.arc(tc.cx + 50, tc.cy + 55, 4.5, 0, Math.PI * 2);
+                    if (isShiftWarn) {
+                        ctx.fillStyle = '#ffd748';
+                        ctx.shadowColor = '#ffd748';
+                        ctx.shadowBlur = 8;
+                    } else {
+                        ctx.fillStyle = '#2e2508';
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fill();
+
+                    // 超轉紅燈
+                    ctx.beginPath();
+                    ctx.arc(tc.cx + 35, tc.cy + 72, 4.5, 0, Math.PI * 2);
+                    if (isOverRev) {
+                        ctx.fillStyle = '#ff3030';
+                        ctx.shadowColor = '#ff3030';
+                        ctx.shadowBlur = 8;
+                    } else {
+                        ctx.fillStyle = '#2e0808';
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else {
+                    // Defi Shift Pod 外掛燈筒
+                    var sp = geom.shiftPod;
+                    ctx.beginPath();
+                    ctx.arc(sp.cx, sp.cy, sp.r, 0, Math.PI * 2);
+                    if (isOverRev || isShiftWarn) {
+                        ctx.fillStyle = '#ff0033';
+                        ctx.shadowColor = '#ff0000';
+                        ctx.shadowBlur = 18;
+                    } else {
+                        ctx.fillStyle = '#330005';
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            // ── 60Hz 即時動態繪製主函式 ─────────────────────────────────
+            function renderHUD() {
+                if (!dom.ctx) return;
+                var ctx = dom.ctx;
+                var geom = getGeometry();
+                var isTrd = config.tachStyle === 'trd';
+
+                ctx.clearRect(0, 0, geom.width, geom.height);
+
+                // 1. Blit 靜態盤面
+                if (offscreenDial) {
+                    ctx.drawImage(offscreenDial, 0, 0, geom.width, geom.height);
+                }
+
+                // 計算動態角度
+                var spdAngle, tachAngle, aux1Angle, aux2Angle, turboAngle;
+                var activeGearChar = gearOut.char;
+                var showShift = currentShiftWarn;
+                var showOver = currentOverRev;
+
+                if (isSweeping) {
+                    var now = performance.now();
+                    var p = Model.calculateSweepProgress(now - sweepStartTime, sweepDuration);
+                    var minSpd = Model.calculateSpeedAngle(0, config.isMetric, 0, false);
+                    var maxSpd = Model.calculateSpeedAngle(config.isMetric ? 200 : 140, config.isMetric, 0, false);
+                    spdAngle = minSpd + p * (maxSpd - minSpd);
+
+                    var minTach = Model.calculateTachAngle(0, currentMaxRpm, config.tachStyle);
+                    var maxTach = Model.calculateTachAngle(currentMaxRpm, currentMaxRpm, config.tachStyle);
+                    tachAngle = minTach + p * (maxTach - minTach);
+
+                    var sA = 0.75 * Math.PI;
+                    var swA = 1.5 * Math.PI;
+                    aux1Angle = sA + p * swA;
+                    aux2Angle = sA + p * swA;
+                    turboAngle = sA + p * swA;
+
+                    activeGearChar = p > 0.8 ? '8' : '-';
+                    showShift = p > 0.85;
+                    showOver = p > 0.9;
+                } else {
+                    spdAngle = Model.calculateSpeedAngle(currentSpeed, config.isMetric, performance.now(), true);
+                    tachAngle = Model.calculateTachAngle(currentRpm, currentMaxRpm, config.tachStyle);
+
+                    Model.resolveAuxGauge(config.aux1, currentData, config.isMetric, aux1Out);
+                    aux1Angle = aux1Out.angle;
+
+                    Model.resolveAuxGauge(config.aux2, currentData, config.isMetric, aux2Out);
+                    aux2Angle = aux2Out.angle;
+
+                    Model.resolveAuxGauge('turbo', currentData, config.isMetric, turboOut);
+                    turboAngle = turboOut.angle;
+
+                    // Defi Peak Hold 更新
+                    if (!isTrd) {
+                        var curTime = performance.now();
+                        if (currentRpm >= peakRpm) {
+                            peakRpm = currentRpm;
+                            peakRpmTime = curTime;
+                        } else if (curTime - peakRpmTime > 1800) {
+                            peakRpm = Math.max(currentRpm, peakRpm - 15);
+                        }
+
+                        var rawB = currentData.boost_bar !== undefined ? currentData.boost_bar : 0;
+                        if (rawB >= peakBoost) {
+                            peakBoost = rawB;
+                            peakBoostTime = curTime;
+                        } else if (curTime - peakBoostTime > 1800) {
+                            peakBoost = Math.max(rawB, peakBoost - 0.01);
+                        }
+                    }
+                }
+
+                // 2. 繪製指針
+                drawPointer(ctx, geom.speed.cx, geom.speed.cy, geom.speed.r, spdAngle, isTrd, null);
+                drawPointer(ctx, geom.tach.cx, geom.tach.cy, geom.tach.r, tachAngle, isTrd, null);
+
+                // Defi Peak 指示器
+                if (!isSweeping) {
+                    if (!isTrd) {
+                        var pRpmAngle = Model.calculateTachAngle(peakRpm, 11000, 'defi');
+                        drawPeakIndicator(ctx, geom.tach.cx, geom.tach.cy, geom.tach.r, pRpmAngle, '#FFB74D');
+                    }
+
+                    if (config.showTriple) {
+                        Model.resolveAuxGauge('turbo', { boost_bar: peakBoost }, config.isMetric, turboOut);
+                        drawPeakIndicator(ctx, geom.turbo.cx, geom.turbo.cy, geom.turbo.r, turboOut.angle, '#E0F2FE');
+                    }
+                }
+
+                if (config.showTriple) {
+                    drawSmallPointer(ctx, geom.aux2.cx, geom.aux2.cy, geom.aux2.r, aux2Angle);
+                    drawSmallPointer(ctx, geom.aux1.cx, geom.aux1.cy, geom.aux1.r, aux1Angle);
+                    drawSmallPointer(ctx, geom.turbo.cx, geom.turbo.cy, geom.turbo.r, turboAngle);
+                }
+
+                // 3. 繪製純 Canvas 7-Segment LED 檔顯 (位於轉速錶盤中下部)
+                var gearLedY = isTrd ? (geom.tach.cy + 34) : (geom.tach.cy + 34);
+                draw7SegmentGearLED(ctx, geom.tach.cx, gearLedY, activeGearChar);
+
+                // 4. 警示燈與 Shift Pod
+                drawLampsAndShiftPod(ctx, geom, showShift, showOver, isTrd);
+            }
+
+            // ── 掃表動畫迴圈 ───────────────────────────────────────────
+            function runSweep(timestamp) {
+                var elapsed = timestamp - sweepStartTime;
+                if (elapsed >= sweepDuration) {
+                    isSweeping = false;
+                    sweepRafId = null;
+                    renderHUD();
+                    return;
+                }
+                renderHUD();
+                sweepRafId = requestAnimationFrame(runSweep);
+            }
+
+            // ── 互動切換 Defi 琥珀/冷白背光 ──────────────────────────────
+            if (dom.canvas) {
+                dom.canvas.style.cursor = 'pointer';
+                dom.canvas.addEventListener('click', function () {
+                    if (config.tachStyle === 'defi') {
+                        config.defiTheme = config.defiTheme === 'amber' ? 'white' : 'amber';
+                        try {
+                            localStorage.setItem('defi_theme', config.defiTheme);
+                        } catch (e) {}
+                        buildOffscreenDial();
+                        renderHUD();
+                    }
+                });
+            }
+
+            // ── 註冊 HUDCore 樣式合約 ────────────────────────────────────
+            HUDCore.registerStyle('classic_jdm', {
+                containerId: 'classicJdmContainer',
+                scaleBaseline: 1.0,
+                scaleMultiplier: 0.95,
+                globalScaleFactor: 0.75,
+
+                onInit: function (cfg) {
+                    if (cfg) {
+                        if (cfg.classicJdmTachStyle) config.tachStyle = cfg.classicJdmTachStyle;
+                        else if (cfg.tachStyle) config.tachStyle = cfg.tachStyle;
+
+                        if (cfg.classicJdmShowTriple !== undefined) config.showTriple = cfg.classicJdmShowTriple !== false;
+                        else if (cfg.showTriple !== undefined) config.showTriple = cfg.showTriple !== false;
+
+                        if (cfg.classicJdmAux1) config.aux1 = cfg.classicJdmAux1;
+                        else if (cfg.aux1) config.aux1 = cfg.aux1;
+
+                        if (cfg.classicJdmAux2) config.aux2 = cfg.classicJdmAux2;
+                        else if (cfg.aux2) config.aux2 = cfg.aux2;
+
+                        if (cfg.classicJdmDefiTheme) config.defiTheme = cfg.classicJdmDefiTheme;
+                        else if (cfg.defiTheme) config.defiTheme = cfg.defiTheme;
+
+                        if (cfg.isMetric !== undefined) config.isMetric = cfg.isMetric !== false;
+                        else if (cfg.unit) config.isMetric = cfg.unit !== 'mph';
+
+                        if (cfg.redlineRpm) config.redlineRpm = cfg.redlineRpm;
+                    }
+                    buildOffscreenDial();
+                    renderHUD();
+                },
+
+                onElementsChange: function (elements) {
+                    if (elements && dom.container && elements.showGauge !== undefined) {
+                        dom.container.style.display = elements.showGauge === false ? 'none' : 'block';
+                    }
+                },
+
+                onFrame: function (data, payload) {
+                    if (!data) return;
+                    currentData = data;
+
+                    if (payload) {
+                        if (payload.isMetric !== undefined) config.isMetric = payload.isMetric !== false;
+                        else if (payload.unit) config.isMetric = payload.unit !== 'mph';
+                    }
+                    if (data.displayUnits && data.displayUnits.speed) {
+                        config.isMetric = data.displayUnits.speed !== 'mph';
+                    }
+
+                    currentSpeed = config.isMetric
+                        ? (data.speed_kmh !== undefined ? data.speed_kmh : (data.speed || 0))
+                        : (data.speed_mph !== undefined ? data.speed_mph : ((data.speed_kmh || data.speed || 0) * 0.621371));
+
+                    currentRpm = Number(data.rpm || data.engineRpm || 0);
+                    currentMaxRpm = Number(data.redlineRpm || data.max_rpm || data.maxRpm || currentMaxRpm || 11000);
+
+                    // 檔位格式化
+                    Model.format7SegmentGear(data.gear !== undefined ? data.gear : 0, gearOut);
+
+                    // 警示燈判定
+                    var redline = config.redlineRpm || (currentMaxRpm - 1200);
+                    currentShiftWarn = currentRpm >= (redline - 800);
+                    currentOverRev = currentRpm >= redline;
+
+                    if (!isSweeping) {
+                        renderHUD();
+                    }
+                },
+
+                onAnimate: function () {
+                    if (sweepRafId !== null) window.cancelAnimationFrame(sweepRafId);
+                    isSweeping = true;
+                    sweepStartTime = performance.now();
+                    sweepRafId = requestAnimationFrame(runSweep);
+                },
+
+                onScale: function () {
+                    // HUDCore handles container style.zoom automatically
+                }
+            });
+
+            window.addEventListener('pagehide', function () {
+                isSweeping = false;
+                if (sweepRafId !== null) window.cancelAnimationFrame(sweepRafId);
+                sweepRafId = null;
+            });
+
+            // 初始化 HUDCore
+            HUDCore.init('classic_jdm');
+
+            buildOffscreenDial();
+            renderHUD();
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                    buildOffscreenDial();
+                    renderHUD();
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

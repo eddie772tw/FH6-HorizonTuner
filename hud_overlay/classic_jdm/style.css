@@ -1,0 +1,26 @@
+/* =============================================================================
+   hud_overlay/classic_jdm/style.css
+   Arcade Arc cluster container geometry & adaptive transitions
+   ============================================================================= */
+
+.classic-jdm-container {
+    width: 800px;
+    height: 440px;
+    position: relative;
+    box-sizing: border-box;
+    pointer-events: none;
+    transform-origin: bottom right;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.classic-jdm-container.compact-mode {
+    width: 540px;
+    height: 300px;
+}
+
+#classicJdmCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
