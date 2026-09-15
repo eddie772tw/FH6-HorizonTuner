@@ -600,3 +600,19 @@ def test_hud_styles_custom_directory_override():
             for file in os.listdir(temp_hud_dir):
                 os.remove(os.path.join(temp_hud_dir, file))
             os.rmdir(temp_hud_dir)
+
+
+def test_normalize_hud_config_classic_jdm_migration():
+    initial_d_config = {"hudStyle": "initial_d", "scale": 1.0}
+    normalized_initial_d = main.normalize_hud_config(initial_d_config)
+    assert normalized_initial_d["hudStyle"] == "classic_jdm"
+    assert normalized_initial_d["classicJdmTachStyle"] == "trd"
+    assert normalized_initial_d["classicJdmShowTriple"] is True
+    assert normalized_initial_d["classicJdmAux1"] == "tire_temp_4w"
+    assert normalized_initial_d["classicJdmAux2"] == "tire_temp_rear"
+
+    defi_config = {"hudStyle": "defi_triple", "scale": 1.2}
+    normalized_defi = main.normalize_hud_config(defi_config)
+    assert normalized_defi["hudStyle"] == "classic_jdm"
+    assert normalized_defi["classicJdmTachStyle"] == "defi"
+    assert normalized_defi["classicJdmShowTriple"] is True

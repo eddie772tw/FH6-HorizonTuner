@@ -17,6 +17,11 @@ import {
   type S650HmiTheme,
 } from './s650/config';
 import {
+  CLASSIC_JDM_STYLE_ID,
+  normalizeClassicJdmConfig,
+} from './classic_jdm/config';
+import { ClassicJdmSettingsCard } from './classic_jdm/ClassicJdmSettingsCard';
+import {
   DEFAULT_HUD_CONFIG,
   type HudConfig,
   type HudElements,
@@ -214,11 +219,11 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       const res = await backendFetch('/api/overlay/config');
       if (res.ok) {
         const data = await res.json();
-        const normalizedData = normalizeS650HmiConfig(data as {
+        const normalizedData = normalizeClassicJdmConfig(normalizeS650HmiConfig(data as {
           hudStyle?: string;
           s650Theme?: unknown;
           [key: string]: unknown;
-        });
+        }));
         const merged = {
           ...DEFAULT_HUD_CONFIG,
           ...normalizedData,
@@ -242,7 +247,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     newConfig: HudConfig,
     timeoutMs = HUD_CONFIG_REQUEST_TIMEOUT_MS,
   ): Promise<boolean> => {
-    const normalizedConfig = normalizeS650HmiConfig(newConfig);
+    const normalizedConfig = normalizeClassicJdmConfig(normalizeS650HmiConfig(newConfig));
     setConfig(normalizedConfig);
     broadcastConfig(normalizedConfig);
     try {
@@ -544,9 +549,13 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const handleStyleChange = (style: string) => {
-    const updated = normalizeS650HmiConfig({ ...config, hudStyle: style });
+    const updated = normalizeClassicJdmConfig(normalizeS650HmiConfig({ ...config, hudStyle: style }));
     saveConfig(updated);
     loadAuthorInfo(updated.hudStyle);
+  };
+
+  const handleClassicJdmConfigChange = (updates: Partial<HudConfig>) => {
+    saveConfig({ ...config, ...updates });
   };
 
   const handleS650ThemeChange = (theme: S650HmiTheme) => {
@@ -1277,6 +1286,14 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                     ))}
                   </select>
                 </div>
+              )}
+
+              {config.hudStyle === CLASSIC_JDM_STYLE_ID && (
+                <ClassicJdmSettingsCard
+                  config={config}
+                  onChange={handleClassicJdmConfigChange}
+                  t={t}
+                />
               )}
 
               {/* Overall HUD Scale */}

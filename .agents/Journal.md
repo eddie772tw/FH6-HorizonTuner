@@ -1,5 +1,21 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-15 / HUD 基準縮放標準化、Classic JDM 多模式整合與動態遙測多功能小錶（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；依使用者需求重構 FH6 HUD 顯示系統：統一 1080p 基準縮放、整合 AE86 (TRD) 與 Defi 為 `classic_jdm` 樣式、新增紅光 7-Segment LED 檔顯、三聯小錶 Arcade Arc 弧形街機佈局，以及多功能小錶 1 & 2 下拉自訂與動態盤面印字。
+- **Learning**：
+  1. **HUD 基準縮放統一與多解析度自適應**：盤點 15 款 HUD 樣式，將單圓錶視覺直徑收斂於 280~290px，修正 `nfs15` (1.15) 與 `simple` (0.50) 的離群縮放，確立 1080p 為 1.0x 統一標準，消除切換樣式時畫面跳躍膨脹的問題。
+  2. **Classic JDM 雙模式轉速盤與街機弧形幾何**：整合 `initial_d` (TRD 11,000 RPM 非線性壓縮刻度) 與 `defi_triple` (Defi Advance BF 270度線性刻度) 為統一的 `classic_jdm`。三聯小錶固定維持 Defi 樣式。整體佈局採用街機專用尺寸（800×440）：轉速錶放大 15%（r=126）、速度錶縮小 15%（r=94）、AUX 1 與 AUX 2 橫向排列於速度錶左側、TURBO 錶位於轉速錶 45° 正左上方；移除 "SPEED" 與 "TACHO" 冗餘字樣，TRD 與 Defi 標誌共用上方開闊座標（`cy - r * 0.44`），`x1000 r/min` 統一置於 7-Segment LED 檔顯下方（`cy + r * 0.58`），右下角錨點固定且零邊界裁切。
+  3. **動態多功能小錶與 Forza 原生真實遙測映射**：Forza 原生 324-byte UDP 封包缺乏動態機油數據。將原 Defi 小錶抽象化為「多功能錶 1」與「多功能錶 2」，預設四輪即時平均胎溫與後輪即時平均胎溫，並支援前輪胎溫、4W/前/後懸吊行程平均及輪胎滑移率。錶面印字（`TIRE 4W`, `TIRE RR`, `SUSP 4W`）與單位（`°C`/`°F`, `%`）在 Canvas 動態生成，零寫死字串。
+  4. **前後端無痛向後相容性與組件解耦**：在 `backend/main.py` 與 `frontend/src/features/overlay_control/classic_jdm/config.ts` 實作自動遷移合約，舊設定檔之 `initial_d` 與 `defi_triple` 自動映射至 `classic_jdm`；獨立 `ClassicJdmSettingsCard.tsx` 遵循巨型組件解耦原則，保持 `OverlayView.tsx` 清爽。
+- **Action**：
+  1. 建立 `hud_overlay/classic_jdm/`（`classic-jdm-model.js`、`index.html`、`style.css`、`author.json`、`assets/trd_logo.svg`）與專屬單元合約測試 `classicJdmContract.test.ts`。
+  2. 建立 `frontend/src/features/overlay_control/classic_jdm/`（`config.ts`、`config.test.ts`、`ClassicJdmSettingsCard.tsx`）。
+  3. 擴充 `hudConfig.ts`、`hudStyleScanner.ts`、`OverlayView.tsx` 與 `backend/main.py`。
+  4. 校正 `nfs15` 與 `simple` 儀表之 `scaleMultiplier`，擴充 `hudScale.test.ts` 與 `test_overlay_api.py`。
+- **Evidence**：前端 110 測試檔案（760 tests）100% 通過；後端 335 tests 全數通過；`ruff check .` 與 `ruff format --check .` 全數通過；`git diff --check` 通過。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`、`modular-refactoring`。
+
 ## 2026-09-13 / 關聯 PR 協同審查、交換律合流驗證與五階段順序整併（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；使用者指示針對 5 個互相關聯之調校分支（PR #332, #334, #333, #335, #336）進行可合併性驗證、提出優化順序並自主留言與合併。

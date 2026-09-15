@@ -85,6 +85,7 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(HUD_DISPLAY_NAMES['cyberpunk_hud']).toBeUndefined();
 
       // Production styles should be retained
+      expect(HUD_DISPLAY_NAMES['classic_jdm']).toBe('Classic JDM Arcade');
       expect(HUD_DISPLAY_NAMES['defi_triple']).toBe('Defi Advance BF');
       expect(HUD_DISPLAY_NAMES['initial_d']).toBe('Initial D AE86 TRD');
       expect(HUD_DISPLAY_NAMES['vfd']).toBe('Retro VFD');

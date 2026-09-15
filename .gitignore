@@ -118,3 +118,8 @@ id_rsa*
 /.agents/reviewer_*/
 /.agents/test_writer_*/
 /.agents/worker_*/
+/.agents/sentinel/
+/.agents/teamwork_preview_*/
+/.agents/ORIGINAL_REQUEST.md
+/.agents/PROJECT.md
+/.agents/TEST_INFRA.md

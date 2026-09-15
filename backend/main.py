@@ -2671,6 +2671,28 @@ def normalize_hud_config(data: dict) -> dict:
     ):
         normalized["s650CenterWidget"] = "drive"
 
+    # Legacy JDM HUD styles migration to classic_jdm
+    if hud_style == "initial_d":
+        normalized["hudStyle"] = "classic_jdm"
+        if "classicJdmTachStyle" not in normalized:
+            normalized["classicJdmTachStyle"] = "trd"
+        if "classicJdmShowTriple" not in normalized:
+            normalized["classicJdmShowTriple"] = True
+        if "classicJdmAux1" not in normalized:
+            normalized["classicJdmAux1"] = "tire_temp_4w"
+        if "classicJdmAux2" not in normalized:
+            normalized["classicJdmAux2"] = "tire_temp_rear"
+    elif hud_style == "defi_triple":
+        normalized["hudStyle"] = "classic_jdm"
+        if "classicJdmTachStyle" not in normalized:
+            normalized["classicJdmTachStyle"] = "defi"
+        if "classicJdmShowTriple" not in normalized:
+            normalized["classicJdmShowTriple"] = True
+        if "classicJdmAux1" not in normalized:
+            normalized["classicJdmAux1"] = "tire_temp_4w"
+        if "classicJdmAux2" not in normalized:
+            normalized["classicJdmAux2"] = "tire_temp_rear"
+
     return normalized
 
 
