@@ -5,7 +5,27 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend"))
 )
 
-from main import dyno_is_reasonable
+from main import dyno_is_reasonable, normalize_vfd_render_mode
+
+
+def test_normalize_vfd_render_mode():
+    """Test VFD render mode normalization with valid, invalid, and non-string inputs."""
+    # Valid inputs
+    assert normalize_vfd_render_mode("optimized") == "optimized"
+    assert normalize_vfd_render_mode("legacy") == "legacy"
+
+    # Invalid string inputs (case sensitive, whitespace, unknown modes, empty)
+    assert normalize_vfd_render_mode("OPTIMIZED") == "legacy"
+    assert normalize_vfd_render_mode(" optimized ") == "legacy"
+    assert normalize_vfd_render_mode("") == "legacy"
+    assert normalize_vfd_render_mode("custom") == "legacy"
+
+    # Non-string inputs
+    assert normalize_vfd_render_mode(None) == "legacy"
+    assert normalize_vfd_render_mode(123) == "legacy"
+    assert normalize_vfd_render_mode(True) == "legacy"
+    assert normalize_vfd_render_mode([]) == "legacy"
+    assert normalize_vfd_render_mode({}) == "legacy"
 
 
 def test_dyno_is_reasonable_no_neighbors():
