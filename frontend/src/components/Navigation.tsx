@@ -152,7 +152,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
       <div className="container-fluid p-0 d-flex flex-wrap gap-2 justify-content-between align-items-center" style={{ overflow: 'visible' }}>
         <div className="d-flex flex-wrap align-items-center gap-2">
           <span className="navbar-brand text-primary fw-bold fs-5 d-flex flex-wrap align-items-center m-0">
-            FH6-Horizon Tuner
+            {t('FH6-Horizon Tuner')}
             <GitInfoBadge />
           </span>
 

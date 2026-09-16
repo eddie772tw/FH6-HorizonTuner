@@ -1208,5 +1208,7 @@
   "Tracked local storage": "追跡されているローカルストレージ",
   "Export setup": "設定をエクスポート",
   "Export collected frames": "収集したフレームをエクスポート",
-  "Export recorded frames": "記録されたフレームをエクスポート"
+  "Export recorded frames": "記録されたフレームをエクスポート",
+  "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
+  "FH6-Horizon Tuner": "FH6-Horizon Tuner"
 }

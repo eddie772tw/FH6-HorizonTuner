@@ -16,17 +16,18 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     var currentPwr = data.power  || 0;
     var currentTq  = data.torque || 0;
 
+    powerTorqueHist._offset = powerTorqueHist._offset || 0;
     if (powerTorqueHist.length < 300) {
         powerTorqueHist.push({ rpm: currentRPM, power: currentPwr, torque: currentTq, time: now });
     } else {
-        var oldPT = powerTorqueHist.shift();
+        var oldPT = powerTorqueHist[powerTorqueHist._offset];
         if (oldPT) {
             oldPT.rpm    = currentRPM;
             oldPT.power  = currentPwr;
             oldPT.torque = currentTq;
             oldPT.time   = now;
-            powerTorqueHist.push(oldPT);
         }
+        powerTorqueHist._offset = (powerTorqueHist._offset + 1) % 300;
     }
 
     var ptCanvas = domCache ? domCache.ptCanvas : document.getElementById('tcPowerTorqueChart');
@@ -45,7 +46,8 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     // Draw Torque Trace (Yellow / Contrast Theme Color)
     ptCtx.fillStyle = 'rgba(255, 235, 59, 0.75)';
     for (var k = 0; k < powerTorqueHist.length; k++) {
-        var pt = powerTorqueHist[k];
+        var logicalIdx = (powerTorqueHist._offset + k) % powerTorqueHist.length;
+        var pt = powerTorqueHist[logicalIdx];
         var tx = (pt.rpm / mRpm) * pw;
         var clampedTQ = clamp(pt.torque, 0, combinedMax);
         var ty = ph - (clampedTQ / combinedMax) * (ph - 4 * dpr) - 2 * dpr;
@@ -61,7 +63,8 @@ export function renderPowerTorque(data, powerTorqueHist, now, domCache) {
     }
     ptCtx.fillStyle = primaryColor;
     for (var k = 0; k < powerTorqueHist.length; k++) {
-        var pt = powerTorqueHist[k];
+        var logicalIdxHP = (powerTorqueHist._offset + k) % powerTorqueHist.length;
+        var pt = powerTorqueHist[logicalIdxHP];
         var px = (pt.rpm / mRpm) * pw;
         var clampedHP = clamp(pt.power, 0, combinedMax);
         var py = ph - (clampedHP / combinedMax) * (ph - 4 * dpr) - 2 * dpr;
