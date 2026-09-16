@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-16 / V1.6 Release 發行前準備、版本契約平滑推進與文檔全域同步（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；完成 V1.6.0 Release 發行前版本號全域同步、安全支援週期轉移、發行說明撰寫與多語系主文檔更新。
+- **Learning**：
+  1. **Tauri OTA 序列推進與 Git Tag 雙軌相容性**：專案對外發布 Tag 為 `v1.6.0`，而 Tauri v2 updater 的內建比對機制嚴格採用 SemVer 序列（`remote > current`）。從上一版 V1.5.2 的 `11.45.17` 平滑推進至 `11.45.18`（Sidecar `11.45.18.0`），確保既有 `v1.4.x` 與 `v1.5.x` 客戶端能順利觸發 OTA 更新通知，同時維持 `validate_version_consistency.py` 的跨語言（Rust Cargo/Python/JSON/PyInstaller）強契約一致性。
+  2. **支援政策生命週期轉移**：依據 `portable-release-validation` 規範更新 `SECURITY.md`，將主要支援版本推進至 `1.6.x`，上一版 `1.5.x` 轉為維護過渡期，`1.4.x` 及更早版本終止支援，同步維護中英文雙語條目。
+  3. **Release Highlights 結構化梳理**：本次 V1.6 聚合三大核心革新：Tuning Workflow V2（4 階段 3 欄位佈局與 Race Evidence 實測遙測特徵驅動）、HorizonTuner-cli (`fh6-agent`) AI Agent 零相依工具鏈、Classic JDM 復古儀表群組與街機多聯錶，並包含全域 60Hz O(1) 環形緩衝區與自訂公式 RCE 重大安全修復。
+- **Action**：
+  1. 同步更新 `tauri.conf.json`、`Cargo.toml`、`Cargo.lock`、`backend/main.py`、`backend/agent_cli.py`、`backend/version_info.txt`、`test_diagnostic_support_bundle.py` 與 `agent-cli-guide.md` 之版本號至 `11.45.18` / `11.45.18.0`。
+  2. 更新 `SECURITY.md` 支援矩陣至 `1.6.x`。
+  3. 建立 `docs/releases/v1.6.0.md` 發行說明。
+  4. 同步更新 `README.md` 與 `README.en.md` 核心功能與專案架構樹。
+- **Evidence**：`scripts/validate_version_consistency.py` 輸出 `Application version contract OK: 11.45.18`；後端測試 335 passed, 8 deselected；前端測試 108 files / 752 tests 通過；Vite 生產建置 726 modules 通過；Ruff check/format 通過；`git diff --check` 通過。
+- **Skills**：`portable-release-validation`、`modular-refactoring`。
+
 ## 2026-09-15 / HUD 及時重新載入失效修復、Launcher 全域快取穿透與靜態防快取標頭（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；修復開發模式下修改 `hud_overlay/<style>/` 靜態檔案後，及時重新載入（Reload HUD）無法載入最新 HTML/JS 的快取失效問題。

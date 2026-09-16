@@ -28,17 +28,20 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - Live charts for vehicle speed, engine RPM, power/torque curves, boost pressure, pedal inputs (Throttle/Brake/Clutch), and steering angle.
   - 2D G-Force motion radar, 4-wheel independent surface tire temperatures, hot pressures, and normalized suspension travel.
   - Bounded backend pipeline metrics, with initial dyno-profile reads and persistence kept off the realtime telemetry loop.
-* **Four-Stage Verifiable Tuning Workflow**:
-  - **Step 1 Goal & Setup**: Select Road, Drift, Rally, or Drag and save vehicle, parts, event, and unknown metadata in an input snapshot.
-  - **Step 2 Chassis & Tires**: Combine tire, chassis, and alignment baselines from the `tuningMath` pure functions.
-  - **Step 3 Engine data & gearing**: Use decoded game `EngineMaxRpm`, power, and torque observations from a WOT sweep. Observation completeness does not identify tire grip.
-  - **Step 4 Setup verification**: Road supports baseline, run, descriptive reports, single-variable A/B comparison, and keep/retest decisions. Other discipline baselines and compatibility snapshots do not imply equivalent in-game validation. See the [tuning development index](docs/tuning/README.md) for formula research, sources, and limitations.
+* **Four-Stage Verifiable Tuning Workflow (V2)**:
+  - **4-Stage 3-Column Streamlined Layout**: Overhauled tuning interface providing a clear 4-stage 3-column layout with immediate telemetry feedback and solver outputs.
+  - **Driven by Observed Race Telemetry (Race Evidence)**: Replaced static tire compound inputs with real driving tire load and observed telemetry evidence to drive camber, alignment, and tire pressure solving.
+  - **Multi-Discipline Physics Models**: Added Road FWD chassis and electric/hybrid (AEGO) front/rear torque split calculations; separated mixed-surface Rally and long-travel Cross Country baselines; derived Drift dynamic chassis and gearing from observed RPM bands; support full Drag transmission ratios and finish-speed evidence. See the [tuning development index](docs/tuning/README.md) for formula research, sources, and limitations.
 * **Racing HUD Overlay & Full/Lite Clients**:
-  - HTML5 Canvas hardware-accelerated standalone overlays featuring Ford Mustang S650 HMI, GT7, Retro VFD, and 093 Drift professional HUD styles.
-  - The S650 center widget includes a read-only music player using Windows GSMTC for cover art, track title, artist, album, progress, and time, with playback status indicated by a compact text symbol; see the [S650 media contract](docs/hud/s650-media-properties-contract.md) for the complete field projection and reserved integration points.
-  - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides only the Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing the existing frontend features and backend lifecycle with the Full client.
+  - **All-New Classic JDM Gauge Cluster**: High-contrast vintage white-dial tachometer, shift lights, dual trip meters, and boost gauge delivering an authentic 90s Japanese sports car dashboard feel.
+  - **Arcade Multi-Gauge Layout & Standardized 1080p Scaling**: Supports side-by-side modular gauges with unified anchor points and adaptive proportional scaling across resolutions.
+  - **Multi-Style Overlay Support**: Features Ford Mustang S650 HMI (with Windows GSMTC media widget), GT7 style, Retro VFD vacuum fluorescent display, 093 Drift HUD, and 5 popular community overlay styles.
+  - **Lite Standalone Client (`FH6-HorizonTuner_lite.exe`)**: Provides Telemetry Dashboard, HUD Overlay, and Settings tabs while sharing existing frontend features and backend lifecycle with the Full client.
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
+* **HorizonTuner-cli AI Agent Command-Line Tool (HorizonTuner-cli)**:
+  - Official CLI tool (`fh6-agent.bat` or `python -m backend.agent_cli`) designed for AI Agents, automated scripts, and terminal runners with zero third-party dependencies (Python standard library only).
+  - Dual online/offline workflow: supports online readiness/telemetry probe (`status`), live dynamics diagnosis (`diagnose`), car specifications (`spec`), and offline deterministic tuning solvers (`tune`) with `--json` machine-readable output. See [Agent CLI Guide](docs/guides/agent-cli-guide.md).
 * **Drag Launch Test & Acceleration Analyzer**:
   - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.
   - Speed/RPM timeline chart playback and historical session comparison.
@@ -67,8 +70,8 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD workflows (ci.yml gatekeeping + release.yml automated packaging)
 ├── backend/                 # Python FastAPI backend core
-├── scripts/                 # Automated release & telemetry metrics scripts (prepare_release_assets.py, release_metrics.py)
 │   ├── main.py              # Backend entry point, API definitions & process management
+│   ├── agent_cli.py         # HorizonTuner-cli AI Agent command-line interface
 │   ├── mcp/                 # Model Context Protocol (MCP) Read-Only Server
 │   │   ├── service.py       # Telemetry & tuning service layer (aligned with TelemetryView)
 │   │   ├── tools.py         # 26 MCP tools declarations & dispatch
@@ -103,14 +106,17 @@ FH6-HorizonTuner/
 │   └── src-tauri/           # Tauri window & Full/Lite packaging configuration
 ├── hud_overlay/             # HTML5 Canvas custom racing HUD overlays
 │   ├── index.html           # HUD launcher & Viewport renderer entry
+│   ├── classic_jdm/         # Classic JDM vintage Japanese cluster & arcade multi-gauge
 │   ├── gt7/                 # Gran Turismo 7 style racing dashboard
 │   ├── vfd/                 # Retro VFD simulated fluorescent gauge
 │   ├── drift/               # 093 Drift professional drift dashboard
 │   └── shared/              # Shared Canvas drawing & geometry math library
+├── scripts/                 # Automated release & telemetry metrics scripts (prepare_release_assets.py, release_metrics.py)
 ├── lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
 ├── tests/                   # Pytest unit testing suite
 ├── pyproject.toml           # Ruff formatting rules & Pytest configuration
 ├── requirements.txt         # Python dependency list
+├── fh6-agent.bat            # HorizonTuner-cli AI Agent entry script
 ├── setup_dev.bat           # Install Python and frontend dependencies
 ├── dev_full.bat            # Full dev entry; runs Python source directly
 ├── dev_lite.bat            # Lite dev entry; runs Python source directly

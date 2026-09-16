@@ -60,7 +60,7 @@ uv run --no-project --python .venv\Scripts\python.exe -m backend.agent_cli <subc
 ```json
 {
   "cli_version": "1.0.0",
-  "app_version": "11.45.17",
+  "app_version": "11.45.18",
   "backend_url": "http://127.0.0.1:8001",
   "backend_running": true,
   "mcp_enabled": true,

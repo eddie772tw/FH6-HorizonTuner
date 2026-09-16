@@ -29,17 +29,20 @@
   - 包含車速、轉速 (RPM)、馬力/扭力雙曲線、渦輪增壓值 (Boost) 與油門/煞車/方向盤輸入即時圖表。
   - 2D G-Force 運動雷達圖、4 輪獨立表面胎溫 (Tire Temp)、熱胎壓 (Hot Pressure) 與 4 輪正規化懸吊行程 (Suspension Travel)。
   - 後端提供有界的 pipeline metrics，並將 dyno profile 的首次讀取與持久化移出即時遙測迴圈。
-* **4 階段可驗證車輛調校工作流 (Four-Stage Tuning Workflow)**：
-  - **Step 1 Goal & Setup**：選擇 Road、Drift、Rally 或 Drag，保存車輛、改裝、賽事與未知欄位的輸入快照。
-  - **Step 2 Chassis & Tires**：整合 `tuningMath` 純函數的輪胎、底盤與定位基線。
-  - **Step 3 Engine data & gearing**：以遊戲解碼的 `EngineMaxRpm`、功率與扭力進行 WOT 實測觀察；完整性 gate 不等於抓地力識別。
-  - **Step 4 Setup verification**：Road 支援 baseline、run、描述性報告、單一變量 A/B 與保留／回測決策；其他賽事的公式基線與相容快照不代表同等實機驗收。公式研究、來源與限制見[調校開發入口](docs/tuning/README.md)。
+* **4 階段可驗證車輛調校工作流 (Four-Stage Tuning Workflow V2)**：
+  - **4 階段 3 欄位精簡佈局**：重構調校介面為 4 階段 3 欄位清晰佈局，即時呈現車輛狀態與求解反饋。
+  - **實車測試圈遙測特徵驅動 (Race Evidence)**：徹底捨棄原先的手動輪胎抓地力係數輸入，改由真實操駕之輪胎載荷與遙測特徵自動觀察並驅動定位角度與胎壓求解。
+  - **多元賽事模型與底盤支援**：新增 Road 前驅 (FWD) 底盤與全電/混合動力 (AEGO) 前後軸扭力分配；獨立拆分混合路面拉力 (Rally) 與大衝程越野 (Cross Country) 基準；實測轉速區間衍生甩尾 (Drift) 設定與全齒比；支援完整直線加速 (Drag) 變速箱各檔齒比梯度與終點時速推導。公式研究、來源與限制見[調校開發入口](docs/tuning/README.md)。
 * **客製化賽車儀表覆蓋層與雙前端客戶端 (Racing HUD Overlay & Full/Lite Clients)**:
-  - 提供多款專業 HTML5 Canvas 獨立賽車儀表（Ford Mustang S650 HMI、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表）。
-  - S650 中央 widget 支援唯讀音樂播放器，透過 Windows GSMTC 顯示封面、曲目、藝人、專輯、進度條與時間，並以符號文字提示播放狀態；完整欄位與未啟用整合入口見 [S650 media contract](docs/hud/s650-media-properties-contract.md)。
+  - **全新 Classic JDM 儀表群組**：高對比度復古白底轉速儀表盤、超轉換檔提示燈、雙計程儀與渦輪壓力表，提供沉浸式 90 年代日系經典性能車儀表視覺。
+  - **街機多聯錶版面 (Arcade Multi-Gauge Layout) 與 1080p 響應縮放**：支援多聯錶並排顯示，統一所有 HUD 儀表的座標錨點與自適應等比縮放機制。
+  - **多風格儀表支援**：整合 Ford Mustang S650 HMI（支援 Windows GSMTC 音樂小工具）、Gran Turismo 7 風格、Retro VFD 擬真螢光顯示、093 Drift 甩尾專用儀表與 5 款社群熱門 HUD 樣式。
   - **精簡獨立客戶端 (`FH6-HorizonTuner_lite.exe`)**：提供 Telemetry Dashboard、HUD Overlay 與 Settings 三個分頁，與完整客戶端共用前端功能與後端生命週期。
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
+* **HorizonTuner-cli AI Agent 命令列工具 (HorizonTuner-cli)**:
+  - 提供專為 AI Agent、自動化腳本與終端開發打造的官方工具 `fh6-agent.bat`（或 `python -m backend.agent_cli`），零第三方 Python 依賴。
+  - 具備線上即時遙測與離線純數學計算雙模式，支援連接埠就緒探測（`status`）、即時動態診斷（`diagnose`）、車輛規格檢索（`spec`）與底盤算牌（`tune`），並提供 `--json` 結構化輸出。詳細說明參閱 [Agent CLI 使用指南](docs/guides/agent-cli-guide.md)。
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
   - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。
   - 速度/轉速時間軸圖表回放與歷史 Session 紀錄對比。
@@ -68,8 +71,8 @@
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD 工作流 (ci.yml 門禁測試 + release.yml 自動發行)
 ├── backend/                 # Python FastAPI 後端核心
-├── scripts/                 # 自動化發行與度量腳本 (prepare_release_assets.py, release_metrics.py)
 │   ├── main.py              # 後端服務主入口與 API 宣告
+│   ├── agent_cli.py         # HorizonTuner-cli AI Agent 命令列工具實作
 │   ├── mcp/                 # Model Context Protocol (MCP) 唯讀伺服器
 │   │   ├── service.py       # 遙測與調校服務層 (對齊 TelemetryView)
 │   │   ├── tools.py         # 26 個 MCP Tools 宣告與分派
@@ -104,14 +107,17 @@ FH6-HorizonTuner/
 │   └── src-tauri/           # Tauri 視窗與 Full/Lite 打包設定
 ├── hud_overlay/             # HTML5 Canvas 客製化賽車儀表覆蓋層
 │   ├── index.html           # HUD 載入與 Viewport 渲染入口
+│   ├── classic_jdm/         # Classic JDM 經典日系儀表與街機多聯錶
 │   ├── gt7/                 # Gran Turismo 7 風格賽車儀表
 │   ├── vfd/                 # Retro VFD 擬真螢光顯示儀表
 │   ├── drift/               # 093 Drift 專業甩尾賽車儀表
 │   └── shared/              # 共用 Canvas 幾何繪圖與數學庫
+├── scripts/                 # 自動化發行與度量腳本 (prepare_release_assets.py, release_metrics.py)
 ├── lang/                    # 系統多語言翻譯字典 (zh-tw, ja-jp 等)
 ├── tests/                   # Pytest 單元測試套件
 ├── pyproject.toml           # Ruff 格式化規則與 Pytest 設定
 ├── requirements.txt         # Python 依賴套件清單
+├── fh6-agent.bat            # HorizonTuner-cli AI Agent 命令列工具入口
 ├── setup_dev.bat           # 安裝 Python 與前端開發依賴
 ├── dev_full.bat            # Full 開發入口，直接執行 Python 原始碼
 ├── dev_lite.bat            # Lite 開發入口，直接執行 Python 原始碼

@@ -24,7 +24,7 @@ import urllib.request
 from typing import Any
 
 CLI_VERSION = "1.0.0"
-APP_VERSION = "11.45.17"
+APP_VERSION = "11.45.18"
 DEFAULT_HTTP_PORT = 8001
 DEFAULT_UDP_PORT = 8000
 
