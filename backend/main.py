@@ -1884,8 +1884,7 @@ app.include_router(
 # --- Languages API ---
 
 
-@app.get("/api/languages")
-async def list_languages():
+def _list_languages_sync():
     # Always include English (US) which is hardcoded in the frontend
     languages_dict = {"en-us": "English (US)"}
 
@@ -1915,8 +1914,12 @@ async def list_languages():
     return [{"code": code, "name": name} for code, name in languages_dict.items()]
 
 
-@app.get("/api/languages/{code}")
-async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
+@app.get("/api/languages")
+async def list_languages():
+    return await asyncio.to_thread(_list_languages_sync)
+
+
+def _get_language_sync(code: str):
     code = code.lower()
     if code == "en-us":
         return {}
@@ -1934,6 +1937,11 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
                 logger.error(f"Failed to read language file {file_path}: {e}")
 
     return {"error": "Language not found"}
+
+
+@app.get("/api/languages/{code}")
+async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
+    return await asyncio.to_thread(_get_language_sync, code)
 
 
 # --- MCP Endpoints ---
