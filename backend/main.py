@@ -887,33 +887,32 @@ class DragRecorder:
             )
 
         # 4. Path Validity & OLS Linear Regression
-        x_coords = [p.get("PositionX", 0.0) for p in self.current_session]
-        z_coords = [p.get("PositionZ", 0.0) for p in self.current_session]
-        n_pts = len(self.current_session)
+        coords = [
+            (p.get("PositionX", 0.0), p.get("PositionZ", 0.0))
+            for p in self.current_session
+        ]
+        n_pts = len(coords)
 
         max_deviation_meters = 0.0
         path_valid = True
 
         if n_pts >= 10:
-            mean_x = sum(x_coords) / n_pts
-            mean_z = sum(z_coords) / n_pts
+            mean_x = sum(c[0] for c in coords) / n_pts
+            mean_z = sum(c[1] for c in coords) / n_pts
 
-            num = sum(
-                (x_coords[i] - mean_x) * (z_coords[i] - mean_z) for i in range(n_pts)
-            )
-            den = sum((x_coords[i] - mean_x) ** 2 for i in range(n_pts))
+            num = sum((x - mean_x) * (z - mean_z) for x, z in coords)
+            den = sum((x - mean_x) ** 2 for x, _ in coords)
 
             if den == 0:
-                deviations = [abs(x - mean_x) for x in x_coords]
+                max_deviation_meters = max(abs(x - mean_x) for x, _ in coords)
             else:
                 a = num / den
                 b = mean_z - a * mean_x
                 denom = (a**2 + 1) ** 0.5
-                deviations = [
-                    abs(a * x_coords[i] - z_coords[i] + b) / denom for i in range(n_pts)
-                ]
+                max_deviation_meters = max(
+                    abs(a * x - z + b) / denom for x, z in coords
+                )
 
-            max_deviation_meters = max(deviations)
             if max_deviation_meters > 3.0:
                 path_valid = False
 

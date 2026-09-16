@@ -61,3 +61,7 @@
 ## 2024-11-26 - O(1) Circular Buffers in Canvas Render Loops
 **Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
 **Action:** Replace `Array.shift()` with a fixed-size array and an `offset` index to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offset + index) % capacity` to traverse elements sequentially.
+
+## 2026-09-08 - Optimizing Python List Traversals and OLS Computations via Zip Generators
+**Learning:** Using indexed `range(n_pts)` lookups and intermediate `deviations` list allocations during linear regression calculations across telemetry point arrays introduces indexing overhead and temporary memory allocations.
+**Action:** Streamline linear regression math by iterating `zip(x_coords, z_coords)` directly and computing maximum deviation inline with a `max()` generator call to eliminate list allocation and index resolution penalties.
