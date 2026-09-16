@@ -81,7 +81,6 @@ import asyncio
 import gc
 import json
 import logging
-import subprocess
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
