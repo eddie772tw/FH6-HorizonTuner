@@ -61,3 +61,7 @@
 ## 2024-11-26 - O(1) Circular Buffers in Canvas Render Loops
 **Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
 **Action:** Replace `Array.shift()` with a fixed-size array and an `offset` index to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offset + index) % capacity` to traverse elements sequentially.
+
+## 2026-09-08 - Offloading Blocking Sync I/O in Async API Endpoints
+**Learning:** Performing synchronous file I/O operations (e.g. `open`, `json.load`, `json.dump`) directly inside FastAPI `async def` endpoints blocks the main asyncio event loop thread, stalling concurrent WebSockets and background tasks.
+**Action:** Offload synchronous file I/O operations in `async def` endpoints to thread pool workers using `await asyncio.to_thread(func, *args)` to ensure the event loop remains unblocked.
