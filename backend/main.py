@@ -1883,6 +1883,35 @@ app.include_router(
 
 # --- Languages API ---
 
+# In-memory dictionary cache for language JSON files: { file_path: (mtime, data_dict) }
+_lang_file_cache = {}
+
+
+def load_language_file(file_path: str) -> dict | None:
+    """Load language JSON file with in-memory caching and staleness check based on mtime."""
+    try:
+        mtime = os.path.getmtime(file_path)
+    except OSError:
+        _lang_file_cache.pop(file_path, None)
+        return None
+
+    if file_path in _lang_file_cache:
+        cached_mtime, cached_data = _lang_file_cache[file_path]
+        if cached_mtime == mtime:
+            return cached_data
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                _lang_file_cache[file_path] = (mtime, data)
+                return data
+    except Exception as e:
+        logger.error(f"Failed to read language file {file_path}: {e}")
+        _lang_file_cache.pop(file_path, None)
+
+    return None
+
 
 @app.get("/api/languages")
 async def list_languages():
@@ -1899,16 +1928,10 @@ async def list_languages():
                     if code in languages_dict:
                         continue
                     file_path = os.path.join(lang_dir, filename)
-                    try:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                            if isinstance(data, dict):
-                                name = data.get("__language_name__", filename[:-5])
-                                languages_dict[code] = name
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to read language file {filename} in {lang_dir}: {e}"
-                        )
+                    data = load_language_file(file_path)
+                    if isinstance(data, dict):
+                        name = data.get("__language_name__", filename[:-5])
+                        languages_dict[code] = name
         except Exception as e:
             logger.error(f"Failed to list language directory {lang_dir}: {e}")
 
@@ -1927,11 +1950,9 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
             continue
         file_path = safe_resolve_path(lang_dir, f"{clean_code}.json")
         if file_path and os.path.exists(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to read language file {file_path}: {e}")
+            data = load_language_file(file_path)
+            if isinstance(data, dict):
+                return data
 
     return {"error": "Language not found"}
 

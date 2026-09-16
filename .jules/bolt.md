@@ -61,3 +61,7 @@
 ## 2024-11-26 - O(1) Circular Buffers in Canvas Render Loops
 **Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
 **Action:** Replace `Array.shift()` with a fixed-size array and an `offset` index to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offset + index) % capacity` to traverse elements sequentially.
+
+## 2026-03-30 - In-Memory Caching for Language JSON File Reads
+**Learning:** Parsing language JSON files from disk on every `/api/languages` request introduces redundant disk I/O and JSON decoding overhead.
+**Action:** Implement an in-memory dictionary cache keyed by file path and modified time (`st_mtime`) using a helper function `load_language_file(file_path)` to serve cached language dictionaries instantly when files are unchanged.
