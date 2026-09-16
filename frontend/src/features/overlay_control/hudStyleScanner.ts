@@ -1,3 +1,5 @@
+import { backendFetch } from '../../services/backend';
+
 export interface HudStyleEntry {
   id: string;
   source: 'builtin' | 'user';
@@ -8,6 +10,11 @@ export interface HudDropdownOption {
   value: string;
   label: string;
   isCustom: boolean;
+}
+
+export interface HudAuthorInfo {
+  author: string;
+  description: string;
 }
 
 export interface HudStyleFetchOptions {
@@ -26,8 +33,7 @@ export const HUD_DISPLAY_NAMES: Record<string, string> = {
   nfs15: "Need for Speed 2015",
   shift_tacho: 'Need for Speed Shift',
   simple: 'Simple Gauge',
-  defi_triple: 'Defi Advance BF',
-  initial_d: 'Initial D AE86 TRD',
+  classic_jdm: 'Classic JDM Arcade',
 };
 
 /**
@@ -194,4 +200,41 @@ export function formatHudDropdownOptions(
 export function getHudUrlPrefix(hudStyles: HudStyleEntry[], styleName: string): string {
   const entry = hudStyles.find((s) => s.id === styleName);
   return entry ? entry.urlPrefix : '/hud';
+}
+
+/**
+ * Fetch author metadata (author.json) for a HUD style.
+ * Uses backendFetch first to ensure consistency across dev_full, dev_lite,
+ * and portable/release environments, falling back to origin-relative fetch.
+ */
+export async function fetchHudAuthorInfo(
+  styleName: string,
+  urlPrefix = '/hud',
+  fetchFn: (path: string) => Promise<Response> = backendFetch,
+  cacheBuster = '',
+): Promise<HudAuthorInfo | null> {
+  const rawPrefix = urlPrefix || '/hud';
+  const prefix = rawPrefix.startsWith('/') ? rawPrefix : `/${rawPrefix}`;
+  const path = `${prefix}/${styleName}/author.json${cacheBuster}`;
+
+  let res: Response;
+  try {
+    res = await fetchFn(path);
+  } catch {
+    // Fallback to origin-relative fetch if backend transport fails
+    res = await fetch(path);
+  }
+
+  if (res.ok) {
+    try {
+      const data = await res.json();
+      return {
+        author: data.author || 'Author',
+        description: data.description || 'No description provided.',
+      };
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }

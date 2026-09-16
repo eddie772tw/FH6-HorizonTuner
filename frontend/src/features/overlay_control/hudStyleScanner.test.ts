@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   fetchHudStylesList,
+  fetchHudAuthorInfo,
   formatHudDropdownOptions,
   getHudUrlPrefix,
   isWipHudQueryEnabled,
@@ -84,9 +85,12 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(HUD_DISPLAY_NAMES['fh5_arc']).toBeUndefined();
       expect(HUD_DISPLAY_NAMES['cyberpunk_hud']).toBeUndefined();
 
+      // Legacy compatibility entrypoints must be removed
+      expect(HUD_DISPLAY_NAMES['defi_triple']).toBeUndefined();
+      expect(HUD_DISPLAY_NAMES['initial_d']).toBeUndefined();
+
       // Production styles should be retained
-      expect(HUD_DISPLAY_NAMES['defi_triple']).toBe('Defi Advance BF');
-      expect(HUD_DISPLAY_NAMES['initial_d']).toBe('Initial D AE86 TRD');
+      expect(HUD_DISPLAY_NAMES['classic_jdm']).toBe('Classic JDM Arcade');
       expect(HUD_DISPLAY_NAMES['vfd']).toBe('Retro VFD');
     });
 
@@ -94,7 +98,6 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(WIP_HUD_IDS.has('motec_gt3')).toBe(true);
       expect(WIP_HUD_IDS.has('fh5_arc')).toBe(true);
       expect(WIP_HUD_IDS.has('cyberpunk_hud')).toBe(true);
-      expect(WIP_HUD_IDS.has('defi_triple')).toBe(false);
 
       expect(WIP_HUD_DISPLAY_NAMES['fh5_arc']).toContain('(WIP)');
       expect(WIP_HUD_DISPLAY_NAMES['cyberpunk_hud']).toContain('(WIP)');
@@ -107,14 +110,14 @@ describe('hudStyleScanner frontend module tests', () => {
         { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
         { id: 'cyberpunk_hud', source: 'builtin', urlPrefix: '/hud' },
         { id: 'motec_gt3', source: 'builtin', urlPrefix: '/hud' },
-        { id: 'defi_triple', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'classic_jdm', source: 'builtin', urlPrefix: '/hud' },
       ];
 
       const options = formatHudDropdownOptions(mockStyles);
       const optionValues = options.map((o) => o.value);
 
       expect(optionValues).toContain('vfd');
-      expect(optionValues).toContain('defi_triple');
+      expect(optionValues).toContain('classic_jdm');
       expect(optionValues).not.toContain('fh5_arc');
       expect(optionValues).not.toContain('cyberpunk_hud');
       expect(optionValues).not.toContain('motec_gt3');
@@ -124,7 +127,7 @@ describe('hudStyleScanner frontend module tests', () => {
       const mockStyles: HudStyleEntry[] = [
         { id: 'vfd', source: 'builtin', urlPrefix: '/hud' },
         { id: 'fh5_arc', source: 'builtin', urlPrefix: '/hud' },
-        { id: 'defi_triple', source: 'builtin', urlPrefix: '/hud' },
+        { id: 'classic_jdm', source: 'builtin', urlPrefix: '/hud' },
       ];
 
       const options = formatHudDropdownOptions(mockStyles, HUD_DISPLAY_NAMES, { includeWip: true });
@@ -163,6 +166,74 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(isWipHudQueryEnabled('?wip=0')).toBe(false);
       expect(isWipHudQueryEnabled('?dev=false')).toBe(false);
       expect(isWipHudQueryEnabled('')).toBe(false);
+    });
+  });
+
+  describe('fetchHudAuthorInfo', () => {
+    it('fetches and parses author.json via backendFetch without dot-prefix relative paths', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          author: 'Turn10 / PG',
+          description: 'Classic JDM cluster',
+        }),
+      });
+
+      const res = await fetchHudAuthorInfo('classic_jdm', '/hud', mockFetch, '?t=123');
+
+      expect(mockFetch).toHaveBeenCalledWith('/hud/classic_jdm/author.json?t=123');
+      expect(res).toEqual({
+        author: 'Turn10 / PG',
+        description: 'Classic JDM cluster',
+      });
+    });
+
+    it('handles custom HUD prefix /hud_user correctly', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          author: 'CommunityModder',
+          description: 'Custom drift dash',
+        }),
+      });
+
+      const res = await fetchHudAuthorInfo('my_drift', '/hud_user', mockFetch);
+
+      expect(mockFetch).toHaveBeenCalledWith('/hud_user/my_drift/author.json');
+      expect(res?.author).toBe('CommunityModder');
+    });
+
+    it('falls back to window.fetch if backendFetch throws, without dot-prefix relative path', async () => {
+      const mockBackendFetch = vi.fn().mockRejectedValue(new Error('Backend offline'));
+      const mockGlobalFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          author: 'FallbackAuthor',
+          description: 'Fallback description',
+        }),
+      });
+      vi.stubGlobal('fetch', mockGlobalFetch);
+
+      const res = await fetchHudAuthorInfo('vfd', '/hud', mockBackendFetch);
+
+      expect(mockBackendFetch).toHaveBeenCalledWith('/hud/vfd/author.json');
+      expect(mockGlobalFetch).toHaveBeenCalledWith('/hud/vfd/author.json');
+      expect(res?.author).toBe('FallbackAuthor');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('returns null when response is not ok or JSON parsing fails', async () => {
+      const mockFetch404 = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+      const res404 = await fetchHudAuthorInfo('nonexistent', '/hud', mockFetch404);
+      expect(res404).toBeNull();
+
+      const mockFetchBadJson = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => { throw new Error('Bad JSON'); },
+      });
+      const resBadJson = await fetchHudAuthorInfo('broken', '/hud', mockFetchBadJson);
+      expect(resBadJson).toBeNull();
     });
   });
 });

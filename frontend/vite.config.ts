@@ -30,12 +30,15 @@ function hudStaticPlugin(): Plugin {
   return {
     name: "hud-static-serve",
     configureServer(server) {
-      // Register before internal middlewares so /hud/* is intercepted early
+      // Register before internal middlewares so /hud/* (and dev_lite relative /lite/hud/*) is intercepted early
       server.middlewares.use((req, res, next) => {
-        if (!req.url || !req.url.startsWith("/hud/")) return next();
+        if (!req.url) return next();
+        const isHud = req.url.startsWith("/hud/") || req.url.startsWith("/lite/hud/");
+        if (!isHud) return next();
 
-        // Strip /hud/ prefix and decode URI, then map to hud_overlay/
-        const relativePath = decodeURIComponent(req.url.slice("/hud/".length).split("?")[0]);
+        // Strip prefix and decode URI, then map to hud_overlay/
+        const prefix = req.url.startsWith("/lite/hud/") ? "/lite/hud/" : "/hud/";
+        const relativePath = decodeURIComponent(req.url.slice(prefix.length).split("?")[0]);
         const filePath = path.join(HUD_OVERLAY_DIR, relativePath);
 
         // Security: prevent directory traversal

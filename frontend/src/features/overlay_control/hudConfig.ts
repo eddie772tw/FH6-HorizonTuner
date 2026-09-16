@@ -1,4 +1,5 @@
 import type { S650CenterWidget, S650HmiTheme } from './s650/config';
+import type { ClassicJdmAuxGauge, ClassicJdmDefiTheme, ClassicJdmTachStyle } from './classic_jdm/config';
 import type { HudDisplayUnits } from './HudUnitSettingsSidebar';
 
 export interface HudElements {
@@ -44,6 +45,11 @@ export interface HudConfig {
   s650CenterWidget?: S650CenterWidget;
   /** S650-only outer container Y offset; positive values move down. */
   s650HmiOffsetY?: number;
+  classicJdmTachStyle?: ClassicJdmTachStyle;
+  classicJdmShowTriple?: boolean;
+  classicJdmAux1?: ClassicJdmAuxGauge;
+  classicJdmAux2?: ClassicJdmAuxGauge;
+  classicJdmDefiTheme?: ClassicJdmDefiTheme;
   audioDeviceId?: string;
   selectedMonitorIndex: number;
   scale: number;
@@ -87,6 +93,11 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   s650Theme: 'heritage67',
   s650CenterWidget: 'drive',
   s650HmiOffsetY: 60,
+  classicJdmTachStyle: 'trd',
+  classicJdmShowTriple: true,
+  classicJdmAux1: 'tire_temp_4w',
+  classicJdmAux2: 'tire_temp_rear',
+  classicJdmDefiTheme: 'amber',
   audioDeviceId: 'default',
   selectedMonitorIndex: 0,
   scale: 1.0,
