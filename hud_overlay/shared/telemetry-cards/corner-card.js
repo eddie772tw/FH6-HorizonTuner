@@ -67,11 +67,13 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
         // Maintain 3-second Tire Temp History (180 points @ 60 Hz)
         var tHist = tireHist[i];
+        tHist._offset = tHist._offset || 0;
         if (tHist.length < 180) {
             tHist.push({ temp: cTemp, time: now });
         } else {
-            var oldT = tHist.shift();
-            if (oldT) { oldT.temp = cTemp; oldT.time = now; tHist.push(oldT); }
+            var oldT = tHist[tHist._offset];
+            if (oldT) { oldT.temp = cTemp; oldT.time = now; }
+            tHist._offset = (tHist._offset + 1) % 180;
         }
 
         // ---- Slip Radar ----------------------------------------------------
@@ -156,7 +158,7 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
                     var bins = _sharedBins;
 
                     for (var hi = 0; hi < tHist.length; hi++) {
-                        var p = tHist[hi];
+                        var p = tHist[(tHist._offset + hi) % tHist.length];
                         if (p.temp <= 0) continue;
                         var normT = clamp((p.temp - TEMP_HIST_MIN_F) / tempRange, 0, 1);
                         var bIdx  = Math.min(numBins - 1, Math.floor(normT * numBins));
@@ -240,11 +242,13 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
             var maxEl = domCache ? domCache.corners[tag].maxEl : document.getElementById('tcSuspMax' + tag); if (maxEl) maxEl.textContent = mm.max.toFixed(2);
 
             var sHist = suspHist[i];
+            sHist._offset = sHist._offset || 0;
             if (sHist.length < 150) {
                 sHist.push({ travel: cTravel, time: now });
             } else {
-                var oldS = sHist.shift();
-                if (oldS) { oldS.travel = cTravel; oldS.time = now; sHist.push(oldS); }
+                var oldS = sHist[sHist._offset];
+                if (oldS) { oldS.travel = cTravel; oldS.time = now; }
+                sHist._offset = (sHist._offset + 1) % 150;
             }
 
             var wCanvas = domCache ? domCache.corners[tag].wCanvas : document.getElementById('tcSuspWave' + tag);
@@ -262,8 +266,9 @@ export function renderCorners(data, showSusp, showSlip, showTemp, tireHist, susp
 
                     wCtx.beginPath();
                     for (var j = 0; j < sHist.length; j++) {
+                        var logicalIdx = (sHist._offset + j) % sHist.length;
                         var wx = (j / 150) * ww;
-                        var wy = wh - (sHist[j].travel * wh);
+                        var wy = wh - (sHist[logicalIdx].travel * wh);
                         if (j === 0) wCtx.moveTo(wx, wy);
                         else         wCtx.lineTo(wx, wy);
                     }
