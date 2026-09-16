@@ -243,7 +243,16 @@ const AnalysisView: React.FC = () => {
       else if (selectedMetric === "brake") value = finite(p.BrakeInput) ? p.BrakeInput / 255 : null;
       else if (selectedMetric === "grip") {
         const slip = (p.TireSlipRatio || []).filter(finite);
-        value = slip.length > 0 ? Math.max(...slip.map(Math.abs)) : null;
+        if (slip.length > 0) {
+          let maxVal = 0;
+          for (let i = 0; i < slip.length; i++) {
+            const absVal = Math.abs(slip[i]);
+            if (absVal > maxVal) maxVal = absVal;
+          }
+          value = maxVal;
+        } else {
+          value = null;
+        }
       } else if (selectedMetric === "suspension") {
         value = finite(p.SuspTravel?.[0]) ? p.SuspTravel[0] : null;
       }
