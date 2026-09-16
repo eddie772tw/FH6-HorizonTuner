@@ -5,8 +5,6 @@ blocking Discord IPC work is owned by a dedicated worker thread so a missing
 Discord client can never delay UDP ingestion or WebSocket broadcasts.
 """
 
-from __future__ import annotations
-
 import copy
 import json
 import math
