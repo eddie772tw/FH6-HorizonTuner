@@ -9,11 +9,13 @@ export function renderPedalWave(data, pedalHist, now, domCache) {
     var throttle = clamp(data.throttle !== undefined ? data.throttle : 0, 0, 1);
     var brake    = clamp(data.brake    !== undefined ? data.brake    : 0, 0, 1);
 
+    pedalHist._offset = pedalHist._offset || 0;
     if (pedalHist.length < 300) {
         pedalHist.push({ throttle: throttle, brake: brake, time: now });
     } else {
-        var oldP = pedalHist.shift();
-        if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; pedalHist.push(oldP); }
+        var oldP = pedalHist[pedalHist._offset];
+        if (oldP) { oldP.throttle = throttle; oldP.brake = brake; oldP.time = now; }
+        pedalHist._offset = (pedalHist._offset + 1) % 300;
     }
 
     var pCanvas = domCache ? domCache.pedalWaveCanvas : document.getElementById('tcPedalWave');
@@ -42,8 +44,9 @@ export function renderPedalWave(data, pedalHist, now, domCache) {
     // Throttle Trace (Green #00ff66) - Latest data on right
     pCtx.beginPath();
     for (var k = 0; k < len; k++) {
+        var logicalIdx = (pedalHist._offset + k) % len;
         var px = k * stepX;
-        var py = ph - (pedalHist[k].throttle * drawH) - padY;
+        var py = ph - (pedalHist[logicalIdx].throttle * drawH) - padY;
         if (k === 0) pCtx.moveTo(px, py);
         else         pCtx.lineTo(px, py);
     }
@@ -57,8 +60,9 @@ export function renderPedalWave(data, pedalHist, now, domCache) {
     // Brake Trace (Red #ff0055) - Latest data on right
     pCtx.beginPath();
     for (var k = 0; k < len; k++) {
+        var logicalIdxBrake = (pedalHist._offset + k) % len;
         var px = k * stepX;
-        var py = ph - (pedalHist[k].brake * drawH) - padY;
+        var py = ph - (pedalHist[logicalIdxBrake].brake * drawH) - padY;
         if (k === 0) pCtx.moveTo(px, py);
         else         pCtx.lineTo(px, py);
     }
