@@ -2,6 +2,8 @@
 
 本文件搭配 [執行計畫](README.md) 與 [介面/開工條件](contracts-and-gates.md)。使用者已恢復實作；既有 W1 分支與草稿的現況見 [執行紀錄](execution.md) 及 [實作交接快照](handoffs/implementation-snapshot-20260914.md)。W2–W4 仍為 `proposed`；沒有建立使用者擁有的實作子任務。未來派發時須填入當時已通過 gate 的 SHA，不能用本文的預定分支名稱推論已有授權或成果。
 
+2026-09-16 使用者新增限制：所有後續子代理（含 W1 修正、rebase 與 review）僅使用 Luna；既定 `high`/`xhigh` 思考起點可保留。歷史 Terra 執行與 review 紀錄只描述已發生工作，不構成後續授權；複雜協調與決策由 Coordinator/root 處理。
+
 G2 等待期間完成的 [W2-A 拆分設計](handoffs/w2-a-design-preflight-20260914.md) 只提供實際 owner、檔案分界與 A-D slot 提議；沒有移交 write lease 或建立 WAVE2_BASE_SHA。
 
 另見 [W2-B HUD 設計交接](handoffs/w2-b-design-preflight-20260914.md) 與 [W2-C Settings 設計交接](handoffs/w2-c-design-preflight-20260914.md)。它們補齊第一個工作包與 Coordinator 的 Settings/Updates 接線方向，均為 proposed；模型配置與派發順序見 [規劃交付入口](planning-delivery-20260914.md)。
@@ -34,7 +36,7 @@ Locales 統一由 Coordinator 寫。各 lane 在自己的 handoff 提供 key、�
 | 任務名稱（預定） | 模型/思考起點 | 形式 | Branch（預定） | 啟動條件 |
 | --- | --- | --- | --- | --- |
 | 前端 IA：共用 Shell 與契約 | 本對話 Coordinator | 保留本任務 | 現存 `codex/frontend-ia-contracts-20260914`、`codex/frontend-ia-shell-20260914` | 恢復實作後先核對 G0-code、既有 W1 差異 |
-| W1：Tune / Road / Sessions / HUD 狀態前置 | `gpt-5.6-terra` / xhigh | 獨立 worktree 子代理 | 現存分支見 execution.md | 核對 G0-code，指定各自 BASE_SHA；一次最多三條子代理寫入 lane |
+| W1：Tune / Road / Sessions / HUD 狀態前置（歷史執行模型） | `gpt-5.6-terra` / xhigh（歷史執行模型） | 獨立 worktree 子代理 | 現存分支見 execution.md | 核對 G0-code，指定各自 BASE_SHA；一次最多三條子代理寫入 lane |
 | 前端 IA：Sessions 與 Live | `gpt-5.6-luna` / high | 子代理 A；可依使用者要求建立獨立任務 | `codex/frontend-ia-sessions-20260913`（預定） | G2、WAVE2_BASE_SHA |
 | 前端 IA：HUD 控制與面板拆分 | `gpt-5.6-luna` / xhigh | 子代理 B；可依使用者要求建立獨立任務 | `codex/frontend-ia-hud-20260913`（預定） | 同上 |
 | 前端 IA：Settings 能力與設定面板 | `gpt-5.6-luna` / high | 子代理 C；可依使用者要求建立獨立任務 | `codex/frontend-ia-settings-20260913`（預定） | 同上 |

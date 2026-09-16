@@ -153,7 +153,7 @@ flowchart TD
 | --- | --- | --- |
 | W0 / G0（原 Phase 0） | Coordinator + scouts | 已有靜態 inventory 與 baseline test/build 紀錄；恢復時核對 G0-code 開工基準；固定 source 的 native baseline 與 3 次效能基準另列 G0-observability，完成後才算整體 G0 通過 |
 | W1 / P1（原 Phase 1） | Coordinator | typed manifest/capabilities/intent、dead overlay category；C1–C5 具體化，清除 generic any channel。保留 tune restore contract |
-| W1 / 狀態前置 | Coordinator + Terra 子代理 | Tune/Road 狀態、A0 Sessions/Live adapter、B0 HUD 權威設定與 pending writes；每條路徑單一 owner，整合前交接；G1-core freeze（C4 的 review slot 留待 A→D 接點確認） |
+| W1 / 狀態前置（歷史執行模型） | Coordinator + Terra 子代理（歷史執行模型） | Tune/Road 狀態、A0 Sessions/Live adapter、B0 HUD 權威設定與 pending writes；每條路徑單一 owner，整合前交接；G1-core freeze（C4 的 review slot 留待 A→D 接點確認） |
 | W1 / P2（原 Phase 2） | Coordinator | 共用 Shell/Header/Menu/Status；接入已審查的狀態前置，以候選分支驗證 active-only mount；通過 G2 才放行 W2 |
 | W2 / A1、A2（原 Phase 3） | Luna 任務 A | A1 穩定 Live/Sessions 邊界與 async selection；A2 拆 Analysis library/header/actions/summary/comparison/track，保留既有能力 |
 | W2 / B1、B2（原 Phase 5） | Luna 任務 B | B1 controller/config concurrency/lifecycle；B2 Setup/Layout/Advanced、能力對照。B2 依 handoff allowlist 執行，避免與 controller 或共享契約重疊 |
@@ -167,6 +167,8 @@ P2 的薄 adapter 需登錄於 [相容程式移除表](contracts-and-gates.md)�
 工作量以驗收風險與 PR 單位衡量，不先承諾天數。P1/P2 與 D 是主要依賴路徑；B 的 native HUD 驗收可能成為最終關卡。A2/B2 可按 reviewer 可讀的大小拆 PR，不為達成行數目標過度拆分。
 
 ## 6. 模型、子代理與子對話策略
+
+2026-09-16 使用者新增限制：所有後續子代理（含 W1 修正、rebase 與 review）僅使用 Luna。既有 Terra 執行與 review 紀錄只描述已發生工作，不構成後續授權；複雜協調與決策由 Coordinator/root 處理。
 
 本對話持續擔任 Coordinator/root，保留架構取捨、共享契約、衝突解決、native 驗收與最終結論。Luna 執行 Sessions、HUD controller、Tune/Road、Settings、已凍結介面下的 panel 抽離、pure selectors/tests 與文件核對；複雜協調與產品決策由 Coordinator/root 直接處理。
 
