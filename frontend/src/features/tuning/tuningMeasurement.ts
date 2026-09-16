@@ -178,7 +178,15 @@ export function retainReadyMeasurementSnapshot(
 function observedSlip(frame: TelemetryData): number | undefined {
   const slip = frame.TireSlipRatio;
   if (!Array.isArray(slip) || slip.length < 4 || !slip.slice(0, 4).every(isFiniteNumber)) return undefined;
-  return Math.max(...slip.slice(0, 4).map(Math.abs));
+
+  let maxAbsSlip = 0;
+  for (let i = 0; i < 4; i++) {
+    const absSlip = Math.abs(slip[i]);
+    if (absSlip > maxAbsSlip) {
+      maxAbsSlip = absSlip;
+    }
+  }
+  return maxAbsSlip;
 }
 
 function addBin(previous: TuningMeasurementBin[], rpm: number, redlineRpm: number, powerWatts: number, torqueNewtons: number): TuningMeasurementBin[] {
