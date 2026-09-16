@@ -67,28 +67,84 @@ describe('vfdAudioMath', () => {
   });
 
   describe('sanitizeVFDText', () => {
-    it('replaces & with AND and strips unsupported symbols', () => {
-      const input = 'GOMAD! & MONSTER - Under Control!';
+    it('returns empty string for null, undefined, empty, or whitespace-only inputs', () => {
+      const emptyCases = [null, undefined, '', '   ', '\t\n  '];
+      emptyCases.forEach((input) => {
+        expect(sanitizeVFDText(input)).toBe('');
+      });
+    });
+
+    it('safely converts non-string primitives and objects to sanitized strings', () => {
+      const primitiveCases = [
+        { input: 12345, expected: '12345' },
+        { input: 0, expected: '0' },
+        { input: true, expected: 'TRUE' },
+        { input: false, expected: 'FALSE' },
+        { input: { song: 'test' }, expected: 'OBJECT OBJECT' },
+        { input: [1, 2], expected: '1 2' },
+      ];
+      primitiveCases.forEach(({ input, expected }) => {
+        expect(sanitizeVFDText(input)).toBe(expected);
+      });
+    });
+
+    it('normalizes accents and diacritics into standard ASCII equivalents', () => {
+      const testCases = [
+        { input: 'éèêë ÉÈÊË', expected: 'EEEE EEEE' },
+        { input: 'áàâäã ÁÀÂÄÃ', expected: 'AAAAA AAAAA' },
+        { input: 'óòôöõ ÓÒÔÖÕ', expected: 'OOOOO OOOOO' },
+        { input: 'úùûü ÚÙÛÜ', expected: 'UUUU UUUU' },
+        { input: 'íìîï ÍÌÎÏ', expected: 'IIII IIII' },
+        { input: 'ñ Ñ ç Ç', expected: 'N N C C' },
+      ];
+      testCases.forEach(({ input, expected }) => {
+        expect(sanitizeVFDText(input)).toBe(expected);
+      });
+    });
+
+    it('normalizes smart punctuation symbols', () => {
+      const testCases = [
+        { input: 'Rock ’n’ Roll ‘n’ Groove', expected: 'ROCK N ROLL N GROOVE' },
+        { input: '“Track” title', expected: 'TRACK TITLE' },
+        { input: 'Artist – Song — Remix', expected: 'ARTIST - SONG - REMIX' },
+        { input: 'Loading…', expected: 'LOADING' },
+      ];
+      testCases.forEach(({ input, expected }) => {
+        expect(sanitizeVFDText(input)).toBe(expected);
+      });
+    });
+
+    it('replaces & with AND and strips exclamation marks', () => {
+      const testCases = [
+        { input: 'Rock & Roll!', expected: 'ROCK AND ROLL' },
+        { input: 'M&M! & AC/DC!', expected: 'MANDM AND AC/DC' },
+        { input: 'STOP!', expected: 'STOP' },
+      ];
+      testCases.forEach(({ input, expected }) => {
+        expect(sanitizeVFDText(input)).toBe(expected);
+      });
+    });
+
+    it('strips non-ASCII, CJK, and emoji characters', () => {
+      const testCases = [
+        { input: 'Café Pokémon - 晴天 (Sunny Day) 😄', expected: 'CAFE POKEMON - SUNNY DAY' },
+        { input: '🎵 Music 🎶 Heavy ⚡ Metal 🤘', expected: 'MUSIC HEAVY METAL' },
+        { input: 'русский текст', expected: '' },
+      ];
+      testCases.forEach(({ input, expected }) => {
+        expect(sanitizeVFDText(input)).toBe(expected);
+      });
+    });
+
+    it('strips punctuation symbols while preserving spaces and hyphens', () => {
+      const input = '@#$ %^* ()_+ =[] {}| \\;: \' ",.<>? -';
       const res = sanitizeVFDText(input);
-      expect(res).toBe('GOMAD AND MONSTER - UNDER CONTROL');
+      expect(res).toBe('-');
     });
 
-    it('converts text to uppercase and normalizes spaces', () => {
-      const input = '  random   song  name  ';
-      expect(sanitizeVFDText(input)).toBe('RANDOM SONG NAME');
-    });
-
-    it('safely handles non-string, null, and numeric inputs without throwing', () => {
-      expect(sanitizeVFDText(null)).toBe('');
-      expect(sanitizeVFDText(undefined)).toBe('');
-      expect(sanitizeVFDText(12345)).toBe('12345');
-      expect(sanitizeVFDText({ song: 'test' })).toBe('OBJECT OBJECT');
-    });
-
-    it('normalizes accented characters and strips CJK/Emoji characters safely', () => {
-      const input = 'Café Pokémon - 晴天 (Sunny Day) 😄';
-      const res = sanitizeVFDText(input);
-      expect(res).toBe('CAFE POKEMON - SUNNY DAY');
+    it('collapses multiple whitespace characters and converts to uppercase', () => {
+      const input = '   hello   world   track-1   ';
+      expect(sanitizeVFDText(input)).toBe('HELLO WORLD TRACK-1');
     });
   });
 
