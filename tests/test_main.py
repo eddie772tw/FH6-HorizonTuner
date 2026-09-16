@@ -9,15 +9,19 @@ from main import dyno_is_reasonable
 
 
 def test_dyno_is_reasonable_no_neighbors():
-    """Test when neighbor_vals is empty or None."""
+    """Test when neighbor_vals is empty, None, or empty containers."""
     assert dyno_is_reasonable(100, []) is True
+    assert dyno_is_reasonable(100, ()) is True
+    assert dyno_is_reasonable(100, set()) is True
     assert dyno_is_reasonable(100, None) is True
 
 
 def test_dyno_is_reasonable_max_neighbor_zero_or_negative():
     """Test when the maximum neighbor value is 0 or negative."""
+    assert dyno_is_reasonable(100, [0]) is True
     assert dyno_is_reasonable(100, [0, -10, -5]) is True
     assert dyno_is_reasonable(100, [-20, -10, -5]) is True
+    assert dyno_is_reasonable(-50, [-20, -10, 0]) is True
 
 
 def test_dyno_is_reasonable_within_threshold():
@@ -26,8 +30,10 @@ def test_dyno_is_reasonable_within_threshold():
     # max_neighbor = 100
     # max_acceptable = 100 * 1.30 = 130
     assert dyno_is_reasonable(130, [80, 90, 100]) is True
-    assert dyno_is_reasonable(129, [80, 90, 100]) is True
+    assert dyno_is_reasonable(129.99, [80, 90, 100]) is True
     assert dyno_is_reasonable(100, [80, 90, 100]) is True
+    assert dyno_is_reasonable(0, [80, 90, 100]) is True
+    assert dyno_is_reasonable(-50, [80, 90, 100]) is True
 
 
 def test_dyno_is_reasonable_exceeds_threshold():
@@ -35,17 +41,29 @@ def test_dyno_is_reasonable_exceeds_threshold():
     # With default threshold 0.30
     # max_neighbor = 100
     # max_acceptable = 100 * 1.30 = 130
+    assert dyno_is_reasonable(130.01, [80, 90, 100]) is False
     assert dyno_is_reasonable(131, [80, 90, 100]) is False
     assert dyno_is_reasonable(200, [80, 90, 100]) is False
 
 
 def test_dyno_is_reasonable_custom_threshold():
     """Test with a custom threshold."""
+    # With threshold 0.0 (strictly <= max_neighbor)
+    assert dyno_is_reasonable(100, [80, 90, 100], threshold=0.0) is True
+    assert dyno_is_reasonable(100.1, [80, 90, 100], threshold=0.0) is False
+
     # With custom threshold 0.50
-    # max_neighbor = 100
-    # max_acceptable = 100 * 1.50 = 150
+    # max_neighbor = 100 -> max_acceptable = 150
     assert dyno_is_reasonable(150, [80, 90, 100], threshold=0.50) is True
     assert dyno_is_reasonable(151, [80, 90, 100], threshold=0.50) is False
+
+
+def test_dyno_is_reasonable_unsorted_and_iterable_types():
+    """Test handling of unsorted neighbor lists, tuples, and sets."""
+    assert dyno_is_reasonable(130, [100, 50, 90]) is True
+    assert dyno_is_reasonable(131, [100, 50, 90]) is False
+    assert dyno_is_reasonable(130, (80, 100, 90)) is True
+    assert dyno_is_reasonable(130, {80, 90, 100}) is True
 
 
 def test_get_language_search_dirs():
