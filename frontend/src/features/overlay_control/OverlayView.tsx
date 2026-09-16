@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import {
   fetchHudStylesList,
+  fetchHudAuthorInfo,
   formatHudDropdownOptions,
   getHudUrlPrefix,
   isWipHudQueryEnabled,
@@ -165,15 +166,14 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     try {
       const cacheBuster = force ? `?t=${Date.now()}` : '';
       const prefix = overridePrefix || getHudUrlPrefix(hudStyles, styleName);
-      const res = await fetch(`.${prefix}/${styleName}/author.json${cacheBuster}`);
-      if (res.ok) {
-        const data = await res.json();
-        const info: AuthorInfo = {
-          author: data.author || t('Author'),
-          description: data.description || t('No description provided.')
+      const info = await fetchHudAuthorInfo(styleName, prefix, backendFetch, cacheBuster);
+      if (info) {
+        const localized: AuthorInfo = {
+          author: info.author || t('Author'),
+          description: info.description || t('No description provided.'),
         };
-        setAuthorCache(prev => ({ ...prev, [styleName]: info }));
-        setCurrentAuthorInfo(info);
+        setAuthorCache(prev => ({ ...prev, [styleName]: localized }));
+        setCurrentAuthorInfo(localized);
         return;
       }
     } catch (e) {

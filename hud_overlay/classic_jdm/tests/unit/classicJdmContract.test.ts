@@ -33,6 +33,13 @@ describe('Classic JDM HUD Contract', () => {
       expect(html).toContain("id=\"classicJdmCanvas\"");
       expect(html).toContain("classic-jdm-model.js");
     });
+
+    it('positions Defi brand markings above needle center on both speedometer and tachometer', () => {
+      const html = readFileSync(indexPath, 'utf8');
+      const defiAboveMatches = html.match(/ctx\.fillText\('Defi',\s*cx,\s*cy\s*-\s*r\s*\*\s*0\.44\);/g);
+      expect(defiAboveMatches).not.toBeNull();
+      expect(defiAboveMatches?.length).toBe(2);
+    });
   });
 
   describe('Container Geometry', () => {

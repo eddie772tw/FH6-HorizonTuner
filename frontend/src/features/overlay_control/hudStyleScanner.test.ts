@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   fetchHudStylesList,
+  fetchHudAuthorInfo,
   formatHudDropdownOptions,
   getHudUrlPrefix,
   isWipHudQueryEnabled,
@@ -165,6 +166,74 @@ describe('hudStyleScanner frontend module tests', () => {
       expect(isWipHudQueryEnabled('?wip=0')).toBe(false);
       expect(isWipHudQueryEnabled('?dev=false')).toBe(false);
       expect(isWipHudQueryEnabled('')).toBe(false);
+    });
+  });
+
+  describe('fetchHudAuthorInfo', () => {
+    it('fetches and parses author.json via backendFetch without dot-prefix relative paths', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          author: 'Turn10 / PG',
+          description: 'Classic JDM cluster',
+        }),
+      });
+
+      const res = await fetchHudAuthorInfo('classic_jdm', '/hud', mockFetch, '?t=123');
+
+      expect(mockFetch).toHaveBeenCalledWith('/hud/classic_jdm/author.json?t=123');
+      expect(res).toEqual({
+        author: 'Turn10 / PG',
+        description: 'Classic JDM cluster',
+      });
+    });
+
+    it('handles custom HUD prefix /hud_user correctly', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          author: 'CommunityModder',
+          description: 'Custom drift dash',
+        }),
+      });
+
+      const res = await fetchHudAuthorInfo('my_drift', '/hud_user', mockFetch);
+
+      expect(mockFetch).toHaveBeenCalledWith('/hud_user/my_drift/author.json');
+      expect(res?.author).toBe('CommunityModder');
+    });
+
+    it('falls back to window.fetch if backendFetch throws, without dot-prefix relative path', async () => {
+      const mockBackendFetch = vi.fn().mockRejectedValue(new Error('Backend offline'));
+      const mockGlobalFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          author: 'FallbackAuthor',
+          description: 'Fallback description',
+        }),
+      });
+      vi.stubGlobal('fetch', mockGlobalFetch);
+
+      const res = await fetchHudAuthorInfo('vfd', '/hud', mockBackendFetch);
+
+      expect(mockBackendFetch).toHaveBeenCalledWith('/hud/vfd/author.json');
+      expect(mockGlobalFetch).toHaveBeenCalledWith('/hud/vfd/author.json');
+      expect(res?.author).toBe('FallbackAuthor');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('returns null when response is not ok or JSON parsing fails', async () => {
+      const mockFetch404 = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+      const res404 = await fetchHudAuthorInfo('nonexistent', '/hud', mockFetch404);
+      expect(res404).toBeNull();
+
+      const mockFetchBadJson = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => { throw new Error('Bad JSON'); },
+      });
+      const resBadJson = await fetchHudAuthorInfo('broken', '/hud', mockFetchBadJson);
+      expect(resBadJson).toBeNull();
     });
   });
 });

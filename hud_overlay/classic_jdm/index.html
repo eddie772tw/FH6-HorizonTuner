@@ -311,16 +311,21 @@
                     }
                 }
 
-                ctx.font = 'bold 10px Arial, sans-serif';
-                ctx.fillText(isMetric ? 'km/h' : 'MPH', cx, cy + r * 0.32);
-
+                // 比照轉速表：Defi 品牌標誌與 ADVANCE BF 移至指針上方開闊區域 (cy - r * 0.44 與 cy - r * 0.30)
                 if (!isTrd) {
-                    ctx.font = 'italic bold 20px Arial, sans-serif';
-                    ctx.fillText('Defi', cx, cy + r * 0.55);
+                    ctx.fillStyle = textColor;
+                    ctx.font = 'italic bold 19px Arial, sans-serif';
+                    ctx.fillText('Defi', cx, cy - r * 0.44);
+
                     ctx.fillStyle = dimColor;
-                    ctx.font = '7px Arial, sans-serif';
-                    ctx.fillText('ADVANCE BF', cx, cy + r * 0.72);
+                    ctx.font = 'bold 7.5px Arial, sans-serif';
+                    ctx.fillText('ADVANCE BF', cx, cy - r * 0.30);
                 }
+
+                // 單位文字置於指針下方
+                ctx.fillStyle = textColor;
+                ctx.font = 'bold 10px Arial, sans-serif';
+                ctx.fillText(isMetric ? 'km/h' : 'MPH', cx, cy + r * 0.35);
 
                 ctx.restore();
             }
