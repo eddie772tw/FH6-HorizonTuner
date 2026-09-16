@@ -11,8 +11,6 @@ Designed for long-term stability:
 - Fully compatible with PyInstaller packaging as standalone binary or Tauri sidecar.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import math
