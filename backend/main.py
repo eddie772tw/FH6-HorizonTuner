@@ -887,52 +887,105 @@ class DragRecorder:
             )
 
         # 4. Path Validity & OLS Linear Regression
-        x_coords = [p.get("PositionX", 0.0) for p in self.current_session]
-        z_coords = [p.get("PositionZ", 0.0) for p in self.current_session]
         n_pts = len(self.current_session)
-
         max_deviation_meters = 0.0
         path_valid = True
+        yaw_variance_rad = 0.0
 
         if n_pts >= 10:
-            mean_x = sum(x_coords) / n_pts
-            mean_z = sum(z_coords) / n_pts
+            sum_x = 0.0
+            sum_z = 0.0
+            cos_sum = 0.0
+            sin_sum = 0.0
+            x_coords = [0.0] * n_pts
+            z_coords = [0.0] * n_pts
+            yaws = [0.0] * n_pts
 
-            num = sum(
-                (x_coords[i] - mean_x) * (z_coords[i] - mean_z) for i in range(n_pts)
-            )
-            den = sum((x_coords[i] - mean_x) ** 2 for i in range(n_pts))
+            # Single pass to extract coordinates/yaws and compute sums
+            for i, p in enumerate(self.current_session):
+                x = p.get("PositionX", 0.0)
+                z = p.get("PositionZ", 0.0)
+                y = p.get("Yaw", 0.0)
+                x_coords[i] = x
+                z_coords[i] = z
+                yaws[i] = y
+                sum_x += x
+                sum_z += z
+                cos_sum += math.cos(y)
+                sin_sum += math.sin(y)
+
+            mean_x = sum_x / n_pts
+            mean_z = sum_z / n_pts
+
+            num = 0.0
+            den = 0.0
+            for i in range(n_pts):
+                dx = x_coords[i] - mean_x
+                dz = z_coords[i] - mean_z
+                num += dx * dz
+                den += dx * dx
 
             if den == 0:
-                deviations = [abs(x - mean_x) for x in x_coords]
+                max_dev = 0.0
+                for x in x_coords:
+                    dev = abs(x - mean_x)
+                    if dev > max_dev:
+                        max_dev = dev
+                max_deviation_meters = max_dev
             else:
                 a = num / den
                 b = mean_z - a * mean_x
                 denom = (a**2 + 1) ** 0.5
-                deviations = [
-                    abs(a * x_coords[i] - z_coords[i] + b) / denom for i in range(n_pts)
-                ]
+                max_dev = 0.0
+                for i in range(n_pts):
+                    dev = abs(a * x_coords[i] - z_coords[i] + b) / denom
+                    if dev > max_dev:
+                        max_dev = dev
+                max_deviation_meters = max_dev
 
-            max_deviation_meters = max(deviations)
             if max_deviation_meters > 3.0:
                 path_valid = False
 
-        # 5. Yaw stability (using vector average to handle -pi/pi wrap-around)
-        yaws = [p.get("Yaw", 0.0) for p in self.current_session]
+            # 5. Yaw stability (using vector average to handle -pi/pi wrap-around)
+            avg_cos = cos_sum / n_pts
+            avg_sin = sin_sum / n_pts
+            avg_yaw = math.atan2(avg_sin, avg_cos)
 
-        cos_sum = sum(math.cos(y) for y in yaws)
-        sin_sum = sum(math.sin(y) for y in yaws)
+            min_yaw_dev = float("inf")
+            max_yaw_dev = float("-inf")
+            for y in yaws:
+                diff = math.atan2(math.sin(y - avg_yaw), math.cos(y - avg_yaw))
+                if diff < min_yaw_dev:
+                    min_yaw_dev = diff
+                if diff > max_yaw_dev:
+                    max_yaw_dev = diff
 
-        avg_cos = cos_sum / n_pts if n_pts > 0 else 1.0
-        avg_sin = sin_sum / n_pts if n_pts > 0 else 0.0
-        avg_yaw = math.atan2(avg_sin, avg_cos)
+            yaw_variance_rad = max_yaw_dev - min_yaw_dev if n_pts > 0 else 0.0
+        elif n_pts > 0:
+            # Fallback for small sessions (< 10 points)
+            cos_sum = 0.0
+            sin_sum = 0.0
+            yaws = []
+            for p in self.current_session:
+                y = p.get("Yaw", 0.0)
+                yaws.append(y)
+                cos_sum += math.cos(y)
+                sin_sum += math.sin(y)
 
-        yaw_devs = []
-        for y in yaws:
-            diff = math.atan2(math.sin(y - avg_yaw), math.cos(y - avg_yaw))
-            yaw_devs.append(diff)
+            avg_cos = cos_sum / n_pts
+            avg_sin = sin_sum / n_pts
+            avg_yaw = math.atan2(avg_sin, avg_cos)
 
-        yaw_variance_rad = max(yaw_devs) - min(yaw_devs) if yaw_devs else 0.0
+            min_yaw_dev = float("inf")
+            max_yaw_dev = float("-inf")
+            for y in yaws:
+                diff = math.atan2(math.sin(y - avg_yaw), math.cos(y - avg_yaw))
+                if diff < min_yaw_dev:
+                    min_yaw_dev = diff
+                if diff > max_yaw_dev:
+                    max_yaw_dev = diff
+
+            yaw_variance_rad = max_yaw_dev - min_yaw_dev
 
         # 6. Differential Lock Diagnostics (focusing on asymmetry and fishtailing)
         active_pts = [

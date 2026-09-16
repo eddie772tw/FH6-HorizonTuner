@@ -61,3 +61,7 @@
 ## 2024-11-26 - O(1) Circular Buffers in Canvas Render Loops
 **Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
 **Action:** Replace `Array.shift()` with a fixed-size array and an `offset` index to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offset + index) % capacity` to traverse elements sequentially.
+
+## 2026-03-31 - Single-pass telemetry path and yaw stability analysis
+**Learning:** Performing multiple list comprehensions and list allocations over session telemetry points in `DragRecorder.analyze()` (extracting `x_coords`, `z_coords`, `yaws`, `deviations`, and `yaw_devs`) creates redundant list traversals and intermediate allocations.
+**Action:** Consolidate data extractions into a single loop pass when `n_pts >= 10`, calculating sums and lists simultaneously, and compute maximum deviation and yaw variance inline to reduce loop iterations and intermediate memory allocations.
