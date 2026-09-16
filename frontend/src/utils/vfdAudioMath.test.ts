@@ -39,6 +39,29 @@ describe('vfdAudioMath', () => {
       expect(state.holdTicks).toEqual([10, 10, 10]);
     });
 
+    it('sets holdTicks to 0 for initial zero band values and holdDurationTicks for positive values', () => {
+      const bands = [0.0, 0.5, 0.0, 1.0];
+      const state = updatePeakHold(bands, null, 10, 0.04);
+      expect(state.values).toEqual([0.0, 0.5, 0.0, 1.0]);
+      expect(state.holdTicks).toEqual([0, 10, 0, 10]);
+    });
+
+    it('re-initializes state if prevState band count does not match current bands count', () => {
+      const prevState = { values: [0.8, 0.8], holdTicks: [5, 5] };
+      const currentBands = [0.5, 0.6, 0.7];
+      const state = updatePeakHold(currentBands, prevState, 8, 0.04);
+      expect(state.values).toEqual([0.5, 0.6, 0.7]);
+      expect(state.holdTicks).toEqual([8, 8, 8]);
+    });
+
+    it('updates value and resets hold ticks when current band value rises above previous peak', () => {
+      const prevState = { values: [0.5, 0.3], holdTicks: [2, 0] };
+      const currentBands = [0.8, 0.6];
+      const state = updatePeakHold(currentBands, prevState, 10, 0.04);
+      expect(state.values).toEqual([0.8, 0.6]);
+      expect(state.holdTicks).toEqual([10, 10]);
+    });
+
     it('holds peak value when current band drops', () => {
       const initialBands = [0.9, 0.9, 0.9];
       let state = updatePeakHold(initialBands, null, 5, 0.1);
@@ -63,6 +86,34 @@ describe('vfdAudioMath', () => {
       // Tick 2: drops to 0.0 -> decay by 0.2 to 0.8
       state = updatePeakHold([0.0], state, 1, 0.2);
       expect(state.values[0]).toBeCloseTo(0.8);
+    });
+
+    it('clamps decay at current band value if decayed value falls below current band', () => {
+      const prevState = { values: [0.3], holdTicks: [0] };
+      const currentBands = [0.25];
+      // Decay step 0.1 would bring 0.3 -> 0.2, but current band is 0.25, so max(0.25, 0.20) = 0.25
+      const state = updatePeakHold(currentBands, prevState, 10, 0.1);
+      expect(state.values[0]).toBe(0.25);
+      expect(state.holdTicks[0]).toBe(0);
+    });
+
+    it('uses default parameters (holdDurationTicks = 10, decayStep = 0.04) when omitted', () => {
+      // 1. Initial state with defaults
+      let state = updatePeakHold([0.5]);
+      expect(state.values).toEqual([0.5]);
+      expect(state.holdTicks).toEqual([10]);
+
+      // 2. Step 10 times to deplete hold ticks from 10 to 0
+      for (let i = 0; i < 10; i++) {
+        state = updatePeakHold([0.1], state);
+      }
+      expect(state.values[0]).toBe(0.5);
+      expect(state.holdTicks[0]).toBe(0);
+
+      // 3. 11th step decays by default decayStep (0.04)
+      state = updatePeakHold([0.1], state);
+      expect(state.values[0]).toBeCloseTo(0.46);
+      expect(state.holdTicks[0]).toBe(0);
     });
   });
 
