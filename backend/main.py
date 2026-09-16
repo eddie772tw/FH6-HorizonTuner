@@ -1883,6 +1883,9 @@ app.include_router(
 
 # --- Languages API ---
 
+# Global cache dictionary to prevent repeated disk reads for language files
+LANGUAGE_CACHE: dict[str, dict] = {}
+
 
 @app.get("/api/languages")
 async def list_languages():
@@ -1921,6 +1924,10 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
     if code == "en-us":
         return {}
 
+    # Performance optimization: Serve previously loaded language dictionary from memory cache
+    if code in LANGUAGE_CACHE:
+        return LANGUAGE_CACHE[code]
+
     clean_code = os.path.basename(code)
     for lang_dir in get_language_search_dirs():
         if not os.path.exists(lang_dir):
@@ -1929,11 +1936,15 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
         if file_path and os.path.exists(file_path):
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    LANGUAGE_CACHE[code] = data
+                    return data
             except Exception as e:
                 logger.error(f"Failed to read language file {file_path}: {e}")
 
-    return {"error": "Language not found"}
+    err_resp = {"error": "Language not found"}
+    LANGUAGE_CACHE[code] = err_resp
+    return err_resp
 
 
 # --- MCP Endpoints ---
