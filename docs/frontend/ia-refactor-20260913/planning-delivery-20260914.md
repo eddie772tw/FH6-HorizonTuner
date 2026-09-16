@@ -39,13 +39,13 @@
 | 角色 | 模型與思考起點 | 責任 |
 | --- | --- | --- |
 | Coordinator | 本 task 主代理 | 共享契約、Shell/providers、locale、跨 lane 決策、整合順序、最終驗收與文件 |
-| A：Sessions / Live | Terra / high 起 | 分析頁與即時頁拆分、selection/refresh 保護、A-D review 接點 |
-| B：HUD | Terra / xhigh 起 | runtime/controller/native 邊界；props 固定後可將新面板交 Luna |
+| A：Sessions / Live | Luna / high 起 | 分析頁與即時頁拆分、selection/refresh 保護、A-D review 接點 |
+| B：HUD | Luna / xhigh 起 | runtime/controller/native 邊界；props 固定後依 handoff allowlist 拆分新面板 |
 | C：Settings | Luna / high 起 | 四分類、能力投影、現有設定完整保留 |
-| D：Tune / Road | Terra / xhigh 起 | 結果檢視遷移、既有動作與錄製 owner 保護 |
-| 獨立 Reviewer | Terra；有界文件檢核可由 Luna | 唯讀審查差異、契約、驗收證據；修復派回 owner |
+| D：Tune / Road | Luna / xhigh 起 | 結果檢視遷移、既有動作與錄製 owner 保護 |
+| 獨立 Reviewer | Luna / high 或 xhigh 起 | 唯讀審查差異、契約、驗收證據；修復派回 owner |
 
-思考起點不是上限，按問題提高至模型支援等級。複雜的跨頁 race、共享 state、原生生命週期與產品取捨由 Coordinator 直接處理。受目前四個並行席位限制，同時最多三個子代理；若 A/B/C 正在執行，要先釋出席位再派獨立 reviewer 或 B 的面板子代理。
+思考起點不是上限，按問題提高至模型支援等級。複雜的跨頁 race、共享 state、原生生命週期與產品取捨由 Coordinator/root 直接處理。受目前四個並行席位限制，同時最多三個子代理；若 A/B/C 正在執行，要先釋出席位再派獨立 reviewer 或 B 的面板子代理。
 
 本 task 的短期工作預設使用子代理。需要使用者獨立追蹤的子 task 時，依明確建立要求使用獨立 worktree；以實際回傳的 task ID、工作路徑及 branch 登記，不先填虛構 task ID。交接文件對兩種形式均自足。
 

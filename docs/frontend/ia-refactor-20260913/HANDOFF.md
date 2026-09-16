@@ -39,7 +39,7 @@
 | 順序 | 文件 | 用途 |
 | --- | --- | --- |
 | 1 | [開發計畫](README.md) | 目標、相對附件修訂、Wave 依賴、模型與整合策略 |
-| 2 | [工作單](work-orders.md) | Coordinator/A/B/C/D ownership、Luna/Terra 派發內容及 handoff 模板 |
+| 2 | [工作單](work-orders.md) | Coordinator/A/B/C/D ownership、Luna 派發內容及 handoff 模板 |
 | 3 | [介面與 gate](contracts-and-gates.md) | state-lifetime 表、A-D freeze、adapter 移除、逐波出口與 PR-ready 判定 |
 | 4 | [驗收矩陣](acceptance.md) | Full/Lite、Tune、Sessions、HUD、Settings、效能/真實證據要求 |
 | 5 | [執行紀錄](execution.md) | 當前 gate、owner 與既有 PR 的精確 head 狀態 |
@@ -63,7 +63,7 @@
 1. 先核對使用者當時要求、main/remote SHA、所有 worktree dirty paths 與 ownership；不要重建或覆蓋本快照中的草稿。
 2. 讀實作快照，將未合併 commits、未測 WIP 與缺少的 G0 native/performance 分開處理；先核對 G0-code，另列 G0-observability 缺項。
 3. 沿已對齊 P1 的 road-reviewed 接續修正，保留原分支；完成 Tune 複查、Road/Sessions blocker 修正與 HUD B0 修查，root 才完成 G1-core 和 Shell/Full/Lite 接線。
-4. 通過 G2 後公布共同 WAVE2_BASE_SHA，派 A/B/C；在 A-D slot freeze 後才派 D。短期子工作用 Luna/Terra 子代理，獨立使用者任務須有明確建立要求。
+4. 通過 G2 後公布共同 WAVE2_BASE_SHA，派 A/B/C；在 A-D slot freeze 後才派 D。短期子工作僅用 Luna 子代理，獨立使用者任務須有明確建立要求；複雜協調與決策由 Coordinator/root 處理。
 5. 逐次 review、接線及隔離組合驗證；更新精確 head 的 PR/check/evidence；G5 缺必要真實證據的相關 PR 保持 draft。
 
 根據本次交付範圍，下一輪不直接宣告任一程式 lane done，也不把兩個既有 PR 的 CI 視為未提交 WIP 的驗證。

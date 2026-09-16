@@ -1,6 +1,6 @@
 # W2-B：HUD 設計交接
 
-Task：HUD controller 與面板拆分。Status：`proposed`。Owner：Coordinator 保管設計，未發 W2-B write lease。Model：Terra / xhigh 起；面板可另派 Luna。更新：2026-09-14。
+Task：HUD controller 與面板拆分。Status：`proposed`。Owner：Coordinator 保管設計，未發 W2-B write lease。Model：Luna / xhigh 起；所有面板 lane 亦僅派 Luna。更新：2026-09-14。
 
 盤點來源：Shell `54165303f12c9598872905571f7162cc5f80effa`，工作區 `D:/FH6-frontend-ia-20260913/shell-race-fix`。這是來源 SHA，並非 `WAVE2_BASE_SHA`。正式開工須依 [契約與關卡](../contracts-and-gates.md) 取得 G2 PASS、當時共同基準與 ownership。
 

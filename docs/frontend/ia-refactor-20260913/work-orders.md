@@ -18,7 +18,7 @@ G2 等待期間完成的 [W2-A 拆分設計](handoffs/w2-a-design-preflight-2026
 | W1/B0：HUD runtime 前置 | `frontend/src/features/overlay_control/**`，排除 hudConfig.ts public contract | G0-code + P1 精確 SHA 後可開始；權威讀取/寫入存活完成後交 root 接入 P2，是 G2 前置 |
 | W2/A：Sessions / Live 完整重構 | Live/analysis/telemetry/drag_test；Sessions 僅限下方 A 精確檔案表，排除 root 的 runtime/race/preflight | G2 + WAVE2_BASE_SHA 後，Coordinator 登記 transfer SHA；D/最終接線前 A 停寫並 handoff |
 | W2/B1–B2：HUD controller / panels | 同 W1/B0 路徑 | 僅 G2 + WAVE2_BASE_SHA 後；B 接手完整 metadata/native adapter 與 OverlayView composition，root 只接 Shell |
-| B2-panel（選用 Luna） | 僅 B handoff 列明的三個新 panel 檔案；其餘測試/CSS/controller 仍由 B 持有 | B1 props freeze，具名檔案由 B 移交且停止寫入；B2 handoff 後才交回 B |
+| B2-panel（Luna） | 僅 B handoff 列明的三個新 panel 檔案；其餘測試/CSS/controller 仍由 B 持有 | B1 props freeze，具名檔案由 B 移交且停止寫入；B2 handoff 後才交回 B |
 | C：Settings | `frontend/src/features/settings/**` | G2 完成後 |
 | D：Tune / Road | `frontend/src/features/tuning/**`、`frontend/src/features/road/**` | A foundation 已整合，且 Coordinator 釋放 W1 的 Tune state adapter 後 |
 | Reviewer | 唯讀上述程式、diff、handoff、測試結果 | 不自行修復作者檔案 |
@@ -35,13 +35,13 @@ Locales 統一由 Coordinator 寫。各 lane 在自己的 handoff 提供 key、�
 | --- | --- | --- | --- | --- |
 | 前端 IA：共用 Shell 與契約 | 本對話 Coordinator | 保留本任務 | 現存 `codex/frontend-ia-contracts-20260914`、`codex/frontend-ia-shell-20260914` | 恢復實作後先核對 G0-code、既有 W1 差異 |
 | W1：Tune / Road / Sessions / HUD 狀態前置 | `gpt-5.6-terra` / xhigh | 獨立 worktree 子代理 | 現存分支見 execution.md | 核對 G0-code，指定各自 BASE_SHA；一次最多三條子代理寫入 lane |
-| 前端 IA：Sessions 與 Live | `gpt-5.6-terra` / high | 子代理 A；可依使用者要求建立獨立任務 | `codex/frontend-ia-sessions-20260913`（預定） | G2、WAVE2_BASE_SHA |
-| 前端 IA：HUD 控制與面板拆分 | `gpt-5.6-terra` / xhigh | 子代理 B；可依使用者要求建立獨立任務 | `codex/frontend-ia-hud-20260913`（預定） | 同上 |
+| 前端 IA：Sessions 與 Live | `gpt-5.6-luna` / high | 子代理 A；可依使用者要求建立獨立任務 | `codex/frontend-ia-sessions-20260913`（預定） | G2、WAVE2_BASE_SHA |
+| 前端 IA：HUD 控制與面板拆分 | `gpt-5.6-luna` / xhigh | 子代理 B；可依使用者要求建立獨立任務 | `codex/frontend-ia-hud-20260913`（預定） | 同上 |
 | 前端 IA：Settings 能力與設定面板 | `gpt-5.6-luna` / high | 子代理 C；可依使用者要求建立獨立任務 | `codex/frontend-ia-settings-20260913`（預定） | 同上 |
-| 前端 IA：Tune 與 Road 結果整合 | `gpt-5.6-terra` / xhigh | 子代理 D；可依使用者要求建立獨立任務 | `codex/frontend-ia-validation-20260913`（預定） | Shell + A foundation 已接線、A-D 介面 freeze、指定 BASE_SHA |
-| 前端 IA：整合驗收 | Coordinator + Terra reviewer | 本對話 + 短期唯讀子代理 | `codex/frontend-ia-acceptance-20260913` | A/B/C/D 接線完成 |
+| 前端 IA：Tune 與 Road 結果整合 | `gpt-5.6-luna` / xhigh | 子代理 D；可依使用者要求建立獨立任務 | `codex/frontend-ia-validation-20260913`（預定） | Shell + A foundation 已接線、A-D 介面 freeze、指定 BASE_SHA |
+| 前端 IA：整合驗收 | Coordinator + Luna reviewer | 本對話 + 短期唯讀子代理 | `codex/frontend-ia-acceptance-20260913` | A/B/C/D 接線完成 |
 
-思考起點不是上限。Luna/ Terra 可依問題提升至當時工具列出的支援等級；複雜 shared 架構與產品取捨由 Coordinator 直接處理。子任務不要再建立新的使用者任務；若需要短期子代理，先劃分它獨占的新檔案範圍。
+思考起點不是上限。Luna 可依問題提升至當時工具列出的支援等級；複雜 shared 架構、跨 lane 協調與產品取捨由 Coordinator/root 直接處理。子任務不要再建立新的使用者任務；若需要短期 Luna 子代理，先劃分它獨占的新檔案範圍。
 
 規劃 worktree 已存在於 `D:/FH6-frontend-ia-20260913/plan`。後續子對話使用獨立 worktree，記錄工具實際回傳的路徑；不假設新任務會自動使用此 plan 路徑。Git 專案預設以 worktree 建任務，先確認 branch/head，將 lane branch 對齊指定 BASE_SHA 才寫碼，不共用 main checkout。
 
@@ -136,7 +136,7 @@ A 可讀上述 root 檔案並消費凍結的 guard/intent，不更改 background
 
 ## 8. Reviewer 工作單
 
-使用 Terra，預設 high/xhigh，唯讀。以同一 BASE_SHA、實際 head SHA 和 diff 檢查 ownership、契約 consumer、狀態保留、async ordering、lifecycle、variant、測試與未測範圍。找可重現的行為問題，不以檔案大小或名稱當缺陷。
+使用 Luna，預設 high/xhigh，唯讀。以同一 BASE_SHA、實際 head SHA 和 diff 檢查 ownership、契約 consumer、狀態保留、async ordering、lifecycle、variant、測試與未測範圍。找可重現的行為問題，不以檔案大小或名稱當缺陷。
 
 回覆 findings 必須含檔案/行號、觸發情境、影響及最小修正方向。若無 findings 明說已檢查範圍，仍保留 native/runtime 證據限制。若需要修改，由 Coordinator 派回原 owner 或正式轉交；reviewer 不搶寫。
 

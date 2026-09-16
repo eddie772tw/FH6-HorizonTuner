@@ -155,11 +155,11 @@ flowchart TD
 | W1 / P1（原 Phase 1） | Coordinator | typed manifest/capabilities/intent、dead overlay category；C1–C5 具體化，清除 generic any channel。保留 tune restore contract |
 | W1 / 狀態前置 | Coordinator + Terra 子代理 | Tune/Road 狀態、A0 Sessions/Live adapter、B0 HUD 權威設定與 pending writes；每條路徑單一 owner，整合前交接；G1-core freeze（C4 的 review slot 留待 A→D 接點確認） |
 | W1 / P2（原 Phase 2） | Coordinator | 共用 Shell/Header/Menu/Status；接入已審查的狀態前置，以候選分支驗證 active-only mount；通過 G2 才放行 W2 |
-| W2 / A1、A2（原 Phase 3） | Terra 任務 A | A1 穩定 Live/Sessions 邊界與 async selection；A2 拆 Analysis library/header/actions/summary/comparison/track，保留既有能力 |
-| W2 / B1、B2（原 Phase 5） | Terra 任務 B | B1 controller/config concurrency/lifecycle；B2 Setup/Layout/Advanced、能力對照。Luna 只接獨立檔案的機械拆分 |
+| W2 / A1、A2（原 Phase 3） | Luna 任務 A | A1 穩定 Live/Sessions 邊界與 async selection；A2 拆 Analysis library/header/actions/summary/comparison/track，保留既有能力 |
+| W2 / B1、B2（原 Phase 5） | Luna 任務 B | B1 controller/config concurrency/lifecycle；B2 Setup/Layout/Advanced、能力對照。B2 依 handoff allowlist 執行，避免與 controller 或共享契約重疊 |
 | W2 / C（原 Phase 6） | Luna 任務 C | capability-aware SettingsSurface，ModalPortal，保留原設定；AppMenu 接線由 Coordinator |
-| W3 / D（原 Phase 4） | Terra 任務 D | A foundation 已整合後，Road review export、Tune history action；Coordinator 接入 Sessions 後才移除舊 reviewHistory |
-| W4 / P7（原 Phase 7） | Coordinator + Terra reviewer | 清掉各 Feature 的暫存 adapter，resource inventory、60Hz/CPU/RSS/切頁量測，完成組合整合審核 |
+| W3 / D（原 Phase 4） | Luna 任務 D | A foundation 已整合後，Road review export、Tune history action；Coordinator 接入 Sessions 後才移除舊 reviewHistory |
+| W4 / P7（原 Phase 7） | Coordinator + Luna reviewer | 清掉各 Feature 的暫存 adapter，resource inventory、60Hz/CPU/RSS/切頁量測，完成組合整合審核 |
 | W4 / P8（原 Phase 8 + 文件 PR） | Coordinator + reviewer | 完整 Full/Lite smoke，更新 README/README.en/架構文件；Journal 僅登錄可重現的學習 |
 
 P2 的薄 adapter 需登錄於 [相容程式移除表](contracts-and-gates.md)，包括路徑、行為、測試、移除 owner 與最晚 gate。W1 子代理交接後 Coordinator 才接線，W2 再正式釋放給 A/B/C，W3 釋放給 D；不得同時寫入。若某工作區卸載 gate 未過，不宣告 G2 通過、不啟動 W2；優先保存必要 controller/state，不能恢復整個 App 常駐來繞過驗收。
@@ -168,12 +168,12 @@ P2 的薄 adapter 需登錄於 [相容程式移除表](contracts-and-gates.md)�
 
 ## 6. 模型、子代理與子對話策略
 
-本對話持續擔任 Coordinator，保留架構取捨、共享契約、衝突解決、native 驗收與最終結論。Terra 用於 Sessions、HUD controller、Tune/Road 和獨立 review；Luna 用於 Settings、已凍結介面下的 panel 抽離、pure selectors/tests 與文件核對。
+本對話持續擔任 Coordinator/root，保留架構取捨、共享契約、衝突解決、native 驗收與最終結論。Luna 執行 Sessions、HUD controller、Tune/Road、Settings、已凍結介面下的 panel 抽離、pure selectors/tests 與文件核對；複雜協調與產品決策由 Coordinator/root 直接處理。
 
-預設 Terra `high` 或 `xhigh`，Luna `high`；複雜問題可提高到該模型支援的最高等級，沒有本計畫額外上限。若兩輪仍不能解決契約或 lifecycle 問題，回到 Coordinator 判斷，不強迫拆成更小的委派。
+預設 Luna `high` 或 `xhigh`；複雜問題可提高到該模型支援的最高等級，沒有本計畫額外上限。若兩輪仍不能解決契約或 lifecycle 問題，回到 Coordinator/root 判斷，不強迫拆成更小的委派。
 
 - 短、可獨立驗證的盤點/抽取/review 使用子代理；已有 Terra/Luna scouts、Terra 狀態前置及 Luna reviewer 紀錄。恢復時的 active owner 以 execution.md 為準。
-- 目前沒有新增使用者擁有的實作任務。當前請求內的子工作預設使用子代理與獨立 worktree；若使用者後續明確要求建立可分別追蹤的子任務，再按工作單建立 Luna/Terra 任務，並沿原任務續談。文件中的預定任務名稱不代表任務已存在。
+- 目前沒有新增使用者擁有的實作任務。當前請求內的子工作預設使用 Luna 子代理與獨立 worktree；若使用者後續明確要求建立可分別追蹤的子任務，再按工作單建立 Luna 任務，並沿原任務續談。文件中的預定任務名稱不代表任務已存在。
 - 原則最多三條寫入 lane，同時保留 Coordinator。需要 reviewer 時釋放一個完成 lane 的執行位；不讓 reviewer 同時修改被 review 的檔案。
 - 每個工作單含 exact base、worktree、contract 版本、allowed paths、禁止寫入、交付與停止條件。各 lane 單寫自己的 handoff；Coordinator 單寫本計畫與總交接。
 
