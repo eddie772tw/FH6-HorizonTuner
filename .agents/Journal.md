@@ -1,5 +1,33 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-15 / HUD 及時重新載入失效修復、Launcher 全域快取穿透與靜態防快取標頭（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復開發模式下修改 `hud_overlay/<style>/` 靜態檔案後，及時重新載入（Reload HUD）無法載入最新 HTML/JS 的快取失效問題。
+- **Learning**：
+  1. **WebView2 / 瀏覽器多層快取陷阱**：`hud_overlay/index.html`（Launcher）在 `loadHud` 中過去僅為 `s650_hmi` 開放條件式快取穿透（`force || name === 's650_hmi'`），其他樣式在初次載入或透過 Tauri `reload_hud_window` 重新載入 Launcher 時，iframe URL 均不帶 `t=${Date.now()}` query param。
+  2. **Starlette StaticFiles 預設標頭缺失**：後端 FastAPI 預設掛載的 `StaticFiles` 僅回傳 ETag 與 Last-Modified，未發送 `Cache-Control: no-cache`，導致 WebView2 判定靜態 HTML/JS/CSS 仍有效而直接自記憶體或磁碟快取載入舊檔。
+  3. **雙重防快取穿透架構 (Dual Cache Busting)**：前端在 `loadHud` 統一所有 HUD 樣式均附帶 `?t=${Date.now()}`；後端以 `HudStaticFiles` 覆寫 `get_response`，對 `/hud` 與 `/hud_user` 回應強制注入 `Cache-Control: no-cache, no-store, must-revalidate`、`Pragma: no-cache` 及 `Expires: 0`，雙重保障動態開發時的熱重載體驗。
+- **Action**：
+  1. 修改 `hud_overlay/index.html`，使 `loadHud` 對所有 HUD 樣式一律加上時間戳快取穿透參數。
+  2. 擴充 `backend/main.py` 定義 `HudStaticFiles`，並套用於 `/hud` 與 `/hud_user` 掛載點。
+- **Evidence**：後端測試 335 passed (8 deselected)、前端測試 110 檔 762 passed、`ruff check backend/` 與 `ruff format --check backend/` 通過、`git diff --check` 通過。
+- **Skills**：`modular-refactoring`、`portable-release-validation`。
+
+## 2026-09-15 / HUD 基準縮放標準化、Classic JDM 多模式整合與動態遙測多功能小錶（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；依使用者需求重構 FH6 HUD 顯示系統：統一 1080p 基準縮放、整合 AE86 (TRD) 與 Defi 為 `classic_jdm` 樣式、新增紅光 7-Segment LED 檔顯、三聯小錶 Arcade Arc 弧形街機佈局，以及多功能小錶 1 & 2 下拉自訂與動態盤面印字。
+- **Learning**：
+  1. **HUD 基準縮放統一與多解析度自適應**：盤點 15 款 HUD 樣式，將單圓錶視覺直徑收斂於 280~290px，修正 `nfs15` (1.15) 與 `simple` (0.50) 的離群縮放，確立 1080p 為 1.0x 統一標準，消除切換樣式時畫面跳躍膨脹的問題。
+  2. **Classic JDM 雙模式轉速盤與街機弧形幾何**：整合 `initial_d` (TRD 11,000 RPM 非線性壓縮刻度) 與 `defi_triple` (Defi Advance BF 270度線性刻度) 為統一的 `classic_jdm`。三聯小錶固定維持 Defi 樣式。整體佈局採用街機專用尺寸（800×440）：轉速錶放大 15%（r=126）、速度錶縮小 15%（r=94）、AUX 1 與 AUX 2 橫向排列於速度錶左側、TURBO 錶位於轉速錶 45° 正左上方；移除 "SPEED" 與 "TACHO" 冗餘字樣，TRD 與 Defi 標誌共用上方開闊座標（`cy - r * 0.44`），`x1000 r/min` 統一置於 7-Segment LED 檔顯下方（`cy + r * 0.58`），右下角錨點固定且零邊界裁切。
+  3. **動態多功能小錶與 Forza 原生真實遙測映射**：Forza 原生 324-byte UDP 封包缺乏動態機油數據。將原 Defi 小錶抽象化為「多功能錶 1」與「多功能錶 2」，預設四輪即時平均胎溫與後輪即時平均胎溫，並支援前輪胎溫、4W/前/後懸吊行程平均及輪胎滑移率。錶面印字（`TIRE 4W`, `TIRE RR`, `SUSP 4W`）與單位（`°C`/`°F`, `%`）在 Canvas 動態生成，零寫死字串。
+  4. **前後端無痛向後相容性與組件解耦**：在 `backend/main.py` 與 `frontend/src/features/overlay_control/classic_jdm/config.ts` 實作自動遷移合約，舊設定檔之 `initial_d` 與 `defi_triple` 自動映射至 `classic_jdm`；獨立 `ClassicJdmSettingsCard.tsx` 遵循巨型組件解耦原則，保持 `OverlayView.tsx` 清爽。
+- **Action**：
+  1. 建立 `hud_overlay/classic_jdm/`（`classic-jdm-model.js`、`index.html`、`style.css`、`author.json`、`assets/trd_logo.svg`）與專屬單元合約測試 `classicJdmContract.test.ts`。
+  2. 建立 `frontend/src/features/overlay_control/classic_jdm/`（`config.ts`、`config.test.ts`、`ClassicJdmSettingsCard.tsx`）。
+  3. 擴充 `hudConfig.ts`、`hudStyleScanner.ts`、`OverlayView.tsx` 與 `backend/main.py`。
+  4. 校正 `nfs15` 與 `simple` 儀表之 `scaleMultiplier`，擴充 `hudScale.test.ts` 與 `test_overlay_api.py`。
+- **Evidence**：前端 110 測試檔案（760 tests）100% 通過；後端 335 tests 全數通過；`ruff check .` 與 `ruff format --check .` 全數通過；`git diff --check` 通過。
+- **Skills**：`halfmoon-design-system`、`huge-component-refactoring`、`telemetry-udp-protocol`、`modular-refactoring`。
 ## 2026-09-15 / 多 PR 協同分流審查、PR #351 歷史日誌與語法安全修復整併（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；使用者指示針對 PR #340～#345 以外的所有開放 PR 進行審查與 Merge 建議，並手動修正 PR #351 相關問題後予以合入。

@@ -405,7 +405,19 @@ IGNORED_HUD_DIRS = {
     "css",
     "js",
     "__pycache__",
+    "defi_triple",
+    "initial_d",
 }
+
+
+class HudStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
 
 if getattr(sys, "frozen", False):
     builtin_hud_path = os.path.join(RESOURCE_ROOT, "hud_overlay")
@@ -413,12 +425,12 @@ if getattr(sys, "frozen", False):
 
     if os.path.exists(builtin_hud_path):
         app.mount(
-            "/hud", StaticFiles(directory=builtin_hud_path, html=True), name="hud"
+            "/hud", HudStaticFiles(directory=builtin_hud_path, html=True), name="hud"
         )
     if os.path.exists(user_hud_path):
         app.mount(
             "/hud_user",
-            StaticFiles(directory=user_hud_path, html=True),
+            HudStaticFiles(directory=user_hud_path, html=True),
             name="hud_user",
         )
 else:
@@ -427,7 +439,7 @@ else:
     )
     if os.path.exists(hud_overlay_path):
         app.mount(
-            "/hud", StaticFiles(directory=hud_overlay_path, html=True), name="hud"
+            "/hud", HudStaticFiles(directory=hud_overlay_path, html=True), name="hud"
         )
 
 
@@ -2670,6 +2682,28 @@ def normalize_hud_config(data: dict) -> dict:
         and normalized.get("s650CenterWidget") not in S650_HMI_CENTER_WIDGETS
     ):
         normalized["s650CenterWidget"] = "drive"
+
+    # Legacy JDM HUD styles migration to classic_jdm
+    if hud_style == "initial_d":
+        normalized["hudStyle"] = "classic_jdm"
+        if "classicJdmTachStyle" not in normalized:
+            normalized["classicJdmTachStyle"] = "trd"
+        if "classicJdmShowTriple" not in normalized:
+            normalized["classicJdmShowTriple"] = True
+        if "classicJdmAux1" not in normalized:
+            normalized["classicJdmAux1"] = "tire_temp_4w"
+        if "classicJdmAux2" not in normalized:
+            normalized["classicJdmAux2"] = "tire_temp_rear"
+    elif hud_style == "defi_triple":
+        normalized["hudStyle"] = "classic_jdm"
+        if "classicJdmTachStyle" not in normalized:
+            normalized["classicJdmTachStyle"] = "defi"
+        if "classicJdmShowTriple" not in normalized:
+            normalized["classicJdmShowTriple"] = True
+        if "classicJdmAux1" not in normalized:
+            normalized["classicJdmAux1"] = "tire_temp_4w"
+        if "classicJdmAux2" not in normalized:
+            normalized["classicJdmAux2"] = "tire_temp_rear"
 
     return normalized
 
