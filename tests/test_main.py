@@ -134,3 +134,70 @@ def test_api_settings_forwarding_configuration():
     assert updated_data["forward_telemetry_enabled"] is True
     assert updated_data["forward_telemetry_host"] == "127.0.0.1"
     assert updated_data["forward_telemetry_port"] == 5300
+
+
+def test_normalize_general_unit_settings_default_fallback():
+    from main import DEFAULT_SETTINGS, GENERAL_UNIT_PROFILES, normalize_general_unit_settings
+
+    # None input should return metric profile default
+    res_none = normalize_general_unit_settings(None)
+    expected = dict(DEFAULT_SETTINGS["units"])
+    expected.update(GENERAL_UNIT_PROFILES["metric"])
+    assert res_none == expected
+
+    # Empty dict input should also default to metric profile
+    res_empty = normalize_general_unit_settings({})
+    assert res_empty == expected
+
+
+def test_normalize_general_unit_settings_metric_and_imperial():
+    from main import DEFAULT_SETTINGS, GENERAL_UNIT_PROFILES, normalize_general_unit_settings
+
+    # Explicit metric speed ("kmh") should result in metric profile
+    res_metric = normalize_general_unit_settings({"speed": "kmh"})
+    expected_metric = dict(DEFAULT_SETTINGS["units"])
+    expected_metric.update({"speed": "kmh"})
+    expected_metric.update(GENERAL_UNIT_PROFILES["metric"])
+    assert res_metric == expected_metric
+
+    # Explicit imperial speed ("mph") should result in imperial profile
+    res_imperial = normalize_general_unit_settings({"speed": "mph"})
+    expected_imperial = dict(DEFAULT_SETTINGS["units"])
+    expected_imperial.update({"speed": "mph"})
+    expected_imperial.update(GENERAL_UNIT_PROFILES["imperial"])
+    assert res_imperial == expected_imperial
+
+
+def test_normalize_general_unit_settings_mixed_and_custom_keys():
+    from main import DEFAULT_SETTINGS, GENERAL_UNIT_PROFILES, normalize_general_unit_settings
+
+    # Legacy mixed settings: speed=mph, but weight=kg (metric).
+    # Expected behavior: speed=mph forces the imperial profile, overwriting weight to lbs.
+    mixed_input = {
+        "speed": "mph",
+        "weight": "kg",
+        "power": "kw",  # non-profile custom unit key
+        "springRate": "Nmm",  # non-profile custom unit key
+    }
+    res_mixed = normalize_general_unit_settings(mixed_input)
+
+    expected = dict(DEFAULT_SETTINGS["units"])
+    expected.update(mixed_input)
+    expected.update(GENERAL_UNIT_PROFILES["imperial"])
+    assert res_mixed["weight"] == "lbs"
+    assert res_mixed["speed"] == "mph"
+    assert res_mixed["power"] == "kw"
+    assert res_mixed["springRate"] == "Nmm"
+    assert res_mixed == expected
+
+
+def test_normalize_general_unit_settings_invalid_input():
+    from main import DEFAULT_SETTINGS, GENERAL_UNIT_PROFILES, normalize_general_unit_settings
+
+    expected_default = dict(DEFAULT_SETTINGS["units"])
+    expected_default.update(GENERAL_UNIT_PROFILES["metric"])
+
+    # Non-dict inputs should safely fall back to default normalized dict
+    assert normalize_general_unit_settings("invalid_string") == expected_default
+    assert normalize_general_unit_settings(123) == expected_default
+    assert normalize_general_unit_settings(["list"]) == expected_default
