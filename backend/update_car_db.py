@@ -1,7 +1,7 @@
 import json
 import os
 import re
-import urllib.request
+from urllib.request import urlopen
 
 URL = "https://gist.githubusercontent.com/HDR/0659d1717bc61504bf83750628963f4f/raw/edd5ac8dbb000c024cd2c6359140feb21d609ba9/Forza%2520Horizon%25206%2520Car%2520Ordinals.json"
 DB_PATH = os.path.join(os.path.dirname(__file__), "car_database.json")
@@ -9,7 +9,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "car_database.json")
 
 def main():
     try:
-        with urllib.request.urlopen(URL) as response:
+        with urlopen(URL) as response:
             data = response.read().decode("utf-8")
             new_data = json.loads(data)
     except Exception as e:

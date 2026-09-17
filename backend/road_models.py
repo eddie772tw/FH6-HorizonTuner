@@ -1,7 +1,5 @@
 """Road workflow API inputs. Snapshot outputs use the same named JSON fields."""
 
-from __future__ import annotations
-
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -42,6 +40,23 @@ class RoadEvent(RoadInput):
     format: Literal["circuit", "sprint"]
     driverAssists: str = Field(default="unknown", max_length=160)
     conditions: str = Field(default="unknown", max_length=160)
+
+
+class SuggestedField(RoadInput):
+    value: float
+    unit: str = Field(max_length=16)
+
+
+class WorkflowRecommendation(RoadInput):
+    formulaVersion: Literal["tuningMath/measured-workflow-v1"]
+    inputSnapshot: dict
+    fields: dict[str, SuggestedField] = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def validate_units(self):
+        for key, field in self.fields.items():
+            validate_parameter_unit(key, field.unit)
+        return self
 
 
 class CreateRoadWorkflow(RoadInput):
@@ -146,23 +161,6 @@ class RoadComparison(RoadInput):
 class RoadDecision(RoadInput):
     reportId: str = Field(min_length=1, max_length=80)
     choice: Literal["keep-baseline", "keep-candidate", "retest-baseline"]
-
-
-class SuggestedField(RoadInput):
-    value: float
-    unit: str = Field(max_length=16)
-
-
-class WorkflowRecommendation(RoadInput):
-    formulaVersion: Literal["tuningMath/measured-workflow-v1"]
-    inputSnapshot: dict
-    fields: dict[str, SuggestedField] = Field(min_length=1, max_length=64)
-
-    @model_validator(mode="after")
-    def validate_units(self):
-        for key, field in self.fields.items():
-            validate_parameter_unit(key, field.unit)
-        return self
 
 
 class CompatibilitySnapshot(RoadInput):

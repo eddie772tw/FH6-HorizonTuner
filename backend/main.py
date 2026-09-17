@@ -81,7 +81,6 @@ import asyncio
 import gc
 import json
 import logging
-import subprocess
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
@@ -122,7 +121,7 @@ from motec_exporter import (
 )
 from motec_template import generate_motec_workspace_xml
 from overlay_metrics import OverlayPerformanceMetrics
-from path_security import safe_join_under_dir, safe_resolve_path
+from path_security import safe_resolve_path
 from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from road_router import create_road_router

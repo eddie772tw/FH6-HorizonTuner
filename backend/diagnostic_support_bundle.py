@@ -5,8 +5,6 @@ never receives telemetry frames or settings files, and it is created entirely
 in memory so a support export does not leave a second copy on disk.
 """
 
-from __future__ import annotations
-
 import io
 import json
 import re
