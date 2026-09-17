@@ -1207,5 +1207,9 @@
   "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
   "FH6-Horizon Tuner": "FH6-Horizon Tuner",
   "Are you sure you want to clear the telemetry feed?": "Are you sure you want to clear the telemetry feed?",
-  "Clear Feed": "Clear Feed"
+  "Clear Feed": "Clear Feed",
+  "FL Temp": "FL Temp",
+  "FR Temp": "FR Temp",
+  "RL Temp": "RL Temp",
+  "RR Temp": "RR Temp"
 }
