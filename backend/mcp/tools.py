@@ -1,7 +1,5 @@
 """Tool definitions, JSON schema validation, and dispatching for FH6-HorizonTuner MCP."""
 
-from __future__ import annotations
-
 import json
 from typing import Any
 

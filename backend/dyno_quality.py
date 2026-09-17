@@ -5,8 +5,6 @@ only clock is the telemetry packet timestamp; persistence and UI clocks do not
 participate in acceptance decisions.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from math import dist, isfinite, sqrt
 from statistics import median

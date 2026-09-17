@@ -12,7 +12,7 @@ import update_car_db
 
 def test_fetch_error():
     with (
-        patch("update_car_db.urllib.request.urlopen") as mock_urlopen,
+        patch("update_car_db.urlopen") as mock_urlopen,
         patch("builtins.print") as mock_print,
     ):
         mock_urlopen.side_effect = Exception("Network error")
@@ -22,7 +22,7 @@ def test_fetch_error():
 
 def test_file_not_found():
     with (
-        patch("update_car_db.urllib.request.urlopen") as mock_urlopen,
+        patch("update_car_db.urlopen") as mock_urlopen,
         patch("builtins.open", new_callable=mock_open) as mock_file,
         patch("update_car_db.json.dump") as mock_json_dump,
     ):
@@ -57,7 +57,7 @@ def test_file_not_found():
 
 def test_invalid_ordinal():
     with (
-        patch("update_car_db.urllib.request.urlopen") as mock_urlopen,
+        patch("update_car_db.urlopen") as mock_urlopen,
         patch("builtins.open", new_callable=mock_open, read_data="{}"),
         patch("update_car_db.json.dump") as mock_json_dump,
         patch("builtins.print") as mock_print,
@@ -95,7 +95,7 @@ def test_existing_entry_and_various_name_formats():
     }
 
     with (
-        patch("update_car_db.urllib.request.urlopen") as mock_urlopen,
+        patch("update_car_db.urlopen") as mock_urlopen,
         patch(
             "builtins.open", new_callable=mock_open, read_data=json.dumps(existing_db)
         ),
@@ -144,7 +144,7 @@ def test_skip_easter_egg_car_1215():
     }
 
     with (
-        patch("update_car_db.urllib.request.urlopen") as mock_urlopen,
+        patch("update_car_db.urlopen") as mock_urlopen,
         patch(
             "builtins.open", new_callable=mock_open, read_data=json.dumps(existing_db)
         ),

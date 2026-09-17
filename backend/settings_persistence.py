@@ -5,8 +5,6 @@ attempt to migrate telemetry/session storage, which has separate compatibility
 contracts.
 """
 
-from __future__ import annotations
-
 import asyncio
 import copy
 import json
