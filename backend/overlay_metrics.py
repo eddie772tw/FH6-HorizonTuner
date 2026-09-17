@@ -1,7 +1,5 @@
 """Bounded diagnostics for the overlay audio and media pipeline."""
 
-from __future__ import annotations
-
 from collections import Counter, deque
 from time import perf_counter
 from typing import Any

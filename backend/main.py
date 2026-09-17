@@ -81,7 +81,6 @@ import asyncio
 import gc
 import json
 import logging
-import subprocess
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
@@ -122,7 +121,7 @@ from motec_exporter import (
 )
 from motec_template import generate_motec_workspace_xml
 from overlay_metrics import OverlayPerformanceMetrics
-from path_security import safe_join_under_dir, safe_resolve_path
+from path_security import safe_resolve_path
 from pydantic import BaseModel, Field
 from race_recorder import AsyncRacePersistence, RaceRecorder
 from road_router import create_road_router
@@ -1936,6 +1935,9 @@ app.include_router(
 
 # --- Languages API ---
 
+# Global cache dictionary to prevent repeated disk reads for language files
+LANGUAGE_CACHE: dict[str, dict] = {}
+
 
 @app.get("/api/languages")
 async def list_languages():
@@ -1974,6 +1976,10 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
     if code == "en-us":
         return {}
 
+    # Performance optimization: Serve previously loaded language dictionary from memory cache
+    if code in LANGUAGE_CACHE:
+        return LANGUAGE_CACHE[code]
+
     clean_code = os.path.basename(code)
     for lang_dir in get_language_search_dirs():
         if not os.path.exists(lang_dir):
@@ -1982,11 +1988,15 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
         if file_path and os.path.exists(file_path):
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    LANGUAGE_CACHE[code] = data
+                    return data
             except Exception as e:
                 logger.error(f"Failed to read language file {file_path}: {e}")
 
-    return {"error": "Language not found"}
+    err_resp = {"error": "Language not found"}
+    LANGUAGE_CACHE[code] = err_resp
+    return err_resp
 
 
 # --- MCP Endpoints ---
@@ -2096,14 +2106,26 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
 # --- Post-Race Analysis API Endpoints ---
 
 
-@app.get("/api/analysis/config")
-async def get_analysis_config():
+def _read_analysis_config():
     if os.path.exists(ANALYSIS_LAYOUT_FILE):
         try:
             with open(ANALYSIS_LAYOUT_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to read analysis layout config: {e}")
+    return None
+
+
+def _save_analysis_config(config: dict):
+    with open(ANALYSIS_LAYOUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4)
+
+
+@app.get("/api/analysis/config")
+async def get_analysis_config():
+    config = await asyncio.to_thread(_read_analysis_config)
+    if config is not None:
+        return config
     # Default layout configuration
     return {
         "activeMetric": "speed",
@@ -2122,8 +2144,7 @@ async def get_analysis_config():
 @app.post("/api/analysis/config")
 async def save_analysis_config(config: dict):
     try:
-        with open(ANALYSIS_LAYOUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4)
+        await asyncio.to_thread(_save_analysis_config, config)
         return {"message": "Analysis layout saved successfully"}
     except Exception as e:
         logger.error(f"Failed to save analysis layout: {e}")

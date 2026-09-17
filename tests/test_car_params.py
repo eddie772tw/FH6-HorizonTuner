@@ -14,6 +14,27 @@ def mock_car_params_dir(monkeypatch):
         yield temp_dir
 
 
+def test_create_default_car_params():
+    params = main.create_default_car_params()
+    assert isinstance(params, dict)
+    assert params["weight"] == 1500
+    assert params["weight_distribution"] == 50
+    assert params["drivetrain"] == "RWD"
+    assert params["frontTireWidth"] == 245
+    assert params["frontTireAspect"] == 40
+    assert params["frontTireRim"] == 18
+    assert params["rearTireWidth"] == 245
+    assert params["rearTireAspect"] == 40
+    assert params["rearTireRim"] == 18
+    assert params["adjustability"] == {
+        "gearbox": "Full",
+        "gears": 6,
+        "suspension": "Race",
+        "arb": "Adjustable",
+    }
+    assert params["dyno_curve"] == {}
+
+
 def test_load_car_params_exists(mock_car_params_dir):
     car_id = "test_car_123"
     test_data = {"param1": 1, "param2": "value"}
