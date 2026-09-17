@@ -168,8 +168,9 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         <div className="border-bottom px-4 py-2 d-flex justify-content-between align-items-center" style={{ background: 'var(--surface-1)' }}>
           <div className="d-flex gap-4 align-items-center">
             <div className="d-flex align-items-center gap-2">
-              <label className="form-label mb-0 text-body-secondary fs-7">{t("Log Level")}:</label>
+              <label htmlFor="log-level-select" className="form-label mb-0 text-body-secondary fs-7">{t("Log Level")}:</label>
               <select
+                id="log-level-select"
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
                 className="form-select form-select-sm"
