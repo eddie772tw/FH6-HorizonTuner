@@ -2053,14 +2053,26 @@ async def save_tuning(car_id: str, save_name: str, data: dict):
 # --- Post-Race Analysis API Endpoints ---
 
 
-@app.get("/api/analysis/config")
-async def get_analysis_config():
+def _read_analysis_config():
     if os.path.exists(ANALYSIS_LAYOUT_FILE):
         try:
             with open(ANALYSIS_LAYOUT_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to read analysis layout config: {e}")
+    return None
+
+
+def _save_analysis_config(config: dict):
+    with open(ANALYSIS_LAYOUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4)
+
+
+@app.get("/api/analysis/config")
+async def get_analysis_config():
+    config = await asyncio.to_thread(_read_analysis_config)
+    if config is not None:
+        return config
     # Default layout configuration
     return {
         "activeMetric": "speed",
@@ -2079,8 +2091,7 @@ async def get_analysis_config():
 @app.post("/api/analysis/config")
 async def save_analysis_config(config: dict):
     try:
-        with open(ANALYSIS_LAYOUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4)
+        await asyncio.to_thread(_save_analysis_config, config)
         return {"message": "Analysis layout saved successfully"}
     except Exception as e:
         logger.error(f"Failed to save analysis layout: {e}")
