@@ -62,6 +62,10 @@
 **Learning:** Using `Array.shift()` inside a 60Hz high-frequency rendering loop (like telemetry overlays or radar) causes an O(N) penalty as the entire array is shifted in memory on every frame, leading to CPU spikes and GC pressure.
 **Action:** Replace `Array.shift()` with a fixed-size array and an `offset` index to simulate an O(1) circular buffer. Be sure to update all array iteration logic to modulo arithmetic `(offset + index) % capacity` to traverse elements sequentially.
 
+## 2026-03-31 - Single-pass telemetry path and yaw stability analysis
+**Learning:** Performing multiple list comprehensions and list allocations over session telemetry points in `DragRecorder.analyze()` (extracting `x_coords`, `z_coords`, `yaws`, `deviations`, and `yaw_devs`) creates redundant list traversals and intermediate allocations.
+**Action:** Consolidate data extractions into a single loop pass when `n_pts >= 10`, calculating sums and lists simultaneously, and compute maximum deviation and yaw variance inline to reduce loop iterations and intermediate memory allocations.
+
 ## 2026-09-08 - Offloading Blocking Sync I/O in Async API Endpoints
 **Learning:** Performing synchronous file I/O operations (e.g. `open`, `json.load`, `json.dump`) directly inside FastAPI `async def` endpoints blocks the main asyncio event loop thread, stalling concurrent WebSockets and background tasks.
 **Action:** Offload synchronous file I/O operations in `async def` endpoints to thread pool workers using `await asyncio.to_thread(func, *args)` to ensure the event loop remains unblocked.
@@ -69,3 +73,4 @@
 ## 2026-09-16 - Global Caching for Language Translation Files
 **Learning:** Repeatedly reading and parsing static JSON language files from disk on every `/api/languages/{code}` HTTP request causes unnecessary file I/O, path resolution, and JSON decoding overhead.
 **Action:** Implement an in-memory dictionary cache (`LANGUAGE_CACHE`) for loaded language JSON data to serve subsequent translation requests in O(1) time without disk reads.
+
