@@ -152,6 +152,33 @@ def test_api_languages_discovery_and_fallback(tmp_path, monkeypatch):
     assert res_invalid.json() == {"error": "Language not found"}
 
 
+def test_api_languages_cache():
+    import main
+    from fastapi.testclient import TestClient
+    from main import LANGUAGE_CACHE, app
+
+    client = TestClient(app)
+
+    # Clear cache before testing
+    LANGUAGE_CACHE.clear()
+
+    # First fetch should populate cache
+    assert "zh-tw" not in LANGUAGE_CACHE
+    res1 = client.get("/api/languages/zh-tw")
+    assert res1.status_code == 200
+    assert "zh-tw" in LANGUAGE_CACHE
+    assert LANGUAGE_CACHE["zh-tw"].get("__language_name__") == "繁體中文"
+
+    # Mutate cache entry to verify second fetch uses cache
+    LANGUAGE_CACHE["zh-tw"] = {"__language_name__": "Cached Test Lang"}
+    res2 = client.get("/api/languages/zh-tw")
+    assert res2.status_code == 200
+    assert res2.json() == {"__language_name__": "Cached Test Lang"}
+
+    # Clean up
+    LANGUAGE_CACHE.clear()
+
+
 def test_api_settings_forwarding_configuration():
     from fastapi.testclient import TestClient
     from main import app
