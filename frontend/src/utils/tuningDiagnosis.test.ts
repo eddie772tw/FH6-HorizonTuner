@@ -637,20 +637,44 @@ describe('collectTuningTelemetryEvents & revalidateTuningEventsOnSetupChange', (
   });
 
   describe('Tire Overheat Warning Threshold Contract', () => {
-    it('uses a unit-independent tire temperature warning threshold', () => {
-      const warningThresholdC = 105;
-      const toC = (fahrenheit: number) => (fahrenheit - 32) * 5 / 9;
-      expect(toC(180) > warningThresholdC).toBe(false);
+    describe('Celsius unit', () => {
+      it('returns false for temperatures below 105°C threshold', () => {
+        expect(isTireOverheated(90, 'C')).toBe(false);
+        expect(isTireOverheated(104.9, 'C')).toBe(false);
+      });
 
-      // Celsius mode: 105°C is safe, >105°C is overheated
-      expect(isTireOverheated(90, 'C')).toBe(false);
-      expect(isTireOverheated(105, 'C')).toBe(false);
-      expect(isTireOverheated(106, 'C')).toBe(true);
+      it('returns false when temperature is exactly at 105°C threshold', () => {
+        expect(isTireOverheated(105, 'C')).toBe(false);
+      });
 
-      // Fahrenheit mode: 180°F is normal (~82.2°C), 221°F is 105°C, 225°F is overheated (~107.2°C)
-      expect(isTireOverheated(180, 'F')).toBe(false);
-      expect(isTireOverheated(220, 'F')).toBe(false);
-      expect(isTireOverheated(225, 'F')).toBe(true);
+      it('returns true when temperature is strictly above 105°C threshold', () => {
+        expect(isTireOverheated(105.1, 'C')).toBe(true);
+        expect(isTireOverheated(150, 'C')).toBe(true);
+      });
+    });
+
+    describe('Fahrenheit unit', () => {
+      it('returns false for temperatures below threshold (221°F = 105°C)', () => {
+        expect(isTireOverheated(180, 'F')).toBe(false);
+        expect(isTireOverheated(220, 'F')).toBe(false);
+      });
+
+      it('returns false when temperature is exactly at threshold (221°F = 105°C)', () => {
+        expect(isTireOverheated(221, 'F')).toBe(false);
+      });
+
+      it('returns true when temperature is above threshold (221.1°F / 222°F)', () => {
+        expect(isTireOverheated(221.1, 'F')).toBe(true);
+        expect(isTireOverheated(222, 'F')).toBe(true);
+        expect(isTireOverheated(300, 'F')).toBe(true);
+      });
+    });
+
+    describe('default unit parameter', () => {
+      it('defaults to Celsius unit when unit parameter is omitted', () => {
+        expect(isTireOverheated(105)).toBe(false);
+        expect(isTireOverheated(106)).toBe(true);
+      });
     });
   });
 });
