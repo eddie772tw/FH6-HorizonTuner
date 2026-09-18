@@ -367,7 +367,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
             aria-label={`Open Data Out guide. ${telemetryHealth.label}`}
             title="Open Data Out guide and health details"
           >
-            <span className="d-none d-xl-inline">Data Out: </span>{telemetryHealth.state === 'active' ? 'Ready' : 'Check'}
+            <span className="d-none d-xl-inline">{t('Data Out: ')}</span>{telemetryHealth.state === 'active' ? t('Ready') : t('Check')}
           </button>
           <div 
             className="position-relative d-inline-block"
