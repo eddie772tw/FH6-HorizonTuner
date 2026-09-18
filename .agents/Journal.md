@@ -1,5 +1,21 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-18 / 斷油點特徵閉環自動判定、平滑 Dyno 曲線與齒比圖斷油端點對齊（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；解決部分車輛實際斷油轉速低於表底導致調校工作流 Step 3 資料採集卡死問題，並將調校齒比圖端點對齊至斷油轉速。
+- **Learning**：
+  1. **Dyno 形態特徵閉環自適應採集判定**：部分 Forza 車輛（如特定改裝或美式大排量引擎）之實際斷油轉速遠低於表底紅線（`EngineMaxRpm * 0.9`），導致傳統固定 16-bin 與 90% 表底門檻在 Step 3 永遠無法滿足。演算法改為偵測真實 Dyno 形態特徵：後峰值動力衰退達標（$\ge 12\%$）或全油門高轉斷油平原期累加（$\ge 350\text{ms}$），即可自適應收縮採集範圍為 `effectiveRedline * 0.85` 並以 $\ge 6$ bins 閉環判定完成，徹底捨棄脆弱的手動確認按鈕。
+  2. **10 RPM 聚合桶與二次貝茲平滑 Dyno 渲染**：即時 60Hz 遙測存在微小齒比震盪與離散噪聲。在 `<LiveDynoCurveCanvas />` 中採用 10 RPM 區間中位數/均值聚合，並以相鄰中點二次貝茲曲線插值繪製平滑雙曲線（Power 主色、Torque 副色），背景半透明高亮動力帶（Powerband）區域並垂直標注 Peak HP/TQ/Cutoff 指示線，提供直觀清晰的視覺回饋。
+  3. **齒比圖鋸齒升檔曲線端點對齊斷油轉速**：齒比圖（Speed vs RPM Chart）各檔理論最高速原先以錶底 `yLimit` 計算，造成低斷油轉速車輛的齒比線段右側終點虛高，連帶使下一檔切入點偏離實際。修正為統一以 `cutoffRpm`（優先取 `effectiveRedline`，fallback 至 `yLimit`）計算各檔終點車速與繪圖上限，使各檔線段右側終點精確貼齊斷油轉速，並使下一檔左側起點精確對齊換檔掉轉轉速 $(cutoffRpm \times \frac{ratio_{N+1}}{ratio_N})$，完美呈現實際換檔轉速域與車速。
+- **Action**：
+  1. 修改 `tuningMeasurement.ts`、`engineMeasurementArchive.ts`、`road_models.py`，新增動力衰退與平原期斷油檢測及前後端資料驗證。
+  2. 新增 `LiveDynoCurveCanvas.tsx`，並整合至 `TuningMeasurementStep.tsx`。
+  3. 修改 `GearingTuner.tsx`，導出 `computeGearingChartData` 純函數並加入斷油轉速參考線。
+  4. 擴充 `tuningMeasurement.test.ts`、`engineMeasurementArchive.test.ts`、`test_workflow_api.py`、`GearingTuner.test.ts`。
+  5. 於 `lang/zh-tw.json` 補充 `Rev Limiter` 翻譯。
+- **Evidence**：前端測試 110 檔案 789 tests 通過；後端 pytest 349 tests 通過；`tsc && vite build` 通過；`ruff check .` / `ruff format --check .` / `git diff --check` 通過。
+- **Skills**：`physics-tuning-math`、`halfmoon-design-system`、`modular-refactoring`。
+
 ## 2026-09-16 / V1.6 Release 發行前準備、版本契約平滑推進與文檔全域同步（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；完成 V1.6.0 Release 發行前版本號全域同步、安全支援週期轉移、發行說明撰寫與多語系主文檔更新。

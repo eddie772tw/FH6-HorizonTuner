@@ -66,6 +66,13 @@ export interface TuningMeasurementState {
   guidance: TuningMeasurementGuidance;
   identity?: TuningMeasurementIdentity;
   engineMaxRpm?: number;
+  effectiveRedline?: number;
+  powerDropoffDetected?: boolean;
+  cutoffDetected?: boolean;
+  plateauCandidateRpm?: number;
+  plateauDurationMs?: number;
+  powerbandStartRpm?: number;
+  powerbandEndRpm?: number;
   acceptedMs: number;
   lowestRpm?: number;
   highestRpm?: number;
@@ -89,6 +96,11 @@ export interface TuningMeasurementReadiness {
   binCount: number;
   lowRpmCoverage: boolean;
   highRpmCoverage: boolean;
+  effectiveRedline?: number;
+  powerDropoffDetected?: boolean;
+  cutoffDetected?: boolean;
+  powerbandStartRpm?: number;
+  powerbandEndRpm?: number;
 }
 
 const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
@@ -110,6 +122,14 @@ function sameIdentity(left: TuningMeasurementIdentity, right: TuningMeasurementI
     && left.performanceIndex === right.performanceIndex;
 }
 
+export function isHighCoverageMet(state: TuningMeasurementState): boolean {
+  if (!state.engineMaxRpm || !state.highestRpm) return false;
+  const targetLimit = state.effectiveRedline ?? state.engineMaxRpm;
+  if (state.highestRpm >= targetLimit * 0.88) return true;
+  if (state.powerDropoffDetected || state.cutoffDetected) return true;
+  return false;
+}
+
 function readGuidance(state: TuningMeasurementState, nowMs: number): TuningMeasurementGuidance {
   if ([
     'telemetry-disconnected',
@@ -125,8 +145,9 @@ function readGuidance(state: TuningMeasurementState, nowMs: number): TuningMeasu
   }
   if (state.acceptedMs < TUNING_MEASUREMENT_MIN_ACCEPTED_MS) return 'duration-insufficient';
   if (!state.engineMaxRpm || !state.lowestRpm || state.lowestRpm > state.engineMaxRpm * 0.4) return 'rpm-coverage-low';
-  if (!state.highestRpm || state.highestRpm < state.engineMaxRpm * 0.9) return 'rpm-coverage-high';
-  if (state.bins.length < TUNING_MEASUREMENT_MIN_BINS) return 'bins-insufficient';
+  if (!isHighCoverageMet(state)) return 'rpm-coverage-high';
+  const minBins = (state.powerDropoffDetected || state.cutoffDetected) ? 6 : TUNING_MEASUREMENT_MIN_BINS;
+  if (state.bins.length < minBins) return 'bins-insufficient';
   return 'ready';
 }
 
@@ -150,7 +171,12 @@ export function getTuningMeasurementReadiness(state: TuningMeasurementState, now
     acceptedMs: state.acceptedMs,
     binCount: state.bins.length,
     lowRpmCoverage: Boolean(state.engineMaxRpm && state.lowestRpm !== undefined && state.lowestRpm <= state.engineMaxRpm * 0.4),
-    highRpmCoverage: Boolean(state.engineMaxRpm && state.highestRpm !== undefined && state.highestRpm >= state.engineMaxRpm * 0.9),
+    highRpmCoverage: isHighCoverageMet(state),
+    effectiveRedline: state.effectiveRedline,
+    powerDropoffDetected: state.powerDropoffDetected,
+    cutoffDetected: state.cutoffDetected,
+    powerbandStartRpm: state.powerbandStartRpm,
+    powerbandEndRpm: state.powerbandEndRpm,
   };
 }
 
@@ -280,20 +306,65 @@ export function advanceTuningMeasurement(
     return withGuidance({ ...progressed, lastAcceptedTimestampMs: timestamp }, 'sampling-gap');
   }
 
+  const observedPeakPower = !progressed.observedPeakPower || powerWatts > progressed.observedPeakPower.value ? { value: powerWatts, rpm } : progressed.observedPeakPower;
+  const observedPeakTorque = !progressed.observedPeakTorque || torqueNewtons > progressed.observedPeakTorque.value ? { value: torqueNewtons, rpm } : progressed.observedPeakTorque;
+
+  const powerbandStartRpm = observedPeakTorque.rpm;
+  let powerbandEndRpm = observedPeakPower.rpm;
+
+  let plateauCandidateRpm = progressed.plateauCandidateRpm;
+  let plateauDurationMs = progressed.plateauDurationMs ?? 0;
+  let cutoffDetected = progressed.cutoffDetected ?? false;
+  let effectiveRedline = progressed.effectiveRedline;
+
+  if (rpm >= redlineRpm * 0.55) {
+    if (plateauCandidateRpm !== undefined && Math.abs(rpm - plateauCandidateRpm) <= 50) {
+      plateauDurationMs += Math.max(0, deltaMs);
+      if (plateauDurationMs >= 350 && !cutoffDetected) {
+        cutoffDetected = true;
+        effectiveRedline = Math.round(Math.max(plateauCandidateRpm, rpm));
+      }
+    } else {
+      plateauCandidateRpm = rpm;
+      plateauDurationMs = 0;
+    }
+  }
+
+  let powerDropoffDetected = progressed.powerDropoffDetected ?? false;
+  if (observedPeakPower && rpm >= observedPeakPower.rpm * 1.05) {
+    if (powerWatts <= observedPeakPower.value * 0.88) {
+      powerDropoffDetected = true;
+      if (!effectiveRedline) {
+        effectiveRedline = Math.round(rpm);
+      }
+    }
+  }
+
+  if (effectiveRedline) {
+    powerbandEndRpm = Math.max(powerbandEndRpm, effectiveRedline);
+  }
+
   const next: TuningMeasurementState = {
     ...progressed,
     guidance: 'collecting',
     lastObservedGear: frame.Gear,
     gearSettleUntilMs: undefined,
     engineMaxRpm: redlineRpm,
+    effectiveRedline,
+    powerDropoffDetected,
+    cutoffDetected,
+    plateauCandidateRpm,
+    plateauDurationMs,
+    powerbandStartRpm,
+    powerbandEndRpm,
     maxObservedNormalizedSlip: normalizedSlip === undefined ? progressed.maxObservedNormalizedSlip
       : Math.max(progressed.maxObservedNormalizedSlip ?? 0, normalizedSlip),
     acceptedMs: progressed.acceptedMs + Math.max(0, deltaMs),
     lowestRpm: progressed.lowestRpm === undefined ? rpm : Math.min(progressed.lowestRpm, rpm),
     highestRpm: progressed.highestRpm === undefined ? rpm : Math.max(progressed.highestRpm, rpm),
     bins: addBin(progressed.bins, rpm, redlineRpm, powerWatts, torqueNewtons),
-    observedPeakPower: !progressed.observedPeakPower || powerWatts > progressed.observedPeakPower.value ? { value: powerWatts, rpm } : progressed.observedPeakPower,
-    observedPeakTorque: !progressed.observedPeakTorque || torqueNewtons > progressed.observedPeakTorque.value ? { value: torqueNewtons, rpm } : progressed.observedPeakTorque,
+    observedPeakPower,
+    observedPeakTorque,
     lastAcceptedTimestampMs: timestamp,
   };
   return withGuidance(next, readGuidance(next, nowMs));

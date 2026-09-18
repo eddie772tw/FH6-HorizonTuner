@@ -23,8 +23,9 @@ export function parseEngineArchive(text: string | null): EngineObservation[] {
         d.identity && String(d.identity.ordinal) === item.carId && Number.isFinite(d.identity.carClass) && Number.isFinite(d.identity.performanceIndex) &&
         [d.observedPeakPower, d.observedPeakTorque].every(p => p && Number.isFinite(p.value) && p.value > 0 && Number.isFinite(p.rpm) && p.rpm > 0 && p.rpm <= d.engineMaxRpm) &&
         Number.isFinite(d.acceptedMs) && d.acceptedMs >= 6000 && Number.isFinite(d.lowestRpm) && d.lowestRpm > 0 && d.lowestRpm <= d.engineMaxRpm * 0.4 &&
-        Number.isFinite(d.highestRpm) && d.highestRpm >= d.engineMaxRpm * 0.9 && d.highestRpm <= d.engineMaxRpm &&
-        Array.isArray(d.bins) && d.bins.length >= 8 && d.bins.length <= 16 && new Set(d.bins.map((b: { index: number }) => b?.index)).size === d.bins.length &&
+        Number.isFinite(d.highestRpm) && d.highestRpm > 0 && d.highestRpm <= d.engineMaxRpm &&
+        (d.highestRpm >= (Number.isFinite(d.effectiveRedline) && d.effectiveRedline! > 0 ? d.effectiveRedline! : d.engineMaxRpm) * 0.85 || Boolean(d.powerDropoffDetected) || Boolean(d.cutoffDetected)) &&
+        Array.isArray(d.bins) && d.bins.length >= 6 && d.bins.length <= 16 && new Set(d.bins.map((b: { index: number }) => b?.index)).size === d.bins.length &&
         d.bins.every((b: Record<string, number>) => b && Number.isInteger(b.index) && b.index >= 0 && b.index < 16 && Number.isInteger(b.sampleCount) && b.sampleCount > 0 &&
           ['averagePowerWatts', 'averageTorqueNewtons', 'averageRpm', 'powerWattsSum', 'torqueNewtonsSum', 'rpmSum'].every(k => Number.isFinite(b[k]) && b[k] > 0));
     }).map(({ capture: _capture, ...item }) => item);
