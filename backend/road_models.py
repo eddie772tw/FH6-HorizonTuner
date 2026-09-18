@@ -213,9 +213,21 @@ class EngineArchiveRequest(RoadInput):
             or not finite(data.get("lowestRpm"))
             or not 0 < data["lowestRpm"] <= limit * 0.4
             or not finite(data.get("highestRpm"))
-            or not limit * 0.9 <= data["highestRpm"] <= limit
+            or not (
+                (
+                    finite(data.get("effectiveRedline"))
+                    and (data.get("effectiveRedline") or 0) * 0.85
+                    <= data["highestRpm"]
+                    <= limit
+                )
+                or (limit * 0.85 <= data["highestRpm"] <= limit)
+                or (
+                    bool(data.get("powerDropoffDetected") or data.get("cutoffDetected"))
+                    and 0 < data["highestRpm"] <= limit
+                )
+            )
             or not isinstance(bins, list)
-            or not 8 <= len(bins) <= 16
+            or not 6 <= len(bins) <= 16
             or not isinstance(self.capture.get("samples"), list)
             or not 1 <= len(self.capture["samples"]) <= 30000
         ):

@@ -231,3 +231,24 @@ async def test_engine_api_rejects_incomplete_or_mismatched_evidence(
             assert (
                 await client.post("/api/road/engine-observations", json=invalid)
             ).status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_engine_observation_low_rev_limit_accepted(tmp_path, monkeypatch):
+    db = TelemetrySQLite(str(tmp_path / "sessions.db"))
+    service = RoadService(db, RoadStore(db.db_path))
+    monkeypatch.setattr(main, "road_service", service)
+    async with AsyncClient(
+        transport=ASGITransport(app=main.app), base_url="http://test"
+    ) as client:
+        payload = engine_payload()
+        payload["observation"]["id"] = "engine-low-rev-42"
+        payload["capture"]["references"]["engineObservationId"] = "engine-low-rev-42"
+        payload["observation"]["data"]["effectiveRedline"] = 6200
+        payload["observation"]["data"]["highestRpm"] = 6000
+        payload["observation"]["data"]["powerDropoffDetected"] = True
+        payload["observation"]["data"]["bins"] = payload["observation"]["data"]["bins"][
+            :6
+        ]
+        res = await client.post("/api/road/engine-observations", json=payload)
+        assert res.status_code == 200, res.text

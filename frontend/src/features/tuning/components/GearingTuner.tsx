@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea, ResponsiveContainer } from 'recharts';
 import { useSettings } from '../../../context/SettingsContext';
-import { calcGearSpeed } from '../../../utils/tuningMath';
+import { calcGearRpm, calcGearSpeed } from '../../../utils/tuningMath';
 
 interface GearingTunerProps {
   tuning: any;
@@ -10,6 +10,120 @@ interface GearingTunerProps {
   carParams?: any;
   gearingMethod?: string;
   showCorrections?: boolean;
+}
+
+export interface GearingChartDataParams {
+  numGears: number;
+  gears: number[];
+  finalDrive: number;
+  maxRpm?: number;
+  effectiveRedline?: number;
+  maxHpRpm?: number;
+  tireRadiusM: number;
+  speedUnit: 'kmh' | 'mph';
+  convertSpeed: (ms: number) => { value: number; label: string };
+  simulatedTopSpeed?: number;
+  softMaxSpeed?: number;
+}
+
+export function computeGearingChartData(params: GearingChartDataParams) {
+  const {
+    numGears,
+    gears,
+    finalDrive,
+    maxRpm,
+    effectiveRedline,
+    maxHpRpm = 7000,
+    tireRadiusM,
+    speedUnit,
+    convertSpeed,
+    simulatedTopSpeed = 0,
+    softMaxSpeed = 0
+  } = params;
+
+  // 1. Determine gauge redline limit and actual cutoff RPM
+  const yLimit = maxRpm && maxRpm > 0 ? maxRpm : Math.round(maxHpRpm * 1.15);
+  const cutoffRpm = effectiveRedline && effectiveRedline > 0 ? effectiveRedline : yLimit;
+  const chartYMax = Math.max(yLimit, cutoffRpm);
+
+  const displaySpeed = (kmh: number) => speedUnit === 'mph' ? kmh * 0.621371 : kmh;
+
+  // 2. Compute start/end speeds for each gear
+  // Gear 1: Start speed = 0, End speed = Speed at cutoffRpm in Gear 1
+  // Gear N (N > 1): Start speed = Gear N-1 End speed (speed at cutoffRpm of Gear N-1)
+  const gearRanges: { gearIndex: number; startSpeed: number; endSpeed: number; ratio: number }[] = [];
+
+  let currentStartSpeed = 0;
+  for (let g = 0; g < numGears; g++) {
+    const ratio = gears[g] || 1.0;
+    let endSpeed = 0;
+    if (ratio > 0 && finalDrive > 0) {
+      const maxSpeedMs = calcGearSpeed(cutoffRpm, ratio, finalDrive, tireRadiusM);
+      endSpeed = Math.round(convertSpeed(maxSpeedMs).value * 10) / 10;
+    }
+
+    const startSpeed = g === 0 ? 0 : currentStartSpeed;
+    const validEndSpeed = Math.max(endSpeed, startSpeed + 5);
+
+    gearRanges.push({
+      gearIndex: g,
+      startSpeed,
+      endSpeed: validEndSpeed,
+      ratio
+    });
+
+    // Next gear starts at this gear's endSpeed (cutoffRpm speed)
+    currentStartSpeed = validEndSpeed;
+  }
+
+  const overallTopSpeed = Math.max(
+    gearRanges[gearRanges.length - 1]?.endSpeed || 300,
+    displaySpeed(simulatedTopSpeed),
+    displaySpeed(softMaxSpeed)
+  );
+  const xLimit = Math.max(120, Math.ceil(overallTopSpeed / 20) * 20);
+
+  // 3. Collect critical speed sample points
+  const speedSet = new Set<number>();
+  speedSet.add(0);
+  speedSet.add(xLimit);
+
+  gearRanges.forEach(range => {
+    speedSet.add(Math.round(range.startSpeed * 10) / 10);
+    speedSet.add(Math.round(range.endSpeed * 10) / 10);
+
+    // Interpolate points between startSpeed and endSpeed
+    const steps = 15;
+    const stepSize = (range.endSpeed - range.startSpeed) / steps;
+    for (let s = 1; s < steps; s++) {
+      speedSet.add(Math.round((range.startSpeed + s * stepSize) * 10) / 10);
+    }
+  });
+
+  const sortedSpeeds = Array.from(speedSet).sort((a, b) => a - b);
+
+  // 4. Generate Recharts data points
+  const points = sortedSpeeds.map(speed => {
+    const pt: any = { speed };
+
+    gearRanges.forEach(range => {
+      const { gearIndex, startSpeed, endSpeed, ratio } = range;
+
+      // Include point if speed is between this gear's shift start and shift end
+        if (speed >= startSpeed - 0.05 && speed <= endSpeed + 0.05 && ratio > 0 && finalDrive > 0) {
+          const speedMs = speedUnit === 'mph' ? speed / 2.23694 : speed / 3.6;
+          const rpm = calcGearRpm(speedMs, ratio, finalDrive, tireRadiusM);
+          if (rpm >= 0 && rpm <= cutoffRpm + 50) {
+            const isAtEnd = Math.abs(speed - endSpeed) < 0.05;
+            pt[`gear${gearIndex + 1}`] = isAtEnd ? Math.round(cutoffRpm) : Math.min(Math.round(rpm), Math.round(cutoffRpm));
+          }
+        }
+    });
+
+    return pt;
+  });
+
+  return { chartData: points, xMax: xLimit, yMax: chartYMax, cutoffRpm, gearRanges };
 }
 
 const inputStyle: React.CSSProperties = {
@@ -37,8 +151,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
   const displaySpeed = (kmh: number) => settings.units.speed === 'mph' ? kmh * 0.621371 : kmh;
   const speedToKmh = (value: number) => settings.units.speed === 'mph' ? value / 0.621371 : value;
 
-  // Compute speed-rpm chart data with shift-chained starting points (Gear N starts at Gear N-1 maxRPM speed)
-  const { chartData, xMax, yMax } = useMemo(() => {
+  // Compute speed-rpm chart data with shift-chained starting points (Gear N starts at Gear N-1 cutoffRpm speed)
+  const { chartData, xMax, yMax, cutoffRpm } = useMemo(() => {
     // 1. Calculate Rear Tire Radius in meters
     let tireRadiusM = 0.32;
     if (carParams?.rearTireWidth && carParams?.rearTireAspect && carParams?.rearTireRim) {
@@ -48,88 +162,33 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
       tireRadiusM = diameterM / 2;
     }
 
-    // 2. Engine max RPM limit
-    const maxHpRpm = carParams?.maxHpRpm || 7000;
-    const yLimit = tuning?.gearing?.maxRpm > 0 ? tuning.gearing.maxRpm : Math.round(maxHpRpm * 1.15);
-    const finalDrive = tuning?.gearing?.finalDrive || 3.40;
-    const gears: number[] = tuning?.gearing?.gears || [];
+    const effectiveRedline = tuning?.gearing?.effectiveRedline || carParams?.effectiveRedline;
 
-    // 3. Compute start/end speeds for each gear
-    // Gear 1: Start speed = 0, End speed = Speed at maxRPM in Gear 1
-    // Gear N (N > 1): Start speed = Gear N-1 End speed (speed at maxRPM of Gear N-1)
-    const gearRanges: { gearIndex: number; startSpeed: number; endSpeed: number; ratio: number }[] = [];
-
-    let currentStartSpeed = 0;
-    for (let g = 0; g < numGears; g++) {
-      const ratio = gears[g] || 1.0;
-      let endSpeed = 0;
-      if (ratio > 0 && finalDrive > 0) {
-        const maxSpeedMs = calcGearSpeed(yLimit, ratio, finalDrive, tireRadiusM);
-        endSpeed = Math.round(convertSpeed(maxSpeedMs).value * 10) / 10;
-      }
-
-      const startSpeed = g === 0 ? 0 : currentStartSpeed;
-      const validEndSpeed = Math.max(endSpeed, startSpeed + 5);
-
-      gearRanges.push({
-        gearIndex: g,
-        startSpeed,
-        endSpeed: validEndSpeed,
-        ratio
-      });
-
-      // Next gear starts at this gear's endSpeed (maxRPM speed)
-      currentStartSpeed = validEndSpeed;
-    }
-
-    const overallTopSpeed = Math.max(
-      gearRanges[gearRanges.length - 1]?.endSpeed || 300,
-      displaySpeed(tuning?.gearing?.simulatedTopSpeed || 0),
-      displaySpeed(tuning?.gearing?.softMaxSpeed || 0)
-    );
-    const xLimit = Math.max(120, Math.ceil(overallTopSpeed / 20) * 20);
-
-    // 4. Collect critical speed sample points
-    const speedSet = new Set<number>();
-    speedSet.add(0);
-    speedSet.add(xLimit);
-
-    gearRanges.forEach(range => {
-      speedSet.add(Math.round(range.startSpeed * 10) / 10);
-      speedSet.add(Math.round(range.endSpeed * 10) / 10);
-
-      // Interpolate points between startSpeed and endSpeed
-      const steps = 15;
-      const stepSize = (range.endSpeed - range.startSpeed) / steps;
-      for (let s = 1; s < steps; s++) {
-        speedSet.add(Math.round((range.startSpeed + s * stepSize) * 10) / 10);
-      }
+    return computeGearingChartData({
+      numGears,
+      gears: tuning?.gearing?.gears || [],
+      finalDrive: tuning?.gearing?.finalDrive || 3.40,
+      maxRpm: tuning?.gearing?.maxRpm,
+      effectiveRedline,
+      maxHpRpm: carParams?.maxHpRpm,
+      tireRadiusM,
+      speedUnit: settings.units.speed,
+      convertSpeed,
+      simulatedTopSpeed: tuning?.gearing?.simulatedTopSpeed,
+      softMaxSpeed: tuning?.gearing?.softMaxSpeed
     });
-
-    const sortedSpeeds = Array.from(speedSet).sort((a, b) => a - b);
-
-    // 5. Generate Recharts data points
-    const points = sortedSpeeds.map(speed => {
-      const pt: any = { speed };
-
-      gearRanges.forEach(range => {
-        const { gearIndex, startSpeed, endSpeed, ratio } = range;
-
-        // Include point if speed is between this gear's shift start and shift end
-        if (speed >= startSpeed - 0.05 && speed <= endSpeed + 0.05 && ratio > 0 && finalDrive > 0) {
-          const speedMs = settings.units.speed === 'mph' ? speed / 2.23694 : speed / 3.6;
-          const rpm = (speedMs * ratio * finalDrive * 60) / (2 * Math.PI * tireRadiusM);
-          if (rpm >= 0 && rpm <= yLimit + 200) {
-            pt[`gear${gearIndex + 1}`] = Math.round(rpm);
-          }
-        }
-      });
-
-      return pt;
-    });
-
-    return { chartData: points, xMax: xLimit, yMax: yLimit };
-  }, [tuning?.gearing?.finalDrive, tuning?.gearing?.gears, tuning?.gearing?.maxRpm, tuning?.gearing?.simulatedTopSpeed, tuning?.gearing?.softMaxSpeed, numGears, carParams, settings.units.speed]);
+  }, [
+    tuning?.gearing?.finalDrive,
+    tuning?.gearing?.gears,
+    tuning?.gearing?.maxRpm,
+    tuning?.gearing?.effectiveRedline,
+    tuning?.gearing?.simulatedTopSpeed,
+    tuning?.gearing?.softMaxSpeed,
+    numGears,
+    carParams,
+    settings.units.speed,
+    convertSpeed
+  ]);
 
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
@@ -219,6 +278,21 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
                   stroke="rgba(0, 230, 118, 0.25)"
                   strokeDasharray="2 2"
                   label={{ value: t("Effective Powerband"), fill: 'rgba(0, 230, 118, 0.6)', fontSize: 10, position: 'insideTopLeft' }}
+                />
+              )}
+
+              {/* 0. Rev Limiter / Cutoff RPM horizontal dashed line */}
+              {Boolean(cutoffRpm && cutoffRpm > 0) && (
+                <ReferenceLine
+                  y={cutoffRpm}
+                  stroke="#ff1744"
+                  strokeDasharray="4 2"
+                  label={{
+                    value: `${t("Rev Limiter")}: ${Math.round(cutoffRpm)} RPM`,
+                    fill: '#ff1744',
+                    fontSize: 10,
+                    position: 'insideTopRight'
+                  }}
                 />
               )}
 

@@ -32,4 +32,18 @@ describe('engine observation dependencies', () => {
   it('does not promote malformed or mismatched archive data to a ready observation', () => {
     for (const value of [null, '{}', 'not json', JSON.stringify([{ schema: 'engine-observation/v1', id: 'x', carId: '42', dependencyKey: 'key', data: { status: 'ready', engineMaxRpm: 8000 } }])]) expect(parseEngineArchive(value)).toEqual([]);
   });
+  it('accepts low-rev-limit observation with effectiveRedline or dropoff flag', () => {
+    const item: EngineObservation = {
+      schema: 'engine-observation/v1', id: 'low-rev-scan', carId: '42', source: 'measured', capturedAt: 1000,
+      dependencyKey: engineDependencyKey('42', profile),
+      data: { carId: '42', status: 'ready', guidance: 'ready', acceptedMs: 6500, engineMaxRpm: 8000,
+        effectiveRedline: 6200, powerDropoffDetected: true,
+        identity: { ordinal: 42, carClass: 3, performanceIndex: 700 }, lowestRpm: 3000, highestRpm: 6000,
+        observedPeakPower: { rpm: 5000, value: 200000 }, observedPeakTorque: { rpm: 4000, value: 400 },
+        bins: Array.from({ length: 6 }, (_, i) => ({ index: i + 6, sampleCount: 10, averageRpm: 3000 + i * 500,
+          averagePowerWatts: 200000, averageTorqueNewtons: 400, rpmSum: (3000 + i * 500) * 10,
+          powerWattsSum: 2000000, torqueNewtonsSum: 4000 })) },
+    };
+    expect(parseEngineArchive(JSON.stringify([item]))).toEqual([item]);
+  });
 });
