@@ -300,13 +300,13 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.75rem', textAlign: 'center' }}>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
-                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>FL Temp</span>
+                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>{t('FL Temp')}</span>
                     <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempFL ?? 0, tempUnit) ? '#ff2a5f' : '#00b4d8' }}>
                       {telemetryGripMetrics?.tireTempFL ?? '-'}{tempUnitLabel}
                     </strong>
                   </div>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
-                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>FR Temp</span>
+                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>{t('FR Temp')}</span>
                     <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempFR ?? 0, tempUnit) ? '#ff2a5f' : '#00b4d8' }}>
                       {telemetryGripMetrics?.tireTempFR ?? '-'}{tempUnitLabel}
                     </strong>
@@ -330,13 +330,13 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.75rem', textAlign: 'center' }}>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
-                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>RL Temp</span>
+                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>{t('RL Temp')}</span>
                     <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempRL ?? 0, tempUnit) ? '#ff2a5f' : '#ffb703' }}>
                       {telemetryGripMetrics?.tireTempRL ?? '-'}{tempUnitLabel}
                     </strong>
                   </div>
                   <div style={{ background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: '4px' }}>
-                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>RR Temp</span>
+                    <span style={{ color: 'gray', display: 'block', fontSize: '0.68rem' }}>{t('RR Temp')}</span>
                     <strong style={{ color: isTireOverheated(telemetryGripMetrics?.tireTempRR ?? 0, tempUnit) ? '#ff2a5f' : '#ffb703' }}>
                       {telemetryGripMetrics?.tireTempRR ?? '-'}{tempUnitLabel}
                     </strong>

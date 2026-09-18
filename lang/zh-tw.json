@@ -1657,5 +1657,9 @@
   "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
   "FH6-Horizon Tuner": "FH6-Horizon Tuner",
   "Are you sure you want to clear the telemetry feed?": "確定要清除遙測即時動態嗎？",
-  "Clear Feed": "清除動態"
+  "Clear Feed": "清除動態",
+  "FL Temp": "左前溫度",
+  "FR Temp": "右前溫度",
+  "RL Temp": "左後溫度",
+  "RR Temp": "右後溫度"
 }

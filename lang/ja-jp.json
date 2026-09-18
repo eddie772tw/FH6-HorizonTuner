@@ -1212,5 +1212,9 @@
   "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
   "FH6-Horizon Tuner": "FH6-Horizon Tuner",
   "Are you sure you want to clear the telemetry feed?": "テレメトリーフィードを消去してもよろしいですか？",
-  "Clear Feed": "フィードをクリア"
+  "Clear Feed": "フィードをクリア",
+  "FL Temp": "左前温度",
+  "FR Temp": "右前温度",
+  "RL Temp": "左後温度",
+  "RR Temp": "右後温度"
 }
