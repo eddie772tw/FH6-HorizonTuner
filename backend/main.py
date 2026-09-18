@@ -31,6 +31,42 @@ parser.add_argument(
 parsed_args, _ = parser.parse_known_args()
 
 
+def _read_json_file(path: str) -> dict | list | None:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to read JSON file {path}: {e}")
+        raise
+
+
+def _write_json_file(path: str, data: dict | list) -> None:
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"Failed to write JSON file {path}: {e}")
+        raise
+
+
+def _read_text_file(path: str) -> str:
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read()
+    except Exception as e:
+        logger.error(f"Failed to read text file {path}: {e}")
+        raise
+
+
+def _write_text_file(path: str, data: str) -> None:
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(data)
+    except Exception as e:
+        logger.error(f"Failed to write text file {path}: {e}")
+        raise
+
+
 def emit_sidecar_event(event: str, **payload) -> None:
     """Send a machine-readable lifecycle event to the Tauri host process."""
     try:
@@ -1955,11 +1991,10 @@ async def list_languages():
                         continue
                     file_path = os.path.join(lang_dir, filename)
                     try:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                            if isinstance(data, dict):
-                                name = data.get("__language_name__", filename[:-5])
-                                languages_dict[code] = name
+                        data = await asyncio.to_thread(_read_json_file, file_path)
+                        if isinstance(data, dict):
+                            name = data.get("__language_name__", filename[:-5])
+                            languages_dict[code] = name
                     except Exception as e:
                         logger.error(
                             f"Failed to read language file {filename} in {lang_dir}: {e}"
@@ -1987,10 +2022,9 @@ async def get_language(code: str = Path(pattern="^[a-zA-Z0-9-]+$")):
         file_path = safe_resolve_path(lang_dir, f"{clean_code}.json")
         if file_path and os.path.exists(file_path):
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    LANGUAGE_CACHE[code] = data
-                    return data
+                data = await asyncio.to_thread(_read_json_file, file_path)
+                LANGUAGE_CACHE[code] = data
+                return data
             except Exception as e:
                 logger.error(f"Failed to read language file {file_path}: {e}")
 
@@ -2499,8 +2533,7 @@ async def drag_save_session():
     }
 
     try:
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(session_payload, f, indent=4)
+        await asyncio.to_thread(_write_json_file, file_path, session_payload)
         return {"message": "Drag session saved successfully", "filename": filename}
     except Exception as e:
         logger.error(f"Failed to save drag session to {filename}: {e}")
@@ -2515,8 +2548,8 @@ def _read_drag_sessions():
         for f in files:
             path = os.path.join(DRAG_SESSIONS_DIR, f)
             try:
-                with open(path, "r", encoding="utf-8") as file:
-                    payload = json.load(file)
+                payload = _read_json_file(path)
+                if payload and isinstance(payload, dict):
                     metadata = payload.get("metadata", {})
                     sessions.append(metadata)
             except Exception as e:
@@ -2540,8 +2573,7 @@ async def get_drag_session(filename: str):
     file_path = safe_resolve_path(DRAG_SESSIONS_DIR, clean_filename)
     if file_path and os.path.exists(file_path):
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+            return await asyncio.to_thread(_read_json_file, file_path)
         except Exception as e:
             logger.error(f"Failed to read drag session file: {e}")
             return {"error": "Failed to read drag session file"}
@@ -2573,8 +2605,8 @@ async def get_logs(level: str | None = None, limit: int = 300):
         return {"logs": []}
 
     try:
-        with open(backend_log_path, "r", encoding="utf-8", errors="ignore") as f:
-            lines = f.readlines()
+        text = await asyncio.to_thread(_read_text_file, backend_log_path)
+        lines = text.splitlines()
     except Exception as e:
         logger.error(f"Failed to read log file: {e}")
         return {"error": "Failed to read log file"}
@@ -2625,8 +2657,7 @@ async def get_logs(level: str | None = None, limit: int = 300):
 async def clear_logs():
     if os.path.exists(backend_log_path):
         try:
-            with open(backend_log_path, "w", encoding="utf-8") as f:
-                f.write("")
+            await asyncio.to_thread(_write_text_file, backend_log_path, "")
             return {"message": "Logs cleared successfully"}
         except Exception as e:
             logger.error(f"Failed to clear logs: {e}")
@@ -2842,8 +2873,8 @@ async def select_audio_device(payload: dict):
 async def get_overlay_config():
     if os.path.exists(HUD_CONFIG_FILE):
         try:
-            with open(HUD_CONFIG_FILE, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
+            cfg = await asyncio.to_thread(_read_json_file, HUD_CONFIG_FILE)
+            if cfg and isinstance(cfg, dict):
                 if "audioDeviceId" in cfg:
                     set_audio_capture_device(str(cfg["audioDeviceId"]))
                 return hud_config_with_gui_theme(cfg)
@@ -2859,8 +2890,7 @@ async def save_overlay_config(data: dict):
         data = normalize_hud_config(data)
         if "audioDeviceId" in data:
             set_audio_capture_device(str(data["audioDeviceId"]))
-        with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        await asyncio.to_thread(_write_json_file, HUD_CONFIG_FILE, data)
         broadcast_data = hud_config_with_gui_theme(data)
 
         # Broadcast config update to all connected WebSockets (including the HUD)
@@ -2878,8 +2908,7 @@ async def save_overlay_config(data: dict):
 async def reset_overlay_config():
     try:
         data = normalize_hud_config(DEFAULT_HUD_CONFIG)
-        with open(HUD_CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        await asyncio.to_thread(_write_json_file, HUD_CONFIG_FILE, data)
 
         await overlay_manager.broadcast_json(
             {
@@ -2951,8 +2980,7 @@ async def get_hud_styles():
 async def get_car_learning():
     if os.path.exists(CAR_LEARNING_FILE):
         try:
-            with open(CAR_LEARNING_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+            return await asyncio.to_thread(_read_json_file, CAR_LEARNING_FILE)
         except Exception as e:
             logger.error(f"Failed to load car_learning.json: {e}")
     return {}
@@ -2961,8 +2989,7 @@ async def get_car_learning():
 @app.post("/api/overlay/car_learning")
 async def save_car_learning(data: dict):
     try:
-        with open(CAR_LEARNING_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        await asyncio.to_thread(_write_json_file, CAR_LEARNING_FILE, data)
         return {"message": "Car learning data saved successfully", "success": True}
     except Exception as e:
         logger.error(f"Failed to save car_learning.json: {e}")
