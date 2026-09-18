@@ -169,4 +169,4 @@ def test_support_bundle_api_is_a_no_store_zip_and_rejects_unsafe_fields(
         json={"windowMinutes": 5, "fields": ["rawUdpPayload"]},
     )
     assert rejected.status_code == 400
-    assert "not allowed" in rejected.json()["detail"]
+    assert "Invalid support bundle request" in rejected.json()["detail"]

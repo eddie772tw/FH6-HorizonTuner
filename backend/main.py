@@ -1610,7 +1610,10 @@ async def export_diagnostic_support_bundle(request: SupportBundleRequest):
             requested_fields=request.fields,
         )
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        logger.error("Failed to create support bundle: %s", error)
+        raise HTTPException(
+            status_code=400, detail="Invalid support bundle request"
+        ) from error
 
     return Response(
         content=bundle,
@@ -2036,7 +2039,8 @@ async def mcp_streamable_http_endpoint(request: Request):
     try:
         body = await request.json()
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {exc}")
+        logger.error("Invalid MCP payload: %s", exc)
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="MCP payload must be a JSON object")
