@@ -29,7 +29,7 @@
 
 9/16 的 Shell candidate `ca942a95...` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files 與 version 11.45.18 PASS；這些是歷史 local evidence。9/19 contracts candidate `9baeb1ec...` 的 frontend/backend 結果與 sidecar retry 邊界列於 [執行紀錄](execution.md)。目前 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS，Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS（race-fix mapping `d37dbf9`）；兩者 `git diff --check` PASS。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS，HUD `83301f68...` 為 111 files／796 tests/build PASS，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。Shell 新 sidecar build PASS 11.45.18；目前剩餘是 Full Tauri/native 與 new-head CI 登記，未由 local PASS 推定 Ready to Merge。
 
-2026-09-16 的舊 2cb native 觀察已轉成[正式證據](evidence/g2-native-observations-20260916.md)：Full 觀察到 HUD 跨頁、theme 與 fallback，Lite 只有 fallback 啟動的局部觀察；pending write 跨頁仍缺，且這些結果不代表 2026-09-19 rebase 後新候選 native PASS。G2 仍為 `partial`，G2 剩餘是新候選的 Full/Lite C5/H5 native 與 pending-write 跨頁，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`。
+2026-09-16 的舊 2cb native 觀察已轉成[正式證據](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full partial observation 另記於[正式 evidence](evidence/g2-native-observations-20260919.md)。新 Full 已觀察啟動、8001/8124、light/modern、獨立 HUD 與兩輪重入；pending write 未人工 delay，Lite 尚未啟動，因此不能宣稱完整 native PASS。G2 仍為 `partial`，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`。目前先完成 G2；G2 通過並完成 handoff 後暫停，不開 W2，完整目標保留至後續恢復。
 
 ## 2026-09-14 恢復後實作現況（歷史快照）
 

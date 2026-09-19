@@ -20,9 +20,9 @@
 | Road | `575ff0f139592b17b428b7d044e3ef943656a86e`；112 files／804 tests、build PASS、range 4/4 clean | new head checks/native 尚未完成；不由 clean 推定 ready |
 | Sessions / Tune | `49049908fcb19efa567d6392ff677001404f4546`：114 files／807 tests PASS；`2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4`：111 files／799 tests PASS | local checks recorded; push/CI and native evidence remain |
 
-Aggregate `c38f13ec90e6de671bea51144446720c461650aa`：118 files／839 tests、build PASS、`git diff --check` PASS。其 backend/build inputs 與 contracts/main 無 diff，沿用有效的 348 backend passed／8 deselected、Ruff check/format、version 11.45.18 結果。product refs 已推送，new-head CI 待完成；Full/Lite native 尚未操作。
+Aggregate `c38f13ec90e6de671bea51144446720c461650aa`：118 files／839 tests、build PASS、`git diff --check` PASS。其 backend/build inputs 與 contracts/main 無 diff，沿用有效的 348 backend passed／8 deselected、Ruff check/format、version 11.45.18 結果。product refs 已推送，new-head CI 待完成；Full native 已有 partial observation，Lite 尚未啟動。
 
-2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)。Full 曾觀察 HUD 跨頁、theme 與 fallback；Lite 只有 fallback 啟動的局部觀察；Full/Lite pending config write 跨頁仍缺。這些結果不代表 rebase 後新 candidate native PASS，故 G2 仍 `partial`。新 stack 必須重新建置並重跑 Full/Lite C5/H5，W2 尚未啟動，也不公布 `WAVE2_BASE_SHA`。
+2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full partial observation 見 [G2 native observations 20260919](evidence/g2-native-observations-20260919.md)。Full 已觀察啟動、HTTP 8001／UDP 8124、light/modern、獨立 HUD 與兩輪 HUD → Live → HUD；pending config write 未人工 delay，Lite 尚未啟動，故 G2 仍 `partial`。目前繼續完成 G2；G2 通過並完成 handoff 後暫停，不開 W2，也不公布 `WAVE2_BASE_SHA`，完整目標保留至後續恢復。
 
 ## 2026-09-14 恢復後現況（歷史快照）
 
