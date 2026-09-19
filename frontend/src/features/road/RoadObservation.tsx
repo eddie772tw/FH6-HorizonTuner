@@ -1,24 +1,28 @@
-import { useEffect, useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
-import type { RoadFinish, RoadSummary } from './roadTypes';
+import type { RoadSummary } from './roadTypes';
 import { parseGameTime } from './roadPresentation';
+import type { RoadFinishDraft } from './RoadValidationController';
 
-interface Props { summary: RoadSummary; finish?: RoadFinish; busy: boolean; saveFinish: (body: unknown) => Promise<unknown> }
-export function RoadObservation({ summary, finish, busy, saveFinish }: Props) {
+interface Props {
+  summary: RoadSummary;
+  busy: boolean;
+  draft: RoadFinishDraft;
+  onDraftChange: (draft: RoadFinishDraft) => void;
+  saveFinish: (body: unknown) => Promise<unknown>;
+}
+export function RoadObservation({ summary, busy, draft, onDraftChange, saveFinish }: Props) {
   const { t } = useSettings();
-  const [time, setTime] = useState(''), [clean, setClean] = useState(false);
-  useEffect(() => { setTime(finish?.timeSeconds.toString() || ''); setClean(finish?.clean === 'confirmed'); }, [summary.id, finish?.id]);
-  const seconds = parseGameTime(time);
+  const seconds = parseGameTime(draft.time);
   const fmt = (v: number | null | undefined, digits = 1) => v === null || v === undefined ? t('Unknown') : v.toFixed(digits);
   return <section className="glass-panel p-4">
     <h2 className="h5">{t('Saved run observations')}</h2>
     <p>{t('Observed driving')}: {summary.observations.quality.observedSeconds.toFixed(1)} s · {t('Saved samples')}: {summary.observations.sampleCount}</p>
-    <form onSubmit={e => { e.preventDefault(); if (seconds !== null) void saveFinish({ completed: true, timeSeconds: seconds, clean: clean ? 'confirmed' : 'unknown', source: 'game-confirmed' }); }}>
+    <form onSubmit={e => { e.preventDefault(); if (seconds !== null) void saveFinish({ completed: true, timeSeconds: seconds, clean: draft.clean ? 'confirmed' : 'unknown', source: 'game-confirmed' }); }}>
       <div className="d-flex flex-wrap align-items-end gap-3">
-        <label className="form-label mb-0">{t('Full-event time shown in game')}<input className="form-control" value={time} onChange={e => setTime(e.target.value)} placeholder="1:23.456" required /></label>
+        <label className="form-label mb-0">{t('Full-event time shown in game')}<input className="form-control" value={draft.time} onChange={e => onDraftChange({ ...draft, time: e.target.value })} placeholder="1:23.456" required /></label>
         <button className="btn btn-outline-primary" disabled={busy || seconds === null}>{t('Confirm finish result')}</button>
       </div>
-      <label className="d-flex gap-2 my-3"><input type="checkbox" checked={clean} onChange={e => setClean(e.target.checked)} />{t('I completed the selected event without a collision, rewind or other known incident.')}</label>
+      <label className="d-flex gap-2 my-3"><input type="checkbox" checked={draft.clean} onChange={e => onDraftChange({ ...draft, clean: e.target.checked })} />{t('I completed the selected event without a collision, rewind or other known incident.')}</label>
       <p className="small text-body-secondary">{t('Optional until comparing performance. Telemetry sample duration is not a finish time.')}</p>
     </form>
     <details><summary>{t('Four-wheel observations and data quality')}</summary>
