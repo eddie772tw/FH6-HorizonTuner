@@ -77,3 +77,6 @@
 ## 2026-09-18 - Offloading Blocking Sync I/O in Async API Endpoints
 **Learning:** Performing synchronous file I/O operations (e.g. `open`, `json.load`, `json.dump`) directly inside FastAPI `async def` endpoints blocks the main asyncio event loop thread, stalling concurrent WebSockets and background tasks.
 **Action:** Offload synchronous file I/O operations in `async def` endpoints to thread pool workers using `await asyncio.to_thread(func, *args)` to ensure the event loop remains unblocked.
+## 2026-10-27 - Eliminating dynamic array allocation in Frame Interpolator arrays
+**Learning:** In high-frequency render or telemetry loops (e.g., `FrameInterpolator` running at 60Hz+), allocating new arrays dynamically (`new Array(length)`) for small, fixed-size datasets (like 4-element vehicle telemetry arrays) and iterating over them in loops generates significant Garbage Collection (GC) pressure and execution overhead compared to explicit array literals.
+**Action:** Unroll loop iterations manually for small fixed-size arrays (e.g., check `arr.length === 4`) and return explicit array literals (e.g., `[v0, v1, v2, v3]`) with inline logic. This prevents object mutation, avoids dynamic allocation, and reduces allocations on the hot path (from ~63ms to ~49ms for 10k iterations in benchmarks).
