@@ -8,6 +8,7 @@
 - G1-core public contract 的歷史 freeze 仍登記於 `54165303f12c9598872905571f7162cc5f80effa`；Shell 9/16 local implementation candidate `ca942a95c4edb80b777c0b7989ed6b108270cbde` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files、version 11.45.18 PASS，但未推送。
 - Contracts 9/19 local candidate `9baeb1ec...` 有 frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS。sidecar 首輪 HTTP 8001 GET timeout、focused 3-test retry 與完整 revalidation 分別保留於 `contracts/scratch/rebase-sidecar-retest-20260919.log`、`contracts/scratch/rebase-backend-retest-20260919.log` 等 log；不放寬 timeout，也未修改產品程式。
 - 2026-09-16 舊 2cb 的 Full/Lite 原生觀察已整理至 [正式 evidence](g2-native-observations-20260916.md)。Full 有 HUD 跨頁、theme 與 fallback 局部觀察；Lite 只有 fallback 啟動局部觀察；pending config write 跨頁仍缺。它們不等於 9/19 rebase 後 candidate native PASS。
+- 2026-09-19 新候選的 actual browser delayed config/reentry 結果見 [browser evidence](g2-browser-observations-20260919.md)：Full/Lite response 前回到 Live、reentry GET readback 與 DOM theme attributes 均有記錄。這補足 browser-side ordering，不能回填 native H5；native pending write 與 Lite native lifecycle 仍為 `not-run`。Full native partial 結果另見 [native evidence](g2-native-observations-20260919.md)。
 
 ## 新 candidate 尚缺的兩項 G2 native 操作
 

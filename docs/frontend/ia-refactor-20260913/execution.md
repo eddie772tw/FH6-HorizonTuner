@@ -22,7 +22,7 @@
 
 Aggregate `c38f13ec90e6de671bea51144446720c461650aa`：118 files／839 tests、build PASS、`git diff --check` PASS。其 backend/build inputs 與 contracts/main 無 diff，沿用有效的 348 backend passed／8 deselected、Ruff check/format、version 11.45.18 結果。product refs 已推送，new-head CI 待完成；Full native 已有 partial observation，Lite 尚未啟動。
 
-2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full partial observation 見 [G2 native observations 20260919](evidence/g2-native-observations-20260919.md)。Full 已觀察啟動、HTTP 8001／UDP 8124、light/modern、獨立 HUD 與兩輪 HUD → Live → HUD；pending config write 未人工 delay，Lite 尚未啟動，故 G2 仍 `partial`。目前繼續完成 G2；G2 通過並完成 handoff 後暫停，不開 W2，也不公布 `WAVE2_BASE_SHA`，完整目標保留至後續恢復。
+2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full partial observation 見 [G2 native observations 20260919](evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry 見 [G2 browser observations 20260919](evidence/g2-browser-observations-20260919.md)。Browser evidence 記錄兩個 response 前回到 Live 的 1.8s delayed writes、reentry GET readback 與 theme DOM attributes；它不替代 native H5/first-paint。Full 已觀察啟動、HTTP 8001／UDP 8124、light/modern、獨立 HUD 與兩輪 HUD → Live → HUD；Lite native 尚未啟動，故 G2 仍 `partial`。目前繼續完成 G2；G2 通過並完成 handoff 後暫停，不開 W2，也不公布 `WAVE2_BASE_SHA`，完整目標保留至後續恢復。
 
 ## 2026-09-14 恢復後現況（歷史快照）
 
