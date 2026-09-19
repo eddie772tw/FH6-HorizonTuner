@@ -67,6 +67,8 @@
 
 ## 專案架構 / Project Architecture
 
+前端由共用 `AppShell` 管理工作區與應用程式選單：Full 提供即時、調校、賽事紀錄、HUD，Lite 提供即時與 HUD。一次只掛載目前工作區；Tune、Road、Sessions 與 HUD 的長生命週期狀態由各功能 provider 持有，避免切頁中斷量測或清空未保存草稿。全域選單提供設定、外觀、診斷、更新與關於。此分支仍在 IA 分階段遷移，面板拆分及完整原生驗收進度見 [Shell 交接](docs/frontend/ia-refactor-20260913/handoffs/shell-20260914.md)。
+
 ```text
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD 工作流 (ci.yml 門禁測試 + release.yml 自動發行)
@@ -90,7 +92,11 @@ FH6-HorizonTuner/
 │   └── car_database.json    # 內建車輛資料庫
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
 │   ├── lite/                # Lite 前端 HTML entrypoint
+│   ├── src/app/             # 共用 Shell、能力契約、工作區與全域 surface 導覽
 │   ├── src/features/        # 業務領域模組 (Features Domain)
+│   │   ├── live/            # Live 工作區入口；Full/Lite 能力投影
+│   │   ├── sessions/        # Sessions 選取狀態、IO 與賽後完成導覽
+│   │   ├── road/            # Road 工作流控制器及 prepare/run/review 狀態
 │   │   ├── telemetry/       # 即時遙測視圖 (TelemetryView) 與 5 大可展開動態卡片
 │   │   ├── tuning/          # 車輛調校嚮導 (TuningView & Step 1~4 分頁)
 │   │   ├── overlay_control/ # WYSIWYG 儀表佈局編輯器 (OverlayView)
@@ -99,7 +105,7 @@ FH6-HorizonTuner/
 │   │   ├── car_params/      # 車輛參數設定 (CarParamsView)
 │   │   ├── settings/        # 系統全域設定 (SettingsView)
 │   │   └── theme/           # 主題色調與皮膚視圖 (ThemeView)
-│   ├── src/components/      # 通用 UI 元件 (Navigation, DiagnosticConsole 等)
+│   ├── src/components/      # 通用 UI 元件 (ModalPortal, DiagnosticConsole 等)
 │   ├── src/domain/tuning/    # 純函數調校 domain（輪胎、載荷轉移、懸吊、齒比與差速器）
 │   │   ├── chassis/          # 懸吊與 Phase 4B 四輪載荷轉移估算
 │   │   └── tires/            # 摩擦橢圓、輪胎幾何與垂直剛度先驗

@@ -6,6 +6,7 @@ import {
   supportBundleRequestBody,
 } from './diagnosticSupportBundle';
 import { ModalPortal } from './common/ModalPortal';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 interface LogEntry {
   timestamp: string;
@@ -20,6 +21,7 @@ interface DiagnosticConsoleProps {
 }
 
 const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) => {
+  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
   const { t } = useSettings();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [level, setLevel] = useState<string>('ALL');
@@ -30,28 +32,26 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
   
   const consoleRef = useRef<HTMLPreElement>(null);
 
-  // Fetch logs
-  const fetchLogs = async () => {
-    if (isPaused) return;
-    try {
-      const res = await backendFetch(`/api/logs?level=${level}&limit=300`);
-      const data = await res.json();
-      if (data.logs) {
-        setLogs(data.logs);
-        setErrorMsg(null);
-      } else if (data.error) {
-        setErrorMsg(data.error);
-      }
-    } catch (err) {
-      setErrorMsg(t("Failed to connect to backend log API."));
-    }
-  };
-
   useEffect(() => {
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 1000);
-    return () => clearInterval(interval);
-  }, [level, isPaused]);
+    if (!show || isPaused) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    const fetchLogs = async () => {
+      try {
+        const res = await backendFetch(`/api/logs?level=${level}&limit=300`, { signal: controller.signal });
+        const data = await res.json();
+        if (controller.signal.aborted) return;
+        if (data.logs) { setLogs(data.logs); setErrorMsg(null); }
+        else if (data.error) setErrorMsg(data.error);
+      } catch {
+        if (!controller.signal.aborted) setErrorMsg(t('Failed to connect to backend log API.'));
+      } finally {
+        if (!controller.signal.aborted) timer = setTimeout(fetchLogs, 1000);
+      }
+    };
+    void fetchLogs();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [show, level, isPaused, t]);
 
   // Handle auto scroll
   useEffect(() => {
@@ -142,6 +142,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
       {/* Offcanvas panel */}
       <div
         className={`offcanvas offcanvas-end terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
+        ref={panelRef}
         tabIndex={-1}
         aria-modal="true"
         role="dialog"

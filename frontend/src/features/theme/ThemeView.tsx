@@ -6,6 +6,7 @@ import ColorPickerPanel from './components/ColorPickerPanel';
 import PresetPanel from './components/PresetPanel';
 import CustomCSSEditorPanel from './components/CustomCSSEditorPanel';
 import { ModalPortal } from '../../components/common/ModalPortal';
+import { useModalFocus } from '../../hooks/useModalFocus';
 
 interface ThemeViewProps {
   show: boolean;
@@ -13,6 +14,7 @@ interface ThemeViewProps {
 }
 
 const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
+  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
   const { themeSettings } = useTheme();
   const { t } = useSettings();
 
@@ -31,6 +33,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
       {/* Offcanvas panel */}
       <div
         className={`offcanvas offcanvas-start theme-sidebar border-end glass-panel shadow-lg${show ? ' show' : ''}`}
+        ref={panelRef}
         tabIndex={-1}
         aria-modal="true"
         role="dialog"

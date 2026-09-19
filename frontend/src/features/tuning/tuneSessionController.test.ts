@@ -8,6 +8,7 @@ import {
   MAX_TUNING_CAPTURE_SAMPLES,
   nextTuneAsyncToken,
   selectedEngineObservationMatchesLiveTelemetry,
+  shouldForceMeasurementPublish,
   shouldInvalidateMeasurementAttempt,
   shouldPreserveIdleIdentityHydration,
   type TuneAsyncToken,
@@ -79,6 +80,14 @@ describe('Tune session controller', () => {
     expect(canFinishAdditionalMeasurement('paused', false, MAX_TUNING_CAPTURE_SAMPLES, false, 'collecting')).toBe(false);
     expect(canFinishAdditionalMeasurement('collecting', false, 10, true, 'collecting')).toBe(true);
     expect(canFinishAdditionalMeasurement('paused', true, MAX_TUNING_CAPTURE_SAMPLES, true, 'collecting')).toBe(false);
+  });
+
+  it('bypasses progress throttling only for a terminal measurement transition', () => {
+    expect(shouldForceMeasurementPublish('collecting', 'collecting', 'collecting')).toBe(false);
+    expect(shouldForceMeasurementPublish('collecting', 'complete', 'ready')).toBe(true);
+    expect(shouldForceMeasurementPublish('collecting', 'invalidated', 'blocked')).toBe(true);
+    expect(shouldForceMeasurementPublish('collecting', 'collecting', 'blocked')).toBe(true);
+    expect(shouldForceMeasurementPublish('complete', 'complete', 'ready')).toBe(false);
   });
 
   it('preserves idle reuse while the first complete live identity hydrates', () => {

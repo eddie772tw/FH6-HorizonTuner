@@ -41,6 +41,14 @@ export const canFinishAdditionalMeasurement = (
   && hasReadySnapshot
   && status !== 'blocked';
 
+/** Terminal transitions are rare and must not wait behind collecting-progress throttling. */
+export const shouldForceMeasurementPublish = (
+  previousPhase: EngineMeasurementPhase,
+  nextPhase: EngineMeasurementPhase,
+  status: TuningMeasurementState['status'],
+): boolean => status === 'blocked'
+  || (previousPhase !== nextPhase && (nextPhase === 'complete' || nextPhase === 'invalidated'));
+
 /** Keep an idle archive selection while its first complete live identity hydrates. */
 export const shouldPreserveIdleIdentityHydration = (
   previous: TuneSessionIdentity,
