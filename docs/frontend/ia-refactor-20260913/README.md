@@ -1,6 +1,6 @@
 # 前端資訊架構重構：開發執行計畫
 
-日期：2026-09-13；更新：2026-09-14。狀態：`active`。使用者已恢復 G5 真實證據驗收前的完整實作目標；非 G5 PR 必須完成必要實作、檢查與審查，缺少 G5 真實證據的相關 PR 保持 draft。即時成果與 ownership 見 [執行紀錄](execution.md)，歷史停筆快照見 [HANDOFF](HANDOFF.md)。
+日期：2026-09-13；更新：2026-09-19。狀態：`active`。使用者已恢復 G5 真實證據驗收前的完整實作目標；非 G5 PR 必須完成必要實作、檢查與審查，缺少 G5 真實證據的相關 PR 保持 draft。即時成果與 ownership 見 [執行紀錄](execution.md)，歷史停筆快照見 [HANDOFF](HANDOFF.md)。
 
 ## 1. 本輪交付與閱讀順序
 
@@ -15,15 +15,23 @@
 | 項目 | 本次確認 |
 | --- | --- |
 | Repository | `eddie772tw/FH6-HorizonTuner` |
-| 盤點基準 | `5891d21bca35161836d84c51d1b6e9c279ec4709` |
-| 遠端狀態 | 2026-09-13 執行 `git fetch origin main` 後，HEAD 與 origin/main 相同 |
+| 目前產品基準 | `568da2041e0cb4bbb58583c3a4dc9a279508094d`（2026-09-19 `origin/main`） |
+| 2026-09-16 IA rebase 基準 | `cd96d86f017fa43f4f3d429155a08aa77dc74bac`；各候選的 local 交付仍未推送，舊 `5891d21` 僅保留在歷史證據 |
 | 原工作區 | `D:/FH6-HorizonTuner`，保留 main 與既有調校 worktree |
 | 規劃工作區 | `D:/FH6-frontend-ia-20260913/plan` |
 | 規劃分支 | `codex/plan/frontend-ia-20260913` |
 | 本輪使用技能 | `cross-agent-collaboration`；實作技能依工作單按需讀取 |
-| 測試證據 | 2026-09-13 靜態盤點與後續 baseline test/build 分開記錄；恢復後各候選重新記錄驗證。最新結果見 execution.md；G0 partial，G1-core code contract 已凍結，G2 尚未通過 |
+| 測試證據 | 2026-09-19 contracts `9baeb1e`：frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS。sidecar 初輪 HTTP 8001 GET timeout 已保留 log，聚焦重跑 3 tests PASS；新 head 的 native 尚待重跑。最新結果見 execution.md；G0 partial，G1-core code contract 已凍結，G2 尚未通過 |
 
-## 2026-09-14 恢復後實作現況
+## 2026-09-19 目前實作現況
+
+`plan` 分支已由 `a422db4f...` 備份至 `refs/ia-backup/20260919/plan`，並 rebase 到 `568da204...`；本輪文件修改待本次 commit 後由 root 推送。9/16 的 active IA candidates 已以 `cd96d86...` 為 rebase 基準；product refs 已依 exact old-SHA lease 推送新 heads，#340–#345 的新 head CI 尚待完成，#339 的 plan head 仍待本次文件 push。
+
+9/16 的 Shell candidate `ca942a95...` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files 與 version 11.45.18 PASS；這些是歷史 local evidence。9/19 contracts candidate `9baeb1ec...` 的 frontend/backend 結果與 sidecar retry 邊界列於 [執行紀錄](execution.md)。目前 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS，Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS（race-fix mapping `d37dbf9`）；兩者 `git diff --check` PASS。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS，HUD `83301f68...` 為 111 files／796 tests/build PASS，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。Shell 新 sidecar build PASS 11.45.18；目前剩餘是 Full Tauri/native 與 new-head CI 登記，未由 local PASS 推定 Ready to Merge。
+
+2026-09-16 的舊 2cb native 觀察已轉成[正式證據](evidence/g2-native-observations-20260916.md)：Full 觀察到 HUD 跨頁、theme 與 fallback，Lite 只有 fallback 啟動的局部觀察；pending write 跨頁仍缺，且這些結果不代表 2026-09-19 rebase 後新候選 native PASS。G2 仍為 `partial`，G2 剩餘是新候選的 Full/Lite C5/H5 native 與 pending-write 跨頁，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`。
+
+## 2026-09-14 恢復後實作現況（歷史快照）
 
 前置 P1 與四個 state foundations 已整合；aggregate 為 `373c0b81add4b80786617c1b1358ce22ca78944d`，G1-core 公開 `CONTRACT_SHA` 仍是 `54165303f12c9598872905571f7162cc5f80effa`。Shell 最新內部 implementation source 為 `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`，只變更 TelemetryRecorder Context 的重入輪詢，不改公開 API。Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 以 state-base 為基底，保留 draft。
 
@@ -35,7 +43,7 @@
 | G3/G4 | W2 A/B/C 與 W3 D 尚未開工；G2 未過，不公布 WAVE2_BASE_SHA。 |
 | G5 | not-run；最後真實 FH6/native/performance matrix 與完整組合驗收仍待取得，相關 PR 必須保持 draft。 |
 
-c5e7fdf 的 race completion 曾在交給 Shell 後仍有第二段等待，B 不能取消 A。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已在公開 contract 候選修正 guard 的 lifecycle、selection/navigation 與 Retry 傳遞；`2cb2983` 的實際 mounted A/B 競爭已驗證 A 不覆蓋 B。原 `shell` 工作樹仍固定 c5；新版 `shell-race-fix` 的 Full/Lite/sidecar 已建置，而 Full 只有啟動與 AX 局部證據，兩次前景啟用失敗，詳見[原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md)，尚非 C5/H5 驗收。
+c5e7fdf 的 race completion 曾在交給 Shell 後仍有第二段等待，B 不能取消 A。[race handoff 修正](https://github.com/eddie772tw/FH6-HorizonTuner/blob/54165303f12c9598872905571f7162cc5f80effa/docs/frontend/ia-refactor-20260913/evidence/g2-race-handoff-fix-20260914.md) 已在公開 contract 候選修正 guard 的 lifecycle、selection/navigation 與 Retry 傳遞；`2cb2983` 的實際 mounted A/B 競爭已驗證 A 不覆蓋 B。原生觀察與當時阻擋原因已移至帶日期的 [2026-09-16 證據](evidence/g2-native-observations-20260916.md) 與 [2026-09-14 產物快照](evidence/g2-native-artifacts-20260914.md)；這些歷史文件不代表 rebase 後新候選驗收。
 
 各 PR 的精確 head、依賴、checks 與 owner 只在 [execution.md](execution.md) 更新。Ready to Merge 必須逐 PR 滿足條件，不能由 non-draft 或個別測試綠燈推定；#339 本次更新前 head 是歷史快照，不冒充更新後 head。原始碼、受控 UI、原生視窗及真實遊戲證據保持分開。
 

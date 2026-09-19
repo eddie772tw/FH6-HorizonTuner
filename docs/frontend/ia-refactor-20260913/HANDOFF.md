@@ -1,10 +1,21 @@
 # Coordinator 交接
 
-目前使用者已恢復 G5 真實證據驗收前的實作目標；即時範圍、寫入 ownership 與驗證狀態以 [execution.md](execution.md) 為準。下列 02:00 規劃交付與停筆結果是歷史快照，不能用來取消後續已恢復的開發授權。
+目前使用者已恢復 G5 真實證據驗收前的實作目標；即時範圍、寫入 ownership 與驗證狀態以 [execution.md](execution.md) 為準。2026-09-14 的規劃交付與停筆結果保留為歷史快照，不能用來取消後續已恢復的開發授權。
 
-更新：2026-09-14（Asia/Taipei）。本文件先記錄恢復後交接，再保留 02:00 snapshot；不要把歷史的 planning-only 欄位當成目前狀態。
+更新：2026-09-19（Asia/Taipei）。本文件先記錄目前交接，再保留帶日期的歷史 snapshot；不要把歷史的 planning-only 欄位當成目前狀態。
 
-## 恢復後交接（live）
+## 2026-09-19 目前交接（live）
+
+接手先讀 [execution.md](execution.md)、[G1-core 凍結紀錄](evidence/g1-shell-freeze-20260914.md)、[G2 最小剩餘操作](evidence/g2-remaining-20260914.md) 與 [2026-09-16 原生觀察](evidence/g2-native-observations-20260916.md)。目前 `origin/main` 是 `568da2041e0cb4bbb58583c3a4dc9a279508094d`；9/16 active IA candidates 已 rebase 到 `cd96d86f017fa43f4f3d429155a08aa77dc74bac`，但未推送。`plan` 已備份 `refs/ia-backup/20260919/plan` 並完成 rebase；本輪文件仍未 commit/push。
+
+- #340–#345 的 product refs 已由 root 依 exact old-SHA lease 推送新 heads：contracts `9baeb1e`、Road `575ff0f`、Sessions `4904990`、Tune `2f0ac23`、HUD `83301f6`、Shell `ee0f7bb`；new-head CI 尚待完成。#339 remote plan 仍是舊 `8f8edf2`，隨本次文件 push 更新；remote 舊 snapshots（aggregate `373c0b8`、Shell `2cb2983`）只作歷史對照，不能代表新 candidate 驗證。
+- 9/19 contracts `9baeb1ec...`：frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS。sidecar 首輪 HTTP 8001 GET timeout 與 focused 3-test retry 均保留在 `contracts/scratch/rebase-*.log`；完整 backend revalidation PASS。native 新 head 尚待重跑。
+- 新 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS、diff-check PASS；Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS、diff-check PASS，race-fix mapping 是 `d37dbf9`，Context blob 仍 `4b534955`。Shell 新 sidecar 與 Full Tauri build PASS、version 11.45.18；Full artifact `dist/g2-full-20260919/FH6-HorizonTuner.exe` 已固定但尚未操作 native，Lite build/native 仍待完成。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS。product refs 已推送，new-head CI 尚待完成。
+- 9/16 Shell 前置 `ca942a95...` 的 frontend 119 files／827 tests、build PASS，backend 335 passed／8 deselected、Ruff 208 files、version 11.45.18 PASS；HUD `83301f68...` 為 111 files／796 tests/build PASS、range 3/3 clean，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。這些 local results 未推送，aggregate/Shell final gate 與 new-head native 尚在重驗，不能由 clean 或舊 CI 推定 Ready to Merge。
+- 2026-09-16 舊 2cb 原生觀察顯示 Full 的 HUD 跨頁、theme/fallback 與 Lite 的 fallback 啟動局部結果；pending config write 跨頁仍缺。它們已轉成 [正式 evidence](evidence/g2-native-observations-20260916.md)，不能當作 9/19 rebase 後 candidate native PASS。
+- G2 維持 `partial`；新 candidate Full/Lite C5/H5 native 與 pending write 跨頁需重新建置、重新觀察。W2 尚未啟動，不公布 `WAVE2_BASE_SHA`。後續 assignments 僅由 Luna 執行，複雜 shared coordination 由 root 保留。
+
+## 2026-09-14 恢復後交接（歷史快照）
 
 接手先讀 [execution.md](execution.md)、[G1-core 凍結紀錄](evidence/g1-shell-freeze-20260914.md)、[G2 最小剩餘操作](evidence/g2-remaining-20260914.md) 與 [原生產物與視窗紀錄](evidence/g2-native-artifacts-20260914.md)。精確 PR 狀態只在 execution 登記，避免多份 current table 漂移。
 

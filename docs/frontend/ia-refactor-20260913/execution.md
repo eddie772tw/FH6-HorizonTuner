@@ -1,14 +1,30 @@
 # IA 執行與交接紀錄
 
-更新：2026-09-14。Owner：Coordinator / Codex。Status：active。
+更新：2026-09-19。Owner：Coordinator / Codex。Status：active。
 
 ## 當前範圍
 
-使用者已恢復開發目標：實作至 G5 真實證據驗收前。Shell/docs 由 Coordinator 持有；Terra 分別完成 race handoff P1 獨立重現、回歸測試與最終複查。產品作者均已停寫；另有 Terra 只做 W2-A 設計盤點，沒有 W2 write lease。
+使用者已恢復開發目標：實作至 G5 真實證據驗收前。Shell/docs 由 Coordinator/root 持有；既有 Terra review 與設計盤點只屬歷史 evidence，產品作者均已停寫。後續 assignments 僅由 Luna 執行，複雜 shared coordination 與最終組合由 root 保留。
 
 本頁是當前候選及 gate 的唯一登記；下方 02:00 保留歷史快照，不能覆寫目前授權或狀態。[baseline.md](baseline.md) 是最初靜態基準。
 
-## 2026-09-14 恢復後現況（live）
+## 2026-09-19 目前現況（live）
+
+目前產品基準為 `568da2041e0cb4bbb58583c3a4dc9a279508094d`（`origin/main`）；9/16 active IA candidates 已以 `cd96d86f017fa43f4f3d429155a08aa77dc74bac` rebase。`plan` 已先建立 `refs/ia-backup/20260919/plan`，本次文件記錄 local candidates；product refs 已由 root 依 exact old-SHA lease 推送，new-head CI 由 root 後續登記。PR #340–#345 已有新 heads、CI 尚待完成；#339 的 plan head 隨本次文件 push。stack integration aggregate 是 `c38f13ec90e6de671bea51144446720c461650aa`，Shell 是 `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`（race-fix mapping `d37dbf9`）；local code/build checks 已記錄，剩餘是 Full/Lite native 操作與 CI 登記。
+
+| Candidate | Local head / verification | Boundary |
+| --- | --- | --- |
+| Contracts | `9baeb1ec6f5edd14b61c6aa90944b1d9bb820623`；frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS | sidecar first pass had HTTP 8001 GET timeout；log retained，focused 3-test retry PASS，完整 backend revalidation PASS；new head native 尚未重跑 |
+| Shell | 目前 stack `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`；120 files／859 tests、build PASS、`git diff --check` PASS；race-fix mapping `d37dbf9`，Context blob 仍 `4b534955`；新 sidecar build PASS、Full Tauri build PASS、version 11.45.18 | new-head CI/native 尚未完成；Full artifact `dist/g2-full-20260919/FH6-HorizonTuner.exe` 已固定，尚未操作 native；舊 2cb evidence 不能回填 |
+| HUD | `83301f68fa0ed04d900a76c4c9e2d88dcb6b8b3f`；111 files／796 tests、build PASS、range 3/3 clean | Luna independent review PASS；new head native 尚未重跑 |
+| Road | `575ff0f139592b17b428b7d044e3ef943656a86e`；112 files／804 tests、build PASS、range 4/4 clean | new head checks/native 尚未完成；不由 clean 推定 ready |
+| Sessions / Tune | `49049908fcb19efa567d6392ff677001404f4546`：114 files／807 tests PASS；`2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4`：111 files／799 tests PASS | local checks recorded; push/CI and native evidence remain |
+
+Aggregate `c38f13ec90e6de671bea51144446720c461650aa`：118 files／839 tests、build PASS、`git diff --check` PASS。其 backend/build inputs 與 contracts/main 無 diff，沿用有效的 348 backend passed／8 deselected、Ruff check/format、version 11.45.18 結果。product refs 已推送，new-head CI 待完成；Full/Lite native 尚未操作。
+
+2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)。Full 曾觀察 HUD 跨頁、theme 與 fallback；Lite 只有 fallback 啟動的局部觀察；Full/Lite pending config write 跨頁仍缺。這些結果不代表 rebase 後新 candidate native PASS，故 G2 仍 `partial`。新 stack 必須重新建置並重跑 Full/Lite C5/H5，W2 尚未啟動，也不公布 `WAVE2_BASE_SHA`。
+
+## 2026-09-14 恢復後現況（歷史快照）
 
 | 項目 | 精確證據與邊界 |
 | --- | --- |
