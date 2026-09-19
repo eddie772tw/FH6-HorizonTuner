@@ -1,37 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { subscribeToDecodedTelemetry } from '../../../hooks/useTelemetry';
-import {
-  captureToCsv,
-  summarizeCapture,
-  telemetryToCaptureSample,
-  TuningCaptureFile,
-  TuningCaptureMetadata,
-  TuningCaptureSample
-} from '../../../domain/tuning/telemetryCapture';
+import React, { useMemo } from 'react';
+import { captureToCsv, summarizeCapture, type TuningCaptureMetadata } from '../../../domain/tuning/telemetryCapture';
+import { useTuneSession } from '../TuneSessionProvider';
 
 interface TuningTelemetryCaptureViewProps {
-  carId: string;
   t: (text: string) => string;
   onBack: () => void;
 }
-
-const MAX_SAMPLES = 30000;
-
-const defaultMetadata = (carId: string): TuningCaptureMetadata => ({
-  label: `tuning-capture-${new Date().toISOString().replace(/[:.]/g, '-')}`,
-  purpose: 'tire-and-chassis-validation',
-  carId,
-  gameBuild: 'unknown',
-  installedParts: 'unknown',
-  tireType: 'unknown',
-  surface: 'unknown',
-  weather: 'unknown',
-  eventType: 'unknown',
-  track: 'unknown',
-  shareCode: 'unknown',
-  driverAssists: 'unknown',
-  notes: ''
-});
 
 const download = (content: string, filename: string, type: string) => {
   const blob = new Blob([content], { type });
@@ -51,65 +25,13 @@ const SummaryRow: React.FC<{ label: string; value: string | number }> = ({ label
   <div className="d-flex justify-content-between border-bottom py-1 gap-2"><span className="text-body-secondary fs-7">{label}</span><span className="fw-bold text-end fs-7">{value}</span></div>
 );
 
-const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({ carId, t, onBack }) => {
-  const [metadata, setMetadata] = useState<TuningCaptureMetadata>(() => defaultMetadata(carId));
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [capture, setCapture] = useState<TuningCaptureFile | null>(null);
-  const [liveCount, setLiveCount] = useState(0);
-  const samplesRef = useRef<TuningCaptureSample[]>([]);
-  const captureMetadataRef = useRef(metadata);
-  const capturingRef = useRef(false);
-  const lastUiUpdateRef = useRef(0);
-
-  useEffect(() => {
-    return subscribeToDecodedTelemetry(data => {
-      if (!capturingRef.current) return;
-      if (String(data.CarOrdinal) !== captureMetadataRef.current.carId) { stopCapture('identity-changed'); return; }
-      samplesRef.current.push(telemetryToCaptureSample(data));
-      if (samplesRef.current.length >= MAX_SAMPLES) { stopCapture('sample-limit'); return; }
-      const now = performance.now();
-      if (now - lastUiUpdateRef.current > 250) {
-        lastUiUpdateRef.current = now;
-        setLiveCount(samplesRef.current.length);
-      }
-    });
-  }, [isCapturing]);
-
-  const summary = useMemo(() => summarizeCapture(capture?.samples ?? samplesRef.current), [capture, liveCount]);
-
-  const startCapture = () => {
-    samplesRef.current = [];
-    setCapture(null);
-    setLiveCount(0);
-    captureMetadataRef.current = { ...metadata, carId };
-    capturingRef.current = true;
-    setIsCapturing(true);
-  };
-
-  const stopCapture = (reason = 'manual-stop') => {
-    capturingRef.current = false;
-    setIsCapturing(false);
-    const nextCapture: TuningCaptureFile = {
-      schemaVersion: 'tuning-capture/v1',
-      capturedAt: new Date().toISOString(),
-      metadata: { ...captureMetadataRef.current },
-      recording: { source: 'decoded-websocket', endReason: reason },
-      samples: [...samplesRef.current]
-    };
-    setCapture(nextCapture);
-    setLiveCount(nextCapture.samples.length);
-  };
-
-  const clearCapture = () => {
-    capturingRef.current = false;
-    setIsCapturing(false);
-    samplesRef.current = [];
-    setCapture(null);
-    setLiveCount(0);
-  };
-
+const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({ t, onBack }) => {
+  const { capture } = useTuneSession();
+  const metadata = capture.metadata;
+  const isCapturing = capture.status === 'capturing';
+  const activeCapture = capture.activeCapture;
+  const summary = useMemo(() => summarizeCapture(activeCapture?.samples ?? []), [activeCapture, capture.revision]);
   const filenameBase = metadata.label.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'tuning-capture';
-  const activeCapture = capture ?? (samplesRef.current.length > 0 ? { schemaVersion: 'tuning-capture/v1' as const, capturedAt: new Date().toISOString(), metadata: captureMetadataRef.current, recording: { source: 'decoded-websocket' }, samples: samplesRef.current } : null);
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -131,31 +53,32 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
             <div className="card-body d-flex flex-column gap-2">
               <h5 className="text-primary fs-6 fw-bold border-bottom pb-2">{t('Capture Metadata')}</h5>
               <label className="form-label fs-7" htmlFor="capture-label">{t('File Label')}</label>
-              <input id="capture-label" className="form-control form-control-sm" value={metadata.label} onChange={(event) => setMetadata(updateMetadata(metadata, 'label', event.target.value))} />
+              <input id="capture-label" className="form-control form-control-sm" value={metadata.label} onChange={(event) => capture.setMetadata(updateMetadata(metadata, 'label', event.target.value))} />
               <div className="row g-2">
                 {(['purpose', 'gameBuild', 'installedParts', 'tireType', 'surface', 'weather', 'eventType', 'track', 'shareCode', 'driverAssists'] as const).map((key) => (
                   <div className="col-12 col-md-6" key={key}>
                     <label className="form-label fs-7" htmlFor={`capture-${key}`}>{t(key)}</label>
-                    <input id={`capture-${key}`} className="form-control form-control-sm" value={metadata[key]} onChange={(event) => setMetadata(updateMetadata(metadata, key, event.target.value))} />
+                    <input id={`capture-${key}`} className="form-control form-control-sm" value={metadata[key]} onChange={(event) => capture.setMetadata(updateMetadata(metadata, key, event.target.value))} />
                   </div>
                 ))}
               </div>
               <label className="form-label fs-7" htmlFor="capture-notes">{t('Notes')}</label>
-              <textarea id="capture-notes" className="form-control form-control-sm" rows={3} value={metadata.notes} onChange={(event) => setMetadata(updateMetadata(metadata, 'notes', event.target.value))} />
+              <textarea id="capture-notes" className="form-control form-control-sm" rows={3} value={metadata.notes} onChange={(event) => capture.setMetadata(updateMetadata(metadata, 'notes', event.target.value))} />
               <div className="d-flex gap-2 flex-wrap mt-2">
-                {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={startCapture}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={() => stopCapture()}>{t('Stop Capture')}</button>}
+                {!isCapturing ? <button className="btn btn-primary btn-sm" onClick={capture.start}>{t('Start Capture')}</button> : <button className="btn btn-danger btn-sm" onClick={() => capture.stop()}>{t('Stop Capture')}</button>}
                 <span
-                  title={isCapturing ? t("Cannot clear while capturing") : undefined}
+                  title={isCapturing ? t('Cannot clear while capturing') : undefined}
                   tabIndex={isCapturing ? 0 : undefined}
-                  role={isCapturing ? "group" : undefined}
-                  aria-label={isCapturing ? t("Cannot clear while capturing") : undefined}
+                  role={isCapturing ? 'group' : undefined}
+                  aria-label={isCapturing ? t('Cannot clear while capturing') : undefined}
                   style={isCapturing ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
                 >
-                  <button className="btn btn-outline-secondary btn-sm" onClick={clearCapture} disabled={isCapturing} style={{ pointerEvents: isCapturing ? 'none' : 'auto' }}>{t('Clear')}</button>
+                  <button className="btn btn-outline-secondary btn-sm" onClick={capture.clear} disabled={isCapturing} style={{ pointerEvents: isCapturing ? 'none' : 'auto' }}>{t('Clear')}</button>
                 </span>
-                <span className="badge bg-secondary-subtle text-secondary-emphasis align-self-center">{isCapturing ? t('Capturing') : t('Idle')} · {liveCount} {t('samples')}</span>
+                <span className="badge bg-secondary-subtle text-secondary-emphasis align-self-center">{isCapturing ? t('Capturing') : capture.status === 'invalidated' ? t('Invalidated') : t('Idle')} · {capture.sampleCount} {t('samples')}</span>
               </div>
-              <div className="form-text fs-7">{t('Maximum capture size is 30,000 frames. Telemetry is collected only while this page is capturing.')}</div>
+              {capture.status === 'invalidated' && <div className="form-text fs-7" role="status">{t('Capture was invalidated because the vehicle identity changed. Start a new capture before using it.')}</div>}
+              <div className="form-text fs-7">{t('Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.')}</div>
             </div>
           </section>
         </div>
@@ -176,19 +99,19 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
               <SummaryRow label={t('Non-monotonic timestamps')} value={summary.droppedTimestampCount} />
               <div className="d-flex gap-2 flex-wrap mt-3">
                 <span
-                  title={(!activeCapture || activeCapture.samples.length === 0) ? t("No capture data available to download") : undefined}
+                  title={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   tabIndex={(!activeCapture || activeCapture.samples.length === 0) ? 0 : undefined}
-                  role={(!activeCapture || activeCapture.samples.length === 0) ? "group" : undefined}
-                  aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t("No capture data available to download") : undefined}
+                  role={(!activeCapture || activeCapture.samples.length === 0) ? 'group' : undefined}
+                  aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
                 >
                   <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={() => activeCapture && download(JSON.stringify({ ...activeCapture, summary: summarizeCapture(activeCapture.samples) }, null, 2), `${filenameBase}.json`, 'application/json')}>{t('Download JSON')}</button>
                 </span>
                 <span
-                  title={(!activeCapture || activeCapture.samples.length === 0) ? t("No capture data available to download") : undefined}
+                  title={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   tabIndex={(!activeCapture || activeCapture.samples.length === 0) ? 0 : undefined}
-                  role={(!activeCapture || activeCapture.samples.length === 0) ? "group" : undefined}
-                  aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t("No capture data available to download") : undefined}
+                  role={(!activeCapture || activeCapture.samples.length === 0) ? 'group' : undefined}
+                  aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
                 >
                   <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={() => activeCapture && download(captureToCsv(activeCapture), `${filenameBase}.csv`, 'text/csv')}>{t('Download CSV')}</button>

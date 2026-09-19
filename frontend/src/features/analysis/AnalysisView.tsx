@@ -10,8 +10,9 @@ import SessionHealthDebrief from "./SessionHealthDebrief";
 import LapDeltaCanvas from "./LapDeltaCanvas";
 import { calculateFrontendDebrief, SessionDebriefData } from "./sessionDebriefMath";
 import { backendFetch } from "../../services/backend";
-
-type MetricType = "speed" | "throttle" | "brake" | "grip" | "suspension";
+import { type AnalysisMetric, useSessionsState } from "../sessions/SessionsStateProvider";
+import { analysisDataPath, analysisSelectionKey } from "../sessions/sessionSelection";
+import { createSessionsIo } from "../sessions/sessionsIo";
 
 const AnalysisView: React.FC = () => {
   const {
@@ -21,69 +22,96 @@ const AnalysisView: React.FC = () => {
     currentSession,
     loadedSession,
     savedSessions,
-    setLoadedSession,
-    fetchCurrentSessionData,
-    loadSavedSession,
+    fetchSavedSessionsList,
     loadSessionLaps,
-    deleteSavedSession,
     exportMoTecCsv,
-    uploadMoTecCsv,
     openInMoTec,
     downloadMoTecTemplate,
     fetchSessionDebrief,
   } = useTelemetryRecorder();
+  const {
+    state: sessionsState,
+    selectedFilename,
+    selectedSessionId,
+    isSavedSelection,
+    selectCurrent,
+    selectSaved,
+    setPrimaryLap,
+    setCompareLap,
+    setMetric,
+    beginSelectionOperation,
+    setImportedSession,
+    loadPrimaryLap,
+    cancelPrimaryLoad,
+    refreshCurrent,
+  } = useSessionsState();
 
   const { t } = useSettings();
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>("speed");
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedFilename, setSelectedFilename] = useState<string>("current");
   const [motecActionMsg, setMotecActionMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Laps & Lap Comparison state
   const [lapsList, setLapsList] = useState<LapSummary[]>([]);
-  const [primaryLap, setPrimaryLap] = useState<number>(0);
-  const [compareLap, setCompareLap] = useState<number>(-1);
   const [compareSessionData, setCompareSessionData] = useState<AnalysisDataPoint[]>([]);
   const [fullSessionTrackData, setFullSessionTrackData] = useState<AnalysisDataPoint[]>([]);
 
   // Debrief Data State
   const [debriefData, setDebriefData] = useState<SessionDebriefData | null>(null);
 
-  // Initial Fetch on mount
-  useEffect(() => {
-    const initData = async () => {
-      setIsLoading(true);
-      const data = await fetchCurrentSessionData(primaryLap);
-      setFullSessionTrackData(data);
+  const { selection, primaryLap, compareLap, metric: selectedMetric, isLoading } = sessionsState;
 
-      const debrief = await fetchSessionDebrief("current");
-      if (debrief) {
-        setDebriefData(debrief);
-      } else if (data && data.length > 0) {
-        setDebriefData(calculateFrontendDebrief(data));
+  // The feature adapter owns writes to loadedSession. Its generation guard
+  // prevents an earlier selection from winning after this view is unmounted.
+  useEffect(() => {
+    if (selection.kind !== "local") void loadPrimaryLap();
+    return cancelPrimaryLoad;
+  }, [cancelPrimaryLoad, loadPrimaryLap, primaryLap, selection]);
+
+  // Secondary view data never writes the shared recorder selection.  It is
+  // still cancelled locally when the selected identity changes or unmounts.
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const selectedKey = analysisSelectionKey(selection);
+    const loadSupportingData = async () => {
+      if (selection.kind === "local") {
+        setLapsList([]);
+        setFullSessionTrackData(loadedSession ?? []);
+        setDebriefData(loadedSession && loadedSession.length > 0 ? calculateFrontendDebrief(loadedSession) : null);
+        return;
       }
-      setIsLoading(false);
+      const sessionId = selectedSessionId;
+      const fullTrackPath = analysisDataPath(selection, 0);
+      if (!sessionId || !fullTrackPath) return;
+      const [fullTrack, laps, debrief] = await Promise.all([
+        backendFetch(fullTrackPath, { signal: controller.signal })
+          .then(response => response.json())
+          .catch(() => null),
+        selection.kind === "current" ? Promise.resolve([]) : loadSessionLaps(sessionId),
+        fetchSessionDebrief(sessionId),
+      ]);
+      if (!active || analysisSelectionKey(selection) !== selectedKey) return;
+      setLapsList(laps);
+      if (Array.isArray(fullTrack)) setFullSessionTrackData(fullTrack);
+      if (debrief) setDebriefData(debrief);
     };
-    initData();
-  }, []);
+    void loadSupportingData();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [fetchSessionDebrief, loadSessionLaps, loadedSession, selectedSessionId, selection]);
 
   // During Live Recording, periodically refresh full session data and debrief
   useEffect(() => {
-    let intervalId: any = null;
-    if (isRecording) {
-      intervalId = setInterval(async () => {
-        const fullPoints = await fetchCurrentSessionData(0);
-        if (fullPoints && fullPoints.length > 0) {
-          setFullSessionTrackData(fullPoints);
-          setDebriefData(calculateFrontendDebrief(fullPoints));
-        }
-      }, 4000);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isRecording]);
+    if (!isRecording || selection.kind !== "current") return;
+    const intervalId = window.setInterval(() => {
+      void refreshCurrent().then(data => {
+        if (data && data.length > 0) setDebriefData(calculateFrontendDebrief(data));
+      });
+    }, 4000);
+    return () => window.clearInterval(intervalId);
+  }, [isRecording, refreshCurrent, selection.kind]);
 
   const activeSession = loadedSession || currentSession;
 
@@ -94,96 +122,50 @@ const AnalysisView: React.FC = () => {
     }
   }, [activeSession]);
 
-  // Load Lap Summaries & Full Track Base Data when selected Session changes
-  useEffect(() => {
-    const fetchLapsAndFullTrack = async () => {
-      if (selectedFilename !== "current" && selectedFilename !== "local") {
-        const laps = await loadSessionLaps(selectedFilename);
-        setLapsList(laps);
-
-        const res = await backendFetch(
-          `/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=0`,
-        );
-        const data = await res.json();
-        if (Array.isArray(data)) setFullSessionTrackData(data);
-
-        const debrief = await fetchSessionDebrief(selectedFilename);
-        if (debrief) setDebriefData(debrief);
-      } else {
-        setLapsList([]);
-      }
-    };
-    fetchLapsAndFullTrack();
-  }, [selectedFilename]);
-
-  // Load Primary Lap Data when primaryLap dropdown changes
-  useEffect(() => {
-    const reloadPrimaryLap = async () => {
-      setIsLoading(true);
-      if (selectedFilename === "current") {
-        await fetchCurrentSessionData(primaryLap);
-      } else if (selectedFilename !== "local") {
-        await loadSavedSession(selectedFilename, primaryLap);
-      }
-      setIsLoading(false);
-    };
-    reloadPrimaryLap();
-  }, [primaryLap]);
-
   // Load Compare Lap Data when compareLap dropdown changes
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
     const fetchCompareData = async () => {
-      if (compareLap > 0 && selectedFilename !== "local") {
-        if (selectedFilename === "current") {
-          const res = await backendFetch(
-            `/api/analysis/data?lap=${compareLap}`,
-          );
-          const data = await res.json();
-          if (Array.isArray(data)) setCompareSessionData(data);
-        } else {
-          const res = await backendFetch(
-            `/api/analysis/sessions/${encodeURIComponent(selectedFilename)}?lap=${compareLap}`,
-          );
-          const data = await res.json();
-          if (Array.isArray(data)) setCompareSessionData(data);
+      const path = compareLap > 0 ? analysisDataPath(selection, compareLap) : null;
+      if (path) {
+        try {
+          const data = await backendFetch(path, { signal: controller.signal }).then(response => response.json());
+          if (active && Array.isArray(data)) setCompareSessionData(data);
+        } catch {
+          if (active) setCompareSessionData([]);
         }
       } else {
         setCompareSessionData([]);
       }
     };
-    fetchCompareData();
-  }, [compareLap, selectedFilename]);
+    void fetchCompareData();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [compareLap, selection]);
 
   const handleDropdownChange = async (
     e: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const val = e.target.value;
-    setSelectedFilename(val);
-    setPrimaryLap(0);
-    setCompareLap(-1);
-
-    setIsLoading(true);
     if (val === "current") {
-      setLoadedSession(null);
-      await fetchCurrentSessionData(0);
-    } else if (val !== "local") {
-      await loadSavedSession(val, 0);
+      selectCurrent();
+    } else {
+      selectSaved(val);
     }
-    setIsLoading(false);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setIsLoading(true);
-      const data = await uploadMoTecCsv(file);
-      if (data && data.length > 0) {
-        setLoadedSession(data);
-        setSelectedFilename("local");
+      const operation = beginSelectionOperation();
+      const data = await createSessionsIo().importMoTeCCsv(file);
+      if (data && data.length > 0 && setImportedSession(data, operation)) {
         setFullSessionTrackData(data);
         setDebriefData(calculateFrontendDebrief(data));
       }
-      setIsLoading(false);
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -192,31 +174,31 @@ const AnalysisView: React.FC = () => {
 
   const handleOpenInMoTec = async () => {
     const sid =
-      selectedFilename === "current"
+      selectedSessionId === "current"
         ? (currentSessionId || (savedSessions.length > 0 ? savedSessions[0].session_id : "current"))
-        : selectedFilename;
+        : (selectedSessionId || "current");
     const result = await openInMoTec(sid);
     setMotecActionMsg(result.message);
     setTimeout(() => setMotecActionMsg(null), 4000);
   };
 
   const handleDeleteSession = async () => {
-    if (selectedFilename === "current" || selectedFilename === "local") return;
+    if (!isSavedSelection || !selectedSessionId) return;
     if (
       confirm(
-        `${t("Are you sure you want to delete this session?")} (${selectedFilename})`,
+        `${t("Are you sure you want to delete this session?")} (${selectedSessionId})`,
       )
     ) {
-      setIsLoading(true);
-      const success = await deleteSavedSession(selectedFilename);
+      const operation = beginSelectionOperation();
+      const success = await createSessionsIo().deleteSavedSession(selectedSessionId);
       if (success) {
-        setLoadedSession(null);
-        setSelectedFilename("current");
-        await fetchCurrentSessionData();
-      } else {
+        // Library reconciliation does not alter the selected source. The
+        // guarded transition is skipped if the user selected something newer.
+        await fetchSavedSessionsList();
+        if (operation.isCurrent()) selectCurrent();
+      } else if (operation.isCurrent()) {
         alert(t("Failed to delete session."));
       }
-      setIsLoading(false);
     }
   };
 
@@ -275,7 +257,7 @@ const AnalysisView: React.FC = () => {
 
   const activeCanvasData = useMemo(() => formatTrackCanvasData(activeSession), [activeSession, formatTrackCanvasData]);
   const baseCanvasData = useMemo(() => formatTrackCanvasData(fullSessionTrackData), [fullSessionTrackData, formatTrackCanvasData]);
-  const isSavedSession = selectedFilename !== "current" && selectedFilename !== "local";
+  const isSavedSession = selection.kind === "saved" || selection.kind === "latest";
 
   const fallbackDebrief: SessionDebriefData = debriefData || {
     total_samples: activeSession.length,
@@ -436,7 +418,7 @@ const AnalysisView: React.FC = () => {
             </button>
 
             {/* Delete Session */}
-            {selectedFilename !== "current" && selectedFilename !== "local" && (
+            {isSavedSelection && (
               <button
                 onClick={handleDeleteSession}
                 className="btn btn-sm btn-danger"
@@ -531,7 +513,7 @@ const AnalysisView: React.FC = () => {
                   </span>
                   <select
                     value={selectedMetric}
-                    onChange={(e) => setSelectedMetric(e.target.value as MetricType)}
+                    onChange={(e) => setMetric(e.target.value as AnalysisMetric)}
                     style={{ ...selectStyle, minWidth: "100px", padding: "0.2rem 0.4rem", fontSize: "0.75rem" }}
                   >
                     <option value="speed">{t("Speed")}</option>
@@ -571,9 +553,9 @@ const AnalysisView: React.FC = () => {
 };
 
 const selectStyle: React.CSSProperties = {
-  background: "#111",
-  color: "#fff",
-  border: "1px solid rgba(255,255,255,0.2)",
+  background: "var(--surface-1)",
+  color: "var(--text-primary)",
+  border: "1px solid var(--glass-border)",
   padding: "0.4rem 0.6rem",
   borderRadius: "4px",
   fontSize: "0.85rem",

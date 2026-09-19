@@ -9,12 +9,14 @@ import { LegacyTuningHistory } from './LegacyTuningHistory';
 import { observeTireEvidence } from '../tireEvidence';
 import { TireEvidencePanel } from './TireEvidencePanel';
 import { useMemo } from 'react';
+import { useTuneSession } from '../TuneSessionProvider';
 
 export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
   carId: string; profile: CarParams | null; engine: ReturnType<typeof useEngineMeasurementArchive>;
   gearing: GearingResult | null; enabled: boolean;
 }) {
   const { t } = useSettings();
+  const { engineMeasurement } = useTuneSession();
   const measured = engine.current;
   const tireEvidence = useMemo(() => measured && engine.observation?.capture ? observeTireEvidence(engine.observation.capture.samples, {
     carOrdinal: measured.identity!.ordinal, performanceIndex: measured.identity!.performanceIndex, carClass: measured.identity!.carClass,
@@ -25,11 +27,11 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
     </div>
     <EngineObservationHistory entries={engine.archive} compatibleIds={engine.compatible.map(item => item.id)} reuse={engine.reuse} storageError={engine.storageError} />
     <LegacyTuningHistory carId={carId} />
-    {engine.storageError && <p role="status">{t('The observation could not be saved. Keep this page open and retry Continue; collected frames are retained.')}</p>}
+    {engine.storageError && <p role="status">{t('The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.')}</p>}
     {measured ? <div className="glass-panel p-3"><p>{t('Measured engine limit')}: {measured.engineMaxRpm} RPM · {t('Peak power RPM')}: {Math.round(measured.observedPeakPower!.rpm)} · {t('Peak torque RPM')}: {Math.round(measured.observedPeakTorque!.rpm)}</p>
       <TireEvidencePanel evidence={tireEvidence} />
-      <button className="btn btn-outline-secondary" onClick={engine.invalidate}>{t('Collect driving data again')}</button></div>
-      : <TuningMeasurementStep carId={carId} enabled={enabled} onComplete={engine.complete} />}
+      <button className="btn btn-outline-secondary" onClick={() => engineMeasurement.restart(enabled)}>{t('Collect driving data again')}</button></div>
+      : <TuningMeasurementStep carId={carId} enabled={enabled} />}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}
     {gearing && measured && <div className="glass-panel p-3"><GearingTuner showCorrections={false} numGears={gearing.gears.length}
       tuning={{ gearing: { ...gearing, maxRpm: measured.engineMaxRpm } }}
