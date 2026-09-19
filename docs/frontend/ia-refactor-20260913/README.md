@@ -1,6 +1,6 @@
 # 前端資訊架構重構：開發執行計畫
 
-日期：2026-09-13；更新：2026-09-19。狀態：`active`。使用者已恢復 G5 真實證據驗收前的完整實作目標；非 G5 PR 必須完成必要實作、檢查與審查，缺少 G5 真實證據的相關 PR 保持 draft。即時成果與 ownership 見 [執行紀錄](execution.md)，歷史停筆快照見 [HANDOFF](HANDOFF.md)。
+日期：2026-09-13；更新：2026-09-19。狀態：`active`。使用者已恢復交付流程以完成 G2 closure、final handoff 與 push；完整 G5 實作目標保留，非 G5 PR 仍須完成必要實作、檢查與審查，缺少 G5 真實證據的相關 PR 保持 draft。後續新 task 僅準備 W2 入口與 ownership，不自動開始 W2 實作；即時成果與 ownership 見 [執行紀錄](execution.md)，歷史停筆快照見 [HANDOFF](HANDOFF.md)。
 
 ## 1. 本輪交付與閱讀順序
 
@@ -21,15 +21,15 @@
 | 規劃工作區 | `D:/FH6-frontend-ia-20260913/plan` |
 | 規劃分支 | `codex/plan/frontend-ia-20260913` |
 | 本輪使用技能 | `cross-agent-collaboration`；實作技能依工作單按需讀取 |
-| 測試證據 | 2026-09-19 contracts `9baeb1e`：frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS。sidecar 初輪 HTTP 8001 GET timeout 已保留 log，聚焦重跑 3 tests PASS；新 head 的 native 尚待重跑。最新結果見 execution.md；G0 partial，G1-core code contract 已凍結，G2 尚未通過 |
+| 測試證據 | 2026-09-19 contracts `9baeb1e`：frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS。sidecar 初輪 HTTP 8001 GET timeout 已保留 log，聚焦重跑 3 tests PASS；Full/Lite native、browser C5/H5 split 與 X1 evidence 已完成。最新結果見 execution.md；G0 partial，G1-core code contract 已凍結，G2 foundation scope PASS，G5 尚未宣告 |
 
 ## 2026-09-19 目前實作現況
 
-`plan` 分支已由 `a422db4f...` 備份至 `refs/ia-backup/20260919/plan`，並 rebase 到 `568da204...`；本輪文件修改待本次 commit 後由 root 推送。9/16 的 active IA candidates 已以 `cd96d86...` 為 rebase 基準；product refs 已依 exact old-SHA lease 推送新 heads，#340–#345 的新 head CI 尚待完成，#339 的 plan head 仍待本次文件 push。
+`plan` 分支已由 `a422db4f...` 備份至 `refs/ia-backup/20260919/plan`，並 rebase 到 `568da204...`；本輪文件記錄 local candidate，推送與 CI 由 root 後續登記。9/16 的 active IA candidates 已以 `cd96d86...` 為 rebase 基準；product refs 已依 exact old-SHA lease 推送新 heads，#340–#345 的 exact new heads 已有 SUCCESS checks，#339 的新文件 head 尚待本次文件 push 後重查。
 
-9/16 的 Shell candidate `ca942a95...` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files 與 version 11.45.18 PASS；這些是歷史 local evidence。9/19 contracts candidate `9baeb1ec...` 的 frontend/backend 結果與 sidecar retry 邊界列於 [執行紀錄](execution.md)。目前 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS，Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS（race-fix mapping `d37dbf9`）；兩者 `git diff --check` PASS。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS，HUD `83301f68...` 為 111 files／796 tests/build PASS，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。Shell 新 sidecar build PASS 11.45.18；目前剩餘是 Full Tauri/native 與 new-head CI 登記，未由 local PASS 推定 Ready to Merge。
+9/16 的 Shell candidate `ca942a95...` 有 119 files／827 frontend tests、build PASS、335 backend passed／8 deselected、Ruff 208 files 與 version 11.45.18 PASS；這些是歷史 local evidence。9/19 contracts candidate `9baeb1ec...` 的 frontend/backend 結果與 sidecar retry 邊界列於 [執行紀錄](execution.md)。目前 stack aggregate `c38f13ec90e6de671bea51144446720c461650aa` 為 118 files／839 tests、build PASS，Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 為 120 files／859 tests、build PASS（race-fix mapping `d37dbf9`）；兩者 `git diff --check` PASS。Sessions `49049908...` 為 114 files／807 tests PASS，Tune `2f0ac23...` 為 111 files／799 tests PASS，HUD `83301f68...` 為 111 files／796 tests/build PASS，Road `575ff0f...` 為 112 files／804 tests/build PASS、range 4/4 clean。Shell 新 sidecar build PASS 11.45.18；product exact-head CI 已記錄，G2 foundation scope 已通過，剩餘為 root final handoff/push、#339 新文件 head CI 重查與後續使用者要求的暫停；未由 local PASS 推定整體計畫 Ready to Merge。
 
-2026-09-16 的舊 2cb native 觀察已轉成[正式證據](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full native partial observation 另記於[正式 native evidence](evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry evidence 則記於[瀏覽器 evidence](evidence/g2-browser-observations-20260919.md)。Browser helper 觀察到 Full/Lite response 前回到 Live、reentry GET 讀回與 DOM theme attributes；這不等同 Tauri native H5 或 first-paint。Full native 已觀察啟動、8001/8124、light/modern、獨立 HUD 與兩輪重入，Lite native 尚未啟動，因此不能宣稱完整 native PASS。G2 仍為 `partial`，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`。目前先完成 G2；G2 通過並完成 handoff 後暫停，不開 W2，完整目標保留至後續恢復。
+2026-09-16 的舊 2cb native 觀察已轉成[正式證據](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full/Lite normal、fallback、HUD lifecycle 與 listener cleanup 另記於[正式 native evidence](evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry、early-root/theme 與 X1 page-channel evidence 則記於[瀏覽器 evidence](evidence/g2-browser-observations-20260919.md)。Browser evidence 與 native evidence 的環境邊界、artifact、port、HUD id 與 cleanup 均已登記；[G2 closure](evidence/g2-closure-20260919.md) 核准 foundation scope PASS。這不等同 G5、真實 FH6、完整 native first-paint 或效能完成。G2 foundation 已通過，W2 尚未啟動，也不發布 `WAVE2_BASE_SHA`；root 完成 final handoff/push 後依使用者條件暫停，完整目標保留至後續恢復。
 
 ## 2026-09-14 恢復後實作現況（歷史快照）
 
@@ -203,7 +203,7 @@ Feature PR 只寫 allowed paths。要接 shared shell、locale 或跨 lane UI �
 
 - **G0**：G0-code 的 SHA、dirty ownership、inventory、baseline test/build 是 P1/W1 開工前置；G0-observability 的 Full/Lite native 與三次效能基準是 X3/G5 比較前置。後者未完成不阻擋純契約/狀態前置，但 G0 整體仍為 partial，不作效能或 G5 通過證據。
 - **G1**：G1-core 實際介面與狀態存活表 freeze；pure contract tests 通過；無 any navigation bus。C4 此時只確認資料語意；Road review slot 在 Shell + A foundation 接線後、D 開工前獨立 freeze，不阻擋 P2。目前 code contract 已在 `54165303f12c9598872905571f7162cc5f80effa` 凍結，詳見 producer/consumer 紀錄。
-- **G2**：共用 Shell 可用、provider 沒重建、草稿/capture/recorder/HUD bridge 跨頁正確；有效 Live/Sessions adapters；允許 W2。目前只有局部受控 UI/整合 evidence，維持 `partial`，尚未允許 W2。
+- **G2**：共用 Shell 可用、provider 沒重建、草稿/capture/recorder/HUD bridge 跨頁正確；有效 Live/Sessions adapters；C5/H5 split 與 X1 page-channel evidence 已經 Coordinator 核准，foundation scope `PASS`。W2 仍未啟動，待 root final handoff 後依條件暫停，不發布 `WAVE2_BASE_SHA`。
 - **G3**：A/B/C 個別實作、Coordinator 接線與 lane gates 完成；A→D 的 review slot/return-to-Tune 介面已 freeze 並記錄 SHA。D 的開工只依 A 接點與 Shell 的實際整合，不必空等無關 B/C 面板。
 - **G4**：Road review 可由 Sessions 開啟，Tune 不再切成 history viewer；Road 原生與其他目的 compatibility 邊界保留。
 - **G5**：active-only UI mount、無新增資源洩漏、效能比較、Full/Lite/native smoke、文件同步全部完成。

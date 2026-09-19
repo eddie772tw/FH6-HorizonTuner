@@ -1,6 +1,6 @@
 # 分工與可派發工作單
 
-本文件搭配 [執行計畫](README.md) 與 [介面/開工條件](contracts-and-gates.md)。使用者已恢復實作；既有 W1 分支與草稿的現況見 [執行紀錄](execution.md) 及 [實作交接快照](handoffs/implementation-snapshot-20260914.md)。W2–W4 仍為 `proposed`；沒有建立使用者擁有的實作子任務。未來派發時須填入當時已通過 gate 的 SHA，不能用本文的預定分支名稱推論已有授權或成果。
+本文件搭配 [執行計畫](README.md) 與 [介面/開工條件](contracts-and-gates.md)。使用者已恢復 G2 closure 後的交付收尾；既有 W1 分支與草稿的現況見 [執行紀錄](execution.md) 及 [實作交接快照](handoffs/implementation-snapshot-20260914.md)。W2–W4 仍為 `proposed`；本次後續 task 僅準備 W2 的 entry、ownership 與 exact SHA 重新確認，不自動開始 W2 實作，也沒有建立使用者擁有的實作子任務。root 完成 final handoff/push 後依條件暫停。未來派發時須填入當時已通過 gate 的 SHA，不能用本文的預定分支名稱推論已有授權或成果。
 
 2026-09-16 使用者新增限制：所有後續子代理（含 W1 修正、rebase 與 review）僅使用 Luna；既定 `high`/`xhigh` 思考起點可保留。歷史 Terra 執行與 review 紀錄只描述已發生工作，不構成後續授權；複雜協調與決策由 Coordinator/root 處理。
 

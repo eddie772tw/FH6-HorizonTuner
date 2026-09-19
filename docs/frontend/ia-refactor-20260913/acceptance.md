@@ -1,6 +1,6 @@
 # 驗收矩陣與證據格式
 
-本表定義驗收要求，不是全項通過紀錄。2026-09-13 規劃時所有產品執行項均為 `not-run`；後續已執行的局部結果見 [執行紀錄](execution.md) 與 [G0 基準](evidence/g0-baseline.md)。使用者已恢復實作，依本矩陣逐項取得證據。保留已做過的測試事實；沒有對應行為/環境證據的項目仍為 `not-run`，計畫完成不代表產品通過。
+本表定義驗收要求，不是全項通過紀錄。2026-09-13 規劃時所有產品執行項均為 `not-run`；後續已執行的局部結果見 [執行紀錄](execution.md) 與 [G0 基準](evidence/g0-baseline.md)。使用者目前恢復的是 G2 closure 後的交付收尾；G2 foundation scope 已依 closure 核准，W2–W4/G5 仍按本矩陣逐項取得證據。保留已做過的測試事實；沒有對應行為/環境證據的項目仍為 `not-run`，計畫完成不代表產品通過。
 
 G1 欄位確認、A→D 介面 freeze、每波出口與 PR-ready 定義見 [contracts-and-gates.md](contracts-and-gates.md)。某 pure test 覆蓋了 C2 的拒絕 intent 邏輯，不代表 C2 的 Lite 實際 mount 行為也通過；每項證據必須細分。
 

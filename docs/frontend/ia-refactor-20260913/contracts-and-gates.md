@@ -1,10 +1,10 @@
 # 介面、開工條件與 PR 出口
 
-更新：2026-09-19。Owner：Coordinator。狀態：public `CONTRACT_SHA` 的歷史 freeze 為 `54165303f12c9598872905571f7162cc5f80effa`；目前 stack 的 aggregate candidate 是 `c38f13ec90e6de671bea51144446720c461650aa`，Shell candidate 是 `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`（race-fix mapping `d37dbf9`，Context blob 仍為 `4b534955`），product refs 已推送，new-head CI 待完成。A-D 不包含在 public freeze。G2 為 partial，最小剩餘是新 candidate 的 C5/H5 native 與 pending-write 跨頁，G5 必要證據另待取得。本文件細化 [主計畫](README.md)，不取代 [實際狀態](execution.md) 或 [行為驗收](acceptance.md)。
+更新：2026-09-19。Owner：Coordinator。狀態：public `CONTRACT_SHA` 的歷史 freeze 為 `54165303f12c9598872905571f7162cc5f80effa`；目前 stack 的 aggregate candidate 是 `c38f13ec90e6de671bea51144446720c461650aa`，Shell candidate 是 `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`（race-fix mapping `d37dbf9`，Context blob 仍為 `4b534955`），product refs 已推送，exact product-head CI 已由 read-only audit 登記。A-D 不包含在 public freeze。G2 foundation scope 已依 C5/H5 split、X1 與 T3 review 核准為 PASS；G5 必要證據另待取得。本文件細化 [主計畫](README.md)，不取代 [實際狀態](execution.md) 或 [行為驗收](acceptance.md)。
 
 ## 1. G1-core 公開介面確認表
 
-已凍結的逐項 producer/consumer、精確 SHA 與證據見 [G1-core 紀錄](evidence/g1-shell-freeze-20260914.md)。`2cb2983` 的 [受控 mounted 證據](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 已完成操作 1–3；G2 最小 native 缺項獨立列於 [剩餘操作](evidence/g2-remaining-20260914.md)，不以 code contract freeze 抹去行為驗收。
+已凍結的逐項 producer/consumer、精確 SHA 與證據見 [G1-core 紀錄](evidence/g1-shell-freeze-20260914.md)。`2cb2983` 的 [受控 mounted 證據](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 已完成操作 1–3；其狹義 carry-forward 與新候選的 C5/H5 完成結果見 [G2 操作紀錄](evidence/g2-remaining-20260914.md)，不以 code contract freeze 取代行為驗收。
 
 G1-core 是 P2 前置：包含 workspace/capability/intent、四個狀態前置、資料來源與生命週期契約。C4 在此只凍結 analysis filename 與 Road workflowId 的分界；ValidationReviewSlot、A_FOUNDATION_SHA、AD_INTERFACE_SHA 屬於後續 A→D 接點確認，不是 P2/G2 前置。後期 review export 尚未存在，不阻擋共用 Shell 開工。
 
@@ -18,15 +18,15 @@ G1-core 是 P2 前置：包含 workspace/capability/intent、四個狀態前置�
 | SessionIntent / AppIntent | Coordinator / Shell、A、D | P1 已有 latest-analysis、analysis filename、road workflowId；候選 #340 經 local review PASS | capability 拒絕、單次消費、資料選擇與導航分離、失敗不搶焦點 |
 | TuneSessionProvider / useTuneSession | W1 Tune owner / 正式與 Developer Tune、root 掛載 | aggregate state-base `373c0b81add4b80786617c1b1358ce22ca78944d` 已含前置整合；CUA 觀察 goal/weight/Developer 301 跨頁，T3 1080 frames / 18 seconds sweep 與 save POST pending 往返成功 | 下節 state 表與既有量測失效/重測語意；Lite 不掛載；pending save 能完成但不得污染新 identity |
 | RoadValidationProvider / useRoadValidation | W1 Road owner / Tune Step 4、D | aggregate state-base 已含候選前置；T3 save evidence 已有；Road snapshot fix 完成，Terra 獨立 review 9 tests/tsc PASS，UI baseline 建立成功；backend immutable guard 已拒絕帶 capture snapshot | selected workflow、所有未保存草稿、active run reconcile、pending operation 跨頁結算；完整 state/identity matrix 尚缺 |
-| SessionsStateProvider / SessionsWorkspace / SessionsRuntime / LiveWorkspace | W1 A0 owner，後交 A / root | 舊 aggregate state-base `373c0b8...` 的受控 evidence 已完成；目前 local aggregate candidate 為 `c38f13ec90e6de671bea51144446720c461650aa`，new stack final gate 尚在重驗 | 結果資料 identity、current/latest/saved/local、離頁返回、bounded retry、Full-only runtime；G2 不再列新的 browser matrix，僅保留新 candidate 的 C5/H5 native |
-| OverlayControlRuntimeProvider / useOverlayControlRuntime | W1 B0 owner，後交 B / HUD page、root | aggregate/Shell 已有 HUD offset 5 跨頁與 backend readback、raw capture 120 → HUD → 240 evidence；C5/H5 native 待完成 | Full/Lite app-session boundary；typed nested patch、未知欄位保留、序列化寫入與權威回讀 |
+| SessionsStateProvider / SessionsWorkspace / SessionsRuntime / LiveWorkspace | W1 A0 owner，後交 A / root | 舊 aggregate state-base `373c0b8...` 的受控 evidence 已完成；目前 aggregate candidate `c38f13ec90e6de671bea51144446720c461650aa` 已 local final gate PASS，product exact-head CI 另見 execution | 結果資料 identity、current/latest/saved/local、離頁返回、bounded retry、Full-only runtime；G2 foundation closure 已核准，W2 仍未啟動 |
+| OverlayControlRuntimeProvider / useOverlayControlRuntime | W1 B0 owner，後交 B / HUD page、root | 歷史 aggregate/Shell 已有 HUD offset 5 跨頁與 backend readback、raw capture 120 → HUD → 240 evidence；新候選 C5 combined 與 H5 browser/native split 已核准為 G2 foundation PASS，詳見 closure | Full/Lite app-session boundary；typed nested patch、未知欄位保留、序列化寫入與權威回讀；完整 G5 驗收另待取得 |
 | ValidationReviewSlot 或同用途型別（非 G1-core） | Coordinator + A / D review export | 提議，W3 開工前確認 | workflowId 分界、selected review、onReturnToTune、結果 actions 的 owner、無第二條錄製 |
 
 G1-core 記錄至少包含：實際 export 路徑與名稱、producer/consumer、BASE_SHA、CONTRACT_SHA、測試證據、owner 的交接狀態。public contract 的 `CONTRACT_SHA` 已登記為 [`54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa)，authoritative race 修正與 terminal measurement force-publish 已完成且 Terra 最後整合 review PASS、無 P1/P2 blocker；新 race handoff 修正另經 Terra 獨立複查，guard 保留至 Shell 第二段 preflight 與 Retry。此 freeze 只涵蓋 G1-core public contract，不涵蓋 A-D，也不等於 G2 pass。A→D 接點依第 3 節獨立確認，不回頭阻擋 G1-core。
 
 ### 1.1 恢復後候選紀錄
 
-舊 aggregate state-base [`373c0b81add4b80786617c1b1358ce22ca78944d`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/373c0b81add4b80786617c1b1358ce22ca78944d) 與 public Shell contract [commit `54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa) 是歷史 freeze。舊 source [commit `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe) 的 Context blob `4b53495569904fb95a19d6195037834f3f8f14ca` 未改 public API；其 119 files／794 frontend tests、Full/Lite build、334 backend tests、8 backend test modules、Ruff 214 files 與 version `11.45.17` 僅屬舊受控交付記錄。當前 local aggregate `c38f13ec90e6de671bea51144446720c461650aa` 與 Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 尚待 final gate；Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 為 draft，精確 head/checks 只在 execution 登記。
+舊 aggregate state-base [`373c0b81add4b80786617c1b1358ce22ca78944d`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/373c0b81add4b80786617c1b1358ce22ca78944d) 與 public Shell contract [commit `54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa) 是歷史 freeze。舊 source [commit `2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe) 的 Context blob `4b53495569904fb95a19d6195037834f3f8f14ca` 未改 public API；其 119 files／794 frontend tests、Full/Lite build、334 backend tests、8 backend test modules、Ruff 214 files 與 version `11.45.17` 僅屬舊受控交付記錄。當前 local aggregate `c38f13ec90e6de671bea51144446720c461650aa` 與 Shell `ee0f7bb9f5e607a682a5136bb0785deb580e51fb` 已完成 local final gate；Shell [PR #345](https://github.com/eddie772tw/FH6-HorizonTuner/pull/345) 為 draft，精確 head/checks 只在 execution 登記。
 
 精確 PR head/checks 與依賴條件統一見 [execution.md](execution.md)，不在本契約文件維護第二份 current table。root-owned [g0-lite-browser-20260914.md](evidence/g0-lite-browser-20260914.md) 是基準證據，沒有 native/三次效能結論。
 
@@ -94,7 +94,7 @@ D export 歷史 review 後，Coordinator 接入 A 留下的 slot，另記 `AD_IN
 
 ## 5. 每波出口與依賴
 
-以下是目前實作順序。W1 與 Shell 已提交，G1-core code contract 已更新；G0 observability 與 G2 完整行為仍未通過。
+以下是目前實作順序。W1 與 Shell 已提交，G1-core code contract 已更新，G2 foundation scope 已通過；G0 observability、W2–W4 完整功能與 G5 驗收仍待完成。
 
 G0-code（固定 SHA、dirty ownership、inventory、baseline test/build）是 P1/W1 開工條件。G0-observability（Full/Lite native baseline、三次效能基準）以固定 source SHA 保留，作為 X3/G5 比較前置；尚缺時可進行純契約與狀態前置，但不能宣稱效能改善或 G5 通過。G2 明列的 native HUD lifecycle 子項仍須在 G2 取得，不能延後冒充已完成。
 
@@ -113,7 +113,7 @@ G2 只驗證既有 UI 加上 W1 狀態前置的跨頁行為：T1–T4 由 Coordi
 
 G2 前置的實際 native HUD 離頁行為若尚未驗證，G2 就保持未通過；缺項的相關 Shell/HUD PR 保留 draft，不影響已獨立完成的純契約 PR。不能將前置缺項改名成 G5 來放行 W2。G5 最終完整驗收則要求 acceptance 指定的最低環境與全組合證據；不要求每一個 pure contract 都另外用真實遊戲證明。
 
-目前 gate record：G0 為 `partial`（含 root-owned [g0-lite-browser-20260914.md](evidence/g0-lite-browser-20260914.md) 與歷史 Shell exact-SHA native handoff/X1 局部量測；完整 native baseline/三次效能仍缺）；G1-core public contract 已 freeze @ [`54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa)，不包含 A-D；G2 為 `partial`，舊 `2cb2983` 的操作 1–3 與 2026-09-16 Full/Lite 原生觀察已分別記於 [mounted evidence](https://github.com/eddie772tw/FH6-HorizonTuner/blob/2cb2983c763cce4ca86e2d4c79b0d7bfba3295fe/docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md) 與 [dated native evidence](evidence/g2-native-observations-20260916.md)，不回填為 rebase 後 native PASS。新 candidate 的最小 remaining 是 Full/Lite C5/H5 native 及 pending-write 跨頁，仍不啟動 W2。完整資源生命週期、真實 FH6 與三次效能比較屬 W2–W4/G5，不能把它們回填為新的 G2 blocker 或把 C5/H5 缺項升格為 G5 pass。
+目前 gate record：G0 為 `partial`（含 root-owned [g0-lite-browser-20260914.md](evidence/g0-lite-browser-20260914.md) 與歷史 Shell exact-SHA native handoff/X1 局部量測；完整 native baseline/三次效能仍缺）；G1-core public contract 已 freeze @ [`54165303f12c9598872905571f7162cc5f80effa`](https://github.com/eddie772tw/FH6-HorizonTuner/commit/54165303f12c9598872905571f7162cc5f80effa)，不包含 A-D；G2 foundation scope 已依新 candidate Full/Lite C5、browser/native H5 split、X1 page-channel 與 T3 review 核准為 `PASS`，詳見 [G2 closure](evidence/g2-closure-20260919.md)。這不宣告 G5；完整資源生命週期、真實 FH6、native first-paint 與三次效能比較仍屬後續 W2–W4/G5，W2 目前不啟動、不發布 `WAVE2_BASE_SHA`。
 
 ## 6. PR-ready 判定
 

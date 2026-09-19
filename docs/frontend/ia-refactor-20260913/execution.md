@@ -4,25 +4,25 @@
 
 ## 當前範圍
 
-使用者已恢復開發目標：實作至 G5 真實證據驗收前。Shell/docs 由 Coordinator/root 持有；既有 Terra review 與設計盤點只屬歷史 evidence，產品作者均已停寫。後續 assignments 僅由 Luna 執行，複雜 shared coordination 與最終組合由 root 保留。
+使用者已恢復交付收尾：G2 foundation closure 後完成 final handoff/push，再依條件暫停；完整 G5 目標保留。Shell/docs 由 Coordinator/root 持有；既有 Terra review 與設計盤點只屬歷史 evidence，產品作者均已停寫。後續 assignments 僅由 Luna 執行，下一個 task 只準備 W2 入口與 ownership，不自動開始 W2 實作；複雜 shared coordination 與最終組合由 root 保留。
 
 本頁是當前候選及 gate 的唯一登記；下方 02:00 保留歷史快照，不能覆寫目前授權或狀態。[baseline.md](baseline.md) 是最初靜態基準。
 
 ## 2026-09-19 目前現況（live）
 
-目前產品基準為 `568da2041e0cb4bbb58583c3a4dc9a279508094d`（`origin/main`）；9/16 active IA candidates 已以 `cd96d86f017fa43f4f3d429155a08aa77dc74bac` rebase。`plan` 已先建立 `refs/ia-backup/20260919/plan`，本次文件記錄 local candidates；product refs 已由 root 依 exact old-SHA lease 推送，new-head CI 由 root 後續登記。PR #340–#345 已有新 heads、CI 尚待完成；#339 的 plan head 隨本次文件 push。stack integration aggregate 是 `c38f13ec90e6de671bea51144446720c461650aa`，Shell 是 `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`（race-fix mapping `d37dbf9`）；local code/build checks 已記錄，剩餘是 Full/Lite native 操作與 CI 登記。
+目前產品基準為 `568da2041e0cb4bbb58583c3a4dc9a279508094d`（`origin/main`）；9/16 active IA candidates 已以 `cd96d86f017fa43f4f3d429155a08aa77dc74bac` rebase。`plan` 已先建立 `refs/ia-backup/20260919/plan`，本次文件記錄 local candidate；product refs 已由 root 依 exact old-SHA lease 推送，#340–#345 exact new heads 的 CI 已 SUCCESS，#339 的 current docs head 需在本次文件 push 後重查。stack integration aggregate 是 `c38f13ec90e6de671bea51144446720c461650aa`，Shell 是 `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`（race-fix mapping `d37dbf9`）；C5/H5 split、X1 與 T3 review 已核准為 G2 foundation PASS，剩餘是 root final handoff/push、#339 新文件 head CI 與條件式暫停。
 
 | Candidate | Local head / verification | Boundary |
 | --- | --- | --- |
-| Contracts | `9baeb1ec6f5edd14b61c6aa90944b1d9bb820623`；frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS | sidecar first pass had HTTP 8001 GET timeout；log retained，focused 3-test retry PASS，完整 backend revalidation PASS；new head native 尚未重跑 |
-| Shell | 目前 stack `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`；120 files／859 tests、build PASS、`git diff --check` PASS；race-fix mapping `d37dbf9`，Context blob 仍 `4b534955`；新 sidecar build PASS、Full Tauri build PASS、version 11.45.18 | new-head CI/native 尚未完成；Full artifact `dist/g2-full-20260919/FH6-HorizonTuner.exe` 已固定，尚未操作 native；舊 2cb evidence 不能回填 |
-| HUD | `83301f68fa0ed04d900a76c4c9e2d88dcb6b8b3f`；111 files／796 tests、build PASS、range 3/3 clean | Luna independent review PASS；new head native 尚未重跑 |
-| Road | `575ff0f139592b17b428b7d044e3ef943656a86e`；112 files／804 tests、build PASS、range 4/4 clean | new head checks/native 尚未完成；不由 clean 推定 ready |
-| Sessions / Tune | `49049908fcb19efa567d6392ff677001404f4546`：114 files／807 tests PASS；`2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4`：111 files／799 tests PASS | local checks recorded; push/CI and native evidence remain |
+| Contracts | `9baeb1ec6f5edd14b61c6aa90944b1d9bb820623`；frontend 110 files／789 tests、build PASS；backend 348 passed／8 deselected、Ruff check PASS、format 207 files PASS、version 11.45.18 PASS | sidecar first pass had HTTP 8001 GET timeout；log retained，focused 3-test retry PASS，完整 backend revalidation PASS；native evidence 由整合後 Shell candidate 登記 |
+| Shell | 目前 stack `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`；120 files／859 tests、build PASS、`git diff --check` PASS；race-fix mapping `d37dbf9`，Context blob 仍 `4b534955`；新 sidecar build PASS、Full Tauri build PASS、version 11.45.18 | exact product head CI 已由 read-only audit 記為 SUCCESS；Full artifact `dist/g2-full-20260919/FH6-HorizonTuner.exe` 已固定。Full/Lite native C5、browser H5 split、X1 與 T3 review 已核准為 G2 foundation PASS；G5/first-paint/performance 仍不宣告，舊 2cb evidence 不能回填 |
+| HUD | `83301f68fa0ed04d900a76c4c9e2d88dcb6b8b3f`；111 files／796 tests、build PASS、range 3/3 clean | #344 exact-head CI SUCCESS；Luna independent review PASS；native evidence 由整合後 Shell candidate 登記 |
+| Road | `575ff0f139592b17b428b7d044e3ef943656a86e`；112 files／804 tests、build PASS、range 4/4 clean | #341 exact-head CI SUCCESS；不由 clean 或 local evidence 單獨推定整體 ready |
+| Sessions / Tune | `49049908fcb19efa567d6392ff677001404f4546`：114 files／807 tests PASS；`2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4`：111 files／799 tests PASS | #342/#343 exact-head CI SUCCESS；native evidence 由整合後 Shell candidate 登記 |
 
-Aggregate `c38f13ec90e6de671bea51144446720c461650aa`：118 files／839 tests、build PASS、`git diff --check` PASS。其 backend/build inputs 與 contracts/main 無 diff，沿用有效的 348 backend passed／8 deselected、Ruff check/format、version 11.45.18 結果。product refs 已推送，new-head CI 待完成；Full native 已有 partial observation，Lite 尚未啟動。
+Aggregate `c38f13ec90e6de671bea51144446720c461650aa`：118 files／839 tests、build PASS、`git diff --check` PASS。其 backend/build inputs 與 contracts/main 無 diff，沿用有效的 348 backend passed／8 deselected、Ruff check/format、version 11.45.18 結果。product refs 已推送，exact new-head CI 由 read-only audit 記錄為 SUCCESS；Full/Lite C5、browser H5 split、X1 與 T3 review 已由 Coordinator 核准為 G2 foundation PASS，G5/效能與真實 FH6 仍不宣告。
 
-2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full partial observation 見 [G2 native observations 20260919](evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry 見 [G2 browser observations 20260919](evidence/g2-browser-observations-20260919.md)。Browser evidence 記錄兩個 response 前回到 Live 的 1.8s delayed writes、reentry GET readback 與 theme DOM attributes；它不替代 native H5/first-paint。Full 已觀察啟動、HTTP 8001／UDP 8124、light/modern、獨立 HUD 與兩輪 HUD → Live → HUD；Lite native 尚未啟動，故 G2 仍 `partial`。目前繼續完成 G2；G2 通過並完成 handoff 後暫停，不開 W2，也不公布 `WAVE2_BASE_SHA`，完整目標保留至後續恢復。
+2026-09-16 的舊 2cb 原生觀察已整理至 [G2 native observations](evidence/g2-native-observations-20260916.md)；2026-09-19 新候選的 Full/Lite normal、fallback、HUD lifecycle 與 cleanup 見 [G2 native observations 20260919](evidence/g2-native-observations-20260919.md)，actual browser App/LiteApp 的 delayed config/reentry、early-root/theme 與 X1 見 [G2 browser observations 20260919](evidence/g2-browser-observations-20260919.md)。[G2 closure](evidence/g2-closure-20260919.md) 已核准 foundation scope PASS；其 browser/native split 不替代 G5、真實 FH6、native first-paint 或效能證據。root 完成 final handoff/push 後依條件暫停，不開 W2，也不公布 `WAVE2_BASE_SHA`，完整目標保留至後續恢復。
 
 ## 2026-09-14 恢復後現況（歷史快照）
 
