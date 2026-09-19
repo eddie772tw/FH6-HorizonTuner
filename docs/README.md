@@ -12,6 +12,7 @@
 | 安裝自訂 HUD | [可攜版 HUD 套件](guides/portable-custom-hud.md) |
 | 查看 HUD 技術參考 | [S650 媒體欄位契約](hud/s650-media-properties-contract.md)、[FH6 畫面安全區觀測](hud/fh6-ui-safe-zones.md) |
 | 開始調校開發 | [調校程式與驗證入口](tuning/README.md) |
+| 規劃前端資訊架構重構與多代理分工 | [前端 IA 開發計畫與交接](frontend/ia-refactor-20260913/README.md) |
 | 收集實機資料、規劃人工驗收 | [校準資料與流程](calibration/README.md) |
 | 查找外部 HUD 研究 | [外部專案參考索引](reference-projects/README.md) |
 | 查找版本發行紀錄 | [v1.5.2](releases/v1.5.2.md)、[v1.4.4](releases/v1.4.4.md) |
