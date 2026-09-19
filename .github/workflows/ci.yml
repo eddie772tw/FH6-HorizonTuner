@@ -4,7 +4,8 @@ on:
   push:
     branches: [ "master", "main" ]
   pull_request:
-    branches: [ "master", "main" ]
+    # IA feature PRs target the reviewed contract/shell branch before main.
+    branches: [ "master", "main", "codex/frontend-ia-*" ]
 
 permissions:
   contents: read

@@ -43,11 +43,6 @@ interface AuthorInfo {
   description: string;
 }
 
-interface OverlayViewProps {
-  category?: 'general' | 'displays' | 'gauges' | 'performance';
-  setCategory?: (cat: 'general' | 'displays' | 'gauges' | 'performance') => void;
-}
-
 const HUD_CONFIG_REQUEST_TIMEOUT_MS = 2_500;
 const HUD_COMMAND_TIMEOUT_MS = 4_000;
 
@@ -64,7 +59,7 @@ async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: s
   }
 }
 
-export const OverlayView: React.FC<OverlayViewProps> = () => {
+export const OverlayView: React.FC = () => {
   const { settings, t } = useSettings();
   const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
   const [loading, setLoading] = useState(false);

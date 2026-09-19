@@ -15,12 +15,13 @@ import './App.css';
 
 import OverlayView from './features/overlay_control/OverlayView';
 import { getBackendPort } from './services/backend';
+import type { LegacyNavigationTarget, LegacyTab } from './app/legacyNavigation';
 
 const AppContent: React.FC = () => {
   const { isConnected } = useTelemetry();
   const { settings } = useSettings();
   useOverlayWebSocket();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'tuning' | 'overlay' | 'settings'>('telemetry');
+  const [activeTab, setActiveTab] = useState<LegacyTab>('telemetry');
   const { carId, setCarId, telemetryCarId } = useCarParams();
   const [showLogs, setShowLogs] = useState(false);
   const [showTheme, setShowTheme] = useState(false);
@@ -34,15 +35,11 @@ const AppContent: React.FC = () => {
     try { localStorage.setItem('tuning-workflow-state', JSON.stringify({ schema: 'tuning-workflow/v3', step: tuningStep })); } catch { /* Navigation still works without storage. */ }
   }, [tuningStep]);
   const [developerTuningStep, setDeveloperTuningStep] = useState<number>(1);
-  const [overlayCategory, setOverlayCategory] = useState<'general' | 'displays' | 'gauges' | 'performance'>('general');
-
-  // Quick jump handler triggered by Navbar Dropdown
-  const handleSubTabJump = (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings', subTarget?: any) => {
-    setActiveTab(tab);
-    if (subTarget) {
-      if (tab === 'telemetry') setTelemetrySubTab(subTarget);
-      else if (tab === 'tuning') (settings.developer_tuning_enabled ? setDeveloperTuningStep : setTuningStep)(typeof subTarget === 'number' ? subTarget : 1);
-      else if (tab === 'overlay') setOverlayCategory(subTarget);
+  const handleNavigation = (target: LegacyNavigationTarget) => {
+    setActiveTab(target.tab);
+    if (target.tab === 'telemetry') setTelemetrySubTab(target.view);
+    if (target.tab === 'tuning') {
+      (settings.developer_tuning_enabled ? setDeveloperTuningStep : setTuningStep)(target.step);
     }
   };
 
@@ -57,8 +54,7 @@ const AppContent: React.FC = () => {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text)' }}>
       <Navigation 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onSubTabJump={handleSubTabJump}
+        onNavigate={handleNavigation}
         isConnected={isConnected}
         onShowLogs={() => setShowLogs(true)}
         onShowTheme={() => setShowTheme(true)}
@@ -70,13 +66,13 @@ const AppContent: React.FC = () => {
         </div>
         <div style={{ display: activeTab === 'tuning' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           {settings.developer_tuning_enabled ? (
-            <TuningViewDev currentStep={developerTuningStep} setCurrentStep={setDeveloperTuningStep} setActiveTab={setActiveTab} />
+            <TuningViewDev currentStep={developerTuningStep} setCurrentStep={setDeveloperTuningStep} />
           ) : (
-            <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} setActiveTab={setActiveTab} />
+            <TuningView currentStep={tuningStep} setCurrentStep={setTuningStep} />
           )}
         </div>
         <div style={{ display: activeTab === 'overlay' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <OverlayView category={overlayCategory} setCategory={setOverlayCategory} />
+          <OverlayView />
         </div>
         <div style={{ display: activeTab === 'settings' ? 'flex' : 'none', flex: 1, flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <SettingsView />
