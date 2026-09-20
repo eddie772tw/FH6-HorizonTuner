@@ -1,6 +1,7 @@
 """Low-rate Road API. Database reads and analysis execute outside the event loop."""
 
 import asyncio
+import logging
 
 from fastapi import APIRouter, HTTPException
 from road_comparison import compare_road_runs
@@ -30,17 +31,25 @@ def create_road_router(service_provider) -> APIRouter:
 
     service = ServiceProxy()
 
+    logger = logging.getLogger(__name__)
+
     async def call(function, *args, **kwargs):
         try:
             return await asyncio.to_thread(function, *args, **kwargs)
         except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
+            logger.error("Error in road_router call: %s", exc)
+            raise HTTPException(
+                status_code=422, detail="Invalid request parameters"
+            ) from exc
 
     async def operation(awaitable):
         try:
             return await awaitable
         except (ValueError, RuntimeError) as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+            logger.error("Error in road_router operation: %s", exc)
+            raise HTTPException(
+                status_code=409, detail="Operation could not be completed"
+            ) from exc
 
     @router.get("/live")
     async def live():
