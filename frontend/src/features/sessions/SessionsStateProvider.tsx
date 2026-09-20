@@ -6,14 +6,14 @@ import type { SessionIntent } from "../../app/workspaceManifest";
 import {
   analysisSelectionKey,
   analysisSessionId,
-  shouldConsumeSessionRequest,
   type AnalysisSelection,
   readSelectionData,
   SessionLoadGate,
   SessionOperationGate,
   type SessionOperationGuard,
 } from "./sessionSelection";
-import { createSessionsIo, resolveLatestSavedSession, resolveSavedSession } from "./sessionsIo";
+import { prepareAnalysisSessionIntent } from "./sessionIntentPreparation";
+import { createSessionsIo } from "./sessionsIo";
 
 export type AnalysisMetric = "speed" | "throttle" | "brake" | "grip" | "suspension";
 
@@ -38,7 +38,7 @@ interface SessionsStateContextValue {
   setMetric(metric: AnalysisMetric): void;
   beginSelectionOperation(): SessionOperationGuard;
   setImportedSession(data: AnalysisDataPoint[], operation: SessionOperationGuard): boolean;
-  applySessionIntent(intent: SessionIntent, sequence?: number): Promise<void>;
+  applySessionIntent(intent: SessionIntent, isNavigationCurrent?: () => boolean): Promise<boolean>;
   loadPrimaryLap(): Promise<AnalysisDataPoint[] | null>;
   cancelPrimaryLoad(): void;
   refreshCurrent(): Promise<AnalysisDataPoint[] | null>;
@@ -68,7 +68,6 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
   const primaryInFlightRef = useRef(0);
   const refreshInFlightRef = useRef(false);
   const intentGenerationRef = useRef(0);
-  const consumedIntentSequenceRef = useRef<number | null>(null);
   stateRef.current = state;
 
   useEffect(() => {
@@ -194,34 +193,42 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
     primaryGateRef.current.invalidate();
   }, []);
 
-  const applySessionIntent = useCallback(async (intent: SessionIntent, sequence?: number): Promise<void> => {
-    if (sequence !== undefined) {
-      if (!shouldConsumeSessionRequest(consumedIntentSequenceRef.current, sequence)) return;
-      consumedIntentSequenceRef.current = sequence;
-    }
+  const applySessionIntent = useCallback(async (
+    intent: SessionIntent,
+    isNavigationCurrent: () => boolean = () => true,
+  ): Promise<boolean> => {
+    const operation = beginSelectionOperation();
+    const isCurrent = () => operation.isCurrent() && isNavigationCurrent();
+    if (!isCurrent()) return false;
+
     if (intent.kind === "road") {
+      // Road has its own workflow contract in W3. It must still invalidate an
+      // older analysis request before remembering its independent identifier.
       setState(previous => ({ ...previous, roadWorkflowId: intent.workflowId }));
-      return;
-    }
-    if (intent.kind === "analysis") {
-      const operation = beginSelectionOperation();
-      const saved = await resolveSavedSession(createSessionsIo(), intent.filename, operation);
-      if (!saved || !operation.isCurrent()) return;
-      // The shared recorder owns library state. This refresh does not touch
-      // loadedSession, and selection remains guarded around its async result.
-      await fetchSavedSessionsList();
-      if (!operation.isCurrent()) return;
-      chooseSelection({ kind: "saved", filename: saved.filename });
-      return;
+      return true;
     }
 
-    const operation = beginSelectionOperation();
-    const latest = await resolveLatestSavedSession(createSessionsIo(), operation);
-    if (!latest || !operation.isCurrent()) return;
-    await fetchSavedSessionsList();
-    if (!operation.isCurrent()) return;
-    chooseSelection({ kind: "latest", filename: latest.filename });
-  }, [beginSelectionOperation, chooseSelection, fetchSavedSessionsList]);
+    return prepareAnalysisSessionIntent(intent, {
+      io: createSessionsIo(),
+      operation,
+      isNavigationCurrent,
+      refreshLibrary: fetchSavedSessionsList,
+      apply: ({ selection, samples }) => {
+        // There are no awaits between this final ownership check and the two
+        // related writes, so selection and its verified samples move together.
+        if (!isCurrent()) return;
+        invalidateSelectionRequest();
+        setLoadedSession(samples);
+        setState(previous => ({
+          ...previous,
+          selection,
+          primaryLap: 0,
+          compareLap: -1,
+          isLoading: false,
+        }));
+      },
+    });
+  }, [beginSelectionOperation, fetchSavedSessionsList, invalidateSelectionRequest, setLoadedSession]);
 
   const value = useMemo<SessionsStateContextValue>(() => {
     const selectedSessionId = analysisSessionId(state.selection);

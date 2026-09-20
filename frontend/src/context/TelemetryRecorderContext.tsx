@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useSettings } from "./SettingsContext";
 import { backendFetch, backendHttpUrl } from "../services/backend";
 import { SessionDebriefData } from "../features/analysis/sessionDebriefMath";
@@ -91,15 +91,20 @@ export const TelemetryRecorderProvider: React.FC<{
 
   // Poll recording status from backend every 2 seconds
   useEffect(() => {
+    if (!settings.race_recording) {
+      setIsRecording(false);
+      setRecordingCount(0);
+      return;
+    }
     let active = true;
+    let inFlight = false;
+    const controller = new AbortController();
     const checkStatus = async () => {
-      if (!settings.race_recording) {
-        if (isRecording) setIsRecording(false);
-        if (recordingCount !== 0) setRecordingCount(0);
-        return;
-      }
+      if (!active || inFlight) return;
+      inFlight = true;
       try {
-        const res = await backendFetch("/api/analysis/status");
+        const res = await backendFetch("/api/analysis/status", { signal: controller.signal });
+        if (!res.ok) return;
         const data = await res.json();
         if (active && data) {
           setIsRecording(data.isRecording);
@@ -107,10 +112,14 @@ export const TelemetryRecorderProvider: React.FC<{
           setCurrentSessionId(data.currentSessionId || null);
         }
       } catch (e) {
-        console.error(
-          "Failed to fetch telemetry recording status from backend:",
-          e,
-        );
+        if (active && !controller.signal.aborted) {
+          console.error(
+            "Failed to fetch telemetry recording status from backend:",
+            e,
+          );
+        }
+      } finally {
+        inFlight = false;
       }
     };
 
@@ -120,14 +129,11 @@ export const TelemetryRecorderProvider: React.FC<{
     return () => {
       active = false;
       clearInterval(interval);
+      controller.abort();
     };
-  }, [settings.race_recording, isRecording, recordingCount]);
+  }, [settings.race_recording]);
 
-  useEffect(() => {
-    fetchSavedSessionsList();
-  }, []);
-
-  const fetchSavedSessionsList = async () => {
+  const fetchSavedSessionsList = useCallback(async () => {
     try {
       const res = await backendFetch("/api/analysis/sessions");
       const data = await res.json();
@@ -137,7 +143,11 @@ export const TelemetryRecorderProvider: React.FC<{
     } catch (e) {
       console.error("Failed to fetch saved sessions list:", e);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchSavedSessionsList();
+  }, [fetchSavedSessionsList]);
 
   const fetchCurrentSessionData = async (
     lap: number = 0,
@@ -205,7 +215,7 @@ export const TelemetryRecorderProvider: React.FC<{
     return null;
   };
 
-  const loadSessionLaps = async (filename: string): Promise<LapSummary[]> => {
+  const loadSessionLaps = useCallback(async (filename: string): Promise<LapSummary[]> => {
     try {
       const res = await backendFetch(
         `/api/analysis/sessions/${encodeURIComponent(filename)}/laps`,
@@ -218,7 +228,7 @@ export const TelemetryRecorderProvider: React.FC<{
       console.error(`Failed to load session laps ${filename}:`, e);
     }
     return [];
-  };
+  }, []);
 
   const deleteSavedSession = async (filename: string): Promise<boolean> => {
     try {
@@ -297,7 +307,7 @@ export const TelemetryRecorderProvider: React.FC<{
     document.body.removeChild(a);
   };
 
-  const fetchSessionDebrief = async (
+  const fetchSessionDebrief = useCallback(async (
     sessionId: string,
   ): Promise<SessionDebriefData | null> => {
     try {
@@ -312,7 +322,7 @@ export const TelemetryRecorderProvider: React.FC<{
       console.error(`Failed to fetch debrief for session ${sessionId}:`, e);
     }
     return null;
-  };
+  }, []);
 
   return (
     <TelemetryRecorderContext.Provider

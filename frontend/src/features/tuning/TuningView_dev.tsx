@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useSettings } from '../../context/SettingsContext';
 import { createDefaultCapabilityContract } from '../../domain/tuning/contracts';
@@ -15,24 +15,11 @@ import DevOutputPanel from './components/DevOutputPanel';
 import TuningTelemetryCaptureView from './components/TuningTelemetryCaptureView';
 import { TuneSessionBoundary, useTuneSession } from './TuneSessionProvider';
 
-interface TuningViewDevProps {
-  currentStep?: number;
-  setCurrentStep?: (step: number | ((prev: number) => number)) => void;
-}
-
-const TuningViewDevContent: React.FC<TuningViewDevProps> = ({ currentStep: externalStep, setCurrentStep: externalSetStep }) => {
+const TuningViewDevContent: React.FC = () => {
   const { carName, carParams } = useCarParams();
   const { t } = useSettings();
   const session = useTuneSession();
   const developer = session.developer;
-
-  useEffect(() => {
-    if (externalStep !== undefined && externalStep !== developer.step) developer.setStep(externalStep);
-  }, [developer, externalStep]);
-
-  useEffect(() => {
-    externalSetStep?.(developer.step);
-  }, [developer.step, externalSetStep]);
 
   const input = useMemo<DevTuningInput | null>(() => {
     if (!carParams) return null;
@@ -126,8 +113,8 @@ const TuningViewDevContent: React.FC<TuningViewDevProps> = ({ currentStep: exter
   );
 };
 
-const TuningViewDev: React.FC<TuningViewDevProps> = props => (
-  <TuneSessionBoundary><TuningViewDevContent {...props} /></TuneSessionBoundary>
+const TuningViewDev: React.FC = () => (
+  <TuneSessionBoundary><TuningViewDevContent /></TuneSessionBoundary>
 );
 
 export default TuningViewDev;

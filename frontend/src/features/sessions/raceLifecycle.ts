@@ -1,9 +1,14 @@
 import type { SavedSessionHeader } from "../../context/TelemetryRecorderContext";
-import { type RaceCompletionReader, waitForCompletedRaceSession } from "./raceCompletion";
+import {
+  type AnalysisRecordingStatus,
+  type RaceCompletionReader,
+  waitForCompletedRaceSession,
+} from "./raceCompletion";
 
 export interface RaceCompletionLifecycleHooks {
+  onStarted?(sessionId: string): void;
   onPending(sessionId: string): void;
-  onCompleted(session: SavedSessionHeader): void;
+  onCompleted(session: SavedSessionHeader, isCurrent: () => boolean): void;
 }
 
 interface ActiveRace {
@@ -14,10 +19,9 @@ interface ActiveRace {
 }
 
 /**
- * Owns the race-edge lifecycle independently from React polling state. A
- * recorder ID is accepted only from the status request started for this race;
- * a delayed result after race end is forwarded directly to validation instead
- * of writing an ID that a later race could inherit.
+ * Owns recorder identity transitions independently from React. Only an
+ * authoritative status response that is recording with an identity can begin
+ * a race; unknown status responses never imply its end.
  */
 export class RaceCompletionLifecycle {
   private nextToken = 0;
@@ -29,20 +33,39 @@ export class RaceCompletionLifecycle {
     private readonly hooks: RaceCompletionLifecycleHooks,
   ) {}
 
-  beginRace(): void {
+  beginRace(sessionId?: string): void {
     const race: ActiveRace = {
       token: ++this.nextToken,
       ended: false,
-      capturedSessionId: null,
+      capturedSessionId: sessionId ?? null,
       completionGeneration: 0,
     };
     this.activeRace = race;
-    void this.captureStartIdentity(race);
+    if (sessionId) {
+      this.hooks.onStarted?.(sessionId);
+    } else {
+      // Kept for direct callers while they migrate to observeStatus. Runtime
+      // transitions supply the identity synchronously from the same status.
+      void this.captureStartIdentity(race);
+    }
+  }
+
+  observeStatus(status: AnalysisRecordingStatus | null): void {
+    if (this.disposed || !status) return;
+    if (status.isRecording) {
+      if (!status.currentSessionId) return;
+      const race = this.activeRace;
+      if (!race || !this.isCurrentRace(race) || race.ended || race.capturedSessionId !== status.currentSessionId) {
+        this.beginRace(status.currentSessionId);
+      }
+      return;
+    }
+    this.endRace();
   }
 
   endRace(): void {
     const race = this.activeRace;
-    if (!race || !this.isCurrentRace(race)) return;
+    if (!race || race.ended || !this.isCurrentRace(race)) return;
     race.ended = true;
     if (race.capturedSessionId) this.startCompletionValidation(race, race.capturedSessionId);
   }
@@ -50,6 +73,7 @@ export class RaceCompletionLifecycle {
   retry(sessionId: string): void {
     const race = this.activeRace;
     if (!race || !race.ended || !this.isCurrentRace(race)) return;
+    if (race.capturedSessionId !== null && race.capturedSessionId !== sessionId) return;
     this.startCompletionValidation(race, sessionId);
   }
 
@@ -74,6 +98,7 @@ export class RaceCompletionLifecycle {
       return;
     }
     race.capturedSessionId = sessionId;
+    this.hooks.onStarted?.(sessionId);
   }
 
   private startCompletionValidation(race: ActiveRace, sessionId: string): void {
@@ -92,7 +117,9 @@ export class RaceCompletionLifecycle {
       isCurrent: () => this.isCurrentRace(race) && race.completionGeneration === generation,
     });
     if (completed && this.isCurrentRace(race) && race.completionGeneration === generation) {
-      this.hooks.onCompleted(completed);
+      // The consumer may still need asynchronous reads before committing its
+      // selection. Keep this race's ownership valid through that handoff.
+      this.hooks.onCompleted(completed, () => this.isCurrentRace(race) && race.completionGeneration === generation);
     }
   }
 }
