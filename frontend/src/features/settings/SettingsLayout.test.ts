@@ -1,28 +1,16 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { projectSettingsSections } from './settingsSections';
 
-const source = readFileSync(
-  fileURLToPath(new URL('./SettingsView.tsx', import.meta.url)),
-  'utf8'
-);
-
-describe('SettingsView responsive layout contract', () => {
-  it('uses exactly three desktop columns', () => {
-    expect(source.match(/col-12 col-lg-4 d-flex flex-column gap-4/g)).toHaveLength(3);
+describe('SettingsSurface information architecture', () => {
+  it('projects the four named sections for Full', () => {
+    const sections = projectSettingsSections(true);
+    expect(sections.map(section => section.id)).toEqual(['general', 'telemetry', 'integrations', 'maintenance']);
+    expect(sections.find(section => section.id === 'maintenance')?.items).toContain('developerTuning');
   });
 
-  it('orders display, telemetry, and application concerns from left to right', () => {
-    const units = source.indexOf("t('Game Unit Settings')");
-    const telemetry = source.indexOf("t('Telemetry Receiver Settings')");
-    const developer = source.indexOf("t('Developer Options')");
-    const mcp = source.indexOf('<McpSettingsCard />');
-    const updates = source.indexOf('<UpdateSettingsCard />');
-
-    expect(units).toBeGreaterThan(-1);
-    expect(telemetry).toBeGreaterThan(units);
-    expect(developer).toBeGreaterThan(telemetry);
-    expect(mcp).toBeGreaterThan(developer);
-    expect(updates).toBeGreaterThan(mcp);
+  it('keeps every non Developer setting visible in Lite', () => {
+    const items = projectSettingsSections(false).flatMap(section => section.items);
+    expect(items).not.toContain('developerTuning');
+    expect(items).toEqual(['language', 'units', 'telemetry', 'recording', 'discord', 'mcp', 'updates', 'storage']);
   });
 });
