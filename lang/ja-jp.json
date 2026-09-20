@@ -1223,7 +1223,6 @@
   "Export collected frames": "収集したフレームをエクスポート",
   "Export recorded frames": "記録されたフレームをエクスポート",
   "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
-  "FH6-Horizon Tuner": "FH6-Horizon Tuner",
   "Are you sure you want to clear the telemetry feed?": "テレメトリーフィードを消去してもよろしいですか？",
   "Clear Feed": "フィードをクリア",
   "FL Temp": "左前温度",
@@ -1253,5 +1252,7 @@
   "Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.": "最大 30,000 フレームを記録できます。このワークスペースを離れても記録は続き、手動で停止するか車両情報が変わると停止します。",
   "The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.": "測定結果を保存できませんでした。エラーを解消してから続行を再試行してください。記録したフレームはアプリを閉じるまで保持されます。",
   "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.": "続行すると、デコード済みフレームと測定概要を一緒に保存します。上限は 30,000 フレームです。チューニングの手順を切り替えても記録は保持されます。記録の再開やアプリの終了前にエクスポートしてください。",
-  "Unable to open the requested session. Check the connection and try again.": "指定した走行記録を開けません。接続を確認して再試行してください。"
+  "Unable to open the requested session. Check the connection and try again.": "指定した走行記録を開けません。接続を確認して再試行してください。",
+  "A · {number} · {date}": "A · {number} · {date}",
+  "B · {number} · {date}": "B · {number} · {date}"
 }

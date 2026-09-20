@@ -39,7 +39,7 @@ interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings> | { units: Partial<UnitSettings> }) => Promise<void>;
   isLoading: boolean;
-  t: (text: string) => string;
+  t: (text: string, params?: Record<string, string | number>) => string;
   availableLanguages: Array<{ code: string; name: string }>;
   // Speed conversions (input in m/s)
   convertSpeed: (ms: number) => { value: number; label: string };
@@ -497,11 +497,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { value: nm, label: 'N·m' };
   };
 
-  const t = (text: string): string => {
-    if (settings.language === 'en-us') {
-      return text;
+  const t = (text: string, params?: Record<string, string | number>): string => {
+    let result = text;
+    if (settings.language !== 'en-us') {
+      result = translations[text] ?? text;
     }
-    return translations[text] ?? text;
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        result = result.replace(`{${key}}`, String(value));
+      }
+    }
+    return result;
   };
 
   return (
