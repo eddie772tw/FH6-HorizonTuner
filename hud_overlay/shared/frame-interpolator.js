@@ -135,17 +135,27 @@ export class FrameInterpolator {
             const arr0 = prev[key];
             const arr1 = curr[key];
             if (Array.isArray(arr0) && Array.isArray(arr1) && arr0.length === arr1.length) {
-                const interpolatedArr = new Array(arr1.length);
-                for (let j = 0; j < arr1.length; j++) {
-                    const val0 = arr0[j];
-                    const val1 = arr1[j];
-                    if (typeof val0 === 'number' && typeof val1 === 'number') {
-                        interpolatedArr[j] = lerp(val0, val1, alpha);
-                    } else {
-                        interpolatedArr[j] = val1;
+                if (arr1.length === 4) {
+                    // [PERF] Manual unrolling to eliminate new Array(length) allocation for 4-element arrays in hot path
+                    out[key] = [
+                        typeof arr0[0] === 'number' && typeof arr1[0] === 'number' ? lerp(arr0[0], arr1[0], alpha) : arr1[0],
+                        typeof arr0[1] === 'number' && typeof arr1[1] === 'number' ? lerp(arr0[1], arr1[1], alpha) : arr1[1],
+                        typeof arr0[2] === 'number' && typeof arr1[2] === 'number' ? lerp(arr0[2], arr1[2], alpha) : arr1[2],
+                        typeof arr0[3] === 'number' && typeof arr1[3] === 'number' ? lerp(arr0[3], arr1[3], alpha) : arr1[3]
+                    ];
+                } else {
+                    const interpolatedArr = new Array(arr1.length);
+                    for (let j = 0; j < arr1.length; j++) {
+                        const val0 = arr0[j];
+                        const val1 = arr1[j];
+                        if (typeof val0 === 'number' && typeof val1 === 'number') {
+                            interpolatedArr[j] = lerp(val0, val1, alpha);
+                        } else {
+                            interpolatedArr[j] = val1;
+                        }
                     }
+                    out[key] = interpolatedArr;
                 }
-                out[key] = interpolatedArr;
             }
         }
 
