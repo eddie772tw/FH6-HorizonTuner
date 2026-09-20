@@ -9,9 +9,9 @@
 | 最後產品程式變更 | `30fedc3833383dc646c724fb918b19830c52451f`（P7-A） |
 | W2/W3 integration parent | `147981c3ea0d68f146e0b2400d147e2346d7930e` |
 | W4 main integration | PR #407 merge `25d3f946b88f08b981d662a29152dd376d65601a` |
-| 文件清理分支 | `codex/frontend-ia-w4-doc-cleanup-20260920`；PR #408，僅文件，等待合併 |
+| 文件清理分支 | `codex/frontend-ia-w4-doc-cleanup-20260920`；PR #408 已以 `33829a349277de10fa3861c366fee603bca6b307` 合併，僅文件 |
 
-這些是固定交付身分；再次工作前需讀取 live refs。W4 已進入 `main`，但不代表 G5 或最後實機驗收通過；cleanup PR #408 只整理文件與歷史索引，不產生新的產品驗證。
+這些是固定交付身分；再次工作前需讀取 live refs。W4 已進入 `main`，cleanup PR #408 也已合併；這些都不代表 G5 或最後實機驗收通過。cleanup 只整理文件與歷史索引，不產生新的產品驗證。
 
 ## 現行 handoff 與證據
 
@@ -37,4 +37,4 @@ Full/Lite Tauri、backend-ready/dynamic port、Windows HUD monitor/window/audio�
 
 [歷史索引](archive/README.md) 收錄 W1/G2、W2/W3 的 handoff 與原 W4 工作包。舊檔保留原路徑與當時 evidence；頂端的 `superseded` 只取代舊進度／開工指令，不否定原測試結果、不解除 contract，也不把歷史 `not-run` 改為 `pass`。
 
-W2/W3 refs 雖已包含於 W4，仍被 registered worktree 和 handoff 使用，本輪 **沒有刪除任何 remote branch/ref**。未追蹤的準備文件與其他 worktree 不在本次修改範圍。
+W2/W3 refs 雖已包含於 W4，原始 audit 當時仍被 registered worktree 和 handoff 使用；#407/#408 合併後，GitHub 自動清理已合併 PR 的 head refs，未由本次工作手動刪除。仍存的 W2/W3 refs 依 worktree／handoff 依賴保留。未追蹤的準備文件與其他 worktree 不在本次修改範圍。

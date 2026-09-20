@@ -3,11 +3,11 @@
 | Handoff 欄位 | 值 |
 | --- | --- |
 | Task | W4-P8 後 IA 文件清理與 W2/W3 remote refs audit |
-| Status | active-merge-resolution |
+| Status | merged |
 | Owner | Codex / `/root` |
-| Branch | `codex/frontend-ia-w4-doc-cleanup-20260920` |
+| Branch | `codex/frontend-ia-w4-doc-cleanup-20260920`（PR #408 後由 GitHub 自動清理） |
 | Worktree | `D:/FH6-frontend-ia-20260920/w4-doc-cleanup` |
-| Base | `25d3f946b88f08b981d662a29152dd376d65601a`（PR #407 merge into `main`） |
+| Base | `33829a349277de10fa3861c366fee603bca6b307`（PR #408 merge into `main`） |
 | Scope | 僅 `docs/frontend/ia-refactor-20260913/**` |
 | Blocked by | None；remote deletion 不符合目前清理條件，因此保留 |
 | Last updated | 2026-09-20 |
@@ -26,9 +26,9 @@
 - PR #339 merged into `main` as `7fc4795f1ff055c12df652f6f2b8f8d4b0f1c441`; aggregate PR #405 merged as `e45730e72f6ca5711f3f88c3110bb0012c0cef5b`; Shell #345 merged as `c3e04543f91b144b52b17b68354cc139d191ee11`; W2/W3 #406 merged as `28f8a0c96cb424703b6c6cbd954a578750814e99`; W4 #407 merged as `25d3f946b88f08b981d662a29152dd376d65601a`.
 - After #407, this cleanup branch was re-targeted to `main`. The merge exposed one add/add conflict in `docs/frontend/ia-refactor-20260913/README.md`: the W4 current-state entry is retained as the live entry, while the original plan from #339 is preserved verbatim at [archive/ia-refactor-plan-20260913.md](../archive/ia-refactor-plan-20260913.md) and indexed in the archive README.
 - The original cleanup audit recorded no ref deletion. GitHub subsequently removed merged PR head refs as part of the repository's merged-branch cleanup; the remaining W2/W3 work-package refs with registered worktrees stay retained. This handoff does not authorize further ref deletion.
-- The cleanup PR now carries the post-stack current-state wording and must be rechecked against the exact cleanup head before #408 is merged.
+- PR #408 then merged the reconciled cleanup head `d99a4dcff74ee104287a64320772b1e6b049c2f0` into `main` as `33829a349277de10fa3861c366fee603bca6b307`; the cleanup branch head was subsequently auto-removed by GitHub.
 
-## Remote refs：全部保留
+## Remote refs：audit 與 post-merge 狀態
 
 Remote：`origin`，`https://github.com/eddie772tw/FH6-HorizonTuner.git`。前後 evidence 與 exact timestamps 見 [refs audit JSON](../evidence/w4-doc-cleanup-refs-20260920.json)。該檔保存兩次 `git ls-remote --heads origin`、工作樹 inventory、各 W2/W3 worktree status 及 ancestry 結果。
 
@@ -44,7 +44,7 @@ Remote：`origin`，`https://github.com/eddie772tw/FH6-HorizonTuner.git`。前�
 | `refs/heads/codex/frontend-ia-w2-integration-20260920` | `147981c3ea0d68f146e0b2400d147e2346d7930e` | `D:/FH6-frontend-ia-20260919/w2-integration`；[W3 integration](w3-integration-20260920.md)、[W4-0](w4-0-acceptance-ledger-20260920.md) |
 | `refs/heads/codex/frontend-ia-w3-d-20260920` | `5cfe75e0e977d5078f253277e0bda9f8d9fcac98` | `D:/FH6-frontend-ia-w3-20260920/w3-d`；[D handoff](w3-d.md)、[W3 integration](w3-integration-20260920.md) |
 
-刪除 refs：**無**。其他 21 個既有 remote heads 全數保留，exact ref/SHA 均在 JSON；包含 `refs/heads/main` @ `568da2041e0cb4bbb58583c3a4dc9a279508094d`、W4 candidate @ `88cf28e6152c125c1cca18dc21c3c1f46e4fbcff`、W1 foundation/contract/plan 以及未在本任務證明已退役的其他 product lanes。沒有 prune、刪除 local branch、移除 worktree、reset、clean、stash、force-push、PR 或 main merge。branch audit 不對 tag、PR refs 或 GitHub checks 宣稱完成驗證。
+原始 cleanup audit 的 before/after 中刪除 refs 為 **無**。其後 #339、#405、#345、#406、#407、#408 合併時，GitHub 自動清理已合併 PR 的 head refs；本次沒有手動刪除 remote branch、prune、刪除 local branch、移除 worktree、reset、clean、stash 或 force-push。仍存的 W2/W3 refs 與 worktree／handoff 依賴保留。branch audit 不對 tag、PR refs 或 GitHub checks 宣稱完成驗證。
 
 JSON 的 before/after 是 cleanup 分支推送前的既有 heads 安全稽核；兩份清單須完全一致。其後唯一授權的 remote 新增是本 cleanup branch；最終 local/remote SHA 由一次 commit/push 後的交付回報提供，不把 self SHA 寫入同一 commit。
 
@@ -97,7 +97,7 @@ JSON 的 before/after 是 cleanup 分支推送前的既有 heads 安全稽核；
 
 ## Pending / Next action
 
-root 接手時先核對 cleanup 的 local/remote commit 與 docs-only diff，再決定如何納入文件清理；本 owner 完成交付後停止寫入，不自動合併 W4 或 main。
+已完成 root 接手、docs-only merge reconciliation、PR #408 exact-head reviewer、CI 與 main 合併；目前文件清理已納入 `main`，不再有待合併動作。
 
 7 個 W2/W3 refs 是「可標記進度已 superseded、但目前不可刪」的清理候選。若後續仍要刪除，root 須先取得各 lane 停用／釋放 worktree 的明確證據，確認 handoff 不再依賴 branch 名稱作為活躍入口，重查 exact remote SHA、ancestry、worktree 與任何 PR/owner，再保存當次 `git ls-remote` 前後證據；此 handoff 本身不授權刪除。
 
