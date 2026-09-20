@@ -29,7 +29,7 @@ No coordinator-owned files were changed.
 - `pnpm -C frontend run build`: passed, TypeScript and Vite production build succeeded for Full and Lite outputs.
 - `pnpm -C frontend exec vitest run src/features/settings/settingsSections.test.ts src/features/settings/SettingsLayout.test.ts`: passed, 2 files and 4 tests.
 - `git diff --check`: passed; only Git's existing LF/CRLF normalization warnings remain.
-- Browser interaction: pending coordinator integration and browser session execution.
+- Browser interaction: passed against the branch's Vite server at `http://127.0.0.1:1422/`; Full opened Settings and showed General, Telemetry, Integrations, Maintenance, and Developer Tuning; Lite opened Settings and showed the four sections while omitting Developer Tuning.
 - Native/Tauri interaction: not run for this objective.
 
 ## Integration follow-up
