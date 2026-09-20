@@ -1,0 +1,61 @@
+{
+  "schema": "fh6-ia-w4-x3-preparation/v1",
+  "recordedAt": "2026-09-20T12:11:00+08:00",
+  "baselineProductSha": "147981c3ea0d68f146e0b2400d147e2346d7930e",
+  "candidateProductSha": "30fedc3833383dc646c724fb918b19830c52451f",
+  "evidenceDocumentSha": "9dfb7eac6440781aaf4b64db96286b3f7e3ce9d0",
+  "environment": {
+    "os": "Windows 11 Pro 64-bit build 26200",
+    "cpu": "AMD Ryzen 7 5800XT 8-Core Processor",
+    "cores": 8,
+    "logicalProcessors": 16,
+    "gpu": "AMD Radeon RX 9070 XT",
+    "gpuDriver": "32.0.31041.1004",
+    "ramBytes": 34282192896,
+    "node": "v24.13.0",
+    "pnpm": "11.20.0"
+  },
+  "fixture": {
+    "browser": "Codex In-app Browser",
+    "viteUrl": "http://127.0.0.1:1424/",
+    "backend": "disconnected at http://127.0.0.1:8001",
+    "desktopViewport": [846, null],
+    "narrowViewport": [390, 844],
+    "theme": "dark/default",
+    "dataSource": "disconnected fixture"
+  },
+  "browserBaseline": {
+    "fullLiveCanvasCount": 17,
+    "fullTuneCanvasCount": 0,
+    "fullSessionsCanvasCount": 0,
+    "fullHudCanvasCount": 0,
+    "liteLiveCanvasCount": 17,
+    "liteHudCanvasCount": 0,
+    "sessionsRequestsObserved": [
+      "/api/analysis/data?lap=0",
+      "/api/analysis/sessions/current/debrief",
+      "/api/road/workflows",
+      "/api/analysis/status"
+    ],
+    "hudRequestsObserved": [
+      "/api/hud/styles",
+      "/hud/vfd/author.json",
+      "/api/audio/devices",
+      "/api/analysis/status"
+    ],
+    "afterLeaveObservation": "page-owned Sessions/HUD request classes stopped in the following 2.2s window"
+  },
+  "pairedRuns": [
+    { "scenario": "idle-disconnected", "repetition": 1, "status": "not-run", "reason": "native-capable measurement harness not available in browser-only W4" },
+    { "scenario": "idle-disconnected", "repetition": 2, "status": "not-run", "reason": "native-capable measurement harness not available in browser-only W4" },
+    { "scenario": "idle-disconnected", "repetition": 3, "status": "not-run", "reason": "native-capable measurement harness not available in browser-only W4" },
+    { "scenario": "live-synthetic-or-game", "repetition": 1, "status": "not-run", "reason": "no synthetic 60 Hz replay or real FH6 session used for this preparation" },
+    { "scenario": "live-synthetic-or-game", "repetition": 2, "status": "not-run", "reason": "no synthetic 60 Hz replay or real FH6 session used for this preparation" },
+    { "scenario": "live-synthetic-or-game", "repetition": 3, "status": "not-run", "reason": "no synthetic 60 Hz replay or real FH6 session used for this preparation" },
+    { "scenario": "native-hud-and-tauri", "repetition": 1, "status": "not-run", "reason": "Tauri/native HUD is outside browser-only W4" },
+    { "scenario": "native-hud-and-tauri", "repetition": 2, "status": "not-run", "reason": "Tauri/native HUD is outside browser-only W4" },
+    { "scenario": "native-hud-and-tauri", "repetition": 3, "status": "not-run", "reason": "Tauri/native HUD is outside browser-only W4" }
+  ],
+  "x3Result": "not-run",
+  "g5Result": "not-run"
+}

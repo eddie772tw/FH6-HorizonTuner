@@ -7,7 +7,7 @@ import type { WorkflowRecommendation } from '../tuning/workflowSnapshot';
 import { verificationState } from '../tuning/tuningWorkflow';
 import { RoadRunPanel } from './RoadRunPanel';
 import { RoadResults } from './RoadResults';
-import { RoadValidationBoundary, useRoadValidation } from './RoadValidationController';
+import { useRoadValidation } from './RoadValidationController';
 
 interface Props {
   recommendation: WorkflowRecommendation | null;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function RoadWorkflowView(props: Props) {
-  return <RoadValidationBoundary><RoadWorkflowContent {...props} /></RoadValidationBoundary>;
+  return <RoadWorkflowContent {...props} />;
 }
 
 function RoadWorkflowContent({ recommendation, carId }: Props) {

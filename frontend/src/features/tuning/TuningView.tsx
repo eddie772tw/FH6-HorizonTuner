@@ -12,7 +12,7 @@ import { EngineDataStep } from './components/EngineDataStep';
 import { WorkflowGuide } from './components/WorkflowGuide';
 import { SetupVerificationStep } from './components/SetupVerificationStep';
 import { canOpenTuningStep, getWorkflowReadiness, resolveTuningStep, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
-import { TuneSessionBoundary, useTuneSession } from './TuneSessionProvider';
+import { useTuneSession } from './TuneSessionProvider';
 import { selectedEngineObservationMatchesLiveTelemetry } from './tuneSessionController';
 import { useTelemetry } from '../../hooks/useTelemetry';
 
@@ -97,7 +97,7 @@ export default function TuningView() {
     setPreference(normalized);
     localStorage.setItem('tuning_unit_preference', JSON.stringify(normalized));
   };
-  return <TuneSessionBoundary><ScopedUnitSettingsProvider units={units}>
+  return <ScopedUnitSettingsProvider units={units}>
     <TuningViewContent unitPreference={preference} onUnitPreferenceChange={update} />
-  </ScopedUnitSettingsProvider></TuneSessionBoundary>;
+  </ScopedUnitSettingsProvider>;
 }

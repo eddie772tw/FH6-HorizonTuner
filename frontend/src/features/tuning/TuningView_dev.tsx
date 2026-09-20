@@ -13,7 +13,7 @@ import CapabilityContractPanel from './components/CapabilityContractPanel';
 import DevInputPanel from './components/DevInputPanel';
 import DevOutputPanel from './components/DevOutputPanel';
 import TuningTelemetryCaptureView from './components/TuningTelemetryCaptureView';
-import { TuneSessionBoundary, useTuneSession } from './TuneSessionProvider';
+import { useTuneSession } from './TuneSessionProvider';
 
 const TuningViewDevContent: React.FC = () => {
   const { carName, carParams } = useCarParams();
@@ -113,8 +113,6 @@ const TuningViewDevContent: React.FC = () => {
   );
 };
 
-const TuningViewDev: React.FC = () => (
-  <TuneSessionBoundary><TuningViewDevContent /></TuneSessionBoundary>
-);
+const TuningViewDev: React.FC = () => <TuningViewDevContent />;
 
 export default TuningViewDev;
