@@ -84,3 +84,14 @@ The W4 worktree was created at `D:\FH6-frontend-ia-20260920\w4` from the exact i
 
 W4-0 exit criteria are satisfied: isolated W4 branch/worktree exists, candidate SHA and contract references are recorded, the acceptance ledger has every C/L/T/S/R/H/U/X item with an owner and next action, the exact candidate frontend gates pass, and the worktree is clean. P7-A may now start with a bounded adapter/state-owner inventory; no native, game, MoTeC, external HUD or final performance claim is implied by this lock.
 
+## Post-lock W4 updates
+
+The W4-0 table is the locked baseline snapshot. The following updates were obtained on the same W4 branch and are carried into P8:
+
+| Area | Current result | Evidence |
+| --- | --- | --- |
+| P7-A provider owner | `pass` for the exercised Full browser path; redundant feature fallback boundaries removed; `reviewHistory` retained-gated | [w4-p7-a-adapter-register-20260920.md](./w4-p7-a-adapter-register-20260920.md), [browser evidence](../evidence/w4-p7-a-browser-20260920.md) |
+| X1 browser lifecycle | `pass` for observed Full/Lite canvas and page-owned request cleanup; internal/native resources remain not-run | [w4-p7-b-browser-lifecycle-20260920.md](../evidence/w4-p7-b-browser-lifecycle-20260920.md) |
+| X2 browser composition | `pass` for tested Full/Lite themes, responsive widths, keyboard/Escape and layering; native/Tauri remains not-run | [w4-p7-c-browser-ui-matrix-20260920.md](../evidence/w4-p7-c-browser-ui-matrix-20260920.md) |
+| X3 | `not-run` final; protocol, fixed environment and placeholders prepared | [w4-p7-d-measurement-protocol-20260920.md](../evidence/w4-p7-d-measurement-protocol-20260920.md), [baseline JSON](../evidence/w4-p7-d-baseline-20260920.json) |
+| X4/G5 | `not-run` until final machine gate | P8 handoff and final real-machine checklist |
