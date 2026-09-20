@@ -70,9 +70,10 @@ export function roadReviewDecisionBody(value: unknown): RoadReviewDecision {
 }
 
 export function createRoadReviewIo(fetcher: Fetcher = backendFetch): RoadReviewIo {
+  const missing = Symbol('missing-workflow');
   async function request(path: string, signal?: AbortSignal, body?: unknown, missingAllowed = false): Promise<unknown> {
     const response = await fetcher(path, body === undefined ? { signal } : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (missingAllowed && response.status === 404) return null;
+    if (missingAllowed && response.status === 404) return missing;
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(response.ok ? 'The Road response is malformed. Retry loading the workflow.' : 'Road request failed. Retry when the backend is available.'); }
     if (!response.ok) throw new Error(object(data) && typeof data.detail === 'string' ? data.detail : 'Road request failed. Check the entered values and try again.');
@@ -96,7 +97,7 @@ export function createRoadReviewIo(fetcher: Fetcher = backendFetch): RoadReviewI
     },
     async read(workflowId, signal) {
       const data = await request(roadReviewPath(workflowId), signal, undefined, true);
-      if (data === null) return null;
+      if (data === missing) return null;
       const list = documents(data, workflowId);
       if (!list.some(item => item.kind === 'workflow' && item.id === workflowId)) throw new Error('The Road response is missing the selected workflow.');
       return list;

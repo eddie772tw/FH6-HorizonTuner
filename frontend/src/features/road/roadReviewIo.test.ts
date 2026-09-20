@@ -32,6 +32,7 @@ describe('Road review IO contracts', () => {
       await expect(createRoadReviewIo(async () => response(malformed)).list()).rejects.toThrow();
     }
     await expect(createRoadReviewIo(async () => response([])).read('road-a')).rejects.toThrow('missing');
+    await expect(createRoadReviewIo(async () => response(null)).read('road-a')).rejects.toThrow('invalid');
     await expect(createRoadReviewIo(async () => response([workflow('road-b')])).read('road-a')).rejects.toThrow('mismatched');
     await expect(createRoadReviewIo(async () => response([workflow(), { ...report, local: null }])).read('road-a')).rejects.toThrow('invalid');
   });
