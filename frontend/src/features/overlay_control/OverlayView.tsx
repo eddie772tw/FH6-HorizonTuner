@@ -1,42 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
-import {
-  fetchHudStylesList,
-  fetchHudAuthorInfo,
-  formatHudDropdownOptions,
-  getHudUrlPrefix,
-  isWipHudQueryEnabled,
-  HUD_DISPLAY_NAMES,
-  HudStyleEntry,
-} from './hudStyleScanner';
-import {
-  S650_HMI_STYLE_ID,
-  S650_CENTER_WIDGETS,
-  S650_HMI_THEMES,
-  normalizeS650HmiConfig,
-  type S650CenterWidget,
-  type S650HmiTheme,
-} from './s650/config';
-import {
-  CLASSIC_JDM_STYLE_ID,
-  normalizeClassicJdmConfig,
-} from './classic_jdm/config';
-import { ClassicJdmSettingsCard } from './classic_jdm/ClassicJdmSettingsCard';
-import {
-  DEFAULT_HUD_CONFIG,
-  type HudConfig,
-  type HudElements,
-  type MonitorOption,
-} from './hudConfig';
+import { isWipHudQueryEnabled } from './hudStyleScanner';
+import { DEFAULT_HUD_CONFIG, type HudConfig, type HudElements, type MonitorOption } from './hudConfig';
 import '../../App.css';
-import { backendFetch, backendHttpUrl } from '../../services/backend';
+import { backendFetch } from '../../services/backend';
 import { HudUnitSettingsSidebar } from './HudUnitSettingsSidebar';
-import {
-  OverlayControlRuntimeProvider,
-  useOptionalOverlayControlRuntime,
-} from './OverlayControlRuntimeProvider';
+import { OverlayControlRuntimeProvider, useOptionalOverlayControlRuntime } from './OverlayControlRuntimeProvider';
 import { HudWorkspace } from './HudWorkspace';
 import { useHudController } from './useHudController';
+import { useHudMetadata } from './useHudMetadata';
+import { HudSetupPanel } from './panels/HudSetupPanel';
+import { HudLayoutPanel } from './panels/HudLayoutPanel';
+import { HudAdvancedPanel } from './panels/HudAdvancedPanel';
 
 interface AudioDeviceOption {
   id: string;
@@ -44,1453 +19,178 @@ interface AudioDeviceOption {
   is_default: boolean;
 }
 
-interface AuthorInfo {
-  author: string;
-  description: string;
-}
-
 const OverlayViewContent: React.FC = () => {
   const { settings, t } = useSettings();
-  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand, updateConfig, native } = useHudController();
+  const { config, status, error: runtimeError, pendingWrites, publishConfig, refresh,
+    replaceConfig, retry, sendHudCommand, updateConfig, native, capabilities } = useHudController();
+  const metadata = useHudMetadata(config.hudStyle);
   const [loading, setLoading] = useState(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
-  const [hudStyles, setHudStyles] = useState<HudStyleEntry[]>([]);
   const [hudActionError, setHudActionError] = useState<string | null>(null);
-
-  // Cache author metadata loaded dynamically per HUD style
-  const [authorCache, setAuthorCache] = useState<Record<string, AuthorInfo>>({});
-  const [currentAuthorInfo, setCurrentAuthorInfo] = useState<AuthorInfo>({
-    author: 'Author',
-    description: 'Loading author metadata...'
-  });
-
-  const mountedRef = useRef(true);
-  const authorRequestRef = useRef(0);
-
   const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
   const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
-
-  const [showWipHuds, setShowWipHuds] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('fh6_show_wip_huds') === 'true';
-    } catch {
-      return false;
-    }
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const pageGeneration = useRef(0);
+  const audioReadGeneration = useRef(0);
+  const audioWriteGeneration = useRef(0);
+  const [showWipHuds, setShowWipHuds] = useState(() => {
+    try { return localStorage.getItem('fh6_show_wip_huds') === 'true'; } catch { return false; }
   });
-
-  const isWipActive = Boolean(
-    showWipHuds ||
-    settings.developer_tuning_enabled ||
-    isWipHudQueryEnabled()
-  );
-
+  const wipForced = Boolean(settings.developer_tuning_enabled || isWipHudQueryEnabled());
+  const isWipActive = showWipHuds || wipForced;
   const handleToggleShowWipHuds = (checked: boolean) => {
     setShowWipHuds(checked);
-    try {
-      localStorage.setItem('fh6_show_wip_huds', checked ? 'true' : 'false');
-    } catch {
-      // ignore storage error
-    }
+    try { localStorage.setItem('fh6_show_wip_huds', checked ? 'true' : 'false'); } catch { /* Optional page preference. */ }
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchMonitors();
-    loadStyles();
-    fetchAudioDevices();
-
+    pageGeneration.current += 1;
+    void fetchMonitors();
+    void fetchAudioDevices();
     return () => {
       mountedRef.current = false;
+      pageGeneration.current += 1;
+      audioReadGeneration.current += 1;
     };
   }, []);
 
   const fetchAudioDevices = async () => {
+    const request = ++audioReadGeneration.current;
     setLoadingAudioDevices(true);
+    setAudioError(null);
     try {
       const res = await backendFetch('/api/audio/devices');
-      if (res.ok) {
-        const list = await res.json();
-        if (Array.isArray(list)) {
-          if (mountedRef.current) setAudioDevices(list);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to fetch available audio capture devices:', e);
+      if (!res.ok) throw new Error('Audio devices request failed (HTTP ' + res.status + ').');
+      const list = await res.json();
+      if (Array.isArray(list) && mountedRef.current && request === audioReadGeneration.current) setAudioDevices(list);
+    } catch (error) {
+      if (mountedRef.current && request === audioReadGeneration.current) setAudioError(error instanceof Error ? error.message : String(error));
     } finally {
-      if (mountedRef.current) setLoadingAudioDevices(false);
+      if (mountedRef.current && request === audioReadGeneration.current) setLoadingAudioDevices(false);
     }
   };
 
   const handleAudioDeviceChange = async (deviceId: string) => {
+    const request = ++audioWriteGeneration.current;
+    setAudioError(null);
     void updateConfig({ audioDeviceId: deviceId });
     try {
-      await backendFetch('/api/audio/device', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: deviceId }),
+      const res = await backendFetch('/api/audio/device', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device_id: deviceId }),
       });
-    } catch (e) {
-      console.warn('Failed to select audio device on backend:', e);
+      if (!res.ok) throw new Error('Audio device selection failed (HTTP ' + res.status + ').');
+    } catch (error) {
+      if (mountedRef.current && request === audioWriteGeneration.current) setAudioError(error instanceof Error ? error.message : String(error));
     }
-  };
-
-  const loadStyles = async () => {
-    const styles = await fetchHudStylesList(backendHttpUrl(''));
-    if (styles.length > 0) {
-      if (mountedRef.current) setHudStyles(styles);
-    }
-  };
-
-  const loadAuthorInfo = async (styleName: string, force: boolean = false, overridePrefix?: string) => {
-    const request = ++authorRequestRef.current;
-    if (!force && authorCache[styleName]) {
-      if (mountedRef.current && request === authorRequestRef.current) setCurrentAuthorInfo(authorCache[styleName]);
-      return;
-    }
-    try {
-      const cacheBuster = force ? `?t=${Date.now()}` : '';
-      const prefix = overridePrefix || getHudUrlPrefix(hudStyles, styleName);
-      const info = await fetchHudAuthorInfo(styleName, prefix, backendFetch, cacheBuster);
-      if (info) {
-        const localized: AuthorInfo = {
-          author: info.author || t('Author'),
-          description: info.description || t('No description provided.'),
-        };
-        if (mountedRef.current && request === authorRequestRef.current) {
-          setAuthorCache(prev => ({ ...prev, [styleName]: localized }));
-          setCurrentAuthorInfo(localized);
-        }
-        return;
-      }
-    } catch (e) {
-      console.warn(`Failed to dynamically load author.json for HUD style '${styleName}':`, e);
-    }
-    const fallback: AuthorInfo = { author: 'Author', description: t('Author metadata unavailable.') };
-    if (mountedRef.current && request === authorRequestRef.current) setCurrentAuthorInfo(fallback);
   };
 
   const fetchMonitors = async () => {
-    try {
-      const result = await native.getAvailableMonitors();
-      if (result.status === 'success' && result.value && result.value.length > 0 && mountedRef.current) {
-        setMonitors(result.value);
-      }
-    } catch (e) {
-      console.warn('Failed to fetch available monitors:', e);
+    const generation = pageGeneration.current;
+    const result = await native.getAvailableMonitors();
+    if (!mountedRef.current || generation !== pageGeneration.current) return;
+    if (result.status === 'success' && result.value) setMonitors(result.value);
+    else if (result.status === 'error' || result.status === 'degraded') setHudActionError(result.error ?? capabilities.monitorSelection.detail);
+  };
+
+  const applyMonitorSelection = async (index: number) => {
+    if (!monitors[index]) return;
+    const result = await native.moveHudToMonitor(monitors[index]);
+    if (mountedRef.current && (result.status === 'error' || result.status === 'degraded')) {
+      setHudActionError(result.error ?? capabilities.monitorSelection.detail);
     }
   };
 
-  const fetchConfig = async () => refresh();
-
-  useEffect(() => {
-    void loadAuthorInfo(config.hudStyle);
-  }, [config.hudStyle]);
-
-  const applyMonitorSelection = async (monIdx: number) => {
-    if (monitors.length > 0 && monitors[monIdx]) {
-      const m = monitors[monIdx];
-      try {
-        const result = await native.moveHudToMonitor(m);
-        if (result.status === 'error' || result.status === 'degraded') {
-          console.warn('Failed to move HUD to selected monitor:', result.error);
-        }
-      } catch (err) {
-        console.warn('Failed to move HUD to selected monitor:', err);
-      }
+  const toggleHudWindow = async (enabled: boolean) => {
+    if (!native.available) {
+      setHudActionError(capabilities.nativeWindow.detail);
+      return;
     }
-  };
-
-  const toggleHudWindow = async (enable: boolean) => {
     setLoading(true);
     setHudActionError(null);
-    const persistence = updateConfig({ enabled: enable });
-
+    const persistence = updateConfig({ enabled });
     try {
-      if (enable) {
-        sendHudCommand({ type: 'hud:animate' });
-      } else {
-        sendHudCommand({ type: 'hud:destroy' });
-      }
-
-      const windowResult = await native.toggleHudWindow(enable);
-      if (windowResult.status === 'error') {
-        throw new Error(windowResult.error ?? 'Native HUD window command failed.');
-      }
-      if (windowResult.status === 'success' && enable) {
-        const clickThroughResult = await native.setHudClickThrough(true);
-        if (clickThroughResult.status === 'error') {
-          throw new Error(clickThroughResult.error ?? 'Native HUD click-through command failed.');
-        }
-      }
-      if (enable) {
+      sendHudCommand({ type: enabled ? 'hud:animate' : 'hud:destroy' });
+      const result = await native.toggleHudWindow(enabled);
+      if (result.status !== 'success') throw new Error(result.error ?? capabilities.nativeWindow.detail);
+      if (enabled) {
+        const clickThrough = await native.setHudClickThrough(true);
+        if (clickThrough.status !== 'success') throw new Error(clickThrough.error ?? capabilities.clickThrough.detail);
         void applyMonitorSelection(config.selectedMonitorIndex);
       }
-
-      void persistence.then((persisted) => {
-        if (!persisted) {
-          console.warn('HUD config persistence timed out or failed after the window action.');
-          if (mountedRef.current) setHudActionError(t('HUD opened, but its settings could not be saved.'));
-        }
+      void persistence.then(persisted => {
+        if (!persisted && enabled && mountedRef.current) setHudActionError(t('HUD opened, but its settings could not be saved.'));
       });
-    } catch (err) {
-      console.error('HUD overlay action failed:', err);
+    } catch (error) {
+      console.error('HUD overlay action failed:', error);
       if (mountedRef.current) setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
     } finally {
       if (mountedRef.current) setLoading(false);
     }
   };
 
-  const handleMonitorChange = (monIdx: number) => {
-    void updateConfig({ selectedMonitorIndex: monIdx });
-    if (config.enabled) {
-      applyMonitorSelection(monIdx);
-    }
+  const handleMonitorChange = (index: number) => {
+    void updateConfig({ selectedMonitorIndex: index });
+    if (config.enabled) void applyMonitorSelection(index);
   };
-
-  const handleScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ scale: clamped });
-  };
-
-  const handleTelemetryOpacityChange = (newOpacity: number) => {
-    const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    void updateConfig({ telemetryOpacity: clamped });
-  };
-
-  const handleGRadarScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryGRadarScale: clamped });
-  };
-
-  const handleCornersScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryCornersScale: clamped });
-  };
-
-  const handlePedalScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryPedalScale: clamped });
-  };
-
-  const handlePowerTorqueScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryPowerTorqueScale: clamped });
-  };
-
-  const handleMergedChartsScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryMergedChartsScale: clamped });
-  };
-
-  const handleLiveMapScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryLiveMapScale: clamped });
-  };
-
-  const handleLiveMapOpacityChange = (newOpacity: number) => {
-    const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    void updateConfig({ telemetryLiveMapOpacity: clamped });
-  };
-
-  const handleCornerOffsetXChange = (val: number) => {
-    void updateConfig({ telemetryCornerOffsetX: val });
-  };
-
-  const handleCornerOffsetYChange = (val: number) => {
-    void updateConfig({ telemetryCornerOffsetY: val });
-  };
-
-  const handleLiveMapOffsetXChange = (val: number) => {
-    void updateConfig({ telemetryLiveMapOffsetX: val });
-  };
-
-  const handleLiveMapOffsetYChange = (val: number) => {
-    void updateConfig({ telemetryLiveMapOffsetY: val });
-  };
-
-  const handlePedalOffsetXChange = (val: number) => {
-    void updateConfig({
-      telemetryPedalOffsetX: val,
-      ...(config.telemetrySideBySideCharts ? { telemetryPowerTorqueOffsetX: val } : {})
-    });
-  };
-
-  const handlePowerTorqueOffsetXChange = (val: number) => {
-    void updateConfig({
-      telemetryPowerTorqueOffsetX: val,
-    });
-  };
-
-  const handleMergedChartsOffsetXChange = (val: number) => {
-    void updateConfig({
-      telemetryMergedChartsOffsetX: val,
-    });
-  };
-
-  const handleTelemetryCardFontScaleChange = (newScale: number) => {
-    const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    void updateConfig({ telemetryCardFontScale: clamped });
-  };
-
-  const handlePedalPositionChange = (pos: 'top' | 'bottom') => {
-    void updateConfig({
-      telemetryPedalPosition: pos,
-    });
-  };
-
-  const handlePowerTorquePositionChange = (pos: 'top' | 'bottom') => {
-    void updateConfig({
-      telemetryPowerTorquePosition: pos,
-    });
-  };
-
-  const handleMergedChartsPositionChange = (pos: 'top' | 'bottom') => {
-    void updateConfig({
-      telemetryMergedChartsPosition: pos,
-    });
-  };
-
-  const handleSideBySideChartsToggle = () => {
-    const nextVal = !config.telemetrySideBySideCharts;
-    void updateConfig({ telemetrySideBySideCharts: nextVal });
-  };
-
-  const handleVfdVuOffsetChange = (val: number) => {
-    const clamped = Math.max(-5, Math.min(5, val));
-    void updateConfig({ vfdVuOffset: clamped });
-  };
-
-  const handleVfdAudioOffsetChange = (val: number) => {
-    const clamped = Math.max(-5, Math.min(5, val));
-    void updateConfig({ vfdAudioOffset: clamped });
-  };
-
-  const handleGlowIntensityChange = (val: number) => {
-    const clamped = Math.max(0.0, Math.min(2.0, val));
-    void updateConfig({ glowIntensity: clamped });
-  };
-
-  const handleCustomColorChange = (color: string) => {
-    void updateConfig({ customColor: color });
-  };
-
-  const handleUseDefaultColorsToggle = () => {
-    void updateConfig({ useDefaultColors: !(config.useDefaultColors !== false) });
-  };
-
   const handleReloadHud = async () => {
+    setHudActionError(null);
     publishConfig();
     sendHudCommand({ type: 'hud:reload', hudStyle: config.hudStyle });
-
     const result = await native.reloadHudWindow();
-    if (result.status === 'error' || result.status === 'degraded') {
-      console.warn('Failed to invoke reload_hud_window:', result.error);
-    }
-
-    void fetchConfig();
-    if (config.hudStyle) {
-      loadAuthorInfo(config.hudStyle, true);
-    }
+    if (mountedRef.current && (result.status === 'error' || result.status === 'degraded')) setHudActionError(result.error ?? capabilities.reload.detail);
+    void refresh();
+    if (mountedRef.current) metadata.refresh();
   };
-
   const handleResetHudConfig = () => {
-    if (!window.confirm(t("Are you sure you want to reset all HUD settings?"))) return;
-    const resetConfig: HudConfig = {
-      ...DEFAULT_HUD_CONFIG,
-      enabled: config.enabled,
-    };
-    void replaceConfig(resetConfig);
+    if (!window.confirm(t('Are you sure you want to reset all HUD settings?'))) return;
+    void replaceConfig({ ...DEFAULT_HUD_CONFIG, enabled: config.enabled });
     sendHudCommand({ type: 'hud:reload' });
-    void fetchConfig();
+    void refresh();
   };
-
   const handleElementToggle = (key: keyof HudElements) => {
     const nextVal = !config.elements[key];
-    const elements: Partial<HudElements> = {
-      [key]: nextVal,
-    };
-
-    if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && nextVal) {
-      elements.showTeleTires = true;
-    }
-
+    const elements: Partial<HudElements> = { [key]: nextVal };
+    if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && nextVal) elements.showTeleTires = true;
     void updateConfig({ elements });
   };
-
-  const handleStyleChange = (style: string) => {
-    const normalizedStyle = normalizeClassicJdmConfig(normalizeS650HmiConfig({ hudStyle: style })).hudStyle;
-    void updateConfig({ hudStyle: style });
-    loadAuthorInfo(normalizedStyle);
-  };
-
-  const handleClassicJdmConfigChange = (updates: Partial<HudConfig>) => {
-    void updateConfig(updates);
-  };
-
-  const handleS650ThemeChange = (theme: S650HmiTheme) => {
-    void updateConfig({ hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
-  };
-
-  const handleS650CenterWidgetChange = (widget: S650CenterWidget) => {
-    void updateConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
-  };
-
   const handleS650CenterInfoToggle = () => {
-    if (config.s650CenterWidget === 'disable') {
-      void updateConfig({
-        s650CenterWidget: 'drive',
-        elements: { showCenterInfo: true },
-      });
-      return;
-    }
-    void updateConfig({
-      elements: { showCenterInfo: config.elements.showCenterInfo === false },
-    });
+    void updateConfig(config.s650CenterWidget === 'disable'
+      ? { s650CenterWidget: 'drive', elements: { showCenterInfo: true } }
+      : { elements: { showCenterInfo: config.elements.showCenterInfo === false } });
   };
-
-  const s650CenterInfoEnabled =
-    config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
-  const displayedHudError = hudActionError ?? runtimeError;
+  const displayedHudError = hudActionError ?? runtimeError ?? metadata.error;
+  const panelProps = {
+    config, styles: metadata.styles, t, disabled: status === 'loading',
+    onConfigPatch: (patch: Partial<HudConfig>) => { void updateConfig(patch); },
+  };
 
   return (
-    <HudWorkspace>
-
-      {/* Unframed Header Banner */}
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-2 flex-shrink-0">
-        <div>
-          <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>
-            {t("HUD Control Panel")}
-          </h2>
-          <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
-            {t("Full-screen borderless transparent HUD overlay for Forza Horizon 6")}
-            <br />
-            {t('Simple & Advanced HUD Style:')} Paburrito
-            <br />
-            {t('VFD HUD Style:')} eddie772tw feat. crosXover
-            <br />
-            {t('Other SIMHUB HUD Style:')} StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
-          </p>
-        </div>
-
-        <div className="d-flex align-items-center gap-2">
-          {displayedHudError && (
-            <div className="d-flex align-items-center gap-2">
-              <span role="alert" className="text-danger small" style={{ maxWidth: '22rem' }}>
-                {displayedHudError}
-              </span>
-              {runtimeError && (
-                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => void retry()}>
-                  {t('Retry Update')}
-                </button>
-              )}
-            </div>
-          )}
-          {pendingWrites > 0 && <span className="badge text-bg-secondary">{t('Processing...')}</span>}
-          <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
-            <button
-              onClick={() => toggleHudWindow(!config.enabled)}
-              disabled={loading}
-              className={`btn fw-bold px-4 py-2 ${config.enabled ? 'btn-outline-danger' : 'btn-primary'}`}
-              style={{
-                fontSize: '1rem',
-                borderRadius: '6px',
-                cursor: loading ? 'wait' : 'pointer',
-                boxShadow: config.enabled ? '0 0 15px rgba(255, 50, 50, 0.3)' : '0 0 15px var(--primary-glow)',
-                pointerEvents: loading ? 'none' : 'auto'
-              }}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" /> {t("Processing...")}
-                </>
-              ) : config.enabled ? (
-                t("Close HUD Overlay")
-              ) : (
-                t("Launch HUD Overlay")
-              )}
-            </button>
-          </span>
-        </div>
-      </div>
-
-      {/* Main Settings Grid: 3 columns x 2 rows fixed grid layout */}
-      <div className="row g-4 m-0 w-100 flex-grow-1">
-
-        {/* --- COLUMN 1 ROW 1: Offset & Position Settings --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("Offset & Position Settings")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-              {/* Corner Cards Horizontal (X) Offset Slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Corner Cards X-Offset")}:</span>
-                  <span className="text-primary fw-bold fs-7">{config.telemetryCornerOffsetX ?? 0} px</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={-500}
-                  max={500}
-                  step={5}
-                  value={config.telemetryCornerOffsetX ?? 0}
-                  onChange={(e) => handleCornerOffsetXChange(Number(e.target.value))}
-                aria-label={t("Corner Cards X-Offset")}
-                />
-              </div>
-
-              {/* Corner Cards Vertical (Y) Offset Slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Corner Cards Y-Offset")}:</span>
-                  <span className="text-primary fw-bold fs-7">{config.telemetryCornerOffsetY ?? 0} px</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={-300}
-                  max={300}
-                  step={5}
-                  value={config.telemetryCornerOffsetY ?? 0}
-                  onChange={(e) => handleCornerOffsetYChange(Number(e.target.value))}
-                aria-label={t("Corner Cards Y-Offset")}
-                />
-              </div>
-
-              <div className="border-bottom pb-3">
-                <button type="button" className="btn btn-outline-secondary btn-sm w-100" onClick={() => setShowUnitSettings(true)}>
-                  {t("HUD Unit Settings")}
-                </button>
-              </div>
-
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-side-by-side"
-                  checked={config.telemetrySideBySideCharts === true}
-                  onChange={handleSideBySideChartsToggle}
-                />
-                <label className="form-check-label fs-7 fw-bold text-primary" htmlFor="sw-side-by-side">
-                  {t("Merge Power & Pedal Charts")}
-                </label>
-              </div>
-
-              {/* Conditional Display: Merged vs Individual Offsets & Positions */}
-              {config.telemetrySideBySideCharts ? (
-                <>
-                  {/* Merged Charts Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Merged Charts X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryMergedChartsOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryMergedChartsOffsetX ?? 0}
-                      onChange={(e) => handleMergedChartsOffsetXChange(Number(e.target.value))}
-                    aria-label={t("Merged Charts X-Offset")}
-                    />
-                  </div>
-
-                  {/* Merged Charts Top/Bottom Position */}
-                  <div className="d-flex justify-content-between align-items-center pt-1">
-                    <span className="fs-7 text-body-secondary">{t("Merged Charts Position")}:</span>
-                    <select
-                      value={config.telemetryMergedChartsPosition ?? 'bottom'}
-                      onChange={(e) => handleMergedChartsPositionChange(e.target.value as 'top' | 'bottom')}
-                      className="form-select form-select-sm"
-                      style={{ width: 'auto', minWidth: '110px' }}
-                    >
-                      <option value="bottom">{t("Bottom")}</option>
-                      <option value="top">{t("Top")}</option>
-                    </select>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Pedal Wave Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Pedal Chart X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryPedalOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryPedalOffsetX ?? 0}
-                      onChange={(e) => handlePedalOffsetXChange(Number(e.target.value))}
-                    aria-label={t("Pedal Chart X-Offset")}
-                    />
-                  </div>
-
-                  {/* Power / Torque Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Power / Torque X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryPowerTorqueOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryPowerTorqueOffsetX ?? 0}
-                      onChange={(e) => handlePowerTorqueOffsetXChange(Number(e.target.value))}
-                    aria-label={t("Power / Torque X-Offset")}
-                    />
-                  </div>
-
-                  {/* Live Map Horizontal (X) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Live Map X-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetX ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryLiveMapOffsetX ?? 0}
-                      onChange={(e) => handleLiveMapOffsetXChange(Number(e.target.value))}
-                    aria-label={t("Live Map X-Offset")}
-                    />
-                  </div>
-
-                  {/* Live Map Vertical (Y) Offset Slider */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Live Map Y-Offset")}:</span>
-                      <span className="text-primary fw-bold fs-7">{config.telemetryLiveMapOffsetY ?? 0} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-500}
-                      max={500}
-                      step={10}
-                      value={config.telemetryLiveMapOffsetY ?? 0}
-                      onChange={(e) => handleLiveMapOffsetYChange(Number(e.target.value))}
-                    aria-label={t("Live Map Y-Offset")}
-                    />
-                  </div>
-
-                  {/* Chart Top/Bottom Positions */}
-                  <div className="d-flex justify-content-between align-items-center pt-1">
-                    <span className="fs-7 text-body-secondary">{t("Pedal Position")}:</span>
-                    <select
-                      value={config.telemetryPedalPosition ?? 'bottom'}
-                      onChange={(e) => handlePedalPositionChange(e.target.value as 'top' | 'bottom')}
-                      className="form-select form-select-sm"
-                      style={{ width: 'auto', minWidth: '110px' }}
-                    >
-                      <option value="bottom">{t("Bottom")}</option>
-                      <option value="top">{t("Top")}</option>
-                    </select>
-                  </div>
-
-                  <div className="d-flex justify-content-between align-items-center pt-1">
-                    <span className="fs-7 text-body-secondary">{t("Power/Torque Position")}:</span>
-                    <select
-                      value={config.telemetryPowerTorquePosition ?? 'top'}
-                      onChange={(e) => handlePowerTorquePositionChange(e.target.value as 'top' | 'bottom')}
-                      className="form-select form-select-sm"
-                      style={{ width: 'auto', minWidth: '110px' }}
-                    >
-                      <option value="bottom">{t("Bottom")}</option>
-                      <option value="top">{t("Top")}</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-            </div>
-          </div>
-        </div>
-
-        {/* --- COLUMN 2 ROW 1: HUD Scale Size --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("HUD Scale Size")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-
-              {/* G-Force Radar Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("G-Force Radar Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryGRadarScale ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryGRadarScale ?? 1.0}
-                  onChange={(e) => handleGRadarScaleChange(Number(e.target.value))}
-                aria-label={t("G-Radar Scale")}
-                />
-              </div>
-
-              {/* 4-Corner Cards Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("4-Corner Wheel Cards Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryCornersScale ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryCornersScale ?? 1.0}
-                  onChange={(e) => handleCornersScaleChange(Number(e.target.value))}
-                aria-label={t("Corner Speed / Temp Scale")}
-                />
-              </div>
-
-              {config.telemetrySideBySideCharts ? (
-                /* Merged Charts Scale */
-                <div>
-                  <div className="d-flex justify-content-between align-items-center mb-1">
-                    <span className="fs-7 text-body-secondary">{t("Merged Charts Scale")}:</span>
-                    <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryMergedChartsScale ?? 1.0) * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    className="form-range"
-                    min={0.5}
-                    max={2.0}
-                    step={0.05}
-                    value={config.telemetryMergedChartsScale ?? 1.0}
-                    onChange={(e) => handleMergedChartsScaleChange(Number(e.target.value))}
-                  aria-label={t("Merged Charts Scale")}
-                  />
-                </div>
-              ) : (
-                <>
-                  {/* Pedal Chart Scale */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Pedal Chart Scale")}:</span>
-                      <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryPedalScale ?? 1.0) * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={0.5}
-                      max={2.0}
-                      step={0.05}
-                      value={config.telemetryPedalScale ?? 1.0}
-                      onChange={(e) => handlePedalScaleChange(Number(e.target.value))}
-                    aria-label={t("Pedal Chart Scale")}
-                    />
-                  </div>
-
-                  {/* Power / Torque Chart Scale */}
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Power / Torque Scale")}:</span>
-                      <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryPowerTorqueScale ?? 1.0) * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={0.5}
-                      max={2.0}
-                      step={0.05}
-                      value={config.telemetryPowerTorqueScale ?? 1.0}
-                      onChange={(e) => handlePowerTorqueScaleChange(Number(e.target.value))}
-                    aria-label={t("Power / Torque Scale")}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Card Font Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Card Font Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryCardFontScale ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryCardFontScale ?? 1.0}
-                  onChange={(e) => handleTelemetryCardFontScaleChange(Number(e.target.value))}
-                aria-label={t("Card Font Scale")}
-                />
-              </div>
-
-              {/* Live Map Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Live Map Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapScale ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.telemetryLiveMapScale ?? 1.0}
-                  onChange={(e) => handleLiveMapScaleChange(Number(e.target.value))}
-                aria-label={t("Live Map Scale")}
-                />
-              </div>
-
-              {/* Live Map Opacity */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Live Map Opacity")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round((config.telemetryLiveMapOpacity ?? 1.0) * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.05}
-                  value={config.telemetryLiveMapOpacity ?? 1.0}
-                  onChange={(e) => handleLiveMapOpacityChange(Number(e.target.value))}
-                aria-label={t("Live Map Opacity")}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- COLUMN 3 ROW 1: Telemetry HUD Elements --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <div className="d-flex justify-content-between align-items-center border-bottom pb-2 m-0">
-              <h3 className="fs-6 fw-bold text-primary m-0">
-                {t("Telemetry HUD Elements")}
-              </h3>
-              <div className="form-check form-switch m-0" title={t("Toggle Master Telemetry HUD Switch")}>
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-tele-master"
-                  checked={config.elements.showTeleMaster !== false}
-                  onChange={() => handleElementToggle('showTeleMaster')}
-                />
-              </div>
-            </div>
-
-            <div className="row g-3 pt-1">
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-susp"
-                    checked={config.elements.showTeleSuspension}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showTeleSuspension')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-susp">{t("Suspension Travel")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-slip"
-                    checked={config.elements.showTeleTiresSlip !== false}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showTeleTiresSlip')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-slip">{t("Tire Slip Radar")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-temp"
-                    checked={config.elements.showTeleTiresTemp !== false}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showTeleTiresTemp')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-temp">{t("Tire Temp Histogram")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-att"
-                    checked={config.elements.showTeleAttitude}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showTeleAttitude')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-att">{t("G-Force & Attitude")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-pedal"
-                    checked={config.elements.showTelePedals}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showTelePedals')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-pedal">{t("Throttle & Brake Trace")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-power"
-                    checked={config.elements.showPowerTorque !== false}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showPowerTorque')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-power">{t("Power & Torque Trace")}</label>
-                </div>
-              </div>
-
-              <div className="col-6">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-tele-live-map"
-                    checked={config.elements.showLiveMap !== false}
-                    disabled={config.elements.showTeleMaster === false}
-                    onChange={() => handleElementToggle('showLiveMap')}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-tele-live-map">{t("Live Map (Track & Cursor)")}</label>
-                </div>
-              </div>
-
-              {config.elements.showLiveMap !== false && (
-                <>
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="sw-tele-live-pois"
-                        checked={config.elements.showLiveMapPOIs !== false}
-                        disabled={config.elements.showTeleMaster === false}
-                        onChange={() => handleElementToggle('showLiveMapPOIs')}
-                      />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pois">{t("Live Map Landmarks & POIs")}</label>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="sw-tele-live-pr"
-                        checked={config.elements.showLiveMapPRStunts !== false}
-                        disabled={config.elements.showTeleMaster === false}
-                        onChange={() => handleElementToggle('showLiveMapPRStunts')}
-                      />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-pr">{t("PR Stunts (Speed/Drift/Danger)")}</label>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="sw-tele-live-collectibles"
-                        checked={config.elements.showLiveMapCollectibles !== false}
-                        disabled={config.elements.showTeleMaster === false}
-                        onChange={() => handleElementToggle('showLiveMapCollectibles')}
-                      />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-collectibles">{t("Collectibles & Mascots")}</label>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="form-check form-switch py-1">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="sw-tele-live-heading"
-                        checked={config.elements.showLiveMapHeading !== false}
-                        disabled={config.elements.showTeleMaster === false}
-                        onChange={() => handleElementToggle('showLiveMapHeading')}
-                      />
-                      <label className="form-check-label fs-7" htmlFor="sw-tele-live-heading">{t("Heading Arrow & Compass")}</label>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* --- COLUMN 1 ROW 2: Speedometer Settings --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("Speedometer Settings")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-main-gauge"
-                  checked={config.elements.showGauge !== false}
-                  onChange={() => handleElementToggle('showGauge')}
-                />
-                <label className="form-check-label fs-7 fw-bold text-primary" htmlFor="sw-main-gauge">
-                  {t("Enabled")}
-                </label>
-              </div>
-
-              <select
-                value={config.hudStyle}
-                onChange={(e) => handleStyleChange(e.target.value)}
-                disabled={config.elements.showGauge === false}
-                className="form-select form-select-sm fw-bold"
-              >
-                {formatHudDropdownOptions(hudStyles, HUD_DISPLAY_NAMES, {
-                  includeWip: isWipActive,
-                  currentStyle: config.hudStyle,
-                }).map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-show-wip-huds"
-                  checked={isWipActive}
-                  disabled={settings.developer_tuning_enabled || isWipHudQueryEnabled()}
-                  onChange={(e) => handleToggleShowWipHuds(e.target.checked)}
-                />
-                <label className="form-check-label fs-7 text-body-secondary" htmlFor="sw-show-wip-huds">
-                  {t("Show WIP Gauges")}
-                  {(settings.developer_tuning_enabled || isWipHudQueryEnabled()) && (
-                    <span className="badge bg-secondary ms-1 fs-8">{t("Dev Mode")}</span>
-                  )}
-                </label>
-              </div>
-
-              {config.hudStyle === S650_HMI_STYLE_ID && (
-                <div className="border-top pt-2">
-                  <label htmlFor="s650-hmi-theme" className="form-label fs-7 text-body-secondary mb-1">
-                    {t("S650 HMI Mode")}:
-                  </label>
-                  <select
-                    id="s650-hmi-theme"
-                    className="form-select form-select-sm fw-bold"
-                    value={config.s650Theme ?? 'heritage67'}
-                    onChange={(e) => handleS650ThemeChange(e.target.value as S650HmiTheme)}
-                  >
-                    {S650_HMI_THEMES.map((theme) => (
-                      <option key={theme.value} value={theme.value}>
-                        {t(theme.label)}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="d-flex justify-content-between align-items-center mt-2 mb-1">
-                    <label htmlFor="s650-center-widget" className="form-label fs-7 text-body-secondary mb-0">
-                      {t("S650 center information")}:
-                    </label>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      aria-label={t("S650 center information")}
-                      aria-pressed={s650CenterInfoEnabled}
-                      onClick={handleS650CenterInfoToggle}
-                    >
-                      {t(s650CenterInfoEnabled ? "Enabled" : "Disabled")}
-                    </button>
-                  </div>
-                  <select
-                    id="s650-center-widget"
-                    className="form-select form-select-sm fw-bold"
-                    value={config.s650CenterWidget ?? 'drive'}
-                    onChange={(e) => handleS650CenterWidgetChange(e.target.value as S650CenterWidget)}
-                  >
-                    {S650_CENTER_WIDGETS.map((widget) => (
-                      <option key={widget.value} value={widget.value}>
-                        {t(widget.label)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {config.hudStyle === CLASSIC_JDM_STYLE_ID && (
-                <ClassicJdmSettingsCard
-                  config={config}
-                  onChange={handleClassicJdmConfigChange}
-                  t={t}
-                />
-              )}
-
-              {/* Overall HUD Scale */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Overall HUD Scale")}:</span>
-                  <span className="text-primary fw-bold fs-7">{Math.round(config.scale * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={config.scale}
-                  onChange={(e) => handleScaleChange(Number(e.target.value))}
-                aria-label={t("Overall HUD Scale")}
-                />
-              </div>
-
-              {/* VFD Instrument Waveform Sensitivity Offsets (Visible only when Retro VFD is selected) */}
-              {config.hudStyle === 'vfd' && (
-                <>
-                  <div className="border-top pt-2">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("VU Offset:")}</span>
-                      <span className="text-primary fw-bold fs-7">{config.vfdVuOffset ?? 0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-5}
-                      max={5}
-                      step={1}
-                      value={config.vfdVuOffset ?? 0}
-                      onChange={(e) => handleVfdVuOffsetChange(Number(e.target.value))}
-                    aria-label={t("VU Offset")}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="fs-7 text-body-secondary">{t("Audio Visualizer Offset:")}</span>
-                      <span className="text-primary fw-bold fs-7">{config.vfdAudioOffset ?? 0}</span>
-                    </div>
-                    <input
-                      type="range"
-                      className="form-range"
-                      min={-5}
-                      max={5}
-                      step={1}
-                      value={config.vfdAudioOffset ?? 0}
-                      onChange={(e) => handleVfdAudioOffsetChange(Number(e.target.value))}
-                    aria-label={t("Audio Visualizer Offset")}
-                    />
-                  </div>
-                </>
-              )}
-
-              <button
-                onClick={handleReloadHud}
-                className="btn btn-outline-primary btn-sm w-100 fw-bold py-2 mt-1"
-              >
-                {t("Refresh HUD List & Reload HTML")}
-              </button>
-
-              {/* HUD Author & Simple Description Info Box */}
-              <div className="p-3 border rounded glass-panel">
-                <div className="fs-7 text-body-secondary mb-1">
-                  {t("Author")}: <strong className="text-primary">{currentAuthorInfo.author === 'Author' ? t('Author') : currentAuthorInfo.author}</strong>
-                </div>
-                <div className="fs-7 text-body-secondary" style={{ lineHeight: '1.4' }}>
-                  {currentAuthorInfo.description === 'Loading author metadata...' ? t('Loading author metadata...') : currentAuthorInfo.description === 'Author metadata unavailable.' ? t('Author metadata unavailable.') : currentAuthorInfo.description === 'No description provided.' ? t('No description provided.') : currentAuthorInfo.description}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- COLUMN 2 ROW 2: HUD Style Settings --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("HUD Style Settings")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-              {/* Telemetry Opacity slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Telemetry Opacity")}:</span>
-                  <div className="d-flex align-items-center gap-1">
-                    <input
-                      type="number"
-                      min={10}
-                      max={100}
-                      value={Math.round((config.telemetryOpacity ?? 0.65) * 100)}
-                      onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value) / 100)}
-                      className="form-control form-control-sm text-center fw-bold text-primary"
-                      style={{ width: '65px' }}
-                    />
-                    <span className="text-primary fw-bold fs-7">%</span>
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.05}
-                  value={config.telemetryOpacity ?? 0.65}
-                  onChange={(e) => handleTelemetryOpacityChange(Number(e.target.value))}
-                aria-label={t("HUD Window Opacity")}
-                />
-              </div>
-
-              {/* Glow Intensity slider */}
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fs-7 text-body-secondary">{t("Glow Intensity")}:</span>
-                  <div className="d-flex align-items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      max={200}
-                      value={Math.round((config.glowIntensity ?? 1.0) * 100)}
-                      onChange={(e) => handleGlowIntensityChange(Number(e.target.value) / 100)}
-                      className="form-control form-control-sm text-center fw-bold text-primary"
-                      style={{ width: '65px' }}
-                    />
-                    <span className="text-primary fw-bold fs-7">%</span>
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  className="form-range"
-                  min={0.0}
-                  max={2.0}
-                  step={0.05}
-                  value={config.glowIntensity ?? 1.0}
-                  onChange={(e) => handleGlowIntensityChange(Number(e.target.value))}
-                aria-label={t("Glow Intensity")}
-                />
-              </div>
-
-              {/* Gauge Color Palette Customization */}
-              <div className="d-flex flex-column gap-2">
-                <div className="form-check form-switch py-1">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="sw-default-colors"
-                    checked={config.useDefaultColors !== false}
-                    onChange={handleUseDefaultColorsToggle}
-                  />
-                  <label className="form-check-label fs-7" htmlFor="sw-default-colors">
-                    {t("Use Default Gauge Colors")}
-                  </label>
-                </div>
-
-                {config.useDefaultColors === false && (
-                  <div className="d-flex justify-content-between align-items-center ps-4">
-                    <span className="fs-7 text-body-secondary">{t("Custom Gauge Color")}:</span>
-                    <input
-                      type="color"
-                      value={config.customColor || '#00f0ff'}
-                      onChange={(e) => handleCustomColorChange(e.target.value)}
-                      className="form-control form-control-color"
-                      style={{ width: '45px', height: '28px', cursor: 'pointer' }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Motion Effect Toggle */}
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-motion-effect"
-                  checked={config.elements.showMotionEffect !== false}
-                  onChange={() => handleElementToggle('showMotionEffect')}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-motion-effect">
-                  {t("Motion Effect")}
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- COLUMN 3 ROW 2: Performance & System Options --- */}
-        <div className="col-12 col-lg-4">
-          <div className="h-100 p-2 d-flex flex-column gap-3">
-            <h3 className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">
-              {t("Performance & System Options")}
-            </h3>
-            <div className="d-flex flex-column gap-3">
-
-              {/* Target Display Monitor Selector */}
-              <div className="border-bottom pb-3">
-                <label className="form-label fs-7 text-body-secondary mb-1">
-                  {t("Select Monitor for HUD Overlay")}:
-                </label>
-                <select
-                  value={config.selectedMonitorIndex}
-                  onChange={(e) => handleMonitorChange(Number(e.target.value))}
-                  className="form-select form-select-sm"
-                >
-                  {monitors.length > 0 ? (
-                    monitors.map((m, idx) => (
-                      <option key={idx} value={idx}>
-                        {m.name} ({m.width}x{m.height}) {m.is_primary ? `[${t("Primary")}]` : ''}
-                      </option>
-                    ))
-                  ) : (
-                    <option value={0}>{t("Default Primary Display")}</option>
-                  )}
-                </select>
-              </div>
-
-              {/* Audio Spectrum Capture Device Selector */}
-              <div className="border-bottom pb-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label className="form-label fs-7 text-body-secondary mb-0">
-                    {t("Audio Capture Source")}:
-                  </label>
-                  <button
-                    type="button"
-                    onClick={fetchAudioDevices}
-                    disabled={loadingAudioDevices}
-                    className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8"
-                  >
-                    {loadingAudioDevices ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" /> {t("Refreshing...")}
-                      </>
-                    ) : (
-                      t("Refresh Audio Devices")
-                    )}
-                  </button>
-                </div>
-                <select
-                  value={config.audioDeviceId || 'default'}
-                  onChange={(e) => handleAudioDeviceChange(e.target.value)}
-                  className="form-select form-select-sm"
-                >
-                  {audioDevices.length > 0 ? (
-                    audioDevices.map((dev) => (
-                      <option key={dev.id} value={dev.id}>
-                        {dev.name === 'System Default Speaker / 系統預設輸出裝置' ? t('System Default Speaker') : dev.name}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="default">{t("System Default Speaker")}</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-pause-telemetry"
-                  checked={!!config.pauseTelemetryViewWhenActive}
-                  onChange={(e) => {
-                    void updateConfig({ pauseTelemetryViewWhenActive: e.target.checked });
-                  }}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-pause-telemetry">
-                  {t("Pause Telemetry View when HUD is active")}
-                </label>
-              </div>
-
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-center-anchor"
-                  checked={config.elements.showTeleCenterAnchor !== false}
-                  onChange={() => handleElementToggle('showTeleCenterAnchor')}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-center-anchor">
-                  {t("Center Alignment Anchor Frame")}
-                </label>
-              </div>
-
-              <div className="form-check form-switch py-1">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="sw-gridlines"
-                  checked={!!config.elements.showTeleGridLines}
-                  onChange={() => handleElementToggle('showTeleGridLines')}
-                />
-                <label className="form-check-label fs-7" htmlFor="sw-gridlines">
-                  {t("Alignment Grid Lines")}
-                </label>
-              </div>
-
-              {/* Reset HUD Settings Action */}
-              <div className="pt-3 border-top mt-auto">
-                <button
-                  onClick={handleResetHudConfig}
-                  className="btn btn-outline-danger btn-sm w-100 fw-bold py-2"
-                >
-                  {t("Reset HUD Settings")}
-                </button>
-                <span className="d-block text-body-secondary fs-8 mt-1 text-center">
-                  {t("Reset all HUD elements, scaling, colors, and positions to default values.")}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <HudUnitSettingsSidebar
-        show={showUnitSettings}
-        followGlobal={config.followAppUnits !== false}
-        units={config.units ?? DEFAULT_HUD_CONFIG.units!}
-        globalUnits={settings.units}
-        t={t}
+    <HudWorkspace t={t}
+      status={<div className="d-flex align-items-center flex-wrap gap-2" aria-live="polite">
+        <span role="alert" className="text-danger small">{displayedHudError}</span>
+        {runtimeError && <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => void retry()}>{t('Retry Update')}</button>}
+        {pendingWrites > 0 && <span className="badge text-bg-secondary">{t('Processing...')}</span>}
+      </div>}
+      setup={<HudSetupPanel {...panelProps} monitors={monitors} author={metadata.currentAuthor}
+        metadataLoading={metadata.loading} includeWip={isWipActive} busy={loading} pendingWrites={pendingWrites}
+        error={displayedHudError} capabilities={capabilities} onToggleHud={enabled => void toggleHudWindow(enabled)}
+        onStyleChange={hudStyle => void updateConfig({ hudStyle })} onMonitorChange={handleMonitorChange}
+        onReloadHud={() => void handleReloadHud()} onOpenUnitSettings={() => setShowUnitSettings(true)}
+        onRetry={runtimeError ? () => { void retry(); } : undefined} />}
+      layout={<HudLayoutPanel {...panelProps} onElementToggle={handleElementToggle} />}
+      advanced={<HudAdvancedPanel {...panelProps} audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices}
+        audioError={audioError} isWipActive={isWipActive} wipForced={wipForced}
+        onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
+        onShowWipChange={handleToggleShowWipHuds} onElementToggle={handleElementToggle}
+        onS650CenterInfoToggle={handleS650CenterInfoToggle} onResetHudConfig={handleResetHudConfig} />}
+    >
+      <HudUnitSettingsSidebar show={showUnitSettings} followGlobal={config.followAppUnits !== false}
+        units={config.units ?? DEFAULT_HUD_CONFIG.units!} globalUnits={settings.units} t={t}
         onFollowGlobalChange={followAppUnits => void updateConfig({ followAppUnits })}
-        onUnitsChange={units => void updateConfig({ unit: units.speed, units })}
-        onClose={() => setShowUnitSettings(false)}
-      />
+        onUnitsChange={units => void updateConfig({ unit: units.speed, units })} onClose={() => setShowUnitSettings(false)} />
     </HudWorkspace>
   );
 };
@@ -1498,9 +198,6 @@ const OverlayViewContent: React.FC = () => {
 export const OverlayView: React.FC = () => {
   const runtime = useOptionalOverlayControlRuntime();
   if (runtime) return <OverlayViewContent />;
-  // Compatibility wrapper until the Coordinator mounts the provider beside the
-  // workspace switch. The runtime itself is module-scoped, so queued writes
-  // still survive this page's unmount/remount cycle.
   return <OverlayControlRuntimeProvider><OverlayViewContent /></OverlayControlRuntimeProvider>;
 };
 

@@ -1,6 +1,16 @@
 .hud-workspace {
   min-height: 0;
+  min-width: 0;
   background: var(--bs-body-bg);
   color: var(--bs-body-color);
+}
+
+.hud-workspace-panel {
+  min-width: 0;
+}
+
+.hud-workspace-panel:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 
