@@ -95,6 +95,7 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(previous => ({
       ...previous,
       selection,
+      roadWorkflowId: null,
       primaryLap: 0,
       compareLap: -1,
       isLoading: selection.kind !== "local",
@@ -132,6 +133,7 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(previous => ({
       ...previous,
       selection: { kind: "local" },
+      roadWorkflowId: null,
       primaryLap: 0,
       compareLap: -1,
       isLoading: false,
@@ -202,8 +204,10 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!isCurrent()) return false;
 
     if (intent.kind === "road") {
-      // Road has its own workflow contract in W3. It must still invalidate an
-      // older analysis request before remembering its independent identifier.
+      // Road has its own workflow contract in W3. Invalidate an older analysis
+      // request before remembering its independent identifier so a late
+      // primary read cannot overwrite the next review surface.
+      invalidateSelectionRequest();
       setState(previous => ({ ...previous, roadWorkflowId: intent.workflowId }));
       return true;
     }
@@ -222,6 +226,7 @@ export const SessionsStateProvider: React.FC<{ children: React.ReactNode }> = ({
         setState(previous => ({
           ...previous,
           selection,
+          roadWorkflowId: null,
           primaryLap: 0,
           compareLap: -1,
           isLoading: false,
