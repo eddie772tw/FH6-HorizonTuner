@@ -8,7 +8,7 @@
 - Base SHA: `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`
 - Contract SHA: not published in the preparation packet; no shared contract was changed.
 - Wave 2 base SHA: not published in the preparation packet; this lane used the coordinator-issued exact BASE_SHA above.
-- Head SHA: `e995306672f6a88ddf45f22ada372edb30f2dcac` (branch tip after the browser-smoke handoff commit).
+- Head SHA: `b5d74019e09a679696f8a7f941b71648df4a5710` (branch tip after the final handoff metadata commit).
 
 ## Changed files and ownership
 
@@ -72,7 +72,7 @@ Coordinator-retained files include `frontend/src/app/AppShell.tsx`, `frontend/sr
 - `cmd /c "pnpm -C frontend run test"` — passed: 120 files, 859 tests.
 - `cmd /c "pnpm -C frontend run build"` — passed: TypeScript and Vite production build.
 - `git diff --check` — passed.
-- Test/build SHA: `e995306672f6a88ddf45f22ada372edb30f2dcac` (the implementation was validated before the documentation-only handoff commit).
+- Test/build SHA: `048a8fd` (implementation commit; subsequent branch commits are documentation-only handoff updates).
 
 ## A to D boundary
 
