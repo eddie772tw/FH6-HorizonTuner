@@ -252,3 +252,52 @@ async def test_engine_observation_low_rev_limit_accepted(tmp_path, monkeypatch):
         ]
         res = await client.post("/api/road/engine-observations", json=payload)
         assert res.status_code == 200, res.text
+
+
+@pytest.mark.asyncio
+async def test_engine_observation_coverage_and_morphology_contract(
+    tmp_path, monkeypatch
+):
+    db = TelemetrySQLite(str(tmp_path / "coverage.db"))
+    service = RoadService(db, RoadStore(db.db_path))
+    monkeypatch.setattr(main, "road_service", service)
+
+    def with_id(payload, identifier):
+        payload["observation"]["id"] = identifier
+        payload["capture"]["references"]["engineObservationId"] = identifier
+        return payload
+
+    async with AsyncClient(
+        transport=ASGITransport(app=main.app), base_url="http://test"
+    ) as client:
+        for index, highest_rpm in enumerate((6800, 7040)):
+            payload = with_id(engine_payload(), f"engine-under-90-{index}")
+            payload["observation"]["data"]["highestRpm"] = highest_rpm
+            response = await client.post("/api/road/engine-observations", json=payload)
+            assert response.status_code == 422, response.text
+
+        normal = with_id(engine_payload(), "engine-normal-eight")
+        normal["observation"]["data"]["highestRpm"] = 7200
+        normal["observation"]["data"]["bins"] = normal["observation"]["data"]["bins"][
+            :8
+        ]
+        response = await client.post("/api/road/engine-observations", json=normal)
+        assert response.status_code == 200, response.text
+
+        for index, (override, bin_count) in enumerate(
+            (
+                ({"powerDropoffDetected": "true", "effectiveRedline": 6200}, 6),
+                ({"cutoffDetected": 1, "effectiveRedline": 6200}, 6),
+                ({"powerDropoffDetected": True}, 9),
+                ({"powerDropoffDetected": True, "effectiveRedline": 0}, 6),
+                ({"cutoffDetected": True, "effectiveRedline": -1}, 6),
+                ({"cutoffDetected": True, "effectiveRedline": 8200}, 6),
+            )
+        ):
+            payload = with_id(engine_payload(), f"engine-invalid-morphology-{index}")
+            data = payload["observation"]["data"]
+            data.update(override)
+            data["highestRpm"] = 6000
+            data["bins"] = data["bins"][:bin_count]
+            response = await client.post("/api/road/engine-observations", json=payload)
+            assert response.status_code == 422, response.text

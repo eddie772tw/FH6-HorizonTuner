@@ -74,3 +74,6 @@
 **Learning:** Repeatedly reading and parsing static JSON language files from disk on every `/api/languages/{code}` HTTP request causes unnecessary file I/O, path resolution, and JSON decoding overhead.
 **Action:** Implement an in-memory dictionary cache (`LANGUAGE_CACHE`) for loaded language JSON data to serve subsequent translation requests in O(1) time without disk reads.
 
+## 2026-09-18 - Offloading Blocking Sync I/O in Async API Endpoints
+**Learning:** Performing synchronous file I/O operations (e.g. `open`, `json.load`, `json.dump`) directly inside FastAPI `async def` endpoints blocks the main asyncio event loop thread, stalling concurrent WebSockets and background tasks.
+**Action:** Offload synchronous file I/O operations in `async def` endpoints to thread pool workers using `await asyncio.to_thread(func, *args)` to ensure the event loop remains unblocked.

@@ -122,12 +122,22 @@ function sameIdentity(left: TuningMeasurementIdentity, right: TuningMeasurementI
     && left.performanceIndex === right.performanceIndex;
 }
 
+export function hasAdaptiveEngineCoverage(state: TuningMeasurementState): boolean {
+  return (state.powerDropoffDetected === true || state.cutoffDetected === true)
+    && isFiniteNumber(state.effectiveRedline) && state.effectiveRedline > 0
+    && isFiniteNumber(state.engineMaxRpm) && state.effectiveRedline <= state.engineMaxRpm;
+}
+
+export function getTuningMeasurementMinBins(state: TuningMeasurementState): number {
+  return hasAdaptiveEngineCoverage(state) ? 6 : TUNING_MEASUREMENT_MIN_BINS;
+}
+
 export function isHighCoverageMet(state: TuningMeasurementState): boolean {
-  if (!state.engineMaxRpm || !state.highestRpm) return false;
-  const targetLimit = state.effectiveRedline ?? state.engineMaxRpm;
-  if (state.highestRpm >= targetLimit * 0.88) return true;
-  if (state.powerDropoffDetected || state.cutoffDetected) return true;
-  return false;
+  if (!isFiniteNumber(state.engineMaxRpm) || state.engineMaxRpm <= 0
+    || !isFiniteNumber(state.highestRpm) || state.highestRpm <= 0 || state.highestRpm > state.engineMaxRpm) return false;
+  return hasAdaptiveEngineCoverage(state)
+    ? state.highestRpm >= state.effectiveRedline! * 0.9
+    : state.highestRpm >= state.engineMaxRpm * 0.9;
 }
 
 function readGuidance(state: TuningMeasurementState, nowMs: number): TuningMeasurementGuidance {
@@ -146,7 +156,7 @@ function readGuidance(state: TuningMeasurementState, nowMs: number): TuningMeasu
   if (state.acceptedMs < TUNING_MEASUREMENT_MIN_ACCEPTED_MS) return 'duration-insufficient';
   if (!state.engineMaxRpm || !state.lowestRpm || state.lowestRpm > state.engineMaxRpm * 0.4) return 'rpm-coverage-low';
   if (!isHighCoverageMet(state)) return 'rpm-coverage-high';
-  const minBins = (state.powerDropoffDetected || state.cutoffDetected) ? 6 : TUNING_MEASUREMENT_MIN_BINS;
+  const minBins = getTuningMeasurementMinBins(state);
   if (state.bins.length < minBins) return 'bins-insufficient';
   return 'ready';
 }

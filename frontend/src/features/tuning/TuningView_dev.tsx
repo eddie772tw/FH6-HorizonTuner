@@ -1,63 +1,52 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useCarParams } from '../../context/CarParamsContext';
 import { useSettings } from '../../context/SettingsContext';
 import { createDefaultCapabilityContract } from '../../domain/tuning/contracts';
 import {
   calculateDevTuning,
-  DevRaceGoal,
-  DevSurface,
-  DevTuningInput,
-  DevTuningOutput
+  type DevRaceGoal,
+  type DevSurface,
+  type DevTuningInput,
+  type DevTuningOutput,
 } from '../../utils/tuningMath_dev';
 import CapabilityContractPanel from './components/CapabilityContractPanel';
 import DevInputPanel from './components/DevInputPanel';
 import DevOutputPanel from './components/DevOutputPanel';
 import TuningTelemetryCaptureView from './components/TuningTelemetryCaptureView';
+import { useTuneSession } from './TuneSessionProvider';
 
-interface TuningViewDevProps {
-  currentStep?: number;
-  setCurrentStep?: (step: number | ((prev: number) => number)) => void;
-  setActiveTab?: (tab: any) => void;
-}
-
-const TuningViewDev: React.FC<TuningViewDevProps> = ({ currentStep }) => {
-  const { carId, carName, carParams } = useCarParams();
+const TuningViewDevContent: React.FC = () => {
+  const { carName, carParams } = useCarParams();
   const { t } = useSettings();
-  const [raceGoal, setRaceGoal] = useState<DevRaceGoal>('Road');
-  const [surface, setSurface] = useState<DevSurface>('tarmac');
-  const [targetTopSpeedKmh, setTargetTopSpeedKmh] = useState(280);
-  const [targetRideFrequencyFrontHz, setTargetRideFrequencyFrontHz] = useState(2.2);
-  const [targetRideFrequencyRearHz, setTargetRideFrequencyRearHz] = useState(2.3);
-  const [dampingRatioFront, setDampingRatioFront] = useState(0.70);
-  const [dampingRatioRear, setDampingRatioRear] = useState(0.70);
-  const [showCapture, setShowCapture] = useState(false);
+  const session = useTuneSession();
+  const developer = session.developer;
 
   const input = useMemo<DevTuningInput | null>(() => {
     if (!carParams) return null;
     return {
-      raceGoal,
-      surface,
+      raceGoal: developer.raceGoal,
+      surface: developer.surface,
       car: carParams,
-      targetTopSpeedKmh,
-      targetRideFrequencyFrontHz,
-      targetRideFrequencyRearHz,
-      dampingRatioFront,
-      dampingRatioRear
+      targetTopSpeedKmh: developer.targetTopSpeedKmh,
+      targetRideFrequencyFrontHz: developer.targetRideFrequencyFrontHz,
+      targetRideFrequencyRearHz: developer.targetRideFrequencyRearHz,
+      dampingRatioFront: developer.dampingRatioFront,
+      dampingRatioRear: developer.dampingRatioRear,
     };
-  }, [carParams, raceGoal, surface, targetTopSpeedKmh, targetRideFrequencyFrontHz, targetRideFrequencyRearHz, dampingRatioFront, dampingRatioRear]);
+  }, [carParams, developer]);
 
   const output = useMemo<DevTuningOutput | null>(() => (input ? calculateDevTuning(input) : null), [input]);
   const capabilityContract = useMemo(() => (carParams ? createDefaultCapabilityContract(carParams) : null), [carParams]);
 
   const updateRaceGoal = (nextGoal: DevRaceGoal) => {
-    setRaceGoal(nextGoal);
+    developer.setRaceGoal(nextGoal);
     const validSurfaces: Record<DevRaceGoal, DevSurface[]> = {
-      Road: ['tarmac'], Rally: ['gravel', 'snow'], Drag: ['dragStrip', 'tarmac'], Drift: ['tarmac', 'gravel']
+      Road: ['tarmac'], Rally: ['gravel', 'snow'], Drag: ['dragStrip', 'tarmac'], Drift: ['tarmac', 'gravel'],
     };
-    if (!validSurfaces[nextGoal].includes(surface)) setSurface(validSurfaces[nextGoal][0]);
+    if (!validSurfaces[nextGoal].includes(developer.surface)) developer.setSurface(validSurfaces[nextGoal][0]);
   };
 
-  if (showCapture) return <TuningTelemetryCaptureView carId={carId} t={t} onBack={() => setShowCapture(false)} />;
+  if (developer.showCapture) return <TuningTelemetryCaptureView t={t} onBack={() => developer.setShowCapture(false)} />;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -68,7 +57,7 @@ const TuningViewDev: React.FC<TuningViewDevProps> = ({ currentStep }) => {
             <p className="text-body-secondary fs-7 mb-0">{t('Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.')}</p>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <button className="btn btn-outline-primary btn-sm" onClick={() => setShowCapture(true)}>{t('Open Telemetry Capture')}</button>
+            <button className="btn btn-outline-primary btn-sm" onClick={() => developer.setShowCapture(true)}>{t('Open Telemetry Capture')}</button>
             <span className="badge bg-warning-subtle text-warning-emphasis">{t('EXPERIMENTAL')}</span>
             <span className="badge bg-primary-subtle text-primary-emphasis">tuning-dev/v1</span>
           </div>
@@ -86,25 +75,25 @@ const TuningViewDev: React.FC<TuningViewDevProps> = ({ currentStep }) => {
               <DevInputPanel
                 carName={carName}
                 carParams={carParams}
-                raceGoal={raceGoal}
-                surface={surface}
-                targetTopSpeedKmh={targetTopSpeedKmh}
-                targetRideFrequencyFrontHz={targetRideFrequencyFrontHz}
-                targetRideFrequencyRearHz={targetRideFrequencyRearHz}
-                dampingRatioFront={dampingRatioFront}
-                dampingRatioRear={dampingRatioRear}
+                raceGoal={developer.raceGoal}
+                surface={developer.surface}
+                targetTopSpeedKmh={developer.targetTopSpeedKmh}
+                targetRideFrequencyFrontHz={developer.targetRideFrequencyFrontHz}
+                targetRideFrequencyRearHz={developer.targetRideFrequencyRearHz}
+                dampingRatioFront={developer.dampingRatioFront}
+                dampingRatioRear={developer.dampingRatioRear}
                 t={t}
                 onRaceGoalChange={updateRaceGoal}
-                onSurfaceChange={setSurface}
-                onTargetTopSpeedChange={setTargetTopSpeedKmh}
-                onFrontFrequencyChange={setTargetRideFrequencyFrontHz}
-                onRearFrequencyChange={setTargetRideFrequencyRearHz}
-                onFrontDampingChange={setDampingRatioFront}
-                onRearDampingChange={setDampingRatioRear}
+                onSurfaceChange={developer.setSurface}
+                onTargetTopSpeedChange={developer.setTargetTopSpeedKmh}
+                onFrontFrequencyChange={developer.setTargetRideFrequencyFrontHz}
+                onRearFrequencyChange={developer.setTargetRideFrequencyRearHz}
+                onFrontDampingChange={developer.setDampingRatioFront}
+                onRearDampingChange={developer.setDampingRatioRear}
               />
             </div>
             <div className="col-12 col-xl-7">
-              <DevOutputPanel output={output} currentStep={currentStep} t={t} />
+              <DevOutputPanel output={output} currentStep={developer.step} t={t} />
             </div>
           </div>
           <section className="card">
@@ -123,5 +112,7 @@ const TuningViewDev: React.FC<TuningViewDevProps> = ({ currentStep }) => {
     </div>
   );
 };
+
+const TuningViewDev: React.FC = () => <TuningViewDevContent />;
 
 export default TuningViewDev;

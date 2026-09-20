@@ -1,0 +1,333 @@
+{
+  "schema": "fh6-ia-doc-cleanup-ref-audit/v1",
+  "candidateSha": "88cf28e6152c125c1cca18dc21c3c1f46e4fbcff",
+  "cleanupBranch": "codex/frontend-ia-w4-doc-cleanup-20260920",
+  "remote": "origin",
+  "remoteUrl": "https://github.com/eddie772tw/FH6-HorizonTuner.git",
+  "before": {
+    "capturedAt": "2026-09-20T04:22:20.309Z",
+    "command": "git ls-remote --heads origin",
+    "heads": [
+      {
+        "ref": "refs/heads/codex/frontend-ia-contracts-20260914",
+        "sha": "9baeb1ec6f5edd14b61c6aa90944b1d9bb820623"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-hud-state-20260914",
+        "sha": "83301f68fa0ed04d900a76c4c9e2d88dcb6b8b3f"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-road-review-20260914",
+        "sha": "575ff0f139592b17b428b7d044e3ef943656a86e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-sessions-state-20260914",
+        "sha": "49049908fcb19efa567d6392ff677001404f4546"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-shell-20260914",
+        "sha": "ee0f7bb9f5e607a682a5136bb0785deb580e51fb"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-state-base-20260914",
+        "sha": "c38f13ec90e6de671bea51144446720c461650aa"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-tune-state-20260914",
+        "sha": "2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-a-20260919",
+        "sha": "c281f504de27bc387d1d4a4570d12ef0eec06eb0"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-b-20260919",
+        "sha": "8442bffdb9393e36a5139b751b723c220a461a08"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-b-integrate-20260920",
+        "sha": "2942b3c83e1c6ab29669e9e233c69561647e9a7e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-b-panels-20260920",
+        "sha": "288dc18659656f0906660cdecae06dcc46134456"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-c-20260919",
+        "sha": "6eb93a781f1c9a00d3a3d40815dae1d36255307e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-integration-20260920",
+        "sha": "147981c3ea0d68f146e0b2400d147e2346d7930e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w3-d-20260920",
+        "sha": "5cfe75e0e977d5078f253277e0bda9f8d9fcac98"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w4-20260920",
+        "sha": "88cf28e6152c125c1cca18dc21c3c1f46e4fbcff"
+      },
+      {
+        "ref": "refs/heads/codex/plan/frontend-ia-20260913",
+        "sha": "eb16986ea0744c7fd4ce1933201d8f7f7cf7fc3d"
+      },
+      {
+        "ref": "refs/heads/feat/remove-unused-annotations-import-4004631456205448865",
+        "sha": "5be3d82cf8a1ce12413579c21e60523a970fc0d3"
+      },
+      {
+        "ref": "refs/heads/fix/dyno-anomaly-detection-tests-3831511994401551197",
+        "sha": "73942240f480796ab8d0ec04d8335d7107437142"
+      },
+      {
+        "ref": "refs/heads/fix/step3-dyno-auto-completion",
+        "sha": "8f3cd32c55499829a16a9753331ee3196c7254ac"
+      },
+      {
+        "ref": "refs/heads/fix/test-normalize-unit-settings-5327212550115761559",
+        "sha": "b06689c503e15cad118716c14256d69e059c1f72"
+      },
+      {
+        "ref": "refs/heads/main",
+        "sha": "568da2041e0cb4bbb58583c3a4dc9a279508094d"
+      },
+      {
+        "ref": "refs/heads/perf-frame-interpolator-array-allocation-6378893238879346373",
+        "sha": "6c2098e0dc1f547cc3d15e7b4f7415f878c96ac5"
+      },
+      {
+        "ref": "refs/heads/perf-optimize-telemetry-detail-15802990976513004037",
+        "sha": "7771379456748890f22beb602f69e3ff41c0dc09"
+      },
+      {
+        "ref": "refs/heads/perf/frame-interpolator-array-unroll-8844499815675157414",
+        "sha": "d59796eca3a76fb36bc92cd55acf6cc38cd90ed5"
+      },
+      {
+        "ref": "refs/heads/perf/frame-interpolator-sets-3304704301884623683",
+        "sha": "eff4bb8ca3a2150b22cb227f76be64fa5fd06cbe"
+      },
+      {
+        "ref": "refs/heads/sentinel-sanitize-error-messages-13490357129491209662",
+        "sha": "81d24388ace5dc3fa92ebd97a51894878264c958"
+      },
+      {
+        "ref": "refs/heads/ui/i18n-nav-data-out-18128589472457434511",
+        "sha": "11033a5b8fd473684ac9029f07f0b75bb3423317"
+      },
+      {
+        "ref": "refs/heads/ui/i18n-road-compare-2774609728468239367",
+        "sha": "8d609e7035360fc3dc2c4d66546219b7e1e6766e"
+      }
+    ],
+    "worktreeCommand": "git worktree list --porcelain",
+    "worktreePorcelain": "worktree D:/FH6-HorizonTuner\nHEAD 3f3b97395856f8caf38a186c31b6fcf8d3f7a772\ndetached\n\nworktree C:/Users/eddie/.codex/worktrees/a945/FH6-HorizonTuner\nHEAD 568da2041e0cb4bbb58583c3a4dc9a279508094d\ndetached\n\nworktree C:/Users/eddie/.gemini/antigravity/worktrees/FH6-HorizonTuner/assess_pr_merge_readiness\nHEAD 202633e414f5673476d92f0c2cb88bfa211068f1\nbranch refs/heads/codex/chassis-sevenlap\n\nworktree D:/FH6-frontend-ia-20260913/baseline\nHEAD 5891d21bca35161836d84c51d1b6e9c279ec4709\ndetached\n\nworktree D:/FH6-frontend-ia-20260913/contracts\nHEAD 9baeb1ec6f5edd14b61c6aa90944b1d9bb820623\nbranch refs/heads/codex/frontend-ia-contracts-20260914\n\nworktree D:/FH6-frontend-ia-20260913/hud-state\nHEAD 83301f68fa0ed04d900a76c4c9e2d88dcb6b8b3f\nbranch refs/heads/codex/frontend-ia-hud-state-20260914\n\nworktree D:/FH6-frontend-ia-20260913/plan\nHEAD eb16986ea0744c7fd4ce1933201d8f7f7cf7fc3d\nbranch refs/heads/codex/plan/frontend-ia-20260913\n\nworktree D:/FH6-frontend-ia-20260913/road-reviewed\nHEAD 575ff0f139592b17b428b7d044e3ef943656a86e\nbranch refs/heads/codex/frontend-ia-road-review-20260914\n\nworktree D:/FH6-frontend-ia-20260913/road-state\nHEAD 2c6cc0c30239174389c3418e9391cd4e9c1ff5bb\nbranch refs/heads/codex/frontend-ia-road-state-20260914\n\nworktree D:/FH6-frontend-ia-20260913/sessions-state\nHEAD 49049908fcb19efa567d6392ff677001404f4546\nbranch refs/heads/codex/frontend-ia-sessions-state-20260914\n\nworktree D:/FH6-frontend-ia-20260913/shell\nHEAD c5e7fdfb82c4b1f792fd76be4cb796059337bcfc\nbranch refs/heads/codex/frontend-ia-shell-20260914\n\nworktree D:/FH6-frontend-ia-20260913/shell-race-fix\nHEAD ee0f7bb9f5e607a682a5136bb0785deb580e51fb\nbranch refs/heads/codex/frontend-ia-shell-race-fix-20260914\n\nworktree D:/FH6-frontend-ia-20260913/state-base\nHEAD c38f13ec90e6de671bea51144446720c461650aa\nbranch refs/heads/codex/frontend-ia-state-base-20260919\n\nworktree D:/FH6-frontend-ia-20260913/tune-state\nHEAD 2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4\nbranch refs/heads/codex/frontend-ia-tune-state-20260914\n\nworktree D:/FH6-frontend-ia-20260919/w2-a\nHEAD c281f504de27bc387d1d4a4570d12ef0eec06eb0\nbranch refs/heads/codex/frontend-ia-w2-a-20260919\n\nworktree D:/FH6-frontend-ia-20260919/w2-b\nHEAD 8442bffdb9393e36a5139b751b723c220a461a08\nbranch refs/heads/codex/frontend-ia-w2-b-20260919\n\nworktree D:/FH6-frontend-ia-20260919/w2-c\nHEAD 6eb93a781f1c9a00d3a3d40815dae1d36255307e\nbranch refs/heads/codex/frontend-ia-w2-c-20260919\n\nworktree D:/FH6-frontend-ia-20260919/w2-integration\nHEAD 147981c3ea0d68f146e0b2400d147e2346d7930e\nbranch refs/heads/codex/frontend-ia-w2-integration-20260920\n\nworktree D:/FH6-frontend-ia-20260920/w2-b-integrate\nHEAD 2942b3c83e1c6ab29669e9e233c69561647e9a7e\nbranch refs/heads/codex/frontend-ia-w2-b-integrate-20260920\n\nworktree D:/FH6-frontend-ia-20260920/w2-b-panels\nHEAD 288dc18659656f0906660cdecae06dcc46134456\nbranch refs/heads/codex/frontend-ia-w2-b-panels-20260920\n\nworktree D:/FH6-frontend-ia-20260920/w4\nHEAD 88cf28e6152c125c1cca18dc21c3c1f46e4fbcff\nbranch refs/heads/codex/frontend-ia-w4-20260920\n\nworktree D:/FH6-frontend-ia-20260920/w4-doc-cleanup\nHEAD 88cf28e6152c125c1cca18dc21c3c1f46e4fbcff\nbranch refs/heads/codex/frontend-ia-w4-doc-cleanup-20260920\n\nworktree D:/FH6-frontend-ia-w3-20260920/w3-d\nHEAD 5cfe75e0e977d5078f253277e0bda9f8d9fcac98\nbranch refs/heads/codex/frontend-ia-w3-d-20260920\n\nworktree D:/FH6-tuning-iteration-20260913/combined\nHEAD 291abafdf83a20a1397dbc0e0a4462517f5cd157\ndetached\n\nworktree D:/FH6-tuning-iteration-20260913/drag\nHEAD 19eb558edaf1abf8e79b3862a7654457d7a8b41c\nbranch refs/heads/codex/drag-meta-20260913\n\nworktree D:/FH6-tuning-iteration-20260913/drift\nHEAD 27afe83a3ebc3152406ecdf768e7854bd1c210f0\nbranch refs/heads/codex/drift-meta-20260913\n\nworktree D:/FH6-tuning-iteration-20260913/rally\nHEAD a8bc7436bce504f335c2bf188cb12b588a079546\nbranch refs/heads/codex/rally-offroad-meta-20260913\n\nworktree D:/FH6-tuning-iteration-20260913/road\nHEAD 5e4189de93ebacb262fab03f4ee1547d64912c86\nbranch refs/heads/codex/road-fwd-aego-20260913\n\nworktree D:/FH6-tuning-iteration-20260913/tires\nHEAD 1c355697366eca107bb62eff5430ddecc3d749da\nbranch refs/heads/codex/measured-tire-evidence-20260913"
+  },
+  "scopeRefs": [
+    {
+      "ref": "refs/heads/codex/frontend-ia-w2-a-20260919",
+      "sha": "c281f504de27bc387d1d4a4570d12ef0eec06eb0",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-20260919/w2-a",
+        "sha": "c281f504de27bc387d1d4a4570d12ef0eec06eb0",
+        "ref": "refs/heads/codex/frontend-ia-w2-a-20260919",
+        "status": "## codex/frontend-ia-w2-a-20260919...origin/codex/frontend-ia-w2-a-20260919"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    },
+    {
+      "ref": "refs/heads/codex/frontend-ia-w2-b-20260919",
+      "sha": "8442bffdb9393e36a5139b751b723c220a461a08",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-20260919/w2-b",
+        "sha": "8442bffdb9393e36a5139b751b723c220a461a08",
+        "ref": "refs/heads/codex/frontend-ia-w2-b-20260919",
+        "status": "## codex/frontend-ia-w2-b-20260919"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    },
+    {
+      "ref": "refs/heads/codex/frontend-ia-w2-b-integrate-20260920",
+      "sha": "2942b3c83e1c6ab29669e9e233c69561647e9a7e",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-20260920/w2-b-integrate",
+        "sha": "2942b3c83e1c6ab29669e9e233c69561647e9a7e",
+        "ref": "refs/heads/codex/frontend-ia-w2-b-integrate-20260920",
+        "status": "## codex/frontend-ia-w2-b-integrate-20260920...origin/codex/frontend-ia-w2-b-integrate-20260920"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    },
+    {
+      "ref": "refs/heads/codex/frontend-ia-w2-b-panels-20260920",
+      "sha": "288dc18659656f0906660cdecae06dcc46134456",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-20260920/w2-b-panels",
+        "sha": "288dc18659656f0906660cdecae06dcc46134456",
+        "ref": "refs/heads/codex/frontend-ia-w2-b-panels-20260920",
+        "status": "## codex/frontend-ia-w2-b-panels-20260920...origin/codex/frontend-ia-w2-b-panels-20260920"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    },
+    {
+      "ref": "refs/heads/codex/frontend-ia-w2-c-20260919",
+      "sha": "6eb93a781f1c9a00d3a3d40815dae1d36255307e",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-20260919/w2-c",
+        "sha": "6eb93a781f1c9a00d3a3d40815dae1d36255307e",
+        "ref": "refs/heads/codex/frontend-ia-w2-c-20260919",
+        "status": "## codex/frontend-ia-w2-c-20260919...origin/codex/frontend-ia-w2-c-20260919"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    },
+    {
+      "ref": "refs/heads/codex/frontend-ia-w2-integration-20260920",
+      "sha": "147981c3ea0d68f146e0b2400d147e2346d7930e",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-20260919/w2-integration",
+        "sha": "147981c3ea0d68f146e0b2400d147e2346d7930e",
+        "ref": "refs/heads/codex/frontend-ia-w2-integration-20260920",
+        "status": "## codex/frontend-ia-w2-integration-20260920...origin/codex/frontend-ia-w2-integration-20260920"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    },
+    {
+      "ref": "refs/heads/codex/frontend-ia-w3-d-20260920",
+      "sha": "5cfe75e0e977d5078f253277e0bda9f8d9fcac98",
+      "isAncestorOfCandidate": true,
+      "worktree": {
+        "path": "D:/FH6-frontend-ia-w3-20260920/w3-d",
+        "sha": "5cfe75e0e977d5078f253277e0bda9f8d9fcac98",
+        "ref": "refs/heads/codex/frontend-ia-w3-d-20260920",
+        "status": "## codex/frontend-ia-w3-d-20260920...origin/codex/frontend-ia-w3-d-20260920"
+      },
+      "decision": "retain: registered worktree and historical handoff reference"
+    }
+  ],
+  "deletedRefs": [],
+  "after": {
+    "capturedAt": "2026-09-20T04:27:42.812Z",
+    "command": "git ls-remote --heads origin",
+    "heads": [
+      {
+        "ref": "refs/heads/codex/frontend-ia-contracts-20260914",
+        "sha": "9baeb1ec6f5edd14b61c6aa90944b1d9bb820623"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-hud-state-20260914",
+        "sha": "83301f68fa0ed04d900a76c4c9e2d88dcb6b8b3f"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-road-review-20260914",
+        "sha": "575ff0f139592b17b428b7d044e3ef943656a86e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-sessions-state-20260914",
+        "sha": "49049908fcb19efa567d6392ff677001404f4546"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-shell-20260914",
+        "sha": "ee0f7bb9f5e607a682a5136bb0785deb580e51fb"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-state-base-20260914",
+        "sha": "c38f13ec90e6de671bea51144446720c461650aa"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-tune-state-20260914",
+        "sha": "2f0ac23dc6e9cde560c0c5f2b3f1e55884e56fa4"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-a-20260919",
+        "sha": "c281f504de27bc387d1d4a4570d12ef0eec06eb0"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-b-20260919",
+        "sha": "8442bffdb9393e36a5139b751b723c220a461a08"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-b-integrate-20260920",
+        "sha": "2942b3c83e1c6ab29669e9e233c69561647e9a7e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-b-panels-20260920",
+        "sha": "288dc18659656f0906660cdecae06dcc46134456"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-c-20260919",
+        "sha": "6eb93a781f1c9a00d3a3d40815dae1d36255307e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w2-integration-20260920",
+        "sha": "147981c3ea0d68f146e0b2400d147e2346d7930e"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w3-d-20260920",
+        "sha": "5cfe75e0e977d5078f253277e0bda9f8d9fcac98"
+      },
+      {
+        "ref": "refs/heads/codex/frontend-ia-w4-20260920",
+        "sha": "88cf28e6152c125c1cca18dc21c3c1f46e4fbcff"
+      },
+      {
+        "ref": "refs/heads/codex/plan/frontend-ia-20260913",
+        "sha": "eb16986ea0744c7fd4ce1933201d8f7f7cf7fc3d"
+      },
+      {
+        "ref": "refs/heads/feat/remove-unused-annotations-import-4004631456205448865",
+        "sha": "5be3d82cf8a1ce12413579c21e60523a970fc0d3"
+      },
+      {
+        "ref": "refs/heads/fix/dyno-anomaly-detection-tests-3831511994401551197",
+        "sha": "73942240f480796ab8d0ec04d8335d7107437142"
+      },
+      {
+        "ref": "refs/heads/fix/step3-dyno-auto-completion",
+        "sha": "8f3cd32c55499829a16a9753331ee3196c7254ac"
+      },
+      {
+        "ref": "refs/heads/fix/test-normalize-unit-settings-5327212550115761559",
+        "sha": "b06689c503e15cad118716c14256d69e059c1f72"
+      },
+      {
+        "ref": "refs/heads/main",
+        "sha": "568da2041e0cb4bbb58583c3a4dc9a279508094d"
+      },
+      {
+        "ref": "refs/heads/perf-frame-interpolator-array-allocation-6378893238879346373",
+        "sha": "6c2098e0dc1f547cc3d15e7b4f7415f878c96ac5"
+      },
+      {
+        "ref": "refs/heads/perf-optimize-telemetry-detail-15802990976513004037",
+        "sha": "7771379456748890f22beb602f69e3ff41c0dc09"
+      },
+      {
+        "ref": "refs/heads/perf/frame-interpolator-array-unroll-8844499815675157414",
+        "sha": "d59796eca3a76fb36bc92cd55acf6cc38cd90ed5"
+      },
+      {
+        "ref": "refs/heads/perf/frame-interpolator-sets-3304704301884623683",
+        "sha": "eff4bb8ca3a2150b22cb227f76be64fa5fd06cbe"
+      },
+      {
+        "ref": "refs/heads/sentinel-sanitize-error-messages-13490357129491209662",
+        "sha": "81d24388ace5dc3fa92ebd97a51894878264c958"
+      },
+      {
+        "ref": "refs/heads/ui/i18n-nav-data-out-18128589472457434511",
+        "sha": "11033a5b8fd473684ac9029f07f0b75bb3423317"
+      },
+      {
+        "ref": "refs/heads/ui/i18n-road-compare-2774609728468239367",
+        "sha": "8d609e7035360fc3dc2c4d66546219b7e1e6766e"
+      }
+    ],
+    "existingHeadsUnchanged": true
+  }
+}

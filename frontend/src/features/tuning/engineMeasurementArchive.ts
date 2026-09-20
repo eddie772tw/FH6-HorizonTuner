@@ -1,5 +1,6 @@
 import type { TuningCarParams } from '../../utils/tuningMath';
 import type { TuningMeasurementState } from './tuningMeasurement';
+import { getTuningMeasurementMinBins, isHighCoverageMet } from './tuningMeasurement';
 import type { TuningCaptureFile } from '../../domain/tuning/telemetryCapture';
 
 export interface EngineObservation {
@@ -24,8 +25,10 @@ export function parseEngineArchive(text: string | null): EngineObservation[] {
         [d.observedPeakPower, d.observedPeakTorque].every(p => p && Number.isFinite(p.value) && p.value > 0 && Number.isFinite(p.rpm) && p.rpm > 0 && p.rpm <= d.engineMaxRpm) &&
         Number.isFinite(d.acceptedMs) && d.acceptedMs >= 6000 && Number.isFinite(d.lowestRpm) && d.lowestRpm > 0 && d.lowestRpm <= d.engineMaxRpm * 0.4 &&
         Number.isFinite(d.highestRpm) && d.highestRpm > 0 && d.highestRpm <= d.engineMaxRpm &&
-        (d.highestRpm >= (Number.isFinite(d.effectiveRedline) && d.effectiveRedline! > 0 ? d.effectiveRedline! : d.engineMaxRpm) * 0.85 || Boolean(d.powerDropoffDetected) || Boolean(d.cutoffDetected)) &&
-        Array.isArray(d.bins) && d.bins.length >= 6 && d.bins.length <= 16 && new Set(d.bins.map((b: { index: number }) => b?.index)).size === d.bins.length &&
+        (d.effectiveRedline === undefined || (Number.isFinite(d.effectiveRedline) && d.effectiveRedline > 0 && d.effectiveRedline <= d.engineMaxRpm)) &&
+        [d.powerDropoffDetected, d.cutoffDetected].every(flag => flag === undefined || typeof flag === 'boolean') &&
+        isHighCoverageMet(d) &&
+        Array.isArray(d.bins) && d.bins.length >= getTuningMeasurementMinBins(d) && d.bins.length <= 16 && new Set(d.bins.map((b: { index: number }) => b?.index)).size === d.bins.length &&
         d.bins.every((b: Record<string, number>) => b && Number.isInteger(b.index) && b.index >= 0 && b.index < 16 && Number.isInteger(b.sampleCount) && b.sampleCount > 0 &&
           ['averagePowerWatts', 'averageTorqueNewtons', 'averageRpm', 'powerWattsSum', 'torqueNewtonsSum', 'rpmSum'].every(k => Number.isFinite(b[k]) && b[k] > 0));
     }).map(({ capture: _capture, ...item }) => item);

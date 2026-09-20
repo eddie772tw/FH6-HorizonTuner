@@ -189,6 +189,22 @@ class EngineArchiveRequest(RoadInput):
                 "The capture must reference this engine observation and configuration"
             )
         limit = data.get("engineMaxRpm")
+        effective_limit = data.get("effectiveRedline")
+        if "effectiveRedline" in data and (
+            not finite(effective_limit)
+            or not finite(limit)
+            or not 0 < effective_limit <= limit
+        ):
+            raise ValueError("Invalid effective engine limit")
+        if any(
+            key in data and not isinstance(data[key], bool)
+            for key in ("powerDropoffDetected", "cutoffDetected")
+        ):
+            raise ValueError("Invalid engine morphology flag")
+        adaptive = finite(effective_limit) and (
+            data.get("powerDropoffDetected") is True
+            or data.get("cutoffDetected") is True
+        )
         bins = data.get("bins")
         identity = data.get("identity")
         if (
@@ -213,21 +229,11 @@ class EngineArchiveRequest(RoadInput):
             or not finite(data.get("lowestRpm"))
             or not 0 < data["lowestRpm"] <= limit * 0.4
             or not finite(data.get("highestRpm"))
-            or not (
-                (
-                    finite(data.get("effectiveRedline"))
-                    and (data.get("effectiveRedline") or 0) * 0.85
-                    <= data["highestRpm"]
-                    <= limit
-                )
-                or (limit * 0.85 <= data["highestRpm"] <= limit)
-                or (
-                    bool(data.get("powerDropoffDetected") or data.get("cutoffDetected"))
-                    and 0 < data["highestRpm"] <= limit
-                )
-            )
+            or not (effective_limit if adaptive else limit) * 0.9
+            <= data["highestRpm"]
+            <= limit
             or not isinstance(bins, list)
-            or not 6 <= len(bins) <= 16
+            or not (6 if adaptive else 8) <= len(bins) <= 16
             or not isinstance(self.capture.get("samples"), list)
             or not 1 <= len(self.capture["samples"]) <= 30000
         ):

@@ -1,8 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { computeGearingChartData } from './GearingTuner';
+import { computeGearingChartData } from './gearingChartData';
 
 describe('computeGearingChartData', () => {
   const dummyConvertSpeed = (ms: number) => ({ value: ms * 3.6, label: 'km/h' });
+
+  it('preserves physical endpoints for closely spaced gear ratios', () => {
+    const result = computeGearingChartData({ numGears: 2, gears: [3, 2.99], finalDrive: 3.5,
+      maxRpm: 8000, effectiveRedline: 5200, tireRadiusM: 0.32,
+      speedUnit: 'kmh', convertSpeed: dummyConvertSpeed });
+    expect(result.gearRanges[1].endSpeed / result.gearRanges[0].endSpeed).toBeCloseTo(3 / 2.99, 6);
+    const shift = result.chartData.find(point => point.speed === result.gearRanges[0].endSpeed)!;
+    expect(shift.gear2).toBeCloseTo(Math.round(5200 * 2.99 / 3), 0);
+  });
 
   it('caps gear line endpoints to cutoffRpm when effectiveRedline is lower than maxRpm', () => {
     const res = computeGearingChartData({

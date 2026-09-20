@@ -6,6 +6,17 @@ export interface WorkflowRecommendation {
   inputSnapshot: Record<string, unknown>;
   fields: Record<string, { value: number; unit: string }>;
 }
+
+function canonicalWorkflowInputSnapshot(inputSnapshot: Record<string, unknown>): Record<string, unknown> {
+  const snapshot = JSON.parse(JSON.stringify(inputSnapshot)) as Record<string, unknown>;
+  const observation = snapshot.engineObservation;
+  if (observation && typeof observation === 'object' && !Array.isArray(observation)) {
+    const { capture: _capture, ...canonicalObservation } = observation as Record<string, unknown>;
+    snapshot.engineObservation = canonicalObservation;
+  }
+  return snapshot;
+}
+
 /** Transport mapping only. All numbers are outputs of the existing pure solver. */
 export function workflowRecommendation(profile: CarParams, chassis: ChassisTuningResult,
   alignment: StaticTireAlignResult, gearing: GearingResult, inputSnapshot: Record<string, unknown>): WorkflowRecommendation {
@@ -38,5 +49,5 @@ export function workflowRecommendation(profile: CarParams, chassis: ChassisTunin
       (family === 'arb' && capability.arb === 'Fixed') || (family === 'diff' && capability.diff === 'Fixed') ||
       (family === 'gearing' && (capability.gearbox === 'Fixed' || (key !== 'gearing.finalDrive' && capability.gearbox !== 'Full')))) delete fields[key];
   }
-  return { formulaVersion: 'tuningMath/measured-workflow-v1', inputSnapshot: JSON.parse(JSON.stringify(inputSnapshot)), fields };
+  return { formulaVersion: 'tuningMath/measured-workflow-v1', inputSnapshot: canonicalWorkflowInputSnapshot(inputSnapshot), fields };
 }
