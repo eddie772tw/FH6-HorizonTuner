@@ -1,5 +1,7 @@
 # W2-C Settings Surface Handoff
 
+> **歷史快照；進度／下一步已 superseded（2026-09-20）。** 現行候選與後續 gate 請讀 [W4 入口](../README.md)；替代關係見 [歷史索引](../archive/README.md)。以下保留當時 SHA、驗證與 `not-run`，不作為目前開工或 ownership 指令。
+
 ## Status
 
 Completed the C lane foundation on branch `codex/frontend-ia-w2-c-20260919` from contract base `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`. The lane is ready for coordinator integration after the commit is pushed.

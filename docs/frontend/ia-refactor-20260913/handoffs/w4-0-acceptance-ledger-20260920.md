@@ -1,5 +1,7 @@
 # W4-0 candidate lock and acceptance ledger
 
+> **W4-0 鎖定快照。** 初始 ledger 與 adapter inventory 保留原狀；後續 P7/P8 狀態見本文件 Post-lock 段及 [W4 候選入口](../README.md)。`P7-A may now start` 是當時下一步，並非目前工作指令。
+
 日期：2026-09-20。狀態：`locked-baseline`。Owner：Coordinator/root。
 
 本紀錄把 W4 的候選基線固定在目前 W2/W3 integration head，並保留最後實機驗收前的逐項狀態。`pass` 只表示本列所寫的證據範圍已觀察；browser-only 證據不延伸成 Tauri/native、真實 FH6、MoTeC、外部 HUD 或 G5 通過。沒有在本候選重新取得的舊 SHA 證據維持 `not-run`，避免把歷史結果誤當成 current-head proof。

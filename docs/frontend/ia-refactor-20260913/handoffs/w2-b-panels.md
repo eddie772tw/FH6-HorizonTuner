@@ -1,5 +1,7 @@
 # W2-B2 Panels 交接
 
+> **歷史快照；進度／下一步已 superseded（2026-09-20）。** 現行候選與後續 gate 請讀 [W4 入口](../README.md)；替代關係見 [歷史索引](../archive/README.md)。以下保留當時 SHA、驗證與 `not-run`，不作為目前開工或 ownership 指令。
+
 - Task：W2-B2 三個純展示面板。
 - Status：`handoff`。面板 milestone 已交付；B 的 composition、正式 App 接線及 H1–H6 驗收尚未完成，不能標記整條 B lane done。
 - Owner / Agent ID：Codex / `/root/w2_b2_panels`；Model / Thinking：繼承 parent，未另行覆寫。

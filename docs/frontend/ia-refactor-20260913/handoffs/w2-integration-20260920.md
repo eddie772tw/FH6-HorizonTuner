@@ -1,5 +1,7 @@
 # W2 integration handoff
 
+> **歷史快照；進度／下一步已 superseded（2026-09-20）。** 現行候選與後續 gate 請讀 [W4 入口](../README.md)；替代關係見 [歷史索引](../archive/README.md)。以下保留當時 SHA、驗證與 `not-run`，不作為目前開工或 ownership 指令。
+
 > Superseded by [`w3-integration-20260920.md`](./w3-integration-20260920.md), which records the B2 composition, D Road review bridge, and final browser-only integration evidence.
 
 ## Delivery identity

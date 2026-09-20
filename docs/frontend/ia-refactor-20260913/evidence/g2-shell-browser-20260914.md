@@ -1,5 +1,7 @@
 # G2 Shell 受控瀏覽器驗證
 
+> **歷史 evidence；進度敘述已 superseded（2026-09-20）。** 下列觀察只適用其原始 SHA／條件；原測試、限制與 `not-run` 完整保留。目前 W4 狀態請讀 [候選入口](../README.md)，勿沿用本文的 W2–W4 開工狀態。
+
 日期：2026-09-14，Asia/Taipei。執行者：IA Coordinator as Codex。
 
 ## 候選與環境

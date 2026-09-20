@@ -1,5 +1,7 @@
 # W2-B B2 整合交接（2026-09-20）
 
+> **歷史快照；進度／下一步已 superseded（2026-09-20）。** 現行候選與後續 gate 請讀 [W4 入口](../README.md)；替代關係見 [歷史索引](../archive/README.md)。以下保留當時 SHA、驗證與 `not-run`，不作為目前開工或 ownership 指令。
+
 - Task / Status：HUD Setup／Layout／Advanced 實際 composition；`handoff`，browser／native／G5 缺項仍保留，非整條 lane done。
 - Owner / Agent ID：Codex / `/root/w2_b2_panels`；Model / Thinking：繼承 parent，未另行覆寫。
 - Worktree / Branch：`D:/FH6-frontend-ia-20260920/w2-b-integrate` / `codex/frontend-ia-w2-b-integrate-20260920`。

@@ -1,5 +1,7 @@
 # W4-P7-A adapter and state-owner register
 
+> **P7-A 實作時點 register。** 下方 pending-browser 敘述保留初次交付時序；其後已取得 [有限 Full browser reentry](../evidence/w4-p7-a-browser-20260920.md) 與 [P8 smoke](../evidence/w4-p8-browser-smoke-20260920.md)。成功 backend/R1–R5/T1–T4、native 與 game 缺項仍依 [現行入口](../README.md) 保留，`reviewHistory` 仍為 `retained-gated`。
+
 日期：2026-09-20。Status：`implemented`。Owner：Coordinator/root。
 
 本階段只處理已證實由 Full `App` root 持有的 provider boundary。`App.tsx` 在 Full entry 以單一順序掛載 `TuneSessionProvider`、`RoadValidationProvider`、`SessionsStateProvider`；`TuningWorkspace`、`TuningView`、`TuningView_dev`、`SetupVerificationStep` 與 `SessionsWorkspaceBridge` 都在這個 root 下。Lite entry 不註冊 Tune/Road workspace，因此不需要透過 feature wrapper 自動建立第二份 state。
