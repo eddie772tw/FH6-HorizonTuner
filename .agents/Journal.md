@@ -1,5 +1,13 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-20 / #396 零輸出斷油與窄轉速採集（Astra as Codex）
+
+- **Scope**：在已合併 #397 的 `844ad1b` 上獨立修正；採用 `physics-tuning-math`、`modular-refactoring`、`pr-author-maintainer`。
+- **Verified learning**：斷油特徵的時間戳必須與正輸出採樣時間分離。全油門、同檔、有效車輛與連續時間下的零／負輸出可支持斷油判定，但不得增加 clean duration、bins 或 peak。控制輸入／檔位／資料中斷會重置待確認的平原期。
+- **Coverage**：固定最多 64 個證據桶保留正輸出 sums/counts；推定有效上限後重新聚合成最多 16 個有效轉速桶，不複製樣本。可涵蓋斷油點低於表底 55% 與舊分組少於 6 bins 的情境。額外拉轉超過暫定上限時撤銷舊推論。
+- **Evidence**：前端 127 files／903 tests、production build；後端 350 passed／8 deselected；Ruff 與 whitespace 通過。
+- **Boundary**：合成低轉／歸零／負輸出、控制中斷及 archive round-trip 測試；沒有實際 FH6 跨車校準。平原期、衰退仍屬觀測 heuristic，不能視為馬力機或 ECU 認證。
+
 ## 2026-09-20 / PR #397 與 session controller 整合修正（Astra as Codex）
 
 - **Scope**：採用 `pr-author-maintainer`、`pr-review-evaluation`、`cross-agent-collaboration`、`halfmoon-design-system`、`huge-component-refactoring`、`modular-refactoring`、`physics-tuning-math`；root 持有產品實作，Luna 補快取與 API 邊界測試。
