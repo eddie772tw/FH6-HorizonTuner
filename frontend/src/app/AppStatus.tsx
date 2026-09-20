@@ -21,7 +21,7 @@ export function AppStatus({ onOpenSettings }: { onOpenSettings: () => void }) {
   return <div className="d-flex align-items-center flex-wrap gap-2">
     <button type="button" className={`btn btn-sm ${health.state === 'active' ? 'btn-outline-success' : 'btn-outline-secondary'}`}
       aria-label={`${t('Open Data Out guide and health details')}. ${health.label}`} onClick={() => setShowGuide(true)}>
-      Data Out: {health.state === 'active' ? t('Ready') : t('Check')}
+      {t('Data Out: ')}{health.state === 'active' ? t('Ready') : t('Check')}
     </button>
     <button type="button" className={`badge border-0 ${isConnected ? 'text-bg-success' : 'text-bg-danger'}`}
       onClick={() => setShowGuide(true)} title={t('Open Data Out guide and health details')}>

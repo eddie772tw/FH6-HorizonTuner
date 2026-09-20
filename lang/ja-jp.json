@@ -1242,6 +1242,7 @@
   "Workspaces": "ワークスペース",
   "Backend connected": "バックエンド接続済み",
   "Backend disconnected": "バックエンド未接続",
+  "Data Out: ": "データ出力：",
   "Project website": "プロジェクトのウェブサイト",
   "Check": "要確認",
   "Ready": "準備完了",

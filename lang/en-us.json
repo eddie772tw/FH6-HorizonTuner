@@ -1237,6 +1237,7 @@
   "Workspaces": "Workspaces",
   "Backend connected": "Backend connected",
   "Backend disconnected": "Backend disconnected",
+  "Data Out: ": "Data Out: ",
   "Project website": "Project website",
   "Check": "Check",
   "Ready": "Ready",
