@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { AppProviders } from './AppProviders';
 import { AppShell, type WorkspaceRegistry } from './app/AppShell';
 import { commonWorkspaces } from './app/commonWorkspaces';
+import SessionsWorkspaceBridge from './app/SessionsWorkspaceBridge';
 import ToastContainer from './components/common/ToastContainer';
 import { TuneSessionProvider } from './features/tuning/TuneSessionProvider';
 import { RoadValidationProvider } from './features/road/RoadValidationController';
@@ -13,7 +14,7 @@ import './App.css';
 const workspaces: WorkspaceRegistry = {
   ...commonWorkspaces,
   tune: lazy(() => import('./features/tuning/TuningWorkspace')),
-  sessions: lazy(() => import('./features/sessions/SessionsWorkspace').then(module => ({ default: module.SessionsWorkspace }))),
+  sessions: SessionsWorkspaceBridge,
 };
 
 function FullWorkspaceShell() {
