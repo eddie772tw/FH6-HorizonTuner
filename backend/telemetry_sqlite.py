@@ -129,11 +129,17 @@ class TelemetrySQLite:
                     ),
                 ),
             ):
+                if not re.match(r"^[a-zA-Z0-9_]+$", table):
+                    raise ValueError(f"Invalid table name: {table}")
                 existing = {
                     row[1] for row in conn.execute(f"PRAGMA table_info({table})")
                 }
                 for name, definition in additions:
                     if name not in existing:
+                        if not re.match(r"^[a-zA-Z0-9_]+$", name):
+                            raise ValueError(f"Invalid column name: {name}")
+                        if not re.match(r"^[a-zA-Z0-9_\. '\-]+$", definition):
+                            raise ValueError(f"Invalid column definition: {definition}")
                         conn.execute(
                             f"ALTER TABLE {table} ADD COLUMN {name} {definition}"
                         )

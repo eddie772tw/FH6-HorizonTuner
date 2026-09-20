@@ -26,3 +26,8 @@
 **Vulnerability:** The math expression engine `evaluateCustomMath` in `frontend/src/utils/customMathEngine.ts` evaluated user-provided formulas using `new Function(...)` without rigorous sanitization, resulting in an arbitrary code execution vulnerability.
 **Learning:** Naive regex-based token substitution combined with string evaluation (`new Function`, `eval`) is fundamentally insecure when parsing untrusted user inputs (like custom telemetry channels).
 **Prevention:** Always implement a proper parser/evaluator algorithm (like the Shunting-Yard algorithm) to interpret mathematical expressions securely, completely avoiding native dynamic execution mechanisms when handling user-provided strings.
+
+## 2025-02-27 - SQL Injection via dynamic values in PRAGMA and ALTER TABLE
+**Vulnerability:** A potential SQL injection vulnerability existed when dynamically building `PRAGMA table_info` and `ALTER TABLE` queries in `backend/telemetry_sqlite.py`. The `table`, `name`, and `definition` variables were concatenated directly into the query strings without validation.
+**Learning:** SQLite cannot parameterize table or column names, nor PRAGMA arguments. If these identifiers become derived from untrusted input, direct interpolation leads to SQL injection.
+**Prevention:** Always strictly validate dynamic table, column names, and schemas against an alphanumeric regex allowlist (e.g., `^[a-zA-Z0-9_]+$`) before executing dynamic DDL or PRAGMA statements.
