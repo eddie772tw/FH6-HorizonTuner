@@ -93,7 +93,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionRequest(null)}>{t('Close')}</button>
       </div>
     </div>}
-    {surface === 'settings' && <AppDialog title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} /></AppDialog>}
+    {surface === 'settings' && <AppDialog title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} onOpenUpdates={() => openSurface('updates')} /></AppDialog>}
     {surface === 'updates' && <AppDialog title="Updates" onClose={closeSurface}><UpdateSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog title="About" onClose={closeSurface}>
       <h3 className="h5">FH6 HorizonTuner{variant === 'lite' ? ' Lite' : ''}</h3>
