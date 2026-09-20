@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { downloadCapture } from '../captureDownload';
 import { useSettings } from '../../../context/SettingsContext';
+import { LiveDynoCurveCanvas } from './LiveDynoCurveCanvas';
 import {
   getTuningMeasurementReadiness,
   TUNING_MEASUREMENT_MIN_ACCEPTED_MS,
-  TUNING_MEASUREMENT_MIN_BINS,
+  getTuningMeasurementMinBins,
   type TuningMeasurementGuidance,
 } from '../tuningMeasurement';
 import { canFinishAdditionalMeasurement } from '../tuneSessionController';
@@ -74,12 +75,22 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
               ? t('A usable result is retained. Continue driving to add data, or finish additional collection before calculating.')
               : t(guidanceText[guidance])}
       </div>
+      <div className="mb-3">
+        <LiveDynoCurveCanvas state={state} height={180} />
+      </div>
       <ul>
-        <li>{t('Engine limit received')}: {state.engineMaxRpm ? `${Math.round(state.engineMaxRpm)} RPM` : t('Waiting')}</li>
+        <li>{t('Engine limit received')}: {state.engineMaxRpm ? `${Math.round(state.engineMaxRpm)} RPM` : t('Waiting')}
+          {state.effectiveRedline ? ` · ${t('Effective limit')}: ${Math.round(state.effectiveRedline)} RPM` : ''}
+        </li>
         <li>{t('Clean acceleration data')}: {(state.acceptedMs / 1000).toFixed(1)} / {TUNING_MEASUREMENT_MIN_ACCEPTED_MS / 1000} {t('seconds')}</li>
         <li>{t('Low rev range')}: {t(readiness.lowRpmCoverage ? 'Collected' : 'Still needed')}</li>
-        <li>{t('High rev range')}: {t(readiness.highRpmCoverage ? 'Collected' : 'Still needed')}</li>
-        <li>{t('Rev range coverage')}: {readiness.binCount} / {TUNING_MEASUREMENT_MIN_BINS} {t('required sample bands')}</li>
+        <li>{t('High rev range')}: {t(readiness.highRpmCoverage ? 'Collected' : 'Still needed')}
+          {readiness.cutoffDetected ? ` (${t('Cutoff detected')})` : readiness.powerDropoffDetected ? ` (${t('Powerband roll-off')})` : ''}
+        </li>
+        <li>{t('Rev range coverage')}: {readiness.binCount} / {getTuningMeasurementMinBins(state)} {t('required sample bands')}</li>
+        {state.powerbandStartRpm && state.powerbandEndRpm && (
+          <li>{t('Observed powerband')}: {Math.round(state.powerbandStartRpm)} - {Math.round(state.powerbandEndRpm)} RPM</li>
+        )}
       </ul>
       <p className="small" style={{ color: 'var(--text-secondary)' }}>{t('Engine-output collection checks throttle, controls, gear changes and rev-range coverage. Tire slip is recorded as context, not used as an engine-output rejection threshold. This does not validate road grip or gearing against vehicle speed.')}</p>
       <p className="small">{t('Meeting the collection requirements allows calculation; it does not prove that engine peaks are stable. You can keep the collected data and add another run.')}</p>

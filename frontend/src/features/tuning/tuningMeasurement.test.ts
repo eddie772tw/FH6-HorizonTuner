@@ -215,4 +215,36 @@ describe('tuning measurement state machine', () => {
     state = advanceTuningMeasurement(state, frame(400, 3_200), true, 400);
     expect(state.acceptedMs).toBe(400);
   });
+
+  it('automatically accepts low-rev-limit vehicles when power drop-off indicates full powerband coverage', () => {
+    let state = createTuningMeasurement('42');
+    for (let i = 0; i <= 30; i++) {
+      const rpm = 2500 + i * 110;
+      const power = rpm <= 4800 ? rpm * 52 : Math.max(150000, 250000 - (rpm - 4800) * 60);
+      state = advanceTuningMeasurement(state, frame(i * 200, rpm, { PowerWatts: power, TorqueNewtons: 450 }), true, i * 200);
+    }
+    const readiness = getTuningMeasurementReadiness(state, 6000);
+    expect(state.highestRpm).toBeLessThan(8000 * 0.75);
+    expect(state.powerDropoffDetected).toBe(true);
+    expect(readiness.highRpmCoverage).toBe(true);
+    expect(readiness.ready).toBe(true);
+    expect(readiness.guidance).toBe('ready');
+  });
+
+  it('automatically detects cutoff/rev-limiter plateau and completes collection without manual override', () => {
+    let state = createTuningMeasurement('42');
+    for (let i = 0; i <= 25; i++) {
+      const rpm = 2500 + i * 108;
+      state = advanceTuningMeasurement(state, frame(i * 200, rpm, { PowerWatts: 200000, TorqueNewtons: 400 }), true, i * 200);
+    }
+    state = advanceTuningMeasurement(state, frame(5400, 5200, { PowerWatts: 195000 }), true, 5400);
+    state = advanceTuningMeasurement(state, frame(5600, 5210, { PowerWatts: 195000 }), true, 5600);
+    state = advanceTuningMeasurement(state, frame(6000, 5205, { PowerWatts: 190000 }), true, 6000);
+
+    const readiness = getTuningMeasurementReadiness(state, 6000);
+    expect(state.cutoffDetected).toBe(true);
+    expect(state.effectiveRedline).toBeGreaterThanOrEqual(5200);
+    expect(readiness.highRpmCoverage).toBe(true);
+    expect(readiness.ready).toBe(true);
+  });
 });

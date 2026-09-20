@@ -34,7 +34,7 @@ export function EngineDataStep({ carId, profile, engine, gearing, enabled }: {
       : <TuningMeasurementStep carId={carId} enabled={enabled} />}
     {!enabled && <p>{t('Enter the game-reported vehicle power before collecting engine data.')}</p>}
     {gearing && measured && <div className="glass-panel p-3"><GearingTuner showCorrections={false} numGears={gearing.gears.length}
-      tuning={{ gearing: { ...gearing, maxRpm: measured.engineMaxRpm } }}
-      carParams={{ ...profile, maxHpRpm: measured.observedPeakPower!.rpm, maxTorqueRpm: measured.observedPeakTorque!.rpm }} /></div>}
+      tuning={{ gearing: { ...gearing, maxRpm: measured.engineMaxRpm, effectiveRedline: measured.effectiveRedline } }}
+      carParams={{ ...profile, maxHpRpm: measured.observedPeakPower!.rpm, maxTorqueRpm: measured.observedPeakTorque!.rpm, effectiveRedline: measured.effectiveRedline }} /></div>}
   </section>;
 }

@@ -1,4 +1,10 @@
 {
+  "Rev Limiter": "Rev Limiter",
+  "Effective limit": "Effective limit",
+  "Cutoff detected": "Cutoff detected",
+  "Powerband roll-off": "Powerband roll-off",
+  "Observed powerband": "Observed powerband",
+  "Observed engine output": "Observed engine output",
   "__language_name__": "English",
   "READY": "READY",
   "EXPERIMENTAL": "EXPERIMENTAL",
