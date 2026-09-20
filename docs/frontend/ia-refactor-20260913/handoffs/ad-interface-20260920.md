@@ -1,5 +1,7 @@
 # A→D review interface freeze
 
+> **保留的 interface freeze（歷史交付）。** 本 contract 未被本次文件清理解除；D 實作與 coordinator 接線已交付，舊 lease 不重新生效。現況見 [W4 入口](../README.md)，交付關係見 [歷史索引](../archive/README.md)。
+
 ## Identity
 
 - Parent: `codex/frontend-ia-w2-integration-20260920` at `f9d24a192327bd7c38d8aeab7879eddeac372fe2`

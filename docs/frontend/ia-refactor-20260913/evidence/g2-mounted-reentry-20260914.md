@@ -1,5 +1,7 @@
 # G2：重入輪詢修正與受控 identity／賽事交錯證據
 
+> **歷史 evidence；進度敘述已 superseded（2026-09-20）。** 下列觀察只適用其原始 SHA／條件；原測試、限制與 `not-run` 完整保留。目前 W4 狀態請讀 [候選入口](../README.md)，勿沿用本文的 W2–W4 開工狀態。
+
 日期：2026-09-14。Owner：IA Coordinator as Codex。程式及語意獨立審查：Terra。
 
 本次操作使用實際 App、providers 與 backend，輸入全部為隔離合成資料。它補足下列指定 browser 場景，不代表 Windows 原生視窗、真實 FH6 或完整 G2/G5 通過。

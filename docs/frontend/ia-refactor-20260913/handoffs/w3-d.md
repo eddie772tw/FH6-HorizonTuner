@@ -1,5 +1,7 @@
 # W3 D：Road review 交接
 
+> **歷史快照；進度／下一步已 superseded（2026-09-20）。** 現行候選與後續 gate 請讀 [W4 入口](../README.md)；替代關係見 [歷史索引](../archive/README.md)。以下保留當時 SHA、驗證與 `not-run`，不作為目前開工或 ownership 指令。
+
 - Task / Status：Road review library/detail；handoff，實作、frontend gate 與隔離 browser fixture smoke 完成，D 停寫；真實 Sessions 接線與整合驗收待 coordinator。
 - Owner / Agent ID：Codex / `/root/w3_d_road_review`。
 - Worktree：`D:/FH6-frontend-ia-w3-20260920/w3-d`。

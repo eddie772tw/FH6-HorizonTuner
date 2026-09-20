@@ -1,5 +1,7 @@
 # G2 賽事完成交接的取消修正
 
+> **歷史 evidence；進度敘述已 superseded（2026-09-20）。** 下列觀察只適用其原始 SHA／條件；原測試、限制與 `not-run` 完整保留。目前 W4 狀態請讀 [候選入口](../README.md)，勿沿用本文的 W2–W4 開工狀態。
+
 日期：2026-09-14。Owner：IA Coordinator as Codex；獨立重現／審查：Terra；回歸測試：另一個 Terra 子代理。
 
 ## 問題與修正範圍
