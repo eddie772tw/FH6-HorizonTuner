@@ -62,7 +62,7 @@ Coordinator-retained files include `frontend/src/app/AppShell.tsx`, `frontend/sr
 
 - Source boundary evidence: `SessionsStateProvider.tsx:84-102` owns the generation invalidation and ordinary selection transition; `SessionsStateProvider.tsx:206-230` owns Road/analysis intent identity; `SessionsWorkspace.tsx:7-14` is the optional review-slot host; `AnalysisView.tsx:13-50` retains Recorder/Sessions/IO consumers and `AnalysisView.tsx:152-195` delegates only presentation.
 - Candidate source was checked at exact `ee0f7bb9f5e607a682a5136bb0785deb580e51fb`; no drift-based bulk copy was used.
-- Browser evidence: not run in this lane.
+- Browser evidence: browser-only smoke completed against `http://127.0.0.1:1423/` from the Vite server for this branch. After dismissing the local Data Out guide and clicking the visible `Sessions` workspace button, the page rendered `Post-Race Debrief & MoTeC Bridge`, `Status: Idle (0 samples)`, the `Select Session` control, `Open in MoTeC`, `MoTeC CSV Export`, `MoTeC CSV Import`, `Workspace Template`, and the empty-state text `No data recorded. Start racing to record telemetry.` The global state also visibly reported `Backend disconnected`, so no session data or backend-backed review was claimed. Native/Tauri was not started.
 - Native/Tauri evidence: not run in this lane.
 - No product/game or cross-device evidence is claimed.
 
