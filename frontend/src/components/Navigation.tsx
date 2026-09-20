@@ -1,3 +1,4 @@
+import type { LegacyNavigationTarget, LegacyTab } from '../app/legacyNavigation';
 import { TUNING_WORKFLOW_STEPS } from '../features/tuning/tuningWorkflow';
 import React, { useState, useEffect } from 'react';
 import '../App.css';
@@ -15,9 +16,8 @@ import { hasDismissedDataOutGuide } from '../features/onboarding/telemetryHealth
 import { useTelemetryHealth } from '../features/onboarding/useTelemetryHealth';
 
 interface NavigationProps {
-  activeTab: 'telemetry' | 'tuning' | 'overlay' | 'settings';
-  setActiveTab: (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings') => void;
-  onSubTabJump: (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings', subTarget?: any) => void;
+  activeTab: LegacyTab;
+  onNavigate: (target: LegacyNavigationTarget) => void;
   isConnected: boolean;
   onShowLogs: () => void;
   onShowTheme: () => void;
@@ -113,7 +113,7 @@ const GitInfoBadge: React.FC = () => {
   );
 };
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onSubTabJump, isConnected, onShowLogs, onShowTheme, backendPort }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, onNavigate, isConnected, onShowLogs, onShowTheme, backendPort }) => {
   const { settings, t } = useSettings();
   const telemetryHealth = useTelemetryHealth();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -142,8 +142,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
     }
   }, []);
 
-  const handleDropdownItemClick = (tab: 'telemetry' | 'tuning' | 'overlay' | 'settings', subTarget?: any) => {
-    onSubTabJump(tab, subTarget);
+  const handleDropdownItemClick = (target: LegacyNavigationTarget) => {
+    onNavigate(target);
     setActiveDropdown(null);
   };
 
@@ -165,7 +165,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               onMouseLeave={() => setActiveDropdown(null)}
             >
               <button 
-                onClick={() => handleDropdownItemClick('telemetry', 'live')}
+                onClick={() => handleDropdownItemClick({ tab: 'telemetry', view: 'live' })}
                 className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'telemetry' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
                 aria-current={activeTab === 'telemetry' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
@@ -176,17 +176,17 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               {activeDropdown === 'telemetry' && (
                 <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '210px', zIndex: 1000, background: 'var(--surface-1)' }}>
                   <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('telemetry', 'live')}>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick({ tab: 'telemetry', view: 'live' })}>
                       {t("Dashboard")}
                     </button>
                   </li>
                   <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('telemetry', 'analysis')}>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick({ tab: 'telemetry', view: 'analysis' })}>
                       {t("Post-Race Analysis")}
                     </button>
                   </li>
                   <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('telemetry', 'drag')}>
+                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick({ tab: 'telemetry', view: 'drag' })}>
                       {t("Drag Test")}
                     </button>
                   </li>
@@ -201,7 +201,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               onMouseLeave={() => setActiveDropdown(null)}
             >
               <button 
-                onClick={() => handleDropdownItemClick('tuning', 1)}
+                onClick={() => handleDropdownItemClick({ tab: 'tuning', step: 1 })}
                 className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'tuning' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
                 aria-current={activeTab === 'tuning' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
@@ -215,7 +215,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                     { number: 1, label: 'Goal & Setup' }, { number: 2, label: 'Chassis & Tires' },
                     { number: 3, label: 'Powertrain & Gearing' }, { number: 4, label: 'Verification & Summary' },
                   ] : TUNING_WORKFLOW_STEPS).map(step => <li key={step.number}>
-                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick('tuning', step.number)}>
+                    <button className="dropdown-item d-flex align-items-center gap-2 py-2 fs-7" onClick={() => handleDropdownItemClick({ tab: 'tuning', step: step.number })}>
                       <span className="badge bg-primary-subtle text-primary">{step.number}</span> {t(step.label)}
                     </button>
                   </li>)}
@@ -223,51 +223,18 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
               )}
             </li>
 
-            {/* HUD Overlay Dropdown */}
-            <li 
-              className="nav-item dropdown position-relative"
-              onMouseEnter={() => setActiveDropdown('overlay')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <button 
-                onClick={() => handleDropdownItemClick('overlay', 'general')}
-                className={`nav-link px-3 py-2 d-flex align-items-center gap-1 ${activeTab === 'overlay' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
+            <li className="nav-item">
+              <button type="button" onClick={() => handleDropdownItemClick({ tab: 'overlay' })}
+                className={`nav-link px-3 py-2 ${activeTab === 'overlay' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
                 aria-current={activeTab === 'overlay' ? 'page' : undefined}
-                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
-              >
-                {t("HUD Overlay")}
-                <span className="fs-8 opacity-50 ms-1">▾</span>
+                style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+                {t('HUD Overlay')}
               </button>
-              {activeDropdown === 'overlay' && (
-                <ul className="dropdown-menu show shadow-lg border rounded position-absolute start-0 top-100 m-0 py-1" style={{ minWidth: '200px', zIndex: 1000, background: 'var(--surface-1)' }}>
-                  <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'general')}>
-                      {t("General Settings")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'displays')}>
-                      {t("Displays & Layout")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'gauges')}>
-                      {t("Gauges & Scales")}
-                    </button>
-                  </li>
-                  <li>
-                    <button className="dropdown-item py-2 fs-7" onClick={() => handleDropdownItemClick('overlay', 'performance')}>
-                      {t("Performance & System")}
-                    </button>
-                  </li>
-                </ul>
-              )}
             </li>
-
             {/* Settings Link */}
             <li className="nav-item position-relative">
               <button 
-                onClick={() => handleDropdownItemClick('settings')}
+                onClick={() => handleDropdownItemClick({ tab: 'settings' })}
                 className={`nav-link px-3 py-2 ${activeTab === 'settings' ? 'active text-primary fw-bold border-bottom border-2 border-primary' : 'text-body-secondary'}`}
                 aria-current={activeTab === 'settings' ? 'page' : undefined}
                 style={{ background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}
@@ -334,7 +301,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab: _, onS
                       className="btn btn-outline-warning btn-sm fw-bold w-100"
                       onClick={() => {
                         setShowMcpPortPopover(false);
-                        handleDropdownItemClick('settings');
+                        handleDropdownItemClick({ tab: 'settings' });
                       }}
                     >
                       {t("Open MCP Settings")} &gt;

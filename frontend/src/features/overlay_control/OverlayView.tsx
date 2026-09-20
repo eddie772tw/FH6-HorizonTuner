@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import {
   fetchHudStylesList,
@@ -30,7 +30,12 @@ import {
 } from './hudConfig';
 import '../../App.css';
 import { backendFetch, backendHttpUrl } from '../../services/backend';
-import { HudUnitSettingsSidebar, type HudDisplayUnits } from './HudUnitSettingsSidebar';
+import { HudUnitSettingsSidebar } from './HudUnitSettingsSidebar';
+import {
+  OverlayControlRuntimeProvider,
+  useOptionalOverlayControlRuntime,
+  useOverlayControlRuntime,
+} from './OverlayControlRuntimeProvider';
 
 interface AudioDeviceOption {
   id: string;
@@ -43,12 +48,6 @@ interface AuthorInfo {
   description: string;
 }
 
-interface OverlayViewProps {
-  category?: 'general' | 'displays' | 'gauges' | 'performance';
-  setCategory?: (cat: 'general' | 'displays' | 'gauges' | 'performance') => void;
-}
-
-const HUD_CONFIG_REQUEST_TIMEOUT_MS = 2_500;
 const HUD_COMMAND_TIMEOUT_MS = 4_000;
 
 async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -64,9 +63,9 @@ async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: s
   }
 }
 
-export const OverlayView: React.FC<OverlayViewProps> = () => {
+const OverlayViewContent: React.FC = () => {
   const { settings, t } = useSettings();
-  const [config, setConfig] = useState<HudConfig>(DEFAULT_HUD_CONFIG);
+  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand, updateConfig } = useOverlayControlRuntime();
   const [loading, setLoading] = useState(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
@@ -80,7 +79,8 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     description: 'Loading author metadata...'
   });
 
-  const channelRef = React.useRef<BroadcastChannel | null>(null);
+  const mountedRef = useRef(true);
+  const authorRequestRef = useRef(0);
 
   const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
   const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
@@ -109,14 +109,13 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   useEffect(() => {
-    channelRef.current = new BroadcastChannel('horizon_tuner_hud_channel');
+    mountedRef.current = true;
     fetchMonitors();
     loadStyles();
-    fetchConfig(false, false);
     fetchAudioDevices();
 
     return () => {
-      channelRef.current?.close();
+      mountedRef.current = false;
     };
   }, []);
 
@@ -127,19 +126,18 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       if (res.ok) {
         const list = await res.json();
         if (Array.isArray(list)) {
-          setAudioDevices(list);
+          if (mountedRef.current) setAudioDevices(list);
         }
       }
     } catch (e) {
       console.warn('Failed to fetch available audio capture devices:', e);
     } finally {
-      setLoadingAudioDevices(false);
+      if (mountedRef.current) setLoadingAudioDevices(false);
     }
   };
 
   const handleAudioDeviceChange = async (deviceId: string) => {
-    const updated = { ...config, audioDeviceId: deviceId };
-    saveConfig(updated);
+    void updateConfig({ audioDeviceId: deviceId });
     try {
       await backendFetch('/api/audio/device', {
         method: 'POST',
@@ -154,13 +152,14 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   const loadStyles = async () => {
     const styles = await fetchHudStylesList(backendHttpUrl(''));
     if (styles.length > 0) {
-      setHudStyles(styles);
+      if (mountedRef.current) setHudStyles(styles);
     }
   };
 
   const loadAuthorInfo = async (styleName: string, force: boolean = false, overridePrefix?: string) => {
+    const request = ++authorRequestRef.current;
     if (!force && authorCache[styleName]) {
-      setCurrentAuthorInfo(authorCache[styleName]);
+      if (mountedRef.current && request === authorRequestRef.current) setCurrentAuthorInfo(authorCache[styleName]);
       return;
     }
     try {
@@ -172,15 +171,17 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
           author: info.author || t('Author'),
           description: info.description || t('No description provided.'),
         };
-        setAuthorCache(prev => ({ ...prev, [styleName]: localized }));
-        setCurrentAuthorInfo(localized);
+        if (mountedRef.current && request === authorRequestRef.current) {
+          setAuthorCache(prev => ({ ...prev, [styleName]: localized }));
+          setCurrentAuthorInfo(localized);
+        }
         return;
       }
     } catch (e) {
       console.warn(`Failed to dynamically load author.json for HUD style '${styleName}':`, e);
     }
     const fallback: AuthorInfo = { author: 'Author', description: t('Author metadata unavailable.') };
-    setCurrentAuthorInfo(fallback);
+    if (mountedRef.current && request === authorRequestRef.current) setCurrentAuthorInfo(fallback);
   };
 
   const fetchMonitors = async () => {
@@ -188,7 +189,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       if ((window as any).__TAURI__?.core?.invoke) {
         const list = await (window as any).__TAURI__.core.invoke('get_available_monitors');
         if (list && Array.isArray(list) && list.length > 0) {
-          setMonitors(list);
+          if (mountedRef.current) setMonitors(list);
         }
       }
     } catch (e) {
@@ -196,72 +197,11 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
     }
   };
 
-  const broadcastConfig = (newConfig: HudConfig) => {
-    const configuredUnits = newConfig.units ?? DEFAULT_HUD_CONFIG.units!;
-    const effectiveUnits: HudDisplayUnits = newConfig.followAppUnits !== false
-      ? {
-          speed: settings.units.speed,
-          boostPressure: settings.units.boostPressure,
-          torque: settings.units.torque,
-          power: settings.units.power
-        }
-      : configuredUnits;
-    if (channelRef.current) {
-      channelRef.current.postMessage({
-        type: 'config',
-        data: { ...newConfig, effectiveUnit: effectiveUnits.speed, effectiveUnits },
-      });
-    }
-  };
+  const fetchConfig = async () => refresh();
 
-  const fetchConfig = async (preserveEnabled: boolean = false, forceAuthorUpdate: boolean = false) => {
-    try {
-      const res = await backendFetch('/api/overlay/config');
-      if (res.ok) {
-        const data = await res.json();
-        const normalizedData = normalizeClassicJdmConfig(normalizeS650HmiConfig(data as {
-          hudStyle?: string;
-          s650Theme?: unknown;
-          [key: string]: unknown;
-        }));
-        const merged = {
-          ...DEFAULT_HUD_CONFIG,
-          ...normalizedData,
-          enabled: preserveEnabled,
-          units: { ...DEFAULT_HUD_CONFIG.units, ...(normalizedData.units || {}) },
-          elements: { ...DEFAULT_HUD_CONFIG.elements, ...(normalizedData.elements || {}) }
-        } as HudConfig;
-        setConfig(merged);
-        broadcastConfig(merged);
-        loadAuthorInfo(merged.hudStyle, forceAuthorUpdate);
-      } else {
-        loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
-      }
-    } catch (e) {
-      console.warn('Failed to fetch HUD config:', e);
-      loadAuthorInfo(DEFAULT_HUD_CONFIG.hudStyle, forceAuthorUpdate);
-    }
-  };
-
-  const saveConfig = async (
-    newConfig: HudConfig,
-    timeoutMs = HUD_CONFIG_REQUEST_TIMEOUT_MS,
-  ): Promise<boolean> => {
-    const normalizedConfig = normalizeClassicJdmConfig(normalizeS650HmiConfig(newConfig));
-    setConfig(normalizedConfig);
-    broadcastConfig(normalizedConfig);
-    try {
-      await backendFetch('/api/overlay/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(normalizedConfig),
-      }, timeoutMs);
-      return true;
-    } catch (e) {
-      console.error('Failed to save HUD config:', e);
-      return false;
-    }
-  };
+  useEffect(() => {
+    void loadAuthorInfo(config.hudStyle);
+  }, [config.hudStyle]);
 
   const applyMonitorSelection = async (monIdx: number) => {
     if (monitors.length > 0 && monitors[monIdx]) {
@@ -286,17 +226,15 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
   };
 
   const toggleHudWindow = async (enable: boolean) => {
-    const previousConfig = config;
     setLoading(true);
     setHudActionError(null);
-    const updated = { ...config, enabled: enable };
-    const persistence = saveConfig(updated);
+    const persistence = updateConfig({ enabled: enable });
 
     try {
       if (enable) {
-        channelRef.current?.postMessage({ type: 'hud:animate' });
+        sendHudCommand({ type: 'hud:animate' });
       } else {
-        channelRef.current?.postMessage({ type: 'hud:destroy' });
+        sendHudCommand({ type: 'hud:destroy' });
       }
 
       if ((window as any).__TAURI__?.core?.invoke) {
@@ -314,29 +252,25 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         }
       }
       if (enable) {
-        void applyMonitorSelection(updated.selectedMonitorIndex);
+        void applyMonitorSelection(config.selectedMonitorIndex);
       }
 
       void persistence.then((persisted) => {
         if (!persisted) {
           console.warn('HUD config persistence timed out or failed after the window action.');
-          setHudActionError(t('HUD opened, but its settings could not be saved.'));
+          if (mountedRef.current) setHudActionError(t('HUD opened, but its settings could not be saved.'));
         }
       });
     } catch (err) {
       console.error('HUD overlay action failed:', err);
-      setConfig(previousConfig);
-      broadcastConfig(previousConfig);
-      setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
-      void saveConfig(previousConfig, HUD_CONFIG_REQUEST_TIMEOUT_MS);
+      if (mountedRef.current) setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   const handleMonitorChange = (monIdx: number) => {
-    const updated = { ...config, selectedMonitorIndex: monIdx };
-    saveConfig(updated);
+    void updateConfig({ selectedMonitorIndex: monIdx });
     if (config.enabled) {
       applyMonitorSelection(monIdx);
     }
@@ -344,166 +278,138 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
 
   const handleScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    const updated = { ...config, scale: clamped };
-    saveConfig(updated);
+    void updateConfig({ scale: clamped });
   };
 
   const handleTelemetryOpacityChange = (newOpacity: number) => {
     const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    const updated = { ...config, telemetryOpacity: clamped };
-    saveConfig(updated);
+    void updateConfig({ telemetryOpacity: clamped });
   };
 
   const handleGRadarScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryGRadarScale: clamped });
+    void updateConfig({ telemetryGRadarScale: clamped });
   };
 
   const handleCornersScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryCornersScale: clamped });
+    void updateConfig({ telemetryCornersScale: clamped });
   };
 
   const handlePedalScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryPedalScale: clamped });
+    void updateConfig({ telemetryPedalScale: clamped });
   };
 
   const handlePowerTorqueScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryPowerTorqueScale: clamped });
+    void updateConfig({ telemetryPowerTorqueScale: clamped });
   };
 
   const handleMergedChartsScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryMergedChartsScale: clamped });
+    void updateConfig({ telemetryMergedChartsScale: clamped });
   };
 
   const handleLiveMapScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    saveConfig({ ...config, telemetryLiveMapScale: clamped });
+    void updateConfig({ telemetryLiveMapScale: clamped });
   };
 
   const handleLiveMapOpacityChange = (newOpacity: number) => {
     const clamped = Math.max(0.1, Math.min(1.0, newOpacity));
-    saveConfig({ ...config, telemetryLiveMapOpacity: clamped });
+    void updateConfig({ telemetryLiveMapOpacity: clamped });
   };
 
   const handleCornerOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryCornerOffsetX: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryCornerOffsetX: val });
   };
 
   const handleCornerOffsetYChange = (val: number) => {
-    const updated = { ...config, telemetryCornerOffsetY: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryCornerOffsetY: val });
   };
 
   const handleLiveMapOffsetXChange = (val: number) => {
-    const updated = { ...config, telemetryLiveMapOffsetX: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryLiveMapOffsetX: val });
   };
 
   const handleLiveMapOffsetYChange = (val: number) => {
-    const updated = { ...config, telemetryLiveMapOffsetY: val };
-    saveConfig(updated);
+    void updateConfig({ telemetryLiveMapOffsetY: val });
   };
 
   const handlePedalOffsetXChange = (val: number) => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPedalOffsetX: val,
       ...(config.telemetrySideBySideCharts ? { telemetryPowerTorqueOffsetX: val } : {})
-    };
-    saveConfig(updated);
+    });
   };
 
   const handlePowerTorqueOffsetXChange = (val: number) => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPowerTorqueOffsetX: val,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleMergedChartsOffsetXChange = (val: number) => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryMergedChartsOffsetX: val,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleTelemetryCardFontScaleChange = (newScale: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, newScale));
-    const updated = { ...config, telemetryCardFontScale: clamped };
-    saveConfig(updated);
+    void updateConfig({ telemetryCardFontScale: clamped });
   };
 
   const handlePedalPositionChange = (pos: 'top' | 'bottom') => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPedalPosition: pos,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handlePowerTorquePositionChange = (pos: 'top' | 'bottom') => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryPowerTorquePosition: pos,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleMergedChartsPositionChange = (pos: 'top' | 'bottom') => {
-    const updated = {
-      ...config,
+    void updateConfig({
       telemetryMergedChartsPosition: pos,
-    };
-    saveConfig(updated);
+    });
   };
 
   const handleSideBySideChartsToggle = () => {
     const nextVal = !config.telemetrySideBySideCharts;
-    const updated = {
-      ...config,
-      telemetrySideBySideCharts: nextVal,
-    };
-    saveConfig(updated);
+    void updateConfig({ telemetrySideBySideCharts: nextVal });
   };
 
   const handleVfdVuOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
-    const updated = { ...config, vfdVuOffset: clamped };
-    saveConfig(updated);
+    void updateConfig({ vfdVuOffset: clamped });
   };
 
   const handleVfdAudioOffsetChange = (val: number) => {
     const clamped = Math.max(-5, Math.min(5, val));
-    const updated = { ...config, vfdAudioOffset: clamped };
-    saveConfig(updated);
+    void updateConfig({ vfdAudioOffset: clamped });
   };
 
   const handleGlowIntensityChange = (val: number) => {
     const clamped = Math.max(0.0, Math.min(2.0, val));
-    const updated = { ...config, glowIntensity: clamped };
-    saveConfig(updated);
+    void updateConfig({ glowIntensity: clamped });
   };
 
   const handleCustomColorChange = (color: string) => {
-    const updated = { ...config, customColor: color };
-    saveConfig(updated);
+    void updateConfig({ customColor: color });
   };
 
   const handleUseDefaultColorsToggle = () => {
-    const updated = { ...config, useDefaultColors: !(config.useDefaultColors !== false) };
-    saveConfig(updated);
+    void updateConfig({ useDefaultColors: !(config.useDefaultColors !== false) });
   };
 
   const handleReloadHud = async () => {
-    broadcastConfig(config);
-    channelRef.current?.postMessage({ type: 'hud:reload', hudStyle: config.hudStyle });
+    publishConfig();
+    sendHudCommand({ type: 'hud:reload', hudStyle: config.hudStyle });
 
     if ((window as any).__TAURI__?.core?.invoke) {
       try {
@@ -513,7 +419,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       }
     }
 
-    fetchConfig(config.enabled, true);
+    void fetchConfig();
     if (config.hudStyle) {
       loadAuthorInfo(config.hudStyle, true);
     }
@@ -525,70 +431,58 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
       ...DEFAULT_HUD_CONFIG,
       enabled: config.enabled,
     };
-    saveConfig(resetConfig);
-    channelRef.current?.postMessage({ type: 'hud:reload' });
-    fetchConfig(config.enabled, true);
+    void replaceConfig(resetConfig);
+    sendHudCommand({ type: 'hud:reload' });
+    void fetchConfig();
   };
 
   const handleElementToggle = (key: keyof HudElements) => {
     const nextVal = !config.elements[key];
-    const newElements = {
-      ...config.elements,
+    const elements: Partial<HudElements> = {
       [key]: nextVal,
     };
 
     if ((key === 'showTeleTiresSlip' || key === 'showTeleTiresTemp') && nextVal) {
-      newElements.showTeleTires = true;
+      elements.showTeleTires = true;
     }
 
-    const updated = {
-      ...config,
-      elements: newElements,
-    };
-    saveConfig(updated);
+    void updateConfig({ elements });
   };
 
   const handleStyleChange = (style: string) => {
-    const updated = normalizeClassicJdmConfig(normalizeS650HmiConfig({ ...config, hudStyle: style }));
-    saveConfig(updated);
-    loadAuthorInfo(updated.hudStyle);
+    const normalizedStyle = normalizeClassicJdmConfig(normalizeS650HmiConfig({ hudStyle: style })).hudStyle;
+    void updateConfig({ hudStyle: style });
+    loadAuthorInfo(normalizedStyle);
   };
 
   const handleClassicJdmConfigChange = (updates: Partial<HudConfig>) => {
-    saveConfig({ ...config, ...updates });
+    void updateConfig(updates);
   };
 
   const handleS650ThemeChange = (theme: S650HmiTheme) => {
-    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
+    void updateConfig({ hudStyle: S650_HMI_STYLE_ID, s650Theme: theme });
   };
 
   const handleS650CenterWidgetChange = (widget: S650CenterWidget) => {
-    saveConfig({ ...config, hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
+    void updateConfig({ hudStyle: S650_HMI_STYLE_ID, s650CenterWidget: widget });
   };
 
   const handleS650CenterInfoToggle = () => {
     if (config.s650CenterWidget === 'disable') {
-      saveConfig({
-        ...config,
+      void updateConfig({
         s650CenterWidget: 'drive',
-        elements: {
-          ...config.elements,
-          showCenterInfo: true,
-        },
+        elements: { showCenterInfo: true },
       });
       return;
     }
-    saveConfig({
-      ...config,
-      elements: {
-        ...config.elements,
-        showCenterInfo: config.elements.showCenterInfo === false,
-      },
+    void updateConfig({
+      elements: { showCenterInfo: config.elements.showCenterInfo === false },
     });
   };
 
   const s650CenterInfoEnabled =
     config.s650CenterWidget !== 'disable' && config.elements.showCenterInfo !== false;
+  const displayedHudError = hudActionError ?? runtimeError;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -611,11 +505,19 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {hudActionError && (
-            <span role="alert" className="text-danger small" style={{ maxWidth: '22rem' }}>
-              {hudActionError}
-            </span>
+          {displayedHudError && (
+            <div className="d-flex align-items-center gap-2">
+              <span role="alert" className="text-danger small" style={{ maxWidth: '22rem' }}>
+                {displayedHudError}
+              </span>
+              {runtimeError && (
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => void retry()}>
+                  {t('Retry Update')}
+                </button>
+              )}
+            </div>
           )}
+          {pendingWrites > 0 && <span className="badge text-bg-secondary">{t('Processing...')}</span>}
           <span title={loading ? t("Please wait, HUD is currently launching or closing...") : undefined} style={loading ? { cursor: 'wait', display: 'inline-block' } : {}}>
             <button
               onClick={() => toggleHudWindow(!config.enabled)}
@@ -1559,8 +1461,7 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
                   id="sw-pause-telemetry"
                   checked={!!config.pauseTelemetryViewWhenActive}
                   onChange={(e) => {
-                    const updated = { ...config, pauseTelemetryViewWhenActive: e.target.checked };
-                    saveConfig(updated);
+                    void updateConfig({ pauseTelemetryViewWhenActive: e.target.checked });
                   }}
                 />
                 <label className="form-check-label fs-7" htmlFor="sw-pause-telemetry">
@@ -1617,12 +1518,21 @@ export const OverlayView: React.FC<OverlayViewProps> = () => {
         units={config.units ?? DEFAULT_HUD_CONFIG.units!}
         globalUnits={settings.units}
         t={t}
-        onFollowGlobalChange={followAppUnits => saveConfig({ ...config, followAppUnits })}
-        onUnitsChange={units => saveConfig({ ...config, unit: units.speed, units })}
+        onFollowGlobalChange={followAppUnits => void updateConfig({ followAppUnits })}
+        onUnitsChange={units => void updateConfig({ unit: units.speed, units })}
         onClose={() => setShowUnitSettings(false)}
       />
     </div>
   );
+};
+
+export const OverlayView: React.FC = () => {
+  const runtime = useOptionalOverlayControlRuntime();
+  if (runtime) return <OverlayViewContent />;
+  // Compatibility wrapper until the Coordinator mounts the provider beside the
+  // workspace switch. The runtime itself is module-scoped, so queued writes
+  // still survive this page's unmount/remount cycle.
+  return <OverlayControlRuntimeProvider><OverlayViewContent /></OverlayControlRuntimeProvider>;
 };
 
 export default OverlayView;
