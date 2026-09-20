@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+mod file_export;
 
 #[cfg(all(target_os = "windows", target_arch = "x86_64", not(debug_assertions)))]
 const EMBEDDED_SIDECAR: &[u8] = include_bytes!("../bin/server-sidecar-x86_64-pc-windows-msvc.exe");
@@ -630,6 +631,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            file_export::save_export_file,
             greet,
             get_backend_port,
             get_backend_status,

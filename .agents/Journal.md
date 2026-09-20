@@ -16,6 +16,13 @@
 - **Evidence**：前端 126 files／892 tests、build；完整後端 349 passed／8 deselected，補測後 workflow API 4 passed；Ruff 與 diff whitespace 通過。
 - **Boundary**：零／負輸出仍在 morphology 前被排除，#396 必須以後續 PR 補足，不能宣稱全面修復。未做 FH6 實車與原生 GUI 驗收；上限與動力帶仍為觀測 heuristic。
 
+## 2026-09-20 / 原生檔案匯出與瀏覽器手勢期限（Astra as Codex）
+
+- **Scope**：#391／#392 共用儲存流程；採用 `pr-author-maintainer`、`cross-agent-collaboration`、`halfmoon-design-system`、`modular-refactoring`、`computer-use`。Root 持有共用服務／原生 IPC，Luna 遷移三個獨立入口及補純服務測試。
+- **Verified learning**：跨來源後端 anchor 可能導覽主 WebView；必須由既有 backend transport 取得且驗證 Blob，再交給儲存流程。瀏覽器 picker 必須在網路等待前消耗點擊手勢，原生 picker 則可在資料準備完成後開啟。取消／失敗不能靜默改走下載。
+- **Native evidence**：Windows debug Tauri 真實 XML 儲存（中文檔名、完整路徑通知）、取消、HTTP 200 JSON error、後端離線留頁均已觀察；Rust 二進位覆寫／失敗保留測試通過。
+- **Boundary**：909 frontend tests、350 backend tests、5 Rust tests 與 Full／Lite build 通過。瀏覽器 picker／fallback 是注入測試；未逐一實機覆蓋所有入口、剪貼簿內容、不同瀏覽器、發行 EXE 或真實遊戲。詳細範圍見 [檔案匯出指南](../docs/guides/file-exports.md)。
+
 ## 2026-09-18 / 斷油點特徵閉環自動判定、平滑 Dyno 曲線與齒比圖斷油端點對齊（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；解決部分車輛實際斷油轉速低於表底導致調校工作流 Step 3 資料採集卡死問題，並將調校齒比圖端點對齊至斷油轉速。

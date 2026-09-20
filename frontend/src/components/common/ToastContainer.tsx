@@ -81,7 +81,9 @@ export const ToastContainer: React.FC = () => {
       </div>
       <div className="toast-body py-2 px-3 text-start">
         <div className="fs-7 fw-medium text-body">{toast.message}</div>
-        {toast.detail && <div className="fs-8 text-secondary mt-1">{toast.detail}</div>}
+        {toast.detail && <div className="fs-8 text-secondary mt-1" style={{ overflowWrap: 'anywhere', userSelect: 'text' }}>{toast.detail}</div>}
+        {toast.action && <button type="button" className="btn btn-sm btn-outline-secondary mt-2"
+          onClick={toast.action.onClick}>{toast.action.label}</button>}
       </div>
     </div>
   );

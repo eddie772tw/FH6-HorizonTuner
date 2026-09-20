@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { backendFetch } from '../../../services/backend';
 import { useSettings } from '../../../context/SettingsContext';
-import { downloadCapture } from '../captureDownload';
+import { captureSaveRequest } from '../captureDownload';
+import { useFileSave } from '../../../hooks/useFileSave';
 
 /** Legacy files stay readable without promoting unmeasured RPM to current inputs. */
 export function LegacyTuningHistory({ carId }: { carId: string }) {
   const { t } = useSettings();
+  const { save, isSaving } = useFileSave();
   const [names, setNames] = useState<string[]>([]);
   const [selected, setSelected] = useState('');
   const [snapshot, setSnapshot] = useState<unknown>(null);
@@ -36,6 +38,6 @@ export function LegacyTuningHistory({ carId }: { carId: string }) {
     </select>
     {error && <p role="status">{t(error)}</p>}
     {snapshot !== null && <><pre className="small overflow-auto mt-2" style={{ maxHeight: 280 }}>{JSON.stringify(snapshot, null, 2)}</pre>
-      <button className="btn btn-outline-secondary" onClick={() => downloadCapture(snapshot, 'legacy-setup.json')}>{t('Export setup')}</button></>}
+      <button className="btn btn-outline-secondary" disabled={isSaving} onClick={() => void save(captureSaveRequest(snapshot, 'legacy-setup.json'))}>{t('Export setup')}</button></>}
   </details>;
 }

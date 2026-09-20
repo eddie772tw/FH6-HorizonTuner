@@ -7,6 +7,7 @@
 | 需求 | 入口 |
 | --- | --- |
 | 啟動 Full／Lite 開發環境、打包 | [開發啟動指南](guides/development.md) |
+| 匯出檔案、另存新檔與儲存位置 | [檔案匯出指南](guides/file-exports.md) |
 | 使用 Agent CLI | [CLI 操作指南](guides/agent-cli-guide.md) |
 | 連接 MCP | [MCP 設定指南](guides/mcp-setup-guide.md) |
 | 安裝自訂 HUD | [可攜版 HUD 套件](guides/portable-custom-hud.md) |

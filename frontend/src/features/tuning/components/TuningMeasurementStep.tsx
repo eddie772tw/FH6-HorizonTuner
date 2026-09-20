@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { downloadCapture } from '../captureDownload';
+import { captureSaveRequest } from '../captureDownload';
+import { useFileSave } from '../../../hooks/useFileSave';
 import { useSettings } from '../../../context/SettingsContext';
 import { LiveDynoCurveCanvas } from './LiveDynoCurveCanvas';
 import {
@@ -37,6 +38,7 @@ const guidanceText: Record<TuningMeasurementGuidance, string> = {
 
 export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabled: boolean }) {
   const { t } = useSettings();
+  const { save, isSaving } = useFileSave();
   const session = useTuneSession();
   const measurement = session.engineMeasurement;
   const [now, setNow] = useState(() => performance.now());
@@ -107,8 +109,8 @@ export function TuningMeasurementStep({ carId, enabled }: { carId: string; enabl
         {measurement.phase !== 'complete' && measurement.phase !== 'invalidated' && <button type="button" className="btn btn-outline-secondary" disabled={!enabled}
           onClick={measurement.pauseOrResume}>{t(measurement.phase === 'paused' ? 'Resume collection' : 'Pause collection')}</button>}
         <button type="button" className="btn btn-outline-secondary" disabled={!enabled} onClick={() => measurement.restart(enabled)}>{t('Restart collection')}</button>
-        <button type="button" className="btn btn-outline-secondary" disabled={!measurement.sampleCount}
-          onClick={() => downloadCapture(measurement.captureSnapshot(), 'engine-attempt.json')}>{t('Export collected frames')}</button>
+        <button type="button" className="btn btn-outline-secondary" disabled={!measurement.sampleCount || isSaving}
+          onClick={() => void save(captureSaveRequest(measurement.captureSnapshot(), 'engine-attempt.json'))}>{t('Export collected frames')}</button>
         <button type="button" className="btn btn-primary" disabled={!complete || session.engine.pendingSave}
           onClick={measurement.complete}>{t(session.engine.pendingSave ? 'Saving engine data…' : 'Next: calculate from collected data')}</button>
       </div>

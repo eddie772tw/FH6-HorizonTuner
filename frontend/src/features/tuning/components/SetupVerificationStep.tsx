@@ -5,7 +5,8 @@ import type { ChassisTuningResult, GearingResult, StaticTireAlignResult } from '
 import { RoadWorkflowView } from '../../road/RoadWorkflowView';
 import { workflowRecommendation } from '../workflowSnapshot';
 import { backendFetch } from '../../../services/backend';
-import { downloadCapture } from '../captureDownload';
+import { captureSaveRequest } from '../captureDownload';
+import { useFileSave } from '../../../hooks/useFileSave';
 import type { WorkflowRecommendation } from '../workflowSnapshot';
 
 interface SavedCompatibility { id: string; discipline: string; createdAt: number; recommendation: WorkflowRecommendation }
@@ -15,6 +16,7 @@ export function SetupVerificationStep({ goal, carId, profile, chassis, alignment
   alignment: StaticTireAlignResult | null; gearing: GearingResult | null; inputSnapshot: Record<string, unknown>;
 }) {
   const { t } = useSettings();
+  const { save: exportFile, isSaving } = useFileSave();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<SavedCompatibility[]>([]);
@@ -53,7 +55,7 @@ export function SetupVerificationStep({ goal, carId, profile, chassis, alignment
     <details className="mt-3"><summary>{t('Saved compatibility snapshots')}</summary>
       {history.filter(item => item.discipline === goal && item.recommendation.inputSnapshot.carId === carId).map(item =>
         <div key={item.id} className="my-2"><span>{new Date(item.createdAt * 1000).toLocaleString()} · {item.discipline}</span>
-          <button className="btn btn-sm btn-outline-secondary ms-2" onClick={() => downloadCapture(item, 'compatibility-setup.json')}>{t('Export setup')}</button>
+          <button className="btn btn-sm btn-outline-secondary ms-2" disabled={isSaving} onClick={() => void exportFile(captureSaveRequest(item, 'compatibility-setup.json'))}>{t('Export setup')}</button>
           <details><summary>{t('Observation data')}</summary><pre className="small overflow-auto" style={{ maxHeight: 260 }}>{JSON.stringify(item, null, 2)}</pre></details>
         </div>)}
     </details>

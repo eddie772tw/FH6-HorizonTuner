@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import { useSettings } from '../../../context/SettingsContext';
+import { useFileSave } from '../../../hooks/useFileSave';
 import { validateCSS, CSSValidationResult } from '../../../utils/cssValidator';
 
 const STARTER_CSS = `/* Optional UI overrides. Keep selectors scoped to the app. */
@@ -50,6 +51,7 @@ const CustomCSSEditorPanel: React.FC = () => {
   const [draftCSS, setDraftCSS] = useState(themeSettings.customCSS);
   const [cssValidation, setCssValidation] = useState<CSSValidationResult>({ isValid: true });
   const [fileError, setFileError] = useState<string | null>(null);
+  const { save, isSaving } = useFileSave();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastAppliedCSS = useRef(themeSettings.customCSS);
@@ -89,13 +91,11 @@ const CustomCSSEditorPanel: React.FC = () => {
   };
 
   const handleExport = () => {
-    const blob = new Blob([exportThemeJSON()], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `fh6-theme-${new Date().toISOString().slice(0, 10)}.json`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    void save({
+      filename: `fh6-theme-${new Date().toISOString().slice(0, 10)}.json`,
+      mimeType: 'application/json',
+      load: () => new Blob([exportThemeJSON()], { type: 'application/json' }),
+    });
   };
 
   const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,7 +200,7 @@ const CustomCSSEditorPanel: React.FC = () => {
         </div>
 
         <div className="d-flex flex-wrap gap-2">
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExport}>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExport} disabled={isSaving}>
             {t('Export Theme JSON')}
           </button>
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>
