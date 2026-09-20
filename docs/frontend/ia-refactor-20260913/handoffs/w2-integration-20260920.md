@@ -1,5 +1,7 @@
 # W2 integration handoff
 
+> Superseded by [`w3-integration-20260920.md`](./w3-integration-20260920.md), which records the B2 composition, D Road review bridge, and final browser-only integration evidence.
+
 ## Delivery identity
 
 - Branch: `codex/frontend-ia-w2-integration-20260920`
@@ -23,7 +25,6 @@
 - Browser backend state was `Backend disconnected`; no backend/session/product proof is claimed.
 - Native/Tauri interaction: not run for this objective.
 
-## Remaining boundaries
+## Snapshot boundary
 
-- W2-B2 HUD panel transfer remains unleased and was intentionally not started.
-- D remains downstream of the typed `ValidationReviewSlot` and shared contract/base publication.
+This document records the earlier W2 A/B/C integration snapshot. The B2 HUD panel transfer and D Road review work were completed afterward; use the superseding W3 coordinator handoff for current branch heads, validation, and remaining boundaries.
