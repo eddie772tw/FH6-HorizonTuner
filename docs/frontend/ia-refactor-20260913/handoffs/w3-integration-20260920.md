@@ -3,6 +3,9 @@
 ## Delivery identity
 
 - Integration branch: `codex/frontend-ia-w2-integration-20260920`
+- A foundation remote head: `c281f504de27bc387d1d4a4570d12ef0eec06eb0`
+- B1 foundation remote head: `8442bffdb9393e36a5139b751b723c220a461a08`
+- C settings remote head: `6eb93a781f1c9a00d3a3d40815dae1d36255307e`
 - AD interface freeze: `b780e0c0000a6c7ae613369e38eaa6715a7355f8`
 - B2 panels and composition: `2942b3c83e1c6ab29669e9e233c69561647e9a7e`
 - D Road review final handoff: `5cfe75e0e977d5078f253277e0bda9f8d9fcac98` (product code `1f6c3abf6aa78353fb89a7045025a93396dc014c`)
