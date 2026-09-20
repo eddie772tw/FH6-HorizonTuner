@@ -34,8 +34,9 @@ import { HudUnitSettingsSidebar } from './HudUnitSettingsSidebar';
 import {
   OverlayControlRuntimeProvider,
   useOptionalOverlayControlRuntime,
-  useOverlayControlRuntime,
 } from './OverlayControlRuntimeProvider';
+import { HudWorkspace } from './HudWorkspace';
+import { useHudController } from './useHudController';
 
 interface AudioDeviceOption {
   id: string;
@@ -48,24 +49,9 @@ interface AuthorInfo {
   description: string;
 }
 
-const HUD_COMMAND_TIMEOUT_MS = 4_000;
-
-async function withTimeout<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms.`)), timeoutMs);
-  });
-
-  try {
-    return await Promise.race([operation, timeout]);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
-}
-
 const OverlayViewContent: React.FC = () => {
   const { settings, t } = useSettings();
-  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand, updateConfig } = useOverlayControlRuntime();
+  const { config, error: runtimeError, pendingWrites, publishConfig, refresh, replaceConfig, retry, sendHudCommand, updateConfig, native } = useHudController();
   const [loading, setLoading] = useState(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
@@ -186,11 +172,9 @@ const OverlayViewContent: React.FC = () => {
 
   const fetchMonitors = async () => {
     try {
-      if ((window as any).__TAURI__?.core?.invoke) {
-        const list = await (window as any).__TAURI__.core.invoke('get_available_monitors');
-        if (list && Array.isArray(list) && list.length > 0) {
-          if (mountedRef.current) setMonitors(list);
-        }
+      const result = await native.getAvailableMonitors();
+      if (result.status === 'success' && result.value && result.value.length > 0 && mountedRef.current) {
+        setMonitors(result.value);
       }
     } catch (e) {
       console.warn('Failed to fetch available monitors:', e);
@@ -207,17 +191,9 @@ const OverlayViewContent: React.FC = () => {
     if (monitors.length > 0 && monitors[monIdx]) {
       const m = monitors[monIdx];
       try {
-        if ((window as any).__TAURI__?.core?.invoke) {
-          await withTimeout(
-            (window as any).__TAURI__.core.invoke('move_hud_to_monitor', {
-              monitorX: m.x,
-              monitorY: m.y,
-              width: m.width,
-              height: m.height
-            }),
-            HUD_COMMAND_TIMEOUT_MS,
-            'Moving HUD to the selected monitor',
-          );
+        const result = await native.moveHudToMonitor(m);
+        if (result.status === 'error' || result.status === 'degraded') {
+          console.warn('Failed to move HUD to selected monitor:', result.error);
         }
       } catch (err) {
         console.warn('Failed to move HUD to selected monitor:', err);
@@ -237,18 +213,14 @@ const OverlayViewContent: React.FC = () => {
         sendHudCommand({ type: 'hud:destroy' });
       }
 
-      if ((window as any).__TAURI__?.core?.invoke) {
-        await withTimeout(
-          (window as any).__TAURI__.core.invoke('toggle_hud_window', { visible: enable, destroy: !enable }),
-          HUD_COMMAND_TIMEOUT_MS,
-          enable ? 'Launching HUD overlay' : 'Closing HUD overlay',
-        );
-        if (enable) {
-          await withTimeout(
-            (window as any).__TAURI__.core.invoke('set_hud_click_through', { ignore: true }),
-            HUD_COMMAND_TIMEOUT_MS,
-            'Configuring HUD click-through',
-          );
+      const windowResult = await native.toggleHudWindow(enable);
+      if (windowResult.status === 'error') {
+        throw new Error(windowResult.error ?? 'Native HUD window command failed.');
+      }
+      if (windowResult.status === 'success' && enable) {
+        const clickThroughResult = await native.setHudClickThrough(true);
+        if (clickThroughResult.status === 'error') {
+          throw new Error(clickThroughResult.error ?? 'Native HUD click-through command failed.');
         }
       }
       if (enable) {
@@ -411,12 +383,9 @@ const OverlayViewContent: React.FC = () => {
     publishConfig();
     sendHudCommand({ type: 'hud:reload', hudStyle: config.hudStyle });
 
-    if ((window as any).__TAURI__?.core?.invoke) {
-      try {
-        await (window as any).__TAURI__.core.invoke('reload_hud_window');
-      } catch (err) {
-        console.warn('Failed to invoke reload_hud_window:', err);
-      }
+    const result = await native.reloadHudWindow();
+    if (result.status === 'error' || result.status === 'degraded') {
+      console.warn('Failed to invoke reload_hud_window:', result.error);
     }
 
     void fetchConfig();
@@ -485,7 +454,7 @@ const OverlayViewContent: React.FC = () => {
   const displayedHudError = hudActionError ?? runtimeError;
 
   return (
-    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
+    <HudWorkspace>
 
       {/* Unframed Header Banner */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-2 flex-shrink-0">
@@ -1522,7 +1491,7 @@ const OverlayViewContent: React.FC = () => {
         onUnitsChange={units => void updateConfig({ unit: units.speed, units })}
         onClose={() => setShowUnitSettings(false)}
       />
-    </div>
+    </HudWorkspace>
   );
 };
 

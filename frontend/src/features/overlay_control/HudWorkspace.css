@@ -1,0 +1,6 @@
+.hud-workspace {
+  min-height: 0;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
