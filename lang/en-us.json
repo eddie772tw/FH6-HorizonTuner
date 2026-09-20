@@ -1248,5 +1248,7 @@
   "Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.": "Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.",
   "The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.": "The observation could not be saved. Retry Continue after the error; collected frames remain available while this app session is open.",
   "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.": "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.",
-  "Unable to open the requested session. Check the connection and try again.": "Unable to open the requested session. Check the connection and try again."
+  "Unable to open the requested session. Check the connection and try again.": "Unable to open the requested session. Check the connection and try again.",
+  "A · {number} · {date}": "A · {number} · {date}",
+  "B · {number} · {date}": "B · {number} · {date}"
 }

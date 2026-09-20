@@ -39,15 +39,15 @@ export function RoadCompare({ documents, busy, selection, onSelectionChange, com
       <label className="form-label w-100">{t('Candidate event')}<select className="form-select" value={candidateRun.id} onChange={e => onSelectionChange({ ...selection, comparison: {
         ...comparison, candidateRunId: e.target.value, extraBaselineRunIds: [], extraCandidateRunIds: [],
       } })}>
-        {candidates.map((run, i) => <option key={run.id} value={run.id}>B · {i + 1} · {new Date(run.createdAt * 1000).toLocaleString()}</option>)}
+        {candidates.map((run, i) => <option key={run.id} value={run.id}>{t('B · {number} · {date}', { number: i + 1, date: new Date(run.createdAt * 1000).toLocaleString() })}</option>)}
       </select></label>
       <label className="form-label w-100">{t('Baseline event')}<select className="form-select" value={baselineRun.id} onChange={e => onSelectionChange({ ...selection, comparison: { ...comparison, baselineRunId: e.target.value } })}>
-        {baselines.map((run, i) => <option key={run.id} value={run.id}>A · {i + 1} · {new Date(run.createdAt * 1000).toLocaleString()}</option>)}
+        {baselines.map((run, i) => <option key={run.id} value={run.id}>{t('A · {number} · {date}', { number: i + 1, date: new Date(run.createdAt * 1000).toLocaleString() })}</option>)}
       </select></label>
       <details className="mb-3"><summary>{t('Include independent repeated events')}</summary>
         <p className="small text-body-secondary">{t('Select every relevant repeat. Laps within one event do not count as repetitions.')}</p>
-        {baselines.filter(r => r.id !== baselineRun.id).map((run, i) => <label className="d-block" key={run.id}><input type="checkbox" checked={comparison.extraBaselineRunIds.includes(run.id)} onChange={() => onSelectionChange({ ...selection, comparison: { ...comparison, extraBaselineRunIds: toggle(comparison.extraBaselineRunIds, run.id) } })} /> A · {i + 2} · {new Date(run.createdAt * 1000).toLocaleString()}</label>)}
-        {candidates.filter(r => r.setupId === candidateRun.setupId && r.id !== candidateRun.id).map((run, i) => <label className="d-block" key={run.id}><input type="checkbox" checked={comparison.extraCandidateRunIds.includes(run.id)} onChange={() => onSelectionChange({ ...selection, comparison: { ...comparison, extraCandidateRunIds: toggle(comparison.extraCandidateRunIds, run.id) } })} /> B · {i + 1} · {new Date(run.createdAt * 1000).toLocaleString()}</label>)}
+        {baselines.filter(r => r.id !== baselineRun.id).map((run, i) => <label className="d-block" key={run.id}><input type="checkbox" checked={comparison.extraBaselineRunIds.includes(run.id)} onChange={() => onSelectionChange({ ...selection, comparison: { ...comparison, extraBaselineRunIds: toggle(comparison.extraBaselineRunIds, run.id) } })} /> {t('A · {number} · {date}', { number: i + 2, date: new Date(run.createdAt * 1000).toLocaleString() })}</label>)}
+        {candidates.filter(r => r.setupId === candidateRun.setupId && r.id !== candidateRun.id).map((run, i) => <label className="d-block" key={run.id}><input type="checkbox" checked={comparison.extraCandidateRunIds.includes(run.id)} onChange={() => onSelectionChange({ ...selection, comparison: { ...comparison, extraCandidateRunIds: toggle(comparison.extraCandidateRunIds, run.id) } })} /> {t('B · {number} · {date}', { number: i + 1, date: new Date(run.createdAt * 1000).toLocaleString() })}</label>)}
       </details>
       <button className="btn btn-primary" disabled={busy} onClick={() => void submit()}>{t('Create saved comparison')}</button>
     </section>}
