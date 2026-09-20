@@ -3,11 +3,11 @@
 | Handoff 欄位 | 值 |
 | --- | --- |
 | Task | W4-P8 後 IA 文件清理與 W2/W3 remote refs audit |
-| Status | handoff |
-| Owner | Codex / `/root/w4_repo_docs_cleanup` |
+| Status | active-merge-resolution |
+| Owner | Codex / `/root` |
 | Branch | `codex/frontend-ia-w4-doc-cleanup-20260920` |
 | Worktree | `D:/FH6-frontend-ia-20260920/w4-doc-cleanup` |
-| Base | `88cf28e6152c125c1cca18dc21c3c1f46e4fbcff`（W4-P8 candidate） |
+| Base | `25d3f946b88f08b981d662a29152dd376d65601a`（PR #407 merge into `main`） |
 | Scope | 僅 `docs/frontend/ia-refactor-20260913/**` |
 | Blocked by | None；remote deletion 不符合目前清理條件，因此保留 |
 | Last updated | 2026-09-20 |
@@ -20,6 +20,13 @@
 - [原 W4 計畫入口](w4-plan-20260920.md) 精簡為 exact 交付索引與剩餘 gate。舊工作包逐字保留於 [封存檔](../archive/w4-work-packages-20260920.md)，並指出草稿 `4e24fac` 起點已被實際 W4-0 lock `147981c3ea0d68f146e0b2400d147e2346d7930e` 取代。
 - 13 份 W1/G2/W2/W3 handoff 加上 `superseded` 進度提示；A→D contract 保留有效性，3 份 G2 evidence 保留為歷史版本證據。W4-0 與 P7-A 只新增 snapshot 說明，避免舊 pending 敘述遮蔽後續有限 browser 結果。
 - 原始 handoff/evidence 正文、W4-P8 handoff、P7/P8 browser evidence 與 P7-D baseline JSON 均保留；沒有把任何 `not-run` 升為 `pass`，沒有移除 `reviewHistory` 的驗證門檻。
+
+## Stack merge reconciliation
+
+- PR #339 merged into `main` as `7fc4795f1ff055c12df652f6f2b8f8d4b0f1c441`; aggregate PR #405 merged as `e45730e72f6ca5711f3f88c3110bb0012c0cef5b`; Shell #345 merged as `c3e04543f91b144b52b17b68354cc139d191ee11`; W2/W3 #406 merged as `28f8a0c96cb424703b6c6cbd954a578750814e99`; W4 #407 merged as `25d3f946b88f08b981d662a29152dd376d65601a`.
+- After #407, this cleanup branch was re-targeted to `main`. The merge exposed one add/add conflict in `docs/frontend/ia-refactor-20260913/README.md`: the W4 current-state entry is retained as the live entry, while the original plan from #339 is preserved verbatim at [archive/ia-refactor-plan-20260913.md](../archive/ia-refactor-plan-20260913.md) and indexed in the archive README.
+- The original cleanup audit recorded no ref deletion. GitHub subsequently removed merged PR head refs as part of the repository's merged-branch cleanup; the remaining W2/W3 work-package refs with registered worktrees stay retained. This handoff does not authorize further ref deletion.
+- The cleanup PR now carries the post-stack current-state wording and must be rechecked against the exact cleanup head before #408 is merged.
 
 ## Remote refs：全部保留
 

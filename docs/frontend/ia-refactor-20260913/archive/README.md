@@ -14,6 +14,7 @@
 | A→D freeze | [interface contract](../handoffs/ad-interface-20260920.md) | `retained-contract`：保留設計與 ownership 的交付來源；D 實作與 coordinator 接線見後續 handoff，不重開舊 lease |
 | W2 / W3 integration | [W2 snapshot](../handoffs/w2-integration-20260920.md)、[W3 snapshot](../handoffs/w3-integration-20260920.md)、[D handoff](../handoffs/w3-d.md) | `superseded` 最新候選身分：W4 已從最終 integration `147981c3ea0d68f146e0b2400d147e2346d7930e` 接續；原 branch/head/測試是歷史證據 |
 | 原 W4 工作包 | [封存工作指令](w4-work-packages-20260920.md) | `superseded` 執行計畫：W4-0/P7/P8 已交付，進度看 [交付索引](../handoffs/w4-plan-20260920.md)；舊草稿 `4e24fac` 不是實際 W4 lock base |
+| Original IA plan from PR #339 | [2026-09-13 plan](ia-refactor-plan-20260913.md) | `superseded` current-state entry：原計畫正文保留供追溯；目前 candidate、merge state 與實機邊界以 W4 入口及 P8 handoff 為準 |
 
 W4-0 ledger 仍在主要索引中，因為它保留逐列 acceptance baseline 與 Post-lock 更新。P7/P8 handoff 和 evidence 也繼續作為現行候選的可追溯證據，不移入歷史目錄。
 

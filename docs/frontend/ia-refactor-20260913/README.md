@@ -1,6 +1,6 @@
 # Frontend IA：W4 候選與文件入口
 
-本目錄的現行交接是 [W4-P8 candidate handoff](handoffs/w4-p8-candidate-20260920.md)。截至 2026-09-20，狀態為 **`candidate-pre-machine`**：W4 的指定 browser 工作與量測準備已交付，最後實機驗收仍未完成。
+本目錄的現行交接是 [W4-P8 candidate handoff](handoffs/w4-p8-candidate-20260920.md)。W4 candidate 已由 PR #407 以 merge commit `25d3f946b88f08b981d662a29152dd376d65601a` 合併入 `main`；狀態仍為 **`candidate-pre-machine`**，因最後實機驗收尚未完成。
 
 | 身分 | 固定值 |
 | --- | --- |
@@ -8,9 +8,10 @@
 | P8 candidate commit | `88cf28e6152c125c1cca18dc21c3c1f46e4fbcff` |
 | 最後產品程式變更 | `30fedc3833383dc646c724fb918b19830c52451f`（P7-A） |
 | W2/W3 integration parent | `147981c3ea0d68f146e0b2400d147e2346d7930e` |
-| 文件清理分支 | `codex/frontend-ia-w4-doc-cleanup-20260920`；僅文件，沒有取代上述產品候選 |
+| W4 main integration | PR #407 merge `25d3f946b88f08b981d662a29152dd376d65601a` |
+| 文件清理分支 | `codex/frontend-ia-w4-doc-cleanup-20260920`；PR #408，僅文件，等待合併 |
 
-這些是固定交付身分；再次工作前需讀取 live refs。cleanup 分支不代表 W4 已合併 `main`、通過 G5 或產生新的產品驗證。
+這些是固定交付身分；再次工作前需讀取 live refs。W4 已進入 `main`，但不代表 G5 或最後實機驗收通過；cleanup PR #408 只整理文件與歷史索引，不產生新的產品驗證。
 
 ## 現行 handoff 與證據
 
