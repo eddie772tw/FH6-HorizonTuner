@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { backendFetch } from '../services/backend';
+import { fetchExportBlob } from '../services/fileSave';
 import {
   SUPPORT_BUNDLE_PRIVACY_NOTICE,
   supportBundleRequestBody,
 } from './diagnosticSupportBundle';
 import { ModalPortal } from './common/ModalPortal';
 import { useModalFocus } from '../hooks/useModalFocus';
+import { useFileSave } from '../hooks/useFileSave';
 
 interface LogEntry {
   timestamp: string;
@@ -28,7 +30,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isExportingBundle, setIsExportingBundle] = useState<boolean>(false);
+  const { save, isSaving } = useFileSave();
   
   const consoleRef = useRef<HTMLPreElement>(null);
 
@@ -71,31 +73,18 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
     }
   };
 
-  const handleExportSupportBundle = async () => {
-    setIsExportingBundle(true);
-    try {
-      const response = await backendFetch('/api/diagnostics/support-bundle', {
+  const handleExportSupportBundle = () => {
+    void save({
+      filename: 'fh6-diagnostic-support.zip',
+      mimeType: 'application/zip',
+      load: () => fetchExportBlob('/api/diagnostics/support-bundle', 'application/zip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: supportBundleRequestBody(),
-      });
-      if (!response.ok) {
-        throw new Error(`${t('Support bundle export failed.')} (${response.status})`);
-      }
-      const downloadUrl = URL.createObjectURL(await response.blob());
-      const download = document.createElement('a');
-      download.href = downloadUrl;
-      download.download = 'fh6-diagnostic-support.zip';
-      document.body.appendChild(download);
-      download.click();
-      download.remove();
-      URL.revokeObjectURL(downloadUrl);
-      setErrorMsg(null);
-    } catch (error) {
-      setErrorMsg(error instanceof Error ? error.message : t('Support bundle export failed.'));
-    } finally {
-      setIsExportingBundle(false);
-    }
+      }),
+    }).then(result => {
+      if (result?.status === 'saved' || result?.status === 'downloaded') setErrorMsg(null);
+    });
   };
 
   const getLogLevelColor = (lvl: string) => {
@@ -216,10 +205,10 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
               type="button"
               onClick={handleExportSupportBundle}
               className="btn btn-outline-primary btn-sm fw-bold"
-              disabled={isExportingBundle}
+              disabled={isSaving}
               title={t(SUPPORT_BUNDLE_PRIVACY_NOTICE)}
             >
-              {isExportingBundle ? (
+              {isSaving ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />
                   {t('Preparing Support Bundle...')}

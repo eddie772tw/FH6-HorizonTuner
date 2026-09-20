@@ -1,4 +1,11 @@
 {
+  "File saved": "File saved",
+  "Copy path": "Copy path",
+  "Path copied": "Path copied",
+  "Unable to copy path. Select the path in the save notification.": "Unable to copy path. Select the path in the save notification.",
+  "Download started": "Download started",
+  "Check your browser downloads for the file and save location.": "Check your browser downloads for the file and save location.",
+  "File export failed": "File export failed",
   "Rev Limiter": "Rev Limiter",
   "Effective limit": "Effective limit",
   "Cutoff detected": "Cutoff detected",

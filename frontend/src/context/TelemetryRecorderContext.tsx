@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useSettings } from "./SettingsContext";
-import { backendFetch, backendHttpUrl } from "../services/backend";
+import { backendFetch } from "../services/backend";
+import { fetchExportBlob } from '../services/fileSave';
+import { useFileSave } from '../hooks/useFileSave';
 import { SessionDebriefData } from "../features/analysis/sessionDebriefMath";
 
 export interface AnalysisDataPoint {
@@ -65,6 +67,7 @@ interface TelemetryRecorderContextType {
   loadSessionLaps: (filename: string) => Promise<LapSummary[]>;
   deleteSavedSession: (filename: string) => Promise<boolean>;
   exportMoTecCsv: (filename: string) => void;
+  isExporting: boolean;
   uploadMoTecCsv: (file: File) => Promise<AnalysisDataPoint[] | null>;
   openInMoTec: (sessionId: string) => Promise<{ success: boolean; launched: boolean; message: string }>;
   downloadMoTecTemplate: () => void;
@@ -79,6 +82,7 @@ export const TelemetryRecorderProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const { settings } = useSettings();
+  const { save, isSaving: isExporting } = useFileSave();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingCount, setRecordingCount] = useState(0);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -249,13 +253,8 @@ export const TelemetryRecorderProvider: React.FC<{
   };
 
   const exportMoTecCsv = (filename: string) => {
-    const url = backendHttpUrl(`/api/analysis/export/motec/${encodeURIComponent(filename)}`);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}_motec.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    void save({ filename: `${filename}_motec.csv`, mimeType: 'text/csv',
+      load: () => fetchExportBlob(`/api/analysis/export/motec/${encodeURIComponent(filename)}`, 'text/csv') });
   };
 
   const uploadMoTecCsv = async (
@@ -298,13 +297,8 @@ export const TelemetryRecorderProvider: React.FC<{
   };
 
   const downloadMoTecTemplate = () => {
-    const url = backendHttpUrl("/api/analysis/motec/template");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "FH6_HorizonTuner_MoTeC_Workspace.xml";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    void save({ filename: 'FH6_HorizonTuner_MoTeC_Workspace.xml', mimeType: 'application/xml',
+      load: () => fetchExportBlob('/api/analysis/motec/template', 'application/xml') });
   };
 
   const fetchSessionDebrief = useCallback(async (
@@ -342,6 +336,7 @@ export const TelemetryRecorderProvider: React.FC<{
         loadSessionLaps,
         deleteSavedSession,
         exportMoTecCsv,
+        isExporting,
         uploadMoTecCsv,
         openInMoTec,
         downloadMoTecTemplate,

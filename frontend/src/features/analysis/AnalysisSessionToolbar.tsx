@@ -13,6 +13,7 @@ export interface AnalysisSessionToolbarProps {
   readonly compareLap: number;
   readonly isSavedSelection: boolean;
   readonly motecActionMsg: string | null;
+  readonly isExporting?: boolean;
   readonly fileInputRef: React.RefObject<HTMLInputElement | null>;
   readonly onSelectSession: (filename: string) => void;
   readonly onSelectPrimaryLap: (lap: number) => void;
@@ -49,6 +50,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   compareLap,
   isSavedSelection,
   motecActionMsg,
+  isExporting = false,
   fileInputRef,
   onSelectSession,
   onSelectPrimaryLap,
@@ -139,14 +141,14 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
           </button>
-          <button onClick={onExportMoTec} className="btn btn-sm btn-secondary">
+          <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-sm btn-secondary">
             MoTeC CSV {t("Export")}
           </button>
           <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />
           <button onClick={onOpenImport} className="btn btn-sm btn-primary" title={t("Import MoTeC CSV for analysis")}>
             MoTeC CSV {t("Import")}
           </button>
-          <button onClick={onDownloadTemplate} className="btn btn-sm btn-info" title={t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}>
+          <button onClick={onDownloadTemplate} disabled={isExporting} className="btn btn-sm btn-info" title={t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}>
             {t("Workspace Template")}
           </button>
           {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-sm btn-danger">{t("Delete")}</button>}

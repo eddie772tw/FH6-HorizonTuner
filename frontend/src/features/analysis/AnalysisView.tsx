@@ -10,7 +10,7 @@ import { analysisDataPath, analysisSelectionKey } from "../sessions/sessionSelec
 import { createSessionsIo } from "../sessions/sessionsIo";
 
 const AnalysisView: React.FC = () => {
-  const { isRecording, recordingCount, currentSessionId, currentSession, loadedSession, savedSessions, fetchSavedSessionsList, loadSessionLaps, exportMoTecCsv, openInMoTec, downloadMoTecTemplate, fetchSessionDebrief } = useTelemetryRecorder();
+  const { isRecording, recordingCount, currentSessionId, currentSession, loadedSession, savedSessions, fetchSavedSessionsList, loadSessionLaps, exportMoTecCsv, isExporting, openInMoTec, downloadMoTecTemplate, fetchSessionDebrief } = useTelemetryRecorder();
   const { state: sessionsState, selectedFilename, selectedSessionId, isSavedSelection, selectCurrent, selectSaved, setPrimaryLap, setCompareLap, setMetric, beginSelectionOperation, setImportedSession, loadPrimaryLap, cancelPrimaryLoad, refreshCurrent } = useSessionsState();
   const { t } = useSettings();
   const [motecActionMsg, setMotecActionMsg] = useState<string | null>(null);
@@ -161,6 +161,7 @@ const AnalysisView: React.FC = () => {
         compareLap={compareLap}
         isSavedSelection={isSavedSelection}
         motecActionMsg={motecActionMsg}
+        isExporting={isExporting}
         fileInputRef={fileInputRef}
         onSelectSession={handleDropdownChange}
         onSelectPrimaryLap={setPrimaryLap}

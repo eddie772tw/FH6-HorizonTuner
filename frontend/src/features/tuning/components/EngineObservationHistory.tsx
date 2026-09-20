@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import type { EngineObservation } from '../engineMeasurementArchive';
-import { downloadSavedCapture } from '../captureDownload';
+import { savedCaptureSaveRequest } from '../captureDownload';
+import { useFileSave } from '../../../hooks/useFileSave';
 
 export function EngineObservationHistory({ entries, compatibleIds, reuse, storageError }: {
   entries: EngineObservation[]; compatibleIds: string[]; reuse: (id: string) => void | Promise<void>; storageError: boolean;
 }) {
   const { t } = useSettings();
+  const { save, isSaving } = useFileSave();
   const [confirmed, setConfirmed] = useState(false);
   const [selectedId, setSelectedId] = useState('');
-  const [error, setError] = useState('');
   const selected = entries.find(e => e.id === selectedId) || entries[entries.length - 1];
   if (!entries.length) return null;
   return <details className="glass-panel p-3 mb-3"><summary>{t('Saved engine observations')} · {entries.length}</summary>
@@ -20,11 +21,9 @@ export function EngineObservationHistory({ entries, compatibleIds, reuse, storag
     </select>
     <label className="d-flex gap-2 my-3"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{t('The engine, drivetrain and installed powertrain parts are unchanged, including same-PI changes.')}</label>
     <button className="btn btn-outline-primary" disabled={!confirmed || !selected || !compatibleIds.includes(selected.id)} onClick={() => { if (selected) void reuse(selected.id); setConfirmed(false); }}>{t('Reuse the confirmed engine observation')}</button>
-    <button className="btn btn-outline-secondary ms-2" onClick={() => {
-      if (selected) void downloadSavedCapture('/engine-observations/' + encodeURIComponent(selected.id) + '/capture', 'engine-capture.json')
-        .then(() => setError('')).catch(e => setError(e.message));
+    <button className="btn btn-outline-secondary ms-2" disabled={isSaving} onClick={() => {
+      if (selected) void save(savedCaptureSaveRequest('/engine-observations/' + encodeURIComponent(selected.id) + '/capture', 'engine-capture.json'));
     }}>{t('Export recorded frames')}</button>
-    {error && <p role="status">{t(error)}</p>}
     <details className="mt-2"><summary>{t('Observation data')}</summary><pre className="small overflow-auto" style={{ maxHeight: 260 }}>{JSON.stringify(selected, null, 2)}</pre></details>
   </details>;
 }

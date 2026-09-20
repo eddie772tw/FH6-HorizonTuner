@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { downloadCapture } from '../tuning/captureDownload';
+import { useFileSave } from '../../hooks/useFileSave';
 import { useRoadValidation } from './RoadValidationController';
 import { createRoadReviewGuard, createRoadReviewIo, roadReviewComparisonBody, roadReviewDecisionBody } from './roadReviewIo';
 import { documentsOf, type RoadDecision, type RoadDocument, type RoadReport, type RoadWorkflow } from './roadTypes';
@@ -31,12 +31,12 @@ export function useRoadReviewLibrary(workflowId: string, io: RoadReviewIo = defa
 }
 
 export function useRoadReview(workflowId: string, io: RoadReviewIo = defaultIo) {
+  const { save: saveExport, isSaving } = useFileSave();
   const controller = useRoadValidation();
   const guard = useMemo(createRoadReviewGuard, []);
   guard.select(workflowId);
   const [state, setState] = useState<{ workflowId: string; status: RoadReviewStatus; documents: RoadDocument[]; error: string }>({ workflowId, status: 'loading', documents: [], error: '' });
   const [notice, setNotice] = useState({ workflowId, message: '' });
-  const [exporting, setExporting] = useState({ workflowId, active: false });
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; guard.invalidate(); }; }, [guard]);
   const applies = useCallback((lease: Parameters<typeof guard.applies>[0]) => mounted.current && guard.applies(lease), [guard]);
@@ -55,7 +55,6 @@ export function useRoadReview(workflowId: string, io: RoadReviewIo = defaultIo) 
   useEffect(() => {
     const abort = new AbortController();
     setNotice({ workflowId, message: '' });
-    setExporting({ workflowId, active: false });
     void refresh(abort.signal);
     return () => { guard.invalidate(); abort.abort(); };
   }, [guard, refresh, workflowId]);
@@ -107,22 +106,16 @@ export function useRoadReview(workflowId: string, io: RoadReviewIo = defaultIo) 
   const exportCapture = async (runId: string) => {
     if (state.workflowId !== workflowId || state.status !== 'ready' || !documentsOf(state.documents, 'summary').some(summary => summary.runId === runId)) return;
     const lease = guard.read('capture');
-    setExporting({ workflowId, active: true });
     setNotice({ workflowId, message: '' });
-    try {
-      const capture = await io.capture(workflowId, runId);
-      if (applies(lease)) downloadCapture(capture, 'road-capture.json');
-    } catch (error) {
-      if (applies(lease)) setNotice({ workflowId, message: message(error) });
-    } finally {
-      if (applies(lease)) setExporting({ workflowId, active: false });
-    }
+    await saveExport({ filename: 'road-capture.json', mimeType: 'application/json',
+      isCurrent: () => applies(lease),
+      load: async () => new Blob([JSON.stringify(await io.capture(workflowId, runId), null, 2)], { type: 'application/json' }) });
   };
   return {
     ...(state.workflowId === workflowId ? state : { workflowId, status: 'loading' as const, documents: [], error: '' }),
     busy: controller.operation?.status === 'pending',
     notice: notice.workflowId === workflowId ? notice.message : '',
-    exporting: exporting.workflowId === workflowId && exporting.active,
+    exporting: isSaving,
     refresh, compare, decide, exportCapture,
   };
 }

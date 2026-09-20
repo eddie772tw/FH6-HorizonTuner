@@ -1,23 +1,12 @@
 import React, { useMemo } from 'react';
 import { captureToCsv, summarizeCapture, type TuningCaptureMetadata } from '../../../domain/tuning/telemetryCapture';
+import { useFileSave } from '../../../hooks/useFileSave';
 import { useTuneSession } from '../TuneSessionProvider';
 
 interface TuningTelemetryCaptureViewProps {
   t: (text: string) => string;
   onBack: () => void;
 }
-
-const download = (content: string, filename: string, type: string) => {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
-};
 
 const updateMetadata = (metadata: TuningCaptureMetadata, key: keyof TuningCaptureMetadata, value: string): TuningCaptureMetadata => ({ ...metadata, [key]: value });
 
@@ -27,11 +16,30 @@ const SummaryRow: React.FC<{ label: string; value: string | number }> = ({ label
 
 const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({ t, onBack }) => {
   const { capture } = useTuneSession();
+  const { save, isSaving } = useFileSave();
   const metadata = capture.metadata;
   const isCapturing = capture.status === 'capturing';
   const activeCapture = capture.activeCapture;
   const summary = useMemo(() => summarizeCapture(activeCapture?.samples ?? []), [activeCapture, capture.revision]);
   const filenameBase = metadata.label.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'tuning-capture';
+
+  const handleDownloadJson = () => {
+    if (!activeCapture || activeCapture.samples.length === 0) return;
+    void save({
+      filename: `${filenameBase}.json`,
+      mimeType: 'application/json',
+      load: () => new Blob([JSON.stringify({ ...activeCapture, summary: summarizeCapture(activeCapture.samples) }, null, 2)], { type: 'application/json' }),
+    });
+  };
+
+  const handleDownloadCsv = () => {
+    if (!activeCapture || activeCapture.samples.length === 0) return;
+    void save({
+      filename: `${filenameBase}.csv`,
+      mimeType: 'text/csv',
+      load: () => new Blob([captureToCsv(activeCapture)], { type: 'text/csv' }),
+    });
+  };
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
@@ -105,7 +113,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
                   aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
                 >
-                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={() => activeCapture && download(JSON.stringify({ ...activeCapture, summary: summarizeCapture(activeCapture.samples) }, null, 2), `${filenameBase}.json`, 'application/json')}>{t('Download JSON')}</button>
+                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadJson}>{t('Download JSON')}</button>
                 </span>
                 <span
                   title={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
@@ -114,7 +122,7 @@ const TuningTelemetryCaptureView: React.FC<TuningTelemetryCaptureViewProps> = ({
                   aria-label={(!activeCapture || activeCapture.samples.length === 0) ? t('No capture data available to download') : undefined}
                   style={(!activeCapture || activeCapture.samples.length === 0) ? { cursor: 'not-allowed', display: 'inline-block' } : {}}
                 >
-                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={() => activeCapture && download(captureToCsv(activeCapture), `${filenameBase}.csv`, 'text/csv')}>{t('Download CSV')}</button>
+                  <button className="btn btn-outline-primary btn-sm" disabled={!activeCapture || activeCapture.samples.length === 0 || isSaving} style={{ pointerEvents: (!activeCapture || activeCapture.samples.length === 0) ? 'none' : 'auto' }} onClick={handleDownloadCsv}>{t('Download CSV')}</button>
                 </span>
               </div>
               <div className="form-text fs-7 mt-2">{t('Use JSON as the canonical evidence file; CSV is for spreadsheet or MoTeC-style inspection.')}</div>

@@ -1,4 +1,11 @@
 {
+  "File saved": "檔案已儲存",
+  "Copy path": "複製路徑",
+  "Path copied": "已複製路徑",
+  "Unable to copy path. Select the path in the save notification.": "無法複製路徑，請在儲存通知中選取路徑。",
+  "Download started": "已開始下載",
+  "Check your browser downloads for the file and save location.": "請在瀏覽器下載紀錄中查看檔案與儲存位置。",
+  "File export failed": "檔案匯出失敗",
   "__language_name__": "繁體中文",
   "Rev Limiter": "斷油轉速",
   "Effective limit": "觀測有效上限",
