@@ -117,15 +117,81 @@ function PositionControl({ label, value, onChange, t }: { label: string; value: 
   );
 }
 
+function GRadarAlignmentControl({
+  value,
+  onChange,
+  t,
+}: {
+  value: 'center' | 'left' | 'right';
+  onChange: (alignment: 'center' | 'left' | 'right') => void;
+  t: HudLayoutPanelProps['t'];
+}) {
+  return (
+    <label className="d-flex justify-content-between align-items-center gap-2 fs-7 text-body-secondary">
+      {t('G-Force Radar Alignment')}:
+      <select
+        value={value}
+        onChange={event => onChange(event.target.value as 'center' | 'left' | 'right')}
+        className="form-select form-select-sm"
+        style={{ width: 'auto', minWidth: '110px' }}
+      >
+        <option value="center">{t('Center')}</option>
+        <option value="left">{t('Left Edge')}</option>
+        <option value="right">{t('Right Edge')}</option>
+      </select>
+    </label>
+  );
+}
+
 export function HudLayoutPanel({ config, disabled = false, onConfigPatch, onElementToggle, t }: HudLayoutPanelProps) {
   const id = useId();
   const merged = config.telemetrySideBySideCharts === true;
   const rangeProps = { config, onConfigPatch, t };
+
+  const gRadarAlignment = config.telemetryGRadarAlignment ?? 'center';
+  const gRadarXMin = gRadarAlignment === 'left' ? 0 : -500;
+  const gRadarXMax = gRadarAlignment === 'right' ? 0 : 500;
+
+  const gRadarXSetting: RangeSetting = {
+    key: 'telemetryGRadarOffsetX',
+    label: 'G-Force Radar X-Offset',
+    min: gRadarXMin,
+    max: gRadarXMax,
+    step: 5,
+    fallback: 0,
+  };
+
+  const gRadarYSetting: RangeSetting = {
+    key: 'telemetryGRadarOffsetY',
+    label: 'G-Force Radar Y-Offset',
+    min: -300,
+    max: 300,
+    step: 5,
+    fallback: 0,
+  };
+
+  const handleGRadarAlignmentChange = (newAlignment: 'center' | 'left' | 'right') => {
+    const currentX = config.telemetryGRadarOffsetX ?? 0;
+    let clampedX = currentX;
+    if (newAlignment === 'left' && currentX < 0) {
+      clampedX = 0;
+    } else if (newAlignment === 'right' && currentX > 0) {
+      clampedX = 0;
+    }
+    onConfigPatch({
+      telemetryGRadarAlignment: newAlignment,
+      telemetryGRadarOffsetX: clampedX,
+    });
+  };
+
   return (
     <fieldset disabled={disabled} className="border-0 p-0 m-0 row g-4" style={{ minWidth: 0 }} aria-labelledby={`${id}-title`}>
       <legend id={`${id}-title`} className="visually-hidden">{t('HUD Style Settings')}</legend>
       <section className="col-12 col-lg-4 d-flex flex-column gap-3" aria-labelledby={`${id}-position`}>
         <h3 id={`${id}-position`} className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">{t('Offset & Position Settings')}</h3>
+        <GRadarAlignmentControl value={gRadarAlignment} onChange={handleGRadarAlignmentChange} t={t} />
+        <RangeControl setting={gRadarXSetting} {...rangeProps} />
+        <RangeControl setting={gRadarYSetting} {...rangeProps} />
         {CORNER_OFFSETS.map(setting => <RangeControl key={setting.key} setting={setting} {...rangeProps} />)}
         <Toggle label={t('Merge Power & Pedal Charts')} checked={merged} onToggle={() => onConfigPatch({ telemetrySideBySideCharts: !merged })} />
         {merged ? (

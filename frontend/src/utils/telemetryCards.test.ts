@@ -21,8 +21,8 @@ function setupDOMMock() {
             tagName,
             id,
             classList: {
-                add: (cls: string) => classSet.add(cls),
-                remove: (cls: string) => classSet.delete(cls),
+                add: (...classes: string[]) => classes.forEach(cls => classSet.add(cls)),
+                remove: (...classes: string[]) => classes.forEach(cls => classSet.delete(cls)),
                 contains: (cls: string) => classSet.has(cls)
             },
             style: {
@@ -403,5 +403,72 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         expect(nearbyEl?.innerText).toContain('NEARBY: Horizon Japan Festival');
         expect(coordEl?.innerText).toBe('X:10 Z:15');
     });
-});
 
+    it('handles G-Force Radar alignment, 75% base scale reduction, and defensive offset bounds', () => {
+        const manager = createTelemetryCardsManager();
+        manager.init(container);
+
+        const centerAnchor = document.getElementById('tcCenterAnchor');
+        const wrapper = document.getElementById('tcClusterWrapper');
+
+        // 1. Center alignment (default, scale=1.0, allowed negative and positive offsets)
+        manager.update({}, {
+            telemetryGRadarScale: 1.0,
+            telemetryGRadarAlignment: 'center',
+            telemetryGRadarOffsetX: -50,
+            telemetryGRadarOffsetY: 30
+        });
+
+        expect(centerAnchor?.classList.contains('tc-align-center')).toBe(true);
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-scale')).toBe('1');
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-x')).toBe('-50px');
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-y')).toBe('30px');
+
+        // 2. Left alignment (base scale drops to 75%, negative offset clamped to 0)
+        manager.update({}, {
+            telemetryGRadarScale: 1.0,
+            telemetryGRadarAlignment: 'left',
+            telemetryGRadarOffsetX: -80, // illegal negative offset for left edge
+            telemetryGRadarOffsetY: -20
+        });
+
+        expect(centerAnchor?.classList.contains('tc-align-left')).toBe(true);
+        expect(centerAnchor?.classList.contains('tc-align-center')).toBe(false);
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-scale')).toBe('0.75');
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-x')).toBe('0px');
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-y')).toBe('-20px');
+
+        // 3. Left alignment with valid positive offset
+        manager.update({}, {
+            telemetryGRadarScale: 1.2,
+            telemetryGRadarAlignment: 'left',
+            telemetryGRadarOffsetX: 40,
+            telemetryGRadarOffsetY: 10
+        });
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-scale')).toBe((1.2 * 0.75).toString());
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-x')).toBe('40px');
+
+        // 4. Right alignment (base scale drops to 75%, positive offset clamped to 0)
+        manager.update({}, {
+            telemetryGRadarScale: 1.0,
+            telemetryGRadarAlignment: 'right',
+            telemetryGRadarOffsetX: 100, // illegal positive offset for right edge
+            telemetryGRadarOffsetY: 15
+        });
+
+        expect(centerAnchor?.classList.contains('tc-align-right')).toBe(true);
+        expect(centerAnchor?.classList.contains('tc-align-left')).toBe(false);
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-scale')).toBe('0.75');
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-x')).toBe('0px');
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-y')).toBe('15px');
+
+        // 5. Right alignment with valid negative offset
+        manager.update({}, {
+            telemetryGRadarScale: 1.0,
+            telemetryGRadarAlignment: 'right',
+            telemetryGRadarOffsetX: -60,
+            telemetryGRadarOffsetY: 0
+        });
+        expect(wrapper?.style.getPropertyValue('--tc-gradar-offset-x')).toBe('-60px');
+    });
+});
