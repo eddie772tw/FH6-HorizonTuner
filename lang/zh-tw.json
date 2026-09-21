@@ -48,6 +48,8 @@
   "Forward Target Port": "轉發目標連接埠 (Port)",
   "Target UDP port to forward raw UDP packets to (Default: 5300).": "轉發原生 UDP 封包的目標連接埠（預設：5300）。",
   "Telemetry HUD Elements": "Telemetry 遙測 HUD 元素",
+  "Tape Compass HUD": "刻度式羅盤 HUD",
+  "Compass Position": "羅盤對齊位置",
   "Audio Capture Source": "音訊擷取來源",
   "Refresh Audio Devices": "重新整理音訊裝置",
   "Select Audio Device for Spectrum": "選擇音訊視覺化擷取來源裝置",

@@ -97,6 +97,7 @@ const TELEMETRY_TOGGLES: readonly { key: keyof HudElements; label: string; defau
   { key: 'showTelePedals', label: 'Throttle & Brake Trace' },
   { key: 'showPowerTorque', label: 'Power & Torque Trace', defaultOn: true },
   { key: 'showLiveMap', label: 'Live Map (Track & Cursor)', defaultOn: true },
+  { key: 'showTeleCompass', label: 'Tape Compass HUD', defaultOn: true },
 ];
 const MAP_TOGGLES: readonly { key: keyof HudElements; label: string; defaultOn: true }[] = [
   { key: 'showLiveMapPOIs', label: 'Live Map Landmarks & POIs', defaultOn: true },
@@ -127,6 +128,8 @@ export function HudLayoutPanel({ config, disabled = false, onConfigPatch, onElem
       <section className="col-12 col-lg-4 d-flex flex-column gap-3" aria-labelledby={`${id}-position`}>
         <h3 id={`${id}-position`} className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">{t('Offset & Position Settings')}</h3>
         {CORNER_OFFSETS.map(setting => <RangeControl key={setting.key} setting={setting} {...rangeProps} />)}
+        <PositionControl label="Compass Position" value={config.telemetryCompassPosition ?? 'top'} t={t}
+          onChange={telemetryCompassPosition => onConfigPatch({ telemetryCompassPosition })} />
         <Toggle label={t('Merge Power & Pedal Charts')} checked={merged} onToggle={() => onConfigPatch({ telemetrySideBySideCharts: !merged })} />
         {merged ? (
           <>

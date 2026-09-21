@@ -27,6 +27,7 @@ export interface HudElements {
   showLiveMapPRStunts?: boolean;
   showLiveMapCollectibles?: boolean;
   showLiveMapHeading?: boolean;
+  showTeleCompass?: boolean;
 }
 
 export interface MonitorOption {
@@ -71,6 +72,7 @@ export interface HudConfig {
   telemetryPedalPosition?: 'top' | 'bottom';
   telemetryPowerTorquePosition?: 'top' | 'bottom';
   telemetryMergedChartsPosition?: 'top' | 'bottom';
+  telemetryCompassPosition?: 'top' | 'bottom';
   telemetryCornerOffsetY?: number;
   telemetryCornerOffsetX?: number;
   telemetryPedalOffsetX?: number;
@@ -118,6 +120,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalPosition: 'bottom',
   telemetryPowerTorquePosition: 'top',
   telemetryMergedChartsPosition: 'bottom',
+  telemetryCompassPosition: 'top',
   telemetryCornerOffsetY: 0,
   telemetryCornerOffsetX: 0,
   telemetryPedalOffsetX: 0,
@@ -149,6 +152,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
     showTeleAttitude: true,
     showTeleEngine: true,
     showTelePedals: true,
+    showTeleCompass: true,
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
     showLiveMap: true,

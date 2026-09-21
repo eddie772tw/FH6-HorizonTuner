@@ -10,6 +10,7 @@ import { renderCorners } from './corner-card.js';
 import { renderPedalWave } from './pedal-wave.js';
 import { renderPowerTorque } from './power-torque.js';
 import { renderLiveMap } from './live-map.js';
+import { renderCompass } from './compass.js';
 
 var DEFAULT_PRIMARY_COLOR = '#00f0ff';
 
@@ -62,6 +63,8 @@ init: function (parentEl) {
                 gDot: document.getElementById('tcGDot'),
                 pedalWaveCanvas: document.getElementById('tcPedalWave'),
                 ptCanvas: document.getElementById('tcPowerTorqueChart'),
+                compassContainer: document.getElementById('tcCompassContainer'),
+                compassCanvas: document.getElementById('tcCompassCanvas'),
                 latEl: document.getElementById('tcLatG'),
                 lonEl: document.getElementById('tcLonG'),
                 markersContainer: document.getElementById('tcGMarkers'),
@@ -159,6 +162,7 @@ init: function (parentEl) {
             var showPedals   = showMaster && (elements.showTelePedals     !== false);
             var showPT       = showMaster && (elements.showPowerTorque    !== false);
             var showLiveMap  = showMaster && (elements.showLiveMap        !== false);
+            var showCompass  = showMaster && (elements.showTeleCompass    !== false);
             var showCorners  = showSusp || showSlip || showTemp;
 
             // ---- Central Anchor & Alignment Grid ----
@@ -256,6 +260,22 @@ init: function (parentEl) {
                 }
             }
 
+            // ---- Compass HUD Positioning (Top or Bottom Screen Edge) ----
+            var compassPos = fullConfig.telemetryCompassPosition || 'top';
+            var compassContainer = this.domCache ? this.domCache.compassContainer : document.getElementById('tcCompassContainer');
+            if (compassContainer) {
+                compassContainer.style.display = showCompass ? 'flex' : 'none';
+                var targetCompassParent = (compassPos === 'bottom') ? bottomEdgeContainer : topEdgeContainer;
+                if (targetCompassParent && compassContainer.parentElement !== targetCompassParent) {
+                    if (typeof targetCompassParent.insertBefore === 'function') {
+                        targetCompassParent.insertBefore(compassContainer, targetCompassParent.firstChild);
+                    } else if (typeof targetCompassParent.appendChild === 'function') {
+                        targetCompassParent.appendChild(compassContainer);
+                    }
+                    compassContainer.parentElement = targetCompassParent;
+                }
+            }
+
 
             // ---- Corner Cards (Grid vs Screen Edge Snap Layout) ----
             var cornerEdgeSnap = fullConfig.telemetryCornerEdgeSnap === true || elements.showTeleCornerEdgeSnap === true;
@@ -349,6 +369,13 @@ init: function (parentEl) {
                 var liveMapCanvas = this.domCache ? this.domCache.liveMapCanvas : document.getElementById('tcLiveMapCanvas');
                 if (liveMapCanvas) {
                     renderLiveMap(liveMapCanvas, data, fullConfig);
+                }
+            }
+
+            if (showCompass) {
+                var compassCanvas = this.domCache ? this.domCache.compassCanvas : document.getElementById('tcCompassCanvas');
+                if (compassCanvas) {
+                    renderCompass(compassCanvas, data, fullConfig, this.domCache);
                 }
             }
         },

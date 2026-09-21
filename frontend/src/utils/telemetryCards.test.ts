@@ -9,6 +9,12 @@ import {
 import { getClusterHTML } from '../../../hud_overlay/shared/telemetry-cards/template.js';
 import { createTelemetryCardsManager } from '../../../hud_overlay/shared/telemetry-cards/manager.js';
 import { classifyLiveMapDrift } from '../../../hud_overlay/shared/telemetry-cards/live-map.js';
+import {
+    renderCompass,
+    normalizeAngle,
+    formatHeadingDigits,
+    getNearestCardinal
+} from '../../../hud_overlay/shared/telemetry-cards/compass.js';
 
 // Simple lightweight DOM Mock for Node vitest environment
 function setupDOMMock() {
@@ -43,15 +49,43 @@ function setupDOMMock() {
                 beginPath: () => {},
                 moveTo: () => {},
                 lineTo: () => {},
+                closePath: () => {},
                 arc: () => {},
                 fill: () => {},
                 fillText: () => {},
                 measureText: () => ({ width: 10 }),
                 save: () => {},
-                restore: () => {}
+                restore: () => {},
+                createLinearGradient: () => ({
+                    addColorStop: () => {}
+                })
             }),
+            parentElement: null,
+            get firstChild() {
+                return el.children[0] || null;
+            },
             appendChild: (child: any) => {
+                if (child.parentElement && child.parentElement.children) {
+                    const oldIdx = child.parentElement.children.indexOf(child);
+                    if (oldIdx !== -1) child.parentElement.children.splice(oldIdx, 1);
+                }
                 el.children.push(child);
+                child.parentElement = el;
+                if (child.id) elements[child.id] = child;
+                return child;
+            },
+            insertBefore: (child: any, refChild: any) => {
+                if (child.parentElement && child.parentElement.children) {
+                    const oldIdx = child.parentElement.children.indexOf(child);
+                    if (oldIdx !== -1) child.parentElement.children.splice(oldIdx, 1);
+                }
+                const idx = refChild ? el.children.indexOf(refChild) : -1;
+                if (idx === -1) {
+                    el.children.push(child);
+                } else {
+                    el.children.splice(idx, 0, child);
+                }
+                child.parentElement = el;
                 if (child.id) elements[child.id] = child;
                 return child;
             }
@@ -402,6 +436,91 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         expect(nearbyEl?.style.display).toBe('block');
         expect(nearbyEl?.innerText).toContain('NEARBY: Horizon Japan Festival');
         expect(coordEl?.innerText).toBe('X:10 Z:15');
+    });
+
+    it('compass HUD: getClusterHTML includes tcCompassContainer with 50vw width and borderless transparent style', () => {
+        const html = getClusterHTML(1.0, 1.0);
+        expect(html).toContain('id="tcCompassContainer"');
+        expect(html).toContain('id="tcCompassCanvas"');
+        expect(html).toContain('.tc-compass-container');
+        expect(html).toContain('width: 50vw;');
+        expect(html).toContain('background: transparent;');
+        expect(html).toContain('border: none;');
+        expect(html).toContain('filter: drop-shadow(');
+    });
+
+    it('compass HUD: heading math correctly normalizes angles, digits, and cardinal points', () => {
+        expect(normalizeAngle(0)).toBe(0);
+        expect(normalizeAngle(360)).toBe(0);
+        expect(normalizeAngle(-90)).toBe(270);
+        expect(normalizeAngle(450)).toBe(90);
+
+        expect(formatHeadingDigits(0)).toBe('000');
+        expect(formatHeadingDigits(5)).toBe('005');
+        expect(formatHeadingDigits(45)).toBe('045');
+        expect(formatHeadingDigits(359)).toBe('359');
+
+        expect(getNearestCardinal(0)).toBe('N');
+        expect(getNearestCardinal(44)).toBe('NE');
+        expect(getNearestCardinal(45)).toBe('NE');
+        expect(getNearestCardinal(90)).toBe('E');
+        expect(getNearestCardinal(135)).toBe('SE');
+        expect(getNearestCardinal(180)).toBe('S');
+        expect(getNearestCardinal(225)).toBe('SW');
+        expect(getNearestCardinal(270)).toBe('W');
+        expect(getNearestCardinal(315)).toBe('NW');
+        expect(getNearestCardinal(358)).toBe('N');
+    });
+
+    it('compass HUD: telemetryCompassPosition toggles placement between top and bottom edge containers', () => {
+        const manager = createTelemetryCardsManager();
+        manager.init(container);
+
+        const topContainer = document.getElementById('tcTopEdgeContainer');
+        const bottomContainer = document.getElementById('tcBottomEdgeContainer');
+        const compassContainer = document.getElementById('tcCompassContainer');
+
+        // Default position: top
+        manager.update({}, {
+            telemetryCompassPosition: 'top',
+            elements: { showTeleCompass: true }
+        });
+        expect(compassContainer?.parentElement).toBe(topContainer);
+        expect(compassContainer?.style.display).toBe('flex');
+
+        // Switch to bottom
+        manager.update({}, {
+            telemetryCompassPosition: 'bottom',
+            elements: { showTeleCompass: true }
+        });
+        expect(compassContainer?.parentElement).toBe(bottomContainer);
+
+        // Toggle showTeleCompass to false
+        manager.update({}, {
+            elements: { showTeleCompass: false }
+        });
+        expect(compassContainer?.style.display).toBe('none');
+    });
+
+    it('compass HUD: renderCompass executes cleanly with different yaw angles without errors', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 52;
+
+        // Yaw = 0 (North)
+        expect(() => renderCompass(canvas, { Yaw: 0 }, { customColor: '#00f0ff' })).not.toThrow();
+
+        // Yaw = PI/2 (East, 90 deg)
+        expect(() => renderCompass(canvas, { Yaw: Math.PI / 2 }, {})).not.toThrow();
+
+        // Yaw = PI (South, 180 deg)
+        expect(() => renderCompass(canvas, { Yaw: Math.PI }, {})).not.toThrow();
+
+        // Yaw = -PI/2 (West, 270 deg)
+        expect(() => renderCompass(canvas, { Yaw: -Math.PI / 2 }, {})).not.toThrow();
+
+        // Empty/null data
+        expect(() => renderCompass(canvas, null, {})).not.toThrow();
     });
 });
 
