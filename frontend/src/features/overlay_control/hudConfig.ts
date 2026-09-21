@@ -22,11 +22,6 @@ export interface HudElements {
   showTelePedals: boolean;
   showTeleCenterAnchor: boolean;
   showTeleGridLines: boolean;
-  showLiveMap?: boolean;
-  showLiveMapPOIs?: boolean;
-  showLiveMapPRStunts?: boolean;
-  showLiveMapCollectibles?: boolean;
-  showLiveMapHeading?: boolean;
 }
 
 export interface MonitorOption {
@@ -64,8 +59,6 @@ export interface HudConfig {
   telemetryPedalScale?: number;
   telemetryPowerTorqueScale?: number;
   telemetryMergedChartsScale?: number;
-  telemetryLiveMapScale?: number;
-  telemetryLiveMapOpacity?: number;
   telemetryCardFontScale?: number;
   telemetrySideBySideCharts?: boolean;
   telemetryPedalPosition?: 'top' | 'bottom';
@@ -76,8 +69,6 @@ export interface HudConfig {
   telemetryPedalOffsetX?: number;
   telemetryPowerTorqueOffsetX?: number;
   telemetryMergedChartsOffsetX?: number;
-  telemetryLiveMapOffsetX?: number;
-  telemetryLiveMapOffsetY?: number;
   vfdVuOffset?: number;
   vfdAudioOffset?: number;
   glowIntensity?: number;
@@ -111,8 +102,6 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,
   telemetryMergedChartsScale: 1.0,
-  telemetryLiveMapScale: 1.0,
-  telemetryLiveMapOpacity: 1.0,
   telemetryCardFontScale: 1.0,
   telemetrySideBySideCharts: true,
   telemetryPedalPosition: 'bottom',
@@ -123,8 +112,6 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   telemetryPedalOffsetX: 0,
   telemetryPowerTorqueOffsetX: 0,
   telemetryMergedChartsOffsetX: 0,
-  telemetryLiveMapOffsetX: 0,
-  telemetryLiveMapOffsetY: 0,
   vfdVuOffset: 0,
   vfdAudioOffset: 0,
   glowIntensity: 1.0,
@@ -151,11 +138,6 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
     showTelePedals: true,
     showTeleCenterAnchor: false,
     showTeleGridLines: false,
-    showLiveMap: true,
-    showLiveMapPOIs: true,
-    showLiveMapPRStunts: true,
-    showLiveMapCollectibles: true,
-    showLiveMapHeading: true,
   },
   soundEnabled: false,
 };

@@ -9,7 +9,6 @@ import { renderGRadar } from './g-radar.js';
 import { renderCorners } from './corner-card.js';
 import { renderPedalWave } from './pedal-wave.js';
 import { renderPowerTorque } from './power-torque.js';
-import { renderLiveMap } from './live-map.js';
 
 var DEFAULT_PRIMARY_COLOR = '#00f0ff';
 
@@ -48,7 +47,6 @@ init: function (parentEl) {
             // Cache DOM elements
             this.domCache = {
                 wrapper: document.getElementById('tcClusterWrapper'),
-                liveMapContainer: document.getElementById('tcLiveMapContainer'),
                 centerAnchor: document.getElementById('tcCenterAnchor'),
                 centerRadar: document.getElementById('tcCenterRadarContainer'),
                 gridLinesEl: document.getElementById('tcGridLines'),
@@ -57,7 +55,6 @@ init: function (parentEl) {
                 pedalContainer: document.getElementById('tcPedalWaveContainer'),
                 ptContainer: document.getElementById('tcPowerTorqueContainer'),
                 gridContainer: document.getElementById('tcGridContainer'),
-                liveMapCanvas: document.getElementById('tcLiveMapCanvas'),
                 gCircle: document.getElementById('tcGRadarCircle'),
                 gDot: document.getElementById('tcGDot'),
                 pedalWaveCanvas: document.getElementById('tcPedalWave'),
@@ -116,11 +113,6 @@ init: function (parentEl) {
             var pedalOffsetX  = fullConfig.telemetryPedalOffsetX  || 0;
             var ptOffsetX     = fullConfig.telemetryPowerTorqueOffsetX || 0;
 
-            var liveMapOffsetX = fullConfig.telemetryLiveMapOffsetX || 0;
-            var liveMapOffsetY = fullConfig.telemetryLiveMapOffsetY || 0;
-            var liveMapOpacity = fullConfig.telemetryLiveMapOpacity !== undefined ? fullConfig.telemetryLiveMapOpacity : 1.0;
-            var liveMapScale   = fullConfig.telemetryLiveMapScale   !== undefined ? fullConfig.telemetryLiveMapScale   : 1.0;
-
             var useDefaultColors = fullConfig.useDefaultColors !== false;
             var primaryColor = useDefaultColors
                 ? DEFAULT_PRIMARY_COLOR
@@ -141,14 +133,6 @@ init: function (parentEl) {
                 }
             }
 
-            var liveMapContainer = this.domCache ? this.domCache.liveMapContainer : document.getElementById('tcLiveMapContainer');
-            if (liveMapContainer && typeof liveMapContainer.style.setProperty === 'function') {
-                if (_lastStyles['liveMapOffsetX'] !== liveMapOffsetX) { liveMapContainer.style.setProperty('--tc-live-map-offset-x', liveMapOffsetX + 'px'); _lastStyles['liveMapOffsetX'] = liveMapOffsetX; }
-                if (_lastStyles['liveMapOffsetY'] !== liveMapOffsetY) { liveMapContainer.style.setProperty('--tc-live-map-offset-y', liveMapOffsetY + 'px'); _lastStyles['liveMapOffsetY'] = liveMapOffsetY; }
-                if (_lastStyles['liveMapOpacity'] !== liveMapOpacity) { liveMapContainer.style.setProperty('--tc-live-map-opacity',  liveMapOpacity.toString()); _lastStyles['liveMapOpacity'] = liveMapOpacity; }
-                if (_lastStyles['liveMapScale'] !== liveMapScale) { liveMapContainer.style.setProperty('--tc-live-map-scale',    liveMapScale.toString()); _lastStyles['liveMapScale'] = liveMapScale; }
-            }
-
             // ---- Element Visibility Toggles ----
             var showMaster   = elements.showTeleMaster     !== false;
             var showAttitude = showMaster && (elements.showTeleAttitude   !== false);
@@ -158,7 +142,6 @@ init: function (parentEl) {
             var showTemp     = showMaster && (elements.showTeleTiresTemp !== undefined ? (elements.showTeleTiresTemp !== false) : showTires);
             var showPedals   = showMaster && (elements.showTelePedals     !== false);
             var showPT       = showMaster && (elements.showPowerTorque    !== false);
-            var showLiveMap  = showMaster && (elements.showLiveMap        !== false);
             var showCorners  = showSusp || showSlip || showTemp;
 
             // ---- Central Anchor & Alignment Grid ----
@@ -304,11 +287,6 @@ init: function (parentEl) {
                 if (tempBlock) tempBlock.style.display = showTemp ? 'flex' : 'none';
             }
 
-            var liveMapContainer = this.domCache ? this.domCache.liveMapContainer : document.getElementById('tcLiveMapContainer');
-            if (liveMapContainer) {
-                liveMapContainer.style.display = showLiveMap ? 'block' : 'none';
-            }
-
             if (!data) return;
 
             var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -343,13 +321,6 @@ init: function (parentEl) {
 
             if (showPT) {
                 renderPowerTorque(data, this.powerTorqueHist, now, this.domCache);
-            }
-
-            if (showLiveMap) {
-                var liveMapCanvas = this.domCache ? this.domCache.liveMapCanvas : document.getElementById('tcLiveMapCanvas');
-                if (liveMapCanvas) {
-                    renderLiveMap(liveMapCanvas, data, fullConfig);
-                }
             }
         },
 

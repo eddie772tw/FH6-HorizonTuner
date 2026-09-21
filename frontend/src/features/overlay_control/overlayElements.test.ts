@@ -6,7 +6,7 @@ describe('Overlay Telemetry HUD Elements & Audio Device Contract', () => {
       showTeleMaster: true,
       showTeleSuspension: true,
       showTeleTires: true,
-      showLiveMap: true,
+      showPowerTorque: true,
     };
     expect(defaultElements.showTeleMaster).toBe(true);
   });
@@ -16,16 +16,16 @@ describe('Overlay Telemetry HUD Elements & Audio Device Contract', () => {
       showTeleMaster: false,
       showTeleSuspension: true,
       showTeleTires: true,
-      showLiveMap: true,
+      showPowerTorque: true,
     };
 
     const isMasterOn = elements.showTeleMaster !== false;
     const isSuspensionVisible = isMasterOn && (elements.showTeleSuspension !== false);
-    const isLiveMapVisible = isMasterOn && (elements.showLiveMap !== false);
+    const isPowerTorqueVisible = isMasterOn && (elements.showPowerTorque !== false);
 
     expect(isMasterOn).toBe(false);
     expect(isSuspensionVisible).toBe(false);
-    expect(isLiveMapVisible).toBe(false);
+    expect(isPowerTorqueVisible).toBe(false);
   });
 
   it('evaluates child element visibility normally when showTeleMaster is true', () => {
@@ -33,17 +33,17 @@ describe('Overlay Telemetry HUD Elements & Audio Device Contract', () => {
       showTeleMaster: true,
       showTeleSuspension: true,
       showTeleTires: false,
-      showLiveMap: true,
+      showPowerTorque: true,
     };
 
     const isMasterOn = elements.showTeleMaster !== false;
     const isSuspensionVisible = isMasterOn && (elements.showTeleSuspension !== false);
     const isTiresVisible = isMasterOn && (elements.showTeleTires !== false);
-    const isLiveMapVisible = isMasterOn && (elements.showLiveMap !== false);
+    const isPowerTorqueVisible = isMasterOn && (elements.showPowerTorque !== false);
 
     expect(isMasterOn).toBe(true);
     expect(isSuspensionVisible).toBe(true);
     expect(isTiresVisible).toBe(false);
-    expect(isLiveMapVisible).toBe(true);
+    expect(isPowerTorqueVisible).toBe(true);
   });
 });
