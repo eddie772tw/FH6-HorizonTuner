@@ -74,12 +74,17 @@ def observation_weights(points: list[dict]) -> tuple[list[float], dict]:
 
 
 def distribution(values: list[float | None], weights: list[float]) -> dict:
-    pairs = sorted(
-        (value, weight)
-        for value, weight in zip(values, weights)
-        if finite(value) and weight > 0
-    )
-    exposure = sum(weight for _, weight in pairs)
+    pairs = []
+    exposure = 0.0
+    weighted_sum = 0.0
+    for value, weight in zip(values, weights):
+        if finite(value) and weight > 0:
+            pairs.append((value, weight))
+            exposure += weight
+            weighted_sum += value * weight
+
+    pairs.sort(key=lambda x: x[0])
+
     result = {
         "observedSeconds": exposure,
         "mean": None,
@@ -89,14 +94,26 @@ def distribution(values: list[float | None], weights: list[float]) -> dict:
     }
     if not exposure:
         return result
-    result["mean"] = sum(value * weight for value, weight in pairs) / exposure
-    for key, fraction in (("p05", 0.05), ("p50", 0.5), ("p95", 0.95)):
-        accumulated = 0.0
-        for value, weight in pairs:
-            accumulated += weight
-            if accumulated >= fraction * exposure:
-                result[key] = value
-                break
+
+    result["mean"] = weighted_sum / exposure
+
+    thresholds = [
+        ("p05", 0.05 * exposure),
+        ("p50", 0.5 * exposure),
+        ("p95", 0.95 * exposure),
+    ]
+
+    accumulated = 0.0
+    threshold_idx = 0
+
+    for value, weight in pairs:
+        accumulated += weight
+        while threshold_idx < 3 and accumulated >= thresholds[threshold_idx][1]:
+            result[thresholds[threshold_idx][0]] = value
+            threshold_idx += 1
+        if threshold_idx >= 3:
+            break
+
     return result
 
 
