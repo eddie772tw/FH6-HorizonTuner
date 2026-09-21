@@ -17,6 +17,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
   const latRef = useRef<HTMLSpanElement>(null);
   const lonRef = useRef<HTMLSpanElement>(null);
   const hist = useRef<{ lat: number; lon: number; time: number }[]>([]);
+  const offsetRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const markerCanvasRef = useRef<HTMLCanvasElement>(null);
   const sizeRef = useRef<number>(propSize || 170);
@@ -36,6 +37,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
         dotRef.current.style.transform = `translate(-50%, -50%) translate(0px, 0px)`;
       }
       hist.current = [];
+      offsetRef.current = 0;
     }
   }, [renderRadar]);
 
@@ -95,6 +97,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
         (prevRace.current !== null && prevRace.current !== data.IsRaceOn)
       ) {
         hist.current = [];
+        offsetRef.current = 0;
       }
       prevCar.current = data.CarOrdinal;
       prevRace.current = data.IsRaceOn;
@@ -114,6 +117,7 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
 
       if (!renderRadar) {
         hist.current = [];
+        offsetRef.current = 0;
         if (dotRef.current) {
           dotRef.current.style.transform = `translate(-50%, -50%) translate(0px, 0px)`;
         }
@@ -123,16 +127,18 @@ const GForceRadar: React.FC<GForceRadarProps> = React.memo(({ size: propSize, re
       if (!isMoving) {
         for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
       } else {
+        // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
         if (hist.current.length < 900) {
           hist.current.push({ lat, lon, time: now });
         } else {
-          const old = hist.current.shift();
+          const idx = offsetRef.current;
+          const old = hist.current[idx];
           if (old) {
             old.lat = lat;
             old.lon = lon;
             old.time = now;
-            hist.current.push(old);
           }
+          offsetRef.current = (idx + 1) % 900;
         }
       }
 

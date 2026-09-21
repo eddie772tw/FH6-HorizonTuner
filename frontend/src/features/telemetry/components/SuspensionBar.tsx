@@ -24,6 +24,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
   const { t } = useSettings();
   
   const hist = useRef<{travel: number, time: number}[]>([]);
+  const offsetRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const minMax = useRef<{ min: number | null, max: number | null }>({ min: null, max: null });
   const prevCar = useRef<number | null>(null);
@@ -31,12 +32,14 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
 
   useEffect(() => {
     hist.current = [];
+    offsetRef.current = 0;
     minMax.current = { min: null, max: null };
   }, [displayMode]);
 
   useEffect(() => {
     if (!renderHistoryTrace) {
       hist.current = [];
+      offsetRef.current = 0;
       const canvas = canvasRef.current;
       if (canvas && canvas.width > 0 && canvas.height > 0) {
         const ctx = canvas.getContext('2d');
@@ -103,6 +106,7 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
       if ((prevCar.current !== null && prevCar.current !== liveData.CarOrdinal) ||
           (prevRace.current !== null && prevRace.current !== liveData.IsRaceOn)) {
         hist.current = [];
+        offsetRef.current = 0;
         minMax.current = { min: null, max: null };
       }
       prevCar.current = liveData.CarOrdinal;
@@ -133,18 +137,22 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
         if (!isMoving) {
           for (let i = 0; i < hist.current.length; i++) hist.current[i].time += dt;
         } else {
+          // [PERF] Use O(1) circular buffer instead of O(N) Array.shift() in 60Hz loop
           if (hist.current.length < 180) {
             hist.current.push({ travel: normalizedTravel, time: now });
           } else {
-            const old = hist.current.shift();
+            const idx = offsetRef.current;
+            const old = hist.current[idx];
             if (old) {
-               old.travel = normalizedTravel; old.time = now;
-               hist.current.push(old);
+              old.travel = normalizedTravel;
+              old.time = now;
             }
+            offsetRef.current = (idx + 1) % 180;
           }
         }
       } else {
         hist.current = [];
+        offsetRef.current = 0;
       }
 
       const percent = Math.max(0, Math.min(100, normalizedTravel * 100));
@@ -176,12 +184,15 @@ const SuspensionBar: React.FC<SuspensionBarProps> = React.memo(({ title, isLeft,
             ctx.lineWidth = 2 * dpr;
             ctx.lineJoin = 'round';
     
-            const maxT = hist.current.length > 0 ? hist.current[hist.current.length - 1].time : 0;
-            for (let i = 0; i < hist.current.length; i++) {
-              const p = hist.current[i];
+            const len = hist.current.length;
+            const latestIdx = (offsetRef.current - 1 + len) % len;
+            const maxT = hist.current[latestIdx].time;
+            for (let k = 0; k < len; k++) {
+              const idx = (offsetRef.current + k) % len;
+              const p = hist.current[idx];
               const x = w - ((maxT - p.time) / 2500) * w; 
               const y = h - (p.travel * h);
-              if (i === 0) ctx.moveTo(x, y);
+              if (k === 0) ctx.moveTo(x, y);
               else ctx.lineTo(x, y);
             }
             ctx.stroke();
