@@ -101,6 +101,9 @@ pub fn atomic_json(path: &Path, value: &Value) -> ApiResult<()> {
 }
 pub fn initialize(root: &Path) -> ApiResult<()> {
     for directory in DIRECTORIES {
+        if *directory == "hud_overlay" && !crate::platform::HUD_ENABLED {
+            continue;
+        }
         fs::create_dir_all(root.join(directory))?;
     }
     for (name, bytes) in crate::assets::EMBEDDED {

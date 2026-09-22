@@ -1,9 +1,11 @@
 /** App navigation contracts are data-only: importing them never loads a feature UI. */
+import { getRuntimeCapabilities, type RuntimeCapabilities } from '../services/runtimeCapabilities';
 export type WorkspaceId = 'live' | 'tune' | 'sessions' | 'hud';
 export type AppVariant = 'full' | 'lite';
 export type AppSurface = 'settings' | 'appearance' | 'diagnostics' | 'updates' | 'about' | 'companion';
 
 export interface AppCapabilities {
+  readonly hudOverlay: boolean;
   readonly tuning: boolean;
   readonly sessions: boolean;
   readonly developerTuning: boolean;
@@ -20,26 +22,26 @@ export const WORKSPACES: readonly WorkspaceDefinition[] = [
   { id: 'live', label: 'Live' },
   { id: 'tune', label: 'Tune', capability: 'tuning' },
   { id: 'sessions', label: 'Sessions', capability: 'sessions' },
-  { id: 'hud', label: 'HUD' },
+  { id: 'hud', label: 'HUD', capability: 'hudOverlay' },
 ];
 
 const VARIANTS: Readonly<Record<AppVariant, AppCapabilities>> = {
-  full: { tuning: true, sessions: true, developerTuning: true, launchTest: true },
-  lite: { tuning: false, sessions: false, developerTuning: false, launchTest: false },
+  full: { tuning: true, sessions: true, developerTuning: true, launchTest: true, hudOverlay: true },
+  lite: { tuning: false, sessions: false, developerTuning: false, launchTest: false, hudOverlay: true },
 };
 
-export function getAppCapabilities(variant: AppVariant): AppCapabilities {
-  return VARIANTS[variant];
+export function getAppCapabilities(variant: AppVariant, runtime: Pick<RuntimeCapabilities, 'hudOverlay'> = getRuntimeCapabilities()): AppCapabilities {
+  return { ...VARIANTS[variant], hudOverlay: runtime.hudOverlay };
 }
 
-export function getWorkspaces(variant: AppVariant): readonly WorkspaceDefinition[] {
-  const capabilities = getAppCapabilities(variant);
+export function getWorkspaces(variant: AppVariant, runtime: Pick<RuntimeCapabilities, 'hudOverlay'> = getRuntimeCapabilities()): readonly WorkspaceDefinition[] {
+  const capabilities = getAppCapabilities(variant, runtime);
   return WORKSPACES.filter(item => !item.capability || capabilities[item.capability]);
 }
 
 /** Used at every entry point, including intents and stale stored selections. */
-export function resolveWorkspace(variant: AppVariant, requested: unknown): WorkspaceId {
-  return getWorkspaces(variant).find(item => item.id === requested)?.id ?? 'live';
+export function resolveWorkspace(variant: AppVariant, requested: unknown, runtime: Pick<RuntimeCapabilities, 'hudOverlay'> = getRuntimeCapabilities()): WorkspaceId {
+  return getWorkspaces(variant, runtime).find(item => item.id === requested)?.id ?? 'live';
 }
 
 /** Different domain identifiers remain different intent alternatives. */

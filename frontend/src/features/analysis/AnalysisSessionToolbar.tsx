@@ -1,4 +1,5 @@
 import React from "react";
+import { getRuntimeCapabilities } from '../../services/runtimeCapabilities';
 import type { SavedSessionHeader, LapSummary } from "../../context/TelemetryRecorderContext";
 
 export interface AnalysisSessionToolbarProps {
@@ -138,9 +139,9 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         )}
 
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.8rem", flexWrap: "wrap" }}>
-          <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
+          {getRuntimeCapabilities().localMotecLaunch && <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
-          </button>
+          </button>}
           <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-sm btn-secondary">
             MoTeC CSV {t("Export")}
           </button>

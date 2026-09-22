@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export interface BackendStatus {
-  state: "starting" | "ready" | "failed";
+  state: "starting" | "ready" | "failed" | "updating";
   port: number | null;
   error: string | null;
 }

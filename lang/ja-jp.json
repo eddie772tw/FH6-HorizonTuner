@@ -1262,5 +1262,15 @@
   "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.": "続行すると、デコード済みフレームと測定概要を一緒に保存します。上限は 30,000 フレームです。チューニングの手順を切り替えても記録は保持されます。記録の再開やアプリの終了前にエクスポートしてください。",
   "Unable to open the requested session. Check the connection and try again.": "指定した走行記録を開けません。接続を確認して再試行してください。",
   "A · {number} · {date}": "A · {number} · {date}",
-  "B · {number} · {date}": "B · {number} · {date}"
+  "B · {number} · {date}": "B · {number} · {date}",
+  "Data Out destination": "Data Out の送信先",
+  "On the device running FH6, send Data Out to this computer on the same local network.": "FH6 を実行する端末から、同じ LAN にあるこのコンピューターへ Data Out を送信してください。",
+  "No LAN receiver address is available. Connect this computer to the local network and restart the app.": "利用可能な LAN 受信アドレスがありません。このコンピューターを LAN に接続してアプリを再起動してください。",
+  "When Forza runs on this PC, use destination IP": "Forza をこの PC で実行する場合の送信先 IP",
+  "and UDP port": "および UDP ポート",
+  "Receiver addresses are unavailable.": "受信アドレスを取得できません。",
+  "Loading receiver addresses…": "受信アドレスを読み込み中…",
+  "Choose the address on the game device’s network. Allow incoming UDP on the displayed port; after changing networks, restart the app.": "ゲーム端末と同じネットワークのアドレスを選び、表示されたポートへの UDP 受信を許可してください。ネットワーク変更後はアプリを再起動してください。",
+  "Use one of the receiver addresses below and its UDP port.": "以下の受信アドレスと UDP ポートを使用してください。",
+  "Enable Data Out, then set the destination IP and UDP port.": "Data Out を有効にして、送信先 IP と UDP ポートを設定してください。"
 }

@@ -296,9 +296,10 @@ pub async fn run(options: Options) -> Result<(), String> {
         }
     };
     let settings = app.config.settings();
-    let udp_port = std::env::var("TELEMETRY_PORT")
+    let environment_udp_port = std::env::var("TELEMETRY_PORT")
         .ok()
-        .and_then(|s| s.parse::<u16>().ok())
+        .and_then(|s| s.parse::<u16>().ok());
+    let udp_port = environment_udp_port
         .or_else(|| {
             settings["telemetry_port"]
                 .as_u64()
@@ -309,6 +310,12 @@ pub async fn run(options: Options) -> Result<(), String> {
         crate::diagnostics::write_log(&options.data_dir, "ERROR", &error);
         error
     })?;
+    *lock(&app.telemetry_binding) = crate::platform::TelemetryBinding::from_addresses(
+        initial_sockets
+            .iter()
+            .filter_map(|s| s.local_addr().ok())
+            .collect(),
+    );
     let port_file = options.data_dir.join("logs/web_port.txt");
     let temporary = port_file.with_extension("txt.tmp");
     std::fs::write(&temporary, port.to_string()).map_err(|e| e.to_string())?;
@@ -347,16 +354,14 @@ pub async fn run(options: Options) -> Result<(), String> {
         }
         worker_app.shutdown();
     });
-    let overlay = overlay_worker(app.clone(), stopping.clone());
+    let overlay =
+        crate::platform::HUD_ENABLED.then(|| overlay_worker(app.clone(), stopping.clone()));
     app.native.discord_start();
     let udp_app = app.clone();
     let udp_stop = stop_rx.clone();
     let mut config_updates = app.config.settings_changed.subscribe();
     let udp = tokio::spawn(async move {
-        let mut current_port = config_updates.borrow()["telemetry_port"]
-            .as_u64()
-            .and_then(|p| u16::try_from(p).ok())
-            .unwrap_or(8000);
+        let mut current_port = udp_port;
         let mut sockets = initial_sockets;
         let mut stop = udp_stop;
         let mut tasks = Vec::new();
@@ -370,7 +375,30 @@ pub async fn run(options: Options) -> Result<(), String> {
                     stop.clone(),
                 )));
             }
-            tokio::select! {_=stop.changed()=>break,changed=config_updates.changed()=>{if changed.is_err(){break;}let next=config_updates.borrow().get("telemetry_port").and_then(Value::as_u64).and_then(|p|u16::try_from(p).ok());if let Some(next)=next.filter(|p|*p!=current_port){for task in tasks.drain(..){task.abort();let _=task.await;}match bind_udp(next){Ok(bound)=>{sockets=bound;current_port=next;},Err(error)=>eprintln!("{error}")}}}}
+            tokio::select! {
+                _ = stop.changed() => break,
+                changed = config_updates.changed() => {
+                    if changed.is_err() { break; }
+                    let next = environment_udp_port.or_else(|| config_updates.borrow().get("telemetry_port")
+                        .and_then(Value::as_u64).and_then(|p| u16::try_from(p).ok()));
+                    if let Some(next) = next.filter(|p| *p != current_port) {
+                        match bind_udp(next) {
+                            Ok(bound) => {
+                                for task in tasks.drain(..) { task.abort(); let _ = task.await; }
+                                *lock(&udp_app.telemetry_binding) = crate::platform::TelemetryBinding::from_addresses(
+                                    bound.iter().filter_map(|s| s.local_addr().ok()).collect(),
+                                );
+                                sockets = bound;
+                                current_port = next;
+                            }
+                            Err(error) => {
+                                lock(&udp_app.telemetry_binding).error = Some(error.clone());
+                                eprintln!("{error}");
+                            }
+                        }
+                    }
+                }
+            }
         }
         for task in tasks {
             task.abort();
@@ -422,7 +450,9 @@ pub async fn run(options: Options) -> Result<(), String> {
     let _ = udp.await;
     stopping.store(true, Ordering::Release);
     let _ = worker.join();
-    let _ = overlay.join();
+    if let Some(overlay) = overlay {
+        let _ = overlay.join();
+    }
     crate::diagnostics::write_log(
         &options.data_dir,
         "INFO",

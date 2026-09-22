@@ -2769,3 +2769,13 @@
 - **決策**：Android Compose 統一持有 Telemetry／Tuning／Connection 分頁、離線提示、QR 優先的連線設定、折疊式手動欄位與診斷資訊；只有連線後的共用遙測圖表與 Tuning 內容由 WebView 呈現。原生與 WebView 對齊深色面板、青色作用中分頁及藍色操作按鈕；初次連線前延後建立 WebView。
 - **實機驗證**：平板 `bd411745` 在 LAN 連線前後使用同一組 Compose 分頁；Telemetry 五卡、Tuning 等待桌面快照頁、Connection 進階欄位均可切換。切換 LAN／USB 會先斷開舊連線，避免模式與實際通道不一致；USB 無反向轉發時顯示 `ERR_CONNECTION_REFUSED`、重試與返回主畫面，返回後仍可用原生分頁。連線指示區分 WebView 載入、Companion 後端輪詢及桌面前端心跳，以免後端離線誤報為只有前端未連線。
 - **驗證**：Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功；前端 135 files／941 tests 與 production build 成功；Python Ruff check／format 與 349 passed／8 deselected。實機 sidecar-only 連線為黃色「桌面前端未連線」，停止測試 sidecar 後後端輪詢轉 Offline、badge 轉紅，沒有繼續誤報黃色；CI 結果見 PR #425 的最終驗證紀錄。
+## 2026-09-22 / 跨平台 Full 發行與獨立 OTA channel
+
+- **範圍**：依使用者修正，先將 `codex/cross-platform-release-ota` 建立於更新後 `origin/main` 的 `b6259865a442dedf90062eb6e46bc0ef95fea686`，不沿用 Companion 架構分支。採用 `portable-release-validation`、`modular-refactoring`、`halfmoon-design-system`、`huge-component-refactoring`。產品基礎已遷移 Rust，因此原生套件使用 Rust sidecar，而非重新引入 Python 打包。
+- **能力邊界**：macOS ARM64 Full 與 Linux x86_64 Full 使用 no-HUD Cargo feature profile 及前端 LAN 入口。Rust 不嵌入 HUD，不建立音訊／媒體 worker；Vite 模組圖拒絕 HUD／overlay_control imports。Live 頁面的 HUD 設定讀取與 BroadcastChannel 也必須受能力控制，僅移除 HUD 導航並不足夠。
+- **可重現的 port 問題**：啟動時 `TELEMETRY_PORT` 與設定檔 port 不同，儲存語言等設定曾使新的接收器控制邏輯切回設定 port。環境變數現在在啟動及設定更新時均優先，runtime API 只回報成功 bind 的地址。重新 bind 失敗時保留原接收器，回報錯誤。
+- **OTA 與重跑**：payload／signature 不可覆寫已發布的不同 bytes；驗證上傳內容後才發布 manifest。carry-forward 保存舊 runtime version、URL、簽章，不為首次失敗的平台假造 channel。GitHub asset 替換不具原子性，保留短暫空窗與重跑復原說明。publisher-only retry 必須使用不含 `run_attempt` 的 artifact 名稱，才能下載先前成功建置的同一組 bytes；實際 GitHub 重跑仍待 CI 驗證。
+- **本機證據**：前端 131 files／930 tests；Windows Full／Lite 與 LAN bundle 建置；Rust 有 HUD／無 HUD 契約；Tauri host 單元測試；24 個發布／簽章工具測試；三份 workflow 的 Actionlint、Ruff、version consistency、Rust format 及 diff whitespace 檢查。Windows release sidecar 與 Tauri EXE 可編譯。macOS／Linux `cargo tree --target ... --no-default-features --edges normal` 不含 rustfft 與 Windows API crates。
+- **受控介面／程序證據**：以暫存資料目錄啟動 Windows 上的 no-HUD backend 與 LAN web bundle，導航僅有 Live／Tune／Sessions；Data Out 顯示實際 LAN IP 與覆寫 port 18000，20 個合成封包顯示 20 個有效影格。檢查 default／modern／elegant 深淺主題，無新增 console error。獨立 smoke helper 驗證 `embeddedHudFiles=0`、HTTP occupied-port fallback、10 個合成封包、stdin EOF 與 UDP port 釋放；證據保存在本機 ignored `scratch/lan-backend-smoke-ig2c9ocu/`。
+- **限制**：Windows no-HUD 編譯／本機 UDP 與瀏覽器介面，不等於 macOS／Linux 原生套件、GTK／Cocoa 儲存視窗、完整 OTA 安裝或真實跨機 FH6 驗收。native CI 已接入相同 reusable packaging workflow，PR／手動測試使用臨時簽章，不發布 Release。未以本次本機結果宣稱跨平台驗收完成。
+- **操作文件**：[跨平台發行指南](../docs/guides/cross-platform-release.md)。

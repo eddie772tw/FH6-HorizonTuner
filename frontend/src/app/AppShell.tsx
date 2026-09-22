@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, Suspense, type ComponentType 
 import { useCarParams } from '../context/CarParamsContext';
 import { useSettings } from '../context/SettingsContext';
 import { useTelemetry } from '../hooks/useTelemetry';
-import { useOverlayWebSocket } from '../hooks/useOverlayWebSocket';
+import { HudRuntime } from '@platform/hud';
 import DiagnosticConsole from '../components/DiagnosticConsole';
 import ThemeView from '../features/theme/ThemeView';
 import SettingsView from '../features/settings/SettingsView';
@@ -32,12 +32,11 @@ interface SessionOpenRequest {
 /** Transport and car synchronization outlive the active page and its canvases. */
 function AppRuntime({ activeWorkspace }: { activeWorkspace: WorkspaceId }) {
   useTelemetry();
-  useOverlayWebSocket();
   const { carId, setCarId, telemetryCarId } = useCarParams();
   useEffect(() => {
     if (activeWorkspace === 'live' && telemetryCarId && telemetryCarId !== '0' && carId !== telemetryCarId) setCarId(telemetryCarId);
   }, [activeWorkspace, telemetryCarId, carId, setCarId]);
-  return null;
+  return <HudRuntime />;
 }
 
 export function AppShell({ variant, workspaces, Runtime, prepareSession }: {

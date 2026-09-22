@@ -1,7 +1,10 @@
+#[cfg(feature = "hud")]
 use fh6_backend::native::{default_audio_devices, media_fallback, NativeServices};
+#[cfg(feature = "hud")]
 use serde_json::Value;
 
 #[test]
+#[cfg(feature = "hud")]
 fn audio_device_fallback_matches_python_contract() {
     let devices = default_audio_devices();
     assert_eq!(devices.len(), 1);
@@ -11,6 +14,7 @@ fn audio_device_fallback_matches_python_contract() {
 }
 
 #[test]
+#[cfg(feature = "hud")]
 fn native_facade_returns_json_contracts_without_hardware() {
     let services = NativeServices::new();
     let devices = services.get_audio_devices();
@@ -31,6 +35,7 @@ fn native_facade_returns_json_contracts_without_hardware() {
 }
 
 #[test]
+#[cfg(feature = "hud")]
 fn setting_audio_device_is_bounded_and_rejects_empty_ids() {
     let services = NativeServices::new();
     assert!(services.set_audio_device(" ").is_err());
@@ -40,6 +45,7 @@ fn setting_audio_device_is_bounded_and_rejects_empty_ids() {
 }
 
 #[test]
+#[cfg(feature = "hud")]
 fn media_fallback_has_all_overlay_fields() {
     let media = media_fallback();
     assert_eq!(media["title"], "Turbo Fire");
@@ -66,6 +72,7 @@ fn discord_accepts_local_configuration_and_reports_input_before_ipc() {
 }
 
 #[test]
+#[cfg(feature = "hud")]
 fn external_pcm_updates_spectrum_without_native_audio() {
     let services = NativeServices::new();
     let samples: Vec<f32> = (0..1024).map(|i| ((i as f32) * 0.1).sin() * 0.25).collect();
@@ -76,6 +83,7 @@ fn external_pcm_updates_spectrum_without_native_audio() {
 }
 
 #[test]
+#[cfg(feature = "hud")]
 fn pcm_and_redaction_match_python_reference() {
     let fixture: Value = serde_json::from_str(include_str!("fixtures/native.json")).unwrap();
     let services = NativeServices::new();

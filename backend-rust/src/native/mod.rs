@@ -4,14 +4,21 @@
 //! sidecar.  Native calls are routed through one bounded worker per service so
 //! a slow WASAPI/GSMTC/Discord provider cannot hold the request thread.
 
+#[cfg(feature = "hud")]
 mod audio;
 mod discord;
+#[cfg(feature = "hud")]
 mod media;
+#[cfg(not(feature = "hud"))]
+mod unsupported;
+#[cfg(not(feature = "hud"))]
+use unsupported::{audio, media};
 
 use std::sync::Arc;
 
 use serde_json::Value;
 /// A broken driver/IPC provider must not hold sidecar shutdown indefinitely.
+#[cfg(feature = "hud")]
 fn finish_worker(join: std::thread::JoinHandle<()>) {
     finish_worker_with_timeout(join, std::time::Duration::from_millis(100));
 }
@@ -25,8 +32,12 @@ fn finish_worker_with_timeout(join: std::thread::JoinHandle<()>, timeout: std::t
     }
 }
 
+#[cfg(feature = "hud")]
 pub use audio::{default_audio_devices, AudioDevice};
 pub use discord::{DiscordPresence, PresenceSnapshot};
+#[cfg(not(feature = "hud"))]
+use media::MediaService;
+#[cfg(feature = "hud")]
 pub use media::{media_fallback, MediaService};
 
 /// Error returned when a native command cannot be accepted or completed.

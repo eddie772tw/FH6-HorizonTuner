@@ -1709,5 +1709,15 @@
   "Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.": "最多收集 30,000 個影格。離開此工作區後仍會繼續收集，直到手動停止或車輛識別資料變更。",
   "Unable to open the requested session. Check the connection and try again.": "無法開啟指定紀錄。請確認連線後重試。",
   "A · {number} · {date}": "A · {number} · {date}",
-  "B · {number} · {date}": "B · {number} · {date}"
+  "B · {number} · {date}": "B · {number} · {date}",
+  "Data Out destination": "Data Out 接收目的地",
+  "On the device running FH6, send Data Out to this computer on the same local network.": "請在執行 FH6 的裝置上，將 Data Out 傳送至同一區域網路上的這台電腦。",
+  "No LAN receiver address is available. Connect this computer to the local network and restart the app.": "目前沒有可用的 LAN 接收地址。請將這台電腦連上區域網路後重新啟動應用程式。",
+  "When Forza runs on this PC, use destination IP": "若 Forza 在這台電腦執行，請使用目的 IP",
+  "and UDP port": "以及 UDP 連接埠",
+  "Receiver addresses are unavailable.": "無法取得接收地址。",
+  "Loading receiver addresses…": "正在載入接收地址…",
+  "Choose the address on the game device’s network. Allow incoming UDP on the displayed port; after changing networks, restart the app.": "請選擇與遊戲裝置同網段的地址，並允許畫面所示連接埠的 UDP 輸入。切換網路後請重新啟動應用程式。",
+  "Use one of the receiver addresses below and its UDP port.": "使用下方其中一個接收地址及其 UDP 連接埠。",
+  "Enable Data Out, then set the destination IP and UDP port.": "啟用 Data Out，然後設定目的 IP 及 UDP 連接埠。"
 }

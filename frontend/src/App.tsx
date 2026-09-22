@@ -9,7 +9,7 @@ import { CompanionHostBridge } from './features/companion/CompanionHostBridge';
 import { RoadValidationProvider } from './features/road/RoadValidationController';
 import { SessionsStateProvider, useSessionsState } from './features/sessions/SessionsStateProvider';
 import { SessionsRuntime } from './features/sessions/SessionsRuntime';
-import { OverlayControlRuntimeProvider } from './features/overlay_control/OverlayControlRuntimeProvider';
+import { HudProvider } from '@platform/hud';
 import './App.css';
 
 const workspaces: WorkspaceRegistry = {
@@ -25,7 +25,7 @@ function FullWorkspaceShell() {
 
 export default function App() {
   return <AppProviders>
-    <OverlayControlRuntimeProvider>
+    <HudProvider>
       <TuneSessionProvider>
         <CompanionHostBridge />
         <RoadValidationProvider>
@@ -34,7 +34,7 @@ export default function App() {
           </SessionsStateProvider>
         </RoadValidationProvider>
       </TuneSessionProvider>
-    </OverlayControlRuntimeProvider>
+    </HudProvider>
     <ToastContainer />
   </AppProviders>;
 }

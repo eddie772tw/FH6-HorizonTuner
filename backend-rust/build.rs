@@ -35,6 +35,13 @@ fn collect(root: &Path, path: &Path, prefix: &str, entries: &mut Vec<(String, Pa
 }
 
 fn main() {
+    let hud = env::var_os("CARGO_FEATURE_HUD").is_some();
+    assert!(
+        env::var("PROFILE").as_deref() != Ok("release")
+            || env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
+            || !hud,
+        "Non-Windows releases must use --no-default-features to exclude HUD"
+    );
     let repo = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
         .parent()
         .unwrap()
@@ -113,6 +120,9 @@ fn main() {
         ("frontend/dist/companion", "companion"),
         ("frontend/dist/assets", "assets"),
     ] {
+        if relative == "hud_overlay" && !hud {
+            continue;
+        }
         let directory = repo.join(relative);
         println!("cargo:rerun-if-changed={}", directory.display());
         collect(&directory, &directory, prefix, &mut entries);

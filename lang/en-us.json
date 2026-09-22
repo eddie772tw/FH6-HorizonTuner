@@ -1257,5 +1257,15 @@
   "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.": "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.",
   "Unable to open the requested session. Check the connection and try again.": "Unable to open the requested session. Check the connection and try again.",
   "A · {number} · {date}": "A · {number} · {date}",
-  "B · {number} · {date}": "B · {number} · {date}"
+  "B · {number} · {date}": "B · {number} · {date}",
+  "Data Out destination": "Data Out destination",
+  "On the device running FH6, send Data Out to this computer on the same local network.": "On the device running FH6, send Data Out to this computer on the same local network.",
+  "No LAN receiver address is available. Connect this computer to the local network and restart the app.": "No LAN receiver address is available. Connect this computer to the local network and restart the app.",
+  "When Forza runs on this PC, use destination IP": "When Forza runs on this PC, use destination IP",
+  "and UDP port": "and UDP port",
+  "Receiver addresses are unavailable.": "Receiver addresses are unavailable.",
+  "Loading receiver addresses…": "Loading receiver addresses…",
+  "Choose the address on the game device’s network. Allow incoming UDP on the displayed port; after changing networks, restart the app.": "Choose the address on the game device’s network. Allow incoming UDP on the displayed port; after changing networks, restart the app.",
+  "Use one of the receiver addresses below and its UDP port.": "Use one of the receiver addresses below and its UDP port.",
+  "Enable Data Out, then set the destination IP and UDP port.": "Enable Data Out, then set the destination IP and UDP port."
 }

@@ -156,9 +156,15 @@ fn process_http_udp_websocket_persistence_and_shutdown_contract() {
             _ => panic!("foreign origin accepted for {path}"),
         }
     }
-    let mut overlay = run.ws("/ws/overlay");
-    let initial: Value = serde_json::from_str(overlay.read().unwrap().to_text().unwrap()).unwrap();
-    assert_eq!(initial["type"], "hud:config");
+    let overlay = if fh6_backend::platform::HUD_ENABLED {
+        let mut overlay = run.ws("/ws/overlay");
+        let initial: Value =
+            serde_json::from_str(overlay.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(initial["type"], "hud:config");
+        Some(overlay)
+    } else {
+        None
+    };
     let mut json_ws = run.ws("/ws/telemetry");
     let mut binary_ws = run.ws("/ws/telemetry/binary");
     let bytes = packet();
@@ -232,12 +238,49 @@ fn process_http_udp_websocket_persistence_and_shutdown_contract() {
     let imported: Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(imported["metadata"]["filename"], "test.csv");
     assert_eq!(imported["data"].as_array().unwrap().len(), 3);
-    assert!(
-        run.request("GET", "/hud/s650_hmi/index.html", &[], "")
-            .1
-            .len()
-            > 100
+    let (hud_status, hud_body) = run.request("GET", "/hud/s650_hmi/index.html", &[], "");
+    if fh6_backend::platform::HUD_ENABLED {
+        assert_eq!(hud_status, 200);
+        assert!(hud_body.len() > 100);
+    } else {
+        assert_eq!(hud_status, 404);
+        for path in [
+            "/api/overlay/config",
+            "/api/audio/devices",
+            "/api/overlay/system_media",
+        ] {
+            assert_eq!(
+                run.request("GET", path, &[], "").0,
+                501,
+                "unsupported HUD endpoint {path}"
+            );
+        }
+        let socket = TcpStream::connect(("127.0.0.1", run.port)).unwrap();
+        socket
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        match client(format!("ws://127.0.0.1:{}/ws/overlay", run.port), socket) {
+            Err(tungstenite::HandshakeError::Failure(tungstenite::Error::Http(response))) => {
+                assert_eq!(response.status(), 501)
+            }
+            _ => panic!("HUD WebSocket must be unsupported in LAN builds"),
+        }
+        assert!(!run.root.path().join("hud_overlay").exists());
+    }
+    assert_eq!(
+        run.json("GET", "/api/health", Value::Null)["status"],
+        "ready"
     );
+    let runtime = run.json("GET", "/api/runtime", Value::Null);
+    assert_eq!(
+        runtime["capabilities"]["hudOverlay"],
+        fh6_backend::platform::HUD_ENABLED
+    );
+    assert_eq!(runtime["telemetry"]["port"], run.udp);
+    assert!(runtime["telemetry"]["listenAddresses"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("127.0.0.1")));
     // The owning host can exit while the frontend still has WebSockets open.
     run.stop();
     drop((json_ws, binary_ws, overlay));

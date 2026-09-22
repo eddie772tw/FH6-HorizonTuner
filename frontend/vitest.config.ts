@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: { alias: { '@platform/hud': path.resolve(import.meta.dirname, 'src/platform/hud.windows.tsx') } },
   test: {
     // Keep HUD-owned renderer contracts next to their standalone assets while
     // retaining one frontend Vitest entry point for local and CI verification.

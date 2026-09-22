@@ -19,6 +19,16 @@ We actively provide security patches and updates for the following versions of *
 
 If you are using an older build or development branch, please upgrade to the latest stable release (`1.6.x` or later) before reporting a vulnerability.
 
+Platform scope for the expanded release pipeline:
+
+| Platform | Distribution / support boundary |
+| --- | --- |
+| Windows x86_64 | Full and Lite; existing installer and portable channels |
+| macOS 14+ ARM64 | Experimental Full; ad-hoc signed, not Apple-notarized; security reports accepted |
+| Linux x86_64 | Full AppImage built on Ubuntu 22.04; distribution compatibility requires native validation |
+
+macOS and Linux exclude HUD, native audio capture and system media integration. Native CI and LAN game acceptance are separate gates; configuration alone does not certify support. Include both the Release tag and the runtime version from About in reports, since OTA uses the Tauri runtime version rather than the tag. See the [release guide](docs/guides/cross-platform-release.md).
+
 ---
 
 ### Reporting a Vulnerability
@@ -40,7 +50,7 @@ We take the security and integrity of FH6-HorizonTuner seriously. If you discove
 
 To help us triage and resolve the issue quickly, please include:
 - **Type of vulnerability** (e.g., Local Privilege Escalation, Remote Code Execution, Denial of Service, Cross-Site Scripting).
-- **Affected component(s)** (e.g., FastAPI backend, UDP telemetry parser, Tauri host window, theme engine).
+- **Affected component(s)** (e.g., Rust/Axum backend, UDP telemetry parser, Tauri host window, theme engine).
 - **Exact version or commit hash** tested.
 - **Step-by-step reproduction instructions** or a Proof of Concept (PoC).
 - **Potential impact** and suggested remediation (if known).
@@ -62,10 +72,10 @@ When a vulnerability is reported:
 FH6-HorizonTuner is designed as a local desktop companion app and overlay tool for Forza games. The core threat boundaries are:
 
 1. **Localhost Isolation (`127.0.0.1`)**:
-   - The FastAPI backend and WebSocket broadcast server bind strictly to `127.0.0.1` (localhost).
+   - The Rust/Axum HTTP, MCP and WebSocket server binds strictly to `127.0.0.1` (localhost), including macOS and Linux builds.
    - They are **not intended** to be exposed to public networks or untrusted local area networks (LAN) without proper reverse proxy and authentication layers.
 2. **UDP Telemetry Ingestion**:
-   - The telemetry listener receives 324-byte UDP broadcast packets from the game. Packets are parsed with strict binary length and struct constraints to mitigate malformed packet buffer anomalies.
+   - UDP telemetry binds local IPv4 interfaces for same-PC or LAN game input. Configure the game to send to the receiver address and UDP port; firewall access should be limited to the trusted game network. Packet length and field validation remain independent of the localhost HTTP boundary.
 3. **Frontend & Theming Engine**:
    - Custom CSS, themes, and formula engines are sanitized and validated to prevent script injection (XSS) or arbitrary execution.
 4. **Desktop Host & Sidecar Integrity**:
@@ -88,6 +98,16 @@ FH6-HorizonTuner is designed as a local desktop companion app and overlay tool f
 
 若您目前使用的是舊版本或未標籤的開發分支，請在回報前先升級至最新的正式釋出版本（`1.6.x` 或以上）。
 
+新增發行流程的平台支援邊界如下：
+
+| 平台 | 發行形式與支援範圍 |
+| --- | --- |
+| Windows x86_64 | Full／Lite；沿用安裝版與可攜版管道 |
+| macOS 14+ ARM64 | 實驗性 Full；ad-hoc 簽署、未經 Apple notarization；接受安全性回報 |
+| Linux x86_64 | Ubuntu 22.04 建置的 Full AppImage；各發行版相容性需原生驗證 |
+
+macOS／Linux 不包含 HUD、原生音訊擷取與系統媒體整合。原生 CI 與真實遊戲 LAN 驗收是不同關卡，設定完成不等於平台認證。回報請同時附上 Release tag 及「關於」顯示的 runtime version，OTA 以 Tauri runtime version 比較。詳見[跨平台發行指南](docs/guides/cross-platform-release.md)。
+
 ---
 
 ### 回報安全性漏洞 (Reporting a Vulnerability)
@@ -109,7 +129,7 @@ FH6-HorizonTuner is designed as a local desktop companion app and overlay tool f
 
 為了協助維護團隊快速重現與驗證問題，請在報告中提供：
 - **漏洞類型**（例如：本機提權、阻斷服務 DoS、腳本注入 XSS 等）。
-- **受影響模組**（例如：FastAPI 後端、UDP 遙測解析器、Tauri 主程式、自訂主題引擎等）。
+- **受影響模組**（例如：Rust/Axum 後端、UDP 遙測解析器、Tauri 主程式、自訂主題引擎等）。
 - **測試所使用的具體版本或 Commit SHA**。
 - **詳細的重現步驟（Step-by-step reproduction）或概念驗證代碼（PoC）**。
 - **潛在安全影響評估與建議的修補方向**（若已知）。
@@ -131,10 +151,10 @@ FH6-HorizonTuner is designed as a local desktop companion app and overlay tool f
 FH6-HorizonTuner 被設計為本機執行的賽車遊戲輔助與 HUD 覆蓋工具。其核心安全邊界如下：
 
 1. **本機回環介面隔離 (`127.0.0.1`)**：
-   - 後端 FastAPI 與 WebSocket 廣播服務預設嚴格綁定於 `127.0.0.1`。
+   - Rust/Axum HTTP、MCP 與 WebSocket 服務嚴格綁定於 `127.0.0.1`，macOS／Linux 版本亦同。
    - 本工具**不應**在無反向代理與安全驗證的情況下直接暴露於外部網際網路或不可信的區域網路（LAN）。
 2. **高頻 UDP 遙測資料防護**：
-   - 遙測接收器僅處理符合 Forza 官方協定之 324-byte 固定長度二進位封包，具備嚴格的長度校驗與結構解包防護。
+   - UDP 接收器綁定本機 IPv4 介面，接收同機或 LAN 遊戲端輸入。遊戲端使用接收 IP 與 UDP port，防火牆僅允許可信任遊戲網段；封包長度與欄位驗證獨立於 localhost HTTP 邊界。
 3. **前端與自訂主題安全**：
    - 自訂 CSS 與數學計算引擎內建語意檢查與正規表示式過濾，防範任意程式碼注入。
 4. **桌面主程式與 Sidecar 整合**：

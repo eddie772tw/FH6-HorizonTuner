@@ -7,44 +7,63 @@ on:
     inputs:
       tag_name:
         description: 'Target Release Tag name (e.g. v1.5.0)'
-        required: false
-        default: ''
+        required: true
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-assets-${{ github.event.release.tag_name || inputs.tag_name }}
+  cancel-in-progress: false
 
 env:
   UV_PYTHON_PREFERENCE: only-managed
-  TAG: ""
 
 jobs:
+  release-metadata:
+    name: Resolve published tag and preserve OTA channels
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.target.outputs.tag }}
+      sha: ${{ steps.target.outputs.sha }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag_name }}
+      REPOSITORY: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          python-version: '3.13'
+          activate-environment: true
+          no-project: true
+      - name: Require an existing published Release and resolve its exact commit
+        id: target
+        run: uv run --no-project --active python scripts/publish_release_assets.py resolve --repo "$REPOSITORY" --tag "$RELEASE_TAG"
+      - name: Preserve last successful channels before independent builds
+        id: carry
+        continue-on-error: true
+        run: uv run --no-project --active python scripts/publish_release_assets.py carry --repo "$REPOSITORY" --tag "$RELEASE_TAG"
+      - name: Report carry-forward failure
+        if: steps.carry.outcome == 'failure'
+        run: echo 'OTA channel carry-forward failed; inspect this job before relying on a failed platform channel.' >> "$GITHUB_STEP_SUMMARY"
+
   build-and-publish-release:
-    name: Build, Sign & Attach Release Assets
+    name: Windows Full and Lite
+    needs: release-metadata
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
+    env:
+      TAG: ${{ needs.release-metadata.outputs.tag }}
+      FH6_PLATFORM: windows
 
     steps:
-    - name: Determine Release Tag
-      id: release_meta
-      shell: bash
-      env:
-        EVENT_NAME: ${{ github.event_name }}
-        EVENT_TAG: ${{ github.event.release.tag_name }}
-        INPUT_TAG: ${{ github.event.inputs.tag_name }}
-        REF_NAME: ${{ github.ref_name }}
-      run: |
-        if [ "$EVENT_NAME" = "release" ]; then
-          TAG="$EVENT_TAG"
-        else
-          TAG="${INPUT_TAG:-$REF_NAME}"
-        fi
-        echo "TAG=$TAG" >> "$GITHUB_ENV"
-        echo "RELEASE_TAG=$TAG" >> "$GITHUB_OUTPUT"
-        echo "Tag identified for release: **$TAG**" >> "$GITHUB_STEP_SUMMARY"
-
     - name: Checkout repository
       uses: actions/checkout@v7
       with:
+        ref: ${{ needs.release-metadata.outputs.sha }}
         fetch-depth: 0
 
     - name: Set up uv and managed Python 3.13
@@ -103,6 +122,9 @@ jobs:
 
     - name: Run Backend Unit Tests (Pre-Release Gate)
       run: uv run --no-project --active python -m pytest tests/ -v -m "not host_diagnostics and not executable_bundle"
+
+    - name: Test publication and platform packaging behavior
+      run: uv run --no-project --active python -m pytest scripts/tests/test_platform_release.py scripts/tests/test_publish_release_assets.py
 
     - name: Run Frontend Unit Tests (Pre-Release Gate)
       run: pnpm --prefix frontend run test
@@ -247,24 +269,115 @@ jobs:
           --lite-updater-bundle "${{ steps.updater_artifacts.outputs.lite_bundle }}" `
           --lite-updater-signature "${{ steps.updater_artifacts.outputs.lite_signature }}" `
           --output-dir dist/release `
-          --tag "${{ env.TAG }}" `
+          --tag "$env:TAG" `
           --version "${{ steps.updater_artifacts.outputs.version }}" `
           --repo "${{ github.repository }}"
 
-    - name: Upload and Attach Assets to GitHub Release
-      uses: softprops/action-gh-release@v3
+    - name: Stage Windows assets for publication
+      uses: actions/upload-artifact@v7
       with:
-        tag_name: ${{ env.TAG }}
-        fail_on_unmatched_files: true
-        files: |
-          dist/release/FH6-HorizonTuner-Full-Installer.exe
-          dist/release/FH6-HorizonTuner-Full-Portable.exe
-          dist/release/FH6-HorizonTuner-Lite-Installer.exe
-          dist/release/FH6-HorizonTuner-Lite-Portable.exe
-          dist/release/FH6-HorizonTuner-Portable-Bundle.zip
-          dist/release/FH6-HorizonTuner-Full-Installer.exe.sig
-          dist/release/FH6-HorizonTuner-Lite-Installer.exe.sig
-          dist/release/latest.json
-          dist/release/latest-lite.json
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: native-windows-${{ github.run_id }}
+        overwrite: true
+        path: dist/release/*
+        if-no-files-found: error
+
+  publish-windows:
+    needs: [release-metadata, build-and-publish-release]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.release-metadata.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-metadata.outputs.sha }}
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          python-version: '3.13'
+          activate-environment: true
+          no-project: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: native-windows-${{ github.run_id }}
+          path: release-assets
+      - run: uv run --no-project --active python scripts/publish_release_assets.py publish --repo "$REPOSITORY" --tag "$RELEASE_TAG" --directory release-assets
+
+  build-macos:
+    needs: release-metadata
+    uses: ./.github/workflows/native-packaging.yml
+    with:
+      platform: macos
+      ref: ${{ needs.release-metadata.outputs.sha }}
+      tag: ${{ needs.release-metadata.outputs.tag }}
+      release-signing: true
+    secrets: inherit
+
+  build-linux:
+    needs: release-metadata
+    uses: ./.github/workflows/native-packaging.yml
+    with:
+      platform: linux
+      ref: ${{ needs.release-metadata.outputs.sha }}
+      tag: ${{ needs.release-metadata.outputs.tag }}
+      release-signing: true
+    secrets: inherit
+
+  publish-macos:
+    needs: [release-metadata, build-macos]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.release-metadata.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-metadata.outputs.sha }}
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          python-version: '3.13'
+          activate-environment: true
+          no-project: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: native-macos-${{ github.run_id }}
+          path: release-assets
+      - run: uv run --no-project --active python scripts/publish_release_assets.py publish --repo "$REPOSITORY" --tag "$RELEASE_TAG" --directory release-assets
+
+  publish-linux:
+    needs: [release-metadata, build-linux]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.release-metadata.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-metadata.outputs.sha }}
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          python-version: '3.13'
+          activate-environment: true
+          no-project: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: native-linux-${{ github.run_id }}
+          path: release-assets
+      - run: uv run --no-project --active python scripts/publish_release_assets.py publish --repo "$REPOSITORY" --tag "$RELEASE_TAG" --directory release-assets
+
+  release-summary:
+    if: always()
+    needs: [release-metadata, build-and-publish-release, publish-windows, build-macos, build-linux, publish-macos, publish-linux]
+    runs-on: ubuntu-22.04
+    env:
+      RESULTS: ${{ toJSON(needs) }}
+    steps:
+      - run: printf '%s\n' "$RESULTS" >> "$GITHUB_STEP_SUMMARY"

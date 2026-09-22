@@ -16,6 +16,7 @@ import TelemetryCardShell, { type TelemetryCardId } from './components/Telemetry
 import TelemetryCardLayout from './components/TelemetryCardLayout';
 import TelemetryDetailView from './components/TelemetryDetailView';
 import { backendFetch } from '../../services/backend';
+import { getRuntimeCapabilities } from '../../services/runtimeCapabilities';
 import type { SuspensionTravelMode } from '../../utils/suspensionTravel';
 import { UnitSettingsSidebar } from '../../components/UnitSettingsSidebar';
 import {
@@ -109,6 +110,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   };
 
   useEffect(() => {
+    if (!getRuntimeCapabilities().hudOverlay) return;
     const channel = new BroadcastChannel('horizon_tuner_hud_channel');
     const checkConfig = (cfg: any) => {
       if (pauseForDesktopOverlay && cfg && cfg.enabled && cfg.pauseTelemetryViewWhenActive) {

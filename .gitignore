@@ -116,6 +116,7 @@ id_rsa*
 /scratch
 /.tools/adb/
 /backend-rust/target/
+/smoke-evidence/
 .agents/security_data.json
 .agents/security_report.md
 
