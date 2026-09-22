@@ -121,6 +121,62 @@ def test_suspension_telemetry_formatting(mcp_service):
     assert res["corners"]["rear_left"]["travel_ratio"] == 0.96
 
 
+def test_driver_cockpit_clutch_and_handbrake_inputs(mcp_service):
+    sample = {
+        "ClutchInput": 255,
+        "HandBrakeInput": 128,
+        "AccelInput": 128,
+        "BrakeInput": 64,
+        "SteerInput": -127,
+    }
+    res = mcp_service.get_driver_cockpit_telemetry(sample)
+    assert res["driver_inputs"]["clutch_pct"] == 100.0
+    assert round(res["driver_inputs"]["handbrake_pct"], 1) == 50.2
+    assert round(res["driver_inputs"]["throttle_pct"], 1) == 50.2
+    assert round(res["driver_inputs"]["brake_pct"], 1) == 25.1
+    assert res["driver_inputs"]["steer_pct"] == -100.0
+
+
+def test_vehicle_dynamics_low_accel_and_sub_psi_boost(mcp_service):
+    sample = {
+        "AccelerationX": 3.924,  # Exactly 0.40 G (< 5.0 m/s²)
+        "AccelerationY": 9.81,
+        "AccelerationZ": 1.962,  # Exactly 0.20 G
+        "Boost": 500.0,  # 500 Pa (< 1000 Pa), should be ~0.07 PSI and 0.005 bar
+    }
+    res = mcp_service.get_vehicle_dynamics_telemetry(sample)
+    assert res["g_forces"]["lateral_g"] == 0.4
+    assert res["g_forces"]["longitudinal_g"] == 0.2
+    assert res["power_train"]["boost_bar"] == 0.005
+    assert res["power_train"]["boost_psi"] == 0.07
+
+
+def test_tires_status_high_slip_ratio_and_angles(mcp_service):
+    sample = {
+        "TireTemp": [248.0, 248.0, 180.0, 180.0],
+        "TireSlipAngle": [0.261799, 0.261799, 0.034907, 0.034907],  # ~15 deg, ~2 deg
+        "TireSlipRatio": [6.0, 6.0, 0.0, 0.0],  # 600% slip ratio
+    }
+    res = mcp_service.get_tires_status_telemetry(sample)
+    fl = res["corners"]["front_left"]
+    assert fl["slip_ratio_pct"] == 600.0
+    assert fl["slip_angle_deg"] == 15.0
+    assert fl["is_slipping"] is True
+    assert fl["is_overheating"] is True
+
+
+def test_suspension_normalized_travel_key(mcp_service):
+    sample = {
+        "NormalizedSuspensionTravel": [0.98, 0.95, 0.40, 0.42],
+    }
+    res = mcp_service.get_suspension_telemetry(sample)
+    assert res["corners"]["front_left"]["is_bottoming"] is True
+    assert res["corners"]["front_left"]["travel_ratio"] == 0.98
+    assert res["corners"]["front_left"]["travel_pct"] == 98.0
+    assert res["corners"]["front_right"]["is_bottoming"] is True
+    assert res["corners"]["rear_left"]["is_bottoming"] is False
+
+
 def test_search_cars(mcp_service):
     results = mcp_service.search_cars(query="Mustang")
     assert len(results) == 1

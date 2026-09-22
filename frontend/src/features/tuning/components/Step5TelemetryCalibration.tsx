@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { CarParams } from '../../../context/CarParamsContext';
-import { useTelemetry } from '../../../hooks/useTelemetry';
+import { useTelemetry, convertRawBoostToUnits } from '../../../hooks/useTelemetry';
 import {
   evaluateTireTelemetryDiagnosis,
   buildBaselineSetup,
@@ -118,7 +118,7 @@ export const Step5TelemetryCalibration: React.FC<Step5TelemetryCalibrationProps>
     const accelZG = (telemetry.AccelerationZ || 0) / 9.81;
     const speedKmh = (telemetry.SpeedMetersPerSecond || 0) * 3.6;
     const powerHp = (telemetry.PowerWatts || 0) / 745.7;
-    const boostPsi = Math.max(0, telemetry.Boost || 0);
+    const boostPsi = convertRawBoostToUnits(telemetry.Boost).psi;
 
     return {
       avgSlipRatioF: (slipRatio[0] + slipRatio[1]) / 2,

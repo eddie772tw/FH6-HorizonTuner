@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createOptimisticSettingsQueue, mergeSettingsUpdate, type AppSettings } from './SettingsContext';
+import {
+  createOptimisticSettingsQueue,
+  createScopedConverters,
+  mergeSettingsUpdate,
+  type AppSettings,
+  type UnitSettings,
+} from './SettingsContext';
 
 const settings: AppSettings = {
   dyno_recording: false,
@@ -37,5 +43,54 @@ describe('settings persistence updates', () => {
       language: 'en-us',
       dyno_recording: true,
     });
+  });
+});
+
+describe('SettingsContext - convertBoost unit conversions', () => {
+  const baseUnits: UnitSettings = {
+    speed: 'kmh',
+    weight: 'kg',
+    temperature: 'C',
+    tirePressure: 'bar',
+    boostPressure: 'bar',
+    springRate: 'kgfmm',
+    rideHeight: 'cm',
+    suspensionForce: 'kgf',
+    power: 'hp',
+    torque: 'nm',
+  };
+
+  it('converts raw Pa to bar without 6,894.76x magnification', () => {
+    const converters = createScopedConverters({ ...baseUnits, boostPressure: 'bar' });
+    const result = converters.convertBoost(150_000);
+    expect(result.value).toBeCloseTo(1.5, 4);
+    expect(result.label).toBe('bar');
+
+    // Negative regression check: verify absence of ~10,342 bar
+    expect(result.value).toBeLessThan(10);
+  });
+
+  it('converts raw Pa to PSI with accurate physical factor', () => {
+    const converters = createScopedConverters({ ...baseUnits, boostPressure: 'psi' });
+    const result = converters.convertBoost(150_000);
+    expect(result.value).toBeCloseTo(21.756, 2);
+    expect(result.label).toBe('PSI');
+
+    // Negative regression check: verify absence of 150,000 psi
+    expect(result.value).toBeLessThan(100);
+  });
+
+  it('converts raw Pa to kPa correctly', () => {
+    const converters = createScopedConverters({ ...baseUnits, boostPressure: 'kpa' });
+    const result = converters.convertBoost(150_000);
+    expect(result.value).toBeCloseTo(150.0, 4);
+    expect(result.label).toBe('kPa');
+  });
+
+  it('handles zero, negative, and non-finite boost values safely', () => {
+    const converters = createScopedConverters({ ...baseUnits, boostPressure: 'bar' });
+    expect(converters.convertBoost(0)).toEqual({ value: 0, label: 'bar' });
+    expect(converters.convertBoost(-1000)).toEqual({ value: 0, label: 'bar' });
+    expect(converters.convertBoost(NaN)).toEqual({ value: 0, label: 'bar' });
   });
 });
