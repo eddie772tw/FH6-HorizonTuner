@@ -108,6 +108,21 @@ init: function (parentEl) {
             var pedalScale   = fullConfig.telemetryPedalScale !== undefined ? fullConfig.telemetryPedalScale : 1.0;
             var ptScale      = fullConfig.telemetryPowerTorqueScale !== undefined ? fullConfig.telemetryPowerTorqueScale : 1.0;
 
+            var gRadarAlign   = fullConfig.telemetryGRadarAlignment || 'center';
+            var gRadarOffsetX = fullConfig.telemetryGRadarOffsetX || 0;
+            var gRadarOffsetY = fullConfig.telemetryGRadarOffsetY || 0;
+
+            // Enforce legal offset bounds per alignment to prevent radar from clipping offscreen
+            if (gRadarAlign === 'left') {
+                gRadarOffsetX = Math.max(0, gRadarOffsetX);
+            } else if (gRadarAlign === 'right') {
+                gRadarOffsetX = Math.min(0, gRadarOffsetX);
+            }
+
+            // Base scale is reduced to 75% when aligned to screen left or right edge
+            var gRadarBaseScale = (gRadarAlign === 'left' || gRadarAlign === 'right') ? 0.75 : 1.0;
+            var effectiveGRadarScale = gRadarScale * gRadarBaseScale;
+
             var cornerOffsetY = fullConfig.telemetryCornerOffsetY || 0;
             var cornerOffsetX = fullConfig.telemetryCornerOffsetX || 0;
             var pedalOffsetX  = fullConfig.telemetryPedalOffsetX  || 0;
@@ -127,7 +142,9 @@ init: function (parentEl) {
                     if (_lastStyles['cornerOffsetY'] !== cornerOffsetY) { wrapper.style.setProperty('--tc-corner-offset-y', cornerOffsetY + 'px'); _lastStyles['cornerOffsetY'] = cornerOffsetY; }
                     if (_lastStyles['cornerOffsetX'] !== cornerOffsetX) { wrapper.style.setProperty('--tc-corner-offset-x', cornerOffsetX + 'px'); _lastStyles['cornerOffsetX'] = cornerOffsetX; }
                     if (_lastStyles['cornersScale'] !== cornersScale) { wrapper.style.setProperty('--tc-corners-scale', cornersScale.toString()); _lastStyles['cornersScale'] = cornersScale; }
-                    if (_lastStyles['gRadarScale'] !== gRadarScale) { wrapper.style.setProperty('--tc-gradar-scale', gRadarScale.toString()); _lastStyles['gRadarScale'] = gRadarScale; }
+                    if (_lastStyles['gRadarScale'] !== effectiveGRadarScale) { wrapper.style.setProperty('--tc-gradar-scale', effectiveGRadarScale.toString()); _lastStyles['gRadarScale'] = effectiveGRadarScale; }
+                    if (_lastStyles['gRadarOffsetX'] !== gRadarOffsetX) { wrapper.style.setProperty('--tc-gradar-offset-x', gRadarOffsetX + 'px'); _lastStyles['gRadarOffsetX'] = gRadarOffsetX; }
+                    if (_lastStyles['gRadarOffsetY'] !== gRadarOffsetY) { wrapper.style.setProperty('--tc-gradar-offset-y', gRadarOffsetY + 'px'); _lastStyles['gRadarOffsetY'] = gRadarOffsetY; }
                     if (_lastStyles['primaryColor'] !== primaryColor) { wrapper.style.setProperty('--card-primary', primaryColor); _lastStyles['primaryColor'] = primaryColor; }
                     if (_lastStyles['contrastColor'] !== contrastColor) { wrapper.style.setProperty('--card-contrast', contrastColor); _lastStyles['contrastColor'] = contrastColor; }
                 }
@@ -153,6 +170,13 @@ init: function (parentEl) {
                 centerAnchor.style.display     = (showAttitude || showCenterAnchor) ? 'flex' : 'flex';
                 centerAnchor.style.visibility  = (showAttitude || showCenterAnchor) ? 'visible' : 'hidden';
                 centerAnchor.style.borderStyle = showCenterAnchor ? 'dashed' : 'none';
+                if (_lastStyles['gRadarAlign'] !== gRadarAlign) {
+                    centerAnchor.classList.remove('tc-align-center');
+                    centerAnchor.classList.remove('tc-align-left');
+                    centerAnchor.classList.remove('tc-align-right');
+                    centerAnchor.classList.add('tc-align-' + gRadarAlign);
+                    _lastStyles['gRadarAlign'] = gRadarAlign;
+                }
             }
 
             var centerRadar = this.domCache ? this.domCache.centerRadar : document.getElementById('tcCenterRadarContainer');

@@ -55,6 +55,9 @@ export interface HudConfig {
   soundEnabled: boolean;
   telemetryOpacity?: number;
   telemetryGRadarScale?: number;
+  telemetryGRadarAlignment?: 'center' | 'left' | 'right';
+  telemetryGRadarOffsetX?: number;
+  telemetryGRadarOffsetY?: number;
   telemetryCornersScale?: number;
   telemetryPedalScale?: number;
   telemetryPowerTorqueScale?: number;
@@ -98,6 +101,9 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
   units: { speed: 'kmh', boostPressure: 'bar', torque: 'nm', power: 'hp' },
   telemetryOpacity: 0.65,
   telemetryGRadarScale: 1.0,
+  telemetryGRadarAlignment: 'center',
+  telemetryGRadarOffsetX: 0,
+  telemetryGRadarOffsetY: 0,
   telemetryCornersScale: 1.0,
   telemetryPedalScale: 1.0,
   telemetryPowerTorqueScale: 1.0,

@@ -22,6 +22,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 --tc-corner-offset-x:  0px;
                 --tc-corners-scale:    1.0;
                 --tc-gradar-scale:     1.0;
+                --tc-gradar-offset-x:  0px;
+                --tc-gradar-offset-y:  0px;
             }
 
             /* Responsive breakpoints */
@@ -40,6 +42,35 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 .tc-radar-container { width: 64vh; height: 64vh; }
                 .tc-sub-card        { width: 12.5vh; min-height: 11vh; }
                 .tc-edge-chart      { width: 68vh; height: 10vh; }
+            }
+
+            /* Central G-Radar Alignment Variations */
+            .tc-radar-container.tc-align-center {
+                grid-column: 2;
+                grid-row: 1 / span 3;
+                position: relative;
+                transform-origin: center center;
+                transform: translate(var(--tc-gradar-offset-x, 0px), var(--tc-gradar-offset-y, 0px)) scale(var(--tc-gradar-scale, 1.0));
+            }
+
+            .tc-radar-container.tc-align-left {
+                position: fixed;
+                left: 25px;
+                top: 50%;
+                grid-column: auto;
+                grid-row: auto;
+                transform-origin: left center;
+                transform: translate(var(--tc-gradar-offset-x, 0px), calc(-50% + var(--tc-gradar-offset-y, 0px))) scale(var(--tc-gradar-scale, 1.0));
+            }
+
+            .tc-radar-container.tc-align-right {
+                position: fixed;
+                right: 25px;
+                top: 50%;
+                grid-column: auto;
+                grid-row: auto;
+                transform-origin: right center;
+                transform: translate(var(--tc-gradar-offset-x, 0px), calc(-50% + var(--tc-gradar-offset-y, 0px))) scale(var(--tc-gradar-scale, 1.0));
             }
 
             /* Corner card container */
@@ -315,15 +346,12 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 </div>
 
                 <!-- Row 1-3, Col 2: Central Anchor Container (3. Central G-Radar Container) -->
-                <div id="tcCenterAnchor" class="tc-radar-container tc-center-container" style="
-                    grid-column: 2; grid-row: 1 / span 3;
+                <div id="tcCenterAnchor" class="tc-radar-container tc-center-container tc-align-center" style="
                     display: flex; flex-direction: column;
                     align-items: center; justify-content: center;
-                    position: relative;
                     border: 1px dashed rgba(0, 240, 255, 0.15);
                     border-radius: 50%;
                     box-sizing: border-box;
-                    transform: scale(var(--tc-gradar-scale, 1.0));
                     transition: transform 0.15s ease-out;
                 ">
                     <div id="tcCenterRadarContainer" style="
