@@ -1,0 +1,268 @@
+{
+  "metadata": {
+    "session_id": "fixture",
+    "car_name": "測試, Car"
+  },
+  "points": [
+    {
+      "time": 0,
+      "LapNumber": 1,
+      "SpeedMetersPerSecond": 20,
+      "CurrentEngineRpm": 4000,
+      "Gear": 3,
+      "AccelInput": 127,
+      "SteerInput": -60,
+      "AccelerationX": 5,
+      "PowerWatts": 150000,
+      "TorqueNewtons": 300,
+      "TireTemp": [
+        160,
+        180,
+        null,
+        212
+      ],
+      "SuspTravel": [
+        0.96,
+        null,
+        0.5,
+        0.6
+      ],
+      "TireSlipAngle": [
+        0.8,
+        0.7,
+        0.1,
+        0.2
+      ],
+      "PositionX": 123,
+      "PositionY": 5,
+      "PositionZ": -250
+    },
+    {
+      "time": 0.1,
+      "LapNumber": 1,
+      "SpeedMetersPerSecond": 0
+    },
+    {
+      "time": 0.2,
+      "LapNumber": 2,
+      "LastLap": 72.5
+    }
+  ],
+  "parsedMetadata": {
+    "session_id": "fixture",
+    "car_name": "測試, Car",
+    "timestamp": 0
+  },
+  "parsed": [
+    {
+      "time": 0.0,
+      "lap_distance": null,
+      "LapNumber": 1.0,
+      "SpeedMetersPerSecond": 20.0,
+      "CurrentEngineRpm": 4000.0,
+      "Gear": 3.0,
+      "AccelInput": 127.00019999999999,
+      "BrakeInput": null,
+      "ClutchInput": null,
+      "HandBrakeInput": null,
+      "steer_pct": -47.244,
+      "AccelerationX": 5.003100000000001,
+      "AccelerationZ": null,
+      "AccelerationY": null,
+      "Boost": null,
+      "Fuel": null,
+      "PowerWatts": 149999.7921,
+      "TorqueNewtons": 300.0,
+      "SuspTravel": [
+        0.96,
+        null,
+        0.5,
+        0.6
+      ],
+      "SuspensionTravelMeters": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireSlipAngle": [
+        0.8,
+        0.7,
+        0.1,
+        0.2
+      ],
+      "TireSlipRatio": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireTemp": [
+        159.9998,
+        179.9996,
+        null,
+        212.0
+      ],
+      "sourceSchema": "motec-csv/normalized-v1",
+      "Power": 149999.7921,
+      "Torque": 300.0,
+      "PositionY": 5.0,
+      "PositionX": 123.00375999882817,
+      "PositionZ": -249.99606659961864
+    },
+    {
+      "time": 0.1,
+      "lap_distance": null,
+      "LapNumber": 1.0,
+      "SpeedMetersPerSecond": 0.0,
+      "CurrentEngineRpm": null,
+      "Gear": null,
+      "AccelInput": null,
+      "BrakeInput": null,
+      "ClutchInput": null,
+      "HandBrakeInput": null,
+      "steer_pct": null,
+      "AccelerationX": null,
+      "AccelerationZ": null,
+      "AccelerationY": null,
+      "Boost": null,
+      "Fuel": null,
+      "PowerWatts": null,
+      "TorqueNewtons": null,
+      "SuspTravel": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "SuspensionTravelMeters": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireSlipAngle": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireSlipRatio": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireTemp": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "sourceSchema": "motec-csv/normalized-v1",
+      "Power": null,
+      "Torque": null,
+      "PositionY": null,
+      "PositionX": null,
+      "PositionZ": null
+    },
+    {
+      "time": 0.2,
+      "lap_distance": null,
+      "LapNumber": 2.0,
+      "SpeedMetersPerSecond": null,
+      "CurrentEngineRpm": null,
+      "Gear": null,
+      "AccelInput": null,
+      "BrakeInput": null,
+      "ClutchInput": null,
+      "HandBrakeInput": null,
+      "steer_pct": null,
+      "AccelerationX": null,
+      "AccelerationZ": null,
+      "AccelerationY": null,
+      "Boost": null,
+      "Fuel": null,
+      "PowerWatts": null,
+      "TorqueNewtons": null,
+      "SuspTravel": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "SuspensionTravelMeters": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireSlipAngle": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireSlipRatio": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "TireTemp": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "sourceSchema": "motec-csv/normalized-v1",
+      "Power": null,
+      "Torque": null,
+      "PositionY": null,
+      "PositionX": null,
+      "PositionZ": null
+    }
+  ],
+  "debrief": {
+    "total_samples": 3,
+    "valid_laps": 0,
+    "tire_thermals": {
+      "fl_avg": 71.1,
+      "fr_avg": 82.2,
+      "rl_avg": null,
+      "rr_avg": 100.0,
+      "status": "Optimal"
+    },
+    "suspension": {
+      "peak_travel_pct": 96.0,
+      "bottom_out_count": 1,
+      "status": "Occasional Bottoming"
+    },
+    "handling_balance": {
+      "understeer_pct": 100.0,
+      "oversteer_pct": 0.0,
+      "tendency": "Understeer Biased"
+    }
+  },
+  "emptyDebrief": {
+    "total_samples": 0,
+    "valid_laps": 0,
+    "tire_thermals": {
+      "fl_avg": null,
+      "fr_avg": null,
+      "rl_avg": null,
+      "rr_avg": null,
+      "status": "no_data"
+    },
+    "suspension": {
+      "peak_travel_pct": null,
+      "bottom_out_count": null,
+      "status": "no_data"
+    },
+    "handling_balance": {
+      "understeer_pct": null,
+      "oversteer_pct": null,
+      "tendency": "no_data"
+    }
+  }
+}

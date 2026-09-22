@@ -1,12 +1,12 @@
 # FH6-HorizonTuner 🏎️
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
-[![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Uvicorn-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Language](https://img.shields.io/badge/Rust-2021-DEA584.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Backend](https://img.shields.io/badge/Backend-Axum%20%2B%20Tokio-009688.svg)](backend-rust/)
 [![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React%2018-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app/)
 [![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
 [![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
-[![Tests](https://img.shields.io/badge/Tests-Pytest%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-Cargo%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -15,7 +15,7 @@
 
 ## Introduction
 
-`FH6-HorizonTuner` is a dedicated telemetry data analysis and vehicle tuning assistant tool developed for *Forza Horizon 6*. This project integrates a high-performance Python FastAPI backend UDP packet listener service, a modern Tauri desktop graphical user interface, and a fully injection-free HTML5 Canvas / Tauri transparent racing overlay engine.
+`FH6-HorizonTuner` is a dedicated telemetry data analysis and vehicle tuning assistant tool developed for *Forza Horizon 6*. This project integrates a high-performance Rust Axum backend UDP packet listener service, a modern Tauri desktop graphical user interface, and a fully injection-free HTML5 Canvas / Tauri transparent racing overlay engine.
 
 The current release provides **real-time telemetry dashboards**, a **customizable racing dashboard overlay (with a WYSIWYG visual editor)**, a **vehicle tuning workbench**, and **drag launch testing** — helping players monitor vehicle physics and dynamic feedback in real time.
 
@@ -49,13 +49,13 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - Automated backend SQLite historical telemetry logging.
   - One-click exporter for professional racing analysis software **MoTeC i2** standard `.ld` log format.
 * **Localhost Read-Only MCP Server (Model Context Protocol)**:
-  - The running FastAPI backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
+  - The running Rust backend provides a Streamable HTTP MCP endpoint at `/mcp`, offering 26 dedicated read-only tools and 5 Resource URI templates in the same process as telemetry.
   - Enables AI Agents (Claude Desktop, Cursor, Cline, Antigravity) to query live telemetry (aligned with `TelemetryView`), track sessions, A/B run delta comparisons, car specs, and tuning solvers.
   - The standard MCP `initialize` response automatically provides Agent-facing configuration and usage guidance; Settings now shows the current endpoint and status without copy-based JSON/CLI setup actions. A client still needs a one-time endpoint bootstrap for the first connection.
 * **Over-The-Air (OTA) Updates & Automated Release Management**:
   - Integrated with Tauri v2 official Updater plugin and Ed25519 asymmetric cryptographic verification.
   - Supports silent startup checks and manual checks via Settings with a Glassmorphism racing modal and dynamic download progress bar.
-  - Sidecar lifecycle protection: ensures Python child process is gracefully killed and UDP 8000 / HTTP 8001 ports are cleanly released before restart.
+  - Sidecar lifecycle protection: ensures Rust sidecar process is gracefully killed and UDP 8000 / HTTP 8001 ports are cleanly released before restart.
   - **Automated Web-Triggered Release Pipeline**: Maintainers simply publish a release on GitHub Web; Actions builds and signs the Full installer and attaches both Full/Lite portable executables, their Portable ZIP, `.sig`, and `latest.json`.
 * **Diagnostics Console, Theme System & i18n**:
   - **Diagnostic Console**: Live log viewer with DEBUG / INFO / WARNING / ERROR level filtering and automated Traceback stitching.
@@ -71,24 +71,16 @@ The shared `AppShell` owns workspace navigation and the application menu. Full p
 ```text
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD workflows (ci.yml gatekeeping + release.yml automated packaging)
-├── backend/                 # Python FastAPI backend core
-│   ├── main.py              # Backend entry point, API definitions & process management
-│   ├── agent_cli.py         # HorizonTuner-cli AI Agent command-line interface
-│   ├── mcp/                 # Model Context Protocol (MCP) Read-Only Server
-│   │   ├── service.py       # Telemetry & tuning service layer (aligned with TelemetryView)
-│   │   ├── tools.py         # 26 MCP tools declarations & dispatch
-│   │   └── resources.py     # 5 Resource URI router
-│   ├── telemetry_listener.py # UDP 60Hz telemetry socket listener and parser
-│   ├── telemetry_runtime.py  # Pipeline metrics and non-blocking dyno profile cache/persistence
-│   ├── system_media.py       # Windows GSMTC snapshot query/cache and overlay broadcast source
-│   ├── system_media_contract.py # Pure GSMTC media/playback/timeline to bounded JSON mapping
-│   ├── core/                # Core telemetry processing & calculation modules
-│   ├── routers/             # API routers (telemetry, tuning, overlay, drag, log, etc.)
-│   ├── services/            # System services & background state managers
-│   ├── telemetry_sqlite.py   # Historical telemetry SQLite storage engine
-│   ├── motec_exporter.py    # MoTeC i2 professional telemetry exporter (41 full channels + GPS projection)
-│   ├── motec_template.py    # MoTeC i2 Pro 5-worksheet XML workspace generator
-│   └── car_database.json    # Built-in car database
+├── backend-rust/            # Independent Rust HTTP / WebSocket / UDP sidecar
+│   ├── src/runtime.rs       # Process lifecycle, ports and bounded UDP delivery
+│   ├── src/network.rs       # HTTP / WebSocket transport and origin checks
+│   ├── src/telemetry/       # Packet codec, recorders, dyno and SQLite
+│   ├── src/road/            # Road workflow, observations, matching and captures
+│   ├── src/mcp/             # Existing read-only MCP tools and resources
+│   ├── src/native/          # WASAPI, GSMTC and Discord workers
+│   ├── src/config_service.rs # Settings, files and HUD API
+│   └── tests/               # Contract fixtures and loopback process tests
+├── backend/                 # Python reference, optional Agent CLI and resource data
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
 │   ├── lite/                # Lite frontend HTML entrypoint
 │   ├── src/app/             # Shared shell, capability contract, workspace and application-surface navigation
@@ -123,9 +115,9 @@ FH6-HorizonTuner/
 ├── pyproject.toml           # Ruff formatting rules & Pytest configuration
 ├── requirements.txt         # Python dependency list
 ├── fh6-agent.bat            # HorizonTuner-cli AI Agent entry script
-├── setup_dev.bat           # Install Python and frontend dependencies
-├── dev_full.bat            # Full dev entry; runs Python source directly
-├── dev_lite.bat            # Lite dev entry; runs Python source directly
+├── setup_dev.bat           # Download Rust and frontend dependencies
+├── dev_full.bat            # Full dev entry; compiles and launches the Rust sidecar
+├── dev_lite.bat            # Lite dev entry; compiles and launches the Rust sidecar
 ├── setup_build.bat         # Install packaging dependencies
 └── build_all.bat            # One-click standalone release bundler
 ```
@@ -144,12 +136,12 @@ To receive telemetry data, enable the data output feature in *Forza Horizon 6*:
 
 ### 2. Launching the Tool
 
-Install uv, Node.js/pnpm, and the Windows Rust/Tauri prerequisites, then run `setup_dev.bat` once. Run setup again when dependency declarations change.
+Install Node.js/pnpm, and the Windows Rust/Tauri prerequisites, then run `setup_dev.bat` once. Run setup again when dependency declarations change.
 
 - **Full**: run `dev_full.bat`.
 - **Lite**: run `dev_lite.bat` for Dashboard, HUD Overlay, and Settings.
 
-Tauri owns the `.venv` Python process running `backend/main.py` and stops it when the app closes. Dev never builds or launches a sidecar EXE; PyInstaller belongs only to release packaging. Vite HMR remains available; restart the app after changing Python. Full and Lite share development ports, so run one at a time.
+Both development entrypoints incrementally compile the independent Rust sidecar, then let Tauri manage its lifetime. Vite HMR remains available; restart the launcher after Rust edits. Full and Lite share development ports. Product development and packaging do not require Python. The optional Agent CLI, migration reference tests and some maintenance tools still use uv.
 
 Launching does not install packages, format source, update the vehicle database, or terminate other processes. Occupied HTTP `8001` or UDP `8000` ports cause an error. Close the existing instance before retrying. See the [development guide](docs/guides/development.md) for standalone backend, external frontend, and troubleshooting commands.
 
@@ -157,32 +149,19 @@ Launching does not install packages, format source, update the vehicle database,
 
 ## Standalone Release Bundling
 
-You can package both the frontend and backend into a **single standalone executable (.exe)** using the standard **Tauri (Rust Host) + Python Sidecar** architecture:
+Run `setup_build.bat`, then `build_all.bat`. The build compiles the shared frontend, standalone Rust sidecar, and Full/Lite Tauri hosts, producing `dist/FH6-HorizonTuner.exe` and `dist/FH6-HorizonTuner_lite.exe`.
 
-Run `setup_build.bat` once to install packaging tools. Builds consume the prepared environment without invoking development launchers or repairing dependencies. Resources come from the explicit `server-sidecar.spec` list.
+The sidecar uses `cargo build --locked --release`; `backend-rust/build.rs` embeds the HUD, language and vehicle resources. Packaging no longer uses PyInstaller. Existing settings, SQLite sessions and custom HUD data keep their paths. Release HTTP prefers 8001 and reports any fallback port through its readiness event; UDP telemetry remains independently configured.
 
-Audio initialization and Python packaging use Windows platform information without WMI to avoid stalled version queries. Device discovery retains a bounded wait. See the [Windows audio diagnostics](docs/guides/windows-audio-diagnostics.md) for implementation details and local validation.
-
-1. Run **`build_all.bat`**:
-   - **Phase 1 (Python Sidecar)**: PyInstaller builds the FastAPI backend into a dedicated Sidecar binary `server-sidecar-x86_64-pc-windows-msvc.exe` inside `frontend/src-tauri/bin/`.
-   - **Phase 2 (Release Build Host)**: The shared frontend is built once, then Tauri builds Full and Lite separately, producing `dist/FH6-HorizonTuner.exe` and `dist/FH6-HorizonTuner_lite.exe` without installers. The release Portable ZIP contains both.
-
-> `build_all.bat` skips the network-backed `pnpm audit` by default so a slow npm advisory service cannot stall packaging. Set `FH6_RUN_PNPM_AUDIT=1` before launching the script when a local audit is required.
-
-> [!NOTE]
-> **Release Build Path Strategy**:
-> When running the standalone executable, default resources are extracted by the Sidecar. User-generated files including settings (`settings.json`), telemetry sessions (`sessions/`), custom tunings (`tunings/`), custom car parameters (`car_params/`), translations (`lang/`), and custom HUD themes (`hud_overlay/`) are **automatically saved and maintained alongside the `.exe`**, ensuring 100% data portability.
-
-> **Custom HUD packages**: Place a package at `hud_overlay/<package-name>/index.html` beside the Release Build `.exe`; it is detected automatically and can be selected in the HUD menu. See [Release Build custom HUD packages](docs/guides/portable-custom-hud.md).
-
+See the [Rust migration and contract test guide](docs/backend-rust/README.md) and [development commands](docs/guides/development.md).
 
 ---
 
 ## Prerequisites
 
-* **uv**: Required for Python 3.13 management, virtual environment creation, and package installation. Follow the [Python / uv toolchain policy](.agents/rules/python-uv.md).
+* **uv**: Optional, for Python 3.13 management, virtual environment creation, and package installation. Follow the [Python / uv toolchain policy](.agents/rules/python-uv.md).
 * **Node.js**: 20 or higher
-* **Rust / Cargo**: Required only for local Tauri compilation (automatically falls back to web debug mode if missing)
+* **Rust / Cargo**: Required for the independent backend and Tauri host
 
 ---
 
@@ -308,7 +287,7 @@ The project supports a fully dynamic multi-language framework. Contributors can 
 
 ## CI/CD Pipeline
 
-All Python tooling is governed by the [Python / uv toolchain policy](.agents/rules/python-uv.md). The local launch/build scripts and GitHub workflows use the same pinned uv bootstrap, managed Python 3.13 environment, uv cache, `uv pip`, and `uv run` contract.
+Optional Python tooling and reference tests follow the [Python / uv toolchain policy](.agents/rules/python-uv.md): managed Python 3.13, `uv pip`, and `uv run`. Product launch and local packaging use Cargo and pnpm directly.
 
 The project uses GitHub Actions for automated quality control. Every push to `main`/`master` or Pull Request triggers:
 
@@ -347,7 +326,7 @@ We are committed to the security of our users and project. If you discover a sec
 ## Release Build Contract
 
 The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
-separate sidecar file are required. The PyInstaller backend is embedded into
+separate sidecar file are required. The Rust backend is embedded into
 the Tauri host and extracted to a versioned temporary directory at startup.
 User data is stored beside the executable when that directory is writable,
 with an AppData fallback for protected locations.
@@ -360,9 +339,9 @@ This project uses two separate localhost ports; do not configure them interchang
 | :--- | :--- | :--- |
 | Forza Horizon Data Out telemetry | UDP | `8000` (Receives game telemetry) |
 | UDP Telemetry Forwarding (Passthrough) | UDP | `5300` (Forwards raw bytes to SimHub / dashboards) |
-| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` (Broadcasts parsed data to UI/HUD) |
+| Rust REST API / WebSocket | HTTP / WebSocket | `8001` (Broadcasts parsed data to UI/HUD) |
 
 In the game, set **Data Out IP Address** to `127.0.0.1` and **Data Out Port** to `8000`. The development frontend connects to `http://127.0.0.1:8001` and `ws://127.0.0.1:8001`. Development uses `8001` as its fixed HTTP port. `TELEMETRY_PORT` remains available for changing the UDP port; `BACKEND_PORT` is retained for explicit test and external-backend workflows. To forward raw datagrams to SimHub or other tools, enable "Telemetry UDP Forwarding" in Settings and configure the destination host and port (defaults to `127.0.0.1:5300`, customizable via `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT`).
 
-In a Release Build, the FastAPI HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before a client's one-time endpoint bootstrap. After the first connection, a compatible Agent receives configuration guidance through the standard MCP `initialize` response; MCP does not define a cross-client API for injecting the initial URL.
+In a Release Build, the Rust HTTP service first attempts to bind `8001`. If another process owns that port, it falls back to an available dynamic TCP port. The actual bound port is written to `logs/web_port.txt` under the data directory after binding succeeds, and the frontend uses that value directly. Forza UDP telemetry still listens on `8000` by default. When fallback occurs, the application displays a Settings/MCP popover so the current endpoint can be confirmed before a client's one-time endpoint bootstrap. After the first connection, a compatible Agent receives configuration guidance through the standard MCP `initialize` response; MCP does not define a cross-client API for injecting the initial URL.
 After the Tauri sidecar reports ready, the frontend configures that actual port through a centralized transport contract. REST and WebSocket calls do not rely on global `fetch` or `WebSocket` interception, so HUD assets and other non-backend connections are never rewritten.

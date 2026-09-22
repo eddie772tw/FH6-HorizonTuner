@@ -1,0 +1,41 @@
+{
+  "bytes_base64": "AQAAAAAMh0UAIABGAICJRAAAtEIEAAAAAACgQQAAgD8AAIA/AACAvwAAAADNzMw+AAAAAAAAAAAAALRCAAC2QgAAuEIAALpCzczMPc3MTD6amZk+zczMPgrXIzwK16M8j8L1PArXIz1grslACwTcQLdZ7kCxVwBBAAAAAAAAAAA=",
+  "input": {
+    "AccelerationX": 9.81,
+    "AccelerationY": -9.81,
+    "AccelerationZ": 0.0,
+    "Boost": 6894.75729,
+    "CurrentEngineRpm": 4321.5,
+    "EngineIdleRpm": 1100,
+    "EngineMaxRpm": 8200,
+    "Gear": 4,
+    "IsRaceOn": 1,
+    "NormalizedSuspensionTravel": [
+      0.1,
+      0.2,
+      0.3,
+      0.4
+    ],
+    "PowerWatts": 14914,
+    "SpeedMetersPerSecond": 25.0,
+    "TireSlipAngle": [
+      0.11,
+      0.12,
+      0.13,
+      0.14
+    ],
+    "TireSlipRatio": [
+      0.01,
+      0.02,
+      0.03,
+      0.04
+    ],
+    "TireTemp": [
+      90,
+      91,
+      92,
+      93
+    ],
+    "Yaw": 0.4
+  }
+}

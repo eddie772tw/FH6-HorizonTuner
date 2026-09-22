@@ -1,0 +1,83 @@
+{
+  "profile_after_collection": {
+    "drivetrain": "RWD",
+    "dyno_curve": {
+      "4000": {
+        "hp": 10.0,
+        "hp_hist": [
+          10.0
+        ],
+        "torque": 73.756,
+        "torque_hist": [
+          73.756
+        ]
+      }
+    }
+  },
+  "quality": [
+    {
+      "canCollect": true,
+      "confidence": 0.12,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 0.25,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 0.38,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 0.5,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 0.62,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 0.75,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 0.88,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "observing"
+    },
+    {
+      "canCollect": true,
+      "confidence": 1.0,
+      "reasons": [],
+      "segmentId": 0,
+      "segmentReset": false,
+      "status": "confident"
+    }
+  ]
+}

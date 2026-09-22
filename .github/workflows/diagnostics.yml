@@ -85,16 +85,22 @@ jobs:
     - name: Install Python & Frontend Dependencies
       run: |
         uv pip install --requirement requirements.txt
-        uv pip install "pyinstaller>=6.10,<7.0"
         pnpm --prefix frontend install --frozen-lockfile
 
-    - name: Build Python sidecar executable
+    - name: Restore backend Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./backend-rust -> target"
+        shared-key: "backend-windows-release"
+        cache-workspace-crates: true
+
+    - name: Build Rust sidecar executable
       run: >
         python scripts/release_metrics.py
-        --label "PyInstaller sidecar"
+        --label "Rust sidecar"
         --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
         --metrics-file metrics/sidecar-build.json
-        -- uv run --no-project --active python scripts/build_sidecar.py server-sidecar.spec --clean
+        -- pwsh -NoProfile -File scripts/build_backend.ps1
 
     - name: Stage Embedded Sidecar
       shell: pwsh

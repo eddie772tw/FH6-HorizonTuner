@@ -1,0 +1,57 @@
+{
+  "calls": [
+    [
+      "create",
+      {
+        "car_class": 700,
+        "car_name": "2026 Test Car",
+        "car_ordinal": 42,
+        "car_pi": 800,
+        "session_id": "<session_id>"
+      }
+    ],
+    [
+      "points",
+      "<session_id>",
+      [
+        {
+          "CarClass": 700,
+          "CarOrdinal": 42,
+          "CarPerformanceIndex": 800,
+          "CurrentRaceTime": 1,
+          "DrivetrainType": 1,
+          "IsRaceOn": 1,
+          "LapNumber": 0,
+          "TimestampMS": 100,
+          "time": 0.0
+        },
+        {
+          "CarOrdinal": 42,
+          "CarPerformanceIndex": 800,
+          "CurrentRaceTime": 0,
+          "DrivetrainType": 1,
+          "IsRaceOn": 0,
+          "LapNumber": 0,
+          "TimestampMS": 200,
+          "time": 0.1
+        }
+      ]
+    ],
+    [
+      "finalize",
+      "<session_id>",
+      {
+        "capturedSamples": 2,
+        "droppedSamples": 0,
+        "endReason": "race-stopped",
+        "raceClockRegressions": 0,
+        "recordingSchema": "decoded-fh6/v1",
+        "sampleIntervalSeconds": 0
+      }
+    ]
+  ],
+  "status": {
+    "is_recording": false,
+    "session_id": "<session_id>"
+  }
+}

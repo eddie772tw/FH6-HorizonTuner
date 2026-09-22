@@ -1,0 +1,1133 @@
+{
+  "settings": [
+    {
+      "initial": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      },
+      "patch": {},
+      "expected": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "initial": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      },
+      "patch": {
+        "units": {
+          "speed": "mph",
+          "power": "ps",
+          "springRate": "lbfin"
+        }
+      },
+      "expected": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "mph",
+          "weight": "lbs",
+          "temperature": "F",
+          "tirePressure": "psi",
+          "boostPressure": "psi",
+          "springRate": "lbfin",
+          "rideHeight": "in",
+          "suspensionForce": "lbf",
+          "power": "ps",
+          "torque": "lbft"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "initial": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      },
+      "patch": {
+        "theme": {
+          "mode": "light",
+          "slots": [
+            1
+          ],
+          "customCSS": "x"
+        }
+      },
+      "expected": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "light",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": "x"
+        }
+      }
+    },
+    {
+      "initial": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      },
+      "patch": {
+        "dyno_recording": "false",
+        "telemetry_port": "8020",
+        "forward_telemetry_host": " localhost "
+      },
+      "expected": {
+        "settings_schema_version": 2,
+        "dyno_recording": true,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8020,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "localhost",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "initial": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      },
+      "patch": {
+        "unknown": 1,
+        "mcp_max_downsample": 30,
+        "language": null
+      },
+      "expected": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 30,
+        "language": "None",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    }
+  ],
+  "hud": [
+    {
+      "input": {},
+      "normalized": {},
+      "frontend": {
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnits": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnit": "kmh"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "input": {
+        "enabled": false,
+        "hudStyle": "vfd",
+        "s650Theme": "heritage67",
+        "s650CenterWidget": "drive",
+        "s650HmiOffsetY": 60,
+        "audioDeviceId": "default",
+        "position": {
+          "x": 100,
+          "y": 100
+        },
+        "scale": 1.0,
+        "unit": "kmh",
+        "followAppUnits": true,
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "telemetryOpacity": 0.65,
+        "telemetryGRadarScale": 1.0,
+        "telemetryCornersScale": 1.0,
+        "telemetryPedalScale": 1.0,
+        "telemetryPowerTorqueScale": 1.0,
+        "telemetryMergedChartsScale": 1.0,
+        "telemetryLiveMapScale": 1.0,
+        "telemetryLiveMapOpacity": 1.0,
+        "telemetryLiveMapOffsetX": 0,
+        "telemetryLiveMapOffsetY": 0,
+        "telemetrySideBySideCharts": true,
+        "pauseTelemetryViewWhenActive": true,
+        "enableSmoothing": true,
+        "elements": {
+          "showTeleMaster": true,
+          "showGauge": true,
+          "showCenterInfo": true,
+          "showRPM": true,
+          "showSpeed": true,
+          "showGear": true,
+          "showPowerTorque": true,
+          "showBoost": true,
+          "showWheelLockup": true,
+          "showMotionEffect": true,
+          "showTeleSuspension": true,
+          "showTeleTires": true,
+          "showTeleTiresSlip": true,
+          "showTeleTiresTemp": true,
+          "showTeleAttitude": true,
+          "showTeleEngine": true,
+          "showTelePedals": true,
+          "showTeleCenterAnchor": true,
+          "showTeleGridLines": false,
+          "showLiveMap": true,
+          "showLiveMapPOIs": true,
+          "showLiveMapPRStunts": true,
+          "showLiveMapCollectibles": true,
+          "showLiveMapHeading": true
+        },
+        "soundEnabled": false
+      },
+      "normalized": {
+        "enabled": false,
+        "hudStyle": "vfd",
+        "s650Theme": "heritage67",
+        "s650CenterWidget": "drive",
+        "s650HmiOffsetY": 60,
+        "audioDeviceId": "default",
+        "position": {
+          "x": 100,
+          "y": 100
+        },
+        "scale": 1.0,
+        "unit": "kmh",
+        "followAppUnits": true,
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "telemetryOpacity": 0.65,
+        "telemetryGRadarScale": 1.0,
+        "telemetryCornersScale": 1.0,
+        "telemetryPedalScale": 1.0,
+        "telemetryPowerTorqueScale": 1.0,
+        "telemetryMergedChartsScale": 1.0,
+        "telemetryLiveMapScale": 1.0,
+        "telemetryLiveMapOpacity": 1.0,
+        "telemetryLiveMapOffsetX": 0,
+        "telemetryLiveMapOffsetY": 0,
+        "telemetrySideBySideCharts": true,
+        "pauseTelemetryViewWhenActive": true,
+        "enableSmoothing": true,
+        "elements": {
+          "showTeleMaster": true,
+          "showGauge": true,
+          "showCenterInfo": true,
+          "showRPM": true,
+          "showSpeed": true,
+          "showGear": true,
+          "showPowerTorque": true,
+          "showBoost": true,
+          "showWheelLockup": true,
+          "showMotionEffect": true,
+          "showTeleSuspension": true,
+          "showTeleTires": true,
+          "showTeleTiresSlip": true,
+          "showTeleTiresTemp": true,
+          "showTeleAttitude": true,
+          "showTeleEngine": true,
+          "showTelePedals": true,
+          "showTeleCenterAnchor": true,
+          "showTeleGridLines": false,
+          "showLiveMap": true,
+          "showLiveMapPOIs": true,
+          "showLiveMapPRStunts": true,
+          "showLiveMapCollectibles": true,
+          "showLiveMapHeading": true
+        },
+        "soundEnabled": false
+      },
+      "frontend": {
+        "enabled": false,
+        "hudStyle": "vfd",
+        "s650Theme": "heritage67",
+        "s650CenterWidget": "drive",
+        "s650HmiOffsetY": 60,
+        "audioDeviceId": "default",
+        "position": {
+          "x": 100,
+          "y": 100
+        },
+        "scale": 1.0,
+        "unit": "kmh",
+        "followAppUnits": true,
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "telemetryOpacity": 0.65,
+        "telemetryGRadarScale": 1.0,
+        "telemetryCornersScale": 1.0,
+        "telemetryPedalScale": 1.0,
+        "telemetryPowerTorqueScale": 1.0,
+        "telemetryMergedChartsScale": 1.0,
+        "telemetryLiveMapScale": 1.0,
+        "telemetryLiveMapOpacity": 1.0,
+        "telemetryLiveMapOffsetX": 0,
+        "telemetryLiveMapOffsetY": 0,
+        "telemetrySideBySideCharts": true,
+        "pauseTelemetryViewWhenActive": true,
+        "enableSmoothing": true,
+        "elements": {
+          "showTeleMaster": true,
+          "showGauge": true,
+          "showCenterInfo": true,
+          "showRPM": true,
+          "showSpeed": true,
+          "showGear": true,
+          "showPowerTorque": true,
+          "showBoost": true,
+          "showWheelLockup": true,
+          "showMotionEffect": true,
+          "showTeleSuspension": true,
+          "showTeleTires": true,
+          "showTeleTiresSlip": true,
+          "showTeleTiresTemp": true,
+          "showTeleAttitude": true,
+          "showTeleEngine": true,
+          "showTelePedals": true,
+          "showTeleCenterAnchor": true,
+          "showTeleGridLines": false,
+          "showLiveMap": true,
+          "showLiveMapPOIs": true,
+          "showLiveMapPRStunts": true,
+          "showLiveMapCollectibles": true,
+          "showLiveMapHeading": true
+        },
+        "soundEnabled": false,
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "effectiveUnits": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnit": "kmh"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "input": {
+        "hudStyle": "s650_foxbody",
+        "actualScale": 2,
+        "s650CenterWidget": "x"
+      },
+      "normalized": {
+        "hudStyle": "s650_hmi",
+        "s650CenterWidget": "drive",
+        "s650Theme": "foxbody"
+      },
+      "frontend": {
+        "hudStyle": "s650_hmi",
+        "s650CenterWidget": "drive",
+        "s650Theme": "foxbody",
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnits": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnit": "kmh"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "input": {
+        "hudStyle": "s650_unrecognized",
+        "s650Theme": "track"
+      },
+      "normalized": {
+        "hudStyle": "s650_hmi",
+        "s650Theme": "heritage67",
+        "s650CenterWidget": "drive"
+      },
+      "frontend": {
+        "hudStyle": "s650_hmi",
+        "s650Theme": "heritage67",
+        "s650CenterWidget": "drive",
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnits": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnit": "kmh"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "input": {
+        "hudStyle": "initial_d"
+      },
+      "normalized": {
+        "hudStyle": "classic_jdm",
+        "classicJdmTachStyle": "trd",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear"
+      },
+      "frontend": {
+        "hudStyle": "classic_jdm",
+        "classicJdmTachStyle": "trd",
+        "classicJdmShowTriple": true,
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear",
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnits": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnit": "kmh"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "input": {
+        "hudStyle": "defi_triple",
+        "classicJdmShowTriple": false
+      },
+      "normalized": {
+        "hudStyle": "classic_jdm",
+        "classicJdmShowTriple": false,
+        "classicJdmTachStyle": "defi",
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear"
+      },
+      "frontend": {
+        "hudStyle": "classic_jdm",
+        "classicJdmShowTriple": false,
+        "classicJdmTachStyle": "defi",
+        "classicJdmAux1": "tire_temp_4w",
+        "classicJdmAux2": "tire_temp_rear",
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "units": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnits": {
+          "speed": "kmh",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "hp"
+        },
+        "effectiveUnit": "kmh"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    },
+    {
+      "input": {
+        "hudStyle": "s650_hmi",
+        "s650Theme": "track",
+        "followAppUnits": false,
+        "units": {
+          "speed": "mph",
+          "boostPressure": "invalid",
+          "power": "ps"
+        }
+      },
+      "normalized": {
+        "hudStyle": "s650_hmi",
+        "s650Theme": "track",
+        "followAppUnits": false,
+        "units": {
+          "speed": "mph",
+          "boostPressure": "invalid",
+          "power": "ps"
+        },
+        "s650CenterWidget": "drive"
+      },
+      "frontend": {
+        "hudStyle": "s650_hmi",
+        "s650Theme": "track",
+        "followAppUnits": false,
+        "units": {
+          "speed": "mph",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "ps"
+        },
+        "s650CenterWidget": "drive",
+        "s650GuiThemeMode": "dark",
+        "vfdRenderMode": "legacy",
+        "effectiveUnits": {
+          "speed": "mph",
+          "boostPressure": "bar",
+          "torque": "nm",
+          "power": "ps"
+        },
+        "effectiveUnit": "mph"
+      },
+      "settings": {
+        "settings_schema_version": 2,
+        "dyno_recording": false,
+        "race_recording": false,
+        "developer_tuning_enabled": false,
+        "mcp_enabled": true,
+        "mcp_allow_live": true,
+        "mcp_max_downsample": 500,
+        "language": "zh-tw",
+        "dyno_test_gear": 4,
+        "dyno_filter_slip": true,
+        "dyno_filter_transients": true,
+        "telemetry_port": 8000,
+        "units": {
+          "speed": "kmh",
+          "weight": "kg",
+          "temperature": "C",
+          "tirePressure": "bar",
+          "boostPressure": "bar",
+          "springRate": "kgfmm",
+          "rideHeight": "cm",
+          "suspensionForce": "kgf",
+          "power": "hp",
+          "torque": "nm"
+        },
+        "forward_telemetry_enabled": false,
+        "forward_telemetry_host": "127.0.0.1",
+        "forward_telemetry_port": 5300,
+        "theme": {
+          "mode": "dark",
+          "halfmoonCore": "default",
+          "primaryColor": "#00f0ff",
+          "secondaryColor": "#ff003c",
+          "accentColor": "#7000ff",
+          "customCSS": ""
+        }
+      }
+    }
+  ],
+  "units": [
+    {
+      "input": {},
+      "expected": {
+        "speed": "kmh",
+        "weight": "kg",
+        "temperature": "C",
+        "tirePressure": "bar",
+        "boostPressure": "bar",
+        "springRate": "kgfmm",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
+        "power": "hp",
+        "torque": "nm"
+      }
+    },
+    {
+      "input": null,
+      "expected": {
+        "speed": "kmh",
+        "weight": "kg",
+        "temperature": "C",
+        "tirePressure": "bar",
+        "boostPressure": "bar",
+        "springRate": "kgfmm",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
+        "power": "hp",
+        "torque": "nm"
+      }
+    },
+    {
+      "input": {
+        "speed": "mph",
+        "temperature": "C",
+        "power": "kw"
+      },
+      "expected": {
+        "speed": "mph",
+        "weight": "lbs",
+        "temperature": "F",
+        "tirePressure": "psi",
+        "boostPressure": "psi",
+        "springRate": "kgfmm",
+        "rideHeight": "in",
+        "suspensionForce": "lbf",
+        "power": "kw",
+        "torque": "lbft"
+      }
+    },
+    {
+      "input": {
+        "speed": "invalid",
+        "custom": 123
+      },
+      "expected": {
+        "speed": "kmh",
+        "weight": "kg",
+        "temperature": "C",
+        "tirePressure": "bar",
+        "boostPressure": "bar",
+        "springRate": "kgfmm",
+        "rideHeight": "cm",
+        "suspensionForce": "kgf",
+        "power": "hp",
+        "torque": "nm",
+        "custom": 123
+      }
+    }
+  ]
+}

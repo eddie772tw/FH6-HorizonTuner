@@ -1,0 +1,48 @@
+[package]
+name = "fh6-backend"
+version = "11.45.18"
+edition = "2021"
+description = "Independent HTTP, WebSocket and UDP backend for FH6 HorizonTuner"
+license = "MIT"
+
+[lib]
+name = "fh6_backend"
+
+[[bin]]
+name = "server-sidecar"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.8.9", features = ["ws", "multipart"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "net", "sync", "time", "signal", "io-util"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+rusqlite = { version = "0.40.2", default-features = false, features = ["bundled"] }
+chrono = "0.4.45"
+uuid = { version = "1.26.1", features = ["v4"] }
+tempfile = "3.27.0"
+rustfft = "6.4.1"
+csv = "1.4.0"
+zip = { version = "2.4.2", default-features = false, features = ["deflate"] }
+mime_guess = "2.0.5"
+if-addrs = "0.15.0"
+socket2 = "0.6.5"
+url = "2.5.8"
+regex = "1.13.1"
+percent-encoding = "2.3.2"
+sha2 = "0.11.0"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62.2", features = ["Foundation", "Foundation_Collections", "Media_Control", "Storage_Streams", "Win32_Foundation", "Win32_Media_Audio", "Win32_Media_Multimedia", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_Devices_FunctionDiscovery", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Shell_PropertiesSystem", "Win32_UI_WindowsAndMessaging", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_Security", "Win32_System_Threading", "Win32_System_IO", "Win32_Networking_WinSock"] }
+
+[build-dependencies]
+serde_json = "1"
+winresource = "0.1.31"
+
+[dev-dependencies]
+tower = { version = "0.5.3", features = ["util"] }
+tungstenite = "0.29.0"
+
+[profile.release]
+strip = true
+lto = "thin"

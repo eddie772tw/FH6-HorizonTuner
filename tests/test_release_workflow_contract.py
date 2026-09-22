@@ -291,12 +291,15 @@ def test_release_workflow_embeds_discord_presence_sidecar_resource():
     workflow = (repo_root / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"
     )
-    spec = (repo_root / "server-sidecar.spec").read_text(encoding="utf-8")
+    backend_build = (repo_root / "backend-rust" / "build.rs").read_text(
+        encoding="utf-8"
+    )
 
     assert "DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}" in workflow
     assert "DISCORD_APPLICATION_ID is empty or unavailable." in workflow
-    assert "backend/discord_application_id.json" in workflow
-    assert "discord_application_id_file" in spec
-    sidecar_start = workflow.index("Build Python Backend Sidecar Executable")
+    assert "scripts/build_backend.ps1" in workflow
+    assert 'env::var("DISCORD_APPLICATION_ID")' in backend_build
+    assert "cargo:rustc-env=FH6_BUNDLED_DISCORD_APPLICATION_ID=" in backend_build
+    sidecar_start = workflow.index("Build Rust Backend Sidecar Executable")
     stage_start = workflow.index("Stage Embedded Sidecar")
     assert "frontend" not in workflow[sidecar_start:stage_start]

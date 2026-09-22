@@ -1,70 +1,64 @@
 # 開發啟動與打包
 
+安裝 Node.js／pnpm、Rust stable 與 Tauri 的 Windows 開發工具（MSVC Build Tools、Windows SDK、WebView2）。產品後端位於 `backend-rust/`，與 Tauri host 各自編譯，透過 HTTP／WebSocket 通訊。
+
 ## 日常開發
 
-先安裝 uv、Node.js／pnpm 與 Rust／Tauri 所需的 Windows 工具。於專案根目錄執行：
-
 ```powershell
-# 第一次使用，或 requirements.txt / pnpm-lock.yaml 有變更時
 .\setup_dev.bat
-
-# 選擇其中一個
 .\dev_full.bat
-.\dev_lite.bat
+# 或 .\dev_lite.bat
 ```
 
-Full 與 Lite 共用 HTTP `8001`、UDP `8000` 與 Vite `1420`，一次執行一個。啟動時只執行 Tauri／Vite 與 Python 原始碼，不安裝依賴、不自動格式化、不更新車輛資料，不呼叫 PyInstaller，也不啟動 sidecar EXE。
+setup 下載 Cargo.lock 與 pnpm-lock.yaml 所列依賴。開發入口先執行 `pnpm run build:backend` 增量編譯後端，再啟動 Vite 與 Tauri。Tauri 直接執行 `backend-rust/target/debug/server-sidecar.exe --dev --data-dir backend`，不需要 Python／uv。React 使用 Vite HMR；修改 Rust 後重啟入口。
 
-Tauri 透過 `uv run --offline --no-project --python .venv\Scripts\python.exe python -u backend/main.py --dev --data-dir backend` 管理 Python 程序。`--data-dir` 使用 stdin 管道關閉合約；正常關閉主視窗或開發 host 重啟時，後端會一併結束。原有設定仍存於 `backend/`。React 修改由 Vite HMR 更新；Python 修改後重新啟動應用程式。
+Full／Lite 共用 HTTP 8001、UDP 8000 與 Vite 1420，一次執行一個。Dev HTTP 8001 被占用時直接失敗。Tauri 關閉 stdin 時，所擁有的後端會保存紀錄並退出。
 
-ready 由後端在 HTTP 與應用程式初始化完成後透過 stdout 發布。`backend/logs/web_port.txt` 保留供 CLI／診斷使用，Tauri 管理的後端不依賴此檔判斷 ready。
-
-## 單獨開發後端或前端
-
-需要保留後端、單獨重啟 GUI 時，第一個終端執行：
+## 獨立後端與外接前端
 
 ```powershell
-uv run --offline --no-project --python .venv\Scripts\python.exe python -u backend/main.py --dev
+cargo run --locked --manifest-path backend-rust/Cargo.toml -- --dev
 ```
 
-第二個 PowerShell 終端執行：
+獨立模式預設使用 `backend/` 資料目錄，Ctrl+C 關閉。要指定目錄可加 `--data-dir <path>`；此參數也啟用 stdin EOF 關閉合約，呼叫端須保留 stdin 管道。
+
+另一個終端啟動外接 host：
 
 ```powershell
 $env:FH6_NO_SIDECAR = '1'
 $env:BACKEND_PORT = '8001'
-.\dev_full.bat  # 也可改用 dev_lite.bat
+.\dev_full.bat
 Remove-Item Env:FH6_NO_SIDECAR, Env:BACKEND_PORT
 ```
 
-外接模式只驗證指定的 HTTP endpoint，不擁有或關閉外部後端。預設 port 是 `8001`；`BACKEND_PORT` 只控制外接位置，不修改 `--dev` 後端固定 port。純瀏覽器開發可用 `pnpm -C frontend run dev`。
+外接模式不擁有或關閉外部後端。純瀏覽器前端使用 `pnpm -C frontend run dev`。HTTP 與 UDP 分別配置；`TELEMETRY_PORT` 僅覆寫 UDP。正式模式優先使用 HTTP 8001，占用時 fallback；實際埠以 stdout `FH6_BACKEND_READY` 與 `logs/web_port.txt` 為準。
 
-CLI 直接執行 `.\fh6-agent.bat status --json` 等指令。需要手動更新車輛資料時，執行 `uv run --no-project --python .venv\Scripts\python.exe python backend/update_car_db.py`。
-
-## 正式打包
+## 測試與打包
 
 ```powershell
-# 第一次打包，或依賴有變更時
+cargo test --locked --manifest-path backend-rust/Cargo.toml
+cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
 .\setup_build.bat
 .\build_all.bat
 ```
 
-setup 安裝 Python／前端依賴與 `requirements-build.txt` 宣告的 PyInstaller。build 驗證版本，建置共用前端、Python sidecar，再建置 Full 與 Lite，輸出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`。
+後端測試以接受的輸入及前端可觀察輸出為基準；詳見 [Rust 後端測試分層](../backend-rust/README.md)。build 先建置共用前端，再執行 `scripts/build_backend.ps1` 建置並放置 sidecar，最後打包 Full／Lite。兩種 host 都嵌入相同 sidecar；使用者資料保持在既有位置。
 
-Python 打包統一經過 `scripts/build_sidecar.py`，使 PyInstaller 及其子程序採用 CPython 的非 WMI Windows 平台資訊路徑；此設定只作用於建置程序，不修改 `.venv` 或系統。Full／Lite 都封裝共用前端資源，Lite 主視窗指定 `lite/index.html`，開發入口也使用相同頁面。
+`backend-rust/build.rs` 直接嵌入 HUD、翻譯與車輛資源，並檢查版本與 Tauri manifest 一致。Discord application ID 可由建置環境的 `DISCORD_APPLICATION_ID` 或忽略追蹤的 `config/discord.local.json` 提供。沒有設定時，其餘功能仍正常運作。Cargo／pnpm 初次建置可能下載鎖定依賴，build 不安裝 Python、修改虛擬環境或執行 PyInstaller。
 
-build 不呼叫 dev、不修復 `.venv`、不安裝或升級依賴。資源依 `server-sidecar.spec` 的明確清單封裝，不掃描未知目錄後互動修改排除清單。`FH6_RUN_PNPM_AUDIT=1` 可額外執行網路 audit。Python 依賴仍採 requirements 範圍，尚非完整 lockfile 重現性保證；Rust／pnpm 首次建置仍可能下載既定依賴。
+## 選用的 Python 工具與參考測試
 
-正式版優先綁定 HTTP `8001`，占用時選擇動態 HTTP port；UDP 遙測 port 維持設定值。Dev 的 `--dev` 模式則在 HTTP `8001` 占用時直接失敗。
+`backend/` 暫時保留 Python 參考實作、Agent CLI 與資料維護工具，以供差分驗證與獨立 CLI 使用。它不會被 Tauri 啟動，也不會進入產品 runtime。
 
-## 失敗處理
+```powershell
+.\setup_venv.bat
+.\fh6-agent.bat status --json
+uv run --no-project --python .venv\Scripts\python.exe python scripts/generate_backend_contract_fixtures.py
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
+```
 
-| 情況 | 處理方式 |
-| --- | --- |
-| 缺少 Python／前端依賴 | 執行 `setup_dev.bat`，依第一個失敗命令的輸出處理 |
-| `.venv` 版本不正確或損毀 | 先關閉開發程序，手動移開 `.venv`，再執行 setup；腳本不自動刪除環境 |
-| 缺少 PyInstaller | 執行 `setup_build.bat` |
-| HTTP／UDP／Vite port 被占用 | 關閉先前執行個體；腳本不依 port 或程序名稱強制清除其他程序 |
-| Python 啟動失敗或逾時 | 查看啟動終端與 `backend/logs/backend.log`；直接執行上方後端命令排查 |
-| 主視窗關閉後後端仍存活 | 先保留 log；正常路徑透過 stdin EOF 結束，逾時只清除此 host 建立的程序樹 |
+## 排查
 
-lint、format 與測試由開發者明確執行。音訊初始化使用標準庫的非 WMI 版本資訊，裝置列舉與擷取各自維護執行緒的 COM session。若原生裝置呼叫仍掛起，清單會在約 1 秒回傳快取或預設值。實機與產物的驗證結果見 [Windows 音訊診斷紀錄](windows-audio-diagnostics.md)。
+缺少 cargo／MSVC 時先修復 Rust 工具鏈；缺少前端依賴執行 setup。HTTP／UDP／Vite 被占用時關閉原有執行個體，腳本不會按程序名稱強制終止其他工作。後端啟動錯誤看終端與資料目錄的 `logs/backend.log`；關閉逾時由 Tauri 只清理自己建立的程序樹。
+
+Windows 原生裝置與真實遊戲驗收仍須在對應環境執行。迴路測試只證明程序、資料與傳輸契約。

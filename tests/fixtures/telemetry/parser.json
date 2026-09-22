@@ -1,0 +1,186 @@
+{
+  "full": {
+    "bytes_base64": "AQAAAEDiAQAAIABGAICJRAAIh0XNzIw/zcwMwMP1HEEAAEBAAACAQAAAoEDNzMw9zcxMPpqZmT7NzMw+AAAAP5qZGT/NzMw9zcxMPpqZmT7NzMw+CtcjPArXozyPwvU8CtcjPQAAIEEAADBBAABAQQAAUEFkAAAAyAAAACwBAACQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAD+amRk/MzMzP83MTD+uR+E9j8L1PbgeBT4pXA8+PQpXPq5HYT4fhWs+j8J1PlK4nj4K16M+w/WoPnsUrj4qAAAAvAIAACADAAABAAAABgAAAAAAAAAAAAAAAAAAAAAAyEIAAEhDAACWQwAAyEEACGlGAADIQwAAtEIAALZCAAC4QgAAukIAAPpEAABAPwBAmkQAAHBCAAB0QgAASEEAAHpCAwAC/wAAAAQMAAAA",
+    "expected": {
+      "AccelInput": 255,
+      "AccelerationX": 1.100000023841858,
+      "AccelerationY": -2.200000047683716,
+      "AccelerationZ": 9.8100004196167,
+      "AngularVelocityX": 0.10000000149011612,
+      "AngularVelocityY": 0.20000000298023224,
+      "AngularVelocityZ": 0.30000001192092896,
+      "BestLap": 60.0,
+      "Boost": 2000.0,
+      "BrakeInput": 0,
+      "CarClass": 700,
+      "CarOrdinal": 42,
+      "CarPerformanceIndex": 800,
+      "ClutchInput": 0,
+      "CurrentEngineRpm": 4321.0,
+      "CurrentLap": 12.5,
+      "CurrentRaceTime": 62.5,
+      "Cylinders": 6,
+      "DistanceTraveled": 1234.0,
+      "DrivetrainType": 1,
+      "EngineIdleRpm": 1100.0,
+      "EngineMaxRpm": 8200.0,
+      "Fuel": 0.75,
+      "Gear": 4,
+      "HandBrakeInput": 0,
+      "IsRaceOn": 1,
+      "LapNumber": 3,
+      "LastLap": 61.0,
+      "NormalizedSuspensionTravel": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645
+      ],
+      "Pitch": 0.5,
+      "PositionX": 100.0,
+      "PositionY": 200.0,
+      "PositionZ": 300.0,
+      "PowerWatts": 14914.0,
+      "RacePosition": 2,
+      "Roll": 0.6000000238418579,
+      "SpeedMetersPerSecond": 25.0,
+      "SteerInput": 12,
+      "SurfaceRumble": [
+        0.5,
+        0.6000000238418579,
+        0.699999988079071,
+        0.800000011920929
+      ],
+      "SuspensionTravelMeters": [
+        0.3100000023841858,
+        0.3199999928474426,
+        0.33000001311302185,
+        0.3400000035762787
+      ],
+      "TelemetrySchema": "forza-data-out/fh6-324-v2",
+      "TimestampMS": 123456,
+      "TireCombinedSlip": [
+        0.20999999344348907,
+        0.2199999988079071,
+        0.23000000417232513,
+        0.23999999463558197
+      ],
+      "TireSlipAngle": [
+        0.10999999940395355,
+        0.11999999731779099,
+        0.12999999523162842,
+        0.14000000059604645
+      ],
+      "TireSlipRatio": [
+        0.009999999776482582,
+        0.019999999552965164,
+        0.029999999329447746,
+        0.03999999910593033
+      ],
+      "TireTemp": [
+        90.0,
+        91.0,
+        92.0,
+        93.0
+      ],
+      "TorqueNewtons": 400.0,
+      "VelocityX": 3.0,
+      "VelocityY": 4.0,
+      "VelocityZ": 5.0,
+      "WheelOnRumbleStrip": [
+        100,
+        200,
+        300,
+        400
+      ],
+      "WheelRotationSpeed": [
+        10.0,
+        11.0,
+        12.0,
+        13.0
+      ],
+      "Yaw": 0.4000000059604645
+    }
+  },
+  "legacy": {
+    "bytes_base64": "AQAAAEDiAQAAIABGAICJRAAIh0XNzIw/zcwMwMP1HEEAAEBAAACAQAAAoEDNzMw9zcxMPpqZmT7NzMw+AAAAP5qZGT/NzMw9zcxMPpqZmT7NzMw+CtcjPArXozyPwvU8CtcjPQAAIEEAADBBAABAQQAAUEFkAAAAyAAAACwBAACQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAD+amRk/MzMzP83MTD+uR+E9j8L1PbgeBT4pXA8+PQpXPq5HYT4fhWs+j8J1PlK4nj4K16M+w/WoPnsUrj4qAAAAvAIAACADAAABAAAABgAAAA==",
+    "expected": {
+      "AccelerationX": 1.100000023841858,
+      "AccelerationY": -2.200000047683716,
+      "AccelerationZ": 9.8100004196167,
+      "AngularVelocityX": 0.10000000149011612,
+      "AngularVelocityY": 0.20000000298023224,
+      "AngularVelocityZ": 0.30000001192092896,
+      "CarClass": 700,
+      "CarOrdinal": 42,
+      "CarPerformanceIndex": 800,
+      "CurrentEngineRpm": 4321.0,
+      "Cylinders": 6,
+      "DrivetrainType": 1,
+      "EngineIdleRpm": 1100.0,
+      "EngineMaxRpm": 8200.0,
+      "IsRaceOn": 1,
+      "NormalizedSuspensionTravel": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645
+      ],
+      "Pitch": 0.5,
+      "Roll": 0.6000000238418579,
+      "SurfaceRumble": [
+        0.5,
+        0.6000000238418579,
+        0.699999988079071,
+        0.800000011920929
+      ],
+      "SuspensionTravelMeters": [
+        0.3100000023841858,
+        0.3199999928474426,
+        0.33000001311302185,
+        0.3400000035762787
+      ],
+      "TelemetrySchema": "forza-data-out/legacy-common-v1",
+      "TimestampMS": 123456,
+      "TireCombinedSlip": [
+        0.20999999344348907,
+        0.2199999988079071,
+        0.23000000417232513,
+        0.23999999463558197
+      ],
+      "TireSlipAngle": [
+        0.10999999940395355,
+        0.11999999731779099,
+        0.12999999523162842,
+        0.14000000059604645
+      ],
+      "TireSlipRatio": [
+        0.009999999776482582,
+        0.019999999552965164,
+        0.029999999329447746,
+        0.03999999910593033
+      ],
+      "VelocityX": 3.0,
+      "VelocityY": 4.0,
+      "VelocityZ": 5.0,
+      "WheelOnRumbleStrip": [
+        100,
+        200,
+        300,
+        400
+      ],
+      "WheelRotationSpeed": [
+        10.0,
+        11.0,
+        12.0,
+        13.0
+      ],
+      "Yaw": 0.4000000059604645
+    }
+  },
+  "rejections": {
+    "not_racing": null,
+    "partial_schema": null,
+    "too_short": null
+  }
+}

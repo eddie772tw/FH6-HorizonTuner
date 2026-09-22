@@ -56,7 +56,9 @@ jobs:
       run: uv run --no-project --active ruff format --check .
 
     - name: Run Rust Format Verification
-      run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+      run: |
+        cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+        cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
 
   frontend-build-test:
     name: Frontend Build Test & Audit
@@ -105,7 +107,7 @@ jobs:
   # ============================================================================
 
   backend-unit-test:
-    name: Backend Pytest Unit Tests
+    name: Backend Contracts & Python Reference Tests
     needs: [backend-static-check]
     runs-on: ubuntu-latest
     steps:
@@ -124,6 +126,14 @@ jobs:
 
     - name: Install dependencies
       run: uv pip install --requirement requirements.txt
+
+    - name: Restore backend Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./backend-rust -> target"
+
+    - name: Verify Rust backend input and output contracts
+      run: cargo test --locked --manifest-path backend-rust/Cargo.toml
 
     - name: Execute Pytest Test Suite
       # Windows 專屬之行程合約測試與宿主診斷由專屬發行階段執行
@@ -164,7 +174,7 @@ jobs:
     name: Verify & Build Portable Sidecar
     needs: [backend-static-check]
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
@@ -182,24 +192,23 @@ jobs:
     - name: Install backend test dependencies
       run: uv pip install --requirement requirements.txt
 
-    - name: Verify modular WinRT media import
-      run: >
-        uv run --no-project --active python -c
-        "import winrt.windows.media.control as wmc; print(wmc.GlobalSystemMediaTransportControlsSessionManager)"
+    - name: Restore backend Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./backend-rust -> target"
+        shared-key: "backend-windows-release"
+        cache-workspace-crates: true
 
-    - name: Verify source sidecar lifecycle contract
-      run: uv run --no-project --active python -m pytest tests/test_sidecar_process_contract.py -v
+    - name: Verify Windows backend contracts
+      run: cargo test --locked --manifest-path backend-rust/Cargo.toml
 
-    - name: Install PyInstaller through uv
-      run: uv pip install "pyinstaller>=6.10,<7.0"
-
-    - name: Build Python sidecar executable
+    - name: Build Rust sidecar executable
       run: >
         python scripts/release_metrics.py
-        --label "PyInstaller sidecar"
+        --label "Rust sidecar"
         --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
         --metrics-file metrics/sidecar-build.json
-        -- uv run --no-project --active python scripts/build_sidecar.py server-sidecar.spec --clean
+        -- pwsh -NoProfile -File scripts/build_backend.ps1
 
     - name: Publish sidecar build metrics
       if: always()

@@ -2,7 +2,7 @@
 
 狀態：`adopted`。
 
-本專案的 Python 執行環境、虛擬環境與 Python 套件管理統一由 `uv` 負責。這條規範適用於本機開發、批次檔、測試、PyInstaller 打包，以及未來要同步的 GitHub Actions 工作流程。
+本專案的選用 Python 參考實作、Agent CLI、維護工具與測試環境統一由 `uv` 負責。產品後端與打包已改用獨立 Rust crate；本規範適用於仍使用 Python 的命令，不要求 Rust 開發安裝 Python。
 
 ## 固定契約
 
@@ -39,7 +39,7 @@ uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
 uv run --no-project --python .venv\Scripts\python.exe python -m py_compile backend\main.py
 ```
 
-環境準備使用 `setup_dev.bat`（內部呼叫 `setup_venv.bat`）；日常開發使用 `dev_full.bat` 或 `dev_lite.bat`，直接執行 Python 原始碼，不建立後端 EXE、不重新安裝依賴。打包前明確執行 `setup_build.bat`，再執行 `build_all.bat`。
+選用 Python 環境直接執行 `setup_venv.bat`。產品開發使用 `setup_dev.bat` 與 `dev_full.bat`／`dev_lite.bat`，由 Cargo 增量編譯後端。產品打包使用 `setup_build.bat` 與 `build_all.bat`，不執行 PyInstaller。
 
 ## 禁止與例外
 

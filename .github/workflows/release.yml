@@ -81,14 +81,25 @@ jobs:
     - name: Install Dependencies
       run: |
         uv pip install --requirement requirements.txt
-        uv pip install "pyinstaller>=6.10,<7.0"
         pnpm --prefix frontend install --frozen-lockfile
 
     - name: Verify application version consistency
       run: uv run --no-project --active python scripts/validate_version_consistency.py
 
     - name: Run Rust Format Verification (Pre-Release Gate)
-      run: cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+      run: |
+        cargo fmt --manifest-path frontend/src-tauri/Cargo.toml -- --check
+        cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
+
+    - name: Restore backend Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./backend-rust -> target"
+        shared-key: "backend-windows-release"
+        cache-workspace-crates: true
+
+    - name: Run Rust backend contract tests
+      run: cargo test --locked --manifest-path backend-rust/Cargo.toml
 
     - name: Run Backend Unit Tests (Pre-Release Gate)
       run: uv run --no-project --active python -m pytest tests/ -v -m "not host_diagnostics and not executable_bundle"
@@ -102,7 +113,7 @@ jobs:
         VITE_GIT_BRANCH: "main"
       run: pnpm --prefix frontend run build
 
-    - name: Build Python Backend Sidecar Executable
+    - name: Build Rust Backend Sidecar Executable
       shell: pwsh
       env:
         DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
@@ -114,16 +125,7 @@ jobs:
           throw 'DISCORD_APPLICATION_ID must be a 17-20 digit Discord Application ID.'
         }
 
-        $generatedPath = Join-Path $PWD 'backend/discord_application_id.json'
-        try {
-          @{ discord_application_id = $env:DISCORD_APPLICATION_ID } |
-            ConvertTo-Json -Compress |
-            Set-Content -LiteralPath $generatedPath -Encoding UTF8
-          uv run --no-project --active python scripts/build_sidecar.py server-sidecar.spec --clean
-        }
-        finally {
-          Remove-Item -LiteralPath $generatedPath -Force -ErrorAction SilentlyContinue
-        }
+        ./scripts/build_backend.ps1
 
     - name: Stage Embedded Sidecar for Tauri Host
       shell: pwsh

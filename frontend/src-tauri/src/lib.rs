@@ -241,27 +241,27 @@ fn fail_backend(app_handle: &tauri::AppHandle, error: String) {
 
 fn backend_command(app_handle: &tauri::AppHandle) -> Result<Command, String> {
     if cfg!(debug_assertions) {
-        println!("Starting development backend from Python source (no sidecar EXE).");
+        println!("Starting independent Rust development backend.");
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .and_then(|path| path.parent())
             .ok_or("Cannot resolve the development checkout")?
             .to_path_buf();
-        let python = root.join(".venv").join(if cfg!(windows) {
-            "Scripts/python.exe"
-        } else {
-            "bin/python"
-        });
-        if !python.is_file() {
-            return Err("Python environment is missing. Run setup_dev.bat first.".into());
+        let backend = root
+            .join("backend-rust/target/debug")
+            .join(if cfg!(windows) {
+                "server-sidecar.exe"
+            } else {
+                "server-sidecar"
+            });
+        if !backend.is_file() {
+            return Err(
+                "Rust backend is missing. Run pnpm -C frontend run build:backend first.".into(),
+            );
         }
-        let mut command = Command::new("uv");
+        let mut command = Command::new(backend);
         command
             .current_dir(&root)
-            .args(["run", "--offline", "--no-project", "--python"])
-            .arg(python)
-            .args(["python", "-u"])
-            .arg(root.join("backend/main.py"))
             .args(["--dev", "--data-dir"])
             .arg(root.join("backend"));
         Ok(command)

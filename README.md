@@ -2,12 +2,12 @@
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 > **《極限競速：地平線 6》即時遙測分析、車輛調校工作台與賽車客製化儀表覆蓋層**
 
-[![Language](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Uvicorn-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Language](https://img.shields.io/badge/Rust-2021-DEA584.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Backend](https://img.shields.io/badge/Backend-Axum%20%2B%20Tokio-009688.svg)](backend-rust/)
 [![Frontend](https://img.shields.io/badge/Frontend-Tauri%20%2B%20React%2018-24C8D8.svg?logo=tauri&logoColor=white)](https://tauri.app/)
 [![UI](https://img.shields.io/badge/UI-Halfmoon%20CSS-593196.svg)](https://www.gethalfmoon.com/)
 [![Overlay](https://img.shields.io/badge/Overlay-HTML5%20Canvas-E34F26.svg?logo=html5&logoColor=white)](hud_overlay/)
-[![Tests](https://img.shields.io/badge/Tests-Pytest%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-Cargo%20%2B%20Vitest-46A2F1.svg?logo=vitest&logoColor=white)](tests/)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![Package](https://img.shields.io/badge/Distribution-Standalone%20EXE-red.svg)](build_all.bat)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -16,7 +16,7 @@
 
 ## 簡介 / Introduction
 
-`FH6-HorizonTuner` 是一款專為《極限競速：地平線 6》開發的專屬遙測資料分析與車輛調校輔助工具。此專案整合了高效能的 Python FastAPI 後端封包監聽服務、現代化的 Tauri 桌面端圖形介面，以及完全免注入的 HTML5 Canvas / Tauri 透明儀表覆蓋層引擎。
+`FH6-HorizonTuner` 是一款專為《極限競速：地平線 6》開發的專屬遙測資料分析與車輛調校輔助工具。此專案整合了高效能的 Rust Axum 後端封包監聽服務、現代化的 Tauri 桌面端圖形介面，以及完全免注入的 HTML5 Canvas / Tauri 透明儀表覆蓋層引擎。
 
 目前此專案提供**即時遙測面板**、**自定義賽車儀表覆蓋層 (含視覺化編輯器)**、**車輛調校輔助**與**彈射起步測試**等核心功能，幫助玩家在操駕時即時監控車輛物理與動態反饋。
 
@@ -50,13 +50,13 @@
   - 後端 SQLite 遙測歷程資料庫自動記錄。
   - 支援一鍵匯出專業賽車數據分析軟體 **MoTeC i2** 標準 `.ld` 格式檔案。
 * **Localhost 唯讀 MCP Server (Model Context Protocol)**:
-  - 由執行中的 FastAPI backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
+  - 由執行中的 Rust backend 提供 Streamable HTTP MCP endpoint（`/mcp`），提供 26 個專屬唯讀工具與 5 類 Resource URI；MCP 與 telemetry 共用同一個 backend process。
   - 支援 AI Agent（Claude Desktop、Cursor、Cline 等）結構化查詢即時遙測（對齊 `TelemetryView`）、歷史單圈、A/B 跑圈差異比對、車輛規格與調校求解器。
   - MCP 標準 `initialize` 回應會自動提供 Agent-facing 配置與使用說明；Settings 僅顯示目前 endpoint 與連線狀態，不再要求複製 JSON/CLI 設定。首次連線仍須由客戶端完成一次性 endpoint bootstrap。
 * **OTA 自動更新與版本管理 (Over-The-Air Update & Release Management)**:
   - 整合 Tauri v2 官方 Updater 插件與 Ed25519 非對稱數位簽章防篡改校驗。
   - 支援「啟動時自動背景檢查」與「設定頁面手動檢查更新」，提供 Glassmorphism 賽車風格更新對話框與動態下載進度條。
-  - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Python 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
+  - 具備 Sidecar 生命週期協同保護：重啟升級前自動銷毀 Rust sidecar 子行程，確保 UDP 8000 與 HTTP 8001 連接埠 100% 釋放。
   - **自動化發布架構**：維護者僅需在 GitHub 網頁建立 Release，GitHub Actions 即自動觸發編譯與簽名。`FH6-HorizonTuner-Full-Installer.exe` 與 `FH6-HorizonTuner-Lite-Installer.exe` 是可直接安裝的正式 NSIS installer，也是 OTA updater 重用的同一個經簽署 payload；Full/Lite portable EXE 與 Portable ZIP 則清楚標示為可攜版。兩個 OTA 管道分別使用 `latest.json`（Full）與 `latest-lite.json`（Lite），可獨立下載與安裝，不依賴另一個版本。
 * **診斷主控台與主題 / 多語言系統 (Diagnostics, Theme & i18n)**:
   - **診斷主控台**：內建即時日誌檢視器，支援 DEBUG / INFO / WARNING / ERROR 層級篩選與 Traceback 自動拼接。
@@ -72,24 +72,16 @@
 ```text
 FH6-HorizonTuner/
 ├── .github/workflows/       # GitHub CI/CD 工作流 (ci.yml 門禁測試 + release.yml 自動發行)
-├── backend/                 # Python FastAPI 後端核心
-│   ├── main.py              # 後端服務主入口與 API 宣告
-│   ├── agent_cli.py         # HorizonTuner-cli AI Agent 命令列工具實作
-│   ├── mcp/                 # Model Context Protocol (MCP) 唯讀伺服器
-│   │   ├── service.py       # 遙測與調校服務層 (對齊 TelemetryView)
-│   │   ├── tools.py         # 26 個 MCP Tools 宣告與分派
-│   │   └── resources.py     # 5 類 Resource URI 路由
-│   ├── telemetry_listener.py # UDP 60Hz 遙測數據流監聽與解析
-│   ├── telemetry_runtime.py  # Pipeline metrics 與非阻塞 dyno profile 快取/寫入
-│   ├── system_media.py       # Windows GSMTC snapshot query/cache 與 overlay broadcast source
-│   ├── system_media_contract.py # GSMTC media/playback/timeline 到 bounded JSON 的純映射
-│   ├── core/                # 遙測數據處理、算牌與系統核心
-│   ├── routers/             # API 路由 (telemetry, tuning, overlay, drag, log, etc.)
-│   ├── services/            # 後端系統服務與狀態管理
-│   ├── telemetry_sqlite.py   # 遙測歷史紀錄 SQLite 資料庫持久化
-│   ├── motec_exporter.py    # 專業賽車 MoTeC i2 數據匯出器 (41 全通道 + GPS 投影)
-│   ├── motec_template.py    # MoTeC i2 Pro 5 大工作區 XML 範本產生器
-│   └── car_database.json    # 內建車輛資料庫
+├── backend-rust/            # Independent Rust HTTP / WebSocket / UDP sidecar
+│   ├── src/runtime.rs       # Process lifecycle, ports and bounded UDP delivery
+│   ├── src/network.rs       # HTTP / WebSocket transport and origin checks
+│   ├── src/telemetry/       # Packet codec, recorders, dyno and SQLite
+│   ├── src/road/            # Road workflow, observations, matching and captures
+│   ├── src/mcp/             # Existing read-only MCP tools and resources
+│   ├── src/native/          # WASAPI, GSMTC and Discord workers
+│   ├── src/config_service.rs # Settings, files and HUD API
+│   └── tests/               # Contract fixtures and loopback process tests
+├── backend/                 # Python reference, optional Agent CLI and resource data
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
 │   ├── lite/                # Lite 前端 HTML entrypoint
 │   ├── src/app/             # 共用 Shell、能力契約、工作區與全域 surface 導覽
@@ -124,9 +116,9 @@ FH6-HorizonTuner/
 ├── pyproject.toml           # Ruff 格式化規則與 Pytest 設定
 ├── requirements.txt         # Python 依賴套件清單
 ├── fh6-agent.bat            # HorizonTuner-cli AI Agent 命令列工具入口
-├── setup_dev.bat           # 安裝 Python 與前端開發依賴
-├── dev_full.bat            # Full 開發入口，直接執行 Python 原始碼
-├── dev_lite.bat            # Lite 開發入口，直接執行 Python 原始碼
+├── setup_dev.bat           # 下載 Rust 與前端開發依賴
+├── dev_full.bat            # Full 開發入口，編譯並啟動 Rust sidecar
+├── dev_lite.bat            # Lite 開發入口，編譯並啟動 Rust sidecar
 ├── setup_build.bat         # 安裝打包依賴
 └── build_all.bat            # 一鍵打包發行腳本
 ```
@@ -145,12 +137,12 @@ FH6-HorizonTuner/
 
 ### 2. 啟動本工具
 
-先安裝 uv、Node.js／pnpm 與 Rust／Tauri 的 Windows 開發工具，再執行一次 `setup_dev.bat`。相依宣告有變更時，重新執行 setup。
+先安裝 Node.js／pnpm 與 Rust／Tauri 的 Windows 開發工具，再執行一次 `setup_dev.bat`。相依宣告有變更時，重新執行 setup。
 
 - **Full**：執行 `dev_full.bat`。
 - **Lite**：執行 `dev_lite.bat`；僅提供 Dashboard、HUD Overlay、Settings。
 
-兩個入口都由 Tauri 啟動並管理 `.venv` 的 Python `backend/main.py`，關閉應用程式時一併結束後端。Dev 不編譯或啟動 sidecar EXE；PyInstaller 僅用於正式打包。前端保留 Vite HMR，修改 Python 後重新啟動應用程式。Full／Lite 共用開發 port，請一次啟動一個。
+兩個入口先增量編譯獨立的 Rust 後端，再由 Tauri 管理該程序的啟停。前端仍使用 Vite HMR；修改 Rust 後重新啟動開發入口。Full／Lite 共用開發 port，請一次啟動一個。日常開發與產品打包不需要 Python；Agent CLI、舊實作參考測試與部分維護工具仍可透過選用的 uv 環境執行。
 
 日常啟動不安裝套件、不格式化程式、不更新車輛資料、不清除其他程序。HTTP `8001` 或 UDP `8000` 被占用時會回報失敗，請關閉原有執行個體後重試。單獨執行後端、外接前端與故障排查請見[開發啟動指南](docs/guides/development.md)。
 
@@ -158,27 +150,17 @@ FH6-HorizonTuner/
 
 ## 一鍵打包可攜版 / Build Portable Executables (.exe)
 
-`build_all.bat` 會將後端與前端打包成 Full 與 Lite 的**免安裝可攜版執行檔**，採用標準的 **Tauri (Rust Host) + Python Sidecar** 架構。正式 GitHub Release 另外提供可直接安裝的 Full/Lite NSIS installer；下載者可依需求選擇 installer 或 portable 版本。
+執行 `setup_build.bat` 準備 Rust／前端依賴，再執行 `build_all.bat`。流程依序建置共用前端、獨立 Rust sidecar，以及 Full／Lite Tauri host，輸出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`。
 
-> [!NOTE]
-> **路徑設計說明**：
-> 發行版的獨立執行檔在運行時，所有的預設靜態資源由 Sidecar 內建釋放；而由使用者操作產生的個人設定檔（`settings.json`）、遙測紀錄（`sessions/`）、車輛調校資料（`tunings/`）、自訂車輛參數（`car_params/`）、i18n 語系檔（`lang/`）與自訂 HUD 樣式（`hud_overlay/`）皆會**自動儲存與維護於該 `.exe` 執行檔的同級目錄下**，實現 100% 可攜與自訂擴充自由。
+sidecar 由 `cargo build --locked --release` 編譯；HUD、語言、車輛資料透過 `backend-rust/build.rs` 嵌入，不再使用 PyInstaller。使用者的設定、SQLite 紀錄與自訂 HUD 沿用既有資料路徑。正式版 HTTP 優先使用 8001，必要時透過 readiness event 宣告動態埠；UDP 遙測埠仍獨立設定。
 
-先執行一次 `setup_build.bat` 安裝打包工具，再執行 `build_all.bat`。建置只使用準備好的環境，不呼叫開發啟動或環境修復流程；資源以 `server-sidecar.spec` 的明確清單為準。
-
-音訊初始化與 Python 打包採用非 WMI 的 Windows 平台資訊路徑，避免版本查詢掛起；裝置列舉仍保留等待上限。實作與本機驗證結果見 [Windows 音訊診斷](docs/guides/windows-audio-diagnostics.md)。
-
-* **兩階段自動化打包腳本 (`build_all.bat`)**：
-    1. **Phase 1 (Python Sidecar)**：PyInstaller 將 Python 後端單獨編譯為專用 Sidecar 可執行檔 `server-sidecar-x86_64-pc-windows-msvc.exe`，放置於 `frontend/src-tauri/bin/`。
-    2. **Phase 2 (Tauri Bundle)**：共用前端資源只建置一次，再分別打包 Full 與 Lite，產出 `dist/FH6-HorizonTuner.exe` 與 `dist/FH6-HorizonTuner_lite.exe`；Release workflow 會將它們命名為 `FH6-HorizonTuner-Full-Portable.exe` 與 `FH6-HorizonTuner-Lite-Portable.exe`，並另外建立包含兩者的 Portable ZIP。
-
-> `build_all.bat` 預設不執行需要連線 npm advisory service 的 `pnpm audit`，避免發行打包因遠端服務逾時而停滯；需要本機執行時，先設定 `FH6_RUN_PNPM_AUDIT=1` 再啟動腳本。
+詳細架構、Python 參考實作的保留用途與測試分層見 [Rust 後端遷移](docs/backend-rust/README.md)；命令見[開發指南](docs/guides/development.md)。
 
 ---
 
-## Python / uv 開發規範
+## 選用 Python / uv 工具規範
 
-本專案固定使用 Python 3.13，並由 `uv` 管理 Python interpreter、`.venv` 與所有 Python 套件。請先安裝 uv，再使用 [Python / uv 工具鏈規範](.agents/rules/python-uv.md) 中的命令；不要使用裸 `python`、`pip`、`pytest` 或 `ruff`。
+選用 Python 工具固定使用 Python 3.13，並由 `uv` 管理 Python interpreter、`.venv` 與所有 Python 套件。請先安裝 uv，再使用 [Python / uv 工具鏈規範](.agents/rules/python-uv.md) 中的命令；不要使用裸 `python`、`pip`、`pytest` 或 `ruff`。
 
 標準測試命令：
 
@@ -190,9 +172,9 @@ uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
 
 ## 開發環境要求 / Prerequisites
 
-* **uv**：Python 3.13、`.venv` 與 Python 套件安裝的必要管理工具。詳細規範請參閱 [Python / uv 工具鏈規範](.agents/rules/python-uv.md)。
+* **uv**：選用 Python 3.13、`.venv` 與 Python 套件安裝的必要管理工具。詳細規範請參閱 [Python / uv 工具鏈規範](.agents/rules/python-uv.md)。
 * **Node.js**: 20 或以上版本
-* **Rust / Cargo**: 本地端 Tauri 編譯所需 (非必須，若無則自動降級至 Web 瀏覽器調試模式)
+* **Rust / Cargo**：獨立後端與 Tauri host 的必要編譯工具。
 
 ---
 
@@ -401,7 +383,7 @@ each other. The Tauri updater consumes `latest.json` for Full and
 embeds the corresponding signature. The detached `.sig` assets are for
 verification and are not needed when manually launching an installer.
 
-Both installer and portable builds embed the PyInstaller backend into the Tauri
+Both installer and portable builds embed the Rust backend into the Tauri
 host; no separate sidecar download is required. At startup the backend is
 extracted to a versioned temporary directory. User data is stored beside a
 portable executable when that directory is writable, with an AppData fallback
@@ -415,11 +397,11 @@ for protected locations.
 | :--- | :--- | :--- |
 | Forza Horizon Data Out Telemetry | UDP | `8000` (接收遊戲遙測數據) |
 | UDP Telemetry Forwarding (Passthrough) | UDP | `5300` (可轉發 raw 封包至 SimHub / 外部儀表) |
-| FastAPI REST API / WebSocket | HTTP / WebSocket | `8001` (前端與 HUD 數據推播) |
+| Rust REST API / WebSocket | HTTP / WebSocket | `8001` (前端與 HUD 數據推播) |
 
 在遊戲中請將 **Data Out IP Address** 設為 `127.0.0.1`、**Data Out Port** 設為 `8000`。前端開發模式固定連線至 `http://127.0.0.1:8001` 與 `ws://127.0.0.1:8001`。可透過 `TELEMETRY_PORT` 修改 UDP 連接埠；`BACKEND_PORT` 僅保留給明確的測試與外部 backend workflow。如需將 raw 遙測數據轉發至 SimHub 或第三方軟體，可於「系統設定 (Settings)」開啟「Telemetry 遙測封包轉發」並設定目標 Host 與 Port（預設 `127.0.0.1:5300`，亦支援 `TELEMETRY_FORWARD_ENABLED` / `TELEMETRY_FORWARD_PORT` 環境變數）。
 
-Release Build 會優先使用 `8001` 作為 FastAPI HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。Agent 完成初次 endpoint 連線後，會透過 MCP 標準 `initialize` 回應自動取得配置說明，不需再次複製 JSON 或 CLI 設定；但 MCP 本身沒有跨客戶端注入首次 URL 的通用 API。
+Release Build 會優先使用 `8001` 作為 Rust HTTP 連接埠；若 `8001` 已被占用，才會 fallback 到可用的動態 TCP 連接埠。實際連接埠會在 backend bind 成功後寫入資料目錄的 `logs/web_port.txt`，前端直接使用該值；Forza UDP Telemetry 預設仍監聽 `8000`。若發生 fallback，應前往 Settings 的 MCP Server 區塊確認目前 endpoint。Agent 完成初次 endpoint 連線後，會透過 MCP 標準 `initialize` 回應自動取得配置說明，不需再次複製 JSON 或 CLI 設定；但 MCP 本身沒有跨客戶端注入首次 URL 的通用 API。
 前端會在 Tauri sidecar 回報 ready 後，透過集中式 transport 契約設定該實際連接埠；REST 與 WebSocket 呼叫不依賴全域 `fetch` / `WebSocket` 攔截，因此不會重寫 HUD 靜態資源或其他非後端連線。
 
 
