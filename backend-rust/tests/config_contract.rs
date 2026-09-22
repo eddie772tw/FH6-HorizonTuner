@@ -122,6 +122,8 @@ fn externally_supplied_paths_remain_inside_the_data_root() {
         ".",
         "a/../b",
         "x\0y",
+        ".. /escape",
+        "child./file",
     ] {
         assert!(
             storage::safe_path(directory.path(), name).is_err(),
@@ -131,4 +133,53 @@ fn externally_supplied_paths_remain_inside_the_data_root() {
     assert!(storage::safe_path(directory.path(), "child/file.json")
         .unwrap()
         .starts_with(directory.path().canonicalize().unwrap()));
+}
+
+#[test]
+fn symlinks_and_dangling_junctions_cannot_escape_storage() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path().join("root");
+    let outside = fixture.path().join("outside");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::create_dir_all(&outside).unwrap();
+    std::fs::write(outside.join("sentinel.json"), b"private").unwrap();
+    let link = root.join("escape");
+    let link_directory = |destination: &std::path::Path| {
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(destination, &link).unwrap();
+        #[cfg(windows)]
+        {
+            let result = std::process::Command::new("cmd")
+                .args(["/c", "mklink", "/J"])
+                .arg(&link)
+                .arg(destination)
+                .output()
+                .unwrap();
+            assert!(
+                result.status.success(),
+                "junction: {}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+    };
+    let unlink = || {
+        #[cfg(unix)]
+        std::fs::remove_file(&link).unwrap();
+        #[cfg(windows)]
+        std::fs::remove_dir(&link).unwrap();
+    };
+    link_directory(&outside);
+    assert!(storage::safe_path(&root, "escape/sentinel.json").is_err());
+    assert!(storage::safe_path(&root, "escape/new.json").is_err());
+    #[cfg(windows)]
+    assert!(storage::safe_path(&root, "ESCAPE/new.json").is_err());
+    unlink();
+    link_directory(&fixture.path().join("missing-outside"));
+    assert!(storage::safe_path(&root, "escape/new.json").is_err());
+    unlink();
+    assert_eq!(
+        std::fs::read(outside.join("sentinel.json")).unwrap(),
+        b"private"
+    );
+    assert!(!fixture.path().join("missing-outside").exists());
 }

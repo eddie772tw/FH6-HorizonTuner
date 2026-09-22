@@ -30,20 +30,59 @@ pub fn safe_path(base: &Path, relative: &str) -> ApiResult<PathBuf> {
     {
         return Err(ApiError::new(400, "Invalid path"));
     }
-    let base = base.canonicalize()?;
-    let target = base.join(path);
-    // Resolve the nearest existing ancestor as well as existing files, preventing
-    // a junction/symlink from escaping the writable root during creation.
-    let mut ancestor = target.as_path();
-    while !ancestor.exists() {
-        ancestor = ancestor
-            .parent()
-            .ok_or_else(|| ApiError::new(400, "Invalid path"))?;
-    }
-    if !ancestor.canonicalize()?.starts_with(&base) {
+    // Win32 strips these suffixes before resolving a component. Reject aliases
+    // before matching directory entries, even on non-Windows contract runners.
+    if path
+        .components()
+        .any(|c| c.as_os_str().to_string_lossy().ends_with(['.', ' ']))
+    {
         return Err(ApiError::new(400, "Invalid path"));
     }
-    Ok(target)
+    let base = base.canonicalize()?;
+    let mut directory = base.clone();
+    let mut components = path.components();
+    while let Some(component) = components.next() {
+        // Resolve an enumerated entry, never a user-composed path. In particular,
+        // a dangling symlink must be rejected, not treated as a new file.
+        let mut found = None;
+        for entry in fs::read_dir(&directory)? {
+            let entry = entry?;
+            if file_name_matches(&entry.file_name(), component.as_os_str()) {
+                found = Some(entry.path());
+                break;
+            }
+        }
+        if let Some(entry) = found {
+            let resolved = entry.canonicalize()?;
+            if !resolved.starts_with(&base) {
+                return Err(ApiError::new(400, "Invalid path"));
+            }
+            directory = resolved;
+        } else {
+            let mut target = directory.join(component);
+            for remaining in components {
+                target.push(remaining);
+            }
+            if !target.starts_with(&base) {
+                return Err(ApiError::new(400, "Invalid path"));
+            }
+            return Ok(target);
+        }
+    }
+    Ok(directory)
+}
+
+#[cfg(not(windows))]
+fn file_name_matches(actual: &std::ffi::OsStr, requested: &std::ffi::OsStr) -> bool {
+    actual == requested
+}
+#[cfg(windows)]
+fn file_name_matches(actual: &std::ffi::OsStr, requested: &std::ffi::OsStr) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::Win32::Globalization::{CompareStringOrdinal, CSTR_EQUAL};
+    let actual: Vec<u16> = actual.encode_wide().collect();
+    let requested: Vec<u16> = requested.encode_wide().collect();
+    unsafe { CompareStringOrdinal(&actual, &requested, true) == CSTR_EQUAL }
 }
 pub fn read_json(path: &Path) -> ApiResult<Value> {
     Ok(serde_json::from_slice(&fs::read(path)?)?)

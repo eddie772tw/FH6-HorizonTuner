@@ -363,7 +363,10 @@ impl App {
                 relative.trim_end_matches('/'),
             )?;
             if target.is_dir() {
-                target = storage::safe_path(&target, "index.html")?;
+                target = storage::safe_path(
+                    &self.config.root.join("hud_overlay"),
+                    &format!("{}/index.html", relative.trim_end_matches('/')),
+                )?;
             }
             (
                 fs::read(&target).map_err(|_| ApiError::new(404, "Not Found"))?,
