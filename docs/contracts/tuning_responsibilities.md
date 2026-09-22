@@ -1,29 +1,32 @@
 # 車輛調校與齒比算牌責任契約 (Tuning & Gearing Responsibilities Contract)
 
-- **版本 (Version)**: 1.0.0
+- **版本 (Version)**: 1.1.0
 - **狀態 (Status)**: 正式架構契約 (Architecture Contract)
 - **管轄範圍 (Scope)**: 車輛底盤調校（防傾桿 ARB、彈簧、車高、阻尼、差速器）與 AEGO 齒比計算邏輯
-- **關聯 Issue**: #423 (前後端調校與遙測責任釐清 Stacked PR 2)
+- **關聯 Issue**: #423 (前後端調校與遙測責任釐清 Stacked PR 1-4)
 
 ---
 
 ## 1. 架構核心原則與單一真理 (SSOT Architecture)
 
 依據 `.agents/AGENTS.md` 之 **Core Invariant #2**：
-> 「所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，且統一收攏。」
+> 「所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，以 Rust `backend-rust/src/tuning/`（與前端同步對齊之 `frontend/src/utils/tuningMath.ts`）作為單一真理 (SSOT)，雙端必須經由 `tests/fixtures/tuning_golden_fixtures.json` 保持 100% 數值一致。」
 
-### 1.1 演進階段定義 (Evolution Phases)
+### 1.1 演進階段與落地狀態 (Evolution Phases & Implementation Status)
 
-1. **現況過渡期 (PR 1 ~ PR 2)**：
-   - **前端正式 SSOT**：[`frontend/src/utils/tuningMath.ts`](file:///d:/FH6-HorizonTuner/frontend/src/utils/tuningMath.ts) 為全專案調校演算法的唯一基準。
-   - **後端過渡求解器**：`backend/mcp/service.py` 與 `backend/agent_cli.py` 標記為 `tuning-dev/v1 (Legacy Quick Baseline Solver)`。其僅用於開發期離線快速概算，不再宣稱與前端等價。
-   - **黃金資料集保護**：以 `tests/fixtures/tuning_golden_fixtures.json` 鎖定前端 16 組以上賽事與驅動組合之輸入與預期輸出。
+1. **基礎建立與契約鎖定 (PR 1 ~ PR 2)**：
+   - **前端基準鎖定**：以 [`frontend/src/utils/tuningMath.ts`](file:///d:/FH6-HorizonTuner/frontend/src/utils/tuningMath.ts) 為調校演算法之功能基準。
+   - **黃金資料集保護**：建立 `tests/fixtures/tuning_golden_fixtures.json`，鎖定 18 組涵蓋四大賽事與驅動組合之輸入與預期輸出，並建立前端契約測試 `frontend/src/utils/tuningMath.contract.test.ts`。
+   - **後端過渡求解器**：`backend/mcp/service.py` 與 `backend/agent_cli.py` 標記為 `tuning-dev/v1 (Legacy Quick Baseline Solver)`，明確與正式調校契約區隔。
 
-2. **目標架構期 (PR 3 ~ PR 4)**：
-   - **跨端純 Rust 核心**：在 `backend-rust/src/tuning/`（或獨立 crate `fh6-tuning-core`）中以純函數重構完整底盤與 AEGO 齒比模型。
-   - **雙向交付**：
-     - **後端 / CLI / MCP**：直接靜態連結或調用 Rust 本地函式庫，達成零開銷、強型別與記憶體安全。
-     - **前端 UI**：透過 `wasm-bindgen` 編譯為 WebAssembly (`.wasm`)，前端 Vite/React 直接 `import` 調用，維持 0ms 滑桿拖曳響應與 100% 離線運行能力。
+2. **Rust 純函數核心實作 (PR 3)**：
+   - **純 Rust 核心 (`backend-rust/src/tuning/`)**：完成 `chassis.rs`（底盤、懸吊、防傾桿、車高、阻尼、差速器）與 `gearing.rs`（AEGO 齒比優化），為零相依純數學實現。
+   - **後端契約測試 (`backend-rust/tests/tuning_contract.rs`)**：直接載入 `tests/fixtures/tuning_golden_fixtures.json`，18/18 組情境全部 100% 通過。
+
+3. **跨端整合與真理對齊 (PR 4)**：
+   - **雙端 SSOT 對齊**：Rust `backend-rust/src/tuning/` 與 TypeScript `frontend/src/utils/tuningMath.ts` 經由 18 組 Golden Fixtures 保證 100% 數值一致。
+   - **架構規範同步**：更新 `.agents/AGENTS.md` Core Invariant #2，確立 Rust 核心為後端算牌與未來 WASM 編譯基礎。
+   - **舊求解器退場指引**：MCP 與 Agent CLI 舊有 `tuning-dev/v1` 標記為過渡/已棄用 (Deprecated) 狀態，引導工具鏈逐步調用 Rust `tuning_core`。
 
 ---
 
