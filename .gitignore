@@ -107,6 +107,7 @@ config/discord.local.json
 id_rsa*
 
 /scratch
+/backend-rust/target/
 .agents/security_data.json
 .agents/security_report.md
 

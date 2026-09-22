@@ -1,0 +1,15 @@
+//! Frontend-independent backend. Network adapters translate inputs into domain services.
+pub mod app;
+pub mod assets;
+pub mod config;
+pub mod config_service;
+pub mod diagnostics;
+pub mod error;
+pub mod mcp;
+pub mod motec;
+pub mod native;
+pub mod network;
+pub mod road;
+pub mod runtime;
+pub mod storage;
+pub mod telemetry;

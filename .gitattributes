@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# MoTeC oracle is a byte-level wire fixture, including CSV CRLF terminators.
+backend-rust/tests/fixtures/motec.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

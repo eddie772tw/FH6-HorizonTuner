@@ -1,0 +1,257 @@
+{
+  "variants": [
+    {
+      "expected": {
+        "AccelInput": 127.5,
+        "AccelerationX": null,
+        "AccelerationY": null,
+        "AccelerationZ": null,
+        "AngularVelocityX": null,
+        "AngularVelocityY": null,
+        "AngularVelocityZ": null,
+        "BestLap": null,
+        "Boost": null,
+        "BrakeInput": null,
+        "CarClass": null,
+        "CarOrdinal": null,
+        "CarPerformanceIndex": null,
+        "ClutchInput": null,
+        "CurrentEngineRpm": null,
+        "CurrentLap": null,
+        "CurrentRaceTime": null,
+        "Cylinders": null,
+        "DistanceTraveled": null,
+        "DrivetrainType": null,
+        "EngineIdleRpm": null,
+        "EngineMaxRpm": null,
+        "Fuel": null,
+        "Gear": null,
+        "HandBrakeInput": null,
+        "IsRaceOn": null,
+        "LapNumber": null,
+        "LastLap": null,
+        "NormalizedSuspensionTravel": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "Pitch": null,
+        "PositionX": null,
+        "PositionY": null,
+        "PositionZ": null,
+        "Power": null,
+        "PowerWatts": null,
+        "RacePosition": null,
+        "Roll": null,
+        "SmashableMass": null,
+        "SmashableVelDiff": null,
+        "SpeedMetersPerSecond": 10,
+        "SteerInput": null,
+        "SurfaceRumble": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "SuspTravel": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "SuspensionTravelMeters": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TelemetrySchema": "unknown",
+        "TimestampMS": null,
+        "TireCombinedSlip": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TireSlipAngle": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TireSlipRatio": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TireTemp": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "Torque": null,
+        "TorqueNewtons": null,
+        "VelocityX": null,
+        "VelocityY": null,
+        "VelocityZ": null,
+        "WheelOnRumbleStrip": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "WheelRotationSpeed": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "Yaw": null,
+        "accel_pct": 50.0,
+        "brake_pct": null,
+        "clutch_pct": null,
+        "handbrake_pct": null,
+        "lap_distance": null,
+        "sourceSchema": "decoded-fh6/v1",
+        "steer_pct": null,
+        "time": null
+      },
+      "input": {
+        "SpeedMetersPerSecond": 10,
+        "accel_pct": 50
+      }
+    },
+    {
+      "expected": {
+        "AccelInput": null,
+        "AccelerationX": null,
+        "AccelerationY": null,
+        "AccelerationZ": null,
+        "AngularVelocityX": null,
+        "AngularVelocityY": null,
+        "AngularVelocityZ": null,
+        "BestLap": null,
+        "Boost": null,
+        "BrakeInput": null,
+        "CarClass": null,
+        "CarOrdinal": null,
+        "CarPerformanceIndex": null,
+        "ClutchInput": null,
+        "CurrentEngineRpm": null,
+        "CurrentLap": null,
+        "CurrentRaceTime": null,
+        "Cylinders": null,
+        "DistanceTraveled": 7,
+        "DrivetrainType": null,
+        "EngineIdleRpm": null,
+        "EngineMaxRpm": null,
+        "Fuel": null,
+        "Gear": null,
+        "HandBrakeInput": null,
+        "IsRaceOn": null,
+        "LapNumber": null,
+        "LastLap": null,
+        "NormalizedSuspensionTravel": [
+          1,
+          2,
+          null,
+          null
+        ],
+        "Pitch": null,
+        "PositionX": null,
+        "PositionY": null,
+        "PositionZ": null,
+        "Power": 123,
+        "PowerWatts": 123,
+        "RacePosition": null,
+        "Roll": null,
+        "SmashableMass": null,
+        "SmashableVelDiff": null,
+        "SpeedMetersPerSecond": null,
+        "SteerInput": null,
+        "SurfaceRumble": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "SuspTravel": [
+          1,
+          2,
+          null,
+          null
+        ],
+        "SuspensionTravelMeters": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TelemetrySchema": "unknown",
+        "TimestampMS": null,
+        "TireCombinedSlip": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TireSlipAngle": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TireSlipRatio": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "TireTemp": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "Torque": 456,
+        "TorqueNewtons": 456,
+        "VelocityX": null,
+        "VelocityY": null,
+        "VelocityZ": null,
+        "WheelOnRumbleStrip": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "WheelRotationSpeed": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "Yaw": null,
+        "accel_pct": null,
+        "brake_pct": null,
+        "clutch_pct": null,
+        "handbrake_pct": null,
+        "lap_distance": 7,
+        "sourceSchema": "decoded-fh6/v1",
+        "steer_pct": null,
+        "time": null
+      },
+      "input": {
+        "Power": 123,
+        "SuspTravel": [
+          1,
+          2
+        ],
+        "Torque": 456,
+        "lap_distance": 7
+      }
+    }
+  ]
+}

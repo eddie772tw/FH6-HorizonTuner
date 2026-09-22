@@ -1,0 +1,12 @@
+Format,MoTeC CSV Log File,Version,1.00
+Device,FH6 Horizon Tuner Telemetry,Serial,FH6-HORIZON-TUNER
+Date,fixture,Time,00:00:00
+Driver,Driver,Vehicle,"測試, Car"
+Venue,Forza Circuit,Comment,Exported Telemetry Session fixture - Full 41 Channels
+Sample Rate,10.000
+
+Time,Distance,Lap Number,Ground Speed,Engine RPM,Gear,Throttle Pos,Brake Pos,Clutch Pos,Handbrake Pos,Steered Angle,G Force Lat,G Force Long,G Force Vert,Boost Pressure,Fuel Level,Engine Power,Engine Torque,Susp Pos FL,Susp Pos FR,Susp Pos RL,Susp Pos RR,Susp Travel FL,Susp Travel FR,Susp Travel RL,Susp Travel RR,Normalized Slip Angle FL,Normalized Slip Angle FR,Normalized Slip Angle RL,Normalized Slip Angle RR,Slip Ratio FL,Slip Ratio FR,Slip Ratio RL,Slip Ratio RR,Tire Temp FL,Tire Temp FR,Tire Temp RL,Tire Temp RR,GPS Latitude,GPS Longitude,GPS Altitude
+s,m,,km/h,rpm,,%,%,%,%,%,G,G,G,psi,%,hp,Nm,%,%,%,%,m,m,m,m,normalized,normalized,normalized,normalized,,,,,°C,°C,°C,°C,deg,deg,m
+0.000,,1,72.000,4000,3,49.804,,,,-47.244,0.510,,,,,201.153,300.000,96.000,,50.000,60.000,,,,,0.800,0.700,0.100,0.200,,,,,71.111,82.222,,100.000,19.4303586,-99.1320353,5.000
+0.100,,1,0.000,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0.200,,2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

@@ -5,7 +5,7 @@
 | 服務項目 | 傳輸協定 | 開發模式預設值 | 環境變數設定 | 職責與用途 |
 | :--- | :--- | :--- | :--- | :--- |
 | **Forza Data Out 遙測接收器** | UDP | `127.0.0.1:8000` | `TELEMETRY_IP`, `TELEMETRY_PORT` | 接收 Forza 遊戲 60Hz 324-byte 二進位封包 |
-| **FastAPI REST / WebSocket 伺服器** | HTTP / WS over TCP | `127.0.0.1:8001` | `BACKEND_PORT` | 提供前端 UI 數據查詢與即時廣播 |
+| **Rust REST / WebSocket 伺服器** | HTTP / WS over TCP | `127.0.0.1:8001` | `BACKEND_PORT` | 提供前端 UI 數據查詢與即時廣播 |
 
 ---
 
@@ -17,7 +17,7 @@
    - **嚴禁將 `8000` 作為 HTTP URL 呼叫**（例如 `http://127.0.0.1:8000/api/...` 為嚴重錯誤，會導致連線失敗）。
 
 2. **Portable Release 動態連接埠機制**：
-   - 在單檔便攜發行版（Portable Release）中，FastAPI 後端會在啟動時動態選取可用的本機 TCP 埠，防止多執行個體或與既有系統服務衝突。
+   - 在單檔便攜發行版（Portable Release）中，Rust 後端會在啟動時動態選取可用的本機 TCP 埠，防止多執行個體或與既有系統服務衝突。
    - Tauri 主機與外部整合透過 **Sidecar Readiness Event** 或讀取 `logs/web_port.txt` 取得實際分配之 HTTP 埠。
    - **UDP 遙測端口在 Release 模式下依然維持固定配置（預設 `8000`）**，不受動態 TCP 埠影響。
 

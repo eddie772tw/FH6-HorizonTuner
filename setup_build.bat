@@ -3,5 +3,5 @@ setlocal
 cd /D "%~dp0"
 call "%~dp0setup_dev.bat"
 if errorlevel 1 exit /b 1
-uv pip install --python "%~dp0.venv\Scripts\python.exe" --requirement "%~dp0requirements-build.txt"
-exit /b %errorlevel%
+echo [READY] Rust and frontend dependencies are ready. Run build_all.bat.
+exit /b 0

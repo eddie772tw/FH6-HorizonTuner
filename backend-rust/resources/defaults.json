@@ -1,0 +1,161 @@
+{
+  "DEFAULT_SETTINGS": {
+    "settings_schema_version": 2,
+    "dyno_recording": false,
+    "race_recording": false,
+    "developer_tuning_enabled": false,
+    "mcp_enabled": true,
+    "mcp_allow_live": true,
+    "mcp_max_downsample": 500,
+    "language": "zh-tw",
+    "dyno_test_gear": 4,
+    "dyno_filter_slip": true,
+    "dyno_filter_transients": true,
+    "telemetry_port": 8000,
+    "units": {
+      "speed": "kmh",
+      "weight": "kg",
+      "temperature": "C",
+      "tirePressure": "bar",
+      "boostPressure": "bar",
+      "springRate": "kgfmm",
+      "rideHeight": "cm",
+      "suspensionForce": "kgf",
+      "power": "hp",
+      "torque": "nm"
+    },
+    "forward_telemetry_enabled": false,
+    "forward_telemetry_host": "127.0.0.1",
+    "forward_telemetry_port": 5300,
+    "theme": {
+      "mode": "dark",
+      "halfmoonCore": "default",
+      "primaryColor": "#00f0ff",
+      "secondaryColor": "#ff003c",
+      "accentColor": "#7000ff",
+      "customCSS": ""
+    }
+  },
+  "GENERAL_UNIT_PROFILES": {
+    "metric": {
+      "speed": "kmh",
+      "weight": "kg",
+      "temperature": "C",
+      "tirePressure": "bar",
+      "boostPressure": "bar",
+      "rideHeight": "cm",
+      "suspensionForce": "kgf",
+      "torque": "nm"
+    },
+    "imperial": {
+      "speed": "mph",
+      "weight": "lbs",
+      "temperature": "F",
+      "tirePressure": "psi",
+      "boostPressure": "psi",
+      "rideHeight": "in",
+      "suspensionForce": "lbf",
+      "torque": "lbft"
+    }
+  },
+  "DEFAULT_LAYOUT": {
+    "modules": {
+      "tireTemp": {
+        "visible": true,
+        "x": 50,
+        "y": 50,
+        "w": 250,
+        "h": 180
+      },
+      "suspTravel": {
+        "visible": true,
+        "x": 320,
+        "y": 50,
+        "w": 200,
+        "h": 180
+      },
+      "slipLimit": {
+        "visible": true,
+        "x": 540,
+        "y": 50,
+        "w": 220,
+        "h": 220
+      },
+      "gForce": {
+        "visible": true,
+        "x": 50,
+        "y": 250,
+        "w": 220,
+        "h": 220
+      },
+      "dashboard": {
+        "visible": true,
+        "x": 290,
+        "y": 250,
+        "w": 470,
+        "h": 120
+      }
+    }
+  },
+  "DEFAULT_HUD_CONFIG": {
+    "enabled": false,
+    "hudStyle": "vfd",
+    "s650Theme": "heritage67",
+    "s650CenterWidget": "drive",
+    "s650HmiOffsetY": 60,
+    "audioDeviceId": "default",
+    "position": {
+      "x": 100,
+      "y": 100
+    },
+    "scale": 1.0,
+    "unit": "kmh",
+    "followAppUnits": true,
+    "units": {
+      "speed": "kmh",
+      "boostPressure": "bar",
+      "torque": "nm",
+      "power": "hp"
+    },
+    "telemetryOpacity": 0.65,
+    "telemetryGRadarScale": 1.0,
+    "telemetryCornersScale": 1.0,
+    "telemetryPedalScale": 1.0,
+    "telemetryPowerTorqueScale": 1.0,
+    "telemetryMergedChartsScale": 1.0,
+    "telemetryLiveMapScale": 1.0,
+    "telemetryLiveMapOpacity": 1.0,
+    "telemetryLiveMapOffsetX": 0,
+    "telemetryLiveMapOffsetY": 0,
+    "telemetrySideBySideCharts": true,
+    "pauseTelemetryViewWhenActive": true,
+    "enableSmoothing": true,
+    "elements": {
+      "showTeleMaster": true,
+      "showGauge": true,
+      "showCenterInfo": true,
+      "showRPM": true,
+      "showSpeed": true,
+      "showGear": true,
+      "showPowerTorque": true,
+      "showBoost": true,
+      "showWheelLockup": true,
+      "showMotionEffect": true,
+      "showTeleSuspension": true,
+      "showTeleTires": true,
+      "showTeleTiresSlip": true,
+      "showTeleTiresTemp": true,
+      "showTeleAttitude": true,
+      "showTeleEngine": true,
+      "showTelePedals": true,
+      "showTeleCenterAnchor": true,
+      "showTeleGridLines": false,
+      "showLiveMap": true,
+      "showLiveMapPOIs": true,
+      "showLiveMapPRStunts": true,
+      "showLiveMapCollectibles": true,
+      "showLiveMapHeading": true
+    },
+    "soundEnabled": false
+  }
+}

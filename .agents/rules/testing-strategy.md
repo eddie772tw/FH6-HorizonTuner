@@ -2,6 +2,8 @@
 
 本專案的前後端測試體系旨在保障 60Hz 即時賽車遙測數據流與車輛物理調校運算的正確性，並透過嚴格的分層隔離防止測試集膨脹、脆弱性 (Flakiness) 與過度工程。
 
+Rust 遷移後，產品後端的主驗證入口為 `cargo test --locked --manifest-path backend-rust/Cargo.toml`，細分純領域、Python 黃金輸出、資料往返與短時間程序迴路。後者只驗證 HTTP／UDP／WS／stdin 的產品邊界，不啟動 GUI 或遊戲，不能當成原生裝置驗收。詳見 [後端測試分層](../../docs/backend-rust/README.md)。下表 Python 層級適用於保留的參考實作、CLI 及發布維護工具。
+
 ---
 
 ## 一、 測試金字塔與分層隔離原則 (Test Pyramid & Isolation)

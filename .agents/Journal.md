@@ -2696,3 +2696,14 @@
 - **Verified learning**：status effect 依賴自己更新的 recordingCount 並立即讀取，會隨錄製樣本數變更重啟；provider 每次 render 產生的新 laps/debrief callbacks 又觸發 consumer effect。實際 6 秒重入視窗從 data/debrief 7/6 放大到 31/30，純函數測試與離頁歸零不足以發現。
 - **Fix/evidence**：只以 recording enable flag 驅動 effect，維持既有頻率、禁止重疊並在 cleanup abort，將無 closure state 的讀取 callbacks 固定。修正後兩輪重入為 2/1、2/1、3/2；離頁皆 0/0，無事件截斷。完整 119 files／794 tests 與 Full/Lite build 通過；同一 mounted provider 完成 A/B 第二段交錯，A 未導頁、B 開啟 exact 100 samples。
 - **Boundary**：當 request metadata 可能被高頻 WS 事件擠出時，須分段讀取並按 request 時間篩選；截斷或超過 timeout 的 interception 不列證據。HTTP 次數不是全部 channel/native/效能結論。C5/H5 與真實 FH6 仍待驗收，見 [受控證據](../docs/frontend/ia-refactor-20260913/evidence/g2-mounted-reentry-20260914.md)。
+
+## 2026-09-22 / 以 Rust sidecar 保留後端輸入輸出契約
+
+- **Scope**：`codex/rust-backend`；使用者授權將 Python 產品後端移至獨立 Rust crate，保留前後端分離，以輸入／輸出相容為本地驗證基準。採用 `cross-agent-collaboration`、`modular-refactoring`、`telemetry-udp-protocol`、`portable-release-validation`、`pr-author-maintainer`、`agent-governance-audit`、`github-security-audit`；三個 Luna 子代理分別持有 telemetry、Road、native/MCP，root 管理 HTTP/runtime、建置、整合與除錯。
+- **Architecture**：Tokio UDP 接收只解析並送入有界佇列；同步 SQLite、錄製與分析在處理 worker。獨立 Axum HTTP／WS 契約維持前端用法，Tauri 管理 stdin ownership 與 readiness。產品 launch/build 改走 Cargo，不需要 Python／PyInstaller；Python 暫留為 oracle、CLI 與維護工具。
+- **Reproduced findings**：Python fixtures 揭露 NULL SQLite metadata、Road slider grid、Dyno rounding、MoTeC 空白列、MCP 小數四捨五入與原生 PCM gain 差異；整合 review 另修 Discord 設定來源／telemetry timestamp、Windows UDP reset suppression、language list 的 en-us 順序。設定 schema 升級需落盤及保留備份，已接受的 UDP frame 在 EOF 關閉前需排空。
+- **Evidence**：Rust 契約測試涵蓋設定、MoTeC、26 MCP tools/resources、Road lifecycle、232/324-byte 封包、exact 128-byte binary、Dyno／Drag／Race 與 SQLite。真實 subprocess 測試涵蓋 HTTP／multipart／UDP／三條 WS、手動錄製、動態 port、開啟中的 WS 與 stdin EOF。Rust release sidecar 可建置，Windows PE version 為 11.45.18.0。驗證命令與最新結果以 PR 內文為準。
+- **Boundary**：本地 I/O 契約及 release 編譯不等同真實 FH6、原生音訊／GSMTC／Discord、GUI 或跨機驗收；不宣稱特定效能提升百分比。既有前後端調校 solver／顯示單位分工差異另提 enhancement #423，本次不重新設計。
+- **CI learning**：MoTeC CSV 是 byte contract，須避免 Git 正規化 CRLF。Road JSON／SQLite 的 immutable equality 需 `serde_json/float_roundtrip`；以 CI 捕捉到的 `1790061494.4082587` 在本地重現單一 ULP 漂移，再修正解析器，保留精確相等 assertion。CodeQL path finding 的修正改為以受信任目錄列舉項目解析路徑，避免 `exists()` 略過 dangling link；Windows junction／case alias／dangling junction 均有回歸驗證。
+- **Reference**：[Rust 後端指南](../docs/backend-rust/README.md)、[開發指南](../docs/guides/development.md)。
+- **CodeQL source audit**：SARIF analysis `1816409922` 的三條剩餘資料流皆從 WebSocket handler 的 `State<Arc<dyn Backend>>` 出發，經 server-owned root 讀取固定 `hud_config.json`；非客戶端提供路徑。依 [Axum closure capture](https://docs.rs/axum/latest/axum/#using-closure-captures) 將啟動時 backend 注入與 request extractors 分離，讓 [CodeQL Axum parameter model](https://github.com/github/codeql/blob/main/rust/ql/lib/codeql/rust/frameworks/axum.model.yml) 保留真正 request sources；未排除規則或 dismiss alert。既有三條 WS I/O 及新增 foreign-Origin 403 契約通過，檔案 containment 防護保留。

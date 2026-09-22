@@ -3,7 +3,7 @@
   "productName": "FH6-HorizonTuner_lite",
   "identifier": "com.eddie772tw.frontend.lite",
   "build": {
-    "beforeDevCommand": "pnpm run dev",
+    "beforeDevCommand": "pnpm run build:backend && pnpm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "echo Using prebuilt lite frontend distribution",
     "frontendDist": "../dist"

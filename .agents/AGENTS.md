@@ -30,10 +30,10 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 
 ## 專案核心事實與領域規範 (Core Invariants)
 
-1. **UDP 高頻效能保護**：`backend/telemetry_listener.py` 負責以 60Hz+ 頻率接收 Forza 遊戲 UDP 遙測封包。此循環內**絕不可放置同步阻塞 (Synchronous Blocking) 或高開銷的 I/O 操作**。
+1. **UDP 高頻效能保護**：產品接收器為 `backend-rust/src/runtime.rs`，`backend/telemetry_listener.py` 保留作遷移參考。60Hz+ UDP 接收循環內**絕不可放置同步阻塞 (Synchronous Blocking) 或高開銷的 I/O 操作**。
 2. **車輛物理與調校邏輯單一真理 (SSOT)**：所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，且統一收攏於 `frontend/src/utils/tuningMath.ts`。
 3. **單位嚴格性**：處理遙測數據時，必須釐清遊戲原生單位、領域單位與顯示單位的分層轉換，不得在 UI 組件內任意硬編碼物理計算公式。
-4. **路徑安全與檔案存取規範 (Path Security)**：所有涉及外部輸入、檔案名稱、Preset 或 Session 存取的模組，必須使用 `backend/path_security.py` 的 `safe_resolve_path` / `safe_join_under_dir` 進行目錄包含性檢驗，嚴禁直接拼接外部輸入路徑。
+4. **路徑安全與檔案存取規範 (Path Security)**：所有涉及外部輸入、檔案名稱、Preset 或 Session 存取的模組，Rust 使用 `backend-rust/src/storage.rs::safe_path`，Python 工具使用 `backend/path_security.py` 的 `safe_resolve_path` / `safe_join_under_dir` 進行目錄包含性檢驗，嚴禁直接拼接外部輸入路徑。
 5. **Agent CLI 工具鏈效率導引 (Agent CLI Tooling)**：專案提供官方面向 AI Agent 的命令列工具 `fh6-agent.bat`（或 `python -m backend.agent_cli` / `fh6-agent.exe`）。Agent 在進行車輛規格檢索、底盤/齒比算牌、調校 Preset 讀寫、閉環遙測診斷或 MCP 連接埠探測時，**應優先調用 `fh6-agent.bat <subcommand> --json`** 獲取結構化輸出，大幅提升決策效率並維持算牌真理一致性。詳細指令參閱 [`docs/guides/agent-cli-guide.md`](../docs/guides/agent-cli-guide.md)。
 
 ---
@@ -87,7 +87,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 2. **範圍分流測試 (Scoped Tests)**：
    - **純文檔/規範變更**：以 `git diff --check` 驗證，不需執行代碼測試。
    - **前端/物理/UI 變更**：執行 `cmd /c "pnpm -C frontend run test"` 確保通過。
-   - **後端/遙測/CLI 變更**：執行 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` 確保通過。
+   - **後端/遙測變更**：執行 `cargo test --locked --manifest-path backend-rust/Cargo.toml`，以輸入及對前端輸出契約驗證；Python CLI／參考實作變更仍執行 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`。
    - **跨端或發行變更**：同時執行前後端測試與構建檢查。
 3. **架構學習點回顧**：評估本次任務是否有值得傳承的架構學習點，依規範追加紀錄至 [Journal.md](Journal.md)。
 4. **狀態維護**：維護 `.gitignore` 與 `README.md` 說明文件狀態。

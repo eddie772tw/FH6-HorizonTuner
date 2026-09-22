@@ -80,6 +80,16 @@ def read_version_contract(root_dir: Path = ROOT_DIR) -> dict[str, str]:
         )
 
     return {
+        "rust_backend": tomllib.loads(
+            (root_dir / "backend-rust" / "Cargo.toml").read_text(encoding="utf-8")
+        )["package"]["version"],
+        "rust_backend_lock": next(
+            package["version"]
+            for package in tomllib.loads(
+                (root_dir / "backend-rust" / "Cargo.lock").read_text(encoding="utf-8")
+            )["package"]
+            if package.get("name") == "fh6-backend"
+        ),
         "tauri": tauri_version,
         "cargo": cargo_version,
         "cargo_lock": cargo_lock_version,
@@ -94,6 +104,8 @@ def validate_version_contract(root_dir: Path = ROOT_DIR) -> dict[str, str]:
     versions = read_version_contract(root_dir)
     expected_backend_version = f"{versions['tauri']}.0"
     expected = {
+        "rust_backend": versions["tauri"],
+        "rust_backend_lock": versions["tauri"],
         "tauri": versions["tauri"],
         "cargo": versions["tauri"],
         "cargo_lock": versions["tauri"],
