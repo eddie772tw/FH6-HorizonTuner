@@ -92,7 +92,10 @@ pub struct TuningCarParams {
     pub max_torque_rpm: Option<f64>,
     #[serde(alias = "drag_finish_speed_kmh", alias = "dragFinishSpeedKmh")]
     pub drag_finish_speed_kmh: Option<f64>,
-    #[serde(alias = "drag_finish_speed_provenance", alias = "dragFinishSpeedProvenance")]
+    #[serde(
+        alias = "drag_finish_speed_provenance",
+        alias = "dragFinishSpeedProvenance"
+    )]
     pub drag_finish_speed_provenance: Option<String>,
     #[serde(alias = "aero_efficiency", alias = "aeroEfficiency")]
     pub aero_efficiency: Option<f64>,

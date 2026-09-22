@@ -1,5 +1,5 @@
-use std::f64::consts::PI;
 use super::types::*;
+use std::f64::consts::PI;
 
 #[inline]
 fn clamp(val: f64, min: f64, max: f64) -> f64 {
@@ -11,24 +11,14 @@ fn r2(n: f64) -> f64 {
     (n * 100.0).round() / 100.0
 }
 
-pub fn calc_gear_speed(
-    rpm: f64,
-    gear_ratio: f64,
-    final_drive: f64,
-    tire_radius_m: f64,
-) -> f64 {
+pub fn calc_gear_speed(rpm: f64, gear_ratio: f64, final_drive: f64, tire_radius_m: f64) -> f64 {
     if gear_ratio <= 0.0 || final_drive <= 0.0 {
         return 0.0;
     }
     (rpm * 2.0 * PI * tire_radius_m) / (gear_ratio * final_drive * 60.0)
 }
 
-pub fn calc_gear_rpm(
-    speed_ms: f64,
-    gear_ratio: f64,
-    final_drive: f64,
-    tire_radius_m: f64,
-) -> f64 {
+pub fn calc_gear_rpm(speed_ms: f64, gear_ratio: f64, final_drive: f64, tire_radius_m: f64) -> f64 {
     if tire_radius_m <= 0.0 {
         return 0.0;
     }
@@ -179,8 +169,7 @@ pub fn calculate_aego_gearing(
         .or(car_params.drag_finish_speed_provenance.as_deref());
     let drag_finish_speed_kmh = finish_speed_candidate.filter(|&cand| {
         cand > 0.0
-            && finish_speed_provenance
-                .map_or(false, |prov| prov == "telemetry" || prov == "manual")
+            && finish_speed_provenance.map_or(false, |prov| prov == "telemetry" || prov == "manual")
     });
 
     let c = ((((w_tire * ar) / 100.0) * 2.0 + s_rim * 25.4) * PI) / 1000.0;
@@ -205,8 +194,7 @@ pub fn calculate_aego_gearing(
             };
             let base_drift_gear_ratios: [f64; 4] = [2.89, 1.99, 1.34, 1.0];
             let rpm_band = drift_rpm_t / drift_rpm_hp;
-            let band_exponent =
-                clamp(0.82 / clamp(rpm_band, 0.55, 0.95), 0.75, 1.25);
+            let band_exponent = clamp(0.82 / clamp(rpm_band, 0.55, 0.95), 0.75, 1.25);
             let calc_gears = clamp(num_gears as f64, 4.0, 10.0) as usize;
             gears = vec![0.0; calc_gears];
             for i in 0..calc_gears {
@@ -218,9 +206,8 @@ pub fn calculate_aego_gearing(
                 gears[i] = log_ratio.exp().powf(band_exponent);
             }
             let circumference = if c > 0.0 { c } else { 2.0 };
-            let raw_drift_fd = (drift_weight * f_drive * 2.0 * circumference)
-                / (drift_torque * gears[0])
-                * 3.5;
+            let raw_drift_fd =
+                (drift_weight * f_drive * 2.0 * circumference) / (drift_torque * gears[0]) * 3.5;
             fd = clamp(raw_drift_fd, 2.2, 6.1);
             active_gear_count = calc_gears;
         }
@@ -234,11 +221,7 @@ pub fn calculate_aego_gearing(
                 } else {
                     1.0
                 };
-            let r = clamp(
-                0.82 - 0.05 * ((max_torque / max_hp) - 1.1),
-                0.75,
-                0.85,
-            );
+            let r = clamp(0.82 - 0.05 * ((max_torque / max_hp) - 1.1), 0.75, 0.85);
             gears[0] = 2.7;
             for i in 1..num_gears {
                 gears[i] = gears[i - 1] * r;
@@ -249,8 +232,7 @@ pub fn calculate_aego_gearing(
         }
         RaceGoal::Drag => {
             let hp_per_kg = if weight > 0.0 { max_hp / weight } else { 0.5 };
-            let prior_top_speed_kmh =
-                410.0 * hp_per_kg.powf(0.30) * (1.0 + 0.12 * aero_efficiency);
+            let prior_top_speed_kmh = 410.0 * hp_per_kg.powf(0.30) * (1.0 + 0.12 * aero_efficiency);
             let v_drag_top = drag_finish_speed_kmh.unwrap_or(prior_top_speed_kmh);
 
             let calc_gears = num_gears;
@@ -379,8 +361,8 @@ pub fn calculate_aego_gearing(
                 if let Some(soft_max) = sc.soft_max_speed {
                     if soft_max > 0.0 && max_rpm > 0.0 {
                         let max_speed_at_peak_hp_from_soft_cap = soft_max * (rpm_hp / max_rpm);
-                        target_top_speed_at_peak_hp_kmh = target_top_speed_at_peak_hp_kmh
-                            .min(max_speed_at_peak_hp_from_soft_cap);
+                        target_top_speed_at_peak_hp_kmh =
+                            target_top_speed_at_peak_hp_kmh.min(max_speed_at_peak_hp_from_soft_cap);
                     }
                 }
             }
@@ -430,7 +412,11 @@ pub fn calculate_aego_gearing(
 
                         let num_steps = top_gear_idx;
                         let r_band = if rpm_hp > 0.0 { rpm_t / rpm_hp } else { 0.65 };
-                        let r_redline_hp = if max_rpm > 0.0 { rpm_hp / max_rpm } else { 0.85 };
+                        let r_redline_hp = if max_rpm > 0.0 {
+                            rpm_hp / max_rpm
+                        } else {
+                            0.85
+                        };
                         let is_turbo = engine_type == "Turbo" || engine_type == "TwinTurbo";
                         let r_min = if is_turbo {
                             (0.68_f64).max(r_redline_hp * (0.80_f64).max(r_band))

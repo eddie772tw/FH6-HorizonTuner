@@ -1,6 +1,6 @@
 use fh6_backend::tuning::{
-    calculate_aego_gearing, calculate_chassis_tuning, resolve_aero_downforce, RaceGoal,
-    TuningCarParams, GearingSecondaryCorrection,
+    calculate_aego_gearing, calculate_chassis_tuning, resolve_aero_downforce,
+    GearingSecondaryCorrection, RaceGoal, TuningCarParams,
 };
 use serde_json::Value;
 use std::path::Path;

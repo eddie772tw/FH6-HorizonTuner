@@ -149,7 +149,10 @@ fn rally_calculation_inputs(params: &TuningCarParams) -> TuningCarParams {
 }
 
 /// Calculates complete chassis tuning (ARBs, Springs, Ride Height, Damping, Differential).
-pub fn calculate_chassis_tuning(race_goal: RaceGoal, car_params: &TuningCarParams) -> ChassisTuningResult {
+pub fn calculate_chassis_tuning(
+    race_goal: RaceGoal,
+    car_params: &TuningCarParams,
+) -> ChassisTuningResult {
     let p = match race_goal {
         RaceGoal::Road => normalize_road_inputs(car_params),
         RaceGoal::Rally | RaceGoal::DangerSign => rally_calculation_inputs(car_params),
@@ -177,7 +180,18 @@ pub fn calculate_chassis_tuning(race_goal: RaceGoal, car_params: &TuningCarParam
 
     let aero = resolve_aero_downforce(&p);
 
-    let (arb_f, arb_r, spring_f, spring_r, height_f, height_r, mut reb_f, mut reb_r, bump_f, bump_r);
+    let (
+        arb_f,
+        arb_r,
+        spring_f,
+        spring_r,
+        height_f,
+        height_r,
+        mut reb_f,
+        mut reb_r,
+        bump_f,
+        bump_r,
+    );
     let mut accel_f = 0.0;
     let mut decel_f = 0.0;
     let mut accel_r = 0.0;
@@ -228,8 +242,8 @@ pub fn calculate_chassis_tuning(race_goal: RaceGoal, car_params: &TuningCarParam
         RaceGoal::Rally | RaceGoal::DangerSign => {
             let base_arb_f = 64.0 * (wf / 100.0) + 1.0;
             let base_arb_r = 64.0 * (wr / 100.0) + 1.0;
-            let is_cross_country = race_goal == RaceGoal::Rally
-                && p.rally_profile == Some(RallyProfile::CrossCountry);
+            let is_cross_country =
+                race_goal == RaceGoal::Rally && p.rally_profile == Some(RallyProfile::CrossCountry);
 
             arb_f = base_arb_f
                 * if is_cross_country {
@@ -374,8 +388,10 @@ pub fn calculate_chassis_tuning(race_goal: RaceGoal, car_params: &TuningCarParam
             reb_r = 19.0 * road_rear + 1.0;
 
             if dt == Drivetrain::FWD {
-                reb_f = (19.0 * road_front + 1.0) * (spring_f / (base_spring_f + delta_kf).max(1.0)).sqrt();
-                reb_r = (19.0 * road_rear + 1.0) * (spring_r / (base_spring_r + delta_kr).max(1.0)).sqrt();
+                reb_f = (19.0 * road_front + 1.0)
+                    * (spring_f / (base_spring_f + delta_kf).max(1.0)).sqrt();
+                reb_r = (19.0 * road_rear + 1.0)
+                    * (spring_r / (base_spring_r + delta_kr).max(1.0)).sqrt();
             }
             bump_f = reb_f * 0.60;
             bump_r = reb_r * 0.60;
