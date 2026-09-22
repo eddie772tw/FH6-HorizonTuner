@@ -45,7 +45,11 @@ fn road_store_preserves_append_only_schema_and_atomic_batch() {
     let temp = tempfile::tempdir().unwrap();
     let path = temp.path().join("road.sqlite");
     let store = RoadStore::new(path.to_string_lossy()).unwrap();
-    let first = RoadStore::document("setup", "workflow", &json!({"label":"A"}), Some("setup-a"));
+    let mut first =
+        RoadStore::document("setup", "workflow", &json!({"label":"A"}), Some("setup-a"));
+    // CI exposed a one-ULP change when reloading this timestamp through JSON.
+    // Immutable Road documents require exact round trips, including f64 values.
+    first["createdAt"] = json!(1790061494.4082587_f64);
     store.append_documents(&[first.clone()]).unwrap();
     assert_eq!(
         store

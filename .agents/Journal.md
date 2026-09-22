@@ -2693,4 +2693,5 @@
 - **Reproduced findings**：Python fixtures 揭露 NULL SQLite metadata、Road slider grid、Dyno rounding、MoTeC 空白列、MCP 小數四捨五入與原生 PCM gain 差異；整合 review 另修 Discord 設定來源／telemetry timestamp、Windows UDP reset suppression、language list 的 en-us 順序。設定 schema 升級需落盤及保留備份，已接受的 UDP frame 在 EOF 關閉前需排空。
 - **Evidence**：Rust 契約測試涵蓋設定、MoTeC、26 MCP tools/resources、Road lifecycle、232/324-byte 封包、exact 128-byte binary、Dyno／Drag／Race 與 SQLite。真實 subprocess 測試涵蓋 HTTP／multipart／UDP／三條 WS、手動錄製、動態 port、開啟中的 WS 與 stdin EOF。Rust release sidecar 可建置，Windows PE version 為 11.45.18.0。驗證命令與最新結果以 PR 內文為準。
 - **Boundary**：本地 I/O 契約及 release 編譯不等同真實 FH6、原生音訊／GSMTC／Discord、GUI 或跨機驗收；不宣稱特定效能提升百分比。既有前後端調校 solver／顯示單位分工差異另提 enhancement #423，本次不重新設計。
+- **CI learning**：MoTeC CSV 是 byte contract，須避免 Git 正規化 CRLF。Road JSON／SQLite 的 immutable equality 需 `serde_json/float_roundtrip`；以 CI 捕捉到的 `1790061494.4082587` 在本地重現單一 ULP 漂移，再修正解析器，保留精確相等 assertion。
 - **Reference**：[Rust 後端指南](../docs/backend-rust/README.md)、[開發指南](../docs/guides/development.md)。

@@ -16,7 +16,8 @@ path = "src/main.rs"
 axum = { version = "0.8.9", features = ["ws", "multipart"] }
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "net", "sync", "time", "signal", "io-util"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["preserve_order"] }
+# Road immutable documents must survive JSON/SQLite round trips without f64 drift.
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 rusqlite = { version = "0.40.2", default-features = false, features = ["bundled"] }
 chrono = "0.4.45"
 uuid = { version = "1.26.1", features = ["v4"] }
