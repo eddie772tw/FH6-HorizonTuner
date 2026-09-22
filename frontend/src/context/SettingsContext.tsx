@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useRef 
 import { backendFetch } from '../services/backend';
 import { normalizeGeneralUnitSettings } from '../utils/gameUnitSettings';
 import { useToast } from './ToastContext';
+import { PA_PER_BAR, PA_PER_PSI, PA_PER_KPA } from '../hooks/useTelemetry';
 
 export interface UnitSettings {
   speed: 'kmh' | 'mph';
@@ -54,8 +55,8 @@ interface SettingsContextType {
   // Tire Pressure (input in psi)
   convertTirePressureFromPsi: (psi: number) => { value: number; label: string };
   convertTirePressureToPsi: (val: number) => number;
-  // Boost Pressure (input in psi)
-  convertBoost: (psi: number) => { value: number; label: string };
+  // Boost Pressure (input in raw Pa)
+  convertBoost: (rawPa: number) => { value: number; label: string };
   // Spring rate (input in kgf/mm)
   convertSpringRate: (kgfmm: number) => { value: number; label: string };
   convertSpringRateToKgfmm: (val: number) => number;
@@ -160,7 +161,7 @@ export function createOptimisticSettingsQueue(initial: AppSettings): OptimisticS
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 const ScopedUnitsContext = createContext<UnitSettings | undefined>(undefined);
 
-function createScopedConverters(units: UnitSettings): Pick<SettingsContextType,
+export function createScopedConverters(units: UnitSettings): Pick<SettingsContextType,
   'convertSpeed' | 'convertWeight' | 'convertWeightToLbs' | 'convertTemp' |
   'convertTirePressure' | 'convertTirePressureToBar' | 'convertTirePressureFromPsi' |
   'convertTirePressureToPsi' | 'convertBoost' | 'convertSpringRate' |
@@ -194,11 +195,15 @@ function createScopedConverters(units: UnitSettings): Pick<SettingsContextType,
     convertTirePressureToPsi: value => units.tirePressure === 'bar'
       ? value / 0.0689476
       : units.tirePressure === 'kpa' ? value / 6.89476 : value,
-    convertBoost: psi => units.boostPressure === 'bar'
-      ? { value: psi / 14.5038, label: 'bar' }
-      : units.boostPressure === 'kpa'
-        ? { value: psi * 6.89476, label: 'kPa' }
-        : { value: psi, label: 'PSI' },
+    convertBoost: rawPa => {
+      const pa = Number.isFinite(rawPa) ? Math.max(0, rawPa) : 0;
+      if (units.boostPressure === 'bar') {
+        return { value: pa / PA_PER_BAR, label: 'bar' };
+      } else if (units.boostPressure === 'kpa') {
+        return { value: pa / PA_PER_KPA, label: 'kPa' };
+      }
+      return { value: pa / PA_PER_PSI, label: 'PSI' };
+    },
     convertSpringRate: kgfmm => units.springRate === 'lbsin'
       ? { value: kgfmm * 55.9974, label: 'lbs/in' }
       : { value: kgfmm, label: 'kgf/mm' },
@@ -408,14 +413,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return val;
   };
 
-  // Boost (psi input)
-  const convertBoost = (psi: number) => {
+  // Boost (raw Pa input)
+  const convertBoost = (rawPa: number) => {
+    const pa = Number.isFinite(rawPa) ? Math.max(0, rawPa) : 0;
     if (settings.units.boostPressure === 'bar') {
-      return { value: psi / 14.5038, label: 'bar' };
+      return { value: pa / PA_PER_BAR, label: 'bar' };
     } else if (settings.units.boostPressure === 'kpa') {
-      return { value: psi * 6.89476, label: 'kPa' };
+      return { value: pa / PA_PER_KPA, label: 'kPa' };
     }
-    return { value: psi, label: 'PSI' };
+    return { value: pa / PA_PER_PSI, label: 'PSI' };
   };
 
   // Spring Rate (kgf/mm input, for TuningView.tsx)

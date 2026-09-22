@@ -1,0 +1,1379 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "telemetry-canonical/v1",
+  "description": "Cross-stack Golden Fixtures for Forza Horizon Telemetry conversions across Raw Wire, Domain Canonical, and Presentation layers.",
+  "fixtures": [
+    {
+      "id": "typical_gt_racing",
+      "category": "typical",
+      "description": "Typical GT racing condition at 180 km/h with 1.5 bar boost, 1.2 G lateral cornering, normal operating tire temperatures and suspension travel.",
+      "raw_packet": {
+        "IsRaceOn": 1,
+        "TimestampMS": 150000,
+        "EngineMaxRpm": 8000.0,
+        "EngineIdleRpm": 800.0,
+        "CurrentEngineRpm": 6500.0,
+        "AccelerationX": 11.772,
+        "AccelerationY": 9.81,
+        "AccelerationZ": -7.848,
+        "VelocityX": 0.0,
+        "VelocityY": 0.0,
+        "VelocityZ": 50.0,
+        "AngularVelocityX": 0.01,
+        "AngularVelocityY": 0.05,
+        "AngularVelocityZ": 0.02,
+        "Yaw": 0.05,
+        "Pitch": -0.02,
+        "Roll": 0.03,
+        "NormalizedSuspensionTravel": [
+          0.45,
+          0.48,
+          0.4,
+          0.42
+        ],
+        "SuspTravel": [
+          0.45,
+          0.48,
+          0.4,
+          0.42
+        ],
+        "TireSlipRatio": [
+          0.08,
+          0.08,
+          0.01,
+          0.01
+        ],
+        "WheelRotationSpeed": [
+          170.0,
+          170.0,
+          160.0,
+          160.0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "TireSlipAngle": [
+          0.06,
+          0.06,
+          0.02,
+          0.02
+        ],
+        "TireCombinedSlip": [
+          0.1,
+          0.1,
+          0.022,
+          0.022
+        ],
+        "SuspensionTravelMeters": [
+          0.12,
+          0.13,
+          0.11,
+          0.11
+        ],
+        "CarOrdinal": 101,
+        "CarClass": 4,
+        "CarPerformanceIndex": 900,
+        "DrivetrainType": 1,
+        "Cylinders": 6,
+        "PositionX": 150.0,
+        "PositionY": 25.0,
+        "PositionZ": 500.0,
+        "SpeedMetersPerSecond": 50.0,
+        "PowerWatts": 350000.0,
+        "TorqueNewtons": 500.0,
+        "TireTemp": [
+          190.0,
+          192.0,
+          185.0,
+          186.0
+        ],
+        "Boost": 150000.0,
+        "Fuel": 0.75,
+        "DistanceTraveled": 2500.0,
+        "BestLap": 85.5,
+        "LastLap": 86.2,
+        "CurrentLap": 45.0,
+        "CurrentRaceTime": 216.7,
+        "LapNumber": 3,
+        "RacePosition": 1,
+        "AccelInput": 255,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "Gear": 4,
+        "SteerInput": 32
+      },
+      "expected_canonical": {
+        "speed_ms": 50.0,
+        "power_w": 350000.0,
+        "torque_nm": 500.0,
+        "boost_pa": 150000.0,
+        "accel_x_ms2": 11.772,
+        "accel_y_ms2": 9.81,
+        "accel_z_ms2": -7.848,
+        "throttle_pct": 100.0,
+        "brake_pct": 0.0,
+        "clutch_pct": 0.0,
+        "handbrake_pct": 0.0,
+        "steer_pct": 25.2,
+        "gear_raw": 4,
+        "gear_display": "4",
+        "tire_temps_f": [
+          190.0,
+          192.0,
+          185.0,
+          186.0
+        ],
+        "tire_temps_c": [
+          87.8,
+          88.9,
+          85.0,
+          85.6
+        ],
+        "slip_angles_rad": [
+          0.06,
+          0.06,
+          0.02,
+          0.02
+        ],
+        "slip_ratios": [
+          0.08,
+          0.08,
+          0.01,
+          0.01
+        ],
+        "suspension_travel_ratio": [
+          0.45,
+          0.48,
+          0.4,
+          0.42
+        ],
+        "is_bottoming": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "expected_presentation": {
+        "boost_bar": 1.5,
+        "boost_psi": 21.76,
+        "boost_kpa": 150.0,
+        "speed_kmh": 180.0,
+        "speed_mph": 111.85,
+        "power_kw": 350.0,
+        "power_hp": 469.36,
+        "power_ps": 475.87,
+        "torque_nm": 500.0,
+        "torque_ftlb": 368.78,
+        "lateral_g": 1.2,
+        "longitudinal_g": -0.8,
+        "vertical_g": 1.0,
+        "slip_angles_deg": [
+          3.44,
+          3.44,
+          1.15,
+          1.15
+        ],
+        "slip_ratios_pct": [
+          8.0,
+          8.0,
+          1.0,
+          1.0
+        ],
+        "temp_c": [
+          87.8,
+          88.9,
+          85.0,
+          85.6
+        ],
+        "temp_f": [
+          190.0,
+          192.0,
+          185.0,
+          186.0
+        ],
+        "hud_metric": {
+          "speed": 180.0,
+          "boost": 1.5,
+          "power": 350.0,
+          "torque": 500.0
+        },
+        "hud_imperial": {
+          "speed": 111.85,
+          "boost": 21.76,
+          "power": 469.36,
+          "torque": 368.78
+        },
+        "mcp_driver_cockpit": {
+          "engine": {
+            "rpm": 6500.0,
+            "idle_rpm": 800.0,
+            "max_rpm": 8000.0,
+            "rpm_ratio": 0.812,
+            "is_shift_alert": false,
+            "is_ev": false
+          },
+          "transmission": {
+            "gear_raw": 4,
+            "gear_display": "4"
+          },
+          "speed": {
+            "meters_per_second": 50.0,
+            "kmh": 180.0,
+            "mph": 111.8
+          },
+          "driver_inputs": {
+            "throttle_pct": 100.0,
+            "brake_pct": 0.0,
+            "clutch_pct": 0.0,
+            "handbrake_pct": 0.0,
+            "steer_pct": 25.2,
+            "steer_angle_deg": 11.3
+          }
+        },
+        "mcp_vehicle_dynamics": {
+          "g_forces": {
+            "lateral_g": 1.2,
+            "longitudinal_g": -0.8,
+            "vertical_g": 1.0
+          },
+          "orientation": {
+            "yaw_rad": 0.05,
+            "yaw_deg": 2.86,
+            "pitch_rad": -0.02,
+            "pitch_deg": -1.15,
+            "roll_rad": 0.03,
+            "roll_deg": 1.72
+          },
+          "power_train": {
+            "power_kw": 350.0,
+            "power_hp": 469.4,
+            "torque_nm": 500.0,
+            "torque_ftlb": 368.8,
+            "boost_psi": 21.76,
+            "boost_bar": 1.5,
+            "is_ev": false,
+            "is_regen_active": false
+          },
+          "position": {
+            "x": 150.0,
+            "y": 25.0,
+            "z": 500.0
+          }
+        },
+        "mcp_tires_status": {
+          "summary": {
+            "front_avg_temp_c": 88.4,
+            "rear_avg_temp_c": 85.3,
+            "axle_temp_delta_c": 3.1
+          },
+          "corners": {
+            "front_left": {
+              "temp_c": 87.8,
+              "temp_f": 190.0,
+              "slip_angle_deg": 3.44,
+              "slip_ratio_pct": 8.0,
+              "combined_slip": 8.71,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "front_right": {
+              "temp_c": 88.9,
+              "temp_f": 192.0,
+              "slip_angle_deg": 3.44,
+              "slip_ratio_pct": 8.0,
+              "combined_slip": 8.71,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_left": {
+              "temp_c": 85.0,
+              "temp_f": 185.0,
+              "slip_angle_deg": 1.15,
+              "slip_ratio_pct": 1.0,
+              "combined_slip": 1.52,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_right": {
+              "temp_c": 85.6,
+              "temp_f": 186.0,
+              "slip_angle_deg": 1.15,
+              "slip_ratio_pct": 1.0,
+              "combined_slip": 1.52,
+              "is_slipping": false,
+              "is_overheating": false
+            }
+          }
+        },
+        "mcp_suspension": {
+          "corners": {
+            "front_left": {
+              "travel_ratio": 0.45,
+              "travel_pct": 45.0,
+              "is_bottoming": false
+            },
+            "front_right": {
+              "travel_ratio": 0.48,
+              "travel_pct": 48.0,
+              "is_bottoming": false
+            },
+            "rear_left": {
+              "travel_ratio": 0.4,
+              "travel_pct": 40.0,
+              "is_bottoming": false
+            },
+            "rear_right": {
+              "travel_ratio": 0.42,
+              "travel_pct": 42.0,
+              "is_bottoming": false
+            }
+          },
+          "dynamics": {
+            "roll_deflection": -0.05,
+            "pitch_dive": 0.11
+          }
+        }
+      }
+    },
+    {
+      "id": "high_boost_extreme",
+      "category": "extreme_edge",
+      "description": "Extreme high-performance twin-turbo build running 3.5 bar (350 kPa / 50.76 PSI) boost, 85 m/s (306 km/h), 750 kW (1005.8 HP), and 1050 N·m torque.",
+      "raw_packet": {
+        "IsRaceOn": 1,
+        "TimestampMS": 180000,
+        "EngineMaxRpm": 8500.0,
+        "EngineIdleRpm": 900.0,
+        "CurrentEngineRpm": 8100.0,
+        "AccelerationX": 0.0,
+        "AccelerationY": 9.81,
+        "AccelerationZ": 5.886,
+        "VelocityX": 0.0,
+        "VelocityY": 0.0,
+        "VelocityZ": 85.0,
+        "AngularVelocityX": 0.0,
+        "AngularVelocityY": 0.0,
+        "AngularVelocityZ": 0.0,
+        "Yaw": 0.0,
+        "Pitch": 0.01,
+        "Roll": 0.0,
+        "NormalizedSuspensionTravel": [
+          0.65,
+          0.65,
+          0.55,
+          0.55
+        ],
+        "SuspTravel": [
+          0.65,
+          0.65,
+          0.55,
+          0.55
+        ],
+        "TireSlipRatio": [
+          0.05,
+          0.05,
+          0.03,
+          0.03
+        ],
+        "WheelRotationSpeed": [
+          290.0,
+          290.0,
+          285.0,
+          285.0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "TireSlipAngle": [
+          0.08,
+          0.08,
+          0.03,
+          0.03
+        ],
+        "TireCombinedSlip": [
+          0.094,
+          0.094,
+          0.042,
+          0.042
+        ],
+        "SuspensionTravelMeters": [
+          0.15,
+          0.15,
+          0.13,
+          0.13
+        ],
+        "CarOrdinal": 202,
+        "CarClass": 5,
+        "CarPerformanceIndex": 998,
+        "DrivetrainType": 2,
+        "Cylinders": 8,
+        "PositionX": 500.0,
+        "PositionY": 10.0,
+        "PositionZ": 1200.0,
+        "SpeedMetersPerSecond": 85.0,
+        "PowerWatts": 750000.0,
+        "TorqueNewtons": 1050.0,
+        "TireTemp": [
+          225.0,
+          228.0,
+          215.0,
+          216.0
+        ],
+        "Boost": 350000.0,
+        "Fuel": 0.5,
+        "DistanceTraveled": 4500.0,
+        "BestLap": 72.1,
+        "LastLap": 73.0,
+        "CurrentLap": 22.0,
+        "CurrentRaceTime": 167.1,
+        "LapNumber": 2,
+        "RacePosition": 1,
+        "AccelInput": 255,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "Gear": 6,
+        "SteerInput": 0
+      },
+      "expected_canonical": {
+        "speed_ms": 85.0,
+        "power_w": 750000.0,
+        "torque_nm": 1050.0,
+        "boost_pa": 350000.0,
+        "accel_x_ms2": 0.0,
+        "accel_y_ms2": 9.81,
+        "accel_z_ms2": 5.886,
+        "throttle_pct": 100.0,
+        "brake_pct": 0.0,
+        "clutch_pct": 0.0,
+        "handbrake_pct": 0.0,
+        "steer_pct": 0.0,
+        "gear_raw": 6,
+        "gear_display": "6",
+        "tire_temps_f": [
+          225.0,
+          228.0,
+          215.0,
+          216.0
+        ],
+        "tire_temps_c": [
+          107.2,
+          108.9,
+          101.7,
+          102.2
+        ],
+        "slip_angles_rad": [
+          0.08,
+          0.08,
+          0.03,
+          0.03
+        ],
+        "slip_ratios": [
+          0.05,
+          0.05,
+          0.03,
+          0.03
+        ],
+        "suspension_travel_ratio": [
+          0.65,
+          0.65,
+          0.55,
+          0.55
+        ],
+        "is_bottoming": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "expected_presentation": {
+        "boost_bar": 3.5,
+        "boost_psi": 50.76,
+        "boost_kpa": 350.0,
+        "speed_kmh": 306.0,
+        "speed_mph": 190.14,
+        "power_kw": 750.0,
+        "power_hp": 1005.77,
+        "power_ps": 1019.72,
+        "torque_nm": 1050.0,
+        "torque_ftlb": 774.44,
+        "lateral_g": 0.0,
+        "longitudinal_g": 0.6,
+        "vertical_g": 1.0,
+        "slip_angles_deg": [
+          4.58,
+          4.58,
+          1.72,
+          1.72
+        ],
+        "slip_ratios_pct": [
+          5.0,
+          5.0,
+          3.0,
+          3.0
+        ],
+        "temp_c": [
+          107.2,
+          108.9,
+          101.7,
+          102.2
+        ],
+        "temp_f": [
+          225.0,
+          228.0,
+          215.0,
+          216.0
+        ],
+        "hud_metric": {
+          "speed": 306.0,
+          "boost": 3.5,
+          "power": 750.0,
+          "torque": 1050.0
+        },
+        "hud_imperial": {
+          "speed": 190.14,
+          "boost": 50.76,
+          "power": 1005.77,
+          "torque": 774.44
+        },
+        "mcp_driver_cockpit": {
+          "engine": {
+            "rpm": 8100.0,
+            "idle_rpm": 900.0,
+            "max_rpm": 8500.0,
+            "rpm_ratio": 0.953,
+            "is_shift_alert": true,
+            "is_ev": false
+          },
+          "transmission": {
+            "gear_raw": 6,
+            "gear_display": "6"
+          },
+          "speed": {
+            "meters_per_second": 85.0,
+            "kmh": 306.0,
+            "mph": 190.1
+          },
+          "driver_inputs": {
+            "throttle_pct": 100.0,
+            "brake_pct": 0.0,
+            "clutch_pct": 0.0,
+            "handbrake_pct": 0.0,
+            "steer_pct": 0.0,
+            "steer_angle_deg": 0.0
+          }
+        },
+        "mcp_vehicle_dynamics": {
+          "g_forces": {
+            "lateral_g": 0.0,
+            "longitudinal_g": 0.6,
+            "vertical_g": 1.0
+          },
+          "orientation": {
+            "yaw_rad": 0.0,
+            "yaw_deg": 0.0,
+            "pitch_rad": 0.01,
+            "pitch_deg": 0.57,
+            "roll_rad": 0.0,
+            "roll_deg": 0.0
+          },
+          "power_train": {
+            "power_kw": 750.0,
+            "power_hp": 1005.8,
+            "torque_nm": 1050.0,
+            "torque_ftlb": 774.4,
+            "boost_psi": 50.76,
+            "boost_bar": 3.5,
+            "is_ev": false,
+            "is_regen_active": false
+          },
+          "position": {
+            "x": 500.0,
+            "y": 10.0,
+            "z": 1200.0
+          }
+        },
+        "mcp_tires_status": {
+          "summary": {
+            "front_avg_temp_c": 108.1,
+            "rear_avg_temp_c": 102.0,
+            "axle_temp_delta_c": 6.1
+          },
+          "corners": {
+            "front_left": {
+              "temp_c": 107.2,
+              "temp_f": 225.0,
+              "slip_angle_deg": 4.58,
+              "slip_ratio_pct": 5.0,
+              "combined_slip": 6.78,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "front_right": {
+              "temp_c": 108.9,
+              "temp_f": 228.0,
+              "slip_angle_deg": 4.58,
+              "slip_ratio_pct": 5.0,
+              "combined_slip": 6.78,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_left": {
+              "temp_c": 101.7,
+              "temp_f": 215.0,
+              "slip_angle_deg": 1.72,
+              "slip_ratio_pct": 3.0,
+              "combined_slip": 3.46,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_right": {
+              "temp_c": 102.2,
+              "temp_f": 216.0,
+              "slip_angle_deg": 1.72,
+              "slip_ratio_pct": 3.0,
+              "combined_slip": 3.46,
+              "is_slipping": false,
+              "is_overheating": false
+            }
+          }
+        },
+        "mcp_suspension": {
+          "corners": {
+            "front_left": {
+              "travel_ratio": 0.65,
+              "travel_pct": 65.0,
+              "is_bottoming": false
+            },
+            "front_right": {
+              "travel_ratio": 0.65,
+              "travel_pct": 65.0,
+              "is_bottoming": false
+            },
+            "rear_left": {
+              "travel_ratio": 0.55,
+              "travel_pct": 55.0,
+              "is_bottoming": false
+            },
+            "rear_right": {
+              "travel_ratio": 0.55,
+              "travel_pct": 55.0,
+              "is_bottoming": false
+            }
+          },
+          "dynamics": {
+            "roll_deflection": 0.0,
+            "pitch_dive": 0.2
+          }
+        }
+      }
+    },
+    {
+      "id": "na_low_accel_vacuum",
+      "category": "extreme_edge",
+      "description": "Naturally aspirated engine with zero boost (0.0 Pa) and gentle cornering acceleration AccelX = 3.924 m/s² (0.4 G). Specifically tests and breaks legacy naive heuristics: abs(accel) > 5 (which would erroneously output 3.924 G!) and boost > 1000.",
+      "raw_packet": {
+        "IsRaceOn": 1,
+        "TimestampMS": 60000,
+        "EngineMaxRpm": 7000.0,
+        "EngineIdleRpm": 750.0,
+        "CurrentEngineRpm": 3200.0,
+        "AccelerationX": 3.924,
+        "AccelerationY": 9.81,
+        "AccelerationZ": 1.962,
+        "VelocityX": 1.0,
+        "VelocityY": 0.0,
+        "VelocityZ": 15.0,
+        "AngularVelocityX": 0.0,
+        "AngularVelocityY": 0.02,
+        "AngularVelocityZ": 0.0,
+        "Yaw": 0.01,
+        "Pitch": 0.0,
+        "Roll": 0.01,
+        "NormalizedSuspensionTravel": [
+          0.5,
+          0.5,
+          0.48,
+          0.48
+        ],
+        "SuspTravel": [
+          0.5,
+          0.5,
+          0.48,
+          0.48
+        ],
+        "TireSlipRatio": [
+          0.02,
+          0.02,
+          0.01,
+          0.01
+        ],
+        "WheelRotationSpeed": [
+          51.0,
+          51.0,
+          50.0,
+          50.0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "TireSlipAngle": [
+          0.015,
+          0.015,
+          0.005,
+          0.005
+        ],
+        "TireCombinedSlip": [
+          0.025,
+          0.025,
+          0.011,
+          0.011
+        ],
+        "SuspensionTravelMeters": [
+          0.1,
+          0.1,
+          0.09,
+          0.09
+        ],
+        "CarOrdinal": 303,
+        "CarClass": 2,
+        "CarPerformanceIndex": 650,
+        "DrivetrainType": 0,
+        "Cylinders": 4,
+        "PositionX": 50.0,
+        "PositionY": 5.0,
+        "PositionZ": 120.0,
+        "SpeedMetersPerSecond": 15.0,
+        "PowerWatts": 120000.0,
+        "TorqueNewtons": 240.0,
+        "TireTemp": [
+          122.0,
+          122.0,
+          115.0,
+          115.0
+        ],
+        "Boost": 0.0,
+        "Fuel": 0.9,
+        "DistanceTraveled": 800.0,
+        "BestLap": 0.0,
+        "LastLap": 0.0,
+        "CurrentLap": 40.0,
+        "CurrentRaceTime": 40.0,
+        "LapNumber": 1,
+        "RacePosition": 3,
+        "AccelInput": 77,
+        "BrakeInput": 0,
+        "ClutchInput": 0,
+        "HandBrakeInput": 0,
+        "Gear": 2,
+        "SteerInput": 15
+      },
+      "expected_canonical": {
+        "speed_ms": 15.0,
+        "power_w": 120000.0,
+        "torque_nm": 240.0,
+        "boost_pa": 0.0,
+        "accel_x_ms2": 3.924,
+        "accel_y_ms2": 9.81,
+        "accel_z_ms2": 1.962,
+        "throttle_pct": 30.2,
+        "brake_pct": 0.0,
+        "clutch_pct": 0.0,
+        "handbrake_pct": 0.0,
+        "steer_pct": 11.8,
+        "gear_raw": 2,
+        "gear_display": "2",
+        "tire_temps_f": [
+          122.0,
+          122.0,
+          115.0,
+          115.0
+        ],
+        "tire_temps_c": [
+          50.0,
+          50.0,
+          46.1,
+          46.1
+        ],
+        "slip_angles_rad": [
+          0.015,
+          0.015,
+          0.005,
+          0.005
+        ],
+        "slip_ratios": [
+          0.02,
+          0.02,
+          0.01,
+          0.01
+        ],
+        "suspension_travel_ratio": [
+          0.5,
+          0.5,
+          0.48,
+          0.48
+        ],
+        "is_bottoming": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "expected_presentation": {
+        "boost_bar": 0.0,
+        "boost_psi": 0.0,
+        "boost_kpa": 0.0,
+        "speed_kmh": 54.0,
+        "speed_mph": 33.55,
+        "power_kw": 120.0,
+        "power_hp": 160.92,
+        "power_ps": 163.15,
+        "torque_nm": 240.0,
+        "torque_ftlb": 177.01,
+        "lateral_g": 0.4,
+        "longitudinal_g": 0.2,
+        "vertical_g": 1.0,
+        "slip_angles_deg": [
+          0.86,
+          0.86,
+          0.29,
+          0.29
+        ],
+        "slip_ratios_pct": [
+          2.0,
+          2.0,
+          1.0,
+          1.0
+        ],
+        "temp_c": [
+          50.0,
+          50.0,
+          46.1,
+          46.1
+        ],
+        "temp_f": [
+          122.0,
+          122.0,
+          115.0,
+          115.0
+        ],
+        "hud_metric": {
+          "speed": 54.0,
+          "boost": 0.0,
+          "power": 120.0,
+          "torque": 240.0
+        },
+        "hud_imperial": {
+          "speed": 33.55,
+          "boost": 0.0,
+          "power": 160.92,
+          "torque": 177.01
+        },
+        "mcp_driver_cockpit": {
+          "engine": {
+            "rpm": 3200.0,
+            "idle_rpm": 750.0,
+            "max_rpm": 7000.0,
+            "rpm_ratio": 0.457,
+            "is_shift_alert": false,
+            "is_ev": false
+          },
+          "transmission": {
+            "gear_raw": 2,
+            "gear_display": "2"
+          },
+          "speed": {
+            "meters_per_second": 15.0,
+            "kmh": 54.0,
+            "mph": 33.6
+          },
+          "driver_inputs": {
+            "throttle_pct": 30.2,
+            "brake_pct": 0.0,
+            "clutch_pct": 0.0,
+            "handbrake_pct": 0.0,
+            "steer_pct": 11.8,
+            "steer_angle_deg": 5.3
+          }
+        },
+        "mcp_vehicle_dynamics": {
+          "g_forces": {
+            "lateral_g": 0.4,
+            "longitudinal_g": 0.2,
+            "vertical_g": 1.0
+          },
+          "orientation": {
+            "yaw_rad": 0.01,
+            "yaw_deg": 0.57,
+            "pitch_rad": 0.0,
+            "pitch_deg": 0.0,
+            "roll_rad": 0.01,
+            "roll_deg": 0.57
+          },
+          "power_train": {
+            "power_kw": 120.0,
+            "power_hp": 160.9,
+            "torque_nm": 240.0,
+            "torque_ftlb": 177.0,
+            "boost_psi": 0.0,
+            "boost_bar": 0.0,
+            "is_ev": false,
+            "is_regen_active": false
+          },
+          "position": {
+            "x": 50.0,
+            "y": 5.0,
+            "z": 120.0
+          }
+        },
+        "mcp_tires_status": {
+          "summary": {
+            "front_avg_temp_c": 50.0,
+            "rear_avg_temp_c": 46.1,
+            "axle_temp_delta_c": 3.9
+          },
+          "corners": {
+            "front_left": {
+              "temp_c": 50.0,
+              "temp_f": 122.0,
+              "slip_angle_deg": 0.86,
+              "slip_ratio_pct": 2.0,
+              "combined_slip": 2.18,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "front_right": {
+              "temp_c": 50.0,
+              "temp_f": 122.0,
+              "slip_angle_deg": 0.86,
+              "slip_ratio_pct": 2.0,
+              "combined_slip": 2.18,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_left": {
+              "temp_c": 46.1,
+              "temp_f": 115.0,
+              "slip_angle_deg": 0.29,
+              "slip_ratio_pct": 1.0,
+              "combined_slip": 1.04,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_right": {
+              "temp_c": 46.1,
+              "temp_f": 115.0,
+              "slip_angle_deg": 0.29,
+              "slip_ratio_pct": 1.0,
+              "combined_slip": 1.04,
+              "is_slipping": false,
+              "is_overheating": false
+            }
+          }
+        },
+        "mcp_suspension": {
+          "corners": {
+            "front_left": {
+              "travel_ratio": 0.5,
+              "travel_pct": 50.0,
+              "is_bottoming": false
+            },
+            "front_right": {
+              "travel_ratio": 0.5,
+              "travel_pct": 50.0,
+              "is_bottoming": false
+            },
+            "rear_left": {
+              "travel_ratio": 0.48,
+              "travel_pct": 48.0,
+              "is_bottoming": false
+            },
+            "rear_right": {
+              "travel_ratio": 0.48,
+              "travel_pct": 48.0,
+              "is_bottoming": false
+            }
+          },
+          "dynamics": {
+            "roll_deflection": 0.0,
+            "pitch_dive": 0.04
+          }
+        }
+      }
+    },
+    {
+      "id": "high_slip_burnout",
+      "category": "extreme_edge",
+      "description": "Extreme wheelspin burnout with front-drive wheelspin SlipRatio = [6.0, 6.0, 0.0, 0.0] (600%), heavy suspension compression travel [0.98, 0.98, 0.40, 0.40] triggering bottoming alert, and tire heating to 248 °F (120 °C). Specifically tests and breaks naive abs(r) <= 5.0 heuristic (which would mistakenly output 6.0% instead of 600.0%!).",
+      "raw_packet": {
+        "IsRaceOn": 1,
+        "TimestampMS": 95000,
+        "EngineMaxRpm": 7500.0,
+        "EngineIdleRpm": 850.0,
+        "CurrentEngineRpm": 7200.0,
+        "AccelerationX": 0.0,
+        "AccelerationY": 9.81,
+        "AccelerationZ": 4.905,
+        "VelocityX": 0.0,
+        "VelocityY": 0.0,
+        "VelocityZ": 5.0,
+        "AngularVelocityX": 0.0,
+        "AngularVelocityY": 0.0,
+        "AngularVelocityZ": 0.0,
+        "Yaw": 0.0,
+        "Pitch": 0.03,
+        "Roll": 0.0,
+        "NormalizedSuspensionTravel": [
+          0.98,
+          0.98,
+          0.4,
+          0.4
+        ],
+        "SuspTravel": [
+          0.98,
+          0.98,
+          0.4,
+          0.4
+        ],
+        "TireSlipRatio": [
+          6.0,
+          6.0,
+          0.0,
+          0.0
+        ],
+        "WheelRotationSpeed": [
+          120.0,
+          120.0,
+          17.0,
+          17.0
+        ],
+        "WheelOnRumbleStrip": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "SurfaceRumble": [
+          0.1,
+          0.1,
+          0.0,
+          0.0
+        ],
+        "TireSlipAngle": [
+          0.261799,
+          0.261799,
+          0.034907,
+          0.034907
+        ],
+        "TireCombinedSlip": [
+          6.006,
+          6.006,
+          0.035,
+          0.035
+        ],
+        "SuspensionTravelMeters": [
+          0.22,
+          0.22,
+          0.1,
+          0.1
+        ],
+        "CarOrdinal": 404,
+        "CarClass": 3,
+        "CarPerformanceIndex": 780,
+        "DrivetrainType": 1,
+        "Cylinders": 8,
+        "PositionX": 10.0,
+        "PositionY": 2.0,
+        "PositionZ": 30.0,
+        "SpeedMetersPerSecond": 5.0,
+        "PowerWatts": 450000.0,
+        "TorqueNewtons": 650.0,
+        "TireTemp": [
+          248.0,
+          248.0,
+          180.0,
+          180.0
+        ],
+        "Boost": 120000.0,
+        "Fuel": 0.85,
+        "DistanceTraveled": 20.0,
+        "BestLap": 0.0,
+        "LastLap": 0.0,
+        "CurrentLap": 5.0,
+        "CurrentRaceTime": 5.0,
+        "LapNumber": 1,
+        "RacePosition": 1,
+        "AccelInput": 255,
+        "BrakeInput": 255,
+        "ClutchInput": 0,
+        "HandBrakeInput": 255,
+        "Gear": 1,
+        "SteerInput": 0
+      },
+      "expected_canonical": {
+        "speed_ms": 5.0,
+        "power_w": 450000.0,
+        "torque_nm": 650.0,
+        "boost_pa": 120000.0,
+        "accel_x_ms2": 0.0,
+        "accel_y_ms2": 9.81,
+        "accel_z_ms2": 4.905,
+        "throttle_pct": 100.0,
+        "brake_pct": 100.0,
+        "clutch_pct": 0.0,
+        "handbrake_pct": 100.0,
+        "steer_pct": 0.0,
+        "gear_raw": 1,
+        "gear_display": "1",
+        "tire_temps_f": [
+          248.0,
+          248.0,
+          180.0,
+          180.0
+        ],
+        "tire_temps_c": [
+          120.0,
+          120.0,
+          82.2,
+          82.2
+        ],
+        "slip_angles_rad": [
+          0.261799,
+          0.261799,
+          0.034907,
+          0.034907
+        ],
+        "slip_ratios": [
+          6.0,
+          6.0,
+          0.0,
+          0.0
+        ],
+        "suspension_travel_ratio": [
+          0.98,
+          0.98,
+          0.4,
+          0.4
+        ],
+        "is_bottoming": [
+          true,
+          true,
+          false,
+          false
+        ]
+      },
+      "expected_presentation": {
+        "boost_bar": 1.2,
+        "boost_psi": 17.4,
+        "boost_kpa": 120.0,
+        "speed_kmh": 18.0,
+        "speed_mph": 11.18,
+        "power_kw": 450.0,
+        "power_hp": 603.46,
+        "power_ps": 611.83,
+        "torque_nm": 650.0,
+        "torque_ftlb": 479.42,
+        "lateral_g": 0.0,
+        "longitudinal_g": 0.5,
+        "vertical_g": 1.0,
+        "slip_angles_deg": [
+          15.0,
+          15.0,
+          2.0,
+          2.0
+        ],
+        "slip_ratios_pct": [
+          600.0,
+          600.0,
+          0.0,
+          0.0
+        ],
+        "temp_c": [
+          120.0,
+          120.0,
+          82.2,
+          82.2
+        ],
+        "temp_f": [
+          248.0,
+          248.0,
+          180.0,
+          180.0
+        ],
+        "hud_metric": {
+          "speed": 18.0,
+          "boost": 1.2,
+          "power": 450.0,
+          "torque": 650.0
+        },
+        "hud_imperial": {
+          "speed": 11.18,
+          "boost": 17.4,
+          "power": 603.46,
+          "torque": 479.42
+        },
+        "mcp_driver_cockpit": {
+          "engine": {
+            "rpm": 7200.0,
+            "idle_rpm": 850.0,
+            "max_rpm": 7500.0,
+            "rpm_ratio": 0.96,
+            "is_shift_alert": true,
+            "is_ev": false
+          },
+          "transmission": {
+            "gear_raw": 1,
+            "gear_display": "1"
+          },
+          "speed": {
+            "meters_per_second": 5.0,
+            "kmh": 18.0,
+            "mph": 11.2
+          },
+          "driver_inputs": {
+            "throttle_pct": 100.0,
+            "brake_pct": 100.0,
+            "clutch_pct": 0.0,
+            "handbrake_pct": 100.0,
+            "steer_pct": 0.0,
+            "steer_angle_deg": 0.0
+          }
+        },
+        "mcp_vehicle_dynamics": {
+          "g_forces": {
+            "lateral_g": 0.0,
+            "longitudinal_g": 0.5,
+            "vertical_g": 1.0
+          },
+          "orientation": {
+            "yaw_rad": 0.0,
+            "yaw_deg": 0.0,
+            "pitch_rad": 0.03,
+            "pitch_deg": 1.72,
+            "roll_rad": 0.0,
+            "roll_deg": 0.0
+          },
+          "power_train": {
+            "power_kw": 450.0,
+            "power_hp": 603.5,
+            "torque_nm": 650.0,
+            "torque_ftlb": 479.4,
+            "boost_psi": 17.4,
+            "boost_bar": 1.2,
+            "is_ev": false,
+            "is_regen_active": false
+          },
+          "position": {
+            "x": 10.0,
+            "y": 2.0,
+            "z": 30.0
+          }
+        },
+        "mcp_tires_status": {
+          "summary": {
+            "front_avg_temp_c": 120.0,
+            "rear_avg_temp_c": 82.2,
+            "axle_temp_delta_c": 37.8
+          },
+          "corners": {
+            "front_left": {
+              "temp_c": 120.0,
+              "temp_f": 248.0,
+              "slip_angle_deg": 15.0,
+              "slip_ratio_pct": 600.0,
+              "combined_slip": 600.19,
+              "is_slipping": true,
+              "is_overheating": true
+            },
+            "front_right": {
+              "temp_c": 120.0,
+              "temp_f": 248.0,
+              "slip_angle_deg": 15.0,
+              "slip_ratio_pct": 600.0,
+              "combined_slip": 600.19,
+              "is_slipping": true,
+              "is_overheating": true
+            },
+            "rear_left": {
+              "temp_c": 82.2,
+              "temp_f": 180.0,
+              "slip_angle_deg": 2.0,
+              "slip_ratio_pct": 0.0,
+              "combined_slip": 2.0,
+              "is_slipping": false,
+              "is_overheating": false
+            },
+            "rear_right": {
+              "temp_c": 82.2,
+              "temp_f": 180.0,
+              "slip_angle_deg": 2.0,
+              "slip_ratio_pct": 0.0,
+              "combined_slip": 2.0,
+              "is_slipping": false,
+              "is_overheating": false
+            }
+          }
+        },
+        "mcp_suspension": {
+          "corners": {
+            "front_left": {
+              "travel_ratio": 0.98,
+              "travel_pct": 98.0,
+              "is_bottoming": true
+            },
+            "front_right": {
+              "travel_ratio": 0.98,
+              "travel_pct": 98.0,
+              "is_bottoming": true
+            },
+            "rear_left": {
+              "travel_ratio": 0.4,
+              "travel_pct": 40.0,
+              "is_bottoming": false
+            },
+            "rear_right": {
+              "travel_ratio": 0.4,
+              "travel_pct": 40.0,
+              "is_bottoming": false
+            }
+          },
+          "dynamics": {
+            "roll_deflection": 0.0,
+            "pitch_dive": 1.16
+          }
+        }
+      }
+    }
+  ]
+}

@@ -121,6 +121,7 @@ id_rsa*
 /.agents/worker_*/
 /.agents/sentinel/
 /.agents/teamwork_*/
+/.agents/victory_auditor_*/
 /.agents/ORIGINAL_REQUEST.md
 /.agents/PROJECT.md
 /.agents/TEST_INFRA.md

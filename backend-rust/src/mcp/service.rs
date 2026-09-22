@@ -63,12 +63,14 @@ impl<'a> McpService<'a> {
         self.telemetry()
     }
     pub fn get_driver_cockpit_telemetry(&self) -> Value {
-        let p = self.sample();
-        let rpm = Self::n(&p, &["CurrentEngineRpm", "rpm"], 0.0);
-        let max = Self::n(&p, &["EngineMaxRpm"], 8000.0);
-        let idle = Self::n(&p, &["EngineIdleRpm"], 800.0);
-        let speed = Self::n(&p, &["SpeedMetersPerSecond", "speed"], 0.0);
-        let gear = Self::n(&p, &["Gear", "gear"], 0.0) as i64;
+        self.format_driver_cockpit(&self.sample())
+    }
+    pub fn format_driver_cockpit(&self, p: &Value) -> Value {
+        let rpm = Self::n(p, &["CurrentEngineRpm", "rpm"], 0.0);
+        let max = Self::n(p, &["EngineMaxRpm"], 8000.0);
+        let idle = Self::n(p, &["EngineIdleRpm"], 800.0);
+        let speed = Self::n(p, &["SpeedMetersPerSecond", "speed"], 0.0);
+        let gear = Self::n(p, &["Gear", "gear"], 0.0) as i64;
         let gear_display = match gear {
             0 => "R".to_string(),
             11 => "N".to_string(),
@@ -77,76 +79,74 @@ impl<'a> McpService<'a> {
         let pct = |explicit: &str, raw: &str, scale: f64| {
             p.get(explicit)
                 .and_then(Value::as_f64)
-                .filter(|x| *x != 0.0)
-                .unwrap_or(Self::n(&p, &[raw], 0.0) / scale * 100.0)
+                .unwrap_or_else(|| Self::n(p, &[raw], 0.0) / scale * 100.0)
         };
         let accel = pct("accel_pct", "AccelInput", 255.0);
         let brake = pct("brake_pct", "BrakeInput", 255.0);
+        let clutch = pct("clutch_pct", "ClutchInput", 255.0);
+        let handbrake = pct("handbrake_pct", "HandBrakeInput", 255.0);
         let steer = pct("steer_pct", "SteerInput", 127.0);
-        json!({"engine":{"rpm":Self::round(rpm,1),"idle_rpm":Self::round(idle,1),"max_rpm":Self::round(max,1),"rpm_ratio":if max>0.0{Self::round(rpm/max,3).clamp(0.0,1.0)}else{0.0},"is_shift_alert":rpm>=max*0.95&&max>1000.0,"is_ev":idle==0.0},"transmission":{"gear_raw":gear,"gear_display":gear_display},"speed":{"meters_per_second":Self::round(speed,2),"kmh":Self::round(speed*3.6,1),"mph":Self::round(speed*2.23694,1)},"driver_inputs":{"throttle_pct":Self::round(accel,1),"brake_pct":Self::round(brake,1),"clutch_pct":Self::round(Self::n(&p,&["clutch_pct"],0.0),1),"handbrake_pct":Self::round(Self::n(&p,&["handbrake_pct"],0.0),1),"steer_pct":Self::round(steer,1),"steer_angle_deg":Self::round(steer*0.45,1)}})
+        json!({"engine":{"rpm":Self::round(rpm,1),"idle_rpm":Self::round(idle,1),"max_rpm":Self::round(max,1),"rpm_ratio":if max>0.0{Self::round(rpm/max,3).clamp(0.0,1.0)}else{0.0},"is_shift_alert":rpm>=max*0.95&&max>1000.0,"is_ev":idle==0.0},"transmission":{"gear_raw":gear,"gear_display":gear_display},"speed":{"meters_per_second":Self::round(speed,2),"kmh":Self::round(speed*3.6,1),"mph":Self::round(speed*2.23694,1)},"driver_inputs":{"throttle_pct":Self::round(accel,1),"brake_pct":Self::round(brake,1),"clutch_pct":Self::round(clutch,1),"handbrake_pct":Self::round(handbrake,1),"steer_pct":Self::round(steer,1),"steer_angle_deg":Self::round(steer*0.45,1)}})
     }
     pub fn get_vehicle_dynamics_telemetry(&self) -> Value {
-        let p = self.sample();
-        let ax = Self::n(&p, &["AccelerationX", "accel_x"], 0.0);
-        let ay = Self::n(&p, &["AccelerationY", "accel_y"], 0.0);
-        let az = Self::n(&p, &["AccelerationZ", "accel_z"], 0.0);
-        let pw = Self::n(&p, &["PowerWatts", "power_watts"], 0.0);
-        let tq = Self::n(&p, &["TorqueNewtons", "torque_nm"], 0.0);
-        let boost = Self::n(&p, &["Boost", "boost"], 0.0);
-        let yaw = Self::n(&p, &["Yaw", "yaw"], 0.0);
-        let pitch = Self::n(&p, &["Pitch", "pitch"], 0.0);
-        let roll = Self::n(&p, &["Roll", "roll"], 0.0);
-        let idle = Self::n(&p, &["EngineIdleRpm"], 800.0);
-        let g = |v: f64| Self::round(if v.abs() > 5.0 { v / 9.81 } else { v }, 3);
-        let bpsi = if boost > 1000.0 {
-            boost * 0.000145038
-        } else {
-            boost
-        };
-        let bbar = if boost > 1000.0 {
-            boost / 100000.0
-        } else {
-            boost / 14.5038
-        };
-        json!({"g_forces":{"lateral_g":g(ax),"longitudinal_g":g(az),"vertical_g":g(ay)},"orientation":{"yaw_rad":Self::round(yaw,4),"yaw_deg":Self::round(yaw.to_degrees(),2),"pitch_rad":Self::round(pitch,4),"pitch_deg":Self::round(pitch.to_degrees(),2),"roll_rad":Self::round(roll,4),"roll_deg":Self::round(roll.to_degrees(),2)},"power_train":{"power_kw":Self::round(pw/1000.0,1),"power_hp":Self::round(pw/745.699872,1),"torque_nm":Self::round(tq,1),"torque_ftlb":Self::round(tq*0.737562,1),"boost_psi":Self::round(bpsi,2),"boost_bar":Self::round(bbar,3),"is_ev":idle==0.0,"is_regen_active":idle==0.0&&(pw<0.0||tq<0.0)},"position":{"x":Self::round(Self::n(&p,&["PositionX","pos_x"],0.0),2),"y":Self::round(Self::n(&p,&["PositionY","pos_y"],0.0),2),"z":Self::round(Self::n(&p,&["PositionZ","pos_z"],0.0),2)}})
+        self.format_vehicle_dynamics(&self.sample())
     }
-    fn arr(p: &Value, key: &str, defaults: [f64; 4]) -> [f64; 4] {
-        p.get(key)
-            .and_then(Value::as_array)
-            .filter(|v| v.len() >= 4)
-            .map(|v| [0, 1, 2, 3].map(|i| v[i].as_f64().unwrap_or(0.0)))
-            .unwrap_or(defaults)
+    pub fn format_vehicle_dynamics(&self, p: &Value) -> Value {
+        let ax = Self::n(p, &["AccelerationX", "accel_x"], 0.0);
+        let ay = Self::n(p, &["AccelerationY", "accel_y"], 0.0);
+        let az = Self::n(p, &["AccelerationZ", "accel_z"], 0.0);
+        let pw = Self::n(p, &["PowerWatts", "power_watts"], 0.0);
+        let tq = Self::n(p, &["TorqueNewtons", "torque_nm"], 0.0);
+        let boost = Self::n(p, &["Boost", "boost"], 0.0);
+        let yaw = Self::n(p, &["Yaw", "yaw"], 0.0);
+        let pitch = Self::n(p, &["Pitch", "pitch"], 0.0);
+        let roll = Self::n(p, &["Roll", "roll"], 0.0);
+        let idle = Self::n(p, &["EngineIdleRpm"], 800.0);
+        let g = |v: f64| Self::round(v / 9.81, 3);
+        let bpsi = boost * 0.0001450377;
+        let bbar = boost / 100000.0;
+        json!({"g_forces":{"lateral_g":g(ax),"longitudinal_g":g(az),"vertical_g":g(ay)},"orientation":{"yaw_rad":Self::round(yaw,4),"yaw_deg":Self::round(yaw.to_degrees(),2),"pitch_rad":Self::round(pitch,4),"pitch_deg":Self::round(pitch.to_degrees(),2),"roll_rad":Self::round(roll,4),"roll_deg":Self::round(roll.to_degrees(),2)},"power_train":{"power_kw":Self::round(pw/1000.0,1),"power_hp":Self::round(pw/745.699872,1),"torque_nm":Self::round(tq,1),"torque_ftlb":Self::round(tq*0.737562,1),"boost_psi":Self::round(bpsi,2),"boost_bar":Self::round(bbar,3),"is_ev":idle==0.0,"is_regen_active":idle==0.0&&(pw<0.0||tq<0.0)},"position":{"x":Self::round(Self::n(p,&["PositionX","pos_x"],0.0),2),"y":Self::round(Self::n(p,&["PositionY","pos_y"],0.0),2),"z":Self::round(Self::n(p,&["PositionZ","pos_z"],0.0),2)}})
+    }
+    fn arr(p: &Value, keys: &[&str], defaults: [f64; 4]) -> [f64; 4] {
+        for key in keys {
+            if let Some(v) = p.get(*key).and_then(Value::as_array).filter(|v| v.len() >= 4) {
+                return [0, 1, 2, 3].map(|i| v[i].as_f64().unwrap_or(0.0));
+            }
+        }
+        defaults
     }
     pub fn get_tires_status_telemetry(&self) -> Value {
-        let p = self.sample();
+        self.format_tires_status(&self.sample())
+    }
+    pub fn format_tires_status(&self, p: &Value) -> Value {
         let temps = Self::arr(
-            &p,
-            "TireTemp",
+            p,
+            &["TireTemp"],
             [
-                Self::n(&p, &["temp_fl"], 180.0),
-                Self::n(&p, &["temp_fr"], 180.0),
-                Self::n(&p, &["temp_rl"], 180.0),
-                Self::n(&p, &["temp_rr"], 180.0),
+                Self::n(p, &["temp_fl"], 180.0),
+                Self::n(p, &["temp_fr"], 180.0),
+                Self::n(p, &["temp_rl"], 180.0),
+                Self::n(p, &["temp_rr"], 180.0),
             ],
         );
         let sa = Self::arr(
-            &p,
-            "TireSlipAngle",
+            p,
+            &["TireSlipAngle"],
             [
-                Self::n(&p, &["slip_angle_fl"], 0.0),
-                Self::n(&p, &["slip_angle_fr"], 0.0),
-                Self::n(&p, &["slip_angle_rl"], 0.0),
-                Self::n(&p, &["slip_angle_rr"], 0.0),
+                Self::n(p, &["slip_angle_fl"], 0.0),
+                Self::n(p, &["slip_angle_fr"], 0.0),
+                Self::n(p, &["slip_angle_rl"], 0.0),
+                Self::n(p, &["slip_angle_rr"], 0.0),
             ],
         );
         let sr = Self::arr(
-            &p,
-            "TireSlipRatio",
+            p,
+            &["TireSlipRatio"],
             [
-                Self::n(&p, &["slip_ratio_fl"], 0.0),
-                Self::n(&p, &["slip_ratio_fr"], 0.0),
-                Self::n(&p, &["slip_ratio_rl"], 0.0),
-                Self::n(&p, &["slip_ratio_rr"], 0.0),
+                Self::n(p, &["slip_ratio_fl"], 0.0),
+                Self::n(p, &["slip_ratio_fr"], 0.0),
+                Self::n(p, &["slip_ratio_rl"], 0.0),
+                Self::n(p, &["slip_ratio_rr"], 0.0),
             ],
         );
         let c = ["front_left", "front_right", "rear_left", "rear_right"];
@@ -154,37 +154,25 @@ impl<'a> McpService<'a> {
         let mut tc = [0.; 4];
         for i in 0..4 {
             tc[i] = Self::round((temps[i] - 32.0) * 5.0 / 9.0, 1);
-            let ad = Self::round(
-                if sa[i].abs() < 10.0 {
-                    sa[i].to_degrees()
-                } else {
-                    sa[i]
-                },
-                2,
-            );
-            let rp = Self::round(
-                if sr[i].abs() <= 5.0 {
-                    sr[i] * 100.0
-                } else {
-                    sr[i]
-                },
-                1,
-            );
+            let ad = Self::round(sa[i].to_degrees(), 2);
+            let rp = Self::round(sr[i] * 100.0, 1);
             let slip = (rp * rp + ad * ad).sqrt();
             corners.insert(c[i].into(),json!({"temp_c":tc[i],"temp_f":Self::round(temps[i],1),"slip_angle_deg":ad,"slip_ratio_pct":rp,"combined_slip":Self::round(slip,2),"is_slipping":slip>15.0,"is_overheating":tc[i]>110.0}));
         }
         json!({"summary":{"front_avg_temp_c":Self::round((tc[0]+tc[1])/2.0,1),"rear_avg_temp_c":Self::round((tc[2]+tc[3])/2.0,1),"axle_temp_delta_c":Self::round((tc[0]+tc[1]-tc[2]-tc[3])/2.0,1)},"corners":corners})
     }
     pub fn get_suspension_telemetry(&self) -> Value {
-        let p = self.sample();
+        self.format_suspension(&self.sample())
+    }
+    pub fn format_suspension(&self, p: &Value) -> Value {
         let t = Self::arr(
-            &p,
-            "SuspTravel",
+            p,
+            &["NormalizedSuspensionTravel", "SuspTravel"],
             [
-                Self::n(&p, &["susp_fl"], 0.0),
-                Self::n(&p, &["susp_fr"], 0.0),
-                Self::n(&p, &["susp_rl"], 0.0),
-                Self::n(&p, &["susp_rr"], 0.0),
+                Self::n(p, &["susp_fl"], 0.0),
+                Self::n(p, &["susp_fr"], 0.0),
+                Self::n(p, &["susp_rl"], 0.0),
+                Self::n(p, &["susp_rr"], 0.0),
             ],
         );
         let names = ["front_left", "front_right", "rear_left", "rear_right"];
@@ -450,6 +438,8 @@ impl<'a> McpService<'a> {
             .find(|p| p["preset_name"] == clean_name)
             .and_then(|p| storage::read_json(Path::new(p["file_path"].as_str()?)).ok())
     }
+    /// Legacy quick baseline tuning solver (tuning-dev/v1).
+    /// Formal SSOT is defined by docs/contracts/tuning_responsibilities.md and tests/fixtures/tuning_golden_fixtures.json.
     pub fn dev_solver(
         &self,
         c: &Map<String, Value>,
@@ -484,6 +474,7 @@ impl<'a> McpService<'a> {
         };
         json!({"schemaVersion":"tuning-dev/v1","purpose":purpose,"calculated_setup":{"tires":{"front_cold_psi":28.5,"rear_cold_psi":28.5,"target_hot_psi":32.0},"alignment":{"camber_front_deg":if purpose=="drag"{-0.5}else{-1.8},"camber_rear_deg":if purpose=="drag"{0.0}else{-1.2},"toe_front_deg":if purpose=="drift"{0.5}else{0.0},"toe_rear_deg":if purpose=="drift"{-0.2}else{0.0},"caster_deg":if purpose=="drift"{7.0}else{6.5}},"anti_roll_bars":{"front":af,"rear":ar},"springs":{"front_lbs_in":Self::round(w*f*0.7,1),"rear_lbs_in":Self::round(w*r*0.7,1)},"dampers":{"rebound_front":rf,"rebound_rear":rr,"bump_front":Self::round(rf*0.6,1),"bump_rear":Self::round(rr*0.6,1)},"differential":diff},"capabilities":self.capabilities(&ordinal,parts)})
     }
+    /// Legacy quick gearing solver (tuning-dev/v1).
     pub fn gearing(&self, max: f64, peak: f64, top: f64, count: i64, tire: f64) -> Value {
         if max <= 0. || peak <= 0. || count < 1 {
             return json!({"error":"Invalid engine or gear parameters"});

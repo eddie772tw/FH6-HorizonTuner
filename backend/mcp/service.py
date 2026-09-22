@@ -148,16 +148,30 @@ class HorizonTunerMcpService:
             gear_str = str(gear_raw)
 
         # Inputs normalized (0.0 to 100.0% and 0..255 byte)
-        clutch = float(p.get("clutch_pct") or 0.0)
+        clutch = float(
+            p["clutch_pct"]
+            if p.get("clutch_pct") is not None
+            else (float(p.get("ClutchInput") or 0) / 255.0 * 100.0)
+        )
         accel = float(
-            p.get("accel_pct") or (float(p.get("AccelInput") or 0) / 255.0 * 100.0)
+            p["accel_pct"]
+            if p.get("accel_pct") is not None
+            else (float(p.get("AccelInput") or 0) / 255.0 * 100.0)
         )
         brake = float(
-            p.get("brake_pct") or (float(p.get("BrakeInput") or 0) / 255.0 * 100.0)
+            p["brake_pct"]
+            if p.get("brake_pct") is not None
+            else (float(p.get("BrakeInput") or 0) / 255.0 * 100.0)
         )
-        handbrake = float(p.get("handbrake_pct") or 0.0)
+        handbrake = float(
+            p["handbrake_pct"]
+            if p.get("handbrake_pct") is not None
+            else (float(p.get("HandBrakeInput") or 0) / 255.0 * 100.0)
+        )
         steer_pct = float(
-            p.get("steer_pct") or (float(p.get("SteerInput") or 0) / 127.0 * 100.0)
+            p["steer_pct"]
+            if p.get("steer_pct") is not None
+            else (float(p.get("SteerInput") or 0) / 127.0 * 100.0)
         )
 
         shift_alert = rpm >= (max_rpm * 0.95) and max_rpm > 1000
@@ -223,11 +237,9 @@ class HorizonTunerMcpService:
 
         return {
             "g_forces": {
-                "lateral_g": round(accel_x / 9.81 if abs(accel_x) > 5 else accel_x, 3),
-                "longitudinal_g": round(
-                    accel_z / 9.81 if abs(accel_z) > 5 else accel_z, 3
-                ),
-                "vertical_g": round(accel_y / 9.81 if abs(accel_y) > 5 else accel_y, 3),
+                "lateral_g": round(accel_x / 9.81, 3),
+                "longitudinal_g": round(accel_z / 9.81, 3),
+                "vertical_g": round(accel_y / 9.81, 3),
             },
             "orientation": {
                 "yaw_rad": round(yaw, 4),
@@ -242,12 +254,8 @@ class HorizonTunerMcpService:
                 "power_hp": round(power_w / 745.699872, 1),
                 "torque_nm": round(torque_nm, 1),
                 "torque_ftlb": round(torque_nm * 0.737562, 1),
-                "boost_psi": round(boost_pa * 0.000145038, 2)
-                if boost_pa > 1000
-                else round(boost_pa, 2),
-                "boost_bar": round(boost_pa / 100000.0, 3)
-                if boost_pa > 1000
-                else round(boost_pa / 14.5038, 3),
+                "boost_psi": round(boost_pa * 0.0001450377, 2),
+                "boost_bar": round(boost_pa / 100000.0, 3),
                 "is_ev": is_ev,
                 "is_regen_active": is_regen,
             },
@@ -296,9 +304,7 @@ class HorizonTunerMcpService:
                 p.get("slip_angle_rr", 0.0),
             ),
         )
-        slip_angles_deg = [
-            round(math.degrees(a) if abs(a) < 10 else a, 2) for a in raw_slip_angles
-        ]
+        slip_angles_deg = [round(math.degrees(a), 2) for a in raw_slip_angles]
 
         # Slip ratios
         raw_slip_ratios = get_corner_array(
@@ -310,9 +316,7 @@ class HorizonTunerMcpService:
                 p.get("slip_ratio_rr", 0.0),
             ),
         )
-        slip_ratios_pct = [
-            round(r * 100.0 if abs(r) <= 5.0 else r, 1) for r in raw_slip_ratios
-        ]
+        slip_ratios_pct = [round(r * 100.0, 1) for r in raw_slip_ratios]
 
         corners = ["front_left", "front_right", "rear_left", "rear_right"]
         corner_data = {}
@@ -350,7 +354,9 @@ class HorizonTunerMcpService:
             live = self.get_live_telemetry_snapshot()
             p = live.get("latest_sample") or {}
 
-        val = p.get("SuspTravel")
+        val = p.get("NormalizedSuspensionTravel")
+        if val is None:
+            val = p.get("SuspTravel")
         if isinstance(val, (list, tuple)) and len(val) >= 4:
             travels = [float(x) for x in val[:4]]
         else:
@@ -879,7 +885,12 @@ class HorizonTunerMcpService:
         installed_parts: dict[str, str] | None = None,
         purpose: str = "road",
     ) -> dict[str, Any]:
-        """Execute deterministic tuning calculation aligned with tuningMath.ts and contracts.ts."""
+        """Execute legacy quick baseline tuning solver (tuning-dev/v1).
+
+        NOTE: This is a simplified transitional baseline solver. Formal vehicle
+        tuning and AEGO calculations are defined by docs/contracts/tuning_responsibilities.md
+        and tests/fixtures/tuning_golden_fixtures.json (to be implemented in Rust tuning_core).
+        """
         weight_kg = float(car_params.get("weight_kg") or 1400.0)
         weight_lbs = weight_kg * 2.20462
         f_bias = float(car_params.get("front_weight_bias") or 0.52)
@@ -989,7 +1000,12 @@ class HorizonTunerMcpService:
         gears_count: int = 6,
         tire_diameter_cm: float = 65.0,
     ) -> dict[str, Any]:
-        """Execute AEGO geometric powerband gearing solver."""
+        """Execute legacy quick gearing solver (tuning-dev/v1).
+
+        NOTE: This is a simplified transitional baseline solver. Formal AEGO
+        gearing calculations are defined by docs/contracts/tuning_responsibilities.md
+        and tests/fixtures/tuning_golden_fixtures.json (to be implemented in Rust tuning_core).
+        """
         if max_rpm <= 0 or peak_hp_rpm <= 0 or gears_count < 1:
             return {"error": "Invalid engine or gear parameters"}
 
