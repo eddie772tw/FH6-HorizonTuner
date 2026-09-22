@@ -11,6 +11,20 @@
 - **Evidence**：本地 `pnpm --prefix frontend run build` 驗證 exit 0 且產出 `dist/index.html` 與 `dist/lite/index.html`；`git diff --check` 通過。
 - **Skills**：`portable-release-validation`。
 
+## 2026-09-21 / Canvas 60Hz 環形緩衝區優化與 FrameInterpolator 物件語意決策（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；消除 `SuspensionBar` 與 `GForceRadar` 在 60Hz 高頻渲染循環中 `Array.shift()` 的 $O(N)$ 記憶體搬移與 GC 抖動，並確立 `FrameInterpolator` 保留 React 物件語意的架構決策。
+- **Learning**：
+  1. **高頻 Canvas 環形緩衝區 (Circular Buffer) 零搬移合約**：在 60Hz 高頻遙測路徑中，`SuspensionBar`（固定 180 筆）與 `GForceRadar`（固定 900 筆）若使用 `Array.shift()` 維護歷史隊列，在隊列滿載後每幀皆觸發 $O(N)$ 記憶體搬移與陣列重分配。改採固定尺寸陣列配合 `offsetRef` 原地更新，達成 $O(1)$ 常數時間複雜度，與 `PedalTraceCanvas` 及 `PowerTorqueCanvas` 模式統一。
+  2. **繪圖依序模運算 vs 極值無序掃描之差異化遍歷**：波形連線組件（`SuspensionBar`）繪製時依賴時間軸連續性，須透過模運算 `(offsetRef.current + k) % len` 由舊至新依序走訪，以正確對齊最新時間錨點 `maxT`；而雷達極值標記（`GForceRadar` markers）僅尋找全局八方位極值，為順序無關（order-independent），因此直接線性遍歷，避免多餘模除運算。
+  3. **FrameInterpolator 原型繼承破壞 React 物件語意之反思**：嘗試在 60Hz 遙測插值中以 `Object.create(curr)` 代替 `{ ...curr }` 雖然能加速物件複製，但會將屬性置於原型鏈（prototype chain）而非自有效屬性（own properties），導致 `Object.keys()`、展開運算子及 JSON 序列化遺失屬性，破壞 React 下游組件的資料契約。故回退該變更，嚴格維持淺拷貝以確保安全性。
+- **Action**：
+  1. 修改 `SuspensionBar.tsx`：引入 `offsetRef`，在重置狀態時重置 offset，將 60Hz 更新改為 $O(1)$ circular buffer，繪製時採模運算依序走訪。
+  2. 修改 `GForceRadar.tsx`：引入 `offsetRef`，在重置狀態時重置 offset，將 60Hz 更新改為 $O(1)$ circular buffer，Marker 搜尋維持直接線性走訪。
+  3. 更新 `.jules/bolt.md` 與 `.agents/Journal.md` 登錄學習點。
+- **Evidence**：前端測試 128 檔案 920 tests 全數通過；前端 Vite 生產打包通過；`git diff --check` 通過。
+- **Skills**：`huge-component-refactoring`、`modular-refactoring`。
+
 ## 2026-09-20 / #396 零輸出斷油與窄轉速採集（Astra as Codex）
 
 - **Scope**：在已合併 #397 的 `844ad1b` 上獨立修正；採用 `physics-tuning-math`、`modular-refactoring`、`pr-author-maintainer`。
