@@ -1,0 +1,1106 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-09-23T00:00:00Z",
+  "cases": [
+    {
+      "id": "road_awd_standard",
+      "description": "Road AWD with 1/65 ARB meta and moderate downforce",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1450,
+          "weight_distribution": 54,
+          "drivetrain": "AWD",
+          "maxHp": 450,
+          "maxTorque": 500,
+          "maxHpRpm": 6800,
+          "maxTorqueRpm": 4800,
+          "aero_downforce_front": 80,
+          "aero_downforce_rear": 120,
+          "spring_front_min": 15,
+          "spring_front_max": 130,
+          "spring_rear_min": 15,
+          "spring_rear_max": 130,
+          "height_front_min": 10,
+          "height_front_max": 22,
+          "height_rear_min": 10,
+          "height_rear_max": 22
+        },
+        "maxRpm": 7800,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 80,
+          "rear": 120
+        },
+        "chassis": {
+          "arb": {
+            "front": 3.2,
+            "rear": 50
+          },
+          "springs": {
+            "front": 81.1,
+            "rear": 70.3,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 11.3,
+            "reboundR": 9.7,
+            "bumpF": 6.8,
+            "bumpR": 5.8
+          },
+          "diff": {
+            "accelF": 15,
+            "decelF": 0,
+            "accelR": 75,
+            "decelR": 15,
+            "centerRear": 66
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.07,
+          "gears": [
+            2.69,
+            1.91,
+            1.41,
+            1.09,
+            0.87,
+            0.72
+          ]
+        }
+      }
+    },
+    {
+      "id": "road_rwd_sports",
+      "description": "Road RWD balanced 50:50 sports coupe",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1300,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 380,
+          "maxTorque": 420,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5000,
+          "aero_downforce_front": 40,
+          "aero_downforce_rear": 60
+        },
+        "maxRpm": 8000,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 40,
+          "rear": 60
+        },
+        "chassis": {
+          "arb": {
+            "front": 33,
+            "rear": 33
+          },
+          "springs": {
+            "front": 67,
+            "rear": 66.2,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 10.5,
+            "reboundR": 10.5,
+            "bumpF": 6.3,
+            "bumpR": 6.3
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 40,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.44,
+          "gears": [
+            1.88,
+            1.45,
+            1.16,
+            0.96,
+            0.82,
+            0.72
+          ]
+        }
+      }
+    },
+    {
+      "id": "road_fwd_hot_hatch",
+      "description": "Road FWD front-heavy hot hatch with roll support",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1250,
+          "weight_distribution": 62,
+          "drivetrain": "FWD",
+          "maxHp": 280,
+          "maxTorque": 360,
+          "maxHpRpm": 6200,
+          "maxTorqueRpm": 3500,
+          "aero_downforce_front": 30,
+          "aero_downforce_rear": 20
+        },
+        "maxRpm": 7200,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 30,
+          "rear": 20
+        },
+        "chassis": {
+          "arb": {
+            "front": 20.8,
+            "rear": 41.3
+          },
+          "springs": {
+            "front": 68.7,
+            "rear": 63.2,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 11.9,
+            "reboundR": 9,
+            "bumpF": 7.1,
+            "bumpR": 5.4
+          },
+          "diff": {
+            "accelF": 25,
+            "decelF": 5,
+            "accelR": 0,
+            "decelR": 0,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.35,
+          "gears": [
+            1.47,
+            1.22,
+            1.03,
+            0.89,
+            0.79,
+            0.72
+          ]
+        }
+      }
+    },
+    {
+      "id": "drift_rwd_standard",
+      "description": "Drift RWD high angle power oversteer setup",
+      "raceGoal": "Drift",
+      "inputs": {
+        "carParams": {
+          "weight": 1200,
+          "weight_distribution": 53,
+          "drivetrain": "RWD",
+          "maxHp": 550,
+          "maxTorque": 650,
+          "maxHpRpm": 6800,
+          "maxTorqueRpm": 4500
+        },
+        "maxRpm": 7500,
+        "numGears": 4
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 115.3,
+          "rear": 124.7
+        },
+        "chassis": {
+          "arb": {
+            "front": 22.3,
+            "rear": 26.8
+          },
+          "springs": {
+            "front": 22.3,
+            "rear": 19.7,
+            "heightF": 10.5,
+            "heightR": 11
+          },
+          "damping": {
+            "reboundF": 3.1,
+            "reboundR": 2.7,
+            "bumpF": 1.9,
+            "bumpR": 1.6
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 90,
+            "decelR": 15,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.27,
+          "gears": [
+            3.72,
+            2.35,
+            1.44,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "drift_awd_high_power",
+      "description": "Drift AWD gymkhana setup with rear power bias",
+      "raceGoal": "Drift",
+      "inputs": {
+        "carParams": {
+          "weight": 1350,
+          "weight_distribution": 52,
+          "drivetrain": "AWD",
+          "maxHp": 800,
+          "maxTorque": 900,
+          "maxHpRpm": 7200,
+          "maxTorqueRpm": 5200
+        },
+        "maxRpm": 8500,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 143.7,
+          "rear": 126.3
+        },
+        "chassis": {
+          "arb": {
+            "front": 22.3,
+            "rear": 26.8
+          },
+          "springs": {
+            "front": 24.6,
+            "rear": 22.7,
+            "heightF": 10.5,
+            "heightR": 11
+          },
+          "damping": {
+            "reboundF": 3.5,
+            "reboundR": 3.2,
+            "bumpF": 2.1,
+            "bumpR": 1.9
+          },
+          "diff": {
+            "accelF": 85,
+            "decelF": 5,
+            "accelR": 60,
+            "decelR": 15,
+            "centerRear": 75
+          }
+        },
+        "gearing": {
+          "finalDrive": 6.1,
+          "gears": [
+            3.34,
+            2.59,
+            2,
+            1.53,
+            1.22,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "drift_fwd_handbrake",
+      "description": "Drift FWD weight transfer and handbrake setup",
+      "raceGoal": "Drift",
+      "inputs": {
+        "carParams": {
+          "weight": 1100,
+          "weight_distribution": 60,
+          "drivetrain": "FWD",
+          "maxHp": 220,
+          "maxTorque": 260,
+          "maxHpRpm": 6500,
+          "maxTorqueRpm": 4200
+        },
+        "maxRpm": 7000,
+        "numGears": 5
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 134.6,
+          "rear": 85.4
+        },
+        "chassis": {
+          "arb": {
+            "front": 22.3,
+            "rear": 26.8
+          },
+          "springs": {
+            "front": 23.1,
+            "rear": 15.4,
+            "heightF": 10.5,
+            "heightR": 11
+          },
+          "damping": {
+            "reboundF": 3.3,
+            "reboundR": 1.9,
+            "bumpF": 2,
+            "bumpR": 1.2
+          },
+          "diff": {
+            "accelF": 85,
+            "decelF": 5,
+            "accelR": 0,
+            "decelR": 0,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 6.1,
+          "gears": [
+            3.77,
+            2.66,
+            1.85,
+            1.32,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "rally_awd_mixed_surface",
+      "description": "Rally AWD gravel & dirt compliance setup",
+      "raceGoal": "Rally",
+      "inputs": {
+        "carParams": {
+          "weight": 1280,
+          "weight_distribution": 52,
+          "drivetrain": "AWD",
+          "rallyProfile": "mixed-surface",
+          "maxHp": 350,
+          "maxTorque": 480,
+          "maxHpRpm": 6000,
+          "maxTorqueRpm": 3800
+        },
+        "maxRpm": 7000,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 136.2,
+          "rear": 119.8
+        },
+        "chassis": {
+          "arb": {
+            "front": 11,
+            "rear": 10.2
+          },
+          "springs": {
+            "front": 43.7,
+            "rear": 40.8,
+            "heightF": 22.8,
+            "heightR": 22.8
+          },
+          "damping": {
+            "reboundF": 8.3,
+            "reboundR": 7.7,
+            "bumpF": 3.3,
+            "bumpR": 3.1
+          },
+          "diff": {
+            "accelF": 40,
+            "decelF": 10,
+            "accelR": 80,
+            "decelR": 25,
+            "centerRear": 65
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.07,
+          "gears": [
+            2.7,
+            2.18,
+            1.76,
+            1.42,
+            1.14,
+            0.92
+          ]
+        }
+      }
+    },
+    {
+      "id": "rally_awd_cross_country",
+      "description": "Rally AWD cross-country big jumps setup with landing absorption",
+      "raceGoal": "Rally",
+      "inputs": {
+        "carParams": {
+          "weight": 1600,
+          "weight_distribution": 50,
+          "drivetrain": "AWD",
+          "rallyProfile": "cross-country",
+          "maxHp": 450,
+          "maxTorque": 580,
+          "maxHpRpm": 6200,
+          "maxTorqueRpm": 4000
+        },
+        "maxRpm": 7200,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 163.9,
+          "rear": 156.1
+        },
+        "chassis": {
+          "arb": {
+            "front": 12.5,
+            "rear": 15.2
+          },
+          "springs": {
+            "front": 55.3,
+            "rear": 55.3,
+            "heightF": 25,
+            "heightR": 25
+          },
+          "damping": {
+            "reboundF": 8.8,
+            "reboundR": 8.8,
+            "bumpF": 4.4,
+            "bumpR": 4.4
+          },
+          "diff": {
+            "accelF": 50,
+            "decelF": 20,
+            "accelR": 90,
+            "decelR": 35,
+            "centerRear": 55
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.18,
+          "gears": [
+            2.7,
+            2.19,
+            1.77,
+            1.44,
+            1.17,
+            0.94
+          ]
+        }
+      }
+    },
+    {
+      "id": "rally_rwd_historic",
+      "description": "Rally RWD classic rally car with compliant suspension",
+      "raceGoal": "Rally",
+      "inputs": {
+        "carParams": {
+          "weight": 1150,
+          "weight_distribution": 48,
+          "drivetrain": "RWD",
+          "rallyProfile": "mixed-surface",
+          "maxHp": 260,
+          "maxTorque": 300,
+          "maxHpRpm": 6800,
+          "maxTorqueRpm": 5000
+        },
+        "maxRpm": 7500,
+        "numGears": 5
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 99.1,
+          "rear": 130.9
+        },
+        "chassis": {
+          "arb": {
+            "front": 10.2,
+            "rear": 11
+          },
+          "springs": {
+            "front": 40.8,
+            "rear": 43.7,
+            "heightF": 22.8,
+            "heightR": 22.8
+          },
+          "damping": {
+            "reboundF": 7.7,
+            "reboundR": 8.3,
+            "bumpF": 3.1,
+            "bumpR": 3.3
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 75,
+            "decelR": 25,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 3.89,
+          "gears": [
+            2.7,
+            2.21,
+            1.8,
+            1.47,
+            1.2
+          ]
+        }
+      }
+    },
+    {
+      "id": "drag_rwd_muscle",
+      "description": "Drag RWD high torque launch with forward rake",
+      "raceGoal": "Drag",
+      "inputs": {
+        "carParams": {
+          "weight": 1550,
+          "weight_distribution": 55,
+          "drivetrain": "RWD",
+          "maxHp": 750,
+          "maxTorque": 880,
+          "maxHpRpm": 6500,
+          "maxTorqueRpm": 4800
+        },
+        "maxRpm": 7200,
+        "numGears": 4
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 155.2,
+          "rear": 154.8
+        },
+        "chassis": {
+          "arb": {
+            "front": 65,
+            "rear": 65
+          },
+          "springs": {
+            "front": 32,
+            "rear": 32,
+            "heightF": 25,
+            "heightR": 25
+          },
+          "damping": {
+            "reboundF": 3,
+            "reboundR": 12,
+            "bumpF": 12,
+            "bumpR": 4
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 85,
+            "decelR": 0,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 2.29,
+          "gears": [
+            2.8,
+            1.98,
+            1.41,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "drag_awd_supercar",
+      "description": "Drag AWD sub-9s quarter mile launch",
+      "raceGoal": "Drag",
+      "inputs": {
+        "carParams": {
+          "weight": 1650,
+          "weight_distribution": 43,
+          "drivetrain": "AWD",
+          "maxHp": 1000,
+          "maxTorque": 1050,
+          "maxHpRpm": 8200,
+          "maxTorqueRpm": 6000
+        },
+        "maxRpm": 9000,
+        "numGears": 7
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 145.9,
+          "rear": 184.1
+        },
+        "chassis": {
+          "arb": {
+            "front": 65,
+            "rear": 65
+          },
+          "springs": {
+            "front": 32,
+            "rear": 32,
+            "heightF": 25,
+            "heightR": 25
+          },
+          "damping": {
+            "reboundF": 3,
+            "reboundR": 12,
+            "bumpF": 12,
+            "bumpR": 4
+          },
+          "diff": {
+            "accelF": 85,
+            "decelF": 0,
+            "accelR": 65,
+            "decelR": 10,
+            "centerRear": 75
+          }
+        },
+        "gearing": {
+          "finalDrive": 3.29,
+          "gears": [
+            2.79,
+            2.27,
+            1.85,
+            1.51,
+            1.23,
+            1.01,
+            0.82
+          ]
+        }
+      }
+    },
+    {
+      "id": "drag_fwd_compact",
+      "description": "Drag FWD wheelie-prevention stiff rear launch",
+      "raceGoal": "Drag",
+      "inputs": {
+        "carParams": {
+          "weight": 1050,
+          "weight_distribution": 64,
+          "drivetrain": "FWD",
+          "maxHp": 400,
+          "maxTorque": 460,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5200
+        },
+        "maxRpm": 8000,
+        "numGears": 4
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 136.7,
+          "rear": 73.3
+        },
+        "chassis": {
+          "arb": {
+            "front": 55,
+            "rear": 65
+          },
+          "springs": {
+            "front": 26.5,
+            "rear": 37.5,
+            "heightF": 10,
+            "heightR": 25
+          },
+          "damping": {
+            "reboundF": 8,
+            "reboundR": 8,
+            "bumpF": 12,
+            "bumpR": 10
+          },
+          "diff": {
+            "accelF": 85,
+            "decelF": 0,
+            "accelR": 0,
+            "decelR": 0,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 2.65,
+          "gears": [
+            3.25,
+            2.2,
+            1.48,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "aego_weak_engine_4speed",
+      "description": "AEGO powerband gearing for low HP economy engine",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 2100,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 85,
+          "maxTorque": 120,
+          "maxHpRpm": 4200,
+          "maxTorqueRpm": 2400,
+          "rearTireWidth": 205,
+          "rearTireAspect": 65,
+          "rearTireRim": 15
+        },
+        "maxRpm": 5000,
+        "numGears": 4
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 189.2,
+          "rear": 230.8
+        },
+        "chassis": {
+          "arb": {
+            "front": 33,
+            "rear": 33
+          },
+          "springs": {
+            "front": 74.5,
+            "rear": 69.6,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 10.5,
+            "reboundR": 10.5,
+            "bumpF": 6.3,
+            "bumpR": 6.3
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 40,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 3.56,
+          "gears": [
+            1.39,
+            1.14,
+            0.96,
+            0.81
+          ]
+        }
+      }
+    },
+    {
+      "id": "aego_10speed_hypercar",
+      "description": "AEGO 10-speed transmission for 1200HP hypercar",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 45,
+          "drivetrain": "AWD",
+          "maxHp": 1200,
+          "maxTorque": 1300,
+          "maxHpRpm": 8500,
+          "maxTorqueRpm": 6500,
+          "aeroEfficiency": 0.8
+        },
+        "maxRpm": 9500,
+        "numGears": 10
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 129.4,
+          "rear": 150.6
+        },
+        "chassis": {
+          "arb": {
+            "front": 2.8,
+            "rear": 51.5
+          },
+          "springs": {
+            "front": 66,
+            "rear": 73.5,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 9.6,
+            "reboundR": 11.5,
+            "bumpF": 5.7,
+            "bumpR": 6.9
+          },
+          "diff": {
+            "accelF": 15,
+            "decelF": 0,
+            "accelR": 75,
+            "decelR": 15,
+            "centerRear": 75
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.41,
+          "gears": [
+            3.1,
+            2.42,
+            1.92,
+            1.54,
+            1.26,
+            1.05,
+            0.88,
+            0.76,
+            0.66,
+            0.58
+          ]
+        }
+      }
+    },
+    {
+      "id": "aego_secondary_correction_simulated",
+      "description": "AEGO secondary correction with simulated top speed constraint",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 500,
+          "maxTorque": 600,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5000
+        },
+        "maxRpm": 8000,
+        "numGears": 6,
+        "secondaryCorrection": {
+          "simulatedTopSpeed": 320
+        }
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 126.2,
+          "rear": 153.8
+        },
+        "chassis": {
+          "arb": {
+            "front": 33,
+            "rear": 33
+          },
+          "springs": {
+            "front": 71.3,
+            "rear": 68.1,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 10.5,
+            "reboundR": 10.5,
+            "bumpF": 6.3,
+            "bumpR": 6.3
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 40,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.28,
+          "gears": [
+            2.06,
+            1.55,
+            1.22,
+            0.99,
+            0.83,
+            0.72
+          ]
+        }
+      }
+    },
+    {
+      "id": "aego_secondary_correction_softmax",
+      "description": "AEGO secondary correction with soft max speed preview cap",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 50,
+          "drivetrain": "RWD",
+          "maxHp": 500,
+          "maxTorque": 600,
+          "maxHpRpm": 7000,
+          "maxTorqueRpm": 5000
+        },
+        "maxRpm": 8000,
+        "numGears": 6,
+        "secondaryCorrection": {
+          "softMaxSpeed": 280
+        }
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 126.2,
+          "rear": 153.8
+        },
+        "chassis": {
+          "arb": {
+            "front": 33,
+            "rear": 33
+          },
+          "springs": {
+            "front": 71.3,
+            "rear": 68.1,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 10.5,
+            "reboundR": 10.5,
+            "bumpF": 6.3,
+            "bumpR": 6.3
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 40,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.89,
+          "gears": [
+            2.06,
+            1.55,
+            1.22,
+            0.99,
+            0.83,
+            0.72
+          ]
+        }
+      }
+    },
+    {
+      "id": "aero_auto_derivation",
+      "description": "Automatic aerodynamic downforce derivation when inputs are 0",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 1400,
+          "weight_distribution": 52,
+          "drivetrain": "RWD",
+          "aero_downforce_front": 0,
+          "aero_downforce_rear": 0
+        },
+        "maxRpm": 7500,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 131.7,
+          "rear": 148.3
+        },
+        "chassis": {
+          "arb": {
+            "front": 34.3,
+            "rear": 31.7
+          },
+          "springs": {
+            "front": 73.8,
+            "rear": 65.8,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 10.9,
+            "reboundR": 10.1,
+            "bumpF": 6.5,
+            "bumpR": 6.1
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 40,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 4.37,
+          "gears": [
+            1.74,
+            1.37,
+            1.12,
+            0.94,
+            0.8,
+            0.68
+          ]
+        }
+      }
+    },
+    {
+      "id": "extreme_boundary_light_heavy",
+      "description": "Extreme vehicle mass and weight bias clamping test",
+      "raceGoal": "Road",
+      "inputs": {
+        "carParams": {
+          "weight": 500,
+          "weight_distribution": 25,
+          "drivetrain": "RWD",
+          "maxHp": 150,
+          "maxTorque": 180,
+          "maxHpRpm": 6000,
+          "maxTorqueRpm": 4000
+        },
+        "maxRpm": 7000,
+        "numGears": 6
+      },
+      "expected": {
+        "aeroDownforce": {
+          "front": 21.5,
+          "rear": 78.5
+        },
+        "chassis": {
+          "arb": {
+            "front": 17,
+            "rear": 49
+          },
+          "springs": {
+            "front": 38.6,
+            "rear": 94.1,
+            "heightF": 11.5,
+            "heightR": 11.5
+          },
+          "damping": {
+            "reboundF": 5.8,
+            "reboundR": 15.3,
+            "bumpF": 3.5,
+            "bumpR": 9.2
+          },
+          "diff": {
+            "accelF": 0,
+            "decelF": 0,
+            "accelR": 52.5,
+            "decelR": 20,
+            "centerRear": 50
+          }
+        },
+        "gearing": {
+          "finalDrive": 5.18,
+          "gears": [
+            1.38,
+            1.16,
+            1,
+            0.86,
+            0.74,
+            0.63
+          ]
+        }
+      }
+    }
+  ]
+}

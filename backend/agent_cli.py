@@ -210,7 +210,12 @@ class BackendClient:
 
 
 class TuningMathSolver:
-    """Deterministic tuning algorithms aligned with frontend/src/utils/tuningMath.ts and MCP service."""
+    """Legacy quick baseline tuning algorithms (tuning-dev/v1).
+
+    NOTE: This is a transitional baseline solver used by the CLI. Formal vehicle
+    tuning and AEGO calculations are defined by docs/contracts/tuning_responsibilities.md
+    and tests/fixtures/tuning_golden_fixtures.json (to be implemented in Rust tuning_core).
+    """
 
     @staticmethod
     def calculate_chassis(
