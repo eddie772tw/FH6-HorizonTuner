@@ -425,7 +425,7 @@ def test_valid_s650_center_widget_round_trips(temp_hud_config_file, widget):
     assert loaded_data["s650CenterWidget"] == widget
 
 
-def test_default_hud_config_includes_all_live_map_controls(temp_hud_config_file):
+def test_default_hud_config_excludes_live_map_controls(temp_hud_config_file):
     client = TestClient(app)
 
     elements = client.get("/api/overlay/config").json()["elements"]
@@ -436,45 +436,13 @@ def test_default_hud_config_includes_all_live_map_controls(temp_hud_config_file)
         "showLiveMapCollectibles",
         "showLiveMapHeading",
     ):
-        assert elements[key] is True
+        assert key not in elements
 
     config = client.get("/api/overlay/config").json()
-    assert config["telemetryLiveMapScale"] == 1.0
-    assert config["telemetryLiveMapOpacity"] == 1.0
-    assert config["telemetryLiveMapOffsetX"] == 0
-    assert config["telemetryLiveMapOffsetY"] == 0
-
-
-def test_live_map_fields_round_trip(temp_hud_config_file):
-    client = TestClient(app)
-    custom_config = {
-        "hudStyle": "s650_hmi",
-        "s650Theme": "normal",
-        "elements": {
-            "showLiveMap": False,
-            "showLiveMapPOIs": False,
-            "showLiveMapPRStunts": True,
-            "showLiveMapCollectibles": False,
-            "showLiveMapHeading": True,
-        },
-        "telemetryLiveMapScale": 1.5,
-        "telemetryLiveMapOpacity": 0.75,
-        "telemetryLiveMapOffsetX": -24,
-        "telemetryLiveMapOffsetY": 18,
-    }
-
-    post_res = client.post("/api/overlay/config", json=custom_config)
-    assert post_res.status_code == 200
-    assert post_res.json()["success"] is True
-
-    loaded_data = client.get("/api/overlay/config").json()
-    assert loaded_data["hudStyle"] == "s650_hmi"
-    assert loaded_data["s650Theme"] == "normal"
-    assert loaded_data["elements"] == custom_config["elements"]
-    assert loaded_data["telemetryLiveMapScale"] == 1.5
-    assert loaded_data["telemetryLiveMapOpacity"] == 0.75
-    assert loaded_data["telemetryLiveMapOffsetX"] == -24
-    assert loaded_data["telemetryLiveMapOffsetY"] == 18
+    assert "telemetryLiveMapScale" not in config
+    assert "telemetryLiveMapOpacity" not in config
+    assert "telemetryLiveMapOffsetX" not in config
+    assert "telemetryLiveMapOffsetY" not in config
 
 
 def test_reset_hud_config(temp_hud_config_file):

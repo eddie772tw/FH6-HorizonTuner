@@ -75,7 +75,6 @@ HUDCore.init(id);
 - `--hud-glow-intensity`：發光強度 ($0.0 \sim 2.0$)
 - `--hud-custom-color`：自訂色彩 HEX 或預設樣式色彩
 - `--tc-font-scale`、`--tc-corners-scale`、`--tc-gradar-scale`：中央遙測卡片的字體、角落卡片與 G-Force radar 縮放倍率
-- `--tc-live-map-scale`、`--tc-live-map-opacity`：Live Map 的縮放倍率與透明度
 - `--tc-corner-offset-x`、`--tc-corner-offset-y`：中央遙測卡片的位移調整
 
 實際可用變數以 `hud_overlay/shared/telemetry-cards/manager.js` 與共用卡片模板為準；不要假設只有單一 `--tc-elem-scale` 變數。

@@ -8,7 +8,6 @@ import {
 } from '../../../hud_overlay/shared/telemetry-cards/utils.js';
 import { getClusterHTML } from '../../../hud_overlay/shared/telemetry-cards/template.js';
 import { createTelemetryCardsManager } from '../../../hud_overlay/shared/telemetry-cards/manager.js';
-import { classifyLiveMapDrift } from '../../../hud_overlay/shared/telemetry-cards/live-map.js';
 
 // Simple lightweight DOM Mock for Node vitest environment
 function setupDOMMock() {
@@ -78,18 +77,6 @@ function setupDOMMock() {
 }
 
 describe('HUD Telemetry Cards Utilities', () => {
-    it('classifies drift from the fixed four-wheel slip tuple without changing threshold semantics', () => {
-        expect(classifyLiveMapDrift({ TireSlipRatio: [0.1, 0.2, 0.3, 0.39] }, 100)).toBe(false);
-        expect(classifyLiveMapDrift({ TireSlipRatio: [0.1, 0.2, 0.3, 0.4] }, 100)).toBe(false);
-        expect(classifyLiveMapDrift({ TireSlipRatio: [0.1, 0.2, 0.3, 0.41] }, 0)).toBe(true);
-    });
-
-    it('retains speed fallback and malformed-slip fail-closed behavior', () => {
-        expect(classifyLiveMapDrift({}, 21)).toBe(true);
-        expect(classifyLiveMapDrift({}, 20)).toBe(false);
-        expect(classifyLiveMapDrift(null, 100)).toBe(false);
-        expect(classifyLiveMapDrift({ TireSlipRatio: [Number.NaN, 0.5, 0, 0] }, 100)).toBe(false);
-    });
 
     it('getTempColor correctly maps temperature thresholds to hex colors', () => {
         expect(getTempColor(150)).toBe('#0088ff');
@@ -208,7 +195,7 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         expect(manager.suspHist[0].length).toBeLessThanOrEqual(150);
     });
 
-    it('elements visibility toggle hides corresponding DOM nodes including Live Map', () => {
+    it('elements visibility toggle hides corresponding DOM nodes', () => {
         const manager = createTelemetryCardsManager();
         manager.init(container);
 
@@ -218,45 +205,17 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
                 showTeleSuspension: false,
                 showTeleTires: false,
                 showTelePedals: false,
-                showPowerTorque: false,
-                showLiveMap: false
+                showPowerTorque: false
             }
         });
 
         const attitudeContainer = document.getElementById('tcCenterRadarContainer');
         const pedalContainer = document.getElementById('tcPedalWaveContainer');
         const powerContainer = document.getElementById('tcPowerTorqueContainer');
-        const liveMapContainer = document.getElementById('tcLiveMapContainer');
 
         expect(attitudeContainer?.style.display).toBe('none');
         expect(pedalContainer?.style.display).toBe('none');
         expect(powerContainer?.style.display).toBe('none');
-        expect(liveMapContainer?.style.display).toBe('none');
-
-        // Toggle showLiveMap back to true with null data
-        manager.update(null, {
-            elements: {
-                showLiveMap: true
-            }
-        });
-        expect(liveMapContainer?.style.display).toBe('block');
-    });
-
-    it('applies Live Map scale and offset CSS custom properties to tcLiveMapContainer', () => {
-        const manager = createTelemetryCardsManager();
-        manager.init(container);
-
-        manager.update(null, {
-            telemetryLiveMapScale: 1.25,
-            telemetryLiveMapOffsetX: 30,
-            telemetryLiveMapOffsetY: -20,
-            elements: { showLiveMap: true }
-        });
-
-        const liveMapContainer = document.getElementById('tcLiveMapContainer');
-        expect(liveMapContainer?.style.getPropertyValue('--tc-live-map-scale')).toBe('1.25');
-        expect(liveMapContainer?.style.getPropertyValue('--tc-live-map-offset-x')).toBe('30px');
-        expect(liveMapContainer?.style.getPropertyValue('--tc-live-map-offset-y')).toBe('-20px');
     });
 
     it('tire slip radar and tire temp blocks display correctly when showTeleTires is false but sub-toggles are true', () => {
@@ -379,29 +338,4 @@ describe('TelemetryCardsManager Lifecycle & DOM Interaction', () => {
         expect(ptContainer?.classList.contains('tc-half-width')).toBe(true);
         expect(ptContainer?.style.transform).toBe('none');
     });
-
-    it('renders Live Map POIs, proximity alert banner, and updates coordinates', () => {
-        const manager = createTelemetryCardsManager();
-        manager.init(container);
-
-        // Near Horizon Japan Festival (0, 0)
-        manager.update({ PositionX: 10, PositionZ: 15, SpeedMetersPerSecond: 25, Yaw: 0.5 }, {
-            elements: {
-                showLiveMap: true,
-                showLiveMapPOIs: true,
-                showLiveMapPRStunts: true,
-                showLiveMapCollectibles: true,
-                showLiveMapHeading: true
-            }
-        });
-
-        const nearbyEl = document.getElementById('tcLiveMapNearby');
-        const coordEl = document.getElementById('tcLiveMapCoord');
-
-        expect(nearbyEl).not.toBeNull();
-        expect(nearbyEl?.style.display).toBe('block');
-        expect(nearbyEl?.innerText).toContain('NEARBY: Horizon Japan Festival');
-        expect(coordEl?.innerText).toBe('X:10 Z:15');
-    });
 });
-

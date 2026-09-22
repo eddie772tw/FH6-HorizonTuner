@@ -32,8 +32,6 @@ const MERGED_OFFSET: RangeSetting = { key: 'telemetryMergedChartsOffsetX', label
 const INDIVIDUAL_OFFSETS: readonly RangeSetting[] = [
   { key: 'telemetryPedalOffsetX', label: 'Pedal Chart X-Offset', min: -500, max: 500, step: 10, fallback: 0 },
   { key: 'telemetryPowerTorqueOffsetX', label: 'Power / Torque X-Offset', min: -500, max: 500, step: 10, fallback: 0 },
-  { key: 'telemetryLiveMapOffsetX', label: 'Live Map X-Offset', min: -500, max: 500, step: 10, fallback: 0 },
-  { key: 'telemetryLiveMapOffsetY', label: 'Live Map Y-Offset', min: -500, max: 500, step: 10, fallback: 0 },
 ];
 const scale = (key: NumericConfigKey, label: string, ariaLabel = label): RangeSetting => (
   { key, label, ariaLabel, min: 0.5, max: 2, step: 0.05, fallback: 1, percent: true }
@@ -46,8 +44,6 @@ const MERGED_SCALE = scale('telemetryMergedChartsScale', 'Merged Charts Scale');
 const INDIVIDUAL_SCALES = [scale('telemetryPedalScale', 'Pedal Chart Scale'), scale('telemetryPowerTorqueScale', 'Power / Torque Scale')];
 const OTHER_SIZES: readonly RangeSetting[] = [
   scale('telemetryCardFontScale', 'Card Font Scale'),
-  scale('telemetryLiveMapScale', 'Live Map Scale'),
-  { key: 'telemetryLiveMapOpacity', label: 'Live Map Opacity', min: 0.1, max: 1, step: 0.05, fallback: 1, percent: true },
   { key: 'telemetryOpacity', label: 'Telemetry Opacity', ariaLabel: 'HUD Window Opacity', min: 0.1, max: 1, step: 0.05, fallback: 0.65, percent: true, numericInput: true },
 ];
 
@@ -96,13 +92,6 @@ const TELEMETRY_TOGGLES: readonly { key: keyof HudElements; label: string; defau
   { key: 'showTeleAttitude', label: 'G-Force & Attitude' },
   { key: 'showTelePedals', label: 'Throttle & Brake Trace' },
   { key: 'showPowerTorque', label: 'Power & Torque Trace', defaultOn: true },
-  { key: 'showLiveMap', label: 'Live Map (Track & Cursor)', defaultOn: true },
-];
-const MAP_TOGGLES: readonly { key: keyof HudElements; label: string; defaultOn: true }[] = [
-  { key: 'showLiveMapPOIs', label: 'Live Map Landmarks & POIs', defaultOn: true },
-  { key: 'showLiveMapPRStunts', label: 'PR Stunts (Speed/Drift/Danger)', defaultOn: true },
-  { key: 'showLiveMapCollectibles', label: 'Collectibles & Mascots', defaultOn: true },
-  { key: 'showLiveMapHeading', label: 'Heading Arrow & Compass', defaultOn: true },
 ];
 
 function PositionControl({ label, value, onChange, t }: { label: string; value: 'top' | 'bottom'; onChange: (position: 'top' | 'bottom') => void; t: HudLayoutPanelProps['t'] }) {
@@ -157,7 +146,7 @@ export function HudLayoutPanel({ config, disabled = false, onConfigPatch, onElem
         <h3 id={`${id}-visibility`} className="fs-6 fw-bold text-primary border-bottom pb-2 m-0">{t('Telemetry HUD Elements')}</h3>
         <Toggle label={t('Toggle Master Telemetry HUD Switch')} checked={config.elements.showTeleMaster !== false} onToggle={() => onElementToggle('showTeleMaster')} />
         <div className="row g-3">
-          {[...TELEMETRY_TOGGLES, ...(config.elements.showLiveMap !== false ? MAP_TOGGLES : [])].map(({ key, label, defaultOn }) => (
+          {TELEMETRY_TOGGLES.map(({ key, label, defaultOn }) => (
             <div className="col-12 col-sm-6 col-lg-12" key={key}>
               <Toggle label={t(label)} checked={defaultOn ? config.elements[key] !== false : !!config.elements[key]}
                 disabled={config.elements.showTeleMaster === false} onToggle={() => onElementToggle(key)} />
