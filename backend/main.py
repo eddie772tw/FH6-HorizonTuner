@@ -1786,7 +1786,11 @@ async def get_cars_with_params():
 
 @app.get("/api/car_params/{car_id}")
 async def get_car_params(car_id: str):
-    params = dyno_cache.get(car_id) or load_car_params(car_id)
+    params = dyno_cache.get(car_id)
+    if not params:
+        # [PERF] Offload synchronous file I/O to a thread pool to avoid blocking the main asyncio event loop.
+        # Impact: Improves concurrent request handling and prevents Websocket/background task stalls.
+        params = await asyncio.to_thread(load_car_params, car_id)
     if params:
         return params
     return {"error": "Car parameters not found"}
@@ -1795,7 +1799,13 @@ async def get_car_params(car_id: str):
 @app.post("/api/car_params/{car_id}")
 async def update_car_params(car_id: str, data: dict):
     # Merge with existing to avoid overwriting dyno curve if not provided
-    params = dyno_cache.get(car_id) or load_car_params(car_id) or {}
+    params = dyno_cache.get(car_id)
+    if not params:
+        # [PERF] Offload synchronous file I/O to a thread pool to avoid blocking the main asyncio event loop.
+        # Impact: Improves concurrent request handling and prevents Websocket/background task stalls.
+        params = await asyncio.to_thread(load_car_params, car_id)
+    if not params:
+        params = {}
     params.update(data)
     dyno_cache[car_id] = params
     car_params_cache.mark_ready(car_id)
