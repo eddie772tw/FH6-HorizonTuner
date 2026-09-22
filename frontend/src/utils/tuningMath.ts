@@ -1,4 +1,11 @@
 /**
+ * Vehicle Physics & Tuning Calculation Engine (Frontend SSOT Implementation)
+ *
+ * Conforms to:
+ * - docs/contracts/tuning_responsibilities.md (Tuning & Gearing Responsibilities Contract)
+ * - tests/fixtures/tuning_golden_fixtures.json (18 Golden Fixture Scenarios)
+ * - .agents/AGENTS.md Core Invariant #2 (Vehicle physics twin SSOT with backend-rust/src/tuning/)
+ *
  * Interface representing vehicle parameters used for tuning calculation.
  */
 export interface TuningCarParams {
