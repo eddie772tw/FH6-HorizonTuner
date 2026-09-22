@@ -137,6 +137,25 @@ fn process_http_udp_websocket_persistence_and_shutdown_contract() {
         json!({"language":"en-us","units":{"speed":"mph"}}),
     );
     assert_eq!(saved["units"]["temperature"], "F");
+    for path in ["/ws/telemetry", "/ws/telemetry/binary", "/ws/overlay"] {
+        use tungstenite::client::IntoClientRequest;
+        let mut request = format!("ws://127.0.0.1:{}{path}", run.port)
+            .into_client_request()
+            .unwrap();
+        request
+            .headers_mut()
+            .insert("origin", "https://remote.invalid".parse().unwrap());
+        let socket = TcpStream::connect(("127.0.0.1", run.port)).unwrap();
+        socket
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        match client(request, socket) {
+            Err(tungstenite::HandshakeError::Failure(tungstenite::Error::Http(response))) => {
+                assert_eq!(response.status(), 403, "origin check for {path}");
+            }
+            _ => panic!("foreign origin accepted for {path}"),
+        }
+    }
     let mut overlay = run.ws("/ws/overlay");
     let initial: Value = serde_json::from_str(overlay.read().unwrap().to_text().unwrap()).unwrap();
     assert_eq!(initial["type"], "hud:config");
