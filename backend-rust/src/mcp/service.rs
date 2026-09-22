@@ -109,7 +109,11 @@ impl<'a> McpService<'a> {
     }
     fn arr(p: &Value, keys: &[&str], defaults: [f64; 4]) -> [f64; 4] {
         for key in keys {
-            if let Some(v) = p.get(*key).and_then(Value::as_array).filter(|v| v.len() >= 4) {
+            if let Some(v) = p
+                .get(*key)
+                .and_then(Value::as_array)
+                .filter(|v| v.len() >= 4)
+            {
                 return [0, 1, 2, 3].map(|i| v[i].as_f64().unwrap_or(0.0));
             }
         }

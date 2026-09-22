@@ -5,7 +5,7 @@ on:
     branches: [ "master", "main" ]
   pull_request:
     # IA feature PRs target the reviewed contract/shell branch before main.
-    branches: [ "master", "main", "codex/frontend-ia-*" ]
+    branches: [ "master", "main", "codex/frontend-ia-*", "feat/issue-423-*" ]
 
 permissions:
   contents: read

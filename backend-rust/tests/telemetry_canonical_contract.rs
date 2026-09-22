@@ -95,11 +95,7 @@ fn rust_mcp_matches_telemetry_canonical_fixtures() {
         // 4. Suspension
         let actual_susp = service.format_suspension(raw);
         let expected_susp = &expected_pres["mcp_suspension"];
-        assert_json_close(
-            &actual_susp,
-            expected_susp,
-            &format!("{id}.mcp_suspension"),
-        );
+        assert_json_close(&actual_susp, expected_susp, &format!("{id}.mcp_suspension"));
     }
 }
 
@@ -143,8 +139,16 @@ fn canonical_domain_and_presentation_conversions() {
         let vert_g = (ay / 9.81 * 10.0).round() / 10.0;
         let long_g = (az / 9.81 * 10.0).round() / 10.0;
         assert_eq!(lat_g, pres["lateral_g"].as_f64().unwrap(), "{id} lateral_g");
-        assert_eq!(vert_g, pres["vertical_g"].as_f64().unwrap(), "{id} vertical_g");
-        assert_eq!(long_g, pres["longitudinal_g"].as_f64().unwrap(), "{id} longitudinal_g");
+        assert_eq!(
+            vert_g,
+            pres["vertical_g"].as_f64().unwrap(),
+            "{id} vertical_g"
+        );
+        assert_eq!(
+            long_g,
+            pres["longitudinal_g"].as_f64().unwrap(),
+            "{id} longitudinal_g"
+        );
 
         // Inputs
         let accel_raw = raw["AccelInput"].as_f64().unwrap();
@@ -159,10 +163,30 @@ fn canonical_domain_and_presentation_conversions() {
         let handbrake_pct = (handbrake_raw / 255.0 * 1000.0).round() / 10.0;
         let steer_pct = (steer_raw / 127.0 * 1000.0).round() / 10.0;
 
-        assert_eq!(throttle_pct, canonical["throttle_pct"].as_f64().unwrap(), "{id} throttle_pct");
-        assert_eq!(brake_pct, canonical["brake_pct"].as_f64().unwrap(), "{id} brake_pct");
-        assert_eq!(clutch_pct, canonical["clutch_pct"].as_f64().unwrap(), "{id} clutch_pct");
-        assert_eq!(handbrake_pct, canonical["handbrake_pct"].as_f64().unwrap(), "{id} handbrake_pct");
-        assert_eq!(steer_pct, canonical["steer_pct"].as_f64().unwrap(), "{id} steer_pct");
+        assert_eq!(
+            throttle_pct,
+            canonical["throttle_pct"].as_f64().unwrap(),
+            "{id} throttle_pct"
+        );
+        assert_eq!(
+            brake_pct,
+            canonical["brake_pct"].as_f64().unwrap(),
+            "{id} brake_pct"
+        );
+        assert_eq!(
+            clutch_pct,
+            canonical["clutch_pct"].as_f64().unwrap(),
+            "{id} clutch_pct"
+        );
+        assert_eq!(
+            handbrake_pct,
+            canonical["handbrake_pct"].as_f64().unwrap(),
+            "{id} handbrake_pct"
+        );
+        assert_eq!(
+            steer_pct,
+            canonical["steer_pct"].as_f64().unwrap(),
+            "{id} steer_pct"
+        );
     }
 }
