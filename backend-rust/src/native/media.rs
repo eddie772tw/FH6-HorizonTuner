@@ -1,3 +1,4 @@
+#[cfg(windows)]
 use std::future::IntoFuture;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::{self, JoinHandle};

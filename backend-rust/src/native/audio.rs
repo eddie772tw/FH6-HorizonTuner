@@ -352,7 +352,13 @@ fn compute_fft_bands(samples: &[f32]) -> ([f32; BAND_COUNT], f32, f32) {
 
 #[cfg(not(windows))]
 fn capture_worker_loop(_state: Arc<Mutex<AudioState>>, rx: mpsc::Receiver<CaptureCommand>) {
-    while !matches!(rx.recv().ok(), Some(CaptureCommand::Stop) | None) {}
+    while let Ok(command) = rx.recv() {
+        match command {
+            CaptureCommand::Stop => break,
+            CaptureCommand::Select(device) => drop(device),
+            CaptureCommand::Pause => {}
+        }
+    }
 }
 
 #[cfg(windows)]
