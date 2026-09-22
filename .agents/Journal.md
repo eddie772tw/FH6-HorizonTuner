@@ -25,6 +25,20 @@
 - **Evidence**：前端測試 128 檔案 920 tests 全數通過；前端 Vite 生產打包通過；`git diff --check` 通過。
 - **Skills**：`huge-component-refactoring`、`modular-refactoring`。
 
+## 2026-09-21 / HUD 刻度式羅盤功能優化、60Hz Canvas 雙級刻度與螢幕邊緣對齊（Gemini as Antigravity）
+
+- **Scope**：遙測卡片叢集追加刻度式羅盤 HUD；採用 `halfmoon-design-system`、`pr-author-maintainer`。
+- **Verified learning**：
+  1. **無邊框無實體背景 HUD 的高對比抗干擾策略**：在 Canvas 繪製中同時啟用 `ctx.shadowColor = 'rgba(0, 0, 0, 0.95)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;`，搭配容器層 `filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.95))` 與兩側線性平滑漸層羽化（Fade Out Mask），能在不遮擋駕駛視線的前提下，使 50vw 寬度的刻度羅盤在雪地、艷陽或夜間等複雜背景中維持高對比與清晰度。
+  2. **雙級刻度與八方位輔助判讀架構**：以正北 (N) 為 0°，將 360° 方位角依 5° 間距劃分。次刻度（Minor Tick）7px 長/1px 粗；每 15° 的主刻度（Major Tick）14px 長/2px 粗並附帶輔助方位角數字；其中 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315° 等八方位角以主色彩突出顯示英文縮寫（`N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`），兼顧航空級精確度與即時判讀性。
+  3. **螢幕上緣／下緣邊界安全掛載**：利用現有 `tcTopEdgeContainer`（`flex-direction: column`）與 `tcBottomEdgeContainer`（`flex-direction: column-reverse`），以 `insertBefore(..., firstChild)` 確保羅盤無論配置於上緣或下緣皆緊貼最外側螢幕邊緣，且在 DOM Mock 環境中做好 `insertBefore` 與 `parentElement` 安全相容防護。
+- **Action**：
+  1. 新增 `hud_overlay/shared/telemetry-cards/compass.js`。
+  2. 修改 `template.js`、`manager.js`、`telemetry-cards.js`。
+  3. 修改 `hudConfig.ts`、`HudLayoutPanel.tsx`、`lang/zh-tw.json`。
+  4. 擴充 `telemetryCards.test.ts`。
+- **Evidence**：前端 128 files / 924 tests 全部通過；Vite build 843ms 通過；後端 pytest 350 passed, 8 deselected 全部通過；`ruff check .` 與 `git diff --check` 通過。
+
 ## 2026-09-20 / #396 零輸出斷油與窄轉速採集（Astra as Codex）
 
 - **Scope**：在已合併 #397 的 `844ad1b` 上獨立修正；採用 `physics-tuning-math`、`modular-refactoring`、`pr-author-maintainer`。

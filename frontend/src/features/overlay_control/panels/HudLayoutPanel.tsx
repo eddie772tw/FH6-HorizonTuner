@@ -92,6 +92,7 @@ const TELEMETRY_TOGGLES: readonly { key: keyof HudElements; label: string; defau
   { key: 'showTeleAttitude', label: 'G-Force & Attitude' },
   { key: 'showTelePedals', label: 'Throttle & Brake Trace' },
   { key: 'showPowerTorque', label: 'Power & Torque Trace', defaultOn: true },
+  { key: 'showTeleCompass', label: 'Tape Compass HUD', defaultOn: true },
 ];
 
 function PositionControl({ label, value, onChange, t }: { label: string; value: 'top' | 'bottom'; onChange: (position: 'top' | 'bottom') => void; t: HudLayoutPanelProps['t'] }) {
@@ -182,6 +183,8 @@ export function HudLayoutPanel({ config, disabled = false, onConfigPatch, onElem
         <RangeControl setting={gRadarXSetting} {...rangeProps} />
         <RangeControl setting={gRadarYSetting} {...rangeProps} />
         {CORNER_OFFSETS.map(setting => <RangeControl key={setting.key} setting={setting} {...rangeProps} />)}
+        <PositionControl label="Compass Position" value={config.telemetryCompassPosition ?? 'top'} t={t}
+          onChange={telemetryCompassPosition => onConfigPatch({ telemetryCompassPosition })} />
         <Toggle label={t('Merge Power & Pedal Charts')} checked={merged} onToggle={() => onConfigPatch({ telemetrySideBySideCharts: !merged })} />
         {merged ? (
           <>

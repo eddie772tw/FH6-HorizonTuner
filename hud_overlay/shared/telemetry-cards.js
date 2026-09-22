@@ -11,6 +11,7 @@ import { renderGRadar } from './telemetry-cards/g-radar.js';
 import { renderCorners } from './telemetry-cards/corner-card.js';
 import { renderPedalWave } from './telemetry-cards/pedal-wave.js';
 import { renderPowerTorque } from './telemetry-cards/power-torque.js';
+import { renderCompass } from './telemetry-cards/compass.js';
 
 if (typeof window !== 'undefined') {
     window.TelemetryCardsManager = TelemetryCardsManager;
@@ -29,5 +30,6 @@ export {
     renderGRadar,
     renderCorners,
     renderPedalWave,
-    renderPowerTorque
+    renderPowerTorque,
+    renderCompass
 };
