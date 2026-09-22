@@ -1,5 +1,16 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-22 / GitHub Actions Host Diagnostics 建置失敗修復（Gemini as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；修復 GitHub Actions 定時與手動執行的 `Host Diagnostics` 工作流程始終在 `Build Full Portable Tauri Executable` 步驟失敗的問題。
+- **Learning**：
+  1. **Tauri CI 設定覆蓋 beforeBuildCommand 之依賴斷鏈**：在 `frontend/src-tauri/tauri.ci.conf.json` 與 `tauri.lite.conf.json` 中，為避免在 CI 重複編譯前端，`beforeBuildCommand` 被覆寫為 `echo Using verified frontend distribution...`，並預期 `frontendDist: "../dist"`（即 `frontend/dist`）已事先備妥。在常規 `ci.yml` 中，該目錄由前置 job 建置並透過 artifact 下載；然而在獨立單一 job 的 `diagnostics.yml` 中，流程僅安裝了依賴，未曾執行 `pnpm --prefix frontend run build`，導致 Tauri 建置時因找不到 web assets 而中斷退出。
+  2. **獨立測試流水線之完整前置驗證**：任何需調用 `tauri build --config ...` 的獨立工作流程（如 nightly/on-demand diagnostics），必須確保在進入 Tauri native compilation 前，前端資源已完整產出（Full 與 Lite 雙入口）。
+- **Action**：
+  1. 在 `.github/workflows/diagnostics.yml` 的 `Install Python & Frontend Dependencies` 步驟後，追加 `Build Frontend Distribution`（`pnpm --prefix frontend run build`）。
+- **Evidence**：本地 `pnpm --prefix frontend run build` 驗證 exit 0 且產出 `dist/index.html` 與 `dist/lite/index.html`；`git diff --check` 通過。
+- **Skills**：`portable-release-validation`。
+
 ## 2026-09-20 / #396 零輸出斷油與窄轉速採集（Astra as Codex）
 
 - **Scope**：在已合併 #397 的 `844ad1b` 上獨立修正；採用 `physics-tuning-math`、`modular-refactoring`、`pr-author-maintainer`。
