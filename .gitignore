@@ -33,6 +33,12 @@ frontend/src-tauri/target/
 frontend/src-tauri/gen/
 frontend/src-tauri/bin/
 
+# Gradle & Android build outputs
+.gradle/
+**/build/
+companion/.gradle/
+companion/**/build/
+
 # User settings, runtime telemetry logs, and auto-generated data
 /settings.json
 /backend/settings.json

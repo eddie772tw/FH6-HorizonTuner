@@ -11,6 +11,6 @@ describe('SettingsSurface information architecture', () => {
   it('keeps every non Developer setting visible in Lite', () => {
     const items = projectSettingsSections(false).flatMap(section => section.items);
     expect(items).not.toContain('developerTuning');
-    expect(items).toEqual(['language', 'units', 'telemetry', 'recording', 'discord', 'mcp', 'updates', 'storage']);
+    expect(items).toEqual(['language', 'units', 'telemetry', 'recording', 'discord', 'mcp', 'companion', 'updates', 'storage']);
   });
 });

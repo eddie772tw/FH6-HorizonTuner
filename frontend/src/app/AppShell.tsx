@@ -7,6 +7,7 @@ import DiagnosticConsole from '../components/DiagnosticConsole';
 import ThemeView from '../features/theme/ThemeView';
 import SettingsView from '../features/settings/SettingsView';
 import { UpdateSettingsCard } from '../features/settings/components/UpdateSettingsCard';
+import { CompanionSettingsCard } from '../features/settings/components/CompanionSettingsCard';
 import { getAppBuildInfo, formatBuildInfoText } from '../services/buildInfoService';
 import { AppHeader } from './AppHeader';
 import { AppDialog } from './AppDialog';
@@ -94,6 +95,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
       </div>
     </div>}
     {surface === 'settings' && <AppDialog title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} onOpenUpdates={() => openSurface('updates')} /></AppDialog>}
+    {surface === 'companion' && <AppDialog title={t('Companion App')} onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'updates' && <AppDialog title="Updates" onClose={closeSurface}><UpdateSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog title="About" onClose={closeSurface}>
       <h3 className="h5">FH6 HorizonTuner{variant === 'lite' ? ' Lite' : ''}</h3>

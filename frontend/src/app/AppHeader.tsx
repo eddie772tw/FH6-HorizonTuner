@@ -2,6 +2,7 @@ import { useSettings } from '../context/SettingsContext';
 import { AppStatus } from './AppStatus';
 import { AppBuildInfo } from './AppBuildInfo';
 import { AppMenu } from './AppMenu';
+import { AppCompanionIndicator } from './AppCompanionIndicator';
 import { getWorkspaces, type AppSurface, type AppVariant, type WorkspaceId } from './workspaceManifest';
 
 export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface }: {
@@ -20,6 +21,6 @@ export function AppHeader({ variant, activeWorkspace, onSelect, onOpenSurface }:
           aria-current={workspace.id === activeWorkspace ? 'page' : undefined} onClick={() => onSelect(workspace.id)}>{t(workspace.label)}</button>)}
       </nav>
     </div>
-    <div className="d-flex align-items-center gap-2"><AppStatus onOpenSettings={() => onOpenSurface('settings')} /><AppMenu onOpen={onOpenSurface} /></div>
+    <div className="d-flex align-items-center gap-2"><AppCompanionIndicator onOpen={() => onOpenSurface('companion')} /><AppStatus onOpenSettings={() => onOpenSurface('settings')} /><AppMenu onOpen={onOpenSurface} /></div>
   </header>;
 }

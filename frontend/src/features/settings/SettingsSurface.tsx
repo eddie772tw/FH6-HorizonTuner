@@ -4,6 +4,7 @@ import { applyGeneralUnitSystem, inferGeneralUnitSystem, type GeneralUnitSystem 
 import { DiscordPresenceStatusCard } from './components/DiscordPresenceStatusCard';
 import { DataStorageOverview } from './components/DataStorageOverview';
 import { McpSettingsCard } from './components/McpSettingsCard';
+import { CompanionSettingsCard } from './components/CompanionSettingsCard';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
 import { UpdatePreferenceRow } from './components/UpdatePreferenceRow';
@@ -85,6 +86,7 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
         {has('integrations', 'discord') && <SettingsSection title={t('Integrations')}>
           <DiscordPresenceStatusCard />
           <McpSettingsCard />
+          {has('integrations', 'companion') && <CompanionSettingsCard />}
         </SettingsSection>}
 
         {has('maintenance', 'updates') && <SettingsSection title={t('Maintenance')}>

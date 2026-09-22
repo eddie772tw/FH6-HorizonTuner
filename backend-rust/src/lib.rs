@@ -1,6 +1,7 @@
 //! Frontend-independent backend. Network adapters translate inputs into domain services.
 pub mod app;
 pub mod assets;
+pub mod companion;
 pub mod config;
 pub mod config_service;
 pub mod diagnostics;
