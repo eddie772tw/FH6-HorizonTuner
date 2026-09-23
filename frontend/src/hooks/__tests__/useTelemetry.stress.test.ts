@@ -303,7 +303,7 @@ describe('Adversarial Empirical Stress Testing: Frontend Boost & HUD Telemetry',
       }
 
       expect(iterations).toBe(39000);
-    });
+    }, 20000);
   });
 
   describe('Adversarial Boundary Investigation: Session State Persistence across Unit Switching', () => {

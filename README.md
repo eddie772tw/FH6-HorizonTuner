@@ -43,11 +43,10 @@
 * **HorizonTuner-cli AI Agent 命令列工具 (HorizonTuner-cli)**:
   - 提供專為 AI Agent、自動化腳本與終端開發打造的官方工具 `fh6-agent.bat`（或 `python -m backend.agent_cli`），零第三方 Python 依賴。
   - 具備線上即時遙測與離線純數學計算雙模式，支援連接埠就緒探測（`status`）、即時動態診斷（`diagnose`）、車輛規格檢索（`spec`）與底盤算牌（`tune`），並提供 `--json` 結構化輸出。詳細說明參閱 [Agent CLI 使用指南](docs/guides/agent-cli-guide.md)。
-* **Android Companion（開發中）**:
-  - 原生 Jetpack Compose 連線外殼搭配 Android WebView，載入共用 `frontend/dist/companion/index.html`，重用桌面端五大遙測卡片與四步工作流。APP 端 HUD 顯示留待後續實作。
-  - PC TuneSessionProvider 是調校與 engine measurement 的唯一 owner；profile、workflow、measurement command 透過 queue/ack 傳遞，並以 profileKey、host lease 與 client heartbeat 防止過期結果和失聯寫入。
-  - 目前可驗證的開發模式是 PC Full app 的 loopback HTTP 與 USB。於 PC Companion 設定選取平板並按「Connect USB device」，程式以內嵌 ADB 自動建立反向連接並開啟 APP；多台設備時必須明確選擇。LAN、QR scanning、mDNS、RFCOMM 與 native offline cache 仍是 planned，尚未宣稱可用。
-  - Android 建置與 protocol gate：`./gradlew :protocol-core:test :app:lintDebug :app:assembleDebug`；這些檢查不等同實機、USB 或 gameplay end-to-end 驗收。詳見 [Companion 架構與驗收界線](docs/architecture/companion-app-evaluation.md) 與 [Companion README](companion/README.md)。
+* **Android Companion App（Beta）**:
+  - 原生 Jetpack Compose 連線外殼搭配 Android WebView，載入共用 `frontend/dist/companion/index.html`，重用桌面端五大遙測卡片與四步工作流。
+  - 支援區網 QR Code 一鍵掃碼配對 (LAN Pairing) 與低延遲 USB/ADB 連線模式，具備自動反向轉發與主機租約保護。
+  - 注意：Beta 階段 GitHub Release 產物未包含預編譯 APK，若欲體驗請於 `companion/` 目錄由原始碼手動編譯（`./gradlew :app:assembleRelease` 或 `:app:assembleDebug`）。詳見 [Companion 架構與驗收界線](docs/architecture/companion-app-evaluation.md) 與 [Companion README](companion/README.md)。
 * **彈射起步測試與加速度分析 (Drag Launch Test & Acceleration Analyzer)**:
   - 0-100 km/h, 0-200 km/h, 1/4 英里 (400m) 加速度自動計時測試。
   - 速度/轉速時間軸圖表回放與歷史 Session 紀錄對比。

@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-23 / v1.6.1 Release Chore 發行整備、雙端版本遞增與高壓測試逾時防禦（Antigravity as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；完成 v1.6.1 發行整備與多組件版本同步（`11.45.19`），更新發行日誌草稿，並排查修復高併發測試逾時問題。
+- **Learning**：
+  1. **高併發 Vitest 下的大型壓力測試逾時防禦**：在 138 檔案並行執行下，包含 39,000 次轉換與 312,000 項斷言的極限壓力測試（`useTelemetry.stress.test.ts`）因 CPU 爭搶而偶發超過預設 5000ms 限制。為大型計算壓力測試指定顯式 timeout（`20000ms`）可徹底防止在 CI 或本機負載時 flakiness。
+  2. **多端協同版本真理同步邊界**：本專案涵蓋 Rust Backend (`backend-rust/Cargo.toml`)、Tauri Host (`frontend/src-tauri/Cargo.toml`, `tauri.conf.json`)、Python 工具與 CLI (`backend/main.py`, `backend/agent_cli.py`, `backend/version_info.txt`)。版本遞增至 `11.45.19`（發行 Tag `v1.6.1`）需同步對齊全部入口與診斷 bundle 斷言，確保執行時回報與建置資訊完全一致。
+- **Action**：
+  1. 建立 `docs/releases/v1.6.1.md`。
+  2. 同步遞增 `backend-rust/Cargo.toml`、`frontend/src-tauri/Cargo.toml`、`tauri.conf.json`、`backend/main.py`、`backend/agent_cli.py`、`backend/version_info.txt` 至 `11.45.19` / `11.45.19.0`。
+  3. 更新 `tests/test_diagnostic_support_bundle.py` 與 `docs/guides/agent-cli-guide.md`。
+  4. 更新 `README.md` 與 `README.en.md` 之 Android Companion Beta 標註與發行說明。
+  5. 為 `useTelemetry.stress.test.ts` 壓力測試補齊 20000ms timeout 避免 worker 爭搶逾時。
+- **Evidence**：後端 Rust 55 tests 通過；Python 377 passed, 8 deselected 全部通過；前端 138 檔案 982 tests 全部通過；Vite build 通過；`ruff check .` 與 `git diff --check` 通過。
+- **Skills**：`portable-release-validation`、`pr-author-maintainer`。
+
 ## 2026-09-23 / Android Google Play 上架整備、RFC 1918 私有 IP 白名單與 Release AAB 構建合約（Antigravity as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；落實 Issue #433 與 PR #425 Google Play 商店正式上架規範，完成網路安全加固、權限最小化、模式分流與 Release AAB 打包。
