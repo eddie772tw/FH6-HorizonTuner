@@ -6,6 +6,19 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-tabs, .companion-message { flex-shrink: 0; }
 .companion-content { flex: 1; min-height: 0; padding-top: .35rem; overflow: auto; }
 .companion-stack { display: flex; flex-direction: column; gap: .75rem; }
+.companion-section-nav { position: sticky; top: 0; z-index: 9; display: flex; gap: .5rem; overflow-x: auto; padding: .25rem 0 .5rem; background: var(--bs-body-bg); }
+.companion-section-nav .btn { flex: 0 0 auto; min-height: 2.75rem; }
+.companion-tuning-setup, .companion-result-card, #companion-engine { scroll-margin-top: 3.75rem; }
+.companion-readiness { margin: .75rem 0 0; font-size: .8rem; }
+.companion-profile-details { margin-top: .75rem; padding-top: .5rem; border-top: 1px solid var(--glass-border); }
+.companion-profile-details summary { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; cursor: pointer; list-style: none; }
+.companion-profile-details summary::-webkit-details-marker { display: none; }
+.companion-profile-details summary::after { content: '▾'; margin-left: .25rem; color: var(--text-secondary); }
+.companion-profile-details[open] summary::after { transform: rotate(180deg); }
+.companion-profile-details summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.companion-profile-summary { margin-left: auto; color: var(--text-secondary); font-size: .75rem; text-align: right; }
+.companion-profile-body { display: flex; flex-direction: column; gap: .75rem; padding-top: .75rem; }
+.companion-tuning-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: .75rem; }
 .companion-panel { padding: 1rem; border: 1px solid var(--glass-border); border-radius: .75rem; background: var(--glass-bg); box-shadow: var(--glass-shadow); }
 .companion-panel h2, .companion-panel h3 { margin: 0 0 .45rem; font-size: 1rem; }
 .companion-message { margin: .5rem 0; padding: .65rem .8rem; border-radius: .5rem; background: var(--surface-2); }
@@ -28,6 +41,9 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
 .companion-stat-grid > div, .companion-result-card > div { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
 .companion-stat-label { color: var(--text-secondary); font-size: .7rem; text-transform: capitalize; }
+.companion-result-list { gap: .5rem; }
+.companion-result-list > div { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .25rem .5rem; }
+.companion-result-list strong { text-align: right; overflow-wrap: anywhere; }
 .companion-telemetry { height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .companion-card-picker { display: flex; gap: .35rem; overflow-x: auto; padding: .25rem 0 .6rem; }
 .companion-card-picker .btn { flex: 0 0 auto; text-transform: capitalize; }
@@ -36,6 +52,7 @@ input[type='range'], input[type='color'], canvas { transition: none !important; 
 /* Android WebView may keep its orientation media feature stale after configChanges.
    Width follows the actual visual viewport, so use it for narrow card layouts. */
 @media (max-width: 700px) {
+  .companion-tuning-results { grid-template-columns: 1fr; }
   .companion-telemetry[data-card='dynamics'] .telemetry-card-layout--split { flex-direction: column; }
   .companion-telemetry[data-card='dynamics'] .telemetry-card-layout__radar { flex: 0 0 42%; width: 100%; }
 }

@@ -13,6 +13,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +32,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -106,6 +110,7 @@ private fun CompanionAppContent(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var requestedUrl by remember { mutableStateOf<String?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
+    var offlinePage by remember { mutableStateOf(OfflinePage.CONNECTION) }
     val nativeStatusJson = remember { AtomicReference(connectionStatusJson(state, host, port, null)) }
 
     val connect: (String, String) -> Unit = { inputHost, inputPort ->
@@ -114,6 +119,7 @@ private fun CompanionAppContent(
         val endpoint = buildCompanionUrl(inputHost, inputPort)
         if (endpoint == null) {
             state = WebConnectionState.ERROR
+            offlinePage = OfflinePage.CONNECTION
             errorMessage = "請輸入有效的 HTTP(S) 主機與 1-65535 連接埠"
             nativeStatusJson.set(connectionStatusJson(state, host, port, errorMessage))
             webView?.let { publishConnectionStatus(it, state, host, port, errorMessage) }
@@ -133,9 +139,17 @@ private fun CompanionAppContent(
         requestedUrl = null
         errorMessage = null
         state = WebConnectionState.DISCONNECTED
+        offlinePage = OfflinePage.TELEMETRY
         nativeStatusJson.set(connectionStatusJson(state, host, port, null))
         webView?.let { publishConnectionStatus(it, state, host, port, null) }
         Unit
+    }
+
+    BackHandler(enabled = requestedUrl == null && offlinePage == OfflinePage.CONNECTION) {
+        offlinePage = OfflinePage.TELEMETRY
+    }
+    BackHandler(enabled = requestedUrl != null && state == WebConnectionState.LOADING) {
+        disconnect()
     }
 
     LaunchedEffect(autoConnect, webView) {
@@ -161,6 +175,7 @@ private fun CompanionAppContent(
                         onServiceStart()
                     }, { message ->
                         state = WebConnectionState.ERROR
+                        offlinePage = OfflinePage.CONNECTION
                         errorMessage = message
                         requestedUrl = null
                         nativeStatusJson.set(connectionStatusJson(state, host, port, message))
@@ -176,23 +191,46 @@ private fun CompanionAppContent(
         if (requestedUrl == null) {
             Column(
                 modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(16.dp),
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text("FH6 HorizonTuner Companion", style = MaterialTheme.typography.headlineSmall)
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(host, { host = it }, label = { Text("Host or HTTP(S) URL") }, singleLine = true, modifier = Modifier.weight(1f))
-                            OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.weight(0.42f))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(OfflinePage.TELEMETRY, OfflinePage.TUNING, OfflinePage.CONNECTION).forEach { page ->
+                        if (page == offlinePage) {
+                            Button(onClick = { offlinePage = page }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
+                                Text(page.label, style = MaterialTheme.typography.labelMedium)
+                            }
+                        } else {
+                            OutlinedButton(onClick = { offlinePage = page }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
+                                Text(page.label, style = MaterialTheme.typography.labelMedium)
+                            }
                         }
-                        Button(onClick = { connect(host, port) }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (state == WebConnectionState.ERROR) "Retry" else "Connect")
+                    }
+                }
+                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            if (offlinePage == OfflinePage.CONNECTION) {
+                                Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
+                                OutlinedTextField(host, { host = it }, label = { Text("Host or HTTP(S) URL") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = { connect(host, port) }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.weight(1f)) {
+                                        Text(if (state == WebConnectionState.ERROR) "Retry" else "Connect")
+                                    }
+                                    OutlinedButton(onClick = { offlinePage = OfflinePage.TELEMETRY }, modifier = Modifier.weight(1f)) {
+                                        Text("返回主畫面")
+                                    }
+                                }
+                            } else {
+                                Text(offlinePage.label, style = MaterialTheme.typography.titleLarge)
+                                Text("PC Companion 尚未連線，${offlinePage.label} 暫時無法取得資料。", color = MaterialTheme.colorScheme.onSurface)
+                                Button(onClick = { offlinePage = OfflinePage.CONNECTION }, modifier = Modifier.fillMaxWidth()) {
+                                    Text("連線設定")
+                                }
+                            }
                         }
-                        errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     }
                 }
             }
@@ -213,6 +251,7 @@ private fun CompanionAppContent(
 }
 
 private enum class WebConnectionState { DISCONNECTED, LOADING, CONNECTED, ERROR }
+private enum class OfflinePage(val label: String) { TELEMETRY("Telemetry"), TUNING("Tuning"), CONNECTION("Connection") }
 
 private class CompanionJavascriptBridge(
     private val status: AtomicReference<String>,
