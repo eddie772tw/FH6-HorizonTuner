@@ -1,5 +1,19 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-23 / Android Google Play 上架整備、RFC 1918 私有 IP 白名單與 Release AAB 構建合約（Antigravity as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；落實 Issue #433 與 PR #425 Google Play 商店正式上架規範，完成網路安全加固、權限最小化、模式分流與 Release AAB 打包。
+- **Learning**：
+  1. **Android Network Security Config 與 IP 白名單之雙層明文防禦**：Android 的 `network-security-config.xml` 中 `<domain>` 標籤不支援通配 IP 或 CIDR 遮罩（如 `192.168.*.*`）。若要滿足本地區域網路 (LAN) 通訊同時禁止公網明文 HTTP，最佳架構實踐為：在 `network_security_config.xml` 中移除全域 `usesCleartextTraffic="true"` 並嚴格規範信任錨點；並在應用層（`MainActivity.kt` 的 `buildOrigin` 與 `buildCompanionUrl`）實施 RFC 1918 私有 IP（`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`）與 Loopback/Link-Local 強制白名單校驗，嚴禁向公網發送明文 HTTP 請求。
+  2. **Release AAB 簽名降級與 ProGuard WebView 保護**：在無正式上傳金鑰環境（CI/本地自動化測試）中執行 `:app:bundleRelease` 時，透過 Gradle `signingConfigs` 友善降級 fallback 至 Debug 簽名，可確保 AAB 產物構建可重現；同時必須在 `proguard-rules.pro` 中加入 `-keepattributes JavascriptInterface` 與 `@android.webkit.JavascriptInterface` 保留規則，防止 R8 混淆破壞 WebView 與 Native Compose 之間的通訊 Bridge。
+  3. **正式版與開發版模式分流之使用者體驗護欄**：Google Play 面向的一般玩家不應被複雜的 USB/ADB 連線選項困擾。透過 `BuildConfig.DEBUG` 判定，正式發行版預設僅呈現直覺的相機 QR 掃碼配對，將 USB/ADB 入口收折於進階選項（標示為開發者選項）；開發版維持快速切換，兼顧生產純粹度與本機偵錯效率。
+- **Action**：
+  1. 建立 `companion/app/src/main/res/xml/network_security_config.xml` 與 `companion/app/proguard-rules.pro`。
+  2. 修改 `AndroidManifest.xml`、`build.gradle.kts`、`MainActivity.kt`、`CompanionShell.kt`、`LanQrScanner.kt`。
+  3. 撰寫 `docs/architecture/google-play-distribution.md` (V1)。
+- **Evidence**：`:protocol-core:test :app:lintDebug :app:assembleDebug :app:bundleRelease` 全部通過；產出 `app-release.aab` (19.29 MB)；前端 941 tests、後端 47 tests、pytest 349 tests 全部通過。
+- **Skills**：`pr-author-maintainer`、`portable-release-validation`。
+
 ## 2026-09-22 / GitHub Actions Host Diagnostics 建置失敗修復（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；修復 GitHub Actions 定時與手動執行的 `Host Diagnostics` 工作流程始終在 `Build Full Portable Tauri Executable` 步驟失敗的問題。
