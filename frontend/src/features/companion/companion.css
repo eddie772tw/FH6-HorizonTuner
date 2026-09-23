@@ -30,9 +30,13 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-connection-form { margin-bottom: .75rem; }
 .companion-connection-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .companion-connection-actions .btn { min-height: 2.65rem; min-width: 7rem; }
+.companion-mode-switch { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
+.companion-mode-switch .btn { min-height: 2.65rem; }
+.companion-token-field { margin-bottom: .75rem; }
 .companion-status-dot { display: inline-block; width: .48rem; height: .48rem; margin-left: .3rem; border-radius: 50%; vertical-align: .08rem; }
-.companion-status-dot.is-online { background: var(--bs-success); }
-.companion-status-dot.is-offline { background: var(--bs-danger); }
+.companion-status-dot.is-success { background: var(--bs-success); }
+.companion-status-dot.is-warning { background: var(--bs-warning); }
+.companion-status-dot.is-danger { background: var(--bs-danger); }
 .companion-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
 .companion-field { display: flex; flex-direction: column; gap: .25rem; color: var(--text-secondary); font-size: .78rem; }
 .companion-field .form-control, .companion-field .form-select { min-height: 2.7rem; }

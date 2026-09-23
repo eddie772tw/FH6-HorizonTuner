@@ -501,8 +501,20 @@ impl Backend for App {
             }
             _ => {}
         }
-        if request.method == "GET" && request.path == "/api/companion/qr" {
-            let qr = self.companion.generate_qr_payload(None);
+        if (request.method == "POST" && request.path == "/api/companion/lan/pairing")
+            || (request.method == "GET" && request.path == "/api/companion/qr")
+        {
+            let port = self
+                .companion
+                .get_lan_port()
+                .ok_or_else(|| ApiError::new(503, "Companion LAN listener is unavailable"))?;
+            if CompanionService::detect_lan_ips().is_empty() {
+                return Err(ApiError::new(
+                    503,
+                    "No LAN address is available for pairing",
+                ));
+            }
+            let qr = self.companion.generate_qr_payload(Some(port));
             return Ok(ApiResponse::json(
                 serde_json::to_value(&qr).unwrap_or_default(),
             ));

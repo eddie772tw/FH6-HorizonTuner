@@ -25,6 +25,7 @@ pub struct QrPayload {
     pub lan_ips: Vec<String>,
     pub port: u16,
     pub expires_in_secs: u64,
+    pub expires_at_unix: i64,
     pub host_name: String,
 }
 
@@ -36,7 +37,7 @@ pub struct PairedDevice {
     pub paired_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_connected_at: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing, default)]
     pub session_token: String,
 }
 
@@ -46,6 +47,7 @@ pub struct CompanionStatus {
     pub paired_devices_count: usize,
     pub lan_ips: Vec<String>,
     pub port: u16,
+    pub lan_port: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,6 +60,7 @@ pub struct HudManifestItem {
 pub struct CompanionService {
     root: PathBuf,
     default_port: Mutex<u16>,
+    lan_port: Mutex<Option<u16>>,
     pending_tokens: Mutex<HashMap<String, Instant>>,
     paired_devices: Mutex<Vec<PairedDevice>>,
     active_connections: AtomicUsize,
@@ -78,6 +81,7 @@ impl CompanionService {
         Self {
             root: root.to_path_buf(),
             default_port: Mutex::new(default_port),
+            lan_port: Mutex::new(None),
             pending_tokens: Mutex::new(HashMap::new()),
             paired_devices: Mutex::new(paired_devices),
             active_connections: AtomicUsize::new(0),
@@ -92,6 +96,16 @@ impl CompanionService {
 
     pub fn get_port(&self) -> u16 {
         self.default_port.lock().map(|p| *p).unwrap_or(8001)
+    }
+
+    pub fn set_lan_port(&self, port: Option<u16>) {
+        if let Ok(mut current) = self.lan_port.lock() {
+            *current = port;
+        }
+    }
+
+    pub fn get_lan_port(&self) -> Option<u16> {
+        self.lan_port.lock().map(|p| *p).unwrap_or(None)
     }
 
     /// Detect non-loopback IPv4 addresses across network interfaces.
@@ -109,24 +123,30 @@ impl CompanionService {
                 }
             }
         }
-        if ips.is_empty() {
-            ips.push("127.0.0.1".into());
-        }
         ips
     }
 
     /// Generate a 5-minute one-time pairing token and build the QR payload.
     pub fn generate_qr_payload(&self, port: Option<u16>) -> QrPayload {
-        let token = uuid::Uuid::new_v4().to_string();
-        let port = port.unwrap_or_else(|| self.get_port());
+        let port = port
+            .or_else(|| self.get_lan_port())
+            .unwrap_or_else(|| self.get_port());
         let now = Instant::now();
 
-        // Store token with creation time
-        if let Ok(mut tokens) = self.pending_tokens.lock() {
-            // Prune expired tokens
+        // 40 random bits give a code that is practical to enter on a phone.
+        // Keep the code one-time and replace any accidental collision.
+        let token = if let Ok(mut tokens) = self.pending_tokens.lock() {
             tokens.retain(|_, created_at| now.duration_since(*created_at) < PAIRING_TOKEN_TTL);
-            tokens.insert(token.clone(), now);
-        }
+            loop {
+                let candidate = uuid::Uuid::new_v4().simple().to_string()[..10].to_uppercase();
+                if !tokens.contains_key(&candidate) {
+                    tokens.insert(candidate.clone(), now);
+                    break candidate;
+                }
+            }
+        } else {
+            String::new()
+        };
 
         let lan_ips = Self::detect_lan_ips();
         let host_name = hostname_fallback();
@@ -136,6 +156,7 @@ impl CompanionService {
             lan_ips,
             port,
             expires_in_secs: PAIRING_TOKEN_TTL.as_secs(),
+            expires_at_unix: chrono::Utc::now().timestamp() + PAIRING_TOKEN_TTL.as_secs() as i64,
             host_name,
         }
     }
@@ -180,7 +201,7 @@ impl CompanionService {
             platform: "Android".into(),
             paired_at: now_str.clone(),
             last_connected_at: Some(now_str),
-            session_token: session_token.clone(),
+            session_token: hash_session(&session_token),
         };
 
         if let Ok(mut devices) = self.paired_devices.lock() {
@@ -216,11 +237,12 @@ impl CompanionService {
 
     /// Validate a session token.
     pub fn validate_session(&self, session_token: &str) -> bool {
+        if session_token.is_empty() {
+            return false;
+        }
+        let token_hash = hash_session(session_token);
         if let Ok(mut devices) = self.paired_devices.lock() {
-            if let Some(device) = devices
-                .iter_mut()
-                .find(|d| d.session_token == session_token)
-            {
+            if let Some(device) = devices.iter_mut().find(|d| d.session_token == token_hash) {
                 device.last_connected_at = Some(chrono::Utc::now().to_rfc3339());
                 return true;
             }
@@ -251,6 +273,7 @@ impl CompanionService {
             paired_devices_count: count,
             lan_ips,
             port,
+            lan_port: self.get_lan_port(),
         }
     }
 
@@ -276,10 +299,23 @@ impl CompanionService {
 
     fn persist_devices(&self, devices: &[PairedDevice]) {
         let storage_path = self.root.join("companion_devices.json");
-        if let Ok(json) = serde_json::to_string_pretty(devices) {
+        let stored: Vec<serde_json::Value> = devices
+            .iter()
+            .filter_map(|device| {
+                let mut value = serde_json::to_value(device).ok()?;
+                value["session_token"] = serde_json::Value::String(device.session_token.clone());
+                Some(value)
+            })
+            .collect();
+        if let Ok(json) = serde_json::to_string_pretty(&stored) {
             let _ = fs::write(storage_path, json);
         }
     }
+}
+
+fn hash_session(token: &str) -> String {
+    let digest = Sha256::digest(token.as_bytes());
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn hostname_fallback() -> String {
@@ -340,6 +376,7 @@ mod tests {
         assert!(!qr.token.is_empty());
         assert_eq!(qr.port, 8001);
         assert!(!qr.lan_ips.is_empty());
+        assert!(qr.expires_at_unix > chrono::Utc::now().timestamp());
 
         // Pair with the valid token
         let (device, session_token) = service
@@ -356,6 +393,12 @@ mod tests {
         // Session validation
         assert!(service.validate_session(&session_token));
         assert!(!service.validate_session("invalid-session-token"));
+        let stored = fs::read_to_string(temp_dir.path().join("companion_devices.json")).unwrap();
+        assert!(!stored.contains(&session_token));
+        assert!(stored.contains(&hash_session(&session_token)));
+
+        let restarted = CompanionService::new(temp_dir.path(), 8001);
+        assert!(restarted.validate_session(&session_token));
 
         // Device listing
         let devices = service.list_devices();
@@ -370,5 +413,6 @@ mod tests {
         assert!(service.remove_device("device-123"));
         assert_eq!(service.list_devices().len(), 0);
         assert!(!service.remove_device("device-123"));
+        assert!(!CompanionService::new(temp_dir.path(), 8001).validate_session(&session_token));
     }
 }

@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { backendFetch } from '../../services/backend';
 import { readCompanionResponse, sendCompanionCommand } from './companionClient';
 import type { CompanionIntent, CompanionState } from './companionProtocol';
+import { companionUuid } from './companionUuid';
 
 export function useCompanionSession() {
-  const [clientId] = useState(() => crypto.randomUUID());
+  const [clientId] = useState(companionUuid);
   const [state, setState] = useState<CompanionState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export function useCompanionSession() {
     const controller = new AbortController();
     commandAbort.current = controller;
     try {
-      await sendCompanionCommand({ ...intent, id: crypto.randomUUID(), carId: current.snapshot.carId, profileKey: current.snapshot.profileKey }, clientId, controller.signal, setState);
+      await sendCompanionCommand({ ...intent, id: companionUuid(), carId: current.snapshot.carId, profileKey: current.snapshot.profileKey }, clientId, controller.signal, setState);
       setNotice('Applied on PC');
       return true;
     } catch (reason) {

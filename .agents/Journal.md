@@ -2741,3 +2741,11 @@
 - **Scope**：Android Compose/WebView 外殼、Tauri 單一算牌 owner 的工作流 bridge、Rust 命令佇列與回覆、五張共用遙測卡、內嵌 Windows ADB 及多設備選單；本輪依使用者調整暫移 APP HUD。
 - **實機發現**：Android WebView 中 `html/body/#root` 被既有 flex 規則壓為 0 高，即使子層有 `100vh` 仍導致方向盤圓弧過小；根容器以 visualViewport 高度固定後，五卡皆可用。平板旋轉後 `matchMedia('(orientation: portrait)')` 曾仍回 false，寬度斷點較可靠；390px 模擬顯示 Tires/Suspension 兩欄文字擠壓，改單欄卡內捲動。
 - **連線與界線**：ADB `reverse --list` 的首欄在該平板回 `UsbFfs`，不能假定等於裝置 serial；連線需以指定 serial 的反向規則與實際 port 驗證。受控 324-byte UDP 回放在 Android 實機顯示五卡；APP 草稿輸入到 Tauri working draft、桌面算牌結果回 APP 均已觀察，但不等於 FH6 gameplay 驗收。APP HUD 預覽曾遭 Android `lmkd watchdog` 終止，依新範圍移除入口與專用程式碼，桌面 HUD 保留。
+
+## 2026-09-23 / Companion LAN 與相機 QR 配對
+
+- **Scope**：在既有 USB 除錯模式之外，Rust sidecar 增設獨立 LAN listener、限縮 Companion 路徑、一次性短碼與含所有非 loopback IPv4／實際 port／到期時間的 QR 契約；Android 依序嘗試各位址並保存配對工作階段，桌面設定產生 QR，連線狀態合成單一三色 badge。Android launcher 改用 `frontend/src-tauri/icons/icon.ico`；根目錄 `app.ico` 實為另一專案圖樣，未採用。
+- **實機發現**：平板 `bd411745` 不用 `adb reverse`，透過 192.168.4.4 → 192.168.4.3:8002 的 Wi-Fi 連上 Companion；工作流程命令由 Android 送出、桌面 host exchange 收到並 ack，Android 再讀到 applied 與 snapshot。原生 WebView 對 LAN HTTP 無 `crypto.randomUUID()`，改用 `crypto.getRandomValues()` UUID。MIUI 的 CameraX 預設 SurfaceView 在 Compose Dialog 中全黑，`PreviewView.ImplementationMode.COMPATIBLE` 後實機截圖有即時畫面。
+- **驗證**：Rust `cargo test --locked` 全通過（含 LAN host/origin/session/revocation）；前端 134 files／939 tests 與 build；Python 349 passed／8 deselected、Ruff check／format；Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功，最新 APK 已安裝於平板。LAN listener 未授權靜態與工作流請求 401、拒絕管理 API 404、已認證 WS 101；實機顯示單一黃色 badge「桌面前端未連線」符合 sidecar-only 情境。
+- **QR 實機驗收**：使用者以平板相機掃描本輪 sidecar 產生、含 192.168.12.3／192.168.4.3 的五分鐘 QR 後回報已連線；後端 `active_connections=1`，實機 WebView Connection 顯示 192.168.12.3:8002、單一黃色「桌面前端未連線」badge，與 sidecar-only 情境一致。沒有檔案或相簿匯入 QR 的產品入口。
+- **驗收界線**：控制式工作流測試不等於實際 FH6 駕駛；本輪沒有將桌面 Tauri 主視窗叫到前景，故 QR 後的綠色雙端狀態仍待桌面前端連上時確認。Google Play 發行整備另追蹤 #433，非本輪完成事項。

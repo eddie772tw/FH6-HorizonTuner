@@ -8,6 +8,7 @@ import { calculateWizardMeasuredGearing } from '../tuning/measurementTuningProfi
 import { selectedEngineObservationMatchesLiveTelemetry } from '../tuning/tuneSessionController';
 import { getWorkflowReadiness } from '../tuning/tuningWorkflow';
 import { companionProfileKey, validateCompanionCommand, type CompanionAck, type CompanionCommand, type CompanionSnapshot, type CompanionSeason } from './companionProtocol';
+import { companionUuid } from './companionUuid';
 
 /** Mounted once outside workspaces so remote commands continue while viewing telemetry. */
 export function CompanionHostBridge() {
@@ -16,7 +17,7 @@ export function CompanionHostBridge() {
   const { data } = useTelemetry();
   const latest = useRef({ car, session, data });
   latest.current = { car, session, data };
-  const [clientId] = useState(() => crypto.randomUUID());
+  const [clientId] = useState(companionUuid);
   const completed = useRef(new Map<string, CompanionAck>());
 
   useEffect(() => {

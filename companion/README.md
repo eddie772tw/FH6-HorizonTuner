@@ -6,9 +6,13 @@ The Android client is a thin client. `PC TuneSessionProvider` remains the only o
 
 ## Current connection contract
 
-The supported development path is a PC HorizonTuner Full app listening on its actual HTTP port. The current host is loopback-only. Install the Companion APK, enable USB debugging on the tablet, and accept Android's authorization prompt. In the PC app's Companion settings, refresh the device list, select the tablet if more than one device is present, and press **Connect USB device**. The PC app uses its bundled ADB runtime to set up the reverse port mapping and launch the Android app. The Android app loads `127.0.0.1:8001` automatically after this action. Keep the Full PC app running while using Companion.
+For normal use, keep HorizonTuner Full open on the PC and put the PC and Android device on the same trusted local network. In the PC Companion settings, generate a five-minute pairing QR code. The Android Connection page scans it with the live camera, tries every advertised PC IPv4 address in turn, and pairs with the first reachable address. The QR contains the actual LAN port, a one-time code, host name, and expiration time; the PC independently checks the code and its five-minute lifetime. Manual address, port, and code entry remains available when scanning is unavailable. The Android app saves the paired endpoint and session for reconnecting.
 
-LAN access, QR scanning, mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are planned contracts. They are not connected end to end yet and must not be described as available transports.
+The main PC HTTP API remains loopback-only. A separate Companion LAN listener exposes only the pairing, Companion page/assets, workflow, and telemetry WebSocket routes; authenticated routes require the paired session. The PC LAN listener normally uses port `8002`, with an available-port fallback. The QR always contains the actual port.
+
+USB debugging remains available. Install the Companion APK, enable USB debugging on the tablet, and accept Android's authorization prompt. In the PC app's Companion settings, refresh the device list, select the tablet if more than one device is present, and press **Connect USB device**. The PC app uses its bundled ADB runtime to set up reverse port mapping and launch the Android app, which loads `127.0.0.1:8001`. The Connection page switches between LAN and USB modes. Keep the Full PC app running while using Companion.
+
+mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are planned contracts. QR pairing accepts only live camera scans in the app; no image-file import is provided.
 
 ## Modules
 

@@ -2,15 +2,20 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import CompanionTelemetry from './CompanionTelemetry';
 import CompanionTuning from './CompanionTuning';
 import { useCompanionSession } from './useCompanionSession';
+import { getAggregateConnectionStatus } from './connectionStatus';
 import './companion.css';
 
 type CompanionTab = 'telemetry' | 'tuning' | 'connection';
-type NativeConnectionState = { state: 'DISCONNECTED' | 'LOADING' | 'CONNECTED' | 'ERROR'; host: string; port: string; error: string | null };
+type NativeConnectionState = { state: 'DISCONNECTED' | 'LOADING' | 'CONNECTED' | 'ERROR'; host: string; port: string; error: string | null; mode?: 'LAN' | 'USB'; paired?: boolean };
 
 declare global {
   interface Window {
     HorizonTunerCompanion?: {
       connectionStatus: () => string;
+      setMode?: (mode: 'LAN' | 'USB') => void;
+      pairLan?: (host: string, port: string, token: string) => void;
+      connectLan?: () => void;
+      scanLanQr?: () => void;
       connect: (host: string, port: string) => void;
       disconnect: () => void;
     };
@@ -30,6 +35,7 @@ export default function CompanionApp() {
   const [nativeStatus, setNativeStatus] = useState<NativeConnectionState>(readNativeStatus);
   const [host, setHost] = useState(nativeStatus.host);
   const [port, setPort] = useState(nativeStatus.port);
+  const [token, setToken] = useState('');
   const { state, error, notice, commandBusy, send } = useCompanionSession();
   const [noticeVisible, setNoticeVisible] = useState(false);
   const nativeAvailable = Boolean(window.HorizonTunerCompanion);
@@ -69,14 +75,15 @@ export default function CompanionApp() {
   }, []);
 
   const online = Boolean(state?.hostOnline);
+  const connectionStatus = getAggregateConnectionStatus(online, nativeStatus.state === 'CONNECTED');
   return (
     <main className="companion-app" aria-label="HorizonTuner Companion">
       {(error || (noticeVisible && notice)) && <div className={`companion-message ${error ? 'is-error' : 'is-success is-toast'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
       <nav className="companion-tabs nav nav-pills" aria-label="Companion sections">
         {(['telemetry', 'tuning', 'connection'] as const).map((item) => (
-          <button key={item} className={`nav-link ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)} type="button" aria-label={item === 'connection' ? `Connection, PC ${online ? 'online' : 'offline'}` : undefined}>
+          <button key={item} className={`nav-link ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)} type="button" aria-label={item === 'connection' ? `Connection, ${connectionStatus.accessibleLabel}` : undefined}>
             {item === 'telemetry' ? 'Telemetry' : item === 'tuning' ? 'Tuning' : <>
-              Connection <span className={`companion-status-dot ${online ? 'is-online' : 'is-offline'}`} aria-hidden="true" />
+              Connection <span className={`companion-status-dot is-${connectionStatus.color}`} aria-hidden="true" />
             </>}
           </button>
         ))}
@@ -89,30 +96,33 @@ export default function CompanionApp() {
           <section className="companion-stack" aria-label="Connection settings">
             <article className="companion-panel">
               <h2>Connection</h2>
-              <p className="companion-connection-copy">
-                {nativeAvailable ? '連線到執行 PC Companion 的電腦。USB ADB 連線會由桌面端自動設定。' : 'Android 連線設定會在 Companion App 中顯示。'}
-              </p>
+              <p className="companion-connection-copy">{nativeAvailable ? '選擇一般使用的區域網路，或選擇 USB 除錯連線。' : 'Android 連線設定會在 Companion App 中顯示。'}</p>
               {nativeAvailable && <>
+                <div className="companion-mode-switch" role="group" aria-label="Connection mode">
+                  {(['LAN', 'USB'] as const).map((mode) => <button key={mode} type="button" className={`btn ${nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN') ? 'btn-primary' : 'btn-outline-secondary'}`} aria-pressed={nativeStatus.mode === mode || (!nativeStatus.mode && mode === 'LAN')} onClick={() => { window.HorizonTunerCompanion?.setMode?.(mode); setNativeStatus((current) => ({ ...current, mode })); }}>{mode === 'LAN' ? 'Local network' : 'USB debugging'}</button>)}
+                </div>
                 <div className="companion-connection-status" role="status">
-                  <span className={`badge rounded-pill ${online ? 'text-bg-success' : 'text-bg-danger'}`}>{online ? 'PC ONLINE' : 'PC OFFLINE'}</span>
-                  <span className={`badge rounded-pill ${nativeStatus.state === 'CONNECTED' ? 'text-bg-success' : nativeStatus.state === 'ERROR' ? 'text-bg-danger' : 'text-bg-secondary'}`}>
-                    {nativeStatus.state === 'CONNECTED' ? 'CONNECTED' : nativeStatus.state === 'LOADING' ? 'CONNECTING' : nativeStatus.state === 'ERROR' ? 'CONNECTION ERROR' : 'DISCONNECTED'}
-                  </span>
+                  <span className={`badge rounded-pill text-bg-${connectionStatus.color}`} aria-label={connectionStatus.accessibleLabel}>{connectionStatus.label}</span>
                   <span>{nativeStatus.host}:{nativeStatus.port}</span>
                 </div>
                 <div className="companion-form-grid companion-connection-form">
-                  <label className="companion-field">Host or HTTP(S) URL
-                    <input className="form-control" autoCapitalize="none" autoCorrect="off" value={host} onChange={(event) => setHost(event.target.value)} placeholder="127.0.0.1" />
+                  <label className="companion-field">{nativeStatus.mode === 'USB' ? 'USB forwarded host' : 'PC local network address'}
+                    <input className="form-control" autoCapitalize="none" autoCorrect="off" value={host} onChange={(event) => setHost(event.target.value)} placeholder={nativeStatus.mode === 'USB' ? '127.0.0.1' : '192.168.1.20'} />
                   </label>
                   <label className="companion-field">Port
                     <input className="form-control" inputMode="numeric" value={port} onChange={(event) => setPort(event.target.value.replace(/\D/g, '').slice(0, 5))} placeholder="8001" />
                   </label>
                 </div>
+                {nativeStatus.mode !== 'USB' && <label className="companion-field companion-token-field">Pairing code
+                  <input className="form-control" autoCapitalize="characters" autoCorrect="off" value={token} onChange={(event) => setToken(event.target.value.trim().toUpperCase())} placeholder="Enter code shown on PC" />
+                </label>}
                 {nativeStatus.error && <p className="companion-message is-error" role="alert">{nativeStatus.error}</p>}
                 <div className="companion-connection-actions">
-                  <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING'} onClick={() => window.HorizonTunerCompanion?.connect(host.trim(), port)}>
-                    {nativeStatus.state === 'ERROR' ? 'Retry' : 'Connect'}
-                  </button>
+                  {nativeStatus.mode === 'USB' ? <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING'} onClick={() => window.HorizonTunerCompanion?.connect(host.trim(), port)}>{nativeStatus.state === 'ERROR' ? 'Retry USB connection' : 'Connect over USB'}</button> : <>
+                    <button className="btn btn-primary" type="button" disabled={!window.HorizonTunerCompanion?.scanLanQr} onClick={() => window.HorizonTunerCompanion?.scanLanQr?.()}>Scan pairing QR</button>
+                    <button className="btn btn-outline-secondary" type="button" disabled={!host.trim() || !token || !window.HorizonTunerCompanion?.pairLan} onClick={() => window.HorizonTunerCompanion?.pairLan?.(host.trim(), port, token)}>{nativeStatus.paired ? 'Update pairing' : 'Pair with PC'}</button>
+                    <button className="btn btn-primary" type="button" disabled={nativeStatus.state === 'LOADING' || !nativeStatus.paired || !window.HorizonTunerCompanion?.connectLan} onClick={() => window.HorizonTunerCompanion?.connectLan?.()}>{nativeStatus.state === 'ERROR' ? 'Reconnect LAN' : 'Connect over LAN'}</button>
+                  </>}
                   <button className="btn btn-outline-secondary" type="button" disabled={nativeStatus.state === 'DISCONNECTED'} onClick={() => window.HorizonTunerCompanion?.disconnect()}>
                     Disconnect
                   </button>

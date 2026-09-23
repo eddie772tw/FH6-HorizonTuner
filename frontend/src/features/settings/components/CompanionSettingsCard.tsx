@@ -3,6 +3,7 @@ import { useSettings } from '../../../context/SettingsContext';
 import { backendFetch } from '../../../services/backend';
 import { SettingsSection } from './SettingsPrimitives';
 import CompanionUsbControls from './CompanionUsbControls';
+import CompanionLanControls from './CompanionLanControls';
 
 interface CompanionStatus { active_connections: number; port: number }
 
@@ -38,6 +39,7 @@ export function CompanionSettingsCard() {
         <p className="small text-body-secondary mb-0">{t('Keep HorizonTuner open to synchronize vehicle parameters, tuning results and engine measurements.')}</p>
       </div>
       <CompanionUsbControls />
+      <CompanionLanControls />
       <ol className="list-group list-group-numbered w-100 gap-2">
         <li className="list-group-item d-flex flex-column align-items-start gap-1 glass-panel border rounded p-3">
           <span className="fw-semibold">{t('Install the Companion APK')}</span>
@@ -55,7 +57,7 @@ export function CompanionSettingsCard() {
       <div className="glass-panel p-3">
         <h4 className="h6 text-primary mb-1">{t('Available in this preview')}</h4>
         <p className="small text-body-secondary mb-2">{t('Live telemetry cards and remote tuning workflow over USB. Android HUD display is deferred.')}</p>
-        <p className="small text-body-secondary mb-0">{t('LAN pairing, QR scanning and Bluetooth are planned and are not enabled in this preview.')}</p>
+        <p className="small text-body-secondary mb-0">{t('Pair over your local network with a short-lived code, or use USB debugging for a direct development connection.')}</p>
       </div>
     </div>
   </SettingsSection>;

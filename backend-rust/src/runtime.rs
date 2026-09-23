@@ -74,6 +74,13 @@ pub async fn bind_http(port: u16, fallback: bool) -> std::io::Result<TcpListener
         Err(error) => Err(error),
     }
 }
+
+pub async fn bind_companion_lan(port: u16) -> std::io::Result<TcpListener> {
+    match TcpListener::bind((Ipv4Addr::UNSPECIFIED, port)).await {
+        Ok(listener) => Ok(listener),
+        Err(_) => TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0)).await,
+    }
+}
 pub fn local_addresses() -> BTreeSet<Ipv4Addr> {
     let mut addresses = BTreeSet::from([Ipv4Addr::LOCALHOST]);
     if let Ok(interfaces) = if_addrs::get_if_addrs() {
@@ -268,6 +275,26 @@ pub async fn run(options: Options) -> Result<(), String> {
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     let app = App::new(&options.data_dir).map_err(|e| e.to_string())?;
     app.companion.set_port(port);
+    let companion_port = std::env::var("COMPANION_LAN_PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(8002);
+    let companion_listener = match bind_companion_lan(companion_port).await {
+        Ok(listener) => {
+            if let Ok(address) = listener.local_addr() {
+                app.companion.set_lan_port(Some(address.port()));
+            }
+            Some(listener)
+        }
+        Err(error) => {
+            crate::diagnostics::write_log(
+                &options.data_dir,
+                "ERROR",
+                &format!("Companion LAN listener unavailable: {error}"),
+            );
+            None
+        }
+    };
     let settings = app.config.settings();
     let udp_port = std::env::var("TELEMETRY_PORT")
         .ok()
@@ -353,13 +380,30 @@ pub async fn run(options: Options) -> Result<(), String> {
     crate::diagnostics::write_log(
         &options.data_dir,
         "INFO",
-        &format!("Rust backend ready; HTTP {port}, UDP {udp_port}"),
+        &format!(
+            "Rust backend ready; HTTP {port}, Companion LAN {:?}, UDP {udp_port}",
+            app.companion.get_lan_port()
+        ),
     );
     println!(
         "FH6_BACKEND_READY:{}",
         json!({"port":port,"port_fallback":port!=8001})
     );
     let mut shutdown = stop_rx;
+    let companion_server = companion_listener.map(|listener| {
+        let lan_app = app.clone();
+        let mut lan_shutdown = shutdown.clone();
+        tokio::spawn(async move {
+            axum::serve(
+                listener,
+                network::lan_router(lan_app.clone(), lan_app.companion.clone()),
+            )
+            .with_graceful_shutdown(async move {
+                let _ = lan_shutdown.changed().await;
+            })
+            .await
+        })
+    });
     let stop = stop_signal.clone();
     let server =
         axum::serve(listener, network::router(app.clone())).with_graceful_shutdown(async move {
@@ -368,6 +412,13 @@ pub async fn run(options: Options) -> Result<(), String> {
         });
     let result = server.await.map_err(|e| e.to_string());
     stop_signal.send_replace(true);
+    if let Some(companion_server) = companion_server {
+        match companion_server.await {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => eprintln!("Companion LAN server failed: {error}"),
+            Err(error) => eprintln!("Companion LAN task failed: {error}"),
+        }
+    }
     let _ = udp.await;
     stopping.store(true, Ordering::Release);
     let _ = worker.join();
