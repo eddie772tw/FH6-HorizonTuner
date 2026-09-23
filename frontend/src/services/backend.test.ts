@@ -4,6 +4,7 @@ import {
   backendHttpUrl,
   backendWebSocketUrl,
   configureBackendTransport,
+  configureCompanionTransport,
   createBackendTransport,
 } from "./backend";
 
@@ -41,6 +42,13 @@ describe("backend URL helpers", () => {
 
   it("rejects invalid sidecar ports", () => {
     expect(() => createBackendTransport(0)).toThrow("Invalid backend port: 0");
+  });
+
+  it('keeps companion HTTP and telemetry on the selected host origin and port', () => {
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:53124' } });
+    configureCompanionTransport();
+    expect(backendHttpUrl('/api/companion/workflow')).toBe('http://127.0.0.1:53124/api/companion/workflow');
+    expect(backendWebSocketUrl('/ws/telemetry')).toBe('ws://127.0.0.1:53124/ws/telemetry');
   });
 
   it("aborts a backend request that exceeds its timeout", async () => {

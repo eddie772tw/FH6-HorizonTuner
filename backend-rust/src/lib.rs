@@ -2,6 +2,9 @@
 pub mod app;
 pub mod assets;
 pub mod companion;
+pub mod companion_usb;
+mod companion_usb_runtime;
+pub mod companion_workflow;
 pub mod config;
 pub mod config_service;
 pub mod diagnostics;

@@ -56,6 +56,22 @@ export function configureBackendTransport(port: number): void {
   backendTransport = createBackendTransport(port);
 }
 
+/** Companion assets and APIs share the selected PC origin (including adb reverse). */
+export function configureCompanionTransport(): void {
+  const base = new URL(window.location.origin);
+  if (!['http:', 'https:'].includes(base.protocol)) throw new Error('Companion requires an HTTP host.');
+  backendTransport = {
+    port: Number(base.port || (base.protocol === 'https:' ? 443 : 80)),
+    httpUrl: path => new URL(normalizePath(path), base).href,
+    webSocketUrl: path => {
+      const url = new URL(normalizePath(path), base);
+      url.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
+      return url.href;
+    },
+    fetch: (path, init) => fetch(new URL(normalizePath(path), base), init),
+  };
+}
+
 export function getBackendPort(): number {
   return backendTransport.port;
 }

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:backend": "cargo build --locked --manifest-path ../backend-rust/Cargo.toml",
+    "build:backend": "pnpm run build && pwsh -NoProfile -File ../scripts/build_backend.ps1 -DebugBuild -UseVerifiedFrontendDist",
     "build": "tsc && vite build",
     "build:web-hud": "pnpm run build && node scripts/copy-hud.mjs",
     "preview": "vite preview",

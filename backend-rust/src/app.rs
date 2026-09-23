@@ -39,6 +39,8 @@ pub struct App {
     pub database: Arc<TelemetryStore>,
     pub native: NativeServices,
     pub companion: Arc<CompanionService>,
+    companion_workflow: Mutex<crate::companion_workflow::CompanionWorkflow>,
+    companion_usb_operation: Mutex<()>,
     pub metrics: Mutex<Metrics>,
     engine: Mutex<Engine>,
     telemetry: watch::Sender<Option<Arc<Value>>>,
@@ -82,6 +84,8 @@ impl App {
             database,
             native,
             companion,
+            companion_workflow: Mutex::new(crate::companion_workflow::CompanionWorkflow::default()),
+            companion_usb_operation: Mutex::new(()),
             metrics: Mutex::new(Metrics::default()),
             engine: Mutex::new(engine),
             telemetry,
@@ -376,7 +380,10 @@ impl App {
                 fs::read(&target).map_err(|_| ApiError::new(404, "Not Found"))?,
                 target.to_string_lossy().into_owned(),
             )
-        } else if path.starts_with("/hud/") {
+        } else if path.starts_with("/hud/")
+            || path.starts_with("/companion/")
+            || path.starts_with("/assets/")
+        {
             let key = path.trim_start_matches('/');
             let key = if assets::get(key).is_some() {
                 key.into()
@@ -455,9 +462,50 @@ impl Backend for App {
         lock(&self.metrics).client_delta(channel, delta);
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
+        match (request.method.as_str(), request.path.as_str()) {
+            ("GET", "/api/companion/usb/devices") => {
+                let _operation = lock(&self.companion_usb_operation);
+                let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
+                let devices = client
+                    .list_devices()
+                    .map_err(|e| ApiError::new(503, &e.to_string()))?;
+                return Ok(ApiResponse::json(json!({"devices": devices})));
+            }
+            ("POST", "/api/companion/usb/connect") => {
+                let body = request.json()?;
+                let serial = body["serial"]
+                    .as_str()
+                    .ok_or_else(|| ApiError::invalid("Choose a USB device first."))?;
+                let _operation = lock(&self.companion_usb_operation);
+                let client = crate::companion_usb_runtime::packaged_client(&self.config.root)?;
+                let port = self.companion.get_status(None).port;
+                let result = client
+                    .connect(serial, port)
+                    .map_err(|e| ApiError::new(503, &e.to_string()))?;
+                return Ok(ApiResponse::json(serde_json::to_value(result)?));
+            }
+            ("GET", "/api/companion/workflow") => {
+                let mut workflow = lock(&self.companion_workflow);
+                workflow.touch_client(request.query.get("clientId").map(String::as_str));
+                return Ok(ApiResponse::json(workflow.state()));
+            }
+            ("POST", "/api/companion/commands") => {
+                return Ok(ApiResponse::json(
+                    lock(&self.companion_workflow).enqueue(request.json()?)?,
+                ))
+            }
+            ("POST", "/api/companion/host") => {
+                return Ok(ApiResponse::json(
+                    lock(&self.companion_workflow).exchange(request.json()?)?,
+                ))
+            }
+            _ => {}
+        }
         if request.method == "GET" && request.path == "/api/companion/qr" {
             let qr = self.companion.generate_qr_payload(None);
-            return Ok(ApiResponse::json(serde_json::to_value(&qr).unwrap_or_default()));
+            return Ok(ApiResponse::json(
+                serde_json::to_value(&qr).unwrap_or_default(),
+            ));
         }
         if request.method == "POST" && request.path == "/api/companion/pair" {
             let body = request.json()?;
@@ -485,8 +533,11 @@ impl Backend for App {
             })));
         }
         if request.method == "GET" && request.path == "/api/companion/status" {
-            let status = self.companion.get_status(None);
-            return Ok(ApiResponse::json(serde_json::to_value(&status).unwrap_or_default()));
+            let mut status = self.companion.get_status(None);
+            status.active_connections = lock(&self.companion_workflow).client_count();
+            return Ok(ApiResponse::json(
+                serde_json::to_value(&status).unwrap_or_default(),
+            ));
         }
         if request.method == "GET" && request.path == "/api/hud/manifest" {
             let manifest = self.companion.generate_hud_manifest();

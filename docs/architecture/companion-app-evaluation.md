@@ -1,5 +1,7 @@
 # HorizonTuner Companion APP 架構評估與技術規格書
 
+> 本文保留原始架構評估與規劃。已實作功能、目前限制及實機驗收狀態請以 [Companion 實作邊界](companion-implementation-boundary.md) 和 [本次驗收紀錄](companion-acceptance-20260923.md) 為準。
+
 本文件基於 [`ref/padlink`](../../ref/padlink) 參考專案的概念與實作為基準，針對 **HorizonTuner Companion APP（Android 行動端輔助應用程式）** 進行深度架構評估、技術選型決策與詳細系統設計。
 
 ---

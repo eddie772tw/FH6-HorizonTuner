@@ -87,10 +87,31 @@ fn main() {
         resource.compile().expect("Windows executable metadata");
     }
     let mut entries = Vec::new();
+    println!("cargo:rerun-if-env-changed=FH6_REQUIRE_ADB");
+    let adb_directory = repo.join(".tools/adb/windows");
+    println!("cargo:rerun-if-changed={}", adb_directory.display());
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        for name in [
+            "adb.exe",
+            "AdbWinApi.dll",
+            "AdbWinUsbApi.dll",
+            "NOTICE.txt",
+            "source.properties",
+        ] {
+            let path = adb_directory.join(name);
+            if path.is_file() {
+                entries.push((format!("tools/adb/{name}"), path));
+            } else if env::var("FH6_REQUIRE_ADB").as_deref() == Ok("1") {
+                panic!("Required USB component missing: {name}. Run scripts/prepare_adb.ps1.");
+            }
+        }
+    }
     for (relative, prefix) in [
         ("hud_overlay", "hud"),
         ("lang", "lang"),
         ("backend/car_params", "car_params"),
+        ("frontend/dist/companion", "companion"),
+        ("frontend/dist/assets", "assets"),
     ] {
         let directory = repo.join(relative);
         println!("cargo:rerun-if-changed={}", directory.display());

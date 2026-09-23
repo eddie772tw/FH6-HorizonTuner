@@ -267,6 +267,7 @@ pub async fn run(options: Options) -> Result<(), String> {
         .map_err(|e| format!("HTTP {} is unavailable: {e}", options.port))?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     let app = App::new(&options.data_dir).map_err(|e| e.to_string())?;
+    app.companion.set_port(port);
     let settings = app.config.settings();
     let udp_port = std::env::var("TELEMETRY_PORT")
         .ok()

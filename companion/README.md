@@ -1,56 +1,36 @@
-# HorizonTuner Companion APP (Android)
+# HorizonTuner Companion APP
 
-本目錄為 HorizonTuner 的行動端輔助應用程式（Companion APP），基於 [`ref/padlink`](../ref/padlink) 參考專案的概念與實作為基礎，為玩家提供車載副螢幕 HUD、5 大遙測卡片手勢滑動監控，以及調校工作流遠端操作能力。
+`companion/` contains the Android Companion shell. The current implementation is a native Jetpack Compose connection screen with an Android `WebView`. After connecting, the WebView loads the shared React page at `/companion/index.html`; the page reuses the desktop telemetry cards and tuning workflow. The Rust sidecar embeds the built `frontend/dist/companion` page and its shared assets. HUD display on Android is deferred for a later iteration.
 
-詳細架構評估、技術選型與系統設計請參閱 [Companion APP 架構評估規格書](../docs/architecture/companion-app-evaluation.md)。
+The Android client is a thin client. `PC TuneSessionProvider` remains the only owner of tuning calculations and engine measurement. The client sends validated profile, workflow, and measurement commands and renders the acknowledged state. A `profileKey` prevents stale profile results from being applied. The host lease and client heartbeat protect ownership and liveness.
 
----
+## Current connection contract
 
-## 模組分工架構 (Architecture & Modules)
+The supported development path is a PC HorizonTuner Full app listening on its actual HTTP port. The current host is loopback-only. Install the Companion APK, enable USB debugging on the tablet, and accept Android's authorization prompt. In the PC app's Companion settings, refresh the device list, select the tablet if more than one device is present, and press **Connect USB device**. The PC app uses its bundled ADB runtime to set up the reverse port mapping and launch the Android app. The Android app loads `127.0.0.1:8001` automatically after this action. Keep the Full PC app running while using Companion.
 
-本專案採多模組 Gradle 結構設計：
+LAN access, QR scanning, mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are planned contracts. They are not connected end to end yet and must not be described as available transports.
 
-- **`:protocol-core` (純 Kotlin/JVM 模組)**：
-  - **完全不依賴 Android SDK**，可於桌面環境進行毫秒級單元測試與契約驗證。
-  - 職責：
-    - `ITransport` 傳輸抽象介面（支援 LAN WebSocket、USB 本機轉發與預留之藍牙 RFCOMM 介面）。
-    - 324-byte Forza 遙測封包二進位解碼器與結構體。
-    - 連線狀態機 (`ConnectionStateMachine`)、心跳監控與 Watchdog。
-    - 調校遠端 RPC 通訊契約（Thin-Client 模式）。
-    - Golden Vectors 黃金測試向量驗證。
-- **`:theme` (視覺設計系統模組)**：
-  - 將桌面端 Halfmoon CSS v2 的視覺層次、深淺主題、表面與 Accent 強調色彩精準映射為 Jetpack Compose `ColorScheme` 與 Design Tokens。
-- **`:app` (Android 應用程式模組)**：
-  - 基於 Android 13+ (API 33+) 與 Jetpack Compose。
-  - 職責：
-    - 5 大遙測卡片 (`driver`, `traces`, `dynamics`, `tires`, `suspension`) 的 `HorizontalPager` 滑動切換與展開視圖。
-    - 橫向駕駛艙模式 (Cockpit Mode) 與 HUD 儀表螢幕手勢切換。
-    - HUD 資源動態隨選下載與私有目錄快取 (On-Demand Cache-First Strategy)。
-    - 調校工作流 5 步 Wizard 遠端輸入與算牌結果呈現。
-    - CameraX 一次性 QR 碼配對與 mDNS 自動探索。
-    - Android `connectedDevice` 前景服務 (`TelemetryForegroundService`) 保活。
+## Modules
 
----
+- `:protocol-core` is a pure Kotlin/JVM module for transport abstractions, framing, telemetry decoding, connection liveness, and protocol tests. It does not own tuning formulas.
+- `:theme` maps the shared visual tokens to Compose.
+- `:app` provides the Android 13+ Compose shell, WebView, connection validation, and the `connectedDevice` foreground service.
+- `frontend/companion` and `frontend/src/features/companion` provide the shared Companion page, five telemetry cards, and four-step remote workflow.
 
-## 開發環境規範 (Toolchain Requirements)
+The current workflow is four steps: **Goal & Setup**, **Chassis & Tires**, **Engine data & gearing**, and **Setup verification**.
 
-- **JDK**：Temurin 17 (Java 17)
-- **Gradle**：8.13 (使用 Gradle Wrapper)
-- **Android Gradle Plugin (AGP)**：8.13.2
-- **Kotlin / Compose Compiler**：2.2.21
-- **Android SDK**：
-  - `compileSdk`: 36
-  - `targetSdk`: 36
-  - `minSdk`: 33 (Android 13+)
-  - `buildToolsVersion`: "35.0.0"
+## Toolchain and validation
 
----
+Use `JAVA_HOME` and `ANDROID_HOME` (or the Android Studio equivalents) rather than hard-coding machine-specific SDK paths. The project targets Android `minSdk 33` and `targetSdk 36`, uses the checked-in Gradle Wrapper (8.13), AGP 8.13.2, and Kotlin 2.2.21.
 
-## 核心設計原則 (Core Design Invariants)
+From this directory, the Android gate is:
 
-1. **物理調校單一真理 (SSOT)**：
-   - Companion APP 嚴禁在 Kotlin 程式碼中重複實作物理計算公式。所有懸吊、彈簧、防傾桿與齒比算牌必須透過 Thin-Client RPC 委派由 PC 端 `frontend/src/utils/tuningMath.ts` 執行。
-2. **HUD 資源隨選快取 (On-Demand Caching)**：
-   - HUD 儀表外觀資產（SVG/JSON/字型）採隨選下載快取機制，私有目錄比對 SHA-256 哈希值，不硬性內嵌於 APK。
-3. **連線強韌度與防睡眠**：
-   - 透過 Android 前景服務保持 60Hz 遙測連線，螢幕常亮控制（`KEEP_SCREEN_ON`）確保遊戲競速時不黑屏。
+```text
+./gradlew :protocol-core:test :app:lintDebug :app:assembleDebug
+```
+
+Desktop development builds the frontend distribution before compiling the Rust sidecar so the current Companion page and assets are embedded. CI may pass a previously verified frontend distribution to the sidecar build; the sidecar must reject a missing `frontend/dist/companion/index.html` instead of embedding stale or incomplete assets.
+
+The Android build and protocol tests are validation gates. They do not constitute physical-device, USB, LAN, QR, mDNS, RFCOMM, or end-to-end gameplay acceptance.
+
+See [the implementation boundary](../docs/architecture/companion-implementation-boundary.md) for current behavior and pending work. The [architecture evaluation](../docs/architecture/companion-app-evaluation.md) preserves the original design study.

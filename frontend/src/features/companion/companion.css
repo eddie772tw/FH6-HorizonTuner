@@ -1,0 +1,44 @@
+html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height: 0; }
+.companion-app { height: var(--companion-viewport-height, 100dvh); flex-shrink: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: 1rem; color: var(--text-primary); background: var(--surface-1); }
+.companion-header { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.companion-kicker { color: var(--text-secondary); font-size: .68rem; letter-spacing: .13em; }
+.companion-title { margin: .1rem 0 0; color: var(--primary); font-size: 1.45rem; }
+.companion-tabs { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem; padding: .35rem 0; background: var(--surface-1); }
+.companion-tabs .nav-link { min-height: 2.8rem; color: var(--text-secondary); }
+.companion-tabs .nav-link.active { color: var(--text-primary); background: var(--primary); }
+.companion-header, .companion-tabs, .companion-message { flex-shrink: 0; }
+.companion-content { flex: 1; min-height: 0; padding-top: .6rem; overflow: auto; }
+.companion-stack { display: flex; flex-direction: column; gap: .75rem; }
+.companion-panel { padding: 1rem; border: 1px solid var(--glass-border); border-radius: .75rem; background: var(--glass-bg); box-shadow: var(--glass-shadow); }
+.companion-panel h2, .companion-panel h3 { margin: 0 0 .45rem; font-size: 1rem; }
+.companion-message { margin: .5rem 0; padding: .65rem .8rem; border-radius: .5rem; background: var(--surface-2); }
+.companion-message.is-error { color: var(--bs-danger); }
+.companion-message.is-success { color: var(--bs-success); }
+.companion-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.companion-field { display: flex; flex-direction: column; gap: .25rem; color: var(--text-secondary); font-size: .78rem; }
+.companion-field .form-control, .companion-field .form-select { min-height: 2.7rem; }
+.companion-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.companion-result-card { min-width: 0; }
+.companion-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.companion-stat-grid > div, .companion-result-card > div { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.companion-stat-label { color: var(--text-secondary); font-size: .7rem; text-transform: capitalize; }
+.companion-telemetry { height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.companion-card-picker { display: flex; gap: .35rem; overflow-x: auto; padding: .25rem 0 .6rem; }
+.companion-card-picker .btn { flex: 0 0 auto; text-transform: capitalize; }
+.companion-telemetry-content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+input[type='range'], input[type='color'], canvas { transition: none !important; }
+/* Android WebView may keep its orientation media feature stale after configChanges.
+   Width follows the actual visual viewport, so use it for narrow card layouts. */
+@media (max-width: 700px) {
+  .companion-telemetry[data-card='dynamics'] .telemetry-card-layout--split { flex-direction: column; }
+  .companion-telemetry[data-card='dynamics'] .telemetry-card-layout__radar { flex: 0 0 42%; width: 100%; }
+}
+@media (max-width: 560px) {
+  .companion-form-grid, .companion-result-grid { grid-template-columns: 1fr; }
+  .companion-telemetry[data-card='driver'] .telemetry-driver-inputs { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+  .companion-telemetry[data-card='driver'] .telemetry-driver-inputs > .vr { display: none; }
+  .companion-telemetry[data-card='tires'] .telemetry-card-shell__body,
+  .companion-telemetry[data-card='suspension'] .telemetry-card-shell__body { overflow-y: auto; }
+  .companion-telemetry[data-card='tires'] .telemetry-card-layout--grid,
+  .companion-telemetry[data-card='suspension'] .telemetry-card-layout--grid { flex: 0 0 auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(190px, auto)); overflow: visible; }
+}

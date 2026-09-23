@@ -52,7 +52,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
   const current = selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
   const compatible = archive.filter(item => item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
   const complete = async (data: TuningMeasurementState, capture: TuningCaptureFile) => {
-    if (saving.current !== null) return;
+    if (saving.current !== null) return false;
     const requestId = ++saveSequence.current;
     saving.current = requestId;
     setPendingSave(true);
@@ -77,7 +77,7 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
       if (isCurrentEngineObservationSaveToken(saveToken, currentSaveToken())) {
         setStorageError(true);
       }
-      return;
+      return false;
     }
     if (saving.current === requestId) {
       saving.current = null;
@@ -85,12 +85,13 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     }
     // The backend save may complete after invalidate/reuse on the same key.
     // It is already durable server-side, but must not overwrite the newer UI selection.
-    if (!isCurrentEngineObservationSaveToken(saveToken, currentSaveToken())) return;
+    if (!isCurrentEngineObservationSaveToken(saveToken, currentSaveToken())) return true;
     const next = [...new Map([...readArchive(), ...archive, item].map(entry => [entry.id, entry])).values()];
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* SQLite remains authoritative. */ }
     setStorageError(false);
     setArchive(next); setSelected({ ...item, capture: JSON.parse(JSON.stringify(savedCapture)) });
     setSavedIds(previous => [...previous, item.id]);
+    return true;
   };
   return { key, current, observation: current ? selected : null, complete, invalidate: () => {
     generation.current += 1;

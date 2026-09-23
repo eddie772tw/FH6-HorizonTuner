@@ -34,7 +34,7 @@ class TelemetryForegroundService : Service() {
             return START_NOT_STICKY
         }
 
-        val notification = buildNotification("Connected to HorizonTuner PC Host")
+        val notification = buildNotification("HorizonTuner Companion is in use")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
                 NOTIFICATION_ID,

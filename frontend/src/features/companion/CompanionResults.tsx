@@ -1,0 +1,13 @@
+import type { CompanionSnapshot } from './companionProtocol';
+
+const n = (value: number | undefined, digits = 1) => value === undefined || !Number.isFinite(value) ? '—' : value.toFixed(digits);
+function Stat({ label, value, unit = '' }: { label: string; value: string; unit?: string }) { return <div><span className="companion-stat-label">{label}</span><strong>{value}{unit && ` ${unit}`}</strong></div>; }
+
+export default function CompanionResults({ snapshot }: { snapshot: CompanionSnapshot }) {
+  const { chassis, alignment, gearing } = snapshot.results;
+  return <div className="companion-result-grid">
+    <article className="companion-panel companion-result-card"><h3>Chassis</h3>{chassis ? <div className="companion-result-list"><Stat label="Front spring" value={n(chassis.springs.front)} unit="kgf/mm" /><Stat label="Rear spring" value={n(chassis.springs.rear)} unit="kgf/mm" /><Stat label="Ride height F/R" value={`${n(chassis.springs.heightF)} / ${n(chassis.springs.heightR)}`} unit="cm" /><Stat label="Damping rebound F/R" value={`${n(chassis.damping.reboundF)} / ${n(chassis.damping.reboundR)}`} /><Stat label="Damping bump F/R" value={`${n(chassis.damping.bumpF)} / ${n(chassis.damping.bumpR)}`} /><Stat label="ARB F/R" value={`${n(chassis.arb.front)} / ${n(chassis.arb.rear)}`} /><Stat label="Diff accel F/R" value={`${n(chassis.diff.accelF)} / ${n(chassis.diff.accelR)}`} unit="%" /><Stat label="Diff decel F/R" value={`${n(chassis.diff.decelF)} / ${n(chassis.diff.decelR)}`} unit="%" /><Stat label="AWD center rear" value={n(chassis.diff.centerRear)} unit="%" /></div> : <span className="text-body-secondary">No result yet</span>}</article>
+    <article className="companion-panel companion-result-card"><h3>Alignment</h3>{alignment ? <div className="companion-result-list"><Stat label="Cold pressure F/R" value={`${n(alignment.pcF)} / ${n(alignment.pcR)}`} unit="psi" /><Stat label="Target hot pressure" value={n(alignment.targetPhot)} unit="psi" /><Stat label="Camber F/R" value={`${n(alignment.camber.front)} / ${n(alignment.camber.rear)}`} unit="deg" /><Stat label="Toe F/R" value={`${alignment.toe.front} / ${alignment.toe.rear}`} /><Stat label="Caster" value={n(alignment.caster)} unit="deg" /></div> : <span className="text-body-secondary">No result yet</span>}</article>
+    <article className="companion-panel companion-result-card"><h3>Gearing</h3>{gearing ? <div className="companion-result-list"><Stat label="Final drive" value={n(gearing.finalDrive, 3)} unit="ratio" />{gearing.gears.map((ratio, index) => <Stat key={index} label={`Gear ${index + 1}`} value={n(ratio, 3)} unit="ratio" />)}</div> : <span className="text-body-secondary">No result yet</span>}</article>
+  </div>;
+}

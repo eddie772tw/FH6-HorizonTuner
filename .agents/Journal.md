@@ -2735,3 +2735,9 @@
 - **CI learning**：MoTeC CSV 是 byte contract，須避免 Git 正規化 CRLF。Road JSON／SQLite 的 immutable equality 需 `serde_json/float_roundtrip`；以 CI 捕捉到的 `1790061494.4082587` 在本地重現單一 ULP 漂移，再修正解析器，保留精確相等 assertion。CodeQL path finding 的修正改為以受信任目錄列舉項目解析路徑，避免 `exists()` 略過 dangling link；Windows junction／case alias／dangling junction 均有回歸驗證。
 - **Reference**：[Rust 後端指南](../docs/backend-rust/README.md)、[開發指南](../docs/guides/development.md)。
 - **CodeQL source audit**：SARIF analysis `1816409922` 的三條剩餘資料流皆從 WebSocket handler 的 `State<Arc<dyn Backend>>` 出發，經 server-owned root 讀取固定 `hud_config.json`；非客戶端提供路徑。依 [Axum closure capture](https://docs.rs/axum/latest/axum/#using-closure-captures) 將啟動時 backend 注入與 request extractors 分離，讓 [CodeQL Axum parameter model](https://github.com/github/codeql/blob/main/rust/ql/lib/codeql/rust/frameworks/axum.model.yml) 保留真正 request sources；未排除規則或 dismiss alert。既有三條 WS I/O 及新增 foreign-Origin 403 契約通過，檔案 containment 防護保留。
+
+## 2026-09-23 / Companion 平板整合與版型驗收
+
+- **Scope**：Android Compose/WebView 外殼、Tauri 單一算牌 owner 的工作流 bridge、Rust 命令佇列與回覆、五張共用遙測卡、內嵌 Windows ADB 及多設備選單；本輪依使用者調整暫移 APP HUD。
+- **實機發現**：Android WebView 中 `html/body/#root` 被既有 flex 規則壓為 0 高，即使子層有 `100vh` 仍導致方向盤圓弧過小；根容器以 visualViewport 高度固定後，五卡皆可用。平板旋轉後 `matchMedia('(orientation: portrait)')` 曾仍回 false，寬度斷點較可靠；390px 模擬顯示 Tires/Suspension 兩欄文字擠壓，改單欄卡內捲動。
+- **連線與界線**：ADB `reverse --list` 的首欄在該平板回 `UsbFfs`，不能假定等於裝置 serial；連線需以指定 serial 的反向規則與實際 port 驗證。受控 324-byte UDP 回放在 Android 實機顯示五卡；APP 草稿輸入到 Tauri working draft、桌面算牌結果回 APP 均已觀察，但不等於 FH6 gameplay 驗收。APP HUD 預覽曾遭 Android `lmkd watchdog` 終止，依新範圍移除入口與專用程式碼，桌面 HUD 保留。

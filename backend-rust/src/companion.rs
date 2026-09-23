@@ -217,7 +217,10 @@ impl CompanionService {
     /// Validate a session token.
     pub fn validate_session(&self, session_token: &str) -> bool {
         if let Ok(mut devices) = self.paired_devices.lock() {
-            if let Some(device) = devices.iter_mut().find(|d| d.session_token == session_token) {
+            if let Some(device) = devices
+                .iter_mut()
+                .find(|d| d.session_token == session_token)
+            {
                 device.last_connected_at = Some(chrono::Utc::now().to_rfc3339());
                 return true;
             }
@@ -285,18 +288,17 @@ fn hostname_fallback() -> String {
         .unwrap_or_else(|_| "HorizonTuner-Host".into())
 }
 
-fn collect_assets_recursively(
-    base: &Path,
-    current: &Path,
-    manifest: &mut Vec<HudManifestItem>,
-) {
+fn collect_assets_recursively(base: &Path, current: &Path, manifest: &mut Vec<HudManifestItem>) {
     let Ok(entries) = fs::read_dir(current) else {
         return;
     };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            if path.file_name().is_some_and(|name| name != "tests" && name != "node_modules") {
+            if path
+                .file_name()
+                .is_some_and(|name| name != "tests" && name != "node_modules")
+            {
                 collect_assets_recursively(base, &path, manifest);
             }
         } else if path.is_file() {
