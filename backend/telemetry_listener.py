@@ -49,6 +49,8 @@ _FULL_STRUCT = struct.Struct(
     + "BBBBBb"
     + "3s"
 )
+_PACK_STRUCT = struct.Struct(TELEMETRY_STRUCT_FORMAT)
+_IS_RACE_ON_STRUCT = struct.Struct("<i")
 
 
 def _packet_rejection_reason(data: bytes) -> str | None:
@@ -60,7 +62,7 @@ def _packet_rejection_reason(data: bytes) -> str | None:
         return "partial_schema"
     if data_len > FULL_TELEMETRY_PACKET_LENGTH:
         return "unsupported_length"
-    if struct.unpack_from("<i", data, 0)[0] != 1:
+    if _IS_RACE_ON_STRUCT.unpack_from(data, 0)[0] != 1:
         return "not_racing"
     return None
 
@@ -89,17 +91,20 @@ def _plausibility_rejection_reason(telemetry_data: dict) -> str | None:
         "Pitch",
         "Roll",
     )
-    if not all(math.isfinite(telemetry_data[field]) for field in numeric_values):
-        return "non_finite"
-    if not all(
-        math.isfinite(telemetry_data.get(field, 0))
-        for field in ("AngularVelocityX", "AngularVelocityY", "AngularVelocityZ")
-    ):
-        return "non_finite"
-    if not all(
-        math.isfinite(value) for value in telemetry_data.get("WheelRotationSpeed", ())
-    ):
-        return "non_finite"
+
+    # Unrolled generators into direct loops for performance in high-frequency path
+    for field in numeric_values:
+        if not math.isfinite(telemetry_data[field]):
+            return "non_finite"
+
+    for field in ("AngularVelocityX", "AngularVelocityY", "AngularVelocityZ"):
+        if not math.isfinite(telemetry_data.get(field, 0)):
+            return "non_finite"
+
+    for value in telemetry_data.get("WheelRotationSpeed", ()):
+        if not math.isfinite(value):
+            return "non_finite"
+
     for field in (
         "SurfaceRumble",
         "TireCombinedSlip",
@@ -108,8 +113,9 @@ def _plausibility_rejection_reason(telemetry_data: dict) -> str | None:
         "TireSlipRatio",
         "TireSlipAngle",
     ):
-        if not all(math.isfinite(value) for value in telemetry_data[field]):
-            return "non_finite"
+        for value in telemetry_data[field]:
+            if not math.isfinite(value):
+                return "non_finite"
 
     if telemetry_data["TelemetrySchema"] == FULL_TELEMETRY_SCHEMA:
         numeric_v2_fields = (
@@ -127,8 +133,9 @@ def _plausibility_rejection_reason(telemetry_data: dict) -> str | None:
             "DistanceTraveled",
             "CurrentRaceTime",
         )
-        if not all(math.isfinite(telemetry_data[field]) for field in numeric_v2_fields):
-            return "non_finite"
+        for field in numeric_v2_fields:
+            if not math.isfinite(telemetry_data[field]):
+                return "non_finite"
         if not 0.0 <= telemetry_data["Fuel"] <= 1.0:
             return "out_of_range"
         if telemetry_data["SpeedMetersPerSecond"] < 0.0:
@@ -176,8 +183,7 @@ def pack_telemetry_binary(data: dict) -> bytes:
 
         reserved = b"\x00" * 8
 
-        return struct.pack(
-            TELEMETRY_STRUCT_FORMAT,
+        return _PACK_STRUCT.pack(
             is_race_on,
             rpm,
             max_rpm,
