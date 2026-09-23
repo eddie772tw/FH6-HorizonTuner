@@ -11,7 +11,7 @@
 
 | 項目 | 必要證據 | 狀態 |
 | --- | --- | --- |
-| CI | 本次 HEAD 的 CI Pipeline、Android Companion CI 結果 | 待執行 |
+| CI | 本次 HEAD 的 CI Pipeline、Android Companion CI 與 CodeQL 結果 | 以 [PR #425 Checks](https://github.com/eddie772tw/FH6-HorizonTuner/pull/425/checks) 最新提交結果為準；驗收時須確認所有工作流程完成 |
 | Android 載入 | 本次 APK 安裝於 23073RPBFG 平板；USB HTTP 載入且無崩潰 | 通過：最新版 APK 經 PC Companion USB 按鈕啟動，頁面只含 Telemetry/Tuning 且 PC ONLINE |
 | 五張卡片 | 受控 UDP 回放中逐張顯示 driver、traces、dynamics、tires、suspension；數值及圖形更新 | 通過：最新版 APK 五卡逐張有即時數值及有效 Canvas；橫向 Driver 畫面與直向 Driver/Dynamics 畫面已檢視 |
 | APP → Tauri | APP 修改參數，收到 desktop applied 確認，Tauri 可見相同參數 | 通過：實機輸入 412 hp / 6550 rpm，命令 applied、host snapshot revision 4 含相同值，隱藏 Tauri 調校頁可見 412 hp |
@@ -20,8 +20,8 @@
 
 ## 已確認的開發基線
 
-- 原始 HEAD `47ca647` 的 CI 有 Rust format 和未使用 React import 失敗，已在本地修正，尚未推送。
-- 2026-09-23 完整前端測試 131 files / 932 tests 通過，Rust `cargo test --locked` 通過；Android lint/assemble 於移除 HUD 前通過，後續修改需重跑。
+- 原始 HEAD `47ca647` 的 CI 有 Rust format 和未使用 React import 失敗，已修正並推送；後續 CodeQL 指出的 Companion 請求路徑問題也已修正並加入回歸測試。
+- 2026-09-23 完整前端測試 131 files / 933 tests 通過，Rust `cargo test --locked` 通過；Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 在移除 HUD 後通過。
 - 2026-09-23 使用者重新接上平板後，ADB 已確認裝置在線且有授權。
 - 使用受控 324-byte UDP 封包回放與本地 8001 sidecar 驗證；平板型號 23073RPBFG，單鍵 USB API 實際回報 reverse `tcp:8001 → tcp:8001` 及 launched。
 - HUD 預覽曾在平板觸發 `lmkd watchdog` 終止前景 APP；依使用者縮減目標，已從 Companion 導覽與 Android 專屬程式碼移除，桌面 HUD 不變。
