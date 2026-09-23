@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import secrets
 import subprocess
 from pathlib import Path
 
@@ -27,7 +28,7 @@ def main():
         if not os.environ.get("TAURI_SIGNING_PRIVATE_KEY", "").strip():
             raise ValueError("Production OTA signing key is required")
     else:
-        password = "fh6-ephemeral-ci-key"
+        password = secrets.token_hex(32)
         subprocess.run(
             [
                 "pnpm",

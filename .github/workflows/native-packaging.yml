@@ -80,7 +80,7 @@ jobs:
           uv run --no-project --active python scripts/validate_version_consistency.py
           cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features
           pnpm --prefix frontend run test
-          uv run --no-project --active python -m pytest scripts/tests/test_platform_release.py scripts/tests/test_publish_release_assets.py
+          uv run --no-project --active python -m pytest scripts/tests/test_platform_release.py scripts/tests/test_publish_release_assets.py scripts/tests/test_prepare_native_signing.py
       - name: Build HUD-free frontend
         run: pnpm --prefix frontend run build
       - name: Build native Rust backend

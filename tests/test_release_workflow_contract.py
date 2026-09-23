@@ -1,6 +1,7 @@
 """Contract and unit tests for release packaging workflows."""
 
 import json
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -17,6 +18,20 @@ from scripts.prepare_release_assets import (
     generate_latest_manifest,
     prepare_release_assets,
 )
+
+
+def test_no_gradle_cache_committed():
+    repo_root = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        ["git", "ls-files", "--", "companion/.gradle"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == "", (
+        f"Found committed .gradle cache files: {result.stdout.strip()}"
+    )
 
 
 def _create_packaging_fixtures(
