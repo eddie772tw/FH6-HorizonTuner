@@ -3,7 +3,6 @@
 import argparse
 import json
 import os
-import secrets
 import subprocess
 from pathlib import Path
 
@@ -28,10 +27,9 @@ def main():
         if not os.environ.get("TAURI_SIGNING_PRIVATE_KEY", "").strip():
             raise ValueError("Production OTA signing key is required")
     else:
-        password = secrets.token_hex(32)
         subprocess.run(
             [
-                "pnpm",
+                "pnpm.cmd" if os.name == "nt" else "pnpm",
                 "--prefix",
                 "frontend",
                 "exec",
@@ -40,7 +38,7 @@ def main():
                 "generate",
                 "--ci",
                 "-p",
-                password,
+                "",
                 "-w",
                 str(key),
             ],
@@ -51,9 +49,7 @@ def main():
             "updater": {"pubkey": Path(str(key) + ".pub").read_text().strip()}
         }
         with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-            env.write(
-                f"TAURI_SIGNING_PRIVATE_KEY={key}\nTAURI_SIGNING_PRIVATE_KEY_PASSWORD={password}\n"
-            )
+            env.write(f"TAURI_SIGNING_PRIVATE_KEY={key}\n")
     config_file.write_text(json.dumps(config), encoding="utf-8")
 
 
