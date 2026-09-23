@@ -141,16 +141,26 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
           </button>
-          <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-sm btn-secondary">
-            MoTeC CSV {t("Export")}
-          </button>
+          <span
+            title={isExporting ? t("Export is currently in progress") : undefined}
+            style={isExporting ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
+          >
+            <button onClick={onExportMoTec} disabled={isExporting} className="btn btn-sm btn-secondary" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+              MoTeC CSV {t("Export")}
+            </button>
+          </span>
           <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={onImportFile} />
           <button onClick={onOpenImport} className="btn btn-sm btn-primary" title={t("Import MoTeC CSV for analysis")}>
             MoTeC CSV {t("Import")}
           </button>
-          <button onClick={onDownloadTemplate} disabled={isExporting} className="btn btn-sm btn-info" title={t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}>
-            {t("Workspace Template")}
-          </button>
+          <span
+            title={isExporting ? t("Export is currently in progress") : t("Download pre-configured HorizonTuner MoTeC i2 workspace template")}
+            style={isExporting ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
+          >
+            <button onClick={onDownloadTemplate} disabled={isExporting} className="btn btn-sm btn-info" style={isExporting ? { pointerEvents: 'none' } : undefined}>
+              {t("Workspace Template")}
+            </button>
+          </span>
           {isSavedSelection && <button onClick={onDeleteSession} className="btn btn-sm btn-danger">{t("Delete")}</button>}
         </div>
       </div>
