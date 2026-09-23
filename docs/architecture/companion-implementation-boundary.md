@@ -55,3 +55,14 @@ For a physical-device acceptance run, record:
 5. The four workflow steps and telemetry cards as observed on a physical device. Android HUD display is outside this iteration's acceptance scope.
 
 Do not mark LAN, QR, mDNS, RFCOMM, native cache, or full gameplay readiness from a build-only result.
+
+## Upstream PadLink protocol alignment
+
+The core protocol, transport abstractions, and connection lifecycle implementations in this repository maintain bi-directional alignment with the upstream `PadLink` project (`D:\padlink`).
+
+- **Unified transport abstraction (`ITransport`)**: Standardized across Bluetooth Classic RFCOMM, USB ADB reverse forwarding, and local network Wi-Fi/WebSocket.
+- **Connection state machine & watchdog**: Implements the canonical 5-state lifecycle (`DISCONNECTED`, `CONNECTING`, `PAIRED`, `STREAMING`, `RECONNECTING`) with exponential backoff and dual-direction heartbeat monitoring.
+- **QR pairing & session contract**: Standardized 5-minute single-use token payload, multi-interface IPv4 probe, and revocable session cookie/token management.
+- **Asset caching**: Dynamic SHA-256 asset manifest contract supporting client-side cache-first verification.
+
+Upstream PadLink has incorporated these refinements from HorizonTuner, ensuring that protocol contracts and test suites remain compatible and standardized across both projects.

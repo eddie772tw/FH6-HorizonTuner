@@ -32,6 +32,19 @@ HorizonTuner 桌面端為玩家提供 Forza Horizon 遊戲的高頻遙測監控�
 
 ---
 
+### 2.1 PadLink 上游協議之雙向反饋與標準化演進 (Upstream Standardization)
+
+隨 HorizonTuner 在 PR #425 中實作並驗證了多網卡 LAN QR 配對、USB ADB 反向轉發、連線看門狗與動態資產 SHA-256 快取機制，維護 PadLink 協議的 Agent 已從 HorizonTuner 專案唯讀提煉相應實作，並全數反饋至原始專案（`D:\padlink`），達成架構標準化與雙向迭代：
+
+1. **多傳輸通道抽象 (`ITransport`)**：PadLink 上游已從原先單一藍牙 RFCOMM 擴展為通用 `ITransport` 介面，納入 `RfcommTransport`、`UsbAdbTransport` 與 `WebSocketTransport`。
+2. **標準五態連線狀態機 (`ConnectionStateMachine`)**：標準化 `DISCONNECTED`、`CONNECTING`、`PAIRED`、`STREAMING`、`RECONNECTING` 五大狀態與 1s~16s 指數退避機制。
+3. **高頻串流看門狗 (`HeartbeatWatchdog`)**：提供雙向心跳偵測、超時告警與自動恢復，守護 60Hz 串流。
+4. **QR 掃描配對與 Session 授權 (`QrPairingPayload` / `PairingManager`)**：支援 5 分鐘一次性短碼、多候選 IPv4 探測與持久性 Session Token 簽發/撤銷。
+5. **隨選資產 SHA-256 快取合約 (`AssetManifestContract`)**：提供目錄資產雜湊清單與 Cache-First 驗證。
+6. **測試套件齊備**：Python 參考實作（`protocol.py`）與 Kotlin JVM 核心 8 組測試類別（30+ 測試案例）皆已於 PadLink 上游完成對齊並全數驗證通過。
+
+---
+
 ## 3. 技術架構選型評估
 
 我們針對 **方案 A (PadLink 模式：Kotlin + Jetpack Compose + 獨立 JVM 核心)** 與 **方案 B (Tauri Mobile v2：React 19 + TypeScript + Halfmoon CSS)** 進行綜合權衡：

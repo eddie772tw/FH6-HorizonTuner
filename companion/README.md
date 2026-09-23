@@ -16,7 +16,7 @@ mDNS discovery, Bluetooth Classic RFCOMM, and a native offline HUD cache are pla
 
 ## Modules
 
-- `:protocol-core` is a pure Kotlin/JVM module for transport abstractions, framing, telemetry decoding, connection liveness, and protocol tests. It does not own tuning formulas.
+- `:protocol-core` is a pure Kotlin/JVM module for transport abstractions, framing, telemetry decoding, connection liveness, and protocol tests. It maintains bi-directional synchronization with the upstream PadLink protocol (`ITransport`, 5-state `ConnectionStateMachine`, `HeartbeatWatchdog`, and pairing manager). It does not own tuning formulas.
 - `:theme` maps the shared visual tokens to Compose.
 - `:app` provides the Android 13+ Compose shell, WebView, connection validation, and the `connectedDevice` foreground service.
 - `frontend/companion` and `frontend/src/features/companion` provide the shared Companion page, five telemetry cards, and four-step remote workflow.
