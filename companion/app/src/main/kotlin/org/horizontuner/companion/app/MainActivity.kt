@@ -17,6 +17,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +46,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -190,7 +191,7 @@ private fun CompanionAppContent(
 
         if (requestedUrl == null) {
             Column(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(16.dp),
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text("FH6 HorizonTuner Companion", style = MaterialTheme.typography.headlineSmall)
@@ -207,28 +208,26 @@ private fun CompanionAppContent(
                         }
                     }
                 }
-                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            if (offlinePage == OfflinePage.CONNECTION) {
-                                Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
-                                OutlinedTextField(host, { host = it }, label = { Text("Host or HTTP(S) URL") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                                OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Button(onClick = { connect(host, port) }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.weight(1f)) {
-                                        Text(if (state == WebConnectionState.ERROR) "Retry" else "Connect")
-                                    }
-                                    OutlinedButton(onClick = { offlinePage = OfflinePage.TELEMETRY }, modifier = Modifier.weight(1f)) {
-                                        Text("返回主畫面")
-                                    }
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (offlinePage == OfflinePage.CONNECTION) {
+                            Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
+                            OutlinedTextField(host, { host = it }, label = { Text("Host or HTTP(S) URL") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { connect(host, port) }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.weight(1f)) {
+                                    Text(if (state == WebConnectionState.ERROR) "Retry" else "Connect")
                                 }
-                            } else {
-                                Text(offlinePage.label, style = MaterialTheme.typography.titleLarge)
-                                Text("PC Companion 尚未連線，${offlinePage.label} 暫時無法取得資料。", color = MaterialTheme.colorScheme.onSurface)
-                                Button(onClick = { offlinePage = OfflinePage.CONNECTION }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("連線設定")
+                                OutlinedButton(onClick = { offlinePage = OfflinePage.TELEMETRY }, modifier = Modifier.weight(1f)) {
+                                    Text("返回主畫面")
                                 }
+                            }
+                        } else {
+                            Text(offlinePage.label, style = MaterialTheme.typography.titleLarge)
+                            Text("PC Companion 尚未連線，${offlinePage.label} 暫時無法取得資料。", color = MaterialTheme.colorScheme.onSurface)
+                            Button(onClick = { offlinePage = OfflinePage.CONNECTION }, modifier = Modifier.fillMaxWidth()) {
+                                Text("連線設定")
                             }
                         }
                     }
