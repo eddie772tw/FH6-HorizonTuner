@@ -5,6 +5,7 @@ import { commonWorkspaces } from './app/commonWorkspaces';
 import SessionsWorkspaceBridge from './app/SessionsWorkspaceBridge';
 import ToastContainer from './components/common/ToastContainer';
 import { TuneSessionProvider } from './features/tuning/TuneSessionProvider';
+import { CompanionHostBridge } from './features/companion/CompanionHostBridge';
 import { RoadValidationProvider } from './features/road/RoadValidationController';
 import { SessionsStateProvider, useSessionsState } from './features/sessions/SessionsStateProvider';
 import { SessionsRuntime } from './features/sessions/SessionsRuntime';
@@ -26,6 +27,7 @@ export default function App() {
   return <AppProviders>
     <OverlayControlRuntimeProvider>
       <TuneSessionProvider>
+        <CompanionHostBridge />
         <RoadValidationProvider>
           <SessionsStateProvider>
             <FullWorkspaceShell />

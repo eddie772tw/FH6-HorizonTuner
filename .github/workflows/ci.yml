@@ -172,7 +172,7 @@ jobs:
 
   build-portable-sidecar:
     name: Verify & Build Portable Sidecar
-    needs: [backend-static-check]
+    needs: [backend-static-check, frontend-build-test]
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -202,13 +202,19 @@ jobs:
     - name: Verify Windows backend contracts
       run: cargo test --locked --manifest-path backend-rust/Cargo.toml
 
+    - name: Download verified frontend distribution
+      uses: actions/download-artifact@v8
+      with:
+        name: frontend-dist-${{ github.sha }}
+        path: frontend/dist
+
     - name: Build Rust sidecar executable
       run: >
         python scripts/release_metrics.py
         --label "Rust sidecar"
         --artifact dist/server-sidecar-x86_64-pc-windows-msvc.exe
         --metrics-file metrics/sidecar-build.json
-        -- pwsh -NoProfile -File scripts/build_backend.ps1
+        -- pwsh -NoProfile -File scripts/build_backend.ps1 -UseVerifiedFrontendDist
 
     - name: Publish sidecar build metrics
       if: always()

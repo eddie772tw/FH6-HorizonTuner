@@ -1,0 +1,5 @@
+.companion-lan-controls { min-width: 0; }
+.companion-lan-pairing { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; padding: .75rem; border: 1px solid var(--glass-border); border-radius: .5rem; background: var(--surface-1); overflow-wrap: anywhere; }
+.companion-lan-pairing-heading { display: flex; width: 100%; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.companion-lan-token { font-size: clamp(1.4rem, 6vw, 2rem); letter-spacing: .16em; font-variant-numeric: tabular-nums; }
+.companion-lan-qr { display: block; width: min(100%, 300px); height: auto; border-radius: .35rem; }

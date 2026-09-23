@@ -13,7 +13,7 @@ describe('settings section projection', () => {
     expect(sections).toHaveLength(4);
     expect(sections.flatMap(section => section.items)).not.toContain('developerTuning');
     expect(sections.flatMap(section => section.items)).toEqual([
-      'language', 'units', 'telemetry', 'recording', 'discord', 'mcp', 'updates', 'storage',
+      'language', 'units', 'telemetry', 'recording', 'discord', 'mcp', 'companion', 'updates', 'storage',
     ]);
   });
 });

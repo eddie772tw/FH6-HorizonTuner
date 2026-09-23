@@ -47,6 +47,9 @@ interface TelemetryViewProps {
   subTab?: 'live' | 'analysis' | 'drag';
   setSubTab?: (tab: 'live' | 'analysis' | 'drag') => void;
   dashboardOnly?: boolean;
+  /** The tablet mounts one full-size card, without rendering the four hidden canvases. */
+  focusedCard?: TelemetryCardId;
+  pauseForDesktopOverlay?: boolean;
 }
 
 interface BlockRenderConfig {
@@ -63,7 +66,9 @@ interface TelemetryViewContentProps extends TelemetryViewProps {
 
 const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   unitPreference,
-  onUnitPreferenceChange
+  onUnitPreferenceChange,
+  focusedCard,
+  pauseForDesktopOverlay = true,
 }) => {
   const [isHudPaused, setIsHudPaused] = useState<boolean>(false);
   const [showUnitSettings, setShowUnitSettings] = useState(false);
@@ -106,7 +111,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   useEffect(() => {
     const channel = new BroadcastChannel('horizon_tuner_hud_channel');
     const checkConfig = (cfg: any) => {
-      if (cfg && cfg.enabled && cfg.pauseTelemetryViewWhenActive) {
+      if (pauseForDesktopOverlay && cfg && cfg.enabled && cfg.pauseTelemetryViewWhenActive) {
         setIsHudPaused(true);
         (window as any).__IS_HUD_PAUSED__ = true;
       } else {
@@ -129,7 +134,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
     return () => {
       channel.close();
     };
-  }, []);
+  }, [pauseForDesktopOverlay]);
 
   const [showPopover, setShowPopover] = useState<boolean>(isHudPaused);
 
@@ -236,13 +241,13 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
         </div>
       </div>
 
-      <div className="d-grid gap-3 flex-grow-1 telemetry-live-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
+      <div className="d-grid gap-3 flex-grow-1 telemetry-live-grid" style={{ gridTemplateColumns: focusedCard ? 'minmax(0, 1fr)' : 'repeat(6, 1fr)', gridTemplateRows: focusedCard ? 'minmax(0, 1fr)' : '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
 
           {/* BLOCK 1: Row 1 Left (Span 2 / 6 = 33.3%) - Driver Cockpit Cluster */}
-          <TelemetryCardShell
+          {(!focusedCard || focusedCard === 'driver') && <TelemetryCardShell
             id="driver"
             title={t("Driver Inputs & Engine")}
-            gridColumn="span 2"
+            gridColumn={focusedCard ? '1' : 'span 2'}
             expanded={expandedCard === 'driver'}
             expandable={false}
             onClose={closeExpandedCard}
@@ -265,13 +270,13 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
                 </div>
               </div>
             </TelemetryCardLayout>
-          </TelemetryCardShell>
+          </TelemetryCardShell>}
 
           {/* BLOCK 2: Row 1 Center (Span 2 / 6 = 33.3%) - Dual Trace Center */}
-          <TelemetryCardShell
+          {(!focusedCard || focusedCard === 'traces') && <TelemetryCardShell
             id="traces"
             title={t("Live Telemetry Traces")}
-            gridColumn="span 2"
+            gridColumn={focusedCard ? '1' : 'span 2'}
             expanded={expandedCard === 'traces'}
             onExpand={() => expandCard('traces')}
             onClose={closeExpandedCard}
@@ -288,13 +293,13 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
                 <PowerTorqueCanvas height="100%" enabled={renderConfig.traces} />
               </div>
             </TelemetryCardLayout>
-          </TelemetryCardShell>
+          </TelemetryCardShell>}
 
           {/* BLOCK 3: Row 1 Right (Span 2 / 6 = 33.3%) - Dynamics Summary & G-Radar */}
-          <TelemetryCardShell
+          {(!focusedCard || focusedCard === 'dynamics') && <TelemetryCardShell
             id="dynamics"
             title={t("Vehicle Dynamics Overview")}
-            gridColumn="span 2"
+            gridColumn={focusedCard ? '1' : 'span 2'}
             expanded={expandedCard === 'dynamics'}
             onExpand={() => expandCard('dynamics')}
             onClose={closeExpandedCard}
@@ -311,13 +316,13 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
                 <GForceRadar renderRadar={renderConfig.dynamicsRadar} />
               </div>
             </TelemetryCardLayout>
-          </TelemetryCardShell>
+          </TelemetryCardShell>}
 
           {/* BLOCK 4: Row 2 Left (Span 3 / 6 = 50%) - Tire Grip & Status */}
-          <TelemetryCardShell
+          {(!focusedCard || focusedCard === 'tires') && <TelemetryCardShell
             id="tires"
             title={t("Tire Grip & Status")}
-            gridColumn="span 3"
+            gridColumn={focusedCard ? '1' : 'span 3'}
             expanded={expandedCard === 'tires'}
             onExpand={() => expandCard('tires')}
             onClose={closeExpandedCard}
@@ -332,13 +337,13 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
               <TireRadar title={t("Rear Left")} isLeft={true} tireIdx={2} renderCharts={renderConfig.tireRadar} />
               <TireRadar title={t("Rear Right")} isLeft={false} tireIdx={3} renderCharts={renderConfig.tireRadar} />
             </TelemetryCardLayout>
-          </TelemetryCardShell>
+          </TelemetryCardShell>}
 
           {/* BLOCK 5: Row 2 Right (Span 3 / 6 = 50%) - Suspension Travel */}
-          <TelemetryCardShell
+          {(!focusedCard || focusedCard === 'suspension') && <TelemetryCardShell
             id="suspension"
             title={t("Suspension Travel")}
-            gridColumn="span 3"
+            gridColumn={focusedCard ? '1' : 'span 3'}
             expanded={expandedCard === 'suspension'}
             onExpand={() => expandCard('suspension')}
             onClose={closeExpandedCard}
@@ -361,7 +366,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
               <SuspensionBar title={t("Rear Left")} isLeft={true} tireIdx={2} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
               <SuspensionBar title={t("Rear Right")} isLeft={false} tireIdx={3} renderHistoryTrace={renderConfig.suspensionTrace} displayMode={suspensionTravelMode} />
             </TelemetryCardLayout>
-          </TelemetryCardShell>
+          </TelemetryCardShell>}
 
       </div>
       <UnitSettingsSidebar

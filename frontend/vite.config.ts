@@ -180,6 +180,7 @@ export default defineConfig(async () => ({
       input: {
         main: path.resolve(import.meta.dirname, "index.html"),
         lite: path.resolve(import.meta.dirname, "lite/index.html"),
+        companion: path.resolve(import.meta.dirname, "companion/index.html"),
       },
       output: {
         manualChunks(id) {

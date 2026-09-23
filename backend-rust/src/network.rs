@@ -1,5 +1,8 @@
 //! HTTP/WebSocket adapter with bounded delivery, independent of Tauri.
-use crate::error::{ApiError, ApiResult};
+use crate::{
+    companion::CompanionService,
+    error::{ApiError, ApiResult},
+};
 use axum::{
     body::{to_bytes, Body},
     extract::{
@@ -96,6 +99,102 @@ pub fn router(backend: Arc<dyn Backend>) -> Router {
         )
         .fallback(move |request| http_request(backend.clone(), request))
         .layer(middleware::from_fn(origin_security))
+}
+
+/// The LAN listener deliberately exposes only the Companion's data path.
+/// The normal loopback router also contains host controls and administrative APIs.
+pub fn lan_router(backend: Arc<dyn Backend>, companion: Arc<CompanionService>) -> Router {
+    let ws_backend = backend.clone();
+    let ws_companion = companion.clone();
+    Router::new()
+        .route(
+            "/ws/telemetry",
+            get(move |headers, upgrade| {
+                lan_ws(ws_backend.clone(), ws_companion.clone(), headers, upgrade)
+            }),
+        )
+        .fallback(move |request| lan_http(backend.clone(), companion.clone(), request))
+}
+
+fn lan_host_and_origin_allowed(headers: &HeaderMap, companion: &CompanionService) -> bool {
+    let Some(host) = headers.get("host").and_then(|h| h.to_str().ok()) else {
+        return false;
+    };
+    let Ok(address) = host.parse::<std::net::SocketAddr>() else {
+        return false;
+    };
+    if Some(address.port()) != companion.get_lan_port() {
+        return false;
+    }
+    let std::net::IpAddr::V4(ip) = address.ip() else {
+        return false;
+    };
+    if !ip.is_loopback() && !CompanionService::detect_lan_ips().contains(&ip.to_string()) {
+        return false;
+    }
+    match headers.get("origin") {
+        None => true, // Native Android pairing requests do not send Origin.
+        Some(origin) => origin
+            .to_str()
+            .ok()
+            .is_some_and(|origin| origin == format!("http://{host}")),
+    }
+}
+
+fn lan_session(headers: &HeaderMap, companion: &CompanionService) -> bool {
+    headers
+        .get_all("cookie")
+        .iter()
+        .filter_map(|header| header.to_str().ok())
+        .flat_map(|header| header.split(';'))
+        .filter_map(|part| part.trim().strip_prefix("companion_session="))
+        .any(|token| companion.validate_session(token))
+}
+
+fn lan_allowed_http(method: &Method, path: &str) -> bool {
+    let Ok(path) = percent_encoding::percent_decode_str(path).decode_utf8() else {
+        return false;
+    };
+    match (method, path.as_ref()) {
+        (&Method::POST, "/api/companion/pair")
+        | (&Method::GET, "/api/companion/workflow")
+        | (&Method::POST, "/api/companion/commands") => true,
+        (&Method::GET, path) => path.starts_with("/companion/") || path.starts_with("/assets/"),
+        _ => false,
+    }
+}
+
+async fn lan_http(
+    backend: Arc<dyn Backend>,
+    companion: Arc<CompanionService>,
+    request: Request<Body>,
+) -> Response {
+    if !lan_host_and_origin_allowed(request.headers(), &companion) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let path = request.uri().path();
+    if !lan_allowed_http(request.method(), path) {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    if path != "/api/companion/pair" && !lan_session(request.headers(), &companion) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    http_request(backend, request).await
+}
+
+async fn lan_ws(
+    backend: Arc<dyn Backend>,
+    companion: Arc<CompanionService>,
+    headers: HeaderMap,
+    upgrade: WebSocketUpgrade,
+) -> Response {
+    if !lan_host_and_origin_allowed(&headers, &companion) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    if !lan_session(&headers, &companion) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    upgrade.on_upgrade(move |socket| socket_loop(socket, backend, "json"))
 }
 pub fn allowed_origin(origin: Option<&str>) -> bool {
     let Some(origin) = origin.filter(|s| !s.is_empty()) else {

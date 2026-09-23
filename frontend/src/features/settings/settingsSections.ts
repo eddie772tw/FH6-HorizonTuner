@@ -7,6 +7,7 @@ export type SettingsSectionItem =
   | 'recording'
   | 'discord'
   | 'mcp'
+  | 'companion'
   | 'developerTuning'
   | 'updates'
   | 'storage';
@@ -20,7 +21,7 @@ export interface SettingsSectionProjection {
 const BASE_SECTIONS: readonly SettingsSectionProjection[] = [
   { id: 'general', title: 'General', items: ['language', 'units'] },
   { id: 'telemetry', title: 'Telemetry', items: ['telemetry', 'recording'] },
-  { id: 'integrations', title: 'Integrations', items: ['discord', 'mcp'] },
+  { id: 'integrations', title: 'Integrations', items: ['discord', 'mcp', 'companion'] },
   { id: 'maintenance', title: 'Maintenance', items: ['updates', 'storage'] },
 ];
 

@@ -1,8 +1,35 @@
-param([switch]$DebugBuild)
+param(
+    [switch]$DebugBuild,
+    [switch]$UseVerifiedFrontendDist
+)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $projectRoot
 try {
+    $companionEntry = Join-Path $projectRoot 'frontend/dist/companion/index.html'
+    $frontendAssets = Join-Path $projectRoot 'frontend/dist/assets'
+    if ($UseVerifiedFrontendDist) {
+        if (-not (Test-Path -LiteralPath $companionEntry -PathType Leaf)) {
+            throw "Verified frontend distribution is missing the companion entrypoint: $companionEntry"
+        }
+        if (-not (Test-Path -LiteralPath $frontendAssets -PathType Container)) {
+            throw "Verified frontend distribution is missing its assets directory: $frontendAssets"
+        }
+    } else {
+        Write-Host 'Building frontend distribution before compiling the Rust sidecar.'
+        & pnpm --prefix frontend run build
+        if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed; refusing to compile a sidecar with stale assets.' }
+    }
+
+    if (-not (Test-Path -LiteralPath $companionEntry -PathType Leaf)) {
+        throw "Frontend distribution is missing the companion entrypoint: $companionEntry"
+    }
+
+    if ($env:OS -eq 'Windows_NT' -and $env:FH6_REQUIRE_ADB -ne '0') {
+        & pwsh -NoProfile -File (Join-Path $projectRoot 'scripts/prepare_adb.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'ADB staging failed; refusing to compile the Windows sidecar.' }
+    }
+
     $buildArgs = @('build', '--locked', '--manifest-path', 'backend-rust/Cargo.toml')
     if (-not $DebugBuild) { $buildArgs += '--release' }
     & cargo @buildArgs

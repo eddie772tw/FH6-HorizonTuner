@@ -1,0 +1,41 @@
+name: Android Companion CI
+
+on:
+  pull_request:
+    paths:
+      - "companion/**"
+      - ".github/workflows/companion.yml"
+  push:
+    branches:
+      - main
+      - "feature/**"
+    paths:
+      - "companion/**"
+      - ".github/workflows/companion.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  companion:
+    name: Android Companion tests, lint, and assemble
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: companion
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+
+      - name: Run protocol tests, Android lint, and debug assemble
+        run: bash ./gradlew --no-daemon --stacktrace :protocol-core:test :app:lintDebug :app:assembleDebug

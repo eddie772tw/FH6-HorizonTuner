@@ -33,6 +33,13 @@ frontend/src-tauri/target/
 frontend/src-tauri/gen/
 frontend/src-tauri/bin/
 
+# Gradle & Android build outputs
+.gradle/
+**/build/
+companion/.gradle/
+companion/.kotlin/
+companion/**/build/
+
 # User settings, runtime telemetry logs, and auto-generated data
 /settings.json
 /backend/settings.json
@@ -107,6 +114,7 @@ config/discord.local.json
 id_rsa*
 
 /scratch
+/.tools/adb/
 /backend-rust/target/
 .agents/security_data.json
 .agents/security_report.md

@@ -42,6 +42,11 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
 * **HorizonTuner-cli AI Agent Command-Line Tool (HorizonTuner-cli)**:
   - Official CLI tool (`fh6-agent.bat` or `python -m backend.agent_cli`) designed for AI Agents, automated scripts, and terminal runners with zero third-party dependencies (Python standard library only).
   - Dual online/offline workflow: supports online readiness/telemetry probe (`status`), live dynamics diagnosis (`diagnose`), car specifications (`spec`), and offline deterministic tuning solvers (`tune`) with `--json` machine-readable output. See [Agent CLI Guide](docs/guides/agent-cli-guide.md).
+* **Android Companion (development)**:
+  - A native Jetpack Compose connection shell hosts an Android WebView that loads the shared `frontend/dist/companion/index.html`, reusing the desktop five telemetry cards and four-step workflow. Android HUD display is deferred.
+  - `PC TuneSessionProvider` remains the sole owner of tuning and engine measurement. Profile, workflow, and measurement commands use queue/ack semantics with `profileKey`, host lease, and client heartbeat protection against stale results and disconnected writes.
+  - The currently verifiable development mode uses the PC Full app's loopback HTTP service over USB. Choose the tablet in PC Companion settings and press **Connect USB device**; the bundled ADB runtime sets up reverse forwarding and opens the app. Selection is required when multiple devices are present. LAN, QR scanning, mDNS, RFCOMM, and a native offline cache remain planned and are not advertised as available.
+  - Android and protocol gate: `./gradlew :protocol-core:test :app:lintDebug :app:assembleDebug`. These checks do not constitute physical-device, USB, or gameplay end-to-end acceptance. See [Companion architecture and acceptance boundary](docs/architecture/companion-app-evaluation.md) and [Companion README](companion/README.md).
 * **Drag Launch Test & Acceleration Analyzer**:
   - Automatic timing tests for 0-100 km/h, 0-200 km/h, and 1/4 mile (400m) launch acceleration.
   - Speed/RPM timeline chart playback and historical session comparison.

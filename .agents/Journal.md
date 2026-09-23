@@ -1,5 +1,19 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-23 / Android Google Play 上架整備、RFC 1918 私有 IP 白名單與 Release AAB 構建合約（Antigravity as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；落實 Issue #433 與 PR #425 Google Play 商店正式上架規範，完成網路安全加固、權限最小化、模式分流與 Release AAB 打包。
+- **Learning**：
+  1. **Android Network Security Config 與 IP 白名單之雙層明文防禦**：Android 的 `network-security-config.xml` 中 `<domain>` 標籤不支援通配 IP 或 CIDR 遮罩（如 `192.168.*.*`）。若要滿足本地區域網路 (LAN) 通訊同時禁止公網明文 HTTP，最佳架構實踐為：在 `network_security_config.xml` 中移除全域 `usesCleartextTraffic="true"` 並嚴格規範信任錨點；並在應用層（`MainActivity.kt` 的 `buildOrigin` 與 `buildCompanionUrl`）實施 RFC 1918 私有 IP（`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`）與 Loopback/Link-Local 強制白名單校驗，嚴禁向公網發送明文 HTTP 請求。
+  2. **Release AAB 簽名降級與 ProGuard WebView 保護**：在無正式上傳金鑰環境（CI/本地自動化測試）中執行 `:app:bundleRelease` 時，透過 Gradle `signingConfigs` 友善降級 fallback 至 Debug 簽名，可確保 AAB 產物構建可重現；同時必須在 `proguard-rules.pro` 中加入 `-keepattributes JavascriptInterface` 與 `@android.webkit.JavascriptInterface` 保留規則，防止 R8 混淆破壞 WebView 與 Native Compose 之間的通訊 Bridge。
+  3. **正式版與開發版模式分流之使用者體驗護欄**：Google Play 面向的一般玩家不應被複雜的 USB/ADB 連線選項困擾。透過 `BuildConfig.DEBUG` 判定，正式發行版預設僅呈現直覺的相機 QR 掃碼配對，將 USB/ADB 入口收折於進階選項（標示為開發者選項）；開發版維持快速切換，兼顧生產純粹度與本機偵錯效率。
+- **Action**：
+  1. 建立 `companion/app/src/main/res/xml/network_security_config.xml` 與 `companion/app/proguard-rules.pro`。
+  2. 修改 `AndroidManifest.xml`、`build.gradle.kts`、`MainActivity.kt`、`CompanionShell.kt`、`LanQrScanner.kt`。
+  3. 撰寫 `docs/architecture/google-play-distribution.md` (V1)。
+- **Evidence**：`:protocol-core:test :app:lintDebug :app:assembleDebug :app:bundleRelease` 全部通過；產出 `app-release.aab` (19.29 MB)；前端 941 tests、後端 47 tests、pytest 349 tests 全部通過。
+- **Skills**：`pr-author-maintainer`、`portable-release-validation`。
+
 ## 2026-09-22 / GitHub Actions Host Diagnostics 建置失敗修復（Gemini as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；修復 GitHub Actions 定時與手動執行的 `Host Diagnostics` 工作流程始終在 `Build Full Portable Tauri Executable` 步驟失敗的問題。
@@ -2735,3 +2749,23 @@
 - **CI learning**：MoTeC CSV 是 byte contract，須避免 Git 正規化 CRLF。Road JSON／SQLite 的 immutable equality 需 `serde_json/float_roundtrip`；以 CI 捕捉到的 `1790061494.4082587` 在本地重現單一 ULP 漂移，再修正解析器，保留精確相等 assertion。CodeQL path finding 的修正改為以受信任目錄列舉項目解析路徑，避免 `exists()` 略過 dangling link；Windows junction／case alias／dangling junction 均有回歸驗證。
 - **Reference**：[Rust 後端指南](../docs/backend-rust/README.md)、[開發指南](../docs/guides/development.md)。
 - **CodeQL source audit**：SARIF analysis `1816409922` 的三條剩餘資料流皆從 WebSocket handler 的 `State<Arc<dyn Backend>>` 出發，經 server-owned root 讀取固定 `hud_config.json`；非客戶端提供路徑。依 [Axum closure capture](https://docs.rs/axum/latest/axum/#using-closure-captures) 將啟動時 backend 注入與 request extractors 分離，讓 [CodeQL Axum parameter model](https://github.com/github/codeql/blob/main/rust/ql/lib/codeql/rust/frameworks/axum.model.yml) 保留真正 request sources；未排除規則或 dismiss alert。既有三條 WS I/O 及新增 foreign-Origin 403 契約通過，檔案 containment 防護保留。
+
+## 2026-09-23 / Companion 平板整合與版型驗收
+
+- **Scope**：Android Compose/WebView 外殼、Tauri 單一算牌 owner 的工作流 bridge、Rust 命令佇列與回覆、五張共用遙測卡、內嵌 Windows ADB 及多設備選單；本輪依使用者調整暫移 APP HUD。
+- **實機發現**：Android WebView 中 `html/body/#root` 被既有 flex 規則壓為 0 高，即使子層有 `100vh` 仍導致方向盤圓弧過小；根容器以 visualViewport 高度固定後，五卡皆可用。平板旋轉後 `matchMedia('(orientation: portrait)')` 曾仍回 false，寬度斷點較可靠；390px 模擬顯示 Tires/Suspension 兩欄文字擠壓，改單欄卡內捲動。
+- **連線與界線**：ADB `reverse --list` 的首欄在該平板回 `UsbFfs`，不能假定等於裝置 serial；連線需以指定 serial 的反向規則與實際 port 驗證。受控 324-byte UDP 回放在 Android 實機顯示五卡；APP 草稿輸入到 Tauri working draft、桌面算牌結果回 APP 均已觀察，但不等於 FH6 gameplay 驗收。APP HUD 預覽曾遭 Android `lmkd watchdog` 終止，依新範圍移除入口與專用程式碼，桌面 HUD 保留。
+
+## 2026-09-23 / Companion LAN 與相機 QR 配對
+
+- **Scope**：在既有 USB 除錯模式之外，Rust sidecar 增設獨立 LAN listener、限縮 Companion 路徑、一次性短碼與含所有非 loopback IPv4／實際 port／到期時間的 QR 契約；Android 依序嘗試各位址並保存配對工作階段，桌面設定產生 QR，連線狀態合成單一三色 badge。Android launcher 改用 `frontend/src-tauri/icons/icon.ico`；根目錄 `app.ico` 實為另一專案圖樣，未採用。
+- **實機發現**：平板 `bd411745` 不用 `adb reverse`，透過 192.168.4.4 → 192.168.4.3:8002 的 Wi-Fi 連上 Companion；工作流程命令由 Android 送出、桌面 host exchange 收到並 ack，Android 再讀到 applied 與 snapshot。原生 WebView 對 LAN HTTP 無 `crypto.randomUUID()`，改用 `crypto.getRandomValues()` UUID。MIUI 的 CameraX 預設 SurfaceView 在 Compose Dialog 中全黑，`PreviewView.ImplementationMode.COMPATIBLE` 後實機截圖有即時畫面。
+- **驗證**：Rust `cargo test --locked` 全通過（含 LAN host/origin/session/revocation）；前端 134 files／939 tests 與 build；Python 349 passed／8 deselected、Ruff check／format；Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功，最新 APK 已安裝於平板。LAN listener 未授權靜態與工作流請求 401、拒絕管理 API 404、已認證 WS 101；實機顯示單一黃色 badge「桌面前端未連線」符合 sidecar-only 情境。
+- **QR 實機驗收**：使用者以平板相機掃描本輪 sidecar 產生、含 192.168.12.3／192.168.4.3 的五分鐘 QR 後回報已連線。後端裝置紀錄的同一平板 `paired_at=2026-09-23T05:31:06Z` 證實本輪確實重新配對；重新安裝後的 Android SharedPreferences 與 WebView Connection 均顯示成功保存的 192.168.4.3:8002，代表前一個候選位址未成而落到第二個。後端曾顯示 `active_connections=1`，實機只有單一黃色「桌面前端未連線」badge，符合 sidecar-only 情境。沒有檔案或相簿匯入 QR 的產品入口。
+- **驗收界線**：控制式工作流測試不等於實際 FH6 駕駛；本輪沒有將桌面 Tauri 主視窗叫到前景，故 QR 後的綠色雙端狀態仍待桌面前端連上時確認。Google Play 發行整備另追蹤 #433，非本輪完成事項。
+
+## 2026-09-23 / Companion 原生外框與一致化 UI
+
+- **決策**：Android Compose 統一持有 Telemetry／Tuning／Connection 分頁、離線提示、QR 優先的連線設定、折疊式手動欄位與診斷資訊；只有連線後的共用遙測圖表與 Tuning 內容由 WebView 呈現。原生與 WebView 對齊深色面板、青色作用中分頁及藍色操作按鈕；初次連線前延後建立 WebView。
+- **實機驗證**：平板 `bd411745` 在 LAN 連線前後使用同一組 Compose 分頁；Telemetry 五卡、Tuning 等待桌面快照頁、Connection 進階欄位均可切換。切換 LAN／USB 會先斷開舊連線，避免模式與實際通道不一致；USB 無反向轉發時顯示 `ERR_CONNECTION_REFUSED`、重試與返回主畫面，返回後仍可用原生分頁。連線指示區分 WebView 載入、Companion 後端輪詢及桌面前端心跳，以免後端離線誤報為只有前端未連線。
+- **驗證**：Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功；前端 135 files／941 tests 與 production build 成功；Python Ruff check／format 與 349 passed／8 deselected。實機 sidecar-only 連線為黃色「桌面前端未連線」，停止測試 sidecar 後後端輪詢轉 Offline、badge 轉紅，沒有繼續誤報黃色；CI 結果見 PR #425 的最終驗證紀錄。

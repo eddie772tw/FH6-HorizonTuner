@@ -26,6 +26,29 @@ function normalizePath(path: string): string {
   return path.startsWith("/") ? path : `/${path}`;
 }
 
+/** Keep requests made by the Companion WebView on the host that served it. */
+function companionPath(path: string): string {
+  const normalized = normalizePath(path);
+  if (normalized.startsWith("//") || /[\\\u0000-\u001f\u007f#]/.test(normalized)) {
+    throw new Error("Invalid companion request path.");
+  }
+  const [pathname, query, ...extra] = normalized.split("?");
+  if (extra.length) throw new Error("Invalid companion request path.");
+  const segments = pathname.slice(1).split("/").map(segment => {
+    let decoded: string;
+    try { decoded = decodeURIComponent(segment); }
+    catch { throw new Error("Invalid companion request path."); }
+    if (decoded === "." || decoded === ".." || decoded.includes("/") || decoded.includes("\\")) {
+      throw new Error("Invalid companion request path.");
+    }
+    return encodeURIComponent(decoded);
+  });
+  const search = query === undefined ? "" : [...new URLSearchParams(query)].map(
+    ([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+  ).join("&");
+  return `/${segments.join("/")}${search ? `?${search}` : ""}`;
+}
+
 export function createBackendTransport(
   port: number,
   fetchImplementation: FetchImplementation = fetch,
@@ -54,6 +77,24 @@ let backendTransport = createBackendTransport(PREFERRED_BACKEND_PORT);
  */
 export function configureBackendTransport(port: number): void {
   backendTransport = createBackendTransport(port);
+}
+
+/** Companion assets and APIs share the selected PC origin (including adb reverse). */
+export function configureCompanionTransport(): void {
+  const base = new URL(window.location.origin);
+  if (!['http:', 'https:'].includes(base.protocol)) throw new Error('Companion requires an HTTP host.');
+  backendTransport = {
+    port: Number(base.port || (base.protocol === 'https:' ? 443 : 80)),
+    httpUrl: path => new URL(companionPath(path), base).href,
+    webSocketUrl: path => {
+      const url = new URL(companionPath(path), base);
+      url.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
+      return url.href;
+    },
+    // A path-only browser request cannot retarget the host via a WebSocket frame
+    // or an API value. The same-origin response still uses the selected PC port.
+    fetch: async (path, init) => fetch(companionPath(path), init),
+  };
 }
 
 export function getBackendPort(): number {

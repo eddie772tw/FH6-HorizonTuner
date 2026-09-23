@@ -4,6 +4,7 @@ import {
   backendHttpUrl,
   backendWebSocketUrl,
   configureBackendTransport,
+  configureCompanionTransport,
   createBackendTransport,
 } from "./backend";
 
@@ -41,6 +42,36 @@ describe("backend URL helpers", () => {
 
   it("rejects invalid sidecar ports", () => {
     expect(() => createBackendTransport(0)).toThrow("Invalid backend port: 0");
+  });
+
+  it('keeps companion HTTP and telemetry on the selected host origin and port', () => {
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:53124' } });
+    configureCompanionTransport();
+    expect(backendHttpUrl('/api/companion/workflow')).toBe('http://127.0.0.1:53124/api/companion/workflow');
+    expect(backendWebSocketUrl('/ws/telemetry')).toBe('ws://127.0.0.1:53124/ws/telemetry');
+  });
+
+  it('keeps companion fetches relative to the selected host', async () => {
+    const fetchImplementation = vi.fn().mockResolvedValue(new Response());
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:53124' } });
+    vi.stubGlobal('fetch', fetchImplementation);
+    configureCompanionTransport();
+
+    await backendFetch('/api/companion/workflow?clientId=abc');
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      '/api/companion/workflow?clientId=abc',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    await backendFetch('/api/companion/workflow?clientId=%2F%2Fevil.example');
+    expect(fetchImplementation).toHaveBeenLastCalledWith(
+      '/api/companion/workflow?clientId=%2F%2Fevil.example',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+
+    for (const path of ['//evil.example/api', '/\\evil.example/api', '/api/../admin', '/api/%2e%2e/admin', '/api/%2f%2fevil']) {
+      await expect(backendFetch(path)).rejects.toThrow('Invalid companion request path.');
+    }
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 
   it("aborts a backend request that exceeds its timeout", async () => {
