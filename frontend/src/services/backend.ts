@@ -26,6 +26,24 @@ function normalizePath(path: string): string {
   return path.startsWith("/") ? path : `/${path}`;
 }
 
+/** Keep requests made by the Companion WebView on the host that served it. */
+function companionPath(path: string): string {
+  const normalized = normalizePath(path);
+  if (normalized.startsWith("//") || /[\\\u0000-\u001f\u007f#]/.test(normalized)) {
+    throw new Error("Invalid companion request path.");
+  }
+  const pathname = normalized.split("?", 1)[0];
+  for (const segment of pathname.split("/")) {
+    let decoded: string;
+    try { decoded = decodeURIComponent(segment); }
+    catch { throw new Error("Invalid companion request path."); }
+    if (decoded === "." || decoded === ".." || decoded.includes("/") || decoded.includes("\\")) {
+      throw new Error("Invalid companion request path.");
+    }
+  }
+  return normalized;
+}
+
 export function createBackendTransport(
   port: number,
   fetchImplementation: FetchImplementation = fetch,
@@ -62,13 +80,15 @@ export function configureCompanionTransport(): void {
   if (!['http:', 'https:'].includes(base.protocol)) throw new Error('Companion requires an HTTP host.');
   backendTransport = {
     port: Number(base.port || (base.protocol === 'https:' ? 443 : 80)),
-    httpUrl: path => new URL(normalizePath(path), base).href,
+    httpUrl: path => new URL(companionPath(path), base).href,
     webSocketUrl: path => {
-      const url = new URL(normalizePath(path), base);
+      const url = new URL(companionPath(path), base);
       url.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
       return url.href;
     },
-    fetch: (path, init) => fetch(new URL(normalizePath(path), base), init),
+    // A path-only browser request cannot retarget the host via a WebSocket frame
+    // or an API value. The same-origin response still uses the selected PC port.
+    fetch: async (path, init) => fetch(companionPath(path), init),
   };
 }
 

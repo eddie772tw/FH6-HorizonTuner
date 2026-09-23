@@ -51,6 +51,24 @@ describe("backend URL helpers", () => {
     expect(backendWebSocketUrl('/ws/telemetry')).toBe('ws://127.0.0.1:53124/ws/telemetry');
   });
 
+  it('keeps companion fetches relative to the selected host', async () => {
+    const fetchImplementation = vi.fn().mockResolvedValue(new Response());
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:53124' } });
+    vi.stubGlobal('fetch', fetchImplementation);
+    configureCompanionTransport();
+
+    await backendFetch('/api/companion/workflow?clientId=abc');
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      '/api/companion/workflow?clientId=abc',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+
+    for (const path of ['//evil.example/api', '/\\evil.example/api', '/api/../admin', '/api/%2e%2e/admin', '/api/%2f%2fevil']) {
+      await expect(backendFetch(path)).rejects.toThrow('Invalid companion request path.');
+    }
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+  });
+
   it("aborts a backend request that exceeds its timeout", async () => {
     const fetchImplementation = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => (
       new Promise<Response>((_, reject) => {
