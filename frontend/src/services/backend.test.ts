@@ -62,11 +62,16 @@ describe("backend URL helpers", () => {
       '/api/companion/workflow?clientId=abc',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+    await backendFetch('/api/companion/workflow?clientId=%2F%2Fevil.example');
+    expect(fetchImplementation).toHaveBeenLastCalledWith(
+      '/api/companion/workflow?clientId=%2F%2Fevil.example',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
 
     for (const path of ['//evil.example/api', '/\\evil.example/api', '/api/../admin', '/api/%2e%2e/admin', '/api/%2f%2fevil']) {
       await expect(backendFetch(path)).rejects.toThrow('Invalid companion request path.');
     }
-    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 
   it("aborts a backend request that exceeds its timeout", async () => {

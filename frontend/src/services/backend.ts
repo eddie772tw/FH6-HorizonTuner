@@ -32,16 +32,21 @@ function companionPath(path: string): string {
   if (normalized.startsWith("//") || /[\\\u0000-\u001f\u007f#]/.test(normalized)) {
     throw new Error("Invalid companion request path.");
   }
-  const pathname = normalized.split("?", 1)[0];
-  for (const segment of pathname.split("/")) {
+  const [pathname, query, ...extra] = normalized.split("?");
+  if (extra.length) throw new Error("Invalid companion request path.");
+  const segments = pathname.slice(1).split("/").map(segment => {
     let decoded: string;
     try { decoded = decodeURIComponent(segment); }
     catch { throw new Error("Invalid companion request path."); }
     if (decoded === "." || decoded === ".." || decoded.includes("/") || decoded.includes("\\")) {
       throw new Error("Invalid companion request path.");
     }
-  }
-  return normalized;
+    return encodeURIComponent(decoded);
+  });
+  const search = query === undefined ? "" : [...new URLSearchParams(query)].map(
+    ([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+  ).join("&");
+  return `/${segments.join("/")}${search ? `?${search}` : ""}`;
 }
 
 export function createBackendTransport(
