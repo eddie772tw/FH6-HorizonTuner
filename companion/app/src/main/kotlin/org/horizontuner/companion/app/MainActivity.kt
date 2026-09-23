@@ -22,28 +22,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -53,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import android.os.Handler
@@ -81,7 +61,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContent {
-            HalfmoonTheme {
+            HalfmoonTheme(darkTheme = true) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     CompanionAppContent(::startTelemetryService, ::stopTelemetryService, autoConnect.value) { autoConnect.value = false }
                 }
@@ -134,7 +114,10 @@ private fun CompanionAppContent(
     var requestedUrl by remember { mutableStateOf<String?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
     var showQrScanner by remember { mutableStateOf(false) }
+    var manualLanExpanded by remember { mutableStateOf(false) }
     var offlinePage by remember { mutableStateOf(OfflinePage.CONNECTION) }
+    var desktopOnline by remember { mutableStateOf(false) }
+    var backendOnline by remember { mutableStateOf(false) }
     val nativeStatusJson = remember { AtomicReference(connectionStatusJson(state, mode, host, port, errorMessage, sessionToken.isNotBlank())) }
     val scope = rememberCoroutineScope()
     fun publishStatus(error: String? = errorMessage) {
@@ -181,6 +164,8 @@ private fun CompanionAppContent(
         requestedUrl = null
         errorMessage = null
         state = WebConnectionState.DISCONNECTED
+        desktopOnline = false
+        backendOnline = false
         offlinePage = OfflinePage.TELEMETRY
         publishStatus(null)
         Unit
@@ -300,7 +285,15 @@ private fun CompanionAppContent(
     }
 
     fun selectMode(value: String) {
-        mode = if (value.equals("LAN", ignoreCase = true)) ConnectionMode.LAN else ConnectionMode.USB
+        val selectedMode = if (value.equals("LAN", ignoreCase = true)) ConnectionMode.LAN else ConnectionMode.USB
+        if (selectedMode != mode && requestedUrl != null) {
+            disconnect()
+            offlinePage = OfflinePage.CONNECTION
+        } else if (selectedMode != mode) {
+            state = WebConnectionState.DISCONNECTED
+            errorMessage = null
+        }
+        mode = selectedMode
         if (mode == ConnectionMode.USB) {
             host = "127.0.0.1"
             port = "8001"
@@ -318,8 +311,8 @@ private fun CompanionAppContent(
         disconnect()
     }
 
-    LaunchedEffect(autoConnect, webView) {
-        if (autoConnect && webView != null) {
+    LaunchedEffect(autoConnect) {
+        if (autoConnect) {
             mode = ConnectionMode.USB
             host = "127.0.0.1"
             port = "8001"
@@ -328,19 +321,66 @@ private fun CompanionAppContent(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-        AndroidView(
+    LaunchedEffect(offlinePage, state, webView) {
+        if (state == WebConnectionState.CONNECTED && offlinePage != OfflinePage.CONNECTION) {
+            webView?.let { publishNativeTab(it, offlinePage) }
+        }
+    }
+
+    LaunchedEffect(requestedUrl, webView) {
+        val endpoint = requestedUrl
+        val view = webView
+        if (endpoint != null && view != null && view.tag != endpoint) {
+            view.tag = endpoint
+            view.loadUrl(endpoint)
+        }
+    }
+
+    CompanionShell(
+        state = CompanionShellState(
+            page = offlinePage,
+            mode = mode,
+            host = host,
+            port = port,
+            pairingToken = pairingToken,
+            paired = sessionToken.isNotBlank(),
+            deviceId = deviceId,
+            connection = state,
+            desktopOnline = desktopOnline,
+            backendOnline = backendOnline,
+            error = errorMessage,
+            manualLanExpanded = manualLanExpanded,
+            webConnected = requestedUrl != null && state == WebConnectionState.CONNECTED,
+        ),
+        actions = CompanionShellActions(
+            selectPage = { offlinePage = it },
+            selectMode = { selectMode(it.name) },
+            setHost = { host = it },
+            setPort = { port = it.filter(Char::isDigit).take(5) },
+            setPairingToken = { pairingToken = it.trim().uppercase() },
+            scanQr = ::requestQrScanner,
+            reconnectLan = ::reconnectLan,
+            pairLan = { loadLanSession(host, port, pairingToken) },
+            connectUsb = { connect(host, port) },
+            disconnect = disconnect,
+            toggleManualLan = { manualLanExpanded = !manualLanExpanded },
+        ),
+    ) {
+        if (requestedUrl != null || webView != null) AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).also { view ->
-                    view.addJavascriptInterface(CompanionJavascriptBridge(nativeStatusJson, connect, disconnect, ::selectMode, ::loadLanSession, ::reconnectLan, ::requestQrScanner), "HorizonTunerCompanion")
+                    view.addJavascriptInterface(CompanionJavascriptBridge(nativeStatusJson, connect, disconnect, ::selectMode, ::loadLanSession, ::reconnectLan, ::requestQrScanner, { desktopOnline = it }, { backendOnline = it }), "HorizonTunerCompanion")
                     configureWebView(view, {
                         state = WebConnectionState.CONNECTED
                         errorMessage = null
+                        if (offlinePage == OfflinePage.CONNECTION) offlinePage = OfflinePage.TELEMETRY
                         publishStatus(null)
                         onServiceStart()
                     }, { message ->
                         state = WebConnectionState.ERROR
+                        desktopOnline = false
+                        backendOnline = false
                         offlinePage = OfflinePage.CONNECTION
                         errorMessage = message
                         requestedUrl = null
@@ -352,69 +392,6 @@ private fun CompanionAppContent(
             },
             update = { webView = it },
         )
-
-        if (requestedUrl == null) {
-            Column(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text("FH6 HorizonTuner Companion", style = MaterialTheme.typography.headlineSmall)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(OfflinePage.TELEMETRY, OfflinePage.TUNING, OfflinePage.CONNECTION).forEach { page ->
-                        if (page == offlinePage) {
-                            Button(onClick = { offlinePage = page }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
-                                Text(page.label, style = MaterialTheme.typography.labelMedium)
-                            }
-                        } else {
-                            OutlinedButton(onClick = { offlinePage = page }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
-                                Text(page.label, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
-                }
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (offlinePage == OfflinePage.CONNECTION) {
-                            Text("連線模式")
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                if (mode == ConnectionMode.USB) Button(onClick = { selectMode("USB") }, modifier = Modifier.weight(1f)) { Text("USB 除錯") }
-                                else OutlinedButton(onClick = { selectMode("USB") }, modifier = Modifier.weight(1f)) { Text("USB 除錯") }
-                                if (mode == ConnectionMode.LAN) Button(onClick = { selectMode("LAN") }, modifier = Modifier.weight(1f)) { Text("區域網路") }
-                                else OutlinedButton(onClick = { selectMode("LAN") }, modifier = Modifier.weight(1f)) { Text("區域網路") }
-                            }
-                            Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
-                            OutlinedTextField(host, { host = it }, label = { Text(if (mode == ConnectionMode.LAN) "PC LAN IP or host" else "USB forwarded host") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                            OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                            if (mode == ConnectionMode.LAN) {
-                                OutlinedTextField(pairingToken, { pairingToken = it }, label = { Text("桌面端配對碼") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                                OutlinedButton(onClick = ::requestQrScanner, enabled = state != WebConnectionState.LOADING, modifier = Modifier.fillMaxWidth()) { Text("掃描 QR") }
-                                if (sessionToken.isNotBlank()) Text("已配對裝置：${deviceId.ifBlank { "Companion" }}", color = MaterialTheme.colorScheme.onSurface)
-                            }
-                            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (mode == ConnectionMode.USB) {
-                                    Button(onClick = { connect(host, port) }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.weight(1f)) {
-                                        Text(if (state == WebConnectionState.ERROR) "重試 USB" else "連接 USB")
-                                    }
-                                } else {
-                                    Button(onClick = { loadLanSession(host, port, pairingToken) }, enabled = state != WebConnectionState.LOADING && pairingToken.isNotBlank(), modifier = Modifier.weight(1f)) { Text("配對並連線") }
-                                    OutlinedButton(onClick = { reconnectLan() }, enabled = state != WebConnectionState.LOADING && sessionToken.isNotBlank(), modifier = Modifier.weight(1f)) { Text("重新連線") }
-                                }
-                            }
-                            OutlinedButton(onClick = { offlinePage = OfflinePage.TELEMETRY }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("返回主畫面")
-                            }
-                        } else {
-                            Text(offlinePage.label, style = MaterialTheme.typography.titleLarge)
-                            Text("PC Companion 尚未連線，${offlinePage.label} 暫時無法取得資料。", color = MaterialTheme.colorScheme.onSurface)
-                            Button(onClick = { offlinePage = OfflinePage.CONNECTION }, modifier = Modifier.fillMaxWidth()) {
-                                Text("連線設定")
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     if (showQrScanner) {
@@ -441,9 +418,9 @@ private fun CompanionAppContent(
     }
 }
 
-private enum class WebConnectionState { DISCONNECTED, LOADING, CONNECTED, ERROR }
-private enum class ConnectionMode { LAN, USB }
-private enum class OfflinePage(val label: String) { TELEMETRY("Telemetry"), TUNING("Tuning"), CONNECTION("Connection") }
+internal enum class WebConnectionState { DISCONNECTED, LOADING, CONNECTED, ERROR }
+internal enum class ConnectionMode { LAN, USB }
+internal enum class OfflinePage(val label: String) { TELEMETRY("Telemetry"), TUNING("Tuning"), CONNECTION("Connection") }
 
 private class CompanionJavascriptBridge(
     private val status: AtomicReference<String>,
@@ -453,6 +430,8 @@ private class CompanionJavascriptBridge(
     private val onPairLan: (String, String, String) -> Unit,
     private val onConnectLan: () -> Unit,
     private val onScanLanQr: () -> Unit,
+    private val onDesktopStatus: (Boolean) -> Unit,
+    private val onBackendStatus: (Boolean) -> Unit,
 ) {
     @JavascriptInterface fun connectionStatus(): String = status.get()
     @JavascriptInterface fun connect(host: String, port: String) { Handler(Looper.getMainLooper()).post { onConnect(host, port) } }
@@ -461,6 +440,13 @@ private class CompanionJavascriptBridge(
     @JavascriptInterface fun pairLan(host: String, port: String, token: String) { Handler(Looper.getMainLooper()).post { onPairLan(host, port, token) } }
     @JavascriptInterface fun connectLan() { Handler(Looper.getMainLooper()).post { onConnectLan() } }
     @JavascriptInterface fun scanLanQr() { Handler(Looper.getMainLooper()).post { onScanLanQr() } }
+    @JavascriptInterface fun updateDesktopStatus(online: Boolean) { Handler(Looper.getMainLooper()).post { onDesktopStatus(online) } }
+    @JavascriptInterface fun updateBackendStatus(online: Boolean) { Handler(Looper.getMainLooper()).post { onBackendStatus(online) } }
+}
+
+private fun publishNativeTab(view: WebView, page: OfflinePage) {
+    val tab = if (page == OfflinePage.TUNING) "tuning" else "telemetry"
+    view.post { view.evaluateJavascript("window.dispatchEvent(new CustomEvent('companion-native-tab', {detail:'$tab'}))", null) }
 }
 
 private fun connectionStatusJson(state: WebConnectionState, mode: ConnectionMode, host: String, port: String, error: String?, paired: Boolean): String =
@@ -469,13 +455,6 @@ private fun connectionStatusJson(state: WebConnectionState, mode: ConnectionMode
 private fun publishConnectionStatus(view: WebView, state: WebConnectionState, mode: ConnectionMode, host: String, port: String, error: String?, paired: Boolean) {
     val json = connectionStatusJson(state, mode, host, port, error, paired)
     view.post { view.evaluateJavascript("window.dispatchEvent(new CustomEvent('companion-native-connection', {detail:$json}))", null) }
-}
-
-private fun connectionLabel(state: WebConnectionState): String = when (state) {
-    WebConnectionState.DISCONNECTED -> "未連線"
-    WebConnectionState.LOADING -> "載入 PC Companion…"
-    WebConnectionState.CONNECTED -> "PC Companion 介面已載入"
-    WebConnectionState.ERROR -> "連線失敗"
 }
 
 private fun buildCompanionUrl(hostInput: String, portInput: String): String? {
@@ -607,14 +586,14 @@ private fun configureWebView(view: WebView, onPageLoaded: () -> Unit, onLoadErro
         }
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-            if (request.isForMainFrame) {
+            if (request.isForMainFrame && sameDocument(request.url, requestedUrl())) {
                 mainFrameLoadFailed = true
                 onLoadError("無法載入 PC Companion：${error.description}")
             }
         }
 
         override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: android.webkit.WebResourceResponse) {
-            if (request.isForMainFrame) {
+            if (request.isForMainFrame && sameDocument(request.url, requestedUrl())) {
                 mainFrameLoadFailed = true
                 onLoadError("PC Companion 回傳 HTTP ${response.statusCode}")
             }
@@ -622,7 +601,7 @@ private fun configureWebView(view: WebView, onPageLoaded: () -> Unit, onLoadErro
 
         override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
             handler.cancel()
-            onLoadError("TLS 憑證驗證失敗")
+            if (sameDocument(Uri.parse(error.url), requestedUrl())) onLoadError("TLS 憑證驗證失敗")
         }
     }
 }

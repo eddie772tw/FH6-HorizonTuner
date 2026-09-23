@@ -2747,5 +2747,11 @@
 - **Scope**：在既有 USB 除錯模式之外，Rust sidecar 增設獨立 LAN listener、限縮 Companion 路徑、一次性短碼與含所有非 loopback IPv4／實際 port／到期時間的 QR 契約；Android 依序嘗試各位址並保存配對工作階段，桌面設定產生 QR，連線狀態合成單一三色 badge。Android launcher 改用 `frontend/src-tauri/icons/icon.ico`；根目錄 `app.ico` 實為另一專案圖樣，未採用。
 - **實機發現**：平板 `bd411745` 不用 `adb reverse`，透過 192.168.4.4 → 192.168.4.3:8002 的 Wi-Fi 連上 Companion；工作流程命令由 Android 送出、桌面 host exchange 收到並 ack，Android 再讀到 applied 與 snapshot。原生 WebView 對 LAN HTTP 無 `crypto.randomUUID()`，改用 `crypto.getRandomValues()` UUID。MIUI 的 CameraX 預設 SurfaceView 在 Compose Dialog 中全黑，`PreviewView.ImplementationMode.COMPATIBLE` 後實機截圖有即時畫面。
 - **驗證**：Rust `cargo test --locked` 全通過（含 LAN host/origin/session/revocation）；前端 134 files／939 tests 與 build；Python 349 passed／8 deselected、Ruff check／format；Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功，最新 APK 已安裝於平板。LAN listener 未授權靜態與工作流請求 401、拒絕管理 API 404、已認證 WS 101；實機顯示單一黃色 badge「桌面前端未連線」符合 sidecar-only 情境。
-- **QR 實機驗收**：使用者以平板相機掃描本輪 sidecar 產生、含 192.168.12.3／192.168.4.3 的五分鐘 QR 後回報已連線；後端 `active_connections=1`，實機 WebView Connection 顯示 192.168.12.3:8002、單一黃色「桌面前端未連線」badge，與 sidecar-only 情境一致。沒有檔案或相簿匯入 QR 的產品入口。
+- **QR 實機驗收**：使用者以平板相機掃描本輪 sidecar 產生、含 192.168.12.3／192.168.4.3 的五分鐘 QR 後回報已連線。後端裝置紀錄的同一平板 `paired_at=2026-09-23T05:31:06Z` 證實本輪確實重新配對；重新安裝後的 Android SharedPreferences 與 WebView Connection 均顯示成功保存的 192.168.4.3:8002，代表前一個候選位址未成而落到第二個。後端曾顯示 `active_connections=1`，實機只有單一黃色「桌面前端未連線」badge，符合 sidecar-only 情境。沒有檔案或相簿匯入 QR 的產品入口。
 - **驗收界線**：控制式工作流測試不等於實際 FH6 駕駛；本輪沒有將桌面 Tauri 主視窗叫到前景，故 QR 後的綠色雙端狀態仍待桌面前端連上時確認。Google Play 發行整備另追蹤 #433，非本輪完成事項。
+
+## 2026-09-23 / Companion 原生外框與一致化 UI
+
+- **決策**：Android Compose 統一持有 Telemetry／Tuning／Connection 分頁、離線提示、QR 優先的連線設定、折疊式手動欄位與診斷資訊；只有連線後的共用遙測圖表與 Tuning 內容由 WebView 呈現。原生與 WebView 對齊深色面板、青色作用中分頁及藍色操作按鈕；初次連線前延後建立 WebView。
+- **實機驗證**：平板 `bd411745` 在 LAN 連線前後使用同一組 Compose 分頁；Telemetry 五卡、Tuning 等待桌面快照頁、Connection 進階欄位均可切換。切換 LAN／USB 會先斷開舊連線，避免模式與實際通道不一致；USB 無反向轉發時顯示 `ERR_CONNECTION_REFUSED`、重試與返回主畫面，返回後仍可用原生分頁。連線指示區分 WebView 載入、Companion 後端輪詢及桌面前端心跳，以免後端離線誤報為只有前端未連線。
+- **驗證**：Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功；前端 135 files／941 tests 與 production build 成功；Python Ruff check／format 與 349 passed／8 deselected。實機 sidecar-only 連線為黃色「桌面前端未連線」，停止測試 sidecar 後後端輪詢轉 Offline、badge 轉紅，沒有繼續誤報黃色；CI 結果見 PR #425 的最終驗證紀錄。

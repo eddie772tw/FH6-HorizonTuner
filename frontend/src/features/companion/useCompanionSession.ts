@@ -7,6 +7,7 @@ import { companionUuid } from './companionUuid';
 export function useCompanionSession() {
   const [clientId] = useState(companionUuid);
   const [state, setState] = useState<CompanionState | null>(null);
+  const [backendOnline, setBackendOnline] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [commandBusy, setCommandBusy] = useState(false);
@@ -25,9 +26,15 @@ export function useCompanionSession() {
         pollAbort.current = controller;
         try {
           const next = await readCompanionResponse(await backendFetch(`/api/companion/workflow?clientId=${encodeURIComponent(clientId)}`, { signal: controller.signal }));
-          if (active && !controller.signal.aborted) setState(next);
+          if (active && !controller.signal.aborted) {
+            setBackendOnline(true);
+            setState(next);
+          }
         } catch {
-          if (active && !controller.signal.aborted) setState(previous => previous ? { ...previous, hostOnline: false } : null);
+          if (active && !controller.signal.aborted) {
+            setBackendOnline(false);
+            setState(previous => previous ? { ...previous, hostOnline: false } : null);
+          }
         }
       }
       if (active) timer = setTimeout(poll, 1000);
@@ -56,5 +63,5 @@ export function useCompanionSession() {
       if (!controller.signal.aborted) setCommandBusy(false);
     }
   }, [clientId]);
-  return { state, error, notice, commandBusy, send };
+  return { state, backendOnline, error, notice, commandBusy, send };
 }
