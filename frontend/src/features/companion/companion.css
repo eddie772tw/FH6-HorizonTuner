@@ -13,7 +13,7 @@ html, body, #root { height: var(--companion-viewport-height, 100dvh); min-height
 .companion-message.is-success { color: var(--bs-success); }
 .companion-message.is-toast { position: absolute; z-index: 20; top: 3.05rem; left: 50%; width: max-content; max-width: calc(100% - 1.5rem); margin: 0; transform: translateX(-50%); box-shadow: var(--glass-shadow); pointer-events: none; }
 .companion-connection-copy { margin: .25rem 0 .8rem; color: var(--text-secondary); font-size: .88rem; }
-.companion-connection-status { display: flex; align-items: center; gap: .65rem; margin-bottom: .75rem; color: var(--text-secondary); font-size: .85rem; }
+.companion-connection-status { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; margin-bottom: .75rem; color: var(--text-secondary); font-size: .85rem; overflow-wrap: anywhere; }
 .companion-connection-form { margin-bottom: .75rem; }
 .companion-connection-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .companion-connection-actions .btn { min-height: 2.65rem; min-width: 7rem; }
