@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      HorizonTuner Companion 專用於區域網路 (LAN) 及 USB Loopback 與本機 PC 通訊。
+      應用程式層 (MainActivity.kt) 嚴格強制執行 RFC 1918 私有 IP 與 Loopback 白名單校驗，
+      嚴禁對任何公網 IP 或公網網域名稱建立明文 HTTP 連線。
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

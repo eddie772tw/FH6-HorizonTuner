@@ -18,8 +18,46 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = System.getenv("HORIZONTUNER_KEYSTORE_PATH")
+                ?: (project.findProperty("HORIZONTUNER_KEYSTORE_PATH") as? String)
+            if (keystoreFile != null && file(keystoreFile).exists()) {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("HORIZONTUNER_KEYSTORE_PASSWORD")
+                    ?: (project.findProperty("HORIZONTUNER_KEYSTORE_PASSWORD") as? String) ?: ""
+                keyAlias = System.getenv("HORIZONTUNER_KEY_ALIAS")
+                    ?: (project.findProperty("HORIZONTUNER_KEY_ALIAS") as? String) ?: ""
+                keyPassword = System.getenv("HORIZONTUNER_KEY_PASSWORD")
+                    ?: (project.findProperty("HORIZONTUNER_KEY_PASSWORD") as? String) ?: ""
+            } else {
+                // Fallback to debug signing config for repeatable local/CI verification if upload key is not present
+                val debugConfig = signingConfigs.getByName("debug")
+                storeFile = debugConfig.storeFile
+                storePassword = debugConfig.storePassword
+                keyAlias = debugConfig.keyAlias
+                keyPassword = debugConfig.keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+        debug {
+            // standard debug build
+        }
+    }
+
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {

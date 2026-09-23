@@ -86,7 +86,14 @@ internal fun LanQrScanner(onScanned: (String) -> Boolean, onClose: () -> Unit) {
                                     }
                                 }
                                 try {
-                                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+                                    val cameraSelector = if (provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
+                                        CameraSelector.DEFAULT_BACK_CAMERA
+                                    } else if (provider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) {
+                                        CameraSelector.DEFAULT_FRONT_CAMERA
+                                    } else {
+                                        CameraSelector.DEFAULT_BACK_CAMERA
+                                    }
+                                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, analysis)
                                     cleanupRef.set(ScannerCleanup(provider, executor, scanner, listOf(preview, analysis)))
                                 } catch (failure: Exception) {
                                     scanner.close()

@@ -61,6 +61,7 @@ internal data class CompanionShellState(
     val error: String?,
     val manualLanExpanded: Boolean,
     val webConnected: Boolean,
+    val isDevMode: Boolean = BuildConfig.DEBUG,
 )
 
 internal data class CompanionShellActions(
@@ -155,10 +156,14 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Connection", color = HalfmoonTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            Text("選擇一般使用的區域網路，或選擇 USB 除錯連線。", color = HalfmoonTextSecondary, fontSize = 14.sp)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ShellButton("Local network", onClick = { actions.selectMode(ConnectionMode.LAN) }, primary = state.mode == ConnectionMode.LAN)
-                ShellButton("USB debugging", onClick = { actions.selectMode(ConnectionMode.USB) }, primary = state.mode == ConnectionMode.USB)
+            if (state.isDevMode) {
+                Text("選擇一般使用的區域網路，或選擇 USB 除錯連線。", color = HalfmoonTextSecondary, fontSize = 14.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ShellButton("Local network", onClick = { actions.selectMode(ConnectionMode.LAN) }, primary = state.mode == ConnectionMode.LAN)
+                    ShellButton("USB debugging", onClick = { actions.selectMode(ConnectionMode.USB) }, primary = state.mode == ConnectionMode.USB)
+                }
+            } else {
+                Text("透過區域網路 (Wi-Fi) 連接桌面 HorizonTuner。", color = HalfmoonTextSecondary, fontSize = 14.sp)
             }
             val (statusColor, statusText) = aggregateStatus(state)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -186,12 +191,20 @@ private fun ConnectionPage(state: CompanionShellState, actions: CompanionShellAc
                     ShellField("Port", state.port, actions.setPort)
                     ShellField("Pairing code", state.pairingToken, actions.setPairingToken)
                     ShellButton("手動配對並連線", onClick = actions.pairLan, enabled = state.connection != WebConnectionState.LOADING && state.pairingToken.isNotBlank())
+                    if (!state.isDevMode) {
+                        Spacer(Modifier.size(4.dp))
+                        ShellButton("切換至 USB 模式（開發者選項）", onClick = { actions.selectMode(ConnectionMode.USB) })
+                    }
                 }
             } else {
                 ShellField("USB forwarded host", state.host, actions.setHost)
                 ShellField("Port", state.port, actions.setPort)
                 ShellButton(if (state.connection == WebConnectionState.ERROR) "重試 USB" else "連接 USB", onClick = actions.connectUsb, primary = true, enabled = state.connection != WebConnectionState.LOADING)
                 if (state.webConnected) ShellButton("中斷連線", onClick = actions.disconnect)
+                if (!state.isDevMode) {
+                    Spacer(Modifier.size(4.dp))
+                    ShellButton("返回區域網路 (LAN) 模式", onClick = { actions.selectMode(ConnectionMode.LAN) }, primary = true)
+                }
             }
             state.error?.let { Text(it, color = ErrorRed, fontSize = 13.sp) }
             if (!state.webConnected) ShellButton("返回主畫面", onClick = { actions.selectPage(OfflinePage.TELEMETRY) })

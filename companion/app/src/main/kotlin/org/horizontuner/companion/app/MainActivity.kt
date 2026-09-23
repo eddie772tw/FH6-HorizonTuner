@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.content.Intent
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.SslErrorHandler
@@ -54,6 +55,8 @@ private const val PAIRING_PREFS = "companion_lan_session"
 
 class MainActivity : ComponentActivity() {
     private val autoConnect = mutableStateOf(false)
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* handled */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +78,16 @@ class MainActivity : ComponentActivity() {
         autoConnect.value = intent.getBooleanExtra("companionAutoConnect", false)
     }
 
+    private fun requestNotificationPermissionIfNecessary() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     private fun startTelemetryService() {
+        requestNotificationPermissionIfNecessary()
         ContextCompat.startForegroundService(
             this,
             Intent(this, TelemetryForegroundService::class.java).setAction(TelemetryForegroundService.ACTION_START),
@@ -146,7 +158,7 @@ private fun CompanionAppContent(
         if (endpoint == null) {
             state = WebConnectionState.ERROR
             offlinePage = OfflinePage.CONNECTION
-            errorMessage = "請輸入有效的 HTTP(S) 主機與 1-65535 連接埠"
+            errorMessage = "請輸入有效的 HTTP(S) 主機與 1-65535 連接埠（僅限區域網路或本機位址）"
             publishStatus(errorMessage)
         } else {
             requestedUrl = endpoint
@@ -351,6 +363,7 @@ private fun CompanionAppContent(
             error = errorMessage,
             manualLanExpanded = manualLanExpanded,
             webConnected = requestedUrl != null && state == WebConnectionState.CONNECTED,
+            isDevMode = BuildConfig.DEBUG,
         ),
         actions = CompanionShellActions(
             selectPage = { offlinePage = it },
@@ -457,6 +470,31 @@ private fun publishConnectionStatus(view: WebView, state: WebConnectionState, mo
     view.post { view.evaluateJavascript("window.dispatchEvent(new CustomEvent('companion-native-connection', {detail:$json}))", null) }
 }
 
+private fun isPrivateOrLoopbackHost(host: String): Boolean {
+    val cleanHost = host.trim().lowercase()
+    if (cleanHost == "localhost" || cleanHost == "127.0.0.1") return true
+    val octets = cleanHost.split('.')
+    if (octets.size != 4) return false
+    val first = octets[0].toIntOrNull() ?: return false
+    val second = octets[1].toIntOrNull() ?: return false
+    val third = octets[2].toIntOrNull() ?: return false
+    val fourth = octets[3].toIntOrNull() ?: return false
+    if (first !in 0..255 || second !in 0..255 || third !in 0..255 || fourth !in 0..255) return false
+
+    // 127.0.0.0/8 (Loopback)
+    if (first == 127) return true
+    // 10.0.0.0/8 (RFC 1918)
+    if (first == 10) return true
+    // 172.16.0.0/12 (RFC 1918)
+    if (first == 172 && second in 16..31) return true
+    // 192.168.0.0/16 (RFC 1918)
+    if (first == 192 && second == 168) return true
+    // 169.254.0.0/16 (Link-Local)
+    if (first == 169 && second == 254) return true
+
+    return false
+}
+
 private fun buildCompanionUrl(hostInput: String, portInput: String): String? {
     val rawHost = hostInput.trim()
     val port = portInput.toIntOrNull()?.takeIf { it in 1..65535 } ?: return null
@@ -465,6 +503,7 @@ private fun buildCompanionUrl(hostInput: String, portInput: String): String? {
     if (parsed.scheme !in setOf("http", "https") || parsed.host.isNullOrBlank() || parsed.userInfo != null ||
         !parsed.query.isNullOrEmpty() || !parsed.fragment.isNullOrEmpty() || (parsed.path != null && parsed.path != "" && parsed.path != "/")
     ) return null
+    if (parsed.scheme == "http" && !isPrivateOrLoopbackHost(parsed.host ?: "")) return null
     return Uri.Builder().scheme(parsed.scheme).encodedAuthority("${parsed.host}:$port").path(COMPANION_PATH).build().toString()
 }
 
@@ -474,6 +513,7 @@ private fun buildOrigin(hostInput: String, portInput: String): String? {
     if (rawHost.isBlank() || rawHost.contains("://") || rawHost.contains('/') || rawHost.contains('@')) return null
     val parsed = Uri.parse("http://$rawHost")
     if (parsed.host.isNullOrBlank() || parsed.userInfo != null || parsed.path != null && parsed.path != "") return null
+    if (!isPrivateOrLoopbackHost(parsed.host ?: "")) return null
     return Uri.Builder().scheme("http").encodedAuthority("${parsed.host}:$port").build().toString()
 }
 
@@ -493,7 +533,7 @@ private fun parseLanPairQr(payload: String, nowUnixSeconds: Long = System.curren
     val ipsJson = json.optJSONArray("lan_ips") ?: error("QR 碼缺少 LAN 位址")
     val ips = (0 until ipsJson.length()).map { index ->
         val ip = ipsJson.optString(index)
-        require(isValidIpv4(ip))
+        require(isValidIpv4(ip) && isPrivateOrLoopbackHost(ip)) { "QR 碼包含非區域網路位址" }
         ip
     }.distinct()
     require(ips.isNotEmpty())
