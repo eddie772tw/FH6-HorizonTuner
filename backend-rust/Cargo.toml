@@ -1,6 +1,6 @@
 [package]
 name = "fh6-backend"
-version = "11.45.18"
+version = "11.45.19"
 edition = "2021"
 description = "Independent HTTP, WebSocket and UDP backend for FH6 HorizonTuner"
 license = "MIT"

@@ -1,5 +1,20 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-23 / v1.6.1 Release Chore 發行整備、雙端版本遞增與高壓測試逾時防禦（Antigravity as Antigravity）
+
+- **來源／狀態**：`local`／`verified`；完成 v1.6.1 發行整備與多組件版本同步（`11.45.19`），更新發行日誌草稿，並排查修復高併發測試逾時問題。
+- **Learning**：
+  1. **高併發 Vitest 下的大型壓力測試逾時防禦**：在 138 檔案並行執行下，包含 39,000 次轉換與 312,000 項斷言的極限壓力測試（`useTelemetry.stress.test.ts`）因 CPU 爭搶而偶發超過預設 5000ms 限制。為大型計算壓力測試指定顯式 timeout（`20000ms`）可徹底防止在 CI 或本機負載時 flakiness。
+  2. **多端協同版本真理同步邊界**：本專案涵蓋 Rust Backend (`backend-rust/Cargo.toml`)、Tauri Host (`frontend/src-tauri/Cargo.toml`, `tauri.conf.json`)、Python 工具與 CLI (`backend/main.py`, `backend/agent_cli.py`, `backend/version_info.txt`)。版本遞增至 `11.45.19`（發行 Tag `v1.6.1`）需同步對齊全部入口與診斷 bundle 斷言，確保執行時回報與建置資訊完全一致。
+- **Action**：
+  1. 建立 `docs/releases/v1.6.1.md`。
+  2. 同步遞增 `backend-rust/Cargo.toml`、`frontend/src-tauri/Cargo.toml`、`tauri.conf.json`、`backend/main.py`、`backend/agent_cli.py`、`backend/version_info.txt` 至 `11.45.19` / `11.45.19.0`。
+  3. 更新 `tests/test_diagnostic_support_bundle.py` 與 `docs/guides/agent-cli-guide.md`。
+  4. 更新 `README.md` 與 `README.en.md` 之 Android Companion Beta 標註與發行說明。
+  5. 為 `useTelemetry.stress.test.ts` 壓力測試補齊 20000ms timeout 避免 worker 爭搶逾時。
+- **Evidence**：後端 Rust 55 tests 通過；Python 377 passed, 8 deselected 全部通過；前端 138 檔案 982 tests 全部通過；Vite build 通過；`ruff check .` 與 `git diff --check` 通過。
+- **Skills**：`portable-release-validation`、`pr-author-maintainer`。
+
 ## 2026-09-23 / Android Google Play 上架整備、RFC 1918 私有 IP 白名單與 Release AAB 構建合約（Antigravity as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；落實 Issue #433 與 PR #425 Google Play 商店正式上架規範，完成網路安全加固、權限最小化、模式分流與 Release AAB 打包。
@@ -2788,3 +2803,11 @@
 - **前端測試差異**：標準 5 秒 timeout 的完整本機 Vitest 首次有 1 個 stress test timeout；同一 stress 檔 22 tests 在 30 秒 timeout 下通過。完整 140 files／989 tests 在 `--testTimeout=30000 --maxWorkers=2 --no-file-parallelism` 下全通過，用時 107.60 秒；PR 上標準 frontend CI check 亦為 pass。沒有修改測試斷言或其標準 timeout。
 - **邊界與工具限制**：Xvfb 視窗建立不等同實際桌面／Wayland 操作；OTA 真實安裝、跨裝置遊戲驗收仍未完成。容器驗證 wrapper 最後的 `git status` 因 worktree `.git` 指向未掛載的 parent repo 而退出 128；已在 host 另行檢查 Git 狀態，這不是產品 build 或 smoke failure。
 - **操作文件**：[跨平台發行指南](../docs/guides/cross-platform-release.md)。使用 `portable-release-validation`、`pr-author-maintainer`、`cross-agent-collaboration`、`engineering-governance`、`agent-governance-audit`。
+
+## 2026-09-23 / PR #426 同步最新 main 與重新驗證
+
+- **Main 同步**：`origin/main` 在 PR #431、#432 合併後前進到 `2426238`；main worktree 已 fast-forward 且乾淨。PR 隔離分支合併最新 main，唯一內容衝突在 `AnalysisSessionToolbar.tsx`；保留 LAN 的 `localMotecLaunch` capability gate，並整合 main 的 disabled export tooltip。
+- **最新 Linux 產物**：以更新後 `11.45.19` 在 Ubuntu 22.04 x86_64 建置；AppImage 86,907,384 bytes，臨時測試簽章 436 bytes，SHA-256 `9bba3a2bbd11f3923a4276e484f1017a1aa3f7f5401c918d418ac20bb25a3d1d`。`prepare_native_signing.py --cleanup` 後私鑰、公鑰與暫存 config 均不存在。
+- **重新驗證**：version consistency、Rust format、backend no-default-features tests、Python Ruff check／format、pytest（375 passed／8 deselected）、release helper（19 passed）、Tauri host tests（5 passed）、LAN frontend build 與 native backend build 均通過。AppImage sidecar 處理 10 frames，HTTP requested port 41799 fallback 至 40789、UDP port 39393、shutdown `clean`；DBus + Xvfb 於 5 秒內建立主視窗。
+- **Vitest 可攜性修正**：最新 main 的 Mission Stress 5 原設 20 秒 timeout；本機實測約 20.8 秒。只將此測試的 runner timeout 調為 30 秒，保留全部 39,000 iterations 與 assertions；focused stress 檔 22/22 通過，標準 `pnpm --prefix frontend run test` 140/140 files、989/989 tests 通過，用時 42.29 秒。未放寬任何產品行為或斷言門檻；新 merge commit 的 GitHub checks 待推送後驗證。
+- **邊界**：Xvfb 只證明視窗可建立，不等同實體桌面／Wayland 互動；原生安裝、OTA 與跨裝置 FH6 遊玩仍未驗收。

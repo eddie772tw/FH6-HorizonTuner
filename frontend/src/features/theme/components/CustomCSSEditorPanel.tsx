@@ -200,9 +200,20 @@ const CustomCSSEditorPanel: React.FC = () => {
         </div>
 
         <div className="d-flex flex-wrap gap-2">
-          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleExport} disabled={isSaving}>
-            {t('Export Theme JSON')}
-          </button>
+          <span
+            title={isSaving ? t("Export is currently in progress") : undefined}
+            style={isSaving ? { display: 'inline-block', cursor: 'not-allowed' } : undefined}
+          >
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={handleExport}
+              disabled={isSaving}
+              style={isSaving ? { pointerEvents: 'none' } : undefined}
+            >
+              {t('Export Theme JSON')}
+            </button>
+          </span>
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>
             {t('Import Theme JSON')}
           </button>
