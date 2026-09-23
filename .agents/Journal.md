@@ -2779,3 +2779,12 @@
 - **受控介面／程序證據**：以暫存資料目錄啟動 Windows 上的 no-HUD backend 與 LAN web bundle，導航僅有 Live／Tune／Sessions；Data Out 顯示實際 LAN IP 與覆寫 port 18000，20 個合成封包顯示 20 個有效影格。檢查 default／modern／elegant 深淺主題，無新增 console error。獨立 smoke helper 驗證 `embeddedHudFiles=0`、HTTP occupied-port fallback、10 個合成封包、stdin EOF 與 UDP port 釋放；證據保存在本機 ignored `scratch/lan-backend-smoke-ig2c9ocu/`。
 - **限制**：Windows no-HUD 編譯／本機 UDP 與瀏覽器介面，不等於 macOS／Linux 原生套件、GTK／Cocoa 儲存視窗、完整 OTA 安裝或真實跨機 FH6 驗收。native CI 已接入相同 reusable packaging workflow，PR／手動測試使用臨時簽章，不發布 Release。未以本次本機結果宣稱跨平台驗收完成。
 - **操作文件**：[跨平台發行指南](../docs/guides/cross-platform-release.md)。
+
+## 2026-09-23 / PR #426 Linux AppImage 本機驗證（Lynn as Hermes）
+
+- **範圍**：在本機 Ubuntu 22.04 x86_64 容器中驗證 PR #426 Linux LAN release 路徑；隔離 worktree 為 `FH6-HorizonTuner-pr-426`，未改動 main worktree。文件補上本機建置命令，並新增 root `/.pnpm-store/` ignore，避免 pnpm cache 讓 PR worktree 顯示未追蹤檔。
+- **工具鏈與建置**：Node 22.23.2、pnpm 11.27.0、uv 0.12.18、Rust stable。版本一致性、Rust format、Rust no-default-features tests、release helper pytest、Tauri host tests（5 passed）、LAN frontend production build 與 Linux native backend build 均完成。Linux AppImage 與測試 updater signature 成功產生；AppImage 為 86,911,480 bytes，signature 為 436 bytes。環境原先帶有 `UV_PYTHON_PREFERENCE=only-managed` 時，`uv venv --managed-python` 會拒絕執行；本機指南用 `env -u` 限定移除此衝突變數。
+- **封裝 smoke**：`smoke_native_release.py` 回報 runtime `linux`、10 個 frames、HTTP requested port 44595 fallback 至 37015、UDP telemetry port 43204，且 shutdown 為 `clean`。另以 DBus + Xvfb 啟動 AppImage，5 秒內建立 `FH6-Horizon Tuner` 視窗。
+- **前端測試差異**：標準 5 秒 timeout 的完整本機 Vitest 首次有 1 個 stress test timeout；同一 stress 檔 22 tests 在 30 秒 timeout 下通過。完整 140 files／989 tests 在 `--testTimeout=30000 --maxWorkers=2 --no-file-parallelism` 下全通過，用時 107.60 秒；PR 上標準 frontend CI check 亦為 pass。沒有修改測試斷言或其標準 timeout。
+- **邊界與工具限制**：Xvfb 視窗建立不等同實際桌面／Wayland 操作；OTA 真實安裝、跨裝置遊戲驗收仍未完成。容器驗證 wrapper 最後的 `git status` 因 worktree `.git` 指向未掛載的 parent repo 而退出 128；已在 host 另行檢查 Git 狀態，這不是產品 build 或 smoke failure。
+- **操作文件**：[跨平台發行指南](../docs/guides/cross-platform-release.md)。使用 `portable-release-validation`、`pr-author-maintainer`、`cross-agent-collaboration`、`engineering-governance`、`agent-governance-audit`。

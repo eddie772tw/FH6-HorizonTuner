@@ -47,6 +47,63 @@ GitHub 沒有原子替換 asset API，因此 manifest 的刪除／上傳間有�
 
 `Release Packaging Test` 在 PR 路徑命中或手動啟動時，呼叫同一個 native reusable workflow，使用臨時 OTA key，不取得正式 key、不上傳 Release。產物與 smoke evidence 保存為 Actions artifacts。正式 Release 才要求 production key；臨時 key 在 job 結束清除。
 
+### Linux x86_64 本機建置與驗證
+
+Native workflow 使用 Ubuntu 22.04。建議在 x86_64 Ubuntu 22.04 環境重現；較新的 Linux 主機可用 `ubuntu:22.04` 容器執行建置。容器內要提供 Node 22、pnpm 11.27.0、Rust stable、`uv`，以及下列系統套件：
+
+```sh
+sudo apt-get update
+sudo apt-get install -y build-essential libwebkit2gtk-4.1-dev libssl-dev \
+  libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2
+```
+
+以下命令與 native packaging job 同路徑；測試簽章只使用臨時 key，不要替換成正式 OTA key。`UV_PYTHON_PREFERENCE=only-managed` 不能與 `uv venv --managed-python` 同時使用，因此建立環境時只對該命令移除此變數：
+
+```sh
+set -euo pipefail
+export FH6_PLATFORM=lan PLATFORM=linux APPIMAGE_EXTRACT_AND_RUN=1
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+export RUNNER_TEMP="$(mktemp -d "${XDG_CACHE_HOME:-$HOME/.cache}/fh6-native-linux.XXXXXX")"
+mkdir -p "$RUNNER_TEMP"
+export GITHUB_ENV="$RUNNER_TEMP/github.env"
+: > "$GITHUB_ENV"
+
+uv python install 3.13
+if [ ! -x .venv/bin/python ]; then
+  env -u UV_PYTHON_PREFERENCE uv venv --python 3.13 --managed-python .venv
+fi
+uv pip install --python .venv/bin/python pytest
+pnpm --prefix frontend install --frozen-lockfile
+
+uv run --no-project --python .venv/bin/python python scripts/validate_version_consistency.py
+cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
+cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features
+pnpm --prefix frontend run test
+uv run --no-project --python .venv/bin/python python -m pytest \
+  scripts/tests/test_platform_release.py \
+  scripts/tests/test_publish_release_assets.py \
+  scripts/tests/test_prepare_native_signing.py
+pnpm --prefix frontend run build
+uv run --no-project --python .venv/bin/python python scripts/build_native_backend.py --platform linux
+
+cleanup_native_signing() {
+  uv run --no-project --python .venv/bin/python python scripts/prepare_native_signing.py --cleanup || true
+}
+trap cleanup_native_signing EXIT
+uv run --no-project --python .venv/bin/python python scripts/prepare_native_signing.py
+set -a
+. "$GITHUB_ENV"
+set +a
+cargo test --locked --manifest-path frontend/src-tauri/Cargo.toml --lib
+pnpm --prefix frontend exec tauri build --config "$RUNNER_TEMP/fh6-native-build.json"
+uv run --no-project --python .venv/bin/python python scripts/smoke_native_release.py \
+  --platform linux \
+  --bundle-root frontend/src-tauri/target/release/bundle \
+  --evidence-dir "$RUNNER_TEMP/smoke-evidence"
+```
+
+這個 smoke 驗證打包後的 sidecar、UDP 遙測、HTTP port fallback 與正常關閉；它不代替在實際桌面環境確認 GUI 互動。測試 key 與臨時 Tauri config 會在 shell 結束時清除。
+
 ```powershell
 cargo test --locked --manifest-path backend-rust/Cargo.toml
 cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features
