@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.SslErrorHandler
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -14,15 +15,20 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -38,9 +44,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.safeDrawing
+import android.os.Handler
+import android.os.Looper
+import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicReference
 import org.horizontuner.companion.app.service.TelemetryForegroundService
 import org.horizontuner.companion.theme.HalfmoonTheme
 
@@ -99,83 +106,97 @@ private fun CompanionAppContent(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var requestedUrl by remember { mutableStateOf<String?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
-    var showSettings by remember { mutableStateOf(true) }
+    val nativeStatusJson = remember { AtomicReference(connectionStatusJson(state, host, port, null)) }
 
-    val connect = {
-        val endpoint = buildCompanionUrl(host, port)
+    val connect: (String, String) -> Unit = { inputHost, inputPort ->
+        host = inputHost
+        port = inputPort
+        val endpoint = buildCompanionUrl(inputHost, inputPort)
         if (endpoint == null) {
             state = WebConnectionState.ERROR
             errorMessage = "請輸入有效的 HTTP(S) 主機與 1-65535 連接埠"
+            nativeStatusJson.set(connectionStatusJson(state, host, port, errorMessage))
+            webView?.let { publishConnectionStatus(it, state, host, port, errorMessage) }
         } else {
             requestedUrl = endpoint
             errorMessage = null
             state = WebConnectionState.LOADING
-            showSettings = false
+            nativeStatusJson.set(connectionStatusJson(state, host, port, null))
             webView?.let { it.tag = endpoint }
             webView?.loadUrl(endpoint)
         }
     }
-    val disconnect = {
+    val disconnect: () -> Unit = {
         webView?.stopLoading()
         webView?.loadUrl("about:blank")
         onServiceStop()
         requestedUrl = null
         errorMessage = null
         state = WebConnectionState.DISCONNECTED
-        showSettings = true
+        nativeStatusJson.set(connectionStatusJson(state, host, port, null))
+        webView?.let { publishConnectionStatus(it, state, host, port, null) }
+        Unit
     }
 
     LaunchedEffect(autoConnect, webView) {
         if (autoConnect && webView != null) {
             host = "127.0.0.1"
             port = "8001"
-            connect()
+            connect(host, port)
             onAutoConnectHandled()
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (state == WebConnectionState.DISCONNECTED || showSettings) {
-            Text("FH6 HorizonTuner Companion", style = MaterialTheme.typography.headlineSmall)
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(host, { host = it }, label = { Text("Host or HTTP(S) URL") }, singleLine = true, modifier = Modifier.weight(1f))
-                        OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.weight(0.42f))
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { connect() }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.weight(1f)) {
-                            Text(if (state == WebConnectionState.ERROR) "Retry" else "Connect")
-                        }
-                        Button(onClick = disconnect, enabled = state != WebConnectionState.DISCONNECTED, modifier = Modifier.weight(1f)) {
-                            Text("Disconnect")
-                        }
-                    }
-                    errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                }
-            }
-        } else {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
-                Button(onClick = { showSettings = true }) { Text("Connection settings") }
-            }
-        }
+    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         AndroidView(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).also { view ->
-                    configureWebView(view, { state = WebConnectionState.CONNECTED; errorMessage = null; showSettings = false; onServiceStart() }, { message ->
-                        state = WebConnectionState.ERROR; errorMessage = message; showSettings = true; onServiceStop()
+                    view.addJavascriptInterface(CompanionJavascriptBridge(nativeStatusJson, connect, disconnect), "HorizonTunerCompanion")
+                    configureWebView(view, {
+                        state = WebConnectionState.CONNECTED
+                        errorMessage = null
+                        nativeStatusJson.set(connectionStatusJson(state, host, port, null))
+                        publishConnectionStatus(view, state, host, port, null)
+                        onServiceStart()
+                    }, { message ->
+                        state = WebConnectionState.ERROR
+                        errorMessage = message
+                        requestedUrl = null
+                        nativeStatusJson.set(connectionStatusJson(state, host, port, message))
+                        publishConnectionStatus(view, state, host, port, message)
+                        onServiceStop()
                     }, { requestedUrl }, { })
                     webView = view
                 }
             },
             update = { webView = it },
         )
+
+        if (requestedUrl == null) {
+            Column(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("FH6 HorizonTuner Companion", style = MaterialTheme.typography.headlineSmall)
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(connectionLabel(state), color = MaterialTheme.colorScheme.onSurface)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(host, { host = it }, label = { Text("Host or HTTP(S) URL") }, singleLine = true, modifier = Modifier.weight(1f))
+                            OutlinedTextField(port, { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") }, singleLine = true, modifier = Modifier.weight(0.42f))
+                        }
+                        Button(onClick = { connect(host, port) }, enabled = state != WebConnectionState.LOADING, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (state == WebConnectionState.ERROR) "Retry" else "Connect")
+                        }
+                        errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    }
+                }
+            }
+        }
     }
 
     DisposableEffect(Unit) {
@@ -192,6 +213,24 @@ private fun CompanionAppContent(
 }
 
 private enum class WebConnectionState { DISCONNECTED, LOADING, CONNECTED, ERROR }
+
+private class CompanionJavascriptBridge(
+    private val status: AtomicReference<String>,
+    private val onConnect: (String, String) -> Unit,
+    private val onDisconnect: () -> Unit,
+) {
+    @JavascriptInterface fun connectionStatus(): String = status.get()
+    @JavascriptInterface fun connect(host: String, port: String) { Handler(Looper.getMainLooper()).post { onConnect(host, port) } }
+    @JavascriptInterface fun disconnect() { Handler(Looper.getMainLooper()).post { onDisconnect() } }
+}
+
+private fun connectionStatusJson(state: WebConnectionState, host: String, port: String, error: String?): String =
+    JSONObject().put("state", state.name).put("host", host).put("port", port).put("error", error).toString()
+
+private fun publishConnectionStatus(view: WebView, state: WebConnectionState, host: String, port: String, error: String?) {
+    val json = connectionStatusJson(state, host, port, error)
+    view.post { view.evaluateJavascript("window.dispatchEvent(new CustomEvent('companion-native-connection', {detail:$json}))", null) }
+}
 
 private fun connectionLabel(state: WebConnectionState): String = when (state) {
     WebConnectionState.DISCONNECTED -> "未連線"
