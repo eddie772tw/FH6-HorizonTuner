@@ -1,4 +1,11 @@
 {
+  "Developer": "開發選項",
+  "Not checked": "尚未檢查",
+  "Check Failed": "檢查失敗",
+  "Companion status unavailable": "Companion 連線狀態無法取得",
+  "Advanced settings": "進階設定",
+  "HUD credits": "HUD 製作名單",
+  "Game status unavailable": "遊戲狀態暫不可用",
   "HUD status": "HUD 狀態",
   "HUD settings": "HUD 設定",
   "HUD window": "HUD 視窗",

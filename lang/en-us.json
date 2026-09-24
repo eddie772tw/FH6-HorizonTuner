@@ -1,4 +1,11 @@
 {
+  "Developer": "Developer",
+  "Not checked": "Not checked",
+  "Check Failed": "Check failed",
+  "Companion status unavailable": "Companion status unavailable",
+  "Advanced settings": "Advanced settings",
+  "HUD credits": "HUD credits",
+  "Game status unavailable": "Game status unavailable",
   "HUD status": "HUD status",
   "HUD settings": "HUD settings",
   "HUD window": "HUD window",

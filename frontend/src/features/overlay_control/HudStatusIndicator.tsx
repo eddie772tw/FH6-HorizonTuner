@@ -78,6 +78,9 @@ export function HudStatusIndicator({ state, issues, t }: {
     </div>
     {open && <ModalPortal>
       <div ref={details} id={id} role="dialog" aria-label={t('HUD status')}
+        onBlur={event => {
+          if (!event.currentTarget.contains(event.relatedTarget) && !trigger.current?.contains(event.relatedTarget)) setOpen(false);
+        }}
         className="hud-status-details popover bs-popover-bottom show glass-panel" style={position}>
         <div className="d-flex align-items-center justify-content-between gap-3 border-bottom pb-2 mb-2">
           <h2 className="fs-6 fw-bold m-0">{t('HUD status')}</h2>

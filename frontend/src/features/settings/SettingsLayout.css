@@ -1,20 +1,30 @@
-.app-dialog .modal-dialog {
-  width: min(100% - 2rem, 80rem);
-  max-width: 80rem;
+.offcanvas.app-menu-drawer {
+  --app-drawer-cap: 65rem;
+  --bs-offcanvas-width: min(66.6666667vw, var(--app-drawer-cap));
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: min(24rem, 66.6666667vw);
+  max-width: min(66.6666667vw, var(--app-drawer-cap));
+  z-index: 1050;
+  transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
-.app-dialog .modal-content {
-  min-width: 0;
-  max-height: calc(100dvh - 2rem);
-  padding: 0;
+.offcanvas.app-menu-drawer.app-dialog--about { --app-drawer-cap: 38rem; }
+.offcanvas.app-menu-drawer.app-dialog--mcp { --app-drawer-cap: 50rem; }
+.offcanvas.app-menu-drawer.app-dialog--companion { --app-drawer-cap: 60rem; }
+.offcanvas.app-menu-drawer.app-dialog--settings { width: min(66.6666667vw, 65rem); }
+.offcanvas.app-menu-drawer.theme-sidebar { --app-drawer-cap: 54rem; }
+.offcanvas.app-menu-drawer.terminal-sidebar { --app-drawer-cap: 58rem; }
+
+.offcanvas.app-menu-drawer.show {
+  transition: transform 0.3s ease-in-out;
 }
 
-.app-dialog .modal-header {
+.app-menu-drawer .offcanvas-header {
   flex: 0 0 auto;
-  gap: 1rem;
 }
 
-.app-dialog .modal-body {
+.app-menu-drawer .offcanvas-body {
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -22,9 +32,49 @@
 }
 
 .settings-surface {
-  width: min(100%, 65rem);
+  width: 100%;
+  max-width: 65rem;
   min-width: 0;
   margin-inline: auto;
+}
+
+.settings-surface-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
+  align-items: start;
+  gap: 1.5rem 2rem;
+}
+
+.settings-surface-grid > .settings-section {
+  container: settings-section / inline-size;
+}
+
+.settings-surface-grid > .settings-grid-wide {
+  grid-column: 1 / -1;
+}
+
+@container settings-section (max-width: 34rem) {
+  .settings-surface-grid .settings-row:not(.settings-switch) {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .settings-surface-grid .settings-row .settings-control {
+    width: 100%;
+    max-width: none;
+    flex-basis: auto;
+  }
+}
+
+.app-dialog--about .settings-surface { max-width: 36rem; }
+.app-dialog--mcp .settings-surface { max-width: 48rem; }
+.app-dialog--companion .settings-surface { max-width: 58rem; }
+.theme-sidebar .settings-surface { max-width: 52rem; }
+
+.app-about-credit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 1rem;
 }
 
 .app-dialog .settings-section {
@@ -100,50 +150,19 @@
 }
 
 .terminal-sidebar .offcanvas-body pre {
+  min-width: 0;
   min-height: 0;
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-@media (min-width: 768px) {
-  .settings-surface .settings-row {
-    flex-direction: row;
-    align-items: center !important;
+@media (prefers-reduced-motion: reduce) {
+  .offcanvas.app-menu-drawer, .offcanvas.app-menu-drawer.show {
+    transition: none;
   }
 }
 
-@media (max-width: 767.98px) {
-  .app-dialog .modal-dialog {
-    width: calc(100% - 1rem);
-    margin: 0.5rem auto;
-  }
-
-  .app-dialog .modal-content {
-    max-height: calc(100dvh - 1rem);
-  }
-
-  .app-dialog .modal-header,
-  .app-dialog .modal-body {
-    padding-inline: 1rem;
-  }
-
-  .settings-surface .settings-row:not(.settings-switch) {
-    flex-direction: column;
-    align-items: stretch !important;
-  }
-
-  .settings-surface .settings-control {
-    width: 100%;
-    flex-basis: auto;
-  }
-
-  .settings-surface .settings-switch {
-    flex-direction: row;
-    align-items: center !important;
-  }
-
-  .settings-drawer .offcanvas-header,
-  .settings-drawer .offcanvas-body,
-  .settings-drawer .diagnostic-toolbar {
-    padding-inline: 1rem !important;
-  }
+.settings-surface .settings-row {
+  flex-direction: row;
+  align-items: center !important;
 }

@@ -4,14 +4,19 @@
   color: var(--text-primary);
 }
 
-.hud-workspace-panel {
+.hud-workspace-content {
+  flex: 1 1 auto;
+  min-height: 0;
   min-width: 0;
-  padding: 0.5rem;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
-.hud-workspace-panel:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: -2px;
+.hud-workspace-content > * { flex-shrink: 0; }
+.hud-advanced-settings > summary { cursor: pointer; }
+.hud-advanced-settings > summary:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
 }
 
 .hud-workspace-toolbar { flex-shrink: 0; }

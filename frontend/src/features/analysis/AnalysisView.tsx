@@ -9,7 +9,7 @@ import { useSessionsState } from "../sessions/SessionsStateProvider";
 import { analysisDataPath, analysisSelectionKey } from "../sessions/sessionSelection";
 import { createSessionsIo } from "../sessions/sessionsIo";
 
-const AnalysisView: React.FC = () => {
+const AnalysisView: React.FC<{ onLatestAnalysis: () => void }> = ({ onLatestAnalysis }) => {
   const { isRecording, recordingCount, currentSessionId, currentSession, loadedSession, savedSessions, fetchSavedSessionsList, loadSessionLaps, exportMoTecCsv, isExporting, openInMoTec, downloadMoTecTemplate, fetchSessionDebrief } = useTelemetryRecorder();
   const { state: sessionsState, selectedFilename, selectedSessionId, isSavedSelection, selectCurrent, selectSaved, setPrimaryLap, setCompareLap, setMetric, beginSelectionOperation, setImportedSession, loadPrimaryLap, cancelPrimaryLoad, refreshCurrent } = useSessionsState();
   const { t } = useSettings();
@@ -150,6 +150,7 @@ const AnalysisView: React.FC = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "1rem", overflowY: "auto", minWidth: 0 }}>
       <AnalysisSessionToolbar
+        onLatestAnalysis={onLatestAnalysis}
         t={t}
         isRecording={isRecording}
         recordingCount={recordingCount}

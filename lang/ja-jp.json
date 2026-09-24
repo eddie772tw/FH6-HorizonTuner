@@ -1,4 +1,11 @@
 {
+  "Developer": "開発者向け",
+  "Not checked": "未確認",
+  "Check Failed": "確認に失敗しました",
+  "Companion status unavailable": "Companion の接続状態を取得できません",
+  "Advanced settings": "詳細設定",
+  "HUD credits": "HUD クレジット",
+  "Game status unavailable": "ゲームの状態を取得できません",
   "HUD status": "HUD の状態",
   "HUD settings": "HUD 設定",
   "HUD window": "HUD ウィンドウ",

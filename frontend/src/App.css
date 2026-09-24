@@ -274,35 +274,22 @@ main .container-fluid {
   height: 100%;
 }
 
-.telemetry-view { min-height: 0; overflow: auto; }
+/* The desktop shell owns scrolling; off-screen portal drawers must not scroll the document. */
+html:has(.app-shell), body:has(.app-shell) {
+  overflow: clip;
+}
+body:has(.app-shell) {
+  position: fixed;
+  inset: 0;
+}
+
+.telemetry-view { min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.telemetry-vehicle-status { min-width: 0; max-width: 100%; }
 .live-workspace, .live-workspace-panel { min-height: 0; min-width: 0; }
 .telemetry-live-grid--focused { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; }
 .telemetry-view--focused { overflow: hidden; }
 .telemetry-dynamics-summary { overflow-y: auto; }
 .telemetry-dynamics-summary > div { height: auto !important; min-height: 100%; }
-
-@media (max-width: 991.98px) {
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: none;
-    grid-auto-rows: 25rem;
-    height: auto;
-    flex: 0 0 auto !important;
-  }
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) > .telemetry-card-shell { grid-column: auto !important; }
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) > .telemetry-card-shell:nth-child(n+4) { grid-column: 1 / -1 !important; }
-}
-
-@media (max-width: 575.98px) {
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) { grid-template-columns: minmax(0, 1fr); }
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) > .telemetry-card-shell:nth-child(n+4) { height: 44rem !important; }
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) { grid-auto-rows: auto; }
-  .telemetry-live-grid:not(.telemetry-live-grid--focused) > .telemetry-card-shell { height: 24rem !important; }
-  .telemetry-view:not(.telemetry-view--focused) .telemetry-card-layout--grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); }
-  .app-header-navigation, .app-header-actions { width: 100%; min-width: 0; }
-  .app-header-navigation > .nav { width: 100%; }
-  .app-header-actions { justify-content: flex-end; }
-}
 
 .telemetry-card-shell {
   min-width: 0;
@@ -744,6 +731,9 @@ input[type="range"]::-moz-range-thumb {
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--divider);
 }
+
+.live-status-item { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; }
+.live-status-dot { width: 0.75rem; height: 0.75rem; flex: 0 0 0.75rem; border-radius: 50%; }
 
 .telemetry-detail-backdrop { position: fixed; inset: 0; z-index: 1055; background: var(--bs-body-bg); opacity: 0.65; }
 .telemetry-card-shell__header { flex-wrap: wrap; }

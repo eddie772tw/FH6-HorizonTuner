@@ -37,15 +37,11 @@ export function HudSetupPanel({
         ? t(author.description) : author.description;
 
   return (
-    <section className="d-flex flex-column gap-3" aria-labelledby={`${id}-title`}>
+    <section className="d-flex flex-column gap-3" aria-label={t('Setup')}>
       <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 border-bottom pb-2">
         <div>
-          <h2 id={`${id}-title`} className="text-primary fs-6 fw-bold mb-1">{t('HUD Control Panel')}</h2>
           <p className="text-body-secondary fs-7 mb-0">
             {t('Full-screen borderless transparent HUD overlay for Forza Horizon 6')}
-            <br />{t('Simple & Advanced HUD Style:')} Paburrito
-            <br />{t('VFD HUD Style:')} eddie772tw feat. crosXover
-            <br />{t('Other SIMHUB HUD Style:')} StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
           </p>
         </div>
         <div className="d-flex align-items-center flex-wrap gap-2">

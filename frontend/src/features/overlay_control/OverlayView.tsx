@@ -116,7 +116,8 @@ const OverlayViewContent: React.FC = () => {
     }
     setLoading(true);
     setHudActionError(null);
-    const persistence = updateConfig({ enabled });
+    // Persistence failures are reported by runtimeError and cleared by its retry.
+    void updateConfig({ enabled });
     try {
       sendHudCommand({ type: enabled ? 'hud:animate' : 'hud:destroy' });
       const result = await native.toggleHudWindow(enabled);
@@ -126,9 +127,6 @@ const OverlayViewContent: React.FC = () => {
         if (clickThrough.status !== 'success') throw new Error(clickThrough.error ?? capabilities.clickThrough.detail);
         void applyMonitorSelection(config.selectedMonitorIndex);
       }
-      void persistence.then(persisted => {
-        if (!persisted && enabled && mountedRef.current) setHudActionError(t('HUD opened, but its settings could not be saved.'));
-      });
     } catch (error) {
       console.error('HUD overlay action failed:', error);
       if (mountedRef.current) setHudActionError(t('HUD overlay could not be started. Check the backend log and retry.'));

@@ -1,18 +1,17 @@
 import React, { useId, useRef, useState, type KeyboardEvent } from "react";
-import type { AppVariant, SessionIntent } from "../../app/workspaceManifest";
+import type { AppVariant } from "../../app/workspaceManifest";
 import { useSettings } from "../../context/SettingsContext";
 import DragTestView from "../drag_test/DragTestView";
 import TelemetryView from "../telemetry/TelemetryView";
 
 export interface LiveWorkspaceProps {
   readonly variant: AppVariant;
-  readonly onOpenSessions: (intent?: SessionIntent) => void;
 }
 
 type FullLivePanel = "dashboard" | "launch-test";
 
 /** Full owns Dashboard plus the existing launch-test flow; Lite is dashboard-only. */
-export const LiveWorkspace: React.FC<LiveWorkspaceProps> = ({ variant, onOpenSessions }) => {
+export const LiveWorkspace: React.FC<LiveWorkspaceProps> = ({ variant }) => {
   const { t } = useSettings();
   const [panel, setPanel] = useState<FullLivePanel>("dashboard");
   const id = useId();
@@ -41,9 +40,6 @@ export const LiveWorkspace: React.FC<LiveWorkspaceProps> = ({ variant, onOpenSes
             {t(value === 'dashboard' ? 'Dashboard' : 'Drag Test')}
           </button>)}
         </div>
-        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => onOpenSessions({ kind: "latest-analysis" })}>
-          {t("Post-Race Analysis")}
-        </button>
       </div>
       {panels.map(value => <div key={value} id={`${id}-panel-${value}`} role="tabpanel"
         aria-labelledby={`${id}-tab-${value}`} tabIndex={0} hidden={panel !== value}

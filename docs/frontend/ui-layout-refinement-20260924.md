@@ -82,23 +82,34 @@ Carbon 憑證只預留 `CARBON_MCP_TOKEN` 與 `CARBON_MCP_SESSION` 環境變數�
 - 現有 `useModalFocus` 會限制 Tab 焦點。一般自動儲存提示不應套用此 modal 行為；浮動錯誤詳情只在使用者開啟時處理焦點，關閉後返回觸發鈕。
 - 現有 App.css 有通用色彩／陰影 transition 及高頻控制項排除，尚未找到 `prefers-reduced-motion` 規則；新增狀態展示需處理這項動效偏好，不擴張成無關的全站動畫重寫。
 
+## 使用者最後修正
+
+- 主 UI 以桌面橫向視窗為範圍，不需直式或行動裝置布局；已移除本次新增的手機堆疊與斷點規則。既有 Companion/遊戲內 HUD 不在此次主 UI 改動範圍。
+- Post-Race Analysis 入口從 Live 移到 Sessions 工具列，沿用 latest-analysis 載入契約。
+- App Menu 的 Settings、Appearance、Companion、MCP、Diagnostics、About 統一從右側滑出。依使用者最後修正，2/3 是視窗寬度上限，取代先前固定占寬要求；抽屜依內容與頁面上限縮短，內部表單及雙欄控制亦限寬。共用遮罩、焦點與 Escape 行為。
+
+- 頂列合併重複的 Data Out／Backend 診斷入口，保留一個 Data Out 按鈕。Backend 狀態移至 Live 遊戲狀態旁，以一致指示燈與文字呈現；斷線時遊戲狀態標示不可用。
+- HUD 取消 Setup／Layout／Advanced 三個子分頁，整合成單一設定頁。啟動、樣式、螢幕與縮放在前，位置與顯示項目接續呈現，效果、音訊及系統選項收進一層「進階設定」。常駐狀態工具列位於捲動區之外。
+- 頂列保留 Data Out 與 App Menu，Companion 與 MCP 各自為選單獨立入口，Companion 保留連線數。OTA 更新併入 Settings，不再占獨立子頁；設定使用單層區段與一致的標籤／說明／控制項。About 集中版本、專案連結及原 HUD 製作名單；HUD 僅保留所選樣式的作者與描述。
+- Settings 依抽屜可用內容寬度自動採單欄／雙欄；較窄欄內的輸入控制移至標籤及說明下方，Data Storage 跨欄。這是桌面內容自適應，不新增手機版型。
+
 ## 修訂後的實作方案
 
 ### 共用視覺與版型
 
 - AppShell 頁面外距與大區塊間距保留 `1rem`；輕量區塊內距與工具列間距使用 `0.5rem`；表單群組內距可使用 `1rem`。沿用語意色彩、圓角與 Halfmoon 控制項，不增加 UI 依賴。
 - 一般區塊採小標題、細分隔線；數據與表單內層使用適度的語意底色。浮動詳情和彈窗保留毛玻璃層次。不為每個靜態分區增加陰影卡片。
-- 頁級操作放在頁內工具列，局部操作放在區塊標題旁。常用操作持續可見，不因選取、hover 或狀態切換突然增加寬度；狹窄視窗以響應式換行承接。
+- 頁級操作放在頁內工具列，局部操作放在區塊標題旁。常用操作持續可見，不因選取、hover 或狀態切換突然增加寬度；桌面視窗縮放時以必要的工具列換行承接。
 - 共用部分優先使用 CSS 與小型展示元件。若需要 WorkspaceFrame，只處理結構與 scroll/fill 模式；主標題與說明為選用，避免每頁多一列重複頁名。
-- 一般單欄設定內容最大寬度採 `65rem`（16px 基準字級時為 1040px），在可用內容區置中；彈窗和抽屜的可用寬度優先。HUD 多欄控制與資料儀表維持流動寬度，不套這個上限。
+- Settings 抽屜最大 `65rem`，在足夠寬度採雙欄；其他抽屜按內容採 38–60rem 上限，同時全部不超過 2/3 視窗寬。HUD 多欄控制與資料儀表維持流動寬度，不套這些上限。
 - 每頁／彈窗有一個主要垂直捲動區。保留有明確用途的圖表詳情與表格局部捲動；浮動詳情透過 Portal 避免裁切。
 
 ### 各頁收斂
 
 | 介面 | 變更 |
 | --- | --- |
-| Live Dashboard | 保留現有桌面密度與區塊結構，作回歸基準；窄螢幕與長翻譯需要可讀、可捲動，不能只靠 hidden 裁掉內容。 |
-| HUD | 子分頁與狀態放在精簡工具列；移除獨有的整頁實色底板；三個面板採共同標題、分隔線、間距。啟動／關閉操作仍在 Setup。 |
+| Live Dashboard | 保留現有桌面密度與區塊結構，作回歸基準；桌面橫向視窗與長翻譯需要可讀、可捲動，不能只靠 hidden 裁掉內容；不新增手機或直式堆疊版型。 |
+| HUD | 單頁呈現常用設定與位置／顯示項目，較少使用的選項收進進階設定。狀態放在固定工具列；移除獨有的整頁實色底板，分組採共同標題、分隔線、間距。 |
 | Tune | 保留步驟、車輛資訊與常用調校操作的位置；減少重複標題、說明卡片和多層外框，保留必要操作指引。 |
 | Sessions | 將大型標題卡片收斂為精簡工具列，分組既有 Session 選取與匯入／匯出操作；保留現有分析和 Road 流程。 |
 | Drag Test | 對齊 Live 的工具列、標題與留白；保留測試進度和結果需要的視覺重點。 |
@@ -106,7 +117,7 @@ Carbon 憑證只預留 `CARBON_MCP_TOKEN` 與 `CARBON_MCP_SESSION` 環境變數�
 
 ### HUD 狀態與介面邊界
 
-- 建立 HUD 專用的常駐狀態展示，消除 Setup 與其他子分頁的重複提示。輸入沿用 runtime snapshot、pendingWrites、各來源錯誤及既有 retry callback。
+- 建立 HUD 專用的常駐狀態展示，消除各區塊的重複提示。輸入沿用 runtime snapshot、pendingWrites、各來源錯誤及既有 retry callback。
 - 載入中、儲存中、已同步、需處理共用同一占位；圖示槽與文字槽使用所有狀態的最大需求，不隨翻譯文字或狀態改變尺寸。錯誤存在時不顯示綠色的整體成功。
 - 浮動詳情分列仍有效的 config、native、metadata 問題，retry 只接對應已存在的操作；不假設每個錯誤都能呼叫 runtime.retry。儲存中仍允許原本可編輯的控制項。
 - 原生啟動／關閉按鈕保留文字占位，以預留圖示槽和 aria-busy 表示忙碌。一般背景儲存不移動焦點、不打開 modal、不逐次發送 Toast。
@@ -123,13 +134,13 @@ Carbon 憑證只預留 `CARBON_MCP_TOKEN` 與 `CARBON_MCP_SESSION` 環境變數�
 ## 驗收與交付順序
 
 1. 先完成 HUD 狀態穩定性與外觀收斂，再與 Live 並排核對；接著處理 Tune、Sessions、Drag Test，最後收斂設定介面。
-2. HUD 在立即成功、延遲成功、HTTP 失敗、逾時、重試與多筆排隊時，比較同一控制項的前／中／後相對邊界、捲動位置與焦點；不只看 CLS。驗證離頁／重入及三個子分頁。
+2. HUD 在立即成功、延遲成功、HTTP 失敗、逾時、重試與多筆排隊時，比較同一控制項的前／中／後相對邊界、捲動位置與焦點；不只看 CLS。驗證離頁／重入、常用欄位及進階設定展開。
 3. 測試 config 成功但 native 或 metadata 仍失敗的組合，確保錯誤不被掩蓋；狀態文字／圖示及其讀屏語意一致。
-4. Full／Lite、深淺色與三種 core、繁中／英文、390／768／1280／1920px 寬度都要核對。比較相同高度視窗中 Live 的可見內容，避免新增裝飾造成資訊量退步。
+4. Full／Lite、深淺色與三種 core、繁中／英文、1280×720／1920×1080 桌面橫向視窗都要核對（依使用者修正，390／768px 直式與行動適配不列本次範圍）。比較相同高度視窗中 Live 的可見內容，避免新增裝飾造成資訊量退步。
 5. 核對鍵盤分頁、錯誤詳情關閉和焦點返回、彈窗焦點、Live 圖表展開、Tune 步驟和 Sessions 選取；60Hz Canvas、range、color input 維持無 transition，新增展示需通過 reduced-motion 模式。一般文字與主要控制的對比不能因輕量化而降低。
 6. 新增必要的純函數狀態映射測試；瀏覽器位移驗收獨立於 Vitest。完成後執行 `cmd /c "pnpm -C frontend run test"`、`cmd /c "pnpm -C frontend run build"` 與 `git diff --check`。Tauri 原生 HUD 忙碌狀態另行驗證。
 
-本次研究沒有重跑產品測試。先前本任務的 3 個聚焦測試檔、14 項通過是既有基線，不是修正後的證據；先前本機瀏覽器預覽在後端未連線下完成，尚無成功儲存的位移量測。
+研究階段證據與實作後驗證分開記錄；修正後測試、位移量測及瀏覽器驗收詳見 `ui-layout-validation-20260924.md`。
 
 ## 交接
 
@@ -139,7 +150,7 @@ Carbon 憑證只預留 `CARBON_MCP_TOKEN` 與 `CARBON_MCP_SESSION` 環境變數�
 
 1. 規劃提交：保存本方案、交付階段與寫入範圍。
 2. HUD／共用基礎提交：主代理負責 HUD 常駐狀態、錯誤來源、固定按鈕占位、共用樣式、語系及純狀態測試；不更改 runtime 寫入語意。
-3. 主頁一致化提交：Sol workspaces 負責 Tune、Sessions／Analysis 展示及 Drag Test；主代理負責 Live 響應式和共同外殼整合。
+3. 主頁一致化提交：Sol workspaces 負責 Tune、Sessions／Analysis 展示及 Drag Test；主代理負責 Live 桌面視窗與共同外殼整合。
 4. 設定介面提交：Sol settings 負責 Settings、Appearance、Diagnostics、Updates、Companion、AppDialog 與單位抽屜；主代理整合 About 外殼。
 5. 驗收修正提交：主代理完成視覺／互動／主題矩陣、測試與 build；Luna 獨立視覺風格審查並提供畫面缺陷，主代理逐項處置。
 6. PR 與 CI：建立一個 PR，等待目前 head 的 GitHub CI／CodeQL 全數完成；失敗則修復提交並重新核對最新 head。
@@ -150,20 +161,20 @@ Carbon 憑證只預留 `CARBON_MCP_TOKEN` 與 `CARBON_MCP_SESSION` 環境變數�
 
 Task: Live 基準版型一致化與 HUD 狀態穩定性
 
-Status: active
+Status: implemented; desktop validation and PR delivery recorded separately
 
 Owner: 主代理維護本提案；Luna 外部研究已完成，無程式碼寫入 ownership
 
 Branch: codex/live-layout-consistency / base 2426238
 
-Changed: Repo 僅新增本研究與方案文件；另完成使用者層級 MCP 工具設定、獨立安裝及使用說明。產品程式碼與前端依賴未修改
+Changed: 已實作 HUD 常駐狀態、Live 基準的頁面／設定層級一致化與桌面焦點／捲動修正；賽後分析入口移至 Sessions。未新增前端依賴。
 
-Pending: 依上述順序實作及驗收；Carbon 待使用者取得官方存取權後啟用驗證
+Pending: GitHub checks 以 PR 即時結果為準；Carbon 待使用者取得官方存取權後啟用驗證
 
 Blocked by: None
 
 Verification: 官方文件與三張官方參考圖已核對；本地展示元件已檢查；Microsoft Learn 與 MUI MCP 握手、工具列表及文件查詢成功；既有 Codex 設定比對通過；git diff --check 與新檔案的 git diff --no-index --check 通過
 
-Next action: 實作開始時重新核對 Git 狀態與 ownership，先修 HUD 常駐狀態展示；外部指南保留為參考，未經本地驗收不升級為 Journal 或強制治理規則
+Next action: 參照 ui-layout-validation-20260924.md 與 PR 變更／CI 結果審閱。外部指南維持參考，不升級為長期治理規則。
 
 Last updated: 2026-09-24

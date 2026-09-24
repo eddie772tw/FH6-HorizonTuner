@@ -3,21 +3,16 @@ import { useSettings } from '../../context/SettingsContext';
 import { applyGeneralUnitSystem, inferGeneralUnitSystem, type GeneralUnitSystem } from '../../utils/gameUnitSettings';
 import { DiscordPresenceStatusCard } from './components/DiscordPresenceStatusCard';
 import { DataStorageOverview } from './components/DataStorageOverview';
-import { McpSettingsCard } from './components/McpSettingsCard';
-import { CompanionSettingsCard } from './components/CompanionSettingsCard';
 import { SettingsItem, SettingsSection, SettingsSwitch } from './components/SettingsPrimitives';
 import { UpdateSettingsCard } from './components/UpdateSettingsCard';
-import { UpdatePreferenceRow } from './components/UpdatePreferenceRow';
 import { projectSettingsSections } from './settingsSections';
 
 export interface SettingsSurfaceProps {
   allowDeveloperTuning?: boolean;
-  onOpenUpdates?: () => void;
 }
 
 export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
   allowDeveloperTuning = true,
-  onOpenUpdates,
 }) => {
   const { settings, updateSettings, isLoading, t, availableLanguages } = useSettings();
   const sections = projectSettingsSections(allowDeveloperTuning);
@@ -34,8 +29,8 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
     sections.find(section => section.id === id)?.items.includes(item) ?? false;
 
   return (
-    <div className="settings-surface d-flex flex-column gap-4" data-settings-surface>
-      <p className="text-body-secondary mb-0">
+    <div className="settings-surface settings-surface-grid" data-settings-surface>
+      <p className="settings-grid-wide text-body-secondary mb-0">
         {t('Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.')}
       </p>
         {has('general', 'language') && <SettingsSection title={t('General')}>
@@ -78,19 +73,17 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
           <SettingsSwitch id="chk-race-rec" label={t('Race Recording')} description={t('Record suspension and grip data during races or driving for post-race analysis.')} checked={settings.race_recording} onChange={event => void updateSettings({ race_recording: event.target.checked })} />
         </SettingsSection>}
 
-        {has('integrations', 'discord') && <SettingsSection title={t('Integrations')}>
+        {has('integrations', 'discord') && <SettingsSection title={t('Discord Rich Presence')}>
           <DiscordPresenceStatusCard />
-          <McpSettingsCard />
-          {has('integrations', 'companion') && <CompanionSettingsCard />}
         </SettingsSection>}
 
-        {has('maintenance', 'updates') && <SettingsSection title={t('Maintenance')}>
-          {has('maintenance', 'developerTuning') && <>
+        {has('updates', 'updates') && <UpdateSettingsCard />}
+
+        {has('storage', 'storage') && <DataStorageOverview />}
+
+        {has('developer', 'developerTuning') && <SettingsSection title={t('Developer')}>
             <SettingsSwitch id="chk-developer-tuning" label={t('Use Developer Tuning View')} description={t('Switches the tuning wizard to the experimental TuningMath input/output view. The legacy view remains the default.')} checked={settings.developer_tuning_enabled} onChange={event => void updateSettings({ developer_tuning_enabled: event.target.checked })} />
             {settings.developer_tuning_enabled && <div className="alert alert-warning mb-0 py-2" role="status">{t('Experimental mode active: verify all outputs in-game before saving a tune.')}</div>}
-          </>}
-          {onOpenUpdates ? <UpdatePreferenceRow onOpenUpdates={onOpenUpdates} /> : <UpdateSettingsCard />}
-          <DataStorageOverview />
         </SettingsSection>}
     </div>
   );

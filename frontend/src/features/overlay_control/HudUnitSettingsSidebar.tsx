@@ -1,6 +1,7 @@
 import React from 'react';
 import type { UnitSettings } from '../../context/SettingsContext';
 import { ModalPortal } from '../../components/common/ModalPortal';
+import { useModalFocus } from '../../hooks/useModalFocus';
 
 export interface HudDisplayUnits {
   speed: UnitSettings['speed'];
@@ -31,6 +32,7 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
   onClose
 }) => {
   const displayed = followGlobal ? globalUnits : units;
+  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
   const update = <K extends keyof HudDisplayUnits>(key: K, value: HudDisplayUnits[K]) =>
     onUnitsChange({ ...units, [key]: value });
 
@@ -40,6 +42,7 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
       <div
         className={`offcanvas offcanvas-bottom settings-drawer glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-hidden={!show}

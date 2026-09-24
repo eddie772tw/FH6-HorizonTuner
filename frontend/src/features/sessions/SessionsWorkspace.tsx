@@ -7,9 +7,10 @@ import type { ValidationReviewSlotHostProps } from "./validationReviewSlot";
 export const SessionsWorkspace: React.FC<WorkspaceProps & ValidationReviewSlotHostProps> = ({
   reviewSlot,
   renderReviewSlot,
+  onOpenSessions,
 }) => (
   <>
-    <AnalysisView />
+    <AnalysisView onLatestAnalysis={() => onOpenSessions({ kind: 'latest-analysis' })} />
     {reviewSlot && renderReviewSlot ? renderReviewSlot(reviewSlot) : null}
   </>
 );

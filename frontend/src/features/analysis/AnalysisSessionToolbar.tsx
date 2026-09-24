@@ -25,6 +25,7 @@ export interface AnalysisSessionToolbarProps {
   readonly onDownloadTemplate: () => void;
   readonly onDeleteSession: () => void;
   readonly onCloseMessage: () => void;
+  readonly onLatestAnalysis: () => void;
 }
 
 const selectStyle: React.CSSProperties = {
@@ -62,6 +63,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   onDownloadTemplate,
   onDeleteSession,
   onCloseMessage,
+  onLatestAnalysis,
 }) => (
   <>
     <div className="workspace-toolbar" style={{ flexShrink: 0 }}>
@@ -124,6 +126,9 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         )}
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button type="button" onClick={onLatestAnalysis} className="btn btn-sm btn-outline-secondary">
+            {t('Post-Race Analysis')}
+          </button>
           <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
             {t("Open in MoTeC")}
           </button>

@@ -42,7 +42,7 @@ export const DataStorageOverview: React.FC = () => {
   }, []);
 
   return (
-    <SettingsSection title={t("Data & Storage")}>
+    <SettingsSection title={t("Data & Storage")} className="settings-grid-wide">
       <div className="settings-item-description form-text">
         {loadFailed && t('Storage information is unavailable while the local service is offline.')}
         {!loadFailed && !overview && t('Loading local storage information...')}

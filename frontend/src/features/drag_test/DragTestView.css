@@ -62,15 +62,3 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-
-@media (max-width: 860px) {
-  .drag-test-results {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 460px) {
-  .drag-test-summary-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}

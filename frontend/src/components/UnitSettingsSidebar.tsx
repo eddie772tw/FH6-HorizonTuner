@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSettings, type UnitSettings } from '../context/SettingsContext';
 import { ModalPortal } from './common/ModalPortal';
+import { useModalFocus } from '../hooks/useModalFocus';
 import type { GeneralUnitSystem, GranularUnitPreference, UnitPreferenceOverride } from '../utils/gameUnitSettings';
 
 interface UnitSettingsSidebarBaseProps {
@@ -48,6 +49,7 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
   children
 }) => {
   const { t } = useSettings();
+  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
   return (
     <ModalPortal>
       <div
@@ -58,6 +60,7 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
       <div
         className={`offcanvas offcanvas-bottom settings-drawer glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-hidden={!show}

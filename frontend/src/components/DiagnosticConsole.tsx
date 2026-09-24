@@ -130,19 +130,19 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-end settings-drawer terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end app-menu-drawer settings-drawer terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
         ref={panelRef}
         tabIndex={-1}
         aria-modal="true"
+        aria-hidden={!show}
+        aria-label={t('Diagnostic Log Console')}
         role="dialog"
         style={{
           zIndex: 1050,
-          visibility: show ? 'visible' : 'hidden',
-          transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
         }}
       >
         {/* Header */}
-        <div className="offcanvas-header border-bottom px-4 py-2 d-flex justify-content-between align-items-center">
+        <div className="offcanvas-header border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
           <h5 className="offcanvas-title text-primary fw-bold fs-6 m-0 d-flex align-items-center gap-2">
             {t("Diagnostic Log Console")}
           </h5>
