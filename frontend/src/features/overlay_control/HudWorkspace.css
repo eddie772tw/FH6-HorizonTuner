@@ -1,16 +1,63 @@
 .hud-workspace {
   min-height: 0;
   min-width: 0;
-  background: var(--bs-body-bg);
-  color: var(--bs-body-color);
+  color: var(--text-primary);
 }
 
 .hud-workspace-panel {
   min-width: 0;
+  padding: 0.5rem;
 }
 
 .hud-workspace-panel:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: -2px;
+}
+
+.hud-workspace-toolbar { flex-shrink: 0; }
+.hud-status { flex-shrink: 0; max-width: 100%; }
+.hud-status-trigger, .hud-window-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.hud-status-labels { display: inline-grid; min-width: 0; }
+.hud-status-labels > span { grid-area: 1 / 1; }
+.hud-status-reserved { visibility: hidden; }
+.hud-status-icon, .hud-window-action-icon {
+  display: inline-block;
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  line-height: 1rem;
+  text-align: center;
+}
+.hud-status[data-state="attention"] .hud-status-icon { color: var(--bs-danger); }
+.hud-status[data-state="synced"] .hud-status-icon { color: var(--bs-success); }
+.hud-status-working { color: var(--primary); }
+.hud-status-details.popover {
+  position: fixed;
+  z-index: 1050;
+  width: min(24rem, calc(100vw - 2rem));
+  max-width: none;
+  padding: 1rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+}
+.hud-status-issue + .hud-status-issue {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--divider);
+}
+.hud-author-details { background: var(--surface-1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-status-trigger, .hud-status-details, .hud-window-action { transition: none !important; }
+  .hud-window-action-icon { animation: none !important; }
 }
 

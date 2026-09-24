@@ -28,15 +28,17 @@ export function HudWorkspace({ setup, layout, advanced, status, children, t, cla
   };
   return (
     <div className={`hud-workspace container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto ${className}`.trim()} data-testid={testId}>
-      <div className="nav nav-pills gap-2 flex-shrink-0" role="tablist" aria-label={t('HUD Control Panel')}>
+      <div className="workspace-toolbar hud-workspace-toolbar">
+      <div className="nav nav-pills gap-1 flex-shrink-0" role="tablist" aria-label={t('HUD Control Panel')}>
         {PANELS.map((label, index) => (
           <button key={label} type="button" role="tab" id={`${id}-tab-${index}`} aria-controls={`${id}-panel-${index}`}
             aria-selected={selected === index} tabIndex={selected === index ? 0 : -1}
-            className={`nav-link${selected === index ? ' active' : ''}`} ref={element => { tabs.current[index] = element; }}
+            className={`nav-link btn-sm${selected === index ? ' active fw-bold' : ''}`} ref={element => { tabs.current[index] = element; }}
             onKeyDown={event => handleKeyDown(event, index)} onClick={() => setSelected(index)}>{t(label)}</button>
         ))}
       </div>
-      {selected !== 0 && status}
+      {status}
+      </div>
       {[setup, layout, advanced].map((panel, index) => (
         <div key={PANELS[index]} id={`${id}-panel-${index}`} role="tabpanel" aria-labelledby={`${id}-tab-${index}`}
           tabIndex={0} hidden={selected !== index} className="hud-workspace-panel">

@@ -1,4 +1,11 @@
 {
+  "HUD status": "HUD の状態",
+  "HUD settings": "HUD 設定",
+  "HUD window": "HUD ウィンドウ",
+  "HUD metadata": "HUD スタイル情報",
+  "HUD settings synchronized": "HUD 設定を同期済み",
+  "Updating HUD...": "HUD を更新中...",
+  "Needs attention": "対応が必要",
   "File saved": "ファイルを保存しました",
   "Copy path": "パスをコピー",
   "Path copied": "パスをコピーしました",

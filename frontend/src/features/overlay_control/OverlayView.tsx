@@ -12,6 +12,8 @@ import { useHudMetadata } from './useHudMetadata';
 import { HudSetupPanel } from './panels/HudSetupPanel';
 import { HudLayoutPanel } from './panels/HudLayoutPanel';
 import { HudAdvancedPanel } from './panels/HudAdvancedPanel';
+import { HudStatusIndicator } from './HudStatusIndicator';
+import { deriveHudDisplayState } from './hudStatus';
 
 interface AudioDeviceOption {
   id: string;
@@ -28,6 +30,8 @@ const OverlayViewContent: React.FC = () => {
   const [showUnitSettings, setShowUnitSettings] = useState(false);
   const [monitors, setMonitors] = useState<MonitorOption[]>([]);
   const [hudActionError, setHudActionError] = useState<string | null>(null);
+  const [monitorError, setMonitorError] = useState<string | null>(null);
+  const monitorMoveGeneration = useRef(0);
   const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
   const [loadingAudioDevices, setLoadingAudioDevices] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
@@ -91,16 +95,18 @@ const OverlayViewContent: React.FC = () => {
     const generation = pageGeneration.current;
     const result = await native.getAvailableMonitors();
     if (!mountedRef.current || generation !== pageGeneration.current) return;
-    if (result.status === 'success' && result.value) setMonitors(result.value);
-    else if (result.status === 'error' || result.status === 'degraded') setHudActionError(result.error ?? capabilities.monitorSelection.detail);
+    if (result.status === 'success' && result.value) { setMonitors(result.value); setMonitorError(null); }
+    else if (result.status === 'error' || result.status === 'degraded') setMonitorError(result.error ?? capabilities.monitorSelection.detail);
   };
 
   const applyMonitorSelection = async (index: number) => {
     if (!monitors[index]) return;
+    const request = ++monitorMoveGeneration.current;
+    const generation = pageGeneration.current;
     const result = await native.moveHudToMonitor(monitors[index]);
-    if (mountedRef.current && (result.status === 'error' || result.status === 'degraded')) {
-      setHudActionError(result.error ?? capabilities.monitorSelection.detail);
-    }
+    if (!mountedRef.current || generation !== pageGeneration.current || request !== monitorMoveGeneration.current) return;
+    if (result.status === 'success') setMonitorError(null);
+    else if (result.status === 'error' || result.status === 'degraded') setMonitorError(result.error ?? capabilities.monitorSelection.detail);
   };
 
   const toggleHudWindow = async (enabled: boolean) => {
@@ -161,7 +167,8 @@ const OverlayViewContent: React.FC = () => {
       ? { s650CenterWidget: 'drive', elements: { showCenterInfo: true } }
       : { elements: { showCenterInfo: config.elements.showCenterInfo === false } });
   };
-  const displayedHudError = hudActionError ?? runtimeError ?? metadata.error;
+  const displayState = deriveHudDisplayState({ status, pendingWrites, nativeBusy: loading,
+    metadataLoading: metadata.loading, errors: [hudActionError, monitorError, runtimeError, metadata.error, audioError] });
   const panelProps = {
     config, styles: metadata.styles, t, disabled: status === 'loading',
     onConfigPatch: (patch: Partial<HudConfig>) => { void updateConfig(patch); },
@@ -169,20 +176,21 @@ const OverlayViewContent: React.FC = () => {
 
   return (
     <HudWorkspace t={t}
-      status={<div className="d-flex align-items-center flex-wrap gap-2" aria-live="polite">
-        <span role="alert" className="text-danger small">{displayedHudError}</span>
-        {runtimeError && <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => void retry()}>{t('Retry Update')}</button>}
-        {pendingWrites > 0 && <span className="badge text-bg-secondary">{t('Processing...')}</span>}
-      </div>}
+      status={<HudStatusIndicator state={displayState} t={t} issues={[
+        { source: 'HUD settings', message: runtimeError, retry: () => { void retry(); } },
+        { source: 'HUD window', message: hudActionError },
+        { source: 'Select Monitor for HUD Overlay', message: monitorError },
+        { source: 'HUD metadata', message: metadata.error, retry: metadata.refresh },
+        { source: 'Audio Capture Source', message: audioError },
+      ]} />}
       setup={<HudSetupPanel {...panelProps} monitors={monitors} author={metadata.currentAuthor}
-        metadataLoading={metadata.loading} includeWip={isWipActive} busy={loading} pendingWrites={pendingWrites}
-        error={displayedHudError} capabilities={capabilities} onToggleHud={enabled => void toggleHudWindow(enabled)}
+        metadataLoading={metadata.loading} includeWip={isWipActive} busy={loading}
+        capabilities={capabilities} onToggleHud={enabled => void toggleHudWindow(enabled)}
         onStyleChange={hudStyle => void updateConfig({ hudStyle })} onMonitorChange={handleMonitorChange}
-        onReloadHud={() => void handleReloadHud()} onOpenUnitSettings={() => setShowUnitSettings(true)}
-        onRetry={runtimeError ? () => { void retry(); } : undefined} />}
+        onReloadHud={() => void handleReloadHud()} onOpenUnitSettings={() => setShowUnitSettings(true)} />}
       layout={<HudLayoutPanel {...panelProps} onElementToggle={handleElementToggle} />}
       advanced={<HudAdvancedPanel {...panelProps} audioDevices={audioDevices} loadingAudioDevices={loadingAudioDevices}
-        audioError={audioError} isWipActive={isWipActive} wipForced={wipForced}
+        isWipActive={isWipActive} wipForced={wipForced}
         onAudioDeviceChange={deviceId => void handleAudioDeviceChange(deviceId)} onRefreshAudioDevices={() => void fetchAudioDevices()}
         onShowWipChange={handleToggleShowWipHuds} onElementToggle={handleElementToggle}
         onS650CenterInfoToggle={handleS650CenterInfoToggle} onResetHudConfig={handleResetHudConfig} />}

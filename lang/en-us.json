@@ -1,4 +1,11 @@
 {
+  "HUD status": "HUD status",
+  "HUD settings": "HUD settings",
+  "HUD window": "HUD window",
+  "HUD metadata": "HUD metadata",
+  "HUD settings synchronized": "HUD settings synchronized",
+  "Updating HUD...": "Updating HUD...",
+  "Needs attention": "Needs attention",
   "File saved": "File saved",
   "Copy path": "Copy path",
   "Path copied": "Path copied",
