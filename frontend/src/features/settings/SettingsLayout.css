@@ -1,0 +1,149 @@
+.app-dialog .modal-dialog {
+  width: min(100% - 2rem, 80rem);
+  max-width: 80rem;
+}
+
+.app-dialog .modal-content {
+  min-width: 0;
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+}
+
+.app-dialog .modal-header {
+  flex: 0 0 auto;
+  gap: 1rem;
+}
+
+.app-dialog .modal-body {
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.settings-surface {
+  width: min(100%, 65rem);
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.app-dialog .settings-section {
+  min-width: 0;
+  gap: 1rem !important;
+}
+
+.app-dialog .settings-section-header {
+  gap: 0.5rem 1rem;
+  padding-bottom: 0.5rem;
+  border-color: var(--divider) !important;
+}
+
+.app-dialog .settings-section-title {
+  font-size: 0.95rem !important;
+  line-height: 1.35;
+}
+
+.app-dialog .settings-row {
+  min-width: 0;
+  gap: 0.5rem 1.25rem;
+  padding-bottom: 0.75rem !important;
+}
+
+.app-dialog .settings-item-label {
+  font-size: 0.875rem;
+}
+
+.app-dialog .settings-item-description {
+  font-size: 0.8125rem;
+}
+
+.app-dialog .settings-control {
+  min-width: 0;
+  width: min(100%, 15rem);
+  flex: 0 0 min(35%, 15rem);
+}
+
+.settings-surface .settings-row > :first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.settings-surface .settings-switch .form-check-input {
+  flex: 0 0 auto;
+}
+
+.settings-drawer {
+  min-width: 0;
+  padding: 0;
+}
+
+.settings-drawer .offcanvas-header {
+  min-width: 0;
+  gap: 1rem;
+}
+
+.settings-drawer .offcanvas-header > :first-child {
+  min-width: 0;
+}
+
+.settings-drawer .offcanvas-body {
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.settings-drawer .offcanvas-body .row > [class*='col-'] {
+  min-width: 0;
+}
+
+.terminal-sidebar .diagnostic-toolbar {
+  flex: 0 0 auto;
+}
+
+.terminal-sidebar .offcanvas-body pre {
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 768px) {
+  .settings-surface .settings-row {
+    flex-direction: row;
+    align-items: center !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .app-dialog .modal-dialog {
+    width: calc(100% - 1rem);
+    margin: 0.5rem auto;
+  }
+
+  .app-dialog .modal-content {
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .app-dialog .modal-header,
+  .app-dialog .modal-body {
+    padding-inline: 1rem;
+  }
+
+  .settings-surface .settings-row:not(.settings-switch) {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .settings-surface .settings-control {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .settings-surface .settings-switch {
+    flex-direction: row;
+    align-items: center !important;
+  }
+
+  .settings-drawer .offcanvas-header,
+  .settings-drawer .offcanvas-body,
+  .settings-drawer .diagnostic-toolbar {
+    padding-inline: 1rem !important;
+  }
+}

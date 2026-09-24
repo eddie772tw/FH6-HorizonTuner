@@ -98,7 +98,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
     {surface === 'companion' && <AppDialog title={t('Companion App')} onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
     {surface === 'updates' && <AppDialog title="Updates" onClose={closeSurface}><UpdateSettingsCard /></AppDialog>}
     {surface === 'about' && <AppDialog title="About" onClose={closeSurface}>
-      <h3 className="h5">FH6 HorizonTuner{variant === 'lite' ? ' Lite' : ''}</h3>
+      <h3 className="workspace-section-heading">FH6 HorizonTuner{variant === 'lite' ? ' Lite' : ''}</h3>
       <p>{formatBuildInfoText(getAppBuildInfo())}</p>
       <a href="https://github.com/eddie772tw/FH6-HorizonTuner" target="_blank" rel="noreferrer">{t('Project website')}</a>
     </AppDialog>}

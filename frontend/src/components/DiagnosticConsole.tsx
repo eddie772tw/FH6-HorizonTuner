@@ -130,7 +130,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-end terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end settings-drawer terminal-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
         ref={panelRef}
         tabIndex={-1}
         aria-modal="true"
@@ -155,8 +155,8 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
         </div>
 
         {/* Toolbar */}
-        <div className="border-bottom px-4 py-2 d-flex justify-content-between align-items-center" style={{ background: 'var(--surface-1)' }}>
-          <div className="d-flex gap-4 align-items-center">
+        <div className="diagnostic-toolbar border-bottom px-4 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ background: 'var(--surface-1)' }}>
+          <div className="d-flex gap-2 align-items-center flex-wrap">
             <div className="d-flex align-items-center gap-2">
               <label htmlFor="log-level-select" className="form-label mb-0 text-body-secondary fs-7">{t("Log Level")}:</label>
               <select
@@ -200,7 +200,7 @@ const DiagnosticConsole: React.FC<DiagnosticConsoleProps> = ({ show, onClose }) 
             </div>
           </div>
 
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleExportSupportBundle}

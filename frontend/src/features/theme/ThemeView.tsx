@@ -32,7 +32,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-start theme-sidebar border-end glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-start settings-drawer theme-sidebar border-end glass-panel shadow-lg${show ? ' show' : ''}`}
         ref={panelRef}
         tabIndex={-1}
         aria-modal="true"

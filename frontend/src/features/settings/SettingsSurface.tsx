@@ -34,15 +34,10 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
     sections.find(section => section.id === id)?.items.includes(item) ?? false;
 
   return (
-    <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto" data-settings-surface>
-      <header className="border-bottom pb-3 mb-2 flex-shrink-0">
-        <h2 className="text-primary fs-4 fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>{t('System Settings')}</h2>
-        <p className="text-body-secondary fs-7 mb-0" style={{ lineHeight: '1.4' }}>
-          {t('Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.')}
-        </p>
-      </header>
-
-      <div className="flex-grow-1 overflow-auto p-2 d-flex flex-column gap-4">
+    <div className="settings-surface d-flex flex-column gap-4" data-settings-surface>
+      <p className="text-body-secondary mb-0">
+        {t('Adjust display language, UDP telemetry options, and unit conversions for the tuning tool. All changes are saved automatically.')}
+      </p>
         {has('general', 'language') && <SettingsSection title={t('General')}>
           <SettingsItem label={t('Language')} description={t('Select application display language.')} htmlFor="settings-language">
             <select id="settings-language" value={settings.language} onChange={event => void updateSettings({ language: event.target.value })} className="form-select form-select-sm">
@@ -97,7 +92,6 @@ export const SettingsSurface: React.FC<SettingsSurfaceProps> = ({
           {onOpenUpdates ? <UpdatePreferenceRow onOpenUpdates={onOpenUpdates} /> : <UpdateSettingsCard />}
           <DataStorageOverview />
         </SettingsSection>}
-      </div>
     </div>
   );
 };

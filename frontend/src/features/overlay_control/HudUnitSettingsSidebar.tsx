@@ -38,7 +38,7 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
     <ModalPortal>
       <div className={`offcanvas-backdrop fade${show ? ' show' : ''}`} style={{ display: show ? 'block' : 'none', zIndex: 1040 }} onClick={onClose} />
       <div
-        className={`offcanvas offcanvas-bottom glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-bottom settings-drawer glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
@@ -48,7 +48,7 @@ export const HudUnitSettingsSidebar: React.FC<HudUnitSettingsSidebarProps> = ({
           zIndex: 1050,
           visibility: show ? 'visible' : 'hidden',
           transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
-          '--bs-offcanvas-height': 'min(360px, 70vh)'
+          '--bs-offcanvas-height': 'min(30rem, 80dvh)'
         } as React.CSSProperties}
       >
         <div className="offcanvas-header border-bottom px-4 py-3">
