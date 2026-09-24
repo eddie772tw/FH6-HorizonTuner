@@ -528,7 +528,7 @@
   "Pie (Ratio)": "円グラフ (割合)",
   "Please complete your gearing setup in Tuning Setup -> Gearing first, save it, and then return here for the Dyno run.": "まず「調整設定 ➔ ギア比」に移動してギア比値の入力を完了して保存し、ここに戻ってテストすることをお勧めします。",
   "Please set your Final Drive, 1st Gear, and Top Gear on the left panel first.": "最初に、左側のパネルで最終変速比、ファーストギア、ファイナルギア比を設定してください。",
-  "Please shift to gear {gear} and slow down below 2,000 RPM.": "{ギア}にシフトし、2,000 RPM 未満まで減速します。",
+  "Please shift to gear {gear} and slow down below 2,000 RPM.": "{gear}にシフトし、2,000 RPM 未満まで減速します。",
   "Port to listen for Forza UDP telemetry packets (Default: 8000).": "Port to listen for Forza UDP telemetry packets (Default: 8000).",
   "Post-Race Analysis": "レース後解析",
   "Pound-Foot (lb-ft)": "ポンド・フィート (lb-ft)",
