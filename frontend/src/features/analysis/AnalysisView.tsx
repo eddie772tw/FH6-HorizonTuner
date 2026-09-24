@@ -148,7 +148,7 @@ const AnalysisView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "1rem", overflowY: "auto", paddingRight: "0.5rem" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "1rem", overflowY: "auto", minWidth: 0 }}>
       <AnalysisSessionToolbar
         t={t}
         isRecording={isRecording}

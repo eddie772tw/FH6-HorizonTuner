@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { backendFetch } from '../../services/backend';
+import './DragTestView.css';
 
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend
@@ -291,36 +292,22 @@ const DragTestView: React.FC = () => {
   }, [sessionData, convertSpeed]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, minHeight: '600px' }}>
+    <div className="drag-test-workspace">
       
       {/* SECTION 1: Status & Controller */}
-      <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem 1.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>{t("Drag Test Analysis")}</h3>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            {t("Analyze launch grip, gear shift RPM drops, and final drive ratio matching.")}
-          </span>
-        </div>
+      <div className="workspace-toolbar drag-test-toolbar">
+        <div className="drag-test-toolbar-label">{t("Drag Test Analysis")}</div>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="drag-test-actions">
           {/* Comparison Dropdown */}
           {(status === 'idle' || status === 'finished') && sessionsList.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Compare with History")}:</span>
+            <div className="drag-test-compare">
+              <label htmlFor="drag-test-compare-session" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t("Compare with History")}:</label>
               <select 
+                id="drag-test-compare-session"
                 value={selectedCompareFilename} 
                 onChange={(e) => handleCompareSelect(e.target.value)}
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'white',
-                  padding: '0.45rem 0.8rem',
-                  borderRadius: '6px',
-                  fontSize: '0.8rem',
-                  outline: 'none',
-                  maxWidth: '240px',
-                  cursor: 'pointer'
-                }}
+                className="form-select form-select-sm drag-test-compare-select"
               >
                 <option value="">{t("None")}</option>
                 {sessionsList.map((s) => {
@@ -428,7 +415,7 @@ const DragTestView: React.FC = () => {
           )}
           
           {status === 'waiting' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="drag-test-actions">
               <span className="pulse-text" style={{ color: '#ffcc00', fontWeight: 700, fontSize: '0.9rem' }}>
                 {t("Waiting for Launch...")}
               </span>
@@ -439,7 +426,7 @@ const DragTestView: React.FC = () => {
           )}
           
           {status === 'recording' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+            <div className="drag-test-actions">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff003c', boxShadow: '0 0 8px #ff003c' }} className="pulse-dot" />
                 <span style={{ color: '#ff003c', fontWeight: 700, fontSize: '0.9rem' }}>
@@ -453,7 +440,7 @@ const DragTestView: React.FC = () => {
           )}
           
           {status === 'finished' && (
-            <div style={{ display: 'flex', gap: '0.8rem' }}>
+            <div className="drag-test-actions">
               <span
                 title={isSaving ? t("Saving data in progress...") : undefined}
                 tabIndex={isSaving ? 0 : undefined}
@@ -496,10 +483,9 @@ const DragTestView: React.FC = () => {
 
       {/* SECTION 2: Guiding & Instructions (If Idle/Waiting) */}
       {(status === 'idle' || status === 'waiting') && (
-        <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', flex: 1, justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '3.5rem' }}>🚦</div>
+        <section className="workspace-section drag-test-guide">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '500px' }}>
-            <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'white' }}>{t("How to perform a Drag Test:")}</h4>
+            <h4 className="workspace-section-heading">{t("How to perform a Drag Test:")}</h4>
             <ol style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', paddingLeft: '1.2rem' }}>
               <li>{t("Click the 'Ready for Test' button above.")}</li>
               <li>{t("Bring your car to a complete stop (0 km/h) in the game.")}</li>
@@ -513,7 +499,7 @@ const DragTestView: React.FC = () => {
               {t("Currently waiting for vehicle launch. Please floor the throttle in 1st gear.")}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* SECTION 3: Recording Status (If Recording) */}
@@ -544,12 +530,12 @@ const DragTestView: React.FC = () => {
 
       {/* SECTION 4: Analysis & Charts (If Finished) */}
       {status === 'finished' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1.5rem', flex: 1 }}>
+        <div className="drag-test-results">
           
           {/* LEFT COLUMN: Charts */}
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>{t("Telemetry Visualization")}</h4>
+              <h4 className="workspace-section-heading">{t("Telemetry Visualization")}</h4>
               
               <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.2rem', borderRadius: '6px' }}>
                 <button 
@@ -651,7 +637,7 @@ const DragTestView: React.FC = () => {
             
             {/* Session Stats Summary */}
             <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>{t("Run Summary")}</h4>
+              <h4 className="workspace-section-heading">{t("Run Summary")}</h4>
               {analysis && (
                 compareAnalysis ? (
                   /* Comparison Table View */
@@ -719,7 +705,7 @@ const DragTestView: React.FC = () => {
                   </div>
                 ) : (
                   /* Standard Grid View */
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.4rem' }}>
+                  <div className="drag-test-summary-grid">
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t("Max Speed")}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#00f0ff' }}>
@@ -762,8 +748,8 @@ const DragTestView: React.FC = () => {
             </div>
 
             {/* Gearing Optimization Recommendations */}
-            <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflowY: 'auto', maxHeight: '450px' }}>
-              <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+            <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minWidth: 0 }}>
+              <h4 className="workspace-section-heading">
                 {t("Gearing Tuning Assist")}
               </h4>
               
@@ -773,7 +759,7 @@ const DragTestView: React.FC = () => {
                   {/* 1. Launch / 1st Gear */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <div style={{ fontWeight: 600, color: '#00f0ff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      🟢 {t("1st Gear & Launch")}
+                      {t("1st Gear & Launch")}
                     </div>
                     <p style={{ margin: 0, color: 'var(--text-primary)', background: 'rgba(0,240,255,0.03)', padding: '0.6rem', borderRadius: '6px', borderLeft: '3px solid #00f0ff' }}>
                       {analysis.launch_recommendation}
@@ -783,7 +769,7 @@ const DragTestView: React.FC = () => {
                   {/* 2. Shifts & Gear Steps */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <div style={{ fontWeight: 600, color: '#ff003c', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      🔴 {t("Individual Gear Ratios")}
+                      {t("Individual Gear Ratios")}
                     </div>
                     
                     {/* Shifts Details Table */}
@@ -826,7 +812,7 @@ const DragTestView: React.FC = () => {
                       </div>
                     ) : (
                       <p style={{ margin: 0, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', padding: '0.6rem', borderRadius: '6px', textAlign: 'center' }}>
-                        ✅ {t("All gear ratios step smoothly. No significant RPM drops detected.")}
+                        {t("All gear ratios step smoothly. No significant RPM drops detected.")}
                       </p>
                     )}
                   </div>
@@ -834,7 +820,7 @@ const DragTestView: React.FC = () => {
                   {/* 3. Final Drive */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <div style={{ fontWeight: 600, color: '#ffaa00', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      🟡 {t("Final Drive Ratio")}
+                      {t("Final Drive Ratio")}
                     </div>
                     <p style={{ margin: 0, color: 'var(--text-primary)', background: 'rgba(255,170,0,0.03)', padding: '0.6rem', borderRadius: '6px', borderLeft: '3px solid #ffaa00' }}>
                       {analysis.final_drive_recommendation}
@@ -844,7 +830,7 @@ const DragTestView: React.FC = () => {
                   {/* 4. Stability & Symmetry */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <div style={{ fontWeight: 600, color: '#ffcc00', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      ⚖️ {t("Stability & Straight-line Diagnostics")}
+                      {t("Stability & Straight-line Diagnostics")}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {analysis.stability_diagnostics && analysis.stability_diagnostics.map((diag, idx) => {

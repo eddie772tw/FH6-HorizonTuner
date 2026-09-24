@@ -84,9 +84,9 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
   return (
     <div className="d-flex flex-column gap-3">
       {/* Top Header Banner */}
-      <div className="glass-panel p-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+      <div className="workspace-section d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <div>
-          <h3 className="fs-5 text-primary fw-bold mb-1">
+          <h3 className="workspace-section-heading mb-1">
             Step 2: {t('Chassis, suspension & tire recommendations')}
           </h3>
           <span className="text-body-secondary fs-7">
@@ -123,7 +123,7 @@ export const Step2ChassisTuner: React.FC<Step2ChassisTunerProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
           gap: '1.25rem',
           alignItems: 'stretch',
         }}

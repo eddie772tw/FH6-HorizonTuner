@@ -84,9 +84,9 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
   return (
     <div className="d-flex flex-column gap-3">
       {/* Top Banner Toolbar */}
-      <div className="glass-panel p-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+      <div className="workspace-section d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <div>
-          <h3 className="fs-5 text-primary fw-bold mb-1">
+          <h3 className="workspace-section-heading mb-1">
             Step 1: {t('Define tuning goals & check parameters')}
           </h3>
           <span className="text-body-secondary fs-7">
