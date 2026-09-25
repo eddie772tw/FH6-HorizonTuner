@@ -1238,7 +1238,6 @@
   "Export collected frames": "Export collected frames",
   "Export recorded frames": "Export recorded frames",
   "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
-  "FH6-Horizon Tuner": "FH6-Horizon Tuner",
   "Are you sure you want to clear the telemetry feed?": "Are you sure you want to clear the telemetry feed?",
   "Clear Feed": "Clear Feed",
   "FL Temp": "FL Temp",
@@ -1271,5 +1270,10 @@
   "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.": "Decoded frames and the measured summary are saved together when you continue. Collection is limited to 30,000 frames. Collected frames remain available while you switch Tune steps; export them before restarting collection or closing the app.",
   "Unable to open the requested session. Check the connection and try again.": "Unable to open the requested session. Check the connection and try again.",
   "A · {number} · {date}": "A · {number} · {date}",
-  "B · {number} · {date}": "B · {number} · {date}"
+  "B · {number} · {date}": "B · {number} · {date}",
+  "{activeCount} Companion device(s) connected": "{activeCount} Companion device(s) connected",
+  "Companion APP: No devices connected. Click to pair.": "Companion APP: No devices connected. Click to pair.",
+  "RENDER PAUSED (OVERLAY ACTIVE)": "RENDER PAUSED (OVERLAY ACTIVE)",
+  "RACE DATA LIVE": "RACE DATA LIVE",
+  "GAME IDLE / MENU": "GAME IDLE / MENU"
 }

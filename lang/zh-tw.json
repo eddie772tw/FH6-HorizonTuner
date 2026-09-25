@@ -1690,7 +1690,6 @@
   "(Used for circuit top speed aero drag scaling)": "（用於賽道極速空氣阻力比例縮放）",
   "Cannot clear while capturing": "取樣進行中無法清除",
   "FH6 HorizonTuner Lite": "FH6 HorizonTuner Lite",
-  "FH6-Horizon Tuner": "FH6-Horizon Tuner",
   "Are you sure you want to clear the telemetry feed?": "確定要清除遙測即時動態嗎？",
   "Clear Feed": "清除動態",
   "FL Temp": "左前溫度",
@@ -1723,5 +1722,10 @@
   "Maximum capture size is 30,000 frames. Collection continues while this workspace is closed and stops only when you stop it or identity changes.": "最多收集 30,000 個影格。離開此工作區後仍會繼續收集，直到手動停止或車輛識別資料變更。",
   "Unable to open the requested session. Check the connection and try again.": "無法開啟指定紀錄。請確認連線後重試。",
   "A · {number} · {date}": "A · {number} · {date}",
-  "B · {number} · {date}": "B · {number} · {date}"
+  "B · {number} · {date}": "B · {number} · {date}",
+  "{activeCount} Companion device(s) connected": "已連接 {activeCount} 台 Companion 裝置",
+  "Companion APP: No devices connected. Click to pair.": "Companion 應用程式：未連接裝置。點擊進行配對。",
+  "RENDER PAUSED (OVERLAY ACTIVE)": "渲染已暫停 (HUD 懸浮窗啟用中)",
+  "RACE DATA LIVE": "比賽數據即時接收中",
+  "GAME IDLE / MENU": "遊戲待機 / 選單"
 }
