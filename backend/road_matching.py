@@ -128,24 +128,65 @@ def local_comparison(a_points: list[dict], b_points: list[dict], circuit: bool) 
             },
         )
         segment["matchedLocations"] += 1
-        av = [wheel_value(p, "TireSlipAngle", i) for i in range(4)]
-        bv = [wheel_value(q, "TireSlipAngle", i) for i in range(4)]
-        if all(finite(v) for v in av + bv):
-            segment["angles"].append(
-                sum(abs(v) for v in bv) / 4 - sum(abs(v) for v in av) / 4
-            )
-        for i in range(4):
-            at, bt = wheel_value(p, "TireTemp", i), wheel_value(q, "TireTemp", i)
-            if at is not None and bt is not None:
-                segment["thermal"][i].append((bt - at) * 5 / 9)
+
+        # [PERF] Unroll fixed-length array iterations to avoid function call and list allocation overhead in hot loops.
+        p_tsa = p.get("TireSlipAngle")
+        q_tsa = q.get("TireSlipAngle")
+        if (
+            p_tsa
+            and len(p_tsa) >= 4
+            and q_tsa
+            and len(q_tsa) >= 4
+            and finite(p_tsa[0])
+            and finite(p_tsa[1])
+            and finite(p_tsa[2])
+            and finite(p_tsa[3])
+            and finite(q_tsa[0])
+            and finite(q_tsa[1])
+            and finite(q_tsa[2])
+            and finite(q_tsa[3])
+        ):
+            p_sum = abs(p_tsa[0]) + abs(p_tsa[1]) + abs(p_tsa[2]) + abs(p_tsa[3])
+            q_sum = abs(q_tsa[0]) + abs(q_tsa[1]) + abs(q_tsa[2]) + abs(q_tsa[3])
+            segment["angles"].append(q_sum / 4.0 - p_sum / 4.0)
+
+        # [PERF] Unroll fixed-length array iterations to avoid function call and list allocation overhead in hot loops.
+        p_tt = p.get("TireTemp")
+        q_tt = q.get("TireTemp")
+        if p_tt and len(p_tt) >= 4 and q_tt and len(q_tt) >= 4:
+            if p_tt[0] is not None and q_tt[0] is not None:
+                segment["thermal"][0].append((q_tt[0] - p_tt[0]) * 5 / 9)
+            if p_tt[1] is not None and q_tt[1] is not None:
+                segment["thermal"][1].append((q_tt[1] - p_tt[1]) * 5 / 9)
+            if p_tt[2] is not None and q_tt[2] is not None:
+                segment["thermal"][2].append((q_tt[2] - p_tt[2]) * 5 / 9)
+            if p_tt[3] is not None and q_tt[3] is not None:
+                segment["thermal"][3].append((q_tt[3] - p_tt[3]) * 5 / 9)
+
     changes = []
     for p, q in comparable:
-        av, bv = (
-            [wheel_value(p, "TireSlipAngle", i) for i in range(4)],
-            [wheel_value(q, "TireSlipAngle", i) for i in range(4)],
-        )
-        if all(finite(v) for v in av + bv):
-            changes.append(sum(abs(v) for v in bv) / 4 - sum(abs(v) for v in av) / 4)
+        # [PERF] Unroll fixed-length array iterations to avoid function call and list allocation overhead in hot loops.
+        p_tsa = p.get("TireSlipAngle")
+        q_tsa = q.get("TireSlipAngle")
+
+        if (
+            p_tsa
+            and len(p_tsa) >= 4
+            and q_tsa
+            and len(q_tsa) >= 4
+            and finite(p_tsa[0])
+            and finite(p_tsa[1])
+            and finite(p_tsa[2])
+            and finite(p_tsa[3])
+            and finite(q_tsa[0])
+            and finite(q_tsa[1])
+            and finite(q_tsa[2])
+            and finite(q_tsa[3])
+        ):
+            p_sum = abs(p_tsa[0]) + abs(p_tsa[1]) + abs(p_tsa[2]) + abs(p_tsa[3])
+            q_sum = abs(q_tsa[0]) + abs(q_tsa[1]) + abs(q_tsa[2]) + abs(q_tsa[3])
+            changes.append(q_sum / 4.0 - p_sum / 4.0)
+
     return {
         "methodVersion": MATCH_VERSION,
         "routeStatus": route_status,
