@@ -133,9 +133,9 @@ def local_comparison(a_points: list[dict], b_points: list[dict], circuit: bool) 
         p_tsa = p.get("TireSlipAngle")
         q_tsa = q.get("TireSlipAngle")
         if (
-            p_tsa
+            isinstance(p_tsa, (list, tuple))
             and len(p_tsa) >= 4
-            and q_tsa
+            and isinstance(q_tsa, (list, tuple))
             and len(q_tsa) >= 4
             and finite(p_tsa[0])
             and finite(p_tsa[1])
@@ -153,14 +153,19 @@ def local_comparison(a_points: list[dict], b_points: list[dict], circuit: bool) 
         # [PERF] Unroll fixed-length array iterations to avoid function call and list allocation overhead in hot loops.
         p_tt = p.get("TireTemp")
         q_tt = q.get("TireTemp")
-        if p_tt and len(p_tt) >= 4 and q_tt and len(q_tt) >= 4:
-            if p_tt[0] is not None and q_tt[0] is not None:
+        if (
+            isinstance(p_tt, (list, tuple))
+            and len(p_tt) >= 4
+            and isinstance(q_tt, (list, tuple))
+            and len(q_tt) >= 4
+        ):
+            if finite(p_tt[0]) and finite(q_tt[0]):
                 segment["thermal"][0].append((q_tt[0] - p_tt[0]) * 5 / 9)
-            if p_tt[1] is not None and q_tt[1] is not None:
+            if finite(p_tt[1]) and finite(q_tt[1]):
                 segment["thermal"][1].append((q_tt[1] - p_tt[1]) * 5 / 9)
-            if p_tt[2] is not None and q_tt[2] is not None:
+            if finite(p_tt[2]) and finite(q_tt[2]):
                 segment["thermal"][2].append((q_tt[2] - p_tt[2]) * 5 / 9)
-            if p_tt[3] is not None and q_tt[3] is not None:
+            if finite(p_tt[3]) and finite(q_tt[3]):
                 segment["thermal"][3].append((q_tt[3] - p_tt[3]) * 5 / 9)
 
     changes = []
@@ -170,9 +175,9 @@ def local_comparison(a_points: list[dict], b_points: list[dict], circuit: bool) 
         q_tsa = q.get("TireSlipAngle")
 
         if (
-            p_tsa
+            isinstance(p_tsa, (list, tuple))
             and len(p_tsa) >= 4
-            and q_tsa
+            and isinstance(q_tsa, (list, tuple))
             and len(q_tsa) >= 4
             and finite(p_tsa[0])
             and finite(p_tsa[1])
