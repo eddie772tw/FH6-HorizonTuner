@@ -2811,3 +2811,11 @@
 - **重新驗證**：version consistency、Rust format、backend no-default-features tests、Python Ruff check／format、pytest（375 passed／8 deselected）、release helper（19 passed）、Tauri host tests（5 passed）、LAN frontend build 與 native backend build 均通過。AppImage sidecar 處理 10 frames，HTTP requested port 41799 fallback 至 40789、UDP port 39393、shutdown `clean`；DBus + Xvfb 於 5 秒內建立主視窗。
 - **Vitest 可攜性修正**：最新 main 的 Mission Stress 5 原設 20 秒 timeout；本機實測約 20.8 秒。只將此測試的 runner timeout 調為 30 秒，保留全部 39,000 iterations 與 assertions；focused stress 檔 22/22 通過，標準 `pnpm --prefix frontend run test` 140/140 files、989/989 tests 通過，用時 42.29 秒。未放寬任何產品行為或斷言門檻；新 merge commit 的 GitHub checks 待推送後驗證。
 - **邊界**：Xvfb 只證明視窗可建立，不等同實體桌面／Wayland 互動；原生安裝、OTA 與跨裝置 FH6 遊玩仍未驗收。
+
+## 2026-09-25 / PR #426 移除 macOS 與同步 main
+
+- **範圍**：依使用者要求，平台發行保留 Windows Full／Lite 與 Linux x86_64 Full，移除 macOS workflow、Tauri config、打包／smoke 分支及 OTA channel。上述 macOS 紀錄保留為歷史，不代表目前支援。採用 `pr-review-evaluation`、`pr-author-maintainer`、`portable-release-validation`、`halfmoon-design-system` 與 `ponytail`。
+- **整合**：先審查並合併 #436、#439、#440，#441 因輪胎輸入驗證回歸而關閉，再將 main `a0b323d` 整合至 #426。工具列同時保留 Post-Race Analysis、disabled export tooltip 與 `localMotecLaunch`；三份語系保留最新翻譯與 LAN 字串，移除本分支重複加入的兩個 key。
+- **可重現測試落差**：`scripts/tests/test_build_entry.py` 仍模擬舊 uv／Python 打包，但 `build_all.bat` 已使用 PowerShell／Rust；在乾淨 fixture 中缺少 `scripts/build_backend.ps1`。改為受控 Rust 建置腳本，驗證成功、backend 失敗、frontend 失敗與跨目錄路徑，沒有改動產品打包入口。
+- **驗證順序**：backend build.rs 會將 `frontend/dist` 資產以 include_bytes 嵌入；前端重建會刪除舊 hash 檔案，因此 frontend build 與 Cargo 編譯不能同時改讀同一輸出。先完成並固定 frontend dist，再執行 default／no-default-features 與 Tauri 驗證。
+- **本地證據**：前端 141 files／996 tests、Windows／LAN build；Python 與工具腳本 425 passed／8 deselected，Ruff check／format、Rust format 與版本一致性通過。新增 OTA carry 測試確認歷史 macOS channel 被忽略且 Linux channel 保留；這些測試不代表真實 FH6 跨機或 OTA 安裝驗收。

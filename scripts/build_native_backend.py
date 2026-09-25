@@ -8,7 +8,6 @@ import subprocess
 from pathlib import Path
 
 TARGETS = {
-    "macos": ("Darwin", "arm64", "aarch64-apple-darwin"),
     "linux": ("Linux", "x86_64", "x86_64-unknown-linux-gnu"),
 }
 

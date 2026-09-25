@@ -1,4 +1,4 @@
-"""Exercise the sidecar extracted from a real macOS app or Linux AppImage.
+"""Exercise the sidecar extracted from a real Linux AppImage.
 
 This verifies the native package/backend boundary, not a game or GUI session.
 """
@@ -120,35 +120,25 @@ def exercise(binary: Path, data_root: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--platform", choices=["macos", "linux"], required=True)
+    parser.add_argument("--platform", choices=["linux"], required=True)
     parser.add_argument("--bundle-root", type=Path, required=True)
     parser.add_argument("--evidence-dir", type=Path, required=True)
     args = parser.parse_args()
     root = args.bundle_root.resolve()
     with tempfile.TemporaryDirectory(prefix="fh6-package-smoke-") as work:
         work = Path(work)
-        if args.platform == "macos":
-            app = exactly_one(root, "macos/*.app")
-            subprocess.run(
-                ["codesign", "--verify", "--deep", "--strict", str(app)], check=True
-            )
-            binary = app / "Contents/Resources/sidecar/server-sidecar"
-            inspect_backend(binary, "macos", "aarch64")
-        else:
-            appimage = exactly_one(root, "appimage/*.AppImage")
-            subprocess.run(
-                [str(appimage), "--appimage-extract"],
-                cwd=work,
-                check=True,
-                stdout=subprocess.DEVNULL,
-            )
-            binaries = list((work / "squashfs-root").rglob("sidecar/server-sidecar"))
-            if len(binaries) != 1:
-                raise ValueError(
-                    f"Expected one packaged sidecar, found {len(binaries)}"
-                )
-            binary = binaries[0]
-            inspect_backend(binary, "linux", "x86_64")
+        appimage = exactly_one(root, "appimage/*.AppImage")
+        subprocess.run(
+            [str(appimage), "--appimage-extract"],
+            cwd=work,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        binaries = list((work / "squashfs-root").rglob("sidecar/server-sidecar"))
+        if len(binaries) != 1:
+            raise ValueError(f"Expected one packaged sidecar, found {len(binaries)}")
+        binary = binaries[0]
+        inspect_backend(binary, "linux", "x86_64")
         data = work / "user-data"
         data.mkdir()
         try:

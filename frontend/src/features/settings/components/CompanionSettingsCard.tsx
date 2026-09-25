@@ -33,14 +33,14 @@ export function CompanionSettingsCard() {
       {error ? t('Status unavailable') : `${count} ${t('DEVICE(S) CONNECTED')}`}
     </span>
   }>
-    <div className="d-flex flex-column gap-3 w-100">
+    <div className="companion-settings-content gap-3 w-100">
       <div className="companion-settings-intro glass-panel p-3">
         <h4 className="h6 text-primary mb-1">{t('USB tablet connection')}</h4>
         <p className="small text-body-secondary mb-0">{t('Keep HorizonTuner open to synchronize vehicle parameters, tuning results and engine measurements.')}</p>
       </div>
       <CompanionUsbControls />
       <CompanionLanControls />
-      <ol className="list-group list-group-numbered w-100 gap-2">
+      <ol className="companion-settings-steps list-group list-group-numbered w-100 gap-2">
         <li className="list-group-item d-flex flex-column align-items-start gap-1 glass-panel border rounded p-3">
           <span className="fw-semibold">{t('Install the Companion APK')}</span>
           <span className="small text-body-secondary">{t('Use an Android 13 or newer device.')}</span>
@@ -54,7 +54,7 @@ export function CompanionSettingsCard() {
           <span className="small text-body-secondary">{t('Choose the tablet above and press Connect USB device. The app opens and connects automatically.')}</span>
         </li>
       </ol>
-      <div className="glass-panel p-3">
+      <div className="companion-settings-preview glass-panel p-3">
         <h4 className="h6 text-primary mb-1">{t('Available in this preview')}</h4>
         <p className="small text-body-secondary mb-2">{t('Live telemetry cards and remote tuning workflow over USB. Android HUD display is deferred.')}</p>
         <p className="small text-body-secondary mb-0">{t('Pair over your local network with a short-lived code, or use USB debugging for a direct development connection.')}</p>

@@ -2,7 +2,7 @@
 
 Windows 桌面版的 MoTeC CSV、工作區 XML、診斷 ZIP、主題 JSON、調校與 Road capture 匯出都會開啟「另存新檔」。選擇資料夾與檔名後，程式完成寫入才顯示成功通知，通知包含完整路徑與「複製路徑」。取消對話框不顯示錯誤，也不另外下載檔案。
 
-macOS／Linux Full 現在也接入原生另存視窗，沿用相同檔名、大小、取消與原子寫入契約；對話框由非 Windows 專屬的 `tauri-plugin-dialog` 提供。本機啟動 MoTeC 的按鈕只在 Windows 顯示，CSV／XML 匯出仍保留。原生 Cocoa／GTK 視窗互動與目標平台驗收尚需完成，不能沿用下方 Windows 的歷史驗證結果；詳見[跨平台發行指南](cross-platform-release.md)。
+Linux Full 現在也接入原生另存視窗，沿用相同檔名、大小、取消與原子寫入契約；對話框由 `tauri-plugin-dialog` 提供。本機啟動 MoTeC 的按鈕只在 Windows 顯示，CSV／XML 匯出仍保留。原生 GTK 視窗互動與目標平台驗收尚需完成，不能沿用下方 Windows 的歷史驗證結果；詳見[跨平台發行指南](cross-platform-release.md)。
 
 後端離線、紀錄不存在、回應格式不正確或檔案寫入失敗時，錯誤會留在程式內顯示。MoTeC 匯出與範本下載使用目前已設定的後端連接埠，不會把主視窗導覽至後端 URL。
 

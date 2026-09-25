@@ -1,4 +1,6 @@
 import React, { type ReactNode, useEffect, useRef } from 'react';
+import { ModalPortal } from '../../../components/common/ModalPortal';
+import { useModalFocus } from '../../../hooks/useModalFocus';
 
 export type TelemetryCardId = 'driver' | 'traces' | 'dynamics' | 'tires' | 'suspension';
 
@@ -33,26 +35,17 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
 }) => {
   const expandButtonRef = useRef<HTMLButtonElement>(null);
   const wasExpandedRef = useRef(false);
+  const dialogRef = useModalFocus<HTMLElement>(expanded, onClose);
 
   useEffect(() => {
     if (expandable && wasExpandedRef.current && !expanded) expandButtonRef.current?.focus();
     wasExpandedRef.current = expanded;
   }, [expandable, expanded]);
 
-  useEffect(() => {
-    if (!expanded) return undefined;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [expanded, onClose]);
-
-  return (
+  const content = (
     <section
+      ref={expanded ? dialogRef : undefined}
+      tabIndex={expanded ? -1 : undefined}
       className={`telemetry-card-shell d-flex flex-column ${expanded ? 'telemetry-card-shell--expanded' : 'h-100 p-2 overflow-hidden'}`}
       style={expanded ? undefined : { gridColumn }}
       aria-labelledby={`${id}-card-title`}
@@ -89,6 +82,13 @@ const TelemetryCardShell: React.FC<TelemetryCardShellProps> = ({
       </div>
     </section>
   );
+  return expanded ? <>
+    <div style={{ gridColumn }} aria-hidden="true" />
+    <ModalPortal>
+      <div className="telemetry-detail-backdrop" onClick={onClose} aria-hidden="true" />
+      {content}
+    </ModalPortal>
+  </> : content;
 };
 
 export default React.memo(TelemetryCardShell);

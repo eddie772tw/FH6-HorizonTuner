@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSettings, type UnitSettings } from '../context/SettingsContext';
 import { ModalPortal } from './common/ModalPortal';
+import { useModalFocus } from '../hooks/useModalFocus';
 import type { GeneralUnitSystem, GranularUnitPreference, UnitPreferenceOverride } from '../utils/gameUnitSettings';
 
 interface UnitSettingsSidebarBaseProps {
@@ -48,6 +49,7 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
   children
 }) => {
   const { t } = useSettings();
+  const panelRef = useModalFocus<HTMLDivElement>(show, onClose);
   return (
     <ModalPortal>
       <div
@@ -56,8 +58,9 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
         onClick={onClose}
       />
       <div
-        className={`offcanvas offcanvas-bottom glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-bottom settings-drawer glass-panel shadow-lg${show ? ' show' : ''}`}
         tabIndex={-1}
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-hidden={!show}
@@ -66,7 +69,7 @@ const UnitSettingsSidebarFrame: React.FC<UnitSettingsSidebarFrameProps> = ({
           zIndex: 1050,
           visibility: show ? 'visible' : 'hidden',
           transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
-          '--bs-offcanvas-height': 'min(360px, 70vh)'
+          '--bs-offcanvas-height': 'min(30rem, 80dvh)'
         } as React.CSSProperties}
       >
         <div className="offcanvas-header border-bottom px-4 py-3">

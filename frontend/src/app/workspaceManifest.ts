@@ -2,7 +2,7 @@
 import { getRuntimeCapabilities, type RuntimeCapabilities } from '../services/runtimeCapabilities';
 export type WorkspaceId = 'live' | 'tune' | 'sessions' | 'hud';
 export type AppVariant = 'full' | 'lite';
-export type AppSurface = 'settings' | 'appearance' | 'diagnostics' | 'updates' | 'about' | 'companion';
+export type AppSurface = 'settings' | 'appearance' | 'diagnostics' | 'about' | 'companion' | 'mcp';
 
 export interface AppCapabilities {
   readonly hudOverlay: boolean;

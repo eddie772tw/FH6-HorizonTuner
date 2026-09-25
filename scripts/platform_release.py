@@ -23,12 +23,6 @@ class PlatformRelease:
 
 
 PLATFORMS = {
-    "macos": PlatformRelease(
-        "darwin-aarch64",
-        "latest-macos.json",
-        "FH6-HorizonTuner-Full-macOS-arm64.app.tar.gz",
-        "FH6-HorizonTuner-Full-macOS-arm64.dmg",
-    ),
     "linux": PlatformRelease(
         "linux-x86_64",
         "latest-linux.json",
@@ -50,11 +44,7 @@ def stage_platform(
 ) -> list[Path]:
     """Stage already signed bytes without modifying/repacking the OTA payload."""
     profile = PLATFORMS[platform]
-    if platform == "macos":
-        payload = exactly_one(bundle_root, "macos/*.app.tar.gz")
-        download = exactly_one(bundle_root, "dmg/*.dmg")
-    else:
-        payload = download = exactly_one(bundle_root, "appimage/*.AppImage")
+    payload = download = exactly_one(bundle_root, "appimage/*.AppImage")
     signature = Path(str(payload) + ".sig")
     signature_text = signature.read_text(encoding="utf-8").strip()
     if not signature_text or not payload.stat().st_size or not download.stat().st_size:
@@ -78,12 +68,7 @@ def stage_platform(
         tag,
         signature_text,
         profile.payload_name,
-        notes=f"FH6-HorizonTuner Full {tag}"
-        + (
-            " — macOS experimental, ad-hoc signed, not notarized"
-            if platform == "macos"
-            else ""
-        ),
+        notes=f"FH6-HorizonTuner Full {tag}",
         platform=profile.target,
     )
     manifest_file = output / profile.manifest

@@ -16,21 +16,18 @@ export interface HudSetupPanelProps extends HudPanelSharedProps {
   metadataLoading: boolean;
   includeWip: boolean;
   busy: boolean;
-  pendingWrites: number;
-  error: string | null;
   capabilities: Pick<HudCapabilitySet, 'nativeWindow' | 'monitorSelection' | 'reload'>;
   onToggleHud: (enabled: boolean) => void;
   onStyleChange: (style: string) => void;
   onMonitorChange: (index: number) => void;
   onReloadHud: () => void;
   onOpenUnitSettings: () => void;
-  onRetry?: () => void;
 }
 
 export function HudSetupPanel({
   config, styles, disabled = false, onConfigPatch, t, monitors, author,
-  metadataLoading, includeWip, busy, pendingWrites, error, capabilities,
-  onToggleHud, onStyleChange, onMonitorChange, onReloadHud, onOpenUnitSettings, onRetry,
+  metadataLoading, includeWip, busy, capabilities,
+  onToggleHud, onStyleChange, onMonitorChange, onReloadHud, onOpenUnitSettings,
 }: HudSetupPanelProps) {
   const id = useId();
   const authorDescription = metadataLoading
@@ -40,36 +37,41 @@ export function HudSetupPanel({
         ? t(author.description) : author.description;
 
   return (
-    <section className="d-flex flex-column gap-3" aria-labelledby={`${id}-title`}>
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3">
+    <section className="d-flex flex-column gap-3" aria-label={t('Setup')}>
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 border-bottom pb-2">
         <div>
-          <h2 id={`${id}-title`} className="text-primary fs-4 fw-bold mb-1">{t('HUD Control Panel')}</h2>
           <p className="text-body-secondary fs-7 mb-0">
             {t('Full-screen borderless transparent HUD overlay for Forza Horizon 6')}
-            <br />{t('Simple & Advanced HUD Style:')} Paburrito
-            <br />{t('VFD HUD Style:')} eddie772tw feat. crosXover
-            <br />{t('Other SIMHUB HUD Style:')} StoRMiX43, Inori, GhostInTheLeague, FSH Motorsport Studio
           </p>
         </div>
         <div className="d-flex align-items-center flex-wrap gap-2">
-          <span role="alert" className="text-danger small">{error}</span>
-          {error && onRetry && (
-            <button type="button" className="btn btn-outline-secondary btn-sm" disabled={disabled || busy} onClick={onRetry}>
-              {t('Retry Update')}
-            </button>
-          )}
-          {pendingWrites > 0 && <span role="status" className="badge text-bg-secondary">{t('Processing...')}</span>}
-          <button
-            type="button"
-            className={`btn fw-bold px-4 py-2 ${config.enabled ? 'btn-outline-danger' : 'btn-primary'}`}
-            disabled={disabled || busy || capabilities.nativeWindow.status === 'unsupported'}
+          <span
             title={busy ? t('Please wait, HUD is currently launching or closing...') : capabilities.nativeWindow.detail}
-            aria-busy={busy}
-            onClick={() => onToggleHud(!config.enabled)}
+            style={
+              (disabled || busy || capabilities.nativeWindow.status === 'unsupported')
+                ? { display: 'inline-block', cursor: 'not-allowed' }
+                : undefined
+            }
           >
-            {busy ? <><span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />{t('Processing...')}</>
-              : t(config.enabled ? 'Close HUD Overlay' : 'Launch HUD Overlay')}
-          </button>
+            <button
+              type="button"
+              className={`hud-window-action btn btn-sm fw-bold ${config.enabled ? 'btn-outline-danger' : 'btn-primary'}`}
+              disabled={disabled || busy || capabilities.nativeWindow.status === 'unsupported'}
+              style={
+                (disabled || busy || capabilities.nativeWindow.status === 'unsupported')
+                  ? { pointerEvents: 'none' }
+                  : undefined
+              }
+              aria-busy={busy}
+              onClick={() => onToggleHud(!config.enabled)}
+            >
+              <span className={`hud-window-action-icon${busy ? ' spinner-border spinner-border-sm' : ''}`} aria-hidden="true" />
+              <span className="hud-status-labels">
+                <span className={config.enabled ? 'hud-status-reserved' : ''} aria-hidden={config.enabled}>{t('Launch HUD Overlay')}</span>
+                <span className={config.enabled ? '' : 'hud-status-reserved'} aria-hidden={!config.enabled}>{t('Close HUD Overlay')}</span>
+              </span>
+            </button>
+          </span>
         </div>
       </div>
       {capabilities.nativeWindow.status !== 'available' && (
@@ -88,11 +90,22 @@ export function HudSetupPanel({
               ))}
             </select>
           </div>
-          <button type="button" className="btn btn-outline-primary btn-sm fw-bold py-2" disabled={busy}
-            title={capabilities.reload.detail} onClick={onReloadHud}>
-            {t('Refresh HUD List & Reload HTML')}
-          </button>
-          <div className="p-3 border rounded glass-panel" aria-busy={metadataLoading}>
+          <span
+            title={capabilities.reload.detail}
+            className="d-block"
+            style={busy ? { cursor: 'not-allowed' } : undefined}
+          >
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm fw-bold py-2 w-100"
+              disabled={busy}
+              style={busy ? { pointerEvents: 'none' } : undefined}
+              onClick={onReloadHud}
+            >
+              {t('Refresh HUD List & Reload HTML')}
+            </button>
+          </span>
+          <div className="hud-author-details p-2 rounded" aria-busy={metadataLoading}>
             <div className="fs-7 text-body-secondary mb-1">
               {t('Author')}: <strong className="text-primary">{!author || author.author === 'Author' ? t('Author') : author.author}</strong>
             </div>

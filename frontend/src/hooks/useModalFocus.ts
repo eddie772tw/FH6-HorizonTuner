@@ -12,7 +12,8 @@ export function useModalFocus<T extends HTMLElement>(open: boolean, onClose: () 
     const focusable = () => Array.from(panel?.querySelectorAll<HTMLElement>(
       'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
     ) ?? []).filter(element => element.getClientRects().length > 0);
-    (focusable()[0] ?? panel)?.focus();
+    // Offcanvas visibility and its opening class must be applied before moving focus.
+    const frame = requestAnimationFrame(() => (focusable()[0] ?? panel)?.focus());
     const onKey = (event: KeyboardEvent) => {
       // Nested dialogs (for example updater details) own their own keyboard handling.
       const activeDialog = document.activeElement?.closest('[role="dialog"]');
@@ -30,7 +31,7 @@ export function useModalFocus<T extends HTMLElement>(open: boolean, onClose: () 
       }
     };
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
+    return () => { cancelAnimationFrame(frame); document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
   }, [open]);
   return panelRef;
 }

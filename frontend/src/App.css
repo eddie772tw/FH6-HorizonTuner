@@ -268,7 +268,28 @@ main .container-fluid {
 /* TelemetryView V1.5 card expansion and detail surface. */
 .telemetry-live-grid {
   position: relative;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 4.2fr) minmax(0, 5.8fr);
+  min-height: 28rem;
+  height: 100%;
 }
+
+/* The desktop shell owns scrolling; off-screen portal drawers must not scroll the document. */
+html:has(.app-shell), body:has(.app-shell) {
+  overflow: clip;
+}
+body:has(.app-shell) {
+  position: fixed;
+  inset: 0;
+}
+
+.telemetry-view { min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.telemetry-vehicle-status { min-width: 0; max-width: 100%; }
+.live-workspace, .live-workspace-panel { min-height: 0; min-width: 0; }
+.telemetry-live-grid--focused { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; }
+.telemetry-view--focused { overflow: hidden; }
+.telemetry-dynamics-summary { overflow-y: auto; }
+.telemetry-dynamics-summary > div { height: auto !important; min-height: 100%; }
 
 .telemetry-card-shell {
   min-width: 0;
@@ -276,9 +297,9 @@ main .container-fluid {
 }
 
 .telemetry-card-shell--expanded {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
+  position: fixed;
+  inset: 1rem;
+  z-index: 1060;
   padding: 1rem;
   overflow: hidden;
   background: var(--glass-bg);
@@ -698,3 +719,30 @@ input[type="range"]::-moz-range-thumb {
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
 ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
+
+/* Shared workspace rhythm, based on the compact Live dashboard. */
+.workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--divider);
+}
+
+.live-status-item { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; }
+.live-status-dot { width: 0.75rem; height: 0.75rem; flex: 0 0 0.75rem; border-radius: 50%; }
+
+.telemetry-detail-backdrop { position: fixed; inset: 0; z-index: 1055; background: var(--bs-body-bg); opacity: 0.65; }
+.telemetry-card-shell__header { flex-wrap: wrap; }
+.workspace-section { min-width: 0; padding: 0.5rem; background: transparent; }
+.workspace-section-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--divider);
+}

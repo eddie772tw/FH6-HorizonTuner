@@ -305,16 +305,6 @@ jobs:
           path: release-assets
       - run: uv run --no-project --active python scripts/publish_release_assets.py publish --repo "$REPOSITORY" --tag "$RELEASE_TAG" --directory release-assets
 
-  build-macos:
-    needs: release-metadata
-    uses: ./.github/workflows/native-packaging.yml
-    with:
-      platform: macos
-      ref: ${{ needs.release-metadata.outputs.sha }}
-      tag: ${{ needs.release-metadata.outputs.tag }}
-      release-signing: true
-    secrets: inherit
-
   build-linux:
     needs: release-metadata
     uses: ./.github/workflows/native-packaging.yml
@@ -324,30 +314,6 @@ jobs:
       tag: ${{ needs.release-metadata.outputs.tag }}
       release-signing: true
     secrets: inherit
-
-  publish-macos:
-    needs: [release-metadata, build-macos]
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      REPOSITORY: ${{ github.repository }}
-      RELEASE_TAG: ${{ needs.release-metadata.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.release-metadata.outputs.sha }}
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
-        with:
-          python-version: '3.13'
-          activate-environment: true
-          no-project: true
-      - uses: actions/download-artifact@v8
-        with:
-          name: native-macos-${{ github.run_id }}
-          path: release-assets
-      - run: uv run --no-project --active python scripts/publish_release_assets.py publish --repo "$REPOSITORY" --tag "$RELEASE_TAG" --directory release-assets
 
   publish-linux:
     needs: [release-metadata, build-linux]
@@ -375,7 +341,7 @@ jobs:
 
   release-summary:
     if: always()
-    needs: [release-metadata, build-and-publish-release, publish-windows, build-macos, build-linux, publish-macos, publish-linux]
+    needs: [release-metadata, build-and-publish-release, publish-windows, build-linux, publish-linux]
     runs-on: ubuntu-22.04
     env:
       RESULTS: ${{ toJSON(needs) }}

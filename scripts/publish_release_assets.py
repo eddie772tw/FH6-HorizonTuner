@@ -18,7 +18,6 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 CHANNELS = {
     "latest.json": "windows-x86_64",
     "latest-lite.json": "windows-x86_64",
-    "latest-macos.json": "darwin-aarch64",
     "latest-linux.json": "linux-x86_64",
 }
 

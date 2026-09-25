@@ -7,21 +7,15 @@ import pytest
 from scripts.platform_release import PLATFORMS, stage_platform
 
 
-@pytest.mark.parametrize("platform", ["macos", "linux"])
 def test_signed_payload_is_unchanged_and_manifest_targets_only_its_platform(
-    tmp_path, platform
+    tmp_path,
 ):
+    platform = "linux"
     bundle = tmp_path / "bundle"
-    payload = bundle / (
-        "macos/Tuner.app.tar.gz" if platform == "macos" else "appimage/Tuner.AppImage"
-    )
+    payload = bundle / "appimage/Tuner.AppImage"
     payload.parent.mkdir(parents=True)
     payload.write_bytes(b"already-signed-native-payload")
     payload.with_name(payload.name + ".sig").write_bytes(b"updater-signature\n")
-    if platform == "macos":
-        download = bundle / "dmg/Tuner.dmg"
-        download.parent.mkdir()
-        download.write_bytes(b"disk-image")
     output = tmp_path / "output"
     artifacts = stage_platform(
         platform, bundle, output, "11.45.18", "v2-launch", "owner/repo"
@@ -39,7 +33,7 @@ def test_signed_payload_is_unchanged_and_manifest_targets_only_its_platform(
             "url": f"https://github.com/owner/repo/releases/download/v2-launch/{profile.payload_name}",
         }
     }
-    assert len(artifacts) == (4 if platform == "macos" else 3)
+    assert len(artifacts) == 3
 
 
 def test_missing_or_ambiguous_native_artifact_is_rejected(tmp_path):

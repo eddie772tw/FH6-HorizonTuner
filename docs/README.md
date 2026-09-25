@@ -7,7 +7,7 @@
 | 需求 | 入口 |
 | --- | --- |
 | 啟動 Full／Lite 開發環境、打包 | [開發啟動指南](guides/development.md) |
-| Windows／macOS／Linux 發行、LAN Data Out 與獨立 OTA | [跨平台發行指南](guides/cross-platform-release.md) |
+| Windows／Linux 發行、LAN Data Out 與獨立 OTA | [跨平台發行指南](guides/cross-platform-release.md) |
 | Rust 後端架構、遷移契約與測試分層 | [Rust 後端指南](backend-rust/README.md) |
 | 匯出檔案、另存新檔與儲存位置 | [檔案匯出指南](guides/file-exports.md) |
 | 使用 Agent CLI | [CLI 操作指南](guides/agent-cli-guide.md) |

@@ -28,12 +28,11 @@ permissions:
 
 jobs:
   package:
-    runs-on: ${{ inputs.platform == 'macos' && 'macos-14' || 'ubuntu-22.04' }}
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
       FH6_PLATFORM: lan
       UV_PYTHON_PREFERENCE: only-managed
-      MACOSX_DEPLOYMENT_TARGET: '14.0'
       APPIMAGE_EXTRACT_AND_RUN: '1'
       TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.release-signing && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.release-signing && secrets.TAURI_SIGNING_KEY_PASSWORD || '' }}
@@ -61,7 +60,6 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - name: Install Linux bundle dependencies
-        if: inputs.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2
@@ -87,9 +85,6 @@ jobs:
         env:
           PLATFORM: ${{ inputs.platform }}
         run: uv run --no-project --active python scripts/build_native_backend.py --platform "$PLATFORM"
-      - name: Ad-hoc sign macOS backend
-        if: inputs.platform == 'macos'
-        run: codesign --force --sign - frontend/src-tauri/bin/sidecar/server-sidecar
       - name: Prepare build override and test-only signing key
         env:
           RELEASE_SIGNING: ${{ inputs.release-signing }}
@@ -100,14 +95,8 @@ jobs:
           pnpm --prefix frontend exec tauri build --config "$RUNNER_TEMP/fh6-native-build.json"
       - name: Verify production signature key identity
         if: inputs.release-signing
-        env:
-          PLATFORM: ${{ inputs.platform }}
         run: |
-          if [ "$PLATFORM" = macos ]; then
-            signatures=(frontend/src-tauri/target/release/bundle/macos/*.app.tar.gz.sig)
-          else
-            signatures=(frontend/src-tauri/target/release/bundle/appimage/*.AppImage.sig)
-          fi
+          signatures=(frontend/src-tauri/target/release/bundle/appimage/*.AppImage.sig)
           test "${#signatures[@]}" -eq 1
           uv run --no-project --active python scripts/validate_tauri_updater_keypair.py --config frontend/src-tauri/tauri.conf.json --signature "${signatures[0]}"
       - name: Exercise backend from native package

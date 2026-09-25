@@ -21,11 +21,6 @@ permissions:
   contents: read
 
 jobs:
-  native-macos:
-    uses: ./.github/workflows/native-packaging.yml
-    with:
-      platform: macos
-      ref: ${{ github.sha }}
   native-linux:
     uses: ./.github/workflows/native-packaging.yml
     with:

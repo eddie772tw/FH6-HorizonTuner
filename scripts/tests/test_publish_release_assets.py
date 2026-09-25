@@ -191,6 +191,20 @@ def test_platform_failure_keeps_old_version_url_and_signature_while_windows_adva
     )
 
 
+def test_retired_macos_channel_is_not_carried_to_new_releases(tmp_path):
+    client = Releases()
+    prior = client.add_release("v1")
+    previous = fixture(tmp_path, version="11.45.17", tag="v1")
+    publish(client, prior, tmp_path)
+    client.upload(prior, "latest-macos.json", b"retired platform metadata")
+    target = client.add_release("v2")
+
+    carry_channels(client, target, list(CHANNELS))
+
+    assert {asset["name"] for asset in client.assets(target)} == {"latest-linux.json"}
+    assert asset_bytes(client, target, "latest-linux.json") == previous
+
+
 def test_first_platform_release_does_not_fabricate_a_channel():
     client = Releases()
     release = client.add_release("first")

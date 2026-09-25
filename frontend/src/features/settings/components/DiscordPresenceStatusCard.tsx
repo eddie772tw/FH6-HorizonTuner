@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { backendFetch } from '../../../services/backend';
 import { useSettings } from '../../../context/SettingsContext';
+import { SettingsItem } from './SettingsPrimitives';
 
 interface DiscordPresenceStatus {
   configured: boolean;
@@ -54,21 +55,12 @@ export const DiscordPresenceStatusCard: React.FC = () => {
               : t('Waiting for Discord');
 
   return (
-    <div className="settings-section d-flex flex-column gap-3">
-      <h5 className="text-primary fs-6 fw-bold border-bottom pb-2 m-0">
-        {t('Discord Rich Presence')}
-      </h5>
-      <div className="settings-row d-flex justify-content-between align-items-center border-bottom pb-3">
-        <div>
-          <div className="form-check-label fw-bold fs-6">{t('Presence Status')}</div>
-          <div className="form-text fs-7">
-            {t('Shows your current FH6 car and race status in Discord when Discord Desktop is running.')}
-          </div>
-        </div>
+    <div className="d-flex flex-column gap-2">
+      <SettingsItem label={t('Presence Status')} description={t('Shows your current FH6 car and race status in Discord when Discord Desktop is running.')}>
         <span className="badge text-bg-secondary">{stateLabel}</span>
-      </div>
+      </SettingsItem>
       {status && (
-        <div className="d-flex justify-content-end gap-3 text-body-secondary fs-7">
+        <div className="d-flex justify-content-end flex-wrap gap-3 text-body-secondary fs-7">
           <span>{t('Updates')}: {status.updatesSent}</span>
           <span>{t('Attempts')}: {status.connectionAttempts}</span>
           <span>{t('Reconnects')}: {status.reconnects}</span>

@@ -26,6 +26,7 @@ export interface AnalysisSessionToolbarProps {
   readonly onDownloadTemplate: () => void;
   readonly onDeleteSession: () => void;
   readonly onCloseMessage: () => void;
+  readonly onLatestAnalysis: () => void;
 }
 
 const selectStyle: React.CSSProperties = {
@@ -63,27 +64,14 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
   onDownloadTemplate,
   onDeleteSession,
   onCloseMessage,
+  onLatestAnalysis,
 }) => (
   <>
-    <div
-      className="glass-panel"
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "1rem",
-        flexShrink: 0,
-        flexWrap: "wrap",
-        gap: "0.75rem",
-      }}
-    >
-      <div>
-        <h2 style={{ color: "var(--primary)", marginBottom: "0.2rem" }}>
-          {t("Post-Race Debrief & MoTeC Bridge")}
-        </h2>
+    <div className="workspace-toolbar" style={{ flexShrink: 0 }}>
+      <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
         <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
           {t("Status")}: {isRecording ? (
-            <span style={{ color: "#ff003c", fontWeight: "bold" }}>
+            <span className="text-danger fw-bold">
               {t("Recording...")} ({recordingCount} {t("samples")})
             </span>
           ) : (
@@ -94,7 +82,7 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "0.5rem", alignItems: "end", flexWrap: "wrap", minWidth: 0 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
           <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
             {t("Select Session")}:
@@ -138,7 +126,10 @@ const AnalysisSessionToolbar: React.FC<AnalysisSessionToolbarProps> = ({
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.8rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button type="button" onClick={onLatestAnalysis} className="btn btn-sm btn-outline-secondary">
+            {t('Post-Race Analysis')}
+          </button>
           {getRuntimeCapabilities().localMotecLaunch && (
             <button onClick={onOpenInMoTec} className="btn btn-sm btn-success" title={t("Launch session in local MoTeC i2 viewer")}>
               {t("Open in MoTeC")}

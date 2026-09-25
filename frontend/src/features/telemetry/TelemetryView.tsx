@@ -76,7 +76,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   const [suspensionTravelMode, setSuspensionTravelMode] = useState<SuspensionTravelMode>(() =>
     localStorage.getItem('telemetry_suspension_travel_mode') === 'absolute' ? 'absolute' : 'relative'
   );
-  const { data: telemetryData } = useTelemetry();
+  const { data: telemetryData, isConnected } = useTelemetry();
   const { t } = useSettings();
   const { carName } = useCarParams();
   const [expandedCard, setExpandedCard] = useState<TelemetryCardId | null>(null);
@@ -153,11 +153,15 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
   const isEV = telemetryData?.EngineIdleRpm === 0;
 
   return (
-    <div className="d-flex flex-column h-100 w-100 overflow-hidden">
+    <div className={`telemetry-view d-flex flex-column h-100 w-100${focusedCard ? ' telemetry-view--focused' : ''}`}>
       
       {/* Header bar */}
-      <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom flex-shrink-0">
-        <div className="d-flex align-items-center gap-3">
+      <div className="workspace-toolbar mb-2 flex-shrink-0">
+        <div className="d-flex align-items-center flex-wrap gap-3">
+          {!focusedCard && <span className="live-status-item" role="status" aria-atomic="true">
+            <span className={`live-status-dot ${isConnected ? 'bg-success' : 'bg-danger'}`} aria-hidden="true" />
+            <span>{t(isConnected ? 'Backend connected' : 'Backend disconnected')}</span>
+          </span>}
           <div 
             className="position-relative d-inline-flex align-items-center gap-2"
             onClick={() => { if (isHudPaused) setShowPopover(prev => !prev); }}
@@ -167,11 +171,10 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
               width: '12px',
               height: '12px',
               borderRadius: '50%',
-              background: isHudPaused ? 'var(--bs-warning)' : isRacing ? 'var(--bs-primary)' : 'var(--bs-secondary)',
-              boxShadow: isHudPaused ? '0 0 10px var(--bs-warning)' : isRacing ? '0 0 10px var(--bs-primary)' : 'none'
+              background: !isConnected ? 'var(--bs-secondary)' : isHudPaused ? 'var(--bs-warning)' : isRacing ? 'var(--bs-primary)' : 'var(--bs-secondary)',
             }} />
-            <span className={isHudPaused ? "fw-bold text-warning fs-6 m-0" : isRacing ? "fw-bold text-primary fs-6 m-0" : "fw-bold text-secondary fs-6 m-0"}>
-              {isHudPaused ? t("RENDER PAUSED (OVERLAY ACTIVE)") : isRacing ? t("RACE DATA LIVE") : t("GAME IDLE / MENU")}
+            <span className={!isConnected ? 'fw-bold text-body-secondary fs-6 m-0' : isHudPaused ? "fw-bold text-warning fs-6 m-0" : isRacing ? "fw-bold text-primary fs-6 m-0" : "fw-bold text-secondary fs-6 m-0"}>
+              {!isConnected ? t('Game status unavailable') : isHudPaused ? t("RENDER PAUSED (OVERLAY ACTIVE)") : isRacing ? t("RACE DATA LIVE") : t("GAME IDLE / MENU")}
             </span>
 
             {/* Downward Popover */}
@@ -233,7 +236,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
 
         </div>
 
-        <div className="d-flex align-items-center gap-2 fw-bold text-secondary fs-6">
+        <div className="telemetry-vehicle-status d-flex align-items-center flex-wrap gap-2 fw-bold text-secondary fs-6">
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowUnitSettings(true)}>
             {t("Telemetry Units")}
           </button>
@@ -243,7 +246,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
         </div>
       </div>
 
-      <div className="d-grid gap-3 flex-grow-1 telemetry-live-grid" style={{ gridTemplateColumns: focusedCard ? 'minmax(0, 1fr)' : 'repeat(6, 1fr)', gridTemplateRows: focusedCard ? 'minmax(0, 1fr)' : '4.2fr 5.8fr', minHeight: 0, height: '100%', overflow: 'hidden' }}>
+      <div className={`d-grid gap-3 flex-grow-1 telemetry-live-grid${focusedCard ? ' telemetry-live-grid--focused' : ''}`}>
 
           {/* BLOCK 1: Row 1 Left (Span 2 / 6 = 33.3%) - Driver Cockpit Cluster */}
           {(!focusedCard || focusedCard === 'driver') && <TelemetryCardShell
@@ -311,7 +314,7 @@ const TelemetryViewContent: React.FC<TelemetryViewContentProps> = ({
             detail={<TelemetryDetailView cardId="dynamics" current={telemetryData} />}
           >
             <TelemetryCardLayout variant="split">
-              <div className="telemetry-card-layout__fill">
+              <div className="telemetry-card-layout__fill telemetry-dynamics-summary" tabIndex={0} role="region" aria-label={t('Vehicle Dynamics Overview')}>
                 <VehicleDynamicsDisplay />
               </div>
               <div className="telemetry-card-layout__radar">

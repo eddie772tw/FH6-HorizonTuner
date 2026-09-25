@@ -38,7 +38,7 @@ describe('workspace capabilities', () => {
   });
 
   it.each<AppVariant>(['full', 'lite'])('keeps app surfaces available in %s', variant => {
-    for (const surface of ['settings', 'appearance', 'diagnostics', 'updates', 'about'] as const) {
+    for (const surface of ['settings', 'appearance', 'diagnostics', 'companion', 'mcp', 'about'] as const) {
       expect(permitsIntent(variant, { kind: 'surface', surface })).toBe(true);
     }
   });

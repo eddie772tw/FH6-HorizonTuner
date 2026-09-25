@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../../context/SettingsContext';
 import { backendFetch, backendHttpUrl } from '../../../services/backend';
-import { SettingsItem, SettingsSection, SettingsSwitch } from './SettingsPrimitives';
+import { SettingsItem, SettingsSwitch } from './SettingsPrimitives';
 
 interface McpStatus {
   enabled: boolean;
@@ -25,13 +25,13 @@ export const McpSettingsCard: React.FC = () => {
     const fetchStatus = async () => {
       try {
         const response = await backendFetch('/api/mcp/status');
-        if (!response.ok) return;
+        if (!response.ok) { if (isMounted) setStatus(null); return; }
         const data = (await response.json()) as McpStatus;
         if (isMounted) {
           setStatus(data);
         }
       } catch {
-        // Ignored if backend status endpoint is unreachable
+        if (isMounted) setStatus(null);
       }
     };
 
@@ -46,25 +46,17 @@ export const McpSettingsCard: React.FC = () => {
   const mcpUrl = backendHttpUrl('/mcp');
 
   return (
-    <SettingsSection
-      title={t('Model Context Protocol (MCP) Server')}
-      headerAside={(
-        <div className="d-flex align-items-center flex-wrap gap-2">
+    <div className="d-flex flex-column gap-3">
+      <p className="text-body-secondary m-0">{t('Model Context Protocol (MCP) Server')}</p>
+      <SettingsItem label={t('Status')} description={status && mcpEnabled ? `${t('Total Requests')}: ${status.total_requests_served}` : undefined}>
           <span
             className={`badge ${
-              mcpEnabled ? 'text-bg-success' : 'text-bg-secondary'
+              mcpEnabled && status?.enabled ? 'text-bg-success' : 'text-bg-secondary'
             } fs-8 fw-semibold`}
           >
-            {mcpEnabled ? t('ACTIVE') : t('DISABLED')}
+            {t(!mcpEnabled ? 'DISABLED' : !status ? 'Unavailable' : status.enabled ? 'ACTIVE' : 'DISABLED')}
           </span>
-          {status && mcpEnabled && (
-            <span className="fs-7 text-secondary">
-              {t('Total Requests')}: <span className="text-info fw-bold">{status.total_requests_served}</span>
-            </span>
-          )}
-        </div>
-      )}
-    >
+      </SettingsItem>
       <SettingsSwitch
         id="chk-mcp-enabled"
         label={t('Enable MCP Server')}
@@ -125,6 +117,6 @@ export const McpSettingsCard: React.FC = () => {
           </div>
         </>
       )}
-    </SettingsSection>
+    </div>
   );
 };
