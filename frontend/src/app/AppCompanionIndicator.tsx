@@ -40,11 +40,11 @@ export function AppCompanionIndicator({ onOpen }: { onOpen: () => void }) {
       type="button"
       className="dropdown-item d-flex align-items-center justify-content-between gap-3"
       onClick={onOpen}
-      title={t(
-        !status ? 'Companion status unavailable' : activeCount > 0
-          ? `${activeCount} Companion device(s) connected`
-          : 'Companion APP: No devices connected. Click to pair.'
-      )}
+      title={
+        !status ? t('Companion status unavailable') : activeCount > 0
+          ? t('{activeCount} Companion device(s) connected', { activeCount })
+          : t('Companion APP: No devices connected. Click to pair.')
+      }
       aria-label={t('Companion App')}
     >
       <span>{t('Companion App')}</span>

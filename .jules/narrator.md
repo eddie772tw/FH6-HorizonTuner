@@ -22,3 +22,8 @@
 ## 2024-11-13 - Translation Parameterization support
 **Learning:** Hardcoded text that contain numbers or values in UI elements must be extracted via `t` variables, for this project we must use string replacement. E.g `t(text, params)` inside the `SettingsContext.tsx`
 **Action:** Extract text using `t(A · {number} · {date}, { number: i + 1, date: ... })` and pass the mapped `Record<string, string | number>` object.
+## 2024-05-24 - Variable interpolation in translation function
+
+**Learning:** When passing variables to custom `t()` function, ensure the variables are properly enclosed in an object as the second argument, e.g., `t('{activeCount} Companion device(s) connected', { activeCount })`.
+
+**Action:** Ensure proper variable interpolation when refactoring hardcoded text to i18n usage.
