@@ -9,7 +9,6 @@ export interface HudAdvancedPanelProps extends HudPanelSharedProps {
   t: (key: string) => string;
   audioDevices: readonly { id: string; name: string; is_default: boolean }[];
   loadingAudioDevices: boolean;
-  audioError?: string | null;
   isWipActive: boolean;
   wipForced: boolean;
   /** Owner persists audioDeviceId AND posts /api/audio/device. */
@@ -120,7 +119,7 @@ function StyleSettings({ config, onConfigPatch, isWipActive, wipForced, onShowWi
   );
 }
 
-function SystemSettings({ config, onConfigPatch, audioDevices, loadingAudioDevices, audioError, onAudioDeviceChange, onRefreshAudioDevices, onResetHudConfig, t }: HudAdvancedPanelProps) {
+function SystemSettings({ config, onConfigPatch, audioDevices, loadingAudioDevices, onAudioDeviceChange, onRefreshAudioDevices, onResetHudConfig, t }: HudAdvancedPanelProps) {
   const id = useId();
   return (
     <section className="col-12 col-lg-4 d-flex flex-column gap-3" aria-labelledby={`${id}-title`}>
@@ -130,7 +129,10 @@ function SystemSettings({ config, onConfigPatch, audioDevices, loadingAudioDevic
           <label htmlFor={`${id}-source`} className="form-label fs-7 text-body-secondary mb-0">{t('Audio Capture Source')}:</label>
           <button type="button" className="btn btn-outline-secondary btn-sm py-0 px-2 fs-8" disabled={loadingAudioDevices}
             aria-busy={loadingAudioDevices} onClick={onRefreshAudioDevices}>
-            {loadingAudioDevices ? <><span className="spinner-border spinner-border-sm me-1" aria-hidden="true" />{t('Refreshing...')}</> : t('Refresh Audio Devices')}
+            <span className="hud-status-labels">
+              <span className={loadingAudioDevices ? 'hud-status-reserved' : ''} aria-hidden={loadingAudioDevices}>{t('Refresh Audio Devices')}</span>
+              <span className={loadingAudioDevices ? '' : 'hud-status-reserved'} aria-hidden={!loadingAudioDevices}>{t('Refreshing...')}</span>
+            </span>
           </button>
         </div>
         <select id={`${id}-source`} className="form-select form-select-sm" value={config.audioDeviceId || 'default'}
@@ -139,7 +141,6 @@ function SystemSettings({ config, onConfigPatch, audioDevices, loadingAudioDevic
             <option key={device.id} value={device.id}>{device.name === 'System Default Speaker / 系統預設輸出裝置' ? t('System Default Speaker') : device.name}</option>
           )) : <option value="default">{t('System Default Speaker')}</option>}
         </select>
-        <span className="text-danger fs-7" role="alert">{audioError}</span>
       </div>
       <label className="form-check form-switch py-1 m-0">
         <input type="checkbox" className="form-check-input" checked={!!config.pauseTelemetryViewWhenActive}

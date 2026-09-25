@@ -82,7 +82,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
           zIndex: 1060 
         }}
       >
-        <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '520px' }}>
+        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ width: 'calc(100% - 1rem)', maxWidth: '40rem' }}>
           <div className="modal-content glass-panel border border-primary border-opacity-25 shadow-lg">
             
             {/* Header */}
@@ -130,9 +130,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ updateInfo, isOpen, on
               {updateInfo.body && (
                 <div>
                   <label className="form-label fs-7 fw-bold text-primary mb-1">{t('Release Notes')}</label>
-                  <div 
-                    className="bg-dark bg-opacity-75 p-3 rounded border border-secondary border-opacity-25 fs-7 text-light overflow-y-auto"
-                    style={{ maxHeight: '140px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}
+                  <div
+                    className="bg-dark bg-opacity-75 p-3 rounded border border-secondary border-opacity-25 fs-7 text-light"
+                    style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4', overflowWrap: 'anywhere' }}
                   >
                     {updateInfo.body}
                   </div>

@@ -50,19 +50,15 @@ const TuningViewDevContent: React.FC = () => {
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">
-      <div className="border-bottom pb-3 flex-shrink-0">
-        <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
-          <div>
-            <h2 className="text-primary fs-4 fw-bold mb-1">{t('Developer Tuning View')}</h2>
-            <p className="text-body-secondary fs-7 mb-0">{t('Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.')}</p>
-          </div>
-          <div className="d-flex align-items-center gap-2">
+      <div className="workspace-toolbar flex-shrink-0">
+        <div className="small text-body-secondary">{t('Developer Tuning View')}</div>
+        <div className="d-flex align-items-center flex-wrap gap-2">
             <button className="btn btn-outline-primary btn-sm" onClick={() => developer.setShowCapture(true)}>{t('Open Telemetry Capture')}</button>
             <span className="badge bg-warning-subtle text-warning-emphasis">{t('EXPERIMENTAL')}</span>
             <span className="badge bg-primary-subtle text-primary-emphasis">tuning-dev/v1</span>
-          </div>
         </div>
       </div>
+      <p className="text-body-secondary small mb-0">{t('Explicit typed input/output for the experimental tuningMath_dev.ts calculation layer.')}</p>
       <div className="alert alert-warning mb-0 py-2" role="alert">
         {t('This view is for algorithm validation. Tire coefficients and game-slider mappings are calibration priors, not official FH6 values.')}
       </div>

@@ -6,9 +6,9 @@ import { useOverlayWebSocket } from '../hooks/useOverlayWebSocket';
 import DiagnosticConsole from '../components/DiagnosticConsole';
 import ThemeView from '../features/theme/ThemeView';
 import SettingsView from '../features/settings/SettingsView';
-import { UpdateSettingsCard } from '../features/settings/components/UpdateSettingsCard';
 import { CompanionSettingsCard } from '../features/settings/components/CompanionSettingsCard';
-import { getAppBuildInfo, formatBuildInfoText } from '../services/buildInfoService';
+import { McpSettingsCard } from '../features/settings/components/McpSettingsCard';
+import { AppAbout } from './AppAbout';
 import { AppHeader } from './AppHeader';
 import { AppDialog } from './AppDialog';
 import { getAppCapabilities, permitsIntent, resolveWorkspace, type AppSurface, type AppVariant, type SessionIntent, type WorkspaceId } from './workspaceManifest';
@@ -77,7 +77,7 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
   }, []);
   const closeSurface = useCallback(() => setSurface(null), []);
   const Workspace = workspaces[resolveWorkspace(variant, activeWorkspace)];
-  return <div className="d-flex flex-column vh-100" style={{ background: 'var(--bg-color)', color: 'var(--text)' }}>
+  return <div className="app-shell d-flex flex-column vh-100" style={{ background: 'var(--bg-color)', color: 'var(--text)' }}>
     <AppRuntime activeWorkspace={activeWorkspace} />
     <AppHeader variant={variant} activeWorkspace={activeWorkspace} onSelect={selectWorkspace} onOpenSurface={openSurface} />
     {Runtime && <Runtime activeWorkspace={activeWorkspace} onOpenSessions={openSessions} />}
@@ -94,14 +94,10 @@ export function AppShell({ variant, workspaces, Runtime, prepareSession }: {
         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setFailedSessionRequest(null)}>{t('Close')}</button>
       </div>
     </div>}
-    {surface === 'settings' && <AppDialog title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} onOpenUpdates={() => openSurface('updates')} /></AppDialog>}
-    {surface === 'companion' && <AppDialog title={t('Companion App')} onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
-    {surface === 'updates' && <AppDialog title="Updates" onClose={closeSurface}><UpdateSettingsCard /></AppDialog>}
-    {surface === 'about' && <AppDialog title="About" onClose={closeSurface}>
-      <h3 className="h5">FH6 HorizonTuner{variant === 'lite' ? ' Lite' : ''}</h3>
-      <p>{formatBuildInfoText(getAppBuildInfo())}</p>
-      <a href="https://github.com/eddie772tw/FH6-HorizonTuner" target="_blank" rel="noreferrer">{t('Project website')}</a>
-    </AppDialog>}
+    {surface === 'settings' && <AppDialog className="app-dialog--settings" title="Settings" onClose={closeSurface}><SettingsView allowDeveloperTuning={getAppCapabilities(variant).developerTuning} /></AppDialog>}
+    {surface === 'companion' && <AppDialog className="app-dialog--companion" title={t('Companion App')} onClose={closeSurface}><CompanionSettingsCard /></AppDialog>}
+    {surface === 'mcp' && <AppDialog className="app-dialog--mcp" title="MCP" onClose={closeSurface}><McpSettingsCard /></AppDialog>}
+    {surface === 'about' && <AppDialog className="app-dialog--about" title="About" onClose={closeSurface}><AppAbout variant={variant} /></AppDialog>}
     <DiagnosticConsole show={surface === 'diagnostics'} onClose={closeSurface} />
     <ThemeView show={surface === 'appearance'} onClose={closeSurface} />
   </div>;

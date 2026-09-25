@@ -8,12 +8,13 @@ import { SettingsSection, SettingsSwitch } from './SettingsPrimitives';
 export const UpdateSettingsCard: React.FC = () => {
   const { settings, updateSettings, t } = useSettings();
   const { addToast } = useToast();
-  const [isChecking, setIsChecking] = useState(false);
+  const [checkState, setCheckState] = useState<'unchecked' | 'checking' | 'current' | 'available' | 'failed'>('unchecked');
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [availableUpdate, setAvailableUpdate] = useState<UpdateInfo | null>(null);
   const [showModal, setShowModal] = useState(false);
 
   const autoCheck = settings.auto_check_updates !== false;
+  const isChecking = checkState === 'checking';
 
   const handleCheckUpdate = async () => {
     if (!isTauriEnvironment()) {
@@ -24,17 +25,17 @@ export const UpdateSettingsCard: React.FC = () => {
         duration: 4000,
         anchor: 'build-info',
       });
-      setLastChecked(new Date().toLocaleTimeString());
       return;
     }
 
     try {
-      setIsChecking(true);
+      setCheckState('checking');
       const update = await checkForAppUpdates();
       setLastChecked(new Date().toLocaleTimeString());
 
       if (update) {
         setAvailableUpdate(update);
+        setCheckState('available');
         setShowModal(true);
         addToast({
           type: 'success',
@@ -45,6 +46,7 @@ export const UpdateSettingsCard: React.FC = () => {
         });
       } else {
         setAvailableUpdate(null);
+        setCheckState('current');
         addToast({
           type: 'info',
           title: t('Up to Date'),
@@ -54,6 +56,7 @@ export const UpdateSettingsCard: React.FC = () => {
         });
       }
     } catch (err: any) {
+      setCheckState('failed');
       console.error('[UpdateSettingsCard] Update check failed:', err);
       addToast({
         type: 'danger',
@@ -62,8 +65,6 @@ export const UpdateSettingsCard: React.FC = () => {
         duration: 5000,
         anchor: 'build-info',
       });
-    } finally {
-      setIsChecking(false);
     }
   };
 
@@ -75,10 +76,15 @@ export const UpdateSettingsCard: React.FC = () => {
           <div className="d-flex align-items-center flex-wrap gap-2">
             <span
               className={`badge ${
-                availableUpdate ? 'text-bg-warning' : 'text-bg-success'
+                checkState === 'available' ? 'text-bg-warning'
+                  : checkState === 'current' ? 'text-bg-success'
+                    : checkState === 'failed' ? 'text-bg-danger' : 'text-bg-secondary'
               } fs-8 fw-semibold`}
             >
-              {availableUpdate ? t('UPDATE AVAILABLE') : t('UP TO DATE')}
+              {checkState === 'available' ? t('UPDATE AVAILABLE')
+                : checkState === 'current' ? t('UP TO DATE')
+                  : checkState === 'failed' ? t('Check Failed')
+                    : checkState === 'checking' ? t('Checking...') : t('Not checked')}
             </span>
             {lastChecked && (
               <span className="fs-7 text-secondary">

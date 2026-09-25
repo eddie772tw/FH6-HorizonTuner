@@ -32,15 +32,15 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
 
       {/* Offcanvas panel */}
       <div
-        className={`offcanvas offcanvas-start theme-sidebar border-end glass-panel shadow-lg${show ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end app-menu-drawer settings-drawer theme-sidebar border-start glass-panel shadow-lg${show ? ' show' : ''}`}
         ref={panelRef}
         tabIndex={-1}
         aria-modal="true"
+        aria-hidden={!show}
+        aria-label={t('Theme Customization')}
         role="dialog"
         style={{
           zIndex: 1050,
-          visibility: show ? 'visible' : 'hidden',
-          transition: 'transform 0.3s ease-in-out, visibility 0s linear 0s',
         }}
       >
         {/* Header */}
@@ -68,7 +68,7 @@ const ThemeView: React.FC<ThemeViewProps> = ({ show, onClose }) => {
 
         {/* Offcanvas Body */}
         <div className="offcanvas-body p-0 overflow-y-auto">
-          <div className="d-flex flex-column gap-4 p-4">
+          <div className="settings-surface d-flex flex-column gap-4 p-4">
             <AppearanceModePanel />
             <ColorPickerPanel />
             <PresetPanel />

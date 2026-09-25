@@ -1,0 +1,64 @@
+.drag-test-workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.drag-test-toolbar,
+.drag-test-actions,
+.drag-test-compare {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.drag-test-toolbar-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.drag-test-compare-select {
+  width: min(15rem, 100%);
+  min-width: 0;
+  background-color: var(--surface-1);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
+.drag-test-guide {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.drag-test-results {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.drag-test-results > * {
+  min-width: 0;
+}
+
+.drag-test-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.drag-test-summary-grid > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import type { AppSurface } from './workspaceManifest';
+import { AppCompanionIndicator } from './AppCompanionIndicator';
 
 const surfaces: readonly { id: AppSurface; label: string }[] = [
   { id: 'settings', label: 'Settings' }, { id: 'appearance', label: 'Appearance' },
-  { id: 'diagnostics', label: 'Diagnostics' }, { id: 'updates', label: 'Updates' },
-  { id: 'about', label: 'About' },
 ];
 
 export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
@@ -13,6 +12,11 @@ export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const openSurface = (surface: AppSurface) => {
+    setOpen(false);
+    triggerRef.current?.focus();
+    onOpen(surface);
+  };
   useEffect(() => {
     if (!open) return;
     const closeOutside = (event: PointerEvent) => {
@@ -28,7 +32,13 @@ export function AppMenu({ onOpen }: { onOpen: (surface: AppSurface) => void }) {
       aria-controls="app-menu-items" onClick={() => setOpen(value => !value)}>{t('App Menu')}</button>
     {open && <div id="app-menu-items" className="dropdown-menu show end-0 shadow glass-panel" aria-label={t('App Menu')}>
       {surfaces.map(surface => <button key={surface.id} type="button" className="dropdown-item"
-        onClick={() => { setOpen(false); triggerRef.current?.focus(); onOpen(surface.id); }}>{t(surface.label)}</button>)}
+        onClick={() => openSurface(surface.id)}>{t(surface.label)}</button>)}
+      <hr className="dropdown-divider" />
+      <AppCompanionIndicator onOpen={() => openSurface('companion')} />
+      <button type="button" className="dropdown-item" onClick={() => openSurface('mcp')}>MCP</button>
+      <hr className="dropdown-divider" />
+      <button type="button" className="dropdown-item" onClick={() => openSurface('diagnostics')}>{t('Diagnostics')}</button>
+      <button type="button" className="dropdown-item" onClick={() => openSurface('about')}>{t('About')}</button>
     </div>}
   </div>;
 }

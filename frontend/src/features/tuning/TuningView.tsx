@@ -52,16 +52,16 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
     engineObservation: engine.observation }), [carId, goal, season, profile, engine.observation]);
 
   return <div className="container-fluid h-100 d-flex flex-column gap-3 p-0 overflow-auto">
-    <header className="border-bottom pb-3">
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div><h2 className="h4 text-primary">{t('Tuning Wizard')}</h2><span>{carName} · {carId}</span></div>
-        <div className="d-flex gap-2">
+    <header>
+      <div className="workspace-toolbar mb-2">
+        <div className="small text-body-secondary" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{carName} · {carId}</div>
+        <div className="d-flex flex-wrap gap-2">
           <button className="btn btn-outline-secondary" onClick={() => session.workflow.setReviewHistory(value => !value)}>{t(reviewHistory ? 'Return to current setup' : 'Review saved runs')}</button>
           {currentStep > 1 && <button className="btn btn-outline-secondary" onClick={() => setCurrentStep(currentStep - 1)}>{t('Previous')}</button>}
           {currentStep < 4 && <button className="btn btn-primary" disabled={!canOpenTuningStep(currentStep + 1, readiness)} onClick={() => setCurrentStep(currentStep + 1)}>{t('Next')}</button>}
         </div>
       </div>
-      <nav className="nav nav-pills gap-2" aria-label={t('Tuning workflow steps')}>
+      <nav className="nav nav-pills gap-2 flex-wrap" aria-label={t('Tuning workflow steps')}>
         {TUNING_WORKFLOW_STEPS.map(step => <button key={step.id} className={'nav-link ' + (currentStep === step.number ? 'active' : '')}
           aria-current={currentStep === step.number ? 'step' : undefined} disabled={!canOpenTuningStep(step.number, readiness)}
           title={step.number === 4 && !readiness.measuredEngine ? t('Complete engine measurement before verifying the full setup.') : undefined}

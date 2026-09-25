@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import * as updaterService from '../../../services/updaterService';
+import { UpdateSettingsCard } from './UpdateSettingsCard';
+
+vi.mock('../../../context/SettingsContext', () => ({
+  useSettings: () => ({ settings: {}, updateSettings: vi.fn(), t: (text: string) => text }),
+}));
+
+vi.mock('../../../context/ToastContext', () => ({
+  useToast: () => ({ addToast: vi.fn() }),
+}));
 
 vi.mock('../../../services/updaterService', () => ({
   checkForAppUpdates: vi.fn(),
@@ -11,6 +22,12 @@ vi.mock('../../../services/updaterService', () => ({
 describe('UpdateSettingsCard logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('shows an unchecked state before a real updater result exists', () => {
+    const html = renderToStaticMarkup(React.createElement(UpdateSettingsCard));
+    expect(html).toContain('Not checked');
+    expect(html).not.toContain('UP TO DATE');
   });
 
   it('detects when in non-Tauri environment and skips network call', async () => {
