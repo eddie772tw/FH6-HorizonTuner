@@ -168,18 +168,27 @@ def pack_telemetry_binary(data: dict) -> bytes:
         slip_ratios = data.get("TireSlipRatio", DEFAULT_TIRE_ARRAY)
         slip_angles = data.get("TireSlipAngle", DEFAULT_TIRE_ARRAY)
 
-        # 確保陣列長度皆為 4
-        if len(tire_temps) < 4:
-            tire_temps = list(tire_temps) + [0.0] * (4 - len(tire_temps))
-        if len(susp_travels) < 4:
-            susp_travels = list(susp_travels) + [0.0] * (4 - len(susp_travels))
-        if len(slip_ratios) < 4:
-            slip_ratios = list(slip_ratios) + [0.0] * (4 - len(slip_ratios))
-        if len(slip_angles) < 4:
-            slip_angles = list(slip_angles) + [0.0] * (4 - len(slip_angles))
+        # [PERF] Manual unrolling to avoid creating multiple lists in a hot path
+        t_fl = tire_temps[0] if len(tire_temps) > 0 else 0.0
+        t_fr = tire_temps[1] if len(tire_temps) > 1 else 0.0
+        t_rl = tire_temps[2] if len(tire_temps) > 2 else 0.0
+        t_rr = tire_temps[3] if len(tire_temps) > 3 else 0.0
 
-        # 轉換弧度為度
-        slip_angles_deg = [sa * 57.29578 for sa in slip_angles]
+        st_fl = susp_travels[0] if len(susp_travels) > 0 else 0.0
+        st_fr = susp_travels[1] if len(susp_travels) > 1 else 0.0
+        st_rl = susp_travels[2] if len(susp_travels) > 2 else 0.0
+        st_rr = susp_travels[3] if len(susp_travels) > 3 else 0.0
+
+        sr_fl = slip_ratios[0] if len(slip_ratios) > 0 else 0.0
+        sr_fr = slip_ratios[1] if len(slip_ratios) > 1 else 0.0
+        sr_rl = slip_ratios[2] if len(slip_ratios) > 2 else 0.0
+        sr_rr = slip_ratios[3] if len(slip_ratios) > 3 else 0.0
+
+        # [PERF] Convert radians to degrees inline to avoid list comprehension
+        sa_fl = (slip_angles[0] if len(slip_angles) > 0 else 0.0) * 57.29578
+        sa_fr = (slip_angles[1] if len(slip_angles) > 1 else 0.0) * 57.29578
+        sa_rl = (slip_angles[2] if len(slip_angles) > 2 else 0.0) * 57.29578
+        sa_rr = (slip_angles[3] if len(slip_angles) > 3 else 0.0) * 57.29578
 
         reserved = b"\x00" * 8
 
@@ -198,10 +207,22 @@ def pack_telemetry_binary(data: dict) -> bytes:
             yaw,
             pitch,
             roll,
-            *tire_temps,
-            *susp_travels,
-            *slip_ratios,
-            *slip_angles_deg,
+            t_fl,
+            t_fr,
+            t_rl,
+            t_rr,
+            st_fl,
+            st_fr,
+            st_rl,
+            st_rr,
+            sr_fl,
+            sr_fr,
+            sr_rl,
+            sr_rr,
+            sa_fl,
+            sa_fr,
+            sa_rl,
+            sa_rr,
             reserved,
         )
     except Exception as e:
