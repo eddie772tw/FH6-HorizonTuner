@@ -279,7 +279,6 @@ init: function (parentEl) {
                     } else if (typeof targetCompassParent.appendChild === 'function') {
                         targetCompassParent.appendChild(compassContainer);
                     }
-                    compassContainer.parentElement = targetCompassParent;
                 }
             }
 

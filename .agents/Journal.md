@@ -2857,3 +2857,10 @@
 - **採用技能**：`modular-refactoring`、`cross-agent-collaboration`、`pr-author-maintainer`、`ponytail`。保留 API shape、raw/legacy units、window/stride、路徑安全與交易回滾；損壞 DB 未抽中列不再 decode 的邊界另有測試與文件，不隱藏語義範圍。
 - **正式 API 測量**：實際官方 Python v1.6、Rust `3cf6bb0` 與修正後 release 各三輪，每 workload 90 樣本；九個 process 的 23 個可比較回應一致，storage 因版本生成檔案不同排除。Rust 本輪 MCP sparse／snapshot、Road list、Drag status 中位數耗時減少 84.8%／97.4%／73.4%／86.7%；HTTP 10k points 減少 42.8%，Debrief／MoTeC 減少 17.0%／15.0%。Road list、laps、MCP sessions／summary 仍慢於 Python，全部樣本與限制見[正式報告](../docs/backend-rust/api-workload-performance.md)。
 - **錄製與驗證**：新增索引後另跑 Python／Rust 各 30 秒固定 60 Hz；Rust 1,800/1,800 收齊，p50/p95 0.229/0.269 ms，telemetry 與 writer queue peak=1/end=0，6 batches、0 dropped／failed，未見積壓。完整 Cargo default 84 passed/3 ignored、no-HUD 76 passed/2 ignored、維護工具 53 passed；Ruff 全域 check/format、Cargo fmt、release bins build 通過。未啟動前端，未量 cold cache、100k points、多 client 或遊戲滿載。
+## 2026-09-26 / Tape Compass HUD 解析度與比例修復
+
+- **分支與技能**：`codex/fix-tape-compass-resolution` 從 `origin/main` 的 `ec7d769` 建立。採用 `ponytail`、`halfmoon-design-system`、`huge-component-refactoring`。
+- **可重現根因**：#421 固定使用 `800×52` bitmap，CSS 卻以 `50vw×52px` 顯示；2560×1440 瀏覽器實測顯示為 `1280×52`，橫縱比例分別為 0.625／1，且未處理 DPR。改以 CSS 尺寸作為繪圖座標、按 DPR 配置 bitmap，尺寸不變時不重設 bitmap；隱藏時不採用舊 bitmap 尺寸，避免反覆倍增。
+- **可讀性與真實 DOM**：固定讀數與捲動方位標籤分行，保留 50vw 寬度並將高度調為 76px。瀏覽器另重現上下切換時 `parentElement` 為唯讀所造成的 TypeError；移除手動賦值，交由 DOM 掛載方法維護父節點，並使既有 mock 的 `parentElement` 同樣唯讀。
+- **驗證**：修改前 141 files／996 tests 通過；修改後 `pnpm -C frontend run test` 為 142 files／1004 tests 通過，`pnpm -C frontend run build` 與 `git diff --check` 通過。新增 HUD-owned 測試驗證尺寸／DPR 幾何比例、視窗縮放、DPR 改變及隱藏後恢復，不斷言繪圖 API 次數或刻度像素座標。
+- **瀏覽器證據與邊界**：以實際 renderer、template、manager 與字型製成獨立靜態頁面，透過限 loopback、僅提供兩個預覽路徑的 HTTP server 驗證；未啟動前端、後端或桌面控制。720p／1080p／1440p／3440 超寬／4K 及 DPR 1／1.25／1.5／2 通過；4K、DPR 2 的羅盤為 CSS `1920×76`、bitmap `3840×152`。上下切換、隱藏後縮放恢復、重建與亮暗背景均通過；不代表 Tauri WebView、實體螢幕或真實 FH6 遊戲驗收。
