@@ -61,6 +61,7 @@ CLI oracle 直接呼叫基準 `TuningMathSolver.calculate_chassis`／`calculate_
 - 維護／發行工具：83 項通過、8 項宿主／executable 測試排除；Ruff check／format 及版本契約通過。
 - release binaries：Cargo `--release --bins -j 2` 建置成功；`server-sidecar.exe` 約 20.5 MiB、`fh6-agent.exe` 約 13.7 MiB。設定 `FH6_TEST_BACKEND_EXE`／`FH6_TEST_AGENT_EXE` 指向 release 產物後，完整 65 項 Rust 契約通過（含 75 HTTP 路徑與 CLI／MCP 往返）。
 - 最後 MCP junction 修正後重建 release，MCP 4 項與程序 5 項再次通過；Spotify 暫停時不以不存在的音訊當作 release 頻譜驗收通過。
+- 使用者授權控制 Spotify 後，以 Windows GSMTC `TryPlayAsync` 將已暫停的 Spotify 恢復播放，明確指定 release `server-sidecar.exe`／`fh6-agent.exe` 重跑 `windows_native_audio_media_and_removed_device_recovery`：1 passed、0 failed，測試耗時 1.48 秒。驗證連續至少 3 筆具有非零值的 32 頻帶 WASAPI 事件、WinRT 專輯資訊、124,176 bytes 封面、ETag 304／舊 hash 404，以及失效裝置回退預設輸出後恢復音訊且原生錯誤為 null。完成後以 `TryPauseAsync` 恢復原本暫停狀態，另一次 GSMTC 查詢確認 paused；未改變音量或主動切歌。臨時控制工具只用現有 Rust／Windows 相依，驗證後移除。
 
 可重跑命令（PowerShell；測試不啟動前端）：
 

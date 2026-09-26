@@ -8,6 +8,7 @@
 - **MCP 檔案邊界**：遞迴掃描需使用不跟隨連結的 entry file type，跳過 symlink／Windows junction；否則唯讀工具仍可能讀到目錄外資料或循環掃描。已用暫存目錄及真實 junction 驗證，不刪除外部 sentinel。
 - **移除邊界**：Python HTTP／MCP／CLI／PyInstaller 已移除；車庫與開發資料路徑沿用。維護及發行工具仍可使用 uv，requirements 不再安裝 Python 原生音訊／HTTP runtime。第二個 Cargo binary 加入後須指定 default-run，否則舊 cargo run 入口失效。
 - **驗證**：75 個繼承 HTTP method/path、26 個 MCP tools、Rust 全／無 HUD 契約、Spotify metadata／封面／真實 WASAPI 與失效裝置恢復；前端只有測試及 build，未啟動。完整命令、結果與限制見 [接替紀錄](../docs/backend-rust/parity-hardening.md)。
+- **release 實機補驗**：Spotify 暫停時可能仍提供完整 GSMTC metadata／封面，但沒有可驗收的 WASAPI 串流；這不等於 WinRT 失效。取得使用者播放控制授權後，以 GSMTC 恢復播放並指定 release sidecar 重跑 opt-in：1 passed，連續 32 頻帶、124,176 bytes 封面、快取狀態及失效裝置 fallback 均通過；隨後恢復 paused 並重新查證。沿用 `portable-release-validation`，未啟動應用程式前端。
 - **環境**：Windows 高平行 Rust 連結曾遇到 os 1455，使用 `-j 2` 完成；不修改 paging-file。API／CLI／裝置證據不等於 HUD 畫面、實際遊戲、Discord 或 Android 驗收。
 
 ## 2026-09-23 / v1.6.1 Release Chore 發行整備、雙端版本遞增與高壓測試逾時防禦（Antigravity as Antigravity）
