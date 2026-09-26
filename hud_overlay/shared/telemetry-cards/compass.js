@@ -63,8 +63,18 @@ export function renderCompass(canvas, data, config, domCache) {
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    var w = canvas.width;
-    var h = canvas.height;
+    // Draw in CSS pixels; the backing bitmap follows the viewport and display DPI.
+    // Never use the previous bitmap as the layout size while the HUD is hidden.
+    var w = canvas.clientWidth;
+    var h = canvas.clientHeight;
+    if (w <= 0 || h <= 0) return;
+
+    var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    var pixelWidth = Math.max(1, Math.round(w * dpr));
+    var pixelHeight = Math.max(1, Math.round(h * dpr));
+    if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+    if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+    ctx.setTransform(pixelWidth / w, 0, 0, pixelHeight / h, 0, 0);
 
     // Clear canvas - transparent background
     ctx.clearRect(0, 0, w, h);
@@ -102,9 +112,9 @@ export function renderCompass(canvas, data, config, domCache) {
 
     // Configure drop shadows for all lines and text for maximum readability
     ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-    ctx.shadowBlur = 4;
+    ctx.shadowBlur = 4 * dpr;
     ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 1;
+    ctx.shadowOffsetY = dpr;
 
     // Visible span in degrees (FOV): 120 degrees across the canvas width
     var visibleSpanDeg = 120.0;
@@ -112,7 +122,8 @@ export function renderCompass(canvas, data, config, domCache) {
     var centerX = w / 2;
 
     // Ticks baseline Y (ticks hang down from baseline)
-    var baselineY = 22;
+    // Keep the scrolling labels below the fixed heading readout.
+    var baselineY = 44;
 
     // Find starting tick: round down to nearest 5 degrees
     var minAngle = headingDeg - (visibleSpanDeg / 2);
@@ -180,9 +191,9 @@ export function renderCompass(canvas, data, config, domCache) {
 
     // Center Lubber Line / Pointer Triangle Indicator
     ctx.beginPath();
-    ctx.moveTo(centerX, baselineY + 16);
-    ctx.lineTo(centerX - 6, baselineY + 24);
-    ctx.lineTo(centerX + 6, baselineY + 24);
+    ctx.moveTo(centerX, 30);
+    ctx.lineTo(centerX - 6, 22);
+    ctx.lineTo(centerX + 6, 22);
     ctx.closePath();
     ctx.fillStyle = primaryColor;
     ctx.fill();
@@ -196,7 +207,7 @@ export function renderCompass(canvas, data, config, domCache) {
     ctx.fillStyle = primaryColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(readoutText, centerX, baselineY - 4);
+    ctx.fillText(readoutText, centerX, 18);
 
     // Smooth edge fade-out gradient mask (left and right 15%)
     ctx.restore();

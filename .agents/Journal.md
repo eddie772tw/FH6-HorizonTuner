@@ -2819,3 +2819,11 @@
 - **可重現測試落差**：`scripts/tests/test_build_entry.py` 仍模擬舊 uv／Python 打包，但 `build_all.bat` 已使用 PowerShell／Rust；在乾淨 fixture 中缺少 `scripts/build_backend.ps1`。改為受控 Rust 建置腳本，驗證成功、backend 失敗、frontend 失敗與跨目錄路徑，沒有改動產品打包入口。
 - **驗證順序**：backend build.rs 會將 `frontend/dist` 資產以 include_bytes 嵌入；前端重建會刪除舊 hash 檔案，因此 frontend build 與 Cargo 編譯不能同時改讀同一輸出。先完成並固定 frontend dist，再執行 default／no-default-features 與 Tauri 驗證。
 - **本地證據**：前端 141 files／996 tests、Windows／LAN build；Python 與工具腳本 425 passed／8 deselected，Ruff check／format、Rust format 與版本一致性通過。新增 OTA carry 測試確認歷史 macOS channel 被忽略且 Linux channel 保留；這些測試不代表真實 FH6 跨機或 OTA 安裝驗收。
+
+## 2026-09-26 / Tape Compass HUD 解析度與比例修復
+
+- **分支與技能**：`codex/fix-tape-compass-resolution` 從 `origin/main` 的 `ec7d769` 建立。採用 `ponytail`、`halfmoon-design-system`、`huge-component-refactoring`。
+- **可重現根因**：#421 固定使用 `800×52` bitmap，CSS 卻以 `50vw×52px` 顯示；2560×1440 瀏覽器實測顯示為 `1280×52`，橫縱比例分別為 0.625／1，且未處理 DPR。改以 CSS 尺寸作為繪圖座標、按 DPR 配置 bitmap，尺寸不變時不重設 bitmap；隱藏時不採用舊 bitmap 尺寸，避免反覆倍增。
+- **可讀性與真實 DOM**：固定讀數與捲動方位標籤分行，保留 50vw 寬度並將高度調為 76px。瀏覽器另重現上下切換時 `parentElement` 為唯讀所造成的 TypeError；移除手動賦值，交由 DOM 掛載方法維護父節點，並使既有 mock 的 `parentElement` 同樣唯讀。
+- **驗證**：修改前 141 files／996 tests 通過；修改後 `pnpm -C frontend run test` 為 142 files／1004 tests 通過，`pnpm -C frontend run build` 與 `git diff --check` 通過。新增 HUD-owned 測試驗證尺寸／DPR 幾何比例、視窗縮放、DPR 改變及隱藏後恢復，不斷言繪圖 API 次數或刻度像素座標。
+- **瀏覽器證據與邊界**：以實際 renderer、template、manager 與字型製成獨立靜態頁面，透過限 loopback、僅提供兩個預覽路徑的 HTTP server 驗證；未啟動前端、後端或桌面控制。720p／1080p／1440p／3440 超寬／4K 及 DPR 1／1.25／1.5／2 通過；4K、DPR 2 的羅盤為 CSS `1920×76`、bitmap `3840×152`。上下切換、隱藏後縮放恢復、重建與亮暗背景均通過；不代表 Tauri WebView、實體螢幕或真實 FH6 遊戲驗收。

@@ -139,7 +139,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
             /* Compass HUD Container - Borderless, Transparent, Drop Shadow, 50vw Width */
             .tc-compass-container {
                 width: 50vw;
-                height: 52px;
+                height: 76px;
+                flex-shrink: 0;
                 background: transparent;
                 border: none;
                 box-sizing: border-box;
@@ -151,6 +152,8 @@ export function getClusterHTML(initialScale, initialOpacity) {
                 position: relative;
                 filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.95));
             }
+
+            #tcCompassCanvas { transition: none !important; }
 
             /* Reference Grid Lines Overlay */
             .tc-grid-lines {
@@ -550,7 +553,7 @@ export function getClusterHTML(initialScale, initialOpacity) {
             ">
                 <!-- Charts appended here dynamically when positioned TOP -->
                 <div id="tcCompassContainer" class="tc-compass-container">
-                    <canvas id="tcCompassCanvas" width="800" height="52" style="width:100%; height:100%; display:block;"></canvas>
+                    <canvas id="tcCompassCanvas" style="width:100%; height:100%; display:block;"></canvas>
                 </div>
             </div>
 
