@@ -160,6 +160,8 @@ The sidecar uses `cargo build --locked --release`; `backend-rust/build.rs` embed
 
 See the [Rust migration and contract test guide](docs/backend-rust/README.md) and [development commands](docs/guides/development.md).
 
+The [backend performance audit](docs/backend-rust/performance-audit.md) records historical optimization principles, API/JSON copy findings, and candidates that still need measurement. Release comparisons use matching data and real HTTP/MCP responses, separately from functional contract tests.
+
 ---
 
 ## Prerequisites

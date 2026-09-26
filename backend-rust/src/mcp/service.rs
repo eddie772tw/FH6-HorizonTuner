@@ -42,17 +42,20 @@ impl<'a> McpService<'a> {
         if let Some(sample) = self.live_sample() {
             return json!({"status":"live","source":"udp_memory_stream","latest_sample":sample});
         }
-        let sessions = self.app.database.list_all_sessions().unwrap_or_default();
-        let id = sessions
-            .first()
-            .and_then(|s| s.get("session_id"))
-            .cloned()
-            .unwrap_or(Value::Null);
-        let point = id
-            .as_str()
-            .and_then(|id| self.app.database.get_telemetry_points(id, None).ok())
-            .and_then(|v| v.into_iter().last());
-        json!({"status":if point.is_some(){"ready"}else{"idle"},"active_session_id":id,"total_recorded_sessions":sessions.len(),"latest_sample":point})
+        let (count, latest) = self
+            .app
+            .database
+            .session_count_and_latest()
+            .unwrap_or_default();
+        let id = latest.map(Value::from).unwrap_or(Value::Null);
+        let point = id.as_str().and_then(|id| {
+            self.app
+                .database
+                .get_latest_telemetry_point(id)
+                .ok()
+                .flatten()
+        });
+        json!({"status":if point.is_some(){"ready"}else{"idle"},"active_session_id":id,"total_recorded_sessions":count,"latest_sample":point})
     }
     fn sample(&self) -> Value {
         self.live_sample()
@@ -189,18 +192,13 @@ impl<'a> McpService<'a> {
     }
 
     pub fn list_race_sessions(&self, limit: i64, offset: i64) -> Vec<Value> {
-        let all = self.app.database.list_all_sessions().unwrap_or_default();
-        let start = offset.max(0) as usize;
-        all.into_iter()
-            .skip(start)
-            .take(limit.max(0) as usize)
-            .collect()
+        self.app
+            .database
+            .list_sessions_page(limit, offset)
+            .unwrap_or_default()
     }
     pub fn session_summary(&self, id: &str) -> Option<Value> {
-        let sessions = self.app.database.list_all_sessions().ok()?;
-        let s = sessions
-            .into_iter()
-            .find(|x| x["session_id"].as_str() == Some(id))?;
+        let s = self.app.database.get_session(id).ok()??;
         let laps = self.app.database.get_session_laps(id).ok()?;
         Some(json!({"session":s,"laps":laps,"total_laps_count":laps.len()}))
     }
@@ -211,37 +209,16 @@ impl<'a> McpService<'a> {
         downsample: i64,
         channels: Option<&Vec<Value>>,
     ) -> Vec<Value> {
-        let mut p = self
-            .app
-            .database
-            .get_telemetry_points(id, lap)
-            .unwrap_or_default();
-        let step = downsample.max(1) as usize;
-        if step > 1 {
-            p = p.into_iter().step_by(step).collect();
-        }
-        if let Some(ch) = channels {
-            let set = ch
-                .iter()
+        let set = channels.map(|ch| {
+            ch.iter()
                 .filter_map(Value::as_str)
-                .collect::<std::collections::HashSet<_>>();
-            p = p
-                .into_iter()
-                .map(|v| {
-                    v.as_object()
-                        .map(|o| {
-                            Value::Object(
-                                o.iter()
-                                    .filter(|(k, _)| set.contains(k.as_str()))
-                                    .map(|(k, v)| (k.clone(), v.clone()))
-                                    .collect(),
-                            )
-                        })
-                        .unwrap_or(Value::Null)
-                })
-                .collect();
-        }
-        p
+                .map(str::to_owned)
+                .collect::<std::collections::HashSet<_>>()
+        });
+        self.app
+            .database
+            .get_telemetry_points_filtered(id, lap, downsample.max(1) as usize, set.as_ref())
+            .unwrap_or_default()
     }
 
     fn walk_json(dir: &Path, out: &mut Vec<PathBuf>) {
@@ -302,7 +279,7 @@ impl<'a> McpService<'a> {
     }
     pub fn capture_summary(&self, id: &str) -> Option<Value> {
         let (p, d) = self.capture(id)?;
-        let samples = d["samples"].as_array().cloned().unwrap_or_default();
+        let samples = d["samples"].as_array().map(Vec::as_slice).unwrap_or(&[]);
         let ts: Vec<f64> = samples
             .iter()
             .map(|s| s["timestampMs"].as_f64().unwrap_or(0.))
@@ -336,13 +313,18 @@ impl<'a> McpService<'a> {
         channels: Option<&Vec<Value>>,
         max_samples: i64,
     ) -> Vec<Value> {
-        let Some((_p, d)) = self.capture(id) else {
+        let Some((_p, mut d)) = self.capture(id) else {
             return vec![];
         };
-        let mut v = d["samples"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
+        let samples = d
+            .get_mut("samples")
+            .map(Value::take)
+            .and_then(|value| match value {
+                Value::Array(samples) => Some(samples),
+                _ => None,
+            })
+            .unwrap_or_default();
+        let mut v = samples
             .into_iter()
             .filter(|s| {
                 let t = s["timestampMs"].as_i64().unwrap_or(0);
@@ -363,17 +345,12 @@ impl<'a> McpService<'a> {
                 .collect::<std::collections::HashSet<_>>();
             v = v
                 .into_iter()
-                .map(|x| {
-                    let Some(object) = x.as_object() else {
+                .map(|mut x| {
+                    let Some(object) = x.as_object_mut() else {
                         return Value::Object(Map::new());
                     };
-                    Value::Object(
-                        object
-                            .iter()
-                            .filter(|(k, _)| set.contains(k.as_str()))
-                            .map(|(k, v)| (k.clone(), v.clone()))
-                            .collect(),
-                    )
+                    object.retain(|key, _| set.contains(key.as_str()));
+                    x
                 })
                 .collect();
         }

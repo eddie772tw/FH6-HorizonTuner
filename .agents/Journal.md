@@ -2847,3 +2847,13 @@
 - **CI 時序修正**：`caf518a` Windows portable job 在 Road start 時收到 stale telemetry 409；測試原先在送 frame 後做 SQLite 前置作業，可能超過 2 秒窗口。兩個 lifecycle 測試改為每次 start 前送新遞增 frame，產品 freshness 條件不變。
 - **驗證**：完整 Cargo gate 80 passed／3 ignored；opt-in release comparison 七輪皆成功、完整輸出在 abs/rel 1e-6 容差內一致；維護工具 53 passed；Cargo fmt、兩個新 benchmark 工具 Ruff、diff check。無前端／遊戲／HUD 畫面驗收。
 - **60 Hz 後續調查**：改用獨立固定 deadline sender，recorder 關閉／開啟各 30 秒，前後及 Python 控制組共八個 streams 皆 1,800/1,800 接收，Rust queue peak=1/end=0，writer 無丟樣或失敗。找到 App::process 每幀 clone 651 輛車的 Drag database；移至 App::new 一次設定後，Rust 中位數 1.309/1.294→0.231/0.230 ms，p95 2.031/2.007→0.276/0.271 ms。新增經 App prepare/process/analysis/clear 的兩車非 fallback 名稱回歸。最終 default 81 passed/3 ignored、no-HUD 73 passed/2 ignored、release bins build 成功。修正前此負載已無塞車，修正後降低固定處理成本；單 consumer/localhost 不代表遊戲滿載驗收。
+
+## 2026-09-26 / Rust API 全量物件成本與資料庫讀取盤查（Codex as Codex）
+
+- **可重現成本**：`json!(owned_value)` 經借用 Serialize 重建 Value，不會自動 move；analysis/MCP 已擁有的 Vec/JSON result 應直接移入 `Value::Array`／response。Drag status 原先為 len 複製整段 session；save 的 snapshot 仍需 ownership，但磁碟 I/O 不需持有 engine lock。
+- **SQL 範圍與排序**：Road 清單原先在 Rust parse 完 capture 才移除，恢復舊 Python 的 SQLite JSON projection。MCP 改為讀取時先按 ordinal stride 決定是否 decode、owned map retain；snapshot 只取最後一點。原 full-session 查詢以 session/distance index 加暫存 B-tree 排序；新增 `(session_id,id)` index 保留順序並避免搬動大量 raw JSON。
+- **比較陷阱**：v1.6 HTTP analysis 與 MCP 使用不同 DB 路徑，必須用相同 fixture 同時填入 root 和 sessions/，不能把空結果當成速度優勢。Storage overview 的生成檔案本來就跨版本不同，從等價與百分比比較排除。Windows `uv` 工具只做客戶端與 fixture，產品仍不依賴 Python。
+- **盤查範圍**：兩個明確指定 Luna 的子代理分別實作／覆核 MCP-SQLite 與 Road projection；主線處理整合、API ownership、測試和同機 release 測量。未量測的 Discord/profile/dyno/settings/thumbnail/audio 等成本仍列候選，不將靜態 clone 清單說成 profiler 結果。詳見[盤查](../docs/backend-rust/performance-audit.md)。
+- **採用技能**：`modular-refactoring`、`cross-agent-collaboration`、`pr-author-maintainer`、`ponytail`。保留 API shape、raw/legacy units、window/stride、路徑安全與交易回滾；損壞 DB 未抽中列不再 decode 的邊界另有測試與文件，不隱藏語義範圍。
+- **正式 API 測量**：實際官方 Python v1.6、Rust `3cf6bb0` 與修正後 release 各三輪，每 workload 90 樣本；九個 process 的 23 個可比較回應一致，storage 因版本生成檔案不同排除。Rust 本輪 MCP sparse／snapshot、Road list、Drag status 中位數耗時減少 84.8%／97.4%／73.4%／86.7%；HTTP 10k points 減少 42.8%，Debrief／MoTeC 減少 17.0%／15.0%。Road list、laps、MCP sessions／summary 仍慢於 Python，全部樣本與限制見[正式報告](../docs/backend-rust/api-workload-performance.md)。
+- **錄製與驗證**：新增索引後另跑 Python／Rust 各 30 秒固定 60 Hz；Rust 1,800/1,800 收齊，p50/p95 0.229/0.269 ms，telemetry 與 writer queue peak=1/end=0，6 batches、0 dropped／failed，未見積壓。完整 Cargo default 84 passed/3 ignored、no-HUD 76 passed/2 ignored、維護工具 53 passed；Ruff 全域 check/format、Cargo fmt、release bins build 通過。未啟動前端，未量 cold cache、100k points、多 client 或遊戲滿載。

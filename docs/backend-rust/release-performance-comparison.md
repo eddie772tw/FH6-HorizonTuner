@@ -2,6 +2,8 @@
 
 測量日期：2026-09-26。Windows 11 build 26200、AMD Ryzen 7 5800XT、Rust 1.96.0；沒有啟動應用程式前端。這是同一台開發機的受控測量，不是遊戲、完整 HUD、多人併發或跨平台驗收。
 
+後續對有實際資料的 24 個 API／MCP workload、JSON ownership 與 SQLite 查詢的三輪對照，見[大型 API／MCP 實測](api-workload-performance.md)；該報告另含新增索引後的錄製中固定 60 Hz 驗證。本文保留早期基準與 UDP 問題定位過程，不把不同階段的 binary 混成一組數字。
+
 ## 比較對象與來源
 
 - 最後一個引入 Rust 前的公開 Release 為 [v1.6](https://github.com/eddie772tw/FH6-HorizonTuner/releases/tag/v1.6)，tag commit `cd96d86f017fa43f4f3d429155a08aa77dc74bac`（2026-09-16 發布）。該版本的 `server-sidecar.spec` 打包 `backend/main.py`，沒有 `backend-rust`；v1.6.1 才引入 Rust Beta。不能用內嵌 OTA runtime version 代替 Release tag。

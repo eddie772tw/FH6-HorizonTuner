@@ -2,6 +2,8 @@
 
 盤查日期：2026-09-26。歷史依據為 main ancestry 與 PR 實際 diff，Rust 修正前基準為 `8ed390d`；成果屬於尚未合併的 PR [#443](https://github.com/eddie772tw/FH6-HorizonTuner/pull/443)。已合併工作與尚未合併的 [#442](https://github.com/eddie772tw/FH6-HorizonTuner/pull/442) 分開判讀，不以 Rust 語言本身推論速度。
 
+另見[Rust 後端 API 與配置成本盤查](performance-audit.md)：涵蓋歷史 PR 思路、API/module inventory、本輪 API/SQLite/MCP/Drag 差異與尚未量測候選；歷史前端/HUD 效能改動與 Rust 後端分開歸類。
+
 ## 歷史工作與目前實作
 
 | 歷史 PR | 原有優化概念 | Rust 承接與證據 |

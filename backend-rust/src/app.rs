@@ -260,7 +260,7 @@ impl App {
         }
         Ok(self
             .database
-            .list_all_sessions()
+            .list_sessions_page(1, 0)
             .map_err(database_error)?
             .first()
             .and_then(|s| s["session_id"].as_str())
@@ -274,18 +274,32 @@ impl App {
             ("POST",["api","analysis","clear"])=>{let mut engine=lock(&self.engine);engine.race.save_latest_and_clear("manual-clear");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Current recording session cleared."})}
             ("POST",["api","analysis","recorder","start"])=>{let mut engine=lock(&self.engine);let id=engine.race.start_manual(0,"Manual Session".into(),0,0,diagnostics::now()).map_err(database_error)?;self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording started successfully","sessionId":id})}
             ("POST",["api","analysis","recorder","stop"])=>{let mut engine=lock(&self.engine);let s=engine.race.status();if !s.is_recording||!s.manual_mode{json!({"error":"Manual recording is not active"})}else{engine.race.save_latest_and_clear("manual-stop");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording stopped and saved successfully"})}}
-            ("GET",["api","analysis","data"])=>{let lap=query_integer(request,"lap",0)?;json!(match self.session_id("current")?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
-            ("GET",["api","analysis","sessions"])=>json!(self.database.list_all_sessions().map_err(database_error)?.iter().map(|s|json!({"filename":s["session_id"],"session_id":s["session_id"],"car_name":s["car_name"],"total_laps":s["total_laps"],"best_lap_time":s["best_lap_time"],"total_distance":s["total_distance"],"mtime":s["start_time"],"size":0})).collect::<Vec<_>>()),
-            ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;json!(self.database.get_telemetry_points(id,(lap>0).then_some(lap)).map_err(database_error)?)}
+            ("GET",["api","analysis","data"])=>{let lap=query_integer(request,"lap",0)?;Value::Array(match self.session_id("current")?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
+            ("GET",["api","analysis","sessions"])=>Value::Array(self.database.list_all_sessions().map_err(database_error)?.iter().map(|s|json!({"filename":s["session_id"],"session_id":s["session_id"],"car_name":s["car_name"],"total_laps":s["total_laps"],"best_lap_time":s["best_lap_time"],"total_distance":s["total_distance"],"mtime":s["start_time"],"size":0})).collect()),
+            ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;Value::Array(self.database.get_telemetry_points(id,(lap>0).then_some(lap)).map_err(database_error)?)}
             ("DELETE",["api","analysis","sessions",id])=>{self.database.delete_session(id).map_err(database_error)?;json!({"message":"Session deleted successfully"})},
-            ("GET",["api","analysis","sessions",id,"laps"])=>json!(self.database.get_session_laps(id).map_err(database_error)?),
+            ("GET",["api","analysis","sessions",id,"laps"])=>Value::Array(self.database.get_session_laps(id).map_err(database_error)?),
             ("GET",["api","analysis","sessions",id,"debrief"])=>{let points=match self.session_id(id)?{Some(id)=>self.database.get_telemetry_points(&id,None).map_err(database_error)?,None=>vec![]};motec::debrief(&points)}
             ("POST",["api","drag","prepare"])=>{lock(&self.engine).drag.prepare();json!({"message":"Drag recorder prepared, waiting for launch."})}
             ("POST",["api","drag","clear"])=>{lock(&self.engine).drag.clear();json!({"message":"Drag recorder cleared."})}
-            ("GET",["api","drag","status"])=>{let engine=lock(&self.engine);json!({"status":engine.drag.status(),"points_count":engine.drag.data().as_array().map_or(0,Vec::len)})}
+            ("GET",["api","drag","status"])=>{let engine=lock(&self.engine);json!({"status":engine.drag.status(),"points_count":engine.drag.point_count()})}
             ("GET",["api","drag","data"])=>lock(&self.engine).drag.data(),
             ("GET",["api","drag","analysis"])=>lock(&self.engine).drag.analysis(),
-            ("POST",["api","drag","sessions","save"])=>{let engine=lock(&self.engine);let points=engine.drag.data();if points.as_array().is_none_or(Vec::is_empty){json!({"error":"No data to save"})}else{let analysis=engine.drag.analysis();let timestamp=diagnostics::now()as i64;let filename=format!("drag_session_{timestamp}.json");let payload=json!({"metadata":{"filename":filename,"timestamp":timestamp,"car_id":analysis.get("car_id").cloned().unwrap_or(json!("0")),"car_name":analysis.get("car_name").cloned().unwrap_or(json!("Unknown Car")),"max_speed_kmh":analysis.get("max_speed_kmh").cloned().unwrap_or(json!(0.0)),"duration":analysis.get("duration").cloned().unwrap_or(json!(0.0)),"launch_slip_percent":analysis.get("launch_slip_percent").cloned().unwrap_or(json!(0.0))},"data":points,"analysis":analysis});storage::atomic_json(&self.config.root.join("drag_sessions").join(&filename),&payload)?;json!({"message":"Drag session saved successfully","filename":filename})}}
+            ("POST",["api","drag","sessions","save"])=>{
+                let (points, analysis) = {
+                    let engine=lock(&self.engine);
+                    (engine.drag.data(), engine.drag.analysis())
+                };
+                if points.as_array().is_none_or(Vec::is_empty){json!({"error":"No data to save"})}else{
+                    let timestamp=diagnostics::now()as i64;
+                    let filename=format!("drag_session_{timestamp}.json");
+                    let mut payload=json!({"metadata":{"filename":filename,"timestamp":timestamp,"car_id":analysis.get("car_id").unwrap_or(&json!("0")),"car_name":analysis.get("car_name").unwrap_or(&json!("Unknown Car")),"max_speed_kmh":analysis.get("max_speed_kmh").unwrap_or(&json!(0.0)),"duration":analysis.get("duration").unwrap_or(&json!(0.0)),"launch_slip_percent":analysis.get("launch_slip_percent").unwrap_or(&json!(0.0))}});
+                    payload["data"] = points;
+                    payload["analysis"] = analysis;
+                    storage::atomic_json(&self.config.root.join("drag_sessions").join(&filename),&payload)?;
+                    json!({"message":"Drag session saved successfully","filename":filename})
+                }
+            }
             _=>{if let Some(path)=request.path.strip_prefix("/api/road"){return lock(&self.engine).road.handle(method,path,Some(data)).map(Some).map_err(|error| {
                 // Python's read-only Road adapter maps missing/wrong-type saved
                 // documents to 422; mutation conflicts retain their 409 contract.
@@ -318,8 +332,7 @@ impl App {
         let Some(id) = self.session_id(requested)? else {
             return Ok(failure("Session not found"));
         };
-        let sessions = self.database.list_all_sessions().map_err(database_error)?;
-        let Some(metadata) = sessions.iter().find(|s| s["session_id"] == id) else {
+        let Some(metadata) = self.database.get_session(&id).map_err(database_error)? else {
             return Ok(failure("Session not found"));
         };
         let points = self
@@ -338,7 +351,7 @@ impl App {
             Ok(path) => path,
             Err(_) => return Ok(failure("Invalid session export path")),
         };
-        let bytes = motec::export(metadata, &points)?;
+        let bytes = motec::export(&metadata, &points)?;
         fs::write(&path, &bytes)?;
         if open {
             let launched = open_in_viewer(&path);

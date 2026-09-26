@@ -161,6 +161,8 @@ sidecar 由 `cargo build --locked --release` 編譯；HUD、語言、車輛資�
 
 詳細架構、Python 參考實作的保留用途與測試分層見 [Rust 後端遷移](docs/backend-rust/README.md)；命令見[開發指南](docs/guides/development.md)。
 
+歷史效能 PR 的移植原則、API／JSON 複製盤查與尚待量測項目，見[後端效能盤查](docs/backend-rust/performance-audit.md)。Release 對照使用相同資料的真實 HTTP／MCP 回應，與功能契約測試分開記錄。
+
 ---
 
 ## 選用 Python / uv 工具規範

@@ -49,7 +49,7 @@ pub fn call(
         "get_tires_status_telemetry" => service.get_tires_status_telemetry(),
         "get_suspension_telemetry" => service.get_suspension_telemetry(),
         "list_race_sessions" => {
-            json!(service.list_race_sessions(i(args, "limit", 20), i(args, "offset", 0)))
+            Value::Array(service.list_race_sessions(i(args, "limit", 20), i(args, "offset", 0)))
         }
         "get_session_summary" => {
             let id = s(args, "session_id").ok_or_else(|| ToolError::missing("session_id"))?;
@@ -59,17 +59,17 @@ pub fn call(
         }
         "query_session_telemetry" => {
             let id = s(args, "session_id").ok_or_else(|| ToolError::missing("session_id"))?;
-            json!(service.session_points(
+            Value::Array(service.session_points(
                 id,
                 args.get("lap_number").and_then(Value::as_i64),
                 i(args, "downsample", 1),
-                arr(args, "channels")
+                arr(args, "channels"),
             ))
         }
-        "list_tuning_captures" => json!(service.list_captures(
+        "list_tuning_captures" => Value::Array(service.list_captures(
             s(args, "surface"),
             s(args, "purpose"),
-            s(args, "confidence")
+            s(args, "confidence"),
         )),
         "get_capture_summary" => {
             let id = s(args, "capture_id").ok_or_else(|| ToolError::missing("capture_id"))?;
@@ -79,12 +79,12 @@ pub fn call(
         }
         "query_capture_window" => {
             let id = s(args, "capture_id").ok_or_else(|| ToolError::missing("capture_id"))?;
-            json!(service.capture_window(
+            Value::Array(service.capture_window(
                 id,
                 i(args, "start_ms", 0),
                 args.get("end_ms").and_then(Value::as_i64),
                 arr(args, "channels"),
-                i(args, "max_samples", 500)
+                i(args, "max_samples", 500),
             ))
         }
         "compare_captures" => {
@@ -102,17 +102,17 @@ pub fn call(
                     ToolError::not_found("One or both capture datasets could not be loaded".into())
                 })?
         }
-        "list_drag_sessions" => json!(service.drag_sessions()),
+        "list_drag_sessions" => Value::Array(service.drag_sessions()),
         "get_drag_analysis" => {
             let n = s(args, "filename").ok_or_else(|| ToolError::missing("filename"))?;
             service
                 .drag_analysis(n)
                 .ok_or_else(|| ToolError::not_found(format!("Drag session file '{n}' not found")))?
         }
-        "search_cars" => json!(service.search_cars(
+        "search_cars" => Value::Array(service.search_cars(
             s(args, "query"),
             s(args, "drivetrain"),
-            s(args, "car_class")
+            s(args, "car_class"),
         )),
         "get_car_details" => {
             let id = s(args, "car_id").ok_or_else(|| ToolError::missing("car_id"))?;
@@ -125,7 +125,7 @@ pub fn call(
             service.capabilities(id, args.get("installed_parts").and_then(Value::as_object))
         }
         "get_tuning_constants_and_priors" => service.priors(s(args, "profile_name")),
-        "list_tuning_presets" => json!(service.presets(s(args, "car_id"))),
+        "list_tuning_presets" => Value::Array(service.presets(s(args, "car_id"))),
         "get_tuning_preset" => {
             let c = s(args, "car_id");
             let n = s(args, "save_name");

@@ -76,6 +76,9 @@ impl DragRecorder {
     pub fn data(&self) -> Value {
         Value::Array(self.session.clone())
     }
+    pub fn point_count(&self) -> usize {
+        self.session.len()
+    }
     pub fn analysis(&self) -> Value {
         self.result.clone()
     }

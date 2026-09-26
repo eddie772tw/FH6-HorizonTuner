@@ -224,7 +224,28 @@ fn drag_context_survives_clear_and_uses_the_launched_car_name() {
             "IsRaceOn": 0
         }));
         assert_eq!(request(&app, "GET", "/api/drag/analysis")["car_name"], name);
+        let data = request(&app, "GET", "/api/drag/data");
+        assert_eq!(
+            request(&app, "GET", "/api/drag/status")["points_count"],
+            data.as_array().unwrap().len()
+        );
+        let saved = request(&app, "POST", "/api/drag/sessions/save");
+        let archive: Value = serde_json::from_slice(
+            &std::fs::read(
+                root.path()
+                    .join("drag_sessions")
+                    .join(saved["filename"].as_str().unwrap()),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(archive["data"], data);
+        assert_eq!(
+            archive["analysis"],
+            request(&app, "GET", "/api/drag/analysis")
+        );
         request(&app, "POST", "/api/drag/clear");
+        assert_eq!(request(&app, "GET", "/api/drag/status")["points_count"], 0);
     }
     app.shutdown();
 }

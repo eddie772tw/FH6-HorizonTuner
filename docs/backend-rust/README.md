@@ -20,6 +20,8 @@ UDP socket 接收不執行同步磁碟寫入或原生 Windows 呼叫。處理工
 
 Race 與 Road 的錄製 writer 維持 create → points → finalize 順序，樣本批次飽和時記錄丟樣，預留 finalizer 空間；明確停止與關機等待已接受資料落盤。profile 背景載入與按車輛合併寫入也與即時處理分離。歷史效能 PR 的逐項對照、測試與量測方式見[效能承接盤查](performance-inheritance.md)。
 
+後續 [API／配置成本盤查](performance-audit.md) 覆蓋完整後端模組，記錄 SQLite 讀取範圍、JSON 所有權、鎖內 I/O 與尚未量測的候選；效能結論與 75 個 legacy HTTP method/path 的契約覆蓋分開呈現。
+
 ## 測試的完成基準
 
 本次以輸入／輸出相容為本地驗證基準，不以內部類別名稱或 Python 實作細節鎖住 Rust 設計：

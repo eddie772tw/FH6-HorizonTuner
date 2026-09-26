@@ -71,7 +71,7 @@ impl TelemetryStore {
                 }
             }
         }
-        c.execute_batch("CREATE INDEX IF NOT EXISTS idx_telemetry_session_lap ON telemetry_channels(session_id,lap_number);CREATE INDEX IF NOT EXISTS idx_telemetry_distance ON telemetry_channels(session_id,lap_distance);").map_err(|e| e.to_string())
+        c.execute_batch("CREATE INDEX IF NOT EXISTS idx_telemetry_session_lap ON telemetry_channels(session_id,lap_number);CREATE INDEX IF NOT EXISTS idx_telemetry_distance ON telemetry_channels(session_id,lap_distance);CREATE INDEX IF NOT EXISTS idx_telemetry_session_id ON telemetry_channels(session_id,id);").map_err(|e| e.to_string())
     }
     pub fn create_session(
         &self,
@@ -197,6 +197,22 @@ impl TelemetryStore {
         .map(|_| ())
     }
     pub fn get_telemetry_points(&self, id: &str, lap: Option<i64>) -> Result<Vec<Value>, String> {
+        self.get_telemetry_points_filtered(id, lap, 1, None)
+    }
+    pub fn get_latest_telemetry_point(&self, id: &str) -> Result<Option<Value>, String> {
+        let c = self.conn()?;
+        let mut st = c.prepare("SELECT relative_time,lap_number,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,accel_x,accel_y,accel_z,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,clutch_pct,handbrake_pct,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json FROM telemetry_channels WHERE session_id=? ORDER BY id DESC LIMIT 1").map_err(|e| e.to_string())?;
+        st.query_row(params![id], row_value)
+            .optional()
+            .map_err(|e| e.to_string())
+    }
+    pub fn get_telemetry_points_filtered(
+        &self,
+        id: &str,
+        lap: Option<i64>,
+        downsample: usize,
+        channels: Option<&std::collections::HashSet<String>>,
+    ) -> Result<Vec<Value>, String> {
         let c = self.conn()?;
         let mut q="SELECT relative_time,lap_number,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,accel_x,accel_y,accel_z,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,clutch_pct,handbrake_pct,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json FROM telemetry_channels WHERE session_id=?".to_string();
         if lap.is_some() {
@@ -204,16 +220,29 @@ impl TelemetryStore {
         }
         q.push_str(" ORDER BY id ASC");
         let mut st = c.prepare(&q).map_err(|e| e.to_string())?;
-        let rows = if let Some(l) = lap {
-            st.query_map(params![id, l], row_value)
-                .map_err(|e| e.to_string())?
+        let mut rows = if let Some(l) = lap {
+            st.query(params![id, l]).map_err(|e| e.to_string())?
         } else {
-            st.query_map(params![id], row_value)
-                .map_err(|e| e.to_string())?
+            st.query(params![id]).map_err(|e| e.to_string())?
         };
         let mut out = Vec::new();
-        for x in rows {
-            out.push(x.map_err(|e| e.to_string())?)
+        let step = downsample.max(1);
+        let mut ordinal = 0usize;
+        while let Some(row) = rows.next().map_err(|e| e.to_string())? {
+            if ordinal % step != 0 {
+                ordinal += 1;
+                continue;
+            }
+            let mut point = row_value(&row).map_err(|e| e.to_string())?;
+            if let Some(channels) = channels {
+                if let Some(object) = point.as_object_mut() {
+                    object.retain(|key, _| channels.contains(key));
+                } else {
+                    point = Value::Null;
+                }
+            }
+            out.push(point);
+            ordinal += 1;
         }
         Ok(out)
     }
@@ -377,6 +406,36 @@ impl TelemetryStore {
         let mut st=c.prepare("SELECT session_id,car_ordinal,car_name,car_class,car_pi,start_time,total_laps,best_lap_time,total_distance FROM sessions ORDER BY start_time DESC").map_err(|e|e.to_string())?;
         let rows=st.query_map([],|r|Ok(serde_json::json!({"session_id":r.get::<_,String>(0)?,"car_ordinal":r.get::<_,i64>(1)?,"car_name":r.get::<_,String>(2)?,"car_class":r.get::<_,i64>(3)?,"car_pi":r.get::<_,i64>(4)?,"start_time":r.get::<_,f64>(5)?,"total_laps":r.get::<_,i64>(6)?,"best_lap_time":r.get::<_,f64>(7)?,"total_distance":r.get::<_,f64>(8)?}))).map_err(|e|e.to_string())?;
         rows.map(|x| x.map_err(|e| e.to_string())).collect()
+    }
+    pub fn list_sessions_page(&self, limit: i64, offset: i64) -> Result<Vec<Value>, String> {
+        let c = self.conn()?;
+        let mut st = c.prepare("SELECT session_id,car_ordinal,car_name,car_class,car_pi,start_time,total_laps,best_lap_time,total_distance FROM sessions ORDER BY start_time DESC LIMIT ? OFFSET ?").map_err(|e| e.to_string())?;
+        let rows = st
+            .query_map(params![limit.max(0), offset.max(0)], |r| {
+                Ok(serde_json::json!({
+                    "session_id": r.get::<_, String>(0)?, "car_ordinal": r.get::<_, i64>(1)?,
+                    "car_name": r.get::<_, String>(2)?, "car_class": r.get::<_, i64>(3)?,
+                    "car_pi": r.get::<_, i64>(4)?, "start_time": r.get::<_, f64>(5)?,
+                    "total_laps": r.get::<_, i64>(6)?, "best_lap_time": r.get::<_, f64>(7)?,
+                    "total_distance": r.get::<_, f64>(8)?
+                }))
+            })
+            .map_err(|e| e.to_string())?;
+        rows.map(|x| x.map_err(|e| e.to_string())).collect()
+    }
+    pub fn get_session(&self, id: &str) -> Result<Option<Value>, String> {
+        let c = self.conn()?;
+        c.query_row("SELECT session_id,car_ordinal,car_name,car_class,car_pi,start_time,total_laps,best_lap_time,total_distance FROM sessions WHERE session_id=?", params![id], |r| Ok(serde_json::json!({
+            "session_id": r.get::<_, String>(0)?, "car_ordinal": r.get::<_, i64>(1)?,
+            "car_name": r.get::<_, String>(2)?, "car_class": r.get::<_, i64>(3)?,
+            "car_pi": r.get::<_, i64>(4)?, "start_time": r.get::<_, f64>(5)?,
+            "total_laps": r.get::<_, i64>(6)?, "best_lap_time": r.get::<_, f64>(7)?,
+            "total_distance": r.get::<_, f64>(8)?
+        }))).optional().map_err(|e| e.to_string())
+    }
+    pub fn session_count_and_latest(&self) -> Result<(usize, Option<String>), String> {
+        let c = self.conn()?;
+        c.query_row("SELECT COUNT(*), (SELECT session_id FROM sessions ORDER BY start_time DESC LIMIT 1) FROM sessions", [], |r| Ok((r.get::<_, i64>(0)? as usize, r.get::<_, Option<String>>(1)?))).map_err(|e| e.to_string())
     }
     pub fn delete_session(&self, id: &str) -> Result<bool, String> {
         let c = self.conn()?;
