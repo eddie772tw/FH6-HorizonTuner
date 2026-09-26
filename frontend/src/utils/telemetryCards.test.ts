@@ -43,6 +43,7 @@ function setupDOMMock() {
             innerHTML: '',
             getContext: () => ({
                 clearRect: () => {},
+                setTransform: () => {},
                 fillRect: () => {},
                 stroke: () => {},
                 beginPath: () => {},
@@ -59,7 +60,10 @@ function setupDOMMock() {
                     addColorStop: () => {}
                 })
             }),
-            parentElement: null,
+            _parentElement: null,
+            get parentElement() {
+                return el._parentElement;
+            },
             get firstChild() {
                 return el.children[0] || null;
             },
@@ -69,7 +73,7 @@ function setupDOMMock() {
                     if (oldIdx !== -1) child.parentElement.children.splice(oldIdx, 1);
                 }
                 el.children.push(child);
-                child.parentElement = el;
+                child._parentElement = el;
                 if (child.id) elements[child.id] = child;
                 return child;
             },
@@ -84,7 +88,7 @@ function setupDOMMock() {
                 } else {
                     el.children.splice(idx, 0, child);
                 }
-                child.parentElement = el;
+                child._parentElement = el;
                 if (child.id) elements[child.id] = child;
                 return child;
             }
