@@ -100,3 +100,7 @@ Additionally, attempting to optimize 60Hz telemetry data copying in `FrameInterp
 ## 2024-11-26 - Eliminating list allocations in high-frequency binary unpack loop
 **Learning:** In the high-frequency backend telemetry listener loop processing 60Hz UDP data (`pack_telemetry_binary`), dynamically creating lists to pad small arrays (`list(tire_temps) + [0.0] * ...`) and using list comprehensions (`[sa * 57.29578 for sa in slip_angles]`) generates unnecessary intermediate objects and significant Garbage Collection (GC) pressure over thousands of frames.
 **Action:** Unroll fixed-length array unpacking manually and inline mathematical operations into scalar variables (e.g., `t_fl = tire_temps[0] if len(tire_temps) > 0 else 0.0`) when preparing fields for `struct.pack`. This completely eliminates list allocation overhead in the hot loop.
+
+## 2024-11-26 - Eliminating list comprehensions and function calls in O(N) points processing
+**Learning:** In telemetry aggregation functions (e.g., `summarize_road_observations` and `local_comparison`), using list comprehensions with function calls inside (e.g., `[wheel_value(...) for p in points]`) creates multiple O(N) traversals, allocates redundant lists, and generates severe function call overhead.
+**Action:** Refactor O(N) point processing logic into single-pass `for` loops. Pre-allocate arrays and manually unroll fixed-size nested fields (e.g. 4 tires) with direct index access to eliminate function calls and temporary list allocations.

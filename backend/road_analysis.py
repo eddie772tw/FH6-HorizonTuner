@@ -228,27 +228,78 @@ def summarize_laps(points: list[dict]) -> list[dict]:
 def summarize_road_observations(points: list[dict]) -> dict[str, Any]:
     weights, quality = observation_weights(points)
     initial_index = next((i for i, weight in enumerate(weights) if weight > 0), None)
+
+    total = sum(weights)
+    edge = min(10.0, total / 3)
+    end_weights = []
+    cumulative = 0.0
+    for weight in weights:
+        end_weights.append(max(0.0, min(weight, cumulative + weight - (total - edge))))
+        cumulative += weight
+
+    # Pre-allocate lists for 4 wheels to avoid O(N) list comprehensions with function calls
+    num_points = len(points)
+    all_temperatures_c = [[None] * num_points for _ in range(4)]
+    all_travel = [[None] * num_points for _ in range(4)]
+    all_slip = [[None] * num_points for _ in range(4)]
+    all_angle = [[None] * num_points for _ in range(4)]
+
+    for i, p in enumerate(points):
+        tt = p.get("TireTemp")
+        if isinstance(tt, (list, tuple)) and len(tt) >= 4:
+            if finite(tt[0]):
+                all_temperatures_c[0][i] = (tt[0] - 32) * 5 / 9
+            if finite(tt[1]):
+                all_temperatures_c[1][i] = (tt[1] - 32) * 5 / 9
+            if finite(tt[2]):
+                all_temperatures_c[2][i] = (tt[2] - 32) * 5 / 9
+            if finite(tt[3]):
+                all_temperatures_c[3][i] = (tt[3] - 32) * 5 / 9
+
+        nst = p.get("NormalizedSuspensionTravel")
+        if not isinstance(nst, (list, tuple)):
+            nst = p.get("SuspTravel")
+        if isinstance(nst, (list, tuple)) and len(nst) >= 4:
+            if finite(nst[0]):
+                all_travel[0][i] = nst[0]
+            if finite(nst[1]):
+                all_travel[1][i] = nst[1]
+            if finite(nst[2]):
+                all_travel[2][i] = nst[2]
+            if finite(nst[3]):
+                all_travel[3][i] = nst[3]
+
+        tsr = p.get("TireSlipRatio")
+        if isinstance(tsr, (list, tuple)) and len(tsr) >= 4:
+            if finite(tsr[0]):
+                all_slip[0][i] = tsr[0]
+            if finite(tsr[1]):
+                all_slip[1][i] = tsr[1]
+            if finite(tsr[2]):
+                all_slip[2][i] = tsr[2]
+            if finite(tsr[3]):
+                all_slip[3][i] = tsr[3]
+
+        tsa = p.get("TireSlipAngle")
+        if isinstance(tsa, (list, tuple)) and len(tsa) >= 4:
+            if finite(tsa[0]):
+                all_angle[0][i] = tsa[0]
+            if finite(tsa[1]):
+                all_angle[1][i] = tsa[1]
+            if finite(tsa[2]):
+                all_angle[2][i] = tsa[2]
+            if finite(tsa[3]):
+                all_angle[3][i] = tsa[3]
+
     wheels = {}
     for index, wheel in enumerate(WHEELS):
-        temperatures = [wheel_value(p, "TireTemp", index) for p in points]
-        temperatures_c = [
-            (value - 32) * 5 / 9 if value is not None else None
-            for value in temperatures
-        ]
-        travel = [wheel_value(p, "NormalizedSuspensionTravel", index) for p in points]
-        slip = [wheel_value(p, "TireSlipRatio", index) for p in points]
-        angle = [wheel_value(p, "TireSlipAngle", index) for p in points]
+        temperatures_c = all_temperatures_c[index]
+        travel = all_travel[index]
+        slip = all_slip[index]
+        angle = all_angle[index]
+
         # Thermal change uses the beginning/end of observed driving exposure;
         # it describes this run, never claims an optimal tyre temperature.
-        total = sum(weights)
-        edge = min(10.0, total / 3)
-        end_weights = []
-        cumulative = 0.0
-        for weight in weights:
-            end_weights.append(
-                max(0.0, min(weight, cumulative + weight - (total - edge)))
-            )
-            cumulative += weight
         # Do not match away pressure-induced warming during the early race.
         # The first observed driving frame defines the initial state. A missing
         # wheel at that instant stays unknown instead of borrowing a later value.

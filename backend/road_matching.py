@@ -104,48 +104,100 @@ def local_comparison(a_points: list[dict], b_points: list[dict], circuit: bool) 
     segment_length = max(100.0, max((p["distance"] for p in a), default=0) / 10)
     for left, right in pairs:
         p, q = left["point"], right["point"]
-        keys = ("SpeedMetersPerSecond", "AccelInput", "BrakeInput", "SteerInput")
-        if not all(finite(s.get(k)) for s in (p, q) for k in keys):
+
+        # Fast-fail missing or non-finite inputs without allocating tuples and loops
+        p_speed, q_speed = p.get("SpeedMetersPerSecond"), q.get("SpeedMetersPerSecond")
+        if not finite(p_speed) or not finite(q_speed):
             continue
-        if abs(p[keys[0]] - q[keys[0]]) > max(2, p[keys[0]] * 0.08):
+        if abs(p_speed - q_speed) > max(2, p_speed * 0.08):
             continue
-        if any(
-            abs(p[k] - q[k]) > limit
-            for k, limit in (("AccelInput", 25), ("BrakeInput", 25), ("SteerInput", 10))
-        ):
+
+        p_acc, q_acc = p.get("AccelInput"), q.get("AccelInput")
+        if not finite(p_acc) or not finite(q_acc) or abs(p_acc - q_acc) > 25:
             continue
+
+        p_brk, q_brk = p.get("BrakeInput"), q.get("BrakeInput")
+        if not finite(p_brk) or not finite(q_brk) or abs(p_brk - q_brk) > 25:
+            continue
+
+        p_str, q_str = p.get("SteerInput"), q.get("SteerInput")
+        if not finite(p_str) or not finite(q_str) or abs(p_str - q_str) > 10:
+            continue
+
         comparable.append((p, q))
+
         index = min(9, int(left["distance"] / segment_length))
-        segment = segments.setdefault(
-            index,
-            {
+        if index not in segments:
+            segments[index] = {
                 "index": index + 1,
                 "fromMeters": index * segment_length,
                 "toMeters": (index + 1) * segment_length,
                 "matchedLocations": 0,
                 "angles": [],
                 "thermal": [[] for _ in range(4)],
-            },
-        )
+            }
+        segment = segments[index]
         segment["matchedLocations"] += 1
-        av = [wheel_value(p, "TireSlipAngle", i) for i in range(4)]
-        bv = [wheel_value(q, "TireSlipAngle", i) for i in range(4)]
-        if all(finite(v) for v in av + bv):
-            segment["angles"].append(
-                sum(abs(v) for v in bv) / 4 - sum(abs(v) for v in av) / 4
-            )
-        for i in range(4):
-            at, bt = wheel_value(p, "TireTemp", i), wheel_value(q, "TireTemp", i)
-            if at is not None and bt is not None:
-                segment["thermal"][i].append((bt - at) * 5 / 9)
+
+        # Use direct property accesses instead of allocating [wheel_value(...)] list comprehensions
+        p_tsa = p.get("TireSlipAngle")
+        q_tsa = q.get("TireSlipAngle")
+        if (
+            isinstance(p_tsa, (list, tuple))
+            and len(p_tsa) >= 4
+            and isinstance(q_tsa, (list, tuple))
+            and len(q_tsa) >= 4
+        ):
+            if (
+                finite(p_tsa[0])
+                and finite(p_tsa[1])
+                and finite(p_tsa[2])
+                and finite(p_tsa[3])
+                and finite(q_tsa[0])
+                and finite(q_tsa[1])
+                and finite(q_tsa[2])
+                and finite(q_tsa[3])
+            ):
+                p_sum = abs(p_tsa[0]) + abs(p_tsa[1]) + abs(p_tsa[2]) + abs(p_tsa[3])
+                q_sum = abs(q_tsa[0]) + abs(q_tsa[1]) + abs(q_tsa[2]) + abs(q_tsa[3])
+                segment["angles"].append((q_sum - p_sum) / 4)
+
+        p_tt = p.get("TireTemp")
+        q_tt = q.get("TireTemp")
+        if (
+            isinstance(p_tt, (list, tuple))
+            and len(p_tt) >= 4
+            and isinstance(q_tt, (list, tuple))
+            and len(q_tt) >= 4
+        ):
+            for i in range(4):
+                at, bt = p_tt[i], q_tt[i]
+                if finite(at) and finite(bt):
+                    segment["thermal"][i].append((bt - at) * 5 / 9)
+
     changes = []
     for p, q in comparable:
-        av, bv = (
-            [wheel_value(p, "TireSlipAngle", i) for i in range(4)],
-            [wheel_value(q, "TireSlipAngle", i) for i in range(4)],
-        )
-        if all(finite(v) for v in av + bv):
-            changes.append(sum(abs(v) for v in bv) / 4 - sum(abs(v) for v in av) / 4)
+        p_tsa = p.get("TireSlipAngle")
+        q_tsa = q.get("TireSlipAngle")
+        if (
+            isinstance(p_tsa, (list, tuple))
+            and len(p_tsa) >= 4
+            and isinstance(q_tsa, (list, tuple))
+            and len(q_tsa) >= 4
+        ):
+            if (
+                finite(p_tsa[0])
+                and finite(p_tsa[1])
+                and finite(p_tsa[2])
+                and finite(p_tsa[3])
+                and finite(q_tsa[0])
+                and finite(q_tsa[1])
+                and finite(q_tsa[2])
+                and finite(q_tsa[3])
+            ):
+                p_sum = abs(p_tsa[0]) + abs(p_tsa[1]) + abs(p_tsa[2]) + abs(p_tsa[3])
+                q_sum = abs(q_tsa[0]) + abs(q_tsa[1]) + abs(q_tsa[2]) + abs(q_tsa[3])
+                changes.append((q_sum - p_sum) / 4)
     return {
         "methodVersion": MATCH_VERSION,
         "routeStatus": route_status,
