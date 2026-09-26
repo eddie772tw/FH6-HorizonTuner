@@ -29,7 +29,7 @@ uv run --no-project --python .venv\Scripts\python.exe .agents/skills/github-secu
 
 ### 情境 2：漏洞審查與標準修復
 若涉及具體漏洞代碼修復，請嚴格參閱 [references/vulnerability_remediation_patterns.md](references/vulnerability_remediation_patterns.md) 實作防禦模式：
-1. **Python / JS 路徑注入**：使用集中安全模組 `safe_resolve_path` 或內部枚舉切斷污點鏈。
+1. **路徑注入**：Rust 產品後端使用 `backend-rust/src/storage.rs::safe_path` 驗證資料目錄邊界；Python 維護工具與 JS 依各自的集中路徑驗證函式或內部枚舉切斷污點鏈。不得引用已退役的 Python backend 模組。
 2. **HTML 標籤過濾**：使用標準合格之容錯正則。
 3. **Socket 綁定**：預設綁定 `127.0.0.1`，僅遙測主迴圈允許廣播綁定。
 4. **密鑰洩漏**：優先立即吊銷金鑰並更新 `.gitignore`。

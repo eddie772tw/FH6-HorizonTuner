@@ -11,8 +11,8 @@
 - **[檔案/工具變更]**：說明新增或更新的模組。
 
 ### Pre-Commit & Local Verification
-- **Python Static & Formatting:** `ruff check .` (pass), `ruff format --check .` (pass)
-- **Backend Tests:** `pytest tests/` (X passed, 0 failed)
+- **Rust Backend / CLI Tests:** `cargo test --locked --manifest-path backend-rust/Cargo.toml` (X passed)
+- **Optional Python Tool Checks (only when changed):** uv-managed Ruff and focused `scripts/tests/` (pass)
 - **Frontend Tests:** `vitest` (Y tests passed, 0 failed)
 - **Frontend Build:** `pnpm build` (pass, assets verified)
 
@@ -48,7 +48,8 @@ Author / Maintainer: {代號} as {Agent}
   已套用 Reviewer 的 Code Suggestion。
 
 **Latest Verification Status:**
-- `pytest tests/`: X passed (含新增之 Reviewer 測試案例)
+- `cargo test --locked --manifest-path backend-rust/Cargo.toml`: X passed (Rust 產品案例)
+- 選用 Python 工具案例（若本次修改）：uv 執行對應 `scripts/tests/`
 - `vitest`: Y passed
 - All pre-commit checks pass locally.
 

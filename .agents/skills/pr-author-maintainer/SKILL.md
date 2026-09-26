@@ -13,8 +13,9 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
    - 絕不在 PR 內文或留言中自我宣稱「Ready to merge」、「LGTM」或自行下定論；客觀陳述變更與驗證數據，將審核結論交由 Reviewer。
 2. **嚴格 Commit 前驗證門檻 (Strict Pre-Commit Gate)**：
    - Commit 或 push 前必須 100% 通過本地檢查：
-     - 後端檢查：`uv run --no-project --python .venv\Scripts\python.exe ruff check .` 與 `pytest tests/`
-     - 前端檢查：`cmd /c "pnpm -C frontend run test"` 與 `cmd /c "pnpm -C frontend run build"`
+     - Rust 後端／CLI：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；平台或原生功能變更另加 `--no-default-features`。
+     - 前端：`cmd /c "pnpm -C frontend run test"`；UI 或打包整合變更依範圍執行 build。
+     - 只有修改 Python 維護／發行工具時，才依 `.agents/rules/python-uv.md` 執行對應 Ruff 與 `scripts/tests/` 測試。不得以 Pytest 取代 Rust 產品 gate。
 3. **PR Body 活文件原則 (Living PR Body / Continuous Sync)**：
    - 隨著多次 commit 或重構，必須即時更新頂層 PR Body，杜絕資訊偏差。
 4. **雙軌審查與 Inline Comments 防漏盤點 (Anti-Omission Review Gate)**：
@@ -38,7 +39,7 @@ description: 以 PR 作者或維護者身分建立 PR、同步 PR 內文、回�
 
 ### 流程 3：回覆 Reviewer 意見與整合測試
 1. 執行雙軌盤點：獲取頂層意見與行內評論清單。
-2. 若 Reviewer 提出 Blocking 意見並附帶測試代碼，依義務整合入專案測試並確認修復。
+2. 若 Reviewer 提出 Blocking 意見並附帶可重現案例，將其加入對應產品測試套件（Rust Cargo 或前端 Vitest）；只有 Python 工具本身才加入 `scripts/tests/`。
 3. 依結構化回覆格式發表說明或回覆討論串：`manage_pr_author.py --pr <number> --reply-thread <comment_id> --body-file scratch/reply.md`。詳細格式參閱 [references/pr_templates_and_replies.md](references/pr_templates_and_replies.md)。
 
 ### 流程 4：標題與中繼資料維護

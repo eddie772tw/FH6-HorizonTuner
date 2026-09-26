@@ -1,0 +1,2224 @@
+{
+  "source": "ec7d769 backend/agent_cli.py TuningMathSolver",
+  "cases": [
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "AWD",
+        "road",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "AWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 3.1,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 1169.7,
+          "rear_lbs_in": 1080.5,
+          "front_kgf_mm": 20.89,
+          "rear_kgf_mm": 19.3
+        },
+        "ride_height": {
+          "front": "Stock/Min + 3 clicks",
+          "rear": "Stock/Min + 3 clicks"
+        },
+        "dampers": {
+          "rebound_front": 10.9,
+          "rebound_rear": 10.1,
+          "bump_front": 6.5,
+          "bump_rear": 6.1
+        },
+        "alignment": {
+          "camber_front_deg": -1.8,
+          "camber_rear_deg": -1.2,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.5
+        },
+        "tires": {
+          "front_cold_psi": 28.5,
+          "rear_cold_psi": 28.5,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 30,
+          "front_decel": 0,
+          "rear_accel": 65,
+          "rear_decel": 15,
+          "center_balance": 65
+        }
+      },
+      "applied": {
+        "tirePressureFront": 28.5,
+        "tirePressureRear": 28.5,
+        "camberFront": -1.8,
+        "camberRear": -1.2,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 6.5,
+        "arbFront": 3.1,
+        "arbRear": 50.0,
+        "springsFront": 1169.7,
+        "springsRear": 1080.5,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 10.9,
+        "reboundRear": 10.1,
+        "bumpFront": 6.5,
+        "bumpRear": 6.1,
+        "diffAccelRear": 65,
+        "diffDecelRear": 15,
+        "diffAccelFront": 30,
+        "diffDecelFront": 0,
+        "diffCenterRear": 65
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "AWD",
+        "road",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "AWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 3.5,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 2142.9,
+          "rear_lbs_in": 1224.1,
+          "front_kgf_mm": 38.27,
+          "rear_kgf_mm": 21.86
+        },
+        "ride_height": {
+          "front": "Stock/Min + 3 clicks",
+          "rear": "Stock/Min + 3 clicks"
+        },
+        "dampers": {
+          "rebound_front": 13.1,
+          "rebound_rear": 7.9,
+          "bump_front": 7.9,
+          "bump_rear": 4.7
+        },
+        "alignment": {
+          "camber_front_deg": -1.8,
+          "camber_rear_deg": -1.2,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.5
+        },
+        "tires": {
+          "front_cold_psi": 28.5,
+          "rear_cold_psi": 28.5,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 30,
+          "front_decel": 0,
+          "rear_accel": 65,
+          "rear_decel": 15,
+          "center_balance": 65
+        }
+      },
+      "applied": {
+        "tirePressureFront": 28.5,
+        "tirePressureRear": 28.5,
+        "camberFront": -1.8,
+        "camberRear": -1.2,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 6.5,
+        "arbFront": 3.5,
+        "arbRear": 50.0,
+        "springsFront": 2142.9,
+        "springsRear": 1224.1,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 13.1,
+        "reboundRear": 7.9,
+        "bumpFront": 7.9,
+        "bumpRear": 4.7,
+        "diffAccelRear": 65,
+        "diffDecelRear": 15,
+        "diffAccelFront": 30,
+        "diffDecelFront": 0,
+        "diffCenterRear": 65
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "RWD",
+        "road",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "RWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 34.3,
+          "rear": 31.7
+        },
+        "springs": {
+          "front_lbs_in": 1169.7,
+          "rear_lbs_in": 1080.5,
+          "front_kgf_mm": 20.89,
+          "rear_kgf_mm": 19.3
+        },
+        "ride_height": {
+          "front": "Stock/Min + 3 clicks",
+          "rear": "Stock/Min + 3 clicks"
+        },
+        "dampers": {
+          "rebound_front": 10.9,
+          "rebound_rear": 10.1,
+          "bump_front": 6.5,
+          "bump_rear": 6.1
+        },
+        "alignment": {
+          "camber_front_deg": -1.8,
+          "camber_rear_deg": -1.2,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.5
+        },
+        "tires": {
+          "front_cold_psi": 28.5,
+          "rear_cold_psi": 28.5,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 60,
+          "rear_decel": 20,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 28.5,
+        "tirePressureRear": 28.5,
+        "camberFront": -1.8,
+        "camberRear": -1.2,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 6.5,
+        "arbFront": 34.3,
+        "arbRear": 31.7,
+        "springsFront": 1169.7,
+        "springsRear": 1080.5,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 10.9,
+        "reboundRear": 10.1,
+        "bumpFront": 6.5,
+        "bumpRear": 6.1,
+        "diffAccelRear": 60,
+        "diffDecelRear": 20,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "RWD",
+        "road",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "RWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 41.8,
+          "rear": 24.2
+        },
+        "springs": {
+          "front_lbs_in": 2142.9,
+          "rear_lbs_in": 1224.1,
+          "front_kgf_mm": 38.27,
+          "rear_kgf_mm": 21.86
+        },
+        "ride_height": {
+          "front": "Stock/Min + 3 clicks",
+          "rear": "Stock/Min + 3 clicks"
+        },
+        "dampers": {
+          "rebound_front": 13.1,
+          "rebound_rear": 7.9,
+          "bump_front": 7.9,
+          "bump_rear": 4.7
+        },
+        "alignment": {
+          "camber_front_deg": -1.8,
+          "camber_rear_deg": -1.2,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.5
+        },
+        "tires": {
+          "front_cold_psi": 28.5,
+          "rear_cold_psi": 28.5,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 60,
+          "rear_decel": 20,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 28.5,
+        "tirePressureRear": 28.5,
+        "camberFront": -1.8,
+        "camberRear": -1.2,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 6.5,
+        "arbFront": 41.8,
+        "arbRear": 24.2,
+        "springsFront": 2142.9,
+        "springsRear": 1224.1,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 13.1,
+        "reboundRear": 7.9,
+        "bumpFront": 7.9,
+        "bumpRear": 4.7,
+        "diffAccelRear": 60,
+        "diffDecelRear": 20,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "FWD",
+        "road",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "FWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 34.3,
+          "rear": 31.7
+        },
+        "springs": {
+          "front_lbs_in": 1169.7,
+          "rear_lbs_in": 1080.5,
+          "front_kgf_mm": 20.89,
+          "rear_kgf_mm": 19.3
+        },
+        "ride_height": {
+          "front": "Stock/Min + 3 clicks",
+          "rear": "Stock/Min + 3 clicks"
+        },
+        "dampers": {
+          "rebound_front": 10.9,
+          "rebound_rear": 10.1,
+          "bump_front": 6.5,
+          "bump_rear": 6.1
+        },
+        "alignment": {
+          "camber_front_deg": -1.8,
+          "camber_rear_deg": -1.2,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.5
+        },
+        "tires": {
+          "front_cold_psi": 28.5,
+          "rear_cold_psi": 28.5,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 28.5,
+        "tirePressureRear": 28.5,
+        "camberFront": -1.8,
+        "camberRear": -1.2,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 6.5,
+        "arbFront": 34.3,
+        "arbRear": 31.7,
+        "springsFront": 1169.7,
+        "springsRear": 1080.5,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 10.9,
+        "reboundRear": 10.1,
+        "bumpFront": 6.5,
+        "bumpRear": 6.1,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "FWD",
+        "road",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "road",
+        "drivetrain": "FWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 41.8,
+          "rear": 24.2
+        },
+        "springs": {
+          "front_lbs_in": 2142.9,
+          "rear_lbs_in": 1224.1,
+          "front_kgf_mm": 38.27,
+          "rear_kgf_mm": 21.86
+        },
+        "ride_height": {
+          "front": "Stock/Min + 3 clicks",
+          "rear": "Stock/Min + 3 clicks"
+        },
+        "dampers": {
+          "rebound_front": 13.1,
+          "rebound_rear": 7.9,
+          "bump_front": 7.9,
+          "bump_rear": 4.7
+        },
+        "alignment": {
+          "camber_front_deg": -1.8,
+          "camber_rear_deg": -1.2,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.5
+        },
+        "tires": {
+          "front_cold_psi": 28.5,
+          "rear_cold_psi": 28.5,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 28.5,
+        "tirePressureRear": 28.5,
+        "camberFront": -1.8,
+        "camberRear": -1.2,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 6.5,
+        "arbFront": 41.8,
+        "arbRear": 24.2,
+        "springsFront": 2142.9,
+        "springsRear": 1224.1,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 13.1,
+        "reboundRear": 7.9,
+        "bumpFront": 7.9,
+        "bumpRear": 4.7,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "AWD",
+        "drift",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drift",
+        "drivetrain": "AWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 10.0,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 581.8,
+          "rear_lbs_in": 537.0,
+          "front_kgf_mm": 10.39,
+          "rear_kgf_mm": 9.59
+        },
+        "ride_height": {
+          "front": "Lowest + 1 click",
+          "rear": "Lowest"
+        },
+        "dampers": {
+          "rebound_front": 6.0,
+          "rebound_rear": 6.0,
+          "bump_front": 3.0,
+          "bump_rear": 3.0
+        },
+        "alignment": {
+          "camber_front_deg": -3.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.5,
+          "toe_rear_deg": -0.2,
+          "caster_deg": 7.0
+        },
+        "tires": {
+          "front_cold_psi": 32.0,
+          "rear_cold_psi": 26.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 25,
+          "front_decel": 0,
+          "rear_accel": 100,
+          "rear_decel": 100,
+          "center_balance": 85
+        }
+      },
+      "applied": {
+        "tirePressureFront": 32.0,
+        "tirePressureRear": 26.0,
+        "camberFront": -3.5,
+        "camberRear": -1.0,
+        "toeFront": 0.5,
+        "toeRear": -0.2,
+        "caster": 7.0,
+        "arbFront": 10.0,
+        "arbRear": 50.0,
+        "springsFront": 581.8,
+        "springsRear": 537.0,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 6.0,
+        "reboundRear": 6.0,
+        "bumpFront": 3.0,
+        "bumpRear": 3.0,
+        "diffAccelRear": 100,
+        "diffDecelRear": 100,
+        "diffAccelFront": 25,
+        "diffDecelFront": 0,
+        "diffCenterRear": 85
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "AWD",
+        "drift",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drift",
+        "drivetrain": "AWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 10.0,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 1068.4,
+          "rear_lbs_in": 608.8,
+          "front_kgf_mm": 19.08,
+          "rear_kgf_mm": 10.87
+        },
+        "ride_height": {
+          "front": "Lowest + 1 click",
+          "rear": "Lowest"
+        },
+        "dampers": {
+          "rebound_front": 6.0,
+          "rebound_rear": 6.0,
+          "bump_front": 3.0,
+          "bump_rear": 3.0
+        },
+        "alignment": {
+          "camber_front_deg": -3.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.5,
+          "toe_rear_deg": -0.2,
+          "caster_deg": 7.0
+        },
+        "tires": {
+          "front_cold_psi": 32.0,
+          "rear_cold_psi": 26.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 25,
+          "front_decel": 0,
+          "rear_accel": 100,
+          "rear_decel": 100,
+          "center_balance": 85
+        }
+      },
+      "applied": {
+        "tirePressureFront": 32.0,
+        "tirePressureRear": 26.0,
+        "camberFront": -3.5,
+        "camberRear": -1.0,
+        "toeFront": 0.5,
+        "toeRear": -0.2,
+        "caster": 7.0,
+        "arbFront": 10.0,
+        "arbRear": 50.0,
+        "springsFront": 1068.4,
+        "springsRear": 608.8,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 6.0,
+        "reboundRear": 6.0,
+        "bumpFront": 3.0,
+        "bumpRear": 3.0,
+        "diffAccelRear": 100,
+        "diffDecelRear": 100,
+        "diffAccelFront": 25,
+        "diffDecelFront": 0,
+        "diffCenterRear": 85
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "RWD",
+        "drift",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drift",
+        "drivetrain": "RWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 10.0,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 581.8,
+          "rear_lbs_in": 537.0,
+          "front_kgf_mm": 10.39,
+          "rear_kgf_mm": 9.59
+        },
+        "ride_height": {
+          "front": "Lowest + 1 click",
+          "rear": "Lowest"
+        },
+        "dampers": {
+          "rebound_front": 6.0,
+          "rebound_rear": 6.0,
+          "bump_front": 3.0,
+          "bump_rear": 3.0
+        },
+        "alignment": {
+          "camber_front_deg": -3.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.5,
+          "toe_rear_deg": -0.2,
+          "caster_deg": 7.0
+        },
+        "tires": {
+          "front_cold_psi": 32.0,
+          "rear_cold_psi": 26.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 100,
+          "rear_decel": 100,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 32.0,
+        "tirePressureRear": 26.0,
+        "camberFront": -3.5,
+        "camberRear": -1.0,
+        "toeFront": 0.5,
+        "toeRear": -0.2,
+        "caster": 7.0,
+        "arbFront": 10.0,
+        "arbRear": 50.0,
+        "springsFront": 581.8,
+        "springsRear": 537.0,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 6.0,
+        "reboundRear": 6.0,
+        "bumpFront": 3.0,
+        "bumpRear": 3.0,
+        "diffAccelRear": 100,
+        "diffDecelRear": 100,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "RWD",
+        "drift",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drift",
+        "drivetrain": "RWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 10.0,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 1068.4,
+          "rear_lbs_in": 608.8,
+          "front_kgf_mm": 19.08,
+          "rear_kgf_mm": 10.87
+        },
+        "ride_height": {
+          "front": "Lowest + 1 click",
+          "rear": "Lowest"
+        },
+        "dampers": {
+          "rebound_front": 6.0,
+          "rebound_rear": 6.0,
+          "bump_front": 3.0,
+          "bump_rear": 3.0
+        },
+        "alignment": {
+          "camber_front_deg": -3.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.5,
+          "toe_rear_deg": -0.2,
+          "caster_deg": 7.0
+        },
+        "tires": {
+          "front_cold_psi": 32.0,
+          "rear_cold_psi": 26.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 100,
+          "rear_decel": 100,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 32.0,
+        "tirePressureRear": 26.0,
+        "camberFront": -3.5,
+        "camberRear": -1.0,
+        "toeFront": 0.5,
+        "toeRear": -0.2,
+        "caster": 7.0,
+        "arbFront": 10.0,
+        "arbRear": 50.0,
+        "springsFront": 1068.4,
+        "springsRear": 608.8,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 6.0,
+        "reboundRear": 6.0,
+        "bumpFront": 3.0,
+        "bumpRear": 3.0,
+        "diffAccelRear": 100,
+        "diffDecelRear": 100,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "FWD",
+        "drift",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drift",
+        "drivetrain": "FWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 10.0,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 581.8,
+          "rear_lbs_in": 537.0,
+          "front_kgf_mm": 10.39,
+          "rear_kgf_mm": 9.59
+        },
+        "ride_height": {
+          "front": "Lowest + 1 click",
+          "rear": "Lowest"
+        },
+        "dampers": {
+          "rebound_front": 6.0,
+          "rebound_rear": 6.0,
+          "bump_front": 3.0,
+          "bump_rear": 3.0
+        },
+        "alignment": {
+          "camber_front_deg": -3.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.5,
+          "toe_rear_deg": -0.2,
+          "caster_deg": 7.0
+        },
+        "tires": {
+          "front_cold_psi": 32.0,
+          "rear_cold_psi": 26.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 32.0,
+        "tirePressureRear": 26.0,
+        "camberFront": -3.5,
+        "camberRear": -1.0,
+        "toeFront": 0.5,
+        "toeRear": -0.2,
+        "caster": 7.0,
+        "arbFront": 10.0,
+        "arbRear": 50.0,
+        "springsFront": 581.8,
+        "springsRear": 537.0,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 6.0,
+        "reboundRear": 6.0,
+        "bumpFront": 3.0,
+        "bumpRear": 3.0,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "FWD",
+        "drift",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drift",
+        "drivetrain": "FWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 10.0,
+          "rear": 50.0
+        },
+        "springs": {
+          "front_lbs_in": 1068.4,
+          "rear_lbs_in": 608.8,
+          "front_kgf_mm": 19.08,
+          "rear_kgf_mm": 10.87
+        },
+        "ride_height": {
+          "front": "Lowest + 1 click",
+          "rear": "Lowest"
+        },
+        "dampers": {
+          "rebound_front": 6.0,
+          "rebound_rear": 6.0,
+          "bump_front": 3.0,
+          "bump_rear": 3.0
+        },
+        "alignment": {
+          "camber_front_deg": -3.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.5,
+          "toe_rear_deg": -0.2,
+          "caster_deg": 7.0
+        },
+        "tires": {
+          "front_cold_psi": 32.0,
+          "rear_cold_psi": 26.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 32.0,
+        "tirePressureRear": 26.0,
+        "camberFront": -3.5,
+        "camberRear": -1.0,
+        "toeFront": 0.5,
+        "toeRear": -0.2,
+        "caster": 7.0,
+        "arbFront": 10.0,
+        "arbRear": 50.0,
+        "springsFront": 1068.4,
+        "springsRear": 608.8,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 6.0,
+        "reboundRear": 6.0,
+        "bumpFront": 3.0,
+        "bumpRear": 3.0,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "AWD",
+        "rally",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "rally",
+        "drivetrain": "AWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 12.0,
+          "rear": 11.1
+        },
+        "springs": {
+          "front_lbs_in": 756.3,
+          "rear_lbs_in": 698.2,
+          "front_kgf_mm": 13.51,
+          "rear_kgf_mm": 12.47
+        },
+        "ride_height": {
+          "front": "Maximum (Highest)",
+          "rear": "Maximum (Highest)"
+        },
+        "dampers": {
+          "rebound_front": 8.3,
+          "rebound_rear": 7.7,
+          "bump_front": 3.3,
+          "bump_rear": 3.1
+        },
+        "alignment": {
+          "camber_front_deg": -1.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.1,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.0
+        },
+        "tires": {
+          "front_cold_psi": 25.0,
+          "rear_cold_psi": 25.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 40,
+          "front_decel": 0,
+          "rear_accel": 70,
+          "rear_decel": 20,
+          "center_balance": 60
+        }
+      },
+      "applied": {
+        "tirePressureFront": 25.0,
+        "tirePressureRear": 25.0,
+        "camberFront": -1.5,
+        "camberRear": -1.0,
+        "toeFront": 0.1,
+        "toeRear": 0.0,
+        "caster": 6.0,
+        "arbFront": 12.0,
+        "arbRear": 11.1,
+        "springsFront": 756.3,
+        "springsRear": 698.2,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 8.3,
+        "reboundRear": 7.7,
+        "bumpFront": 3.3,
+        "bumpRear": 3.1,
+        "diffAccelRear": 70,
+        "diffDecelRear": 20,
+        "diffAccelFront": 40,
+        "diffDecelFront": 0,
+        "diffCenterRear": 60
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "AWD",
+        "rally",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "rally",
+        "drivetrain": "AWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 14.6,
+          "rear": 8.5
+        },
+        "springs": {
+          "front_lbs_in": 1388.9,
+          "rear_lbs_in": 791.5,
+          "front_kgf_mm": 24.8,
+          "rear_kgf_mm": 14.13
+        },
+        "ride_height": {
+          "front": "Maximum (Highest)",
+          "rear": "Maximum (Highest)"
+        },
+        "dampers": {
+          "rebound_front": 9.9,
+          "rebound_rear": 6.1,
+          "bump_front": 4.0,
+          "bump_rear": 2.4
+        },
+        "alignment": {
+          "camber_front_deg": -1.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.1,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.0
+        },
+        "tires": {
+          "front_cold_psi": 25.0,
+          "rear_cold_psi": 25.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 40,
+          "front_decel": 0,
+          "rear_accel": 70,
+          "rear_decel": 20,
+          "center_balance": 60
+        }
+      },
+      "applied": {
+        "tirePressureFront": 25.0,
+        "tirePressureRear": 25.0,
+        "camberFront": -1.5,
+        "camberRear": -1.0,
+        "toeFront": 0.1,
+        "toeRear": 0.0,
+        "caster": 6.0,
+        "arbFront": 14.6,
+        "arbRear": 8.5,
+        "springsFront": 1388.9,
+        "springsRear": 791.5,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 9.9,
+        "reboundRear": 6.1,
+        "bumpFront": 4.0,
+        "bumpRear": 2.4,
+        "diffAccelRear": 70,
+        "diffDecelRear": 20,
+        "diffAccelFront": 40,
+        "diffDecelFront": 0,
+        "diffCenterRear": 60
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "RWD",
+        "rally",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "rally",
+        "drivetrain": "RWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 12.0,
+          "rear": 11.1
+        },
+        "springs": {
+          "front_lbs_in": 756.3,
+          "rear_lbs_in": 698.2,
+          "front_kgf_mm": 13.51,
+          "rear_kgf_mm": 12.47
+        },
+        "ride_height": {
+          "front": "Maximum (Highest)",
+          "rear": "Maximum (Highest)"
+        },
+        "dampers": {
+          "rebound_front": 8.3,
+          "rebound_rear": 7.7,
+          "bump_front": 3.3,
+          "bump_rear": 3.1
+        },
+        "alignment": {
+          "camber_front_deg": -1.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.1,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.0
+        },
+        "tires": {
+          "front_cold_psi": 25.0,
+          "rear_cold_psi": 25.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 60,
+          "rear_decel": 20,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 25.0,
+        "tirePressureRear": 25.0,
+        "camberFront": -1.5,
+        "camberRear": -1.0,
+        "toeFront": 0.1,
+        "toeRear": 0.0,
+        "caster": 6.0,
+        "arbFront": 12.0,
+        "arbRear": 11.1,
+        "springsFront": 756.3,
+        "springsRear": 698.2,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 8.3,
+        "reboundRear": 7.7,
+        "bumpFront": 3.3,
+        "bumpRear": 3.1,
+        "diffAccelRear": 60,
+        "diffDecelRear": 20,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "RWD",
+        "rally",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "rally",
+        "drivetrain": "RWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 14.6,
+          "rear": 8.5
+        },
+        "springs": {
+          "front_lbs_in": 1388.9,
+          "rear_lbs_in": 791.5,
+          "front_kgf_mm": 24.8,
+          "rear_kgf_mm": 14.13
+        },
+        "ride_height": {
+          "front": "Maximum (Highest)",
+          "rear": "Maximum (Highest)"
+        },
+        "dampers": {
+          "rebound_front": 9.9,
+          "rebound_rear": 6.1,
+          "bump_front": 4.0,
+          "bump_rear": 2.4
+        },
+        "alignment": {
+          "camber_front_deg": -1.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.1,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.0
+        },
+        "tires": {
+          "front_cold_psi": 25.0,
+          "rear_cold_psi": 25.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 60,
+          "rear_decel": 20,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 25.0,
+        "tirePressureRear": 25.0,
+        "camberFront": -1.5,
+        "camberRear": -1.0,
+        "toeFront": 0.1,
+        "toeRear": 0.0,
+        "caster": 6.0,
+        "arbFront": 14.6,
+        "arbRear": 8.5,
+        "springsFront": 1388.9,
+        "springsRear": 791.5,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 9.9,
+        "reboundRear": 6.1,
+        "bumpFront": 4.0,
+        "bumpRear": 2.4,
+        "diffAccelRear": 60,
+        "diffDecelRear": 20,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "FWD",
+        "rally",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "rally",
+        "drivetrain": "FWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 12.0,
+          "rear": 11.1
+        },
+        "springs": {
+          "front_lbs_in": 756.3,
+          "rear_lbs_in": 698.2,
+          "front_kgf_mm": 13.51,
+          "rear_kgf_mm": 12.47
+        },
+        "ride_height": {
+          "front": "Maximum (Highest)",
+          "rear": "Maximum (Highest)"
+        },
+        "dampers": {
+          "rebound_front": 8.3,
+          "rebound_rear": 7.7,
+          "bump_front": 3.3,
+          "bump_rear": 3.1
+        },
+        "alignment": {
+          "camber_front_deg": -1.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.1,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.0
+        },
+        "tires": {
+          "front_cold_psi": 25.0,
+          "rear_cold_psi": 25.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 25.0,
+        "tirePressureRear": 25.0,
+        "camberFront": -1.5,
+        "camberRear": -1.0,
+        "toeFront": 0.1,
+        "toeRear": 0.0,
+        "caster": 6.0,
+        "arbFront": 12.0,
+        "arbRear": 11.1,
+        "springsFront": 756.3,
+        "springsRear": 698.2,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 8.3,
+        "reboundRear": 7.7,
+        "bumpFront": 3.3,
+        "bumpRear": 3.1,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "FWD",
+        "rally",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "rally",
+        "drivetrain": "FWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 14.6,
+          "rear": 8.5
+        },
+        "springs": {
+          "front_lbs_in": 1388.9,
+          "rear_lbs_in": 791.5,
+          "front_kgf_mm": 24.8,
+          "rear_kgf_mm": 14.13
+        },
+        "ride_height": {
+          "front": "Maximum (Highest)",
+          "rear": "Maximum (Highest)"
+        },
+        "dampers": {
+          "rebound_front": 9.9,
+          "rebound_rear": 6.1,
+          "bump_front": 4.0,
+          "bump_rear": 2.4
+        },
+        "alignment": {
+          "camber_front_deg": -1.5,
+          "camber_rear_deg": -1.0,
+          "toe_front_deg": 0.1,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 6.0
+        },
+        "tires": {
+          "front_cold_psi": 25.0,
+          "rear_cold_psi": 25.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 25.0,
+        "tirePressureRear": 25.0,
+        "camberFront": -1.5,
+        "camberRear": -1.0,
+        "toeFront": 0.1,
+        "toeRear": 0.0,
+        "caster": 6.0,
+        "arbFront": 14.6,
+        "arbRear": 8.5,
+        "springsFront": 1388.9,
+        "springsRear": 791.5,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 9.9,
+        "reboundRear": 6.1,
+        "bumpFront": 4.0,
+        "bumpRear": 2.4,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "AWD",
+        "drag",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drag",
+        "drivetrain": "AWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 1.0,
+          "rear": 65.0
+        },
+        "springs": {
+          "front_lbs_in": 581.8,
+          "rear_lbs_in": 1396.3,
+          "front_kgf_mm": 10.39,
+          "rear_kgf_mm": 24.94
+        },
+        "ride_height": {
+          "front": "Lowest (Front Rake)",
+          "rear": "Highest (Weight Transfer)"
+        },
+        "dampers": {
+          "rebound_front": 3.0,
+          "rebound_rear": 12.0,
+          "bump_front": 4.0,
+          "bump_rear": 10.0
+        },
+        "alignment": {
+          "camber_front_deg": -0.5,
+          "camber_rear_deg": 0.0,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 5.0
+        },
+        "tires": {
+          "front_cold_psi": 35.0,
+          "rear_cold_psi": 20.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 30,
+          "front_decel": 0,
+          "rear_accel": 65,
+          "rear_decel": 15,
+          "center_balance": 65
+        }
+      },
+      "applied": {
+        "tirePressureFront": 35.0,
+        "tirePressureRear": 20.0,
+        "camberFront": -0.5,
+        "camberRear": 0.0,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 5.0,
+        "arbFront": 1.0,
+        "arbRear": 65.0,
+        "springsFront": 581.8,
+        "springsRear": 1396.3,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 3.0,
+        "reboundRear": 12.0,
+        "bumpFront": 4.0,
+        "bumpRear": 10.0,
+        "diffAccelRear": 65,
+        "diffDecelRear": 15,
+        "diffAccelFront": 30,
+        "diffDecelFront": 0,
+        "diffCenterRear": 65
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "AWD",
+        "drag",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drag",
+        "drivetrain": "AWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 1.0,
+          "rear": 65.0
+        },
+        "springs": {
+          "front_lbs_in": 1068.4,
+          "rear_lbs_in": 1582.9,
+          "front_kgf_mm": 19.08,
+          "rear_kgf_mm": 28.27
+        },
+        "ride_height": {
+          "front": "Lowest (Front Rake)",
+          "rear": "Highest (Weight Transfer)"
+        },
+        "dampers": {
+          "rebound_front": 3.0,
+          "rebound_rear": 12.0,
+          "bump_front": 4.0,
+          "bump_rear": 10.0
+        },
+        "alignment": {
+          "camber_front_deg": -0.5,
+          "camber_rear_deg": 0.0,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 5.0
+        },
+        "tires": {
+          "front_cold_psi": 35.0,
+          "rear_cold_psi": 20.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 30,
+          "front_decel": 0,
+          "rear_accel": 65,
+          "rear_decel": 15,
+          "center_balance": 65
+        }
+      },
+      "applied": {
+        "tirePressureFront": 35.0,
+        "tirePressureRear": 20.0,
+        "camberFront": -0.5,
+        "camberRear": 0.0,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 5.0,
+        "arbFront": 1.0,
+        "arbRear": 65.0,
+        "springsFront": 1068.4,
+        "springsRear": 1582.9,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 3.0,
+        "reboundRear": 12.0,
+        "bumpFront": 4.0,
+        "bumpRear": 10.0,
+        "diffAccelRear": 65,
+        "diffDecelRear": 15,
+        "diffAccelFront": 30,
+        "diffDecelFront": 0,
+        "diffCenterRear": 65
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "RWD",
+        "drag",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drag",
+        "drivetrain": "RWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 1.0,
+          "rear": 65.0
+        },
+        "springs": {
+          "front_lbs_in": 581.8,
+          "rear_lbs_in": 1396.3,
+          "front_kgf_mm": 10.39,
+          "rear_kgf_mm": 24.94
+        },
+        "ride_height": {
+          "front": "Lowest (Front Rake)",
+          "rear": "Highest (Weight Transfer)"
+        },
+        "dampers": {
+          "rebound_front": 3.0,
+          "rebound_rear": 12.0,
+          "bump_front": 4.0,
+          "bump_rear": 10.0
+        },
+        "alignment": {
+          "camber_front_deg": -0.5,
+          "camber_rear_deg": 0.0,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 5.0
+        },
+        "tires": {
+          "front_cold_psi": 35.0,
+          "rear_cold_psi": 20.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 100,
+          "rear_decel": 100,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 35.0,
+        "tirePressureRear": 20.0,
+        "camberFront": -0.5,
+        "camberRear": 0.0,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 5.0,
+        "arbFront": 1.0,
+        "arbRear": 65.0,
+        "springsFront": 581.8,
+        "springsRear": 1396.3,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 3.0,
+        "reboundRear": 12.0,
+        "bumpFront": 4.0,
+        "bumpRear": 10.0,
+        "diffAccelRear": 100,
+        "diffDecelRear": 100,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "RWD",
+        "drag",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drag",
+        "drivetrain": "RWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 1.0,
+          "rear": 65.0
+        },
+        "springs": {
+          "front_lbs_in": 1068.4,
+          "rear_lbs_in": 1582.9,
+          "front_kgf_mm": 19.08,
+          "rear_kgf_mm": 28.27
+        },
+        "ride_height": {
+          "front": "Lowest (Front Rake)",
+          "rear": "Highest (Weight Transfer)"
+        },
+        "dampers": {
+          "rebound_front": 3.0,
+          "rebound_rear": 12.0,
+          "bump_front": 4.0,
+          "bump_rear": 10.0
+        },
+        "alignment": {
+          "camber_front_deg": -0.5,
+          "camber_rear_deg": 0.0,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 5.0
+        },
+        "tires": {
+          "front_cold_psi": 35.0,
+          "rear_cold_psi": 20.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 0,
+          "front_decel": 0,
+          "rear_accel": 100,
+          "rear_decel": 100,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 35.0,
+        "tirePressureRear": 20.0,
+        "camberFront": -0.5,
+        "camberRear": 0.0,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 5.0,
+        "arbFront": 1.0,
+        "arbRear": 65.0,
+        "springsFront": 1068.4,
+        "springsRear": 1582.9,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 3.0,
+        "reboundRear": 12.0,
+        "bumpFront": 4.0,
+        "bumpRear": 10.0,
+        "diffAccelRear": 100,
+        "diffDecelRear": 100,
+        "diffAccelFront": 0,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        1450.0,
+        52.0,
+        "FWD",
+        "drag",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drag",
+        "drivetrain": "FWD",
+        "weight_kg": 1450.0,
+        "front_weight_bias_pct": 52.0,
+        "anti_roll_bars": {
+          "front": 1.0,
+          "rear": 65.0
+        },
+        "springs": {
+          "front_lbs_in": 581.8,
+          "rear_lbs_in": 1396.3,
+          "front_kgf_mm": 10.39,
+          "rear_kgf_mm": 24.94
+        },
+        "ride_height": {
+          "front": "Lowest (Front Rake)",
+          "rear": "Highest (Weight Transfer)"
+        },
+        "dampers": {
+          "rebound_front": 3.0,
+          "rebound_rear": 12.0,
+          "bump_front": 4.0,
+          "bump_rear": 10.0
+        },
+        "alignment": {
+          "camber_front_deg": -0.5,
+          "camber_rear_deg": 0.0,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 5.0
+        },
+        "tires": {
+          "front_cold_psi": 35.0,
+          "rear_cold_psi": 20.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 35.0,
+        "tirePressureRear": 20.0,
+        "camberFront": -0.5,
+        "camberRear": 0.0,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 5.0,
+        "arbFront": 1.0,
+        "arbRear": 65.0,
+        "springsFront": 581.8,
+        "springsRear": 1396.3,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 3.0,
+        "reboundRear": 12.0,
+        "bumpFront": 4.0,
+        "bumpRear": 10.0,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "chassis",
+      "args": [
+        2173.6,
+        0.637,
+        "FWD",
+        "drag",
+        123.0,
+        321.0
+      ],
+      "result": {
+        "schemaVersion": "tuning-dev/v1",
+        "goal": "drag",
+        "drivetrain": "FWD",
+        "weight_kg": 2173.6,
+        "front_weight_bias_pct": 63.7,
+        "anti_roll_bars": {
+          "front": 1.0,
+          "rear": 65.0
+        },
+        "springs": {
+          "front_lbs_in": 1068.4,
+          "rear_lbs_in": 1582.9,
+          "front_kgf_mm": 19.08,
+          "rear_kgf_mm": 28.27
+        },
+        "ride_height": {
+          "front": "Lowest (Front Rake)",
+          "rear": "Highest (Weight Transfer)"
+        },
+        "dampers": {
+          "rebound_front": 3.0,
+          "rebound_rear": 12.0,
+          "bump_front": 4.0,
+          "bump_rear": 10.0
+        },
+        "alignment": {
+          "camber_front_deg": -0.5,
+          "camber_rear_deg": 0.0,
+          "toe_front_deg": 0.0,
+          "toe_rear_deg": 0.0,
+          "caster_deg": 5.0
+        },
+        "tires": {
+          "front_cold_psi": 35.0,
+          "rear_cold_psi": 20.0,
+          "target_hot_psi": 32.0
+        },
+        "differential": {
+          "front_accel": 45,
+          "front_decel": 0,
+          "rear_accel": 0,
+          "rear_decel": 0,
+          "center_balance": 0
+        }
+      },
+      "applied": {
+        "tirePressureFront": 35.0,
+        "tirePressureRear": 20.0,
+        "camberFront": -0.5,
+        "camberRear": 0.0,
+        "toeFront": 0.0,
+        "toeRear": 0.0,
+        "caster": 5.0,
+        "arbFront": 1.0,
+        "arbRear": 65.0,
+        "springsFront": 1068.4,
+        "springsRear": 1582.9,
+        "rideHeightFront": 12.0,
+        "rideHeightRear": 12.0,
+        "reboundFront": 3.0,
+        "reboundRear": 12.0,
+        "bumpFront": 4.0,
+        "bumpRear": 10.0,
+        "diffAccelRear": 0,
+        "diffDecelRear": 0,
+        "diffAccelFront": 45,
+        "diffDecelFront": 0,
+        "diffCenterRear": 0
+      }
+    },
+    {
+      "kind": "gearing",
+      "args": [
+        8000.0,
+        7200.0,
+        300.0,
+        6,
+        65.0
+      ],
+      "result": {
+        "final_drive": 3.46,
+        "gears_count": 6,
+        "gears": [
+          {
+            "gear": 1,
+            "ratio": 3.2,
+            "speed_at_redline_kmh": 88.5,
+            "upshift_drop_rpm": 6800.0
+          },
+          {
+            "gear": 2,
+            "ratio": 2.72,
+            "speed_at_redline_kmh": 104.2,
+            "upshift_drop_rpm": 6800.0
+          },
+          {
+            "gear": 3,
+            "ratio": 2.31,
+            "speed_at_redline_kmh": 122.5,
+            "upshift_drop_rpm": 6800.0
+          },
+          {
+            "gear": 4,
+            "ratio": 1.97,
+            "speed_at_redline_kmh": 144.2,
+            "upshift_drop_rpm": 6800.0
+          },
+          {
+            "gear": 5,
+            "ratio": 1.67,
+            "speed_at_redline_kmh": 169.6,
+            "upshift_drop_rpm": 6800.0
+          },
+          {
+            "gear": 6,
+            "ratio": 1.42,
+            "speed_at_redline_kmh": 199.5,
+            "upshift_drop_rpm": null
+          }
+        ],
+        "powerband_retention_ratio": 0.85
+      }
+    },
+    {
+      "kind": "gearing",
+      "args": [
+        9000.0,
+        6350.0,
+        235.0,
+        10,
+        72.0
+      ],
+      "result": {
+        "final_drive": 4.31,
+        "gears_count": 10,
+        "gears": [
+          {
+            "gear": 1,
+            "ratio": 3.2,
+            "speed_at_redline_kmh": 88.6,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 2,
+            "ratio": 2.26,
+            "speed_at_redline_kmh": 125.5,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 3,
+            "ratio": 1.59,
+            "speed_at_redline_kmh": 177.9,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 4,
+            "ratio": 1.12,
+            "speed_at_redline_kmh": 252.1,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 5,
+            "ratio": 0.79,
+            "speed_at_redline_kmh": 357.4,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 6,
+            "ratio": 0.56,
+            "speed_at_redline_kmh": 506.5,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 7,
+            "ratio": 0.39,
+            "speed_at_redline_kmh": 717.9,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 8,
+            "ratio": 0.28,
+            "speed_at_redline_kmh": 1017.5,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 9,
+            "ratio": 0.2,
+            "speed_at_redline_kmh": 1442.1,
+            "upshift_drop_rpm": 6350.0
+          },
+          {
+            "gear": 10,
+            "ratio": 0.14,
+            "speed_at_redline_kmh": 2043.9,
+            "upshift_drop_rpm": null
+          }
+        ],
+        "powerband_retention_ratio": 0.706
+      }
+    },
+    {
+      "kind": "gearing",
+      "args": [
+        6000.0,
+        3400.0,
+        0.0,
+        1,
+        65.0
+      ],
+      "result": {
+        "final_drive": 3.73,
+        "gears_count": 1,
+        "gears": [
+          {
+            "gear": 1,
+            "ratio": 3.2,
+            "speed_at_redline_kmh": 61.6,
+            "upshift_drop_rpm": null
+          }
+        ],
+        "powerband_retention_ratio": 0.567
+      }
+    },
+    {
+      "kind": "full",
+      "result": {
+        "schemaVersion": "tuning-preset/v1",
+        "gameBuild": "FH6_B1.0",
+        "vehicleClass": "S1",
+        "profileUsed": "road",
+        "installedParts": {},
+        "parameters": {
+          "tire_pressure_f": 28.5,
+          "tire_pressure_r": 28.5,
+          "camber_front": -1.8,
+          "camber_rear": -1.2,
+          "toe_front": 0.0,
+          "toe_rear": 0.0,
+          "caster": 6.5,
+          "arb_front": 34.3,
+          "arb_rear": 31.7,
+          "spring_front": 1123.5,
+          "spring_rear": 1037.1,
+          "rebound_front": 10.9,
+          "rebound_rear": 10.1,
+          "bump_front": 6.5,
+          "bump_rear": 6.1,
+          "diff_accel_rear": 60,
+          "diff_decel_rear": 20,
+          "final_drive": 3.46
+        },
+        "solverOutputSnapshot": {
+          "chassis": {
+            "schemaVersion": "tuning-dev/v1",
+            "goal": "road",
+            "drivetrain": "RWD",
+            "weight_kg": 1400.0,
+            "front_weight_bias_pct": 52.0,
+            "anti_roll_bars": {
+              "front": 34.3,
+              "rear": 31.7
+            },
+            "springs": {
+              "front_lbs_in": 1123.5,
+              "rear_lbs_in": 1037.1,
+              "front_kgf_mm": 20.06,
+              "rear_kgf_mm": 18.52
+            },
+            "ride_height": {
+              "front": "Stock/Min + 3 clicks",
+              "rear": "Stock/Min + 3 clicks"
+            },
+            "dampers": {
+              "rebound_front": 10.9,
+              "rebound_rear": 10.1,
+              "bump_front": 6.5,
+              "bump_rear": 6.1
+            },
+            "alignment": {
+              "camber_front_deg": -1.8,
+              "camber_rear_deg": -1.2,
+              "toe_front_deg": 0.0,
+              "toe_rear_deg": 0.0,
+              "caster_deg": 6.5
+            },
+            "tires": {
+              "front_cold_psi": 28.5,
+              "rear_cold_psi": 28.5,
+              "target_hot_psi": 32.0
+            },
+            "differential": {
+              "front_accel": 0,
+              "front_decel": 0,
+              "rear_accel": 60,
+              "rear_decel": 20,
+              "center_balance": 0
+            }
+          },
+          "gearing": {
+            "final_drive": 3.46,
+            "gears_count": 6,
+            "gears": [
+              {
+                "gear": 1,
+                "ratio": 3.2,
+                "speed_at_redline_kmh": 88.5,
+                "upshift_drop_rpm": 6800.0
+              },
+              {
+                "gear": 2,
+                "ratio": 2.72,
+                "speed_at_redline_kmh": 104.2,
+                "upshift_drop_rpm": 6800.0
+              },
+              {
+                "gear": 3,
+                "ratio": 2.31,
+                "speed_at_redline_kmh": 122.5,
+                "upshift_drop_rpm": 6800.0
+              },
+              {
+                "gear": 4,
+                "ratio": 1.97,
+                "speed_at_redline_kmh": 144.2,
+                "upshift_drop_rpm": 6800.0
+              },
+              {
+                "gear": 5,
+                "ratio": 1.67,
+                "speed_at_redline_kmh": 169.6,
+                "upshift_drop_rpm": 6800.0
+              },
+              {
+                "gear": 6,
+                "ratio": 1.42,
+                "speed_at_redline_kmh": 199.5,
+                "upshift_drop_rpm": null
+              }
+            ],
+            "powerband_retention_ratio": 0.85
+          }
+        },
+        "calibrationStatus": "unverified"
+      }
+    }
+  ]
+}

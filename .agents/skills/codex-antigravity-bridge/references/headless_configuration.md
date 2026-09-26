@@ -34,7 +34,7 @@ Headless 調用時，**必須明確將工作目錄與工作區綁定在專案根
 標準 Headless 調用命令範例：
 
 ```powershell
-agy --add-dir "D:\FH6-HorizonTuner" --print --sandbox --print-timeout 90s -p "<prompt>"
+agy --add-dir "<workspacePath>" --print --sandbox --print-timeout 90s -p "<prompt>"
 ```
 
 ---
@@ -42,6 +42,6 @@ agy --add-dir "D:\FH6-HorizonTuner" --print --sandbox --print-timeout 90s -p "<p
 ## 工作區邊界與路徑規範
 
 Antigravity 內建硬性安全防護（Hardcoded System Protection Boundary）：
-- **允許存取**：位於目前工作區（如 `D:\FH6-HorizonTuner\...`）之內的檔案與目錄。
+- **允許存取**：位於目前工作區（以 `<workspacePath>` 表示）之內的檔案與目錄；不要假設固定磁碟代號或使用者資料夾。
 - **嚴格拒絕**：工作區外部路徑（例如 `C:\Users\<user>\...`、`~/.gemini/` 或系統目錄）。任何跨工作區的讀取請求均會直接返回 `Permission denied for read_file: Matches hardcoded system protection boundary rule`。
 - **Prompt 路徑格式**：傳遞給 Antigravity 的檔案路徑必須為工作區內的絕對路徑（例如 `D:/FH6-HorizonTuner/path/to/file`）或相對於工作區根目錄的相對路徑。

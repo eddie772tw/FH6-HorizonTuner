@@ -36,6 +36,14 @@ impl McpServer {
             }
             return Ok(None);
         }
+        if request.get("params").is_some_and(|p| !p.is_object()) {
+            return Ok(Some(protocol::error(
+                id,
+                -32602,
+                "params must be an object",
+                None,
+            )));
+        }
         let params = request
             .get("params")
             .and_then(Value::as_object)
@@ -64,6 +72,14 @@ impl McpServer {
                 Ok(json!({"resources":resources::list(&service::McpService::new(app))}))
             }
             "tools/call" => {
+                if params.get("arguments").is_some_and(|p| !p.is_object()) {
+                    return Ok(Some(protocol::error(
+                        id,
+                        -32602,
+                        "arguments must be an object",
+                        None,
+                    )));
+                }
                 let Some(name) = params
                     .get("name")
                     .and_then(Value::as_str)

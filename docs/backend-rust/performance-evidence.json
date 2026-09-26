@@ -1,0 +1,156 @@
+{
+  "date": "2026-09-26",
+  "platform": "Windows x86_64",
+  "cpu": "AMD Ryzen 7 5800XT",
+  "rustc": "1.96.0",
+  "profile": "release",
+  "baseline": "8ed390dec4a60d583158e877e375c6078b86cfe1",
+  "implementation": "PR #443 performance inheritance changes",
+  "command": "cargo test --locked -j 2 --release --manifest-path backend-rust/Cargo.toml --test performance_probe -- --ignored --nocapture",
+  "method": "Seven samples; Road and language warmup once; fresh SQLite database per sample. Rust before/after, not a Python comparison or a CI timing threshold.",
+  "before": [
+    {
+      "probe": "road_summary_10000",
+      "median_ms": 123.2329,
+      "samples_ms": [
+        104.5553,
+        112.8595,
+        117.0012,
+        123.2329,
+        125.1407,
+        125.6652,
+        129.5483
+      ]
+    },
+    {
+      "probe": "road_matching_4000",
+      "median_ms": 49.707300000000004,
+      "samples_ms": [
+        48.8209,
+        49.007299999999994,
+        49.3419,
+        49.707300000000004,
+        50.2354,
+        50.705,
+        51.595
+      ]
+    },
+    {
+      "probe": "language_100_reads",
+      "median_ms": 44.2104,
+      "samples_ms": [
+        43.609,
+        44.041900000000005,
+        44.1615,
+        44.2104,
+        44.4767,
+        45.0462,
+        49.778299999999994
+      ]
+    },
+    {
+      "probe": "sqlite_insert_1000",
+      "median_ms": 41.012,
+      "samples_ms": [
+        39.8383,
+        39.8566,
+        39.8737,
+        41.012,
+        43.9929,
+        45.2817,
+        45.4916
+      ]
+    }
+  ],
+  "after": [
+    {
+      "probe": "road_summary_10000",
+      "median_ms": 36.380500000000005,
+      "samples_ms": [
+        32.9748,
+        34.632000000000005,
+        36.130700000000004,
+        36.380500000000005,
+        36.4932,
+        38.16,
+        38.9341
+      ]
+    },
+    {
+      "probe": "road_matching_4000",
+      "median_ms": 15.845999999999998,
+      "samples_ms": [
+        14.1334,
+        14.705400000000001,
+        15.3578,
+        15.845999999999998,
+        18.5234,
+        19.3538,
+        21.6174
+      ]
+    },
+    {
+      "probe": "language_100_reads",
+      "median_ms": 18.970399999999998,
+      "samples_ms": [
+        18.615,
+        18.6213,
+        18.93,
+        18.970399999999998,
+        19.132,
+        19.2014,
+        20.8917
+      ]
+    },
+    {
+      "probe": "sqlite_insert_1000",
+      "median_ms": 36.1894,
+      "samples_ms": [
+        32.8173,
+        33.8957,
+        35.297399999999996,
+        36.1894,
+        37.4917,
+        38.2606,
+        42.3506
+      ]
+    }
+  ],
+  "matchingPairedDiagnostic": {
+    "method": "Independent rustc -O -C lto=thin -C codegen-units=1 executable includes baseline and final matching modules; same 4000-point shape; exact JSON equality first; alternating execution order for 14 pairs.",
+    "before_ms": [
+      48.757000000000005,
+      49.4296,
+      49.4835,
+      51.31079999999999,
+      51.4689,
+      51.502199999999995,
+      51.5363,
+      51.7929,
+      52.377399999999994,
+      56.400800000000004,
+      56.5072,
+      57.088699999999996,
+      57.151199999999996,
+      57.8089
+    ],
+    "after_ms": [
+      11.5676,
+      12.1513,
+      12.5395,
+      13.1589,
+      13.258000000000001,
+      13.3117,
+      13.9887,
+      14.1036,
+      14.1346,
+      15.0921,
+      16.5684,
+      16.8301,
+      17.2288,
+      17.4827
+    ],
+    "before_median_ms": 51.6646,
+    "after_median_ms": 14.04615
+  }
+}

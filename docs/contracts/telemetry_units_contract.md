@@ -2,7 +2,7 @@
 
 - **版本 (Version)**: 1.0.0
 - **狀態 (Status)**: 正式規範 (Single Source of Truth / SSOT)
-- **管轄範圍 (Scope)**: Forza Horizon 遙測資料流（UDP 接收端、Python/Rust 後端、MCP 診斷服務、WebSocket 廣播、React 前端與 HUD 疊加層）
+- **管轄範圍 (Scope)**: Forza Horizon 遙測資料流（Rust UDP 接收端與 MCP 診斷服務、WebSocket 廣播、React 前端與 HUD 疊加層）
 - **關聯 Issue**: #423 (前後端調校與遙測責任釐清 Stacked PR 1)
 
 ---
@@ -240,7 +240,7 @@ const boostKpa = rawBoostPa / 1000.0;
 ## 4. MCP 服務 `sample_data` 輸入規格與啟發式清理規範
 
 ### 4.1 介面合約 (Interface Contract)
-`backend/mcp/service.py` 與 `backend-rust/src/mcp/service.rs` 中的 4 個遙測工具函式：
+`backend-rust/src/mcp/service.rs` 中的 4 個遙測工具函式（原 Python 參考保存於 Git `ec7d769`）：
 - `get_driver_cockpit_telemetry`
 - `get_vehicle_dynamics_telemetry`
 - `get_tires_status_telemetry`
@@ -302,5 +302,4 @@ const boostKpa = rawBoostPa / 1000.0;
 | 測試框架 | 測試檔案位置 | 驗證項目 | 執行指令 |
 |---|---|---|---|
 | **Vitest (前端)** | `frontend/src/hooks/__tests__/useTelemetry.test.ts` | 驗證 `formatHudTelemetry` 在各種增壓與車速下之單位顯示，確保無 10,000x 放大 | `cmd /c "pnpm -C frontend run test"` |
-| **Pytest (後端)** | `tests/test_telemetry_canonical_contract.py` | 驗證 `McpService` 遙測格式化函式接收 Raw UDP 字典並產出標準 Canonical 輸出 | `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` |
-| **Cargo (後端)** | `backend-rust/tests/telemetry_canonical_contract.rs` | 驗證 Rust `McpService` 與封包解析產出完全相同的 Canonical 輸出 | `cargo test --locked --manifest-path backend-rust/Cargo.toml` |
+| **Cargo (產品後端)** | `backend-rust/tests/` | 驗證 Rust MCP、遙測格式化與封包解析輸出契約 | `cargo test --locked --manifest-path backend-rust/Cargo.toml` |

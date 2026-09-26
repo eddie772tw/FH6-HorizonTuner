@@ -28,7 +28,7 @@ description: 以審查者 (Reviewer) 身分評估 Pull Request (PR) 狀態、CI 
 ## 2. Review 結構與標準格式
 
 ### 2.1 跨 Agent 身分標記規範 (`{代號} as {Agent}`)
-遵循 [`.agents/AGENTS.md`](file:///d:/FH6-Bundle/FH6-HorizonTuner/.agents/AGENTS.md) 規範，所有 Agent 共用 GitHub 帳號時，Review 開頭標題與結尾簽名一律標記 `{代號} as {Agent}`（例如 `Gemini as Antigravity`、`Luna as Codex`）。
+遵循 [`.agents/AGENTS.md`](../../AGENTS.md) 規範，所有 Agent 共用 GitHub 帳號時，Review 開頭標題與結尾簽名一律標記 `{代號} as {Agent}`（例如 `Gemini as Antigravity`、`Luna as Codex`）。
 
 ### 2.2 頂層 Review (Top-level Review Body)
 頂層 Review 內文必須包含以下標準結構，語氣客觀嚴謹：
@@ -41,7 +41,7 @@ description: 以審查者 (Reviewer) 身分評估 Pull Request (PR) 狀態、CI 
 
 **Findings & Assessment:**
 - 條列式指出具體問題 (型別錯誤、邏輯缺失、缺乏邊界驗證等)。
-- **CI 未涵蓋 Blocking 意見之測試代碼提供義務 (Mandatory Test Snippet)**：若提出之 Blocking 意見涉及現有 CI 尚未覆蓋的情境，**Reviewer 必須一併提供可重現該問題的測試代碼片段（Pytest 或 Vitest）**，供 Author 本地重現驗證。
+- **CI 未涵蓋 Blocking 意見之可重現案例**：若 Blocking 意見涉及現有 CI 未覆蓋的情境，Reviewer 應提供精簡可重現案例，並指出適用的產品測試入口（Rust Cargo、前端 Vitest；僅 Python 維護工具使用 Pytest）。
 - 提出具體修改建議與處理方案。
 
 **Next Steps:**

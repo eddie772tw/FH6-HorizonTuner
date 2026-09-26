@@ -7,14 +7,14 @@
 ## 核心設計理念與架構特性
 
 1. **極度穩定性 (Long-Term Invariant)**：
-   - 採用 Python 3.13 標準庫核心實作，**零額外 pip 第三方依賴**。
+   - 採用 Rust，使用共用車庫資源及有時限的 HTTP client，無 Python runtime。
    - 與後端透過標準 HTTP REST 與 MCP JSON-RPC 2.0 協議解耦，內部重構不會影響 CLI 契約。原則上非新增重大功能，日常無需修改維護。
 2. **離線與線上雙模式 (Offline & Online Dual Mode)**：
    - **離線純算牌模式**：當後端未啟動時，CLI 依然能直接載入車輛資料庫進行車型查詢、底盤物理算牌、AEGO 齒比計算與 Preset 讀寫。
    - **線上即時模式**：當後端啟動時，自動感知 `logs/web_port.txt`（相容動態埠），可即時擷取 60Hz 遙測快照、調用閉環操控診斷，並與後端 REST/MCP 狀態即時雙向同步。
 3. **單一自包含二進位發行支援 (Standalone Binary & Sidecar Ready)**：
-   - 內建完整 `sys.frozen` 相容層與 `fh6-agent.spec` 打包規格。
-   - 可一鍵編譯為單一執行檔 `fh6-agent.exe`，作為 GitHub Release Asset 直接下載使用，或作為 Tauri Sidecar 隨附分發，於無 Python 環境的電腦上獨立運作。
+   - Cargo 直接編譯 `fh6-agent.exe`，車庫資料嵌入執行檔；同時保留 `--data-dir` 與動態埠探索。
+   - 可獨立運作；開發模式沿用 repository／backend 資料路徑，release 預設使用執行檔所在目錄。
 4. **AI Agent 第一優先 (Agent-First)**：
    - 所有子命令均支援 `--json` 輸出純淨、可預測的 JSON 結構（無 ANSI 顏色字元干擾）。
    - 標準 Exit Code（`0` 成功，`1` 業務/連線失敗，`2` 引數解析錯誤）。
@@ -35,11 +35,13 @@
 .\fh6-agent.exe <subcommand> [options]
 ```
 
-### 方式 C：標準 uv 虛擬環境調度
-遵循專案 Python 工具鏈規範：
+### 方式 C：Cargo 原始碼入口
+
 ```powershell
-uv run --no-project --python .venv\Scripts\python.exe -m backend.agent_cli <subcommand> [options]
+cargo run --locked --manifest-path backend-rust/Cargo.toml --bin fh6-agent -- <subcommand> [options]
 ```
+
+所有結果均為可閱讀的 JSON，`--json` 保留為相容旗標。`solve` 維持舊版 `tuning-dev/v1` 的數值與匯出契約，並非正式 Rust／TypeScript 調校核心的等價替代；輸出仍標記未校準。`telemetry diagnose` 需要實際 live sample 或明確的 `--tire-temps`，缺值會回報錯誤，不再使用虛構的 85°C。齒數限制為 1–10，輸入必須為有限值，Preset 路徑不可跳出資料目錄。
 
 ---
 
@@ -207,16 +209,15 @@ uv run --no-project --python .venv\Scripts\python.exe -m backend.agent_cli <subc
 
 ---
 
-## 獨立二進位檔編譯說明 (PyInstaller)
+## 獨立二進位檔編譯說明 (Cargo)
 
 若要將 `fh6-agent` 打包為單一自包含執行檔以供 Release 發行或作為 Sidecar：
 
 ```powershell
-# 透過 uv 執行 PyInstaller 打包
-uv run --no-project --python .venv\Scripts\python.exe pyinstaller fh6-agent.spec
+cargo build --locked --release --manifest-path backend-rust/Cargo.toml --bin fh6-agent
 ```
 
-產物將生成於 `dist/fh6-agent.exe`，體積輕巧且內嵌車輛資料庫，可在任何乾淨的 Windows 機器上獨立運作。
+產物位於 `backend-rust/target/release/fh6-agent.exe`；`scripts/build_backend.ps1` 另複製至 `dist/fh6-agent.exe`。Linux 產物名稱為 `fh6-agent`。車庫已嵌入，離線指令不需啟動應用程式。
 
 ---
 

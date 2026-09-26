@@ -146,20 +146,26 @@ impl RoadStore {
         exclude_capture: bool,
     ) -> ApiResult<Vec<Value>> {
         let c = self.connect()?;
-        let (q,args):(String,Vec<String>)=match (wf,kind){(Some(w),Some(k))=> ("SELECT document FROM road_documents WHERE workflow_id=?1 AND kind=?2 ORDER BY created_at,rowid".into(),vec![w.into(),k.into()]),(Some(w),None)=>("SELECT document FROM road_documents WHERE workflow_id=?1 ORDER BY created_at,rowid".into(),vec![w.into()]),(None,Some(k))=>("SELECT document FROM road_documents WHERE kind=?1 ORDER BY created_at,rowid".into(),vec![k.into()]),(None,None)=>("SELECT document FROM road_documents ORDER BY created_at,rowid".into(),vec![])};
+        let projection = if exclude_capture {
+            "json_remove(document, '$.capture')"
+        } else {
+            "document"
+        };
+        let (filters, args): (&str, Vec<&str>) = match (wf, kind) {
+            (Some(w), Some(k)) => ("WHERE workflow_id=?1 AND kind=?2", vec![w, k]),
+            (Some(w), None) => ("WHERE workflow_id=?1", vec![w]),
+            (None, Some(k)) => ("WHERE kind=?1", vec![k]),
+            (None, None) => ("", vec![]),
+        };
+        let q =
+            format!("SELECT {projection} FROM road_documents {filters} ORDER BY created_at,rowid");
         let mut st = c.prepare(&q)?;
         let rows = st.query_map(rusqlite::params_from_iter(args.iter()), |r| {
             r.get::<_, String>(0)
         })?;
         let mut out = Vec::new();
         for row in rows {
-            let mut d: Value = serde_json::from_str(&row?)?;
-            if exclude_capture {
-                if let Some(o) = d.as_object_mut() {
-                    o.remove("capture");
-                }
-            }
-            out.push(d);
+            out.push(serde_json::from_str(&row?)?);
         }
         Ok(out)
     }

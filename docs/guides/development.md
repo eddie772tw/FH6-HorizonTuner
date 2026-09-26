@@ -46,15 +46,14 @@ cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
 
 `backend-rust/build.rs` 直接嵌入 HUD、翻譯與車輛資源，並檢查版本與 Tauri manifest 一致。Discord application ID 可由建置環境的 `DISCORD_APPLICATION_ID` 或忽略追蹤的 `config/discord.local.json` 提供。沒有設定時，其餘功能仍正常運作。Cargo／pnpm 初次建置可能下載鎖定依賴，build 不安裝 Python、修改虛擬環境或執行 PyInstaller。
 
-## 選用的 Python 工具與參考測試
+## Rust Agent CLI 與選用的 Python 維護工具
 
-`backend/` 暫時保留 Python 參考實作、Agent CLI 與資料維護工具，以供差分驗證與獨立 CLI 使用。它不會被 Tauri 啟動，也不會進入產品 runtime。
+`fh6-agent.bat` 由 Cargo 執行 Rust CLI，不需 Python。`backend/` 只保留車庫資源及既有開發資料路徑。Python 僅用於發行、診斷與車庫維護；舊後端參考可由 Git `ec7d769` 取得，固定輸出仍由 Rust tests 驗證。
 
 ```powershell
 .\setup_venv.bat
 .\fh6-agent.bat status --json
-uv run --no-project --python .venv\Scripts\python.exe python scripts/generate_backend_contract_fixtures.py
-uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest scripts/tests/
 ```
 
 ## 排查

@@ -41,5 +41,6 @@ try {
             New-Item -ItemType Directory -Force -Path $destination | Out-Null
             Copy-Item -LiteralPath $binary -Destination (Join-Path $destination 'server-sidecar-x86_64-pc-windows-msvc.exe') -Force
         }
+        Copy-Item -LiteralPath (Join-Path $projectRoot 'backend-rust/target/release/fh6-agent.exe') -Destination (Join-Path $projectRoot 'dist/fh6-agent.exe') -Force
     }
 } finally { Pop-Location }

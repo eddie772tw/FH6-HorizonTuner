@@ -64,7 +64,7 @@ line-ending = "auto"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = [".", "backend"]
+pythonpath = ["."]
 addopts = "-m 'not host_diagnostics and not executable_bundle'"
 filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
@@ -80,7 +80,6 @@ markers = [
 
 
 [tool.pyright]
-extraPaths = ["backend"]
 exclude = [
     "**/__pyrefly_virtual__/**",
     "__pyrefly_virtual__",

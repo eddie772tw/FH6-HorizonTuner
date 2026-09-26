@@ -161,6 +161,12 @@ fn process_http_udp_websocket_persistence_and_shutdown_contract() {
         let initial: Value =
             serde_json::from_str(overlay.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(initial["type"], "hud:config");
+        for expected in ["hud:audio", "hud:media"] {
+            let snapshot: Value =
+                serde_json::from_str(overlay.read().unwrap().to_text().unwrap()).unwrap();
+            assert_eq!(snapshot["type"], expected);
+            assert_eq!(snapshot["data"]["success"], true);
+        }
         Some(overlay)
     } else {
         None
@@ -305,5 +311,336 @@ fn occupied_http_port_falls_back_to_a_reported_port() {
     let mut run = Running::start(preferred);
     assert_ne!(run.port, preferred);
     assert!(run.json("GET", "/api/settings", Value::Null).is_object());
+    run.stop();
+}
+
+#[test]
+fn every_legacy_http_endpoint_has_a_typed_response() {
+    let mut run = Running::start(0);
+    let inventory: Value =
+        serde_json::from_str(include_str!("fixtures/http_inventory.json")).unwrap();
+    let mut count = 0;
+    for case in inventory["routes"].as_array().unwrap() {
+        let method = case["method"].as_str().unwrap();
+        let path = case["path"].as_str().unwrap();
+        let body = if method == "POST" {
+            serde_json::to_vec(&case["body"]).unwrap()
+        } else {
+            vec![]
+        };
+        let (status, bytes) = if path == "/api/analysis/import/motec" {
+            let mut upload = b"--parity\r\nContent-Disposition: form-data; name=\"file\"; filename=\"parity.csv\"\r\nContent-Type: text/csv\r\n\r\n".to_vec();
+            upload.extend_from_slice(include_bytes!("fixtures/motec.csv"));
+            upload.extend_from_slice(b"\r\n--parity--\r\n");
+            run.request(
+                method,
+                path,
+                &upload,
+                "Content-Type: multipart/form-data; boundary=parity\r\n",
+            )
+        } else {
+            run.request(method, path, &body, "Content-Type: application/json\r\n")
+        };
+        count += 1;
+        if !fh6_backend::platform::HUD_ENABLED
+            && (path.starts_with("/api/overlay/")
+                || path.starts_with("/api/audio/")
+                || path.starts_with("/api/hud/")
+                || path == "/api/diagnostics/overlay")
+        {
+            assert_eq!(
+                status, 501,
+                "{method} {path} must report unsupported without HUD"
+            );
+            continue;
+        }
+        if path == "/api/overlay/media/thumbnail" {
+            assert!([200, 404].contains(&status), "{method} {path}: {status}");
+            continue; // Hardware/artwork contents have a separate opt-in host test.
+        }
+        assert_eq!(
+            u64::from(status),
+            case["status"].as_u64().unwrap(),
+            "{method} {path}: {}",
+            String::from_utf8_lossy(&bytes)
+        );
+        if case["shape"] == "binary" {
+            assert!(!bytes.is_empty(), "{method} {path}");
+            continue;
+        }
+        let result: Value =
+            serde_json::from_slice(&bytes).unwrap_or_else(|e| panic!("{method} {path}: {e}"));
+        match case["shape"].as_str().unwrap() {
+            "object" => {
+                assert!(result.is_object(), "{method} {path}: {result}");
+                for key in case["keys"].as_array().unwrap() {
+                    assert!(
+                        result.get(key.as_str().unwrap()).is_some(),
+                        "{method} {path} missing {key}: {result}"
+                    );
+                }
+            }
+            "array" => assert!(result.is_array(), "{method} {path}: {result}"),
+            _ => panic!("Unreviewed response shape for {path}"),
+        }
+    }
+    println!("Validated {count} inherited HTTP method/path contracts");
+    run.stop();
+}
+
+#[test]
+fn mcp_http_uses_shared_persistence_and_honors_access_settings() {
+    let mut run = Running::start(0);
+    let rpc = |method: &str, params: Value| json!({"jsonrpc":"2.0","id":1,"method":method,"params":params});
+    let initialized = run.json(
+        "POST",
+        "/mcp",
+        rpc("initialize", json!({"protocolVersion":"2024-11-05"})),
+    );
+    assert_eq!(initialized["result"]["protocolVersion"], "2024-11-05");
+    let notification =
+        serde_json::to_vec(&json!({"jsonrpc":"2.0","method":"notifications/initialized"})).unwrap();
+    assert_eq!(
+        run.request(
+            "POST",
+            "/mcp",
+            &notification,
+            "Content-Type: application/json\r\n"
+        )
+        .0,
+        202
+    );
+    let tools = run.json("POST", "/mcp", rpc("tools/list", json!({})));
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 26);
+    let preset = json!({"schemaVersion":"tuning-preset/v1","parameters":{"arb_front":3.0}});
+    run.json("POST", "/api/tunings/247/road-test", preset.clone());
+    let response = run.json("POST", "/mcp", rpc("tools/call", json!({"name":"get_tuning_preset","arguments":{"car_id":"247","save_name":"road-test"}})));
+    let read: Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(read, preset);
+    let response = run.json(
+        "POST",
+        "/mcp",
+        rpc(
+            "resources/read",
+            json!({"uri":"fh6://tuning/247/road-test"}),
+        ),
+    );
+    let read: Value =
+        serde_json::from_str(response["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(read, preset);
+    let sender = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        sender.send_to(&packet(), ("127.0.0.1", run.udp)).unwrap();
+        let response = run.json(
+            "POST",
+            "/mcp",
+            rpc(
+                "tools/call",
+                json!({"name":"get_live_telemetry_snapshot","arguments":{}}),
+            ),
+        );
+        let snapshot: Value =
+            serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap())
+                .unwrap();
+        if snapshot["source"] == "udp_memory_stream" {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "No live telemetry before checking access restriction"
+        );
+        thread::sleep(Duration::from_millis(20));
+    }
+    run.json("POST", "/api/settings", json!({"mcp_allow_live":false}));
+    let response = run.json(
+        "POST",
+        "/mcp",
+        rpc(
+            "tools/call",
+            json!({"name":"get_live_telemetry_snapshot","arguments":{}}),
+        ),
+    );
+    let snapshot: Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_ne!(snapshot["source"], "udp_memory_stream");
+    assert_ne!(snapshot["status"], "live");
+    run.json("POST", "/api/settings", json!({"mcp_enabled":false}));
+    assert_eq!(
+        run.json("GET", "/api/mcp/status", Value::Null)["enabled"],
+        false
+    );
+    let ping = serde_json::to_vec(&rpc("ping", json!({}))).unwrap();
+    assert_eq!(
+        run.request("POST", "/mcp", &ping, "Content-Type: application/json\r\n")
+            .0,
+        403
+    );
+    run.stop();
+}
+
+#[test]
+fn rust_agent_cli_discovers_backend_and_reads_live_data() {
+    let mut run = Running::start(0);
+    let cli = |args: &[&str]| -> Value {
+        let executable = std::env::var_os("FH6_TEST_AGENT_EXE")
+            .unwrap_or_else(|| env!("CARGO_BIN_EXE_fh6-agent").into());
+        let output = Command::new(executable)
+            .args(args)
+            .args(["--json", "--data-dir"])
+            .arg(run.root.path())
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        serde_json::from_slice(&output.stdout).unwrap()
+    };
+    let sender = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        sender.send_to(&packet(), ("127.0.0.1", run.udp)).unwrap();
+        let status = cli(&["status"]);
+        if status["telemetry_receiving"] == true {
+            assert_eq!(status["current_speed_kmh"], 72.0);
+            assert_eq!(status["is_race_on"], true);
+            assert_eq!(status["mcp_enabled"], true);
+            assert_eq!(status["telemetry_udp_port"], run.udp);
+            assert_eq!(
+                status["backend_url"],
+                format!("http://127.0.0.1:{}", run.port)
+            );
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "CLI did not observe live UDP: {status}"
+        );
+    }
+    assert_eq!(
+        cli(&["telemetry", "snapshot"])["source"],
+        "udp_memory_stream"
+    );
+    assert!(cli(&["telemetry", "diagnose"])
+        .get("front_avg_temp_c")
+        .is_some());
+    assert_eq!(
+        cli(&["solve", "full", "--car-id", "247", "--save", "cli-api"])["synced_to_backend"],
+        true
+    );
+    let preset = run.json("GET", "/api/tunings/247/cli-api", Value::Null);
+    assert_eq!(preset["schemaVersion"], "tuning-preset/v1");
+    let response = cli(&[
+        "mcp-call",
+        "get_tuning_preset",
+        "--args",
+        r#"{"car_id":"247","save_name":"cli-api"}"#,
+    ]);
+    assert_eq!(response["status"], "ok");
+    assert_eq!(response["result"], preset);
+    run.stop();
+}
+
+/// Opt-in host acceptance. Requires an audible playback stream and a GSMTC
+/// player with album artwork (e.g. Spotify). Never starts a GUI or controls music.
+#[test]
+#[cfg(all(windows, feature = "hud"))]
+#[ignore = "requires active Windows audio and a GSMTC media session with artwork"]
+fn windows_native_audio_media_and_removed_device_recovery() {
+    let mut run = Running::start(0);
+    let mut overlay = run.ws("/ws/overlay");
+    let mut live_audio = 0;
+    let mut live_media = None;
+    let deadline = Instant::now() + Duration::from_secs(12);
+    while (live_audio < 3 || live_media.is_none()) && Instant::now() < deadline {
+        let message = match overlay.read() {
+            Ok(message) => message,
+            Err(tungstenite::Error::Io(error))
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+                ) =>
+            {
+                break
+            }
+            Err(error) => panic!("Native host WebSocket failed: {error}"),
+        };
+        let message: Value = serde_json::from_str(message.to_text().unwrap()).unwrap();
+        if message["type"] == "hud:audio" && message["data"]["has_audio"] == true {
+            let data = &message["data"];
+            assert_eq!(data["source"], "wasapi");
+            assert_eq!(data["spectrum"].as_array().unwrap().len(), 32);
+            assert!(data["spectrum"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|n| n.as_f64().unwrap() > 0.0));
+            live_audio += 1;
+        }
+        if message["type"] == "hud:media" && message["data"]["has_media"] == true {
+            live_media = Some(message["data"].clone());
+        }
+    }
+    assert!(
+        live_audio >= 3,
+        "No live WASAPI stream; start audio playback before this host test. Playback status: {}; native diagnostics: {}",
+        live_media.as_ref().map(|v|&v["status"]).unwrap_or(&Value::Null),
+        run.json("GET", "/api/diagnostics/overlay", Value::Null)["native"]
+    );
+    let media = live_media.expect("No GSMTC session; start Spotify before this host test");
+    assert_eq!(media["source"], "winrt");
+    assert!(!media["title"].as_str().unwrap().is_empty());
+    assert!(!media["album_title"].as_str().unwrap().is_empty());
+    let thumbnail = media["thumbnail_url"]
+        .as_str()
+        .expect("Expected artwork from the host player");
+    let (status, bytes) = run.request("GET", thumbnail, &[], "");
+    assert_eq!(status, 200);
+    assert!(bytes.len() > 100);
+    let hash = thumbnail.split("?v=").nth(1).unwrap();
+    assert_eq!(
+        run.request(
+            "GET",
+            thumbnail,
+            &[],
+            &format!("If-None-Match: \"{hash}\"\r\n")
+        )
+        .0,
+        304
+    );
+    assert_eq!(
+        run.request("GET", "/api/overlay/media/thumbnail?v=expired", &[], "")
+            .0,
+        404
+    );
+
+    run.json(
+        "POST",
+        "/api/audio/device",
+        json!({"device_id":"removed-device-from-python-settings"}),
+    );
+    let deadline = Instant::now() + Duration::from_secs(6);
+    let (mut recovered, mut diagnostics) = (false, Value::Null);
+    while Instant::now() < deadline {
+        diagnostics = run.json("GET", "/api/diagnostics/overlay", Value::Null);
+        let spectrum = run.json("GET", "/api/overlay/audio_spectrum", Value::Null);
+        if diagnostics["native"]["audio"]["usingDefaultFallback"] == true
+            && spectrum["has_audio"] == true
+        {
+            recovered = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    assert!(
+        recovered,
+        "Removed device did not recover through the default endpoint: {diagnostics}"
+    );
+    assert_eq!(diagnostics["native"]["audio"]["error"], Value::Null);
+    println!("Windows acceptance: live WASAPI + GSMTC album metadata + {} artwork bytes; removed device recovered", bytes.len());
+    drop(overlay);
     run.stop();
 }

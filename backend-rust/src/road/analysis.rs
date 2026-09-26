@@ -10,38 +10,59 @@ fn point_time(p: &Value) -> Option<f64> {
         .map(|x| x / 1000.0)
         .or_else(|| num(p.get("time")))
 }
-fn wheel(p: &Value, field: &str, i: usize) -> Option<f64> {
+fn wheel_values<'a>(p: &'a Value, field: &str) -> Option<&'a [Value]> {
     let a = p.get(field).and_then(Value::as_array).or_else(|| {
         (field == "NormalizedSuspensionTravel")
             .then(|| p.get("SuspTravel"))
             .flatten()
             .and_then(Value::as_array)
     });
-    a.and_then(|a| a.get(i)).and_then(|v| num(Some(v)))
+    a.map(Vec::as_slice)
+}
+fn wheel_value(values: Option<&[Value]>, i: usize) -> Option<f64> {
+    num(values.and_then(|values| values.get(i)))
 }
 fn driving(p: &Value) -> bool {
     p.get("IsRaceOn").and_then(Value::as_i64) != Some(0)
         && num(p.get("SpeedMetersPerSecond")).is_some_and(|x| x > 2.0)
 }
-fn weights(points: &[Value]) -> (Vec<f64>, Value) {
-    let mut w = vec![0.0; points.len()];
+fn weights<'a>(points: impl Iterator<Item = &'a Value>) -> (Vec<f64>, Value) {
+    let mut w = Vec::new();
     let (mut gaps, mut dup, mut reg, mut miss) = (0.0, 0, 0, 0);
-    for i in 0..points.len().saturating_sub(1) {
-        let (a, b) = (point_time(&points[i]), point_time(&points[i + 1]));
+    let mut previous: Option<&Value> = None;
+    let mut count = 0;
+    for point in points {
+        count += 1;
+        let Some(previous_point) = previous else {
+            previous = Some(point);
+            continue;
+        };
+        let (a, b) = (point_time(previous_point), point_time(point));
         let (Some(a), Some(b)) = (a, b) else {
             miss += 1;
+            w.push(0.0);
+            previous = Some(point);
             continue;
         };
         let d = b - a;
         if d == 0.0 {
-            dup += 1
+            dup += 1;
+            w.push(0.0);
         } else if d < 0.0 {
-            reg += 1
+            reg += 1;
+            w.push(0.0);
         } else if d > 0.5 {
-            gaps += d
-        } else if driving(&points[i]) && driving(&points[i + 1]) {
-            w[i] = d;
+            gaps += d;
+            w.push(0.0);
+        } else if driving(previous_point) && driving(point) {
+            w.push(d);
+        } else {
+            w.push(0.0);
         }
+        previous = Some(point);
+    }
+    if count > 0 {
+        w.push(0.0);
     }
     let observed = w.iter().sum::<f64>();
     (
@@ -49,42 +70,54 @@ fn weights(points: &[Value]) -> (Vec<f64>, Value) {
         json!({"observedSeconds":observed,"gapSeconds":gaps,"duplicateTimestamps":dup,"timestampRegressions":reg,"missingTimeIntervals":miss}),
     )
 }
-fn dist(vals: &[Option<f64>], w: &[f64]) -> Value {
-    let mut x: Vec<(f64, f64)> = vals
-        .iter()
-        .zip(w)
-        .filter_map(|(v, w)| v.filter(|_| *w > 0.0).map(|v| (v, *w)))
-        .collect();
+fn dist(vals: impl IntoIterator<Item = Option<f64>>, w: &[f64]) -> Value {
+    let mut exposure = 0.0;
+    let mut weighted_sum = 0.0;
+    let mut x = Vec::new();
+    for (value, weight) in vals.into_iter().zip(w) {
+        if let Some(value) = value.filter(|_| *weight > 0.0) {
+            exposure += *weight;
+            weighted_sum += value * *weight;
+            x.push((value, *weight));
+        }
+    }
     x.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal));
-    let total: f64 = x.iter().map(|x| x.1).sum();
-    if total == 0.0 {
+    if exposure == 0.0 {
         return json!({"observedSeconds":0.0,"mean":null,"p05":null,"p50":null,"p95":null});
     }
-    let mean = x.iter().map(|(v, w)| v * w).sum::<f64>() / total;
-    let q = |f: f64| {
-        let mut s = 0.0;
-        x.iter().find_map(|(v, w)| {
-            s += w;
-            (s >= f * total).then_some(*v)
-        })
-    };
-    json!({"observedSeconds":total,"mean":mean,"p05":q(0.05),"p50":q(0.5),"p95":q(0.95)})
+    let thresholds = [0.05 * exposure, 0.5 * exposure, 0.95 * exposure];
+    let mut percentiles = [None; 3];
+    let mut accumulated = 0.0;
+    for (value, weight) in x {
+        accumulated += weight;
+        for (index, threshold) in thresholds.iter().enumerate() {
+            if percentiles[index].is_none() && accumulated >= *threshold {
+                percentiles[index] = Some(value);
+            }
+        }
+    }
+    json!({"observedSeconds":exposure,"mean":weighted_sum/exposure,"p05":percentiles[0],"p50":percentiles[1],"p95":percentiles[2]})
 }
 fn events(
-    vals: &[Option<f64>],
+    vals: impl IntoIterator<Item = Option<f64>>,
     w: &[f64],
     above: Option<f64>,
     below: Option<f64>,
     strict: bool,
+    absolute: bool,
 ) -> Value {
     let (mut count, mut total, mut longest, mut current, mut valid): (i64, f64, f64, f64, f64) =
         (0, 0.0, 0.0, 0.0, 0.0);
-    for (v, wt) in vals.iter().zip(w) {
+    for (v, wt) in vals.into_iter().zip(w) {
         if *wt <= 0.0 || v.is_none() {
             current = 0.0;
             continue;
         }
-        let x = v.unwrap();
+        let x = if absolute {
+            v.unwrap().abs()
+        } else {
+            v.unwrap()
+        };
         valid += wt;
         let on = above.is_some_and(|t| if strict { x > t } else { x >= t })
             || below.is_some_and(|t| x <= t);
@@ -102,45 +135,46 @@ fn events(
     json!({"count":if valid>0.0{json!(count)}else{Value::Null},"seconds":if valid>0.0{json!(total)}else{Value::Null},"longestSeconds":if valid>0.0{json!(longest)}else{Value::Null},"observedSeconds":valid})
 }
 pub fn summarize_road_observations(points: &[Value]) -> Value {
-    let (w, q) = weights(points);
+    let (w, q) = weights(points.iter());
     let initial = w.iter().position(|x| *x > 0.0);
+    let total = w.iter().sum::<f64>();
+    let edge = 10.0_f64.min(total / 3.0);
+    let mut cumulative = 0.0;
+    let end_weights: Vec<_> = w
+        .iter()
+        .map(|weight| {
+            let end_weight = 0.0_f64.max((cumulative + *weight - (total - edge)).min(*weight));
+            cumulative += *weight;
+            end_weight
+        })
+        .collect();
+    let mut tc: [Vec<Option<f64>>; 4] = std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    let mut travel: [Vec<Option<f64>>; 4] =
+        std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    let mut slip: [Vec<Option<f64>>; 4] = std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    let mut angle: [Vec<Option<f64>>; 4] =
+        std::array::from_fn(|_| Vec::with_capacity(points.len()));
+    for point in points {
+        let temperatures = wheel_values(point, "TireTemp");
+        let travels = wheel_values(point, "NormalizedSuspensionTravel");
+        let slips = wheel_values(point, "TireSlipRatio");
+        let angles = wheel_values(point, "TireSlipAngle");
+        for i in 0..4 {
+            tc[i].push(wheel_value(temperatures, i).map(|x| (x - 32.0) * 5.0 / 9.0));
+            travel[i].push(wheel_value(travels, i));
+            slip[i].push(wheel_value(slips, i));
+            angle[i].push(wheel_value(angles, i));
+        }
+    }
+
     let mut ws = serde_json::Map::new();
     for (i, name) in ["FL", "FR", "RL", "RR"].iter().enumerate() {
-        let temps: Vec<_> = points
-            .iter()
-            .map(|p| wheel(p, "TireTemp", i).and_then(|v| Some(v)))
-            .collect();
-        let tc: Vec<_> = temps
-            .iter()
-            .map(|v| v.map(|x| (x - 32.0) * 5.0 / 9.0))
-            .collect();
-        let travel: Vec<_> = points
-            .iter()
-            .map(|p| wheel(p, "NormalizedSuspensionTravel", i))
-            .collect();
-        let slip: Vec<_> = points
-            .iter()
-            .map(|p| wheel(p, "TireSlipRatio", i))
-            .collect();
-        let angle: Vec<_> = points
-            .iter()
-            .map(|p| wheel(p, "TireSlipAngle", i))
-            .collect();
-        let total: f64 = w.iter().sum();
-        let edge = 10.0_f64.min(total / 3.0);
-        let mut c = 0.0;
-        let ew: Vec<_> = w
-            .iter()
-            .map(|x| {
-                let z = 0.0_f64.max((c + x - (total - edge)).min(*x));
-                c += x;
-                z
-            })
-            .collect();
-        let start = initial.and_then(|j| tc[j]);
-        let end = dist(&tc, &ew).get("mean").and_then(Value::as_f64);
+        let start = initial.and_then(|j| tc[i][j]);
+        let end = dist(tc[i].iter().copied(), &end_weights)
+            .get("mean")
+            .and_then(Value::as_f64);
         let change = start.zip(end).map(|(a, b)| b - a);
-        ws.insert(name.to_string(),json!({"temperatureC":dist(&tc,&w),"startTemperatureC":start,"endTemperatureC":end,"temperatureChangeC":change,"normalizedTravel":dist(&travel,&w),"nearCompression":events(&travel,&w,Some(0.95),None,false),"nearExtension":events(&travel,&w,None,Some(0.05),false),"normalizedRatio":dist(&slip,&w),"normalizedAngle":dist(&angle,&w),"ratioAboveOne":events(&slip.iter().map(|x|x.map(f64::abs)).collect::<Vec<_>>(),&w,Some(1.0),None,true),"angleAboveOne":events(&angle.iter().map(|x|x.map(f64::abs)).collect::<Vec<_>>(),&w,Some(1.0),None,true)}));
+        ws.insert(name.to_string(),json!({"temperatureC":dist(tc[i].iter().copied(),&w),"startTemperatureC":start,"endTemperatureC":end,"temperatureChangeC":change,"normalizedTravel":dist(travel[i].iter().copied(),&w),"nearCompression":events(travel[i].iter().copied(),&w,Some(0.95),None,false,false),"nearExtension":events(travel[i].iter().copied(),&w,None,Some(0.05),false,false),"normalizedRatio":dist(slip[i].iter().copied(),&w),"normalizedAngle":dist(angle[i].iter().copied(),&w),"ratioAboveOne":events(slip[i].iter().copied(),&w,Some(1.0),None,true,true),"angleAboveOne":events(angle[i].iter().copied(),&w,Some(1.0),None,true,true)}));
     }
     let fields = [
         "SpeedMetersPerSecond",
@@ -159,13 +193,7 @@ pub fn summarize_road_observations(points: &[Value]) -> Value {
     ];
     let mut channels = serde_json::Map::new();
     for f in fields {
-        channels.insert(
-            f.into(),
-            dist(
-                &points.iter().map(|p| num(p.get(f))).collect::<Vec<_>>(),
-                &w,
-            ),
-        );
+        channels.insert(f.into(), dist(points.iter().map(|p| num(p.get(f))), &w));
     }
     json!({"methodVersion":ROAD_ANALYSIS_VERSION,"sampleCount":points.len(),"quality":q,"wheels":ws,"laps":summarize_laps(points),"channels":channels})
 }
@@ -208,5 +236,46 @@ pub fn summarize_laps(points: &[Value]) -> Vec<Value> {
             starts.insert(index);
         }
     }
-    groups.into_iter().map(|(index,group)|{let ts=group.iter().filter_map(|p|point_time(p)).collect::<Vec<_>>();let speeds=group.iter().filter_map(|p|num(p.get("SpeedMetersPerSecond")).map(|x|x*3.6)).collect::<Vec<_>>();let cloned=group.iter().map(|p|(*p).clone()).collect::<Vec<_>>();let(w,quality)=weights(&cloned);let mean=dist(&group.iter().map(|p|num(p.get("SpeedMetersPerSecond"))).collect::<Vec<_>>(),&w).get("mean").and_then(Value::as_f64).map(|x|x*3.6);json!({"lapIndex":index,"lapNumber":index+1,"lapTimeSeconds":times.get(&index),"lapTimeSource":if times.contains_key(&index){"game-lastlap"}else{"unavailable"},"startObserved":starts.contains(&index),"endObserved":times.contains_key(&index),"complete":starts.contains(&index)&&times.contains_key(&index),"observedSpanSeconds":if ts.is_empty(){None}else{Some(ts.iter().fold(f64::NEG_INFINITY,|a,b|a.max(*b))-ts.iter().fold(f64::INFINITY,|a,b|a.min(*b)))},"maxSpeedKmh":speeds.into_iter().reduce(f64::max),"meanSpeedKmh":mean,"observedSeconds":quality["observedSeconds"],"gapSeconds":quality["gapSeconds"],"duplicateTimestamps":quality["duplicateTimestamps"],"timestampRegressions":quality["timestampRegressions"],"missingTimeIntervals":quality["missingTimeIntervals"]})}).collect()
+    groups
+        .into_iter()
+        .map(|(index, group)| {
+            let (mut min_time, mut max_time, mut max_speed) = (None, None, None);
+            for point in &group {
+                if let Some(time) = point_time(point) {
+                    min_time = Some(min_time.map_or(time, |value: f64| value.min(time)));
+                    max_time = Some(max_time.map_or(time, |value: f64| value.max(time)));
+                }
+                if let Some(speed) = num(point.get("SpeedMetersPerSecond")) {
+                    max_speed = Some(max_speed.map_or(speed * 3.6, |value: f64| value.max(speed * 3.6)));
+                }
+            }
+            let (w, quality) = weights(group.iter().copied());
+            let mean = dist(
+                group
+                    .iter()
+                    .map(|p| num(p.get("SpeedMetersPerSecond"))),
+                &w,
+            )
+            .get("mean")
+            .and_then(Value::as_f64)
+            .map(|x| x * 3.6);
+            json!({
+                "lapIndex": index,
+                "lapNumber": index + 1,
+                "lapTimeSeconds": times.get(&index),
+                "lapTimeSource": if times.contains_key(&index) { "game-lastlap" } else { "unavailable" },
+                "startObserved": starts.contains(&index),
+                "endObserved": times.contains_key(&index),
+                "complete": starts.contains(&index) && times.contains_key(&index),
+                "observedSpanSeconds": min_time.zip(max_time).map(|(min, max)| max - min),
+                "maxSpeedKmh": max_speed,
+                "meanSpeedKmh": mean,
+                "observedSeconds": quality["observedSeconds"],
+                "gapSeconds": quality["gapSeconds"],
+                "duplicateTimestamps": quality["duplicateTimestamps"],
+                "timestampRegressions": quality["timestampRegressions"],
+                "missingTimeIntervals": quality["missingTimeIntervals"]
+            })
+        })
+        .collect()
 }

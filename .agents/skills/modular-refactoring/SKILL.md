@@ -8,22 +8,22 @@ description: 當需要拆分底層邏輯、建立功能模組、整理 domain/AP
 ## 與其他 skill 的分工
 
 - 巨型 UI 元件、Canvas 或 60Hz render hot path：使用 `huge-component-refactoring`。
-- Python/TypeScript 模組邊界、domain logic、API contract 與可測試性：使用本技能。
+- Rust/TypeScript 模組邊界、domain logic、API contract 與可測試性：使用本技能。
 - 兩者皆適用時，先讀 `huge-component-refactoring` 保護高頻行為，再用本技能整理契約。
 - Codex、Antigravity 或 Jules 非同步協作時，同時讀 `cross-agent-collaboration`。
 
-## Python tooling
+## 產品與選用工具驗證
 
-Backend Python commands follow [../../rules/python-uv.md](../../rules/python-uv.md). Use `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` and never a bare `python`, `pip`, or `pytest` command.
+產品後端／CLI 使用 `cargo test --locked --manifest-path backend-rust/Cargo.toml`，前端使用 Vitest。只有選用 Python 維護工具依 [../../rules/python-uv.md](../../rules/python-uv.md) 使用 uv；不得執行裸 `python`、`pip` 或 `pytest`。
 
 ## SOP
 
 1. 讀取 `AGENTS.md`、相關 rule、Journal 與目標 skill；確認 ownership、dirty worktree 與不可變更範圍。
-2. 先定義輸入/輸出的 TypeScript Interface、TypedDict 或 Dataclass，不以內部實作細節作為跨模組契約。
+2. 先定義 Rust 型別與 TypeScript Interface 等輸入／輸出契約，不以內部實作細節作為跨模組契約。
 3. 抽離純函式與 domain logic；物理計算、遙測解析與單位轉換不得散落在 UI。
-4. 先補 isolation tests，再接回 UI 或主流程：前端使用 Vitest，後端使用 Pytest。
+4. 先補 isolation tests，再接回 UI 或主流程：前端使用 Vitest，後端使用 Cargo tests；保留黃金契約。
 5. 驗證循環依賴、錯誤處理、向後相容性與序列化格式；不得以重構名義改變公式或 API 語意。
-6. 執行 `cmd /c "pnpm -C frontend run test"`、`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` 或與範圍相符的測試，最後執行 `git diff --check`。
+6. 依變更範圍執行 Cargo、Vitest 或選用工具測試，最後執行 `git diff --check`。
 7. 將已驗證的新邊界或決策記錄到 Journal，並在 handoff 中寫出剩餘工作與驗證結果。
 
 ## 反模式

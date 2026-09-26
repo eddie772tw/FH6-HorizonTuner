@@ -28,6 +28,38 @@ fn analysis_and_lap_summary_keep_python_wire_shape() {
 }
 
 #[test]
+fn road_distributions_keep_weighted_mean_percentiles_and_short_wheels() {
+    let points: Vec<_> = (0..4)
+        .map(|i| {
+            json!({
+                "TimestampMS": i * 100,
+                "IsRaceOn": 1,
+                "SpeedMetersPerSecond": (i + 1) as f64 * 10.0,
+                "TireTemp": if i == 0 { json!([185.0]) } else { json!([null]) },
+                "TireSlipRatio": [1.2],
+                "NormalizedSuspensionTravel": [0.96],
+                "TireSlipAngle": [-1.5]
+            })
+        })
+        .collect();
+    let summary = summarize_road_observations(&points);
+    let speed = &summary["channels"]["SpeedMetersPerSecond"];
+    assert!((speed["observedSeconds"].as_f64().unwrap() - 0.3).abs() < 1e-12);
+    assert!((speed["mean"].as_f64().unwrap() - 20.0).abs() < 1e-12);
+    assert_eq!(speed["p05"], 10.0);
+    assert_eq!(speed["p50"], 20.0);
+    assert_eq!(speed["p95"], 30.0);
+
+    let front_left = &summary["wheels"]["FL"];
+    assert_eq!(front_left["startTemperatureC"], 85.0);
+    assert_eq!(front_left["temperatureC"]["observedSeconds"], 0.1);
+    assert_eq!(front_left["normalizedRatio"]["p50"], 1.2);
+    assert_eq!(front_left["nearCompression"]["count"], 1);
+    assert_eq!(front_left["nearExtension"]["count"], 0);
+    assert_eq!(summary["wheels"]["FR"]["temperatureC"]["mean"], Value::Null);
+}
+
+#[test]
 fn capture_sample_declares_missing_channels_and_zero_fills_fixed_vectors() {
     let sample = capture_sample(&json!({"TimestampMS":100,"WheelRotationSpeed":[0,null,2,3]}));
     assert_eq!(sample["timestampMS"], 100);
@@ -90,6 +122,37 @@ fn local_match_requires_spatially_compatible_driving_points() {
 }
 
 #[test]
+fn local_match_keeps_available_short_temperature_arrays() {
+    let a: Vec<_> = (0..30)
+        .map(|i| {
+            let mut p = point(i * 100, 0, i as f64 * 0.1);
+            p["AccelInput"] = json!(100);
+            p["BrakeInput"] = json!(0);
+            p["SteerInput"] = json!(0);
+            p["TireTemp"] = json!([185.0]);
+            p
+        })
+        .collect();
+    let b: Vec<_> = a
+        .iter()
+        .map(|p| {
+            let mut p = p.clone();
+            p["TireTemp"] = json!([203.0]);
+            p
+        })
+        .collect();
+
+    let report = local_comparison(&a, &b, true);
+    assert_eq!(report["routeStatus"], "compatible");
+    assert_eq!(report["matchedDrivingConditions"], 29);
+    let temperature_changes = report["segments"][0]["meanTemperatureChangeC"]
+        .as_array()
+        .unwrap();
+    assert_eq!(temperature_changes[0], 10.0);
+    assert!(temperature_changes[1..].iter().all(Value::is_null));
+}
+
+#[test]
 fn road_service_lifecycle_uses_batched_telemetry_and_persists_summary() {
     let temp = tempfile::tempdir().unwrap();
     let telemetry_path = temp.path().join("telemetry.sqlite");
@@ -107,8 +170,26 @@ fn road_service_lifecycle_uses_batched_telemetry_and_persists_summary() {
         .list(Some(workflow["id"].as_str().unwrap()), Some("setup"), false)
         .unwrap()
         .remove(0);
+    // Setup persistence may take long enough for the initial frames to go stale.
+    service.observe(&json!({
+        "TimestampMS": 300, "IsRaceOn": 1, "CurrentRaceTime": 0.3, "CarOrdinal": 42,
+        "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
+        "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.3,
+        "TireTemp": [185, 185, 185, 185]
+    }));
+    service.observe(&json!({
+        "TimestampMS": 400, "IsRaceOn": 1, "CurrentRaceTime": 0.4, "CarOrdinal": 42,
+        "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
+        "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.4,
+        "TireTemp": [185, 185, 185, 185]
+    }));
     let run = service.start_run(workflow["id"].as_str().unwrap(),&json!({"setupId":setup["id"],"settingsConfirmed":true,"otherSettings":"unchanged","tires":"unchanged","conditions":"unchanged","driverAssists":"unchanged"})).unwrap();
-    service.observe(&json!({"TimestampMS":300,"IsRaceOn":1,"CurrentRaceTime":0.3,"CarOrdinal":42,"CarPerformanceIndex":700,"DrivetrainType":1,"CarClass":3,"SpeedMetersPerSecond":20.0,"LapNumber":0,"CurrentLap":0.3,"TireTemp":[185,185,185,185]}));
+    service.observe(&json!({
+        "TimestampMS": 500, "IsRaceOn": 1, "CurrentRaceTime": 0.5, "CarOrdinal": 42,
+        "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
+        "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.5,
+        "TireTemp": [185, 185, 185, 185]
+    }));
     assert_eq!(service.live()["sampleCount"], 1);
     service.stop().unwrap();
     let summaries = service
@@ -141,6 +222,17 @@ fn road_workflow_candidate_comparison_decision_and_recovery_preserve_links() {
         .unwrap()
         .remove(0);
     let start = |service: &mut RoadService, setup: &Value, start_ms: i64| {
+        // Each start follows database work; establish a new progressing telemetry window.
+        service.observe(&frame(
+            start_ms - 200,
+            (start_ms - 200) as f64 / 1000.0,
+            0.0,
+        ));
+        service.observe(&frame(
+            start_ms - 100,
+            (start_ms - 100) as f64 / 1000.0,
+            2.0,
+        ));
         let run=service.start_run(&wf,&json!({"setupId":setup["id"],"settingsConfirmed":true,"otherSettings":"unchanged","tires":"unchanged","conditions":"unchanged","driverAssists":"unchanged"})).unwrap();
         for i in 1..=25 {
             service.observe(&frame(start_ms + i * 100, i as f64 / 10.0, i as f64 * 2.0));

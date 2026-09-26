@@ -109,7 +109,7 @@ jobs:
   # ============================================================================
 
   backend-unit-test:
-    name: Backend Contracts & Python Reference Tests
+    name: Rust Backend & Agent CLI Contracts
     needs: [backend-static-check]
     runs-on: ubuntu-latest
     steps:
@@ -137,9 +137,12 @@ jobs:
     - name: Verify Rust backend input and output contracts
       run: cargo test --locked --manifest-path backend-rust/Cargo.toml
 
-    - name: Execute Pytest Test Suite
+    - name: Verify backend without HUD support
+      run: cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features
+
+    - name: Verify repository maintenance and release tools
       # Windows 專屬之行程合約測試與宿主診斷由專屬發行階段執行
-      run: uv run --no-project --active python -m pytest tests/ -v -m "not windows_contract and not host_diagnostics and not executable_bundle"
+      run: uv run --no-project --active python -m pytest tests/ scripts/tests/ -v -m "not windows_contract and not host_diagnostics and not executable_bundle"
 
   frontend-unit-test:
     name: Frontend Vitest Unit Tests

@@ -1,5 +1,16 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-26 / Rust 原生媒體補強與 Python 後端接替（Codex as Codex）
+
+- **證據**：基準 Rust 並未缺少 WASAPI／GSMTC；使用者啟動 Spotify 後能讀到原生頻譜與專輯資訊。但把選定裝置設為已移除 ID 可重現持續 unavailable，Python 參考會退回預設裝置。Rust 已補 fallback 與預設裝置／重新連接偵測。
+- **並行邊界**：媒體 snapshot 不得同步等待原生查詢，否則共用 overlay worker 的音訊廣播會被拖慢。single flight、timeout、退避及 stale grace 可同時保護 HTTP 延遲、執行緒數與錯誤可見性；新 WS client 需收到 config／audio／media 初始快取。
+- **相容性**：真實車庫使用 display_name，REST Preset 使用 car-name.json；MCP 必須依實際資料欄位與檔名讀取，且不可跨車輛 fallback。CLI 舊 `tuning-dev/v1` 與正式調校核心數值不同，移植使用 28 組 Python oracle 保留輸出，沒有重算 golden。
+- **MCP 檔案邊界**：遞迴掃描需使用不跟隨連結的 entry file type，跳過 symlink／Windows junction；否則唯讀工具仍可能讀到目錄外資料或循環掃描。已用暫存目錄及真實 junction 驗證，不刪除外部 sentinel。
+- **移除邊界**：Python HTTP／MCP／CLI／PyInstaller 已移除；車庫與開發資料路徑沿用。維護及發行工具仍可使用 uv，requirements 不再安裝 Python 原生音訊／HTTP runtime。第二個 Cargo binary 加入後須指定 default-run，否則舊 cargo run 入口失效。
+- **驗證**：75 個繼承 HTTP method/path、26 個 MCP tools、Rust 全／無 HUD 契約、Spotify metadata／封面／真實 WASAPI 與失效裝置恢復；前端只有測試及 build，未啟動。完整命令、結果與限制見 [接替紀錄](../docs/backend-rust/parity-hardening.md)。
+- **release 實機補驗**：Spotify 暫停時可能仍提供完整 GSMTC metadata／封面，但沒有可驗收的 WASAPI 串流；這不等於 WinRT 失效。取得使用者播放控制授權後，以 GSMTC 恢復播放並指定 release sidecar 重跑 opt-in：1 passed，連續 32 頻帶、124,176 bytes 封面、快取狀態及失效裝置 fallback 均通過；隨後恢復 paused 並重新查證。沿用 `portable-release-validation`，未啟動應用程式前端。
+- **環境**：Windows 高平行 Rust 連結曾遇到 os 1455，使用 `-j 2` 完成；不修改 paging-file。API／CLI／裝置證據不等於 HUD 畫面、實際遊戲、Discord 或 Android 驗收。
+
 ## 2026-09-23 / v1.6.1 Release Chore 發行整備、雙端版本遞增與高壓測試逾時防禦（Antigravity as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；完成 v1.6.1 發行整備與多組件版本同步（`11.45.19`），更新發行日誌草稿，並排查修復高併發測試逾時問題。
@@ -2812,6 +2823,15 @@
 - **Vitest 可攜性修正**：最新 main 的 Mission Stress 5 原設 20 秒 timeout；本機實測約 20.8 秒。只將此測試的 runner timeout 調為 30 秒，保留全部 39,000 iterations 與 assertions；focused stress 檔 22/22 通過，標準 `pnpm --prefix frontend run test` 140/140 files、989/989 tests 通過，用時 42.29 秒。未放寬任何產品行為或斷言門檻；新 merge commit 的 GitHub checks 待推送後驗證。
 - **邊界**：Xvfb 只證明視窗可建立，不等同實體桌面／Wayland 互動；原生安裝、OTA 與跨裝置 FH6 遊玩仍未驗收。
 
+## 2026-09-26 / Rust 效能承接、文件治理與 Wiki 對齊（Codex as Codex）
+
+- **採用技能與 ownership**：`modular-refactoring`、`agent-governance-audit`、`cross-agent-collaboration`、`pr-author-maintainer`、`ponytail`。依使用者授權由 Luna 子代理盤點歷史 PR、處理 Road/SQLite 局部優化與文件；主線整合 writer、profile I/O、快取、測試與發布。
+- **可重現缺口**：UDP socket 與 processing worker 分離不代表磁碟 I/O 已隔離。原 Rust 在持有 engine lock 時同步寫 SQLite/profile，慢磁碟仍可延遲 live frame。新增有界 FIFO writer、預留 finalizer、飽和丟樣指標、stop/shutdown drain；profile 首讀與合併寫入另由 worker 執行。外部鎖住 SQLite 時仍發布 120 個 frame，stop 後資料全數可讀；Road 身分切換亦不等待磁碟。
+- **交易與生命週期**：SQLite batch prepare-once 需同時保留 rollback；lap rows、metadata、session totals 必須同交易，否則可留下 finalized metadata 卻沒有 lap rows。明確 clear 也須完成已接受 session 的 finalizer，避免反覆 start/clear 耗盡保留空間。
+- **量測教訓**：減少迴圈內 Vec 不足以推定 matching 較快；初次 probe 反而變慢。索引深複製完整 JSON 才是明顯配置來源，改為借用 point，並以完整 JSON 等值與交錯舊／新量測核對。原始資料、歷史 PR 對照及限制見 [效能承接盤查](../docs/backend-rust/performance-inheritance.md)。
+- **文件邊界**：Skills/README 以 Cargo 作產品後端 gate，Python 限維護／發行工具與 frozen fixtures；不重寫歷史日誌。Wiki 7 頁已推送至獨立 repo `master` 的 `2b6937c`，明確區分 v1.6.1 Rust/MCP Beta、後續 #426 平台工作及未發布的 #443。
+- **驗證與限制**：Rust default 80 passed、no-HUD 72 passed；Road 9 項在最後借用修改後再通過。原生宿主與性能 probe 為 opt-in；原 Spotify 實機驗收見接替紀錄，本輪未重新控制播放器。未啟動前端、遊戲或其他裝置，不從契約測試推定高負載尾延遲或所有原生驅動皆已驗收。
+
 ## 2026-09-25 / PR #426 移除 macOS 與同步 main
 
 - **範圍**：依使用者要求，平台發行保留 Windows Full／Lite 與 Linux x86_64 Full，移除 macOS workflow、Tauri config、打包／smoke 分支及 OTA channel。上述 macOS 紀錄保留為歷史，不代表目前支援。採用 `pr-review-evaluation`、`pr-author-maintainer`、`portable-release-validation`、`halfmoon-design-system` 與 `ponytail`。
@@ -2820,6 +2840,23 @@
 - **驗證順序**：backend build.rs 會將 `frontend/dist` 資產以 include_bytes 嵌入；前端重建會刪除舊 hash 檔案，因此 frontend build 與 Cargo 編譯不能同時改讀同一輸出。先完成並固定 frontend dist，再執行 default／no-default-features 與 Tauri 驗證。
 - **本地證據**：前端 141 files／996 tests、Windows／LAN build；Python 與工具腳本 425 passed／8 deselected，Ruff check／format、Rust format 與版本一致性通過。新增 OTA carry 測試確認歷史 macOS channel 被忽略且 Linux channel 保留；這些測試不代表真實 FH6 跨機或 OTA 安裝驗收。
 
+## 2026-09-26 / Python Release 與 Rust 性能對照（Codex as Codex）
+
+- **來源與方法**：v1.6 tag `cd96d86` 是引入 Rust 前公開 Release。驗證 asset SHA-256 後，從 Full portable 的 include_bytes payload 抽出原始 PyInstaller sidecar，未啟動前端；與 `caf518a` Rust release 交錯七輪，各用新資料目錄及隔離 UDP port。Road 另以 release-tag 原始 Python 模組與 Rust library、相同 fixture 做 21 次函式計時及完整輸出比對。
+- **結果與邊界**：啟動 1,757.33→89.25 ms，Working Set 83.33→29.49 MiB；settings/language/MCP initialize 中位數減少 71.9%/87.4%/75.4%，Road summary/matching 減少 87.8%/94.0%。UDP→JSON WS 中位數反而 0.398→1.268 ms，七輪皆 130 processed／0 dropped，不能宣稱所有路徑加速。Private Bytes 不等於駐留實體 RAM；啟動未清 OS cache；MCP initialize 不能代表全部工具。方法、raw samples、hash 與重現命令見 [Release 性能對照](../docs/backend-rust/release-performance-comparison.md)。
+- **CI 時序修正**：`caf518a` Windows portable job 在 Road start 時收到 stale telemetry 409；測試原先在送 frame 後做 SQLite 前置作業，可能超過 2 秒窗口。兩個 lifecycle 測試改為每次 start 前送新遞增 frame，產品 freshness 條件不變。
+- **驗證**：完整 Cargo gate 80 passed／3 ignored；opt-in release comparison 七輪皆成功、完整輸出在 abs/rel 1e-6 容差內一致；維護工具 53 passed；Cargo fmt、兩個新 benchmark 工具 Ruff、diff check。無前端／遊戲／HUD 畫面驗收。
+- **60 Hz 後續調查**：改用獨立固定 deadline sender，recorder 關閉／開啟各 30 秒，前後及 Python 控制組共八個 streams 皆 1,800/1,800 接收，Rust queue peak=1/end=0，writer 無丟樣或失敗。找到 App::process 每幀 clone 651 輛車的 Drag database；移至 App::new 一次設定後，Rust 中位數 1.309/1.294→0.231/0.230 ms，p95 2.031/2.007→0.276/0.271 ms。新增經 App prepare/process/analysis/clear 的兩車非 fallback 名稱回歸。最終 default 81 passed/3 ignored、no-HUD 73 passed/2 ignored、release bins build 成功。修正前此負載已無塞車，修正後降低固定處理成本；單 consumer/localhost 不代表遊戲滿載驗收。
+
+## 2026-09-26 / Rust API 全量物件成本與資料庫讀取盤查（Codex as Codex）
+
+- **可重現成本**：`json!(owned_value)` 經借用 Serialize 重建 Value，不會自動 move；analysis/MCP 已擁有的 Vec/JSON result 應直接移入 `Value::Array`／response。Drag status 原先為 len 複製整段 session；save 的 snapshot 仍需 ownership，但磁碟 I/O 不需持有 engine lock。
+- **SQL 範圍與排序**：Road 清單原先在 Rust parse 完 capture 才移除，恢復舊 Python 的 SQLite JSON projection。MCP 改為讀取時先按 ordinal stride 決定是否 decode、owned map retain；snapshot 只取最後一點。原 full-session 查詢以 session/distance index 加暫存 B-tree 排序；新增 `(session_id,id)` index 保留順序並避免搬動大量 raw JSON。
+- **比較陷阱**：v1.6 HTTP analysis 與 MCP 使用不同 DB 路徑，必須用相同 fixture 同時填入 root 和 sessions/，不能把空結果當成速度優勢。Storage overview 的生成檔案本來就跨版本不同，從等價與百分比比較排除。Windows `uv` 工具只做客戶端與 fixture，產品仍不依賴 Python。
+- **盤查範圍**：兩個明確指定 Luna 的子代理分別實作／覆核 MCP-SQLite 與 Road projection；主線處理整合、API ownership、測試和同機 release 測量。未量測的 Discord/profile/dyno/settings/thumbnail/audio 等成本仍列候選，不將靜態 clone 清單說成 profiler 結果。詳見[盤查](../docs/backend-rust/performance-audit.md)。
+- **採用技能**：`modular-refactoring`、`cross-agent-collaboration`、`pr-author-maintainer`、`ponytail`。保留 API shape、raw/legacy units、window/stride、路徑安全與交易回滾；損壞 DB 未抽中列不再 decode 的邊界另有測試與文件，不隱藏語義範圍。
+- **正式 API 測量**：實際官方 Python v1.6、Rust `3cf6bb0` 與修正後 release 各三輪，每 workload 90 樣本；九個 process 的 23 個可比較回應一致，storage 因版本生成檔案不同排除。Rust 本輪 MCP sparse／snapshot、Road list、Drag status 中位數耗時減少 84.8%／97.4%／73.4%／86.7%；HTTP 10k points 減少 42.8%，Debrief／MoTeC 減少 17.0%／15.0%。Road list、laps、MCP sessions／summary 仍慢於 Python，全部樣本與限制見[正式報告](../docs/backend-rust/api-workload-performance.md)。
+- **錄製與驗證**：新增索引後另跑 Python／Rust 各 30 秒固定 60 Hz；Rust 1,800/1,800 收齊，p50/p95 0.229/0.269 ms，telemetry 與 writer queue peak=1/end=0，6 batches、0 dropped／failed，未見積壓。完整 Cargo default 84 passed/3 ignored、no-HUD 76 passed/2 ignored、維護工具 53 passed；Ruff 全域 check/format、Cargo fmt、release bins build 通過。未啟動前端，未量 cold cache、100k points、多 client 或遊戲滿載。
 ## 2026-09-26 / Tape Compass HUD 解析度與比例修復
 
 - **分支與技能**：`codex/fix-tape-compass-resolution` 從 `origin/main` 的 `ec7d769` 建立。採用 `ponytail`、`halfmoon-design-system`、`huge-component-refactoring`。

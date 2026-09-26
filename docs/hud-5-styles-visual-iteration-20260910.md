@@ -9,7 +9,9 @@
 - 使用本分支實際 HTML Canvas renderer、共用 HUDCore 與全視窗 iframe，在 Edge Chromium headless 注入明確標示的合成 frame。
 - 狀態包含巡航（168 km/h、6200 RPM）、怠速／N、紅線（321 km/h）、英制倒檔／手煞車，以及空資料；逐一檢查深色 `#202725`、淺色 `#dedbd0` 背景與 DPR 1／2。每款 20 組，JSON 保存 backing store、顯示尺寸與角落透明度。
 - 定位另以 1920×1080、1280×720、3440×1440 與使用者 scale 0.75／1／1.5 驗證。共用 `.hud-root-wrapper` 仍為右下定位；量測的是容器，實際盤面另有內部留白。
-- 每款提交前執行 Ruff lint／format、`pytest tests/`、完整前端 Vitest、TypeScript／Vite build、path-case 與 diff check。前端 gate 涵蓋當時工作樹中已完成、尚未分批提交的獨立 HUD 改動。
+> 歷史記錄（2026-09-10）：以下 gate 命令反映當時 Python 後端架構，不是現行產品後端驗證指引。現行 Rust 後端／CLI 使用 Cargo；詳見 `.agents/rules/testing-strategy.md`。
+
+- 當時每款提交前執行 Ruff lint／format、`pytest tests/`、完整前端 Vitest、TypeScript／Vite build、path-case 與 diff check。前端 gate 涵蓋當時工作樹中已完成、尚未分批提交的獨立 HUD 改動。
 - 這是本地瀏覽器與合成資料的視覺驗收，沒有 Tauri 遊戲疊加、真實遊戲畫面、OS DPI 切换、效能 profiling 或像素等價認證。外部照片、遊戲截圖及概念圖的來源性質維持分開；沒有將外部影像複製進產品。
 
 ## Defi：A 方案

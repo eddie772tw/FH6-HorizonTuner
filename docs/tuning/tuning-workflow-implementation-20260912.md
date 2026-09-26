@@ -1,10 +1,10 @@
-# 六階段調校工作流現行實作
+# 六階段調校工作流實作記錄
 
 文件日期：2026-09-12
 適用分支：`codex/plan/tuning-workflow-iteration-20260912`
-狀態：實作與本機／loopback 驗證說明；不代表已完成 FH6 實機或跨裝置驗收。
+狀態：2026-09-12 的實作與本機／loopback 驗證快照。後端程式路徑與測試入口反映當時 Python 架構，不代表目前 checkout 的產品程式；不代表已完成 FH6 實機或跨裝置驗收。
 
-本文件描述目前工作區已落地的六階段入口、實測引擎資料、遙測保存與 Road 驗證閉環。公式、資料來源、保存紀錄與「已知／未知」狀態分開記錄，避免把資料完整性門檻寫成物理校準證據。
+本文件描述當時工作區已落地的六階段入口、實測引擎資料、遙測保存與 Road 驗證閉環。公式、資料來源、保存紀錄與「已知／未知」狀態分開記錄，避免把資料完整性門檻寫成物理校準證據。
 
 ## 六個使用者階段
 
@@ -93,7 +93,9 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 整合驗證如下（2026-09-12）：
 
 - `cmd /c "pnpm -C frontend run test"`：94 files／621 tests passed。
-- `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ -q`：315 passed，8 項 host／executable 驗收依專案預設排除。
+> 歷史驗證記錄（2026-09-12）：當時使用 Python 後端的 pytest gate；產品後端已遷移至 Rust。現行驗證命令見 [測試策略](../../.agents/rules/testing-strategy.md)。
+
+- 當時 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ -q`：315 passed，8 項 host／executable 驗收依當時 pytest 設定排除。
 - `cmd /c "pnpm -C frontend run build"`：TypeScript 與 Vite production build 通過。
 - `ruff check .`、`ruff format --check .`：通過；`git diff --check` 亦通過。
 - 瀏覽器使用隔離 SQLite 與 synthetic WebSocket：量測達標與保存、既有量測明確確認後重用、基準建立、錄製／停止、跨圈保留、重新開頁讀取報告均通過。測試未寫入實際使用者資料，也未綁定遊戲 UDP 8000。Default／Modern／Elegant 的深色與淺色樣式均已檢查；測試分頁與自有服務已關閉。
@@ -112,27 +114,27 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 - [.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md](../../.agents/skills/telemetry-udp-protocol/references/packet_format_reference.md)
 - [README.en.md](../../README.en.md)
 - [README.md](../../README.md)
-- [backend/main.py](../../backend/main.py)
-- [backend/motec_exporter.py](../../backend/motec_exporter.py)
-- [backend/race_recorder.py](../../backend/race_recorder.py)
-- [backend/road_analysis.py](../../backend/road_analysis.py)
-- [backend/road_comparison.py](../../backend/road_comparison.py)
-- [backend/road_matching.py](../../backend/road_matching.py)
-- [backend/road_models.py](../../backend/road_models.py)
-- [backend/road_router.py](../../backend/road_router.py)
-- [backend/road_service.py](../../backend/road_service.py)
-- [backend/road_store.py](../../backend/road_store.py)
-- [backend/telemetry_contract.py](../../backend/telemetry_contract.py)
-- [backend/telemetry_listener.py](../../backend/telemetry_listener.py)
-- [backend/telemetry_sqlite.py](../../backend/telemetry_sqlite.py)
-- [backend/tuning_capture.py](../../backend/tuning_capture.py)
+- `backend/main.py`（歷史路徑：`../../backend/main.py`）
+- `backend/motec_exporter.py`（歷史路徑：`../../backend/motec_exporter.py`）
+- `backend/race_recorder.py`（歷史路徑：`../../backend/race_recorder.py`）
+- `backend/road_analysis.py`（歷史路徑：`../../backend/road_analysis.py`）
+- `backend/road_comparison.py`（歷史路徑：`../../backend/road_comparison.py`）
+- `backend/road_matching.py`（歷史路徑：`../../backend/road_matching.py`）
+- `backend/road_models.py`（歷史路徑：`../../backend/road_models.py`）
+- `backend/road_router.py`（歷史路徑：`../../backend/road_router.py`）
+- `backend/road_service.py`（歷史路徑：`../../backend/road_service.py`）
+- `backend/road_store.py`（歷史路徑：`../../backend/road_store.py`）
+- `backend/telemetry_contract.py`（歷史路徑：`../../backend/telemetry_contract.py`）
+- `backend/telemetry_listener.py`（歷史路徑：`../../backend/telemetry_listener.py`）
+- `backend/telemetry_sqlite.py`（歷史路徑：`../../backend/telemetry_sqlite.py`）
+- `backend/tuning_capture.py`（歷史路徑：`../../backend/tuning_capture.py`）
 - [docs/tuning/README.md](../../docs/tuning/README.md)
 - [docs/tuning/community-tuning-needs-20260912.md](../../docs/tuning/community-tuning-needs-20260912.md)
 - [docs/tuning/tuning-workflow-implementation-20260912.md](../../docs/tuning/tuning-workflow-implementation-20260912.md)
 - [docs/tuning/tuning-workflow-iteration-20260912.md](../../docs/tuning/tuning-workflow-iteration-20260912.md)
 - [docs/tuning/workflow-order-evidence-20260912.md](../../docs/tuning/workflow-order-evidence-20260912.md)
 - [frontend/src/App.tsx](../../frontend/src/App.tsx)
-- [frontend/src/components/Navigation.tsx](../../frontend/src/components/Navigation.tsx)
+- `frontend/src/components/Navigation.tsx`（歷史路徑：`../../frontend/src/components/Navigation.tsx`）
 - [frontend/src/context/CarParamsContext.tsx](../../frontend/src/context/CarParamsContext.tsx)
 - [frontend/src/context/TelemetryRecorderContext.tsx](../../frontend/src/context/TelemetryRecorderContext.tsx)
 - [frontend/src/domain/tuning/telemetryCapture.test.ts](../../frontend/src/domain/tuning/telemetryCapture.test.ts)
@@ -163,10 +165,10 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 - [frontend/src/features/tuning/components/LegacyTuningHistory.tsx](../../frontend/src/features/tuning/components/LegacyTuningHistory.tsx)
 - [frontend/src/features/tuning/components/SetupVerificationStep.tsx](../../frontend/src/features/tuning/components/SetupVerificationStep.tsx)
 - [frontend/src/features/tuning/components/Step1GoalSetup.tsx](../../frontend/src/features/tuning/components/Step1GoalSetup.tsx)
-- [frontend/src/features/tuning/components/TireBaselineStep.tsx](../../frontend/src/features/tuning/components/TireBaselineStep.tsx)
+- `frontend/src/features/tuning/components/TireBaselineStep.tsx`（歷史路徑：`../../frontend/src/features/tuning/components/TireBaselineStep.tsx`）
 - [frontend/src/features/tuning/components/TuningMeasurementStep.tsx](../../frontend/src/features/tuning/components/TuningMeasurementStep.tsx)
 - [frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx](../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx)
-- [frontend/src/features/tuning/components/WheelAlignmentStep.tsx](../../frontend/src/features/tuning/components/WheelAlignmentStep.tsx)
+- `frontend/src/features/tuning/components/WheelAlignmentStep.tsx`（歷史路徑：`../../frontend/src/features/tuning/components/WheelAlignmentStep.tsx`）
 - [frontend/src/features/tuning/components/WorkflowGuide.tsx](../../frontend/src/features/tuning/components/WorkflowGuide.tsx)
 - [frontend/src/features/tuning/engineMeasurementArchive.test.ts](../../frontend/src/features/tuning/engineMeasurementArchive.test.ts)
 - [frontend/src/features/tuning/engineMeasurementArchive.ts](../../frontend/src/features/tuning/engineMeasurementArchive.ts)
@@ -181,13 +183,13 @@ Road workflow 透過 `backend/road_service.py`、`road_store.py` 與 `frontend/s
 - [frontend/src/utils/tuningMath.ts](../../frontend/src/utils/tuningMath.ts)
 - [lang/zh-tw.json](../../lang/zh-tw.json)
 - [tests/fixtures/road_observation_contract.json](../../tests/fixtures/road_observation_contract.json)
-- [tests/test_analysis_sqlite.py](../../tests/test_analysis_sqlite.py)
-- [tests/test_motec_exporter.py](../../tests/test_motec_exporter.py)
-- [tests/test_race_recorder.py](../../tests/test_race_recorder.py)
-- [tests/test_road_workflow.py](../../tests/test_road_workflow.py)
-- [tests/test_telemetry_contract.py](../../tests/test_telemetry_contract.py)
-- [tests/test_telemetry_replay_contract.py](../../tests/test_telemetry_replay_contract.py)
-- [tests/test_workflow_api.py](../../tests/test_workflow_api.py)
-- [tests/test_workflow_recorder.py](../../tests/test_workflow_recorder.py)
+- `tests/test_analysis_sqlite.py`（歷史路徑：`../../tests/test_analysis_sqlite.py`）
+- `tests/test_motec_exporter.py`（歷史路徑：`../../tests/test_motec_exporter.py`）
+- `tests/test_race_recorder.py`（歷史路徑：`../../tests/test_race_recorder.py`）
+- `tests/test_road_workflow.py`（歷史路徑：`../../tests/test_road_workflow.py`）
+- `tests/test_telemetry_contract.py`（歷史路徑：`../../tests/test_telemetry_contract.py`）
+- `tests/test_telemetry_replay_contract.py`（歷史路徑：`../../tests/test_telemetry_replay_contract.py`）
+- `tests/test_workflow_api.py`（歷史路徑：`../../tests/test_workflow_api.py`）
+- `tests/test_workflow_recorder.py`（歷史路徑：`../../tests/test_workflow_recorder.py`）
 
 </details>

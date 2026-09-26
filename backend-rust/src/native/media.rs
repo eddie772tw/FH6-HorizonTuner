@@ -58,10 +58,14 @@ struct MediaState {
     last_check: Instant,
     last_valid: Option<Instant>,
     failure_count: u8,
+    in_flight: Option<Instant>,
+    query_timed_out: bool,
+    retry_at: Instant,
+    last_error: Option<String>,
 }
 
 enum MediaCommand {
-    Query(mpsc::SyncSender<Result<MediaResult, String>>),
+    Query,
     Stop,
 }
 
@@ -71,15 +75,34 @@ struct MediaWorker {
 }
 
 impl MediaWorker {
-    fn new() -> Self {
+    fn new(
+        state: Arc<Mutex<MediaState>>,
+        mut query: impl FnMut() -> Result<MediaResult, String> + Send + 'static,
+    ) -> Self {
         let (tx, rx) = mpsc::sync_channel(1);
         let join = thread::Builder::new()
             .name("fh6-gsmtc".into())
             .spawn(move || {
                 while let Ok(command) = rx.recv() {
                     match command {
-                        MediaCommand::Query(reply) => {
-                            let _ = reply.send(query_platform());
+                        MediaCommand::Query => {
+                            let result = query();
+                            if let Ok(mut state) = state.lock() {
+                                state.in_flight = None;
+                                state.query_timed_out = false;
+                                state.last_check = Instant::now();
+                                match result {
+                                    Ok(result) => {
+                                        state.snapshot = result.snapshot;
+                                        state.thumbnail = result.thumbnail;
+                                        state.last_valid = Some(Instant::now());
+                                        state.failure_count = 0;
+                                        state.last_error = None;
+                                        state.retry_at = Instant::now();
+                                    }
+                                    Err(error) => state.fail(error),
+                                }
+                            }
                         }
                         MediaCommand::Stop => break,
                     }
@@ -91,11 +114,37 @@ impl MediaWorker {
             join: Some(join),
         }
     }
+}
 
-    fn query(&self) -> Option<MediaResult> {
-        let (reply, rx) = mpsc::sync_channel(1);
-        self.tx.try_send(MediaCommand::Query(reply)).ok()?;
-        rx.recv_timeout(QUERY_TIMEOUT).ok()?.ok()
+impl MediaState {
+    fn fail(&mut self, error: String) {
+        self.failure_count = self.failure_count.saturating_add(1);
+        self.last_error = Some(error);
+        let seconds = [1, 2, 5, 10][usize::from(self.failure_count.saturating_sub(1)).min(3)];
+        self.retry_at = Instant::now() + Duration::from_secs(seconds);
+    }
+
+    fn expire(&mut self) {
+        if self
+            .in_flight
+            .is_some_and(|at| at.elapsed() >= QUERY_TIMEOUT)
+            && !self.query_timed_out
+        {
+            self.query_timed_out = true;
+            self.fail("GSMTC query timed out".into());
+        }
+        if self.last_error.is_some() {
+            if self
+                .last_valid
+                .is_some_and(|at| at.elapsed() <= STALE_GRACE)
+            {
+                self.snapshot["state"] = json!("stale");
+                self.snapshot["source"] = json!("stale");
+            } else {
+                self.snapshot = media_fallback();
+                self.thumbnail = None;
+            }
+        }
     }
 }
 
@@ -127,27 +176,29 @@ pub struct MediaService {
 
 impl MediaService {
     pub fn new() -> Self {
+        Self::with_query(query_platform)
+    }
+
+    fn with_query(query: impl FnMut() -> Result<MediaResult, String> + Send + 'static) -> Self {
+        let state = Arc::new(Mutex::new(MediaState {
+            snapshot: media_fallback(),
+            thumbnail: None,
+            last_check: Instant::now() - CACHE_TTL,
+            last_valid: None,
+            failure_count: 0,
+            in_flight: None,
+            query_timed_out: false,
+            retry_at: Instant::now(),
+            last_error: None,
+        }));
         Self {
-            state: Arc::new(Mutex::new(MediaState {
-                snapshot: media_fallback(),
-                thumbnail: None,
-                last_check: Instant::now() - CACHE_TTL,
-                last_valid: None,
-                failure_count: 0,
-            })),
-            worker: MediaWorker::new(),
+            worker: MediaWorker::new(state.clone(), query),
+            state,
         }
     }
 
     pub fn snapshot(&self) -> Value {
-        let refresh = self
-            .state
-            .lock()
-            .map(|s| s.last_check.elapsed() >= CACHE_TTL)
-            .unwrap_or(false);
-        if refresh {
-            self.refresh();
-        }
+        self.refresh();
         self.state
             .lock()
             .map(|s| s.snapshot.clone())
@@ -156,43 +207,30 @@ impl MediaService {
 
     pub fn refresh(&self) {
         if let Ok(mut state) = self.state.lock() {
-            state.last_check = Instant::now();
-        }
-        if let Some(result) = self.worker.query() {
-            if let Ok(mut state) = self.state.lock() {
-                if result
-                    .snapshot
-                    .get("has_media")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false)
-                {
-                    state.snapshot = result.snapshot;
-                    state.last_valid = Some(Instant::now());
-                    state.failure_count = 0;
-                    state.thumbnail = result.thumbnail;
-                } else {
-                    state.snapshot = media_fallback_with("winrt", "none");
-                    state.last_valid = Some(Instant::now());
-                    state.failure_count = 0;
-                    state.thumbnail = None;
-                }
-            }
-        } else if let Ok(mut state) = self.state.lock() {
-            state.failure_count = state.failure_count.saturating_add(1);
-            if state
-                .last_valid
-                .map(|t| t.elapsed() <= STALE_GRACE)
-                .unwrap_or(false)
+            state.expire();
+            // A hung native call never queues another query or blocks HTTP/audio.
+            if state.in_flight.is_some()
+                || state.last_check.elapsed() < CACHE_TTL
+                || Instant::now() < state.retry_at
             {
-                if let Some(object) = state.snapshot.as_object_mut() {
-                    object.insert("state".into(), Value::String("stale".into()));
-                    object.insert("source".into(), Value::String("stale".into()));
-                }
-            } else {
-                state.snapshot = media_fallback();
-                state.thumbnail = None;
+                return;
+            }
+            state.last_check = Instant::now();
+            match self.worker.tx.try_send(MediaCommand::Query) {
+                Ok(()) => state.in_flight = Some(Instant::now()),
+                Err(_) => state.fail("GSMTC worker unavailable".into()),
             }
         }
+    }
+
+    pub fn diagnostics(&self) -> Value {
+        let Ok(mut state) = self.state.lock() else {
+            return json!({"state":"unavailable","error":"GSMTC state unavailable"});
+        };
+        state.expire();
+        json!({"state":state.snapshot["state"],"source":state.snapshot["source"],
+            "queryInFlight":state.in_flight.is_some(),"failures":state.failure_count,
+            "error":state.last_error})
     }
 
     pub fn thumbnail(&self) -> Option<(String, Vec<u8>)> {
@@ -243,58 +281,64 @@ fn query_platform() -> Result<MediaResult, String> {
         GlobalSystemMediaTransportControlsSessionManager,
         GlobalSystemMediaTransportControlsSessionPlaybackStatus,
     };
-    use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED};
+    use windows::Win32::System::WinRT::{RoInitialize, RoUninitialize, RO_INIT_MULTITHREADED};
 
-    struct ComGuard;
-    impl Drop for ComGuard {
+    struct WinRtGuard;
+    impl Drop for WinRtGuard {
         fn drop(&mut self) {
             unsafe {
-                CoUninitialize();
+                RoUninitialize();
             }
         }
     }
     unsafe {
-        CoInitializeEx(None, COINIT_MULTITHREADED)
-            .ok()
-            .map_err(|e| e.to_string())?;
+        RoInitialize(RO_INIT_MULTITHREADED).map_err(|e| e.to_string())?;
     }
-    let _com = ComGuard;
-    let manager = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| e.to_string())?
-        .block_on(
-            GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
-                .map_err(|e| e.to_string())?
-                .into_future(),
-        )
-        .map_err(|e| e.to_string())?;
+    let _winrt = WinRtGuard;
+    let manager = wait_winrt(
+        "GSMTC manager",
+        QUERY_TIMEOUT,
+        GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
+            .map_err(|e| format!("GSMTC manager: {e}"))?
+            .into_future(),
+    )?;
     let current = manager.GetCurrentSession().ok();
-    let sessions = manager.GetSessions().ok();
+    let sessions = manager.GetSessions();
     let mut candidates = Vec::new();
+    let mut inspection_error = None;
     if let Some(session) = current.clone() {
         candidates.push(session);
     }
-    if let Some(view) = sessions {
-        for i in 0..view.Size().unwrap_or(0) {
-            if let Ok(session) = view.GetAt(i) {
-                if current.as_ref() != Some(&session) {
-                    candidates.push(session);
+    match sessions {
+        Ok(view) => match view.Size() {
+            Ok(count) => {
+                for i in 0..count {
+                    match view.GetAt(i) {
+                        Ok(session) if current.as_ref() != Some(&session) => {
+                            candidates.push(session)
+                        }
+                        Err(error) => inspection_error = Some(format!("GSMTC session: {error}")),
+                        _ => (),
+                    }
                 }
             }
-        }
+            Err(error) => inspection_error = Some(format!("GSMTC session count: {error}")),
+        },
+        Err(error) => inspection_error = Some(format!("GSMTC sessions: {error}")),
     }
     let mut chosen = None;
     for session in candidates {
-        let info = session.TryGetMediaPropertiesAsync().ok().and_then(|op| {
-            tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .ok()?
-                .block_on(op.into_future())
-                .ok()
-        });
-        let Some(info) = info else { continue };
+        let info = session
+            .TryGetMediaPropertiesAsync()
+            .map_err(|e| format!("GSMTC properties: {e}"))
+            .and_then(|op| wait_winrt("GSMTC properties", QUERY_TIMEOUT, op.into_future()));
+        let info = match info {
+            Ok(info) => info,
+            Err(error) => {
+                inspection_error = Some(error);
+                continue;
+            }
+        };
         let title = info.Title().map(|v| v.to_string()).unwrap_or_default();
         let artist = info.Artist().map(|v| v.to_string()).unwrap_or_default();
         if title.trim().is_empty() && artist.trim().is_empty() {
@@ -307,38 +351,60 @@ fn query_platform() -> Result<MediaResult, String> {
             .map(|s| s == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
             .unwrap_or(false);
         let timeline = session.GetTimelineProperties().ok();
-        let thumbnail = info
-            .Thumbnail()
-            .ok()
-            .and_then(|reference| extract_thumbnail(&reference).ok())
-            .flatten();
-        let snapshot = build_media_snapshot(
-            &session,
-            &info,
-            playback.as_ref(),
-            timeline.as_ref(),
-            thumbnail.as_ref(),
-        );
         if playing {
-            chosen = Some((snapshot, thumbnail));
+            chosen = Some((session, info, playback, timeline));
             break;
         }
         if chosen.is_none() {
-            chosen = Some((snapshot, thumbnail));
+            chosen = Some((session, info, playback, timeline));
         }
     }
     chosen
-        .map(|(snapshot, thumbnail)| {
+        .map(|(session, info, playback, timeline)| {
+            // Artwork failure must not hide otherwise valid title/album metadata.
+            let thumbnail = info
+                .Thumbnail()
+                .ok()
+                .and_then(|reference| extract_thumbnail(&reference).ok())
+                .flatten();
+            let snapshot = build_media_snapshot(
+                &session,
+                &info,
+                playback.as_ref(),
+                timeline.as_ref(),
+                thumbnail.as_ref(),
+            );
             Ok(MediaResult {
                 snapshot,
                 thumbnail,
             })
         })
         .unwrap_or_else(|| {
+            if let Some(error) = inspection_error {
+                return Err(error);
+            }
             Ok(MediaResult {
                 snapshot: media_fallback_with("winrt", "none"),
                 thumbnail: None,
             })
+        })
+}
+
+#[cfg(windows)]
+fn wait_winrt<T>(
+    stage: &str,
+    timeout: Duration,
+    future: impl std::future::Future<Output = windows::core::Result<T>>,
+) -> Result<T, String> {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| e.to_string())?
+        .block_on(async {
+            tokio::time::timeout(timeout, future)
+                .await
+                .map_err(|_| format!("{stage} timed out"))?
+                .map_err(|e| format!("{stage}: {e}"))
         })
 }
 
@@ -465,34 +531,31 @@ fn extract_thumbnail(
 ) -> Result<Option<ThumbnailData>, String> {
     use sha2::{Digest, Sha256};
     use windows::Storage::Streams::DataReader;
-    let stream = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| e.to_string())?
-        .block_on(
-            reference
-                .OpenReadAsync()
-                .map_err(|e| e.to_string())?
-                .into_future(),
-        )
-        .map_err(|e| e.to_string())?;
+    let stream = wait_winrt(
+        "GSMTC thumbnail open",
+        Duration::from_millis(500),
+        reference
+            .OpenReadAsync()
+            .map_err(|e| e.to_string())?
+            .into_future(),
+    )?;
     let size = stream.Size().map_err(|e| e.to_string())?;
     if size == 0 || size > 10 * 1024 * 1024 {
         return Ok(None);
     }
     let input = stream.GetInputStreamAt(0).map_err(|e| e.to_string())?;
     let reader = DataReader::CreateDataReader(&input).map_err(|e| e.to_string())?;
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| e.to_string())?
-        .block_on(
-            reader
-                .LoadAsync(size as u32)
-                .map_err(|e| e.to_string())?
-                .into_future(),
-        )
-        .map_err(|e| e.to_string())?;
+    let loaded = wait_winrt(
+        "GSMTC thumbnail read",
+        Duration::from_millis(500),
+        reader
+            .LoadAsync(size as u32)
+            .map_err(|e| e.to_string())?
+            .into_future(),
+    )?;
+    if u64::from(loaded) != size {
+        return Err("GSMTC thumbnail stream was truncated".into());
+    }
     let mut bytes = vec![0; size as usize];
     reader.ReadBytes(&mut bytes).map_err(|e| e.to_string())?;
     let digest = Sha256::digest(&bytes);
@@ -512,4 +575,67 @@ fn extract_thumbnail(
         hash,
         bytes,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hung_provider_keeps_snapshots_nonblocking_and_does_not_queue_queries() {
+        let (started, entered) = mpsc::channel();
+        let (release, wait) = mpsc::channel();
+        let service = MediaService::with_query(move || {
+            started.send(()).unwrap();
+            wait.recv().unwrap();
+            Ok(MediaResult {
+                snapshot: media_fallback_with("winrt", "none"),
+                thumbnail: None,
+            })
+        });
+        let before = Instant::now();
+        assert_eq!(service.snapshot()["state"], "unavailable");
+        assert!(before.elapsed() < Duration::from_millis(100));
+        entered.recv_timeout(Duration::from_secs(1)).unwrap();
+        {
+            let mut state = service.state.lock().unwrap();
+            state.in_flight = Some(Instant::now() - QUERY_TIMEOUT);
+        }
+        for _ in 0..10 {
+            service.snapshot();
+        }
+        assert_eq!(service.diagnostics()["failures"], 1);
+        assert_eq!(service.diagnostics()["queryInFlight"], true);
+        release.send(()).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while service.diagnostics()["queryInFlight"] == true {
+            assert!(Instant::now() < deadline);
+            thread::yield_now();
+        }
+        assert_eq!(service.snapshot()["source"], "winrt");
+        assert_eq!(service.diagnostics()["error"], Value::Null);
+        assert!(entered.try_recv().is_err());
+    }
+
+    #[test]
+    fn failed_media_expires_stale_metadata_and_artwork() {
+        let service = MediaService::with_query(|| unreachable!());
+        let mut state = service.state.lock().unwrap();
+        state.snapshot["has_media"] = json!(true);
+        state.last_valid = Some(Instant::now());
+        state.thumbnail = Some(ThumbnailData {
+            content_type: "image/png".into(),
+            hash: "test".into(),
+            bytes: vec![1],
+        });
+        state.fail("provider disconnected".into());
+        state.expire();
+        assert_eq!(state.snapshot["state"], "stale");
+        assert!(state.thumbnail.is_some());
+        state.last_valid = Some(Instant::now() - STALE_GRACE - Duration::from_secs(1));
+        state.expire();
+        assert_eq!(state.snapshot["has_media"], false);
+        assert_eq!(state.snapshot["state"], "unavailable");
+        assert!(state.thumbnail.is_none());
+    }
 }

@@ -1,4 +1,7 @@
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    mpsc, Arc, Mutex,
+};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -48,42 +51,42 @@ enum DiscoveryCommand {
     Stop,
 }
 
-enum CaptureCommand {
-    Select(String),
-    Pause,
-    Stop,
-}
-
 struct CaptureWorker {
-    tx: mpsc::SyncSender<CaptureCommand>,
+    tx: mpsc::SyncSender<()>,
+    stopping: Arc<AtomicBool>,
     join: Option<JoinHandle<()>>,
 }
 
 impl CaptureWorker {
     fn new(state: Arc<Mutex<AudioState>>) -> Self {
-        let (tx, rx) = mpsc::sync_channel(2);
+        let (tx, rx) = mpsc::sync_channel(1);
+        let stopping = Arc::new(AtomicBool::new(false));
+        let worker_stop = stopping.clone();
         let join = thread::Builder::new()
             .name("fh6-wasapi-loopback".to_owned())
-            .spawn(move || capture_worker_loop(state, rx))
+            .spawn(move || capture_worker_loop(state, rx, worker_stop))
             .expect("native WASAPI worker must start");
         Self {
             tx,
+            stopping,
             join: Some(join),
         }
     }
 
-    fn select(&self, device_id: String) {
-        let _ = self.tx.try_send(CaptureCommand::Select(device_id));
+    fn wake(&self) {
+        // The channel is only a wakeup; the latest requested state cannot be lost.
+        let _ = self.tx.try_send(());
     }
 
     fn stop(&self) {
-        let _ = self.tx.try_send(CaptureCommand::Pause);
+        self.wake();
     }
 }
 
 impl Drop for CaptureWorker {
     fn drop(&mut self) {
-        let _ = self.tx.try_send(CaptureCommand::Stop);
+        self.stopping.store(true, Ordering::Release);
+        self.wake();
         if let Some(join) = self.join.take() {
             super::finish_worker(join);
         }
@@ -147,6 +150,9 @@ struct AudioState {
     sequence: u64,
     source: &'static str,
     active: bool,
+    capture_error: Option<String>,
+    resolved_device: Option<String>,
+    using_default_fallback: bool,
 }
 
 pub struct AudioService {
@@ -171,6 +177,9 @@ impl AudioService {
             sequence: 0,
             source: "unavailable",
             active: false,
+            capture_error: None,
+            resolved_device: None,
+            using_default_fallback: false,
         }));
         Self {
             capture: CaptureWorker::new(state.clone()),
@@ -220,8 +229,9 @@ impl AudioService {
             state.selected_device = selected.to_owned();
             state.last_update = None;
             state.source = "unavailable";
+            state.capture_error = None;
             if state.active {
-                self.capture.select(selected.to_owned());
+                self.capture.wake();
             }
         } else {
             return Err(NativeError::WorkerUnavailable);
@@ -257,8 +267,19 @@ impl AudioService {
         };
         if !state.active && state.source != "external" {
             state.active = true;
-            self.capture.select(state.selected_device.clone());
+            self.capture.wake();
         }
+        Self::snapshot(&state)
+    }
+
+    pub fn cached_spectrum(&self) -> Value {
+        self.state
+            .lock()
+            .map(|state| Self::snapshot(&state))
+            .unwrap_or_else(|_| spectrum_unavailable())
+    }
+
+    fn snapshot(state: &AudioState) -> Value {
         let age = state
             .last_update
             .map(|t| t.elapsed())
@@ -273,7 +294,7 @@ impl AudioService {
             "silence"
         };
         json!({
-            "spectrum": state.spectrum,
+            "spectrum": if status == "unavailable" { [0.0; BAND_COUNT] } else { state.spectrum },
             "vu_left": if status == "unavailable" { 0.0 } else { state.vu_left },
             "vu_right": if status == "unavailable" { 0.0 } else { state.vu_right },
             "has_audio": state.has_audio && status == "live",
@@ -283,6 +304,16 @@ impl AudioService {
             "source": state.source,
             "success": true
         })
+    }
+
+    pub fn diagnostics(&self) -> Value {
+        let Ok(state) = self.state.lock() else {
+            return json!({"state":"unavailable","error":"WASAPI state unavailable"});
+        };
+        json!({"active":state.active,"selectedDevice":state.selected_device,
+            "resolvedDevice":state.resolved_device,"usingDefaultFallback":state.using_default_fallback,
+            "source":state.source,"sequence":state.sequence,"error":state.capture_error,
+            "discoveryFailed":state.last_error})
     }
 }
 
@@ -351,68 +382,51 @@ fn compute_fft_bands(samples: &[f32]) -> ([f32; BAND_COUNT], f32, f32) {
 }
 
 #[cfg(not(windows))]
-fn capture_worker_loop(_state: Arc<Mutex<AudioState>>, rx: mpsc::Receiver<CaptureCommand>) {
-    while let Ok(command) = rx.recv() {
-        match command {
-            CaptureCommand::Stop => break,
-            CaptureCommand::Select(device) => drop(device),
-            CaptureCommand::Pause => {}
-        }
-    }
+fn capture_worker_loop(
+    _state: Arc<Mutex<AudioState>>,
+    rx: mpsc::Receiver<()>,
+    stopping: Arc<AtomicBool>,
+) {
+    while !stopping.load(Ordering::Acquire) && rx.recv().is_ok() {}
 }
 
 #[cfg(windows)]
-fn capture_worker_loop(state: Arc<Mutex<AudioState>>, rx: mpsc::Receiver<CaptureCommand>) {
-    let mut selected: Option<String> = None;
-    loop {
-        let command = if selected.is_some() {
-            rx.try_recv()
-        } else {
-            rx.recv().map_err(|_| mpsc::TryRecvError::Disconnected)
-        };
-        match command {
-            Ok(CaptureCommand::Stop) | Err(mpsc::TryRecvError::Disconnected) => break,
-            Ok(CaptureCommand::Select(device)) => selected = Some(device),
-            Ok(CaptureCommand::Pause) => {
-                selected = None;
-                continue;
+fn capture_worker_loop(
+    state: Arc<Mutex<AudioState>>,
+    rx: mpsc::Receiver<()>,
+    stopping: Arc<AtomicBool>,
+) {
+    while !stopping.load(Ordering::Acquire) {
+        let selected = state
+            .lock()
+            .ok()
+            .and_then(|s| s.active.then(|| s.selected_device.clone()));
+        let Some(device) = selected else {
+            if rx.recv().is_err() {
+                break;
             }
-            Err(mpsc::TryRecvError::Empty) => {}
-        }
-        let Some(device) = selected.as_deref() else {
             continue;
         };
-        match wasapi_capture_once(&state, device, &rx) {
-            Ok(CaptureControl::Stop) => break,
-            Ok(CaptureControl::Restart(device)) => selected = Some(device),
-            Ok(CaptureControl::Pause) => selected = None,
-            Err(_) => {
-                // Driver failures are expected during device changes. Preserve the
-                // cached spectrum and retry with a bounded backoff.
-                thread::sleep(Duration::from_millis(100));
+        if let Err(error) = wasapi_capture_once(&state, &device, &stopping) {
+            if let Ok(mut state) = state.lock() {
+                state.capture_error = Some(error);
             }
+            // A control change interrupts backoff; no stale Select can undo Pause.
+            let _ = rx.recv_timeout(Duration::from_millis(100));
         }
     }
-}
-
-#[cfg(windows)]
-enum CaptureControl {
-    Stop,
-    Pause,
-    Restart(String),
 }
 
 #[cfg(windows)]
 fn wasapi_capture_once(
     state: &Arc<Mutex<AudioState>>,
     selected: &str,
-    rx: &mpsc::Receiver<CaptureCommand>,
-) -> Result<CaptureControl, String> {
-    use windows::core::{HSTRING, PCWSTR};
+    stopping: &AtomicBool,
+) -> Result<(), String> {
     use windows::Win32::Media::Audio::{
-        eConsole, eRender, IAudioCaptureClient, IAudioClient, IMMDeviceEnumerator,
-        MMDeviceEnumerator, AUDCLNT_BUFFERFLAGS_SILENT, AUDCLNT_SHAREMODE_SHARED,
-        AUDCLNT_STREAMFLAGS_LOOPBACK, WAVEFORMATEX,
+        IAudioCaptureClient, IAudioClient, IMMDeviceEnumerator, MMDeviceEnumerator,
+        AUDCLNT_BUFFERFLAGS_SILENT, AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK,
+        WAVEFORMATEX,
     };
     use windows::Win32::System::Com::{
         CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_MULTITHREADED,
@@ -435,13 +449,8 @@ fn wasapi_capture_once(
     let enumerator: IMMDeviceEnumerator =
         unsafe { CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL) }
             .map_err(|e| e.to_string())?;
-    let device = if selected == "default" {
-        unsafe { enumerator.GetDefaultAudioEndpoint(eRender, eConsole) }
-    } else {
-        let id = HSTRING::from(selected);
-        unsafe { enumerator.GetDevice(PCWSTR(id.as_ptr())) }
-    }
-    .map_err(|e| e.to_string())?;
+    let (device, fallback) = resolve_device(&enumerator, selected)?;
+    let resolved_id = device_id(&device)?;
     let client: IAudioClient =
         unsafe { device.Activate(CLSCTX_ALL, None) }.map_err(|e| e.to_string())?;
     let format: *mut WAVEFORMATEX = unsafe { client.GetMixFormat() }.map_err(|e| e.to_string())?;
@@ -472,14 +481,35 @@ fn wasapi_capture_once(
     }
     let capture: IAudioCaptureClient = unsafe { client.GetService() }.map_err(|e| e.to_string())?;
     unsafe { client.Start() }.map_err(|e| e.to_string())?;
-    let result = loop {
-        match rx.try_recv() {
-            Ok(CaptureCommand::Stop) | Err(mpsc::TryRecvError::Disconnected) => {
-                break CaptureControl::Stop
+    struct StartedClient<'a>(&'a IAudioClient);
+    impl Drop for StartedClient<'_> {
+        fn drop(&mut self) {
+            let _ = unsafe { self.0.Stop() };
+        }
+    }
+    let _started = StartedClient(&client);
+    if let Ok(mut state) = state.lock() {
+        state.resolved_device = Some(resolved_id.clone());
+        state.using_default_fallback = fallback;
+        state.capture_error = None;
+    }
+    let mut endpoint_check = Instant::now();
+    loop {
+        if stopping.load(Ordering::Acquire)
+            || state
+                .lock()
+                .map(|s| !s.active || s.selected_device != selected)
+                .unwrap_or(true)
+        {
+            break;
+        }
+        // Follow the system default and recover a reconnected explicitly selected device.
+        if endpoint_check.elapsed() >= Duration::from_secs(1) {
+            let (desired, _) = resolve_device(&enumerator, selected)?;
+            if device_id(&desired)? != resolved_id {
+                break;
             }
-            Ok(CaptureCommand::Select(device)) => break CaptureControl::Restart(device),
-            Ok(CaptureCommand::Pause) => break CaptureControl::Pause,
-            Err(mpsc::TryRecvError::Empty) => {}
+            endpoint_check = Instant::now();
         }
         let mut packet = unsafe { capture.GetNextPacketSize() }.map_err(|e| e.to_string())?;
         while packet > 0 {
@@ -521,12 +551,43 @@ fn wasapi_capture_once(
             packet = unsafe { capture.GetNextPacketSize() }.map_err(|e| e.to_string())?;
         }
         thread::sleep(Duration::from_millis(10));
-    };
-    unsafe {
-        let _ = client.Stop();
     }
     drop(format_guard);
-    Ok(result)
+    Ok(())
+}
+
+#[cfg(windows)]
+fn device_id(device: &windows::Win32::Media::Audio::IMMDevice) -> Result<String, String> {
+    unsafe {
+        let id = device.GetId().map_err(|e| e.to_string())?;
+        let text = id.to_string().map_err(|e| e.to_string());
+        windows::Win32::System::Com::CoTaskMemFree(Some(id.0 as _));
+        text
+    }
+}
+
+#[cfg(windows)]
+fn resolve_device(
+    enumerator: &windows::Win32::Media::Audio::IMMDeviceEnumerator,
+    selected: &str,
+) -> Result<(windows::Win32::Media::Audio::IMMDevice, bool), String> {
+    use windows::{
+        core::HSTRING,
+        Win32::Media::Audio::{eConsole, eRender, DEVICE_STATE_ACTIVE},
+    };
+    unsafe {
+        if selected != "default" {
+            if let Ok(device) = enumerator.GetDevice(&HSTRING::from(selected)) {
+                if device.GetState().is_ok_and(|s| s == DEVICE_STATE_ACTIVE) {
+                    return Ok((device, false));
+                }
+            }
+        }
+        enumerator
+            .GetDefaultAudioEndpoint(eRender, eConsole)
+            .map(|device| (device, selected != "default"))
+            .map_err(|e| format!("WASAPI playback endpoint: {e}"))
+    }
 }
 
 #[cfg(windows)]
@@ -668,5 +729,27 @@ fn enumerate_platform() -> Result<Vec<AudioDevice>, Box<dyn std::error::Error + 
             });
         }
         Ok(devices)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn expired_audio_cannot_return_a_frozen_nonzero_spectrum() {
+        let service = AudioService::new();
+        service.update_pcm(&vec![0.5; 1024]);
+        assert!(service.spectrum()["has_audio"].as_bool().unwrap());
+        service.state.lock().unwrap().last_update =
+            Some(Instant::now() - SILENT_AFTER - Duration::from_secs(1));
+        let snapshot = service.spectrum();
+        assert_eq!(snapshot["state"], "unavailable");
+        assert_eq!(snapshot["has_audio"], false);
+        assert!(snapshot["spectrum"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|n| n.as_f64() == Some(0.0)));
     }
 }

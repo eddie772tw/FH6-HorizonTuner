@@ -1,9 +1,15 @@
+use axum::http::HeaderMap;
 use fh6_backend::telemetry::{
     collect_dyno_sample, decoded_point, pack_binary, parse_packet, DragRecorder, DynoQualityGate,
     DynoQualityGateRegistry, RaceRecorder, RaceRecorderConfig, RecorderCommand, TelemetryStore,
 };
+use fh6_backend::{
+    app::App,
+    network::{ApiRequest, Backend},
+};
 use serde_json::json;
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 fn set_i32(b: &mut [u8], index: usize, v: i32) {
     b[index * 4..index * 4 + 4].copy_from_slice(&v.to_le_bytes())
@@ -167,6 +173,81 @@ fn drag_recorder_observes_launch_and_finishes_on_release() {
     r.record(&json!({"SpeedMetersPerSecond":5.0,"Gear":1,"AccelInput":0,"TimestampMS":4001,"IsRaceOn":1}));
     assert_eq!(r.status(), "finished");
     assert!(r.analysis().get("drivetrain").is_some())
+}
+#[test]
+fn drag_context_survives_clear_and_uses_the_launched_car_name() {
+    fn request(app: &App, method: &str, path: &str) -> Value {
+        let response = app
+            .request(ApiRequest {
+                method: method.to_owned(),
+                path: path.to_owned(),
+                query: BTreeMap::new(),
+                headers: HeaderMap::new(),
+                body: vec![],
+                upload_filename: None,
+            })
+            .unwrap();
+        assert_eq!(response.status, 200, "{method} {path}");
+        serde_json::from_slice(&response.body).unwrap()
+    }
+
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    let cars = app.config.car_database.as_object().unwrap();
+    let cars: Vec<(i64, String)> = cars
+        .iter()
+        .filter_map(|(id, car)| {
+            let ordinal = id.parse().ok()?;
+            let name = car.get("display_name")?.as_str()?;
+            (!name.is_empty() && name != format!("Car {ordinal}")).then(|| (ordinal, name.into()))
+        })
+        .take(2)
+        .collect();
+    assert_eq!(cars.len(), 2, "expected two named cars in bundled database");
+
+    for (id, name) in cars {
+        request(&app, "POST", "/api/drag/prepare");
+        app.process(json!({
+            "CarOrdinal": id,
+            "SpeedMetersPerSecond": 0.1,
+            "Gear": 1,
+            "AccelInput": 255,
+            "TimestampMS": 1000,
+            "IsRaceOn": 1
+        }));
+        app.process(json!({
+            "CarOrdinal": id,
+            "SpeedMetersPerSecond": 0.1,
+            "Gear": 1,
+            "AccelInput": 255,
+            "TimestampMS": 1016,
+            "IsRaceOn": 0
+        }));
+        assert_eq!(request(&app, "GET", "/api/drag/analysis")["car_name"], name);
+        let data = request(&app, "GET", "/api/drag/data");
+        assert_eq!(
+            request(&app, "GET", "/api/drag/status")["points_count"],
+            data.as_array().unwrap().len()
+        );
+        let saved = request(&app, "POST", "/api/drag/sessions/save");
+        let archive: Value = serde_json::from_slice(
+            &std::fs::read(
+                root.path()
+                    .join("drag_sessions")
+                    .join(saved["filename"].as_str().unwrap()),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(archive["data"], data);
+        assert_eq!(
+            archive["analysis"],
+            request(&app, "GET", "/api/drag/analysis")
+        );
+        request(&app, "POST", "/api/drag/clear");
+        assert_eq!(request(&app, "GET", "/api/drag/status")["points_count"], 0);
+    }
+    app.shutdown();
 }
 #[test]
 fn drag_recorder_matches_generated_fwd_rwd_awd_analysis_shapes() {
@@ -378,4 +459,116 @@ fn sqlite_roundtrip_matches_generated_decoded_fixture() {
         &oracle["metadata"],
         "sqlite.metadata",
     );
+}
+
+#[test]
+fn sqlite_finalize_rolls_back_laps_and_session_summary_on_lap_failure() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("finalize-rollback.db");
+    let store = TelemetryStore::new(&path).unwrap();
+    store
+        .create_session("s", 42, "Test", 700, 800, 1.0)
+        .unwrap();
+    store
+        .set_session_metadata("s", &json!({"state":"recording","keep":"value"}))
+        .unwrap();
+    store
+        .insert_points_batch(
+            "s",
+            &[
+                json!({"TimestampMS":1000,"LapNumber":1,"CurrentLap":0,"LastLap":60,"IsRaceOn":1,"SpeedMetersPerSecond":10}),
+                json!({"TimestampMS":2000,"LapNumber":2,"CurrentLap":0,"LastLap":60,"IsRaceOn":1,"SpeedMetersPerSecond":12}),
+            ],
+        )
+        .unwrap();
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch(
+        "CREATE TRIGGER reject_second_lap BEFORE INSERT ON laps \
+         WHEN NEW.lap_number=2 BEGIN SELECT RAISE(ABORT,'injected failure'); END;",
+    )
+    .unwrap();
+    drop(c);
+
+    let original_metadata = store.get_session_metadata("s").unwrap();
+    assert!(store.finalize_session("s", original_metadata).is_err());
+    assert!(store.get_session_laps("s").unwrap().is_empty());
+    assert_eq!(store.list_all_sessions().unwrap()[0]["total_laps"], 0);
+    let metadata_after_failure = store.get_session_metadata("s").unwrap();
+    assert_eq!(metadata_after_failure["state"], "recording");
+    assert_eq!(metadata_after_failure["keep"], "value");
+    assert!(metadata_after_failure.get("completeLaps").is_none());
+}
+
+#[test]
+fn sqlite_batch_round_trip_preserves_channels_units_nulls_and_raw_json() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("batch.db");
+    let store = TelemetryStore::new(&path).unwrap();
+    store
+        .create_session("s", 42, "Test", 700, 800, 1.0)
+        .unwrap();
+    let points = vec![
+        json!({
+            "time":1.25,"LapNumber":2,"DistanceTraveled":123.5,
+            "SpeedMetersPerSecond":25.0,"CurrentEngineRpm":5400,"Gear":4,
+            "AccelInput":128,"AccelerationX":9.81,"AccelerationY":-4.905,
+            "Yaw":1.0,"Pitch":0.1,"Roll":0.2,"PositionX":5.0,"PositionZ":6.0,
+            "NormalizedSuspensionTravel":[0.1,0.2,0.3,0.4],
+            "SuspensionTravelMeters":[0.01,0.02,0.03,0.04],
+            "TireSlipAngle":[0.1,null,-0.2,0.3],"TireSlipRatio":[0.5,0.4,0.3,0.2],
+            "TireTemp":[70,71,72,73],"PowerWatts":7457,"TorqueNewtons":300,
+            "Boost":1.3,"Fuel":0.75
+        }),
+        json!({"time":2.0,"LapNumber":2,"Gear":3}),
+    ];
+    store.insert_points_batch("s", &points).unwrap();
+
+    let rows = store.get_telemetry_points("s", None).unwrap();
+    assert_eq!(rows.len(), points.len());
+    for (actual, source) in rows.iter().zip(&points) {
+        assert_eq!(actual, &decoded_point(source));
+    }
+    assert!(rows[1]["SpeedMetersPerSecond"].is_null());
+    assert!(rows[1]["PositionX"].is_null());
+
+    let c = rusqlite::Connection::open(path).unwrap();
+    let (speed, accel_x, slip_angle, missing_slip_angle, suspension_m, power, fuel, missing_pos, raw): (
+        Option<f64>, Option<f64>, Option<f64>, Option<f64>, Option<f64>, Option<f64>, Option<f64>, Option<f64>, String,
+    ) = c
+        .query_row(
+            "SELECT speed,accel_x,slip_angle_fl,slip_angle_fr,susp_meters_fr,power_watts,fuel,pos_y,raw_json FROM telemetry_channels WHERE session_id='s' ORDER BY id LIMIT 1",
+            [],
+            |r| Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?,r.get(7)?,r.get(8)?)),
+        )
+        .unwrap();
+    assert_eq!(speed, Some(90.0));
+    assert_eq!(accel_x, Some(1.0));
+    assert_eq!(slip_angle, Some(0.1 * 57.29578));
+    assert_eq!(missing_slip_angle, None);
+    assert_eq!(suspension_m, Some(0.02));
+    assert_eq!(power, Some(7457.0));
+    assert_eq!(fuel, Some(0.75));
+    assert_eq!(missing_pos, None);
+    assert_eq!(serde_json::from_str::<Value>(&raw).unwrap(), rows[0]);
+}
+
+#[test]
+fn sqlite_batch_insert_rolls_back_all_points_on_later_row_failure() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("rollback.db");
+    let store = TelemetryStore::new(&path).unwrap();
+    store
+        .create_session("s", 42, "Test", 700, 800, 1.0)
+        .unwrap();
+    let c = rusqlite::Connection::open(&path).unwrap();
+    c.execute_batch(
+        "CREATE TRIGGER reject_second_point BEFORE INSERT ON telemetry_channels \
+         WHEN NEW.relative_time=2.0 BEGIN SELECT RAISE(ABORT,'injected failure'); END;",
+    )
+    .unwrap();
+    drop(c);
+
+    let result = store.insert_points_batch("s", &[json!({"time":1.0}), json!({"time":2.0})]);
+    assert!(result.is_err());
+    assert!(store.get_telemetry_points("s", None).unwrap().is_empty());
 }

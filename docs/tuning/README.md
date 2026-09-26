@@ -15,8 +15,8 @@ PR #330 已將現行工作流整合為四階段 `Goal & Setup → Chassis & Tire
 | 模式選擇 | [App.tsx](../../frontend/src/App.tsx) | `developer_tuning_enabled` 選擇一般或開發者調校介面 |
 | 一般調校 | [TuningView.tsx](../../frontend/src/features/tuning/TuningView.tsx)、[tuningMath.ts](../../frontend/src/utils/tuningMath.ts) | 既有使用者流程與純函數 |
 | 開發者調校 | [TuningView_dev.tsx](../../frontend/src/features/tuning/TuningView_dev.tsx)、[tuningMath_dev.ts](../../frontend/src/utils/tuningMath_dev.ts)、[domain/tuning](../../frontend/src/domain/tuning/) | 開發者計算入口及其領域模組；不可直接視為一般模式的替代品 |
-| CLI | [agent_cli.py](../../backend/agent_cli.py) | Python 內另有計算實作；與前端結果是否一致需獨立驗證 |
-| MCP | [tools.py](../../backend/mcp/tools.py)、[service.py](../../backend/mcp/service.py) | 工具介面與 Python service 計算，不能僅因名稱相同就假定共用 TypeScript solver |
+| CLI | [agent_cli.rs](../../backend-rust/src/agent_cli.rs)、[legacy_cli.rs](../../backend-rust/src/tuning/legacy_cli.rs) | Rust 保留舊 CLI 數值，不等同正式調校核心 |
+| MCP | [tools.rs](../../backend-rust/src/mcp/tools.rs)、[service.rs](../../backend-rust/src/mcp/service.rs) | Rust 工具介面與快速求解器，不能僅因名稱相同就假定共用正式 solver |
 | 遙測採樣 | [TuningTelemetryCaptureView.tsx](../../frontend/src/features/tuning/components/TuningTelemetryCaptureView.tsx)、[telemetryCapture.ts](../../frontend/src/domain/tuning/telemetryCapture.ts) | 錄製介面、資料契約與匯出內容 |
 
 此表描述現況，不是授權新增平行計算實作。既有實作與治理中的單一來源目標仍須分開看待；未經比對，不宣稱一般模式、開發者模式、CLI 與 MCP 已有數值一致性保證。
