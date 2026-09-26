@@ -1,4 +1,4 @@
-"""Run the startup dependency probe without touching host audio devices."""
+"""Verify the optional repository maintenance and diagnostics environment."""
 
 from __future__ import annotations
 
@@ -7,24 +7,7 @@ import importlib.metadata
 import importlib.util
 import sys
 
-REQUIRED_MODULES = (
-    "fastapi",
-    "httpx",
-    "numpy",
-    "pydantic",
-    "pytest",
-    "pytest_asyncio",
-    "ruff",
-    "uvicorn",
-    "websockets",
-    "multipart",
-    "winrt.windows.foundation",
-    "winrt.windows.foundation.collections",
-    "winrt.windows.media",
-    "winrt.windows.media.control",
-    "winrt.windows.storage",
-    "winrt.windows.storage.streams",
-)
+REQUIRED_MODULES = ("pytest", "ruff", "websockets")
 
 
 def main() -> int:
@@ -42,7 +25,7 @@ def main() -> int:
 
     print(
         f"[INFO] Probing {len(REQUIRED_MODULES)} Python modules "
-        "(audio capture remains lazy) ...",
+        "for optional repository tools ...",
         flush=True,
     )
     for module_name in REQUIRED_MODULES:
@@ -56,23 +39,7 @@ def main() -> int:
             )
             return 1
 
-    print(
-        "[INFO] Checking soundcard distribution without importing its WASAPI backend ...",
-        flush=True,
-    )
-    if importlib.util.find_spec("soundcard") is None:
-        print("[ERROR] The soundcard module is not installed.", flush=True)
-        return 1
-    try:
-        version = importlib.metadata.version("soundcard")
-    except importlib.metadata.PackageNotFoundError:
-        print("[ERROR] The soundcard distribution metadata is missing.", flush=True)
-        return 1
-
-    print(
-        f"[SUCCESS] Python dependency probe passed; soundcard {version} is installed.",
-        flush=True,
-    )
+    print("[SUCCESS] Optional Python tooling dependency probe passed.", flush=True)
     return 0
 
 

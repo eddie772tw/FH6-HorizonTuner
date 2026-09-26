@@ -240,7 +240,7 @@ const boostKpa = rawBoostPa / 1000.0;
 ## 4. MCP 服務 `sample_data` 輸入規格與啟發式清理規範
 
 ### 4.1 介面合約 (Interface Contract)
-`backend/mcp/service.py` 與 `backend-rust/src/mcp/service.rs` 中的 4 個遙測工具函式：
+`backend-rust/src/mcp/service.rs` 中的 4 個遙測工具函式（原 Python 參考保存於 Git `ec7d769`）：
 - `get_driver_cockpit_telemetry`
 - `get_vehicle_dynamics_telemetry`
 - `get_tires_status_telemetry`

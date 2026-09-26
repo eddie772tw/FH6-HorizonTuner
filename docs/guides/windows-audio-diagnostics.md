@@ -1,5 +1,7 @@
 # Windows WMI 與 WASAPI 診斷紀錄
 
+此頁的 Python／SoundCard 調查是歷史紀錄。現行 Rust 入口與故障恢復契約見本頁末段及 [Rust 接替紀錄](../backend-rust/parity-hardening.md)。
+
 日期：2026-09-12。環境：本機 Windows、uv 管理的 CPython 3.13.12、SoundCard 0.4.6、PyInstaller 6.22.2。已驗證本機 source 與本次 Full／Lite 打包產物；其他 Windows 主機仍需另行驗收。
 
 ## 已確認的兩個問題
@@ -32,3 +34,16 @@ Microsoft 要求每個使用 COM 的執行緒各自初始化；成功結果包�
 本機 WMI 服務本身沒有修復，也沒有重建 repository、重啟服務、改驅動或修改第三方／系統 Python 檔案。應用程式所需的版本與程序資訊已有替代路徑；直接執行 `python -m PyInstaller` 等未經專案入口的其他工具仍可能遇到主機原有問題。本次沒有驗證其他音訊硬體、乾淨 Windows、音質或遊戲同步。
 
 音訊單元測試使用受控裝置／執行緒，不依賴測試機的音訊硬體。完整 pytest **302 passed、8 deselected**；前端 **579 tests**、工具 **31 tests** 通過。另以 `-m "executable_bundle or host_diagnostics"` 執行產物 metadata 與主機測試，**8 passed、1 deselected**，含 Full／Lite 預設與動態 HTTP port、關閉釋放與重新啟動。
+# Rust 後端現行入口
+
+2026-09-26：Python 後端已移除。音訊由 `backend-rust/src/native/audio.rs` 的 WASAPI worker 提供，媒體由 `native/media.rs` 的 WinRT GSMTC worker 提供。以下 Python／SoundCard／PyInstaller 記錄是歷史調查，來源保存於 Git `ec7d769`。
+
+- `/api/audio/devices`：裝置清單；`POST /api/audio/device` 保存選擇。失效的已選裝置會退回系統預設，裝置恢復或預設裝置改變時重新擷取。
+- `/api/overlay/audio_spectrum`：32 段頻譜、VU、sequence；過期資料歸零並標記 unavailable。
+- `/api/overlay/system_media`：非同步快取的 GSMTC metadata；首次呼叫可能是 unavailable，稍後讀取更新。
+- `/api/diagnostics/overlay` 的 `native.audio`／`native.media`：實際裝置、fallback、錯誤及 query 狀態。資料來源失效不阻塞 HTTP 或音訊廣播。
+- 自行啟動可提供 GSMTC 與音訊的播放器後，執行 `cargo test --locked --manifest-path backend-rust/Cargo.toml --test process_contract windows_native -- --ignored --nocapture`。測試只啟動隔離後端，不控制播放器或啟動前端。
+
+現行驗證結果見 [Rust 接替紀錄](../backend-rust/parity-hardening.md)。
+
+---

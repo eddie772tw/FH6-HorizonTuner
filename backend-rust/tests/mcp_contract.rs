@@ -46,6 +46,66 @@ fn initialize_and_tool_registry_match_json_rpc_contract() {
 }
 
 #[test]
+fn mcp_reads_real_car_names_and_api_written_presets_without_cross_car_fallback() {
+    let (app, root) = app();
+    let service = fh6_backend::mcp::McpService::new(&app);
+    let cars = service.search_cars(Some("Toyota 2000"), None, None);
+    assert!(cars
+        .iter()
+        .any(|car| car["car_id"] == "247" && car["name"] == "1969 Toyota 2000 GT"));
+    assert_eq!(
+        service.car_details("247").unwrap()["name"],
+        "1969 Toyota 2000 GT"
+    );
+    let preset = json!({"schemaVersion":"tuning-preset/v1","createdAt":"2026-09-26T00:00:00Z","parameters":{"arb_front":3.0}});
+    app.config
+        .handle("POST", "/api/tunings/247/road-test", &preset)
+        .unwrap()
+        .unwrap();
+    assert_eq!(service.preset("247", "road-test"), Some(preset));
+    let list = service.presets(Some("247"));
+    assert_eq!(list[0]["schema_version"], "tuning-preset/v1");
+    assert_eq!(list[0]["created_at"], "2026-09-26T00:00:00Z");
+    std::fs::write(
+        root.path().join("tunings/other-car.json"),
+        r#"{"car_id":"249"}"#,
+    )
+    .unwrap();
+    assert!(service.preset("247", "other-car").is_none());
+    assert!(service.preset("247", "../settings").is_none());
+    let outside = tempfile::tempdir().unwrap();
+    std::fs::write(outside.path().join("escaped.json"), r#"{"car_id":"247"}"#).unwrap();
+    let link = root.path().join("tunings").join("linked");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(outside.path(), &link).unwrap();
+    #[cfg(windows)]
+    {
+        let status = std::process::Command::new("cmd")
+            .args(["/c", "mklink", "/J"])
+            .arg(&link)
+            .arg(outside.path())
+            .output()
+            .unwrap();
+        assert!(
+            status.status.success(),
+            "junction failed: stdout={}, stderr={}",
+            String::from_utf8_lossy(&status.stdout),
+            String::from_utf8_lossy(&status.stderr)
+        );
+    }
+    assert!(!service
+        .presets(Some("247"))
+        .iter()
+        .any(|v| v["preset_name"] == "escaped"));
+    assert!(service.preset("247", "escaped").is_none());
+    #[cfg(unix)]
+    std::fs::remove_file(&link).unwrap();
+    #[cfg(windows)]
+    std::fs::remove_dir(&link).unwrap();
+    assert!(outside.path().join("escaped.json").exists());
+}
+
+#[test]
 fn tool_errors_and_solver_are_json_contracts() {
     let (app, _root) = app();
     let mut server = McpServer::default();
@@ -86,6 +146,24 @@ fn tool_errors_and_solver_are_json_contracts() {
         )
         .unwrap();
     assert!(note.is_none());
+    for params in [
+        json!([]),
+        json!({"name":"get_system_settings","arguments":[]}),
+        json!({"name":"diagnose_telemetry_handling","arguments":{"tire_temps":[90,null,"90",90]}}),
+    ] {
+        let response = server
+            .handle(
+                &app,
+                &json!({"jsonrpc":"2.0","id":99,"method":"tools/call","params":params}),
+            )
+            .unwrap()
+            .unwrap();
+        assert_eq!(response["error"]["code"], -32602);
+    }
+    let response=server.handle(&app,&json!({"jsonrpc":"2.0","id":100,"method":"tools/call","params":{"name":"run_gearing_solver","arguments":{"max_rpm":8000,"peak_hp_rpm":7200,"gears_count":1000000000}}})).unwrap().unwrap();
+    let result: serde_json::Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert!(result.get("error").is_some());
 }
 
 fn assert_json_equivalent(actual: &serde_json::Value, expected: &serde_json::Value, path: &str) {

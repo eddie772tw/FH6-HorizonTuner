@@ -1,5 +1,15 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-26 / Rust 原生媒體補強與 Python 後端接替（Codex as Codex）
+
+- **證據**：基準 Rust 並未缺少 WASAPI／GSMTC；使用者啟動 Spotify 後能讀到原生頻譜與專輯資訊。但把選定裝置設為已移除 ID 可重現持續 unavailable，Python 參考會退回預設裝置。Rust 已補 fallback 與預設裝置／重新連接偵測。
+- **並行邊界**：媒體 snapshot 不得同步等待原生查詢，否則共用 overlay worker 的音訊廣播會被拖慢。single flight、timeout、退避及 stale grace 可同時保護 HTTP 延遲、執行緒數與錯誤可見性；新 WS client 需收到 config／audio／media 初始快取。
+- **相容性**：真實車庫使用 display_name，REST Preset 使用 car-name.json；MCP 必須依實際資料欄位與檔名讀取，且不可跨車輛 fallback。CLI 舊 `tuning-dev/v1` 與正式調校核心數值不同，移植使用 28 組 Python oracle 保留輸出，沒有重算 golden。
+- **MCP 檔案邊界**：遞迴掃描需使用不跟隨連結的 entry file type，跳過 symlink／Windows junction；否則唯讀工具仍可能讀到目錄外資料或循環掃描。已用暫存目錄及真實 junction 驗證，不刪除外部 sentinel。
+- **移除邊界**：Python HTTP／MCP／CLI／PyInstaller 已移除；車庫與開發資料路徑沿用。維護及發行工具仍可使用 uv，requirements 不再安裝 Python 原生音訊／HTTP runtime。第二個 Cargo binary 加入後須指定 default-run，否則舊 cargo run 入口失效。
+- **驗證**：75 個繼承 HTTP method/path、26 個 MCP tools、Rust 全／無 HUD 契約、Spotify metadata／封面／真實 WASAPI 與失效裝置恢復；前端只有測試及 build，未啟動。完整命令、結果與限制見 [接替紀錄](../docs/backend-rust/parity-hardening.md)。
+- **環境**：Windows 高平行 Rust 連結曾遇到 os 1455，使用 `-j 2` 完成；不修改 paging-file。API／CLI／裝置證據不等於 HUD 畫面、實際遊戲、Discord 或 Android 驗收。
+
 ## 2026-09-23 / v1.6.1 Release Chore 發行整備、雙端版本遞增與高壓測試逾時防禦（Antigravity as Antigravity）
 
 - **來源／狀態**：`local`／`verified`；完成 v1.6.1 發行整備與多組件版本同步（`11.45.19`），更新發行日誌草稿，並排查修復高併發測試逾時問題。

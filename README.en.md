@@ -40,7 +40,7 @@ The current release provides **real-time telemetry dashboards**, a **customizabl
   - 100% injection-free, zero hook, zero anti-cheat ban risk. Multi-channel WebSocket telemetry streaming and fullscreen adaptive auto-scaling.
   - **WYSIWYG Dashboard Designer**: Drag-and-drop layout editor, property panels, conditional threshold styling, and one-click import/export presets.
 * **HorizonTuner-cli AI Agent Command-Line Tool (HorizonTuner-cli)**:
-  - Official CLI tool (`fh6-agent.bat` or `python -m backend.agent_cli`) designed for AI Agents, automated scripts, and terminal runners with zero third-party dependencies (Python standard library only).
+  - Official Rust CLI (`fh6-agent.bat` / `fh6-agent.exe`) for AI agents and automation. The backend, MCP server and CLI require no Python runtime.
   - Dual online/offline workflow: supports online readiness/telemetry probe (`status`), live dynamics diagnosis (`diagnose`), car specifications (`spec`), and offline deterministic tuning solvers (`tune`) with `--json` machine-readable output. See [Agent CLI Guide](docs/guides/agent-cli-guide.md).
 * **Android Companion (Beta)**:
   - A native Jetpack Compose connection shell hosts an Android WebView that loads the shared `frontend/dist/companion/index.html`, reusing the desktop five telemetry cards and four-step workflow.
@@ -84,7 +84,7 @@ FH6-HorizonTuner/
 │   ├── src/native/          # WASAPI, GSMTC and Discord workers
 │   ├── src/config_service.rs # Settings, files and HUD API
 │   └── tests/               # Contract fixtures and loopback process tests
-├── backend/                 # Python reference, optional Agent CLI and resource data
+├── backend/                 # Car resources and existing development data path; no Python server
 ├── frontend/                # Tauri frontend code (Vite + React + TypeScript)
 │   ├── lite/                # Lite frontend HTML entrypoint
 │   ├── src/app/             # Shared shell, capability contract, workspace and application-surface navigation
@@ -117,7 +117,7 @@ FH6-HorizonTuner/
 ├── lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
 ├── tests/                   # Pytest unit testing suite
 ├── pyproject.toml           # Ruff formatting rules & Pytest configuration
-├── requirements.txt         # Python dependency list
+├── requirements.txt         # Optional maintenance and diagnostics tools
 ├── fh6-agent.bat            # HorizonTuner-cli AI Agent entry script
 ├── setup_dev.bat           # Download Rust and frontend dependencies
 ├── dev_full.bat            # Full dev entry; compiles and launches the Rust sidecar

@@ -4,7 +4,7 @@
 
 ## 單位與 status 約定
 
-- `decoded`：`backend/telemetry_listener.py` 已由 offset 解出，並經 finite／範圍檢查。
+- `decoded`：`backend-rust/src/telemetry/packet.rs` 已由 offset 解出，並經 finite／範圍檢查。
 - `stored`：解碼值進入 `telemetry_contract.py`、WebSocket 或 `raw_json`；不表示每個 MoTeC 相容欄位都保留相同表示法。
 - `unsupported`：官方欄位已知，但目前 parser 不解碼或產品不使用；保持 `unknown`，不得用 0 假裝觀測值。
 - `normalized` slip 是無量綱值；它不是百分比、度或弧度。官方語意是 0 代表完整抓地，絕對值大於 1 代表失去抓地。

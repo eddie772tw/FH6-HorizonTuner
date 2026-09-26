@@ -1,5 +1,6 @@
 pub mod chassis;
 pub mod gearing;
+pub mod legacy_cli;
 pub mod types;
 
 pub use chassis::{calculate_chassis_tuning, get_road_awd_rear_percent, resolve_aero_downforce};

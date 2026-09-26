@@ -14,14 +14,14 @@ description: 當需要拆分底層邏輯、建立功能模組、整理 domain/AP
 
 ## Python tooling
 
-Backend Python commands follow [../../rules/python-uv.md](../../rules/python-uv.md). Use `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` and never a bare `python`, `pip`, or `pytest` command.
+後端／CLI 使用 `cargo test --locked --manifest-path backend-rust/Cargo.toml`。選用 Python 維護工具遵循 [../../rules/python-uv.md](../../rules/python-uv.md)，不可執行裸 `python`、`pip` 或 `pytest`。
 
 ## SOP
 
 1. 讀取 `AGENTS.md`、相關 rule、Journal 與目標 skill；確認 ownership、dirty worktree 與不可變更範圍。
 2. 先定義輸入/輸出的 TypeScript Interface、TypedDict 或 Dataclass，不以內部實作細節作為跨模組契約。
 3. 抽離純函式與 domain logic；物理計算、遙測解析與單位轉換不得散落在 UI。
-4. 先補 isolation tests，再接回 UI 或主流程：前端使用 Vitest，後端使用 Pytest。
+4. 先補 isolation tests，再接回 UI 或主流程：前端使用 Vitest，後端使用 Cargo tests；保留黃金契約。
 5. 驗證循環依賴、錯誤處理、向後相容性與序列化格式；不得以重構名義改變公式或 API 語意。
 6. 執行 `cmd /c "pnpm -C frontend run test"`、`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` 或與範圍相符的測試，最後執行 `git diff --check`。
 7. 將已驗證的新邊界或決策記錄到 Journal，並在 handoff 中寫出剩餘工作與驗證結果。

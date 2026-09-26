@@ -76,6 +76,9 @@ pub trait Backend: Send + Sync + 'static {
     fn telemetry(&self) -> watch::Receiver<Option<Arc<Value>>>;
     fn overlay(&self) -> broadcast::Receiver<Value>;
     fn initial_overlay(&self) -> Value;
+    fn initial_overlay_events(&self) -> Vec<Value> {
+        vec![self.initial_overlay()]
+    }
     fn client_delta(&self, channel: &str, delta: i64);
 }
 pub fn router(backend: Arc<dyn Backend>) -> Router {
@@ -417,13 +420,10 @@ async fn socket_loop(mut socket: WebSocket, backend: Arc<dyn Backend>, channel: 
     };
     if channel == "overlay" {
         let mut receiver = backend.overlay();
-        if !send(
-            &mut socket,
-            Message::Text(backend.initial_overlay().to_string().into()),
-        )
-        .await
-        {
-            return;
+        for value in backend.initial_overlay_events() {
+            if !send(&mut socket, Message::Text(value.to_string().into())).await {
+                return;
+            }
         }
         loop {
             tokio::select! {

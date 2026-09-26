@@ -2,7 +2,7 @@
 
 狀態：`adopted`。
 
-本專案的選用 Python 參考實作、Agent CLI、維護工具與測試環境統一由 `uv` 負責。產品後端與打包已改用獨立 Rust crate；本規範適用於仍使用 Python 的命令，不要求 Rust 開發安裝 Python。
+本專案選用的 Python 維護／診斷／發行工具與測試環境統一由 `uv` 負責。產品後端、MCP 與 Agent CLI 均為 Rust；本規範不要求 Rust 開發安裝 Python。
 
 ## 固定契約
 
@@ -36,7 +36,7 @@ uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
 uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
 
 # Python 語法檢查
-uv run --no-project --python .venv\Scripts\python.exe python -m py_compile backend\main.py
+uv run --no-project --python .venv\Scripts\python.exe python -m py_compile scripts\update_car_db.py
 ```
 
 選用 Python 環境直接執行 `setup_venv.bat`。產品開發使用 `setup_dev.bat` 與 `dev_full.bat`／`dev_lite.bat`，由 Cargo 增量編譯後端。產品打包使用 `setup_build.bat` 與 `build_all.bat`，不執行 PyInstaller。

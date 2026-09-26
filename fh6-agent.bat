@@ -1,21 +1,20 @@
 @echo off
 setlocal
-REM FH6-HorizonTuner Agent CLI Windows Launcher
-REM Compatible with standalone binary dist/fh6-agent.exe and uv/Python environment.
+REM Rust CLI: distributed binary or Cargo incremental source build.
 
 set "SCRIPT_DIR=%~dp0"
 set "BINARY_DIST=%SCRIPT_DIR%dist\fh6-agent.exe"
 set "BINARY_ROOT=%SCRIPT_DIR%fh6-agent.exe"
-set "VENV_PY=%SCRIPT_DIR%.venv\Scripts\python.exe"
-set "UV_EXE=uv"
 
 cd /D "%SCRIPT_DIR%"
+if exist "%SCRIPT_DIR%backend-rust\Cargo.toml" goto :source
 if exist "%BINARY_ROOT%" goto :binary_root
 if exist "%BINARY_DIST%" goto :binary_dist
-where.exe uv >nul 2>nul
+goto :missing
+:source
+where.exe cargo >nul 2>nul
 if errorlevel 1 goto :missing
-if not exist "%VENV_PY%" goto :missing
-"%UV_EXE%" run --offline --no-project --python "%VENV_PY%" python -m backend.agent_cli %*
+cargo run --quiet --locked --manifest-path "%SCRIPT_DIR%backend-rust\Cargo.toml" --bin fh6-agent -- %*
 exit /b %errorlevel%
 :binary_root
 "%BINARY_ROOT%" %*
@@ -24,5 +23,5 @@ exit /b %errorlevel%
 "%BINARY_DIST%" %*
 exit /b %errorlevel%
 :missing
-echo [ERROR] No supported FH6 agent runtime was found. Run setup_dev.bat first.
+echo [ERROR] Rust or fh6-agent.exe was not found. Run setup_dev.bat first.
 exit /b 1

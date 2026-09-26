@@ -409,7 +409,7 @@
       {
         "ordinal": 247,
         "car_id": "247",
-        "name": "",
+        "name": "1969 Toyota 2000 GT",
         "year": 1969,
         "drivetrain": "",
         "class": "",
@@ -421,7 +421,7 @@
       {
         "ordinal": 2470,
         "car_id": "2470",
-        "name": "",
+        "name": "2016 Aston Martin Vulcan",
         "year": 2016,
         "drivetrain": "",
         "class": "",
@@ -433,7 +433,7 @@
       {
         "ordinal": 2471,
         "car_id": "2471",
-        "name": "",
+        "name": "2016 Mercedes-Benz C63 AMG Coupe",
         "year": 2016,
         "drivetrain": "",
         "class": "",
@@ -445,7 +445,7 @@
       {
         "ordinal": 2472,
         "car_id": "2472",
-        "name": "",
+        "name": "2016 McLaren 570S",
         "year": 2016,
         "drivetrain": "",
         "class": "",
@@ -457,7 +457,7 @@
       {
         "ordinal": 2473,
         "car_id": "2473",
-        "name": "",
+        "name": "2016 Audi R8 V10 Plus",
         "year": 2016,
         "drivetrain": "",
         "class": "",
@@ -469,7 +469,7 @@
     ],
     "get_car_details": {
       "car_id": "247",
-      "name": null,
+      "name": "1969 Toyota 2000 GT",
       "class": null,
       "pi": null,
       "drivetrain": null,
@@ -707,7 +707,7 @@
         {
           "uri": "fh6://car/247",
           "mimeType": "application/json",
-          "text": "{\n  \"details\": {\n    \"car_id\": \"247\",\n    \"name\": null,\n    \"class\": null,\n    \"pi\": null,\n    \"drivetrain\": null,\n    \"weight_kg\": null,\n    \"front_weight_bias\": null,\n    \"max_rpm\": null,\n    \"idle_rpm\": 800,\n    \"torque_nm\": null,\n    \"power_kw\": null\n  },\n  \"capabilities\": {\n    \"car_id\": \"247\",\n    \"installed_parts\": {},\n    \"capabilities\": {\n      \"tire_pressure\": true,\n      \"camber\": false,\n      \"toe\": false,\n      \"caster\": false,\n      \"arb_front\": false,\n      \"arb_rear\": false,\n      \"springs\": false,\n      \"ride_height\": false,\n      \"damping_rebound\": false,\n      \"damping_bump\": false,\n      \"aero_downforce\": false,\n      \"gearing_final_drive\": false,\n      \"gearing_individual\": false,\n      \"differential_lock\": false\n    }\n  }\n}"
+          "text": "{\n  \"details\": {\n    \"car_id\": \"247\",\n    \"name\": \"1969 Toyota 2000 GT\",\n    \"class\": null,\n    \"pi\": null,\n    \"drivetrain\": null,\n    \"weight_kg\": null,\n    \"front_weight_bias\": null,\n    \"max_rpm\": null,\n    \"idle_rpm\": 800,\n    \"torque_nm\": null,\n    \"power_kw\": null\n  },\n  \"capabilities\": {\n    \"car_id\": \"247\",\n    \"installed_parts\": {},\n    \"capabilities\": {\n      \"tire_pressure\": true,\n      \"camber\": false,\n      \"toe\": false,\n      \"caster\": false,\n      \"arb_front\": false,\n      \"arb_rear\": false,\n      \"springs\": false,\n      \"ride_height\": false,\n      \"damping_rebound\": false,\n      \"damping_bump\": false,\n      \"aero_downforce\": false,\n      \"gearing_final_drive\": false,\n      \"gearing_individual\": false,\n      \"differential_lock\": false\n    }\n  }\n}"
         }
       ]
     },

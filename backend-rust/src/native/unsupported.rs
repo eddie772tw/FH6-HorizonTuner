@@ -18,6 +18,12 @@ pub mod audio {
         pub fn spectrum(&self) -> Value {
             json!({"state":"unsupported"})
         }
+        pub fn cached_spectrum(&self) -> Value {
+            self.spectrum()
+        }
+        pub fn diagnostics(&self) -> Value {
+            json!({"state":"unsupported"})
+        }
         pub fn update_pcm(&self, _samples: &[f32]) {}
         pub fn stop_capture(&self) {}
     }
@@ -32,6 +38,9 @@ pub mod media {
         }
         pub fn snapshot(&self) -> Value {
             json!({"state":"unsupported","has_media":false})
+        }
+        pub fn diagnostics(&self) -> Value {
+            json!({"state":"unsupported"})
         }
         pub fn refresh(&self) {}
         pub fn thumbnail(&self) -> Option<(String, Vec<u8>)> {

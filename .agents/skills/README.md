@@ -21,8 +21,8 @@
 | `cross-agent-collaboration` | `cross-agent-collaboration/SKILL.md` | Codex、Antigravity 或 Jules 的非同步跨代理協作、ownership、handoff 與 Git 衝突避免 | `.agents/AGENTS.md`、`.agents/Journal.md` 與 `.jules/` 原始日誌 |
 | `codex-antigravity-bridge` | `codex-antigravity-bridge/SKILL.md` | Codex 透過 `agy` CLI 執行 Headless 叫用、固定 token 握手、回覆輪詢與共享 worktree 驗證 | `scripts/Invoke-AgyCrossAgentSmoke.ps1`、`scripts/Set-AgyBridgeSettings.ps1`、`references/` |
 | `jules_coding` | `jules_coding/SKILL.md` | 手動 Jules Session 委派，以及遠端排程 Jules Session／PR 的來源判斷與收件驗收 | `JULES_API_KEY`、已綁定 Jules 的 GitHub repository、`references/` 與可用整合 |
-| `modular-refactoring` | `modular-refactoring/SKILL.md` | Python/TS 底層架構模組化、Domain 邏輯抽離、新功能模組或跨前後端型別契約 | Isolation tests 與 typed contracts |
-| `physics-tuning-math` | `physics-tuning-math/SKILL.md` | 車輛物理、調校公式、校準常數或診斷數學 | 對應的 Vitest/Pytest 覆蓋 |
+| `modular-refactoring` | `modular-refactoring/SKILL.md` | Rust/TS 底層架構模組化、Domain 邏輯抽離、新功能模組或跨前後端型別契約 | Isolation tests 與 typed contracts |
+| `physics-tuning-math` | `physics-tuning-math/SKILL.md` | 車輛物理、調校公式、校準常數或診斷數學 | 對應的 Cargo／Vitest 與 golden fixtures |
 | `telemetry-udp-protocol` | `telemetry-udp-protocol/SKILL.md` | Forza UDP 封包解析、324-byte layout、單位換算或高頻遙測 | 涉及 offset 時讀取 `telemetry-udp-protocol/references/packet_format_reference.md` |
 | `agent-governance-audit` | `agent-governance-audit/SKILL.md` | 稽核與修復 .agents、Journal、Jules 原始日誌、skill ID 及跨代理治理規則漂移 | 調整治理文件或發現 skill/path/language 錯誤時使用 |
 | `portable-release-validation` | `portable-release-validation/SKILL.md` | V1.x portable/exe、sidecar、動態 port 與 Windows 發行驗證 | 發行、打包、啟動流程或 runtime path 變更時使用 |

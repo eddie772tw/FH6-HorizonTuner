@@ -169,7 +169,7 @@ pub fn call(
                 code: -32602,
                 message: "Requires 'tire_temps' array with 4 values [FL, FR, RL, RR]".into(),
             })?;
-            if values.len() < 4 {
+            if values.len() != 4 || values.iter().any(|v| v.as_f64().is_none()) {
                 return Err(ToolError {
                     code: -32602,
                     message: "Requires 'tire_temps' array with 4 values [FL, FR, RL, RR]".into(),

@@ -2,7 +2,7 @@
 
 本專案的前後端測試體系旨在保障 60Hz 即時賽車遙測數據流與車輛物理調校運算的正確性，並透過嚴格的分層隔離防止測試集膨脹、脆弱性 (Flakiness) 與過度工程。
 
-Rust 遷移後，產品後端的主驗證入口為 `cargo test --locked --manifest-path backend-rust/Cargo.toml`，細分純領域、Python 黃金輸出、資料往返與短時間程序迴路。後者只驗證 HTTP／UDP／WS／stdin 的產品邊界，不啟動 GUI 或遊戲，不能當成原生裝置驗收。詳見 [後端測試分層](../../docs/backend-rust/README.md)。下表 Python 層級適用於保留的參考實作、CLI 及發布維護工具。
+Rust 後端及 Agent CLI 的主驗證入口為 `cargo test --locked --manifest-path backend-rust/Cargo.toml`，細分純領域、凍結的 Python 黃金輸出、資料往返與短時間程序迴路。後者只驗證 HTTP／UDP／WS／stdin 的產品邊界，不啟動 GUI 或遊戲，不能當成原生裝置驗收。詳見 [後端測試分層](../../docs/backend-rust/README.md)。Python 僅用於選用維護及發行工具。
 
 ---
 
@@ -12,7 +12,7 @@ Rust 遷移後，產品後端的主驗證入口為 `cargo test --locked --manife
 
 | 層級 | 測試路徑 / 標記 | 測試範疇 | 執行時機與預期耗時 | 標準執行命令 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Tier 1: 產品核心單元測試** | `tests/`<br>`frontend/src/**/*.test.ts` | 60Hz UDP 封包解碼、FastAPI 端點、路徑安全、懸吊與齒比純物理計算 | 提交前每次必跑<br>(後端 < 5s, 前端 < 10s) | 後端：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`<br>前端：`cmd /c "pnpm -C frontend run test"` |
+| **Tier 1: 產品核心契約測試** | `backend-rust/tests/`<br>`frontend/src/**/*.test.ts` | UDP 封包、HTTP／WS、CLI、路徑安全、調校純函數 | 修改對應產品範圍時執行 | 後端：`cargo test --locked --manifest-path backend-rust/Cargo.toml`<br>前端：`cmd /c "pnpm -C frontend run test"` |
 | **Tier 2: 內部治理與工具測試** | `scripts/tests/` | Agent 協作腳本、PR 審查工具 (`manage_pr_author.py`, `submit_pr_review.py`) | 僅在修改對應工具腳本時觸發 | `uv run --no-project --python .venv\Scripts\python.exe python -m pytest scripts/tests/` |
 | **Tier 3: 發行與驗收整合測試** | `@pytest.mark.host_diagnostics`<br>`@pytest.mark.executable_bundle` | 啟動真實二進位產物 (`.exe`)、Windows WinRT / 音訊裝置生命週期、PE 元數據 | 僅由 Release CI 與打包發行驗收執行；日常 pytest 預設排除 | `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ -m host_diagnostics` |
 

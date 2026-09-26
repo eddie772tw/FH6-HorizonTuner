@@ -41,7 +41,7 @@
   - 100% 免注入、免 Hook 零作弊風險；支援多頻道 WebSocket 數據透傳與全螢幕自適應放縮。
   - **WYSIWYG 儀表編輯器**：拖曳式佈局編輯器、屬性面板、條件色彩規則與一鍵匯入/匯出設定。
 * **HorizonTuner-cli AI Agent 命令列工具 (HorizonTuner-cli)**:
-  - 提供專為 AI Agent、自動化腳本與終端開發打造的官方工具 `fh6-agent.bat`（或 `python -m backend.agent_cli`），零第三方 Python 依賴。
+  - 提供專為 AI Agent、自動化腳本與終端開發打造的 Rust 工具 `fh6-agent.bat`／`fh6-agent.exe`，後端、MCP 與 CLI 均不需要 Python。
   - 具備線上即時遙測與離線純數學計算雙模式，支援連接埠就緒探測（`status`）、即時動態診斷（`diagnose`）、車輛規格檢索（`spec`）與底盤算牌（`tune`），並提供 `--json` 結構化輸出。詳細說明參閱 [Agent CLI 使用指南](docs/guides/agent-cli-guide.md)。
 * **Android Companion App（Beta）**:
   - 原生 Jetpack Compose 連線外殼搭配 Android WebView，載入共用 `frontend/dist/companion/index.html`，重用桌面端五大遙測卡片與四步工作流。
@@ -85,7 +85,7 @@ FH6-HorizonTuner/
 │   ├── src/native/          # WASAPI, GSMTC and Discord workers
 │   ├── src/config_service.rs # Settings, files and HUD API
 │   └── tests/               # Contract fixtures and loopback process tests
-├── backend/                 # Python reference, optional Agent CLI and resource data
+├── backend/                 # 車庫資源與沿用的開發資料路徑；無 Python 後端
 ├── frontend/                # Tauri 前端代碼 (Vite + React + TypeScript)
 │   ├── lite/                # Lite 前端 HTML entrypoint
 │   ├── src/app/             # 共用 Shell、能力契約、工作區與全域 surface 導覽
@@ -116,9 +116,9 @@ FH6-HorizonTuner/
 │   └── shared/              # 共用 Canvas 幾何繪圖與數學庫
 ├── scripts/                 # 自動化發行與度量腳本 (prepare_release_assets.py, release_metrics.py)
 ├── lang/                    # 系統多語言翻譯字典 (zh-tw, ja-jp 等)
-├── tests/                   # Pytest 單元測試套件
+├── tests/                   # 跨語言黃金資料與發行工具驗證
 ├── pyproject.toml           # Ruff 格式化規則與 Pytest 設定
-├── requirements.txt         # Python 依賴套件清單
+├── requirements.txt         # 選用的維護／診斷工具依賴
 ├── fh6-agent.bat            # HorizonTuner-cli AI Agent 命令列工具入口
 ├── setup_dev.bat           # 下載 Rust 與前端開發依賴
 ├── dev_full.bat            # Full 開發入口，編譯並啟動 Rust sidecar

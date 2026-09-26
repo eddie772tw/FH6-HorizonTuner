@@ -1,24 +1,4 @@
-# FH6-HorizonTuner 核心執行依賴套件
-fastapi>=0.141.1,<1.0.0
-uvicorn>=0.53.0,<1.0.0
-websockets>=17.1,<18.0
-pydantic>=2.13.5,<3.0.0
-httpx>=0.28.1,<1.0.0
-python-multipart
-soundcard==0.4.6
-# Only the system-media control namespace is needed. These modular packages
-# publish CPython 3.13 Windows wheels, avoiding the legacy winsdk sdist build.
-# winrt-Windows.Foundation is required to convert WinRT IAsyncOperation objects into Python awaitables.
-winrt-Windows.Foundation==3.2.1; sys_platform == 'win32'
-winrt-Windows.Foundation.Collections==3.2.1; sys_platform == 'win32'
-winrt-Windows.Media==3.2.1; sys_platform == 'win32'
-winrt-Windows.Media.Control==3.2.1; sys_platform == 'win32'
-winrt-Windows.Storage==3.2.1; sys_platform == 'win32'
-winrt-Windows.Storage.Streams==3.2.1; sys_platform == 'win32'
-
-
-# 開發與測試工具
+# Optional repository maintenance, diagnostics and test tools; no product runtime.
 ruff
 pytest
-pytest-asyncio
-numpy>=2.5.3
+websockets>=17.1,<18.0

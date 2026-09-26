@@ -21,7 +21,7 @@ media-properties 欄位：`title`、`artist`、`album_title`、`album_artist`、
 | `Subtitle` | `subtitle` | 契約已宣告 | 副標題／版本資訊，現階段不佔畫面 |
 | `Thumbnail` | `thumbnail_url` + `thumbnail_available` | 使用中 | WinRT `RandomAccessStream` 以 10 MiB 上限讀入單槽快取；HUD 只接收內容 hash URL，不在 WebSocket 傳送圖片 bytes |
 
-`backend/system_media_contract.py` 將 WinRT 物件轉成 bounded JSON；
+`backend-rust/src/native/media.rs` 將 WinRT 物件轉成 bounded JSON（原 Python 調查為歷史基準）；
 `hud_overlay/s650_hmi/assets/s650_contract.js` 再做 HUD 邊界的型別與數值正規化。
 因此沒有 metadata 時，欄位仍存在並以 `null`、空陣列或明確的 capability default
 表示，不會讓 renderer 猜測播放器行為。

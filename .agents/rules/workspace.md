@@ -1,7 +1,7 @@
 # FH6-HorizonTuner - 工作區邊界與驗證規範 (Workspace Rules)
 
 ## 核心物理與數學運算規範
-1. **調校計算單一真理 (Source of Truth)**：所有懸吊、彈簧磅數、防傾桿 (ARB) 或齒輪比算牌公式，必須作為「無副作用純函數 (Pure Functions)」統一收攏於 `frontend/src/utils/tuningMath.ts`。
+1. **調校計算單一真理 (Source of Truth)**：正式純函數位於 `backend-rust/src/tuning/`，與 `frontend/src/utils/tuningMath.ts` 經 golden fixtures 對齊。`legacy_cli.rs` 僅保存舊版 CLI 相容數值，不作為新公式入口。
 2. **確定性輸入**：嚴禁在物理計算演算法中引入非確定性狀態或副作用。
 
 ## 架構隔離原則
@@ -19,7 +19,7 @@
 
 ## 任務完成驗證關卡 (Verification Gate)
 - 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試（遵循反過度測試與分層原則）：
-  - 後端輸入／輸出契約：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；Python 參考／CLI 測試使用 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/`。
+  - 後端與 CLI 輸入／輸出契約：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；無 HUD 平台另加 `--no-default-features`。
   - Rust 格式：`cargo fmt --manifest-path backend-rust/Cargo.toml -- --check`。
   - 後端代碼檢查：`uv run --no-project --python .venv\Scripts\python.exe ruff check .` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
   - 前端單元測試：`cmd /c "pnpm -C frontend run test"` (或 `pnpm run test`)
@@ -30,7 +30,7 @@
 
 - Python 3.13、`.venv`、`requirements.txt` 與所有 Python 工具入口遵循 [python-uv.md](python-uv.md)。
 - 任何 Python、pip、pytest、ruff 或 PyInstaller 命令都必須透過 uv 選定 interpreter；不可使用裸 `python`、`pip`、`pytest` 或 `ruff`。
-- Python 參考實作／CLI 驗證的標準入口是 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff check .`；產品 Rust 後端使用上列 Cargo 命令。
+- 選用維護工具驗證使用 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ scripts/tests/` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff check .`；產品後端與 CLI 使用上列 Cargo 命令。
 - GitHub Actions 若涉及 Python，必須維持相同的 uv contract；目前 workflow 的同步需求詳見 [python-uv.md](python-uv.md)。
 
 ## HUD ownership and contract directory standard

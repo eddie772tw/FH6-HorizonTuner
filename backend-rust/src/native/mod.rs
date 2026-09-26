@@ -95,6 +95,10 @@ impl NativeServices {
         self.audio.spectrum()
     }
 
+    pub fn cached_audio_spectrum(&self) -> Value {
+        self.audio.cached_spectrum()
+    }
+
     pub fn update_audio_pcm(&self, samples: &[f32]) {
         self.audio.update_pcm(samples)
     }
@@ -109,6 +113,10 @@ impl NativeServices {
 
     pub fn refresh_system_media(&self) {
         self.media.refresh()
+    }
+
+    pub fn diagnostics(&self) -> Value {
+        serde_json::json!({"audio":self.audio.diagnostics(),"media":self.media.diagnostics()})
     }
 
     pub fn thumbnail(&self) -> Option<(String, Vec<u8>)> {

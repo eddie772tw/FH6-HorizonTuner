@@ -26,7 +26,7 @@ graph TD
 
 ### 關鍵目錄與職責分工：
 - **`hud_overlay/index.html` (Launcher Host)**：負責與 Tauri 視窗、控制面板進行廣播通訊，透過 `/api/hud/styles` 動態建立 HUD URL mapping，並嵌入當前選定的 HUD IFrame。新增 HUD 不應再修改 Launcher 內的靜態 `HUDS` 字典。
-- **`backend/main.py` 的 `/api/hud/styles`**：掃描內建 `/hud` 與使用者 `/hud_user` 目錄，回傳有效 HUD 的 `id`、來源與 URL prefix，供控制面板和 Launcher 共用。
+- **`backend-rust/src/config_service.rs` 的 `/api/hud/styles`**：掃描內建 `/hud` 與使用者 `/hud_user` 目錄，回傳有效 HUD 的 `id`、來源與 URL prefix，供控制面板和 Launcher 共用。
 - **`hud_overlay/shared/hud-base.css`**：標準 HUD 視窗佈局、賽車字型宣告（`ForzaFont`, `ForzaGear`）與全螢幕無邊框容器定位。
 - **`hud_overlay/shared/hud-core.js`**：HUD 樣式註冊中心 (Registry) 與生命週期事件監聽器。支援發光強度、自訂色彩、縮放計算與 `hud:reload` / `hud:destroy` 動態訊息。
 - **`hud_overlay/shared/telemetry-cards/`**：畫面中央對稱遙測 Cluster（G-Force 雷達、四角懸吊行程、輪胎滑移角與胎溫、油門煞車波形、馬力扭力圖）。
@@ -199,8 +199,8 @@ Launcher 與控制面板會使用回傳的 `urlPrefix` 組合出 HUD URL。這�
 flowchart LR
     Telemetry[Forza UDP 60Hz] --> Coordinator[shared/coordinator.js]
     Coordinator --> Frame[hud:frame]
-    Audio[Windows WASAPI Loopback] --> AudioService[backend/audio_spectrum.py]
-    Media[Windows GSMTC / WinRT] --> MediaService[backend/system_media.py]
+    Audio[Windows WASAPI Loopback] --> AudioService[backend-rust/src/native/audio.rs]
+    Media[Windows GSMTC / WinRT] --> MediaService[backend-rust/src/native/media.rs]
     AudioService --> OverlayWS[Backend /ws/overlay]
     MediaService --> OverlayWS
     Config[HUD config API / Control Panel] --> OverlayWS
@@ -213,12 +213,12 @@ flowchart LR
 | 類型 | 來源與入口 | 更新方式 | 可用資料與注意事項 |
 | :--- | :--- | :--- | :--- |
 | HUD 設定 | `GET /api/overlay/config`、Overlay WebSocket 的 `hud:config` | 初始化、控制面板變更時 | `scale`、`glowIntensity`、`customColor`、`useDefaultColors`、`elements` 及樣式專屬欄位。`HUDCore` 會同步到 `window._currentFullConfig`、`window._currentCustomColor` 等全域狀態。 |
-| 系統音訊 | `backend/audio_spectrum.py` 的 Windows WASAPI Loopback | `/ws/overlay` 推送 `hud:audio`；約 60Hz 廣播，音訊擷取執行緒約 30Hz 更新快取 | `spectrum` 為 32 段頻帶，另有 `vu_left`、`vu_right`、`has_audio`、`success`；VFD 端會將頻帶與 VU 值 clamp 至 0~1。只在 `success` 且資料有效時更新狀態；沒有音訊時要保留衰減或靜音 fallback。 |
-| 系統媒體 | `backend/system_media.py` 的 Windows GSMTC（先嘗試 `winsdk`，再退回 PowerShell WinRT 查詢） | `/ws/overlay` 推送 `hud:media`，約每 1 秒一次；Backend 內有 0.5 秒快取 | `title`、`artist`、`status`（`playing` / `paused` / `none`）、`has_media`、`success`。Windows 媒體工作階段不存在或沒有權限時，應回到空狀態。 |
+| 系統音訊 | `backend-rust/src/native/audio.rs` 的 WASAPI Loopback | `/ws/overlay` 推送 `hud:audio`；連線立即收到快取，後續按 sequence／state 變化發布 | 32 段 `spectrum`、`vu_left`、`vu_right`、`has_audio`、`success`；數值為 0–1。過期頻譜歸零，已移除的選定裝置會退回系統預設。 |
+| 系統媒體 | `backend-rust/src/native/media.rs` 的 WinRT GSMTC | `/ws/overlay` 推送 `hud:media`；連線立即收到快取，背景每秒查詢並有 timeout／退避 | `title`、`artist`、`album_title`、`thumbnail_url`、`status`、`has_media`、`success`。無工作階段時回空狀態；短暫故障標為 stale，超過 grace 清除。 |
 | 共用衍生資料 | `shared/coordinator.js` | 隨每個 `hud:frame` 一起傳送 | `redlineRpm`、`sessionMaxima`、`lockup`、單位轉換後的 `speed` / `power` / `torque` 等。這些是已驗證的共用計算，不要在各 HUD 重新推導出不同版本。 |
 | HUD 樣式探索 | `GET /api/hud/styles` | Launcher 啟動或重新載入樣式時 | Backend 會掃描內建與使用者 HUD 目錄。自訂樣式只要提供 `index.html`，即可被動態加入清單；同名使用者樣式會覆寫內建樣式。 |
 
-實作對照位置：[`shared/ws.js`](shared/ws.js)、[`shared/hud-core.js`](shared/hud-core.js)、[`shared/coordinator.js`](shared/coordinator.js)、[`backend/audio_spectrum.py`](../backend/audio_spectrum.py)、[`backend/system_media.py`](../backend/system_media.py)、[`vfd/index.html`](vfd/index.html) 與 [`advanced/index.html`](advanced/index.html)。
+實作對照位置：[`shared/ws.js`](shared/ws.js)、[`shared/hud-core.js`](shared/hud-core.js)、[`shared/coordinator.js`](shared/coordinator.js)、[`native/audio.rs`](../backend-rust/src/native/audio.rs)、[`native/media.rs`](../backend-rust/src/native/media.rs)、[`vfd/index.html`](vfd/index.html) 與 [`advanced/index.html`](advanced/index.html)。
 
 ### 4.2 系統媒體與音訊視覺化
 

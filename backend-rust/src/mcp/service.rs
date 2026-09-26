@@ -248,9 +248,17 @@ impl<'a> McpService<'a> {
         if let Ok(entries) = fs::read_dir(dir) {
             for e in entries.flatten() {
                 let p = e.path();
-                if p.is_dir() {
+                let Ok(kind) = e.file_type() else {
+                    continue;
+                };
+                // Never follow symlinks/junctions: they can escape the declared
+                // preset/capture root or create an infinite recursion cycle.
+                if kind.is_symlink() {
+                    continue;
+                }
+                if kind.is_dir() {
                     Self::walk_json(&p, out)
-                } else if p.extension().is_some_and(|x| x == "json") {
+                } else if kind.is_file() && p.extension().is_some_and(|x| x == "json") {
                     out.push(p)
                 }
             }
@@ -406,7 +414,12 @@ impl<'a> McpService<'a> {
         let Some(db) = self.app.config.car_database.as_object() else {
             return vec![];
         };
-        db.iter().filter_map(|(key,c)|{let name=c["name"].as_str().or(c["car_name"].as_str()).unwrap_or("");let drivetrain=c["drivetrain"].as_str().unwrap_or("");let cls=c["car_class"].as_str().or(c["class"].as_str()).unwrap_or("");if q.is_some_and(|x|!name.to_lowercase().contains(&x.to_lowercase())&&!key.contains(x))||dt.is_some_and(|x|x.to_uppercase()!=drivetrain.to_uppercase())||class.is_some_and(|x|x.to_uppercase()!=cls.to_uppercase()){return None}Some(json!({"ordinal":c["ordinal"].as_i64().or_else(||key.parse().ok()).unwrap_or(0),"car_id":key,"name":name,"year":c["year"],"drivetrain":drivetrain,"class":cls,"pi":c["pi"],"weight_kg":c["weight_kg"].as_f64().or(c["weight"].as_f64()),"front_weight_bias":c["front_weight_bias"].as_f64().or(c["weight_distribution"].as_f64()),"max_rpm":c["max_rpm"].as_f64().or(c["redline_rpm"].as_f64())}))}).take(50).collect()
+        db.iter().filter_map(|(key,c)|{let name=Self::car_name(c).unwrap_or("");let drivetrain=c["drivetrain"].as_str().unwrap_or("");let cls=c["car_class"].as_str().or(c["class"].as_str()).unwrap_or("");if q.is_some_and(|x|!name.to_lowercase().contains(&x.to_lowercase())&&!key.contains(x))||dt.is_some_and(|x|x.to_uppercase()!=drivetrain.to_uppercase())||class.is_some_and(|x|x.to_uppercase()!=cls.to_uppercase()){return None}Some(json!({"ordinal":c["ordinal"].as_i64().or_else(||key.parse().ok()).unwrap_or(0),"car_id":key,"name":name,"year":c["year"],"drivetrain":drivetrain,"class":cls,"pi":c["pi"],"weight_kg":c["weight_kg"].as_f64().or(c["weight"].as_f64()),"front_weight_bias":c["front_weight_bias"].as_f64().or(c["weight_distribution"].as_f64()),"max_rpm":c["max_rpm"].as_f64().or(c["redline_rpm"].as_f64())}))}).take(50).collect()
+    }
+    fn car_name(car: &Value) -> Option<&str> {
+        ["name", "car_name", "display_name"]
+            .iter()
+            .find_map(|key| car[*key].as_str().filter(|name| !name.trim().is_empty()))
     }
     pub fn car_details(&self, id: &str) -> Option<Value> {
         let db = self.app.config.car_database.as_object()?;
@@ -415,7 +428,7 @@ impl<'a> McpService<'a> {
                 .find(|x| x["ordinal"].to_string().trim_matches('"') == id)
         })?;
         Some(
-            json!({"car_id":c["car_id"].as_str().unwrap_or(id),"name":c["name"].as_str().or(c["car_name"].as_str()),"class":c["class"].as_str().or(c["car_class"].as_str()),"pi":c["pi"],"drivetrain":c["drivetrain"],"weight_kg":c["weight_kg"].as_f64().or(c["weight"].as_f64()),"front_weight_bias":c["front_weight_bias"].as_f64().or(c["weight_distribution"].as_f64()),"max_rpm":c["max_rpm"].as_f64().or(c["redline_rpm"].as_f64()),"idle_rpm":c["idle_rpm"].as_f64().unwrap_or(800.),"torque_nm":c["torque_nm"].as_f64().or(c["torque"].as_f64()),"power_kw":c["power_kw"].as_f64().or(c["power"].as_f64())}),
+            json!({"car_id":c["car_id"].as_str().unwrap_or(id),"name":Self::car_name(c),"class":c["class"].as_str().or(c["car_class"].as_str()),"pi":c["pi"],"drivetrain":c["drivetrain"],"weight_kg":c["weight_kg"].as_f64().or(c["weight"].as_f64()),"front_weight_bias":c["front_weight_bias"].as_f64().or(c["weight_distribution"].as_f64()),"max_rpm":c["max_rpm"].as_f64().or(c["redline_rpm"].as_f64()),"idle_rpm":c["idle_rpm"].as_f64().unwrap_or(800.),"torque_nm":c["torque_nm"].as_f64().or(c["torque"].as_f64()),"power_kw":c["power_kw"].as_f64().or(c["power"].as_f64())}),
         )
     }
     pub fn capabilities(&self, id: &str, parts: Option<&Map<String, Value>>) -> Value {
@@ -431,15 +444,36 @@ impl<'a> McpService<'a> {
     pub fn presets(&self, id: Option<&str>) -> Vec<Value> {
         let mut paths = Vec::new();
         Self::walk_json(&self.app.config.root.join("tunings"), &mut paths);
-        paths.into_iter().filter_map(|p|{let d=storage::read_json(&p).ok()?;let cid=d["car_id"].as_str().or(d["carId"].as_str()).unwrap_or("");if id.is_some_and(|x|x!=cid){return None}Some(json!({"preset_name":p.file_stem()?.to_str(),"car_id":cid,"created_at":d["created_at"],"schema_version":d["schema_version"].as_str().unwrap_or("unknown"),"file_path":p}))}).collect()
+        paths.into_iter().filter_map(|p| {
+            let d = storage::read_json(&p).ok()?;
+            let stem = p.file_stem()?.to_str()?;
+            let cid = d.get("car_id").or_else(|| d.get("carId"))
+                .filter(|v| v.is_string() || v.is_number())
+                .map(|v| v.as_str().map(str::to_owned).unwrap_or_else(|| v.to_string()))
+                .unwrap_or_else(|| stem.split_once('-').map(|(car, _)| car).unwrap_or("").to_owned());
+            if id.is_some_and(|x| x != cid) { return None; }
+            Some(json!({"preset_name":stem,"car_id":cid,"created_at":d.get("created_at").or_else(|| d.get("createdAt")),"schema_version":d["schema_version"].as_str().or(d["schemaVersion"].as_str()).unwrap_or("unknown"),"file_path":p}))
+        }).collect()
     }
     pub fn preset(&self, car: &str, name: &str) -> Option<Value> {
-        let clean_car = Path::new(car).file_name()?.to_str()?;
-        let clean_name = Path::new(name).file_name()?.to_str()?;
-        self.presets(Some(clean_car))
+        if car.is_empty()
+            || name.is_empty()
+            || car.contains(['/', '\\'])
+            || name.contains(['/', '\\'])
+        {
+            return None;
+        }
+        let path = storage::safe_path(
+            &self.app.config.root.join("tunings"),
+            &format!("{car}-{name}.json"),
+        )
+        .ok()?;
+        if path.is_file() {
+            return storage::read_json(&path).ok();
+        }
+        self.presets(Some(car))
             .into_iter()
-            .chain(self.presets(None))
-            .find(|p| p["preset_name"] == clean_name)
+            .find(|p| p["preset_name"] == name)
             .and_then(|p| storage::read_json(Path::new(p["file_path"].as_str()?)).ok())
     }
     /// Legacy quick baseline tuning solver (tuning-dev/v1).
@@ -480,24 +514,7 @@ impl<'a> McpService<'a> {
     }
     /// Legacy quick gearing solver (tuning-dev/v1).
     pub fn gearing(&self, max: f64, peak: f64, top: f64, count: i64, tire: f64) -> Value {
-        if max <= 0. || peak <= 0. || count < 1 {
-            return json!({"error":"Invalid engine or gear parameters"});
-        };
-        let circ = tire / 100. * std::f64::consts::PI;
-        let wheel = top / 3.6 / circ * 60.;
-        let final_drive = if wheel > 0. {
-            Self::round(peak / (wheel * 0.85), 2)
-        } else {
-            3.73
-        };
-        let step = (peak / max).min(0.85);
-        let mut ratio = 3.2;
-        let mut gears = Vec::new();
-        for g in 1..=count {
-            gears.push(json!({"gear":g,"ratio":Self::round(ratio,2),"speed_at_redline_kmh":Self::round((max/(ratio*final_drive)*circ/60.)*3.6,1),"upshift_drop_rpm":if g<count{json!(Self::round(max*step,0))}else{Value::Null}}));
-            ratio *= step;
-        }
-        json!({"final_drive":final_drive,"gears_count":count,"gears":gears,"powerband_retention_ratio":Self::round(step,3)})
+        crate::tuning::legacy_cli::gearing(max, peak, top, count, tire)
     }
     pub fn diagnosis(&self, t: &[f64], symptom: Option<&str>) -> Value {
         if t.len() < 4 {
