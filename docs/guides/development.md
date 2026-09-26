@@ -53,7 +53,7 @@ cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
 ```powershell
 .\setup_venv.bat
 .\fh6-agent.bat status --json
-uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ scripts/tests/
+uv run --no-project --python .venv\Scripts\python.exe python -m pytest scripts/tests/
 ```
 
 ## 排查

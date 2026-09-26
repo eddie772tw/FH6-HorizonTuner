@@ -52,6 +52,8 @@ CLI oracle 直接呼叫基準 `TuningMathSolver.calculate_chassis`／`calculate_
 
 ## 驗證狀態
 
+以下 65／57 項結果屬原生媒體與 Python 退役階段（`8ed390d`）。後續歷史效能承接補強使 default／no-HUD 分別增為 80／72 項；最新變更、資料完整性測試與 release probe 詳見[效能承接盤查](performance-inheritance.md)。前端與 Python 工具程式在本輪未變更，保留原驗證所屬範圍。
+
 - 基準 Rust：56 項通過；移除前 Python：372 項通過、11 項宿主／發行測試排除。
 - Rust 完整組態：65 項通過、1 項原生宿主測試預設 ignored。
 - Rust `--no-default-features`：57 項通過；HUD endpoints 明確 501，HUD assets／workers 不啟用。

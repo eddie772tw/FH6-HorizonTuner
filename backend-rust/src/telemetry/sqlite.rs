@@ -91,6 +91,9 @@ impl TelemetryStore {
         }
         let mut c = self.conn()?;
         let tx = c.transaction().map_err(|e| e.to_string())?;
+        let mut insert = tx
+            .prepare("INSERT INTO telemetry_channels(session_id,lap_number,relative_time,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,clutch_pct,handbrake_pct,accel_x,accel_y,accel_z,yaw,pitch,roll,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+            .map_err(|e| e.to_string())?;
         for source in points {
             let p = decoded_point(source);
             let a = |k: &str| p.get(k).and_then(Value::as_f64);
@@ -100,8 +103,58 @@ impl TelemetryStore {
                     .and_then(|x| x.get(i))
                     .and_then(Value::as_f64)
             };
-            tx.execute("INSERT INTO telemetry_channels(session_id,lap_number,relative_time,lap_distance,speed,rpm,gear,accel_pct,brake_pct,steer_pct,clutch_pct,handbrake_pct,accel_x,accel_y,accel_z,yaw,pitch,roll,pos_x,pos_y,pos_z,susp_fl,susp_fr,susp_rl,susp_rr,slip_angle_fl,slip_angle_fr,slip_angle_rl,slip_angle_rr,slip_ratio_fl,slip_ratio_fr,slip_ratio_rl,slip_ratio_rr,temp_fl,temp_fr,temp_rl,temp_rr,susp_meters_fl,susp_meters_fr,susp_meters_rl,susp_meters_rr,power_watts,torque_newtons,boost,fuel,raw_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",params![session_id,i64v(&p,"LapNumber",0),a("time").unwrap_or(0.0),a("DistanceTraveled"),a("SpeedMetersPerSecond").map(|x|x*3.6),a("CurrentEngineRpm"),i64v(&p,"Gear",0),a("accel_pct"),a("brake_pct"),a("steer_pct"),a("clutch_pct"),a("handbrake_pct"),a("AccelerationX").map(|x|x/9.81),a("AccelerationY").map(|x|x/9.81),a("AccelerationZ").map(|x|x/9.81),a("Yaw"),a("Pitch"),a("Roll"),a("PositionX"),a("PositionY"),a("PositionZ"),arr("NormalizedSuspensionTravel",0),arr("NormalizedSuspensionTravel",1),arr("NormalizedSuspensionTravel",2),arr("NormalizedSuspensionTravel",3),arr("TireSlipAngle",0).map(|x|x*57.29578),arr("TireSlipAngle",1).map(|x|x*57.29578),arr("TireSlipAngle",2).map(|x|x*57.29578),arr("TireSlipAngle",3).map(|x|x*57.29578),arr("TireSlipRatio",0),arr("TireSlipRatio",1),arr("TireSlipRatio",2),arr("TireSlipRatio",3),arr("TireTemp",0),arr("TireTemp",1),arr("TireTemp",2),arr("TireTemp",3),arr("SuspensionTravelMeters",0),arr("SuspensionTravelMeters",1),arr("SuspensionTravelMeters",2),arr("SuspensionTravelMeters",3),a("PowerWatts"),a("TorqueNewtons"),a("Boost"),a("Fuel").unwrap_or(1.0),serde_json::to_string(&p).map_err(|e|e.to_string())?]).map_err(|e|e.to_string())?;
+            insert
+                .execute(params![
+                    session_id,
+                    i64v(&p, "LapNumber", 0),
+                    a("time").unwrap_or(0.0),
+                    a("DistanceTraveled"),
+                    a("SpeedMetersPerSecond").map(|x| x * 3.6),
+                    a("CurrentEngineRpm"),
+                    i64v(&p, "Gear", 0),
+                    a("accel_pct"),
+                    a("brake_pct"),
+                    a("steer_pct"),
+                    a("clutch_pct"),
+                    a("handbrake_pct"),
+                    a("AccelerationX").map(|x| x / 9.81),
+                    a("AccelerationY").map(|x| x / 9.81),
+                    a("AccelerationZ").map(|x| x / 9.81),
+                    a("Yaw"),
+                    a("Pitch"),
+                    a("Roll"),
+                    a("PositionX"),
+                    a("PositionY"),
+                    a("PositionZ"),
+                    arr("NormalizedSuspensionTravel", 0),
+                    arr("NormalizedSuspensionTravel", 1),
+                    arr("NormalizedSuspensionTravel", 2),
+                    arr("NormalizedSuspensionTravel", 3),
+                    arr("TireSlipAngle", 0).map(|x| x * 57.29578),
+                    arr("TireSlipAngle", 1).map(|x| x * 57.29578),
+                    arr("TireSlipAngle", 2).map(|x| x * 57.29578),
+                    arr("TireSlipAngle", 3).map(|x| x * 57.29578),
+                    arr("TireSlipRatio", 0),
+                    arr("TireSlipRatio", 1),
+                    arr("TireSlipRatio", 2),
+                    arr("TireSlipRatio", 3),
+                    arr("TireTemp", 0),
+                    arr("TireTemp", 1),
+                    arr("TireTemp", 2),
+                    arr("TireTemp", 3),
+                    arr("SuspensionTravelMeters", 0),
+                    arr("SuspensionTravelMeters", 1),
+                    arr("SuspensionTravelMeters", 2),
+                    arr("SuspensionTravelMeters", 3),
+                    a("PowerWatts"),
+                    a("TorqueNewtons"),
+                    a("Boost"),
+                    a("Fuel").unwrap_or(1.0),
+                    serde_json::to_string(&p).map_err(|e| e.to_string())?
+                ])
+                .map_err(|e| e.to_string())?;
         }
+        drop(insert);
         tx.commit().map_err(|e| e.to_string())
     }
     pub fn get_session_metadata(&self, id: &str) -> Result<Value, String> {
@@ -271,12 +324,40 @@ impl TelemetryStore {
         );
         summary.insert("completeLaps".into(), Value::from(complete));
         summary.insert("observedLaps".into(), Value::from(laps.len()));
-        self.set_session_metadata(id, &Value::Object(summary))?;
-        let c = self.conn()?;
+        let summary_json =
+            serde_json::to_string(&Value::Object(summary)).map_err(|e| e.to_string())?;
+        let mut c = self.conn()?;
+        let tx = c.transaction().map_err(|e| e.to_string())?;
+        let mut insert = tx
+            .prepare("INSERT OR REPLACE INTO laps(session_id,lap_number,lap_time,start_distance,end_distance,max_speed_kmh,avg_speed_kmh,lap_time_source,complete,observed_span) VALUES(?,?,?,?,?,?,?,?,?,?)")
+            .map_err(|e| e.to_string())?;
         for (lap_number, lap_time, observed_span, max_speed, avg_speed, is_complete) in lap_rows {
-            c.execute("INSERT OR REPLACE INTO laps(session_id,lap_number,lap_time,start_distance,end_distance,max_speed_kmh,avg_speed_kmh,lap_time_source,complete,observed_span) VALUES(?,?,?,?,?,?,?,?,?,?)", params![id,lap_number,lap_time,None::<f64>,None::<f64>,max_speed,avg_speed,if lap_time.is_some() {"game-lastlap"} else {"unavailable"},if is_complete {1} else {0},observed_span]).map_err(|e|e.to_string())?;
+            insert
+                .execute(params![
+                    id,
+                    lap_number,
+                    lap_time,
+                    None::<f64>,
+                    None::<f64>,
+                    max_speed,
+                    avg_speed,
+                    if lap_time.is_some() {
+                        "game-lastlap"
+                    } else {
+                        "unavailable"
+                    },
+                    if is_complete { 1 } else { 0 },
+                    observed_span
+                ])
+                .map_err(|e| e.to_string())?;
         }
-        c.execute(
+        drop(insert);
+        tx.execute(
+            "UPDATE sessions SET metadata_json=? WHERE session_id=?",
+            params![summary_json, id],
+        )
+        .map_err(|e| e.to_string())?;
+        tx.execute(
             "UPDATE sessions SET total_laps=?,best_lap_time=?,total_distance=? WHERE session_id=?",
             params![
                 complete,
@@ -286,6 +367,7 @@ impl TelemetryStore {
             ],
         )
         .map_err(|e| e.to_string())?;
+        tx.commit().map_err(|e| e.to_string())?;
         Ok(
             serde_json::json!({"session_id":id,"total_laps":complete,"best_lap_time":if best.is_finite(){best}else{0.0},"total_distance":total}),
         )

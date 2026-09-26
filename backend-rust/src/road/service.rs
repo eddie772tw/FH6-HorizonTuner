@@ -3,6 +3,7 @@ use super::{
     store::RoadStore, tuning_capture::export_road_capture,
 };
 use crate::error::{ApiError, ApiResult};
+use crate::{persistence::Persistence, telemetry::RecorderCommand};
 use serde_json::{json, Value};
 use std::{
     sync::Arc,
@@ -26,9 +27,12 @@ pub struct RoadService {
     last_error: Option<String>,
     pending: Vec<Value>,
     recorded_count: usize,
+    writer: Persistence,
 }
 impl RoadService {
     pub fn new(database: Arc<TelemetryStore>, store: RoadStore) -> Self {
+        let writer =
+            Persistence::new(database.clone()).expect("Road persistence worker must start");
         Self {
             database,
             store,
@@ -42,6 +46,7 @@ impl RoadService {
             last_error: None,
             pending: Vec::new(),
             recorded_count: 0,
+            writer,
         }
     }
     fn identity(frame: &Value) -> Option<Value> {
@@ -99,7 +104,9 @@ impl RoadService {
             self.flush_pending();
             let run = self.active.take();
             if let Some(run) = run {
-                let _ = self.summarize_with_reason(&run, "identity-changed");
+                if let Err(error) = self.finish_run(run, "identity-changed") {
+                    self.last_error = Some(error.to_string());
+                }
             }
             return;
         }
@@ -432,6 +439,12 @@ impl RoadService {
     }
     pub fn shutdown(&mut self) {
         self.flush_pending();
+        if let Err(error) = self.writer.flush() {
+            self.last_error = Some(error);
+        }
+    }
+    pub fn persistence_metrics(&self) -> Value {
+        self.writer.snapshot()
     }
     fn flush_pending(&mut self) {
         if self.pending.is_empty() {
@@ -447,7 +460,10 @@ impl RoadService {
         if let Some(sid) = sid {
             let points = std::mem::take(&mut self.pending);
             self.recorded_count += points.len();
-            if let Err(e) = self.database.insert_points_batch(&sid, &points) {
+            if let Err(e) = self.writer.submit(RecorderCommand::WritePoints {
+                session_id: sid,
+                points,
+            }) {
                 self.last_error = Some(e);
             }
         }
@@ -477,21 +493,25 @@ impl RoadService {
             ));
         }
         let session_id = Uuid::new_v4().simple().to_string();
-        self.database
-            .create_session(
-                &session_id,
-                workflow["identity"]["ordinal"].as_i64().unwrap_or(0),
-                workflow["carName"].as_str().unwrap_or(""),
-                self.latest_class,
-                workflow["identity"]["performanceIndex"]
+        self.writer
+            .submit(RecorderCommand::CreateSession {
+                session_id: session_id.clone(),
+                car_ordinal: workflow["identity"]["ordinal"].as_i64().unwrap_or(0),
+                car_name: workflow["carName"].as_str().unwrap_or("").to_owned(),
+                car_class: self.latest_class,
+                car_pi: workflow["identity"]["performanceIndex"]
                     .as_i64()
                     .unwrap_or(0),
-                SystemTime::now()
+                start_time: SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_secs_f64(),
-            )
+            })
             .map_err(|e| ApiError::new(500, e))?;
+        if let Err(error) = self.writer.flush() {
+            self.cancel_start(&session_id);
+            return Err(ApiError::new(500, error));
+        }
         self.recorded_count = 0;
         let mut payload = request.as_object().cloned().unwrap_or_default();
         payload.insert("sessionId".into(), Value::String(session_id.clone()));
@@ -516,20 +536,52 @@ impl RoadService {
             applied.insert(key.clone(), Value::Object(field));
         }
         payload.insert("appliedSetup".into(), Value::Object(applied));
-        let run = self
+        let run = match self
             .store
-            .append("run", workflow_id, &Value::Object(payload), None)?;
+            .append("run", workflow_id, &Value::Object(payload), None)
+        {
+            Ok(run) => run,
+            Err(error) => {
+                self.cancel_start(&session_id);
+                return Err(error);
+            }
+        };
         self.active = Some(
             json!({"id":run["id"],"workflowId":workflow_id,"sessionId":session_id,"identity":workflow["identity"],"armedSequence":self.sequence}),
         );
         Ok(run)
     }
+    fn cancel_start(&self, session_id: &str) {
+        // A failed HTTP start must also release the reserved finalizer slot.
+        let _ = self.writer.submit(RecorderCommand::Finalize {
+            session_id: session_id.to_owned(),
+            metadata: json!({"endReason":"start-failed","incompletePersistence":true}),
+        });
+        let _ = self.writer.flush();
+    }
     pub fn stop(&mut self) -> ApiResult<()> {
         self.flush_pending();
         if let Some(active) = self.active.take() {
-            let _ = self.summarize_with_reason(&active, "manual-stop")?;
+            self.finish_run(active, "manual-stop")?;
         }
+        self.writer.flush().map_err(|e| ApiError::new(500, e))?;
         Ok(())
+    }
+    fn finish_run(&self, run: Value, reason: &str) -> ApiResult<()> {
+        let database = self.database.clone();
+        let store = self.store.clone();
+        let reason = reason.to_owned();
+        self.writer
+            .finalize(
+                run["sessionId"].as_str().unwrap_or("").to_owned(),
+                json!({"endReason":reason,"incompletePersistence":false}),
+                move || {
+                    Self::summarize_saved(&database, &store, &run, &reason)
+                        .map(|_| ())
+                        .map_err(|e| e.to_string())
+                },
+            )
+            .map_err(|e| ApiError::new(500, e))
     }
     pub fn recover(&mut self) -> ApiResult<()> {
         for d in self.store.list(None, Some("run"), true)? {
@@ -549,19 +601,24 @@ impl RoadService {
         Ok(())
     }
     fn summarize_with_reason(&self, run: &Value, reason: &str) -> ApiResult<Value> {
+        Self::summarize_saved(&self.database, &self.store, run, reason)
+    }
+    fn summarize_saved(
+        database: &TelemetryStore,
+        store: &RoadStore,
+        run: &Value,
+        reason: &str,
+    ) -> ApiResult<Value> {
         let sid = run["sessionId"].as_str().unwrap_or("");
-        let points = self
-            .database
+        let points = database
             .get_telemetry_points(sid, None)
             .map_err(|e| ApiError::new(500, e))?;
-        let mut meta = self
-            .database
+        let mut meta = database
             .get_session_metadata(sid)
             .map_err(|e| ApiError::new(500, e))?;
         if meta["state"] != "finalized" {
-            let _self_result=self.database.finalize_session(sid,json!({"endReason":reason,"incompletePersistence":reason=="application-interrupted"})).map_err(|e|ApiError::new(500,e))?;
-            meta = self
-                .database
+            let _self_result=database.finalize_session(sid,json!({"endReason":reason,"incompletePersistence":reason=="application-interrupted"})).map_err(|e|ApiError::new(500,e))?;
+            meta = database
                 .get_session_metadata(sid)
                 .map_err(|e| ApiError::new(500, e))?;
         }
@@ -582,6 +639,6 @@ impl RoadService {
             .into_iter()
             .map(Value::String)
             .collect::<Vec<_>>();
-        self.store.append("summary",run["workflowId"].as_str().unwrap_or(""),&json!({"runId":run["id"],"sessionId":sid,"observations":summarize_road_observations(&points),"recording":meta,"raceTimeCoverage":{"firstSeconds":race.first(),"lastSeconds":race.last()},"sourceSchemas":schemas}),None)
+        store.append("summary",run["workflowId"].as_str().unwrap_or(""),&json!({"runId":run["id"],"sessionId":sid,"observations":summarize_road_observations(&points),"recording":meta,"raceTimeCoverage":{"firstSeconds":race.first(),"lastSeconds":race.last()},"sourceSchemas":schemas}),None)
     }
 }

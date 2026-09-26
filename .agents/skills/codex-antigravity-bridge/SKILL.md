@@ -41,7 +41,7 @@ powershell -ExecutionPolicy Bypass -File .agents/skills/codex-antigravity-bridge
 ### Step 5. 收回 Ownership 與驗證
 1. 重新檢查 `git status --short` 與 `git diff --stat`，確認變更完全落在 handoff write scope 內。
 2. 執行 `git diff --check`。
-3. 依任務範圍執行分流測試（前端 `pnpm -C frontend run test`，後端 `pytest tests/`）。
+3. 依任務範圍執行分流測試（前端 `pnpm -C frontend run test`，Rust 後端／CLI `cargo test --locked --manifest-path backend-rust/Cargo.toml`；選用 Python 工具依 `python-uv.md` 執行其專屬測試）。
 4. 驗證通過後將狀態改為 `done`，並將可重現之重要架構結論同步至 `.agents/Journal.md`。
 
 ---

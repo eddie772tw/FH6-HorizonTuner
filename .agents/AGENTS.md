@@ -24,14 +24,14 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 | **`.agents/skills/`** | 具體任務的可執行 SOP、專用工具鏈與驗證指引。 | 依任務觸發條件選取單一 skill 載入，不預先通讀。 |
 | **`.agents/Journal.md`** | 經本地驗證的歷史踩坑知識庫、架構決策與暫存經驗。 | 僅於排查疑難雜症或任務結束登錄新學習點時查閱。 |
 | **[`docs/README.md`](../docs/README.md)** | 操作指南、技術參考、校準流程與歷史文件的統一入口；`docs/archive/` 不代表目前進度。 | 查找開發文件與舊路徑搬移位置。 |
-| **`tests/` vs `scripts/tests/`** | 核心業務測試 vs 開發治理腳本測試。 | 遵循 testing-strategy.md 進行分流驗證。 |
+| **測試目錄** | `backend-rust/tests/` 與前端 Vitest 為產品契約；`tests/` 保留遷移 fixtures／選用 Python 工具相容案例，`scripts/tests/` 為維護工具測試。 | 遵循 testing-strategy.md 進行分流驗證。 |
 
 ---
 
 ## 專案核心事實與領域規範 (Core Invariants)
 
 1. **UDP 高頻效能保護**：產品接收器為 `backend-rust/src/runtime.rs`，封包解碼位於 `backend-rust/src/telemetry/packet.rs`。60Hz+ UDP 接收循環內**絕不可放置同步阻塞 (Synchronous Blocking) 或高開銷的 I/O 操作**。
-2. **車輛物理與調校邏輯單一真理 (SSOT)**：所有懸吊、彈簧磅數、防傾桿 (ARB) 與齒輪比算牌公式，必須嚴格維持為純函數 (Pure Functions)，以 Rust `backend-rust/src/tuning/`（與前端同步對齊之 `frontend/src/utils/tuningMath.ts`）作為單一真理 (SSOT)，雙端必須經由 `tests/fixtures/tuning_golden_fixtures.json` 保持 100% 數值一致。嚴禁在 UI 組件內任意硬編碼物理計算公式。
+2. **車輛物理與調校邏輯單一真理 (SSOT)**：懸吊、彈簧、防傾桿與齒輪比公式必須維持純函式。產品後端正式調校公式位於 Rust `backend-rust/src/tuning/`；前端 `frontend/src/utils/tuningMath.ts` 維持 UI 所需的對齊行為。兩端以 `tests/fixtures/tuning_golden_fixtures.json` 驗證數值契約；不要把 TypeScript 前端實作視為後端 SSOT。嚴禁在 UI 組件內任意硬編碼物理計算公式。
 3. **單位嚴格性**：處理遙測數據時，必須釐清遊戲原生單位、領域單位與顯示單位的分層轉換，不得在 UI 組件內任意硬編碼物理計算公式。
 4. **路徑安全與檔案存取規範 (Path Security)**：所有涉及外部輸入、檔案名稱、Preset 或 Session 存取的 Rust 模組使用 `backend-rust/src/storage.rs::safe_path` 進行目錄包含性檢驗，嚴禁直接拼接外部輸入路徑。選用維護工具也須在解析 symlink 後驗證資料目錄邊界。
 5. **Agent CLI 工具鏈效率導引 (Agent CLI Tooling)**：專案提供 Rust 工具 `fh6-agent.bat`／`fh6-agent.exe`。車輛檢索、Preset 讀寫、遙測診斷與 MCP 探測**應優先調用 `fh6-agent.bat <subcommand> --json`**。CLI 算牌保留 `tuning-dev/v1` 相容契約，不能視為正式調校核心或已校準結果。詳細指令參閱 [`docs/guides/agent-cli-guide.md`](../docs/guides/agent-cli-guide.md)。
@@ -43,7 +43,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 具體架構、環境契約與實作合約收攏於 `.agents/rules/` 模組化體系，Agent 執行對應領域任務時按需遵循：
 
 - **[工作區邊界與驗證關卡 (workspace.md)](rules/workspace.md)**：前後端職責隔離、HUD 目錄合約與任務驗證關卡。
-- **[Python 3.13 / uv 工具鏈標準 (python-uv.md)](rules/python-uv.md)**：虛擬環境管理、`uv run --no-project` 命令防呆與禁止激活規範。
+- **[選用 Python 3.13 / uv 工具鏈標準 (python-uv.md)](rules/python-uv.md)**：只適用於維護、診斷與發行工具；產品後端、MCP 與 Agent CLI 使用 Rust。
 - **[網路連接埠傳輸契約 (network-ports.md)](rules/network-ports.md)**：UDP 8000 遙測與 HTTP 8001 API 端點隔離、Release 動態 Port 機制。
 - **[測試策略與反過度測試規範 (testing-strategy.md)](rules/testing-strategy.md)**：測試金字塔三層分流、反微觀 Canvas 座標斷言、反 YAML 測試與 Vitest 單元測試合約。
 - **[前端 UI 與設計系統架構 (ui-architecture.md)](rules/ui-architecture.md)**：Halfmoon CSS 雙層架構、Anti-FOUC、全域 `ModalPortal` 護欄、向下 Popover 與 Wizard 獨立組件規範。
@@ -62,7 +62,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 * **有條件明確授權 (Pre-authorized Bounded Rules)**：
   - **修改 UDP 封包解構格式**：當符合以下全部前提時，Agent 獲明確授權可直接修改 `backend-rust/src/telemetry/packet.rs` 與 `packet_format_reference.md`：
     1. 取得真實遊戲封包 dump 或協議佐證，能重現證明現有 offset 錯誤；
-    2. 於 `tests/` 補齊二進位封包回放測試確保解構正確；
+    2. 於 `backend-rust/tests/telemetry_contract.rs` 補齊二進位封包回放測試確保解構正確；
     3. 維持 324-byte 總長度與非同步高頻接收效能不變。若無客觀封包證據或涉及破壞性協定變更，則須於計畫中提請使用者確認。
   - **引入全新的第三方相依套件**：當符合以下全部前提時，Agent 獲明確授權可直接加入相依設定並更新 lockfile：
     1. 現有標準庫與專案既有依賴無法滿足需求，且自研代價過高；
@@ -87,7 +87,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 2. **範圍分流測試 (Scoped Tests)**：
    - **純文檔/規範變更**：以 `git diff --check` 驗證，不需執行代碼測試。
    - **前端/物理/UI 變更**：執行 `cmd /c "pnpm -C frontend run test"` 確保通過。
-   - **後端/遙測/CLI 變更**：執行 `cargo test --locked --manifest-path backend-rust/Cargo.toml`，以輸入及對前端輸出契約驗證；平台或原生功能變更另驗證 `--no-default-features`。維護／發行工具變更使用 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ scripts/tests/`。
+   - **後端/遙測/CLI 變更**：執行 `cargo test --locked --manifest-path backend-rust/Cargo.toml`；平台或原生功能變更另驗證 `--no-default-features`。前端契約變更執行 Vitest。僅修改選用維護／發行工具時，依對應文件以 uv 執行 `scripts/tests/` 或指定的工具測試；不得把 Python 測試視為產品後端 gate。
    - **跨端或發行變更**：同時執行前後端測試與構建檢查。
 3. **架構學習點回顧**：評估本次任務是否有值得傳承的架構學習點，依規範追加紀錄至 [Journal.md](Journal.md)。
 4. **狀態維護**：維護 `.gitignore` 與 `README.md` 說明文件狀態。

@@ -6,7 +6,9 @@
 
 ```text
 Forza UDP → Tokio receive → bounded processing worker
-                              ├─ telemetry / recorders / dyno / SQLite
+                              ├─ telemetry / recorders / dyno
+                              ├─ bounded recorder writers → SQLite
+                              ├─ coalesced profile I/O → JSON
                               ├─ Road observations and captures
                               └─ latest snapshot → JSON / binary WebSocket
 React / HUD → HTTP → config / sessions / Road / MoTeC / MCP
@@ -15,6 +17,8 @@ Tauri host → owned stdin / readiness → standalone sidecar
 ```
 
 UDP socket 接收不執行同步磁碟寫入或原生 Windows 呼叫。處理工作有界；慢速 WS consumer 不會形成無限積壓。設定儲存先持久化再發布結果；檔案存取需通過資料目錄包含性檢查。
+
+Race 與 Road 的錄製 writer 維持 create → points → finalize 順序，樣本批次飽和時記錄丟樣，預留 finalizer 空間；明確停止與關機等待已接受資料落盤。profile 背景載入與按車輛合併寫入也與即時處理分離。歷史效能 PR 的逐項對照、測試與量測方式見[效能承接盤查](performance-inheritance.md)。
 
 ## 測試的完成基準
 

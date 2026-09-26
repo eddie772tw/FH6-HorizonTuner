@@ -2823,6 +2823,15 @@
 - **Vitest 可攜性修正**：最新 main 的 Mission Stress 5 原設 20 秒 timeout；本機實測約 20.8 秒。只將此測試的 runner timeout 調為 30 秒，保留全部 39,000 iterations 與 assertions；focused stress 檔 22/22 通過，標準 `pnpm --prefix frontend run test` 140/140 files、989/989 tests 通過，用時 42.29 秒。未放寬任何產品行為或斷言門檻；新 merge commit 的 GitHub checks 待推送後驗證。
 - **邊界**：Xvfb 只證明視窗可建立，不等同實體桌面／Wayland 互動；原生安裝、OTA 與跨裝置 FH6 遊玩仍未驗收。
 
+## 2026-09-26 / Rust 效能承接、文件治理與 Wiki 對齊（Codex as Codex）
+
+- **採用技能與 ownership**：`modular-refactoring`、`agent-governance-audit`、`cross-agent-collaboration`、`pr-author-maintainer`、`ponytail`。依使用者授權由 Luna 子代理盤點歷史 PR、處理 Road/SQLite 局部優化與文件；主線整合 writer、profile I/O、快取、測試與發布。
+- **可重現缺口**：UDP socket 與 processing worker 分離不代表磁碟 I/O 已隔離。原 Rust 在持有 engine lock 時同步寫 SQLite/profile，慢磁碟仍可延遲 live frame。新增有界 FIFO writer、預留 finalizer、飽和丟樣指標、stop/shutdown drain；profile 首讀與合併寫入另由 worker 執行。外部鎖住 SQLite 時仍發布 120 個 frame，stop 後資料全數可讀；Road 身分切換亦不等待磁碟。
+- **交易與生命週期**：SQLite batch prepare-once 需同時保留 rollback；lap rows、metadata、session totals 必須同交易，否則可留下 finalized metadata 卻沒有 lap rows。明確 clear 也須完成已接受 session 的 finalizer，避免反覆 start/clear 耗盡保留空間。
+- **量測教訓**：減少迴圈內 Vec 不足以推定 matching 較快；初次 probe 反而變慢。索引深複製完整 JSON 才是明顯配置來源，改為借用 point，並以完整 JSON 等值與交錯舊／新量測核對。原始資料、歷史 PR 對照及限制見 [效能承接盤查](../docs/backend-rust/performance-inheritance.md)。
+- **文件邊界**：Skills/README 以 Cargo 作產品後端 gate，Python 限維護／發行工具與 frozen fixtures；不重寫歷史日誌。Wiki 7 頁已推送至獨立 repo `master` 的 `2b6937c`，明確區分 v1.6.1 Rust/MCP Beta、後續 #426 平台工作及未發布的 #443。
+- **驗證與限制**：Rust default 80 passed、no-HUD 72 passed；Road 9 項在最後借用修改後再通過。原生宿主與性能 probe 為 opt-in；原 Spotify 實機驗收見接替紀錄，本輪未重新控制播放器。未啟動前端、遊戲或其他裝置，不從契約測試推定高負載尾延遲或所有原生驅動皆已驗收。
+
 ## 2026-09-25 / PR #426 移除 macOS 與同步 main
 
 - **範圍**：依使用者要求，平台發行保留 Windows Full／Lite 與 Linux x86_64 Full，移除 macOS workflow、Tauri config、打包／smoke 分支及 OTA channel。上述 macOS 紀錄保留為歷史，不代表目前支援。採用 `pr-review-evaluation`、`pr-author-maintainer`、`portable-release-validation`、`halfmoon-design-system` 與 `ponytail`。

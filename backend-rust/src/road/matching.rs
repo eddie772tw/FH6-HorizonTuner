@@ -10,14 +10,17 @@ fn finite(v: Option<&Value>) -> Option<f64> {
     let x = v?.as_f64()?;
     x.is_finite().then_some(x)
 }
-fn wheel(point: &Value, field: &str, index: usize) -> Option<f64> {
-    let values = point.get(field).and_then(Value::as_array).or_else(|| {
-        (field == "NormalizedSuspensionTravel")
-            .then(|| point.get("SuspTravel"))
-            .flatten()
-            .and_then(Value::as_array)
-    })?;
-    finite(values.get(index))
+fn wheel_values<'a>(point: &'a Value, field: &str) -> Option<&'a [Value]> {
+    point
+        .get(field)
+        .and_then(Value::as_array)
+        .or_else(|| {
+            (field == "NormalizedSuspensionTravel")
+                .then(|| point.get("SuspTravel"))
+                .flatten()
+                .and_then(Value::as_array)
+        })
+        .map(Vec::as_slice)
 }
 fn point_time(point: &Value) -> Option<f64> {
     finite(point.get("TimestampMS"))
@@ -43,8 +46,8 @@ fn observation_weights(points: &[Value]) -> Vec<f64> {
 }
 
 #[derive(Clone)]
-struct Spatial {
-    point: Value,
+struct Spatial<'a> {
+    point: &'a Value,
     x: f64,
     z: f64,
     y: Option<f64>,
@@ -53,7 +56,7 @@ struct Spatial {
     dz: f64,
     lap: i64,
 }
-fn spatial_points(points: &[Value], circuit: bool) -> Vec<Spatial> {
+fn spatial_points(points: &[Value], circuit: bool) -> Vec<Spatial<'_>> {
     let weights = observation_weights(points);
     let stride = ((points.len() + MAX_MATCH_POINTS - 1) / MAX_MATCH_POINTS).max(1);
     let mut result = Vec::new();
@@ -91,7 +94,7 @@ fn spatial_points(points: &[Value], circuit: bool) -> Vec<Spatial> {
             continue;
         };
         result.push(Spatial {
-            point: a.clone(),
+            point: a,
             x: ax,
             z: az,
             y: finite(a.get("PositionY")),
@@ -103,7 +106,7 @@ fn spatial_points(points: &[Value], circuit: bool) -> Vec<Spatial> {
     }
     result
 }
-fn matched_pairs(left: &[Spatial], right: &[Spatial]) -> Vec<(usize, usize)> {
+fn matched_pairs(left: &[Spatial<'_>], right: &[Spatial<'_>]) -> Vec<(usize, usize)> {
     use std::collections::HashMap;
     let mut grid: HashMap<(i64, i64, i64), Vec<usize>> = HashMap::new();
     for (i, p) in right.iter().enumerate() {
@@ -175,8 +178,9 @@ pub fn local_comparison(a_points: &[Value], b_points: &[Value], circuit: bool) -
     } else {
         "different-or-incomplete"
     };
-    let mut comparable = Vec::new();
-    let mut segments: std::collections::BTreeMap<i64, (f64, f64, Vec<f64>, [Vec<f64>; 4])> =
+    let mut comparable_count = 0;
+    let mut changes = Vec::new();
+    let mut segments: std::collections::BTreeMap<i64, (f64, f64, Vec<f64>, [Vec<f64>; 4], usize)> =
         std::collections::BTreeMap::new();
     let max_distance = a.iter().map(|p| p.distance).fold(0.0, f64::max);
     let segment_length = 100.0_f64.max(max_distance / 10.0);
@@ -211,7 +215,6 @@ pub fn local_comparison(a_points: &[Value], b_points: &[Value], circuit: bool) -
         {
             continue;
         }
-        comparable.push((*ai, *bi));
         let index = (a[*ai].distance / segment_length).floor().min(9.0) as i64;
         let segment = segments.entry(index).or_insert_with(|| {
             (
@@ -219,37 +222,41 @@ pub fn local_comparison(a_points: &[Value], b_points: &[Value], circuit: bool) -
                 (index + 1) as f64 * segment_length,
                 Vec::new(),
                 [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+                0,
             )
         });
-        let av: Vec<_> = (0..4).map(|i| wheel(p, "TireSlipAngle", i)).collect();
-        let bv: Vec<_> = (0..4).map(|i| wheel(q, "TireSlipAngle", i)).collect();
-        if av.iter().all(Option::is_some) && bv.iter().all(Option::is_some) {
-            segment.2.push(
-                bv.iter().map(|x| x.unwrap().abs()).sum::<f64>() / 4.0
-                    - av.iter().map(|x| x.unwrap().abs()).sum::<f64>() / 4.0,
-            );
-        }
+        comparable_count += 1;
+        segment.4 += 1;
+        let p_angles = wheel_values(p, "TireSlipAngle");
+        let q_angles = wheel_values(q, "TireSlipAngle");
+        let p_temps = wheel_values(p, "TireTemp");
+        let q_temps = wheel_values(q, "TireTemp");
+        let (mut p_angle_sum, mut q_angle_sum, mut angle_count) = (0.0, 0.0, 0);
         for i in 0..4 {
-            if let (Some(at), Some(bt)) = (wheel(p, "TireTemp", i), wheel(q, "TireTemp", i)) {
+            if let (Some(at), Some(bt)) = (
+                p_angles.and_then(|values| finite(values.get(i))),
+                q_angles.and_then(|values| finite(values.get(i))),
+            ) {
+                p_angle_sum += at.abs();
+                q_angle_sum += bt.abs();
+                angle_count += 1;
+            }
+            if let (Some(at), Some(bt)) = (
+                p_temps.and_then(|values| finite(values.get(i))),
+                q_temps.and_then(|values| finite(values.get(i))),
+            ) {
                 segment.3[i].push((bt - at) * 5.0 / 9.0);
             }
         }
-    }
-    let mut changes = Vec::new();
-    for (ai, bi) in &comparable {
-        let av: Vec<_> = (0..4)
-            .map(|i| wheel(&a[*ai].point, "TireSlipAngle", i))
-            .collect();
-        let bv: Vec<_> = (0..4)
-            .map(|i| wheel(&b[*bi].point, "TireSlipAngle", i))
-            .collect();
-        if av.iter().all(Option::is_some) && bv.iter().all(Option::is_some) {
-            changes.push(
-                bv.iter().map(|x| x.unwrap().abs()).sum::<f64>() / 4.0
-                    - av.iter().map(|x| x.unwrap().abs()).sum::<f64>() / 4.0,
-            );
+        if angle_count == 4 {
+            let change = q_angle_sum / 4.0 - p_angle_sum / 4.0;
+            segment.2.push(change);
+            changes.push(change);
         }
     }
-    let segment_values: Vec<Value> = segments.into_iter().map(|(index, (from, to, angles, thermal))| json!({ "index": index + 1, "fromMeters": from, "toMeters": to, "matchedLocations": comparable.iter().filter(|(ai, _)| ((a[*ai].distance / segment_length).floor().min(9.0) as i64) == index).count(), "angleLocations": angles.len(), "meanNormalizedAngleChange": avg(&angles), "meanTemperatureChangeC": thermal.into_iter().map(|x| avg(&x)).collect::<Vec<_>>() })).collect();
-    json!({ "methodVersion": MATCH_VERSION, "routeStatus": route_status, "baselineCoverage": a_coverage, "candidateCoverage": b_coverage, "matchedLocations": pairs.len(), "matchedDrivingConditions": comparable.len(), "meanNormalizedAngleChange": avg(&changes), "angleLocations": changes.len(), "segments": segment_values, "independentRuns": 2, "limitations": ["Position matching does not establish weather, traffic or clean driving.", "Matched locations are not independent repeated races.", "Matching speed and inputs describes local behavior and may omit part of a setting's effect."], "rules": {"maxPositionDifferenceMeters": MATCH_METERS, "minimumRouteCoverage": ROUTE_COVERAGE_MIN, "minimumHeadingCosine": 0.9, "maxVerticalDifferenceMeters": 3, "maxSpeedDifferenceMps": 2, "maxRelativeSpeedDifference": 0.08, "maxPedalDifferenceRaw": 25, "maxSteeringDifferenceRaw": 10, "pointLimitPerRun": MAX_MATCH_POINTS} })
+    let segment_values: Vec<Value> = segments
+        .into_iter()
+        .map(|(index, (from, to, angles, thermal, matched))| json!({ "index": index + 1, "fromMeters": from, "toMeters": to, "matchedLocations": matched, "angleLocations": angles.len(), "meanNormalizedAngleChange": avg(&angles), "meanTemperatureChangeC": thermal.into_iter().map(|x| avg(&x)).collect::<Vec<_>>() }))
+        .collect();
+    json!({ "methodVersion": MATCH_VERSION, "routeStatus": route_status, "baselineCoverage": a_coverage, "candidateCoverage": b_coverage, "matchedLocations": pairs.len(), "matchedDrivingConditions": comparable_count, "meanNormalizedAngleChange": avg(&changes), "angleLocations": changes.len(), "segments": segment_values, "independentRuns": 2, "limitations": ["Position matching does not establish weather, traffic or clean driving.", "Matched locations are not independent repeated races.", "Matching speed and inputs describes local behavior and may omit part of a setting's effect."], "rules": {"maxPositionDifferenceMeters": MATCH_METERS, "minimumRouteCoverage": ROUTE_COVERAGE_MIN, "minimumHeadingCosine": 0.9, "maxVerticalDifferenceMeters": 3, "maxSpeedDifferenceMps": 2, "maxRelativeSpeedDifference": 0.08, "maxPedalDifferenceRaw": 25, "maxSteeringDifferenceRaw": 10, "pointLimitPerRun": MAX_MATCH_POINTS} })
 }

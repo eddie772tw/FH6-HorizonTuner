@@ -7,6 +7,7 @@ use crate::{
     motec,
     native::NativeServices,
     network::{ApiRequest, ApiResponse, Backend},
+    persistence::Persistence,
     road::{RoadService, RoadStore},
     storage,
     telemetry::{
@@ -47,6 +48,7 @@ pub struct App {
     telemetry: watch::Sender<Option<Arc<Value>>>,
     epoch: Instant,
     mcp: Mutex<crate::mcp::McpServer>,
+    persistence: Persistence,
 }
 impl App {
     pub fn new(root: &Path) -> ApiResult<Arc<Self>> {
@@ -80,6 +82,7 @@ impl App {
             let _ = native.set_audio_device(device);
         }
         let companion = Arc::new(CompanionService::new(root, 8001));
+        let persistence = Persistence::new(database.clone()).map_err(database_error)?;
         Ok(Arc::new(Self {
             config,
             database,
@@ -93,10 +96,18 @@ impl App {
             telemetry,
             epoch: Instant::now(),
             mcp: Mutex::new(crate::mcp::McpServer::default()),
+            persistence,
         }))
     }
     pub fn live(&self) -> Option<Arc<Value>> {
         self.telemetry.borrow().clone()
+    }
+    fn pipeline_metrics(&self) -> Value {
+        let mut snapshot = lock(&self.metrics).telemetry();
+        snapshot["raceRecorderPersistence"] = self.persistence.snapshot();
+        snapshot["roadRecorderPersistence"] = lock(&self.engine).road.persistence_metrics();
+        snapshot["profilePersistence"] = self.config.profile_metrics();
+        snapshot
     }
     /// Called exclusively by a bounded processing worker, outside UDP/HTTP I/O.
     pub fn process(&self, frame: Value) {
@@ -108,17 +119,21 @@ impl App {
             .race
             .record_at(&frame, self.epoch.elapsed().as_secs_f64());
         engine.road.observe(&frame);
-        let params = self
-            .config
-            .car_params(&frame["CarOrdinal"].to_string())
-            .unwrap_or(Value::Null);
+        let id = frame["CarOrdinal"].as_i64().unwrap_or(0).to_string();
+        let lookup = self.config.live_car_params(&id);
+        let (params, profile_loaded) = match lookup {
+            crate::profile_io::Lookup::Ready(value) => (value, true),
+            crate::profile_io::Lookup::Missing => (Value::Null, true),
+            crate::profile_io::Lookup::Pending | crate::profile_io::Lookup::Failed => {
+                (Value::Null, false)
+            }
+        };
         engine.drag.set_context(&params, &self.config.car_database);
         engine.drag.record(&frame);
-        let _ = self.persist_commands(engine.race.drain_commands());
-        let id = frame["CarOrdinal"].as_i64().unwrap_or(0).to_string();
-        if id != "0" {
+        let _ = self.persist_commands(&mut engine.race);
+        if id != "0" && profile_loaded {
             let quality = engine.dyno.observe(&id, &frame);
-            let existing = self.config.car_params(&id);
+            let existing = (!params.is_null()).then_some(params);
             let created = existing.is_none();
             let profile = existing.or_else(|| {
                 settings["race_recording"]
@@ -149,7 +164,7 @@ impl App {
                     || reset
                     || (changed && engine.last_profile_save.elapsed().as_secs() >= 5)
                 {
-                    if self.config.save_car_params(&id, &profile).is_err() {
+                    if self.config.schedule_car_params(&id, profile).is_err() {
                         lock(&self.metrics).profile_failures += 1;
                     }
                     engine.last_profile_save = Instant::now();
@@ -192,54 +207,20 @@ impl App {
         metrics.frames_processed += 1;
         metrics.stage("total", started.elapsed().as_secs_f64() * 1000.0);
     }
-    fn persist_commands(&self, commands: Vec<RecorderCommand>) -> ApiResult<()> {
-        // This function runs on the processing worker or HTTP blocking pool.
-        // Control and sample commands remain ordered within the recorder lock.
+    fn persist_commands(&self, recorder: &mut RaceRecorder) -> ApiResult<()> {
         let mut failure = None;
-        for command in commands {
-            let started = Instant::now();
-            let result = match command {
-                RecorderCommand::CreateSession {
-                    session_id,
-                    car_ordinal,
-                    car_name,
-                    car_class,
-                    car_pi,
-                    start_time,
-                } => self.database.create_session(
-                    &session_id,
-                    car_ordinal,
-                    &car_name,
-                    car_class,
-                    car_pi,
-                    start_time,
-                ),
-                RecorderCommand::WritePoints { session_id, points } => {
-                    let result = self.database.insert_points_batch(&session_id, &points);
-                    if result.is_ok() {
-                        lock(&self.metrics).persistence_completed += 1;
-                    }
-                    result
+        for command in recorder.drain_commands() {
+            let starting = matches!(command, RecorderCommand::CreateSession { .. });
+            let samples = matches!(command, RecorderCommand::WritePoints { .. });
+            if let Err(error) = self.persistence.submit(command) {
+                if starting {
+                    recorder.clear();
                 }
-                RecorderCommand::Finalize {
-                    session_id,
-                    metadata,
-                } => self
-                    .database
-                    .finalize_session(&session_id, metadata)
-                    .map(|_| ()),
-            };
-            if let Err(error) = result {
-                lock(&self.metrics).persistence_failures += 1;
-                diagnostics::write_log(
-                    &self.config.root,
-                    "ERROR",
-                    &format!("Recording persistence: {error}"),
-                );
-                failure = Some(error);
+                // Dropped batches are recorded in final session metadata and diagnostics.
+                if !samples {
+                    failure = Some(error);
+                }
             }
-            lock(&self.metrics).persistence_last_write_ms =
-                started.elapsed().as_secs_f64() * 1000.0;
         }
         failure.map_or(Ok(()), |error| Err(database_error(error)))
     }
@@ -247,14 +228,20 @@ impl App {
         let mut engine = lock(&self.engine);
         engine.race.tick(self.epoch.elapsed().as_secs_f64());
         engine.road.maintain();
-        let _ = self.persist_commands(engine.race.drain_commands());
+        let _ = self.persist_commands(&mut engine.race);
     }
     pub fn shutdown(&self) {
         let mut engine = lock(&self.engine);
         engine.race.save_latest_and_clear("application-shutdown");
-        let _ = self.persist_commands(engine.race.drain_commands());
+        let _ = self.persist_commands(&mut engine.race);
         engine.road.shutdown();
         drop(engine);
+        if let Err(error) = self.persistence.flush() {
+            eprintln!("recorder shutdown flush: {error}");
+        }
+        if let Err(error) = self.config.flush_profiles() {
+            eprintln!("profile shutdown flush: {error}");
+        }
         let profiles = lock(&self.config.profiles).clone();
         for (id, profile) in profiles {
             if let Err(e) = self.config.save_car_params(&id, &profile) {
@@ -283,9 +270,9 @@ impl App {
         let method = request.method.as_str();
         let value=match(method,parts.as_slice()) {
             ("GET",["api","analysis","status"])=>{let s=lock(&self.engine).race.status();json!({"isRecording":s.is_recording,"recordingCount":s.total_count,"currentSessionId":s.current_session_id})}
-            ("POST",["api","analysis","clear"])=>{lock(&self.engine).race.clear();json!({"message":"Current recording session cleared."})}
-            ("POST",["api","analysis","recorder","start"])=>{let mut engine=lock(&self.engine);let id=engine.race.start_manual(0,"Manual Session".into(),0,0,diagnostics::now()).map_err(database_error)?;self.persist_commands(engine.race.drain_commands())?;json!({"message":"Manual recording started successfully","sessionId":id})}
-            ("POST",["api","analysis","recorder","stop"])=>{let mut engine=lock(&self.engine);let s=engine.race.status();if !s.is_recording||!s.manual_mode{json!({"error":"Manual recording is not active"})}else{engine.race.save_latest_and_clear("manual-stop");self.persist_commands(engine.race.drain_commands())?;json!({"message":"Manual recording stopped and saved successfully"})}}
+            ("POST",["api","analysis","clear"])=>{let mut engine=lock(&self.engine);engine.race.save_latest_and_clear("manual-clear");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Current recording session cleared."})}
+            ("POST",["api","analysis","recorder","start"])=>{let mut engine=lock(&self.engine);let id=engine.race.start_manual(0,"Manual Session".into(),0,0,diagnostics::now()).map_err(database_error)?;self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording started successfully","sessionId":id})}
+            ("POST",["api","analysis","recorder","stop"])=>{let mut engine=lock(&self.engine);let s=engine.race.status();if !s.is_recording||!s.manual_mode{json!({"error":"Manual recording is not active"})}else{engine.race.save_latest_and_clear("manual-stop");self.persist_commands(&mut engine.race)?;drop(engine);self.persistence.flush().map_err(database_error)?;json!({"message":"Manual recording stopped and saved successfully"})}}
             ("GET",["api","analysis","data"])=>{let lap=query_integer(request,"lap",0)?;json!(match self.session_id("current")?{Some(id)=>self.database.get_telemetry_points(&id,(lap>0).then_some(lap)).map_err(database_error)?,None=>vec![]})}
             ("GET",["api","analysis","sessions"])=>json!(self.database.list_all_sessions().map_err(database_error)?.iter().map(|s|json!({"filename":s["session_id"],"session_id":s["session_id"],"car_name":s["car_name"],"total_laps":s["total_laps"],"best_lap_time":s["best_lap_time"],"total_distance":s["total_distance"],"mtime":s["start_time"],"size":0})).collect::<Vec<_>>()),
             ("GET",["api","analysis","sessions",id])=>{let lap=query_integer(request,"lap",0)?;json!(self.database.get_telemetry_points(id,(lap>0).then_some(lap)).map_err(database_error)?)}
@@ -681,7 +668,15 @@ impl Backend for App {
                 ));
             }
         }
-        if let Some(result) = self.config.handle(&request.method, &request.path, &data) {
+        let config_result = {
+            // Serialize explicit profile edits with dyno snapshots; an older scheduled
+            // automatic save must not overwrite the user's completed API update.
+            let _profile_edit = (request.method != "GET"
+                && request.path.starts_with("/api/car_params/"))
+            .then(|| lock(&self.engine));
+            self.config.handle(&request.method, &request.path, &data)
+        };
+        if let Some(result) = config_result {
             let value = result?;
             if matches!(
                 request.path.as_str(),
@@ -738,7 +733,7 @@ impl Backend for App {
                         },
                     ));
             }
-            ("GET", "/api/diagnostics/telemetry-pipeline") => lock(&self.metrics).telemetry(),
+            ("GET", "/api/diagnostics/telemetry-pipeline") => self.pipeline_metrics(),
             ("GET", "/api/diagnostics/overlay") => {
                 let mut overlay = lock(&self.metrics).overlay();
                 overlay["native"] = self.native.diagnostics();
@@ -746,10 +741,8 @@ impl Backend for App {
             }
             ("GET", "/api/diagnostics/discord-presence") => self.native.discord_status(),
             ("POST", "/api/diagnostics/support-bundle") => {
-                let (pipeline, mut overlay) = {
-                    let metrics = lock(&self.metrics);
-                    (metrics.telemetry(), metrics.overlay())
-                };
+                let pipeline = self.pipeline_metrics();
+                let mut overlay = lock(&self.metrics).overlay();
                 overlay["native"] = self.native.diagnostics();
                 let snapshots = json!({"telemetryPipeline":pipeline,"overlay":overlay,"discordPresence":self.native.discord_status()});
                 let bytes = diagnostics::support_bundle(

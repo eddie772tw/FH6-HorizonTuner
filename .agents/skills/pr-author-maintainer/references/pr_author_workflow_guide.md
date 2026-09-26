@@ -23,29 +23,29 @@
 | 違規模式 (Disallowed) | 合規模式 (Required) |
 |---|---|
 | ❌ "This PR is ready to merge now." | ✅ "All local and CI checks have passed. Awaiting review from Reviewers / Maintainers." |
-| ❌ "LGTM, everything is tested, merging approved." | ✅ "Pre-commit tests (pytest 171 passed, vitest 440 passed) and static checks verified locally." |
+| ❌ "LGTM, everything is tested, merging approved." | ✅ "Cargo and Vitest checks passed for the changed product scope; optional tool checks are listed separately." |
 | ❌ "No issues found, this should be merged immediately." | ✅ "Changes summarized below. Please review the updated logic." |
 
 ---
 
 ### 2.2 嚴格 Commit 前驗證門檻 (Pre-Commit Gate)
 
-在每次執行 `git commit` 或 `git push` 到 PR 分支前，**必須依序執行以下 4 道防線**：
+在 `git commit` 或 `git push` 前，依 `.agents/rules/testing-strategy.md` 分流驗證以下適用範圍；純文件修改檢查路徑與 `git diff --check`。已通過且相關程式碼未再變更的結果可沿用，須在 PR 註明證據所屬範圍。
 
-1. **Python 靜態語法與型別格式檢查**：
+1. **Python 維護工具變更的靜態檢查**：
    ```powershell
    uv run --no-project --python .venv\Scripts\python.exe ruff check .
    uv run --no-project --python .venv\Scripts\python.exe ruff format --check .
    ```
-2. **後端完整單元測試**：
+2. **Rust 後端／CLI 變更的完整契約測試**：
    ```powershell
-   uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
+   cargo test --locked --manifest-path backend-rust/Cargo.toml
    ```
-3. **前端單元測試**：
+3. **前端變更的單元測試**：
    ```powershell
    cmd /c "pnpm -C frontend run test"
    ```
-4. **前端靜態產物與型別打包建置**：
+4. **UI 或打包整合變更的前端靜態產物與型別建置**：
    ```powershell
    cmd /c "pnpm -C frontend run build"
    ```
@@ -178,7 +178,7 @@ gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/comments --jq '.[] | {id: .id, pat
    - 已抽離重複之初始化邏輯為獨立共用函式 `safe_init_context()`。
 
 **Verification Status:**
-- `pytest tests/`: 171 passed
+- Historical migration-era example: `pytest tests/` reported 171 passed; do not use this as the current product backend gate. Use Cargo for Rust product code.
 - `vitest`: 440 passed
 - `ruff check .` & `ruff format --check .`: passed
 
@@ -216,7 +216,7 @@ Author: Gemini as Antigravity
    - 本地執行 `vitest` 確認該新測試由紅燈轉為綠燈。
 
 **Verification Status:**
-- `pytest tests/`: 171 passed
+- Historical migration-era example: `pytest tests/` reported 171 passed; do not use this as the current product backend gate. Use Cargo for Rust product code.
 - `vitest`: 441 passed (含新增之 Reviewer 測試)
 - `ruff check .` & `ruff format --check .`: passed
 

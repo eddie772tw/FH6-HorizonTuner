@@ -115,8 +115,9 @@ FH6-HorizonTuner/
 │   └── shared/              # Shared Canvas drawing & geometry math library
 ├── scripts/                 # Automated release & telemetry metrics scripts (prepare_release_assets.py, release_metrics.py)
 ├── lang/                    # Multi-language translation dictionaries (zh-tw, ja-jp, etc.)
-├── tests/                   # Pytest unit testing suite
-├── pyproject.toml           # Ruff formatting rules & Pytest configuration
+├── tests/                   # Golden fixtures and selected release-tool tests
+├── backend-rust/tests/      # Rust backend and CLI product contract tests
+├── pyproject.toml           # Ruff / Pytest configuration for optional Python tools
 ├── requirements.txt         # Optional maintenance and diagnostics tools
 ├── fh6-agent.bat            # HorizonTuner-cli AI Agent entry script
 ├── setup_dev.bat           # Download Rust and frontend dependencies
@@ -175,7 +176,7 @@ Start with the [documentation index](docs/README.md) for CLI/MCP guides, HUD con
 
 Agent collaboration rules are in [`.agents/AGENTS.md`](.agents/AGENTS.md); read them before making changes. Project decisions and learnings are maintained in [`.agents/Journal.md`](.agents/Journal.md).
 
-The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard Python code formatter and linter with a **Black-compatible** style. To ensure consistent code style and pass GitHub Actions CI checks, follow these procedures before committing:
+Optional Python maintenance tools use **[Ruff](https://github.com/astral-sh/ruff)** for formatting and linting. These commands apply to Python tools; they are not the Rust product backend CI gate.
 
 ### Python Formatting (Ruff)
 
@@ -195,36 +196,25 @@ The project uses **[Ruff](https://github.com/astral-sh/ruff)** as the standard P
 > [!TIP]
 > Run formatting and checks explicitly. Development launchers do not modify source files.
 
-### Unit Testing (Pytest)
+### Rust Backend and CLI Tests (Cargo)
 
-All automated tests are located in the `tests/` directory. Before submitting a PR, ensure all tests pass:
+The product backend, telemetry, REST/WebSocket, MCP, and Agent CLI use Cargo as their primary verification gate:
 
-```bash
-# Run with the project-managed Python environment
-uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
-
-# Or run a specific test file
-uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/test_overlay_api.py -v
+```powershell
+cargo test --locked --manifest-path backend-rust/Cargo.toml
+cargo fmt --manifest-path backend-rust/Cargo.toml -- --check
 ```
 
-Current test suite coverage:
-| Test File | Coverage Area |
-| :--- | :--- |
-| `test_telemetry_listener.py` | UDP telemetry packet parsing & listener logic |
-| `test_telemetry_runtime.py` | Pipeline metrics contract and non-blocking profile load/write coalescing |
-| `test_telemetry_metrics_api.py` | Telemetry diagnostics API response contract |
-| `test_log_api.py` | Backend log API, Traceback merging & level filtering |
-| `test_overlay_api.py` | Overlay layout CRUD, process start/stop & status tracking |
-| `test_drag_recorder.py` | Drag launch test data recording & analysis |
+For platform-native changes, also run `cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features` when applicable. See the [testing strategy](.agents/rules/testing-strategy.md) for scope and limits.
 
 ### Frontend Unit Testing (Vitest)
 
 Frontend uses **[Vitest](https://vitest.dev/)** as unit test runner.
 ```bash
-cd frontend && pnpm run test
+cmd /c "pnpm -C frontend run test"
 ```
 
-Current frontend test suite covers 71 test files with 449 unit tests:
+Representative frontend test areas are listed below; file and case counts change over time:
 | Test File | Coverage Area |
 | :--- | :--- |
 | `tuningMath.test.ts` | 29 test cases covering AEGO gear ratios, springs, ARBs, damping, downforce & alignment |
@@ -253,7 +243,7 @@ Current frontend test suite covers 71 test files with 449 unit tests:
    ```
    feat: add new component type for overlay
    fix: resolve HDR color space detection issue
-   test: implement pytest suite for overlay API
+   test: add Rust backend or frontend contract coverage
    docs: update README with contribution guidelines
    refactor: extract expression engine into separate module
    ```
@@ -265,7 +255,7 @@ Before submitting a Pull Request, please verify the following:
 
 - [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
 - [ ] Code passes `uv run --no-project --python .venv\Scripts\python.exe ruff check .`
-- [ ] All existing unit tests pass through `uv run ... python -m pytest`
+- [ ] Rust backend / CLI contract tests pass with `cargo test --locked --manifest-path backend-rust/Cargo.toml`
 - [ ] If new API routes or core logic were added, corresponding unit tests have been written
 - [ ] If `tuningMath.ts` / `tuningDiagnosis.ts` pure logic was updated, corresponding Vitest unit tests have been added
 - [ ] If significant architectural changes or core modules were added, `README.md` & `README.en.md` have been updated
@@ -297,12 +287,12 @@ The project uses GitHub Actions for automated quality control. Every push to `ma
 
 | Stage | Description |
 | :--- | :--- |
-| **Lint** | uv-managed `ruff check` static analysis + `ruff format --check` formatting verification |
-| **Test (Backend)** | Full `pytest` suite execution on both Windows and Ubuntu platforms |
+| **Lint** | uv-managed Ruff checks for Python tools and Cargo fmt for Rust |
+| **Test (Backend)** | Rust Cargo product contract tests (including no-HUD build); CI also runs frozen Python migration-compatibility and release-validation cases, not a Python backend |
 | **Test (Frontend)** | `cd frontend && pnpm run test` Vitest suite execution (covers `tuningMath.ts` & UI logic) |
 
 > [!IMPORTANT]
-> The CI pipeline is now fully automated and no longer requires reviewer approval to trigger. Ensure you run the uv-managed Ruff and Pytest commands locally before pushing to avoid unnecessary CI failures.
+> The current CI workflows define the required gates. Run Cargo, Vitest, and build checks for the changed scope; CI also runs the frozen Python compatibility/release cases and Ruff checks.
 
 ---
 

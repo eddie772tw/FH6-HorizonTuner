@@ -2,6 +2,8 @@
 use crate::{
     assets, config,
     error::{ApiError, ApiResult},
+    languages::Languages,
+    profile_io::{Lookup, ProfileIo},
     storage,
 };
 use serde_json::{json, Value};
@@ -9,7 +11,7 @@ use std::{
     collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
-    sync::{Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard},
 };
 use tokio::sync::{broadcast, watch};
 
@@ -21,7 +23,9 @@ pub struct ConfigService {
     pub root: PathBuf,
     pub settings: Mutex<Value>,
     pub car_database: Value,
-    pub profiles: Mutex<BTreeMap<String, Value>>,
+    pub profiles: Arc<Mutex<BTreeMap<String, Value>>>,
+    profile_io: ProfileIo,
+    languages: Languages,
     pub overlay: broadcast::Sender<Value>,
     pub settings_changed: watch::Sender<Value>,
 }
@@ -44,11 +48,16 @@ impl ConfigService {
         settings["units"] = config::normalize_units(&settings["units"]);
         let (overlay, _) = broadcast::channel(32);
         let (settings_changed, _) = watch::channel(settings.clone());
+        let profiles = Arc::new(Mutex::new(BTreeMap::new()));
+        let profile_io =
+            ProfileIo::new(root.to_owned(), profiles.clone()).map_err(|e| ApiError::new(500, e))?;
         Ok(Self {
             root: root.to_owned(),
             settings: Mutex::new(settings),
             car_database: assets::json("car_database.json").unwrap_or(json!({})),
-            profiles: Mutex::new(BTreeMap::new()),
+            profiles,
+            profile_io,
+            languages: Languages::new(root.to_owned()),
             overlay,
             settings_changed,
         })
@@ -78,10 +87,27 @@ impl ConfigService {
             .or_else(|| assets::json(&format!("car_params/{id}.json")))
     }
     pub fn save_car_params(&self, id: &str, value: &Value) -> ApiResult<()> {
-        let path = storage::safe_path(&self.root.join("car_params"), &format!("{id}.json"))?;
-        storage::atomic_json(&path, value)?;
+        storage::safe_path(&self.root.join("car_params"), &format!("{id}.json"))?;
+        // Explicit API writes wait for earlier automatic versions before returning.
+        self.profile_io.flush().map_err(|e| ApiError::new(500, e))?;
+        self.profile_io
+            .save(id, value.clone())
+            .map_err(|e| ApiError::new(500, e))?;
+        self.profile_io.flush().map_err(|e| ApiError::new(500, e))?;
         lock(&self.profiles).insert(id.to_owned(), value.clone());
         Ok(())
+    }
+    pub(crate) fn live_car_params(&self, id: &str) -> Lookup {
+        self.profile_io.resolve(id)
+    }
+    pub(crate) fn schedule_car_params(&self, id: &str, value: Value) -> Result<(), String> {
+        self.profile_io.save(id, value)
+    }
+    pub(crate) fn flush_profiles(&self) -> Result<(), String> {
+        self.profile_io.flush()
+    }
+    pub(crate) fn profile_metrics(&self) -> Value {
+        self.profile_io.snapshot()
     }
     pub fn list_drag_sessions(&self) -> Vec<Value> {
         let mut sessions: Vec<Value> = json_files(&self.root.join("drag_sessions"))
@@ -126,16 +152,11 @@ impl ConfigService {
                 value["dyno_curve"]=json!({}); if let Some(object)=value.as_object_mut() { object.remove("maxHpRpm"); object.remove("maxTorqueRpm"); }
                 self.save_car_params(id,&value)?; Ok(json!({"message":"Dyno curve data cleared successfully"}))
             }
-            ("GET",["api","languages"]) => {
-                let mut languages=serde_json::Map::new(); languages.insert("en-us".to_owned(),json!("English (US)"));
-                for path in json_files(&self.root.join("lang")) { let code=path.file_stem().unwrap().to_string_lossy().to_lowercase(); if code=="iso639" || code=="en-us" {continue;} if let Ok(v)=storage::read_json(&path) { if v.is_object() {languages.insert(code.clone(),v.get("__language_name__").cloned().unwrap_or(json!(code)));} } }
-                for (code,value) in assets::languages() { languages.entry(code.clone()).or_insert_with(||value.get("__language_name__").cloned().unwrap_or(json!(code))); }
-                Ok(json!(languages.into_iter().map(|(code,name)|json!({"code":code,"name":name})).collect::<Vec<_>>()))
-            }
+            ("GET",["api","languages"]) => Ok(self.languages.list()),
             ("GET",["api","languages",code]) => {
                 if !code.chars().all(|c| c.is_ascii_alphanumeric() || c=='-') {return Err(ApiError::invalid("Invalid language code"));}
                 let code=code.to_lowercase(); if code=="en-us" {return Ok(json!({}));}
-                Ok(storage::read_json(&self.root.join("lang").join(format!("{code}.json"))).ok().or_else(||assets::json(&format!("lang/{code}.json"))).unwrap_or(json!({"error":"Language not found"})))
+                Ok(self.languages.get(&code))
             }
             ("GET",["api","tunings"]) => Ok(json!({"tunings":json_files(&self.root.join("tunings")).iter().filter_map(|p|p.file_stem()?.to_str()).collect::<Vec<_>>()})),
             ("GET" | "POST",["api","tunings",id,name]) => {

@@ -53,7 +53,7 @@ Agent 文件、技能說明、工作日誌與規範內容以繁體中文為主�
 ## Skill 選擇補充
 
 - 前端 UI 組件拆分 (>250行)、解耦 React DOM 或 60Hz Canvas 渲染路徑使用 `huge-component-refactoring`。
-- 非 UI 的 Python/TS 底層架構模組化、Domain 邏輯抽離與跨前後端型別契約使用 `modular-refactoring`；兩者同時適用時先讀前者。
+- 非 UI 的 Rust/TS 底層架構模組化、Domain 邏輯抽離與跨前後端型別契約使用 `modular-refactoring`；此技能也適用於選用 Python 維護工具。與巨型 UI 拆分同時適用時先讀 `huge-component-refactoring`。
 - 稽核與修復 `.agents`、`.jules`、Journal 或 skill 索引時使用 `agent-governance-audit`。
 - 發行 portable/exe、sidecar 或動態 HTTP port 時使用 `portable-release-validation`。
 - 作為 Reviewer 審查他人 PR 狀態、CI 與提出 Review / Inline Comments 時使用 `pr-review-evaluation`。

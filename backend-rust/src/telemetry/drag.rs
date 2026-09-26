@@ -430,33 +430,44 @@ fn path_stats(points: &[Value]) -> (bool, f64, f64) {
         return (true, 0.0, 0.0);
     }
     let n = points.len();
-    let xs: Vec<f64> = points.iter().map(|p| fv(p, "PositionX", 0.0)).collect();
-    let zs: Vec<f64> = points.iter().map(|p| fv(p, "PositionZ", 0.0)).collect();
-    let ys: Vec<f64> = points.iter().map(|p| fv(p, "Yaw", 0.0)).collect();
-    let mx = xs.iter().sum::<f64>() / n as f64;
-    let mz = zs.iter().sum::<f64>() / n as f64;
-    let num = xs
-        .iter()
-        .zip(zs.iter())
-        .map(|(x, z)| (x - mx) * (z - mz))
-        .sum::<f64>();
-    let den = xs.iter().map(|x| (x - mx).powi(2)).sum::<f64>();
+    let mut coordinates = Vec::with_capacity(n);
+    let (mut sum_x, mut sum_z, mut cos_sum, mut sin_sum) = (0.0, 0.0, 0.0, 0.0);
+    for p in points {
+        let (x, z, yaw) = (
+            fv(p, "PositionX", 0.0),
+            fv(p, "PositionZ", 0.0),
+            fv(p, "Yaw", 0.0),
+        );
+        coordinates.push((x, z, yaw));
+        sum_x += x;
+        sum_z += z;
+        cos_sum += yaw.cos();
+        sin_sum += yaw.sin();
+    }
+    let mx = sum_x / n as f64;
+    let mz = sum_z / n as f64;
+    let (mut num, mut den) = (0.0, 0.0);
+    for &(x, z, _) in &coordinates {
+        num += (x - mx) * (z - mz);
+        den += (x - mx).powi(2);
+    }
     let dev = if den == 0.0 {
-        xs.iter().map(|x| (x - mx).abs()).fold(0.0, f64::max)
+        coordinates
+            .iter()
+            .map(|(x, _, _)| (x - mx).abs())
+            .fold(0.0, f64::max)
     } else {
         let a = num / den;
         let b = mz - a * mx;
-        xs.iter()
-            .zip(zs.iter())
-            .map(|(x, z)| (a * x - z + b).abs() / (a * a + 1.0).sqrt())
+        coordinates
+            .iter()
+            .map(|(x, z, _)| (a * x - z + b).abs() / (a * a + 1.0).sqrt())
             .fold(0.0, f64::max)
     };
-    let c = ys.iter().map(|y| y.cos()).sum::<f64>() / n as f64;
-    let s = ys.iter().map(|y| y.sin()).sum::<f64>() / n as f64;
-    let avg = s.atan2(c);
+    let avg = (sin_sum / n as f64).atan2(cos_sum / n as f64);
     let mut min = f64::INFINITY;
     let mut max = f64::NEG_INFINITY;
-    for y in ys {
+    for &(_, _, y) in &coordinates {
         let d = (y - avg).sin().atan2((y - avg).cos());
         min = min.min(d);
         max = max.max(d)

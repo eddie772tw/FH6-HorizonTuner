@@ -2,7 +2,7 @@
 
 > 本文保留原始架構評估與規劃。已實作功能、目前限制及實機驗收狀態請以 [Companion 實作邊界](companion-implementation-boundary.md) 和 [本次驗收紀錄](companion-acceptance-20260923.md) 為準。
 
-本文件基於 [`ref/padlink`](../../ref/padlink) 參考專案的概念與實作為基準，針對 **HorizonTuner Companion APP（Android 行動端輔助應用程式）** 進行深度架構評估、技術選型決策與詳細系統設計。
+本文件基於當時本機忽略追蹤的 `ref/padlink` checkout，針對 **HorizonTuner Companion APP（Android 行動端輔助應用程式）** 進行架構評估與規劃。該參考資料不隨 repository 發佈。
 
 ---
 
@@ -21,7 +21,7 @@ HorizonTuner 桌面端為玩家提供 Forza Horizon 遊戲的高頻遙測監控�
 
 ## 2. PadLink 參考專案核心概念剖析
 
-在評估 Companion APP 時，[`ref/padlink`](../../ref/padlink) 提供了極具價值的架構範例：
+在評估 Companion APP 時，當時本機忽略追蹤的 `ref/padlink` checkout 提供了架構參考：
 
 | PadLink 核心概念 | 實作特點 (`ref/padlink`) | HorizonTuner 映射價值 |
 | :--- | :--- | :--- |
@@ -34,7 +34,7 @@ HorizonTuner 桌面端為玩家提供 Forza Horizon 遊戲的高頻遙測監控�
 
 ### 2.1 PadLink 上游協議之雙向反饋與標準化演進 (Upstream Standardization)
 
-隨 HorizonTuner 在 PR #425 中實作並驗證了多網卡 LAN QR 配對、USB ADB 反向轉發、連線看門狗與動態資產 SHA-256 快取機制，維護 PadLink 協議的 Agent 已從 HorizonTuner 專案唯讀提煉相應實作，並全數反饋至原始專案（`D:\padlink`），達成架構標準化與雙向迭代：
+隨 HorizonTuner 在 PR #425 中實作並驗證了多網卡 LAN QR 配對、USB ADB 反向轉發、連線看門狗與動態資產 SHA-256 快取機制，維護 PadLink 協議的 Agent 當時回報已唯讀提煉並回饋相應實作。原始專案 checkout 路徑依本機環境而異；此為提案紀錄，不作現行產品狀態證據：
 
 1. **多傳輸通道抽象 (`ITransport`)**：PadLink 上游已從原先單一藍牙 RFCOMM 擴展為通用 `ITransport` 介面，納入 `RfcommTransport`、`UsbAdbTransport` 與 `WebSocketTransport`。
 2. **標準五態連線狀態機 (`ConnectionStateMachine`)**：標準化 `DISCONNECTED`、`CONNECTING`、`PAIRED`、`STREAMING`、`RECONNECTING` 五大狀態與 1s~16s 指數退避機制。
@@ -74,7 +74,7 @@ HorizonTuner 桌面端為玩家提供 Forza Horizon 遊戲的高頻遙測監控�
 
 ### 4.1 5 大遙測卡片滑動切換與展開 (`driver`, `traces`, `dynamics`, `tires`, `suspension`)
 
-桌面端現有 5 種遙測區塊定義於 [`TelemetryCardShell.tsx`](file:///d:/FH6-HorizonTuner/frontend/src/features/telemetry/components/TelemetryCardShell.tsx)：
+桌面端現有 5 種遙測區塊定義於 [`TelemetryCardShell.tsx`](../../frontend/src/features/telemetry/components/TelemetryCardShell.tsx)：
 1. `driver`：油門、煞車、離合器、手煞車垂直輸入條、方向盤轉角儀表與引擎轉速。
 2. `traces`：踩踏曲線歷史軌跡 (Pedal Trace Canvas) 與馬力/扭力曲線 (PowerTorqueCanvas)。
 3. `dynamics`：車身動態、G-Force 雷達圖 (GForceRadar) 與側向加速度。

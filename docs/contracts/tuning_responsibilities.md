@@ -15,7 +15,7 @@
 ### 1.1 演進階段與落地狀態 (Evolution Phases & Implementation Status)
 
 1. **基礎建立與契約鎖定 (PR 1 ~ PR 2)**：
-   - **前端基準鎖定**：以 [`frontend/src/utils/tuningMath.ts`](file:///d:/FH6-HorizonTuner/frontend/src/utils/tuningMath.ts) 為調校演算法之功能基準。
+   - **現行雙端契約**：Rust `backend-rust/src/tuning/` 與 TypeScript `frontend/src/utils/tuningMath.ts` 經 golden fixtures 對齊；產品後端計算以 Rust 實作為準，前端維持一致的可觀察輸出。
    - **黃金資料集保護**：建立 `tests/fixtures/tuning_golden_fixtures.json`，鎖定 18 組涵蓋四大賽事與驅動組合之輸入與預期輸出，並建立前端契約測試 `frontend/src/utils/tuningMath.contract.test.ts`。
    - **後端過渡求解器**：`backend-rust/src/mcp/service.rs` 與 `backend-rust/src/tuning/legacy_cli.rs` 保留 `tuning-dev/v1 (Legacy Quick Baseline Solver)`，明確與正式調校契約區隔。Python 參考已移除，數值由凍結 fixtures 驗證。
 

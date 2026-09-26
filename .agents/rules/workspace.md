@@ -21,7 +21,7 @@
 - 在完成或宣佈任何開發與重構任務前，必須執行以下驗證測試（遵循反過度測試與分層原則）：
   - 後端與 CLI 輸入／輸出契約：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；無 HUD 平台另加 `--no-default-features`。
   - Rust 格式：`cargo fmt --manifest-path backend-rust/Cargo.toml -- --check`。
-  - 後端代碼檢查：`uv run --no-project --python .venv\Scripts\python.exe ruff check .` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
+  - 選用 Python 維護工具檢查（僅修改 Python 工具時）：`uv run --no-project --python .venv\Scripts\python.exe ruff check .` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff format --check .`
   - 前端單元測試：`cmd /c "pnpm -C frontend run test"` (或 `pnpm run test`)
   - 工具鏈腳本測試（若有修改工具）：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest scripts/tests/`
 - 嚴禁為了使測試通過而隨意放寬測試條件或修改斷言閾值；嚴禁在單元測試中斷言靜態 YAML 設定或 Canvas 2D 微觀繪圖呼叫次數。
@@ -30,7 +30,7 @@
 
 - Python 3.13、`.venv`、`requirements.txt` 與所有 Python 工具入口遵循 [python-uv.md](python-uv.md)。
 - 任何 Python、pip、pytest、ruff 或 PyInstaller 命令都必須透過 uv 選定 interpreter；不可使用裸 `python`、`pip`、`pytest` 或 `ruff`。
-- 選用維護工具驗證使用 `uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/ scripts/tests/` 與 `uv run --no-project --python .venv\Scripts\python.exe ruff check .`；產品後端與 CLI 使用上列 Cargo 命令。
+- 選用維護工具驗證僅執行對應的 `scripts/tests/` 測試並透過 uv 執行 Ruff；產品後端與 CLI 使用 Cargo 命令。舊 `tests/` Python 後端案例不是現行產品 gate。
 - GitHub Actions 若涉及 Python，必須維持相同的 uv contract；目前 workflow 的同步需求詳見 [python-uv.md](python-uv.md)。
 
 ## HUD ownership and contract directory standard

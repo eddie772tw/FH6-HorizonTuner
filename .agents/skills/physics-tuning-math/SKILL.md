@@ -60,4 +60,4 @@ description: 當新增、修改車輛物理計算（懸吊、彈簧、防傾桿 
 
 - 修改物理算牌公式後，必須於 `tuningMath.test.ts` 新增/更新單元測試案例。
 - 執行測試指令：`cmd /c "pnpm -C frontend run test"`。
-- 後端與 CLI 驗證指令：`uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/test_agent_cli.py`。
+- Rust 後端與 CLI 驗證指令：`cargo test --locked --manifest-path backend-rust/Cargo.toml`；相關公式契約另確認 `tests/fixtures/tuning_golden_fixtures.json` 與前端 Vitest。

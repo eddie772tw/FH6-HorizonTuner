@@ -70,7 +70,7 @@
 
 ```powershell
 uv run --no-project --python .venv\Scripts\python.exe .agents/skills/telemetry-udp-protocol/references/verify_telemetry_v2_v3.py --scan --port 8000
-uv run --no-project --python .venv\Scripts\python.exe python -m pytest tests/
+cargo test --locked --manifest-path backend-rust/Cargo.toml
 cmd /c "pnpm -C frontend run test"
 ```
 
