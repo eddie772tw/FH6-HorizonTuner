@@ -1,9 +1,15 @@
+use axum::http::HeaderMap;
 use fh6_backend::telemetry::{
     collect_dyno_sample, decoded_point, pack_binary, parse_packet, DragRecorder, DynoQualityGate,
     DynoQualityGateRegistry, RaceRecorder, RaceRecorderConfig, RecorderCommand, TelemetryStore,
 };
+use fh6_backend::{
+    app::App,
+    network::{ApiRequest, Backend},
+};
 use serde_json::json;
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 fn set_i32(b: &mut [u8], index: usize, v: i32) {
     b[index * 4..index * 4 + 4].copy_from_slice(&v.to_le_bytes())
@@ -167,6 +173,60 @@ fn drag_recorder_observes_launch_and_finishes_on_release() {
     r.record(&json!({"SpeedMetersPerSecond":5.0,"Gear":1,"AccelInput":0,"TimestampMS":4001,"IsRaceOn":1}));
     assert_eq!(r.status(), "finished");
     assert!(r.analysis().get("drivetrain").is_some())
+}
+#[test]
+fn drag_context_survives_clear_and_uses_the_launched_car_name() {
+    fn request(app: &App, method: &str, path: &str) -> Value {
+        let response = app
+            .request(ApiRequest {
+                method: method.to_owned(),
+                path: path.to_owned(),
+                query: BTreeMap::new(),
+                headers: HeaderMap::new(),
+                body: vec![],
+                upload_filename: None,
+            })
+            .unwrap();
+        assert_eq!(response.status, 200, "{method} {path}");
+        serde_json::from_slice(&response.body).unwrap()
+    }
+
+    let root = tempfile::tempdir().unwrap();
+    let app = App::new(root.path()).unwrap();
+    let cars = app.config.car_database.as_object().unwrap();
+    let cars: Vec<(i64, String)> = cars
+        .iter()
+        .filter_map(|(id, car)| {
+            let ordinal = id.parse().ok()?;
+            let name = car.get("display_name")?.as_str()?;
+            (!name.is_empty() && name != format!("Car {ordinal}")).then(|| (ordinal, name.into()))
+        })
+        .take(2)
+        .collect();
+    assert_eq!(cars.len(), 2, "expected two named cars in bundled database");
+
+    for (id, name) in cars {
+        request(&app, "POST", "/api/drag/prepare");
+        app.process(json!({
+            "CarOrdinal": id,
+            "SpeedMetersPerSecond": 0.1,
+            "Gear": 1,
+            "AccelInput": 255,
+            "TimestampMS": 1000,
+            "IsRaceOn": 1
+        }));
+        app.process(json!({
+            "CarOrdinal": id,
+            "SpeedMetersPerSecond": 0.1,
+            "Gear": 1,
+            "AccelInput": 255,
+            "TimestampMS": 1016,
+            "IsRaceOn": 0
+        }));
+        assert_eq!(request(&app, "GET", "/api/drag/analysis")["car_name"], name);
+        request(&app, "POST", "/api/drag/clear");
+    }
+    app.shutdown();
 }
 #[test]
 fn drag_recorder_matches_generated_fwd_rwd_awd_analysis_shapes() {

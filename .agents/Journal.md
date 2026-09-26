@@ -2839,3 +2839,11 @@
 - **可重現測試落差**：`scripts/tests/test_build_entry.py` 仍模擬舊 uv／Python 打包，但 `build_all.bat` 已使用 PowerShell／Rust；在乾淨 fixture 中缺少 `scripts/build_backend.ps1`。改為受控 Rust 建置腳本，驗證成功、backend 失敗、frontend 失敗與跨目錄路徑，沒有改動產品打包入口。
 - **驗證順序**：backend build.rs 會將 `frontend/dist` 資產以 include_bytes 嵌入；前端重建會刪除舊 hash 檔案，因此 frontend build 與 Cargo 編譯不能同時改讀同一輸出。先完成並固定 frontend dist，再執行 default／no-default-features 與 Tauri 驗證。
 - **本地證據**：前端 141 files／996 tests、Windows／LAN build；Python 與工具腳本 425 passed／8 deselected，Ruff check／format、Rust format 與版本一致性通過。新增 OTA carry 測試確認歷史 macOS channel 被忽略且 Linux channel 保留；這些測試不代表真實 FH6 跨機或 OTA 安裝驗收。
+
+## 2026-09-26 / Python Release 與 Rust 性能對照（Codex as Codex）
+
+- **來源與方法**：v1.6 tag `cd96d86` 是引入 Rust 前公開 Release。驗證 asset SHA-256 後，從 Full portable 的 include_bytes payload 抽出原始 PyInstaller sidecar，未啟動前端；與 `caf518a` Rust release 交錯七輪，各用新資料目錄及隔離 UDP port。Road 另以 release-tag 原始 Python 模組與 Rust library、相同 fixture 做 21 次函式計時及完整輸出比對。
+- **結果與邊界**：啟動 1,757.33→89.25 ms，Working Set 83.33→29.49 MiB；settings/language/MCP initialize 中位數減少 71.9%/87.4%/75.4%，Road summary/matching 減少 87.8%/94.0%。UDP→JSON WS 中位數反而 0.398→1.268 ms，七輪皆 130 processed／0 dropped，不能宣稱所有路徑加速。Private Bytes 不等於駐留實體 RAM；啟動未清 OS cache；MCP initialize 不能代表全部工具。方法、raw samples、hash 與重現命令見 [Release 性能對照](../docs/backend-rust/release-performance-comparison.md)。
+- **CI 時序修正**：`caf518a` Windows portable job 在 Road start 時收到 stale telemetry 409；測試原先在送 frame 後做 SQLite 前置作業，可能超過 2 秒窗口。兩個 lifecycle 測試改為每次 start 前送新遞增 frame，產品 freshness 條件不變。
+- **驗證**：完整 Cargo gate 80 passed／3 ignored；opt-in release comparison 七輪皆成功、完整輸出在 abs/rel 1e-6 容差內一致；維護工具 53 passed；Cargo fmt、兩個新 benchmark 工具 Ruff、diff check。無前端／遊戲／HUD 畫面驗收。
+- **60 Hz 後續調查**：改用獨立固定 deadline sender，recorder 關閉／開啟各 30 秒，前後及 Python 控制組共八個 streams 皆 1,800/1,800 接收，Rust queue peak=1/end=0，writer 無丟樣或失敗。找到 App::process 每幀 clone 651 輛車的 Drag database；移至 App::new 一次設定後，Rust 中位數 1.309/1.294→0.231/0.230 ms，p95 2.031/2.007→0.276/0.271 ms。新增經 App prepare/process/analysis/clear 的兩車非 fallback 名稱回歸。最終 default 81 passed/3 ignored、no-HUD 73 passed/2 ignored、release bins build 成功。修正前此負載已無塞車，修正後降低固定處理成本；單 consumer/localhost 不代表遊戲滿載驗收。

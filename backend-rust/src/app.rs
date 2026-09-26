@@ -65,13 +65,15 @@ impl App {
             )?,
         );
         road.recover()?;
+        let mut drag = DragRecorder::default();
+        drag.set_context(&Value::Null, &config.car_database);
         let engine = Engine {
             race: RaceRecorder::new_with_context(
                 RaceRecorderConfig::default(),
                 config.settings(),
                 config.car_database.clone(),
             ),
-            drag: DragRecorder::default(),
+            drag,
             road,
             dyno: DynoQualityGateRegistry::default(),
             last_profile_save: Instant::now(),
@@ -128,7 +130,6 @@ impl App {
                 (Value::Null, false)
             }
         };
-        engine.drag.set_context(&params, &self.config.car_database);
         engine.drag.record(&frame);
         let _ = self.persist_commands(&mut engine.race);
         if id != "0" && profile_loaded {

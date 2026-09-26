@@ -170,8 +170,26 @@ fn road_service_lifecycle_uses_batched_telemetry_and_persists_summary() {
         .list(Some(workflow["id"].as_str().unwrap()), Some("setup"), false)
         .unwrap()
         .remove(0);
+    // Setup persistence may take long enough for the initial frames to go stale.
+    service.observe(&json!({
+        "TimestampMS": 300, "IsRaceOn": 1, "CurrentRaceTime": 0.3, "CarOrdinal": 42,
+        "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
+        "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.3,
+        "TireTemp": [185, 185, 185, 185]
+    }));
+    service.observe(&json!({
+        "TimestampMS": 400, "IsRaceOn": 1, "CurrentRaceTime": 0.4, "CarOrdinal": 42,
+        "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
+        "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.4,
+        "TireTemp": [185, 185, 185, 185]
+    }));
     let run = service.start_run(workflow["id"].as_str().unwrap(),&json!({"setupId":setup["id"],"settingsConfirmed":true,"otherSettings":"unchanged","tires":"unchanged","conditions":"unchanged","driverAssists":"unchanged"})).unwrap();
-    service.observe(&json!({"TimestampMS":300,"IsRaceOn":1,"CurrentRaceTime":0.3,"CarOrdinal":42,"CarPerformanceIndex":700,"DrivetrainType":1,"CarClass":3,"SpeedMetersPerSecond":20.0,"LapNumber":0,"CurrentLap":0.3,"TireTemp":[185,185,185,185]}));
+    service.observe(&json!({
+        "TimestampMS": 500, "IsRaceOn": 1, "CurrentRaceTime": 0.5, "CarOrdinal": 42,
+        "CarPerformanceIndex": 700, "DrivetrainType": 1, "CarClass": 3,
+        "SpeedMetersPerSecond": 20.0, "LapNumber": 0, "CurrentLap": 0.5,
+        "TireTemp": [185, 185, 185, 185]
+    }));
     assert_eq!(service.live()["sampleCount"], 1);
     service.stop().unwrap();
     let summaries = service
@@ -204,6 +222,17 @@ fn road_workflow_candidate_comparison_decision_and_recovery_preserve_links() {
         .unwrap()
         .remove(0);
     let start = |service: &mut RoadService, setup: &Value, start_ms: i64| {
+        // Each start follows database work; establish a new progressing telemetry window.
+        service.observe(&frame(
+            start_ms - 200,
+            (start_ms - 200) as f64 / 1000.0,
+            0.0,
+        ));
+        service.observe(&frame(
+            start_ms - 100,
+            (start_ms - 100) as f64 / 1000.0,
+            2.0,
+        ));
         let run=service.start_run(&wf,&json!({"setupId":setup["id"],"settingsConfirmed":true,"otherSettings":"unchanged","tires":"unchanged","conditions":"unchanged","driverAssists":"unchanged"})).unwrap();
         for i in 1..=25 {
             service.observe(&frame(start_ms + i * 100, i as f64 / 10.0, i as f64 * 2.0));

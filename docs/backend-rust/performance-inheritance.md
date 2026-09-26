@@ -59,3 +59,11 @@ cargo test --locked -j 2 --release --manifest-path backend-rust/Cargo.toml --tes
 | SQLite batch 1,000 rows | 41.0120 ms | 36.1894 ms | 11.8% |
 
 單機短測仍有作業系統排程與磁碟波動；SQLite 前後樣本區間有重疊，不把中位數差異宣稱為所有磁碟／負載的保證。語言 probe 呼叫 ConfigService handler，不含 HTTP 傳輸。完整 default gate 的程序案例另以最終 release sidecar／CLI 執行，覆蓋 75 個 HTTP method/path、MCP、UDP/WS、持久化與關機。
+
+## 補充：Python v1.6 Release 對照
+
+後續依使用者要求另完成 [Python v1.6 與 Rust 性能測量](release-performance-comparison.md)：實際發行的 PyInstaller sidecar 對目前 release sidecar，量測啟動、記憶體、HTTP／MCP 與 UDP→WS；另以 v1.6 tag 原始模組對 Rust library 量測 Road summary／matching，完整輸出一致。此對照不改寫上表 Rust before/after 的意義，也不把 v1.6 之後的所有歷史優化歸因於本次 commit。
+
+API／Road 有改善，但第一輪 UDP→JSON WS 中位數由 0.398 ms 增至 1.268 ms；七輪兩端皆完整處理 130 frames，0 dropped。原始樣本與退步皆保留。進一步固定 60 Hz 調查發現 `App::process` 每幀深複製整份 Drag car database；改為初始化一次後，recorder 關閉／開啟的 30 秒 stream 中位數由 1.309／1.294 ms 降至 0.231／0.230 ms。前後均完整收到 1,800 frames，Rust queue 峰值 1、結束 0，沒有持久化丟樣／失敗。
+
+最終完整 default gate 為 81 passed、3 ignored；no-default-features 為 73 passed、2 ignored。新增 App 車名回歸測試，另修正 Road lifecycle 在建立設定後、每次 start 前更新遙測，避免 CI 磁碟耗時令前置 frame 超過產品 2 秒有效窗，未放寬產品檢查。
