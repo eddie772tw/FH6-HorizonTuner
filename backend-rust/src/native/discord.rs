@@ -105,6 +105,35 @@ struct DiscordIpc {
     application_id: String,
 }
 
+#[cfg(unix)]
+fn unix_ipc(index: usize) -> Result<Box<dyn IpcStream>, String> {
+    let mut roots = Vec::new();
+    for name in ["XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"] {
+        if let Some(value) = env::var_os(name).filter(|value| !value.is_empty()) {
+            let path = std::path::PathBuf::from(value);
+            if !roots.contains(&path) {
+                roots.push(path);
+            }
+        }
+    }
+    roots.push(std::path::PathBuf::from("/tmp"));
+    for root in roots {
+        if let Ok(stream) =
+            std::os::unix::net::UnixStream::connect(root.join(format!("discord-ipc-{index}")))
+        {
+            // A desktop client that stalls during handshake must not pin shutdown.
+            stream
+                .set_read_timeout(Some(Duration::from_millis(100)))
+                .map_err(|e| e.to_string())?;
+            stream
+                .set_write_timeout(Some(Duration::from_millis(100)))
+                .map_err(|e| e.to_string())?;
+            return Ok(Box::new(stream));
+        }
+    }
+    Err("Discord IPC socket is unavailable".into())
+}
+
 impl DiscordIpc {
     fn new(application_id: String) -> Self {
         Self {
@@ -125,9 +154,7 @@ impl DiscordIpc {
             } else {
                 #[cfg(unix)]
                 {
-                    std::os::unix::net::UnixStream::connect(format!("/tmp/discord-ipc-{index}"))
-                        .map(|s| Box::new(s) as Box<dyn IpcStream>)
-                        .map_err(|e| e.to_string())
+                    unix_ipc(index)
                 }
                 #[cfg(not(unix))]
                 {

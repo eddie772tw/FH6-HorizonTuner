@@ -4,6 +4,7 @@ import "halfmoon/css/halfmoon.min.css";
 import "halfmoon/css/cores/halfmoon.cores.css";
 import App from "./App";
 import { configureBackendTransport, waitForBackendReady } from "./services/backend";
+import { initializeRuntimeCapabilities } from './services/runtimeCapabilities';
 
 import { applyThemeEarly } from './app/applyThemeEarly';
 
@@ -17,6 +18,7 @@ async function initApp() {
     }
 
     configureBackendTransport(backend.port);
+    await initializeRuntimeCapabilities();
     console.log("Backend sidecar is ready on port:", backend.port);
   } catch (error) {
     console.error("Backend startup failed:", error);

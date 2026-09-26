@@ -329,6 +329,10 @@ We are committed to the security of our users and project. If you discover a sec
 
 ## Release Build Contract
 
+The Release Action also builds **Linux x86_64 Full AppImage**. It retains tuning, Live telemetry, recording, analysis, export and MCP, while excluding HUD, audio spectrum and system media integration. FH6 runs on another device on the same LAN. The Data Out guide lists receiver addresses and the actual UDP port; HTTP and MCP remain localhost-only.
+
+Linux builds on Ubuntu 22.04 and requires compatible system graphics libraries. Windows and Linux publish independently with their own OTA channels; configured builds do not constitute native or real-game acceptance. macOS is unsupported. See the [cross-platform release guide](docs/guides/cross-platform-release.md) for assets, limits and maintenance. The EXE and Full/Lite portable contract below applies to Windows.
+
 The release artifact is a single `FH6-HorizonTuner.exe`. No installer and no
 separate sidecar file are required. The Rust backend is embedded into
 the Tauri host and extracted to a versioned temporary directory at startup.

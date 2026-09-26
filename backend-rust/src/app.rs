@@ -42,6 +42,7 @@ pub struct App {
     companion_workflow: Mutex<crate::companion_workflow::CompanionWorkflow>,
     companion_usb_operation: Mutex<()>,
     pub metrics: Mutex<Metrics>,
+    pub telemetry_binding: Mutex<crate::platform::TelemetryBinding>,
     engine: Mutex<Engine>,
     telemetry: watch::Sender<Option<Arc<Value>>>,
     epoch: Instant,
@@ -87,6 +88,7 @@ impl App {
             companion_workflow: Mutex::new(crate::companion_workflow::CompanionWorkflow::default()),
             companion_usb_operation: Mutex::new(()),
             metrics: Mutex::new(Metrics::default()),
+            telemetry_binding: Mutex::new(crate::platform::TelemetryBinding::default()),
             engine: Mutex::new(engine),
             telemetry,
             epoch: Instant::now(),
@@ -462,6 +464,36 @@ impl Backend for App {
         lock(&self.metrics).client_delta(channel, delta);
     }
     fn request(&self, request: ApiRequest) -> ApiResult<ApiResponse> {
+        if request.method == "GET" && request.path == "/api/health" {
+            return Ok(ApiResponse::json(
+                json!({"status":"ready","version":env!("CARGO_PKG_VERSION")}),
+            ));
+        }
+        if request.method == "GET" && request.path == "/api/runtime" {
+            return Ok(ApiResponse::json(json!({
+                "platform": std::env::consts::OS,
+                "capabilities": crate::platform::capabilities(),
+                "telemetry": *lock(&self.telemetry_binding),
+            })));
+        }
+        if !crate::platform::HUD_ENABLED {
+            if request.path.starts_with("/api/overlay/")
+                || request.path.starts_with("/api/audio/")
+                || request.path.starts_with("/api/hud/")
+                || request.path == "/api/diagnostics/overlay"
+            {
+                return Err(ApiError::new(
+                    501,
+                    "unsupported: HUD is not included in this build",
+                ));
+            }
+            if request.path.starts_with("/hud/") || request.path.starts_with("/hud_user/") {
+                return Err(ApiError::new(
+                    404,
+                    "HUD assets are not included in this build",
+                ));
+            }
+        }
         match (request.method.as_str(), request.path.as_str()) {
             ("GET", "/api/companion/usb/devices") => {
                 let _operation = lock(&self.companion_usb_operation);

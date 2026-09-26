@@ -4,6 +4,8 @@ use std::io::Write;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+#[cfg(not(windows))]
+use tauri::Manager;
 
 const MAX_EXPORT_BYTES: usize = 64 * 1024 * 1024;
 static SAVING: AtomicBool = AtomicBool::new(false);
@@ -132,7 +134,32 @@ pub async fn save_export_file(
         .map_err(|e| e.to_string())?
     }
     #[cfg(not(target_os = "windows"))]
-    Err("Native export dialogs are currently supported on Windows.".into())
+    {
+        use tauri_plugin_dialog::DialogExt;
+        if SAVING.swap(true, Ordering::AcqRel) {
+            return Err("Another save dialog is already open.".into());
+        }
+        let guard = SaveGuard;
+        let app = window.app_handle().clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            let _guard = guard;
+            let extension = validate_export(&suggested_name, data.len())?;
+            let chosen = app
+                .dialog()
+                .file()
+                .set_file_name(&suggested_name)
+                .add_filter(extension.to_uppercase(), &[extension])
+                .blocking_save_file();
+            let Some(chosen) = chosen else {
+                return Ok(None);
+            };
+            let path = chosen.into_path().map_err(|error| error.to_string())?;
+            write_export(&path, &data)?;
+            Ok(Some(path.to_string_lossy().into_owned()))
+        })
+        .await
+        .map_err(|error| error.to_string())?
+    }
 }
 
 #[cfg(test)]

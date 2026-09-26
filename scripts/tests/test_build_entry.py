@@ -17,22 +17,20 @@ def build_workspace(tmp_path):
     root = tmp_path / "checkout with spaces"
     root.mkdir()
     shutil.copyfile(ROOT / "build_all.bat", root / "build_all.bat")
-    for relative in (
-        ".venv/Scripts/python.exe",
-        "frontend/node_modules/.bin/tauri.cmd",
-    ):
+    for relative in ("frontend/node_modules/.bin/tauri.cmd",):
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
     tools = tmp_path / "fake tools"
     tools.mkdir()
-    (tools / "uv.cmd").write_text(
-        "@echo off\n"
-        'echo uv %*>>"%TRACE%"\n'
-        'if "%FAIL_STAGE%"=="python" exit /b 7\n'
-        'if not exist "%FIXTURE%\\dist" mkdir "%FIXTURE%\\dist"\n'
-        'echo backend>"%FIXTURE%\\dist\\server-sidecar-x86_64-pc-windows-msvc.exe"\n'
-        "exit /b 0\n",
+    (tools / "cargo.cmd").write_text("@exit /b 0\n", encoding="utf-8")
+    (root / "scripts").mkdir()
+    (root / "scripts/build_backend.ps1").write_text(
+        "Add-Content -LiteralPath $env:TRACE -Value 'Rust backend'\n"
+        "if ($env:FAIL_STAGE -eq 'backend') { exit 7 }\n"
+        "$output = Join-Path $env:FIXTURE 'dist'\n"
+        "New-Item -ItemType Directory -Force -Path $output | Out-Null\n"
+        "Set-Content -LiteralPath (Join-Path $output 'server-sidecar-x86_64-pc-windows-msvc.exe') -Value 'backend'\n",
         encoding="utf-8",
     )
     (tools / "pnpm.cmd").write_text(
@@ -54,7 +52,7 @@ def build_workspace(tmp_path):
     return root, env
 
 
-@pytest.mark.parametrize("failure", ["", "python", "frontend"])
+@pytest.mark.parametrize("failure", ["", "backend", "frontend"])
 def test_build_exit_and_artifacts_from_an_unrelated_directory(
     build_workspace, tmp_path, failure
 ):
@@ -74,3 +72,5 @@ def test_build_exit_and_artifacts_from_an_unrelated_directory(
     commands = Path(env["TRACE"]).read_text()
     assert "pip install" not in commands
     assert " install " not in commands
+    assert ("Rust backend" in commands) is (failure != "frontend")
+    assert ("tauri build" in commands) is (not failure)

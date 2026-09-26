@@ -2784,3 +2784,38 @@
 - **決策**：Android Compose 統一持有 Telemetry／Tuning／Connection 分頁、離線提示、QR 優先的連線設定、折疊式手動欄位與診斷資訊；只有連線後的共用遙測圖表與 Tuning 內容由 WebView 呈現。原生與 WebView 對齊深色面板、青色作用中分頁及藍色操作按鈕；初次連線前延後建立 WebView。
 - **實機驗證**：平板 `bd411745` 在 LAN 連線前後使用同一組 Compose 分頁；Telemetry 五卡、Tuning 等待桌面快照頁、Connection 進階欄位均可切換。切換 LAN／USB 會先斷開舊連線，避免模式與實際通道不一致；USB 無反向轉發時顯示 `ERR_CONNECTION_REFUSED`、重試與返回主畫面，返回後仍可用原生分頁。連線指示區分 WebView 載入、Companion 後端輪詢及桌面前端心跳，以免後端離線誤報為只有前端未連線。
 - **驗證**：Android `:protocol-core:test :app:lintDebug :app:assembleDebug` 成功；前端 135 files／941 tests 與 production build 成功；Python Ruff check／format 與 349 passed／8 deselected。實機 sidecar-only 連線為黃色「桌面前端未連線」，停止測試 sidecar 後後端輪詢轉 Offline、badge 轉紅，沒有繼續誤報黃色；CI 結果見 PR #425 的最終驗證紀錄。
+## 2026-09-22 / 跨平台 Full 發行與獨立 OTA channel
+
+- **範圍**：依使用者修正，先將 `codex/cross-platform-release-ota` 建立於更新後 `origin/main` 的 `b6259865a442dedf90062eb6e46bc0ef95fea686`，不沿用 Companion 架構分支。採用 `portable-release-validation`、`modular-refactoring`、`halfmoon-design-system`、`huge-component-refactoring`。產品基礎已遷移 Rust，因此原生套件使用 Rust sidecar，而非重新引入 Python 打包。
+- **能力邊界**：macOS ARM64 Full 與 Linux x86_64 Full 使用 no-HUD Cargo feature profile 及前端 LAN 入口。Rust 不嵌入 HUD，不建立音訊／媒體 worker；Vite 模組圖拒絕 HUD／overlay_control imports。Live 頁面的 HUD 設定讀取與 BroadcastChannel 也必須受能力控制，僅移除 HUD 導航並不足夠。
+- **可重現的 port 問題**：啟動時 `TELEMETRY_PORT` 與設定檔 port 不同，儲存語言等設定曾使新的接收器控制邏輯切回設定 port。環境變數現在在啟動及設定更新時均優先，runtime API 只回報成功 bind 的地址。重新 bind 失敗時保留原接收器，回報錯誤。
+- **OTA 與重跑**：payload／signature 不可覆寫已發布的不同 bytes；驗證上傳內容後才發布 manifest。carry-forward 保存舊 runtime version、URL、簽章，不為首次失敗的平台假造 channel。GitHub asset 替換不具原子性，保留短暫空窗與重跑復原說明。publisher-only retry 必須使用不含 `run_attempt` 的 artifact 名稱，才能下載先前成功建置的同一組 bytes；實際 GitHub 重跑仍待 CI 驗證。
+- **本機證據**：前端 131 files／930 tests；Windows Full／Lite 與 LAN bundle 建置；Rust 有 HUD／無 HUD 契約；Tauri host 單元測試；24 個發布／簽章工具測試；三份 workflow 的 Actionlint、Ruff、version consistency、Rust format 及 diff whitespace 檢查。Windows release sidecar 與 Tauri EXE 可編譯。macOS／Linux `cargo tree --target ... --no-default-features --edges normal` 不含 rustfft 與 Windows API crates。
+- **受控介面／程序證據**：以暫存資料目錄啟動 Windows 上的 no-HUD backend 與 LAN web bundle，導航僅有 Live／Tune／Sessions；Data Out 顯示實際 LAN IP 與覆寫 port 18000，20 個合成封包顯示 20 個有效影格。檢查 default／modern／elegant 深淺主題，無新增 console error。獨立 smoke helper 驗證 `embeddedHudFiles=0`、HTTP occupied-port fallback、10 個合成封包、stdin EOF 與 UDP port 釋放；證據保存在本機 ignored `scratch/lan-backend-smoke-ig2c9ocu/`。
+- **限制**：Windows no-HUD 編譯／本機 UDP 與瀏覽器介面，不等於 macOS／Linux 原生套件、GTK／Cocoa 儲存視窗、完整 OTA 安裝或真實跨機 FH6 驗收。native CI 已接入相同 reusable packaging workflow，PR／手動測試使用臨時簽章，不發布 Release。未以本次本機結果宣稱跨平台驗收完成。
+- **操作文件**：[跨平台發行指南](../docs/guides/cross-platform-release.md)。
+
+## 2026-09-23 / PR #426 Linux AppImage 本機驗證（Lynn as Hermes）
+
+- **範圍**：在本機 Ubuntu 22.04 x86_64 容器中驗證 PR #426 Linux LAN release 路徑；隔離 worktree 為 `FH6-HorizonTuner-pr-426`，未改動 main worktree。文件補上本機建置命令，並新增 root `/.pnpm-store/` ignore，避免 pnpm cache 讓 PR worktree 顯示未追蹤檔。
+- **工具鏈與建置**：Node 22.23.2、pnpm 11.27.0、uv 0.12.18、Rust stable。版本一致性、Rust format、Rust no-default-features tests、release helper pytest、Tauri host tests（5 passed）、LAN frontend production build 與 Linux native backend build 均完成。Linux AppImage 與測試 updater signature 成功產生；AppImage 為 86,911,480 bytes，signature 為 436 bytes。環境原先帶有 `UV_PYTHON_PREFERENCE=only-managed` 時，`uv venv --managed-python` 會拒絕執行；本機指南用 `env -u` 限定移除此衝突變數。
+- **封裝 smoke**：`smoke_native_release.py` 回報 runtime `linux`、10 個 frames、HTTP requested port 44595 fallback 至 37015、UDP telemetry port 43204，且 shutdown 為 `clean`。另以 DBus + Xvfb 啟動 AppImage，5 秒內建立 `FH6-Horizon Tuner` 視窗。
+- **前端測試差異**：標準 5 秒 timeout 的完整本機 Vitest 首次有 1 個 stress test timeout；同一 stress 檔 22 tests 在 30 秒 timeout 下通過。完整 140 files／989 tests 在 `--testTimeout=30000 --maxWorkers=2 --no-file-parallelism` 下全通過，用時 107.60 秒；PR 上標準 frontend CI check 亦為 pass。沒有修改測試斷言或其標準 timeout。
+- **邊界與工具限制**：Xvfb 視窗建立不等同實際桌面／Wayland 操作；OTA 真實安裝、跨裝置遊戲驗收仍未完成。容器驗證 wrapper 最後的 `git status` 因 worktree `.git` 指向未掛載的 parent repo 而退出 128；已在 host 另行檢查 Git 狀態，這不是產品 build 或 smoke failure。
+- **操作文件**：[跨平台發行指南](../docs/guides/cross-platform-release.md)。使用 `portable-release-validation`、`pr-author-maintainer`、`cross-agent-collaboration`、`engineering-governance`、`agent-governance-audit`。
+
+## 2026-09-23 / PR #426 同步最新 main 與重新驗證
+
+- **Main 同步**：`origin/main` 在 PR #431、#432 合併後前進到 `2426238`；main worktree 已 fast-forward 且乾淨。PR 隔離分支合併最新 main，唯一內容衝突在 `AnalysisSessionToolbar.tsx`；保留 LAN 的 `localMotecLaunch` capability gate，並整合 main 的 disabled export tooltip。
+- **最新 Linux 產物**：以更新後 `11.45.19` 在 Ubuntu 22.04 x86_64 建置；AppImage 86,907,384 bytes，臨時測試簽章 436 bytes，SHA-256 `9bba3a2bbd11f3923a4276e484f1017a1aa3f7f5401c918d418ac20bb25a3d1d`。`prepare_native_signing.py --cleanup` 後私鑰、公鑰與暫存 config 均不存在。
+- **重新驗證**：version consistency、Rust format、backend no-default-features tests、Python Ruff check／format、pytest（375 passed／8 deselected）、release helper（19 passed）、Tauri host tests（5 passed）、LAN frontend build 與 native backend build 均通過。AppImage sidecar 處理 10 frames，HTTP requested port 41799 fallback 至 40789、UDP port 39393、shutdown `clean`；DBus + Xvfb 於 5 秒內建立主視窗。
+- **Vitest 可攜性修正**：最新 main 的 Mission Stress 5 原設 20 秒 timeout；本機實測約 20.8 秒。只將此測試的 runner timeout 調為 30 秒，保留全部 39,000 iterations 與 assertions；focused stress 檔 22/22 通過，標準 `pnpm --prefix frontend run test` 140/140 files、989/989 tests 通過，用時 42.29 秒。未放寬任何產品行為或斷言門檻；新 merge commit 的 GitHub checks 待推送後驗證。
+- **邊界**：Xvfb 只證明視窗可建立，不等同實體桌面／Wayland 互動；原生安裝、OTA 與跨裝置 FH6 遊玩仍未驗收。
+
+## 2026-09-25 / PR #426 移除 macOS 與同步 main
+
+- **範圍**：依使用者要求，平台發行保留 Windows Full／Lite 與 Linux x86_64 Full，移除 macOS workflow、Tauri config、打包／smoke 分支及 OTA channel。上述 macOS 紀錄保留為歷史，不代表目前支援。採用 `pr-review-evaluation`、`pr-author-maintainer`、`portable-release-validation`、`halfmoon-design-system` 與 `ponytail`。
+- **整合**：先審查並合併 #436、#439、#440，#441 因輪胎輸入驗證回歸而關閉，再將 main `a0b323d` 整合至 #426。工具列同時保留 Post-Race Analysis、disabled export tooltip 與 `localMotecLaunch`；三份語系保留最新翻譯與 LAN 字串，移除本分支重複加入的兩個 key。
+- **可重現測試落差**：`scripts/tests/test_build_entry.py` 仍模擬舊 uv／Python 打包，但 `build_all.bat` 已使用 PowerShell／Rust；在乾淨 fixture 中缺少 `scripts/build_backend.ps1`。改為受控 Rust 建置腳本，驗證成功、backend 失敗、frontend 失敗與跨目錄路徑，沒有改動產品打包入口。
+- **驗證順序**：backend build.rs 會將 `frontend/dist` 資產以 include_bytes 嵌入；前端重建會刪除舊 hash 檔案，因此 frontend build 與 Cargo 編譯不能同時改讀同一輸出。先完成並固定 frontend dist，再執行 default／no-default-features 與 Tauri 驗證。
+- **本地證據**：前端 141 files／996 tests、Windows／LAN build；Python 與工具腳本 425 passed／8 deselected，Ruff check／format、Rust format 與版本一致性通過。新增 OTA carry 測試確認歷史 macOS channel 被忽略且 Linux channel 保留；這些測試不代表真實 FH6 跨機或 OTA 安裝驗收。

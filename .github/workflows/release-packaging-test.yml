@@ -5,8 +5,13 @@ on:
     paths:
       - ".github/workflows/release.yml"
       - ".github/workflows/release-packaging-test.yml"
-      - "frontend/src-tauri/tauri.conf.json"
-      - "frontend/src-tauri/tauri.lite.conf.json"
+      - ".github/workflows/native-packaging.yml"
+      - "frontend/**"
+      - "backend-rust/**"
+      - "pnpm-lock.yaml"
+      - "scripts/*native*.py"
+      - "scripts/*release*.py"
+      - "scripts/tests/test_*release*.py"
       - "scripts/prepare_release_assets.py"
       - "scripts/validate_version_consistency.py"
       - "tests/test_release_workflow_contract.py"
@@ -16,6 +21,11 @@ permissions:
   contents: read
 
 jobs:
+  native-linux:
+    uses: ./.github/workflows/native-packaging.yml
+    with:
+      platform: linux
+      ref: ${{ github.sha }}
   package-and-validate:
     name: Package test assets without publishing a Release
     runs-on: windows-latest
@@ -201,5 +211,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: fh6-release-packaging-test-assets
+          overwrite: true
           path: ${{ steps.fixtures.outputs.output }}/*
           if-no-files-found: error

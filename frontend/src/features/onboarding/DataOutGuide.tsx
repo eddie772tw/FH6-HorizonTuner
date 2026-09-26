@@ -3,6 +3,7 @@ import type { TelemetryHealth } from './telemetryHealth';
 import { saveDataOutGuideChoice } from './telemetryHealth';
 import { ModalPortal } from '../../components/common/ModalPortal';
 import { useSettings } from '../../context/SettingsContext';
+import { DataOutDestination } from './DataOutDestination';
 
 interface DataOutGuideProps {
   health: TelemetryHealth;
@@ -128,16 +129,17 @@ export default function DataOutGuide({ health, open, onClose }: DataOutGuideProp
             <div className="modal-body py-3">
               <ol className="mb-4 ps-3 text-body">
                 <li className="mb-1">{t("In Forza Horizon 6, open Settings, then HUD and Gameplay.")}</li>
-                <li className="mb-1">{t("When Forza runs on this PC, use destination IP")} <code>127.0.0.1</code> {t("and UDP port")} <code>8000</code>.</li>
+                <li className="mb-1">{t('Enable Data Out, then set the destination IP and UDP port.')}</li>
+                <li className="mb-1">{t('Use one of the receiver addresses below and its UDP port.')}</li>
                 <li>{t("Return here and drive briefly. The health status below reflects packets seen by the local diagnostics endpoint.")}</li>
               </ol>
+              <DataOutDestination />
               <section aria-labelledby="data-out-health-title" className="border rounded p-3" style={{ borderColor: 'var(--divider)', background: 'var(--surface-1)' }}>
                 <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap">
                   <div><h3 id="data-out-health-title" className="fs-6 mb-1 fw-bold">{t("Data Out health")}</h3><p className="mb-0 small text-secondary">{localizedHealth.detail}</p></div>
                   <span className={`badge ${badgeClass[health.state]} px-2 py-1`}>{localizedHealth.label}</span>
                 </div>
                 <dl className="row small mb-0 mt-3">
-                  <dt className="col-sm-4 text-secondary">{t("Destination")}</dt><dd className="col-sm-8"><code>127.0.0.1:8000</code> {t("(same-PC setup)")}</dd>
                   <dt className="col-sm-4 text-secondary">{t("First packet")}</dt><dd className="col-sm-8">{health.hasObservedPacket ? t("Observed") : t("Not received")}</dd>
                   <dt className="col-sm-4 text-secondary">{t("Latest packet observed")}</dt><dd className="col-sm-8">{lastPacket}</dd>
                   <dt className="col-sm-4 text-secondary">{t("Datagrams / valid frames")}</dt><dd className="col-sm-8">{health.datagramsReceived} / {health.validFrames}</dd>

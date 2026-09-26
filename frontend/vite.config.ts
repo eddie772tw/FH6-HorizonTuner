@@ -166,9 +166,29 @@ const appBuildInfo = {
 };
 
 // https://vite.dev/config/
+const hostPlatform = process.platform === 'win32' ? 'windows' : process.platform;
+const platform = process.env.FH6_PLATFORM ??
+  ((process.env.TAURI_ENV_PLATFORM ?? hostPlatform) === 'windows' ? 'windows' : 'lan');
+if (!['windows', 'lan'].includes(platform)) throw new Error('FH6_PLATFORM must be windows or lan');
+const includesHud = platform === 'windows';
+
 export default defineConfig(async () => ({
-  plugins: [react(), hudStaticPlugin()],
+  plugins: [react(), ...(includesHud ? [hudStaticPlugin()] : []), {
+    name: 'verify-platform-isolation',
+    generateBundle() {
+      if (!includesHud) {
+        for (const id of this.getModuleIds()) {
+          if (/[/\\](hud_overlay|overlay_control)[/\\]/.test(id)) {
+            this.error(`LAN build includes a HUD module: ${id}`);
+          }
+        }
+      }
+    },
+  }],
+  resolve: { alias: { '@platform/hud': path.resolve(import.meta.dirname,
+    `src/platform/hud.${includesHud ? 'windows' : 'lan'}.tsx`) } },
   define: {
+    __HUD_ENABLED__: JSON.stringify(includesHud),
     __APP_BUILD_INFO__: JSON.stringify(appBuildInfo),
     __GIT_COMMIT__: JSON.stringify(legacyGitCommit),
     __GIT_BRANCH__: JSON.stringify(gitBranch),
@@ -179,8 +199,10 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: path.resolve(import.meta.dirname, "index.html"),
-        lite: path.resolve(import.meta.dirname, "lite/index.html"),
-        companion: path.resolve(import.meta.dirname, "companion/index.html"),
+        ...(includesHud ? {
+          lite: path.resolve(import.meta.dirname, "lite/index.html"),
+          companion: path.resolve(import.meta.dirname, "companion/index.html"),
+        } : {}),
       },
       output: {
         manualChunks(id) {

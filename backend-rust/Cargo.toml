@@ -22,7 +22,7 @@ rusqlite = { version = "0.40.2", default-features = false, features = ["bundled"
 chrono = "0.4.45"
 uuid = { version = "1.26.1", features = ["v4"] }
 tempfile = "3.27.0"
-rustfft = "6.4.1"
+rustfft = { version = "6.4.1", optional = true }
 csv = "1.4.0"
 zip = { version = "2.4.2", default-features = false, features = ["deflate"] }
 mime_guess = "2.0.5"
@@ -43,6 +43,10 @@ winresource = "0.1.31"
 [dev-dependencies]
 tower = { version = "0.5.3", features = ["util"] }
 tungstenite = "0.29.0"
+
+[features]
+default = ["hud"]
+hud = ["dep:rustfft"]
 
 [profile.release]
 strip = true

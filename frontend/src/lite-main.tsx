@@ -5,6 +5,7 @@ import 'halfmoon/css/cores/halfmoon.cores.css';
 import './App.css';
 import LiteApp from './LiteApp';
 import { configureBackendTransport, waitForBackendReady } from './services/backend';
+import { initializeRuntimeCapabilities } from './services/runtimeCapabilities';
 
 import { applyThemeEarly } from './app/applyThemeEarly';
 
@@ -17,6 +18,7 @@ async function initLiteApp() {
       throw new Error(backend.error || 'Backend did not report a listening port.');
     }
     configureBackendTransport(backend.port);
+    await initializeRuntimeCapabilities();
   } catch (error) {
     const root = document.getElementById('root');
     if (root) root.textContent = `Unable to connect to Lite backend. ${error instanceof Error ? error.message : String(error)}`;

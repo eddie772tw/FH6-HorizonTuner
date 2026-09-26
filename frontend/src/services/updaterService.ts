@@ -1,5 +1,6 @@
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { invoke } from '@tauri-apps/api/core';
+import { configureBackendTransport, waitForBackendReady } from './backend';
 
 export interface UpdateInfo {
   version: string;
@@ -78,7 +79,7 @@ export async function downloadAndApplyUpdate(
   let totalBytes = 0;
   let downloadedBytes = 0;
 
-  await update.downloadAndInstall((event) => {
+  await update.download((event) => {
     switch (event.event) {
       case 'Started':
         totalBytes = event.data.contentLength || 0;
@@ -102,6 +103,24 @@ export async function downloadAndApplyUpdate(
         break;
     }
   });
+  // Downloads may take minutes. Keep telemetry alive until verified bytes are
+  // ready, then release files and UDP sockets before the installer replaces them.
+  await invoke('stop_backend_for_update');
+  try {
+    await update.install();
+  } catch (error) {
+    try {
+      await invoke('resume_backend_after_failed_update');
+      const backend = await waitForBackendReady();
+      if (backend.state !== 'ready' || !backend.port) {
+        throw new Error(backend.error || 'Backend recovery did not become ready.');
+      }
+      configureBackendTransport(backend.port);
+    } catch (resumeError) {
+      console.error('[UpdaterService] Backend recovery failed:', resumeError);
+    }
+    throw error;
+  }
 }
 
 /**

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { backendWebSocketUrl } from "../services/backend";
+import { getRuntimeCapabilities } from '../services/runtimeCapabilities';
 import { FrameInterpolator } from "../utils/frameInterpolator";
 
 export interface TelemetryData {
@@ -302,7 +303,7 @@ export function useTelemetry(url?: string) {
         console.log("Telemetry WebSocket connected.");
       };
 
-      if (!hudBroadcastChannel && typeof window !== 'undefined') {
+      if (getRuntimeCapabilities().hudOverlay && !hudBroadcastChannel && typeof window !== 'undefined') {
         hudBroadcastChannel = new BroadcastChannel('horizon_tuner_hud_channel');
         hudBroadcastChannel.addEventListener('message', event => {
           if (event.data?.type !== 'config') return;

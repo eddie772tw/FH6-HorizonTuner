@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { getAppCapabilities, getWorkspaces, permitsIntent, resolveWorkspace, type AppVariant } from './workspaceManifest';
 
 describe('workspace capabilities', () => {
+  it('keeps Full workflows while rejecting stale HUD navigation on LAN builds', () => {
+    const runtime = { hudOverlay: false };
+    expect(getWorkspaces('full', runtime).map(item => item.id)).toEqual(['live', 'tune', 'sessions']);
+    expect(resolveWorkspace('full', 'hud', runtime)).toBe('live');
+    expect(getAppCapabilities('full', runtime).tuning).toBe(true);
+  });
   it('projects Full and Lite navigation from the same capabilities', () => {
     expect(getWorkspaces('full').map(item => item.id)).toEqual(['live', 'tune', 'sessions', 'hud']);
     expect(getWorkspaces('lite').map(item => item.id)).toEqual(['live', 'hud']);

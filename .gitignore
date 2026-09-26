@@ -27,6 +27,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .npm/
+/.pnpm-store/
 
 # Rust & Tauri build outputs
 frontend/src-tauri/target/
@@ -116,6 +117,7 @@ id_rsa*
 /scratch
 /.tools/adb/
 /backend-rust/target/
+/smoke-evidence/
 .agents/security_data.json
 .agents/security_report.md
 

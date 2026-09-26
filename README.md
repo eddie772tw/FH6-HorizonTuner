@@ -371,6 +371,10 @@ Copyright (c) 2026 罐頭 (eddie772tw) & Contributors.
 
 ## Release Build Contract
 
+Release Action 現在另建置 **Linux x86_64 Full AppImage**。此版本保留調校、Live、錄製、分析、匯出與 MCP，移除 HUD、音訊頻譜及系統媒體整合；遊戲預期在同一區域網路的其他裝置執行。請在 Data Out 引導中選擇本機實際接收的 LAN IP 與 UDP port，HTTP／MCP 仍僅監聽 localhost。
+
+Linux 以 Ubuntu 22.04 建置，AppImage 仍需相容的系統圖形函式庫。Windows 與 Linux 可獨立成功發布，並使用獨立 OTA manifest；原生建置或遊戲跨機驗證尚未成功前，不代表已完成該平台驗收。macOS 不在支援範圍內。下載名稱、支援邊界與維護流程見[跨平台發行指南](docs/guides/cross-platform-release.md)。以下 EXE／Full-Lite portable 契約適用 Windows。
+
 Each GitHub Release publishes the following Windows download choices:
 
 | Asset | Intended use |

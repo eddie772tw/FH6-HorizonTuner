@@ -26,6 +26,7 @@ def generate_latest_manifest(
     download_filename: str,
     notes: str = "",
     pub_date: str | None = None,
+    platform: str = "windows-x86_64",
 ) -> dict:
     """Generate a Tauri v2 static updater manifest."""
     clean_version = version.lstrip("v")
@@ -43,7 +44,7 @@ def generate_latest_manifest(
         "notes": notes or f"FH6-HorizonTuner Release {tag}",
         "pub_date": pub_date,
         "platforms": {
-            "windows-x86_64": {
+            platform: {
                 "signature": signature.strip(),
                 "url": download_url,
             }

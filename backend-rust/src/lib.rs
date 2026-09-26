@@ -13,6 +13,7 @@ pub mod mcp;
 pub mod motec;
 pub mod native;
 pub mod network;
+pub mod platform;
 pub mod road;
 pub mod runtime;
 pub mod storage;

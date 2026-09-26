@@ -83,6 +83,8 @@ jobs:
       run: pnpm --prefix frontend install --frozen-lockfile
 
     - name: Run Frontend Build Verification (Build Test)
+      env:
+        FH6_PLATFORM: windows
       run: pnpm --prefix frontend run build
 
     - name: Publish verified frontend distribution

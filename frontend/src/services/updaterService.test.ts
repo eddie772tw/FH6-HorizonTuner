@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { formatUpdaterError, isTauriEnvironment, checkForAppUpdates, downloadAndApplyUpdate, restartApplication } from './updaterService';
+import { configureBackendTransport, waitForBackendReady } from './backend';
+
+vi.mock('./backend', () => ({
+  configureBackendTransport: vi.fn(),
+  waitForBackendReady: vi.fn(),
+}));
 
 vi.mock('@tauri-apps/plugin-updater', () => ({
   check: vi.fn(),
@@ -15,7 +21,8 @@ vi.mock('@tauri-apps/plugin-process', () => ({
 
 describe('updaterService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.mocked(waitForBackendReady).mockResolvedValue({ state: 'ready', port: 53124, error: null });
     delete (globalThis as any).__TAURI_INTERNALS__;
     delete (globalThis as any).__TAURI__;
   });
@@ -92,12 +99,13 @@ describe('updaterService', () => {
       const mockUpdate = {
         version: '1.5.0',
         currentVersion: '1.4.0',
-        downloadAndInstall: vi.fn(async (cb: any) => {
+        download: vi.fn(async (cb: any) => {
           cb({ event: 'Started', data: { contentLength: 1000 } });
           cb({ event: 'Progress', data: { chunkLength: 500 } });
           cb({ event: 'Progress', data: { chunkLength: 500 } });
           cb({ event: 'Finished' });
         }),
+        install: vi.fn().mockResolvedValue(undefined),
       };
 
       const onProgress = vi.fn((downloaded, total, percentage) => {
@@ -106,12 +114,41 @@ describe('updaterService', () => {
 
       await downloadAndApplyUpdate(mockUpdate as any, onProgress);
 
-      expect(mockUpdate.downloadAndInstall).toHaveBeenCalledTimes(1);
+      expect(mockUpdate.download).toHaveBeenCalledTimes(1);
       expect(onProgress).toHaveBeenCalledTimes(4);
       expect(progressCallbacks[0]).toEqual({ downloaded: 0, total: 1000, percentage: 0 });
       expect(progressCallbacks[1]).toEqual({ downloaded: 500, total: 1000, percentage: 50 });
       expect(progressCallbacks[2]).toEqual({ downloaded: 1000, total: 1000, percentage: 100 });
       expect(progressCallbacks[3]).toEqual({ downloaded: 1000, total: 1000, percentage: 100 });
+    });
+
+    it('keeps the backend through download, stops it before installation, and recovers if install fails', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const events: string[] = [];
+      vi.mocked(invoke).mockImplementation(async command => { events.push(command); });
+      const update = {
+        download: async () => { events.push('download'); },
+        install: async () => { events.push('install'); throw new Error('installation failed'); },
+      };
+      await expect(downloadAndApplyUpdate(update as any)).rejects.toThrow('installation failed');
+      expect(events).toEqual(['download', 'stop_backend_for_update', 'install', 'resume_backend_after_failed_update']);
+      expect(configureBackendTransport).toHaveBeenCalledWith(53124);
+    });
+
+    it('refuses installation if backend teardown fails', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockRejectedValueOnce(new Error('backend still running'));
+      const update = { download: vi.fn().mockResolvedValue(undefined), install: vi.fn() };
+      await expect(downloadAndApplyUpdate(update as any)).rejects.toThrow('backend still running');
+      expect(update.install).not.toHaveBeenCalled();
+    });
+
+    it('does not stop telemetry when the download fails', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const update = { download: async () => { throw new Error('offline'); }, install: vi.fn() };
+      await expect(downloadAndApplyUpdate(update as any)).rejects.toThrow('offline');
+      expect(invoke).not.toHaveBeenCalled();
+      expect(update.install).not.toHaveBeenCalled();
     });
   });
 

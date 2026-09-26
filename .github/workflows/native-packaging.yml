@@ -1,0 +1,129 @@
+name: Native Full Packaging
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        type: string
+        required: true
+      ref:
+        type: string
+        required: true
+      tag:
+        type: string
+        default: packaging-test
+      release-signing:
+        type: boolean
+        default: false
+    secrets:
+      TAURI_SIGNING_PRIVATE_KEY:
+        required: false
+      TAURI_SIGNING_KEY_PASSWORD:
+        required: false
+      DISCORD_APPLICATION_ID:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      FH6_PLATFORM: lan
+      UV_PYTHON_PREFERENCE: only-managed
+      APPIMAGE_EXTRACT_AND_RUN: '1'
+      TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.release-signing && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.release-signing && secrets.TAURI_SIGNING_KEY_PASSWORD || '' }}
+      DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+      VITE_GIT_COMMIT: ${{ inputs.tag }}
+      VITE_GIT_BRANCH: main
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          python-version: '3.13'
+          activate-environment: true
+          no-project: true
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.27.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install Linux bundle dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            backend-rust -> target
+            frontend/src-tauri -> target
+          shared-key: native-${{ inputs.platform }}-no-hud
+      - name: Install frontend and validation tools
+        run: |
+          pnpm --prefix frontend install --frozen-lockfile
+          uv pip install pytest
+      - name: Validate versions and platform contracts
+        run: |
+          uv run --no-project --active python scripts/validate_version_consistency.py
+          cargo test --locked --manifest-path backend-rust/Cargo.toml --no-default-features
+          pnpm --prefix frontend run test
+          uv run --no-project --active python -m pytest scripts/tests/test_platform_release.py scripts/tests/test_publish_release_assets.py scripts/tests/test_prepare_native_signing.py
+      - name: Build HUD-free frontend
+        run: pnpm --prefix frontend run build
+      - name: Build native Rust backend
+        env:
+          PLATFORM: ${{ inputs.platform }}
+        run: uv run --no-project --active python scripts/build_native_backend.py --platform "$PLATFORM"
+      - name: Prepare build override and test-only signing key
+        env:
+          RELEASE_SIGNING: ${{ inputs.release-signing }}
+        run: uv run --no-project --active python scripts/prepare_native_signing.py
+      - name: Test native host and build signed bundles
+        run: |
+          cargo test --locked --manifest-path frontend/src-tauri/Cargo.toml --lib
+          pnpm --prefix frontend exec tauri build --config "$RUNNER_TEMP/fh6-native-build.json"
+      - name: Verify production signature key identity
+        if: inputs.release-signing
+        run: |
+          signatures=(frontend/src-tauri/target/release/bundle/appimage/*.AppImage.sig)
+          test "${#signatures[@]}" -eq 1
+          uv run --no-project --active python scripts/validate_tauri_updater_keypair.py --config frontend/src-tauri/tauri.conf.json --signature "${signatures[0]}"
+      - name: Exercise backend from native package
+        env:
+          PLATFORM: ${{ inputs.platform }}
+        run: uv run --no-project --active python scripts/smoke_native_release.py --platform "$PLATFORM" --bundle-root frontend/src-tauri/target/release/bundle --evidence-dir smoke-evidence
+      - name: Retain native lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-smoke-${{ inputs.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: smoke-evidence/*
+          if-no-files-found: warn
+      - name: Stage platform assets
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          VERSION=$(uv run --no-project --active python -c "import json; print(json.load(open('frontend/src-tauri/tauri.conf.json'))['version'])")
+          uv run --no-project --active python scripts/platform_release.py --platform "$PLATFORM" --bundle-root frontend/src-tauri/target/release/bundle --output-dir dist/native-release --version "$VERSION" --tag "$RELEASE_TAG" --repo "$REPOSITORY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: native-${{ inputs.platform }}-${{ github.run_id }}
+          overwrite: true
+          path: dist/native-release/*
+          if-no-files-found: error
+      - name: Remove temporary signing material
+        if: always()
+        run: uv run --no-project --active python scripts/prepare_native_signing.py --cleanup

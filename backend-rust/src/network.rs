@@ -374,6 +374,13 @@ async fn ws_overlay(
     headers: HeaderMap,
     upgrade: WebSocketUpgrade,
 ) -> Response {
+    if !crate::platform::HUD_ENABLED {
+        if !allowed_origin(headers.get("origin").and_then(|v| v.to_str().ok())) {
+            return StatusCode::FORBIDDEN.into_response();
+        }
+        return ApiError::new(501, "unsupported: HUD is not included in this build")
+            .into_response();
+    }
     ws_start(backend, headers, upgrade, "overlay")
 }
 fn ws_start(

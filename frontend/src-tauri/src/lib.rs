@@ -12,7 +12,7 @@ mod file_export;
 #[cfg(all(target_os = "windows", target_arch = "x86_64", not(debug_assertions)))]
 const EMBEDDED_SIDECAR: &[u8] = include_bytes!("../bin/server-sidecar-x86_64-pc-windows-msvc.exe");
 
-#[cfg(not(all(target_os = "windows", target_arch = "x86_64", not(debug_assertions))))]
+#[cfg(all(windows, any(not(target_arch = "x86_64"), debug_assertions)))]
 const EMBEDDED_SIDECAR: &[u8] = &[];
 
 #[derive(Clone, Serialize)]
@@ -48,48 +48,32 @@ fn set_backend_status(app_handle: &tauri::AppHandle, status: BackendStatus) {
     }
 }
 
-fn stop_backend_process(app_handle: &tauri::AppHandle) {
-    if let Ok(mut process) = app_handle.state::<BackendProcess>().0.lock() {
-        if let Some(mut child) = process.take() {
-            // Closing stdin is the sidecar's graceful shutdown signal. This is
-            // important for the Python cleanup path and releases the UDP
-            // listener before we resort to forceful termination.
-            drop(child.stdin.take());
+fn stop_backend_process(app_handle: &tauri::AppHandle) -> Result<(), String> {
+    let state = app_handle.state::<BackendProcess>();
+    let mut process = state.0.lock().map_err(|error| error.to_string())?;
+    if let Some(mut child) = process.take() {
+        // The owned Rust sidecar drains accepted telemetry and flushes
+        // recordings when stdin closes, then releases its UDP sockets.
+        drop(child.stdin.take());
 
-            let deadline = Instant::now() + Duration::from_secs(2);
-            while Instant::now() < deadline {
-                match child.try_wait() {
-                    Ok(Some(_)) => return,
-                    Ok(None) => std::thread::sleep(Duration::from_millis(50)),
-                    Err(_) => break,
-                }
-            }
-
-            // PyInstaller one-file executables have a bootloader process and
-            // a worker process with the same executable path. Killing only
-            // Child's PID can leave the worker behind and keep UDP 8000 open.
-            #[cfg(target_os = "windows")]
-            {
-                let pid = child.id().to_string();
-                let _ = Command::new("taskkill")
-                    .args(["/PID", pid.as_str(), "/T", "/F"])
-                    .status();
-                // taskkill owns termination of the PyInstaller process tree.
-                // Do not call Child::wait here: the bootloader/worker handle
-                // can remain signalled asynchronously and block the Tauri
-                // close-request handler indefinitely.
-                let _ = child.try_wait();
-            }
-
-            #[cfg(not(target_os = "windows"))]
-            {
-                let _ = child.kill();
-                let _ = child.wait();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline {
+            match child.try_wait() {
+                Ok(Some(_)) => return Ok(()),
+                Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+                Err(_) => break,
             }
         }
+
+        if let Err(error) = child.kill().and_then(|()| child.wait().map(|_| ())) {
+            *process = Some(child);
+            return Err(format!("Cannot stop owned backend before update: {error}"));
+        }
     }
+    Ok(())
 }
 
+#[cfg(windows)]
 fn extract_embedded_sidecar() -> Result<PathBuf, String> {
     if EMBEDDED_SIDECAR.is_empty() {
         return Err("No embedded Windows x64 sidecar is available for this build.".to_string());
@@ -133,6 +117,7 @@ fn resolve_portable_data_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, S
         }
     }
 
+    #[cfg(windows)]
     if let Ok(executable) = std::env::current_exe() {
         if let Some(parent) = executable.parent() {
             let portable_dir = parent.to_path_buf();
@@ -222,7 +207,7 @@ fn watch_external_backend(app_handle: tauri::AppHandle) {
         }
         fail_backend(
             &app_handle,
-            format!("No responsive external backend at HTTP {port}. Start backend/main.py first; see docs/guides/development.md."),
+            format!("No responsive external backend at HTTP {port}. Start the Rust backend first; see docs/guides/development.md."),
         );
     });
 }
@@ -266,10 +251,18 @@ fn backend_command(app_handle: &tauri::AppHandle) -> Result<Command, String> {
             .arg(root.join("backend"));
         Ok(command)
     } else {
-        println!("Starting embedded release backend.");
+        println!("Starting packaged release backend.");
         let data_dir = resolve_portable_data_dir(app_handle)?;
         fs::create_dir_all(&data_dir).map_err(|error| error.to_string())?;
-        let mut command = Command::new(extract_embedded_sidecar()?);
+        #[cfg(windows)]
+        let backend = extract_embedded_sidecar()?;
+        #[cfg(not(windows))]
+        let backend = app_handle
+            .path()
+            .resource_dir()
+            .map_err(|error| error.to_string())?
+            .join("sidecar/server-sidecar");
+        let mut command = Command::new(backend);
         command.arg("--data-dir").arg(data_dir);
         Ok(command)
     }
@@ -292,6 +285,7 @@ fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
         })?;
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
+    let owned_id = child.id();
     *app_handle
         .state::<BackendProcess>()
         .0
@@ -316,6 +310,9 @@ fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
                 let Some(child) = process.as_mut() else {
                     return;
                 };
+                if child.id() != owned_id {
+                    return;
+                }
                 child.try_wait()
             };
             match exit {
@@ -340,7 +337,7 @@ fn start_owned_backend(app_handle: &tauri::AppHandle) -> Result<(), String> {
                     &app_handle,
                     "Backend startup timed out. Check terminal output or backend.log.".into(),
                 );
-                stop_backend_process(&app_handle);
+                let _ = stop_backend_process(&app_handle);
                 return;
             }
             std::thread::sleep(Duration::from_millis(100));
@@ -385,9 +382,7 @@ fn backend_is_ready(port: u16) -> bool {
     let _ = stream.set_write_timeout(Some(Duration::from_millis(250)));
     let _ = stream.set_read_timeout(Some(Duration::from_millis(750)));
     if stream
-        .write_all(
-            b"GET /api/overlay/config HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
-        )
+        .write_all(b"GET /api/health HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
         .is_err()
     {
         return false;
@@ -549,9 +544,43 @@ fn move_hud_to_monitor(
 }
 
 #[tauri::command]
+fn stop_backend_for_update(app_handle: tauri::AppHandle) -> Result<(), String> {
+    stop_backend_process(&app_handle)?;
+    set_backend_status(
+        &app_handle,
+        BackendStatus {
+            state: "updating".into(),
+            port: None,
+            error: None,
+        },
+    );
+    Ok(())
+}
+
+#[tauri::command]
+fn resume_backend_after_failed_update(app_handle: tauri::AppHandle) -> Result<(), String> {
+    set_backend_status(
+        &app_handle,
+        BackendStatus {
+            state: "starting".into(),
+            port: None,
+            error: None,
+        },
+    );
+    if std::env::args().any(|arg| arg == "--no-sidecar") || std::env::var("FH6_NO_SIDECAR").is_ok()
+    {
+        watch_external_backend(app_handle);
+        Ok(())
+    } else {
+        start_owned_backend(&app_handle)
+            .inspect_err(|error| fail_backend(&app_handle, error.clone()))
+    }
+}
+
+#[tauri::command]
 fn prepare_update_and_restart(app_handle: tauri::AppHandle) -> Result<(), String> {
     println!("Preparing for OTA update restart: stopping backend sidecar and terminating background processes.");
-    stop_backend_process(&app_handle);
+    stop_backend_process(&app_handle)?;
     std::thread::sleep(Duration::from_millis(300));
     app_handle.restart();
 }
@@ -569,12 +598,15 @@ pub fn run() {
                 let app_handle = window.app_handle();
                 if label == "main" {
                     println!("Primary window [{label}] closed — terminating all windows and backend sidecar.");
-                    stop_backend_process(&app_handle);
+                    if let Err(error) = stop_backend_process(&app_handle) { eprintln!("{error}"); }
                     app_handle.exit(0);
                 }
             }
         })
         .setup(|app| {
+            #[cfg(not(windows))]
+            app.handle().plugin(tauri_plugin_dialog::init())?;
+            #[cfg(windows)]
             #[allow(unused_variables)]
             let overlay_window = tauri::WebviewWindowBuilder::new(
                 app,
@@ -640,6 +672,8 @@ pub fn run() {
             reload_hud_window,
             get_available_monitors,
             move_hud_to_monitor,
+            stop_backend_for_update,
+            resume_backend_after_failed_update,
             prepare_update_and_restart
         ])
         .run(tauri::generate_context!())
