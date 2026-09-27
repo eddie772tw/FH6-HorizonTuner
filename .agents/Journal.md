@@ -2897,3 +2897,10 @@
 - **可讀性與真實 DOM**：固定讀數與捲動方位標籤分行，保留 50vw 寬度並將高度調為 76px。瀏覽器另重現上下切換時 `parentElement` 為唯讀所造成的 TypeError；移除手動賦值，交由 DOM 掛載方法維護父節點，並使既有 mock 的 `parentElement` 同樣唯讀。
 - **驗證**：修改前 141 files／996 tests 通過；修改後 `pnpm -C frontend run test` 為 142 files／1004 tests 通過，`pnpm -C frontend run build` 與 `git diff --check` 通過。新增 HUD-owned 測試驗證尺寸／DPR 幾何比例、視窗縮放、DPR 改變及隱藏後恢復，不斷言繪圖 API 次數或刻度像素座標。
 - **瀏覽器證據與邊界**：以實際 renderer、template、manager 與字型製成獨立靜態頁面，透過限 loopback、僅提供兩個預覽路徑的 HTTP server 驗證；未啟動前端、後端或桌面控制。720p／1080p／1440p／3440 超寬／4K 及 DPR 1／1.25／1.5／2 通過；4K、DPR 2 的羅盤為 CSS `1920×76`、bitmap `3840×152`。上下切換、隱藏後縮放恢復、重建與亮暗背景均通過；不代表 Tauri WebView、實體螢幕或真實 FH6 遊戲驗收。
+
+## 2026-09-27 / EV 獨立量測與齒比基礎模型
+
+- **分流契約**：EV 開關可持久化，與傳統檔位數互斥；同樣四個步驟，使用獨立的 `ev-measurement/v1`、`ev-capture/v1` 與 TS/Rust EV solver。ICE archive、peak-RPM AEGO、Companion 傳統量測命令不能接收 EV 流程。車輛／模式／量測配置改變會失效結果；驗證快照拒絕兩種模型混用。
+- **實測學習**：Taycan 的持續正功率平台不等於限轉；需分開保存正輸出曲線、高轉速零輸出與低打滑的 RPM／車速映射。A/B/A 二檔 2.00→2.20→2.00 的錄製回放可重現約 +10% 並回復的映射變化；不據此宣稱辨識單顆馬達、抓地力或最佳換檔點。
+- **單速與能力邊界**：單一前進檔可完成 EV 流程；檔位數與可調能力互不推導。終傳與各檔預設鎖定，未顯示的比值保存 null，仍可量測基準。只有已知、確認可調的終傳可預覽變更；鎖定或未知數值不進入待套用設定，不沿用傳統 gearbox 的 Full 預設。
+- **驗證與來源**：前端 145 files／1,030 tests 與 build 通過；Rust 完整 gate 87 passed／3 ignored、Cargo fmt 通過。TS/Rust 共用十個 EV golden cases，含單速、全鎖定、未知齒比、僅終傳可調。選用瀏覽器測試 mock 全部 backend HTTP/WS，驗證跨步驟、模式失效、保存再載入、六種主題組合與繁中標籤；不注入遊戲 UDP。實際單速 EV、新 UI 遊戲操作與最佳化效果尚未實機驗收。採用技能、交接與工程一手來源見 [EV 模型文件](../docs/calibration/ev-foundation.md)。

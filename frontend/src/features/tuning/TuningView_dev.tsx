@@ -14,6 +14,7 @@ import DevInputPanel from './components/DevInputPanel';
 import DevOutputPanel from './components/DevOutputPanel';
 import TuningTelemetryCaptureView from './components/TuningTelemetryCaptureView';
 import { useTuneSession } from './TuneSessionProvider';
+import TuningView from './TuningView';
 
 const TuningViewDevContent: React.FC = () => {
   const { carName, carParams } = useCarParams();
@@ -35,7 +36,7 @@ const TuningViewDevContent: React.FC = () => {
     };
   }, [carParams, developer]);
 
-  const output = useMemo<DevTuningOutput | null>(() => (input ? calculateDevTuning(input) : null), [input]);
+  const output = useMemo<DevTuningOutput | null>(() => (input && !carParams?.isElectric ? calculateDevTuning(input) : null), [input, carParams?.isElectric]);
   const capabilityContract = useMemo(() => (carParams ? createDefaultCapabilityContract(carParams) : null), [carParams]);
 
   const updateRaceGoal = (nextGoal: DevRaceGoal) => {
@@ -47,6 +48,7 @@ const TuningViewDevContent: React.FC = () => {
   };
 
   if (developer.showCapture) return <TuningTelemetryCaptureView t={t} onBack={() => developer.setShowCapture(false)} />;
+  if (carParams?.isElectric) return <TuningView />;
 
   return (
     <div className="container-fluid h-100 w-100 d-flex flex-column gap-3 p-0 overflow-x-hidden overflow-y-auto">

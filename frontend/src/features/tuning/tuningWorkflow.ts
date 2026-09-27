@@ -54,11 +54,11 @@ export function updateWorkflowProfile<T extends object, K extends keyof T>(profi
 }
 
 export function getWorkflowReadiness(profileReady: boolean,
-  params: Pick<TuningCarParams, 'weight' | 'weight_distribution' | 'maxHp'> | null,
+  params: Pick<TuningCarParams, 'weight' | 'weight_distribution' | 'maxHp' | 'isElectric'> | null,
   measuredEngine: boolean, gearingAvailable = measuredEngine): WorkflowReadiness {
   const mechanical = Boolean(profileReady && params && Number.isFinite(params.weight) && params.weight > 0 &&
     Number.isFinite(params.weight_distribution) && params.weight_distribution > 0 && params.weight_distribution < 100);
-  const engineInputs = mechanical && Boolean(params && Number.isFinite(params.maxHp) && params.maxHp > 0);
+  const engineInputs = mechanical && Boolean(params && (params.isElectric || (Number.isFinite(params.maxHp) && params.maxHp > 0)));
   return { mechanical, engineInputs, measuredEngine: engineInputs && measuredEngine,
     gearingAvailable: engineInputs && measuredEngine && gearingAvailable };
 }

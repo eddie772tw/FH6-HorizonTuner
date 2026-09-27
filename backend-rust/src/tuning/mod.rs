@@ -1,4 +1,5 @@
 pub mod chassis;
+pub mod ev;
 pub mod gearing;
 pub mod legacy_cli;
 pub mod types;

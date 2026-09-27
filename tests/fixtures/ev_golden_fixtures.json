@@ -1,0 +1,4017 @@
+[
+  {
+    "id": "taycan-baseline",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4,
+          2
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          true,
+          true
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.03
+    },
+    "expected": {
+      "model": "ev/v1",
+      "basis": "measured-baseline",
+      "finalDrive": 4.03,
+      "gears": [
+        4,
+        2
+      ],
+      "adjustability": {
+        "finalDrive": true,
+        "gears": [
+          true,
+          true
+        ]
+      },
+      "envelopes": [
+        {
+          "gear": 1,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "powerBandStartRpm": 8744.25674715909,
+          "powerBandEndRpm": 15743.229248046875,
+          "peakPowerKw": 561.0060208333334,
+          "boundRpm": 16517.272229034046,
+          "boundKind": "observed-cut",
+          "baselineRpmPerKmh": 119.30217461899113,
+          "boundSpeedKmh": 138.44904572598412
+        },
+        {
+          "gear": 2,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "powerBandStartRpm": 5254.299072265625,
+          "powerBandEndRpm": 16115.127122961956,
+          "peakPowerKw": 560.91675,
+          "boundRpm": 16224.4921875,
+          "boundKind": "measured-range",
+          "baselineRpmPerKmh": 60.13021937581321,
+          "boundSpeedKmh": 269.8226009470729
+        }
+      ]
+    }
+  },
+  {
+    "id": "candidate-fd",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4,
+          2
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          true,
+          true
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.433
+    },
+    "expected": {
+      "model": "ev/v1",
+      "basis": "ratio-preview",
+      "finalDrive": 4.433,
+      "gears": [
+        4,
+        2
+      ],
+      "adjustability": {
+        "finalDrive": true,
+        "gears": [
+          true,
+          true
+        ]
+      },
+      "envelopes": [
+        {
+          "gear": 1,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "powerBandStartRpm": 8744.25674715909,
+          "powerBandEndRpm": 15743.229248046875,
+          "peakPowerKw": 561.0060208333334,
+          "boundRpm": 16517.272229034046,
+          "boundKind": "observed-cut",
+          "baselineRpmPerKmh": 119.30217461899113,
+          "boundSpeedKmh": 125.86276884180376
+        },
+        {
+          "gear": 2,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "powerBandStartRpm": 5254.299072265625,
+          "powerBandEndRpm": 16115.127122961956,
+          "peakPowerKw": 560.91675,
+          "boundRpm": 16224.4921875,
+          "boundKind": "measured-range",
+          "baselineRpmPerKmh": 60.13021937581321,
+          "boundSpeedKmh": 245.29327358824813
+        }
+      ]
+    }
+  },
+  {
+    "id": "single-speed-contract",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          false
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.03
+    },
+    "expected": {
+      "model": "ev/v1",
+      "basis": "measured-baseline",
+      "finalDrive": 4.03,
+      "gears": [
+        4
+      ],
+      "adjustability": {
+        "finalDrive": true,
+        "gears": [
+          false
+        ]
+      },
+      "envelopes": [
+        {
+          "gear": 1,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "powerBandStartRpm": 8744.25674715909,
+          "powerBandEndRpm": 15743.229248046875,
+          "peakPowerKw": 561.0060208333334,
+          "boundRpm": 16517.272229034046,
+          "boundKind": "observed-cut",
+          "baselineRpmPerKmh": 119.30217461899113,
+          "boundSpeedKmh": 138.44904572598412
+        }
+      ]
+    }
+  },
+  {
+    "id": "missing-first-gear",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4,
+          2
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          true,
+          true
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 15000,
+          "positiveSamples": 325,
+          "zeroOutputSamples": 37,
+          "lowestRpm": 472.5203552246094,
+          "highestRpm": 16516.279296875,
+          "cutoff": {
+            "count": 37,
+            "mean": 16486.125422297293,
+            "m2": 3256.2602854558027
+          },
+          "rpmPerKmh": {
+            "count": 150,
+            "mean": 65.93461902921278,
+            "m2": 2.6726058845496192
+          },
+          "frontRatio": {
+            "count": 150,
+            "mean": 8.876338340639801,
+            "m2": 0.002056119147075531
+          },
+          "rearRatio": {
+            "count": 150,
+            "mean": 8.839665165657212,
+            "m2": 0.0010531871228725244
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5203552246094,
+              "powerWatts": 12045.703125,
+              "torqueNewtons": 259.4299621582031
+            },
+            {
+              "count": 1,
+              "rpm": 1247.4241943359375,
+              "powerWatts": 65918.8984375,
+              "torqueNewtons": 519.5556030273438
+            },
+            {
+              "count": 5,
+              "rpm": 1887.7658447265626,
+              "powerWatts": 188402.86875,
+              "torqueNewtons": 951.154443359375
+            },
+            {
+              "count": 9,
+              "rpm": 2228.041205512153,
+              "powerWatts": 245238.83680555556,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 9,
+              "rpm": 2704.5013563368057,
+              "powerWatts": 297019.30555555556,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3279.6897583007812,
+              "powerWatts": 360001.4921875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3787.0263671875,
+              "powerWatts": 415756.609375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 4282.372802734375,
+              "powerWatts": 470262.859375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 4769.9564208984375,
+              "powerWatts": 523891.65625,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5284.4464111328125,
+              "powerWatts": 560690.53125,
+              "torqueNewtons": 1015.0953521728516
+            },
+            {
+              "count": 4,
+              "rpm": 5749.3341064453125,
+              "powerWatts": 560777,
+              "torqueNewtons": 932.7744293212891
+            },
+            {
+              "count": 5,
+              "rpm": 6217.3287109375,
+              "powerWatts": 560697.275,
+              "torqueNewtons": 862.3147216796875
+            },
+            {
+              "count": 6,
+              "rpm": 6738.183512369792,
+              "powerWatts": 560713.6979166666,
+              "torqueNewtons": 795.6679280598959
+            },
+            {
+              "count": 6,
+              "rpm": 7264.603597005208,
+              "powerWatts": 560686.6666666666,
+              "torqueNewtons": 737.7470194498698
+            },
+            {
+              "count": 7,
+              "rpm": 7774.673688616072,
+              "powerWatts": 560765.7589285715,
+              "torqueNewtons": 689.3930315290179
+            },
+            {
+              "count": 7,
+              "rpm": 8277.52162388393,
+              "powerWatts": 560608.7142857143,
+              "torqueNewtons": 647.2509068080357
+            },
+            {
+              "count": 7,
+              "rpm": 8780.55161830357,
+              "powerWatts": 560558.0625,
+              "torqueNewtons": 610.0183977399554
+            },
+            {
+              "count": 8,
+              "rpm": 9260.543090820312,
+              "powerWatts": 560648.59375,
+              "torqueNewtons": 578.4678955078125
+            },
+            {
+              "count": 9,
+              "rpm": 9764.301432291666,
+              "powerWatts": 560653.1875,
+              "torqueNewtons": 548.6302693684896
+            },
+            {
+              "count": 8,
+              "rpm": 10259.09912109375,
+              "powerWatts": 560535.09375,
+              "torqueNewtons": 521.9800415039062
+            },
+            {
+              "count": 10,
+              "rpm": 10746.1791015625,
+              "powerWatts": 560553.8125,
+              "torqueNewtons": 498.3426910400391
+            },
+            {
+              "count": 11,
+              "rpm": 11254.678977272728,
+              "powerWatts": 560535.2954545454,
+              "torqueNewtons": 475.7811972878196
+            },
+            {
+              "count": 11,
+              "rpm": 11747.193093039772,
+              "powerWatts": 560545.1988636364,
+              "torqueNewtons": 455.82430752840907
+            },
+            {
+              "count": 12,
+              "rpm": 12233.650146484375,
+              "powerWatts": 560522.8437500001,
+              "torqueNewtons": 437.66998799641925
+            },
+            {
+              "count": 14,
+              "rpm": 12749.311593191964,
+              "powerWatts": 560527.0848214285,
+              "torqueNewtons": 419.9588078090123
+            },
+            {
+              "count": 14,
+              "rpm": 13254.58530970982,
+              "powerWatts": 560533.2321428572,
+              "torqueNewtons": 403.94023568289623
+            },
+            {
+              "count": 16,
+              "rpm": 13760.218566894531,
+              "powerWatts": 560520.2109375,
+              "torqueNewtons": 389.0811538696289
+            },
+            {
+              "count": 17,
+              "rpm": 14257.420840992647,
+              "powerWatts": 560515.6139705882,
+              "torqueNewtons": 375.4954349293428
+            },
+            {
+              "count": 19,
+              "rpm": 14752.156455592105,
+              "powerWatts": 560491.8355263158,
+              "torqueNewtons": 362.885054738898
+            },
+            {
+              "count": 21,
+              "rpm": 15259.973818824405,
+              "powerWatts": 560503.130952381,
+              "torqueNewtons": 350.8121802920387
+            },
+            {
+              "count": 23,
+              "rpm": 15763.859544836956,
+              "powerWatts": 560497.7527173914,
+              "torqueNewtons": 339.58520375127375
+            },
+            {
+              "count": 36,
+              "rpm": 16314.020345052084,
+              "powerWatts": 517805.365451389,
+              "torqueNewtons": 303.31637488471137
+            },
+            {
+              "count": 9,
+              "rpm": 16510.918836805555,
+              "powerWatts": 477300.43402777775,
+              "torqueNewtons": 276.1579827202691
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.03
+    },
+    "expected": null
+  },
+  {
+    "id": "unconfirmed",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4,
+          2
+        ],
+        "allForwardGearsConfirmed": false,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          true,
+          true
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.03
+    },
+    "expected": null
+  },
+  {
+    "id": "wrong-ratios",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4,
+          3
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          true,
+          true
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.03
+    },
+    "expected": null
+  },
+  {
+    "id": "locked-final-drive-preview-rejected",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          4,
+          2
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": false,
+        "gearAdjustable": [
+          true,
+          true
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.4
+    },
+    "expected": null
+  },
+  {
+    "id": "unknown-locked-single-speed",
+    "input": {
+      "setup": {
+        "finalDrive": null,
+        "gearRatios": [
+          null
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": false,
+        "gearAdjustable": [
+          false
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": null
+    },
+    "expected": {
+      "model": "ev/v1",
+      "basis": "measured-baseline",
+      "finalDrive": null,
+      "gears": [
+        null
+      ],
+      "adjustability": {
+        "finalDrive": false,
+        "gears": [
+          false
+        ]
+      },
+      "envelopes": [
+        {
+          "gear": 1,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "powerBandStartRpm": 8744.25674715909,
+          "powerBandEndRpm": 15743.229248046875,
+          "peakPowerKw": 561.0060208333334,
+          "boundRpm": 16517.272229034046,
+          "boundKind": "observed-cut",
+          "baselineRpmPerKmh": 119.30217461899113,
+          "boundSpeedKmh": 138.44904572598412
+        }
+      ]
+    }
+  },
+  {
+    "id": "unknown-locked-two-speed",
+    "input": {
+      "setup": {
+        "finalDrive": null,
+        "gearRatios": [
+          null,
+          null
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": false,
+        "gearAdjustable": [
+          false,
+          false
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": null
+    },
+    "expected": {
+      "model": "ev/v1",
+      "basis": "measured-baseline",
+      "finalDrive": null,
+      "gears": [
+        null,
+        null
+      ],
+      "adjustability": {
+        "finalDrive": false,
+        "gears": [
+          false,
+          false
+        ]
+      },
+      "envelopes": [
+        {
+          "gear": 1,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "powerBandStartRpm": 8744.25674715909,
+          "powerBandEndRpm": 15743.229248046875,
+          "peakPowerKw": 561.0060208333334,
+          "boundRpm": 16517.272229034046,
+          "boundKind": "observed-cut",
+          "baselineRpmPerKmh": 119.30217461899113,
+          "boundSpeedKmh": 138.44904572598412
+        },
+        {
+          "gear": 2,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "powerBandStartRpm": 5254.299072265625,
+          "powerBandEndRpm": 16115.127122961956,
+          "peakPowerKw": 560.91675,
+          "boundRpm": 16224.4921875,
+          "boundKind": "measured-range",
+          "baselineRpmPerKmh": 60.13021937581321,
+          "boundSpeedKmh": 269.8226009470729
+        }
+      ]
+    }
+  },
+  {
+    "id": "final-drive-only-preview",
+    "input": {
+      "setup": {
+        "finalDrive": 4.03,
+        "gearRatios": [
+          null,
+          null
+        ],
+        "allForwardGearsConfirmed": true,
+        "finalDriveAdjustable": true,
+        "gearAdjustable": [
+          false,
+          false
+        ]
+      },
+      "measurements": [
+        {
+          "gear": 1,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 4297,
+          "positiveSamples": 91,
+          "zeroOutputSamples": 1217,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "cutoff": {
+            "count": 1217,
+            "mean": 16517.272229034046,
+            "m2": 300571.5343516968
+          },
+          "rpmPerKmh": {
+            "count": 1190,
+            "mean": 119.30217461899113,
+            "m2": 16.53113769023386
+          },
+          "frontRatio": {
+            "count": 1190,
+            "mean": 16.137197920795114,
+            "m2": 0.0100118262998575
+          },
+          "rearRatio": {
+            "count": 1190,
+            "mean": 16.073262674313135,
+            "m2": 0.005129067121438736
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 471.4934997558594,
+              "powerWatts": 12004.443359375,
+              "torqueNewtons": 259.11126708984375
+            },
+            {
+              "count": 1,
+              "rpm": 1246.2281494140625,
+              "powerWatts": 65757.2109375,
+              "torqueNewtons": 518.6705322265625
+            },
+            {
+              "count": 1,
+              "rpm": 1969.2601318359375,
+              "powerWatts": 158739.84375,
+              "torqueNewtons": 782.4874267578125
+            },
+            {
+              "count": 1,
+              "rpm": 2632.71044921875,
+              "powerWatts": 286353.6875,
+              "torqueNewtons": 1050.0689697265625
+            },
+            {
+              "count": 1,
+              "rpm": 3413.583740234375,
+              "powerWatts": 369595.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 4499.732421875,
+              "powerWatts": 488296.5,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 1,
+              "rpm": 5243.869140625,
+              "powerWatts": 567250.3125,
+              "torqueNewtons": 1046.747314453125
+            },
+            {
+              "count": 1,
+              "rpm": 6250.66845703125,
+              "powerWatts": 560492.8125,
+              "torqueNewtons": 861.3603515625
+            },
+            {
+              "count": 1,
+              "rpm": 6875.8173828125,
+              "powerWatts": 562692.375,
+              "torqueNewtons": 784.5392456054688
+            },
+            {
+              "count": 1,
+              "rpm": 7334.64453125,
+              "powerWatts": 560488.375,
+              "torqueNewtons": 731.768798828125
+            },
+            {
+              "count": 2,
+              "rpm": 7875.947998046875,
+              "powerWatts": 560495.71875,
+              "torqueNewtons": 680.6768798828125
+            },
+            {
+              "count": 1,
+              "rpm": 8178.52001953125,
+              "powerWatts": 561468,
+              "torqueNewtons": 656.7098388671875
+            },
+            {
+              "count": 11,
+              "rpm": 8744.25674715909,
+              "powerWatts": 560509.2613636364,
+              "torqueNewtons": 612.5125954367898
+            },
+            {
+              "count": 15,
+              "rpm": 9202.294205729168,
+              "powerWatts": 560570.0458333333,
+              "torqueNewtons": 581.886083984375
+            },
+            {
+              "count": 3,
+              "rpm": 9705.306966145834,
+              "powerWatts": 560478.125,
+              "torqueNewtons": 552.1624552408854
+            },
+            {
+              "count": 3,
+              "rpm": 10217.580729166666,
+              "powerWatts": 560865.3333333334,
+              "torqueNewtons": 524.8157145182291
+            },
+            {
+              "count": 3,
+              "rpm": 10749.7216796875,
+              "powerWatts": 561006.0208333334,
+              "torqueNewtons": 498.8843994140625
+            },
+            {
+              "count": 3,
+              "rpm": 11233.606770833334,
+              "powerWatts": 560482.9166666666,
+              "torqueNewtons": 476.86476643880206
+            },
+            {
+              "count": 3,
+              "rpm": 11738.998046875,
+              "powerWatts": 560633.9375,
+              "torqueNewtons": 456.4424235026042
+            },
+            {
+              "count": 3,
+              "rpm": 12217.614583333334,
+              "powerWatts": 560614.3958333334,
+              "torqueNewtons": 438.5043131510417
+            },
+            {
+              "count": 4,
+              "rpm": 12750.795166015625,
+              "powerWatts": 560575.34375,
+              "torqueNewtons": 420.13633728027344
+            },
+            {
+              "count": 4,
+              "rpm": 13293.953369140625,
+              "powerWatts": 560646.109375,
+              "torqueNewtons": 402.9943313598633
+            },
+            {
+              "count": 3,
+              "rpm": 13779.4365234375,
+              "powerWatts": 560585.4375,
+              "torqueNewtons": 388.7146301269531
+            },
+            {
+              "count": 4,
+              "rpm": 14200.581298828125,
+              "powerWatts": 560761.40625,
+              "torqueNewtons": 377.3130416870117
+            },
+            {
+              "count": 5,
+              "rpm": 14734.509375,
+              "powerWatts": 560639.8625,
+              "torqueNewtons": 363.5551696777344
+            },
+            {
+              "count": 4,
+              "rpm": 15293.1884765625,
+              "powerWatts": 560608.515625,
+              "torqueNewtons": 350.22899627685547
+            },
+            {
+              "count": 4,
+              "rpm": 15743.229248046875,
+              "powerWatts": 560478.078125,
+              "torqueNewtons": 340.0997314453125
+            },
+            {
+              "count": 6,
+              "rpm": 16253.844401041666,
+              "powerWatts": 529336,
+              "torqueNewtons": 311.25046793619794
+            }
+          ]
+        },
+        {
+          "gear": 2,
+          "reportedMaxRpm": 16999.990234375,
+          "acceptedMs": 19062,
+          "positiveSamples": 396,
+          "zeroOutputSamples": 0,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "cutoff": {
+            "count": 0,
+            "mean": 0,
+            "m2": 0
+          },
+          "rpmPerKmh": {
+            "count": 129,
+            "mean": 60.13021937581321,
+            "m2": 0.2941730251622985
+          },
+          "frontRatio": {
+            "count": 129,
+            "mean": 8.071523676157568,
+            "m2": 0.0021051641392887603
+          },
+          "rearRatio": {
+            "count": 129,
+            "mean": 8.034540947717424,
+            "m2": 0.001076717843998223
+          },
+          "curve": [
+            {
+              "count": 1,
+              "rpm": 472.5432434082031,
+              "powerWatts": 11896.7724609375,
+              "torqueNewtons": 259.26275634765625
+            },
+            {
+              "count": 1,
+              "rpm": 1245.014404296875,
+              "powerWatts": 65677.5625,
+              "torqueNewtons": 518.6749877929688
+            },
+            {
+              "count": 9,
+              "rpm": 1843.3571370442708,
+              "powerWatts": 196471.98784722222,
+              "torqueNewtons": 1020.53662109375
+            },
+            {
+              "count": 10,
+              "rpm": 2281.1017333984373,
+              "powerWatts": 248215.7640625,
+              "torqueNewtons": 1041.3250122070312
+            },
+            {
+              "count": 8,
+              "rpm": 2708.140655517578,
+              "powerWatts": 297732.5703125,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 3260.73603515625,
+              "powerWatts": 357961.825,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 3723.2094116210938,
+              "powerWatts": 408927.6796875,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4220.95625,
+              "powerWatts": 463658.35,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 5,
+              "rpm": 4769.317578125,
+              "powerWatts": 523980.54375,
+              "torqueNewtons": 1050.3179931640625
+            },
+            {
+              "count": 4,
+              "rpm": 5254.299072265625,
+              "powerWatts": 560423.546875,
+              "torqueNewtons": 1020.0006866455078
+            },
+            {
+              "count": 6,
+              "rpm": 5733.404866536458,
+              "powerWatts": 560916.75,
+              "torqueNewtons": 935.745371500651
+            },
+            {
+              "count": 6,
+              "rpm": 6263.660725911458,
+              "powerWatts": 560568.1041666666,
+              "torqueNewtons": 855.6400858561198
+            },
+            {
+              "count": 7,
+              "rpm": 6759.513811383928,
+              "powerWatts": 560700.0625,
+              "torqueNewtons": 792.952898297991
+            },
+            {
+              "count": 7,
+              "rpm": 7246.346749441965,
+              "powerWatts": 560541.5,
+              "torqueNewtons": 739.2946515764509
+            },
+            {
+              "count": 8,
+              "rpm": 7741.849304199219,
+              "powerWatts": 560581.640625,
+              "torqueNewtons": 691.9989776611328
+            },
+            {
+              "count": 9,
+              "rpm": 8258.504774305555,
+              "powerWatts": 560614.5416666666,
+              "torqueNewtons": 648.7172105577257
+            },
+            {
+              "count": 9,
+              "rpm": 8757.65234375,
+              "powerWatts": 560606.5763888889,
+              "torqueNewtons": 611.6212497287327
+            },
+            {
+              "count": 11,
+              "rpm": 9262.954723011364,
+              "powerWatts": 560547.3806818182,
+              "torqueNewtons": 578.191483931108
+            },
+            {
+              "count": 10,
+              "rpm": 9767.5857421875,
+              "powerWatts": 560589.175,
+              "torqueNewtons": 548.3100769042969
+            },
+            {
+              "count": 12,
+              "rpm": 10250.946614583334,
+              "powerWatts": 560549.4687499999,
+              "torqueNewtons": 522.4199803670248
+            },
+            {
+              "count": 12,
+              "rpm": 10761.280924479166,
+              "powerWatts": 560551.4166666666,
+              "torqueNewtons": 497.6108805338542
+            },
+            {
+              "count": 13,
+              "rpm": 11255.867262620191,
+              "powerWatts": 560495.8076923077,
+              "torqueNewtons": 475.67097825270434
+            },
+            {
+              "count": 15,
+              "rpm": 11751.12578125,
+              "powerWatts": 560527.0208333336,
+              "torqueNewtons": 455.63901774088544
+            },
+            {
+              "count": 17,
+              "rpm": 12252.538832720587,
+              "powerWatts": 560513.1875,
+              "torqueNewtons": 436.971871768727
+            },
+            {
+              "count": 18,
+              "rpm": 12755.053819444445,
+              "powerWatts": 560507.1423611111,
+              "torqueNewtons": 419.7370351155599
+            },
+            {
+              "count": 19,
+              "rpm": 13255.239206414473,
+              "powerWatts": 560505.6217105263,
+              "torqueNewtons": 403.88573255037005
+            },
+            {
+              "count": 22,
+              "rpm": 13754.885786576704,
+              "powerWatts": 560491.2443181818,
+              "torqueNewtons": 389.20091247558594
+            },
+            {
+              "count": 24,
+              "rpm": 14255.300740559896,
+              "powerWatts": 560512.7161458334,
+              "torqueNewtons": 375.5407002766927
+            },
+            {
+              "count": 27,
+              "rpm": 14750.848090277777,
+              "powerWatts": 560497.8356481482,
+              "torqueNewtons": 362.90622174298323
+            },
+            {
+              "count": 32,
+              "rpm": 15244.447448730469,
+              "powerWatts": 560497.224609375,
+              "torqueNewtons": 351.15111732482916
+            },
+            {
+              "count": 37,
+              "rpm": 15745.103489231418,
+              "powerWatts": 560487.1452702703,
+              "torqueNewtons": 339.97372931403083
+            },
+            {
+              "count": 23,
+              "rpm": 16115.127122961956,
+              "powerWatts": 551825.991847826,
+              "torqueNewtons": 327.02764759893
+            }
+          ]
+        }
+      ],
+      "candidateFinalDrive": 4.4
+    },
+    "expected": {
+      "model": "ev/v1",
+      "basis": "ratio-preview",
+      "finalDrive": 4.4,
+      "gears": [
+        null,
+        null
+      ],
+      "adjustability": {
+        "finalDrive": true,
+        "gears": [
+          false,
+          false
+        ]
+      },
+      "envelopes": [
+        {
+          "gear": 1,
+          "lowestRpm": 471.4934997558594,
+          "highestRpm": 16466.205078125,
+          "powerBandStartRpm": 8744.25674715909,
+          "powerBandEndRpm": 15743.229248046875,
+          "peakPowerKw": 561.0060208333334,
+          "boundRpm": 16517.272229034046,
+          "boundKind": "observed-cut",
+          "baselineRpmPerKmh": 119.30217461899113,
+          "boundSpeedKmh": 126.80673960811727
+        },
+        {
+          "gear": 2,
+          "lowestRpm": 472.5432434082031,
+          "highestRpm": 16224.4921875,
+          "powerBandStartRpm": 5254.299072265625,
+          "powerBandEndRpm": 16115.127122961956,
+          "peakPowerKw": 560.91675,
+          "boundRpm": 16224.4921875,
+          "boundKind": "measured-range",
+          "baselineRpmPerKmh": 60.13021937581321,
+          "boundSpeedKmh": 247.13297314015992
+        }
+      ]
+    }
+  }
+]

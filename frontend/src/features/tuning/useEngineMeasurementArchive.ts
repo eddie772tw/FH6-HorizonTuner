@@ -50,13 +50,13 @@ export function useEngineMeasurementArchive(carId: string, profile: TuningCarPar
     }).catch(() => {});
     return () => { active = false; };
   }, []);
-  const current = selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
+  const current = !profile?.isElectric && selected?.dependencyKey === key && selected.carId === carId ? selected.data : null;
   // Loading/failed capture hydration never exposes the legacy instantaneous peak.
   const calculation = useMemo(() => current && selected
     ? analyzeEngineCapture(selected.id, carId, selected.capture, current) : null, [current, selected, carId]);
-  const compatible = archive.filter(item => item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
+  const compatible = archive.filter(item => !profile?.isElectric && item.carId === carId && item.dependencyKey === key && savedIds.includes(item.id));
   const complete = async (data: TuningMeasurementState, capture: TuningCaptureFile) => {
-    if (saving.current !== null) return false;
+    if (profile?.isElectric || saving.current !== null) return false;
     const requestId = ++saveSequence.current;
     saving.current = requestId;
     setPendingSave(true);

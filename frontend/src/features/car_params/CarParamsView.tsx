@@ -162,14 +162,14 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
     };
   }, []);
 
-  const triggerAutoSave = () => {
+  const triggerAutoSave = (snapshot: CarParams) => {
     setSaveState('unsaved');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     
     saveTimeoutRef.current = setTimeout(async () => {
       setSaveState('saving');
       try {
-        await saveCarParams();
+        await saveCarParams(snapshot);
         setSaveState('saved');
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
@@ -241,8 +241,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   const updateParam = (field: keyof CarParams, value: any) => {
     if (!carParams) return;
-    setCarParams({ ...carParams, [field]: value });
-    triggerAutoSave();
+    const next = { ...carParams, [field]: value };
+    setCarParams(next);
+    triggerAutoSave(next);
   };
 
   // Conversions for Spring limits inputs
@@ -278,8 +279,9 @@ const CarParamsView: React.FC<CarParamsViewProps> = ({ subTab: propSubTab, setSu
 
   const updateAdjust = (field: keyof CarParams['adjustability'], value: any) => {
     if (!carParams) return;
-    setCarParams({ ...carParams, adjustability: { ...carParams.adjustability, [field]: value } });
-    triggerAutoSave();
+    const next = { ...carParams, adjustability: { ...carParams.adjustability, [field]: value } };
+    setCarParams(next);
+    triggerAutoSave(next);
   };
 
   // Convert dyno_curve dict to sorted array for Recharts

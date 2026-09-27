@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CarParams } from '../../../context/CarParamsContext';
 import { useSettings } from '../../../context/SettingsContext';
-import type { ChassisTuningResult, GearingResult, StaticTireAlignResult } from '../../../utils/tuningMath';
+import type { ChassisTuningResult, StaticTireAlignResult } from '../../../utils/tuningMath';
 import { RoadWorkflowView } from '../../road/RoadWorkflowView';
 import { workflowRecommendation } from '../workflowSnapshot';
 import { backendFetch } from '../../../services/backend';
 import { captureSaveRequest } from '../captureDownload';
 import { useFileSave } from '../../../hooks/useFileSave';
 import type { WorkflowRecommendation } from '../workflowSnapshot';
+import type { WorkflowGearingResult } from '../measurementTuningProfile';
 
 interface SavedCompatibility { id: string; discipline: string; createdAt: number; recommendation: WorkflowRecommendation }
 
 export function SetupVerificationStep({ goal, carId, profile, chassis, alignment, gearing, inputSnapshot }: {
   goal: string; carId: string; profile: CarParams | null; chassis: ChassisTuningResult | null;
-  alignment: StaticTireAlignResult | null; gearing: GearingResult | null; inputSnapshot: Record<string, unknown>;
+  alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null; inputSnapshot: Record<string, unknown>;
 }) {
   const { t } = useSettings();
   const { save: exportFile, isSaving } = useFileSave();

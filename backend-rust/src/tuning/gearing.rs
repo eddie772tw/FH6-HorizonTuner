@@ -221,6 +221,14 @@ pub fn calculate_aego_gearing(
     mut max_rpm: f64,
     secondary_correction: Option<&GearingSecondaryCorrection>,
 ) -> GearingResult {
+    if car_params.is_electric == Some(true) {
+        return GearingResult {
+            final_drive: 0.0,
+            gears: vec![],
+            unsupported: Some(true),
+            unsupported_reason: Some("EV requires the independent measured EV model.".into()),
+        };
+    }
     let normalized;
     let car_params = if race_goal == RaceGoal::Road {
         normalized = normalize_road_gearing_inputs(car_params);

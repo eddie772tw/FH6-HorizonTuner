@@ -3,8 +3,12 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { useSettings } from './SettingsContext';
 import { backendFetch } from '../services/backend';
 import type { DynoQuality } from '../features/car_params/dynoQuality';
+import { normalizeEvProfile } from '../domain/tuning/ev/profile';
+import type { EvGearboxSetup } from '../domain/tuning/ev/types';
 
 export interface CarParams {
+  isElectric?: boolean;
+  evGearbox?: EvGearboxSetup;
   weight: number;
   weight_distribution: number; // % front
   drivetrain: 'FWD' | 'RWD' | 'AWD';
@@ -77,7 +81,7 @@ interface CarParamsContextType {
   carName: string;
   carParams: CarParams | null;
   setCarParams: (params: CarParams) => void;
-  saveCarParams: () => Promise<void>;
+  saveCarParams: (snapshot?: CarParams) => Promise<void>;
   clearDynoCurve: () => Promise<void>;
   importDynoValues: () => void;
   settings: any;
@@ -148,6 +152,7 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const normalizeCarParams = (raw: any): CarParams => {
     return {
+      ...normalizeEvProfile(raw),
       weight: raw?.weight ?? 1500,
       weight_distribution: raw?.weight_distribution ?? 50,
       drivetrain: raw?.drivetrain ?? 'RWD',
@@ -241,17 +246,19 @@ export const CarParamsProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [telemetryCarId, carId]);
 
-  const saveCarParams = async () => {
-    if (!carParams) return;
+  const saveCarParams = async (snapshot = carParams) => {
+    if (!snapshot) return;
     try {
-      await backendFetch(`/api/car_params/${carId}`, {
+      const response = await backendFetch(`/api/car_params/${carId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(carParams)
+        body: JSON.stringify(snapshot)
       });
+      if (!response.ok) throw new Error('Car parameters could not be saved.');
       await fetchCarsWithParams();
     } catch (e) {
       console.error("Failed to save car params", e);
+      throw e;
     }
   };
 

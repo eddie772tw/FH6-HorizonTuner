@@ -1,6 +1,6 @@
 import type { CompanionSnapshot } from './companionProtocol';
 
-const n = (value: number | undefined, digits = 1) => value === undefined || !Number.isFinite(value) ? '—' : value.toFixed(digits);
+const n = (value: number | null | undefined, digits = 1) => value == null || !Number.isFinite(value) ? '—' : value.toFixed(digits);
 function Stat({ label, value, unit = '' }: { label: string; value: string; unit?: string }) { return <div><span className="companion-stat-label">{label}</span><strong>{value}{unit && ` ${unit}`}</strong></div>; }
 
 export function ChassisResults({ result }: { result: CompanionSnapshot['results']['chassis'] }) {

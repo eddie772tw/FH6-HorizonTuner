@@ -10,7 +10,9 @@ export interface EngineObservation {
 }
 /** Tire geometry and suspension values affect their outputs, not the captured engine scan. */
 export function engineDependencyKey(carId: string, profile: TuningCarParams | null): string {
-  return JSON.stringify([carId, profile?.drivetrain, profile?.induction, profile?.maxHp, profile?.maxTorque]);
+  const key = [carId, profile?.drivetrain, profile?.induction, profile?.maxHp, profile?.maxTorque];
+  // Keep historical ICE archives compatible; EV can never share their dependency key.
+  return JSON.stringify(profile?.isElectric ? [...key, 'ev/v1'] : key);
 }
 export function parseEngineArchive(text: string | null): EngineObservation[] {
   if (!text) return [];
