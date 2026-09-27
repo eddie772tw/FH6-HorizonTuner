@@ -1,9 +1,18 @@
 # Agent 開發經驗日誌 (Journal) - FH6-HorizonTuner
 
+## 2026-09-27 / AEGO 斷油循環與齒比顯示補強（Codex as Codex）
+
+- **可重現盲點**：VW Beetle 已在約 5250 RPM 斷油，但功率切斷伴隨掉轉超過 50 RPM，v2 的窄平台計時反覆歸零。完整 9,070-frame capture 到 152.172 秒才就緒；不可把包含中斷的總時長寫成連續全油門。
+- **最小修正**：v3 以同檔、有載、切斷／恢復各多影格的三次有界循環取代正功率平台推論。保留 5 km/h、500 ms、6 秒有效正輸出及低轉覆蓋，不將負輸出放入峰值或有效時長；控制／換檔／斷流中斷會重設待確認循環。相同完整 capture 重播於 19.281 秒就緒。
+- **版本與證據**：第一份歷史 capture 在 v3 可辨識真實斷油而就緒，第二份仍不足 6 秒；這修正了下方初版 v2「兩份均需補測」的結論。v2 摘要不能直接升版，必須重播原 capture；Road 公式版本仍為 v2。加入去位置等無關通道的前 20 秒真實 fixture 及負例。
+- **顯示**：左齒比窗格依檔數展開，右圖依最新要求維持 16:9，窄視窗改上下排列；Halfmoon 六種主題與 4／6／10 檔 smoke check 通過。使用既有語意色與網格，不加依賴。
+- **驗收邊界**：使用者確認公式修正已讓本車產出實際可用設定；未據此虛構三次定量試車、候選套用值或跨車款校準。詳見 [修正紀錄](../docs/tuning/aego-low-power-20260927.md)。輪詢暫停，Draft 不自動解除。
+- **採用技能**：physics-tuning-math、halfmoon-design-system、ponytail、pr-author-maintainer。Rust 測試採單工作與獨立 target-dir，避開 Windows 記憶體不足與正在執行的 sidecar 檔案鎖，不停止使用者遊戲或服務。
+
 ## 2026-09-27 / AEGO 起步瞬態與低功率 Road 齒比（Codex as Codex）
 
 - **可重現盲點**：低於 1 km/h 且 ClutchInput=0 的瞬態仍會污染功率峰值。兩份本車 capture 的固定分箱峰值約 3984 RPM，不能把約 3365 RPM 的瞬時峰值當成換檔硬上限，也不能歸因為 NA 標籤。
-- **相容性**：保留原始觀測，分析另帶版本與 observation ID。重播使用同一採樣 reducer，缺少 capture 或未通過 6 秒／覆蓋 gate 就阻擋新推薦；修正後兩份舊 capture 均需補測，不為了得到結果放寬門檻。
+- **相容性**：保留原始觀測，分析另帶版本與 observation ID。重播使用同一採樣 reducer，缺少 capture 或未通過 6 秒／覆蓋 gate 就阻擋新推薦；初版 v2 兩份舊 capture 均未就緒，後續 v3 斷油循環調查及更正見上方紀錄，不為了得到結果放寬門檻。
 - **幾何限制**：共同分配起步與頂檔總減速比，整數百分位網格保留端點與全檔間距；無解是模型衝突，不是汽車無法行駛。重複夾至 0.40 不是合法修復。
 - **證據邊界**：真實 fixture、TS/Rust golden、全量本地測試與隔離 Halfmoon 元件檢查不等於實車起步可用；Race 六速初始設定不能誤寫成原廠四速。詳見 [修正紀錄](../docs/tuning/aego-low-power-20260927.md)。
 - **採用技能**：physics-tuning-math、ponytail、modular-refactoring、halfmoon-design-system、pr-author-maintainer。保留既有依賴與其他賽事公式，沒有完整曲線最佳化器。
