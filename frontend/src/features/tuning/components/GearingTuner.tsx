@@ -77,18 +77,18 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
   ]);
 
   return (
-    <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
+    <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
       <div style={{ marginBottom: '0.8rem' }}>
-        <h4 style={{ margin: 0, color: 'white', fontSize: '0.95rem' }}>{t("AEGO Optimized Gear Ratios & Dynamic Curve")}</h4>
+        <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t("AEGO Optimized Gear Ratios & Dynamic Curve")}</h4>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.2rem', alignItems: 'start' }}>
+      <div className="row g-3 align-items-start">
 
         {/* Left Column: Final Drive & Gears Table */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '320px', overflowY: 'auto' }}>
-            <div style={{ ...formRowStyle, marginBottom: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
+        <div className="col-12 col-md-4 d-flex flex-column gap-3">
+          <div style={{ background: 'var(--surface-1)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            <div style={{ ...formRowStyle, marginBottom: '0.8rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{t("Final Drive Ratio (FD)")}</span>
               <input
                 type="number" step="0.01" value={tuning.gearing.finalDrive}
                 readOnly
@@ -99,7 +99,7 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {Array.from({length: numGears}).map((_, i) => (
-                <div key={`gear-in-${i}`} style={{ ...formRowStyle, background: 'rgba(255,255,255,0.02)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
+                <div key={`gear-in-${i}`} style={{ ...formRowStyle, background: 'var(--surface-2)', padding: '0.4rem 0.6rem', borderRadius: '4px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t("Gear")} {i + 1}</span>
                   <input
                     type="number" step="0.01" value={tuning.gearing.gears[i] || 0.0}
@@ -113,8 +113,8 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
           </div>
 
           {/* Secondary Correction Mechanism Input Card */}
-          {showCorrections && <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.9rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.6rem' }}>
+          {showCorrections && <div style={{ background: 'var(--surface-1)', padding: '0.9rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.6rem' }}>
               {t("Secondary Correction Mechanism")}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -150,93 +150,97 @@ const GearingTunerComponent: React.FC<GearingTunerProps> = ({
         </div>
 
         {/* Right Column: Speed-RPM LineChart Graph */}
-        <div style={{ height: '440px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.8rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
-              <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="rgba(255,255,255,0.4)" fontSize={10} unit={` ${speedLabel}`} />
-              <YAxis type="number" domain={[0, yMax || 9000]} stroke="rgba(255,255,255,0.4)" fontSize={10} unit=" RPM" />
-              {/* 3. Effective Powerband Highlight Range (Semi-transparent background area) */}
-              {Boolean(carParams?.maxHpRpm && carParams?.maxTorqueRpm) && (
-                <ReferenceArea
-                  y1={Math.min(carParams.maxTorqueRpm, carParams.maxHpRpm)}
-                  y2={Math.max(carParams.maxTorqueRpm, carParams.maxHpRpm)}
-                  fill="rgba(0, 230, 118, 0.08)"
-                  stroke="rgba(0, 230, 118, 0.25)"
-                  strokeDasharray="2 2"
-                  label={{ value: t("Effective Powerband"), fill: 'rgba(0, 230, 118, 0.6)', fontSize: 10, position: 'insideTopLeft' }}
-                />
-              )}
+        <div className="col-12 col-md-8" style={{ minWidth: 0 }}>
+          <div style={{ background: 'var(--surface-2)', borderRadius: '8px', padding: '0.8rem', border: '1px solid var(--glass-border)' }}>
+            <ResponsiveContainer width="100%" aspect={16 / 9} minWidth={0}>
+              <LineChart data={chartData} margin={{ top: 15, right: 15, bottom: 5, left: -15 }}>
+                <XAxis dataKey="speed" type="number" domain={[0, xMax || 400]} stroke="var(--text-secondary)" fontSize={10} unit={` ${speedLabel}`} />
+                <YAxis type="number" domain={[0, yMax || 9000]} stroke="var(--text-secondary)" fontSize={10} unit=" RPM" />
+                {/* 3. Effective Powerband Highlight Range (Semi-transparent background area) */}
+                {Boolean(carParams?.maxHpRpm && carParams?.maxTorqueRpm) && (
+                  <ReferenceArea
+                    y1={Math.min(carParams.maxTorqueRpm, carParams.maxHpRpm)}
+                    y2={Math.max(carParams.maxTorqueRpm, carParams.maxHpRpm)}
+                    fill="var(--bs-success-text-emphasis)"
+                    fillOpacity={0.08}
+                    stroke="var(--bs-success-text-emphasis)"
+                    strokeOpacity={0.25}
+                    strokeDasharray="2 2"
+                    label={{ value: t("Effective Powerband"), fill: 'var(--bs-success-text-emphasis)', fontSize: 10, position: 'insideTopLeft' }}
+                  />
+                )}
 
-              {/* 0. Rev Limiter / Cutoff RPM horizontal dashed line */}
-              {Boolean(cutoffRpm && cutoffRpm > 0) && (
-                <ReferenceLine
-                  y={cutoffRpm}
-                  stroke="#ff1744"
-                  strokeDasharray="4 2"
-                  label={{
-                    value: `${t("Rev Limiter")}: ${Math.round(cutoffRpm)} RPM`,
-                    fill: '#ff1744',
-                    fontSize: 10,
-                    position: 'insideTopRight'
-                  }}
-                />
-              )}
+                {/* 0. Rev Limiter / Cutoff RPM horizontal dashed line */}
+                {Boolean(cutoffRpm && cutoffRpm > 0) && (
+                  <ReferenceLine
+                    y={cutoffRpm}
+                    stroke="var(--bs-danger-text-emphasis)"
+                    strokeDasharray="4 2"
+                    label={{
+                      value: `${t("Rev Limiter")}: ${Math.round(cutoffRpm)} RPM`,
+                      fill: 'var(--bs-danger-text-emphasis)',
+                      fontSize: 10,
+                      position: 'insideTopRight'
+                    }}
+                  />
+                )}
 
-              {/* 1. Max HP horizontal dashed line */}
-              {carParams?.maxHpRpm && (
-                <ReferenceLine
-                  y={carParams.maxHpRpm}
-                  stroke="#ff3d00"
-                  strokeDasharray="3 3"
-                  label={{ value: `${t("Max HP")}: ${Math.round(carParams.maxHpRpm)} RPM`, fill: '#ff3d00', fontSize: 10, position: 'top' }}
-                />
-              )}
+                {/* 1. Max HP horizontal dashed line */}
+                {carParams?.maxHpRpm && (
+                  <ReferenceLine
+                    y={carParams.maxHpRpm}
+                    stroke="var(--bs-danger-text-emphasis)"
+                    strokeDasharray="3 3"
+                    label={{ value: `${t("Max HP")}: ${Math.round(carParams.maxHpRpm)} RPM`, fill: 'var(--bs-danger-text-emphasis)', fontSize: 10, position: 'top' }}
+                  />
+                )}
 
-              {/* 2. Max Torque horizontal dashed line */}
-              {carParams?.maxTorqueRpm && (
-                <ReferenceLine
-                  y={carParams.maxTorqueRpm}
-                  stroke="#ffaa00"
-                  strokeDasharray="3 3"
-                  label={{ value: `${t("Max Torque")}: ${Math.round(carParams.maxTorqueRpm)} RPM`, fill: '#ffaa00', fontSize: 10, position: 'bottom' }}
-                />
-              )}
+                {/* 2. Max Torque horizontal dashed line */}
+                {carParams?.maxTorqueRpm && (
+                  <ReferenceLine
+                    y={carParams.maxTorqueRpm}
+                    stroke="var(--bs-warning-text-emphasis)"
+                    strokeDasharray="3 3"
+                    label={{ value: `${t("Max Torque")}: ${Math.round(carParams.maxTorqueRpm)} RPM`, fill: 'var(--bs-warning-text-emphasis)', fontSize: 10, position: 'bottom' }}
+                  />
+                )}
 
-              {/* 4. Simulated Top Speed Vertical Reference Line */}
-              {Boolean(tuning?.gearing?.simulatedTopSpeed && tuning.gearing.simulatedTopSpeed > 0) && (
-                <ReferenceLine
-                  x={displaySpeed(tuning.gearing.simulatedTopSpeed)}
-                  stroke="#00e5ff"
-                  strokeDasharray="3 3"
-                  label={{ value: `${t("Simulated Top Speed")}: ${displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1)} ${speedLabel}`, fill: '#00e5ff', fontSize: 10, position: 'insideTopLeft' }}
-                />
-              )}
+                {/* 4. Simulated Top Speed Vertical Reference Line */}
+                {Boolean(tuning?.gearing?.simulatedTopSpeed && tuning.gearing.simulatedTopSpeed > 0) && (
+                  <ReferenceLine
+                    x={displaySpeed(tuning.gearing.simulatedTopSpeed)}
+                    stroke="var(--bs-info-text-emphasis)"
+                    strokeDasharray="3 3"
+                    label={{ value: `${t("Simulated Top Speed")}: ${displaySpeed(tuning.gearing.simulatedTopSpeed).toFixed(1)} ${speedLabel}`, fill: 'var(--bs-info-text-emphasis)', fontSize: 10, position: 'insideTopLeft' }}
+                  />
+                )}
 
-              {/* 5. Soft Max Speed Cap Vertical Reference Line */}
-              {Boolean(tuning?.gearing?.softMaxSpeed && tuning.gearing.softMaxSpeed > 0) && (
-                <ReferenceLine
-                  x={displaySpeed(tuning.gearing.softMaxSpeed)}
-                  stroke="#d500f9"
-                  strokeDasharray="4 4"
-                  label={{ value: `${t("Soft Cap")}: ${displaySpeed(tuning.gearing.softMaxSpeed).toFixed(1)} ${speedLabel}`, fill: '#d500f9', fontSize: 10, position: 'insideTopRight' }}
-                />
-              )}
+                {/* 5. Soft Max Speed Cap Vertical Reference Line */}
+                {Boolean(tuning?.gearing?.softMaxSpeed && tuning.gearing.softMaxSpeed > 0) && (
+                  <ReferenceLine
+                    x={displaySpeed(tuning.gearing.softMaxSpeed)}
+                    stroke="var(--bs-primary-text-emphasis)"
+                    strokeDasharray="4 4"
+                    label={{ value: `${t("Soft Cap")}: ${displaySpeed(tuning.gearing.softMaxSpeed).toFixed(1)} ${speedLabel}`, fill: 'var(--bs-primary-text-emphasis)', fontSize: 10, position: 'insideTopRight' }}
+                  />
+                )}
 
-              {Array.from({length: numGears}).map((_, i) => (
-                <Line
-                  key={`gear-graph-${i}`}
-                  type="linear"
-                  dataKey={`gear${i+1}`}
-                  stroke={`hsl(${i * 45}, 85%, 60%)`}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={true}
-                  name={`${i + 1} Gear`}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+                {Array.from({length: numGears}).map((_, i) => (
+                  <Line
+                    key={`gear-graph-${i}`}
+                    type="linear"
+                    dataKey={`gear${i+1}`}
+                    stroke={`color-mix(in srgb, hsl(${i * 45}, 85%, 60%) 65%, var(--text-primary))`}
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                    connectNulls={true}
+                    name={`${i + 1} Gear`}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
       </div>
