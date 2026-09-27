@@ -1,4 +1,6 @@
 # FH6-HorizonTuner 🏎️
+
+EV tuning now has an independent measured powertrain model, selected with a persisted EV switch instead of the conventional gear-count input. The same four-step workflow supports single-speed and multi-speed EV scans and final-drive previews. Launch/shift optimization and attainable top-speed prediction remain uncalibrated. See the [model contract and validation notes](docs/calibration/ev-foundation.md).
 > **Forza Horizon 6 Real-Time Telemetry Analyzer, Vehicle Tuning Workbench & Custom Racing Dashboard Overlay**
 
 [![Language](https://img.shields.io/badge/Rust-2021-DEA584.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)

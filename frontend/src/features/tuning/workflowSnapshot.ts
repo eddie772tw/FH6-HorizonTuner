@@ -1,8 +1,9 @@
-import type { ChassisTuningResult, StaticTireAlignResult, GearingResult } from '../../utils/tuningMath';
+import type { ChassisTuningResult, StaticTireAlignResult } from '../../utils/tuningMath';
 import type { CarParams } from '../../context/CarParamsContext';
+import type { WorkflowGearingResult } from './measurementTuningProfile';
 
 export interface WorkflowRecommendation {
-  formulaVersion: 'tuningMath/measured-workflow-v1';
+  formulaVersion: 'tuningMath/measured-workflow-v1' | 'ev/measured-workflow-v1';
   inputSnapshot: Record<string, unknown>;
   fields: Record<string, { value: number; unit: string }>;
 }
@@ -19,7 +20,9 @@ function canonicalWorkflowInputSnapshot(inputSnapshot: Record<string, unknown>):
 
 /** Transport mapping only. All numbers are outputs of the existing pure solver. */
 export function workflowRecommendation(profile: CarParams, chassis: ChassisTuningResult,
-  alignment: StaticTireAlignResult, gearing: GearingResult, inputSnapshot: Record<string, unknown>): WorkflowRecommendation {
+  alignment: StaticTireAlignResult, gearing: WorkflowGearingResult, inputSnapshot: Record<string, unknown>): WorkflowRecommendation {
+  const ev = 'model' in gearing ? gearing : null;
+  if (Boolean(profile.isElectric) !== Boolean(ev)) throw new Error('Powertrain profile and gearing result modes must match');
   const fields: WorkflowRecommendation['fields'] = {};
   const add = (key: string, value: number, unit: string) => { fields[key] = { value, unit }; };
   add('pressure.front', alignment.pcF, 'psi'); add('pressure.rear', alignment.pcR, 'psi');
@@ -40,14 +43,17 @@ export function workflowRecommendation(profile: CarParams, chassis: ChassisTunin
     add('diff.rear.acceleration', chassis.diff.accelR, '%'); add('diff.rear.deceleration', chassis.diff.decelR, '%');
   }
   if (profile.drivetrain === 'AWD') add('diff.center', chassis.diff.centerRear, '%');
-  add('gearing.finalDrive', gearing.finalDrive, 'ratio');
-  gearing.gears.forEach((ratio, i) => add('gearing.gear' + (i + 1), ratio, 'ratio'));
+  if (gearing.finalDrive !== null && (!ev || ev.adjustability.finalDrive)) add('gearing.finalDrive', gearing.finalDrive, 'ratio');
+  gearing.gears.forEach((ratio, i) => {
+    if (ratio !== null && (!ev || ev.adjustability.gears[i])) add('gearing.gear' + (i + 1), ratio, 'ratio');
+  });
   const capability = profile.adjustability;
   for (const key of Object.keys(fields)) {
     const family = key.split('.')[0];
     if ((['spring', 'height', 'rebound', 'bump', 'camber', 'toe', 'caster'].includes(family) && capability.suspension !== 'Race') ||
       (family === 'arb' && capability.arb === 'Fixed') || (family === 'diff' && capability.diff === 'Fixed') ||
-      (family === 'gearing' && (capability.gearbox === 'Fixed' || (key !== 'gearing.finalDrive' && capability.gearbox !== 'Full')))) delete fields[key];
+      (family === 'gearing' && !ev && (capability.gearbox === 'Fixed' || (key !== 'gearing.finalDrive' && capability.gearbox !== 'Full')))) delete fields[key];
   }
-  return { formulaVersion: 'tuningMath/measured-workflow-v1', inputSnapshot: canonicalWorkflowInputSnapshot(inputSnapshot), fields };
+  return { formulaVersion: profile.isElectric ? 'ev/measured-workflow-v1' : 'tuningMath/measured-workflow-v1',
+    inputSnapshot: canonicalWorkflowInputSnapshot(inputSnapshot), fields };
 }

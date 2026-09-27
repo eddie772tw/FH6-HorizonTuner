@@ -1,7 +1,8 @@
 import type { CarParams } from '../../context/CarParamsContext';
-import type { Season, ChassisTuningResult, StaticTireAlignResult, GearingResult } from '../../utils/tuningMath';
+import type { Season, ChassisTuningResult, StaticTireAlignResult } from '../../utils/tuningMath';
 import type { TuningMeasurementState } from '../tuning/tuningMeasurement';
 import type { WorkflowReadiness } from '../tuning/tuningWorkflow';
+import type { WorkflowGearingResult } from '../tuning/measurementTuningProfile';
 import { canOpenTuningStep, serializeWorkflowProfile } from '../tuning/tuningWorkflow';
 
 export interface CompanionSnapshot {
@@ -10,7 +11,7 @@ export interface CompanionSnapshot {
   profile: CarParams | null;
   profileKey: string;
   workflow: { step: number; goal: string; season: string };
-  results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: GearingResult | null };
+  results: { chassis: ChassisTuningResult | null; alignment: StaticTireAlignResult | null; gearing: WorkflowGearingResult | null };
   engine: { phase: string; sampleCount: number; state: TuningMeasurementState | null };
   readiness: WorkflowReadiness;
 }
@@ -65,6 +66,7 @@ export function validateCompanionCommand(command: CompanionCommand, snapshot: Co
     if (command.step !== undefined && !canOpenTuningStep(command.step, snapshot.readiness)) throw new Error('Complete the required workflow inputs before opening this step.');
     if (command.goal === undefined && command.season === undefined && command.step === undefined) throw new Error('Empty workflow command.');
   } else if (command.kind === 'measurement') {
+    if (snapshot.profile.isElectric) throw new Error('Use the desktop EV measurement controls for this powertrain.');
     if (!snapshot.readiness.engineInputs) throw new Error('Complete vehicle weight and engine power first.');
     const phase = snapshot.engine.phase;
     if (command.action === 'start' && phase === 'idle') return;

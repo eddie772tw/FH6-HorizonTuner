@@ -7,6 +7,7 @@ import { DragGearingSetup } from './DragGearingSetup';
 import { Season } from '../../../utils/tuningMath';
 import { DecimalInput } from '../../../components/common/DecimalInput';
 import { DriftModeGuidance } from './DriftModeGuidance';
+import { EvModeSwitch } from '../../car_params/components/EvModeSwitch';
 
 interface Step1GoalSetupProps {
   measuredEngineInputs?: boolean;
@@ -265,7 +266,8 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
             {selectedRaceGoal === 'Road' && carParams && <RoadDrivetrainSetup profile={carParams}
               onChange={value => updateParam('roadAwdRearPercent', value)} />}
 
-            <div className="d-flex justify-content-between align-items-center">
+            <EvModeSwitch t={t} checked={carParams?.isElectric === true} onChange={value => updateParam('isElectric', value)} />
+            {!carParams?.isElectric && <div className="d-flex justify-content-between align-items-center">
               <label className="text-body-secondary fs-7 mb-0">{t('Gears Count')}</label>
               <div style={{ width: '130px' }}>
                 <DecimalInput
@@ -276,7 +278,7 @@ export const Step1GoalSetup: React.FC<Step1GoalSetupProps> = ({
                   max={10}
                 />
               </div>
-            </div>
+            </div>}
 
             <div className="d-flex justify-content-between align-items-center">
               <label className="text-body-secondary fs-7 mb-0">{t('Induction Type')}</label>

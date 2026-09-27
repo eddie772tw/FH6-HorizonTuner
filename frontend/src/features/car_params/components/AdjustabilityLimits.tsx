@@ -24,10 +24,10 @@ export const AdjustabilityLimits: React.FC<AdjustabilityLimitsProps> = ({
           <option value="Full">{t("Full Adjustable")}</option>
         </select>
       </div>
-      <div style={formRowStyle}>
+      {!carParams.isElectric && <div style={formRowStyle}>
         <label htmlFor="adj-gears">{t("Gears Count")}</label>
         <input id="adj-gears" type="number" value={carParams.adjustability.gears} min={4} max={10} onChange={e => updateAdjust('gears', parseInt(e.target.value))} style={inputStyle} />
-      </div>
+      </div>}
       <div style={{...formRowStyle, opacity: 0.5}}>
         <label htmlFor="adj-suspension">{t("Suspension")} <span style={{color: 'orange', fontSize: '0.7rem'}}>({t("Coming Soon")})</span></label>
         <select id="adj-suspension" value={carParams.adjustability.suspension} disabled style={inputStyle}>

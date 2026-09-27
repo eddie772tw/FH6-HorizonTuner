@@ -34,6 +34,7 @@ export type DevRaceGoal = 'Road' | 'Rally' | 'Drag' | 'Drift';
 export type DevSurface = 'tarmac' | 'gravel' | 'snow' | 'dragStrip';
 
 export interface DevCarInput {
+  isElectric?: boolean;
   weight: number;
   weight_distribution: number;
   drivetrain: 'FWD' | 'RWD' | 'AWD';
@@ -155,6 +156,8 @@ export interface DevAlignmentOutput {
 }
 
 export interface DevGearingOutput {
+  unsupported?: boolean;
+  unsupportedReason?: string;
   finalDrive: number;
   gears: number[];
   tireCircumferenceM: number;

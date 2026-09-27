@@ -9,6 +9,7 @@ import { createUnitPreference, loadUnitPreference, resolveUnitPreference, type U
 import { Step1GoalSetup } from './components/Step1GoalSetup';
 import { Step2ChassisTuner } from './components/Step2ChassisTuner';
 import { EngineDataStep } from './components/EngineDataStep';
+import { EvPowertrainStep } from './components/EvPowertrainStep';
 import { WorkflowGuide } from './components/WorkflowGuide';
 import { SetupVerificationStep } from './components/SetupVerificationStep';
 import { canOpenTuningStep, getWorkflowReadiness, resolveTuningStep, TUNING_WORKFLOW_STEPS, updateWorkflowProfile } from './tuningWorkflow';
@@ -42,14 +43,16 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
   const gearing = useMemo(() => calculateWizardMeasuredGearing(goal, gears, profile, prepared ? {
     engineMaxRpm: prepared.engineMaxRpm!, peakPowerRpm: prepared.observedPeakPower!.rpm,
     peakTorqueRpm: prepared.observedPeakTorque!.rpm,
-  } : null), [goal, gears, profile, prepared]);
+  } : null, session.evMeasurement.result), [goal, gears, profile, prepared, session.evMeasurement.result]);
   const readiness = getWorkflowReadiness(!isLoading && loadedCarId === carId, profile, Boolean(gearing));
   useEffect(() => {
     const step = resolveTuningStep(currentStep, readiness);
     if (step !== currentStep) setCurrentStep(step);
   }, [currentStep, readiness.mechanical, readiness.engineInputs, readiness.measuredEngine]);
   const inputSnapshot = useMemo(() => ({ carId, goal, season, profile,
-    engineObservation: engine.observation }), [carId, goal, season, profile, engine.observation]);
+    ...(profile?.isElectric ? { powertrainModel: 'ev/v1', evMeasurement: session.evMeasurement.state, evResult: session.evMeasurement.result }
+      : { powertrainModel: 'ice', engineObservation: engine.observation }) }),
+    [carId, goal, season, profile, engine.observation, session.evMeasurement.state, session.evMeasurement.result]);
 
   return <div className="container-fluid h-100 d-flex flex-column gap-3 p-0 overflow-auto">
     <header>
@@ -79,7 +82,9 @@ function TuningViewContent({ unitPreference, onUnitPreferenceChange }: {
       onProceed={async () => { await saveCarParams(); setCurrentStep(2); }} />}
     {!reviewHistory && currentStep === 2 && <Step2ChassisTuner selectedRaceGoal={goal} season={season} carParams={profile}
       chassis={chassis} alignment={alignment} saveCarParams={saveCarParams} />}
-    {!reviewHistory && currentStep === 3 && <EngineDataStep carId={carId} profile={profile} engine={engine} gearing={gearing} enabled={readiness.engineInputs} />}
+    {!reviewHistory && currentStep === 3 && (profile?.isElectric
+      ? <EvPowertrainStep enabled={readiness.engineInputs} />
+      : <EngineDataStep carId={carId} profile={profile} engine={engine} gearing={gearing && !('model' in gearing) ? gearing : null} enabled={readiness.engineInputs} />)}
     {!reviewHistory && currentStep === 4 && <SetupVerificationStep goal={goal} carId={carId} profile={profile} chassis={chassis}
       alignment={alignment} gearing={gearing} inputSnapshot={inputSnapshot} />}
     {reviewHistory && <RoadWorkflowView recommendation={null} carId={carId} />}

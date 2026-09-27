@@ -99,7 +99,9 @@ pub fn validate_request(kind: &str, body: &Value) -> ApiResult<()> {
             }
             if let Some(r) = o.get("recommendation").filter(|v| !v.is_null()) {
                 let rec = as_obj(r)?;
-                if text(rec, "formulaVersion", 80)? != "tuningMath/measured-workflow-v1" {
+                if !["tuningMath/measured-workflow-v1", "ev/measured-workflow-v1"]
+                    .contains(&text(rec, "formulaVersion", 80)?.as_str())
+                {
                     return Err(ApiError::invalid("Unsupported recommendation formula"));
                 }
                 let fields = child(rec, "fields")?;

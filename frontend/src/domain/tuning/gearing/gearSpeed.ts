@@ -15,6 +15,8 @@ export function calculateTireCircumferenceM(car: DevTuningInput['car']): number 
 }
 
 export function calculateDevGearing(input: DevTuningInput): DevGearingOutput {
+  if (input.car.isElectric) return { finalDrive: 0, gears: [], tireCircumferenceM: 0, topSpeedAtPeakHpKmh: 0,
+    unsupported: true, unsupportedReason: 'EV requires the measured EV workflow.' };
   const circumference = calculateTireCircumferenceM(input.car);
   const rpmAtPower = Math.max(3000, finiteOr(input.car.maxHpRpm, 7500));
   const targetSpeed = clamp(finiteOr(input.targetTopSpeedKmh, 280), 80, 450);
